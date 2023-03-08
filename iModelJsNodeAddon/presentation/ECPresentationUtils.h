@@ -24,6 +24,7 @@ enum class ECPresentationStatus
     Pending = 2,                            /** Request is still being processed */
     Error = 0x10000,                        /** Base error */
     InvalidArgument = Error + 1,            /** Argument is invalid */
+    ResultSetTooLarge = Error + 2,          /** Requested result set is too large */
     };
 
 //=======================================================================================
