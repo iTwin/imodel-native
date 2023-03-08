@@ -211,6 +211,22 @@ bvector<PresentationQueryBuilderPtr> NavigationQueryBuilder::GetQueries(RootNode
     return visitor.GetQueries();
     }
 
+struct GroupingHandler;
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct GroupingNodeAndHandler
+{
+private:
+    NavNodeCPtr m_node;
+    GroupingHandler const* m_handler;
+public:
+    GroupingNodeAndHandler() : m_node(nullptr), m_handler(nullptr) {}
+    GroupingNodeAndHandler(NavNodeCR node, GroupingHandler const& handler) : m_node(&node), m_handler(&handler) {}
+    NavNodeCR GetNode() const { return *m_node; }
+    GroupingHandler const& GetHandler() const { return *m_handler; }
+};
+
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
@@ -224,7 +240,7 @@ private:
     bvector<InstanceLabelOverrideValueSpecification const*> m_labelOverrideValueSpecs;
     bvector<InstanceFilterDefinitionCP> m_instanceFilterDefinitions;
     QueryClauseAndBindings m_instanceFilterECSqlExpression;
-    NavigationQueryContractCPtr m_forcedGroupingContract;
+    std::function<NavigationQueryContractPtr(SelectQueryInfo const&, bvector<GroupingNodeAndHandler> const&)> m_forcedGroupingContractFactory;
 
 public:
     SelectQueryInfo() {}
@@ -271,8 +287,8 @@ public:
     bvector<InstanceLabelOverrideValueSpecification const*> const& GetLabelOverrideValueSpecs() const {return m_labelOverrideValueSpecs;}
     void SetLabelOverrideValueSpecs(bvector<InstanceLabelOverrideValueSpecification const*> const& overrides) {m_labelOverrideValueSpecs = overrides;}
 
-    NavigationQueryContractCPtr GetForcedGroupingContract() const {return m_forcedGroupingContract;}
-    void SetForcedGroupingContract(NavigationQueryContractCPtr value) {m_forcedGroupingContract = value;}
+    std::function<NavigationQueryContractPtr(SelectQueryInfo const&, bvector<GroupingNodeAndHandler> const&)> GetForcedGroupingContractFactory() const {return m_forcedGroupingContractFactory;}
+    void SetForcedGroupingContractFactory(std::function<NavigationQueryContractPtr(SelectQueryInfo const&, bvector<GroupingNodeAndHandler> const&)> value) {m_forcedGroupingContractFactory = value;}
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -628,21 +644,6 @@ public:
     SameLabelInstanceGroupingHandler(ECSchemaHelper const& schemaHelper, GroupingRuleCR rule)
         : T_Super(rule, schemaHelper)
         {}
-};
-
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-struct GroupingNodeAndHandler
-{
-private:
-    NavNodeCPtr m_node;
-    GroupingHandler const* m_handler;
-public:
-    GroupingNodeAndHandler() : m_node(nullptr), m_handler(nullptr) {}
-    GroupingNodeAndHandler(NavNodeCR node, GroupingHandler const& handler) : m_node(&node), m_handler(&handler) {}
-    NavNodeCR GetNode() const {return *m_node;}
-    GroupingHandler const& GetHandler() const {return *m_handler;}
 };
 
 /*=================================================================================**//**
@@ -1446,6 +1447,7 @@ private:
     NavNodeCP m_parentInstanceNode;
     ChildNodeSpecification const& m_specification;
     Utf8StringCR m_specificationIdentifier;
+    std::function<uint64_t()> m_selectContractIdAllocator;
 
 protected:
     NavigationQueryBuilderParameters const& GetQueryBuilderParams() const {return m_params;}
@@ -1462,6 +1464,7 @@ protected:
             }
         return m_specificationIdentifier;
         }
+    uint64_t AllocateContractId() const {return m_selectContractIdAllocator();}
 
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
@@ -1475,15 +1478,23 @@ protected:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
-    ComplexQueryBuilderPtr CreateQueryBase(NavigationQueryContractCR contract, SelectQueryInfo const& selectInfo, bvector<GroupingNodeAndHandler> const& filters) const
+    ComplexQueryBuilderPtr CreateQueryBase(PresentationQueryContractR contract, SelectQueryInfo const& selectInfo, bvector<GroupingNodeAndHandler> const& filters) const
         {
-        NavigationQueryContractCPtr queryContract = &contract;
+        PresentationQueryContractPtr queryContract = &contract;
 
-        if (selectInfo.GetForcedGroupingContract().IsValid())
+        bool groupByContract = false;
+        if (queryContract->AsNavigationQueryContract())
             {
-            // in some cases (e.g. SameLabelInstance grouping) higher priority select query handlers might want to
-            // replace the contract and use it for grouping
-            queryContract = selectInfo.GetForcedGroupingContract();
+            if (selectInfo.GetForcedGroupingContractFactory())
+                {
+                // in some cases (e.g. SameLabelInstance grouping) higher priority select query handlers might want to
+                // replace the contract and use it for grouping
+                auto contractFactory = selectInfo.GetForcedGroupingContractFactory();
+                queryContract = contractFactory(selectInfo, filters);
+                groupByContract = true;
+                }
+            if (0 == queryContract->GetId())
+                queryContract->SetId(AllocateContractId());
             }
 
         ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
@@ -1519,10 +1530,12 @@ protected:
                 query->Join(pathFromSelectToParentClass);
                 }
 
+#ifdef wip_skipped_instance_keys_performance_issue
             // set the relationship path for the contract so it can include any skipped related instance keys into the select clause
             auto relatedQueryContract = queryContract->Clone();
             relatedQueryContract->SetPathFromSelectToParentClass(pathFromSelectToParentClass);
             queryContract = relatedQueryContract;
+#endif
 
             // TODO: since the path can include multiple relationships with different directions, this extended
             // data attribute is ambiguous - consider removal
@@ -1535,7 +1548,7 @@ protected:
         // apply filters from parent grouping nodes
         for (GroupingNodeAndHandler const& filter : filters)
             {
-            auto filteringHandler = Create(filter.GetHandler(), GetQueryBuilderParams(), GetParentNode(), GetParentInstanceNode(), GetSpecification(), GetSpecificationIdentifier());
+            auto filteringHandler = Create(filter.GetHandler(), GetQueryBuilderParams(), GetParentNode(), GetParentInstanceNode(), GetSpecification(), GetSpecificationIdentifier(), m_selectContractIdAllocator);
             if (filteringHandler)
                 filteringHandler->ApplyFilter(query, selectInfo, filter.GetNode());
             }
@@ -1560,7 +1573,7 @@ protected:
             }
 
         // if force grouping - do that
-        if (selectInfo.GetForcedGroupingContract().IsValid())
+        if (groupByContract)
             {
             auto groupedQuery = QueryBuilderHelpers::CreateComplexNestedQueryIfNecessary(*query, queryContract->GetGroupingAliases());
             groupedQuery->GroupByContract(*queryContract);
@@ -1571,8 +1584,9 @@ protected:
         }
 
 protected:
-    SelectQueryHandler(NavigationQueryBuilderParameters const& params, NavNodeCP parentNode, NavNodeCP parentInstanceNode, ChildNodeSpecification const& specification, Utf8StringCR specificationHash)
-        : m_params(params), m_parentNode(parentNode), m_parentInstanceNode(parentInstanceNode), m_specification(specification), m_specificationIdentifier(specificationHash)
+    SelectQueryHandler(NavigationQueryBuilderParameters const& params, NavNodeCP parentNode, NavNodeCP parentInstanceNode, ChildNodeSpecification const& specification,
+        Utf8StringCR specificationHash, std::function<uint64_t()> selectContractIdAllocator)
+        : m_params(params), m_parentNode(parentNode), m_parentInstanceNode(parentInstanceNode), m_specification(specification), m_specificationIdentifier(specificationHash), m_selectContractIdAllocator(selectContractIdAllocator)
         {}
     virtual Utf8CP _GetName() const = 0;
     virtual int _GetOrderInUnion() const = 0;
@@ -1586,14 +1600,15 @@ public:
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
     static std::unique_ptr<SelectQueryHandler const> Create(GroupingHandler const& groupingHandler, NavigationQueryBuilderParameters const& queryBuilderParams,
-        NavNodeCP parentNode, NavNodeCP parentInstanceNode, ChildNodeSpecificationCR specification, Utf8StringCR specificationHash);
+        NavNodeCP parentNode, NavNodeCP parentInstanceNode, ChildNodeSpecificationCR specification, Utf8StringCR specificationHash, std::function<uint64_t()> selectContractIdAllocator);
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
-    static std::unique_ptr<SelectQueryHandler const> Create(GroupingHandler const& groupingHandler, GroupingResolver const& groupingResolver)
+    static std::unique_ptr<SelectQueryHandler const> Create(GroupingHandler const& groupingHandler, GroupingResolver const& groupingResolver, std::function<uint64_t()> selectContractIdAllocator)
         {
         return Create(groupingHandler, groupingResolver.GetQueryBuilderParams(), groupingResolver.GetParentNode(),
-            groupingResolver.GetParentInstanceNode(), groupingResolver.GetSpecification(), groupingResolver.GetSpecificationIdentifier());
+            groupingResolver.GetParentInstanceNode(), groupingResolver.GetSpecification(), groupingResolver.GetSpecificationIdentifier(),
+            selectContractIdAllocator);
         }
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
@@ -1691,11 +1706,14 @@ private:
         // set to invalid so NavigationQuery doesn't attempt to set resultQuery result type to nested query result type
         query->GetNavigationResultParameters().SetResultType(NavigationQueryResultType::Invalid);
 
+        auto const* contract = query->GetContract()->AsNavigationQueryContract();
+        auto const& instanceKeysSelectQuery = contract->GetInstanceKeysSelectQuery();
+
         // note: we don't need to create a valid label field here because we're just wrapping another query - the valid clause is set there
-        auto displayLabelField = PresentationQueryContractSimpleField::Create(MultiECInstanceNodesQueryContract::DisplayLabelFieldName, "NULL", false);
-        auto contract = MultiECInstanceNodesQueryContract::Create(GetSpecificationIdentifierForContract(), &info.GetSelectClass().GetClass(), displayLabelField, false, info.GetRelatedInstancePaths());
+        auto displayLabelField = PresentationQueryContractSimpleField::Create(MultiECInstanceNodesQueryContract::DisplayLabelFieldName, "", false);
+        auto resultContract = MultiECInstanceNodesQueryContract::Create(contract->GetId(), GetSpecificationIdentifierForContract(), instanceKeysSelectQuery, &info.GetSelectClass().GetClass(), displayLabelField, false, info.GetRelatedInstancePaths());
         ComplexQueryBuilderPtr resultQuery = ComplexQueryBuilder::Create();
-        resultQuery->SelectContract(*contract);
+        resultQuery->SelectContract(*resultContract);
         resultQuery->From(*query);
 
         query = resultQuery;
@@ -1708,7 +1726,8 @@ private:
         {
         auto displayLabelField = QueryBuilderHelpers::CreateDisplayLabelField(ECInstanceNodesQueryContract::DisplayLabelFieldName, GetQueryBuilderParams().GetSchemaHelper(),
             info.GetSelectClass(), nullptr, nullptr, info.GetRelatedInstancePaths(), info.GetLabelOverrideValueSpecs());
-        auto contract = ECInstanceNodesQueryContract::Create(GetSpecificationIdentifierForContract(), &info.GetSelectClass().GetClass(), displayLabelField, info.GetRelatedInstancePaths());
+        auto instanceKeysSelectQuery = CreateQueryBase(*ECClassGroupedInstancesQueryContract::Create(), info, filters);
+        auto contract = ECInstanceNodesQueryContract::Create(0, GetSpecificationIdentifierForContract(), *instanceKeysSelectQuery, &info.GetSelectClass().GetClass(), displayLabelField, info.GetRelatedInstancePaths());
         auto query = CreateQueryBase(*contract, info, filters);
         ToMultiECInstanceNodeQuery(query, info);
         return query;
@@ -1721,7 +1740,8 @@ private:
         {
         auto displayLabelField = QueryBuilderHelpers::CreateDisplayLabelField(ECInstanceNodesQueryContract::DisplayLabelFieldName, GetQueryBuilderParams().GetSchemaHelper(),
             info.GetSelectClass(), nullptr, nullptr, info.GetRelatedInstancePaths(), info.GetLabelOverrideValueSpecs());
-        auto contract = ECInstanceNodesQueryContract::Create(GetSpecificationIdentifierForContract(), &info.GetSelectClass().GetClass(), displayLabelField, info.GetRelatedInstancePaths());
+        auto instanceKeysSelectQuery = CreateQueryBase(*ECClassGroupedInstancesQueryContract::Create(), info, filters);
+        auto contract = ECInstanceNodesQueryContract::Create(0, GetSpecificationIdentifierForContract(), *instanceKeysSelectQuery, &info.GetSelectClass().GetClass(), displayLabelField, info.GetRelatedInstancePaths());
         return CreateQueryBase(*contract, info, filters);
         }
 
@@ -1832,8 +1852,9 @@ protected:
         }
 
 public:
-    ECInstanceSelectQueryHandler(NavigationQueryBuilderParameters const& params, NavNodeCP parentNode, NavNodeCP parentInstanceNode, ChildNodeSpecification const& specification, Utf8StringCR specificationHash)
-        : SelectQueryHandler(params, parentNode, parentInstanceNode, specification, specificationHash)
+    ECInstanceSelectQueryHandler(NavigationQueryBuilderParameters const& params, NavNodeCP parentNode, NavNodeCP parentInstanceNode, ChildNodeSpecification const& specification,
+        Utf8StringCR specificationHash, std::function<uint64_t()> selectContractIdAllocator)
+        : SelectQueryHandler(params, parentNode, parentInstanceNode, specification, specificationHash, selectContractIdAllocator)
         {}
 };
 
@@ -1853,8 +1874,9 @@ protected:
         return _CreateGroupedQuery(selectInfos, filters);
         }
 public:
-    GroupingSelectQueryHandler(TGroupingHandler const& groupingHandler, NavigationQueryBuilderParameters const& params, NavNodeCP parentNode, NavNodeCP parentInstanceNode, ChildNodeSpecification const& specification, Utf8StringCR specificationHash)
-        : SelectQueryHandler(params, parentNode, parentInstanceNode, specification, specificationHash), m_groupingHandler(groupingHandler)
+    GroupingSelectQueryHandler(TGroupingHandler const& groupingHandler, NavigationQueryBuilderParameters const& params, NavNodeCP parentNode, NavNodeCP parentInstanceNode, ChildNodeSpecification const& specification,
+        Utf8StringCR specificationHash, std::function<uint64_t()> selectContractIdAllocator)
+        : SelectQueryHandler(params, parentNode, parentInstanceNode, specification, specificationHash, selectContractIdAllocator), m_groupingHandler(groupingHandler)
         {}
     TGroupingHandler const& GetGroupingHandler() const {return m_groupingHandler;}
 };
@@ -1901,7 +1923,7 @@ protected:
         {
         auto scope = Diagnostics::Scope::Create("Create class grouping query");
 
-        NavigationQueryContractPtr groupedInstanceKeysContract = ECClassGroupedInstancesQueryContract::Create();
+        auto groupedInstanceKeysContract = ECClassGroupedInstancesQueryContract::Create();
         PresentationQueryBuilderPtr instanceKeysSelectQuery;
         for (auto const& selectInfo : selectInfos)
             QueryBuilderHelpers::SetOrUnion(instanceKeysSelectQuery, *CreateQueryBase(*groupedInstanceKeysContract, *selectInfo, filters));
@@ -1909,7 +1931,7 @@ protected:
         if (instanceKeysSelectQuery.IsNull())
             return nullptr;
 
-        NavigationQueryContractPtr contract = ECClassGroupingNodesQueryContract::Create(GetSpecificationIdentifierForContract(), instanceKeysSelectQuery);
+        auto contract = ECClassGroupingNodesQueryContract::Create(AllocateContractId(), GetSpecificationIdentifierForContract(), *instanceKeysSelectQuery);
         PresentationQueryBuilderPtr unionQuery;
         for (auto const& selectInfo : selectInfos)
             QueryBuilderHelpers::SetOrUnion(unionQuery, *CreateQueryBase(*contract, *selectInfo, filters));
@@ -1933,8 +1955,9 @@ protected:
         }
 
 public:
-    ClassGroupingSelectQueryHandler(GroupingHandler const& groupingHandler, NavigationQueryBuilderParameters const& params, NavNodeCP parentNode, NavNodeCP parentInstanceNode, ChildNodeSpecification const& specification, Utf8StringCR specificationHash)
-        : GroupingSelectQueryHandler(groupingHandler, params, parentNode, parentInstanceNode, specification, specificationHash)
+    ClassGroupingSelectQueryHandler(GroupingHandler const& groupingHandler, NavigationQueryBuilderParameters const& params, NavNodeCP parentNode, NavNodeCP parentInstanceNode, ChildNodeSpecification const& specification,
+        Utf8StringCR specificationHash, std::function<uint64_t()> selectContractIdAllocator)
+        : GroupingSelectQueryHandler(groupingHandler, params, parentNode, parentInstanceNode, specification, specificationHash, selectContractIdAllocator)
         {}
 };
 
@@ -1961,6 +1984,7 @@ protected:
         {
         auto scope = Diagnostics::Scope::Create("Create label grouping query");
 
+        uint64_t groupingContractId = AllocateContractId();
         PresentationQueryBuilderPtr instanceKeysSelectQuery;
         PresentationQueryBuilderPtr unionQuery;
         for (auto const& selectInfo : selectInfos)
@@ -1968,26 +1992,26 @@ protected:
             auto displayLabelField = QueryBuilderHelpers::CreateDisplayLabelField(DisplayLabelGroupingNodesQueryContract::DisplayLabelFieldName, GetQueryBuilderParams().GetSchemaHelper(),
                 selectInfo->GetSelectClass(), nullptr, nullptr, selectInfo->GetRelatedInstancePaths(), selectInfo->GetLabelOverrideValueSpecs());
 
-            NavigationQueryContractPtr contract = DisplayLabelGroupingNodesQueryContract::Create(GetSpecificationIdentifierForContract(), nullptr, &selectInfo->GetSelectClass().GetClass(), displayLabelField);
-            QueryBuilderHelpers::SetOrUnion(unionQuery, *CreateQueryBase(*contract, *selectInfo, filters));
+            auto instanceKeysSelectQueryContract = DisplayLabelGroupedInstancesQueryContract::Create(displayLabelField);
+            ComplexQueryBuilderPtr thisInstanceKeysSelectQuery = CreateQueryBase(*instanceKeysSelectQueryContract, *selectInfo, filters);
+            QueryBuilderHelpers::SetOrUnion(instanceKeysSelectQuery, *thisInstanceKeysSelectQuery);
 
-            NavigationQueryContractPtr instanceKeysSelectQueryContract = DisplayLabelGroupedInstancesQueryContract::Create(displayLabelField);
-            QueryBuilderHelpers::SetOrUnion(instanceKeysSelectQuery, *CreateQueryBase(*instanceKeysSelectQueryContract, *selectInfo, filters));
+            auto contract = DisplayLabelGroupingNodesQueryContract::Create(AllocateContractId(), GetSpecificationIdentifierForContract(), *thisInstanceKeysSelectQuery, &selectInfo->GetSelectClass().GetClass(), displayLabelField);
+            QueryBuilderHelpers::SetOrUnion(unionQuery, *CreateQueryBase(*contract, *selectInfo, filters));
             }
 
-        if (unionQuery.IsNull())
+        if (unionQuery.IsNull() || instanceKeysSelectQuery.IsNull())
             return nullptr;
 
-        auto groupedQueryLabelField = PresentationQueryContractSimpleField::Create(DisplayLabelGroupingNodesQueryContract::DisplayLabelFieldName, DisplayLabelGroupingNodesQueryContract::DisplayLabelFieldName, false);
+        auto groupedQueryLabelField = PresentationQueryContractSimpleField::Create(DisplayLabelGroupingNodesQueryContract::DisplayLabelFieldName, "", false);
         groupedQueryLabelField->SetGroupingClause(QueryBuilderHelpers::CreateDisplayLabelValueClause(groupedQueryLabelField->GetName()));
         groupedQueryLabelField->SetResultType(PresentationQueryFieldType::LabelDefinition);
 
-        NavigationQueryContractPtr groupingContract = DisplayLabelGroupingNodesQueryContract::Create(GetSpecificationIdentifierForContract(), instanceKeysSelectQuery, nullptr, groupedQueryLabelField);
-        ComplexQueryBuilderPtr groupedQuery = ComplexQueryBuilder::Create();
-        groupedQuery->SelectContract(*groupingContract);
-        groupedQuery->From(*unionQuery);
-        groupedQuery->GroupByContract(*groupingContract);
-        unionQuery = groupedQuery;
+        NavigationQueryContractPtr groupingContract = DisplayLabelGroupingNodesQueryContract::Create(groupingContractId, GetSpecificationIdentifierForContract(), *instanceKeysSelectQuery, nullptr, groupedQueryLabelField);
+        unionQuery = &ComplexQueryBuilder::Create()
+            ->SelectContract(*groupingContract)
+            .From(ComplexQueryBuilder::Create()->SelectContract(*groupingContract).From(*unionQuery))
+            .GroupByContract(*groupingContract);
 
         if (!GetSpecification().GetDoNotSort())
             {
@@ -2036,8 +2060,9 @@ protected:
         }
 
 public:
-    LabelGroupingSelectQueryHandler(GroupingHandler const& groupingHandler, NavigationQueryBuilderParameters const& params, NavNodeCP parentNode, NavNodeCP parentInstanceNode, ChildNodeSpecification const& specification, Utf8StringCR specificationHash)
-        : GroupingSelectQueryHandler(groupingHandler, params, parentNode, parentInstanceNode, specification, specificationHash)
+    LabelGroupingSelectQueryHandler(GroupingHandler const& groupingHandler, NavigationQueryBuilderParameters const& params, NavNodeCP parentNode, NavNodeCP parentInstanceNode, ChildNodeSpecification const& specification,
+        Utf8StringCR specificationHash, std::function<uint64_t()> selectContractIdAllocator)
+        : GroupingSelectQueryHandler(groupingHandler, params, parentNode, parentInstanceNode, specification, specificationHash, selectContractIdAllocator)
         {}
 };
 
@@ -2082,7 +2107,7 @@ protected:
         {
         auto scope = Diagnostics::Scope::Create("Create base class grouping query");
 
-        NavigationQueryContractPtr groupedInstanceKeysContract = ECClassGroupedInstancesQueryContract::Create();
+        auto groupedInstanceKeysContract = ECClassGroupedInstancesQueryContract::Create();
         PresentationQueryBuilderPtr instanceKeysSelectQuery;
         for (auto const& selectInfo : selectInfos)
             QueryBuilderHelpers::SetOrUnion(instanceKeysSelectQuery, *CreateQueryBase(*groupedInstanceKeysContract, *selectInfo, filters));
@@ -2090,7 +2115,7 @@ protected:
         if (instanceKeysSelectQuery.IsNull())
             return nullptr;
 
-        NavigationQueryContractPtr contract = ECClassGroupingNodesQueryContract::Create(GetSpecificationIdentifierForContract(), instanceKeysSelectQuery, GetGroupingHandler().GetBaseECClassId(), true);
+        auto contract = ECClassGroupingNodesQueryContract::Create(AllocateContractId(), GetSpecificationIdentifierForContract(), *instanceKeysSelectQuery, GetGroupingHandler().GetBaseECClassId(), true);
         PresentationQueryBuilderPtr unionQuery;
         for (auto const& selectInfo : selectInfos)
             QueryBuilderHelpers::SetOrUnion(unionQuery, *CreateQueryBase(*contract, *selectInfo, filters));
@@ -2120,8 +2145,9 @@ protected:
         }
 
 public:
-    BaseClassGroupingSelectQueryHandler(BaseClassGroupingHandler const& groupingHandler, NavigationQueryBuilderParameters const& params, NavNodeCP parentNode, NavNodeCP parentInstanceNode, ChildNodeSpecification const& specification, Utf8StringCR specificationHash)
-        : GroupingSelectQueryHandler(groupingHandler, params, parentNode, parentInstanceNode, specification, specificationHash)
+    BaseClassGroupingSelectQueryHandler(BaseClassGroupingHandler const& groupingHandler, NavigationQueryBuilderParameters const& params, NavNodeCP parentNode, NavNodeCP parentInstanceNode, ChildNodeSpecification const& specification,
+        Utf8StringCR specificationHash, std::function<uint64_t()> selectContractIdAllocator)
+        : GroupingSelectQueryHandler(groupingHandler, params, parentNode, parentInstanceNode, specification, specificationHash, selectContractIdAllocator)
         {}
 };
 
@@ -2187,7 +2213,7 @@ private:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
-    ComplexQueryBuilderPtr CreateSelectInfoQuery(NavigationQueryContractR contract, SelectQueryInfo const& selectInfo, bvector<GroupingNodeAndHandler> const& filters, RelatedClassCR relatedClass) const
+    ComplexQueryBuilderPtr CreateSelectInfoQuery(PresentationQueryContractR contract, SelectQueryInfo const& selectInfo, bvector<GroupingNodeAndHandler> const& filters, RelatedClassCR relatedClass) const
         {
         ComplexQueryBuilderPtr query = CreateQueryBase(contract, selectInfo, filters);
         if (relatedClass.IsValid())
@@ -2238,6 +2264,12 @@ protected:
         {
         auto scope = Diagnostics::Scope::Create("Create property grouping query");
 
+        if (selectInfos.empty())
+            {
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "Not creating property grouping query as there are not classes to group.");
+            return nullptr;
+            }
+
         ECPropertyCP groupingProperty = GetGroupingHandler().GetGroupingProperty();
         if (nullptr == groupingProperty)
             {
@@ -2253,6 +2285,7 @@ protected:
             DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "Grouping by navigation property.");
             }
 
+        uint64_t groupingContractId = AllocateContractId();
         PresentationQueryBuilderPtr instanceKeysSelectQuery;
         PresentationQueryBuilderPtr unionQuery;
         for (auto const& selectInfo : selectInfos)
@@ -2261,26 +2294,25 @@ protected:
             SelectClass<ECClass> selectClass(*GetGroupingHandler().GetTargetClass(), selectAlias);
             Utf8String propertyValueSelector = CreatePropertyValueSelector(*groupingProperty, selectAlias);
 
-            NavigationQueryContractPtr contract = ECPropertyGroupingNodesQueryContract::Create(GetSpecificationIdentifierForContract(), nullptr, selectClass, *groupingProperty,
+            auto instanceKeysSelectQueryContract = ECPropertyGroupedInstancesQueryContract::Create(propertyValueSelector);
+            ComplexQueryBuilderPtr thisInstanceKeysSelectQuery = CreateSelectInfoQuery(*instanceKeysSelectQueryContract, *selectInfo, filters, foreignKeyClass);
+            QueryBuilderHelpers::SetOrUnion(instanceKeysSelectQuery, *thisInstanceKeysSelectQuery);
+
+            auto contract = ECPropertyGroupingNodesQueryContract::Create(AllocateContractId(), GetSpecificationIdentifierForContract(), *thisInstanceKeysSelectQuery, selectClass, *groupingProperty,
                 GetGroupingHandler().GetGroupingSpecification(), foreignKeyClass.IsValid() ? &foreignKeyClass.GetTargetClass() : nullptr);
             ComplexQueryBuilderPtr query = CreateSelectInfoQuery(*contract, *selectInfo, filters, foreignKeyClass);
             QueryBuilderHelpers::SetOrUnion(unionQuery, *query);
-
-            NavigationQueryContractPtr instanceKeysSelectQueryContract = ECPropertyGroupedInstancesQueryContract::Create(propertyValueSelector);
-            QueryBuilderHelpers::SetOrUnion(instanceKeysSelectQuery, *CreateSelectInfoQuery(*instanceKeysSelectQueryContract, *selectInfo, filters, foreignKeyClass));
             }
 
-        if (unionQuery.IsNull())
+        if (unionQuery.IsNull() || instanceKeysSelectQuery.IsNull())
             return nullptr;
 
-        RefCountedPtr<ECPropertyGroupingNodesQueryContract> groupingContract = ECPropertyGroupingNodesQueryContract::Create(GetSpecificationIdentifierForContract(), instanceKeysSelectQuery,
-            SelectClass<ECClass>(*GetGroupingHandler().GetTargetClass(), ""), *groupingProperty,
-            GetGroupingHandler().GetGroupingSpecification(), foreignKeyClass.IsValid() ? &foreignKeyClass.GetTargetClass() : nullptr);
-        ComplexQueryBuilderPtr groupedQuery = ComplexQueryBuilder::Create();
-        groupedQuery->SelectContract(*groupingContract);
-        groupedQuery->From(*unionQuery);
-        groupedQuery->GroupByContract(*groupingContract);
-        unionQuery = groupedQuery;
+        auto groupingContract = ECPropertyGroupingNodesQueryContract::Create(groupingContractId, GetSpecificationIdentifierForContract(),
+            *instanceKeysSelectQuery, *groupingProperty, GetGroupingHandler().GetGroupingSpecification());
+        unionQuery = &ComplexQueryBuilder::Create()
+            ->SelectContract(*groupingContract)
+            .From(ComplexQueryBuilder::Create()->SelectContract(*groupingContract).From(*unionQuery))
+            .GroupByContract(*groupingContract);
 
         if (!GetSpecification().GetDoNotSort())
             {
@@ -2375,8 +2407,9 @@ protected:
         }
 
 public:
-    PropertyGroupingSelectQueryHandler(PropertyGroupingHandler const& groupingHandler, NavigationQueryBuilderParameters const& params, NavNodeCP parentNode, NavNodeCP parentInstanceNode, ChildNodeSpecification const& specification, Utf8StringCR specificationHash)
-        : GroupingSelectQueryHandler(groupingHandler, params, parentNode, parentInstanceNode, specification, specificationHash)
+    PropertyGroupingSelectQueryHandler(PropertyGroupingHandler const& groupingHandler, NavigationQueryBuilderParameters const& params, NavNodeCP parentNode, NavNodeCP parentInstanceNode, ChildNodeSpecification const& specification,
+        Utf8StringCR specificationHash, std::function<uint64_t()> selectContractIdAllocator)
+        : GroupingSelectQueryHandler(groupingHandler, params, parentNode, parentInstanceNode, specification, specificationHash, selectContractIdAllocator)
         {}
 };
 
@@ -2398,9 +2431,15 @@ protected:
         {
         // enforce `MultiECInstanceNodesQueryContract` for same-label-grouped nodes and return 'Reject' so the given `SelectQueryInfo`
         // gets handled by `ECInstanceSelectQueryHandler`
-        auto displayLabelField = QueryBuilderHelpers::CreateDisplayLabelField(MultiECInstanceNodesQueryContract::DisplayLabelFieldName, GetQueryBuilderParams().GetSchemaHelper(),
-            info.GetSelectClass(), nullptr, nullptr, info.GetRelatedInstancePaths(), info.GetLabelOverrideValueSpecs());
-        info.SetForcedGroupingContract(MultiECInstanceNodesQueryContract::Create(GetSpecificationIdentifierForContract(), &info.GetSelectClass().GetClass(), displayLabelField, true, info.GetRelatedInstancePaths()));
+        info.SetForcedGroupingContractFactory([this](SelectQueryInfo const& selectInfo, bvector<GroupingNodeAndHandler> const& filters)
+            {
+            auto displayLabelField = QueryBuilderHelpers::CreateDisplayLabelField(MultiECInstanceNodesQueryContract::DisplayLabelFieldName, GetQueryBuilderParams().GetSchemaHelper(),
+                selectInfo.GetSelectClass(), nullptr, nullptr, selectInfo.GetRelatedInstancePaths(), selectInfo.GetLabelOverrideValueSpecs());
+            SelectQueryInfo infoNoForceGrouping(selectInfo);
+            infoNoForceGrouping.SetForcedGroupingContractFactory(nullptr);
+            ComplexQueryBuilderPtr instanceKeysSelectQuery = CreateQueryBase(*ECClassGroupedInstancesQueryContract::Create(), infoNoForceGrouping, filters);
+            return MultiECInstanceNodesQueryContract::Create(AllocateContractId(), GetSpecificationIdentifierForContract(), *instanceKeysSelectQuery, &selectInfo.GetSelectClass().GetClass(), displayLabelField, true, selectInfo.GetRelatedInstancePaths());
+            });
         return AcceptResult::CreateRejected();
         }
 
@@ -2409,13 +2448,14 @@ protected:
     +---------------+---------------+---------------+---------------+---------------+------*/
     PresentationQueryBuilderPtr _CreateGroupedQuery(bvector<std::shared_ptr<SelectQueryInfo const>> const& selectInfos, bvector<GroupingNodeAndHandler> const& filters) const override
         {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_ERROR, "SameLabelGroupingSelectQueryHandler doesn't accept any select infos, so this method should never be called");
+        DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Hierarchies, false, "SameLabelGroupingSelectQueryHandler doesn't accept any select infos, so this method should never be called");
         return nullptr;
         }
 
 public:
-    SameLabelGroupingSelectQueryHandler(SameLabelInstanceGroupingHandler const& groupingHandler, NavigationQueryBuilderParameters const& params, NavNodeCP parentNode, NavNodeCP parentInstanceNode, ChildNodeSpecification const& specification, Utf8StringCR specificationHash)
-        : GroupingSelectQueryHandler(groupingHandler, params, parentNode, parentInstanceNode, specification, specificationHash)
+    SameLabelGroupingSelectQueryHandler(SameLabelInstanceGroupingHandler const& groupingHandler, NavigationQueryBuilderParameters const& params, NavNodeCP parentNode, NavNodeCP parentInstanceNode, ChildNodeSpecification const& specification,
+        Utf8StringCR specificationHash, std::function<uint64_t()> selectContractIdAllocator)
+        : GroupingSelectQueryHandler(groupingHandler, params, parentNode, parentInstanceNode, specification, specificationHash, selectContractIdAllocator)
         {}
 };
 
@@ -2423,20 +2463,20 @@ public:
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::unique_ptr<SelectQueryHandler const> SelectQueryHandler::Create(GroupingHandler const& groupingHandler, NavigationQueryBuilderParameters const& queryBuilderParams,
-    NavNodeCP parentNode, NavNodeCP parentInstanceNode, ChildNodeSpecificationCR specification, Utf8StringCR specificationHash)
+    NavNodeCP parentNode, NavNodeCP parentInstanceNode, ChildNodeSpecificationCR specification, Utf8StringCR specificationHash, std::function<uint64_t()> selectContractIdAllocator)
     {
     switch (groupingHandler.GetType())
         {
         case GroupingType::Class:
-            return std::make_unique<ClassGroupingSelectQueryHandler>(groupingHandler, queryBuilderParams, parentNode, parentInstanceNode, specification, specificationHash);
+            return std::make_unique<ClassGroupingSelectQueryHandler>(groupingHandler, queryBuilderParams, parentNode, parentInstanceNode, specification, specificationHash, selectContractIdAllocator);
         case GroupingType::DisplayLabel:
-            return std::make_unique<LabelGroupingSelectQueryHandler>(groupingHandler, queryBuilderParams, parentNode, parentInstanceNode, specification, specificationHash);
+            return std::make_unique<LabelGroupingSelectQueryHandler>(groupingHandler, queryBuilderParams, parentNode, parentInstanceNode, specification, specificationHash, selectContractIdAllocator);
         case GroupingType::BaseClass:
-            return std::make_unique<BaseClassGroupingSelectQueryHandler>(static_cast<BaseClassGroupingHandler const&>(groupingHandler), queryBuilderParams, parentNode, parentInstanceNode, specification, specificationHash);
+            return std::make_unique<BaseClassGroupingSelectQueryHandler>(static_cast<BaseClassGroupingHandler const&>(groupingHandler), queryBuilderParams, parentNode, parentInstanceNode, specification, specificationHash, selectContractIdAllocator);
         case GroupingType::Property:
-            return std::make_unique<PropertyGroupingSelectQueryHandler>(static_cast<PropertyGroupingHandler const&>(groupingHandler), queryBuilderParams, parentNode, parentInstanceNode, specification, specificationHash);
+            return std::make_unique<PropertyGroupingSelectQueryHandler>(static_cast<PropertyGroupingHandler const&>(groupingHandler), queryBuilderParams, parentNode, parentInstanceNode, specification, specificationHash, selectContractIdAllocator);
         case GroupingType::SameLabelInstance:
-            return std::make_unique<SameLabelGroupingSelectQueryHandler>(static_cast<SameLabelInstanceGroupingHandler const&>(groupingHandler), queryBuilderParams, parentNode, parentInstanceNode, specification, specificationHash);
+            return std::make_unique<SameLabelGroupingSelectQueryHandler>(static_cast<SameLabelInstanceGroupingHandler const&>(groupingHandler), queryBuilderParams, parentNode, parentInstanceNode, specification, specificationHash, selectContractIdAllocator);
         }
     return nullptr;
     }
@@ -2464,7 +2504,9 @@ private:
     std::unique_ptr<ECInstanceSelectQueryHandler> m_ecInstancesSelectHandler;
     std::unordered_map<GroupingHandler const*, std::unique_ptr<SelectQueryHandler const>> m_groupingSelectQueryHandlers;
     std::unordered_map<SelectQueryHandler const*, bvector<std::shared_ptr<SelectQueryInfo const>>> m_selectsByHandler;
+    bvector<SelectQueryHandler const*> selectQueryHandlersOrder;
     bvector<GroupingNodeAndHandler> m_groupingFilters;
+    uint64_t m_contractIdCounter;
 
 private:
     /*---------------------------------------------------------------------------------**//**
@@ -2501,10 +2543,11 @@ public:
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
     RootQueryContext(GroupingResolver const& groupingResolver)
-        : m_groupingResolver(groupingResolver)
+        : m_groupingResolver(groupingResolver), m_contractIdCounter(0)
         {
         m_ecInstancesSelectHandler = std::make_unique<ECInstanceSelectQueryHandler>(groupingResolver.GetQueryBuilderParams(),
-            groupingResolver.GetParentNode(), groupingResolver.GetParentInstanceNode(), groupingResolver.GetSpecification(), groupingResolver.GetSpecificationIdentifier());
+            groupingResolver.GetParentNode(), groupingResolver.GetParentInstanceNode(), groupingResolver.GetSpecification(),
+            groupingResolver.GetSpecificationIdentifier(), [&](){return ++m_contractIdCounter;});
         m_groupingFilters = groupingResolver.GetFilterHandlers();
         DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, Utf8PrintfString("Found grouping node filters: %" PRIu64, (uint64_t)m_groupingFilters.size()));
         }
@@ -2539,7 +2582,7 @@ public:
             {
             auto iter = m_groupingSelectQueryHandlers.find(handler);
             if (m_groupingSelectQueryHandlers.end() == iter)
-                iter = m_groupingSelectQueryHandlers.insert(std::make_pair(handler, SelectQueryHandler::Create(*handler, m_groupingResolver))).first;
+                iter = m_groupingSelectQueryHandlers.insert(std::make_pair(handler, SelectQueryHandler::Create(*handler, m_groupingResolver, [&](){return ++m_contractIdCounter;}))).first;
             return iter->second.get();
             });
         selectQueryHandlers.push_back(m_ecInstancesSelectHandler.get());
@@ -2572,14 +2615,21 @@ public:
             if (result.GetPartialAcceptCriteria())
                 queryHandlersCriteria.push_back(result.GetPartialAcceptCriteria());
 
+            auto selectHandlerIter = m_selectsByHandler.find(handler);
+            if (m_selectsByHandler.end() == selectHandlerIter)
+                {
+                selectHandlerIter = m_selectsByHandler.insert(std::make_pair(handler, bvector<std::shared_ptr<SelectQueryInfo const>>())).first;
+                selectQueryHandlersOrder.push_back(handler);
+                }
+
             if (result.GetStatus() == SelectQueryHandler::AcceptResult::Status::AcceptFully)
                 {
-                m_selectsByHandler[handler].push_back(currSelectInfo);
+                selectHandlerIter->second.push_back(currSelectInfo);
                 break;
                 }
             if (result.GetStatus() == SelectQueryHandler::AcceptResult::Status::AcceptPartially)
                 {
-                m_selectsByHandler[handler].push_back(currSelectInfo);
+                selectHandlerIter->second.push_back(currSelectInfo);
                 currSelectInfo = result.GetPartialQueryInfo();
                 continue;
                 }
@@ -2597,7 +2647,10 @@ public:
         auto scope = Diagnostics::Scope::Create("Create queries");
 
         bvector<bpair<SelectQueryHandler const*, bvector<std::shared_ptr<SelectQueryInfo const>>>> orderedSelects;
-        ContainerHelpers::TransformContainer(orderedSelects, m_selectsByHandler, [](auto const& entry){return make_bpair(entry.first, entry.second);});
+        ContainerHelpers::TransformContainer(orderedSelects, selectQueryHandlersOrder, [&](auto const& handler)
+            {
+            return make_bpair(handler, m_selectsByHandler.find(handler)->second);
+            });
         std::stable_sort(orderedSelects.begin(), orderedSelects.end(), [](auto const& lhs, auto const& rhs){return lhs.first->GetOrderInUnion() > rhs.first->GetOrderInUnion();});
         DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, Utf8PrintfString("Total select handlers: %" PRIu64, (uint64_t)orderedSelects.size()));
 
@@ -2947,9 +3000,9 @@ bvector<PresentationQueryBuilderPtr> NavigationQueryBuilder::GetQueries(NavNodeC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bmap<ECClassCP, bvector<ECInstanceId>> GroupClassInstanceKeys(bvector<ECClassInstanceKey> const& vec)
+static bmap<ECClassCP, bvector<ECInstanceId>, ECClassNameComparer> GroupClassInstanceKeys(bvector<ECClassInstanceKey> const& vec)
     {
-    bmap<ECClassCP, bvector<ECInstanceId>> map;
+    bmap<ECClassCP, bvector<ECInstanceId>, ECClassNameComparer> map;
     for (ECClassInstanceKeyCR key : vec)
         {
         auto iter = map.find(key.GetClass());
@@ -2984,7 +3037,7 @@ bvector<PresentationQueryBuilderPtr> NavigationQueryBuilder::GetQueries(NavNodeC
 
     // get the parent instance keys
     bvector<ECClassInstanceKey> const& parentInstanceKeys = groupingResolver.GetParentInstanceNode()->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys();
-    bmap<ECClassCP, bvector<ECInstanceId>> parentClassInstanceIdsMap = GroupClassInstanceKeys(parentInstanceKeys);
+    auto parentClassInstanceIdsMap = GroupClassInstanceKeys(parentInstanceKeys);
 
     // preserve specification instance filter
     auto specificationInstanceFilter = std::make_unique<InstanceFilterDefinition>(specification.GetInstanceFilter());
@@ -3149,7 +3202,7 @@ protected:
             }
 
         ECInstancesNodeKey const& key = *m_parentNode->GetKey()->AsECInstanceNodeKey();
-        bmap<ECClassCP, bvector<ECInstanceId>> parentClassInstanceIds = GroupClassInstanceKeys(key.GetInstanceKeys());
+        auto parentClassInstanceIds = GroupClassInstanceKeys(key.GetInstanceKeys());
         DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, LOG_INFO, Utf8PrintfString("Parent ECInstance node is based on %" PRIu64 " instances", (uint64_t)key.GetInstanceKeys().size()));
 
         ECClassInstanceKey usedParentInstanceKey;

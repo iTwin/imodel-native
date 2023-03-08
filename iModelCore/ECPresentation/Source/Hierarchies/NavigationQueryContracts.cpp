@@ -18,6 +18,7 @@ static T PrepareDisplayLabelField(T field)
     return field;
     }
 
+Utf8CP NavigationQueryContract::ContractIdFieldName = "/ContractId/";
 Utf8CP NavigationQueryContract::SpecificationIdentifierFieldName = "/SpecificationIdentifier/";
 Utf8CP NavigationQueryContract::SkippedInstanceKeysFieldName = "/SkippedInstanceKeys/";
 Utf8CP NavigationQueryContract::SkippedInstanceKeysInternalFieldName = NavigationQueryContract::SkippedInstanceKeysFieldName;
@@ -26,6 +27,15 @@ Utf8CP NavigationQueryContract::SkippedInstanceKeysInternalFieldName = Navigatio
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<PresentationQueryContractFieldCPtr> NavigationQueryContract::_GetFields() const
     {
+    bvector<PresentationQueryContractFieldCPtr> fields;
+
+    if (0 != GetId())
+        fields.push_back(PresentationQueryContractSimpleField::Create(ContractIdFieldName, std::to_string(GetId()).c_str(), false));
+    else
+        fields.push_back(PresentationQueryContractSimpleField::Create(nullptr, ContractIdFieldName, false));
+
+    fields.push_back(PresentationQueryContractSimpleField::Create(SpecificationIdentifierFieldName, Utf8PrintfString("'%s'", m_specificationIdentifier.c_str()), false));
+
 #ifdef wip_skipped_instance_keys_performance_issue
     if (m_skippedInstanceKeysInternalField.IsNull())
         {
@@ -62,16 +72,13 @@ bvector<PresentationQueryContractFieldCPtr> NavigationQueryContract::_GetFields(
     if (m_skippedInstanceKeysField.IsNull())
         {
         m_skippedInstanceKeysField = PresentationQueryContractFunctionField::Create(SkippedInstanceKeysFieldName, FUNCTION_NAME_AggregateJsonArray,
-            {m_skippedInstanceKeysInternalField}, false, true, FieldVisibility::Both);
+            { m_skippedInstanceKeysInternalField }, false, true, FieldVisibility::Both);
         }
+    fields.push_back(m_skippedInstanceKeysField);
+    fields.push_back(m_skippedInstanceKeysInternalField);
 #endif
-    return {
-        PresentationQueryContractSimpleField::Create(SpecificationIdentifierFieldName, Utf8PrintfString("'%s'", m_specificationIdentifier.c_str()), false),
-#ifdef wip_skipped_instance_keys_performance_issue
-        m_skippedInstanceKeysField,
-        m_skippedInstanceKeysInternalField,
-#endif
-        };
+
+    return fields;
     }
 
 Utf8CP ECInstanceNodesQueryContract::ECInstanceIdFieldName = "/ECInstanceId/";
@@ -80,8 +87,9 @@ Utf8CP ECInstanceNodesQueryContract::DisplayLabelFieldName = "/DisplayLabel/";
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECInstanceNodesQueryContract::ECInstanceNodesQueryContract(Utf8String specificationIdentifier, ECClassCP ecClass, PresentationQueryContractFieldPtr displayLabelField, bvector<RelatedClassPath> const& relatedInstancePaths)
-    : T_Super(specificationIdentifier)
+ECInstanceNodesQueryContract::ECInstanceNodesQueryContract(uint64_t id, Utf8String specificationIdentifier, PresentationQueryBuilderCR instanceKeysSelectQuery,
+    ECClassCP ecClass, PresentationQueryContractFieldPtr displayLabelField, bvector<RelatedClassPath> const& relatedInstancePaths)
+    : T_Super(id, specificationIdentifier, instanceKeysSelectQuery)
     {
     m_ecInstanceIdField = PresentationQueryContractSimpleField::Create(ECInstanceIdFieldName, "ECInstanceId");
     m_ecClassIdField = PresentationQueryContractSimpleField::Create(ECClassIdFieldName, "ECClassId");
@@ -109,12 +117,25 @@ void ECInstanceNodesQueryContract::_SetECClassIdFieldName(Utf8CP name)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<PresentationQueryContractFieldCPtr> ECInstanceNodesQueryContract::_GetFields() const
     {
-    bvector<PresentationQueryContractFieldCPtr> fields = NavigationQueryContract::_GetFields();
+    bvector<PresentationQueryContractFieldCPtr> fields = T_Super::_GetFields();
     fields.push_back(m_ecInstanceIdField);
     fields.push_back(m_ecClassIdField);
     fields.push_back(m_displayLabelField);
     fields.push_back(m_relatedInstanceInfoField);
     return fields;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+PresentationQueryBuilderPtr ECInstanceNodesQueryContract::CreateInstanceKeysSelectQuery(ECInstanceKey const& key) const
+    {
+    Utf8PrintfString query("SELECT ? AS [%s], ? AS [%s]", ECClassIdFieldName, ECInstanceIdFieldName);
+    BoundQueryValuesList bindings(
+        {
+        std::make_shared<BoundQueryId>(key.GetClassId()),
+        std::make_shared<BoundQueryId>(key.GetInstanceId())
+        });
+    return StringQueryBuilder::Create(query, bindings);
     }
 
 Utf8CP MultiECInstanceNodesQueryContract::ECInstanceIdFieldName = "/ECInstanceId/";
@@ -124,8 +145,9 @@ Utf8CP MultiECInstanceNodesQueryContract::DisplayLabelFieldName = "/DisplayLabel
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-MultiECInstanceNodesQueryContract::MultiECInstanceNodesQueryContract(Utf8String specificationIdentifier, ECClassCP ecClass, PresentationQueryContractFieldPtr displayLabelField, bool aggregateInstanceKeys, bvector<RelatedClassPath> const& relatedInstancePaths)
-    : T_Super(specificationIdentifier)
+MultiECInstanceNodesQueryContract::MultiECInstanceNodesQueryContract(uint64_t id, Utf8String specificationIdentifier, PresentationQueryBuilderCR instanceKeysSelectQuery,
+    ECClassCP ecClass, PresentationQueryContractFieldPtr displayLabelField, bool aggregateInstanceKeys, bvector<RelatedClassPath> const& relatedInstancePaths)
+    : T_Super(id, specificationIdentifier, instanceKeysSelectQuery)
     {
     m_ecInstanceIdField = PresentationQueryContractSimpleField::Create(ECInstanceIdFieldName, "ECInstanceId", true, false, FieldVisibility::Inner);
     m_ecClassIdField = PresentationQueryContractSimpleField::Create(ECClassIdFieldName, "ECClassId", true, false, FieldVisibility::Inner);
@@ -163,7 +185,7 @@ void MultiECInstanceNodesQueryContract::_SetECClassIdFieldName(Utf8CP name)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<PresentationQueryContractFieldCPtr> MultiECInstanceNodesQueryContract::_GetFields() const
     {
-    bvector<PresentationQueryContractFieldCPtr> fields = NavigationQueryContract::_GetFields();
+    bvector<PresentationQueryContractFieldCPtr> fields = T_Super::_GetFields();
     if (m_includeIdFields)
         {
         fields.push_back(m_ecInstanceIdField);
@@ -174,6 +196,24 @@ bvector<PresentationQueryContractFieldCPtr> MultiECInstanceNodesQueryContract::_
     fields.push_back(m_instanceKeysField);
     return fields;
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+PresentationQueryBuilderPtr MultiECInstanceNodesQueryContract::CreateInstanceKeysSelectQuery(bvector<ECInstanceKey> const& keys) const
+    {
+    static Utf8PrintfString const s_keySelectTemplate("SELECT ? AS [%s], ? AS [%s]", ECClassIdFieldName, ECInstanceIdFieldName);
+    Utf8String query;
+    BoundQueryValuesList bindings;
+    for (auto const& key : keys)
+        {
+        if (!query.empty())
+            query.append(" UNION ALL ");
+        query.append(s_keySelectTemplate);
+        bindings.push_back(std::make_shared<BoundQueryId>(key.GetClassId()));
+        bindings.push_back(std::make_shared<BoundQueryId>(key.GetInstanceId()));
+        }
+    return StringQueryBuilder::Create(query, bindings);
+    }
 
 Utf8CP ECClassGroupingNodesQueryContract::ECInstanceIdFieldName = "/ECInstanceId/";
 Utf8CP ECClassGroupingNodesQueryContract::ECClassIdFieldName = "/ECClassId/";
@@ -183,8 +223,8 @@ Utf8CP ECClassGroupingNodesQueryContract::GroupedInstancesCountFieldName = "/Gro
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClassGroupingNodesQueryContract::ECClassGroupingNodesQueryContract(Utf8String specificationIdentifier, PresentationQueryBuilderCPtr instanceKeysSelectQueryBase, ECClassId customClassId, bool isPolymorphic)
-    : T_Super(specificationIdentifier), m_instanceKeysSelectQueryBase(instanceKeysSelectQueryBase), m_customClassId(customClassId), m_isPolymorphic(isPolymorphic)
+ECClassGroupingNodesQueryContract::ECClassGroupingNodesQueryContract(uint64_t id, Utf8String specificationIdentifier, PresentationQueryBuilderCR instanceKeysSelectQuery, ECClassId customClassId, bool isPolymorphic)
+    : T_Super(id, specificationIdentifier, instanceKeysSelectQuery), m_customClassId(customClassId), m_isPolymorphic(isPolymorphic)
     {
     auto actualClassIdField = PresentationQueryContractSimpleField::Create(ECClassIdFieldName, "ECClassId");
     m_ecClassIdField = customClassId.IsValid() ? PresentationQueryContractSimpleField::Create(ECClassIdFieldName, customClassId.ToString(), false) : actualClassIdField;
@@ -206,7 +246,7 @@ void ECClassGroupingNodesQueryContract::_SetECClassIdFieldName(Utf8CP name)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<PresentationQueryContractFieldCPtr> ECClassGroupingNodesQueryContract::_GetFields() const
     {
-    bvector<PresentationQueryContractFieldCPtr> fields = NavigationQueryContract::_GetFields();
+    bvector<PresentationQueryContractFieldCPtr> fields = T_Super::_GetFields();
     fields.push_back(m_ecClassIdField);
     fields.push_back(PresentationQueryContractSimpleField::Create(IsClassPolymorphicFieldName, m_isPolymorphic ? "TRUE" : "FALSE", false));
     fields.push_back(m_displayLabelField);
@@ -217,25 +257,12 @@ bvector<PresentationQueryContractFieldCPtr> ECClassGroupingNodesQueryContract::_
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-PresentationQueryBuilderPtr ECClassGroupingNodesQueryContract::CreateInstanceKeysSelectQuery() const
-    {
-    if (m_instanceKeysSelectQueryBase.IsNull())
-        DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, "Class grouping contract has no instance keys select query.");
-    return m_instanceKeysSelectQueryBase->Clone();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 PresentationQueryBuilderPtr ECClassGroupingNodesQueryContract::CreateInstanceKeysSelectQuery(ECClassCR ecClass, bool isPolymorphic) const
     {
-    if (m_instanceKeysSelectQueryBase.IsNull())
-        DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, "Class grouping contract has no instance keys select query.");
-
     auto query = ComplexQueryBuilder::Create();
     query->SelectAll();
-    query->From(*m_instanceKeysSelectQueryBase->Clone());
-    query->Where(Utf8PrintfString("ECClassId IS (%s%s)", isPolymorphic ? "" : "ONLY ", ecClass.GetFullName()).c_str(), BoundQueryValuesList());
+    query->From(*GetInstanceKeysSelectQuery().Clone());
+    query->Where(Utf8PrintfString("[%s] IS (%s%s)", ECClassIdFieldName, isPolymorphic ? "" : "ONLY ", ecClass.GetFullName()).c_str(), BoundQueryValuesList());
     return query;
     }
 
@@ -244,10 +271,7 @@ PresentationQueryBuilderPtr ECClassGroupingNodesQueryContract::CreateInstanceKey
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<PresentationQueryContractFieldCPtr> ECClassGroupedInstancesQueryContract::_GetFields() const
     {
-    bvector<PresentationQueryContractFieldCPtr> fields;
-    fields.push_back(PresentationQueryContractSimpleField::Create("ECClassId", "ECClassId"));
-    fields.push_back(PresentationQueryContractSimpleField::Create("ECInstanceId", "ECInstanceId"));
-    return fields;
+    return T_Super::_GetFields();
     }
 
 Utf8CP DisplayLabelGroupingNodesQueryContract::ECInstanceIdFieldName = "/ECInstanceId/";
@@ -258,8 +282,8 @@ Utf8CP DisplayLabelGroupingNodesQueryContract::GroupedInstanceKeysFieldName = "/
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DisplayLabelGroupingNodesQueryContract::DisplayLabelGroupingNodesQueryContract(Utf8String specificationIdentifier, PresentationQueryBuilderCPtr instanceKeysSelectQueryBase, ECClassCP ecClass, PresentationQueryContractFieldPtr displayLabelField)
-    : T_Super(specificationIdentifier), m_instanceKeysSelectQueryBase(instanceKeysSelectQueryBase)
+DisplayLabelGroupingNodesQueryContract::DisplayLabelGroupingNodesQueryContract(uint64_t id, Utf8String specificationIdentifier, PresentationQueryBuilderCR instanceKeysSelectQuery, ECClassCP ecClass, PresentationQueryContractFieldPtr displayLabelField)
+    : T_Super(id, specificationIdentifier, instanceKeysSelectQuery)
     {
     auto maxInstanceKeysField = PresentationQueryContractSimpleField::Create("", std::to_string(MAX_LABEL_GROUPED_INSTANCE_KEYS).c_str(), false, false, FieldVisibility::Inner);
     m_ecClassIdField = PresentationQueryContractSimpleField::Create(ECClassIdFieldName, "ECClassId", true, false, FieldVisibility::Inner);
@@ -290,7 +314,7 @@ void DisplayLabelGroupingNodesQueryContract::_SetECClassIdFieldName(Utf8CP name)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<PresentationQueryContractFieldCPtr> DisplayLabelGroupingNodesQueryContract::_GetFields() const
     {
-    bvector<PresentationQueryContractFieldCPtr> fields = NavigationQueryContract::_GetFields();
+    bvector<PresentationQueryContractFieldCPtr> fields = T_Super::_GetFields();
     fields.push_back(m_ecClassIdField);
     fields.push_back(m_ecInstanceIdField);
     fields.push_back(m_displayLabelField);
@@ -302,24 +326,11 @@ bvector<PresentationQueryContractFieldCPtr> DisplayLabelGroupingNodesQueryContra
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-PresentationQueryBuilderPtr DisplayLabelGroupingNodesQueryContract::CreateInstanceKeysSelectQuery() const
-    {
-    if (m_instanceKeysSelectQueryBase.IsNull())
-        DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, "Label grouping contract has no instance keys select query.");
-    return m_instanceKeysSelectQueryBase->Clone();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 PresentationQueryBuilderPtr DisplayLabelGroupingNodesQueryContract::CreateInstanceKeysSelectQuery(LabelDefinitionCR label) const
     {
-    if (m_instanceKeysSelectQueryBase.IsNull())
-        DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, "Label grouping contract has no instance keys select query.");
-
     auto query = ComplexQueryBuilder::Create();
     query->SelectAll();
-    query->From(*m_instanceKeysSelectQueryBase->Clone());
+    query->From(*GetInstanceKeysSelectQuery().Clone());
     query->Where(Utf8PrintfString("json_extract([%s], '$.DisplayValue') = ?", DisplayLabelGroupingNodesQueryContract::DisplayLabelFieldName).c_str(),
         BoundQueryValuesList({ std::make_shared<BoundQueryECValue>(ECValue(label.GetDisplayValue().c_str())) }));
     return query;
@@ -330,9 +341,7 @@ PresentationQueryBuilderPtr DisplayLabelGroupingNodesQueryContract::CreateInstan
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<PresentationQueryContractFieldCPtr> DisplayLabelGroupedInstancesQueryContract::_GetFields() const
     {
-    bvector<PresentationQueryContractFieldCPtr> fields;
-    fields.push_back(PresentationQueryContractSimpleField::Create("ECClassId", "ECClassId"));
-    fields.push_back(PresentationQueryContractSimpleField::Create("ECInstanceId", "ECInstanceId"));
+    bvector<PresentationQueryContractFieldCPtr> fields = T_Super::_GetFields();
     fields.push_back(m_displayLabelField);
     return fields;
     }
@@ -350,8 +359,8 @@ Utf8CP ECPropertyGroupingNodesQueryContract::GroupedInstancesCountFieldName = "/
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPropertyGroupingNodesQueryContract::ECPropertyGroupingNodesQueryContract(Utf8String specificationIdentifier, PresentationQueryBuilderCPtr instanceKeysSelectQueryBase, SelectClass<ECClass> const& propertyClass, ECPropertyCR prop, PropertyGroupCR spec, SelectClass<ECClass> const* foreignKeyClass)
-    : T_Super(specificationIdentifier), m_instanceKeysSelectQueryBase(instanceKeysSelectQueryBase), m_property(prop), m_specification(spec), m_groupingPropertyClassAlias(propertyClass.GetAlias())
+ECPropertyGroupingNodesQueryContract::ECPropertyGroupingNodesQueryContract(uint64_t id, Utf8String specificationIdentifier, PresentationQueryBuilderCR instanceKeysSelectQuery, SelectClass<ECClass> const& propertyClass, ECPropertyCR prop, PropertyGroupCR spec, SelectClass<ECClass> const* foreignKeyClass)
+    : T_Super(id, specificationIdentifier, instanceKeysSelectQuery), m_property(prop), m_specification(spec), m_groupingPropertyClassAlias(propertyClass.GetAlias())
     {
     m_ecInstanceIdField = PresentationQueryContractSimpleField::Create(ECInstanceIdFieldName, "ECInstanceId", true, false, FieldVisibility::Inner);
     m_ecClassIdField = PresentationQueryContractSimpleField::Create(ECClassIdFieldName, "ECClassId", true, false, FieldVisibility::Inner);
@@ -360,10 +369,25 @@ ECPropertyGroupingNodesQueryContract::ECPropertyGroupingNodesQueryContract(Utf8S
     auto propertyDisplayValueField = CreatePropertyDisplayValueField(prop, propertyClass.GetAlias(), foreignKeyClass ? foreignKeyClass->GetAlias() : "", *m_ecClassIdField, *m_ecInstanceIdField);
     m_imageIdField = CreateImageIdField(m_specification, *propertyDisplayValueField);
     m_isRangeField = PresentationQueryContractSimpleField::Create(IsRangeFieldName, spec.GetRanges().empty() ? "false" : "true", false);
-    m_groupedInstancesCountField = PresentationQueryContractSimpleField::Create(GroupedInstancesCountFieldName, "COUNT(1)", false, true);
     m_groupingValueField = CreateGroupingValueField(prop, propertyClass.GetAlias(), spec, *propertyDisplayValueField);
-    m_groupingValuesField = CreateGroupingValuesField(prop, spec, *m_groupingValueField);
     m_displayLabelField = CreateDisplayLabelField(m_specification, *m_groupingValueField, *propertyDisplayValueField, *m_ecPropertyClassIdField, *m_ecPropertyNameField, *m_ecInstanceIdField);
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECPropertyGroupingNodesQueryContract::ECPropertyGroupingNodesQueryContract(uint64_t id, Utf8String specificationIdentifier, PresentationQueryBuilderCR instanceKeysSelectQuery, ECPropertyCR prop, PropertyGroupCR spec)
+    : T_Super(id, specificationIdentifier, instanceKeysSelectQuery), m_property(prop), m_specification(spec)
+    {
+    m_ecInstanceIdField = PresentationQueryContractSimpleField::Create(ECInstanceIdFieldName, "", true, false, FieldVisibility::Inner);
+    m_ecClassIdField = PresentationQueryContractSimpleField::Create(ECClassIdFieldName, "", true, false, FieldVisibility::Inner);
+    m_ecPropertyClassIdField = PresentationQueryContractSimpleField::Create(ECPropertyClassIdFieldName, "", false);
+    m_ecPropertyNameField = PresentationQueryContractSimpleField::Create(ECPropertyNameFieldName, "", false);
+    m_imageIdField = PresentationQueryContractSimpleField::Create(ImageIdFieldName, "", false);
+    m_isRangeField = PresentationQueryContractSimpleField::Create(IsRangeFieldName, "", false);
+    m_groupedInstancesCountField = PresentationQueryContractSimpleField::Create(GroupedInstancesCountFieldName, "COUNT(1)", false, true);
+    m_groupingValueField = PresentationQueryContractSimpleField::Create(GroupingValueFieldName, "", false, false, (PropertyGroupingValue::PropertyValue == spec.GetPropertyGroupingValue()) ? FieldVisibility::Both : FieldVisibility::Inner);
+    m_groupingValuesField = CreateGroupingValuesField(prop, spec, *m_groupingValueField);
+    m_displayLabelField = CreateGroupingDisplayLabelField(m_specification, *m_groupingValueField, *m_ecPropertyClassIdField, *m_ecPropertyNameField, *m_ecInstanceIdField);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -452,8 +476,9 @@ PresentationQueryContractFieldPtr ECPropertyGroupingNodesQueryContract::CreateDi
     PresentationQueryContractFieldCR propertyDisplayValueField, PresentationQueryContractFieldCR ecPropertyClassIdField, PresentationQueryContractFieldCR ecPropertyNameField,
     PresentationQueryContractFieldCR ecInstanceIdField)
     {
-    PresentationQueryContractFieldCPtr defaultLabelField, groupedInstancesCountField;
     bool groupByValue = (PropertyGroupingValue::PropertyValue == spec.GetPropertyGroupingValue());
+
+    PresentationQueryContractFieldCPtr defaultLabelField, groupedInstancesCountField;
     if (groupByValue)
         {
         defaultLabelField = &groupingValueField;
@@ -462,13 +487,29 @@ PresentationQueryContractFieldPtr ECPropertyGroupingNodesQueryContract::CreateDi
     else
         {
         defaultLabelField = PresentationQueryContractSimpleField::Create(GroupingValueFieldName, propertyDisplayValueField.GetSelectClause(),
-            false, false, groupByValue ? FieldVisibility::Both : FieldVisibility::Inner);
+            false, false, FieldVisibility::Inner);
         groupedInstancesCountField = PresentationQueryContractSimpleField::Create(nullptr, "0", false);
         }
 
     return PrepareDisplayLabelField(PresentationQueryContractFunctionField::Create(DisplayLabelFieldName, FUNCTION_NAME_GetECPropertyDisplayLabel,
         {&ecPropertyClassIdField, &ecPropertyNameField, &ecInstanceIdField, defaultLabelField, groupedInstancesCountField},
         true, groupByValue, groupByValue ? FieldVisibility::Outer : FieldVisibility::Both));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+PresentationQueryContractFieldPtr ECPropertyGroupingNodesQueryContract::CreateGroupingDisplayLabelField(PropertyGroupCR spec, PresentationQueryContractFieldCR groupingValueField,
+    PresentationQueryContractFieldCR ecPropertyClassIdField, PresentationQueryContractFieldCR ecPropertyNameField, PresentationQueryContractFieldCR ecInstanceIdField)
+    {
+    bool groupByValue = (PropertyGroupingValue::PropertyValue == spec.GetPropertyGroupingValue());
+    if (groupByValue)
+        {
+        return PrepareDisplayLabelField(PresentationQueryContractFunctionField::Create(DisplayLabelFieldName, FUNCTION_NAME_GetECPropertyDisplayLabel,
+            { &ecPropertyClassIdField, &ecPropertyNameField, &ecInstanceIdField, &groupingValueField, PresentationQueryContractSimpleField::Create(nullptr, "COUNT(1)", false) },
+            true, true));
+        }
+    return PrepareDisplayLabelField(PresentationQueryContractSimpleField::Create(DisplayLabelFieldName, "", false, false));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -499,7 +540,7 @@ void ECPropertyGroupingNodesQueryContract::_SetECInstanceIdFieldName(Utf8CP name
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<PresentationQueryContractFieldCPtr> ECPropertyGroupingNodesQueryContract::_GetFields() const
     {
-    bvector<PresentationQueryContractFieldCPtr> fields = NavigationQueryContract::_GetFields();
+    bvector<PresentationQueryContractFieldCPtr> fields = T_Super::_GetFields();
     fields.push_back(m_ecInstanceIdField);
     fields.push_back(m_ecPropertyNameField);
     fields.push_back(m_ecClassIdField);
@@ -508,19 +549,11 @@ bvector<PresentationQueryContractFieldCPtr> ECPropertyGroupingNodesQueryContract
     fields.push_back(m_imageIdField);
     fields.push_back(m_isRangeField);
     fields.push_back(m_groupingValueField);
-    fields.push_back(m_groupingValuesField);
-    fields.push_back(m_groupedInstancesCountField);
+    if (m_groupingValuesField.IsValid())
+        fields.push_back(m_groupingValuesField);
+    if (m_groupedInstancesCountField.IsValid())
+        fields.push_back(m_groupedInstancesCountField);
     return fields;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-PresentationQueryBuilderPtr ECPropertyGroupingNodesQueryContract::CreateInstanceKeysSelectQuery() const
-    {
-    if (m_instanceKeysSelectQueryBase.IsNull())
-        DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, "Properties grouping contract has no instance keys select query.");
-    return m_instanceKeysSelectQueryBase->Clone();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -528,12 +561,9 @@ PresentationQueryBuilderPtr ECPropertyGroupingNodesQueryContract::CreateInstance
 +---------------+---------------+---------------+---------------+---------------+------*/
 PresentationQueryBuilderPtr ECPropertyGroupingNodesQueryContract::CreateInstanceKeysSelectQuery(RapidJsonValueCR groupingValuesJson) const
     {
-    if (m_instanceKeysSelectQueryBase.IsNull())
-        DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, "Properties grouping contract has no instance keys select query.");
-
     auto query = ComplexQueryBuilder::Create();
     query->SelectAll();
-    query->From(*m_instanceKeysSelectQueryBase->Clone());
+    query->From(*GetInstanceKeysSelectQuery().Clone());
     query->Where(QueryBuilderHelpers::CreatePropertyGroupFilteringClause(m_property, "[PropertyValue]",
         m_specification, groupingValuesJson));
     return query;
@@ -544,9 +574,7 @@ PresentationQueryBuilderPtr ECPropertyGroupingNodesQueryContract::CreateInstance
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<PresentationQueryContractFieldCPtr> ECPropertyGroupedInstancesQueryContract::_GetFields() const
     {
-    bvector<PresentationQueryContractFieldCPtr> fields;
-    fields.push_back(PresentationQueryContractSimpleField::Create("ECClassId", "ECClassId"));
-    fields.push_back(PresentationQueryContractSimpleField::Create("ECInstanceId", "ECInstanceId"));
+    bvector<PresentationQueryContractFieldCPtr> fields = T_Super::_GetFields();
     fields.push_back(PresentationQueryContractSimpleField::Create("PropertyValue", m_propertyValueSelector, false));
     return fields;
     }

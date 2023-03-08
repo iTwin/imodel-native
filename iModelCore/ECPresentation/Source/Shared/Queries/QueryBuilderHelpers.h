@@ -165,6 +165,8 @@ public:
     static std::unique_ptr<InputFilteringParams> CreateInputFilter(IConnectionCR, SelectClassInfo const&, RecursiveQueryInfo const*, IParsedInput const&);
     static void ApplyInstanceFilter(ComplexQueryBuilder&, InstanceFilteringParams const&);
 
+    static PresentationQueryBuilderPtr GetInstanceKeysQuery(PresentationQueryBuilderCR sourceNavigationQuery);
+
     static bvector<SelectClassSplitResult> ProcessSelectClassesBasedOnCustomizationRules(bvector<SelectClassWithExcludes<ECClass>> const& selectClasses,
         bvector<RuleApplicationInfo> const& customizationRuleInfos, SchemaManagerCR schemas);
     static bvector<RelatedClassPath> ProcessRelationshipPathsBasedOnCustomizationRules(bvector<RelatedClassPath> const& relationshipPaths,

@@ -150,7 +150,7 @@ static void LoadPropertyDisplaySpecifications(BeJsConst json, bvector<PropertySp
         bool isDisplayed = json[i][PROPERTIES_DISPLAY_SPECIFICATION_JSON_ATTRIBUTE_ISDISPLAYED].asBool(true);
         bool doNotHideOtherPropertiesOnDisplayOverride = json[i][PROPERTIES_DISPLAY_SPECIFICATION_JSON_ATTRIBUTE_DONOTHIDEOTHERPROPERTIESONDISPLAYOVERRIDE].asBool(false);
 
-        for (Json::ArrayIndex j = 0; j < propertyNamesJson.size(); ++j)
+        for (BeJsConst::ArrayIndex j = 0; j < propertyNamesJson.size(); ++j)
             {
             Utf8CP propertyName = propertyNamesJson[j].asCString();
             specs.push_back(new PropertySpecification(propertyName, priority, "", nullptr, isDisplayed, nullptr, nullptr, doNotHideOtherPropertiesOnDisplayOverride));

@@ -627,10 +627,19 @@ bool ShouldSelectWithClause(PresentationQueryContractFieldCR field, Presentation
     if (!nestedContract)
         return true;
 
+    if (field.GetSelectClause().GetClause().empty())
+        return false;
+
     bvector<PresentationQueryContractFieldCPtr> nestedFields = nestedContract->GetFields();
     for (PresentationQueryContractFieldCPtr const& nestedField : nestedFields)
         {
-        if (0 == strcmp(nestedField->GetName(), field.GetName()) && (FieldVisibility::Outer != nestedField->GetVisibility()))
+        if (0 != strcmp(nestedField->GetName(), field.GetName()))
+            continue;
+
+        if (nestedField->GetSelectClause() != field.GetSelectClause())
+            return true;
+        
+        if (FieldVisibility::Outer != nestedField->GetVisibility())
             return false;
         }
     return true;
@@ -703,8 +712,9 @@ void ComplexQueryBuilder::InitSelectClause() const
             }
         }
 
-    bvector<QueryClauseAndBindings> selectClauseFields;
+    auto skipNestedClauses = CreateQueryFieldLookupFunc(m_nestedQuery.get());
 
+    bvector<QueryClauseAndBindings> selectClauseFields;
     if (m_isSelectAll && !hasNestedInnerFields)
         {
         selectClauseFields.push_back("*");
@@ -726,14 +736,9 @@ void ComplexQueryBuilder::InitSelectClause() const
             bool selectWithClause = ShouldSelectWithClause(*field, nestedContract);
             Utf8String wrappedName = QueryHelpers::Wrap(field->GetName());
             if (selectWithClause)
-                {
-                auto skipNestedClauses = CreateQueryFieldLookupFunc(m_nestedQuery.get());
                 SelectField(selectClauseFields, field->GetSelectClause(m_selectPrefix.c_str(), skipNestedClauses), wrappedName);
-                }
             else
-                {
                 SelectField(selectClauseFields, QueryClauseAndBindings(), wrappedName);
-                }
             }
         }
 
@@ -747,14 +752,9 @@ void ComplexQueryBuilder::InitSelectClause() const
                 continue;
 
             if (m_groupingContract.get() == groupingContract)
-                {
-                auto skipNestedClauses = CreateQueryFieldLookupFunc(m_nestedQuery.get());
                 SelectField(selectClauseFields, field->GetSelectClause(m_selectPrefix.c_str(), skipNestedClauses), field->GetName());
-                }
             else
-                {
                 SelectField(selectClauseFields, QueryClauseAndBindings(), QueryHelpers::Wrap(field->GetName()));
-                }
             }
         }
 
@@ -889,19 +889,32 @@ ComplexQueryBuilder& ComplexQueryBuilder::From(PresentationQuery const& nestedQu
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ComplexQueryBuilder& ComplexQueryBuilder::Where(Utf8CP whereClause, BoundQueryValuesListCR bindings)
+static Utf8CP GetClauseJoinOperatorStr(ClauseJoinOperator op)
     {
-    return Where(QueryClauseAndBindings(whereClause, BoundQueryValuesList(bindings)));
+    switch (op)
+        {
+        case ClauseJoinOperator::And: return " AND ";
+        case ClauseJoinOperator::Or: return " OR ";
+        }
+    DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, "Invalid ClauseJoinOperator value");
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ComplexQueryBuilder& ComplexQueryBuilder::Where(QueryClauseAndBindings clause)
+ComplexQueryBuilder& ComplexQueryBuilder::Where(Utf8CP whereClause, BoundQueryValuesListCR bindings, ClauseJoinOperator op)
+    {
+    return Where(QueryClauseAndBindings(whereClause, BoundQueryValuesList(bindings)), op);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ComplexQueryBuilder& ComplexQueryBuilder::Where(QueryClauseAndBindings clause, ClauseJoinOperator op)
     {
     InvalidateQuery();
     clause.GetClause().assign(Utf8String("(").append(clause.GetClause()).append(")"));
-    m_whereClause.Append(clause, " AND ");
+    m_whereClause.Append(clause, GetClauseJoinOperatorStr(op));
     return *this;
     }
 
@@ -1029,9 +1042,13 @@ Utf8String ComplexQueryBuilder::CreateGroupByClause() const
         if (field->IsAggregateField() || FieldVisibility::Both != field->GetVisibility())
             continue;
 
+        Utf8CP fieldGroupingClause = field->GetGroupingClause();
+        if (!fieldGroupingClause || !*fieldGroupingClause)
+            continue;
+
         if (!groupByClause.empty())
             groupByClause.append(", ");
-        groupByClause.append(QueryHelpers::Wrap(field->GetGroupingClause()));
+        groupByClause.append(QueryHelpers::Wrap(fieldGroupingClause));
         }
     return groupByClause;
     }
@@ -2106,7 +2123,7 @@ public:
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Nullable<PrimitiveType> BoundECValueSet::GetValueType() const 
+Nullable<PrimitiveType> BoundECValueSet::GetValueType() const
     {
     auto const& values = static_cast<ECValueVirtualSet const*>(m_set.get())->GetValues();
 
@@ -2122,7 +2139,7 @@ Nullable<PrimitiveType> BoundECValueSet::GetValueType() const
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BoundECValueSet::ForEachValue(std::function<void(ECValue const&)> const& cb) const 
+void BoundECValueSet::ForEachValue(std::function<void(ECValue const&)> const& cb) const
     {
     auto const& values = static_cast<ECValueVirtualSet const*>(m_set.get())->GetValues();
 
