@@ -17,7 +17,7 @@
 #include <Bentley/ByteStream.h>
 #include <Bentley/Base64Utilities.h>
 #include <BeRapidJson/BeRapidJson.h>
-#include "json.h"
+#include <json/json.h>
 
 namespace Napi {
 class Value;

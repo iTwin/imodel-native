@@ -7,7 +7,7 @@
 #include "node_api-config.h"
 #include "node-src/napi.h"
 #include <Bentley/ByteStream.h>
-#include <json/BeJsValue.h>
+#include <BeRapidJson/BeJsValue.h>
 #include <limits>
 
 BEGIN_BENTLEY_NAMESPACE
@@ -125,8 +125,8 @@ protected:
     }
     virtual double GetDouble(double defVal) const override { return isNumeric() ? m_napiVal.ToNumber() : defVal; }
     virtual bool GetBoolean(bool defVal) const override { return isNull() ? defVal : m_napiVal.ToBoolean(); }
-    virtual Json::Int GetInt(Json::Int defVal) const override { return isNumeric() ? m_napiVal.ToNumber() : defVal; }
-    virtual Json::UInt GetUInt(Json::UInt defVal) const override { return isNumeric() ? m_napiVal.ToNumber() : defVal; }
+    virtual int32_t GetInt(int32_t defVal) const override { return isNumeric() ? m_napiVal.ToNumber() : defVal; }
+    virtual uint32_t GetUInt(uint32_t defVal) const override { return isNumeric() ? m_napiVal.ToNumber() : defVal; }
     virtual BentleyStatus GetBinary(std::vector<Byte>& dest) const override {
         dest.clear();
         if (m_napiVal.IsTypedArray()) {
