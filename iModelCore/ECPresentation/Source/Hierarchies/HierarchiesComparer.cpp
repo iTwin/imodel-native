@@ -92,7 +92,7 @@ HierarchiesComparer::CompareResult HierarchiesComparer::CompareDataSources(Compa
     DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::HierarchiesUpdate, LOG_INFO, Utf8PrintfString("Sizes LHS: %" PRIu64 ", RHS: %" PRIu64, (uint64_t)lhsProvider.GetNodesCount(), (uint64_t)rhsProvider.GetNodesCount()));
 
     bool allowGettingPastLhsNodes = params.ShouldLoadLhsNodes()
-        || m_params.GetNodesCache()->IsCombinedHierarchyLevelInitialized(lhsProvider.GetContext().GetHierarchyLevelIdentifier(), params.GetLhsVariables(), lhsProvider.GetContext().GetInstanceFilter());
+        || m_params.GetNodesCache()->IsCombinedHierarchyLevelInitialized(lhsProvider.GetContext().GetHierarchyLevelIdentifier(), params.GetLhsVariables(), lhsProvider.GetContext().GetInstanceFilter(), lhsProvider.GetContext().GetResultSetSizeLimit());
 
     uint64_t lhsPositionIndex = 0;
     auto lhsEnd = lhsProvider.end();

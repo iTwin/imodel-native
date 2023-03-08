@@ -84,7 +84,7 @@ uint8_t PresentationQueryContract::GetIndex(Utf8CP fieldName) const
             aggregateFieldsCount++;
         else if (-1 != aggregateFieldIndex)
             nonAggregateFieldsCount++;
-        if (field.GetDefaultName() == fieldName || 0 == strcmp(field.GetDefaultName(), fieldName))
+        if (0 == strcmp(field.GetName(), fieldName))
             {
             if (field.IsAggregateField())
                 aggregateFieldIndex = (int)(i - unusedFieldsCount);
@@ -282,6 +282,19 @@ CountQueryContract::CountQueryContract(Utf8CP groupingFieldName)
     auto field = PresentationQueryContractFunctionField::Create(CountFieldName, "COUNT", params, false, true);
     field->SetDistinctArguments(wantDistinct);
     AddField(*field);
+    }
+
+Utf8CP InstanceKeysSelectContract::ECClassIdFieldName = "/ECClassId/";
+Utf8CP InstanceKeysSelectContract::ECInstanceIdFieldName = "/ECInstanceId/";
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<PresentationQueryContractFieldCPtr> InstanceKeysSelectContract::_GetFields() const
+    {
+    bvector<PresentationQueryContractFieldCPtr> fields;
+    fields.push_back(PresentationQueryContractSimpleField::Create(ECClassIdFieldName, "ECClassId"));
+    fields.push_back(PresentationQueryContractSimpleField::Create(ECInstanceIdFieldName, "ECInstanceId"));
+    return fields;
     }
 
 /*---------------------------------------------------------------------------------**//**

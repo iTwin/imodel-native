@@ -138,6 +138,7 @@ private:
     bset<ArtifactsCapturer*> m_artifactsCapturers;
     std::function<void(NavNodesProviderContextR)> m_onHierarchyLevelLoaded;
     std::shared_ptr<InstanceFilterDefinition const> m_instanceFilter;
+    Nullable<uint64_t> m_resultSetSizeLimit;
 
     // optimization flags
     OptimizationFlagsContainer m_optFlags;
@@ -201,6 +202,8 @@ public:
     std::shared_ptr<InstanceFilterDefinition const> GetInstanceFilterPtr() const {return m_instanceFilter;}
     InstanceFilterDefinitionCP GetInstanceFilter() const {return m_instanceFilter.get();}
     void SetInstanceFilter(std::shared_ptr<InstanceFilterDefinition const> value) {m_instanceFilter = value;}
+    Nullable<uint64_t> const& GetResultSetSizeLimit() const {return m_resultSetSizeLimit;}
+    void SetResultSetSizeLimit(Nullable<uint64_t> value) {m_resultSetSizeLimit = value;}
 
     // page options
     void SetPageOptions(std::shared_ptr<PageOptions> value) {m_pageOptions = value;}
@@ -396,6 +399,7 @@ protected:
     virtual NodesInitializationState _InitializeNodes() {return NodesInitializationState(SUCCESS);}
     virtual NavNodesProviderPtr _FindNestedProvider(DataSourceIdentifier const&) {return nullptr;}
     virtual std::unordered_set<ECClassCP> _GetResultInstanceNodesClasses() const {return std::unordered_set<ECClassCP>();}
+    virtual size_t _GetLimitedInstancesCount(size_t limit) const = 0;
     ECPRESENTATION_EXPORT virtual DataSourceIdentifier const& _GetIdentifier() const;
     virtual RulesetVariables _GetRelatedRulesetVariables() const {return GetContext().GetRelatedRulesetVariables();}
     virtual bool _RequiresFullLoad() const {return !GetContext().GetArtifactsCapturers().empty() && GetContext().MayHaveArtifacts();}
@@ -423,6 +427,7 @@ public:
     DataSourceIdentifier const& GetIdentifier() const {return _GetIdentifier();}
     NavNodesProviderPtr FindNestedProvider(DataSourceIdentifier const& identifier) {return _FindNestedProvider(identifier);}
     std::unordered_set<ECClassCP> GetResultInstanceNodesClasses() const {return _GetResultInstanceNodesClasses();}
+    size_t GetLimitedInstancesCount(size_t limit) const {return _GetLimitedInstancesCount(limit);}
     bool RequiresFullLoad() const {return _RequiresFullLoad();}
 
     ECPRESENTATION_EXPORT size_t GetNodesCount() const;
@@ -526,6 +531,7 @@ protected:
     CountInfo _GetTotalNodesCount() const override {return CountInfo(0, true);}
     Iterator _CreateFrontIterator() const override {return Iterator(std::make_unique<EmptyIteratorImpl<NavNodePtr>>());}
     Iterator _CreateBackIterator() const override {return Iterator(std::make_unique<EmptyIteratorImpl<NavNodePtr>>());}
+    size_t _GetLimitedInstancesCount(size_t) const override {return 0;}
 
 public:
     static RefCountedPtr<EmptyNavNodesProvider> Create(NavNodesProviderContextR context)
@@ -553,6 +559,7 @@ protected:
     ECPRESENTATION_EXPORT virtual Iterator _CreateBackIterator() const override;
     ECPRESENTATION_EXPORT virtual NavNodesProviderPtr _FindNestedProvider(DataSourceIdentifier const&) override;
     ECPRESENTATION_EXPORT virtual std::unordered_set<ECClassCP> _GetResultInstanceNodesClasses() const override;
+    ECPRESENTATION_EXPORT virtual size_t _GetLimitedInstancesCount(size_t) const override;
     ECPRESENTATION_EXPORT virtual void _OnPageOptionsSet() override;
     ECPRESENTATION_EXPORT virtual void _InitializeDataSources() override;
     ECPRESENTATION_EXPORT RulesetVariables _GetRelatedRulesetVariables() const override;
@@ -668,6 +675,7 @@ protected:
     CountInfo _GetTotalNodesCount() const override {return CountInfo(m_nodes.size(), true);}
     ECPRESENTATION_EXPORT Iterator _CreateFrontIterator() const override;
     ECPRESENTATION_EXPORT Iterator _CreateBackIterator() const override;
+    ECPRESENTATION_EXPORT size_t _GetLimitedInstancesCount(size_t) const override;
 
 public:
     static RefCountedPtr<BVectorNodesProvider> Create(NavNodesProviderContextR context, bvector<NavNodePtr> nodes)
@@ -802,6 +810,7 @@ protected:
     Utf8CP _GetName() const override { return "Finalizing nodes provider"; }
     NavNodesProviderPtr _FindNestedProvider(DataSourceIdentifier const& id) override {return m_source->FindNestedProvider(id);}
     std::unordered_set<ECClassCP> _GetResultInstanceNodesClasses() const override {return m_source->GetResultInstanceNodesClasses();}
+    size_t _GetLimitedInstancesCount(size_t limit) const override {return m_source->GetLimitedInstancesCount(limit);}
     Iterator _CreateFrontIterator() const override {return Iterator(std::make_unique<NodesFinalizingIteratorImpl>(*this, m_source->begin()));}
     Iterator _CreateBackIterator() const override {return Iterator(std::make_unique<NodesFinalizingIteratorImpl>(*this, m_source->end()));}
     bool _HasNodes() const override {return m_source->HasNodes();}
@@ -841,6 +850,7 @@ protected:
     ECPRESENTATION_EXPORT Iterator _CreateBackIterator() const override;
     ECPRESENTATION_EXPORT void _OnPageOptionsSet() override;
     ECPRESENTATION_EXPORT void _InitializeDataSources() override;
+    size_t _GetLimitedInstancesCount(size_t limit) const override {return m_wrappedProvider->GetLimitedInstancesCount(limit);}
 
 public:
     static RefCountedPtr<PostProcessingNodesProviderDeprecated> Create(NavNodesProviderR provider)
@@ -906,6 +916,7 @@ private:
 protected:
     Utf8CP _GetName() const override {return "Query-based nodes provider";}
     ECPRESENTATION_EXPORT std::unordered_set<ECClassCP> _GetResultInstanceNodesClasses() const override;
+    ECPRESENTATION_EXPORT size_t _GetLimitedInstancesCount(size_t) const override;
     ECPRESENTATION_EXPORT void _OnFirstCreate() override;
     ECPRESENTATION_EXPORT std::unique_ptr<DirectNodesIterator> _CreateDirectNodesIterator() const override;
     void _OnDirectNodesRead(size_t nodesCount) override {UpdateDataSourceDirectNodesCount(GetIdentifier(), nodesCount);}
@@ -957,149 +968,150 @@ public:
 +===============+===============+===============+===============+===============+======*/
 template<typename TBaseProvider = NavNodesProvider>
 struct SQLiteCacheNavNodesProviderBase : TBaseProvider
-    {
-    private:
-        BeSQLite::Db& m_cache;
-        BeSQLite::StatementCache& m_statements;
-        BeMutex& m_cacheMutex;
+{
+private:
+    BeSQLite::Db& m_cache;
+    BeSQLite::StatementCache& m_statements;
+    BeMutex& m_cacheMutex;
 
-    private:
-        void InitializeUsedVariables();
+private:
+    void InitializeUsedVariables();
 
-    protected:
-        SQLiteCacheNavNodesProviderBase(NavNodesProviderContextR context, BeSQLite::Db& cache, BeSQLite::StatementCache& statements, BeMutex& cacheMutex)
-            : TBaseProvider(context), m_cache(cache), m_statements(statements), m_cacheMutex(cacheMutex)
-            {}
-        BeSQLite::Db& GetCache() const {return m_cache;}
-        BeSQLite::StatementCache& GetStatements() const {return m_statements;}
-        BeMutex& GetCacheMutex() const {return m_cacheMutex;}
-        ECPRESENTATION_EXPORT void OnCreated();
-        template<typename TConcreteProvider> static RefCountedPtr<TConcreteProvider> CallOnCreated(TConcreteProvider& p) {p.OnCreated(); return &p;}
+protected:
+    SQLiteCacheNavNodesProviderBase(NavNodesProviderContextR context, BeSQLite::Db& cache, BeSQLite::StatementCache& statements, BeMutex& cacheMutex)
+        : TBaseProvider(context), m_cache(cache), m_statements(statements), m_cacheMutex(cacheMutex)
+        {}
+    BeSQLite::Db& GetCache() const {return m_cache;}
+    BeSQLite::StatementCache& GetStatements() const {return m_statements;}
+    BeMutex& GetCacheMutex() const {return m_cacheMutex;}
+    ECPRESENTATION_EXPORT void OnCreated();
+    template<typename TConcreteProvider> static RefCountedPtr<TConcreteProvider> CallOnCreated(TConcreteProvider& p) {p.OnCreated(); return &p;}
 
-    protected:
-        ECPRESENTATION_EXPORT std::unordered_set<ECClassCP> _GetResultInstanceNodesClasses() const override;
+protected:
+    ECPRESENTATION_EXPORT std::unordered_set<ECClassCP> _GetResultInstanceNodesClasses() const override;
+    ECPRESENTATION_EXPORT size_t _GetLimitedInstancesCount(size_t) const override;
 
-    protected:
-        virtual BeSQLite::CachedStatementPtr _GetUsedVariablesStatement() const = 0;
-        virtual BeSQLite::CachedStatementPtr _GetResultInstanceNodesClassIdsStatement() const = 0;
-    };
+protected:
+    virtual BeSQLite::CachedStatementPtr _GetUsedVariablesStatement() const = 0;
+    virtual BeSQLite::CachedStatementPtr _GetResultInstanceNodesClassIdsStatement() const = 0;
+};
 
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
 struct CachedHierarchyLevelProvider : SQLiteCacheNavNodesProviderBase<NodesCreatingMultiNavNodesProvider>
-    {
-    DEFINE_T_SUPER(SQLiteCacheNavNodesProviderBase<NodesCreatingMultiNavNodesProvider>)
+{
+DEFINE_T_SUPER(SQLiteCacheNavNodesProviderBase<NodesCreatingMultiNavNodesProvider>)
 
-    private:
-        BeGuid m_hierarchyLevelId;
+private:
+    BeGuid m_hierarchyLevelId;
 
-    private:
-        CachedHierarchyLevelProvider(NavNodesProviderContextR context, BeSQLite::Db& cache, BeSQLite::StatementCache& statements, BeMutex& cacheMutex, BeGuid hierarchyLevelId)
-            : T_Super(context, cache, statements, cacheMutex), m_hierarchyLevelId(hierarchyLevelId)
-            {}
+private:
+    CachedHierarchyLevelProvider(NavNodesProviderContextR context, BeSQLite::Db& cache, BeSQLite::StatementCache& statements, BeMutex& cacheMutex, BeGuid hierarchyLevelId)
+        : T_Super(context, cache, statements, cacheMutex), m_hierarchyLevelId(hierarchyLevelId)
+        {}
 
-    protected:
-        Utf8CP _GetName() const override {return "Cached hierarchy level provider";}
-        std::unique_ptr<DirectNodesIterator> _CreateDirectNodesIterator() const override;
-        BeSQLite::CachedStatementPtr _GetUsedVariablesStatement() const override;
-        BeSQLite::CachedStatementPtr _GetResultInstanceNodesClassIdsStatement() const override;
+protected:
+    Utf8CP _GetName() const override {return "Cached hierarchy level provider";}
+    std::unique_ptr<DirectNodesIterator> _CreateDirectNodesIterator() const override;
+    BeSQLite::CachedStatementPtr _GetUsedVariablesStatement() const override;
+    BeSQLite::CachedStatementPtr _GetResultInstanceNodesClassIdsStatement() const override;
 
-    public:
-        ECPRESENTATION_EXPORT static RefCountedPtr<CachedHierarchyLevelProvider> Create(NavNodesProviderContextR, BeSQLite::Db&, BeSQLite::StatementCache&, BeMutex&, BeGuid hierarchyLevelId);
-    };
+public:
+    ECPRESENTATION_EXPORT static RefCountedPtr<CachedHierarchyLevelProvider> Create(NavNodesProviderContextR, BeSQLite::Db&, BeSQLite::StatementCache&, BeMutex&, BeGuid hierarchyLevelId);
+};
 
 /*=================================================================================**//**
 * Uses NavNodeCache's backing sqlite db to retrieve cached nodes.
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
 struct SQLiteCacheNodesProvider : SQLiteCacheNavNodesProviderBase<NavNodesProvider>
-    {
-    DEFINE_T_SUPER(SQLiteCacheNavNodesProviderBase<NavNodesProvider>)
+{
+DEFINE_T_SUPER(SQLiteCacheNavNodesProviderBase<NavNodesProvider>)
 
-    private:
-        std::unique_ptr<bvector<NavNodePtr>> m_nodes;
+private:
+    std::unique_ptr<bvector<NavNodePtr>> m_nodes;
 
-    protected:
-        SQLiteCacheNodesProvider(NavNodesProviderContextR, BeSQLite::Db&, BeSQLite::StatementCache&, BeMutex&);
-        void _ResetInitializedNodes() override;
-        NodesInitializationState _InitializeNodes() override;
-        bool _HasNodes() const override;
-        CountInfo _GetTotalNodesCount() const override;
-        Iterator _CreateFrontIterator() const override {return m_nodes ? Iterator(std::make_unique<IterableIteratorImpl<bvector<NavNodePtr>::const_iterator, NavNodePtr>>(m_nodes->begin())) : Iterator(std::make_unique<EmptyIteratorImpl<NavNodePtr>>());}
-        Iterator _CreateBackIterator() const override {return m_nodes ? Iterator(std::make_unique<IterableIteratorImpl<bvector<NavNodePtr>::const_iterator, NavNodePtr>>(m_nodes->end())) : Iterator(std::make_unique<EmptyIteratorImpl<NavNodePtr>>());}
-        virtual void _OnPageOptionsSet() override;
+protected:
+    SQLiteCacheNodesProvider(NavNodesProviderContextR, BeSQLite::Db&, BeSQLite::StatementCache&, BeMutex&);
+    void _ResetInitializedNodes() override;
+    NodesInitializationState _InitializeNodes() override;
+    bool _HasNodes() const override;
+    CountInfo _GetTotalNodesCount() const override;
+    Iterator _CreateFrontIterator() const override {return m_nodes ? Iterator(std::make_unique<IterableIteratorImpl<bvector<NavNodePtr>::const_iterator, NavNodePtr>>(m_nodes->begin())) : Iterator(std::make_unique<EmptyIteratorImpl<NavNodePtr>>());}
+    Iterator _CreateBackIterator() const override {return m_nodes ? Iterator(std::make_unique<IterableIteratorImpl<bvector<NavNodePtr>::const_iterator, NavNodePtr>>(m_nodes->end())) : Iterator(std::make_unique<EmptyIteratorImpl<NavNodePtr>>());}
+    virtual void _OnPageOptionsSet() override;
 
-    protected:
-        virtual BeSQLite::CachedStatementPtr _GetNodesStatement() const = 0;
-        virtual BeSQLite::CachedStatementPtr _GetCountStatement() const = 0;
-    };
+protected:
+    virtual BeSQLite::CachedStatementPtr _GetNodesStatement() const = 0;
+    virtual BeSQLite::CachedStatementPtr _GetCountStatement() const = 0;
+};
 
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
 struct CachedCombinedHierarchyLevelProvider : SQLiteCacheNodesProvider
-    {
-    private:
-        BeGuid m_physicalHierarchyLevelId;
+{
+private:
+    BeGuid m_physicalHierarchyLevelId;
 
-    private:
-        CachedCombinedHierarchyLevelProvider(NavNodesProviderContextR context, BeSQLite::Db& cache, BeSQLite::StatementCache& statements, BeMutex& cacheMutex, BeGuidCR physicalHierarchyLevelId)
-            : SQLiteCacheNodesProvider(context, cache, statements, cacheMutex), m_physicalHierarchyLevelId(physicalHierarchyLevelId)
-            {}
+private:
+    CachedCombinedHierarchyLevelProvider(NavNodesProviderContextR context, BeSQLite::Db& cache, BeSQLite::StatementCache& statements, BeMutex& cacheMutex, BeGuidCR physicalHierarchyLevelId)
+        : SQLiteCacheNodesProvider(context, cache, statements, cacheMutex), m_physicalHierarchyLevelId(physicalHierarchyLevelId)
+        {}
 
-    protected:
-        Utf8CP _GetName() const override {return "Cached combined hierarchy level provider";}
-        BeSQLite::CachedStatementPtr _GetUsedVariablesStatement() const override;
-        BeSQLite::CachedStatementPtr _GetResultInstanceNodesClassIdsStatement() const override;
-        BeSQLite::CachedStatementPtr _GetNodesStatement() const override;
-        BeSQLite::CachedStatementPtr _GetCountStatement() const override;
+protected:
+    Utf8CP _GetName() const override {return "Cached combined hierarchy level provider";}
+    BeSQLite::CachedStatementPtr _GetUsedVariablesStatement() const override;
+    BeSQLite::CachedStatementPtr _GetResultInstanceNodesClassIdsStatement() const override;
+    BeSQLite::CachedStatementPtr _GetNodesStatement() const override;
+    BeSQLite::CachedStatementPtr _GetCountStatement() const override;
 
-    public:
-        ECPRESENTATION_EXPORT static RefCountedPtr<CachedCombinedHierarchyLevelProvider> Create(NavNodesProviderContextR, BeSQLite::Db&, BeSQLite::StatementCache&, BeMutex&, BeGuidCR physicalHierarchyLevelId);
-    };
+public:
+    ECPRESENTATION_EXPORT static RefCountedPtr<CachedCombinedHierarchyLevelProvider> Create(NavNodesProviderContextR, BeSQLite::Db&, BeSQLite::StatementCache&, BeMutex&, BeGuidCR physicalHierarchyLevelId);
+};
 
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
 struct NodesWithUndeterminedChildrenProvider : SQLiteCacheNodesProvider
-    {
-    private:
-        NodesWithUndeterminedChildrenProvider(NavNodesProviderContextR context, BeSQLite::Db& cache, BeSQLite::StatementCache& statements, BeMutex& cacheMutex)
-            : SQLiteCacheNodesProvider(context, cache, statements, cacheMutex)
-            {}
+{
+private:
+    NodesWithUndeterminedChildrenProvider(NavNodesProviderContextR context, BeSQLite::Db& cache, BeSQLite::StatementCache& statements, BeMutex& cacheMutex)
+        : SQLiteCacheNodesProvider(context, cache, statements, cacheMutex)
+        {}
 
-    protected:
-        Utf8CP _GetName() const override { return "Cached nodes with undetermined children provider"; }
-        BeSQLite::CachedStatementPtr _GetUsedVariablesStatement() const override;
-        BeSQLite::CachedStatementPtr _GetResultInstanceNodesClassIdsStatement() const override;
-        BeSQLite::CachedStatementPtr _GetNodesStatement() const override;
-        BeSQLite::CachedStatementPtr _GetCountStatement() const override;
+protected:
+    Utf8CP _GetName() const override { return "Cached nodes with undetermined children provider"; }
+    BeSQLite::CachedStatementPtr _GetUsedVariablesStatement() const override;
+    BeSQLite::CachedStatementPtr _GetResultInstanceNodesClassIdsStatement() const override;
+    BeSQLite::CachedStatementPtr _GetNodesStatement() const override;
+    BeSQLite::CachedStatementPtr _GetCountStatement() const override;
 
-    public:
-        ECPRESENTATION_EXPORT static RefCountedPtr<NodesWithUndeterminedChildrenProvider> Create(NavNodesProviderContextR, BeSQLite::Db&, BeSQLite::StatementCache&, BeMutex&);
-    };
+public:
+    ECPRESENTATION_EXPORT static RefCountedPtr<NodesWithUndeterminedChildrenProvider> Create(NavNodesProviderContextR, BeSQLite::Db&, BeSQLite::StatementCache&, BeMutex&);
+};
 
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
 struct FilteredNodesProvider : SQLiteCacheNodesProvider
-    {
-    private:
-        Utf8String m_filter;
-        FilteredNodesProvider(NavNodesProviderContextR context, BeSQLite::Db& cache, BeSQLite::StatementCache& statements, BeMutex& cacheMutex, Utf8String filter)
-            : SQLiteCacheNodesProvider(context, cache, statements, cacheMutex), m_filter(filter)
-            {}
+{
+private:
+    Utf8String m_filter;
+    FilteredNodesProvider(NavNodesProviderContextR context, BeSQLite::Db& cache, BeSQLite::StatementCache& statements, BeMutex& cacheMutex, Utf8String filter)
+        : SQLiteCacheNodesProvider(context, cache, statements, cacheMutex), m_filter(filter)
+        {}
 
-    protected:
-        Utf8CP _GetName() const override { return "Cached filtered nodes provider"; }
-        BeSQLite::CachedStatementPtr _GetUsedVariablesStatement() const override;
-        BeSQLite::CachedStatementPtr _GetResultInstanceNodesClassIdsStatement() const override;
-        BeSQLite::CachedStatementPtr _GetNodesStatement() const override;
-        BeSQLite::CachedStatementPtr _GetCountStatement() const override;
+protected:
+    Utf8CP _GetName() const override { return "Cached filtered nodes provider"; }
+    BeSQLite::CachedStatementPtr _GetUsedVariablesStatement() const override;
+    BeSQLite::CachedStatementPtr _GetResultInstanceNodesClassIdsStatement() const override;
+    BeSQLite::CachedStatementPtr _GetNodesStatement() const override;
+    BeSQLite::CachedStatementPtr _GetCountStatement() const override;
 
-    public:
-        ECPRESENTATION_EXPORT static RefCountedPtr<FilteredNodesProvider> Create(NavNodesProviderContextR, BeSQLite::Db&, BeSQLite::StatementCache&, BeMutex&, Utf8String filter);
-    };
+public:
+    ECPRESENTATION_EXPORT static RefCountedPtr<FilteredNodesProvider> Create(NavNodesProviderContextR, BeSQLite::Db&, BeSQLite::StatementCache&, BeMutex&, Utf8String filter);
+};
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

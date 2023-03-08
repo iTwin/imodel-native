@@ -144,6 +144,14 @@ public:
 
     ECPRESENTATION_EXPORT static void BindInstanceFilter(Statement& stmt, int index, InstanceFilterDefinitionCP);
 
+    template<typename TValue>
+    static DbResult BindNullable(Statement& stmt, int index, Nullable<TValue> const& value, DbResult(Statement::* binder)(int, TValue))
+        {
+        if (value.IsNull())
+            return stmt.BindNull(index);
+        return (stmt.*binder)(index, *value);
+        }
+
     ECPRESENTATION_EXPORT static bool VariablesExists(Db& db, BeGuidCR variablesId);
     ECPRESENTATION_EXPORT static bool RulesetExists(Db& db, Utf8StringCR rulesetId);
     ECPRESENTATION_EXPORT static bool NodeExists(Db& db, BeGuidCR nodeId);

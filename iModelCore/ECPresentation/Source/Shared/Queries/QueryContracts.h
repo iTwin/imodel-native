@@ -176,6 +176,7 @@ public:
     NavigationQueryContract const* AsNavigationQueryContract() const {return _AsNavigationQueryContract();}
     ContentQueryContract const* AsContentQueryContract() const {return _AsContentQueryContract();}
     uint64_t GetId() const {return m_id;}
+    void SetId(uint64_t id) {m_id = id;}
     ECPRESENTATION_EXPORT uint8_t GetIndex(Utf8CP fieldName) const;
     void SetECInstanceIdFieldName(Utf8CP name) {_SetECInstanceIdFieldName(name);}
     void SetECClassIdFieldName(Utf8CP name) {_SetECClassIdFieldName(name);}
@@ -217,6 +218,19 @@ private:
     ECPRESENTATION_EXPORT CountQueryContract(Utf8CP groupingFieldName);
 public:
     static RefCountedPtr<CountQueryContract> Create(Utf8CP groupingFieldName = nullptr) {return new CountQueryContract(groupingFieldName);}
+};
+
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct InstanceKeysSelectContract : PresentationQueryContract
+{
+public:
+    ECPRESENTATION_EXPORT static Utf8CP ECInstanceIdFieldName;
+    ECPRESENTATION_EXPORT static Utf8CP ECClassIdFieldName;
+protected:
+    InstanceKeysSelectContract() : PresentationQueryContract() {}
+    ECPRESENTATION_EXPORT virtual bvector<PresentationQueryContractFieldCPtr> _GetFields() const override;
 };
 
 /*=================================================================================**//**
