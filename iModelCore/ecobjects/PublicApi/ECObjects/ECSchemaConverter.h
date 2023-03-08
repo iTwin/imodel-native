@@ -175,10 +175,9 @@ public:
     //! @param[in] schema   The schema to traverse
     //! @param[in] context  A context to use if a particular converter needs to locate a schema which is not currently a schema reference.
     //! @param[in] doValidate Flag saying whether to validate the schema or not.  This is used by the DgnV8Converter to disable validation until it has had a chance to fix the schemas
-    static bool Convert(ECSchemaR schema, ECSchemaReadContextP context, bool doValidate = true)
+    static bool Convert(ECSchemaR schema, ECSchemaReadContextR context, bool doValidate = true)
         {
-        if (nullptr != context)
-            GetSingleton()->AddSchemaReadContext(*context);
+        GetSingleton()->AddSchemaReadContext(context);
         bool returnVal = GetSingleton()->Convert(schema, doValidate);
         GetSingleton()->RemoveSchemaReadContext();
         return returnVal;
@@ -418,8 +417,8 @@ struct HidePropertyConverter : IECCustomAttributeConverter
 struct DisplayOptionsConverter : IECCustomAttributeConverter
     {
     private:
-        static ECObjectsStatus ConvertSchemaDisplayOptions(ECSchemaR schema, IECInstanceR instance);
-        static ECObjectsStatus ConvertClassDisplayOptions(ECSchemaR schema, ECClassR ecClass, IECInstanceR instance);
+        static ECObjectsStatus ConvertSchemaDisplayOptions(ECSchemaR schema, IECInstanceR instance, ECSchemaReadContextR context);
+        static ECObjectsStatus ConvertClassDisplayOptions(ECSchemaR schema, ECClassR ecClass, IECInstanceR instance, ECSchemaReadContextR context);
 
     public:
         ECObjectsStatus Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance, ECSchemaReadContextP context);

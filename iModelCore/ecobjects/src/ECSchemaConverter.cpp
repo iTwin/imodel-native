@@ -1870,13 +1870,12 @@ bool shouldHide(IECInstanceR instance)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus DisplayOptionsConverter::ConvertSchemaDisplayOptions(ECSchemaR schema, IECInstanceR instance)
+ECObjectsStatus DisplayOptionsConverter::ConvertSchemaDisplayOptions(ECSchemaR schema, IECInstanceR instance, ECSchemaReadContextR context)
     {
     bool hideSchema = shouldHide(instance);
     if (hideSchema)
         {
-        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
-        auto customAttributeSchema = CoreCustomAttributeHelper::GetSchema(*schemaContext);
+        auto customAttributeSchema = CoreCustomAttributeHelper::GetSchema(context);
         IECInstancePtr hiddenSchema = customAttributeSchema->GetClassCP(HIDDEN_SCHEMA)->GetDefaultStandaloneEnabler()->CreateInstance();
         schema.AddReferencedSchema(*customAttributeSchema);
         schema.SetCustomAttribute(*hiddenSchema);
@@ -1888,12 +1887,11 @@ ECObjectsStatus DisplayOptionsConverter::ConvertSchemaDisplayOptions(ECSchemaR s
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus DisplayOptionsConverter::ConvertClassDisplayOptions(ECSchemaR schema, ECClassR ecClass, IECInstanceR instance)
+ECObjectsStatus DisplayOptionsConverter::ConvertClassDisplayOptions(ECSchemaR schema, ECClassR ecClass, IECInstanceR instance, ECSchemaReadContextR context)
     {
     bool hideClass = shouldHide(instance);
 
-    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
-    auto customAttributeSchema = CoreCustomAttributeHelper::GetSchema(*schemaContext);
+    auto customAttributeSchema = CoreCustomAttributeHelper::GetSchema(context);
     IECInstancePtr hiddenClass = customAttributeSchema->GetClassCP(HIDDEN_CLASS)->GetDefaultStandaloneEnabler()->CreateInstance();
     ECValue show(!hideClass);
     hiddenClass->SetValue(SHOW, show);
@@ -1913,11 +1911,11 @@ ECObjectsStatus DisplayOptionsConverter::Convert(ECSchemaR schema, IECCustomAttr
     {
     ECClassP ecClass = dynamic_cast<ECClassP> (&container);
     if (nullptr != ecClass)
-        return ConvertClassDisplayOptions(schema, *ecClass, instance);
+        return ConvertClassDisplayOptions(schema, *ecClass, instance, *context);
 
     ECSchemaP ecSchema = dynamic_cast<ECSchemaP> (&container);
     if (nullptr != ecSchema)
-        return ConvertSchemaDisplayOptions(schema, instance);
+        return ConvertSchemaDisplayOptions(schema, instance, *context);
 
     LOG.infov("Found DisplayOptions custom attribute on a container which is not a schema or class, removing. Container is %s", container.GetContainerName().c_str());
     container.RemoveCustomAttribute(BSCA_SCHEMANAME, DISPLAY_OPTIONS);

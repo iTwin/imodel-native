@@ -17,10 +17,10 @@ const uint32_t kBscaVersionMinor = 8u;
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSchemaPtr StandardCustomAttributeHelper::_GetSchema(ECSchemaReadContextPtr schemaContext)
+ECSchemaPtr StandardCustomAttributeHelper::_GetSchema(ECSchemaReadContextR schemaContext)
     {
     SchemaKey key(kBentleyStandardCustomAttributes, kBscaVersionRead, kBscaVersionMinor);
-    ECSchemaPtr schema = ECSchema::LocateSchema(key, *schemaContext);
+    ECSchemaPtr schema = ECSchema::LocateSchema(key, schemaContext);
     return schema;
     }
 
@@ -36,7 +36,7 @@ ECObjectsStatus StandardCustomAttributeHelper::GetDateTimeInfo(DateTime::Info& d
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClassCP StandardCustomAttributeHelper::GetCustomAttributeClass(ECSchemaReadContextPtr schemaContext, Utf8CP attributeName)
+ECClassCP StandardCustomAttributeHelper::GetCustomAttributeClass(ECSchemaReadContextR schemaContext, Utf8CP attributeName)
     {
     ECSchemaPtr schema = _GetSchema(schemaContext);
     return schema->GetClassCP(attributeName);
@@ -45,7 +45,7 @@ ECClassCP StandardCustomAttributeHelper::GetCustomAttributeClass(ECSchemaReadCon
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECInstancePtr StandardCustomAttributeHelper::CreateCustomAttributeInstance(ECSchemaReadContextPtr schemaContext, Utf8CP attributeName)
+IECInstancePtr StandardCustomAttributeHelper::CreateCustomAttributeInstance(ECSchemaReadContextR schemaContext, Utf8CP attributeName)
     {
     ECSchemaPtr schema = _GetSchema(schemaContext);
     if (!schema.IsValid())

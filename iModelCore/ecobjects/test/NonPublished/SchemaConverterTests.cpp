@@ -42,7 +42,7 @@ TEST_F(SchemaConverterTests, RenameReservedWords)
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
     ASSERT_TRUE(schema.IsValid());
 
-    EXPECT_TRUE(ECSchemaConverter::Convert(*schema, context.get()));
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema, *context));
     
     ECClassCP entity = schema->GetClassCP("TestEntityClass");
     EXPECT_EQ(nullptr, entity->GetPropertyP("Id")) << "The Id property is a reserved keyword and should have been renamed";
@@ -98,7 +98,7 @@ TEST_F(SchemaConverterTests, RenameRelationshipReservedWords)
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
     ASSERT_TRUE(schema.IsValid());
 
-    EXPECT_TRUE(ECSchemaConverter::Convert(*schema, context.get()));
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema, *context));
 
     ECClassCP relClass = schema->GetClassCP("ARelB");
 
@@ -153,7 +153,7 @@ TEST_F(SchemaConverterTests, PruneEmptyNamedCategories)
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
     ASSERT_TRUE(schema.IsValid());
 
-    EXPECT_TRUE(ECSchemaConverter::Convert(*schema, context.get()));
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema, *context));
     EXPECT_EQ(0, schema->GetReferencedSchemas().size()) << "Expect EditorCustomAttributes schema reference to be removed during conversion";
 
     ECClassCP class1 = schema->GetClassCP("Class1");
@@ -192,7 +192,7 @@ TEST_F(SchemaConverterTests, EmptyStructPropertyRemoval)
     ASSERT_EQ(2, schema->GetClassCP("EmptyEntity")->GetPropertyCount());
     ASSERT_EQ(2, schema->GetClassCP("FullEntity")->GetPropertyCount());
 
-    ECSchemaConverter::Convert(*schema, context.get());
+    ECSchemaConverter::Convert(*schema, *context);
 
     //showing after conversion, struct property with empty struct class is deleted, but normal struct properties are left alone
     ASSERT_EQ(0, schema->GetClassCP("EmptyEntity")->GetPropertyCount());
