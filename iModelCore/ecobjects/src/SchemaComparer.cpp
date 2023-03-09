@@ -921,7 +921,7 @@ BentleyStatus SchemaComparer::CompareBaseClasses(BaseClassChanges& changes, ECBa
     std::for_each(newFirstMixin, newBaseClasses.end(), [&newMixinFullNames](ECClassP element) { newMixinFullNames.insert(Utf8String(element->GetFullName())); });
 
     bvector<Utf8String> removedMixins;
-    std::set_difference(oldMixinFullNames.begin(), oldMixinFullNames.end(), newMixinFullNames.begin(), newMixinFullNames.end(), std::inserter(removedMixins, removedMixins.begin()));
+    std::set_difference(oldMixinFullNames.begin(), oldMixinFullNames.end(), newMixinFullNames.begin(), newMixinFullNames.end(), std::inserter(removedMixins, removedMixins.begin()), [](Utf8StringCR str1, Utf8StringCR str2) { return BeStringUtilities::StricmpAscii(str1.c_str(), str2.c_str()) < 0; });
     for(auto removedMixin : removedMixins)
         {
         RefCountedPtr<StringChange> change = changes.CreateElement(ECChange::OpCode::Deleted, ECChange::Type::BaseClass);
@@ -930,7 +930,7 @@ BentleyStatus SchemaComparer::CompareBaseClasses(BaseClassChanges& changes, ECBa
         }
 
     bvector<Utf8String> addedMixins;
-    std::set_difference(newMixinFullNames.begin(), newMixinFullNames.end(), oldMixinFullNames.begin(), oldMixinFullNames.end(), std::inserter(addedMixins, addedMixins.begin()));
+    std::set_difference(newMixinFullNames.begin(), newMixinFullNames.end(), oldMixinFullNames.begin(), oldMixinFullNames.end(), std::inserter(addedMixins, addedMixins.begin()), [](Utf8StringCR str1, Utf8StringCR str2) { return BeStringUtilities::StricmpAscii(str1.c_str(), str2.c_str()) < 0; });
     for(auto addedMixin : addedMixins)
         {
         RefCountedPtr<StringChange> change = changes.CreateElement(ECChange::OpCode::New, ECChange::Type::BaseClass);

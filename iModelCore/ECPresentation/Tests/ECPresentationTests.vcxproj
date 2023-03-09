@@ -23,6 +23,7 @@
     <ClCompile Include="NonPublished\Integration\Content\Content_UpdateTests.cpp" />
     <ClCompile Include="NonPublished\Integration\Hierarchies\HierarchiesCompareTests.cpp" />
     <ClCompile Include="NonPublished\Integration\Hierarchies\HierarchiesWithRulesetVariablesTests.cpp" />
+    <ClCompile Include="NonPublished\Integration\Hierarchies\Hierarchies_Limiting.cpp" />
     <ClCompile Include="NonPublished\Integration\Hierarchies\HierarchyIntegrationTests.cpp" />
     <ClCompile Include="NonPublished\Integration\Hierarchies\HierarchyUpdateTests.cpp" />
     <ClCompile Include="NonPublished\Integration\Hierarchies\Hierarchies_InstanceFiltering.cpp" />

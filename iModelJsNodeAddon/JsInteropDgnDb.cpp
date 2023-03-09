@@ -388,7 +388,7 @@ Napi::String JsInterop::InsertElement(DgnDbR dgndb, Napi::Object obj, Napi::Valu
         DgnDbStatus status;
         auto newEl = el->Insert(&status);
         if (!newEl.IsValid())
-            BeNapi::ThrowJsException(Env(), "error inserting", (int)status);
+            throwDgnDbStatus(status);
         return Napi::String::New(Env(), newEl->GetElementId().ToHexStr());
     } catch (std::logic_error const& err) {
         BeNapi::ThrowJsException(Env(), err.what(), (int)DgnDbStatus::BadArg);
@@ -601,8 +601,9 @@ Napi::String JsInterop::InsertElementAspect(DgnDbR db, Napi::Object obj) {
     if (!elementEdit.IsValid())
         throwWriteError();
 
-    auto arg = Napi::Object::New(obj.Env());
-    arg.Set("props", obj);
+    BeJsNapiObject arg(obj.Env());
+    ((Napi::Object)arg).Set("props", obj);
+    arg[DgnElement::json_model()] = element->GetModelId();
     db.CallJsHandlerMethod(aspectClassId, "onInsert", arg);
 
     DgnDbStatus stat;
@@ -652,8 +653,9 @@ void JsInterop::UpdateElementAspect(DgnDbR db, Napi::Object obj) {
     if (!elementEdit.IsValid())
         throwWriteError();
 
-    auto arg = Napi::Object::New(obj.Env());
-    arg.Set("props", obj);
+    BeJsNapiObject arg(obj.Env());
+    ((Napi::Object)arg).Set("props", obj);
+    arg[DgnElement::json_model()] = element->GetModelId();
     db.CallJsHandlerMethod(aspectClassId, "onUpdate", arg);
 
     IECInstanceP aspect;
@@ -724,6 +726,7 @@ void JsInterop::DeleteElementAspect(DgnDbR db, Utf8StringCR aspectIdStr)   {
 
     BeJsNapiObject arg(db.GetJsIModelDb()->Env());
     arg["aspectId"] = aspectId;
+    arg[DgnElement::json_model()] = element->GetModelId();
     db.CallJsHandlerMethod(aspectClassId, "onDelete", arg);
 
     if (isMultiAspect)
@@ -931,7 +934,7 @@ Napi::String JsInterop::InsertModel(DgnDbR dgndb, Napi::Object napiObj) {
     SetNapiObjOnModel _v(*model, &napiObj);
     DgnDbStatus status = model->Insert();
     if (DgnDbStatus::Success != status)
-        BeNapi::ThrowJsException(Env(), "error inserting model", (int)status);
+        throwDgnDbStatus(status);
 
     return Napi::String::New(Env(), model->GetModelId().ToHexStr());
 }

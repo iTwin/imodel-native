@@ -4,6 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 #pragma once
 #include <ECPresentation/ECPresentation.h>
+#include <ECPresentation/PresentationQuery.h>
 #include "../../RulesEngineTypes.h"
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE

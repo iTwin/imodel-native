@@ -18,7 +18,6 @@
 
     <Part Name="ECPresentation-Library" BentleyBuildMakeFile="ECPresentation.mke">
         <SubPart PartName="ECPresentation-PublicAPI" />
-        <SubPart PartName="BeJsonCpp" PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp" />
         <SubPart PartName="BeRapidJson" PartFile="iModelCore/Bentley/Bentley" />
         <SubPart PartName="folly" PartFile="iModelCore/libsrc/facebook/facebook" />
         <SubPart PartName="BeXml" PartFile="iModelCore/Bentley/Bentley" />
