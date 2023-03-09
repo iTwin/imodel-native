@@ -9,7 +9,7 @@
 #include <Bentley/DateTime.h>
 #include <Bentley/ByteStream.h>
 #include <Geom/GeomApi.h>
-#include <json/BeJsValue.h>
+#include <BeRapidJson/BeJsValue.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //=================================================================================

@@ -8,7 +8,7 @@
 #include <Formatting/FormattingEnum.h>
 #include <Formatting/AliasMappings.h>
 #include <Bentley/Nullable.h>
-#include <json/BeJsValue.h>
+#include <BeRapidJson/BeJsValue.h>
 
 namespace BEU = BentleyApi::Units;
 
