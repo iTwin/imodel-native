@@ -26,7 +26,17 @@ void NavigationQueryBuilderTests::SetUp()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsitest
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+NavigationQueryContractPtr NavigationQueryBuilderTests::WithId(uint64_t id, NavigationQueryContractCR contract)
+    {
+    auto clone = contract.Clone();
+    clone->SetId(id);
+    return clone;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 PresentationQueryBuilderPtr NavigationQueryBuilderTests::PrepareNavigationQuery(std::function<PresentationQueryBuilderPtr()> queryFactory)
     {
@@ -56,7 +66,7 @@ void NavigationQueryBuilderTests::ValidateQuery(ChildNodeSpecificationCR spec, P
 +---------------+---------------+---------------+---------------+---------------+------*/
 PresentationQueryContractFieldPtr NavigationQueryBuilderTests::CreateGroupingDisplayLabelField()
     {
-    auto field = PresentationQueryContractSimpleField::Create(DisplayLabelGroupingNodesQueryContract::DisplayLabelFieldName, DisplayLabelGroupingNodesQueryContract::DisplayLabelFieldName, false);
+    auto field = PresentationQueryContractSimpleField::Create(DisplayLabelGroupingNodesQueryContract::DisplayLabelFieldName, "", false);
     field->SetGroupingClause(QueryBuilderHelpers::CreateDisplayLabelValueClause(field->GetName()));
     field->SetResultType(PresentationQueryFieldType::LabelDefinition);
     return field;
@@ -91,6 +101,15 @@ ComplexQueryBuilderR NavigationQueryBuilderTests::SetLabelGroupingNodeChildrenWh
     whereClauseBindings.push_back(std::make_unique<BoundQueryECValue>(ECValue(LabelDefinition::Create(LABEL_GROUPING_NODE_LABEL)->ToJsonString().c_str())));
     query.Where(whereClause.c_str(), whereClauseBindings);
     return query;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ComplexQueryBuilderPtr NavigationQueryBuilderTests::CreateInstanceKeysSelectQuery()
+    {
+    // query builder tests don't validate instance keys select query - no need to create a valid one here
+    return ComplexQueryBuilder::Create();
     }
 
 //---------------------------------------------------------------------------------------
@@ -346,14 +365,14 @@ TEST_F (NavigationQueryBuilderTests, JoinsWithAdditionalRelatedInstances)
         {
         SelectClass<ECClass> selectClass(*classB, "this", false);
         RelatedClass relatedInstanceClass(*classB, SelectClass<ECRelationshipClass>(*relAB, RULES_ENGINE_RELATED_CLASS_ALIAS(*relAB, 0)), false, SelectClass<ECClass>(*classA, "a", true));
-        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classB, CreateDisplayLabelField(selectClass, { RelatedClassPath{relatedInstanceClass} }), { RelatedClassPath{relatedInstanceClass} });
+        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(1, "", *CreateInstanceKeysSelectQuery(), classB, CreateDisplayLabelField(selectClass, { RelatedClassPath{relatedInstanceClass} }), { RelatedClassPath{relatedInstanceClass} });
 
         ComplexQueryBuilderPtr nested = ComplexQueryBuilder::Create();
         nested->SelectContract(*contract, "this")
             .From(selectClass)
             .Join(relatedInstanceClass);
 
-        ComplexQueryBuilderPtr sorted = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classB, *nested);
+        ComplexQueryBuilderPtr sorted = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classB, *nested, { RelatedClassPath{relatedInstanceClass} });
         sorted->OrderBy(GetECInstanceNodesOrderByClause().c_str());
         sorted->GetNavigationResultParameters().GetUsedRelationshipClasses().insert(relAB);
         return sorted;
@@ -395,7 +414,7 @@ TEST_F (NavigationQueryBuilderTests, FiltersByRelatedInstanceProperties)
         {
         SelectClass<ECClass> selectClass(*classB, "this", false);
         RelatedClass relatedInstanceClass(*classB, SelectClass<ECRelationshipClass>(*relAB, RULES_ENGINE_RELATED_CLASS_ALIAS(*relAB, 0)), false, SelectClass<ECClass>(*classA, "a", true));
-        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classB, CreateDisplayLabelField(selectClass, { RelatedClassPath{relatedInstanceClass} }), { RelatedClassPath{relatedInstanceClass} });
+        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(1, "", *CreateInstanceKeysSelectQuery(), classB, CreateDisplayLabelField(selectClass, { RelatedClassPath{relatedInstanceClass} }), { RelatedClassPath{relatedInstanceClass} });
 
         ComplexQueryBuilderPtr nested = ComplexQueryBuilder::Create();
         nested->SelectContract(*contract, "this")
@@ -403,7 +422,7 @@ TEST_F (NavigationQueryBuilderTests, FiltersByRelatedInstanceProperties)
             .Join(relatedInstanceClass)
             .Where("[a].[PropA] > 5 AND [a].[PropA] <> [this].[PropB]", BoundQueryValuesList());
 
-        ComplexQueryBuilderPtr sorted = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classB, *nested);
+        ComplexQueryBuilderPtr sorted = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classB, *nested, { RelatedClassPath{relatedInstanceClass} });
         sorted->OrderBy(GetECInstanceNodesOrderByClause().c_str());
         sorted->GetNavigationResultParameters().GetUsedRelationshipClasses().insert(relAB);
         return sorted;
@@ -441,14 +460,14 @@ TEST_F (NavigationQueryBuilderTests, InnerJoinsWithAdditionalRelatedInstances)
         {
         SelectClass<ECClass> selectClass(*classB, "this", false);
         RelatedClass relatedInstanceClass(*classB, SelectClass<ECRelationshipClass>(*relAB, RULES_ENGINE_RELATED_CLASS_ALIAS(*relAB, 0)), false, SelectClass<ECClass>(*classA, "a", true), false);
-        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classB, CreateDisplayLabelField(selectClass, { RelatedClassPath{relatedInstanceClass} }), { RelatedClassPath{relatedInstanceClass} });
+        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(1, "", *CreateInstanceKeysSelectQuery(), classB, CreateDisplayLabelField(selectClass, { RelatedClassPath{relatedInstanceClass} }), { RelatedClassPath{relatedInstanceClass} });
 
         ComplexQueryBuilderPtr nested = ComplexQueryBuilder::Create();
         nested->SelectContract(*contract, "this")
             .From(selectClass)
             .Join(relatedInstanceClass);
 
-        ComplexQueryBuilderPtr sorted = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classB, *nested);
+        ComplexQueryBuilderPtr sorted = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classB, *nested, { RelatedClassPath{relatedInstanceClass} });
         sorted->OrderBy(GetECInstanceNodesOrderByClause().c_str());
         sorted->GetNavigationResultParameters().GetUsedRelationshipClasses().insert(relAB);
         return sorted;
@@ -501,7 +520,7 @@ TEST_F(NavigationQueryBuilderTests, JoinsWithAdditionalRelatedInstances_ReusesSa
         SelectClass<ECClass> selectClass(*classA, "this", false);
         RelatedClass relatedB1(*classA, SelectClass<ECRelationshipClass>(*relAToB, RULES_ENGINE_RELATED_CLASS_ALIAS(*relAToB, 0)), true, SelectClass<ECClass>(*classB1, "relatedB1", true), false);
         RelatedClass relatedB2(*classA, SelectClass<ECRelationshipClass>(*relAToB, RULES_ENGINE_RELATED_CLASS_ALIAS(*relAToB, 0)), true, SelectClass<ECClass>(*classB2, "relatedB2", true), false);
-        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass, { RelatedClassPath{relatedB1, relatedB2} }), { RelatedClassPath{relatedB1, relatedB2} });
+        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(1, "", *CreateInstanceKeysSelectQuery(), classA, CreateDisplayLabelField(selectClass, { RelatedClassPath{relatedB1, relatedB2} }), { RelatedClassPath{relatedB1, relatedB2} });
 
         ComplexQueryBuilderPtr nested = ComplexQueryBuilder::Create();
         nested->SelectContract(*contract, "this")
@@ -509,7 +528,7 @@ TEST_F(NavigationQueryBuilderTests, JoinsWithAdditionalRelatedInstances_ReusesSa
             .Join(relatedB1)
             .Join(relatedB2);
 
-        ComplexQueryBuilderPtr sorted = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA, *nested);
+        ComplexQueryBuilderPtr sorted = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA, *nested, { RelatedClassPath{relatedB1, relatedB2} });
         sorted->OrderBy(GetECInstanceNodesOrderByClause().c_str());
         sorted->GetNavigationResultParameters().GetUsedRelationshipClasses().insert(relAToB);
         return sorted;

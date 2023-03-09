@@ -121,6 +121,15 @@ public:
     JoinType GetJoinType() const {return m_joinType;}
 };
 
+/*=============================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+==*/
+enum class ClauseJoinOperator
+    {
+    And,
+    Or,
+    };
+
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
@@ -187,8 +196,8 @@ public:
     ECPRESENTATION_EXPORT ComplexQueryBuilder& From(SelectClassWithExcludes<ECClass> const& fromClass);
     ECPRESENTATION_EXPORT ComplexQueryBuilder& From(PresentationQueryBuilder& nestedQuery, Utf8CP alias = nullptr);
     ECPRESENTATION_EXPORT ComplexQueryBuilder& From(PresentationQuery const& nestedQuery, Utf8CP alias = nullptr);
-    ECPRESENTATION_EXPORT ComplexQueryBuilder& Where(Utf8CP whereClause, BoundQueryValuesListCR);
-    ECPRESENTATION_EXPORT ComplexQueryBuilder& Where(QueryClauseAndBindings whereClause);
+    ECPRESENTATION_EXPORT ComplexQueryBuilder& Where(Utf8CP whereClause, BoundQueryValuesListCR, ClauseJoinOperator = ClauseJoinOperator::And);
+    ECPRESENTATION_EXPORT ComplexQueryBuilder& Where(QueryClauseAndBindings whereClause, ClauseJoinOperator = ClauseJoinOperator::And);
     ECPRESENTATION_EXPORT ComplexQueryBuilder& Join(SelectClass<ECClass> const& join, QueryClauseAndBindings joinClause, bool isOuter);
     ECPRESENTATION_EXPORT ComplexQueryBuilder& Join(PresentationQueryBuilder const& nestedQuery, Utf8CP alias, QueryClauseAndBindings joinClause, bool isOuter);
     ECPRESENTATION_EXPORT ComplexQueryBuilder& Join(PresentationQuery const& nestedQuery, Utf8CP alias, QueryClauseAndBindings joinClause, bool isOuter);
@@ -358,10 +367,10 @@ public:
         }
     Utf8String ToString() const
         {
-        Json::Value json;
+        BeJsDocument json;
         for (auto const& query : m_queries)
-            json.append(query->GetQuery()->GetQueryString());
-        return json.toStyledString();
+            json[json.size()] = query->GetQuery()->GetQueryString();
+        return json.Stringify();
         }
 };
 

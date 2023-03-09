@@ -35,7 +35,7 @@ TEST_F(ContentRuleTests, LoadsFromJson)
             "specType": "SelectedNodeInstances"
         }]
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     ContentRule rule;
@@ -51,7 +51,7 @@ TEST_F(ContentRuleTests, LoadsFromJsonWithDefaultValues)
     static Utf8CP jsonString = R"({
         "ruleType": "Content"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     ContentRule rule;
@@ -68,8 +68,8 @@ TEST_F(ContentRuleTests, WriteToJson)
     rule.AddSpecification(*new SelectedNodeInstancesSpecification());
     rule.AddSpecification(*new ContentRelatedInstancesSpecification());
     rule.AddSpecification(*new ContentInstancesOfSpecificClassesSpecification());
-    Json::Value json = rule.WriteJson();
-    Json::Value expected = Json::Reader::DoParse(R"({
+    BeJsDocument json = rule.WriteJson();
+    BeJsDocument expected(R"({
         "ruleType": "Content",
         "priority": 123,
         "onlyIfNotHandled": true,
@@ -83,7 +83,7 @@ TEST_F(ContentRuleTests, WriteToJson)
             "classes": []
         }]
     })");
-    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
+    EXPECT_TRUE(expected.isExactEqual(json));
     }
 
 /*---------------------------------------------------------------------------------**//**

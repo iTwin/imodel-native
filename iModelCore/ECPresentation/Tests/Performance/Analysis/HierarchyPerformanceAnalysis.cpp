@@ -111,7 +111,7 @@ TEST_F(HierarchyPerformanceAnalysis, Run)
         size_t totalNodesCount = PresentationManagerTestsHelper::GetAllNodes(*m_manager, params, [](double){}, &depthLimiter).get();
         createFullHierarchyTime.Stop();
         reporter.Record(REPORT_FIELD_TimeToLoadAllHierarchy, createFullHierarchyTime.GetElapsed().ToSeconds());
-        reporter.Record(REPORT_FIELD_TotalNodesCount, Json::Value((uint64_t)totalNodesCount));
+        reporter.Record(REPORT_FIELD_TotalNodesCount, (int64_t)totalNodesCount);
         NativeLogging::CategoryLogger(LOGGER_NAMESPACE).infov("    Loaded all hierarchy with %" PRIu64 " nodes in %.2f s", (uint64_t)totalNodesCount, createFullHierarchyTime.GetElapsed().ToSeconds());
         LogDepthLimitReachCount(depthLimiter);
 

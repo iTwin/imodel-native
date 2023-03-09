@@ -70,7 +70,6 @@ void PresentationManagerIntegrationTests::SetUp()
     {
     ECPresentationTest::SetUp();
 
-    m_localState.GetValues().clear();
     m_locater = DelayLoadingRuleSetLocater::Create();
     m_connectionManager = _CreateConnectionManager();
     ReCreatePresentationManager(CreateManagerParams());
@@ -325,6 +324,7 @@ std::function<void(NavNodeCR, HierarchyRequestParams const&)> PresentationManage
     {
     return [this, expectedInstances](NavNodeCR n, HierarchyRequestParams const& requestParams)
         {
+        ASSERT_STREQ(NAVNODE_TYPE_ECInstancesNode, n.GetType().c_str());
         VerifyNodeInstances(n, expectedInstances);
         };
     }

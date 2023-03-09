@@ -36,6 +36,15 @@ struct UserSettingsTests : ECPresentationTest
     UserSettings& GetSettings() {return m_settingsManager->GetSettings("UserSettingsTests");}
     };
 
+template <typename T>
+BeJsDocument convertToBeJsDocument(T value)
+    {
+    BeJsDocument doc;
+    BeJsValue json = doc;
+    json = value;
+    return doc;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -44,7 +53,7 @@ TEST_F(UserSettingsTests, GetsStringValueFromLocalState)
     m_localState.SetGetHandler([](Utf8CP ns, Utf8CP id)
         {
         EXPECT_STREQ("UserSettingsTests:test", id);
-        return "GetsStringValueFromLocalState";
+        return convertToBeJsDocument("GetsStringValueFromLocalState");
         });
     ASSERT_STREQ("GetsStringValueFromLocalState", GetSettings().GetSettingValue("test").c_str());
     }
@@ -57,7 +66,7 @@ TEST_F(UserSettingsTests, GetsIntValueFromLocalState)
     m_localState.SetGetHandler([](Utf8CP ns, Utf8CP id)
         {
         EXPECT_STREQ("UserSettingsTests:test", id);
-        return 999;
+        return convertToBeJsDocument(999);
         });
     ASSERT_EQ(999, GetSettings().GetSettingIntValue("test"));
     }
@@ -69,11 +78,11 @@ TEST_F(UserSettingsTests, GetsIntValuesFromLocalState)
     {
     m_localState.SetGetHandler([](Utf8CP ns, Utf8CP id)
         {
+        BeJsDocument json;
+        json[0] = 123;
+        json[1] = 456;
+        json[2] = 789;
         EXPECT_STREQ("UserSettingsTests:test", id);
-        Json::Value json(Json::arrayValue);
-        json.append(123);
-        json.append(456);
-        json.append(789);
         return json;
         });
 
@@ -92,7 +101,7 @@ TEST_F(UserSettingsTests, GetsBoolValueFromLocalState)
     m_localState.SetGetHandler([](Utf8CP ns, Utf8CP id)
         {
         EXPECT_STREQ("UserSettingsTests:test", id);
-        return true;
+        return convertToBeJsDocument(true);
         });
     ASSERT_EQ(true, GetSettings().GetSettingBoolValue("test"));
     }
@@ -103,7 +112,7 @@ TEST_F(UserSettingsTests, GetsBoolValueFromLocalState)
 TEST_F(UserSettingsTests, SetsStringValueToLocalState)
     {
     bool didSave = false;
-    m_localState.SetSaveHandler([&didSave](Utf8CP ns, Utf8CP id, JsonValueCR value)
+    m_localState.SetSaveHandler([&didSave](Utf8CP ns, Utf8CP id, BeJsConst value)
         {
         EXPECT_STREQ("UserSettingsTests:test", id);
         EXPECT_TRUE(value.isString());
@@ -120,7 +129,7 @@ TEST_F(UserSettingsTests, SetsStringValueToLocalState)
 TEST_F(UserSettingsTests, SetsDefaultStringValueToLocalState)
     {
     bool didSave = false;
-    m_localState.SetSaveHandler([&didSave](Utf8CP ns, Utf8CP id, JsonValueCR value)
+    m_localState.SetSaveHandler([&didSave](Utf8CP ns, Utf8CP id, BeJsConst value)
         {
         EXPECT_STREQ("UserSettingsTests:test", id);
         EXPECT_TRUE(value.isString());
@@ -137,10 +146,10 @@ TEST_F(UserSettingsTests, SetsDefaultStringValueToLocalState)
 TEST_F(UserSettingsTests, SetsIntValueToLocalState)
     {
     bool didSave = false;
-    m_localState.SetSaveHandler([&didSave](Utf8CP ns, Utf8CP id, JsonValueCR value)
+    m_localState.SetSaveHandler([&didSave](Utf8CP ns, Utf8CP id, BeJsConst value)
         {
         EXPECT_STREQ("UserSettingsTests:test", id);
-        EXPECT_TRUE(value.isIntegral());
+        EXPECT_TRUE(value.isNumeric());
         EXPECT_EQ(666, value.asInt());
         didSave = true;
         });
@@ -154,10 +163,10 @@ TEST_F(UserSettingsTests, SetsIntValueToLocalState)
 TEST_F(UserSettingsTests, SetsDefaultIntValueToLocalState)
     {
     bool didSave = false;
-    m_localState.SetSaveHandler([&didSave](Utf8CP ns, Utf8CP id, JsonValueCR value)
+    m_localState.SetSaveHandler([&didSave](Utf8CP ns, Utf8CP id, BeJsConst value)
         {
         EXPECT_STREQ("UserSettingsTests:test", id);
-        EXPECT_TRUE(value.isIntegral());
+        EXPECT_TRUE(value.isNumeric());
         EXPECT_EQ(0, value.asInt());
         didSave = true;
         });
@@ -171,7 +180,7 @@ TEST_F(UserSettingsTests, SetsDefaultIntValueToLocalState)
 TEST_F(UserSettingsTests, SetsIntValuesToLocalState)
     {
     bool didSave = false;
-    m_localState.SetSaveHandler([&didSave](Utf8CP ns, Utf8CP id, JsonValueCR value)
+    m_localState.SetSaveHandler([&didSave](Utf8CP ns, Utf8CP id, BeJsConst value)
         {
         EXPECT_STREQ("UserSettingsTests:test", id);
         EXPECT_TRUE(value.isArray());
@@ -191,7 +200,7 @@ TEST_F(UserSettingsTests, SetsIntValuesToLocalState)
 TEST_F(UserSettingsTests, SetsDefaultIntValuesToLocalState)
     {
     bool didSave = false;
-    m_localState.SetSaveHandler([&didSave](Utf8CP ns, Utf8CP id, JsonValueCR value)
+    m_localState.SetSaveHandler([&didSave](Utf8CP ns, Utf8CP id, BeJsConst value)
         {
         EXPECT_STREQ("UserSettingsTests:test", id);
         EXPECT_TRUE(value.isArray());
@@ -208,7 +217,7 @@ TEST_F(UserSettingsTests, SetsDefaultIntValuesToLocalState)
 TEST_F(UserSettingsTests, SetsBoolValueToLocalState)
     {
     bool didSave = false;
-    m_localState.SetSaveHandler([&didSave](Utf8CP ns, Utf8CP id, JsonValueCR value)
+    m_localState.SetSaveHandler([&didSave](Utf8CP ns, Utf8CP id, BeJsConst value)
         {
         EXPECT_STREQ("UserSettingsTests:test", id);
         EXPECT_TRUE(value.isBool());
@@ -225,7 +234,7 @@ TEST_F(UserSettingsTests, SetsBoolValueToLocalState)
 TEST_F(UserSettingsTests, SetsDefaultBoolValueToLocalState)
     {
     bool didSave = false;
-    m_localState.SetSaveHandler([&didSave](Utf8CP ns, Utf8CP id, JsonValueCR value)
+    m_localState.SetSaveHandler([&didSave](Utf8CP ns, Utf8CP id, BeJsConst value)
         {
         EXPECT_STREQ("UserSettingsTests:test", id);
         EXPECT_TRUE(value.isBool());
@@ -257,20 +266,24 @@ TEST_F(UserSettingsTests, InitializesFromRules)
     expectedKeys.insert("UserSettingsTests:Item3_Id");
     expectedKeys.insert("UserSettingsTests:Item4_Id");
 
-    Json::Value localStateValues;
-    m_localState.SetGetHandler([&localStateValues](Utf8CP ns, Utf8CP id){return localStateValues[id];});
-    m_localState.SetSaveHandler([&localStateValues, &expectedKeys](Utf8CP ns, Utf8CP id, JsonValueCR value)
+    BeJsDocument localStateValues;
+    m_localState.SetGetHandler([&localStateValues](Utf8CP ns, Utf8CP id){
+        BeJsDocument json;
+        json.From(localStateValues[id]);
+        return json;
+        });
+    m_localState.SetSaveHandler([&localStateValues, &expectedKeys](Utf8CP ns, Utf8CP id, BeJsConst value)
         {
         auto iter = expectedKeys.find(id);
         ASSERT_TRUE(expectedKeys.end() != iter);
         expectedKeys.erase(iter);
-        localStateValues[id] = value;
+        localStateValues[id].From(value);
         });
 
     GetSettings().InitFrom(rules);
     ASSERT_TRUE(expectedKeys.empty());
 
-    Json::Value expectedPresentationInfo;
+    BeJsDocument expectedPresentationInfo;
     expectedPresentationInfo[0]["Label"] = "Group1";
     expectedPresentationInfo[0]["Items"][0]["Id"] = "Item1_Id";
     expectedPresentationInfo[0]["Items"][0]["Label"] = "Item1_Label";
@@ -290,10 +303,10 @@ TEST_F(UserSettingsTests, InitializesFromRules)
     expectedPresentationInfo[1]["Items"][1]["Options"] = "IntValue";
     expectedPresentationInfo[1]["Items"][1]["Value"] = 999;
 
-    Json::Value actualInfo = GetSettings().GetPresentationInfo();
-    EXPECT_TRUE(expectedPresentationInfo == actualInfo)
-        << "Expected: " << Json::StyledWriter().write(expectedPresentationInfo).c_str() << "\r\n"
-        << "Actual:   " << Json::StyledWriter().write(actualInfo).c_str();
+    BeJsDocument actualInfo = GetSettings().GetPresentationInfo();
+    EXPECT_TRUE(expectedPresentationInfo.isExactEqual(actualInfo))
+        << "Expected: " << expectedPresentationInfo.Stringify().c_str() << "\r\n"
+        << "Actual:   " << actualInfo.Stringify().c_str();
 
     for (UserSettingsGroupCP rule : rules)
         delete rule;
@@ -316,20 +329,24 @@ TEST_F(UserSettingsTests, InitializesFromNestedRules)
     expectedKeys.insert("UserSettingsTests:Item1_Id");
     expectedKeys.insert("UserSettingsTests:Item2_Id");
 
-    Json::Value localStateValues;
-    m_localState.SetGetHandler([&localStateValues](Utf8CP ns, Utf8CP id){return localStateValues[id];});
-    m_localState.SetSaveHandler([&localStateValues, &expectedKeys](Utf8CP ns, Utf8CP id, JsonValueCR value)
+    BeJsDocument localStateValues;
+    m_localState.SetGetHandler([&localStateValues](Utf8CP ns, Utf8CP id){
+        BeJsDocument json;
+        json.From(localStateValues[id]);
+        return json;
+        });
+    m_localState.SetSaveHandler([&localStateValues, &expectedKeys](Utf8CP ns, Utf8CP id, BeJsConst value)
         {
         auto iter = expectedKeys.find(id);
         ASSERT_TRUE(expectedKeys.end() != iter);
         expectedKeys.erase(iter);
-        localStateValues[id] = value;
+        localStateValues[id].From(value);
         });
 
     GetSettings().InitFrom(rules);
     ASSERT_TRUE(expectedKeys.empty());
 
-    Json::Value expectedPresentationInfo;
+    BeJsDocument expectedPresentationInfo;
     expectedPresentationInfo[0]["Label"] = "Group";
     expectedPresentationInfo[0]["NestedGroups"][0]["Label"] = "NestedGroup";
     expectedPresentationInfo[0]["NestedGroups"][0]["Items"][0]["Id"] = "Item1_Id";
@@ -341,10 +358,10 @@ TEST_F(UserSettingsTests, InitializesFromNestedRules)
     expectedPresentationInfo[0]["NestedGroups"][0]["Items"][1]["Options"] = "TrueFalse";
     expectedPresentationInfo[0]["NestedGroups"][0]["Items"][1]["Value"] = false;
 
-    Json::Value actualInfo = GetSettings().GetPresentationInfo();
-    EXPECT_TRUE(expectedPresentationInfo == actualInfo)
-        << "Expected: " << Json::StyledWriter().write(expectedPresentationInfo).c_str() << "\r\n"
-        << "Actual:   " << Json::StyledWriter().write(actualInfo).c_str();
+    BeJsDocument actualInfo = GetSettings().GetPresentationInfo();
+    EXPECT_TRUE(expectedPresentationInfo.isExactEqual(actualInfo))
+        << "Expected: " << expectedPresentationInfo.Stringify().c_str() << "\r\n"
+        << "Actual:   " << actualInfo.Stringify().c_str();
 
     for (UserSettingsGroupCP rule : rules)
         delete rule;
@@ -364,9 +381,13 @@ TEST_F(UserSettingsTests, InitializesFromRulesWithDefaults)
     group->AddSettingsItem(*new UserSettingsItem("Item5_Id", "Item5_Label", "", ""));
     rules.push_back(group);
 
-    Json::Value localStateValues;
-    m_localState.SetGetHandler([&localStateValues](Utf8CP ns, Utf8CP id){return localStateValues[id];});
-    m_localState.SetSaveHandler([&localStateValues](Utf8CP ns, Utf8CP id, JsonValueCR value)
+    BeJsDocument localStateValues;
+    m_localState.SetGetHandler([&localStateValues](Utf8CP ns, Utf8CP id){
+        BeJsDocument json;
+        json.From(localStateValues[id]);
+        return json;
+        });
+    m_localState.SetSaveHandler([&localStateValues](Utf8CP ns, Utf8CP id, BeJsConst value)
         {
         if (0 == strcmp("UserSettingsTests:Item1_Id", id) || 0 == strcmp("UserSettingsTests:Item2_Id", id) || 0 == strcmp("UserSettingsTests:Item5_Id", id))
             {
@@ -380,16 +401,16 @@ TEST_F(UserSettingsTests, InitializesFromRulesWithDefaults)
             }
         else if (0 == strcmp("UserSettingsTests:Item4_Id", id))
             {
-            EXPECT_TRUE(value.isInt());
+            EXPECT_TRUE(value.isNumeric());
             EXPECT_EQ(0, value.asInt());
             }
-        localStateValues[id] = value;
+        localStateValues[id].From(value);
         });
 
     GetSettings().InitFrom(rules);
 
     // additionally, check if Item5_Id has the "options" value "TrueFalse"
-    Json::Value presentationInfo = GetSettings().GetPresentationInfo();
+    BeJsDocument presentationInfo = GetSettings().GetPresentationInfo();
     ASSERT_STREQ("TrueFalse", presentationInfo[0]["Items"][4]["Options"].asCString());
 
     for (UserSettingsGroupCP rule : rules)
@@ -406,9 +427,13 @@ TEST_F(UserSettingsTests, InitializingFromRulesDoesntOverwriteLocalStateValues)
     group->AddSettingsItem(*new UserSettingsItem("SettingId", "ItemLabel", "StringValue", "DefaultValue"));
     rules.push_back(group);
 
-    Json::Value localStateValues;
-    m_localState.SetGetHandler([&localStateValues](Utf8CP ns, Utf8CP id){return localStateValues[id];});
-    m_localState.SetSaveHandler([&localStateValues](Utf8CP ns, Utf8CP id, JsonValueCR value){localStateValues[id] = value;});
+    BeJsDocument localStateValues;
+    m_localState.SetGetHandler([&localStateValues](Utf8CP ns, Utf8CP id){
+        BeJsDocument json;
+        json.From(localStateValues[id]);
+        return json;
+        });
+    m_localState.SetSaveHandler([&localStateValues](Utf8CP ns, Utf8CP id, BeJsConst value){localStateValues[id].From(value);});
     localStateValues["UserSettingsTests:SettingId"] = "PersistedValue";
 
     GetSettings().InitFrom(rules);
@@ -426,7 +451,8 @@ TEST_F(UserSettingsTests, HasValueReturnsFalseWhenTheresNoValue)
     {
     m_localState.SetGetHandler([](Utf8CP ns, Utf8CP id)
         {
-        return Json::Value::GetNull();
+        BeJsDocument json;
+        return json;
         });
     ASSERT_FALSE(GetSettings().HasSetting("test"));
     }
@@ -439,16 +465,16 @@ TEST_F(UserSettingsTests, HasValueReturnsTrueWhenTheresAValue)
     m_localState.SetGetHandler([](Utf8CP ns, Utf8CP id)
         {
         if (0 == strcmp("UserSettingsTests:bool", id))
-            return Json::Value(true);
+            return convertToBeJsDocument(true);
 
         if (0 == strcmp("UserSettingsTests:int", id))
-            return Json::Value(9);
+            return convertToBeJsDocument(9);
 
         if (0 == strcmp("UserSettingsTests:string", id))
-            return Json::Value("setting");
+            return convertToBeJsDocument("setting");
 
         EXPECT_FALSE(true);
-        return Json::Value::GetNull();
+        return convertToBeJsDocument(false);
         });
 
     ASSERT_TRUE(GetSettings().HasSetting("bool"));
@@ -461,7 +487,8 @@ TEST_F(UserSettingsTests, HasValueReturnsTrueWhenTheresAValue)
 +===============+===============+===============+===============+===============+======*/
 struct UserSettingsRoundtripTests : UserSettingsTests
     {
-    RuntimeJsonLocalState m_localState;
+    ECPresentation::JsonLocalState m_localState;
+    UserSettingsRoundtripTests () : m_localState(std::make_shared<RuntimeLocalState>()) {}
     void SetUp() override
         {
         UserSettingsTests::SetUp();
@@ -521,21 +548,26 @@ TEST_F(UserSettingsRoundtripTests, IntValues)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UserSettingsRoundtripTests, ValueAsJson)
     {
-    EXPECT_EQ(Json::Value(Json::nullValue), GetSettings().GetSettingValueAsJson("int_values")); // No value found
+    BeJsDocument doc;
+    BeJsValue json = doc;
+    EXPECT_TRUE(json.isExactEqual(GetSettings().GetSettingValueAsJson("int_values"))); // No value found
 
+    json = true;
     GetSettings().SetSettingBoolValue("bool_value", true);
-    EXPECT_EQ(Json::Value(true), GetSettings().GetSettingValueAsJson("bool_value")); // verify
+    EXPECT_TRUE(json.isExactEqual(GetSettings().GetSettingValueAsJson("bool_value"))); // verify
 
+    json = "test";
     GetSettings().SetSettingValue("string_value", "test");
-    EXPECT_EQ(Json::Value("test"), GetSettings().GetSettingValueAsJson("string_value")); // verify
+    EXPECT_TRUE(json.isExactEqual(GetSettings().GetSettingValueAsJson("string_value"))); // verify
 
+    json = 123;
     GetSettings().SetSettingIntValue("int_value", 123);
-    EXPECT_EQ(Json::Value(123), GetSettings().GetSettingValueAsJson("int_value")); // verify
+    EXPECT_TRUE(json.isExactEqual(GetSettings().GetSettingValueAsJson("int_value"))); // verify
 
-    Json::Value json(Json::arrayValue);
-    json.append(123);
-    json.append(456);
-    json.append(789);
+    json.SetEmptyArray();
+    json[0] = 123;
+    json[1] = 456;
+    json[2] = 789;
     GetSettings().SetSettingIntValues("int_values", {123, 456, 789});
-    EXPECT_EQ(json, GetSettings().GetSettingValueAsJson("int_values")); // verify
+    EXPECT_TRUE(json.isExactEqual(GetSettings().GetSettingValueAsJson("int_values"))); // verify
     }

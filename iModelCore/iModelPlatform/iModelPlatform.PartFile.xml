@@ -25,6 +25,7 @@
         <SubPart PartName="ECObjects"     PartFile="iModelCore/ecobjects/ECObjects" />
         <SubPart PartName="Freetype2Library" PartFile="iModelCore/libsrc/freetype2/freetype2"/>
         <SubPart PartName="BeJsonCpp"           PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp" />
+        <SubPart PartName="BeRapidJson" PartFile="iModelCore/Bentley/Bentley" />
         <SubPart LibType="Static" PartName="pnglib" PartFile="iModelCore/libsrc/png/png"/>
         <SubPart PartName="BeJpeg" PartFile="iModelCore/Bentley/Bentley" />
         <SubPart PartName="Headers" PartFile="iModelCore/libsrc/flatbuffers/flatbuffers"/>
@@ -242,6 +243,7 @@
     <NuGetProduct Name="IModelEvolutionTestRunnerNuget" Description="Create nuget that contains the current test runner">
         <Directories DirectoryListName="GtestProduct" PartFile="iModelCore/BeGTest/BeGTest"/>
         <SubPart PartName="BuildIModelEvolutionGTest"/>
+        <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
     </NuGetProduct>
 
     <NuGetProduct Name="IModelEvolutionTestFilesNuget" Description="Create the test files nuget">

@@ -73,7 +73,7 @@ TEST_F(PresentationTestingUnitTests, PassingTest)
     filepath.AppendToPath(L"ECPresentationTestData");
     filepath.AppendToPath(L"TestingRulesetNodes.json");
 
-    Json::Value file;
+    BeJsDocument file;
     ASSERT_EQ(SUCCESS,m_tester->ReadJsonFromFile(filepath, file));
 
     m_tester->ValidateTree("CustomNodeTesting", file);
@@ -93,10 +93,10 @@ TEST_F(PresentationTestingUnitTests, ClearFile)
     filepath.AppendToPath(L"ECPresentationTestData");
     filepath.AppendToPath(L"TestingRulesetNodes.json");
 
-    Json::Value file;
+    BeJsDocument file;
     ASSERT_EQ(SUCCESS,m_tester->ReadJsonFromFile(filepath, file));
 
-    file.clear();
+    file.SetNull();
 
     m_tester->ValidateTree("CustomNodeTesting", file);
 
@@ -121,7 +121,7 @@ TEST_F(PresentationTestingUnitTests, RemoveFirstNode)
     filepath.AppendToPath(L"ECPresentationTestData");
     filepath.AppendToPath(L"TestingRulesetNodes.json");
 
-    Json::Value file;
+    BeJsDocument file;
     ASSERT_EQ(SUCCESS,m_tester->ReadJsonFromFile(filepath, file));
 
     file["nodes"].removeIndex(0);
@@ -150,7 +150,7 @@ TEST_F(PresentationTestingUnitTests, WrongNodeLabel)
     filepath.AppendToPath(L"ECPresentationTestData");
     filepath.AppendToPath(L"TestingRulesetNodes.json");
 
-    Json::Value file;
+    BeJsDocument file;
     ASSERT_EQ(SUCCESS,m_tester->ReadJsonFromFile(filepath, file));
 
     file["nodes"][0]["Label"] = "WRONG";
@@ -175,13 +175,14 @@ TEST_F(PresentationTestingUnitTests, SwapVals)
     filepath.AppendToPath(L"ECPresentationTestData");
     filepath.AppendToPath(L"TestingRulesetNodes.json");
 
-    Json::Value file;
+    BeJsDocument file;
     ASSERT_EQ(SUCCESS,m_tester->ReadJsonFromFile(filepath, file));
 
-    Json::Value temp = file["nodes"][0]["Type"];
+    BeJsDocument temp;
+    temp.From(file["nodes"][0]["Type"]);
 
-    file["nodes"][0]["Type"] = file["nodes"][0]["Label"];
-    file["nodes"][0]["Label"] = temp;
+    file["nodes"][0]["Type"].From(file["nodes"][0]["Label"]);
+    file["nodes"][0]["Label"].From(temp);
 
     m_tester->ValidateTree("CustomNodeTesting", file);
 
@@ -205,16 +206,17 @@ TEST_F(PresentationTestingUnitTests, SwapNodesTypes)
     filepath.AppendToPath(L"ECPresentationTestData");
     filepath.AppendToPath(L"TestingRulesetNodes.json");
 
-    Json::Value file;
+    BeJsDocument file;
     ASSERT_EQ(SUCCESS,m_tester->ReadJsonFromFile(filepath, file));
 
 
     if (file["nodes"].size() >= 1)
         {
-        Json::Value temp = file["nodes"][0]["Type"];
+        BeJsDocument temp;
+        temp.From(file["nodes"][0]["Type"]);
 
-        file["nodes"][0]["Type"] = file["nodes"][1]["Type"];
-        file["nodes"][1]["Type"] = temp;
+        file["nodes"][0]["Type"].From(file["nodes"][1]["Type"]);
+        file["nodes"][1]["Type"].From(temp);
 
         m_tester->ValidateTree("CustomNodeTesting", file);
 
@@ -237,7 +239,7 @@ TEST_F(PresentationTestingUnitTests, NoType)
     filepath.AppendToPath(L"ECPresentationTestData");
     filepath.AppendToPath(L"TestingRulesetNodes.json");
 
-    Json::Value file;
+    BeJsDocument file;
     ASSERT_EQ(SUCCESS,m_tester->ReadJsonFromFile(filepath, file));
 
     file["nodes"][0].removeMember("Type");
@@ -261,7 +263,7 @@ TEST_F(PresentationTestingUnitTests, NoChildNodes)
     filepath.AppendToPath(L"ECPresentationTestData");
     filepath.AppendToPath(L"TestingRulesetNodes.json");
 
-    Json::Value file;
+    BeJsDocument file;
     ASSERT_EQ(SUCCESS,m_tester->ReadJsonFromFile(filepath, file));
 
     file["nodes"][0].removeMember("ChildNodes");
@@ -291,7 +293,7 @@ TEST_F(PresentationTestingUnitTests, ClearChildren)
     filepath.AppendToPath(L"ECPresentationTestData");
     filepath.AppendToPath(L"TestingRulesetNodes.json");
 
-    Json::Value file;
+    BeJsDocument file;
     ASSERT_EQ(SUCCESS,m_tester->ReadJsonFromFile(filepath, file));
 
     int size = file["nodes"][0]["ChildNodes"].size();
@@ -319,7 +321,7 @@ TEST_F(PresentationTestingUnitTests, ClearChildren)
 //---------------------------------------------------------------------------------------
 TEST_F(PresentationTestingUnitTests, ExportJsonTest)
     {
-    Json::Value exportedJson = m_tester->ExportJson("CustomNodeTesting");
+    BeJsDocument exportedJson = m_tester->ExportJson("CustomNodeTesting");
     m_tester->ValidateTree("CustomNodeTesting", exportedJson);
     EXPECT_EQ(0, errorVector.size());
     }
@@ -341,7 +343,7 @@ TEST_F(PresentationTestingUnitTests, GenerateJsonFile)
     inputFilePath.AppendToPath(L"ECPresentationTestData");
     inputFilePath.AppendToPath(L"TestingRulesetNodes.json");
 
-    Json::Value testValue;
+    BeJsDocument testValue;
     m_tester->ReadJsonFromFile(inputFilePath, testValue);
 
     m_tester->GenerateJsonFile(testValue, outputJsonFile);
@@ -368,7 +370,7 @@ TEST_F(PresentationTestingUnitTests, IncorrectJsonFile)
     inputFilePath.AppendToPath(L"ECPresentationTestData");
     inputFilePath.AppendToPath(L"TestingRulesetNodes.json");
 
-    Json::Value testValue;
+    BeJsDocument testValue;
     m_tester->ReadJsonFromFile(inputFilePath, testValue);
 
     m_tester->GenerateJsonFile(testValue, outputJsonFile);

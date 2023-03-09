@@ -2791,16 +2791,16 @@ static void printLog(void *pArg, int iErrCode, Utf8CP zMsg)
     }
 #endif
 
-/** return true if this database is using WAL mode. */
+/** return true if this is a valid database and it is using WAL mode. */
 bool Db::IsWalMode() const {
     // CloudSqlite always uses WAL mode (and produces an error if you attempt to query the journal mode)
     if (m_isCloudDb)
         return true;
 
     Statement stmt;
-    stmt.Prepare(*this, "pragma journal_mode");
-    stmt.Step();
-    return 0 == strncmp("wal", stmt.GetValueText(0), 3);
+    return BE_SQLITE_OK == stmt.Prepare(*this, "pragma journal_mode") &&
+           BE_SQLITE_ROW == stmt.Step() &&
+           0 == strncmp("wal", stmt.GetValueText(0), 3);
 };
 
 /*---------------------------------------------------------------------------------**/ /**
@@ -5404,7 +5404,6 @@ static void initLanguageSupportOnDb(sqlite3* db)
         }
     }
 
-extern "C" int sqlite3_closure_init(sqlite3* db, char** pzErrMsg, struct sqlite3_api_routines const* pApi);
 
 /*---------------------------------------------------------------------------------**//**
 * this function is called for every new database connection.
@@ -5412,13 +5411,9 @@ extern "C" int sqlite3_closure_init(sqlite3* db, char** pzErrMsg, struct sqlite3
 +---------------+---------------+---------------+---------------+---------------+------*/
 static int besqlite_db_init(sqlite3* db, char** pzErrMsg, struct sqlite3_api_routines const* pApi)
     {
-    // install the "closure" virtual table
-    int rc = sqlite3_closure_init(db, pzErrMsg, pApi);
-    UNUSED_VARIABLE(rc);
-    BeAssert(BE_SQLITE_OK == rc);
-
     // and the "InVirtualSet" SQL function. It requires at least two arguments: the address of the VirtualSet and the value(s) to test
-    rc = sqlite3_create_function_v2(db, "InVirtualSet", -1, SQLITE_UTF8, nullptr, &isInVirtualSet, nullptr, nullptr, nullptr);
+    const auto rc = sqlite3_create_function_v2(db, "InVirtualSet", -1, SQLITE_UTF8, nullptr, &isInVirtualSet, nullptr, nullptr, nullptr);
+    UNUSED_VARIABLE(rc);
     BeAssert(BE_SQLITE_OK == rc);
 
     // Register language-aware callbacks if necessary.

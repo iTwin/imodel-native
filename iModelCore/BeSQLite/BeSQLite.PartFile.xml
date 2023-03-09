@@ -4,7 +4,7 @@
 
     <!-- Bind my own PublicAPI and VendorAPI into BuildContext. Note that this part does not cause any sub-part PublicAPIs to be bound. Also deliver my notices. -->
     <Part Name="PublicAPI" BentleyBuildMakeFile="BeSQLite.prewire.mke">
-        <SubPart PartName="PublicAPI" PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp" />
+        <SubPart PartName="BeRapidJson" PartFile="iModelCore/Bentley/Bentley" />
         <SubPart PartName="PublicAPI"  PartFile="iModelCore/libsrc/google_re2/google_re2" />
         <Bindings>
             <PublicAPI Domain="BeSQLite" />
@@ -18,7 +18,6 @@
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="BentleyDll" PartFile="iModelCore/Bentley/Bentley" />
         <SubPart LibType="Static" PartName="Compress" PartFile="iModelCore\libsrc\compress\Zlib"/>
-        <SubPart PartName="BeJsonCpp"  PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp" />
         <SubPart PartName="google_re2"  PartFile="iModelCore/libsrc/google_re2/google_re2" />
         <SubPart PartName="BeCurl" PartFile="iModelCore\libsrc\curl\BeCurl"/>
         <SubPart PartName="Library" PartFile="iModelCore\libsrc\openssl\BeOpenSSL"/>

@@ -17,7 +17,7 @@
 #include <Bentley/Nullable.h>
 #include <Bentley/Logging.h>
 #include <Formatting/FormattingApi.h>
-#include <json/BeJsValue.h>
+#include <BeRapidJson/BeJsValue.h>
 #include <pugixml/src/pugixml.hpp>
 #include <pugixml/src/BePugiXmlHelper.h>
 

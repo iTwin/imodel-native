@@ -25,7 +25,7 @@ TEST_F(SelectedNodeInstancesSpecificationTests, LoadFromJson)
         "acceptableClassNames": ["ClassA", "B"],
         "acceptablePolymorphically": true
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     SelectedNodeInstancesSpecification spec;
@@ -43,7 +43,7 @@ TEST_F(SelectedNodeInstancesSpecificationTests, LoadFromJsonWithDefaultValues)
     static Utf8CP jsonString = R"({
         "specType": "SelectedNodeInstances"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     SelectedNodeInstancesSpecification spec;
@@ -59,8 +59,8 @@ TEST_F(SelectedNodeInstancesSpecificationTests, LoadFromJsonWithDefaultValues)
 TEST_F(SelectedNodeInstancesSpecificationTests, WriteToJson)
     {
     SelectedNodeInstancesSpecification spec(123, true, "schema", "a, b", true);
-    Json::Value json = spec.WriteJson();
-    Json::Value expected = Json::Reader::DoParse(R"({
+    BeJsDocument json = spec.WriteJson();
+    BeJsDocument expected(R"({
         "specType": "SelectedNodeInstances",
         "priority": 123,
         "onlyIfNotHandled": true,
@@ -68,7 +68,7 @@ TEST_F(SelectedNodeInstancesSpecificationTests, WriteToJson)
         "acceptableClassNames": ["a", "b"],
         "acceptablePolymorphically": true
     })");
-    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
+    EXPECT_TRUE(expected.isExactEqual(json));
     }
 
 /*---------------------------------------------------------------------------------**//**
