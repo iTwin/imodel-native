@@ -2657,6 +2657,9 @@ public:
         bvector<PresentationQueryBuilderPtr> queries;
         for (auto const& entry : orderedSelects)
             {
+            if (entry.second.empty())
+                continue;
+
             PresentationQueryBuilderPtr query = entry.first->CreateQuery(entry.second, m_groupingFilters);
             if (query.IsNull())
                 {
