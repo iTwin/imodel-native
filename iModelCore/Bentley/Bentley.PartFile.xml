@@ -204,7 +204,8 @@
     </Part>
 
     <Part Name="BeRapidJson" BentleyBuildMakeFile="BeRapidJson/BeRapidJson.mke">
-        <SubPart PartName="rapidjsonapi" PartFile="iModelCore\libsrc\rapidjson\rapidjson"/>
+        <SubPart PartName="rapidjsonapi" PartFile="iModelCore/libsrc/rapidjson/rapidjson"/>
+        <SubPart PartName="BeJsonCpp" PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp" />
         <Bindings>
             <PublicAPI Domain="BeRapidJson"/>
         </Bindings>

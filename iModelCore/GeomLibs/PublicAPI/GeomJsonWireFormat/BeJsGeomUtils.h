@@ -5,7 +5,7 @@
 #pragma once
 
 #include <Geom/GeomApi.h>
-#include <json/BeJsValue.h>
+#include <BeRapidJson/BeJsValue.h>
 
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 PUSH_MSVC_IGNORE(4701) // potentially uninitialized

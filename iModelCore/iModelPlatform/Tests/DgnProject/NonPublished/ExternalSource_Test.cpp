@@ -3,7 +3,7 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
-#include "json/BeJsValue.h"
+#include <BeRapidJson/BeJsValue.h>
 
 struct ExternalSourceTest : public GenericDgnModel2dTestFixture
 {

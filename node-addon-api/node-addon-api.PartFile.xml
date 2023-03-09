@@ -4,7 +4,7 @@
 
     <!-- The delivers the "Napi/napi.h" source files. -->
     <Part Name="VendorAPI" BentleyBuildMakeFile="prewire-api.mke">
-        <SubPart PartName="BeJsonCpp"  PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp" />
+        <SubPart PartName="BeRapidJson"  PartFile="iModelCore/Bentley/Bentley" />
         <Bindings>
             <VendorAPI Domain="Napi"/>
         </Bindings>
@@ -12,6 +12,7 @@
 
     <Part Name="napi-lib" BentleyBuildMakeFile="node-addon-lib.mke">
         <SubPart PartName="VendorAPI"/>
+        <SubPart PartName="BentleyDll" PartFile="iModelCore/Bentley/Bentley" />
         <Bindings>
             <Libs>Delivery/$(stlibprefix)iTwinNapi$(stlibext)</Libs>
         </Bindings>
