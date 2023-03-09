@@ -61,11 +61,23 @@ dirToSearch = $(vendorSrc)crypto/ec/curve448/
 dirToSearch = $(vendorSrc)crypto/ec/curve448/arch_32/
 %include cincapnd.mki
 
+dirToSearch = $(vendorSrc)providers/common/include/
+%include cincapnd.mki
+
+dirToSearch = $(vendorSrc)providers/implementations/include/
+%include cincapnd.mki
+
 #----------------------------------------------------------------------------------------
 #   Platform-agnostic settings
 #----------------------------------------------------------------------------------------
 
 nameToDefine = OPENSSLDIR=\"\"
+%include cdefapnd.mki
+
+nameToDefine = MODULESDIR=\"\"
+%include cdefapnd.mki
+
+nameToDefine = ENGINESDIR=\"\"
 %include cdefapnd.mki
 
 #----------------------------------------------------------------------------------------
@@ -124,7 +136,7 @@ nameToDefine = OPENSSLDIR=\"\"
 
 %elif $(TARGET_PLATFORM) == "iOS"
 
-    # Version 1.1.0 uses iOS APIs such as _getContext, _setContext, and _makeContext, which are now considered internal by Apple, and cannot be used in App store submissions.
+    # Version 1.1.0 uses iOS APIs such as _getContext, _setContext, and _makeContext, which are now considered internal by Apple, and cannot be used in App store submissions.cr
     # According to https://github.com/openssl/openssl/issues/2545, this is triggered by using async support in openssl, which is only actually useful with dedicated crypto hardware (which iOS devices don't have).
     nameToDefine = OPENSSL_NO_ASYNC=1
     %include cdefapnd.mki
@@ -140,7 +152,91 @@ $(o)BentleyVersionString$(oext) : $(_MakeFilePath)BentleyVersionString.c ${Multi
 #----------------------------------------------------------------------------------------
 # Crypto
 
+$(o)asn1_dsa$(oext) : $(vendorSrc)crypto/asn1_dsa.c ${MultiCompileDepends}
+
+$(o)bsearch$(oext) : $(vendorSrc)crypto/bsearch.c ${MultiCompileDepends}
+
+$(o)context$(oext) : $(vendorSrc)crypto/context.c ${MultiCompileDepends}
+
+$(o)core_algorithm$(oext) : $(vendorSrc)crypto/core_algorithm.c ${MultiCompileDepends}
+
+$(o)core_fetch$(oext) : $(vendorSrc)crypto/core_fetch.c ${MultiCompileDepends}
+
+$(o)core_namemap$(oext) : $(vendorSrc)crypto/core_namemap.c ${MultiCompileDepends}
+
+$(o)cpt_err$(oext) : $(vendorSrc)crypto/cpt_err.c ${MultiCompileDepends}
+
+$(o)cpuid$(oext) : $(vendorSrc)crypto/cpuid.c ${MultiCompileDepends}
+
+$(o)cryptlib$(oext) : $(vendorSrc)crypto/cryptlib.c ${MultiCompileDepends}
+
+$(o)ctype$(oext) : $(vendorSrc)crypto/ctype.c ${MultiCompileDepends}
+
+$(o)cversion$(oext) : $(vendorSrc)crypto/cversion.c ${MultiCompileDepends}
+
+$(o)der_writer$(oext) : $(vendorSrc)crypto/der_writer.c ${MultiCompileDepends}
+
+$(o)deterministic_nonce$(oext) : $(vendorSrc)crypto/deterministic_nonce.c ${MultiCompileDepends}
+
 $(o)dllmain$(oext) : $(vendorSrc)crypto/dllmain.c ${MultiCompileDepends}
+
+$(o)ebcdic$(oext) : $(vendorSrc)crypto/ebcdic.c ${MultiCompileDepends}
+
+$(o)ex_data$(oext) : $(vendorSrc)crypto/ex_data.c ${MultiCompileDepends}
+
+$(o)getenv$(oext) : $(vendorSrc)crypto/getenv.c ${MultiCompileDepends}
+
+$(o)init$(oext) : $(vendorSrc)crypto/init.c ${MultiCompileDepends}
+
+$(o)info$(oext) : $(vendorSrc)crypto/info.c ${MultiCompileDepends}
+
+$(o)initthread$(oext) : $(vendorSrc)crypto/initthread.c ${MultiCompileDepends}
+
+$(o)mem_sec$(oext) : $(vendorSrc)crypto/mem_sec.c ${MultiCompileDepends}
+
+$(o)mem$(oext) : $(vendorSrc)crypto/mem.c ${MultiCompileDepends}
+
+$(o)packet$(oext) : $(vendorSrc)crypto/packet.c ${MultiCompileDepends}
+
+$(o)param_build_set$(oext) : $(vendorSrc)crypto/param_build_set.c ${MultiCompileDepends}
+
+$(o)param_build$(oext) : $(vendorSrc)crypto/param_build.c ${MultiCompileDepends}
+
+$(o)params_dup$(oext) : $(vendorSrc)crypto/params_dup.c ${MultiCompileDepends}
+
+$(o)params_from_text$(oext) : $(vendorSrc)crypto/params_from_text.c ${MultiCompileDepends}
+
+$(o)params$(oext) : $(vendorSrc)crypto/params.c ${MultiCompileDepends}
+
+$(o)passphrase$(oext) : $(vendorSrc)crypto/passphrase.c ${MultiCompileDepends}
+
+$(o)provider$(oext) : $(vendorSrc)crypto/provider.c ${MultiCompileDepends}
+
+$(o)provider_child$(oext) : $(vendorSrc)crypto/provider_child.c ${MultiCompileDepends}
+
+$(o)provider_conf$(oext) : $(vendorSrc)crypto/provider_conf.c ${MultiCompileDepends}
+
+$(o)provider_core$(oext) : $(vendorSrc)crypto/provider_core.c ${MultiCompileDepends}
+
+$(o)provider_predefined$(oext) : $(vendorSrc)crypto/provider_predefined.c ${MultiCompileDepends}
+
+$(o)punycode$(oext) : $(vendorSrc)crypto/punycode.c ${MultiCompileDepends}
+
+$(o)self_test_core$(oext) : $(vendorSrc)crypto/self_test_core.c ${MultiCompileDepends}
+
+$(o)sleep$(oext) : $(vendorSrc)crypto/sleep.c ${MultiCompileDepends}
+
+$(o)sparse_array$(oext) : $(vendorSrc)crypto/sparse_array.c ${MultiCompileDepends}
+
+$(o)time$(oext) : $(vendorSrc)crypto/time.c ${MultiCompileDepends}
+
+$(o)threads_none$(oext) : $(vendorSrc)crypto/threads_none.c ${MultiCompileDepends}
+
+$(o)threads_pthread$(oext) : $(vendorSrc)crypto/threads_pthread.c ${MultiCompileDepends}
+
+$(o)threads_win$(oext) : $(vendorSrc)crypto/threads_win.c ${MultiCompileDepends}
+
+$(o)trace$(oext) : $(vendorSrc)crypto/trace.c ${MultiCompileDepends}
 
 $(o)aes_cbc$(oext) : $(vendorSrc)crypto/aes/aes_cbc.c ${MultiCompileDepends}
 
@@ -208,7 +304,7 @@ $(o)asn1_item_list$(oext) : $(vendorSrc)crypto/asn1/asn1_item_list.c ${MultiComp
 
 $(o)asn1_lib$(oext) : $(vendorSrc)crypto/asn1/asn1_lib.c ${MultiCompileDepends}
 
-$(o)asn1_par$(oext) : $(vendorSrc)crypto/asn1/asn1_par.c ${MultiCompileDepends}
+$(o)asn1_parse$(oext) : $(vendorSrc)crypto/asn1/asn1_parse.c ${MultiCompileDepends}
 
 $(o)asn_mime$(oext) : $(vendorSrc)crypto/asn1/asn_mime.c ${MultiCompileDepends}
 
@@ -232,9 +328,7 @@ $(o)f_int$(oext) : $(vendorSrc)crypto/asn1/f_int.c ${MultiCompileDepends}
 
 $(o)f_string$(oext) : $(vendorSrc)crypto/asn1/f_string.c ${MultiCompileDepends}
 
-$(o)i2d_pr$(oext) : $(vendorSrc)crypto/asn1/i2d_pr.c ${MultiCompileDepends}
-
-$(o)i2d_pu$(oext) : $(vendorSrc)crypto/asn1/i2d_pu.c ${MultiCompileDepends}
+$(o)i2d_evp$(oext) : $(vendorSrc)crypto/asn1/i2d_evp.c ${MultiCompileDepends}
 
 $(o)n_pkey$(oext) : $(vendorSrc)crypto/asn1/n_pkey.c ${MultiCompileDepends}
 
@@ -310,15 +404,15 @@ $(o)bf_ofb64$(oext) : $(vendorSrc)crypto/bf/bf_ofb64.c ${MultiCompileDepends}
 
 $(o)bf_skey$(oext) : $(vendorSrc)crypto/bf/bf_skey.c ${MultiCompileDepends}
 
-$(o)b_addr$(oext) : $(vendorSrc)crypto/bio/b_addr.c ${MultiCompileDepends}
+$(o)bio_addr$(oext) : $(vendorSrc)crypto/bio/bio_addr.c ${MultiCompileDepends}
 
-$(o)b_dump$(oext) : $(vendorSrc)crypto/bio/b_dump.c ${MultiCompileDepends}
+$(o)bio_dump$(oext) : $(vendorSrc)crypto/bio/bio_dump.c ${MultiCompileDepends}
 
-$(o)b_print$(oext) : $(vendorSrc)crypto/bio/b_print.c ${MultiCompileDepends}
+$(o)bio_print$(oext) : $(vendorSrc)crypto/bio/bio_print.c ${MultiCompileDepends}
 
-$(o)b_sock$(oext) : $(vendorSrc)crypto/bio/b_sock.c ${MultiCompileDepends}
+$(o)bio_sock$(oext) : $(vendorSrc)crypto/bio/bio_sock.c ${MultiCompileDepends}
 
-$(o)b_sock2$(oext) : $(vendorSrc)crypto/bio/b_sock2.c ${MultiCompileDepends}
+$(o)bio_sock2$(oext) : $(vendorSrc)crypto/bio/bio_sock2.c ${MultiCompileDepends}
 
 $(o)bf_buff$(oext) : $(vendorSrc)crypto/bio/bf_buff.c ${MultiCompileDepends}
 
@@ -327,6 +421,10 @@ $(o)bf_lbuf$(oext) : $(vendorSrc)crypto/bio/bf_lbuf.c ${MultiCompileDepends}
 $(o)bf_nbio$(oext) : $(vendorSrc)crypto/bio/bf_nbio.c ${MultiCompileDepends}
 
 $(o)bf_null$(oext) : $(vendorSrc)crypto/bio/bf_null.c ${MultiCompileDepends}
+
+$(o)bf_prefix$(oext) : $(vendorSrc)crypto/bio/bf_prefix.c ${MultiCompileDepends}
+
+$(o)bf_readbuff$(oext) : $(vendorSrc)crypto/bio/bf_readbuff.c ${MultiCompileDepends}
 
 $(o)bio_cb$(oext) : $(vendorSrc)crypto/bio/bio_cb.c ${MultiCompileDepends}
 
@@ -342,7 +440,11 @@ $(o)bss_bio$(oext) : $(vendorSrc)crypto/bio/bss_bio.c ${MultiCompileDepends}
 
 $(o)bss_conn$(oext) : $(vendorSrc)crypto/bio/bss_conn.c ${MultiCompileDepends}
 
+$(o)bss_core$(oext) : $(vendorSrc)crypto/bio/bss_core.c ${MultiCompileDepends}
+
 $(o)bss_dgram$(oext) : $(vendorSrc)crypto/bio/bss_dgram.c ${MultiCompileDepends}
+
+$(o)bss_dgram_pair$(oext) : $(vendorSrc)crypto/bio/bss_dgram_pair.c ${MultiCompileDepends}
 
 $(o)bss_fd$(oext) : $(vendorSrc)crypto/bio/bss_fd.c ${MultiCompileDepends}
 
@@ -356,13 +458,7 @@ $(o)bss_null$(oext) : $(vendorSrc)crypto/bio/bss_null.c ${MultiCompileDepends}
 
 $(o)bss_sock$(oext) : $(vendorSrc)crypto/bio/bss_sock.c ${MultiCompileDepends}
 
-$(o)blake2b$(oext) : $(vendorSrc)crypto/blake2/blake2b.c ${MultiCompileDepends}
-
-$(o)blake2s$(oext) : $(vendorSrc)crypto/blake2/blake2s.c ${MultiCompileDepends}
-
-$(o)m_blake2b$(oext) : $(vendorSrc)crypto/blake2/m_blake2b.c ${MultiCompileDepends}
-
-$(o)m_blake2s$(oext) : $(vendorSrc)crypto/blake2/m_blake2s.c ${MultiCompileDepends}
+$(o)ossl_core_bio$(oext) : $(vendorSrc)crypto/bio/ossl_core_bio.c ${MultiCompileDepends}
 
 $(o)bn_add$(oext) : $(vendorSrc)crypto/bn/bn_add.c ${MultiCompileDepends}
 
@@ -371,6 +467,8 @@ $(o)bn_asm$(oext) : $(vendorSrc)crypto/bn/bn_asm.c ${MultiCompileDepends}
 $(o)bn_blind$(oext) : $(vendorSrc)crypto/bn/bn_blind.c ${MultiCompileDepends}
 
 $(o)bn_const$(oext) : $(vendorSrc)crypto/bn/bn_const.c ${MultiCompileDepends}
+
+$(o)bn_conv$(oext) : $(vendorSrc)crypto/bn/bn_conv.c ${MultiCompileDepends}
 
 $(o)bn_ctx$(oext) : $(vendorSrc)crypto/bn/bn_ctx.c ${MultiCompileDepends}
 
@@ -414,6 +512,8 @@ $(o)bn_rand$(oext) : $(vendorSrc)crypto/bn/bn_rand.c ${MultiCompileDepends}
 
 $(o)bn_recp$(oext) : $(vendorSrc)crypto/bn/bn_recp.c ${MultiCompileDepends}
 
+$(o)bn_rsa_fips186_4$(oext) : $(vendorSrc)crypto/bn/bn_rsa_fips186_4.c ${MultiCompileDepends}
+
 $(o)bn_shift$(oext) : $(vendorSrc)crypto/bn/bn_shift.c ${MultiCompileDepends}
 
 $(o)bn_sqr$(oext) : $(vendorSrc)crypto/bn/bn_sqr.c ${MultiCompileDepends}
@@ -425,6 +525,8 @@ $(o)bn_srp$(oext) : $(vendorSrc)crypto/bn/bn_srp.c ${MultiCompileDepends}
 $(o)bn_word$(oext) : $(vendorSrc)crypto/bn/bn_word.c ${MultiCompileDepends}
 
 $(o)bn_x931p$(oext) : $(vendorSrc)crypto/bn/bn_x931p.c ${MultiCompileDepends}
+
+$(o)rsa_sup_mul$(oext) : $(vendorSrc)crypto/bn/rsa_sup_mul.c ${MultiCompileDepends}
 
 $(o)buf_err$(oext) : $(vendorSrc)crypto/buffer/buf_err.c ${MultiCompileDepends}
 
@@ -456,10 +558,6 @@ $(o)c_skey$(oext) : $(vendorSrc)crypto/cast/c_skey.c ${MultiCompileDepends}
 
 $(o)chacha_enc$(oext) : $(vendorSrc)crypto/chacha/chacha_enc.c ${MultiCompileDepends}
 
-$(o)cm_ameth$(oext) : $(vendorSrc)crypto/cmac/cm_ameth.c ${MultiCompileDepends}
-
-$(o)cm_pmeth$(oext) : $(vendorSrc)crypto/cmac/cm_pmeth.c ${MultiCompileDepends}
-
 $(o)cmac$(oext) : $(vendorSrc)crypto/cmac/cmac.c ${MultiCompileDepends}
 
 $(o)cms_asn1$(oext) : $(vendorSrc)crypto/cms/cms_asn1.c ${MultiCompileDepends}
@@ -469,6 +567,10 @@ $(o)cms_att$(oext) : $(vendorSrc)crypto/cms/cms_att.c ${MultiCompileDepends}
 $(o)cms_cd$(oext) : $(vendorSrc)crypto/cms/cms_cd.c ${MultiCompileDepends}
 
 $(o)cms_dd$(oext) : $(vendorSrc)crypto/cms/cms_dd.c ${MultiCompileDepends}
+
+$(o)cms_dh$(oext) : $(vendorSrc)crypto/cms/cms_dh.c ${MultiCompileDepends}
+
+$(o)cms_ec$(oext) : $(vendorSrc)crypto/cms/cms_ec.c ${MultiCompileDepends}
 
 $(o)cms_enc$(oext) : $(vendorSrc)crypto/cms/cms_enc.c ${MultiCompileDepends}
 
@@ -486,15 +588,25 @@ $(o)cms_lib$(oext) : $(vendorSrc)crypto/cms/cms_lib.c ${MultiCompileDepends}
 
 $(o)cms_pwri$(oext) : $(vendorSrc)crypto/cms/cms_pwri.c ${MultiCompileDepends}
 
+$(o)cms_rsa$(oext) : $(vendorSrc)crypto/cms/cms_rsa.c ${MultiCompileDepends}
+
 $(o)cms_sd$(oext) : $(vendorSrc)crypto/cms/cms_sd.c ${MultiCompileDepends}
 
 $(o)cms_smime$(oext) : $(vendorSrc)crypto/cms/cms_smime.c ${MultiCompileDepends}
 
+$(o)c_brotli$(oext) : $(vendorSrc)crypto/comp/c_brotli.c ${MultiCompileDepends}
+
 $(o)c_zlib$(oext) : $(vendorSrc)crypto/comp/c_zlib.c ${MultiCompileDepends}
+
+$(o)c_zstd$(oext) : $(vendorSrc)crypto/comp/c_zstd.c ${MultiCompileDepends}
 
 $(o)comp_err$(oext) : $(vendorSrc)crypto/comp/comp_err.c ${MultiCompileDepends}
 
 $(o)comp_lib$(oext) : $(vendorSrc)crypto/comp/comp_lib.c ${MultiCompileDepends}
+
+$(o)cmp_err$(oext) : $(vendorSrc)crypto/cmp/cmp_err.c ${MultiCompileDepends}
+
+$(o)cmp_util$(oext) : $(vendorSrc)crypto/cmp/cmp_util.c ${MultiCompileDepends}
 
 $(o)conf_api$(oext) : $(vendorSrc)crypto/conf/conf_api.c ${MultiCompileDepends}
 
@@ -512,9 +624,13 @@ $(o)conf_sap$(oext) : $(vendorSrc)crypto/conf/conf_sap.c ${MultiCompileDepends}
 
 $(o)conf_ssl$(oext) : $(vendorSrc)crypto/conf/conf_ssl.c ${MultiCompileDepends}
 
-$(o)cpt_err$(oext) : $(vendorSrc)crypto/cpt_err.c ${MultiCompileDepends}
+$(o)crmf_asn$(oext) : $(vendorSrc)crypto/crmf/crmf_asn.c ${MultiCompileDepends}
 
-$(o)cryptlib$(oext) : $(vendorSrc)crypto/cryptlib.c ${MultiCompileDepends}
+$(o)crmf_err$(oext) : $(vendorSrc)crypto/crmf/crmf_err.c ${MultiCompileDepends}
+
+$(o)crmf_lib$(oext) : $(vendorSrc)crypto/crmf/crmf_lib.c ${MultiCompileDepends}
+
+$(o)crmf_pbm$(oext) : $(vendorSrc)crypto/crmf/crmf_pbm.c ${MultiCompileDepends}
 
 $(o)ct_b64$(oext) : $(vendorSrc)crypto/ct/ct_b64.c ${MultiCompileDepends}
 
@@ -535,10 +651,6 @@ $(o)ct_sct_ctx$(oext) : $(vendorSrc)crypto/ct/ct_sct_ctx.c ${MultiCompileDepends
 $(o)ct_vfy$(oext) : $(vendorSrc)crypto/ct/ct_vfy.c ${MultiCompileDepends}
 
 $(o)ct_x509v3$(oext) : $(vendorSrc)crypto/ct/ct_x509v3.c ${MultiCompileDepends}
-
-$(o)ctype$(oext) : $(vendorSrc)crypto/ctype.c ${MultiCompileDepends}
-
-$(o)cversion$(oext) : $(vendorSrc)crypto/cversion.c ${MultiCompileDepends}
 
 $(o)cbc_cksm$(oext) : $(vendorSrc)crypto/des/cbc_cksm.c ${MultiCompileDepends}
 
@@ -582,6 +694,8 @@ $(o)dh_ameth$(oext) : $(vendorSrc)crypto/dh/dh_ameth.c ${MultiCompileDepends}
 
 $(o)dh_asn1$(oext) : $(vendorSrc)crypto/dh/dh_asn1.c ${MultiCompileDepends}
 
+$(o)dh_backend$(oext) : $(vendorSrc)crypto/dh/dh_backend.c ${MultiCompileDepends}
+
 $(o)dh_check$(oext) : $(vendorSrc)crypto/dh/dh_check.c ${MultiCompileDepends}
 
 $(o)dh_depr$(oext) : $(vendorSrc)crypto/dh/dh_depr.c ${MultiCompileDepends}
@@ -589,6 +703,8 @@ $(o)dh_depr$(oext) : $(vendorSrc)crypto/dh/dh_depr.c ${MultiCompileDepends}
 $(o)dh_err$(oext) : $(vendorSrc)crypto/dh/dh_err.c ${MultiCompileDepends}
 
 $(o)dh_gen$(oext) : $(vendorSrc)crypto/dh/dh_gen.c ${MultiCompileDepends}
+
+$(o)dh_group_params$(oext) : $(vendorSrc)crypto/dh/dh_group_params.c ${MultiCompileDepends}
 
 $(o)dh_kdf$(oext) : $(vendorSrc)crypto/dh/dh_kdf.c ${MultiCompileDepends}
 
@@ -604,11 +720,13 @@ $(o)dh_prn$(oext) : $(vendorSrc)crypto/dh/dh_prn.c ${MultiCompileDepends}
 
 $(o)dh_rfc5114$(oext) : $(vendorSrc)crypto/dh/dh_rfc5114.c ${MultiCompileDepends}
 
-$(o)dh_rfc7919$(oext) : $(vendorSrc)crypto/dh/dh_rfc7919.c ${MultiCompileDepends}
-
 $(o)dsa_ameth$(oext) : $(vendorSrc)crypto/dsa/dsa_ameth.c ${MultiCompileDepends}
 
 $(o)dsa_asn1$(oext) : $(vendorSrc)crypto/dsa/dsa_asn1.c ${MultiCompileDepends}
+
+$(o)dsa_backend$(oext) : $(vendorSrc)crypto/dsa/dsa_backend.c ${MultiCompileDepends}
+
+$(o)dsa_check$(oext) : $(vendorSrc)crypto/dsa/dsa_check.c ${MultiCompileDepends}
 
 $(o)dsa_depr$(oext) : $(vendorSrc)crypto/dsa/dsa_depr.c ${MultiCompileDepends}
 
@@ -646,11 +764,11 @@ $(o)dso_vms$(oext) : $(vendorSrc)crypto/dso/dso_vms.c ${MultiCompileDepends}
 
 $(o)dso_win32$(oext) : $(vendorSrc)crypto/dso/dso_win32.c ${MultiCompileDepends}
 
-$(o)ebcdic$(oext) : $(vendorSrc)crypto/ebcdic.c ${MultiCompileDepends}
-
 $(o)curve25519$(oext) : $(vendorSrc)crypto/ec/curve25519.c ${MultiCompileDepends}
 
-$(o)f_impl$(oext) : $(vendorSrc)crypto/ec/curve448/arch_32/f_impl.c ${MultiCompileDepends}
+$(o)f_impl32$(oext) : $(vendorSrc)crypto/ec/curve448/arch_32/f_impl32.c ${MultiCompileDepends}
+
+$(o)f_impl64$(oext) : $(vendorSrc)crypto/ec/curve448/arch_64/f_impl64.c ${MultiCompileDepends}
 
 $(o)curve448$(oext) : $(vendorSrc)crypto/ec/curve448/curve448.c ${MultiCompileDepends}
 
@@ -670,11 +788,15 @@ $(o)ec_ameth$(oext) : $(vendorSrc)crypto/ec/ec_ameth.c ${MultiCompileDepends}
 
 $(o)ec_asn1$(oext) : $(vendorSrc)crypto/ec/ec_asn1.c ${MultiCompileDepends}
 
+$(o)ec_backend$(oext) : $(vendorSrc)crypto/ec/ec_backend.c ${MultiCompileDepends}
+
 $(o)ec_check$(oext) : $(vendorSrc)crypto/ec/ec_check.c ${MultiCompileDepends}
 
 $(o)ec_curve$(oext) : $(vendorSrc)crypto/ec/ec_curve.c ${MultiCompileDepends}
 
 $(o)ec_cvt$(oext) : $(vendorSrc)crypto/ec/ec_cvt.c ${MultiCompileDepends}
+
+$(o)ec_deprecated$(oext) : $(vendorSrc)crypto/ec/ec_deprecated.c ${MultiCompileDepends}
 
 $(o)ec_err$(oext) : $(vendorSrc)crypto/ec/ec_err.c ${MultiCompileDepends}
 
@@ -708,25 +830,89 @@ $(o)ecp_mont$(oext) : $(vendorSrc)crypto/ec/ecp_mont.c ${MultiCompileDepends}
 
 $(o)ecp_nist$(oext) : $(vendorSrc)crypto/ec/ecp_nist.c ${MultiCompileDepends}
 
-$(o)ecp_nistp224$(oext) : $(vendorSrc)crypto/ec/ecp_nistp224.c ${MultiCompileDepends}
-
-$(o)ecp_nistp256$(oext) : $(vendorSrc)crypto/ec/ecp_nistp256.c ${MultiCompileDepends}
-
-$(o)ecp_nistp521$(oext) : $(vendorSrc)crypto/ec/ecp_nistp521.c ${MultiCompileDepends}
-
-$(o)ecp_nistputil$(oext) : $(vendorSrc)crypto/ec/ecp_nistputil.c ${MultiCompileDepends}
-
 $(o)ecp_oct$(oext) : $(vendorSrc)crypto/ec/ecp_oct.c ${MultiCompileDepends}
 
 $(o)ecp_smpl$(oext) : $(vendorSrc)crypto/ec/ecp_smpl.c ${MultiCompileDepends}
 
+$(o)ecx_backend$(oext) : $(vendorSrc)crypto/ec/ecx_backend.c ${MultiCompileDepends}
+
+$(o)ecx_key$(oext) : $(vendorSrc)crypto/ec/ecx_key.c ${MultiCompileDepends}
+
 $(o)ecx_meth$(oext) : $(vendorSrc)crypto/ec/ecx_meth.c ${MultiCompileDepends}
+
+$(o)decoder_lib$(oext) : $(vendorSrc)crypto/encode_decode/decoder_lib.c ${MultiCompileDepends}
+
+$(o)decoder_meth$(oext) : $(vendorSrc)crypto/encode_decode/decoder_meth.c ${MultiCompileDepends}
+
+$(o)decoder_pkey$(oext) : $(vendorSrc)crypto/encode_decode/decoder_pkey.c ${MultiCompileDepends}
+
+$(o)encoder_lib$(oext) : $(vendorSrc)crypto/encode_decode/encoder_lib.c ${MultiCompileDepends}
+
+$(o)encoder_meth$(oext) : $(vendorSrc)crypto/encode_decode/encoder_meth.c ${MultiCompileDepends}
+
+$(o)encoder_pkey$(oext) : $(vendorSrc)crypto/encode_decode/encoder_pkey.c ${MultiCompileDepends}
+
+$(o)eng_all$(oext) : $(vendorSrc)crypto/engine/eng_all.c ${MultiCompileDepends}
+
+$(o)eng_cnf$(oext) : $(vendorSrc)crypto/engine/eng_cnf.c ${MultiCompileDepends}
+
+$(o)eng_ctrl$(oext) : $(vendorSrc)crypto/engine/eng_ctrl.c ${MultiCompileDepends}
+
+$(o)eng_dyn$(oext) : $(vendorSrc)crypto/engine/eng_dyn.c ${MultiCompileDepends}
+
+$(o)eng_err$(oext) : $(vendorSrc)crypto/engine/eng_err.c ${MultiCompileDepends}
+
+$(o)eng_fat$(oext) : $(vendorSrc)crypto/engine/eng_fat.c ${MultiCompileDepends}
+
+$(o)eng_init$(oext) : $(vendorSrc)crypto/engine/eng_init.c ${MultiCompileDepends}
+
+$(o)eng_lib$(oext) : $(vendorSrc)crypto/engine/eng_lib.c ${MultiCompileDepends}
+
+$(o)eng_list$(oext) : $(vendorSrc)crypto/engine/eng_list.c ${MultiCompileDepends}
+
+$(o)eng_openssl$(oext) : $(vendorSrc)crypto/engine/eng_openssl.c ${MultiCompileDepends}
+
+$(o)eng_pkey$(oext) : $(vendorSrc)crypto/engine/eng_pkey.c ${MultiCompileDepends}
+
+$(o)eng_rdrand$(oext) : $(vendorSrc)crypto/engine/eng_rdrand.c ${MultiCompileDepends}
+
+$(o)eng_table$(oext) : $(vendorSrc)crypto/engine/eng_table.c ${MultiCompileDepends}
+
+$(o)tb_asnmth$(oext) : $(vendorSrc)crypto/engine/tb_asnmth.c ${MultiCompileDepends}
+
+$(o)tb_cipher$(oext) : $(vendorSrc)crypto/engine/tb_cipher.c ${MultiCompileDepends}
+
+$(o)tb_dh$(oext) : $(vendorSrc)crypto/engine/tb_dh.c ${MultiCompileDepends}
+
+$(o)tb_digest$(oext) : $(vendorSrc)crypto/engine/tb_digest.c ${MultiCompileDepends}
+
+$(o)tb_dsa$(oext) : $(vendorSrc)crypto/engine/tb_dsa.c ${MultiCompileDepends}
+
+$(o)tb_eckey$(oext) : $(vendorSrc)crypto/engine/tb_eckey.c ${MultiCompileDepends}
+
+$(o)tb_pkmeth$(oext) : $(vendorSrc)crypto/engine/tb_pkmeth.c ${MultiCompileDepends}
+
+$(o)tb_rand$(oext) : $(vendorSrc)crypto/engine/tb_rand.c ${MultiCompileDepends}
+
+$(o)tb_rsa$(oext) : $(vendorSrc)crypto/engine/tb_rsa.c ${MultiCompileDepends}
 
 $(o)err$(oext) : $(vendorSrc)crypto/err/err.c ${MultiCompileDepends}
 
 $(o)err_all$(oext) : $(vendorSrc)crypto/err/err_all.c ${MultiCompileDepends}
 
+$(o)err_blocks$(oext) : $(vendorSrc)crypto/err/err_blocks.c ${MultiCompileDepends}
+
+$(o)err_mark$(oext) : $(vendorSrc)crypto/err/err_mark.c ${MultiCompileDepends}
+
 $(o)err_prn$(oext) : $(vendorSrc)crypto/err/err_prn.c ${MultiCompileDepends}
+
+$(o)ess_asn1$(oext) : $(vendorSrc)crypto/ess/ess_asn1.c ${MultiCompileDepends}
+
+$(o)ess_err$(oext) : $(vendorSrc)crypto/ess/ess_err.c ${MultiCompileDepends}
+
+$(o)ess_lib$(oext) : $(vendorSrc)crypto/ess/ess_lib.c ${MultiCompileDepends}
+
+$(o)asymcipher$(oext) : $(vendorSrc)crypto/evp/asymcipher.c ${MultiCompileDepends}
 
 $(o)bio_b64$(oext) : $(vendorSrc)crypto/evp/bio_b64.c ${MultiCompileDepends}
 
@@ -742,7 +928,15 @@ $(o)c_alld$(oext) : $(vendorSrc)crypto/evp/c_alld.c ${MultiCompileDepends}
 
 $(o)cmeth_lib$(oext) : $(vendorSrc)crypto/evp/cmeth_lib.c ${MultiCompileDepends}
 
+$(o)ctrl_params_translate$(oext) : $(vendorSrc)crypto/evp/ctrl_params_translate.c ${MultiCompileDepends}
+
+$(o)dh_ctrl$(oext) : $(vendorSrc)crypto/evp/dh_ctrl.c ${MultiCompileDepends}
+
+$(o)dh_support$(oext) : $(vendorSrc)crypto/evp/dh_support.c ${MultiCompileDepends}
+
 $(o)digest$(oext) : $(vendorSrc)crypto/evp/digest.c ${MultiCompileDepends}
+
+$(o)dsa_ctrl$(oext) : $(vendorSrc)crypto/evp/dsa_ctrl.c ${MultiCompileDepends}
 
 $(o)e_aes$(oext) : $(vendorSrc)crypto/evp/e_aes.c ${MultiCompileDepends}
 
@@ -784,11 +978,17 @@ $(o)e_sm4$(oext) : $(vendorSrc)crypto/evp/e_sm4.c ${MultiCompileDepends}
 
 $(o)e_xcbc_d$(oext) : $(vendorSrc)crypto/evp/e_xcbc_d.c ${MultiCompileDepends}
 
+$(o)ec_ctrl$(oext) : $(vendorSrc)crypto/evp/ec_ctrl.c ${MultiCompileDepends}
+
+$(o)ec_support$(oext) : $(vendorSrc)crypto/evp/ec_support.c ${MultiCompileDepends}
+
 $(o)encode$(oext) : $(vendorSrc)crypto/evp/encode.c ${MultiCompileDepends}
 
 $(o)evp_cnf$(oext) : $(vendorSrc)crypto/evp/evp_cnf.c ${MultiCompileDepends}
 
 $(o)evp_enc$(oext) : $(vendorSrc)crypto/evp/evp_enc.c ${MultiCompileDepends}
+
+$(o)evp_fetch$(oext) : $(vendorSrc)crypto/evp/evp_fetch.c ${MultiCompileDepends}
 
 $(o)evp_err$(oext) : $(vendorSrc)crypto/evp/evp_err.c ${MultiCompileDepends}
 
@@ -800,27 +1000,47 @@ $(o)evp_pbe$(oext) : $(vendorSrc)crypto/evp/evp_pbe.c ${MultiCompileDepends}
 
 $(o)evp_pkey$(oext) : $(vendorSrc)crypto/evp/evp_pkey.c ${MultiCompileDepends}
 
-$(o)m_md2$(oext) : $(vendorSrc)crypto/evp/m_md2.c ${MultiCompileDepends}
+$(o)evp_rand$(oext) : $(vendorSrc)crypto/evp/evp_rand.c ${MultiCompileDepends}
 
-$(o)m_md4$(oext) : $(vendorSrc)crypto/evp/m_md4.c ${MultiCompileDepends}
+$(o)evp_utils$(oext) : $(vendorSrc)crypto/evp/evp_utils.c ${MultiCompileDepends}
 
-$(o)m_md5$(oext) : $(vendorSrc)crypto/evp/m_md5.c ${MultiCompileDepends}
+$(o)exchange$(oext) : $(vendorSrc)crypto/evp/exchange.c ${MultiCompileDepends}
 
-$(o)m_md5_sha1$(oext) : $(vendorSrc)crypto/evp/m_md5_sha1.c ${MultiCompileDepends}
+$(o)kdf_lib$(oext) : $(vendorSrc)crypto/evp/kdf_lib.c ${MultiCompileDepends}
 
-$(o)m_mdc2$(oext) : $(vendorSrc)crypto/evp/m_mdc2.c ${MultiCompileDepends}
+$(o)kdf_meth$(oext) : $(vendorSrc)crypto/evp/kdf_meth.c ${MultiCompileDepends}
+
+$(o)kem$(oext) : $(vendorSrc)crypto/evp/kem.c ${MultiCompileDepends}
+
+$(o)keymgmt_lib$(oext) : $(vendorSrc)crypto/evp/keymgmt_lib.c ${MultiCompileDepends}
+
+$(o)keymgmt_meth$(oext) : $(vendorSrc)crypto/evp/keymgmt_meth.c ${MultiCompileDepends}
 
 $(o)m_null$(oext) : $(vendorSrc)crypto/evp/m_null.c ${MultiCompileDepends}
 
-$(o)m_ripemd$(oext) : $(vendorSrc)crypto/evp/m_ripemd.c ${MultiCompileDepends}
-
-$(o)m_sha1$(oext) : $(vendorSrc)crypto/evp/m_sha1.c ${MultiCompileDepends}
-
-$(o)m_sha3$(oext) : $(vendorSrc)crypto/evp/m_sha3.c ${MultiCompileDepends}
-
 $(o)m_sigver$(oext) : $(vendorSrc)crypto/evp/m_sigver.c ${MultiCompileDepends}
 
-$(o)m_wp$(oext) : $(vendorSrc)crypto/evp/m_wp.c ${MultiCompileDepends}
+$(o)mac_lib$(oext) : $(vendorSrc)crypto/evp/mac_lib.c ${MultiCompileDepends}
+
+$(o)mac_meth$(oext) : $(vendorSrc)crypto/evp/mac_meth.c ${MultiCompileDepends}
+
+$(o)legacy_blake2$(oext) : $(vendorSrc)crypto/evp/legacy_blake2.c ${MultiCompileDepends}
+
+$(o)legacy_md2$(oext) : $(vendorSrc)crypto/evp/legacy_md2.c ${MultiCompileDepends}
+
+$(o)legacymd4$(oext) : $(vendorSrc)crypto/evp/legacy_md4.c ${MultiCompileDepends}
+
+$(o)legacy_md5$(oext) : $(vendorSrc)crypto/evp/legacy_md5.c ${MultiCompileDepends}
+
+$(o)legacy_md5_sha1$(oext) : $(vendorSrc)crypto/evp/legacy_md5_sha1.c ${MultiCompileDepends}
+
+$(o)legacy_mdc2$(oext) : $(vendorSrc)crypto/evp/legacy_mdc2.c ${MultiCompileDepends}
+
+$(o)legacy_ripemd$(oext) : $(vendorSrc)crypto/evp/legacy_ripemd.c ${MultiCompileDepends}
+
+$(o)legacy_sha$(oext) : $(vendorSrc)crypto/evp/legacy_sha.c ${MultiCompileDepends}
+
+$(o)legacy_wp$(oext) : $(vendorSrc)crypto/evp/legacy_wp.c ${MultiCompileDepends}
 
 $(o)names$(oext) : $(vendorSrc)crypto/evp/names.c ${MultiCompileDepends}
 
@@ -834,6 +1054,8 @@ $(o)p_enc$(oext) : $(vendorSrc)crypto/evp/p_enc.c ${MultiCompileDepends}
 
 $(o)p_lib$(oext) : $(vendorSrc)crypto/evp/p_lib.c ${MultiCompileDepends}
 
+$(o)p_legacy$(oext) : $(vendorSrc)crypto/evp/p_legacy.c ${MultiCompileDepends}
+
 $(o)p_open$(oext) : $(vendorSrc)crypto/evp/p_open.c ${MultiCompileDepends}
 
 $(o)p_seal$(oext) : $(vendorSrc)crypto/evp/p_seal.c ${MultiCompileDepends}
@@ -844,21 +1066,37 @@ $(o)p_verify$(oext) : $(vendorSrc)crypto/evp/p_verify.c ${MultiCompileDepends}
 
 $(o)pbe_scrypt$(oext) : $(vendorSrc)crypto/evp/pbe_scrypt.c ${MultiCompileDepends}
 
-$(o)pmeth_fn$(oext) : $(vendorSrc)crypto/evp/pmeth_fn.c ${MultiCompileDepends}
+$(o)pmeth_check$(oext) : $(vendorSrc)crypto/evp/pmeth_check.c ${MultiCompileDepends}
 
 $(o)pmeth_gn$(oext) : $(vendorSrc)crypto/evp/pmeth_gn.c ${MultiCompileDepends}
 
 $(o)pmeth_lib$(oext) : $(vendorSrc)crypto/evp/pmeth_lib.c ${MultiCompileDepends}
 
-$(o)ex_data$(oext) : $(vendorSrc)crypto/ex_data.c ${MultiCompileDepends}
+$(o)signature$(oext) : $(vendorSrc)crypto/evp/signature.c ${MultiCompileDepends}
 
-$(o)getenv$(oext) : $(vendorSrc)crypto/getenv.c ${MultiCompileDepends}
+$(o)ffc_backend$(oext) : $(vendorSrc)crypto/ffc/ffc_backend.c ${MultiCompileDepends}
 
-$(o)hm_ameth$(oext) : $(vendorSrc)crypto/hmac/hm_ameth.c ${MultiCompileDepends}
+$(o)ffc_dh$(oext) : $(vendorSrc)crypto/ffc/ffc_dh.c ${MultiCompileDepends}
 
-$(o)hm_pmeth$(oext) : $(vendorSrc)crypto/hmac/hm_pmeth.c ${MultiCompileDepends}
+$(o)ffc_key_generate$(oext) : $(vendorSrc)crypto/ffc/ffc_key_generate.c ${MultiCompileDepends}
+
+$(o)ffc_key_validate$(oext) : $(vendorSrc)crypto/ffc/ffc_key_validate.c ${MultiCompileDepends}
+
+$(o)ffc_params_generate$(oext) : $(vendorSrc)crypto/ffc/ffc_params_generate.c ${MultiCompileDepends}
+
+$(o)ffc_params_validate$(oext) : $(vendorSrc)crypto/ffc/ffc_params_validate.c ${MultiCompileDepends}
+
+$(o)ffc_params$(oext) : $(vendorSrc)crypto/ffc/ffc_params.c ${MultiCompileDepends}
 
 $(o)hmac$(oext) : $(vendorSrc)crypto/hmac/hmac.c ${MultiCompileDepends}
+
+$(o)hpke_util$(oext) : $(vendorSrc)crypto/hpke/hpke_util.c ${MultiCompileDepends}
+
+$(o)http_client$(oext) : $(vendorSrc)crypto/http/http_client.c ${MultiCompileDepends}
+
+$(o)http_err$(oext) : $(vendorSrc)crypto/http/http_err.c ${MultiCompileDepends}
+
+$(o)http_lib$(oext) : $(vendorSrc)crypto/http/http_lib.c ${MultiCompileDepends}
 
 $(o)i_cbc$(oext) : $(vendorSrc)crypto/idea/i_cbc.c ${MultiCompileDepends}
 
@@ -870,19 +1108,15 @@ $(o)i_ofb64$(oext) : $(vendorSrc)crypto/idea/i_ofb64.c ${MultiCompileDepends}
 
 $(o)i_skey$(oext) : $(vendorSrc)crypto/idea/i_skey.c ${MultiCompileDepends}
 
-$(o)init$(oext) : $(vendorSrc)crypto/init.c ${MultiCompileDepends}
-
-$(o)hkdf$(oext) : $(vendorSrc)crypto/kdf/hkdf.c ${MultiCompileDepends}
-
 $(o)kdf_err$(oext) : $(vendorSrc)crypto/kdf/kdf_err.c ${MultiCompileDepends}
-
-$(o)scrypt$(oext) : $(vendorSrc)crypto/kdf/scrypt.c ${MultiCompileDepends}
-
-$(o)tls1_prf$(oext) : $(vendorSrc)crypto/kdf/tls1_prf.c ${MultiCompileDepends}
 
 $(o)lh_stats$(oext) : $(vendorSrc)crypto/lhash/lh_stats.c ${MultiCompileDepends}
 
 $(o)lhash$(oext) : $(vendorSrc)crypto/lhash/lhash.c ${MultiCompileDepends}
+
+$(o)md2_dgst$(oext) : $(vendorSrc)crypto/md2/md2_dgst.c ${MultiCompileDepends}
+
+$(o)md2_one$(oext) : $(vendorSrc)crypto/md2/md2_one.c ${MultiCompileDepends}
 
 $(o)md4_dgst$(oext) : $(vendorSrc)crypto/md4/md4_dgst.c ${MultiCompileDepends}
 
@@ -892,21 +1126,17 @@ $(o)md5_dgst$(oext) : $(vendorSrc)crypto/md5/md5_dgst.c ${MultiCompileDepends}
 
 $(o)md5_one$(oext) : $(vendorSrc)crypto/md5/md5_one.c ${MultiCompileDepends}
 
+$(o)md5_sha1$(oext) : $(vendorSrc)crypto/md5/md5_sha1.c ${MultiCompileDepends}
+
 $(o)mdc2_one$(oext) : $(vendorSrc)crypto/mdc2/mdc2_one.c ${MultiCompileDepends}
 
 $(o)mdc2dgst$(oext) : $(vendorSrc)crypto/mdc2/mdc2dgst.c ${MultiCompileDepends}
-
-$(o)mem$(oext) : $(vendorSrc)crypto/mem.c ${MultiCompileDepends}
 
 %if ($(TARGET_PLATFORM) != "Linux" && $(TARGET_PLATFORM) != "Android" && $(TARGET_PLATFORM) != "Windows") || $(TARGET_PROCESSOR_ARCHITECTURE) == "AndroidARM64"
 
     $(o)mem_clr$(oext) : $(vendorSrc)crypto/mem_clr.c ${MultiCompileDepends}
 
 %endif
-
-$(o)mem_dbg$(oext) : $(vendorSrc)crypto/mem_dbg.c ${MultiCompileDepends}
-
-$(o)mem_sec$(oext) : $(vendorSrc)crypto/mem_sec.c ${MultiCompileDepends}
 
 $(o)cbc128$(oext) : $(vendorSrc)crypto/modes/cbc128.c ${MultiCompileDepends}
 
@@ -924,13 +1154,15 @@ $(o)ocb128$(oext) : $(vendorSrc)crypto/modes/ocb128.c ${MultiCompileDepends}
 
 $(o)ofb128$(oext) : $(vendorSrc)crypto/modes/ofb128.c ${MultiCompileDepends}
 
+$(o)siv128$(oext) : $(vendorSrc)crypto/modes/siv128.c ${MultiCompileDepends}
+
 $(o)wrap128$(oext) : $(vendorSrc)crypto/modes/wrap128.c ${MultiCompileDepends}
+
+$(o)xts128gb$(oext) : $(vendorSrc)crypto/modes/xts128gb.c ${MultiCompileDepends}
 
 $(o)xts128$(oext) : $(vendorSrc)crypto/modes/xts128.c ${MultiCompileDepends}
 
 $(o)o_dir$(oext) : $(vendorSrc)crypto/o_dir.c ${MultiCompileDepends}
-
-$(o)o_fips$(oext) : $(vendorSrc)crypto/o_fips.c ${MultiCompileDepends}
 
 $(o)o_fopen$(oext) : $(vendorSrc)crypto/o_fopen.c ${MultiCompileDepends}
 
@@ -958,7 +1190,7 @@ $(o)ocsp_err$(oext) : $(vendorSrc)crypto/ocsp/ocsp_err.c ${MultiCompileDepends}
 
 $(o)ocsp_ext$(oext) : $(vendorSrc)crypto/ocsp/ocsp_ext.c ${MultiCompileDepends}
 
-$(o)ocsp_ht$(oext) : $(vendorSrc)crypto/ocsp/ocsp_ht.c ${MultiCompileDepends}
+$(o)ocsp_http$(oext) : $(vendorSrc)crypto/ocsp/ocsp_http.c ${MultiCompileDepends}
 
 $(o)ocsp_lib$(oext) : $(vendorSrc)crypto/ocsp/ocsp_lib.c ${MultiCompileDepends}
 
@@ -1042,13 +1274,21 @@ $(o)pkcs7err$(oext) : $(vendorSrc)crypto/pkcs7/pkcs7err.c ${MultiCompileDepends}
 
 $(o)poly1305$(oext) : $(vendorSrc)crypto/poly1305/poly1305.c ${MultiCompileDepends}
 
-$(o)poly1305_ameth$(oext) : $(vendorSrc)crypto/poly1305/poly1305_ameth.c ${MultiCompileDepends}
+$(o)defn_cache$(oext) : $(vendorSrc)crypto/property/defn_cache.c ${MultiCompileDepends}
 
-$(o)poly1305_pmeth$(oext) : $(vendorSrc)crypto/poly1305/poly1305_pmeth.c ${MultiCompileDepends}
+$(o)property_err$(oext) : $(vendorSrc)crypto/property/property_err.c ${MultiCompileDepends}
 
-$(o)drbg_ctr$(oext) : $(vendorSrc)crypto/rand/drbg_ctr.c ${MultiCompileDepends}
+$(o)property_parse$(oext) : $(vendorSrc)crypto/property/property_parse.c ${MultiCompileDepends}
+
+$(o)property_string$(oext) : $(vendorSrc)crypto/property/property_string.c ${MultiCompileDepends}
+
+$(o)property_query$(oext) : $(vendorSrc)crypto/property/property_query.c ${MultiCompileDepends}
+
+$(o)property$(oext) : $(vendorSrc)crypto/property/property.c ${MultiCompileDepends}
 
 $(o)drbg_lib$(oext) : $(vendorSrc)crypto/rand/drbg_lib.c ${MultiCompileDepends}
+
+$(o)prov_seed$(oext) : $(vendorSrc)crypto/rand/prov_seed.c ${MultiCompileDepends}
 
 $(o)rand_egd$(oext) : $(vendorSrc)crypto/rand/rand_egd.c ${MultiCompileDepends}
 
@@ -1056,13 +1296,11 @@ $(o)rand_err$(oext) : $(vendorSrc)crypto/rand/rand_err.c ${MultiCompileDepends}
 
 $(o)rand_lib$(oext) : $(vendorSrc)crypto/rand/rand_lib.c ${MultiCompileDepends}
 
-$(o)rand_unix$(oext) : $(vendorSrc)crypto/rand/rand_unix.c ${MultiCompileDepends}
-
-$(o)rand_vms$(oext) : $(vendorSrc)crypto/rand/rand_vms.c ${MultiCompileDepends}
-
-$(o)rand_win$(oext) : $(vendorSrc)crypto/rand/rand_win.c ${MultiCompileDepends}
-
 $(o)randfile$(oext) : $(vendorSrc)crypto/rand/randfile.c ${MultiCompileDepends}
+
+$(o)rand_meth$(oext) : $(vendorSrc)crypto/rand/rand_meth.c ${MultiCompileDepends}
+
+$(o)rand_pool$(oext) : $(vendorSrc)crypto/rand/rand_pool.c ${MultiCompileDepends}
 
 $(o)rc2_cbc$(oext) : $(vendorSrc)crypto/rc2/rc2_cbc.c ${MultiCompileDepends}
 
@@ -1086,6 +1324,8 @@ $(o)rsa_ameth$(oext) : $(vendorSrc)crypto/rsa/rsa_ameth.c ${MultiCompileDepends}
 
 $(o)rsa_asn1$(oext) : $(vendorSrc)crypto/rsa/rsa_asn1.c ${MultiCompileDepends}
 
+$(o)rsa_backend$(oext) : $(vendorSrc)crypto/rsa/rsa_backend.c ${MultiCompileDepends}
+
 $(o)rsa_chk$(oext) : $(vendorSrc)crypto/rsa/rsa_chk.c ${MultiCompileDepends}
 
 $(o)rsa_crpt$(oext) : $(vendorSrc)crypto/rsa/rsa_crpt.c ${MultiCompileDepends}
@@ -1101,6 +1341,8 @@ $(o)rsa_lib$(oext) : $(vendorSrc)crypto/rsa/rsa_lib.c ${MultiCompileDepends}
 $(o)rsa_meth$(oext) : $(vendorSrc)crypto/rsa/rsa_meth.c ${MultiCompileDepends}
 
 $(o)rsa_mp$(oext) : $(vendorSrc)crypto/rsa/rsa_mp.c ${MultiCompileDepends}
+
+$(o)rsa_mp_names$(oext) : $(vendorSrc)crypto/rsa/rsa_mp_names.c ${MultiCompileDepends}
 
 $(o)rsa_none$(oext) : $(vendorSrc)crypto/rsa/rsa_none.c ${MultiCompileDepends}
 
@@ -1118,9 +1360,13 @@ $(o)rsa_pss$(oext) : $(vendorSrc)crypto/rsa/rsa_pss.c ${MultiCompileDepends}
 
 $(o)rsa_saos$(oext) : $(vendorSrc)crypto/rsa/rsa_saos.c ${MultiCompileDepends}
 
+$(o)rsa_schemes$(oext) : $(vendorSrc)crypto/rsa/rsa_schemes.c ${MultiCompileDepends}
+
 $(o)rsa_sign$(oext) : $(vendorSrc)crypto/rsa/rsa_sign.c ${MultiCompileDepends}
 
-$(o)rsa_ssl$(oext) : $(vendorSrc)crypto/rsa/rsa_ssl.c ${MultiCompileDepends}
+$(o)rsa_sp800_56b_check$(oext) : $(vendorSrc)crypto/rsa/rsa_sp800_56b_check.c ${MultiCompileDepends}
+
+$(o)rsa_sp800_56b_gen$(oext) : $(vendorSrc)crypto/rsa/rsa_sp800_56b_gen.c ${MultiCompileDepends}
 
 $(o)rsa_x931$(oext) : $(vendorSrc)crypto/rsa/rsa_x931.c ${MultiCompileDepends}
 
@@ -1144,23 +1390,21 @@ $(o)sha1dgst$(oext) : $(vendorSrc)crypto/sha/sha1dgst.c ${MultiCompileDepends}
 
 $(o)sha256$(oext) : $(vendorSrc)crypto/sha/sha256.c ${MultiCompileDepends}
 
+$(o)sha3$(oext) : $(vendorSrc)crypto/sha/sha3.c ${MultiCompileDepends}
+
 $(o)sha512$(oext) : $(vendorSrc)crypto/sha/sha512.c ${MultiCompileDepends}
 
 $(o)siphash$(oext) : $(vendorSrc)crypto/siphash/siphash.c ${MultiCompileDepends}
-
-$(o)siphash_ameth$(oext) : $(vendorSrc)crypto/siphash/siphash_ameth.c ${MultiCompileDepends}
-
-$(o)siphash_pmeth$(oext) : $(vendorSrc)crypto/siphash/siphash_pmeth.c ${MultiCompileDepends}
 
 $(o)sm2_crypt$(oext) : $(vendorSrc)crypto/sm2/sm2_crypt.c ${MultiCompileDepends}
 
 $(o)sm2_err$(oext) : $(vendorSrc)crypto/sm2/sm2_err.c ${MultiCompileDepends}
 
-$(o)sm2_pmeth$(oext) : $(vendorSrc)crypto/sm2/sm2_pmeth.c ${MultiCompileDepends}
+$(o)sm2_key$(oext) : $(vendorSrc)crypto/sm2/sm2_key.c ${MultiCompileDepends}
 
 $(o)sm2_sign$(oext) : $(vendorSrc)crypto/sm2/sm2_sign.c ${MultiCompileDepends}
 
-$(o)m_sm3$(oext) : $(vendorSrc)crypto/sm3/m_sm3.c ${MultiCompileDepends}
+$(o)legacy_sm3$(oext) : $(vendorSrc)crypto/sm3/legacy_sm3.c ${MultiCompileDepends}
 
 $(o)sm3$(oext) : $(vendorSrc)crypto/sm3/sm3.c ${MultiCompileDepends}
 
@@ -1172,23 +1416,31 @@ $(o)srp_vfy$(oext) : $(vendorSrc)crypto/srp/srp_vfy.c ${MultiCompileDepends}
 
 $(o)stack$(oext) : $(vendorSrc)crypto/stack/stack.c ${MultiCompileDepends}
 
-$(o)loader_file$(oext) : $(vendorSrc)crypto/store/loader_file.c ${MultiCompileDepends}
-
 $(o)store_err$(oext) : $(vendorSrc)crypto/store/store_err.c ${MultiCompileDepends}
 
 $(o)store_init$(oext) : $(vendorSrc)crypto/store/store_init.c ${MultiCompileDepends}
 
 $(o)store_lib$(oext) : $(vendorSrc)crypto/store/store_lib.c ${MultiCompileDepends}
 
+$(o)store_meth$(oext) : $(vendorSrc)crypto/store/store_meth.c ${MultiCompileDepends}
+
 $(o)store_register$(oext) : $(vendorSrc)crypto/store/store_register.c ${MultiCompileDepends}
 
 $(o)store_strings$(oext) : $(vendorSrc)crypto/store/store_strings.c ${MultiCompileDepends}
 
-$(o)threads_none$(oext) : $(vendorSrc)crypto/threads_none.c ${MultiCompileDepends}
+$(o)store_result$(oext) : $(vendorSrc)crypto/store/store_result.c ${MultiCompileDepends}
 
-$(o)threads_pthread$(oext) : $(vendorSrc)crypto/threads_pthread.c ${MultiCompileDepends}
+$(o)api$(oext) : $(vendorSrc)crypto/thread/api.c ${MultiCompileDepends}
 
-$(o)threads_win$(oext) : $(vendorSrc)crypto/threads_win.c ${MultiCompileDepends}
+$(o)arch$(oext) : $(vendorSrc)crypto/thread/arch.c ${MultiCompileDepends}
+
+$(o)internal$(oext) : $(vendorSrc)crypto/thread/internal.c ${MultiCompileDepends}
+
+$(o)thread_none$(oext) : $(vendorSrc)crypto/thread/arch/thread_none.c ${MultiCompileDepends}
+
+$(o)thread_posix$(oext) : $(vendorSrc)crypto/thread/arch/thread_posix.c ${MultiCompileDepends}
+
+$(o)thread_win$(oext) : $(vendorSrc)crypto/thread/arch/thread_win.c ${MultiCompileDepends}
 
 $(o)ts_asn1$(oext) : $(vendorSrc)crypto/ts/ts_asn1.c ${MultiCompileDepends}
 
@@ -1234,6 +1486,8 @@ $(o)by_dir$(oext) : $(vendorSrc)crypto/x509/by_dir.c ${MultiCompileDepends}
 
 $(o)by_file$(oext) : $(vendorSrc)crypto/x509/by_file.c ${MultiCompileDepends}
 
+$(o)by_store$(oext) : $(vendorSrc)crypto/x509/by_store.c ${MultiCompileDepends}
+
 $(o)t_crl$(oext) : $(vendorSrc)crypto/x509/t_crl.c ${MultiCompileDepends}
 
 $(o)t_req$(oext) : $(vendorSrc)crypto/x509/t_req.c ${MultiCompileDepends}
@@ -1264,7 +1518,7 @@ $(o)x509_req$(oext) : $(vendorSrc)crypto/x509/x509_req.c ${MultiCompileDepends}
 
 $(o)x509_set$(oext) : $(vendorSrc)crypto/x509/x509_set.c ${MultiCompileDepends}
 
-$(o)x509_trs$(oext) : $(vendorSrc)crypto/x509/x509_trs.c ${MultiCompileDepends}
+$(o)x509_trust$(oext) : $(vendorSrc)crypto/x509/x509_trust.c ${MultiCompileDepends}
 
 $(o)x509_txt$(oext) : $(vendorSrc)crypto/x509/x509_txt.c ${MultiCompileDepends}
 
@@ -1302,79 +1556,83 @@ $(o)x_x509$(oext) : $(vendorSrc)crypto/x509/x_x509.c ${MultiCompileDepends}
 
 $(o)x_x509a$(oext) : $(vendorSrc)crypto/x509/x_x509a.c ${MultiCompileDepends}
 
-$(o)pcy_cache$(oext) : $(vendorSrc)crypto/x509v3/pcy_cache.c ${MultiCompileDepends}
+$(o)pcy_cache$(oext) : $(vendorSrc)crypto/x509/pcy_cache.c ${MultiCompileDepends}
 
-$(o)pcy_data$(oext) : $(vendorSrc)crypto/x509v3/pcy_data.c ${MultiCompileDepends}
+$(o)pcy_data$(oext) : $(vendorSrc)crypto/x509/pcy_data.c ${MultiCompileDepends}
 
-$(o)pcy_lib$(oext) : $(vendorSrc)crypto/x509v3/pcy_lib.c ${MultiCompileDepends}
+$(o)pcy_lib$(oext) : $(vendorSrc)crypto/x509/pcy_lib.c ${MultiCompileDepends}
 
-$(o)pcy_map$(oext) : $(vendorSrc)crypto/x509v3/pcy_map.c ${MultiCompileDepends}
+$(o)pcy_map$(oext) : $(vendorSrc)crypto/x509/pcy_map.c ${MultiCompileDepends}
 
-$(o)pcy_node$(oext) : $(vendorSrc)crypto/x509v3/pcy_node.c ${MultiCompileDepends}
+$(o)pcy_node$(oext) : $(vendorSrc)crypto/x509/pcy_node.c ${MultiCompileDepends}
 
-$(o)pcy_tree$(oext) : $(vendorSrc)crypto/x509v3/pcy_tree.c ${MultiCompileDepends}
+$(o)pcy_tree$(oext) : $(vendorSrc)crypto/x509/pcy_tree.c ${MultiCompileDepends}
 
-$(o)v3_addr$(oext) : $(vendorSrc)crypto/x509v3/v3_addr.c ${MultiCompileDepends}
+$(o)v3_addr$(oext) : $(vendorSrc)crypto/x509/v3_addr.c ${MultiCompileDepends}
 
-$(o)v3_admis$(oext) : $(vendorSrc)crypto/x509v3/v3_admis.c ${MultiCompileDepends}
+$(o)v3_admis$(oext) : $(vendorSrc)crypto/x509/v3_admis.c ${MultiCompileDepends}
 
-$(o)v3_akey$(oext) : $(vendorSrc)crypto/x509v3/v3_akey.c ${MultiCompileDepends}
+$(o)v3_akid$(oext) : $(vendorSrc)crypto/x509/v3_akid.c ${MultiCompileDepends}
 
-$(o)v3_akeya$(oext) : $(vendorSrc)crypto/x509v3/v3_akeya.c ${MultiCompileDepends}
+$(o)v3_akeya$(oext) : $(vendorSrc)crypto/x509/v3_akeya.c ${MultiCompileDepends}
 
-$(o)v3_alt$(oext) : $(vendorSrc)crypto/x509v3/v3_alt.c ${MultiCompileDepends}
+$(o)v3_asid$(oext) : $(vendorSrc)crypto/x509/v3_asid.c ${MultiCompileDepends}
 
-$(o)v3_asid$(oext) : $(vendorSrc)crypto/x509v3/v3_asid.c ${MultiCompileDepends}
+$(o)v3_bcons$(oext) : $(vendorSrc)crypto/x509/v3_bcons.c ${MultiCompileDepends}
 
-$(o)v3_bcons$(oext) : $(vendorSrc)crypto/x509v3/v3_bcons.c ${MultiCompileDepends}
+$(o)v3_bitst$(oext) : $(vendorSrc)crypto/x509/v3_bitst.c ${MultiCompileDepends}
 
-$(o)v3_bitst$(oext) : $(vendorSrc)crypto/x509v3/v3_bitst.c ${MultiCompileDepends}
+$(o)v3_conf$(oext) : $(vendorSrc)crypto/x509/v3_conf.c ${MultiCompileDepends}
 
-$(o)v3_conf$(oext) : $(vendorSrc)crypto/x509v3/v3_conf.c ${MultiCompileDepends}
+$(o)v3_cpols$(oext) : $(vendorSrc)crypto/x509/v3_cpols.c ${MultiCompileDepends}
 
-$(o)v3_cpols$(oext) : $(vendorSrc)crypto/x509v3/v3_cpols.c ${MultiCompileDepends}
+$(o)v3_crld$(oext) : $(vendorSrc)crypto/x509/v3_crld.c ${MultiCompileDepends}
 
-$(o)v3_crld$(oext) : $(vendorSrc)crypto/x509v3/v3_crld.c ${MultiCompileDepends}
+$(o)v3_enum$(oext) : $(vendorSrc)crypto/x509/v3_enum.c ${MultiCompileDepends}
 
-$(o)v3_enum$(oext) : $(vendorSrc)crypto/x509v3/v3_enum.c ${MultiCompileDepends}
+$(o)v3_extku$(oext) : $(vendorSrc)crypto/x509/v3_extku.c ${MultiCompileDepends}
 
-$(o)v3_extku$(oext) : $(vendorSrc)crypto/x509v3/v3_extku.c ${MultiCompileDepends}
+$(o)v3_genn$(oext) : $(vendorSrc)crypto/x509/v3_genn.c ${MultiCompileDepends}
 
-$(o)v3_genn$(oext) : $(vendorSrc)crypto/x509v3/v3_genn.c ${MultiCompileDepends}
+$(o)v3_ia5$(oext) : $(vendorSrc)crypto/x509/v3_ia5.c ${MultiCompileDepends}
 
-$(o)v3_ia5$(oext) : $(vendorSrc)crypto/x509v3/v3_ia5.c ${MultiCompileDepends}
+$(o)v3_info$(oext) : $(vendorSrc)crypto/x509/v3_info.c ${MultiCompileDepends}
 
-$(o)v3_info$(oext) : $(vendorSrc)crypto/x509v3/v3_info.c ${MultiCompileDepends}
+$(o)v3_int$(oext) : $(vendorSrc)crypto/x509/v3_int.c ${MultiCompileDepends}
 
-$(o)v3_int$(oext) : $(vendorSrc)crypto/x509v3/v3_int.c ${MultiCompileDepends}
+$(o)v3_ist$(oext) : $(vendorSrc)crypto/x509/v3_ist.c ${MultiCompileDepends}
 
-$(o)v3_lib$(oext) : $(vendorSrc)crypto/x509v3/v3_lib.c ${MultiCompileDepends}
+$(o)v3_lib$(oext) : $(vendorSrc)crypto/x509/v3_lib.c ${MultiCompileDepends}
 
-$(o)v3_ncons$(oext) : $(vendorSrc)crypto/x509v3/v3_ncons.c ${MultiCompileDepends}
+$(o)v3_ncons$(oext) : $(vendorSrc)crypto/x509/v3_ncons.c ${MultiCompileDepends}
 
-$(o)v3_pci$(oext) : $(vendorSrc)crypto/x509v3/v3_pci.c ${MultiCompileDepends}
+$(o)v3_pci$(oext) : $(vendorSrc)crypto/x509/v3_pci.c ${MultiCompileDepends}
 
-$(o)v3_pcia$(oext) : $(vendorSrc)crypto/x509v3/v3_pcia.c ${MultiCompileDepends}
+$(o)v3_pcia$(oext) : $(vendorSrc)crypto/x509/v3_pcia.c ${MultiCompileDepends}
 
-$(o)v3_pcons$(oext) : $(vendorSrc)crypto/x509v3/v3_pcons.c ${MultiCompileDepends}
+$(o)v3_pcons$(oext) : $(vendorSrc)crypto/x509/v3_pcons.c ${MultiCompileDepends}
 
-$(o)v3_pku$(oext) : $(vendorSrc)crypto/x509v3/v3_pku.c ${MultiCompileDepends}
+$(o)v3_pku$(oext) : $(vendorSrc)crypto/x509/v3_pku.c ${MultiCompileDepends}
 
-$(o)v3_pmaps$(oext) : $(vendorSrc)crypto/x509v3/v3_pmaps.c ${MultiCompileDepends}
+$(o)v3_pmaps$(oext) : $(vendorSrc)crypto/x509/v3_pmaps.c ${MultiCompileDepends}
 
-$(o)v3_prn$(oext) : $(vendorSrc)crypto/x509v3/v3_prn.c ${MultiCompileDepends}
+$(o)v3_prn$(oext) : $(vendorSrc)crypto/x509/v3_prn.c ${MultiCompileDepends}
 
-$(o)v3_purp$(oext) : $(vendorSrc)crypto/x509v3/v3_purp.c ${MultiCompileDepends}
+$(o)v3_purp$(oext) : $(vendorSrc)crypto/x509/v3_purp.c ${MultiCompileDepends}
 
-$(o)v3_skey$(oext) : $(vendorSrc)crypto/x509v3/v3_skey.c ${MultiCompileDepends}
+$(o)v3_san$(oext) : $(vendorSrc)crypto/x509/v3_san.c ${MultiCompileDepends}
 
-$(o)v3_sxnet$(oext) : $(vendorSrc)crypto/x509v3/v3_sxnet.c ${MultiCompileDepends}
+$(o)v3_skey$(oext) : $(vendorSrc)crypto/x509/v3_skid.c ${MultiCompileDepends}
 
-$(o)v3_tlsf$(oext) : $(vendorSrc)crypto/x509v3/v3_tlsf.c ${MultiCompileDepends}
+$(o)v3_sxnet$(oext) : $(vendorSrc)crypto/x509/v3_sxnet.c ${MultiCompileDepends}
 
-$(o)v3_utl$(oext) : $(vendorSrc)crypto/x509v3/v3_utl.c ${MultiCompileDepends}
+$(o)v3_tlsf$(oext) : $(vendorSrc)crypto/x509/v3_tlsf.c ${MultiCompileDepends}
 
-$(o)v3err$(oext) : $(vendorSrc)crypto/x509v3/v3err.c ${MultiCompileDepends}
+$(o)v3_utf8$(oext) : $(vendorSrc)crypto/x509/v3_utf8.c ${MultiCompileDepends}
+
+$(o)v3_utl$(oext) : $(vendorSrc)crypto/x509/v3_utl.c ${MultiCompileDepends}
+
+$(o)v3err$(oext) : $(vendorSrc)crypto/x509/v3err.c ${MultiCompileDepends}
 
 #----------------------------------------------------------------------------------------
 # SSL
@@ -1389,23 +1647,29 @@ $(o)d1_srtp$(oext) : $(vendorSrc)ssl/d1_srtp.c ${MultiCompileDepends}
 
 $(o)methods$(oext) : $(vendorSrc)ssl/methods.c ${MultiCompileDepends}
 
-$(o)packet$(oext) : $(vendorSrc)ssl/packet.c ${MultiCompileDepends}
-
 $(o)pqueue$(oext) : $(vendorSrc)ssl/pqueue.c ${MultiCompileDepends}
-
-$(o)dtls1_bitmap$(oext) : $(vendorSrc)ssl/record/dtls1_bitmap.c ${MultiCompileDepends}
 
 $(o)rec_layer_d1$(oext) : $(vendorSrc)ssl/record/rec_layer_d1.c ${MultiCompileDepends}
 
 $(o)rec_layer_s3$(oext) : $(vendorSrc)ssl/record/rec_layer_s3.c ${MultiCompileDepends}
 
-$(o)ssl3_buffer$(oext) : $(vendorSrc)ssl/record/ssl3_buffer.c ${MultiCompileDepends}
+$(o)dtls_meth$(oext) : $(vendorSrc)ssl/record/methods/dtls_meth.c ${MultiCompileDepends}
 
-$(o)ssl3_record$(oext) : $(vendorSrc)ssl/record/ssl3_record.c ${MultiCompileDepends}
+$(o)tls_common$(oext) : $(vendorSrc)ssl/record/methods/tls_common.c ${MultiCompileDepends}
 
-$(o)ssl3_record_tls13$(oext) : $(vendorSrc)ssl/record/ssl3_record_tls13.c ${MultiCompileDepends}
+$(o)ssl3_cbc$(oext) : $(vendorSrc)ssl/record/methods/ssl3_cbc.c ${MultiCompileDepends}
 
-$(o)s3_cbc$(oext) : $(vendorSrc)ssl/s3_cbc.c ${MultiCompileDepends}
+$(o)ssl3_meth$(oext) : $(vendorSrc)ssl/record/methods/ssl3_meth.c ${MultiCompileDepends}
+
+$(o)tls_multib$(oext) : $(vendorSrc)ssl/record/methods/tls_multib.c ${MultiCompileDepends}
+
+$(o)tls_pad$(oext) : $(vendorSrc)ssl/record/methods/tls_pad.c ${MultiCompileDepends}
+
+$(o)tls1_meth$(oext) : $(vendorSrc)ssl/record/methods/tls1_meth.c ${MultiCompileDepends}
+
+$(o)tls13_meth$(oext) : $(vendorSrc)ssl/record/methods/tls13_meth.c ${MultiCompileDepends}
+
+$(o)tlsany_meth$(oext) : $(vendorSrc)ssl/record/methods/tlsany_meth.c ${MultiCompileDepends}
 
 $(o)s3_enc$(oext) : $(vendorSrc)ssl/s3_enc.c ${MultiCompileDepends}
 
@@ -1465,7 +1729,386 @@ $(o)t1_trce$(oext) : $(vendorSrc)ssl/t1_trce.c ${MultiCompileDepends}
 
 $(o)tls13_enc$(oext) : $(vendorSrc)ssl/tls13_enc.c ${MultiCompileDepends}
 
+$(o)tls_depr$(oext) : $(vendorSrc)ssl/tls_depr.c ${MultiCompileDepends}
+
 $(o)tls_srp$(oext) : $(vendorSrc)ssl/tls_srp.c ${MultiCompileDepends}
+
+#----------------------------------------------------------------------------------------
+# providers
+
+$(o)baseprov$(oext) : $(vendorSrc)providers/baseprov.c ${MultiCompileDepends}
+
+$(o)defltprov$(oext) : $(vendorSrc)providers/defltprov.c ${MultiCompileDepends}
+
+$(o)nullprov$(oext) : $(vendorSrc)providers/nullprov.c ${MultiCompileDepends}
+
+$(o)prov_running$(oext) : $(vendorSrc)providers/prov_running.c ${MultiCompileDepends}
+
+$(o)bio_prov$(oext) : $(vendorSrc)providers/common/bio_prov.c ${MultiCompileDepends}
+
+$(o)capabilities$(oext) : $(vendorSrc)providers/common/capabilities.c ${MultiCompileDepends}
+
+$(o)digest_to_nid$(oext) : $(vendorSrc)providers/common/digest_to_nid.c ${MultiCompileDepends}
+
+$(o)provider_ctx$(oext) : $(vendorSrc)providers/common/provider_ctx.c ${MultiCompileDepends}
+
+$(o)provider_err$(oext) : $(vendorSrc)providers/common/provider_err.c ${MultiCompileDepends}
+
+$(o)provider_seeding$(oext) : $(vendorSrc)providers/common/provider_seeding.c ${MultiCompileDepends}
+
+$(o)provider_util$(oext) : $(vendorSrc)providers/common/provider_util.c ${MultiCompileDepends}
+
+$(o)securitycheck$(oext) : $(vendorSrc)providers/common/securitycheck.c ${MultiCompileDepends}
+
+$(o)securitycheck_default$(oext) : $(vendorSrc)providers/common/securitycheck_default.c ${MultiCompileDepends}
+
+$(o)der_digests_gen$(oext) : $(vendorSrc)providers/common/der/der_digests_gen.c ${MultiCompileDepends}
+
+$(o)der_dsa_gen$(oext) : $(vendorSrc)providers/common/der/der_dsa_gen.c ${MultiCompileDepends}
+
+$(o)der_dsa_key$(oext) : $(vendorSrc)providers/common/der/der_dsa_key.c ${MultiCompileDepends}
+
+$(o)der_dsa_sig$(oext) : $(vendorSrc)providers/common/der/der_dsa_sig.c ${MultiCompileDepends}
+
+$(o)der_ec_gen$(oext) : $(vendorSrc)providers/common/der/der_ec_gen.c ${MultiCompileDepends}
+
+$(o)der_ec_key$(oext) : $(vendorSrc)providers/common/der/der_ec_key.c ${MultiCompileDepends}
+
+$(o)der_ec_sig$(oext) : $(vendorSrc)providers/common/der/der_ec_sig.c ${MultiCompileDepends}
+
+$(o)der_ecx_gen$(oext) : $(vendorSrc)providers/common/der/der_ecx_gen.c ${MultiCompileDepends}
+
+$(o)der_ecx_key$(oext) : $(vendorSrc)providers/common/der/der_ecx_key.c ${MultiCompileDepends}
+
+$(o)der_rsa_gen$(oext) : $(vendorSrc)providers/common/der/der_rsa_gen.c ${MultiCompileDepends}
+
+$(o)der_rsa_key$(oext) : $(vendorSrc)providers/common/der/der_rsa_key.c ${MultiCompileDepends}
+
+$(o)der_rsa_sig$(oext) : $(vendorSrc)providers/common/der/der_rsa_sig.c ${MultiCompileDepends}
+
+$(o)der_sm2_gen$(oext) : $(vendorSrc)providers/common/der/der_sm2_gen.c ${MultiCompileDepends}
+
+$(o)der_sm2_key$(oext) : $(vendorSrc)providers/common/der/der_sm2_key.c ${MultiCompileDepends}
+
+$(o)der_sm2_sig$(oext) : $(vendorSrc)providers/common/der/der_sm2_sig.c ${MultiCompileDepends}
+
+$(o)der_wrap_gen$(oext) : $(vendorSrc)providers/common/der/der_wrap_gen.c ${MultiCompileDepends}
+
+$(o)sm2_enc$(oext) : $(vendorSrc)providers/implementations/asymciphers/sm2_enc.c ${MultiCompileDepends}
+
+$(o)rsa_enc$(oext) : $(vendorSrc)providers/implementations/asymciphers/rsa_enc.c ${MultiCompileDepends}
+
+$(o)cipher_aes$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_aes.c ${MultiCompileDepends}
+
+$(o)cipher_aes_cbc_hmac_sha$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_aes_cbc_hmac_sha.c ${MultiCompileDepends}
+
+$(o)cipher_aes_cbc_hmac_sha1_hw$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_aes_cbc_hmac_sha1_hw.c ${MultiCompileDepends}
+
+$(o)cipher_aes_ccm$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_aes_cbc_hmac_sha256_hw.c ${MultiCompileDepends}
+
+$(o)cipher_aes_ccm$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_aes_ccm.c ${MultiCompileDepends}
+
+$(o)cipher_aes_ccm_hw$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_aes_ccm_hw.c ${MultiCompileDepends}
+
+$(o)cipher_aes_gcm_hw$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_aes_gcm_hw.c ${MultiCompileDepends}
+
+$(o)cipher_aes_gcm$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_aes_gcm.c ${MultiCompileDepends}
+
+$(o)cipher_aes_gcm_siv$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_aes_gcm_siv.c ${MultiCompileDepends}
+
+$(o)cipher_aes_gcm_siv_hw$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_aes_gcm_siv_hw.c ${MultiCompileDepends}
+
+$(o)cipher_aes_gcm_siv_polyval$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_aes_gcm_siv_polyval.c ${MultiCompileDepends}
+
+$(o)cipher_aes_ocb$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_aes_hw.c ${MultiCompileDepends}
+
+$(o)cipher_aes_ocb$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_aes_ocb.c ${MultiCompileDepends}
+
+$(o)cipher_aes_ocb_hw$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_aes_ocb_hw.c ${MultiCompileDepends}
+
+$(o)cipher_aes_siv$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_aes_siv.c ${MultiCompileDepends}
+
+$(o)cipher_aes_wrp$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_aes_wrp.c ${MultiCompileDepends}
+
+$(o)cipher_aes_siv_hw$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_aes_siv_hw.c ${MultiCompileDepends}
+
+$(o)cipher_aes_xts$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_aes_xts.c ${MultiCompileDepends}
+
+$(o)cipher_aes_xts_fips$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_aes_xts_fips.c ${MultiCompileDepends}
+
+$(o)cipher_aria$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_aria.c ${MultiCompileDepends}
+
+$(o)ciphercommcipher_aes_xts_hwon$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_aes_xts_hw.c ${MultiCompileDepends}
+
+$(o)cipher_aria_ccm$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_aria_ccm.c ${MultiCompileDepends}
+
+$(o)cipher_aria_ccm_hw$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_aria_ccm_hw.c ${MultiCompileDepends}
+
+$(o)cipher_aria_gcm$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_aria_gcm.c ${MultiCompileDepends}
+
+$(o)cipher_aria_hw$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_aria_hw.c ${MultiCompileDepends}
+
+$(o)cipher_aria_gcm_hw$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_aria_gcm_hw.c ${MultiCompileDepends}
+
+$(o)cipher_blowfish$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_blowfish.c ${MultiCompileDepends}
+
+$(o)cipher_camellia$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_camellia.c ${MultiCompileDepends}
+
+$(o)cipher_blowfish_hw$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_blowfish_hw.c ${MultiCompileDepends}
+
+$(o)cipher_camellia_hw$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_camellia_hw.c ${MultiCompileDepends}
+
+$(o)cipher_cast5_hw$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_cast5_hw.c ${MultiCompileDepends}
+
+$(o)cipher_chacha20$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_cast5.c ${MultiCompileDepends}
+
+$(o)cipher_chacha20$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_chacha20.c ${MultiCompileDepends}
+
+$(o)cipher_chacha20_poly1305$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_chacha20_poly1305.c ${MultiCompileDepends}
+
+$(o)cipher_chacha20_hw$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_chacha20_hw.c ${MultiCompileDepends}
+
+$(o)cipher_chacha20_poly1305_hw$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_chacha20_poly1305_hw.c ${MultiCompileDepends}
+
+$(o)cipher_cts$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_cts.c ${MultiCompileDepends}
+
+$(o)cipher_des$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_des.c ${MultiCompileDepends}
+
+$(o)cipher_des_hw$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_des_hw.c ${MultiCompileDepends}
+
+$(o)cipher_desx_hw$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_desx_hw.c ${MultiCompileDepends}
+
+$(o)cipher_idea$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_desx.c ${MultiCompileDepends}
+
+$(o)cipher_idea$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_idea.c ${MultiCompileDepends}
+
+$(o)cipher_null$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_null.c ${MultiCompileDepends}
+
+$(o)cipher_idea_hw$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_idea_hw.c ${MultiCompileDepends}
+
+#$(o)cipher_rc2$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_rc2.c ${MultiCompileDepends}
+
+$(o)cipher_rc4$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_rc4.c ${MultiCompileDepends}
+
+$(o)cipher_rc4_hmac_md5$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_rc4_hmac_md5.c ${MultiCompileDepends}
+
+$(o)cipher_rc4_hw$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_rc4_hw.c ${MultiCompileDepends}
+
+$(o)cipher_rc4_hmac_md5_hw$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_rc4_hmac_md5_hw.c ${MultiCompileDepends}
+
+$(o)cipher_seed$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_seed.c ${MultiCompileDepends}
+
+$(o)cipher_seed_hw$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_seed_hw.c ${MultiCompileDepends}
+
+$(o)cipher_sm4$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_sm4.c ${MultiCompileDepends}
+
+$(o)cipher_sm4_ccm$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_sm4_ccm.c ${MultiCompileDepends}
+
+$(o)cipher_sm4_gcm$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_sm4_gcm.c ${MultiCompileDepends}
+
+$(o)cipher_sm4_ccm_hw$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_sm4_ccm_hw.c ${MultiCompileDepends}
+
+$(o)cipher_sm4_hw$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_sm4_hw.c ${MultiCompileDepends}
+
+$(o)cipher_sm4_gcm_hw$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_sm4_gcm_hw.c ${MultiCompileDepends}
+
+$(o)cipher_sm4_xts$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_sm4_xts.c ${MultiCompileDepends}
+
+$(o)cipher_tdes$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_tdes.c ${MultiCompileDepends}
+
+$(o)cipher_sm4_xts_hw$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_sm4_xts_hw.c ${MultiCompileDepends}
+
+$(o)cipher_tdes_common$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_tdes_common.c ${MultiCompileDepends}
+
+$(o)cipher_tdes_default$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_tdes_default.c ${MultiCompileDepends}
+
+$(o)cipher_tdes_default_hw$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_tdes_default_hw.c ${MultiCompileDepends}
+
+$(o)cipher_tdes_wrap$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_tdes_wrap.c ${MultiCompileDepends}
+
+$(o)cipher_tdes_hw$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_tdes_hw.c ${MultiCompileDepends}
+
+$(o)ciphercommon$(oext) : $(vendorSrc)providers/implementations/ciphers/ciphercommon.c ${MultiCompileDepends}
+
+$(o)cipher_tdes_wrap_hw$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_tdes_wrap_hw.c ${MultiCompileDepends}
+
+$(o)ciphercommon_ccm$(oext) : $(vendorSrc)providers/implementations/ciphers/ciphercommon_ccm.c ${MultiCompileDepends}
+
+$(o)ciphercommon_block$(oext) : $(vendorSrc)providers/implementations/ciphers/ciphercommon_block.c ${MultiCompileDepends}
+
+$(o)ciphercommon_gcm$(oext) : $(vendorSrc)providers/implementations/ciphers/ciphercommon_gcm.c ${MultiCompileDepends}
+
+$(o)ciphercommon_ccm_hw$(oext) : $(vendorSrc)providers/implementations/ciphers/ciphercommon_ccm_hw.c ${MultiCompileDepends}
+
+$(o)ciphercommon_gcm_hw$(oext) : $(vendorSrc)providers/implementations/ciphers/ciphercommon_gcm_hw.c ${MultiCompileDepends}
+
+$(o)ciphercommon_hw$(oext) : $(vendorSrc)providers/implementations/ciphers/ciphercommon_hw.c ${MultiCompileDepends}
+
+$(o)blake2_prov$(oext) : $(vendorSrc)providers/implementations/digests/blake2_prov.c ${MultiCompileDepends}
+
+$(o)blake2b_prov$(oext) : $(vendorSrc)providers/implementations/digests/blake2b_prov.c ${MultiCompileDepends}
+
+$(o)blake2s_prov$(oext) : $(vendorSrc)providers/implementations/digests/blake2s_prov.c ${MultiCompileDepends}
+
+$(o)digestcommon$(oext) : $(vendorSrc)providers/implementations/digests/digestcommon.c ${MultiCompileDepends}
+
+$(o)md2_prov$(oext) : $(vendorSrc)providers/implementations/digests/md2_prov.c ${MultiCompileDepends}
+
+$(o)md4_prov$(oext) : $(vendorSrc)providers/implementations/digests/md4_prov.c ${MultiCompileDepends}
+
+$(o)md5_prov$(oext) : $(vendorSrc)providers/implementations/digests/md5_prov.c ${MultiCompileDepends}
+
+$(o)md5_sha1_prov$(oext) : $(vendorSrc)providers/implementations/digests/md5_sha1_prov.c ${MultiCompileDepends}
+
+$(o)mdc2_prov$(oext) : $(vendorSrc)providers/implementations/digests/mdc2_prov.c ${MultiCompileDepends}
+
+$(o)null_prov$(oext) : $(vendorSrc)providers/implementations/digests/null_prov.c ${MultiCompileDepends}
+
+$(o)ripemd_prov$(oext) : $(vendorSrc)providers/implementations/digests/ripemd_prov.c ${MultiCompileDepends}
+
+$(o)sha2_prov$(oext) : $(vendorSrc)providers/implementations/digests/sha2_prov.c ${MultiCompileDepends}
+
+$(o)sha3_prov$(oext) : $(vendorSrc)providers/implementations/digests/sha3_prov.c ${MultiCompileDepends}
+
+$(o)sm3_prov$(oext) : $(vendorSrc)providers/implementations/digests/sm3_prov.c ${MultiCompileDepends}
+
+$(o)wp_prov$(oext) : $(vendorSrc)providers/implementations/digests/wp_prov.c ${MultiCompileDepends}
+
+$(o)decode_der2key$(oext) : $(vendorSrc)providers/implementations/encode_decode/decode_der2key.c ${MultiCompileDepends}
+
+$(o)decode_epki2pki$(oext) : $(vendorSrc)providers/implementations/encode_decode/decode_epki2pki.c ${MultiCompileDepends}
+
+$(o)decode_msblob2key$(oext) : $(vendorSrc)providers/implementations/encode_decode/decode_msblob2key.c ${MultiCompileDepends}
+
+$(o)decode_pem2der$(oext) : $(vendorSrc)providers/implementations/encode_decode/decode_pem2der.c ${MultiCompileDepends}
+
+$(o)decode_pvk2key$(oext) : $(vendorSrc)providers/implementations/encode_decode/decode_pvk2key.c ${MultiCompileDepends}
+
+$(o)decode_spki2typespki$(oext) : $(vendorSrc)providers/implementations/encode_decode/decode_spki2typespki.c ${MultiCompileDepends}
+
+$(o)encode_key2any$(oext) : $(vendorSrc)providers/implementations/encode_decode/encode_key2any.c ${MultiCompileDepends}
+
+$(o)encode_key2blob$(oext) : $(vendorSrc)providers/implementations/encode_decode/encode_key2blob.c ${MultiCompileDepends}
+
+$(o)encode_key2ms$(oext) : $(vendorSrc)providers/implementations/encode_decode/encode_key2ms.c ${MultiCompileDepends}
+
+$(o)encode_key2text$(oext) : $(vendorSrc)providers/implementations/encode_decode/encode_key2text.c ${MultiCompileDepends}
+
+$(o)endecoder_common$(oext) : $(vendorSrc)providers/implementations/encode_decode/endecoder_common.c ${MultiCompileDepends}
+
+$(o)dh_exch$(oext) : $(vendorSrc)providers/implementations/exchange/dh_exch.c ${MultiCompileDepends}
+
+$(o)ecdh_exch$(oext) : $(vendorSrc)providers/implementations/exchange/ecdh_exch.c ${MultiCompileDepends}
+
+$(o)ecx_exch$(oext) : $(vendorSrc)providers/implementations/exchange/ecx_exch.c ${MultiCompileDepends}
+
+$(o)kdf_exch$(oext) : $(vendorSrc)providers/implementations/exchange/kdf_exch.c ${MultiCompileDepends}
+
+$(o)hkdf$(oext) : $(vendorSrc)providers/implementations/kdfs/hkdf.c ${MultiCompileDepends}
+
+$(o)hmacdrbg_kdf$(oext) : $(vendorSrc)providers/implementations/kdfs/hmacdrbg_kdf.c ${MultiCompileDepends}
+
+$(o)kbkdf$(oext) : $(vendorSrc)providers/implementations/kdfs/kbkdf.c ${MultiCompileDepends}
+
+$(o)krb5kdf$(oext) : $(vendorSrc)providers/implementations/kdfs/krb5kdf.c ${MultiCompileDepends}
+
+$(o)pbkdf1$(oext) : $(vendorSrc)providers/implementations/kdfs/pbkdf1.c ${MultiCompileDepends}
+
+$(o)pbkdf2_fips$(oext) : $(vendorSrc)providers/implementations/kdfs/pbkdf2_fips.c ${MultiCompileDepends}
+
+$(o)pbkdf2$(oext) : $(vendorSrc)providers/implementations/kdfs/pbkdf2.c ${MultiCompileDepends}
+
+$(o)pkcs12kdf$(oext) : $(vendorSrc)providers/implementations/kdfs/pkcs12kdf.c ${MultiCompileDepends}
+
+$(o)pvkkdf$(oext) : $(vendorSrc)providers/implementations/kdfs/pvkkdf.c ${MultiCompileDepends}
+
+$(o)scrypt$(oext) : $(vendorSrc)providers/implementations/kdfs/scrypt.c ${MultiCompileDepends}
+
+$(o)sshkdf$(oext) : $(vendorSrc)providers/implementations/kdfs/sshkdf.c ${MultiCompileDepends}
+
+$(o)sskdf$(oext) : $(vendorSrc)providers/implementations/kdfs/sskdf.c ${MultiCompileDepends}
+
+$(o)tls1_prf$(oext) : $(vendorSrc)providers/implementations/kdfs/tls1_prf.c ${MultiCompileDepends}
+
+$(o)x942kdf$(oext) : $(vendorSrc)providers/implementations/kdfs/x942kdf.c ${MultiCompileDepends}
+
+$(o)ec_kem$(oext) : $(vendorSrc)providers/implementations/kem/ec_kem.c ${MultiCompileDepends}
+
+$(o)ecx_kem$(oext) : $(vendorSrc)providers/implementations/kem/ecx_kem.c ${MultiCompileDepends}
+
+$(o)kem_util$(oext) : $(vendorSrc)providers/implementations/kem/kem_util.c ${MultiCompileDepends}
+
+$(o)rsa_kem$(oext) : $(vendorSrc)providers/implementations/kem/rsa_kem.c ${MultiCompileDepends}
+
+$(o)dh_kmgmt$(oext) : $(vendorSrc)providers/implementations/keymgmt/dh_kmgmt.c ${MultiCompileDepends}
+
+$(o)dsa_kmgmt$(oext) : $(vendorSrc)providers/implementations/keymgmt/dsa_kmgmt.c ${MultiCompileDepends}
+
+$(o)ec_kmgmt$(oext) : $(vendorSrc)providers/implementations/keymgmt/ec_kmgmt.c ${MultiCompileDepends}
+
+$(o)ecx_kmgmt$(oext) : $(vendorSrc)providers/implementations/keymgmt/ecx_kmgmt.c ${MultiCompileDepends}
+
+$(o)kdf_legacy_kmgmt$(oext) : $(vendorSrc)providers/implementations/keymgmt/kdf_legacy_kmgmt.c ${MultiCompileDepends}
+
+$(o)mac_legacy_kmgmt$(oext) : $(vendorSrc)providers/implementations/keymgmt/mac_legacy_kmgmt.c ${MultiCompileDepends}
+
+$(o)rsa_kmgmt$(oext) : $(vendorSrc)providers/implementations/keymgmt/rsa_kmgmt.c ${MultiCompileDepends}
+
+$(o)blake2b_mac$(oext) : $(vendorSrc)providers/implementations/macs/blake2b_mac.c ${MultiCompileDepends}
+
+$(o)blake2s_mac$(oext) : $(vendorSrc)providers/implementations/macs/blake2s_mac.c ${MultiCompileDepends}
+
+$(o)cmac_prov$(oext) : $(vendorSrc)providers/implementations/macs/cmac_prov.c ${MultiCompileDepends}
+
+$(o)gmac_prov$(oext) : $(vendorSrc)providers/implementations/macs/gmac_prov.c ${MultiCompileDepends}
+
+$(o)hmac_prov$(oext) : $(vendorSrc)providers/implementations/macs/hmac_prov.c ${MultiCompileDepends}
+
+$(o)kmac_prov$(oext) : $(vendorSrc)providers/implementations/macs/kmac_prov.c ${MultiCompileDepends}
+
+$(o)poly1305_prov$(oext) : $(vendorSrc)providers/implementations/macs/poly1305_prov.c ${MultiCompileDepends}
+
+$(o)siphash_prov$(oext) : $(vendorSrc)providers/implementations/macs/siphash_prov.c ${MultiCompileDepends}
+
+$(o)crngt$(oext) : $(vendorSrc)providers/implementations/rands/crngt.c ${MultiCompileDepends}
+
+$(o)drbg$(oext) : $(vendorSrc)providers/implementations/rands/drbg_ctr.c ${MultiCompileDepends}
+
+$(o)drbg_hash$(oext) : $(vendorSrc)providers/implementations/rands/drbg_hash.c ${MultiCompileDepends}
+
+$(o)drbg$(oext) : $(vendorSrc)providers/implementations/rands/drbg_hmac.c ${MultiCompileDepends}
+
+$(o)drbg$(oext) : $(vendorSrc)providers/implementations/rands/drbg.c ${MultiCompileDepends}
+
+$(o)seed_src$(oext) : $(vendorSrc)providers/implementations/rands/seed_src.c ${MultiCompileDepends}
+
+$(o)test_rng$(oext) : $(vendorSrc)providers/implementations/rands/test_rng.c ${MultiCompileDepends}
+
+$(o)rand_cpu_arm64$(oext) : $(vendorSrc)providers/implementations/rands/seeding/rand_cpu_arm64.c ${MultiCompileDepends}
+
+$(o)rand_cpu_x86$(oext) : $(vendorSrc)providers/implementations/rands/seeding/rand_cpu_x86.c ${MultiCompileDepends}
+
+$(o)rand_tsc$(oext) : $(vendorSrc)providers/implementations/rands/seeding/rand_tsc.c ${MultiCompileDepends}
+
+$(o)rand_unix$(oext) : $(vendorSrc)providers/implementations/rands/seeding/rand_unix.c ${MultiCompileDepends}
+
+$(o)rand_win$(oext) : $(vendorSrc)providers/implementations/rands/seeding/rand_win.c ${MultiCompileDepends}
+
+$(o)dsa_sig$(oext) : $(vendorSrc)providers/implementations/signature/dsa_sig.c ${MultiCompileDepends}
+
+$(o)ecdsa_sig$(oext) : $(vendorSrc)providers/implementations/signature/ecdsa_sig.c ${MultiCompileDepends}
+
+$(o)eddsa_sig$(oext) : $(vendorSrc)providers/implementations/signature/eddsa_sig.c ${MultiCompileDepends}
+
+$(o)mac_legacy_sig$(oext) : $(vendorSrc)providers/implementations/signature/mac_legacy_sig.c ${MultiCompileDepends}
+
+$(o)rsa_sig$(oext) : $(vendorSrc)providers/implementations/signature/rsa_sig.c ${MultiCompileDepends}
+
+$(o)sm2_sig$(oext) : $(vendorSrc)providers/implementations/signature/sm2_sig.c ${MultiCompileDepends}
+
+$(o)file_store_any2obj$(oext) : $(vendorSrc)providers/implementations/storemgmt/file_store_any2obj.c ${MultiCompileDepends}
+
+$(o)file_store$(oext) : $(vendorSrc)providers/implementations/storemgmt/file_store.c ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 objs =% $(MultiCompileObjectList)
@@ -1475,11 +2118,13 @@ objs =% $(MultiCompileObjectList)
 #perl ./crypto/aes/asm/aesni-x86_64.pl ./crypto/aes/asm/aesni-x86_64.s
 #perl ./crypto/modes/asm/aesni-gcm-x86_64.pl ./crypto/modes/asm/aesni-gcm-x86_64.s
 #perl ./crypto/modes/asm/ghash-x86_64.pl ./crypto/modes/asm/ghash-x86_64.s
+#perl ./crypto/ec/asm/x25519-x86_64.pl ./crypto/ec/asm/x25519-x86_64.s
 #WINDOWS ASSEMBLY GENERATION
 #perl ./crypto/x86_64cpuid.pl masm ./crypto/x86_64cpuid.asm
 #perl ./crypto/aes/asm/aesni-x86_64.pl masm ./crypto/aes/asm/aesni-x86_64.asm
 #perl ./crypto/modes/asm/aesni-gcm-x86_64.pl masm ./crypto/modes/asm/aesni-gcm-x86_64.asm
 #perl ./crypto/modes/asm/ghash-x86_64.pl masm ./crypto/modes/asm/ghash-x86_64.asm
+#perl ./crypto/ec/asm/x25519-x86_64.pl masm ./crypto/ec/asm/x25519-x86_64.asm
 # -- ASM ------------------------------------------------------------------------------------------
 %if $(TARGET_PLATFORM) == "Linux"
     .s.o:
@@ -1535,6 +2180,8 @@ objs =% $(MultiCompileObjectList)
     $(o)aesni-gcm-x86_64$(oext) : $(vendorSrc)crypto/modes/asm/aesni-gcm-x86_64.asm ${MultiCompileDepends}
 
     $(o)ghash-x86_64$(oext) : $(vendorSrc)crypto/modes/asm/ghash-x86_64.asm ${MultiCompileDepends}
+
+    $(o)winstore_store$(oext) : $(vendorSrc)providers/implementations/storemgmt/winstore_store.c ${MultiCompileDepends}
 
     always:
       ~set objs $(objs) $(o)x86_64cpuid$(oext) $(o)aesni-x86_64$(oext) $(o)aesni-gcm-x86_64$(oext) $(o)ghash-x86_64$(oext)
