@@ -2511,6 +2511,9 @@ public:
         // Skip the check for SQLite file validity before opening. When using the CloudSqlite mode, the local file is not in SQLite normal format.
         bool m_skipFileCheck = false;
 
+        // Provide uri to shared schema channel use by default during schema upgrade or update.
+        Utf8String m_sharedSchemaChannelUri;
+
         BusyRetry* m_busyRetry = nullptr;
         mutable bvector<Utf8String> m_queryParams;
 

@@ -201,20 +201,20 @@ struct SharedSchemaChannelHelper final {
 		auto rc = TryGetAttachDbs(aliasMap, conn);
 		if (rc != BE_SQLITE_OK) {
 			conn.GetImpl().Issues().Report(
-				IssueSeverity::Error, IssueCategory::SchemaSynchronization, IssueType::ECDbIssue,
+				IssueSeverity::Error, IssueCategory::SharedSchemaChannel, IssueType::ECDbIssue,
 				"Unable to query attach db from primary connection");
 			return rc;
 		}
 		if (aliasMap.find(ALIAS_MAIN_DB) == aliasMap.end()) {
 			conn.GetImpl().Issues().ReportV(
-				IssueSeverity::Error, IssueCategory::SchemaSynchronization, IssueType::ECDbIssue,
+				IssueSeverity::Error, IssueCategory::SharedSchemaChannel, IssueType::ECDbIssue,
 				"Expecting '%s' attach db on primary connection", ALIAS_MAIN_DB);
 			return rc;
 		}
 
 		if (aliasMap.find(ALIAS_SHARED_DB) != aliasMap.end()) {
 			conn.GetImpl().Issues().ReportV(
-				IssueSeverity::Error, IssueCategory::SchemaSynchronization, IssueType::ECDbIssue,
+				IssueSeverity::Error, IssueCategory::SharedSchemaChannel, IssueType::ECDbIssue,
 				"Db alias '%s' use by channel db is already in use", ALIAS_SHARED_DB);
 			return rc;
 		}
@@ -412,13 +412,25 @@ struct SharedSchemaChannelHelper final {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+SharedSchemaChannel::Status SharedSchemaChannel::SetDefaultChannelUri(ChannelUri channelUri) {
+    auto rc = VerifyChannel(channelUri, false);
+	if (rc != SharedSchemaChannel::Status::ERROR) {
+        return rc;
+    }
+    m_defaultChannelUri = channelUri;
+    return Status::SUCCESS;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 SharedSchemaChannel::Status SharedSchemaChannel::Init(ChannelUri const& channelURI, TableList additionTables) {
     auto const info = channelURI.GetInfo();
 	if (!info.IsEmpty()) {
         BeJsDocument doc;
         info.To(BeJsValue(doc));
         m_conn.GetImpl().Issues().ReportV(
-			IssueSeverity::Error, IssueCategory::SchemaSynchronization, IssueType::ECDbIssue,
+			IssueSeverity::Error, IssueCategory::SharedSchemaChannel, IssueType::ECDbIssue,
 			"Shared schema channel (%a) already initalized. %s", doc.Stringify().c_str());
         return Status::ERROR_SHARED_CHANNEL_ALREADY_INITIALIZED;
     }
@@ -427,7 +439,7 @@ SharedSchemaChannel::Status SharedSchemaChannel::Init(ChannelUri const& channelU
     auto rc = sharedDb.OpenBeSQLiteDb(channelURI.GetUri().c_str(), Db::OpenParams(Db::OpenMode::ReadWrite, DefaultTxn::Yes));
 	if (rc != BE_SQLITE_OK) {
         m_conn.GetImpl().Issues().ReportV(
-			IssueSeverity::Error, IssueCategory::SchemaSynchronization, IssueType::ECDbIssue,
+			IssueSeverity::Error, IssueCategory::SharedSchemaChannel, IssueType::ECDbIssue,
 			"Fail to open shared db %s. %s", channelURI.GetUri().c_str(), BeSQLiteLib::GetErrorString(rc));
         return Status::ERROR_SHARED_CHANNEL_ALREADY_INITIALIZED;
 	}
@@ -437,7 +449,7 @@ SharedSchemaChannel::Status SharedSchemaChannel::Init(ChannelUri const& channelU
     rc = SharedSchemaChannelHelper::DropDataTables(sharedDb);
 	if (rc != BE_SQLITE_OK) {
         m_conn.GetImpl().Issues().ReportV(
-			IssueSeverity::Error, IssueCategory::SchemaSynchronization, IssueType::ECDbIssue,
+			IssueSeverity::Error, IssueCategory::SharedSchemaChannel, IssueType::ECDbIssue,
 			"Fail to drop data table(s) from shared schema channel (%s). %s", channelURI.GetUri().c_str(), BeSQLiteLib::GetErrorString(rc));
         return Status::ERROR_FAIL_TO_INIT_SHARED_DB;
 	}
@@ -445,7 +457,7 @@ SharedSchemaChannel::Status SharedSchemaChannel::Init(ChannelUri const& channelU
     rc = SharedSchemaChannelHelper::DropMetaTables(sharedDb);
 	if (rc != BE_SQLITE_OK) {
         m_conn.GetImpl().Issues().ReportV(
-			IssueSeverity::Error, IssueCategory::SchemaSynchronization, IssueType::ECDbIssue,
+			IssueSeverity::Error, IssueCategory::SharedSchemaChannel, IssueType::ECDbIssue,
 			"Fail to drop meta table(s) from shared schema channel (%s). %s", channelURI.GetUri().c_str(), BeSQLiteLib::GetErrorString(rc));
         return Status::ERROR_FAIL_TO_INIT_SHARED_DB;
 	}
@@ -453,7 +465,7 @@ SharedSchemaChannel::Status SharedSchemaChannel::Init(ChannelUri const& channelU
     rc = SharedSchemaChannelHelper::CreateMetaTablesFrom(m_conn, sharedDb);
 	if (rc != BE_SQLITE_OK) {
         m_conn.GetImpl().Issues().ReportV(
-			IssueSeverity::Error, IssueCategory::SchemaSynchronization, IssueType::ECDbIssue,
+			IssueSeverity::Error, IssueCategory::SharedSchemaChannel, IssueType::ECDbIssue,
 			"Fail to re-create meta table(s) in shared schema channel (%s). %s", channelURI.GetUri().c_str(), BeSQLiteLib::GetErrorString(rc));
         return Status::ERROR_FAIL_TO_INIT_SHARED_DB;
 	}
@@ -461,7 +473,7 @@ SharedSchemaChannel::Status SharedSchemaChannel::Init(ChannelUri const& channelU
     rc = UpdateOrCreateSharedChannelInfo(sharedDb);
     if (rc != BE_SQLITE_OK) {
         m_conn.GetImpl().Issues().ReportV(
-			IssueSeverity::Error, IssueCategory::SchemaSynchronization, IssueType::ECDbIssue,
+			IssueSeverity::Error, IssueCategory::SharedSchemaChannel, IssueType::ECDbIssue,
 			"Fail to save shared channel info in (%s). %s", channelURI.GetUri().c_str(), BeSQLiteLib::GetErrorString(rc));
         return Status::ERROR_FAIL_TO_INIT_SHARED_DB;
 	}
@@ -470,7 +482,7 @@ SharedSchemaChannel::Status SharedSchemaChannel::Init(ChannelUri const& channelU
     rc = sharedDb.SaveChanges();
 	if (rc != BE_SQLITE_OK || sharedInfo.IsEmpty()) {
         m_conn.GetImpl().Issues().ReportV(
-			IssueSeverity::Error, IssueCategory::SchemaSynchronization, IssueType::ECDbIssue,
+			IssueSeverity::Error, IssueCategory::SharedSchemaChannel, IssueType::ECDbIssue,
 			"Fail to save changes to shared schema channel (%s). %s", channelURI.GetUri().c_str(), BeSQLiteLib::GetErrorString(rc));
         return Status::ERROR_FAIL_TO_INIT_SHARED_DB;
 	}
@@ -478,7 +490,7 @@ SharedSchemaChannel::Status SharedSchemaChannel::Init(ChannelUri const& channelU
     rc = UpdateOrCreateLocalChannelInfo(sharedInfo);
     if (rc != BE_SQLITE_OK) {
         m_conn.GetImpl().Issues().ReportV(
-			IssueSeverity::Error, IssueCategory::SchemaSynchronization, IssueType::ECDbIssue,
+			IssueSeverity::Error, IssueCategory::SharedSchemaChannel, IssueType::ECDbIssue,
 			"Fail to save shared channel info to local db. %s", BeSQLiteLib::GetErrorString(rc));
         return Status::ERROR;
 	}
@@ -490,10 +502,10 @@ SharedSchemaChannel::Status SharedSchemaChannel::Init(ChannelUri const& channelU
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-SharedSchemaChannel::Status SharedSchemaChannel::VerifyChannel(ChannelUri const& channelURI, bool isPull) {
+SharedSchemaChannel::Status SharedSchemaChannel::VerifyChannel(ChannelUri const& channelURI, bool isPull) const{
 	if (m_conn.IsReadonly()) {
 		m_conn.GetImpl().Issues().Report(
-			IssueSeverity::Error, IssueCategory::SchemaSynchronization, IssueType::ECDbIssue,
+			IssueSeverity::Error, IssueCategory::SharedSchemaChannel, IssueType::ECDbIssue,
 			"Primary connection is readonly. It must be in read/write mode.");
 		return Status::ERROR_READONLY;
 	}
@@ -504,7 +516,7 @@ SharedSchemaChannel::Status SharedSchemaChannel::VerifyChannel(ChannelUri const&
 		rc = sharedDb.OpenBeSQLiteDb(channelURI.GetUri().c_str(), Db::OpenParams(Db::OpenMode::Readonly));
 		if (rc != BE_SQLITE_OK) {
 				m_conn.GetImpl().Issues().ReportV(
-					IssueSeverity::Error, IssueCategory::SchemaSynchronization, IssueType::ECDbIssue,
+					IssueSeverity::Error, IssueCategory::SharedSchemaChannel, IssueType::ECDbIssue,
 					"Fail to to open shared schema channel db in readonly mode: (%s)", channelURI.GetUri().c_str());
 			return Status::ERROR_OPENING_SHARED_DB;
 		}
@@ -512,7 +524,7 @@ SharedSchemaChannel::Status SharedSchemaChannel::VerifyChannel(ChannelUri const&
 		rc = sharedDb.OpenBeSQLiteDb(channelURI.GetUri().c_str(), Db::OpenParams(Db::OpenMode::ReadWrite));
 		if (rc != BE_SQLITE_OK) {
 				m_conn.GetImpl().Issues().ReportV(
-					IssueSeverity::Error, IssueCategory::SchemaSynchronization, IssueType::ECDbIssue,
+					IssueSeverity::Error, IssueCategory::SharedSchemaChannel, IssueType::ECDbIssue,
 					"Fail to to open shared schema channel db in readonly mode: (%s)", channelURI.GetUri().c_str());
 			return Status::ERROR_OPENING_SHARED_DB;
 		}
@@ -521,7 +533,7 @@ SharedSchemaChannel::Status SharedSchemaChannel::VerifyChannel(ChannelUri const&
     const auto sharedChannelInfo = SharedChannelInfo::From(sharedDb);
 	if (sharedChannelInfo.IsEmpty()) {
 		m_conn.GetImpl().Issues().ReportV(
-			IssueSeverity::Error, IssueCategory::SchemaSynchronization, IssueType::ECDbIssue,
+			IssueSeverity::Error, IssueCategory::SharedSchemaChannel, IssueType::ECDbIssue,
 			"Invalid shared channel db (%s). Shared channel info not found.", channelURI.GetUri().c_str());
 		return Status::ERROR_INVALID_SHARED_DB;
 	}
@@ -529,14 +541,14 @@ SharedSchemaChannel::Status SharedSchemaChannel::VerifyChannel(ChannelUri const&
     const auto localChannelInfo = LocalChannelInfo::From(m_conn);
 	if (localChannelInfo.IsEmpty()) {
 		m_conn.GetImpl().Issues().ReportV(
-			IssueSeverity::Error, IssueCategory::SchemaSynchronization, IssueType::ECDbIssue,
+			IssueSeverity::Error, IssueCategory::SharedSchemaChannel, IssueType::ECDbIssue,
 			"Local db is not set to use shared schema channel (%s).", channelURI.GetUri().c_str());
 		return Status::ERROR_INVALID_LOCAL_DB;
 	}
 
     if (sharedChannelInfo.GetChannelId() != localChannelInfo.GetChannelId()) {
 		m_conn.GetImpl().Issues().ReportV(
-			IssueSeverity::Error, IssueCategory::SchemaSynchronization, IssueType::ECDbIssue,
+			IssueSeverity::Error, IssueCategory::SharedSchemaChannel, IssueType::ECDbIssue,
 			"channel id does not match (local) %s <> (shared) %s.",
 				localChannelInfo.GetChannelId().ToString().c_str(),
 				sharedChannelInfo.GetChannelId().ToString().c_str());
@@ -546,7 +558,7 @@ SharedSchemaChannel::Status SharedSchemaChannel::VerifyChannel(ChannelUri const&
     const auto projectGUID = m_conn.QueryProjectGuid();
     if (sharedChannelInfo.GetProjectId() != projectGUID) {
 		m_conn.GetImpl().Issues().ReportV(
-			IssueSeverity::Error, IssueCategory::SchemaSynchronization, IssueType::ECDbIssue,
+			IssueSeverity::Error, IssueCategory::SharedSchemaChannel, IssueType::ECDbIssue,
 			"project id does not match (local) %s <> (shared) %s.",
 				projectGUID.ToString().c_str(),
 				sharedChannelInfo.GetProjectId().ToString().c_str());
@@ -556,7 +568,7 @@ SharedSchemaChannel::Status SharedSchemaChannel::VerifyChannel(ChannelUri const&
     const auto fileGUID = m_conn.GetDbGuid();
     if (sharedChannelInfo.GetFileId() != fileGUID) {
 		m_conn.GetImpl().Issues().ReportV(
-			IssueSeverity::Error, IssueCategory::SchemaSynchronization, IssueType::ECDbIssue,
+			IssueSeverity::Error, IssueCategory::SharedSchemaChannel, IssueType::ECDbIssue,
 			"project id does not match (local) %s <> (shared) %s.",
 				fileGUID.ToString().c_str(),
 				sharedChannelInfo.GetFileId().ToString().c_str());
@@ -593,7 +605,7 @@ SharedSchemaChannel::Status SharedSchemaChannel::PullInternal(ChannelUri const& 
     auto rc = m_conn.AttachDb(channelURI.GetUri().c_str(), SharedSchemaChannelHelper::ALIAS_SHARED_DB);
 	if (rc != BE_SQLITE_OK) {
 		m_conn.GetImpl().Issues().ReportV(
-			IssueSeverity::Error, IssueCategory::SchemaSynchronization, IssueType::ECDbIssue,
+			IssueSeverity::Error, IssueCategory::SharedSchemaChannel, IssueType::ECDbIssue,
 			"Unable to attach sync db '%s' as '%s' to primary connection: %s",
 			channelURI.GetUri().c_str(),
 			SharedSchemaChannelHelper::ALIAS_SHARED_DB,
@@ -658,7 +670,7 @@ SharedSchemaChannel::Status SharedSchemaChannel::PushInternal(ChannelUri const& 
     auto rc = m_conn.AttachDb(channelURI.GetUri().c_str(), SharedSchemaChannelHelper::ALIAS_SHARED_DB);
 	if (rc != BE_SQLITE_OK) {
 		m_conn.GetImpl().Issues().ReportV(
-			IssueSeverity::Error, IssueCategory::SchemaSynchronization, IssueType::ECDbIssue,
+			IssueSeverity::Error, IssueCategory::SharedSchemaChannel, IssueType::ECDbIssue,
 			"Unable to attach sync db '%s' as '%s' to primary connection: %s",
 			channelURI.GetUri().c_str(),
 			SharedSchemaChannelHelper::ALIAS_SHARED_DB,
@@ -966,7 +978,7 @@ SharedSchemaChannel::SharedChannelInfo SharedSchemaChannel::SharedChannelInfo::F
 
 		info.m_projectId.FromString(val[JsonNames::ChannelProjectId].asCString());
 		info.m_fileId.FromString(val[JsonNames::ChannelFileId].asCString());
-		info.m_lastModUtc.FromString(val[JsonNames::ChannelLastModUtc].asCString());
+		info.m_lastModUtc = DateTime::FromString(val[JsonNames::ChannelLastModUtc].asCString());
         info.m_changesetId = val[JsonNames::ChannelChangeSetId].asCString();
         info.m_changesetIndex = (int32_t)val[JsonNames::ChannelChangeSetIndex].asInt();
         return info;
@@ -1027,7 +1039,7 @@ SharedSchemaChannel::LocalChannelInfo SharedSchemaChannel::LocalChannelInfo::Fro
 			return s_empty;
 		}
 
-		info.m_lastModUtc.FromString(val[JsonNames::ChannelLastModUtc].asCString());
+		info.m_lastModUtc = DateTime::FromString(val[JsonNames::ChannelLastModUtc].asCString());
         return info;
     }
     return s_empty;

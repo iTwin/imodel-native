@@ -31,6 +31,7 @@ struct SharedSchemaChannel final {
     enum class Status {
         SUCCESS,
         ERROR,
+        ERROR_UP_TO_DATE,
         ERROR_SHARED_CHANNEL_ALREADY_INITIALIZED,
         ERROR_OPENING_SHARED_DB,
         ERROR_FAIL_TO_INIT_SHARED_DB,
@@ -114,6 +115,7 @@ struct SharedSchemaChannel final {
     };
 private:
     ECDbR m_conn;
+    ChannelUri m_defaultChannelUri;
     DbResult UpdateOrCreateSharedChannelInfo(DbR channelDb);
     DbResult UpdateOrCreateSharedChannelInfo(ChannelUri channelUri);
     DbResult UpdateOrCreateLocalChannelInfo(SharedChannelInfo const& from);
@@ -122,15 +124,18 @@ private:
     Status Init(ChannelUri const&, TableList);
     Status PullInternal(ChannelUri const&, TableList);
     Status PushInternal(ChannelUri const&, TableList);
-    Status VerifyChannel(ChannelUri const&, bool isPull);
+    Status VerifyChannel(ChannelUri const&, bool isPull) const;
 public:
     SharedSchemaChannel(SharedSchemaChannel&&) = delete;
     SharedSchemaChannel(SharedSchemaChannel const&)=delete;
     SharedSchemaChannel& operator=(SharedSchemaChannel&&)=delete;
     SharedSchemaChannel& operator=(SharedSchemaChannel const&)=delete;
     explicit SharedSchemaChannel(ECDbR conn):m_conn(conn){}
-    ECDB_EXPORT LocalChannelInfo GetInfo() const;
     bool IsEnabled() const { return !GetInfo().IsEmpty(); }
+    ChannelUri const& GetDefaultChannelUri() const { return m_defaultChannelUri;  }
+    Status SetDefaultChannelUri(Utf8CP channelUri) { return SetDefaultChannelUri(ChannelUri(channelUri)); }
+    ECDB_EXPORT LocalChannelInfo GetInfo() const;
+    ECDB_EXPORT Status SetDefaultChannelUri(ChannelUri channelUri);
     ECDB_EXPORT Status Init(ChannelUri const&);
     ECDB_EXPORT Status Pull(ChannelUri const&, SchemaImportToken const* token = nullptr); // read/write op
     ECDB_EXPORT Status Push(ChannelUri const&);

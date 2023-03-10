@@ -159,6 +159,19 @@ bool ECDb::Impl::s_isInitialized = false;
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
+DbResult ECDb::Impl::OnDbOpened(OpenParams const& params) const
+    {
+    if (!params.m_sharedSchemaChannelUri.empty())
+        {
+        Schemas().GetSharedChannel().SetDefaultChannelUri(params.m_sharedSchemaChannelUri.c_str());
+        }
+
+    return BE_SQLITE_OK;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+------
 DbResult ECDb::Impl::OnDbCreated() const
     {
     OnInit();

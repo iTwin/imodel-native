@@ -89,6 +89,18 @@ DbResult ECDb::_OnDbCreated(CreateParams const& params)
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
+DbResult ECDb::_OnDbOpened(OpenParams const& params)
+    {
+    DbResult stat = Db::_OnDbOpened(params);
+    if (stat != BE_SQLITE_OK)
+        return stat;
+
+    return m_pimpl->OnDbOpened(params);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+------
 DbResult ECDb::_AfterSchemaChangeSetApplied() const
     {
     ClearECDbCache();

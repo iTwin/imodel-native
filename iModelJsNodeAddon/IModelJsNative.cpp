@@ -510,8 +510,9 @@ public:
             InstanceMethod("getLastInsertRowId", &NativeECDb::GetLastInsertRowId),
             InstanceMethod("importSchema", &NativeECDb::ImportSchema),
             InstanceMethod("isOpen", &NativeECDb::IsOpen),
-            InstanceMethod("schemaSync", &NativeECDb::SyncSchemas),
-            InstanceMethod("initSharedSchemaDb", &NativeECDb::InitSharedSchemaDb),
+            InstanceMethod("sharedChannelSetDefaultUri", &NativeECDb::SharedChannelSetDefaultUri),
+            InstanceMethod("sharedChannelPull", &NativeECDb::SharedChannelPull),
+            InstanceMethod("sharedChannelInit", &NativeECDb::SharedChannelInit),
             InstanceMethod("openDb", &NativeECDb::OpenDb),
             InstanceMethod("saveChanges", &NativeECDb::SaveChanges),
             StaticMethod("enableSharedCache", &NativeECDb::EnableSharedCache),
@@ -1783,17 +1784,35 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
             THROW_JS_EXCEPTION(rc.GetStatusAsString());
         }
     }
-    Napi::Value SyncSchemas(NapiInfoCR info) {
+    void SharedChannelSetDefaultUri(NapiInfoCR info) {
         RequireDbIsOpen(info);
-        REQUIRE_ARGUMENT_STRING(0, sharedSchemaDbUri);
-        REQUIRE_ARGUMENT_INTEGER(1, action);
-        auto rc = GetDgnDb().SyncSchemas(sharedSchemaDbUri, (SchemaManager::SyncAction)action);
-        return Napi::Number::New(Env(), (int)rc);
+        REQUIRE_ARGUMENT_STRING(0, channelUri);
+        auto rc = GetDgnDb().Schemas().GetSharedChannel().SetDefaultChannelUri(channelUri.c_str());
+        if (rc != SharedSchemaChannel::Status) {
+            THROW_JS_EXCEPTION(Utf8PrintfString("fail to set default shared schema channel uri: %s", channelUri.c_str()));
+        }
     }
-    Napi::Value InitSharedSchemaDb(NapiInfoCR info) {
+    Napi::Value SharedChannelGetDefaultUri(NapiInfoCR info) {
         RequireDbIsOpen(info);
-        REQUIRE_ARGUMENT_STRING(0, sharedSchemaDbUri);
-        auto rc = GetDgnDb().Schemas().InitSharedSchemaDb(sharedSchemaDbUri);
+        auto& channelUri = GetDgnDb().Schemas().GetSharedChannel().GetDefaultChannelUri();
+        if (channelUri.IsEmpty())
+            return Env().Undefined();
+
+        return Napi::String::New(Env(), channelUri.GetUri().c_str());
+        }
+    void SharedChannelInit(NapiInfoCR info) {
+        RequireDbIsOpen(info);
+        REQUIRE_ARGUMENT_STRING(0, channelUri);
+        auto channelUri = SharedSchemaChannel::ChannelUri(channelUri.c_str());
+        auto rc = GetDgnDb().Schemas().GetSharedChannel().Init(channelUri);
+        if (rc != SharedSchemaChannel::Status) {
+            THROW_JS_EXCEPTION(Utf8PrintfString("fail to initialize shared schema channel: %s", channelUri.c_str()));
+        }
+    }
+    Napi::Value SharedChannelPull(NapiInfoCR info) {
+        RequireDbIsOpen(info);
+        OP_ARGUMENT_STRING(0, sharedSchemaDbUri);
+        auto rc = GetDgnDb().Schemas().GetSharedChannel().push
         return Napi::Number::New(Env(), (int)rc);
     }
     Napi::Value ImportSchemas(NapiInfoCR info)
