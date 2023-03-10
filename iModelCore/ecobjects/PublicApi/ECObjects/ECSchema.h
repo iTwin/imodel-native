@@ -3393,7 +3393,7 @@ public:
     //! @param[out] ecClass If successful, will contain a new ECEntityClass object
     //! @param[in]  name        Name of the class to create
     //! @param[in]  appliesTo   The class used to set the AppliesToEntityClass property in the IsMixin Custom Attribute
-    //! @param[in]  schemaContext   Contains the information of where to look for standard custom attributes schemas
+    //! @param[in]  schemaContext   Contains the information of where to look for CoreCustomAttributes schema
     //! @return A status code indicating whether or not the class was successfully created and added to the schema
     ECOBJECTS_EXPORT ECObjectsStatus CreateMixinClass(ECEntityClassP& ecClass, Utf8StringCR name, ECEntityClassCR appliesTo, ECSchemaReadContextR schemaContext);
 
