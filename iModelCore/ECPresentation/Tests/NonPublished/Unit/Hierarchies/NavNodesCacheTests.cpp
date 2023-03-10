@@ -439,7 +439,7 @@ TEST_F(NodesCacheTests, MakeVirtual)
     EXPECT_EQ(NodeVisibility::Visible, m_cache->GetNodeVisibility(nodes[0]->GetNodeId(), RulesetVariables(), nullptr));
 
     // make virtual
-    m_cache->MakeVirtual(nodes[0]->GetNodeId(), RulesetVariables(), nullptr);
+    m_cache->MakeVirtual(nodes[0]->GetNodeId(), RulesetVariables(), nullptr, nullptr);
 
     // verify node is virtual
     EXPECT_EQ(NodeVisibility::Virtual, m_cache->GetNodeVisibility(nodes[0]->GetNodeId(), RulesetVariables(), nullptr));
@@ -1759,7 +1759,7 @@ TEST_F(NodesCacheTests, ReturnsPhysicalHierarchyLevelNodes)
     auto cachedChildLevelInfo = CacheDataSource(m_connection->GetId(), TEST_RULESET_ID, cachedRootNodes[0]->GetNodeId());
     auto cachedChildNodes = FillWithNodes(cachedChildLevelInfo, 1, false, false);
 
-    m_cache->MakeVirtual(cachedRootNodes[0]->GetNodeId(), RulesetVariables(), nullptr);
+    m_cache->MakeVirtual(cachedRootNodes[0]->GetNodeId(), RulesetVariables(), nullptr, nullptr);
 
     CombinedHierarchyLevelIdentifier rootInfo(m_connection->GetId(), TEST_RULESET_ID, BeGuid());
     EXPECT_TRUE(m_cache->FindPhysicalHierarchyLevelId(rootInfo).IsValid());

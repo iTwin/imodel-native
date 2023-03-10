@@ -26,7 +26,7 @@ TEST_F(UserSettingsItemTests, LoadsFromJson)
         "type": "options",
         "defaultValue": "defaultValue"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     UserSettingsItem item;
@@ -46,7 +46,7 @@ TEST_F(UserSettingsItemTests, LoadsFromJsonWithDefaultValues)
         "id": "id",
         "label": "label"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     UserSettingsItem item;
@@ -63,14 +63,14 @@ TEST_F(UserSettingsItemTests, LoadsFromJsonWithDefaultValues)
 TEST_F(UserSettingsItemTests, WriteToJson)
     {
     UserSettingsItem item("id", "label", "opts", "default");
-    Json::Value json = item.WriteJson();
-    Json::Value expected = Json::Reader::DoParse(R"({
+    BeJsDocument json = item.WriteJson();
+    BeJsDocument expected(R"({
         "id": "id",
         "label": "label",
         "type": "opts",
         "defaultValue": "default"
     })");
-    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
+    EXPECT_TRUE(expected.isExactEqual(json));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -121,7 +121,7 @@ TEST_F(UserSettingsItemTests, LoadFromJsonFailsWhenIdIsNotSpecified)
     static Utf8CP jsonString = R"({
         "label": "label"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     UserSettingsItem item;
@@ -136,7 +136,7 @@ TEST_F(UserSettingsItemTests, LoadFromJsonFailsWhenLabelIsNotSpecified)
     static Utf8CP jsonString = R"({
         "id": "id"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     UserSettingsItem item;
@@ -235,7 +235,7 @@ TEST_F(UserSettingsGroupTests, LoadsFromJson)
             "vars": []
         }]
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     ASSERT_FALSE(json.isNull());
 
     UserSettingsGroup group;
@@ -256,7 +256,7 @@ TEST_F(UserSettingsGroupTests, LoadsFromJson)
 TEST_F(UserSettingsGroupTests, LoadsFromJsonWithDefaultValues)
     {
     static Utf8CP jsonString = "{}";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     UserSettingsGroup group;
@@ -274,8 +274,8 @@ TEST_F(UserSettingsGroupTests, WriteToJson)
     UserSettingsGroup group("label");
     group.AddNestedSettings(*new UserSettingsGroup("nested"));
     group.AddSettingsItem(*new UserSettingsItem("id", "label", "opts", "default"));
-    Json::Value json = group.WriteJson();
-    Json::Value expected = Json::Reader::DoParse(R"({
+    BeJsDocument json = group.WriteJson();
+    BeJsDocument expected(R"({
         "label": "label",
         "nestedGroups": [{
             "label": "nested"
@@ -287,7 +287,7 @@ TEST_F(UserSettingsGroupTests, WriteToJson)
             "defaultValue": "default"
         }]
     })");
-    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
+    EXPECT_TRUE(expected.isExactEqual(json));
     }
 
 /*---------------------------------------------------------------------------------**//**

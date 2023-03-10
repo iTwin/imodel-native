@@ -25,7 +25,7 @@ TEST_F(LabelOverrideTests, LoadsFromJson)
         "label":"label",
         "description":"description"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     LabelOverride override;
@@ -42,7 +42,7 @@ TEST_F(LabelOverrideTests, LoadsFromJsonWithDefaultValues)
     static Utf8CP jsonString = R"({
         "ruleType": "LabelOverride"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     LabelOverride override;
@@ -57,15 +57,15 @@ TEST_F(LabelOverrideTests, LoadsFromJsonWithDefaultValues)
 TEST_F(LabelOverrideTests, WriteToJson)
     {
     LabelOverride rule("cond", 123, "label", "descr");
-    Json::Value json = rule.WriteJson();
-    Json::Value expected = Json::Reader::DoParse(R"({
+    BeJsDocument json = rule.WriteJson();
+    BeJsDocument expected(R"({
         "ruleType": "LabelOverride",
         "priority": 123,
         "condition": "cond",
         "label": "label",
         "description": "descr"
     })");
-    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
+    EXPECT_TRUE(expected.isExactEqual(json));
     }
 
 /*---------------------------------------------------------------------------------**//**

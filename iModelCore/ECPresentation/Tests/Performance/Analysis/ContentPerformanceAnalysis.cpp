@@ -61,9 +61,9 @@ struct ContentPerformanceAnalysis : SingleManagerRulesEnginePerformanceAnalysisT
                 }
             void Save(Reporter& reporter)
                 {
-                reporter.Record(REPORT_FIELD_MaxTimeToLoadInstanceProperties, Json::Value(m_max));
+                reporter.Record(REPORT_FIELD_MaxTimeToLoadInstanceProperties, m_max);
                 if (m_totalElements > 0)
-                    reporter.Record(REPORT_FIELD_AvgTimeToLoadInstanceProperties, Json::Value(m_max / m_totalElements));
+                    reporter.Record(REPORT_FIELD_AvgTimeToLoadInstanceProperties, m_max / m_totalElements);
                 }
         };
 
@@ -93,12 +93,12 @@ struct ContentPerformanceAnalysis : SingleManagerRulesEnginePerformanceAnalysisT
                 m_totalRequests++;
                 }
             //void ReportTotalTime(double time) {m_totalTime = time;}
-            double GetTotalTime() const {return m_totalTime;}
+            double GetTotalTime() const { return m_totalTime; }
             void Save(Reporter& reporter)
                 {
-                reporter.Record(REPORT_FIELD_TimeToLoadAllContent, Json::Value(m_totalTime));
-                reporter.Record(REPORT_FIELD_TotalContentSetSize, Json::Value(m_totalNumberOfElements));
-                reporter.Record(REPORT_FIELD_AvgTimeToLoadContentForElement, Json::Value(m_totalNumberOfElements > 0 ? (m_totalTime / m_totalNumberOfElements) : 0));
+                reporter.Record(REPORT_FIELD_TimeToLoadAllContent, m_totalTime);
+                reporter.Record(REPORT_FIELD_TotalContentSetSize, (int64_t)m_totalNumberOfElements);
+                reporter.Record(REPORT_FIELD_AvgTimeToLoadContentForElement, m_totalNumberOfElements > 0 ? (m_totalTime / m_totalNumberOfElements) : 0);
                 }
         };
 
@@ -131,15 +131,15 @@ struct ContentPerformanceAnalysis : SingleManagerRulesEnginePerformanceAnalysisT
                 if (time > PAGE_LOAD_THRESHOLD)
                     m_numberOfPagesAboveThreshold++;
                 }
-            void ReportTotalTime(double time) {m_totalTime += time;}
-            double GetTotalTime() const {return m_totalTime;}
+            void ReportTotalTime(double time) { m_totalTime += time; }
+            double GetTotalTime() const { return m_totalTime; }
             void Save(Reporter& reporter)
                 {
-                reporter.Record(REPORT_FIELD_MaxTimeForPage, Json::Value(m_pageLoadMax));
+                reporter.Record(REPORT_FIELD_MaxTimeForPage, m_pageLoadMax);
                 if (m_totalNumberOfPages > 0)
-                    reporter.Record(REPORT_FIELD_AvgTimeForPage, Json::Value(m_totalTimeLoadingPages / m_totalNumberOfPages));
-                reporter.Record(REPORT_FIELD_NumberOfPagesAboveThreshold, Json::Value(m_numberOfPagesAboveThreshold));
-                reporter.Record(REPORT_FIELD_TimeToLoadAllContentPaged, Json::Value(m_totalTime));
+                    reporter.Record(REPORT_FIELD_AvgTimeForPage, m_totalTimeLoadingPages / m_totalNumberOfPages);
+                reporter.Record(REPORT_FIELD_NumberOfPagesAboveThreshold, (int64_t)m_numberOfPagesAboveThreshold);
+                reporter.Record(REPORT_FIELD_TimeToLoadAllContentPaged, m_totalTime);
                 }
         };
 
@@ -265,7 +265,7 @@ void ContentPerformanceAnalysis::LoadPagedContent(PagedLoadPerformanceMetricsSto
         {
         auto pageTimer = std::make_shared<StopWatch>("", false);
         auto contentPageParams = MakePaged(params, PageOptions(page * CONTENT_REQUEST_PAGE_SIZE, CONTENT_REQUEST_PAGE_SIZE));
-        contentPageParams.SetTaskStartCallback([&metrics, pageTimer](){pageTimer->Start();});
+        contentPageParams.SetTaskStartCallback([&metrics, pageTimer](){pageTimer->Start(); });
         auto pageFuture = m_manager->GetContent(contentPageParams).then([&metrics, pageTimer](auto)
             {
             metrics.ReportPageLoad(pageTimer->GetCurrentSeconds());
@@ -315,10 +315,10 @@ TEST_F(ContentPerformanceAnalysis, Run)
         size_t totalPropertiesCount = GetElementProperties(individualElementPropertiesLoadMetrics, project, rulesetId, allElementKeys);
         loadPropertiesForAllElementsTime.Stop();
         double totalTimeToLoadProperties = loadPropertiesForAllElementsTime.GetElapsed().ToSeconds();
-        reporter.Record(REPORT_FIELD_TotalPropertiesCount, Json::Value((uint64_t)totalPropertiesCount));
-        reporter.Record(REPORT_FIELD_AveragePropertiesCount, Json::Value((uint64_t)!allElementKeys.empty() ? (totalPropertiesCount / allElementKeys.size()) : 0));
-        reporter.Record(REPORT_FIELD_TotalElementsCount, Json::Value((uint64_t)allElementKeys.size()));
-        reporter.Record(REPORT_FIELD_AvgTimeToLoadInstanceProperties, Json::Value((uint64_t)!allElementKeys.empty() ? (totalTimeToLoadProperties / allElementKeys.size()) : 0));
+        reporter.Record(REPORT_FIELD_TotalPropertiesCount, (int64_t)totalPropertiesCount);
+        reporter.Record(REPORT_FIELD_AveragePropertiesCount, (int64_t)(!allElementKeys.empty() ? (totalPropertiesCount / allElementKeys.size()) : 0));
+        reporter.Record(REPORT_FIELD_TotalElementsCount, (int64_t)allElementKeys.size());
+        reporter.Record(REPORT_FIELD_AvgTimeToLoadInstanceProperties, (int64_t)(!allElementKeys.empty() ? (totalTimeToLoadProperties / allElementKeys.size()) : 0));
         individualElementPropertiesLoadMetrics.Save(reporter);
         NativeLogging::CategoryLogger(LOGGER_NAMESPACE).infov("    Loaded properties for all elements individually in %.2f s", totalTimeToLoadProperties);
 

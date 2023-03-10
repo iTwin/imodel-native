@@ -370,7 +370,7 @@ bool PresentationRuleSet::WriteToXmlFile (BeFileNameCR xmlFilePath) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool PresentationRuleSet::ReadJson(JsonValueCR json)
+bool PresentationRuleSet::ReadJson(BeJsConst json)
     {
     // required:
     m_ruleSetId = json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_RULESETID].asCString("");
@@ -388,7 +388,7 @@ bool PresentationRuleSet::ReadJson(JsonValueCR json)
         if (SUCCESS != Version::FromString(m_schemaVersion, json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_SCHEMA_VERSION].asCString()))
             {
             DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid value for `%s.%s`: `%s`. Expected %s.",
-                "PresentationRuleSet", PRESENTATION_RULE_SET_JSON_ATTRIBUTE_SCHEMA_VERSION, json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_SCHEMA_VERSION].ToString().c_str(),
+                "PresentationRuleSet", PRESENTATION_RULE_SET_JSON_ATTRIBUTE_SCHEMA_VERSION, json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_SCHEMA_VERSION].Stringify().c_str(),
                 "version string in format {major}.{minor}.{patch}"));
             m_schemaVersion = GetCurrentRulesetSchemaVersion();
             }
@@ -400,7 +400,7 @@ bool PresentationRuleSet::ReadJson(JsonValueCR json)
         if (SUCCESS != Version::FromString(rulesetVersion, json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_RULESET_VERSION].asCString()))
             {
             DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid value for `%s.%s`: `%s`. Expected %s.",
-                "PresentationRuleSet", PRESENTATION_RULE_SET_JSON_ATTRIBUTE_RULESET_VERSION, json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_RULESET_VERSION].ToString().c_str(),
+                "PresentationRuleSet", PRESENTATION_RULE_SET_JSON_ATTRIBUTE_RULESET_VERSION, json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_RULESET_VERSION].Stringify().c_str(),
                 "version string in format {major}.{minor}.{patch}"));
             }
         else
@@ -415,8 +415,8 @@ bool PresentationRuleSet::ReadJson(JsonValueCR json)
 
     if (json.isMember(PRESENTATION_RULE_SET_JSON_ATTRIBUTE_RULES))
         {
-        JsonValueCR rulesJson = json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_RULES];
-        if (CommonToolsInternal::ValidateJsonValueType("PresentationRuleSet", PRESENTATION_RULE_SET_JSON_ATTRIBUTE_RULES, rulesJson, Json::arrayValue))
+        BeJsConst rulesJson = json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_RULES];
+        if (CommonToolsInternal::ValidateJsonArrayValueType("PresentationRuleSet", PRESENTATION_RULE_SET_JSON_ATTRIBUTE_RULES, rulesJson))
             {
             CommonToolsInternal::LoadFromJsonByPriority("PresentationRuleSet", PRESENTATION_RULE_SET_JSON_ATTRIBUTE_RULES, rulesJson, m_childNodesRules, CommonToolsInternal::LoadRuleFromJson<ChildNodeRule>, this);
             CommonToolsInternal::LoadFromJsonByPriority("PresentationRuleSet", PRESENTATION_RULE_SET_JSON_ATTRIBUTE_RULES, rulesJson, m_rootNodesRules, CommonToolsInternal::LoadRuleFromJson<RootNodeRule>, this);
@@ -444,11 +444,11 @@ bool PresentationRuleSet::ReadJson(JsonValueCR json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PresentationRuleSet::WriteJson(JsonValueR json) const
+void PresentationRuleSet::WriteJson(BeJsValue json) const
     {
     json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_RULESETID] = m_ruleSetId;
     if (!m_supportedSchemas.empty())
-        json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_SUPPORTEDSCHEMAS] = CommonToolsInternal::SupportedSchemasToJson(m_supportedSchemas);
+        CommonToolsInternal::WriteSupportedSchemasToJson(json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_SUPPORTEDSCHEMAS], m_supportedSchemas);
     if (!m_requiredSchemas.empty())
         {
         CommonToolsInternal::WriteRulesToJson<RequiredSchemaSpecification, RequiredSchemaSpecificationsList>
@@ -457,7 +457,7 @@ void PresentationRuleSet::WriteJson(JsonValueR json) const
     if (m_isSupplemental)
         json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_SUPPLEMENTATIONINFO][PRESENTATION_RULE_SET_JSON_ATTRIBUTE_SUPPLEMENTATIONINFO_PURPOSE] = m_supplementationPurpose;
 
-    Json::Value rulesJson(Json::arrayValue);
+    BeJsValue rulesJson = json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_RULES];
     CommonToolsInternal::WriteRulesToJson<RootNodeRule, RootNodeRuleList>(rulesJson, m_rootNodesRules);
     CommonToolsInternal::WriteRulesToJson<ChildNodeRule, ChildNodeRuleList>(rulesJson, m_childNodesRules);
     CommonToolsInternal::WriteRulesToJson<ContentRule, ContentRuleList>(rulesJson, m_contentRules);
@@ -472,7 +472,6 @@ void PresentationRuleSet::WriteJson(JsonValueR json) const
     CommonToolsInternal::WriteRulesToJson<CheckBoxRule, CheckBoxRuleList>(rulesJson, m_checkBoxRules);
     CommonToolsInternal::WriteRulesToJson<SortingRule, SortingRuleList>(rulesJson, m_sortingRules);
     CommonToolsInternal::WriteRulesToJson<DefaultPropertyCategoryOverride, DefaultPropertyCategoryOverridesList>(rulesJson, m_defaultPropertyCategoryOverrides);
-    json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_RULES] = rulesJson;
 
     if (!m_userSettings.empty())
         CommonToolsInternal::WriteRulesToJson<UserSettingsGroup, UserSettingsGroupList>(json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_USERSETTINGS], m_userSettings);
@@ -481,18 +480,18 @@ void PresentationRuleSet::WriteJson(JsonValueR json) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-PresentationRuleSetPtr PresentationRuleSet::ReadFromJsonValue(JsonValueCR json)
+PresentationRuleSetPtr PresentationRuleSet::ReadFromJsonValue(BeJsConst json)
     {
     auto scope = Diagnostics::Scope::Create("Read PresentationRuleSet from JSON value");
 
     PresentationRuleSetPtr ruleSet = new PresentationRuleSet();
     if (!json.isNull() && ruleSet->ReadJson(json))
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_INFO, Utf8PrintfString("Successfully read: %s", ruleSet->WriteToJsonValue().ToString().c_str()));
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_INFO, Utf8PrintfString("Successfully read: %s", ruleSet->WriteToJsonValue().Stringify().c_str()));
         return ruleSet;
         }
 
-    DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Failed to read: ", json.ToString().c_str()));
+    DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Failed to read: ", json.Stringify().c_str()));
     return nullptr;
     }
 
@@ -502,7 +501,7 @@ PresentationRuleSetPtr PresentationRuleSet::ReadFromJsonValue(JsonValueCR json)
 PresentationRuleSetPtr PresentationRuleSet::ReadFromJsonString(Utf8StringCR jsonString)
     {
     auto scope = Diagnostics::Scope::Create("Read PresentationRuleSet from JSON string");
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     return ReadFromJsonValue(json);
     }
 
@@ -536,9 +535,9 @@ PresentationRuleSetPtr PresentationRuleSet::ReadFromJsonFile(BeFileNameCR jsonFi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value PresentationRuleSet::WriteToJsonValue() const
+BeJsDocument PresentationRuleSet::WriteToJsonValue() const
     {
-    Json::Value json;
+    BeJsDocument json;
     WriteJson(json);
     return json;
     }
@@ -548,8 +547,8 @@ Json::Value PresentationRuleSet::WriteToJsonValue() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool PresentationRuleSet::WriteToJsonFile(BeFileNameCR jsonFilePath) const
     {
-    Json::Value json = WriteToJsonValue();
-    Utf8String serializedJson = json.toStyledString();
+    BeJsDocument json = WriteToJsonValue();
+    Utf8String serializedJson = json.Stringify();
 
     BeFile f;
     BeFileStatus status = BeFileStatus::UnknownError;

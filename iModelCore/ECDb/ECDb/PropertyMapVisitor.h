@@ -47,7 +47,7 @@ struct GetTablesPropertyMapVisitor final : IPropertyMapVisitor
     {
     private:
         PropertyMap::Type m_filter;
-        mutable std::set<DbTable const*> m_tables;
+        mutable std::vector<DbTable const*> m_tables;
 
         BentleyStatus _Visit(SingleColumnDataPropertyMap const&) const override;
         BentleyStatus _Visit(CompoundDataPropertyMap const&) const override;
@@ -57,8 +57,8 @@ struct GetTablesPropertyMapVisitor final : IPropertyMapVisitor
         explicit GetTablesPropertyMapVisitor(PropertyMap::Type filter = PropertyMap::Type::All) : IPropertyMapVisitor(), m_filter(filter) {}
         ~GetTablesPropertyMapVisitor() {}
 
-        std::set<DbTable const*> const& GetTables() const { return m_tables; }
-
+        std::vector<DbTable const*> const& GetTables() const { return m_tables; }
+        bool Contains(DbTable const& table) const { return std::find(m_tables.begin(), m_tables.end(), &table) != m_tables.end(); }
     };
 
 //=======================================================================================

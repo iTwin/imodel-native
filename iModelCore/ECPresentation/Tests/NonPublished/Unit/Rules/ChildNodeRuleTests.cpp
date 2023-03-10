@@ -72,7 +72,7 @@ TEST_F(SubConditionTests, LoadsFromJson)
             "specType": "CustomQueryInstanceNodes"
         }]
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     ASSERT_FALSE(json.isNull());
 
     SubCondition rule;
@@ -89,7 +89,7 @@ TEST_F(SubConditionTests, LoadsFromJson)
 TEST_F(SubConditionTests, LoadsFromJsonWithDefaultValues)
     {
     static Utf8CP jsonString = "{}";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     SubCondition rule;
@@ -109,8 +109,8 @@ TEST_F(SubConditionTests, WriteToJson)
     subCondition.AddRequiredSchemaSpecification(*new RequiredSchemaSpecification("TestSchema"));
     subCondition.AddSubCondition(*new SubCondition("cond 2"));
     subCondition.AddSpecification(*new AllInstanceNodesSpecification());
-    Json::Value json = subCondition.WriteJson();
-    Json::Value expected = Json::Reader::DoParse(R"({
+    BeJsDocument json = subCondition.WriteJson();
+    BeJsDocument expected(R"({
         "condition": "cond",
         "requiredSchemas": [{"name": "TestSchema"}],
         "subConditions": [{
@@ -120,7 +120,7 @@ TEST_F(SubConditionTests, WriteToJson)
             "specType": "AllInstanceNodes"
         }]
     })");
-    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
+    EXPECT_TRUE(expected.isExactEqual(json));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -354,7 +354,7 @@ TEST_F(ChildNodeRuleTests, LoadsFromJson)
             "items": {}
         }]
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     ASSERT_FALSE(json.isNull());
 
     ChildNodeRule rule;
@@ -374,7 +374,7 @@ TEST_F(ChildNodeRuleTests, LoadsFromJsonWithDefaultValues)
     static Utf8CP jsonString = R"({
         "ruleType": "ChildNodes"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     ChildNodeRule rule;
@@ -393,15 +393,15 @@ TEST_F(ChildNodeRuleTests, WriteToJson)
     {
     ChildNodeRule rule("cond", 123, true, TargetTree_MainTree);
     rule.AddRequiredSchemaSpecification(*new RequiredSchemaSpecification("TestSchema"));
-    Json::Value json = rule.WriteJson();
-    Json::Value expected = Json::Reader::DoParse(R"({
+    BeJsDocument json = rule.WriteJson();
+    BeJsDocument expected(R"({
         "ruleType": "ChildNodes",
         "onlyIfNotHandled": true,
         "condition": "cond",
         "requiredSchemas": [{"name": "TestSchema"}],
         "priority": 123
     })");
-    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
+    EXPECT_TRUE(expected.isExactEqual(json));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -522,15 +522,15 @@ struct RootNodeRuleTests : PresentationRulesTests
 TEST_F(RootNodeRuleTests, WriteToJson)
     {
     RootNodeRule rule("cond", 123, true, TargetTree_MainTree, true);
-    Json::Value json = rule.WriteJson();
-    Json::Value expected = Json::Reader::DoParse(R"({
+    BeJsDocument json = rule.WriteJson();
+    BeJsDocument expected(R"({
         "ruleType": "RootNodes",
         "onlyIfNotHandled": true,
         "condition": "cond",
         "priority": 123,
         "autoExpand": true
     })");
-    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
+    EXPECT_TRUE(expected.isExactEqual(json));
     }
 
 /*---------------------------------------------------------------------------------**//**

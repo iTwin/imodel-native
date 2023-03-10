@@ -311,18 +311,20 @@ PresentationQueryContractFieldPtr RulesEngineTestHelpers::CreateDisplayLabelFiel
 +---------------+---------------+---------------+---------------+---------------+------*/
 PresentationQueryContractFieldPtr RulesEngineTestHelpers::CreateNullDisplayLabelField()
     {
-    return PresentationQueryContractSimpleField::Create(ECInstanceNodesQueryContract::DisplayLabelFieldName, "NULL", false);
+    return PresentationQueryContractSimpleField::Create(ECInstanceNodesQueryContract::DisplayLabelFieldName, "", false);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ComplexQueryBuilderPtr RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(ECClassCR ecClass, PresentationQueryBuilderR instanceNodesQuery)
+ComplexQueryBuilderPtr RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(ECClassCR ecClass, PresentationQueryBuilderR instanceNodesQuery, bvector<RelatedClassPath> const& relatedInstancePaths)
     {
     auto displayLabelField = instanceNodesQuery.GetContract()->GetField(ECInstanceNodesQueryContract::DisplayLabelFieldName);
+    auto const* contract = instanceNodesQuery.GetContract()->AsNavigationQueryContract();
+    auto const& instanceKeysQuery = contract->GetInstanceKeysSelectQuery();
     instanceNodesQuery.GetNavigationResultParameters().SetResultType(NavigationQueryResultType::Invalid);
     ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
-    query->SelectContract(*MultiECInstanceNodesQueryContract::Create("", &ecClass, const_cast<PresentationQueryContractFieldP>(displayLabelField.get()), false));
+    query->SelectContract(*MultiECInstanceNodesQueryContract::Create(contract->GetId(), "", instanceKeysQuery, &ecClass, const_cast<PresentationQueryContractFieldP>(displayLabelField.get()), false, relatedInstancePaths));
     query->From(instanceNodesQuery);
     query->GetNavigationResultParameters().GetSelectInstanceClasses().insert(&ecClass);
     return query;
@@ -331,9 +333,11 @@ ComplexQueryBuilderPtr RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(E
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ComplexQueryBuilderPtr RulesEngineTestHelpers::CreateECInstanceNodesQueryForClass(ECSchemaHelper const& schemaHelper, SelectClass<ECClass> const& selectClass, bvector<RelatedClassPath> const& relatedInstancePaths)
+ComplexQueryBuilderPtr RulesEngineTestHelpers::CreateECInstanceNodesQueryForClass(ECSchemaHelper const& schemaHelper, uint64_t contractId, SelectClass<ECClass> const& selectClass, bvector<RelatedClassPath> const& relatedInstancePaths)
     {
-    RefCountedPtr<ECInstanceNodesQueryContract> contract = ECInstanceNodesQueryContract::Create("", &selectClass.GetClass(), CreateDisplayLabelField(schemaHelper, selectClass), relatedInstancePaths);
+    auto labelField = CreateDisplayLabelField(schemaHelper, selectClass);
+    ComplexQueryBuilderPtr instanceKeysQuery = &ComplexQueryBuilder::Create()->SelectContract(*ECClassGroupedInstancesQueryContract::Create(), selectClass.GetAlias().c_str()).From(selectClass);
+    RefCountedPtr<ECInstanceNodesQueryContract> contract = ECInstanceNodesQueryContract::Create(contractId, "", *instanceKeysQuery, &selectClass.GetClass(), labelField, relatedInstancePaths);
     ComplexQueryBuilderPtr query = &ComplexQueryBuilder::Create()->SelectContract(*contract, selectClass.GetAlias().c_str()).From(selectClass);
     query->GetNavigationResultParameters().GetSelectInstanceClasses().insert(&selectClass.GetClass());
     return query;
@@ -342,12 +346,12 @@ ComplexQueryBuilderPtr RulesEngineTestHelpers::CreateECInstanceNodesQueryForClas
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-PresentationQueryBuilderPtr RulesEngineTestHelpers::CreateECInstanceNodesQueryForClasses(ECSchemaHelper const& schemaHelper, ECClassSet const& classes, Utf8CP alias, ComplexQueryHandler handler)
+PresentationQueryBuilderPtr RulesEngineTestHelpers::CreateECInstanceNodesQueryForClasses(ECSchemaHelper const& schemaHelper, uint64_t& contractIdsCounter, ECClassSet const& classes, Utf8CP alias, ComplexQueryHandler handler)
     {
     auto q = UnionQueryBuilder::Create(bvector<PresentationQueryBuilderPtr>());
-    for (auto pair: classes)
+    for (auto const& pair : classes)
         {
-        ComplexQueryBuilderPtr query = CreateECInstanceNodesQueryForClass(schemaHelper, SelectClass<ECClass>(*pair.first, alias, pair.second));
+        ComplexQueryBuilderPtr query = CreateECInstanceNodesQueryForClass(schemaHelper, ++contractIdsCounter, SelectClass<ECClass>(*pair.first, alias, pair.second));
         if (handler)
             handler(*query);
 
@@ -363,7 +367,16 @@ PresentationQueryBuilderPtr RulesEngineTestHelpers::CreateECInstanceNodesQueryFo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-PresentationQueryBuilderPtr RulesEngineTestHelpers::CreateQuery(NavigationQueryContract const& contract, bset<ECN::ECClassCP> classes, bool polymorphic, Utf8CP alias, ComplexQueryHandler handler)
+PresentationQueryBuilderPtr RulesEngineTestHelpers::CreateECInstanceNodesQueryForClasses(ECSchemaHelper const& schemaHelper, ECClassSet const& classes, Utf8CP alias, ComplexQueryHandler handler)
+    {
+    uint64_t contractIdsCounter = 0;
+    return CreateECInstanceNodesQueryForClasses(schemaHelper, contractIdsCounter, classes, alias, handler);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+PresentationQueryBuilderPtr RulesEngineTestHelpers::CreateQuery(PresentationQueryContract const& contract, bset<ECN::ECClassCP> classes, bool polymorphic, Utf8CP alias, ComplexQueryHandler handler)
     {
     if (classes.empty())
         return nullptr;
@@ -388,7 +401,7 @@ PresentationQueryBuilderPtr RulesEngineTestHelpers::CreateQuery(NavigationQueryC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-PresentationQueryBuilderPtr RulesEngineTestHelpers::CreateQuery(NavigationQueryContract const& contract, bvector<ECN::ECClassCP> classes, bool polymorphic, Utf8CP alias, ComplexQueryHandler handler)
+PresentationQueryBuilderPtr RulesEngineTestHelpers::CreateQuery(PresentationQueryContract const& contract, bvector<ECN::ECClassCP> classes, bool polymorphic, Utf8CP alias, ComplexQueryHandler handler)
     {
     if (classes.empty())
         return nullptr;

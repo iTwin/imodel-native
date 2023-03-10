@@ -63,7 +63,7 @@ Reporter& RulesEnginePerformanceAnalysisTests::_GetCsvReporter()
 /*---------------------------------------------------------------------------------**//**
 * @betest
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus RulesEnginePerformanceAnalysisTests::ParseRulesetConfig(JsonValueCR json, RulesetConfig& config)
+BentleyStatus RulesEnginePerformanceAnalysisTests::ParseRulesetConfig(BeJsConst json, RulesetConfig& config)
     {
     bool hasAnyData = false;
     if (json.hasMember("maxDepth"))
@@ -85,23 +85,22 @@ void RulesEnginePerformanceAnalysisTests::LoadRulesetConfigs()
     Utf8String jsonString;
     PresentationManagerTestsHelper::ReadFileContent(configFilePath, jsonString);
 
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     if (!json.isObject())
         return;
 
-    for (auto iter = json.begin(); iter != json.end(); iter++)
+    json.ForEachProperty(
+        [&](Utf8CP rulesetId, BeJsConst value)
         {
-        Utf8String rulesetId = iter.memberName();
-        JsonValueCR value = *iter;
-
         RulesetConfig config;
         if (SUCCESS != ParseRulesetConfig(value, config))
             {
-            NativeLogging::CategoryLogger(LOGGER_NAMESPACE).errorv("Invalid config encountered for ruleset - %s", rulesetId.c_str());
-            continue;
+            NativeLogging::CategoryLogger(LOGGER_NAMESPACE).errorv("Invalid config encountered for ruleset - %s", rulesetId);
+            return false;
             }
         m_rulesetConfigs.Insert(rulesetId, config);
-        }
+        return false;
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**

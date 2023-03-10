@@ -991,12 +991,15 @@ void PolyfaceHeader::ClearParameters (bool active)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-static DVec3d getDefaultNormalForFace(DPoint3dCP xyzIn, int numXYZ)
+static DVec3d getDefaultNormalForFace(BlockedVectorDPoint3dCR xyzIn, size_t numXYZ)
     {
+    if (numXYZ > xyzIn.size())
+        numXYZ = xyzIn.size();
+
     // Return a default normal for faces collapsed to a single point or edge. Should
     // only be called if the face has already been determined to have ~zero area.
     DVec3d zero = DVec3d::FromZero();
-    for (int i = 1; i < numXYZ; ++i)
+    for (size_t i = 1; i < numXYZ; ++i)
         {
         DVec3d testEdge = DVec3d::FromStartEnd(xyzIn[0], xyzIn[i]);
         if (DVec3dOps::AlmostEqual(testEdge, zero))
@@ -1037,7 +1040,7 @@ bool PolyfaceHeader::BuildPerFaceNormals ()
     for (visitor->Reset (); visitor->AdvanceToNextFace (); )
         {
         if (!visitor->TryGetLocalFrame (localToWorld, worldToLocal, LOCAL_COORDINATE_SCALE_UnitAxesAtStart))
-            zvector = getDefaultNormalForFace(&(Point())[0], (int)visitor->NumEdgesThisFace());
+            zvector = getDefaultNormalForFace(visitor->Point(), (int) visitor->NumEdgesThisFace());
         else
             localToWorld.GetMatrixColumn (zvector, 2);
 

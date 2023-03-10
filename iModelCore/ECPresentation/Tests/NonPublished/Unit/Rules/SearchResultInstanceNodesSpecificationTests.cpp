@@ -43,7 +43,7 @@ TEST_F(SearchResultInstanceNodesSpecificationTests, StringQuerySpecification_Loa
         "class": {"schemaName": "TestSchema", "className": "TestClass"},
         "query": "QueryString"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     StringQuerySpecification spec;
@@ -62,7 +62,7 @@ TEST_F(SearchResultInstanceNodesSpecificationTests, StringQuerySpecification_Loa
         "class": {"schemaName": "TestSchema", "className": "TestClass"},
         "query": "QueryString"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     StringQuerySpecification spec;
@@ -79,7 +79,7 @@ TEST_F(SearchResultInstanceNodesSpecificationTests, StringQuerySpecification_Loa
         "class": {"className": "TestClass"},
         "query": "QueryString"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     StringQuerySpecification spec;
@@ -96,7 +96,7 @@ TEST_F(SearchResultInstanceNodesSpecificationTests, StringQuerySpecification_Loa
         "class": {"schemaName": "TestSchema"},
         "query": "QueryString"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     StringQuerySpecification spec;
@@ -112,7 +112,7 @@ TEST_F(SearchResultInstanceNodesSpecificationTests, StringQuerySpecification_Loa
         "specType": "String",
         "class": {"schemaName": "TestSchema", "className": "TestClass"}
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     ASSERT_FALSE(json.isNull());
 
     StringQuerySpecification spec;
@@ -214,7 +214,7 @@ TEST_F(SearchResultInstanceNodesSpecificationTests, ECPropertyValueQuerySpecific
         "class": {"schemaName": "TestSchema", "className": "TestClass"},
         "parentPropertyName": "parent"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     ECPropertyValueQuerySpecification spec;
@@ -233,7 +233,7 @@ TEST_F(SearchResultInstanceNodesSpecificationTests, ECPropertyValueQuerySpecific
         "class": {"className": "TestClass"},
         "parentPropertyName": "parent"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     ECPropertyValueQuerySpecification spec;
@@ -250,7 +250,7 @@ TEST_F(SearchResultInstanceNodesSpecificationTests, ECPropertyValueQuerySpecific
         "class": {"className": "TestClass"},
         "parentPropertyName": "parent"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     ECPropertyValueQuerySpecification spec;
@@ -267,7 +267,7 @@ TEST_F(SearchResultInstanceNodesSpecificationTests, ECPropertyValueQuerySpecific
         "class": {"schemaName": "TestSchema"},
         "parentPropertyName": "parent"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     ECPropertyValueQuerySpecification spec;
@@ -283,7 +283,7 @@ TEST_F(SearchResultInstanceNodesSpecificationTests, ECPropertyValueQuerySpecific
         "specType": "ECPropertyValue",
         "class": {"schemaName": "TestSchema", "className": "TestClass"}
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     ECPropertyValueQuerySpecification spec;
@@ -394,7 +394,7 @@ TEST_F(SearchResultInstanceNodesSpecificationTests, LoadsFromJson)
             "parentPropertyName": "parent"
         }]
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     ASSERT_FALSE(json.isNull());
 
     SearchResultInstanceNodesSpecification spec;
@@ -412,7 +412,7 @@ TEST_F(SearchResultInstanceNodesSpecificationTests, LoadsFromJsonWithDefaultValu
     static Utf8CP jsonString = R"({
         "specType": "CustomQueryInstanceNodes"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     SearchResultInstanceNodesSpecification spec;
@@ -430,8 +430,8 @@ TEST_F(SearchResultInstanceNodesSpecificationTests, WriteToJson)
     SearchResultInstanceNodesSpecification spec(123, true, true, true, false, false);
     spec.AddQuerySpecification(*new StringQuerySpecification("query", "schema", "class"));
     spec.AddQuerySpecification(*new ECPropertyValueQuerySpecification("schema", "class", "prop"));
-    Json::Value json = spec.WriteJson();
-    Json::Value expected = Json::Reader::DoParse(R"({
+    BeJsDocument json = spec.WriteJson();
+    BeJsDocument  expected(R"({
         "specType": "CustomQueryInstanceNodes",
         "priority": 123,
         "hasChildren": "Always",
@@ -449,7 +449,7 @@ TEST_F(SearchResultInstanceNodesSpecificationTests, WriteToJson)
             "parentPropertyName": "prop"
         }]
     })");
-    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
+    EXPECT_TRUE(expected.isExactEqual(json));
     }
 
 /*---------------------------------------------------------------------------------**//**

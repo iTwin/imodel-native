@@ -77,7 +77,7 @@ TEST_F(PropertyEditorRulesTests, LoadsFromJson)
             "max": 4.56
         }]
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     PropertyEditorSpecification spec;
@@ -93,7 +93,7 @@ TEST_F(PropertyEditorRulesTests, LoadFromJsonFailsWhenEditorNameIsNotSpecified)
     {
     static Utf8CP jsonString = R"({
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     PropertyEditorSpecification spec;
@@ -106,11 +106,11 @@ TEST_F(PropertyEditorRulesTests, LoadFromJsonFailsWhenEditorNameIsNotSpecified)
 TEST_F(PropertyEditorRulesTests, WriteToJson)
     {
     PropertyEditorSpecification spec("editor");
-    Json::Value json = spec.WriteJson();
-    Json::Value expected = Json::Reader::DoParse(R"({
+    BeJsDocument json = spec.WriteJson();
+    BeJsDocument expected(R"({
         "editorName": "editor"
     })");
-    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
+    EXPECT_TRUE(expected.isExactEqual(json));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -212,7 +212,7 @@ TEST_F(PropertyEditorRulesTests, JsonParams_LoadsFromJson)
         "paramsType": "Json",
         "json": {"Custom": "Json"}
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     PropertyEditorJsonParameters spec;
@@ -221,12 +221,11 @@ TEST_F(PropertyEditorRulesTests, JsonParams_LoadsFromJson)
     static Utf8CP expectedJsonStr = R"({
         "Custom": "Json"
         })";
-    Json::Value expectedJson;
-    Json::Reader::Parse(expectedJsonStr, expectedJson);
+    BeJsDocument expectedJson(expectedJsonStr);
 
-    EXPECT_EQ(expectedJson, spec.GetJson())
-        << "Expected:\r\n" << expectedJson.toStyledString() << "\r\n"
-        << "Actual: \r\n" << spec.GetJson().toStyledString();
+    EXPECT_TRUE(expectedJson.isExactEqual(spec.GetJson()))
+        << "Expected:\r\n" << expectedJson.Stringify(Indented) << "\r\n"
+        << "Actual: \r\n" << spec.GetJson().Stringify(Indented);
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass
@@ -246,12 +245,11 @@ TEST_F(PropertyEditorRulesTests, LoadsJsonParamsFromXml)
     static Utf8CP expectedJsonStr = R"({
         "Custom": "Json"
         })";
-    Json::Value expectedJson;
-    Json::Reader::Parse(expectedJsonStr, expectedJson);
+    BeJsDocument expectedJson(expectedJsonStr);
 
-    EXPECT_EQ(expectedJson, spec.GetJson())
-        << "Expected:\r\n" << expectedJson.toStyledString() << "\r\n"
-        << "Actual: \r\n" << spec.GetJson().toStyledString();
+    EXPECT_TRUE(expectedJson.isExactEqual(spec.GetJson()))
+        << "Expected:\r\n" << expectedJson.Stringify(Indented) << "\r\n"
+        << "Actual: \r\n" << spec.GetJson().Stringify(Indented);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -263,7 +261,7 @@ TEST_F(PropertyEditorRulesTests, WritesJsonParamsToXml)
     BeXmlDomPtr xml = BeXmlDom::CreateEmpty();
     xml->AddNewElement("Root", nullptr, nullptr);
 
-    Json::Value json;
+    BeJsDocument json;
     json["Test"] = 123;
 
     PropertyEditorJsonParameters spec(json);
@@ -303,7 +301,7 @@ TEST_F(PropertyEditorRulesTests, MultilineParams_LoadsFromJson)
         "paramsType": "Multiline",
         "height":999
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     PropertyEditorMultilineParameters spec;
@@ -375,7 +373,7 @@ TEST_F(PropertyEditorRulesTests, RangeParams_LoadsFromJson)
         "min": 1.23,
         "max": 4.56
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     PropertyEditorRangeParameters spec;
@@ -413,7 +411,7 @@ TEST_F(PropertyEditorRulesTests, RangeParams_LoadsFromJsonWithDefaultValues)
     static Utf8CP jsonString = R"({
         "paramsType": "Range"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     PropertyEditorRangeParameters spec;
@@ -508,7 +506,7 @@ TEST_F(PropertyEditorRulesTests, SliderParams_LoadsFromJson)
         "intervalsCount": 5,
         "isVertical": true
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     PropertyEditorSliderParameters spec;
@@ -530,7 +528,7 @@ TEST_F(PropertyEditorRulesTests, SliderParams_LoadsFromJsonWithDefaultValues)
         "min": 1.23,
         "max": 4.56
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     PropertyEditorSliderParameters spec;
@@ -593,7 +591,7 @@ TEST_F(PropertyEditorRulesTests, SliderParams_LoadFromJsonFailsWhenMinimumAtribu
         "paramsType": "Slider",
         "max":4.56
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     PropertyEditorSliderParameters spec;
@@ -608,7 +606,7 @@ TEST_F(PropertyEditorRulesTests, SliderParams_LoadFromJsonFailsWhenMaximumAtribu
         "paramsType": "Slider",
         "min":4.56
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     PropertyEditorSliderParameters spec;

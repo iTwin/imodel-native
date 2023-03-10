@@ -19,7 +19,8 @@ BentleyStatus ValueHelpers::GetEnumPropertyDisplayValue(Utf8StringR displayValue
     if (nullptr == enumeration)
         return ERROR;
 
-    Json::Value rawValue;
+    BeJsDocument rawDoc;
+    BeJsValue rawValue = rawDoc;
     ECEnumeratorCP enumerator = nullptr;
     switch (enumeration->GetType())
         {
@@ -42,7 +43,7 @@ BentleyStatus ValueHelpers::GetEnumPropertyDisplayValue(Utf8StringR displayValue
     if (nullptr == enumerator)
         {
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Failed to determine enumerator for `%s`, value `%s`",
-            enumeration->GetFullName().c_str(), rawValue.ToString().c_str()));
+            enumeration->GetFullName().c_str(), rawValue.Stringify().c_str()));
         }
 
     displayValue = enumerator->GetDisplayLabel();
@@ -118,31 +119,11 @@ DPoint3d ValueHelpers::GetPoint3dFromSqlValue(IECSqlValue const& value)
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DPoint2d ValueHelpers::GetPoint2dFromJson(JsonValueCR json)
-    {
-    if (json.isNull() || !json.isObject())
-        return DPoint2d();
-    return DPoint2d::From(json["x"].asDouble(), json["y"].asDouble());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-// @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 DPoint2d ValueHelpers::GetPoint2dFromJson(RapidJsonValueCR json)
     {
     if (json.IsNull() || !json.IsObject())
         return DPoint2d();
     return DPoint2d::From(json["x"].GetDouble(), json["y"].GetDouble());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-// @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-DPoint3d ValueHelpers::GetPoint3dFromJson(JsonValueCR json)
-    {
-    if (json.isNull() || !json.isObject())
-        return DPoint3d();
-    return DPoint3d::From(json["x"].asDouble(), json["y"].asDouble(), json["z"].asDouble());
     }
 
 /*---------------------------------------------------------------------------------**//**

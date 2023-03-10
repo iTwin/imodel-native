@@ -37,8 +37,8 @@ protected:
 
     Utf8CP _GetJsonElementTypeAttributeName() const override {return nullptr;}
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
-    ECPRESENTATION_EXPORT virtual bool _ReadJson(JsonValueCR) override;
-    ECPRESENTATION_EXPORT virtual void _WriteJson(JsonValueR) const override;
+    ECPRESENTATION_EXPORT virtual bool _ReadJson(BeJsConst) override;
+    ECPRESENTATION_EXPORT virtual void _WriteJson(BeJsValue) const override;
 
     virtual std::unique_ptr<PropertyCategoryIdentifier> _Clone() const {return std::make_unique<PropertyCategoryIdentifier>(*this);}
     virtual IdPropertyCategoryIdentifier const* _AsIdIdentifier() const {return nullptr;}
@@ -47,7 +47,7 @@ protected:
     PropertyCategoryIdentifier(PropertyCategoryIdentifierType type) : m_type(type) {}
 
 public:
-    ECPRESENTATION_EXPORT static std::unique_ptr<PropertyCategoryIdentifier> Create(JsonValueCR);
+    ECPRESENTATION_EXPORT static std::unique_ptr<PropertyCategoryIdentifier> Create(BeJsConst);
     ECPRESENTATION_EXPORT static std::unique_ptr<PropertyCategoryIdentifier> CreateForRoot();
     ECPRESENTATION_EXPORT static std::unique_ptr<PropertyCategoryIdentifier> CreateForDefaultParent();
     ECPRESENTATION_EXPORT static std::unique_ptr<PropertyCategoryIdentifier> CreateForId(Utf8String id);
@@ -73,8 +73,8 @@ private:
 protected:
     ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationKeyCR) const override;
     ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
-    ECPRESENTATION_EXPORT virtual bool _ReadJson(JsonValueCR) override;
-    ECPRESENTATION_EXPORT virtual void _WriteJson(JsonValueR) const override;
+    ECPRESENTATION_EXPORT virtual bool _ReadJson(BeJsConst) override;
+    ECPRESENTATION_EXPORT virtual void _WriteJson(BeJsValue) const override;
     std::unique_ptr<PropertyCategoryIdentifier> _Clone() const override {return std::make_unique<IdPropertyCategoryIdentifier>(*this);}
     IdPropertyCategoryIdentifier const* _AsIdIdentifier() const override {return this;}
 
@@ -109,8 +109,8 @@ protected:
 
     Utf8CP _GetJsonElementTypeAttributeName() const override {return nullptr;}
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
-    ECPRESENTATION_EXPORT bool _ReadJson(JsonValueCR json) override;
-    ECPRESENTATION_EXPORT void _WriteJson(JsonValueR) const override;
+    ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
+    ECPRESENTATION_EXPORT void _WriteJson(BeJsValue) const override;
 
 public:
     PropertyCategorySpecification(): m_autoExpand(false), m_rendererOverride(nullptr) {}

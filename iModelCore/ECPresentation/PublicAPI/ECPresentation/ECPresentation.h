@@ -14,7 +14,6 @@ POP_CLANG_IGNORE
 POP_CLANG_IGNORE
 
 #include <ECDb/ECDbApi.h>
-#include <BeJsonCpp/BeJsonUtilities.h>
 #include <BeRapidJson/BeRapidJson.h>
 
 //-----------------------------------------------------------------------------------------

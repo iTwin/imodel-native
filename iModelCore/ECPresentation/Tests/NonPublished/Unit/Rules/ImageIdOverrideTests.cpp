@@ -24,7 +24,7 @@ TEST_F(ImageIdOverrideTests, LoadsFromJson)
         "ruleType": "ImageIdOverride",
         "imageIdExpression": "imgId"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     ImageIdOverride override;
@@ -40,7 +40,7 @@ TEST_F(ImageIdOverrideTests, LoadsFromJsonWithDefaultValues)
     static Utf8CP jsonString = R"({
         "ruleType": "ImageIdOverride"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     ImageIdOverride override;
@@ -54,14 +54,14 @@ TEST_F(ImageIdOverrideTests, LoadsFromJsonWithDefaultValues)
 TEST_F(ImageIdOverrideTests, WriteToJson)
     {
     ImageIdOverride rule("cond", 123, "imageid");
-    Json::Value json = rule.WriteJson();
-    Json::Value expected = Json::Reader::DoParse(R"({
+    BeJsDocument json = rule.WriteJson();
+    BeJsDocument expected(R"({
         "ruleType": "ImageIdOverride",
         "priority": 123,
         "condition": "cond",
         "imageIdExpression": "imageid"
     })");
-    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
+    EXPECT_TRUE(expected.isExactEqual(json));
     }
 
 /*---------------------------------------------------------------------------------**//**

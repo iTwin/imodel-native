@@ -4981,7 +4981,7 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
 
     std::unique_ptr<ECPresentationManager> m_presentationManager;
     RefCountedPtr<SimpleRuleSetLocater> m_ruleSetLocater;
-    RuntimeJsonLocalState m_localState;
+    ECPresentation::JsonLocalState m_localState;
     std::shared_ptr<IModelJsECPresentationUpdateRecordsHandler> m_updateRecords;
     std::shared_ptr<IModelJsECPresentationUiStateProvider> m_uiStateProvider;
     Napi::ThreadSafeFunction m_threadSafeFunc;
@@ -5031,24 +5031,12 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
             }
         else
             {
-            // success
-            if (result.IsJsonCppResponse())
-                {
-                // jsoncpp response
-                if (serializeResponse)
-                    retVal["result"] = result.GetSerializedSuccessResponse();
-                else
-                    retVal["result"].From(result.GetJsonCppSuccessResponse());
-                }
-            else
-                {
-                // rapidjson response
-                if (serializeResponse) {
-                    auto str = result.GetSerializedSuccessResponse();
-                    retVal["result"] = str.empty() ? "\"null\"" : str; // see note about null values for BeJsValue::Stringify
-                } else
-                    retVal["result"].From(result.GetSuccessResponse());
-                }
+            // rapidjson response
+            if (serializeResponse) {
+                auto str = result.GetSerializedSuccessResponse();
+                retVal["result"] = str.empty() ? "\"null\"" : str; // see note about null values for BeJsValue::Stringify
+            } else
+                retVal["result"].From(result.GetSuccessResponse());
             }
         if (!result.GetDiagnostics().IsNull())
             retVal["diagnostics"].From(result.GetDiagnostics());
@@ -5057,7 +5045,7 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         }
 
     NativeECPresentationManager(NapiInfoCR info)
-        : BeObjectWrap<NativeECPresentationManager>(info)
+        : BeObjectWrap<NativeECPresentationManager>(info), m_localState(std::make_shared<RuntimeLocalState>())
         {
         REQUIRE_ARGUMENT_ANY_OBJ(0, props);
         if (!props.Get("id").IsString())

@@ -8,6 +8,7 @@
 #include <thread>
 #include <map>
 #include <vector>
+#include <array>
 
 #define VERIFY(X) ASSERT_TRUE(X)
 
@@ -440,3 +441,51 @@ TEST(Utf8StringTest, Compare)
     EXPECT_TRUE(str.EqualsIAscii(" ABC "));
     EXPECT_TRUE(str.EqualsIAscii(Utf8String(" ABC ")));
     }
+
+
+//---------------------------------------------------------------------------------------
+// @betest
+//---------------------------------------------------------------------------------------
+TEST(Utf8StringTest,TrimUtf8) {
+
+    #define NBSP u8"\u00a0"
+    #define EMSPC u8"\u2003"
+    static_assert(sizeof(EMSPC) - 1 == 3, "emspace char size was not 3");
+    #define TESTSPC NBSP EMSPC " \n\r\v\t"
+
+    struct TestCase { Utf8String pretrim, expectedPostTrim; };
+
+    std::array<TestCase, 6> cases = {
+      TestCase{
+        "test" TESTSPC,
+        "test"
+      },
+      TestCase{
+        TESTSPC "test",
+        "test"
+      },
+      TestCase{
+        TESTSPC "te" TESTSPC "st" TESTSPC,
+        "te" TESTSPC "st"
+      },
+      TestCase{
+        TESTSPC "te" TESTSPC "st" TESTSPC TESTSPC TESTSPC,
+        "te" TESTSPC  "st"
+      },
+      TestCase{
+        "te " TESTSPC " st",
+        "te " TESTSPC " st"
+      },
+      TestCase{
+        TESTSPC "this is a longish string without any non-ascii characters" TESTSPC, 
+        "this is a longish string without any non-ascii characters",
+      },
+    };
+
+    for (auto& [pretrimMut, expected] : cases) {
+        const auto pretrim = pretrimMut;
+        pretrimMut.TrimUtf8();
+        const auto& trimmed = pretrimMut;
+        EXPECT_STREQ(trimmed.c_str(), expected.c_str());
+    }
+}

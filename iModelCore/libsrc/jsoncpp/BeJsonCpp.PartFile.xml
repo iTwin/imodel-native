@@ -8,7 +8,6 @@
     </Part>
 
     <Part Name="PublicAPI" BentleyBuildMakeFile="prewire.mke">
-        <SubPart PartName="BeRapidJson" PartFile="iModelCore/Bentley/Bentley"/>
         <Bindings>
             <PublicAPI Domain="BeJsonCpp" />
             <PublicAPI Domain="json" />

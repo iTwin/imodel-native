@@ -12,7 +12,7 @@
 #define GEOCOORD_ENHANCEMENT
 #endif
 
-#include <json/BeJsValue.h>
+#include <BeRapidJson/BeJsValue.h>
 #include <Geom/GeomApi.h>
 #include "BaseGeoDefs.r.h"
 #include <BeJsonCpp/BeJsonUtilities.h>

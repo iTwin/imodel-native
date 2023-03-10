@@ -33,33 +33,33 @@ Utf8CP ExtendedDataRule::_GetJsonElementType() const { return EXTENDED_DATA_RULE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ExtendedDataRule::_ReadJson(JsonValueCR json)
+bool ExtendedDataRule::_ReadJson(BeJsConst json)
     {
     if (!ConditionalCustomizationRule::_ReadJson(json))
         return false;
 
-    JsonValueCR itemsObject = json[EXTENDED_DATA_RULE_JSON_ATTRIBUTE_ITEMS];
+    BeJsConst itemsObject = json[EXTENDED_DATA_RULE_JSON_ATTRIBUTE_ITEMS];
     bool isItemsObjectValid = itemsObject.isObject() && !itemsObject.isNull();
     if (CommonToolsInternal::CheckRuleIssue(!isItemsObjectValid, _GetJsonElementType(), EXTENDED_DATA_RULE_JSON_ATTRIBUTE_ITEMS, json[EXTENDED_DATA_RULE_JSON_ATTRIBUTE_ITEMS], "JSON object"))
         return false;
 
-    auto memberNames = json[EXTENDED_DATA_RULE_JSON_ATTRIBUTE_ITEMS].getMemberNames();
-    for (Utf8StringCR memberName : memberNames)
+    json[EXTENDED_DATA_RULE_JSON_ATTRIBUTE_ITEMS].ForEachProperty(
+        [&](Utf8CP name, BeJsConst value)
         {
-        JsonValueCR value = json[EXTENDED_DATA_RULE_JSON_ATTRIBUTE_ITEMS][memberName];
-        if (CommonToolsInternal::CheckRuleIssue(!value.isString(), _GetJsonElementType(), Utf8PrintfString("value.items.%s", memberName.c_str()).c_str(), value, "non-empty string"))
-            continue;
+        if (CommonToolsInternal::CheckRuleIssue(!value.isString(), _GetJsonElementType(), Utf8PrintfString("value.items.%s", name).c_str(), value, "non-empty string"))
+            return false;
 
-        m_items.Insert(memberName, value.asCString());
+        m_items.Insert(name, value.asCString());
+        return false;
         }
-
+    );
     return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ExtendedDataRule::_WriteJson(JsonValueR json) const
+void ExtendedDataRule::_WriteJson(BeJsValue json) const
     {
     ConditionalCustomizationRule::_WriteJson(json);
     for (auto entry : m_items)

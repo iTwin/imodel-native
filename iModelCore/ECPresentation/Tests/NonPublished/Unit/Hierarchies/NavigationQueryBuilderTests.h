@@ -49,11 +49,14 @@ struct NavigationQueryBuilderTests : QueryBuilderTest
     RefCountedPtr<SimpleQueryContract> CreateRelatedInstancesQueryContract();
     RefCountedPtr<SimpleQueryContract> CreateSelect1QueryContract();
     ComplexQueryBuilderR SetLabelGroupingNodeChildrenWhereClause(ComplexQueryBuilderR query);
+    ComplexQueryBuilderPtr CreateInstanceKeysSelectQuery();
 
     Utf8String GetECInstanceNodesOrderByClause();
     Utf8String GetLabelGroupingNodesOrderByClause();
     Utf8String GetECPropertyGroupingNodesOrderByClause();
     Utf8String GetECClassGroupingNodesOrderByClause();
+
+    static NavigationQueryContractPtr WithId(uint64_t id, NavigationQueryContractCR contract);
     };
 
 END_ECPRESENTATIONTESTS_NAMESPACE

@@ -26,7 +26,7 @@ TEST_F(RelatedInstanceSpecificationTests, LoadsFromJsonDeprecated)
         "isRequired": true,
         "requiredDirection": "Forward"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     RelatedInstanceSpecification spec;
@@ -53,7 +53,7 @@ TEST_F(RelatedInstanceSpecificationTests, LoadsFromJson)
         "alias": "TestAlias",
         "isRequired": true
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     RelatedInstanceSpecification spec;
@@ -76,7 +76,7 @@ TEST_F(RelatedInstanceSpecificationTests, LoadsFromJsonWithDefaultValuesDeprecat
         "class": {"schemaName": "c", "className": "d"},
         "alias": "TestAlias"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     RelatedInstanceSpecification spec;
@@ -95,8 +95,8 @@ TEST_F(RelatedInstanceSpecificationTests, LoadsFromJsonWithDefaultValuesDeprecat
 TEST_F(RelatedInstanceSpecificationTests, WriteToJson)
     {
     RelatedInstanceSpecification spec(RequiredRelationDirection_Forward, "s1:c1", "s2:c2", "alias", true);
-    Json::Value json = spec.WriteJson();
-    Json::Value expected = Json::Reader::DoParse(R"({
+    BeJsDocument json = spec.WriteJson();
+    BeJsDocument expected(R"({
         "relationshipPath": {
             "relationship": {"schemaName": "s1", "className": "c1"},
             "direction": "Forward",
@@ -105,7 +105,7 @@ TEST_F(RelatedInstanceSpecificationTests, WriteToJson)
         "alias": "alias",
         "isRequired": true
     })");
-    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
+    EXPECT_TRUE(expected.isExactEqual(json));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -163,7 +163,7 @@ TEST_F(RelatedInstanceSpecificationTests, LoadFromJsonFailsWhenRelationshipAttri
         "isRequired": true,
         "direction": "Forward"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     RelatedInstanceSpecification spec;
@@ -181,7 +181,7 @@ TEST_F(RelatedInstanceSpecificationTests, LoadFromJsonFailsWhenClassNameAttribut
         "isRequired": true,
         "direction": "Forward"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     RelatedInstanceSpecification spec;
@@ -199,7 +199,7 @@ TEST_F(RelatedInstanceSpecificationTests, LoadFromJsonFailsWhenAliasAttributeIsN
         "isRequired": true,
         "direction": "Forward"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     RelatedInstanceSpecification spec;
