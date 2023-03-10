@@ -270,6 +270,13 @@ DbResult DgnDb::InitializeSchemas(Db::OpenParams const& params)
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
+DgnDb::PullResult DgnDb::PullSchemaChanges(ChannelUri uri) {
+    return Schemas().GetSharedChannel().Pull(uri, GetSchemaImportToken());
+}
+
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//--------------------------------------------------------------------------------------
 DbResult DgnDb::SchemaStatusToDbResult(SchemaStatus status, bool isUpgrade)
     {
     switch (status)

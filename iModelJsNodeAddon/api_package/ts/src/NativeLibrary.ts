@@ -443,11 +443,15 @@ export declare namespace IModelJsNative {
     extents: Range3dProps;
     status: IModelStatus;
   }
-
+NativeDgnDb
   /** The native object for a Briefcase. */
   class DgnDb implements IConcurrentQueryManager, SQLiteOps {
     constructor();
     public readonly cloudContainer?: CloudContainer;
+    public sharedChannelSetDefaultUri(channelUri: string): void;
+    public sharedChannelGetDefaultUri(): string;
+    public sharedChannelInit(channelUri: string): void;
+    public sharedChannelPull(channelUri: string | undefined): number;
     public abandonChanges(): DbResult;
     public abandonCreateChangeset(): void;
     public addChildPropagatesChangesToParentRelationship(schemaName: string, relClassName: string): BentleyStatus;
@@ -639,8 +643,10 @@ export declare namespace IModelJsNative {
     public createDb(dbName: string): DbResult;
     public dispose(): void;
     public dropSchema(schemaName: string): void;
-    public schemaSync(sharedSchemaDbUri: string, action: SyncAction): DbResult;
-    public initSharedSchemaDb(sharedSchemaDbUri: string): DbResult;
+    public sharedChannelSetDefaultUri(channelUri: string): void;
+    public sharedChannelGetDefaultUri(): string;
+    public sharedChannelInit(channelUri: string): void;
+    public sharedChannelPull(channelUri: string | undefined): number;
     public getFilePath(): string;
     public importSchema(schemaPathName: string): DbResult;
     public isOpen(): boolean;
