@@ -4,14 +4,14 @@
  *
  * Copyright 2014-2017 The OpenSSL Project Authors. All Rights Reserved.
  *
- * Licensed under the OpenSSL license (the "License").  You may not use
+ * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
  * in the file LICENSE in the source distribution or at
  * https://www.openssl.org/source/license.html
  */
 
-#define PLATFORM "platform: VC-WIN64A"
-#define DATE "built on: Wed Jan 16 18:10:36 2019 UTC"
+#define PLATFORM "platform: linux-x86_64"
+#define DATE "built on: Mon Feb 13 18:25:12 2023 UTC"
 
 /*
  * Generate compiler_flags as an array of individual characters. This is a
@@ -19,11 +19,14 @@
  * literal
  */
 static const char compiler_flags[] = {
-    'c','o','m','p','i','l','e','r',':',' ','c','l',' ','/','Z','i',
-    ' ','/','F','d','o','s','s','l','_','s','t','a','t','i','c','.',
-    'p','d','b',' ','/','G','s','0',' ','/','G','F',' ','/','G','y',
-    ' ','/','M','D',' ','/','W','3',' ','/','w','d','4','0','9','0',
-    ' ','/','n','o','l','o','g','o',' ','/','O','2',' ','-','D','L',
-    '_','E','N','D','I','A','N',' ','-','D','O','P','E','N','S','S',
-    'L','_','P','I','C','\0'
+    'c','o','m','p','i','l','e','r',':',' ','g','c','c',' ','-','f',
+    'P','I','C',' ','-','p','t','h','r','e','a','d',' ','-','m','6',
+    '4',' ','-','W','a',',','-','-','n','o','e','x','e','c','s','t',
+    'a','c','k',' ','-','W','a','l','l',' ','-','O','3',' ','-','D',
+    'O','P','E','N','S','S','L','_','U','S','E','_','N','O','D','E',
+    'L','E','T','E',' ','-','D','L','_','E','N','D','I','A','N',' ',
+    '-','D','O','P','E','N','S','S','L','_','P','I','C',' ','-','D',
+    'O','P','E','N','S','S','L','_','B','U','I','L','D','I','N','G',
+    '_','O','P','E','N','S','S','L',' ','-','D','N','D','E','B','U',
+    'G','\0'
 };
