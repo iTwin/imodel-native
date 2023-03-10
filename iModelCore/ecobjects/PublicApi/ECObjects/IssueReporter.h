@@ -33,7 +33,7 @@ struct ECOBJECTS_EXPORT IssueCategory
     operator const char*() const { return m_stringId; }
 
     static IssueCategory BusinessProperties; // should be used when an issue is related to ECFramework;
-    static IssueCategory SchemaSynchronization;
+    static IssueCategory SharedSchemaChannel;
     };
 
 //=======================================================================================

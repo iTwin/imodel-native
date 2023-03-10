@@ -229,17 +229,17 @@ TEST_F(SchemaSyncTestFixture, Test) {
         b2->SaveChanges();
     });
 
-    // Test("b3 pull changes from hub", [&]() {
-    //     ASSERT_EQ(BE_SQLITE_OK, b3->PullMergePush("add new schema"))  << "b3->PullMergePush()";
-    //     auto pipe1 = b3->Schemas().GetClass("TestSchema1", "Pipe1");
-    //     ASSERT_NE(pipe1, nullptr);
-    //     ASSERT_EQ(pipe1->GetPropertyCount(), 4);
-    //     ASSERT_TRUE(b3->TableExists("ts_Pipe1"));
-    //     ASSERT_STRCASEEQ(GetIndexDDL(*b3, "idx_pipe1_p1").c_str(), "CREATE INDEX [idx_pipe1_p1] ON [ts_Pipe1]([p1], [p2])");
-    //     EXPECT_STREQ(SCHEMA2_HASH_ECDB_SCHEMA, GetSchemaHash(*b3).c_str());
-    //     EXPECT_STREQ(SCHEMA2_HASH_ECDB_MAP, GetMapHash(*b3).c_str());
-    //     EXPECT_STREQ(SCHEMA2_HASH_SQLITE_SCHEMA, GetDbSchemaHash(*b3).c_str());
-    // });
+    Test("b3 pull changes from hub", [&]() {
+        ASSERT_EQ(BE_SQLITE_OK, b3->PullMergePush("add new schema"))  << "b3->PullMergePush()";
+        auto pipe1 = b3->Schemas().GetClass("TestSchema1", "Pipe1");
+        ASSERT_NE(pipe1, nullptr);
+        ASSERT_EQ(pipe1->GetPropertyCount(), 4);
+        ASSERT_TRUE(b3->TableExists("ts_Pipe1"));
+        ASSERT_STRCASEEQ(GetIndexDDL(*b3, "idx_pipe1_p1").c_str(), "CREATE INDEX [idx_pipe1_p1] ON [ts_Pipe1]([p1], [p2])");
+        EXPECT_STREQ(SCHEMA2_HASH_ECDB_SCHEMA, GetSchemaHash(*b3).c_str());
+        EXPECT_STREQ(SCHEMA2_HASH_ECDB_MAP, GetMapHash(*b3).c_str());
+        EXPECT_STREQ(SCHEMA2_HASH_SQLITE_SCHEMA, GetDbSchemaHash(*b3).c_str());
+    });
 }
 
 END_ECDBUNITTESTS_NAMESPACE
