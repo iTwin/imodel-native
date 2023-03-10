@@ -516,7 +516,7 @@ BentleyStatus NodesCache::DbFactory::InitializeCacheTables(Db& db)
             "[ParentId] " NAVNODES_CACHE_ID_TYPE " DEFAULT NULL REFERENCES " NODESCACHE_TABLENAME_DataSources "([Id]) ON DELETE CASCADE ON UPDATE CASCADE, "
             "[CustomJson] TEXT DEFAULT ''";
         EVALUATE_SQLITE_RESULT(db, db.CreateTable(NODESCACHE_TABLENAME_DataSources, ddl));
-        EVALUATE_SQLITE_RESULT(db, db.ExecuteSql("CREATE INDEX [IX_DataSources_HierarchyLevelId] ON [" NODESCACHE_TABLENAME_DataSources "]([HierarchyLevelId],[InstanceFilter],[VariablesId],[Index])"));
+        EVALUATE_SQLITE_RESULT(db, db.ExecuteSql("CREATE INDEX [IX_DataSources_HierarchyLevelId] ON [" NODESCACHE_TABLENAME_DataSources "]([HierarchyLevelId],[InstanceFilter],[VariablesId],[ResultSetSizeLimit],[Index])"));
         EVALUATE_SQLITE_RESULT(db, db.ExecuteSql("CREATE INDEX [IX_DataSources_ParentDataSourceId] ON [" NODESCACHE_TABLENAME_DataSources "]([ParentId])"));
         }
     if (!db.TableExists(NODESCACHE_TABLENAME_DataSourceClasses))
@@ -1924,19 +1924,19 @@ DataSourceInfo NodesCache::_FindDataSource(DataSourceIdentifier const& identifie
 NavNodePtr NodesCache::_GetPhysicalParentNode(BeGuidCR nodeId, RulesetVariables const& contextVariables, InstanceFilterDefinitionCP instanceFilter) const
     {
     static Utf8CP query =
-        "SELECT [hl].[ParentNodeId], [parent_node].[Visibility] "
-        // find id of the parent node
-        "  FROM [" NODESCACHE_TABLENAME_Nodes "] n "
-        "  JOIN [" NODESCACHE_TABLENAME_HierarchyLevels "] hl ON [hl].[Id] = [n].[HierarchyLevelId] "
-        // also need visibility of the parent
-        "  LEFT JOIN ("
-        "      SELECT [parent_dsn].[NodeId], [parent_dsn].[Visibility]"
+        "SELECT "
+        "   [hl].[ParentNodeId], "
+        "   ("
+        "      SELECT [parent_dsn].[Visibility]"
         "      FROM [" NODESCACHE_TABLENAME_DataSourceNodes "] parent_dsn "
         "      JOIN [" NODESCACHE_TABLENAME_DataSources "] parent_ds ON [parent_ds].[Id] = [parent_dsn].[DataSourceId] AND [parent_ds].[InstanceFilter] IS ? "
         "      JOIN [" NODESCACHE_TABLENAME_Variables "] parent_dsv ON [parent_dsv].[Id] = [parent_ds].[VariablesId] AND " NODESCACHE_FUNCNAME_VariablesMatch "([parent_dsv].[Variables], ?) "
-        "      GROUP BY [parent_dsn].[NodeId]"
-        "  ) parent_node ON [parent_node].[NodeId] = [hl].[ParentNodeId]"
-        " WHERE [n].[Id] = ?";
+        "      WHERE [parent_dsn].[NodeId] = [hl].[ParentNodeId]"
+        "      LIMIT 1"
+        "   )"
+        "FROM [" NODESCACHE_TABLENAME_Nodes "] n "
+        "JOIN [" NODESCACHE_TABLENAME_HierarchyLevels "] hl ON [hl].[Id] = [n].[HierarchyLevelId] "
+        "WHERE [n].[Id] = ?";
 
     CachedStatementPtr stmt;
     if (BE_SQLITE_OK != m_statements.GetPreparedStatement(stmt, *m_db.GetDbFile(), query))
