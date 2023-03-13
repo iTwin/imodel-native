@@ -30,7 +30,7 @@ describe("basic tests", () => {
     done();
   });
 
-  it.only("schema shared channel", () => {
+  it("schema shared channel", () => {
 
     const copyAndOverrideFile = (from: string, to: string) => {
       if (fs.existsSync(to)) {
@@ -39,7 +39,7 @@ describe("basic tests", () => {
       fs.copyFileSync(from, to);
     };
     const getCheckSum = (db: IModelJsNative.ECDb | IModelJsNative.DgnDb, type: "ecdb_schema" | "ecdb_map"| "sqlite_schema") => {
-      const stmt = new IModelJsNative.ECSqlStatement();
+      const stmt = new iModelJsNative.ECSqlStatement();
       assert.equal(DbResult.BE_SQLITE_OK, stmt.prepare(db, `PRAGMA checksum(${type})`).status);
       assert.equal(DbResult.BE_SQLITE_ROW,stmt.step());
       const val = stmt.getValue(0).getString();
@@ -124,7 +124,7 @@ describe("basic tests", () => {
     rc = b1.importXmlSchemas([schema2], { sharedSchemaChannelUri: channelUri });
     assert.equal(DbResult.BE_SQLITE_OK, rc);
 
-    b1.sharedChannelPull(channelUri);
+    b0.sharedChannelPull(channelUri);
 
     // b1 = b2
     const b0Hashes = getSchemaHashes(b0);
