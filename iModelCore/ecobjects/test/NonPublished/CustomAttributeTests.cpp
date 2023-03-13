@@ -613,7 +613,7 @@ TEST_F (CustomAttributeTest, SerializeSchemaToXmlUtfString)
     caClass->CreatePrimitiveProperty (stringProp, caUtf8StringPropName, PRIMITIVETYPE_String);
 
         // *** WIP_PORTABILITY: Use an escape such as \u here. Don't try to use extended ascii directly
-    WCharCP caPropValueString = L"����ᳵ";
+    WCharCP caPropValueString = L"äöüßá³µ";
     Utf8String expectedCAPropValueUtf8String;
     EXPECT_EQ (SUCCESS, BeStringUtilities::WCharToUtf8 (expectedCAPropValueUtf8String, caPropValueString));
 
