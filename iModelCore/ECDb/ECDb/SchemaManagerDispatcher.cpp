@@ -1066,13 +1066,18 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
                 return SchemaImportResult::ERROR;
                 }
 
-            if (sharedChannel.Pull(resolvedChannelUri) != SharedSchemaChannel::Status::SUCCESS)
+            if (sharedChannel.Pull(resolvedChannelUri, schemaImportToken) != SharedSchemaChannel::Status::SUCCESS)
                 {
                 m_ecdb.GetImpl().Issues().ReportV(
                     IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue,
                     "Failed to import ECSchemas. Unable to pull changes from Channel-Id: {%s}, uri: {%s}.",
                     localChannelInfo.GetChannelId().ToString().c_str(),
                     resolvedChannelUri.GetUri().c_str());
+                return SchemaImportResult::ERROR;
+                }
+            if (!GetECDb().GetImpl().GetIdFactory().Reset())
+                {
+                LOG.error("Failed to import ECSchemas: Failed to create id factory.");
                 return SchemaImportResult::ERROR;
                 }
             }

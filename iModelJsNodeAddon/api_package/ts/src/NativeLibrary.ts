@@ -434,6 +434,7 @@ export declare namespace IModelJsNative {
 
   interface SchemaImportOptions {
     readonly schemaLockHeld?: boolean;
+    readonly sharedSchemaChannelUri?: string;
     readonly ecSchemaXmlContext?: ECSchemaXmlContext;
   }
 
@@ -443,7 +444,7 @@ export declare namespace IModelJsNative {
     extents: Range3dProps;
     status: IModelStatus;
   }
-NativeDgnDb
+
   /** The native object for a Briefcase. */
   class DgnDb implements IConcurrentQueryManager, SQLiteOps {
     constructor();

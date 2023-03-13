@@ -368,6 +368,7 @@ struct JsInterop {
 
     struct SchemaImportOptions
         {
+        Utf8String m_sharedChannelUri;
         bool m_schemaLockHeld = true;
         ECSchemaReadContextPtr m_customSchemaContext = nullptr;
         };
@@ -434,6 +435,7 @@ struct JsInterop {
     BE_JSON_NAME(row)
     BE_JSON_NAME(secure)
     BE_JSON_NAME(schemaLockHeld)
+    BE_JSON_NAME(sharedSchemaChannelUri)
     BE_JSON_NAME(size)
     BE_JSON_NAME(skipFileCheck)
     BE_JSON_NAME(state)

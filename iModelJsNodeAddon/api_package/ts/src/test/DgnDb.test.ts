@@ -30,6 +30,113 @@ describe("basic tests", () => {
     done();
   });
 
+  it.only("schema shared channel", () => {
+
+    const copyAndOverrideFile = (from: string, to: string) => {
+      if (fs.existsSync(to)) {
+        fs.unlinkSync(to);
+      }
+      fs.copyFileSync(from, to);
+    };
+    const getCheckSum = (db: IModelJsNative.ECDb | IModelJsNative.DgnDb, type: "ecdb_schema" | "ecdb_map"| "sqlite_schema") => {
+      const stmt = new IModelJsNative.ECSqlStatement();
+      assert.equal(DbResult.BE_SQLITE_OK, stmt.prepare(db, `PRAGMA checksum(${type})`).status);
+      assert.equal(DbResult.BE_SQLITE_ROW,stmt.step());
+      const val = stmt.getValue(0).getString();
+      assert.isNotEmpty(val);
+      stmt.dispose();
+      return val;
+    };
+
+    const getSchemaHashes = (db: IModelJsNative.ECDb | IModelJsNative.DgnDb) => {
+      return {
+        eCDbSchema: getCheckSum(db, "ecdb_schema"),
+        eCDbMap: getCheckSum(db, "ecdb_map"),
+        sQLiteSchema: getCheckSum(db, "sqlite_schema"),
+      };
+    };
+
+    const baseDir = path.join(getOutputDir(), "shared-schema-channel");
+    if (fs.existsSync(baseDir)) {
+      fs.emptyDirSync(baseDir);
+      for (const file of fs.readdirSync(baseDir)) {
+        fs.unlinkSync(path.join(baseDir, file));
+      }
+    } else {
+      fs.mkdirSync(baseDir, { recursive: true });
+    }
+
+    // create empty channel db.
+    const channelUri = path.join(baseDir, "channel.ecdb");
+    const channelDb = new iModelJsNative.ECDb();
+    let rc: DbResult = channelDb.createDb(channelUri);
+    assert.equal(DbResult.BE_SQLITE_OK, rc);
+    channelDb.saveChanges();
+    channelDb.closeDb();
+
+    // create seed file.
+    const seedUri= path.join(baseDir, "seed.bim");
+    const iModelDb = new iModelJsNative.DgnDb();
+    iModelDb.createIModel(seedUri, { rootSubject: { name: "test file" } });
+
+    // initialize shared channel.
+    iModelDb.sharedChannelInit(channelUri);
+    iModelDb.saveChanges();
+    iModelDb.performCheckpoint();
+    iModelDb.closeIModel();
+
+    // create first briefcase
+    const b0Uri = path.join(baseDir, "b0.bim");
+    copyAndOverrideFile(seedUri, b0Uri);
+    const b0 = new iModelJsNative.DgnDb();
+    b0.openIModel(b0Uri, OpenMode.ReadWrite);
+
+    // create second briefcase
+    const b1Uri = path.join(baseDir, "b1.bim");
+    copyAndOverrideFile(seedUri, b1Uri);
+    const b1 = new iModelJsNative.DgnDb();
+    b1.openIModel(b1Uri, OpenMode.ReadWrite);
+
+    // import schema in briefcase 1
+    const schema1 = `<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchema1" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+        <ECEntityClass typeName="Pipe1">
+            <BaseClass>bis:GeometricElement2d</BaseClass>
+            <ECProperty propertyName="p1" typeName="int" />
+            <ECProperty propertyName="p2" typeName="int" />
+        </ECEntityClass>
+    </ECSchema>`;
+    rc = b0.importXmlSchemas([schema1], { sharedSchemaChannelUri: channelUri });
+    assert.equal(DbResult.BE_SQLITE_OK, rc);
+
+    const schema2 = `<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchema1" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+        <ECEntityClass typeName="Pipe1">
+          <BaseClass>bis:GeometricElement2d</BaseClass>
+          <ECProperty propertyName="p1" typeName="int" />
+          <ECProperty propertyName="p2" typeName="int" />
+          <ECProperty propertyName="p3" typeName="int" />
+          <ECProperty propertyName="p4" typeName="int" />
+        </ECEntityClass>
+    </ECSchema>`;
+    rc = b1.importXmlSchemas([schema2], { sharedSchemaChannelUri: channelUri });
+    assert.equal(DbResult.BE_SQLITE_OK, rc);
+
+    b1.sharedChannelPull(channelUri);
+
+    // b1 = b2
+    const b0Hashes = getSchemaHashes(b0);
+    const b1Hashes = getSchemaHashes(b1);
+    assert.deepEqual(b0Hashes, b1Hashes);
+
+    b0.saveChanges();
+    b1.saveChanges();
+    b0.closeIModel();
+    b1.closeIModel();
+  });
+
   // verify that throwing javascript exceptions from C++ works
   it("testExceptions", () => {
     // first try a function

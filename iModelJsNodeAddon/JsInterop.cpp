@@ -917,7 +917,7 @@ DbResult JsInterop::ImportSchemas(DgnDbR dgndb, bvector<Utf8String> const& schem
     if (0 == schemas.size())
         return BE_SQLITE_ERROR;
 
-    SchemaStatus status = dgndb.ImportSchemas(schemas, opts.m_schemaLockHeld); // NOTE: this calls DgnDb::ImportSchemas which has additional processing over SchemaManager::ImportSchemas
+    SchemaStatus status = dgndb.ImportSchemas(schemas, opts.m_schemaLockHeld, DgnDb::ChannelUri(opts.m_sharedChannelUri.c_str())); // NOTE: this calls DgnDb::ImportSchemas which has additional processing over SchemaManager::ImportSchemas
     if (status != SchemaStatus::Success)
         return DgnDb::SchemaStatusToDbResult(status, true);
 
