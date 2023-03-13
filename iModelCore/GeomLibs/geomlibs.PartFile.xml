@@ -23,6 +23,7 @@
 
     <Part Name="GeomDlls" BentleyBuildMakeFile="geom/build/BentleyGeom/BentleyGeom.mke">
         <SubPart PartName="BentleyDll" PartFile="iModelCore/Bentley/Bentley" />
+        <SubPart PartName="BeRapidJson" PartFile="iModelCore/Bentley/Bentley" />
         <SubPart PartName="BeJsonCpp" PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp" />
         <SubPart PartName="PublicAPI" />
         <Bindings>
@@ -35,7 +36,8 @@
         <SubPart PartName="GeomDlls"/>
         <SubPart PartName="BentleyDll" PartFile="iModelCore/Bentley/Bentley" />
         <SubPart PartName="Headers" PartFile="iModelCore/libsrc/flatbuffers/flatbuffers"/>
-        <SubPart PartName="BeJsonCpp"       PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp" />
+        <SubPart PartName="BeJsonCpp" PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp" />
+        <SubPart PartName="BeRapidJson" PartFile="iModelCore/Bentley/Bentley" />
         <Bindings>
             <Assemblies>Delivery/$(shlibprefix)iTwinGeomSerialization$(shlibext)</Assemblies>
             <Libs>Delivery/$(libprefix)iTwinGeomSerialization$(libext)</Libs>
@@ -232,7 +234,7 @@
 
     <!-- ***NEEDS WORK: Does this really need to be a product? Does PRG build it? -->
     <ProductDirectoryList ListName="Empty" />
-    <Product Name="GeomLibsTested" AddIn="true" PrgOutputDir="GeomLibs" >
+    <Product Name="GeomLibsTested" AddIn="true">
         <SubPart PartName="RunGtest" />
         <Directories DirectoryListName="Empty" />
     </Product>
@@ -241,7 +243,7 @@
     <!-- //////////////////////////////////////////////////////////////////////////////////////////////////// -->
     <!-- GeomLibs Product -->
     <!-- //////////////////////////////////////////////////////////////////////////////////////////////////// -->
-    <Product Name="GeomLibs" PrgOutputDir="Geomlibs">
+    <Product Name="GeomLibs">
         <SubPart PartName= "GeomDlls" />
         <SubPart PartName="GeomDlls" LibType="Static"/>
         <SubPart PartName="GeomlibsSerialization"/>

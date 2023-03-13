@@ -26,7 +26,7 @@ TEST_F(CustomNodeSpecificationTests, LoadsFromJson)
         "description": "description",
         "imageId": "imgID"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     CustomNodeSpecification spec;
@@ -47,7 +47,7 @@ TEST_F(CustomNodeSpecificationTests, LoadsFromJsonWithDefaultValues)
         "type": "type",
         "label": "label"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     CustomNodeSpecification spec;
@@ -67,8 +67,8 @@ TEST_F(CustomNodeSpecificationTests, WriteToJson)
     spec.SetHasChildren(ChildrenHint::Never);
     spec.SetDoNotSort(true);
     spec.SetHideNodesInHierarchy(true);
-    Json::Value json = spec.WriteJson();
-    Json::Value expected = Json::Reader::DoParse(R"({
+    BeJsDocument json = spec.WriteJson();
+    BeJsDocument expected(R"({
         "specType": "CustomNode",
         "hasChildren": "Never",
         "hideNodesInHierarchy": true,
@@ -79,7 +79,7 @@ TEST_F(CustomNodeSpecificationTests, WriteToJson)
         "description": "descr",
         "imageId": "imageid"
     })");
-    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
+    EXPECT_TRUE(expected.isExactEqual(json));
     }
 
 /*---------------------------------------------------------------------------------**//**

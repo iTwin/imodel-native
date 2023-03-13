@@ -10,6 +10,7 @@
 #include <ECPresentation/Connection.h>
 #include <ECPresentation/NavNodeKey.h>
 #include <ECPresentation/DataSource.h>
+#include <ECPresentation/PresentationQuery.h>
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 

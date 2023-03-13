@@ -57,7 +57,7 @@ protected:
 private:
     void SaveReport();
     void LoadRulesetConfigs();
-    BentleyStatus ParseRulesetConfig(JsonValueCR, RulesetConfig&);
+    BentleyStatus ParseRulesetConfig(BeJsConst, RulesetConfig&);
 
 protected:
     static void SetUpTestCase();
@@ -78,7 +78,7 @@ struct SingleManagerRulesEnginePerformanceAnalysisTests : RulesEnginePerformance
 protected:
     RulesEnginePerformanceAnalysisTestsConfig m_config;
     ECPresentationManager* m_manager = nullptr;
-    RuntimeJsonLocalState m_localState;
+    JsonLocalState m_localState;
     TestRuleSetLocaterPtr m_locater;
 
 protected:
@@ -87,6 +87,9 @@ protected:
 
     void Reset(ECDb* project = nullptr);
     void ForEachDatasetAndRuleset(std::function<void(Reporter&, ECDbR, Utf8StringCR)> testCaseRunner);
+
+public:
+    SingleManagerRulesEnginePerformanceAnalysisTests() : m_localState(std::make_shared<RuntimeLocalState>()) {}
 };
 
 END_ECPRESENTATIONTESTS_NAMESPACE

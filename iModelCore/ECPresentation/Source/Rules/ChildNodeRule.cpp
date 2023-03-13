@@ -108,7 +108,7 @@ Utf8CP SubCondition::_GetJsonElementType() const {return "SubCondition";}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool SubCondition::_ReadJson(JsonValueCR json)
+bool SubCondition::_ReadJson(BeJsConst json)
     {
     if (!PresentationKey::_ReadJson(json))
         return false;
@@ -126,7 +126,7 @@ bool SubCondition::_ReadJson(JsonValueCR json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SubCondition::_WriteJson(JsonValueR json) const
+void SubCondition::_WriteJson(BeJsValue json) const
     {
     if (!m_condition.empty())
         json[PRESENTATION_RULE_JSON_ATTRIBUTE_CONDITION] = m_condition;
@@ -335,7 +335,7 @@ Utf8CP ChildNodeRule::_GetJsonElementType() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ChildNodeRule::_ReadJson(JsonValueCR json)
+bool ChildNodeRule::_ReadJson(BeJsConst json)
     {
     if (!ConditionalPresentationRule::_ReadJson(json))
         return false;
@@ -353,7 +353,7 @@ bool ChildNodeRule::_ReadJson(JsonValueCR json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ChildNodeRule::_WriteJson(JsonValueR json) const
+void ChildNodeRule::_WriteJson(BeJsValue json) const
     {
     ConditionalPresentationRule::_WriteJson(json);
     if (m_stopFurtherProcessing)
@@ -507,7 +507,7 @@ Utf8CP RootNodeRule::_GetJsonElementType() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool RootNodeRule::_ReadJson(JsonValueCR json)
+bool RootNodeRule::_ReadJson(BeJsConst json)
     {
     if (!ChildNodeRule::_ReadJson(json))
         return false;
@@ -519,7 +519,7 @@ bool RootNodeRule::_ReadJson(JsonValueCR json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RootNodeRule::_WriteJson(JsonValueR json) const
+void RootNodeRule::_WriteJson(BeJsValue json) const
     {
     ChildNodeRule::_WriteJson(json);
     if (m_autoExpand)

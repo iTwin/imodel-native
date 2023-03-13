@@ -69,7 +69,7 @@ Utf8CP LabelOverride::_GetJsonElementType() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool LabelOverride::_ReadJson(JsonValueCR json)
+bool LabelOverride::_ReadJson(BeJsConst json)
     {
     if (!ConditionalCustomizationRule::_ReadJson(json))
         return false;
@@ -82,7 +82,7 @@ bool LabelOverride::_ReadJson(JsonValueCR json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void LabelOverride::_WriteJson(JsonValueR json) const
+void LabelOverride::_WriteJson(BeJsValue json) const
     {
     ConditionalCustomizationRule::_WriteJson(json);
     if (!m_label.empty())

@@ -10,6 +10,7 @@ vendorSrc = $(_MakeFilePath)vendor/
 #   License file
 #----------------------------------------------------------------------------------------
 always:
-    ~linkfile "$(BuildContext)Delivery/openssl-license.txt=$(vendorSrc)LICENSE"
+    ~linkfile "$(BuildContext)Delivery/openssl-license.txt=$(vendorSrc)LICENSE.txt"
     ~linkmultifiles "$(BuildContext)VendorAPI/openssl=$(vendorSrc)include/openssl/*.h"
+    ~linkfile "$(BuildContext)VendorAPI/openssl/crypto/engineerr.h=$(vendorSrc)include/crypto/engineerr.h"
     -$(deleteCmd) $(BuildContext)VendorAPI/openssl/*__DECC_*

@@ -11,6 +11,7 @@
     <Part Name="UnitsNative" BentleyBuildMakeFile="Units.mke">
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="BentleyDll"  PartFile="iModelCore/Bentley/Bentley" />
+        <SubPart PartName="BeRapidJson" PartFile="iModelCore/Bentley/Bentley" />
         <SubPart PartName="BeJsonCpp"   PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp" />
         <Bindings>
             <Libs>Delivery/$(libprefix)iTwinUnits$(libext)</Libs>
@@ -60,7 +61,7 @@
         <ProductDirectory Name="VendorNotices"                   Path="Notices"/>
     </ProductDirectoryList>
 
-    <Product Name="UnitsTested" PrgOutputDir="Units" SaveProduct="true" AddIn="true">
+    <Product Name="UnitsTested" SaveProduct="true" AddIn="true">
         <SubPart PartName="RunGtest" />
         <SubPart PartName="RunAndroidJUnitTest" />
         <SubPart PartName="RuniOSXCTest" />

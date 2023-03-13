@@ -161,7 +161,7 @@ bool InstanceNodesOfSpecificClassesSpecification::_ReadXml(BeXmlNodeP xmlNode)
 void InstanceNodesOfSpecificClassesSpecification::_WriteXml(BeXmlNodeP xmlNode) const
     {
     ChildNodeSpecification::_WriteXml(xmlNode);
-    xmlNode->AddAttributeStringValue(COMMON_XML_ATTRIBUTE_CLASSNAMES, CommonToolsInternal::SchemaAndClassNamesToString(CommonToolsInternal::MultiSchemaClassesToJson(m_classes)).c_str());
+    xmlNode->AddAttributeStringValue(COMMON_XML_ATTRIBUTE_CLASSNAMES, CommonToolsInternal::SchemaAndClassNamesToString(CommonToolsInternal::WriteMultiSchemaClassesToJson(m_classes)).c_str());
     xmlNode->AddAttributeBooleanValue(COMMON_XML_ATTRIBUTE_GROUPBYCLASS, m_groupByClass);
     xmlNode->AddAttributeBooleanValue(COMMON_XML_ATTRIBUTE_GROUPBYLABEL, m_groupByLabel);
     xmlNode->AddAttributeBooleanValue(COMMON_XML_ATTRIBUTE_SHOWEMPTYGROUPS, m_showEmptyGroups);
@@ -182,7 +182,7 @@ Utf8CP InstanceNodesOfSpecificClassesSpecification::_GetJsonElementType() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool InstanceNodesOfSpecificClassesSpecification::_ReadJson(JsonValueCR json)
+bool InstanceNodesOfSpecificClassesSpecification::_ReadJson(BeJsConst json)
     {
     if (!ChildNodeSpecification::_ReadJson(json))
         return false;
@@ -205,7 +205,7 @@ bool InstanceNodesOfSpecificClassesSpecification::_ReadJson(JsonValueCR json)
     if (!CommonToolsInternal::ParseMultiSchemaClassesFromJson(json[COMMON_JSON_ATTRIBUTE_CLASSES], defaultPolymorphism, m_classes, this) || m_classes.empty())
         {
         DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid value for `%s`: `%s`. Expected %s.",
-            _GetJsonElementType(), json.ToString().c_str(), "at least one class"));
+            _GetJsonElementType(), json.Stringify().c_str(), "at least one class"));
         return false;
         }
 
@@ -215,13 +215,13 @@ bool InstanceNodesOfSpecificClassesSpecification::_ReadJson(JsonValueCR json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void InstanceNodesOfSpecificClassesSpecification::_WriteJson(JsonValueR json) const
+void InstanceNodesOfSpecificClassesSpecification::_WriteJson(BeJsValue json) const
     {
     ChildNodeSpecification::_WriteJson(json);
     if (!m_classes.empty())
-        json[COMMON_JSON_ATTRIBUTE_CLASSES] = CommonToolsInternal::MultiSchemaClassesToJson(m_classes);
+        CommonToolsInternal::WriteMultiSchemaClassesToJson(json[COMMON_JSON_ATTRIBUTE_CLASSES], m_classes);
     if (!m_excludedClasses.empty())
-        json[COMMON_JSON_ATTRIBUTE_EXCLUDEDCLASSES] = CommonToolsInternal::MultiSchemaClassesToJson(m_excludedClasses);
+        CommonToolsInternal::WriteMultiSchemaClassesToJson(json[COMMON_JSON_ATTRIBUTE_EXCLUDEDCLASSES], m_excludedClasses);
     if (!m_groupByClass)
         json[COMMON_JSON_ATTRIBUTE_GROUPBYCLASS] = m_groupByClass;
     if (!m_groupByLabel)

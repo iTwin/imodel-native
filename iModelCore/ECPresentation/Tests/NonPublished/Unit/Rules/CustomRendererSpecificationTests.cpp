@@ -19,7 +19,7 @@ struct CustomRendererSpecificationTests : PresentationRulesTests
 TEST_F(CustomRendererSpecificationTests, ReadJson_ValidJson_Success)
     {
     static Utf8CP jsonString = R"({ "rendererName": "test_renderer" })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     ASSERT_FALSE(json.isNull());
 
     CustomRendererSpecification spec;
@@ -33,7 +33,7 @@ TEST_F(CustomRendererSpecificationTests, ReadJson_ValidJson_Success)
 TEST_F(CustomRendererSpecificationTests, ReadJson_EmptyRendererName_Failure)
     {
     static Utf8CP jsonString = R"({ "rendererName": "" })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     ASSERT_FALSE(json.isNull());
 
     CustomRendererSpecification spec;
@@ -46,9 +46,9 @@ TEST_F(CustomRendererSpecificationTests, ReadJson_EmptyRendererName_Failure)
 TEST_F(CustomRendererSpecificationTests, WriteJson_InitialisedSpec_ExpectedJson)
     {
     CustomRendererSpecification spec("test_renderer");
-    Json::Value json = spec.WriteJson();
-    Json::Value expected = Json::Reader::DoParse(R"({ "rendererName": "test_renderer" })");
-    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
+    BeJsDocument json = spec.WriteJson();
+    BeJsDocument expected(R"({ "rendererName": "test_renderer" })");
+    EXPECT_TRUE(expected.isExactEqual(json));
     }
 
 /*---------------------------------------------------------------------------------**//**

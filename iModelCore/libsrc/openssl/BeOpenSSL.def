@@ -5,7 +5,6 @@
 LIBRARY BeOpenSSLB02
 
 EXPORTS
-    _shadow_DES_check_key
     a2d_ASN1_OBJECT
     a2i_ASN1_ENUMERATED
     a2i_ASN1_INTEGER
@@ -911,7 +910,6 @@ EXPORTS
     CRYPTO_get_ex_new_index
     CRYPTO_get_mem_functions
     CRYPTO_malloc
-    CRYPTO_mem_ctrl
     CRYPTO_memcmp
     CRYPTO_memdup
     CRYPTO_new_ex_data
@@ -942,7 +940,6 @@ EXPORTS
     CRYPTO_secure_used
     CRYPTO_secure_zalloc
     CRYPTO_set_ex_data
-    CRYPTO_set_mem_debug
     CRYPTO_set_mem_functions
     CRYPTO_strdup
     CRYPTO_strndup
@@ -1044,11 +1041,6 @@ EXPORTS
     d2i_ECPrivateKey_bio
     d2i_ECPrivateKey_fp
     d2i_EDIPARTYNAME
-    d2i_ESS_CERT_ID
-    d2i_ESS_CERT_ID_V2
-    d2i_ESS_ISSUER_SERIAL
-    d2i_ESS_SIGNING_CERT
-    d2i_ESS_SIGNING_CERT_V2
     d2i_EXTENDED_KEY_USAGE
     d2i_GENERAL_NAME
     d2i_GENERAL_NAMES
@@ -1373,7 +1365,6 @@ EXPORTS
     DSO_global_lookup
     DSO_load
     DSO_merge
-    DSO_METHOD_openssl
     DSO_new
     DSO_pathbyaddr
     DSO_set_filename
@@ -1574,70 +1565,23 @@ EXPORTS
     ERR_get_next_error_library
     ERR_get_state
     ERR_lib_error_string
-    ERR_load_ASN1_strings
-    ERR_load_ASYNC_strings
-    ERR_load_BIO_strings
-    ERR_load_BN_strings
-    ERR_load_BUF_strings
-    ERR_load_CMS_strings
-    ERR_load_COMP_strings
-    ERR_load_CONF_strings
-    ERR_load_CRYPTO_strings
-    ERR_load_CT_strings
-    ERR_load_DH_strings
-    ERR_load_DSA_strings
-    ERR_load_DSO_strings
-    ERR_load_EC_strings
-    ERR_load_ERR_strings
-    ERR_load_EVP_strings
     ERR_load_KDF_strings
-    ERR_load_OBJ_strings
-    ERR_load_OCSP_strings
-    ERR_load_OSSL_STORE_strings
-    ERR_load_PEM_strings
-    ERR_load_PKCS12_strings
-    ERR_load_PKCS7_strings
-    ERR_load_RAND_strings
-    ERR_load_RSA_strings
-    ERR_load_SSL_strings
     ERR_load_strings
     ERR_load_strings_const
-    ERR_load_TS_strings
-    ERR_load_UI_strings
-    ERR_load_X509_strings
-    ERR_load_X509V3_strings
     ERR_peek_error
     ERR_peek_error_line
     ERR_peek_error_line_data
     ERR_peek_last_error
     ERR_peek_last_error_line
     ERR_peek_last_error_line_data
-    ERR_pop_to_mark
     ERR_print_errors
     ERR_print_errors_cb
     ERR_print_errors_fp
-    ERR_put_error
     ERR_reason_error_string
     ERR_remove_state
     ERR_remove_thread_state
     ERR_set_error_data
-    ERR_set_mark
     ERR_unload_strings
-    ESS_CERT_ID_dup
-    ESS_CERT_ID_free
-    ESS_CERT_ID_new
-    ESS_CERT_ID_V2_dup
-    ESS_CERT_ID_V2_free
-    ESS_CERT_ID_V2_new
-    ESS_ISSUER_SERIAL_dup
-    ESS_ISSUER_SERIAL_free
-    ESS_ISSUER_SERIAL_new
-    ESS_SIGNING_CERT_dup
-    ESS_SIGNING_CERT_free
-    ESS_SIGNING_CERT_new
-    ESS_SIGNING_CERT_V2_dup
-    ESS_SIGNING_CERT_V2_free
-    ESS_SIGNING_CERT_V2_new
     EVP_add_alg_module
     EVP_add_cipher
     EVP_add_digest
@@ -1714,8 +1658,6 @@ EXPORTS
     EVP_bf_cfb64
     EVP_bf_ecb
     EVP_bf_ofb
-    EVP_blake2b512
-    EVP_blake2s256
     EVP_BytesToKey
     EVP_camellia_128_cbc
     EVP_camellia_128_cfb1
@@ -1746,24 +1688,17 @@ EXPORTS
     EVP_chacha20_poly1305
     EVP_Cipher
     EVP_CIPHER_asn1_to_param
-    EVP_CIPHER_block_size
-    EVP_CIPHER_CTX_block_size
     EVP_CIPHER_CTX_buf_noconst
     EVP_CIPHER_CTX_cipher
     EVP_CIPHER_CTX_clear_flags
     EVP_CIPHER_CTX_copy
     EVP_CIPHER_CTX_ctrl
-    EVP_CIPHER_CTX_encrypting
     EVP_CIPHER_CTX_free
     EVP_CIPHER_CTX_get_app_data
     EVP_CIPHER_CTX_get_cipher_data
     EVP_CIPHER_CTX_iv
-    EVP_CIPHER_CTX_iv_length
     EVP_CIPHER_CTX_iv_noconst
-    EVP_CIPHER_CTX_key_length
     EVP_CIPHER_CTX_new
-    EVP_CIPHER_CTX_nid
-    EVP_CIPHER_CTX_num
     EVP_CIPHER_CTX_original_iv
     EVP_CIPHER_CTX_rand_key
     EVP_CIPHER_CTX_reset
@@ -1776,11 +1711,8 @@ EXPORTS
     EVP_CIPHER_CTX_test_flags
     EVP_CIPHER_do_all
     EVP_CIPHER_do_all_sorted
-    EVP_CIPHER_flags
     EVP_CIPHER_get_asn1_iv
     EVP_CIPHER_impl_ctx_size
-    EVP_CIPHER_iv_length
-    EVP_CIPHER_key_length
     EVP_CIPHER_meth_dup
     EVP_CIPHER_meth_free
     EVP_CIPHER_meth_get_cleanup
@@ -1799,10 +1731,8 @@ EXPORTS
     EVP_CIPHER_meth_set_init
     EVP_CIPHER_meth_set_iv_length
     EVP_CIPHER_meth_set_set_asn1_params
-    EVP_CIPHER_nid
     EVP_CIPHER_param_to_asn1
     EVP_CIPHER_set_asn1_iv
-    EVP_CIPHER_type
     EVP_CipherFinal
     EVP_CipherFinal_ex
     EVP_CipherInit
@@ -1874,16 +1804,13 @@ EXPORTS
     EVP_md4
     EVP_md5
     EVP_md5_sha1
-    EVP_MD_block_size
     EVP_MD_CTX_clear_flags
     EVP_MD_CTX_copy
     EVP_MD_CTX_copy_ex
     EVP_MD_CTX_ctrl
     EVP_MD_CTX_free
     EVP_MD_CTX_md
-    EVP_MD_CTX_md_data
     EVP_MD_CTX_new
-    EVP_MD_CTX_pkey_ctx
     EVP_MD_CTX_reset
     EVP_MD_CTX_set_flags
     EVP_MD_CTX_set_pkey_ctx
@@ -1892,7 +1819,6 @@ EXPORTS
     EVP_MD_CTX_update_fn
     EVP_MD_do_all
     EVP_MD_do_all_sorted
-    EVP_MD_flags
     EVP_MD_meth_dup
     EVP_MD_meth_free
     EVP_MD_meth_get_app_datasize
@@ -1917,9 +1843,6 @@ EXPORTS
     EVP_MD_meth_set_result_size
     EVP_MD_meth_set_update
     EVP_md_null
-    EVP_MD_pkey_type
-    EVP_MD_size
-    EVP_MD_type
     EVP_mdc2
     EVP_OpenFinal
     EVP_OpenInit
@@ -1962,8 +1885,6 @@ EXPORTS
     EVP_PKEY_asn1_set_set_pub_key
     EVP_PKEY_asn1_set_siginf
     EVP_PKEY_assign
-    EVP_PKEY_base_id
-    EVP_PKEY_bits
     EVP_PKEY_check
     EVP_PKEY_cmp
     EVP_PKEY_cmp_parameters
@@ -1989,31 +1910,19 @@ EXPORTS
     EVP_PKEY_CTX_set_cb
     EVP_PKEY_CTX_set_data
     EVP_PKEY_CTX_str2ctrl
-    EVP_PKEY_decrypt
-    EVP_PKEY_decrypt_init
     EVP_PKEY_decrypt_old
     EVP_PKEY_delete_attr
-    EVP_PKEY_derive
-    EVP_PKEY_derive_init
-    EVP_PKEY_derive_set_peer
-    EVP_PKEY_encrypt
-    EVP_PKEY_encrypt_init
     EVP_PKEY_encrypt_old
     EVP_PKEY_free
     EVP_PKEY_get0
     EVP_PKEY_get0_asn1
     EVP_PKEY_get0_DH
     EVP_PKEY_get0_DSA
-    EVP_PKEY_get0_EC_KEY
     EVP_PKEY_get0_hmac
     EVP_PKEY_get0_poly1305
-    EVP_PKEY_get0_RSA
     EVP_PKEY_get0_siphash
     EVP_PKEY_get1_DH
     EVP_PKEY_get1_DSA
-    EVP_PKEY_get1_EC_KEY
-    EVP_PKEY_get1_RSA
-    EVP_PKEY_get1_tls_encodedpoint
     EVP_PKEY_get_attr
     EVP_PKEY_get_attr_by_NID
     EVP_PKEY_get_attr_by_OBJ
@@ -2021,7 +1930,6 @@ EXPORTS
     EVP_PKEY_get_default_digest_nid
     EVP_PKEY_get_raw_private_key
     EVP_PKEY_get_raw_public_key
-    EVP_PKEY_id
     EVP_PKEY_keygen
     EVP_PKEY_keygen_init
     EVP_PKEY_meth_add0
@@ -2083,24 +1991,12 @@ EXPORTS
     EVP_PKEY_print_public
     EVP_PKEY_public_check
     EVP_PKEY_save_parameters
-    EVP_PKEY_security_bits
     EVP_PKEY_set1_DH
     EVP_PKEY_set1_DSA
-    EVP_PKEY_set1_EC_KEY
-    EVP_PKEY_set1_RSA
-    EVP_PKEY_set1_tls_encodedpoint
-    EVP_PKEY_set_alias_type
     EVP_PKEY_set_type
     EVP_PKEY_set_type_str
-    EVP_PKEY_sign
-    EVP_PKEY_sign_init
-    EVP_PKEY_size
     EVP_PKEY_type
     EVP_PKEY_up_ref
-    EVP_PKEY_verify
-    EVP_PKEY_verify_init
-    EVP_PKEY_verify_recover
-    EVP_PKEY_verify_recover_init
     EVP_rc2_40_cbc
     EVP_rc2_64_cbc
     EVP_rc2_cbc
@@ -2134,7 +2030,6 @@ EXPORTS
     EVP_shake128
     EVP_shake256
     EVP_SignFinal
-    EVP_sm3
     EVP_sm4_cbc
     EVP_sm4_cfb128
     EVP_sm4_ctr
@@ -2145,8 +2040,6 @@ EXPORTS
     EXTENDED_KEY_USAGE_free
     EXTENDED_KEY_USAGE_it
     EXTENDED_KEY_USAGE_new
-    FIPS_mode
-    FIPS_mode_set
     GENERAL_NAME_cmp
     GENERAL_NAME_dup
     GENERAL_NAME_free
@@ -2246,11 +2139,6 @@ EXPORTS
     i2d_ECPrivateKey_bio
     i2d_ECPrivateKey_fp
     i2d_EDIPARTYNAME
-    i2d_ESS_CERT_ID
-    i2d_ESS_CERT_ID_V2
-    i2d_ESS_ISSUER_SERIAL
-    i2d_ESS_SIGNING_CERT
-    i2d_ESS_SIGNING_CERT_V2
     i2d_EXTENDED_KEY_USAGE
     i2d_GENERAL_NAME
     i2d_GENERAL_NAMES
@@ -2572,16 +2460,6 @@ EXPORTS
     OCSP_ONEREQ_get_ext_count
     OCSP_ONEREQ_it
     OCSP_ONEREQ_new
-    OCSP_parse_url
-    OCSP_REQ_CTX_add1_header
-    OCSP_REQ_CTX_free
-    OCSP_REQ_CTX_get0_mem_bio
-    OCSP_REQ_CTX_http
-    OCSP_REQ_CTX_i2d
-    OCSP_REQ_CTX_nbio
-    OCSP_REQ_CTX_nbio_d2i
-    OCSP_REQ_CTX_new
-    OCSP_REQ_CTX_set1_req
     OCSP_REQINFO_free
     OCSP_REQINFO_it
     OCSP_REQINFO_new
@@ -2643,12 +2521,10 @@ EXPORTS
     OCSP_REVOKEDINFO_it
     OCSP_REVOKEDINFO_new
     OCSP_sendreq_bio
-    OCSP_sendreq_nbio
     OCSP_sendreq_new
     OCSP_SERVICELOC_free
     OCSP_SERVICELOC_it
     OCSP_SERVICELOC_new
-    OCSP_set_max_response_length
     OCSP_SIGNATURE_free
     OCSP_SIGNATURE_it
     OCSP_SIGNATURE_new
@@ -2709,7 +2585,6 @@ EXPORTS
     OPENSSL_LH_stats_bio
     OPENSSL_LH_strhash
     OPENSSL_load_builtin_modules
-    OPENSSL_memcmp
     OPENSSL_sk_deep_copy
     OPENSSL_sk_delete
     OPENSSL_sk_delete_ptr
@@ -2737,7 +2612,6 @@ EXPORTS
     OPENSSL_strlcat
     OPENSSL_strlcpy
     OPENSSL_strnlen
-    OPENSSL_thread_stop
     OPENSSL_uni2asc
     OPENSSL_uni2utf8
     OPENSSL_utf82uni
@@ -3149,35 +3023,13 @@ EXPORTS
     PROXY_POLICY_new
     RAND_add
     RAND_bytes
-    RAND_DRBG_bytes
-    RAND_DRBG_free
-    RAND_DRBG_generate
-    RAND_DRBG_get0_master
-    RAND_DRBG_get0_private
-    RAND_DRBG_get0_public
-    RAND_DRBG_get_ex_data
-    RAND_DRBG_instantiate
-    RAND_DRBG_new
-    RAND_DRBG_reseed
-    RAND_DRBG_secure_new
-    RAND_DRBG_set
-    RAND_DRBG_set_callbacks
-    RAND_DRBG_set_defaults
-    RAND_DRBG_set_ex_data
-    RAND_DRBG_set_reseed_defaults
-    RAND_DRBG_set_reseed_interval
-    RAND_DRBG_set_reseed_time_interval
-    RAND_DRBG_uninstantiate
-    RAND_event
     RAND_file_name
     RAND_get_rand_method
     RAND_keep_random_devices_open
     RAND_load_file
-    RAND_OpenSSL
     RAND_poll
     RAND_priv_bytes
     RAND_pseudo_bytes
-    RAND_screen
     RAND_seed
     RAND_set_rand_method
     RAND_status
@@ -3273,14 +3125,12 @@ EXPORTS
     RSA_padding_add_PKCS1_PSS_mgf1
     RSA_padding_add_PKCS1_type_1
     RSA_padding_add_PKCS1_type_2
-    RSA_padding_add_SSLv23
     RSA_padding_add_X931
     RSA_padding_check_none
     RSA_padding_check_PKCS1_OAEP
     RSA_padding_check_PKCS1_OAEP_mgf1
     RSA_padding_check_PKCS1_type_1
     RSA_padding_check_PKCS1_type_2
-    RSA_padding_check_SSLv23
     RSA_padding_check_X931
     RSA_PKCS1_OpenSSL
     RSA_pkey_ctx_ctrl
@@ -3599,7 +3449,6 @@ EXPORTS
     SSL_CTX_set_timeout
     SSL_CTX_set_tlsext_max_fragment_length
     SSL_CTX_set_tlsext_use_srtp
-    SSL_CTX_set_tmp_dh_callback
     SSL_CTX_set_trust
     SSL_CTX_set_verify
     SSL_CTX_set_verify_depth
@@ -3615,9 +3464,6 @@ EXPORTS
     SSL_CTX_use_PrivateKey_ASN1
     SSL_CTX_use_PrivateKey_file
     SSL_CTX_use_psk_identity_hint
-    SSL_CTX_use_RSAPrivateKey
-    SSL_CTX_use_RSAPrivateKey_ASN1
-    SSL_CTX_use_RSAPrivateKey_file
     SSL_CTX_use_serverinfo
     SSL_CTX_use_serverinfo_ex
     SSL_CTX_use_serverinfo_file
@@ -3674,7 +3520,6 @@ EXPORTS
     SSL_get_num_tickets
     SSL_get_options
     SSL_get_peer_cert_chain
-    SSL_get_peer_certificate
     SSL_get_peer_finished
     SSL_get_peer_signature_type_nid
     SSL_get_pending_cipher
@@ -3832,7 +3677,6 @@ EXPORTS
     SSL_set_ssl_method
     SSL_set_tlsext_max_fragment_length
     SSL_set_tlsext_use_srtp
-    SSL_set_tmp_dh_callback
     SSL_set_trust
     SSL_set_verify
     SSL_set_verify_depth
@@ -3855,9 +3699,6 @@ EXPORTS
     SSL_use_PrivateKey_ASN1
     SSL_use_PrivateKey_file
     SSL_use_psk_identity_hint
-    SSL_use_RSAPrivateKey
-    SSL_use_RSAPrivateKey_ASN1
-    SSL_use_RSAPrivateKey_file
     SSL_verify_client_post_handshake
     SSL_version
     SSL_waiting_for_async
@@ -4028,7 +3869,6 @@ EXPORTS
     TS_TST_INFO_set_time
     TS_TST_INFO_set_tsa
     TS_TST_INFO_set_version
-    TS_VERIFY_CTS_set_certs
     TS_VERIFY_CTX_add_flags
     TS_VERIFY_CTX_cleanup
     TS_VERIFY_CTX_free
@@ -4204,7 +4044,6 @@ EXPORTS
     X509_CRL_get_REVOKED
     X509_CRL_get_signature_nid
     X509_CRL_get_version
-    X509_CRL_http_nbio
     X509_CRL_INFO_free
     X509_CRL_INFO_it
     X509_CRL_INFO_new
@@ -4293,7 +4132,6 @@ EXPORTS
     X509_getm_notAfter
     X509_getm_notBefore
     X509_gmtime_adj
-    X509_http_nbio
     X509_INFO_free
     X509_INFO_new
     X509_issuer_and_serial_cmp
@@ -4369,7 +4207,6 @@ EXPORTS
     X509_NAME_get_index_by_OBJ
     X509_NAME_get_text_by_NID
     X509_NAME_get_text_by_OBJ
-    X509_NAME_hash
     X509_NAME_hash_old
     X509_NAME_it
     X509_NAME_new

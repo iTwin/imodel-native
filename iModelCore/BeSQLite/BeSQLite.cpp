@@ -2844,16 +2844,16 @@ static void printLog(void *pArg, int iErrCode, Utf8CP zMsg)
     }
 #endif
 
-/** return true if this database is using WAL mode. */
+/** return true if this is a valid database and it is using WAL mode. */
 bool Db::IsWalMode() const {
     // CloudSqlite always uses WAL mode (and produces an error if you attempt to query the journal mode)
     if (m_isCloudDb)
         return true;
 
     Statement stmt;
-    stmt.Prepare(*this, "pragma journal_mode");
-    stmt.Step();
-    return 0 == strncmp("wal", stmt.GetValueText(0), 3);
+    return BE_SQLITE_OK == stmt.Prepare(*this, "pragma journal_mode") &&
+           BE_SQLITE_ROW == stmt.Step() &&
+           0 == strncmp("wal", stmt.GetValueText(0), 3);
 };
 
 /*---------------------------------------------------------------------------------**/ /**
