@@ -3922,10 +3922,9 @@ CachedStatementPtr CachedCombinedHierarchyLevelProvider::_GetUsedVariablesStatem
             PHYSICAL_HIERARCHY_LEVELS_SETUP_HL_TABLE_ALIAS ".[Id] = ? "
             "AND " PHYSICAL_HIERARCHY_LEVELS_SETUP_HL_TABLE_ALIAS ".[RemovalId] IS ?"
         )
-        "SELECT [dsv].[Variables] "
+        "SELECT [phl].[" PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_Variables "] "
         "  FROM [" PHYSICAL_HIERARCHY_LEVELS_TABLE_NAME "] phl "
-        "  CROSS JOIN [" NODESCACHE_TABLENAME_Variables "] dsv ON [dsv].[Id] = [phl].[" PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_VariablesId "]"
-        " WHERE " NODESCACHE_FUNCNAME_VariablesMatch "([dsv].[Variables], ?) ";
+        " WHERE " NODESCACHE_FUNCNAME_VariablesMatch "([phl].[" PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_Variables "], ?) ";
 
     DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, Utf8PrintfString("Used variables query: `%s`", query));
 
@@ -3954,7 +3953,6 @@ CachedStatementPtr CachedCombinedHierarchyLevelProvider::_GetResultInstanceNodes
         )
         "SELECT DISTINCT [ni].[ECClassId] "
         "  FROM [" PHYSICAL_HIERARCHY_LEVELS_TABLE_NAME "] phl "
-        "  CROSS JOIN [" NODESCACHE_TABLENAME_Variables "] dsv ON [dsv].[Id] = [phl].[" PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_VariablesId "] "
         "  CROSS JOIN [" NODESCACHE_TABLENAME_DataSourceNodes "] dsn ON [dsn].[DataSourceId] = [phl].[" PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_DataSourceId "] "
         "  CROSS JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[Id] = [phl].[" PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_DataSourceId "] "
         "  CROSS JOIN [" NODESCACHE_TABLENAME_Nodes "] n ON [n].[Id] = [dsn].[NodeId]"
@@ -3962,7 +3960,7 @@ CachedStatementPtr CachedCombinedHierarchyLevelProvider::_GetResultInstanceNodes
         " WHERE [ds].[InstanceFilter] IS ? "
         "       AND [ds].[ResultSetSizeLimit] IS ? "
         "       AND [dsn].[Visibility] = ? "
-        "       AND " NODESCACHE_FUNCNAME_VariablesMatch "([dsv].[Variables], ?) ";
+        "       AND " NODESCACHE_FUNCNAME_VariablesMatch "([phl].[" PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_Variables "], ?) ";
 
     DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, Utf8PrintfString("Result instance node class IDs query: `%s`", query));
 
@@ -3994,7 +3992,6 @@ CachedStatementPtr CachedCombinedHierarchyLevelProvider::_GetNodesStatement() co
         "SELECT " NODE_SELECT_STMT("hl", "n", "nk")
         "  FROM [" PHYSICAL_HIERARCHY_LEVELS_TABLE_NAME "] phl "
         "  CROSS JOIN [" NODESCACHE_TABLENAME_HierarchyLevels "] hl ON [hl].[Id] = [phl].[" PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_HierarchyLevelId "] "
-        "  CROSS JOIN [" NODESCACHE_TABLENAME_Variables "] dsv ON [dsv].[Id] = [phl].[" PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_VariablesId "] "
         "  CROSS JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[Id] = [phl].[" PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_DataSourceId "] "
         "  CROSS JOIN [" NODESCACHE_TABLENAME_DataSourceNodes "] dsn ON [dsn].[DataSourceId] = [ds].[Id] "
         "  CROSS JOIN [" NODESCACHE_TABLENAME_Nodes "] n ON [n].[Id] = [dsn].[NodeId] "
@@ -4002,7 +3999,7 @@ CachedStatementPtr CachedCombinedHierarchyLevelProvider::_GetNodesStatement() co
         " WHERE [ds].[InstanceFilter] IS ? "
         "       AND [ds].[ResultSetSizeLimit] IS ? "
         "       AND [dsn].[Visibility] = ? "
-        "       AND " NODESCACHE_FUNCNAME_VariablesMatch "([dsv].[Variables], ?) "
+        "       AND " NODESCACHE_FUNCNAME_VariablesMatch "([phl].[" PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_Variables "], ?) "
         " ORDER BY " NODESCACHE_FUNCNAME_ConcatBinaryIndex "([phl].[" PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_DataSourceIndex "], [dsn].[NodeIndex]) ";
     if (GetContext().HasPageOptions())
         query.append(" LIMIT ? OFFSET ? ");
@@ -4045,13 +4042,12 @@ CachedStatementPtr CachedCombinedHierarchyLevelProvider::_GetCountStatement() co
         )
         "SELECT COUNT(1) "
         "  FROM [" PHYSICAL_HIERARCHY_LEVELS_TABLE_NAME "] phl "
-        "  CROSS JOIN [" NODESCACHE_TABLENAME_Variables "] dsv ON [dsv].[Id] = [phl].[" PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_VariablesId "] "
         "  CROSS JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[Id] = [phl].[" PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_DataSourceId "] "
         "  CROSS JOIN [" NODESCACHE_TABLENAME_DataSourceNodes "] dsn ON [dsn].[DataSourceId] = [ds].[Id] "
         " WHERE [dsn].[Visibility] = ? "
         "       AND [ds].[InstanceFilter] IS ? "
         "       AND [ds].[ResultSetSizeLimit] IS ? "
-        "       AND " NODESCACHE_FUNCNAME_VariablesMatch "([dsv].[Variables], ?) ";
+        "       AND " NODESCACHE_FUNCNAME_VariablesMatch "([phl].[" PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_Variables "], ?) ";
 
     DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, Utf8PrintfString("Nodes count query: `%s`", query));
 
