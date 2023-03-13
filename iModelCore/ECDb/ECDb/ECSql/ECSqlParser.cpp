@@ -32,7 +32,7 @@ std::unique_ptr<Exp> ECSqlParser::Parse(ECDbCR ecdb, Utf8CP ecsql, IssueDataSour
     }
 
     // Expand transient ECSql class to its query.
-    Utf8String expandedECSql;
+    /*Utf8String expandedECSql;
     if (!ecdb.GetImpl().GetViewManager().Loading() && (
         parseTree->getKnownRuleID() == OSQLParseNode::select_statement || 
         parseTree->getKnownRuleID() == OSQLParseNode::cte   || 
@@ -55,7 +55,7 @@ std::unique_ptr<Exp> ECSqlParser::Parse(ECDbCR ecdb, Utf8CP ecsql, IssueDataSour
                 }
             }
         }
-    }
+    }*/
 
     std::unique_ptr<Exp> exp = nullptr;
     switch (parseTree->getKnownRuleID()) {

@@ -110,6 +110,46 @@ TEST_F(ECSqlView, TransientView_Simple) {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECSqlView, TransientView_Basic) {
+    auto testSchema = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+    <ECSchema
+            schemaName="test_schema"
+            alias="ts"
+            version="1.0.0"
+            xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name='ECDbView' version='01.00.00' alias='ecdbview' />
+        <ECEntityClass typeName="SchemaView" modifier="Abstract">
+            <ECCustomAttributes>
+                <TransientView xmlns="ECDbView.01.00.00">
+                    <Query>SELECT [sc].[ECInstanceId] [ECInstanceId], [sc].[Name] [SchemaName] FROM [meta].[ECSchemaDef] [sc]</Query>
+                </TransientView>
+           </ECCustomAttributes>
+            <ECProperty propertyName="SchemaName" typeName="string" />
+        </ECEntityClass>
+    </ECSchema>)xml");
+
+    ASSERT_EQ(SUCCESS, SetupECDb("TransientView_Basic.ecdb", testSchema));
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, SchemaName FROM ts.SchemaView"));
+        Utf8CP native = stmt.GetNativeSql();
+        ASSERT_NE(native, nullptr);
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        ASSERT_EQ(stmt.GetValueId<ECInstanceId>(0), ECInstanceId(1ull));
+        ASSERT_STREQ(stmt.GetValueText(2), "ECDbView");
+    }
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT COUNT(*) FROM ts.SchemaView"));
+        printf("%s\n", stmt.GetNativeSql());
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        ASSERT_EQ(stmt.GetValueInt(0), 10);
+    }
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSqlView, PersistedView_Simple) {
     auto testSchema = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
     <ECSchema
