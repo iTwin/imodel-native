@@ -2067,12 +2067,16 @@ bvector<uint64_t> NodesCache::_GetNodeIndex(BeGuidCR hierarchyLevelId, BeGuidCR 
         )
         "SELECT " NODESCACHE_FUNCNAME_ConcatBinaryIndex "([phl].[" PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_DataSourceIndex "], [dsn].[NodeIndex]) "
         "  FROM [" PHYSICAL_HIERARCHY_LEVELS_TABLE_NAME "] phl "
-        "  JOIN [" NODESCACHE_TABLENAME_Variables "] dsv ON [dsv].[Id] = [phl].[" PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_VariablesId "]"
         "  JOIN [" NODESCACHE_TABLENAME_DataSourceNodes "] dsn ON [dsn].[DataSourceId] = [phl].[" PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_DataSourceId "] "
         "  JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[Id] = [dsn].[DataSourceId] "
         " WHERE [dsn].[NodeId] = ? "
         "       AND [ds].[InstanceFilter] IS ? "
+<<<<<<< HEAD
         "       AND " NODESCACHE_FUNCNAME_VariablesMatch "([dsv].[Variables], ?) ";
+=======
+        "       AND [ds].[ResultSetSizeLimit] IS ? "
+        "       AND " NODESCACHE_FUNCNAME_VariablesMatch "([phl].[" PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_Variables "], ?) ";
+>>>>>>> eff5493f (Presentation: Fix getting nodes when child specs use different vars (#203))
 
     CachedStatementPtr stmt;
     if (BE_SQLITE_OK != m_statements.GetPreparedStatement(stmt, *m_db.GetDbFile(), query))
