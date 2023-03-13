@@ -49,18 +49,17 @@ typedef RefCountedPtr<CustomECSchemaConverter> CustomECSchemaConverterPtr;
 struct CustomECSchemaConverter : RefCountedBase, NonCopyableClass
     {
 private:
-    ECSchemaReadContextPtr m_schemaContext;
     bool m_convertedOK = true;
     bool m_removeLegacyStandardCustomAttributes = false;
     bmap<Utf8String, IECCustomAttributeConverterPtr> m_converterMap;
     bvector<Utf8String> m_schemaReferencesToRemove;
     std::unordered_set<Utf8String> m_customAttributesToRemove;
 
-    void ProcessCustomAttributeInstances(IECCustomAttributeContainerR container, Utf8String containerName);
+    void ProcessCustomAttributeInstances(IECCustomAttributeContainerR container, Utf8String containerName, ECSchemaReadContextR context);
     static void ProcessRelationshipConstraint(ECRelationshipConstraintR constraint, bool isSource);
-    void ConvertSchemaLevel(ECSchemaR schema) { ProcessCustomAttributeInstances(schema.GetCustomAttributeContainer(), "ECSchema:" + schema.GetName()); }
-    void ConvertClassLevel(bvector<ECClassP>& classes);
-    void ConvertPropertyLevel(bvector<ECClassP>& classes);
+    void ConvertSchemaLevel(ECSchemaR schema, ECSchemaReadContextR context) { ProcessCustomAttributeInstances(schema.GetCustomAttributeContainer(), "ECSchema:" + schema.GetName(), context); }
+    void ConvertClassLevel(bvector<ECClassP>& classes, ECSchemaReadContextR context);
+    void ConvertPropertyLevel(bvector<ECClassP>& classes, ECSchemaReadContextR context);
     void RemoveSchemaReferences(ECSchemaR schema);
     IECCustomAttributeConverterP GetConverter(Utf8StringCR converterName);
 
@@ -97,8 +96,9 @@ public:
 
     //! Converts EC2 schema metadata to EC3 concepts by traversing custom attributes of the supplied schema and calling converters based on schemaName:customAttributeName
     //! @param[in] schema   The schema to traverse
+    //! @param[in] context  A context to use if a particular converter needs to locate a schema which is not currently a schema reference.
     //! @param[in] doValidate Flag saying whether to validate the schema or not.  This is used by the DgnV8Converter to disable validation until it has had a chance to fix the schemas
-    ECOBJECTS_EXPORT bool Convert(ECSchemaR schema, bool doValidate = true);
+    ECOBJECTS_EXPORT bool Convert(ECSchemaR schema, ECSchemaReadContextR context, bool doValidate = true);
 
     //! Adds the supplied IECCustomAttributeConverterP which will be later called when ECSchemaConverter::Convert is run
     //! @param[in] schemaName   The schemaName that the customattribute belongs to
@@ -116,13 +116,6 @@ public:
     //! Removes the IECCustomAttributeConverterP associated with the given customAttributeQualifiedName, if it exists
     //! @param[in] customAttributeQualifiedName Key used to retrieve converter
     ECOBJECTS_EXPORT ECObjectsStatus RemoveConverter(Utf8StringCR customAttributeQualifiedName);
-
-    //! Adds an ECSchemaReadContext that will be used during conversion to locate schemas which may not be an original reference schema.
-    //! @param[in] context A
-    ECObjectsStatus AddSchemaReadContext(ECSchemaReadContextR context) {m_schemaContext = &context; return ECObjectsStatus::Success;}
-
-    //! Removes an ECSchemaReadContext, if one exists.
-    void RemoveSchemaReadContext() {m_schemaContext = nullptr;}
 
     //! Adds the name of a schema to remove at the end of schema conversion.
     //! @param[in] schemaName   The name of the schema to remove.  Name only, do not include version.
@@ -177,9 +170,7 @@ public:
     //! @param[in] doValidate Flag saying whether to validate the schema or not.  This is used by the DgnV8Converter to disable validation until it has had a chance to fix the schemas
     static bool Convert(ECSchemaR schema, ECSchemaReadContextR context, bool doValidate = true)
         {
-        GetSingleton()->AddSchemaReadContext(context);
-        bool returnVal = GetSingleton()->Convert(schema, doValidate);
-        GetSingleton()->RemoveSchemaReadContext();
+        bool returnVal = GetSingleton()->Convert(schema, context, doValidate);
         return returnVal;
         }
 

@@ -3740,11 +3740,10 @@ void validateClassMapConvertedCorrectly(Utf8CP schemaXml, bool expectSuccess, Ut
     context->AddSchemaPath(ecdbSchemaDir);
 
     CustomECSchemaConverterPtr schemaConverter = CustomECSchemaConverter::Create();
-    schemaConverter->AddSchemaReadContext(*context);
     IECCustomAttributeConverterPtr classMapConverter = new ECDbClassMapConverter();
     schemaConverter->AddConverter(ECDbClassMapConverter::GetSchemaName(), ECDbClassMapConverter::GetClassName(), classMapConverter);
 
-    schemaConverter->Convert(*schema); // Converter doesn't return an error when it hits a mapping strategy it doesn't understand
+    schemaConverter->Convert(*schema, *context); // Converter doesn't return an error when it hits a mapping strategy it doesn't understand
     IECInstancePtr classMapCA = schema->GetClassCP("C")->GetCustomAttribute("ClassMap");
     ASSERT_EQ(expectSuccess, classMapCA.IsValid());
     if (expectSuccess)
@@ -3902,7 +3901,7 @@ TEST_F(StandardCustomAttributeConversionTests, RemovingStandardCustomAttributesI
     ASSERT_TRUE(schema.IsValid());
 
     auto converter = CustomECSchemaConverter::Create();
-    ASSERT_EQ(true, converter->Convert(*schema, true));
+    ASSERT_EQ(true, converter->Convert(*schema, *context, true));
     EXPECT_EQ(1, schema->GetReferencedSchemas().size());
     EXPECT_TRUE(schema->GetClassP("C")->GetPropertyP("AppStartDate")->GetCustomAttribute("DateTimeInfo").IsValid()) << "DateTimeInfo CA should not have been removed";
     }
@@ -4038,7 +4037,7 @@ TEST_F(CustomAttributeRemovalTest, RemoveCustomAttrsInSchemaConversionWithDiffPr
     converter->AddCustomAttributeNameToRemove("BuildingDataGroup:DGPropTypeMapperProperty");
     converter->RemoveCustomAttributeNameToRemove("BuildingDataGroup:XpathDGMapperProperty");
 
-    ASSERT_TRUE(converter->Convert(*schema.get())) << "Failed to convert Schema";
+    ASSERT_TRUE(converter->Convert(*schema.get(), *context.get())) << "Failed to convert Schema";
     verifyCAs(*schema.get(), {"DGPropTypeMapperProperty"}, {"XpathDGMapperProperty", "DataGroupCatalogInstanceNameProperty", "DataGroupClassNameProperty", "DGExtendedType", "OtherCA"});
     }
     }

@@ -112,16 +112,16 @@ CustomECSchemaConverterP ECSchemaConverter::GetSingleton()
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-bool CustomECSchemaConverter::Convert(ECSchemaR schema, bool doValidate)
+bool CustomECSchemaConverter::Convert(ECSchemaR schema, ECSchemaReadContextR context, bool doValidate)
     {
     m_convertedOK = true;
 
     auto classes = GetHierarchicallySortedClasses(schema);
-    ConvertClassLevel(classes);
+    ConvertClassLevel(classes, context);
 
-    ConvertPropertyLevel(classes);
+    ConvertPropertyLevel(classes, context);
 
-    ConvertSchemaLevel(schema);
+    ConvertSchemaLevel(schema, context);
 
     RemoveSchemaReferences(schema);
 
@@ -251,7 +251,7 @@ bool IsCustomAttributeFromOldStandardSchemas(IECInstanceR customAttribute)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void CustomECSchemaConverter::ProcessCustomAttributeInstances(IECCustomAttributeContainerR container, Utf8String containerName)
+void CustomECSchemaConverter::ProcessCustomAttributeInstances(IECCustomAttributeContainerR container, Utf8String containerName, ECSchemaReadContextR contxt)
     {
     ECSchemaP schema = container.GetContainerSchema();
     for (auto const& attr : container.GetCustomAttributes(false))
@@ -261,7 +261,7 @@ void CustomECSchemaConverter::ProcessCustomAttributeInstances(IECCustomAttribute
         IECCustomAttributeConverterP converter = GetConverter(fullName);
         if (nullptr != converter)
             {
-            auto status = converter->Convert(*schema, container, *attr, m_schemaContext.get());
+            auto status = converter->Convert(*schema, container, *attr, &contxt);
             if (ECObjectsStatus::Success != status)
                 {
                 LOG.errorv("Failed [%s Converter][Container %s]. ", fullName, containerName.c_str());
@@ -304,20 +304,20 @@ void CustomECSchemaConverter::ProcessRelationshipConstraint(ECRelationshipConstr
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void CustomECSchemaConverter::ConvertClassLevel(bvector<ECClassP>& classes)
+void CustomECSchemaConverter::ConvertClassLevel(bvector<ECClassP>& classes, ECSchemaReadContextR context)
     {
     for (auto const& ecClass : classes)
         {
-        ProcessCustomAttributeInstances(*ecClass, "ECClass:" + ecClass->GetName());
+        ProcessCustomAttributeInstances(*ecClass, "ECClass:" + ecClass->GetName(), context);
         if (ecClass->IsRelationshipClass())
             {
             ECRelationshipClassP relClass = ecClass->GetRelationshipClassP();
             ECRelationshipConstraintR source = relClass->GetSource();
-            ProcessCustomAttributeInstances(source, "ECRelationshipConstraint:" + source.GetRoleLabel());
+            ProcessCustomAttributeInstances(source, "ECRelationshipConstraint:" + source.GetRoleLabel(), context);
             ProcessRelationshipConstraint(source, true);
 
             ECRelationshipConstraintR target = relClass->GetTarget();
-            ProcessCustomAttributeInstances(target, "ECRelationshipConstraint:" + target.GetRoleLabel());
+            ProcessCustomAttributeInstances(target, "ECRelationshipConstraint:" + target.GetRoleLabel(), context);
             ProcessRelationshipConstraint(target, false);
             }
         }
@@ -326,7 +326,7 @@ void CustomECSchemaConverter::ConvertClassLevel(bvector<ECClassP>& classes)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void CustomECSchemaConverter::ConvertPropertyLevel(bvector<ECClassP>& classes)
+void CustomECSchemaConverter::ConvertPropertyLevel(bvector<ECClassP>& classes, ECSchemaReadContextR context)
     {
     for (auto const& ecClass : classes)
         {
@@ -347,7 +347,7 @@ void CustomECSchemaConverter::ConvertPropertyLevel(bvector<ECClassP>& classes)
                 }
             
             Utf8String debugName = Utf8String("ECProperty:") + ecClass->GetFullName() + Utf8String(".") + ecProp->GetName();
-            ProcessCustomAttributeInstances(*ecProp, debugName);
+            ProcessCustomAttributeInstances(*ecProp, debugName, context);
 
             // Need to make sure that property name does not conflict with one of the reserved system properties or aliases.
             Utf8CP thisName = ecProp->GetName().c_str();
