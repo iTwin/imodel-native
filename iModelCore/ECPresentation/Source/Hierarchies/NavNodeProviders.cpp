@@ -3944,12 +3944,7 @@ CachedStatementPtr CachedCombinedHierarchyLevelProvider::_GetCountStatement() co
         "  CROSS JOIN [" NODESCACHE_TABLENAME_DataSourceNodes "] dsn ON [dsn].[DataSourceId] = [ds].[Id] "
         " WHERE [dsn].[Visibility] = ? "
         "       AND [ds].[InstanceFilter] IS ? "
-<<<<<<< HEAD
-        "       AND " NODESCACHE_FUNCNAME_VariablesMatch "([dsv].[Variables], ?) ";
-=======
-        "       AND [ds].[ResultSetSizeLimit] IS ? "
         "       AND " NODESCACHE_FUNCNAME_VariablesMatch "([phl].[" PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_Variables "], ?) ";
->>>>>>> eff5493f (Presentation: Fix getting nodes when child specs use different vars (#203))
 
     DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, Utf8PrintfString("Nodes count query: `%s`", query));
 
