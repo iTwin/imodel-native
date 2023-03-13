@@ -119,31 +119,31 @@ TEST_F(HierarchyPerformanceAnalysis, Run)
         Reset(&project);
 
         // now load all hierarchy in pages (cold cache)
-        totalNodesCount = 0;
         createFullHierarchyTime.Init(true);
         HierarchyPagedLoadPerformanceMetricsStorage metricsColdCache(HierarchyCacheState::Cold);
-        totalNodesCount = PresentationManagerTestsHelper::GatAllNodesPaged(*m_manager, params, HIERARCHY_REQUEST_PAGE_SIZE, [&metricsColdCache](int pageIndex, double pageTime, double countTime)
+        size_t totalNodesCountPagedColdCache = PresentationManagerTestsHelper::GatAllNodesPaged(*m_manager, params, HIERARCHY_REQUEST_PAGE_SIZE, [&metricsColdCache](int pageIndex, double pageTime, double countTime)
             {
             metricsColdCache.ReportPageLoad(pageIndex, pageTime, countTime);
             }, &depthLimiter).get();
         createFullHierarchyTime.Stop();
         metricsColdCache.ReportTotalTime(createFullHierarchyTime.GetElapsed());
         metricsColdCache.Save(reporter);
-        NativeLogging::CategoryLogger(LOGGER_NAMESPACE).infov("    Loaded all hierarchy with %" PRIu64 " nodes in pages with cold cache in %.2f s", (uint64_t)totalNodesCount, createFullHierarchyTime.GetElapsed().ToSeconds());
+        NativeLogging::CategoryLogger(LOGGER_NAMESPACE).infov("    Loaded all hierarchy with %" PRIu64 " nodes in pages with cold cache in %.2f s", (uint64_t)totalNodesCountPagedColdCache, createFullHierarchyTime.GetElapsed().ToSeconds());
         LogDepthLimitReachCount(depthLimiter);
+        EXPECT_EQ(totalNodesCount, totalNodesCountPagedColdCache);
 
         // now load all hierarchy in pages again (warm cache)
-        totalNodesCount = 0;
         createFullHierarchyTime.Init(true);
         HierarchyPagedLoadPerformanceMetricsStorage metricsWarmCache(HierarchyCacheState::Warm);
-        totalNodesCount = PresentationManagerTestsHelper::GatAllNodesPaged(*m_manager, params, HIERARCHY_REQUEST_PAGE_SIZE, [&metricsWarmCache](int pageIndex, double pageTime, double countTime)
+        size_t totalNodesCountPagedWarmCache = PresentationManagerTestsHelper::GatAllNodesPaged(*m_manager, params, HIERARCHY_REQUEST_PAGE_SIZE, [&metricsWarmCache](int pageIndex, double pageTime, double countTime)
             {
             metricsWarmCache.ReportPageLoad(pageIndex, pageTime, countTime);
             }, &depthLimiter).get();
         createFullHierarchyTime.Stop();
         metricsWarmCache.ReportTotalTime(createFullHierarchyTime.GetElapsed());
         metricsWarmCache.Save(reporter);
-        NativeLogging::CategoryLogger(LOGGER_NAMESPACE).infov("    Loaded all hierarchy with %" PRIu64 " nodes in pages with warm cache in %.2f s", (uint64_t)totalNodesCount, createFullHierarchyTime.GetElapsed().ToSeconds());
+        NativeLogging::CategoryLogger(LOGGER_NAMESPACE).infov("    Loaded all hierarchy with %" PRIu64 " nodes in pages with warm cache in %.2f s", (uint64_t)totalNodesCountPagedWarmCache, createFullHierarchyTime.GetElapsed().ToSeconds());
         LogDepthLimitReachCount(depthLimiter);
+        EXPECT_EQ(totalNodesCount, totalNodesCountPagedWarmCache);
         });
     }
