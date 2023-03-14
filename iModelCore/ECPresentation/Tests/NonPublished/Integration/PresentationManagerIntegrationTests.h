@@ -111,17 +111,14 @@ struct PresentationManagerIntegrationTests : ECPresentationTest
 struct TestUpdateRecordsHandler : IUpdateRecordsHandler
 {
 private:
-    bvector<HierarchyUpdateRecord> m_records;
     bvector<FullUpdateRecord> m_fullUpdateRecords;
 protected:
-    void _Start() override { m_records.clear(); m_fullUpdateRecords.clear(); }
-    void _Accept(HierarchyUpdateRecord const& record) override { m_records.push_back(record); }
+    void _Start() override { m_fullUpdateRecords.clear(); }
     void _Accept(FullUpdateRecord const& record) override { m_fullUpdateRecords.push_back(record); }
     void _Finish() override {}
 public:
-    bvector<HierarchyUpdateRecord> const& GetRecords() const { return m_records; }
     bvector<FullUpdateRecord> const& GetFullUpdateRecords() const { return m_fullUpdateRecords; }
-    void Clear() { m_records.clear(); m_fullUpdateRecords.clear(); }
+    void Clear() { m_fullUpdateRecords.clear(); }
 };
 
 /*=================================================================================**//**

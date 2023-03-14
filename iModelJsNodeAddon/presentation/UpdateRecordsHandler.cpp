@@ -13,12 +13,9 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 struct IModelJsECPresentationUpdateRecordsHandler::WipReport
 {
 private:
-    bvector<HierarchyUpdateRecord> m_partialHierarchyUpdates;
     bvector<FullUpdateRecord> m_fullUpdates;
 public:
-    void Accept(HierarchyUpdateRecord const& record) {m_partialHierarchyUpdates.push_back(record);}
     void Accept(FullUpdateRecord const& record) {m_fullUpdates.push_back(record);}
-    bvector<HierarchyUpdateRecord> const& GetPartialHierarchyUpdates() const {return m_partialHierarchyUpdates;}
     bvector<FullUpdateRecord> const& GetFullUpdates() const {return m_fullUpdates;}
 };
 
@@ -55,24 +52,10 @@ struct IModelJsECPresentationUpdateRecordsHandler::FinalReport
         Utf8StringCR GetECDbFileName() const {return m_ecdbFileName;}
     };
 
-    struct PartialHierarchyUpdates : bvector<HierarchyUpdateRecord>
-    {
-    private:
-        uint64_t m_lastUsedTimestamp;
-    public:
-        void push_back(HierarchyUpdateRecord record)
-            {
-            m_lastUsedTimestamp = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
-            bvector<HierarchyUpdateRecord>::push_back(record);
-            }
-        uint64_t GetLastUsedTimestamp() const {return m_lastUsedTimestamp;}
-    };
-
 private:
     static uint64_t const s_partialHierarchyUpdatesLimit = 1000000; // TODO: use 1M for now, need to measure size of update records and tweak this number
     BeMutex m_mutex;
     uint64_t m_partialHierarchyUpdatesCount;
-    bmap<UpdateRecordKey, PartialHierarchyUpdates> m_partialHierarchyUpdates;
     bset<UpdateRecordKey> m_fullHierarchyUpdates;
     bset<UpdateRecordKey> m_fullContentUpdates;
 
@@ -101,49 +84,6 @@ private:
         return obj[name];
         }
 
-    void ClearLeastRecentlyUsedPartialHierarchyUpdates()
-        {
-        bpair<uint64_t, UpdateRecordKey> lru(0, UpdateRecordKey());
-        for (auto entry : m_partialHierarchyUpdates)
-            {
-            if (entry.second.GetLastUsedTimestamp() < lru.first || 0 == lru.first)
-                lru = bpair<uint64_t, UpdateRecordKey>(entry.second.GetLastUsedTimestamp(), entry.first);
-            }
-        auto iter = m_partialHierarchyUpdates.find(lru.second);
-        if (m_partialHierarchyUpdates.end() != iter)
-            {
-            m_partialHierarchyUpdatesCount -= iter->second.size();
-            m_fullHierarchyUpdates.insert(iter->first);
-            m_partialHierarchyUpdates.erase(iter);
-            }
-        }
-
-    void RemovePartialUpdateRecords(UpdateRecordKey const& key)
-        {
-        bool anyRuleset = key.IsAnyRuleset();
-        bool anyECDb = key.IsAnyECDb();
-        if (!anyRuleset && !anyECDb)
-            {
-            m_partialHierarchyUpdates.erase(key);
-            return;
-            }
-
-        if (anyECDb && anyRuleset)
-            {
-            m_partialHierarchyUpdates.clear();
-            return;
-            }
-
-        auto iter = m_partialHierarchyUpdates.begin();
-        while (iter != m_partialHierarchyUpdates.end())
-            {
-            if ((anyECDb && iter->first.GetRulesetId() == key.GetRulesetId()) || (anyRuleset && iter->first.GetECDbFileName() == key.GetECDbFileName()))
-                iter = m_partialHierarchyUpdates.erase(iter);
-            else
-                iter++;
-            }
-        }
-
 public:
     FinalReport() : m_partialHierarchyUpdatesCount(0) {}
     void Accept(WipReport const& wip)
@@ -154,7 +94,6 @@ public:
             UpdateRecordKey key(GetRulesetId(record), GetECDbFileName(record));
             if (FullUpdateRecord::UpdateTarget::Both == record.GetUpdateTarget() || FullUpdateRecord::UpdateTarget::Hierarchy == record.GetUpdateTarget())
                 {
-                RemovePartialUpdateRecords(key);
                 m_fullHierarchyUpdates.insert(key);
                 }
             if (FullUpdateRecord::UpdateTarget::Both == record.GetUpdateTarget() || FullUpdateRecord::UpdateTarget::Content == record.GetUpdateTarget())
@@ -162,44 +101,15 @@ public:
                 m_fullContentUpdates.insert(key);
                 }
             }
-        for (HierarchyUpdateRecord const& record : wip.GetPartialHierarchyUpdates())
-            {
-            while (m_partialHierarchyUpdatesCount > s_partialHierarchyUpdatesLimit && !m_partialHierarchyUpdates.empty())
-                ClearLeastRecentlyUsedPartialHierarchyUpdates();
-
-            UpdateRecordKey key(GetRulesetId(record), GetECDbFileName(record));
-            bool hasFullUpdateRecord = m_fullHierarchyUpdates.end() != std::find_if(m_fullHierarchyUpdates.begin(), m_fullHierarchyUpdates.end(),
-                [&](UpdateRecordKey const& entry)
-                {
-                return entry == key || (key.IsAnyRuleset() && key.GetECDbFileName() == entry.GetECDbFileName()) || (key.IsAnyECDb() && key.GetRulesetId() == entry.GetRulesetId());
-                });
-            if (hasFullUpdateRecord)
-                continue;
-
-            auto iter = m_partialHierarchyUpdates.find(key);
-            if (m_partialHierarchyUpdates.end() == iter)
-                iter = m_partialHierarchyUpdates.Insert(key, PartialHierarchyUpdates()).first;
-            iter->second.push_back(record);
-            ++m_partialHierarchyUpdatesCount;
-            }
         }
 
     rapidjson::Document BuildJsonAndReset()
         {
         BeMutexHolder lock(m_mutex);
-        if (m_partialHierarchyUpdates.empty() && m_fullHierarchyUpdates.empty() && m_fullContentUpdates.empty())
+        if (m_fullHierarchyUpdates.empty() && m_fullContentUpdates.empty())
             return rapidjson::Document();
 
         rapidjson::Document json(rapidjson::kObjectType);
-        for (auto entry : m_partialHierarchyUpdates)
-            {
-            RapidJsonValueR ecdbUpdatesJson = GetMemberJson(json, json.GetAllocator(), entry.first.GetECDbFileName().c_str(), rapidjson::kObjectType);
-            RapidJsonValueR rulesetUpdatesJson = GetMemberJson(ecdbUpdatesJson, json.GetAllocator(), entry.first.GetRulesetId().c_str(), rapidjson::kObjectType);
-            RapidJsonValueR hierarchyUpdatesJson = GetMemberJson(rulesetUpdatesJson, json.GetAllocator(), "hierarchy", rapidjson::kArrayType);
-            for (HierarchyUpdateRecord const& record : entry.second)
-                hierarchyUpdatesJson.PushBack(record.AsJson(&json.GetAllocator()), json.GetAllocator());
-            }
-        m_partialHierarchyUpdates.clear();
         for (UpdateRecordKey const& key : m_fullHierarchyUpdates)
             {
             RapidJsonValueR ecdbUpdatesJson = GetMemberJson(json, json.GetAllocator(), key.GetECDbFileName().c_str(), rapidjson::kObjectType);
@@ -240,14 +150,6 @@ void IModelJsECPresentationUpdateRecordsHandler::_Start()
     {
     m_wipReportMutex.lock();
     m_wipReport = std::make_unique<WipReport>();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void IModelJsECPresentationUpdateRecordsHandler::_Accept(HierarchyUpdateRecord const& record)
-    {
-    m_wipReport->Accept(record);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -13,41 +13,6 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-struct TestUiStateProvider : IUiStateProvider
-{
-private:
-    std::function<bvector<IConnectionCP>()> m_connectionsGetter;
-    std::function<bvector<PresentationRuleSetCPtr>()> m_rulesetsGetter;
-    std::shared_ptr<UiState> m_state;
-protected:
-    std::shared_ptr<UiState> _GetUiState(IConnectionCR, Utf8StringCR) const override {return m_state;}
-    bvector<RulesetUiState> _GetUiState(IConnectionCR) const override
-        {
-        return ContainerHelpers::TransformContainer<bvector<RulesetUiState>>(m_rulesetsGetter(), [&](auto const& ruleset)
-            {
-            return RulesetUiState(ruleset->GetRuleSetId(), m_state);
-            });
-        }
-    bvector<ConnectionUiState> _GetUiState(Utf8StringCR) const override
-        {
-        return ContainerHelpers::TransformContainer<bvector<ConnectionUiState>>(m_connectionsGetter(), [&](auto const& connection)
-            {
-            return ConnectionUiState(*connection, m_state);
-            });
-        }
-public:
-    TestUiStateProvider(std::function<bvector<IConnectionCP>()> connectionsGetter, std::function<bvector<PresentationRuleSetCPtr>()> rulesetsGetter)
-        : m_connectionsGetter(connectionsGetter), m_rulesetsGetter(rulesetsGetter), m_state(std::make_shared<UiState>())
-        {}
-    void AddExpandedNode(NavNodeKeyCPtr key) {m_state->GetHierarchyLevelState(key.get()).SetIsExpanded(true);}
-    void RemoveExpandedNode(NavNodeKeyCPtr key) {m_state->GetHierarchyLevelState(key.get()).SetIsExpanded(false);}
-    void SetInstanceFilter(NavNodeCP parentNode, std::shared_ptr<InstanceFilterDefinition const> instanceFilter) {m_state->GetHierarchyLevelState(parentNode).SetInstanceFilters({ instanceFilter });}
-    void SetInstanceFilters(NavNodeCP parentNode, bvector<std::shared_ptr<InstanceFilterDefinition const>> instanceFilters) {m_state->GetHierarchyLevelState(parentNode).SetInstanceFilters(instanceFilters);}
-};
-
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
 struct HierarchyUpdateTests : UpdateTests
     {
     std::shared_ptr<TestUiStateProvider> m_uiState;
