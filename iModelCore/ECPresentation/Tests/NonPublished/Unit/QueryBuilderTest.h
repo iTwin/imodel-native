@@ -25,7 +25,7 @@ struct QueryBuilderTest : ECPresentationTest
     DECLARE_SCHEMA_REGISTRY(QueryBuilderTest)
     static ECDbTestProject* s_project;
 
-private:
+public:
     std::shared_ptr<ECSchemaHelper> m_schemaHelper;
     TestConnectionManager m_connections;
     IConnectionPtr m_connection;

@@ -10,8 +10,6 @@
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
-#define ITEM_EXTENDEDDATA_ConnectionId                          "ConnectionId"
-#define ITEM_EXTENDEDDATA_RulesetId                             "RulesetId"
 #define ITEM_EXTENDEDDATA_IsCustomized                          "IsNodeCustomized"
 #define ITEM_EXTENDEDDATA_CheckboxBoundPropertyName             "CheckboxBoundPropertyName"
 #define ITEM_EXTENDEDDATA_IsCheckboxBoundPropertyInversed       "IsCheckboxBoundPropertyInversed"
@@ -45,14 +43,6 @@ struct ItemExtendedData : RapidJsonAccessor
     ItemExtendedData(ItemExtendedData const& other) : RapidJsonAccessor(other) {}
     ItemExtendedData(IRapidJsonExtendedDataHolder& item) : RapidJsonAccessor(item) {}
     ItemExtendedData(IRapidJsonExtendedDataHolder const& item) : RapidJsonAccessor(item) {}
-
-    bool HasConnectionId() const {return GetJson().HasMember(ITEM_EXTENDEDDATA_ConnectionId);}
-    Utf8CP GetConnectionId() const {return GetJson()[ITEM_EXTENDEDDATA_ConnectionId].GetString();}
-    void SetConnectionId(Utf8StringCR connectionId) {AddMember(ITEM_EXTENDEDDATA_ConnectionId, rapidjson::Value(connectionId.c_str(), GetAllocator()));}
-
-    bool HasRulesetId() const {return GetJson().HasMember(ITEM_EXTENDEDDATA_RulesetId);}
-    Utf8CP GetRulesetId() const {return GetJson()[ITEM_EXTENDEDDATA_RulesetId].GetString();}
-    void SetRulesetId(Utf8CP rulesetId) {AddMember(ITEM_EXTENDEDDATA_RulesetId, rapidjson::Value(rulesetId, GetAllocator()));}
 
     bool IsCustomized() const {return GetJson().HasMember(ITEM_EXTENDEDDATA_IsCustomized) ? GetJson()[ITEM_EXTENDEDDATA_IsCustomized].GetBool() : false;}
     void SetIsCustomized(bool value) {AddMember(ITEM_EXTENDEDDATA_IsCustomized, rapidjson::Value(value));}

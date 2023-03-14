@@ -329,7 +329,7 @@ TEST_F(NavigationQueryBuilderTests, SortingRule_SortsByProperty_WhenUsingParentI
     m_ruleset->AddPresentationRule(*new SortingRule("", 1, classA->GetSchema().GetName(), classA->GetName(), "Prop", true, false, false));
 
     auto parentNode = TestNodesHelper::CreateInstanceNode(GetConnection(), *classA);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *parentNode);
 
     InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false, "this.Prop = parent.Prop", classA->GetFullName(), false);
 

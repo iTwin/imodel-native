@@ -88,7 +88,6 @@ NavNodePtr NavNodesFactory::CreateECInstanceNode(IConnectionCR connection, Utf8S
     node->SetNodeKey(*ECInstancesNodeKey::Create(connection, specificationIdentifier, parentKey, classInstanceKeys));
 
     NavNodeExtendedData extendedData(*node);
-    extendedData.SetConnectionId(connection.GetId());
     extendedData.SetIsLabelCustomized(true);
 
     return node;
@@ -136,7 +135,6 @@ NavNodePtr NavNodesFactory::CreateECClassGroupingNode(IConnectionCR connection, 
 
     NavNodeExtendedData extendedData(*node);
     extendedData.SetRequestedSpecification(true);
-    extendedData.SetConnectionId(connection.GetId());
     extendedData.SetECClassId(ecClass.GetId());
     extendedData.SetIsECClassPolymorphic(isPolymorphic);
     extendedData.SetIsLabelCustomized(true);
@@ -158,7 +156,6 @@ NavNodePtr NavNodesFactory::CreateECRelationshipGroupingNode(IConnectionCR conne
 
     NavNodeExtendedData extendedData(*node);
     extendedData.SetRequestedSpecification(true);
-    extendedData.SetConnectionId(connection.GetId());
     extendedData.SetECClassId(relationshipClass.GetId());
     extendedData.SetIsLabelCustomized(true);
 
@@ -179,7 +176,6 @@ NavNodePtr NavNodesFactory::CreateDisplayLabelGroupingNode(IConnectionCR connect
 
     NavNodeExtendedData extendedData(*node);
     extendedData.SetRequestedSpecification(true);
-    extendedData.SetConnectionId(connection.GetId());
     extendedData.SetIsLabelCustomized(true);
 
     return node;
@@ -203,7 +199,6 @@ NavNodePtr NavNodesFactory::CreateECPropertyGroupingNode(IConnectionCR connectio
     NavNodeExtendedData extendedData(*node);
     extendedData.SetRequestedSpecification(true);
     extendedData.SetPropertyName(Utf8String(ecProperty.GetName().c_str()).c_str());
-    extendedData.SetConnectionId(connection.GetId());
     extendedData.SetECClassId(ecClass.GetId());
     if (isRangeGrouping)
         extendedData.SetPropertyValueRangeIndexes(groupingValue);
@@ -226,10 +221,6 @@ NavNodePtr NavNodesFactory::CreateCustomNode(IConnectionCR connection, Utf8Strin
     node->SetType(type);
     node->SetImageId(imageId);
     node->SetNodeKey(*NavNodeKey::Create(connection, specificationIdentifier, parentKey, type, label.GetDisplayValue(), instanceKeysSelectQuery));
-
-    NavNodeExtendedData extendedData(*node);
-    extendedData.SetConnectionId(connection.GetId());
-
     return node;
     }
 
@@ -240,10 +231,6 @@ NavNodePtr NavNodesFactory::CreateFromJson(IConnectionCR connection, RapidJsonVa
     {
     auto node = NavNodesHelper::DeserializeNodeFromJson(json);
     node->SetNodeKey(key);
-
-    NavNodeExtendedData extendedData(*node);
-    extendedData.SetConnectionId(connection.GetId());
-
     return node;
     }
 
