@@ -79,7 +79,8 @@ TEST_F(ContentModifierTests, LoadsFromJson)
             "value": "value",
             "label": "label"
             }
-        ]
+        ],
+        "applyOnNestedContent": true
     })";
     BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
@@ -94,6 +95,7 @@ TEST_F(ContentModifierTests, LoadsFromJson)
     EXPECT_EQ(1, modifier.GetRelatedProperties().size());
     EXPECT_EQ(1, modifier.GetPropertyOverrides().size());
     EXPECT_EQ(1, modifier.GetPropertyCategories().size());
+    EXPECT_TRUE(modifier.ShouldApplyOnNestedProperties());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -117,6 +119,7 @@ TEST_F(ContentModifierTests, LoadsFromJsonWithDefaultValues)
     EXPECT_EQ(0, modifier.GetRelatedProperties().size());
     EXPECT_EQ(0, modifier.GetPropertyOverrides().size());
     EXPECT_EQ(0, modifier.GetPropertyCategories().size());
+    EXPECT_FALSE(modifier.ShouldApplyOnNestedProperties());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -130,6 +133,7 @@ TEST_F(ContentModifierTests, WriteToJson)
     rule.AddRelatedProperty(*new RelatedPropertiesSpecification());
     rule.AddPropertyCategory(*new PropertyCategorySpecification());
     rule.AddRequiredSchemaSpecification(*new RequiredSchemaSpecification("TestSchema"));
+    rule.SetApplyOnNestedProperties(true);
     BeJsDocument json = rule.WriteJson();
     BeJsDocument expected (R"({
         "ruleType": "ContentModifier",
@@ -148,7 +152,8 @@ TEST_F(ContentModifierTests, WriteToJson)
         "propertyCategories": [{
             "id": "",
             "label": ""
-        }]
+        }],
+        "applyOnNestedContent": true
     })");
     EXPECT_TRUE(expected.isExactEqual(json));
     }

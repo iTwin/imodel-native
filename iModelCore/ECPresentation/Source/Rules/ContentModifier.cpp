@@ -196,6 +196,7 @@ bool ContentModifiersList::ReadJson(BeJsConst json)
         DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_WARNING, Utf8PrintfString("Using deprecated `%s.%s`. It's recommended to switch to `%s`.",
             CONTENTMODIFIER_RULE_JSON_TYPE, CONTENTMODIFIER_JSON_ATTRIBUTE_PROPERTYDISPLAYSPECIFICATIONS, CONTENTMODIFIER_JSON_ATTRIBUTE_PROPERTYOVERRIDES));
         }
+    m_applyOnNestedProperties = json[CONTENTMODIFIER_JSON_ATTRIBUTE_APPLYONNESTEDCONTENT].asBool(false);
 
     return true;
     }
@@ -225,6 +226,8 @@ void ContentModifiersList::WriteJson(BeJsValue json) const
         CommonToolsInternal::WriteRulesToJson<PropertySpecification, PropertySpecificationsList>
             (json[CONTENTMODIFIER_JSON_ATTRIBUTE_PROPERTYOVERRIDES], m_propertyOverrides);
         }
+    if (m_applyOnNestedProperties)
+        json[CONTENTMODIFIER_JSON_ATTRIBUTE_APPLYONNESTEDCONTENT] = m_applyOnNestedProperties;
     }
 
 /*---------------------------------------------------------------------------------**//**
