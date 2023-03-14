@@ -121,7 +121,7 @@ struct RulesEngineTestHelpers
     static ContentDescriptor::Field& AddField(ContentDescriptorR, ContentDescriptor::Field&);
     static ContentDescriptor::Field& AddField(ContentDescriptorR, ECN::ECClassCR, ContentDescriptor::Property, IPropertyCategorySupplierR);
 
-    static void CacheNode(IHierarchyCacheR cache, NavNodeR node, BeGuidCR parentNodeId = BeGuid());
+    static void CacheNode(IHierarchyCacheR cache, Utf8StringCR connectionId, Utf8String rulesetId, NavNodeR node, BeGuidCR parentNodeId = BeGuid());
 
     static void ImportSchema(ECDbR, std::function<void(ECSchemaR)> const& schemaBuilder);
     static bvector<ECEntityClassP> CreateNDerivedClasses(ECSchemaR schema, ECEntityClassCR baseClass, int numberOfChildClasses);
@@ -213,7 +213,7 @@ protected:
     // TODO: this is bad implementation ("null" strings), refer to RuntimeJsonLocalState
     BeJsDocument _GetValue(Utf8CP nameSpace, Utf8CP key) const override
         {
-        if (nullptr != m_getHandler) 
+        if (nullptr != m_getHandler)
             return m_getHandler(nameSpace, key);
         return BeJsDocument();
         }

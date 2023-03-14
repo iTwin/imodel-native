@@ -169,16 +169,16 @@ TEST_F(HierarchiesCompareTests, ByRuleset_DetectsRootNodeChangesWhenInstanceFilt
     size_t recordIndex = 0;
 
     EXPECT_EQ(ChangeType::Delete, m_changeRecordsHandler->GetRecords()[recordIndex].GetChangeType());
-    VerifyNodeInstance(*m_changeRecordsHandler->GetRecords()[recordIndex].GetNode(), *element1);
+    VerifyNodeInstance(rhs->GetRuleSetId(), *m_changeRecordsHandler->GetRecords()[recordIndex].GetNode(), *element1);
     ++recordIndex;
 
     EXPECT_EQ(ChangeType::Insert, m_changeRecordsHandler->GetRecords()[recordIndex].GetChangeType());
     EXPECT_EQ(0, m_changeRecordsHandler->GetRecords()[recordIndex].GetPosition());
-    VerifyNodeInstance(*m_changeRecordsHandler->GetRecords()[recordIndex].GetNode(), *element2);
+    VerifyNodeInstance(rhs->GetRuleSetId(), *m_changeRecordsHandler->GetRecords()[recordIndex].GetNode(), *element2);
     ++recordIndex;
 
     EXPECT_EQ(ChangeType::Update, m_changeRecordsHandler->GetRecords()[recordIndex].GetChangeType());
-    VerifyNodeInstance(*m_changeRecordsHandler->GetRecords()[recordIndex].GetNode(), *element3);
+    VerifyNodeInstance(rhs->GetRuleSetId(), *m_changeRecordsHandler->GetRecords()[recordIndex].GetNode(), *element3);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -232,12 +232,12 @@ TEST_F(HierarchiesCompareTests, ByRuleset_DetectsChildNodeChangesWhenInstanceFil
     size_t recordIndex = 0;
 
     EXPECT_EQ(ChangeType::Delete, m_changeRecordsHandler->GetRecords()[recordIndex].GetChangeType());
-    VerifyNodeInstance(*m_changeRecordsHandler->GetRecords()[recordIndex].GetNode(), *element1);
+    VerifyNodeInstance(rhs->GetRuleSetId(), *m_changeRecordsHandler->GetRecords()[recordIndex].GetNode(), *element1);
     ++recordIndex;
 
     EXPECT_EQ(ChangeType::Insert, m_changeRecordsHandler->GetRecords()[recordIndex].GetChangeType());
     EXPECT_EQ(0, m_changeRecordsHandler->GetRecords()[recordIndex].GetPosition());
-    VerifyNodeInstance(*m_changeRecordsHandler->GetRecords()[recordIndex].GetNode(), *element2);
+    VerifyNodeInstance(rhs->GetRuleSetId(), *m_changeRecordsHandler->GetRecords()[recordIndex].GetNode(), *element2);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -290,12 +290,12 @@ TEST_F(HierarchiesCompareTests, ByRuleset_DetectsClassGroupingNodeChangesWhenThe
     ++recordIndex;
 
     EXPECT_EQ(ChangeType::Delete, m_changeRecordsHandler->GetRecords()[recordIndex].GetChangeType());
-    VerifyNodeInstance(*m_changeRecordsHandler->GetRecords()[recordIndex].GetNode(), *element1);
+    VerifyNodeInstance(rhs->GetRuleSetId(), *m_changeRecordsHandler->GetRecords()[recordIndex].GetNode(), *element1);
     ++recordIndex;
 
     EXPECT_EQ(ChangeType::Insert, m_changeRecordsHandler->GetRecords()[recordIndex].GetChangeType());
     EXPECT_EQ(0, m_changeRecordsHandler->GetRecords()[recordIndex].GetPosition());
-    VerifyNodeInstance(*m_changeRecordsHandler->GetRecords()[recordIndex].GetNode(), *element2);
+    VerifyNodeInstance(rhs->GetRuleSetId(), *m_changeRecordsHandler->GetRecords()[recordIndex].GetNode(), *element2);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -367,7 +367,7 @@ TEST_F(HierarchiesCompareTests, ByRuleset_DetectsLabelGroupingNodeChangesWhenThe
     ++recordIndex;
 
     EXPECT_EQ(ChangeType::Update, m_changeRecordsHandler->GetRecords()[recordIndex].GetChangeType());
-    VerifyNodeInstance(*m_changeRecordsHandler->GetRecords()[recordIndex].GetNode(), *element3);
+    VerifyNodeInstance(rhs->GetRuleSetId(), *m_changeRecordsHandler->GetRecords()[recordIndex].GetNode(), *element3);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -616,7 +616,7 @@ TEST_F(HierarchiesCompareTests, ByRuleset_DetectsChildNodeUpdatesAndGrandchildre
 
     EXPECT_EQ(ChangeType::Insert, m_changeRecordsHandler->GetRecords()[recordIndex].GetChangeType());
     EXPECT_EQ(0, m_changeRecordsHandler->GetRecords()[recordIndex].GetPosition());
-    VerifyNodeInstance(*m_changeRecordsHandler->GetRecords()[recordIndex].GetNode(), *e);
+    VerifyNodeInstance(rhs->GetRuleSetId(), *m_changeRecordsHandler->GetRecords()[recordIndex].GetNode(), *e);
     ++recordIndex;
 
     EXPECT_EQ(ChangeType::Update, m_changeRecordsHandler->GetRecords()[recordIndex].GetChangeType());
@@ -748,7 +748,7 @@ TEST_F(HierarchiesCompareTests, ByRulesetVariables_DetectsRootNodeChangesWhenVar
 
     EXPECT_EQ(ChangeType::Insert, m_changeRecordsHandler->GetRecords()[recordIndex].GetChangeType());
     EXPECT_EQ(0, m_changeRecordsHandler->GetRecords()[recordIndex].GetPosition());
-    VerifyNodeInstance(*m_changeRecordsHandler->GetRecords()[recordIndex].GetNode(), *e2);
+    VerifyNodeInstance(ruleset->GetRuleSetId(), *m_changeRecordsHandler->GetRecords()[recordIndex].GetNode(), *e2);
 
     // compare 'test=2' VS 'test=1'
     m_changeRecordsHandler->Clear();
@@ -760,12 +760,12 @@ TEST_F(HierarchiesCompareTests, ByRulesetVariables_DetectsRootNodeChangesWhenVar
     recordIndex = 0;
 
     EXPECT_EQ(ChangeType::Delete, m_changeRecordsHandler->GetRecords()[recordIndex].GetChangeType());
-    VerifyNodeInstance(*m_changeRecordsHandler->GetRecords()[recordIndex].GetNode(), *e2);
+    VerifyNodeInstance(ruleset->GetRuleSetId(), *m_changeRecordsHandler->GetRecords()[recordIndex].GetNode(), *e2);
     ++recordIndex;
 
     EXPECT_EQ(ChangeType::Insert, m_changeRecordsHandler->GetRecords()[recordIndex].GetChangeType());
     EXPECT_EQ(0, m_changeRecordsHandler->GetRecords()[recordIndex].GetPosition());
-    VerifyNodeInstance(*m_changeRecordsHandler->GetRecords()[recordIndex].GetNode(), *e1);
+    VerifyNodeInstance(ruleset->GetRuleSetId(), *m_changeRecordsHandler->GetRecords()[recordIndex].GetNode(), *e1);
 
     // compare 'test=1' VS 'test=0'
     m_changeRecordsHandler->Clear();
@@ -777,7 +777,7 @@ TEST_F(HierarchiesCompareTests, ByRulesetVariables_DetectsRootNodeChangesWhenVar
     recordIndex = 0;
 
     EXPECT_EQ(ChangeType::Delete, m_changeRecordsHandler->GetRecords()[recordIndex].GetChangeType());
-    VerifyNodeInstance(*m_changeRecordsHandler->GetRecords()[recordIndex].GetNode(), *e1);
+    VerifyNodeInstance(ruleset->GetRuleSetId(), *m_changeRecordsHandler->GetRecords()[recordIndex].GetNode(), *e1);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -819,7 +819,7 @@ TEST_F(HierarchiesCompareTests, ByRulesetVariables_DetectsRootNodeChangesWhenVar
     size_t recordIndex = 0;
 
     EXPECT_EQ(ChangeType::Update, m_changeRecordsHandler->GetRecords()[recordIndex].GetChangeType());
-    VerifyNodeInstance(*m_changeRecordsHandler->GetRecords()[recordIndex].GetNode(), *e);
+    VerifyNodeInstance(ruleset->GetRuleSetId(), *m_changeRecordsHandler->GetRecords()[recordIndex].GetNode(), *e);
 
     // compare 'customize=true' VS 'customize=false'
     m_changeRecordsHandler->Clear();
@@ -831,7 +831,7 @@ TEST_F(HierarchiesCompareTests, ByRulesetVariables_DetectsRootNodeChangesWhenVar
     recordIndex = 0;
 
     EXPECT_EQ(ChangeType::Update, m_changeRecordsHandler->GetRecords()[recordIndex].GetChangeType());
-    VerifyNodeInstance(*m_changeRecordsHandler->GetRecords()[recordIndex].GetNode(), *e);
+    VerifyNodeInstance(ruleset->GetRuleSetId(), *m_changeRecordsHandler->GetRecords()[recordIndex].GetNode(), *e);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -873,7 +873,7 @@ TEST_F(HierarchiesCompareTests, ByRulesetVariables_DetectsRootNodeChangesWhenVar
     size_t recordIndex = 0;
 
     EXPECT_EQ(ChangeType::Update, m_changeRecordsHandler->GetRecords()[recordIndex].GetChangeType());
-    VerifyNodeInstance(*m_changeRecordsHandler->GetRecords()[recordIndex].GetNode(), *e);
+    VerifyNodeInstance(ruleset->GetRuleSetId(), *m_changeRecordsHandler->GetRecords()[recordIndex].GetNode(), *e);
 
     // compare 'color="Blue"' VS 'color="Green"'
     m_changeRecordsHandler->Clear();
@@ -885,7 +885,7 @@ TEST_F(HierarchiesCompareTests, ByRulesetVariables_DetectsRootNodeChangesWhenVar
     recordIndex = 0;
 
     EXPECT_EQ(ChangeType::Update, m_changeRecordsHandler->GetRecords()[recordIndex].GetChangeType());
-    VerifyNodeInstance(*m_changeRecordsHandler->GetRecords()[recordIndex].GetNode(), *e);
+    VerifyNodeInstance(ruleset->GetRuleSetId(), *m_changeRecordsHandler->GetRecords()[recordIndex].GetNode(), *e);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -974,7 +974,7 @@ TEST_F(HierarchiesCompareTests, ByRulesetVariables_DetectsChangesOnlyForChildNod
 
     EXPECT_EQ(ChangeType::Insert, m_changeRecordsHandler->GetRecords()[recordIndex].GetChangeType());
     EXPECT_EQ(0, m_changeRecordsHandler->GetRecords()[recordIndex].GetPosition());
-    VerifyNodeInstance(*m_changeRecordsHandler->GetRecords()[recordIndex].GetNode(), *e);
+    VerifyNodeInstance(ruleset->GetRuleSetId(), *m_changeRecordsHandler->GetRecords()[recordIndex].GetNode(), *e);
     ++recordIndex;
 
     EXPECT_EQ(ChangeType::Update, m_changeRecordsHandler->GetRecords()[recordIndex].GetChangeType());

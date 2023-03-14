@@ -84,11 +84,28 @@ private:
 private:
     HierarchyLevelIdentifier GetHierarchyLevelIdentifier(NavNodeCR node) const
         {
-        NavNodeExtendedData ex(node);
+        DataSourceIdentifier dsId;
+        for (auto const& partialHierarchyEntry : m_partialHierarchies)
+            {
+            if (ContainerHelpers::Contains(partialHierarchyEntry.second.second, [&](auto const& n){return n.get() == &node;}))
+                {
+                dsId = partialHierarchyEntry.first;
+                break;
+                }
+            }
+        CombinedHierarchyLevelIdentifier physicalHierarchyIdentifier;
+        for (auto const& physicalHierarchyEntry : m_physicalHierarchy)
+            {
+            if (ContainerHelpers::Contains(physicalHierarchyEntry.second, dsId))
+                {
+                physicalHierarchyIdentifier = physicalHierarchyEntry.first;
+                break;
+                }
+            }
         auto physicalParentNode = GetPhysicalParentNode(node.GetNodeId(), RulesetVariables(), nullptr);
         return HierarchyLevelIdentifier(
-            ex.GetConnectionId(),
-            ex.GetRulesetId(),
+            physicalHierarchyIdentifier.GetConnectionId(),
+            physicalHierarchyIdentifier.GetRulesetId(),
             physicalParentNode.IsValid() ? physicalParentNode->GetNodeId() : BeGuid(),
             GetVirtualParentNodeId(node.GetNodeId())
             );
