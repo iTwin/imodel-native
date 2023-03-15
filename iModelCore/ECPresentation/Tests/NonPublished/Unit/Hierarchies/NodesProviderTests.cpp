@@ -50,7 +50,7 @@ void NodesProviderTests::TearDown()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void NodesProviderTests::Cache(NavNodeR node) {RulesEngineTestHelpers::CacheNode(*m_nodesCache, node);}
+void NodesProviderTests::Cache(NavNodeR node) {RulesEngineTestHelpers::CacheNode(*m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), node);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod

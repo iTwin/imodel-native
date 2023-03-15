@@ -1516,7 +1516,6 @@ std::unique_ptr<DirectNodesIterator> CustomNodesProvider::_CreateDirectNodesIter
     NavNodePtr node = GetContext().GetNodesFactory().CreateCustomNode(GetContext().GetConnection(), m_specification.GetHash(), parent.IsValid() ? parent->GetKey().get() : nullptr,
         *LabelDefinition::Create(label.c_str()), description.c_str(), imageId.c_str(), type.c_str(), nullptr);
     NavNodeExtendedData extendedData(*node);
-    extendedData.SetRulesetId(GetContext().GetRuleset().GetRuleSetId().c_str());
     extendedData.SetHideIfNoChildren(m_specification.GetHideIfNoChildren());
     extendedData.SetHideNodesInHierarchy(m_specification.GetHideNodesInHierarchy());
     extendedData.SetHideExpression(m_specification.GetHideExpression());
@@ -1767,7 +1766,6 @@ std::unique_ptr<DirectNodesIterator> QueryBasedNodesProvider::_CreateDirectNodes
         ThrowIfCancelled(GetContext().GetCancelationToken());
 
         NavNodeExtendedData extendedData(*node);
-        extendedData.SetRulesetId(GetContext().GetRuleset().GetRuleSetId().c_str());
         if (GetContext().GetVirtualParentNode().IsValid())
             extendedData.SetVirtualParentIds({ GetContext().GetVirtualParentNode()->GetNodeId() });
         if (GetContext().IsRootNodeContext() && GetContext().GetRootNodeRule() && GetContext().GetRootNodeRule()->GetAutoExpand())
