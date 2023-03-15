@@ -418,7 +418,7 @@ SharedSchemaChannel::Status SharedSchemaChannel::SetDefaultChannelUri(ChannelUri
         return rc;
     }
     m_defaultChannelUri = channelUri;
-    return Status::SUCCESS;
+    return Status::OK;
 }
 
 //---------------------------------------------------------------------------------------
@@ -575,7 +575,7 @@ SharedSchemaChannel::Status SharedSchemaChannel::VerifyChannel(ChannelUri const&
 		return Status::ERROR_INVALID_SHARED_CHANNEL;
 	}
 	sharedDb.CloseDb();
-    return Status::SUCCESS;
+    return Status::OK;
 }
 
 //---------------------------------------------------------------------------------------
@@ -583,14 +583,14 @@ SharedSchemaChannel::Status SharedSchemaChannel::VerifyChannel(ChannelUri const&
 //+---------------+---------------+---------------+---------------+---------------+------
 SharedSchemaChannel::Status SharedSchemaChannel::PullInternal(ChannelUri const& channelURI, TableList additionTables) {
     const auto vrc = VerifyChannel(channelURI, true);
-	if  (vrc != Status::SUCCESS) {
+	if  (vrc != Status::OK) {
         return vrc;
     }
 
     const auto sharedChannelInfo = channelURI.GetInfo();
     const auto localChannelInfo = GetInfo();
     if (sharedChannelInfo.GetDataVersion() == localChannelInfo.GetDataVersion()) {
-        return Status::SUCCESS;
+        return Status::OK;
     }
 
     if (sharedChannelInfo.GetDataVersion() < localChannelInfo.GetDataVersion()) {
@@ -645,7 +645,7 @@ SharedSchemaChannel::Status SharedSchemaChannel::PullInternal(ChannelUri const& 
 		return Status::ERROR;
 	}
 
-    return Status::SUCCESS;
+    return Status::OK;
 }
 
 //---------------------------------------------------------------------------------------
@@ -653,7 +653,7 @@ SharedSchemaChannel::Status SharedSchemaChannel::PullInternal(ChannelUri const& 
 //+---------------+---------------+---------------+---------------+---------------+------
 SharedSchemaChannel::Status SharedSchemaChannel::PushInternal(ChannelUri const& channelURI, TableList additionTables) {
     const auto vrc = VerifyChannel(channelURI, false);
-	if  (vrc != Status::SUCCESS) {
+	if  (vrc != Status::OK) {
         return vrc;
     }
 
@@ -718,7 +718,7 @@ SharedSchemaChannel::Status SharedSchemaChannel::PushInternal(ChannelUri const& 
     if (rc != BE_SQLITE_OK) {
         return Status::ERROR;
     }
-    return Status::SUCCESS;
+    return Status::OK;
 }
 
 //---------------------------------------------------------------------------------------
@@ -753,7 +753,7 @@ SharedSchemaChannel::Status SharedSchemaChannel::Pull(ChannelUri const& channelU
     m_conn.ClearECDbCache();
 
     const auto rc = PullInternal(channelURI, {});
-	if (rc != Status::SUCCESS) {
+	if (rc != Status::OK) {
         return rc;
     }
 

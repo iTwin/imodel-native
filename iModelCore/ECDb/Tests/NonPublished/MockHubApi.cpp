@@ -233,7 +233,7 @@ void SharedSchemaDb::WithReadWrite(std::function<void(ECDbR)> cb, DefaultTxn mod
 +---------------+---------------+---------------+---------------+---------------+------*/
 SharedSchemaChannel::Status SharedSchemaDb::Pull(ECDbR ecdb, std::function<void()> cb) {
     auto rc = ecdb.Schemas().GetSharedChannel().Pull(GetChannelUri());
-    if (rc == SharedSchemaChannel::Status::SUCCESS && cb != nullptr) {
+    if (rc == SharedSchemaChannel::Status::OK && cb != nullptr) {
         cb();
     }
     return rc;

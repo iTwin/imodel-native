@@ -318,7 +318,7 @@ void SyncCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
 
     if (args[1].EqualsIAscii("init"))
         {
-        if (SharedSchemaChannel::Status::SUCCESS != session.GetFile().GetECDbHandle()->Schemas().GetSharedChannel().Init(SharedSchemaChannel::ChannelUri(args[2].c_str())))
+        if (SharedSchemaChannel::Status::OK != session.GetFile().GetECDbHandle()->Schemas().GetSharedChannel().Init(SharedSchemaChannel::ChannelUri(args[2].c_str())))
             {
             IModelConsole::WriteErrorLine("Failed to init : %s",args[2].c_str());
             }
@@ -355,7 +355,7 @@ void SyncCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
         auto rc =  isPull ?
             iModelFile.Schemas().GetSharedChannel().Pull(uri):
             iModelFile.Schemas().GetSharedChannel().Push(uri);
-        if (rc != SharedSchemaChannel::Status::SUCCESS)
+        if (rc != SharedSchemaChannel::Status::OK)
             {
             session.GetFileR().GetHandleR().AbandonChanges();
             IModelConsole::WriteErrorLine("fail to %s changes %s %s", isPull ? "pull" : "push", isPull ? "from" : "to", syncDbFileName.GetNameUtf8().c_str());
@@ -370,7 +370,7 @@ void SyncCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
          auto rc =  isPull ?
             session.GetFile().GetECDbHandle()->Schemas().GetSharedChannel().Pull(uri):
             session.GetFile().GetECDbHandle()->Schemas().GetSharedChannel().Push(uri);
-        if ( rc != SharedSchemaChannel::Status::SUCCESS)
+        if ( rc != SharedSchemaChannel::Status::OK)
             {
             session.GetFileR().GetHandleR().AbandonChanges();
             IModelConsole::WriteErrorLine("fail to %s changes %s %s", isPull ? "pull" : "push", isPull ? "from" : "to", syncDbFileName.GetNameUtf8().c_str());

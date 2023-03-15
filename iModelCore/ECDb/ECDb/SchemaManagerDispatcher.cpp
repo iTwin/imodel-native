@@ -1066,7 +1066,7 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
                 return SchemaImportResult::ERROR;
                 }
 
-            if (sharedChannel.Pull(resolvedChannelUri, schemaImportToken) != SharedSchemaChannel::Status::SUCCESS)
+            if (sharedChannel.Pull(resolvedChannelUri, schemaImportToken) != SharedSchemaChannel::Status::OK)
                 {
                 m_ecdb.GetImpl().Issues().ReportV(
                     IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue,
@@ -1133,7 +1133,7 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
 
     if (!localChannelInfo.IsEmpty() && rc.IsOk())
         {
-        if (sharedChannel.Push(resolvedChannelUri) != SharedSchemaChannel::Status::SUCCESS)
+        if (sharedChannel.Push(resolvedChannelUri) != SharedSchemaChannel::Status::OK)
             {
             m_ecdb.GetImpl().Issues().ReportV(
                 IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue,

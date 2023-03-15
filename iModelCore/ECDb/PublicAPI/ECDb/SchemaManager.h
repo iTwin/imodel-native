@@ -29,9 +29,8 @@ struct SharedSchemaChannel final {
     using ChannelVer = uint64_t;
     using TableList = bvector<Utf8String>;
     enum class Status {
-        SUCCESS,
-        ERROR,
-        ERROR_UP_TO_DATE,
+        OK = BE_SQLITE_OK,
+        ERROR = BE_SQLITE_ERROR,
         ERROR_SHARED_CHANNEL_ALREADY_INITIALIZED,
         ERROR_OPENING_SHARED_DB,
         ERROR_FAIL_TO_INIT_SHARED_DB,
@@ -116,6 +115,7 @@ struct SharedSchemaChannel final {
 private:
     ECDbR m_conn;
     ChannelUri m_defaultChannelUri;
+
     DbResult UpdateOrCreateSharedChannelInfo(DbR channelDb);
     DbResult UpdateOrCreateSharedChannelInfo(ChannelUri channelUri);
     DbResult UpdateOrCreateLocalChannelInfo(SharedChannelInfo const& from);
