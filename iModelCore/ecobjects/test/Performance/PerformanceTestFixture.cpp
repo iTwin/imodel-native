@@ -356,11 +356,12 @@ ECSchemaPtr PerformanceTestFixture::GenerateDeepHierarchyTestSchema(size_t numbe
                 baseClass = currentClass;
             }
 
+        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
         for (size_t nMixin = 0; nMixin < numberOfMixinsPerHierarchy; nMixin++) 
             {
             ECEntityClassP mixin;
             Utf8PrintfString className("Hierarchy%zu_Mixin%zu", hierarchy, nMixin);
-            schema->CreateMixinClass(mixin, className, *baseClass);
+            schema->CreateMixinClass(mixin, className, *baseClass, *schemaContext);
             for (size_t nProp = 0; nProp < numberOfPropertiesPerClass; nProp++) 
                 {
                 PrimitiveECPropertyP p;

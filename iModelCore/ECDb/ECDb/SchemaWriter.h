@@ -138,7 +138,7 @@ struct SchemaWriter final
                 rules.Append(ACCEPT, "*", "*", ALL);
                 }
 
-            BentleyStatus PreprocessSchemas(bvector<ECN::ECSchemaCP>& out, bvector<ECN::ECSchemaCP> const& in);
+            BentleyStatus PreprocessSchemas(bvector<ECN::ECSchemaCP>& out, bvector<ECN::ECSchemaCP> const& in, ECN::ECSchemaReadContextR schemaContext);
             BentleyStatus PostprocessSchemas(bvector<ECN::ECSchemaCP>& out, bvector<ECN::ECSchemaCP> const& in);
             bool AssertReservedPropertyPolicy(ECN::ECClassCR entityClass, ECN::ECPropertyCP property = nullptr) const;
             void ClearCache() { m_schemasToImport.clear(); m_existingSchemas.clear(); GetECDb().ClearECDbCache(); }
