@@ -64,13 +64,15 @@ ContentQueryContract::ContentQueryContract(uint64_t id, ContentDescriptorCR desc
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-PresentationQueryContractFieldCPtr ContentQueryContract::GetCalculatedPropertyField(Utf8StringCR calculatedFieldName, Utf8StringCR calculatedPropertyValue) const
+PresentationQueryContractFieldCPtr ContentQueryContract::GetCalculatedPropertyField(Utf8StringCR calculatedFieldName, Utf8StringCR calculatedPropertyValue, Utf8StringCR prefix) const
     {
     Utf8String value = "'";
     value += calculatedPropertyValue;
     value += "'";
-    return PresentationQueryContractFunctionField::Create(calculatedFieldName.c_str(), FUNCTION_NAME_EvaluateECExpression,
+    PresentationQueryContractFieldPtr field = PresentationQueryContractFunctionField::Create(calculatedFieldName.c_str(), FUNCTION_NAME_EvaluateECExpression,
         CreateFieldsList("ECClassId", "ECInstanceId", value), true);
+    field->SetPrefixOverride(prefix);
+    return field;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -272,6 +274,17 @@ bool ContentQueryContract::ShouldHandleRelatedContentField(ContentDescriptor::Re
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+ECClassCP ContentQueryContract::GetPropertyClass(ContentDescriptor::RelatedContentField const* parentField) const
+    {
+    if (parentField)
+        return parentField->IsRelationshipField() ? &parentField->GetRelationshipClass() : &parentField->GetContentClass();
+    else
+        return m_relationshipClass ? m_relationshipClass : m_class;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 bool ContentQueryContract::CreateContractFields(bvector<PresentationQueryContractFieldCPtr>& contractFields, bvector<ContentDescriptor::Field*> const& fields, ContentDescriptor::RelatedContentField const* parentField) const
     {
     bool didCreateNonNullField = false;
@@ -280,9 +293,14 @@ bool ContentQueryContract::CreateContractFields(bvector<PresentationQueryContrac
         PresentationQueryContractFieldCPtr contractField;
         if (descriptorField->IsCalculatedPropertyField())
             {
-            if (nullptr == descriptorField->AsCalculatedPropertyField()->GetClass() || m_class->Is(descriptorField->AsCalculatedPropertyField()->GetClass()))
+            ECClassCP selectClass = GetPropertyClass(parentField);
+            Utf8String prefix;
+            if (parentField)
+                prefix = parentField->IsRelationshipField() ? parentField->GetRelationshipClassAlias() : parentField->GetContentClassAlias();
+
+            if (nullptr == descriptorField->AsCalculatedPropertyField()->GetClass() || selectClass->Is(descriptorField->AsCalculatedPropertyField()->GetClass()))
                 {
-                contractField = GetCalculatedPropertyField(descriptorField->GetUniqueName(), descriptorField->AsCalculatedPropertyField()->GetValueExpression());
+                contractField = GetCalculatedPropertyField(descriptorField->GetUniqueName(), descriptorField->AsCalculatedPropertyField()->GetValueExpression(), prefix);
                 didCreateNonNullField = true;
                 }
             else
@@ -293,11 +311,7 @@ bool ContentQueryContract::CreateContractFields(bvector<PresentationQueryContrac
         else if (descriptorField->IsPropertiesField())
             {
             ContentDescriptor::ECPropertiesField const& propertiesField = *descriptorField->AsPropertiesField();
-            ECClassCP propertyClass = nullptr;
-            if (parentField)
-                propertyClass = parentField->IsRelationshipField() ? &parentField->GetRelationshipClass() : &parentField->GetContentClass();
-            else
-                propertyClass = m_relationshipClass ? m_relationshipClass : m_class;
+            ECClassCP propertyClass = GetPropertyClass(parentField);
 
             ContentDescriptor::Property const* fieldPropertyForThisContract = FindMatchingProperty(propertiesField, propertyClass);
             if (propertiesField.IsCompositePropertiesField() && m_skipCompositePropertyFields)

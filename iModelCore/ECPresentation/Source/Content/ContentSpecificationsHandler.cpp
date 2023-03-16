@@ -88,16 +88,16 @@ static ExpressionContextPtr CreateContentSpecificationInstanceFilterContext(Cont
 * in content specification or content modifier, the overrides are taken care of by PropertyInfoStore.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentSpecificationsHandler::PropertyAppendResult ContentSpecificationsHandler::AppendProperty(PropertyAppender& appender, ECPropertyCR prop, Utf8CP alias, PropertySpecificationsList const& overrides)
+ContentSpecificationsHandler::PropertyAppendResult ContentSpecificationsHandler::AppendProperty(PropertyAppender& appender, ECPropertyCR prop, ECClassCR propertyClass, Utf8CP alias, PropertySpecificationsList const& overrides)
     {
     auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Append property `%s`", prop.GetName().c_str()));
-    if (!appender.Supports(prop, overrides))
+    if (!appender.Supports(prop, propertyClass, overrides))
         {
         DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Appender skipped the property.");
         return false;
         }
 
-    ContentSpecificationsHandler::PropertyAppendResult result = appender.Append(prop, alias, overrides);
+    ContentSpecificationsHandler::PropertyAppendResult result = appender.Append(prop, propertyClass, alias, overrides);
     DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Did append: %s", result.DidAppend() ? "TRUE" : "FALSE"));
 
     return result;
@@ -287,7 +287,7 @@ ContentSpecificationsHandler::PropertyAppendResult ContentSpecificationsHandler:
             {
             DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Appending `%s`.", ecProperty->GetName().c_str()));
             PropertySpecificationsList overrides = FindSpecificationsForProperty(propertySpecList, ecProperty->GetName());
-            propertyAppendResult.MergeWith(AppendProperty(appender, *ecProperty, propertiesClassAlias.c_str(), overrides));
+            propertyAppendResult.MergeWith(AppendProperty(appender, *ecProperty, propertiesClass, propertiesClassAlias.c_str(), overrides));
             }
         }
 
@@ -400,13 +400,13 @@ bvector<RelatedClassPath> ContentSpecificationsHandler::AppendRelatedProperties(
                 ECClassCR relationshipClass = pathFromSelectToPropertyClass.back().GetRelationship().GetClass();
                 Utf8StringCR relationshipClassAlias = pathFromSelectToPropertyClass.back().GetRelationship().GetAlias();
 
-                PropertyAppenderPtr relationshipPropertyAppender = _CreatePropertyAppender(path.GetActualSourceClasses(), pathFromSelectToPropertyClass, relationshipClass, specPaths->GetSpecification().GetSource(),
+                PropertyAppenderPtr relationshipPropertyAppender = _CreatePropertyAppender(path.GetActualSourceClasses(), pathFromSelectToPropertyClass, &relationshipClass, specPaths->GetSpecification().GetSource(),
                     &specPaths->GetSpecification().GetScope().GetCategories());
                 if (!relationshipPropertyAppender.IsNull())
                     {
                     PropertyAppendResult relationshipPropertyAppendResult(false);
                     relationshipPropertyAppendResult.MergeWith(AppendRelatedProperties(spec.GetRelationshipProperties(), *relationshipPropertyAppender, relationshipClass, relationshipClassAlias));
-                    relationshipPropertyAppendResult.MergeWith(_OnPropertiesAppended(*relationshipPropertyAppender, relationshipClass, relationshipClassAlias));
+                    relationshipPropertyAppendResult.MergeWith(_OnPropertiesAppended(*relationshipPropertyAppender, relationshipClass, relationshipClassAlias, true));
                     bool shouldIncludePathForRelationship = UpdatePaths(relationshipPropertyAppendResult, paths, pathFromSelectToPropertyClass);
                     shouldIncludePath |= shouldIncludePathForRelationship;
                     }
@@ -416,7 +416,7 @@ bvector<RelatedClassPath> ContentSpecificationsHandler::AppendRelatedProperties(
                 ECClassCR targetClass = pathFromSelectToPropertyClass.back().GetTargetClass().GetClass();
                 Utf8StringCR targetClassAlias = pathFromSelectToPropertyClass.back().GetTargetClass().GetAlias();
 
-                PropertyAppenderPtr appender = _CreatePropertyAppender(path.GetActualSourceClasses(), pathFromSelectToPropertyClass, targetClass, specPaths->GetSpecification().GetSource(),
+                PropertyAppenderPtr appender = _CreatePropertyAppender(path.GetActualSourceClasses(), pathFromSelectToPropertyClass, &targetClass, specPaths->GetSpecification().GetSource(),
                     &specPaths->GetSpecification().GetScope().GetCategories());
                 if (appender.IsNull())
                     {
@@ -426,7 +426,7 @@ bvector<RelatedClassPath> ContentSpecificationsHandler::AppendRelatedProperties(
 
                 PropertyAppendResult propertyAppendResult(false);
                 propertyAppendResult.MergeWith(AppendRelatedProperties(spec.GetProperties(), *appender, targetClass, targetClassAlias));
-                propertyAppendResult.MergeWith(_OnPropertiesAppended(*appender, targetClass, targetClassAlias));
+                propertyAppendResult.MergeWith(_OnPropertiesAppended(*appender, targetClass, targetClassAlias, true));
                 bool shouldIncludePathForTargetClass = UpdatePaths(propertyAppendResult, paths, pathFromSelectToPropertyClass);
                 shouldIncludePath |= shouldIncludePathForTargetClass;
                 }
@@ -707,7 +707,7 @@ void ContentSpecificationsHandler::AppendContent(ContentSource const& contentSou
         {
         auto classPropertiesScope = Diagnostics::Scope::Create("Appending class properties");
         bvector<RelatedPropertiesSpecification const*> specsStack;
-        appender = _CreatePropertyAppender(s_emptyClassesSet, s_emptyPath, selectClass.GetClass(), specsStack, &spec.GetPropertyCategories());
+        appender = _CreatePropertyAppender(s_emptyClassesSet, s_emptyPath, &selectClass.GetClass(), specsStack, &spec.GetPropertyCategories());
         if (appender.IsValid())
             {
             PropertyAppendResult appendResult(false);
@@ -715,9 +715,9 @@ void ContentSpecificationsHandler::AppendContent(ContentSource const& contentSou
             for (ECPropertyCP prop : properties)
                 {
                 DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Appending `%s`", prop->GetName().c_str()));
-                appendResult.MergeWith(AppendProperty(*appender, *prop, "this", PropertySpecificationsList()));
+                appendResult.MergeWith(AppendProperty(*appender, *prop, selectClass.GetClass(), "this", PropertySpecificationsList()));
                 }
-            appendResult.MergeWith(_OnPropertiesAppended(*appender, selectClass.GetClass(), "this"));
+            appendResult.MergeWith(_OnPropertiesAppended(*appender, selectClass.GetClass(), "this", false));
             GetContext().AddNavigationPropertiesPaths(selectClass.GetClass(), appendResult.GetAppendedNavigationPropertyPaths());
             }
         GetContext().SetClassHandled(selectClass.GetClass());
