@@ -226,7 +226,7 @@ static PresentationQueryContractFieldCPtr CreateNullPropertySelectField(Utf8CP f
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static PresentationQueryContractFieldCPtr CreateInstanceKeyField(Utf8CP fieldName, Utf8CP alias, ECClassId defaultClassId)
+static PresentationQueryContractFieldPtr CreateInstanceKeyField(Utf8CP fieldName, Utf8CP alias, ECClassId defaultClassId)
     {
     if (nullptr != alias)
         {
@@ -389,7 +389,9 @@ bvector<PresentationQueryContractFieldCPtr> ContentQueryContract::_GetFields() c
             // primary instance key
             bvector<Utf8CP> selectAliases = m_relationshipClass ? bvector<Utf8CP>{m_relationshipClassAlias.c_str()} : m_queryInfo.GetSelectAliases(IQueryInfoProvider::SELECTION_SOURCE_From);
             Utf8CP selectAlias = selectAliases.empty() ? nullptr : selectAliases.front();
-            m_fields->push_back(CreateInstanceKeyField(ECInstanceKeysFieldName, selectAlias, ECClassId()));
+            m_fields->push_back(selectAlias 
+                ? CreateInstanceKeyField(ECInstanceKeysFieldName, selectAlias, ECClassId()).get()
+                : PresentationQueryContractSimpleField::Create(ECInstanceKeysFieldName, "", false).get());
 
             // input instance key
             m_fields->push_back(CreateInputKeysField(selectAlias));

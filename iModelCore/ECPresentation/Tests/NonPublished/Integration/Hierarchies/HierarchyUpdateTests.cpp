@@ -177,7 +177,7 @@ TEST_F (HierarchyUpdateTests, UpdatesECClassGroupingNodeChildrenAfterECInstanceD
     childNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), rootNodes[0].get())).get(); });
     ASSERT_EQ(1, childNodes.GetSize());
     ASSERT_TRUE(childNodes[0].IsValid());
-    VerifyNodeInstance(*childNodes[0], *widget2);
+    VerifyNodeInstance(rules->GetRuleSetId(), *childNodes[0], *widget2);
 
     // verify records
     ASSERT_EQ(2, m_updateRecordsHandler->GetRecords().size());
@@ -1560,7 +1560,7 @@ TEST_F (HierarchyUpdateTests, SameLabelInstanceGroupIsCreatedWhenAdditionalInsta
 
     // expect 1 widget
     ASSERT_EQ(1, rootNodes.GetSize());
-    VerifyNodeInstances(*rootNodes[0], {widget});
+    VerifyNodeInstances(rules->GetRuleSetId(), *rootNodes[0], {widget});
 
     // insert another widget
     IECInstancePtr widget2 = RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("WidgetID"));}, true);
@@ -1569,7 +1569,7 @@ TEST_F (HierarchyUpdateTests, SameLabelInstanceGroupIsCreatedWhenAdditionalInsta
     // still expect 1 node
     rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
-    VerifyNodeInstances(*rootNodes[0], {widget, widget2});
+    VerifyNodeInstances(rules->GetRuleSetId(), *rootNodes[0], {widget, widget2});
 
     // expect 2 update records
     ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
@@ -3537,7 +3537,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterSkippedOneToManyRelationshipInsert)
     // expect 1 root node with 1 child
     rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
-    VerifyNodeInstance(*rootNodes[0], *widget);
+    VerifyNodeInstance(rules->GetRuleSetId(), *rootNodes[0], *widget);
     childNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), rootNodes[0].get())).get(); });
     ASSERT_EQ(1, childNodes.GetSize());
 
@@ -3603,7 +3603,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterSkippedOneToManyRelationshipDelete)
     // expect 1 root node with no children
     rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
-    VerifyNodeInstance(*rootNodes[0], *widget);
+    VerifyNodeInstance(rules->GetRuleSetId(), *rootNodes[0], *widget);
     childNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), rootNodes[0].get())).get(); });
     ASSERT_EQ(0, childNodes.GetSize());
 
@@ -3649,7 +3649,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterSkippedManyToManyRelationshipInsert)
     // request for nodes
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
-    VerifyNodeInstance(*rootNodes[0], *widget1);
+    VerifyNodeInstance(rules->GetRuleSetId(), *rootNodes[0], *widget1);
 
     // expand node
     SetNodeExpanded(*rootNodes[0]);
@@ -3664,10 +3664,10 @@ TEST_F (HierarchyUpdateTests, UpdateAfterSkippedManyToManyRelationshipInsert)
     // expect the child node to exist now
     rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables())).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
-    VerifyNodeInstance(*rootNodes[0], *widget1);
+    VerifyNodeInstance(rules->GetRuleSetId(), *rootNodes[0], *widget1);
     childNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), rootNodes[0].get())).get(); });
     ASSERT_EQ(1, childNodes.GetSize());
-    VerifyNodeInstance(*childNodes[0], *widget2);
+    VerifyNodeInstance(rules->GetRuleSetId(), *childNodes[0], *widget2);
 
     // verify records
     ASSERT_EQ(2, m_updateRecordsHandler->GetRecords().size());
@@ -4901,8 +4901,8 @@ TEST_F (HierarchyUpdateTests, UpdatesDataSourceAfterInsertWhenItAlreadyHasManyTo
     // make sure now it has 2 children nodes
     childNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetNodes(AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables(), rootNodes[0].get())).get(); });
     ASSERT_EQ(2, childNodes.GetSize());
-    VerifyNodeInstance(*childNodes[0], *gadget2);
-    VerifyNodeInstance(*childNodes[1], *gadget);
+    VerifyNodeInstance(rules->GetRuleSetId(), *childNodes[0], *gadget2);
+    VerifyNodeInstance(rules->GetRuleSetId(), *childNodes[1], *gadget);
 
     // verify records
     ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
@@ -5254,9 +5254,9 @@ TEST_F(HierarchyUpdateTests, UpdateFilteredChildHierarchyLevel)
     EXPECT_TRUE(m_updateRecordsHandler->GetRecords()[0].GetParentNode().IsNull());
     EXPECT_EQ(1, m_updateRecordsHandler->GetRecords()[0].GetNodesCount());
     EXPECT_EQ(1, m_updateRecordsHandler->GetRecords()[0].GetExpandedNodes().size());
-    VerifyNodeInstance(*m_updateRecordsHandler->GetRecords()[0].GetExpandedNodes()[0].GetNode(), *a);
+    VerifyNodeInstance(rules->GetRuleSetId(), *m_updateRecordsHandler->GetRecords()[0].GetExpandedNodes()[0].GetNode(), *a);
 
-    VerifyNodeInstance(*m_updateRecordsHandler->GetRecords()[1].GetParentNode(), *a);
+    VerifyNodeInstance(rules->GetRuleSetId(), *m_updateRecordsHandler->GetRecords()[1].GetParentNode(), *a);
     EXPECT_EQ(1, m_updateRecordsHandler->GetRecords()[1].GetNodesCount());
     EXPECT_EQ(0, m_updateRecordsHandler->GetRecords()[1].GetExpandedNodes().size());
 
@@ -5283,9 +5283,9 @@ TEST_F(HierarchyUpdateTests, UpdateFilteredChildHierarchyLevel)
     EXPECT_TRUE(m_updateRecordsHandler->GetRecords()[0].GetParentNode().IsNull());
     EXPECT_EQ(1, m_updateRecordsHandler->GetRecords()[0].GetNodesCount());
     EXPECT_EQ(1, m_updateRecordsHandler->GetRecords()[0].GetExpandedNodes().size());
-    VerifyNodeInstance(*m_updateRecordsHandler->GetRecords()[0].GetExpandedNodes()[0].GetNode(), *a);
+    VerifyNodeInstance(rules->GetRuleSetId(), *m_updateRecordsHandler->GetRecords()[0].GetExpandedNodes()[0].GetNode(), *a);
 
-    VerifyNodeInstance(*m_updateRecordsHandler->GetRecords()[1].GetParentNode(), *a);
+    VerifyNodeInstance(rules->GetRuleSetId(), *m_updateRecordsHandler->GetRecords()[1].GetParentNode(), *a);
     EXPECT_EQ(2, m_updateRecordsHandler->GetRecords()[1].GetNodesCount());
     EXPECT_EQ(0, m_updateRecordsHandler->GetRecords()[1].GetExpandedNodes().size());
     }
@@ -5387,9 +5387,9 @@ TEST_F(HierarchyUpdateTests, UpdatesFilteredParentNodeWhenItHasHideIfNoChildrenF
     EXPECT_TRUE(m_updateRecordsHandler->GetRecords()[0].GetParentNode().IsNull());
     EXPECT_EQ(1, m_updateRecordsHandler->GetRecords()[0].GetNodesCount());
     EXPECT_EQ(1, m_updateRecordsHandler->GetRecords()[0].GetExpandedNodes().size());
-    VerifyNodeInstance(*m_updateRecordsHandler->GetRecords()[0].GetExpandedNodes()[0].GetNode(), *a);
+    VerifyNodeInstance(rules->GetRuleSetId(), *m_updateRecordsHandler->GetRecords()[0].GetExpandedNodes()[0].GetNode(), *a);
 
-    VerifyNodeInstance(*m_updateRecordsHandler->GetRecords()[1].GetParentNode(), *a);
+    VerifyNodeInstance(rules->GetRuleSetId(), *m_updateRecordsHandler->GetRecords()[1].GetParentNode(), *a);
     EXPECT_EQ(0, m_updateRecordsHandler->GetRecords()[1].GetNodesCount());
     EXPECT_EQ(0, m_updateRecordsHandler->GetRecords()[1].GetExpandedNodes().size());
     }
@@ -5484,9 +5484,9 @@ TEST_F(HierarchyUpdateTests, UpdatesFilteredParentNodeWhenItHasHideIfNoChildrenF
     EXPECT_TRUE(m_updateRecordsHandler->GetRecords()[0].GetParentNode().IsNull());
     EXPECT_EQ(1, m_updateRecordsHandler->GetRecords()[0].GetNodesCount());
     EXPECT_EQ(1, m_updateRecordsHandler->GetRecords()[0].GetExpandedNodes().size());
-    VerifyNodeInstance(*m_updateRecordsHandler->GetRecords()[0].GetExpandedNodes()[0].GetNode(), *a);
+    VerifyNodeInstance(rules->GetRuleSetId(), *m_updateRecordsHandler->GetRecords()[0].GetExpandedNodes()[0].GetNode(), *a);
 
-    VerifyNodeInstance(*m_updateRecordsHandler->GetRecords()[1].GetParentNode(), *a);
+    VerifyNodeInstance(rules->GetRuleSetId(), *m_updateRecordsHandler->GetRecords()[1].GetParentNode(), *a);
     EXPECT_EQ(1, m_updateRecordsHandler->GetRecords()[1].GetNodesCount());
     EXPECT_EQ(0, m_updateRecordsHandler->GetRecords()[1].GetExpandedNodes().size());
     }
@@ -5602,9 +5602,9 @@ TEST_F(HierarchyUpdateTests, UpdatesFilteredHierarchyLevelWhenNodesUnderVirtualP
     EXPECT_TRUE(m_updateRecordsHandler->GetRecords()[0].GetParentNode().IsNull());
     EXPECT_EQ(1, m_updateRecordsHandler->GetRecords()[0].GetNodesCount());
     EXPECT_EQ(1, m_updateRecordsHandler->GetRecords()[0].GetExpandedNodes().size());
-    VerifyNodeInstance(*m_updateRecordsHandler->GetRecords()[0].GetExpandedNodes()[0].GetNode(), *a);
+    VerifyNodeInstance(rules->GetRuleSetId(), *m_updateRecordsHandler->GetRecords()[0].GetExpandedNodes()[0].GetNode(), *a);
 
-    VerifyNodeInstance(*m_updateRecordsHandler->GetRecords()[1].GetParentNode(), *a);
+    VerifyNodeInstance(rules->GetRuleSetId(), *m_updateRecordsHandler->GetRecords()[1].GetParentNode(), *a);
     EXPECT_EQ(1, m_updateRecordsHandler->GetRecords()[1].GetNodesCount());
     EXPECT_EQ(0, m_updateRecordsHandler->GetRecords()[1].GetExpandedNodes().size());
     }
@@ -5697,9 +5697,9 @@ TEST_F(HierarchyUpdateTests, UpdatesHierarchyLevelWhenNodesUnderFilteredParentAr
     EXPECT_TRUE(m_updateRecordsHandler->GetRecords()[0].GetParentNode().IsNull());
     EXPECT_EQ(1, m_updateRecordsHandler->GetRecords()[0].GetNodesCount());
     EXPECT_EQ(1, m_updateRecordsHandler->GetRecords()[0].GetExpandedNodes().size());
-    VerifyNodeInstance(*m_updateRecordsHandler->GetRecords()[0].GetExpandedNodes()[0].GetNode(), *a1);
+    VerifyNodeInstance(rules->GetRuleSetId(), *m_updateRecordsHandler->GetRecords()[0].GetExpandedNodes()[0].GetNode(), *a1);
 
-    VerifyNodeInstance(*m_updateRecordsHandler->GetRecords()[1].GetParentNode(), *a1);
+    VerifyNodeInstance(rules->GetRuleSetId(), *m_updateRecordsHandler->GetRecords()[1].GetParentNode(), *a1);
     EXPECT_EQ(2, m_updateRecordsHandler->GetRecords()[1].GetNodesCount());
     EXPECT_EQ(0, m_updateRecordsHandler->GetRecords()[1].GetExpandedNodes().size());
     }

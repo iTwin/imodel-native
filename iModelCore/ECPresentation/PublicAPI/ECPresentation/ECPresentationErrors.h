@@ -5,6 +5,7 @@
 #pragma once
 
 #include <ECPresentation/ECPresentation.h>
+#include <ECPresentation/ECPresentationTypes.h>
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
@@ -111,38 +112,19 @@ public:
         {}
 };
 
-#ifdef WIP_LIMITING_RESULT_SETS_SIZE
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
 struct ResultSetTooLargeError : ECPresentationException<std::length_error>
 {
+    DEFINE_T_SUPER(ECPresentationException<std::length_error>)
 private:
-    size_t m_allowedSize;
-    Nullable<PossiblyApproximate<size_t>> m_actualSize;
+    size_t m_exceededSize;
 public:
-    ResultSetTooLargeError(size_t allowedSize, Nullable<PossiblyApproximate<size_t>> actualSize = nullptr)
-        : m_allowedSize(allowedSize), m_actualSize(actualSize)
+    ResultSetTooLargeError(size_t exceededSize)
+        : T_Super("Result set too large"), m_exceededSize(exceededSize)
         {}
-    size_t GetAllowedSize() const {return m_allowedSize;}
-    void SetActualSize(Nullable<PossiblyApproximate<size_t>> value) {m_actualSize = value;}
-    Nullable<PossiblyApproximate<size_t>> const& GetActualSize() const {return m_actualSize;}
+    size_t GetExceededSize() const {return m_exceededSize;}
 };
-
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-struct TooManyInstancesError : ResultSetTooLargeError
-{
-private:
-    ContentDescriptorCPtr m_descriptor;
-public:
-    TooManyInstancesError(size_t allowedSize, Nullable<PossiblyApproximate<size_t>> actualSize = nullptr, ContentDescriptorCP descriptor = nullptr)
-        : ResultSetTooLargeError(allowedSize, actualSize), m_descriptor(descriptor)
-        {}
-    void SetDescriptor(ContentDescriptorCP value) {m_descriptor = value;}
-    ContentDescriptorCP GetDescriptor() const {return m_descriptor.get();}
-};
-#endif
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

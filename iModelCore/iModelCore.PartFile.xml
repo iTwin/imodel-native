@@ -13,7 +13,7 @@
         <SubPart PartName="__iModelCorePRG-Static"/>
     </Part>
 
-    <Part Name="iModelCoreOpen" PrgOutputDir="iModelCore">
+    <Part Name="iModelCoreOpen" PrgOutputDir="iModelNative">
         <SubPart PartName="__iModelCoreOpen-Dynamic"/>
         <SubPart PartName="__iModelCoreOpen-Static"/>
     </Part>

@@ -401,7 +401,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GetsAllResultsWhenNumber
         });
     ASSERT_EQ(500, rootNodesPage1.GetSize());
     for (size_t i = 0; i < 500; ++i)
-        VerifyNodeInstance(*rootNodesPage1[i], *instances[i]);
+        VerifyNodeInstance(rules->GetRuleSetId(), *rootNodesPage1[i], *instances[i]);
 
     DataContainer<NavNodeCPtr> rootNodesPage2 = RulesEngineTestHelpers::GetValidatedNodes([&]()
         {
@@ -409,14 +409,14 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GetsAllResultsWhenNumber
         });
     ASSERT_EQ(500, rootNodesPage2.GetSize());
     for (size_t i = 0; i < 500; ++i)
-        VerifyNodeInstance(*rootNodesPage2[i], *instances[i + 500]);
+        VerifyNodeInstance(rules->GetRuleSetId(), *rootNodesPage2[i], *instances[i + 500]);
 
     DataContainer<NavNodeCPtr> rootNodesPage3 = RulesEngineTestHelpers::GetValidatedNodes([&]()
         {
         return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), PageOptions(1000, 500))).get();
         });
     ASSERT_EQ(1, rootNodesPage3.GetSize());
-    VerifyNodeInstance(*rootNodesPage3[0], *instances[1000]);
+    VerifyNodeInstance(rules->GetRuleSetId(), *rootNodesPage3[0], *instances[1000]);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -471,9 +471,9 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, ReturnsAllNodesWhenSkipp
         return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), PageOptions(0, 1000))).get();
         });
     EXPECT_EQ(1000, rootNodes1.GetSize());
-    VerifyNodeInstance(*rootNodes1[0], *instanceA0);
+    VerifyNodeInstance(rules->GetRuleSetId(), *rootNodes1[0], *instanceA0);
     for (size_t i = 0; i < 999; ++i)
-        VerifyNodeInstance(*rootNodes1[i + 1], *aInstances[i]);
+        VerifyNodeInstance(rules->GetRuleSetId(), *rootNodes1[i + 1], *aInstances[i]);
 
     DataContainer<NavNodeCPtr> rootNodes2 = RulesEngineTestHelpers::GetValidatedNodes([&]()
         {
@@ -481,14 +481,14 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, ReturnsAllNodesWhenSkipp
         });
     EXPECT_EQ(1000, rootNodes2.GetSize());
     for (size_t i = 0; i < 1000; ++i)
-        VerifyNodeInstance(*rootNodes2[i], *aInstances[i + 999]);
+        VerifyNodeInstance(rules->GetRuleSetId(), *rootNodes2[i], *aInstances[i + 999]);
 
     DataContainer<NavNodeCPtr> rootNodes3 = RulesEngineTestHelpers::GetValidatedNodes([&]()
         {
         return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), PageOptions(2000, 1000))).get();
         });
     EXPECT_EQ(1, rootNodes3.GetSize());
-    VerifyNodeInstance(*rootNodes3[0], *aInstances[1999]);
+    VerifyNodeInstance(rules->GetRuleSetId(), *rootNodes3[0], *aInstances[1999]);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -574,8 +574,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Paging_ReturnsNodesFromD
         return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), PageOptions(1, 2))).get();
         });
     EXPECT_EQ(2, rootNodes.GetSize());
-    VerifyNodeInstance(*rootNodes[0], *instanceB02);
-    VerifyNodeInstance(*rootNodes[1], *instanceC11);
+    VerifyNodeInstance(rules->GetRuleSetId(), *rootNodes[0], *instanceB02);
+    VerifyNodeInstance(rules->GetRuleSetId(), *rootNodes[1], *instanceC11);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -658,8 +658,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Paging_ReturnsNodesFromD
         return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), PageOptions(1, 2))).get();
         });
     EXPECT_EQ(2, rootNodes.GetSize());
-    VerifyNodeInstance(*rootNodes[0], *instanceB02);
-    VerifyNodeInstance(*rootNodes[1], *instanceC11);
+    VerifyNodeInstance(rules->GetRuleSetId(), *rootNodes[0], *instanceB02);
+    VerifyNodeInstance(rules->GetRuleSetId(), *rootNodes[1], *instanceC11);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -692,7 +692,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Paging_ReturnsCorrectNod
         });
     EXPECT_EQ(500, rootNodes.GetSize());
     for (size_t i = 0; i < 500; ++i)
-        VerifyNodeInstance(*rootNodes[i], *aInstances[i + 1500]);
+        VerifyNodeInstance(rules->GetRuleSetId(), *rootNodes[i], *aInstances[i + 1500]);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -726,7 +726,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, ReturnsCorrectNodesCount
         });
     EXPECT_EQ(20, rootNodes.GetSize());
     for (size_t i = 0; i < 20; ++i)
-        VerifyNodeInstance(*rootNodes[i], *aInstances[i]);
+        VerifyNodeInstance(rules->GetRuleSetId(), *rootNodes[i], *aInstances[i]);
 
     ASSERT_EQ(numberOfNodes, GetValidatedResponse(m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()))));
     }

@@ -120,8 +120,6 @@ NavNodesProviderContextPtr NodesCacheTests::CreateContext(CombinedHierarchyLevel
 void NodesCacheTests::InitNode(NavNodeR node, HierarchyLevelIdentifier const& info)
     {
     NavNodeExtendedData extendedData(node);
-    extendedData.SetConnectionId(info.GetConnectionId());
-    extendedData.SetRulesetId(info.GetRulesetId().c_str());
     if (info.GetVirtualParentNodeId().IsValid())
         extendedData.SetVirtualParentIds({info.GetVirtualParentNodeId()});
     }
@@ -439,7 +437,7 @@ TEST_F(NodesCacheTests, MakeVirtual)
     EXPECT_EQ(NodeVisibility::Visible, m_cache->GetNodeVisibility(nodes[0]->GetNodeId(), RulesetVariables(), nullptr));
 
     // make virtual
-    m_cache->MakeVirtual(nodes[0]->GetNodeId(), RulesetVariables(), nullptr);
+    m_cache->MakeVirtual(nodes[0]->GetNodeId(), RulesetVariables(), nullptr, nullptr);
 
     // verify node is virtual
     EXPECT_EQ(NodeVisibility::Virtual, m_cache->GetNodeVisibility(nodes[0]->GetNodeId(), RulesetVariables(), nullptr));
@@ -997,14 +995,12 @@ TEST_F(NodesCacheTests, LocateNode_LocatesECInstanceNode_FromCorrectRuleset)
     m_cache->OnRulesetUsed(*PresentationRuleSet::CreateInstance("ruleset_id_1"));
     auto info1 = CacheDataSource(m_connection->GetId(), "ruleset_id_1", BeGuid());
     NavNodePtr node1 = TestNodesHelper::CreateInstanceNode(*m_connection, *widgetClass);
-    NavNodeExtendedData(*node1).SetRulesetId(info1.first.GetRulesetId().c_str());
     FillWithNodes(info1, { node1 });
 
     // create a node with ruleset 2
     m_cache->OnRulesetUsed(*PresentationRuleSet::CreateInstance("ruleset_id_2"));
     auto info2 = CacheDataSource(m_connection->GetId(), "ruleset_id_2", BeGuid());
     NavNodePtr node2 = TestNodesHelper::CreateInstanceNode(*m_connection, *widgetClass);
-    NavNodeExtendedData(*node2).SetRulesetId(info2.first.GetRulesetId().c_str());
     FillWithNodes(info2, { node2 });
 
     // verify the node is found successfully with valid key
@@ -1415,8 +1411,6 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsEmptyListWhen
     // create a node
     ECClassCP nodeClass = GetDb().Schemas().GetClass("ECDbMeta", "ECClassDef");
     auto node = TestNodesHelper::CreateInstanceNode(*m_connection, *nodeClass, ECInstanceId((uint64_t)2));
-    NavNodeExtendedData extendedData(*node);
-    extendedData.SetRulesetId(TEST_RULESET_ID);
     m_cache->Cache(*node, info.second, 0, NodeVisibility::Visible);
 
     bset<ECInstanceKey> keys;
@@ -1436,8 +1430,6 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsEmptyListWhen
     // create a node
     ECClassCP nodeClass = GetDb().Schemas().GetClass("ECDbMeta", "ECClassDef");
     auto node = TestNodesHelper::CreateInstanceNode(*m_connection, *nodeClass, ECInstanceId((uint64_t)2));
-    NavNodeExtendedData extendedData(*node);
-    extendedData.SetRulesetId(TEST_RULESET_ID);
     m_cache->Cache(*node, info.second, 0, NodeVisibility::Visible);
 
     bset<ECInstanceKey> keys;
@@ -1457,8 +1449,6 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsDataSourceWhe
     // create a node
     ECClassCP nodeClass = GetDb().Schemas().GetClass("ECDbMeta", "ECClassDef");
     auto node = TestNodesHelper::CreateInstanceNode(*m_connection, *nodeClass, ECInstanceId((uint64_t)2));
-    NavNodeExtendedData extendedData(*node);
-    extendedData.SetRulesetId(TEST_RULESET_ID);
     m_cache->Cache(*node, info.second, 0, NodeVisibility::Visible);
 
     bset<ECInstanceKey> keys;
@@ -1487,8 +1477,6 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsDataSourceWhe
 
     // create a node
     auto node = TestNodesHelper::CreateInstanceNode(*m_connection, *nodeClass, ECInstanceId((uint64_t)2));
-    NavNodeExtendedData extendedData(*node);
-    extendedData.SetRulesetId(TEST_RULESET_ID);
     m_cache->Cache(*node, info.second, 0, NodeVisibility::Visible);
 
     bset<ECInstanceKey> keys;
@@ -1759,7 +1747,7 @@ TEST_F(NodesCacheTests, ReturnsPhysicalHierarchyLevelNodes)
     auto cachedChildLevelInfo = CacheDataSource(m_connection->GetId(), TEST_RULESET_ID, cachedRootNodes[0]->GetNodeId());
     auto cachedChildNodes = FillWithNodes(cachedChildLevelInfo, 1, false, false);
 
-    m_cache->MakeVirtual(cachedRootNodes[0]->GetNodeId(), RulesetVariables(), nullptr);
+    m_cache->MakeVirtual(cachedRootNodes[0]->GetNodeId(), RulesetVariables(), nullptr, nullptr);
 
     CombinedHierarchyLevelIdentifier rootInfo(m_connection->GetId(), TEST_RULESET_ID, BeGuid());
     EXPECT_TRUE(m_cache->FindPhysicalHierarchyLevelId(rootInfo).IsValid());
