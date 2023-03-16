@@ -9,6 +9,24 @@
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
+typedef bpair<IConnectionCP, Utf8String> UiStateKey;
+
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct UiStateKeyComparer
+{
+    bool operator()(UiStateKey const& lhs, UiStateKey const& rhs) const
+        {
+        int connectionIdCmp = lhs.first->GetId().CompareTo(rhs.first->GetId());
+        if (connectionIdCmp < 0)
+            return true;
+        if (connectionIdCmp > 0)
+            return false;
+        return lhs.second < rhs.second;
+        }
+};
+
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
@@ -17,7 +35,7 @@ struct IModelJsECPresentationUiStateProvider : IUiStateProvider, IConnectionsLis
 private:
     mutable BeMutex m_mutex;
     ECPresentationManager const* m_manager;
-    bmap<bpair<IConnectionCP, Utf8String>, std::unique_ptr<UiState>> m_uiState;
+    bmap<UiStateKey, std::unique_ptr<UiState>, UiStateKeyComparer> m_uiState;
 
 private:
     UiState& GetUiState(IConnectionCR, Utf8StringCR);

@@ -28,7 +28,7 @@ void IModelJsECPresentationUiStateProvider::_OnConnectionEvent(ConnectionEvent c
     auto iter = m_uiState.begin();
     while (iter != m_uiState.end())
         {
-        if (iter->first.first == &evt.GetConnection())
+        if (iter->first.first->GetId() == evt.GetConnection().GetId())
             iter = m_uiState.erase(iter);
         else
             ++iter;
@@ -70,7 +70,7 @@ bvector<RulesetUiState> IModelJsECPresentationUiStateProvider::_GetUiState(IConn
     bvector<RulesetUiState> result;
     for (auto const& entry : m_uiState)
         {
-        if (entry.first.first == &connection)
+        if (entry.first.first->GetId() == connection.GetId())
             result.push_back(RulesetUiState(entry.first.second, std::make_shared<UiState>(*entry.second)));
         }
     return result;
