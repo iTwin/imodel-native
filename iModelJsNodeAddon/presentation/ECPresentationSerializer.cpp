@@ -894,19 +894,19 @@ NavNodeKeyPtr IModelJsECPresentationSerializer::_GetNavNodeKeyFromJson(IConnecti
     if (!json.isObject() || json.isNull())
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, "Attempting to parse node key from JSON that is not an object");
 
-    Utf8CP type = json["type"].asCString();
-    if (nullptr == type)
+    if (!json.hasMember("type"))
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, "Attempting to parse node key from JSON without 'type'");
 
-    if (0 == strcmp("ECInstanceNode", type)) // @deprecated
+    Utf8String type = json["type"].asString();
+    if (0 == strcmp("ECInstanceNode", type.c_str())) // @deprecated
         return IModelJsECPresentationSerializer::_GetECInstanceNodeKeyFromJson(connection, json);
-    if (0 == strcmp(NAVNODE_TYPE_ECInstancesNode, type))
+    if (0 == strcmp(NAVNODE_TYPE_ECInstancesNode, type.c_str()))
         return IModelJsECPresentationSerializer::_GetECInstanceNodeKeyFromJson(connection, json);
-    if (0 == strcmp(NAVNODE_TYPE_ECClassGroupingNode, type))
+    if (0 == strcmp(NAVNODE_TYPE_ECClassGroupingNode, type.c_str()))
         return IModelJsECPresentationSerializer::_GetECClassGroupingNodeKeyFromJson(connection, json);
-    if (0 == strcmp(NAVNODE_TYPE_ECPropertyGroupingNode, type))
+    if (0 == strcmp(NAVNODE_TYPE_ECPropertyGroupingNode, type.c_str()))
         return IModelJsECPresentationSerializer::_GetECPropertyGroupingNodeKeyFromJson(connection, json);
-    if (0 == strcmp(NAVNODE_TYPE_DisplayLabelGroupingNode, type))
+    if (0 == strcmp(NAVNODE_TYPE_DisplayLabelGroupingNode, type.c_str()))
         return IModelJsECPresentationSerializer::_GetLabelGroupingNodeKeyFromJson(json);
     return IModelJsECPresentationSerializer::_GetBaseNavNodeKeyFromJson(json);
     }
@@ -916,7 +916,7 @@ NavNodeKeyPtr IModelJsECPresentationSerializer::_GetNavNodeKeyFromJson(IConnecti
 +---------------+---------------+---------------+---------------+---------------+------*/
 NavNodeKeyPtr IModelJsECPresentationSerializer::_GetBaseNavNodeKeyFromJson(BeJsConst json) const
     {
-    Utf8CP type = json["type"].asCString();
+    Utf8String type = json["type"].asString();
     NavNodeKeyPtr key = NavNodeKey::Create(type, "", ParseNodeKeyHashPath(json["pathFromRoot"]));
     key->SetInstanceKeysSelectQuery(GetPresentationQueryFromJson(json["instanceKeysSelectQuery"]));
     return key;
@@ -996,7 +996,7 @@ ECPropertyGroupingNodeKeyPtr IModelJsECPresentationSerializer::_GetECPropertyGro
     {
     uint64_t groupedInstancesCount = json["groupedInstancesCount"].GetUInt64();
     ECClassCP ecClass = GetClassFromFullName(connection, json["className"]);
-    Utf8CP propertyName = json["propertyName"].asCString();
+    Utf8String propertyName = json["propertyName"].asString();
     rapidjson::Document groupingValues;
     if (json.isMember("groupingValues"))
         groupingValues.Parse(json["groupingValues"].ToJsonString().c_str());
@@ -1022,7 +1022,7 @@ void IModelJsECPresentationSerializer::_AsJson(ContextR, LabelGroupingNodeKey co
 LabelGroupingNodeKeyPtr IModelJsECPresentationSerializer::_GetLabelGroupingNodeKeyFromJson(BeJsConst json) const
     {
     uint64_t groupedInstancesCount = json["groupedInstancesCount"].GetUInt64();
-    Utf8CP label = json["label"].asCString();
+    Utf8String label = json["label"].asString();
     LabelGroupingNodeKeyPtr key = LabelGroupingNodeKey::Create(label, "", ParseNodeKeyHashPath(json["pathFromRoot"]), groupedInstancesCount);
     key->SetInstanceKeysSelectQuery(GetPresentationQueryFromJson(json["instanceKeysSelectQuery"]));
     return key;
@@ -1422,8 +1422,8 @@ std::unique_ptr<BoundQueryValue> IModelJsBoundQueryValueSerializer::_FromJson(Be
     if (!json.isObject() || !json.hasMember("type"))
         return nullptr;
 
-    Utf8CP type = json["type"].asCString();
-    if (0 == strcmp(BOUNDQUERYVALUETYPE_ECValue, type))
+    Utf8String type = json["type"].asString();
+    if (0 == strcmp(BOUNDQUERYVALUETYPE_ECValue, type.c_str()))
         {
         int valueType = ParsePrimitiveType(json["valueType"].asCString());
         if (0 == valueType)
@@ -1432,7 +1432,7 @@ std::unique_ptr<BoundQueryValue> IModelJsBoundQueryValueSerializer::_FromJson(Be
         ECValue value = GetECValueFromJson((PrimitiveType)valueType, ToRapidJson(json["value"])); // TODO: change to BeJsConst after converting RapidJson usage to BeJsConst
         return std::make_unique<BoundQueryECValue>(std::move(value));
         }
-    if (0 == strcmp(BOUNDQUERYVALUETYPE_ValueSet, type))
+    if (0 == strcmp(BOUNDQUERYVALUETYPE_ValueSet, type.c_str()))
         {
         bvector<ECValue> ecValues;
         if (json["value"].empty())
@@ -1447,11 +1447,11 @@ std::unique_ptr<BoundQueryValue> IModelJsBoundQueryValueSerializer::_FromJson(Be
 
         return std::make_unique<BoundECValueSet>(GetECValueSetFromJson((PrimitiveType)valueType, ToRapidJson(json["value"]))); // TODO: change to BeJsConst after converting RapidJson usage to BeJsConst
         }
-    if (0 == strcmp(BOUNDQUERYVALUETYPE_Id, type))
+    if (0 == strcmp(BOUNDQUERYVALUETYPE_Id, type.c_str()))
         {
         return std::make_unique<BoundQueryId>(json["value"].asCString());
         }
-    if (0 == strcmp(BOUNDQUERYVALUETYPE_IdSet, type))
+    if (0 == strcmp(BOUNDQUERYVALUETYPE_IdSet, type.c_str()))
         {
         BeJsConst idsJson = json["value"];
         bvector<BeInt64Id> ids;
@@ -1532,7 +1532,8 @@ rapidjson::Document IModelJsBoundQueryValueSerializer::_ToJson(BoundQueryIdSet c
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::unique_ptr<PresentationQuery> IModelJsECPresentationSerializer::_GetPresentationQueryFromJson(BeJsConst json) const
     {
-    Utf8CP queryString = json["query"].asCString();
+    BeJsConst queryJson = json["query"];
+    Utf8CP queryString = queryJson.asCString();
     if (!*queryString)
         return nullptr;
 
@@ -1721,16 +1722,16 @@ RulesetVariables IModelJsECPresentationSerializer::GetRulesetVariablesFromJson(B
         if (!item.isMember("id") || !item.isMember("type") || !item.isMember("value"))
             return false;
 
-        Utf8CP variableId = item["id"].asCString();
-        Utf8CP variableType = item["type"].asCString();
+        Utf8String variableId = item["id"].asString();
+        Utf8String variableType = item["type"].asString();
         BeJsConst variableValue = item["value"];
-        if (0 == strcmp("bool", variableType))
-            variables.SetBoolValue(variableId, variableValue.asBool(false));
-        else if (0 == strcmp("string", variableType))
-            variables.SetStringValue(variableId, variableValue.asCString(""));
-        else if (0 == strcmp("id64", variableType) || 0 == strcmp("int", variableType))
-            variables.SetIntValue(variableId, variableValue.GetUInt64());
-        else if ((0 == strcmp("id64[]", variableType) || 0 == strcmp("int[]", variableType)) && variableValue.isArray())
+        if (0 == strcmp("bool", variableType.c_str()))
+            variables.SetBoolValue(variableId.c_str(), variableValue.asBool(false));
+        else if (0 == strcmp("string", variableType.c_str()))
+            variables.SetStringValue(variableId.c_str(), variableValue.asCString(""));
+        else if (0 == strcmp("id64", variableType.c_str()) || 0 == strcmp("int", variableType.c_str()))
+            variables.SetIntValue(variableId.c_str(), variableValue.GetUInt64());
+        else if ((0 == strcmp("id64[]", variableType.c_str()) || 0 == strcmp("int[]", variableType.c_str())) && variableValue.isArray())
             {
             bvector<int64_t> values;
             variableValue.ForEachArrayMember([&](BeJsConst::ArrayIndex, BeJsConst varJson)
@@ -1738,7 +1739,7 @@ RulesetVariables IModelJsECPresentationSerializer::GetRulesetVariablesFromJson(B
                 values.push_back(varJson.GetInt64());
                 return false;
                 });
-            variables.SetIntValues(variableId, values);
+            variables.SetIntValues(variableId.c_str(), values);
             }
         return false;
         });
