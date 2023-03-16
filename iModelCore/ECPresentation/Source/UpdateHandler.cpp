@@ -551,6 +551,131 @@ void UpdateHandler::NotifyRulesetDisposed(PresentationRuleSetCR ruleset)
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
+struct NodesLocater
+{
+private:
+    IConnectionCR m_connection;
+    std::shared_ptr<NodesCache> m_nodesCache;
+    INodesProviderFactoryCR m_providerFactory;
+    INodesProviderContextFactoryCR m_providerContextFactory;
+    std::shared_ptr<IHierarchyLevelLocker> m_hierarchyLock;
+
+private:
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    NavNodesProviderContextPtr CreateNodesProviderContext(IConnectionCR connection, Utf8CP rulesetId, NavNodeCP parent)
+        {
+        return m_providerContextFactory.Create(connection, rulesetId, parent, m_nodesCache, nullptr, RulesetVariables());
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    NavNodesProviderPtr GetProvider(IConnectionCR connection, Utf8StringCR rulesetId, NavNodeCP parent)
+        {
+        NavNodesProviderContextPtr providerContext = CreateNodesProviderContext(connection, rulesetId.c_str(), parent);
+        if (providerContext.IsNull())
+            return nullptr;
+
+        return GetProvider(*providerContext);
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    NavNodesProviderPtr GetProvider(NavNodesProviderContextR providerContext)
+        {
+        NavNodesProviderPtr provider = m_nodesCache->GetCombinedHierarchyLevel(providerContext, providerContext.GetHierarchyLevelIdentifier());
+        if (provider.IsValid())
+            return provider;
+
+        // create locker for the first hierarchy level that was not found in cache and use this locker for all child hierarchy levels
+        if (!m_hierarchyLock)
+            m_hierarchyLock = m_nodesCache->CreateHierarchyLevelLocker(providerContext.GetHierarchyLevelIdentifier());
+
+        providerContext.SetHierarchyLevelLocker(m_hierarchyLock);
+        provider = m_providerFactory.Create(providerContext);
+        return provider->PostProcess(m_providerFactory.GetPostProcessors());
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    NavNodePtr LocateNodeInHierarchy(bvector<Utf8String> const& path, int depth, NavNodeCP parentNode, NavNodesProviderContextCR parentContext)
+        {
+        if (path.size() <= depth)
+            return nullptr;
+
+        NavNodesProviderPtr nodesProvider = GetProvider(parentContext.GetConnection(), parentContext.GetRuleset().GetRuleSetId(), parentNode);
+        if (nodesProvider.IsNull())
+            return nullptr;
+
+        DisabledFullNodesLoadContext disableFullLoad(*nodesProvider);
+        NavNodePtr curr;
+        bool found = false;
+        for (NavNodePtr node : *nodesProvider)
+            {
+            bvector<Utf8String> const& nodePath = node->GetKey()->GetHashPath();
+            if (nodePath.size() <= depth)
+                DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, "Node hash path shorter than requested depth");
+
+            if (nodePath.size() > path.size())
+                break;
+
+            curr = node;
+            found = true;
+            size_t virtualIndex = depth;
+            for (; virtualIndex < nodePath.size() && virtualIndex < path.size(); ++virtualIndex)
+                {
+                if (!nodePath[virtualIndex].Equals(path[virtualIndex]))
+                    {
+                    found = false;
+                    break;
+                    }
+                }
+
+            if (found)
+                {
+                depth = virtualIndex - 1;
+                break;
+                }
+            }
+
+        if (!found)
+            return nullptr;
+
+        if (path.size() == depth + 1)
+            return NodesFinalizer(nodesProvider->GetContextR()).Finalize(*curr);
+
+        return LocateNodeInHierarchy(path, depth + 1, curr.get(), nodesProvider->GetContext());
+        }
+
+public:
+    NodesLocater(IConnectionCR connection, std::shared_ptr<NodesCache> nodesCache, INodesProviderFactoryCR providerFactory, INodesProviderContextFactoryCR providerContextFactory)
+        : m_connection(connection), m_nodesCache(nodesCache), m_providerFactory(providerFactory), m_providerContextFactory(providerContextFactory)
+        {}
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    NavNodeCPtr LocateNode(NavNodeKeyCR nodeKey, Utf8StringCR rulesetId)
+        {
+        NavNodeCPtr node = m_nodesCache->LocateNode(m_connection, rulesetId, nodeKey);
+        if (node.IsValid())
+            return node;
+
+        NavNodesProviderContextPtr rootContext = CreateNodesProviderContext(m_connection, rulesetId.c_str(), nullptr);
+        if (rootContext.IsNull())
+            return nullptr;
+
+        return LocateNodeInHierarchy(nodeKey.GetHashPath(), 0, nullptr, *rootContext);
+        }
+};
+
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
 struct HierarchyRefresher
 {
 private:
@@ -714,8 +839,8 @@ private:
         {
         if (identifier.GetParentNodeKey().IsNull())
             return nullptr;
-
-        return m_nodesCache->LocateNode(m_connection, identifier.GetHierarchyLevelIdentifier().GetRulesetId(), *identifier.GetParentNodeKey());
+        CombinedHierarchyLevelIdentifier const& levelIdentifier = identifier.GetHierarchyLevelIdentifier();
+        return NodesLocater(m_connection, m_nodesCache, m_providerFactory, m_providerContextFactory).LocateNode(*identifier.GetParentNodeKey(), levelIdentifier.GetRulesetId());
         }
 
     /*---------------------------------------------------------------------------------**//**
