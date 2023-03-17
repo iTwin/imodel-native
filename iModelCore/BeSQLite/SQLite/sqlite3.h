@@ -146,9 +146,9 @@ extern "C" {
 ** [sqlite3_libversion_number()], [sqlite3_sourceid()],
 ** [sqlite_version()] and [sqlite_source_id()].
 */
-#define SQLITE_VERSION        "3.41.0"
-#define SQLITE_VERSION_NUMBER 3041000
-#define SQLITE_SOURCE_ID      "2023-03-08 18:03:04 e69df3eb096bbeb9c592fd3e41d54f0c022a5b7005a2d30dc37af70bef27102a"
+#define SQLITE_VERSION        "3.41.1"
+#define SQLITE_VERSION_NUMBER 3041001
+#define SQLITE_SOURCE_ID      "2023-03-10 12:13:52 20399f3eda5ec249d147ba9e48da6e87f969d7966a9a896764ca437ff7e737ff"
 
 /*
 ** CAPI3REF: Run-Time Library Version Numbers
@@ -11913,23 +11913,9 @@ SQLITE_API int sqlite3changeset_apply_v2(
 **   Invert the changeset before applying it. This is equivalent to inverting
 **   a changeset using sqlite3changeset_invert() before applying it. It is
 **   an error to specify this flag with a patchset.
-**
-** <dt>SQLITE_CHANGESETAPPLY_IGNORENOOP <dd>
-**   Do not invoke the conflict handler callback for any changes that
-**   would not actually modify the database even if they were applied.
-**   Specifically, this means that the conflict handler is not invoked
-**   for:
-**    <ul>
-**    <li>a delete change if the row being deleted cannot be found,
-**    <li>an update change if the modified fields are already set to
-**        their new values in the conflicting row, or
-**    <li>an insert change if all fields of the conflicting row match
-**        the row being inserted.
-**    </ul>
 */
 #define SQLITE_CHANGESETAPPLY_NOSAVEPOINT   0x0001
 #define SQLITE_CHANGESETAPPLY_INVERT        0x0002
-#define SQLITE_CHANGESETAPPLY_IGNORENOOP    0x0004
 
 /*
 ** CAPI3REF: Constants Passed To The Conflict Handler
