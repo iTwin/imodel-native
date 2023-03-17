@@ -28,8 +28,9 @@ TEST_F(MixinTest, MixinClassMayOnlyHaveMixinAsBaseClass_AddBaseClass)
     schema->CreateEntityClass(entity1, "Entity1");
     entity1->AddBaseClass(*entity0);
     schema->CreateEntityClass(entity2, "Entity2");
-    schema->CreateMixinClass(mixin0, "Mixin0", *entity0);
-    schema->CreateMixinClass(mixin1, "Mixin1", *entity0);
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    schema->CreateMixinClass(mixin0, "Mixin0", *entity0, *schemaContext);
+    schema->CreateMixinClass(mixin1, "Mixin1", *entity0, *schemaContext);
 
 
     ASSERT_EQ(ECObjectsStatus::BaseClassUnacceptable, mixin0->AddBaseClass(*entity1)) << "Should fail when adding an entity class as a base class for a mixin";
@@ -51,9 +52,10 @@ TEST_F(MixinTest, MixinClassMayOnlyOneBaseClass_AddBaseClass)
 
     ECSchema::CreateSchema(schema, "NoMixinMixing", "NMM", 1, 1, 1);
     schema->CreateEntityClass(entity0, "Entity0");
-    schema->CreateMixinClass(mixin0, "Mixin0", *entity0);
-    schema->CreateMixinClass(mixin1, "Mixin1", *entity0);
-    schema->CreateMixinClass(mixin2, "Mixin2", *entity0);
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    schema->CreateMixinClass(mixin0, "Mixin0", *entity0, *schemaContext);
+    schema->CreateMixinClass(mixin1, "Mixin1", *entity0, *schemaContext);
+    schema->CreateMixinClass(mixin2, "Mixin2", *entity0, *schemaContext);
 
     ASSERT_EQ(ECObjectsStatus::Success, mixin0->AddBaseClass(*mixin1)) << "Should succeed when adding a mixin class as a base class for a mixin";
     ASSERT_EQ(ECObjectsStatus::BaseClassUnacceptable, mixin0->AddBaseClass(*mixin2)) << "Should not be able to add mixin as a base class because the mixin already has a base class.";
@@ -118,10 +120,11 @@ TEST_F(MixinTest, MixinBaseClassMustHaveCompatibleAppliesToConstraint_AddBaseCla
     schema->CreateEntityClass(entity1, "Entity1");
     schema->CreateEntityClass(entity2, "Entity2");
     ASSERT_EQ(ECObjectsStatus::Success, entity2->AddBaseClass(*entity1)) << "Test setup failed";
-    schema->CreateMixinClass(mixin0, "Mixin0", *entity0);
-    schema->CreateMixinClass(mixin1, "Mixin1", *entity1);
-    schema->CreateMixinClass(mixin2, "Mixin2", *entity2);
-    schema->CreateMixinClass(mixin3, "Mixin3", *entity1);
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    schema->CreateMixinClass(mixin0, "Mixin0", *entity0, *schemaContext);
+    schema->CreateMixinClass(mixin1, "Mixin1", *entity1, *schemaContext);
+    schema->CreateMixinClass(mixin2, "Mixin2", *entity2, *schemaContext);
+    schema->CreateMixinClass(mixin3, "Mixin3", *entity1, *schemaContext);
 
 
     ASSERT_EQ(ECObjectsStatus::BaseClassUnacceptable, mixin0->AddBaseClass(*mixin1)) << "Should fail when adding mixin as base class when mixins have 'AppliesTo' constraints that are not in the same hierarchy";
@@ -401,7 +404,8 @@ TEST_F(MixinTest, TestMixinClass)
     ecSchema->CreateEntityClass(classA, "A");
     ecSchema->CreateEntityClass(notSupportedClass, "NotSupported");
 
-    ASSERT_EQ(ECObjectsStatus::Success, ecSchema->CreateMixinClass(mixinClass, "Mixin", *classA)) << "Failed to create mixin class 'Mixin' with applies to " << classA->GetFullName();
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(ECObjectsStatus::Success, ecSchema->CreateMixinClass(mixinClass, "Mixin", *classA, *schemaContext)) << "Failed to create mixin class 'Mixin' with applies to " << classA->GetFullName();
     ASSERT_TRUE(mixinClass->IsMixin()) << "The class '" << mixinClass->GetFullName() << "' is not a mixin class even though success was returned";
 
     IECInstancePtr mixinCAInstance = mixinClass->GetCustomAttribute("IsMixin");
@@ -438,7 +442,8 @@ TEST_F(MixinTest, TestMixinClassInReferencedSchema)
     ECEntityClassP classA;
     ECEntityClassP mixinClass;
 
-    ASSERT_EQ(ECObjectsStatus::Success, schemaWithMixin->CreateMixinClass(mixinClass, "Mixin", *baseClass)) << "Failed to create mixin class 'Mixin' with applies to '" << baseClass->GetFullName() << "' even though the containing schema is now a referenced schema.";
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(ECObjectsStatus::Success, schemaWithMixin->CreateMixinClass(mixinClass, "Mixin", *baseClass, *schemaContext)) << "Failed to create mixin class 'Mixin' with applies to '" << baseClass->GetFullName() << "' even though the containing schema is now a referenced schema.";
     EXPECT_TRUE(ECSchema::IsSchemaReferenced(*schemaWithMixin, *ecSchema)) << "The CreateMixin method should automatically add a reference to the schema containing the appliesTo class";
     ASSERT_TRUE(mixinClass->IsMixin()) << "The class '" << mixinClass->GetFullName() << "' is not a mixin class even though success was returned";
 
@@ -473,7 +478,8 @@ TEST_F(MixinTest, TestFailureWhenMixinClassHasCircular)
     refSchema->CreateEntityClass(appliesTo, "AppliesTo");
 
     EXPECT_EQ(ECObjectsStatus::Success, ecSchema->AddReferencedSchema(*refSchema)) << "Failed to add 'RefSchema' as a reference to 'TestSchema'";
-    ecSchema->CreateMixinClass(mixinClass, "Mixin", *appliesTo);
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    ecSchema->CreateMixinClass(mixinClass, "Mixin", *appliesTo, *schemaContext);
 
     EXPECT_FALSE(appliesTo->CanApply(*mixinClass)) << "This should be false since the mixin class '" << mixinClass->GetFullName() << "' already references the schema " << refSchema->GetFullSchemaName().c_str() << " and adding the class as a mixin to the '" << appliesTo->GetFullName() << "' class would create a circular reference.";
     }
@@ -493,8 +499,9 @@ TEST_F(MixinTest, RelationshipConstraints_MixinsNarrowByAppliesToConstraint)
     ECRelationshipClassP baseRelClass;
     maceSchema->CreateRelationshipClass(baseRelClass, "BaseRel", *baseSourceConstraint, "Source", *baseTargetConstraint, "Target");
 
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     ECEntityClassP mixinSource;
-    maceSchema->CreateMixinClass(mixinSource, "MixinSource", *baseSourceConstraint);
+    maceSchema->CreateMixinClass(mixinSource, "MixinSource", *baseSourceConstraint, *schemaContext);
 
     ECRelationshipClassP relClassWithMixin;
     maceSchema->CreateRelationshipClass(relClassWithMixin, "MixinRel", *mixinSource, "Source", *mixinSource, "Target");
@@ -511,7 +518,7 @@ TEST_F(MixinTest, RelationshipConstraints_MixinsNarrowByAppliesToConstraint)
     sourceConstraint->AddBaseClass(*baseSourceConstraint);
 
     ECEntityClassP mixinSource2;
-    maceSchema->CreateMixinClass(mixinSource2, "MixinSource2", *sourceConstraint);
+    maceSchema->CreateMixinClass(mixinSource2, "MixinSource2", *sourceConstraint, *schemaContext);
     EXPECT_EQ(ECObjectsStatus::Success, mixinSource2->AddBaseClass(*mixinSource));
 
     ECRelationshipClassP relClass2;
@@ -521,7 +528,7 @@ TEST_F(MixinTest, RelationshipConstraints_MixinsNarrowByAppliesToConstraint)
 
     // TODO: if the base constraint class is a mixin then the derived mixin must sub class it
     //ECEntityClassP mixinSource3;
-    //maceSchema->CreateMixinClass(mixinSource3, "MixinSource3", *baseSourceConstraint);
+    //maceSchema->CreateMixinClass(mixinSource3, "MixinSource3", *baseSourceConstraint, *schemaContext);
     //ECRelationshipClassP relClass3;
     //maceSchema->CreateRelationshipClass(relClass3, "MixinRel3", *mixinSource3, "Source3", *baseTargetConstraint, "Target");
     //EXPECT_EQ(ECObjectsStatus::BaseClassUnacceptable, relClass2->AddBaseClass(*relClassWithMixin)) <<
@@ -543,10 +550,11 @@ TEST_F(MixinTest, RelationshipConstraints_MixinsNarrowByMixinInheritance)
     ECRelationshipClassP baseRelClass;
     maceSchema->CreateRelationshipClass(baseRelClass, "BaseRel", *baseSourceConstraint, "Source", *baseTargetConstraint, "Target");
 
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     ECEntityClassP mixinSource;
-    maceSchema->CreateMixinClass(mixinSource, "MixinSource", *baseSourceConstraint);
+    maceSchema->CreateMixinClass(mixinSource, "MixinSource", *baseSourceConstraint, *schemaContext);
     ECEntityClassP mixinSource2;
-    maceSchema->CreateMixinClass(mixinSource2, "MixinSource2", *baseSourceConstraint);
+    maceSchema->CreateMixinClass(mixinSource2, "MixinSource2", *baseSourceConstraint, *schemaContext);
     mixinSource2->AddBaseClass(*mixinSource);
 
     ECRelationshipClassP relClassWithMixin;
@@ -675,8 +683,9 @@ TEST_F(MixinTest, SerializeStandaloneMixin)
 
     ECEntityClassP entityClass;
     schema->CreateEntityClass(entityClass, "ExampleEntity");
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     ECEntityClassP mixin;
-    schema->CreateMixinClass(mixin, "ExampleMixin", *entityClass);
+    schema->CreateMixinClass(mixin, "ExampleMixin", *entityClass, *schemaContext);
     mixin->SetClassModifier(ECClassModifier::Abstract);
 
     BeJsDocument schemaJson;

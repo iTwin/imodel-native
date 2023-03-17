@@ -7,3 +7,23 @@
    fun:_ZN12BentleyM020018BeFileListIterator15GetNextFileNameERNS_10BeFileNameE
    ...
 }
+
+# PresentationManager uses a static `ThreadPool::GetCpuPool()` for returning folly futures. There's no way to destroy the thread pool - it
+# only gets cleaned up when terminating the application.
+{
+   CpuThreadPool
+   Memcheck:Leak
+   match-leak-kinds: possible
+   ...
+   fun:_ZN12BentleyM020017BeThreadUtilities14StartNewThreadEPFPvS1_ES1_i
+   fun:Start
+   fun:_ZN7BeFolly10ThreadPoolC1EiPKc
+   fun:CpuThreadPoolImp
+   fun:operator()
+   fun:_ZNSt17_Function_handlerIFPN12_GLOBAL__N_116CpuThreadPoolImpEvEZN5folly9SingletonIS1_NS4_6detail10DefaultTagES7_EC1EDnSt8functionIFvS2_EEEUlvE_E9_M_invokeERKSt9_Any_data
+   fun:operator()
+   fun:_ZN5folly6detail15SingletonHolderIN12_GLOBAL__N_116CpuThreadPoolImpEE14createInstanceEv
+   ...
+   fun:_ZN7BeFolly10ThreadPool10GetCpuPoolEv
+   ...
+}
