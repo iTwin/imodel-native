@@ -53,7 +53,6 @@ struct IModelJsECPresentationUpdateRecordsHandler::FinalReport
     };
 
 private:
-    static uint64_t const s_partialHierarchyUpdatesLimit = 1000000; // TODO: use 1M for now, need to measure size of update records and tweak this number
     BeMutex m_mutex;
     uint64_t m_partialHierarchyUpdatesCount;
     bset<UpdateRecordKey> m_fullHierarchyUpdates;
