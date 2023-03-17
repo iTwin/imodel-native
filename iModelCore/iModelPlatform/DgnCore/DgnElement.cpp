@@ -23,7 +23,9 @@ void DgnElement::CallJsPostHandler(Utf8CP methodName) const {
     auto jsDb = m_dgndb.GetJsIModelDb();
     if (jsDb) {
         BeJsNapiObject arg(jsDb->Env());
-        arg["id"] = m_elementId;
+        arg[json_id()] = m_elementId;
+        arg[json_model()] = m_modelId;
+        arg[json_federationGuid()] = m_federationGuid.ToString();
         m_dgndb.CallJsHandlerMethod(m_classId, methodName, arg);
     }
 }

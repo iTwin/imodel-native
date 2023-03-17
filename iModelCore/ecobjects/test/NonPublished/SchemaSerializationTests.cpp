@@ -763,11 +763,12 @@ TEST_F(SchemaJsonSerializationTest, SchemaWithItems)
     entityClass->SetDisplayLabel("ExampleEntity");
     entityClass->SetDescription("An example entity class.");
     entityClass->AddBaseClass(*baseEntityClass);
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     ECEntityClassP mixinA;
-    schema->CreateMixinClass(mixinA, "ExampleMixinA", *entityClass);
+    schema->CreateMixinClass(mixinA, "ExampleMixinA", *entityClass, *schemaContext);
     entityClass->AddBaseClass(*mixinA);
     ECEntityClassP mixinB;
-    schema->CreateMixinClass(mixinB, "ExampleMixinB", *entityClass);
+    schema->CreateMixinClass(mixinB, "ExampleMixinB", *entityClass, *schemaContext);
     entityClass->AddBaseClass(*mixinB);
 
     // Struct Class

@@ -53,7 +53,6 @@ void NavigationQueryBuilderTests::ValidateQuery(ChildNodeSpecificationCR spec, P
     {
     auto expected = PrepareNavigationQuery(expectedQueryFactory);
     expected->GetNavigationResultParameters().SetSpecification(&spec);
-    expected->GetNavigationResultParameters().GetNavNodeExtendedDataR().SetRulesetId(m_ruleset->GetRuleSetId().c_str());
 
     ASSERT_TRUE(actualQuery.IsValid());
     EXPECT_TRUE(expected->IsEqual(*actualQuery))
@@ -221,7 +220,7 @@ TEST_F (NavigationQueryBuilderTests, NotifiesAboutUsedClassesInJoins)
     GetBuilder().GetParameters().SetUsedClassesListener(&listener);
 
     auto parentNode = TestNodesHelper::CreateInstanceNode(GetConnection(), *classA);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *parentNode);
 
     ChildNodeRule rule("", 1000, false, TargetTree_MainTree);
     RelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, false,

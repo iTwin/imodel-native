@@ -868,8 +868,9 @@ TEST_F(ClassTest, ClassNotSubClassableInReferencingSchema_API_NoExclusions)
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
     ECEntityClassP baseClass;
     schema->CreateEntityClass(baseClass, "BaseClass");
-    IECInstancePtr notSubClassable = CoreCustomAttributeHelper::GetClass("NotSubclassableInReferencingSchemas")->GetDefaultStandaloneEnabler()->CreateInstance();
-    schema->AddReferencedSchema(*CoreCustomAttributeHelper::GetSchema());
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    IECInstancePtr notSubClassable = CoreCustomAttributeHelper::GetClass(*schemaContext, "NotSubclassableInReferencingSchemas")->GetDefaultStandaloneEnabler()->CreateInstance();
+    schema->AddReferencedSchema(*CoreCustomAttributeHelper::GetSchema(*schemaContext));
     baseClass->SetCustomAttribute(*notSubClassable);
 
     ECEntityClassP localDerivedClass;
@@ -899,11 +900,12 @@ TEST_F(ClassTest, ClassNotSubClassableInReferencingSchema_API_WithExclusions)
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
     ECEntityClassP baseClass;
     schema->CreateEntityClass(baseClass, "BaseClass");
-    IECInstancePtr notSubClassable = CoreCustomAttributeHelper::GetClass("NotSubclassableInReferencingSchemas")->GetDefaultStandaloneEnabler()->CreateInstance();
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    IECInstancePtr notSubClassable = CoreCustomAttributeHelper::GetClass(*schemaContext, "NotSubclassableInReferencingSchemas")->GetDefaultStandaloneEnabler()->CreateInstance();
     ECValue exclusion0("RefingSchema:RemoteDerivedClass");
     notSubClassable->AddArrayElements("Exceptions", 2);
     ASSERT_EQ(ECObjectsStatus::Success, notSubClassable->SetValue("Exceptions", exclusion0, 0));
-    schema->AddReferencedSchema(*CoreCustomAttributeHelper::GetSchema());
+    schema->AddReferencedSchema(*CoreCustomAttributeHelper::GetSchema(*schemaContext));
     baseClass->SetCustomAttribute(*notSubClassable);
 
     ECEntityClassP localDerivedClass;
@@ -1058,8 +1060,9 @@ TEST_F(ClassTest, SerializeStandaloneEntityClass)
     entityClass->SetDisplayLabel("ExampleEntity");
     entityClass->SetDescription("An example entity class.");
     entityClass->AddBaseClass(*baseEntityClass);
-    schema->CreateMixinClass(mixinA, "ExampleMixinA", *entityClass);
-    schema->CreateMixinClass(mixinB, "ExampleMixinB", *entityClass);
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    schema->CreateMixinClass(mixinA, "ExampleMixinA", *entityClass, *schemaContext);
+    schema->CreateMixinClass(mixinB, "ExampleMixinB", *entityClass, *schemaContext);
     entityClass->AddBaseClass(*mixinA);
     entityClass->AddBaseClass(*mixinB);
     entityClass->SetCustomAttribute(*customAttr);
@@ -1457,8 +1460,9 @@ TEST_F(ClassTest, DowncastClassTest)
     ASSERT_NE(ecClass->GetCustomAttributeClassCP(), nullptr);
     ASSERT_NE(ecClass->GetCustomAttributeClassP(), nullptr);
 
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     ECEntityClassP ecMixin;
-    EC_ASSERT_SUCCESS(ecSchema->CreateMixinClass(ecMixin, "TestMixin", *ecEntity));
+    EC_ASSERT_SUCCESS(ecSchema->CreateMixinClass(ecMixin, "TestMixin", *ecEntity, *schemaContext));
     ecClass = ecSchema->GetClassP("TestMixin");
     ASSERT_TRUE(ecClass->IsEntityClass());
     ASSERT_FALSE(ecClass->IsRelationshipClass());
@@ -1487,8 +1491,9 @@ TEST_F(ClassTest, DeleteMixinAppliesTo)
     ECEntityClassP ecEntity;
     EC_ASSERT_SUCCESS(ecSchema->CreateEntityClass(ecEntity, "TestEntity"));
 
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     ECEntityClassP ecMixin;
-    EC_ASSERT_SUCCESS(ecSchema->CreateMixinClass(ecMixin, "TestMixin", *ecEntity));
+    EC_ASSERT_SUCCESS(ecSchema->CreateMixinClass(ecMixin, "TestMixin", *ecEntity, *schemaContext));
     ecClass = ecSchema->GetClassP("TestMixin");
     ASSERT_TRUE(ecClass->IsEntityClass());
     ASSERT_FALSE(ecClass->IsRelationshipClass());

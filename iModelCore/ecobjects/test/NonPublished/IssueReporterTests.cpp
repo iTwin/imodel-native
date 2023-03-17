@@ -100,9 +100,8 @@ TEST_F(IssueReporterTests, SchemaConverterClassMapBadMapStrategyReported)
 
     CustomECSchemaConverterPtr converter = CustomECSchemaConverter::Create();
     IECCustomAttributeConverterPtr classMapConv = new ECDbClassMapConverter();
-    converter->AddSchemaReadContext(*context);
     converter->AddConverter(ECDbClassMapConverter::GetSchemaName(), ECDbClassMapConverter::GetClassName(), classMapConv);
-    ASSERT_TRUE(converter->Convert(*schema.get(), true)) << "schema conversion should succeed (dropping the offending item)";
+    ASSERT_TRUE(converter->Convert(*schema.get(), *context.get(), true)) << "schema conversion should succeed (dropping the offending item)";
 
     EXPECT_EQ(1, testListenerReportCount);
     std::cout << lastReportMessage << std::endl;

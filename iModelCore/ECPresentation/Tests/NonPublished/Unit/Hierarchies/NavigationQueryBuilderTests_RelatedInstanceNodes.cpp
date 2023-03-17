@@ -40,7 +40,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_SkipOneRelatedLevel_Fo
     ECRelationshipClassCP relBC = GetECClass("B_C")->GetRelationshipClassCP();
 
     auto parentNode = TestNodesHelper::CreateInstanceNode(GetConnection(), *classA);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *parentNode);
 
     RelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, false, 1, "", RequiredRelationDirection_Forward,
         GetECSchema()->GetName(), "", RulesEngineTestHelpers::CreateClassNamesList({ classA, classB, classC }));
@@ -93,7 +93,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_SkipTooManyRelatedLeve
     ECClassCP classA = GetECClass("A");
 
     auto parentNode = TestNodesHelper::CreateInstanceNode(GetConnection(), *classA);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *parentNode);
 
     RelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, false, 2, "",
         RequiredRelationDirection_Forward, GetECSchema()->GetName(), "", "");
@@ -135,7 +135,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_SkipRelatedLevel_Group
     ECRelationshipClassCP relBC = GetECClass("B_C")->GetRelationshipClassCP();
 
     auto parentNode = TestNodesHelper::CreateInstanceNode(GetConnection(), *classA);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *parentNode);
 
     RelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, false, 1, "",
         RequiredRelationDirection_Forward, GetECSchema()->GetName(), relBC->GetFullName(), classC->GetFullName());
@@ -198,7 +198,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_RelationshipClassNames
     ECRelationshipClassCP relAB = GetECClass("A_B")->GetRelationshipClassCP();
 
     auto parentNode = TestNodesHelper::CreateInstanceNode(GetConnection(), *classA);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *parentNode);
 
     RelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, true, 0, "",
         RequiredRelationDirection_Both, "", relAB->GetFullName(), "");
@@ -251,7 +251,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_RelationshipAndClassNa
     ECRelationshipClassCP relAB = GetECClass("A_B")->GetRelationshipClassCP();
 
     auto parentNode = TestNodesHelper::CreateInstanceNode(GetConnection(), *classA);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *parentNode);
 
     RelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, true, 0, "", RequiredRelationDirection_Both,
         GetECSchema()->GetName(), relAB->GetFullName(), classB->GetFullName());
@@ -309,7 +309,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_RelatedClasses_OnlyInc
     ECRelationshipClassCP relAB = GetECClass("A_B")->GetRelationshipClassCP();
 
     auto parentNode = TestNodesHelper::CreateInstanceNode(GetConnection(), *classA);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *parentNode);
 
     RelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, true, 0, "",
         RequiredRelationDirection_Both, "", "", classB->GetFullName());
@@ -373,7 +373,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_RelatedClassesAndRelat
     ECRelationshipClassCP relAC = GetECClass("A_C")->GetRelationshipClassCP();
 
     auto parentNode = TestNodesHelper::CreateInstanceNode(GetConnection(), *classA);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *parentNode);
 
     RelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, true, 0, "",
         RequiredRelationDirection_Both, "", relAC->GetFullName(), classD->GetFullName());
@@ -429,7 +429,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_RelatedClasses_AllDeri
     ECRelationshipClassCP relAB = GetECClass("A_B")->GetRelationshipClassCP();
 
     auto parentNode = TestNodesHelper::CreateInstanceNode(GetConnection(), *classA);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *parentNode);
 
     RelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, true, 0, "",
         RequiredRelationDirection_Both, "", "", Utf8PrintfString("%s;E:%s", classB->GetFullName(), classB->GetFullName()));
@@ -475,7 +475,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_RelatedClasses_Polymor
     ECClassCP classB = GetECClass("B");
 
     auto parentNode = TestNodesHelper::CreateInstanceNode(GetConnection(), *classA);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *parentNode);
 
     RelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, true, 0, "",
         RequiredRelationDirection_Both, "", "", Utf8PrintfString("%s;PE:%s", classB->GetFullName(), classB->GetFullName()));
@@ -515,7 +515,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_RelatedClasses_GroupBy
     ECRelationshipClassCP relAB = GetECClass("A_B")->GetRelationshipClassCP();
 
     auto parentNode = TestNodesHelper::CreateInstanceNode(GetConnection(), *classA);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *parentNode);
 
     RelatedInstanceNodesSpecification spec(1, false, false, false, true, false, false, true, 0, "",
         RequiredRelationDirection_Both, "", "", Utf8PrintfString("%s;E:%s", classB->GetFullName(), classB->GetFullName()));
@@ -575,7 +575,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_InstanceFilter)
     ECRelationshipClassCP relAB = GetECClass("A_B")->GetRelationshipClassCP();
 
     auto parentNode = TestNodesHelper::CreateInstanceNode(GetConnection(), *classA);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *parentNode);
 
     RelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, true, 0, "this.Prop = \"2\"",
         RequiredRelationDirection_Both, "", "", classB->GetFullName());
@@ -624,7 +624,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_InstanceFilter_LikeOpe
     ECRelationshipClassCP relAB = GetECClass("A_B")->GetRelationshipClassCP();
 
     auto parentNode = TestNodesHelper::CreateInstanceNode(GetConnection(), *classA);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *parentNode);
 
     RelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, true, 0, "this.Prop ~ \"Test\"",
         RequiredRelationDirection_Both, "", "", classB->GetFullName());
@@ -670,7 +670,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_InstanceFilter_IsOfCla
     ECRelationshipClassCP relAB = GetECClass("A_B")->GetRelationshipClassCP();
 
     auto parentNode = TestNodesHelper::CreateInstanceNode(GetConnection(), *classA);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *parentNode);
 
     RelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, true, 0, "this.IsOfClass(\"ClassName\", \"SchemaName\")",
         RequiredRelationDirection_Both, "", "", classB->GetFullName());
@@ -719,7 +719,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_InstanceFilter_AllowsA
     ECRelationshipClassCP relAB = GetECClass("A_B")->GetRelationshipClassCP();
 
     auto parentNode = TestNodesHelper::CreateInstanceNode(GetConnection(), *classA);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *parentNode);
 
     RelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, true, 0,
         "parent.Prop = 1", RequiredRelationDirection_Forward, "", relAB->GetFullName(), classB->GetFullName());
@@ -783,7 +783,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_RelatedClasses_Multipl
     ECRelationshipClassCP relAB = GetECClass("A_B")->GetRelationshipClassCP();
 
     auto parentNode = TestNodesHelper::CreateInstanceNode(GetConnection(), *classA);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *parentNode);
 
     RelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, true, 0, "", RequiredRelationDirection_Both,
         "", "", Utf8PrintfString("%s:%s;PE:%s:%s;E:%s:%s", classB->GetSchema().GetName().c_str(), classB->GetName().c_str(),
@@ -836,7 +836,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_InstanceLabelOverride_
     ECRelationshipClassCP relAB = GetECClass("A_B")->GetRelationshipClassCP();
 
     auto parentNode = TestNodesHelper::CreateInstanceNode(GetConnection(), *classA);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *parentNode);
 
     RelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, true, 0, "",
         RequiredRelationDirection_Forward, "", relAB->GetFullName(), "");
@@ -904,7 +904,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_InstanceLabelOverride_
     ECRelationshipClassCP relAC = GetECClass("A_C")->GetRelationshipClassCP();
 
     auto parentNode = TestNodesHelper::CreateInstanceNode(GetConnection(), *classA);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *parentNode);
 
     RelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, true, 0, "",
         RequiredRelationDirection_Both, "", RulesEngineTestHelpers::CreateClassNamesList({ relAB, relAC }), "");
@@ -975,7 +975,7 @@ TEST_F(NavigationQueryBuilderTests, RelatedInstanceNodes_CreatesQueryForAllNodeE
         ECInstanceKey(classA->GetId(), ECInstanceId((uint64_t)1)),
         ECInstanceKey(classB->GetId(), ECInstanceId((uint64_t)2)),
         });
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *parentNode);
 
     RelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, true, 0, "", RequiredRelationDirection_Forward,
         "", Utf8PrintfString("%s:%s,%s", GetECSchema()->GetName().c_str(), rel1->GetName().c_str(), rel2->GetName().c_str()), classC->GetFullName());
@@ -1044,7 +1044,7 @@ TEST_F(NavigationQueryBuilderTests, RelatedInstanceNodes_CreatesInClauseForOneTo
         {
         ECInstanceKey(classA->GetId(), ECInstanceId((uint64_t)1)),
         });
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *parentNode);
 
     RelatedInstanceNodesSpecification spec(1, ChildrenHint::Unknown, false, false, false, false, "", { new RepeatableRelationshipPathSpecification({
         new RepeatableRelationshipStepSpecification(relAToB->GetFullName(), RequiredRelationDirection::RequiredRelationDirection_Forward, classB->GetFullName()),
@@ -1122,7 +1122,7 @@ TEST_F(NavigationQueryBuilderTests, RelatedInstanceNodes_CreatesExistsClauseForO
         {
         ECInstanceKey(classA->GetId(), ECInstanceId((uint64_t)1)),
         });
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *parentNode);
 
     RelatedInstanceNodesSpecification spec(1, ChildrenHint::Unknown, false, false, false, false, "",
         {
@@ -1188,7 +1188,7 @@ TEST_F(NavigationQueryBuilderTests, RelatedInstanceNodes_HierarchyLevelInstanceF
         {
         ECInstanceKey(classX->GetId(), ECInstanceId((uint64_t)1)),
         });
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *parentNode);
 
     RelatedInstanceNodesSpecification spec(1, ChildrenHint::Unknown, false, false, false, false, "",
         {
@@ -1280,7 +1280,7 @@ TEST_F(NavigationQueryBuilderTests, RelatedInstanceNodes_HierarchyLevelInstanceF
         {
         ECInstanceKey(classX->GetId(), ECInstanceId((uint64_t)1)),
         });
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *parentNode);
 
     RelatedInstanceNodesSpecification spec(1, ChildrenHint::Unknown, false, false, false, false, "",
         {
@@ -1383,7 +1383,7 @@ TEST_F(NavigationQueryBuilderTests, RelatedInstanceNodes_HierarchyLevelInstanceF
         {
         ECInstanceKey(classX->GetId(), ECInstanceId((uint64_t)1)),
         });
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *parentNode);
 
     RelatedInstanceNodesSpecification spec(1, ChildrenHint::Unknown, false, false, false, false, "",
         {
@@ -1473,7 +1473,7 @@ TEST_F(NavigationQueryBuilderTests, RelatedInstanceNodes_HierarchyLevelInstanceF
         {
         ECInstanceKey(classX->GetId(), ECInstanceId((uint64_t)1)),
         });
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *parentNode);
 
     RelatedInstanceNodesSpecification spec(1, ChildrenHint::Unknown, false, false, false, false, "",
         {

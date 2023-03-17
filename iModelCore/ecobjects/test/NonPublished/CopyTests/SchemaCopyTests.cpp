@@ -484,7 +484,8 @@ TEST_F(SchemaCopyTest, CopyEntityClassWithMixin)
     ECEntityClassP mixin;
     ECEntityClassP ecClass;
     EC_ASSERT_SUCCESS(m_sourceSchema->CreateEntityClass(ecClass, "Class"));
-    EC_ASSERT_SUCCESS(m_sourceSchema->CreateMixinClass(mixin, "Mixin", *ecClass));
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    EC_ASSERT_SUCCESS(m_sourceSchema->CreateMixinClass(mixin, "Mixin", *ecClass, *schemaContext));
     EC_ASSERT_SUCCESS(ecClass->AddBaseClass(*mixin));
 
     CopySchema();
@@ -509,7 +510,8 @@ TEST_F(SchemaCopyTest, TestEntityClassWithBothBaseClassAndMixin)
     EC_ASSERT_SUCCESS(m_sourceSchema->CreateEntityClass(entityBase, "Entity0"));
     EC_ASSERT_SUCCESS(m_sourceSchema->CreateEntityClass(entityDerived, "Entity1"));
     
-    m_sourceSchema->CreateMixinClass(mixin0, "Mixin0", *entityBase);
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    m_sourceSchema->CreateMixinClass(mixin0, "Mixin0", *entityBase, *schemaContext);
     PrimitiveECPropertyP prop;
     mixin0->CreatePrimitiveProperty(prop, "P1", PRIMITIVETYPE_String);
     entityDerived->AddBaseClass(*entityBase);
