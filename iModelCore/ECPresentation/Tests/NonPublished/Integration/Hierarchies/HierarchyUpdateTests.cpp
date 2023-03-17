@@ -47,7 +47,7 @@ TEST_F(HierarchyUpdateTests, DetectsRootNodeAdded)
         CreateInstanceNodeValidator({ a1 }),
         });
 
-    // insertInstance
+    // insert instance
     IECInstancePtr a2 = RulesEngineTestHelpers::InsertInstance(m_db, *classA, nullptr, true);
     m_eventsSource->NotifyECInstanceInserted(m_db, *a2);
 
@@ -298,7 +298,6 @@ TEST_F(HierarchyUpdateTests, GroupByClass_DetectsGroupedNodeInserted)
     EXPECT_FALSE(m_updateRecordsHandler->GetFullUpdateRecords().empty());
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @betest
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -349,6 +348,62 @@ TEST_F(HierarchyUpdateTests, GroupByLabel_DetectsGroupedNodeRemoved)
         {
         CreateInstanceNodeValidator({ a11 }),
         CreateInstanceNodeValidator({ a21 }),
+        });
+
+    // verify records
+    EXPECT_FALSE(m_updateRecordsHandler->GetFullUpdateRecords().empty());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(GroupByLabel_DetectsSiblingNodeRemoved, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="LabelProp" typeName="string" />
+    </ECEntityClass>
+)*");
+TEST_F(HierarchyUpdateTests, GroupByLabel_DetectsSiblingNodeRemoved)
+    {
+    // set up dataset
+    ECClassCP classA = GetClass("A");
+    IECInstancePtr a11 = RulesEngineTestHelpers::InsertInstance(m_db, *classA, [](IECInstanceR instance){instance.SetValue("LabelProp", ECValue("1")); });
+    IECInstancePtr a12 = RulesEngineTestHelpers::InsertInstance(m_db, *classA, [](IECInstanceR instance){instance.SetValue("LabelProp", ECValue("1")); });
+    IECInstancePtr a21 = RulesEngineTestHelpers::InsertInstance(m_db, *classA, [](IECInstanceR instance){instance.SetValue("LabelProp", ECValue("2")); }, true);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, true, "",
+        {
+        new MultiSchemaClass(classA->GetSchema().GetName(), true, bvector<Utf8String>{ classA->GetName() })
+        }, {}));
+    rules->AddPresentationRule(*rootRule);
+
+    rules->AddPresentationRule(*new InstanceLabelOverride(1, false, classA->GetFullName(), { new InstanceLabelOverridePropertyValueSpecification("LabelProp") }));
+
+    // validate hierarchy pre-update
+    auto params = AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables());
+    ValidateHierarchy(params,
+        {
+        ExpectedHierarchyDef(CreateLabelGroupingNodeValidator("1", { a11, a12 }),
+            {
+            CreateInstanceNodeValidator({ a11 }),
+            CreateInstanceNodeValidator({ a12 }),
+            }),
+        CreateInstanceNodeValidator({ a21 }),
+        });
+
+    // remove instance
+    RulesEngineTestHelpers::DeleteInstance(m_db, *a21, true);
+    m_eventsSource->NotifyECInstanceDeleted(m_db, *a21);
+
+    // validate hierarchy post-update
+    ValidateHierarchy(params,
+        {
+        CreateInstanceNodeValidator({ a11 }),
+        CreateInstanceNodeValidator({ a12 }),
         });
 
     // verify records
@@ -1215,6 +1270,205 @@ TEST_F(HierarchyUpdateTests, RelatedInstances_HideNodesInHierarchy_DetectsRelate
         ExpectedHierarchyDef(CreateInstanceNodeValidator({ a2 }),
             {
             CreateInstanceNodeValidator({ c1 }),
+            }),
+        });
+
+    // verify records
+    EXPECT_FALSE(m_updateRecordsHandler->GetFullUpdateRecords().empty());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(RelatedInstances_HideNodesInHierarchy_DetectsNodeRemovedInHiddenLevel, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B" />
+    <ECEntityClass typeName="C" />
+    <ECRelationshipClass typeName="AB" strength="embedding" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="ab" polymorphic="false">
+            <Class class="A"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="ba" polymorphic="false">
+            <Class class="B"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="BC" strength="embedding" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="ab" polymorphic="false">
+            <Class class="B"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="ba" polymorphic="false">
+            <Class class="C"/>
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(HierarchyUpdateTests, RelatedInstances_HideNodesInHierarchy_DetectsNodeRemovedInHiddenLevel)
+    {
+    // set up dataset
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECClassCP classC = GetClass("C");
+    ECRelationshipClassCP relAB = GetClass("AB")->GetRelationshipClassCP();
+    ECRelationshipClassCP relBC = GetClass("BC")->GetRelationshipClassCP();
+    IECInstancePtr a1 = RulesEngineTestHelpers::InsertInstance(m_db, *classA);
+    IECInstancePtr a2 = RulesEngineTestHelpers::InsertInstance(m_db, *classA);
+    IECInstancePtr b1 = RulesEngineTestHelpers::InsertInstance(m_db, *classB);
+    IECInstancePtr b2 = RulesEngineTestHelpers::InsertInstance(m_db, *classB);
+    IECInstancePtr c1 = RulesEngineTestHelpers::InsertInstance(m_db, *classC);
+    IECInstancePtr c2 = RulesEngineTestHelpers::InsertInstance(m_db, *classC);
+    RulesEngineTestHelpers::InsertRelationship(m_db, *relAB, *a1, *b1);
+    RulesEngineTestHelpers::InsertRelationship(m_db, *relAB, *a2, *b2);
+    RulesEngineTestHelpers::InsertRelationship(m_db, *relBC, *b1, *c1);
+    RulesEngineTestHelpers::InsertRelationship(m_db, *relBC, *b2, *c2, nullptr, true);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "",
+        {
+        new MultiSchemaClass(classA->GetSchema().GetName(), true, bvector<Utf8String>{ classA->GetName() })
+        }, {}));
+    rules->AddPresentationRule(*rootRule);
+
+    ChildNodeRule* childRuleAB = new ChildNodeRule(Utf8PrintfString("ParentNode.IsOfClass(\"%s\", \"%s\")", classA->GetName().c_str(), classA->GetSchema().GetName().c_str()), 1, false);
+    childRuleAB->AddSpecification(*new RelatedInstanceNodesSpecification(1, ChildrenHint::Unknown, true, false, false, false, "",
+        {
+        new RepeatableRelationshipPathSpecification({ new RepeatableRelationshipStepSpecification(relAB->GetFullName(), RequiredRelationDirection_Forward) })
+        }));
+    rules->AddPresentationRule(*childRuleAB);
+
+    ChildNodeRule* childRuleBC = new ChildNodeRule(Utf8PrintfString("ParentNode.IsOfClass(\"%s\", \"%s\")", classB->GetName().c_str(), classB->GetSchema().GetName().c_str()), 1, false);
+    childRuleBC->AddSpecification(*new RelatedInstanceNodesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "",
+        {
+        new RepeatableRelationshipPathSpecification({ new RepeatableRelationshipStepSpecification(relBC->GetFullName(), RequiredRelationDirection_Forward) })
+        }));
+    rules->AddPresentationRule(*childRuleBC);
+
+    // validate hierarchy pre-update
+    auto params = AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables());
+    ValidateHierarchy(params,
+        { 
+        ExpectedHierarchyDef(CreateInstanceNodeValidator({ a1 }),
+            {
+            CreateInstanceNodeValidator({ c1 }),
+            }),
+        ExpectedHierarchyDef(CreateInstanceNodeValidator({ a2 }),
+            {
+            CreateInstanceNodeValidator({ c2 }),
+            }),
+        });
+
+    // remove instance
+    RulesEngineTestHelpers::DeleteInstance(m_db, *b1, true);
+    m_eventsSource->NotifyECInstanceDeleted(m_db, *b1);
+
+    // validate hierarchy post-update
+    ValidateHierarchy(params,
+        {
+        CreateInstanceNodeValidator({ a1 }),
+        ExpectedHierarchyDef(CreateInstanceNodeValidator({ a2 }),
+            {
+            CreateInstanceNodeValidator({ c2 }),
+            }),
+        });
+
+    // verify records
+    EXPECT_FALSE(m_updateRecordsHandler->GetFullUpdateRecords().empty());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(RelatedInstances_HideNodesInHierarchy_DetectsNodeInsertedInHiddenLevel, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B" />
+    <ECEntityClass typeName="C" />
+    <ECRelationshipClass typeName="AB" strength="embedding" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="ab" polymorphic="false">
+            <Class class="A"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="ba" polymorphic="false">
+            <Class class="B"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="BC" strength="embedding" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="ab" polymorphic="false">
+            <Class class="B"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="ba" polymorphic="false">
+            <Class class="C"/>
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(HierarchyUpdateTests, RelatedInstances_HideNodesInHierarchy_DetectsNodeInsertedInHiddenLevel)
+    {
+    // set up dataset
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECClassCP classC = GetClass("C");
+    ECRelationshipClassCP relAB = GetClass("AB")->GetRelationshipClassCP();
+    ECRelationshipClassCP relBC = GetClass("BC")->GetRelationshipClassCP();
+    IECInstancePtr a1 = RulesEngineTestHelpers::InsertInstance(m_db, *classA);
+    IECInstancePtr a2 = RulesEngineTestHelpers::InsertInstance(m_db, *classA);
+    IECInstancePtr b1 = RulesEngineTestHelpers::InsertInstance(m_db, *classB);
+    IECInstancePtr c1 = RulesEngineTestHelpers::InsertInstance(m_db, *classC);
+    IECInstancePtr c2 = RulesEngineTestHelpers::InsertInstance(m_db, *classC);
+    RulesEngineTestHelpers::InsertRelationship(m_db, *relAB, *a1, *b1);
+    RulesEngineTestHelpers::InsertRelationship(m_db, *relBC, *b1, *c1, nullptr, true);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "",
+        {
+        new MultiSchemaClass(classA->GetSchema().GetName(), true, bvector<Utf8String>{ classA->GetName() })
+        }, {}));
+    rules->AddPresentationRule(*rootRule);
+
+    ChildNodeRule* childRuleAB = new ChildNodeRule(Utf8PrintfString("ParentNode.IsOfClass(\"%s\", \"%s\")", classA->GetName().c_str(), classA->GetSchema().GetName().c_str()), 1, false);
+    childRuleAB->AddSpecification(*new RelatedInstanceNodesSpecification(1, ChildrenHint::Unknown, true, false, false, false, "",
+        {
+        new RepeatableRelationshipPathSpecification({ new RepeatableRelationshipStepSpecification(relAB->GetFullName(), RequiredRelationDirection_Forward) })
+        }));
+    rules->AddPresentationRule(*childRuleAB);
+
+    ChildNodeRule* childRuleBC = new ChildNodeRule(Utf8PrintfString("ParentNode.IsOfClass(\"%s\", \"%s\")", classB->GetName().c_str(), classB->GetSchema().GetName().c_str()), 1, false);
+    childRuleBC->AddSpecification(*new RelatedInstanceNodesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "",
+        {
+        new RepeatableRelationshipPathSpecification({ new RepeatableRelationshipStepSpecification(relBC->GetFullName(), RequiredRelationDirection_Forward) })
+        }));
+    rules->AddPresentationRule(*childRuleBC);
+
+    // validate hierarchy pre-update
+    auto params = AsyncHierarchyRequestParams::Create(m_db, rules->GetRuleSetId(), RulesetVariables());
+    ValidateHierarchy(params,
+        {
+        ExpectedHierarchyDef(CreateInstanceNodeValidator({ a1 }),
+            {
+            CreateInstanceNodeValidator({ c1 }),
+            }),
+        CreateInstanceNodeValidator({ a2 }),
+        });
+
+    // insert instance
+    IECInstancePtr b2 = RulesEngineTestHelpers::InsertInstance(m_db, *classB);
+    RulesEngineTestHelpers::InsertRelationship(m_db, *relAB, *a2, *b2);
+    RulesEngineTestHelpers::InsertRelationship(m_db, *relBC, *b2, *c2, nullptr, true);
+    m_eventsSource->NotifyECInstanceInserted(m_db, *b2);
+
+    // validate hierarchy post-update
+    ValidateHierarchy(params,
+        {
+        ExpectedHierarchyDef(CreateInstanceNodeValidator({ a1 }),
+            {
+            CreateInstanceNodeValidator({ c1 }),
+            }),
+        ExpectedHierarchyDef(CreateInstanceNodeValidator({ a2 }),
+            {
+            CreateInstanceNodeValidator({ c2 }),
             }),
         });
 
