@@ -54,7 +54,6 @@ struct IModelJsECPresentationUpdateRecordsHandler::FinalReport
 
 private:
     BeMutex m_mutex;
-    uint64_t m_partialHierarchyUpdatesCount;
     bset<UpdateRecordKey> m_fullHierarchyUpdates;
     bset<UpdateRecordKey> m_fullContentUpdates;
 
@@ -84,7 +83,6 @@ private:
         }
 
 public:
-    FinalReport() : m_partialHierarchyUpdatesCount(0) {}
     void Accept(WipReport const& wip)
         {
         BeMutexHolder lock(m_mutex);
