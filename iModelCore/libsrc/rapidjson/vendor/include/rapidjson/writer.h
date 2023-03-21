@@ -349,7 +349,9 @@ protected:
     bool WriteDouble(double d) {
         if (internal::Double(d).IsNanOrInf()) {
             if (!(writeFlags & kWriteNanAndInfFlag))
-                return false;
+// BENTLEY_CHANGES <<<<
+                return WriteNull();
+// BENTLEY_CHANGES >>>>
             if (internal::Double(d).IsNan()) {
                 PutReserve(*os_, 3);
                 PutUnsafe(*os_, 'N'); PutUnsafe(*os_, 'a'); PutUnsafe(*os_, 'N');
