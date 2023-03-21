@@ -282,6 +282,28 @@ TEST_F(InstanceReaderFixture, ecsql_read_property) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceReaderFixture, rapid_json_patch_to_render_inf_and_nan_as_null_instead_of_failing) {
+        // Test for bentley specific change \src\imodel-native\iModelCore\libsrc\rapidjson\vendor\include\rapidjson\writer.h#551
+        // Patch to RapidJson write null instead of failing
+       BeJsDocument docNan;
+       docNan.toObject();
+       docNan["a"] = 0.1;
+       docNan["c"] = std::numeric_limits<double>::quiet_NaN();
+       docNan["e"] = 4.4;
+       ASSERT_STRCASEEQ("{\"a\":0.1,\"c\":null,\"e\":4.4}", docNan.Stringify().c_str());
+
+
+       BeJsDocument docInf;
+       docInf.toObject();
+       docInf["a"] = 0.1;
+       docInf["c"] = std::numeric_limits<double>::infinity();
+       docInf["e"] = 4.4;
+       ASSERT_STRCASEEQ("{\"a\":0.1,\"c\":null,\"e\":4.4}", docInf.Stringify().c_str());
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(InstanceReaderFixture, instance_reader) {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("instanceReader.ecdb"));
 
