@@ -91,8 +91,6 @@ protected:
 
     // Update:
     rapidjson::Document _AsJson(ContextR, HierarchyChangeRecord const& changeRecord, rapidjson::Document::AllocatorType* allocator) const override;
-    rapidjson::Document _AsJson(ContextR, HierarchyUpdateRecord const& updateRecord, rapidjson::Document::AllocatorType* allocator) const override;
-    rapidjson::Document _AsJson(ContextR, HierarchyUpdateRecord::ExpandedNode const& expandedNode, rapidjson::Document::AllocatorType* allocator) const override;
     rapidjson::Document _AsJson(ContextR, ECInstanceChangeResult const&, rapidjson::Document::AllocatorType* allocator) const override;
 
 public:

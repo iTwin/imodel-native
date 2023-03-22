@@ -112,37 +112,3 @@ rapidjson::Document HierarchyChangeRecord::AsJson(rapidjson::Document::Allocator
     ECPresentationSerializerContext ctx;
     return AsJson(ctx, allocator);
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document HierarchyUpdateRecord::AsJson(ECPresentationSerializerContextR ctx, rapidjson::Document::AllocatorType* allocator) const
-    {
-    return ECPresentationManager::GetSerializer().AsJson(ctx, *this, allocator);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document HierarchyUpdateRecord::AsJson(rapidjson::Document::AllocatorType* allocator) const
-    {
-    ECPresentationSerializerContext ctx;
-    return AsJson(ctx, allocator);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document HierarchyUpdateRecord::ExpandedNode::AsJson(ECPresentationSerializerContextR ctx, rapidjson::Document::AllocatorType* allocator) const
-    {
-    return ECPresentationManager::GetSerializer().AsJson(ctx, *this, allocator);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document HierarchyUpdateRecord::ExpandedNode::AsJson(rapidjson::Document::AllocatorType* allocator) const
-    {
-    ECPresentationSerializerContext ctx;
-    return AsJson(ctx, allocator);
-    }
