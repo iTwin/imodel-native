@@ -36,7 +36,6 @@ private:
     mutable BeMutex m_mutex;
 protected:
     void _Start() override {BeMutexHolder lock(m_mutex); std::for_each(m_handlers.begin(), m_handlers.end(), [](auto const& h){h->Start();});}
-    void _Accept(HierarchyUpdateRecord const& record) override {BeMutexHolder lock(m_mutex); std::for_each(m_handlers.begin(), m_handlers.end(), [&record](auto const& h){h->Accept(record);});}
     void _Accept(FullUpdateRecord const& record) override {BeMutexHolder lock(m_mutex); std::for_each(m_handlers.begin(), m_handlers.end(), [&record](auto const& h){h->Accept(record);});}
     void _Finish() override {BeMutexHolder lock(m_mutex); std::for_each(m_handlers.begin(), m_handlers.end(), [](auto const& h){h->Finish();});}
 public:
@@ -761,7 +760,7 @@ RulesDrivenECPresentationManagerImpl::RulesDrivenECPresentationManagerImpl(Param
     m_contentCache = new ContentCache(params.GetContentCachingParams().GetPrivateCacheSize());
 
     m_updateHandler = new UpdateHandler(*m_nodesCachesManager, m_contentCache, *m_connections, *m_nodesProviderContextFactory,
-        *m_nodesProviderFactory, *m_rulesetECExpressionsCache, params.GetUiStateProvider());
+        *m_nodesProviderFactory, *m_rulesetECExpressionsCache);
     m_updateHandler->SetRecordsHandler(std::make_unique<CompositeUpdateRecordsHandler>(params.GetUpdateRecordsHandlers()));
 
     m_connections->AddListener(*this);

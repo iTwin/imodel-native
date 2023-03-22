@@ -23,7 +23,6 @@ struct TestUpdateRecordsHandler : IUpdateRecordsHandler
 {
 protected:
     void _Start() override {}
-    void _Accept(HierarchyUpdateRecord const&) override {}
     void _Accept(FullUpdateRecord const&) override {}
     void _Finish() override {}
 public:

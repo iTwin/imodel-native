@@ -69,7 +69,6 @@ private:
     std::shared_ptr<NodesCache> m_nodesCache;
     bset<AffectedHierarchyLevelIdentifier> m_handledHierarchies;
     bset<Utf8String> m_reportedContentRulesetIds;
-    bmap<Utf8String, std::shared_ptr<UiState>> m_uiState;
     bmap<AffectedHierarchyLevelIdentifier, std::shared_ptr<IHierarchyLevelLocker>> m_hierarchyLocks;
 public:
     bset<AffectedHierarchyLevelIdentifier>& GetHandledHierarchies() {return m_handledHierarchies;}
@@ -79,8 +78,6 @@ public:
     bmap<AffectedHierarchyLevelIdentifier, std::shared_ptr<IHierarchyLevelLocker>>& GetHierarchyLocks() {return m_hierarchyLocks;}
     void SetNodesCache(std::shared_ptr<NodesCache> cache) {m_nodesCache = cache;}
     std::shared_ptr<NodesCache> GetNodesCache() const {return m_nodesCache;}
-    void SetUiState(bmap<Utf8String, std::shared_ptr<UiState>> rulesetsUiState) {m_uiState = rulesetsUiState;}
-    bmap<Utf8String, std::shared_ptr<UiState>> const& GetUiState() const {return m_uiState;}
 };
 
 /*=================================================================================**//**
@@ -122,7 +119,6 @@ public:
     ECPRESENTATION_EXPORT IUpdateTaskPtr CreateContentInvalidationTask(ContentCache&, UpdateContext&, ContentProviderR) const;
 
     // reporting tasks
-    ECPRESENTATION_EXPORT IUpdateTaskPtr CreateReportTask(HierarchyUpdateRecord) const;
     ECPRESENTATION_EXPORT IUpdateTaskPtr CreateReportTask(FullUpdateRecord) const;
 };
 
@@ -138,7 +134,6 @@ private:
     IECExpressionsCacheProvider& m_ecexpressionsCacheProvider;
     std::unique_ptr<IUpdateRecordsHandler> m_updateRecordsHandler;
     HierarchyUpdater* m_hierarchyUpdater;
-    std::shared_ptr<IUiStateProvider> m_uiStateProvider;
     mutable BeMutex m_mutex;
 
 private:
@@ -153,7 +148,7 @@ private:
 
 public:
     ECPRESENTATION_EXPORT UpdateHandler(INodesCacheManager const&, ContentCache*, IConnectionManagerCR, INodesProviderContextFactoryCR,
-        INodesProviderFactoryCR, IECExpressionsCacheProvider&, std::shared_ptr<IUiStateProvider>);
+        INodesProviderFactoryCR, IECExpressionsCacheProvider&);
     ECPRESENTATION_EXPORT ~UpdateHandler();
     UpdateTasksFactory const& GetTasksFactory() const {return m_tasksFactory;}
     void SetRecordsHandler(std::unique_ptr<IUpdateRecordsHandler> handler) {m_updateRecordsHandler = std::move(handler); m_tasksFactory.SetRecordsHandler(m_updateRecordsHandler.get());}

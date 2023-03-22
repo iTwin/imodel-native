@@ -18,7 +18,6 @@
 #include <ECPresentation/RulesetVariables.h>
 #include <ECPresentation/ECInstanceChangeEvents.h>
 #include <ECPresentation/Rules/PresentationRules.h>
-#include <ECPresentation/IUiStateProvider.h>
 #include <ECPresentation/Update.h>
 #include <ECPresentation/ECPresentationManagerRequestParams.h>
 #include <ECPresentation/ECPresentationErrors.h>
@@ -263,7 +262,6 @@ struct ECPresentationManager : public NonCopyableClass
         IPropertyCategorySupplier const* m_categorySupplier;
         bvector<std::shared_ptr<ECInstanceChangeEventSource>> m_ecInstanceChangeEventSources;
         bvector<std::shared_ptr<IUpdateRecordsHandler>> m_updateRecordsHandlers;
-        std::shared_ptr<IUiStateProvider> m_uiStateProvider;
     public:
         //! Constructor.
         //! @param[in] paths Known directory paths required by the presentation manager
@@ -296,8 +294,6 @@ struct ECPresentationManager : public NonCopyableClass
         void SetECInstanceChangeEventSources(bvector<std::shared_ptr<ECInstanceChangeEventSource>> sources) {m_ecInstanceChangeEventSources = sources;}
         bvector<std::shared_ptr<IUpdateRecordsHandler>> const& GetUpdateRecordsHandlers() const {return m_updateRecordsHandlers;}
         void SetUpdateRecordsHandlers(bvector<std::shared_ptr<IUpdateRecordsHandler>> handlers) {m_updateRecordsHandlers = handlers;}
-        std::shared_ptr<IUiStateProvider> GetUiStateProvider() const {return m_uiStateProvider;}
-        void SetUiStateProvider(std::shared_ptr<IUiStateProvider> provider) {m_uiStateProvider = provider;}
     };
 
 private:

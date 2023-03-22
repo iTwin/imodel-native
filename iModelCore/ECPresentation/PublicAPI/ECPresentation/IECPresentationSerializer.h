@@ -39,8 +39,6 @@ protected:
     virtual void _AsJson(ContextR, ContentDescriptor::RelatedContentField const&, RapidJsonDocumentR) const = 0;
 
     virtual rapidjson::Document _AsJson(ContextR, HierarchyChangeRecord const&, rapidjson::Document::AllocatorType*) const = 0;
-    virtual rapidjson::Document _AsJson(ContextR, HierarchyUpdateRecord const&, rapidjson::Document::AllocatorType*) const = 0;
-    virtual rapidjson::Document _AsJson(ContextR, HierarchyUpdateRecord::ExpandedNode const&, rapidjson::Document::AllocatorType*) const = 0;
 
     virtual void _ParamsAsJson(ContextR, ContentFieldEditor::Params const&, RapidJsonDocumentR) const = 0;
     virtual void _AsJson(ContextR, FieldEditorJsonParams const&, RapidJsonDocumentR) const = 0;
@@ -111,10 +109,6 @@ public:
     virtual ~IECPresentationSerializer() {}
 
     rapidjson::Document AsJson(ContextR ctx, HierarchyChangeRecord const& changeRecord, rapidjson::Document::AllocatorType* allocator = nullptr) const {return _AsJson(ctx, changeRecord, allocator);}
-
-    rapidjson::Document AsJson(ContextR ctx, HierarchyUpdateRecord const& updateRecord, rapidjson::Document::AllocatorType* allocator = nullptr) const {return _AsJson(ctx, updateRecord, allocator);}
-
-    rapidjson::Document AsJson(ContextR ctx, HierarchyUpdateRecord::ExpandedNode const& expandedNode, rapidjson::Document::AllocatorType* allocator = nullptr) const {return _AsJson(ctx, expandedNode, allocator);}
 
     rapidjson::Document AsJson(ContextR ctx, ConnectionEvent const& connectionEvent, rapidjson::Document::AllocatorType* allocator = nullptr) const {return _AsJson(ctx, connectionEvent, allocator);}
 

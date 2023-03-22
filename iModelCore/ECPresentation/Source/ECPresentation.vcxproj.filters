@@ -84,9 +84,6 @@
     <ClInclude Include="..\PublicAPI\ECPresentation\Iterators.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\PublicAPI\ECPresentation\IUiStateProvider.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\PublicAPI\ECPresentation\KeySet.h">
       <Filter>Header Files</Filter>
     </ClInclude>

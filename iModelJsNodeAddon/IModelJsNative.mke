@@ -112,8 +112,6 @@ $(o)UpdateRecordsHandler$(oext) : $(presentationDir)UpdateRecordsHandler.cpp $(p
 
 $(o)ECPresentationSerializer$(oext) : $(presentationDir)ECPresentationSerializer.cpp $(presentationDir)ECPresentationSerializer.h ${MultiCompileDepends}
 
-$(o)UiStateProvider$(oext) : $(presentationDir)UiStateProvider.cpp $(presentationDir)UiStateProvider.h ${MultiCompileDepends}
-
 $(o)DgnDbWorker$(oext) : $(baseDir)DgnDbWorker.cpp $(baseDir)DgnDbWorker.h ${MultiCompileDepends}
 
 $(o)ElementMesh$(oext) : $(baseDir)ElementMesh.cpp $(baseDir)DgnDbWorker.h ${MultiCompileDepends}

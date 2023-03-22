@@ -152,70 +152,6 @@ public:
 };
 
 //=======================================================================================
-//! A class that represents updated part of the hierarchy
-//! @ingroup GROUP_Presentation
-// @bsiclass
-//=======================================================================================
-struct HierarchyUpdateRecord
-{
-    //=======================================================================================
-    //! A class that represents expanded node in updated part of the hierarchy.
-    // @bsiclass
-    //=======================================================================================
-    struct ExpandedNode
-    {
-    private:
-        NavNodeCPtr m_node;
-        size_t m_position;
-
-    public:
-        ExpandedNode(NavNodeCR node, size_t position)
-            : m_node(&node), m_position(position)
-            {}
-        NavNodeCPtr GetNode() const {return m_node;}
-        size_t GetPosition() const {return m_position;}
-        //! Get this node as JSON.
-        ECPRESENTATION_EXPORT rapidjson::Document AsJson(ECPresentationSerializerContextR ctx, rapidjson::Document::AllocatorType* = nullptr) const;
-        ECPRESENTATION_EXPORT rapidjson::Document AsJson(rapidjson::Document::AllocatorType* = nullptr) const;
-    };
-
-private:
-    Utf8String m_dbFileName;
-    Utf8String m_rulesetId;
-    std::shared_ptr<InstanceFilterDefinition const> m_instanceFilter;
-    NavNodeCPtr m_parentNode;
-    size_t m_nodesCount;
-    bvector<ExpandedNode> m_expandedNodes;
-
-public:
-    HierarchyUpdateRecord(Utf8String rulesetId, Utf8String ecdbFileName, NavNodeCP parentNode, std::shared_ptr<InstanceFilterDefinition const> instanceFilter, size_t nodesCount, bvector<ExpandedNode> expandedNodes = bvector<ExpandedNode>())
-        : m_rulesetId(std::move(rulesetId)), m_dbFileName(std::move(ecdbFileName)), m_parentNode(parentNode), m_instanceFilter(instanceFilter), m_nodesCount(nodesCount), m_expandedNodes(expandedNodes)
-        {}
-
-    //! Get ID of the ruleset that was used to produce the hierarchy
-    Utf8StringCR GetRulesetId() const { return m_rulesetId; }
-
-    //! Get file name of the ECDb that was used to produce the hierarchy
-    Utf8StringCR GetECDbFileName() const { return m_dbFileName; }
-
-    //! Get parent node of updated hierarchy part
-    NavNodeCPtr GetParentNode() const {return m_parentNode;}
-
-    //! Get instance filter that was applied for this hierarchy level
-    InstanceFilterDefinitionCP GetInstanceFilter() const {return m_instanceFilter.get();}
-
-    //! Get nodes count in hierarchy level after update
-    size_t GetNodesCount() const {return m_nodesCount;}
-
-    //! Get expanded nodes in hierarchy level
-    bvector<ExpandedNode> const& GetExpandedNodes() const {return m_expandedNodes;}
-
-    //! Get this record as JSON.
-    ECPRESENTATION_EXPORT rapidjson::Document AsJson(ECPresentationSerializerContextR ctx, rapidjson::Document::AllocatorType* = nullptr) const;
-    ECPRESENTATION_EXPORT rapidjson::Document AsJson(rapidjson::Document::AllocatorType* = nullptr) const;
-};
-
-//=======================================================================================
 //! A class that represents a full update request.
 //! @ingroup GROUP_Presentation
 // @bsiclass
@@ -271,10 +207,6 @@ struct IUpdateRecordsHandler
         //! Called before update to clear caches.
         virtual void _Start() = 0;
 
-        //! Called when hierarchy level is updated.
-        //! @param[in] record   The update record that contains information about the change.
-        virtual void _Accept(HierarchyUpdateRecord const& record) = 0;
-
         //! Called when a full update should be performed.
         //! @param[in] record   The update record that contains information about the update.
         virtual void _Accept(FullUpdateRecord const& record) = 0;
@@ -287,9 +219,6 @@ struct IUpdateRecordsHandler
 
         //! Starts a new report.
         void Start() { _Start(); }
-
-        //! Accepts an @ref HierarchyUpdateRecord.
-        void Accept(HierarchyUpdateRecord const& record) { _Accept(record); }
 
         //! Accepts a @ref FullUpdateRecord.
         void Accept(FullUpdateRecord const& record) { _Accept(record); }
