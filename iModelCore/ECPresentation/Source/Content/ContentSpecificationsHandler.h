@@ -77,7 +77,8 @@ public:
     RelatedPropertiesSpecificationScopeInfo const& GetScope() const {return m_scope;}
     static bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> Create(RelatedPropertiesSpecificationCR, RelatedPropertiesSpecificationScopeInfo const&);
     static bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> Create(bvector<RelatedPropertiesSpecificationP> const&, RelatedPropertiesSpecificationScopeInfo const&);
-};
+    static void MoveNestedSpecification(bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>>&, bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>>&&, RelatedPropertiesSpecificationCR);
+    };
 
 /*=================================================================================**//**
 * @bsiclass
