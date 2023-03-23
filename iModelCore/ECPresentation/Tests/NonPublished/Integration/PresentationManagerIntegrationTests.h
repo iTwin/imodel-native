@@ -70,6 +70,7 @@ struct PresentationManagerIntegrationTests : ECPresentationTest
     virtual std::unique_ptr<IConnectionManager> _CreateConnectionManager();
     virtual void _ConfigureManagerParams(ECPresentationManager::Params&);
     virtual ECDbR _GetProject();
+    virtual ECClassCP _GetClass(Utf8CP schemaName, Utf8CP className);
     virtual void SetUp() override;
     virtual void TearDown() override;
 
@@ -111,17 +112,14 @@ struct PresentationManagerIntegrationTests : ECPresentationTest
 struct TestUpdateRecordsHandler : IUpdateRecordsHandler
 {
 private:
-    bvector<HierarchyUpdateRecord> m_records;
     bvector<FullUpdateRecord> m_fullUpdateRecords;
 protected:
-    void _Start() override { m_records.clear(); m_fullUpdateRecords.clear(); }
-    void _Accept(HierarchyUpdateRecord const& record) override { m_records.push_back(record); }
+    void _Start() override { m_fullUpdateRecords.clear(); }
     void _Accept(FullUpdateRecord const& record) override { m_fullUpdateRecords.push_back(record); }
     void _Finish() override {}
 public:
-    bvector<HierarchyUpdateRecord> const& GetRecords() const { return m_records; }
     bvector<FullUpdateRecord> const& GetFullUpdateRecords() const { return m_fullUpdateRecords; }
-    void Clear() { m_records.clear(); m_fullUpdateRecords.clear(); }
+    void Clear() { m_fullUpdateRecords.clear(); }
 };
 
 /*=================================================================================**//**
@@ -144,6 +142,7 @@ struct UpdateTests : PresentationManagerIntegrationTests
     virtual void SetUp() override;
     virtual ECDbR _GetProject() override;
     virtual void _ConfigureManagerParams(ECPresentationManager::Params&) override;
+    virtual ECClassCP _GetClass(Utf8CP schemaName, Utf8CP className) override;
     virtual std::unique_ptr<IConnectionManager> _CreateConnectionManager() override;
 
     void Sync() { m_manager->GetTasksCompletion().wait(); }

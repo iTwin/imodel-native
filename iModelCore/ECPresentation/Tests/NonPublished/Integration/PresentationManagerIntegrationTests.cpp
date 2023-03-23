@@ -66,6 +66,14 @@ ECDbR PresentationManagerIntegrationTests::_GetProject()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+ECClassCP PresentationManagerIntegrationTests::_GetClass(Utf8CP schemaName, Utf8CP className)
+    {
+    return s_project->GetECDb().Schemas().GetClass(schemaName, className);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 void PresentationManagerIntegrationTests::SetUp()
     {
     ECPresentationTest::SetUp();
@@ -119,7 +127,7 @@ ECSchemaCP PresentationManagerIntegrationTests::GetSchema()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClassCP PresentationManagerIntegrationTests::GetClass(Utf8CP schemaName, Utf8CP className)
     {
-    return s_project->GetECDb().Schemas().GetClass(schemaName, className);
+    return _GetClass(schemaName, className);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -456,6 +464,15 @@ ECDbR UpdateTests::_GetProject()
         m_db.OpenBeSQLiteDb(projectPath, Db::OpenParams(Db::OpenMode::ReadWrite));
         }
     return m_db;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECClassCP UpdateTests::_GetClass(Utf8CP schemaName, Utf8CP className)
+    {
+    BeAssert(m_db.IsDbOpen());
+    return m_db.Schemas().GetClass(schemaName, className);
     }
 
 /*---------------------------------------------------------------------------------**//**
