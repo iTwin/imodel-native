@@ -53,7 +53,7 @@ TEST_F(SchemaSyncTestFixture, Test) {
     ECDbHub hub;
     SharedSchemaDb schemaChannel("sync-db");
     auto b1 = hub.CreateBriefcase();
-    ASSERT_EQ(SharedSchemaChannel::Status::SUCCESS,
+    ASSERT_EQ(SharedSchemaChannel::Status::OK,
         b1->Schemas().GetSharedChannel().Init(schemaChannel.GetChannelUri()));
 
     b1->PullMergePush("init");
@@ -137,7 +137,7 @@ TEST_F(SchemaSyncTestFixture, Test) {
     });
 
     Test("pull changes from sync-db into b2 and verify class, table and index exists", [&]() {
-        ASSERT_EQ(SharedSchemaChannel::Status::SUCCESS, schemaChannel.Pull(*b2,[&](){
+        ASSERT_EQ(SharedSchemaChannel::Status::OK, schemaChannel.Pull(*b2,[&](){
             auto pipe1 = b2->Schemas().GetClass("TestSchema1", "Pipe1");
             ASSERT_NE(pipe1, nullptr);
             ASSERT_EQ(pipe1->GetPropertyCount(), 2);
@@ -205,7 +205,7 @@ TEST_F(SchemaSyncTestFixture, Test) {
     });
 
     Test("pull changes from sync db into master db and check if schema changes was there and valid", [&]() {
-        ASSERT_EQ(SharedSchemaChannel::Status::SUCCESS, schemaChannel.Pull(*b1, [&]() {
+        ASSERT_EQ(SharedSchemaChannel::Status::OK, schemaChannel.Pull(*b1, [&]() {
             auto pipe1 = b1->Schemas().GetClass("TestSchema1", "Pipe1");
             ASSERT_NE(pipe1, nullptr);
             ASSERT_EQ(pipe1->GetPropertyCount(), 4);

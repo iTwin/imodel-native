@@ -845,7 +845,11 @@ RevisionStatus TxnManager::MergeDataChangesInRevision(DgnRevisionCR revision, Re
     bool mergeNeeded = HasPendingTxns() && m_initTableHandlers; // if tablehandlers are not present we can't merge - happens for schema upgrade
     Rebase rebase;
 
-    DbResult result = ApplyChanges(changeStream, TxnAction::Merge, containsSchemaChanges, mergeNeeded ? &rebase : nullptr);
+    // double insert with same values is not detected as conflict.
+    // shared schema channel expect this but generally enable for schema changes.
+    auto const ignoreNoop = containsSchemaChanges;
+
+    DbResult result = ApplyChanges(changeStream, TxnAction::Merge, containsSchemaChanges, mergeNeeded ? &rebase : nullptr, false, ignoreNoop);
     if (result != BE_SQLITE_OK) {
         LOG.fatalv("MergeDataChangesInRevision failed to ApplyChanges: %s", BeSQLiteLib::GetErrorName(result));
         return RevisionStatus::ApplyError;
@@ -1232,7 +1236,7 @@ struct DisableTracking {
 * Apply a changeset to the database. Notify all TxnTables about what was in the Changeset afterwards.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bool containsSchemaChanges, Rebase* rebase, bool invert) {
+DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bool containsSchemaChanges, Rebase* rebase, bool invert, bool ignoreNoop) {
     BeAssert(action != TxnAction::None);
     AutoRestore<TxnAction> saveAction(&m_action, action);
 
@@ -1254,7 +1258,7 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
 
     if (true) {
         DisableTracking _v(*this);
-        auto result = changeset.ApplyChanges(m_dgndb, rebase, invert); // this actually updates the database with the changes
+        auto result = changeset.ApplyChanges(m_dgndb, rebase, invert, ignoreNoop); // this actually updates the database with the changes
         if (result != BE_SQLITE_OK) {
             LOG.errorv("failed to apply changeset: %s", BeSQLiteLib::GetErrorName(result));
             BeAssert(false);
@@ -1433,8 +1437,13 @@ BentleyStatus TxnManager::PatchSlowDdlChanges(Utf8StringR patchedDDL, Utf8String
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult TxnManager::ApplyDdlChanges(DdlChangesCR ddlChanges) {
     BeAssert(!ddlChanges._IsEmpty() && "DbSchemaChangeSet is empty");
-    bool wasTracking = EnableTracking(false);
+    auto info = GetDgnDb().Schemas().GetSharedChannel().GetInfo();
+    if (!info.IsEmpty()) {
+        LOG.infov("Skipping DDL Changes as IModel has shared schema channel enabled. ChannelId {%s}.", info.GetChannelId().ToString().c_str());
+        return BE_SQLITE_OK;
+    }
 
+    bool wasTracking = EnableTracking(false);
     Utf8String originalDDL = ddlChanges.ToString();
     Utf8String patchedDDL;
     DbResult result = BE_SQLITE_OK;

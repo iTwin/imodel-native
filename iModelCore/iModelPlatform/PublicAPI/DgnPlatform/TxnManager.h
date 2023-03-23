@@ -467,7 +467,7 @@ private:
     BeSQLite::DbResult ReadDataChanges(BeSQLite::ChangeSet&, TxnId rowid, TxnAction);
 
     void ApplyTxnChanges(TxnId, TxnAction);
-    BeSQLite::DbResult ApplyChanges(BeSQLite::ChangeStreamCR, TxnAction txnAction, bool containsSchemaChanges, BeSQLite::Rebase* = nullptr, bool invert = false);
+    BeSQLite::DbResult ApplyChanges(BeSQLite::ChangeStreamCR, TxnAction txnAction, bool containsSchemaChanges, BeSQLite::Rebase* = nullptr, bool invert = false, bool ignoreNoop = false);
     BeSQLite::DbResult ApplyDdlChanges(BeSQLite::DdlChangesCR);
 
     void OnBeginApplyChanges();
