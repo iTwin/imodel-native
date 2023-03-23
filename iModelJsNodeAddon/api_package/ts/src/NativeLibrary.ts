@@ -1187,7 +1187,6 @@ export declare namespace IModelJsNative {
     public clearRulesets(): ECPresentationManagerResponse<void>;
     public handleRequest(db: DgnDb, options: string): { result: Promise<ECPresentationManagerResponse<string>>, cancel: () => void };
     public getUpdateInfo(): ECPresentationManagerResponse<any>;
-    public updateHierarchyState(db: DgnDb, rulesetId: string, stateChanges: Array<{ nodeKey: undefined | object, isExpanded?: boolean, instanceFilters?: string[] }>): ECPresentationManagerResponse<void>;
     public dispose(): void;
   }
 

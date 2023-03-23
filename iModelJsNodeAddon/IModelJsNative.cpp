@@ -16,7 +16,6 @@
 #include "SignalTestUtility.h"
 #include "presentation/ECPresentationUtils.h"
 #include "presentation/UpdateRecordsHandler.h"
-#include "presentation/UiStateProvider.h"
 #include <BeSQLite/Profiler.h>
 #include <folly/BeFolly.h>
 #include "SchemaUtil.h"
@@ -5051,7 +5050,6 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
     RefCountedPtr<SimpleRuleSetLocater> m_ruleSetLocater;
     ECPresentation::JsonLocalState m_localState;
     std::shared_ptr<IModelJsECPresentationUpdateRecordsHandler> m_updateRecords;
-    std::shared_ptr<IModelJsECPresentationUiStateProvider> m_uiStateProvider;
     Napi::ThreadSafeFunction m_threadSafeFunc;
 
     static bool InstanceOf(Napi::Value val) {
@@ -5079,7 +5077,6 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
             InstanceMethod("clearRulesets", &NativeECPresentationManager::ClearRulesets),
             InstanceMethod("handleRequest", &NativeECPresentationManager::HandleRequest),
             InstanceMethod("getUpdateInfo", &NativeECPresentationManager::GetUpdateInfo),
-            InstanceMethod("updateHierarchyState", &NativeECPresentationManager::UpdateHierarchyState),
             InstanceMethod("dispose", &NativeECPresentationManager::Terminate)
             });
 
@@ -5130,9 +5127,8 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         try
             {
             m_updateRecords = std::make_shared<IModelJsECPresentationUpdateRecordsHandler>();
-            m_uiStateProvider = std::make_shared<IModelJsECPresentationUiStateProvider>();
             m_presentationManager = std::unique_ptr<ECPresentationManager>(ECPresentationUtils::CreatePresentationManager(T_HOST.GetIKnownLocationsAdmin(),
-                m_localState, m_updateRecords, m_uiStateProvider, props));
+                m_localState, m_updateRecords, props));
             m_ruleSetLocater = SimpleRuleSetLocater::Create();
             m_presentationManager->GetLocaters().RegisterLocater(*m_ruleSetLocater);
             m_threadSafeFunc = Napi::ThreadSafeFunction::New(Env(), Napi::Function::New(Env(), [](NapiInfoCR info) {}), "NativeECPresentationManager", 0, 1);
@@ -5359,15 +5355,6 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         REQUIRE_ARGUMENT_STRING(0, ruleSetId);
         REQUIRE_ARGUMENT_STRING(1, variableId);
         ECPresentationResult result = ECPresentationUtils::UnsetRulesetVariableValue(*m_presentationManager, ruleSetId, variableId);
-        return CreateReturnValue(result);
-        }
-
-    Napi::Value UpdateHierarchyState(NapiInfoCR info)
-        {
-        REQUIRE_ARGUMENT_OBJ(0, NativeDgnDb, db);
-        REQUIRE_ARGUMENT_STRING(1, ruleSetId);
-        REQUIRE_ARGUMENT_ANY_OBJ(2, stateChanges);
-        ECPresentationResult result = m_uiStateProvider->UpdateHierarchyState(*m_presentationManager, db->GetDgnDb(), ruleSetId, stateChanges);
         return CreateReturnValue(result);
         }
 

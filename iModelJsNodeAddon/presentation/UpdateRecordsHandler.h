@@ -24,7 +24,6 @@ private:
     std::unique_ptr<FinalReport> m_finalReport;
 protected:
     void _Start() override;
-    void _Accept(HierarchyUpdateRecord const&) override;
     void _Accept(FullUpdateRecord const&) override;
     void _Finish() override;
 public:

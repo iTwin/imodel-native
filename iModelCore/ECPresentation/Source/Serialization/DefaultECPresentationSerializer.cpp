@@ -397,44 +397,6 @@ rapidjson::Document DefaultECPresentationSerializer::_AsJson(ContextR ctx, Hiera
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document DefaultECPresentationSerializer::_AsJson(ContextR ctx, HierarchyUpdateRecord const& updateRecord, rapidjson::Document::AllocatorType* allocator) const
-    {
-    rapidjson::Document json(allocator);
-    json.SetObject();
-    if (updateRecord.GetParentNode().IsValid())
-        json.AddMember("Parent", updateRecord.GetParentNode()->GetKey()->AsJson(ctx, &json.GetAllocator()), json.GetAllocator());
-    json.AddMember("NodesCount", (uint64_t)updateRecord.GetNodesCount(), json.GetAllocator());
-
-    rapidjson::Value expandedNodes(rapidjson::kArrayType);
-    for (HierarchyUpdateRecord::ExpandedNode const& expandedNode : updateRecord.GetExpandedNodes())
-        expandedNodes.PushBack(expandedNode.AsJson(ctx, &json.GetAllocator()), json.GetAllocator());
-    if (!expandedNodes.Empty())
-        json.AddMember("ExpandedNodes", expandedNodes.Move(), json.GetAllocator());
-
-    json.AddMember("RulesetId", rapidjson::Value(updateRecord.GetRulesetId().c_str(), json.GetAllocator()), json.GetAllocator());
-    json.AddMember("ECDbFileName", rapidjson::Value(updateRecord.GetECDbFileName().c_str(), json.GetAllocator()), json.GetAllocator());
-
-    if (updateRecord.GetInstanceFilter() != nullptr)
-        json.AddMember("InstanceFilter", AsJson(ctx, *updateRecord.GetInstanceFilter(), &json.GetAllocator()), json.GetAllocator());
-
-    return json;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document DefaultECPresentationSerializer::_AsJson(ContextR ctx, HierarchyUpdateRecord::ExpandedNode const& expandedNode, rapidjson::Document::AllocatorType* allocator) const
-    {
-    rapidjson::Document json(allocator);
-    json.SetObject();
-    json.AddMember("Node", expandedNode.GetNode()->AsJson(ctx, &json.GetAllocator()), json.GetAllocator());
-    json.AddMember("Position", (uint64_t)expandedNode.GetPosition(), json.GetAllocator());
-    return json;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 void DefaultECPresentationSerializer::_AsJson(ContextR ctx, FieldEditorJsonParams const& jsonParams, RapidJsonDocumentR paramsBaseJson) const
     {
     paramsBaseJson.CopyFrom(jsonParams.GetJson(), paramsBaseJson.GetAllocator());

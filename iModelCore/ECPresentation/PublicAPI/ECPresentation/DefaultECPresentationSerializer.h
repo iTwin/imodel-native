@@ -33,8 +33,6 @@ protected:
     ECPRESENTATION_EXPORT virtual void _AsJson(ContextR, ContentDescriptor::RelatedContentField const& relatedContentField, RapidJsonDocumentR nestedContentFieldJson) const override;
 
     ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(ContextR, HierarchyChangeRecord const&, rapidjson::Document::AllocatorType*) const override;
-    ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(ContextR, HierarchyUpdateRecord const&, rapidjson::Document::AllocatorType*) const override;
-    ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(ContextR, HierarchyUpdateRecord::ExpandedNode const&, rapidjson::Document::AllocatorType*) const override;
 
     virtual void _ParamsAsJson(ContextR, ContentFieldEditor::Params const&, RapidJsonDocumentR) const override {}
     ECPRESENTATION_EXPORT virtual void _AsJson(ContextR, FieldEditorJsonParams const& jsonParams, RapidJsonDocumentR paramsBaseJson) const override;

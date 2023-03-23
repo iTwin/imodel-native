@@ -100,7 +100,7 @@ struct ECPresentationUtils
     static ECPresentationResult CreateResultFromException(folly::exception_wrapper const&);
 
     static ECPresentationManager* CreatePresentationManager(Dgn::PlatformLib::Host::IKnownLocationsAdmin&, IJsonLocalState&,
-        std::shared_ptr<IUpdateRecordsHandler>, std::shared_ptr<IUiStateProvider>, Napi::Object const& props);
+        std::shared_ptr<IUpdateRecordsHandler>, BeJsConst props);
 
     static ECPresentationResult SetupRulesetDirectories(ECPresentationManager&, bvector<Utf8String> const&);
     static ECPresentationResult SetupSupplementalRulesetDirectories(ECPresentationManager&, bvector<Utf8String> const&);
