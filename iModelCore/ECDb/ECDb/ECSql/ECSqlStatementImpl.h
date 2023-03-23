@@ -64,7 +64,7 @@ struct ECSqlStatement::Impl final
         Impl() {}
         ~Impl() {}
 
-        ECSqlStatus Prepare(ECDbCR, Db const* dataSourceECDb, Utf8CP, ECCrudWriteToken const*, bool logOnError);
+        ECSqlStatus Prepare(ECDbCR, Db const* dataSourceECDb, Utf8CP, ECCrudWriteToken const*, bool logOnError, uint32_t colAliasPrefix = 0);
 
         bool IsPrepared() const { return m_preparedStatement != nullptr; }
 

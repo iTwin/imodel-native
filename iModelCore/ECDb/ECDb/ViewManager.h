@@ -195,9 +195,10 @@ struct ViewManager final {
         bool GetWritePolicy(WritePolicy& policy, ECN::ECClassCR viewClass) const;
         ClassList GetViewClasses (bool onlyValidViewClasses) const;
         ViewDef::WeakPtr GetViewDef(ECN::ECClassCR viewClass) const;
+        bool IsTransientView(ECN::ECClassId classId) const;
         BentleyStatus RefreshViews() const;
         bool HasTransientViews() const;
         bool ValidateViews(ClassList& failedViews, ClassList& validViews, bool reportIssues) const;
-        int SubstituteTransientViews(Utf8StringR out, Utf8StringCR originalQuery) const;
+        BentleyStatus GetTransientViewNativeSql(Utf8StringR out, ClassMap const& classMap, uint32_t viewId) const;
 };
 END_BENTLEY_SQLITE_EC_NAMESPACE

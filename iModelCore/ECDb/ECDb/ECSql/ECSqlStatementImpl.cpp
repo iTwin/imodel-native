@@ -19,7 +19,7 @@ NativeLogging::CategoryLogger* ECSqlStatement::Impl::s_prepareDiagnosticsLogger 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlStatement::Impl::Prepare(ECDbCR ecdb, Db const* dataSourceECDb, Utf8CP ecsql, ECCrudWriteToken const* writeToken, bool logErrors)
+ECSqlStatus ECSqlStatement::Impl::Prepare(ECDbCR ecdb, Db const* dataSourceECDb, Utf8CP ecsql, ECCrudWriteToken const* writeToken, bool logErrors, uint32_t colAliasPrefix)
     {
     m_hash64 = nullptr;
     auto filterAction = logErrors ?  IssueDataSource::FilterAction::Forward : IssueDataSource::FilterAction::Ignore;
@@ -64,7 +64,7 @@ ECSqlStatus ECSqlStatement::Impl::Prepare(ECDbCR ecdb, Db const* dataSourceECDb,
 #endif
     //Step 1: parse the ECSQL
     ECSqlParser parser;
-    std::unique_ptr<Exp> exp = parser.Parse(ecdb, ecsql, filteredScope.Source());
+    std::unique_ptr<Exp> exp = parser.Parse(ecdb, ecsql, filteredScope.Source(), colAliasPrefix);
     if (exp == nullptr)
         {
         Finalize();
@@ -84,6 +84,8 @@ ECSqlStatus ECSqlStatement::Impl::Prepare(ECDbCR ecdb, Db const* dataSourceECDb,
 
     //if dataSourceECDb is nullptr, the primary ECDb is used
     ECSqlPrepareContext ctx(preparedStatement, dataSourceECDb != nullptr ? *dataSourceECDb : ecdb, filteredScope.Source());
+    if(colAliasPrefix > 0)
+        ctx.SetColAliasPrefix(colAliasPrefix);
     ECSqlStatus stat = preparedStatement.Prepare(ctx, *exp, ecsql);
     if (!stat.IsSuccess())
         Finalize();

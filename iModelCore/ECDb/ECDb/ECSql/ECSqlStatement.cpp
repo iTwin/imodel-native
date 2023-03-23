@@ -75,6 +75,11 @@ ECSqlStatus ECSqlStatement::Prepare(SchemaManagerCR schemaManager, DbCR dataSour
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+ECSqlStatus ECSqlStatement::PrepareForEmbedding(ECDb const& ecdb, Utf8CP ecsql, uint32_t colAliasPrefix) { return m_pimpl->Prepare(ecdb, nullptr, ecsql, nullptr, true, colAliasPrefix); }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 bool ECSqlStatement::IsPrepared() const { return m_pimpl->IsPrepared(); }
 
 //---------------------------------------------------------------------------------------

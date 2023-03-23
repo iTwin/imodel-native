@@ -69,6 +69,7 @@ private:
     bvector<ParameterExp*> m_parameterExpList;
     bmap<Utf8CP, int, CompareIUtf8Ascii> m_ecsqlParameterNameToIndexMapping;
     int m_aliasCount = 0;
+    uint32_t m_colAliasPrefix = 0;
 
     std::vector<Utf8String> m_attachedTableSpaceCache;
     bool m_isAttachedTableSpaceCacheSetup = false;
@@ -87,7 +88,7 @@ private:
         return m_attachedTableSpaceCache;
         }
 public:
-    ECSqlParseContext(ECDbCR ecdb, IssueDataSource const& issues) : m_ecdb(ecdb), m_issues(issues),m_deferFinalize(false) {}
+    ECSqlParseContext(ECDbCR ecdb, IssueDataSource const& issues, uint32_t colAliasPrefix) : m_ecdb(ecdb), m_issues(issues),m_deferFinalize(false), m_colAliasPrefix(colAliasPrefix) {}
     BentleyStatus FinalizeParsing(Exp& rootExp);
     void PushArg(std::unique_ptr<ParseArg>);
     ParseArg const* CurrentArg() const;
@@ -122,9 +123,9 @@ private:
     private:
         ECSqlParser const& m_parser;
     public:
-        ScopedContext(ECSqlParser const& parser, ECDbCR ecdb, IssueDataSource const& issues) : m_parser(parser)
+        ScopedContext(ECSqlParser const& parser, ECDbCR ecdb, IssueDataSource const& issues, uint32_t colAliasPrefix) : m_parser(parser)
             {
-            m_parser.m_context = std::unique_ptr<ECSqlParseContext>(new ECSqlParseContext(ecdb, issues));
+            m_parser.m_context = std::unique_ptr<ECSqlParseContext>(new ECSqlParseContext(ecdb, issues, colAliasPrefix));
             }
 
         ~ScopedContext() { m_parser.m_context = nullptr; }
@@ -247,7 +248,7 @@ public:
     ECSqlParser() {}
     ~ECSqlParser() {}
 
-    std::unique_ptr<Exp> Parse(ECDbCR, Utf8CP ecsql, IssueDataSource const&) const;
+    std::unique_ptr<Exp> Parse(ECDbCR, Utf8CP ecsql, IssueDataSource const&, uint32_t colAliasPrefix = 0) const;
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

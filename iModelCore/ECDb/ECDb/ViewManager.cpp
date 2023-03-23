@@ -1338,6 +1338,8 @@ DbResult RowCopier::Update(int64_t& rowCount) {
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
 void ViewManager::LoadAndCacheViewDefs(bool forced) const {
+    if(m_loading.load())
+        return; //prevent recursive stack overflow calls
     BeMutexHolder holder(m_ecdb.GetImpl().GetMutex());
     if (forced) {
         ClearCache();
@@ -1424,6 +1426,15 @@ ViewDef::WeakPtr ViewManager::GetViewDef(ECN::ECClassCR viewClass) const {
         return ViewDef::WeakPtr(it->second);
     }
     return ViewDef::WeakPtr();
+}
+
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+------
+bool ViewManager::IsTransientView(ECClassId classId) const {
+    LoadAndCacheViewDefs(/* forced = */ false);
+    auto it = m_cachedViewDef.find(classId);
+    return it != m_cachedViewDef.end();
 }
 
 //--------------------------------------------------------------------------------------
@@ -1603,46 +1614,31 @@ bool ViewManager::HasTransientViews() const {
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
-int ViewManager::SubstituteTransientViews(Utf8StringR out, Utf8StringCR originalQuery) const {
+BentleyStatus ViewManager::GetTransientViewNativeSql(Utf8StringR out, ClassMap const& classMap, uint32_t viewId) const {
     BeMutexHolder holder(m_ecdb.GetImpl().GetMutex());
-    if (!HasTransientViews()) {
-        out = originalQuery;
-        return 0;
+    ECClassCR ecClass = classMap.GetClass();
+    auto vc = m_cachedViewDef.find(ecClass.GetId());
+    if (vc == m_cachedViewDef.end()) {
+        return BentleyStatus::ERROR;
+    }
+    auto viewDef = vc->second;
+    if (!viewDef->IsTransient()) {
+        return BentleyStatus::ERROR;
+    }
+    Utf8String ecsql = viewDef->CreateTransientECSql();
+    ECSqlStatement stmt;
+    if(ECSqlStatus::Success != stmt.PrepareForEmbedding(m_ecdb, ecsql.c_str(), viewId)) {
+        return BentleyStatus::ERROR;
     }
 
-    re2::RE2::Options opt;
-    opt.set_case_sensitive(false);
-    opt.set_log_errors(false);
+    Utf8CP native = stmt.GetNativeSql();
+    //enclose this sql in subquery (paranthesis and alias)
+    //access stmt impl and get column names and aliases
+    //map ecproperties to columns
+    //return map
 
-
-    re2::RE2 re(R"regex((?P<name>(?:\[?\s*)(?P<alias>[_\w\d]+)\s*\]?\.\[?\s*(?P<class>[_\w\d]+)\s*\]?))regex", opt);
-    std::string fullName;
-    std::string schemaName;
-    std::string className;
-    re2::StringPiece text = originalQuery;
-    auto tBegin = &originalQuery[0];
-    int nSubstitutionCount = 0;
-    while (RE2::FindAndConsume(&text, re, &fullName, &schemaName, &className)) {
-        const size_t tLength = (text.data() - tBegin -  fullName.length()+ 1);
-        out.append(tBegin, tLength);
-        tBegin = text.data();
-        const auto classP = m_ecdb.Schemas().GetClass(schemaName, className, SchemaLookupMode::AutoDetect);
-        if (classP != nullptr) {
-            auto vc = m_cachedViewDef.find(classP->GetId());
-            if (vc != m_cachedViewDef.end()) {
-                auto viewDef = vc->second;
-                if (viewDef->IsTransient()) {
-                    out.append("(").append( viewDef->CreateTransientECSql()).append(")");
-                    ++nSubstitutionCount;
-                    continue;
-                }
-            }
-        }
-        out.append(fullName);
-    }
-
-   out.append(tBegin);
-   return nSubstitutionCount;
+    out.append(native);
+    return BentleyStatus::SUCCESS;
 }
 
 //--------------------------------------------------------------------------------------

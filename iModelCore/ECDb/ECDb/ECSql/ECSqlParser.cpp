@@ -13,8 +13,8 @@ USING_NAMESPACE_BENTLEY_EC
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-std::unique_ptr<Exp> ECSqlParser::Parse(ECDbCR ecdb, Utf8CP ecsql, IssueDataSource const& issues) const {
-    ScopedContext scopedContext(*this, ecdb , issues);
+std::unique_ptr<Exp> ECSqlParser::Parse(ECDbCR ecdb, Utf8CP ecsql, IssueDataSource const& issues, uint32_t colAliasPrefix) const {
+    ScopedContext scopedContext(*this, ecdb , issues, colAliasPrefix);
     //Parse statement
     Utf8String error;
     OSQLParser parser;
@@ -3403,7 +3403,10 @@ BentleyStatus ECSqlParseContext::GetConstraintClasses(ClassListById& classes, EC
 Utf8String ECSqlParseContext::GenerateAlias()
     {
     Utf8String alias;
-    alias.Sprintf("K%d", m_aliasCount++);
+    if(m_colAliasPrefix == 0)
+        alias.Sprintf("K%d", m_aliasCount++);
+    else
+        alias.Sprintf("V%dK%d", m_colAliasPrefix, m_aliasCount++);
     return alias;
     }
 END_BENTLEY_SQLITE_EC_NAMESPACE

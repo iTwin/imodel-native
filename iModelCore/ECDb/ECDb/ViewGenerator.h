@@ -36,9 +36,10 @@ struct ViewGenerator final
             ViewType m_viewType;
             ECDbCR m_ecdb;
             TableSpaceSchemaManager const& m_schemaManager;
+            uint32_t m_viewCount;
 
         protected:
-            Context(ViewType viewType, ECDbCR ecdb, TableSpaceSchemaManager const& manager) : m_viewType(viewType), m_ecdb(ecdb), m_schemaManager(manager) {}
+            Context(ViewType viewType, ECDbCR ecdb, TableSpaceSchemaManager const& manager) : m_viewType(viewType), m_ecdb(ecdb), m_schemaManager(manager), m_viewCount(0) {}
 
         public:
             virtual ~Context() {}
@@ -48,6 +49,8 @@ struct ViewGenerator final
             TableSpaceSchemaManager const& GetSchemaManager() const { return m_schemaManager; }
             template<typename TContext>
             TContext& GetAs() { BeAssert(dynamic_cast<TContext*> (this) != nullptr); return static_cast<TContext&> (*this); }
+            uint32_t GetViewCount() { return m_viewCount; };
+            void SetViewCount(uint32_t value) { m_viewCount = value; }
             };
 
         //=======================================================================================
@@ -170,6 +173,7 @@ struct ViewGenerator final
         static BentleyStatus RenderEndpointECClassId(NativeSqlBuilder& viewSql, Context& ctx, DbTable const& contextTable, ConstraintECClassIdJoinInfo const& joinInfo, ToSqlVisitor& sqlVisitor, ConstraintECClassIdPropertyMap const* classIdPropMap);
         static BentleyStatus RenderEntityClassMap(NativeSqlBuilder& viewSql, Context&, ClassMap const& classMap);
         static BentleyStatus RenderEntityClassMap(NativeSqlBuilder& viewSql, Context&, ClassMap const& classMap, DbTable const& contextTable, ClassMap const* castAs = nullptr);
+        static BentleyStatus RenderTransientViewClassMap(NativeSqlBuilder& viewSql, Context&, ClassMap const& classMap);
         static BentleyStatus RenderNullView(NativeSqlBuilder& viewSql, Context&, ClassMap const& classMap);
         static BentleyStatus RenderMixinClassMap(NativeSqlBuilder& viewSql, Context&, ClassMap const& classMap);
         static BentleyStatus RenderMixinClassMap(bmap<Utf8String, bpair<DbTable const*, bvector<ECN::ECClassId>>, CompareIUtf8Ascii>& selectClauses, Context& ctx, ClassMap const& mixInClassMap, ClassMap const& derivedClassMap);

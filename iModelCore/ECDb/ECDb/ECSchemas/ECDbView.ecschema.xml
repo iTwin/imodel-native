@@ -26,7 +26,7 @@
     </ECCustomAttributeClass>-->
 
     <!-- View class is replaced by view query when used in ECSql -->
-    <ECCustomAttributeClass typeName="TransientView" modifier="Sealed" appliesTo="EntityClass,RelationshipClass">
+    <ECCustomAttributeClass typeName="TransientView" modifier="Sealed" appliesTo="EntityClass">
         <ECProperty propertyName="Query" typeName="string" description=""/>
     </ECCustomAttributeClass>
 </ECSchema>

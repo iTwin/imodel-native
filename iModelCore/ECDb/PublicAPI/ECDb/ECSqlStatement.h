@@ -125,6 +125,13 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement
         //! @return ECSqlStatus::Success or error codes
         ECDB_EXPORT ECSqlStatus Prepare(SchemaManager const& schemaManager, Db const& dataSourceECDb, Utf8CP selectECSql, bool logErrors = true);
 
+        //! Prepares the statement with the specified ECSQL
+        //! @param[in] ecdb ECDb context
+        //! @param[in] ecsql ECSQL
+        //! @param[in] colIdPrefix column id prefix to use in generated column names
+        //! @return ECSqlStatus::Success or error codes
+        ECSqlStatus PrepareForEmbedding(ECDb const& ecdb, Utf8CP ecsql, uint32_t colAliasPrefix);
+
         //! Indicates whether this statement is already prepared or not.
         //! @return true, if it is prepared. false otherwise
         ECDB_EXPORT bool IsPrepared() const;

@@ -226,6 +226,10 @@ BentleyStatus ViewGenerator::GenerateViewSql(NativeSqlBuilder& viewSql, Context&
     if (classMap.IsMixin())
         return RenderMixinClassMap(viewSql, ctx, classMap);
 
+    auto& classDef = classMap.GetClass();
+    if(ctx.GetECDb().GetImpl().GetViewManager().IsTransientView(classDef.GetId()))
+        return RenderTransientViewClassMap(viewSql, ctx, classMap);
+
     return RenderEntityClassMap(viewSql, ctx, classMap);
     }
 
@@ -526,6 +530,19 @@ BentleyStatus ViewGenerator::RenderMixinClassMap(NativeSqlBuilder& viewSql, Cont
     if (ctx.GetViewType() == ViewType::SelectFromView)
         viewSql.AppendParenRight();
 
+    return SUCCESS;
+    }
+
+BentleyStatus ViewGenerator::RenderTransientViewClassMap(NativeSqlBuilder& viewSql, Context& ctx, ClassMap const& classMap)
+    {
+    auto& viewManager = ctx.GetECDb().GetImpl().GetViewManager();
+    uint32_t viewId = ctx.GetViewCount() + 1;
+    ctx.SetViewCount(viewId); //increase by 1
+    Utf8String nativeSql;
+    if(viewManager.GetTransientViewNativeSql(nativeSql, classMap, viewId) != BentleyStatus::SUCCESS)
+        return ERROR;
+
+    viewSql.AppendInParen(nativeSql.c_str());
     return SUCCESS;
     }
 

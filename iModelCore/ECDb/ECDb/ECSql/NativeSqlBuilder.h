@@ -49,6 +49,7 @@ struct NativeSqlBuilder final
         NativeSqlBuilder& AppendEscaped(Utf8StringCR identifier) { return Append("[").Append(identifier).Append("]"); }
         NativeSqlBuilder& AppendEscaped(Utf8CP identifier) { return Append("[").Append(identifier).Append("]"); }
         NativeSqlBuilder& AppendQuoted(Utf8CP stringLiteral) { return Append("'").Append(stringLiteral).Append("'"); }
+        NativeSqlBuilder& AppendInParen(Utf8CP stringLiteral) { return AppendParenLeft().Append(stringLiteral).AppendParenRight(); }
         NativeSqlBuilder& Append(ECN::ECClassId id);
         NativeSqlBuilder& AppendSpace() { return Append(" "); }
         NativeSqlBuilder& AppendComma() { return Append(","); }

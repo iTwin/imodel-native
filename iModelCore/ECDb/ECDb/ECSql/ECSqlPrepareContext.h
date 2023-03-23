@@ -116,6 +116,7 @@ struct ECSqlPrepareContext final
         //not copyable
         ECSqlPrepareContext(ECSqlPrepareContext const&) = delete;
         ECSqlPrepareContext& operator=(ECSqlPrepareContext const&) = delete;
+        uint32_t m_colAliasPrefix = 0;
 
     public:
         ECSqlPrepareContext(IECSqlPreparedStatement&, Db const& dataSourceECDb, IssueDataSource const&);
@@ -145,6 +146,8 @@ struct ECSqlPrepareContext final
         ExpScope& GetCurrentScopeR() { return m_scopes.CurrentR(); }
         void PushScope(ExpCR exp, OptionsExp const* options = nullptr) { m_scopes.Push(exp, options); }
         void PopScope() { m_scopes.Pop(); }
+        uint32_t GetColAliasPrefix() { return m_colAliasPrefix; };
+        void SetColAliasPrefix(uint32_t value) { m_colAliasPrefix = value; }
 
         int IncrementSystemSqlParameterSuffix() { m_nextSystemSqlParameterNameSuffix++; return m_nextSystemSqlParameterNameSuffix; }
     };
