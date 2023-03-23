@@ -172,6 +172,7 @@ struct BcvfsFile {
   Manifest *pMan;                 /* When transaction is open, manifest */
   ManifestDb *pManDb;             /* When transaction is open, manifest-db */
   u32 lockMask;                   /* Mask of shm-locks currently held */
+  int eLock;                      /* Legacy lock held */
   int bHoldCkpt;                  /* True to not release CHECKPOINTER lock */
 
   BcvKVStore kv;
@@ -1713,7 +1714,7 @@ static int bcvfsProxyRead(
   u32 iCache = 0;
   i64 iCacheOffset = 0;
 
-  if( pFile->lockMask==0 ){
+  if( pFile->eLock==0 ){
     assert( iAmt==100 );
     memset(pBuf, 0, iAmt);
     return SQLITE_OK;
@@ -1918,7 +1919,7 @@ static void bcvfsFileCacheFreeIf(BcvfsFile *pFile){
 
 static int bcvfsLock(sqlite3_file *pFd, int eLock){
   BcvfsFile *pFile = (BcvfsFile*)pFd;
-  pFile->lockMask = eLock;
+  pFile->eLock = eLock;
   if( bcvfsFileType(pFile)==BCVFS_NO_FILE ){
     return SQLITE_OK;
   }
@@ -1926,7 +1927,7 @@ static int bcvfsLock(sqlite3_file *pFd, int eLock){
 }
 static int bcvfsUnlock(sqlite3_file *pFd, int eLock){
   BcvfsFile *pFile = (BcvfsFile*)pFd;
-  pFile->lockMask = eLock;
+  pFile->eLock = eLock;
   bcvfsFileCacheFreeIf(pFile);
   if( bcvfsFileType(pFile)==BCVFS_NO_FILE ){
     return SQLITE_OK;
@@ -2320,16 +2321,128 @@ static void bcvBufferAppendEscaped(int *pRc, BcvBuffer *pBuf, const char *zStr){
 ** pPath. The caller is responsible for ensuring that the returned buffer
 ** is eventually freed using sqlite3_free().
 */
-static char *bcvfsLocalPath(int *pRc, sqlite3_bcvfs *pFs, BcvDbPath *pPath){
+static char *bcvfsLocalPath(
+  int *pRc, 
+  sqlite3_bcvfs *pFs, 
+  BcvDbPath *pPath,
+  int bReadonlyShm
+){
   BcvBuffer b = {0,0,0};
   bcvBufferAppendString(pRc, &b, pFs->c.zDir);
   bcvBufferAppendString(pRc, &b, BCV_PATH_SEPARATOR);
   bcvBufferAppendEscaped(pRc, &b, pPath->zContainer);
   bcvBufferAppendString(pRc, &b, BCV_PATH_SEPARATOR);
   bcvBufferAppendEscaped(pRc, &b, pPath->zDatabase);
+  if( bReadonlyShm ){
+    bcvBufferAppendRc(pRc, &b, "\0", 1);
+    bcvBufferAppendString(pRc, &b, "readonly_shm");
+    bcvBufferAppendRc(pRc, &b, "\0", 1);
+    bcvBufferAppendString(pRc, &b, "1");
+  }
   bcvBufferAppendRc(pRc, &b, "\0\0", 2);
   assert( *pRc==SQLITE_OK || b.aData==0 );
   return (char*)b.aData;
+}
+
+/*
+** This structure exactly matches the definition of WalIndexHdr in
+** SQLite core file wal.c. It is used by bcvfsEmptyWalIndexHdr() to
+** generate valid wal-index headers that correspond to empty wal files.
+*/
+typedef struct BcvfsWalIndexHdr BcvfsWalIndexHdr;
+struct BcvfsWalIndexHdr {
+  u32 iVersion;                   /* Wal-index version */
+  u32 unused;                     /* Unused (padding) field */
+  u32 iChange;                    /* Counter incremented each transaction */
+  u8 isInit;                      /* 1 when initialized */
+  u8 bigEndCksum;                 /* True if checksums in WAL are big-endian */
+  u16 szPage;                     /* Database page size in bytes. 1==64K */
+  u32 mxFrame;                    /* Index of last valid frame in the WAL */
+  u32 nPage;                      /* Size of database in pages */
+  u32 aFrameCksum[2];             /* Checksum of last frame in log */
+  u32 aSalt[2];                   /* Two salt values copied from WAL header */
+  u32 aCksum[2];                  /* Checksum over all prior fields */
+};
+
+/*
+** Write a valid wal-index header into the buffer passed as the only
+** argument. The header:
+**
+**   *  corresponds to an empty wal file - one with zero frames, and
+**
+**   *  sets the change-counter to a random value to ensure any 
+**      existing users purge their page caches when they read the new
+**      header.
+*/
+static void bcvfsEmptyWalIndexHdr(volatile void *aMap){
+  BcvfsWalIndexHdr hdr;
+  u32 s1 = 0;
+  u32 s2 = 0;
+
+  u32 *aData = (u32*)&hdr;
+  u32 *aEnd = (u32*)&hdr.aCksum[0];
+
+  memset(&hdr, 0, sizeof(hdr));
+  hdr.iVersion = 3007000;
+  hdr.isInit = 1;
+  sqlite3_randomness(sizeof(u32)*2, (void*)&hdr.unused);
+  do {
+    s1 += *aData++ + s2;
+    s2 += *aData++ + s1;
+  }while( aData<aEnd );
+  hdr.aCksum[0] = s1;
+  hdr.aCksum[1] = s2;
+
+  memcpy(&((u8*)aMap)[0 * sizeof(hdr)], &hdr, sizeof(hdr));
+  memcpy(&((u8*)aMap)[1 * sizeof(hdr)], &hdr, sizeof(hdr));
+  memset(&((u8*)aMap)[2 * sizeof(hdr)], 0, 512);
+}
+
+/*
+** Create database and shm files for database zCont/zDb. If successful,
+** open a file-descriptor on the database and hold the DMS lock on the shm
+** file. Return the file-descriptor to the caller via *ppFd.
+**
+** Otherwise, if an error occurs, return an SQLite error code and set *ppFd
+** to NULL.
+*/
+int bcvfsCreateLocalDb(
+  BcvCommon *p,
+  const char *zCont,
+  const char *zDb,
+  sqlite3_file **ppFd
+){
+  sqlite3_file *pFd = 0;
+  int rc = SQLITE_OK;
+  volatile void *aMap = 0;
+
+  BcvBuffer b = {0,0,0};
+  bcvBufferAppendString(&rc, &b, p->zDir);
+  bcvBufferAppendString(&rc, &b, BCV_PATH_SEPARATOR);
+  bcvBufferAppendEscaped(&rc, &b, zCont);
+  bcvBufferAppendString(&rc, &b, BCV_PATH_SEPARATOR);
+  bcvBufferAppendEscaped(&rc, &b, zDb);
+
+  if( rc==SQLITE_OK ){
+    rc = bcvOpenLocal((const char*)b.aData, 0, 0, &pFd);
+  }
+  if( rc==SQLITE_OK ){
+    rc = pFd->pMethods->xWrite(pFd, (void*)"daemon", 5, 0);
+  }
+  if( rc==SQLITE_OK ){
+    rc = pFd->pMethods->xShmMap(pFd, 0, 32*1024, 1, (volatile void**)&aMap); 
+    if( rc==SQLITE_OK ){
+      bcvfsEmptyWalIndexHdr(aMap);
+    }
+  }
+
+  if( rc==SQLITE_OK ){
+    *ppFd = pFd;
+  }else{
+    bcvCloseLocal(pFd);
+  }
+  bcvBufferZero(&b);
+  return rc;
 }
 
 /*
@@ -2524,8 +2637,12 @@ int bcvManifestUpdate(
               bFail = 1;
             }else{
               pWrapper->bUnlock = 1;
-              memset(aMap, 0, 24);
-              rc = bcvfsWalNonEmpty(pCommon, zWal, &bFail);
+              if( pCommon->bDaemon ){
+                bcvfsEmptyWalIndexHdr(aMap);
+              }else{
+                memset(aMap, 0, 24);
+                rc = bcvfsWalNonEmpty(pCommon, zWal, &bFail);
+              }
             }
           }
         }
@@ -2787,7 +2904,11 @@ static int bcvfsShmMap(
   void volatile **pp
 ){
   BcvfsFile *pFile = (BcvfsFile*)pFd;
-  return pFile->pFile->pMethods->xShmMap(pFile->pFile, iPg, pgsz, eMode, pp);
+  int rc = pFile->pFile->pMethods->xShmMap(pFile->pFile, iPg, pgsz, eMode, pp);
+  if( pFile->pFs->zPortnumber && rc==SQLITE_READONLY_CANTINIT ){
+    rc = SQLITE_READONLY;
+  }
+  return rc;
 }
 
 static int bcvfsShmLock(sqlite3_file *pFd, int offset, int n, int flags){
@@ -3153,24 +3274,31 @@ static int bcvfsOpen(
     }
 
     if( rc==SQLITE_OK ){
+      int bDaemon = pFs->zPortnumber!=0;
       sqlite3_vfs *pVfs = pFs->c.pVfs;
       if( pPath->zDatabase ){
-        char *zLocal = bcvfsLocalPath(&rc, pFs, pPath);
+        char *zLocal = bcvfsLocalPath(&rc, pFs, pPath, bDaemon);
         if( rc==SQLITE_OK ){
+          sqlite3_file *pFile = pRet->pFile;
           int fout = 0;
-          int f = (flags & ~SQLITE_OPEN_READONLY);
-          f |= SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE;
-          rc = pVfs->xOpen(pVfs, zLocal, pRet->pFile, f, &fout);
-          if( rc==SQLITE_OK && bIsMain ){
-            rc = pRet->pFile->pMethods->xWrite(pRet->pFile,(void*)"bcvfs",5,0);
+          int f = flags | SQLITE_OPEN_URI;
+          if( pFs->zPortnumber==0 ){
+            f |= SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE;
+            f &= ~SQLITE_OPEN_READONLY;
           }
-          if( flags & SQLITE_OPEN_READONLY ){
-            fout &= ~(SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE);
-            fout |= SQLITE_OPEN_READONLY;
+          rc = pVfs->xOpen(pVfs, zLocal, pFile, f, &fout);
+          if( rc==SQLITE_OK && pFs->zPortnumber==0 ){
+            if( bIsMain ){
+              rc = pFile->pMethods->xWrite(pFile, (void*)"bcvfs", 5, 0);
+            }
+            if( flags & SQLITE_OPEN_READONLY ){
+              fout &= ~(SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE);
+              fout |= SQLITE_OPEN_READONLY;
+            }
           }
           *pOutFlags = fout;
           if( rc==SQLITE_OK && bIsMain ){
-            rc = bcvOpenLocal(pFs->zCacheFile, 0, 0, &pRet->pCacheFile);
+            rc = bcvOpenLocal(pFs->zCacheFile, 0, bDaemon, &pRet->pCacheFile);
           }
           pRet->pPath = pPath;
           pRet->zLocalPath = zLocal;
@@ -3202,7 +3330,7 @@ static int bcvfsDelete(sqlite3_vfs *pVfs, const char *zPath, int dirSync){
 
   rc = bcvfsDecodeName(pFs, zPath, &pPath);
   if( rc==SQLITE_OK && pPath->zDatabase ){
-    char *zLocal = bcvfsLocalPath(&rc, pFs, pPath);
+    char *zLocal = bcvfsLocalPath(&rc, pFs, pPath, 0);
     if( rc==SQLITE_OK ){
       rc = pFs->c.pVfs->xDelete(pFs->c.pVfs, zLocal, dirSync);
       sqlite3_free(zLocal);
@@ -6681,7 +6809,6 @@ static int bcvKVStoreLoad(bcv_kv_vtab *pTab){
   BcvfsFile *pFile = pTab->pFile;
   int rc = SQLITE_OK;
 
-  assert( pFile->lockMask!=0 );
   if( pFile->kv.db==0 ){
     sqlite3_bcvfs *pFs = pFile->pFs;
     BcvContainer *pBcv = 0;
@@ -6741,7 +6868,6 @@ static int bcvKVStorePush(bcv_kv_vtab *pTab){
   BcvfsFile *pFile = pTab->pFile;
   int rc = SQLITE_OK;
 
-  assert( pFile->lockMask!=0 );
   if( pFile->kv.db ){
     BcvKVStore *pKv = &pFile->kv;
     sqlite3_bcvfs *pFs = pFile->pFs;
@@ -6811,7 +6937,6 @@ static int bcvFileVtabFilter(
   sqlite3_finalize(pCur->pSelect);
   pCur->pSelect = 0;
 
-  assert( pTab->pFile->lockMask!=0 );
   rc = bcvKVStoreLoad(pTab);
   if( rc==SQLITE_OK ){
     rc = sqlite3_prepare(pTab->pFile->kv.db, 
