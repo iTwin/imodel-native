@@ -2531,9 +2531,6 @@ private:
         if (specification.ShouldSuppressSimilarAncestorsCheck())
             query.GetNavigationResultParameters().GetNavNodeExtendedDataR().SetAllowedSimilarAncestors(MAX_ALLOWED_SIMILAR_ANCESTORS_WHEN_SUPPRESSED);
 
-        // preserve ruleset ID in resulting nodes for later use
-        query.GetNavigationResultParameters().GetNavNodeExtendedDataR().SetRulesetId(m_groupingResolver.GetQueryBuilderParams().GetRuleset().GetRuleSetId().c_str());
-
         // preserve specification ID in resulting nodes for later use
         query.GetNavigationResultParameters().SetSpecification(&m_groupingResolver.GetSpecification());
         }

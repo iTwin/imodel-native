@@ -66,6 +66,14 @@ ECDbR PresentationManagerIntegrationTests::_GetProject()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+ECClassCP PresentationManagerIntegrationTests::_GetClass(Utf8CP schemaName, Utf8CP className)
+    {
+    return s_project->GetECDb().Schemas().GetClass(schemaName, className);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 void PresentationManagerIntegrationTests::SetUp()
     {
     ECPresentationTest::SetUp();
@@ -119,7 +127,7 @@ ECSchemaCP PresentationManagerIntegrationTests::GetSchema()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClassCP PresentationManagerIntegrationTests::GetClass(Utf8CP schemaName, Utf8CP className)
     {
-    return s_project->GetECDb().Schemas().GetClass(schemaName, className);
+    return _GetClass(schemaName, className);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -192,13 +200,13 @@ void PresentationManagerIntegrationTests::SetUpDefaultLabelRule(PresentationRule
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PresentationManagerIntegrationTests::VerifyNodeInstances(NavNodeCR node, bvector<RefCountedPtr<IECInstance const>> const& expectedInstances, InstanceFilterDefinitionCP instanceFilter)
+void PresentationManagerIntegrationTests::VerifyNodeInstances(Utf8StringCR rulesetId, NavNodeCR node, bvector<RefCountedPtr<IECInstance const>> const& expectedInstances, InstanceFilterDefinitionCP instanceFilter)
     {
     auto connection = m_manager->GetConnections().GetConnection(_GetProject());
     auto instanceKeysProvider = m_manager->GetImpl().CreateNodeInstanceKeysProvider(NodeInstanceKeysRequestImplParams::Create(
         *connection,
         nullptr,
-        NavNodeExtendedData(node).GetRulesetId(),
+        rulesetId,
         RulesetVariables(),
         instanceFilter ? std::make_unique<InstanceFilterDefinition>(*instanceFilter) : nullptr
         ));
@@ -208,28 +216,28 @@ void PresentationManagerIntegrationTests::VerifyNodeInstances(NavNodeCR node, bv
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PresentationManagerIntegrationTests::VerifyPropertyGroupingNode(NavNodeCR node, InstanceFilterDefinitionCP instanceFilter, bvector<RefCountedPtr<IECInstance const>> const& groupedInstances, bvector<ECValue> const& groupedValues)
+void PresentationManagerIntegrationTests::VerifyPropertyGroupingNode(Utf8StringCR rulesetId, NavNodeCR node, InstanceFilterDefinitionCP instanceFilter, bvector<RefCountedPtr<IECInstance const>> const& groupedInstances, bvector<ECValue> const& groupedValues)
     {
     ASSERT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, node.GetType().c_str());
     ASSERT_TRUE(nullptr != node.GetKey()->AsECPropertyGroupingNodeKey());
     RulesEngineTestHelpers::ValidateNodeGroupedValues(node, groupedValues);
-    VerifyNodeInstances(node, groupedInstances, instanceFilter);
+    VerifyNodeInstances(rulesetId, node, groupedInstances, instanceFilter);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PresentationManagerIntegrationTests::VerifyPropertyRangeGroupingNode(NavNodeCR node, InstanceFilterDefinitionCP instanceFilter, bvector<RefCountedPtr<IECInstance const>> const& groupedInstances)
+void PresentationManagerIntegrationTests::VerifyPropertyRangeGroupingNode(Utf8StringCR rulesetId, NavNodeCR node, InstanceFilterDefinitionCP instanceFilter, bvector<RefCountedPtr<IECInstance const>> const& groupedInstances)
     {
     ASSERT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, node.GetType().c_str());
     ASSERT_TRUE(nullptr != node.GetKey()->AsECPropertyGroupingNodeKey());
-    VerifyNodeInstances(node, groupedInstances, instanceFilter);
+    VerifyNodeInstances(rulesetId, node, groupedInstances, instanceFilter);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PresentationManagerIntegrationTests::VerifyClassGroupingNode(NavNodeCR node, InstanceFilterDefinitionCP instanceFilter, bvector<RefCountedPtr<IECInstance const>> const& groupedInstances, ECClassCP groupingClass, bool isPolymorphicGrouping)
+void PresentationManagerIntegrationTests::VerifyClassGroupingNode(Utf8StringCR rulesetId, NavNodeCR node, InstanceFilterDefinitionCP instanceFilter, bvector<RefCountedPtr<IECInstance const>> const& groupedInstances, ECClassCP groupingClass, bool isPolymorphicGrouping)
     {
     ASSERT_STREQ(NAVNODE_TYPE_ECClassGroupingNode, node.GetType().c_str());
     ASSERT_TRUE(nullptr != node.GetKey()->AsECClassGroupingNodeKey());
@@ -238,17 +246,17 @@ void PresentationManagerIntegrationTests::VerifyClassGroupingNode(NavNodeCR node
         EXPECT_EQ(groupingClass, &node.GetKey()->AsECClassGroupingNodeKey()->GetECClass());
         EXPECT_EQ(isPolymorphicGrouping, node.GetKey()->AsECClassGroupingNodeKey()->IsPolymorphic());
         }
-    VerifyNodeInstances(node, groupedInstances, instanceFilter);
+    VerifyNodeInstances(rulesetId, node, groupedInstances, instanceFilter);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PresentationManagerIntegrationTests::VerifyLabelGroupingNode(NavNodeCR node, InstanceFilterDefinitionCP instanceFilter, bvector<RefCountedPtr<IECInstance const>> const& groupedInstances)
+void PresentationManagerIntegrationTests::VerifyLabelGroupingNode(Utf8StringCR rulesetId, NavNodeCR node, InstanceFilterDefinitionCP instanceFilter, bvector<RefCountedPtr<IECInstance const>> const& groupedInstances)
     {
     ASSERT_STREQ(NAVNODE_TYPE_DisplayLabelGroupingNode, node.GetType().c_str());
     ASSERT_TRUE(nullptr != node.GetKey()->AsLabelGroupingNodeKey());
-    VerifyNodeInstances(node, groupedInstances, instanceFilter);
+    VerifyNodeInstances(rulesetId, node, groupedInstances, instanceFilter);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -325,7 +333,7 @@ std::function<void(NavNodeCR, HierarchyRequestParams const&)> PresentationManage
     return [this, expectedInstances](NavNodeCR n, HierarchyRequestParams const& requestParams)
         {
         ASSERT_STREQ(NAVNODE_TYPE_ECInstancesNode, n.GetType().c_str());
-        VerifyNodeInstances(n, expectedInstances);
+        VerifyNodeInstances(requestParams.GetRulesetId(), n, expectedInstances);
         };
     }
 
@@ -336,7 +344,7 @@ std::function<void(NavNodeCR, HierarchyRequestParams const&)> PresentationManage
     {
     return [this, &ecClass, isPolymorphic, expectedInstances](NavNodeCR n, HierarchyRequestParams const& requestParams)
         {
-        VerifyClassGroupingNode(n, requestParams.GetInstanceFilter().get(), expectedInstances, &ecClass, isPolymorphic);
+        VerifyClassGroupingNode(requestParams.GetRulesetId(), n, requestParams.GetInstanceFilter().get(), expectedInstances, &ecClass, isPolymorphic);
         };
     }
 
@@ -347,7 +355,7 @@ std::function<void(NavNodeCR, HierarchyRequestParams const&)> PresentationManage
     {
     return [this, label, expectedInstances](NavNodeCR n, HierarchyRequestParams const& requestParams)
         {
-        VerifyLabelGroupingNode(n, requestParams.GetInstanceFilter().get(), expectedInstances);
+        VerifyLabelGroupingNode(requestParams.GetRulesetId(), n, requestParams.GetInstanceFilter().get(), expectedInstances);
         EXPECT_STREQ(label.c_str(), n.GetLabelDefinition().GetDisplayValue().c_str());
         };
     }
@@ -359,7 +367,7 @@ std::function<void(NavNodeCR, HierarchyRequestParams const&)> PresentationManage
     {
     return [this, expectedInstances, groupedValues](NavNodeCR n, HierarchyRequestParams const& requestParams)
         {
-        VerifyPropertyGroupingNode(n, requestParams.GetInstanceFilter().get(), expectedInstances, groupedValues);
+        VerifyPropertyGroupingNode(requestParams.GetRulesetId(), n, requestParams.GetInstanceFilter().get(), expectedInstances, groupedValues);
         };
     }
 
@@ -456,6 +464,15 @@ ECDbR UpdateTests::_GetProject()
         m_db.OpenBeSQLiteDb(projectPath, Db::OpenParams(Db::OpenMode::ReadWrite));
         }
     return m_db;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECClassCP UpdateTests::_GetClass(Utf8CP schemaName, Utf8CP className)
+    {
+    BeAssert(m_db.IsDbOpen());
+    return m_db.Schemas().GetClass(schemaName, className);
     }
 
 /*---------------------------------------------------------------------------------**//**

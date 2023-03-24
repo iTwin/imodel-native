@@ -70,6 +70,7 @@ struct PresentationManagerIntegrationTests : ECPresentationTest
     virtual std::unique_ptr<IConnectionManager> _CreateConnectionManager();
     virtual void _ConfigureManagerParams(ECPresentationManager::Params&);
     virtual ECDbR _GetProject();
+    virtual ECClassCP _GetClass(Utf8CP schemaName, Utf8CP className);
     virtual void SetUp() override;
     virtual void TearDown() override;
 
@@ -87,12 +88,12 @@ struct PresentationManagerIntegrationTests : ECPresentationTest
 
     Utf8String GetDefaultDisplayLabel(IECInstanceCR instance);
 
-    void VerifyNodeInstance(NavNodeCR node, IECInstanceCR instance, InstanceFilterDefinitionCP instanceFilter = nullptr) { VerifyNodeInstances(node, { &instance }, instanceFilter); }
-    void VerifyNodeInstances(NavNodeCR node, bvector<RefCountedPtr<IECInstance const>> const& instances, InstanceFilterDefinitionCP instanceFilter = nullptr);
-    void VerifyPropertyGroupingNode(NavNodeCR node, InstanceFilterDefinitionCP instanceFilter, bvector<RefCountedPtr<IECInstance const>> const& groupedInstances, bvector<ECValue> const& groupedValues);
-    void VerifyPropertyRangeGroupingNode(NavNodeCR node, InstanceFilterDefinitionCP instanceFilter, bvector<RefCountedPtr<IECInstance const>> const& groupedInstances);
-    void VerifyClassGroupingNode(NavNodeCR node, InstanceFilterDefinitionCP instanceFilter, bvector<RefCountedPtr<IECInstance const>> const& groupedInstances, ECClassCP groupingClass = nullptr, bool isPolymorphicGrouping = false);
-    void VerifyLabelGroupingNode(NavNodeCR node, InstanceFilterDefinitionCP instanceFilter, bvector<RefCountedPtr<IECInstance const>> const& groupedInstances);
+    void VerifyNodeInstance(Utf8StringCR rulesetId, NavNodeCR node, IECInstanceCR instance, InstanceFilterDefinitionCP instanceFilter = nullptr) { VerifyNodeInstances(rulesetId, node, { &instance }, instanceFilter); }
+    void VerifyNodeInstances(Utf8StringCR rulesetId, NavNodeCR node, bvector<RefCountedPtr<IECInstance const>> const& instances, InstanceFilterDefinitionCP instanceFilter = nullptr);
+    void VerifyPropertyGroupingNode(Utf8StringCR rulesetId, NavNodeCR node, InstanceFilterDefinitionCP instanceFilter, bvector<RefCountedPtr<IECInstance const>> const& groupedInstances, bvector<ECValue> const& groupedValues);
+    void VerifyPropertyRangeGroupingNode(Utf8StringCR rulesetId, NavNodeCR node, InstanceFilterDefinitionCP instanceFilter, bvector<RefCountedPtr<IECInstance const>> const& groupedInstances);
+    void VerifyClassGroupingNode(Utf8StringCR rulesetId, NavNodeCR node, InstanceFilterDefinitionCP instanceFilter, bvector<RefCountedPtr<IECInstance const>> const& groupedInstances, ECClassCP groupingClass = nullptr, bool isPolymorphicGrouping = false);
+    void VerifyLabelGroupingNode(Utf8StringCR rulesetId, NavNodeCR node, InstanceFilterDefinitionCP instanceFilter, bvector<RefCountedPtr<IECInstance const>> const& groupedInstances);
     void VerifyCustomNode(NavNodeCR node, Utf8StringCR type, Nullable<Utf8String> const& label);
 
     HierarchyListDef<HierarchyDef<>> ValidateHierarchy(AsyncHierarchyRequestParams params, std::function<void(AsyncHierarchyRequestParams&)> const& configureParams, ExpectedHierarchyListDef const& expectedHierarchy);
@@ -111,17 +112,14 @@ struct PresentationManagerIntegrationTests : ECPresentationTest
 struct TestUpdateRecordsHandler : IUpdateRecordsHandler
 {
 private:
-    bvector<HierarchyUpdateRecord> m_records;
     bvector<FullUpdateRecord> m_fullUpdateRecords;
 protected:
-    void _Start() override { m_records.clear(); m_fullUpdateRecords.clear(); }
-    void _Accept(HierarchyUpdateRecord const& record) override { m_records.push_back(record); }
+    void _Start() override { m_fullUpdateRecords.clear(); }
     void _Accept(FullUpdateRecord const& record) override { m_fullUpdateRecords.push_back(record); }
     void _Finish() override {}
 public:
-    bvector<HierarchyUpdateRecord> const& GetRecords() const { return m_records; }
     bvector<FullUpdateRecord> const& GetFullUpdateRecords() const { return m_fullUpdateRecords; }
-    void Clear() { m_records.clear(); m_fullUpdateRecords.clear(); }
+    void Clear() { m_fullUpdateRecords.clear(); }
 };
 
 /*=================================================================================**//**
@@ -144,6 +142,7 @@ struct UpdateTests : PresentationManagerIntegrationTests
     virtual void SetUp() override;
     virtual ECDbR _GetProject() override;
     virtual void _ConfigureManagerParams(ECPresentationManager::Params&) override;
+    virtual ECClassCP _GetClass(Utf8CP schemaName, Utf8CP className) override;
     virtual std::unique_ptr<IConnectionManager> _CreateConnectionManager() override;
 
     void Sync() { m_manager->GetTasksCompletion().wait(); }
