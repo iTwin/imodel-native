@@ -650,7 +650,7 @@ TEST_F(SchemaVersionTestFixture, DomainUpgradeAutoUpgradesProfileVersion)
     SchemaVersionTestDomain::Register("03.02", DgnDomain::Required::No, DgnDomain::Readonly::No);
     SchemaVersionTestDomain::GetDomain().RegisterHandler(TestElementHandler::GetHandler());
     m_db = DgnDb::OpenIModelDb(&result, destFileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
-    ASSERT_EQ(BE_SQLITE_OK, result) << "Failed to open file " << destFileName;
+    ASSERT_EQ(BE_SQLITE_OK, result) << "Failed to open file " << Utf8String(destFileName);
     ASSERT_TRUE(m_db.IsValid());
 
     CodeSpecPtr codeSpec = CodeSpec::CreateRepositorySpec(*m_db, "SchemaVersionTest");

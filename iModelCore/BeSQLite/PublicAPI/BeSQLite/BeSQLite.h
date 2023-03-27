@@ -196,6 +196,10 @@ namespace MemorySize {
 
 typedef struct CloudContainer* CloudContainerP;
 
+struct ProfileVersion;
+typedef ProfileVersion& ProfileVersionR;
+typedef ProfileVersion const& ProfileVersionCR;
+
 //=======================================================================================
 //! A 16-byte Globally Unique Id. A value of all zeros means "Invalid Id".
 // @bsiclass
@@ -398,6 +402,8 @@ public:
     explicit ProfileVersion(Utf8CP json) {FromJson(json);}
     bool operator==(BeVersionCR rhs) const { return CompareTo(rhs) == 0; }
     bool operator!=(BeVersionCR rhs) const { return CompareTo(rhs) != 0; }
+    bool operator==(ProfileVersionCR rhs) const { return CompareTo(rhs) == 0; }
+    bool operator!=(ProfileVersionCR rhs) const { return CompareTo(rhs) != 0; }
     bool operator<(BeVersionCR rhs) const { return CompareTo(rhs) < 0; }
     bool operator<=(BeVersionCR rhs) const { return CompareTo(rhs) <= 0; }
     bool operator>(BeVersionCR rhs) const { return CompareTo(rhs) > 0; }

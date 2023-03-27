@@ -26,7 +26,7 @@ BentleyStatus TestHelper::RunSchemaImport(SchemaItem const& schema, Utf8CP fileN
         return ERROR;
 
     auto rc = TestHelper(ecdb).ImportSchema(schema);
-    if (rc == BE_SQLITE_OK)
+    if (rc == BentleyStatus::SUCCESS)
         ecdb.SaveChanges();
     else
         ecdb.AbandonChanges();
@@ -45,7 +45,7 @@ BentleyStatus TestHelper::RunSchemaImport(std::vector<SchemaItem> const& schemas
         return ERROR;
 
     auto rc = TestHelper(ecdb).ImportSchemas(schemas);
-    if (rc == BE_SQLITE_OK)
+    if (rc == BentleyStatus::SUCCESS)
         ecdb.SaveChanges();
     else
         ecdb.AbandonChanges();

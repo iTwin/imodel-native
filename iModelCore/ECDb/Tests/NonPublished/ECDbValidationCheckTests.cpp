@@ -15,7 +15,7 @@ struct ECDbValidityCheckTests : ECDbTestFixture
     };
 
 TEST_F(ECDbValidityCheckTests, LoadAllSchemas) {
-    ASSERT_EQ(SUCCESS, SetupECDb("loadAllSchemas.ecdb", SchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("loadAllSchemas.ecdb", SchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema1" alias="ts1" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
           <ECEntityClass typeName="MyBaseClass">
@@ -58,7 +58,7 @@ TEST_F(ECDbValidityCheckTests, LoadAllSchemas) {
 }
 
 TEST_F(ECDbValidityCheckTests, ClassIdCheck) {
-    ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("schemaupdate.ecdb"));
 
     ECSqlStatement checkStatement;
 
@@ -71,7 +71,7 @@ TEST_F(ECDbValidityCheckTests, ClassIdCheck) {
 
 
 TEST_F(ECDbValidityCheckTests, NavigationPropertyIdCheck) {
-    ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("schemaupdate.ecdb"));
 
     ECSqlStatement checkStatement;
 
@@ -109,7 +109,7 @@ TEST_F(ECDbValidityCheckTests, FailingNavigationPropertyIdCheck) {
     "    </ECRelationshipClass>"
     "</ECSchema>"));
 
-    ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
 
     ECClassId relClassId = m_ecdb.Schemas().GetClassId(schemaName.c_str(), relClass.c_str());
     ECClassId classBId = m_ecdb.Schemas().GetClassId(schemaName.c_str(), classB.c_str());
@@ -142,7 +142,7 @@ TEST_F(ECDbValidityCheckTests, FailingNavigationPropertyIdCheck) {
 	}
 
 TEST_F(ECDbValidityCheckTests, ValidateCheck) {
-    ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("schemaupdate.ecdb"));
 
     ECSqlStatement checkStatement;
 
@@ -180,7 +180,7 @@ TEST_F(ECDbValidityCheckTests, ValidateCheckFailingNavPropertyCheck) {
     "    </ECRelationshipClass>"
     "</ECSchema>"));
 
-    ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
 
     ECClassId relClassId = m_ecdb.Schemas().GetClassId(schemaName.c_str(), relClass.c_str());
     ECClassId classBId = m_ecdb.Schemas().GetClassId(schemaName.c_str(), classB.c_str());

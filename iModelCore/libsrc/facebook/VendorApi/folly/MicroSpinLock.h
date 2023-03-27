@@ -112,7 +112,7 @@ struct MicroSpinLock {
   }
 };
 static_assert(
-    std::is_pod<MicroSpinLock>::value,
+    std::is_trivial<MicroSpinLock>::value && std::is_standard_layout<MicroSpinLock>::value,
     "MicroSpinLock must be kept a POD type.");
 
 //////////////////////////////////////////////////////////////////////

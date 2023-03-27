@@ -238,7 +238,8 @@ LsSymbolComponentCP LsSymbolReference::GetSymbolComponentCP() const {return m_sy
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            LsSymbolReference::SetJustification(LsSymbolReference::StrokeJustification  justification)
     {
-    m_mod1 = (m_mod1 & ~LCPOINT_ONSTROKE) | (justification & LCPOINT_ONSTROKE);
+    using StrokeJustification_T = std::underlying_type<StrokeJustification>::type;
+    m_mod1 = (m_mod1 & ~LCPOINT_ONSTROKE) | (justification & static_cast<StrokeJustification_T>(LCPOINT_ONSTROKE)); // cast since c++20 disallows & between different enum types
     }
 
 /*---------------------------------------------------------------------------------**//**

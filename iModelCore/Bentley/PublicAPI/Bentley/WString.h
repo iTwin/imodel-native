@@ -538,4 +538,19 @@ typedef T_Utf8StringVector*         T_Utf8StringVectorP, &T_Utf8StringVectorR;
 typedef T_Utf8StringVector const*   T_Utf8StringVectorCP;
 typedef T_Utf8StringVector const&   T_Utf8StringVectorCR;
 
+// Supports char8_t (including u8 literals) interop with Utf8String/Utf8CP APIs.
+template <size_t N>
+class Utf8Chars {
+    Utf8Char m_characters[N];
+    
+    template<size_t... I>
+    constexpr Utf8Chars(const char8_t (&input)[N], std::index_sequence<I...>) : m_characters {static_cast<Utf8Char>(input[I])...} {}
+    
+public:
+    constexpr Utf8Chars(const char8_t (&input)[N]) : Utf8Chars(input, std::make_index_sequence<N>()) {}
+
+    constexpr operator Utf8CP() const { return m_characters; }
+    constexpr Utf8CP operator&() const { return m_characters; }
+};
+
 END_BENTLEY_NAMESPACE

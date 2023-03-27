@@ -20,7 +20,7 @@ struct ECRelationshipInheritanceTestFixture : ECDbTestFixture
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECRelationshipInheritanceTestFixture, BasicCRUD)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecdbrelationshipinheritance.ecdb", SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecdbrelationshipinheritance.ecdb", SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                                                                 "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                                                                                 "  <ECEntityClass typeName='Model' >"
                                                                                 "    <ECProperty propertyName='Name' typeName='string' />"
@@ -951,7 +951,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
                           "  </ECRelationshipClass>"
                           "</ECSchema>");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("relecclassid" SCHEMAALIAS ".ecdb", testSchema)) << "Logical FK";
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("relecclassid" SCHEMAALIAS ".ecdb", testSchema)) << "Logical FK";
 
     assertRelECClassId(m_ecdb, SCHEMAALIAS "_B", "ARelECClassId", RelClassIdExistenceMode::Persisted, false, false);
     assertRelECClassId(m_ecdb, SCHEMAALIAS "_D", "CRelECClassId", RelClassIdExistenceMode::Virtual, false, false);
@@ -1003,7 +1003,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
                           "  </ECRelationshipClass>"
                           "</ECSchema>");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("relecclassid" SCHEMAALIAS ".ecdb", testSchema)) << "Physical FK";
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("relecclassid" SCHEMAALIAS ".ecdb", testSchema)) << "Physical FK";
 
     assertRelECClassId(m_ecdb, SCHEMAALIAS "_B", "ARelECClassId", RelClassIdExistenceMode::Persisted, false, true);
     assertRelECClassId(m_ecdb, SCHEMAALIAS "_D", "CRelECClassId", RelClassIdExistenceMode::Virtual, false, false);
@@ -1050,7 +1050,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
                           "  </ECRelationshipClass>"
                           "</ECSchema>");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("relecclassid" SCHEMAALIAS ".ecdb", testSchema)) << "logical FK";
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("relecclassid" SCHEMAALIAS ".ecdb", testSchema)) << "logical FK";
 
 
     assertRelECClassId(m_ecdb, SCHEMAALIAS "_B", "A1RelECClassId", RelClassIdExistenceMode::Persisted, false, false);
@@ -1116,7 +1116,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
                           "  </ECRelationshipClass>"
                           "</ECSchema>");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("relecclassid" SCHEMAALIAS ".ecdb", testSchema));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("relecclassid" SCHEMAALIAS ".ecdb", testSchema));
 
     Utf8CP tableName = SCHEMAALIAS "_B";
     assertRelECClassId(m_ecdb, tableName, "A1RelECClassId", RelClassIdExistenceMode::Persisted, false, false);
@@ -1163,7 +1163,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
                           "    </Target>"
                           "  </ECRelationshipClass>"
                           "</ECSchema>");
-    ASSERT_EQ(SUCCESS, SetupECDb("relecclassid" SCHEMAALIAS ".ecdb", testSchema));    
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("relecclassid" SCHEMAALIAS ".ecdb", testSchema));    
 
     assertRelECClassId(m_ecdb, SCHEMAALIAS "_B", "A1RelECClassId", RelClassIdExistenceMode::Persisted, false, false);
     //cardinality would imply NOT NULL on rel class id, but the column is shared by other base class rows, so no enforcement of NOT NULL.
@@ -1232,7 +1232,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
                           "  </ECRelationshipClass>"
                           "</ECSchema>");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("relecclassid" SCHEMAALIAS ".ecdb", testSchema));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("relecclassid" SCHEMAALIAS ".ecdb", testSchema));
     assertRelECClassId(m_ecdb, SCHEMAALIAS "_B", "A1RelECClassId", RelClassIdExistenceMode::Virtual, true, false);
     assertRelECClassId(m_ecdb, SCHEMAALIAS "_B", "A2RelECClassId", RelClassIdExistenceMode::Virtual, false, false);
     //nullable because there are base classes of the end class mapped to the same table (for which the FK remains NULL)
@@ -1288,7 +1288,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
                           "  </ECRelationshipClass>"
                           "</ECSchema>");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("relecclassid" SCHEMAALIAS ".ecdb", testSchema));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("relecclassid" SCHEMAALIAS ".ecdb", testSchema));
     assertRelECClassId(m_ecdb, SCHEMAALIAS "_B", "A1RelECClassId", RelClassIdExistenceMode::Virtual, false, false);
     assertRelECClassId(m_ecdb, SCHEMAALIAS "_B", "A2RelECClassId", RelClassIdExistenceMode::Virtual, false, false);
     //nullable because there are base classes of the end class mapped to the same table (for which the FK remains NULL)
@@ -1322,7 +1322,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
                           "  </ECRelationshipClass>"
                           "</ECSchema>");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("relecclassid" SCHEMAALIAS ".ecdb", testSchema));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("relecclassid" SCHEMAALIAS ".ecdb", testSchema));
 
     ASSERT_TRUE(GetHelper().TableExists(SCHEMAALIAS "_AHasB"));
     ASSERT_FALSE(m_ecdb.ColumnExists(SCHEMAALIAS "_AHasB", "ECClassId"));
@@ -1364,7 +1364,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
                           "  </ECRelationshipClass>"
                           "</ECSchema>");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("relecclassid" SCHEMAALIAS ".ecdb", testSchema));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("relecclassid" SCHEMAALIAS ".ecdb", testSchema));
     ASSERT_TRUE(GetHelper().TableExists(SCHEMAALIAS "_AHasB"));
     ASSERT_TRUE(m_ecdb.ColumnExists(SCHEMAALIAS "_AHasB", "ECClassId"));
     }
@@ -1377,7 +1377,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECRelationshipInheritanceTestFixture, NarrowingSemanticsFKMapping)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("narrowingsemanticsrelinheritance_fkmapping.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("narrowingsemanticsrelinheritance_fkmapping.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                                                                                "<ECSchema schemaName='Test' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                                                                                "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                                                                                                "  <ECEntityClass typeName='Element' modifier='Abstract' >"
@@ -1489,7 +1489,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, NarrowingSemanticsFKMapping)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECRelationshipInheritanceTestFixture, NarrowingSemanticsFKMapping_NonAbstractRelBaseClass)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("narrowingsemanticsrelinheritance_fkmapping_nonabstractrelbaseclass.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("narrowingsemanticsrelinheritance_fkmapping_nonabstractrelbaseclass.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                     "<ECSchema schemaName='Test' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                     "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                                     "  <ECEntityClass typeName='Element' modifier='Abstract' >"
@@ -1604,7 +1604,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, NarrowingSemanticsFKMapping_NonAbst
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECRelationshipInheritanceTestFixture, NarrowingSemanticsLinkTable)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("narrowingsemanticsrelinheritance_linktable.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("narrowingsemanticsrelinheritance_linktable.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                   "<ECSchema schemaName='Test' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                   "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                                   "  <ECEntityClass typeName='Element' modifier='Abstract' >"
@@ -1735,7 +1735,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, NarrowingSemanticsLinkTable)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECRelationshipInheritanceTestFixture, AddingPropertyToLinkTableSubclass)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("narrowingsemanticsrelinheritance_linktable.ecdb",
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("narrowingsemanticsrelinheritance_linktable.ecdb",
                                  SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                      <ECEntityClass typeName="A" >
                        <ECProperty propertyName="Name" typeName="string" />
@@ -1788,7 +1788,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, AddingPropertyToLinkTableSubclass)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECRelationshipInheritanceTestFixture, InheritingAllowDuplicateRelationships)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecrelinheritance_allowduplicaterelationships.ecdb", SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecrelinheritance_allowduplicaterelationships.ecdb", SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                "  <ECEntityClass typeName='A' >"
                "    <ECProperty propertyName='Name' typeName='string' />"

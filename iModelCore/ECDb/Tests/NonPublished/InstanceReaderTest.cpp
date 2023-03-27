@@ -15,7 +15,7 @@ struct InstanceReaderFixture : ECDbTestFixture {};
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(InstanceReaderFixture, ecsql_read_instance) {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("instanceReader.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("instanceReader.ecdb"));
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"sql(
@@ -31,7 +31,7 @@ TEST_F(InstanceReaderFixture, ecsql_read_instance) {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(InstanceReaderFixture, ecsql_read_property) {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("instanceReader.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("instanceReader.ecdb"));
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"sql(
@@ -47,7 +47,7 @@ TEST_F(InstanceReaderFixture, ecsql_read_property) {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(InstanceReaderFixture, instance_reader) {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("instanceReader.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("instanceReader.ecdb"));
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"sql(
@@ -107,7 +107,7 @@ TEST_F(InstanceReaderFixture, instance_reader) {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(InstanceReaderFixture, extract_prop) {
-    ASSERT_EQ(SUCCESS, SetupECDb("PROP_EXISTS.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("PROP_EXISTS.ecdb", SchemaItem(
         R"xml(<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                    <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA" />
@@ -215,7 +215,7 @@ TEST_F(InstanceReaderFixture, extract_prop) {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(InstanceReaderFixture, prop_exists) {
-    ASSERT_EQ(SUCCESS, SetupECDb("PROP_EXISTS.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("PROP_EXISTS.ecdb", SchemaItem(
         R"xml(<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                    <ECEntityClass typeName="Base" modifier="Abstract">
@@ -312,7 +312,7 @@ TEST_F(InstanceReaderFixture, prop_exists) {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(InstanceReaderFixture, nested_struct) {
-    ASSERT_EQ(SUCCESS, SetupECDb("nested_struct.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("nested_struct.ecdb", SchemaItem(
         R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                 <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA" />

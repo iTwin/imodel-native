@@ -17,7 +17,7 @@ struct SchemaManagerTests : ECDbTestFixture
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaManagerTests, ImportDifferentInMemorySchemaVersions)
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("ecdbschemamanagertests.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("ecdbschemamanagertests.ecdb"));
 
     auto importSchema = [] (ECDbR ecdb, ECVersion version, bool expectedToSucceed)
         {
@@ -62,7 +62,7 @@ TEST_F(SchemaManagerTests, ImportToken)
         ASSERT_EQ(ERROR, TestHelper(restrictedECDb).ImportSchema(SchemaItem(ecschemaXml))) << "SchemaImport into restricted ECDb. Expected to fail for: " << ecschemaXml;
         };
 
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("importtokentests.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("importtokentests.ecdb"));
     BeFileName seedFileName(m_ecdb.GetDbFileName());
     m_ecdb.CloseDb();
     assertImport("<?xml version='1.0' encoding='utf-8' ?>"
@@ -74,7 +74,7 @@ TEST_F(SchemaManagerTests, ImportToken)
                  "</ECSchema>", seedFileName);
 
 
-    ASSERT_EQ(SUCCESS, SetupECDb("importtokentests.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8' ?>"
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("importtokentests.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8' ?>"
                     R"xml(<ECSchema schemaName="BaseSchema" alias="base" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                         <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbMap" />
                         <ECEntityClass typeName="BaseNoTph" modifier="Abstract">
@@ -249,7 +249,7 @@ TEST_F(SchemaManagerTests, SchemaImportOptionsDoNotOverlap)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaManagerTests, DisallowMajorSchemaVersionImport)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("DisallowMajorSchemaVersionImport.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8' ?>"
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("DisallowMajorSchemaVersionImport.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8' ?>"
                                                   "<ECSchema schemaName='BaseSchema' alias='base' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                                   "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbMap' />"
                                                 "    <ECCustomAttributeClass typeName='MyBaseCA'>"
@@ -635,7 +635,7 @@ TEST_F(SchemaManagerTests, DisallowMajorSchemaVersionImport)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaManagerTests, IncrementalLoading)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecdbschemamanagertests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecdbschemamanagertests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
     BeFileName testFilePath(m_ecdb.GetDbFileName());
 
     const int expectedClassCount = m_ecdb.Schemas().GetSchema("ECSqlTest")->GetClassCount();
@@ -702,7 +702,7 @@ TEST_F(SchemaManagerTests, IncrementalLoading)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaManagerTests, CasingTests)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("schemamanagercasingtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schemamanagercasingtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     ECSchemaCP schema = m_ecdb.Schemas().GetSchema("ECDBFILEinfo");
     ASSERT_TRUE(schema != nullptr && schema->GetName().EqualsI("ECDbFileInfo"));
@@ -741,7 +741,7 @@ TEST_F(SchemaManagerTests, CasingTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaManagerTests, GetDerivedClasses)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecschemamanagertest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecschemamanagertest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     ECClassCP baseClass = m_ecdb.Schemas().GetClass("ECSqlTest", "THBase");
     ASSERT_TRUE(baseClass != nullptr) << "Could not retrieve base class";
@@ -761,7 +761,7 @@ TEST_F(SchemaManagerTests, GetDerivedClasses)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaManagerTests, GetDerivedECClassesWithoutIncrementalLoading)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecschemamanagertest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecschemamanagertest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     ECSchemaCP testSchema = m_ecdb.Schemas().GetSchema("ECSqlTest", true);
     ASSERT_TRUE(testSchema != nullptr);
@@ -780,7 +780,7 @@ TEST_F(SchemaManagerTests, GetDerivedECClassesWithoutIncrementalLoading)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaManagerTests, GetMixin)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("getmixin.ecdb",
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("getmixin.ecdb",
                            SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
                                           <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                           <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA" />
@@ -1036,7 +1036,7 @@ TEST_F(SchemaManagerTests, GetPropertyMinMaxLength)
             </ECEntityClass>
         </ECSchema>)xml"))) << "MinimumLength/MaximumLength not supported for IGeometry arrays";
 
-    ASSERT_EQ(SUCCESS, SetupECDb("GetPropertyMinMaxLength.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("GetPropertyMinMaxLength.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECStructClass typeName="MyStruct">
                <ECProperty propertyName="StrProp1" typeName="string" minimumLength="5" maximumLength="10"/>
@@ -1207,7 +1207,7 @@ TEST_F(SchemaManagerTests, GetPropertyMinMaxValue)
     </ECSchema>)xml"))) << "MinimumValue/MaximumValue not expected to be supported for string";
 
 
-    ASSERT_EQ(SUCCESS, SetupECDb("getpropertyminmaxvalue.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("getpropertyminmaxvalue.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
         <ECStructClass typeName="MyStruct" modifier="None" >
             <ECProperty propertyName="IntProp1" typeName="int" minimumValue="0"/>
@@ -1414,7 +1414,7 @@ TEST_F(SchemaManagerTests, GetPropertyMinMaxValue)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaManagerTests, GetPropertyPriority)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("GetPropertyPriority.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("GetPropertyPriority.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECStructClass typeName="MyStruct">
                 <ECProperty propertyName="MinusFiveHundred" typeName="string" priority="-500"/>
@@ -1484,7 +1484,7 @@ TEST_F(SchemaManagerTests, GetPropertyPriority)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaManagerTests, GetEnumeration)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("getenumeration.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8' ?>"
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("getenumeration.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8' ?>"
                                      "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                      "<ECSchemaReference name='ECDbFileInfo' version='02.00.00' prefix='ecdbf' />"
                                      "  <ECEntityClass typeName='Foo' >"
@@ -1606,7 +1606,7 @@ TEST_F(SchemaManagerTests, GetKindOfQuantity)
                                        </ECEntityClass>
                                      </ECSchema>)xml"));
 
-    ASSERT_EQ(SUCCESS, SetupECDb("getkindofquantity.ecdb", testSchemas[0]));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("getkindofquantity.ecdb", testSchemas[0]));
     ASSERT_TRUE(m_ecdb.Schemas().ContainsSchema("Units"));
     ASSERT_EQ(SUCCESS, ImportSchema(testSchemas[1]));
     ASSERT_EQ(BeVersion(3, 2), GetHelper().GetOriginalECXmlVersion("Schema1"));
@@ -1658,7 +1658,7 @@ TEST_F(SchemaManagerTests, LoadAllUnitsImplicitly)
     //This tests that units, unit systems, phenomena and formats are always loaded entirely if
     //a KOQ is loaded, a unit is loaded, a unit system is loaded or a phenomenon is loaded.
 
-    ASSERT_EQ(SUCCESS, SetupECDb("LoadAllUnitsImplicitly.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("LoadAllUnitsImplicitly.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
                                      <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                      <ECSchemaReference name="Units" version="01.00.00" alias="u" />
                                      <ECSchemaReference name="Formats" version="01.00.00" alias="f" />
@@ -1783,7 +1783,7 @@ TEST_F(SchemaManagerTests, LoadAllUnitsImplicitly)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaManagerTests, ImportPreEC32KindOfQuantity)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ImportPreEC32KindOfQuantity.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ImportPreEC32KindOfQuantity.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
                                      <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                      <KindOfQuantity typeName="MyKindOfQuantity" persistenceUnit="CM" relativeError=".5"  presentationUnits="FT;IN" />
                                      </ECSchema>)xml")));
@@ -1834,7 +1834,7 @@ TEST_F(SchemaManagerTests, GetPreEC32KindOfQuantity)
                                        </ECEntityClass>
                                      </ECSchema>)xml"));
 
-    ASSERT_EQ(SUCCESS, SetupECDb("getkindofquantity.ecdb", testSchemas[0]));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("getkindofquantity.ecdb", testSchemas[0]));
     ASSERT_TRUE(m_ecdb.Schemas().ContainsSchema("Units"));
     ASSERT_EQ(SUCCESS, ImportSchema(testSchemas[1]));
     ASSERT_EQ(BeVersion(3,1), GetHelper().GetOriginalECXmlVersion("Schema1"));
@@ -1883,7 +1883,7 @@ TEST_F(SchemaManagerTests, GetPreEC32KindOfQuantity)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaManagerTests, Formats)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("schemamanager_formats.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schemamanager_formats.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
                                 <ECSchema schemaName="Schema1" alias="s1" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                     <ECSchemaReference name="Units" version="01.00.00" alias="u" />
                                     <Unit typeName="MyMeter" displayLabel="My Metre" definition="u:M" numerator="1.0" phenomenon="u:LENGTH" unitSystem="u:METRIC" />
@@ -1969,7 +1969,7 @@ TEST_F(SchemaManagerTests, Formats)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaManagerTests, GetPropertyCategory)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("getpropertycategories.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("getpropertycategories.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
                                      <ECSchema schemaName="Schema1" alias="s1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                         <PropertyCategory typeName="Core" description="Core" displayLabel="Core" priority="1" />
                                      </ECSchema>)xml")));
@@ -2064,7 +2064,7 @@ TEST_F(SchemaManagerTests, GetPropertyCategory)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaManagerTests, GetPropertyWithExtendedType)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("propertywithextendedtype.ecdb",
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("propertywithextendedtype.ecdb",
                            SchemaItem("<?xml version='1.0' encoding='utf-8' ?>"
                                       "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                       "  <ECEntityClass typeName='Foo' >"
@@ -2102,7 +2102,7 @@ TEST_F(SchemaManagerTests, GetPropertyWithExtendedType)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaManagerTests, GetRelationshipWithAbstractConstraintClass)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("relationshipwithabstractconstraintclass.ecdb",
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("relationshipwithabstractconstraintclass.ecdb",
                            SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
                                       <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                         <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
@@ -2169,7 +2169,7 @@ TEST_F(SchemaManagerTests, GetRelationshipWithAbstractConstraintClass)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaManagerTests, AddDuplicateECSchemaInReadContext)
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("ecschemamanagertest.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("ecschemamanagertest.ecdb"));
 
     ECSchemaReadContextPtr context1 = nullptr;
     ASSERT_EQ(SUCCESS, ReadECSchema(context1, m_ecdb, SchemaItem::CreateForFile("BaseSchemaA.01.00.00.ecschema.xml")));
@@ -2189,7 +2189,7 @@ TEST_F(SchemaManagerTests, AddDuplicateECSchemaInReadContext)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaManagerTests, ImportDuplicateSchema)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecschemamanagertest.ecdb", SchemaItem::CreateForFile("BaseSchemaA.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecschemamanagertest.ecdb", SchemaItem::CreateForFile("BaseSchemaA.01.00.00.ecschema.xml")));
 
     ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem::CreateForFile("BaseSchemaA.01.00.00.ecschema.xml")));
     ECClassCP ecclass = m_ecdb.Schemas().GetClass("BaseSchemaA", "Address");
@@ -2201,7 +2201,7 @@ TEST_F(SchemaManagerTests, ImportDuplicateSchema)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaManagerTests, ImportMultipleSupplementalSchemas)
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("supplementalSchematest.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("supplementalSchematest.ecdb"));
     ASSERT_EQ(SUCCESS, ImportSchemas({ SchemaItem(R"xml(<ECSchema schemaName="SchoolSchema" alias="SS" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA"/>
                 <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
@@ -2353,7 +2353,7 @@ TEST_F(SchemaManagerTests, ImportMultipleSupplementalSchemas)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaManagerTests, GetClass)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecschemamanagertest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecschemamanagertest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
     ECClassCP ecClass = m_ecdb.Schemas().GetClass("ECSqlTest", "PSA");
     EXPECT_TRUE(ecClass != nullptr);
     ecClass = m_ecdb.Schemas().GetClass("ecsql", "PSA", SchemaLookupMode::ByAlias);
@@ -2371,7 +2371,7 @@ TEST_F(SchemaManagerTests, GetClass)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaManagerTests, ClassLocater)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecschemamanagertest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecschemamanagertest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     ECClassCP ecClass = m_ecdb.GetClassLocater().LocateClass("ECSqlTest", "PSA");
     EXPECT_TRUE(ecClass != nullptr) << "Look up by schema name";
@@ -2393,7 +2393,7 @@ TEST_F(SchemaManagerTests, ClassLocater)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaManagerTests, Supplementation_DifferentPrecedences)
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("supplementalschematest.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("supplementalschematest.ecdb"));
 
     ECSchemaReadContextPtr context = nullptr;
     ASSERT_EQ(SUCCESS, ReadECSchema(context, m_ecdb, SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
@@ -2479,7 +2479,7 @@ TEST_F(SchemaManagerTests, Supplementation_DifferentPrecedences)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaManagerTests, Supplementation_SuppSchemaTargetsNewerPrimaryMajorVersion)
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("supplementalschematest.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("supplementalschematest.ecdb"));
 
     ECSchemaReadContextPtr context = nullptr;
     ASSERT_EQ(SUCCESS, ReadECSchema(context, m_ecdb, SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
@@ -2562,7 +2562,7 @@ TEST_F(SchemaManagerTests, Supplementation_SuppSchemaTargetsNewerPrimaryMajorVer
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaManagerTests, Supplementation_SuppSchemaTargetsNewerPrimaryMinorVersion)
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("supplementalschematest.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("supplementalschematest.ecdb"));
 
     ECSchemaReadContextPtr context = nullptr;
     ASSERT_EQ(SUCCESS, ReadECSchema(context, m_ecdb, SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
@@ -2685,7 +2685,7 @@ DbResult PrepareECClassViews(bmap<Utf8String, bset<Utf8String>>& ecclassViewInfo
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaManagerTests, CreateECClassViews)
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("createecclassviews.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("createecclassviews.ecdb"));
 
     ASSERT_EQ(SUCCESS, m_ecdb.Schemas().CreateClassViewsInDb());
     m_ecdb.SaveChanges();
@@ -2709,7 +2709,7 @@ TEST_F(SchemaManagerTests, CreateECClassViews)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaManagerTests, CreateECClassViewsForSubsetOfClasses)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("createecclassviewspartially.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("createecclassviewspartially.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name IN ('FileInfo', 'FileInfoOwnership', 'AAA','Cubicle', 'RelationWithLinkTableMapping')"));
@@ -2749,7 +2749,7 @@ TEST_F(SchemaManagerTests, CreateECClassViewsForSubsetOfClasses)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaManagerTests, CreateECClassViews_SharedColumns)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("createecclassviewssharedcols.ecdb",
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("createecclassviewssharedcols.ecdb",
                       SchemaItem("<?xml version='1.0' encoding='utf-8' ?>"
             "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
             "  <ECSchemaReference name='ECDbMap' version='02.00.00' alias='ecdbmap' />"
@@ -2815,7 +2815,7 @@ TEST_F(SchemaManagerTests, CreateECClassViews_SharedColumns)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaManagerTests, CreateECClassViewsForInvalidClasses)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("createecclassviewsforinvalidclasses.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("createecclassviewsforinvalidclasses.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name IN ('AnglesStruct', 'ClassMap', 'AClassThatDoesNotGetMappedToDb')"));
@@ -2835,7 +2835,7 @@ TEST_F(SchemaManagerTests, CreateECClassViewsForInvalidClasses)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaManagerTests, CreateECClassViewsForCombinationofValidInvalidClasses)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("createecclassviewsforvalidinvalidclasses.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("createecclassviewsforvalidinvalidclasses.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name IN ('AAA', 'AnglesStruct', 'AClassThatDoesNotGetMappedToDb')"));
@@ -2921,7 +2921,7 @@ TEST_F(SchemaManagerTests, ImportSchemaWithSubclassesToBaseClassInExistingSchema
         activityKey = newKey;
         };
 
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("importschemawithsubclassestoexistingschema1.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("importschemawithsubclassestoexistingschema1.ecdb"));
 
     ECInstanceKey activityKey;
     setup(activityKey, m_ecdb);
@@ -2945,7 +2945,7 @@ TEST_F(SchemaManagerTests, ImportSchemaWithSubclassesToBaseClassInExistingSchema
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaManagerTests, IGeometryTypes)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecdbgeometrytypes.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecdbgeometrytypes.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                           "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                           "    <ECEntityClass typeName='Foo' >"
                           "        <ECProperty propertyName='g1' typeName='Bentley.Geometry.Common.IGeometry' />"
@@ -2987,7 +2987,7 @@ TEST_F(SchemaManagerTests, IGeometryTypes)
 
 TEST_F(SchemaManagerTests, SchemaChangeEvent)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("schema_events.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("schema_events.ecdb"));
 
     uint32_t beforeEventCount = 0;
     uint32_t afterEventCount = 0;
@@ -3042,7 +3042,7 @@ TEST_F(SchemaManagerTests, SchemaChangeEvent)
 //+---------------+---------------+---------------+---------------+---------------+-----
 TEST_F(SchemaManagerTests, EnforceECEnumeration)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("propertywithEnumerationType.ecdb",
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("propertywithEnumerationType.ecdb",
                            SchemaItem("<?xml version='1.0' encoding='utf-8' ?>"
                                       "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                       " <ECEnumeration typeName='NonStrictEnum' backingTypeName='int' isStrict='False'>"
@@ -3174,7 +3174,7 @@ TEST_F(SchemaManagerTests, DuplicateInMemorySchemaTest)
     ASSERT_EQ (SchemaReadStatus::Success, ECSchema::ReadFromXmlString(std, stdXml, *readContext));
 
 
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("duplicateInMemorySchemaTest.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("duplicateInMemorySchemaTest.ecdb"));
     ASSERT_EQ(BentleyStatus::SUCCESS, m_ecdb.Schemas().ImportSchemas(readContext->GetCache().GetSchemas()));
 
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(usr, usrXml, *readContext));
@@ -3206,7 +3206,7 @@ TEST_F(SchemaManagerTests, ForeignKeyOnWrongSide)
     ASSERT_EQ (SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *readContext));
 
 
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("bug354429foreignKey.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("bug354429foreignKey.ecdb"));
     auto result = m_ecdb.Schemas().ImportSchemas(readContext->GetCache().GetSchemas());
     ASSERT_EQ(BentleyStatus::ERROR, result); // We expect the schema to fail because foreign key is on the wrong side
     // Previously this caused the application to crash (SEHException, access violation)
@@ -3237,7 +3237,7 @@ TEST_F(SchemaManagerTests, ImportForwardNavPropertyOnStrengDirectionBackward)
     ASSERT_EQ (SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *readContext));
 
 
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("bug354429foreignKey.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("bug354429foreignKey.ecdb"));
     auto result = m_ecdb.Schemas().ImportSchemas(readContext->GetCache().GetSchemas());
     ASSERT_EQ(BentleyStatus::SUCCESS, result);
     }
@@ -3266,7 +3266,7 @@ TEST_F(SchemaManagerTests, ForeignKeyOnWrongSideUsingDefaultStrengthDirection)
     ASSERT_EQ (SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *readContext));
 
 
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("bug354429foreignKey.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("bug354429foreignKey.ecdb"));
     auto result = m_ecdb.Schemas().ImportSchemas(readContext->GetCache().GetSchemas());
     ASSERT_EQ(BentleyStatus::ERROR, result); // strength direction defaults to forward, so this should fail same as scenario #1
     }
@@ -3412,7 +3412,7 @@ TEST_F(SchemaManagerTests, PruneImportedNamelessPropertyCategories)
         namedReferencingProp->SetCategory(propCateg);
         }
 
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("prune_imported_nameless_property_categories.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("prune_imported_nameless_property_categories.ecdb"));
     ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(schema)) << "Importing schema should succeed";
     ECSchemaCP storedSchema = m_ecdb.Schemas().GetSchema("TestSchema3_2");
     ECClassCP structClass = storedSchema->GetClassCP("structClass");
