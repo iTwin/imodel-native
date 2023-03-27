@@ -28,7 +28,7 @@ TEST_F(AllRelatedInstanceNodesSpecificationTests, LoadsFromJson)
         "supportedSchemas": {"schemaNames":["TestSchema"]},
         "requiredDirection": "Forward"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     ASSERT_FALSE(json.isNull());
 
     AllRelatedInstanceNodesSpecification spec;
@@ -48,7 +48,7 @@ TEST_F(AllRelatedInstanceNodesSpecificationTests, LoadsFromJsonWithDefaultValues
     static Utf8CP jsonString = R"({
         "specType": "AllRelatedInstanceNodes"
     })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
+    BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
 
     AllRelatedInstanceNodesSpecification spec;
@@ -68,8 +68,8 @@ TEST_F(AllRelatedInstanceNodesSpecificationTests, WriteToJson)
     {
     AllRelatedInstanceNodesSpecification spec(123, true, true, true, true, true, false, 5, "schema1, schema2");
     spec.SetRequiredRelationDirection(RequiredRelationDirection::RequiredRelationDirection_Forward);
-    Json::Value json = spec.WriteJson();
-    Json::Value expected = Json::Reader::DoParse(R"({
+    BeJsDocument json = spec.WriteJson();
+    BeJsDocument expected(R"({
         "specType": "AllRelatedInstanceNodes",
         "priority": 123,
         "hasChildren": "Always",
@@ -80,7 +80,7 @@ TEST_F(AllRelatedInstanceNodesSpecificationTests, WriteToJson)
         "skipRelatedLevel": 5,
         "supportedSchemas": {"schemaNames": ["schema1", "schema2"]}
     })");
-    EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
+    EXPECT_TRUE(expected.isExactEqual(json));
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -242,10 +242,10 @@ TEST_F(CustomizationHelperTests, CustomizeNode_EvaluateArtifacts)
 TEST_F (CustomizationHelperTests, CustomizationExpressionContextHasParentNodeSymbols)
     {
     NavNodePtr parentNode = CreateNode("Parent", "description", "imageId", "ParentType");
-    RulesEngineTestHelpers::CacheNode(*m_nodesCache, *parentNode);
+    RulesEngineTestHelpers::CacheNode(*m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *parentNode);
 
     NavNodePtr thisNode = CreateNode("This", "description", "imageId", "ThisType");
-    RulesEngineTestHelpers::CacheNode(*m_nodesCache, *thisNode, parentNode->GetNodeId());
+    RulesEngineTestHelpers::CacheNode(*m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *thisNode, parentNode->GetNodeId());
 
     ChildNodeRule rule("", 1, false, RuleTargetTree::TargetTree_Both);
     NavNodesProviderContextPtr childContext = NavNodesProviderContext::Create(*m_ruleset, TargetTree_Both, parentNode.get(),

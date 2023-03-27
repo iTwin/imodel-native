@@ -50,7 +50,7 @@ void NodesProviderTests::TearDown()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void NodesProviderTests::Cache(NavNodeR node) {RulesEngineTestHelpers::CacheNode(*m_nodesCache, node);}
+void NodesProviderTests::Cache(NavNodeR node) {RulesEngineTestHelpers::CacheNode(*m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), node);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -501,6 +501,7 @@ protected:
         EXPECT_OPTIMIZATION_FLAGS_ENABLED();
         return Iterator(std::make_unique<IterableIteratorImpl<bvector<NavNodePtr>::const_iterator, NavNodePtr>>(m_nodes.end()));
         }
+    size_t _GetLimitedInstancesCount(size_t) const override {return 0;}
 public:
     static RefCountedPtr<OptimizationFlagsTestingProvider> Create(NavNodesProviderContextR context, NavNodeP node)
         {

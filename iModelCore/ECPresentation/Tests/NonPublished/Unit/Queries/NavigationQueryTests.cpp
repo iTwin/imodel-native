@@ -162,6 +162,32 @@ TEST_F(ComplexQueryBuilderTests, ToString_Where_WrapsConditionWithBraces)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ComplexQueryBuilderTests, ToString_Where_JoinsWithAndOperator)
+    {
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
+    query->Where("Test1", BoundQueryValuesList(), ClauseJoinOperator::And);
+    query->Where("Test2", BoundQueryValuesList(), ClauseJoinOperator::And);
+
+    Utf8String str = query->GetQuery()->GetQueryString();
+    ASSERT_STREQ(" WHERE (Test1) AND (Test2)", str.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ComplexQueryBuilderTests, ToString_Where_JoinsWithOrOperator)
+    {
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
+    query->Where("Test1", BoundQueryValuesList(), ClauseJoinOperator::Or);
+    query->Where("Test2", BoundQueryValuesList(), ClauseJoinOperator::Or);
+
+    Utf8String str = query->GetQuery()->GetQueryString();
+    ASSERT_STREQ(" WHERE (Test1) OR (Test2)", str.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ComplexQueryBuilderTests, ToString_From_NoAliasPolymorphic)
     {
     ECSchemaPtr schema;
@@ -1543,7 +1569,7 @@ struct TestNavigationContract : NavigationQueryContract
 private:
     bvector<PresentationQueryContractFieldCPtr> m_fields;
 protected:
-    TestNavigationContract() : NavigationQueryContract("") {}
+    TestNavigationContract() : NavigationQueryContract("", *StringQueryBuilder::Create("")) {}
     RefCountedPtr<NavigationQueryContract> _Clone() const override {return new TestNavigationContract(*this);}
     NavigationQueryResultType _GetResultType() const override {return NavigationQueryResultType::ECInstanceNodes;}
     bvector<PresentationQueryContractFieldCPtr> _GetFields() const override {return m_fields;}

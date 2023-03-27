@@ -6,7 +6,7 @@
 #include <Bentley/BeTest.h>
 #include <Bentley/LocalState.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
-#include <json/BeJsValue.h>
+#include <BeRapidJson/BeJsValue.h>
 
 USING_NAMESPACE_BENTLEY
 
@@ -262,4 +262,3 @@ TEST(GetConstArrayMember, OnlyModifiesNonConstValue)
     EXPECT_TRUE(nc[1].isNull());
     EXPECT_EQ(nc.size(), 2);
     }
-

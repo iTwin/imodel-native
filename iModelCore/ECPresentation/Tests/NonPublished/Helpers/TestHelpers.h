@@ -101,11 +101,12 @@ struct RulesEngineTestHelpers
     static PresentationQueryContractFieldPtr CreateDisplayLabelField(ECSchemaHelper const&, SelectClass<ECClass> const&,
         bvector<RelatedClassPath> const& = {}, bvector<InstanceLabelOverrideValueSpecification const*> const& = {});
     static PresentationQueryContractFieldPtr CreateNullDisplayLabelField();
-    static ComplexQueryBuilderPtr CreateMultiECInstanceNodesQuery(ECClassCR ecClass, PresentationQueryBuilderR instanceNodesQuery);
+    static ComplexQueryBuilderPtr CreateMultiECInstanceNodesQuery(ECClassCR ecClass, PresentationQueryBuilderR instanceNodesQuery, bvector<RelatedClassPath> const& = bvector<RelatedClassPath>());
+    static PresentationQueryBuilderPtr CreateECInstanceNodesQueryForClasses(ECSchemaHelper const&, uint64_t& contractIdsCounter, ECClassSet const& classes, Utf8CP alias, ComplexQueryHandler handler = nullptr);
     static PresentationQueryBuilderPtr CreateECInstanceNodesQueryForClasses(ECSchemaHelper const&, ECClassSet const& classes, Utf8CP alias, ComplexQueryHandler handler = nullptr);
-    static ComplexQueryBuilderPtr CreateECInstanceNodesQueryForClass(ECSchemaHelper const&, SelectClass<ECClass> const& selectClass, bvector<RelatedClassPath> const& = bvector<RelatedClassPath>());
-    static PresentationQueryBuilderPtr CreateQuery(NavigationQueryContract const&, bset<ECN::ECClassCP>, bool polymorphic, Utf8CP alias, ComplexQueryHandler handler = nullptr);
-    static PresentationQueryBuilderPtr CreateQuery(NavigationQueryContract const&, bvector<ECN::ECClassCP>, bool polymorphic, Utf8CP alias, ComplexQueryHandler handler = nullptr);
+    static ComplexQueryBuilderPtr CreateECInstanceNodesQueryForClass(ECSchemaHelper const&, uint64_t contractId, SelectClass<ECClass> const& selectClass, bvector<RelatedClassPath> const& = bvector<RelatedClassPath>());
+    static PresentationQueryBuilderPtr CreateQuery(PresentationQueryContract const&, bset<ECN::ECClassCP>, bool polymorphic, Utf8CP alias, ComplexQueryHandler handler = nullptr);
+    static PresentationQueryBuilderPtr CreateQuery(PresentationQueryContract const&, bvector<ECN::ECClassCP>, bool polymorphic, Utf8CP alias, ComplexQueryHandler handler = nullptr);
 
     static void ValidateContentSetItem(ECN::IECInstanceCR instance, ContentSetItemCR item, ContentDescriptorCR descriptor, Utf8CP expectedLabel = nullptr, Utf8CP expectedImageId = nullptr);
     static void ValidateContentSet(bvector<ECN::IECInstanceCP> instances, Content const& content, bool validateOrder = false);
@@ -120,7 +121,7 @@ struct RulesEngineTestHelpers
     static ContentDescriptor::Field& AddField(ContentDescriptorR, ContentDescriptor::Field&);
     static ContentDescriptor::Field& AddField(ContentDescriptorR, ECN::ECClassCR, ContentDescriptor::Property, IPropertyCategorySupplierR);
 
-    static void CacheNode(IHierarchyCacheR cache, NavNodeR node, BeGuidCR parentNodeId = BeGuid());
+    static void CacheNode(IHierarchyCacheR cache, Utf8StringCR connectionId, Utf8String rulesetId, NavNodeR node, BeGuidCR parentNodeId = BeGuid());
 
     static void ImportSchema(ECDbR, std::function<void(ECSchemaR)> const& schemaBuilder);
     static bvector<ECEntityClassP> CreateNDerivedClasses(ECSchemaR schema, ECEntityClassCR baseClass, int numberOfChildClasses);
@@ -199,28 +200,28 @@ struct RulesEngineTestHelpers
 struct TestLocalState : IJsonLocalState
 {
 private:
-    std::function<void(Utf8CP, Utf8CP, JsonValueCR)> m_saveHandler;
-    std::function<Json::Value(Utf8CP, Utf8CP)> m_getHandler;
+    std::function<void(Utf8CP, Utf8CP, BeJsConst)> m_saveHandler;
+    std::function<BeJsDocument(Utf8CP, Utf8CP)> m_getHandler;
 
 protected:
     // TODO: this is bad implementation ("null" strings), refer to RuntimeJsonLocalState
-    void _SaveValue (Utf8CP nameSpace, Utf8CP key, Utf8StringCR value) override
+    void _SaveValue (Utf8CP nameSpace, Utf8CP key, BeJsConst value) override
         {
-        Json::Value jsonValue;
-        Json::Reader().parse(value, jsonValue, false);
         if (nullptr != m_saveHandler)
-            m_saveHandler(nameSpace, key, jsonValue);
+            m_saveHandler(nameSpace, key, value);
         }
     // TODO: this is bad implementation ("null" strings), refer to RuntimeJsonLocalState
-    Utf8String _GetValue(Utf8CP nameSpace, Utf8CP key) const override
+    BeJsDocument _GetValue(Utf8CP nameSpace, Utf8CP key) const override
         {
-        return nullptr != m_getHandler ? Json::FastWriter().write(m_getHandler(nameSpace, key)) : "null";
+        if (nullptr != m_getHandler)
+            return m_getHandler(nameSpace, key);
+        return BeJsDocument();
         }
 
 public:
     TestLocalState(){}
-    void SetSaveHandler(std::function<void(Utf8CP, Utf8CP, JsonValueCR)> const& handler) {m_saveHandler = handler;}
-    void SetGetHandler(std::function<Json::Value(Utf8CP, Utf8CP)> const& handler) {m_getHandler = handler;}
+    void SetSaveHandler(std::function<void(Utf8CP, Utf8CP, BeJsConst)> const& handler) {m_saveHandler = handler;}
+    void SetGetHandler(std::function<BeJsDocument(Utf8CP, Utf8CP)> const& handler) {m_getHandler = handler;}
 };
 
 /*=================================================================================**//**

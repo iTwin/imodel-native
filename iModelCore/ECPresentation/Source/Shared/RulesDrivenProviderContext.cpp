@@ -108,7 +108,9 @@ protected:
         auto query = ComplexQueryBuilder::Create();
         query->SelectAll();
         query->From(*nodeKey.GetInstanceKeysSelectQuery(), "keys");
-        query->Where("[keys].[ECClassId] = ? AND [keys].[ECInstanceId] = ?", { std::make_shared<BoundQueryId>(instanceKey.GetClassId()), std::make_shared<BoundQueryId>(instanceKey.GetInstanceId()) });
+        query->Where(
+            Utf8PrintfString("[keys].[%s] = ? AND [keys].[%s] = ?", InstanceKeysSelectContract::ECClassIdFieldName, InstanceKeysSelectContract::ECInstanceIdFieldName).c_str(),
+            { std::make_shared<BoundQueryId>(instanceKey.GetClassId()), std::make_shared<BoundQueryId>(instanceKey.GetInstanceId()) });
 
         auto supportCustomFunctions = CreateCustomFunctionsContext();
         CachedECSqlStatementPtr statement = m_context->GetConnection().GetStatementCache().GetPreparedStatement(m_context->GetConnection().GetECDb().Schemas(),

@@ -1330,6 +1330,61 @@ TEST_F(BeSQLiteDbTests, InsertMismatchedColumns)
     EXPECT_TRUE(result == BE_SQLITE_OK); // SQLite should ideally fail here - we have reported this to them 8/31/2017
     m_db.SaveChanges();
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F (BeSQLiteDbTests, ChangeSetApply_IgnoreNoop)
+{
+    const auto kMainFile = "test1.db";
+    SetupDb (WString(kMainFile, true).c_str());
+    EXPECT_TRUE (m_db.IsDbOpen ());
+
+    auto cloneDb = [&](DbR from, DbR out, Utf8CP name) {
+        ASSERT_EQ (BE_SQLITE_OK, from.SaveChanges());
+        Utf8String fileName = from.GetDbFileName();
+        fileName.ReplaceAll(kMainFile, name);
+        ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(BeFileName(m_db.GetDbFileName(), true), BeFileName(fileName.c_str(), true)));
+        ASSERT_EQ(BE_SQLITE_OK, out.OpenBeSQLiteDb(fileName.c_str(), Db::OpenParams(Db::OpenMode::ReadWrite)));
+    };
+
+    ASSERT_EQ (BE_SQLITE_OK, m_db.CreateTable ("t1", "id integer primary key")) << "Creating table T1 failed.";
+    ASSERT_EQ (BE_SQLITE_OK, m_db.CreateTable ("t2", "id integer primary key, t1_id integer not null references t1(id) on delete cascade")) << "Creating table T2 failed.";
+
+    Db beforeDb;
+    cloneDb(m_db, beforeDb, "before.db");
+
+    // Make a changeset
+    MyChangeTracker changeTracker(m_db);
+    changeTracker.EnableTracking(true);
+    EXPECT_EQ (BE_SQLITE_OK, m_db.ExecuteSql ("insert into t1 values(100)"));
+    EXPECT_EQ (BE_SQLITE_OK, m_db.ExecuteSql ("insert into t2 values(201, 100)"));
+    EXPECT_EQ (BE_SQLITE_OK, m_db.ExecuteSql ("insert into t2 values(202, 100)"));
+    MyChangeSet changeSet;
+    changeSet.FromChangeTrack(changeTracker);
+    auto size = changeSet.GetSize();
+    ASSERT_TRUE(size > 0);
+    changeTracker.EndTracking();
+
+    Db afterDb;
+    cloneDb(m_db, afterDb, "after.db");
+
+    BeTest::SetFailOnAssert(false);
+    // Apply changeset to db that not have the data and should not cause conflicts
+    ASSERT_EQ(BE_SQLITE_OK, changeSet.ApplyChanges(beforeDb)) << "this should not cause conflict";
+
+
+    // Apply to a db that already have data
+    ASSERT_EQ(BE_SQLITE_ABORT, changeSet.ApplyChanges(afterDb)) << "this should cause conflict and abort";
+
+    BeTest::SetFailOnAssert(true);
+
+    // Apply to a db that already have data but with ignoreNoop flag
+    ASSERT_EQ(BE_SQLITE_OK, changeSet.ApplyChanges(afterDb, nullptr, false, /* ignoreNoop = */true)) << "with ignore noop flag this should succeed";
+
+    beforeDb.SaveChanges();
+    afterDb.SaveChanges();
+}
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod

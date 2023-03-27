@@ -13,7 +13,6 @@
 #include <Bentley/BeTimeUtilities.h>
 #include <Bentley/Logging.h>
 #include <BeRapidJson/BeRapidJson.h>
-#include <BeJsonCpp/BeJsonUtilities.h>
 #include <ECObjects/ECObjectsAPI.h>
 #include <ECDb/ECDbApi.h>
 

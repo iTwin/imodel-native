@@ -489,8 +489,9 @@ TEST_F(SchemaValidatorTests, MixinClassMayNotOverrideInheritedMixinProperty)
     ASSERT_EQ(ECObjectsStatus::Success, schema->AddReferencedSchema(*bisSchema));
     ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(entity0, "Entity0"));
     ASSERT_EQ(ECObjectsStatus::Success, entity0->AddBaseClass(*bisEntity));
-    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateMixinClass(mixin0, "Mixin0", *entity0));
-    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateMixinClass(mixin1, "Mixin1", *entity0));
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateMixinClass(mixin0, "Mixin0", *entity0, *schemaContext));
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateMixinClass(mixin1, "Mixin1", *entity0, *schemaContext));
     ASSERT_EQ(ECObjectsStatus::Success, mixin0->CreatePrimitiveProperty(prop, "P1", PRIMITIVETYPE_String));
     ASSERT_EQ(ECObjectsStatus::Success, mixin1->AddBaseClass(*mixin0));
 
@@ -523,7 +524,8 @@ TEST_F(SchemaValidatorTests, MixinClassMayNotOverrideInheritedEntityProperty)
     ASSERT_EQ(ECObjectsStatus::Success, entity0->CreatePrimitiveProperty(prop, "P1", PRIMITIVETYPE_String));
     ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(entity1, "Entity1"));
     ASSERT_EQ(ECObjectsStatus::Success, entity1->AddBaseClass(*entity0));
-    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateMixinClass(mixin0, "Mixin0", *entity1));
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateMixinClass(mixin0, "Mixin0", *entity1, *schemaContext));
     ASSERT_EQ(ECObjectsStatus::Success, entity1->AddBaseClass(*mixin0));
 
     ASSERT_TRUE(validator.Validate(*schema)) << "Mixin property does not override anything so validation should succeed";
@@ -553,7 +555,8 @@ TEST_F(SchemaValidatorTests, MixinClassMayNotOverrideInheritedEntityProperty_Rul
     ASSERT_EQ(ECObjectsStatus::Success, entity0->CreatePrimitiveProperty(prop, "MODEL_NUMBER", PRIMITIVETYPE_String));
     ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(entity1, "CONTROL_VALVE"));
     ASSERT_EQ(ECObjectsStatus::Success, entity1->AddBaseClass(*entity0));
-    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateMixinClass(mixin, "INSTRUMENT", *entity0));
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateMixinClass(mixin, "INSTRUMENT", *entity0, *schemaContext));
     ASSERT_EQ(ECObjectsStatus::Success, entity1->AddBaseClass(*mixin));
 
     ASSERT_TRUE(validator.Validate(*schema)) << "Mixin property does not override anything so validation should succeed";
@@ -566,7 +569,8 @@ TEST_F(SchemaValidatorTests, MixinClassMayNotOverrideInheritedEntityProperty_Rul
 //---------------------------------------------------------------------------------------
 TEST_F(SchemaValidatorTests, BisCoreMultiAspectTests)
     {
-    IECInstancePtr dynamicCAInstance = CoreCustomAttributeHelper::CreateCustomAttributeInstance("DynamicSchema");
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    IECInstancePtr dynamicCAInstance = CoreCustomAttributeHelper::CreateCustomAttributeInstance(*schemaContext, "DynamicSchema");
     // Element Aspect Relationship TestsF
     {
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
@@ -581,7 +585,7 @@ TEST_F(SchemaValidatorTests, BisCoreMultiAspectTests)
     InitContextWithSchemaXml(badSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
     ASSERT_FALSE(validator.Validate(*schema)) << "There is no relationship, so validation should fail";
-    schema->AddReferencedSchema(*CoreCustomAttributeHelper::GetSchema());
+    schema->AddReferencedSchema(*CoreCustomAttributeHelper::GetSchema(*schemaContext));
     schema->SetCustomAttribute(*dynamicCAInstance);
     ASSERT_TRUE(validator.Validate(*schema)) << "There is no derived aspect relationship but schema is marked as dynamic so validation should pass";
     }
@@ -617,7 +621,7 @@ TEST_F(SchemaValidatorTests, BisCoreMultiAspectTests)
     InitContextWithSchemaXml(badSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
     ASSERT_FALSE(validator.Validate(*schema)) << "Missing base class in TestRelationship. Validation should fail.";
-    schema->AddReferencedSchema(*CoreCustomAttributeHelper::GetSchema());
+    schema->AddReferencedSchema(*CoreCustomAttributeHelper::GetSchema(*schemaContext));
     schema->SetCustomAttribute(*dynamicCAInstance);
     ASSERT_FALSE(validator.Validate(*schema)) << "TestRelationship has an aspect as an endpoint but does not derive from ElementOwnsMultiAspect.  This should fail even though the schema is dynamic";
     }
@@ -766,7 +770,8 @@ TEST_F(SchemaValidatorTests, BisCoreMultiAspectTests)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(SchemaValidatorTests, BisCoreUniqueAspectTests)
     {
-    IECInstancePtr dynamicCAInstance = CoreCustomAttributeHelper::CreateCustomAttributeInstance("DynamicSchema");
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    IECInstancePtr dynamicCAInstance = CoreCustomAttributeHelper::CreateCustomAttributeInstance(*schemaContext, "DynamicSchema");
     {
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
         "<ECSchema schemaName='BisCore' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
@@ -780,7 +785,7 @@ TEST_F(SchemaValidatorTests, BisCoreUniqueAspectTests)
     InitContextWithSchemaXml(badSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
     ASSERT_FALSE(validator.Validate(*schema)) << "There is no relationship, so validation should fail";
-    schema->AddReferencedSchema(*CoreCustomAttributeHelper::GetSchema());
+    schema->AddReferencedSchema(*CoreCustomAttributeHelper::GetSchema(*schemaContext));
     schema->SetCustomAttribute(*dynamicCAInstance);
     ASSERT_TRUE(validator.Validate(*schema)) << "There is no relationship but schema is marked as dynamic so validation should pass";
     }
@@ -815,7 +820,7 @@ TEST_F(SchemaValidatorTests, BisCoreUniqueAspectTests)
     InitContextWithSchemaXml(badSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
     ASSERT_FALSE(validator.Validate(*schema)) << "Missing base class in TestRelationship. Validation should fail.";
-    schema->AddReferencedSchema(*CoreCustomAttributeHelper::GetSchema());
+    schema->AddReferencedSchema(*CoreCustomAttributeHelper::GetSchema(*schemaContext));
     schema->SetCustomAttribute(*dynamicCAInstance);
     ASSERT_FALSE(validator.Validate(*schema)) << "TestRelationship has an aspect as an endpoint but does not derive from ElementOwnsUniqueAspect.  This should fail even though the schema is dynamic";
     }
@@ -2172,7 +2177,8 @@ TEST_F(SchemaValidatorTests, EntityClassMayOverrideInheritedMixinProperty)
     ASSERT_EQ(ECObjectsStatus::Success, schema->AddReferencedSchema(*bisSchema));
     ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(entity, "Entity0"));
     ASSERT_EQ(ECObjectsStatus::Success, entity->AddBaseClass(*bisEntity));
-    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateMixinClass(mixin, "Mixin0", *entity));
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateMixinClass(mixin, "Mixin0", *entity, *schemaContext));
     ASSERT_EQ(ECObjectsStatus::Success, mixin->CreatePrimitiveProperty(prop, "P1", PRIMITIVETYPE_String));
     ASSERT_EQ(ECObjectsStatus::Success, entity->AddBaseClass(*mixin));
 
@@ -2230,10 +2236,11 @@ TEST_F(SchemaValidatorTests, EntityClassMayNotInheritPropertyFromMultipleMixinCl
     ASSERT_EQ(ECObjectsStatus::Success, schema->AddReferencedSchema(*bisSchema));
     ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(entity0, "Entity0"));
     ASSERT_EQ(ECObjectsStatus::Success, entity0->AddBaseClass(*bisEntity));
-    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateMixinClass(mixin0, "Mixin0", *entity0));
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateMixinClass(mixin0, "Mixin0", *entity0, *schemaContext));
     ASSERT_EQ(ECObjectsStatus::Success, mixin0->CreatePrimitiveProperty(prop, "P1", PRIMITIVETYPE_String));
     ASSERT_EQ(ECObjectsStatus::Success, entity0->AddBaseClass(*mixin0));
-    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateMixinClass(mixin1, "Mixin1", *entity0));
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateMixinClass(mixin1, "Mixin1", *entity0, *schemaContext));
     ASSERT_EQ(ECObjectsStatus::Success, entity0->AddBaseClass(*mixin1));
 
     ASSERT_TRUE(validator.Validate(*schema)) << "Entity class inherits property from one mixin class so validation should succeed";
@@ -2263,12 +2270,13 @@ TEST_F(SchemaValidatorTests, DiamondPatternInheritedProperty)
     ASSERT_EQ(ECObjectsStatus::Success, schema->AddReferencedSchema(*bisSchema));
     ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(entity0, "Entity0"));
     ASSERT_EQ(ECObjectsStatus::Success, entity0->AddBaseClass(*bisEntity));
-    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateMixinClass(mixin0, "Mixin0", *entity0));
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateMixinClass(mixin0, "Mixin0", *entity0, *schemaContext));
     ASSERT_EQ(ECObjectsStatus::Success, mixin0->CreatePrimitiveProperty(prop, "P1", PRIMITIVETYPE_String));
     ASSERT_EQ(ECObjectsStatus::Success, entity0->AddBaseClass(*mixin0));
     ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(entity1, "Entity1"));
     ASSERT_EQ(ECObjectsStatus::Success, entity1->AddBaseClass(*entity0));
-    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateMixinClass(mixin1, "Mixin1", *entity1));
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateMixinClass(mixin1, "Mixin1", *entity1, *schemaContext));
     ASSERT_EQ(ECObjectsStatus::Success, mixin1->AddBaseClass(*mixin0));
     ASSERT_EQ(ECObjectsStatus::Success, entity1->AddBaseClass(*mixin1));
 
@@ -2327,9 +2335,10 @@ TEST_F(SchemaValidatorTests, EntityClassesMayNotHaveTheSameDisplayLabel)
     EC_ASSERT_SUCCESS(schema->CreateEntityClass(entity1, "E1"));
     EC_ASSERT_SUCCESS(entity1->AddBaseClass(*bisEntity));
 
-    EC_ASSERT_SUCCESS(schema->AddReferencedSchema(*CoreCustomAttributeHelper::GetSchema()));
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    EC_ASSERT_SUCCESS(schema->AddReferencedSchema(*CoreCustomAttributeHelper::GetSchema(*schemaContext)));
     
-    ECClassCP dynamicSchemaClass = CoreCustomAttributeHelper::GetClass("DynamicSchema");
+    ECClassCP dynamicSchemaClass = CoreCustomAttributeHelper::GetClass(*schemaContext, "DynamicSchema");
     StandaloneECInstancePtr dynamicSchemaInstance = dynamicSchemaClass->GetDefaultStandaloneEnabler()->CreateInstance();
     schema->SetCustomAttribute(*dynamicSchemaInstance.get());
     ASSERT_TRUE(schema->IsDynamicSchema());
@@ -2408,9 +2417,10 @@ TEST_F(SchemaValidatorTests, PropertiesMayNotHaveTheSameDisplayLabelAndCategory)
     EC_ASSERT_SUCCESS(schema->CreatePropertyCategory(cat2, "category2"));
     EC_ASSERT_SUCCESS(entity->AddBaseClass(*bisEntity));
 
-    EC_ASSERT_SUCCESS(schema->AddReferencedSchema(*CoreCustomAttributeHelper::GetSchema()));
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    EC_ASSERT_SUCCESS(schema->AddReferencedSchema(*CoreCustomAttributeHelper::GetSchema(*schemaContext)));
 
-    ECClassCP dynamicSchemaClass = CoreCustomAttributeHelper::GetClass("DynamicSchema");
+    ECClassCP dynamicSchemaClass = CoreCustomAttributeHelper::GetClass(*schemaContext, "DynamicSchema");
     StandaloneECInstancePtr dynamicSchemaInstance = dynamicSchemaClass->GetDefaultStandaloneEnabler()->CreateInstance();
     schema->SetCustomAttribute(*dynamicSchemaInstance.get());
     ASSERT_TRUE(schema->IsDynamicSchema());

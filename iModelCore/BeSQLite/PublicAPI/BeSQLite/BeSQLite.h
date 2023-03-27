@@ -8,7 +8,7 @@
 #include <Bentley/bset.h>
 #include <Bentley/BeId.h>
 #include <Bentley/BeEvent.h>
-#include <json/BeJsValue.h>
+#include <BeRapidJson/BeJsValue.h>
 #include <list>
 #include <type_traits>
 #include <functional>

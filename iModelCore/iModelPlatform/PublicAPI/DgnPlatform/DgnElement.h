@@ -10,7 +10,7 @@
 #include <DgnPlatform/CodeSpec.h>
 #include <Napi/napi.h>
 #include <map>
-#include <json/BeJsValue.h>
+#include <BeRapidJson/BeJsValue.h>
 
 BEGIN_BENTLEY_RENDER_NAMESPACE
 struct Graphic;

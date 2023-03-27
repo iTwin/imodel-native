@@ -11,7 +11,7 @@
 #ifndef OSSL_CRYPTO_DSO_CONF_H
     # define OSSL_CRYPTO_DSO_CONF_H
     # pragma once
-    #if defined (__linux)
+    #if defined (__linux) || (defined(__APPLE__) && defined(__arm64__))
         # define DSO_DLFCN
         # define HAVE_DLFCN_H
         # define DSO_EXTENSION ".so"

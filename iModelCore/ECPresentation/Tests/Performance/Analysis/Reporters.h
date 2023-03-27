@@ -15,11 +15,24 @@ struct Reporter
 {
 private:
     bvector<Utf8String> m_fields;
-    bvector<bmap<Utf8String, Json::Value>> m_results;
+    BeJsDocument m_results;
 public:
     Reporter() {}
     Reporter(bvector<Utf8String> fields) : m_fields(fields) {}
-    void Record(Utf8StringCR field, Json::Value value);
+    template <typename T>
+    void Record(Utf8StringCR field, T value)
+        {
+        if (m_fields.end() == std::find(m_fields.begin(), m_fields.end(), field)) 
+            m_fields.push_back(field);
+        m_results[m_results.size() - 1][field] = value;
+        }
+    void Record(Utf8StringCR field, BeJsConst value)
+        {
+        if (m_fields.end() == std::find(m_fields.begin(), m_fields.end(), field)) 
+            m_fields.push_back(field);
+        m_results[m_results.size() - 1][field].From(value);
+        }
+
     void Next();
     BentleyStatus ToJsonFile(BeFileNameCR path, bvector<Utf8String> const& groupingFields);
     BentleyStatus ToExportCsvFile(BeFileNameCR path, Utf8StringCR suiteName, bvector<Utf8String> const& testNameFields, bvector<Utf8String> const& exportedFields);

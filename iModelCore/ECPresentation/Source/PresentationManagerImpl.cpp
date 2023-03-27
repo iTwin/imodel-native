@@ -36,7 +36,6 @@ private:
     mutable BeMutex m_mutex;
 protected:
     void _Start() override {BeMutexHolder lock(m_mutex); std::for_each(m_handlers.begin(), m_handlers.end(), [](auto const& h){h->Start();});}
-    void _Accept(HierarchyUpdateRecord const& record) override {BeMutexHolder lock(m_mutex); std::for_each(m_handlers.begin(), m_handlers.end(), [&record](auto const& h){h->Accept(record);});}
     void _Accept(FullUpdateRecord const& record) override {BeMutexHolder lock(m_mutex); std::for_each(m_handlers.begin(), m_handlers.end(), [&record](auto const& h){h->Accept(record);});}
     void _Finish() override {BeMutexHolder lock(m_mutex); std::for_each(m_handlers.begin(), m_handlers.end(), [](auto const& h){h->Finish();});}
 public:
@@ -761,7 +760,7 @@ RulesDrivenECPresentationManagerImpl::RulesDrivenECPresentationManagerImpl(Param
     m_contentCache = new ContentCache(params.GetContentCachingParams().GetPrivateCacheSize());
 
     m_updateHandler = new UpdateHandler(*m_nodesCachesManager, m_contentCache, *m_connections, *m_nodesProviderContextFactory,
-        *m_nodesProviderFactory, *m_rulesetECExpressionsCache, params.GetUiStateProvider());
+        *m_nodesProviderFactory, *m_rulesetECExpressionsCache);
     m_updateHandler->SetRecordsHandler(std::make_unique<CompositeUpdateRecordsHandler>(params.GetUpdateRecordsHandlers()));
 
     m_connections->AddListener(*this);
@@ -952,7 +951,11 @@ NavNodesProviderContextPtr RulesDrivenECPresentationManagerImpl::CreateNodesProv
     NavNodesProviderContextPtr context = m_nodesProviderContextFactory->Create(params.GetConnection(), params.GetRulesetId().c_str(),
         parentNode.get(), cache, params.GetCancellationToken(), params.GetRulesetVariables());
     if (context.IsValid())
+        {
         context->SetInstanceFilter(params.GetInstanceFilter());
+        if (params.GetLimit().IsValid())
+            context->SetResultSetSizeLimit((uint64_t)*params.GetLimit());
+        }
     return context;
     }
 
@@ -1012,7 +1015,8 @@ RefCountedPtr<ProviderBasedNodesDataSource> RulesDrivenECPresentationManagerImpl
     auto scope = Diagnostics::Scope::Create("Create data source");
 
     NavNodesProviderPtr provider;
-    if (!pageOptions || pageOptions->GetPageStart() == 0)
+    bool hasPageOffset = pageOptions && pageOptions->GetPageStart() > 0;
+    if (!hasPageOffset && context.GetResultSetSizeLimit().IsNull())
         {
         // look for provider in persistent cache
         // note: combined hierarchy level provider is only efficient to get nodes without offset, in all other cases
@@ -1029,19 +1033,31 @@ RefCountedPtr<ProviderBasedNodesDataSource> RulesDrivenECPresentationManagerImpl
         DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "Created a new provider");
         }
 
+    // check if the hierarchy level supports filtering
+    auto supportsFiltering = HierarchiesFilteringHelper::SupportsFiltering(
+        context.GetVirtualParentNode().get(),
+        TraverseHierarchyRulesProps(context.GetNodesFactory(), context.GetRulesPreprocessor(), context.GetSchemaHelper()),
+        nullptr
+    );
+
+    // apply limiting
+    if (context.GetResultSetSizeLimit().IsValid() && supportsFiltering)
+        {
+        auto limit = (size_t)*context.GetResultSetSizeLimit();
+        auto instancesCount = provider->GetLimitedInstancesCount(limit + 1);
+        if (instancesCount > limit)
+            throw ResultSetTooLargeError(limit);
+        }
+
     // post-process
     provider = provider->PostProcess(m_nodesProviderFactory->GetPostProcessors());
     DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "Provider post-processed");
 
+    // apply paging
     provider->SetPageOptions(CreateProviderPageOptions(pageOptions));
 
     auto source = ProviderBasedNodesDataSource::Create(*provider);
-    source->SetSupportsFiltering(HierarchiesFilteringHelper::SupportsFiltering(
-        context.GetVirtualParentNode().get(),
-        TraverseHierarchyRulesProps(context.GetNodesFactory(), context.GetRulesPreprocessor(), context.GetSchemaHelper()),
-        nullptr
-        ));
-
+    source->SetSupportsFiltering(supportsFiltering);
     return source;
     }
 
@@ -1238,7 +1254,7 @@ bvector<NavNodeCPtr> RulesDrivenECPresentationManagerImpl::_GetFilteredNodes(Nod
     // create a savepoint to avoid committing any changes while we're creating the hierarchy
     auto cacheSavepoint = nodesCache->CreateSavepoint(true);
 
-    if (!nodesCache->IsCombinedHierarchyLevelInitialized(CombinedHierarchyLevelIdentifier(params.GetConnection().GetId(), params.GetRulesetId().c_str(), BeGuid()), params.GetRulesetVariables(), nullptr))
+    if (!nodesCache->IsCombinedHierarchyLevelInitialized(CombinedHierarchyLevelIdentifier(params.GetConnection().GetId(), params.GetRulesetId().c_str(), BeGuid()), params.GetRulesetVariables(), nullptr, nullptr))
         {
         NavNodesProviderContextPtr rootNodesContext = CreateNodesProviderContext(CreateHierarchyRequestParams(params), nodesCache);
         if (rootNodesContext.IsNull())

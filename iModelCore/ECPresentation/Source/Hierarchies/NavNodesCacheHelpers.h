@@ -66,7 +66,7 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 #define PHYSICAL_HIERARCHY_LEVELS_SETUP_HL_TABLE_ALIAS "[hl]"
 #define PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_DataSourceId "DataSourceId"
 #define PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_DataSourceIndex "DataSourceIndex"
-#define PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_VariablesId "VariablesId"
+#define PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_Variables "Variables"
 #define PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_InstanceFilter "InstanceFilter"
 #define PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_HierarchyLevelId "HierarchyLevelId"
 #define PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_VirtualParentNodeId "VirtualParentNodeId"
@@ -79,7 +79,7 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
     PHYSICAL_HIERARCHY_LEVELS_TABLE_NAME " (" \
         PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_DataSourceId ", " \
         PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_DataSourceIndex ", " \
-        PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_VariablesId ", " \
+        PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_Variables ", " \
         PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_InstanceFilter ", " \
         PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_HierarchyLevelId ", " \
         PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_VirtualParentNodeId ", " \
@@ -90,7 +90,7 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
     ") AS (" \
     "    SELECT ds.Id, " \
     "           ds.[Index], " \
-    "           ds.VariablesId, " \
+    "           dsv.Variables, " \
     "           ds.InstanceFilter, " \
     "           " PHYSICAL_HIERARCHY_LEVELS_SETUP_HL_TABLE_ALIAS ".Id, " \
     "           " PHYSICAL_HIERARCHY_LEVELS_SETUP_HL_TABLE_ALIAS ".ParentNodeId, " \
@@ -100,11 +100,12 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
     "           " PHYSICAL_HIERARCHY_LEVELS_SETUP_HL_TABLE_ALIAS ".RemovalId " \
     "    FROM [" NODESCACHE_TABLENAME_HierarchyLevels "] AS " PHYSICAL_HIERARCHY_LEVELS_SETUP_HL_TABLE_ALIAS \
     "    CROSS JOIN [" NODESCACHE_TABLENAME_DataSources "] AS ds ON [ds].[HierarchyLevelId] = " PHYSICAL_HIERARCHY_LEVELS_SETUP_HL_TABLE_ALIAS ".[Id] " \
+    "    CROSS JOIN [" NODESCACHE_TABLENAME_Variables "] AS dsv ON [dsv].[Id] = [ds].[VariablesId] " \
     "    WHERE " SETUP_WHERE_CLAUSE \
     "    UNION ALL " \
     "    SELECT ds.Id, " \
     "           " NODESCACHE_FUNCNAME_ConcatBinaryIndex "([phl].[" PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_DataSourceIndex "], [dsn].[NodeIndex], [ds].[Index]), " \
-    "           ds.VariablesId, " \
+    "           dsv.Variables, " \
     "           ds.InstanceFilter, " \
     "           chl.Id, " \
     "           dsn.NodeId, " \
@@ -117,8 +118,10 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
     "    CROSS JOIN [" NODESCACHE_TABLENAME_HierarchyLevels "] AS chl ON [chl].[ParentNodeId] = [dsn].[NodeId] " \
     "    CROSS JOIN [" NODESCACHE_TABLENAME_DataSources "] AS ds " \
     "         ON     [ds].[HierarchyLevelId] = [chl].[Id] " \
-    "            AND [ds].[VariablesId] = [phl].[VariablesId] " \
     "            AND [ds].[InstanceFilter] IS [phl].[" PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_InstanceFilter "] " \
+    "    CROSS JOIN [" NODESCACHE_TABLENAME_Variables "] AS dsv " \
+    "         ON     [dsv].[Id] = [ds].[VariablesId] " \
+    "            AND " NODESCACHE_FUNCNAME_VariablesMatch "([dsv].[Variables], [phl].[" PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_Variables "]) " \
     ")"
 
 /*=================================================================================**//**
@@ -143,6 +146,14 @@ public:
     ECPRESENTATION_EXPORT static BeGuid GetGuid(Statement& stmt, int index);
 
     ECPRESENTATION_EXPORT static void BindInstanceFilter(Statement& stmt, int index, InstanceFilterDefinitionCP);
+
+    template<typename TValue>
+    static DbResult BindNullable(Statement& stmt, int index, Nullable<TValue> const& value, DbResult(Statement::* binder)(int, TValue))
+        {
+        if (value.IsNull())
+            return stmt.BindNull(index);
+        return (stmt.*binder)(index, *value);
+        }
 
     ECPRESENTATION_EXPORT static bool VariablesExists(Db& db, BeGuidCR variablesId);
     ECPRESENTATION_EXPORT static bool RulesetExists(Db& db, Utf8StringCR rulesetId);

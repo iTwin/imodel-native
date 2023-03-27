@@ -40,7 +40,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_SkipOneRelatedLevel_Fo
     ECRelationshipClassCP relBC = GetECClass("B_C")->GetRelationshipClassCP();
 
     auto parentNode = TestNodesHelper::CreateInstanceNode(GetConnection(), *classA);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *parentNode);
 
     RelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, false, 1, "", RequiredRelationDirection_Forward,
         GetECSchema()->GetName(), "", RulesEngineTestHelpers::CreateClassNamesList({ classA, classB, classC }));
@@ -50,13 +50,15 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_SkipOneRelatedLevel_Fo
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClass<ECClass> selectClass(*classC, "this", true);
-        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classC, CreateDisplayLabelField(selectClass));
+        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(1, "", *CreateInstanceKeysSelectQuery(), classC, CreateDisplayLabelField(selectClass));
         RelatedClassPath relationshipPath
             {
             RelatedClass(*classC, SelectClass<ECRelationshipClass>(*relBC, RULES_ENGINE_RELATED_CLASS_ALIAS(*relBC, 0)), false, SelectClass<ECClass>(*classB, RULES_ENGINE_RELATED_CLASS_ALIAS(*classB, 0), true), false),
             RelatedClass(*classB, SelectClass<ECRelationshipClass>(*relAB, RULES_ENGINE_RELATED_CLASS_ALIAS(*relAB, 0)), false, SelectClass<ECClass>(*classA, "related", true), false),
             };
+#ifdef wip_skipped_instance_keys_performance_issue
         contract->SetPathFromSelectToParentClass(relationshipPath);
+#endif
         ComplexQueryBuilderPtr query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classC,
             ComplexQueryBuilder::Create()->SelectContract(*contract, "this")
             .From(selectClass)
@@ -91,7 +93,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_SkipTooManyRelatedLeve
     ECClassCP classA = GetECClass("A");
 
     auto parentNode = TestNodesHelper::CreateInstanceNode(GetConnection(), *classA);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *parentNode);
 
     RelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, false, 2, "",
         RequiredRelationDirection_Forward, GetECSchema()->GetName(), "", "");
@@ -133,7 +135,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_SkipRelatedLevel_Group
     ECRelationshipClassCP relBC = GetECClass("B_C")->GetRelationshipClassCP();
 
     auto parentNode = TestNodesHelper::CreateInstanceNode(GetConnection(), *classA);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *parentNode);
 
     RelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, false, 1, "",
         RequiredRelationDirection_Forward, GetECSchema()->GetName(), relBC->GetFullName(), classC->GetFullName());
@@ -148,8 +150,10 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_SkipRelatedLevel_Group
             RelatedClass(*classC, SelectClass<ECRelationshipClass>(*relBC, RULES_ENGINE_RELATED_CLASS_ALIAS(*relBC, 0)), false, SelectClass<ECClass>(*classB, RULES_ENGINE_RELATED_CLASS_ALIAS(*classB, 0), true), false),
             RelatedClass(*classB, SelectClass<ECRelationshipClass>(*relAB, RULES_ENGINE_RELATED_CLASS_ALIAS(*relAB, 0)), false, SelectClass<ECClass>(*classA, "related", true), false),
             };
-        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classC, CreateDisplayLabelField(selectClass));
+        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(1, "", *CreateInstanceKeysSelectQuery(), classC, CreateDisplayLabelField(selectClass));
+#ifdef wip_skipped_instance_keys_performance_issue
         contract->SetPathFromSelectToParentClass(relationshipPath);
+#endif
         ComplexQueryBuilderPtr query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classC,
             ComplexQueryBuilder::Create()->SelectContract(*contract, "this")
             .From(selectClass)
@@ -194,7 +198,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_RelationshipClassNames
     ECRelationshipClassCP relAB = GetECClass("A_B")->GetRelationshipClassCP();
 
     auto parentNode = TestNodesHelper::CreateInstanceNode(GetConnection(), *classA);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *parentNode);
 
     RelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, true, 0, "",
         RequiredRelationDirection_Both, "", relAB->GetFullName(), "");
@@ -205,7 +209,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_RelationshipClassNames
         {
         SelectClass<ECClass> selectClass(*classB, "this", true);
         ComplexQueryBuilderPtr query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classB,
-            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", classB, CreateDisplayLabelField(selectClass)), "this")
+            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create(1, "", *CreateInstanceKeysSelectQuery(), classB, CreateDisplayLabelField(selectClass)), "this")
             .From(selectClass)
             .Join(RelatedClass(*classB, SelectClass<ECRelationshipClass>(*relAB, RULES_ENGINE_RELATED_CLASS_ALIAS(*relAB, 0)), false, SelectClass<ECClass>(*classA, "related", true), false))
             .Where("[related].[ECInstanceId] IN (?)", { std::make_shared<BoundQueryId>(ECInstanceId((uint64_t)123)) }));
@@ -247,7 +251,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_RelationshipAndClassNa
     ECRelationshipClassCP relAB = GetECClass("A_B")->GetRelationshipClassCP();
 
     auto parentNode = TestNodesHelper::CreateInstanceNode(GetConnection(), *classA);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *parentNode);
 
     RelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, true, 0, "", RequiredRelationDirection_Both,
         GetECSchema()->GetName(), relAB->GetFullName(), classB->GetFullName());
@@ -258,7 +262,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_RelationshipAndClassNa
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClass<ECClass> selectClass(*classB, "this", true);
-        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classB, CreateDisplayLabelField(selectClass));
+        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(1, "", *CreateInstanceKeysSelectQuery(), classB, CreateDisplayLabelField(selectClass));
 
         ComplexQueryBuilderPtr nestedQuery = ComplexQueryBuilder::Create();
         nestedQuery->SelectContract(*contract, "this")
@@ -305,7 +309,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_RelatedClasses_OnlyInc
     ECRelationshipClassCP relAB = GetECClass("A_B")->GetRelationshipClassCP();
 
     auto parentNode = TestNodesHelper::CreateInstanceNode(GetConnection(), *classA);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *parentNode);
 
     RelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, true, 0, "",
         RequiredRelationDirection_Both, "", "", classB->GetFullName());
@@ -316,7 +320,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_RelatedClasses_OnlyInc
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClass<ECClass> selectClass(*classB, "this", true);
-        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classB, CreateDisplayLabelField(selectClass));
+        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(1, "", *CreateInstanceKeysSelectQuery(), classB, CreateDisplayLabelField(selectClass));
         ComplexQueryBuilderPtr query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classB,
             ComplexQueryBuilder::Create()->SelectContract(*contract, "this")
             .From(selectClass)
@@ -369,7 +373,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_RelatedClassesAndRelat
     ECRelationshipClassCP relAC = GetECClass("A_C")->GetRelationshipClassCP();
 
     auto parentNode = TestNodesHelper::CreateInstanceNode(GetConnection(), *classA);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *parentNode);
 
     RelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, true, 0, "",
         RequiredRelationDirection_Both, "", relAC->GetFullName(), classD->GetFullName());
@@ -380,7 +384,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_RelatedClassesAndRelat
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClass<ECClass> selectClass(*classD, "this", true);
-        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classD, CreateDisplayLabelField(selectClass));
+        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(1, "", *CreateInstanceKeysSelectQuery(), classD, CreateDisplayLabelField(selectClass));
         ComplexQueryBuilderPtr nestedQuery = ComplexQueryBuilder::Create();
         nestedQuery->SelectContract(*contract, "this")
             .From(selectClass)
@@ -425,7 +429,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_RelatedClasses_AllDeri
     ECRelationshipClassCP relAB = GetECClass("A_B")->GetRelationshipClassCP();
 
     auto parentNode = TestNodesHelper::CreateInstanceNode(GetConnection(), *classA);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *parentNode);
 
     RelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, true, 0, "",
         RequiredRelationDirection_Both, "", "", Utf8PrintfString("%s;E:%s", classB->GetFullName(), classB->GetFullName()));
@@ -437,7 +441,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_RelatedClasses_AllDeri
         {
         SelectClassWithExcludes<ECClass> selectClass(*classB, "this", true);
         selectClass.GetDerivedExcludedClasses().push_back(SelectClass<ECClass>(*classB, "", false));
-        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classB, CreateDisplayLabelField(selectClass));
+        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(1, "", *CreateInstanceKeysSelectQuery(), classB, CreateDisplayLabelField(selectClass));
         ComplexQueryBuilderPtr query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classB,
             ComplexQueryBuilder::Create()->SelectContract(*contract, "this")
             .From(selectClass)
@@ -471,7 +475,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_RelatedClasses_Polymor
     ECClassCP classB = GetECClass("B");
 
     auto parentNode = TestNodesHelper::CreateInstanceNode(GetConnection(), *classA);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *parentNode);
 
     RelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, true, 0, "",
         RequiredRelationDirection_Both, "", "", Utf8PrintfString("%s;PE:%s", classB->GetFullName(), classB->GetFullName()));
@@ -511,7 +515,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_RelatedClasses_GroupBy
     ECRelationshipClassCP relAB = GetECClass("A_B")->GetRelationshipClassCP();
 
     auto parentNode = TestNodesHelper::CreateInstanceNode(GetConnection(), *classA);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *parentNode);
 
     RelatedInstanceNodesSpecification spec(1, false, false, false, true, false, false, true, 0, "",
         RequiredRelationDirection_Both, "", "", Utf8PrintfString("%s;E:%s", classB->GetFullName(), classB->GetFullName()));
@@ -521,7 +525,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_RelatedClasses_GroupBy
 
     ValidateQuery(spec, queries[0], [&]()
         {
-        NavigationQueryContractPtr contract = ECClassGroupingNodesQueryContract::Create("", nullptr);
+        NavigationQueryContractPtr contract = ECClassGroupingNodesQueryContract::Create(1, "", *CreateInstanceKeysSelectQuery());
         SelectClassWithExcludes<ECClass> selectClass(*classB, "this", true);
         selectClass.GetDerivedExcludedClasses().push_back(SelectClass<ECClass>(*classB, "", false));
 
@@ -571,7 +575,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_InstanceFilter)
     ECRelationshipClassCP relAB = GetECClass("A_B")->GetRelationshipClassCP();
 
     auto parentNode = TestNodesHelper::CreateInstanceNode(GetConnection(), *classA);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *parentNode);
 
     RelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, true, 0, "this.Prop = \"2\"",
         RequiredRelationDirection_Both, "", "", classB->GetFullName());
@@ -582,7 +586,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_InstanceFilter)
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClass<ECClass> selectClass(*classB, "this", true);
-        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classB, CreateDisplayLabelField(selectClass));
+        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(1, "", *CreateInstanceKeysSelectQuery(), classB, CreateDisplayLabelField(selectClass));
         ComplexQueryBuilderPtr query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classB,
             ComplexQueryBuilder::Create()->SelectContract(*contract, "this")
             .From(selectClass)
@@ -620,7 +624,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_InstanceFilter_LikeOpe
     ECRelationshipClassCP relAB = GetECClass("A_B")->GetRelationshipClassCP();
 
     auto parentNode = TestNodesHelper::CreateInstanceNode(GetConnection(), *classA);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *parentNode);
 
     RelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, true, 0, "this.Prop ~ \"Test\"",
         RequiredRelationDirection_Both, "", "", classB->GetFullName());
@@ -630,7 +634,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_InstanceFilter_LikeOpe
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClass<ECClass> selectClass(*classB, "this", true);
-        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classB, CreateDisplayLabelField(selectClass));
+        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(1, "", *CreateInstanceKeysSelectQuery(), classB, CreateDisplayLabelField(selectClass));
         ComplexQueryBuilderPtr query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classB,
             ComplexQueryBuilder::Create()->SelectContract(*contract, "this")
             .From(selectClass)
@@ -666,7 +670,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_InstanceFilter_IsOfCla
     ECRelationshipClassCP relAB = GetECClass("A_B")->GetRelationshipClassCP();
 
     auto parentNode = TestNodesHelper::CreateInstanceNode(GetConnection(), *classA);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *parentNode);
 
     RelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, true, 0, "this.IsOfClass(\"ClassName\", \"SchemaName\")",
         RequiredRelationDirection_Both, "", "", classB->GetFullName());
@@ -677,7 +681,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_InstanceFilter_IsOfCla
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClass<ECClass> selectClass(*classB, "this", true);
-        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classB, CreateDisplayLabelField(selectClass));
+        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(1, "", *CreateInstanceKeysSelectQuery(), classB, CreateDisplayLabelField(selectClass));
         ComplexQueryBuilderPtr query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classB,
             ComplexQueryBuilder::Create()->SelectContract(*contract, "this")
             .From(selectClass)
@@ -715,7 +719,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_InstanceFilter_AllowsA
     ECRelationshipClassCP relAB = GetECClass("A_B")->GetRelationshipClassCP();
 
     auto parentNode = TestNodesHelper::CreateInstanceNode(GetConnection(), *classA);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *parentNode);
 
     RelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, true, 0,
         "parent.Prop = 1", RequiredRelationDirection_Forward, "", relAB->GetFullName(), classB->GetFullName());
@@ -726,7 +730,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_InstanceFilter_AllowsA
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClass<ECClass> selectClass(*classB, "this", true);
-        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classB, CreateDisplayLabelField(selectClass));
+        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(1, "", *CreateInstanceKeysSelectQuery(), classB, CreateDisplayLabelField(selectClass));
         ComplexQueryBuilderPtr nested = ComplexQueryBuilder::Create();
         nested->SelectContract(*contract, "this")
             .From(selectClass)
@@ -779,7 +783,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_RelatedClasses_Multipl
     ECRelationshipClassCP relAB = GetECClass("A_B")->GetRelationshipClassCP();
 
     auto parentNode = TestNodesHelper::CreateInstanceNode(GetConnection(), *classA);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *parentNode);
 
     RelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, true, 0, "", RequiredRelationDirection_Both,
         "", "", Utf8PrintfString("%s:%s;PE:%s:%s;E:%s:%s", classB->GetSchema().GetName().c_str(), classB->GetName().c_str(),
@@ -793,7 +797,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_RelatedClasses_Multipl
         SelectClassWithExcludes<ECClass> selectClass(*classB, "this", true);
         selectClass.GetDerivedExcludedClasses().push_back(SelectClass<ECClass>(*classD, "", false));
         selectClass.GetDerivedExcludedClasses().push_back(SelectClass<ECClass>(*classC, "", true));
-        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classB, CreateDisplayLabelField(selectClass));
+        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(1, "", *CreateInstanceKeysSelectQuery(), classB, CreateDisplayLabelField(selectClass));
         ComplexQueryBuilderPtr nested = ComplexQueryBuilder::Create();
         nested->SelectContract(*contract, "this")
             .From(selectClass)
@@ -832,7 +836,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_InstanceLabelOverride_
     ECRelationshipClassCP relAB = GetECClass("A_B")->GetRelationshipClassCP();
 
     auto parentNode = TestNodesHelper::CreateInstanceNode(GetConnection(), *classA);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *parentNode);
 
     RelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, true, 0, "",
         RequiredRelationDirection_Forward, "", relAB->GetFullName(), "");
@@ -851,7 +855,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_InstanceLabelOverride_
             &RegisterForDelete(*new InstanceLabelOverridePropertyValueSpecification("Prop2")),
             &RegisterForDelete(*new InstanceLabelOverridePropertyValueSpecification("Prop1")),
             });
-        nested->SelectContract(*ECInstanceNodesQueryContract::Create("", classB, labelField), "this")
+        nested->SelectContract(*ECInstanceNodesQueryContract::Create(1, "", *CreateInstanceKeysSelectQuery(), classB, labelField), "this")
             .From(selectClass)
             .Join(RelatedClass(*classB, SelectClass<ECRelationshipClass>(*relAB, RULES_ENGINE_RELATED_CLASS_ALIAS(*relAB, 0)), false, SelectClass<ECClass>(*classA, "related", true), false))
             .Where("[related].[ECInstanceId] IN (?)", { std::make_shared<BoundQueryId>(ECInstanceId((uint64_t)123)) });
@@ -900,7 +904,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_InstanceLabelOverride_
     ECRelationshipClassCP relAC = GetECClass("A_C")->GetRelationshipClassCP();
 
     auto parentNode = TestNodesHelper::CreateInstanceNode(GetConnection(), *classA);
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *parentNode);
 
     RelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, true, 0, "",
         RequiredRelationDirection_Both, "", RulesEngineTestHelpers::CreateClassNamesList({ relAB, relAC }), "");
@@ -913,14 +917,14 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_InstanceLabelOverride_
         {
         SelectClass<ECClass> selectClassB(*classB, "this", true);
         ComplexQueryBuilderPtr nestedQueryB = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classB,
-            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", classB, CreateDisplayLabelField(selectClassB, {}, { &RegisterForDelete(*new InstanceLabelOverridePropertyValueSpecification("PropB")) })), "this")
+            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create(1, "", *CreateInstanceKeysSelectQuery(), classB, CreateDisplayLabelField(selectClassB, {}, { &RegisterForDelete(*new InstanceLabelOverridePropertyValueSpecification("PropB")) })), "this")
             .From(selectClassB)
             .Join(RelatedClass(*classB, SelectClass<ECRelationshipClass>(*relAB, RULES_ENGINE_RELATED_CLASS_ALIAS(*relAB, 0)), false, SelectClass<ECClass>(*classA, "related", true), false))
             .Where("[related].[ECInstanceId] IN (?)", { std::make_shared<BoundQueryId>(ECInstanceId((uint64_t)123)) }));
 
         SelectClass<ECClass> selectClassC(*classC, "this", true);
         ComplexQueryBuilderPtr nestedQueryC = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classC,
-            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", classC, CreateDisplayLabelField(selectClassC)), "this")
+            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create(2, "", *CreateInstanceKeysSelectQuery(), classC, CreateDisplayLabelField(selectClassC)), "this")
             .From(selectClassC)
             .Join(RelatedClass(*classC, SelectClass<ECRelationshipClass>(*relAC, RULES_ENGINE_RELATED_CLASS_ALIAS(*relAC, 0)), false, SelectClass<ECClass>(*classA, "related", true), false))
             .Where("[related].[ECInstanceId] IN (?)", { std::make_shared<BoundQueryId>(ECInstanceId((uint64_t)123)) }));
@@ -971,7 +975,7 @@ TEST_F(NavigationQueryBuilderTests, RelatedInstanceNodes_CreatesQueryForAllNodeE
         ECInstanceKey(classA->GetId(), ECInstanceId((uint64_t)1)),
         ECInstanceKey(classB->GetId(), ECInstanceId((uint64_t)2)),
         });
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *parentNode);
 
     RelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, true, 0, "", RequiredRelationDirection_Forward,
         "", Utf8PrintfString("%s:%s,%s", GetECSchema()->GetName().c_str(), rel1->GetName().c_str(), rel2->GetName().c_str()), classC->GetFullName());
@@ -983,18 +987,18 @@ TEST_F(NavigationQueryBuilderTests, RelatedInstanceNodes_CreatesQueryForAllNodeE
         {
         SelectClass<ECClass> selectClass(*classC, "this", true);
         ComplexQueryBuilderPtr nestedQuery1 = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classC,
-            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", classC, CreateDisplayLabelField(selectClass)), "this")
+            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create(1, "", *CreateInstanceKeysSelectQuery(), classC, CreateDisplayLabelField(selectClass)), "this")
             .From(selectClass)
             .Join(RelatedClass(*classC, SelectClass<ECRelationshipClass>(*rel1, RULES_ENGINE_RELATED_CLASS_ALIAS(*rel1, 0)), false, SelectClass<ECClass>(*classA, "related", true), false))
             .Where("[related].[ECInstanceId] IN (?)", { std::make_shared<BoundQueryId>(ECInstanceId((uint64_t)1)) }));
 
         ComplexQueryBuilderPtr nestedQuery2 = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classC,
-            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", classC, CreateDisplayLabelField(selectClass)), "this")
+            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create(2, "", *CreateInstanceKeysSelectQuery(), classC, CreateDisplayLabelField(selectClass)), "this")
             .From(selectClass)
             .Join(RelatedClass(*classC, SelectClass<ECRelationshipClass>(*rel2, RULES_ENGINE_RELATED_CLASS_ALIAS(*rel2, 0)), false, SelectClass<ECClass>(*classB, "related", true), false))
             .Where("[related].[ECInstanceId] IN (?)", { std::make_shared<BoundQueryId>(ECInstanceId((uint64_t)2)) }));
 
-        UnionQueryBuilderPtr query = UnionQueryBuilder::Create({ nestedQuery2, nestedQuery1 });
+        UnionQueryBuilderPtr query = UnionQueryBuilder::Create({ nestedQuery1, nestedQuery2 });
         query->OrderBy(GetECInstanceNodesOrderByClause().c_str());
 
         query->GetNavigationResultParameters().GetNavNodeExtendedDataR().SetRelationshipDirection(ECRelatedInstanceDirection::Forward);
@@ -1040,7 +1044,7 @@ TEST_F(NavigationQueryBuilderTests, RelatedInstanceNodes_CreatesInClauseForOneTo
         {
         ECInstanceKey(classA->GetId(), ECInstanceId((uint64_t)1)),
         });
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *parentNode);
 
     RelatedInstanceNodesSpecification spec(1, ChildrenHint::Unknown, false, false, false, false, "", { new RepeatableRelationshipPathSpecification({
         new RepeatableRelationshipStepSpecification(relAToB->GetFullName(), RequiredRelationDirection::RequiredRelationDirection_Forward, classB->GetFullName()),
@@ -1066,7 +1070,7 @@ TEST_F(NavigationQueryBuilderTests, RelatedInstanceNodes_CreatesInClauseForOneTo
 
         SelectClass<ECClass> selectClass(*classC, "this", true);
         ComplexQueryBuilderPtr query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classC,
-            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", classC, CreateDisplayLabelField(selectClass)), "this")
+            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create(1, "", *CreateInstanceKeysSelectQuery(), classC, CreateDisplayLabelField(selectClass)), "this")
             .From(selectClass)
             .Where(QueryClauseAndBindings(whereClause, whereQuery->GetQuery()->GetBindings())));
 
@@ -1118,7 +1122,7 @@ TEST_F(NavigationQueryBuilderTests, RelatedInstanceNodes_CreatesExistsClauseForO
         {
         ECInstanceKey(classA->GetId(), ECInstanceId((uint64_t)1)),
         });
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *parentNode);
 
     RelatedInstanceNodesSpecification spec(1, ChildrenHint::Unknown, false, false, false, false, "",
         {
@@ -1144,7 +1148,7 @@ TEST_F(NavigationQueryBuilderTests, RelatedInstanceNodes_CreatesExistsClauseForO
 
         SelectClass<ECClass> selectClass(*classC, "this", true);
         ComplexQueryBuilderPtr query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classC,
-            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create("", classC, CreateDisplayLabelField(selectClass)), "this")
+            ComplexQueryBuilder::Create()->SelectContract(*ECInstanceNodesQueryContract::Create(1, "", *CreateInstanceKeysSelectQuery(), classC, CreateDisplayLabelField(selectClass)), "this")
             .From(selectClass)
             .Where(QueryClauseAndBindings(Utf8PrintfString("EXISTS (%s)", whereQuery->GetQuery()->GetQueryString().c_str()), whereQuery->GetQuery()->GetBindings())));
 
@@ -1184,7 +1188,7 @@ TEST_F(NavigationQueryBuilderTests, RelatedInstanceNodes_HierarchyLevelInstanceF
         {
         ECInstanceKey(classX->GetId(), ECInstanceId((uint64_t)1)),
         });
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *parentNode);
 
     RelatedInstanceNodesSpecification spec(1, ChildrenHint::Unknown, false, false, false, false, "",
         {
@@ -1202,7 +1206,7 @@ TEST_F(NavigationQueryBuilderTests, RelatedInstanceNodes_HierarchyLevelInstanceF
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClassWithExcludes<ECClass> selectClass(*classA, "this", true);
-        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass));
+        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(1, "", *CreateInstanceKeysSelectQuery(), classA, CreateDisplayLabelField(selectClass));
         ComplexQueryBuilderPtr query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
             ComplexQueryBuilder::Create()->SelectContract(*contract, "this")
             .From(selectClass)
@@ -1222,7 +1226,7 @@ TEST_F(NavigationQueryBuilderTests, RelatedInstanceNodes_HierarchyLevelInstanceF
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClassWithExcludes<ECClass> selectClass(*classA, "this", true);
-        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass));
+        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(1, "", *CreateInstanceKeysSelectQuery(), classA, CreateDisplayLabelField(selectClass));
         ComplexQueryBuilderPtr query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
             ComplexQueryBuilder::Create()->SelectContract(*contract, "this")
             .From(selectClass)
@@ -1276,15 +1280,15 @@ TEST_F(NavigationQueryBuilderTests, RelatedInstanceNodes_HierarchyLevelInstanceF
         {
         ECInstanceKey(classX->GetId(), ECInstanceId((uint64_t)1)),
         });
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *parentNode);
 
     RelatedInstanceNodesSpecification spec(1, ChildrenHint::Unknown, false, false, false, false, "",
         {
-        new RepeatableRelationshipPathSpecification(                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
+        new RepeatableRelationshipPathSpecification(
             {
             new RepeatableRelationshipStepSpecification(
-                relXA->GetFullName(), 
-                RequiredRelationDirection::RequiredRelationDirection_Forward, 
+                relXA->GetFullName(),
+                RequiredRelationDirection::RequiredRelationDirection_Forward,
                 RulesEngineTestHelpers::CreateClassNamesList({ classB, classC })),
             })
         });
@@ -1295,7 +1299,7 @@ TEST_F(NavigationQueryBuilderTests, RelatedInstanceNodes_HierarchyLevelInstanceF
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClassWithExcludes<ECClass> selectClassB(*classB, "this", true);
-        NavigationQueryContractPtr contractB = ECInstanceNodesQueryContract::Create("", classB, CreateDisplayLabelField(selectClassB));
+        NavigationQueryContractPtr contractB = ECInstanceNodesQueryContract::Create(1, "", *CreateInstanceKeysSelectQuery(), classB, CreateDisplayLabelField(selectClassB));
         ComplexQueryBuilderPtr queryB = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classB,
             ComplexQueryBuilder::Create()->SelectContract(*contractB, "this")
             .From(selectClassB)
@@ -1303,7 +1307,7 @@ TEST_F(NavigationQueryBuilderTests, RelatedInstanceNodes_HierarchyLevelInstanceF
             .Where("[related].[ECInstanceId] IN (?)", { std::make_shared<BoundQueryId>(ECInstanceId((uint64_t)1)) }));
 
         SelectClassWithExcludes<ECClass> selectClassC(*classC, "this", true);
-        NavigationQueryContractPtr contractC = ECInstanceNodesQueryContract::Create("", classC, CreateDisplayLabelField(selectClassC));
+        NavigationQueryContractPtr contractC = ECInstanceNodesQueryContract::Create(2, "", *CreateInstanceKeysSelectQuery(), classC, CreateDisplayLabelField(selectClassC));
         ComplexQueryBuilderPtr queryC = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classC,
             ComplexQueryBuilder::Create()->SelectContract(*contractC, "this")
             .From(selectClassC)
@@ -1325,7 +1329,7 @@ TEST_F(NavigationQueryBuilderTests, RelatedInstanceNodes_HierarchyLevelInstanceF
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClassWithExcludes<ECClass> selectClass(*classB, "this", true);
-        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classB, CreateDisplayLabelField(selectClass));
+        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(1, "", *CreateInstanceKeysSelectQuery(), classB, CreateDisplayLabelField(selectClass));
         ComplexQueryBuilderPtr query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classB,
             ComplexQueryBuilder::Create()->SelectContract(*contract, "this")
             .From(selectClass)
@@ -1379,7 +1383,7 @@ TEST_F(NavigationQueryBuilderTests, RelatedInstanceNodes_HierarchyLevelInstanceF
         {
         ECInstanceKey(classX->GetId(), ECInstanceId((uint64_t)1)),
         });
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *parentNode);
 
     RelatedInstanceNodesSpecification spec(1, ChildrenHint::Unknown, false, false, false, false, "",
         {
@@ -1397,7 +1401,7 @@ TEST_F(NavigationQueryBuilderTests, RelatedInstanceNodes_HierarchyLevelInstanceF
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClassWithExcludes<ECClass> selectClass(*classA, "this", true);
-        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass));
+        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(1, "", *CreateInstanceKeysSelectQuery(), classA, CreateDisplayLabelField(selectClass));
         ComplexQueryBuilderPtr query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
             ComplexQueryBuilder::Create()->SelectContract(*contract, "this")
             .From(selectClass)
@@ -1417,7 +1421,7 @@ TEST_F(NavigationQueryBuilderTests, RelatedInstanceNodes_HierarchyLevelInstanceF
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClassWithExcludes<ECClass> selectClass(*classB, "this", true);
-        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classB, CreateDisplayLabelField(selectClass));
+        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(1, "", *CreateInstanceKeysSelectQuery(), classB, CreateDisplayLabelField(selectClass));
         ComplexQueryBuilderPtr query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classB,
             ComplexQueryBuilder::Create()->SelectContract(*contract, "this")
             .From(selectClass)
@@ -1469,7 +1473,7 @@ TEST_F(NavigationQueryBuilderTests, RelatedInstanceNodes_HierarchyLevelInstanceF
         {
         ECInstanceKey(classX->GetId(), ECInstanceId((uint64_t)1)),
         });
-    RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *parentNode);
 
     RelatedInstanceNodesSpecification spec(1, ChildrenHint::Unknown, false, false, false, false, "",
         {
@@ -1487,7 +1491,7 @@ TEST_F(NavigationQueryBuilderTests, RelatedInstanceNodes_HierarchyLevelInstanceF
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClassWithExcludes<ECClass> selectClass(*classA, "this", true);
-        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass));
+        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(1, "", *CreateInstanceKeysSelectQuery(), classA, CreateDisplayLabelField(selectClass));
         ComplexQueryBuilderPtr query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
             ComplexQueryBuilder::Create()->SelectContract(*contract, "this")
             .From(selectClass)
@@ -1500,7 +1504,7 @@ TEST_F(NavigationQueryBuilderTests, RelatedInstanceNodes_HierarchyLevelInstanceF
         });
 
     // then with instance filter using related B instance
-    InstanceFilterDefinition instanceFilter("b.PropB = 123", *classA, 
+    InstanceFilterDefinition instanceFilter("b.PropB = 123", *classA,
         {
         RelatedClassPath{ RelatedClass(*classA, SelectClass<ECRelationshipClass>(*relAB, "r"), true, SelectClass<>(*classB, "b"), true) }
         });
@@ -1510,7 +1514,7 @@ TEST_F(NavigationQueryBuilderTests, RelatedInstanceNodes_HierarchyLevelInstanceF
     ValidateQuery(spec, queries[0], [&]()
         {
         SelectClassWithExcludes<ECClass> selectClass(*classA, "this", true);
-        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create("", classA, CreateDisplayLabelField(selectClass));
+        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(1, "", *CreateInstanceKeysSelectQuery(), classA, CreateDisplayLabelField(selectClass));
         ComplexQueryBuilderPtr query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
             ComplexQueryBuilder::Create()->SelectContract(*contract, "this")
             .From(selectClass)

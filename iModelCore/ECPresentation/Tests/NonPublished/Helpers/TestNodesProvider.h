@@ -32,6 +32,7 @@ protected:
     CountInfo _GetTotalNodesCount() const override {return m_getNodesCountHandler ? m_getNodesCountHandler() : CountInfo(0, true);}
     Iterator _CreateFrontIterator() const override {return Iterator(std::make_unique<EmptyIteratorImpl<NavNodePtr>>());}
     Iterator _CreateBackIterator() const override {return Iterator(std::make_unique<EmptyIteratorImpl<NavNodePtr>>());}
+    size_t _GetLimitedInstancesCount(size_t) const override {return 0;}
 
 public:
     static RefCountedPtr<TestNodesProvider> Create(NavNodesProviderContextR context) {return new TestNodesProvider(context);}

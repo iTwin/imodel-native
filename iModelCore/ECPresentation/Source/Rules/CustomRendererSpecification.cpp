@@ -41,7 +41,7 @@ Utf8CP CustomRendererSpecification::_GetJsonElementType() const {return "CustomR
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool CustomRendererSpecification::_ReadJson(JsonValueCR json)
+bool CustomRendererSpecification::_ReadJson(BeJsConst json)
     {
     if (!T_Super::_ReadJson(json))
         return false;
@@ -56,7 +56,7 @@ bool CustomRendererSpecification::_ReadJson(JsonValueCR json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CustomRendererSpecification::_WriteJson(JsonValueR json) const
+void CustomRendererSpecification::_WriteJson(BeJsValue json) const
     {
     T_Super::_WriteJson(json);
     json[PROPERTY_RENDERERS_SPECIFICATION_JSON_ATTRIBUTE_RENDERERNAME] = m_rendererName;

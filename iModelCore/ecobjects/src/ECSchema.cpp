@@ -834,7 +834,7 @@ ECObjectsStatus ECSchema::CreateEntityClass (ECEntityClassP& pClass, Utf8StringC
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECSchema::CreateMixinClass (ECEntityClassP& pClass, Utf8StringCR name, ECEntityClassCR appliesTo)
+ECObjectsStatus ECSchema::CreateMixinClass (ECEntityClassP& pClass, Utf8StringCR name, ECEntityClassCR appliesTo, ECSchemaReadContextR schemaContext)
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
@@ -849,7 +849,7 @@ ECObjectsStatus ECSchema::CreateMixinClass (ECEntityClassP& pClass, Utf8StringCR
 
     pClass->SetClassModifier(ECClassModifier::Abstract);
 
-    IECInstancePtr mixinInstance = CoreCustomAttributeHelper::CreateCustomAttributeInstance("IsMixin");
+    IECInstancePtr mixinInstance = CoreCustomAttributeHelper::CreateCustomAttributeInstance(schemaContext, "IsMixin");
     if (!mixinInstance.IsValid())
         {
         delete pClass;
@@ -2878,7 +2878,7 @@ int ECSchema::RemoveUnusedSchemaReferences()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECSchema::SetSupplementalSchemaInfo(SupplementalSchemaInfo* info)
+void ECSchema::SetSupplementalSchemaInfo(SupplementalSchemaInfo* info, ECSchemaReadContextR readContext)
     {
     m_supplementalSchemaInfo = info;
     if (nullptr == info)
@@ -2886,7 +2886,7 @@ void ECSchema::SetSupplementalSchemaInfo(SupplementalSchemaInfo* info)
                                     SupplementalSchemaInfo::GetCustomAttributeAccessor());
     else
         {
-        IECInstancePtr attribute = info->CreateCustomAttribute();
+        IECInstancePtr attribute = info->CreateCustomAttribute(readContext);
         if (attribute.IsValid())
             {
             auto& coreCA = attribute->GetClass().GetSchema();
@@ -3204,7 +3204,7 @@ ECSchemaPtr SearchPathSchemaFileLocater::_LocateSchema(SchemaKeyR key, SchemaMat
     if (supplementalSchemas.size() > 0)
         {
         ECN::SupplementedSchemaBuilder builder;
-        builder.UpdateSchema(*schemaOut, supplementalSchemas);
+        builder.UpdateSchema(*schemaOut, supplementalSchemas, schemaContext);
         }
 
     m_knownSchemas.Insert(lookup, schemaOut);

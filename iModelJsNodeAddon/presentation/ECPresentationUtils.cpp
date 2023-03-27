@@ -7,7 +7,6 @@
 #include "DgnDbECInstanceChangeEventSource.h"
 #include "ECPresentationSerializer.h"
 #include "UpdateRecordsHandler.h"
-#include "UiStateProvider.h"
 
 USING_NAMESPACE_BENTLEY_ECPRESENTATION
 
@@ -29,6 +28,10 @@ ECPresentationResult ECPresentationUtils::CreateResultFromException(folly::excep
     catch (InvalidArgumentException const& e)
         {
         return ECPresentationResult(ECPresentationStatus::InvalidArgument, Utf8String(e.what()));
+        }
+    catch (ResultSetTooLargeError const& e)
+        {
+        return ECPresentationResult(ECPresentationStatus::ResultSetTooLarge, Utf8String(e.what()));
         }
     catch (std::runtime_error const& e)
         {
@@ -95,45 +98,27 @@ template<typename TValue> static ParseResult<TValue> CreateParseResult(TValue va
 template<typename TValue> static ParseResult<TValue> CreateParseError(Utf8String error) {return ParseResult<TValue>::CreateError(error);}
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool ParseInt(int& value, Napi::Value const& jsValue)
-    {
-    if (jsValue.IsNumber())
-        {
-        value = jsValue.ToNumber().Int32Value();
-        return true;
-        }
-    if (jsValue.IsString())
-        {
-        value = atoi(jsValue.ToString().Utf8Value().c_str());
-        return true;
-        }
-    return false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                09/2022
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void ApplyDiskCacheParams(ECPresentationManager::Params::CachingParams& cachingParams, Napi::Object const& diskCacheConfig)
+static void ApplyDiskCacheParams(ECPresentationManager::Params::CachingParams& cachingParams, BeJsConst diskCacheConfig)
     {
-    if (diskCacheConfig.Has("directory") && diskCacheConfig.Get("directory").IsString())
-        cachingParams.SetCacheDirectoryPath(BeFileName(diskCacheConfig.Get("directory").ToString().Utf8Value()));
+    if (diskCacheConfig.hasMember("directory") && diskCacheConfig["directory"].isString())
+        cachingParams.SetCacheDirectoryPath(BeFileName(diskCacheConfig["directory"].asString()));
 
-    if (diskCacheConfig.Has("memoryCacheSize") && diskCacheConfig.Get("memoryCacheSize").IsNumber())
-        cachingParams.SetDiskCacheMemoryCacheSize((uint64_t)diskCacheConfig.Get("memoryCacheSize").ToNumber().Int64Value());
+    if (diskCacheConfig.hasMember("memoryCacheSize") && diskCacheConfig["memoryCacheSize"].isNumeric())
+        cachingParams.SetDiskCacheMemoryCacheSize(diskCacheConfig["memoryCacheSize"].asUInt64());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static ECPresentationManager::Params::CachingParams CreateCachingParams(Napi::Object const& cacheConfig)
+static ECPresentationManager::Params::CachingParams CreateCachingParams(BeJsConst cacheConfig)
     {
     ECPresentationManager::Params::CachingParams cachingParams;
-    if (!cacheConfig.Has("mode"))
+    if (!cacheConfig.hasMember("mode"))
         return cachingParams;
 
-    Utf8String cacheMode = cacheConfig.Get("mode").ToString().Utf8Value();
+    Utf8String cacheMode = cacheConfig["mode"].asString();
     if (cacheMode.Equals("memory"))
         {
         cachingParams.SetCacheMode(ECPresentationManager::Params::CachingParams::Mode::Memory);
@@ -146,8 +131,8 @@ static ECPresentationManager::Params::CachingParams CreateCachingParams(Napi::Ob
     else if (cacheMode.Equals("hybrid"))
         {
         cachingParams.SetCacheMode(ECPresentationManager::Params::CachingParams::Mode::Hybrid);
-        if (cacheConfig.Has("disk") && cacheConfig.Get("disk").IsObject())
-            ApplyDiskCacheParams(cachingParams, cacheConfig.Get("disk").As<Napi::Object>());
+        if (cacheConfig.hasMember("disk") && cacheConfig["disk"].isObject())
+            ApplyDiskCacheParams(cachingParams, cacheConfig["disk"]);
         }
 
     return cachingParams;
@@ -156,18 +141,17 @@ static ECPresentationManager::Params::CachingParams CreateCachingParams(Napi::Ob
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bmap<int, unsigned> CreateTaskAllocationSlotsMap(Napi::Object const& jsMap)
+static bmap<int, unsigned> CreateTaskAllocationSlotsMap(BeJsConst jsMap)
     {
     bmap<int, unsigned> slots;
-    Napi::Array jsMemberNames = jsMap.GetPropertyNames();
-    for (uint32_t i = 0; i < jsMemberNames.Length(); ++i)
+    jsMap.ForEachProperty([&](Utf8CP name, BeJsConst value)
         {
-        Napi::Value const& jsMemberName = jsMemberNames[i];
-        Napi::Value const& jsMemberValue = jsMap.Get(jsMemberName);
-        int priority, slotsCount;
-        if (ParseInt(priority, jsMemberName) && ParseInt(slotsCount, jsMemberValue))
-            slots.Insert(priority, slotsCount);
-        }
+        int priority = atoi(name);
+        int slotsCount = value.asUInt64();
+        slots.Insert(priority, slotsCount);
+        return false;
+        });
+
     if (slots.empty())
         slots.Insert(INT_MAX, 1);
     return slots;
@@ -176,17 +160,17 @@ static bmap<int, unsigned> CreateTaskAllocationSlotsMap(Napi::Object const& jsMa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static std::unique_ptr<IConnectionManager> CreateConfiguredConnectionManager(Napi::Object const& props)
+static std::unique_ptr<IConnectionManager> CreateConfiguredConnectionManager(BeJsConst props)
     {
     ConnectionManager::Props connectionManagerProps;
 
-    if (props.Get("useMmap").IsBoolean() && true == props.Get("useMmap").As<Napi::Boolean>())
+    if (props["useMmap"].asBool())
         connectionManagerProps.SetMmapFileSize(nullptr);
-    else if (props.Get("useMmap").IsNumber())
-        connectionManagerProps.SetMmapFileSize(props.Get("useMmap").As<Napi::Number>().Int64Value());
+    else if (props["useMmap"].isNumeric())
+        connectionManagerProps.SetMmapFileSize(props["useMmap"].asInt64());
 
-    if (props.Has("workerConnectionCacheSize") && props.Get("workerConnectionCacheSize").IsNumber())
-        connectionManagerProps.SetMemoryCacheSize((uint64_t)props.Get("workerConnectionCacheSize").ToNumber().Int64Value());
+    if (props["workerConnectionCacheSize"].isNumeric())
+        connectionManagerProps.SetMemoryCacheSize(props["workerConnectionCacheSize"].asUInt64());
 
     return std::make_unique<ConnectionManager>(connectionManagerProps);
     }
@@ -236,37 +220,39 @@ static ECSchemaCP GetUnitsSchema()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static std::map<std::pair<Utf8String, ECPresentation::UnitSystem>, std::shared_ptr<Formatting::Format>> CreateDefaultFormatsMap(Napi::Object const& jsMap)
+static std::map<std::pair<Utf8String, ECPresentation::UnitSystem>, std::shared_ptr<Formatting::Format>> CreateDefaultFormatsMap(BeJsConst jsMap)
     {
     std::map<std::pair<Utf8String, ECPresentation::UnitSystem>, std::shared_ptr<Formatting::Format>> defaultFormats;
     ECSchemaCP unitsSchema = GetUnitsSchema();
     if (unitsSchema == nullptr)
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, "Failed to find Units schema");
-    Napi::Array jsMemberNames = jsMap.GetPropertyNames();
-    for (uint32_t i = 0; i < jsMemberNames.Length(); ++i)
+
+    jsMap.ForEachProperty([&](Utf8CP name, BeJsConst value)
         {
-        Napi::Value const& jsMemberName = jsMemberNames[i];
-        Napi::Object const& jsMemberValue = jsMap.Get(jsMemberName).ToObject();
-        if (jsMemberValue.Has("serializedFormat") && jsMemberValue.Has("unitSystems"))
+        if (!value.hasMember("serializedFormat") || !value.hasMember("unitSystems"))
+            return false;
+
+        Utf8String phenomenon = name;
+        auto format = std::make_shared<Formatting::Format>();
+        Utf8String serializedFormatJson = value["serializedFormat"].asString();
+        if (!Formatting::Format::FromJson(*format, serializedFormatJson.c_str(), &unitsSchema->GetUnitsContext()))
+            DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Failed to read Format from JSON: '%s'", serializedFormatJson.c_str()));
+
+        BeJsConst unitSystems = value["unitSystems"];
+        unitSystems.ForEachArrayMember([&](BeJsConst::ArrayIndex _, BeJsConst unitSystem)
             {
-            Utf8String phenomenon = jsMemberName.ToString().Utf8Value();
-            auto format = std::make_shared<Formatting::Format>();
-            Utf8String serializedFormatJson = jsMemberValue.Get("serializedFormat").ToString().Utf8Value();
-            if (!Formatting::Format::FromJson(*format, serializedFormatJson.c_str(), &unitsSchema->GetUnitsContext()))
-                DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Failed to read Format from JSON: '%s'", serializedFormatJson.c_str()));
-            Napi::Array unitSystems = jsMemberValue.Get("unitSystems").As<Napi::Array>();
-            for (uint32_t arrIndex = 0; arrIndex < unitSystems.Length(); ++arrIndex)
-                {
-                Napi::Value arrValue = unitSystems[arrIndex];
-                if (arrValue.IsString())
-                    {
-                    auto unitSystem = ParseUnitSystemFromString(arrValue.ToString().Utf8Value().c_str());
-                    if (unitSystem.IsSuccess())
-                        defaultFormats.insert(std::make_pair(std::make_pair(phenomenon.ToUpper(), unitSystem.GetValue()), format));
-                    }
-                }
-            }
-        }
+            if (!unitSystem.isString())
+                return false;
+
+            auto parsedUnitSystem = ParseUnitSystemFromString(unitSystem.asCString());
+            if (parsedUnitSystem.IsSuccess())
+                defaultFormats.insert(std::make_pair(std::make_pair(phenomenon.ToUpper(), parsedUnitSystem.GetValue()), format));
+
+            return false;
+            });
+        return false;
+        });
+
     return defaultFormats;
     }
 
@@ -281,17 +267,7 @@ Utf8StringCR ECPresentationResult::GetSerializedSuccessResponse() const
 
     if (m_serializedSuccessResponse.empty())
         {
-        if (m_isJsonCppResponse)
-            {
-            m_serializedSuccessResponse = m_jsoncppSuccessResponse.ToString();
-            }
-        else
-            {
-            rapidjson::StringBuffer buffer;
-            rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-            m_successResponse.Accept(writer);
-            m_serializedSuccessResponse = buffer.GetString();
-            }
+        m_serializedSuccessResponse = m_successResponse.Stringify();
         }
     return m_serializedSuccessResponse;
     }
@@ -310,7 +286,7 @@ NativeLogging::CategoryLogger ECPresentationUtils::GetLogger() {return NativeLog
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECPresentationManager* ECPresentationUtils::CreatePresentationManager(Dgn::PlatformLib::Host::IKnownLocationsAdmin& locations, IJsonLocalState& localState,
-    std::shared_ptr<IUpdateRecordsHandler> updateRecordsHandler, std::shared_ptr<IUiStateProvider> uiStateProvider, Napi::Object const& props)
+    std::shared_ptr<IUpdateRecordsHandler> updateRecordsHandler, BeJsConst props)
     {
     BeFileName assetsDir = locations.GetDgnPlatformAssetsDirectory();
     BeFileName tempDir = locations.GetLocalTempDirectoryBaseName();
@@ -318,7 +294,7 @@ ECPresentationManager* ECPresentationUtils::CreatePresentationManager(Dgn::Platf
     if (!tempDir.DoesPathExist())
         BeFileName::CreateNewDirectory(tempDir.c_str());
 
-    Utf8String id = props.Get("id").As<Napi::String>().Utf8Value();
+    Utf8String id = props["id"].asString();
     if (!id.empty())
         {
         tempDir.AppendToPath(WString(id.c_str(), true).c_str());
@@ -328,23 +304,22 @@ ECPresentationManager* ECPresentationUtils::CreatePresentationManager(Dgn::Platf
     ECPresentationManager::Paths pathParams(assetsDir, tempDir);
 
     ECPresentationManager::Params::ContentCachingParams contentCacheParams;
-    if (props.Get("contentCacheSize").IsNumber())
-        contentCacheParams.SetPrivateCacheSize((size_t)props.Get("contentCacheSize").As<Napi::Number>().Int64Value());
+    if (props["contentCacheSize"].isNumeric())
+        contentCacheParams.SetPrivateCacheSize((size_t)props["contentCacheSize"].asInt64());
 
-    ECPresentationManager::Params::MultiThreadingParams threadingParams(CreateTaskAllocationSlotsMap(props.Get("taskAllocationsMap").As<Napi::Object>()));
+    ECPresentationManager::Params::MultiThreadingParams threadingParams(CreateTaskAllocationSlotsMap(props["taskAllocationsMap"]));
 
     ECPresentationManager::Params params(pathParams);
     params.SetConnections(CreateConfiguredConnectionManager(props));
     params.SetContentCachingParams(contentCacheParams);
     params.SetMultiThreadingParams(threadingParams);
-    params.SetECPropertyFormatter(new DefaultPropertyFormatter(CreateDefaultFormatsMap(props.Get("defaultFormats").As<Napi::Object>())));
-    params.SetCachingParams(CreateCachingParams(props.Get("cacheConfig").As<Napi::Object>()));
+    params.SetECPropertyFormatter(new DefaultPropertyFormatter(CreateDefaultFormatsMap(props["defaultFormats"])));
+    params.SetCachingParams(CreateCachingParams(props["cacheConfig"]));
     params.SetLocalState(&localState);
-    if (props.Get("isChangeTrackingEnabled").As<Napi::Boolean>())
+    if (props["isChangeTrackingEnabled"].asBool())
         {
         params.SetECInstanceChangeEventSources({std::make_shared<DgnDbECInstanceChangeEventSource>()});
         params.SetUpdateRecordsHandlers({updateRecordsHandler});
-        params.SetUiStateProvider(uiStateProvider);
         }
     return new ECPresentationManager(params);
     }
@@ -356,7 +331,7 @@ ECPresentationResult ECPresentationUtils::SetupRulesetDirectories(ECPresentation
     {
     Utf8String joinedDirectories = BeStringUtilities::Join(directories, ";");
     manager.GetLocaters().RegisterLocater(*DirectoryRuleSetLocater::Create(joinedDirectories.c_str()));
-    return ECPresentationResult(rapidjson::Value(rapidjson::kNullType), true);
+    return ECPresentationResult(BeJsDocument::Null(), true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -366,7 +341,7 @@ ECPresentationResult ECPresentationUtils::SetupSupplementalRulesetDirectories(EC
     {
     Utf8String joinedDirectories = BeStringUtilities::Join(directories, ";");
     manager.GetLocaters().RegisterLocater(*SupplementalRuleSetLocater::Create(*DirectoryRuleSetLocater::Create(joinedDirectories.c_str())));
-    return ECPresentationResult(rapidjson::Value(rapidjson::kNullType), true);
+    return ECPresentationResult(BeJsDocument::Null(), true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -375,13 +350,12 @@ ECPresentationResult ECPresentationUtils::SetupSupplementalRulesetDirectories(EC
 ECPresentationResult ECPresentationUtils::GetRulesets(SimpleRuleSetLocater& locater, Utf8StringCR rulesetId)
     {
     bvector<PresentationRuleSetPtr> rulesets = locater.LocateRuleSets(rulesetId.c_str());
-    Json::Value json(Json::arrayValue);
+    BeJsDocument json;
     for (PresentationRuleSetPtr const& ruleset : rulesets)
         {
-        Json::Value hashedRulesetJson;
-        hashedRulesetJson["ruleset"] = ruleset->WriteToJsonValue();
+        BeJsValue hashedRulesetJson = json[json.size()];
+        hashedRulesetJson["ruleset"].From(ruleset->WriteToJsonValue());
         hashedRulesetJson["hash"] = ruleset->GetHash();
-        json.append(hashedRulesetJson);
         }
     return ECPresentationResult(std::move(json), true);
     }
@@ -397,7 +371,19 @@ ECPresentationResult ECPresentationUtils::AddRuleset(SimpleRuleSetLocater& locat
     locater.AddRuleSet(*ruleset);
     rapidjson::Document result;
     result.SetString(ruleset->GetHash().c_str(), result.GetAllocator());
-    return ECPresentationResult(std::move(result), true);
+    return ECPresentationResult(BeJsConst(result), true);
+    }
+
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+static BeJsConst ToBeJsConst(rapidjson::Value const& value)
+    {
+    // `BeJsConst` for `rapidjson::Value const&` requires an allocator, although it's completely
+    // read-only and doesn't use it. The only reason it requires an allocator is that it uses
+    // a read-write `BeJsValue` for all the operations.
+    static rapidjson::MemoryPoolAllocator<> s_staticRapidJsonAllocator(8);
+    return BeJsConst(value, s_staticRapidJsonAllocator);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -411,10 +397,10 @@ ECPresentationResult ECPresentationUtils::RemoveRuleset(SimpleRuleSetLocater& lo
         if (ruleset->GetHash().Equals(hash))
             {
             locater.RemoveRuleSet(rulesetId);
-            return ECPresentationResult(rapidjson::Value(true), true);
+            return ECPresentationResult(ToBeJsConst(rapidjson::Value(true)), true);
             }
         }
-    return ECPresentationResult(rapidjson::Value(false), true);
+    return ECPresentationResult(ToBeJsConst(rapidjson::Value(false)), true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -423,19 +409,7 @@ ECPresentationResult ECPresentationUtils::RemoveRuleset(SimpleRuleSetLocater& lo
 ECPresentationResult ECPresentationUtils::ClearRulesets(SimpleRuleSetLocater& locater)
     {
     locater.Clear();
-    return ECPresentationResult(rapidjson::Value(rapidjson::kNullType), true);
-    }
-
-/*---------------------------------------------------------------------------------**/ /**
- * @bsimethod
- +---------------+---------------+---------------+---------------+---------------+------*/
-static BeJsConst ToBeJsConst(rapidjson::Value const& value)
-    {
-    // `BeJsConst` for `rapidjson::Value const&` requires an allocator, although it's completely
-    // read-only and doesn't use it. The only reason it requires an allocator is that it uses
-    // a read-write `BeJsValue` for all the operations.
-    static rapidjson::MemoryPoolAllocator<> s_staticRapidJsonAllocator(8);
-    return BeJsConst(value, s_staticRapidJsonAllocator);
+    return ECPresentationResult(BeJsDocument::Null(), true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -595,7 +569,7 @@ ECPresentationResult ECPresentationUtils::SetRulesetVariableValue(ECPresentation
         }
     else
         return ECPresentationResult(ECPresentationStatus::InvalidArgument, "type");
-    return ECPresentationResult(rapidjson::Value(rapidjson::kNullType), false);
+    return ECPresentationResult(BeJsDocument::Null(), false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -605,7 +579,7 @@ ECPresentationResult ECPresentationUtils::UnsetRulesetVariableValue(ECPresentati
     {
     IUserSettings& settings = manager.GetUserSettings().GetSettings(rulesetId);
     settings.UnsetValue(variableId.c_str());
-    return ECPresentationResult(rapidjson::Value(rapidjson::kNullType), false);
+    return ECPresentationResult(BeJsDocument::Null(), false);
     }
 
 #define PRESENTATION_JSON_ATTRIBUTE_BaseRequestParams_UnitSystem    "unitSystem"
@@ -733,6 +707,24 @@ static ParseResult<std::unique_ptr<InstanceFilterDefinition>> ParseHierarchyLeve
     return CreateParseResult<std::unique_ptr<InstanceFilterDefinition>>(nullptr);
     }
 
+#define PRESENTATION_JSON_ATTRIBUTE_HierarchyParams_SizeLimit "sizeLimit"
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static ParseResult<Nullable<size_t>> ParseHierarchyLevelSizeLimitFromJson(RapidJsonValueCR json)
+    {
+    if (json.HasMember(PRESENTATION_JSON_ATTRIBUTE_HierarchyParams_SizeLimit))
+        {
+        RapidJsonValueCR limitJson = json[PRESENTATION_JSON_ATTRIBUTE_HierarchyParams_SizeLimit];
+        if (!limitJson.IsInt())
+            return CreateParseError<Nullable<size_t>>("Expected `" PRESENTATION_JSON_ATTRIBUTE_HierarchyParams_SizeLimit "` to be an integer");
+        if (limitJson.GetInt64() <= 0)
+            return CreateParseError<Nullable<size_t>>("Expected `" PRESENTATION_JSON_ATTRIBUTE_HierarchyParams_SizeLimit "` to be a positive integer");
+        return CreateParseResult<Nullable<size_t>>((size_t)limitJson.GetUint64());
+        }
+    return CreateParseResult<Nullable<size_t>>(nullptr);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -750,12 +742,17 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetRootNodesCount(ECPre
     if (instanceFilterParam.HasError())
         return ECPresentationResult(ECPresentationStatus::InvalidArgument, instanceFilterParam.GetError());
 
+    auto sizeLimitParam = ParseHierarchyLevelSizeLimitFromJson(paramsJson);
+    if (sizeLimitParam.HasError())
+        return ECPresentationResult(ECPresentationStatus::InvalidArgument, sizeLimitParam.GetError());
+
     auto params = HierarchyRequestParams(rulesetParams.GetValue());
     params.SetInstanceFilter(std::move(instanceFilterParam.GetValue()));
+    params.SetLimit(sizeLimitParam.GetValue());
 
     return manager.GetNodesCount(CreateAsyncParams(params, db, paramsJson)).then([](NodesCountResponse response)
         {
-        return ECPresentationResult(rapidjson::Value((int64_t)*response), true);
+        return ECPresentationResult(ToBeJsConst(rapidjson::Value((int64_t)*response)), true);
         });
     }
 
@@ -776,12 +773,17 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetRootNodes(ECPresenta
     if (instanceFilterParam.HasError())
         return ECPresentationResult(ECPresentationStatus::InvalidArgument, instanceFilterParam.GetError());
 
+    auto sizeLimitParam = ParseHierarchyLevelSizeLimitFromJson(paramsJson);
+    if (sizeLimitParam.HasError())
+        return ECPresentationResult(ECPresentationStatus::InvalidArgument, sizeLimitParam.GetError());
+
     auto pageParams = ParsePageOptionsFromJson(paramsJson);
     if (pageParams.HasError())
         return ECPresentationResult(ECPresentationStatus::InvalidArgument, pageParams.GetError());
 
     auto params = HierarchyRequestParams(rulesetParams.GetValue());
     params.SetInstanceFilter(std::move(instanceFilterParam.GetValue()));
+    params.SetLimit(sizeLimitParam.GetValue());
 
     return manager.GetNodes(ECPresentation::MakePaged(CreateAsyncParams(params, db, paramsJson), pageParams.GetValue()))
         .then([](NodesResponse nodesResponse)
@@ -835,13 +837,18 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetChildrenCount(ECPres
     if (instanceFilterParam.HasError())
         return ECPresentationResult(ECPresentationStatus::InvalidArgument, instanceFilterParam.GetError());
 
+    auto sizeLimitParam = ParseHierarchyLevelSizeLimitFromJson(paramsJson);
+    if (sizeLimitParam.HasError())
+        return ECPresentationResult(ECPresentationStatus::InvalidArgument, sizeLimitParam.GetError());
+
     auto params = HierarchyRequestParams(rulesetParams.GetValue(), parentKeyParams.GetValue().get());
     params.SetInstanceFilter(std::move(instanceFilterParam.GetValue()));
+    params.SetLimit(sizeLimitParam.GetValue());
 
     return manager.GetNodesCount(CreateAsyncParams(params, connection->GetECDb(), paramsJson))
         .then([](NodesCountResponse nodesCountResponse)
             {
-            return ECPresentationResult(rapidjson::Value((int64_t)*nodesCountResponse), true);
+            return ECPresentationResult(ToBeJsConst(rapidjson::Value((int64_t)*nodesCountResponse)), true);
             });
     }
 
@@ -870,8 +877,13 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetChildren(ECPresentat
     if (instanceFilterParam.HasError())
         return ECPresentationResult(ECPresentationStatus::InvalidArgument, instanceFilterParam.GetError());
 
+    auto sizeLimitParam = ParseHierarchyLevelSizeLimitFromJson(paramsJson);
+    if (sizeLimitParam.HasError())
+        return ECPresentationResult(ECPresentationStatus::InvalidArgument, sizeLimitParam.GetError());
+
     auto params = HierarchyRequestParams(rulesetParams.GetValue(), parentKeyParams.GetValue().get());
     params.SetInstanceFilter(std::move(instanceFilterParam.GetValue()));
+    params.SetLimit(sizeLimitParam.GetValue());
 
     return manager.GetNodes(ECPresentation::MakePaged(CreateAsyncParams(params, db, paramsJson), pageParams.GetValue()))
         .then([](NodesResponse nodesResponse)
@@ -904,7 +916,7 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetHierarchyLevelDescri
             {
             auto const& descriptor = *descriptorResponse;
             if (descriptor.IsNull())
-                return ECPresentationResult(rapidjson::Value(rapidjson::kNullType), true);
+                return ECPresentationResult(BeJsDocument::Null(), true);
 
             ECPresentationSerializerContext serializerCtx(descriptor->GetUnitSystem(), formatter);
             return ECPresentationResult(descriptor->AsJson(serializerCtx), true);
@@ -1512,7 +1524,7 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetContentDescriptor(EC
             {
             auto const& descriptor = *response;
             if (descriptor.IsNull())
-                return ECPresentationResult(rapidjson::Value(rapidjson::kNullType), true);
+                return ECPresentationResult(BeJsDocument::Null(), true);
 
             ECPresentationSerializerContext serializerCtx(descriptor->GetUnitSystem(), formatter);
             return ECPresentationResult(descriptor->AsJson(serializerCtx), true);
@@ -1556,7 +1568,7 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetContent(ECPresentati
 
             ContentDescriptorCPtr descriptor = *descriptorResponse;
             if (descriptor.IsNull())
-                return ECPresentationResult(rapidjson::Value(rapidjson::kNullType), true);
+                return ECPresentationResult(BeJsDocument::Null(), true);
 
             descriptorOverrides.Apply(descriptor);
             return manager.GetContent(ECPresentation::MakePaged(AsyncContentRequestParams::Create(db, *descriptor), pageOptions))
@@ -1605,12 +1617,12 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetContentSetSize(ECPre
 
         ContentDescriptorCPtr descriptor = *descriptorResponse;
         if (descriptor.IsNull())
-            return ECPresentationResult(rapidjson::Value(0), true);
+            return ECPresentationResult(ToBeJsConst(rapidjson::Value(0)), true);
 
         descriptorOverrides.Apply(descriptor);
         return manager.GetContentSetSize(AsyncContentRequestParams::Create(db, *descriptor)).then([](ContentSetSizeResponse contentSetSizeResponse)
             {
-            return ECPresentationResult(rapidjson::Value((int64_t)*contentSetSizeResponse), true);
+            return ECPresentationResult(ToBeJsConst(rapidjson::Value((int64_t)*contentSetSizeResponse)), true);
             });
         });
     }
