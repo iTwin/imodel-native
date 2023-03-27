@@ -823,7 +823,8 @@ static void bcvFetchManifestCb(
   int rc, 
   char *zETag, 
   const u8 *aData, 
-  int nData
+  int nData,
+  const u8 *aHdrs, int nHdrs
 ){
   Manifest **ppMan = (Manifest**)pApp;
   char *zErr = 0;
@@ -1529,7 +1530,8 @@ static void bdAttachCb(
   int errCode, 
   char *zETag, 
   const u8 *aData, 
-  int nData
+  int nData,
+  const u8 *aHdrs, int nHdrs
 ){
   BcvMessage reply;
   FetchCtx *pDLCtx = (FetchCtx*)pCtx;
@@ -1625,7 +1627,7 @@ static void bdDispatchFetch(
   const char *zETag,
   const void *pMd5,
   FetchCtx *pCtx,
-  void (*x)(void*, int rc, char *zETag, const u8 *aData, int nData)
+  void (*x)(void*, int rc, char *zETag, const u8*, int, const u8*, int)
 ){
   int rc = bcvDispatchFetch(p, pCont, zFile, zETag, pMd5, (void*)pCtx, x);
   if( rc!=SQLITE_OK ) fatal_oom_error();
@@ -1874,7 +1876,8 @@ static void bdBlockDownloadCb(
   int errCode, 
   char *zETag, 
   const u8 *aData, 
-  int nData
+  int nData,
+  const u8 *aHdrs, int nHdrs
 ){
   FetchCtx *pDLCtx = (FetchCtx*)pCtx;
   DClient *pClient = bdFetchClient(pDLCtx);
@@ -2076,7 +2079,8 @@ static void bdPollCb(
   void *pCtx,                     /* Pointer to requesting DClient */
   int errCode,                    /* Error code */
   char *zETag,                    /* E-Tag (rc==SQLITE_OK) or error message */
-  const u8 *aData, int nData      /* Serialized manifest */
+  const u8 *aData, int nData,     /* Serialized manifest */
+  const u8 *aHdrs, int nHdrs
 ){
   FetchCtx *pDLCtx = (FetchCtx*)pCtx;
   DClient *pClient = bdFetchClient(pDLCtx);
@@ -2224,7 +2228,8 @@ static void bdPassCb(
   int errCode, 
   char *zETag, 
   const u8 *aData, 
-  int nData
+  int nData,
+  const u8 *aHdrs, int nHdrs
 ){
   BcvMessage reply;
   FetchCtx *pDLCtx = (FetchCtx*)pCtx;
@@ -2307,7 +2312,8 @@ static void bdPrefetchCb(
   int errCode, 
   char *zETag, 
   const u8 *aData, 
-  int nData
+  int nData,
+  const u8 *aHdrs, int nHdrs
 ){
   FetchCtx *pDLCtx = (FetchCtx*)pCtx;
   DClient *pClient = bdFetchClient(pDLCtx);

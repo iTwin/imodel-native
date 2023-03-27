@@ -210,6 +210,8 @@ int sqlite3_bcv_request_status(sqlite3_bcv_request*, const char **pzStatus);
 */
 const char *sqlite3_bcv_request_header(sqlite3_bcv_request*, const char *zHdr);
 
+const unsigned char *sqlite3_bcv_request_hdrs(sqlite3_bcv_request*, int *pn);
+
 /*
 ** This function may be called on a request handle within its HTTP(S) 
 ** reply callback to obtain access to data contained in the body of the
@@ -239,6 +241,8 @@ const unsigned char *sqlite3_bcv_request_body(sqlite3_bcv_request*, int *pn);
 ** nul-terminator in the buffer.
 */
 void sqlite3_bcv_job_result(sqlite3_bcv_job*, const unsigned char *p, int n);
+
+void sqlite3_bcv_job_hdrs(sqlite3_bcv_job*, const unsigned char *p, int n);
 
 /*
 ** This function is used by xFetch() and xPut() jobs to return the unique
