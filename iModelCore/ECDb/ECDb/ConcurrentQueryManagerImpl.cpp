@@ -9,7 +9,6 @@
 #include <Bentley/Logging.h>
 #include <GeomSerialization/GeomSerializationApi.h>
 #include <GeomSerialization/GeomLibsSerialization.h>
-// #include <GeomSerialization/GeomLibsJsonSerialization.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 using namespace std::chrono_literals;
