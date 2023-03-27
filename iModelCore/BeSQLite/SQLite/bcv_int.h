@@ -432,7 +432,7 @@ int bcvDispatchFetch(
   const char *zETag,
   const void *pMd5,
   void *pApp,
-  void (*x)(void*, int rc, char *zETag, const u8 *aData, int nData)
+  void (*x)(void*, int rc, char *zETag, const u8*, int, const u8*, int)
 );
 
 int bcvDispatchPut(
@@ -668,4 +668,6 @@ BcvEncryptionKey *bcvEncryptionKeyRef(BcvEncryptionKey*);
 
 int bcvDecrypt(BcvEncryptionKey*, sqlite3_int64, u8*, u8*, int);
 int bcvEncrypt(BcvEncryptionKey*, sqlite3_int64, u8*, u8*, int);
+
+const char *bcvRequestHeader(const u8 *aHdrs, int nHdrs, const char *zHdr);
 
