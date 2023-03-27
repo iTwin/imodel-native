@@ -1,4 +1,4 @@
-@echo off
+@echo on
 
 rem /*--------------------------------------------------------------------------------------+
 rem |  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
@@ -7,7 +7,7 @@ rem +---------------------------------------------------------------------------
 
 rem This script will update the SQLite Cloud source from a fossil branch.
 
-set besqlite_root=%SrcRoot%imodel02\iModelCore\BeSQLite\SQLite\
+set besqlite_root=%SrcRoot%imodel-native\iModelCore\BeSQLite\SQLite\
 set sqlite_root=%appdata%\sqlite-cloud-src
 set fossil_db=sqlite.fossil
 

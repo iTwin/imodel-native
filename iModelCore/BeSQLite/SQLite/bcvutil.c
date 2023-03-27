@@ -101,7 +101,7 @@ struct sqlite3_bcv_job {
   char *zLogmsg;                  /* Logging caption */
   void *pCbApp;                   /* First argument for callback */
   struct {
-    void (*xFetch)(void*, int rc, char *zETag, const u8 *aData, int nData);
+    void (*xFetch)(void*, int rc, char *zETag, const u8*, int, const u8*, int);
     void (*xPut)(void*, int rc, char *zETag);
     void (*xCreate)(void*, int rc, char *zError);
     void (*xDestroy)(void*, int rc, char *zError);
@@ -113,6 +113,8 @@ struct sqlite3_bcv_job {
   char *zETag;
   u8 *aResult;
   int nResult;
+  u8 *aHdrs;
+  int nHdrs;
 
   char *zPrefix;                  /* Prefix for List operations */
 
@@ -970,7 +972,8 @@ static void xFetchParsed(
   int rc, 
   char *zETag, 
   const u8 *aData, 
-  int nData
+  int nData,
+  const u8 *aHdrs, int nHdrs
 ){
   BcvFetchParsed *p = (BcvFetchParsed*)pApp;
   if( rc!=SQLITE_OK ){
@@ -1593,7 +1596,8 @@ static void bcvDownloadOneFileCb(
   int errCode, 
   char *zETag, 
   const u8 *aData,
-  int nData
+  int nData,
+  const u8 *aHdrs, int nHdrs
 ){
   BcvDownloadJob *pJob = (BcvDownloadJob*)pApp;
   BcvDownload *p = pJob->pDownload;
@@ -2253,16 +2257,18 @@ int sqlite3_bcv_request_status(
   }
   return (int)httpcode;
 }
-const char *sqlite3_bcv_request_header(
-  sqlite3_bcv_request *pReq, 
+
+const char *bcvRequestHeader(
+  const u8 *aHdrs,
+  int nHdrs,
   const char *zHdr
 ){
   int nHdr = bcvStrlen(zHdr);
   int i;
   char *zVal = 0;
 
-  for(i=0; i<pReq->hdr.nData; i+=1+bcvStrlen((char*)&pReq->hdr.aData[i])){
-    char *z = (char*)&pReq->hdr.aData[i];
+  for(i=0; i<nHdrs; i+=1+bcvStrlen((char*)&aHdrs[i])){
+    char *z = (char*)&aHdrs[i];
     if( 0==sqlite3_strnicmp(z, zHdr, nHdr) && z[nHdr]==':' ){
       zVal = &z[nHdr+1];
       while( bcv_isspace(zVal[0]) ) zVal++;
@@ -2271,12 +2277,39 @@ const char *sqlite3_bcv_request_header(
   }
   return zVal;
 }
+
+const char *sqlite3_bcv_request_header(
+  sqlite3_bcv_request *pReq, 
+  const char *zHdr
+){
+  return bcvRequestHeader(pReq->hdr.aData, pReq->hdr.nData, zHdr);
+}
 const unsigned char *sqlite3_bcv_request_body(
   sqlite3_bcv_request *pReq, 
   int *pn
 ){
   *pn = pReq->body.nData;
   return pReq->body.aData;
+}
+const unsigned char *sqlite3_bcv_request_hdrs(
+  sqlite3_bcv_request *pReq, 
+  int *pn
+){
+  *pn = pReq->hdr.nData;
+  return pReq->hdr.aData;
+}
+
+void sqlite3_bcv_job_hdrs(
+  sqlite3_bcv_job *p, 
+  const unsigned char *pHdrs, 
+  int nHdrs
+){
+  sqlite3_free(p->aHdrs);
+  p->aHdrs = bcvMallocRc(&p->rc, nHdrs);
+  if( p->aHdrs ){
+    memcpy(p->aHdrs, pHdrs, nHdrs);
+    p->nHdrs = nHdrs;
+  }
 }
 
 void sqlite3_bcv_job_result(
@@ -2581,6 +2614,7 @@ static void bcvDispatchJobFree(BcvDispatchJob *pJob){
   assert( pJob->pCont && pJob->pCont->nContRef );
   bcvContainerDeref(pJob->pCont);
   sqlite3_free(pJob->aResult);
+  sqlite3_free(pJob->aHdrs);
   sqlite3_free(pJob->zPrefix);
   sqlite3_free(pJob->zETag);
   sqlite3_free(pJob->zLogmsg);
@@ -2615,7 +2649,7 @@ void bcvDispatchFree(BcvDispatch *p){
       pNext = pJob->pNext;
       switch( pJob->eType ){
         case BCV_DISPATCH_FETCH:
-          pJob->cb.xFetch(pApp, SQLITE_ERROR, 0, 0, 0);
+          pJob->cb.xFetch(pApp, SQLITE_ERROR, 0, 0, 0, 0, 0);
           break;
         default:
           assert( 0 );
@@ -2862,7 +2896,9 @@ static void bcvDispatchJobUpdate(BcvDispatchJob *pJob){
 
     switch( pJob->eType ){
       case BCV_DISPATCH_FETCH:
-        pJob->cb.xFetch(pApp, pJob->rc,pJob->zETag,pJob->aResult,pJob->nResult);
+        pJob->cb.xFetch(pApp, pJob->rc, 
+            pJob->zETag, pJob->aResult, pJob->nResult, pJob->aHdrs, pJob->nHdrs
+        );
         break;
       case BCV_DISPATCH_PUT:
         pJob->cb.xPut(pApp, pJob->rc, pJob->zETag);
@@ -3150,7 +3186,7 @@ int bcvDispatchFetch(
   const char *zETag,
   const void *pMd5,
   void *pApp,
-  void (*x)(void*, int rc, char *zETag, const u8 *aData, int nData)
+  void (*x)(void*, int rc, char *zETag, const u8*, int, const u8*, int)
 ){
   int rc = SQLITE_OK;
   BcvDispatchJob *pJob;

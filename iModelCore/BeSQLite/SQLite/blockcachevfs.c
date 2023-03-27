@@ -123,6 +123,8 @@ struct BcvProxyFile {
 
 struct BcvKVStore {
   char *zETag;
+  char *zDate;                    /* Value of 'date' for bcv_kv_meta */
+  char *zLastModified;            /* Value of 'last-modified' for bcv_kv_meta */
   sqlite3 *db;
 };
 
@@ -389,6 +391,7 @@ static int bcvfsIsSafeChar(char c){
   return 0;
 }
 
+#if 0
 static void bcvfsPutText(char **pz, const char *zIn){
   int nIn = bcvStrlen(zIn);
   char *z = *pz;
@@ -405,6 +408,7 @@ static void bcvfsPutFormat(char **pz, const char *zFmt, ...){
   *pz = z;
   va_end(ap);
 }
+#endif
 
 static void bcvfsPutEscaped(char **pz, const char *zIn){
   const char aHex[16] = {
@@ -523,7 +527,8 @@ struct ManifestCb {
 static void bcvfsFetchManifestCb(
   void *pCtx, 
   int rc, char *zETag, 
-  const u8 *aData, int nData
+  const u8 *aData, int nData,
+  const u8 *aHdrs, int nHdrs
 ){
   ManifestCb *pCb = (ManifestCb*)pCtx;
   char *zErr = 0;
@@ -598,7 +603,8 @@ void bcvfsBlockidToText(const u8 *pBlk, int nBlk, char *aBuf){
 static void bcvfsFetchBlockCb(
   void *pCtx, 
   int rc, char *zETag, 
-  const u8 *aData, int nData
+  const u8 *aData, int nData,
+  const u8 *aHdrs, int nHdrs
 ){
   BcvfsFile *pFile = (BcvfsFile*)pCtx;
   if( rc==SQLITE_OK ){
@@ -758,6 +764,8 @@ static void bcvfsProxyCloseTransactionIf(BcvfsFile *pFile){
 static void bcvKVStoreFree(BcvKVStore *pKv){
   sqlite3_close_v2(pKv->db);
   sqlite3_free(pKv->zETag);
+  sqlite3_free(pKv->zDate);
+  sqlite3_free(pKv->zLastModified);
   memset(pKv, 0, sizeof(BcvKVStore));
 }
 
@@ -5403,7 +5411,8 @@ static void bcvfsPrefetchCb(
   int rc, 
   char *zETag, 
   const u8 *aData, 
-  int nData
+  int nData,
+  const u8 *aHdrs, int nHdrs
 ){
   PrefetchCtx *pCtx = (PrefetchCtx*)pArg;
   sqlite3_prefetch *p = pCtx->p;
@@ -5850,6 +5859,12 @@ int sqlite3_bcvfs_revert(sqlite3_bcvfs *pFs, const char *zCont, char **pzErr){
 ")"
 
 #define BCV_FILE_VTAB_SCHEMA      \
+"CREATE TABLE bcv_kv("            \
+"  name      TEXT,"               \
+"  value     TEXT "               \
+")"
+
+#define BCV_FILEMETA_VTAB_SCHEMA  \
 "CREATE TABLE bcv_kv("            \
 "  name      TEXT,"               \
 "  value     TEXT "               \
@@ -6602,11 +6617,12 @@ typedef struct bcv_kv_vtab bcv_kv_vtab;
 typedef struct bcv_kv_csr bcv_kv_csr;
 
 /*
-** Virtual table type for eponymous virtual table bcv_kv.
+** Virtual table type for eponymous virtual table bcv_kv and bcv_kv_meta.
 */
 struct bcv_kv_vtab {
   sqlite3_vtab base;              /* Base class */
   sqlite3 *db;                    /* Database handle for client db */
+  int bMeta;                      /* True for bcv_kv_meta */
   BcvfsFile *pFile;               /* File object to use to access container */
 };
 
@@ -6648,11 +6664,12 @@ static int bcvFileVtabConnect(
     if( pFile->pCont==0 ){
       rc = SQLITE_NOTFOUND;
     }else{
-      rc = sqlite3_declare_vtab(db, BCV_FILE_VTAB_SCHEMA);
+      rc = sqlite3_declare_vtab(db, (const char*)pAux);
       pNew = (bcv_kv_vtab*)bcvMallocRc(&rc, sizeof(bcv_kv_vtab));
       if( pNew ){
         pNew->db = db;
         pNew->pFile = pFile;
+        pNew->bMeta = (sqlite3_stricmp("bcv_kv_meta", argv[0])==0);
       }
     }
   }
@@ -6751,29 +6768,96 @@ u8 *bcvEmptyKV(int *pRc, int *pnData){
   return aRet;
 }
 
+static int bcvFieldLen(const char *zIn){
+  const char *z = zIn;
+  while( *z!='\0' && bcv_isspace(*z)==0 ) z++;
+  return z-zIn;
+}
+
+static const char *bcvNextField(const char *zIn){
+  const char *z = zIn;
+  z += bcvFieldLen(z);
+  while( bcv_isspace(*z) ) z++;
+  return z;
+}
+
+/*
+** Convert an http header format date to an iso-8601 timestamp
+** that can be manipulated by SQLite's datetime functions. An http
+** date looks like this:
+**
+**   "Sat, 25 Mar 2023 19:25:14 GMT"
+*/
+static char *bcvReformatHttpDate(int *pRc, const char *zHttp){
+  const char *azMonth[] = {
+    "", 
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun", 
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+  };
+
+  const char *zDay = 0; int nDay = 0;
+  const char *zMonth = 0; int nMonth = 0;
+  const char *zYear = 0; int nYear = 0;
+  const char *zTime = 0; int nTime = 0;
+  int iMonth = 0;
+
+  if( zHttp==0 ) return 0;
+
+  zDay = bcvNextField(zHttp);
+  zMonth = bcvNextField(zDay);
+  zYear = bcvNextField(zMonth);
+  zTime = bcvNextField(zYear);
+
+  nDay = bcvFieldLen(zDay);
+  nMonth = bcvFieldLen(zMonth);
+  nYear = bcvFieldLen(zYear);
+  nTime = bcvFieldLen(zTime);
+
+  if( nMonth!=3 ) return 0;
+  for(iMonth=1; iMonth<sizeof(azMonth)/sizeof(azMonth[0]); iMonth++){
+    if( 0==sqlite3_strnicmp(azMonth[iMonth], zMonth, 3) ) break;
+  }
+  if( iMonth==sizeof(azMonth)/sizeof(azMonth[0]) ) return 0;
+
+  /* todo! */
+  return bcvMprintfRc(pRc, 
+      "%.*s-%02d-%.*s %.*s", nYear, zYear, iMonth, nDay, zDay, nTime, zTime
+  );
+}
+
 static void bcvfsFetchKvCb(
   void *pApp, 
   int rc, 
   char *zETag, 
   const u8 *aData, 
-  int nData
+  int nData,
+  const u8 *aHdrs, int nHdrs
 ){
   FetchKvCtx *p = (FetchKvCtx*)pApp;
   u8 *aCopy = 0;
   int nCopy = nData;
+
   if( rc==SQLITE_OK ){
     aCopy = bcvMallocRc(&p->rc, nData);
     if( aCopy ) memcpy(aCopy, aData, nData);
   }else if( rc==HTTP_NOT_FOUND ){
     rc = SQLITE_OK;
     zETag = "*";
-    aCopy = bcvEmptyKV(&rc, &nCopy);
+    aCopy = bcvEmptyKV(&p->rc, &nCopy);
   }else{
     p->rc = rc;
     if( zETag ) p->zErr = sqlite3_mprintf("%s", zETag);
   }
 
-  if( aCopy ){
+  assert( p->pKv->zDate==0 && p->pKv->zLastModified==0 );
+  p->pKv->zDate = bcvReformatHttpDate(&p->rc, 
+      bcvRequestHeader(aHdrs, nHdrs, "date")
+  );
+  p->pKv->zLastModified = bcvReformatHttpDate(&p->rc, 
+      bcvRequestHeader(aHdrs, nHdrs, "last-modified")
+  );
+
+  if( p->rc==SQLITE_OK ){
     sqlite3 *db = 0;
     p->rc = sqlite3_open(":memory:", &db);
     if( p->rc==SQLITE_OK ){
@@ -6787,11 +6871,12 @@ static void bcvfsFetchKvCb(
       }
     }
     p->pKv->db = db;
-    if( p->rc!=SQLITE_OK ){
-      bcvKVStoreFree(p->pKv);
-    }
-    sqlite3_free(aCopy);
   }
+
+  if( p->rc!=SQLITE_OK ){
+    bcvKVStoreFree(p->pKv);
+  }
+  sqlite3_free(aCopy);
 }
 
 /*
@@ -6939,9 +7024,18 @@ static int bcvFileVtabFilter(
 
   rc = bcvKVStoreLoad(pTab);
   if( rc==SQLITE_OK ){
-    rc = sqlite3_prepare(pTab->pFile->kv.db, 
-        "SELECT i, k, v FROM kv", -1, &pCur->pSelect, 0
-    );
+    BcvKVStore *pKv = &pTab->pFile->kv;
+    const char *zSql = 0;
+    if( pTab->bMeta ){
+      zSql = "VALUES(1, 'date', ?), (2, 'last-modified', ?)";
+    }else{
+      zSql = "SELECT i, k, v FROM kv";
+    }
+    rc = sqlite3_prepare(pKv->db, zSql, -1, &pCur->pSelect, 0);
+    if( rc==SQLITE_OK && pTab->bMeta ){
+      sqlite3_bind_text(pCur->pSelect,1,pKv->zDate,-1,SQLITE_TRANSIENT);
+      sqlite3_bind_text(pCur->pSelect,2,pKv->zLastModified,-1,SQLITE_TRANSIENT);
+    }
   }
   if( rc==SQLITE_OK ){
     rc = bcvFileVtabNext(cur);
@@ -7109,7 +7203,6 @@ static int bcvFileVtabCommit(sqlite3_vtab *tab){
   return SQLITE_OK;
 }
 
-
 int sqlite3_bcvfs_register_vtab(sqlite3 *db){
   static sqlite3_module bcv_database = {
     /* iVersion    */ 2,
@@ -7217,6 +7310,34 @@ int sqlite3_bcvfs_register_vtab(sqlite3 *db){
     /* xRollbackTo */ 0,
     /* xShadowName */ 0
   };
+
+  static sqlite3_module bcv_kv_meta = {
+    /* iVersion    */ 2,
+    /* xCreate     */ 0,
+    /* xConnect    */ bcvFileVtabConnect,
+    /* xBestIndex  */ bcvFileVtabBestIndex,
+    /* xDisconnect */ bcvFileVtabDisconnect,
+    /* xDestroy    */ 0,
+    /* xOpen       */ bcvFileVtabOpen,
+    /* xClose      */ bcvFileVtabClose,
+    /* xFilter     */ bcvFileVtabFilter,
+    /* xNext       */ bcvFileVtabNext,
+    /* xEof        */ bcvFileVtabEof,
+    /* xColumn     */ bcvFileVtabColumn,
+    /* xRowid      */ bcvFileVtabRowid,
+    /* xUpdate     */ 0,
+    /* xBegin      */ 0,
+    /* xSync       */ 0,
+    /* xCommit     */ 0,
+    /* xRollback   */ 0,
+
+    /* xFindMethod */ 0,
+    /* xRename     */ 0,
+    /* xSavepoint  */ 0,
+    /* xRelease    */ 0,
+    /* xRollbackTo */ 0,
+    /* xShadowName */ 0
+  };
   int rc = SQLITE_OK;
   rc = sqlite3_create_module(
       db, "bcv_database", &bcv_database, (void*)BCV_DATABASE_VTAB_SCHEMA
@@ -7234,6 +7355,11 @@ int sqlite3_bcvfs_register_vtab(sqlite3 *db){
   if( rc==SQLITE_OK ){
     rc = sqlite3_create_module(
         db, "bcv_kv", &bcv_kv, (void*)BCV_FILE_VTAB_SCHEMA
+    );
+  }
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_module(
+        db, "bcv_kv_meta", &bcv_kv_meta, (void*)BCV_FILEMETA_VTAB_SCHEMA
     );
   }
   return rc;
