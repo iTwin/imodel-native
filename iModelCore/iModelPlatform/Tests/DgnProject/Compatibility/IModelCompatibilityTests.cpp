@@ -1043,7 +1043,7 @@ TEST_F(IModelCompatibilityTestFixture, EC31SchemaImport)
             ASSERT_TRUE(deserializationCtx != nullptr) << testDb.GetDescription();
             const SchemaStatus schemaImportStat = testDb.GetDgnDb().ImportSchemas(deserializationCtx->GetCache().GetSchemas());
 
-            if (ProfileState::Age::Newer == testDb.GetECDbAge())
+            if (ProfileState::Age::Newer == testDb.GetECDbAge() && !testDb.DoesECDbVersionAllowSchemaImport())
                 {
                 EXPECT_EQ(SchemaStatus::SchemaImportFailed, schemaImportStat) << testDb.GetDescription();
                 continue;
@@ -1134,7 +1134,7 @@ TEST_F(IModelCompatibilityTestFixture, EC32SchemaImport_Enums)
             ASSERT_TRUE(deserializationCtx != nullptr) << testDb.GetDescription();
             const SchemaStatus schemaImportStat = testDb.GetDgnDb().ImportSchemas(deserializationCtx->GetCache().GetSchemas());
 
-            if (ProfileState::Age::Newer == testDb.GetECDbAge() || !testDb.SupportsFeature(ECDbFeature::NamedEnumerators))
+            if ((ProfileState::Age::Newer == testDb.GetECDbAge() && !testDb.DoesECDbVersionAllowSchemaImport()) || !testDb.SupportsFeature(ECDbFeature::NamedEnumerators))
                 {
                 EXPECT_EQ(SchemaStatus::SchemaImportFailed, schemaImportStat) << testDb.GetDescription();
                 continue;
@@ -1197,7 +1197,7 @@ TEST_F(IModelCompatibilityTestFixture, EC32SchemaImport_Koqs)
             ASSERT_TRUE(deserializationCtx != nullptr) << testDb.GetDescription();
             const SchemaStatus schemaImportStat = testDb.GetDgnDb().ImportSchemas(deserializationCtx->GetCache().GetSchemas());
 
-            if (ProfileState::Age::Newer == testDb.GetECDbAge() || !testDb.SupportsFeature(ECDbFeature::UnitsAndFormats))
+            if ((ProfileState::Age::Newer == testDb.GetECDbAge() && !testDb.DoesECDbVersionAllowSchemaImport()) || !testDb.SupportsFeature(ECDbFeature::UnitsAndFormats))
                 {
                 EXPECT_EQ(SchemaStatus::SchemaImportFailed, schemaImportStat) << testDb.GetDescription();
                 continue;
@@ -1284,7 +1284,7 @@ TEST_F(IModelCompatibilityTestFixture, EC31SchemaUpgrade_Formats_API)
 
             ASSERT_TRUE(deserializationCtx != nullptr) << testDb.GetDescription();
             SchemaStatus schemaImportStat = testDb.GetDgnDb().ImportSchemas(deserializationCtx->GetCache().GetSchemas());
-            if (testDb.GetECDbAge() == ProfileState::Age::Newer)
+            if (testDb.GetECDbAge() == ProfileState::Age::Newer && !testDb.DoesECDbVersionAllowSchemaImport())
                 {
                 EXPECT_EQ(SchemaStatus::SchemaImportFailed, schemaImportStat) << testDb.GetDescription();
                 continue;
@@ -1366,7 +1366,7 @@ TEST_F(IModelCompatibilityTestFixture, EC31Enum_SchemaUpgrade)
             ASSERT_TRUE(deserializationCtx != nullptr) << testDb.GetDescription();
             const SchemaStatus schemaImportStat = testDb.GetDgnDb().ImportSchemas(deserializationCtx->GetCache().GetSchemas());
 
-            if (ProfileState::Age::Newer == testDb.GetECDbAge())
+            if (ProfileState::Age::Newer == testDb.GetECDbAge() && !testDb.DoesECDbVersionAllowSchemaImport())
                 {
                 EXPECT_EQ(SchemaStatus::SchemaImportFailed, schemaImportStat) << testDb.GetDescription();
                 continue;
@@ -1455,7 +1455,7 @@ TEST_F(IModelCompatibilityTestFixture, EC31Koqs_SchemaUpgrade)
             ASSERT_TRUE(deserializationCtx != nullptr) << testDb.GetDescription();
             const SchemaStatus schemaImportStat = testDb.GetDgnDb().ImportSchemas(deserializationCtx->GetCache().GetSchemas());
 
-            if (ProfileState::Age::Newer == testDb.GetECDbAge())
+            if (ProfileState::Age::Newer == testDb.GetECDbAge() && !testDb.DoesECDbVersionAllowSchemaImport())
                 {
                 EXPECT_EQ(SchemaStatus::SchemaImportFailed, schemaImportStat) << testDb.GetDescription();
                 continue;
@@ -1548,7 +1548,7 @@ TEST_F(IModelCompatibilityTestFixture, EC31ToEC32SchemaUpgrade_Enums)
             ASSERT_TRUE(deserializationCtx != nullptr) << testDb.GetDescription();
             const SchemaStatus schemaImportStat = testDb.GetDgnDb().ImportSchemas(deserializationCtx->GetCache().GetSchemas());
 
-            if (ProfileState::Age::Newer == testDb.GetECDbAge() || !testDb.SupportsFeature(ECDbFeature::NamedEnumerators))
+            if ((ProfileState::Age::Newer == testDb.GetECDbAge() && !testDb.DoesECDbVersionAllowSchemaImport()) || !testDb.SupportsFeature(ECDbFeature::NamedEnumerators))
                 {
                 EXPECT_EQ(SchemaStatus::SchemaImportFailed, schemaImportStat) << testDb.GetDescription();
                 continue;
@@ -1636,7 +1636,7 @@ TEST_F(IModelCompatibilityTestFixture, EC31ToEC32SchemaUpgrade_Koqs)
             const SchemaStatus schemaImportStat = testDb.GetDgnDb().ImportSchemas(deserializationCtx->GetCache().GetSchemas());
 
             // If the ECDb version is newer or 
-            if (ProfileState::Age::Newer == testDb.GetECDbAge() || !testDb.SupportsFeature(ECDbFeature::UnitsAndFormats))
+            if ((ProfileState::Age::Newer == testDb.GetECDbAge() && !testDb.DoesECDbVersionAllowSchemaImport()) || !testDb.SupportsFeature(ECDbFeature::UnitsAndFormats))
                 {
                 EXPECT_EQ(SchemaStatus::SchemaImportFailed, schemaImportStat) << testDb.GetDescription();
                 continue;
@@ -1713,7 +1713,7 @@ TEST_F(IModelCompatibilityTestFixture, EC32SchemaUpgrade_Enums)
             ASSERT_TRUE(deserializationCtx != nullptr) << testDb.GetDescription();
             const SchemaStatus schemaImportStat = testDb.GetDgnDb().ImportSchemas(deserializationCtx->GetCache().GetSchemas());
 
-            if (ProfileState::Age::Newer == testDb.GetECDbAge() || !testDb.SupportsFeature(ECDbFeature::NamedEnumerators))
+            if ((ProfileState::Age::Newer == testDb.GetECDbAge() && !testDb.DoesECDbVersionAllowSchemaImport()) || !testDb.SupportsFeature(ECDbFeature::NamedEnumerators))
                 {
                 EXPECT_EQ(SchemaStatus::SchemaImportFailed, schemaImportStat) << testDb.GetDescription();
                 continue;
@@ -1799,7 +1799,7 @@ TEST_F(IModelCompatibilityTestFixture, EC32SchemaUpgrade_Koqs)
             ASSERT_TRUE(deserializationCtx != nullptr) << testDb.GetDescription();
             const SchemaStatus schemaImportStat = testDb.GetDgnDb().ImportSchemas(deserializationCtx->GetCache().GetSchemas());
 
-            if (ProfileState::Age::Newer == testDb.GetECDbAge() || !testDb.SupportsFeature(ECDbFeature::UnitsAndFormats))
+            if ((ProfileState::Age::Newer == testDb.GetECDbAge() && !testDb.DoesECDbVersionAllowSchemaImport()) || !testDb.SupportsFeature(ECDbFeature::UnitsAndFormats))
                 {
                 EXPECT_EQ(SchemaStatus::SchemaImportFailed, schemaImportStat) << testDb.GetDescription();
                 continue;
@@ -1849,7 +1849,7 @@ TEST_F(IModelCompatibilityTestFixture, AddDomain)
                 continue;
                 }
 
-            if (testFile.GetECDbAge() == ProfileState::Age::Newer)
+            if (testFile.GetECDbAge() == ProfileState::Age::Newer && !testDb.DoesECDbVersionAllowSchemaImport())
                 {
                 // schema import not possible to newer ECDb profile files
                 ASSERT_EQ(BE_SQLITE_ERROR_SchemaUpgradeFailed, openStat) << testDb.GetDescription();
@@ -1934,7 +1934,7 @@ TEST_F(IModelCompatibilityTestFixture, UpgradeDomainIModel)
                 continue;
                 }
 
-            if (testFile.GetECDbAge() == ProfileState::Age::Newer)
+            if (testFile.GetECDbAge() == ProfileState::Age::Newer && !testDb.DoesECDbVersionAllowSchemaImport())
                 {
                 // schema import not possible to newer ECDb profile files
                 ASSERT_EQ(BE_SQLITE_ERROR_SchemaUpgradeFailed, openStat) << testDb.GetDescription();
