@@ -5806,7 +5806,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
 
     ContentModifierP calculatedPropertiesModifierApplyOnNestedC = new ContentModifier(GetSchema()->GetName(), "C");
     calculatedPropertiesModifierApplyOnNestedC->AddCalculatedProperty(*new CalculatedPropertiesSpecification("labelC", 1000, "this.PropertyC"));
-    calculatedPropertiesModifierApplyOnNestedC->SetApplyOnNestedProperties(true);
+    calculatedPropertiesModifierApplyOnNestedC->SetApplyOnNestedContent(true);
     calculatedPropertiesModifierApplyOnNestedC->SetPriority(3);
 
     rules->AddPresentationRule(*contentRule);
@@ -5915,21 +5915,21 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
         {
         new RelationshipStepSpecification(relationshipBHasC->GetFullName(), RequiredRelationDirection_Forward, classC->GetFullName())
         }), { new PropertySpecification("*") }, RelationshipMeaning::RelatedInstance));
-    relatedPropertiesModifierBtoC->SetApplyOnNestedProperties(true);
+    relatedPropertiesModifierBtoC->SetApplyOnNestedContent(true);
 
     ContentModifierP relatedPropertiesModifierCtoB = new ContentModifier(GetSchema()->GetName(), "C");
     relatedPropertiesModifierCtoB->AddRelatedProperty(*new RelatedPropertiesSpecification(*new RelationshipPathSpecification(
         {
         new RelationshipStepSpecification(relationshipBHasC->GetFullName(), RequiredRelationDirection_Backward, classB->GetFullName())
         }), { new PropertySpecification("*") }, RelationshipMeaning::RelatedInstance));
-    relatedPropertiesModifierCtoB->SetApplyOnNestedProperties(true);
+    relatedPropertiesModifierCtoB->SetApplyOnNestedContent(true);
 
     ContentModifierP relatedPropertiesModifierCtoD = new ContentModifier(GetSchema()->GetName(), "C");
     relatedPropertiesModifierCtoD->AddRelatedProperty(*new RelatedPropertiesSpecification(*new RelationshipPathSpecification(
         {
         new RelationshipStepSpecification(relationshipCHasD->GetFullName(), RequiredRelationDirection_Forward, classD->GetFullName())
         }), { new PropertySpecification("*") }, RelationshipMeaning::RelatedInstance));
-    relatedPropertiesModifierCtoD->SetApplyOnNestedProperties(true);
+    relatedPropertiesModifierCtoD->SetApplyOnNestedContent(true);
 
     rules->AddPresentationRule(*contentRule);
     rules->AddPresentationRule(*relatedPropertiesModifierBtoC);

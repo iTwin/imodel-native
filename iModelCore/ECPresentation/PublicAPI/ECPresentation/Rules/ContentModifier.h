@@ -18,7 +18,7 @@ private:
     CalculatedPropertiesSpecificationList   m_calculatedProperties;
     PropertyCategorySpecificationsList      m_propertyCategories;
     PropertySpecificationsList              m_propertyOverrides;
-    bool                                    m_applyOnNestedProperties;
+    bool                                    m_applyOnNestedContent;
 
 public:
     ECPRESENTATION_EXPORT bool ReadXml(BeXmlNodeP xmlNode);
@@ -32,7 +32,7 @@ public:
 
 public:
     //! Constructor. It is used to initialize the rule with default settings.
-    ContentModifiersList() : m_applyOnNestedProperties(false) {}
+    ContentModifiersList() : m_applyOnNestedContent(false) {}
 
     //! Copy constructor.
     ECPRESENTATION_EXPORT ContentModifiersList(ContentModifiersList const&);
@@ -59,8 +59,8 @@ public:
     ECPRESENTATION_EXPORT void AddPropertyOverride(PropertySpecificationR);
     ECPRESENTATION_EXPORT void ClearPropertyOverrides();
 
-    bool ShouldApplyOnNestedProperties() const { return m_applyOnNestedProperties; }
-    void SetApplyOnNestedProperties(bool value) { m_applyOnNestedProperties = value; InvalidateHash(); }
+    bool ShouldApplyOnNestedContent() const { return m_applyOnNestedContent; }
+    void SetApplyOnNestedContent(bool value) { m_applyOnNestedContent = value; InvalidateHash(); }
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -115,8 +115,8 @@ public:
     PropertySpecificationsList const& GetPropertyOverrides() const {return m_modifiers.GetPropertyOverrides();}
     void AddPropertyOverride(PropertySpecificationR specification) {m_modifiers.AddPropertyOverride(specification);}
 
-    bool ShouldApplyOnNestedProperties() const { return m_modifiers.ShouldApplyOnNestedProperties(); }
-    void SetApplyOnNestedProperties(bool value) { m_modifiers.SetApplyOnNestedProperties(value); }
+    bool ShouldApplyOnNestedContent() const { return m_modifiers.ShouldApplyOnNestedContent(); }
+    void SetApplyOnNestedContent(bool value) { m_modifiers.SetApplyOnNestedContent(value); }
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

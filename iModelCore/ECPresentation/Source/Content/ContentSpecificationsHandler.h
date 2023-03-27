@@ -258,7 +258,7 @@ struct ContentSpecificationsHandler
     protected:
         virtual bool _Supports(ECPropertyCR, ECClassCR, PropertySpecificationsList const&) = 0;
         virtual PropertyAppendResult _Append(ECPropertyCR, ECClassCR, Utf8CP, PropertySpecificationsList const&) = 0;
-        virtual PropertyAppendResult _AppendCalculatedProperty(ContentDescriptor::CalculatedPropertyField const&) { return PropertyAppendResult(false); };
+        virtual PropertyAppendResult _AppendCalculatedProperty(ECClassCP ecClass, CalculatedPropertiesSpecificationCP spec, Utf8StringCR label, Utf8StringCR name) { return PropertyAppendResult(false); };
         ExpressionContextPtr CreateExpressionContext(Context const& context)
             {
             if (m_expressionContext != nullptr)
@@ -270,7 +270,7 @@ struct ContentSpecificationsHandler
     public:
         bool Supports(ECPropertyCR ecProperty, ECClassCR propertyClass, PropertySpecificationsList const& overrides) {return _Supports(ecProperty, propertyClass, overrides);}
         PropertyAppendResult Append(ECPropertyCR ecProperty, ECClassCR propertyClass, Utf8CP propertyClassAlias, PropertySpecificationsList const& overrides) {return _Append(ecProperty, propertyClass, propertyClassAlias, overrides);}
-        PropertyAppendResult AppendCalculatedProperty(ContentDescriptor::CalculatedPropertyField const& field) { return _AppendCalculatedProperty(field); }
+        PropertyAppendResult AppendCalculatedProperty(ECClassCP ecClass, CalculatedPropertiesSpecificationCP spec, Utf8StringCR label, Utf8StringCR name) { return _AppendCalculatedProperty(ecClass, spec, label, name); }
     };
     typedef RefCountedPtr<PropertyAppender> PropertyAppenderPtr;
 

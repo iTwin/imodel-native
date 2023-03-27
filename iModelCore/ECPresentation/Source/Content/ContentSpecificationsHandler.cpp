@@ -276,7 +276,7 @@ static bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> CreateF
 static bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> CreateForNestedPropertiesFromModifiers(bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> const& flatSpecs, ContentModifierCP modifier, ECSchemaHelper const& helper)
     {
     bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> specs;
-    if (modifier->ShouldApplyOnNestedProperties())
+    if (modifier->ShouldApplyOnNestedContent())
         {
         int flatSpecsSize = flatSpecs.size();
         for (int i = 0; i < flatSpecsSize; ++i)

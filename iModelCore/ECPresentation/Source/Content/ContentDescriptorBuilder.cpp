@@ -224,9 +224,8 @@ public:
     +---------------+---------------+---------------+---------------+---------------+------*/
     std::shared_ptr<ContentDescriptor::Category> GetCalculatedFieldCategory()
         {
-        // just use the default category
         // TODO: support category overrides for calculated fields
-        return PrepareCategoryForReturn(GetDefaultCategory(), ParentOption::NoParent);
+        return GetParentCategory(true);
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -413,7 +412,7 @@ protected:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
-    virtual ContentSpecificationsHandler::PropertyAppendResult _DoAppendCalculatedProperty(ContentDescriptor::CalculatedPropertyField const&) = 0;
+    virtual ContentSpecificationsHandler::PropertyAppendResult _DoAppendCalculatedProperty(ECClassCP ecClass, CalculatedPropertiesSpecificationCP spec, Utf8StringCR label, Utf8StringCR name) = 0;
 
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
@@ -437,9 +436,9 @@ protected:
         return result;
         }
 
-    ContentSpecificationsHandler::PropertyAppendResult _AppendCalculatedProperty(ContentDescriptor::CalculatedPropertyField const& field) override 
+    ContentSpecificationsHandler::PropertyAppendResult _AppendCalculatedProperty(ECClassCP ecClass, CalculatedPropertiesSpecificationCP spec, Utf8StringCR label, Utf8StringCR name) override
         {
-        return _DoAppendCalculatedProperty(field);
+        return _DoAppendCalculatedProperty(ecClass, spec, label, name);
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -559,7 +558,7 @@ protected:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
-    ContentSpecificationsHandler::PropertyAppendResult _DoAppendCalculatedProperty(ContentDescriptor::CalculatedPropertyField const& calculatedField) override
+    ContentSpecificationsHandler::PropertyAppendResult _DoAppendCalculatedProperty(ECClassCP ecClass, CalculatedPropertiesSpecificationCP spec, Utf8StringCR label, Utf8StringCR name) override
         {
         for (ContentDescriptor::Field const* field : m_descriptor.GetAllFields())
             {
@@ -567,13 +566,11 @@ protected:
                 continue;
 
             ContentDescriptor::CalculatedPropertyField const* existingCalculatedField = field->AsCalculatedPropertyField();
-            if (existingCalculatedField->GetRequestedName() == calculatedField.GetRequestedName() 
-                && nullptr != calculatedField.GetClass() 
-                && calculatedField.GetClass()->Is(existingCalculatedField->GetClass()))
+            if (existingCalculatedField->GetRequestedName() == name && nullptr != ecClass && ecClass->Is(existingCalculatedField->GetClass()))
                 return ContentSpecificationsHandler::PropertyAppendResult(false);
             }
      
-        m_descriptor.AddRootField(*new ContentDescriptor::CalculatedPropertyField(calculatedField));
+        m_descriptor.AddRootField(*new ContentDescriptor::CalculatedPropertyField(m_categoriesSupplier.GetCalculatedFieldCategory(), label, name, spec->GetValue(), ecClass, spec->GetPriority()));
         return ContentSpecificationsHandler::PropertyAppendResult(true);
         }
 
@@ -907,7 +904,7 @@ protected:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
-    ContentSpecificationsHandler::PropertyAppendResult _DoAppendCalculatedProperty(ContentDescriptor::CalculatedPropertyField const& calculatedField) override
+    ContentSpecificationsHandler::PropertyAppendResult _DoAppendCalculatedProperty(ECClassCP ecClass, CalculatedPropertiesSpecificationCP spec, Utf8StringCR label, Utf8StringCR name) override
         {
         for (ContentDescriptor::Field* nestedField : m_relatedContentField.GetFields())
             {
@@ -915,13 +912,13 @@ protected:
                 continue;
 
             ContentDescriptor::CalculatedPropertyField const* existingCalculatedField = nestedField->AsCalculatedPropertyField();
-            if(existingCalculatedField->GetRequestedName() == calculatedField.GetRequestedName())
+            if(existingCalculatedField->GetRequestedName() == name)
                 {
                 DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Related content field already contains a similar property field - skip.");
                 return ContentSpecificationsHandler::PropertyAppendResult(false);
                 }
             }
-        m_relatedContentField.GetFields().push_back(new ContentDescriptor::CalculatedPropertyField(calculatedField));
+        m_relatedContentField.GetFields().push_back(new ContentDescriptor::CalculatedPropertyField(m_categoriesSupplier.GetCalculatedFieldCategory(), label, name, spec->GetValue(), ecClass, spec->GetPriority()));
         m_relatedContentField.GetFields().back()->SetParent(&m_relatedContentField);
         return ContentSpecificationsHandler::PropertyAppendResult(true);
         }
@@ -1135,10 +1132,9 @@ private:
         {
         for (size_t i = 0; i < calculatedProperties.size(); i++)
             {
-            Utf8String label = calculatedProperties[i]->GetLabel();
-            Utf8String propertyName = Utf8String("CalculatedProperty_").append(std::to_string(count).c_str());
-            auto category = CategoriesSupplier(*m_categoriesSupplierContext).GetCalculatedFieldCategory();            
-            appender.AppendCalculatedProperty(*new ContentDescriptor::CalculatedPropertyField(category, label, propertyName, calculatedProperties[i]->GetValue(), ecClass, calculatedProperties[i]->GetPriority()));
+            Utf8StringCR label = calculatedProperties[i]->GetLabel();
+            Utf8StringCR propertyName = Utf8String("CalculatedProperty_").append(std::to_string(count).c_str());
+            appender.AppendCalculatedProperty(ecClass, calculatedProperties[i], label, propertyName);
             ++count;
             }
         }
@@ -1152,7 +1148,7 @@ private:
         for (ContentModifierCP modifier : GetContext().GetRulesPreprocessor().GetContentModifiers())
             {
             ECClassCP modifierClass = GetContext().GetSchemaHelper().GetECClass(modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str());
-            if (ecClass.Is(modifierClass) && (!includeNested || modifier->ShouldApplyOnNestedProperties()))
+            if (ecClass.Is(modifierClass) && (!includeNested || modifier->ShouldApplyOnNestedContent()))
                 {
                 DiagnosticsHelpers::ReportRule(*modifier);
                 AddCalculatedFields(modifier->GetCalculatedProperties(), modifierClass, appender, count);

@@ -15,7 +15,7 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentModifiersList::ContentModifiersList(ContentModifiersList const& other)
-    : HashableBase(other)
+    : HashableBase(other), m_applyOnNestedContent(other.m_applyOnNestedContent)
     {
     CommonToolsInternal::CopyRules(m_relatedProperties, other.m_relatedProperties, this);
     CommonToolsInternal::CopyRules(m_calculatedProperties, other.m_calculatedProperties, this);
@@ -27,7 +27,7 @@ ContentModifiersList::ContentModifiersList(ContentModifiersList const& other)
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentModifiersList::ContentModifiersList(ContentModifiersList&& other)
-    : HashableBase(std::move(other))
+    : HashableBase(std::move(other)), m_applyOnNestedContent(other.m_applyOnNestedContent)
     {
     CommonToolsInternal::SwapRules(m_relatedProperties, other.m_relatedProperties, this);
     CommonToolsInternal::SwapRules(m_calculatedProperties, other.m_calculatedProperties, this);
@@ -196,7 +196,7 @@ bool ContentModifiersList::ReadJson(BeJsConst json)
         DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_WARNING, Utf8PrintfString("Using deprecated `%s.%s`. It's recommended to switch to `%s`.",
             CONTENTMODIFIER_RULE_JSON_TYPE, CONTENTMODIFIER_JSON_ATTRIBUTE_PROPERTYDISPLAYSPECIFICATIONS, CONTENTMODIFIER_JSON_ATTRIBUTE_PROPERTYOVERRIDES));
         }
-    m_applyOnNestedProperties = json[CONTENTMODIFIER_JSON_ATTRIBUTE_APPLYONNESTEDCONTENT].asBool(false);
+    m_applyOnNestedContent = json[CONTENTMODIFIER_JSON_ATTRIBUTE_APPLYONNESTEDCONTENT].asBool(false);
 
     return true;
     }
@@ -226,8 +226,8 @@ void ContentModifiersList::WriteJson(BeJsValue json) const
         CommonToolsInternal::WriteRulesToJson<PropertySpecification, PropertySpecificationsList>
             (json[CONTENTMODIFIER_JSON_ATTRIBUTE_PROPERTYOVERRIDES], m_propertyOverrides);
         }
-    if (m_applyOnNestedProperties)
-        json[CONTENTMODIFIER_JSON_ATTRIBUTE_APPLYONNESTEDCONTENT] = m_applyOnNestedProperties;
+    if (m_applyOnNestedContent)
+        json[CONTENTMODIFIER_JSON_ATTRIBUTE_APPLYONNESTEDCONTENT] = m_applyOnNestedContent;
     }
 
 /*---------------------------------------------------------------------------------**//**
