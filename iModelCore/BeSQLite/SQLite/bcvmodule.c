@@ -201,6 +201,8 @@ static void bcvModuleFetchCb(
     const char *zETag;
     aBody = sqlite3_bcv_request_body(pReq, &nBody);
     sqlite3_bcv_job_result(pCtx, aBody, nBody);
+    aBody = sqlite3_bcv_request_hdrs(pReq, &nBody);
+    sqlite3_bcv_job_hdrs(pCtx, aBody, nBody);
     zETag = sqlite3_bcv_request_header(pReq, zETagHdr);
     sqlite3_bcv_job_etag(pCtx, zETag);
   }
