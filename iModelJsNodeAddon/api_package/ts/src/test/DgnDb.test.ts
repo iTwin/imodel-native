@@ -97,6 +97,11 @@ describe("basic tests", () => {
     const b1 = new iModelJsNative.DgnDb();
     b1.openIModel(b1Uri, OpenMode.ReadWrite);
 
+    // create second briefcase
+    const b2Uri = path.join(baseDir, "b2.bim");
+    copyAndOverrideFile(seedUri, b2Uri);
+    const b2 = new iModelJsNative.DgnDb();
+    b2.openIModel(b2Uri, OpenMode.ReadWrite);
     // import schema in briefcase 1
     const schema1 = `<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="TestSchema1" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
@@ -126,15 +131,40 @@ describe("basic tests", () => {
 
     b0.sharedChannelPull(channelUri);
 
-    // b1 = b2
+    // test default URI
+    b2.sharedChannelSetDefaultUri(channelUri);
+    assert.equal(b2.sharedChannelGetDefaultUri(), channelUri);
+    b2.sharedChannelPull();
+
+    // b1 = b2 == b0
     const b0Hashes = getSchemaHashes(b0);
     const b1Hashes = getSchemaHashes(b1);
+    const b2Hashes = getSchemaHashes(b2);
     assert.deepEqual(b0Hashes, b1Hashes);
+    assert.deepEqual(b0Hashes, b2Hashes);
+
+    const schema3 = `<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchema1" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+        <ECEntityClass typeName="Pipe1">
+          <BaseClass>bis:GeometricElement2d</BaseClass>
+          <ECProperty propertyName="p1" typeName="int" />
+          <ECProperty propertyName="p2" typeName="int" />
+          <ECProperty propertyName="p3" typeName="int" />
+          <ECProperty propertyName="p4" typeName="int" />
+          <ECProperty propertyName="p5" typeName="int" />
+          <ECProperty propertyName="p6" typeName="int" />
+        </ECEntityClass>
+    </ECSchema>`;
+    rc = b2.importXmlSchemas([schema3]);
+    assert.equal(DbResult.BE_SQLITE_OK, rc);
 
     b0.saveChanges();
     b1.saveChanges();
+    b2.saveChanges();
     b0.closeIModel();
     b1.closeIModel();
+    b2.closeIModel();
   });
 
   // verify that throwing javascript exceptions from C++ works

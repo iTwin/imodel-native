@@ -499,7 +499,7 @@ public:
             }
         }
     }
-    void SharedChannelGetDefaultUri(NapiInfoCR info) {
+    Napi::Value SharedChannelGetDefaultUri(NapiInfoCR info) {
         RequireDbIsOpen(info);
         auto& channelUri = m_ecdb.Schemas().GetSharedChannel().GetDefaultChannelUri();
         if (channelUri.IsEmpty())
@@ -525,6 +525,7 @@ public:
         RequireDbIsOpen(info);
         OPTIONAL_ARGUMENT_STRING(0, channelUriStr);
         auto channelUri = SharedSchemaChannel::ChannelUri(channelUriStr.c_str());
+        LastErrorListener lastError(m_ecdb);
         auto rc = m_ecdb.Schemas().GetSharedChannel().Pull(channelUri);
         if (rc != SharedSchemaChannel::Status::OK) {
             if (lastError.HasError()) {
@@ -1834,10 +1835,11 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
     void SharedChannelSetDefaultUri(NapiInfoCR info) {
         RequireDbIsOpen(info);
         REQUIRE_ARGUMENT_STRING(0, channelUriStr);
+        LastErrorListener lastError(GetDgnDb());
         auto rc = GetDgnDb().Schemas().GetSharedChannel().SetDefaultChannelUri(channelUriStr.c_str());
         if (rc != SharedSchemaChannel::Status::OK) {
             if (lastError.HasError()) {
-                THROW_JS_EXCEPTION(Utf8PrintfString(lastError.GetLastError().c_str());
+                THROW_JS_EXCEPTION(lastError.GetLastError().c_str());
             } else {
                 THROW_JS_EXCEPTION(Utf8PrintfString("fail to set default shared schema channel uri: %s", channelUriStr.c_str()).c_str());
             }
@@ -1855,10 +1857,11 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         RequireDbIsOpen(info);
         REQUIRE_ARGUMENT_STRING(0, channelUriStr);
         auto channelUri = SharedSchemaChannel::ChannelUri(channelUriStr.c_str());
+        LastErrorListener lastError(GetDgnDb());
         auto rc = GetDgnDb().Schemas().GetSharedChannel().Init(channelUri);
         if (rc != SharedSchemaChannel::Status::OK) {
             if (lastError.HasError()) {
-                THROW_JS_EXCEPTION(Utf8PrintfString(lastError.GetLastError().c_str());
+                THROW_JS_EXCEPTION(lastError.GetLastError().c_str());
             } else {
                 THROW_JS_EXCEPTION(Utf8PrintfString("fail to initialize shared schema channel: %s", channelUriStr.c_str()).c_str());
             }
@@ -1868,10 +1871,11 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         RequireDbIsOpen(info);
         OPTIONAL_ARGUMENT_STRING(0, channelUriStr);
         auto channelUri = SharedSchemaChannel::ChannelUri(channelUriStr.c_str());
+        LastErrorListener lastError(GetDgnDb());
         auto rc = GetDgnDb().PullSchemaChanges(channelUri);
         if (rc != SharedSchemaChannel::Status::OK) {
             if (lastError.HasError()) {
-                THROW_JS_EXCEPTION(Utf8PrintfString(lastError.GetLastError().c_str());
+                THROW_JS_EXCEPTION(lastError.GetLastError().c_str());
             } else {
                 THROW_JS_EXCEPTION(Utf8PrintfString("fail to pull changes from channel: %s", channelUriStr.c_str()).c_str());
             }
@@ -1881,11 +1885,11 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         {
         RequireDbIsOpen(info);
         REQUIRE_ARGUMENT_STRING_ARRAY(0, schemaFileNames);
-        REQUIRE_ARGUMENT_ANY_OBJ(1, jsOpts);
+        OPTIONAL_ARGUMENT_ANY_OBJ(1, jsOpts, Napi::Object::New(Env()));
         ECSchemaReadContextPtr customContext = nullptr;
 
         JsInterop::SchemaImportOptions options;
-        const auto& maybeEcSchemaContextVal = jsOpts.Get(JsInterop::json_ecSchemaXmlContext());
+        const auto maybeEcSchemaContextVal = jsOpts.Get(JsInterop::json_ecSchemaXmlContext());
         options.m_schemaLockHeld = jsOpts.Get(JsInterop::json_schemaLockHeld()).ToBoolean();
         options.m_sharedChannelUri = jsOpts.Get(JsInterop::json_sharedSchemaChannelUri()).ToString().Utf8Value();
         if (!maybeEcSchemaContextVal.IsUndefined())
@@ -1894,7 +1898,6 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
                 THROW_JS_TYPE_EXCEPTION("if SchemaImportOptions.ecSchemaXmlContext is defined, it must be an object of type NativeECSchemaXmlContext")
             options.m_customSchemaContext = NativeECSchemaXmlContext::Unwrap(maybeEcSchemaContextVal.As<Napi::Object>())->GetContext();
             }
-
 
         DbResult result = JsInterop::ImportSchemas(GetDgnDb(), schemaFileNames, SchemaSourceType::File, options);
 
@@ -1905,7 +1908,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         {
         RequireDbIsOpen(info);
         REQUIRE_ARGUMENT_STRING_ARRAY(0, schemaFileNames);
-        REQUIRE_ARGUMENT_ANY_OBJ(1, jsOpts);
+        OPTIONAL_ARGUMENT_ANY_OBJ(1, jsOpts, Napi::Object::New(Env()));
         JsInterop::SchemaImportOptions opts;
         opts.m_schemaLockHeld = jsOpts.Get(JsInterop::json_schemaLockHeld()).ToBoolean();
         opts.m_sharedChannelUri = jsOpts.Get(JsInterop::json_sharedSchemaChannelUri()).ToString().Utf8Value();

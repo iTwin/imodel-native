@@ -414,7 +414,7 @@ struct SharedSchemaChannelHelper final {
 //+---------------+---------------+---------------+---------------+---------------+------
 SharedSchemaChannel::Status SharedSchemaChannel::SetDefaultChannelUri(ChannelUri channelUri) {
     auto rc = VerifyChannel(channelUri, false);
-	if (rc != SharedSchemaChannel::Status::ERROR) {
+	if (rc != SharedSchemaChannel::Status::OK) {
         return rc;
     }
     m_defaultChannelUri = channelUri;
@@ -752,7 +752,8 @@ SharedSchemaChannel::Status SharedSchemaChannel::Pull(ChannelUri const& channelU
     SchemaImportContext ctx(m_conn, SchemaManager::SchemaImportOptions(), /* synchronizeSchemas = */true);
     m_conn.ClearECDbCache();
 
-    const auto rc = PullInternal(channelURI, {});
+    const auto effectiveChannelURI = channelURI.IsEmpty() ? GetDefaultChannelUri() : channelURI;
+    const auto rc = PullInternal(effectiveChannelURI, {});
 	if (rc != Status::OK) {
         return rc;
     }
