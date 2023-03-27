@@ -18,7 +18,7 @@ import type {
   StatusCodeWithMessage,
 } from "@itwin/core-bentley";
 import type {
-  ChangesetIndexAndId, CreateEmptyStandaloneIModelProps, DbRequest, DbResponse, ElementAspectProps, ElementGraphicsRequestProps, ElementLoadProps, ElementProps,
+  ChangesetIndexAndId, CodeSpecProperties, CreateEmptyStandaloneIModelProps, DbRequest, DbResponse, ElementAspectProps, ElementGraphicsRequestProps, ElementLoadProps, ElementProps,
   FilePropertyProps, FontMapProps, GeoCoordinatesRequestProps, GeoCoordinatesResponseProps, GeographicCRSInterpretRequestProps,
   GeographicCRSInterpretResponseProps, GeometryContainmentResponseProps, IModelCoordinatesRequestProps,
   IModelCoordinatesResponseProps, IModelProps, LocalDirName, LocalFileName, MassPropertiesResponseProps, ModelLoadProps,
@@ -534,7 +534,7 @@ export declare namespace IModelJsNative {
     public importXmlSchemas(serializedXmlSchemas: string[], options?: SchemaImportOptions): DbResult;
     public inBulkOperation(): boolean;
     public inlineGeometryPartReferences(): InlineGeometryPartsResult;
-    public insertCodeSpec(name: string, jsonProperties: { spec: any, scopeSpec: any }): Id64String;
+    public insertCodeSpec(name: string, jsonProperties: CodeSpecProperties): Id64String;
     public insertElement(elemProps: ElementProps, options?: { forceUseId: boolean }): Id64String;
     public insertElementAspect(aspectProps: ElementAspectProps): Id64String;
     public insertLinkTableRelationship(props: RelationshipProps): Id64String;
