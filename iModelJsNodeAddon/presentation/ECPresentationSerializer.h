@@ -48,6 +48,7 @@ protected:
     rapidjson::Document _AsJson(ContextR, Content const& content, rapidjson::Document::AllocatorType* allocator) const override;
     rapidjson::Document _AsJson(ContextR, ContentDescriptor const& contentDescriptor, rapidjson::Document::AllocatorType* allocator) const override;
     rapidjson::Document _AsJson(ContextR, ContentSetItem const& contentSetItem, int flags, rapidjson::Document::AllocatorType* allocator) const override;
+    rapidjson::Document _AsJson(ContextR, NavigationPropertyValueCR, rapidjson::Document::AllocatorType*) const override;
     rapidjson::Document _AsJson(ContextR, DisplayValueGroupCR, rapidjson::Document::AllocatorType*) const override;
     rapidjson::Document _AsJson(ContextR, ContentDescriptor::Category const& category, rapidjson::Document::AllocatorType* allocator) const override;
     rapidjson::Document _AsJson(ContextR, ContentDescriptor::Property const& property, rapidjson::Document::AllocatorType* allocator) const override;

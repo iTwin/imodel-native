@@ -680,7 +680,7 @@ rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ContextR ctx, Cont
             }
         }
 
-    if (0 != (ContentSetItem::SerializationFlags::SERIALIZE_DisplayValues & flags))
+    if (!ctx.ShouldOmitDisplayValues() && 0 != (ContentSetItem::SerializationFlags::SERIALIZE_DisplayValues & flags))
         {
         json.AddMember("displayValues", rapidjson::Value(contentSetItem.GetDisplayValues(), json.GetAllocator()), json.GetAllocator());
         for (auto const& nestedContentEntry : contentSetItem.GetNestedContent())
@@ -690,6 +690,10 @@ rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ContextR ctx, Cont
                 nestedValuesJson.PushBack(nestedItem->AsJson(ctx, (int)ContentSetItem::SERIALIZE_DisplayValues, &json.GetAllocator()), json.GetAllocator());
             json["displayValues"].AddMember(rapidjson::Value(nestedContentEntry.first.c_str(), json.GetAllocator()), nestedValuesJson, json.GetAllocator());
             }
+        }
+    else if (ctx.ShouldOmitDisplayValues() && 0 != (ContentSetItem::SerializationFlags::SERIALIZE_DisplayValues & flags))
+        {
+        json.AddMember("displayValues", rapidjson::Value(rapidjson::kObjectType), json.GetAllocator());
         }
 
     if (contentSetItem.GetClass() != nullptr && 0 != (ContentSetItem::SerializationFlags::SERIALIZE_ClassInfo & flags))
@@ -748,6 +752,19 @@ rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ContextR ctx, Cont
         }
 #endif
 
+    return json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ContextR ctx, NavigationPropertyValueCR value, rapidjson::Document::AllocatorType* allocator) const
+    {
+    if (!value.IsValid())
+        return rapidjson::Document(allocator);
+
+    rapidjson::Document json = AsJson(ctx, value.GetKey(), allocator);
+    json.AddMember("label", AsJson(ctx, value.GetLabel(), &json.GetAllocator()), json.GetAllocator());
     return json;
     }
 

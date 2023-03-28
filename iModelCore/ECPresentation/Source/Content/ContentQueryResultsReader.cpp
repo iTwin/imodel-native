@@ -378,18 +378,17 @@ DisplayValueGroupR DistinctValuesAccumulator::GetOrCreateDisplayValueGroup(Utf8S
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DistinctValuesAccumulator::ReadNavigationPropertyRecord(ContentDescriptor::ECPropertiesField const& propertiesField, ECSqlStatementCR statement)
     {
-    auto value = ContentValueHelpers::ParseNavigationPropertyValue(statement.GetValue(0));
-    if (value.first.IsNull())
+    auto value = ContentValueHelpers::ParseNavigationPropertyValue(statement.GetValue(0), m_schemaManager);
+    if (!value.IsValid())
         {
         DisplayValueGroupR group = GetOrCreateDisplayValueGroup("");
         group.GetRawValues().emplace_back(rapidjson::kNullType);
         }
     else
         {
-        DisplayValueGroupR group = GetOrCreateDisplayValueGroup(value.first->GetDisplayValue());
+        DisplayValueGroupR group = GetOrCreateDisplayValueGroup(value.GetLabel().GetDisplayValue());
         ECPresentationSerializerContext ctx;
-        ECClassInstanceKey classInstanceKey(m_schemaManager.GetClass(value.second.GetClassId()), value.second.GetInstanceId());
-        group.GetRawValues().push_back(ECPresentationManager::GetSerializer().AsJson(ctx, classInstanceKey, &group.GetRawValuesAllocator()));
+        group.GetRawValues().push_back(ECPresentationManager::GetSerializer().AsJson(ctx, value.GetKey(), &group.GetRawValuesAllocator()));
         }
     }
 

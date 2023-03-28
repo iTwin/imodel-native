@@ -31,7 +31,7 @@ private:
 
 public:
     ContentValuesFormatter(IECPropertyFormatter const* formatter, ECPresentation::UnitSystem unitSystem)
-        : m_propertyFormatter(formatter), m_unitSystem(unitSystem)
+        : m_propertyFormatter(formatter), m_unitSystem(unitSystem)       
         {}
     rapidjson::Document GetFormattedValue(ECPropertyCR prop, IECSqlValue const& value, rapidjson::MemoryPoolAllocator<>* allocator) const;
     void LocalizeString(Utf8StringR) const;
@@ -195,7 +195,7 @@ struct ContentValueHelpers
 private:
     ContentValueHelpers() {}
 public:
-    static bpair<LabelDefinitionCPtr, ECInstanceKey> ParseNavigationPropertyValue(IECSqlValue const& value);
+    static NavigationPropertyValue ParseNavigationPropertyValue(IECSqlValue const& value, SchemaManagerCR schemas);
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

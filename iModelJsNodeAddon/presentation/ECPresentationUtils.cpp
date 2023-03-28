@@ -1556,13 +1556,14 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetContent(ECPresentati
     if (pageOptions.HasError())
         return ECPresentationResult(ECPresentationStatus::InvalidArgument, pageOptions.GetError());
 
+    bool omitFormattedValues = paramsJson.HasMember("omitFormattedValues") && paramsJson["omitFormattedValues"].IsBool() && paramsJson["omitFormattedValues"].GetBool();
     auto diagnostics = ECPresentation::Diagnostics::GetCurrentScope().lock();
 
     ContentDescriptorRequestParams descriptorParams(
         ContentMetadataRequestParams(rulesetParams.GetValue(), descriptorOverrides.GetValue().GetDisplayType(), descriptorOverrides.GetValue().GetContentFlags()),
         *keys.GetValue());
     return manager.GetContentDescriptor(CreateAsyncParams(descriptorParams, db, paramsJson))
-        .then([&manager, &db, descriptorOverrides = descriptorOverrides.GetValue(), pageOptions = pageOptions.GetValue(), formatter = &manager.GetFormatter(), diagnostics](ContentDescriptorResponse descriptorResponse) -> folly::Future<ECPresentationResult>
+        .then([&manager, &db, descriptorOverrides = descriptorOverrides.GetValue(), pageOptions = pageOptions.GetValue(), formatter = &manager.GetFormatter(), diagnostics, omitFormattedValues](ContentDescriptorResponse descriptorResponse) -> folly::Future<ECPresentationResult>
             {
             auto scope = diagnostics->Hold();
 
@@ -1572,13 +1573,14 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetContent(ECPresentati
 
             descriptorOverrides.Apply(descriptor);
             return manager.GetContent(ECPresentation::MakePaged(AsyncContentRequestParams::Create(db, *descriptor), pageOptions))
-                .then([formatter](ContentResponse contentResponse)
+                .then([formatter, omitFormattedValues](ContentResponse contentResponse)
                     {
                     auto const& content = *contentResponse;
                     if (content.IsNull())
                         return ECPresentationResult(ECPresentationStatus::Error, "Error creating content");
 
                     ECPresentationSerializerContext serializerCtx(content->GetDescriptor().GetUnitSystem(), formatter);
+                    serializerCtx.SetOmitDisplayValues(omitFormattedValues);
                     return ECPresentationResult(content->AsJson(serializerCtx), true);
                     });
             });
