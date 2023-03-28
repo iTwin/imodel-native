@@ -539,7 +539,14 @@ BentleyStatus ViewGenerator::RenderTransientViewClassMap(NativeSqlBuilder& viewS
     uint32_t viewId = ctx.GetViewCount() + 1;
     ctx.SetViewCount(viewId); //increase by 1
     Utf8String nativeSql;
-    if(viewManager.GetTransientViewNativeSql(nativeSql, classMap, viewId) != BentleyStatus::SUCCESS)
+    if(ctx.GetViewType() != ViewType::SelectFromView)
+        return ERROR; //TODO: we need the context here, so can we assume this is always SelectFromView?
+    auto& selectFromViewContext = ctx.GetAs<SelectFromViewContext>();
+    auto& prepareCtx = selectFromViewContext.GetPrepareCtx();
+    auto& viewInfoMap = prepareCtx.GetViewColumnInfos();
+    auto& viewInfos = viewInfoMap[viewId];
+    BeAssert(viewInfos.empty() && "same view id gets filled more than once");
+    if(viewManager.GetTransientViewNativeSql(nativeSql, classMap, viewId, viewInfos) != BentleyStatus::SUCCESS)
         return ERROR;
 
     viewSql.AppendInParen(nativeSql.c_str());

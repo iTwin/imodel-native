@@ -80,6 +80,18 @@ ECSqlStatus ECSqlStatement::PrepareForEmbedding(ECDb const& ecdb, Utf8CP ecsql, 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+BeSQLite::Statement* ECSqlStatement::GetNativeStmt() const 
+    {
+    auto preparedStmt = m_pimpl->GetPreparedStatementP(); 
+    if(preparedStmt == nullptr)
+        return nullptr;
+
+    return preparedStmt->GetNativeStmt();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 bool ECSqlStatement::IsPrepared() const { return m_pimpl->IsPrepared(); }
 
 //---------------------------------------------------------------------------------------

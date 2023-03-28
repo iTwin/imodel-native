@@ -162,6 +162,21 @@ struct RowCopier {
         DbResult Update(int64_t& rowCount);
 };
 
+struct ViewColumnInfo
+{
+    private:
+        Utf8String m_propertyName;
+        Utf8String m_alias;
+        Utf8String m_columnName;
+        int m_columnIndex;
+    public:
+        ViewColumnInfo(Utf8StringCR propertyName, Utf8StringCR alias, Utf8StringCR columnName, int columnIndex)
+            :m_propertyName(propertyName), m_alias(alias), m_columnName(columnName), m_columnIndex(columnIndex) {}
+};
+
+using ViewColumnInfos = std::vector<ViewColumnInfo>;
+using ViewColumnInfosByViewId = std::map<int, ViewColumnInfos>;
+
 //======================================================================================
 // @bsiclass
 //======================================================================================
@@ -199,6 +214,6 @@ struct ViewManager final {
         BentleyStatus RefreshViews() const;
         bool HasTransientViews() const;
         bool ValidateViews(ClassList& failedViews, ClassList& validViews, bool reportIssues) const;
-        BentleyStatus GetTransientViewNativeSql(Utf8StringR out, ClassMap const& classMap, uint32_t viewId) const;
+        BentleyStatus GetTransientViewNativeSql(Utf8StringR out, ClassMap const& classMap, uint32_t viewId, ViewColumnInfos& viewInfos) const;
 };
 END_BENTLEY_SQLITE_EC_NAMESPACE

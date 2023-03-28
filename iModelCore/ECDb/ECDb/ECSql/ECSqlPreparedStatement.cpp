@@ -90,6 +90,14 @@ Utf8CP IECSqlPreparedStatement::GetNativeSql() const
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+BeSQLite::Statement* IECSqlPreparedStatement::GetNativeStmt() const
+    {
+    return _GetNativeStmt();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 ECSqlStatus IECSqlPreparedStatement::ClearBindings()
     {
     if (SUCCESS != AssertIsValid())

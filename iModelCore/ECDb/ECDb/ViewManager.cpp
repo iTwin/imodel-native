@@ -1614,7 +1614,8 @@ bool ViewManager::HasTransientViews() const {
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ViewManager::GetTransientViewNativeSql(Utf8StringR out, ClassMap const& classMap, uint32_t viewId) const {
+BentleyStatus ViewManager::GetTransientViewNativeSql(Utf8StringR out, ClassMap const& classMap, uint32_t viewId, ViewColumnInfos& viewInfos) const {
+
     BeMutexHolder holder(m_ecdb.GetImpl().GetMutex());
     ECClassCR ecClass = classMap.GetClass();
     auto vc = m_cachedViewDef.find(ecClass.GetId());
@@ -1633,9 +1634,29 @@ BentleyStatus ViewManager::GetTransientViewNativeSql(Utf8StringR out, ClassMap c
 
     Utf8CP native = stmt.GetNativeSql();
     //enclose this sql in subquery (paranthesis and alias)
-    //access stmt impl and get column names and aliases
-    //map ecproperties to columns
-    //return map
+    int colCount = stmt.GetColumnCount();
+
+    auto nativeStmt = stmt.GetNativeStmt();
+    if(nativeStmt == nullptr)
+        return BentleyStatus::ERROR;
+
+    int nativeColumnCount = nativeStmt->GetColumnCount();
+    if(colCount != nativeColumnCount)
+        return BentleyStatus::ERROR;
+
+    for(int i = 0; i < colCount; i++)
+    {
+        auto& colInfo = stmt.GetColumnInfo(i);
+        Utf8String colName = nativeStmt->GetColumnName(i);
+        Utf8String alias = colInfo.GetProperty()->GetName();
+        Utf8String propName;
+        auto origProp = colInfo.GetOriginProperty();
+        if(origProp == nullptr)
+            propName = alias;
+        else
+            propName = origProp->GetName();
+        viewInfos.emplace_back(propName, alias, colName, i);
+    }
 
     out.append(native);
     return BentleyStatus::SUCCESS;

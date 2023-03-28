@@ -132,6 +132,10 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement
         //! @return ECSqlStatus::Success or error codes
         ECSqlStatus PrepareForEmbedding(ECDb const& ecdb, Utf8CP ecsql, uint32_t colAliasPrefix);
 
+        //! Gives access to the inner prepared statement.
+        //! @return statement if available, nullptr if not applicable or not prepared yet
+        BeSQLite::Statement* GetNativeStmt() const;
+
         //! Indicates whether this statement is already prepared or not.
         //! @return true, if it is prepared. false otherwise
         ECDB_EXPORT bool IsPrepared() const;

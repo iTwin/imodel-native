@@ -40,6 +40,7 @@ struct IECSqlPreparedStatement
         virtual ECSqlStatus _Reset() = 0;
         virtual ECSqlStatus _ClearBindings() = 0;
         virtual Utf8CP _GetNativeSql() const = 0;
+        virtual BeSQLite::Statement* _GetNativeStmt() const { return nullptr; }
 
     protected:
         IECSqlPreparedStatement(ECDb const& ecdb, ECSqlType type, bool isCompoundStmt) : m_ecdb(ecdb), m_type(type), m_isCompoundStatement(isCompoundStmt), m_dataSourceDb(nullptr) {}
@@ -59,6 +60,7 @@ struct IECSqlPreparedStatement
 
         Utf8CP GetECSql() const { return m_ecsql.c_str(); }
         Utf8CP GetNativeSql() const;
+        BeSQLite::Statement* GetNativeStmt() const;
         bool IsNoopInSqlite() const { return m_isNoopInSqlite; }
         Db const& GetDataSourceDb() const { return m_dataSourceDb == nullptr ? m_ecdb : *m_dataSourceDb;}
         ECDb const& GetECDb() const { return m_ecdb; }
@@ -82,6 +84,7 @@ private:
     int _TryGetParameterIndex(Utf8CP parameterName) const override;
     ECSqlStatus _ClearBindings() override;
     Utf8CP _GetNativeSql() const override { return m_sqliteStatement.GetSql(); }
+    BeSQLite::Statement* _GetNativeStmt() const override { return &m_sqliteStatement; }
 
 protected:
     SingleECSqlPreparedStatement(ECDb const& ecdb, ECSqlType type) : IECSqlPreparedStatement(ecdb, type, false) {}

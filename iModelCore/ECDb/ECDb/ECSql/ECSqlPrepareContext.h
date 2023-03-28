@@ -117,6 +117,7 @@ struct ECSqlPrepareContext final
         ECSqlPrepareContext(ECSqlPrepareContext const&) = delete;
         ECSqlPrepareContext& operator=(ECSqlPrepareContext const&) = delete;
         uint32_t m_colAliasPrefix = 0;
+        mutable ViewColumnInfosByViewId m_viewColInfos;
 
     public:
         ECSqlPrepareContext(IECSqlPreparedStatement&, Db const& dataSourceECDb, IssueDataSource const&);
@@ -150,6 +151,7 @@ struct ECSqlPrepareContext final
         void SetColAliasPrefix(uint32_t value) { m_colAliasPrefix = value; }
 
         int IncrementSystemSqlParameterSuffix() { m_nextSystemSqlParameterNameSuffix++; return m_nextSystemSqlParameterNameSuffix; }
+        ViewColumnInfosByViewId& GetViewColumnInfos() const { return m_viewColInfos; }
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
