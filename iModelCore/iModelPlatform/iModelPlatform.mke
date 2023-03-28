@@ -7,7 +7,7 @@
 # Set up all the standard stuff.
 #----------------------------------------------------------
 DISABLE_COMPILER_ANALYZE_CHECK_UNINITIALIZED_MEMORY=1
-BUILD_WITH_C17=1
+BUILD_WITH_C20=1
 %include  mdl.mki
 
 #-----------------------------------------------------------
