@@ -165,13 +165,19 @@ struct RowCopier {
 struct ViewColumnInfo
 {
     private:
+        Utf8String m_nativeColumnName;
         Utf8String m_propertyName;
-        Utf8String m_alias;
-        Utf8String m_columnName;
+        Utf8String m_originPropertyName;
         int m_columnIndex;
     public:
-        ViewColumnInfo(Utf8StringCR propertyName, Utf8StringCR alias, Utf8StringCR columnName, int columnIndex)
-            :m_propertyName(propertyName), m_alias(alias), m_columnName(columnName), m_columnIndex(columnIndex) {}
+        ViewColumnInfo(Utf8StringCR nativeColumnName, Utf8StringCR propertyName, Utf8StringCR originPropertyName, int columnIndex)
+            :m_nativeColumnName(nativeColumnName), m_propertyName(propertyName), m_originPropertyName(originPropertyName), m_columnIndex(columnIndex) {}
+
+    Utf8StringCR GetNativeColumnName() { return m_nativeColumnName; }
+    Utf8StringCR GetPropertyName() { return m_propertyName; }
+    // returns an empty string if there is no origin property
+    Utf8StringCR GetOriginPropertyName() { return m_originPropertyName; }
+    int GetColumnIndex() { return m_columnIndex; }
 };
 
 using ViewColumnInfos = std::vector<ViewColumnInfo>;

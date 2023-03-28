@@ -1647,15 +1647,13 @@ BentleyStatus ViewManager::GetTransientViewNativeSql(Utf8StringR out, ClassMap c
     for(int i = 0; i < colCount; i++)
     {
         auto& colInfo = stmt.GetColumnInfo(i);
-        Utf8String colName = nativeStmt->GetColumnName(i);
-        Utf8String alias = colInfo.GetProperty()->GetName();
-        Utf8String propName;
+        Utf8String nativeColName = nativeStmt->GetColumnName(i);
+        Utf8String propertyName = colInfo.GetProperty()->GetName();
+        Utf8String origPropertyName;
         auto origProp = colInfo.GetOriginProperty();
-        if(origProp == nullptr)
-            propName = alias;
-        else
-            propName = origProp->GetName();
-        viewInfos.emplace_back(propName, alias, colName, i);
+        if(origProp != nullptr)
+            origPropertyName = origProp->GetName();
+        viewInfos.emplace_back(nativeColName, propertyName, origPropertyName, i);
     }
 
     out.append(native);
