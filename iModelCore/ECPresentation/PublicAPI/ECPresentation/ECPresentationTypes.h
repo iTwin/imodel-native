@@ -511,7 +511,7 @@ struct ECPresentationSerializerContext
 private:
     ECPresentation::UnitSystem m_unitSystem;
     IECPropertyFormatter const* m_propertyFormatter;
-	IECClassSerializer* m_classSerializer;
+    IECClassSerializer* m_classSerializer;
     bool m_omitDisplayValues;
 public:
     ECPresentationSerializerContext(): m_unitSystem(UnitSystem::Undefined), m_propertyFormatter(nullptr), m_classSerializer(nullptr), m_omitDisplayValues(false){}
@@ -521,8 +521,8 @@ public:
     UnitSystem GetUnitSystem() const {return m_unitSystem;}
     void SetPropertyFormatter(IECPropertyFormatter const* formatter) {m_propertyFormatter = formatter;}
     ECPresentation::IECPropertyFormatter const* GetPropertyFormatter() {return m_propertyFormatter;}
-	void SetClassSerializer(IECClassSerializer* serializer) {m_classSerializer = serializer;}
-	ECPresentation::IECClassSerializer* GetClassSerializer() {return m_classSerializer;}
+    void SetClassSerializer(IECClassSerializer* serializer) {m_classSerializer = serializer;}
+    ECPresentation::IECClassSerializer* GetClassSerializer() {return m_classSerializer;}
     void SetOmitDisplayValues(bool omitDisplayValues) {m_omitDisplayValues = omitDisplayValues;}
     bool ShouldOmitDisplayValues() const {return m_omitDisplayValues;}
 };
