@@ -680,20 +680,23 @@ rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ContextR ctx, Cont
             }
         }
 
-    if (!ctx.ShouldOmitDisplayValues() && 0 != (ContentSetItem::SerializationFlags::SERIALIZE_DisplayValues & flags))
+    if (0 != (ContentSetItem::SerializationFlags::SERIALIZE_DisplayValues & flags))
         {
-        json.AddMember("displayValues", rapidjson::Value(contentSetItem.GetDisplayValues(), json.GetAllocator()), json.GetAllocator());
-        for (auto const& nestedContentEntry : contentSetItem.GetNestedContent())
+        if (ctx.ShouldOmitDisplayValues())
             {
-            rapidjson::Value nestedValuesJson(rapidjson::kArrayType);
-            for (auto const& nestedItem : nestedContentEntry.second)
-                nestedValuesJson.PushBack(nestedItem->AsJson(ctx, (int)ContentSetItem::SERIALIZE_DisplayValues, &json.GetAllocator()), json.GetAllocator());
-            json["displayValues"].AddMember(rapidjson::Value(nestedContentEntry.first.c_str(), json.GetAllocator()), nestedValuesJson, json.GetAllocator());
+            json.AddMember("displayValues", rapidjson::Value(rapidjson::kObjectType), json.GetAllocator());
             }
-        }
-    else if (ctx.ShouldOmitDisplayValues() && 0 != (ContentSetItem::SerializationFlags::SERIALIZE_DisplayValues & flags))
-        {
-        json.AddMember("displayValues", rapidjson::Value(rapidjson::kObjectType), json.GetAllocator());
+        else 
+            {
+            json.AddMember("displayValues", rapidjson::Value(contentSetItem.GetDisplayValues(), json.GetAllocator()), json.GetAllocator());
+            for (auto const& nestedContentEntry : contentSetItem.GetNestedContent())
+                {
+                rapidjson::Value nestedValuesJson(rapidjson::kArrayType);
+                for (auto const& nestedItem : nestedContentEntry.second)
+                    nestedValuesJson.PushBack(nestedItem->AsJson(ctx, (int)ContentSetItem::SERIALIZE_DisplayValues, &json.GetAllocator()), json.GetAllocator());
+                json["displayValues"].AddMember(rapidjson::Value(nestedContentEntry.first.c_str(), json.GetAllocator()), nestedValuesJson, json.GetAllocator());
+                }
+            }
         }
 
     if (contentSetItem.GetClass() != nullptr && 0 != (ContentSetItem::SerializationFlags::SERIALIZE_ClassInfo & flags))
