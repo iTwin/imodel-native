@@ -278,8 +278,7 @@ ECClassCP ContentQueryContract::GetPropertyClass(ContentDescriptor::RelatedConte
     {
     if (parentField)
         return parentField->IsRelationshipField() ? &parentField->GetRelationshipClass() : &parentField->GetContentClass();
-    else
-        return m_relationshipClass ? m_relationshipClass : m_class;
+    return m_relationshipClass ? m_relationshipClass : m_class;
     }
 
 /*---------------------------------------------------------------------------------**//**

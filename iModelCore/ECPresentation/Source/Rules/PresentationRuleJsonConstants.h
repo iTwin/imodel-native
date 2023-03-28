@@ -124,7 +124,7 @@
 #define CONTENTMODIFIER_JSON_ATTRIBUTE_RELATEDPROPERTIES                                "relatedProperties"
 #define CONTENTMODIFIER_JSON_ATTRIBUTE_PROPERTYCATEGORIES                               "propertyCategories"
 #define CONTENTMODIFIER_JSON_ATTRIBUTE_PROPERTYOVERRIDES                                "propertyOverrides"
-#define CONTENTMODIFIER_JSON_ATTRIBUTE_APPLYONNESTEDCONTENT								"applyOnNestedContent"
+#define CONTENTMODIFIER_JSON_ATTRIBUTE_APPLYONNESTEDCONTENT                             "applyOnNestedContent"
 
 #define DEFAULT_PROPERTY_CATEGORY_OVERRIDE_JSON_TYPE                                    "DefaultPropertyCategoryOverride"
 #define DEFAULT_PROPERTY_CATEGORY_OVERRIDE_JSON_ATTRIBUTE_SPECIFICATION                 "specification"

@@ -153,17 +153,14 @@ static ECRelationshipConstraintClassList const* GetClassFromRelationship(ECSchem
     RelationshipStepSpecification const* relationshipStep = pathSpec->GetSteps().back();
     auto direction = relationshipStep->GetRelationDirection();
     ECRelationshipClassCP relationshipClass = helper.GetECClass(relationshipStep->GetRelationshipClassName().c_str())->GetRelationshipClassCP();
-    ECRelationshipConstraintClassList const* classes = nullptr;
     switch (direction)
         {
         case RequiredRelationDirection_Backward:
-            classes = &relationshipClass->GetSource().GetConstraintClasses();
-            break;
+            return &relationshipClass->GetSource().GetConstraintClasses();
         case RequiredRelationDirection_Forward:
-            classes = &relationshipClass->GetTarget().GetConstraintClasses();
-            break;
+            return &relationshipClass->GetTarget().GetConstraintClasses();
         }
-    return classes;
+    return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -259,13 +256,13 @@ static ECSchemaHelper::RelationshipPathsResponse FindRelatedPropertyPaths(Conten
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> CreateForSelectClassFromModifiers(ECClassCR selectClass, ContentModifierCP modifier)
+static bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> CreateForSelectClassFromModifiers(ECClassCR selectClass, ContentModifierCR modifier)
     {
     bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> specs;
-    if (selectClass.Is(modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str()))
+    if (selectClass.Is(modifier.GetSchemaName().c_str(), modifier.GetClassName().c_str()))
         {
-        DiagnosticsHelpers::ReportRule(*modifier);
-        ContainerHelpers::MovePush(specs, FlattenedRelatedPropertiesSpecification::Create(modifier->GetRelatedProperties(), RelatedPropertiesSpecificationScopeInfo(modifier->GetPropertyCategories())));
+        DiagnosticsHelpers::ReportRule(modifier);
+        ContainerHelpers::MovePush(specs, FlattenedRelatedPropertiesSpecification::Create(modifier.GetRelatedProperties(), RelatedPropertiesSpecificationScopeInfo(modifier.GetPropertyCategories())));
         }
     return specs;
     }
@@ -273,26 +270,25 @@ static bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> CreateF
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> CreateForNestedPropertiesFromModifiers(bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> const& flatSpecs, ContentModifierCP modifier, ECSchemaHelper const& helper)
+static bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> CreateForNestedPropertiesFromModifiers(bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> const& flatSpecs, ContentModifierCR modifier, ECSchemaHelper const& helper)
     {
     bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> specs;
-    if (modifier->ShouldApplyOnNestedContent())
+    if (!modifier.ShouldApplyOnNestedContent())
+        return specs;
+        
+    for (auto const& flatSpec : flatSpecs)
         {
-        int flatSpecsSize = flatSpecs.size();
-        for (int i = 0; i < flatSpecsSize; ++i)
-            {
-            RelatedPropertiesSpecificationCR spec = flatSpecs[i].get()->GetFlattened();
-            ECRelationshipConstraintClassList const* classes = GetClassFromRelationship(helper, spec);
-            if (nullptr == classes)
-                continue;
+        RelatedPropertiesSpecificationCR spec = flatSpec->GetFlattened();
+        ECRelationshipConstraintClassList const* classes = GetClassFromRelationship(helper, spec);
+        if (nullptr == classes)
+            continue;
 
-            for (ECClassCP ecClass : *classes)
-                {
-                if (!ecClass->Is(modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str()))
-                    continue;
-                DiagnosticsHelpers::ReportRule(*modifier);
-                FlattenedRelatedPropertiesSpecification::MoveNestedSpecification(specs, FlattenedRelatedPropertiesSpecification::Create(modifier->GetRelatedProperties(), RelatedPropertiesSpecificationScopeInfo(modifier->GetPropertyCategories())), spec);
-                }
+        for (ECClassCP ecClass : *classes)
+            {
+            if (!ecClass->Is(modifier.GetSchemaName().c_str(), modifier.GetClassName().c_str()))
+                continue;
+            DiagnosticsHelpers::ReportRule(modifier);
+            FlattenedRelatedPropertiesSpecification::MoveNestedSpecification(specs, FlattenedRelatedPropertiesSpecification::Create(modifier.GetRelatedProperties(), RelatedPropertiesSpecificationScopeInfo(modifier.GetPropertyCategories())), spec);
             }
         }
     return specs;
@@ -309,8 +305,8 @@ bvector<std::unique_ptr<RelatedPropertySpecificationPaths>> ContentSpecification
         {
         if (!modifier->GetRelatedProperties().empty())
             {
-            ContainerHelpers::MovePush(flatSpecs, CreateForSelectClassFromModifiers(params.GetSourceClassInfo().GetSelectClass().GetClass(), modifier));
-            ContainerHelpers::MovePush(flatSpecs, CreateForNestedPropertiesFromModifiers(flatSpecs, modifier, GetContext().GetSchemaHelper()));
+            ContainerHelpers::MovePush(flatSpecs, CreateForSelectClassFromModifiers(params.GetSourceClassInfo().GetSelectClass().GetClass(), *modifier));
+            ContainerHelpers::MovePush(flatSpecs, CreateForNestedPropertiesFromModifiers(flatSpecs, *modifier, GetContext().GetSchemaHelper()));
             }
         }
     DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Got %" PRIu64 " flattened related property specs.", (uint64_t)flatSpecs.size()));
@@ -481,7 +477,7 @@ bvector<RelatedClassPath> ContentSpecificationsHandler::AppendRelatedProperties(
                     {
                     PropertyAppendResult relationshipPropertyAppendResult(false);
                     relationshipPropertyAppendResult.MergeWith(AppendRelatedProperties(spec.GetRelationshipProperties(), *relationshipPropertyAppender, relationshipClass, relationshipClassAlias));
-                    relationshipPropertyAppendResult.MergeWith(_OnPropertiesAppended(*relationshipPropertyAppender, relationshipClass, relationshipClassAlias, true));
+                    relationshipPropertyAppendResult.MergeWith(_OnPropertiesAppended(*relationshipPropertyAppender, relationshipClass, relationshipClassAlias));
                     bool shouldIncludePathForRelationship = UpdatePaths(relationshipPropertyAppendResult, paths, pathFromSelectToPropertyClass);
                     shouldIncludePath |= shouldIncludePathForRelationship;
                     }
@@ -501,7 +497,7 @@ bvector<RelatedClassPath> ContentSpecificationsHandler::AppendRelatedProperties(
 
                 PropertyAppendResult propertyAppendResult(false);
                 propertyAppendResult.MergeWith(AppendRelatedProperties(spec.GetProperties(), *appender, targetClass, targetClassAlias));
-                propertyAppendResult.MergeWith(_OnPropertiesAppended(*appender, targetClass, targetClassAlias, true));
+                propertyAppendResult.MergeWith(_OnPropertiesAppended(*appender, targetClass, targetClassAlias));
                 bool shouldIncludePathForTargetClass = UpdatePaths(propertyAppendResult, paths, pathFromSelectToPropertyClass);
                 shouldIncludePath |= shouldIncludePathForTargetClass;
                 }
@@ -792,7 +788,7 @@ void ContentSpecificationsHandler::AppendContent(ContentSource const& contentSou
                 DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Appending `%s`", prop->GetName().c_str()));
                 appendResult.MergeWith(AppendProperty(*appender, *prop, selectClass.GetClass(), "this", PropertySpecificationsList()));
                 }
-            appendResult.MergeWith(_OnPropertiesAppended(*appender, selectClass.GetClass(), "this", false));
+            appendResult.MergeWith(_OnPropertiesAppended(*appender, selectClass.GetClass(), "this"));
             GetContext().AddNavigationPropertiesPaths(selectClass.GetClass(), appendResult.GetAppendedNavigationPropertyPaths());
             }
         GetContext().SetClassHandled(selectClass.GetClass());

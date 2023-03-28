@@ -220,7 +220,7 @@ protected:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
-    PropertyAppendResult _OnPropertiesAppended(PropertyAppender& appender, ECClassCR propertyClass, Utf8StringCR propertyClassAlias, bool) override
+    PropertyAppendResult _OnPropertiesAppended(PropertyAppender& appender, ECClassCR propertyClass, Utf8StringCR propertyClassAlias) override
         {
         ContentSpecificationsHandler::PropertyAppendResult result(false);
         ForEachDerivedClass(GetContext().GetConnection().GetECDb().Schemas(), propertyClass, [&](ECClassCR derivedClass)

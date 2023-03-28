@@ -258,7 +258,7 @@ struct ContentSpecificationsHandler
     protected:
         virtual bool _Supports(ECPropertyCR, ECClassCR, PropertySpecificationsList const&) = 0;
         virtual PropertyAppendResult _Append(ECPropertyCR, ECClassCR, Utf8CP, PropertySpecificationsList const&) = 0;
-        virtual PropertyAppendResult _AppendCalculatedProperty(ECClassCP ecClass, CalculatedPropertiesSpecificationCP spec, Utf8StringCR label, Utf8StringCR name) { return PropertyAppendResult(false); };
+        virtual PropertyAppendResult _AppendCalculatedProperty(ECClassCP ecClass, CalculatedPropertiesSpecificationCR spec, Utf8StringCR name) { return PropertyAppendResult(false); };
         ExpressionContextPtr CreateExpressionContext(Context const& context)
             {
             if (m_expressionContext != nullptr)
@@ -270,7 +270,7 @@ struct ContentSpecificationsHandler
     public:
         bool Supports(ECPropertyCR ecProperty, ECClassCR propertyClass, PropertySpecificationsList const& overrides) {return _Supports(ecProperty, propertyClass, overrides);}
         PropertyAppendResult Append(ECPropertyCR ecProperty, ECClassCR propertyClass, Utf8CP propertyClassAlias, PropertySpecificationsList const& overrides) {return _Append(ecProperty, propertyClass, propertyClassAlias, overrides);}
-        PropertyAppendResult AppendCalculatedProperty(ECClassCP ecClass, CalculatedPropertiesSpecificationCP spec, Utf8StringCR label, Utf8StringCR name) { return _AppendCalculatedProperty(ecClass, spec, label, name); }
+        PropertyAppendResult AppendCalculatedProperty(ECClassCP ecClass, CalculatedPropertiesSpecificationCR spec, Utf8StringCR name) { return _AppendCalculatedProperty(ecClass, spec, name); }
     };
     typedef RefCountedPtr<PropertyAppender> PropertyAppenderPtr;
 
@@ -292,7 +292,7 @@ protected:
         bvector<RelatedPropertiesSpecification const*> const& relatedPropertyStack, PropertyCategorySpecificationsList const*) = 0;
     virtual bvector<std::unique_ptr<RelatedPropertySpecificationPaths>> _GetRelatedPropertyPaths(RelatedPropertyPathsParams const&) const;
     virtual void _AppendClass(SelectClassInfo const&) = 0;
-    virtual PropertyAppendResult _OnPropertiesAppended(PropertyAppender&, ECClassCR, Utf8StringCR, bool) {return PropertyAppendResult(false);}
+    virtual PropertyAppendResult _OnPropertiesAppended(PropertyAppender&, ECClassCR, Utf8StringCR) {return PropertyAppendResult(false);}
     virtual void _OnContentAppended() {}
     ECPRESENTATION_EXPORT virtual bvector<ContentSource> _BuildContentSource(bvector<SelectClassWithExcludes<ECClass>> const&, ContentSpecificationCR);
     ECPRESENTATION_EXPORT virtual bvector<ContentSource> _BuildContentSource(bvector<RelatedClassPath> const&, ContentSpecificationCR);

@@ -412,11 +412,6 @@ protected:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
-    virtual ContentSpecificationsHandler::PropertyAppendResult _DoAppendCalculatedProperty(ECClassCP ecClass, CalculatedPropertiesSpecificationCP spec, Utf8StringCR label, Utf8StringCR name) = 0;
-
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod
-    +---------------+---------------+---------------+---------------+---------------+------*/
     ContentSpecificationsHandler::PropertyAppendResult _Append(ECPropertyCR ecProperty, ECClassCR propertyClass, Utf8CP propertyClassAlias, PropertySpecificationsList const& overrides) override
         {
         ContentSpecificationsHandler::PropertyAppendResult result(false);
@@ -434,11 +429,6 @@ protected:
             }
         result.MergeWith(_DoAppendProperty(ecProperty, propertyClass, propertyClassAlias, overrides));
         return result;
-        }
-
-    ContentSpecificationsHandler::PropertyAppendResult _AppendCalculatedProperty(ECClassCP ecClass, CalculatedPropertiesSpecificationCP spec, Utf8StringCR label, Utf8StringCR name) override
-        {
-        return _DoAppendCalculatedProperty(ecClass, spec, label, name);
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -558,7 +548,7 @@ protected:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
-    ContentSpecificationsHandler::PropertyAppendResult _DoAppendCalculatedProperty(ECClassCP ecClass, CalculatedPropertiesSpecificationCP spec, Utf8StringCR label, Utf8StringCR name) override
+    ContentSpecificationsHandler::PropertyAppendResult _AppendCalculatedProperty(ECClassCP ecClass, CalculatedPropertiesSpecificationCR spec, Utf8StringCR name) override
         {
         for (ContentDescriptor::Field const* field : m_descriptor.GetAllFields())
             {
@@ -569,8 +559,8 @@ protected:
             if (existingCalculatedField->GetRequestedName() == name && nullptr != ecClass && ecClass->Is(existingCalculatedField->GetClass()))
                 return ContentSpecificationsHandler::PropertyAppendResult(false);
             }
-     
-        m_descriptor.AddRootField(*new ContentDescriptor::CalculatedPropertyField(m_categoriesSupplier.GetCalculatedFieldCategory(), label, name, spec->GetValue(), ecClass, spec->GetPriority()));
+
+        m_descriptor.AddRootField(*new ContentDescriptor::CalculatedPropertyField(m_categoriesSupplier.GetCalculatedFieldCategory(), spec.GetLabel(), name, spec.GetValue(), ecClass, spec.GetPriority()));
         return ContentSpecificationsHandler::PropertyAppendResult(true);
         }
 
@@ -904,7 +894,7 @@ protected:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
-    ContentSpecificationsHandler::PropertyAppendResult _DoAppendCalculatedProperty(ECClassCP ecClass, CalculatedPropertiesSpecificationCP spec, Utf8StringCR label, Utf8StringCR name) override
+    ContentSpecificationsHandler::PropertyAppendResult _AppendCalculatedProperty(ECClassCP ecClass, CalculatedPropertiesSpecificationCR spec, Utf8StringCR name) override
         {
         for (ContentDescriptor::Field* nestedField : m_relatedContentField.GetFields())
             {
@@ -912,13 +902,13 @@ protected:
                 continue;
 
             ContentDescriptor::CalculatedPropertyField const* existingCalculatedField = nestedField->AsCalculatedPropertyField();
-            if(existingCalculatedField->GetRequestedName() == name)
+            if (existingCalculatedField->GetRequestedName() == name)
                 {
-                DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Related content field already contains a similar property field - skip.");
+                DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Related content field already contains a similar calculated field - skip.");
                 return ContentSpecificationsHandler::PropertyAppendResult(false);
                 }
             }
-        m_relatedContentField.GetFields().push_back(new ContentDescriptor::CalculatedPropertyField(m_categoriesSupplier.GetCalculatedFieldCategory(), label, name, spec->GetValue(), ecClass, spec->GetPriority()));
+        m_relatedContentField.GetFields().push_back(new ContentDescriptor::CalculatedPropertyField(m_categoriesSupplier.GetCalculatedFieldCategory(), spec.GetLabel(), name, spec.GetValue(), ecClass, spec.GetPriority()));
         m_relatedContentField.GetFields().back()->SetParent(&m_relatedContentField);
         return ContentSpecificationsHandler::PropertyAppendResult(true);
         }
@@ -1130,11 +1120,10 @@ private:
     +---------------+---------------+---------------+---------------+---------------+------*/
     void AddCalculatedFields(CalculatedPropertiesSpecificationList const& calculatedProperties, ECClassCP ecClass, PropertyAppender& appender, size_t& count)
         {
-        for (size_t i = 0; i < calculatedProperties.size(); i++)
+        for (auto const& calculatedProperty : calculatedProperties)
             {
-            Utf8StringCR label = calculatedProperties[i]->GetLabel();
             Utf8StringCR propertyName = Utf8String("CalculatedProperty_").append(std::to_string(count).c_str());
-            appender.AppendCalculatedProperty(ecClass, calculatedProperties[i], label, propertyName);
+            appender.AppendCalculatedProperty(ecClass, *calculatedProperty, propertyName);
             ++count;
             }
         }
@@ -1142,13 +1131,13 @@ private:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
-    size_t AddCalculatedFieldsFromContentModifiers(PropertyAppender& appender, ECClassCR ecClass, bool includeNested)
+    size_t AddCalculatedFieldsFromContentModifiers(PropertyAppender& appender, ECClassCR ecClass)
         {
         size_t count = 0;
         for (ContentModifierCP modifier : GetContext().GetRulesPreprocessor().GetContentModifiers())
             {
             ECClassCP modifierClass = GetContext().GetSchemaHelper().GetECClass(modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str());
-            if (ecClass.Is(modifierClass) && (!includeNested || modifier->ShouldApplyOnNestedContent()))
+            if (ecClass.Is(modifierClass) && (nullptr != dynamic_cast<DirectPropertiesAppender*>(&appender) || modifier->ShouldApplyOnNestedContent()))
                 {
                 DiagnosticsHelpers::ReportRule(*modifier);
                 AddCalculatedFields(modifier->GetCalculatedProperties(), modifierClass, appender, count);
@@ -1276,7 +1265,7 @@ protected:
             PropertyAppenderPtr appender = _CreatePropertyAppender(s_emptyClassesSet, s_emptyPath, nullptr, specsStack, nullptr);
             size_t count = 0;
             AddCalculatedFields(m_specification->GetCalculatedProperties(), nullptr, *appender, count);
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_TRACE, LOG_INFO, Utf8PrintfString("Added %" PRIu64 " fields from content modifiers.", (uint64_t)count));
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_TRACE, LOG_INFO, Utf8PrintfString("Added %" PRIu64 " fields from specification.", (uint64_t)count));
             }
 
         for (auto const& category : m_categoriesSupplierContext->GetAllCategories())
@@ -1315,11 +1304,11 @@ protected:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
-    PropertyAppendResult _OnPropertiesAppended(PropertyAppender& appender, ECClassCR propertyClass, Utf8StringCR classAlias, bool includeNested) override
+    PropertyAppendResult _OnPropertiesAppended(PropertyAppender& appender, ECClassCR propertyClass, Utf8StringCR classAlias) override
         {
         if (ShouldCreateFields(*m_descriptor))
             {
-            size_t count = AddCalculatedFieldsFromContentModifiers(appender, propertyClass, includeNested);
+            size_t count = AddCalculatedFieldsFromContentModifiers(appender, propertyClass);
             DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_TRACE, LOG_INFO, Utf8PrintfString("Added %" PRIu64 " fields from content modifiers.", (uint64_t)count));
             }
         return ContentSpecificationsHandler::PropertyAppendResult(false);

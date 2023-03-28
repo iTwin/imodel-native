@@ -15,7 +15,7 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentModifiersList::ContentModifiersList(ContentModifiersList const& other)
-    : HashableBase(other), m_applyOnNestedContent(other.m_applyOnNestedContent)
+    : HashableBase(other)
     {
     CommonToolsInternal::CopyRules(m_relatedProperties, other.m_relatedProperties, this);
     CommonToolsInternal::CopyRules(m_calculatedProperties, other.m_calculatedProperties, this);
@@ -27,7 +27,7 @@ ContentModifiersList::ContentModifiersList(ContentModifiersList const& other)
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentModifiersList::ContentModifiersList(ContentModifiersList&& other)
-    : HashableBase(std::move(other)), m_applyOnNestedContent(other.m_applyOnNestedContent)
+    : HashableBase(std::move(other))
     {
     CommonToolsInternal::SwapRules(m_relatedProperties, other.m_relatedProperties, this);
     CommonToolsInternal::SwapRules(m_calculatedProperties, other.m_calculatedProperties, this);
@@ -196,7 +196,6 @@ bool ContentModifiersList::ReadJson(BeJsConst json)
         DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_WARNING, Utf8PrintfString("Using deprecated `%s.%s`. It's recommended to switch to `%s`.",
             CONTENTMODIFIER_RULE_JSON_TYPE, CONTENTMODIFIER_JSON_ATTRIBUTE_PROPERTYDISPLAYSPECIFICATIONS, CONTENTMODIFIER_JSON_ATTRIBUTE_PROPERTYOVERRIDES));
         }
-    m_applyOnNestedContent = json[CONTENTMODIFIER_JSON_ATTRIBUTE_APPLYONNESTEDCONTENT].asBool(false);
 
     return true;
     }
@@ -226,8 +225,6 @@ void ContentModifiersList::WriteJson(BeJsValue json) const
         CommonToolsInternal::WriteRulesToJson<PropertySpecification, PropertySpecificationsList>
             (json[CONTENTMODIFIER_JSON_ATTRIBUTE_PROPERTYOVERRIDES], m_propertyOverrides);
         }
-    if (m_applyOnNestedContent)
-        json[CONTENTMODIFIER_JSON_ATTRIBUTE_APPLYONNESTEDCONTENT] = m_applyOnNestedContent;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -247,7 +244,7 @@ MD5 ContentModifiersList::_ComputeHash() const
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentModifier::ContentModifier(ContentModifier const& other)
-    : PrioritizedPresentationKey(other), m_schemaName(other.m_schemaName), m_className(other.m_className), m_modifiers(other.m_modifiers)
+    : PrioritizedPresentationKey(other), m_schemaName(other.m_schemaName), m_className(other.m_className), m_modifiers(other.m_modifiers), m_applyOnNestedContent(other.m_applyOnNestedContent)
     {
     CommonToolsInternal::CopyRules(m_requiredSchemas, other.m_requiredSchemas, this);
     }
@@ -256,7 +253,7 @@ ContentModifier::ContentModifier(ContentModifier const& other)
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentModifier::ContentModifier(ContentModifier&& other)
-    : PrioritizedPresentationKey(std::move(other)), m_schemaName(std::move(other.m_schemaName)), m_className(std::move(other.m_className)), m_modifiers(std::move(other.m_modifiers))
+    : PrioritizedPresentationKey(std::move(other)), m_schemaName(std::move(other.m_schemaName)), m_className(std::move(other.m_className)), m_modifiers(std::move(other.m_modifiers)), m_applyOnNestedContent(other.m_applyOnNestedContent)
     {
     CommonToolsInternal::SwapRules(m_requiredSchemas, other.m_requiredSchemas, this);
     }
@@ -327,6 +324,7 @@ bool ContentModifier::_ReadJson(BeJsConst json)
         CommonToolsInternal::ParseSchemaAndClassName(m_schemaName, m_className, json[COMMON_JSON_ATTRIBUTE_CLASS], Utf8PrintfString("%s.%s", _GetJsonElementType(), COMMON_JSON_ATTRIBUTE_CLASS).c_str());
     if (json.isMember(COMMON_JSON_ATTRIBUTE_REQUIREDSCHEMAS))
         CommonToolsInternal::LoadFromJson(_GetJsonElementType(), COMMON_JSON_ATTRIBUTE_REQUIREDSCHEMAS, json[COMMON_JSON_ATTRIBUTE_REQUIREDSCHEMAS], m_requiredSchemas, CommonToolsInternal::LoadRuleFromJson<RequiredSchemaSpecification>, this);
+    m_applyOnNestedContent = json[CONTENTMODIFIER_JSON_ATTRIBUTE_APPLYONNESTEDCONTENT].asBool(false);
     return m_modifiers.ReadJson(json);
     }
 
@@ -339,6 +337,8 @@ void ContentModifier::_WriteJson(BeJsValue json) const
 
     if (!m_schemaName.empty() && !m_className.empty())
         CommonToolsInternal::WriteSchemaAndClassNameToJson(json[COMMON_JSON_ATTRIBUTE_CLASS], m_schemaName, m_className);
+    if (m_applyOnNestedContent)
+        json[CONTENTMODIFIER_JSON_ATTRIBUTE_APPLYONNESTEDCONTENT] = m_applyOnNestedContent;
 
     m_modifiers.WriteJson(json);
 
