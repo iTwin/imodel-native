@@ -4468,7 +4468,7 @@ TEST_F(DbMappingTestFixture, OverflowIssue)
                     <ECProperty propertyName="p6" typeName="long"/>
                     <ECProperty propertyName="p7" typeName="long"/>
                 </ECEntityClass>
-            </ECSchema>)xml"), SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+            </ECSchema>)xml"), SchemaManager::SchemaImportOptions::None)) << "UpgradeECInstance for overflow table should not require SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade";
 
     m_ecdb.SaveChanges();
     ReopenECDb();
