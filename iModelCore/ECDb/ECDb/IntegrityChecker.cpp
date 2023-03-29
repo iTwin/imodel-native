@@ -839,5 +839,135 @@ DbResult IntegrityChecker::CheckClassIdForEntityClasses(std::function<bool(Utf8C
 		}
 	}
     return BE_SQLITE_OK;
- }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult IntegrityChecker::CheckDataTablesAndIndexes(std::function<bool(std::string, std::string)> callback) {
+    auto rc = CheckDataTableExists([&](std::string table) {
+        return callback(table, "table");
+    });
+	if (rc != BE_SQLITE_OK) {
+        return rc;
+    }
+	rc = CheckDataIndexExists([&](std::string index) {
+        return callback(index, "index");
+    });
+    return rc;
+}
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8CP IntegrityChecker::GetCheckName(Checks checks) const {
+	switch(checks) {
+	case Checks::ProfileTablesAndIndexes:
+        return "check_profile_tables_and_indexes";
+	case Checks::DataTablesAndIndexes:
+        return "check_data_tables_and_indexes";
+	case Checks::DataTableColumns:
+        return "check_data_table_columns";
+	case Checks::NavRelClassIds:
+        return "check_nav_class_ids";
+	case Checks::NavRelIds:
+        return "check_nav_ids";
+	case Checks::LinkTableSourceAndTargetClassIds:
+        return "check_linktable_source_and_target_class_ids";
+	case Checks::LinkTableSourceAndTargetIds:
+        return "check_linktable_source_and_target_ids";
+	case Checks::EntityAndRelationshipClassIds:
+        return "check_entity_and_rel_class_Ids";
+    };
+    BeAssert(false && "case not handled");
+    return nullptr;
+}
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult IntegrityChecker::QuickCheck(Checks checks, std::function<void(Utf8CP, bool)> callback) {
+    DbResult rc;
+    if (Enum::Contains<Checks>(checks, Checks::DataTableColumns)) {
+        auto passed = true;
+        rc = CheckDataTableColumnExists([&passed](std::string, std::string) {
+            return (passed = false);
+        });
+		if (rc != BE_SQLITE_OK) {
+            return rc;
+        }
+        callback(GetCheckName(Checks::DataTableColumns), passed);
+    }
+    if (Enum::Contains<Checks>(checks, Checks::ProfileTablesAndIndexes)) {
+        auto passed = true;
+        rc = CheckProfileTablesAndIndexes([&passed](std::string, std::string, std::string) {
+            return (passed = false);
+        });
+		if (rc != BE_SQLITE_OK) {
+            return rc;
+        }
+		callback(GetCheckName(Checks::ProfileTablesAndIndexes), passed);
+    }
+    if (Enum::Contains<Checks>(checks, Checks::NavRelClassIds)) {
+        auto passed = true;
+        rc = CheckClassIdForNavProperties([&passed](ECInstanceId, Utf8CP, Utf8CP, ECInstanceId, ECN::ECClassId) {
+            return (passed = false);
+        });
+		if (rc != BE_SQLITE_OK) {
+            return rc;
+        }
+		callback(GetCheckName(Checks::NavRelClassIds), passed);
+    }
+    if (Enum::Contains<Checks>(checks, Checks::NavRelIds)) {
+        auto passed = true;
+        rc = CheckSoftNavForeignKeyConstraint([&passed](ECInstanceId, Utf8CP, Utf8CP, ECInstanceId, Utf8CP) {
+            return (passed = false);
+        });
+		if (rc != BE_SQLITE_OK) {
+            return rc;
+        }
+		callback(GetCheckName(Checks::NavRelIds), passed);
+    }
+    if (Enum::Contains<Checks>(checks, Checks::LinkTableSourceAndTargetClassIds)) {
+        auto passed = true;
+        rc = CheckClassIdForLinkTableRelationships([&passed](ECInstanceId, Utf8CP, Utf8CP, ECInstanceId, ECN::ECClassId) {
+            return (passed = false);
+        });
+		if (rc != BE_SQLITE_OK) {
+            return rc;
+        }
+		callback(GetCheckName(Checks::LinkTableSourceAndTargetClassIds), passed);
+    }
+    if (Enum::Contains<Checks>(checks, Checks::LinkTableSourceAndTargetIds)) {
+        auto passed = true;
+        rc = CheckSoftLinkTableForeignKeyConstraint([&passed](ECInstanceId, Utf8CP, Utf8CP, ECInstanceId, Utf8CP) {
+            return (passed = false);
+        });
+		if (rc != BE_SQLITE_OK) {
+            return rc;
+        }
+		callback(GetCheckName(Checks::LinkTableSourceAndTargetIds), passed);
+    }
+    if (Enum::Contains<Checks>(checks, Checks::EntityAndRelationshipClassIds)) {
+        auto passed = true;
+        rc = CheckClassIdForEntityClasses([&passed](Utf8CP, ECInstanceId, ECN::ECClassId) {
+            return (passed = false);
+        });
+		if (rc != BE_SQLITE_OK) {
+            return rc;
+        }
+		callback(GetCheckName(Checks::EntityAndRelationshipClassIds), passed);
+    }
+    if (Enum::Contains<Checks>(checks, Checks::DataTablesAndIndexes)) {
+        auto passed = true;
+        rc = CheckDataTablesAndIndexes([&passed](std::string, std::string) {
+            return (passed = false);
+        });
+		if (rc != BE_SQLITE_OK) {
+            return rc;
+        }
+		callback(GetCheckName(Checks::DataTablesAndIndexes), passed);
+    }
+    return BE_SQLITE_OK;
+}
+
+
 END_BENTLEY_SQLITE_EC_NAMESPACE

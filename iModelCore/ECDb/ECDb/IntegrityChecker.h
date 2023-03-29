@@ -10,6 +10,19 @@
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 struct IntegrityChecker final {
+	enum class Checks {
+		ProfileTablesAndIndexes = 0x1,
+		DataTablesAndIndexes = 0x2,
+		DataTableColumns = 0x4,
+		NavRelClassIds = 0x8,
+		NavRelIds = 0x10,
+		LinkTableSourceAndTargetClassIds = 0x20,
+		LinkTableSourceAndTargetIds = 0x40,
+		EntityAndRelationshipClassIds = 0x80,
+		OnlyMetaChecks = ProfileTablesAndIndexes | DataTablesAndIndexes | DataTableColumns,
+		OnlyDataChecks =NavRelClassIds | NavRelIds | LinkTableSourceAndTargetClassIds | LinkTableSourceAndTargetIds | EntityAndRelationshipClassIds,
+		All = OnlyMetaChecks | OnlyDataChecks,
+	};
 private:
     ECDbCR m_conn;
     std::string m_lastError;
@@ -26,16 +39,18 @@ private:
 		std::map<std::string, std::string> const&,
 		std::function<bool(std::string, std::string, std::string)>
 	);
-
-
-public:
-    IntegrityChecker(ECDbCR conn) : m_conn(conn) {}
-    //! Callback(table,column)
-    DbResult CheckDataTableColumnExists(std::function<bool(std::string, std::string)>);
     //! Callback(table)
     DbResult CheckDataTableExists(std::function<bool(std::string)>);
     //! Callback(index)
     DbResult CheckDataIndexExists(std::function<bool(std::string)>);
+
+public:
+    IntegrityChecker(ECDbCR conn) : m_conn(conn) {}
+    Utf8CP GetCheckName(Checks) const;
+    //! Callback(table,column)
+    DbResult CheckDataTableColumnExists(std::function<bool(std::string, std::string)>);
+	//! Callback(name, type)
+	DbResult CheckDataTablesAndIndexes(std::function<bool(std::string, std::string)>);
     //! Callback(type, name, issue)
     DbResult CheckProfileTablesAndIndexes(std::function<bool(std::string, std::string, std::string)>);
     // Callback(InstanceId, className, propertyName, id, primaryClassName)
@@ -48,6 +63,8 @@ public:
     DbResult CheckClassIdForLinkTableRelationships(std::function<bool(ECInstanceId, Utf8CP, Utf8CP, ECInstanceId, ECN::ECClassId)>);
 	// Callback(InstanceId, className, propertyName, navId, navClassId)
 	DbResult CheckClassIdForNavProperties(std::function<bool(ECInstanceId, Utf8CP, Utf8CP, ECInstanceId, ECN::ECClassId)>);
+	// Callback(check-name, status)
+    DbResult QuickCheck(Checks, std::function<void(Utf8CP, bool)>);
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

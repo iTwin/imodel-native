@@ -417,6 +417,35 @@ struct PragmaECDbValidation : PragmaManager::GlobalHandler {
 };
 
 //================================================================================
+// @bsiclass PragmaECDbValidation
+//================================================================================
+struct PragmaIntegrityCheck : PragmaManager::GlobalHandler {
+    PragmaIntegrityCheck():GlobalHandler("integrity_check","performs integrity checks on ECDb"){}
+
+    virtual DbResult Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&)  override {
+        auto result = std::make_unique<StaticPragmaResult>(ecdb);
+        result->AppendProperty("check", PRIMITIVETYPE_String);
+        result->AppendProperty("result", PRIMITIVETYPE_Boolean);
+        result->FreezeSchemaChanges();
+
+        IntegrityChecker checker(ecdb);
+        checker.QuickCheck(IntegrityChecker::Checks::All, [&](Utf8CP checkName, bool passed) {
+            auto row = result->AppendRow();
+            row.appendValue() = checkName;
+            row.appendValue() = passed;
+        });
+
+        rowSet = std::move(result);
+        return BE_SQLITE_OK;
+    }
+
+    virtual DbResult Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&) override {
+        return BE_SQLITE_READONLY;
+    }
+
+    static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<PragmaIntegrityCheck>(); }
+};
+//================================================================================
 // @bsiclass PragmaECDbClassIdValidation
 //================================================================================
 struct PragmaECDbClassIdValidation : PragmaManager::GlobalHandler {
@@ -491,6 +520,7 @@ void PragmaManager::InitSystemPragmas() {
     Register(PragmaECDbValidation::Create());
     Register(PragmaECDbClassIdValidation::Create());
     Register(PragmaECDbNavPropIdValidation::Create());
+    Register(PragmaIntegrityCheck::Create());
 }
 
 //---------------------------------------------------------------------------------------
