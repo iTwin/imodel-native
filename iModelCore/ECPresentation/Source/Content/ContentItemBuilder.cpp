@@ -162,17 +162,18 @@ rapidjson::Document ContentValuesFormatter::GetFallbackValue(ECPropertyCR prop, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bpair<LabelDefinitionCPtr, ECInstanceKey> ContentValueHelpers::ParseNavigationPropertyValue(IECSqlValue const& value)
+NavigationPropertyValue ContentValueHelpers::ParseNavigationPropertyValue(IECSqlValue const& value, SchemaManagerCR schemas)
     {
     if (value.IsNull())
-        return bpair<LabelDefinitionCPtr, ECInstanceKey>();
+        return NavigationPropertyValue();
 
     rapidjson::Document::AllocatorType jsonAllocator(1024); // 1kB should be enough (default is 64kB)
     rapidjson::Document json(&jsonAllocator);
     json.Parse(value.GetText());
     auto label = LabelDefinition::FromInternalJson(json["label"]);
     ECInstanceKey key = ValueHelpers::GetECInstanceKeyFromJson(json["key"]);
-    return bpair<LabelDefinitionCPtr, ECInstanceKey>(label, key);
+    ECClassInstanceKey classInstanceKey = ValueHelpers::GetECClassInstanceKey(schemas, key);
+    return NavigationPropertyValue(label, classInstanceKey);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -266,35 +267,39 @@ void ContentItemBuilder::AddValue(Utf8CP name, ECPropertyCR ecProperty, IECSqlVa
         PrimitiveECPropertyCR primitiveProperty = *ecProperty.GetAsPrimitiveProperty();
         _AddValue(name,
             ValueHelpers::GetJsonFromPrimitiveValue(primitiveProperty.GetType(), value, &m_values.GetAllocator()),
-            m_formatter.GetFormattedValue(primitiveProperty, value, &m_displayValues.GetAllocator()), &ecProperty);
+            m_formatter.GetFormattedValue(primitiveProperty, value, &m_displayValues.GetAllocator()), 
+            &ecProperty);
         }
     else if (ecProperty.GetIsStruct())
         {
         StructECPropertyCR structProperty = *ecProperty.GetAsStructProperty();
         _AddValue(name,
             ValueHelpers::GetJsonFromStructValue(structProperty.GetType(), value, &m_values.GetAllocator()),
-            m_formatter.GetFormattedValue(structProperty, value, &m_displayValues.GetAllocator()), &ecProperty);
+            m_formatter.GetFormattedValue(structProperty, value, &m_displayValues.GetAllocator()), 
+            &ecProperty);
         }
     else if (ecProperty.GetIsArray())
         {
         ArrayECPropertyCR arrayProperty = *ecProperty.GetAsArrayProperty();
         _AddValue(name,
             ValueHelpers::GetJsonFromArrayValue(value, &m_values.GetAllocator()),
-            m_formatter.GetFormattedValue(arrayProperty, value, &m_displayValues.GetAllocator()), &ecProperty);
+            m_formatter.GetFormattedValue(arrayProperty, value, &m_displayValues.GetAllocator()), 
+            &ecProperty);
         }
     else if (ecProperty.GetIsNavigation())
         {
-        auto parsedValue = ContentValueHelpers::ParseNavigationPropertyValue(value);
-        if (parsedValue.first.IsNull())
+        auto parsedValue = ContentValueHelpers::ParseNavigationPropertyValue(value, m_schemaManager);
+        if (!parsedValue.IsValid())
             {
             AddNull(name, &ecProperty);
             }
         else
             {
             ECPresentationSerializerContext ctx;
-            ECClassInstanceKey classInstanceKey(m_schemaManager.GetClass(parsedValue.second.GetClassId()), parsedValue.second.GetInstanceId());
-            _AddValue(name, ECPresentationManager::GetSerializer().AsJson(ctx, classInstanceKey, &m_values.GetAllocator()),
-                rapidjson::Value(parsedValue.first->GetDisplayValue().c_str(), m_displayValues.GetAllocator()), &ecProperty);
+            _AddValue(name, 
+                ECPresentationManager::GetSerializer().AsJson(ctx, parsedValue, &m_values.GetAllocator()),
+                rapidjson::Value(parsedValue.GetLabel().GetDisplayValue().c_str(), m_displayValues.GetAllocator()),
+                &ecProperty);
             }
         }
     else

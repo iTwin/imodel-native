@@ -195,7 +195,7 @@ struct ContentValueHelpers
 private:
     ContentValueHelpers() {}
 public:
-    static bpair<LabelDefinitionCPtr, ECInstanceKey> ParseNavigationPropertyValue(IECSqlValue const& value);
+    static NavigationPropertyValue ParseNavigationPropertyValue(IECSqlValue const& value, SchemaManagerCR schemas);
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

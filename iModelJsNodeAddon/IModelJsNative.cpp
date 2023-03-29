@@ -4985,7 +4985,7 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
             // rapidjson response
             if (serializeResponse) {
                 auto str = result.GetSerializedSuccessResponse();
-                retVal["result"] = str.empty() ? "\"null\"" : str; // see note about null values for BeJsValue::Stringify
+                retVal["result"] = str.empty() ? "null" : str; // see note about null values for BeJsValue::Stringify
             } else
                 retVal["result"].From(result.GetSuccessResponse());
             }
