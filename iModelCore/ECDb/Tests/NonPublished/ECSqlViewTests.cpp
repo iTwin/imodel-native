@@ -301,6 +301,38 @@ TEST_F(ECSqlView, TransientView_ContainsCTE) {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECSqlView, TransientView_UsedInCTE) {
+    auto testSchema = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+    <ECSchema
+            schemaName="test_schema"
+            alias="ts"
+            version="1.0.0"
+            xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name='ECDbView' version='01.00.00' alias='ecdbview' />
+        <ECEntityClass typeName="SchemaView" modifier="Abstract">
+            <ECCustomAttributes>
+                <TransientView xmlns="ECDbView.01.00.00">
+                    <Query>SELECT [ECInstanceId],[Name] [SchemaName] FROM [meta].[ECSchemaDef]</Query>
+                </TransientView>
+           </ECCustomAttributes>
+            <ECProperty propertyName="SchemaName" typeName="string" />
+        </ECEntityClass>
+    </ECSchema>)xml");
+
+    ASSERT_EQ(SUCCESS, SetupECDb("TransientView_Basic.ecdb", testSchema));
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "WITH [schemas]([Id],[SchemaName]) as (Select [ECInstanceId],[SchemaName] from [ts].[SchemaView]) SELECT [Id] as [ECInstanceId], [SchemaName] from [schemas] LIMIT 1;"));
+        Utf8CP native = stmt.GetNativeSql();
+        ASSERT_NE(native, nullptr);
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        ASSERT_EQ(stmt.GetValueText(0), "CoreCustomAttributes");
+    }
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSqlView, PersistedView_Simple) {
     auto testSchema = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
     <ECSchema
