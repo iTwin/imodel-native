@@ -548,6 +548,11 @@ protected:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
+    bool _IsDirectPropertiesAppender() override { return true; }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+------*/
     ContentSpecificationsHandler::PropertyAppendResult _AppendCalculatedProperty(ECClassCP ecClass, CalculatedPropertiesSpecificationCR spec, Utf8StringCR name) override
         {
         for (ContentDescriptor::Field const* field : m_descriptor.GetAllFields())
@@ -1137,7 +1142,7 @@ private:
         for (ContentModifierCP modifier : GetContext().GetRulesPreprocessor().GetContentModifiers())
             {
             ECClassCP modifierClass = GetContext().GetSchemaHelper().GetECClass(modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str());
-            if (ecClass.Is(modifierClass) && (nullptr != dynamic_cast<DirectPropertiesAppender*>(&appender) || modifier->ShouldApplyOnNestedContent()))
+            if (ecClass.Is(modifierClass) && (appender.IsDirectPropertiesAppender() || modifier->ShouldApplyOnNestedContent()))
                 {
                 DiagnosticsHelpers::ReportRule(*modifier);
                 AddCalculatedFields(modifier->GetCalculatedProperties(), modifierClass, appender, count);

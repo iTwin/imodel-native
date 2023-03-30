@@ -257,6 +257,7 @@ struct ContentSpecificationsHandler
         ExpressionContextPtr m_expressionContext = nullptr;
     protected:
         virtual bool _Supports(ECPropertyCR, ECClassCR, PropertySpecificationsList const&) = 0;
+        virtual bool _IsDirectPropertiesAppender() { return false; }
         virtual PropertyAppendResult _Append(ECPropertyCR, ECClassCR, Utf8CP, PropertySpecificationsList const&) = 0;
         virtual PropertyAppendResult _AppendCalculatedProperty(ECClassCP ecClass, CalculatedPropertiesSpecificationCR spec, Utf8StringCR name) { return PropertyAppendResult(false); };
         ExpressionContextPtr CreateExpressionContext(Context const& context)
@@ -269,6 +270,7 @@ struct ContentSpecificationsHandler
             }
     public:
         bool Supports(ECPropertyCR ecProperty, ECClassCR propertyClass, PropertySpecificationsList const& overrides) {return _Supports(ecProperty, propertyClass, overrides);}
+        bool IsDirectPropertiesAppender() { return _IsDirectPropertiesAppender(); }
         PropertyAppendResult Append(ECPropertyCR ecProperty, ECClassCR propertyClass, Utf8CP propertyClassAlias, PropertySpecificationsList const& overrides) {return _Append(ecProperty, propertyClass, propertyClassAlias, overrides);}
         PropertyAppendResult AppendCalculatedProperty(ECClassCP ecClass, CalculatedPropertiesSpecificationCR spec, Utf8StringCR name) { return _AppendCalculatedProperty(ecClass, spec, name); }
     };

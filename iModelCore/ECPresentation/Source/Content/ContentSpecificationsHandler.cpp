@@ -256,13 +256,16 @@ static ECSchemaHelper::RelationshipPathsResponse FindRelatedPropertyPaths(Conten
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> CreateForSelectClassFromModifiers(ECClassCR selectClass, ContentModifierCR modifier)
+static bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> CreateForSelectClassFromModifiers(ECClassCR selectClass, bvector<ContentModifierCP> const& modifiers)
     {
     bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> specs;
-    if (selectClass.Is(modifier.GetSchemaName().c_str(), modifier.GetClassName().c_str()))
+    for (ContentModifierCP modifier : modifiers)
         {
-        DiagnosticsHelpers::ReportRule(modifier);
-        ContainerHelpers::MovePush(specs, FlattenedRelatedPropertiesSpecification::Create(modifier.GetRelatedProperties(), RelatedPropertiesSpecificationScopeInfo(modifier.GetPropertyCategories())));
+        if (selectClass.Is(modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str()))
+            {
+            DiagnosticsHelpers::ReportRule(*modifier);
+            ContainerHelpers::MovePush(specs, FlattenedRelatedPropertiesSpecification::Create(modifier->GetRelatedProperties(), RelatedPropertiesSpecificationScopeInfo(modifier->GetPropertyCategories())));   
+            }
         }
     return specs;
     }
@@ -270,27 +273,55 @@ static bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> CreateF
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> CreateForNestedPropertiesFromModifiers(bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> const& flatSpecs, ContentModifierCR modifier, ECSchemaHelper const& helper)
+static bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>>CreateForNestedPropertiesFromModifiers(bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> const& flatSpecs, bvector<ContentModifierCP> const& modifiers, ECSchemaHelper const& helper);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>>CreateForFlatSpecFromModifiers(RelatedPropertiesSpecificationCR spec, bvector<ContentModifierCP> modifiers, ECSchemaHelper const& helper)
     {
     bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> specs;
-    if (!modifier.ShouldApplyOnNestedContent())
+    if (!spec.AllPropertiesIncluded())
         return specs;
-        
-    for (auto const& flatSpec : flatSpecs)
-        {
-        RelatedPropertiesSpecificationCR spec = flatSpec->GetFlattened();
-        ECRelationshipConstraintClassList const* classes = GetClassFromRelationship(helper, spec);
-        if (nullptr == classes)
-            continue;
 
-        for (ECClassCP ecClass : *classes)
+    int iter = -1;
+    while (iter != 0)
+        {
+        iter = 0;
+        for (ContentModifierCP& modifier : modifiers)
             {
-            if (!ecClass->Is(modifier.GetSchemaName().c_str(), modifier.GetClassName().c_str()))
+            if (modifier == nullptr || !modifier->ShouldApplyOnNestedContent())
                 continue;
-            DiagnosticsHelpers::ReportRule(modifier);
-            FlattenedRelatedPropertiesSpecification::MoveNestedSpecification(specs, FlattenedRelatedPropertiesSpecification::Create(modifier.GetRelatedProperties(), RelatedPropertiesSpecificationScopeInfo(modifier.GetPropertyCategories())), spec);
+
+            ECRelationshipConstraintClassList const* classes = GetClassFromRelationship(helper, spec);
+            for (ECClassCP ecClass : *classes)
+                {
+                if (!ecClass->Is(modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str()))
+                    continue;
+                DiagnosticsHelpers::ReportRule(*modifier);
+                bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> createdSpecs = FlattenedRelatedPropertiesSpecification::Create(modifier->GetRelatedProperties(), RelatedPropertiesSpecificationScopeInfo(modifier->GetPropertyCategories()));
+                if (createdSpecs.empty())
+                    continue;
+
+                modifier = nullptr;
+                ++iter;
+                FlattenedRelatedPropertiesSpecification::MoveNestedSpecification(specs, std::move(createdSpecs), spec);
+                ContainerHelpers::MovePush(specs, CreateForNestedPropertiesFromModifiers(specs, modifiers, helper));
+                }
             }
         }
+    return specs;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>>CreateForNestedPropertiesFromModifiers(bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> const& flatSpecs, bvector<ContentModifierCP> const& modifiers, ECSchemaHelper const& helper)
+    {
+    bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> specs;
+    for (auto const& flatSpec : flatSpecs)
+        ContainerHelpers::MovePush(specs, CreateForFlatSpecFromModifiers(flatSpec->GetFlattened(), modifiers, helper));
+
     return specs;
     }
 
@@ -301,14 +332,9 @@ bvector<std::unique_ptr<RelatedPropertySpecificationPaths>> ContentSpecification
     {
     // first build a flat list of all related properties specifications
     auto flatSpecs = FlattenedRelatedPropertiesSpecification::Create(params.GetRelatedPropertySpecs(), RelatedPropertiesSpecificationScopeInfo(params.GetScopeCategorySpecifications()));
-    for (ContentModifierCP modifier : GetContext().GetRulesPreprocessor().GetContentModifiers())
-        {
-        if (!modifier->GetRelatedProperties().empty())
-            {
-            ContainerHelpers::MovePush(flatSpecs, CreateForSelectClassFromModifiers(params.GetSourceClassInfo().GetSelectClass().GetClass(), *modifier));
-            ContainerHelpers::MovePush(flatSpecs, CreateForNestedPropertiesFromModifiers(flatSpecs, *modifier, GetContext().GetSchemaHelper()));
-            }
-        }
+    ContainerHelpers::MovePush(flatSpecs, CreateForSelectClassFromModifiers(params.GetSourceClassInfo().GetSelectClass().GetClass(), GetContext().GetRulesPreprocessor().GetContentModifiers()));
+    ContainerHelpers::MovePush(flatSpecs, CreateForNestedPropertiesFromModifiers(flatSpecs, GetContext().GetRulesPreprocessor().GetContentModifiers(), GetContext().GetSchemaHelper()));
+
     DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Got %" PRIu64 " flattened related property specs.", (uint64_t)flatSpecs.size()));
 
     // then determine actual related class paths for every specification
