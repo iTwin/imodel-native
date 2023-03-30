@@ -180,7 +180,7 @@ TEST_F(ECSqlView, TransientView_ReferenceItself) {
         </ECEntityClass>
     </ECSchema>)xml");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("TransientView_Basic.ecdb", testSchema));
+    ASSERT_EQ(SUCCESS, SetupECDb("TransientView_ReferenceItself.ecdb", testSchema));
     {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Error, stmt.Prepare(m_ecdb, "SELECT SchemaName FROM ts.SchemaView"));
@@ -216,7 +216,7 @@ TEST_F(ECSqlView, TransientView_ReferenceEachOther) {
         </ECEntityClass>
     </ECSchema>)xml");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("TransientView_Basic.ecdb", testSchema));
+    ASSERT_EQ(SUCCESS, SetupECDb("TransientView_ReferenceEachOther.ecdb", testSchema));
     {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Error, stmt.Prepare(m_ecdb, "SELECT SchemaName FROM ts.SchemaView"));
@@ -252,7 +252,7 @@ TEST_F(ECSqlView, TransientView_ReferencesAnother) {
         </ECEntityClass>
     </ECSchema>)xml");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("TransientView_Basic.ecdb", testSchema));
+    ASSERT_EQ(SUCCESS, SetupECDb("TransientView_ReferencesAnother.ecdb", testSchema));
     {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT SchemaName FROM ts.ReferencingView"));
@@ -286,7 +286,7 @@ TEST_F(ECSqlView, TransientView_ContainsCTE) {
         </ECEntityClass>
     </ECSchema>)xml");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("TransientView_Basic.ecdb", testSchema));
+    ASSERT_EQ(SUCCESS, SetupECDb("TransientView_ContainsCTE.ecdb", testSchema));
     {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ts.MyTransientViewClass LIMIT 1"));
@@ -319,7 +319,7 @@ TEST_F(ECSqlView, TransientView_UsedInCTE) {
         </ECEntityClass>
     </ECSchema>)xml");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("TransientView_Basic.ecdb", testSchema));
+    ASSERT_EQ(SUCCESS, SetupECDb("TransientView_UsedInCTE.ecdb", testSchema));
     {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "WITH [schemas]([Id],[SchemaName]) as (Select [ECInstanceId],[SchemaName] from [ts].[SchemaView]) SELECT [Id] as [ECInstanceId], [SchemaName] from [schemas] LIMIT 1;"));
@@ -329,6 +329,50 @@ TEST_F(ECSqlView, TransientView_UsedInCTE) {
         ASSERT_EQ(stmt.GetValueText(0), "CoreCustomAttributes");
     }
 }
+
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECSqlView, TransientView_ConstValueInView) {
+    auto testSchema = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+    <ECSchema
+            schemaName="test_schema"
+            alias="ts"
+            version="1.0.0"
+            xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name='ECDbView' version='01.00.00' alias='ecdbview' />
+        <ECEntityClass typeName="SchemaView" modifier="Abstract">
+            <ECCustomAttributes>
+                <TransientView xmlns="ECDbView.01.00.00">
+                    <Query>Select [ECInstanceId], [Name], 10 as Ten from [meta].[ECSchemaDef]</Query>
+                </TransientView>
+           </ECCustomAttributes>
+            <ECProperty propertyName="Name" typeName="string" />
+            <ECProperty propertyName="Ten" typeName="string" />
+        </ECEntityClass>
+    </ECSchema>)xml");
+
+    ASSERT_EQ(SUCCESS, SetupECDb("TransientView_ConstValueInView.ecdb", testSchema));
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "Select * from [ts].[SchemaView]"));
+        Utf8CP native = stmt.GetNativeSql();
+        ASSERT_NE(native, nullptr);
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        ASSERT_EQ(stmt.GetValueText(0), "CoreCustomAttributes");
+    }
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "Select [Ten] from [ts].[SchemaView] LIMIT 1"));
+        Utf8CP native = stmt.GetNativeSql();
+        ASSERT_NE(native, nullptr);
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        ASSERT_EQ(stmt.GetValueInt(0), 10);
+    }
+}
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
