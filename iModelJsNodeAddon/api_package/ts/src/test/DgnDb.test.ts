@@ -4,7 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 import { DbResult, Id64Array, Id64String, IModelStatus, OpenMode } from "@itwin/core-bentley";
 import { BlobRange, DbBlobRequest, DbBlobResponse, DbQueryRequest, DbQueryResponse, DbRequestKind, DbResponseStatus, ProfileOptions } from "@itwin/core-common";
-import { DomainOptions } from "@itwin/core-common/lib/cjs/BriefcaseTypes";
+import { DomainOptions } from "@itwin/core-common";
 import { assert, expect } from "chai";
 import * as fs from "fs-extra";
 import * as os from "os";
