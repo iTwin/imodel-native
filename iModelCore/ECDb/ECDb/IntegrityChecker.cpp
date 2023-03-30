@@ -630,12 +630,12 @@ DbResult IntegrityChecker::CheckClassIdForNavProperties(std::function<bool(ECIns
 				return BE_SQLITE_ERROR;
 			}
 
-			// skip any nav property for which we do not store RelClassId in db
+			// skip any nav property for which we do not store RelECClassId in db
             if (propMap->GetAs<NavigationPropertyMap>().GetRelECClassIdPropertyMap().GetColumn().IsVirtual()) {
                 continue;
             }
 
-            std::string query = SqlPrintfString("SELECT s.ECInstanceId, s.%s.Id, s.%s.RelClassId FROM %s s LEFT JOIN meta.ECClassDef t ON s.%s.RelClassId=t.ECInstanceId AND t.ECInstanceId IS NULL",
+            std::string query = SqlPrintfString("SELECT s.ECInstanceId, s.%s.Id, s.%s.RelECClassId FROM %s s LEFT JOIN meta.ECClassDef t ON s.%s.RelECClassId=t.ECInstanceId AND t.ECInstanceId IS NULL",
 												navPropCP->GetName().c_str(),
 												navPropCP->GetName().c_str(),
 												classCP->GetECSqlName().c_str(),
@@ -758,7 +758,12 @@ DbResult IntegrityChecker::CheckClassIdForLinkTableRelationships(std::function<b
         auto& relMap = classMap->GetAs<RelationshipClassLinkTableMap>();
         if ("source ids") {
             auto sourceECClassIdPropMap = relMap.GetSourceECClassIdPropMap();
-			if (sourceECClassIdPropMap->IsMappedToSingleTable() && sourceECClassIdPropMap->FindDataPropertyMap(primaryTable)->GetColumn().IsVirtual()) {
+			if(sourceECClassIdPropMap->IsMappedToSingleTable()) {
+                auto s = sourceECClassIdPropMap->GetTables();
+
+                (void)(s);
+            }
+			if (sourceECClassIdPropMap->IsMappedToSingleTable() && sourceECClassIdPropMap->FindDataPropertyMap(primaryTable) && sourceECClassIdPropMap->FindDataPropertyMap(primaryTable)->GetColumn().IsVirtual()) {
 				std::string query = SqlPrintfString("SELECT R.ECInstanceId, R.SourceECInstanceId, R.SourceECClassId FROM %s R LEFT JOIN meta.ECClassDef O ON O.ECInstanceId = R.SourceECClassId WHERE O.ECInstanceId IS NULL",
 													relMap.GetClass().GetECSqlName().c_str()).GetUtf8CP();
 
@@ -782,7 +787,7 @@ DbResult IntegrityChecker::CheckClassIdForLinkTableRelationships(std::function<b
 
 		if ("target ids") {
             auto targetECClassIdPropMap = relMap.GetTargetECClassIdPropMap();
-			if (targetECClassIdPropMap->IsMappedToSingleTable() && targetECClassIdPropMap->FindDataPropertyMap(primaryTable)->GetColumn().IsVirtual()) {
+			if (targetECClassIdPropMap->IsMappedToSingleTable() && targetECClassIdPropMap->FindDataPropertyMap(primaryTable) && targetECClassIdPropMap->FindDataPropertyMap(primaryTable)->GetColumn().IsVirtual()) {
 				std::string query = SqlPrintfString("SELECT R.ECInstanceId, R.SourceECInstanceId, R.SourceECClassId FROM %s R LEFT JOIN meta.ECClassDef O ON O.ECInstanceId = R.SourceECClassId WHERE O.ECInstanceId IS NULL",
 													relMap.GetClass().GetECSqlName().c_str()).GetUtf8CP();
 

@@ -31,8 +31,16 @@ struct IntegrityCheckerFixture : ECDbTestFixture {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(IntegrityCheckerFixture, check_link_table_serialization) {
+TEST_F(IntegrityCheckerFixture, integrity_check) {
+    ECDb db;
+    auto rc = db.OpenBeSQLiteDb("D:\\temp\\IB0H.bim", Db::OpenParams(Db::OpenMode::Readonly));
+    ASSERT_EQ(rc, BE_SQLITE_OK);
 
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "PRAGMA integrity_check"));
+    while (stmt.Step() == BE_SQLITE_ROW) {
+        printf("%s %s\n", stmt.GetValueBoolean(1) ? "PASSED" : "FAILED", stmt.GetValueText(0));
+    }
 }
 
 
