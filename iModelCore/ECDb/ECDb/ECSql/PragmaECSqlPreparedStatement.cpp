@@ -422,23 +422,211 @@ struct PragmaECDbValidation : PragmaManager::GlobalHandler {
 struct PragmaIntegrityCheck : PragmaManager::GlobalHandler {
     PragmaIntegrityCheck():GlobalHandler("integrity_check","performs integrity checks on ECDb"){}
 
-    virtual DbResult Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&)  override {
+    virtual DbResult Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const& v)  override {
         auto result = std::make_unique<StaticPragmaResult>(ecdb);
-        result->AppendProperty("check", PRIMITIVETYPE_String);
-        result->AppendProperty("result", PRIMITIVETYPE_Boolean);
-        result->FreezeSchemaChanges();
-
         IntegrityChecker checker(ecdb);
-        checker.QuickCheck(IntegrityChecker::Checks::All, [&](Utf8CP checkName, bool passed) {
-            auto row = result->AppendRow();
-            row.appendValue() = checkName;
-            row.appendValue() = passed;
-        });
+        DbResult rc = BE_SQLITE_OK;
+        auto checks = IntegrityChecker::Checks::All;
+        if (v.IsString()) {
+            auto customCheck = IntegrityChecker::GetCheckId(v.GetString().c_str());
+            if (customCheck != IntegrityChecker::Checks::None) {
+                checks = customCheck;
+            }
+        }
 
+        switch(checks) {
+            case IntegrityChecker::Checks::CheckDataTableColumns:
+                rc = CheckDataTableColumns(checker, *result, ecdb); break;
+            case IntegrityChecker::Checks::CheckDataTablesAndIndexes:
+                rc = CheckDataTablesAndIndexes(checker, *result, ecdb); break;
+            case IntegrityChecker::Checks::CheckEntityAndRelClassIds:
+                rc = CheckEntityAndRelClassIds(checker, *result, ecdb); break;
+            case IntegrityChecker::Checks::CheckLinkTableSourceAndTargetClassIds:
+                rc = CheckLinkTableSourceAndTargetClassIds(checker, *result, ecdb); break;
+            case IntegrityChecker::Checks::CheckLinkTableSourceAndTargetIds:
+                rc = CheckLinkTableSourceAndTargetIds(checker, *result, ecdb); break;
+            case IntegrityChecker::Checks::CheckNavClassIds:
+                rc = CheckNavClassIds(checker, *result, ecdb); break;
+            case IntegrityChecker::Checks::CheckNavIds:
+                rc = CheckNavClassIds(checker, *result, ecdb); break;
+            case IntegrityChecker::Checks::CheckProfileTablesAndIndexes:
+                rc = CheckProfileTablesAndIndexes(checker, *result, ecdb); break;
+            case IntegrityChecker::Checks::CheckSchemaLoad:
+                rc = CheckSchemaLoad(checker, *result, ecdb); break;
+            default:
+                rc = CheckAll(checker, *result, ecdb);
+            };
         rowSet = std::move(result);
         return BE_SQLITE_OK;
     }
+    DbResult CheckAll(IntegrityChecker& checker, StaticPragmaResult& result, ECDbCR ecdb) {
+        result.AppendProperty("sno", PRIMITIVETYPE_Integer);
+        result.AppendProperty("check", PRIMITIVETYPE_String);
+        result.AppendProperty("result", PRIMITIVETYPE_Boolean);
+        result.AppendProperty("elapsed_sec", PRIMITIVETYPE_String);
+        result.FreezeSchemaChanges();
 
+        int rowCount = 1;
+        return checker.QuickCheck(IntegrityChecker::Checks::All, [&](Utf8CP checkName, bool passed, BeDuration dur) {
+            auto row = result.AppendRow();
+            row.appendValue() = rowCount++;
+            row.appendValue() = checkName;
+            row.appendValue() = passed;
+            row.appendValue() = Utf8PrintfString("%.3f", dur.ToSeconds());
+        });
+    }
+    DbResult CheckSchemaLoad(IntegrityChecker& checker, StaticPragmaResult& result, ECDbCR ecdb) {
+        result.AppendProperty("sno", PRIMITIVETYPE_Integer);
+        result.AppendProperty("schema", PRIMITIVETYPE_String);
+        result.FreezeSchemaChanges();
+        int rowCount = 1;
+        return checker.CheckSchemaLoad([&](Utf8CP schemaName) {
+            auto row = result.AppendRow();
+            row.appendValue() = rowCount++;
+            row.appendValue() = schemaName;
+            return true;
+        });
+    }
+    DbResult CheckProfileTablesAndIndexes(IntegrityChecker& checker, StaticPragmaResult& result, ECDbCR ecdb) {
+        result.AppendProperty("sno", PRIMITIVETYPE_Integer);
+        result.AppendProperty("type", PRIMITIVETYPE_String);
+        result.AppendProperty("name", PRIMITIVETYPE_String);
+        result.AppendProperty("issue", PRIMITIVETYPE_String);
+        result.FreezeSchemaChanges();
+        int rowCount = 1;
+        return checker.CheckProfileTablesAndIndexes([&](std::string type, std::string name, std::string issue) {
+            auto row = result.AppendRow();
+            row.appendValue() = rowCount++;
+            row.appendValue() = type;
+            row.appendValue() = name;
+            row.appendValue() = issue;
+            return true;
+        });
+    }
+    DbResult CheckDataTablesAndIndexes(IntegrityChecker& checker, StaticPragmaResult& result, ECDbCR ecdb) {
+        result.AppendProperty("sno", PRIMITIVETYPE_Integer);
+        result.AppendProperty("type", PRIMITIVETYPE_String);
+        result.AppendProperty("name", PRIMITIVETYPE_String);
+        result.FreezeSchemaChanges();
+        int rowCount = 1;
+        return checker.CheckDataTablesAndIndexes([&](std::string name, std::string type) {
+            auto row = result.AppendRow();
+            row.appendValue() = rowCount++;
+            row.appendValue() = type;
+            row.appendValue() = name;
+            return true;
+        });
+    }
+    DbResult CheckDataTableColumns(IntegrityChecker& checker, StaticPragmaResult& result, ECDbCR ecdb) {
+        result.AppendProperty("sno", PRIMITIVETYPE_Integer);
+        result.AppendProperty("table", PRIMITIVETYPE_String);
+        result.AppendProperty("column", PRIMITIVETYPE_String);
+        result.FreezeSchemaChanges();
+        int rowCount = 1;
+        return checker.CheckDataTableColumns([&](std::string table, std::string column) {
+            auto row = result.AppendRow();
+            row.appendValue() = rowCount++;
+            row.appendValue() = table;
+            row.appendValue() = column;
+            return true;
+        });
+    }
+    DbResult CheckNavClassIds(IntegrityChecker& checker, StaticPragmaResult& result, ECDbCR ecdb) {
+        result.AppendProperty("sno", PRIMITIVETYPE_Integer);
+        result.AppendProperty("id", PRIMITIVETYPE_String);
+        result.AppendProperty("class", PRIMITIVETYPE_String);
+        result.AppendProperty("property", PRIMITIVETYPE_String);
+        result.AppendProperty("nav_id", PRIMITIVETYPE_String);
+        result.AppendProperty("nav_classId", PRIMITIVETYPE_String);
+        result.FreezeSchemaChanges();
+        int rowCount = 1;
+        return checker.CheckNavClassIds([&](ECInstanceId id, Utf8CP className, Utf8CP propertyName, ECInstanceId navId, ECN::ECClassId navClassId) {
+            auto row = result.AppendRow();
+            row.appendValue() = rowCount++;
+            row.appendValue() = id.ToHexStr();
+            row.appendValue() = className;
+            row.appendValue() = propertyName;
+            row.appendValue() = navId.ToHexStr();
+            row.appendValue() = navClassId.ToHexStr();
+            return true;
+        });
+    }
+    DbResult CheckNavIds(IntegrityChecker& checker, StaticPragmaResult& result, ECDbCR ecdb) {
+        result.AppendProperty("sno", PRIMITIVETYPE_Integer);
+        result.AppendProperty("id", PRIMITIVETYPE_String);
+        result.AppendProperty("class", PRIMITIVETYPE_String);
+        result.AppendProperty("property", PRIMITIVETYPE_String);
+        result.AppendProperty("nav_id", PRIMITIVETYPE_String);
+        result.AppendProperty("primary_class", PRIMITIVETYPE_String);
+        result.FreezeSchemaChanges();
+        int rowCount = 1;
+        return checker.CheckNavIds([&](ECInstanceId id , Utf8CP className, Utf8CP propertyName, ECInstanceId navId, Utf8CP primaryClass) {
+            auto row = result.AppendRow();
+            row.appendValue() = rowCount++;
+            row.appendValue() = id.ToHexStr();
+            row.appendValue() = className;
+            row.appendValue() = propertyName;
+            row.appendValue() = navId.ToHexStr();
+            row.appendValue() = primaryClass;
+            return true;
+        });
+    }
+    DbResult CheckLinkTableSourceAndTargetClassIds(IntegrityChecker& checker, StaticPragmaResult& result, ECDbCR ecdb) {
+        result.AppendProperty("sno", PRIMITIVETYPE_Integer);
+        result.AppendProperty("id", PRIMITIVETYPE_String);
+        result.AppendProperty("relationship", PRIMITIVETYPE_String);
+        result.AppendProperty("property", PRIMITIVETYPE_String);
+        result.AppendProperty("key_id", PRIMITIVETYPE_String);
+        result.AppendProperty("key_classId", PRIMITIVETYPE_String);
+        result.FreezeSchemaChanges();
+        int rowCount = 1;
+        return checker.CheckNavClassIds([&](ECInstanceId id , Utf8CP relName, Utf8CP propertyName, ECInstanceId keyId, ECClassId keyClassId) {
+            auto row = result.AppendRow();
+            row.appendValue() = rowCount++;
+            row.appendValue() = id.ToHexStr();
+            row.appendValue() = relName;
+            row.appendValue() = propertyName;
+            row.appendValue() = keyId.ToHexStr();
+            row.appendValue() = keyClassId.ToHexStr();
+            return true;
+        });
+    }
+    DbResult CheckLinkTableSourceAndTargetIds(IntegrityChecker& checker, StaticPragmaResult& result, ECDbCR ecdb) {
+        result.AppendProperty("sno", PRIMITIVETYPE_Integer);
+        result.AppendProperty("id", PRIMITIVETYPE_String);
+        result.AppendProperty("relationship", PRIMITIVETYPE_String);
+        result.AppendProperty("property", PRIMITIVETYPE_String);
+        result.AppendProperty("key_id", PRIMITIVETYPE_String);
+        result.AppendProperty("primary_class", PRIMITIVETYPE_String);
+        result.FreezeSchemaChanges();
+        int rowCount = 1;
+        return checker.CheckLinkTableSourceAndTargetIds([&](ECInstanceId id , Utf8CP relName, Utf8CP propertyName, ECInstanceId keyId, Utf8CP primaryClass) {
+            auto row = result.AppendRow();
+            row.appendValue() = rowCount++;
+            row.appendValue() = id.ToHexStr();
+            row.appendValue() = relName;
+            row.appendValue() = propertyName;
+            row.appendValue() = keyId.ToHexStr();
+            row.appendValue() = primaryClass;
+            return true;
+        });
+    }
+    DbResult CheckEntityAndRelClassIds(IntegrityChecker& checker, StaticPragmaResult& result, ECDbCR ecdb) {
+        result.AppendProperty("sno", PRIMITIVETYPE_Integer);
+        result.AppendProperty("class", PRIMITIVETYPE_String);
+        result.AppendProperty("id", PRIMITIVETYPE_String);
+        result.AppendProperty("class_id", PRIMITIVETYPE_String);
+        result.FreezeSchemaChanges();
+        int rowCount = 1;
+        return checker.CheckEntityAndRelClassIds([&](Utf8CP name, ECInstanceId id, ECN::ECClassId classId) {
+            auto row = result.AppendRow();
+            row.appendValue() = rowCount++;
+            row.appendValue() = name;
+            row.appendValue() = id.ToHexStr();
+            row.appendValue() = classId.ToHexStr();
+            return true;
+        });
+    }
     virtual DbResult Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&) override {
         return BE_SQLITE_READONLY;
     }
@@ -1179,7 +1367,7 @@ bool PragmaVal::GetBool() const {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 std::string PragmaVal::GetString() const {
-    if(IsString()) {
+    if(IsString() || IsName()) {
         return m_str;
     }
     if(IsDouble()) {

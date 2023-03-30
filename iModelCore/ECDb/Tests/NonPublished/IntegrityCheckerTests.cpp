@@ -33,7 +33,7 @@ struct IntegrityCheckerFixture : ECDbTestFixture {
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(IntegrityCheckerFixture, integrity_check) {
     ECDb db;
-    auto rc = db.OpenBeSQLiteDb("D:\\temp\\IB0H.bim", Db::OpenParams(Db::OpenMode::Readonly));
+    auto rc = db.OpenBeSQLiteDb("d:\\temp\\0d38e141-7705-4974-95da-1d4d3b762f31.bim", Db::OpenParams(Db::OpenMode::Readonly));
     ASSERT_EQ(rc, BE_SQLITE_OK);
 
     ECSqlStatement stmt;
