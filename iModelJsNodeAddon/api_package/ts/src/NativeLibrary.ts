@@ -904,7 +904,7 @@ export declare namespace IModelJsNative {
    * and is used to **connect** CloudContainers so they may be accessed. The contents of the cache directory are entirely
    * controlled by CloudSqlite and should be empty when the cache is first created and never modified directly. It maintains
    * the state of the local data across sessions.
-   * @note All CloudContainers attached to a CloudCache must have the same block size, as determined by the first one.
+   * @note All CloudContainers attached to a CloudCache must have the same block size, as determined by the first one connected.
    */
   class CloudCache {
     /** Create an instance of a CloudCache. */
@@ -1009,7 +1009,7 @@ export declare namespace IModelJsNative {
      * Disconnect this CloudContainer from its CloudCache. There must be no open databases from this container.
      */
     public disconnect(args?: {
-      /** if true deletes content of the container in CloudCache, otherwise Leaves the container's data in the CloudCache so it is available for future sessions. */
+      /** if true removes the container from the CloudCache, otherwise Leaves the container in the CloudCache so it is available for future sessions. */
       detach?: boolean;
     }): void;
 
