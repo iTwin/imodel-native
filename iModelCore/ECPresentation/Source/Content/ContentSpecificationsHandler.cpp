@@ -273,21 +273,21 @@ static bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> CreateF
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>>CreateForNestedPropertiesFromModifiers(bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> const& flatSpecs, bvector<ContentModifierCP> const& modifiers, ECSchemaHelper const& helper);
+static bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> CreateForNestedPropertiesFromModifiers(bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> const& flatSpecs, bvector<ContentModifierCP> const& modifiers, ECSchemaHelper const& helper);
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>>CreateForFlatSpecFromModifiers(RelatedPropertiesSpecificationCR spec, bvector<ContentModifierCP> modifiers, ECSchemaHelper const& helper)
+static bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> CreateForFlatSpecFromModifiers(RelatedPropertiesSpecificationCR spec, bvector<ContentModifierCP> modifiers, ECSchemaHelper const& helper)
     {
     bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> specs;
     if (!spec.AllPropertiesIncluded())
         return specs;
 
-    int iter = -1;
-    while (iter != 0)
+    int handledModifiersInPrevIteration = -1;
+    while (handledModifiersInPrevIteration != 0)
         {
-        iter = 0;
+        handledModifiersInPrevIteration = 0;
         for (ContentModifierCP& modifier : modifiers)
             {
             if (modifier == nullptr || !modifier->ShouldApplyOnNestedContent())
@@ -304,7 +304,7 @@ static bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>>CreateFo
                     continue;
 
                 modifier = nullptr;
-                ++iter;
+                ++handledModifiersInPrevIteration;
                 FlattenedRelatedPropertiesSpecification::MoveNestedSpecification(specs, std::move(createdSpecs), spec);
                 ContainerHelpers::MovePush(specs, CreateForNestedPropertiesFromModifiers(specs, modifiers, helper));
                 }
@@ -316,7 +316,7 @@ static bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>>CreateFo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>>CreateForNestedPropertiesFromModifiers(bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> const& flatSpecs, bvector<ContentModifierCP> const& modifiers, ECSchemaHelper const& helper)
+static bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> CreateForNestedPropertiesFromModifiers(bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> const& flatSpecs, bvector<ContentModifierCP> const& modifiers, ECSchemaHelper const& helper)
     {
     bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> specs;
     for (auto const& flatSpec : flatSpecs)

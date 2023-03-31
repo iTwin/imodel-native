@@ -5886,7 +5886,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
         {
         new RelationshipStepSpecification(relationshipAHasB->GetFullName(), RequiredRelationDirection_Forward, classB->GetFullName())
         }), { new PropertySpecification("*") }, RelationshipMeaning::RelatedInstance));
-    relatedPropertiesModifierAtoB->SetApplyOnNestedContent(true);
 
     ContentModifierP relatedPropertiesModifierBtoC = new ContentModifier(GetSchema()->GetName(), classB->GetName());
     relatedPropertiesModifierBtoC->AddRelatedProperty(*new RelatedPropertiesSpecification(*new RelationshipPathSpecification(
@@ -5924,7 +5923,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-DEFINE_SCHEMA(ContentInstancesOfSpecificClassesSpecification_AllContentModifiersGetAppliedOnNestedContentProperties, R"*(
+DEFINE_SCHEMA(ContentInstancesOfSpecificClassesSpecification_RecursiveContentModifiersGetAppliedOnNestedContentProperties, R"*(
     <ECEntityClass typeName="A">
     </ECEntityClass>
     <ECEntityClass typeName="B">
@@ -5939,7 +5938,7 @@ DEFINE_SCHEMA(ContentInstancesOfSpecificClassesSpecification_AllContentModifiers
         </Target>
     </ECRelationshipClass>
 )*");
-TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificClassesSpecification_AllContentModifiersGetAppliedOnNestedContentProperties)
+TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificClassesSpecification_RecursiveContentModifiersGetAppliedOnNestedContentProperties)
     {
     // set up data set
     ECClassCP classA = GetClass("A");
@@ -6090,6 +6089,75 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     EXPECT_EQ(classB->GetName(), descriptor->GetVisibleFields()[0]->GetLabel());
     auto fieldsB = descriptor->GetVisibleFields()[0]->AsNestedContentField();
     EXPECT_EQ(1, fieldsB->GetFields().size()); // Only PropertyB, content modifier not applied
+    EXPECT_STREQ("PropertyOverrideB", fieldsB->GetFields()[0]->GetLabel().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(ContentInstancesOfSpecificClassesSpecification_ContentModifierShouldNotAddCalculatedPropertiesOnNestedContentWhenNotAllPropertiesIncluded, R"*(
+    <ECEntityClass typeName="A">
+    </ECEntityClass>
+    <ECEntityClass typeName="B">
+        <ECProperty propertyName="PropertyB" typeName="string" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="A_Has_B" strength="referencing" strengthDirection="forward" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="references" polymorphic="True">
+            <Class class="A" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="is referenced by" polymorphic="True">
+            <Class class="B" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificClassesSpecification_ContentModifierShouldNotAddCalculatedPropertiesOnNestedContentWhenNotAllPropertiesIncluded)
+    {
+    // set up data set
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+
+    ECRelationshipClassCP relationshipAHasB = GetClass("A_Has_B")->GetRelationshipClassCP();
+
+    IECInstancePtr instanceA = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance) {});
+    IECInstancePtr instanceB = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance) {instance.SetValue("PropertyB", ECValue("InstanceB")); });
+
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipAHasB, *instanceA, *instanceB);
+
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false);
+    contentRule->AddSpecification(*spec);
+
+    RelatedPropertiesSpecification* instanceRelatedPropSpec = new RelatedPropertiesSpecification(*new RelationshipPathSpecification(
+        {
+        new RelationshipStepSpecification(relationshipAHasB->GetFullName(), RequiredRelationDirection_Forward)
+        }), { new PropertySpecification("PropertyB", 1000, "PropertyOverrideB", nullptr, true)}, RelationshipMeaning::RelatedInstance);
+    spec->AddRelatedProperty(*instanceRelatedPropSpec);
+
+    ContentModifierP calculatedPropertiesOnB = new ContentModifier(GetSchema()->GetName(), classB->GetName());
+    calculatedPropertiesOnB->AddCalculatedProperty(*new CalculatedPropertiesSpecification("labelB", 1000, "10*10"));
+    calculatedPropertiesOnB->SetApplyOnNestedContent(true);
+
+    rules->AddPresentationRule(*contentRule);
+    rules->AddPresentationRule(*calculatedPropertiesOnB);
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+
+    // request for content
+    ContentCPtr content = GetVerifiedContent(*descriptor);
+    ASSERT_TRUE(content.IsValid());
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    rapidjson::Document jsonDoc = contentSet.Get(0)->AsJson();
+    RapidJsonValueCR jsonValues = jsonDoc["Values"];
+
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
+    EXPECT_EQ(classB->GetName(), descriptor->GetVisibleFields()[0]->GetLabel());
+    auto fieldsB = descriptor->GetVisibleFields()[0]->AsNestedContentField();
+    EXPECT_EQ(1, fieldsB->GetFields().size()); // Only PropertyB, calculated properties not added
     EXPECT_STREQ("PropertyOverrideB", fieldsB->GetFields()[0]->GetLabel().c_str());
     }
 
