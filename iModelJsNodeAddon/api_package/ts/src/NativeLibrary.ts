@@ -1006,15 +1006,12 @@ export declare namespace IModelJsNative {
     public connect(cache: CloudCache): void;
 
     /**
-     * Disconnect this CloudContainer from its CloudCache. There must be no open databases from this container. Leaves the container attached to the
-     * CloudCache so it is available for future sessions.
+     * Disconnect this CloudContainer from its CloudCache. There must be no open databases from this container.
      */
-    public disconnect(): void;
-
-    /**
-     * Permanently Detach and Disconnect this CloudContainer from its CloudCache. There must be no open databases from this container.
-     */
-    public detach(): void;
+    public disconnect(args?: {
+      /** if true deletes content of the container in CloudCache, otherwise Leaves the container's data in the CloudCache so it is available for future sessions. */
+      detach?: boolean;
+    }): void;
 
     /**
      * Poll cloud storage for changes from other processes. *No changes* made by other processes are visible to
