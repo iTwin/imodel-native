@@ -997,7 +997,7 @@ DbResult IntegrityChecker::CheckClassIds(std::function<bool(Utf8CP, ECInstanceId
 		}
 		while((rc = overflowTableStmt.Step()) == BE_SQLITE_ROW) {
 			auto classId = overflowTableStmt.GetValueId<ECClassId>(0);
-			auto overflowTableName = overflowTableStmt.GetValueText(0);
+			auto overflowTableName = overflowTableStmt.GetValueText(1);
 			const auto classCP = m_conn.Schemas().GetClass(classId);
 
 			if (classCP == nullptr) {
