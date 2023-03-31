@@ -53,6 +53,7 @@ private:
     DbResult CheckProfileTablesAndIndexes(
 		std::map<std::string, std::string> const&,
 		std::map<std::string, std::string> const&,
+		std::map<std::string, std::string> const&,
 		std::function<bool(std::string, std::string, std::string)>
 	);
     //! Callback(table)
@@ -77,7 +78,7 @@ public:
 	// Callback(InstanceId,relName, propertyName, id, primaryClassName)
 	DbResult CheckLinkTableSourceAndTargetIds(std::function<bool(ECInstanceId, Utf8CP, Utf8CP, ECInstanceId, Utf8CP)>);
 	// Callback(Utf8CP, InstanceId, classId)
-    DbResult CheckEntityAndRelClassIds(std::function<bool(Utf8CP, ECInstanceId, ECN::ECClassId)>);
+    DbResult CheckEntityAndRelClassIds(std::function<bool(Utf8CP, ECInstanceId, ECN::ECClassId, Utf8CP)>);
 	// Callback(InstanceId, relName, propertyName, Id, ClassId)
     DbResult CheckLinkTableSourceAndTargetClassIds(std::function<bool(ECInstanceId, Utf8CP, Utf8CP, ECInstanceId, ECN::ECClassId)>);
 	// Callback(InstanceId, className, propertyName, navId, navClassId)

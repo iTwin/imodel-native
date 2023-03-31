@@ -149,7 +149,7 @@ DbResult IntegrityChecker::CheckDataTableColumns(std::function<bool(std::string,
 		return rc;
 	}
 	while((rc = stmt.Step()) == BE_SQLITE_ROW) {
-		if(!callback(stmt.GetValueText(0), stmt.GetValueText(0))) {
+		if(!callback(stmt.GetValueText(0), stmt.GetValueText(1))) {
             return BE_SQLITE_OK;
 		}
     }
@@ -337,8 +337,25 @@ DbResult IntegrityChecker::CheckProfileTablesAndIndexes4002AndLater(std::functio
 		{"ix_ec_cache_ClassHierarchy_ClassId", "CREATE INDEX ix_ec_cache_ClassHierarchy_ClassId ON ec_cache_ClassHierarchy(ClassId)"},
 		{"ix_ec_cache_ClassHierarchy_BaseClassId", "CREATE INDEX ix_ec_cache_ClassHierarchy_BaseClassId ON ec_cache_ClassHierarchy(BaseClassId)"},
 	};
-
-	return CheckProfileTablesAndIndexes(metaTables, metaIndexes, callback);
+	/*
+	SELECT PRINTF ('{"%s", "%s"},', [name], REPLACE(REPLACE ([sql], ', ', ','),'  ',' '))
+	FROM   [sqlite_master]
+	WHERE  ([tbl_name] LIKE 'dgn\_%' ESCAPE '\'
+			OR [tbl_name] LIKE 'bis\_%' ESCAPE '\')
+			AND [sql] IS NOT NULL
+			AND [type] = 'trigger';
+	*/
+	const auto metaTriggers = std::map<std::string,std::string> {
+		{"bis_Element_CurrentTimeStamp", "CREATE TRIGGER [bis_Element_CurrentTimeStamp] AFTER UPDATE ON [bis_Element] WHEN old.LastMod=new.LastMod AND old.LastMod!=julianday('now') BEGIN UPDATE bis_Element SET LastMod=julianday('now') WHERE Id=new.Id; END"},
+		{"dgn_prjrange_del", "CREATE TRIGGER dgn_prjrange_del AFTER DELETE ON bis_GeometricElement3d BEGIN DELETE FROM dgn_SpatialIndex WHERE ElementId=old.ElementId;END"},
+		{"dgn_rtree_upd", "CREATE TRIGGER dgn_rtree_upd AFTER UPDATE OF Origin_X,Origin_Y,Origin_Z,Yaw,Pitch,Roll,BBoxLow_X,BBoxLow_Y,BBoxLow_Z,BBoxHigh_X,BBoxHigh_Y,BBoxHigh_Z ON bis_GeometricElement3d WHEN new.Origin_X IS NOT NULL AND 1 = new.InSpatialIndex BEGIN INSERT OR REPLACE INTO dgn_SpatialIndex(ElementId,minx,maxx,miny,maxy,minz,maxz) SELECT new.ElementId,DGN_bbox_value(bb,0),DGN_bbox_value(bb,3),DGN_bbox_value(bb,1),DGN_bbox_value(bb,4),DGN_bbox_value(bb,2),DGN_bbox_value(bb,5) FROM (SELECT DGN_placement_aabb(DGN_placement(DGN_point(NEW.Origin_X,NEW.Origin_Y,NEW.Origin_Z),DGN_angles(NEW.Yaw,NEW.Pitch,NEW.Roll),DGN_bbox(NEW.BBoxLow_X,NEW.BBoxLow_Y,NEW.BBoxLow_Z,NEW.BBoxHigh_X,NEW.BBoxHigh_Y,NEW.BBoxHigh_Z))) as bb);END"},
+		{"dgn_rtree_upd1", "CREATE TRIGGER dgn_rtree_upd1 AFTER UPDATE OF Origin_X,Origin_Y,Origin_Z,Yaw,Pitch,Roll,BBoxLow_X,BBoxLow_Y,BBoxLow_Z,BBoxHigh_X,BBoxHigh_Y,BBoxHigh_Z ON bis_GeometricElement3d WHEN OLD.Origin_X IS NOT NULL AND NEW.Origin_X IS NULL BEGIN DELETE FROM dgn_SpatialIndex WHERE ElementId=OLD.ElementId;END"},
+		{"dgn_rtree_ins", "CREATE TRIGGER dgn_rtree_ins AFTER INSERT ON bis_GeometricElement3d WHEN new.Origin_X IS NOT NULL AND 1 = new.InSpatialIndex BEGIN INSERT INTO dgn_SpatialIndex(ElementId,minx,maxx,miny,maxy,minz,maxz) SELECT new.ElementId,DGN_bbox_value(bb,0),DGN_bbox_value(bb,3),DGN_bbox_value(bb,1),DGN_bbox_value(bb,4),DGN_bbox_value(bb,2),DGN_bbox_value(bb,5) FROM (SELECT DGN_placement_aabb(DGN_placement(DGN_point(NEW.Origin_X,NEW.Origin_Y,NEW.Origin_Z),DGN_angles(NEW.Yaw,NEW.Pitch,NEW.Roll),DGN_bbox(NEW.BBoxLow_X,NEW.BBoxLow_Y,NEW.BBoxLow_Z,NEW.BBoxHigh_X,NEW.BBoxHigh_Y,NEW.BBoxHigh_Z))) as bb);END"},
+		{"dgn_fts_ai", "CREATE TRIGGER dgn_fts_ai AFTER INSERT ON dgn_fts_content BEGIN INSERT INTO dgn_fts_idx(rowid,Type,Id,Text) VALUES(new.rowid,new.Type,new.Id,new.Text); END"},
+		{"dgn_fts_ad", "CREATE TRIGGER dgn_fts_ad AFTER DELETE ON dgn_fts_content BEGIN INSERT INTO dgn_fts_idx(dgn_fts_idx,rowid,Type,Id,Text) VALUES('delete',old.rowid,old.Type,old.Id,old.Text); END"},
+		{"dgn_fts_au", "CREATE TRIGGER dgn_fts_au AFTER UPDATE ON dgn_fts_content BEGIN INSERT INTO dgn_fts_idx(dgn_fts_idx,rowid,Type,Id,Text) VALUES('delete',old.rowid,old.Type,old.Id,old.Text); INSERT INTO dgn_fts_idx(rowid,Type,Id,Text) VALUES(new.rowid,new.Type,new.Id,new.Text); END"},
+	};
+	return CheckProfileTablesAndIndexes(metaTables, metaIndexes, metaTriggers, callback);
 }
 
 //---------------------------------------------------------------------------------------
@@ -432,21 +449,41 @@ DbResult IntegrityChecker::CheckProfileTablesAndIndexes4001AndOlder(std::functio
 		{"ix_ec_cache_ClassHierarchy_ClassId", "CREATE INDEX ix_ec_cache_ClassHierarchy_ClassId ON ec_cache_ClassHierarchy(ClassId)"},
 		{"ix_ec_cache_ClassHierarchy_BaseClassId", "CREATE INDEX ix_ec_cache_ClassHierarchy_BaseClassId ON ec_cache_ClassHierarchy(BaseClassId)"},
 	};
-	return CheckProfileTablesAndIndexes(metaTables, metaIndexes, callback);
+	/*
+	SELECT PRINTF ('{"%s", "%s"},', [name], REPLACE(REPLACE ([sql], ', ', ','),'  ',' '))
+	FROM   [sqlite_master]
+	WHERE  ([tbl_name] LIKE 'dgn\_%' ESCAPE '\'
+			OR [tbl_name] LIKE 'bis\_%' ESCAPE '\')
+			AND [sql] IS NOT NULL
+			AND [type] = 'trigger';
+
+	*/
+	const auto metaTriggers = std::map<std::string,std::string> {
+		{"bis_Element_CurrentTimeStamp", "CREATE TRIGGER [bis_Element_CurrentTimeStamp] AFTER UPDATE ON [bis_Element] WHEN old.LastMod=new.LastMod AND old.LastMod!=julianday('now') BEGIN UPDATE bis_Element SET LastMod=julianday('now') WHERE Id=new.Id; END"},
+		{"dgn_prjrange_del", "CREATE TRIGGER dgn_prjrange_del AFTER DELETE ON bis_GeometricElement3d BEGIN DELETE FROM dgn_SpatialIndex WHERE ElementId=old.ElementId;END"},
+		{"dgn_rtree_upd", "CREATE TRIGGER dgn_rtree_upd AFTER UPDATE OF Origin_X,Origin_Y,Origin_Z,Yaw,Pitch,Roll,BBoxLow_X,BBoxLow_Y,BBoxLow_Z,BBoxHigh_X,BBoxHigh_Y,BBoxHigh_Z ON bis_GeometricElement3d WHEN new.Origin_X IS NOT NULL AND 1 = new.InSpatialIndex BEGIN INSERT OR REPLACE INTO dgn_SpatialIndex(ElementId,minx,maxx,miny,maxy,minz,maxz) SELECT new.ElementId,DGN_bbox_value(bb,0),DGN_bbox_value(bb,3),DGN_bbox_value(bb,1),DGN_bbox_value(bb,4),DGN_bbox_value(bb,2),DGN_bbox_value(bb,5) FROM (SELECT DGN_placement_aabb(DGN_placement(DGN_point(NEW.Origin_X,NEW.Origin_Y,NEW.Origin_Z),DGN_angles(NEW.Yaw,NEW.Pitch,NEW.Roll),DGN_bbox(NEW.BBoxLow_X,NEW.BBoxLow_Y,NEW.BBoxLow_Z,NEW.BBoxHigh_X,NEW.BBoxHigh_Y,NEW.BBoxHigh_Z))) as bb);END"},
+		{"dgn_rtree_upd1", "CREATE TRIGGER dgn_rtree_upd1 AFTER UPDATE OF Origin_X,Origin_Y,Origin_Z,Yaw,Pitch,Roll,BBoxLow_X,BBoxLow_Y,BBoxLow_Z,BBoxHigh_X,BBoxHigh_Y,BBoxHigh_Z ON bis_GeometricElement3d WHEN OLD.Origin_X IS NOT NULL AND NEW.Origin_X IS NULL BEGIN DELETE FROM dgn_SpatialIndex WHERE ElementId=OLD.ElementId;END"},
+		{"dgn_rtree_ins", "CREATE TRIGGER dgn_rtree_ins AFTER INSERT ON bis_GeometricElement3d WHEN new.Origin_X IS NOT NULL AND 1 = new.InSpatialIndex BEGIN INSERT INTO dgn_SpatialIndex(ElementId,minx,maxx,miny,maxy,minz,maxz) SELECT new.ElementId,DGN_bbox_value(bb,0),DGN_bbox_value(bb,3),DGN_bbox_value(bb,1),DGN_bbox_value(bb,4),DGN_bbox_value(bb,2),DGN_bbox_value(bb,5) FROM (SELECT DGN_placement_aabb(DGN_placement(DGN_point(NEW.Origin_X,NEW.Origin_Y,NEW.Origin_Z),DGN_angles(NEW.Yaw,NEW.Pitch,NEW.Roll),DGN_bbox(NEW.BBoxLow_X,NEW.BBoxLow_Y,NEW.BBoxLow_Z,NEW.BBoxHigh_X,NEW.BBoxHigh_Y,NEW.BBoxHigh_Z))) as bb);END"},
+		{"dgn_fts_ai", "CREATE TRIGGER dgn_fts_ai AFTER INSERT ON dgn_fts_content BEGIN INSERT INTO dgn_fts_idx(rowid,Type,Id,Text) VALUES(new.rowid,new.Type,new.Id,new.Text); END"},
+		{"dgn_fts_ad", "CREATE TRIGGER dgn_fts_ad AFTER DELETE ON dgn_fts_content BEGIN INSERT INTO dgn_fts_idx(dgn_fts_idx,rowid,Type,Id,Text) VALUES('delete',old.rowid,old.Type,old.Id,old.Text); END"},
+		{"dgn_fts_au", "CREATE TRIGGER dgn_fts_au AFTER UPDATE ON dgn_fts_content BEGIN INSERT INTO dgn_fts_idx(dgn_fts_idx,rowid,Type,Id,Text) VALUES('delete',old.rowid,old.Type,old.Id,old.Text); INSERT INTO dgn_fts_idx(rowid,Type,Id,Text) VALUES(new.rowid,new.Type,new.Id,new.Text); END"},
+	};
+	return CheckProfileTablesAndIndexes(metaTables, metaIndexes, metaTriggers, callback);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult IntegrityChecker::CheckProfileTablesAndIndexes(std::map<std::string,std::string> const& metaTables, std::map<std::string,std::string> const& metaIndexes, std::function<bool(std::string,std::string,std::string)> callback) {
-	const auto kIssueNotFound = "not found";
+DbResult IntegrityChecker::CheckProfileTablesAndIndexes(std::map<std::string,std::string> const& metaTables, std::map<std::string,std::string> const& metaIndexes, std::map<std::string,std::string> const& metaTriggers, std::function<bool(std::string,std::string,std::string)> callback) {
+	const auto kIssueNotFound = "missing";
 	const auto kIssueDDLMismatch = "ddl mismatch";
 	const auto kTypeTable = "table";
 	const auto kTypeIndex = "index";
+	const auto kTypeTrigger = "trigger";
 
 	const auto tableSql = R"sql(
 		SELECT replace([sql], ', ', ',')
-		FROM   [sqlite_master]
+		FROM   [main].[sqlite_master]
 		WHERE  [tbl_name] LIKE 'ec\_%' ESCAPE '\'
 				AND [sql] IS NOT NULL
 				AND [type] = 'table'
@@ -462,6 +499,7 @@ DbResult IntegrityChecker::CheckProfileTablesAndIndexes(std::map<std::string,std
 	}
 
 	for(auto & kv : metaTables) {
+		LOG.infov("integrity_check(check_profile_and_indexes) analyzing [table: %s]", kv.first.c_str());
 		tableStmt.Reset();
 		tableStmt.ClearBindings();
 		tableStmt.BindText(1, kv.first.c_str(), Statement::MakeCopy::No);
@@ -479,8 +517,6 @@ DbResult IntegrityChecker::CheckProfileTablesAndIndexes(std::map<std::string,std
 			const std::string sql = tableStmt.GetValueText(0);
 			if (sql != kv.second) {
 				//! miss match declaration
-                printf("[%s]\n", sql.c_str());
-				printf("[%s]\n", kv.second.c_str());
                 if(!callback(kTypeTable, kv.first, kIssueDDLMismatch)) {
                     return BE_SQLITE_OK;
 				}
@@ -490,7 +526,7 @@ DbResult IntegrityChecker::CheckProfileTablesAndIndexes(std::map<std::string,std
 
 	const auto indexSql = R"sql(
 		SELECT replace([sql], ', ', ',')
-		FROM   [sqlite_master]
+		FROM   [main].[sqlite_master]
 		WHERE  [tbl_name] LIKE 'ec\_%' ESCAPE '\'
 				AND [sql] IS NOT NULL
 				AND [type] = 'index'
@@ -506,6 +542,7 @@ DbResult IntegrityChecker::CheckProfileTablesAndIndexes(std::map<std::string,std
 	}
 
 	for(auto & kv : metaIndexes) {
+		LOG.infov("integrity_check(check_profile_and_indexes) analyzing [index: %s]", kv.first.c_str());
 		indexStmt.Reset();
 		indexStmt.ClearBindings();
 		indexStmt.BindText(1, kv.first.c_str(), Statement::MakeCopy::No);
@@ -527,6 +564,50 @@ DbResult IntegrityChecker::CheckProfileTablesAndIndexes(std::map<std::string,std
                     return BE_SQLITE_OK;
 				}
             }
+		}
+	}
+	if(m_conn.Schemas().GetSchema("BisCore") != nullptr) {
+		const auto triggerSql = R"sql(
+			SELECT REPLACE(REPLACE ([sql], ', ', ','),'  ',' ')
+			FROM   [main].[sqlite_master]
+			WHERE  ([tbl_name] LIKE 'dgn\_%' ESCAPE '\'
+					OR [tbl_name] LIKE 'bis\_%' ESCAPE '\')
+					AND [sql] IS NOT NULL
+					AND [type] = 'trigger'
+					AND [name] = ?;
+		)sql";
+
+		Statement triggerStmt;
+		rc = triggerStmt.Prepare(m_conn, triggerSql);
+		if (rc != BE_SQLITE_OK) {
+			m_lastError = m_conn.GetLastError();
+			return rc;
+		}
+
+		for(auto & kv : metaIndexes) {
+			LOG.infov("integrity_check(check_profile_and_indexes) analyzing [trigger: %s]", kv.first.c_str());
+			triggerStmt.Reset();
+			triggerStmt.ClearBindings();
+			triggerStmt.BindText(1, kv.first.c_str(), Statement::MakeCopy::No);
+			rc = triggerStmt.Step();
+			if (rc != BE_SQLITE_ROW && rc != BE_SQLITE_DONE) {
+				m_lastError = m_conn.GetLastError();
+				return rc;
+			}
+			if (rc == BE_SQLITE_DONE) {
+				//! missing index
+				if (!callback(kTypeTrigger, kv.first, kIssueNotFound)) {
+					return BE_SQLITE_OK;
+				}
+			} else {
+				const std::string sql = triggerStmt.GetValueText(0);
+				if (sql != kv.second) {
+					//! miss match declaration
+					if(!callback(kTypeTrigger, kv.first, kIssueDDLMismatch)) {
+						return BE_SQLITE_OK;
+					}
+				}
+			}
 		}
 	}
 	return BE_SQLITE_OK;
@@ -552,21 +633,21 @@ DbResult IntegrityChecker::CheckNavIds(std::function<bool(ECInstanceId, Utf8CP, 
 
 		auto classMap = m_conn.Schemas().Main().GetClassMap(*classCP);
 		if (classCP == nullptr) {
-			m_lastError = SqlPrintfString("failed to find classmap for class '%s'.", classCP->GetECSqlName().c_str());
+			m_lastError = SqlPrintfString("failed to find classmap for class '%s'.", classCP->GetFullName());
 			return BE_SQLITE_ERROR;
 		}
 
         for(auto& prop : props) {
 			auto propertyCP = classCP->GetPropertyP(prop.c_str(), false);
 			if (propertyCP == nullptr) {
-				m_lastError = SqlPrintfString("failed to find property '%s' in class '%s'.", prop.c_str(), classCP->GetECSqlName().c_str());
+				m_lastError = SqlPrintfString("failed to find property '%s' in class '%s'.", prop.c_str(), classCP->GetFullName());
 				return BE_SQLITE_ERROR;
 			}
 
 			auto navPropCP = propertyCP->GetAsNavigationProperty();
             auto propMap = classMap->GetPropertyMaps().Find(prop.c_str());
 			if (propMap == nullptr) {
-				m_lastError = SqlPrintfString("failed to find propertymap for property '%s' in classmap '%s'.", prop.c_str(), classCP->GetECSqlName().c_str());
+				m_lastError = SqlPrintfString("failed to find propertymap for property '%s' in classmap '%s'.", prop.c_str(), classCP->GetFullName());
 				return BE_SQLITE_ERROR;
 			}
 
@@ -576,7 +657,7 @@ DbResult IntegrityChecker::CheckNavIds(std::function<bool(ECInstanceId, Utf8CP, 
             } else {
 				otherClass = navPropCP->GetRelationshipClass()->GetTarget().GetConstraintClasses().front();
 			}
-
+            LOG.infov("integrity_check(check_nav_ids) analyzing [class: %s] [nav_prop: %s]", classCP->GetFullName(), prop.c_str());
             std::string query = SqlPrintfString("SELECT s.ECInstanceId, s.%s.Id FROM %s s LEFT JOIN %s t ON s.%s.Id=t.ECInstanceId WHERE t.ECInstanceId IS NULL AND s.%s.Id IS NOT NULL",
 												navPropCP->GetName().c_str(),
 												classCP->GetECSqlName().c_str(),
@@ -597,10 +678,10 @@ DbResult IntegrityChecker::CheckNavIds(std::function<bool(ECInstanceId, Utf8CP, 
 			while((rc = navStmt.Step()) == BE_SQLITE_ROW) {
 				if (!callback(
 					navStmt.GetValueId<ECInstanceId>(0),
-					classCP->GetECSqlName().c_str(),
+					classCP->GetFullName(),
 					navPropCP->GetName().c_str(),
 					navStmt.GetValueId<ECInstanceId>(1),
-					otherClass->GetECSqlName().c_str())) {
+					otherClass->GetFullName())) {
 					return BE_SQLITE_OK;
 				}
 			}
@@ -628,21 +709,21 @@ DbResult IntegrityChecker::CheckNavClassIds(std::function<bool(ECInstanceId, Utf
 
 		auto classMap = m_conn.Schemas().Main().GetClassMap(*classCP);
 		if (classCP == nullptr) {
-			m_lastError = SqlPrintfString("failed to find classmap for class '%s'.", classCP->GetECSqlName().c_str());
+			m_lastError = SqlPrintfString("failed to find classmap for class '%s'.", classCP->GetFullName());
 			return BE_SQLITE_ERROR;
 		}
 
         for(auto& prop : props) {
 			auto propertyCP = classCP->GetPropertyP(prop.c_str(), false);
 			if (propertyCP == nullptr) {
-				m_lastError = SqlPrintfString("failed to find property '%s' in class '%s'.", prop.c_str(), classCP->GetECSqlName().c_str());
+				m_lastError = SqlPrintfString("failed to find property '%s' in class '%s'.", prop.c_str(), classCP->GetFullName());
 				return BE_SQLITE_ERROR;
 			}
 
 			auto navPropCP = propertyCP->GetAsNavigationProperty();
             auto propMap = classMap->GetPropertyMaps().Find(prop.c_str());
 			if (propMap == nullptr) {
-				m_lastError = SqlPrintfString("failed to find propertymap for property '%s' in classmap '%s'.", prop.c_str(), classCP->GetECSqlName().c_str());
+				m_lastError = SqlPrintfString("failed to find propertymap for property '%s' in classmap '%s'.", prop.c_str(), classCP->GetFullName());
 				return BE_SQLITE_ERROR;
 			}
 
@@ -650,7 +731,7 @@ DbResult IntegrityChecker::CheckNavClassIds(std::function<bool(ECInstanceId, Utf
             if (propMap->GetAs<NavigationPropertyMap>().GetRelECClassIdPropertyMap().GetColumn().IsVirtual()) {
                 continue;
             }
-
+			LOG.infov("integrity_check(check_nav_class_ids) analyzing [class: %s] [nav_prop: %s]", classCP->GetFullName(), prop.c_str());
             std::string query = SqlPrintfString("SELECT s.ECInstanceId, s.%s.Id, s.%s.RelECClassId FROM %s s LEFT JOIN meta.ECClassDef t ON s.%s.RelECClassId=t.ECInstanceId WHERE t.ECInstanceId IS NULL AND s.%s.RelECClassId IS NOT NULL",
 												navPropCP->GetName().c_str(),
 												navPropCP->GetName().c_str(),
@@ -665,7 +746,7 @@ DbResult IntegrityChecker::CheckNavClassIds(std::function<bool(ECInstanceId, Utf
 			while((rc = navStmt.Step()) == BE_SQLITE_ROW) {
 				if (!callback(
 					navStmt.GetValueId<ECInstanceId>(0),
-					classCP->GetECSqlName().c_str(),
+					classCP->GetFullName(),
 					prop.c_str(),
 					navStmt.GetValueId<ECInstanceId>(1),
 					navStmt.GetValueId<ECClassId>(2))) {
@@ -695,34 +776,10 @@ DbResult IntegrityChecker::CheckLinkTableSourceAndTargetIds(std::function<bool(E
 		}
 
         auto relCP = classCP->GetRelationshipClassCP();
-		if ("target ids") {
-			auto targetClassCP = relCP->GetTarget().GetConstraintClasses().front();
-			std::string query = SqlPrintfString("SELECT R.ECInstanceId, R.SourceECInstanceId FROM %s R LEFT JOIN %s O ON O.ECInstanceId = R.SourceECInstanceId WHERE O.ECInstanceId IS NULL",
-				relCP->GetECSqlName().c_str(),
-				targetClassCP->GetECSqlName().c_str()
-			).GetUtf8CP();
-
-			ECSqlStatement stmt;
-			if (ECSqlStatus::Success != stmt.Prepare(m_conn, query.c_str())){
-				m_lastError = "failed to prepared ecsql for nav prop integrity check";
-				return BE_SQLITE_ERROR;
-			}
-			auto prop = stmt.GetColumnInfo(1).GetProperty();
-			while((rc=stmt.Step()) == BE_SQLITE_ROW) {
-				if (!callback(
-					stmt.GetValueId<ECInstanceId>(0),
-					relCP->GetECSqlName().c_str(),
-					prop->GetName().c_str(),
-					stmt.GetValueId<ECInstanceId>(1),
-					targetClassCP->GetECSqlName().c_str())) {
-					return BE_SQLITE_OK;
-				}
-			}
-		}
-
 		if ("source ids") {
 			auto sourceClassCP = relCP->GetSource().GetConstraintClasses().front();
-			std::string query = SqlPrintfString("SELECT R.ECInstanceId, R.TargetECInstanceId FROM %s R LEFT JOIN %s O ON O.ECInstanceId = R.TargetECInstanceId WHERE O.ECInstanceId IS NULL",
+			LOG.infov("integrity_check(check_link_table_source_and_target_ids) analyzing [relationship: %s] [prop: SourceECInstanceId]", classCP->GetFullName());
+			std::string query = SqlPrintfString("SELECT R.ECInstanceId, R.SourceECInstanceId FROM %s R LEFT JOIN %s O ON O.ECInstanceId = R.SourceECInstanceId WHERE O.ECInstanceId IS NULL",
 				relCP->GetECSqlName().c_str(),
 				sourceClassCP->GetECSqlName().c_str()
 			).GetUtf8CP();
@@ -736,10 +793,36 @@ DbResult IntegrityChecker::CheckLinkTableSourceAndTargetIds(std::function<bool(E
 			while((rc=stmt.Step()) == BE_SQLITE_ROW) {
 				if (!callback(
 					stmt.GetValueId<ECInstanceId>(0),
-					relCP->GetECSqlName().c_str(),
+					relCP->GetFullName(),
 					prop->GetName().c_str(),
 					stmt.GetValueId<ECInstanceId>(1),
-					sourceClassCP->GetECSqlName().c_str())) {
+					sourceClassCP->GetFullName())) {
+					return BE_SQLITE_OK;
+				}
+			}
+		}
+
+		if ("target ids") {
+			auto targetClassCP = relCP->GetTarget().GetConstraintClasses().front();
+			LOG.infov("integrity_check(check_link_table_source_and_target_ids) analyzing [relationship: %s] [prop: TargetECInstanceId]", classCP->GetFullName());
+			std::string query = SqlPrintfString("SELECT R.ECInstanceId, R.TargetECInstanceId FROM %s R LEFT JOIN %s O ON O.ECInstanceId = R.TargetECInstanceId WHERE O.ECInstanceId IS NULL",
+				relCP->GetECSqlName().c_str(),
+				targetClassCP->GetECSqlName().c_str()
+			).GetUtf8CP();
+
+			ECSqlStatement stmt;
+			if (ECSqlStatus::Success != stmt.Prepare(m_conn, query.c_str())){
+				m_lastError = "failed to prepared ecsql for nav prop integrity check";
+				return BE_SQLITE_ERROR;
+			}
+			auto prop = stmt.GetColumnInfo(1).GetProperty();
+			while((rc=stmt.Step()) == BE_SQLITE_ROW) {
+				if (!callback(
+					stmt.GetValueId<ECInstanceId>(0),
+					relCP->GetFullName(),
+					prop->GetName().c_str(),
+					stmt.GetValueId<ECInstanceId>(1),
+					targetClassCP->GetFullName())) {
 					return BE_SQLITE_OK;
 				}
 			}
@@ -767,7 +850,7 @@ DbResult IntegrityChecker::CheckLinkTableSourceAndTargetClassIds(std::function<b
 
 		auto classMap = m_conn.Schemas().Main().GetClassMap(*classCP);
 		if (classCP == nullptr) {
-			m_lastError = SqlPrintfString("failed to find classmap for class '%s'.", classCP->GetECSqlName().c_str());
+			m_lastError = SqlPrintfString("failed to find classmap for class '%s'.", classCP->GetFullName());
 			return BE_SQLITE_ERROR;
 		}
 
@@ -781,6 +864,7 @@ DbResult IntegrityChecker::CheckLinkTableSourceAndTargetClassIds(std::function<b
                 (void)(s);
             }
 			if (sourceECClassIdPropMap->IsMappedToSingleTable() && sourceECClassIdPropMap->FindDataPropertyMap(primaryTable) && sourceECClassIdPropMap->FindDataPropertyMap(primaryTable)->GetColumn().IsVirtual()) {
+				LOG.infov("integrity_check(check_link_table_source_and_target_class_ids) analyzing [relationship: %s] [prop: SourceECClassId]", classCP->GetFullName());
 				std::string query = SqlPrintfString("SELECT R.ECInstanceId, R.SourceECInstanceId, R.SourceECClassId FROM %s R LEFT JOIN meta.ECClassDef O ON O.ECInstanceId = R.SourceECClassId WHERE O.ECInstanceId IS NULL",
 													relMap.GetClass().GetECSqlName().c_str()).GetUtf8CP();
 
@@ -805,6 +889,7 @@ DbResult IntegrityChecker::CheckLinkTableSourceAndTargetClassIds(std::function<b
 		if ("target ids") {
             auto targetECClassIdPropMap = relMap.GetTargetECClassIdPropMap();
 			if (targetECClassIdPropMap->IsMappedToSingleTable() && targetECClassIdPropMap->FindDataPropertyMap(primaryTable) && targetECClassIdPropMap->FindDataPropertyMap(primaryTable)->GetColumn().IsVirtual()) {
+				LOG.infov("integrity_check(check_link_table_source_and_target_class_ids) analyzing [relationship: %s] [prop: TargetECClassId]", classCP->GetFullName());
 				std::string query = SqlPrintfString("SELECT R.ECInstanceId, R.SourceECInstanceId, R.SourceECClassId FROM %s R LEFT JOIN meta.ECClassDef O ON O.ECInstanceId = R.SourceECClassId WHERE O.ECInstanceId IS NULL",
 													relMap.GetClass().GetECSqlName().c_str()).GetUtf8CP();
 
@@ -832,7 +917,7 @@ DbResult IntegrityChecker::CheckLinkTableSourceAndTargetClassIds(std::function<b
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult IntegrityChecker::CheckEntityAndRelClassIds(std::function<bool(Utf8CP, ECInstanceId, ECN::ECClassId)> callback) {
+DbResult IntegrityChecker::CheckEntityAndRelClassIds(std::function<bool(Utf8CP, ECInstanceId, ECN::ECClassId, Utf8CP)> callback) {
 	std::vector<ECClassId> classIds;
 	auto rc = GetTablePerHierarchyClasses(classIds);
 	if (BE_SQLITE_OK != rc) {
@@ -844,6 +929,7 @@ DbResult IntegrityChecker::CheckEntityAndRelClassIds(std::function<bool(Utf8CP, 
 			m_lastError = SqlPrintfString("failed to find class with id '%s'.", classId.ToHexStr().c_str());
 			return BE_SQLITE_ERROR;
 		}
+		LOG.infov("integrity_check(check_entity_and_rel_class_Ids) analyzing root table for [class: %s]", classCP->GetFullName());
 		std::string query = SqlPrintfString("SELECT R.ECInstanceId, R.ECClassId FROM %s R LEFT JOIN meta.ECClassDef O ON O.ECInstanceId = R.ECClassId WHERE O.ECInstanceId IS NULL",
 										classCP->GetECSqlName().c_str()).GetUtf8CP();
 		ECSqlStatement stmt;
@@ -853,10 +939,87 @@ DbResult IntegrityChecker::CheckEntityAndRelClassIds(std::function<bool(Utf8CP, 
 		}
 		while((rc = stmt.Step()) == BE_SQLITE_ROW) {
 			if (!callback(
-				classCP->GetECSqlName().c_str(),
+				classCP->GetFullName(),
 				stmt.GetValueId<ECInstanceId>(0),
-				stmt.GetValueId<ECClassId>(1))) {
+				stmt.GetValueId<ECClassId>(1), "primary")) {
 				return BE_SQLITE_OK;
+			}
+		}
+	}
+
+	// JOINED table
+	if ("check JOINED table ECClassId") {
+		Statement stmt;
+		rc = stmt.Prepare(m_conn, "SELECT [ExclusiveRootClassId] FROM [ec_table] WHERE [type] = 1;");
+		if (BE_SQLITE_OK != rc) {
+			m_lastError = m_conn.GetLastError();
+			return rc;
+		}
+		while((rc = stmt.Step()) == BE_SQLITE_ROW) {
+			auto classId = stmt.GetValueId<ECClassId>(0);
+			const auto classCP = m_conn.Schemas().GetClass(classId);
+			if (classCP == nullptr) {
+				m_lastError = SqlPrintfString("failed to find class with id '%s'.", classId.ToHexStr().c_str());
+				return BE_SQLITE_ERROR;
+			}
+			LOG.infov("integrity_check(check_entity_and_rel_class_Ids) analyzing joined table for [class: %s]", classCP->GetFullName());
+			std::string query = SqlPrintfString("SELECT R.ECInstanceId, R.ECClassId FROM %s R LEFT JOIN meta.ECClassDef O ON O.ECInstanceId = R.ECClassId WHERE O.ECInstanceId IS NULL",
+											classCP->GetECSqlName().c_str()).GetUtf8CP();
+			ECSqlStatement stmt;
+			if (ECSqlStatus::Success != stmt.Prepare(m_conn, query.c_str())){
+				m_lastError = "failed to prepared ecsql for nav prop integrity check";
+				return BE_SQLITE_ERROR;
+			}
+			while((rc = stmt.Step()) == BE_SQLITE_ROW) {
+				if (!callback(
+					classCP->GetFullName(),
+					stmt.GetValueId<ECInstanceId>(0),
+					stmt.GetValueId<ECClassId>(1), "joined")) {
+					return BE_SQLITE_OK;
+				}
+			}
+		}
+	}
+
+	//OVERFLOW table 3
+	if ("check OVERFLOW table ECClassId") {
+		Statement overflowTableStmt;
+		rc = overflowTableStmt.Prepare(m_conn, R"sql(
+			SELECT
+				[p].[ExclusiveRootClassId],
+				[o].[Name]
+			FROM   [ec_table] [o]
+				JOIN [ec_table] [p] ON [p].[Id] = [o].[ParentTableId]
+			WHERE  [o].[type] = 3;
+		)sql");
+		if (BE_SQLITE_OK != rc) {
+			m_lastError = m_conn.GetLastError();
+			return rc;
+		}
+		while((rc = overflowTableStmt.Step()) == BE_SQLITE_ROW) {
+			auto classId = overflowTableStmt.GetValueId<ECClassId>(0);
+			auto overflowTableName = overflowTableStmt.GetValueText(0);
+			const auto classCP = m_conn.Schemas().GetClass(classId);
+
+			if (classCP == nullptr) {
+				m_lastError = SqlPrintfString("failed to find class with id '%s'.", classId.ToHexStr().c_str());
+				return BE_SQLITE_ERROR;
+			}
+			LOG.infov("integrity_check(check_entity_and_rel_class_Ids) analyzing overflow table for [class: %s]", classCP->GetFullName());
+			std::string query = SqlPrintfString("SELECT [T].[RowId], [T].[ECClassId] FROM [main].[%s] [T] LEFT JOIN [main].[ec_Class] [C] ON [C].[Id] = [T].[ECClassId] WHERE [C].[Id] IS NULL",
+											overflowTableName).GetUtf8CP();
+			Statement stmt;
+			if (BE_SQLITE_OK != stmt.Prepare(m_conn, query.c_str())){
+				m_lastError = "failed to prepared ecsql for nav prop integrity check";
+				return BE_SQLITE_ERROR;
+			}
+			while((rc = stmt.Step()) == BE_SQLITE_ROW) {
+				if (!callback(
+					classCP->GetFullName(),
+					stmt.GetValueId<ECInstanceId>(0),
+					stmt.GetValueId<ECClassId>(1), "overflow")) {
+					return BE_SQLITE_OK;
+				}
 			}
 		}
 	}
@@ -1023,7 +1186,7 @@ DbResult IntegrityChecker::QuickCheck(Checks checks, std::function<void(Utf8CP, 
     if (Enum::Contains<Checks>(checks, Checks::CheckEntityAndRelClassIds)) {
 		StopWatch stopWatch(true);
         auto passed = true;
-        rc = CheckEntityAndRelClassIds([&passed](Utf8CP, ECInstanceId, ECN::ECClassId) {
+        rc = CheckEntityAndRelClassIds([&passed](Utf8CP, ECInstanceId, ECN::ECClassId, Utf8CP) {
             return (passed = false);
         });
 		if (rc != BE_SQLITE_OK) {

@@ -448,7 +448,7 @@ struct PragmaIntegrityCheck : PragmaManager::GlobalHandler {
             case IntegrityChecker::Checks::CheckNavClassIds:
                 rc = CheckNavClassIds(checker, *result, ecdb); break;
             case IntegrityChecker::Checks::CheckNavIds:
-                rc = CheckNavClassIds(checker, *result, ecdb); break;
+                rc = CheckNavIds(checker, *result, ecdb); break;
             case IntegrityChecker::Checks::CheckProfileTablesAndIndexes:
                 rc = CheckProfileTablesAndIndexes(checker, *result, ecdb); break;
             case IntegrityChecker::Checks::CheckSchemaLoad:
@@ -616,14 +616,16 @@ struct PragmaIntegrityCheck : PragmaManager::GlobalHandler {
         result.AppendProperty("class", PRIMITIVETYPE_String);
         result.AppendProperty("id", PRIMITIVETYPE_String);
         result.AppendProperty("class_id", PRIMITIVETYPE_String);
+        result.AppendProperty("type", PRIMITIVETYPE_String);
         result.FreezeSchemaChanges();
         int rowCount = 1;
-        return checker.CheckEntityAndRelClassIds([&](Utf8CP name, ECInstanceId id, ECN::ECClassId classId) {
+        return checker.CheckEntityAndRelClassIds([&](Utf8CP name, ECInstanceId id, ECN::ECClassId classId, Utf8CP type) {
             auto row = result.AppendRow();
             row.appendValue() = rowCount++;
             row.appendValue() = name;
             row.appendValue() = id.ToHexStr();
             row.appendValue() = classId.ToHexStr();
+            row.appendValue() = type;
             return true;
         });
     }
