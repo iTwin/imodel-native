@@ -193,6 +193,11 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
         if (!JsCloudCache::IsInstance(jsCache))
             BeNapi::ThrowJsException(Env(), "invalid cache argument");
 
+        auto thisObj = Value();
+        auto func = thisObj.Get("onConnect");
+        if (func.IsFunction())
+            func.As<Napi::Function>().Call({thisObj, jsCache});
+
         auto cache = Napi::ObjectWrap<JsCloudCache>::Unwrap(jsCache);
         auto stat = CloudContainer::Connect(*cache);
         if (!stat.IsSuccess())
@@ -206,24 +211,42 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
             if (!m_writeLockHeld && HasLocalChanges())
                 AbandonChanges(info); // we lost the write lock, we have no choice but to abandon all local changes.
         }
-        Value().Set("cache", jsCache);
+
+        thisObj.Set("cache", jsCache);
+        func = thisObj.Get("onConnected");
+        if (func.IsFunction())
+            func.As<Napi::Function>().Call({thisObj});
+        }
+
+    void OnDisconnect(bool before, bool detach) {
+        auto thisObj = Value();
+        if (!before)
+            thisObj.Set("cache", Env().Undefined());
+        auto func = thisObj.Get(before ? "onDisconnect" : "onDisconnected");
+        if (func.IsFunction())
+            func.As<Napi::Function>().Call({thisObj, Napi::Boolean::New(Env(), detach)});
     }
 
     void Detach(NapiInfoCR info) {
         RequireConnected();
+        OnDisconnect(true, true);
+
         auto stat = CloudContainer::Detach();
         if (!stat.IsSuccess())
             BeNapi::ThrowJsException(Env(), stat.m_error.c_str(), stat.m_status);
+
+        OnDisconnect(false, true);
     }
 
     void Disconnect(NapiInfoCR info) {
         if (!IsContainerConnected())
             return;
+        OnDisconnect(true, false);
         auto stat = CloudContainer::Disconnect(false);
         if (!stat.IsSuccess())
             BeNapi::ThrowJsException(Env(), stat.m_error.c_str(), stat.m_status);
 
-        Value().Set("cache", Env().Undefined());
+        OnDisconnect(false, false);
     }
 
     void PollManifest(NapiInfoCR info) {
