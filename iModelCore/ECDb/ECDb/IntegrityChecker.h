@@ -10,31 +10,31 @@
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 struct IntegrityChecker final {
-    constexpr static auto check_profile_tables_and_indexes = "check_profile_tables_and_indexes";
-	constexpr static auto check_data_tables_and_indexes = "check_data_tables_and_indexes";
-	constexpr static auto check_data_table_columns = "check_data_table_columns";
+    constexpr static auto check_ec_profile = "check_ec_profile";
+	constexpr static auto check_data_schema = "check_data_schema";
+	constexpr static auto check_data_columns = "check_data_columns";
 	constexpr static auto check_nav_class_ids = "check_nav_class_ids";
 	constexpr static auto check_nav_ids = "check_nav_ids";
-	constexpr static auto check_linktable_source_and_target_class_ids = "check_linktable_source_and_target_class_ids";
-	constexpr static auto check_linktable_source_and_target_ids = "check_linktable_source_and_target_ids";
-	constexpr static auto check_entity_and_rel_class_ids = "check_entity_and_rel_class_ids";
+	constexpr static auto check_linktable_fk_class_ids = "check_linktable_fk_class_ids";
+	constexpr static auto check_linktable_fk_ids = "check_linktable_fk_ids";
+	constexpr static auto check_class_ids = "check_class_ids";
 	constexpr static auto check_schema_load = "check_schema_load";
 
 
 
     enum class Checks {
 		None = 0x0,
-		CheckProfileTablesAndIndexes = 0x1,
-		CheckDataTablesAndIndexes = 0x2,
-		CheckDataTableColumns = 0x4,
+		CheckEcProfile = 0x1,
+		CheckDataSchema = 0x2,
+		CheckDataColumns = 0x4,
 		CheckNavClassIds = 0x8,
 		CheckNavIds = 0x10,
-		CheckLinkTableSourceAndTargetClassIds = 0x20,
-		CheckLinkTableSourceAndTargetIds = 0x40,
-		CheckEntityAndRelClassIds = 0x80,
+		CheckLinkTableFkClassIds = 0x20,
+		CheckLinkTableFkIds = 0x40,
+		CheckClassIds = 0x80,
 		CheckSchemaLoad = 0x100,
-		OnlyMetaChecks = CheckProfileTablesAndIndexes | CheckDataTablesAndIndexes | CheckDataTableColumns | CheckSchemaLoad,
-		OnlyDataChecks =CheckNavClassIds | CheckNavIds | CheckLinkTableSourceAndTargetClassIds | CheckLinkTableSourceAndTargetIds | CheckEntityAndRelClassIds,
+		OnlyMetaChecks = CheckEcProfile | CheckDataSchema | CheckDataColumns | CheckSchemaLoad,
+		OnlyDataChecks =CheckNavClassIds | CheckNavIds | CheckLinkTableFkClassIds | CheckLinkTableFkIds | CheckClassIds,
 		All = OnlyMetaChecks | OnlyDataChecks,
 	};
 private:
@@ -50,7 +50,7 @@ private:
 
     DbResult CheckProfileTablesAndIndexes4002AndLater(std::function<bool(std::string, std::string, std::string)>);
     DbResult CheckProfileTablesAndIndexes4001AndOlder(std::function<bool(std::string, std::string, std::string)>);
-    DbResult CheckProfileTablesAndIndexes(
+    DbResult CheckEcProfile(
 		std::map<std::string, std::string> const&,
 		std::map<std::string, std::string> const&,
 		std::map<std::string, std::string> const&,
@@ -68,19 +68,19 @@ public:
     static std::vector<Checks> GetChecks();
     std::string const& GetLastError() const { return m_lastError;  }
     //! Callback(table,column)
-    DbResult CheckDataTableColumns(std::function<bool(std::string, std::string)>);
+    DbResult CheckDataColumns(std::function<bool(std::string, std::string)>);
 	//! Callback(name, type)
-	DbResult CheckDataTablesAndIndexes(std::function<bool(std::string, std::string)>);
+	DbResult CheckDataSchema(std::function<bool(std::string, std::string)>);
     //! Callback(type, name, issue)
-    DbResult CheckProfileTablesAndIndexes(std::function<bool(std::string, std::string, std::string)>);
+    DbResult CheckEcProfile(std::function<bool(std::string, std::string, std::string)>);
     // Callback(InstanceId, className, propertyName, id, primaryClassName)
     DbResult CheckNavIds(std::function<bool(ECInstanceId, Utf8CP, Utf8CP, ECInstanceId, Utf8CP)>);
 	// Callback(InstanceId,relName, propertyName, id, primaryClassName)
-	DbResult CheckLinkTableSourceAndTargetIds(std::function<bool(ECInstanceId, Utf8CP, Utf8CP, ECInstanceId, Utf8CP)>);
+	DbResult CheckLinkTableFkIds(std::function<bool(ECInstanceId, Utf8CP, Utf8CP, ECInstanceId, Utf8CP)>);
 	// Callback(Utf8CP, InstanceId, classId)
-    DbResult CheckEntityAndRelClassIds(std::function<bool(Utf8CP, ECInstanceId, ECN::ECClassId, Utf8CP)>);
+    DbResult CheckClassIds(std::function<bool(Utf8CP, ECInstanceId, ECN::ECClassId, Utf8CP)>);
 	// Callback(InstanceId, relName, propertyName, Id, ClassId)
-    DbResult CheckLinkTableSourceAndTargetClassIds(std::function<bool(ECInstanceId, Utf8CP, Utf8CP, ECInstanceId, ECN::ECClassId)>);
+    DbResult CheckLinkTableFkClassIds(std::function<bool(ECInstanceId, Utf8CP, Utf8CP, ECInstanceId, ECN::ECClassId)>);
 	// Callback(InstanceId, className, propertyName, navId, navClassId)
 	DbResult CheckNavClassIds(std::function<bool(ECInstanceId, Utf8CP, Utf8CP, ECInstanceId, ECN::ECClassId)>);
 	// Callback(schema)

@@ -46,16 +46,87 @@ struct IntegrityCheckerFixture : ECDbTestFixture {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(IntegrityCheckerFixture, integrity_check) {
-    ECDb db;
-    auto rc = db.OpenBeSQLiteDb("d:\\temp\\0d38e141-7705-4974-95da-1d4d3b762f31.bim", Db::OpenParams(Db::OpenMode::Readonly));
-    ASSERT_EQ(rc, BE_SQLITE_OK);
+TEST_F(IntegrityCheckerFixture, check_all) {
+    auto runCheck = [&](ECDbCR db) -> Utf8String {
+        BeJsDocument out;
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "PRAGMA integrity_check"));
+        EXPECT_EQ(4, stmt.GetColumnCount());
+        EXPECT_STRCASEEQ("sno", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        EXPECT_STRCASEEQ("check", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+        EXPECT_STRCASEEQ("result", stmt.GetColumnInfo(2).GetProperty()->GetName().c_str());
+        EXPECT_STRCASEEQ("elapsed_sec", stmt.GetColumnInfo(3).GetProperty()->GetName().c_str());
+        EXPECT_EQ(PRIMITIVETYPE_Integer, stmt.GetColumnInfo(0).GetDataType().GetPrimitiveType());
+        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(1).GetDataType().GetPrimitiveType());
+        EXPECT_EQ(PRIMITIVETYPE_Boolean, stmt.GetColumnInfo(2).GetDataType().GetPrimitiveType());
+        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(3).GetDataType().GetPrimitiveType());
 
-    ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "PRAGMA integrity_check"));
-    while (stmt.Step() == BE_SQLITE_ROW) {
-        printf("%s %s\n", stmt.GetValueBoolean(1) ? "PASSED" : "FAILED", stmt.GetValueText(0));
-    }
+        out.SetEmptyArray();
+        while (stmt.Step() == BE_SQLITE_ROW) {
+            auto row = out.appendObject();
+            row["sno"] = stmt.GetValueInt(0);
+            row["check"] = stmt.GetValueText(1);
+            row["result"] = stmt.GetValueText(2);
+        }
+        return out.Stringify(StringifyFormat::Indented);
+    };
+    auto executeTest = [&]() {
+        auto expectedJSON = R"json(
+            [
+                {
+                    "sno": 1,
+                    "check": "check_data_columns",
+                    "result": "true"
+                },
+                {
+                    "sno": 2,
+                    "check": "check_ec_profile",
+                    "result": "true"
+                },
+                {
+                    "sno": 3,
+                    "check": "check_nav_class_ids",
+                    "result": "true"
+                },
+                {
+                    "sno": 4,
+                    "check": "check_nav_ids",
+                    "result": "true"
+                },
+                {
+                    "sno": 5,
+                    "check": "check_linktable_fk_class_ids",
+                    "result": "true"
+                },
+                {
+                    "sno": 6,
+                    "check": "check_linktable_fk_ids",
+                    "result": "true"
+                },
+                {
+                    "sno": 7,
+                    "check": "check_class_ids",
+                    "result": "true"
+                },
+                {
+                    "sno": 8,
+                    "check": "check_data_schema",
+                    "result": "true"
+                },
+                {
+                    "sno": 9,
+                    "check": "check_schema_load",
+                    "result": "true"
+                }
+            ]
+        )json";
+        ASSERT_STREQ(ParseJSON(expectedJSON).c_str(), runCheck(m_ecdb).c_str()) << "Failed for " << m_ecdb.GetDbFileName();
+        m_ecdb.AbandonChanges();
+    };
+
+    ASSERT_EQ(BE_SQLITE_OK, OpenCopyOfDataFile("test.bim", "check_all.bim", Db::OpenMode::ReadWrite));
+    executeTest();
+
 }
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -89,7 +160,6 @@ TEST_F(IntegrityCheckerFixture, check_nav_class_ids) {
             row["nav_id"] = stmt.GetValueText(4);
             row["nav_classId"] = stmt.GetValueText(5);
         }
-        printf("%s\n", out.Stringify(StringifyFormat::Indented).c_str());
         return out.Stringify(StringifyFormat::Indented);
     };
 
@@ -147,7 +217,6 @@ TEST_F(IntegrityCheckerFixture, check_nav_ids) {
             row["nav_id"] = stmt.GetValueText(4);
             row["primary_class"] = stmt.GetValueText(5);
         }
-        printf("%s\n", out.Stringify(StringifyFormat::Indented).c_str());
         return out.Stringify(StringifyFormat::Indented);
     };
 
@@ -178,11 +247,11 @@ TEST_F(IntegrityCheckerFixture, check_nav_ids) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(IntegrityCheckerFixture, check_linktable_source_and_target_ids) {
+TEST_F(IntegrityCheckerFixture, check_linktable_fk_ids) {
     auto runCheck = [&](ECDbCR db) -> Utf8String {
         BeJsDocument out;
         ECSqlStatement stmt;
-        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "PRAGMA integrity_check(check_linktable_source_and_target_ids)"));
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "PRAGMA integrity_check(check_linktable_fk_ids)"));
         EXPECT_EQ(6, stmt.GetColumnCount());
         EXPECT_STRCASEEQ("sno", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
         EXPECT_STRCASEEQ("id", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
@@ -207,7 +276,6 @@ TEST_F(IntegrityCheckerFixture, check_linktable_source_and_target_ids) {
             row["key_id"] = stmt.GetValueText(4);
             row["primary_class"] = stmt.GetValueText(5);
         }
-        printf("%s\n", out.Stringify(StringifyFormat::Indented).c_str());
         return out.Stringify(StringifyFormat::Indented);
     };
 
@@ -264,11 +332,11 @@ TEST_F(IntegrityCheckerFixture, check_linktable_source_and_target_ids) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(IntegrityCheckerFixture, check_linktable_source_and_target_class_ids) {
+TEST_F(IntegrityCheckerFixture, check_linktable_fk_class_ids) {
     auto runCheck = [&](ECDbCR db) -> Utf8String {
         BeJsDocument out;
         ECSqlStatement stmt;
-        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "PRAGMA integrity_check(check_linktable_source_and_target_class_ids)"));
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "PRAGMA integrity_check(check_linktable_fk_class_ids)"));
         EXPECT_EQ(6, stmt.GetColumnCount());
         EXPECT_STRCASEEQ("sno", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
         EXPECT_STRCASEEQ("id", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
@@ -293,7 +361,6 @@ TEST_F(IntegrityCheckerFixture, check_linktable_source_and_target_class_ids) {
             row["key_id"] = stmt.GetValueText(4);
             row["key_classId"] = stmt.GetValueText(4);
         }
-        printf("%s\n", out.Stringify(StringifyFormat::Indented).c_str());
         return out.Stringify(StringifyFormat::Indented);
     };
 
@@ -308,11 +375,11 @@ TEST_F(IntegrityCheckerFixture, check_linktable_source_and_target_class_ids) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(IntegrityCheckerFixture, check_entity_and_rel_class_ids) {
+TEST_F(IntegrityCheckerFixture, check_class_ids) {
     auto runCheck = [&](ECDbCR db) -> Utf8String {
         BeJsDocument out;
         ECSqlStatement stmt;
-        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "PRAGMA integrity_check(check_entity_and_rel_class_ids)"));
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "PRAGMA integrity_check(check_class_ids)"));
         EXPECT_EQ(5, stmt.GetColumnCount());
         EXPECT_STRCASEEQ("sno", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
         EXPECT_STRCASEEQ("class", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
@@ -334,7 +401,6 @@ TEST_F(IntegrityCheckerFixture, check_entity_and_rel_class_ids) {
             row["class_id"] = stmt.GetValueText(3);
             row["type"] = stmt.GetValueText(4);
         }
-        printf("%s\n", out.Stringify(StringifyFormat::Indented).c_str());
         return out.Stringify(StringifyFormat::Indented);
     };
 
@@ -386,11 +452,11 @@ TEST_F(IntegrityCheckerFixture, check_entity_and_rel_class_ids) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(IntegrityCheckerFixture, check_data_table_columns) {
+TEST_F(IntegrityCheckerFixture, check_data_columns) {
     auto runCheck = [&](ECDbCR db) -> Utf8String {
         BeJsDocument out;
         ECSqlStatement stmt;
-        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "PRAGMA integrity_check(check_data_table_columns)"));
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "PRAGMA integrity_check(check_data_columns)"));
         EXPECT_EQ(3, stmt.GetColumnCount());
         EXPECT_STRCASEEQ("sno", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
         EXPECT_STRCASEEQ("table", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
@@ -405,7 +471,6 @@ TEST_F(IntegrityCheckerFixture, check_data_table_columns) {
             row["table"] = stmt.GetValueText(1);
             row["column"] = stmt.GetValueText(2);
         }
-        printf("%s\n", out.Stringify(StringifyFormat::Indented).c_str());
         return out.Stringify(StringifyFormat::Indented);
     };
 
@@ -443,11 +508,11 @@ TEST_F(IntegrityCheckerFixture, check_data_table_columns) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(IntegrityCheckerFixture, check_data_tables_and_indexes) {
+TEST_F(IntegrityCheckerFixture, check_data_schema) {
     auto runCheck = [&](ECDbCR db) -> Utf8String {
         BeJsDocument out;
         ECSqlStatement stmt;
-        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "PRAGMA integrity_check(check_data_tables_and_indexes)"));
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "PRAGMA integrity_check(check_data_schema)"));
         EXPECT_EQ(3, stmt.GetColumnCount());
         EXPECT_STRCASEEQ("sno", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
         EXPECT_STRCASEEQ("type", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
@@ -502,11 +567,11 @@ TEST_F(IntegrityCheckerFixture, check_data_tables_and_indexes) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(IntegrityCheckerFixture, check_profile_tables_and_indexes) {
+TEST_F(IntegrityCheckerFixture, check_ec_profile) {
     auto runCheck = [&](ECDbCR db) -> Utf8String {
         BeJsDocument out;
         ECSqlStatement stmt;
-        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "PRAGMA integrity_check(check_profile_tables_and_indexes)"));
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "PRAGMA integrity_check(check_ec_profile)"));
         EXPECT_EQ(4, stmt.GetColumnCount());
         EXPECT_STRCASEEQ("sno", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
         EXPECT_STRCASEEQ("type", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
@@ -524,13 +589,56 @@ TEST_F(IntegrityCheckerFixture, check_profile_tables_and_indexes) {
             row["name"] = stmt.GetValueText(2);
             row["issue"] = stmt.GetValueText(3);
         }
-        // printf("%s\n", out.Stringify(StringifyFormat::Indented).c_str());
-        // printf("%s\n", out.Stringify().c_str());
         return out.Stringify(StringifyFormat::Indented);
     };
-
+    auto alreadyMissingTriggers = R"json(
+        [
+            {
+                "sno": 1,
+                "type": "trigger",
+                "name": "dgn_fts_ad",
+                "issue": "missing"
+            },
+            {
+                "sno": 2,
+                "type": "trigger",
+                "name": "dgn_fts_ai",
+                "issue": "missing"
+            },
+            {
+                "sno": 3,
+                "type": "trigger",
+                "name": "dgn_fts_au",
+                "issue": "missing"
+            },
+            {
+                "sno": 4,
+                "type": "trigger",
+                "name": "dgn_prjrange_del",
+                "issue": "missing"
+            },
+            {
+                "sno": 5,
+                "type": "trigger",
+                "name": "dgn_rtree_ins",
+                "issue": "missing"
+            },
+            {
+                "sno": 6,
+                "type": "trigger",
+                "name": "dgn_rtree_upd",
+                "issue": "missing"
+            },
+            {
+                "sno": 7,
+                "type": "trigger",
+                "name": "dgn_rtree_upd1",
+                "issue": "missing"
+            }
+        ]
+    )json";
     auto executeTest = [&]() {
-        ASSERT_STREQ(ParseJSON("[]").c_str(), runCheck(m_ecdb).c_str()) << "expect this to pass";
+        ASSERT_STREQ(ParseJSON(alreadyMissingTriggers).c_str(), runCheck(m_ecdb).c_str()) << "expect this to pass";
         m_ecdb.ExecuteSql("DROP TABLE ec_Column");
         auto expectedJSON = R"json(
             [
@@ -550,6 +658,48 @@ TEST_F(IntegrityCheckerFixture, check_profile_tables_and_indexes) {
                     "sno": 3,
                     "type": "index",
                     "name": "uix_ec_Column_TableId_Ordinal",
+                    "issue": "missing"
+                },
+                {
+                    "sno": 4,
+                    "type": "trigger",
+                    "name": "dgn_fts_ad",
+                    "issue": "missing"
+                },
+                {
+                    "sno": 5,
+                    "type": "trigger",
+                    "name": "dgn_fts_ai",
+                    "issue": "missing"
+                },
+                {
+                    "sno": 6,
+                    "type": "trigger",
+                    "name": "dgn_fts_au",
+                    "issue": "missing"
+                },
+                {
+                    "sno": 7,
+                    "type": "trigger",
+                    "name": "dgn_prjrange_del",
+                    "issue": "missing"
+                },
+                {
+                    "sno": 8,
+                    "type": "trigger",
+                    "name": "dgn_rtree_ins",
+                    "issue": "missing"
+                },
+                {
+                    "sno": 9,
+                    "type": "trigger",
+                    "name": "dgn_rtree_upd",
+                    "issue": "missing"
+                },
+                {
+                    "sno": 10,
+                    "type": "trigger",
+                    "name": "dgn_rtree_upd1",
                     "issue": "missing"
                 }
             ]

@@ -127,7 +127,7 @@ DbResult IntegrityChecker::GetMappedClasses (std::set<ECClassId>& mappedClassIds
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult IntegrityChecker::CheckDataTableColumns(std::function<bool(std::string,std::string)> callback) {
+DbResult IntegrityChecker::CheckDataColumns(std::function<bool(std::string,std::string)> callback) {
 	auto sql = R"sql(
 		SELECT
 			[t].[Name] [tbl],
@@ -221,7 +221,7 @@ DbResult IntegrityChecker::CheckDataIndexExists(std::function<bool(std::string)>
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult IntegrityChecker::CheckProfileTablesAndIndexes(std::function<bool(std::string,std::string,std::string)> callback) {
+DbResult IntegrityChecker::CheckEcProfile(std::function<bool(std::string,std::string,std::string)> callback) {
 	if (m_conn.GetECDbProfileVersion() <  ProfileVersion(4,0,0,2)) {
 		return CheckProfileTablesAndIndexes4001AndOlder(callback);
 	}
@@ -338,7 +338,7 @@ DbResult IntegrityChecker::CheckProfileTablesAndIndexes4002AndLater(std::functio
 		{"ix_ec_cache_ClassHierarchy_BaseClassId", "CREATE INDEX ix_ec_cache_ClassHierarchy_BaseClassId ON ec_cache_ClassHierarchy(BaseClassId)"},
 	};
 	/*
-	SELECT PRINTF ('{"%s", "%s"},', [name], REPLACE(REPLACE ([sql], ', ', ','),'  ',' '))
+	SELECT PRINTF ('{"%s", "%s"},', [name], REPLACE(REPLACE(REPLACE(REPLACE ([sql], ', ', ','),'  ',' '),'[',''),']', ''))
 	FROM   [sqlite_master]
 	WHERE  ([tbl_name] LIKE 'dgn\_%' ESCAPE '\'
 			OR [tbl_name] LIKE 'bis\_%' ESCAPE '\')
@@ -346,7 +346,7 @@ DbResult IntegrityChecker::CheckProfileTablesAndIndexes4002AndLater(std::functio
 			AND [type] = 'trigger';
 	*/
 	const auto metaTriggers = std::map<std::string,std::string> {
-		{"bis_Element_CurrentTimeStamp", "CREATE TRIGGER [bis_Element_CurrentTimeStamp] AFTER UPDATE ON [bis_Element] WHEN old.LastMod=new.LastMod AND old.LastMod!=julianday('now') BEGIN UPDATE bis_Element SET LastMod=julianday('now') WHERE Id=new.Id; END"},
+		{"bis_Element_CurrentTimeStamp", "CREATE TRIGGER bis_Element_CurrentTimeStamp AFTER UPDATE ON bis_Element WHEN old.LastMod=new.LastMod AND old.LastMod!=julianday('now') BEGIN UPDATE bis_Element SET LastMod=julianday('now') WHERE Id=new.Id; END"},
 		{"dgn_prjrange_del", "CREATE TRIGGER dgn_prjrange_del AFTER DELETE ON bis_GeometricElement3d BEGIN DELETE FROM dgn_SpatialIndex WHERE ElementId=old.ElementId;END"},
 		{"dgn_rtree_upd", "CREATE TRIGGER dgn_rtree_upd AFTER UPDATE OF Origin_X,Origin_Y,Origin_Z,Yaw,Pitch,Roll,BBoxLow_X,BBoxLow_Y,BBoxLow_Z,BBoxHigh_X,BBoxHigh_Y,BBoxHigh_Z ON bis_GeometricElement3d WHEN new.Origin_X IS NOT NULL AND 1 = new.InSpatialIndex BEGIN INSERT OR REPLACE INTO dgn_SpatialIndex(ElementId,minx,maxx,miny,maxy,minz,maxz) SELECT new.ElementId,DGN_bbox_value(bb,0),DGN_bbox_value(bb,3),DGN_bbox_value(bb,1),DGN_bbox_value(bb,4),DGN_bbox_value(bb,2),DGN_bbox_value(bb,5) FROM (SELECT DGN_placement_aabb(DGN_placement(DGN_point(NEW.Origin_X,NEW.Origin_Y,NEW.Origin_Z),DGN_angles(NEW.Yaw,NEW.Pitch,NEW.Roll),DGN_bbox(NEW.BBoxLow_X,NEW.BBoxLow_Y,NEW.BBoxLow_Z,NEW.BBoxHigh_X,NEW.BBoxHigh_Y,NEW.BBoxHigh_Z))) as bb);END"},
 		{"dgn_rtree_upd1", "CREATE TRIGGER dgn_rtree_upd1 AFTER UPDATE OF Origin_X,Origin_Y,Origin_Z,Yaw,Pitch,Roll,BBoxLow_X,BBoxLow_Y,BBoxLow_Z,BBoxHigh_X,BBoxHigh_Y,BBoxHigh_Z ON bis_GeometricElement3d WHEN OLD.Origin_X IS NOT NULL AND NEW.Origin_X IS NULL BEGIN DELETE FROM dgn_SpatialIndex WHERE ElementId=OLD.ElementId;END"},
@@ -355,7 +355,7 @@ DbResult IntegrityChecker::CheckProfileTablesAndIndexes4002AndLater(std::functio
 		{"dgn_fts_ad", "CREATE TRIGGER dgn_fts_ad AFTER DELETE ON dgn_fts_content BEGIN INSERT INTO dgn_fts_idx(dgn_fts_idx,rowid,Type,Id,Text) VALUES('delete',old.rowid,old.Type,old.Id,old.Text); END"},
 		{"dgn_fts_au", "CREATE TRIGGER dgn_fts_au AFTER UPDATE ON dgn_fts_content BEGIN INSERT INTO dgn_fts_idx(dgn_fts_idx,rowid,Type,Id,Text) VALUES('delete',old.rowid,old.Type,old.Id,old.Text); INSERT INTO dgn_fts_idx(rowid,Type,Id,Text) VALUES(new.rowid,new.Type,new.Id,new.Text); END"},
 	};
-	return CheckProfileTablesAndIndexes(metaTables, metaIndexes, metaTriggers, callback);
+	return CheckEcProfile(metaTables, metaIndexes, metaTriggers, callback);
 }
 
 //---------------------------------------------------------------------------------------
@@ -450,16 +450,15 @@ DbResult IntegrityChecker::CheckProfileTablesAndIndexes4001AndOlder(std::functio
 		{"ix_ec_cache_ClassHierarchy_BaseClassId", "CREATE INDEX ix_ec_cache_ClassHierarchy_BaseClassId ON ec_cache_ClassHierarchy(BaseClassId)"},
 	};
 	/*
-	SELECT PRINTF ('{"%s", "%s"},', [name], REPLACE(REPLACE ([sql], ', ', ','),'  ',' '))
+	SELECT PRINTF ('{"%s", "%s"},', [name], REPLACE(REPLACE(REPLACE(REPLACE ([sql], ', ', ','),'  ',' '),'[',''),']', ''))
 	FROM   [sqlite_master]
 	WHERE  ([tbl_name] LIKE 'dgn\_%' ESCAPE '\'
 			OR [tbl_name] LIKE 'bis\_%' ESCAPE '\')
 			AND [sql] IS NOT NULL
 			AND [type] = 'trigger';
-
 	*/
 	const auto metaTriggers = std::map<std::string,std::string> {
-		{"bis_Element_CurrentTimeStamp", "CREATE TRIGGER [bis_Element_CurrentTimeStamp] AFTER UPDATE ON [bis_Element] WHEN old.LastMod=new.LastMod AND old.LastMod!=julianday('now') BEGIN UPDATE bis_Element SET LastMod=julianday('now') WHERE Id=new.Id; END"},
+		{"bis_Element_CurrentTimeStamp", "CREATE TRIGGER bis_Element_CurrentTimeStamp AFTER UPDATE ON bis_Element WHEN old.LastMod=new.LastMod AND old.LastMod!=julianday('now') BEGIN UPDATE bis_Element SET LastMod=julianday('now') WHERE Id=new.Id; END"},
 		{"dgn_prjrange_del", "CREATE TRIGGER dgn_prjrange_del AFTER DELETE ON bis_GeometricElement3d BEGIN DELETE FROM dgn_SpatialIndex WHERE ElementId=old.ElementId;END"},
 		{"dgn_rtree_upd", "CREATE TRIGGER dgn_rtree_upd AFTER UPDATE OF Origin_X,Origin_Y,Origin_Z,Yaw,Pitch,Roll,BBoxLow_X,BBoxLow_Y,BBoxLow_Z,BBoxHigh_X,BBoxHigh_Y,BBoxHigh_Z ON bis_GeometricElement3d WHEN new.Origin_X IS NOT NULL AND 1 = new.InSpatialIndex BEGIN INSERT OR REPLACE INTO dgn_SpatialIndex(ElementId,minx,maxx,miny,maxy,minz,maxz) SELECT new.ElementId,DGN_bbox_value(bb,0),DGN_bbox_value(bb,3),DGN_bbox_value(bb,1),DGN_bbox_value(bb,4),DGN_bbox_value(bb,2),DGN_bbox_value(bb,5) FROM (SELECT DGN_placement_aabb(DGN_placement(DGN_point(NEW.Origin_X,NEW.Origin_Y,NEW.Origin_Z),DGN_angles(NEW.Yaw,NEW.Pitch,NEW.Roll),DGN_bbox(NEW.BBoxLow_X,NEW.BBoxLow_Y,NEW.BBoxLow_Z,NEW.BBoxHigh_X,NEW.BBoxHigh_Y,NEW.BBoxHigh_Z))) as bb);END"},
 		{"dgn_rtree_upd1", "CREATE TRIGGER dgn_rtree_upd1 AFTER UPDATE OF Origin_X,Origin_Y,Origin_Z,Yaw,Pitch,Roll,BBoxLow_X,BBoxLow_Y,BBoxLow_Z,BBoxHigh_X,BBoxHigh_Y,BBoxHigh_Z ON bis_GeometricElement3d WHEN OLD.Origin_X IS NOT NULL AND NEW.Origin_X IS NULL BEGIN DELETE FROM dgn_SpatialIndex WHERE ElementId=OLD.ElementId;END"},
@@ -468,13 +467,13 @@ DbResult IntegrityChecker::CheckProfileTablesAndIndexes4001AndOlder(std::functio
 		{"dgn_fts_ad", "CREATE TRIGGER dgn_fts_ad AFTER DELETE ON dgn_fts_content BEGIN INSERT INTO dgn_fts_idx(dgn_fts_idx,rowid,Type,Id,Text) VALUES('delete',old.rowid,old.Type,old.Id,old.Text); END"},
 		{"dgn_fts_au", "CREATE TRIGGER dgn_fts_au AFTER UPDATE ON dgn_fts_content BEGIN INSERT INTO dgn_fts_idx(dgn_fts_idx,rowid,Type,Id,Text) VALUES('delete',old.rowid,old.Type,old.Id,old.Text); INSERT INTO dgn_fts_idx(rowid,Type,Id,Text) VALUES(new.rowid,new.Type,new.Id,new.Text); END"},
 	};
-	return CheckProfileTablesAndIndexes(metaTables, metaIndexes, metaTriggers, callback);
+	return CheckEcProfile(metaTables, metaIndexes, metaTriggers, callback);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult IntegrityChecker::CheckProfileTablesAndIndexes(std::map<std::string,std::string> const& metaTables, std::map<std::string,std::string> const& metaIndexes, std::map<std::string,std::string> const& metaTriggers, std::function<bool(std::string,std::string,std::string)> callback) {
+DbResult IntegrityChecker::CheckEcProfile(std::map<std::string,std::string> const& metaTables, std::map<std::string,std::string> const& metaIndexes, std::map<std::string,std::string> const& metaTriggers, std::function<bool(std::string,std::string,std::string)> callback) {
 	const auto kIssueNotFound = "missing";
 	const auto kIssueDDLMismatch = "ddl mismatch";
 	const auto kTypeTable = "table";
@@ -568,7 +567,7 @@ DbResult IntegrityChecker::CheckProfileTablesAndIndexes(std::map<std::string,std
 	}
 	if(m_conn.Schemas().GetSchema("BisCore") != nullptr) {
 		const auto triggerSql = R"sql(
-			SELECT REPLACE(REPLACE ([sql], ', ', ','),'  ',' ')
+			SELECT REPLACE(REPLACE(REPLACE(REPLACE ([sql], ', ', ','),'  ',' '),'[',''),']', '')
 			FROM   [main].[sqlite_master]
 			WHERE  ([tbl_name] LIKE 'dgn\_%' ESCAPE '\'
 					OR [tbl_name] LIKE 'bis\_%' ESCAPE '\')
@@ -584,7 +583,7 @@ DbResult IntegrityChecker::CheckProfileTablesAndIndexes(std::map<std::string,std
 			return rc;
 		}
 
-		for(auto & kv : metaIndexes) {
+		for(auto & kv : metaTriggers) {
 			LOG.infov("integrity_check(check_profile_and_indexes) analyzing [trigger: %s]", kv.first.c_str());
 			triggerStmt.Reset();
 			triggerStmt.ClearBindings();
@@ -761,7 +760,7 @@ DbResult IntegrityChecker::CheckNavClassIds(std::function<bool(ECInstanceId, Utf
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult IntegrityChecker::CheckLinkTableSourceAndTargetIds(std::function<bool(ECInstanceId, Utf8CP, Utf8CP, ECInstanceId, Utf8CP)> callback) {
+DbResult IntegrityChecker::CheckLinkTableFkIds(std::function<bool(ECInstanceId, Utf8CP, Utf8CP, ECInstanceId, Utf8CP)> callback) {
 	std::vector<ECClassId> rootRels;
 	auto rc = GetRootLinkTableRelationships(rootRels);
 	if (BE_SQLITE_OK != rc) {
@@ -834,7 +833,7 @@ DbResult IntegrityChecker::CheckLinkTableSourceAndTargetIds(std::function<bool(E
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult IntegrityChecker::CheckLinkTableSourceAndTargetClassIds(std::function<bool(ECInstanceId, Utf8CP, Utf8CP, ECInstanceId, ECN::ECClassId)> callback) {
+DbResult IntegrityChecker::CheckLinkTableFkClassIds(std::function<bool(ECInstanceId, Utf8CP, Utf8CP, ECInstanceId, ECN::ECClassId)> callback) {
 	std::vector<ECClassId> rootRels;
 	auto rc = GetRootLinkTableRelationships(rootRels);
 	if (BE_SQLITE_OK != rc) {
@@ -917,7 +916,7 @@ DbResult IntegrityChecker::CheckLinkTableSourceAndTargetClassIds(std::function<b
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult IntegrityChecker::CheckEntityAndRelClassIds(std::function<bool(Utf8CP, ECInstanceId, ECN::ECClassId, Utf8CP)> callback) {
+DbResult IntegrityChecker::CheckClassIds(std::function<bool(Utf8CP, ECInstanceId, ECN::ECClassId, Utf8CP)> callback) {
 	std::vector<ECClassId> classIds;
 	auto rc = GetTablePerHierarchyClasses(classIds);
 	if (BE_SQLITE_OK != rc) {
@@ -1029,7 +1028,7 @@ DbResult IntegrityChecker::CheckEntityAndRelClassIds(std::function<bool(Utf8CP, 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult IntegrityChecker::CheckDataTablesAndIndexes(std::function<bool(std::string, std::string)> callback) {
+DbResult IntegrityChecker::CheckDataSchema(std::function<bool(std::string, std::string)> callback) {
     auto rc = CheckDataTableExists([&](std::string table) {
         return callback(table, "table");
     });
@@ -1047,14 +1046,14 @@ DbResult IntegrityChecker::CheckDataTablesAndIndexes(std::function<bool(std::str
 //+---------------+---------------+---------------+---------------+---------------+------
 Utf8CP IntegrityChecker::GetCheckName(Checks check) {
     static auto s_map = std::map<Checks, Utf8CP>{
-		{Checks::CheckProfileTablesAndIndexes, check_profile_tables_and_indexes},
-		{Checks::CheckDataTablesAndIndexes, check_data_tables_and_indexes},
-		{Checks::CheckDataTableColumns, check_data_table_columns},
+		{Checks::CheckEcProfile, check_ec_profile},
+		{Checks::CheckDataSchema, check_data_schema},
+		{Checks::CheckDataColumns, check_data_columns},
 		{Checks::CheckNavClassIds, check_nav_class_ids},
 		{Checks::CheckNavIds, check_nav_ids},
-		{Checks::CheckLinkTableSourceAndTargetClassIds, check_linktable_source_and_target_class_ids},
-		{Checks::CheckLinkTableSourceAndTargetIds, check_linktable_source_and_target_ids},
-		{Checks::CheckEntityAndRelClassIds, check_entity_and_rel_class_ids},
+		{Checks::CheckLinkTableFkClassIds, check_linktable_fk_class_ids},
+		{Checks::CheckLinkTableFkIds, check_linktable_fk_ids},
+		{Checks::CheckClassIds, check_class_ids},
 		{Checks::CheckSchemaLoad, check_schema_load},
     };
     const auto it = s_map.find(check);
@@ -1070,14 +1069,14 @@ Utf8CP IntegrityChecker::GetCheckName(Checks check) {
 IntegrityChecker::Checks IntegrityChecker::GetCheckId(Utf8CP checkName) {
 
     static auto s_map = std::map<Utf8CP, Checks, CompareIUtf8Ascii> {
-		{check_profile_tables_and_indexes, Checks::CheckProfileTablesAndIndexes},
-		{check_data_tables_and_indexes, Checks::CheckDataTablesAndIndexes},
-		{check_data_table_columns, Checks::CheckDataTableColumns},
+		{check_ec_profile, Checks::CheckEcProfile},
+		{check_data_schema, Checks::CheckDataSchema},
+		{check_data_columns, Checks::CheckDataColumns},
 		{check_nav_class_ids, Checks::CheckNavClassIds},
 		{check_nav_ids, Checks::CheckNavIds},
-		{check_linktable_source_and_target_class_ids, Checks::CheckLinkTableSourceAndTargetClassIds},
-		{check_linktable_source_and_target_ids, Checks::CheckLinkTableSourceAndTargetIds},
-		{check_entity_and_rel_class_ids, Checks::CheckEntityAndRelClassIds},
+		{check_linktable_fk_class_ids, Checks::CheckLinkTableFkClassIds},
+		{check_linktable_fk_ids, Checks::CheckLinkTableFkIds},
+		{check_class_ids, Checks::CheckClassIds},
 		{check_schema_load, Checks::CheckSchemaLoad},
     };
     const auto it = s_map.find(checkName);
@@ -1117,27 +1116,27 @@ DbResult IntegrityChecker::CheckSchemaLoad(std::function<bool(Utf8CP)> callback)
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult IntegrityChecker::QuickCheck(Checks checks, std::function<void(Utf8CP, bool, BeDuration)> callback) {
     DbResult rc;
-    if (Enum::Contains<Checks>(checks, Checks::CheckDataTableColumns)) {
+    if (Enum::Contains<Checks>(checks, Checks::CheckDataColumns)) {
         StopWatch stopWatch(true);
         auto passed = true;
-        rc = CheckDataTableColumns([&passed](std::string, std::string) {
+        rc = CheckDataColumns([&passed](std::string, std::string) {
             return (passed = false);
         });
 		if (rc != BE_SQLITE_OK) {
             return rc;
         }
-        callback(GetCheckName(Checks::CheckDataTableColumns), passed, stopWatch.GetCurrent());
+        callback(GetCheckName(Checks::CheckDataColumns), passed, stopWatch.GetCurrent());
     }
-    if (Enum::Contains<Checks>(checks, Checks::CheckProfileTablesAndIndexes)) {
+    if (Enum::Contains<Checks>(checks, Checks::CheckEcProfile)) {
 		StopWatch stopWatch(true);
         auto passed = true;
-        rc = CheckProfileTablesAndIndexes([&passed](std::string, std::string, std::string) {
+        rc = CheckEcProfile([&passed](std::string, std::string, std::string) {
             return (passed = false);
         });
 		if (rc != BE_SQLITE_OK) {
             return rc;
         }
-		callback(GetCheckName(Checks::CheckProfileTablesAndIndexes), passed, stopWatch.GetCurrent());
+		callback(GetCheckName(Checks::CheckEcProfile), passed, stopWatch.GetCurrent());
     }
     if (Enum::Contains<Checks>(checks, Checks::CheckNavClassIds)) {
 		StopWatch stopWatch(true);
@@ -1161,49 +1160,49 @@ DbResult IntegrityChecker::QuickCheck(Checks checks, std::function<void(Utf8CP, 
         }
 		callback(GetCheckName(Checks::CheckNavIds), passed, stopWatch.GetCurrent());
     }
-    if (Enum::Contains<Checks>(checks, Checks::CheckLinkTableSourceAndTargetClassIds)) {
+    if (Enum::Contains<Checks>(checks, Checks::CheckLinkTableFkClassIds)) {
 		StopWatch stopWatch(true);
         auto passed = true;
-        rc = CheckLinkTableSourceAndTargetClassIds([&passed](ECInstanceId, Utf8CP, Utf8CP, ECInstanceId, ECN::ECClassId) {
+        rc = CheckLinkTableFkClassIds([&passed](ECInstanceId, Utf8CP, Utf8CP, ECInstanceId, ECN::ECClassId) {
             return (passed = false);
         });
 		if (rc != BE_SQLITE_OK) {
             return rc;
         }
-		callback(GetCheckName(Checks::CheckLinkTableSourceAndTargetClassIds), passed, stopWatch.GetCurrent());
+		callback(GetCheckName(Checks::CheckLinkTableFkClassIds), passed, stopWatch.GetCurrent());
     }
-    if (Enum::Contains<Checks>(checks, Checks::CheckLinkTableSourceAndTargetIds)) {
+    if (Enum::Contains<Checks>(checks, Checks::CheckLinkTableFkIds)) {
 		StopWatch stopWatch(true);
         auto passed = true;
-        rc = CheckLinkTableSourceAndTargetIds([&passed](ECInstanceId, Utf8CP, Utf8CP, ECInstanceId, Utf8CP) {
+        rc = CheckLinkTableFkIds([&passed](ECInstanceId, Utf8CP, Utf8CP, ECInstanceId, Utf8CP) {
             return (passed = false);
         });
 		if (rc != BE_SQLITE_OK) {
             return rc;
         }
-		callback(GetCheckName(Checks::CheckLinkTableSourceAndTargetIds), passed, stopWatch.GetCurrent());
+		callback(GetCheckName(Checks::CheckLinkTableFkIds), passed, stopWatch.GetCurrent());
     }
-    if (Enum::Contains<Checks>(checks, Checks::CheckEntityAndRelClassIds)) {
+    if (Enum::Contains<Checks>(checks, Checks::CheckClassIds)) {
 		StopWatch stopWatch(true);
         auto passed = true;
-        rc = CheckEntityAndRelClassIds([&passed](Utf8CP, ECInstanceId, ECN::ECClassId, Utf8CP) {
+        rc = CheckClassIds([&passed](Utf8CP, ECInstanceId, ECN::ECClassId, Utf8CP) {
             return (passed = false);
         });
 		if (rc != BE_SQLITE_OK) {
             return rc;
         }
-		callback(GetCheckName(Checks::CheckEntityAndRelClassIds), passed, stopWatch.GetCurrent());
+		callback(GetCheckName(Checks::CheckClassIds), passed, stopWatch.GetCurrent());
     }
-    if (Enum::Contains<Checks>(checks, Checks::CheckDataTablesAndIndexes)) {
+    if (Enum::Contains<Checks>(checks, Checks::CheckDataSchema)) {
 		StopWatch stopWatch(true);
         auto passed = true;
-        rc = CheckDataTablesAndIndexes([&passed](std::string, std::string) {
+        rc = CheckDataSchema([&passed](std::string, std::string) {
             return (passed = false);
         });
 		if (rc != BE_SQLITE_OK) {
             return rc;
         }
-		callback(GetCheckName(Checks::CheckDataTablesAndIndexes), passed, stopWatch.GetCurrent());
+		callback(GetCheckName(Checks::CheckDataSchema), passed, stopWatch.GetCurrent());
     }
     if (Enum::Contains<Checks>(checks, Checks::CheckSchemaLoad)) {
 		StopWatch stopWatch(true);

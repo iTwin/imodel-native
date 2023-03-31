@@ -435,22 +435,22 @@ struct PragmaIntegrityCheck : PragmaManager::GlobalHandler {
         }
 
         switch(checks) {
-            case IntegrityChecker::Checks::CheckDataTableColumns:
-                rc = CheckDataTableColumns(checker, *result, ecdb); break;
-            case IntegrityChecker::Checks::CheckDataTablesAndIndexes:
-                rc = CheckDataTablesAndIndexes(checker, *result, ecdb); break;
-            case IntegrityChecker::Checks::CheckEntityAndRelClassIds:
-                rc = CheckEntityAndRelClassIds(checker, *result, ecdb); break;
-            case IntegrityChecker::Checks::CheckLinkTableSourceAndTargetClassIds:
-                rc = CheckLinkTableSourceAndTargetClassIds(checker, *result, ecdb); break;
-            case IntegrityChecker::Checks::CheckLinkTableSourceAndTargetIds:
-                rc = CheckLinkTableSourceAndTargetIds(checker, *result, ecdb); break;
+            case IntegrityChecker::Checks::CheckDataColumns:
+                rc = CheckDataColumns(checker, *result, ecdb); break;
+            case IntegrityChecker::Checks::CheckDataSchema:
+                rc = CheckDataSchema(checker, *result, ecdb); break;
+            case IntegrityChecker::Checks::CheckClassIds:
+                rc = CheckClassIds(checker, *result, ecdb); break;
+            case IntegrityChecker::Checks::CheckLinkTableFkClassIds:
+                rc = CheckLinkTableFkClassIds(checker, *result, ecdb); break;
+            case IntegrityChecker::Checks::CheckLinkTableFkIds:
+                rc = CheckLinkTableFkIds(checker, *result, ecdb); break;
             case IntegrityChecker::Checks::CheckNavClassIds:
                 rc = CheckNavClassIds(checker, *result, ecdb); break;
             case IntegrityChecker::Checks::CheckNavIds:
                 rc = CheckNavIds(checker, *result, ecdb); break;
-            case IntegrityChecker::Checks::CheckProfileTablesAndIndexes:
-                rc = CheckProfileTablesAndIndexes(checker, *result, ecdb); break;
+            case IntegrityChecker::Checks::CheckEcProfile:
+                rc = CheckEcProfile(checker, *result, ecdb); break;
             case IntegrityChecker::Checks::CheckSchemaLoad:
                 rc = CheckSchemaLoad(checker, *result, ecdb); break;
             default:
@@ -487,14 +487,14 @@ struct PragmaIntegrityCheck : PragmaManager::GlobalHandler {
             return true;
         });
     }
-    DbResult CheckProfileTablesAndIndexes(IntegrityChecker& checker, StaticPragmaResult& result, ECDbCR ecdb) {
+    DbResult CheckEcProfile(IntegrityChecker& checker, StaticPragmaResult& result, ECDbCR ecdb) {
         result.AppendProperty("sno", PRIMITIVETYPE_Integer);
         result.AppendProperty("type", PRIMITIVETYPE_String);
         result.AppendProperty("name", PRIMITIVETYPE_String);
         result.AppendProperty("issue", PRIMITIVETYPE_String);
         result.FreezeSchemaChanges();
         int rowCount = 1;
-        return checker.CheckProfileTablesAndIndexes([&](std::string type, std::string name, std::string issue) {
+        return checker.CheckEcProfile([&](std::string type, std::string name, std::string issue) {
             auto row = result.AppendRow();
             row.appendValue() = rowCount++;
             row.appendValue() = type;
@@ -503,13 +503,13 @@ struct PragmaIntegrityCheck : PragmaManager::GlobalHandler {
             return true;
         });
     }
-    DbResult CheckDataTablesAndIndexes(IntegrityChecker& checker, StaticPragmaResult& result, ECDbCR ecdb) {
+    DbResult CheckDataSchema(IntegrityChecker& checker, StaticPragmaResult& result, ECDbCR ecdb) {
         result.AppendProperty("sno", PRIMITIVETYPE_Integer);
         result.AppendProperty("type", PRIMITIVETYPE_String);
         result.AppendProperty("name", PRIMITIVETYPE_String);
         result.FreezeSchemaChanges();
         int rowCount = 1;
-        return checker.CheckDataTablesAndIndexes([&](std::string name, std::string type) {
+        return checker.CheckDataSchema([&](std::string name, std::string type) {
             auto row = result.AppendRow();
             row.appendValue() = rowCount++;
             row.appendValue() = type;
@@ -517,13 +517,13 @@ struct PragmaIntegrityCheck : PragmaManager::GlobalHandler {
             return true;
         });
     }
-    DbResult CheckDataTableColumns(IntegrityChecker& checker, StaticPragmaResult& result, ECDbCR ecdb) {
+    DbResult CheckDataColumns(IntegrityChecker& checker, StaticPragmaResult& result, ECDbCR ecdb) {
         result.AppendProperty("sno", PRIMITIVETYPE_Integer);
         result.AppendProperty("table", PRIMITIVETYPE_String);
         result.AppendProperty("column", PRIMITIVETYPE_String);
         result.FreezeSchemaChanges();
         int rowCount = 1;
-        return checker.CheckDataTableColumns([&](std::string table, std::string column) {
+        return checker.CheckDataColumns([&](std::string table, std::string column) {
             auto row = result.AppendRow();
             row.appendValue() = rowCount++;
             row.appendValue() = table;
@@ -571,7 +571,7 @@ struct PragmaIntegrityCheck : PragmaManager::GlobalHandler {
             return true;
         });
     }
-    DbResult CheckLinkTableSourceAndTargetClassIds(IntegrityChecker& checker, StaticPragmaResult& result, ECDbCR ecdb) {
+    DbResult CheckLinkTableFkClassIds(IntegrityChecker& checker, StaticPragmaResult& result, ECDbCR ecdb) {
         result.AppendProperty("sno", PRIMITIVETYPE_Integer);
         result.AppendProperty("id", PRIMITIVETYPE_String);
         result.AppendProperty("relationship", PRIMITIVETYPE_String);
@@ -591,7 +591,7 @@ struct PragmaIntegrityCheck : PragmaManager::GlobalHandler {
             return true;
         });
     }
-    DbResult CheckLinkTableSourceAndTargetIds(IntegrityChecker& checker, StaticPragmaResult& result, ECDbCR ecdb) {
+    DbResult CheckLinkTableFkIds(IntegrityChecker& checker, StaticPragmaResult& result, ECDbCR ecdb) {
         result.AppendProperty("sno", PRIMITIVETYPE_Integer);
         result.AppendProperty("id", PRIMITIVETYPE_String);
         result.AppendProperty("relationship", PRIMITIVETYPE_String);
@@ -600,7 +600,7 @@ struct PragmaIntegrityCheck : PragmaManager::GlobalHandler {
         result.AppendProperty("primary_class", PRIMITIVETYPE_String);
         result.FreezeSchemaChanges();
         int rowCount = 1;
-        return checker.CheckLinkTableSourceAndTargetIds([&](ECInstanceId id , Utf8CP relName, Utf8CP propertyName, ECInstanceId keyId, Utf8CP primaryClass) {
+        return checker.CheckLinkTableFkIds([&](ECInstanceId id , Utf8CP relName, Utf8CP propertyName, ECInstanceId keyId, Utf8CP primaryClass) {
             auto row = result.AppendRow();
             row.appendValue() = rowCount++;
             row.appendValue() = id.ToHexStr();
@@ -611,7 +611,7 @@ struct PragmaIntegrityCheck : PragmaManager::GlobalHandler {
             return true;
         });
     }
-    DbResult CheckEntityAndRelClassIds(IntegrityChecker& checker, StaticPragmaResult& result, ECDbCR ecdb) {
+    DbResult CheckClassIds(IntegrityChecker& checker, StaticPragmaResult& result, ECDbCR ecdb) {
         result.AppendProperty("sno", PRIMITIVETYPE_Integer);
         result.AppendProperty("class", PRIMITIVETYPE_String);
         result.AppendProperty("id", PRIMITIVETYPE_String);
@@ -619,7 +619,7 @@ struct PragmaIntegrityCheck : PragmaManager::GlobalHandler {
         result.AppendProperty("type", PRIMITIVETYPE_String);
         result.FreezeSchemaChanges();
         int rowCount = 1;
-        return checker.CheckEntityAndRelClassIds([&](Utf8CP name, ECInstanceId id, ECN::ECClassId classId, Utf8CP type) {
+        return checker.CheckClassIds([&](Utf8CP name, ECInstanceId id, ECN::ECClassId classId, Utf8CP type) {
             auto row = result.AppendRow();
             row.appendValue() = rowCount++;
             row.appendValue() = name;
