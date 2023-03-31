@@ -618,7 +618,7 @@ private:
     std::unique_ptr<ContentSpecificationsHandler::PropertyAppendResult::ReplacedRelationshipPath> m_pathReplaceInfo;
     ContentDescriptor::RelatedContentField& m_relatedContentField;
     std::function<void(ContentDescriptor::RelatedContentField&)> m_onPropertiesAppended;
-    RelatedPropertiesSpecificationCP m_relatedSpec;
+    RelatedPropertiesSpecificationCR m_relatedSpec;
 
 private:
     /*---------------------------------------------------------------------------------**//**
@@ -902,7 +902,7 @@ protected:
     +---------------+---------------+---------------+---------------+---------------+------*/
     ContentSpecificationsHandler::PropertyAppendResult _AppendCalculatedProperty(ECClassCP ecClass, CalculatedPropertiesSpecificationCR spec, Utf8StringCR name) override
         {
-        if (nullptr != m_relatedSpec && !m_relatedSpec->AllPropertiesIncluded())
+        if (!m_relatedSpec.AllPropertiesIncluded())
             return ContentSpecificationsHandler::PropertyAppendResult(false);
         for (ContentDescriptor::Field* nestedField : m_relatedContentField.GetFields())
             {
@@ -962,7 +962,7 @@ public:
     RelatedContentPropertiesAppender(ContentDescriptorBuilder::Context& context, PropertyInfoStore const& propertyInfos, ContentDescriptorR descriptor,
         CategoriesSupplier categoriesSupplier, ContentDescriptor::RelatedContentField& relatedContentField, PropertyCategorySpecificationsList const* scopePropertyCategories, 
         std::unique_ptr<ContentSpecificationsHandler::PropertyAppendResult::ReplacedRelationshipPath> pathReplaceInfo, std::function<void(ContentDescriptor::RelatedContentField&)> onPropertiesAppended, 
-        RelatedPropertiesSpecificationCP relatedSpec)
+        RelatedPropertiesSpecificationCR relatedSpec)
         : ContentPropertiesAppender(context, propertyInfos, descriptor, categoriesSupplier, scopePropertyCategories),
         m_relatedContentField(relatedContentField), m_pathReplaceInfo(std::move(pathReplaceInfo)), m_onPropertiesAppended(onPropertiesAppended), m_relatedSpec(relatedSpec)
         {}
@@ -1239,7 +1239,7 @@ protected:
             replacedPathFromSelectToPropertyClass = std::make_unique<ContentSpecificationsHandler::PropertyAppendResult::ReplacedRelationshipPath>(relatedContentField.pathReplacement->first, relatedContentField.pathReplacement->second);
 
         return new RelatedContentPropertiesAppender(GetContext(), *m_propertyInfos, *m_descriptor, categoriesSupplier, *relatedContentField.field,
-            categorySpecifications, std::move(replacedPathFromSelectToPropertyClass), relatedContentField.onPropertiesAppended, relatedPropertyStack.back());
+            categorySpecifications, std::move(replacedPathFromSelectToPropertyClass), relatedContentField.onPropertiesAppended, *relatedPropertyStack.back());
         }
 
     /*---------------------------------------------------------------------------------**//**
