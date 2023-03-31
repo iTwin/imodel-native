@@ -858,6 +858,13 @@ BeSQLite::ProfileState::Age TestDb::GetECDbAge() const
     return comp > 0 ? ProfileState::Age::Newer : ProfileState::Age::Older;
     }
 
+bool TestDb::DoesECDbVersionAllowSchemaImport() const
+    {
+    if (const auto comparisonValue = GetDb().GetECDbProfileVersion().CompareTo(ECDb::CurrentECDbProfileVersion(), ProfileVersion::VERSION_MajorMinorSub1); comparisonValue > 0)
+        return false;
+    return true;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------

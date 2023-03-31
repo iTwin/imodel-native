@@ -362,6 +362,28 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
         return;
     }
 
+    /**
+     * Get the date(s) returned by the server in the http header when the bcv_kv blob was fetched.
+     * This avoids any dependence on the local computer's time for detecting expired write locks.
+     */
+    DateTime GetServerTime(bool lastMod = false) {
+        auto timeStr = lastMod ? "last-modified" : "date";
+        Statement stmt;
+        auto rc = stmt.Prepare(m_containerDb, "SELECT value FROM bcv_kv_meta WHERE name=?");
+        BeAssert(rc == BE_SQLITE_OK);
+        stmt.BindText(1, timeStr, Statement::MakeCopy::No);
+        rc = stmt.Step();
+        if (rc == BE_SQLITE_ROW) {
+            auto date = DateTime::FromString(stmt.GetValueText(0));
+            if (date.IsValid())
+                return date;
+        }
+        // if the server didn't include a "Date" field, just fall back to local time.
+        Utf8PrintfString warning("server did not return valid [%s] in http response.", timeStr);
+        NativeLogging::Logging::LogMessage("CloudSqlite", NativeLogging::SEVERITY::LOG_WARNING, warning.c_str());
+        return DateTime::GetCurrentTimeUtc();
+    }
+
     void CheckLock() {
         BeJsDocument lockedBy;
         ReadWriteLock(lockedBy);
@@ -374,7 +396,7 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
             return; // the expiration time is invalid, ignore lock
 
         auto lockedByUser = lockedBy[JSON_NAME(user)].asString();
-        if (DateTime::CompareResult::EarlierThan == DateTime::Compare(expiresAt, DateTime::GetCurrentTimeUtc())) {
+        if (DateTime::CompareResult::EarlierThan == DateTime::Compare(expiresAt, GetServerTime())) {
             Utf8PrintfString warning("write lock on container [%s] from user [%s] was present but expired. Overwriting it.", m_containerId.c_str(), lockedByUser.c_str());
             NativeLogging::Logging::LogMessage("CloudSqlite", NativeLogging::SEVERITY::LOG_WARNING, warning.c_str());
             return; // other user's write lock has expired
@@ -405,10 +427,10 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
         }
     }
 
-    Utf8String GetCurrentDateString(uint64_t offsetMilliseconds) {
-        uint64_t nowMs = 0;
-        DateTime::GetCurrentTimeUtc().ToJulianDay(nowMs);
-        return DateTime::FromJulianDay(nowMs + offsetMilliseconds, DateTime::Info::CreateForDateTime(DateTime::Kind::Utc)).ToString();
+    Utf8String GetServerDateString(uint64_t offsetMilliseconds) {
+        uint64_t serverTimeMs = 0;
+        GetServerTime().ToJulianDay(serverTimeMs);
+        return DateTime::FromJulianDay(serverTimeMs + offsetMilliseconds, DateTime::Info::CreateForDateTime(DateTime::Kind::Utc)).ToString();
     }
 
     void AcquireWriteLock(Utf8StringCR user) {
@@ -423,7 +445,7 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
         BeJsDocument lockedBy;
         lockedBy[JSON_NAME(guid)] = m_cache->m_guid;
         lockedBy[JSON_NAME(user)] = user;
-        lockedBy[JSON_NAME(expires)] = GetCurrentDateString(m_durationSeconds * 1000);
+        lockedBy[JSON_NAME(expires)] = GetServerDateString(m_durationSeconds * 1000);
 
         Statement stmt;
         auto rc = stmt.Prepare(m_containerDb, "REPLACE INTO bcv_kv(value,name) VALUES(?,?)");
@@ -459,7 +481,7 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
         ReadWriteLock(currentLock);
         BeJsDocument root;
         auto lastLock = root["lastLock"];
-        lastLock["time"] = GetCurrentDateString(0);
+        lastLock["time"] = GetServerTime(true).ToString();
         lastLock[JSON_NAME(user)] = currentLock[JSON_NAME(user)].asString();
 
         Statement stmt;

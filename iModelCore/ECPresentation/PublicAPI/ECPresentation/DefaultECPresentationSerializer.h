@@ -51,6 +51,7 @@ protected:
     ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(ContextR, ContentDescriptor const& contentDescriptor, rapidjson::Document::AllocatorType*) const override;
 
     ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(ContextR, ContentSetItem const& contentSetItem, int flags, rapidjson::Document::AllocatorType*) const override;
+    ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(ContextR, NavigationPropertyValueCR, rapidjson::Document::AllocatorType*) const override;
     ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(ContextR, DisplayValueGroupCR, rapidjson::Document::AllocatorType*) const override;
 
     ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(ContextR, BeInt64Id const&, rapidjson::Document::AllocatorType*) const override;

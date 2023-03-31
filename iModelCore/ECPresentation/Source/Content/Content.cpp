@@ -1492,6 +1492,23 @@ rapidjson::Document Content::AsJson(rapidjson::Document::AllocatorType* allocato
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Document NavigationPropertyValue::AsJson(ECPresentationSerializerContextR ctx, rapidjson::Document::AllocatorType* allocator) const
+    {
+    return ECPresentationManager::GetSerializer().AsJson(ctx, *this, allocator);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Document NavigationPropertyValue::AsJson(rapidjson::Document::AllocatorType* allocator) const
+    {
+    ECPresentationSerializerContext ctx;
+    return AsJson(ctx, allocator);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 rapidjson::Document DisplayValueGroup::AsJson(ECPresentationSerializerContextR ctx, rapidjson::Document::AllocatorType* allocator) const
     {
     return ECPresentationManager::GetSerializer().AsJson(ctx, *this, allocator);

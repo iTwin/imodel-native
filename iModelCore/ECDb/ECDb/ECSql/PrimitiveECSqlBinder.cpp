@@ -82,6 +82,9 @@ ECSqlStatus PrimitiveECSqlBinder::_BindDateTime(uint64_t julianDayMsec, DateTime
 //---------------------------------------------------------------------------------------
 ECSqlStatus PrimitiveECSqlBinder::_BindDateTime(double julianDay, DateTime::Info const& metadata)
     {
+    if (std::isnan(julianDay) || std::isinf(julianDay))
+        return _BindNull();
+
     const ECSqlStatus stat = CanBind(PRIMITIVETYPE_DateTime);
     if (!stat.IsSuccess())
         return stat;
@@ -112,6 +115,9 @@ ECSqlStatus PrimitiveECSqlBinder::_BindDateTime(double julianDay, DateTime::Info
 //---------------------------------------------------------------------------------------
 ECSqlStatus PrimitiveECSqlBinder::_BindDouble(double value)
     {
+    if (std::isnan(value) || std::isinf(value))
+        return _BindNull();
+
     const ECSqlStatus stat = CanBind(PRIMITIVETYPE_Double);
     if (!stat.IsSuccess())
         return stat;
