@@ -205,7 +205,7 @@ void Assert_BuiltinSchemaVersions_2_0_0_4(TestIModel& testDb)
 
 void Assert_BuiltinSchemaVersions_2_0_0_5(TestIModel& testDb)
     {
-    EXPECT_EQ(8, testDb.GetSchemaCount()) << testDb.GetDescription();
+    EXPECT_EQ(9, testDb.GetSchemaCount()) << testDb.GetDescription();
     //iModel built-in schema versions
     // Note: don't assert on original ecxml version for schemas that don't get upgraded automatically. That is to error-prone to test
     if (testDb.GetSchemaUpgradeOptions().AreDomainUpgradesAllowed())
@@ -695,6 +695,7 @@ TEST_F(IModelCompatibilityTestFixture, EC31ThreadPitchKindOfQuantities)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(IModelCompatibilityTestFixture, SchemaManager_EC31KindOfQuantities)
     {
+
     Utf8CP koq1Name = "TestKoq_M_Mfi8";
     Utf8CP koq2Name = "TestKoq_SQFTfi8_SQFTreal4u";
 
@@ -786,9 +787,8 @@ TEST_F(IModelCompatibilityTestFixture, SchemaManager_EC31KindOfQuantities)
             ASSERT_TRUE(koq2 != nullptr) << testDb.GetDescription();
             testDb.AssertKindOfQuantity(*koq2, "TestSchema", koq2Name, nullptr, nullptr, "u:SQ_FT", JsonValue(R"json(["f:DefaultRealU(4)[u:SQ_FT]"])json"), 1.0);
             assertReferencedUnitsAndFormatsSchema(testDb, koq2->GetSchema());
-
             bvector<ECSchemaCP> schemas = testDb.GetDb().Schemas().GetSchemas(true);
-            ASSERT_EQ(11, schemas.size()) << testDb.GetDescription();
+            ASSERT_EQ(12, schemas.size()) << testDb.GetDescription();
             bool containsUnitsSchema = false, containsFormatsSchema = false;
             for (ECSchemaCP schema : schemas)
                 {
