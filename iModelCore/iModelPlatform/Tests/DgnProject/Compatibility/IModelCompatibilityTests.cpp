@@ -731,7 +731,6 @@ TEST_F(IModelCompatibilityTestFixture, EC31ThreadPitchKindOfQuantities)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(IModelCompatibilityTestFixture, SchemaManager_EC31KindOfQuantities)
     {
-
     Utf8CP koq1Name = "TestKoq_M_Mfi8";
     Utf8CP koq2Name = "TestKoq_SQFTfi8_SQFTreal4u";
 
