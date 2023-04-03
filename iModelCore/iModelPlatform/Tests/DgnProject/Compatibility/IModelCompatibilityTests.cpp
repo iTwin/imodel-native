@@ -208,7 +208,7 @@ void Assert_BuiltinSchemaVersions_2_0_0_5(TestIModel& testDb)
     // Schema count will be incremented by 1 for test files containing BisCore (e.g 1.0.16) which have reference schema BisCustomAttributes
     // Schema count will remain same for test files containing older BisCore
     bool result = false;
-    int schemaCount = testDb.GetSchemaCount()
+    int schemaCount = testDb.GetSchemaCount();
     if (schemaCount == 8 || schemaCount == 9)
         result = true;
     ASSERT_TRUE(result) << testDb.GetDescription();
