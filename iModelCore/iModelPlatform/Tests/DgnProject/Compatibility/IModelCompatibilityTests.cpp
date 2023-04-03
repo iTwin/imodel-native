@@ -798,8 +798,7 @@ TEST_F(IModelCompatibilityTestFixture, SchemaManager_EC31KindOfQuantities)
             // Schema count will be incremented by 1 for test files containing BisCore which have reference schema BisCustomAttributes (e.g 1.0.16)
             // Schema count will remain same for test files containing older BisCore
             bool result = false;
-            int schemaCount = schemas.size();
-            if (schemaCount == 11 || schemaCount == 12)
+            if (schemas.size() == 11 || schemas.size() == 12)
                 result = true;
             ASSERT_TRUE(result) << testDb.GetDescription();
             bool containsUnitsSchema = false, containsFormatsSchema = false;
