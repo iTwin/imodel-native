@@ -68,6 +68,12 @@ struct RulesDrivenECPresentationManagerContentTests : PresentationManagerIntegra
         return fullContent;
         }
 
+    Utf8String GetNavigationPropertyTargetLabel(Utf8CP label = nullptr)
+        {
+        LabelDefinitionCPtr labelDefinition = LabelDefinition::Create(label ? label : CommonStrings::LABEL_NOTSPECIFIED);
+        return BeRapidJsonUtilities::ToString(labelDefinition->AsJson());
+        }
+
     static void ValidateFieldCategoriesHierarchy(ContentDescriptor::Field const&, bvector<Utf8String> const& expectedCategoriesHierarchyLeafToRoot);
     static bvector<ECPropertyCP> CreateNProperties(ECEntityClassR ecClass, int numberOfProperties);
 };
