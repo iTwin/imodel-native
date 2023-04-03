@@ -1,7 +1,7 @@
 ##Ignoring this test running from NuGet package files of different streams (e.g bim0200) as now ExtendedType is not persisted and added on the fly 
 ECDbCompatibilityTestFixture.ECSqlColumnInfoForAliases
 IModelCompatibilityTestFixture.ECSqlColumnInfoForAliases
-##Ignoring these tests for old test runners because schema count will be incremented by 1 for test files containing BisCore (e.g 1.0.16) 
-##which have reference schema BisCustomAttributes, old test runners can not be updated to support this change
+##Ignoring these tests for old test runners because schema count will be incremented by 1 for test files containing BisCore schema 
+##having new reference schema BisCustomAttributes (e.g BisCore.1.0.16), old test runners can not be updated to support this change
 IModelCompatibilityTestFixture.BuiltinSchemaVersions
 IModelCompatibilityTestFixture.SchemaManager_EC31KindOfQuantities
