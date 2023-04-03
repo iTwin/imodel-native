@@ -670,7 +670,7 @@ DbResult IntegrityChecker::CheckNavIds(std::function<bool(ECInstanceId, Utf8CP, 
             }
 
 			ECSqlStatement navStmt;
-			if (navStmt.Prepare(m_conn, query.c_str()) != ECSqlStatus::Success) {
+            if (navStmt.Prepare(m_conn, query.c_str()) != ECSqlStatus::Success) {
 				m_lastError = "failed to prepared ecsql for nav prop integrity check";
 				return BE_SQLITE_ERROR;
 			}
@@ -889,7 +889,7 @@ DbResult IntegrityChecker::CheckLinkTableFkClassIds(std::function<bool(ECInstanc
             auto targetECClassIdPropMap = relMap.GetTargetECClassIdPropMap();
 			if (targetECClassIdPropMap->IsMappedToSingleTable() && targetECClassIdPropMap->FindDataPropertyMap(primaryTable) && targetECClassIdPropMap->FindDataPropertyMap(primaryTable)->GetColumn().IsVirtual()) {
 				LOG.infov("integrity_check(check_link_table_source_and_target_class_ids) analyzing [relationship: %s] [prop: TargetECClassId]", classCP->GetFullName());
-				std::string query = SqlPrintfString("SELECT R.ECInstanceId, R.SourceECInstanceId, R.SourceECClassId FROM %s R LEFT JOIN meta.ECClassDef O ON O.ECInstanceId = R.SourceECClassId WHERE O.ECInstanceId IS NULL",
+				std::string query = SqlPrintfString("SELECT R.ECInstanceId, R.TargetECInstanceId, R.TargetECClassId FROM %s R LEFT JOIN meta.ECClassDef O ON O.ECInstanceId = R.TargetECClassId WHERE O.ECInstanceId IS NULL",
 													relMap.GetClass().GetECSqlName().c_str()).GetUtf8CP();
 
 				ECSqlStatement stmt;
