@@ -134,7 +134,7 @@ void Assert_BuiltinSchemaVersions_2_0_0_1(TestIModel& testDb)
     // Schema count will remain same for test files containing older BisCore
     bool result = false;
     int schemaCount = testDb.GetSchemaCount();
-    if (schemaCount == 9)
+    if (schemaCount == 8 || schemaCount == 9)
         result = true;
     ASSERT_TRUE(result) << testDb.GetDescription();
     //iModel built-in schema versions
@@ -175,7 +175,13 @@ void Assert_BuiltinSchemaVersions_2_0_0_1(TestIModel& testDb)
 //+---------------+---------------+---------------+---------------+---------------+------
 void Assert_BuiltinSchemaVersions_2_0_0_4(TestIModel& testDb)
     {
-    EXPECT_EQ(8, testDb.GetSchemaCount()) << testDb.GetDescription();
+    // Schema count will be incremented by 1 for test files containing BisCore (e.g 1.0.16) which have reference schema BisCustomAttributes
+    // Schema count will remain same for test files containing older BisCore
+    bool result = false;
+    int schemaCount = testDb.GetSchemaCount();
+    if (schemaCount == 8 || schemaCount == 9)
+        result = true;
+    ASSERT_TRUE(result) << testDb.GetDescription();
     //iModel built-in schema versions
     // Note: don't assert on original ecxml version for schemas that don't get upgraded automatically. That is to error-prone to test
     if (testDb.GetSchemaUpgradeOptions().AreDomainUpgradesAllowed())
