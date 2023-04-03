@@ -27,12 +27,12 @@ private:
             std::map<ECN::ECPropertyId, JsonValueBinder> m_structMemberBinders;
             //only relevant if binder is an array binder
             std::unique_ptr<JsonValueBinder> m_currentArrayElementBinder;
-            
+
             //only relevant if binder is a struct binder
             IECSqlBinder& CreateStructMemberBinder(ECN::ECPropertyCR);
             //only relevant if binder is an array binder
             IECSqlBinder& MoveCurrentArrayElementBinder(ECDbCR, ECSqlTypeInfo const& arrayTypeInfo);
-            
+
             ECSqlStatus FailIfTypeMismatch(ECN::PrimitiveType boundType) const;
             ECSqlStatus FailIfInvalid() const;
 

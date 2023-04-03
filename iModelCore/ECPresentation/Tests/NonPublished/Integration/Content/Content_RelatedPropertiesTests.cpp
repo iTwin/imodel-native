@@ -260,7 +260,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentModifierAppliesRelat
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": "InstanceA",
         "%s": null,
-        "%s": {"ECClassId": "%s", "ECInstanceId": "%s"},
+        "%s": {"ECClassId": "%s", "ECInstanceId": "%s", "Label": %s},
         "%s": [{
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
@@ -274,7 +274,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentModifierAppliesRelat
     })",
         descriptor->GetVisibleFields()[0]->GetUniqueName().c_str(),
         descriptor->GetVisibleFields()[1]->GetUniqueName().c_str(),
-        descriptor->GetVisibleFields()[2]->GetUniqueName().c_str(), instanceB->GetClass().GetId().ToString().c_str(), instanceB->GetInstanceId().c_str(),
+        descriptor->GetVisibleFields()[2]->GetUniqueName().c_str(), instanceB->GetClass().GetId().ToString().c_str(), instanceB->GetInstanceId().c_str(), GetNavigationPropertyTargetLabel().c_str(),
         descriptor->GetVisibleFields()[3]->GetUniqueName().c_str(),
         classB->GetId().ToString().c_str(), instanceB->GetInstanceId().c_str(),
         descriptor->GetVisibleFields()[3]->AsNestedContentField()->AsRelatedContentField()->GetFields().front()->GetUniqueName().c_str(),
@@ -1238,7 +1238,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
         "%s": [{
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
-                "%s": {"ECClassId": "%s", "ECInstanceId": "%s"}
+                "%s": {"ECClassId": "%s", "ECInstanceId": "%s", "Label": %s}
                 },
             "DisplayValues": {
                 "%s": "%s"
@@ -1248,7 +1248,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
         "%s": [{
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
-                "%s": {"ECClassId": "%s", "ECInstanceId": "%s"},
+                "%s": {"ECClassId": "%s", "ECInstanceId": "%s", "Label": %s},
                 "%s": 1,
                 "%s": "111",
                 "%s": [2, 1],
@@ -1279,7 +1279,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
             },{
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
-                "%s": {"ECClassId": "%s", "ECInstanceId": "%s"},
+                "%s": {"ECClassId": "%s", "ECInstanceId": "%s", "Label": %s},
                 "%s": 2,
                 "%s": "222",
                 "%s": [3],
@@ -1318,18 +1318,18 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
         FIELD_NAME(parentClass, "ParentProperty"),
         NESTED_CONTENT_FIELD_NAME(parentClass, childClass1),
         childClass1->GetId().ToString().c_str(), child1->GetInstanceId().c_str(),
-        FIELD_NAME(childClass1, "Parent"), parent->GetClass().GetId().ToString().c_str(), parent->GetInstanceId().c_str(),
+        FIELD_NAME(childClass1, "Parent"), parent->GetClass().GetId().ToString().c_str(), parent->GetInstanceId().c_str(), GetNavigationPropertyTargetLabel().c_str(),
         FIELD_NAME(childClass1, "Parent"), CommonStrings::LABEL_NOTSPECIFIED,
         NESTED_CONTENT_FIELD_NAME(parentClass, childClass2),
         childClass2->GetId().ToString().c_str(), child2->GetInstanceId().c_str(),
-        FIELD_NAME(childClass2, "Parent"), parent->GetClass().GetId().ToString().c_str(), parent->GetInstanceId().c_str(),
+        FIELD_NAME(childClass2, "Parent"), parent->GetClass().GetId().ToString().c_str(), parent->GetInstanceId().c_str(), GetNavigationPropertyTargetLabel().c_str(),
         FIELD_NAME(childClass2, "IntProperty"), FIELD_NAME(childClass2, "StringProperty"), FIELD_NAME(childClass2, "ArrayProperty"),
         FIELD_NAME(childClass2, "StructProperty"), FIELD_NAME(childClass2, "StructArrayProperty"),
         FIELD_NAME(childClass2, "Parent"), CommonStrings::LABEL_NOTSPECIFIED,
         FIELD_NAME(childClass2, "IntProperty"), FIELD_NAME(childClass2, "StringProperty"), FIELD_NAME(childClass2, "ArrayProperty"),
         FIELD_NAME(childClass2, "StructProperty"), FIELD_NAME(childClass2, "StructArrayProperty"),
         childClass2->GetId().ToString().c_str(), child3->GetInstanceId().c_str(),
-        FIELD_NAME(childClass2, "Parent"), parent->GetClass().GetId().ToString().c_str(),  parent->GetInstanceId().c_str(),
+        FIELD_NAME(childClass2, "Parent"), parent->GetClass().GetId().ToString().c_str(),  parent->GetInstanceId().c_str(), GetNavigationPropertyTargetLabel().c_str(),
         FIELD_NAME(childClass2, "IntProperty"), FIELD_NAME(childClass2, "StringProperty"), FIELD_NAME(childClass2, "ArrayProperty"),
         FIELD_NAME(childClass2, "StructProperty"), FIELD_NAME(childClass2, "StructArrayProperty"),
         FIELD_NAME(childClass2, "Parent"), CommonStrings::LABEL_NOTSPECIFIED,
@@ -1756,12 +1756,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedNestedIn
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": null,
-                "%s": {"ECClassId": "%s", "ECInstanceId": "%s"},
+                "%s": {"ECClassId": "%s", "ECInstanceId": "%s", "Label": %s},
                 "%s": [{
                     "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
                     "Values": {
                         "%s": null,
-                        "%s": {"ECClassId": "%s", "ECInstanceId": "%s"}
+                        "%s": {"ECClassId": "%s", "ECInstanceId": "%s", "Label": %s}
                         },
                     "DisplayValues": {
                         "%s": null,
@@ -1786,11 +1786,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedNestedIn
         FIELD_NAME(classA, "PropertyA"), NESTED_CONTENT_FIELD_NAME(classA, classB),
         classB->GetId().ToString().c_str(), instanceB->GetInstanceId().c_str(),
         FIELD_NAME(classB, "PropertyB"),
-        FIELD_NAME(classB, "A"), instanceA->GetClass().GetId().ToString().c_str(), instanceA->GetInstanceId().c_str(),
+        FIELD_NAME(classB, "A"), instanceA->GetClass().GetId().ToString().c_str(), instanceA->GetInstanceId().c_str(), GetNavigationPropertyTargetLabel().c_str(),
         NESTED_CONTENT_FIELD_NAME(classB, classC),
         classC->GetId().ToString().c_str(), instanceC->GetInstanceId().c_str(),
         FIELD_NAME(classC, "PropertyC"),
-        FIELD_NAME(classC, "B"), instanceB->GetClass().GetId().ToString().c_str(), instanceB->GetInstanceId().c_str(),
+        FIELD_NAME(classC, "B"), instanceB->GetClass().GetId().ToString().c_str(), instanceB->GetInstanceId().c_str(), GetNavigationPropertyTargetLabel().c_str(),
         FIELD_NAME(classC, "PropertyC"), FIELD_NAME(classC, "B"), CommonStrings::LABEL_NOTSPECIFIED,
         FIELD_NAME(classB, "PropertyB"), FIELD_NAME(classB, "A"), CommonStrings::LABEL_NOTSPECIFIED,
         NESTED_CONTENT_FIELD_NAME(classB, classC),
@@ -1889,7 +1889,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedNestedIn
                     "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
                     "Values": {
                         "%s": null,
-                        "%s": {"ECClassId": "%s", "ECInstanceId": "%s"}
+                        "%s": {"ECClassId": "%s", "ECInstanceId": "%s", "Label": %s}
                         },
                     "DisplayValues": {
                         "%s": null,
@@ -1913,7 +1913,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedNestedIn
         NESTED_CONTENT_FIELD_NAME(classA, classB), classB->GetId().ToString().c_str(), instanceB->GetInstanceId().c_str(),
         NESTED_CONTENT_FIELD_NAME(classB, classC), classC->GetId().ToString().c_str(), instanceC->GetInstanceId().c_str(),
         FIELD_NAME(classC, "PropertyC"),
-        FIELD_NAME(classC, "B"), instanceB->GetClass().GetId().ToString().c_str(), instanceB->GetInstanceId().c_str(),
+        FIELD_NAME(classC, "B"), instanceB->GetClass().GetId().ToString().c_str(), instanceB->GetInstanceId().c_str(), GetNavigationPropertyTargetLabel().c_str(),
         FIELD_NAME(classC, "PropertyC"), FIELD_NAME(classC, "B"), CommonStrings::LABEL_NOTSPECIFIED,
         NESTED_CONTENT_FIELD_NAME(classB, classC),
         FIELD_NAME(classC, "PropertyC"), FIELD_NAME(classC, "B"), CommonStrings::LABEL_NOTSPECIFIED

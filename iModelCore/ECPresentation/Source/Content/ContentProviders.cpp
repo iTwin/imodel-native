@@ -393,10 +393,13 @@ void ContentProvider::LoadNestedContentFieldValue(ContentSetItemR item, ContentD
                 int serializationFlags = GetSerializationFlags(isRelatedContent, true, ContentRequest::Values);
 
                 contentValues.SetArray();
+                contentDisplayValues.SetArray();
                 for (size_t i = 0; i < targetSetitems.size(); ++i)
+                    {
                     contentValues.PushBack(targetSetitems[i]->AsJson(serializationFlags, &contentValues.GetAllocator()), contentValues.GetAllocator());
+                    contentDisplayValues.PushBack(targetSetitems[i]->AsJson((int)ContentSetItem::SERIALIZE_DisplayValues, &contentDisplayValues.GetAllocator()), contentDisplayValues.GetAllocator());
+                    }
 
-                contentDisplayValues.CopyFrom(contentValues, contentDisplayValues.GetAllocator());
                 DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Loaded related content values.");
                 }
             }
