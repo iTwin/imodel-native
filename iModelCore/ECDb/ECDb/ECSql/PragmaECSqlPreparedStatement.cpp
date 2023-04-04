@@ -457,7 +457,7 @@ struct PragmaIntegrityCheck : PragmaManager::GlobalHandler {
                 rc = CheckAll(checker, *result, ecdb);
             };
         rowSet = std::move(result);
-        return BE_SQLITE_OK;
+        return rc;
     }
     DbResult CheckAll(IntegrityChecker& checker, StaticPragmaResult& result, ECDbCR ecdb) {
         result.AppendProperty("sno", PRIMITIVETYPE_Integer);
