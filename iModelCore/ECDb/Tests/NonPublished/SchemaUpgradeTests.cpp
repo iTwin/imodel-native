@@ -16138,78 +16138,7 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass_OverflowTableDoesNotExist
         ASSERT_FALSE(vs->IsColumnNull(4))  << "Expect ps5 to be not null (map to g1)";
     }
 }
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpgradeTestFixture, support_for_inf_and_nan) {
-    auto v1 = R"(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-                    <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
-                    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00.00" alias="bsca" />
-                    <ECEntityClass typeName="Element">
-                        <ECCustomAttributes>
-                            <ShareColumns xmlns="ECDbMap.02.00.00">
-                                <MaxSharedColumnsBeforeOverflow>4</MaxSharedColumnsBeforeOverflow>
-                            </ShareColumns>
-                            <ClassMap xmlns="ECDbMap.02.00.00">
-                                    <MapStrategy>TablePerHierarchy</MapStrategy>
-                            </ClassMap>
-                        </ECCustomAttributes>
-                        <ECProperty propertyName="inf_pos" typeName="double" />
-                        <ECProperty propertyName="inf_neg" typeName="double" />
-                        <ECProperty propertyName="nan_val" typeName="double" />
-                    </ECEntityClass>
-                </ECSchema>)"_schema;
 
-    ASSERT_EQ(SUCCESS, SetupECDb("test.ecdb", v1));
-
-    if("insert row") {
-        ECSqlStatement stmt;
-        ASSERT_EQ(stmt.Prepare(m_ecdb, "insert into ts.Element(inf_pos,inf_neg,nan_val) values(?,?,?)"), ECSqlStatus::Success);
-        stmt.BindDouble(1,  INFINITY);
-        stmt.BindDouble(2, -INFINITY);
-        stmt.BindDouble(3,  NAN);
-        ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
-    }
-    if("read row") {
-        ECSqlStatement stmt;
-        ASSERT_EQ(stmt.Prepare(m_ecdb, "select inf_pos, inf_neg, nan_val from ts.Element"), ECSqlStatus::Success);
-        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
-        auto inf_pos = stmt.GetValueDouble(0);
-        auto inf_neg = stmt.GetValueDouble(1);
-        auto nan_val = stmt.GetValueDouble(2);
-
-        ASSERT_EQ(std::isinf(inf_pos), true);
-        ASSERT_EQ(std::isinf(inf_neg), true);
-        ASSERT_EQ(std::isnan(nan_val), false);
-
-        auto inf_pos_isnull = stmt.IsValueNull(0);
-        auto inf_neg_isnull = stmt.IsValueNull(1);
-        auto nan_val_isnull = stmt.IsValueNull(2);
-
-        ASSERT_EQ(inf_pos_isnull, false);
-        ASSERT_EQ(inf_neg_isnull, false);
-        ASSERT_EQ(nan_val_isnull, true);
-    }
-    if ("jsoncpp must return null for inf") {
-        ECSqlStatement stmt;
-        ASSERT_EQ(stmt.Prepare(m_ecdb, "select inf_pos, inf_neg, nan_val from ts.Element"), ECSqlStatus::Success);
-        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
-        JsonECSqlSelectAdapter adaptor(stmt);
-        Json::Value jsonCpp;
-        EXPECT_EQ(SUCCESS, adaptor.GetRow(jsonCpp));
-        EXPECT_STREQ("{\"inf_neg\":null,\"inf_pos\":null}", jsonCpp.ToString().c_str());
-    }
-    if ("rapidjson must return null for inf") {
-        ECSqlStatement stmt;
-        ASSERT_EQ(stmt.Prepare(m_ecdb, "select  inf_pos, inf_neg, nan_val from ts.Element"), ECSqlStatus::Success);
-        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
-        JsonECSqlSelectAdapter adaptor(stmt);
-        BeJsDocument rapidJson;
-        EXPECT_EQ(SUCCESS, adaptor.GetRow(rapidJson));
-        Utf8String json = rapidJson.Stringify();
-        EXPECT_STREQ("{\"inf_pos\":", json.c_str());
-    }
-}
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------

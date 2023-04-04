@@ -3,6 +3,8 @@
 * See COPYRIGHT.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
+#include <sstream>
+#include <rapidjson/ostreamwrapper.h>
 
 USING_NAMESPACE_BENTLEY_EC
 #include <ECDb/ConcurrentQueryManager.h>
@@ -277,6 +279,69 @@ TEST_F(InstanceReaderFixture, ecsql_read_property) {
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_STREQ(stmt.GetNativeSql(), "SELECT extract_prop([ECClassDef].[ECClassId],[ECClassDef].[ECInstanceId],'name') FROM (SELECT [Id] ECInstanceId,32 ECClassId,[Description] FROM [main].[ec_Class]) [ECClassDef] WHERE [ECClassDef].[Description]='Relates the property to its PropertyCategory.'");
     ASSERT_STREQ(stmt.GetValueText(0), "PropertyHasCategory");
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceReaderFixture, rapid_json_patch_to_render_inf_and_nan_as_null_instead_of_failing_stringify) {
+        // Test for bentley specific change \src\imodel-native\iModelCore\libsrc\rapidjson\vendor\include\rapidjson\writer.h#551
+        // Patch to RapidJson write null instead of failing
+       BeJsDocument docNan;
+       docNan.toObject();
+       docNan["a"] = 0.1;
+       docNan["b"] = std::numeric_limits<double>::quiet_NaN();
+       docNan["c"] = 4.4;
+       ASSERT_STRCASEEQ("{\"a\":0.1,\"b\":null,\"c\":4.4}", docNan.Stringify().c_str());
+
+
+       BeJsDocument docInf;
+       docInf.toObject();
+       docInf["a"] = 0.1;
+       docInf["b"] = std::numeric_limits<double>::infinity();
+       docInf["c"] = 4.4;
+       ASSERT_STRCASEEQ("{\"a\":0.1,\"b\":null,\"c\":4.4}", docInf.Stringify().c_str());
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceReaderFixture, rapid_json_patch_to_render_inf_and_nan_as_null_instead_of_failing_writer) {
+        // Test for bentley specific change \src\imodel-native\iModelCore\libsrc\rapidjson\vendor\include\rapidjson\writer.h#353
+        // Patch to RapidJson write null instead of failing
+       std::ostringstream stream0;
+       rapidjson::OStreamWrapper osw0(stream0);
+
+       rapidjson::Writer<rapidjson::OStreamWrapper> writer0(osw0);
+       writer0.StartObject();
+       writer0.Key("a");
+       writer0.Double(0.1);
+       writer0.Key("b");
+       writer0.Double(std::numeric_limits<double>::infinity());
+       writer0.Key("c");
+       writer0.Double(4.4);
+       writer0.EndObject();
+       writer0.Flush();
+       osw0.Flush();
+       stream0.flush();
+       ASSERT_STRCASEEQ("{\"a\":0.1,\"b\":null,\"c\":4.4}", stream0.str().c_str());
+
+
+       std::ostringstream stream1;
+       rapidjson::OStreamWrapper osw1(stream1);
+       rapidjson::Writer<rapidjson::OStreamWrapper> writer1(osw1);
+       writer1.StartObject();
+       writer1.Key("a");
+       writer1.Double(0.1);
+       writer1.Key("b");
+       writer1.Double(std::numeric_limits<double>::quiet_NaN());
+       writer1.Key("c");
+       writer1.Double(4.4);
+       writer1.EndObject();
+       writer1.Flush();
+       osw1.Flush();
+       stream1.flush();
+       ASSERT_STRCASEEQ("{\"a\":0.1,\"b\":null,\"c\":4.4}", stream1.str().c_str());
 }
 
 //---------------------------------------------------------------------------------------

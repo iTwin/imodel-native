@@ -670,6 +670,20 @@ rapidjson::Document DefaultECPresentationSerializer::_AsJson(ContextR ctx, Conte
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Document DefaultECPresentationSerializer::_AsJson(ContextR ctx, NavigationPropertyValueCR value,
+    rapidjson::Document::AllocatorType* allocator) const
+    {
+    if (!value.IsValid())
+        return rapidjson::Document(allocator);
+
+    rapidjson::Document json = AsJson(ctx, value.GetKey(), allocator);
+    json.AddMember("Label", AsJson(ctx, value.GetLabel(), &json.GetAllocator()), json.GetAllocator());
+    return json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 rapidjson::Document DefaultECPresentationSerializer::_AsJson(ContextR ctx, DisplayValueGroupCR value,
     rapidjson::Document::AllocatorType* allocator) const
     {

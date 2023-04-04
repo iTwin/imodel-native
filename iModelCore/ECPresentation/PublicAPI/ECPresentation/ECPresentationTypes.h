@@ -41,6 +41,7 @@ ECPRESENTATION_REFCOUNTED_PTR(ContentDescriptor)
 ECPRESENTATION_TYPEDEFS(IPropertyCategorySupplier)
 ECPRESENTATION_TYPEDEFS(SelectionInfo)
 ECPRESENTATION_REFCOUNTED_PTR(SelectionInfo)
+ECPRESENTATION_TYPEDEFS(NavigationPropertyValue)
 ECPRESENTATION_TYPEDEFS(DisplayValueGroup)
 ECPRESENTATION_REFCOUNTED_PTR(DisplayValueGroup)
 ECPRESENTATION_TYPEDEFS(IContentFieldMatcher)
@@ -510,17 +511,20 @@ struct ECPresentationSerializerContext
 private:
     ECPresentation::UnitSystem m_unitSystem;
     IECPropertyFormatter const* m_propertyFormatter;
-	IECClassSerializer* m_classSerializer;
+    IECClassSerializer* m_classSerializer;
+    bool m_omitDisplayValues;
 public:
-    ECPresentationSerializerContext(): m_unitSystem(UnitSystem::Undefined), m_propertyFormatter(nullptr), m_classSerializer(nullptr) {}
-    ECPresentationSerializerContext(UnitSystem unitSystem, IECPropertyFormatter const* formatter, IECClassSerializer* serializer = nullptr) : m_unitSystem(unitSystem), m_propertyFormatter(formatter), m_classSerializer(serializer) {}
+    ECPresentationSerializerContext(): m_unitSystem(UnitSystem::Undefined), m_propertyFormatter(nullptr), m_classSerializer(nullptr), m_omitDisplayValues(false){}
+    ECPresentationSerializerContext(UnitSystem unitSystem, IECPropertyFormatter const* formatter, IECClassSerializer* serializer = nullptr) : m_unitSystem(unitSystem), m_propertyFormatter(formatter), m_classSerializer(serializer), m_omitDisplayValues(false) {}
 
     void SetUnitSystem(UnitSystem unitSystem) {m_unitSystem = unitSystem;}
     UnitSystem GetUnitSystem() const {return m_unitSystem;}
     void SetPropertyFormatter(IECPropertyFormatter const* formatter) {m_propertyFormatter = formatter;}
     ECPresentation::IECPropertyFormatter const* GetPropertyFormatter() {return m_propertyFormatter;}
-	void SetClassSerializer(IECClassSerializer* serializer) { m_classSerializer = serializer; }
-	ECPresentation::IECClassSerializer* GetClassSerializer() { return m_classSerializer; }
+    void SetClassSerializer(IECClassSerializer* serializer) {m_classSerializer = serializer;}
+    ECPresentation::IECClassSerializer* GetClassSerializer() {return m_classSerializer;}
+    void SetOmitDisplayValues(bool omitDisplayValues) {m_omitDisplayValues = omitDisplayValues;}
+    bool ShouldOmitDisplayValues() const {return m_omitDisplayValues;}
 };
 typedef ECPresentationSerializerContext& ECPresentationSerializerContextR;
 
