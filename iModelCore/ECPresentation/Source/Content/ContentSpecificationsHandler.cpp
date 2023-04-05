@@ -292,11 +292,18 @@ static bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> CreateF
     while (handledModifiersInPrevIteration != 0)
         {
         handledModifiersInPrevIteration = 0;
-        for (ContentModifierCP& modifier : modifiers)
+        for (auto& modifier : modifiers)
             {
-            ECClassCP modifierClass = nullptr;
-            if (modifier == nullptr || !modifier->ShouldApplyOnNestedContent() || nullptr == (modifierClass = helper.GetECClass(modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str())))
+            if (modifier == nullptr || !modifier->ShouldApplyOnNestedContent())
                 continue;
+
+            ECClassCP modifierClass = helper.GetECClass(modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str());
+            if (modifierClass == nullptr)
+                {
+                DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_INFO, LOG_ERROR, Utf8PrintfString("Content modifier specifies non-existing class: %s.%s.",
+                    modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str()));
+                continue;
+                }
 
             ECRelationshipConstraintClassList const* classes = GetClassFromRelationship(helper, spec);
             for (ECClassCP ecClass : *classes)
