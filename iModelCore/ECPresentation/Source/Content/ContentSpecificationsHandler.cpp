@@ -301,7 +301,7 @@ static bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> CreateF
             ECRelationshipConstraintClassList const* classes = GetClassFromRelationship(helper, spec);
             for (ECClassCP ecClass : *classes)
                 {
-                if (!ecClass->Is(modifierClass))// && !modifierClass->Is(ecClass))
+                if (!ecClass->Is(modifierClass) && !modifierClass->Is(ecClass))
                     continue;
                 DiagnosticsHelpers::ReportRule(*modifier);
                 bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> createdSpecs = FlattenedRelatedPropertiesSpecification::Create(modifier->GetRelatedProperties(), RelatedPropertiesSpecificationScopeInfo(modifier->GetPropertyCategories()));
