@@ -140,7 +140,7 @@ void Assert_BuiltinSchemaVersions_2_0_0_1(TestIModel& testDb)
     EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("BisCore") != nullptr) << testDb.GetDescription();
 
     // BisCustomAttributes schema is added to the test files containing BisCore schema having reference schema BisCustomAttributes (e.g BisCore.1.0.16)
-    if (testDb.GetSchemaVersion("BisCore") == SchemaVersion(1, 0, 16))
+    if (testDb.GetSchemaVersion("BisCore") >= SchemaVersion(1, 0, 16))
         EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("BisCustomAttributes") != nullptr) << testDb.GetDescription();
 
     //iModel built-in schema versions
@@ -191,7 +191,7 @@ void Assert_BuiltinSchemaVersions_2_0_0_4(TestIModel& testDb)
     EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("BisCore") != nullptr) << testDb.GetDescription();
 
     // BisCustomAttributes schema is added to the test files containing BisCore schema having reference schema BisCustomAttributes (e.g BisCore.1.0.16)
-    if (testDb.GetSchemaVersion("BisCore") == SchemaVersion(1, 0, 16))
+    if (testDb.GetSchemaVersion("BisCore") >= SchemaVersion(1, 0, 16))
         EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("BisCustomAttributes") != nullptr) << testDb.GetDescription();
 
     //iModel built-in schema versions
@@ -239,7 +239,7 @@ void Assert_BuiltinSchemaVersions_2_0_0_5(TestIModel& testDb)
     EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("BisCore") != nullptr) << testDb.GetDescription();
 
     // BisCustomAttributes schema is added to the test files containing BisCore schema having reference schema BisCustomAttributes (e.g BisCore.1.0.16)
-    if (testDb.GetSchemaVersion("BisCore") == SchemaVersion(1, 0, 16))
+    if (testDb.GetSchemaVersion("BisCore") >= SchemaVersion(1, 0, 16))
         EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("BisCustomAttributes") != nullptr) << testDb.GetDescription();
 
     //iModel built-in schema versions
@@ -837,7 +837,7 @@ TEST_F(IModelCompatibilityTestFixture, SchemaManager_EC31KindOfQuantities)
             EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("BisCore") != nullptr) << testDb.GetDescription();
 
             // BisCustomAttributes schema is added to the test files containing BisCore schema having reference schema BisCustomAttributes (e.g BisCore.1.0.16)
-            if (testDb.GetSchemaVersion("BisCore") == SchemaVersion(1, 0, 16))
+            if (testDb.GetSchemaVersion("BisCore") >= SchemaVersion(1, 0, 16))
                 EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("BisCustomAttributes") != nullptr) << testDb.GetDescription();
 
             bool containsUnitsSchema = false, containsFormatsSchema = false;
