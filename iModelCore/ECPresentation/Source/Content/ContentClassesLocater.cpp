@@ -240,30 +240,10 @@ protected:
 
         // first build a flat list of all related properties specifications
         auto flatSpecs = FlattenedRelatedPropertiesSpecification::Create(params.GetRelatedPropertySpecs(), RelatedPropertiesSpecificationScopeInfo(params.GetScopeCategorySpecifications()));
-        for (ContentModifierCP modifier : GetContext().GetRulesPreprocessor().GetContentModifiers())
-            {
-            if (modifier->GetRelatedProperties().empty())
-                {
-                // only interested in the ones with related property specs
-                continue;
-                }
-
-            ECClassCP modifierClass = GetContext().GetSchemaHelper().GetECClass(modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str());
-            if (modifierClass == nullptr)
-                {
-                DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_INFO, LOG_ERROR, Utf8PrintfString("Content modifier %s specifies non-existing class: %s.%s.",
-                    modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str()));
-                continue;
-                }
-
-            bool propertyClassMatchesModifierClass = propertyClass.GetClass().Is(modifierClass);
-            bool modifierClassMatchesPropertyClass = propertyClass.IsSelectPolymorphic() && modifierClass->Is(&propertyClass.GetClass());
-            if (propertyClassMatchesModifierClass || modifierClassMatchesPropertyClass)
-                {
-                DiagnosticsHelpers::ReportRule(*modifier);
-                ContainerHelpers::MovePush(flatSpecs, FlattenedRelatedPropertiesSpecification::Create(modifier->GetRelatedProperties(), RelatedPropertiesSpecificationScopeInfo(modifier->GetPropertyCategories())));
-                }
-            }
+        auto const& contentModifiers = GetContext().GetRulesPreprocessor().GetContentModifiers();
+        auto const& schemaHelper = GetContext().GetSchemaHelper();
+        ContainerHelpers::MovePush(flatSpecs, FlattenedRelatedPropertiesSpecification::CreateForSelectClassFromModifiers(propertyClass, contentModifiers, schemaHelper));
+        ContainerHelpers::MovePush(flatSpecs, FlattenedRelatedPropertiesSpecification::CreateForNestedPropertiesFromModifiers(flatSpecs, contentModifiers, schemaHelper));
         DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Got %" PRIu64 " flattened related property specs.", (uint64_t)flatSpecs.size()));
 
         // finally, build the response
