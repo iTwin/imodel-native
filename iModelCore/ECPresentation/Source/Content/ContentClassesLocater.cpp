@@ -240,7 +240,7 @@ protected:
 
         // first build a flat list of all related properties specifications
         auto flatSpecs = FlattenedRelatedPropertiesSpecification::Create(params.GetRelatedPropertySpecs(), RelatedPropertiesSpecificationScopeInfo(params.GetScopeCategorySpecifications()));
-        auto const& contentModifiers = GetContext().GetRulesPreprocessor().GetContentModifiers();
+        auto const contentModifiers = GetContext().GetRulesPreprocessor().GetContentModifiers();
         auto const& schemaHelper = GetContext().GetSchemaHelper();
         ContainerHelpers::MovePush(flatSpecs, FlattenedRelatedPropertiesSpecification::CreateForSelectClassFromModifiers(propertyClass, contentModifiers, schemaHelper));
         ContainerHelpers::MovePush(flatSpecs, FlattenedRelatedPropertiesSpecification::CreateForNestedPropertiesFromModifiers(flatSpecs, contentModifiers, schemaHelper));

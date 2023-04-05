@@ -338,7 +338,7 @@ bvector<std::unique_ptr<RelatedPropertySpecificationPaths>> ContentSpecification
     {
     // first build a flat list of all related properties specifications
     auto flatSpecs = FlattenedRelatedPropertiesSpecification::Create(params.GetRelatedPropertySpecs(), RelatedPropertiesSpecificationScopeInfo(params.GetScopeCategorySpecifications()));
-    auto const& contentModifiers = GetContext().GetRulesPreprocessor().GetContentModifiers();
+    auto const contentModifiers = GetContext().GetRulesPreprocessor().GetContentModifiers();
     auto const& schemaHelper = GetContext().GetSchemaHelper();
     auto const& selectClass = params.GetSourceClassInfo().GetSelectClass();
     ContainerHelpers::MovePush(flatSpecs, FlattenedRelatedPropertiesSpecification::CreateForSelectClassFromModifiers(selectClass, contentModifiers, schemaHelper));
