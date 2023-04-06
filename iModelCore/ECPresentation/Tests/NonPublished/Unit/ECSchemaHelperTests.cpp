@@ -1788,10 +1788,10 @@ DEFINE_SCHEMA(GetRelationshipPaths_PathsAreNotCreatedWhenIntermediateStepSpecsIs
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="C_D" strength="embedding" modifier="None">
-        <Source multiplicity="(1..1)" roleLabel="bc" polymorphic="true">
+        <Source multiplicity="(1..1)" roleLabel="cd" polymorphic="true">
             <Class class="C" />
         </Source>
-        <Target multiplicity="(0..*)" roleLabel="cb" polymorphic="true">
+        <Target multiplicity="(0..*)" roleLabel="dc" polymorphic="true">
             <Class class="D" />
         </Target>
     </ECRelationshipClass>
