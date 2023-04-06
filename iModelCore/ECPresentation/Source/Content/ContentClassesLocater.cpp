@@ -137,15 +137,14 @@ struct ClassesLocaterPropertyAppender : ContentSpecificationsHandler::PropertyAp
 {
 private:
     PropertyInfoStore m_propertyInfos;
-    ECClassCR m_propertyClass;
     ContentSpecificationsHandler::Context m_context;
     bset<bpair<ECRelationshipClassCP, ECClassCP>> m_handledNavigationPropRelationships;
 protected:
-    bool _Supports(ECPropertyCR prop, PropertySpecificationsList const& ovr) override
+    bool _Supports(ECPropertyCR prop, ECClassCR propertyClass, PropertySpecificationsList const& ovr) override
         {
-        return m_propertyInfos.ShouldDisplay(prop, m_propertyClass, [this]() { return CreateExpressionContext(m_context); }, ovr);
+        return m_propertyInfos.ShouldDisplay(prop, propertyClass, [this]() { return CreateExpressionContext(m_context); }, ovr);
         }
-    ContentSpecificationsHandler::PropertyAppendResult _Append(ECPropertyCR prop, Utf8CP, PropertySpecificationsList const&) override
+    ContentSpecificationsHandler::PropertyAppendResult _Append(ECPropertyCR prop, ECClassCR propertyClass, Utf8CP, PropertySpecificationsList const&) override
         {
         ContentSpecificationsHandler::PropertyAppendResult result(true);
         if (prop.GetIsNavigation())
@@ -157,7 +156,7 @@ protected:
             if (m_handledNavigationPropRelationships.find(key) == m_handledNavigationPropRelationships.end())
                 {
                 m_handledNavigationPropRelationships.insert(key);
-                navigationPropRelatedClass.SetSourceClass(m_propertyClass);
+                navigationPropRelatedClass.SetSourceClass(propertyClass);
                 navigationPropRelatedClass.GetRelationship().SetClass(rootRelationship);
                 navigationPropRelatedClass.GetTargetClass().SetClass(rootTarget);
                 result.GetAppendedNavigationPropertyPaths().push_back(navigationPropRelatedClass);
@@ -166,8 +165,8 @@ protected:
         return result;
         }
 public:
-    ClassesLocaterPropertyAppender(ContentSpecificationsHandler::Context const& context, bvector<ContentModifierCP> const& contentModifiers, ContentSpecificationCR spec, ECClassCR propertyClass)
-        : m_propertyInfos(context.GetSchemaHelper(), contentModifiers, &spec), m_propertyClass(propertyClass), m_context(context)
+    ClassesLocaterPropertyAppender(ContentSpecificationsHandler::Context const& context, bvector<ContentModifierCP> const& contentModifiers, ContentSpecificationCR spec)
+        : m_propertyInfos(context.GetSchemaHelper(), contentModifiers, &spec), m_context(context)
         {}
 };
 
@@ -213,9 +212,9 @@ protected:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
-    PropertyAppenderPtr _CreatePropertyAppender(std::unordered_set<ECClassCP> const&, RelatedClassPathCR, ECClassCR propertyClass, bvector<RelatedPropertiesSpecification const*> const&, PropertyCategorySpecificationsList const*) override
+    PropertyAppenderPtr _CreatePropertyAppender(std::unordered_set<ECClassCP> const&, RelatedClassPathCR, ECClassCP, bvector<RelatedPropertiesSpecification const*> const&, PropertyCategorySpecificationsList const*) override
         {
-        return new ClassesLocaterPropertyAppender(GetContext(), m_contentModifiers, *m_currentSpecification, propertyClass);
+        return new ClassesLocaterPropertyAppender(GetContext(), m_contentModifiers, *m_currentSpecification);
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -227,7 +226,7 @@ protected:
         ForEachDerivedClass(GetContext().GetConnection().GetECDb().Schemas(), propertyClass, [&](ECClassCR derivedClass)
             {
             for (auto prop : derivedClass.GetProperties(false))
-                result.MergeWith(AppendProperty(appender, *prop, propertyClassAlias.c_str(), {}));
+                result.MergeWith(AppendProperty(appender, *prop, propertyClass, propertyClassAlias.c_str(), {}));
             });
         return result;
         }
@@ -241,30 +240,10 @@ protected:
 
         // first build a flat list of all related properties specifications
         auto flatSpecs = FlattenedRelatedPropertiesSpecification::Create(params.GetRelatedPropertySpecs(), RelatedPropertiesSpecificationScopeInfo(params.GetScopeCategorySpecifications()));
-        for (ContentModifierCP modifier : GetContext().GetRulesPreprocessor().GetContentModifiers())
-            {
-            if (modifier->GetRelatedProperties().empty())
-                {
-                // only interested in the ones with related property specs
-                continue;
-                }
-
-            ECClassCP modifierClass = GetContext().GetSchemaHelper().GetECClass(modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str());
-            if (modifierClass == nullptr)
-                {
-                DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_INFO, LOG_ERROR, Utf8PrintfString("Content modifier %s specifies non-existing class: %s.%s.",
-                    modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str()));
-                continue;
-                }
-
-            bool propertyClassMatchesModifierClass = propertyClass.GetClass().Is(modifierClass);
-            bool modifierClassMatchesPropertyClass = propertyClass.IsSelectPolymorphic() && modifierClass->Is(&propertyClass.GetClass());
-            if (propertyClassMatchesModifierClass || modifierClassMatchesPropertyClass)
-                {
-                DiagnosticsHelpers::ReportRule(*modifier);
-                ContainerHelpers::MovePush(flatSpecs, FlattenedRelatedPropertiesSpecification::Create(modifier->GetRelatedProperties(), RelatedPropertiesSpecificationScopeInfo(modifier->GetPropertyCategories())));
-                }
-            }
+        auto const contentModifiers = GetContext().GetRulesPreprocessor().GetContentModifiers();
+        auto const& schemaHelper = GetContext().GetSchemaHelper();
+        ContainerHelpers::MovePush(flatSpecs, FlattenedRelatedPropertiesSpecification::CreateForSelectClassFromModifiers(propertyClass, contentModifiers, schemaHelper));
+        ContainerHelpers::MovePush(flatSpecs, FlattenedRelatedPropertiesSpecification::CreateForNestedPropertiesFromModifiers(flatSpecs, contentModifiers, schemaHelper));
         DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Got %" PRIu64 " flattened related property specs.", (uint64_t)flatSpecs.size()));
 
         // finally, build the response

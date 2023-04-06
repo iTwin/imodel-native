@@ -77,7 +77,11 @@ public:
     RelatedPropertiesSpecificationScopeInfo const& GetScope() const {return m_scope;}
     static bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> Create(RelatedPropertiesSpecificationCR, RelatedPropertiesSpecificationScopeInfo const&);
     static bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> Create(bvector<RelatedPropertiesSpecificationP> const&, RelatedPropertiesSpecificationScopeInfo const&);
-};
+    static void MoveNestedSpecification(bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>>&, bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>>&&, RelatedPropertiesSpecificationCR);
+    static bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> CreateForSelectClassFromModifiers(SelectClass<ECClass> const& selectClass, bvector<ContentModifierCP> const& modifiers, ECSchemaHelper const& helper);
+    static bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> CreateForNestedPropertiesFromModifiers(bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> const& flatSpecs, 
+        bvector<ContentModifierCP> const& modifiers, ECSchemaHelper const& helper);
+    };
 
 /*=================================================================================**//**
 * @bsiclass
@@ -255,8 +259,10 @@ struct ContentSpecificationsHandler
     private:
         ExpressionContextPtr m_expressionContext = nullptr;
     protected:
-        virtual bool _Supports(ECPropertyCR, PropertySpecificationsList const&) = 0;
-        virtual PropertyAppendResult _Append(ECPropertyCR, Utf8CP, PropertySpecificationsList const&) = 0;
+        virtual bool _Supports(ECPropertyCR, ECClassCR, PropertySpecificationsList const&) = 0;
+        virtual bool _IsDirectPropertiesAppender() { return false; }
+        virtual PropertyAppendResult _Append(ECPropertyCR, ECClassCR, Utf8CP, PropertySpecificationsList const&) = 0;
+        virtual PropertyAppendResult _AppendCalculatedProperty(ECClassCP ecClass, CalculatedPropertiesSpecificationCR spec, Utf8StringCR name) { return PropertyAppendResult(false); };
         ExpressionContextPtr CreateExpressionContext(Context const& context)
             {
             if (m_expressionContext != nullptr)
@@ -266,8 +272,10 @@ struct ContentSpecificationsHandler
             return m_expressionContext = ECExpressionContextsProvider::GetRulesEngineRootContext(params);
             }
     public:
-        bool Supports(ECPropertyCR ecProperty, PropertySpecificationsList const& overrides) {return _Supports(ecProperty, overrides);}
-        PropertyAppendResult Append(ECPropertyCR ecProperty, Utf8CP propertyClassAlias, PropertySpecificationsList const& overrides) {return _Append(ecProperty, propertyClassAlias, overrides);}
+        bool Supports(ECPropertyCR ecProperty, ECClassCR propertyClass, PropertySpecificationsList const& overrides) {return _Supports(ecProperty, propertyClass, overrides);}
+        bool IsDirectPropertiesAppender() { return _IsDirectPropertiesAppender(); }
+        PropertyAppendResult Append(ECPropertyCR ecProperty, ECClassCR propertyClass, Utf8CP propertyClassAlias, PropertySpecificationsList const& overrides) {return _Append(ecProperty, propertyClass, propertyClassAlias, overrides);}
+        PropertyAppendResult AppendCalculatedProperty(ECClassCP ecClass, CalculatedPropertiesSpecificationCR spec, Utf8StringCR name) { return _AppendCalculatedProperty(ecClass, spec, name); }
     };
     typedef RefCountedPtr<PropertyAppender> PropertyAppenderPtr;
 
@@ -285,7 +293,7 @@ private:
 
 protected:
     ECPRESENTATION_EXPORT virtual int _GetContentFlags(ContentSpecificationCR) const;
-    virtual PropertyAppenderPtr _CreatePropertyAppender(std::unordered_set<ECClassCP> const& actualSourceClasses, RelatedClassPathCR pathFromSelectToPropertyClass, ECClassCR propertyClass,
+    virtual PropertyAppenderPtr _CreatePropertyAppender(std::unordered_set<ECClassCP> const& actualSourceClasses, RelatedClassPathCR pathFromSelectToPropertyClass, ECClassCP propertyClass,
         bvector<RelatedPropertiesSpecification const*> const& relatedPropertyStack, PropertyCategorySpecificationsList const*) = 0;
     virtual bvector<std::unique_ptr<RelatedPropertySpecificationPaths>> _GetRelatedPropertyPaths(RelatedPropertyPathsParams const&) const;
     virtual void _AppendClass(SelectClassInfo const&) = 0;
@@ -295,7 +303,7 @@ protected:
     ECPRESENTATION_EXPORT virtual bvector<ContentSource> _BuildContentSource(bvector<RelatedClassPath> const&, ContentSpecificationCR);
     bvector<ContentSource> CreateContentSources(SelectClassWithExcludes<ECClass> const& selectClass, ECClassCP propertiesSourceClass, ContentSpecificationCR) const;
     bvector<ContentSource> CreateContentSources(RelatedClassPath const& pathFromInputToSelectClass, ContentSpecificationCR) const;
-    PropertyAppendResult AppendProperty(PropertyAppender&, ECPropertyCR, Utf8CP alias, PropertySpecificationsList const& overrides);
+    PropertyAppendResult AppendProperty(PropertyAppender&, ECPropertyCR, ECClassCR, Utf8CP alias, PropertySpecificationsList const& overrides);
     static int GetDefaultContentFlags(Utf8CP displayType, ContentSpecificationCR spec);
 
 protected:
