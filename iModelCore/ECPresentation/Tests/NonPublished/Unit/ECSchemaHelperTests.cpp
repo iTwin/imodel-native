@@ -1709,6 +1709,60 @@ TEST_F(ECSchemaHelperTests, GetRelationshipPaths_ReturnsPathsWhenIntermediateCla
     EXPECT_EQ(classC, &path2[1].GetTargetClass().GetClass());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(GetRelationshipPaths_PathsDoNotCreateWhenStepsSpecsAreIncompatible, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B" />
+    <ECEntityClass typeName="C" />
+    <ECRelationshipClass typeName="A_B" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="ab" polymorphic="true">
+            <Class class="A"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="ba" polymorphic="true">
+            <Class class="B" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="B_C" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="bc" polymorphic="true">
+            <Class class="B" />
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="cb" polymorphic="true">
+            <Class class="C" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(ECSchemaHelperTests, GetRelationshipPaths_PathsDoNotCreateWhenStepsSpecsAreIncompatible)
+    {
+    ECClassCP classA = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A");
+    ECClassCP classB = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "B");
+    ECClassCP classC = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "C");
+    ECRelationshipClassCP relAB = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A_B")->GetRelationshipClassCP();
+    ECRelationshipClassCP relBC = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "B_C")->GetRelationshipClassCP();
+
+    IECInstancePtr a = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr b = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    IECInstancePtr c = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC);
+
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relAB, *a, *b);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relBC, *b, *c);
+
+    CustomFunctionsInjector injectCustomFunctions(m_connections, *m_connection);
+
+    ECClassUseCounter counter;
+    RelationshipPathSpecification pathToRelatedInstanceSpec(
+        {
+        new RelationshipStepSpecification(relAB->GetFullName(), RequiredRelationDirection::RequiredRelationDirection_Forward), // A -> B
+        new RelationshipStepSpecification(relBC->GetFullName(), RequiredRelationDirection::RequiredRelationDirection_Backward) // C -> B incompatible
+        });
+    bvector<ECSchemaHelper::RelationshipPathsRequestParams::PathSpecification> pathSpecs = { ECSchemaHelper::RelationshipPathsRequestParams::PathSpecification(0, pathToRelatedInstanceSpec, true, {}) };
+    ECSchemaHelper::RelationshipPathsRequestParams params(SelectClass<ECClass>(*classA, ""), pathSpecs, nullptr, bvector<RelatedClassPath>(), counter, true);
+
+    ECSchemaHelper::RelationshipPathsResponse response = m_helper->GetRelationshipPaths(params);
+    ASSERT_EQ(0, response.GetPaths(0).size());
+    }
+
 #ifdef wip
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
