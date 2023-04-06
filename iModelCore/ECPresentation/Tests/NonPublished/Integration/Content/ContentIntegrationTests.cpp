@@ -6090,6 +6090,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     auto fieldsB = descriptor->GetVisibleFields()[0]->AsNestedContentField();
     EXPECT_EQ(1, fieldsB->GetFields().size()); // Only PropertyB, content modifier not applied
     EXPECT_STREQ("PropertyOverrideB", fieldsB->GetFields()[0]->GetLabel().c_str());
+    EXPECT_EQ(1, jsonValues[NESTED_CONTENT_FIELD_NAME(classA, classB)][0]["Values"].MemberCount());
+    EXPECT_STREQ("InstanceB", jsonValues[NESTED_CONTENT_FIELD_NAME(classA, classB)][0]["Values"][FIELD_NAME(classB, "PropertyB")].GetString());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -6159,6 +6161,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     auto fieldsB = descriptor->GetVisibleFields()[0]->AsNestedContentField();
     EXPECT_EQ(1, fieldsB->GetFields().size()); // Only PropertyB, calculated properties not added
     EXPECT_STREQ("PropertyOverrideB", fieldsB->GetFields()[0]->GetLabel().c_str());
+    EXPECT_EQ(1, jsonValues[NESTED_CONTENT_FIELD_NAME(classA, classB)][0]["Values"].MemberCount());
+    EXPECT_STREQ("InstanceB", jsonValues[NESTED_CONTENT_FIELD_NAME(classA, classB)][0]["Values"][FIELD_NAME(classB, "PropertyB")].GetString());
     }
 
 /*---------------------------------------------------------------------------------**//**
