@@ -81,8 +81,20 @@ ChangeSet::ConflictResolution RevisionManager::ConflictHandler(DgnDbCR dgndb, Ch
         int nConflicts = 0;
         result = iter.GetFKeyConflicts(&nConflicts);
         BeAssert(result == BE_SQLITE_OK);
-        LOG.errorv("Detected %d foreign key conflicts in ChangeSet. Aborting merge.", nConflicts);
-        return ChangeSet::ConflictResolution::Abort ;
+
+        uint64_t notUsed;
+        // Note: There is no performance implication of follow code as it happen toward end of
+        // apply_changeset only once so we be querying value for 'DebugAllowFkViolations' only once.
+        if (dgndb.QueryBriefcaseLocalValue(notUsed, "DebugAllowFkViolations") == BE_SQLITE_ROW)
+            {
+            LOG.errorv("Detected %d foreign key conflicts in changeset. Continuing merge as 'DebugAllowFkViolations' flag is set. Run 'PRAGMA foreign_key_check' to get list of violations.", nConflicts);
+            return ChangeSet::ConflictResolution::Skip;
+            }
+        else
+            {
+            LOG.errorv("Detected %d foreign key conflicts in ChangeSet. Aborting merge.", nConflicts);
+            return ChangeSet::ConflictResolution::Abort ;
+            }
         }
 
     if (cause == ChangeSet::ConflictCause::NotFound)
