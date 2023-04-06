@@ -63,6 +63,7 @@
 #include "ChangeIteratorImpl.h"
 #include "ChangeSummaryExtractor.h"
 #include "ConcurrentQueryManagerImpl.h"
+#include "QueryJsonAdaptor.h"
 #include "InstanceReaderImpl.h"
 #include "IntegrityChecker.h"
 #include "ECSql/NativeSqlBuilder.h"

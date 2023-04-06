@@ -208,6 +208,22 @@ RelatedPropertiesSpecification::~RelatedPropertiesSpecification()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+bool RelatedPropertiesSpecification::AllRelationshipPropertiesIncluded() const
+    {
+    return AllPropertiesWithNoOverridesIncluded(m_relationshipProperties);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool RelatedPropertiesSpecification::AllPropertiesIncluded() const
+    {
+    return AllPropertiesWithNoOverridesIncluded(m_properties);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 Utf8CP RelatedPropertiesSpecification::_GetXmlElementName() const {return RELATED_PROPERTIES_SPECIFICATION_XML_NODE_NAME;}
 
 /*---------------------------------------------------------------------------------**//**
@@ -419,13 +435,13 @@ void RelatedPropertiesSpecification::_WriteJson(BeJsValue json) const
 
     if (NoPropertiesIncluded(m_properties))
         json[RELATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_PROPERTIES] = INCLUDE_NO_PROPERTIES_SPEC;
-    else if (!AllPropertiesWithNoOverridesIncluded(m_properties))
+    else if (!AllPropertiesIncluded())
         {
         CommonToolsInternal::WriteRulesToJson<PropertySpecification, PropertySpecificationsList>
             (json[RELATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_PROPERTIES], m_properties);
         }
 
-    if (AllPropertiesWithNoOverridesIncluded(m_relationshipProperties))
+    if (AllRelationshipPropertiesIncluded())
         json[RELATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_RELATIONSHIPPROPERTIES] = INCLUDE_ALL_PROPERTIES_SPEC;
     else if (!NoPropertiesIncluded(m_relationshipProperties))
         {
