@@ -17,6 +17,7 @@
 #include <DgnPlatform/EntityIdsChangeGroup.h>
 #include <chrono>
 #include <tuple>
+#include <future>
 
 #if defined (BENTLEYCONFIG_PARASOLID)
 #include <PSBRepGeometry/PSBRepGeometry.h>
@@ -438,7 +439,6 @@ POP_DISABLE_DEPRECATION_WARNINGS
         RegisterOptionalDomains();
         InitLogging();
         InitializeSolidKernel();
-
         BeFileName path = PlatformLib::GetHost().GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
         path.AppendToPath(L"RscFonts.itwin-workspace");
         FontManager::AddWorkspaceDb(path.GetNameUtf8().c_str(), nullptr);
@@ -606,6 +606,63 @@ DgnDbPtr JsInterop::CreateIModel(Utf8StringCR filenameIn, BeJsConst props) {
 
     return db;
 }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult JsInterop::TriggerAutoCommitFailure(Napi::Env env, DbR db, bool reThrowAsJsException)
+    {
+    if (!db.IsDbOpen()) return BE_SQLITE_ERROR_NOTOPEN;
+    if (db.IsReadonly()) return BE_SQLITE_READONLY;
+    // BentleyApi::BeAssertFunctions::SetBeAssertHandler(nullptr);
+    auto insertRows = [](DbCR db, int count, int size, int times) {
+        for (int i = 0; i < times; ++i) {
+            db.TryExecuteSql(SqlPrintfString(R"s(
+                WITH
+                [sequence]([I]) AS(
+                    SELECT 1
+                    UNION
+                    SELECT [I] + 1
+                    FROM   [sequence]
+                    WHERE  [I] < %d
+                )
+                INSERT INTO temp.[auto_commit_test_table]
+                ([block])
+                SELECT RANDOMBLOB (%d)
+                FROM   [sequence];
+            )s", count, size));
+        }
+    };
+    auto rc = db.TryExecuteSql("drop table if exists temp.auto_commit_test_table;");
+    if (rc != BE_SQLITE_OK)
+        return rc;
+
+    rc = db.TryExecuteSql("create table temp.auto_commit_test_table(block);");
+    if (rc != BE_SQLITE_OK)
+        return rc;
+
+    rc = db.SaveChanges();
+    if (rc != BE_SQLITE_OK)
+        return rc;
+
+    auto f = std::async([&]() {
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        db.Interrupt();
+    });
+
+    UNUSED_VARIABLE(f);
+    try {
+        insertRows(db, 10000, 3, 4);
+    } catch (std::runtime_error exp) {
+        if (reThrowAsJsException) {
+            BeNapi::ThrowJsException(env, exp.what());
+        } else {
+            throw exp;
+        }
+    }
+    db.GetLastError(&rc);
+    return rc;
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod

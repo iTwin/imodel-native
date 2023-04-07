@@ -458,6 +458,8 @@ private:
     static void InitializeSolidKernel();
     static void AddFallbackSchemaLocaters(ECDbR db, ECSchemaReadContextPtr schemaContext);
 public:
+    static DbResult TriggerAutoCommitFailure(Napi::Env env, DbR db, bool reThrowAsJsException);
+
     static void HandleAssertion(WCharCP msg, WCharCP file, unsigned line, BeAssertFunctions::AssertType type);
     static void GetECValuesCollectionAsJson(BeJsValue json, ECN::ECValuesCollectionCR);
     static ECN::ECClassCP GetClassFromInstance(BeSQLite::EC::ECDbCR ecdb, BeJsConst jsonInstance);

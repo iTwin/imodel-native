@@ -770,7 +770,6 @@ BeGuid   Db::GetDbGuid() const {return m_dbFile->m_dbGuid;}
 int32_t  Db::GetCurrentSavepointDepth() const {return (int32_t) m_dbFile->m_txns.size();}
 Utf8String Db::GetLastError(DbResult* lastResult) const {return IsDbOpen() ? m_dbFile->GetLastError(lastResult) : "Not opened";}
 void Db::Interrupt() const {return sqlite3_interrupt(GetSqlDb());}
-
 int64_t  Db::GetLastInsertRowId() const {return sqlite3_last_insert_rowid(GetSqlDb());}
 int      Db::GetModifiedRowCount() const {return sqlite3_changes(GetSqlDb());}
 int      Db::GetTotalModifiedRowCount() const { return sqlite3_total_changes(GetSqlDb()); }
@@ -934,28 +933,20 @@ static Utf8CP getStartTxnSql(BeSQLiteTxnMode mode)
 static int savepointCommitHook(void* arg) {return ((DbFile*) arg)->OnCommit();}
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool BeSQLiteLib::s_throwExceptionOnUnexpectedAutoCommit = false;
-
-/*---------------------------------------------------------------------------------**//**
 * Ensure that all commits and rollbacks are done using BeSQLite api, not through SQL directly
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 int DbFile::OnCommit()
     {
     if (m_inCommit || m_txns.empty())
-        return  0;
+        return  BE_SQLITE_OK;
 
     // Sqlite initiate auto rollback in case of SQLITE_FULL, SQLITE_IOERR, SQLITE_NOMEM, SQLITE_BUSY, and SQLITE_INTERRUPT
     // We force a crash if COMMIT/ROLLBACK is called outside BeSQLite api.
     if (sqlite3_get_autocommit(m_sqlDb) != 0 ) {
         LOG.error("Sqlite initiated autocommit due to a fatal error.");
-        if (BeSQLiteLib::s_throwExceptionOnUnexpectedAutoCommit) {
-             LOG.error("Runtime debug option to throw exception on unexpected autocommit is set to *true*. Caller must handle exception and then delete the briefcase/db afterword.");
-            throw std::runtime_error("sqlite initiated autocommit due to a fatal error");
-        }
-        return 0;
+        throw std::runtime_error("sqlite initiated autocommit due to a fatal error");
+        return BE_SQLITE_OK;
     }
 
     BeAssert(0);     // !!! USE BeSQLite API !!!
@@ -970,7 +961,7 @@ int DbFile::OnCommit()
    #pragma clang diagnostic pop
 #endif
 
-    return  1;
+    return  BE_SQLITE_ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**

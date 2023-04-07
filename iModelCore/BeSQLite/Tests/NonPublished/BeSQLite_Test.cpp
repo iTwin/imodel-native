@@ -6,6 +6,7 @@
 #include <BeSQLite/ChangeSet.h>
 #include <Bentley/BeDirectoryIterator.h>
 #include <BeSQLite/Profiler.h>
+#include <future>
 using namespace MemorySize;
 
 #define MEM_THRESHOLD (100 * MEG)
@@ -297,6 +298,85 @@ struct DisableAsserts {
     ~DisableAsserts() { BeTest::SetFailOnAssert(true); }
 };
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(BeSQliteTestFixture, HandleAutoCommitFailure) {
+    DisableAsserts _notused;
+    auto insertRows = [](DbCR db, int count, int size, int times) {
+        for (int i = 0; i < times; ++i) {
+            db.TryExecuteSql(SqlPrintfString(R"s(
+                WITH
+                [sequence]([I]) AS(
+                    SELECT 1
+                    UNION
+                    SELECT [I] + 1 FROM [sequence] WHERE [I] < %d
+                )
+                INSERT INTO temp.[table0] ([block])
+                SELECT RANDOMBLOB (%d) FROM   [sequence];
+            )s", count, size));
+        }
+    };
+    auto db = Create("auto_commit.db");
+    EXPECT_EQ(BE_SQLITE_OK, db->TryExecuteSql("create table temp.table0(block);"));
+    db->SaveChanges();
+    auto r = std::async([&]() {
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        db->Interrupt();
+    });
+
+    bool caughtException = false;
+    try {
+        insertRows(*db, 10000, 3, 4);
+    } catch(std::runtime_error err) {
+        ASSERT_STREQ(err.what(), "sqlite initiated autocommit due to a fatal error");
+        caughtException = true;
+    }
+    ASSERT_TRUE(caughtException);
+    ASSERT_EQ(BE_SQLITE_ERROR, db->SaveChanges());
+    ASSERT_EQ(BE_SQLITE_ERROR, db->AbandonChanges());
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(BeSQliteTestFixture, HandleSqliteFullFailure) {
+    DisableAsserts _notused;
+    auto getPageCount = [](DbCR db) -> int {
+        Statement stmt;
+        EXPECT_EQ(BE_SQLITE_OK, stmt.Prepare(db, "PRAGMA page_count"));
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+        return stmt.GetValueInt(0);
+    };
+    auto getMaxPageCount = [](DbCR db)  -> int{
+        Statement stmt;
+        EXPECT_EQ(BE_SQLITE_OK, stmt.Prepare(db, "PRAGMA max_page_count"));
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+        return stmt.GetValueInt(0);
+    };
+    auto setMaxPageCount = [](DbCR db, int count)  -> int{
+        Statement stmt;
+        EXPECT_EQ(BE_SQLITE_OK, stmt.Prepare(db, SqlPrintfString("PRAGMA max_page_count=%d", count).GetUtf8CP()));
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+        return stmt.GetValueInt(0);
+    };
+
+    auto db = Create("sqlite_full.db");
+    EXPECT_EQ(BE_SQLITE_OK, db->ExecuteSql("create table table0(block);"));
+    db->SaveChanges();
+    db->Vacuum();
+    const auto pageCount = getPageCount(*db);
+    const int additionPages = 10;
+    const auto maxPageCount = setMaxPageCount(*db, pageCount + additionPages);
+    ASSERT_EQ(pageCount + additionPages, maxPageCount);
+    ASSERT_EQ(BE_SQLITE_FULL, db->ExecuteSql("insert into table0 values (zeroblob(1024*512))"));
+    ASSERT_EQ(BE_SQLITE_ERROR, db->SaveChanges());
+    ASSERT_EQ(BE_SQLITE_ERROR, db->AbandonChanges());
+    db->CloseDb();
+}
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 TEST_F(BeSQliteTestFixture, WAL_basic_test) {
     DisableAsserts _notused;
     auto getFileSize = [](Utf8CP name) {

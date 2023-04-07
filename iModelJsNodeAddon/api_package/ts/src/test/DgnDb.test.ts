@@ -361,6 +361,17 @@ describe("basic tests", () => {
     dbForSchemaUpgrade.closeIModel();
   });
 
+  it("trigger auto commit", () => {
+    const testFile = dbFileName.replace("test.bim", "auto-commit.bim");
+    if (fs.existsSync(testFile)) {
+      fs.unlinkSync(testFile);
+    }
+    fs.copyFileSync(dbFileName, testFile);
+    const db = openDgnDb(testFile);
+    db.saveChanges();
+    assert.throws(() => db.triggerAutoCommitFailure(true), "sqlite initiated autocommit due to a fatal error");
+  });
+
   it("import schema with schemaLockHeld flag", async () => {
     let t = 0;
     const generateIntProp = (propCount: number, prefix: string = "P") => {

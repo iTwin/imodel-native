@@ -2261,6 +2261,13 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         return JsInterop::ConcurrentQueryResetConfig(Env(), GetDgnDb());
     }
 
+    Napi::Value TriggerAutoCommitFailure(NapiInfoCR info) {
+        RequireDbIsOpen(info);
+        OPTIONAL_ARGUMENT_BOOL(0, reThrowJsException, false);
+        const auto rc = JsInterop::TriggerAutoCommitFailure(Env(), GetDgnDb(), reThrowJsException);
+        return Napi::Number::New(Env(), rc);;
+    }
+
     void ConcurrentQueryShutdown(NapiInfoCR info) {
         RequireDbIsOpen(info);;
         ConcurrentQueryMgr::Shutdown(GetDgnDb());
@@ -2422,6 +2429,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
             InstanceMethod("startCreateChangeset", &NativeDgnDb::StartCreateChangeset),
             InstanceMethod("startProfiler", &NativeDgnDb::StartProfiler),
             InstanceMethod("stopProfiler", &NativeDgnDb::StopProfiler),
+            InstanceMethod("triggerAutoCommitFailure", &NativeDgnDb::TriggerAutoCommitFailure),
             InstanceMethod("updateElement", &NativeDgnDb::UpdateElement),
             InstanceMethod("updateElementAspect", &NativeDgnDb::UpdateElementAspect),
             InstanceMethod("updateElementGeometryCache", &NativeDgnDb::UpdateElementGeometryCache),
