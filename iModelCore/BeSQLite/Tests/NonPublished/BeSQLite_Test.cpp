@@ -348,12 +348,6 @@ TEST_F(BeSQliteTestFixture, HandleSqliteFullFailure) {
         EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
         return stmt.GetValueInt(0);
     };
-    auto getMaxPageCount = [](DbCR db)  -> int{
-        Statement stmt;
-        EXPECT_EQ(BE_SQLITE_OK, stmt.Prepare(db, "PRAGMA max_page_count"));
-        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
-        return stmt.GetValueInt(0);
-    };
     auto setMaxPageCount = [](DbCR db, int count)  -> int{
         Statement stmt;
         EXPECT_EQ(BE_SQLITE_OK, stmt.Prepare(db, SqlPrintfString("PRAGMA max_page_count=%d", count).GetUtf8CP()));
