@@ -71,6 +71,7 @@ private:
     Utf8String m_className;
     ContentModifiersList m_modifiers;
     RequiredSchemaSpecificationsList m_requiredSchemas;
+    bool m_applyOnNestedContent;
 
 protected:
     ECPRESENTATION_EXPORT Utf8CP _GetXmlElementName () const override;
@@ -86,8 +87,8 @@ protected:
     ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationKeyCR) const override;
 
 public:
-    ContentModifier() {}
-    ContentModifier(Utf8String schemaName, Utf8String className) : m_schemaName(schemaName), m_className(className) {}
+    ContentModifier() : m_applyOnNestedContent(false) {}
+    ContentModifier(Utf8String schemaName, Utf8String className) : m_schemaName(schemaName), m_className(className), m_applyOnNestedContent(false) {}
     ECPRESENTATION_EXPORT ContentModifier(ContentModifier const&);
     ECPRESENTATION_EXPORT ContentModifier(ContentModifier&&);
     ECPRESENTATION_EXPORT ~ContentModifier();
@@ -110,6 +111,9 @@ public:
 
     PropertySpecificationsList const& GetPropertyOverrides() const {return m_modifiers.GetPropertyOverrides();}
     void AddPropertyOverride(PropertySpecificationR specification) {m_modifiers.AddPropertyOverride(specification);}
+
+    bool ShouldApplyOnNestedContent() const { return m_applyOnNestedContent; }
+    void SetApplyOnNestedContent(bool value) { m_applyOnNestedContent = value; InvalidateHash(); }
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE
