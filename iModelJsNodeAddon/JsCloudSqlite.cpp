@@ -56,7 +56,7 @@ struct JsCloudCache : CloudCache, Napi::ObjectWrap<JsCloudCache> {
         Utf8StringCR name = stringMember(args, JSON_NAME(name));
         Utf8StringCR rootDir = stringMember(args, JSON_NAME(rootDir));
         if (name.empty() || rootDir.empty())
-            BeNapi::ThrowJsException(info.Env(), "invalid arguments");
+            BeNapi::ThrowJsException(info.Env(), "invalid arguments", DbResult::BE_SQLITE_MISUSE);
 
         int64_t cacheSize = 50 * MemorySize::GIG; // default in sqlite is 1G, that's way too small
         auto cacheSizeStr = stringMember(args, JSON_NAME(cacheSize));
@@ -64,14 +64,14 @@ struct JsCloudCache : CloudCache, Napi::ObjectWrap<JsCloudCache> {
             cacheSizeStr.ToUpper();
             cacheSize = parseCacheSize(cacheSizeStr.c_str());
             if (cacheSize < 0)
-                BeNapi::ThrowJsException(info.Env(), "illegal cache size");
+                BeNapi::ThrowJsException(info.Env(), "illegal cache size", DbResult::BE_SQLITE_MISUSE);
         }
         bool curlDiagnostics = boolMember(args, JSON_NAME(curlDiagnostics), false);
         auto stat = InitCache(name, rootDir, cacheSize, intMember(args, JSON_NAME(nRequests), 0), intMember(args, JSON_NAME(httpTimeout), 0), curlDiagnostics);
         if (!stat.IsSuccess()) {
             if (stat.m_status == BE_SQLITE_CANTOPEN)
                 stat.m_error = "Cannot create CloudCache: invalid cache directory or directory does not exist";
-            BeNapi::ThrowJsException(info.Env(), stat.m_error.c_str());
+            BeNapi::ThrowJsException(info.Env(), stat.m_error.c_str(), stat.m_status);
         }
     }
 
