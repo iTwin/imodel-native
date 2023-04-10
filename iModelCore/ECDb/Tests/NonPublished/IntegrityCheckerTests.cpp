@@ -48,7 +48,7 @@ struct IntegrityCheckerFixture : ECDbTestFixture {
 TEST_F(IntegrityCheckerFixture, experimental_check) {
     SetupECDb("test.ecdb");
     ECSqlStatement stmt;
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "PRAGMA integrity_check"));
+    EXPECT_EQ(ECSqlStatus(BE_SQLITE_ERROR), stmt.Prepare(m_ecdb, "PRAGMA integrity_check"));
 }
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -132,6 +132,8 @@ TEST_F(IntegrityCheckerFixture, check_all) {
     };
 
     ASSERT_EQ(BE_SQLITE_OK, OpenCopyOfDataFile("test.bim", "check_all.bim", Db::OpenMode::ReadWrite));
+    ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
     executeTest();
 
 }

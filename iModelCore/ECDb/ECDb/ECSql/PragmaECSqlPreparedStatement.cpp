@@ -223,7 +223,7 @@ struct PragmaIntegrityCheck : PragmaManager::GlobalHandler {
 
     virtual DbResult Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const& v)  override {
         if (!ecdb.GetECSqlConfig().GetExperimentalFeaturesEnabled()) {
-            ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "PRAGMA integrity_check is experimental feature. Use 'PRAGMA experimental_feature=true' to enable it.");
+            ecdb.GetImpl().Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "PRAGMA integrity_check is experimental feature. Use 'PRAGMA experimental_feature=true' to enable it.");
             return BE_SQLITE_ERROR;
         }
 
@@ -445,14 +445,21 @@ struct PragmaIntegrityCheck : PragmaManager::GlobalHandler {
 //---------------------------------------------------------------------------------------
 void PragmaManager::InitSystemPragmas() {
     // Register(PragmaECSchemaVersion::Create());
-    Register(PragmaECDbVersion::Create());
-    Register(PragmaExplainQuery::Create());
-    Register(DisqualifyTypeIndex::Create());
-    Register(PragmaHelp::Create(*this));
-    Register(PragmaIntegrityCheck::Create());
-    Register(PragmaIntegrityCheck::Create());
-    Register(PragmaExperimentalFeatures::Create());
+    BentleyStatus rc;
+    UNUSED_VARIABLE(rc);
 
+    rc = Register(PragmaECDbVersion::Create());
+    BeAssert(rc == SUCCESS);
+    rc = Register(PragmaExplainQuery::Create());
+    BeAssert(rc == SUCCESS);
+    rc = Register(DisqualifyTypeIndex::Create());
+    BeAssert(rc == SUCCESS);
+    rc = Register(PragmaHelp::Create(*this));
+    BeAssert(rc == SUCCESS);
+    rc = Register(PragmaIntegrityCheck::Create());
+    BeAssert(rc == SUCCESS);
+    rc = Register(PragmaExperimentalFeatures::Create());
+    BeAssert(rc == SUCCESS);
 }
 
 //---------------------------------------------------------------------------------------
