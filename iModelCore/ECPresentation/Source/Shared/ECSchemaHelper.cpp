@@ -1906,7 +1906,7 @@ static bvector<RelatedClassPath> BuildRelationshipPathsFromStepSpecifications(EC
     for (auto& step : steps)
         {
         bvector<RelatedClassPath> next = BuildRelationshipPathsFromStepSpecifications(helper, step.GetTargetClass().GetClass(), stepIndex + 1, stepSpecs, stepInstanceFilters, classCounter, looseSourceMatching);
-        if (next.empty())
+        if (next.empty() && stepIndex + 1 == stepSpecs.size())
             {
             paths.push_back({step});
             }

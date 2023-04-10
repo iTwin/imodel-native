@@ -3,7 +3,7 @@
 * See COPYRIGHT.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
-#include<sstream>
+#include <sstream>
 #include <rapidjson/ostreamwrapper.h>
 
 USING_NAMESPACE_BENTLEY_EC
@@ -88,23 +88,23 @@ TEST_F(InstanceReaderFixture, check_instance_serialization) {
         [
             {
                 "ECInstanceId":"0x38",
-                "ECClassId":"Generic.PhysicalObject",
+                "ECClassId":"0xe7",
                 "Model":{
                     "Id":"0x1f",
-                    "RelECClassId":"BisCore.ModelContainsElements"
+                    "RelECClassId":"0x40"
                 },
                 "LastMod":"2017-07-25T20:44:59.926Z",
                 "CodeSpec":{
                     "Id":"0x1",
-                    "RelECClassId":"BisCore.CodeSpecSpecifiesCode"
+                    "RelECClassId":"0x47"
                 },
                 "CodeScope":{
                     "Id":"0x1",
-                    "RelECClassId":"BisCore.ElementScopesCode"
+                    "RelECClassId":"0x49"
                 },
                 "Category":{
                     "Id":"0x17",
-                    "RelECClassId":"BisCore.GeometricElement3dIsInCategory"
+                    "RelECClassId":"0x8c"
                 },
                 "InSpatialIndex":true,
                 "Origin":{
@@ -129,23 +129,23 @@ TEST_F(InstanceReaderFixture, check_instance_serialization) {
             },
             {
                 "ECInstanceId":"0x39",
-                "ECClassId":"Generic.PhysicalObject",
+                "ECClassId":"0xe7",
                 "Model":{
                     "Id":"0x24",
-                    "RelECClassId":"BisCore.ModelContainsElements"
+                    "RelECClassId":"0x40"
                 },
                 "LastMod":"2017-07-25T20:44:59.926Z",
                 "CodeSpec":{
                     "Id":"0x1",
-                    "RelECClassId":"BisCore.CodeSpecSpecifiesCode"
+                    "RelECClassId":"0x47"
                 },
                 "CodeScope":{
                     "Id":"0x1",
-                    "RelECClassId":"BisCore.ElementScopesCode"
+                    "RelECClassId":"0x49"
                 },
                 "Category":{
                     "Id":"0x17",
-                    "RelECClassId":"BisCore.GeometricElement3dIsInCategory"
+                    "RelECClassId":"0x8c"
                 },
                 "InSpatialIndex":true,
                 "Origin":{
@@ -170,23 +170,23 @@ TEST_F(InstanceReaderFixture, check_instance_serialization) {
             },
             {
                 "ECInstanceId":"0x3a",
-                "ECClassId":"Generic.PhysicalObject",
+                "ECClassId":"0xe7",
                 "Model":{
                     "Id":"0x22",
-                    "RelECClassId":"BisCore.ModelContainsElements"
+                    "RelECClassId":"0x40"
                 },
                 "LastMod":"2017-07-25T20:44:59.926Z",
                 "CodeSpec":{
                     "Id":"0x1",
-                    "RelECClassId":"BisCore.CodeSpecSpecifiesCode"
+                    "RelECClassId":"0x47"
                 },
                 "CodeScope":{
                     "Id":"0x1",
-                    "RelECClassId":"BisCore.ElementScopesCode"
+                    "RelECClassId":"0x49"
                 },
                 "Category":{
                     "Id":"0x17",
-                    "RelECClassId":"BisCore.GeometricElement3dIsInCategory"
+                    "RelECClassId":"0x8c"
                 },
                 "InSpatialIndex":true,
                 "Origin":{
@@ -211,23 +211,23 @@ TEST_F(InstanceReaderFixture, check_instance_serialization) {
             },
             {
                 "ECInstanceId":"0x3b",
-                "ECClassId":"Generic.PhysicalObject",
+                "ECClassId":"0xe7",
                 "Model":{
                     "Id":"0x23",
-                    "RelECClassId":"BisCore.ModelContainsElements"
+                    "RelECClassId":"0x40"
                 },
                 "LastMod":"2017-07-25T20:44:59.942Z",
                 "CodeSpec":{
                     "Id":"0x1",
-                    "RelECClassId":"BisCore.CodeSpecSpecifiesCode"
+                    "RelECClassId":"0x47"
                 },
                 "CodeScope":{
                     "Id":"0x1",
-                    "RelECClassId":"BisCore.ElementScopesCode"
+                    "RelECClassId":"0x49"
                 },
                 "Category":{
                     "Id":"0x17",
-                    "RelECClassId":"BisCore.GeometricElement3dIsInCategory"
+                    "RelECClassId":"0x8c"
                 },
                 "InSpatialIndex":true,
                 "Origin":{
@@ -280,7 +280,7 @@ TEST_F(InstanceReaderFixture, ecsql_read_instance) {
 
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_STREQ(stmt.GetNativeSql(), "SELECT extract_inst([ECClassDef].[ECClassId],[ECClassDef].[ECInstanceId]) FROM (SELECT [Id] ECInstanceId,32 ECClassId,[Description] FROM [main].[ec_Class]) [ECClassDef] WHERE [ECClassDef].[Description]='Relates the property to its PropertyCategory.'");
-    ASSERT_STREQ(stmt.GetValueText(0), R"json({"ECInstanceId":"0x2e","ECClassId":"ECDbMeta.ECClassDef","Schema":{"Id":"0x4","RelECClassId":"ECDbMeta.SchemaOwnsClasses"},"Name":"PropertyHasCategory","Description":"Relates the property to its PropertyCategory.","Type":1,"Modifier":2,"RelationshipStrength":0,"RelationshipStrengthDirection":1})json");
+    ASSERT_STREQ(stmt.GetValueText(0), R"json({"ECInstanceId":"0x2e","ECClassId":"0x20","Schema":{"Id":"0x4","RelECClassId":"0x21"},"Name":"PropertyHasCategory","Description":"Relates the property to its PropertyCategory.","Type":1,"Modifier":2,"RelationshipStrength":0,"RelationshipStrengthDirection":1})json");
 }
 
 //---------------------------------------------------------------------------------------
@@ -323,7 +323,6 @@ TEST_F(InstanceReaderFixture, rapid_json_patch_to_render_inf_and_nan_as_null_ins
        ASSERT_STRCASEEQ("{\"a\":0.1,\"b\":null,\"c\":4.4}", docInf.Stringify().c_str());
 }
 
-
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -365,7 +364,6 @@ TEST_F(InstanceReaderFixture, rapid_json_patch_to_render_inf_and_nan_as_null_ins
        ASSERT_STRCASEEQ("{\"a\":0.1,\"b\":null,\"c\":4.4}", stream1.str().c_str());
 }
 
-
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -382,10 +380,10 @@ TEST_F(InstanceReaderFixture, instance_reader) {
     BeJsDocument doc;
     doc.Parse(R"json({
         "ECInstanceId": "0x2e",
-        "ECClassId": "ECDbMeta.ECClassDef",
+        "ECClassId": "0x20",
         "Schema": {
             "Id": "0x4",
-            "RelECClassId": "ECDbMeta.SchemaOwnsClasses"
+            "RelECClassId": "0x21"
         },
         "Name": "PropertyHasCategory",
         "Description": "Relates the property to its PropertyCategory.",
@@ -953,7 +951,7 @@ TEST_F(InstanceReaderFixture, nested_struct) {
     BeJsDocument expected;
     expected.Parse(R"json({
         "ECInstanceId": "0x1",
-        "ECClassId": "TestSchema.e_mix",
+        "ECClassId": "0x49",
         "b": true,
         "bi": "encoding=base64;SA==",
         "d": 3.141592653589793,
