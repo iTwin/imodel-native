@@ -35,7 +35,6 @@
 
 #include "ECDbSqlFunctions.h"
 
-#include "ECDbValidationChecks.h"
 #include "DbMappingManager.h"
 #include "DbMapValidator.h"
 #include "MapStrategy.h"

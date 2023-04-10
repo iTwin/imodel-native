@@ -42,7 +42,14 @@ struct IntegrityCheckerFixture : ECDbTestFixture {
         return doc.Stringify(StringifyFormat::Indented);
     }
 };
-
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(IntegrityCheckerFixture, experimental_check) {
+    SetupECDb("test.ecdb");
+    ECSqlStatement stmt;
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "PRAGMA integrity_check"));
+}
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -183,6 +190,9 @@ TEST_F(IntegrityCheckerFixture, check_nav_class_ids) {
     };
 
     ASSERT_EQ(BE_SQLITE_OK, OpenCopyOfDataFile("test.bim", "test.bim", Db::OpenMode::ReadWrite));
+    ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
+
     executeTest();
 }
 //---------------------------------------------------------------------------------------
@@ -241,6 +251,8 @@ TEST_F(IntegrityCheckerFixture, check_nav_ids) {
     };
 
     ASSERT_EQ(BE_SQLITE_OK, OpenCopyOfDataFile("test.bim", "test.bim", Db::OpenMode::ReadWrite));
+    ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
     executeTest();
 }
 
@@ -326,6 +338,8 @@ TEST_F(IntegrityCheckerFixture, check_linktable_fk_ids) {
     };
 
     ASSERT_EQ(BE_SQLITE_OK, OpenCopyOfDataFile("test.bim", "test.bim", Db::OpenMode::ReadWrite));
+    ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
     executeTest();
 }
 
@@ -369,6 +383,8 @@ TEST_F(IntegrityCheckerFixture, check_linktable_fk_class_ids) {
     };
     // Bis never have this case
     ASSERT_EQ(BE_SQLITE_OK, OpenCopyOfDataFile("test.bim", "test.bim", Db::OpenMode::ReadWrite));
+    ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
     executeTest();
 }
 
@@ -447,6 +463,8 @@ TEST_F(IntegrityCheckerFixture, check_class_ids) {
     };
 
     ASSERT_EQ(BE_SQLITE_OK, OpenCopyOfDataFile("test.bim", "test.bim", Db::OpenMode::ReadWrite));
+    ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
     executeTest();
 }
 //---------------------------------------------------------------------------------------
@@ -491,18 +509,27 @@ TEST_F(IntegrityCheckerFixture, check_data_columns) {
     };
     //! delete a data table 4000
     ASSERT_EQ(BE_SQLITE_OK, OpenCopyOfDataFile("fileformatbenchmark/4000/imodel2.ecdb", "4000.bim", Db::OpenMode::ReadWrite));
+    ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
     executeTest();
 
     //! delete a data table 4001
     ASSERT_EQ(BE_SQLITE_OK, OpenCopyOfDataFile("fileformatbenchmark/4001/imodel2.ecdb", "4001.bim", Db::OpenMode::ReadWrite));
+    ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
     executeTest();
 
     //! delete a profile table 4002
     ASSERT_EQ(BE_SQLITE_OK, OpenCopyOfDataFile("fileformatbenchmark/4002/imodel2.ecdb", "4002.bim", Db::OpenMode::ReadWrite));
+    ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
+
     executeTest();
 
     //! delete a data table 4003
     ASSERT_EQ(BE_SQLITE_OK, OpenCopyOfDataFile("fileformatbenchmark/4003/imodel2.ecdb", "4003.bim", Db::OpenMode::ReadWrite));
+    ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
     executeTest();
 }
 //---------------------------------------------------------------------------------------
@@ -552,16 +579,25 @@ TEST_F(IntegrityCheckerFixture, check_data_schema) {
     };
     //! delete a data table 4000
     ASSERT_EQ(BE_SQLITE_OK, OpenCopyOfDataFile("fileformatbenchmark/4000/imodel2.ecdb", "4000.bim", Db::OpenMode::ReadWrite));
+    ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
+
     executeTest();
 
     //! delete a data table 4001
     ASSERT_EQ(BE_SQLITE_OK, OpenCopyOfDataFile("fileformatbenchmark/4001/imodel2.ecdb", "4001.bim", Db::OpenMode::ReadWrite));
+    ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
+
     executeTest();
 
     //! delete a data table 4002 - skipping this test file as it already have issues.
 
     //! delete a data table 4003
     ASSERT_EQ(BE_SQLITE_OK, OpenCopyOfDataFile("fileformatbenchmark/4003/imodel2.ecdb", "4003.bim", Db::OpenMode::ReadWrite));
+    ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
+
     executeTest();
 }
 //---------------------------------------------------------------------------------------
@@ -709,18 +745,30 @@ TEST_F(IntegrityCheckerFixture, check_ec_profile) {
     };
     //! delete a profile table 4000
     ASSERT_EQ(BE_SQLITE_OK, OpenCopyOfDataFile("fileformatbenchmark/4000/imodel2.ecdb", "4000.bim", Db::OpenMode::ReadWrite));
+    ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
+
     executeTest();
 
     //! delete a profile table 4001
     ASSERT_EQ(BE_SQLITE_OK, OpenCopyOfDataFile("fileformatbenchmark/4001/imodel2.ecdb", "4001.bim", Db::OpenMode::ReadWrite));
+    ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
+
     executeTest();
 
     //! delete a profile table 4002
     ASSERT_EQ(BE_SQLITE_OK, OpenCopyOfDataFile("fileformatbenchmark/4002/imodel2.ecdb", "4002.bim", Db::OpenMode::ReadWrite));
+    ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
+
     executeTest();
 
     //! delete a profile table 4003
     ASSERT_EQ(BE_SQLITE_OK, OpenCopyOfDataFile("fileformatbenchmark/4003/imodel2.ecdb", "4003.bim", Db::OpenMode::ReadWrite));
+    ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
+
     executeTest();
 }
 

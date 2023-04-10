@@ -150,204 +150,34 @@ struct PragmaECDbVersion : PragmaManager::GlobalHandler {
     }
     static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<PragmaECDbVersion>(); }
 };
-
 //================================================================================
-// @bsiclass PragmaFileInfo
+// @bsiclass PragmaECDbVersion
 //================================================================================
-struct PragmaFileInfo : PragmaManager::GlobalHandler {
-    PragmaFileInfo():GlobalHandler("file_info","return file info"){}
-    ~PragmaFileInfo(){}
-    void AppendDbGuid(ECDbCR ecdb, BeJsValue row) {
-        row.appendValue() = "db_guid";
-        row.appendValue() =  ecdb.GetDbGuid().ToString();
-    }
-    void AppendProjectId(ECDbCR ecdb, BeJsValue row) {
-        row.appendValue() = "project_id";
-        auto projectGuid = row.appendValue();
-        if (ecdb.QueryProjectGuid().IsValid())
-            projectGuid = ecdb.QueryProjectGuid().ToString();
-        else
-            projectGuid.SetNull();
-    }
-    void AppendFileType(ECDbCR ecdb, BeJsValue row) {
-        row.appendValue() = "type";
-        auto type = row.appendValue();
-        if (ecdb.GetBriefcaseId().IsValid()) {
-            if (ecdb.GetBriefcaseId().IsStandalone())
-                type = "standalone";
-            else
-                type = "briefcase";
-        } else {
-            type = "invalid";
-        }
-    }
-    void AppendBriefcaseId(ECDbCR ecdb, BeJsValue row) {
-        row.appendValue() = "briefcase_id";
-        row.appendValue() = SqlPrintfString("%" PRIu32, ecdb.GetBriefcaseId().GetValue());
-    }
-    void AppendFileName(ECDbCR ecdb, BeJsValue row) {
-        row.appendValue() = "filename";
-        if (ecdb.GetBriefcaseId().IsValid()) {
-            row.appendValue() = ecdb.GetDbFileName();
-        } else {
-            row.appendValue().SetNull();
-        }
-    }
-    void AppendConnectionId(ECDbCR ecdb, BeJsValue row) {
-        row.appendValue() = "connection_id";
-        row.appendValue() = ecdb.GetId().ToString();
-    }
-    void AppendECDbProfileVersion(ECDbCR ecdb, BeJsValue row) {
-        row.appendValue() = "ecdb_cur_profile_ver";
-        row.appendValue() = ECDb::CurrentECDbProfileVersion().ToString();
-    }
-    void AppendECDbCurrentProfileVersion(ECDbCR ecdb, BeJsValue row) {
-        row.appendValue() = "ecdb_profile_ver";
-        row.appendValue() = ecdb.GetECDbProfileVersion().ToString();
-    }
-    void AppendECSQLVersion(ECDbCR ecdb, BeJsValue row) {
-        row.appendValue() = "ecsql_ver";
-        row.appendValue() = ecdb.GetECSqlVersion().ToString();
-    }
-    void AppendParentChangeset(ECDbCR ecdb, BeJsValue row) {
-        row.appendValue() = "parent_changeset";
-        Utf8String parentChangeset;
-        if (BE_SQLITE_ROW == ecdb.QueryBriefcaseLocalValue(parentChangeset, "parentChangeset")) {
-            row.appendValue() = parentChangeset;
-        } else {
-            row.appendValue().SetNull();
-        }
-    }
-    void AppendCreationDate(ECDbCR ecdb, BeJsValue row) {
-        row.appendValue() = "creation_date";
-        DateTime dt;
-        if (BE_SQLITE_ROW == ecdb.QueryCreationDate(dt))
-            row.appendValue() = dt.ToString();
-        else
-            row.appendValue().SetNull();
-    }
-    void AppendJournalMode(ECDbCR ecdb, BeJsValue row) {
-        Statement stmt;
-        row.appendValue() = "journal_mode";
-        if (stmt.Prepare(ecdb, "pragma journal_mode") == BE_SQLITE_OK && stmt.Step() == BE_SQLITE_ROW) {
-            row.appendValue() = stmt.GetValueText(0);
-        } else {
-            row.appendValue().SetNull();
-        }
-    }
-    void AppendPageCount(ECDbCR ecdb, BeJsValue row) {
-        Statement stmt;
-        row.appendValue() = "page_count";
-        if (stmt.Prepare(ecdb, "pragma page_count") == BE_SQLITE_OK && stmt.Step() == BE_SQLITE_ROW) {
-            row.appendValue() = stmt.GetValueText(0);
-        } else {
-            row.appendValue().SetNull();
-        }
-    }
-    void AppendFreeListCount(ECDbCR ecdb, BeJsValue row) {
-        Statement stmt;
-        row.appendValue() = "free_page_count";
-        if (stmt.Prepare(ecdb, "pragma freelist_count") == BE_SQLITE_OK && stmt.Step() == BE_SQLITE_ROW) {
-            row.appendValue() = stmt.GetValueText(0);
-        } else {
-            row.appendValue().SetNull();
-        }
-    }
-    void AppendSQLiteVersion(ECDbCR ecdb, BeJsValue row) {
-        Statement stmt;
-        row.appendValue() = "sqlite_version";
-        if (stmt.Prepare(ecdb, "select sqlite_version()") == BE_SQLITE_OK && stmt.Step() == BE_SQLITE_ROW) {
-            row.appendValue() = stmt.GetValueText(0);
-        } else {
-            row.appendValue().SetNull();
-        }
-    }
-    void AppendSQLiteSourceId(ECDbCR ecdb, BeJsValue row) {
-        Statement stmt;
-        row.appendValue() = "sqlite_source_id";
-        if (stmt.Prepare(ecdb, "select sqlite_source_id()") == BE_SQLITE_OK && stmt.Step() == BE_SQLITE_ROW) {
-            row.appendValue() = stmt.GetValueText(0);
-        } else {
-            row.appendValue().SetNull();
-        }
-    }
-    void AppendBisCoreVersion(ECDbCR ecdb, BeJsValue row) {
-        Statement stmt;
-        row.appendValue() = "bis_core_ver";
-        if (auto bisCore = ecdb.Schemas().GetSchema("BisCore")) {
-            row.appendValue() = bisCore->GetSchemaKey().GetVersionString();
-        } else {
-            row.appendValue().SetNull();
-        }
-    }
-    void AppendSQLitePageSize(ECDbCR ecdb, BeJsValue row) {
-        Statement stmt;
-        row.appendValue() = "sqlite_page_size";
-        if (stmt.Prepare(ecdb, "PRAGMA page_size") == BE_SQLITE_OK && stmt.Step() == BE_SQLITE_ROW) {
-            row.appendValue() = stmt.GetValueText(0);
-        } else {
-            row.appendValue().SetNull();
-        }
-    }
+struct PragmaExperimentalFeatures : PragmaManager::GlobalHandler {
+    PragmaExperimentalFeatures():GlobalHandler("experimental_features_enabled","enable/disable experimental features"){}
+    ~PragmaExperimentalFeatures(){}
     virtual DbResult Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&)  override {
         auto result = std::make_unique<StaticPragmaResult>(ecdb);
-        result->AppendProperty("key", PRIMITIVETYPE_String);
-        result->AppendProperty("value", PRIMITIVETYPE_String);
+        result->AppendProperty("experimental_features_enabled", PRIMITIVETYPE_Boolean);
         result->FreezeSchemaChanges();
-
-        // append rows
-        // AppendDbGuid(ecdb, result->AppendRow());
-        // AppendProjectId(ecdb, result->AppendRow());
-        AppendParentChangeset(ecdb, result->AppendRow());
-        // AppendFileType(ecdb, result->AppendRow());
-        AppendBriefcaseId(ecdb, result->AppendRow());
-        // AppendFileName(ecdb, result->AppendRow());
-        // AppendConnectionId(ecdb, result->AppendRow());
-        AppendECDbProfileVersion(ecdb, result->AppendRow());
-        AppendECDbCurrentProfileVersion(ecdb, result->AppendRow());
-        AppendECSQLVersion(ecdb, result->AppendRow());
-        AppendCreationDate(ecdb, result->AppendRow());
-        AppendJournalMode(ecdb, result->AppendRow());
-        AppendPageCount(ecdb, result->AppendRow());
-        AppendFreeListCount(ecdb, result->AppendRow());
-        AppendSQLiteVersion(ecdb, result->AppendRow());
-        AppendSQLiteSourceId(ecdb, result->AppendRow());
-        AppendSQLitePageSize(ecdb, result->AppendRow());
-        AppendBisCoreVersion(ecdb, result->AppendRow());
-
+        auto row = result->AppendRow();
+        row.appendValue() = ecdb.GetImpl().GetECSqlConfig().GetExperimentalFeaturesEnabled();
         rowSet = std::move(result);
         return BE_SQLITE_OK;
     }
-    virtual DbResult Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&) override {
-        ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "PRAGMA %s is readonly.", GetName().c_str());
-        rowSet = std::make_unique<StaticPragmaResult>(ecdb);
-        rowSet->FreezeSchemaChanges();
-        return BE_SQLITE_READONLY;
-    }
-    static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<PragmaFileInfo>(); }
-};
-
-//================================================================================
-// @bsiclass PragmaECSchemaVersion
-//================================================================================
-struct PragmaECSchemaVersion : PragmaManager::SchemaHandler {
-    PragmaECSchemaVersion():SchemaHandler("version","return ec schema version"){}
-    ~PragmaECSchemaVersion(){}
-    virtual DbResult Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&, ECSchemaCR schema)  override {
+    virtual DbResult Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const& val) override {
+        if (val.IsBool()) {
+            ecdb.GetImpl().GetECSqlConfig().SetExperimentalFeaturesEnabled(val.GetBool());
+        }
         auto result = std::make_unique<StaticPragmaResult>(ecdb);
-        result->AppendProperty(GetName(), PRIMITIVETYPE_String);
+        result->AppendProperty("experimental_features_enabled", PRIMITIVETYPE_Boolean);
         result->FreezeSchemaChanges();
-        result->AppendRow().appendValue() = schema.GetSchemaKey().GetVersionString();
+        auto row = result->AppendRow();
+        row.appendValue() = ecdb.GetImpl().GetECSqlConfig().GetExperimentalFeaturesEnabled();
         rowSet = std::move(result);
         return BE_SQLITE_OK;
     }
-    virtual DbResult Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&, ECSchemaCR) override {
-        ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "PRAGMA %s is readonly.", GetName().c_str());
-        rowSet = std::make_unique<StaticPragmaResult>(ecdb);
-        rowSet->FreezeSchemaChanges();
-        return BE_SQLITE_READONLY;
-    }
-    static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<PragmaECSchemaVersion>(); }
+    static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<PragmaExperimentalFeatures>(); }
 };
 
 //================================================================================
@@ -388,41 +218,15 @@ struct PragmaHelp : PragmaManager::GlobalHandler {
 //================================================================================
 // @bsiclass PragmaECDbValidation
 //================================================================================
-struct PragmaECDbValidation : PragmaManager::GlobalHandler {
-    PragmaECDbValidation():GlobalHandler("validate","performs validation checks on ECDb"){}
-
-    virtual DbResult Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&)  override {
-        auto result = std::make_unique<StaticPragmaResult>(ecdb);
-        result->AppendProperty("check", PRIMITIVETYPE_String);
-        result->AppendProperty("result", PRIMITIVETYPE_String);
-        result->FreezeSchemaChanges();
-
-        auto checkResults = ECDbValidationChecks::PerformAllChecks(ecdb);
-
-        for(auto& checkResult: checkResults) {
-            auto row = result->AppendRow();
-            row.appendValue() = checkResult.checkName;
-            row.appendValue() = checkResult.status;
-        }
-
-        rowSet = std::move(result);
-        return BE_SQLITE_OK;
-    }
-
-    virtual DbResult Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&) override {
-        return BE_SQLITE_READONLY;
-    }
-
-    static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<PragmaECDbValidation>(); }
-};
-
-//================================================================================
-// @bsiclass PragmaECDbValidation
-//================================================================================
 struct PragmaIntegrityCheck : PragmaManager::GlobalHandler {
     PragmaIntegrityCheck():GlobalHandler("integrity_check","performs integrity checks on ECDb"){}
 
     virtual DbResult Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const& v)  override {
+        if (!ecdb.GetECSqlConfig().GetExperimentalFeaturesEnabled()) {
+            ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "PRAGMA integrity_check is experimental feature. Use 'PRAGMA experimental_feature=true' to enable it.");
+            return BE_SQLITE_ERROR;
+        }
+
         auto result = std::make_unique<StaticPragmaResult>(ecdb);
         IntegrityChecker checker(ecdb);
         DbResult rc = BE_SQLITE_OK;
@@ -635,67 +439,6 @@ struct PragmaIntegrityCheck : PragmaManager::GlobalHandler {
 
     static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<PragmaIntegrityCheck>(); }
 };
-//================================================================================
-// @bsiclass PragmaECDbClassIdValidation
-//================================================================================
-struct PragmaECDbClassIdValidation : PragmaManager::GlobalHandler {
-    PragmaECDbClassIdValidation():GlobalHandler("class_id_check","checks if classIds are valid") {}
-
-    virtual DbResult Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&)  override {
-        auto result = std::make_unique<StaticPragmaResult>(ecdb);
-        result->AppendProperty("result", PRIMITIVETYPE_String);
-        result->AppendProperty("details", PRIMITIVETYPE_String);
-        result->FreezeSchemaChanges();
-
-        auto checkResults = ECDbValidationChecks::ClassIdCheck(ecdb);
-
-        for(auto& checkResult: checkResults) {
-            auto row = result->AppendRow();
-            row.appendValue() = checkResult.status;
-            row.appendValue() = checkResult.details;
-        }
-
-        rowSet = std::move(result);
-        return BE_SQLITE_OK;
-    }
-
-    virtual DbResult Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&) override {
-        return BE_SQLITE_READONLY;
-    }
-
-    static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<PragmaECDbClassIdValidation>(); }
-};
-
-//================================================================================
-// @bsiclass PragmaECDbNavPropIdValidation
-//================================================================================
-struct PragmaECDbNavPropIdValidation : PragmaManager::GlobalHandler {
-    PragmaECDbNavPropIdValidation():GlobalHandler("nav_prop_id_check","checks if classIds are valid") {}
-
-    virtual DbResult Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&)  override {
-        auto result = std::make_unique<StaticPragmaResult>(ecdb);
-        result->AppendProperty("result", PRIMITIVETYPE_String);
-        result->AppendProperty("details", PRIMITIVETYPE_String);
-        result->FreezeSchemaChanges();
-
-        auto checkResults = ECDbValidationChecks::NavigationPropertyIdCheck(ecdb);
-
-        for(auto& checkResult: checkResults) {
-            auto row = result->AppendRow();
-            row.appendValue() = checkResult.status;
-            row.appendValue() = checkResult.details;
-        }
-
-        rowSet = std::move(result);
-        return BE_SQLITE_OK;
-    }
-
-    virtual DbResult Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&) override {
-        return BE_SQLITE_READONLY;
-    }
-
-    static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<PragmaECDbNavPropIdValidation>(); }
-};
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -704,13 +447,12 @@ void PragmaManager::InitSystemPragmas() {
     // Register(PragmaECSchemaVersion::Create());
     Register(PragmaECDbVersion::Create());
     Register(PragmaExplainQuery::Create());
-    // Register(PragmaFileInfo::Create());
     Register(DisqualifyTypeIndex::Create());
     Register(PragmaHelp::Create(*this));
-    Register(PragmaECDbValidation::Create());
-    Register(PragmaECDbClassIdValidation::Create());
-    Register(PragmaECDbNavPropIdValidation::Create());
     Register(PragmaIntegrityCheck::Create());
+    Register(PragmaIntegrityCheck::Create());
+    Register(PragmaExperimentalFeatures::Create());
+
 }
 
 //---------------------------------------------------------------------------------------
