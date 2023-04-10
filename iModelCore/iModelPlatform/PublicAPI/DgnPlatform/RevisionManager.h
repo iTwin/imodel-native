@@ -12,10 +12,9 @@
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 //=======================================================================================
-//! A data holder representing a revision of a DgnDb
 // @bsiclass
 //=======================================================================================
-struct DgnRevision : RefCountedBase {
+struct ChangesetInfo : RefCountedBase {
 private:
     Utf8String m_id;
     int32_t m_index;
@@ -30,16 +29,14 @@ private:
     static BeFileName BuildRevisionChangesPathname(Utf8String revisionId);
 
 protected:
-    //! Constructor
-    DgnRevision(Utf8StringCR changesetId, int32_t changesetIndex, Utf8StringCR parentRevisionId, Utf8StringCR dbGuid) :
+    ChangesetInfo(Utf8StringCR changesetId, int32_t changesetIndex, Utf8StringCR parentRevisionId, Utf8StringCR dbGuid) :
         m_id(changesetId), m_index(changesetIndex), m_parentId(parentRevisionId), m_dbGuid(dbGuid), m_ownsRevChangesFile(false) {}
 
-    //! Destructor
-    DGNPLATFORM_EXPORT ~DgnRevision();
+    DGNPLATFORM_EXPORT ~ChangesetInfo();
 
 public:
     //! Create a new DgnRevision object
-    DGNPLATFORM_EXPORT static DgnRevisionPtr Create(Utf8StringCR changesetId, int32_t changesetIndex, Utf8StringCR parentRevisionId, Utf8StringCR dbGuid, BeFileNameCP filename = nullptr);
+    DGNPLATFORM_EXPORT static ChangesetInfoPtr Create(Utf8StringCR changesetId, int32_t changesetIndex, Utf8StringCR parentRevisionId, Utf8StringCR dbGuid, BeFileNameCP filename = nullptr);
 
     Utf8StringCR GetChangesetId() const { return m_id; }
     int32_t GetChangesetIndex() const { return m_index; }
@@ -76,7 +73,7 @@ public:
 
     //! Validate the contents of the revision
     //! @remarks Validates the contents of the ChangeStreamFile against the revision Id.
-    DGNPLATFORM_EXPORT RevisionStatus Validate(DgnDbCR dgndb) const;
+    DGNPLATFORM_EXPORT ChangesetStatus Validate(DgnDbCR dgndb) const;
 
     //! Dump to stdout for debugging purposes.
     DGNPLATFORM_EXPORT void Dump(DgnDbCR dgndb) const;
@@ -86,12 +83,12 @@ public:
 //! Streams the contents of a file containing serialized change streams
 // @bsiclass
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE RevisionChangesFileReader : BeSQLite::RevisionChangesFileReaderBase {
+struct EXPORT_VTABLE_ATTRIBUTE ChangesetFileReader : BeSQLite::ChangesetFileReaderBase {
 private:
     DGNPLATFORM_EXPORT BeSQLite::ChangeSet::ConflictResolution _OnConflict(BeSQLite::ChangeSet::ConflictCause, BeSQLite::Changes::Change iter) override;
 
 public:
-    RevisionChangesFileReader(BeFileNameCR pathname, DgnDbCR dgndb) : BeSQLite::RevisionChangesFileReaderBase({pathname}, dgndb) {}
+    ChangesetFileReader(BeFileNameCR pathname, DgnDbCR dgndb) : BeSQLite::ChangesetFileReaderBase({pathname}, dgndb) {}
 };
 
 //=======================================================================================
@@ -113,7 +110,7 @@ public:
 //=======================================================================================
 struct RevisionManager : NonCopyableClass {
     friend struct TxnManager;
-    friend struct RevisionChangesFileReader;
+    friend struct ChangesetFileReader;
     friend struct ApplyRevisionChangeSet;
     friend struct DgnDb;
     friend struct DgnDomains;
@@ -122,20 +119,20 @@ private:
     DgnDbR m_dgndb;
 
     BeFileName m_tempRevisionPathname;
-    DgnRevisionPtr m_currentRevision;
+    ChangesetInfoPtr m_currentRevision;
 
     static BeFileName BuildTempRevisionPathname();
-    RevisionStatus SaveParentRevision(Utf8StringCR revisionId, int32_t changesetIndex);
+    ChangesetStatus SaveParentRevision(Utf8StringCR revisionId, int32_t changesetIndex);
 
-    RevisionStatus GroupChanges(BeSQLite::DdlChangesR, BeSQLite::ChangeGroupR, TxnManager::TxnId endTxnId) const;
-    DgnRevisionPtr CreateRevisionObject(BeFileNameCR tempRevisionPathname);
-    RevisionStatus WriteChangesToFile(BeFileNameCR pathname, BeSQLite::DdlChangesCR ddlChanges, BeSQLite::ChangeGroupCR dataChangeGroup, BeSQLite::Rebaser*);
+    ChangesetStatus GroupChanges(BeSQLite::DdlChangesR, BeSQLite::ChangeGroupR, TxnManager::TxnId endTxnId) const;
+    ChangesetInfoPtr CreateRevisionObject(BeFileNameCR tempRevisionPathname);
+    ChangesetStatus WriteChangesToFile(BeFileNameCR pathname, BeSQLite::DdlChangesCR ddlChanges, BeSQLite::ChangeGroupCR dataChangeGroup, BeSQLite::Rebaser*);
 
     // If valid, currently creating a revision with all transactions up to *but* excluding this id. Rebase up to and *including* this rebaseId.
-    RevisionStatus SaveCurrentRevisionEndTxnId(TxnManager::TxnId txnId, int64_t rebaseId);
-    RevisionStatus DeleteCurrentRevisionEndTxnId();
+    ChangesetStatus SaveCurrentRevisionEndTxnId(TxnManager::TxnId txnId, int64_t rebaseId);
+    ChangesetStatus DeleteCurrentRevisionEndTxnId();
 
-    DgnRevisionPtr CreateRevision(RevisionStatus* outStatus, TxnManager::TxnId endTxnId, int64_t lastRebaseId);
+    ChangesetInfoPtr CreateRevision(ChangesetStatus* outStatus, TxnManager::TxnId endTxnId, int64_t lastRebaseId);
 
     static BeSQLite::ChangeSet::ConflictResolution ConflictHandler(DgnDbCR dgndb, BeSQLite::ChangeSet::ConflictCause clause, BeSQLite::Changes::Change iter);
 
@@ -149,13 +146,12 @@ public:
     //! Get the DgnDb for this RevisionManager
     DgnDbR GetDgnDb() { return m_dgndb; }
 
-    bool HasParentRevision() const;
     void ClearSavedValues();
 
     //! Merge a single revision to the Db
     //! @param[in] revision The revision to be merged
-    //! @return RevisionStatus::Success if the revision was successfully merged, error status otherwise.
-    DGNPLATFORM_EXPORT RevisionStatus MergeRevision(DgnRevisionCR revision);
+    //! @return ChangesetStatus::Success if the revision was successfully merged, error status otherwise.
+    DGNPLATFORM_EXPORT ChangesetStatus MergeRevision(ChangesetInfoCR revision);
 
     //! Get the Id of the last revision that was merged into or created. This is the parent for any new revisions that will be created from the briefcase.
     //! @remarks Returns an empty string if the BIM is in it's initial state (with no revisions), or if it's a standalone briefcase disconnected from the Hub.
@@ -171,44 +167,44 @@ public:
     //! containing all the changes made since the previous revision.
     //! <li> The revision must be finished or aborted with calls to FinishCreateRevision()
     //! or AbortCreateRevision()
-    //! <li> Unless AbandonCreateRevision is subsequently called, transactions cannot be
+    //! <li> Unless AbandonCreateChangeset is subsequently called, transactions cannot be
     //! undone anymore.
     //! </ul>
-    //! @param[out] status Optional (can pass null). Set to RevisionStatus::Success if the revision was successfully
+    //! @param[out] status Optional (can pass null). Set to ChangesetStatus::Success if the revision was successfully
     //! finished or some error status otherwise.
-    //! @see FinishCreateRevision, AbandonCreateRevision
-    DGNPLATFORM_EXPORT DgnRevisionPtr StartCreateRevision(RevisionStatus* status = nullptr);
+    //! @see FinishCreateRevision, AbandonCreateChangeset
+    DGNPLATFORM_EXPORT ChangesetInfoPtr StartCreateChangeset(ChangesetStatus* status = nullptr);
 
     //! Return true if in the process of creating a revision
     DGNPLATFORM_EXPORT bool IsCreatingRevision() const;
 
     //! Returns the revision currently being created
     //! @remarks Is valid only if in the process of creating a revision
-    DGNPLATFORM_EXPORT DgnRevisionPtr GetCreatingRevision();
+    DGNPLATFORM_EXPORT ChangesetInfoPtr GetCreatingRevision();
 
     //! Finish creating a new revision
-    //! @return RevisionStatus::Success if the revision was successfully finished or some error status otherwise.
+    //! @return ChangesetStatus::Success if the revision was successfully finished or some error status otherwise.
     //! @remarks Upon successful return, the transaction table is flushed and cannot be undone.
-    //! @see StartCreateRevision
-    DGNPLATFORM_EXPORT RevisionStatus FinishCreateRevision(int32_t changesetIndex);
+    //! @see StartCreateChangeset
+    DGNPLATFORM_EXPORT ChangesetStatus FinishCreateRevision(int32_t changesetIndex);
 
     //! Abandon creating a new revision
-    //! @see StartCreateRevision
-    DGNPLATFORM_EXPORT void AbandonCreateRevision();
+    //! @see StartCreateChangeset
+    DGNPLATFORM_EXPORT void AbandonCreateChangeset();
 
     //! Reverses a previously merged revision
     //! @param[in] revision The revision to be reversed. Must match the parent revision of the Db. i.e., the revisions
     //! must be reversed in the opposite order of how were merged.
-    //! @return RevisionStatus::Success if the revision was successfully reversed or some error status otherwise.
+    //! @return ChangesetStatus::Success if the revision was successfully reversed or some error status otherwise.
     //! @remarks After reversals no changes can be committed to the DgnDb unless all the reversed revisions are reinstated
     //! again. @see ReinstateRevision()
-    DGNPLATFORM_EXPORT RevisionStatus ReverseRevision(DgnRevisionCR revision);
+    DGNPLATFORM_EXPORT ChangesetStatus ReverseRevision(ChangesetInfoCR revision);
 
     //! Processes (merges, reverses or reinstates) a set of revisions
     //! @param[in] revisions Revisions to be processed
     //! @param[in] processOption Option to process, i.e., merge, reverse or reinstate the revisions
-    //! @return RevisionStatus::Success if the revision was successfully processed or some error status otherwise.
-    DGNPLATFORM_EXPORT RevisionStatus ProcessRevisions(bvector<DgnRevisionCP> const& revisions, RevisionProcessOption processOption);
+    //! @return ChangesetStatus::Success if the revision was successfully processed or some error status otherwise.
+    DGNPLATFORM_EXPORT ChangesetStatus ProcessRevisions(bvector<ChangesetInfoCP> const& revisions, RevisionProcessOption processOption);
 
     DGNPLATFORM_EXPORT TxnManager::TxnId QueryCurrentRevisionEndTxnId() const; //!< @private
     int64_t QueryLastRebaseId() const;                                         //!< @private

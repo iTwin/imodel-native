@@ -36,17 +36,17 @@ protected:
     WCharCP m_copyTestFileName = L"RevisionMemTestFixture.bim";
 
 
-    DgnRevisionPtr CreateRevision();
-    void DumpRevision(DgnRevisionCR revision, Utf8CP summary = nullptr);
+    ChangesetInfoPtr CreateRevision();
+    void DumpRevision(ChangesetInfoCR revision, Utf8CP summary = nullptr);
 
     void BackupTestFile();
     void RestoreTestFile(Db::OpenMode openMode = Db::OpenMode::ReadWrite);
 
     void ExtractCodesFromRevision(DgnCodeSet& assigned, DgnCodeSet& discarded);
-    void ProcessSchemaRevision(DgnRevisionCR revision, RevisionProcessOption revisionProcessOption);
-    void MergeSchemaRevision(DgnRevisionCR revision) { ProcessSchemaRevision(revision, RevisionProcessOption::Merge); }
-    void ReverseSchemaRevision(DgnRevisionCR revision) { ProcessSchemaRevision(revision, RevisionProcessOption::Reverse); }
-    void ReinstateSchemaRevision(DgnRevisionCR revision) { ProcessSchemaRevision(revision, RevisionProcessOption::Merge); }
+    void ProcessSchemaRevision(ChangesetInfoCR revision, RevisionProcessOption revisionProcessOption);
+    void MergeSchemaRevision(ChangesetInfoCR revision) { ProcessSchemaRevision(revision, RevisionProcessOption::Merge); }
+    void ReverseSchemaRevision(ChangesetInfoCR revision) { ProcessSchemaRevision(revision, RevisionProcessOption::Reverse); }
+    void ReinstateSchemaRevision(ChangesetInfoCR revision) { ProcessSchemaRevision(revision, RevisionProcessOption::Merge); }
 
     static Utf8String CodeToString(DgnCodeCR code) { return Utf8PrintfString("%s:%s\n", code.GetScopeString().c_str(), code.GetValueUtf8CP()); }
     static void ExpectCode(DgnCodeCR code, DgnCodeSet const& codes) { EXPECT_FALSE(codes.end() == codes.find(code)) << CodeToString(code).c_str(); }
@@ -130,7 +130,7 @@ void RevisionMemTestFixture::SetUpTestCase()
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void RevisionMemTestFixture::DumpRevision(DgnRevisionCR revision, Utf8CP summary)
+void RevisionMemTestFixture::DumpRevision(ChangesetInfoCR revision, Utf8CP summary)
     {
 #ifdef DUMP_REVISION
     LOG.infov("---------------------------------------------------------");
@@ -144,14 +144,14 @@ void RevisionMemTestFixture::DumpRevision(DgnRevisionCR revision, Utf8CP summary
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DgnRevisionPtr RevisionMemTestFixture::CreateRevision()
+ChangesetInfoPtr RevisionMemTestFixture::CreateRevision()
     {
-    DgnRevisionPtr revision = m_db->Revisions().StartCreateRevision();
+    ChangesetInfoPtr revision = m_db->Revisions().StartCreateChangeset();
     if (!revision.IsValid())
         return nullptr;
 
-    RevisionStatus status = m_db->Revisions().FinishCreateRevision(-1);
-    if (RevisionStatus::Success != status)
+    ChangesetStatus status = m_db->Revisions().FinishCreateRevision(-1);
+    if (ChangesetStatus::Success != status)
         {
         BeAssert(false);
         return nullptr;
@@ -163,7 +163,7 @@ DgnRevisionPtr RevisionMemTestFixture::CreateRevision()
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void RevisionMemTestFixture::ProcessSchemaRevision(DgnRevisionCR revision, RevisionProcessOption revisionProcessOption)
+void RevisionMemTestFixture::ProcessSchemaRevision(ChangesetInfoCR revision, RevisionProcessOption revisionProcessOption)
     {
     BeFileName fileName = BeFileName(m_db->GetDbFileName(), true);
     CloseDgnDb();

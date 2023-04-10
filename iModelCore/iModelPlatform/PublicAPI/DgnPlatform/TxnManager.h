@@ -70,7 +70,7 @@ struct TxnMonitor {
     virtual void _OnGeometryGuidChanges(TxnManager&, bset<DgnModelId> const& modelIds) {}
 };
 
-struct RevisionChangesFileReader;
+struct ChangesetFileReader;
 namespace dgn_TxnTable {
     struct Element;
     struct ElementDep;
@@ -268,19 +268,17 @@ private:
     //=======================================================================================
     // @bsiclass
     //=======================================================================================
-    struct TxnRange
-    {
+    struct TxnRange {
     private:
         TxnId m_first;
         TxnId m_last;
     public:
         TxnRange(TxnId first, TxnId last) : m_first(first), m_last(last) {}
-        TxnId GetFirst() const {return m_first;}
-        TxnId GetLast() const {return m_last;}
+        TxnId GetFirst() const { return m_first; }
+        TxnId GetLast() const { return m_last; }
     };
 
-    struct UndoChangeSet : BeSQLite::ChangeSet
-    {
+    struct UndoChangeSet : BeSQLite::ChangeSet    {
         ConflictResolution _OnConflict(ConflictCause cause, BeSQLite::Changes::Change iter) override;
     };
 
@@ -291,6 +289,7 @@ private:
     DgnDbR m_dgndb;
     T_TxnTablesByName m_tablesByName;
     T_TxnTables m_tables;
+    /** the next available TxnId */
     TxnId m_curr;
     TxnAction m_action;
     bvector<TxnId> m_multiTxnOp;
@@ -301,9 +300,7 @@ public:
     // or had their geometric properties modified during a transaction.
     // @bsistruct
     //=======================================================================================
-    struct GeometricElementChanges
-    {
-    public:
+    struct GeometricElementChanges {
         // Indexed by TxnTable::ChangeType.
         bset<DgnElementId> m_elements[3];
 
@@ -482,10 +479,10 @@ private:
     void ReinstateTxn(TxnRange const&);
     DgnDbStatus ReinstateActions(TxnRange const& revTxn);
 
-    RevisionStatus MergeRevision(DgnRevisionCR revision);
-    RevisionStatus MakeDdlChangesFromRevision(DgnRevisionCR revision, RevisionChangesFileReader& revisionReader);
-    RevisionStatus MergeDataChangesInRevision(DgnRevisionCR revision, RevisionChangesFileReader& revisionReader, bool containsSchemaChanges);
-    RevisionStatus ReverseRevision(DgnRevisionCR revision);
+    ChangesetStatus MergeRevision(ChangesetInfoCR revision);
+    ChangesetStatus MakeDdlChangesFromRevision(ChangesetInfoCR revision, ChangesetFileReader& revisionReader);
+    ChangesetStatus MergeDataChangesInRevision(ChangesetInfoCR revision, ChangesetFileReader& revisionReader, bool containsSchemaChanges);
+    ChangesetStatus ReverseRevision(ChangesetInfoCR revision);
 
     TxnTable* FindTxnTable(Utf8CP tableName) const;
     bool IsMultiTxnMember(TxnId rowid) const;

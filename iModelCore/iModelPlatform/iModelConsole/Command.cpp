@@ -807,7 +807,7 @@ void ChangeCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
                 return;
                 }
 
-            Dgn::RevisionChangesFileReader changeStream(changesetFilePath, session.GetFile().GetAs<IModelFile>().GetDgnDbHandle());
+            Dgn::ChangesetFileReader changeStream(changesetFilePath, session.GetFile().GetAs<IModelFile>().GetDgnDbHandle());
             PERFLOG_START("iModelConsole", "ExtractChangeSummary>ECDb::ExtractChangeSummary");
             ECInstanceKey changeSummaryKey;
             if (session.GetFileR().GetECDbHandle()->ExtractChangeSummary(changeSummaryKey, ChangeSetArg(changeStream)) != SUCCESS)
@@ -879,7 +879,7 @@ void ChangeCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
             return;
             }
 
-        Dgn::RevisionChangesFileReader changeStream(changesetFilePath, session.GetFile().GetAs<IModelFile>().GetDgnDbHandle());
+        Dgn::ChangesetFileReader changeStream(changesetFilePath, session.GetFile().GetAs<IModelFile>().GetDgnDbHandle());
         changeStream.Dump(Utf8String(changesetFilePath.GetFileNameWithoutExtension().c_str()).c_str(), session.GetFile().GetAs<IModelFile>().GetHandle());
         IModelConsole::WriteLine("Successfully logged the content of the changeset file. See logging category 'Changeset' in the iModelConsole logs.");
         return;

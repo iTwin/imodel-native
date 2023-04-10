@@ -313,19 +313,19 @@ typedef bmap<DgnElementId, SummaryElementInfo> ChangedElementsMap;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static StatusInt GetAppliableChangesets(DgnDbR currentDb, bvector<DgnRevisionPtr> const& changesets, bvector<bvector<DgnRevisionPtr>>& appliableChangesets)
+static StatusInt GetAppliableChangesets(DgnDbR currentDb, bvector<ChangesetInfoPtr> const& changesets, bvector<bvector<ChangesetInfoPtr>>& appliableChangesets)
     {
-    bvector<DgnRevisionPtr> currentAppliableChangesets;
+    bvector<ChangesetInfoPtr> currentAppliableChangesets;
 
     // Get a collection of changesets that can be put together into a change summary
-    for (DgnRevisionPtr changeset : changesets)
+    for (ChangesetInfoPtr changeset : changesets)
         {
         if (changeset->ContainsSchemaChanges(currentDb))
             {
             // Set the current appliable changesets we have
             appliableChangesets.push_back(currentAppliableChangesets);
             // Add the schema changeset as a separate change summary
-            bvector<DgnRevisionPtr> schemaChangeOnly;
+            bvector<ChangesetInfoPtr> schemaChangeOnly;
             schemaChangeOnly.push_back(changeset);
             appliableChangesets.push_back(schemaChangeOnly);
             // Clear to keep going with a new vector for follow up changesets
@@ -467,12 +467,12 @@ static StatusInt   ProcessChangeSummary(ChangedElementsMap& changedElements, Dgn
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt    DgnChangeSummary::GetChangedElements(DgnDbR currentDb, DgnDbPtr targetDb, bvector<DgnRevisionPtr> const & changesets, bvector<DgnElementId>& elementIds, bvector<ECN::ECClassId>& ecclassIds, bvector<BeSQLite::DbOpcode>& opcodes)
+StatusInt    DgnChangeSummary::GetChangedElements(DgnDbR currentDb, DgnDbPtr targetDb, bvector<ChangesetInfoPtr> const & changesets, bvector<DgnElementId>& elementIds, bvector<ECN::ECClassId>& ecclassIds, bvector<BeSQLite::DbOpcode>& opcodes)
     {
     if (changesets.empty())
         return ERROR;
 
-    bvector<bvector<DgnRevisionPtr>> appliableChangesets;
+    bvector<bvector<ChangesetInfoPtr>> appliableChangesets;
     if (SUCCESS != GetAppliableChangesets(currentDb, changesets, appliableChangesets))
         return ERROR;
 
@@ -483,7 +483,7 @@ StatusInt    DgnChangeSummary::GetChangedElements(DgnDbR currentDb, DgnDbPtr tar
     ChangedElementsMap changedElements;
 
     // Construct change summaries
-    for (bvector<DgnRevisionPtr>& changesetList : appliableChangesets)
+    for (bvector<ChangesetInfoPtr>& changesetList : appliableChangesets)
         {
         ChangeGroup group;
         // TODO: Get newer Db
@@ -492,7 +492,7 @@ StatusInt    DgnChangeSummary::GetChangedElements(DgnDbR currentDb, DgnDbPtr tar
         for (auto changeset : changesetList)
             {
             BeFileNameCR changesetChangesFile = changeset->GetRevisionChangesFile();
-            RevisionChangesFileReader changeStream(changesetChangesFile, currentDb);
+            ChangesetFileReader changeStream(changesetChangesFile, currentDb);
             changeStream.AddToChangeGroup(group);
             }
 

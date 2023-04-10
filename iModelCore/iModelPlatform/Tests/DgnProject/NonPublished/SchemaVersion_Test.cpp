@@ -193,14 +193,14 @@ struct SchemaVersionTestFixture : public DgnDbTestFixture
         ASSERT_TRUE(fileStatus == BeFileNameStatus::Success);
         }
 
-    DgnRevisionPtr CreateRevision()
+    ChangesetInfoPtr CreateRevision()
         {
-        DgnRevisionPtr revision = m_db->Revisions().StartCreateRevision();
+        ChangesetInfoPtr revision = m_db->Revisions().StartCreateChangeset();
         if (!revision.IsValid())
             return nullptr;
 
-        RevisionStatus status = m_db->Revisions().FinishCreateRevision(-1);
-        if (RevisionStatus::Success != status)
+        ChangesetStatus status = m_db->Revisions().FinishCreateRevision(-1);
+        if (ChangesetStatus::Success != status)
             {
             BeAssert(false);
             return nullptr;
@@ -209,7 +209,7 @@ struct SchemaVersionTestFixture : public DgnDbTestFixture
         return revision;
         }
 
-    void DumpRevision(DgnRevisionCR revision, Utf8CP summary)
+    void DumpRevision(ChangesetInfoCR revision, Utf8CP summary)
         {
 #ifdef DUMP_REVISION
         LOG.infov("---------------------------------------------------------");
@@ -502,7 +502,7 @@ TEST_F(SchemaVersionTestFixture, CreateAndMergeRevision)
     EXPECT_TRUE(testProperty == nullptr);
 
     SaveDb();
-    DgnRevisionPtr revision1 = CreateRevision();
+    ChangesetInfoPtr revision1 = CreateRevision();
     EXPECT_TRUE(revision1.IsValid());
     EXPECT_TRUE(revision1->ContainsSchemaChanges(*m_db));
 
@@ -521,7 +521,7 @@ TEST_F(SchemaVersionTestFixture, CreateAndMergeRevision)
     EXPECT_TRUE(testProperty != nullptr);
 
     SaveDb();
-    DgnRevisionPtr revision2 = CreateRevision();
+    ChangesetInfoPtr revision2 = CreateRevision();
     EXPECT_TRUE(revision2.IsValid());
     EXPECT_TRUE(revision2->ContainsSchemaChanges(*m_db));
 
@@ -600,7 +600,7 @@ TEST_F(SchemaVersionTestFixture, IncompatibleUpgrade)
     DgnElementId elIdA = cElA->GetElementId();
 
     SaveDb();
-    DgnRevisionPtr revision1 = CreateRevision();
+    ChangesetInfoPtr revision1 = CreateRevision();
     DumpRevision(*revision1, "Revision 1");
     el = nullptr;
     cEl = nullptr;

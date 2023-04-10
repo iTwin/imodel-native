@@ -507,10 +507,10 @@ public:
     static DbResult ImportSchema(ECDbR ecdb, BeFileNameCR pathname);
     static DbResult ImportSchemas(DgnDbR, bvector<Utf8String> const&, SchemaSourceType, const SchemaImportOptions&);
     static DbResult ImportFunctionalSchema(DgnDbR);
-    static DgnRevisionPtr GetRevision(Utf8StringCR dbGuid, BeJsConst arg);
-    static bvector<DgnRevisionPtr> GetRevisions(bool& containsSchemaChanges, Utf8StringCR dbGuid, BeJsConst changeSets);
-    static RevisionStatus ApplySchemaChangeSet(BeFileNameCR dbFileName, bvector<DgnRevisionCP> const& revisions, RevisionProcessOption applyOption);
-    static RevisionStatus DumpChangeSet(DgnDbR dgndb, BeJsConst changeSetToken);
+    static ChangesetInfoPtr GetRevision(Utf8StringCR dbGuid, BeJsConst arg);
+    static bvector<ChangesetInfoPtr> GetRevisions(bool& containsSchemaChanges, Utf8StringCR dbGuid, BeJsConst changeSets);
+    static ChangesetStatus ApplySchemaChangeSet(BeFileNameCR dbFileName, bvector<ChangesetInfoCP> const& revisions, RevisionProcessOption applyOption);
+    static ChangesetStatus DumpChangeSet(DgnDbR dgndb, BeJsConst changeSetToken);
     static DgnDbStatus ExtractChangedInstanceIdsFromChangeSets(BeJsValue, DgnDbR, const bvector<BeFileName>&);
 
     static BentleyStatus GetGeoCoordsFromIModelCoords(BeJsValue, DgnDbR, BeJsConst);
@@ -586,7 +586,7 @@ struct GeoServicesInterop
 //=======================================================================================
 struct NativeChangeset {
     private:
-        std::unique_ptr<RevisionChangesFileReaderBase> m_reader;
+        std::unique_ptr<ChangesetFileReaderBase> m_reader;
         Db m_unusedDb;
         BeFileName m_fileName;
         std::unique_ptr<Changes> m_changes;

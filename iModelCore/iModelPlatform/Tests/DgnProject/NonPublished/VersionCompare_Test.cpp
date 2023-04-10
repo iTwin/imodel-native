@@ -55,14 +55,14 @@ public:
     TestPhysicalTypePtr CreatePhysicalType(Utf8String name, Utf8String propertyValue);
 
     static DgnDbPtr CloneTemporaryDb(DgnDbPtr db);
-    static DgnRevisionPtr CreateRevision();
+    static ChangesetInfoPtr CreateRevision();
 
     void SetUp() override;
     void TearDown() override;
 
     static void LoadSchema();
 
-    void DumpRevision(DgnRevisionCR revision, Utf8CP summary);
+    void DumpRevision(ChangesetInfoCR revision, Utf8CP summary);
     void SetUniqueAspectPropertyValue(DgnElementR element, ECN::ECClassCR aspectClass, Utf8CP propertyName, Utf8CP propertyValue);
     void SetUniqueAspectPropertyValueInt(DgnElementR element, ECN::ECClassCR aspectClass, Utf8CP propertyName, int value);
     void SetMultiAspectPropertyValue(DgnElementR element, ECN::ECClassCR aspectClass, ECInstanceId aspectInstanceId, Utf8CP propertyName, Utf8CP propertyValue);
@@ -155,7 +155,7 @@ void VersionCompareTestFixture::SetUpTestCase()
 
     m_db->SaveChanges();
 
-    DgnRevisionPtr initialRevision = CreateRevision();
+    ChangesetInfoPtr initialRevision = CreateRevision();
     ASSERT_TRUE(initialRevision.IsValid());
 
     BeTest::GetHost().GetTempDir(s_changesetDir);
@@ -168,7 +168,7 @@ void VersionCompareTestFixture::SetUpTestCase()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void VersionCompareTestFixture::DumpRevision(DgnRevisionCR revision, Utf8CP summary)
+void VersionCompareTestFixture::DumpRevision(ChangesetInfoCR revision, Utf8CP summary)
     {
 #ifdef DUMP_REVISION
     LOG.infov("---------------------------------------------------------");
@@ -471,18 +471,18 @@ DgnDbPtr    VersionCompareTestFixture::CloneTemporaryDb(DgnDbPtr db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnRevisionPtr VersionCompareTestFixture::CreateRevision()
+ChangesetInfoPtr VersionCompareTestFixture::CreateRevision()
     {
     m_db->SaveChanges();
 
-    DgnRevisionPtr revision = m_db->Revisions().StartCreateRevision();
+    ChangesetInfoPtr revision = m_db->Revisions().StartCreateChangeset();
     EXPECT_TRUE(revision.IsValid());
     if (!revision.IsValid())
         return nullptr;
 
-    RevisionStatus status = m_db->Revisions().FinishCreateRevision(-1);
-    EXPECT_TRUE(status == RevisionStatus::Success);
-    if (RevisionStatus::Success != status)
+    ChangesetStatus status = m_db->Revisions().FinishCreateRevision(-1);
+    EXPECT_TRUE(status == ChangesetStatus::Success);
+    if (ChangesetStatus::Success != status)
         return nullptr;
 
     return revision;
@@ -713,7 +713,7 @@ void CheckOutput(DgnDbR db, ElementMap & map, bvector<ChangedElement> const& ele
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CreateSummaryAndCheckOutput(DgnDbPtr db, ElementMap& map, bvector<DgnRevisionPtr>& changesets, ECPresentationManagerR presentationManager, Utf8String debugLabel = "", bool filterSpatial = false, bool filterLastMod = false, bool wantParents = false, bool wantTargetState = false, bool wantBriefcaseRoll = false, bool checkOutput = true)
+void CreateSummaryAndCheckOutput(DgnDbPtr db, ElementMap& map, bvector<ChangesetInfoPtr>& changesets, ECPresentationManagerR presentationManager, Utf8String debugLabel = "", bool filterSpatial = false, bool filterLastMod = false, bool wantParents = false, bool wantTargetState = false, bool wantBriefcaseRoll = false, bool checkOutput = true)
     {
     bvector<ChangedElement> elements;
     StatusInt status = SUCCESS;
@@ -796,7 +796,7 @@ TEST_F(VersionCompareTestFixture, CompareOneRevisionOneInsertion)
     {
     // Test one insertion on one changeset
     ElementMap elementMap;
-    bvector<DgnRevisionPtr> changesets;
+    bvector<ChangesetInfoPtr> changesets;
 
     // Clone with the current revision
     DgnDbPtr targetDb = CloneTemporaryDb(m_db);
@@ -819,11 +819,11 @@ TEST_F(VersionCompareTestFixture, CompareOneRevisionOneInsertion)
 TEST_F(VersionCompareTestFixture, CompareOneRevisionOneDeletion)
     {
     ElementMap elementMap;
-    bvector<DgnRevisionPtr> changesets;
+    bvector<ChangesetInfoPtr> changesets;
 
     DgnElementPtr firstElement = InsertPhysicalElement("X");
     // Create first revision containing an element
-    DgnRevisionPtr initialRevision = CreateRevision();
+    ChangesetInfoPtr initialRevision = CreateRevision();
     ASSERT_TRUE(initialRevision.IsValid());
     // Clone with the current revision
     DgnDbPtr targetDb = CloneTemporaryDb(m_db);
@@ -846,11 +846,11 @@ TEST_F(VersionCompareTestFixture, CompareOneRevisionOneDeletion)
 TEST_F(VersionCompareTestFixture, CompareOneRevisionOneUpdate)
     {
     ElementMap elementMap;
-    bvector<DgnRevisionPtr> changesets;
+    bvector<ChangesetInfoPtr> changesets;
 
     DgnElementPtr firstElement = InsertPhysicalElement("X");
     // Create first revision containing an element
-    DgnRevisionPtr initialRevision = CreateRevision();
+    ChangesetInfoPtr initialRevision = CreateRevision();
     ASSERT_TRUE(initialRevision.IsValid());
     // Clone with the current revision
     DgnDbPtr targetDb = CloneTemporaryDb(m_db);
@@ -874,7 +874,7 @@ TEST_F(VersionCompareTestFixture, CompareTenVersionsTwentyInserts)
     {
     // Test one insertion on one changeset
     ElementMap elementMap;
-    bvector<DgnRevisionPtr> changesets;
+    bvector<ChangesetInfoPtr> changesets;
 
     DgnDbPtr targetDb = CloneTemporaryDb(m_db);
     ASSERT_TRUE(targetDb.IsValid());
@@ -901,7 +901,7 @@ TEST_F(VersionCompareTestFixture, CompareTenVersionsTwentyInserts)
 TEST_F(VersionCompareTestFixture, TestFilterSpatial)
     {
     ElementMap elementMap;
-    bvector<DgnRevisionPtr> changesets;
+    bvector<ChangesetInfoPtr> changesets;
 
     DgnDbPtr targetDb = CloneTemporaryDb(m_db);
     ASSERT_TRUE(targetDb.IsValid());
@@ -935,7 +935,7 @@ TEST_F(VersionCompareTestFixture, TestFilterSpatial)
 TEST_F(VersionCompareTestFixture, CompareSchemaChangesAccumulation1)
     {
     ElementMap elementMap;
-    bvector<DgnRevisionPtr> changesets;
+    bvector<ChangesetInfoPtr> changesets;
 
     // Clone with the current revision
     DgnDbPtr targetDb = CloneTemporaryDb(m_db);
@@ -968,7 +968,7 @@ TEST_F(VersionCompareTestFixture, CompareSchemaChangesAccumulation1)
 TEST_F(VersionCompareTestFixture, CompareSchemaChangesAccumulation2)
     {
     ElementMap elementMap;
-    bvector<DgnRevisionPtr> changesets;
+    bvector<ChangesetInfoPtr> changesets;
 
     // Clone with the current revision
     DgnDbPtr targetDb = CloneTemporaryDb(m_db);
@@ -1003,7 +1003,7 @@ TEST_F(VersionCompareTestFixture, CompareSchemaChangesAccumulation2)
 TEST_F(VersionCompareTestFixture, CompareSchemaChangesAccumulation3)
     {
     ElementMap elementMap;
-    bvector<DgnRevisionPtr> changesets;
+    bvector<ChangesetInfoPtr> changesets;
 
     DgnElementPtr zeroElement = InsertPhysicalElement("Zero");
     DgnElementPtr firstElement = InsertPhysicalElement("X");
@@ -1011,7 +1011,7 @@ TEST_F(VersionCompareTestFixture, CompareSchemaChangesAccumulation3)
     DgnElementPtr thirdElement = InsertPhysicalElement("Z");
 
     // Create the starting changeset and clone the db
-    DgnRevisionPtr initialRevision = CreateRevision();
+    ChangesetInfoPtr initialRevision = CreateRevision();
     ASSERT_TRUE(initialRevision.IsValid());
     DgnDbPtr targetDb = CloneTemporaryDb(m_db);
     ASSERT_TRUE(targetDb.IsValid());
@@ -1067,7 +1067,7 @@ TEST_F(VersionCompareTestFixture, CompareSchemaChangesAccumulation3)
 TEST_F(VersionCompareTestFixture, CompareAspectChange1)
     {
     ElementMap elementMap;
-    bvector<DgnRevisionPtr> changesets;
+    bvector<ChangesetInfoPtr> changesets;
 
     DgnDbPtr targetDb = CloneTemporaryDb(m_db);
     ASSERT_TRUE(targetDb.IsValid());
@@ -1092,7 +1092,7 @@ TEST_F(VersionCompareTestFixture, CompareAspectChange1)
 TEST_F(VersionCompareTestFixture, CompareAspectChange2)
     {
     ElementMap elementMap;
-    bvector<DgnRevisionPtr> changesets;
+    bvector<ChangesetInfoPtr> changesets;
 
     // INITIAL CHANGESET
     // Create the starting changeset containing an element with an aspect
@@ -1101,7 +1101,7 @@ TEST_F(VersionCompareTestFixture, CompareAspectChange2)
     DgnElement::UniqueAspect::SetAspect(*tempEl, *aspect);
     aspect->SetPropertyValue("TestUniqueAspectProperty", ECValue("Old Value for Property"));
     m_db->Elements().Insert(*tempEl);
-    DgnRevisionPtr initialRevision = CreateRevision();
+    ChangesetInfoPtr initialRevision = CreateRevision();
     ASSERT_TRUE(initialRevision.IsValid());
     DgnDbPtr targetDb = CloneTemporaryDb(m_db);
     ASSERT_TRUE(targetDb.IsValid());
@@ -1115,7 +1115,7 @@ TEST_F(VersionCompareTestFixture, CompareAspectChange2)
     bvector<Utf8String> props;
     props.push_back("TestUniqueAspectProperty");
     elementMap[tempEl->GetElementId()] = ElementData(tempEl, DbOpcode::Update, ElementChangesType::Type::Mask_Indirect | ElementChangesType::Type::Mask_Property, props);
-    DgnRevisionPtr changeset1 = CreateRevision();
+    ChangesetInfoPtr changeset1 = CreateRevision();
     DumpRevision(*changeset1, "CompareAspectChange2: Aspect modification");
     changesets.push_back(changeset1);
 
@@ -1130,7 +1130,7 @@ TEST_F(VersionCompareTestFixture, CompareAspectChange2)
 TEST_F(VersionCompareTestFixture, CompareMultiAspectChange1)
     {
     ElementMap elementMap;
-    bvector<DgnRevisionPtr> changesets;
+    bvector<ChangesetInfoPtr> changesets;
 
     DgnDbPtr targetDb = CloneTemporaryDb(m_db);
     ASSERT_TRUE(targetDb.IsValid());
@@ -1146,7 +1146,7 @@ TEST_F(VersionCompareTestFixture, CompareMultiAspectChange1)
     // We should only end up with an insertion of the element, not the aspect
     elementMap[tempEl->GetElementId()] = ElementData(tempEl, DbOpcode::Insert);
     // Create changeset and dump
-    DgnRevisionPtr changeset1 = CreateRevision();
+    ChangesetInfoPtr changeset1 = CreateRevision();
     DumpRevision(*changeset1, "CompareMultiAspectChange1: Aspect insertion");
     changesets.push_back(changeset1);
 
@@ -1242,7 +1242,7 @@ TEST_F(VersionCompareTestFixture, ChangedElementsManagerTest1)
     {
     // Test generating the changed elements ECDb based on a change summary
     ElementMap elementMap;
-    bvector<DgnRevisionPtr> changesets;
+    bvector<ChangesetInfoPtr> changesets;
     DgnDbPtr initialDb = CloneTemporaryDb(m_db);
     ASSERT_TRUE(initialDb.IsValid());
 
@@ -1349,7 +1349,7 @@ TEST_F(VersionCompareTestFixture, ChangedElementsManagerTest_SingleChangeset)
     {
     // Test single changeset case that is handled without creating a temporary cloned db
     ElementMap elementMap;
-    bvector<DgnRevisionPtr> changesets;
+    bvector<ChangesetInfoPtr> changesets;
 
     // CHANGESET 1
     // Insert some elements
@@ -1404,7 +1404,7 @@ TEST_F(VersionCompareTestFixture, ChangedElementsManagerTest_SingleChangeset)
 TEST_F(VersionCompareTestFixture, ChangedElementsManagerTest2_ChangedModels)
     {
     // Test generating the changed elements ECDb based on a change summary
-    bvector<DgnRevisionPtr> changesets;
+    bvector<ChangesetInfoPtr> changesets;
     DgnDbPtr initialDb = CloneTemporaryDb(m_db);
     ASSERT_TRUE(initialDb.IsValid());
 
@@ -1412,7 +1412,7 @@ TEST_F(VersionCompareTestFixture, ChangedElementsManagerTest2_ChangedModels)
     // Insert elements
     DgnElementPtr firstElement = InsertPhysicalElement("X1", DPoint3d::From(1.0, 1.0, 1.0), DPoint3d::From(1.0, 1.0, 1.0));
     DgnElementPtr secondElement = InsertPhysicalElement("X2", DPoint3d::From(3.0, 3.0, 3.0), DPoint3d::From(1.0, 1.0, 1.0));
-    DgnRevisionPtr changeset1 = CreateRevision();
+    ChangesetInfoPtr changeset1 = CreateRevision();
     changesets.push_back(changeset1);
 
     // CHANGESET 2
@@ -1420,7 +1420,7 @@ TEST_F(VersionCompareTestFixture, ChangedElementsManagerTest2_ChangedModels)
     DgnElementPtr thirdElement = InsertPhysicalElement("X3", DPoint3d::From(9.0, 9.0, 9.0), DPoint3d::From(1.0, 1.0, 1.0));
     // Should still be mark as an insertion
     ModifyElementPlacement(secondElement->GetElementId());
-    DgnRevisionPtr changeset2 = CreateRevision();
+    ChangesetInfoPtr changeset2 = CreateRevision();
     changesets.push_back(changeset2);
 
     // Filename and cleanup if needed
@@ -1492,7 +1492,7 @@ TEST_F(VersionCompareTestFixture, ChangedElementsManagerTest2_ChangedModels)
 TEST_F(VersionCompareTestFixture, ChangedElementsManagerTest_PassRulesetDirectoryToManager)
     {
     ElementMap elementMap;
-    bvector<DgnRevisionPtr> changesets;
+    bvector<ChangesetInfoPtr> changesets;
     DgnDbPtr targetDb = CloneTemporaryDb(m_db);
     ASSERT_TRUE(targetDb.IsValid());
 
@@ -1503,7 +1503,7 @@ TEST_F(VersionCompareTestFixture, ChangedElementsManagerTest_PassRulesetDirector
     DgnElement::UniqueAspect::SetAspect(*tempEl, *aspect);
     aspect->SetPropertyValue("TestUniqueAspectProperty", ECValue("Old Value for Property"));
     m_db->Elements().Insert(*tempEl);
-    DgnRevisionPtr initialRevision = CreateRevision();
+    ChangesetInfoPtr initialRevision = CreateRevision();
     changesets.push_back(initialRevision);
     ASSERT_TRUE(initialRevision.IsValid());
 
@@ -1515,7 +1515,7 @@ TEST_F(VersionCompareTestFixture, ChangedElementsManagerTest_PassRulesetDirector
     tempEl->Update();
     elementMap[tempEl->GetElementId()] = ElementData(tempEl, DbOpcode::Update, ElementChangesType::Type::Mask_Indirect);
 
-    DgnRevisionPtr changeset1 = CreateRevision();
+    ChangesetInfoPtr changeset1 = CreateRevision();
     DumpRevision(*changeset1, "ChangedElementsManagerTest_Aspects: Aspect modification");
     changesets.push_back(changeset1);
 
@@ -1568,7 +1568,7 @@ TEST_F(VersionCompareTestFixture, ChangedElementsManagerTest_PassRulesetDirector
 TEST_F(VersionCompareTestFixture, ChangesTypeTest)
     {
     ElementMap elementMap;
-    bvector<DgnRevisionPtr> changesets;
+    bvector<ChangesetInfoPtr> changesets;
 
     // INITIAL CHANGESET
     // Create the starting changeset containing  some elements
@@ -1588,7 +1588,7 @@ TEST_F(VersionCompareTestFixture, ChangesTypeTest)
     m_db->Elements().Insert(*indirectEl);
     m_db->Elements().Insert(*multiEl);
 
-    DgnRevisionPtr initialRevision = CreateRevision();
+    ChangesetInfoPtr initialRevision = CreateRevision();
     ASSERT_TRUE(initialRevision.IsValid());
     DgnDbPtr targetDb = CloneTemporaryDb(m_db);
     ASSERT_TRUE(targetDb.IsValid());
@@ -1638,14 +1638,14 @@ TEST_F(VersionCompareTestFixture, ChangesTypeTest)
 TEST_F(VersionCompareTestFixture, PropertyMergingTest)
     {
     ElementMap elementMap;
-    bvector<DgnRevisionPtr> changesets;
+    bvector<ChangesetInfoPtr> changesets;
 
     // INITIAL CHANGESET
     // Create the starting changeset containing  some elements
     TestElementPtr propertyEl = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, "PropertyEl");
     m_db->Elements().Insert(*propertyEl);
 
-    DgnRevisionPtr initialRevision = CreateRevision();
+    ChangesetInfoPtr initialRevision = CreateRevision();
     ASSERT_TRUE(initialRevision.IsValid());
     DgnDbPtr targetDb = CloneTemporaryDb(m_db);
     ASSERT_TRUE(targetDb.IsValid());
@@ -1718,7 +1718,7 @@ TEST_F(VersionCompareTestFixture, PropertyMergingTest)
 TEST_F(VersionCompareTestFixture, PropertyChecksumTest)
     {
     ElementMap elementMap;
-    bvector<DgnRevisionPtr> changesets;
+    bvector<ChangesetInfoPtr> changesets;
 
     // INITIAL CHANGESET
     // Create the starting changeset containing  some elements
@@ -1728,7 +1728,7 @@ TEST_F(VersionCompareTestFixture, PropertyChecksumTest)
     propertyEl->SetPropertyValue("TestElementProperty", "Initial Value");
     m_db->Elements().Insert(*propertyEl);
 
-    DgnRevisionPtr initialRevision = CreateRevision();
+    ChangesetInfoPtr initialRevision = CreateRevision();
     ASSERT_TRUE(initialRevision.IsValid());
     DgnDbPtr targetDb = CloneTemporaryDb(m_db);
     ASSERT_TRUE(targetDb.IsValid());
@@ -1842,14 +1842,14 @@ TEST_F(VersionCompareTestFixture, PropertyChecksumTest)
 TEST_F(VersionCompareTestFixture, AspectCreationTest)
     {
     ElementMap elementMap;
-    bvector<DgnRevisionPtr> changesets;
+    bvector<ChangesetInfoPtr> changesets;
 
     // INITIAL CHANGESET
     // Create an element
     TestElementPtr indirectEl = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, "IndirectAspectEl");
     m_db->Elements().Insert(*indirectEl);
 
-    DgnRevisionPtr initialRevision = CreateRevision();
+    ChangesetInfoPtr initialRevision = CreateRevision();
     ASSERT_TRUE(initialRevision.IsValid());
     DgnDbPtr targetDb = CloneTemporaryDb(m_db);
     ASSERT_TRUE(targetDb.IsValid());
@@ -1882,7 +1882,7 @@ TEST_F(VersionCompareTestFixture, AspectCreationTest)
 TEST_F(VersionCompareTestFixture, AspectSetTest)
     {
     ElementMap elementMap;
-    bvector<DgnRevisionPtr> changesets;
+    bvector<ChangesetInfoPtr> changesets;
 
     // INITIAL CHANGESET
     // Create 2 elements, 1 aspect and set the aspect to one of them
@@ -1895,7 +1895,7 @@ TEST_F(VersionCompareTestFixture, AspectSetTest)
     // Set aspect to one element
     DgnElement::UniqueAspect::SetAspect(*indirectEl, *aspect);
 
-    DgnRevisionPtr initialRevision = CreateRevision();
+    ChangesetInfoPtr initialRevision = CreateRevision();
     ASSERT_TRUE(initialRevision.IsValid());
     DgnDbPtr targetDb = CloneTemporaryDb(m_db);
     ASSERT_TRUE(targetDb.IsValid());
@@ -1930,7 +1930,7 @@ TEST_F(VersionCompareTestFixture, RelatedPropertyTest)
     {
     // Test the case where only the relationship changes but not the actual elements
     ElementMap elementMap;
-    bvector<DgnRevisionPtr> changesets;
+    bvector<ChangesetInfoPtr> changesets;
 
     // INITIAL CHANGESET
     // Create elements and link elements to test related property paths finding Link properties
@@ -1950,7 +1950,7 @@ TEST_F(VersionCompareTestFixture, RelatedPropertyTest)
     UrlLinkCPtr link1A = link1->Insert();
     ASSERT_TRUE(link1A.IsValid());
 
-    DgnRevisionPtr initialRevision = CreateRevision();
+    ChangesetInfoPtr initialRevision = CreateRevision();
     ASSERT_TRUE(initialRevision.IsValid());
     DgnDbPtr targetDb = CloneTemporaryDb(m_db);
     ASSERT_TRUE(targetDb.IsValid());
@@ -1979,7 +1979,7 @@ TEST_F(VersionCompareTestFixture, RelatedPropertyTest)
 TEST_F(VersionCompareTestFixture, AspectDeleteTest)
     {
     ElementMap elementMap;
-    bvector<DgnRevisionPtr> changesets;
+    bvector<ChangesetInfoPtr> changesets;
 
     // INITIAL CHANGESET
     // Create an element
@@ -1996,7 +1996,7 @@ TEST_F(VersionCompareTestFixture, AspectDeleteTest)
     // The only way to get the proper relationship is for an element with the aspect and relationship to exist in the Db
     m_db->Elements().Insert(*indirectEl2);
 
-    DgnRevisionPtr initialRevision = CreateRevision();
+    ChangesetInfoPtr initialRevision = CreateRevision();
     ASSERT_TRUE(initialRevision.IsValid());
     DgnDbPtr targetDb = CloneTemporaryDb(m_db);
     ASSERT_TRUE(targetDb.IsValid());
@@ -2025,7 +2025,7 @@ TEST_F(VersionCompareTestFixture, AspectDeleteTest)
 TEST_F(VersionCompareTestFixture, ParentTestDelete)
     {
     ElementMap elementMap;
-    bvector<DgnRevisionPtr> changesets;
+    bvector<ChangesetInfoPtr> changesets;
 
     // INITIAL CHANGESET
     // Create an element
@@ -2036,7 +2036,7 @@ TEST_F(VersionCompareTestFixture, ParentTestDelete)
     child1->SetParentId(parent->GetElementId(), m_db->Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements));
     m_db->Elements().Insert(*child1);
 
-    DgnRevisionPtr initialRevision = CreateRevision();
+    ChangesetInfoPtr initialRevision = CreateRevision();
     ASSERT_TRUE(initialRevision.IsValid());
     DgnDbPtr targetDb = CloneTemporaryDb(m_db);
     ASSERT_TRUE(targetDb.IsValid());
@@ -2062,7 +2062,7 @@ TEST_F(VersionCompareTestFixture, ParentTestDelete)
 TEST_F(VersionCompareTestFixture, ParentTestModify)
     {
     ElementMap elementMap;
-    bvector<DgnRevisionPtr> changesets;
+    bvector<ChangesetInfoPtr> changesets;
 
     // INITIAL CHANGESET
     // Create an element
@@ -2074,7 +2074,7 @@ TEST_F(VersionCompareTestFixture, ParentTestModify)
     child2->SetParentId(parent->GetElementId(), m_db->Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements));
     m_db->Elements().Insert(*child2);
 
-    DgnRevisionPtr initialRevision = CreateRevision();
+    ChangesetInfoPtr initialRevision = CreateRevision();
     ASSERT_TRUE(initialRevision.IsValid());
     DgnDbPtr targetDb = CloneTemporaryDb(m_db);
     ASSERT_TRUE(targetDb.IsValid());
@@ -2101,7 +2101,7 @@ TEST_F(VersionCompareTestFixture, ParentTestModify)
 TEST_F(VersionCompareTestFixture, ParentTestModifyParent)
     {
     ElementMap elementMap;
-    bvector<DgnRevisionPtr> changesets;
+    bvector<ChangesetInfoPtr> changesets;
 
     // INITIAL CHANGESET
     // Create an element
@@ -2114,7 +2114,7 @@ TEST_F(VersionCompareTestFixture, ParentTestModifyParent)
     child3->SetParentId(parent->GetElementId(), m_db->Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements));
     m_db->Elements().Insert(*child3);
 
-    DgnRevisionPtr initialRevision = CreateRevision();
+    ChangesetInfoPtr initialRevision = CreateRevision();
     ASSERT_TRUE(initialRevision.IsValid());
     DgnDbPtr targetDb = CloneTemporaryDb(m_db);
     ASSERT_TRUE(targetDb.IsValid());
@@ -2140,9 +2140,9 @@ TEST_F(VersionCompareTestFixture, ParentTestModifyParent)
 TEST_F(VersionCompareTestFixture, ParentTestInsert)
     {
     ElementMap elementMap;
-    bvector<DgnRevisionPtr> changesets;
+    bvector<ChangesetInfoPtr> changesets;
 
-    // DgnRevisionPtr initialRevision = CreateRevision();
+    // ChangesetInfoPtr initialRevision = CreateRevision();
     // ASSERT_TRUE(initialRevision.IsValid());
     DgnDbPtr targetDb = CloneTemporaryDb(m_db);
     ASSERT_TRUE(targetDb.IsValid());
@@ -2171,9 +2171,9 @@ TEST_F(VersionCompareTestFixture, ParentTestInsert)
 TEST_F(VersionCompareTestFixture, TopParentTestInsert)
     {
     ElementMap elementMap;
-    bvector<DgnRevisionPtr> changesets;
+    bvector<ChangesetInfoPtr> changesets;
 
-    // DgnRevisionPtr initialRevision = CreateRevision();
+    // ChangesetInfoPtr initialRevision = CreateRevision();
     // ASSERT_TRUE(initialRevision.IsValid());
     DgnDbPtr targetDb = CloneTemporaryDb(m_db);
     ASSERT_TRUE(targetDb.IsValid());
@@ -2208,7 +2208,7 @@ TEST_F(VersionCompareTestFixture, TopParentTestInsert)
 TEST_F(VersionCompareTestFixture, FindTopParentOfModifiedElementThroughAspectChange)
     {
     ElementMap elementMap;
-    bvector<DgnRevisionPtr> changesets;
+    bvector<ChangesetInfoPtr> changesets;
 
     // SETUP
     // Insert a top parent, a intermediate child/parent and a child
@@ -2233,7 +2233,7 @@ TEST_F(VersionCompareTestFixture, FindTopParentOfModifiedElementThroughAspectCha
     ECInstanceKey directChildKey(ECClassId(directChild->GetElementClassId().GetValue()), ECInstanceId(directChild->GetElementId().GetValue()));
 
     // BASELINE
-    DgnRevisionPtr initialRevision = CreateRevision();
+    ChangesetInfoPtr initialRevision = CreateRevision();
     ASSERT_TRUE(initialRevision.IsValid());
     DgnDbPtr targetDb = CloneTemporaryDb(m_db);
     ASSERT_TRUE(targetDb.IsValid());
@@ -2263,7 +2263,7 @@ TEST_F(VersionCompareTestFixture, FindTopParentOfModifiedElementThroughAspectCha
 TEST_F(VersionCompareTestFixture, TopParentTestDelete)
     {
     ElementMap elementMap;
-    bvector<DgnRevisionPtr> changesets;
+    bvector<ChangesetInfoPtr> changesets;
 
     TestElementPtr topParent = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, "TopParentEl");
     TestElementPtr directChild = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, "DirectChildEl");
@@ -2274,7 +2274,7 @@ TEST_F(VersionCompareTestFixture, TopParentTestDelete)
     childOfChild->SetParentId(directChild->GetElementId(), m_db->Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements));
     m_db->Elements().Insert(*childOfChild);
 
-    DgnRevisionPtr initialRevision = CreateRevision();
+    ChangesetInfoPtr initialRevision = CreateRevision();
     ASSERT_TRUE(initialRevision.IsValid());
     DgnDbPtr targetDb = CloneTemporaryDb(m_db);
     ASSERT_TRUE(targetDb.IsValid());
@@ -2305,7 +2305,7 @@ TEST_F(VersionCompareTestFixture, TopParentTestDelete)
 TEST_F(VersionCompareTestFixture, NestedPropertyPaths)
     {
     ElementMap elementMap;
-    bvector<DgnRevisionPtr> changesets;
+    bvector<ChangesetInfoPtr> changesets;
 
     // Test a nested property path as follows
     // TestElement -> PhysicalElementIsOfType -> TestPhysicalType -> ElementOwnsUniqueAspect -> TestUniqueAspect
@@ -2323,7 +2323,7 @@ TEST_F(VersionCompareTestFixture, NestedPropertyPaths)
     DgnElementPtr element2 = InsertPhysicalElement("ElementWithType2", testType);
 
     // Create baseline revision
-    DgnRevisionPtr initialRevision = CreateRevision();
+    ChangesetInfoPtr initialRevision = CreateRevision();
     ASSERT_TRUE(initialRevision.IsValid());
     DgnDbPtr targetDb = CloneTemporaryDb(m_db);
     ASSERT_TRUE(targetDb.IsValid());
@@ -2350,7 +2350,7 @@ TEST_F(VersionCompareTestFixture, NestedPropertyPaths)
 TEST_F(VersionCompareTestFixture, PerfNestedProps)
     {
     ElementMap elementMap;
-    bvector<DgnRevisionPtr> changesets;
+    bvector<ChangesetInfoPtr> changesets;
 
     // Test a nested property path as follows
     // TestElement -> PhysicalElementIsOfType -> TestPhysicalType -> ElementOwnsUniqueAspect -> TestUniqueAspect
@@ -2385,7 +2385,7 @@ TEST_F(VersionCompareTestFixture, PerfNestedProps)
         }
 
     // Create baseline revision
-    DgnRevisionPtr initialRevision = CreateRevision();
+    ChangesetInfoPtr initialRevision = CreateRevision();
     ASSERT_TRUE(initialRevision.IsValid());
     DgnDbPtr targetDb = CloneTemporaryDb(m_db);
     ASSERT_TRUE(targetDb.IsValid());
@@ -2411,7 +2411,7 @@ TEST_F(VersionCompareTestFixture, PerfNestedProps)
 TEST_F(VersionCompareTestFixture, DeleteLeafNestedPropertyPaths)
     {
     ElementMap elementMap;
-    bvector<DgnRevisionPtr> changesets;
+    bvector<ChangesetInfoPtr> changesets;
 
     // Test a nested property path as follows
     // TestElement -> PhysicalElementIsOfType -> TestPhysicalType -> ElementOwnsUniqueAspect -> TestUniqueAspect
@@ -2429,7 +2429,7 @@ TEST_F(VersionCompareTestFixture, DeleteLeafNestedPropertyPaths)
     DgnElementPtr element2 = InsertPhysicalElement("ElementWithType2", testType);
 
     // Create baseline revision
-    DgnRevisionPtr initialRevision = CreateRevision();
+    ChangesetInfoPtr initialRevision = CreateRevision();
     ASSERT_TRUE(initialRevision.IsValid());
     DgnDbPtr targetDb = CloneTemporaryDb(m_db);
     ASSERT_TRUE(targetDb.IsValid());
@@ -2461,7 +2461,7 @@ TEST_F(VersionCompareTestFixture, DeleteLeafNestedPropertyPaths)
 TEST_F(VersionCompareTestFixture, DeleteIntermediaryNestedPropertyPaths)
     {
     ElementMap elementMap;
-    bvector<DgnRevisionPtr> changesets;
+    bvector<ChangesetInfoPtr> changesets;
 
     // Test a nested property path as follows
     // TestElement -> PhysicalElementIsOfType -> TestPhysicalType -> ElementOwnsUniqueAspect -> TestUniqueAspect
@@ -2479,7 +2479,7 @@ TEST_F(VersionCompareTestFixture, DeleteIntermediaryNestedPropertyPaths)
     DgnElementPtr element2 = InsertPhysicalElement("ElementWithType2", testType);
 
     // Create baseline revision
-    DgnRevisionPtr initialRevision = CreateRevision();
+    ChangesetInfoPtr initialRevision = CreateRevision();
     ASSERT_TRUE(initialRevision.IsValid());
     DgnDbPtr targetDb = CloneTemporaryDb(m_db);
     ASSERT_TRUE(targetDb.IsValid());
@@ -2510,7 +2510,7 @@ TEST_F(VersionCompareTestFixture, DeleteIntermediaryNestedPropertyPaths)
 TEST_F(VersionCompareTestFixture, NestedPropertyPathsDeleteElement)
     {
     ElementMap elementMap;
-    bvector<DgnRevisionPtr> changesets;
+    bvector<ChangesetInfoPtr> changesets;
 
     // Test a nested property path as follows
     // TestElement -> PhysicalElementIsOfType -> TestPhysicalType -> ElementOwnsUniqueAspect -> TestUniqueAspect
@@ -2528,7 +2528,7 @@ TEST_F(VersionCompareTestFixture, NestedPropertyPathsDeleteElement)
     DgnElementPtr element2 = InsertPhysicalElement("ElementWithType2", testType);
 
     // Create baseline revision
-    DgnRevisionPtr initialRevision = CreateRevision();
+    ChangesetInfoPtr initialRevision = CreateRevision();
     ASSERT_TRUE(initialRevision.IsValid());
     DgnDbPtr targetDb = CloneTemporaryDb(m_db);
     ASSERT_TRUE(targetDb.IsValid());
@@ -2564,7 +2564,7 @@ TEST_F(VersionCompareTestFixture, TestBriefcaseRolling)
     // So that the agent may roll and process in a single operation without the processing code
     // needing to do a temporary cloning to process the change without affecting the passed Db
     ElementMap elementMap;
-    bvector<DgnRevisionPtr> changesets;
+    bvector<ChangesetInfoPtr> changesets;
 
     // Clone with the current revision
     DgnDbPtr targetDb = CloneTemporaryDb(m_db);
@@ -2574,7 +2574,7 @@ TEST_F(VersionCompareTestFixture, TestBriefcaseRolling)
     // Insert an element
     DgnElementPtr firstElement = InsertPhysicalElement("X");
     elementMap[firstElement->GetElementId()] = ElementData(firstElement, DbOpcode::Insert);
-    DgnRevisionPtr changeset = CreateRevision();
+    ChangesetInfoPtr changeset = CreateRevision();
     changesets.push_back(changeset);
 
     BeFileName dbFilename = targetDb->GetFileName();
@@ -2603,7 +2603,7 @@ TEST_F(VersionCompareTestFixture, TestBriefcaseRolling)
 TEST_F(VersionCompareTestFixture, MemoryUsageTest)
     {
     ElementMap elementMap;
-    bvector<DgnRevisionPtr> changesets;
+    bvector<ChangesetInfoPtr> changesets;
 
     // INITIAL CHANGESET
     // Create elements and aspects
@@ -2621,7 +2621,7 @@ TEST_F(VersionCompareTestFixture, MemoryUsageTest)
         elementIds.push_back(indirectEl->GetElementId());
         }
 
-    DgnRevisionPtr initialRevision = CreateRevision();
+    ChangesetInfoPtr initialRevision = CreateRevision();
     ASSERT_TRUE(initialRevision.IsValid());
     DgnDbPtr targetDb = CloneTemporaryDb(m_db);
     ASSERT_TRUE(targetDb.IsValid());

@@ -20,7 +20,7 @@ enum DgnErrorCategories
     LINESTYLE_ERROR_BASE            = 0x12000,
     GEOREFERENCE_ERROR_BASE         = 0x13000,
     REPOSITORY_ERROR_BASE           = 0x15000,
-    REVISION_ERROR_BASE             = 0x16000,
+    CHANGESET_ERROR_BASE            = 0x16000,
     };
 
 //=======================================================================================
@@ -126,7 +126,7 @@ enum class RepositoryStatus : int
     InvalidResponse = 0x15004, //!< Response from server not understood
     PendingTransactions = 0x15005, //!< An operation requires local changes to be committed or abandoned
     LockUsed = 0x15006, //!< A lock cannot be relinquished because the associated object has been modified
-    CannotCreateRevision = 0x15007, //!< An operation required creation of a DgnRevision, which failed
+    CannotCreateRevision = 0x15007, //!< An operation required creation of a ChangesetInfo, which failed
     InvalidRequest = 0x15008, //!< Request to server not understood
     RevisionRequired = 0x15009, //!< A revision committed to the server must be integrated into the briefcase before the operation can be completed
     CodeUnavailable = 0x1500A, //!< A requested DgnCode is reserved by another briefcase or in use
@@ -139,11 +139,10 @@ enum class RepositoryStatus : int
 // The typescript generator require literal values for all enum members...
 static_assert((int)RepositoryStatus::ServerUnavailable == REPOSITORY_ERROR_BASE + 1, "Inconsistent enum");
 
-//! Status codes for the Revision API
-enum class RevisionStatus : int
-    {
+//! Status codes for Changesets
+enum class ChangesetStatus : int {
     Success = SUCCESS, //!< Success
-    ApplyError = REVISION_ERROR_BASE + 1, //!< Error applying a revision when merging, reversing or reinstating it.
+    ApplyError = CHANGESET_ERROR_BASE + 1, //!< Error applying a revision when merging, reversing or reinstating it.
     ChangeTrackingNotEnabled, //!< Change tracking has not been enabled. The Revision API mandates this.
     CorruptedChangeStream, //!< Contents of the change stream are corrupted and does not match the Revision
     FileNotFound, //!< File containing the changes to the revision is not found
@@ -169,7 +168,7 @@ enum class RevisionStatus : int
     CannotMergeIntoReversed, //! Cannot merge changes into a DgnDb that has reversed revisions.
     BadVersionId, // illegal version length
     CorruptedTxn, // Fail to decompress txn
-    };
+};
 
 //=======================================================================================
 // @bsiclass

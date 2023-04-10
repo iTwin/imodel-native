@@ -26,25 +26,22 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ChangeSet::ConflictResolution RevisionChangesFileReader::_OnConflict(ChangeSet::ConflictCause cause, Changes::Change iter)
-    {
+ChangeSet::ConflictResolution ChangesetFileReader::_OnConflict(ChangeSet::ConflictCause cause, Changes::Change iter) {
     DgnDb const* dgndb = dynamic_cast<DgnDb const*>(&GetDb());
     return RevisionManager::ConflictHandler(*dgndb, cause, iter);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ChangeSet::ConflictResolution ApplyRevisionChangeSet::_OnConflict(ChangeSet::ConflictCause cause, Changes::Change iter)
-    {
+ChangeSet::ConflictResolution ApplyRevisionChangeSet::_OnConflict(ChangeSet::ConflictCause cause, Changes::Change iter) {
     return RevisionManager::ConflictHandler(m_dgndb, cause, iter);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ChangeSet::ConflictResolution RevisionManager::ConflictHandler(DgnDbCR dgndb, ChangeSet::ConflictCause cause, Changes::Change iter)
-    {
+ChangeSet::ConflictResolution RevisionManager::ConflictHandler(DgnDbCR dgndb, ChangeSet::ConflictCause cause, Changes::Change iter) {
     Utf8CP tableName = nullptr;
     int nCols, indirect;
     DbOpcode opcode;
@@ -54,28 +51,23 @@ ChangeSet::ConflictResolution RevisionManager::ConflictHandler(DgnDbCR dgndb, Ch
     UNUSED_VARIABLE(result);
 
     // Handle some special cases
-    if (cause == ChangeSet::ConflictCause::Conflict)
-        {
+    if (cause == ChangeSet::ConflictCause::Conflict) {
         // From the SQLite docs: "CHANGESET_CONFLICT is passed as the second argument to the conflict handler while processing an INSERT change if the operation would result in duplicate primary key values."
         // This is always a fatal error - it can happen only if the app started with a briefcase that is behind the tip and then uses the same primary key values (e.g., ElementIds)
         // that have already been used by some other app using the SAME briefcase ID that recently pushed changes. That can happen only if the app makes changes without first pulling and acquiring locks.
-        if (!const_cast<DgnDbR>(dgndb).Txns().HasPendingTxns())
-            {
+        if (!const_cast<DgnDbR>(dgndb).Txns().HasPendingTxns()) {
             // This changeset is bad. However, it is already in the timeline. We must allow services such as
             // checkpoint-creation, change history, and other apps to apply any changeset that is in the timeline.
             LOG.info("PRIMARY KEY INSERT CONFLICT - resolved by replacing the existing row with the incoming row");
             iter.Dump(dgndb, false, 1);
-            }
-        else
-            {
+        } else {
             LOG.fatal("PRIMARY KEY INSERT CONFLICT - rejecting this changeset");
             iter.Dump(dgndb, false, 1);
             return ChangeSet::ConflictResolution::Abort;
-            }
         }
+    }
 
-    if (cause == ChangeSet::ConflictCause::ForeignKey)
-        {
+    if (cause == ChangeSet::ConflictCause::ForeignKey) {
         // Note: No current or conflicting row information is provided if it's a FKey conflict
         // Since we abort on FKey conflicts, always try and provide details about the error
         int nConflicts = 0;
@@ -85,67 +77,57 @@ ChangeSet::ConflictResolution RevisionManager::ConflictHandler(DgnDbCR dgndb, Ch
         uint64_t notUsed;
         // Note: There is no performance implication of follow code as it happen toward end of
         // apply_changeset only once so we be querying value for 'DebugAllowFkViolations' only once.
-        if (dgndb.QueryBriefcaseLocalValue(notUsed, "DebugAllowFkViolations") == BE_SQLITE_ROW)
-            {
+        if (dgndb.QueryBriefcaseLocalValue(notUsed, "DebugAllowFkViolations") == BE_SQLITE_ROW) {
             LOG.errorv("Detected %d foreign key conflicts in changeset. Continuing merge as 'DebugAllowFkViolations' flag is set. Run 'PRAGMA foreign_key_check' to get list of violations.", nConflicts);
             return ChangeSet::ConflictResolution::Skip;
-            }
-        else
-            {
+        } else {
             LOG.errorv("Detected %d foreign key conflicts in ChangeSet. Aborting merge.", nConflicts);
-            return ChangeSet::ConflictResolution::Abort ;
-            }
+            return ChangeSet::ConflictResolution::Abort;
         }
+    }
 
-    if (cause == ChangeSet::ConflictCause::NotFound)
-        {
+    if (cause == ChangeSet::ConflictCause::NotFound) {
         /*
-        * Note: If ConflictCause = NotFound, the primary key was not found, and returning ConflictResolution::Replace is
-        * not an option at all - this will cause a BE_SQLITE_MISUSE error.
-        */
-        if (opcode == DbOpcode::Delete)
-            {
+         * Note: If ConflictCause = NotFound, the primary key was not found, and returning ConflictResolution::Replace is
+         * not an option at all - this will cause a BE_SQLITE_MISUSE error.
+         */
+        if (opcode == DbOpcode::Delete) {
             // Caused by CASCADE DELETE on a foreign key, and is usually not a problem.
             return ChangeSet::ConflictResolution::Skip;
-            }
-
-
-        if (opcode == DbOpcode::Update && 0 == ::strncmp(tableName, "ec_", 3))
-            {
-            // Caused by a ON DELETE SET NULL constraint on a foreign key - this is known to happen with "ec_" tables, but needs investigation if it happens otherwise
-            return ChangeSet::ConflictResolution::Skip;
-            }
-
-#if defined (WORK_ON_CHANGE_MERGING)
-        if (!letControlHandleThis)
-#endif
-            {
-            // Refer to comment below
-            return opcode == DbOpcode::Update ? ChangeSet::ConflictResolution::Skip : ChangeSet::ConflictResolution::Replace;
-            }
         }
 
-#if defined (WORK_ON_CHANGE_MERGING)
-    if (letControlHandleThis)
+        if (opcode == DbOpcode::Update && 0 == ::strncmp(tableName, "ec_", 3)) {
+            // Caused by a ON DELETE SET NULL constraint on a foreign key - this is known to happen with "ec_" tables, but needs investigation if it happens otherwise
+            return ChangeSet::ConflictResolution::Skip;
+        }
+
+#if defined(WORK_ON_CHANGE_MERGING)
+        if (!letControlHandleThis)
+#endif
         {
+            // Refer to comment below
+            return opcode == DbOpcode::Update ? ChangeSet::ConflictResolution::Skip : ChangeSet::ConflictResolution::Replace;
+        }
+    }
+
+#if defined(WORK_ON_CHANGE_MERGING)
+    if (letControlHandleThis) {
         // if we have a concurrency control, then we allow it to decide how to handle conflicts with local changes.
         // (We don't call the control in the case where there are no local changes. As explained below, we always want the incoming changes in that case.)
         return control->_OnConflict(dgndb, cause, iter);
-        }
+    }
 #endif
 
-    if (ChangeSet::ConflictCause::Constraint == cause)
-        {
-        if (LOG.isSeverityEnabled(NativeLogging::LOG_INFO))
-            {
+    if (ChangeSet::ConflictCause::Constraint == cause) {
+        if (LOG.isSeverityEnabled(NativeLogging::LOG_INFO)) {
             LOG.infov("------------------------------------------------------------------");
             LOG.infov("Conflict detected - Cause: %s", ChangeSet::InterpretConflictCause(cause, 1));
             iter.Dump(dgndb, false, 1);
-            }
+        }
 
         LOG.warning("Constraint conflict handled by rejecting incoming change. Constraint conflicts are NOT expected. These happen most often when two clients both insert elements with the same code. That indicates a bug in the client or the code server.");
         return ChangeSet::ConflictResolution::Skip;
-        }
+    }
 
     /*
      * If we don't have a control, we always accept the incoming revision in cases of conflicts:
@@ -168,30 +150,25 @@ ChangeSet::ConflictResolution RevisionManager::ConflictHandler(DgnDbCR dgndb, Ch
      *
      * + Also see comments in TxnManager::MergeDataChangesInRevision()
      */
-    if (LOG.isSeverityEnabled(NativeLogging::LOG_INFO))
-        {
+    if (LOG.isSeverityEnabled(NativeLogging::LOG_INFO)) {
         LOG.infov("------------------------------------------------------------------");
         LOG.infov("Conflict detected - Cause: %s", ChangeSet::InterpretConflictCause(cause, 1));
         iter.Dump(dgndb, false, 1);
         LOG.infov("Conflicting resolved by replacing the existing entry with the change");
-        }
-    return ChangeSet::ConflictResolution::Replace;
     }
+    return ChangeSet::ConflictResolution::Replace;
+}
 
 //=======================================================================================
-//! Generates the DgnRevision Id
 // @bsiclass
 //=======================================================================================
-struct DgnRevisionIdGenerator : ChangeStream
-{
-private:
+struct ChangesetIdGenerator : ChangeStream {
     SHA1 m_hash;
 
     //---------------------------------------------------------------------------------------
     // @bsimethod
     //---------------------------------------------------------------------------------------
-    static int HexCharToInt(char input)
-        {
+    static int HexCharToInt(char input) {
         if (input >= '0' && input <= '9')
             return input - '0';
         if (input >= 'A' && input <= 'F')
@@ -201,108 +178,89 @@ private:
 
         BeAssert(false);
         return 0;
-        }
+    }
 
     //---------------------------------------------------------------------------------------
     // @bsimethod
     //---------------------------------------------------------------------------------------
-    void AddStringToHash(Utf8StringCR hashString)
-        {
+    void AddStringToHash(Utf8StringCR hashString) {
         Byte hashValue[SHA1::HashBytes];
-        if (hashString.empty())
-            {
+        if (hashString.empty()) {
             memset(hashValue, 0, SHA1::HashBytes);
-            }
-        else
-            {
+        } else {
             BeAssert(hashString.length() == SHA1::HashBytes * 2);
-            for (int ii = 0; ii < SHA1::HashBytes; ii++)
-                {
+            for (int ii = 0; ii < SHA1::HashBytes; ii++) {
                 char hexChar1 = hashString.at(2 * ii);
                 char hexChar2 = hashString.at(2 * ii + 1);
-                hashValue[ii] = (Byte) (16 * HexCharToInt(hexChar1) + HexCharToInt(hexChar2));
-                }
+                hashValue[ii] = (Byte)(16 * HexCharToInt(hexChar1) + HexCharToInt(hexChar2));
             }
+        }
 
         m_hash.Add(hashValue, SHA1::HashBytes);
-        }
+    }
 
     //---------------------------------------------------------------------------------------
     // @bsimethod
     //---------------------------------------------------------------------------------------
-    Utf8String GetHashString()
-        {
-        return m_hash.GetHashString();
-        }
-
-    //---------------------------------------------------------------------------------------
-    // @bsimethod
-    //---------------------------------------------------------------------------------------
-    DbResult _Append(Byte const* pData, int nData) override
-        {
+    DbResult _Append(Byte const* pData, int nData) override {
         m_hash.Add(pData, nData);
         return BE_SQLITE_OK;
-        }
+    }
 
     //---------------------------------------------------------------------------------------
     // @bsimethod
     //---------------------------------------------------------------------------------------
-    ChangeSet::ConflictResolution _OnConflict(ChangeSet::ConflictCause cause, Changes::Change iter) override
-        {
-        BeAssert(false);
+    ChangeSet::ConflictResolution _OnConflict(ChangeSet::ConflictCause cause, Changes::Change iter) override {
         return ChangeSet::ConflictResolution::Abort;
-        }
+    }
 
 public:
-    DgnRevisionIdGenerator() {}
+    ChangesetIdGenerator() {}
     bool _IsEmpty() const override final { return false; }
     RefCountedPtr<Changes::Reader> _GetReader() const override { return nullptr; }
 
     //---------------------------------------------------------------------------------------
     // @bsimethod
     //---------------------------------------------------------------------------------------
-    static RevisionStatus GenerateId(Utf8StringR revId, Utf8StringCR parentRevId, BeFileNameCR revisionFile, DgnDbCR dgndb)
-        {
+    static ChangesetStatus GenerateId(Utf8StringR revId, Utf8StringCR parentRevId, BeFileNameCR revisionFile, DgnDbCR dgndb) {
         revId.clear();
-        RevisionChangesFileReader fs(revisionFile, dgndb);
+        ChangesetFileReader fs(revisionFile, dgndb);
 
-        DgnRevisionIdGenerator idgen;
-        idgen.AddStringToHash(parentRevId);
+        ChangesetIdGenerator idGen;
+        idGen.AddStringToHash(parentRevId);
 
         auto reader = fs.MakeReader();
         DbResult result;
         Utf8StringCR prefix = reader->GetPrefix(result);
-        if (BE_SQLITE_OK != result)
-            {
+        if (BE_SQLITE_OK != result) {
             BeAssert(false);
-            return (result == BE_SQLITE_ERROR_InvalidChangeSetVersion) ? RevisionStatus::InvalidVersion : RevisionStatus::CorruptedChangeStream;
-            }
+            return (result == BE_SQLITE_ERROR_InvalidChangeSetVersion) ? ChangesetStatus::InvalidVersion : ChangesetStatus::CorruptedChangeStream;
+        }
 
         if (!prefix.empty())
-            idgen._Append((Byte const*) prefix.c_str(), (int) prefix.SizeInBytes());
+            idGen._Append((Byte const*)prefix.c_str(), (int)prefix.SizeInBytes());
 
-        result = idgen.ReadFrom(*reader);
-        if (BE_SQLITE_OK != result)
-            {
+        result = idGen.ReadFrom(*reader);
+        if (BE_SQLITE_OK != result) {
             BeAssert(false);
-            return RevisionStatus::CorruptedChangeStream;
-            }
-
-        revId = idgen.GetHashString();
-        return RevisionStatus::Success;
+            return ChangesetStatus::CorruptedChangeStream;
         }
+
+        revId = idGen.m_hash.GetHashString();
+        return ChangesetStatus::Success;
+    }
 };
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DgnRevisionPtr DgnRevision::Create(Utf8StringCR changesetId, int32_t changesetIndex, Utf8StringCR parentRevisionId, Utf8StringCR dbGuid, BeFileNameCP fileName) {
+ChangesetInfoPtr ChangesetInfo::Create(Utf8StringCR changesetId, int32_t changesetIndex, Utf8StringCR parentRevisionId, Utf8StringCR dbGuid, BeFileNameCP fileName) {
     if (changesetId.empty() || changesetId.length() != SHA1::HashBytes * 2) {
         BeAssert(false && "Empty or invalid revision id passed in");
         return nullptr;
     }
 
-    DgnRevisionPtr revision = new DgnRevision(changesetId, changesetIndex, parentRevisionId, dbGuid);
+    ChangesetInfoPtr revision = new ChangesetInfo(changesetId, changesetIndex, parentRevisionId, dbGuid);
     if (nullptr == fileName) {
         revision->m_revChangesFile = BuildRevisionChangesPathname(changesetId);
         revision->m_ownsRevChangesFile = true;
@@ -316,7 +274,7 @@ DgnRevisionPtr DgnRevision::Create(Utf8StringCR changesetId, int32_t changesetIn
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DgnRevision::~DgnRevision()
+ChangesetInfo::~ChangesetInfo()
     {
 #ifndef DEBUG_REVISION_KEEP_FILES
     if (m_ownsRevChangesFile && m_revChangesFile.DoesPathExist())
@@ -334,7 +292,7 @@ DgnRevision::~DgnRevision()
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-BeFileName DgnRevision::BuildRevisionChangesPathname(Utf8String revisionId)
+BeFileName ChangesetInfo::BuildRevisionChangesPathname(Utf8String revisionId)
     {
     BeFileName tempPathname;
     BentleyStatus status = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectory(tempPathname, CHANGESET_REL_DIR);
@@ -345,13 +303,12 @@ BeFileName DgnRevision::BuildRevisionChangesPathname(Utf8String revisionId)
     tempPathname.AppendToPath(WString(revisionId.c_str(), true).c_str());
     tempPathname.AppendExtension(CHANGESET_FILE_EXT);
     return tempPathname;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void DgnRevision::Dump(DgnDbCR dgndb) const
-    {
+void ChangesetInfo::Dump(DgnDbCR dgndb) const {
 // Don't log "sensitive" information in production builds.
 #if !defined(NDEBUG)
     LOG.infov("Id : %s", m_id.c_str());
@@ -362,7 +319,7 @@ void DgnRevision::Dump(DgnDbCR dgndb) const
     LOG.infov("ChangeStreamFile: %ls", m_revChangesFile.c_str());
     LOG.infov("DateTime: %s", m_dateTime.ToString().c_str());
 
-    RevisionChangesFileReader fs(m_revChangesFile, dgndb);
+    ChangesetFileReader fs(m_revChangesFile, dgndb);
 
     bool containsSchemaChanges;
     DdlChanges ddlChanges;
@@ -373,72 +330,62 @@ void DgnRevision::Dump(DgnDbCR dgndb) const
     LOG.infov("Contains Schema Changes: %s", containsSchemaChanges ? "yes" : "no");
     LOG.infov("Contains Ddl Changes: %s", (ddlChanges.GetSize() > 0) ? "yes" : "no");
     if (ddlChanges.GetSize() > 0)
-        ddlChanges.Dump("DDL: ");
+            ddlChanges.Dump("DDL: ");
 
     fs.Dump("ChangeSet:\n", dgndb, false, 0);
 #endif
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-RevisionStatus DgnRevision::Validate(DgnDbCR dgndb) const
-    {
-    if (m_id.empty() || m_id.length() != SHA1::HashBytes * 2)
-        {
-        BeAssert(false && "The revision id is empty");
-        LOG.errorv("Changeset Id (%s) is not a valid SHA1 hash", m_id.c_str());
-        return RevisionStatus::InvalidId;
-        }
+ChangesetStatus ChangesetInfo::Validate(DgnDbCR dgndb) const {
+    if (m_id.length() != SHA1::HashBytes * 2) {
+            LOG.errorv("Changeset Id (%s) is not a valid SHA1 hash", m_id.c_str());
+            return ChangesetStatus::InvalidId;
+    }
 
     Utf8String dbGuid = dgndb.GetDbGuid().ToString();
-    if (m_dbGuid != dbGuid)
-        {
-        BeAssert(false && "The revision did not originate in the specified DgnDb");
-        LOG.errorv("The changeset did not originate in this bim file. this.DbGuid (%s) <> changeset.DbGuid (%s)", dbGuid.c_str(), m_dbGuid.c_str());
-        return RevisionStatus::WrongDgnDb;
-        }
+    if (m_dbGuid != dbGuid) {
+            LOG.errorv("The changeset did not originate in this bim file. this.DbGuid (%s) <> changeset.DbGuid (%s)", dbGuid.c_str(), m_dbGuid.c_str());
+            return ChangesetStatus::WrongDgnDb;
+    }
 
-    if (!m_revChangesFile.DoesPathExist())
-        {
-        BeAssert(false && "File containing the change stream doesn't exist. Cannot validate.");
-        LOG.errorv("Changeset (id=%s) file not found. (%s)", m_id.c_str(), m_revChangesFile.GetNameUtf8().c_str());
-        return RevisionStatus::FileNotFound;
-        }
+    if (!m_revChangesFile.DoesPathExist()) {
+            BeAssert(false && "File containing the change stream doesn't exist. Cannot validate.");
+            LOG.errorv("Changeset (id=%s) file not found. (%s)", m_id.c_str(), m_revChangesFile.GetNameUtf8().c_str());
+            return ChangesetStatus::FileNotFound;
+    }
 
     Utf8String id;
-    RevisionStatus status = DgnRevisionIdGenerator::GenerateId(id, m_parentId, m_revChangesFile, dgndb);
-    if (status != RevisionStatus::Success)
-        return status;
+    ChangesetStatus status = ChangesetIdGenerator::GenerateId(id, m_parentId, m_revChangesFile, dgndb);
+    if (status != ChangesetStatus::Success)
+            return status;
 
-    if (m_id != id)
-        {
-        BeAssert(false && "The contents of the change stream file don't match the DgnRevision");
-        LOG.errorv("Changeset SHA1 hash does not match its content. expected: %s <> actual: %s", m_id.c_str(), id.c_str());
-        return RevisionStatus::CorruptedChangeStream;
-        }
-
-    return RevisionStatus::Success;
+    if (m_id != id) {
+            LOG.errorv("Changeset SHA1 hash does not match its content. expected: %s <> actual: %s", m_id.c_str(), id.c_str());
+            return ChangesetStatus::CorruptedChangeStream;
     }
+
+    return ChangesetStatus::Success;
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-bool DgnRevision::ContainsSchemaChanges(DgnDbCR dgndb) const
-    {
-    RevisionChangesFileReader changeStream(m_revChangesFile, dgndb);
+bool ChangesetInfo::ContainsSchemaChanges(DgnDbCR dgndb) const {
+    ChangesetFileReader changeStream(m_revChangesFile, dgndb);
 
     bool containsSchemaChanges;
     DdlChanges ddlChanges;
     DbResult result = changeStream.MakeReader()->GetSchemaChanges(containsSchemaChanges, ddlChanges);
-    if (BE_SQLITE_OK != result)
-        {
-        BeAssert(false);
-        return false;
-        }
-
-    return containsSchemaChanges; // TODO: Consider caching this flag
+    if (BE_SQLITE_OK != result) {
+            BeAssert(false);
+            return false;
     }
+
+    return containsSchemaChanges;
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -461,9 +408,9 @@ void RevisionManager::ClearSavedValues() {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-RevisionStatus RevisionManager::SaveParentRevision(Utf8StringCR revisionId, int32_t changesetIndex) {
+ChangesetStatus RevisionManager::SaveParentRevision(Utf8StringCR revisionId, int32_t changesetIndex) {
     if (revisionId.length() != SHA1::HashBytes * 2)
-        return RevisionStatus::BadVersionId;
+        return ChangesetStatus::BadVersionId;
 
     // Early versions of iModels didn't save the changesetIndex, which is unfortunate since that's what we usually need. You can
     // get it by a round-trip query to IModelHub, but it's often convenient to know it locally, so we now store it in the be_local table.
@@ -486,16 +433,8 @@ RevisionStatus RevisionManager::SaveParentRevision(Utf8StringCR revisionId, int3
         m_dgndb.DeleteBriefcaseLocalValue(PARENT_CHANGESET);
     }
 
-    return RevisionStatus::Success;
+    return ChangesetStatus::Success;
     }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool RevisionManager::HasParentRevision() const {
-    Utf8String revisionId;
-    return BE_SQLITE_ROW == m_dgndb.QueryBriefcaseLocalValue(revisionId, PARENT_CS_ID);
-}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -526,7 +465,7 @@ void RevisionManager::GetParentRevision(int32_t& index, Utf8StringR id) const {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-RevisionStatus RevisionManager::SaveCurrentRevisionEndTxnId(TxnManager::TxnId txnId, int64_t rebaseId)
+ChangesetStatus RevisionManager::SaveCurrentRevisionEndTxnId(TxnManager::TxnId txnId, int64_t rebaseId)
     {
     DbResult result = m_dgndb.SaveBriefcaseLocalValue(CURRENT_CS_END_TXN_ID, txnId.GetValue());
 
@@ -536,23 +475,23 @@ RevisionStatus RevisionManager::SaveCurrentRevisionEndTxnId(TxnManager::TxnId tx
     if (BE_SQLITE_DONE != result)
         {
         BeAssert(false);
-        return RevisionStatus::SQLiteError;
+        return ChangesetStatus::SQLiteError;
         }
 
     result = m_dgndb.SaveChanges();
     if (BE_SQLITE_OK != result)
         {
         BeAssert(false);
-        return RevisionStatus::SQLiteError;
+        return ChangesetStatus::SQLiteError;
         }
 
-    return RevisionStatus::Success;
+    return ChangesetStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-RevisionStatus RevisionManager::DeleteCurrentRevisionEndTxnId()
+ChangesetStatus RevisionManager::DeleteCurrentRevisionEndTxnId()
     {
     DbResult result = m_dgndb.DeleteBriefcaseLocalValue(CURRENT_CS_END_TXN_ID);
     if (BE_SQLITE_DONE == result)
@@ -561,17 +500,17 @@ RevisionStatus RevisionManager::DeleteCurrentRevisionEndTxnId()
     if (BE_SQLITE_DONE != result)
         {
         BeAssert(false);
-        return RevisionStatus::SQLiteError;
+        return ChangesetStatus::SQLiteError;
         }
 
     result = m_dgndb.SaveChanges();
     if (BE_SQLITE_OK != result)
         {
         BeAssert(false);
-        return RevisionStatus::SQLiteError;
+        return ChangesetStatus::SQLiteError;
         }
 
-    return RevisionStatus::Success;
+    return ChangesetStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
@@ -605,7 +544,7 @@ bool RevisionManager::IsCreatingRevision() const
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DgnRevisionPtr RevisionManager::GetCreatingRevision()
+ChangesetInfoPtr RevisionManager::GetCreatingRevision()
     {
     if (m_currentRevision.IsValid())
         return m_currentRevision;
@@ -626,20 +565,20 @@ DgnRevisionPtr RevisionManager::GetCreatingRevision()
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-RevisionStatus RevisionManager::MergeRevision(DgnRevisionCR revision)
+ChangesetStatus RevisionManager::MergeRevision(ChangesetInfoCR revision)
     {
-    PRECONDITION(!m_dgndb.IsReadonly() && "Cannot merge changes into this database", RevisionStatus::CannotMergeIntoReadonly);
+    PRECONDITION(!m_dgndb.IsReadonly() && "Cannot merge changes into this database", ChangesetStatus::CannotMergeIntoReadonly);
 
     TxnManagerR txnMgr = m_dgndb.Txns();
-    PRECONDITION(!txnMgr.HasChanges() && "There are unsaved changes in the current transaction. Call db.SaveChanges() or db.AbandonChanges() first", RevisionStatus::HasUncommittedChanges);
-    PRECONDITION(!txnMgr.InDynamicTxn() && "Cannot merge revisions if in the middle of a dynamic transaction", RevisionStatus::InDynamicTransaction);
-    PRECONDITION(!IsCreatingRevision() && "There is already a revision being created. Call AbandonCreateRevision() or FinishCreateRevision() first", RevisionStatus::IsCreatingRevision)
+    PRECONDITION(!txnMgr.HasChanges() && "There are unsaved changes in the current transaction. Call db.SaveChanges() or db.AbandonChanges() first", ChangesetStatus::HasUncommittedChanges);
+    PRECONDITION(!txnMgr.InDynamicTxn() && "Cannot merge revisions if in the middle of a dynamic transaction", ChangesetStatus::InDynamicTransaction);
+    PRECONDITION(!IsCreatingRevision() && "There is already a revision being created. Call AbandonCreateChangeset() or FinishCreateRevision() first", ChangesetStatus::IsCreatingRevision)
 
-    RevisionStatus status = revision.Validate(m_dgndb);
-    if (RevisionStatus::Success != status)
+    ChangesetStatus status = revision.Validate(m_dgndb);
+    if (ChangesetStatus::Success != status)
         return status;
 
-    PRECONDITION(GetParentRevisionId() == revision.GetParentId() && "Parent of revision should match the parent revision id of the Db", RevisionStatus::ParentMismatch);
+    PRECONDITION(GetParentRevisionId() == revision.GetParentId() && "Parent of revision should match the parent revision id of the Db", ChangesetStatus::ParentMismatch);
 
 #ifdef DUMP_REVISION
     revision.Dump(m_dgndb);
@@ -651,12 +590,12 @@ RevisionStatus RevisionManager::MergeRevision(DgnRevisionCR revision)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-RevisionStatus RevisionManager::GroupChanges(DdlChangesR ddlChanges, ChangeGroupR dataChangeGroup, TxnManager::TxnId endTxnId) const {
+ChangesetStatus RevisionManager::GroupChanges(DdlChangesR ddlChanges, ChangeGroupR dataChangeGroup, TxnManager::TxnId endTxnId) const {
     TxnManagerR txnMgr = m_dgndb.Txns();
 
     TxnManager::TxnId startTxnId = txnMgr.QueryNextTxnId(TxnManager::TxnId(0));
     if (!startTxnId.IsValid() || startTxnId >= endTxnId)
-        return RevisionStatus::NoTransactions;
+        return ChangesetStatus::NoTransactions;
 
     for (TxnManager::TxnId currTxnId = startTxnId; currTxnId < endTxnId; currTxnId = txnMgr.QueryNextTxnId(currTxnId)) {
         auto txnType = txnMgr.GetTxnType(currTxnId);
@@ -667,40 +606,40 @@ RevisionStatus RevisionManager::GroupChanges(DdlChangesR ddlChanges, ChangeGroup
         if (txnType == TxnType::Ddl) {
             BeAssert(ddlChanges._IsEmpty());
             if (txnMgr.ReadChanges(ddlChanges, currTxnId) != ZIP_SUCCESS) {
-                LOG.error(L"Unable to read schema changes - RevisionStatus::CorruptedTxn");
-                return RevisionStatus::CorruptedTxn;
+                LOG.error(L"Unable to read schema changes - ChangesetStatus::CorruptedTxn");
+                return ChangesetStatus::CorruptedTxn;
             }
         } else {
             ChangeSet sqlChangeSet;
             if (txnMgr.ReadDataChanges(sqlChangeSet, currTxnId, TxnAction::None) != BE_SQLITE_OK) {
-                LOG.error(L"Unable to read data changes - RevisionStatus::CorruptedTxn");
-                return RevisionStatus::CorruptedTxn;
+                LOG.error(L"Unable to read data changes - ChangesetStatus::CorruptedTxn");
+                return ChangesetStatus::CorruptedTxn;
             }
 
             DbResult result = sqlChangeSet.AddToChangeGroup(dataChangeGroup);
             if (result != BE_SQLITE_OK) {
                 LOG.errorv(L"sqlite3changegroup_add failed: %ls", WString(BeSQLiteLib::GetErrorName(result), BentleyCharEncoding::Utf8).c_str());
                 BeAssert(false && "Failed to group sqlite changesets - see error codes in sqlite3changegroup_add()");
-                return RevisionStatus::SQLiteError;
+                return ChangesetStatus::SQLiteError;
             }
         }
     }
-    return RevisionStatus::Success;
+    return ChangesetStatus::Success;
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DgnRevisionPtr RevisionManager::CreateRevisionObject(BeFileNameCR tempRevisionPathname)
+ChangesetInfoPtr RevisionManager::CreateRevisionObject(BeFileNameCR tempRevisionPathname)
     {
     Utf8String parentRevId = GetParentRevisionId();
     Utf8String revId;
-    RevisionStatus status = DgnRevisionIdGenerator::GenerateId(revId, parentRevId, tempRevisionPathname, m_dgndb);
+    ChangesetStatus status = ChangesetIdGenerator::GenerateId(revId, parentRevId, tempRevisionPathname, m_dgndb);
     UNUSED_VARIABLE(status);
-    BeAssert(status == RevisionStatus::Success);
+    BeAssert(status == ChangesetStatus::Success);
     Utf8String dbGuid = m_dgndb.GetDbGuid().ToString();
 
-    DgnRevisionPtr revision = DgnRevision::Create(revId, -1, parentRevId, dbGuid);
+    ChangesetInfoPtr revision = ChangesetInfo::Create(revId, -1, parentRevId, dbGuid);
     if (revision.IsNull())
         return revision;
 
@@ -718,7 +657,6 @@ DgnRevisionPtr RevisionManager::CreateRevisionObject(BeFileNameCR tempRevisionPa
         }
 
     revision->SetDateTime(DateTime::GetCurrentTimeUtc());
-
     return revision;
     }
 
@@ -800,12 +738,12 @@ struct ChangeStreamQueueConsumer : ChangeStream {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-RevisionStatus RevisionManager::WriteChangesToFile(BeFileNameCR pathname, DdlChangesCR ddlChanges, ChangeGroupCR dataChangeGroup, Rebaser* rebaser) {
-    RevisionChangesFileWriter writer(pathname, dataChangeGroup.ContainsEcSchemaChanges(), ddlChanges, m_dgndb);
+ChangesetStatus RevisionManager::WriteChangesToFile(BeFileNameCR pathname, DdlChangesCR ddlChanges, ChangeGroupCR dataChangeGroup, Rebaser* rebaser) {
+    ChangesetFileWriter writer(pathname, dataChangeGroup.ContainsEcSchemaChanges(), ddlChanges, m_dgndb);
 
     DbResult result = writer.Initialize();
     if (BE_SQLITE_OK != result)
-        return RevisionStatus::FileWriteError;
+        return ChangesetStatus::FileWriteError;
 
     if (nullptr == rebaser) {
         result = writer.FromChangeGroup(dataChangeGroup);
@@ -830,10 +768,10 @@ RevisionStatus RevisionManager::WriteChangesToFile(BeFileNameCR pathname, DdlCha
 
     if (BE_SQLITE_OK != result) {
         BeAssert(false && "Could not write data changes to the revision file");
-        return RevisionStatus::FileWriteError;
+        return ChangesetStatus::FileWriteError;
     }
 
-    return pathname.DoesPathExist() ? RevisionStatus::Success : RevisionStatus::NoTransactions;
+    return pathname.DoesPathExist() ? ChangesetStatus::Success : ChangesetStatus::NoTransactions;
 }
 
 //---------------------------------------------------------------------------------------
@@ -850,19 +788,18 @@ BeFileName RevisionManager::BuildTempRevisionPathname()
     tempPathname.AppendToPath(L"CurrentChangeSet");
     tempPathname.AppendExtension(CHANGESET_FILE_EXT);
     return tempPathname;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DgnRevisionPtr RevisionManager::CreateRevision(RevisionStatus* outStatus, TxnManager::TxnId endTxnId, int64_t lastRebaseId)
-    {
-    RevisionStatus ALLOW_NULL_OUTPUT(status, outStatus);
+ChangesetInfoPtr RevisionManager::CreateRevision(ChangesetStatus* outStatus, TxnManager::TxnId endTxnId, int64_t lastRebaseId) {
+    ChangesetStatus ALLOW_NULL_OUTPUT(status, outStatus);
 
     DdlChanges ddlChanges;
     ChangeGroup dataChangeGroup;
     status = GroupChanges(ddlChanges, dataChangeGroup, endTxnId);
-    if (RevisionStatus::Success != status)
+    if (ChangesetStatus::Success != status)
         return nullptr;
 
     Rebaser rebaser;
@@ -870,79 +807,74 @@ DgnRevisionPtr RevisionManager::CreateRevision(RevisionStatus* outStatus, TxnMan
         if (m_dgndb.Txns().LoadRebases(rebaser, lastRebaseId) != BE_SQLITE_OK)
             return nullptr;
 
-    status = WriteChangesToFile(m_tempRevisionPathname, ddlChanges, dataChangeGroup, (lastRebaseId != 0)? &rebaser: nullptr);
-    if (RevisionStatus::Success != status)
+    status = WriteChangesToFile(m_tempRevisionPathname, ddlChanges, dataChangeGroup, (lastRebaseId != 0) ? &rebaser : nullptr);
+    if (ChangesetStatus::Success != status)
         return nullptr;
 
     return CreateRevisionObject(m_tempRevisionPathname);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DgnRevisionPtr RevisionManager::StartCreateRevision(RevisionStatus* outStatus /* = nullptr */)
-    {
-    RevisionStatus ALLOW_NULL_OUTPUT(status, outStatus);
+ChangesetInfoPtr RevisionManager::StartCreateChangeset(ChangesetStatus* outStatus /* = nullptr */) {
+    ChangesetStatus ALLOW_NULL_OUTPUT(status, outStatus);
 
     TxnManagerR txnMgr = m_dgndb.Txns();
-    if (!txnMgr.IsTracking())
-        {
+    if (!txnMgr.IsTracking()) {
         BeAssert(false && "Creating revisions requires that change tracking is enabled");
-        status = RevisionStatus::ChangeTrackingNotEnabled;
+        status = ChangesetStatus::ChangeTrackingNotEnabled;
         return nullptr;
-        }
+    }
 
     txnMgr.DeleteReversedTxns(); // make sure there's nothing undone before we create a new revision
 
-    if (txnMgr.HasChanges())
-        {
+    if (txnMgr.HasChanges()) {
         BeAssert(false && "There are unsaved changes in the current transaction. Call db.SaveChanges() or db.AbandonChanges() first");
-        status = RevisionStatus::HasUncommittedChanges;
+        status = ChangesetStatus::HasUncommittedChanges;
         return nullptr;
-        }
+    }
 
-    if (txnMgr.InDynamicTxn())
-        {
+    if (txnMgr.InDynamicTxn()) {
         BeAssert(false && "Cannot create a revision if in the middle of a dynamic transaction");
-        status = RevisionStatus::InDynamicTransaction;
+        status = ChangesetStatus::InDynamicTransaction;
         return nullptr;
-        }
+    }
 
-    if (IsCreatingRevision())
-        {
-        BeAssert(false && "There is already a revision being created. Call AbandonCreateRevision() or FinishCreateRevision() first");
-        status = RevisionStatus::IsCreatingRevision;
+    if (IsCreatingRevision()) {
+        BeAssert(false && "There is already a revision being created. Call AbandonCreateChangeset() or FinishCreateRevision() first");
+        status = ChangesetStatus::IsCreatingRevision;
         return nullptr;
-        }
+    }
 
     if (!txnMgr.HasPendingTxns()) {
-        status = RevisionStatus::NoTransactions;
+        status = ChangesetStatus::NoTransactions;
         return nullptr;
     }
 
     TxnManager::TxnId endTxnId = txnMgr.GetCurrentTxnId();
     int64_t lastRebaseId = txnMgr.QueryLastRebaseId();
 
-    DgnRevisionPtr currentRevision = CreateRevision(outStatus, endTxnId, lastRebaseId);
+    ChangesetInfoPtr currentRevision = CreateRevision(outStatus, endTxnId, lastRebaseId);
     if (!currentRevision.IsValid())
         return nullptr;
 
     status = SaveCurrentRevisionEndTxnId(endTxnId, lastRebaseId);
-    if (RevisionStatus::Success != status)
+    if (ChangesetStatus::Success != status)
         return nullptr;
 
     m_currentRevision = currentRevision;
     return m_currentRevision;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-RevisionStatus RevisionManager::FinishCreateRevision(int32_t changesetIndex) {
-    DgnRevisionPtr currentRevision = GetCreatingRevision();
+ChangesetStatus RevisionManager::FinishCreateRevision(int32_t changesetIndex) {
+    ChangesetInfoPtr currentRevision = GetCreatingRevision();
     if (!currentRevision.IsValid()) {
         BeAssert(false && "No revision is currently being created");
-        return RevisionStatus::IsNotCreatingRevision;
+        return ChangesetStatus::IsNotCreatingRevision;
     }
 
     // currently, the C++ IModelHub api doesn't have the changesetIndex to pass here, but they put it into the current revision, use it instead of the argument.
@@ -957,20 +889,20 @@ RevisionStatus RevisionManager::FinishCreateRevision(int32_t changesetIndex) {
     m_dgndb.Txns().DeleteRebases(QueryLastRebaseId());
     currentRevision->SetChangesetIndex(changesetIndex);
 
-    RevisionStatus status = SaveParentRevision(currentRevision->GetChangesetId(), changesetIndex);
-    if (RevisionStatus::Success != status)
+    ChangesetStatus status = SaveParentRevision(currentRevision->GetChangesetId(), changesetIndex);
+    if (ChangesetStatus::Success != status)
         return status;
 
     DeleteCurrentRevisionEndTxnId();
     m_currentRevision = nullptr;
 
-    return RevisionStatus::Success;
+    return ChangesetStatus::Success;
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void RevisionManager::AbandonCreateRevision() {
+void RevisionManager::AbandonCreateChangeset() {
     BeAssert(IsCreatingRevision());
     DeleteCurrentRevisionEndTxnId();
     m_currentRevision = nullptr;
@@ -979,32 +911,32 @@ void RevisionManager::AbandonCreateRevision() {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-RevisionStatus RevisionManager::ReverseRevision(DgnRevisionCR revision) {
-    PRECONDITION(!m_dgndb.IsReadonly() && "Cannot reverse changes in a Readonly database", RevisionStatus::CannotMergeIntoReadonly);
+ChangesetStatus RevisionManager::ReverseRevision(ChangesetInfoCR revision) {
+    PRECONDITION(!m_dgndb.IsReadonly() && "Cannot reverse changes in a Readonly database", ChangesetStatus::CannotMergeIntoReadonly);
     if (revision.ContainsSchemaChanges(m_dgndb)) {
         BeAssert(false && "Cannot reverse a revision containing schema changes.");
-        return RevisionStatus::ReverseOrReinstateSchemaChanges;
+        return ChangesetStatus::ReverseOrReinstateSchemaChanges;
     }
 
     TxnManagerR txnMgr = m_dgndb.Txns();
 
     if (txnMgr.HasLocalChanges()) {
         BeAssert(false && "Cannot reverse revisions if there are local changes.");
-        return RevisionStatus::HasLocalChanges;
+        return ChangesetStatus::HasLocalChanges;
     }
 
     if (IsCreatingRevision()) {
-        BeAssert(false && "Cannot reverse revisions when one's being created. Call AbandonCreateRevision() or FinishCreateRevision() first");
-        return RevisionStatus::IsCreatingRevision;
+        BeAssert(false && "Cannot reverse revisions when one's being created. Call AbandonCreateChangeset() or FinishCreateRevision() first");
+        return ChangesetStatus::IsCreatingRevision;
     }
 
-    RevisionStatus status = revision.Validate(m_dgndb);
-    if (RevisionStatus::Success != status)
+    ChangesetStatus status = revision.Validate(m_dgndb);
+    if (ChangesetStatus::Success != status)
         return status;
 
     if (GetParentRevisionId() != revision.GetChangesetId()) {
         BeAssert(false && "Parent of revision should match current parent revision id");
-        return RevisionStatus::ParentMismatch;
+        return ChangesetStatus::ParentMismatch;
     }
 
 #ifdef DUMP_REVISION
@@ -1167,20 +1099,20 @@ OptimisticConcurrencyControl::OptimisticConcurrencyControl(Policy policy)
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-RevisionStatus RevisionManager::ProcessRevisions(bvector<DgnRevisionCP> const &revisions, RevisionProcessOption processOptions) {
-    RevisionStatus status;
+ChangesetStatus RevisionManager::ProcessRevisions(bvector<ChangesetInfoCP> const &revisions, RevisionProcessOption processOptions) {
+    ChangesetStatus status;
     switch (processOptions) {
     case RevisionProcessOption::Merge:
-        for (DgnRevisionCP revision : revisions) {
+        for (ChangesetInfoCP revision : revisions) {
             status = MergeRevision(*revision);
-            if (RevisionStatus::Success != status)
+            if (ChangesetStatus::Success != status)
                 return status;
         }
         break;
     case RevisionProcessOption::Reverse:
-        for (DgnRevisionCP revision : revisions) {
+        for (ChangesetInfoCP revision : revisions) {
             status = ReverseRevision(*revision);
-            if (RevisionStatus::Success != status)
+            if (ChangesetStatus::Success != status)
                 return status;
         }
         break;
@@ -1188,7 +1120,7 @@ RevisionStatus RevisionManager::ProcessRevisions(bvector<DgnRevisionCP> const &r
         BeAssert(false && "Invalid revision process option");
     }
 
-    return RevisionStatus::Success;
+    return ChangesetStatus::Success;
 }
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

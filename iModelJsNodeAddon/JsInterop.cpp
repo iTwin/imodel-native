@@ -610,11 +610,11 @@ DgnDbPtr JsInterop::CreateIModel(Utf8StringCR filenameIn, BeJsConst props) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-RevisionStatus JsInterop::DumpChangeSet(DgnDbR dgndb, BeJsConst changeSet)
+ChangesetStatus JsInterop::DumpChangeSet(DgnDbR dgndb, BeJsConst changeSet)
     {
-    DgnRevisionPtr revision = GetRevision(dgndb.GetDbGuid().ToString(), changeSet);
+    ChangesetInfoPtr revision = GetRevision(dgndb.GetDbGuid().ToString(), changeSet);
     revision->Dump(dgndb);
-    return RevisionStatus::Success;
+    return ChangesetStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
@@ -714,15 +714,15 @@ DgnDbStatus JsInterop::ExtractChangedInstanceIdsFromChangeSets(BeJsValue jsonOut
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DgnRevisionPtr JsInterop::GetRevision(Utf8StringCR dbGuid, BeJsConst arg) {
+ChangesetInfoPtr JsInterop::GetRevision(Utf8StringCR dbGuid, BeJsConst arg) {
     if (!arg.isStringMember("id") || !arg.isNumericMember("index") || !arg.isStringMember("pathname") || !arg.isStringMember("parentId"))
-        ThrowJsException("id, index, pathname, and parentId must all be string members of ChangesetProps");
+        ThrowJsException("id, index, pathname, and parentId must all be members of ChangesetProps");
 
     BeFileName changeSetPathname(arg["pathname"].asString().c_str(), true);
     if (!changeSetPathname.DoesPathExist())
         ThrowJsException("changeset file not found");
 
-    auto revision = DgnRevision::Create(arg["id"].asString(), arg["index"].asInt(), arg["parentId"].asString(), dbGuid, &changeSetPathname);
+    auto revision = ChangesetInfo::Create(arg["id"].asString(), arg["index"].asInt(), arg["parentId"].asString(), dbGuid, &changeSetPathname);
     if (!revision.IsValid())
         ThrowJsException("invalid revision id");
 
@@ -735,12 +735,12 @@ DgnRevisionPtr JsInterop::GetRevision(Utf8StringCR dbGuid, BeJsConst arg) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-bvector<DgnRevisionPtr> JsInterop::GetRevisions(bool& containsSchemaChanges, Utf8StringCR dbGuid, BeJsConst changeSets) {
+bvector<ChangesetInfoPtr> JsInterop::GetRevisions(bool& containsSchemaChanges, Utf8StringCR dbGuid, BeJsConst changeSets) {
     containsSchemaChanges = false;
     if (!changeSets.isArray())
         ThrowJsException("changesets must be an array");
 
-    bvector<DgnRevisionPtr> revisionPtrs;
+    bvector<ChangesetInfoPtr> revisionPtrs;
     for (uint32_t i = 0; i < changeSets.size(); ++i) {
         BeJsConst changeSet = changeSets[i];
         revisionPtrs.push_back(GetRevision(dbGuid, changeSet));
@@ -754,7 +754,7 @@ bvector<DgnRevisionPtr> JsInterop::GetRevisions(bool& containsSchemaChanges, Utf
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-RevisionStatus JsInterop::ApplySchemaChangeSet(BeFileNameCR dbFileName, bvector<DgnRevisionCP> const& revisions, RevisionProcessOption applyOption)
+ChangesetStatus JsInterop::ApplySchemaChangeSet(BeFileNameCR dbFileName, bvector<ChangesetInfoCP> const& revisions, RevisionProcessOption applyOption)
     {
     SchemaUpgradeOptions schemaUpgradeOptions(revisions, applyOption);
     schemaUpgradeOptions.SetUpgradeFromDomains(SchemaUpgradeOptions::DomainUpgradeOptions::SkipCheck);
@@ -762,11 +762,11 @@ RevisionStatus JsInterop::ApplySchemaChangeSet(BeFileNameCR dbFileName, bvector<
     DgnDb::OpenParams openParams(Db::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, schemaUpgradeOptions);
     DbResult result;
     DgnDbPtr dgndb = DgnDb::OpenIModelDb(&result, dbFileName, openParams);
-    POSTCONDITION(result == BE_SQLITE_OK, RevisionStatus::ApplyError);
+    POSTCONDITION(result == BE_SQLITE_OK, ChangesetStatus::ApplyError);
     result = dgndb->SaveChanges();
-    POSTCONDITION(result == BE_SQLITE_OK, RevisionStatus::ApplyError);
+    POSTCONDITION(result == BE_SQLITE_OK, ChangesetStatus::ApplyError);
     dgndb->CloseDb();
-    return RevisionStatus::Success;
+    return ChangesetStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1084,7 +1084,7 @@ Napi::Value NativeChangeset::Open(Napi::Env env, Utf8CP changesetFile, bool inve
     }
     m_fileName = input;
     m_invert = invert;
-    m_reader = std::unique_ptr<RevisionChangesFileReaderBase>( new RevisionChangesFileReaderBase({input}, m_unusedDb));
+    m_reader = std::unique_ptr<ChangesetFileReaderBase>( new ChangesetFileReaderBase({input}, m_unusedDb));
     return Napi::Number::New(env, (int) BE_SQLITE_OK);
 }
 

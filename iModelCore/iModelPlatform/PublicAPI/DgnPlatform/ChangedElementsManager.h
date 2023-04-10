@@ -46,8 +46,8 @@ struct ChangedElementsManager final {
         ECPresentationManager* m_presentationManager;
 
         DbResult AddMetadataToChangeCacheFile(ECDb& cacheFile) const;
-        DbResult InsertEntries(ECDbR cacheDb, DgnRevisionPtr revision, bvector<ChangedElement> const& elements);
-        bool HasChangeset(ECDbR cacheDb, DgnRevisionPtr revision);
+        DbResult InsertEntries(ECDbR cacheDb, ChangesetInfoPtr revision, bvector<ChangedElement> const& elements);
+        bool HasChangeset(ECDbR cacheDb, ChangesetInfoPtr revision);
         BeFileName CloneDb(BeFileNameCR dbFilename);
 
         bmap<DgnModelId, AxisAlignedBox3d> static ComputeChangedModels(ChangedElementsMap const& changedElements);
@@ -100,7 +100,7 @@ struct ChangedElementsManager final {
         //! Returns true if the changeset is already in the cache
         DGNPLATFORM_EXPORT bool IsProcessed(ECDbR cacheDb, Utf8String changesetId);
         //! Process changesets and add them to the cache if they don't exist
-        DGNPLATFORM_EXPORT DbResult ProcessChangesets(ECDbR cacheDb, Utf8String rulesetId, bvector<DgnRevisionPtr> const& revisions);
+        DGNPLATFORM_EXPORT DbResult ProcessChangesets(ECDbR cacheDb, Utf8String rulesetId, bvector<ChangesetInfoPtr> const& revisions);
         //! Gets the changed elements map based on a range of changesets
         DGNPLATFORM_EXPORT DbResult GetChangedElements(ECDbR cacheDb, ChangedElementsMap& changedElements, Utf8String startChangesetId, Utf8String endChangesetId);
         //! Gets the changed models based on a range of changesets

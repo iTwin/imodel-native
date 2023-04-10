@@ -297,12 +297,12 @@ DbResult DgnDb::SchemaStatusToDbResult(SchemaStatus status, bool isUpgrade)
 DbResult DgnDb::ProcessRevisions(Db::OpenParams const& params)
     {
     SchemaUpgradeOptions schemaUpgradeOptions = (((DgnDb::OpenParams const&) params).GetSchemaUpgradeOptions());
-    bvector<DgnRevisionCP> revisions = schemaUpgradeOptions.GetRevisions();
+    bvector<ChangesetInfoCP> revisions = schemaUpgradeOptions.GetRevisions();
     if (revisions.empty())
         return BE_SQLITE_OK;
 
-    RevisionStatus status = Revisions().ProcessRevisions(revisions, schemaUpgradeOptions.GetRevisionProcessOption());
-    return status == RevisionStatus::Success ? BE_SQLITE_OK : BE_SQLITE_ERROR_SchemaUpgradeFailed;
+    ChangesetStatus status = Revisions().ProcessRevisions(revisions, schemaUpgradeOptions.GetRevisionProcessOption());
+    return status == ChangesetStatus::Success ? BE_SQLITE_OK : BE_SQLITE_ERROR_SchemaUpgradeFailed;
     }
 
 //--------------------------------------------------------------------------------------
@@ -323,13 +323,6 @@ DbResult DgnDb::_OnDbOpening()
 void DgnDb::_OnDbGuidChange(BeSQLite::BeGuid guid) {
     // whenever we switch DbGuid's, these values are no longer valid
     Revisions().ClearSavedValues();
-}
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnDb::HasParentChangeset() const {
-     return Revisions().HasParentRevision();
 }
 
 /*---------------------------------------------------------------------------------**//**

@@ -1135,7 +1135,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         RequireDbIsOpen(info);
         REQUIRE_ARGUMENT_ANY_OBJ(0, changeSet);
 
-        RevisionStatus status = JsInterop::DumpChangeSet(*m_dgndb, changeSet);
+        ChangesetStatus status = JsInterop::DumpChangeSet(*m_dgndb, changeSet);
         return Napi::Number::New(Env(), (int)status);
         }
 
@@ -1249,11 +1249,11 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         RevisionManagerR revisions = m_dgndb->Revisions();
 
         if (revisions.IsCreatingRevision())
-            revisions.AbandonCreateRevision();
+            revisions.AbandonCreateChangeset();
 
-        RevisionStatus status;
-        DgnRevisionPtr revision = revisions.StartCreateRevision(&status);
-        if (status != RevisionStatus::Success)
+        ChangesetStatus status;
+        ChangesetInfoPtr revision = revisions.StartCreateChangeset(&status);
+        if (status != ChangesetStatus::Success)
             BeNapi::ThrowJsException(Env(), "Error creating changeset", (int) status);
 
         BeJsNapiObject changesetInfo(Env());
@@ -1274,7 +1274,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         int32_t index = opts[JsInterop::json_index()].GetInt();
 
         auto stat = m_dgndb->Revisions().FinishCreateRevision(index);
-        if (stat != RevisionStatus::Success)
+        if (stat != ChangesetStatus::Success)
             BeNapi::ThrowJsException(Env(), "Error finishing changeset", (int) stat);
     }
 
@@ -1282,7 +1282,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         RequireDbIsOpen(info);
         RevisionManagerR revisions = m_dgndb->Revisions();
         if (revisions.IsCreatingRevision())
-            revisions.AbandonCreateRevision();
+            revisions.AbandonCreateChangeset();
     }
 
     Napi::Value AddChildPropagatesChangesToParentRelationship(NapiInfoCR info)     {
@@ -1933,7 +1933,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         REQUIRE_ARGUMENT_OBJ(0, NativeECDb, changeCacheECDb);
         REQUIRE_ARGUMENT_STRING(1, changesetFilePathStr);
         BeFileName changesetFilePath(changesetFilePathStr.c_str(), true);
-        RevisionChangesFileReader changeStream(changesetFilePath, GetDgnDb());
+        ChangesetFileReader changeStream(changesetFilePath, GetDgnDb());
         PERFLOG_START("iModelJsNative", "ExtractChangeSummary>ECDb::ExtractChangeSummary");
         ECInstanceKey changeSummaryKey;
         if (SUCCESS != ECDb::ExtractChangeSummary(changeSummaryKey, changeCacheECDb->GetECDb(), GetDgnDb(), ChangeSetArg(changeStream)))
@@ -2236,12 +2236,12 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         auto revision = JsInterop::GetRevision(db.GetDbGuid().ToString(), changeset);
 
         auto currentId = db.Revisions().GetParentRevisionId();
-        RevisionStatus stat =  RevisionStatus::ParentMismatch;
+        ChangesetStatus stat =  ChangesetStatus::ParentMismatch;
         if (revision->GetParentId() == currentId)  // merge
             stat = db.Revisions().MergeRevision(*revision);
         else if (revision->GetChangesetId() == currentId) //reverse
             stat = db.Revisions().ReverseRevision(*revision);
-        if (RevisionStatus::Success != stat)
+        if (ChangesetStatus::Success != stat)
             BeNapi::ThrowJsException(Env(), "error applying changeset", (int)stat);
     }
 

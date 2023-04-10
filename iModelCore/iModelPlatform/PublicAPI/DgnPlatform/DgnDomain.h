@@ -86,7 +86,7 @@ enum class DomainUpgradeOptions : int {
 
 private:
     DomainUpgradeOptions m_domainUpgradeOptions = DomainUpgradeOptions::CheckRequiredUpgrades;
-    bvector<DgnRevisionCP> m_revisions;
+    bvector<ChangesetInfoCP> m_revisions;
     RevisionProcessOption m_revisionProcessOption = RevisionProcessOption::None;
 
 public:
@@ -97,10 +97,10 @@ public:
     SchemaUpgradeOptions(DomainUpgradeOptions domainOptions) { SetUpgradeFromDomains(domainOptions); }
 
     //! Constructor to setup schema upgrades by merging/reversing/reinstating a revision (that may contain schema changes).
-    SchemaUpgradeOptions(DgnRevisionCR revision, RevisionProcessOption revisionOptions = RevisionProcessOption::Merge) { SetUpgradeFromRevision(revision, revisionOptions); }
+    SchemaUpgradeOptions(ChangesetInfoCR revision, RevisionProcessOption revisionOptions = RevisionProcessOption::Merge) { SetUpgradeFromRevision(revision, revisionOptions); }
 
     //! Constructor to setup schema upgrades by merging revisions (that may contain schema changes).
-    SchemaUpgradeOptions(bvector<DgnRevisionCP> const& revisions, RevisionProcessOption revisionOptions = RevisionProcessOption::Merge) { SetUpgradeFromRevisions(revisions, revisionOptions); }
+    SchemaUpgradeOptions(bvector<ChangesetInfoCP> const& revisions, RevisionProcessOption revisionOptions = RevisionProcessOption::Merge) { SetUpgradeFromRevisions(revisions, revisionOptions); }
 
     //! Setup to upgrade schemas from the registered domains
     void SetUpgradeFromDomains(DomainUpgradeOptions domainOptions = DomainUpgradeOptions::CheckRequiredUpgrades)
@@ -109,7 +109,7 @@ public:
         }
 
     //! Setup Schema upgrades by merging a revision (that may contain schema changes)
-    void SetUpgradeFromRevision(DgnRevisionCR upgradeRevision, RevisionProcessOption revisionOptions = RevisionProcessOption::Merge)
+    void SetUpgradeFromRevision(ChangesetInfoCR upgradeRevision, RevisionProcessOption revisionOptions = RevisionProcessOption::Merge)
         {
         m_revisions.clear();
         m_revisions.push_back(&upgradeRevision);
@@ -117,7 +117,7 @@ public:
         }
 
     //! Setup Schema upgrades by merging a revision (that contains schema changes)
-    void SetUpgradeFromRevisions(bvector<DgnRevisionCP> const& upgradeRevisions, RevisionProcessOption revisionOptions = RevisionProcessOption::Merge)
+    void SetUpgradeFromRevisions(bvector<ChangesetInfoCP> const& upgradeRevisions, RevisionProcessOption revisionOptions = RevisionProcessOption::Merge)
         {
         m_revisions = upgradeRevisions;
         m_revisionProcessOption = revisionOptions;
@@ -127,7 +127,7 @@ public:
     DomainUpgradeOptions GetDomainUpgradeOptions() const { return m_domainUpgradeOptions; }
 
     //! Gets the revisions that are to be processed
-    bvector<DgnRevisionCP> const& GetRevisions() const { return m_revisions; }
+    bvector<ChangesetInfoCP> const& GetRevisions() const { return m_revisions; }
 
     //! Get the option that controls the processing of revisions
     RevisionProcessOption GetRevisionProcessOption() const { return m_revisionProcessOption;  }

@@ -454,8 +454,6 @@ public:
     //! Perform a SQLite VACUUM on this DgnDb. This potentially makes the file smaller and more efficient to access.
     DGNPLATFORM_EXPORT DgnDbStatus CompactFile();
 
-    // determine whether this Db has a parent changeset id (is attached to a timeline)
-    DGNPLATFORM_EXPORT bool HasParentChangeset() const;
     // determine whether this StandaloneDb requires txns if it is modified
     DGNPLATFORM_EXPORT bool RequireStandaloneTxns() const;
     // determine whether this StandaloneDb permits write operations
@@ -470,8 +468,6 @@ public:
     bool IsStandalone() const { return GetBriefcaseId().IsStandalone(); }
     // determine whether this DgnDb is a snapshot StandaloneDb.
     bool IsSnapshot() const { return IsStandalone() && !AllowStandaloneWrites(); }
-    // determine whether this DgnDb is a checkpoint snapshot StandaloneDb
-    bool IsCheckpointSnapshot() const { return IsSnapshot() && HasParentChangeset(); }
     // determine whether if this DgnDb is an editable StandaloneDb.
     bool IsWriteableStandalone() const { return IsStandalone() && AllowStandaloneWrites(); }
 
