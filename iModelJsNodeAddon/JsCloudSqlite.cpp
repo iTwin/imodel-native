@@ -56,7 +56,7 @@ struct JsCloudCache : CloudCache, Napi::ObjectWrap<JsCloudCache> {
         Utf8StringCR name = stringMember(args, JSON_NAME(name));
         Utf8StringCR rootDir = stringMember(args, JSON_NAME(rootDir));
         if (name.empty() || rootDir.empty())
-            BeNapi::ThrowJsException(info.Env(), "invalid arguments");
+            BeNapi::ThrowJsException(info.Env(), "invalid arguments", DbResult::BE_SQLITE_MISUSE);
 
         int64_t cacheSize = 50 * MemorySize::GIG; // default in sqlite is 1G, that's way too small
         auto cacheSizeStr = stringMember(args, JSON_NAME(cacheSize));
@@ -64,14 +64,14 @@ struct JsCloudCache : CloudCache, Napi::ObjectWrap<JsCloudCache> {
             cacheSizeStr.ToUpper();
             cacheSize = parseCacheSize(cacheSizeStr.c_str());
             if (cacheSize < 0)
-                BeNapi::ThrowJsException(info.Env(), "illegal cache size");
+                BeNapi::ThrowJsException(info.Env(), "illegal cache size", DbResult::BE_SQLITE_MISUSE);
         }
         bool curlDiagnostics = boolMember(args, JSON_NAME(curlDiagnostics), false);
         auto stat = InitCache(name, rootDir, cacheSize, intMember(args, JSON_NAME(nRequests), 0), intMember(args, JSON_NAME(httpTimeout), 0), curlDiagnostics);
         if (!stat.IsSuccess()) {
             if (stat.m_status == BE_SQLITE_CANTOPEN)
                 stat.m_error = "Cannot create CloudCache: invalid cache directory or directory does not exist";
-            BeNapi::ThrowJsException(info.Env(), stat.m_error.c_str());
+            BeNapi::ThrowJsException(info.Env(), stat.m_error.c_str(), stat.m_status);
         }
     }
 
@@ -185,6 +185,12 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
             BeNapi::ThrowJsException(Env(), Utf8PrintfString("container [%s] is not locked for write access", m_containerId.c_str()).c_str());
     }
 
+    void CallJsMemberFunc(Utf8CP funcName, std::vector<napi_value> const& args) {
+        auto func = Value().Get(funcName);
+        if (func.IsFunction())
+            func.As<Napi::Function>().Call(args);
+    }
+
     void Connect(NapiInfoCR info) {
         if (IsContainerConnected())
             return; // already connected, do nothing
@@ -192,6 +198,9 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
         REQUIRE_ARGUMENT_ANY_OBJ(0, jsCache);
         if (!JsCloudCache::IsInstance(jsCache))
             BeNapi::ThrowJsException(Env(), "invalid cache argument");
+
+        auto thisObj = Value();
+        CallJsMemberFunc("onConnect", {thisObj, jsCache});
 
         auto cache = Napi::ObjectWrap<JsCloudCache>::Unwrap(jsCache);
         auto stat = CloudContainer::Connect(*cache);
@@ -206,24 +215,27 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
             if (!m_writeLockHeld && HasLocalChanges())
                 AbandonChanges(info); // we lost the write lock, we have no choice but to abandon all local changes.
         }
-        Value().Set("cache", jsCache);
-    }
 
-    void Detach(NapiInfoCR info) {
-        RequireConnected();
-        auto stat = CloudContainer::Detach();
-        if (!stat.IsSuccess())
-            BeNapi::ThrowJsException(Env(), stat.m_error.c_str(), stat.m_status);
+        thisObj.Set("cache", jsCache);
+        CallJsMemberFunc("onConnected", {thisObj});
     }
 
     void Disconnect(NapiInfoCR info) {
         if (!IsContainerConnected())
             return;
-        auto stat = CloudContainer::Disconnect(false);
+
+        BeJsConst args(info[0]);
+        bool isDetach = args.isObject() && args["detach"].GetBoolean(false);
+        std::vector<napi_value> funcArgs = {Value(), Napi::Boolean::New(Env(), isDetach)};
+
+        CallJsMemberFunc("onDisconnect", funcArgs);
+
+        auto stat = isDetach ? CloudContainer::Detach() : CloudContainer::Disconnect(false);
         if (!stat.IsSuccess())
             BeNapi::ThrowJsException(Env(), stat.m_error.c_str(), stat.m_status);
 
         Value().Set("cache", Env().Undefined());
+        CallJsMemberFunc("onDisconnected", funcArgs);
     }
 
     void PollManifest(NapiInfoCR info) {
@@ -565,7 +577,6 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
             InstanceMethod<&JsCloudContainer::Connect>("connect"),
             InstanceMethod<&JsCloudContainer::CopyDatabase>("copyDatabase"),
             InstanceMethod<&JsCloudContainer::DeleteDatabase>("deleteDatabase"),
-            InstanceMethod<&JsCloudContainer::Detach>("detach"),
             InstanceMethod<&JsCloudContainer::Disconnect>("disconnect"),
             InstanceMethod<&JsCloudContainer::InitializeContainer>("initializeContainer"),
             InstanceMethod<&JsCloudContainer::PollManifest>("checkForChanges"),
