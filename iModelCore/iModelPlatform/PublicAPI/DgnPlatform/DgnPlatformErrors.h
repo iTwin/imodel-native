@@ -126,7 +126,7 @@ enum class RepositoryStatus : int
     InvalidResponse = 0x15004, //!< Response from server not understood
     PendingTransactions = 0x15005, //!< An operation requires local changes to be committed or abandoned
     LockUsed = 0x15006, //!< A lock cannot be relinquished because the associated object has been modified
-    CannotCreateRevision = 0x15007, //!< An operation required creation of a ChangesetInfo, which failed
+    CannotCreateRevision = 0x15007, //!< An operation required creation of a ChangesetProps, which failed
     InvalidRequest = 0x15008, //!< Request to server not understood
     RevisionRequired = 0x15009, //!< A revision committed to the server must be integrated into the briefcase before the operation can be completed
     CodeUnavailable = 0x1500A, //!< A requested DgnCode is reserved by another briefcase or in use
@@ -153,7 +153,7 @@ enum class ChangesetStatus : int {
     InvalidVersion, //! !< Invalid version of the revision
     InDynamicTransaction, //!< Cannot perform the operation since system is in the middle of a dynamic transaction
     IsCreatingRevision, //!< Cannot perform operation since system is in the middle of a creating a revision
-    IsNotCreatingRevision, //!< Cannot perform operation since the system is not creating a revision
+    IsNotCreatingChangeset, //!< Cannot perform operation since the system is not creating a revision
     MergePropagationError, //!< Error propagating the changes after the merge
     NothingToMerge, //!< No revisions to merge
     NoTransactions, //!< No transactions are available to create a revision

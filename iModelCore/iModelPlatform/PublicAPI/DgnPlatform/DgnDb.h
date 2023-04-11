@@ -233,7 +233,6 @@ protected:
     DgnCodeSpecs m_codeSpecs;
     TxnManagerPtr m_txnManager;
     DgnSearchableText m_searchableText;
-    mutable std::unique_ptr<RevisionManager> m_revisionManager;
     mutable BeSQLite::EC::ECSqlStatementCache m_ecsqlCache;
     mutable std::unordered_map<uint64_t, std::unique_ptr<BeSQLite::EC::ECInstanceInserter>> m_cacheECInstanceInserter;
 
@@ -279,7 +278,7 @@ public:
     Napi::String GetJsClassName(DgnElementId id);
     DGNPLATFORM_EXPORT void CallJsHandlerMethod(DgnClassId classId, Utf8CP methodName, Napi::Object arg);
     static void CallJsFunction(Napi::Object obj, Utf8CP methodName, std::vector<napi_value> const& args);
-    [[noreturn]] void ThrowException(Utf8CP message, int errNum);
+    [[noreturn]] void ThrowException(Utf8CP message, int errNum) const;
     BeSQLite::DbResult DisqualifyTypeIndexForBisCoreExternalSourceAspect();
     DGNPLATFORM_EXPORT BeSQLite::EC::CachedECSqlStatementPtr GetGeometricModelUpdateStatement();
     DGNPLATFORM_EXPORT BeSQLite::CachedStatementPtr GetModelLastModUpdateStatement();
@@ -359,7 +358,6 @@ public:
     DgnCodeSpecs& CodeSpecs() const {return const_cast<DgnCodeSpecs&>(m_codeSpecs);} //!< The codeSpecs associated with this DgnDb
     DgnSearchableText& SearchableText() const {return const_cast<DgnSearchableText&>(m_searchableText);} //!< The searchable text table for this DgnDb
     DGNPLATFORM_EXPORT TxnManagerR Txns();                 //!< The TxnManager for this DgnDb.
-    DGNPLATFORM_EXPORT RevisionManagerR Revisions() const; //!< The RevisionManager for this DgnDb.
 
     //! Imports EC Schemas into the DgnDb
     //! @param[in] schemas Schemas to be imported.

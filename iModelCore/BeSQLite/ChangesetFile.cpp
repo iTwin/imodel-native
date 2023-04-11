@@ -2,7 +2,7 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-#include <BeSQLite/RevisionChangesFile.h>
+#include <BeSQLite/ChangesetFile.h>
 #include <Bentley/Logging.h>
 #include <Bentley/ScopedArray.h>
 #include <map>

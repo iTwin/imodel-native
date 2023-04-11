@@ -1618,12 +1618,12 @@ VersionCompareChangeSummary::~VersionCompareChangeSummary()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt   VersionCompareChangeSummary::GetAppliableChangesets(bvector<bvector<ChangesetInfoPtr>>& appliableChangesets)
+StatusInt   VersionCompareChangeSummary::GetAppliableChangesets(bvector<bvector<ChangesetPropsPtr>>& appliableChangesets)
     {
     // TODO: Restructure code: no need for putting together changesets, it is less performant
-    for (ChangesetInfoPtr changeset : m_changesets)
+    for (ChangesetPropsPtr changeset : m_changesets)
         {
-        bvector<ChangesetInfoPtr> current;
+        bvector<ChangesetPropsPtr> current;
         current.push_back(changeset);
         appliableChangesets.push_back(current);
         }
@@ -1685,7 +1685,7 @@ StatusInt    VersionCompareChangeSummary::ProcessChangesets()
     Utf8PrintfString elementClassFullName("%s.%s", BIS_ECSCHEMA_NAME, m_filterSpatial ? BIS_CLASS_SpatialElement : BIS_CLASS_Element);
 
     // Construct change summaries
-    for (ChangesetInfoPtr changeset : m_changesets)
+    for (ChangesetPropsPtr changeset : m_changesets)
         {
 #ifdef PROFILE_VC_PROCESSING
     Utf8PrintfString operation("ProcessChangeset");
@@ -1700,10 +1700,10 @@ StatusInt    VersionCompareChangeSummary::ProcessChangesets()
         VCLOG.infov("ProcessChangesets: Cached %d deleted property paths", beforeStateCache.Get().size());
 
         // When going forwards, we may need to apply the changeset before we process it
-        if ((WantTargetState() || m_wantBriefcaseRoll) && m_targetDb->Revisions().GetParentRevisionId().Equals(changeset->GetParentId()))
+        if ((WantTargetState() || m_wantBriefcaseRoll) && m_targetDb->Txns().GetParentChangesetId().Equals(changeset->GetParentId()))
             {
             VCLOG.infov("ProcessChangesets: Applying changeset");
-            bvector<ChangesetInfoPtr> changesets;
+            bvector<ChangesetPropsPtr> changesets;
             changesets.push_back(changeset);
             if (SUCCESS != RollTargetDb(changesets))
                 {
@@ -1717,7 +1717,7 @@ StatusInt    VersionCompareChangeSummary::ProcessChangesets()
         // Create a summary with the current target db
         DgnChangeSummary changeSummary(*m_targetDb);
         // Put together the changeset
-        ChangesetFileReader fr (changeset->GetRevisionChangesFile(), *m_targetDb);
+        ChangesetFileReader fr (changeset->GetFileName(), *m_targetDb);
         changeSummary.FromChangeSet(fr);
 
 // #define DUMP_CHANGE_SUMMARIES
@@ -1812,13 +1812,13 @@ DgnDbPtr    VersionCompareChangeSummary::CloneDb(BeFileNameCR dbFilename, BeFile
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt   VersionCompareChangeSummary::RollTargetDb(bvector<ChangesetInfoPtr> const& changesets)
+StatusInt   VersionCompareChangeSummary::RollTargetDb(bvector<ChangesetPropsPtr> const& changesets)
     {
 #ifdef PROFILE_VC_PROCESSING
     Profile_StartClock("VersionCompareChangeSummary::RollTargetDb");
 #endif
-    bvector<ChangesetInfoCP> changesetsCP;
-    for (ChangesetInfoPtr changeset : changesets)
+    bvector<ChangesetPropsCP> changesetsCP;
+    for (ChangesetPropsPtr changeset : changesets)
         changesetsCP.push_back(changeset.get());
 
     // Close db
@@ -1923,7 +1923,7 @@ StatusInt   VersionCompareChangeSummary::GetChangedModels(bset<DgnModelId>& mode
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt   VersionCompareChangeSummary::SetChangesets(bvector<ChangesetInfoPtr>& changesets)
+StatusInt   VersionCompareChangeSummary::SetChangesets(bvector<ChangesetPropsPtr>& changesets)
     {
     m_changesets = changesets;
 
@@ -1936,7 +1936,7 @@ StatusInt   VersionCompareChangeSummary::SetChangesets(bvector<ChangesetInfoPtr>
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-VersionCompareChangeSummaryPtr  VersionCompareChangeSummary::Generate(BeFileName dbFilename, bvector<ChangesetInfoPtr>& changesets, ECPresentationManagerR presentationManager, Utf8StringCR rulesetId)
+VersionCompareChangeSummaryPtr  VersionCompareChangeSummary::Generate(BeFileName dbFilename, bvector<ChangesetPropsPtr>& changesets, ECPresentationManagerR presentationManager, Utf8StringCR rulesetId)
     {
     // Create the change summary
     VersionCompareChangeSummaryPtr changeSummary = new VersionCompareChangeSummary(dbFilename, presentationManager);
@@ -1951,7 +1951,7 @@ VersionCompareChangeSummaryPtr  VersionCompareChangeSummary::Generate(BeFileName
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-VersionCompareChangeSummaryPtr  VersionCompareChangeSummary::Generate(BeFileName dbFilename, bvector<ChangesetInfoPtr>& changesets, SummaryOptions const& options)
+VersionCompareChangeSummaryPtr  VersionCompareChangeSummary::Generate(BeFileName dbFilename, bvector<ChangesetPropsPtr>& changesets, SummaryOptions const& options)
     {
     if (options.presentationManager == nullptr)
         {

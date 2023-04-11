@@ -304,6 +304,10 @@ struct SQLiteOps {
         if (!_GetMyDb()->IsDbOpen())
             BeNapi::ThrowJsException(info.Env(), "db is not open");
     }
+    void RequireDbIsWritable(NapiInfoCR info) {
+        if (GetOpenedDb(info).IsReadonly())
+            BeNapi::ThrowJsException(info.Env(), "db is not open for write");
+    }
 
     Napi::Value IsOpen(NapiInfoCR info) {
         return Napi::Boolean::New(info.Env(), _GetMyDb()->IsDbOpen());
@@ -1245,14 +1249,14 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
     }
 
     Napi::Value StartCreateChangeset(NapiInfoCR info) {
-        RequireDbIsOpen(info);
-        RevisionManagerR revisions = m_dgndb->Revisions();
+        RequireDbIsWritable(info);
+        TxnManagerR txns = m_dgndb->Txns();
 
-        if (revisions.IsCreatingRevision())
-            revisions.AbandonCreateChangeset();
+        if (txns.IsChangesetInProgress())
+            txns.AbandonCreateChangeset();
 
         ChangesetStatus status;
-        ChangesetInfoPtr revision = revisions.StartCreateChangeset(&status);
+        ChangesetPropsPtr revision = txns.StartCreateChangeset(&status);
         if (status != ChangesetStatus::Success)
             BeNapi::ThrowJsException(Env(), "Error creating changeset", (int) status);
 
@@ -1260,29 +1264,29 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         changesetInfo[JsInterop::json_id()] = revision->GetChangesetId().c_str();
         changesetInfo[JsInterop::json_index()] = 0;
         changesetInfo[JsInterop::json_parentId()] = revision->GetParentId().c_str();
-        changesetInfo[JsInterop::json_pathname()] = Utf8String(revision->GetRevisionChangesFile()).c_str();
+        changesetInfo[JsInterop::json_pathname()] = Utf8String(revision->GetFileName()).c_str();
         changesetInfo[JsInterop::json_changesType()] = (int)(revision->ContainsSchemaChanges(*m_dgndb) ? 1 : 0);
         return changesetInfo;
     }
 
     void CompleteCreateChangeset(NapiInfoCR info) {
-        RequireDbIsOpen(info);
+        RequireDbIsWritable(info);
         REQUIRE_ARGUMENT_ANY_OBJ(0, optObj);
         BeJsConst opts(optObj);
         if (!opts.isNumericMember(JsInterop::json_index()))
             BeNapi::ThrowJsException(Env(), "changeset index must be supplied");
         int32_t index = opts[JsInterop::json_index()].GetInt();
 
-        auto stat = m_dgndb->Revisions().FinishCreateRevision(index);
+        auto stat = m_dgndb->Txns().FinishCreateChangeset(index);
         if (stat != ChangesetStatus::Success)
             BeNapi::ThrowJsException(Env(), "Error finishing changeset", (int) stat);
     }
 
     void AbandonCreateChangeset(NapiInfoCR info) {
-        RequireDbIsOpen(info);
-        RevisionManagerR revisions = m_dgndb->Revisions();
-        if (revisions.IsCreatingRevision())
-            revisions.AbandonCreateChangeset();
+        RequireDbIsWritable(info);
+        TxnManagerR txns = m_dgndb->Txns();
+        if (txns.IsChangesetInProgress())
+            txns.AbandonCreateChangeset();
     }
 
     Napi::Value AddChildPropagatesChangesToParentRelationship(NapiInfoCR info)     {
@@ -1954,7 +1958,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         RequireDbIsOpen(info);
         int32_t index;
         Utf8String id;
-        m_dgndb->Revisions().GetParentRevision(index, id);
+        m_dgndb->Txns().GetParentChangesetIndex(index, id);
         BeJsNapiObject retVal(Env());
         retVal[JsInterop::json_id()] = id;
         if (index >= 0)
@@ -2233,14 +2237,14 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         REQUIRE_ARGUMENT_ANY_OBJ(0, changeset);
 
         auto& db = GetDgnDb();
-        auto revision = JsInterop::GetRevision(db.GetDbGuid().ToString(), changeset);
+        auto revision = JsInterop::GetChangesetProps(db.GetDbGuid().ToString(), changeset);
 
-        auto currentId = db.Revisions().GetParentRevisionId();
-        ChangesetStatus stat =  ChangesetStatus::ParentMismatch;
+        auto currentId = db.Txns().GetParentChangesetId();
+        ChangesetStatus stat =  ChangesetStatus::Success;
         if (revision->GetParentId() == currentId)  // merge
-            stat = db.Revisions().MergeRevision(*revision);
+            stat = db.Txns().MergeChangeset(*revision);
         else if (revision->GetChangesetId() == currentId) //reverse
-            stat = db.Revisions().ReverseRevision(*revision);
+            db.Txns().ReverseChangeset(*revision);
         if (ChangesetStatus::Success != stat)
             BeNapi::ThrowJsException(Env(), "error applying changeset", (int)stat);
     }
@@ -2692,7 +2696,7 @@ struct NativeChangedElementsECDb : BeObjectWrap<NativeChangedElementsECDb>
 
             bool containsSchemaChanges;
             Utf8String dbGuid = mainDb->GetDgnDb().GetDbGuid().ToString();
-            auto revisionPtrs = JsInterop::GetRevisions(containsSchemaChanges, dbGuid, changeSets);
+            auto revisionPtrs = JsInterop::GetChangesetPropsVec(containsSchemaChanges, dbGuid, changeSets);
 
             m_manager->SetFilterSpatial(filterSpatial);
             m_manager->SetWantParents(wantParents);
@@ -2730,7 +2734,7 @@ struct NativeChangedElementsECDb : BeObjectWrap<NativeChangedElementsECDb>
                 m_manager = std::make_unique<ChangedElementsManager>(BeFileName(dbFilename));
 
             bool containsSchemaChanges;
-            auto revisionPtrs = JsInterop::GetRevisions(containsSchemaChanges, dbGuid, changeSets);
+            auto revisionPtrs = JsInterop::GetChangesetPropsVec(containsSchemaChanges, dbGuid, changeSets);
 
             m_manager->SetFilterSpatial(filterSpatial);
             m_manager->SetWantParents(wantParents);

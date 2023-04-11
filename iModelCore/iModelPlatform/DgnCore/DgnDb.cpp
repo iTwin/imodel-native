@@ -60,7 +60,7 @@ Napi::String DgnDb::GetJsClassName(DgnElementId id) {
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-[[noreturn]] void DgnDb::ThrowException(Utf8CP message, int errNum) {
+[[noreturn]] void DgnDb::ThrowException(Utf8CP message, int errNum) const {
     if (m_private_iModelDbJs.IsEmpty())
         throw std::runtime_error(message);
 
@@ -142,9 +142,8 @@ SchemaImportToken const* DgnDb::GetSchemaImportToken() const { return GetECDbSet
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnDb::Destroy() {
     m_models.Empty();
-    m_txnManager = nullptr; // RefCountedPtr, deletes TxnManager
+    m_txnManager = nullptr;
     m_lineStyles = nullptr;
-    m_revisionManager.reset(nullptr);
     m_cacheECInstanceInserter.clear();
     ClearECSqlCache();
 }
@@ -297,11 +296,11 @@ DbResult DgnDb::SchemaStatusToDbResult(SchemaStatus status, bool isUpgrade)
 DbResult DgnDb::ProcessRevisions(Db::OpenParams const& params)
     {
     SchemaUpgradeOptions schemaUpgradeOptions = (((DgnDb::OpenParams const&) params).GetSchemaUpgradeOptions());
-    bvector<ChangesetInfoCP> revisions = schemaUpgradeOptions.GetRevisions();
+    bvector<ChangesetPropsCP> revisions = schemaUpgradeOptions.GetRevisions();
     if (revisions.empty())
         return BE_SQLITE_OK;
 
-    ChangesetStatus status = Revisions().ProcessRevisions(revisions, schemaUpgradeOptions.GetRevisionProcessOption());
+    ChangesetStatus status = Txns().ProcessRevisions(revisions, schemaUpgradeOptions.GetRevisionProcessOption());
     return status == ChangesetStatus::Success ? BE_SQLITE_OK : BE_SQLITE_ERROR_SchemaUpgradeFailed;
     }
 
@@ -322,7 +321,7 @@ DbResult DgnDb::_OnDbOpening()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnDb::_OnDbGuidChange(BeSQLite::BeGuid guid) {
     // whenever we switch DbGuid's, these values are no longer valid
-    Revisions().ClearSavedValues();
+    Txns().ClearSavedChangesetValues();
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -438,17 +437,6 @@ TxnManagerR DgnDb::Txns()
         m_txnManager = new TxnManager(*this);
 
     return *m_txnManager;
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod
-//--------------------------------------------------------------------------------------
-RevisionManagerR DgnDb::Revisions() const
-    {
-    if (nullptr == m_revisionManager)
-        m_revisionManager.reset(new RevisionManager(const_cast<DgnDbR>(*this)));
-
-    return *m_revisionManager;
     }
 
 //--------------------------------------------------------------------------------------

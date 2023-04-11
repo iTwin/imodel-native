@@ -612,7 +612,7 @@ DgnDbPtr JsInterop::CreateIModel(Utf8StringCR filenameIn, BeJsConst props) {
 //---------------------------------------------------------------------------------------
 ChangesetStatus JsInterop::DumpChangeSet(DgnDbR dgndb, BeJsConst changeSet)
     {
-    ChangesetInfoPtr revision = GetRevision(dgndb.GetDbGuid().ToString(), changeSet);
+    ChangesetPropsPtr revision = GetChangesetProps(dgndb.GetDbGuid().ToString(), changeSet);
     revision->Dump(dgndb);
     return ChangesetStatus::Success;
     }
@@ -714,7 +714,7 @@ DgnDbStatus JsInterop::ExtractChangedInstanceIdsFromChangeSets(BeJsValue jsonOut
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ChangesetInfoPtr JsInterop::GetRevision(Utf8StringCR dbGuid, BeJsConst arg) {
+ChangesetPropsPtr JsInterop::GetChangesetProps(Utf8StringCR dbGuid, BeJsConst arg) {
     if (!arg.isStringMember("id") || !arg.isNumericMember("index") || !arg.isStringMember("pathname") || !arg.isStringMember("parentId"))
         ThrowJsException("id, index, pathname, and parentId must all be members of ChangesetProps");
 
@@ -722,39 +722,37 @@ ChangesetInfoPtr JsInterop::GetRevision(Utf8StringCR dbGuid, BeJsConst arg) {
     if (!changeSetPathname.DoesPathExist())
         ThrowJsException("changeset file not found");
 
-    auto revision = ChangesetInfo::Create(arg["id"].asString(), arg["index"].asInt(), arg["parentId"].asString(), dbGuid, &changeSetPathname);
-    if (!revision.IsValid())
-        ThrowJsException("invalid revision id");
+    ChangesetPropsPtr changeset = new ChangesetProps(arg["id"].asString(), arg["index"].asInt(), arg["parentId"].asString(), dbGuid, changeSetPathname);
 
     if (arg.isStringMember("pushDate"))
-        revision->SetDateTime(DateTime::FromString(arg["pushDate"].asString().c_str()));
+        changeset->SetDateTime(DateTime::FromString(arg["pushDate"].asString().c_str()));
 
-    return revision;
+    return changeset;
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-bvector<ChangesetInfoPtr> JsInterop::GetRevisions(bool& containsSchemaChanges, Utf8StringCR dbGuid, BeJsConst changeSets) {
+bvector<ChangesetPropsPtr> JsInterop::GetChangesetPropsVec(bool& containsSchemaChanges, Utf8StringCR dbGuid, BeJsConst changeSets) {
     containsSchemaChanges = false;
     if (!changeSets.isArray())
         ThrowJsException("changesets must be an array");
 
-    bvector<ChangesetInfoPtr> revisionPtrs;
+    bvector<ChangesetPropsPtr> changesetVec;
     for (uint32_t i = 0; i < changeSets.size(); ++i) {
         BeJsConst changeSet = changeSets[i];
-        revisionPtrs.push_back(GetRevision(dbGuid, changeSet));
+        changesetVec.push_back(GetChangesetProps(dbGuid, changeSet));
         if (!containsSchemaChanges)
             containsSchemaChanges = changeSet["isSchemaChange"].GetBoolean();
     }
 
-    return revisionPtrs;
+    return changesetVec;
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ChangesetStatus JsInterop::ApplySchemaChangeSet(BeFileNameCR dbFileName, bvector<ChangesetInfoCP> const& revisions, RevisionProcessOption applyOption)
+ChangesetStatus JsInterop::ApplySchemaChangeSet(BeFileNameCR dbFileName, bvector<ChangesetPropsCP> const& revisions, RevisionProcessOption applyOption)
     {
     SchemaUpgradeOptions schemaUpgradeOptions(revisions, applyOption);
     schemaUpgradeOptions.SetUpgradeFromDomains(SchemaUpgradeOptions::DomainUpgradeOptions::SkipCheck);

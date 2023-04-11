@@ -671,7 +671,7 @@ private:
 
     ECPresentationManagerR m_presentationManager;
     BentleyApi::Dgn::DgnDbPtr                               m_targetDb;
-    bvector<BentleyApi::Dgn::ChangesetInfoPtr>                m_changesets;
+    bvector<BentleyApi::Dgn::ChangesetPropsPtr>                m_changesets;
     bmap<BentleyApi::BeSQLite::EC::ECInstanceKey, ChangedElementRecord> m_changedElements;
     Utf8String  m_rulesetId;
     BeFileName  m_tempLocation;
@@ -698,11 +698,11 @@ private:
     void SetWantTargetState(bool wantTargetState) { m_wantTargetState = wantTargetState; }
 
     //! Gets the changesets separated by the ones that contain schema changes and such
-    StatusInt   GetAppliableChangesets(bvector<bvector<BentleyApi::Dgn::ChangesetInfoPtr>>& appliableChangesets);
+    StatusInt   GetAppliableChangesets(bvector<bvector<BentleyApi::Dgn::ChangesetPropsPtr>>& appliableChangesets);
     //! Processes the given changesets to generate change summaries
     StatusInt   ProcessChangesets();
     //! Rolls a db, closes it and re-opens it to avoid conflicts with schema changes
-    StatusInt   RollTargetDb(bvector<BentleyApi::Dgn::ChangesetInfoPtr> const& changesets);
+    StatusInt   RollTargetDb(bvector<BentleyApi::Dgn::ChangesetPropsPtr> const& changesets);
     //! Clones the current db to obtain a target one
     static BentleyApi::Dgn::DgnDbPtr    CloneDb(BeFileNameCR dbFilename, BeFileNameCR location);
 
@@ -713,8 +713,8 @@ private:
     VersionCompareChangeSummary(BeFileName dbFilename, ECPresentationManagerR presentationManager) : m_dbFilename(dbFilename), m_targetDb(nullptr), m_presentationManager(presentationManager), m_filterSpatial(false), m_filterLastMod(false), m_wantTargetState(false) { }
 
     //! This method will process the changesets and obtain all the changed instances
-    //! @param[in] changesets Vector of ChangesetInfoPtr containing the changesets to compile together
-    StatusInt   SetChangesets(bvector<BentleyApi::Dgn::ChangesetInfoPtr>& changesets);
+    //! @param[in] changesets Vector of ChangesetPropsPtr containing the changesets to compile together
+    StatusInt   SetChangesets(bvector<BentleyApi::Dgn::ChangesetPropsPtr>& changesets);
 
 public:
     DGNPLATFORM_EXPORT ~VersionCompareChangeSummary();
@@ -744,10 +744,10 @@ public:
     //! Note: The Generate function above should be preferred over this function, but if needed, use VersionSelector::GetChangeSetsToApply to
     //! obtain the changesets and the roll direction
     //! @param[in] dbFilename Filename of Db to process
-    //! @param[in] changesets Vector of ChangesetInfoPtr containing all changesets to be applied
+    //! @param[in] changesets Vector of ChangesetPropsPtr containing all changesets to be applied
     //! @param[in] rulesetId Name of the presentation rules to use
     //! @return VersionCompareChangeSummaryPtr with the results
-    DGNPLATFORM_EXPORT static VersionCompareChangeSummaryPtr Generate(BeFileName dbFilename, bvector<BentleyApi::Dgn::ChangesetInfoPtr> &changesets, ECPresentationManagerR presentationManager, Utf8StringCR rulesetId);
+    DGNPLATFORM_EXPORT static VersionCompareChangeSummaryPtr Generate(BeFileName dbFilename, bvector<BentleyApi::Dgn::ChangesetPropsPtr> &changesets, ECPresentationManagerR presentationManager, Utf8StringCR rulesetId);
 
     //! Creates a change summary that compares the db after applying the given changesets
     //! This will generate a temporary Db that is rolled to the target state to be able to obtain elements from it
@@ -755,10 +755,10 @@ public:
     //! Note: The Generate function above should be preferred over this function, but if needed, use VersionSelector::GetChangeSetsToApply to
     //! obtain the changesets and the roll direction
     //! @param[in] dbFilename Filename of Db to process
-    //! @param[in] changesets Vector of ChangesetInfoPtr containing all changesets to be applied
+    //! @param[in] changesets Vector of ChangesetPropsPtr containing all changesets to be applied
     //! @param[in] options SummaryOptions class with settings for summary generation
     //! @return VersionCompareChangeSummaryPtr with the results
-    DGNPLATFORM_EXPORT static VersionCompareChangeSummaryPtr     Generate(BeFileName dbFilename, bvector<BentleyApi::Dgn::ChangesetInfoPtr>& changesets, SummaryOptions const& options);
+    DGNPLATFORM_EXPORT static VersionCompareChangeSummaryPtr     Generate(BeFileName dbFilename, bvector<BentleyApi::Dgn::ChangesetPropsPtr>& changesets, SummaryOptions const& options);
     }; // VersionCompareChangeSummary
 
 typedef bmap<BentleyApi::BeSQLite::EC::ECInstanceKey, ChangedElementRecord> ChangedElementsMap;

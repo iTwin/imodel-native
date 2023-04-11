@@ -507,9 +507,9 @@ public:
     static DbResult ImportSchema(ECDbR ecdb, BeFileNameCR pathname);
     static DbResult ImportSchemas(DgnDbR, bvector<Utf8String> const&, SchemaSourceType, const SchemaImportOptions&);
     static DbResult ImportFunctionalSchema(DgnDbR);
-    static ChangesetInfoPtr GetRevision(Utf8StringCR dbGuid, BeJsConst arg);
-    static bvector<ChangesetInfoPtr> GetRevisions(bool& containsSchemaChanges, Utf8StringCR dbGuid, BeJsConst changeSets);
-    static ChangesetStatus ApplySchemaChangeSet(BeFileNameCR dbFileName, bvector<ChangesetInfoCP> const& revisions, RevisionProcessOption applyOption);
+    static ChangesetPropsPtr GetChangesetProps(Utf8StringCR dbGuid, BeJsConst arg);
+    static bvector<ChangesetPropsPtr> GetChangesetPropsVec(bool& containsSchemaChanges, Utf8StringCR dbGuid, BeJsConst changeSets);
+    static ChangesetStatus ApplySchemaChangeSet(BeFileNameCR dbFileName, bvector<ChangesetPropsCP> const& revisions, RevisionProcessOption applyOption);
     static ChangesetStatus DumpChangeSet(DgnDbR dgndb, BeJsConst changeSetToken);
     static DgnDbStatus ExtractChangedInstanceIdsFromChangeSets(BeJsValue, DgnDbR, const bvector<BeFileName>&);
 

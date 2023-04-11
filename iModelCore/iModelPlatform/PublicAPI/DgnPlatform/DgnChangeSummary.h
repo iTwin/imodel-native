@@ -51,7 +51,7 @@ public:
     //! @param[out] elementIds Ids of the elements that changed
     //! @param[out] ecclassIds ECClassIds of all elements that changed
     //! @param[out] opcodes DbOpcodes of each element denoting which type of change happened
-    DGNPLATFORM_EXPORT static StatusInt    GetChangedElements(DgnDbR currentDb, DgnDbPtr targetDb, bvector<ChangesetInfoPtr> const & changesets, bvector<DgnElementId>& elementIds, bvector<ECN::ECClassId>& ecclassIds, bvector<BeSQLite::DbOpcode>& opcodes);
+    DGNPLATFORM_EXPORT static StatusInt    GetChangedElements(DgnDbR currentDb, DgnDbPtr targetDb, bvector<ChangesetPropsPtr> const & changesets, bvector<DgnElementId>& elementIds, bvector<ECN::ECClassId>& ecclassIds, bvector<BeSQLite::DbOpcode>& opcodes);
 
 };
 

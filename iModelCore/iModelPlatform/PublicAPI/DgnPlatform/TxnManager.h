@@ -6,6 +6,7 @@
 
 #include <cstddef>
 #include "DgnDb.h"
+#include <BeSQLite/ChangesetFile.h>
 
 DGNPLATFORM_TYPEDEFS(TxnMonitor)
 DGNPLATFORM_TYPEDEFS(DynamicChangeTracker)
@@ -215,7 +216,6 @@ struct EXPORT_VTABLE_ATTRIBUTE DynamicTxnProcessor {
 // @bsiclass
 //=======================================================================================
 struct TxnManager : BeSQLite::ChangeTracker {
-    friend struct RevisionManager;
     friend struct DynamicChangeTracker;
     friend struct DgnDb;
 
@@ -440,6 +440,8 @@ private:
     bool m_indirectChanges = false;
     bool m_enableRebasers;
     bvector<ECN::ECClassId> m_childPropagatesChangesToParentRels;
+    ChangesetPropsPtr m_changesetInProgress;
+
 public:
     ModelChanges m_modelChanges;
 
@@ -479,10 +481,11 @@ private:
     void ReinstateTxn(TxnRange const&);
     DgnDbStatus ReinstateActions(TxnRange const& revTxn);
 
-    ChangesetStatus MergeRevision(ChangesetInfoCR revision);
-    ChangesetStatus MakeDdlChangesFromRevision(ChangesetInfoCR revision, ChangesetFileReader& revisionReader);
-    ChangesetStatus MergeDataChangesInRevision(ChangesetInfoCR revision, ChangesetFileReader& revisionReader, bool containsSchemaChanges);
-    ChangesetStatus ReverseRevision(ChangesetInfoCR revision);
+    void ClearSavedChangesetValues();
+    ChangesetStatus CombineTxns(BeSQLite::DdlChangesR ddlChanges, BeSQLite::ChangeGroupR dataChangeGroup, TxnId endTxnId);
+    ChangesetStatus MergeDdlChanges(ChangesetPropsCR revision, ChangesetFileReader& revisionReader);
+    ChangesetStatus MergeDataChanges(ChangesetPropsCR revision, ChangesetFileReader& revisionReader, bool containsSchemaChanges);
+    ChangesetStatus ProcessRevisions(bvector<ChangesetPropsCP> const &revisions, RevisionProcessOption processOptions);
 
     TxnTable* FindTxnTable(Utf8CP tableName) const;
     bool IsMultiTxnMember(TxnId rowid) const;
@@ -493,7 +496,21 @@ private:
     void NotifyOnCommit();
 
 public:
-    void CallJsTxnManager(Utf8CP methodName) {DgnDb::CallJsFunction(m_dgndb.GetJsTxns(), methodName, {}); };
+    void StartNewSession();
+    void CallJsTxnManager(Utf8CP methodName) { DgnDb::CallJsFunction(m_dgndb.GetJsTxns(), methodName, {}); };
+
+    void ThrowIfChangesetInProgress();
+    DGNPLATFORM_EXPORT Utf8String GetParentChangesetId() const;
+    DGNPLATFORM_EXPORT void GetParentChangesetIndex(int32_t& index, Utf8StringR id) const;
+    DGNPLATFORM_EXPORT ChangesetPropsPtr StartCreateChangeset(ChangesetStatus* outStatus);
+    DGNPLATFORM_EXPORT bool IsChangesetInProgress() const { return m_changesetInProgress.IsValid(); }
+    DGNPLATFORM_EXPORT ChangesetStatus FinishCreateChangeset(int32_t changesetIndex);
+    DGNPLATFORM_EXPORT void AbandonCreateChangeset();
+    DGNPLATFORM_EXPORT ChangesetStatus MergeChangeset(ChangesetPropsCR revision);
+    DGNPLATFORM_EXPORT void ReverseChangeset(ChangesetPropsCR revision);
+    void SaveParentChangeset(Utf8StringCR revisionId, int32_t changesetIndex);
+    ChangesetPropsPtr CreateChangesetProps(BeFileNameCR pathName);
+    ChangesetStatus WriteChangesToFile(BeFileNameCR pathname, BeSQLite::DdlChangesCR ddlChanges, BeSQLite::ChangeGroupCR dataChangeGroup, BeSQLite::Rebaser*);
 
     //! Add a TxnMonitor. The monitor will be notified of all transaction events until it is dropped.
     DGNPLATFORM_EXPORT static void AddTxnMonitor(TxnMonitor& monitor);
@@ -577,7 +594,7 @@ public:
     //! @see   ReverseTo CancelTo
     TxnId GetCurrentTxnId() const {return m_curr;}
 
-    //! @private - query the ID of the last rebase blob stored by MergeRevision. Called by unit tests.
+    //! @private - query the ID of the last rebase blob stored by MergeChangeset. Called by unit tests.
     DGNPLATFORM_EXPORT int64_t QueryLastRebaseId();
 
     //! @private - adds to `rebaser` all stored rebases up to and including `thruId`.

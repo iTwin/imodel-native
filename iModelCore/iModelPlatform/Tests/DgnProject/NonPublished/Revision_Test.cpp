@@ -42,16 +42,16 @@ protected:
     void InsertFloor(int xmax, int ymax);
     void ModifyElement(DgnElementId elementId);
 
-    ChangesetInfoPtr CreateRevision();
-    void DumpRevision(ChangesetInfoCR revision, Utf8CP summary = nullptr);
+    ChangesetPropsPtr CreateRevision();
+    void DumpRevision(ChangesetPropsCR revision, Utf8CP summary = nullptr);
 
     void BackupTestFile();
     void RestoreTestFile(Db::OpenMode openMode = Db::OpenMode::ReadWrite);
 
     void ExtractCodesFromRevision(DgnCodeSet& assigned, DgnCodeSet& discarded);
-    void ProcessSchemaRevision(ChangesetInfoCR revision, RevisionProcessOption revisionProcessOption);
-    void MergeSchemaRevision(ChangesetInfoCR revision) {
-        EXPECT_EQ(ChangesetStatus::Success, m_db->Revisions().MergeRevision(revision));
+    void ProcessSchemaRevision(ChangesetPropsCR revision, RevisionProcessOption revisionProcessOption);
+    void MergeSchemaRevision(ChangesetPropsCR revision) {
+        EXPECT_EQ(ChangesetStatus::Success, m_db->Revisions().MergeChangeset(revision));
     }
 
     static Utf8String CodeToString(DgnCodeCR code) { return Utf8PrintfString("%s:%s\n", code.GetScopeString().c_str(), code.GetValueUtf8CP()); }
@@ -139,9 +139,9 @@ void RevisionTestFixture::SetUpTestCase()
 
     db->SaveChanges();
     // Create a dummy revision to purge transaction table for the test
-    ChangesetInfoPtr rev = db->Revisions().StartCreateChangeset();
+    ChangesetPropsPtr rev = db->Revisions().StartCreateChangeset();
     BeAssert(rev.IsValid());
-    db->Revisions().FinishCreateRevision(-1);
+    db->Revisions().FinishCreateChangeset(-1);
 
     db->SaveChanges();
 
@@ -171,7 +171,7 @@ void RevisionTestFixture::InsertFloor(int xmax, int ymax)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void RevisionTestFixture::DumpRevision(ChangesetInfoCR revision, Utf8CP summary)
+void RevisionTestFixture::DumpRevision(ChangesetPropsCR revision, Utf8CP summary)
     {
 #ifdef DUMP_REVISION
     LOG.infov("---------------------------------------------------------");
@@ -202,13 +202,13 @@ void RevisionTestFixture::ModifyElement(DgnElementId elementId)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ChangesetInfoPtr RevisionTestFixture::CreateRevision()
+ChangesetPropsPtr RevisionTestFixture::CreateRevision()
     {
-    ChangesetInfoPtr revision = m_db->Revisions().StartCreateChangeset();
+    ChangesetPropsPtr revision = m_db->Revisions().StartCreateChangeset();
     if (!revision.IsValid())
         return nullptr;
 
-    ChangesetStatus status = m_db->Revisions().FinishCreateRevision(-1);
+    ChangesetStatus status = m_db->Revisions().FinishCreateChangeset(-1);
     if (ChangesetStatus::Success != status)
         {
         BeAssert(false);
@@ -221,7 +221,7 @@ ChangesetInfoPtr RevisionTestFixture::CreateRevision()
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void RevisionTestFixture::ProcessSchemaRevision(ChangesetInfoCR revision, RevisionProcessOption revisionProcessOption)
+void RevisionTestFixture::ProcessSchemaRevision(ChangesetPropsCR revision, RevisionProcessOption revisionProcessOption)
     {
     BeFileName fileName = BeFileName(m_db->GetDbFileName(), true);
     CloseDgnDb();
@@ -281,14 +281,14 @@ TEST_F(RevisionTestFixture, Workflow)
     m_db->SaveChanges("Created Initial Model");
 
     // Create an initial revision
-    ChangesetInfoPtr initialRevision = CreateRevision();
+    ChangesetPropsPtr initialRevision = CreateRevision();
     ASSERT_TRUE(initialRevision.IsValid());
 
-    Utf8String initialParentRevId = m_db->Revisions().GetParentRevisionId();
+    Utf8String initialParentRevId = m_db->Revisions().GetParentChangesetId();
 
     // Create and save multiple revisions
     BackupTestFile();
-    bvector<ChangesetInfoPtr> revisions;
+    bvector<ChangesetPropsPtr> revisions;
     int dimension = 5;
     int numRevisions = 5;
     for (int revNum = 0; revNum < numRevisions; revNum++)
@@ -296,7 +296,7 @@ TEST_F(RevisionTestFixture, Workflow)
         InsertFloor(dimension, dimension);
         m_db->SaveChanges("Inserted floor");
 
-        ChangesetInfoPtr revision = CreateRevision();
+        ChangesetPropsPtr revision = CreateRevision();
         ASSERT_TRUE(revision.IsValid());
         ASSERT_FALSE(revision->ContainsSchemaChanges(*m_db));
 
@@ -305,24 +305,24 @@ TEST_F(RevisionTestFixture, Workflow)
     RestoreTestFile();
 
     // Dump all revisions
-    for (ChangesetInfoPtr const& rev : revisions)
+    for (ChangesetPropsPtr const& rev : revisions)
         DumpRevision(*rev);
 
     // Merge all the saved revisions
-    for (ChangesetInfoPtr const& rev : revisions)
+    for (ChangesetPropsPtr const& rev : revisions)
         {
-        ChangesetStatus status = m_db->Revisions().MergeRevision(*rev);
+        ChangesetStatus status = m_db->Revisions().MergeChangeset(*rev);
         ASSERT_TRUE(status == ChangesetStatus::Success);
         }
 
     // Check the updated revision id
-    Utf8String mergedParentRevId = m_db->Revisions().GetParentRevisionId();
+    Utf8String mergedParentRevId = m_db->Revisions().GetParentChangesetId();
     ASSERT_TRUE(mergedParentRevId != initialParentRevId);
 
     // Abandon changes, and test that the parent revision and elements do not change
     m_db->AbandonChanges();
 
-    Utf8String newParentRevId = m_db->Revisions().GetParentRevisionId();
+    Utf8String newParentRevId = m_db->Revisions().GetParentChangesetId();
     ASSERT_TRUE(newParentRevId == mergedParentRevId);
     }
 
@@ -334,7 +334,7 @@ TEST_F(RevisionTestFixture, MoreWorkflow)
     // Setup baseline
     SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"MoreWorkflow.bim");
     m_db->SaveChanges("Created Initial Model");
-    ChangesetInfoPtr initialRevision = CreateRevision();
+    ChangesetPropsPtr initialRevision = CreateRevision();
     ASSERT_TRUE(initialRevision.IsValid());
 
     // Create Revision 1 inserting an element into the test model
@@ -343,7 +343,7 @@ TEST_F(RevisionTestFixture, MoreWorkflow)
     ASSERT_TRUE(elementId.IsValid());
     m_db->SaveChanges("Inserted an element");
 
-    ChangesetInfoPtr revision1 = CreateRevision();
+    ChangesetPropsPtr revision1 = CreateRevision();
     ASSERT_TRUE(revision1.IsValid());
     ASSERT_FALSE(revision1->ContainsSchemaChanges(*m_db));
 
@@ -355,7 +355,7 @@ TEST_F(RevisionTestFixture, MoreWorkflow)
     el = nullptr;
     m_db->SaveChanges("Deleted same element");
 
-    ChangesetInfoPtr revision2 = CreateRevision();
+    ChangesetPropsPtr revision2 = CreateRevision();
     ASSERT_TRUE(revision2.IsValid());
     ASSERT_FALSE(revision2->ContainsSchemaChanges(*m_db));
 
@@ -367,7 +367,7 @@ TEST_F(RevisionTestFixture, MoreWorkflow)
     m_defaultModel = nullptr;
     m_db->SaveChanges("Deleted model and contained elements");
 
-    ChangesetInfoPtr revision3 = CreateRevision();
+    ChangesetPropsPtr revision3 = CreateRevision();
     ASSERT_TRUE(revision3.IsValid());
     ASSERT_FALSE(revision3->ContainsSchemaChanges(*m_db));
 
@@ -376,23 +376,23 @@ TEST_F(RevisionTestFixture, MoreWorkflow)
     // Merge Rev1 first
     RestoreTestFile();
     ASSERT_TRUE(m_defaultModel.IsValid());
-    revStatus = m_db->Revisions().MergeRevision(*revision1);
+    revStatus = m_db->Revisions().MergeChangeset(*revision1);
     ASSERT_TRUE(revStatus == ChangesetStatus::Success);
 
     // Merge Rev2 next
-    revStatus = m_db->Revisions().MergeRevision(*revision2);
+    revStatus = m_db->Revisions().MergeChangeset(*revision2);
     ASSERT_TRUE(revStatus == ChangesetStatus::Success);
 
     // Merge Rev3 next - should fail since the parent does not match
     BeTest::SetFailOnAssert(false);
-    revStatus = m_db->Revisions().MergeRevision(*revision3);
+    revStatus = m_db->Revisions().MergeChangeset(*revision3);
     BeTest::SetFailOnAssert(true);
     ASSERT_TRUE(revStatus == ChangesetStatus::ParentMismatch);
 
     // Merge Rev3 first
     RestoreTestFile();
     ASSERT_TRUE(m_defaultModel.IsValid());
-    revStatus = m_db->Revisions().MergeRevision(*revision3);
+    revStatus = m_db->Revisions().MergeChangeset(*revision3);
     ASSERT_TRUE(revStatus == ChangesetStatus::Success);
 
     // Delete model and Merge Rev1 - should fail since the model does not exist
@@ -403,7 +403,7 @@ TEST_F(RevisionTestFixture, MoreWorkflow)
     m_db->SaveChanges("Deleted model and contained elements");
 
     BeTest::SetFailOnAssert(false);
-    revStatus = m_db->Revisions().MergeRevision(*revision1);
+    revStatus = m_db->Revisions().MergeChangeset(*revision1);
     BeTest::SetFailOnAssert(true);
     ASSERT_TRUE(revStatus == ChangesetStatus::ApplyError);
     }
@@ -416,14 +416,14 @@ TEST_F(RevisionTestFixture, MergeToReadonlyBriefcase)
     // Setup baseline
     SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"ReadonlyBriefcase.bim");
     m_db->SaveChanges();
-    ChangesetInfoPtr initialRevision = CreateRevision(); // Clears Txn table
+    ChangesetPropsPtr initialRevision = CreateRevision(); // Clears Txn table
     BackupTestFile();
 
     // Create some revision
     DgnElementId elementId = RevisionTestFixture::InsertPhysicalElement(*m_db, *m_defaultModel, m_defaultCategoryId, 2, 2, 2);
     ASSERT_TRUE(elementId.IsValid());
     m_db->SaveChanges("Inserted an element");
-    ChangesetInfoPtr revision1 = CreateRevision();
+    ChangesetPropsPtr revision1 = CreateRevision();
     ASSERT_TRUE(revision1.IsValid());
 
     // Restore the master file again, and open in Readonly mode
@@ -431,7 +431,7 @@ TEST_F(RevisionTestFixture, MergeToReadonlyBriefcase)
 
     // Merge revision that was previously created to create a checkpoint file
     BeTest::SetFailOnAssert(false);
-    ChangesetStatus revStatus = m_db->Revisions().MergeRevision(*revision1);
+    ChangesetStatus revStatus = m_db->Revisions().MergeChangeset(*revision1);
     ASSERT_TRUE(revStatus == ChangesetStatus::CannotMergeIntoReadonly);
     BeTest::SetFailOnAssert(true);
     }
@@ -445,7 +445,7 @@ TEST_F(RevisionTestFixture, ResetIdSequencesAfterApply)
     SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"ResetElementIdSequenceAfterApply.bim");
     m_db->SaveChanges("Created Initial Model");
 
-    ChangesetInfoPtr initialRevision = CreateRevision();
+    ChangesetPropsPtr initialRevision = CreateRevision();
     ASSERT_TRUE(initialRevision.IsValid());
 
     DgnElementId idBeforeInserts;
@@ -459,7 +459,7 @@ TEST_F(RevisionTestFixture, ResetIdSequencesAfterApply)
     InsertFloor(1, 1);
     m_db->SaveChanges("Inserted floor");
 
-    ChangesetInfoPtr revision = CreateRevision();
+    ChangesetPropsPtr revision = CreateRevision();
     ASSERT_TRUE(revision.IsValid());
 
     DgnElementId idAfterInserts;
@@ -470,7 +470,7 @@ TEST_F(RevisionTestFixture, ResetIdSequencesAfterApply)
     // Restore baseline file, apply the change sets with the same element inserts, and validate the last sequence id
     RestoreTestFile();
 
-    ChangesetStatus status = m_db->Revisions().MergeRevision(*revision);
+    ChangesetStatus status = m_db->Revisions().MergeChangeset(*revision);
     ASSERT_TRUE(status == ChangesetStatus::Success);
 
     DgnElementId idAfterMerge;
@@ -596,7 +596,7 @@ TEST_F(RevisionTestFixture, DdlChanges)
     // Setup baseline
     SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"SchemaChanges.bim");
     m_db->SaveChanges("Created Initial Model");
-    ChangesetInfoPtr initialRevision = CreateRevision();
+    ChangesetPropsPtr initialRevision = CreateRevision();
     ASSERT_TRUE(initialRevision.IsValid());
     BackupTestFile();
 
@@ -609,7 +609,7 @@ TEST_F(RevisionTestFixture, DdlChanges)
     ASSERT_TRUE(m_db->Txns().HasChanges());
 
     m_db->SaveChanges("Revision 1");
-    ChangesetInfoPtr revision1 = CreateRevision();
+    ChangesetPropsPtr revision1 = CreateRevision();
     ASSERT_TRUE(revision1.IsValid());
     DumpRevision(*revision1, "Revision 1 with only schema changes:");
 
@@ -626,7 +626,7 @@ TEST_F(RevisionTestFixture, DdlChanges)
     ASSERT_TRUE(m_db->Txns().HasChanges());
 
     m_db->SaveChanges("Revision 2");
-    ChangesetInfoPtr revision2 = CreateRevision();
+    ChangesetPropsPtr revision2 = CreateRevision();
     ASSERT_TRUE(revision2.IsValid());
     DumpRevision(*revision2, "Revision 2 with only data changes:");
 
@@ -644,7 +644,7 @@ TEST_F(RevisionTestFixture, DdlChanges)
     ASSERT_TRUE(m_db->Txns().HasChanges());
 
     m_db->SaveChanges("Revision 3");
-    ChangesetInfoPtr revision3 = CreateRevision();
+    ChangesetPropsPtr revision3 = CreateRevision();
     ASSERT_TRUE(revision3.IsValid());
     DumpRevision(*revision3, "Revision 3 with schema and data changes:");
 
@@ -663,7 +663,7 @@ TEST_F(RevisionTestFixture, DdlChanges)
     ASSERT_TRUE(m_db->Txns().HasChanges());
 
     m_db->SaveChanges("Revision 4");
-    ChangesetInfoPtr revision4 = CreateRevision();
+    ChangesetPropsPtr revision4 = CreateRevision();
     ASSERT_TRUE(revision4.IsValid());
     DumpRevision(*revision4, "Revision 4 with schema and data changes:");
 
@@ -690,7 +690,7 @@ TEST_F(RevisionTestFixture, DdlChanges)
 
     // Merge revision 2 (Data changes - inserts to both tables)
     LOG.infov("Merging Revision 2");
-    EXPECT_EQ(ChangesetStatus::Success, m_db->Revisions().MergeRevision(*revision2));
+    EXPECT_EQ(ChangesetStatus::Success, m_db->Revisions().MergeChangeset(*revision2));
 
     ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column1 FROM TestTable1 WHERE Id=1", 1));
     ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column1 FROM TestTable2 WHERE Id=1", 1));
@@ -717,7 +717,7 @@ TEST_F(RevisionTestFixture, DdlChanges)
 
     // Reverse revision 4 (Note that all data or schema changes are entirely skipped in this apply)
     BeTest::SetFailOnAssert(false);
-    EXPECT_EQ(ChangesetStatus::ReverseOrReinstateSchemaChanges, m_db->Revisions().ReverseRevision(*revision4));
+    EXPECT_EQ(ChangesetStatus::ReverseOrReinstateSchemaChanges, m_db->Revisions().ReverseChangeset(*revision4));
 
     BeFileName fileName = BeFileName(m_db->GetDbFileName(), true);
     CloseDgnDb();
@@ -739,7 +739,7 @@ TEST_F(RevisionTestFixture, InvalidSchemaChanges)
 
     ASSERT_TRUE(BE_SQLITE_OK == m_db->CreateTable("TestTable", "Id INTEGER PRIMARY KEY, Column1 INTEGER"));
     m_db->SaveChanges("Created test table");
-    ChangesetInfoPtr initialRevision = CreateRevision();
+    ChangesetPropsPtr initialRevision = CreateRevision();
     ASSERT_TRUE(initialRevision.IsValid());
     BackupTestFile();
 
@@ -766,7 +766,7 @@ TEST_F(RevisionTestFixture, ManySchemaChanges)
     // Setup baseline
     SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"SchemaChanges.bim");
     m_db->SaveChanges("Created Initial Model");
-    ChangesetInfoPtr initialRevision = CreateRevision();
+    ChangesetPropsPtr initialRevision = CreateRevision();
     ASSERT_TRUE(initialRevision.IsValid());
     BackupTestFile();
 
@@ -786,7 +786,7 @@ TEST_F(RevisionTestFixture, ManySchemaChanges)
         }
 
     m_db->SaveChanges("");
-    ChangesetInfoPtr revision = CreateRevision();
+    ChangesetPropsPtr revision = CreateRevision();
     ASSERT_TRUE(revision.IsValid());
     DumpRevision(*revision, "Revision containing many schema changes:");
 
@@ -810,7 +810,7 @@ TEST_F(RevisionTestFixture, MergeSchemaChanges)
     SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"SchemaChanges.bim");
     m_db->CreateTable("TestTable", "Id INTEGER PRIMARY KEY, Column1 INTEGER");
     m_db->SaveChanges("Created Initial Model");
-    ChangesetInfoPtr initialRevision = CreateRevision();
+    ChangesetPropsPtr initialRevision = CreateRevision();
     ASSERT_TRUE(initialRevision.IsValid());
     BackupTestFile();
 
@@ -822,7 +822,7 @@ TEST_F(RevisionTestFixture, MergeSchemaChanges)
     ASSERT_TRUE(m_db->Txns().HasDdlChanges());
 
     m_db->SaveChanges("Schema changes");
-    ChangesetInfoPtr schemaChangesRevision = CreateRevision();
+    ChangesetPropsPtr schemaChangesRevision = CreateRevision();
     ASSERT_TRUE(schemaChangesRevision.IsValid());
     DumpRevision(*schemaChangesRevision, "Revision with schema changes:");
 
@@ -837,7 +837,7 @@ TEST_F(RevisionTestFixture, MergeSchemaChanges)
     MergeSchemaRevision(*schemaChangesRevision);
 
     /* Create new revision with just the data changes */
-    ChangesetInfoPtr dataChangesRevision = CreateRevision();
+    ChangesetPropsPtr dataChangesRevision = CreateRevision();
     ASSERT_TRUE(dataChangesRevision.IsValid());
     DumpRevision(*dataChangesRevision, "Revision with data changes:");
 
@@ -849,7 +849,7 @@ TEST_F(RevisionTestFixture, MergeSchemaChanges)
     ASSERT_FALSE(m_db->Txns().HasDdlChanges());
 
     m_db->SaveChanges("More data changes");
-    ChangesetInfoPtr moreDataChangesRevision = CreateRevision();
+    ChangesetPropsPtr moreDataChangesRevision = CreateRevision();
     ASSERT_TRUE(moreDataChangesRevision.IsValid());
     DumpRevision(*moreDataChangesRevision, "Revision with more data changes:");
 
@@ -859,13 +859,13 @@ TEST_F(RevisionTestFixture, MergeSchemaChanges)
 
     ASSERT_TRUE(m_db->ColumnExists("TestTable", "Column2"));
 
-    ChangesetStatus status = m_db->Revisions().MergeRevision(*dataChangesRevision);
+    ChangesetStatus status = m_db->Revisions().MergeChangeset(*dataChangesRevision);
     ASSERT_TRUE(status == ChangesetStatus::Success);
 
     ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column1 FROM TestTable WHERE Id=1", 1));
     ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column2 FROM TestTable WHERE Id=1", 0)); // i.e., null value
 
-    status = m_db->Revisions().MergeRevision(*moreDataChangesRevision);
+    status = m_db->Revisions().MergeChangeset(*moreDataChangesRevision);
     ASSERT_TRUE(status == ChangesetStatus::Success);
 
     ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column2 FROM TestTable WHERE Id=1", 1));
@@ -891,7 +891,7 @@ TEST_F(RevisionTestFixture, TableAndColumnAdditions)
     {
     // Setup baseline
     SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"TableAndColumnAdditions.bim");
-    ChangesetInfoPtr revision0 = CreateRevision();
+    ChangesetPropsPtr revision0 = CreateRevision();
     ASSERT_TRUE(revision0.IsValid());
     BackupTestFile();
 
@@ -931,7 +931,7 @@ TEST_F(RevisionTestFixture, TableAndColumnAdditions)
     ASSERT_TRUE(schemaStatus == SchemaStatus::Success);
     m_db->SaveChanges("Imported Test schema");
 
-    ChangesetInfoPtr revision1 = CreateRevision();
+    ChangesetPropsPtr revision1 = CreateRevision();
     ASSERT_TRUE(revision1.IsValid());
     DumpRevision(*revision1, "Revision with TestSchema import:");
 
@@ -954,9 +954,9 @@ TEST_F(RevisionTestFixture, TableAndColumnAdditions)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-bvector<ChangesetInfoCP> filterRevisions(ChangesetInfoPtr* revisionPtrs, int startIndex, int finishIndex)
+bvector<ChangesetPropsCP> filterRevisions(ChangesetPropsPtr* revisionPtrs, int startIndex, int finishIndex)
     {
-    bvector<ChangesetInfoCP> filteredRevisions;
+    bvector<ChangesetPropsCP> filteredRevisions;
     int incOrDec = finishIndex > startIndex ? +1 : -1;
     for (int ii = startIndex; ii != finishIndex + incOrDec; ii += incOrDec)
         filteredRevisions.push_back(revisionPtrs[ii].get());
@@ -969,7 +969,7 @@ bvector<ChangesetInfoCP> filterRevisions(ChangesetInfoPtr* revisionPtrs, int sta
 TEST_F(RevisionTestFixture, MoreDataAndSchemaChanges)
     {
     /* These scenarios have been reported by the IModelHub team */
-    ChangesetInfoPtr revisionPtrs[11]; // 0 - Initial revision
+    ChangesetPropsPtr revisionPtrs[11]; // 0 - Initial revision
     int ii = 0;
 
     // Setup baseline
@@ -1027,7 +1027,7 @@ TEST_F(RevisionTestFixture, MoreDataAndSchemaChanges)
      */
     RestoreTestFile();
     DbResult openStatus;
-    bvector<ChangesetInfoCP> processRevisions;
+    bvector<ChangesetPropsCP> processRevisions;
     DgnDb::OpenParams openParams(Db::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes);
 
     // Merge Rev 1-6
@@ -1037,7 +1037,7 @@ TEST_F(RevisionTestFixture, MoreDataAndSchemaChanges)
     m_db = DgnDb::OpenIModelDb(&openStatus, fileName, openParams);
     ASSERT_TRUE(m_db.IsValid()) << "Could not open test project";
 
-    ASSERT_STREQ(m_db->Revisions().GetParentRevisionId().c_str(), revisionPtrs[6]->GetChangesetId().c_str());
+    ASSERT_STREQ(m_db->Revisions().GetParentChangesetId().c_str(), revisionPtrs[6]->GetChangesetId().c_str());
 
     // Reverse to Rev 4 (i.e., 6-5)
     m_db->CloseDb();
@@ -1071,7 +1071,7 @@ TEST_F(RevisionTestFixture, MoreDataAndSchemaChanges)
     m_db = DgnDb::OpenIModelDb(&openStatus, fileName, openParams);
     ASSERT_TRUE(m_db.IsValid()) << "Could not open test project";
 
-    ASSERT_STREQ(m_db->Revisions().GetParentRevisionId().c_str(), revisionPtrs[6]->GetChangesetId().c_str());
+    ASSERT_STREQ(m_db->Revisions().GetParentChangesetId().c_str(), revisionPtrs[6]->GetChangesetId().c_str());
 
     // Merge Rev 7-9
     m_db->CloseDb();
@@ -1080,7 +1080,7 @@ TEST_F(RevisionTestFixture, MoreDataAndSchemaChanges)
     m_db = DgnDb::OpenIModelDb(&openStatus, fileName, openParams);
     ASSERT_TRUE(m_db.IsValid()) << "Could not open test project";
 
-    ASSERT_STREQ(m_db->Revisions().GetParentRevisionId().c_str(), revisionPtrs[9]->GetChangesetId().c_str());
+    ASSERT_STREQ(m_db->Revisions().GetParentChangesetId().c_str(), revisionPtrs[9]->GetChangesetId().c_str());
     }
 
 #ifdef DEBUG_REVISION_TEST_MANUAL
@@ -1125,8 +1125,8 @@ TEST_F(RevisionTestFixture, TestMemoryLeak)
     TestDataManager::SetAsStandAlone(m_db, Db::OpenMode::ReadWrite);
 
     Utf8String dbGuid = m_db->GetDbGuid().ToString();
-    bvector<ChangesetInfoPtr> revisionPtrs;
-    bvector<ChangesetInfoCP> revisions;
+    bvector<ChangesetPropsPtr> revisionPtrs;
+    bvector<ChangesetPropsCP> revisions;
 
     Utf8String parentChangeSetId = m_db->Revisions().GetParentRevisionId();
 
@@ -1136,7 +1136,7 @@ TEST_F(RevisionTestFixture, TestMemoryLeak)
         if (ii > 0)
             parentChangeSetId = changeSetIds[ii - 1];
 
-        ChangesetInfoPtr rev = DgnRevision::Create(nullptr, changeSetId, parentChangeSetId, dbGuid);
+        ChangesetPropsPtr rev = DgnRevision::Create(nullptr, changeSetId, parentChangeSetId, dbGuid);
 
         fileStatus = BeFileName::BeCopyFile(csPathnames[ii].c_str(), rev->GetRevisionChangesFile().c_str());
         ASSERT_TRUE(fileStatus == BeFileNameStatus::Success);
@@ -1203,8 +1203,8 @@ TEST_F(RevisionTestFixture, MergeMemoryIssue)
     TestDataManager::SetAsStandAlone(m_db, Db::OpenMode::ReadWrite);
 
     Utf8String dbGuid = m_db->GetDbGuid().ToString();
-    bvector<ChangesetInfoPtr> revisionPtrs;
-    bvector<ChangesetInfoCP> revisions;
+    bvector<ChangesetPropsPtr> revisionPtrs;
+    bvector<ChangesetPropsCP> revisions;
 
     Utf8String parentChangeSetId = m_db->Revisions().GetParentRevisionId();
 
@@ -1214,7 +1214,7 @@ TEST_F(RevisionTestFixture, MergeMemoryIssue)
         if (ii > 0)
             parentChangeSetId = changeSetIds[ii - 1];
 
-        ChangesetInfoPtr rev = DgnRevision::Create(nullptr, changeSetId, parentChangeSetId, dbGuid);
+        ChangesetPropsPtr rev = DgnRevision::Create(nullptr, changeSetId, parentChangeSetId, dbGuid);
 
         fileStatus = BeFileName::BeCopyFile(csPathnames[ii].c_str(), rev->GetRevisionChangesFile().c_str());
         ASSERT_TRUE(fileStatus == BeFileNameStatus::Success);
@@ -1285,14 +1285,14 @@ TEST_F(RevisionTestFixture, DISABLED_MergeFolderWithRevisions)
     TestDataManager::SetAsStandAlone(m_db, Db::OpenMode::ReadWrite);
 
     Utf8String dbGuid = m_db->GetDbGuid().ToString();
-    bvector<ChangesetInfoPtr> revisionPtrs;
-    bvector<ChangesetInfoCP> revisions;
+    bvector<ChangesetPropsPtr> revisionPtrs;
+    bvector<ChangesetPropsCP> revisions;
     for (int ii = 0; ii < 4; ii++)
         {
         Utf8String changeSetId = changeSetIds[ii];
         Utf8String parentChangeSetId = (ii > 0) ? changeSetIds[ii - 1] : "";
 
-        ChangesetInfoPtr rev = DgnRevision::Create(nullptr, changeSetId, parentChangeSetId, dbGuid);
+        ChangesetPropsPtr rev = DgnRevision::Create(nullptr, changeSetId, parentChangeSetId, dbGuid);
 
         fileStatus = BeFileName::BeCopyFile(csPathnames[ii].c_str(), rev->GetRevisionChangesFile().c_str());
         ASSERT_TRUE(fileStatus == BeFileNameStatus::Success);
@@ -1321,7 +1321,7 @@ TEST_F(RevisionTestFixture, DISABLED_CreateAndMergePerformance)
     m_db->SaveChanges("Created Initial Model");
 
     // Create an initial revision
-    ChangesetInfoPtr initialRevision = CreateRevision();
+    ChangesetPropsPtr initialRevision = CreateRevision();
     ASSERT_TRUE(initialRevision.IsValid());
 
     Utf8String initialParentRevId = m_db->Revisions().GetParentRevisionId();
@@ -1332,7 +1332,7 @@ TEST_F(RevisionTestFixture, DISABLED_CreateAndMergePerformance)
 
     // Create and save multiple revisions
     BackupTestFile();
-    bvector<ChangesetInfoPtr> revisions;
+    bvector<ChangesetPropsPtr> revisions;
     int dimension = 100;
     int numRevisions = 100;
     for (int revNum = 0; revNum < numRevisions; revNum++)
@@ -1341,7 +1341,7 @@ TEST_F(RevisionTestFixture, DISABLED_CreateAndMergePerformance)
         m_db->SaveChanges("Inserted floor");
 
         timer.Start();
-        ChangesetInfoPtr revision = CreateRevision();
+        ChangesetPropsPtr revision = CreateRevision();
         timer.Stop();
         generateRevTime += timer.GetElapsedSeconds();
 
@@ -1352,14 +1352,14 @@ TEST_F(RevisionTestFixture, DISABLED_CreateAndMergePerformance)
     RestoreTestFile();
 
     // Dump all revisions
-    for (ChangesetInfoPtr const& rev : revisions)
+    for (ChangesetPropsPtr const& rev : revisions)
         DumpRevision(*rev);
 
     // Merge all the saved revisions
     timer.Start();
-    for (ChangesetInfoPtr const& rev : revisions)
+    for (ChangesetPropsPtr const& rev : revisions)
         {
-        RevisionStatus status = m_db->Revisions().MergeRevision(*rev);
+        RevisionStatus status = m_db->Revisions().MergeChangeset(*rev);
         ASSERT_TRUE(status == RevisionStatus::Success);
         }
     timer.Stop();
@@ -1410,12 +1410,12 @@ TEST_F(RevisionTestFixture, DISABLED_MergeFolderWithRevisions)
         {
         Utf8String parentRevId = m_db->Revisions().GetParentRevisionId();
         Utf8String revId(BeFileName::GetFileNameWithoutExtension(revPathname.c_str()));
-        ChangesetInfoPtr rev = DgnRevision::Create(nullptr, revId, parentRevId, dbGuid);
+        ChangesetPropsPtr rev = DgnRevision::Create(nullptr, revId, parentRevId, dbGuid);
 
         fileStatus = BeFileName::BeCopyFile(revPathname.c_str(), rev->GetChangeStreamFile().c_str());
         ASSERT_TRUE(fileStatus == BeFileNameStatus::Success);
 
-        RevisionStatus status = m_db->Revisions().MergeRevision(*rev);
+        RevisionStatus status = m_db->Revisions().MergeChangeset(*rev);
 
         if (status != RevisionStatus::Success)
             LOG.infov("Failed to merge revision: %s", revId.c_str());
@@ -1442,12 +1442,12 @@ TEST_F(RevisionTestFixture, DISABLED_MergeSpecificRevision)
     Utf8String parentRevId = m_db->Revisions().GetParentRevisionId();
     Utf8String revId(BeFileName::GetFileNameWithoutExtension(revPathname.c_str()));
     Utf8String dbGuid = m_db->GetDbGuid().ToString();
-    ChangesetInfoPtr rev = DgnRevision::Create(nullptr, revId, parentRevId, dbGuid);
+    ChangesetPropsPtr rev = DgnRevision::Create(nullptr, revId, parentRevId, dbGuid);
 
     fileStatus = BeFileName::BeCopyFile(revPathname.c_str(), rev->GetChangeStreamFile().c_str());
     ASSERT_TRUE(fileStatus == BeFileNameStatus::Success);
 
-    RevisionStatus status = m_db->Revisions().MergeRevision(*rev);
+    RevisionStatus status = m_db->Revisions().MergeChangeset(*rev);
 
     if (status != RevisionStatus::Success)
         LOG.infov("Failed to merge revision: %s", revId.c_str());
@@ -1466,7 +1466,7 @@ TEST_F(RevisionTestFixture, DISABLED_MergeSpecificRevision)
 TEST_F(RevisionTestFixture, IterateOverRedundantSchemaChange)
     {
     constexpr size_t revCount = 5;
-    std::array<ChangesetInfoPtr, revCount> revisionPtrs;
+    std::array<ChangesetPropsPtr, revCount> revisionPtrs;
     auto& initialRevision = revisionPtrs[0];
 
     // Setup baseline
@@ -1562,10 +1562,10 @@ TEST_F(RevisionTestFixture, IterateOverRedundantSchemaChange)
 
     // ignore the initial revision since it will have a bunch of inserted stuff for setup purposes that we're not trying to iterate over
     //RevisionChangesFileReader reader1(revisionPtrs[0]->GetRevisionChangesFile(), *m_db);
-    ChangesetFileReader reader2(revisionPtrs[1]->GetRevisionChangesFile(), *m_db);
-    ChangesetFileReader reader3(revisionPtrs[2]->GetRevisionChangesFile(), *m_db);
-    ChangesetFileReader reader4(revisionPtrs[3]->GetRevisionChangesFile(), *m_db);
-    ChangesetFileReader reader5(revisionPtrs[4]->GetRevisionChangesFile(), *m_db);
+    ChangesetFileReader reader2(revisionPtrs[1]->GetFileName(), *m_db);
+    ChangesetFileReader reader3(revisionPtrs[2]->GetFileName(), *m_db);
+    ChangesetFileReader reader4(revisionPtrs[3]->GetFileName(), *m_db);
+    ChangesetFileReader reader5(revisionPtrs[4]->GetFileName(), *m_db);
     // this pointer array compensates for a lack of copy or move constructors which make this type difficult to put in STL containers
     std::array<ChangesetFileReader*, revisionPtrs.size() - 1> revisionReaders { &reader2, &reader3, &reader4, &reader5  };
 

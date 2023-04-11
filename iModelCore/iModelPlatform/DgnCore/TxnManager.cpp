@@ -303,6 +303,10 @@ void TxnManager::Initialize() {
     m_dynamicTxns.clear();
 }
 
+void TxnManager::StartNewSession() {
+    m_curr = TxnId(SessionId(m_curr.GetSession().GetValue()+1), 0);
+}
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -818,7 +822,7 @@ void TxnManager::_OnCommitted(bool isCommit, Utf8CP) {
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ChangesetStatus TxnManager::MakeDdlChangesFromRevision(ChangesetInfoCR revision, ChangesetFileReader& changeStream)  {
+ChangesetStatus TxnManager::MergeDdlChanges(ChangesetPropsCR revision, ChangesetFileReader& changeStream)  {
     bool containsSchemaChanges;
     DdlChanges ddlChanges;
     DbResult result = changeStream.MakeReader()->GetSchemaChanges(containsSchemaChanges, ddlChanges);
@@ -840,14 +844,14 @@ ChangesetStatus TxnManager::MakeDdlChangesFromRevision(ChangesetInfoCR revision,
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ChangesetStatus TxnManager::MergeDataChangesInRevision(ChangesetInfoCR revision, ChangesetFileReader& changeStream, bool containsSchemaChanges) {
+ChangesetStatus TxnManager::MergeDataChanges(ChangesetPropsCR revision, ChangesetFileReader& changeStream, bool containsSchemaChanges) {
     // if we don't have any pending txns, this is merely an Apply, no merging or propagation needed.
     bool mergeNeeded = HasPendingTxns() && m_initTableHandlers; // if tablehandlers are not present we can't merge - happens for schema upgrade
     Rebase rebase;
 
     DbResult result = ApplyChanges(changeStream, TxnAction::Merge, containsSchemaChanges, mergeNeeded ? &rebase : nullptr);
     if (result != BE_SQLITE_OK) {
-        LOG.fatalv("MergeDataChangesInRevision failed to ApplyChanges: %s", BeSQLiteLib::GetErrorName(result));
+        LOG.fatalv("MergeDataChanges failed to ApplyChanges: %s", BeSQLiteLib::GetErrorName(result));
         return ChangesetStatus::ApplyError;
     }
 
@@ -861,7 +865,7 @@ ChangesetStatus TxnManager::MergeDataChangesInRevision(ChangesetInfoCR revision,
         OnValidateChanges(changeStream);
 
         if (SUCCESS != PropagateChanges()) {
-            LOG.error("MergeDataChangesInRevision failed to propagate changes");
+            LOG.error("MergeDataChanges failed to propagate changes");
             status = ChangesetStatus::MergePropagationError;
         }
 
@@ -869,7 +873,7 @@ ChangesetStatus TxnManager::MergeDataChangesInRevision(ChangesetInfoCR revision,
             result = indirectChanges.FromChangeTrack(*this);
             if (BeSQLite::BE_SQLITE_OK != result) {
                 BeAssert(false);
-                LOG.fatalv("MergeDataChangesInRevision failed at indirectDataChangeSet.FromChangeTrack(): %s", BeSQLiteLib::GetErrorName(result));
+                LOG.fatalv("MergeDataChanges failed at indirectDataChangeSet.FromChangeTrack(): %s", BeSQLiteLib::GetErrorName(result));
                 if (BE_SQLITE_NOMEM == result)
                     throw std::bad_alloc();
                 return ChangesetStatus::SQLiteError;
@@ -887,7 +891,7 @@ ChangesetStatus TxnManager::MergeDataChangesInRevision(ChangesetInfoCR revision,
 
                 result = SaveTxn(indirectChanges, mergeComment.c_str(), TxnType::Data);
                 if (BE_SQLITE_OK != result) {
-                    LOG.fatalv("MergeDataChangesInRevision failed saving changes %s", BeSQLiteLib::GetErrorName(result));
+                    LOG.fatalv("MergeDataChanges failed saving changes %s", BeSQLiteLib::GetErrorName(result));
                     BeAssert(false);
                     status = ChangesetStatus::SQLiteError;
                 }
@@ -906,7 +910,7 @@ ChangesetStatus TxnManager::MergeDataChangesInRevision(ChangesetInfoCR revision,
     }
 
     if (status == ChangesetStatus::Success) {
-        status = m_dgndb.Revisions().SaveParentRevision(revision.GetChangesetId(), revision.GetChangesetIndex());
+        SaveParentChangeset(revision.GetChangesetId(), revision.GetChangesetIndex());
 
         if (status == ChangesetStatus::Success) {
             result = m_dgndb.SaveChanges();
@@ -914,7 +918,7 @@ ChangesetStatus TxnManager::MergeDataChangesInRevision(ChangesetInfoCR revision,
             // The user should NOT be able to revert the revision id by a call to AbandonChanges() anymore, since
             // the merged changes are lost after this routine and cannot be used for change propagation anymore.
             if (BE_SQLITE_OK != result) {
-                LOG.fatalv("MergeDataChangesInRevision failed to save: %s", BeSQLiteLib::GetErrorName(result));
+                LOG.fatalv("MergeDataChanges failed to save: %s", BeSQLiteLib::GetErrorName(result));
                 BeAssert(false);
                 status = ChangesetStatus::SQLiteError;
             }
@@ -938,73 +942,71 @@ ChangesetStatus TxnManager::MergeDataChangesInRevision(ChangesetInfoCR revision,
 }
 
 /*---------------------------------------------------------------------------------**//**
- * @remarks Used only in revering or reinstating revisions.
- * @see TxnManager::MergeRevision
  * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ChangesetStatus TxnManager::ReverseRevision(ChangesetInfoCR revision) {
-    BeFileNameCR revisionChangesFile = revision.GetRevisionChangesFile();
-    ChangesetFileReader changeStream(revisionChangesFile, m_dgndb);
-    bool containsSchemaChanges = revision.ContainsSchemaChanges(m_dgndb);
+void TxnManager::ReverseChangeset(ChangesetPropsCR changeset) {
+    if (m_dgndb.IsReadonly())
+        m_dgndb.ThrowException("file is readonly", (int) ChangesetStatus::CannotMergeIntoReadonly);
 
-    if (!containsSchemaChanges) {
-        // Skip the entire schema change set when reversing or reinstating - DDL and
-        // the meta-data changes. Reversing meta data changes cause conflicts - see
-        // TFS#149046
-        DbResult result = ApplyChanges(changeStream, TxnAction::Reverse, false, nullptr, true);
-        if (result != BE_SQLITE_OK)
-            return ChangesetStatus::ApplyError;
-    }
+    ThrowIfChangesetInProgress();
 
-    ChangesetStatus status = m_dgndb.Revisions().SaveParentRevision(revision.GetParentId(), -1);
+    if (HasLocalChanges())
+        m_dgndb.ThrowException("local changes present", (int) ChangesetStatus::HasLocalChanges);
 
-    if (status == ChangesetStatus::Success) {
-        DbResult result = m_dgndb.SaveChanges();
-        if (BE_SQLITE_OK != result) {
-            LOG.errorv("ApplyRevision failed at to save: %s",
-                       BeSQLiteLib::GetErrorName(result));
-            BeAssert(false);
-            status = ChangesetStatus::SQLiteError;
-        }
-    }
+    if (GetParentChangesetId() != changeset.GetChangesetId())
+        m_dgndb.ThrowException("changeset out of order", (int) ChangesetStatus::ParentMismatch);
 
-    if (status != ChangesetStatus::Success) {
-        BeAssert(!containsSchemaChanges &&
-                 "Never attempt to reverse or reinstate schema changes");
-        ApplyChanges(changeStream, TxnAction::Reinstate, false, nullptr, false);
-    }
-    return status;
+    if (changeset.ContainsSchemaChanges(m_dgndb))
+        m_dgndb.ThrowException("Cannot reverse a changeset containing schema changes", (int) ChangesetStatus::ReverseOrReinstateSchemaChanges);
+
+    ChangesetFileReader changeStream(changeset.GetFileName(), m_dgndb);
+
+    // Skip the entire schema change set when reversing or reinstating - DDL and
+    // the meta-data changes. Reversing meta data changes cause conflicts
+    DbResult result = ApplyChanges(changeStream, TxnAction::Reverse, false, nullptr, true);
+    if (result != BE_SQLITE_OK)
+        m_dgndb.ThrowException("Error applying changeset", (int) ChangesetStatus::ApplyError);
+
+    SaveParentChangeset(changeset.GetParentId(), -1);
+
+    result = m_dgndb.SaveChanges();
+    if (BE_SQLITE_OK != result)
+        m_dgndb.ThrowException("unable to save changes", (int) ChangesetStatus::SQLiteError);
 }
 
 /*---------------------------------------------------------------------------------**/ /**
- * Merge changes from a Changeset
  * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ChangesetStatus TxnManager::MergeRevision(ChangesetInfoCR revision)
-    {
-    BeAssert(!InDynamicTxn());
+ChangesetStatus TxnManager::MergeChangeset(ChangesetPropsCR changeset) {
+    if (m_dgndb.IsReadonly())
+        m_dgndb.ThrowException("file is readonly", (int) ChangesetStatus::CannotMergeIntoReadonly);
 
-    BeFileNameCR revisionChangesFile = revision.GetRevisionChangesFile();
-    ChangesetFileReader changeStream(revisionChangesFile, m_dgndb);
+    ThrowIfChangesetInProgress();
 
-    bool containsSchemaChanges = revision.ContainsSchemaChanges(m_dgndb);
+    if (HasLocalChanges())
+        m_dgndb.ThrowException("local changes present", (int) ChangesetStatus::HasLocalChanges);
+
+    changeset.ValidateContent(m_dgndb);
+
+    ChangesetFileReader changeStream(changeset.GetFileName(), m_dgndb);
+
+    bool containsSchemaChanges = changeset.ContainsSchemaChanges(m_dgndb);
 
     ChangesetStatus status;
-    if (containsSchemaChanges)
-        {
+    if (containsSchemaChanges) {
         // Note: Schema changes may not necessary imply ddl changes. They could just be 'minor' ecschema/mapping changes.
-        status = MakeDdlChangesFromRevision(revision, changeStream);
+        status = MergeDdlChanges(changeset, changeStream);
         if (ChangesetStatus::Success != status)
             return status;
-        }
-
-    return MergeDataChangesInRevision(revision, changeStream, containsSchemaChanges);
     }
 
-/*---------------------------------------------------------------------------------**//**
- * call the javascript `txn.reportError` method
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
+    return MergeDataChanges(changeset, changeStream, containsSchemaChanges);
+}
+
+/*---------------------------------------------------------------------------------**/ /**
+  * call the javascript `txn.reportError` method
+  @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::ReportError(bool fatal, Utf8CP errorType, Utf8CP msg)  {
     auto jsTxns = m_dgndb.GetJsTxns();
     if (nullptr == jsTxns) {
@@ -1554,11 +1556,6 @@ void TxnManager::ReverseTxnRange(TxnRange const& txnRange) {
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus TxnManager::ReverseTo(TxnId pos) {
-    if (m_dgndb.Revisions().IsCreatingRevision()) {
-        BeAssert(false && "Cannot reverse transactions after starting a revision");
-        return DgnDbStatus::IsCreatingRevision;
-    }
-
     TxnId lastId = GetCurrentTxnId();
     if (!pos.IsValid() || pos >= lastId)
         return DgnDbStatus::NothingToUndo;
@@ -1597,11 +1594,6 @@ DgnDbStatus TxnManager::ReverseActions(TxnRange const& txnRange) {
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus TxnManager::ReverseTxns(int numActions) {
-    if (m_dgndb.Revisions().IsCreatingRevision()) {
-        BeAssert(false); // Cannot reverse transactions after starting a revision. Call FinishCreateRevision() or AbandonCreateChangeset() first");
-        return DgnDbStatus::IsCreatingRevision;
-    }
-
     TxnId lastId = GetCurrentTxnId();
     TxnId firstUndoableId = GetSessionStartId();
 
@@ -1629,10 +1621,6 @@ DgnDbStatus TxnManager::ReverseTxns(int numActions) {
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus TxnManager::ReverseAll() {
-    if (m_dgndb.Revisions().IsCreatingRevision()) {
-        BeAssert(false); // Cannot reverse transactions after starting a revision. Call FinishCreateRevision() or AbandonCreateChangeset() first");
-        return DgnDbStatus::IsCreatingRevision;
-    }
 
     TxnId lastId = GetCurrentTxnId();
     TxnId startId = GetSessionStartId();
