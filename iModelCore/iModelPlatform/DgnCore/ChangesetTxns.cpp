@@ -612,6 +612,8 @@ ChangesetStatus TxnManager::FinishCreateChangeset(int32_t changesetIndex) {
     m_changesetInProgress->SetChangesetIndex(changesetIndex);
 
     SaveParentChangeset(m_changesetInProgress->GetChangesetId(), changesetIndex);
+    m_dgndb.SaveChanges();
+
     m_changesetInProgress = nullptr;
     return ChangesetStatus::Success;
 }
