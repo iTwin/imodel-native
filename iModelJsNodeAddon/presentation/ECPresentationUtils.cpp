@@ -13,33 +13,33 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPresentationResult ECPresentationUtils::CreateResultFromException(folly::exception_wrapper const& ew)
+ECPresentationResult ECPresentationUtils::CreateResultFromException(folly::exception_wrapper const& ew, rapidjson::Document&& diagnostics)
     {
     if (!ew)
-        return ECPresentationResult(ECPresentationStatus::Error, "Invalid exception");
+        return ECPresentationResult(ECPresentationStatus::Error, "Invalid exception", std::move(diagnostics));
     try
         {
         ew.throwException();
         }
     catch (CancellationException const&)
         {
-        return ECPresentationResult(ECPresentationStatus::Canceled, "");
+        return ECPresentationResult(ECPresentationStatus::Canceled, "", std::move(diagnostics));
         }
     catch (InvalidArgumentException const& e)
         {
-        return ECPresentationResult(ECPresentationStatus::InvalidArgument, Utf8String(e.what()));
+        return ECPresentationResult(ECPresentationStatus::InvalidArgument, Utf8String(e.what()), std::move(diagnostics));
         }
     catch (ResultSetTooLargeError const& e)
         {
-        return ECPresentationResult(ECPresentationStatus::ResultSetTooLarge, Utf8String(e.what()));
+        return ECPresentationResult(ECPresentationStatus::ResultSetTooLarge, Utf8String(e.what()), std::move(diagnostics));
         }
     catch (std::runtime_error const& e)
         {
-        return ECPresentationResult(ECPresentationStatus::Error, Utf8String(e.what()));
+        return ECPresentationResult(ECPresentationStatus::Error, Utf8String(e.what()), std::move(diagnostics));
         }
     catch (...)
         {
-        return ECPresentationResult(ECPresentationStatus::Error, "Unknown exception");
+        return ECPresentationResult(ECPresentationStatus::Error, "Unknown exception", std::move(diagnostics));
         }
     }
 
