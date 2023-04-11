@@ -29,11 +29,25 @@ struct InstanceReaderFixture : ECDbTestFixture {
     }
 
 };
+
+TEST_F(InstanceReaderFixture, experimental_check) {
+    ASSERT_EQ(BE_SQLITE_OK, OpenECDbTestDataFile("test.bim"));
+    ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+
+    ECSqlStatement stmt0;
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt0.Prepare(m_ecdb, "SELECT $ FROM bis.CategorySelectorRefersToCategories"));
+
+    ECSqlStatement stmt1;
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt1.Prepare(m_ecdb, "SELECT $->ECInstanceId FROM bis.CategorySelectorRefersToCategories"));
+}
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(InstanceReaderFixture, check_link_table_serialization) {
     ASSERT_EQ(BE_SQLITE_OK, OpenECDbTestDataFile("test.bim"));
+    ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT $ FROM bis.CategorySelectorRefersToCategories"));
@@ -57,6 +71,8 @@ TEST_F(InstanceReaderFixture, check_link_table_serialization) {
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(InstanceReaderFixture, check_instance_serialization) {
     ASSERT_EQ(BE_SQLITE_OK, OpenECDbTestDataFile("test.bim"));
+    ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT $ FROM bis.Element"));
@@ -254,6 +270,8 @@ TEST_F(InstanceReaderFixture, check_instance_serialization) {
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(InstanceReaderFixture, ecsql_read_instance) {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("instanceReader.ecdb"));
+    ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"sql(
@@ -270,6 +288,8 @@ TEST_F(InstanceReaderFixture, ecsql_read_instance) {
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(InstanceReaderFixture, ecsql_read_property) {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("instanceReader.ecdb"));
+    ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"sql(
@@ -349,6 +369,8 @@ TEST_F(InstanceReaderFixture, rapid_json_patch_to_render_inf_and_nan_as_null_ins
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(InstanceReaderFixture, instance_reader) {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("instanceReader.ecdb"));
+    ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"sql(
@@ -431,7 +453,8 @@ TEST_F(InstanceReaderFixture, extract_prop) {
                     </ECEntityClass>
                </ECSchema>)xml")));
     m_ecdb.SaveChanges();
-
+    ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
     // sample primitive type
     const bool kB = true;
     const DateTime kDt = DateTime::GetCurrentTimeUtc();
@@ -725,6 +748,9 @@ TEST_F(InstanceReaderFixture, nested_struct) {
             </ECSchema>)xml")));
     m_ecdb.Schemas().CreateClassViewsInDb();
     m_ecdb.SaveChanges();
+    ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
+
     ECInstanceKey instKey;
     if ("insert data") {
         ECSqlStatement stmt;

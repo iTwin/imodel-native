@@ -4,8 +4,28 @@ This document including important changes to syntax or file format.
 
 | Module  | Version   |
 | ------- | --------- |
-| Profile | `4.0.0.2` |
-| ECSQL   | `1.0.3.1` |
+| Profile | `4.0.0.3` |
+| ECSQL   | `1.1.0.0` |
+
+## `4/10/2023`: Add comprehensive ECDb integrity checks and support for enable/disabling experimental features.
+
+* In future all experimental syntax will be only available when `PRAGMA experimental_features_enabled` is set to true.
+* ECSQL version changed from `1.0.2.1` -> `1.1.0.0`.
+* **Removed** PRAGMA `class_id_check`, `nav_prop_id_check` and `validate`. (Breaking change in ECSQL. ECSqlVersion -> `1.1.0.0`)
+* Add `PRAGMA experimental_features_enabled` allow to enable experimental feature that disable by default.
+* Made following as experimental features
+    1. PRAGMA integrity_check
+    2. Instance property access. The use of `$` and `$->prop` in ECSQL.
+* Add `PRAGMA integrity_check` with following checks
+    1. `check_ec_profile` - checks if the profile table, indexes, and triggers are present. Does not check of be_* tables. Issues are returned as a list of tables/indexes/triggers which was not found or have different DDL.
+    2. `check_data_schema` - checks if all the required data tables and indexes exist for mapped classes.  Issues are returned as a list of tables/columns which was not found or have different DDL.
+    3. `check_data_columns` - checks if all the required columns exist in data tables. Issues are returned as a list of those tables/columns.
+    4. `check_nav_class_ids` - checks if `RelClassId` of a Navigation property is a valid ECClassId. It does not check the value to match the relationship class.
+    5. `check_nav_ids` - checks if `Id` of a Navigation property matches a valid row primary class.
+    6. `check_linktable_fk_class_ids` - checks if `SourceECClassId` or `TargetECClassId`  of a link table matches a valid ECClassId.
+    7. `check_linktable_fk_ids`- checks if `SourceECInstanceId` or `TargetECInstanceId`  of a link table matches a valid row in primary class.
+    8. `check_class_ids`- checks persisted `ECClassId` in all data tables and make sure they are valid.
+    9. `check_schema_load` - checks if all schemas can be loaded into memory.
 
 ## `2/7/2023`: Add ECDb validity/integriy checks
 
