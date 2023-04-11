@@ -408,7 +408,7 @@ public:
     //! <li> It's the caller's responsibility to start a new transaction before this call and commit it after a successful
     //! import. If an error happens during the import, the new transaction is abandoned within the call.
     //! <li> Errors out if there are local changes (uncommitted or committed). These need to be flushed by committing
-    //! the changes if necessary, and then creating a revision. See @ref RevisionManager.
+    //! the changes if necessary, and then creating a revision.
     //! </ul>
     DGNPLATFORM_EXPORT SchemaStatus ImportSchema(DgnDbR dgndb, BeSQLite::EC::SchemaManager::SchemaImportOptions options = BeSQLite::EC::SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade);
 

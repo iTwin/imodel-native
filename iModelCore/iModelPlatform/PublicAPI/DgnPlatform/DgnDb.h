@@ -334,7 +334,7 @@ public:
     //! </pre>
     //! <li> If the domain schemas are setup to be upgraded, a schema lock is first obtained before the upgrade.
     //! Note that any previously committed local changes that haven't been pushed up to the server
-    //! will cause an error. These need to be flushed out by creating a revision. See @ref RevisionManager
+    //! will cause an error. These need to be flushed out by creating a revision.
     //! </ul>
     DGNPLATFORM_EXPORT static DgnDbPtr OpenIModelDb(BeSQLite::DbResult* status, BeFileNameCR filename, OpenParams const& openParams);
 
@@ -368,7 +368,7 @@ public:
     //! <li> It's the caller's responsibility to start a new transaction before this call and commit it after a successful
     //! import. If an error happens during the import, the new transaction is abandoned within the call.
     //! <li> Errors out if there are local changes (uncommitted or committed). These need to be flushed by committing
-    //! the changes if necessary, and then creating a revision. See @ref RevisionManager.
+    //! the changes if necessary, and then creating a revision.
     //! <li> If the schemas already exist in the Database, they are upgraded if the schemas passed in have a newer, but
     //! compatible version number.
     //! </ul>
@@ -509,7 +509,7 @@ public:
     //! <li> It's the caller's responsibility to start a new transaction before this call and commit it after a successful
     //! import. If an error happens during the import, the new transaction is abandoned within the call.
     //! <li> Errors out if there are local changes (uncommitted or committed). These need to be flushed by committing
-    //! the changes if necessary, and then creating a revision. See @ref RevisionManager.
+    //! the changes if necessary, and then creating a revision.
     //! </ul>
     DGNPLATFORM_EXPORT SchemaStatus ImportV8LegacySchemas(bvector<ECN::ECSchemaCP> const& schemas, size_t* numImported = nullptr);
 

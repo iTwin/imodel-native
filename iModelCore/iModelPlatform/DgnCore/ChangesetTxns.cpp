@@ -314,7 +314,7 @@ void TxnManager::ClearSavedChangesetValues() {
     m_dgndb.DeleteBriefcaseLocalValue(CURRENT_CS_END_TXN_ID);
     m_dgndb.DeleteBriefcaseLocalValue(LAST_REBASE_ID);
     m_dgndb.DeleteBriefcaseLocalValue(PARENT_CS_ID);
-    m_dgndb.DeleteBriefcaseLocalValue("ReversedChangeSetId"); // clean up from old versions
+    m_dgndb.DeleteBriefcaseLocalValue("ReversedChangeSetId");
 }
 
 //---------------------------------------------------------------------------------------
