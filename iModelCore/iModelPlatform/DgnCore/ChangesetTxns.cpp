@@ -593,6 +593,10 @@ ChangesetPropsPtr TxnManager::StartCreateChangeset(ChangesetStatus* outStatus) {
     m_dgndb.DeleteBriefcaseLocalValue(CURRENT_CS_END_TXN_ID);
     m_dgndb.DeleteBriefcaseLocalValue(LAST_REBASE_ID);
 
+    auto rc = m_dgndb.SaveChanges();
+    if (BE_SQLITE_OK != rc)
+        m_dgndb.ThrowException("cannot save changes to start changeset", rc);
+
     return m_changesetInProgress;
 }
 
@@ -612,7 +616,9 @@ ChangesetStatus TxnManager::FinishCreateChangeset(int32_t changesetIndex) {
     m_changesetInProgress->SetChangesetIndex(changesetIndex);
 
     SaveParentChangeset(m_changesetInProgress->GetChangesetId(), changesetIndex);
-    m_dgndb.SaveChanges();
+    auto rc = m_dgndb.SaveChanges();
+    if (BE_SQLITE_OK != rc)
+        m_dgndb.ThrowException("cannot save changes to complete changeset", rc);
 
     m_changesetInProgress = nullptr;
     return ChangesetStatus::Success;

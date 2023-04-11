@@ -2233,7 +2233,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
     }
 
     void ApplyChangeset(NapiInfoCR info) {
-        RequireDbIsOpen(info);;
+        RequireDbIsWritable(info);;
         REQUIRE_ARGUMENT_ANY_OBJ(0, changeset);
 
         auto& db = GetDgnDb();
