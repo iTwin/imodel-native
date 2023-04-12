@@ -480,7 +480,7 @@ void TxnManager::WriteChangesToFile(BeFileNameCR pathname, DdlChangesCR ddlChang
  */
 ChangesetPropsPtr TxnManager::StartCreateChangeset(Utf8CP extension) {
     if (m_changesetInProgress.IsValid())
-        m_dgndb.ThrowException("a changeset is currently in progress", (int) ChangesetStatus::IsCreatingRevision);
+        m_dgndb.ThrowException("a changeset is currently in progress", (int) ChangesetStatus::IsCreatingChangeset);
 
     if (!IsTracking())
         m_dgndb.ThrowException("change tracking not enabled", (int) ChangesetStatus::ChangeTrackingNotEnabled);

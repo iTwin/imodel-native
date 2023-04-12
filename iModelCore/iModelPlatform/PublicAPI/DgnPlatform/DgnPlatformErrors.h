@@ -47,7 +47,6 @@ enum class DgnDbStatus : int
     FileNotLoaded          = DGNDB_ERROR_BASE + 16,
     ForeignKeyConstraint   = DGNDB_ERROR_BASE + 17,
     IdExists               = DGNDB_ERROR_BASE + 18,
-    InDynamicTransaction   = DGNDB_ERROR_BASE + 19,
     InvalidCategory        = DGNDB_ERROR_BASE + 20,
     InvalidCode            = DGNDB_ERROR_BASE + 21,
     InvalidCodeSpec        = DGNDB_ERROR_BASE + 22,
@@ -55,7 +54,7 @@ enum class DgnDbStatus : int
     InvalidName            = DGNDB_ERROR_BASE + 24,
     InvalidParent          = DGNDB_ERROR_BASE + 25,
     InvalidProfileVersion  = DGNDB_ERROR_BASE + 26,
-    IsCreatingRevision     = DGNDB_ERROR_BASE + 27,
+    IsCreatingChangeset     = DGNDB_ERROR_BASE + 27,
     LockNotHeld            = DGNDB_ERROR_BASE + 28,
     Mismatch2d3d           = DGNDB_ERROR_BASE + 29,
     MismatchGcs            = DGNDB_ERROR_BASE + 30,  //!< The Geographic Coordinate Systems of the source and target are not based on equivalent projections
@@ -152,7 +151,7 @@ enum class ChangesetStatus : int {
     InvalidId, //!< Invalid Revision Id
     InvalidVersion, //! !< Invalid version of the revision
     InDynamicTransaction, //!< Cannot perform the operation since system is in the middle of a dynamic transaction
-    IsCreatingRevision, //!< Cannot perform operation since system is in the middle of a creating a revision
+    IsCreatingChangeset, //!< Cannot perform operation since system is in the middle of a creating a revision
     IsNotCreatingChangeset, //!< Cannot perform operation since the system is not creating a revision
     MergePropagationError, //!< Error propagating the changes after the merge
     NothingToMerge, //!< No revisions to merge

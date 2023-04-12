@@ -10,8 +10,6 @@
 #include <BeSQLite/ChangesetFile.h>
 
 DGNPLATFORM_TYPEDEFS(TxnMonitor)
-DGNPLATFORM_TYPEDEFS(DynamicChangeTracker)
-DGNPLATFORM_REF_COUNTED_PTR(DynamicChangeTracker)
 
 #define TXN_TABLE_PREFIX "txn_"
 #define TXN_TABLE(name)  TXN_TABLE_PREFIX name
@@ -197,15 +195,6 @@ struct TxnRelationshipLinkTables
  typedef std::function<CallbackOnCommitStatus(TxnManager&, bool isCommit, Utf8CP operation, BeSQLite::ChangeSetCR, BeSQLite::DdlChangesCR)> T_OnCommitCallback;
 
 //=======================================================================================
-//! Interface adopted by a callback object supplied to TxnManager::EndDynamicOperation(),
-//! to react to change propagation caused by dynamic operations before they are rolled back.
-// @bsiclass
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DynamicTxnProcessor {
-    virtual void _ProcessDynamicChanges() = 0;
-};
-
-//=======================================================================================
 //! This class implements the DgnDb::Txns() object. It is a BeSQLite::ChangeTracker.
 //! It handles:
 //!    - validating Txns on Db::SaveChanges
@@ -217,7 +206,6 @@ struct EXPORT_VTABLE_ATTRIBUTE DynamicTxnProcessor {
 // @bsiclass
 //=======================================================================================
 struct TxnManager : BeSQLite::ChangeTracker {
-    friend struct DynamicChangeTracker;
     friend struct DgnDb;
 
     //=======================================================================================
@@ -429,7 +417,6 @@ public:
 
 private:
     bvector<TxnRange> m_reversedTxn;
-    bvector<DynamicChangeTrackerPtr> m_dynamicTxns;
     BeSQLite::StatementCache m_stmts;
     BeSQLite::SnappyFromBlob m_snappyFrom;
     BeSQLite::SnappyToBlob   m_snappyTo;
@@ -492,7 +479,6 @@ private:
     bool IsMultiTxnMember(TxnId rowid) const;
     TxnType GetTxnType(TxnId rowid) const;
 
-    void CancelDynamics();
     BentleyStatus PatchSlowDdlChanges(Utf8StringR patchedDDL, Utf8StringCR compoundSQL);
     void NotifyOnCommit();
     void ThrowIfChangesetInProgress();
@@ -673,26 +659,6 @@ public:
     //! Get the DgnDb for this TxnManager
     DgnDbR GetDgnDb() {return m_dgndb;}
 
-    //! Pushes a dynamic operation onto the stack.
-    //! When operating in dynamics, only temporary changes can be made to the DgnDb.
-    //! This is useful for implementing tools, among other things.
-    //! During a dynamic operation:
-    //!  - Invoking undo or redo will roll back any dynamic changes
-    //!  - Attempting to begin or end a multi-txn operation will produce an error
-    //! Dynamic operations can be nested.
-    DGNPLATFORM_EXPORT void BeginDynamicOperation();
-
-    //! Pops the current dynamic transaction from the top of the stack, reverting all temporary changes made during the transaction
-    //! A DynamicTxnProcessor may be supplied to capture the results of the dynamic txn
-    //! In that case, if any changes exist in the current dynamic operation:
-    //!  - Any indirect changes resulting from the dynamic changes will be computed; then
-    //!  - The change processor will be invoked
-    //! In either case, all changes made since the most recent call to BeginDynamicOperation will be rolled back before the function returns.
-    DGNPLATFORM_EXPORT void EndDynamicOperation(DynamicTxnProcessor* processor=nullptr);
-
-    //! Returns true if a dynamic transaction is in progress.
-    bool InDynamicTxn() const {return !m_dynamicTxns.empty();}
-
     //! Tell the TxnManager to track changes to instances of the specified ECRelationship class.
     //! Relationship-specific changes will be captured in the Txn summary in different ways, depending on how the relationship was mapped.
     //! Specifically:
@@ -709,23 +675,6 @@ public:
     DGNPLATFORM_EXPORT static uint64_t GetMaxReasonableTxnSize();
 
     void OnGeometryGuidChanges(bset<DgnModelId> const&);
-};
-
-//=======================================================================================
-//! ChangeTracker used by TxnManager to process dynamic operations.
-// @bsiclass
-//=======================================================================================
-struct DynamicChangeTracker : BeSQLite::ChangeTracker
-{
-private:
-    TxnManager& m_txnMgr;
-    DynamicChangeTracker(TxnManager& txnMgr) : m_txnMgr(txnMgr) {}
-    ~DynamicChangeTracker() {}
-
-    OnCommitStatus _OnCommit(bool isCommit, Utf8CP operation) override;
-    TrackChangesForTable _FilterTable(Utf8CP tableName) override;
-public:
-    static DynamicChangeTrackerPtr Create(TxnManager& txnMgr);
 };
 
 //=======================================================================================
