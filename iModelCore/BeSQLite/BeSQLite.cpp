@@ -6525,33 +6525,33 @@ DbResult DbModule::Register() {
     return (DbResult)sqlite3_create_module_v2(m_db.GetSqlDb(), m_name.c_str(), &s_module, this, vtabDestroy);
 }
 
-int DbModule::VirtualTable::IndexInfo::ConstraintUsage::GetArgvIndex() const { return ((sqlite3_index_info::sqlite3_index_constraint_usage*)this)->argvIndex;}
+int DbModule::VirtualTable::IndexInfo::ConstraintUsage::GetArgvIndex() const { return ((sqlite3_index_info::sqlite3_index_constraint_usage const*)this)->argvIndex;}
 void DbModule::VirtualTable::IndexInfo::ConstraintUsage::SetArgvIndex(int argvIndex) const { ((sqlite3_index_info::sqlite3_index_constraint_usage*)this)->argvIndex = argvIndex; }
-bool DbModule::VirtualTable::IndexInfo::ConstraintUsage::GetOmit() const {return (bool)(((sqlite3_index_info::sqlite3_index_constraint_usage*)this)->omit);}
+bool DbModule::VirtualTable::IndexInfo::ConstraintUsage::GetOmit() const {return (bool)(((sqlite3_index_info::sqlite3_index_constraint_usage const*)this)->omit);}
 void DbModule::VirtualTable::IndexInfo::ConstraintUsage::SetOmit(bool omit){ ((sqlite3_index_info::sqlite3_index_constraint_usage*)this)->omit = omit ? 1: 0; }
-int DbModule::VirtualTable::IndexInfo::IndexOrderBy::GetColumn() const { return ((sqlite3_index_info::sqlite3_index_orderby*)this)->iColumn; }
-bool DbModule::VirtualTable::IndexInfo::IndexOrderBy::GetDesc() const{ return (bool)(((sqlite3_index_info::sqlite3_index_orderby*)this)->desc); }
-int DbModule::VirtualTable::IndexInfo::IndexConstraint::GetColumn() const { return ((sqlite3_index_info::sqlite3_index_constraint*)this)->iColumn; }
-DbModule::VirtualTable::IndexInfo::Operator DbModule::VirtualTable::IndexInfo::IndexConstraint::GetOp() const { return (Operator)(((sqlite3_index_info::sqlite3_index_constraint*)this)->op); }
-bool DbModule::VirtualTable::IndexInfo::IndexConstraint::IsUsable() const { return (bool)(((sqlite3_index_info::sqlite3_index_constraint*)this)->usable); }
-int DbModule::VirtualTable::IndexInfo::GetConstraintCount() const { return ((sqlite3_index_info*)this)->nConstraint; }
+int DbModule::VirtualTable::IndexInfo::IndexOrderBy::GetColumn() const { return ((sqlite3_index_info::sqlite3_index_orderby const*)this)->iColumn; }
+bool DbModule::VirtualTable::IndexInfo::IndexOrderBy::GetDesc() const{ return (bool)(((sqlite3_index_info::sqlite3_index_orderby const*)this)->desc); }
+int DbModule::VirtualTable::IndexInfo::IndexConstraint::GetColumn() const { return ((sqlite3_index_info::sqlite3_index_constraint const *)this)->iColumn; }
+DbModule::VirtualTable::IndexInfo::Operator DbModule::VirtualTable::IndexInfo::IndexConstraint::GetOp() const { return (Operator)(((sqlite3_index_info::sqlite3_index_constraint const*)this)->op); }
+bool DbModule::VirtualTable::IndexInfo::IndexConstraint::IsUsable() const { return (bool)(((sqlite3_index_info::sqlite3_index_constraint const *)this)->usable); }
+int DbModule::VirtualTable::IndexInfo::GetConstraintCount() const { return ((sqlite3_index_info const*)this)->nConstraint; }
 const DbModule::VirtualTable::IndexInfo::IndexConstraint* DbModule::VirtualTable::IndexInfo::GetConstraint(int i)  const { return (IndexConstraint*)&(((sqlite3_index_info*)this)->aConstraint[i]);}
-int DbModule::VirtualTable::IndexInfo::GetIndexOrderByCount() const{ return ((sqlite3_index_info*)this)->nOrderBy; }
+int DbModule::VirtualTable::IndexInfo::GetIndexOrderByCount() const{ return ((sqlite3_index_info const*)this)->nOrderBy; }
 const DbModule::VirtualTable::IndexInfo::IndexOrderBy* DbModule::VirtualTable::IndexInfo::GetOrderBy(int i)  const { return (IndexOrderBy*)&(((sqlite3_index_info*)this)->aOrderBy[i]);}
 int DbModule::VirtualTable::IndexInfo::GetConstraintUsageCount() const { return GetConstraintCount(); }
 DbModule::VirtualTable::IndexInfo::ConstraintUsage* DbModule::VirtualTable::IndexInfo::GetConstraintUsage(int i)  { return (ConstraintUsage*)&(((sqlite3_index_info*)this)->aConstraintUsage[i]);}
 void DbModule::VirtualTable::IndexInfo::SetIdxNum(int idxNum) { ((sqlite3_index_info*)this)->idxNum = idxNum; }
-int DbModule::VirtualTable::IndexInfo::GetIdxNum() const{ return ((sqlite3_index_info*)this)->idxNum; }
-const char* DbModule::VirtualTable::IndexInfo::GetIdStr() const { return ((sqlite3_index_info*)this)->idxStr; }
-bool DbModule::VirtualTable::IndexInfo::GetOrderByConsumed() const { return ((sqlite3_index_info*)this)->orderByConsumed; }
+int DbModule::VirtualTable::IndexInfo::GetIdxNum() const{ return ((sqlite3_index_info const *)this)->idxNum; }
+const char* DbModule::VirtualTable::IndexInfo::GetIdStr() const { return ((sqlite3_index_info const *)this)->idxStr; }
+bool DbModule::VirtualTable::IndexInfo::GetOrderByConsumed() const { return ((sqlite3_index_info const *)this)->orderByConsumed; }
 void DbModule::VirtualTable::IndexInfo::SetOrderByConsumed(bool orderByConsumed) { ((sqlite3_index_info*)this)->orderByConsumed = orderByConsumed ? 1 : 0; }
-double DbModule::VirtualTable::IndexInfo::GetEstimatedCost() const{ return ((sqlite3_index_info*)this)->estimatedCost; }
+double DbModule::VirtualTable::IndexInfo::GetEstimatedCost() const{ return ((sqlite3_index_info const *)this)->estimatedCost; }
 void DbModule::VirtualTable::IndexInfo::SetEstimatedCost(double estimatedCost) { ((sqlite3_index_info*)this)->estimatedCost = estimatedCost; }
-int64_t DbModule::VirtualTable::IndexInfo::GetEstimatedRows() const{ return ((sqlite3_index_info*)this)->estimatedRows; }
+int64_t DbModule::VirtualTable::IndexInfo::GetEstimatedRows() const{ return ((sqlite3_index_info const *)this)->estimatedRows; }
 void DbModule::VirtualTable::IndexInfo::SetEstimatedRows(int64_t estimatedRows) { ((sqlite3_index_info*)this)->estimatedRows = estimatedRows; }
-DbModule::VirtualTable::IndexInfo::ScanFlags DbModule::VirtualTable::IndexInfo::GetIdxFlags() const { return (ScanFlags)(((sqlite3_index_info*)this)->idxFlags); }
+DbModule::VirtualTable::IndexInfo::ScanFlags DbModule::VirtualTable::IndexInfo::GetIdxFlags() const { return (ScanFlags)(((sqlite3_index_info const*)this)->idxFlags); }
 void DbModule::VirtualTable::IndexInfo::SetIdxFlags(ScanFlags idxFlags){ ((sqlite3_index_info*)this)->idxFlags =  (int)idxFlags; }
-int64_t DbModule::VirtualTable::IndexInfo::GetColUsed() const { return ((sqlite3_index_info*)this)->colUsed; }
+int64_t DbModule::VirtualTable::IndexInfo::GetColUsed() const { return ((sqlite3_index_info const *)this)->colUsed; }
 void DbModule::VirtualTable::IndexInfo::SetColUsed(int64_t colUsed) { ((sqlite3_index_info*)this)->colUsed =  colUsed; }
 void DbModule::VirtualTable::IndexInfo::SetIdxStr(const char* idxStr, bool makeCopy) {
     auto info = (sqlite3_index_info*)this;
