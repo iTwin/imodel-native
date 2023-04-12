@@ -983,8 +983,8 @@ ChangesetStatus TxnManager::MergeChangeset(ChangesetPropsCR changeset) {
 
     ThrowIfChangesetInProgress();
 
-    if (HasLocalChanges())
-        m_dgndb.ThrowException("local changes present", (int) ChangesetStatus::HasLocalChanges);
+    if (HasChanges())
+        m_dgndb.ThrowException("unsaved changes present", (int) ChangesetStatus::HasUncommittedChanges);
 
     changeset.ValidateContent(m_dgndb);
 

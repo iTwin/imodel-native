@@ -527,7 +527,7 @@ ChangesetStatus TxnManager::WriteChangesToFile(BeFileNameCR pathname, DdlChanges
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ChangesetPropsPtr TxnManager::StartCreateChangeset(ChangesetStatus* outStatus) {
+ChangesetPropsPtr TxnManager::StartCreateChangeset(ChangesetStatus* outStatus, Utf8CP extension) {
     ChangesetStatus ALLOW_NULL_OUTPUT(status, outStatus);
 
     if (m_changesetInProgress.IsValid()) {
@@ -574,7 +574,7 @@ ChangesetPropsPtr TxnManager::StartCreateChangeset(ChangesetStatus* outStatus) {
             return nullptr;
     }
 
-    BeFileName changesetFileName((m_dgndb.GetTempFileBaseName() + "-changeset").c_str());
+    BeFileName changesetFileName((m_dgndb.GetTempFileBaseName() + (extension ? extension : "-changeset")).c_str());
 
     status = WriteChangesToFile(changesetFileName, ddlChanges, dataChangeGroup, (lastRebaseId != 0) ? &rebaser : nullptr);
     if (ChangesetStatus::Success != status)
@@ -603,7 +603,7 @@ ChangesetPropsPtr TxnManager::StartCreateChangeset(ChangesetStatus* outStatus) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ChangesetStatus TxnManager::FinishCreateChangeset(int32_t changesetIndex) {
+ChangesetStatus TxnManager::FinishCreateChangeset(int32_t changesetIndex, bool keepFile) {
     if (!IsChangesetInProgress())
         return ChangesetStatus::IsNotCreatingChangeset;
 
@@ -619,6 +619,9 @@ ChangesetStatus TxnManager::FinishCreateChangeset(int32_t changesetIndex) {
     auto rc = m_dgndb.SaveChanges();
     if (BE_SQLITE_OK != rc)
         m_dgndb.ThrowException("cannot save changes to complete changeset", rc);
+
+    if (!keepFile && m_changesetInProgress->m_fileName.DoesPathExist())
+        m_changesetInProgress->m_fileName.BeDeleteFile();
 
     m_changesetInProgress = nullptr;
     return ChangesetStatus::Success;

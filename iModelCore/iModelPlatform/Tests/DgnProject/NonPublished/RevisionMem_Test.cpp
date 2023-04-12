@@ -35,8 +35,7 @@ protected:
     int m_z = 0;
     WCharCP m_copyTestFileName = L"RevisionMemTestFixture.bim";
 
-
-    ChangesetPropsPtr CreateRevision();
+    ChangesetPropsPtr CreateRevision(Utf8CP);
     void DumpRevision(ChangesetPropsCR revision, Utf8CP summary = nullptr);
 
     void BackupTestFile();
@@ -144,13 +143,13 @@ void RevisionMemTestFixture::DumpRevision(ChangesetPropsCR revision, Utf8CP summ
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ChangesetPropsPtr RevisionMemTestFixture::CreateRevision()
+ChangesetPropsPtr RevisionMemTestFixture::CreateRevision(Utf8CP ext)
     {
-    ChangesetPropsPtr revision = m_db->Revisions().StartCreateChangeset();
+    ChangesetPropsPtr revision = m_db->Txns().StartCreateChangeset(nullptr, ext);
     if (!revision.IsValid())
         return nullptr;
 
-    ChangesetStatus status = m_db->Revisions().FinishCreateChangeset(-1);
+    ChangesetStatus status = m_db->Txns().FinishCreateChangeset(-1, ext != nullptr);
     if (ChangesetStatus::Success != status)
         {
         BeAssert(false);

@@ -503,9 +503,9 @@ public:
     void ThrowIfChangesetInProgress();
     DGNPLATFORM_EXPORT Utf8String GetParentChangesetId() const;
     DGNPLATFORM_EXPORT void GetParentChangesetIndex(int32_t& index, Utf8StringR id) const;
-    DGNPLATFORM_EXPORT ChangesetPropsPtr StartCreateChangeset(ChangesetStatus* outStatus);
+    DGNPLATFORM_EXPORT ChangesetPropsPtr StartCreateChangeset(ChangesetStatus* outStatus = nullptr, Utf8CP extension = nullptr);
     DGNPLATFORM_EXPORT bool IsChangesetInProgress() const { return m_changesetInProgress.IsValid(); }
-    DGNPLATFORM_EXPORT ChangesetStatus FinishCreateChangeset(int32_t changesetIndex);
+    DGNPLATFORM_EXPORT ChangesetStatus FinishCreateChangeset(int32_t changesetIndex, bool keepFile = false);
     DGNPLATFORM_EXPORT void AbandonCreateChangeset();
     DGNPLATFORM_EXPORT ChangesetStatus MergeChangeset(ChangesetPropsCR revision);
     DGNPLATFORM_EXPORT void ReverseChangeset(ChangesetPropsCR revision);
