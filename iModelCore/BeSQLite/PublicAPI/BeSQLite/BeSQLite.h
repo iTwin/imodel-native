@@ -3529,6 +3529,7 @@ struct LzmaUtility
 //=======================================================================================
 struct DbModule : NonCopyableClass {
     public:
+        // Eponymous-only virtual tables (they are useful as table-valued functions)
         struct VirtualTable : NonCopyableClass  {
             struct IndexInfo final {
                 enum class Operator {
@@ -3560,35 +3561,36 @@ struct DbModule : NonCopyableClass {
                     BE_SQLITE_EXPORT bool IsUsable() const;  /* True if this constraint is usable */
                 };
                 struct IndexOrderBy final {
-                    BE_SQLITE_EXPORT int GetColumn() const;
-                    BE_SQLITE_EXPORT bool GetDesc() const;
+                    BE_SQLITE_EXPORT int GetColumn() const; /* Column number */
+                    BE_SQLITE_EXPORT bool GetDesc() const;  /* True for DESC.  False for ASC. */
                 };
                 struct ConstraintUsage final {
                     BE_SQLITE_EXPORT int GetArgvIndex() const;
-                    BE_SQLITE_EXPORT void SetArgvIndex(int) const;
+                    BE_SQLITE_EXPORT void SetArgvIndex(int) const; /* if >0, constraint is part of argv to xFilter */
                     BE_SQLITE_EXPORT bool GetOmit() const;
-                    BE_SQLITE_EXPORT void SetOmit(bool);
+                    BE_SQLITE_EXPORT void SetOmit(bool); /* Do not code a test for this constraint */
                 };
                 BE_SQLITE_EXPORT int GetConstraintCount() const;  /* Number of entries in aConstraint */
                 BE_SQLITE_EXPORT const IndexConstraint* GetConstraint(int)  const;
                 BE_SQLITE_EXPORT int GetIndexOrderByCount() const;  /* Number of terms in the ORDER BY clause */
                 BE_SQLITE_EXPORT const IndexOrderBy* GetOrderBy(int)  const;
+                 /* Outputs */
                 BE_SQLITE_EXPORT int GetConstraintUsageCount() const;
                 BE_SQLITE_EXPORT ConstraintUsage* GetConstraintUsage(int) ;
-                BE_SQLITE_EXPORT void SetIdxNum(int);
+                BE_SQLITE_EXPORT void SetIdxNum(int); /* Number used to identify the index */
                 BE_SQLITE_EXPORT int GetIdxNum() const;
-                BE_SQLITE_EXPORT void SetIdxStr(const char* idxStr, bool makeCopy = true);
+                BE_SQLITE_EXPORT void SetIdxStr(const char* idxStr, bool makeCopy = true); /* String, possibly obtained from sqlite3_malloc */
                 BE_SQLITE_EXPORT const char* GetIdStr() const;
                 BE_SQLITE_EXPORT bool GetOrderByConsumed() const;
-                BE_SQLITE_EXPORT void SetOrderByConsumed(bool);
+                BE_SQLITE_EXPORT void SetOrderByConsumed(bool); /* True if output is already ordered */
                 BE_SQLITE_EXPORT double GetEstimatedCost() const;
-                BE_SQLITE_EXPORT void SetEstimatedCost(double);
+                BE_SQLITE_EXPORT void SetEstimatedCost(double);  /* Estimated cost of using this index */
                 BE_SQLITE_EXPORT int64_t GetEstimatedRows() const;
-                BE_SQLITE_EXPORT void SetEstimatedRows(int64_t);
+                BE_SQLITE_EXPORT void SetEstimatedRows(int64_t); /* Estimated number of rows returned */
                 BE_SQLITE_EXPORT ScanFlags GetIdxFlags() const;
-                BE_SQLITE_EXPORT void SetIdxFlags(ScanFlags);
+                BE_SQLITE_EXPORT void SetIdxFlags(ScanFlags); /* Mask of SQLITE_INDEX_SCAN_* flags */
                 BE_SQLITE_EXPORT int64_t GetColUsed() const;
-                BE_SQLITE_EXPORT void SetColUsed(int64_t);
+                BE_SQLITE_EXPORT void SetColUsed(int64_t);  /* Input: Mask of columns used by statement */
             };
             public:
                 struct CallbackData;
@@ -3618,14 +3620,23 @@ struct DbModule : NonCopyableClass {
                     public:
                         BE_SQLITE_EXPORT Cursor(VirtualTable& vt);
                         BE_SQLITE_EXPORT virtual ~Cursor();
+                        //! Internally used
                         CallbackData* GetCallbackData() { return m_ctx; }
-                        virtual bool Eof() = 0;
-                        virtual DbResult Next() = 0;
-                        virtual DbResult GetColumn(int i, Context& ctx) = 0;
-                        virtual DbResult GetRowId(int64_t&) = 0;
-                        virtual DbResult Close() { return BE_SQLITE_OK;  }
-                        virtual DbResult Filter(int idxNum, const char *idxStr, int argc, DbValue* args) = 0;
+                        //! return VTab
                         VirtualTable& GetTable() { return m_table; }
+                        //! Check if EOF
+                        virtual bool Eof() = 0;
+                        //! Move to next row
+                        virtual DbResult Next() = 0;
+                        //! Get value for a column for current row
+                        virtual DbResult GetColumn(int i, Context& ctx) = 0;
+                        //! Get RowId for current row
+                        virtual DbResult GetRowId(int64_t&) = 0;
+                        //! Called before closing the cursor
+                        virtual DbResult Close() { return BE_SQLITE_OK;  }
+                        //~ Filter rows and move cursor to start of first filtered row.
+                        virtual DbResult Filter(int idxNum, const char *idxStr, int argc, DbValue* args) = 0;
+
                 };
 
             private:
@@ -3633,12 +3644,17 @@ struct DbModule : NonCopyableClass {
                 DbModule& m_module;
 
             public:
-                virtual DbResult Open(Cursor*& cur) = 0;
-                virtual DbResult BestIndex(IndexInfo& indexInfo) = 0;
-                DbModule& GetModule() { return m_module;  }
                 BE_SQLITE_EXPORT explicit VirtualTable(DbModule& module);
                 BE_SQLITE_EXPORT virtual ~VirtualTable();
+                //! Set error message
+                BE_SQLITE_EXPORT void SetError(Utf8CP);
+                //! Internally used
                 CallbackData* GetCallbackData() { return m_ctx; }
+                DbModule& GetModule() { return m_module;  }
+                //! create and return cursor implementation
+                virtual DbResult Open(Cursor*& cur) = 0;
+                //! set index info use by query planner
+                virtual DbResult BestIndex(IndexInfo& indexInfo) = 0;
         };
     private:
         DbR m_db;
@@ -3647,11 +3663,14 @@ struct DbModule : NonCopyableClass {
 
     public:
         DbModule(DbR db, Utf8CP name, Utf8CP declaration):m_name(name), m_db(db), m_declaration(declaration){}
+        virtual ~DbModule(){}
         Utf8StringCR GetName() const { return m_name;  }
         Utf8StringCR GetDeclaration() const { return m_declaration; }
         virtual DbResult Connect(VirtualTable*& out, int argc, const char* const* argv) = 0;
-
+        //! Register and transfer ownership to BeSQLite. It will automatically delete the instance of DbModule
+        //! on which register is called.
         BE_SQLITE_EXPORT DbResult Register();
 };
 
 END_BENTLEY_SQLITE_NAMESPACE
+
