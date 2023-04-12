@@ -195,17 +195,11 @@ struct SchemaVersionTestFixture : public DgnDbTestFixture
 
     ChangesetPropsPtr CreateRevision(Utf8CP extName)
         {
-        ChangesetPropsPtr revision = m_db->Txns().StartCreateChangeset(nullptr, extName);
+        ChangesetPropsPtr revision = m_db->Txns().StartCreateChangeset(extName);
         if (!revision.IsValid())
             return nullptr;
 
-        ChangesetStatus status = m_db->Txns().FinishCreateChangeset(-1, extName != nullptr);
-        if (ChangesetStatus::Success != status)
-            {
-            BeAssert(false);
-            return nullptr;
-            }
-
+        m_db->Txns().FinishCreateChangeset(-1, extName != nullptr);
         return revision;
         }
 

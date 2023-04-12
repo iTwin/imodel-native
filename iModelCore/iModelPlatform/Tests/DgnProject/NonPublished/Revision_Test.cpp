@@ -150,7 +150,7 @@ void RevisionTestFixture::SetUpTestCase()
 
     db->SaveChanges();
     // Create a dummy revision to purge transaction table for the test
-    ChangesetPropsPtr rev = db->Txns().StartCreateChangeset();
+    ChangesetPropsPtr rev = db->Txns().StartCreateChangeset(nullptr);
     BeAssert(rev.IsValid());
     db->Txns().FinishCreateChangeset(-1);
 
@@ -215,17 +215,11 @@ void RevisionTestFixture::ModifyElement(DgnElementId elementId)
 //---------------------------------------------------------------------------------------
 ChangesetPropsPtr RevisionTestFixture::CreateRevision(Utf8CP ext)
     {
-    ChangesetPropsPtr revision = m_db->Txns().StartCreateChangeset(nullptr, ext);
+    ChangesetPropsPtr revision = m_db->Txns().StartCreateChangeset(ext);
     if (!revision.IsValid())
         return nullptr;
 
-    ChangesetStatus status = m_db->Txns().FinishCreateChangeset(-1, ext != nullptr);
-    if (ChangesetStatus::Success != status)
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-
+    m_db->Txns().FinishCreateChangeset(-1, ext != nullptr);
     return revision;
     }
 

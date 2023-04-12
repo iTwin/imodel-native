@@ -1251,21 +1251,17 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
     Napi::Value StartCreateChangeset(NapiInfoCR info) {
         RequireDbIsWritable(info);
         TxnManagerR txns = m_dgndb->Txns();
-
-        if (txns.IsChangesetInProgress())
-            txns.AbandonCreateChangeset();
-
-        ChangesetStatus status;
-        ChangesetPropsPtr revision = txns.StartCreateChangeset(&status);
-        if (status != ChangesetStatus::Success)
-            BeNapi::ThrowJsException(Env(), "Error creating changeset", (int) status);
+        txns.StopCreateChangeset(false); // if there's one in progress, just abandon it.
+        ChangesetPropsPtr changeset = txns.StartCreateChangeset(nullptr);
+        if (!changeset.IsValid())
+            BeNapi::ThrowJsException(Env(), "Error creating changeset");
 
         BeJsNapiObject changesetInfo(Env());
-        changesetInfo[JsInterop::json_id()] = revision->GetChangesetId().c_str();
+        changesetInfo[JsInterop::json_id()] = changeset->GetChangesetId().c_str();
         changesetInfo[JsInterop::json_index()] = 0;
-        changesetInfo[JsInterop::json_parentId()] = revision->GetParentId().c_str();
-        changesetInfo[JsInterop::json_pathname()] = Utf8String(revision->GetFileName()).c_str();
-        changesetInfo[JsInterop::json_changesType()] = (int)(revision->ContainsSchemaChanges(*m_dgndb) ? 1 : 0);
+        changesetInfo[JsInterop::json_parentId()] = changeset->GetParentId().c_str();
+        changesetInfo[JsInterop::json_pathname()] = Utf8String(changeset->GetFileName()).c_str();
+        changesetInfo[JsInterop::json_changesType()] = (int)(changeset->ContainsSchemaChanges(*m_dgndb) ? 1 : 0);
         return changesetInfo;
     }
 
@@ -1277,16 +1273,12 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
             BeNapi::ThrowJsException(Env(), "changeset index must be supplied");
         int32_t index = opts[JsInterop::json_index()].GetInt();
 
-        auto stat = m_dgndb->Txns().FinishCreateChangeset(index);
-        if (stat != ChangesetStatus::Success)
-            BeNapi::ThrowJsException(Env(), "Error finishing changeset", (int) stat);
+        m_dgndb->Txns().FinishCreateChangeset(index);
     }
 
     void AbandonCreateChangeset(NapiInfoCR info) {
         RequireDbIsWritable(info);
-        TxnManagerR txns = m_dgndb->Txns();
-        if (txns.IsChangesetInProgress())
-            txns.AbandonCreateChangeset();
+        m_dgndb->Txns().StopCreateChangeset(false);
     }
 
     Napi::Value AddChildPropagatesChangesToParentRelationship(NapiInfoCR info)     {

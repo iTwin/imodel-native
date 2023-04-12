@@ -483,7 +483,7 @@ private:
     DgnDbStatus ReinstateActions(TxnRange const& revTxn);
 
     void ClearSavedChangesetValues();
-    ChangesetStatus CombineTxns(BeSQLite::DdlChangesR ddlChanges, BeSQLite::ChangeGroupR dataChangeGroup, TxnId endTxnId);
+    void WriteChangesToFile(BeFileNameCR pathname, BeSQLite::DdlChangesCR ddlChanges, BeSQLite::ChangeGroupCR dataChangeGroup, BeSQLite::Rebaser*);
     ChangesetStatus MergeDdlChanges(ChangesetPropsCR revision, ChangesetFileReader& revisionReader);
     ChangesetStatus MergeDataChanges(ChangesetPropsCR revision, ChangesetFileReader& revisionReader, bool containsSchemaChanges);
     ChangesetStatus ProcessRevisions(bvector<ChangesetPropsCP> const &revisions, RevisionProcessOption processOptions);
@@ -503,15 +503,14 @@ public:
     void ThrowIfChangesetInProgress();
     DGNPLATFORM_EXPORT Utf8String GetParentChangesetId() const;
     DGNPLATFORM_EXPORT void GetParentChangesetIndex(int32_t& index, Utf8StringR id) const;
-    DGNPLATFORM_EXPORT ChangesetPropsPtr StartCreateChangeset(ChangesetStatus* outStatus = nullptr, Utf8CP extension = nullptr);
+    DGNPLATFORM_EXPORT ChangesetPropsPtr StartCreateChangeset(Utf8CP extension);
     DGNPLATFORM_EXPORT bool IsChangesetInProgress() const { return m_changesetInProgress.IsValid(); }
-    DGNPLATFORM_EXPORT ChangesetStatus FinishCreateChangeset(int32_t changesetIndex, bool keepFile = false);
-    DGNPLATFORM_EXPORT void AbandonCreateChangeset();
+    DGNPLATFORM_EXPORT void FinishCreateChangeset(int32_t changesetIndex, bool keepFile = false);
+    DGNPLATFORM_EXPORT void StopCreateChangeset(bool keepFile);
     DGNPLATFORM_EXPORT ChangesetStatus MergeChangeset(ChangesetPropsCR revision);
     DGNPLATFORM_EXPORT void ReverseChangeset(ChangesetPropsCR revision);
     void SaveParentChangeset(Utf8StringCR revisionId, int32_t changesetIndex);
     ChangesetPropsPtr CreateChangesetProps(BeFileNameCR pathName);
-    ChangesetStatus WriteChangesToFile(BeFileNameCR pathname, BeSQLite::DdlChangesCR ddlChanges, BeSQLite::ChangeGroupCR dataChangeGroup, BeSQLite::Rebaser*);
 
     //! Add a TxnMonitor. The monitor will be notified of all transaction events until it is dropped.
     DGNPLATFORM_EXPORT static void AddTxnMonitor(TxnMonitor& monitor);

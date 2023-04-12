@@ -372,43 +372,6 @@ void TxnManager::GetParentChangesetIndex(int32_t& index, Utf8StringR id) const {
         index = jsonObj["index"].GetInt();
 }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-ChangesetStatus TxnManager::CombineTxns(DdlChangesR ddlChanges, ChangeGroupR dataChangeGroup, TxnId endTxnId) {
-    TxnId startTxnId = QueryNextTxnId(TxnId(0));
-    if (!startTxnId.IsValid() || startTxnId >= endTxnId)
-        return ChangesetStatus::NoTransactions;
-
-    for (TxnId currTxnId = startTxnId; currTxnId < endTxnId; currTxnId = QueryNextTxnId(currTxnId)) {
-        auto txnType = GetTxnType(currTxnId);
-
-        if (txnType == TxnType::EcSchema) // if we have EcSchema changes, set the flag on the changegroup
-            dataChangeGroup.SetContainsEcSchemaChanges();
-
-        if (txnType == TxnType::Ddl) {
-            BeAssert(ddlChanges._IsEmpty());
-            if (ReadChanges(ddlChanges, currTxnId) != ZIP_SUCCESS) {
-                LOG.error(L"Unable to read schema changes - ChangesetStatus::CorruptedTxn");
-                return ChangesetStatus::CorruptedTxn;
-            }
-        } else {
-            ChangeSet sqlChangeSet;
-            if (ReadDataChanges(sqlChangeSet, currTxnId, TxnAction::None) != BE_SQLITE_OK) {
-                LOG.error(L"Unable to read data changes - ChangesetStatus::CorruptedTxn");
-                return ChangesetStatus::CorruptedTxn;
-            }
-
-            DbResult result = sqlChangeSet.AddToChangeGroup(dataChangeGroup);
-            if (result != BE_SQLITE_OK) {
-                LOG.errorv(L"sqlite3changegroup_add failed: %ls", WString(BeSQLiteLib::GetErrorName(result), BentleyCharEncoding::Utf8).c_str());
-                return ChangesetStatus::SQLiteError;
-            }
-        }
-    }
-    return ChangesetStatus::Success;
-}
-
 //=======================================================================================
 //! Handles a request to stream output by writing to a ProducerConsumerQueue. Can be used as the producer side of a concurrent pipeline.
 // @bsiclass
@@ -488,15 +451,15 @@ struct ChangeStreamQueueConsumer : ChangeStream {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ChangesetStatus TxnManager::WriteChangesToFile(BeFileNameCR pathname, DdlChangesCR ddlChanges, ChangeGroupCR dataChangeGroup, Rebaser* rebaser) {
+void TxnManager::WriteChangesToFile(BeFileNameCR pathname, DdlChangesCR ddlChanges, ChangeGroupCR dataChangeGroup, Rebaser* rebaser) {
     ChangesetFileWriter writer(pathname, dataChangeGroup.ContainsEcSchemaChanges(), ddlChanges, m_dgndb);
 
-    DbResult result = writer.Initialize();
-    if (BE_SQLITE_OK != result)
-        return ChangesetStatus::FileWriteError;
+    if (BE_SQLITE_OK !=  writer.Initialize())
+        m_dgndb.ThrowException("unable to initialize change writer", (int) ChangesetStatus::FileWriteError);
 
     if (nullptr == rebaser) {
-        result = writer.FromChangeGroup(dataChangeGroup);
+        if (BE_SQLITE_OK != writer.FromChangeGroup(dataChangeGroup))
+            m_dgndb.ThrowException("unable to save changes to file", (int) ChangesetStatus::FileWriteError);
     } else {
         DbResult rebaseResult = BE_SQLITE_OK;
 
@@ -506,90 +469,81 @@ ChangesetStatus TxnManager::WriteChangesToFile(BeFileNameCR pathname, DdlChanges
         std::thread writerThread([&] { rebaseResult = rebaser->DoRebase(readFromQueue, writer); });
 
         ChangeStreamQueueProducer writeToQueue(pageQueue);
-        result = writeToQueue.FromChangeGroup(dataChangeGroup);
+        DbResult result = writeToQueue.FromChangeGroup(dataChangeGroup);
 
         while (!pageQueue.write(bvector<uint8_t>())) // write an empty page to tell the consumer that we are done.
             ;
         writerThread.join();
 
-        if (BE_SQLITE_OK == result)
-            result = rebaseResult;
+        if (BE_SQLITE_OK != result || BE_SQLITE_OK != rebaseResult)
+            m_dgndb.ThrowException("unable to save changes with rebase", (int) ChangesetStatus::FileWriteError);
     }
 
-    if (BE_SQLITE_OK != result) {
-        BeAssert(false && "Could not write data changes to the revision file");
-        return ChangesetStatus::FileWriteError;
-    }
-
-    return pathname.DoesPathExist() ? ChangesetStatus::Success : ChangesetStatus::NoTransactions;
+    if (!pathname.DoesPathExist())
+        m_dgndb.ThrowException("changeset file not created", (int) ChangesetStatus::FileWriteError);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ChangesetPropsPtr TxnManager::StartCreateChangeset(ChangesetStatus* outStatus, Utf8CP extension) {
-    ChangesetStatus ALLOW_NULL_OUTPUT(status, outStatus);
+ChangesetPropsPtr TxnManager::StartCreateChangeset(Utf8CP extension) {
+    if (m_changesetInProgress.IsValid())
+        m_dgndb.ThrowException("a changeset is currently in progress", (int) ChangesetStatus::IsCreatingRevision);
 
-    if (m_changesetInProgress.IsValid()) {
-        status = ChangesetStatus::IsCreatingRevision;
-        return nullptr;
-    }
+    if (!IsTracking())
+        m_dgndb.ThrowException("change tracking not enabled", (int) ChangesetStatus::ChangeTrackingNotEnabled);
 
-    TxnManagerR txnMgr = m_dgndb.Txns();
-    if (!txnMgr.IsTracking()) {
-        BeAssert(false && "Creating revisions requires that change tracking is enabled");
-        status = ChangesetStatus::ChangeTrackingNotEnabled;
-        return nullptr;
-    }
+    if (HasChanges())
+        m_dgndb.ThrowException("local uncommitted changes present", (int) ChangesetStatus::HasUncommittedChanges);
 
-    txnMgr.DeleteReversedTxns(); // make sure there's nothing undone before we create a new revision
+    DeleteReversedTxns(); // make sure there's nothing undone before we create a new revision
 
-    if (txnMgr.HasChanges()) {
-        BeAssert(false && "There are unsaved changes in the current transaction. Call db.SaveChanges() or db.AbandonChanges() first");
-        status = ChangesetStatus::HasUncommittedChanges;
-        return nullptr;
-    }
+    if (!HasPendingTxns())
+        m_dgndb.ThrowException("no changes are present", (int) ChangesetStatus::NoTransactions);
 
-    if (!txnMgr.HasPendingTxns()) {
-        status = ChangesetStatus::NoTransactions;
-        return nullptr;
-    }
-
-    TxnManager::TxnId endTxnId = txnMgr.GetCurrentTxnId();
-    int64_t lastRebaseId = txnMgr.QueryLastRebaseId();
-
-    txnMgr.StartNewSession();
-    BeAssert(!txnMgr.IsUndoPossible());
-    BeAssert(!txnMgr.IsRedoPossible());
+    TxnManager::TxnId endTxnId = GetCurrentTxnId();
+    TxnId startTxnId = QueryNextTxnId(TxnId(0));
+    int64_t lastRebaseId = QueryLastRebaseId();
 
     DdlChanges ddlChanges;
     ChangeGroup dataChangeGroup;
-    status = txnMgr.CombineTxns(ddlChanges, dataChangeGroup, endTxnId);
-    if (ChangesetStatus::Success != status)
-        return nullptr;
+    for (TxnId currTxnId = startTxnId; currTxnId < endTxnId; currTxnId = QueryNextTxnId(currTxnId)) {
+        auto txnType = GetTxnType(currTxnId);
+        if (txnType == TxnType::EcSchema) // if we have EcSchema changes, set the flag on the change group
+            dataChangeGroup.SetContainsEcSchemaChanges();
 
-    Rebaser rebaser;
-    if (lastRebaseId != 0) {
-        if (txnMgr.LoadRebases(rebaser, lastRebaseId) != BE_SQLITE_OK)
-            return nullptr;
+        if (txnType == TxnType::Ddl) {
+            BeAssert(ddlChanges._IsEmpty());
+            if (ZIP_SUCCESS != ReadChanges(ddlChanges, currTxnId))
+                m_dgndb.ThrowException("unable to read schema changes", (int) ChangesetStatus::CorruptedTxn);
+        } else {
+            ChangeSet sqlChangeSet;
+            if (BE_SQLITE_OK != ReadDataChanges(sqlChangeSet, currTxnId, TxnAction::None))
+                m_dgndb.ThrowException("unable to read data changes", (int) ChangesetStatus::CorruptedTxn);
+
+            DbResult result = sqlChangeSet.AddToChangeGroup(dataChangeGroup);
+            if (BE_SQLITE_OK != result)
+                m_dgndb.ThrowException("add to changes failed", (int) result);
+        }
     }
 
-    BeFileName changesetFileName((m_dgndb.GetTempFileBaseName() + (extension ? extension : "-changeset")).c_str());
+    Rebaser rebaser;
+    if (lastRebaseId != 0 && (BE_SQLITE_OK != LoadRebases(rebaser, lastRebaseId)))
+        m_dgndb.ThrowException("rebase failed", (int) ChangesetStatus::SQLiteError);
 
-    status = WriteChangesToFile(changesetFileName, ddlChanges, dataChangeGroup, (lastRebaseId != 0) ? &rebaser : nullptr);
-    if (ChangesetStatus::Success != status)
-        return nullptr;
+    BeFileName changesetFileName((m_dgndb.GetTempFileBaseName() + (extension ? extension : "") +  ".changeset").c_str());
+    WriteChangesToFile(changesetFileName, ddlChanges, dataChangeGroup, (lastRebaseId != 0) ? &rebaser : nullptr);
 
     Utf8String parentRevId = GetParentChangesetId();
     Utf8String revId;
-    status = ChangesetIdGenerator::GenerateId(revId, parentRevId, changesetFileName, m_dgndb);
-    BeAssert(status == ChangesetStatus::Success);
+    ChangesetIdGenerator::GenerateId(revId, parentRevId, changesetFileName, m_dgndb);
     Utf8String dbGuid = m_dgndb.GetDbGuid().ToString();
 
     m_changesetInProgress = new ChangesetProps(revId, -1, parentRevId, dbGuid, changesetFileName);
     m_changesetInProgress->m_endTxnId = endTxnId;
     m_changesetInProgress->m_lastRebaseId = lastRebaseId;
 
+    // this is just to clean this up from older versions.
     m_dgndb.DeleteBriefcaseLocalValue(CURRENT_CS_END_TXN_ID);
     m_dgndb.DeleteBriefcaseLocalValue(LAST_REBASE_ID);
 
@@ -597,15 +551,19 @@ ChangesetPropsPtr TxnManager::StartCreateChangeset(ChangesetStatus* outStatus, U
     if (BE_SQLITE_OK != rc)
         m_dgndb.ThrowException("cannot save changes to start changeset", rc);
 
+    StartNewSession();
+    BeAssert(!IsUndoPossible());
+    BeAssert(!IsRedoPossible());
+
     return m_changesetInProgress;
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ChangesetStatus TxnManager::FinishCreateChangeset(int32_t changesetIndex, bool keepFile) {
+void TxnManager::FinishCreateChangeset(int32_t changesetIndex, bool keepFile) {
     if (!IsChangesetInProgress())
-        return ChangesetStatus::IsNotCreatingChangeset;
+        m_dgndb.ThrowException("no changeset in progress", (int) ChangesetStatus::IsNotCreatingChangeset);
 
     TxnId endTxnId = m_changesetInProgress->m_endTxnId;
     BeAssert(endTxnId.IsValid());
@@ -625,17 +583,16 @@ ChangesetStatus TxnManager::FinishCreateChangeset(int32_t changesetIndex, bool k
         Initialize();
 
     m_changesetInProgress->SetDateTime(DateTime::GetCurrentTimeUtc());
-    if (!keepFile && m_changesetInProgress->m_fileName.DoesPathExist())
-        m_changesetInProgress->m_fileName.BeDeleteFile();
-
-    m_changesetInProgress = nullptr;
-    return ChangesetStatus::Success;
+    StopCreateChangeset(keepFile);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void TxnManager::AbandonCreateChangeset() {
+void TxnManager::StopCreateChangeset(bool keepFile) {
+    if (!keepFile && m_changesetInProgress.IsValid() && m_changesetInProgress->m_fileName.DoesPathExist())
+        m_changesetInProgress->m_fileName.BeDeleteFile();
+
     m_changesetInProgress = nullptr;
 }
 

@@ -145,17 +145,11 @@ void RevisionMemTestFixture::DumpRevision(ChangesetPropsCR revision, Utf8CP summ
 //---------------------------------------------------------------------------------------
 ChangesetPropsPtr RevisionMemTestFixture::CreateRevision(Utf8CP ext)
     {
-    ChangesetPropsPtr revision = m_db->Txns().StartCreateChangeset(nullptr, ext);
+    ChangesetPropsPtr revision = m_db->Txns().StartCreateChangeset(ext);
     if (!revision.IsValid())
         return nullptr;
 
-    ChangesetStatus status = m_db->Txns().FinishCreateChangeset(-1, ext != nullptr);
-    if (ChangesetStatus::Success != status)
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-
+    m_db->Txns().FinishCreateChangeset(-1, ext != nullptr);
     return revision;
     }
 

@@ -475,16 +475,9 @@ ChangesetPropsPtr VersionCompareTestFixture::CreateRevision(Utf8CP ext)
     {
     m_db->SaveChanges();
 
-    ChangesetPropsPtr revision = m_db->Txns().StartCreateChangeset(nullptr, ext);
+    ChangesetPropsPtr revision = m_db->Txns().StartCreateChangeset(ext);
     EXPECT_TRUE(revision.IsValid());
-    if (!revision.IsValid())
-        return nullptr;
-
-    ChangesetStatus status = m_db->Txns().FinishCreateChangeset(-1, ext != nullptr);
-    EXPECT_TRUE(status == ChangesetStatus::Success);
-    if (ChangesetStatus::Success != status)
-        return nullptr;
-
+    m_db->Txns().FinishCreateChangeset(-1, ext != nullptr);
     return revision;
     }
 
@@ -806,7 +799,7 @@ TEST_F(VersionCompareTestFixture, CompareOneRevisionOneInsertion)
     // Insert an element
     DgnElementPtr firstElement = InsertPhysicalElement("X");
     elementMap[firstElement->GetElementId()] = ElementData(firstElement, DbOpcode::Insert);
-    changesets.push_back(CreateRevision("cs-1"));
+    changesets.push_back(CreateRevision("-cs1"));
 
     // Test that the output matches with the input rolling forward
     // Single changeset must be processed with up-to-date Db
@@ -888,7 +881,7 @@ TEST_F(VersionCompareTestFixture, CompareTenVersionsTwentyInserts)
         DgnElementPtr element2 = InsertPhysicalElement(codeName2);
         elementMap[element->GetElementId()] = ElementData(element, DbOpcode::Insert);
         elementMap[element2->GetElementId()] = ElementData(element2, DbOpcode::Insert);
-        changesets.push_back(CreateRevision(codeName1.c_str()));
+        changesets.push_back(CreateRevision(Utf8PrintfString("-cst%d", i).c_str()));
         }
 
     // Test that the output matches with the input rolling forward
