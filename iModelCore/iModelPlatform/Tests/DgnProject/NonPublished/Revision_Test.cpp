@@ -150,7 +150,7 @@ void RevisionTestFixture::SetUpTestCase()
 
     db->SaveChanges();
     // Create a dummy revision to purge transaction table for the test
-    ChangesetPropsPtr rev = db->Txns().StartCreateChangeset(nullptr);
+    ChangesetPropsPtr rev = db->Txns().StartCreateChangeset();
     BeAssert(rev.IsValid());
     db->Txns().FinishCreateChangeset(-1);
 
@@ -404,10 +404,7 @@ TEST_F(RevisionTestFixture, MoreWorkflow)
     m_defaultModel = nullptr;
     m_db->SaveChanges("Deleted model and contained elements");
 
-    BeTest::SetFailOnAssert(false);
-    revStatus = m_db->Txns().MergeChangeset(*revision1);
-    BeTest::SetFailOnAssert(true);
-    ASSERT_TRUE(revStatus == ChangesetStatus::ApplyError);
+    expectToThrow([&]() { m_db->Txns().MergeChangeset(*revision1); }, "failed to apply changes");
     }
 
 //---------------------------------------------------------------------------------------

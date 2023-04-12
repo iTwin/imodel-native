@@ -1252,7 +1252,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         RequireDbIsWritable(info);
         TxnManagerR txns = m_dgndb->Txns();
         txns.StopCreateChangeset(false); // if there's one in progress, just abandon it.
-        ChangesetPropsPtr changeset = txns.StartCreateChangeset(nullptr);
+        ChangesetPropsPtr changeset = txns.StartCreateChangeset();
         if (!changeset.IsValid())
             BeNapi::ThrowJsException(Env(), "Error creating changeset");
 
