@@ -806,7 +806,7 @@ TEST_F(VersionCompareTestFixture, CompareOneRevisionOneInsertion)
     // Insert an element
     DgnElementPtr firstElement = InsertPhysicalElement("X");
     elementMap[firstElement->GetElementId()] = ElementData(firstElement, DbOpcode::Insert);
-    changesets.push_back(CreateRevision(nullptr));
+    changesets.push_back(CreateRevision("cs-1"));
 
     // Test that the output matches with the input rolling forward
     // Single changeset must be processed with up-to-date Db
@@ -915,7 +915,7 @@ TEST_F(VersionCompareTestFixture, TestFilterSpatial)
     m_db->Elements().Insert(*tempEl2d);
     // Only insert the 3D element since the 2D element should be filtered out
     elementMap[tempEl->GetElementId()] = ElementData(tempEl, DbOpcode::Insert);
-    changesets.push_back(CreateRevision(nullptr));
+    changesets.push_back(CreateRevision("-cs1"));
 
     // Test filtering out the 2D element first
     // Test that the output matches with the input rolling forward

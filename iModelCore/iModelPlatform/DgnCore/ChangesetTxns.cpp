@@ -616,10 +616,15 @@ ChangesetStatus TxnManager::FinishCreateChangeset(int32_t changesetIndex, bool k
     m_changesetInProgress->SetChangesetIndex(changesetIndex);
 
     SaveParentChangeset(m_changesetInProgress->GetChangesetId(), changesetIndex);
+
     auto rc = m_dgndb.SaveChanges();
     if (BE_SQLITE_OK != rc)
         m_dgndb.ThrowException("cannot save changes to complete changeset", rc);
 
+    if (!HasPendingTxns())
+        Initialize();
+
+    m_changesetInProgress->SetDateTime(DateTime::GetCurrentTimeUtc());
     if (!keepFile && m_changesetInProgress->m_fileName.DoesPathExist())
         m_changesetInProgress->m_fileName.BeDeleteFile();
 
