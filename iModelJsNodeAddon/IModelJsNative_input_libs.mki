@@ -24,7 +24,7 @@ THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libBeZlib.a
 THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinPlatform.a
 THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinECObjects.a
 THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinECPresentation.a
-THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinfreetype2.a
+THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinFreetype2.a
 THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)liblzma.a
 THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libsnappy.a
 THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinUnits.a
