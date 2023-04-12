@@ -430,7 +430,7 @@ struct ChangeStreamQueueConsumer : ChangeStream {
 };
 
 /**
- * write the changes from:
+ * Write the changes from:
  *  1) the DdlChanges
  *  2) data changes
  *  3) rebase information
@@ -535,7 +535,7 @@ ChangesetPropsPtr TxnManager::StartCreateChangeset(Utf8CP extension) {
     m_changesetInProgress->m_endTxnId = endTxnId;
     m_changesetInProgress->m_lastRebaseId = lastRebaseId;
 
-    // this is just to clean this cruft up from older versions.
+    // clean this cruft up from older versions.
     m_dgndb.DeleteBriefcaseLocalValue(CURRENT_CS_END_TXN_ID);
     m_dgndb.DeleteBriefcaseLocalValue(LAST_REBASE_ID);
 
@@ -557,7 +557,7 @@ ChangesetPropsPtr TxnManager::StartCreateChangeset(Utf8CP extension) {
 /**
  * This method is called after an in-progress changeset file, created in this session, was successfully uploaded to iModelHub. We can now delete
  * all of the Txns up to the last one included in the changeset.
- * Note: If the upload fails for any reason (e.g. we crashed before it succeeded), it must be recreated from the current state of the briefcase.
+ * Note: If the upload fails for any reason, or we crashed before it succeeds, a new one must be recreated from the current state of the briefcase.
  */
 void TxnManager::FinishCreateChangeset(int32_t changesetIndex, bool keepFile) {
     if (!IsChangesetInProgress())

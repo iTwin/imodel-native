@@ -303,6 +303,9 @@ void TxnManager::Initialize() {
     m_dynamicTxns.clear();
 }
 
+/**
+ * Increment the current SessionId by 1, so that all current Txns will no longer be undoable.
+ */
 void TxnManager::StartNewSession() {
     m_curr = TxnId(SessionId(m_curr.GetSession().GetValue()+1), 0);
 }
