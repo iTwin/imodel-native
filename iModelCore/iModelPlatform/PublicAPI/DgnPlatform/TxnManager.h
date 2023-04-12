@@ -982,9 +982,9 @@ struct ChangesetProps : RefCountedBase {
     void SetSummary(Utf8CP summary) { m_summary = summary; }
 
     //! Determines if the revision contains schema changes
-    DGNPLATFORM_EXPORT bool ContainsSchemaChanges(DgnDbCR dgndb) const;
-    DGNPLATFORM_EXPORT void ValidateContent(DgnDbCR dgndb) const;
-    DGNPLATFORM_EXPORT void Dump(DgnDbCR dgndb) const;
+    DGNPLATFORM_EXPORT bool ContainsSchemaChanges(DgnDbR dgndb) const;
+    DGNPLATFORM_EXPORT void ValidateContent(DgnDbR dgndb) const;
+    DGNPLATFORM_EXPORT void Dump(DgnDbR dgndb) const;
 };
 
 //=======================================================================================
@@ -993,9 +993,9 @@ struct ChangesetProps : RefCountedBase {
 struct EXPORT_VTABLE_ATTRIBUTE ChangesetFileReader : BeSQLite::ChangesetFileReaderBase {
 private:
     DGNPLATFORM_EXPORT BeSQLite::ChangeSet::ConflictResolution _OnConflict(BeSQLite::ChangeSet::ConflictCause, BeSQLite::Changes::Change iter) override;
-
+    DgnDbR m_dgndb;
 public:
-    ChangesetFileReader(BeFileNameCR pathname, DgnDbCR dgndb) : BeSQLite::ChangesetFileReaderBase({pathname}, dgndb) {}
+    ChangesetFileReader(BeFileNameCR pathname, DgnDbR dgndb) : BeSQLite::ChangesetFileReaderBase({pathname}, dgndb), m_dgndb(dgndb) {}
 };
 
 

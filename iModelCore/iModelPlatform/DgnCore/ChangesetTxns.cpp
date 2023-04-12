@@ -22,14 +22,11 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 // @bsimethod
 //---------------------------------------------------------------------------------------
 ChangeSet::ConflictResolution ChangesetFileReader::_OnConflict(ChangeSet::ConflictCause cause, Changes::Change iter) {
-    DgnDbCR dgndb = *((DgnDbCP) &GetDb());
-    TxnManagerCR txns = ((DgnDbP) &dgndb)->Txns();
     Utf8CP tableName = nullptr;
     int nCols, indirect;
     DbOpcode opcode;
     DbResult result = iter.GetOperation(&tableName, &nCols, &opcode, &indirect);
     BeAssert(result == BE_SQLITE_OK);
-
     UNUSED_VARIABLE(result);
 
     // Handle some special cases
@@ -37,14 +34,14 @@ ChangeSet::ConflictResolution ChangesetFileReader::_OnConflict(ChangeSet::Confli
         // From the SQLite docs: "CHANGESET_CONFLICT is passed as the second argument to the conflict handler while processing an INSERT change if the operation would result in duplicate primary key values."
         // This is always a fatal error - it can happen only if the app started with a briefcase that is behind the tip and then uses the same primary key values (e.g., ElementIds)
         // that have already been used by some other app using the SAME briefcase ID that recently pushed changes. That can happen only if the app makes changes without first pulling and acquiring locks.
-        if (!txns.HasPendingTxns()) {
+        if (!m_dgndb.Txns().HasPendingTxns()) {
             // This changeset is bad. However, it is already in the timeline. We must allow services such as
             // checkpoint-creation, change history, and other apps to apply any changeset that is in the timeline.
             LOG.info("PRIMARY KEY INSERT CONFLICT - resolved by replacing the existing row with the incoming row");
-            iter.Dump(dgndb, false, 1);
+            iter.Dump(m_dgndb, false, 1);
         } else {
             LOG.fatal("PRIMARY KEY INSERT CONFLICT - rejecting this changeset");
-            iter.Dump(dgndb, false, 1);
+            iter.Dump(m_dgndb, false, 1);
             return ChangeSet::ConflictResolution::Abort;
         }
     }
@@ -59,7 +56,7 @@ ChangeSet::ConflictResolution ChangesetFileReader::_OnConflict(ChangeSet::Confli
         uint64_t notUsed;
         // Note: There is no performance implication of follow code as it happen toward end of
         // apply_changeset only once so we be querying value for 'DebugAllowFkViolations' only once.
-        if (dgndb.QueryBriefcaseLocalValue(notUsed, "DebugAllowFkViolations") == BE_SQLITE_ROW) {
+        if (m_dgndb.QueryBriefcaseLocalValue(notUsed, "DebugAllowFkViolations") == BE_SQLITE_ROW) {
             LOG.errorv("Detected %d foreign key conflicts in changeset. Continuing merge as 'DebugAllowFkViolations' flag is set. Run 'PRAGMA foreign_key_check' to get list of violations.", nConflicts);
             return ChangeSet::ConflictResolution::Skip;
         } else {
@@ -96,7 +93,7 @@ ChangeSet::ConflictResolution ChangesetFileReader::_OnConflict(ChangeSet::Confli
     if (letControlHandleThis) {
         // if we have a concurrency control, then we allow it to decide how to handle conflicts with local changes.
         // (We don't call the control in the case where there are no local changes. As explained below, we always want the incoming changes in that case.)
-        return control->_OnConflict(dgndb, cause, iter);
+        return control->_OnConflict(m_dgndb, cause, iter);
     }
 #endif
 
@@ -104,7 +101,7 @@ ChangeSet::ConflictResolution ChangesetFileReader::_OnConflict(ChangeSet::Confli
         if (LOG.isSeverityEnabled(NativeLogging::LOG_INFO)) {
             LOG.infov("------------------------------------------------------------------");
             LOG.infov("Conflict detected - Cause: %s", ChangeSet::InterpretConflictCause(cause, 1));
-            iter.Dump(dgndb, false, 1);
+            iter.Dump(m_dgndb, false, 1);
         }
 
         LOG.warning("Constraint conflict handled by rejecting incoming change. Constraint conflicts are NOT expected. These happen most often when two clients both insert elements with the same code. That indicates a bug in the client or the code server.");
@@ -135,7 +132,7 @@ ChangeSet::ConflictResolution ChangesetFileReader::_OnConflict(ChangeSet::Confli
     if (LOG.isSeverityEnabled(NativeLogging::LOG_INFO)) {
         LOG.infov("------------------------------------------------------------------");
         LOG.infov("Conflict detected - Cause: %s", ChangeSet::InterpretConflictCause(cause, 1));
-        iter.Dump(dgndb, false, 1);
+        iter.Dump(m_dgndb, false, 1);
         LOG.infov("Conflicting resolved by replacing the existing entry with the change");
     }
     return ChangeSet::ConflictResolution::Replace;
@@ -203,7 +200,7 @@ public:
     //---------------------------------------------------------------------------------------
     // @bsimethod
     //---------------------------------------------------------------------------------------
-    static Utf8String GenerateId(Utf8StringCR parentRevId, BeFileNameCR changesetFile, DgnDbCR dgndb) {
+    static Utf8String GenerateId(Utf8StringCR parentRevId, BeFileNameCR changesetFile, DgnDbR dgndb) {
         ChangesetFileReader fs(changesetFile, dgndb);
 
         ChangesetIdGenerator idGen;
@@ -229,7 +226,7 @@ public:
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void ChangesetProps::Dump(DgnDbCR dgndb) const {
+void ChangesetProps::Dump(DgnDbR dgndb) const {
 // Don't log "sensitive" information in production builds.
 #if !defined(NDEBUG)
     LOG.infov("Id : %s", m_id.c_str());
@@ -260,7 +257,7 @@ void ChangesetProps::Dump(DgnDbCR dgndb) const {
 /**
  * validate the content of a changeset props to ensure it is from the right iModel and its checksum is valid
  */
-void ChangesetProps::ValidateContent(DgnDbCR dgndb) const {
+void ChangesetProps::ValidateContent(DgnDbR dgndb) const {
     if (m_dbGuid != dgndb.GetDbGuid().ToString())
         dgndb.ThrowException("changeset did not originate from this iModel", (int) ChangesetStatus::WrongDgnDb);
 
@@ -274,7 +271,7 @@ void ChangesetProps::ValidateContent(DgnDbCR dgndb) const {
 /**
  * determine whether the Changeset has schema changes.
  */
-bool ChangesetProps::ContainsSchemaChanges(DgnDbCR dgndb) const {
+bool ChangesetProps::ContainsSchemaChanges(DgnDbR dgndb) const {
     ChangesetFileReader changeStream(m_fileName, dgndb);
 
     bool containsSchemaChanges;
