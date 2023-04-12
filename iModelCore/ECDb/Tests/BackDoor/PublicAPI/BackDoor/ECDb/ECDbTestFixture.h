@@ -156,6 +156,8 @@ public:
     static BentleyStatus ReadECSchema(ECN::ECSchemaReadContextPtr&, ECDbCR, SchemaItem const&);
     static ECN::ECSchemaPtr GetUnitsSchema(bool recreate = false);
     static ECN::ECSchemaPtr GetFormatsSchema(bool recreate = false);
+    static bool EnableECSqlExperimentalFeatures(ECDbCR, bool);
+    static bool IsECSqlExperimentalFeaturesEnabled(ECDbCR);
     };
 
 SchemaItem operator"" _schema(const char* s, size_t n);

@@ -4974,7 +4974,6 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
             {
             // error
             SaveErrorValue(retVal["error"], result.GetStatus(), result.GetErrorMessage().c_str());
-            return retVal;
             }
         else
             {
@@ -4985,6 +4984,7 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
             } else
                 retVal["result"].From(result.GetSuccessResponse());
             }
+
         if (!result.GetDiagnostics().IsNull())
             retVal["diagnostics"].From(result.GetDiagnostics());
 
@@ -5087,9 +5087,9 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
 
         m_presentationManager->GetConnections().CreateConnection(db->GetDgnDb());
 
+        auto diagnostics = ECPresentation::Diagnostics::Scope::ResetAndCreate(requestId, ECPresentationUtils::CreateDiagnosticsOptions(params));
         try
             {
-            auto diagnostics = ECPresentation::Diagnostics::Scope::ResetAndCreate(requestId, ECPresentationUtils::CreateDiagnosticsOptions(params));
             std::shared_ptr<folly::Future<ECPresentationResult>> result = std::make_shared<folly::Future<ECPresentationResult>>(folly::makeFuture(ECPresentationResult(ECPresentationStatus::InvalidArgument, Utf8PrintfString("request.requestId = '%s'", requestId))));
             if (0 == strcmp("GetRootNodesCount", requestId))
                 *result = ECPresentationUtils::GetRootNodesCount(*m_presentationManager, db->GetDgnDb(), params);
@@ -5130,9 +5130,7 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
                 })
             .onError([this, requestGuid, startTime, diagnostics = *diagnostics, deferred = std::move(deferred)](folly::exception_wrapper e)
                 {
-                ECPresentationResult result = ECPresentationUtils::CreateResultFromException(e);
-                result.SetDiagnostics(diagnostics->BuildJson());
-
+                ECPresentationResult result = ECPresentationUtils::CreateResultFromException(e, diagnostics->BuildJson());
                 if (ECPresentationStatus::Canceled == result.GetStatus())
                     {
                     ECPresentationUtils::GetLogger().debugv("Request %s cancelled after %" PRIu64 " ms.",
@@ -5143,7 +5141,6 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
                     ECPresentationUtils::GetLogger().errorv("Request %s completed with error '%s' in %" PRIu64 " ms.",
                         requestGuid.c_str(), result.GetErrorMessage().c_str(), (BeTimeUtilities::GetCurrentTimeAsUnixMillis() - startTime));
                     }
-
                 ResolvePromise(deferred, std::move(result));
                 });
 
@@ -5152,10 +5149,15 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
                 result->cancel();
                 }));
             }
+        catch (std::exception const& e)
+            {
+            ECPresentationUtils::GetLogger().errorv("Failed to queue request %s", requestGuid.c_str());
+            deferred.Resolve(CreateReturnValue(ECPresentationUtils::CreateResultFromException(folly::exception_wrapper{std::current_exception(), e}, (*diagnostics)->BuildJson())));
+            }
         catch (...)
             {
             ECPresentationUtils::GetLogger().errorv("Failed to queue request %s", requestGuid.c_str());
-            deferred.Resolve(CreateReturnValue(ECPresentationResult(ECPresentationStatus::Error, "Unknown error creating request")));
+            deferred.Resolve(CreateReturnValue(ECPresentationUtils::CreateResultFromException(folly::exception_wrapper{std::current_exception()}, (*diagnostics)->BuildJson())));
             }
 
         return response;
