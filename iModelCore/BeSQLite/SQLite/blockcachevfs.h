@@ -148,18 +148,19 @@
 **
 ** VIRTUAL TABLE INTERFACE
 **
-**   The sqlite3_bcvfs_register_vtab() API is used to register three read-only 
-**   eponymous virtual tables, "bcv_database", "bcv_container" and "bcv_block",
-**   and one read-write table, "bcv_kv". If the main database of the database
-**   handle that these are registered with is open on a CBS database,
-**   the three read-only tables provide information regarding the current state 
-**   of the VFS object. The "bcv_kv" table provides read-write access to a
-**   key-value store stored in the cloud container that may be useful for
-**   advisory locks or other communication between remote database clients.
+**   The sqlite3_bcvfs_register_vtab() API is used to register four read-only 
+**   eponymous virtual tables, "bcv_database", "bcv_container", "bcv_block",
+**   and "bcv_http_log", and one read-write table, "bcv_kv". If the main
+**   database of the database handle that these are registered with is open on
+**   a CBS database, the four read-only tables provide information regarding 
+**   the current state of the VFS object. The "bcv_kv" table provides 
+**   read-write access to a key-value store stored in the cloud container 
+**   that may be useful for advisory locks or other communication between 
+**   remote database clients.
 **
-**   Virtual tables bcv_database and bcv_container are available to both
-**   daemon and daemonless mode VFS clients, but bcv_kv is only available
-**   in daemonless mode.
+**   The four read-only virtual tables are available to both daemon and
+**   daemonless mode VFS clients, but bcv_kv is only available in daemonless 
+**   mode.
 **
 ** The bcv_container table:
 **
@@ -232,6 +233,39 @@
 **   last uploaded, this column contains a NULL value. The boolean "cache"
 **   column is true if the block is currently cached locally, and "dirty"
 **   is true if the block is dirty and a new version needs to be uploaded.
+**
+** The bcv_http_log table:
+**
+**   The "bcv_http_log" table contains one row for each HTTP request made
+**   by the VFS or connected daemon. It has the equivalent of the following
+**   for a schema:
+**
+**     CREATE TABLE bcv_http_log(
+**       id INTEGER,              -- Unique, monotonically increasing id value
+**       start_time INTEGER,      -- Time request was made, as iso-8601
+**       end_time INTEGER,        -- Time reply received, as iso-8601 (or NULL)
+**       method TEXT,             -- "PUT", "GET" etc.
+**       client TEXT,             -- Name of client that caused request
+**       logmsg TEXT,             -- Log message associated with request
+**       uri TEXT,                -- URI of request
+**       httpcode INTEGER         -- HTTP response code (e.g. 200)
+**     ) 
+**
+**   For those requests that can be associated with a single SQLite database
+**   handle, the contents of the "client" column is the client name as
+**   configured using the "PRAGMA bcv_client" command. For requests associated
+**   with a prefetch operation, it contains the string 'prefetch'.
+**
+**   To prevent it from consuming an ever-increasing amount of memory, entries 
+**   are automatically removed from the bcv_http_log on a first-in/first-out
+**   according to the values configured for the SQLITE_BCV_HTTPLOG_TIMEOUT 
+**   and SQLITE_BCV_HTTPLOG_NENTRY parameters. Or, in daemon mode, according
+**   to the values passed via the --httplogtimeout and --httplognentry 
+**   command-line options.
+**
+**   Including various overheads, each entry may be assumed to consume 
+**   256 bytes of memory or less. So allowing 4096 entries to accumulate in
+**   the bcv_http_log table may require up to 1MiB of memory.
 **
 ** The bcv_kv table:
 **
@@ -316,6 +350,9 @@ int sqlite3_bcvfs_create(
 
 /*
 ** Configure a VFS object created by a call to sqlite3_bcv_new().
+**
+** This API is only available for local (non-daemon) VFS objects. It
+** always returns SQLITE_NOTFOUND if called on a daemon VFS.
 */
 int sqlite3_bcvfs_config(sqlite3_bcvfs *pFs, int op, sqlite3_int64 iVal);
 
@@ -334,12 +371,25 @@ int sqlite3_bcvfs_config(sqlite3_bcvfs *pFs, int op, sqlite3_int64 iVal);
 **   request has been lost. Default value is 600.
 **
 ** SQLITE_BCV_CURLVERBOSE:
-**   The argument enables 
+**   The argument enables (non-zero) or disables (zero) verbose libcurl
+**   logging.
+**
+** SQLITE_BCV_HTTPLOG_TIMEOUT:
+**   The parameter specifies the number of seconds for which entries should
+**   remain in the bcv_http_log virtual table. A value of less than 0 means
+**   that entries should never time out. The default value is 3600.
+**
+** SQLITE_BCV_HTTPLOG_NENTRY:
+**   The maximum number of entries that the bcv_http_log table may contain.
+**   A value less than 0 means there is no limit on the number of entries.
+**   The default value is -1.
 */
 #define SQLITE_BCV_CACHESIZE   1
 #define SQLITE_BCV_NREQUEST    2
 #define SQLITE_BCV_HTTPTIMEOUT 3
 #define SQLITE_BCV_CURLVERBOSE 4
+#define SQLITE_BCV_HTTPLOG_TIMEOUT 5
+#define SQLITE_BCV_HTTPLOG_NENTRY  6
 
 /*
 ** Return true if this VFS is connected to a daemon process. Or false if
@@ -571,13 +621,13 @@ int sqlite3_bcvfs_register_vtab(sqlite3*);
 typedef struct sqlite3_prefetch sqlite3_prefetch;
 
 /*
- ** Create a new prefetch object. A prefetch object can be used to manage
- ** prefetching blocks belonging to database zDb in container zCont.
- **
- ** If successful, (*ppOut) is set to point to the new prefetch object
- ** and SQLITE_OK is returned. Otherwise, if an error occurs, an
- ** SQLite error code is returned and (*ppOut) is set to NULL.
- */
+** Create a new prefetch object. A prefetch object can be used to manage
+** prefetching blocks belonging to database zDb in container zCont.
+**
+** If successful, (*ppOut) is set to point to the new prefetch object
+** and SQLITE_OK is returned. Otherwise, if an error occurs, an
+** SQLite error code is returned and (*ppOut) is set to NULL.
+*/
 int sqlite3_bcvfs_prefetch_new(
   sqlite3_bcvfs *pFs,
   const char *zCont,

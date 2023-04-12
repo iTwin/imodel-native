@@ -165,6 +165,8 @@ struct BcvfsFile {
   BcvDbPath *pPath;
   sqlite3_file *pCacheFile;
 
+  char *zClientId;                /* Set by "PRAGMA bcv_client=?" */
+
   /* Used in proxy mode only */
   BcvProxyFile p;
 
@@ -811,6 +813,7 @@ static int bcvfsClose(sqlite3_file *pFd){
   bcvfsCloseFile(pFile->pFile);
   sqlite3_free(pFile->zLocalPath);
   sqlite3_free(pFile->pPath);
+  sqlite3_free(pFile->zClientId);
   return SQLITE_OK;
 }
 
@@ -1214,6 +1217,7 @@ static int bcvfsContainerGetBcv(
       if( (pFs->mLog & (SQLITE_BCV_LOG_HTTP|SQLITE_BCV_LOG_HTTPRETRY) ) ){
         bcvDispatchLog(pWrapper->pDisp, (void*)pFs, bcvfsLogCb);
       }
+      bcvDispatchLogObj(pWrapper->pDisp, pFs->c.pLog);
       bcvDispatchTimeout(pWrapper->pDisp, pFs->nHttpTimeout);
     }
   }
@@ -1244,6 +1248,7 @@ static void bcvfsContainerReleaseBcv(
 ){
   if( pBcv ){
     int ii;
+    bcvDispatchClientId(pDisp, 0);
     for(ii=0; ii<pCont->nBcv; ii++){
       BcvWrapper *pWrapper = &pCont->aBcv[ii];
       if( pWrapper->pBcv==pBcv ){
@@ -1457,6 +1462,7 @@ static int bcvfsReadWriteDatabase(
     if( rc==SQLITE_OK && pEntry->bValid==0 && iBlk<pFile->pManDb->nBlkOrig ){
       assert( iBlk<pFile->pManDb->nBlkLocal || bWrite );
       rc = bcvfsContainerGetBcv(pFs, pFile->pCont, &pDisp, &pBcv, 0);
+      bcvDispatchClientId(pDisp, pFile->zClientId);
     }
   } LEAVE_VFS_MUTEX;
 
@@ -2864,6 +2870,25 @@ static int bcvfsPragma(BcvfsFile *pFile, void *pArg){
     zErr = sqlite3_mprintf("cannot use \"PRAGMA journal_mode\" with bcvfs");
   }
 
+  if( 0==sqlite3_stricmp("bcv_client", zPragma) ){
+    const char *zNew = azArg[2];
+    rc = SQLITE_OK;
+    if( zNew ){
+      pFile->zClientId = bcvStrdupRc(&rc, zNew);
+    }
+    zErr = bcvStrdupRc(&rc, pFile->zClientId);
+    if( pFs->zPortnumber ){
+      BcvMessage msg;
+      BcvMessage *pFinal = 0;       /* reply to CMD message */
+      memset(&msg, 0, sizeof(msg));
+      msg.eType = BCV_MESSAGE_CMD;
+      msg.u.cmd.zAuth = pFile->zClientId ? pFile->zClientId : "";
+      msg.u.cmd.eCmd = BCV_CMD_CLIENT;
+      pFinal = bcvExchangeMessage(&rc, pFile->p.fdProxy, &msg);
+      sqlite3_free(pFinal);
+    }
+  }
+
   rc = bcvErrorToSqlite(rc);
   azArg[0] = zErr;
   return rc;
@@ -3884,6 +3909,11 @@ int sqlite3_bcvfs_create(
     pFs->nRequest = BCV_DEFAULT_NREQUEST;
     pFs->nHttpTimeout = BCV_DEFAULT_HTTPTIMEOUT;
 
+    pFs->c.pLog = bcvLogNew();
+    if( pFs->c.pLog==0 ){
+      rc = SQLITE_NOMEM;
+    }
+
     if( rc==SQLITE_OK ){
       ENTER_VFS_MUTEX; {
         rc = bcvfsCacheInit(&pFs->c, db, zFullDir);
@@ -3963,6 +3993,10 @@ int sqlite3_bcvfs_config(sqlite3_bcvfs *pFs, int op, sqlite3_int64 iVal){
           pFs->bCurlVerbose = (iVal ? 1 : 0);
           bcvfsFreeAllBcv(pFs);
           break;
+        case SQLITE_BCV_HTTPLOG_NENTRY:
+        case SQLITE_BCV_HTTPLOG_TIMEOUT:
+          bcvLogConfig(pFs->c.pLog, op, iVal);
+          break;
         default:
           rc = SQLITE_NOTFOUND;
           break;
@@ -4038,6 +4072,8 @@ void bcvCommonDestroy(BcvCommon *p){
   sqlite3_finalize(p->pInsertCont);
   rc = sqlite3_close(p->bdb);
   assert( rc==SQLITE_OK );
+
+  bcvLogDelete(p->pLog);
 
   while( p->pCList ){
     Container *pCont = p->pCList;
@@ -5385,6 +5421,7 @@ int sqlite3_bcvfs_prefetch_new(
           pNew->rc = SQLITE_ERROR;
         }
         if( pNew->rc==SQLITE_OK ){
+          bcvDispatchClientId(pNew->pDisp, "prefetch");
           pNew->pCont = pCont;
           pCont->nClient++;
           pNew->pMan = bcvManifestRef(pCont->pMan);
@@ -6199,6 +6236,8 @@ u8 *bcvDatabaseVtabData(
         }
       }
     }
+  }else if( bcvStrcmp(zName, "bcv_http_log")==0 ){
+    rc = bcvLogGetData(pCommon->pLog, &buf);
   }
 
   if( rc!=SQLITE_OK ){
@@ -6215,6 +6254,16 @@ static u32 bcvVtabExtractU32(VtabBlob *p){
   }else{
     u32 iRet = bcvGetU32(&p->aData[p->iData]);
     p->iData += 4;
+    return iRet;
+  }
+}
+
+static u64 bcvVtabExtractU64(VtabBlob *p){
+  if( p->iData>=p->nData ){
+    return 0;
+  }else{
+    u64 iRet = bcvGetU64(&p->aData[p->iData]);
+    p->iData += 8;
     return iRet;
   }
 }
@@ -6608,6 +6657,136 @@ static int bcvDatabaseVtabBestIndex(
 
   return SQLITE_OK;
 }
+
+/*************************************************************************
+** Start of bcv_log implementation.
+*/
+
+#define BCV_HTTPLOG_VTAB_SCHEMA  \
+  "CREATE TABLE bcv_http_log("   \
+  "  id INTEGER,"                \
+  "  start_time INTEGER,"        \
+  "  end_time INTEGER,"          \
+  "  method TEXT,"               \
+  "  client TEXT,"               \
+  "  logmsg TEXT,"               \
+  "  uri TEXT,"                  \
+  "  httpcode INTEGER"           \
+  ");"
+
+typedef struct bcv_log_csr bcv_log_csr;
+
+/*
+** Virtual cursor type for bcv_kv.
+**
+** pSelect:
+**   Compiled version of "SELECT rowid, name, value FROM kv" on the 
+**   kv database. Current row of this statement is the current row of
+**   the cursor. pSelect==0 means EOF.
+*/
+struct bcv_log_csr {
+  sqlite3_vtab_cursor base;       /* Base class */
+
+  VtabBlob data;
+  void *pFreeData;
+  i64 iRow;                       /* col 0 */
+
+  i64 iStartTime;                 /* col 1 */
+  i64 iEndTime;                   /* col 2 */
+  const char *zMethod;            /* col 3 */
+  const char *zClient;            /* col 4 */
+  const char *zLogmsg;            /* col 5 */
+  const char *zUri;               /* col 6 */
+  int httpcode;                   /* col 7 */
+};
+
+static int bcvLogVtabOpen(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCur){
+  int rc = SQLITE_OK;
+  bcv_log_csr *pNew = 0;
+  pNew = (bcv_log_csr*)bcvMallocRc(&rc, sizeof(bcv_log_csr));
+  *ppCur = &pNew->base;
+  return rc;
+}
+
+static int bcvLogVtabClose(sqlite3_vtab_cursor *cur){
+  bcv_log_csr *pCur = (bcv_log_csr*)cur;
+  sqlite3_free(pCur->pFreeData);
+  sqlite3_free(pCur);
+  return SQLITE_OK;
+}
+
+static int bcvLogVtabNext(sqlite3_vtab_cursor *cur){
+  bcv_log_csr *pCur = (bcv_log_csr*)cur;
+
+  pCur->iRow = (i64)bcvVtabExtractU64(&pCur->data);
+  pCur->iStartTime = (i64)bcvVtabExtractU64(&pCur->data);
+  pCur->iEndTime = (i64)bcvVtabExtractU64(&pCur->data);
+  pCur->zMethod = bcvVtabExtractString(&pCur->data);
+  pCur->zClient = bcvVtabExtractString(&pCur->data);
+  pCur->zLogmsg = bcvVtabExtractString(&pCur->data);
+  pCur->zUri = bcvVtabExtractString(&pCur->data);
+  pCur->httpcode = bcvVtabExtractU32(&pCur->data);
+
+  pCur->iRow++;
+  return SQLITE_OK;
+}
+
+static int bcvLogVtabEof(sqlite3_vtab_cursor *cur){
+  bcv_log_csr *pCur = (bcv_log_csr*)cur;
+  return (pCur->zMethod==0);
+}
+
+static void returnJulianDay(sqlite3_context *ctx, i64 iTime){
+  if( iTime!=0 ){
+    char aBuf[64];
+    bcvTimeToString(iTime, aBuf);
+    sqlite3_result_text(ctx, aBuf, -1, SQLITE_TRANSIENT);
+  }
+}
+
+static int bcvLogVtabColumn(
+  sqlite3_vtab_cursor *cur,   /* The cursor */
+  sqlite3_context *ctx,       /* First argument to sqlite3_result_...() */
+  int i                       /* Which column to return */
+){
+  bcv_log_csr *pCur = (bcv_log_csr*)cur;
+  switch( i ){
+    case 0:                   /* id */
+      sqlite3_result_int64(ctx, pCur->iRow);
+      break;
+    case 1:                   /* start_time */
+      returnJulianDay(ctx, pCur->iStartTime);
+      break;
+    case 2:                   /* end_time */
+      returnJulianDay(ctx, pCur->iEndTime);
+      break;
+    case 3:                   /* method */
+      sqlite3_result_text(ctx, pCur->zMethod, -1, SQLITE_TRANSIENT);
+      break;
+    case 4:                   /* client */
+      sqlite3_result_text(ctx, pCur->zClient, -1, SQLITE_TRANSIENT);
+      break;
+    case 5:                   /* logmsg */
+      sqlite3_result_text(ctx, pCur->zLogmsg, -1, SQLITE_TRANSIENT);
+      break;
+    case 6:                   /* uri */
+      sqlite3_result_text(ctx, pCur->zUri, -1, SQLITE_TRANSIENT);
+      break;
+    case 7:                   /* httpcode */
+      sqlite3_result_int(ctx, pCur->httpcode);
+      break;
+  }
+
+  return SQLITE_OK;
+}
+
+static int bcvLogVtabRowid(sqlite3_vtab_cursor *cur, sqlite_int64 *pRow){
+  bcv_log_csr *pCur = (bcv_log_csr*)cur;
+  *pRow = pCur->iRow;
+  return SQLITE_OK;
+}
+
+
 
 /*************************************************************************
 ** Start of bcv_kv implementation.
@@ -7282,6 +7461,32 @@ int sqlite3_bcvfs_register_vtab(sqlite3 *db){
     /* xRollbackTo */ 0,
     /* xShadowName */ 0
   };
+  static sqlite3_module bcv_http_log = {
+    /* iVersion    */ 2,
+    /* xCreate     */ 0,
+    /* xConnect    */ bcvDatabaseVtabConnect,
+    /* xBestIndex  */ bcvFileVtabBestIndex,
+    /* xDisconnect */ bcvDatabaseVtabDisconnect,
+    /* xDestroy    */ 0,
+    /* xOpen       */ bcvLogVtabOpen,
+    /* xClose      */ bcvLogVtabClose,
+    /* xFilter     */ bcvReadonlyVtabFilter,
+    /* xNext       */ bcvLogVtabNext,
+    /* xEof        */ bcvLogVtabEof,
+    /* xColumn     */ bcvLogVtabColumn,
+    /* xRowid      */ bcvLogVtabRowid,
+    /* xUpdate     */ 0,
+    /* xBegin      */ 0,
+    /* xSync       */ 0,
+    /* xCommit     */ 0,
+    /* xRollback   */ 0,
+    /* xFindMethod */ 0,
+    /* xRename     */ 0,
+    /* xSavepoint  */ 0,
+    /* xRelease    */ 0,
+    /* xRollbackTo */ 0,
+    /* xShadowName */ 0
+  };
 
   static sqlite3_module bcv_kv = {
     /* iVersion    */ 2,
@@ -7360,6 +7565,11 @@ int sqlite3_bcvfs_register_vtab(sqlite3 *db){
   if( rc==SQLITE_OK ){
     rc = sqlite3_create_module(
         db, "bcv_kv_meta", &bcv_kv_meta, (void*)BCV_FILEMETA_VTAB_SCHEMA
+    );
+  }
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_module(
+        db, "bcv_http_log", &bcv_http_log, (void*)BCV_HTTPLOG_VTAB_SCHEMA
     );
   }
   return rc;

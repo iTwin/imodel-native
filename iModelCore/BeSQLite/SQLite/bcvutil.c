@@ -74,8 +74,8 @@ struct sqlite3_bcv {
 
   int bTestNoKv;                  /* SQLITE_BCVCONFIG_TESTNOKV option */
 
-  bcv_log_cb xLog;
-  void *pLogCtx;
+  bcv_log_cb xBcvLog;
+  void *pBcvLogCtx;
 };
 
 typedef struct sqlite3_bcv_job BcvDispatchJob;
@@ -85,12 +85,15 @@ struct BcvDispatch {
   CURLM *pMulti;                  /* The libcurl dispatcher ("multi-handle") */
   int bVerbose;                   /* True to make libcurl verbose */
   int nHttpTimeout;
-  void *pLogApp;                  /* First argument to xLog() */
-  void (*xLog)(void*,int,const char *zMsg);    /* Log function to invoke */
   int iNextRequestId;             /* Next request-id (for logging only) */
   int iDispatchId;                /* Dispatch id (for logging only) */
   char *zLogmsg;                  /* Logging caption for next http request */
+  const char *zClientId;          /* Logging client name */
   BcvDispatchJob *pJobList;       /* List of current jobs */
+
+  void *pLogApp;                  /* First argument to xLog() */
+  void (*xLog)(void*,int,const char *zMsg);    /* Log function to invoke */
+  BcvLog *pLog;                   /* Log object (may be NULL) */
 };
 
 struct sqlite3_bcv_job {
@@ -99,6 +102,7 @@ struct sqlite3_bcv_job {
   int eType;                      /* Type of job (BCV_DISPATCH_XXX value) */
   int bLogEtag;                   /* True to log eTag of http replies */
   char *zLogmsg;                  /* Logging caption */
+  const char *zClientId;          /* Logging client name */
   void *pCbApp;                   /* First argument for callback */
   struct {
     void (*xFetch)(void*, int rc, char *zETag, const u8*, int, const u8*, int);
@@ -147,8 +151,8 @@ struct sqlite3_bcv_request {
   struct curl_slist *pList;       /* List of HTTP headers for request */
   void *pApp;                     /* 3rd argument to xCallback */
   void (*xCallback)(sqlite3_bcv_job*, sqlite3_bcv_request*, void*);
-  int iRequestId;                 /* Unique id used for logging only */
-  i64 iRequestTime;               /* Time request was made */
+
+  i64 iLogId;                     /* Logging id of request */
 
   const u8 *aBody;                /* Buffer of data to upload (METHOD_PUT) */
   int nBody;                      /* Size of aBody[] in bytes */
@@ -1165,8 +1169,8 @@ const char *sqlite3_bcv_errmsg(sqlite3_bcv *p){
 
 static void bcvLogWrapper(void *pApp, int bRetry, const char *zMsg){
   sqlite3_bcv *p = (sqlite3_bcv*)pApp;
-  if( p->xLog ){
-    p->xLog(p->pLogCtx, zMsg);
+  if( p->xBcvLog ){
+    p->xBcvLog(p->pBcvLogCtx, zMsg);
   }
 }
 
@@ -1188,9 +1192,9 @@ int sqlite3_bcv_config(sqlite3_bcv *p, int eOp, ...){
         p->xProgress = va_arg(ap, bcv_progress_cb);
         break;
       case SQLITE_BCVCONFIG_LOG: {
-        p->pLogCtx = va_arg(ap, void*);
-        p->xLog = (bcv_log_cb)va_arg(ap, bcv_log_cb);
-        if( p->xLog ){
+        p->pBcvLogCtx = va_arg(ap, void*);
+        p->xBcvLog = (bcv_log_cb)va_arg(ap, bcv_log_cb);
+        if( p->xBcvLog ){
           bcvDispatchLog(p->pDisp, (void*)p, bcvLogWrapper);
         }else{
           bcvDispatchLog(p->pDisp, 0, 0);
@@ -2631,6 +2635,13 @@ static void bcvRequestListFree(BcvDispatchReq *pReq){
   }
 }
 
+void bcvDispatchLogObj(
+  BcvDispatch *pDisp,
+  BcvLog *pLog
+){
+  pDisp->pLog = pLog;
+}
+
 void bcvDispatchLog(
   BcvDispatch *pDisp,                  /* Dispatcher object */
   void *pApp,                          /* First argument to pass to xLog() */
@@ -2727,21 +2738,26 @@ static size_t bcvSeekFunction(void *pCtx, curl_off_t offset, int origin){
 }
 
 static void bcvDispatchLogRequest(BcvDispatch *p, BcvDispatchReq *pReq){
+  const char *zUri = pReq->zUriLog ? pReq->zUriLog : pReq->zUri;
+
+  assert( pReq->rc==SQLITE_OK );
+  pReq->rc = bcvLogRequest(p->pLog, pReq->pJob->zClientId, pReq->pJob->zLogmsg, 
+      pReq->eMethod, pReq->nRetry, zUri, &pReq->iLogId
+  );
+
   if( p->xLog ){
     char *zMsg;
     char *zRetry = 0;
-    pReq->iRequestId = ++p->iNextRequestId;
-    pReq->iRequestTime = sqlite_timestamp();
+
     if( pReq->nRetry>0 ){
       zRetry = sqlite3_mprintf(" (nRetry=%d)", pReq->nRetry);
     }
-    zMsg = sqlite3_mprintf("r%d_%d [%s] %s%s %s", 
-      p->iDispatchId, pReq->iRequestId,
+    zMsg = sqlite3_mprintf("r%lld [%s] %s%s %s", 
+      pReq->iLogId,
       pReq->pJob->zLogmsg,
       pReq->eMethod==SQLITE_BCV_METHOD_GET ? "GET" :
       pReq->eMethod==SQLITE_BCV_METHOD_PUT ? "PUT" : "DELETE",
-      zRetry ? zRetry : "",
-      (pReq->zUriLog ? pReq->zUriLog : pReq->zUri)
+      zRetry ? zRetry : "", zUri
     );
     if( zMsg ){
       p->xLog(p->pLogApp, pReq->nRetry>0, zMsg);
@@ -2757,14 +2773,18 @@ static void bcvDispatchLogReply(
   int bRetry, 
   int iDelay
 ){
+  long httpcode = 0;
+  i64 iMs = 0;
+
+  curl_easy_getinfo(pReq->pCurl, CURLINFO_RESPONSE_CODE, &httpcode);
+  bcvLogReply(p->pLog, pReq->iLogId, httpcode, &iMs);
+
   if( p->xLog ){
     char *zMsg = 0;
     char *zRetry = 0;
-    long httpcode = 0;
     const char *zETag = 0;
     const char *zStatus = 0;
     int res = 0;
-    curl_easy_getinfo(pReq->pCurl, CURLINFO_RESPONSE_CODE, &httpcode);
     res = sqlite3_bcv_request_status(pReq, &zStatus);
     if( pReq->pJob->bLogEtag && (httpcode/100)==2 ){
       zETag = pReq->pJob->zETag;
@@ -2772,10 +2792,10 @@ static void bcvDispatchLogReply(
     if( bRetry ){
       zRetry = sqlite3_mprintf(" (retry in %dms)", iDelay);
     }
-    zMsg = sqlite3_mprintf("r%d_%d [%s] [%lldms] (http=%d) (rc=%d) %s%s%s%s%s",
-      p->iDispatchId, pReq->iRequestId, 
+    zMsg = sqlite3_mprintf("r%lld [%s] [%lldms] (http=%d) (rc=%d) %s%s%s%s%s",
+      pReq->iLogId, 
       pReq->pJob->zLogmsg,
-      sqlite_timestamp() - pReq->iRequestTime,
+      iMs,
       httpcode, 
       res,
       zStatus,
@@ -2930,8 +2950,6 @@ static void bcvDispatchFail(
   int rc, 
   const char *zErr
 ){
-  BcvDispatchJob *pNext;
-
   while( pDisp->pJobList ){
     BcvDispatchJob *pJob = pDisp->pJobList;
     BcvDispatchReq *pReq;
@@ -3156,6 +3174,7 @@ static BcvDispatchJob *bcvDispatchNewJob(
     pJob->pNext = p->pJobList;
     pJob->pCont = pCont;
     pJob->zLogmsg = p->zLogmsg;
+    pJob->zClientId = p->zClientId;
     p->pJobList = pJob;
     pCont->nContRef++;
   }else{
@@ -3166,7 +3185,7 @@ static BcvDispatchJob *bcvDispatchNewJob(
 }
 
 int bcvDispatchLogmsg(BcvDispatch *p, const char *zFmt, ...){
-  if( p->xLog!=0 ){
+  if( p->xLog!=0 || p->pLog!=0 ){
     char *zMsg = 0;
     va_list ap;
     va_start(ap, zFmt);
@@ -3176,6 +3195,11 @@ int bcvDispatchLogmsg(BcvDispatch *p, const char *zFmt, ...){
     p->zLogmsg = zMsg;
     return zMsg ? SQLITE_OK : SQLITE_NOMEM;
   }
+  return SQLITE_OK;
+}
+
+int bcvDispatchClientId(BcvDispatch *p, const char *z){
+  p->zClientId = z;
   return SQLITE_OK;
 }
 
