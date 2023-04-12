@@ -853,10 +853,8 @@ ChangesetStatus TxnManager::MergeDataChanges(ChangesetPropsCR revision, Changese
     Rebase rebase;
 
     DbResult result = ApplyChanges(changeStream, TxnAction::Merge, containsSchemaChanges, mergeNeeded ? &rebase : nullptr);
-    if (result != BE_SQLITE_OK) {
-        LOG.fatalv("MergeDataChanges failed to ApplyChanges: %s", BeSQLiteLib::GetErrorName(result));
-        return ChangesetStatus::ApplyError;
-    }
+    if (result != BE_SQLITE_OK)
+        m_dgndb.ThrowException("failed to apply changes", result);
 
     ChangesetStatus status = ChangesetStatus::Success;
     UndoChangeSet indirectChanges;

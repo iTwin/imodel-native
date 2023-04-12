@@ -495,16 +495,16 @@ private:
     void CancelDynamics();
     BentleyStatus PatchSlowDdlChanges(Utf8StringR patchedDDL, Utf8StringCR compoundSQL);
     void NotifyOnCommit();
+    void ThrowIfChangesetInProgress();
 
 public:
     void StartNewSession();
     void CallJsTxnManager(Utf8CP methodName) { DgnDb::CallJsFunction(m_dgndb.GetJsTxns(), methodName, {}); };
 
-    void ThrowIfChangesetInProgress();
+    bool IsChangesetInProgress() const { return m_changesetInProgress.IsValid(); }
     DGNPLATFORM_EXPORT Utf8String GetParentChangesetId() const;
     DGNPLATFORM_EXPORT void GetParentChangesetIndex(int32_t& index, Utf8StringR id) const;
     DGNPLATFORM_EXPORT ChangesetPropsPtr StartCreateChangeset(Utf8CP extension);
-    DGNPLATFORM_EXPORT bool IsChangesetInProgress() const { return m_changesetInProgress.IsValid(); }
     DGNPLATFORM_EXPORT void FinishCreateChangeset(int32_t changesetIndex, bool keepFile = false);
     DGNPLATFORM_EXPORT void StopCreateChangeset(bool keepFile);
     DGNPLATFORM_EXPORT ChangesetStatus MergeChangeset(ChangesetPropsCR revision);
@@ -516,15 +516,15 @@ public:
     DGNPLATFORM_EXPORT static void AddTxnMonitor(TxnMonitor& monitor);
     DGNPLATFORM_EXPORT static void DropTxnMonitor(TxnMonitor& monitor);
     DGNPLATFORM_EXPORT void DeleteAllTxns();
-    void DeleteFromStartTo(TxnId lastId); //!< @private
-    void DeleteRebases(int64_t lastRebaseId); //!< @private
-    DGNPLATFORM_EXPORT void DeleteReversedTxns(); //!< @private
-    void OnBeginValidate(); //!< @private
-    void OnEndValidate(); //!< @private
+    void DeleteFromStartTo(TxnId lastId);
+    void DeleteRebases(int64_t lastRebaseId);
+    void DeleteReversedTxns();
+    void OnBeginValidate();
+    void OnEndValidate();
     void AddTxnTable(DgnDomain::TableHandler*);//!< @private
-    DGNPLATFORM_EXPORT TxnManager(DgnDbR); //!< @private
-    DGNPLATFORM_EXPORT BeSQLite::DbResult InitializeTableHandlers(); //!< @private
-    TxnRelationshipLinkTables& GetRelationshipLinkTables() { return m_rlt; }//!< @private
+    DGNPLATFORM_EXPORT TxnManager(DgnDbR);
+    DGNPLATFORM_EXPORT BeSQLite::DbResult InitializeTableHandlers();
+    TxnRelationshipLinkTables& GetRelationshipLinkTables() { return m_rlt; }
 
     DGNPLATFORM_EXPORT static void SetOnCommitCallback(T_OnCommitCallback);
 
@@ -576,7 +576,7 @@ public:
     size_t GetMultiTxnOperationDepth() {return m_multiTxnOp.size();}
 
     //! @return The TxnId of the the innermost multi-Txn operation. If no multi-Txn operation is active, the TxnId will be zero.
-    DGNPLATFORM_EXPORT TxnId GetMultiTxnOperationStart();
+    TxnId GetMultiTxnOperationStart();
     //@}
 
     //! @name Reversing and Reinstating Transactions
@@ -595,7 +595,7 @@ public:
     TxnId GetCurrentTxnId() const {return m_curr;}
 
     //! @private - query the ID of the last rebase blob stored by MergeChangeset. Called by unit tests.
-    DGNPLATFORM_EXPORT int64_t QueryLastRebaseId();
+    int64_t QueryLastRebaseId();
 
     //! @private - adds to `rebaser` all stored rebases up to and including `thruId`.
     BeSQLite::DbResult LoadRebases(BeSQLite::Rebaser& rebaser, int64_t thruId);
