@@ -15,8 +15,6 @@ USING_NAMESPACE_BENTLEY_SQLITE
 #define LAST_REBASE_ID "LastRebaseId"
 #define PARENT_CS_ID "ParentChangeSetId"
 #define PARENT_CHANGESET "parentChangeset"
-#define CHANGESET_REL_DIR L"ChangeSets"
-#define CHANGESET_FILE_EXT L"changeset"
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -199,16 +197,14 @@ struct ChangesetIdGenerator : ChangeStream {
     }
 
 public:
-    ChangesetIdGenerator() {}
     bool _IsEmpty() const override final { return false; }
     RefCountedPtr<Changes::Reader> _GetReader() const override { return nullptr; }
 
     //---------------------------------------------------------------------------------------
     // @bsimethod
     //---------------------------------------------------------------------------------------
-    static ChangesetStatus GenerateId(Utf8StringR revId, Utf8StringCR parentRevId, BeFileNameCR revisionFile, DgnDbCR dgndb) {
-        revId.clear();
-        ChangesetFileReader fs(revisionFile, dgndb);
+    static Utf8String GenerateId(Utf8StringCR parentRevId, BeFileNameCR changesetFile, DgnDbCR dgndb) {
+        ChangesetFileReader fs(changesetFile, dgndb);
 
         ChangesetIdGenerator idGen;
         idGen.AddStringToHash(parentRevId);
@@ -216,22 +212,17 @@ public:
         auto reader = fs.MakeReader();
         DbResult result;
         Utf8StringCR prefix = reader->GetPrefix(result);
-        if (BE_SQLITE_OK != result) {
-            BeAssert(false);
-            return (result == BE_SQLITE_ERROR_InvalidChangeSetVersion) ? ChangesetStatus::InvalidVersion : ChangesetStatus::CorruptedChangeStream;
-        }
+        if (BE_SQLITE_OK != result)
+            dgndb.ThrowException(result == BE_SQLITE_ERROR_InvalidChangeSetVersion ? "invalid changeset version" : "corrupted changeset header", result);
 
         if (!prefix.empty())
             idGen._Append((Byte const*)prefix.c_str(), (int)prefix.SizeInBytes());
 
         result = idGen.ReadFrom(*reader);
-        if (BE_SQLITE_OK != result) {
-            BeAssert(false);
-            return ChangesetStatus::CorruptedChangeStream;
-        }
+        if (BE_SQLITE_OK != result)
+            dgndb.ThrowException("corrupted changeset", result);
 
-        revId = idGen.m_hash.GetHashString();
-        return ChangesetStatus::Success;
+        return idGen.m_hash.GetHashString();
     }
 };
 
@@ -266,63 +257,54 @@ void ChangesetProps::Dump(DgnDbCR dgndb) const {
 #endif
 }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
+/**
+ * validate the content of a changeset props to ensure it is from the right iModel and its checksum is valid
+ */
 void ChangesetProps::ValidateContent(DgnDbCR dgndb) const {
-    if (m_id.length() != SHA1::HashBytes * 2)
-        dgndb.ThrowException("ChangesetId is not a valid SHA1 hash", (int) ChangesetStatus::InvalidId);
-
-    Utf8String dbGuid = dgndb.GetDbGuid().ToString();
-    if (m_dbGuid != dbGuid)
+    if (m_dbGuid != dgndb.GetDbGuid().ToString())
         dgndb.ThrowException("changeset did not originate from this iModel", (int) ChangesetStatus::WrongDgnDb);
 
     if (!m_fileName.DoesPathExist())
         dgndb.ThrowException("changeset file does not exist", (int) ChangesetStatus::FileNotFound);
 
-    Utf8String id;
-    ChangesetStatus status = ChangesetIdGenerator::GenerateId(id, m_parentId, m_fileName, dgndb);
-
-    if (status != ChangesetStatus::Success)
-        dgndb.ThrowException("corrupt changeset file", (int) status);
-
-    if (m_id != id)
-      dgndb.ThrowException("incorrect hash in changeset", (int) ChangesetStatus::CorruptedChangeStream);
+    if (m_id != ChangesetIdGenerator::GenerateId(m_parentId, m_fileName, dgndb))
+      dgndb.ThrowException("incorrect id for changeset", (int) ChangesetStatus::CorruptedChangeStream);
 }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
+/**
+ * determine whether the Changeset has schema changes.
+ */
 bool ChangesetProps::ContainsSchemaChanges(DgnDbCR dgndb) const {
     ChangesetFileReader changeStream(m_fileName, dgndb);
 
     bool containsSchemaChanges;
     DdlChanges ddlChanges;
     DbResult result = changeStream.MakeReader()->GetSchemaChanges(containsSchemaChanges, ddlChanges);
-    if (BE_SQLITE_OK != result) {
-        BeAssert(false);
-        return false;
-    }
+    if (BE_SQLITE_OK != result)
+        dgndb.ThrowException("error reading changeset data", result);
 
     return containsSchemaChanges;
 }
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
+/**
+ * clear the iModel-specific briefcase local values for changesets. Called when an iModel's guid changes.
+ */
 void TxnManager::ClearSavedChangesetValues() {
+    m_dgndb.DeleteBriefcaseLocalValue(PARENT_CHANGESET);
+    m_dgndb.DeleteBriefcaseLocalValue(PARENT_CS_ID);
+
+    // these are just cruft from old versions.
     m_dgndb.DeleteBriefcaseLocalValue(CURRENT_CS_END_TXN_ID);
     m_dgndb.DeleteBriefcaseLocalValue(LAST_REBASE_ID);
-    m_dgndb.DeleteBriefcaseLocalValue(PARENT_CS_ID);
     m_dgndb.DeleteBriefcaseLocalValue("ReversedChangeSetId");
 }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
+/**
+ * save the parent-changeset-id in the briefcase local values table. This enables us to tell the most recently applied changes for a briefcase.
+ */
 void TxnManager::SaveParentChangeset(Utf8StringCR revisionId, int32_t changesetIndex) {
     if (revisionId.length() != SHA1::HashBytes * 2)
-        m_dgndb.ThrowException("invalid changesetId", (int) ChangesetStatus::BadVersionId);
+        m_dgndb.ThrowException("invalid changesetId", (int)ChangesetStatus::BadVersionId);
 
     // Early versions of iModels didn't save the changesetIndex, which is unfortunate since that's what we usually need. You can
     // get it by a round-trip query to IModelHub, but it's often convenient to know it locally, so we now store it in the be_local table.
@@ -344,11 +326,11 @@ void TxnManager::SaveParentChangeset(Utf8StringCR revisionId, int32_t changesetI
         // the application hasn't been converted to supply changesetIndex. Remove any values saved by other apps, because it's now out of sync.
         m_dgndb.DeleteBriefcaseLocalValue(PARENT_CHANGESET);
     }
-    }
+}
 
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
+/**
+ * get the parent-changeset-id from the briefcase local values table. This identifies the most recently applied changeset for a briefcase.
+ */
 Utf8String TxnManager::GetParentChangesetId() const {
     Utf8String revisionId;
     DbResult result = m_dgndb.QueryBriefcaseLocalValue(revisionId, PARENT_CS_ID);
@@ -374,7 +356,6 @@ void TxnManager::GetParentChangesetIndex(int32_t& index, Utf8StringR id) const {
 
 //=======================================================================================
 //! Handles a request to stream output by writing to a ProducerConsumerQueue. Can be used as the producer side of a concurrent pipeline.
-// @bsiclass
 //=======================================================================================
 struct ChangeStreamQueueProducer : ChangeStream {
     folly::ProducerConsumerQueue<bvector<uint8_t>>& m_q;
@@ -448,9 +429,14 @@ struct ChangeStreamQueueConsumer : ChangeStream {
     }
 };
 
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
+/**
+ * write the changes from:
+ *  1) the DdlChanges
+ *  2) data changes
+ *  3) rebase information
+ *
+ * into a file about to become a changeset file.
+ */
 void TxnManager::WriteChangesToFile(BeFileNameCR pathname, DdlChangesCR ddlChanges, ChangeGroupCR dataChangeGroup, Rebaser* rebaser) {
     ChangesetFileWriter writer(pathname, dataChangeGroup.ContainsEcSchemaChanges(), ddlChanges, m_dgndb);
 
@@ -483,9 +469,15 @@ void TxnManager::WriteChangesToFile(BeFileNameCR pathname, DdlChangesCR ddlChang
         m_dgndb.ThrowException("changeset file not created", (int) ChangesetStatus::FileWriteError);
 }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
+/**
+ * Create a new changeset file from all of the Txns in this briefcase. After this function returns, the
+ * changeset is "in-progress" and its file must be uploaded to iModelHub. After that succeeds, the Txns included
+ * in the changeset are deleted in the call to `FinishCreateChangeset`.
+ *
+ * The changeset file name is the "tempFileNameBase" of the briefcase with ".changeset" appended. For tests, this method
+ * takes a "extension" argument that is appended to the filename before ".changeset" is added. That's so tests
+ * can save more than one changeset while they work (without mocking iModelHub.)
+ */
 ChangesetPropsPtr TxnManager::StartCreateChangeset(Utf8CP extension) {
     if (m_changesetInProgress.IsValid())
         m_dgndb.ThrowException("a changeset is currently in progress", (int) ChangesetStatus::IsCreatingRevision);
@@ -496,7 +488,8 @@ ChangesetPropsPtr TxnManager::StartCreateChangeset(Utf8CP extension) {
     if (HasChanges())
         m_dgndb.ThrowException("local uncommitted changes present", (int) ChangesetStatus::HasUncommittedChanges);
 
-    DeleteReversedTxns(); // make sure there's nothing undone before we create a new revision
+    // make sure there's nothing undone before we start to create a changeset
+    DeleteReversedTxns();
 
     if (!HasPendingTxns())
         m_dgndb.ThrowException("no changes are present", (int) ChangesetStatus::NoTransactions);
@@ -534,16 +527,15 @@ ChangesetPropsPtr TxnManager::StartCreateChangeset(Utf8CP extension) {
     BeFileName changesetFileName((m_dgndb.GetTempFileBaseName() + (extension ? extension : "") +  ".changeset").c_str());
     WriteChangesToFile(changesetFileName, ddlChanges, dataChangeGroup, (lastRebaseId != 0) ? &rebaser : nullptr);
 
-    Utf8String parentRevId = GetParentChangesetId();
-    Utf8String revId;
-    ChangesetIdGenerator::GenerateId(revId, parentRevId, changesetFileName, m_dgndb);
-    Utf8String dbGuid = m_dgndb.GetDbGuid().ToString();
+    auto parentRevId = GetParentChangesetId();
+    auto revId = ChangesetIdGenerator::GenerateId(parentRevId, changesetFileName, m_dgndb);
+    auto dbGuid = m_dgndb.GetDbGuid().ToString();
 
     m_changesetInProgress = new ChangesetProps(revId, -1, parentRevId, dbGuid, changesetFileName);
     m_changesetInProgress->m_endTxnId = endTxnId;
     m_changesetInProgress->m_lastRebaseId = lastRebaseId;
 
-    // this is just to clean this up from older versions.
+    // this is just to clean this cruft up from older versions.
     m_dgndb.DeleteBriefcaseLocalValue(CURRENT_CS_END_TXN_ID);
     m_dgndb.DeleteBriefcaseLocalValue(LAST_REBASE_ID);
 
@@ -551,6 +543,10 @@ ChangesetPropsPtr TxnManager::StartCreateChangeset(Utf8CP extension) {
     if (BE_SQLITE_OK != rc)
         m_dgndb.ThrowException("cannot save changes to start changeset", rc);
 
+    // We've just saved all the local Txns together into a changeset file that can now be pushed to iModelHub. Only after that succeeds we can delete
+    // the Txns from this changeset. In the meantime, we can allow further changes to this briefcase that will be included in the *next* changeset.
+    // However, we cannot allow the changes we've just included in the changeset to be undone. Therefore, we start a new "session" which
+    // makes the current Txns unreachable for undo/redo.
     StartNewSession();
     BeAssert(!IsUndoPossible());
     BeAssert(!IsRedoPossible());
@@ -558,15 +554,18 @@ ChangesetPropsPtr TxnManager::StartCreateChangeset(Utf8CP extension) {
     return m_changesetInProgress;
 }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
+/**
+ * This method is called after an in-progress changeset file, created in this session, was successfully uploaded to iModelHub. We can now delete
+ * all of the Txns up to the last one included in the changeset.
+ * Note: If the upload fails for any reason (e.g. we crashed before it succeeded), it must be recreated from the current state of the briefcase.
+ */
 void TxnManager::FinishCreateChangeset(int32_t changesetIndex, bool keepFile) {
     if (!IsChangesetInProgress())
         m_dgndb.ThrowException("no changeset in progress", (int) ChangesetStatus::IsNotCreatingChangeset);
 
     TxnId endTxnId = m_changesetInProgress->m_endTxnId;
-    BeAssert(endTxnId.IsValid());
+    if (!endTxnId.IsValid())
+        m_dgndb.ThrowException("changeset in progress is not valid", (int) ChangesetStatus::IsNotCreatingChangeset);
 
     m_dgndb.Txns().DeleteFromStartTo(endTxnId);
     if (0 !=m_changesetInProgress->m_lastRebaseId)
@@ -579,6 +578,8 @@ void TxnManager::FinishCreateChangeset(int32_t changesetIndex, bool keepFile) {
     if (BE_SQLITE_OK != rc)
         m_dgndb.ThrowException("cannot save changes to complete changeset", rc);
 
+    // if there were no *new* changes during the process of uploading the changeset (which is very likely), we can
+    // restart the session id back to 0. Otherwise just leave it alone so undo/redo of those changes is still possible.
     if (!HasPendingTxns())
         Initialize();
 
@@ -586,9 +587,9 @@ void TxnManager::FinishCreateChangeset(int32_t changesetIndex, bool keepFile) {
     StopCreateChangeset(keepFile);
 }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
+/**
+ * free the in-progress ChangesetProps, if present, and optionally delete its changeset file.
+ */
 void TxnManager::StopCreateChangeset(bool keepFile) {
     if (!keepFile && m_changesetInProgress.IsValid() && m_changesetInProgress->m_fileName.DoesPathExist())
         m_changesetInProgress->m_fileName.BeDeleteFile();
@@ -596,10 +597,6 @@ void TxnManager::StopCreateChangeset(bool keepFile) {
     m_changesetInProgress = nullptr;
 }
 
-void TxnManager::ThrowIfChangesetInProgress() {
-    if (IsChangesetInProgress())
-        m_dgndb.ThrowException("changeset creation is in progress", (int) ChangesetStatus::IsCreatingRevision);
-}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod

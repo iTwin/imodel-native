@@ -941,14 +941,20 @@ ChangesetStatus TxnManager::MergeDataChanges(ChangesetPropsCR revision, Changese
     return status;
 }
 
+/** throw an exception we are currently waiting for a changeset to be uploaded. */
+void TxnManager::ThrowIfChangesetInProgress() {
+    if (IsChangesetInProgress())
+        m_dgndb.ThrowException("changeset creation is in progress", (int) ChangesetStatus::IsCreatingRevision);
+}
+
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::ReverseChangeset(ChangesetPropsCR changeset) {
+    ThrowIfChangesetInProgress();
+
     if (m_dgndb.IsReadonly())
         m_dgndb.ThrowException("file is readonly", (int) ChangesetStatus::CannotMergeIntoReadonly);
-
-    ThrowIfChangesetInProgress();
 
     if (HasLocalChanges())
         m_dgndb.ThrowException("local changes present", (int) ChangesetStatus::HasLocalChanges);
@@ -978,10 +984,10 @@ void TxnManager::ReverseChangeset(ChangesetPropsCR changeset) {
  * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ChangesetStatus TxnManager::MergeChangeset(ChangesetPropsCR changeset) {
+    ThrowIfChangesetInProgress();
+
     if (m_dgndb.IsReadonly())
         m_dgndb.ThrowException("file is readonly", (int) ChangesetStatus::CannotMergeIntoReadonly);
-
-    ThrowIfChangesetInProgress();
 
     if (HasChanges())
         m_dgndb.ThrowException("unsaved changes present", (int) ChangesetStatus::HasUncommittedChanges);
@@ -1720,8 +1726,8 @@ void TxnManager::DeleteFromStartTo(TxnId lastId) {
     stmt.BindInt64(1, lastId.GetValue());
 
     DbResult result = stmt.Step();
-    UNUSED_VARIABLE(result);
-    BeAssert(result == BE_SQLITE_DONE);
+    if (result != BE_SQLITE_DONE)
+        m_dgndb.ThrowException("error deleting from Txn table", result);
 }
 
 /*---------------------------------------------------------------------------------**//**
