@@ -988,6 +988,9 @@ ChangesetStatus TxnManager::MergeChangeset(ChangesetPropsCR changeset) {
 
     changeset.ValidateContent(m_dgndb);
 
+    if (GetParentChangesetId() != changeset.GetParentId())
+        m_dgndb.ThrowException("changeset out of order", (int) ChangesetStatus::ParentMismatch);
+
     ChangesetFileReader changeStream(changeset.GetFileName(), m_dgndb);
 
     bool containsSchemaChanges = changeset.ContainsSchemaChanges(m_dgndb);

@@ -29,6 +29,17 @@ USING_NAMESPACE_BENTLEY_EC
 // #define DUMP_REVISION 1
 // #define DUMP_CODES
 
+void expectToThrow(std::function<void()> fn, Utf8CP msg) {
+    BeTest::SetFailOnAssert(false);
+    try {
+        fn();
+        ASSERT_TRUE(false);
+    } catch (std::exception const& e) {
+        EXPECT_STREQ(e.what(), msg);
+    }
+    BeTest::SetFailOnAssert(true);
+}
+
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
@@ -384,10 +395,7 @@ TEST_F(RevisionTestFixture, MoreWorkflow)
     ASSERT_TRUE(revStatus == ChangesetStatus::Success);
 
     // Merge Rev3 next - should fail since the parent does not match
-    BeTest::SetFailOnAssert(false);
-    revStatus = m_db->Txns().MergeChangeset(*revision3);
-    BeTest::SetFailOnAssert(true);
-    ASSERT_TRUE(revStatus == ChangesetStatus::ParentMismatch);
+    expectToThrow([&]() { m_db->Txns().MergeChangeset(*revision3); }, "changeset out of order");
 
     // Merge Rev3 first
     RestoreTestFile();
@@ -430,10 +438,7 @@ TEST_F(RevisionTestFixture, MergeToReadonlyBriefcase)
     RestoreTestFile(Db::OpenMode::Readonly);
 
     // Merge revision that was previously created to create a checkpoint file
-    BeTest::SetFailOnAssert(false);
-    ChangesetStatus revStatus = m_db->Txns().MergeChangeset(*revision1);
-    ASSERT_TRUE(revStatus == ChangesetStatus::CannotMergeIntoReadonly);
-    BeTest::SetFailOnAssert(true);
+    expectToThrow([&]() { m_db->Txns().MergeChangeset(*revision1); }, "file is readonly");
     }
 
 //---------------------------------------------------------------------------------------
@@ -716,27 +721,13 @@ TEST_F(RevisionTestFixture, DdlChanges)
     ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column2 FROM TestTable2 WHERE Id=2", 0)); // i.e., null value
 
     // Reverse revision 4 (Note that all data or schema changes are entirely skipped in this apply)
-    BeTest::SetFailOnAssert(false);
-
-    try {
-        m_db->Txns().ReverseChangeset(*revision4);
-        ASSERT_TRUE(false);
-    } catch (std::exception const& e) {
-        EXPECT_STREQ(e.what(), "Cannot reverse a changeset containing schema changes");
-    }
+    expectToThrow([&]() { m_db->Txns().ReverseChangeset(*revision4); }, "Cannot reverse a changeset containing schema changes");
 
     BeFileName fileName = BeFileName(m_db->GetDbFileName(), true);
     CloseDgnDb();
     DbResult openStatus;
     DgnDb::OpenParams openParams(Db::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(*revision4, RevisionProcessOption::Reverse));
-    try {
-        m_db = DgnDb::OpenIModelDb(&openStatus, fileName, openParams);
-        ASSERT_TRUE(false);
-    } catch (std::exception const& e) {
-        EXPECT_STREQ(e.what(), "Cannot reverse a changeset containing schema changes");
-    }
-
-    BeTest::SetFailOnAssert(true);
+    expectToThrow([&]() { m_db = DgnDb::OpenIModelDb(&openStatus, fileName, openParams); }, "Cannot reverse a changeset containing schema changes");
     }
 
 //---------------------------------------------------------------------------------------
@@ -998,7 +989,7 @@ TEST_F(RevisionTestFixture, MoreDataAndSchemaChanges)
         Utf8PrintfString sql("INSERT INTO TestTable1(Id, Column1) VALUES(%d,%d)", ii, ii);
         ASSERT_EQ(m_db->ExecuteSql(sql.c_str()), BE_SQLITE_OK);
         m_db->SaveChanges();
-        revisionPtrs[ii] = CreateRevision("-cs2");
+        revisionPtrs[ii] = CreateRevision(Utf8PrintfString("-csdata%d", ii).c_str());
         ASSERT_TRUE(revisionPtrs[ii].IsValid());
         }
 
@@ -1014,7 +1005,7 @@ TEST_F(RevisionTestFixture, MoreDataAndSchemaChanges)
         Utf8PrintfString sql("INSERT INTO TestTable2(Id, Column1) VALUES(%d,%d)", ii, ii);
         ASSERT_EQ(m_db->ExecuteSql(sql.c_str()), BE_SQLITE_OK);
         m_db->SaveChanges();
-        revisionPtrs[ii] = CreateRevision("-cs4");
+        revisionPtrs[ii] = CreateRevision(Utf8PrintfString("-cs2data%d", ii).c_str());
         ASSERT_TRUE(revisionPtrs[ii].IsValid());
         }
 
@@ -1063,14 +1054,11 @@ TEST_F(RevisionTestFixture, MoreDataAndSchemaChanges)
     m_db->CloseDb();
     processRevisions = filterRevisions(revisionPtrs, 7, 9);
     openParams.GetSchemaUpgradeOptionsR().SetUpgradeFromRevisions(processRevisions, RevisionProcessOption::Merge);
-    BeTest::SetFailOnAssert(false);
-    m_db = DgnDb::OpenIModelDb(&openStatus, fileName, openParams);
-    BeTest::SetFailOnAssert(true);
-    ASSERT_FALSE(m_db.IsValid()) << "Could perform an invalid merge";
+    expectToThrow([&]() { m_db = DgnDb::OpenIModelDb(&openStatus, fileName, openParams);}, "changeset out of order");
 
     openParams.GetSchemaUpgradeOptionsR().Reset();
     m_db = DgnDb::OpenIModelDb(&openStatus, fileName, openParams);
-    ASSERT_TRUE(m_db.IsValid()) << "Could not open test project";
+    ASSERT_TRUE(m_db.IsValid());
 
     /*
     * Test 3: Reinstate and merge
