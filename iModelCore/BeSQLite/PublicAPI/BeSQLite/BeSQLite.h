@@ -3524,4 +3524,134 @@ struct LzmaUtility
     static ZipErrors DecompressEmbeddedBlob(bvector<Byte>&out, uint32_t expectedSize, void const*inputBuffer, uint32_t inputSize, Byte*header, uint32_t headerSize); //!< @private
 };
 
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+struct DbModule : NonCopyableClass {
+    public:
+        struct VirtualTable : NonCopyableClass  {
+            struct IndexInfo final {
+                enum class Operator {
+                    EQ = 2,
+                    GT = 4,
+                    LE = 8,
+                    LT = 16,
+                    GE = 32,
+                    MATCH = 64,
+                    LIKE = 65,
+                    GLOB = 66,
+                    REGEXP = 67,
+                    NE = 68,
+                    ISNOT = 69,
+                    ISNOTNULL = 70,
+                    ISNULL = 71,
+                    IS = 72,
+                    LIMIT = 73,
+                    OFFSET = 74,
+                    FUNCTION = 150,
+                };
+                enum class ScanFlags {
+                    NONE = 0,
+                    UNIQUE = 1,
+                };
+                struct IndexConstraint final {
+                    BE_SQLITE_EXPORT int GetColumn() const;  /* Column constrained.  -1 for ROWID */
+                    BE_SQLITE_EXPORT Operator GetOp() const; /* Constraint operator */
+                    BE_SQLITE_EXPORT bool IsUsable() const;  /* True if this constraint is usable */
+                };
+                struct IndexOrderBy final {
+                    BE_SQLITE_EXPORT int GetColumn() const;
+                    BE_SQLITE_EXPORT bool GetDesc() const;
+                };
+                struct ConstraintUsage final {
+                    BE_SQLITE_EXPORT int GetArgvIndex() const;
+                    BE_SQLITE_EXPORT void SetArgvIndex(int) const;
+                    BE_SQLITE_EXPORT bool GetOmit() const;
+                    BE_SQLITE_EXPORT void SetOmit(bool);
+                };
+                BE_SQLITE_EXPORT int GetConstraintCount() const;  /* Number of entries in aConstraint */
+                BE_SQLITE_EXPORT const IndexConstraint* GetConstraint(int)  const;
+                BE_SQLITE_EXPORT int GetIndexOrderByCount() const;  /* Number of terms in the ORDER BY clause */
+                BE_SQLITE_EXPORT const IndexOrderBy* GetOrderBy(int)  const;
+                BE_SQLITE_EXPORT int GetConstraintUsageCount() const;
+                BE_SQLITE_EXPORT ConstraintUsage* GetConstraintUsage(int) ;
+                BE_SQLITE_EXPORT void SetIdxNum(int);
+                BE_SQLITE_EXPORT int GetIdxNum() const;
+                BE_SQLITE_EXPORT void SetIdxStr(const char* idxStr, bool makeCopy = true);
+                BE_SQLITE_EXPORT const char* GetIdStr() const;
+                BE_SQLITE_EXPORT bool GetOrderByConsumed() const;
+                BE_SQLITE_EXPORT void SetOrderByConsumed(bool);
+                BE_SQLITE_EXPORT double GetEstimatedCost() const;
+                BE_SQLITE_EXPORT void SetEstimatedCost(double);
+                BE_SQLITE_EXPORT int64_t GetEstimatedRows() const;
+                BE_SQLITE_EXPORT void SetEstimatedRows(int64_t);
+                BE_SQLITE_EXPORT ScanFlags GetIdxFlags() const;
+                BE_SQLITE_EXPORT void SetIdxFlags(ScanFlags);
+                BE_SQLITE_EXPORT int64_t GetColUsed() const;
+                BE_SQLITE_EXPORT void SetColUsed(int64_t);
+            };
+            public:
+                struct CallbackData;
+                struct Cursor : NonCopyableClass {
+                    public:
+                        struct CallbackData;
+                        struct Context {
+                            enum class CopyData : int {No = 0, Yes = -1};                                     //!< see sqlite3_destructor_type
+                            BE_SQLITE_EXPORT void SetResultBlob(void const* value, int length, CopyData copy=CopyData::Yes); //!< see sqlite3_result_blob
+                            BE_SQLITE_EXPORT void SetResultDouble(double);                                //!< see sqlite3_result_double
+                            BE_SQLITE_EXPORT void SetResultError(Utf8CP, int len=-1);                     //!< see sqlite3_result_error
+                            BE_SQLITE_EXPORT void SetResultError_toobig();                                //!< see sqlite3_result_error_toobig
+                            BE_SQLITE_EXPORT void SetResultError_nomem();                                 //!< see sqlite3_result_error_nomem
+                            BE_SQLITE_EXPORT void SetResultError_code(int);                               //!< see sqlite3_result_error_code
+                            BE_SQLITE_EXPORT void SetResultInt(int);                                      //!< see sqlite3_result_int
+                            BE_SQLITE_EXPORT void SetResultInt64(int64_t);                                //!< see sqlite3_result_int64
+                            BE_SQLITE_EXPORT void SetResultNull();                                        //!< see sqlite3_result_null
+                            BE_SQLITE_EXPORT void SetResultText(Utf8CP value, int length, CopyData);      //!< see sqlite3_result_text
+                            BE_SQLITE_EXPORT void SetResultZeroblob(int length);                          //!< see sqlite3_result_zeroblob
+                            BE_SQLITE_EXPORT void SetResultValue(DbValue);                                //!< see sqlite3_result_value
+                        };
+
+                    private:
+                        CallbackData *m_ctx = nullptr;
+                        VirtualTable& m_table;
+
+                    public:
+                        BE_SQLITE_EXPORT Cursor(VirtualTable& vt);
+                        BE_SQLITE_EXPORT virtual ~Cursor();
+                        CallbackData* GetCallbackData() { return m_ctx; }
+                        virtual bool Eof() = 0;
+                        virtual DbResult Next() = 0;
+                        virtual DbResult GetColumn(int i, Context& ctx) = 0;
+                        virtual DbResult GetRowId(int64_t&) = 0;
+                        virtual DbResult Close() { return BE_SQLITE_OK;  }
+                        virtual DbResult Filter(int idxNum, const char *idxStr, int argc, DbValue* args) = 0;
+                        VirtualTable& GetTable() { return m_table; }
+                };
+
+            private:
+                CallbackData *m_ctx = nullptr;
+                DbModule& m_module;
+
+            public:
+                virtual DbResult Open(Cursor*& cur) = 0;
+                virtual DbResult BestIndex(IndexInfo& indexInfo) = 0;
+                DbModule& GetModule() { return m_module;  }
+                BE_SQLITE_EXPORT explicit VirtualTable(DbModule& module);
+                BE_SQLITE_EXPORT virtual ~VirtualTable();
+                CallbackData* GetCallbackData() { return m_ctx; }
+        };
+    private:
+        DbR m_db;
+        Utf8String m_name;
+        Utf8String m_declaration;
+
+    public:
+        DbModule(DbR db, Utf8CP name, Utf8CP declaration):m_name(name), m_db(db), m_declaration(declaration){}
+        Utf8StringCR GetName() const { return m_name;  }
+        Utf8StringCR GetDeclaration() const { return m_declaration; }
+        virtual DbResult Connect(VirtualTable*& out, int argc, const char* const* argv) = 0;
+
+        BE_SQLITE_EXPORT DbResult Register();
+};
+
 END_BENTLEY_SQLITE_NAMESPACE

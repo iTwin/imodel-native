@@ -811,6 +811,190 @@ TEST_F(BeSQliteTestFixture, Profiler)
     ASSERT_STREQ( "COMMIT", stats->GetValueText(1));;
     }
 
+struct SeriesModule : DbModule {
+    struct SeriesTable : VirtualTable {
+        struct SeriesCursor : Cursor {
+            enum class Columns{
+                Value = 0,
+                Start = 1,
+                Stop = 2,
+                Step = 3,
+            };
+            private:
+                int m_isDesc = 0;
+                int64_t m_iRowid = 0;
+                int64_t m_iValue = 0;
+                int64_t m_mnValue = 0;
+                int64_t m_mxValue = 0;
+                int64_t m_iStep = 0;
+            public:
+                SeriesCursor(SeriesTable& vt): Cursor(vt){}
+                bool Eof() final {
+                    if (m_isDesc ) {
+                        return m_iValue < m_mnValue;
+                    }else{
+                        return m_iValue > m_mxValue;
+                    }
+                }
+                DbResult Next() final {
+                    if (m_isDesc) {
+                        m_iValue -= m_iStep;
+                    } else {
+                        m_iValue += m_iStep;
+                    }
+                    m_iRowid++;
+                    return BE_SQLITE_OK;
+                }
+                DbResult GetColumn(int i, Context& ctx) final {
+                    int64_t x = 0;
+                    switch( (Columns)i ){
+                        case Columns::Start: x = m_mnValue; break;
+                        case Columns::Stop: x = m_mxValue; break;
+                        case Columns::Step: x = m_iStep;   break;
+                        default: x = m_iValue;  break;
+                    }
+                    ctx.SetResultInt64(x);
+                    return BE_SQLITE_OK;
+                }
+                DbResult GetRowId(int64_t& rowId) final {
+                    rowId = m_iRowid;
+                    return BE_SQLITE_OK;
+                }
+                DbResult Filter(int idxNum, const char *idxStr, int argc, DbValue* argv) final {
+                    int i = 0;
+                    if( idxNum & 1 ){
+                        m_mnValue = argv[i++].GetValueInt64();
+                    }else{
+                        m_mnValue = 0;
+                    }
+                    if( idxNum & 2 ){
+                        m_mxValue = argv[i++].GetValueInt64();
+                    }else{
+                        m_mxValue = 0xff;
+                    }
+                    if( idxNum & 4 ){
+                        m_iStep = argv[i++].GetValueInt64();
+                        if( m_iStep==0 ){
+                        m_iStep = 1;
+                        }else if( m_iStep<0 ){
+                        m_iStep = -m_iStep;
+                        if( (idxNum & 16)==0 ) idxNum |= 8;
+                        }
+                    }else{
+                        m_iStep = 1;
+                    }
+                    for(i=0; i<argc; i++){
+                        if( argv[i].IsNull() ){
+                        m_mnValue = 1;
+                        m_mxValue =  0;
+                        break;
+                        }
+                    }
+                    if( idxNum & 8 ){
+                        m_isDesc = 1;
+                        m_iValue = m_mxValue;
+                        if( m_iStep>0 ){
+                        m_iValue -= (m_mxValue - m_mnValue)%m_iStep;
+                        }
+                    }else{
+                        m_isDesc = 0;
+                        m_iValue = m_mnValue;
+                    }
+                    m_iRowid = 1;
+                    return BE_SQLITE_OK;
+                }
+        };
+        public:
+            SeriesTable(SeriesModule& module): VirtualTable(module) {}
+            DbResult Open(Cursor*& cur) override {
+                cur = new SeriesCursor(*this);
+                return BE_SQLITE_OK;
+            }
+             DbResult BestIndex(IndexInfo& indexInfo) final {
+                int i, j;              /* Loop over constraints */
+                int idxNum = 0;        /* The query plan bitmask */
+                int bStartSeen = 0;    /* EQ constraint seen on the START column */
+                int unusableMask = 0;  /* Mask of unusable constraints */
+                int nArg = 0;          /* Number of arguments that seriesFilter() expects */
+                int aIdx[3];           /* Constraints on start, stop, and step */
+                const int SQLITE_SERIES_CONSTRAINT_VERIFY = 0;
+                aIdx[0] = aIdx[1] = aIdx[2] = -1;
+
+                for(i=0; i<indexInfo.GetConstraintCount(); i++){
+                    auto pConstraint = indexInfo.GetConstraint(i);
+                    int iCol;    /* 0 for start, 1 for stop, 2 for step */
+                    int iMask;   /* bitmask for those column */
+                    if( pConstraint->GetColumn()< (int)SeriesCursor::Columns::Start ) continue;
+                    iCol = pConstraint->GetColumn() - (int)SeriesCursor::Columns::Start;
+                    iMask = 1 << iCol;
+                    if( iCol==0 ) bStartSeen = 1;
+                    if (!pConstraint->IsUsable()){
+                        unusableMask |=  iMask;
+                        continue;
+                    } else if (pConstraint->GetOp() == IndexInfo::Operator::EQ ){
+                        idxNum |= iMask;
+                        aIdx[iCol] = i;
+                    }
+                }
+                for( i = 0; i < 3; i++) {
+                    if( (j = aIdx[i])>=0 ) {
+                        indexInfo.GetConstraintUsage(j)->SetArgvIndex(++nArg);
+                        indexInfo.GetConstraintUsage(j)->SetOmit(!SQLITE_SERIES_CONSTRAINT_VERIFY);
+                    }
+                }
+                if( (unusableMask & ~idxNum)!=0 ){
+                    /* The start, stop, and step columns are inputs.  Therefore if there
+                    ** are unusable constraints on any of start, stop, or step then
+                    ** this plan is unusable */
+                    return BE_SQLITE_CONSTRAINT;
+                }
+                if( (idxNum & 3) == 3){
+                    /* Both start= and stop= boundaries are available.  This is the
+                    ** the preferred case */
+                    indexInfo.SetEstimatedCost((double)(2 - ((idxNum&4)!=0)));
+                    indexInfo.SetEstimatedRows(1000);
+                    if( indexInfo.GetIndexOrderByCount() >= 1 && indexInfo.GetOrderBy(0)->GetColumn() == 0 ){
+                    if( indexInfo.GetOrderBy(0) ->GetDesc()){
+                        idxNum |= 8;
+                    }else{
+                        idxNum |= 16;
+                    }
+                    indexInfo.SetOrderByConsumed(true);
+                    }
+                } else {
+                    /* If either boundary is missing, we have to generate a huge span
+                    ** of numbers.  Make this case very expensive so that the query
+                    ** planner will work hard to avoid it. */
+                    indexInfo.SetEstimatedRows(2147483647);
+                }
+                indexInfo.SetIdxNum(idxNum);
+                return BE_SQLITE_OK;
+             }
+    };
+    public:
+        SeriesModule(DbR db): DbModule(db, "generate_series", "CREATE TABLE x(value,start hidden,stop hidden,step hidden)") {}
+        DbResult Connect(VirtualTable*& out, int argc, const char* const* argv) final {
+            out = new SeriesTable(*this);
+            return BE_SQLITE_OK;
+        }
+};
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(BeSQliteTestFixture, TableValueFunction) {
+    auto db1 = Create("first.db");
+    (new SeriesModule(*db1))->Register();
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*db1, "SELECT value FROM generate_series(0,100,10)"));
+    int expected[] = {0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100};
+    int i = 0;
+    while(stmt.Step() == BE_SQLITE_ROW) {
+        ASSERT_EQ(expected[i++], stmt.GetValueInt(0));
+    }
+    ASSERT_EQ(i, 11);
+}
+
+
 #ifdef ANALYZE_MEMORY_USAGE
 //---------------------------------------------------------------------------------------
 // @bsimethod
