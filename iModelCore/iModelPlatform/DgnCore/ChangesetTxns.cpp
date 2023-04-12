@@ -22,7 +22,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 // @bsimethod
 //---------------------------------------------------------------------------------------
 ChangeSet::ConflictResolution ChangesetFileReader::_OnConflict(ChangeSet::ConflictCause cause, Changes::Change iter) {
-    DgnDbCR dgndb = *(DgnDbCP) &GetDb();
+    DgnDbCR dgndb = *((DgnDbCP) &GetDb());
     TxnManagerCR txns = ((DgnDbP) &dgndb)->Txns();
     Utf8CP tableName = nullptr;
     int nCols, indirect;
