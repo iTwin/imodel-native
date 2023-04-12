@@ -492,7 +492,7 @@ LINKER_LIBRARIES            = $(ContextSubpartsLibs)$(BeSQLiteLib) \
                               $(ContextSubpartsLibs)$(BentleyGeomLib) \
                               $(ContextSubpartsLibs)$(libprefix)iTwinBentley$(libext) \
                               $(ContextSubpartsLibs)$(libprefix)iTwinXml$(libext) \
-                              $(ContextSubpartsLibs)$(libprefix)BeLibxml2$(libext) \
+                              $(ContextSubpartsLibs)$(libprefix)iTwinLibxml2$(libext) \
                               $(ContextSubpartsLibs)$(libprefix)iTwinJsonCpp$(stlibext) \
                               $(ContextSubpartsLibs)$(libprefix)iTwinGeomSerialization$(libext) \
                               $(ContextSubPartsLibs)$(stlibprefix)iTwin_google_re2$(stlibext)
