@@ -21,9 +21,9 @@ struct ContentClassesLocater
         NavNodesFactory const& m_navNodeFactory;
     public:
         Context(ECSchemaHelper const& helper, IConnectionManagerCR connections, IConnectionCR connection, ICancelationTokenCP cancellationToken, 
-            IRulesPreprocessorR rulesPreprocessor, PresentationRuleSetCR ruleset,
-            Utf8CP preferredDisplayType, RulesetVariables const& rulesetVariables, INavNodeLocater const& nodesLocater, NavNodesFactory const& navNodeFactory)
-            : ContentSpecificationsHandler::Context(helper, connections, connection, cancellationToken, rulesPreprocessor, ruleset, rulesetVariables, preferredDisplayType, *NavNodeKeyListContainer::Create()),
+            IRulesPreprocessorR rulesPreprocessor, PresentationRuleSetCR ruleset, Utf8CP preferredDisplayType, RulesetVariables const& rulesetVariables, 
+            INavNodeLocater const& nodesLocater, NavNodesFactory const& navNodeFactory)
+            : ContentSpecificationsHandler::Context(helper, connections, connection, cancellationToken, rulesPreprocessor, ruleset, rulesetVariables, preferredDisplayType, *NavNodeKeyListContainer::Create(), nullptr),
             m_nodesLocater(nodesLocater), m_navNodeFactory(navNodeFactory)
             {}
         INavNodeLocater const& GetNodesLocater() const {return m_nodesLocater;}

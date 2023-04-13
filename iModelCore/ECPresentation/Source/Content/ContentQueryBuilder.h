@@ -43,8 +43,8 @@ struct ContentDescriptorBuilder
         Context(ECSchemaHelper const& helper, IConnectionManagerCR connections, IConnectionCR connection, ICancelationTokenCP cancellationToken,
             IRulesPreprocessorR rulesPreprocessor, PresentationRuleSetCR ruleset, Utf8CP preferredDisplayType,
             RulesetVariables const& rulesetVariables, IPropertyCategorySupplierCR categorySupplier, IECPropertyFormatter const* propertyFormatter, ECPresentation::UnitSystem unitSystem,
-            INavNodeKeysContainerCR input, SelectionInfo const* selection)
-            : ContentSpecificationsHandler::Context(helper, connections, connection, cancellationToken, rulesPreprocessor, ruleset, rulesetVariables, preferredDisplayType, input),
+            INavNodeKeysContainerCR input, SelectionInfo const* selection, IUsedRulesetVariablesListener* usedVariablesListener)
+            : ContentSpecificationsHandler::Context(helper, connections, connection, cancellationToken, rulesPreprocessor, ruleset, rulesetVariables, preferredDisplayType, input, usedVariablesListener),
             m_categorySupplier(categorySupplier), m_propertyFormatter(propertyFormatter), m_unitSystem(unitSystem), m_selectionInfo(selection)
             {}
         IPropertyCategorySupplierCR GetCategorySupplier() const {return m_categorySupplier;}
