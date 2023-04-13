@@ -3,6 +3,8 @@
 * See COPYRIGHT.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
+#include <sstream>
+#include <rapidjson/ostreamwrapper.h>
 
 USING_NAMESPACE_BENTLEY_EC
 #include <ECDb/ConcurrentQueryManager.h>
@@ -27,11 +29,25 @@ struct InstanceReaderFixture : ECDbTestFixture {
     }
 
 };
+
+TEST_F(InstanceReaderFixture, experimental_check) {
+    ASSERT_EQ(BE_SQLITE_OK, OpenECDbTestDataFile("test.bim"));
+    ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+
+    ECSqlStatement stmt0;
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt0.Prepare(m_ecdb, "SELECT $ FROM bis.CategorySelectorRefersToCategories"));
+
+    ECSqlStatement stmt1;
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt1.Prepare(m_ecdb, "SELECT $->ECInstanceId FROM bis.CategorySelectorRefersToCategories"));
+}
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(InstanceReaderFixture, check_link_table_serialization) {
     ASSERT_EQ(BE_SQLITE_OK, OpenECDbTestDataFile("test.bim"));
+    ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT $ FROM bis.CategorySelectorRefersToCategories"));
@@ -55,6 +71,8 @@ TEST_F(InstanceReaderFixture, check_link_table_serialization) {
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(InstanceReaderFixture, check_instance_serialization) {
     ASSERT_EQ(BE_SQLITE_OK, OpenECDbTestDataFile("test.bim"));
+    ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT $ FROM bis.Element"));
@@ -70,23 +88,23 @@ TEST_F(InstanceReaderFixture, check_instance_serialization) {
         [
             {
                 "ECInstanceId":"0x38",
-                "ECClassId":"Generic.PhysicalObject",
+                "ECClassId":"0xe7",
                 "Model":{
                     "Id":"0x1f",
-                    "RelECClassId":"BisCore.ModelContainsElements"
+                    "RelECClassId":"0x40"
                 },
                 "LastMod":"2017-07-25T20:44:59.926Z",
                 "CodeSpec":{
                     "Id":"0x1",
-                    "RelECClassId":"BisCore.CodeSpecSpecifiesCode"
+                    "RelECClassId":"0x47"
                 },
                 "CodeScope":{
                     "Id":"0x1",
-                    "RelECClassId":"BisCore.ElementScopesCode"
+                    "RelECClassId":"0x49"
                 },
                 "Category":{
                     "Id":"0x17",
-                    "RelECClassId":"BisCore.GeometricElement3dIsInCategory"
+                    "RelECClassId":"0x8c"
                 },
                 "InSpatialIndex":true,
                 "Origin":{
@@ -111,23 +129,23 @@ TEST_F(InstanceReaderFixture, check_instance_serialization) {
             },
             {
                 "ECInstanceId":"0x39",
-                "ECClassId":"Generic.PhysicalObject",
+                "ECClassId":"0xe7",
                 "Model":{
                     "Id":"0x24",
-                    "RelECClassId":"BisCore.ModelContainsElements"
+                    "RelECClassId":"0x40"
                 },
                 "LastMod":"2017-07-25T20:44:59.926Z",
                 "CodeSpec":{
                     "Id":"0x1",
-                    "RelECClassId":"BisCore.CodeSpecSpecifiesCode"
+                    "RelECClassId":"0x47"
                 },
                 "CodeScope":{
                     "Id":"0x1",
-                    "RelECClassId":"BisCore.ElementScopesCode"
+                    "RelECClassId":"0x49"
                 },
                 "Category":{
                     "Id":"0x17",
-                    "RelECClassId":"BisCore.GeometricElement3dIsInCategory"
+                    "RelECClassId":"0x8c"
                 },
                 "InSpatialIndex":true,
                 "Origin":{
@@ -152,23 +170,23 @@ TEST_F(InstanceReaderFixture, check_instance_serialization) {
             },
             {
                 "ECInstanceId":"0x3a",
-                "ECClassId":"Generic.PhysicalObject",
+                "ECClassId":"0xe7",
                 "Model":{
                     "Id":"0x22",
-                    "RelECClassId":"BisCore.ModelContainsElements"
+                    "RelECClassId":"0x40"
                 },
                 "LastMod":"2017-07-25T20:44:59.926Z",
                 "CodeSpec":{
                     "Id":"0x1",
-                    "RelECClassId":"BisCore.CodeSpecSpecifiesCode"
+                    "RelECClassId":"0x47"
                 },
                 "CodeScope":{
                     "Id":"0x1",
-                    "RelECClassId":"BisCore.ElementScopesCode"
+                    "RelECClassId":"0x49"
                 },
                 "Category":{
                     "Id":"0x17",
-                    "RelECClassId":"BisCore.GeometricElement3dIsInCategory"
+                    "RelECClassId":"0x8c"
                 },
                 "InSpatialIndex":true,
                 "Origin":{
@@ -193,23 +211,23 @@ TEST_F(InstanceReaderFixture, check_instance_serialization) {
             },
             {
                 "ECInstanceId":"0x3b",
-                "ECClassId":"Generic.PhysicalObject",
+                "ECClassId":"0xe7",
                 "Model":{
                     "Id":"0x23",
-                    "RelECClassId":"BisCore.ModelContainsElements"
+                    "RelECClassId":"0x40"
                 },
                 "LastMod":"2017-07-25T20:44:59.942Z",
                 "CodeSpec":{
                     "Id":"0x1",
-                    "RelECClassId":"BisCore.CodeSpecSpecifiesCode"
+                    "RelECClassId":"0x47"
                 },
                 "CodeScope":{
                     "Id":"0x1",
-                    "RelECClassId":"BisCore.ElementScopesCode"
+                    "RelECClassId":"0x49"
                 },
                 "Category":{
                     "Id":"0x17",
-                    "RelECClassId":"BisCore.GeometricElement3dIsInCategory"
+                    "RelECClassId":"0x8c"
                 },
                 "InSpatialIndex":true,
                 "Origin":{
@@ -252,6 +270,8 @@ TEST_F(InstanceReaderFixture, check_instance_serialization) {
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(InstanceReaderFixture, ecsql_read_instance) {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("instanceReader.ecdb"));
+    ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"sql(
@@ -260,7 +280,7 @@ TEST_F(InstanceReaderFixture, ecsql_read_instance) {
 
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_STREQ(stmt.GetNativeSql(), "SELECT extract_inst([ECClassDef].[ECClassId],[ECClassDef].[ECInstanceId]) FROM (SELECT [Id] ECInstanceId,32 ECClassId,[Description] FROM [main].[ec_Class]) [ECClassDef] WHERE [ECClassDef].[Description]='Relates the property to its PropertyCategory.'");
-    ASSERT_STREQ(stmt.GetValueText(0), R"json({"ECInstanceId":"0x2e","ECClassId":"ECDbMeta.ECClassDef","Schema":{"Id":"0x4","RelECClassId":"ECDbMeta.SchemaOwnsClasses"},"Name":"PropertyHasCategory","Description":"Relates the property to its PropertyCategory.","Type":1,"Modifier":2,"RelationshipStrength":0,"RelationshipStrengthDirection":1})json");
+    ASSERT_STREQ(stmt.GetValueText(0), R"json({"ECInstanceId":"0x2e","ECClassId":"0x20","Schema":{"Id":"0x4","RelECClassId":"0x21"},"Name":"PropertyHasCategory","Description":"Relates the property to its PropertyCategory.","Type":1,"Modifier":2,"RelationshipStrength":0,"RelationshipStrengthDirection":1})json");
 }
 
 //---------------------------------------------------------------------------------------
@@ -268,6 +288,8 @@ TEST_F(InstanceReaderFixture, ecsql_read_instance) {
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(InstanceReaderFixture, ecsql_read_property) {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("instanceReader.ecdb"));
+    ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"sql(
@@ -282,8 +304,73 @@ TEST_F(InstanceReaderFixture, ecsql_read_property) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceReaderFixture, rapid_json_patch_to_render_inf_and_nan_as_null_instead_of_failing_stringify) {
+        // Test for bentley specific change \src\imodel-native\iModelCore\libsrc\rapidjson\vendor\include\rapidjson\writer.h#551
+        // Patch to RapidJson write null instead of failing
+       BeJsDocument docNan;
+       docNan.toObject();
+       docNan["a"] = 0.1;
+       docNan["b"] = std::numeric_limits<double>::quiet_NaN();
+       docNan["c"] = 4.4;
+       ASSERT_STRCASEEQ("{\"a\":0.1,\"b\":null,\"c\":4.4}", docNan.Stringify().c_str());
+
+
+       BeJsDocument docInf;
+       docInf.toObject();
+       docInf["a"] = 0.1;
+       docInf["b"] = std::numeric_limits<double>::infinity();
+       docInf["c"] = 4.4;
+       ASSERT_STRCASEEQ("{\"a\":0.1,\"b\":null,\"c\":4.4}", docInf.Stringify().c_str());
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceReaderFixture, rapid_json_patch_to_render_inf_and_nan_as_null_instead_of_failing_writer) {
+        // Test for bentley specific change \src\imodel-native\iModelCore\libsrc\rapidjson\vendor\include\rapidjson\writer.h#353
+        // Patch to RapidJson write null instead of failing
+       std::ostringstream stream0;
+       rapidjson::OStreamWrapper osw0(stream0);
+
+       rapidjson::Writer<rapidjson::OStreamWrapper> writer0(osw0);
+       writer0.StartObject();
+       writer0.Key("a");
+       writer0.Double(0.1);
+       writer0.Key("b");
+       writer0.Double(std::numeric_limits<double>::infinity());
+       writer0.Key("c");
+       writer0.Double(4.4);
+       writer0.EndObject();
+       writer0.Flush();
+       osw0.Flush();
+       stream0.flush();
+       ASSERT_STRCASEEQ("{\"a\":0.1,\"b\":null,\"c\":4.4}", stream0.str().c_str());
+
+
+       std::ostringstream stream1;
+       rapidjson::OStreamWrapper osw1(stream1);
+       rapidjson::Writer<rapidjson::OStreamWrapper> writer1(osw1);
+       writer1.StartObject();
+       writer1.Key("a");
+       writer1.Double(0.1);
+       writer1.Key("b");
+       writer1.Double(std::numeric_limits<double>::quiet_NaN());
+       writer1.Key("c");
+       writer1.Double(4.4);
+       writer1.EndObject();
+       writer1.Flush();
+       osw1.Flush();
+       stream1.flush();
+       ASSERT_STRCASEEQ("{\"a\":0.1,\"b\":null,\"c\":4.4}", stream1.str().c_str());
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(InstanceReaderFixture, instance_reader) {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("instanceReader.ecdb"));
+    ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"sql(
@@ -293,10 +380,10 @@ TEST_F(InstanceReaderFixture, instance_reader) {
     BeJsDocument doc;
     doc.Parse(R"json({
         "ECInstanceId": "0x2e",
-        "ECClassId": "ECDbMeta.ECClassDef",
+        "ECClassId": "0x20",
         "Schema": {
             "Id": "0x4",
-            "RelECClassId": "ECDbMeta.SchemaOwnsClasses"
+            "RelECClassId": "0x21"
         },
         "Name": "PropertyHasCategory",
         "Description": "Relates the property to its PropertyCategory.",
@@ -366,7 +453,8 @@ TEST_F(InstanceReaderFixture, extract_prop) {
                     </ECEntityClass>
                </ECSchema>)xml")));
     m_ecdb.SaveChanges();
-
+    ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
     // sample primitive type
     const bool kB = true;
     const DateTime kDt = DateTime::GetCurrentTimeUtc();
@@ -660,6 +748,9 @@ TEST_F(InstanceReaderFixture, nested_struct) {
             </ECSchema>)xml")));
     m_ecdb.Schemas().CreateClassViewsInDb();
     m_ecdb.SaveChanges();
+    ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
+
     ECInstanceKey instKey;
     if ("insert data") {
         ECSqlStatement stmt;
@@ -863,7 +954,7 @@ TEST_F(InstanceReaderFixture, nested_struct) {
     BeJsDocument expected;
     expected.Parse(R"json({
         "ECInstanceId": "0x1",
-        "ECClassId": "TestSchema.e_mix",
+        "ECClassId": "0x49",
         "b": true,
         "bi": "encoding=base64;SA==",
         "d": 3.141592653589793,

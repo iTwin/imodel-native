@@ -235,7 +235,6 @@ protected:
     DgnCodeSpecs m_codeSpecs;
     TxnManagerPtr m_txnManager;
     DgnSearchableText m_searchableText;
-    mutable std::unique_ptr<RevisionManager> m_revisionManager;
     mutable BeSQLite::EC::ECSqlStatementCache m_ecsqlCache;
     mutable std::unordered_map<uint64_t, std::unique_ptr<BeSQLite::EC::ECInstanceInserter>> m_cacheECInstanceInserter;
 
@@ -281,7 +280,7 @@ public:
     Napi::String GetJsClassName(DgnElementId id);
     DGNPLATFORM_EXPORT void CallJsHandlerMethod(DgnClassId classId, Utf8CP methodName, Napi::Object arg);
     static void CallJsFunction(Napi::Object obj, Utf8CP methodName, std::vector<napi_value> const& args);
-    [[noreturn]] void ThrowException(Utf8CP message, int errNum);
+    [[noreturn]] void ThrowException(Utf8CP message, int errNum) const;
     BeSQLite::DbResult DisqualifyTypeIndexForBisCoreExternalSourceAspect();
     DGNPLATFORM_EXPORT BeSQLite::EC::CachedECSqlStatementPtr GetGeometricModelUpdateStatement();
     DGNPLATFORM_EXPORT BeSQLite::CachedStatementPtr GetModelLastModUpdateStatement();
@@ -337,7 +336,7 @@ public:
     //! </pre>
     //! <li> If the domain schemas are setup to be upgraded, a schema lock is first obtained before the upgrade.
     //! Note that any previously committed local changes that haven't been pushed up to the server
-    //! will cause an error. These need to be flushed out by creating a revision. See @ref RevisionManager
+    //! will cause an error. These need to be flushed out by creating a revision.
     //! </ul>
     DGNPLATFORM_EXPORT static DgnDbPtr OpenIModelDb(BeSQLite::DbResult* status, BeFileNameCR filename, OpenParams const& openParams);
 
@@ -361,7 +360,6 @@ public:
     DgnCodeSpecs& CodeSpecs() const {return const_cast<DgnCodeSpecs&>(m_codeSpecs);} //!< The codeSpecs associated with this DgnDb
     DgnSearchableText& SearchableText() const {return const_cast<DgnSearchableText&>(m_searchableText);} //!< The searchable text table for this DgnDb
     DGNPLATFORM_EXPORT TxnManagerR Txns();                 //!< The TxnManager for this DgnDb.
-    DGNPLATFORM_EXPORT RevisionManagerR Revisions() const; //!< The RevisionManager for this DgnDb.
 
     //! Imports EC Schemas into the DgnDb
     //! @param[in] schemas Schemas to be imported.
@@ -372,7 +370,7 @@ public:
     //! <li> It's the caller's responsibility to start a new transaction before this call and commit it after a successful
     //! import. If an error happens during the import, the new transaction is abandoned within the call.
     //! <li> Errors out if there are local changes (uncommitted or committed). These need to be flushed by committing
-    //! the changes if necessary, and then creating a revision. See @ref RevisionManager.
+    //! the changes if necessary, and then creating a revision.
     //! <li> If the schemas already exist in the Database, they are upgraded if the schemas passed in have a newer, but
     //! compatible version number.
     //! </ul>
@@ -457,8 +455,6 @@ public:
     //! Perform a SQLite VACUUM on this DgnDb. This potentially makes the file smaller and more efficient to access.
     DGNPLATFORM_EXPORT DgnDbStatus CompactFile();
 
-    // determine whether this Db has a parent changeset id (is attached to a timeline)
-    DGNPLATFORM_EXPORT bool HasParentChangeset() const;
     // determine whether this StandaloneDb requires txns if it is modified
     DGNPLATFORM_EXPORT bool RequireStandaloneTxns() const;
     // determine whether this StandaloneDb permits write operations
@@ -473,8 +469,6 @@ public:
     bool IsStandalone() const { return GetBriefcaseId().IsStandalone(); }
     // determine whether this DgnDb is a snapshot StandaloneDb.
     bool IsSnapshot() const { return IsStandalone() && !AllowStandaloneWrites(); }
-    // determine whether this DgnDb is a checkpoint snapshot StandaloneDb
-    bool IsCheckpointSnapshot() const { return IsSnapshot() && HasParentChangeset(); }
     // determine whether if this DgnDb is an editable StandaloneDb.
     bool IsWriteableStandalone() const { return IsStandalone() && AllowStandaloneWrites(); }
 
@@ -518,7 +512,7 @@ public:
     //! <li> It's the caller's responsibility to start a new transaction before this call and commit it after a successful
     //! import. If an error happens during the import, the new transaction is abandoned within the call.
     //! <li> Errors out if there are local changes (uncommitted or committed). These need to be flushed by committing
-    //! the changes if necessary, and then creating a revision. See @ref RevisionManager.
+    //! the changes if necessary, and then creating a revision.
     //! </ul>
     DGNPLATFORM_EXPORT SchemaStatus ImportV8LegacySchemas(bvector<ECN::ECSchemaCP> const& schemas, size_t* numImported = nullptr);
 

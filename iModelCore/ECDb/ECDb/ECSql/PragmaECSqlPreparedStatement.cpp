@@ -706,7 +706,7 @@ bool PragmaVal::GetBool() const {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 std::string PragmaVal::GetString() const {
-    if(IsString()) {
+    if(IsString() || IsName()) {
         return m_str;
     }
     if(IsDouble()) {

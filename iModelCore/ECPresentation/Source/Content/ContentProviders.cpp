@@ -393,10 +393,13 @@ void ContentProvider::LoadNestedContentFieldValue(ContentSetItemR item, ContentD
                 int serializationFlags = GetSerializationFlags(isRelatedContent, true, ContentRequest::Values);
 
                 contentValues.SetArray();
+                contentDisplayValues.SetArray();
                 for (size_t i = 0; i < targetSetitems.size(); ++i)
+                    {
                     contentValues.PushBack(targetSetitems[i]->AsJson(serializationFlags, &contentValues.GetAllocator()), contentValues.GetAllocator());
+                    contentDisplayValues.PushBack(targetSetitems[i]->AsJson((int)ContentSetItem::SERIALIZE_DisplayValues, &contentDisplayValues.GetAllocator()), contentDisplayValues.GetAllocator());
+                    }
 
-                contentDisplayValues.CopyFrom(contentValues, contentDisplayValues.GetAllocator());
                 DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Loaded related content values.");
                 }
             }
@@ -679,7 +682,7 @@ public:
 
         m_context = std::make_unique<ContentDescriptorBuilder::Context>(context.GetSchemaHelper(), context.GetConnections(), context.GetConnection(), &context.GetCancelationToken(),
             context.GetRulesPreprocessor(), context.GetRuleset(), context.GetPreferredDisplayType().c_str(), context.GetRulesetVariables(), context.GetCategorySupplier(), formatter, unitSystem,
-            context.GetInputKeys(), context.GetSelectionInfo());
+            context.GetInputKeys(), context.GetSelectionInfo(), &context.GetUsedVariablesListener());
         m_context->SetContentFlagsCalculator([flags = context.GetContentFlags()](int defaultFlags){return flags | defaultFlags;});
         m_descriptorBuilder = std::make_unique<ContentDescriptorBuilder>(*m_context);
         m_functionsContext = std::make_unique<CustomFunctionsContext>(context.GetSchemaHelper(), context.GetConnections(), context.GetConnection(),

@@ -130,7 +130,19 @@ void Assert_BuiltinSchemaVersions_2_0_0_0 (TestIModel& testDb)
 //+---------------+---------------+---------------+---------------+---------------+------
 void Assert_BuiltinSchemaVersions_2_0_0_1(TestIModel& testDb)
     {
-    EXPECT_EQ(8, testDb.GetSchemaCount()) << testDb.GetDescription();
+    EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("CoreCustomAttributes") != nullptr) << testDb.GetDescription();
+    EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("ECDbMap") != nullptr) << testDb.GetDescription();
+    EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("ECDbFileInfo") != nullptr) << testDb.GetDescription();
+    EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("ECDbMeta") != nullptr) << testDb.GetDescription();
+    EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("ECDbSystem") != nullptr) << testDb.GetDescription();
+    EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("ECDbSchemaPolicies") != nullptr) << testDb.GetDescription();
+    EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("Generic") != nullptr) << testDb.GetDescription();
+    EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("BisCore") != nullptr) << testDb.GetDescription();
+
+    // BisCustomAttributes schema is added to the test files containing BisCore schema having reference schema BisCustomAttributes (e.g BisCore.1.0.16)
+    if (testDb.GetSchemaVersion("BisCore") >= SchemaVersion(1, 0, 16))
+        EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("BisCustomAttributes") != nullptr) << testDb.GetDescription();
+
     //iModel built-in schema versions
     // Note: don't assert on original ecxml version for schemas that don't get upgraded automatically. That is to error-prone to test
     if (testDb.GetSchemaUpgradeOptions().AreDomainUpgradesAllowed())
@@ -169,7 +181,19 @@ void Assert_BuiltinSchemaVersions_2_0_0_1(TestIModel& testDb)
 //+---------------+---------------+---------------+---------------+---------------+------
 void Assert_BuiltinSchemaVersions_2_0_0_4(TestIModel& testDb)
     {
-    EXPECT_EQ(8, testDb.GetSchemaCount()) << testDb.GetDescription();
+    EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("CoreCustomAttributes") != nullptr) << testDb.GetDescription();
+    EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("ECDbMap") != nullptr) << testDb.GetDescription();
+    EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("ECDbFileInfo") != nullptr) << testDb.GetDescription();
+    EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("ECDbMeta") != nullptr) << testDb.GetDescription();
+    EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("ECDbSystem") != nullptr) << testDb.GetDescription();
+    EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("ECDbSchemaPolicies") != nullptr) << testDb.GetDescription();
+    EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("Generic") != nullptr) << testDb.GetDescription();
+    EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("BisCore") != nullptr) << testDb.GetDescription();
+
+    // BisCustomAttributes schema is added to the test files containing BisCore schema having reference schema BisCustomAttributes (e.g BisCore.1.0.16)
+    if (testDb.GetSchemaVersion("BisCore") >= SchemaVersion(1, 0, 16))
+        EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("BisCustomAttributes") != nullptr) << testDb.GetDescription();
+
     //iModel built-in schema versions
     // Note: don't assert on original ecxml version for schemas that don't get upgraded automatically. That is to error-prone to test
     if (testDb.GetSchemaUpgradeOptions().AreDomainUpgradesAllowed())
@@ -205,7 +229,19 @@ void Assert_BuiltinSchemaVersions_2_0_0_4(TestIModel& testDb)
 
 void Assert_BuiltinSchemaVersions_2_0_0_5(TestIModel& testDb)
     {
-    EXPECT_EQ(8, testDb.GetSchemaCount()) << testDb.GetDescription();
+    EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("CoreCustomAttributes") != nullptr) << testDb.GetDescription();
+    EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("ECDbMap") != nullptr) << testDb.GetDescription();
+    EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("ECDbFileInfo") != nullptr) << testDb.GetDescription();
+    EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("ECDbMeta") != nullptr) << testDb.GetDescription();
+    EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("ECDbSystem") != nullptr) << testDb.GetDescription();
+    EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("ECDbSchemaPolicies") != nullptr) << testDb.GetDescription();
+    EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("Generic") != nullptr) << testDb.GetDescription();
+    EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("BisCore") != nullptr) << testDb.GetDescription();
+
+    // BisCustomAttributes schema is added to the test files containing BisCore schema having reference schema BisCustomAttributes (e.g BisCore.1.0.16)
+    if (testDb.GetSchemaVersion("BisCore") >= SchemaVersion(1, 0, 16))
+        EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("BisCustomAttributes") != nullptr) << testDb.GetDescription();
+
     //iModel built-in schema versions
     // Note: don't assert on original ecxml version for schemas that don't get upgraded automatically. That is to error-prone to test
     if (testDb.GetSchemaUpgradeOptions().AreDomainUpgradesAllowed())
@@ -786,9 +822,24 @@ TEST_F(IModelCompatibilityTestFixture, SchemaManager_EC31KindOfQuantities)
             ASSERT_TRUE(koq2 != nullptr) << testDb.GetDescription();
             testDb.AssertKindOfQuantity(*koq2, "TestSchema", koq2Name, nullptr, nullptr, "u:SQ_FT", JsonValue(R"json(["f:DefaultRealU(4)[u:SQ_FT]"])json"), 1.0);
             assertReferencedUnitsAndFormatsSchema(testDb, koq2->GetSchema());
-
             bvector<ECSchemaCP> schemas = testDb.GetDb().Schemas().GetSchemas(true);
-            ASSERT_EQ(11, schemas.size()) << testDb.GetDescription();
+
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("CoreCustomAttributes") != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("ECDbMap") != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("ECDbFileInfo") != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("ECDbMeta") != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("ECDbSystem") != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("ECDbSchemaPolicies") != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("Generic") != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("Units") != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("Formats") != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("TestSchema") != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("BisCore") != nullptr) << testDb.GetDescription();
+
+            // BisCustomAttributes schema is added to the test files containing BisCore schema having reference schema BisCustomAttributes (e.g BisCore.1.0.16)
+            if (testDb.GetSchemaVersion("BisCore") >= SchemaVersion(1, 0, 16))
+                EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("BisCustomAttributes") != nullptr) << testDb.GetDescription();
+
             bool containsUnitsSchema = false, containsFormatsSchema = false;
             for (ECSchemaCP schema : schemas)
                 {

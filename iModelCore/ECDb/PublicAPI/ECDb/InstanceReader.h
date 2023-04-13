@@ -24,7 +24,7 @@ struct InstanceReader final {
             bool m_useJsName:3;
             bool m_indent:4;
         public:
-            JsonParams():m_abbreviateBlobs(true),m_classIdToClassNames(true), m_useJsName(false), m_indent(false){}
+            JsonParams():m_abbreviateBlobs(true),m_classIdToClassNames(false), m_useJsName(false), m_indent(false){}
             bool GetAbbreviateBlobs() const { return m_abbreviateBlobs;}
             bool GetClassIdToClassNames() const {return m_classIdToClassNames;}
             bool GetUseJsName() const {return m_useJsName; }

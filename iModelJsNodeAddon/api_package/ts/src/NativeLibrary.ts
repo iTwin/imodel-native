@@ -913,6 +913,7 @@ export declare namespace IModelJsNative {
    * and is used to **connect** CloudContainers so they may be accessed. The contents of the cache directory are entirely
    * controlled by CloudSqlite and should be empty when the cache is first created and never modified directly. It maintains
    * the state of the local data across sessions.
+   * @note All CloudContainers attached to a CloudCache must have the same block size, as determined by the first one connected.
    */
   class CloudCache {
     /** Create an instance of a CloudCache. */
@@ -926,12 +927,17 @@ export declare namespace IModelJsNative {
     /** The guid for this CloudCache. Used for acquiring write lock. */
     public get guid(): GuidString;
     public setLogMask(mask: number): void;
-    /** destroy this CloudCache. All CloudContainers should be detached before calling this. */
+    /** destroy this CloudCache. All CloudContainers currently connected are disconnected. */
     public destroy(): void;
   }
 
   /** A CloudSqlite container that may be connected to a CloudCache. */
   class CloudContainer {
+    public onConnect?: (container: CloudContainer, cache: CloudCache) => void;
+    public onConnected?: (container: CloudContainer) => void;
+    public onDisconnect?: (container: CloudContainer, detach: boolean) => void;
+    public onDisconnected?: (container: CloudContainer, detach: boolean) => void;
+
     public readonly cache?: CloudCache;
     /** Create a new instance of a CloudContainer. It must be connected to a CloudCache for most operations. */
     public constructor(props: NativeCloudSqlite.ContainerAccessProps);
@@ -1009,15 +1015,12 @@ export declare namespace IModelJsNative {
     public connect(cache: CloudCache): void;
 
     /**
-     * Disconnect this CloudContainer from its CloudCache. There must be no open databases from this container. Leaves the container attached to the
-     * CloudCache so it is available for future sessions.
+     * Disconnect this CloudContainer from its CloudCache. There must be no open databases from this container.
      */
-    public disconnect(): void;
-
-    /**
-     * Permanently Detach and Disconnect this CloudContainer from its CloudCache. There must be no open databases from this container.
-     */
-    public detach(): void;
+    public disconnect(args?: {
+      /** if true removes the container from the CloudCache, otherwise Leaves the container in the CloudCache so it is available for future sessions. */
+      detach?: boolean;
+    }): void;
 
     /**
      * Poll cloud storage for changes from other processes. *No changes* made by other processes are visible to

@@ -1205,10 +1205,6 @@ SchemaImportResult MainSchemaManager::MapSchemas(SchemaImportContext& ctx, bvect
         return failedToMap();
     }
 
-    if (BE_SQLITE_OK != UpgradeExistingECInstancesWithNewPropertiesMapToOverflowTable(m_ecdb, &ctx)){
-        return failedToMap();
-    }
-
     if (SUCCESS != ctx.RemapManager().UpgradeExistingECInstancesWithRemappedProperties(ctx)) {
         return failedToMap();
     }
@@ -1251,6 +1247,11 @@ SchemaImportResult MainSchemaManager::MapSchemas(SchemaImportContext& ctx, bvect
             return failedToMap();
         }
     }
+
+    if (BE_SQLITE_OK != UpgradeExistingECInstancesWithNewPropertiesMapToOverflowTable(m_ecdb, nullptr)){
+        return failedToMap();
+    }
+
     ClearCache();
     return  SchemaImportResult::OK;
 }

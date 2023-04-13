@@ -56,37 +56,38 @@ struct PragmaChecksum : PragmaManager::GlobalHandler {
     virtual DbResult Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&) override;
     static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<PragmaChecksum>(); }
 };
-//================================================================================
-// @bsiclass PragmaECDbValidation
-//================================================================================
-struct PragmaECDbValidation : PragmaManager::GlobalHandler {
-    PragmaECDbValidation():GlobalHandler("validate","performs validation checks on ECDb"){}
+
+//=======================================================================================
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct PragmaExperimentalFeatures : PragmaManager::GlobalHandler {
+    PragmaExperimentalFeatures():GlobalHandler("experimental_features_enabled","enable/disable experimental features"){}
+    ~PragmaExperimentalFeatures(){}
     virtual DbResult Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&) override;
-    virtual DbResult Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&) override;
-    static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<PragmaECDbValidation>(); }
+    virtual DbResult Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const& val) override;
+    static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<PragmaExperimentalFeatures>(); }
 };
 
-//================================================================================
-// @bsiclass PragmaECDbClassIdValidation
-//================================================================================
-struct PragmaECDbClassIdValidation : PragmaManager::GlobalHandler {
-    PragmaECDbClassIdValidation():GlobalHandler("class_id_check","checks if classIds are valid") {}
-    virtual DbResult Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&) override;
+//=======================================================================================
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct PragmaIntegrityCheck : PragmaManager::GlobalHandler {
+    PragmaIntegrityCheck():GlobalHandler("integrity_check","performs integrity checks on ECDb"){}
+    virtual DbResult Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const& v) override;
+    DbResult CheckAll(IntegrityChecker& checker, StaticPragmaResult& result, ECDbCR ecdb);
+    DbResult CheckSchemaLoad(IntegrityChecker& checker, StaticPragmaResult& result, ECDbCR ecdb);
+    DbResult CheckEcProfile(IntegrityChecker& checker, StaticPragmaResult& result, ECDbCR ecdb);
+    DbResult CheckDataSchema(IntegrityChecker& checker, StaticPragmaResult& result, ECDbCR ecdb);
+    DbResult CheckDataColumns(IntegrityChecker& checker, StaticPragmaResult& result, ECDbCR ecdb);
+    DbResult CheckNavClassIds(IntegrityChecker& checker, StaticPragmaResult& result, ECDbCR ecdb);
+    DbResult CheckNavIds(IntegrityChecker& checker, StaticPragmaResult& result, ECDbCR ecdb);
+    DbResult CheckLinkTableFkClassIds(IntegrityChecker& checker, StaticPragmaResult& result, ECDbCR ecdb);
+    DbResult CheckLinkTableFkIds(IntegrityChecker& checker, StaticPragmaResult& result, ECDbCR ecdb);
+    DbResult CheckClassIds(IntegrityChecker& checker, StaticPragmaResult& result, ECDbCR ecdb);
     virtual DbResult Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&) override;
-    static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<PragmaECDbClassIdValidation>(); }
+    static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<PragmaIntegrityCheck>(); }
+
 };
-
-//================================================================================
-// @bsiclass PragmaECDbNavPropIdValidation
-//================================================================================
-struct PragmaECDbNavPropIdValidation : PragmaManager::GlobalHandler {
-    PragmaECDbNavPropIdValidation():GlobalHandler("nav_prop_id_check","checks if classIds are valid") {}
-    virtual DbResult Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&) override;
-    virtual DbResult Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&) override;
-    static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<PragmaECDbNavPropIdValidation>(); }
-};
-
-
 //=======================================================================================
 // @bsiclass
 //+===============+===============+===============+===============+===============+======

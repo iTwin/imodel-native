@@ -143,7 +143,7 @@ bool SchemaValidator::ValidRelationshipRule::ValidateConstraint(IssueDataSource 
     //we cannot yet enforce one class per constraint.
     if (constraintClassCount == 0)
         {
-        issueReporter.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The relationship class '%'s is not abstract and therefore constraints must be defined. The %s constraint is empty though.",
+        issueReporter.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The relationship class '%s' is not abstract and therefore constraints must be defined. The %s constraint is empty though.",
                              relClass.GetFullName(), constraintEnd == ECRelationshipEnd_Source ? "source" : "target");
         return false;
         }

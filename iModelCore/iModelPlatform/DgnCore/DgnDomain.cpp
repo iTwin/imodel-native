@@ -718,7 +718,7 @@ SchemaStatus DgnDomains::DoImportSchemas(bvector<ECSchemaCP> const &importSchema
         if (dgndb.Txns().HasLocalChanges()) {
             // The dgnv8converter generates changes to the be_EmbedFile table just prior to importing a generated schema. Don't reject the schema just for that.
             if ((importOptions & SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues) != SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues) {
-                BeAssert(false && "Cannot upgrade schemas when there are local changes. Commit any outstanding changes, then create and finish/abandon a revision to flush the TxnTable");
+                BeAssert(false && "Cannot upgrade schemas when there are local changes. Commit any outstanding changes");
                 return SchemaStatus::DbHasLocalChanges;
             }
         }

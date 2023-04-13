@@ -4,6 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 import { DbResult, Id64Array, Id64String, IModelStatus, OpenMode } from "@itwin/core-bentley";
 import { BlobRange, DbBlobRequest, DbBlobResponse, DbQueryRequest, DbQueryResponse, DbRequestKind, DbResponseStatus, ProfileOptions } from "@itwin/core-common";
+import { DomainOptions } from "@itwin/core-common/lib/cjs/BriefcaseTypes";
 import { assert, expect } from "chai";
 import * as fs from "fs-extra";
 import * as os from "os";
@@ -476,7 +477,28 @@ describe("basic tests", () => {
     });
   });
 
-  it("schemaLockHeld flag", async () => {
+  it("profile/schema upgrade with schemaLockHeld flag", async () => {
+    /**
+     * This test verify if schemaLockHeld is true profile upgrade should not fail when imodel have overflow tables.
+     */
+    const originalFile = path.join(getAssetsDir(), "test-with-overflow.bim");
+    const testFile = path.join(getAssetsDir(), "test-with-overflow-upgrade.bim");
+    if (fs.existsSync(testFile)) {
+      fs.unlinkSync(testFile);
+    }
+
+    fs.copyFileSync(originalFile, testFile);
+
+    const dbForProfileUpgrade = openDgnDb(testFile, { profile: ProfileOptions.Upgrade, schemaLockHeld: true });
+    dbForProfileUpgrade.saveChanges();
+    dbForProfileUpgrade.closeIModel();
+
+    const dbForSchemaUpgrade = openDgnDb(testFile, { domain: DomainOptions.Upgrade, schemaLockHeld: true });
+    dbForSchemaUpgrade.saveChanges();
+    dbForSchemaUpgrade.closeIModel();
+  });
+
+  it("import schema with schemaLockHeld flag", async () => {
     let t = 0;
     const generateIntProp = (propCount: number, prefix: string = "P") => {
       let xml = "";
