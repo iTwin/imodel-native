@@ -14,13 +14,13 @@ BEGIN_BENTLEY_SQLITE_NAMESPACE
 //! Streams the contents of a file containing serialized change streams
 // @bsiclass
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE RevisionChangesFileReaderBase : ChangeStream {
+struct EXPORT_VTABLE_ATTRIBUTE ChangesetFileReaderBase : ChangeStream {
 private:
     Db const& m_db; // Used only for debugging
     bvector<BeFileName> m_files;
 
     struct Reader : Changes::Reader {
-        RevisionChangesFileReaderBase const& m_base;
+        ChangesetFileReaderBase const& m_base;
         Utf8String m_prefix = "";
         LzmaDecoder m_lzmaDecoder;
         BlockFilesLzmaInStream* m_inLzmaFileStream = nullptr;
@@ -28,7 +28,7 @@ private:
         DbResult ReadPrefix();
         BE_SQLITE_EXPORT void FinishInput();
         BE_SQLITE_EXPORT Utf8StringCR GetPrefix(DbResult& result);
-        BE_SQLITE_EXPORT Reader(RevisionChangesFileReaderBase const& base) : m_base(base) {}
+        BE_SQLITE_EXPORT Reader(ChangesetFileReaderBase const& base) : m_base(base) {}
         ~Reader() { FinishInput(); }
         BE_SQLITE_EXPORT DbResult _Read(Byte* data, int* pSize) override;
         BE_SQLITE_EXPORT DbResult GetSchemaChanges(bool& containsSchemaChanges, DdlChangesR ddlChanges);
@@ -39,11 +39,11 @@ private:
     BE_SQLITE_EXPORT ChangeSet::ConflictResolution _OnConflict(ChangeSet::ConflictCause cause, Changes::Change iter) override;
 
 public:
-    virtual ~RevisionChangesFileReaderBase(){}
+    virtual ~ChangesetFileReaderBase(){}
     bool _IsEmpty() const override { return m_files.size() == 0; }
     RefCountedPtr<Reader> MakeReader() const { return new Reader(*this); }
     RefCountedPtr<Changes::Reader> _GetReader() const override { return MakeReader(); }
-    RevisionChangesFileReaderBase(bvector<BeFileName> const& files, Db const& db) : m_files(files), m_db(db) {}
+    ChangesetFileReaderBase(bvector<BeFileName> const& files, Db const& db) : m_files(files), m_db(db) {}
     Db const& GetDb() const { return m_db; }
 };
 
@@ -51,7 +51,7 @@ public:
 //! Writes the contents of a change stream to a file
 // @bsiclass
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE RevisionChangesFileWriter : ChangeStream {
+struct EXPORT_VTABLE_ATTRIBUTE ChangesetFileWriter : ChangeStream {
 private:
     BeSQLite::LzmaEncoder m_lzmaEncoder;
     BeFileName m_pathname;
@@ -69,10 +69,10 @@ private:
     BE_SQLITE_EXPORT ChangeSet::ConflictResolution _OnConflict(ChangeSet::ConflictCause cause, Changes::Change iter) override;
 
 public:
-    BE_SQLITE_EXPORT RevisionChangesFileWriter(BeFileNameCR pathname, bool containsEcSchemaChanges, DdlChangesCR ddlChanges, Db const&,
-                                               BeSQLite::LzmaEncoder::LzmaParams const& lzmaParams = BeSQLite::LzmaEncoder::LzmaParams());
+    BE_SQLITE_EXPORT ChangesetFileWriter(BeFileNameCR pathname, bool containsEcSchemaChanges, DdlChangesCR ddlChanges, Db const&,
+                                         BeSQLite::LzmaEncoder::LzmaParams const& lzmaParams = BeSQLite::LzmaEncoder::LzmaParams());
     BE_SQLITE_EXPORT DbResult Initialize();
-    ~RevisionChangesFileWriter() { FinishOutput(); }
+    ~ChangesetFileWriter() { FinishOutput(); }
 };
 
 //=======================================================================================
