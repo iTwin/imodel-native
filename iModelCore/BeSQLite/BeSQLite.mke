@@ -78,6 +78,8 @@ $(o)bentley-sqlite$(oext) : $(SQLiteDir)bentley-sqlite.c ${MultiCompileDepends} 
 
 $(o)bcvutil$(oext) : $(SQLiteDir)bcvutil.c ${MultiCompileDepends} ${bcvheaders}
 
+$(o)bcvlog$(oext): $(SQLiteDir)bcvlog.c ${MultiCompileDepends} ${bcvheaders}
+
 $(o)simplexml$(oext) : $(SQLiteDir)simplexml.c ${MultiCompileDepends} ${bcvheaders}
 
 $(o)bcvmodule$(oext) : $(SQLiteDir)bcvmodule.c ${MultiCompileDepends} ${bcvheaders}
@@ -86,7 +88,7 @@ $(o)bcvmodule$(oext) : $(SQLiteDir)bcvmodule.c ${MultiCompileDepends} ${bcvheade
 
 %include MultiCppCompileGo.mki
 
-objs +% $(o)bentley-sqlite$(oext) $(o)bcvutil$(oext) $(o)bcvmodule$(oext) $(o)simplexml$(oext)
+objs +% $(o)bentley-sqlite$(oext) $(o)bcvutil$(oext) $(o)bcvmodule$(oext) $(o)simplexml$(oext) $(o)bcvlog$(oext)
 
 BeSQLiteRequiredLibs = $(ContextSubPartsStaticLibs)$(stlibprefix)BeZlib$(stlibext)
 BeSQLiteRequiredLibs + $(ContextSubPartsStaticLibs)$(stlibprefix)snappy$(stlibext)
