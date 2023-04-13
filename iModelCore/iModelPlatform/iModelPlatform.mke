@@ -127,7 +127,7 @@ $(CoreObjs)UnitDefinition$(oext) :                  $(DgnCoreDir)UnitDefinition.
 
 $(CoreObjs)TxnManager$(oext) :                      $(DgnCoreDir)TxnManager.cpp $(iModelPlatformAPISrc)TxnManager.h ${MultiCompileDepends}
 
-$(coreObjs)RevisionManager$(oext) :                 $(DgnCoreDir)RevisionManager.cpp $(iModelPlatformAPISrc)RevisionManager.h ${MultiCompileDepends}
+$(coreObjs)ChangesetTxns$(oext) :                   $(DgnCoreDir)ChangesetTxns.cpp $(iModelPlatformAPISrc)TxnManager.h ${MultiCompileDepends}
 
 $(CoreObjs)ElementDependency$(oext) :               $(DgnCoreDir)ElementDependency.cpp $(iModelPlatformAPISrc)TxnManager.h ${MultiCompileDepends}
 

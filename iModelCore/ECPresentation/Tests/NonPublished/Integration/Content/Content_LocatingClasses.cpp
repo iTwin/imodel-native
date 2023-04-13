@@ -582,3 +582,57 @@ TEST_F(LocatingClasses, DetectsOnlyDisplayedRelatedNavigationProperties)
     EXPECT_EQ(GetClass("A_B"), &result[0].GetRelatedPropertyPaths()[1][0].GetRelationship().GetClass());
     EXPECT_EQ(GetClass("C"), &result[0].GetRelatedPropertyPaths()[1][0].GetTargetClass().GetClass());
     }
+
+/*---------------------------------------------------------------------------------**//**
+// @betest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(DetectsRelatedPropertyClassWhenAllItsDirectPropertiesAreHidden, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.2.0">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty typeName="int" propertyName="HiddenProp" />
+    </ECEntityClass>
+    <ECEntityClass typeName="C">
+        <BaseClass>B</BaseClass>
+        <ECProperty typeName="int" propertyName="VisibleProp" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="A_B" strength="referencing" strengthDirection="Forward" modifier="Sealed">
+        <Source multiplicity="(0..1)" roleLabel="ab" polymorphic="true">
+            <Class class="A" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="ba" polymorphic="true">
+            <Class class="B"/>
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(LocatingClasses, DetectsRelatedPropertyClassWhenAllItsDirectPropertiesAreHidden)
+    {
+    // set up lookup classes
+    bvector<ECClassCP> lookup({ GetClass("A") });
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+    rules->AddPresentationRule(*new ContentRule());
+    rules->GetContentRules().back()->AddSpecification(*new SelectedNodeInstancesSpecification());
+    rules->AddPresentationRule(*new ContentModifier(GetSchema()->GetName(), GetClass("A")->GetName()));
+    rules->GetContentModifierRules().back()->AddRelatedProperty(*new RelatedPropertiesSpecification(*new RelationshipPathSpecification(
+        {
+        new RelationshipStepSpecification(GetClass("A_B")->GetFullName(), RequiredRelationDirection_Forward),
+        }), { new PropertySpecification("*") }, RelationshipMeaning::RelatedInstance, true));
+    rules->AddPresentationRule(*new ContentModifier(GetSchema()->GetName(), GetClass("B")->GetName()));
+    rules->GetContentModifierRules().back()->AddPropertyOverride(*new PropertySpecification("HiddenProp", 1000, "", nullptr, false));
+
+    // validate descriptor
+    bvector<SelectClassInfo> result = GetValidatedResponse(m_manager->GetContentClasses(AsyncContentClassesRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), "", 0, lookup)));
+    ASSERT_EQ(1, result.size());
+    EXPECT_EQ(GetClass("A"), &result[0].GetSelectClass().GetClass());
+    EXPECT_EQ(1, result[0].GetRelatedPropertyPaths().size());
+    EXPECT_EQ(1, result[0].GetRelatedPropertyPaths()[0].size());
+    EXPECT_EQ(GetClass("A_B"), &result[0].GetRelatedPropertyPaths()[0][0].GetRelationship().GetClass());
+    EXPECT_EQ(GetClass("B"), &result[0].GetRelatedPropertyPaths()[0][0].GetTargetClass().GetClass());
+    }
