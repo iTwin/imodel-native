@@ -172,6 +172,7 @@ struct ContentSpecificationsHandler
         IRulesPreprocessorR m_rulesPreprocessor;
         PresentationRuleSetCR m_ruleset;
         RulesetVariables const& m_rulesetVariables;
+        IUsedRulesetVariablesListener* m_usedVariablesListener;
         Utf8CP m_preferredDisplayType;
         ECSchemaHelper const& m_helper;
         INavNodeKeysContainerCPtr m_inputKeys;
@@ -186,10 +187,10 @@ struct ContentSpecificationsHandler
     public:
         Context(ECSchemaHelper const& helper, IConnectionManagerCR connections, IConnectionCR connection, ICancelationTokenCP cancellationToken,
             IRulesPreprocessorR rulesPreprocessor, PresentationRuleSetCR ruleset,
-            RulesetVariables const& variables, Utf8CP preferredDisplayType, INavNodeKeysContainerCR inputKeys)
+            RulesetVariables const& variables, Utf8CP preferredDisplayType, INavNodeKeysContainerCR inputKeys, IUsedRulesetVariablesListener* usedVariablesListener)
             : m_helper(helper), m_connections(connections), m_connection(connection), m_cancellationToken(cancellationToken),
             m_rulesPreprocessor(rulesPreprocessor), m_ruleset(ruleset), m_rulesetVariables(variables),
-            m_preferredDisplayType(preferredDisplayType), m_inputKeys(&inputKeys)
+            m_preferredDisplayType(preferredDisplayType), m_inputKeys(&inputKeys), m_usedVariablesListener(usedVariablesListener)
             {}
         IConnectionManagerCR GetConnections() const {return m_connections;}
         IConnectionCR GetConnection() const {return m_connection;}
@@ -197,6 +198,7 @@ struct ContentSpecificationsHandler
         IRulesPreprocessorR GetRulesPreprocessor() const {return m_rulesPreprocessor;}
         PresentationRuleSetCR GetRuleset() const {return m_ruleset;}
         RulesetVariables const& GetRulesetVariables() const {return m_rulesetVariables;}
+        IUsedRulesetVariablesListener* GetUsedVariablesListener() const {return m_usedVariablesListener;}
         Utf8CP GetPreferredDisplayType() const {return m_preferredDisplayType;}
         void SetPreferredDisplayType(Utf8CP value) {m_preferredDisplayType = value;}
         INavNodeKeysContainerCR GetInputKeys() const {return *m_inputKeys;}
@@ -268,7 +270,7 @@ struct ContentSpecificationsHandler
             if (m_expressionContext != nullptr)
                 return m_expressionContext;
 
-            ECExpressionContextsProvider::ContextParametersBase params(context.GetConnection(), context.GetRulesetVariables(), nullptr);
+            ECExpressionContextsProvider::ContextParametersBase params(context.GetConnection(), context.GetRulesetVariables(), context.GetUsedVariablesListener());
             return m_expressionContext = ECExpressionContextsProvider::GetRulesEngineRootContext(params);
             }
     public:

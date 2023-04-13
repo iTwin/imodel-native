@@ -5468,6 +5468,70 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsRemovedF
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(FindsCachedDescriptorWhenAllRelatedRulesetVariablesMatch, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="Property" typeName="string" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, FindsCachedDescriptorWhenAllRelatedRulesetVariablesMatch)
+    {
+    ECClassCP classA = GetClass("A");
+    IECInstancePtr instance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance) {instance.SetValue("Property", ECValue("Instance")); });
+    KeySetPtr input = KeySet::Create(*instance);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false);
+    contentRule->AddSpecification(*spec);
+    rules->AddPresentationRule(*contentRule);
+    spec->AddPropertyOverride(*new PropertySpecification("Property", 1000, "", nullptr, "GetVariableBoolValue(\"related\")"));
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor1 = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), 
+        RulesetVariables({ RulesetVariableEntry("related", true), RulesetVariableEntry("not_related", false) }), nullptr, 0, *input)));
+    ContentDescriptorCPtr descriptor2 = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), 
+        RulesetVariables({ RulesetVariableEntry("related", true), RulesetVariableEntry("not_related", true) }), nullptr, 0, *input)));
+
+    EXPECT_EQ(descriptor1, descriptor2);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(CreatesNewDescriptorWhenRelatedRulesetVariablesDontMatch, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="Property" typeName="string" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, CreatesNewDescriptorWhenRelatedRulesetVariablesDontMatch)
+    {
+    ECClassCP classA = GetClass("A");
+    IECInstancePtr instance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance) {instance.SetValue("Property", ECValue("Instance")); });
+    KeySetPtr input = KeySet::Create(*instance);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false);
+    contentRule->AddSpecification(*spec);
+    rules->AddPresentationRule(*contentRule);
+    spec->AddPropertyOverride(*new PropertySpecification("Property", 1000, "", nullptr, "GetVariableBoolValue(\"related\")"));
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor1 = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables({ RulesetVariableEntry("related", false) }), nullptr, 0, *input)));
+    ContentDescriptorCPtr descriptor2 = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables({ RulesetVariableEntry("related", true) }), nullptr, 0, *input)));
+
+    EXPECT_NE(descriptor1, descriptor2);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
 DEFINE_SCHEMA(ContentModifierAppliesPropertyHidingOverride, R"*(
     <ECEntityClass typeName="A">
         <ECProperty propertyName="Description" typeName="string" />
