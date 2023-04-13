@@ -5468,12 +5468,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsRemovedF
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-DEFINE_SCHEMA(ContentDescriptorIsCachedWhenNotRelatedRulesetVariableChanges, R"*(
+DEFINE_SCHEMA(FindsCachedDescriptorWhenAllRelatedRulesetVariablesMatch, R"*(
     <ECEntityClass typeName="A">
         <ECProperty propertyName="Property" typeName="string" />
     </ECEntityClass>
 )*");
-TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsCachedWhenNotRelatedRulesetVariableChanges)
+TEST_F(RulesDrivenECPresentationManagerContentTests, FindsCachedDescriptorWhenAllRelatedRulesetVariablesMatch)
     {
     ECClassCP classA = GetClass("A");
     IECInstancePtr instance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance) {instance.SetValue("Property", ECValue("Instance")); });
@@ -5501,12 +5501,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsCachedWh
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-DEFINE_SCHEMA(ContentDescriptorIsNotCachedWhenRelatedRulesetVariableUsedInDescriptorChanges, R"*(
+DEFINE_SCHEMA(CreatesNewDescriptorWhenRelatedRulesetVariablesDontMatch, R"*(
     <ECEntityClass typeName="A">
         <ECProperty propertyName="Property" typeName="string" />
     </ECEntityClass>
 )*");
-TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsNotCachedWhenRelatedRulesetVariableUsedInDescriptorChanges)
+TEST_F(RulesDrivenECPresentationManagerContentTests, CreatesNewDescriptorWhenRelatedRulesetVariablesDontMatch)
     {
     ECClassCP classA = GetClass("A");
     IECInstancePtr instance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance) {instance.SetValue("Property", ECValue("Instance")); });
