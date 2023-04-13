@@ -913,7 +913,6 @@ struct SeriesModule : DbModule {
              DbResult BestIndex(IndexInfo& indexInfo) final {
                 int i, j;              /* Loop over constraints */
                 int idxNum = 0;        /* The query plan bitmask */
-                int bStartSeen = 0;    /* EQ constraint seen on the START column */
                 int unusableMask = 0;  /* Mask of unusable constraints */
                 int nArg = 0;          /* Number of arguments that seriesFilter() expects */
                 int aIdx[3];           /* Constraints on start, stop, and step */
@@ -927,7 +926,6 @@ struct SeriesModule : DbModule {
                     if( pConstraint->GetColumn()< (int)SeriesCursor::Columns::Start ) continue;
                     iCol = pConstraint->GetColumn() - (int)SeriesCursor::Columns::Start;
                     iMask = 1 << iCol;
-                    if( iCol==0 ) bStartSeen = 1;
                     if (!pConstraint->IsUsable()){
                         unusableMask |=  iMask;
                         continue;
@@ -1004,7 +1002,6 @@ struct TokenizeModule : DbModule {
                 Delimiter =2,
             };
             private:
-                int m_isDesc = 0;
                 int64_t m_iRowid = 0;
                 Utf8String m_text;
                 Utf8String m_delimiter;
@@ -1063,7 +1060,6 @@ struct TokenizeModule : DbModule {
              DbResult BestIndex(IndexInfo& indexInfo) final {
                  int i, j;              /* Loop over constraints */
                 int idxNum = 0;        /* The query plan bitmask */
-                int bStartSeen = 0;    /* EQ constraint seen on the START column */
                 int unusableMask = 0;  /* Mask of unusable constraints */
                 int nArg = 0;          /* Number of arguments that seriesFilter() expects */
                 int aIdx[2];           /* Constraints on start, stop, and step */
@@ -1078,7 +1074,6 @@ struct TokenizeModule : DbModule {
                     if( pConstraint->GetColumn()< (int)TokenizeCursor::Columns::Text) continue;
                     iCol = pConstraint->GetColumn() - (int)TokenizeCursor::Columns::Text;
                     iMask = 1 << iCol;
-                    if( iCol==0 ) bStartSeen = 1;
                     if (!pConstraint->IsUsable()){
                         unusableMask |=  iMask;
                         continue;

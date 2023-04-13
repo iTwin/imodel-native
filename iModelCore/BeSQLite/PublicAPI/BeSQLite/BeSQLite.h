@@ -3566,7 +3566,7 @@ struct DbModule : NonCopyableClass {
                 };
                 struct ConstraintUsage final {
                     BE_SQLITE_EXPORT int GetArgvIndex() const;
-                    BE_SQLITE_EXPORT void SetArgvIndex(int) const; /* if >0, constraint is part of argv to xFilter */
+                    BE_SQLITE_EXPORT void SetArgvIndex(int); /* if >0, constraint is part of argv to xFilter */
                     BE_SQLITE_EXPORT bool GetOmit() const;
                     BE_SQLITE_EXPORT void SetOmit(bool); /* Do not code a test for this constraint */
                 };

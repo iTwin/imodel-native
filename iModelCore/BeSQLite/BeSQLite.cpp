@@ -6492,9 +6492,17 @@ static int vtabClose(sqlite3_vtab_cursor *pCur){
     delete cur->m_this;
     return (int)rc;
 }
+static int vtabRowId(sqlite3_vtab_cursor *cur, sqlite_int64 *pRowid){ 
+    int64_t rowId;
+    auto rc = ((DbModule::VirtualTable::Cursor::CallbackData*)(cur))->m_this->GetRowId(rowId);
+    if (pRowid) {
+        *pRowid = (int64_t)rowId;
+    }
+    return rc; 
+}
+
 static int vtabNext(sqlite3_vtab_cursor *cur){ return (int)((DbModule::VirtualTable::Cursor::CallbackData*)(cur))->m_this->Next(); }
 static int vtabColumn( sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int i ){ return (int)(((DbModule::VirtualTable::Cursor::CallbackData*)(cur))->m_this->GetColumn(i, (DbModule::VirtualTable::Cursor::Context&)*ctx)); }
-static int vtabRowId(sqlite3_vtab_cursor *cur, sqlite_int64 *pRowid){ return (int)(((DbModule::VirtualTable::Cursor::CallbackData*)(cur))->m_this->GetRowId(*pRowid)); }
 static int vtabEof(sqlite3_vtab_cursor *cur){ return (int)(((DbModule::VirtualTable::Cursor::CallbackData*)(cur))->m_this->Eof()); }
 static int vtabFilter(sqlite3_vtab_cursor *pVtabCursor, int idxNum, const char *idxStr, int argc, sqlite3_value **argv){ return (int)(((DbModule::VirtualTable::Cursor::CallbackData*)(pVtabCursor))->m_this->Filter(idxNum, idxStr, argc, (DbValue*)argv)); }
 static int vtabBestIndex(sqlite3_vtab *pVTab, sqlite3_index_info *pIdxInfo ){ return ((DbModule::VirtualTable::CallbackData*)(pVTab))->m_this->BestIndex((DbModule::VirtualTable::IndexInfo&)(*pIdxInfo)); }
@@ -6526,7 +6534,7 @@ DbResult DbModule::Register() {
 }
 
 int DbModule::VirtualTable::IndexInfo::ConstraintUsage::GetArgvIndex() const { return ((sqlite3_index_info::sqlite3_index_constraint_usage const*)this)->argvIndex;}
-void DbModule::VirtualTable::IndexInfo::ConstraintUsage::SetArgvIndex(int argvIndex) const { ((sqlite3_index_info::sqlite3_index_constraint_usage*)this)->argvIndex = argvIndex; }
+void DbModule::VirtualTable::IndexInfo::ConstraintUsage::SetArgvIndex(int argvIndex) { ((sqlite3_index_info::sqlite3_index_constraint_usage*)this)->argvIndex = argvIndex; }
 bool DbModule::VirtualTable::IndexInfo::ConstraintUsage::GetOmit() const {return (bool)(((sqlite3_index_info::sqlite3_index_constraint_usage const*)this)->omit);}
 void DbModule::VirtualTable::IndexInfo::ConstraintUsage::SetOmit(bool omit){ ((sqlite3_index_info::sqlite3_index_constraint_usage*)this)->omit = omit ? 1: 0; }
 int DbModule::VirtualTable::IndexInfo::IndexOrderBy::GetColumn() const { return ((sqlite3_index_info::sqlite3_index_orderby const*)this)->iColumn; }
@@ -6535,9 +6543,9 @@ int DbModule::VirtualTable::IndexInfo::IndexConstraint::GetColumn() const { retu
 DbModule::VirtualTable::IndexInfo::Operator DbModule::VirtualTable::IndexInfo::IndexConstraint::GetOp() const { return (Operator)(((sqlite3_index_info::sqlite3_index_constraint const*)this)->op); }
 bool DbModule::VirtualTable::IndexInfo::IndexConstraint::IsUsable() const { return (bool)(((sqlite3_index_info::sqlite3_index_constraint const *)this)->usable); }
 int DbModule::VirtualTable::IndexInfo::GetConstraintCount() const { return ((sqlite3_index_info const*)this)->nConstraint; }
-const DbModule::VirtualTable::IndexInfo::IndexConstraint* DbModule::VirtualTable::IndexInfo::GetConstraint(int i)  const { return (IndexConstraint*)&(((sqlite3_index_info*)this)->aConstraint[i]);}
+const DbModule::VirtualTable::IndexInfo::IndexConstraint* DbModule::VirtualTable::IndexInfo::GetConstraint(int i)  const { return ( const IndexConstraint*)&(((sqlite3_index_info const*)this)->aConstraint[i]);}
 int DbModule::VirtualTable::IndexInfo::GetIndexOrderByCount() const{ return ((sqlite3_index_info const*)this)->nOrderBy; }
-const DbModule::VirtualTable::IndexInfo::IndexOrderBy* DbModule::VirtualTable::IndexInfo::GetOrderBy(int i)  const { return (IndexOrderBy*)&(((sqlite3_index_info*)this)->aOrderBy[i]);}
+const DbModule::VirtualTable::IndexInfo::IndexOrderBy* DbModule::VirtualTable::IndexInfo::GetOrderBy(int i)  const { return (IndexOrderBy const*)&(((sqlite3_index_info const*)this)->aOrderBy[i]);}
 int DbModule::VirtualTable::IndexInfo::GetConstraintUsageCount() const { return GetConstraintCount(); }
 DbModule::VirtualTable::IndexInfo::ConstraintUsage* DbModule::VirtualTable::IndexInfo::GetConstraintUsage(int i)  { return (ConstraintUsage*)&(((sqlite3_index_info*)this)->aConstraintUsage[i]);}
 void DbModule::VirtualTable::IndexInfo::SetIdxNum(int idxNum) { ((sqlite3_index_info*)this)->idxNum = idxNum; }
