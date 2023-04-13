@@ -117,7 +117,7 @@ DbResult ChangedElementsManager::AddMetadataToChangeCacheFile(ECDb& cacheFile) c
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-bool ChangedElementsManager::HasChangeset(ECDbR cacheDb, DgnRevisionPtr revision)
+bool ChangedElementsManager::HasChangeset(ECDbR cacheDb, ChangesetPropsPtr revision)
     {
     return IsProcessed(cacheDb, revision->GetChangesetId());
     }
@@ -136,7 +136,7 @@ bool ChangedElementsManager::IsProcessed(ECDbR cacheDb, Utf8String changesetId)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DbResult ChangedElementsManager::InsertEntries(ECDbR cacheDb, DgnRevisionPtr revision, bvector<ChangedElement> const& elements)
+DbResult ChangedElementsManager::InsertEntries(ECDbR cacheDb, ChangesetPropsPtr revision, bvector<ChangedElement> const& elements)
     {
     // Check if we already have this changeset in cache, if so, return success
     if (HasChangeset(cacheDb, revision))
@@ -398,14 +398,14 @@ void ChangedElementsManager::ChangedElementsToJSON(BeJsValue val, ChangedElement
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DbResult ChangedElementsManager::ProcessChangesets(ECDbR cacheDb, Utf8String rulesetId, bvector<DgnRevisionPtr> const& revisions)
+DbResult ChangedElementsManager::ProcessChangesets(ECDbR cacheDb, Utf8String rulesetId, bvector<ChangesetPropsPtr> const& revisions)
     {
     bool multiProcessing = revisions.size() > 1;
     // Clone briefcase so that we may roll it if we have multiple changesets to process
     BeFileName dbFilename = multiProcessing ? CloneDb(m_dbFilename) : m_dbFilename;
 
-    bvector<DgnRevisionPtr> processedRevisions;
-    for (DgnRevisionPtr rev : revisions)
+    bvector<ChangesetPropsPtr> processedRevisions;
+    for (ChangesetPropsPtr rev : revisions)
         processedRevisions.push_back(rev);
 
     // We always have to process from newest to oldest
@@ -416,10 +416,10 @@ DbResult ChangedElementsManager::ProcessChangesets(ECDbR cacheDb, Utf8String rul
         std::reverse(processedRevisions.begin(), processedRevisions.end());
 
     // Use version compare change summary to generate the changed elements list
-    for (DgnRevisionPtr revision : processedRevisions)
+    for (ChangesetPropsPtr revision : processedRevisions)
         {
         // Generate a summary for each revision
-        bvector<DgnRevisionPtr> currentRevisions;
+        bvector<ChangesetPropsPtr> currentRevisions;
         currentRevisions.push_back(revision);
 
         SummaryOptions options;
