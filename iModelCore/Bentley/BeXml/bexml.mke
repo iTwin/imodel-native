@@ -44,7 +44,7 @@ DLM_OBJECT_DEST = $(o)
 DLM_OBJECT_FILES = $(objs)
 DLM_NO_BENTLEY_LIB = 1
 
-LINKER_LIBRARIES + $(BuildContext)SubParts/Libs/$(libprefix)BeLibxml2$(libext)
+LINKER_LIBRARIES + $(BuildContext)SubParts/Libs/$(libprefix)iTwinLibxml2$(libext)
 LINKER_LIBRARIES + $(BuildContext)SubParts/Libs/$(libprefix)iTwinBentley$(stlibext)
 
 %include $(sharedMki)linkLibrary.mki

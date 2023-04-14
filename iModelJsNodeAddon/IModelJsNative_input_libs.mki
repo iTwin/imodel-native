@@ -6,13 +6,13 @@
 
 THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinGeoCoord.a
 THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinCsmapStatic.a
-THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libBeCurl.a
+THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinCurl.a
 THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinFolly.a
-THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libBeIcu4c.a
+THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinIcu4c.a
 THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinJpeg.a
 THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinJsonCpp.a
 THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libBeLibJpegTurbo.a
-THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libBeLibxml2.a
+THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinLibxml2.a
 THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinBentley.a
 THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinGeom.a
 THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinGeomSerialization.a
@@ -24,11 +24,11 @@ THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libBeZlib.a
 THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinPlatform.a
 THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinECObjects.a
 THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinECPresentation.a
-THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libfreetype2.a
+THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinFreetype2.a
 THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)liblzma.a
 THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libsnappy.a
 THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinUnits.a
-THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libBeOpenSSL.a
+THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinOpenSSL.a
 THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwin_google_re2.a
 THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinPugixml.a
 
@@ -70,7 +70,7 @@ LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)iTwinFolly$(libext)
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)iTwinGeomSerialization$(libext)
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)iTwinGeom$(libext)
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)iTwinGeoCoord$(libext)
-LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeOpenSSL$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)iTwinOpenSSL$(libext)
 
 %if defined (BENTLEYCONFIG_PARASOLID)
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)iTwinPSBRepGeometry$(libext)
