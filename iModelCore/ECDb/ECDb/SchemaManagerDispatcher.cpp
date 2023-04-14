@@ -1052,35 +1052,49 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
         return SchemaImportResult::ERROR;
         }
 
-        auto& sharedChannel = m_ecdb.Schemas().GetSharedChannel();
-        auto resolvedChannelUri = channelUri.IsEmpty() ? sharedChannel.GetDefaultChannelUri() : channelUri;
-        const auto localChannelInfo = sharedChannel.GetInfo();
-        if (!localChannelInfo.IsEmpty())
-            {
-            if (resolvedChannelUri.IsEmpty())
-                {
-                m_ecdb.GetImpl().Issues().ReportV(
-                    IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue,
-                    "Failed to import ECSchemas. Cannot import schemas into a file which is setup to use shared schema channel but not shared channel was provided. Channel-Id: {%s}.",
-                    localChannelInfo.GetChannelId().ToString().c_str());
-                return SchemaImportResult::ERROR;
-                }
+    auto& sharedChannel = m_ecdb.Schemas().GetSharedChannel();
+    auto resolvedChannelUri = channelUri.IsEmpty() ? sharedChannel.GetDefaultChannelUri() : channelUri;
+    const auto localChannelInfo = sharedChannel.GetInfo();
+    
+    if (localChannelInfo.IsEmpty() && !resolvedChannelUri.IsEmpty())
+        {
+        m_ecdb.GetImpl().Issues().ReportV(
+            IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue,
+            "Failed to import ECSchemas. Cannot import schemas into a file which is not setup to use shared schema channel but shared channel was provided. Channel-Id: {%s}, uri: {%s}.",
+            localChannelInfo.GetChannelId().ToString().c_str(),
+            resolvedChannelUri.GetUri().c_str()
+        );
+        return SchemaImportResult::ERROR;
+        }
 
-            if (sharedChannel.Pull(resolvedChannelUri, schemaImportToken) != SharedSchemaChannel::Status::OK)
-                {
-                m_ecdb.GetImpl().Issues().ReportV(
-                    IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue,
-                    "Failed to import ECSchemas. Unable to pull changes from Channel-Id: {%s}, uri: {%s}.",
-                    localChannelInfo.GetChannelId().ToString().c_str(),
-                    resolvedChannelUri.GetUri().c_str());
-                return SchemaImportResult::ERROR;
-                }
-            if (!GetECDb().GetImpl().GetIdFactory().Reset())
-                {
-                LOG.error("Failed to import ECSchemas: Failed to create id factory.");
-                return SchemaImportResult::ERROR;
-                }
+    if (!localChannelInfo.IsEmpty())
+        {
+        if (resolvedChannelUri.IsEmpty())
+            {
+            m_ecdb.GetImpl().Issues().ReportV(
+                IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue,
+                "Failed to import ECSchemas. Cannot import schemas into a file which is setup to use shared schema channel but not shared channel was provided. Channel-Id: {%s}.",
+                localChannelInfo.GetChannelId().ToString().c_str()
+            );
+            return SchemaImportResult::ERROR;
             }
+
+        if (sharedChannel.Pull(resolvedChannelUri, schemaImportToken) != SharedSchemaChannel::Status::OK)
+            {
+            m_ecdb.GetImpl().Issues().ReportV(
+                IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue,
+                "Failed to import ECSchemas. Unable to pull changes from Channel-Id: {%s}, uri: {%s}.",
+                localChannelInfo.GetChannelId().ToString().c_str(),
+                resolvedChannelUri.GetUri().c_str()
+            );
+            return SchemaImportResult::ERROR;
+            }
+        if (!GetECDb().GetImpl().GetIdFactory().Reset())
+            {
+            LOG.error("Failed to import ECSchemas: Failed to create id factory.");
+            return SchemaImportResult::ERROR;
+            }
+        }
 
     for (auto schema: schemas) {
         if (ECSchemaOwnershipClaimAppData::HasOwnershipClaim(*schema) && !ECSchemaOwnershipClaimAppData::IsOwnedBy(GetECDb(), *schema)) {
