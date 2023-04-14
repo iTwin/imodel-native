@@ -15,15 +15,12 @@ struct ValueHelpers : NonCopyableClass
 {
 private:
     ValueHelpers() {}
-    static BentleyStatus GetEnumDisplayValue(Utf8StringR displayValue, ECN::ECEnumerationCR enumeration,
-        std::function<int()> const& getIntEnumId, std::function<Utf8CP()> const& getStrEnumId);
     static BentleyStatus GetEnumPropertyDisplayValue(Utf8StringR displayValue, ECN::ECPropertyCR prop,
-        std::function<int()> const& getIntEnumId, std::function<Utf8CP()> const& getStrEnumId);
+        std::function<int()> getIntEnumId, std::function<Utf8CP()> getStrEnumId);
 public:
     static BentleyStatus GetEnumPropertyDisplayValue(Utf8StringR displayValue, ECN::ECPropertyCR prop, BeSQLite::DbValue const& dbValue);
     static BentleyStatus GetEnumPropertyDisplayValue(Utf8StringR displayValue, ECN::ECPropertyCR prop, ECN::ECValueCR ecValue);
     static BentleyStatus GetEnumPropertyDisplayValue(Utf8StringR displayValue, ECN::ECPropertyCR prop, RapidJsonValueCR jsonValue);
-    static BentleyStatus GetEnumPropertyDisplayValue(Utf8StringR displayValue, ECN::ECEnumerationCR enumeration, BeSQLite::DbValue const& dbValue);
 
     static DPoint2d GetPoint2dFromSqlValue(BeSQLite::EC::IECSqlValue const&);
     static DPoint2d GetPoint2dFromJson(RapidJsonValueCR);
