@@ -812,6 +812,10 @@ TEST_F(BeSQliteTestFixture, Profiler)
     ASSERT_STREQ( "COMMIT", stats->GetValueText(1));;
     }
 
+//=======================================================================================
+//! Virtual Table to generate series
+// @bsiclass
+//=======================================================================================
 struct SeriesModule : DbModule {
     struct SeriesTable : VirtualTable {
         struct SeriesCursor : Cursor {
@@ -972,8 +976,9 @@ struct SeriesModule : DbModule {
     };
     public:
         SeriesModule(DbR db): DbModule(db, "generate_series", "CREATE TABLE x(value,start hidden,stop hidden,step hidden)") {}
-        DbResult Connect(VirtualTable*& out, int argc, const char* const* argv) final {
+        DbResult Connect(VirtualTable*& out, Config& conf, int argc, const char* const* argv) final {
             out = new SeriesTable(*this);
+            conf.SetTag(Config::Tags::Innocuous);
             return BE_SQLITE_OK;
         }
 };
@@ -994,6 +999,10 @@ TEST_F(BeSQliteTestFixture, TableValueFunction_SeriesModule) {
 }
 
 
+//=======================================================================================
+//! Virtual Table to tokenize string
+// @bsiclass
+//=======================================================================================
 struct TokenizeModule : DbModule {
     struct TokenizeTable : VirtualTable {
         struct TokenizeCursor : Cursor {
@@ -1110,8 +1119,9 @@ struct TokenizeModule : DbModule {
     };
     public:
         TokenizeModule(DbR db): DbModule(db, "tokenize_text", "CREATE TABLE x(token,buffer hidden,delimiter hidden)") {}
-        DbResult Connect(VirtualTable*& out, int argc, const char* const* argv) final {
+        DbResult Connect(VirtualTable*& out, Config& conf, int argc, const char* const* argv) final {
             out = new TokenizeTable(*this);
+            conf.SetTag(Config::Tags::Innocuous);
             return BE_SQLITE_OK;
         }
 };
