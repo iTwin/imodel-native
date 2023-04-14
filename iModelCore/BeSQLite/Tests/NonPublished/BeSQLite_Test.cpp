@@ -6,6 +6,7 @@
 #include <BeSQLite/ChangeSet.h>
 #include <Bentley/BeDirectoryIterator.h>
 #include <BeSQLite/Profiler.h>
+#include <BeSQLite/VirtualTab.h>
 using namespace MemorySize;
 
 #define MEM_THRESHOLD (100 * MEG)
