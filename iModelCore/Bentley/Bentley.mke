@@ -7,6 +7,10 @@ BUILD_WITH_C17=1
 
 %include mdl.mki
 
+always:
+    | 11111111 In bentley.mke top
+    -set
+
 baseDir         = $(_MakeFilePath)
 bentleyDir      = $(baseDir)Bentley/
 nonportDir      = $(bentleyDir)nonport/
@@ -133,6 +137,10 @@ objs + $(o)BeSystemInfoMacOS$(oext)
 %endif
 
 %undef MultiCompileDepends
+
+always:
+    | 11111111 In bentley.mke bottom
+    -set
 
 #----------------------------------------------------------------------
 #   Create the Bentley DLL

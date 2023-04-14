@@ -6,6 +6,10 @@ CLANG_ALLOW_UNDEFINED=1
 BUILD_WITH_C17=1
 %include mdl.mki
 
+always:
+    | 11111111 In iModelJsNative.mke top
+    -set
+
 appName = imodeljs-addon
 
 baseDir = $(_MakeFilePath)
@@ -139,6 +143,11 @@ always:
 
     %return
 %endif
+
+always:
+    | 11111111 In iModelJsNative.mke bottom
+    -set
+
 
 #----------------------------------------------------------------------
 #   Link the shared library
