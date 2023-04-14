@@ -85,6 +85,9 @@ void DbModule::VirtualTable::Cursor::Context::SetResultNull(){sqlite3_result_nul
 void DbModule::VirtualTable::Cursor::Context::SetResultText(Utf8CP val, int length, CopyData doCopy){sqlite3_result_text((sqlite3_context*) this, val, length,(sqlite3_destructor_type) doCopy);}
 void DbModule::VirtualTable::Cursor::Context::SetResultZeroblob(int length){sqlite3_result_zeroblob((sqlite3_context*)this, length);}
 void DbModule::VirtualTable::Cursor::Context::SetResultValue(DbValue val){sqlite3_result_value((sqlite3_context*)this, val.GetSqlValueP());}
+void DbModule::VirtualTable::Cursor::Context::SetResultPointer(void* ptr,const char* name ,void(*destroy)(void*) ){sqlite3_result_pointer((sqlite3_context*)this, ptr, name, destroy);}
+void DbModule::VirtualTable::Cursor::Context::SetResultZeroBlob(int n){sqlite3_result_zeroblob((sqlite3_context*)this, n);}
+void DbModule::VirtualTable::Cursor::Context::SetSubType(int type){sqlite3_result_subtype((sqlite3_context*)this, type);}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -247,5 +250,6 @@ DbModule::VirtualTable::IndexInfo::ScanFlags DbModule::VirtualTable::IndexInfo::
 void DbModule::VirtualTable::IndexInfo::SetIdxFlags(ScanFlags idxFlags){ ((sqlite3_index_info*)this)->idxFlags =  (int)idxFlags; }
 int64_t DbModule::VirtualTable::IndexInfo::GetColUsed() const { return ((sqlite3_index_info const *)this)->colUsed; }
 void DbModule::VirtualTable::IndexInfo::SetColUsed(int64_t colUsed) { ((sqlite3_index_info*)this)->colUsed =  colUsed; }
+bool DbModule::VirtualTable::IndexInfo::IsDistinct() const { return (bool)sqlite3_vtab_distinct((sqlite3_index_info*)this); }
 
 END_BENTLEY_SQLITE_NAMESPACE

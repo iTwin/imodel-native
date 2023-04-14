@@ -77,6 +77,7 @@ struct DbModule : NonCopyableClass {
                 BE_SQLITE_EXPORT void SetIdxFlags(ScanFlags); /* Mask of SQLITE_INDEX_SCAN_* flags */
                 BE_SQLITE_EXPORT int64_t GetColUsed() const;
                 BE_SQLITE_EXPORT void SetColUsed(int64_t);  /* Input: Mask of columns used by statement */
+                BE_SQLITE_EXPORT bool IsDistinct() const;   /* Determine if a virtual table query is DISTINCT sqlite3_vtab_distinct() */
             };
 
             public:
@@ -87,17 +88,20 @@ struct DbModule : NonCopyableClass {
                         struct Context {
                             enum class CopyData : int {No = 0, Yes = -1};                                     //!< see sqlite3_destructor_type
                             BE_SQLITE_EXPORT void SetResultBlob(void const* value, int length, CopyData copy=CopyData::Yes); //!< see sqlite3_result_blob
-                            BE_SQLITE_EXPORT void SetResultDouble(double);                                //!< see sqlite3_result_double
-                            BE_SQLITE_EXPORT void SetResultError(Utf8CP, int len=-1);                     //!< see sqlite3_result_error
-                            BE_SQLITE_EXPORT void SetResultError_toobig();                                //!< see sqlite3_result_error_toobig
-                            BE_SQLITE_EXPORT void SetResultError_nomem();                                 //!< see sqlite3_result_error_nomem
-                            BE_SQLITE_EXPORT void SetResultError_code(int);                               //!< see sqlite3_result_error_code
-                            BE_SQLITE_EXPORT void SetResultInt(int);                                      //!< see sqlite3_result_int
-                            BE_SQLITE_EXPORT void SetResultInt64(int64_t);                                //!< see sqlite3_result_int64
-                            BE_SQLITE_EXPORT void SetResultNull();                                        //!< see sqlite3_result_null
-                            BE_SQLITE_EXPORT void SetResultText(Utf8CP value, int length, CopyData);      //!< see sqlite3_result_text
-                            BE_SQLITE_EXPORT void SetResultZeroblob(int length);                          //!< see sqlite3_result_zeroblob
-                            BE_SQLITE_EXPORT void SetResultValue(DbValue);                                //!< see sqlite3_result_value
+                            BE_SQLITE_EXPORT void SetResultDouble(double);                                   //!< see sqlite3_result_double
+                            BE_SQLITE_EXPORT void SetResultError(Utf8CP, int len=-1);                        //!< see sqlite3_result_error
+                            BE_SQLITE_EXPORT void SetResultError_toobig();                                   //!< see sqlite3_result_error_toobig
+                            BE_SQLITE_EXPORT void SetResultError_nomem();                                    //!< see sqlite3_result_error_nomem
+                            BE_SQLITE_EXPORT void SetResultError_code(int);                                	 //!< see sqlite3_result_error_code
+                            BE_SQLITE_EXPORT void SetResultInt(int);                                      	 //!< see sqlite3_result_int
+                            BE_SQLITE_EXPORT void SetResultInt64(int64_t);                                	 //!< see sqlite3_result_int64
+                            BE_SQLITE_EXPORT void SetResultNull();                                        	 //!< see sqlite3_result_null
+                            BE_SQLITE_EXPORT void SetResultText(Utf8CP value, int length, CopyData);      	 //!< see sqlite3_result_text
+                            BE_SQLITE_EXPORT void SetResultZeroblob(int length);                          	 //!< see sqlite3_result_zeroblob
+                            BE_SQLITE_EXPORT void SetResultValue(DbValue);                                   //!< see sqlite3_result_value
+							BE_SQLITE_EXPORT void SetResultPointer(void*,const char*,void(*destroy)(void*)); //!< see sqlite3_result_pointer
+							BE_SQLITE_EXPORT void SetResultZeroBlob(int n);     					     	 //!< see sqlite3_result_zeroblob
+                            BE_SQLITE_EXPORT void SetSubType(int type);                                      //!< see sqlite3_result_subtype
                         };
 
                     private:
