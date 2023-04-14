@@ -86,6 +86,7 @@ struct CloudContainer {
     Utf8String m_containerId;
     Utf8String m_alias;
     Utf8String m_accessToken;
+    Utf8String m_clientIdentifier;
     bool m_writeLockHeld = false;
     bool m_writeable = false;
     bool m_secure = false;

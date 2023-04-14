@@ -382,6 +382,7 @@ struct JsInterop {
     BE_JSON_NAME(changesType)
     BE_JSON_NAME(checksumBlockNames)
     BE_JSON_NAME(client)
+    BE_JSON_NAME(clientIdentifier)
     BE_JSON_NAME(cloudContainer)
     BE_JSON_NAME(codeScope)
     BE_JSON_NAME(codeSpecId)
