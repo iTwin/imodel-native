@@ -60,7 +60,7 @@ SchemaImportResult SchemaSyncTestFixture::ImportSchema(SchemaItem item, SchemaMa
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::unique_ptr<TrackedECDb> SchemaSyncTestFixture::OpenECDb(Utf8CP asFileName)
-    {
+     {
     auto ecdb = std::make_unique<TrackedECDb>();
     if (BE_SQLITE_OK != ecdb->OpenBeSQLiteDb(asFileName, Db::OpenParams(Db::OpenMode::ReadWrite)))
         return nullptr;
@@ -75,14 +75,14 @@ DbResult SchemaSyncTestFixture::ReopenECDb()
     {
     if (!m_briefcase->IsDbOpen())
         return BE_SQLITE_ERROR;
-    
-    auto filename = m_briefcase->GetDbFileName();
-    CloseECDb();
 
-    m_briefcase = OpenECDb(filename);
+    Utf8String filename = m_briefcase->GetDbFileName();
+    m_briefcase->SaveChanges();
+    m_briefcase->CloseDb();
+    m_briefcase = OpenECDb(filename.c_str());
     if (m_briefcase == nullptr)
         return BE_SQLITE_ERROR;
-    
+
     return BE_SQLITE_OK;
     }
 
@@ -151,12 +151,12 @@ DropSchemaResult SchemaSyncTestFixture::DropSchema(Utf8CP schemaName, bool disab
     {
     if (disableTracking)
         m_briefcase->GetTracker()->EnableTracking(false);
-    
+
     auto dropSuccess = m_briefcase->Schemas().DropSchema(schemaName);
 
     if (disableTracking)
         m_briefcase->GetTracker()->EnableTracking(true);
-    
+
     if (dropSuccess.IsSuccess())
         EXPECT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
     else
