@@ -250,6 +250,6 @@ DbModule::VirtualTable::IndexInfo::ScanFlags DbModule::VirtualTable::IndexInfo::
 void DbModule::VirtualTable::IndexInfo::SetIdxFlags(ScanFlags idxFlags){ ((sqlite3_index_info*)this)->idxFlags =  (int)idxFlags; }
 int64_t DbModule::VirtualTable::IndexInfo::GetColUsed() const { return ((sqlite3_index_info const *)this)->colUsed; }
 void DbModule::VirtualTable::IndexInfo::SetColUsed(int64_t colUsed) { ((sqlite3_index_info*)this)->colUsed =  colUsed; }
-bool DbModule::VirtualTable::IndexInfo::IsDistinct() const { return (bool)sqlite3_vtab_distinct((sqlite3_index_info*)this); }
+bool DbModule::VirtualTable::IndexInfo::IsDistinct() const { return (bool)sqlite3_vtab_distinct((sqlite3_index_info*)const_cast<IndexInfo*>(this)); }
 
 END_BENTLEY_SQLITE_NAMESPACE
