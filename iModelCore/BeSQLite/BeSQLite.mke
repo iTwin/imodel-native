@@ -61,6 +61,8 @@ $(o)BeSQLiteProfileManager$(oext) : $(baseDir)BeSQLiteProfileManager.cpp $(baseD
 
 $(o)Profiler$(oext) : $(baseDir)Profiler.cpp $(baseDir)/PublicAPI/BeSQLite/Profiler.h ${MultiCompileDepends}
 
+$(o)VirtualTab$(oext) : $(baseDir)VirtualTab.cpp $(baseDir)/PublicAPI/BeSQLite/VirtualTab.h ${MultiCompileDepends}
+
 $(o)BeLzma$(oext) : $(baseDir)BeLzma.cpp $(baseDir)/PublicAPI/BeSQLite/BeLzma.h ${MultiCompileDepends}
 
 $(o)BeBriefcaseBasedIdSequence$(oext) : $(baseDir)BeBriefcaseBasedIdSequence.cpp $(baseDir)/PublicAPI/BeSQLite/BeBriefcaseBasedIdSequence.h ${MultiCompileDepends}
