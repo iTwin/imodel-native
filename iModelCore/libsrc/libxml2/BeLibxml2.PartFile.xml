@@ -4,12 +4,12 @@
               xsi:noNamespaceSchemaLocation="../../../../bentleybuild/PartFile.xsd"
               >
 
-    <Part Name="libxml2" BentleyBuildMakeFile="BeLibxml2.mke" ApiNumber="B02">
+    <Part Name="libxml2" BentleyBuildMakeFile="BeLibxml2.mke">
         <SubPart PartName="BeIcu4cLibrary" PartFile="iModelCore\libsrc\icu4c\BeIcu4cLibrary"/>
         <Bindings>
             <VendorAPI Domain="libxml"/>
-            <Libs>Delivery/$(libprefix)BeLibxml2$(libext)</Libs>
-            <Assemblies>Delivery/$(shlibprefix)BeLibxml2$(ApiNumber)$(shlibext)</Assemblies>
+            <Libs>Delivery/$(libprefix)iTwinLibxml2$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)iTwinLibxml2$(shlibext)</Assemblies>
             <VendorNotices>Delivery/libxml2-license.txt</VendorNotices>
         </Bindings>
     </Part>
