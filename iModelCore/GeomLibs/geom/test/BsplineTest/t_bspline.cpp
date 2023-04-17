@@ -1107,4 +1107,20 @@ TEST(BsplineKnots, ValidateNans)
     Check::True(std::equal(uKnots.data(), uKnots.data() + numKnotsU, origUKnots.data(), isEqual), "uniform uKnots corrected from NaN corruption");
     Check::True(std::equal(vKnots.data(), vKnots.data() + numKnotsV, origVKnots.data(), isEqual), "uniform vKnots corrected from NaN corruption");
     Check::True(std::equal(weights.data(), weights.data() + numPoles, origWeights.data(), isEqual), "unit weights corrected from NaN corruption");
+
+    // cover closed ext knot recomputation
+    closedU = true;
+    poles.resize(numPoleColsU);
+    MSBsplineCurvePtr curve = MSBsplineCurve::CreateFromPolesAndOrder(poles, nullptr, nullptr, orderU, closedU);
+    MSBsplineCurvePtr origCurve = curve->CreateCopy();
+    // mangle first and last interior knots
+    numKnotsU = BsplineParam::NumberAllocatedKnots(numPoleColsU, orderU, closedU);
+    curve->SetKnot(orderU, corrupt);
+    curve->SetKnot(numKnotsU - orderU - 1, corrupt);
+    // recover
+    mdlBspline_validateCurveKnots(curve->knots, nullptr, nullptr, &curve->params);
+    // compare
+    curve->GetKnots(uKnots);
+    origCurve->GetKnots(origUKnots);
+    Check::True(std::equal(uKnots.data(), uKnots.data() + numKnotsU, origUKnots.data(), isEqual), "closed exterior knots corrected from interior knot NaN corruption");
     }
