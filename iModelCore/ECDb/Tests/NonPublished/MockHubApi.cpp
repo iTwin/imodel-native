@@ -26,7 +26,7 @@ SchemaImportResult SchemaSyncTestFixture::ImportSchemas(ECDbR ecdb, std::vector<
     auto schemaReadContext = ECSchemaReadContext::CreateContext();
     schemaReadContext->AddSchemaLocater(ecdb.GetSchemaLocater());
     bvector<ECSchemaCP> importSchemas;
-    for (auto& item : items) {
+    for(auto& item: items) {
         ECSchemaPtr schema;
         ECSchema::ReadFromXmlString(schema, item.GetXmlString().c_str(), *schemaReadContext);
         if (!schema.IsValid()) {
@@ -34,14 +34,14 @@ SchemaImportResult SchemaSyncTestFixture::ImportSchemas(ECDbR ecdb, std::vector<
         }
         importSchemas.push_back(schema.get());
     }
-    return ecdb.Schemas().ImportSchemas(importSchemas, opts, nullptr, uri);
+    return ecdb.Schemas().ImportSchemas(importSchemas, opts,nullptr, uri);
 }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaImportResult SchemaSyncTestFixture::ImportSchema(ECDbR ecdb, SchemaItem item, SchemaManager::SchemaImportOptions opts, SharedSchemaChannel::ChannelUri uri) {
-    return ImportSchemas(ecdb, std::vector<SchemaItem> {item}, opts, uri);
+    return ImportSchemas(ecdb, std::vector<SchemaItem>{item}, opts, uri);
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -152,12 +152,12 @@ SchemaImportResult SchemaSyncTestFixture::SetupECDb(Utf8CP ecdbName, SchemaItem 
 DropSchemaResult SchemaSyncTestFixture::DropSchema(Utf8CP schemaName, bool disableTracking)
     {
     if (disableTracking)
-        m_briefcase->GetTracker()->EnableTracking(false);
+        m_briefcase->GetTracker()->EnableTracking(false); // Remove this
 
     auto dropSuccess = m_briefcase->Schemas().DropSchema(schemaName);
 
     if (disableTracking)
-        m_briefcase->GetTracker()->EnableTracking(true);
+        m_briefcase->GetTracker()->EnableTracking(true);  // Remove this
 
     if (dropSuccess.IsSuccess())
         EXPECT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
@@ -172,12 +172,12 @@ DropSchemaResult SchemaSyncTestFixture::DropSchema(Utf8CP schemaName, bool disab
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String SchemaSyncTestFixture::GetSchemaHash(ECDbCR db) {
     ECSqlStatement stmt;
-    if (stmt.Prepare(db, "PRAGMA checksum(ecdb_schema)") != ECSqlStatus::Success)
+    if (stmt.Prepare(db, "PRAGMA checksum(ecdb_schema)") != ECSqlStatus::Success) {
         return "";
-
-    if (stmt.Step() == BE_SQLITE_ROW)
+    }
+    if (stmt.Step() == BE_SQLITE_ROW) {
         return stmt.GetValueText(0);
-
+    }
     return "";
 }
 
@@ -186,12 +186,12 @@ Utf8String SchemaSyncTestFixture::GetSchemaHash(ECDbCR db) {
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String SchemaSyncTestFixture::GetMapHash(ECDbCR db) {
     ECSqlStatement stmt;
-    if (stmt.Prepare(db, "PRAGMA checksum(ecdb_map)") != ECSqlStatus::Success)
+    if (stmt.Prepare(db, "PRAGMA checksum(ecdb_map)") != ECSqlStatus::Success) {
         return "";
-
-    if (stmt.Step() == BE_SQLITE_ROW)
+    }
+    if (stmt.Step() == BE_SQLITE_ROW) {
         return stmt.GetValueText(0);
-
+    }
     return "";
 }
 
@@ -200,12 +200,12 @@ Utf8String SchemaSyncTestFixture::GetMapHash(ECDbCR db) {
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String SchemaSyncTestFixture::GetDbSchemaHash(ECDbCR db) {
     ECSqlStatement stmt;
-    if (stmt.Prepare(db, "PRAGMA checksum(sqlite_schema)") != ECSqlStatus::Success)
+    if (stmt.Prepare(db, "PRAGMA checksum(sqlite_schema)") != ECSqlStatus::Success) {
         return "";
-
-    if (stmt.Step() == BE_SQLITE_ROW)
+    }
+    if (stmt.Step() == BE_SQLITE_ROW) {
         return stmt.GetValueText(0);
-
+    }
     return "";
 }
 
@@ -216,9 +216,9 @@ bool SchemaSyncTestFixture::ForeignkeyCheck(ECDbCR db) {
     Statement stmt;
     EXPECT_EQ(BE_SQLITE_OK, stmt.Prepare(db, "PRAGMA foreign_key_check"));
     auto rc = stmt.Step();
-    if (rc == BE_SQLITE_DONE)
+    if (rc == BE_SQLITE_DONE) {
         return true;
-
+    }
     while (rc == BE_SQLITE_ROW) {
         printf("%s\n",
                 SqlPrintfString("[table=%s], [rowid=%lld], [parent=%s], [fkid=%d]",
@@ -281,7 +281,7 @@ std::string SchemaSyncTestFixture::GetIndexDDL(ECDbCR ecdb, Utf8CP indexName) {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SharedSchemaDb::SharedSchemaDb(Utf8CP name) {
+SharedSchemaDb::SharedSchemaDb(Utf8CP name){
     BeFileName outPath;
     BeTest::GetHost().GetOutputRoot(outPath);
     Utf8String fileName = name;
@@ -304,7 +304,7 @@ SharedSchemaDb::SharedSchemaDb(Utf8CP name) {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileName SharedSchemaDb::GetFileName() const { return m_fileName; }
+BeFileName SharedSchemaDb::GetFileName() const { return m_fileName;  }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -343,15 +343,14 @@ void SharedSchemaDb::WithReadOnly(std::function<void(ECDbR)> cb, DefaultTxn mode
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SharedSchemaDb::WithReadWrite(std::function<void(ECDbR)> cb, DefaultTxn mode)
-    {
+void SharedSchemaDb::WithReadWrite(std::function<void(ECDbR)> cb, DefaultTxn mode) {
     auto ecdb = OpenReadWrite(mode);
-    if (ecdb == nullptr)
+    if (ecdb == nullptr) {
         throw std::runtime_error("unable to open file");
-
+    }
     cb(*ecdb);
     ecdb->CloseDb();
-    }
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -372,7 +371,6 @@ SharedSchemaChannel::Status SharedSchemaDb::Pull(ECDbR ecdb, std::function<void(
     if (rc == SharedSchemaChannel::Status::OK && cb != nullptr) {
         cb();
     }
-
     return rc;
 }
 
@@ -382,12 +380,13 @@ SharedSchemaChannel::Status SharedSchemaDb::Pull(ECDbR ecdb, std::function<void(
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool InMemoryECDb::WriteToDisk(Utf8CP fileName, const char* zSchema, bool overrideFile) const {
+bool InMemoryECDb::WriteToDisk(Utf8CP fileName, const char *zSchema, bool overrideFile) const {
     BeFileName filePath(fileName);
     if (filePath.DoesPathExist()) {
         if (overrideFile) {
-            if (filePath.BeDeleteFile() != BeFileNameStatus::Success)
+            if (filePath.BeDeleteFile() != BeFileNameStatus::Success) {
                 return false;
+            }
         } else {
             return false;
         }
@@ -403,7 +402,7 @@ bool InMemoryECDb::WriteToDisk(Utf8CP fileName, const char* zSchema, bool overri
     if (BeFileStatus::Success != outFile.Write(nullptr, buf.Data(), (uint32_t)buf.Size())) {
         return false;
     }
-    if (BeFileStatus::Success != outFile.Flush()) {
+    if (BeFileStatus::Success != outFile.Flush() ){
         return false;
     }
     return BeFileStatus::Success == outFile.Close();
@@ -422,6 +421,7 @@ InMemoryECDb::Ptr InMemoryECDb::CreateSnapshot(DbResult* outRc) {
         db.ResetBriefcaseId(BeBriefcaseId(0));
     });
     if (rc == BE_SQLITE_OK) {
+
         dbPtr->ChangeDbGuid(GetDbGuid());
         return std::move(dbPtr);
     }
@@ -432,7 +432,8 @@ InMemoryECDb::Ptr InMemoryECDb::CreateSnapshot(DbResult* outRc) {
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 InMemoryECDb::Ptr InMemoryECDb::Create() {
-    return Ptr(new InMemoryECDb());
+	return Ptr(new InMemoryECDb());
+
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -482,21 +483,21 @@ void InMemoryECDb::_OnDbClose() {
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult TrackedECDb::_OnDbCreated(CreateParams const& params) {
-    auto rc = ECDb::_OnDbCreated(params);
-    SetupTracker();
-    return rc;
+	auto rc = ECDb::_OnDbCreated(params);
+	SetupTracker();
+	return rc;
 }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult TrackedECDb::_OnDbOpening() {
-    auto rc = ECDb::_OnDbOpening();
-    if (!IsReadonly()) {
-        SetupTracker();
-    }
+	auto rc = ECDb::_OnDbOpening();
+	if (!IsReadonly()) {
+		SetupTracker();
 
-    return rc;
+	}
+	return rc;
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -600,12 +601,12 @@ ChangeTracker::OnCommitStatus ECDbChangeTracker::_OnCommit(bool isCommit, Utf8CP
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECDbChangeTracker::Ptr ECDbChangeTracker::Clone(ECDb& db) const {
-    auto tracker = Create(db);
+    auto tracker= Create(db);
     for (auto& changeset : m_localChangesets) {
         tracker->m_localChangesets.push_back(changeset->Clone());
     }
-
     return std::move(tracker);
+
 }
 
 //***************************************************************************************
@@ -766,7 +767,7 @@ ECDbChangeSet::Ptr ECDbChangeSet::From(ECDbChangeTracker& tracker, Utf8CP commen
     if (!tracker.HasChanges() && !tracker.HasDdlChanges()) {
         return nullptr;
     }
-    auto changeset = std::make_unique<ECDbChangeSet>((int)(tracker.GetLocalChangesets().size() + 1), comment, tracker.GetDDL().c_str(), tracker.HasEcSchemaChanges());
+    auto changeset = std::make_unique<ECDbChangeSet>( (int)(tracker.GetLocalChangesets().size() + 1), comment, tracker.GetDDL().c_str(), tracker.HasEcSchemaChanges());
     if (tracker.HasChanges()) {
         auto rc = changeset->FromChangeTrack(tracker);
         if (rc != BE_SQLITE_OK) {
@@ -787,6 +788,7 @@ ECDbChangeSet::Ptr ECDbChangeSet::Create(int index, Utf8CP op, Utf8CP ddl, bool 
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ChangeStream::ConflictResolution ECDbChangeSet::_OnConflict(ConflictCause cause, BeSQLite::Changes::Change iter) {
+
     Utf8CP tableName = nullptr;
     int nCols, indirect;
     DbOpcode opcode;
@@ -803,14 +805,14 @@ ChangeStream::ConflictResolution ECDbChangeSet::_OnConflict(ConflictCause cause,
         result = iter.GetFKeyConflicts(&nConflicts);
         BeAssert(result == BE_SQLITE_OK);
         LOG.errorv("Detected %d foreign key conflicts in ChangeSet. Aborting merge.", nConflicts);
-        return ChangeSet::ConflictResolution::Abort;
+        return ChangeSet::ConflictResolution::Abort ;
     }
-    if (cause == ChangeSet::ConflictCause::NotFound) {
+    if(cause == ChangeSet::ConflictCause::NotFound) {
         if (opcode == DbOpcode::Delete) {
             // Caused by CASCADE DELETE on a foreign key, and is usually not a problem.
             return ChangeSet::ConflictResolution::Skip;
         }
-        if (opcode == DbOpcode::Update && 0 == ::strncmp(tableName, "ec_", 3)) {
+  if (opcode == DbOpcode::Update && 0 == ::strncmp(tableName, "ec_", 3)) {
             // Caused by a ON DELETE SET NULL constraint on a foreign key - this is known to happen with "ec_" tables, but needs investigation if it happens otherwise
             return ChangeSet::ConflictResolution::Skip;
         }
@@ -848,8 +850,9 @@ DbResult ECDbHub::CreateSeedFile() {
         }
     }
     auto ecdb = std::make_unique<TrackedECDb>();
-    if (BE_SQLITE_OK != ecdb->CreateNewDb(m_seedFile))
+    if (BE_SQLITE_OK != ecdb->CreateNewDb(m_seedFile)) {
         return BE_SQLITE_ERROR;
+    }
     ecdb->SaveChanges();
     ecdb->CloseDb();
     return BE_SQLITE_OK;
@@ -858,7 +861,7 @@ DbResult ECDbHub::CreateSeedFile() {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECDbHub::ECDbHub() : m_id(true), m_briefcaseid(10) {
+ECDbHub::ECDbHub():m_id(true), m_briefcaseid(10) {
     BeFileName outPath;
     BeTest::GetHost().GetOutputRoot(outPath);
     outPath.AppendToPath(WString(m_id.ToString().c_str(), true).c_str());
@@ -867,7 +870,7 @@ ECDbHub::ECDbHub() : m_id(true), m_briefcaseid(10) {
     }
     m_basePath = outPath;
     CreateSeedFile();
-    }
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -988,7 +991,7 @@ DbResult TrackedECDb::PullMergePush(Utf8CP comment) {
         }
     }
     m_tracker->EnableTracking(true);
-    if (!m_tracker->GetLocalChangesets().empty()) {
+    if (!m_tracker->GetLocalChangesets().empty()){
         auto changeset = m_tracker->MakeChangeset(true, comment);
         if (changeset == nullptr) {
             m_tracker->EnableTracking(true);

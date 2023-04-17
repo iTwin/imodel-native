@@ -1296,6 +1296,8 @@ TEST_F(SchemaSyncTestFixture, DeleteSchema_Check_Table_Drop)
             }
     );
 
+    // TODO: chech if other briefcases dont have dropped schemas
+
     const auto SCHEMA5_HASH_ECDB_MAP = "bde4d99746cf01acdd04e69c2b39133e92a2ed53858f787450fa7ecdd7cf1675";
     Test(
         "Drop TestSchema",
@@ -7381,8 +7383,6 @@ TEST_F(SchemaSyncTestFixture, AddPropertyToBaseClass)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-// Has issues with finalize and reopen db
-// also doesnt have CreateClassViewsInDb() because it causes open db access violation
 TEST_F(SchemaSyncTestFixture, AddPropertyToSubclassThenPropertyToBaseClass_TPH_SharedColumns)
     {
     const auto SCHEMA1_HASH_ECDB_SCHEMA = "99be3eca8c7db46e07cf934acae443775c940dd22a7d4dc84e743de18b3d6e0c";
@@ -7486,23 +7486,16 @@ TEST_F(SchemaSyncTestFixture, AddPropertyToSubclassThenPropertyToBaseClass_TPH_S
     );
 
     Test(
-        "Insert to upgraded schema",
+        "Insert and validate values to upgraded schema",
         [&]()
             {
             ECSqlStatement stmt;
             ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "INSERT INTO ts.Sub1(Code,Prop1,Prop2,Prop3) VALUES (11,'2-1', '2-2', 2)"));
             ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
             stmt.Finalize();
-            }
-    );
 
-    Test(
-        "validate values of upgraded schema",
-        [&]()
-            {
             ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
 
-            ECSqlStatement stmt;
             auto expected = JsonValue(R"json([{"Code":10,"Prop1":"1-1","Prop2":"1-2"},{"Code":11,"Prop1":"2-1","Prop2":"2-2","Prop3":2}])json");
             ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "SELECT Code, Prop1, Prop2, Prop3 FROM ts.Sub1"));
             ASSERT_EQ(expected, GetHelper().ExecutePreparedECSql(stmt));
@@ -7564,7 +7557,7 @@ TEST_F(SchemaSyncTestFixture, AddPropertyToSubclassThenPropertyToBaseClass_TPH_S
     );
 
     Test(
-        "Insert to final schema",
+        "Insert and validate values to final schema",
         [&]()
             {
             ECSqlStatement stmt;
@@ -7575,16 +7568,9 @@ TEST_F(SchemaSyncTestFixture, AddPropertyToSubclassThenPropertyToBaseClass_TPH_S
             ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "INSERT INTO ts.Sub2(Code,Name,PropA,PropB) VALUES (21,'Object 21', '2-A', 2)"));
             ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
             stmt.Finalize();
-            }
-    );
 
-    Test(
-        "validate values of final schema",
-        [&]()
-            {
             ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
 
-            ECSqlStatement stmt;
             auto expected = JsonValue(R"json([{"Code":10,"Prop1":"1-1","Prop2":"1-2"},{"Code":11,"Prop1":"2-1","Prop2":"2-2","Prop3":2},{"Code":12, "Name":"Object 12","Prop1":"3-1","Prop2":"3-2","Prop3":3}])json");
             ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "SELECT Code, Name, Prop1, Prop2, Prop3 FROM ts.Sub1"));
             ASSERT_EQ(expected, GetHelper().ExecutePreparedECSql(stmt));
@@ -7604,8 +7590,6 @@ TEST_F(SchemaSyncTestFixture, AddPropertyToSubclassThenPropertyToBaseClass_TPH_S
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-// also doesnt have CreateClassViewsInDb() because it causes open db access violation
-// Why does this cause access violations at 'Add property to Sub1'??
 TEST_F(SchemaSyncTestFixture, AddPropertyToSubclassThenPropertyToBaseClass_TPH_JoinedTable_SharedCols)
     {
     const auto SCHEMA1_HASH_ECDB_SCHEMA = "4db8e223774dfd62f4c1659f5a2bd79818cf09c5d248eeeebd27e884ed3c1bf7";
@@ -7753,23 +7737,16 @@ TEST_F(SchemaSyncTestFixture, AddPropertyToSubclassThenPropertyToBaseClass_TPH_J
     );
 
     Test(
-        "Insert to upgraded schema",
+        "Insert and validate values to upgraded schema",
         [&]()
             {
             ECSqlStatement stmt;
             ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "INSERT INTO ts.Sub1(Code,Origin.X,Origin.Y,Name,Prop1,Prop2,Prop3) VALUES (102,2,2,'Sub1 2','1', '2', 3)"));
             ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
             stmt.Finalize();
-            }
-    );
 
-    Test(
-        "validate values of upgraded schema",
-        [&]()
-            {
             ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
 
-            ECSqlStatement stmt;
             auto expected = JsonValue(R"json([{"Code":101,"Origin": {"x":1.0,"y":1.0},"Name": "Sub1 1", "Prop1":"1","Prop2":"2"},{"Code":102,"Origin": {"x":2.0,"y":2.0},"Name": "Sub1 2", "Prop1":"1","Prop2":"2", "Prop3": 3}])json");
             ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "SELECT Code,Origin,Name, Prop1, Prop2, Prop3 FROM ts.Sub1"));
             ASSERT_EQ(expected, GetHelper().ExecutePreparedECSql(stmt));
@@ -7853,7 +7830,7 @@ TEST_F(SchemaSyncTestFixture, AddPropertyToSubclassThenPropertyToBaseClass_TPH_J
     );
 
     Test(
-        "Insert to final schema",
+        "Insert and validate values to final schema",
         [&]()
             {
             ECSqlStatement stmt;
@@ -7864,16 +7841,9 @@ TEST_F(SchemaSyncTestFixture, AddPropertyToSubclassThenPropertyToBaseClass_TPH_J
             ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "INSERT INTO ts.Sub2(Code,Origin.X,Origin.Y,Name,Kind,PropA,PropB) VALUES (202,2,2,'Sub2 2',2,'A', 2)"));
             ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
             stmt.Finalize();
-            }
-    );
 
-    Test(
-        "validate values of final schema",
-        [&]()
-            {
             ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
 
-            ECSqlStatement stmt;
             auto expected = JsonValue(
                 R"json([{"Code":101,"Origin": {"x":1.0,"y":1.0},"Name": "Sub1 1", "Prop1":"1","Prop2":"2"},
                 {"Code":102,"Origin": {"x":2.0,"y":2.0},"Name": "Sub1 2", "Prop1":"1","Prop2":"2", "Prop3": 3},
@@ -7900,7 +7870,6 @@ TEST_F(SchemaSyncTestFixture, AddPropertyToSubclassThenPropertyToBaseClass_TPH_J
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-// also doesnt have CreateClassViewsInDb() because it causes open db access violation
 TEST_F(SchemaSyncTestFixture, AddPropertyToSubclassThenPropertyToBaseClass_TPH_JoinedTable_SharedCols_AllAddedPropsToOverflow)
     {
     const auto SCHEMA1_HASH_ECDB_SCHEMA = "df0df0956dc32d9c0be325ea76969728dfb1f0c7a51678e872012f046529145e";
@@ -8055,23 +8024,16 @@ TEST_F(SchemaSyncTestFixture, AddPropertyToSubclassThenPropertyToBaseClass_TPH_J
     );
 
     Test(
-        "Insert to upgraded schema",
+        "Insert and validate values to upgraded schema",
         [&]()
             {
             ECSqlStatement stmt;
             ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "INSERT INTO ts.Sub1(Code,Origin.X,Origin.Y,Name,Prop1,Prop2,Prop3) VALUES (102,2,2,'Sub1 2','1', '2', 3)"));
             ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
             stmt.Finalize();
-            }
-    );
 
-    Test(
-        "validate values of upgraded schema",
-        [&]()
-            {
             ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
 
-            ECSqlStatement stmt;
             auto expected = JsonValue(R"json([{"Code":101,"Origin": {"x":1.0,"y":1.0},"Name": "Sub1 1", "Prop1":"1","Prop2":"2"},{"Code":102,"Origin": {"x":2.0,"y":2.0},"Name": "Sub1 2", "Prop1":"1","Prop2":"2", "Prop3": 3}])json");
             ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "SELECT Code,Origin,Name, Prop1, Prop2, Prop3 FROM ts.Sub1"));
             ASSERT_EQ(expected, GetHelper().ExecutePreparedECSql(stmt));
@@ -8155,7 +8117,7 @@ TEST_F(SchemaSyncTestFixture, AddPropertyToSubclassThenPropertyToBaseClass_TPH_J
     );
 
     Test(
-        "Insert to final schema",
+        "Insert and validate values to final schema",
         [&]()
             {
             ECSqlStatement stmt;
@@ -8166,16 +8128,9 @@ TEST_F(SchemaSyncTestFixture, AddPropertyToSubclassThenPropertyToBaseClass_TPH_J
             ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "INSERT INTO ts.Sub2(Code,Origin.X,Origin.Y,Name,Kind,PropA,PropB) VALUES (202,2,2,'Sub2 2',2,'A', 2)"));
             ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
             stmt.Finalize();
-            }
-    );
 
-    Test(
-        "validate values of final schema",
-        [&]()
-            {
             ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
 
-            ECSqlStatement stmt;
             auto expected = JsonValue(
                 R"json([{"Code":101,"Origin": {"x":1.0,"y":1.0},"Name": "Sub1 1", "Prop1":"1","Prop2":"2"},
                 {"Code":102,"Origin": {"x":2.0,"y":2.0},"Name": "Sub1 2", "Prop1":"1","Prop2":"2", "Prop3": 3},
@@ -8202,7 +8157,6 @@ TEST_F(SchemaSyncTestFixture, AddPropertyToSubclassThenPropertyToBaseClass_TPH_J
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-// also doesnt have CreateClassViewsInDb() because it causes open db access violation
 TEST_F(SchemaSyncTestFixture, AddPropertyToSubclassThenPropertyToBaseClass_TPH_JoinedTable_SharedCols_AddedBasePropToOverflow)
     {
     const auto SCHEMA1_HASH_ECDB_SCHEMA = "2cc81e820cf5b5e866f641aeaee96cbedbc54e77c6d1a52de204e9b069207003";
@@ -8350,23 +8304,16 @@ TEST_F(SchemaSyncTestFixture, AddPropertyToSubclassThenPropertyToBaseClass_TPH_J
     );
 
     Test(
-        "Insert to upgraded schema",
+        "Insert and validate values to upgraded schema",
         [&]()
             {
             ECSqlStatement stmt;
             ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "INSERT INTO ts.Sub1(Code,Origin.X,Origin.Y,Name,Prop1,Prop2,Prop3) VALUES (102,2,2,'Sub1 2','1', '2', 3)"));
             ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
             stmt.Finalize();
-            }
-    );
 
-    Test(
-        "validate values of upgraded schema",
-        [&]()
-            {
             ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
 
-            ECSqlStatement stmt;
             auto expected = JsonValue(R"json([{"Code":101,"Origin": {"x":1.0,"y":1.0},"Name": "Sub1 1", "Prop1":"1","Prop2":"2"},{"Code":102,"Origin": {"x":2.0,"y":2.0},"Name": "Sub1 2", "Prop1":"1","Prop2":"2", "Prop3": 3}])json");
             ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "SELECT Code,Origin,Name, Prop1, Prop2, Prop3 FROM ts.Sub1"));
             ASSERT_EQ(expected, GetHelper().ExecutePreparedECSql(stmt));
@@ -8450,7 +8397,7 @@ TEST_F(SchemaSyncTestFixture, AddPropertyToSubclassThenPropertyToBaseClass_TPH_J
     );
 
     Test(
-        "Insert to final schema",
+        "Insert and validate values to final schema",
         [&]()
             {
             ECSqlStatement stmt;
@@ -8461,16 +8408,9 @@ TEST_F(SchemaSyncTestFixture, AddPropertyToSubclassThenPropertyToBaseClass_TPH_J
             ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "INSERT INTO ts.Sub2(Code,Origin.X,Origin.Y,Name,Kind,PropA,PropB) VALUES (202,2,2,'Sub2 2',2,'A', 2)"));
             ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
             stmt.Finalize();
-            }
-    );
 
-    Test(
-        "validate values of final schema",
-        [&]()
-            {
             ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
 
-            ECSqlStatement stmt;
             auto expected = JsonValue(
                 R"json([{"Code":101,"Origin": {"x":1.0,"y":1.0},"Name": "Sub1 1", "Prop1":"1","Prop2":"2"},
                 {"Code":102,"Origin": {"x":2.0,"y":2.0},"Name": "Sub1 2", "Prop1":"1","Prop2":"2", "Prop3": 3},
@@ -8750,6 +8690,1864 @@ TEST_F(SchemaSyncTestFixture, AddNewPropertyModifyAllExistingAttributes)
             statement.Finalize();
 
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
+            CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            }
+    );
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncTestFixture, AddNewCAOnProperty)
+    {
+    const auto SCHEMA1_HASH_ECDB_SCHEMA = "482c8e3b064ef4866027ed52003f319d83d4374385fb9c82430a8360af5b5c59";
+    const auto SCHEMA1_HASH_ECDB_MAP = "82a4f93a397725447cf558de379c6f5a4c044c2de789edf25e9f889fbaf52a43";
+    const auto SCHEMA1_HASH_SQLITE_SCHEMA = "77af11ada178c9b759bec7717d606ddd7d1ccfae9168df93c3918729958ef815";
+    Test(
+        "import initial schema",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECEntityClass typeName='TestClass' displayLabel='Test Class' description='This is test Class' modifier='None' >
+                        <ECProperty propertyName='TestProperty' displayLabel='Test Property' description='this is property' typeName='string' />
+                    </ECEntityClass>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+
+    const auto SCHEMA2_HASH_ECDB_SCHEMA = "31f58e3f67f6e434de26af890cd60058af4d970ed51d621e06719f557bcf8f6c";
+    const auto SCHEMA2_HASH_ECDB_MAP = "92d4761e5e147a0a15cc49571291ca1c7f21493b8d00f0a769afd38a2960d297";
+    const auto SCHEMA2_HASH_SQLITE_SCHEMA = "77af11ada178c9b759bec7717d606ddd7d1ccfae9168df93c3918729958ef815";
+    Test(
+        "import edited schema with some changes",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Modified Test Schema' description='modified test schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECCustomAttributeClass typeName = 'TestCA' appliesTo = 'PrimitiveProperty'>
+                        <ECProperty propertyName = 'IsUnique' typeName = 'boolean' description = 'Only allow unique values for this property.' />
+                        <ECProperty propertyName = 'Collation' typeName = 'string' description = 'Specifies how string comparisons should work for this property. Possible values: Binary (default): bit to bit matching. NoCase: The same as binary, except that the 26 upper case characters of ASCII are folded to their lower case equivalents before comparing. Note that it only folds ASCII characters. RTrim: The same as binary, except that trailing space characters are ignored.' />
+                    </ECCustomAttributeClass>
+                    <ECEntityClass typeName='TestClass' displayLabel='Modified Test Class' description='modified test class' modifier='None' >
+                        <ECProperty propertyName='TestProperty' displayLabel='Modified Test Property' description='this is modified property' typeName='string' >
+                            <ECCustomAttributes>
+                                <TestCA xmlns='TestSchema.01.00'>
+                                    <IsUnique>false</IsUnique>
+                                </TestCA>
+                            </ECCustomAttributes>
+                        </ECProperty>
+                    </ECEntityClass>
+                </ECSchema>)xml"
+            );
+
+            auto newBriefcase = m_hub->CreateBriefcase();
+            ASSERT_EQ(
+                SharedSchemaChannel::Status::OK,
+                m_schemaChannel->Pull(
+                    *newBriefcase,
+                    [&]()
+                        {
+                        CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+                        ASSERT_TRUE(ForeignkeyCheck(*newBriefcase));
+                        ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
+                        }
+                )
+            );
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
+            CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "Verify Schema, Class and property attributes upgraded successfully",
+        [&]()
+            {
+            ASSERT_EQ(
+                SharedSchemaChannel::Status::OK,
+                m_schemaChannel->Pull(
+                    *m_briefcase,
+                    [&]()
+                        {
+                        CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
+                        ASSERT_TRUE(ForeignkeyCheck(*m_briefcase));
+                        ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
+                        }
+                )
+            );
+
+            //Verify Schema, Class and property attributes upgraded successfully
+            auto testSchema = m_briefcase->Schemas().GetSchema("TestSchema");
+            ASSERT_NE(testSchema, nullptr);
+            ASSERT_EQ(testSchema->GetAlias(), "ts");
+            ASSERT_EQ(testSchema->GetDisplayLabel(), "Modified Test Schema");
+            ASSERT_EQ(testSchema->GetDescription(), "modified test schema");
+
+            auto testClass = testSchema->GetClassCP("TestClass");
+            ASSERT_NE(testClass, nullptr);
+            ASSERT_EQ(testClass->GetDisplayLabel(), "Modified Test Class");
+            ASSERT_EQ(testClass->GetDescription(), "modified test class");
+
+            auto testProperty = testClass->GetPropertyP("TestProperty");
+            ASSERT_NE(testProperty, nullptr);
+            ASSERT_EQ(testProperty->GetDisplayLabel(), "Modified Test Property");
+            ASSERT_EQ(testProperty->GetDescription(), "this is modified property");
+
+            //Verify attributes via ECSql using MataSchema
+            ECSqlStatement statement;
+            ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(*m_briefcase, "SELECT DisplayLabel, Description, Alias FROM meta.ECSchemaDef WHERE Name='TestSchema'"));
+            ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+            ASSERT_STREQ("Modified Test Schema", statement.GetValueText(0));
+            ASSERT_STREQ("modified test schema", statement.GetValueText(1));
+            ASSERT_STREQ("ts", statement.GetValueText(2));
+
+            statement.Finalize();
+            ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(*m_briefcase, "SELECT DisplayLabel, Description FROM meta.ECClassDef WHERE Name='TestClass'"));
+            ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+            ASSERT_STREQ("Modified Test Class", statement.GetValueText(0));
+            ASSERT_STREQ("modified test class", statement.GetValueText(1));
+
+            statement.Finalize();
+            ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(*m_briefcase, "SELECT DisplayLabel, Description FROM meta.ECPropertyDef WHERE Name='TestProperty'"));
+            ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+            ASSERT_STREQ("Modified Test Property", statement.GetValueText(0));
+            ASSERT_STREQ("this is modified property", statement.GetValueText(1));
+
+            //Query Property
+            statement.Finalize();
+            ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(*m_briefcase, "SELECT TestProperty FROM ts.TestClass"));
+            ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
+
+            //verify newly added CA on Property
+            testProperty = m_briefcase->Schemas().GetSchema("TestSchema")->GetClassCP("TestClass")->GetPropertyP("TestProperty");
+            ASSERT_NE(testProperty, nullptr);
+            auto testCA = testProperty->GetCustomAttribute("TestCA");
+            ASSERT_NE(testCA, nullptr);
+            ECValue val;
+            ASSERT_EQ(ECObjectsStatus::Success, testCA->GetValue(val, "IsUnique"));
+            ASSERT_FALSE(val.GetBoolean());
+            statement.Finalize();
+
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
+            CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            }
+    );
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncTestFixture, UpdateECDbMapCA_AddMaxSharedColumnsBeforeOverflow)
+    {
+    const auto SCHEMA1_HASH_ECDB_SCHEMA = "527e4f7e7f42ada3feb168b808bc7f7b4e8bcd0126c0feccb142ecbdc7ce4637";
+    const auto SCHEMA1_HASH_ECDB_MAP = "cb2d5561bdf63a6e12212081a48862d73338de2d4964f0cb80fb675880d6815d";
+    const auto SCHEMA1_HASH_SQLITE_SCHEMA = "97780c55b8972e6b86c8bd514db8948c6369dca78b94d4f14da12eb4d6dd8e59";
+    Test(
+        "import initial schema",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />
+                    <ECEntityClass typeName='Parent' modifier='None' >
+                        <ECCustomAttributes>
+                            <ClassMap xmlns='ECDbMap.02.00'>
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                            <ShareColumns xmlns='ECDbMap.02.00'>
+                                <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                            </ShareColumns>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName='P1' typeName='int' />
+                    </ECEntityClass>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "import edited schema with some changes",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />
+                    <ECEntityClass typeName='Parent' modifier='None' >
+                        <ECCustomAttributes>
+                            <ClassMap xmlns='ECDbMap.02.00'>
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                            <ShareColumns xmlns='ECDbMap.02.00'>
+                                <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>
+                                <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                            </ShareColumns>
+                            </ECCustomAttributes>
+                        <ECProperty propertyName='P1' typeName='int' />
+                    </ECEntityClass>
+                    <ECEntityClass typeName='Sub' modifier='None' >
+                        <BaseClass>Parent</BaseClass>
+                        <ECProperty propertyName='P2' typeName='int' />
+                    </ECEntityClass>
+                </ECSchema>)xml"
+            );
+
+            auto newBriefcase = m_hub->CreateBriefcase();
+            ASSERT_EQ(
+                SharedSchemaChannel::Status::OK,
+                m_schemaChannel->Pull(
+                    *newBriefcase,
+                    [&]()
+                        {
+                        CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+                        ASSERT_TRUE(ForeignkeyCheck(*newBriefcase));
+                        ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
+                        }
+                )
+            );
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
+            CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncTestFixture, MaxSharedColumnsBeforeOverflowForSubClasses_AddProperty)
+    {
+    const auto SCHEMA1_HASH_ECDB_SCHEMA = "55e6002482091413020ed9d445251d173cd17c645ee32baee4e83fc1c2af211a";
+    const auto SCHEMA1_HASH_ECDB_MAP = "6314fb2092ff0a231a12a50bcde1d90d64a6c58263d53718b4e34c8d58fa7591";
+    const auto SCHEMA1_HASH_SQLITE_SCHEMA = "9afc1fa2bb0dc6be01dea2ad48253e05cc127bbbd5134a205ee35602735f2ad7";
+    Test(
+        "import initial schema",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />
+                    <ECEntityClass typeName='Parent' modifier='None' >
+                        <ECCustomAttributes>
+                            <ClassMap xmlns='ECDbMap.02.00'>
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                            <ShareColumns xmlns='ECDbMap.02.00'>
+                                <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>
+                                <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                            </ShareColumns>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName='P1' typeName='int' />
+                    </ECEntityClass>
+                    <ECEntityClass typeName='Sub1' modifier='None'>
+                        <BaseClass>Parent</BaseClass>
+                        <ECProperty propertyName='S1' typeName='double' />
+                    </ECEntityClass>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test("Check Parent table column count", [&]() { ASSERT_EQ(4, GetColumnCount("ts_Parent")); });
+
+    const auto SCHEMA2_HASH_ECDB_SCHEMA = "62ff287b5e854e2b607ecfc7f4049941ff5a75447bb3d9b80c9b1823e8228a52";
+    const auto SCHEMA2_HASH_ECDB_MAP = "5ca4e3f05088b4d40e4f8ed4c756ceba99ade166dc3d4ddd66f69b9c48bdfa66";
+    const auto SCHEMA2_HASH_SQLITE_SCHEMA = "bcd3a8ade2f995a66dc59b7dbeb79a18a19d566e76029e3029e065a6c9b49934";
+    Test(
+        "import edited schema with some changes",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />
+                    <ECEntityClass typeName='Parent' modifier='None' >
+                        <ECCustomAttributes>
+                            <ClassMap xmlns='ECDbMap.02.00'>
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                            <ShareColumns xmlns='ECDbMap.02.00'>
+                                <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>
+                                <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                            </ShareColumns>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName='P1' typeName='int' />
+                    </ECEntityClass>
+                    <ECEntityClass typeName='Sub1' modifier='None'>
+                        <BaseClass>Parent</BaseClass>
+                        <ECProperty propertyName='S1' typeName='double' />
+                        <ECProperty propertyName='S2' typeName='double' />
+                        <ECProperty propertyName='S3' typeName='double' />
+                        <ECProperty propertyName='S4' typeName='double' />
+                        <ECProperty propertyName='S5' typeName='double' />
+                    </ECEntityClass>
+                </ECSchema>)xml"
+            );
+
+            auto newBriefcase = m_hub->CreateBriefcase();
+            ASSERT_EQ(
+                SharedSchemaChannel::Status::OK,
+                m_schemaChannel->Pull(
+                    *newBriefcase,
+                    [&]()
+                        {
+                        CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+                        ASSERT_TRUE(ForeignkeyCheck(*newBriefcase));
+                        ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
+                        }
+                )
+            );
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
+            CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "Check Parent table column count of edited schema",
+        [&]()
+            {
+            ASSERT_EQ(
+                SharedSchemaChannel::Status::OK,
+                m_schemaChannel->Pull(
+                    *m_briefcase,
+                    [&]()
+                        {
+                        ASSERT_EQ(8, GetColumnCount("ts_Parent"));
+
+                        CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
+                        ASSERT_TRUE(ForeignkeyCheck(*m_briefcase));
+                        ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
+                        }
+                )
+            );
+            }
+    );
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+// Another place where the sqlite schema hash is not what expected. Why is this happening?
+TEST_F(SchemaSyncTestFixture, MaxSharedColumnsBeforeOverflowWithJoinedTable_AddProperty)
+    {
+    const auto SCHEMA1_HASH_ECDB_SCHEMA = "72d492c18ecdfb5c9d22e2fc9e1ebcae349972d7be78a7040d79afeaf67eea3e";
+    const auto SCHEMA1_HASH_ECDB_MAP = "ad20c24f80db11abc958f5f88be6963f917a5aba3038cdef6a20cfa8427ec6e1";
+    const auto SCHEMA1_HASH_SQLITE_SCHEMA = "1ac9eb8ed7dde6b0057bc57f4d9d160800e495b9424c9fca2090540bef948116";
+    Test(
+        "import initial schema",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />
+                    <ECEntityClass typeName='Parent' modifier='None' >
+                        <ECCustomAttributes>
+                            <ClassMap xmlns='ECDbMap.02.00'>
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                            <ShareColumns xmlns='ECDbMap.02.00'>
+                                <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>
+                                <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                            </ShareColumns>
+                            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName='P1' typeName='int' />
+                    </ECEntityClass>
+                    <ECEntityClass typeName='Sub1' modifier='None'>
+                        <BaseClass>Parent</BaseClass>
+                        <ECProperty propertyName='S1' typeName='double' />
+                    </ECEntityClass>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "Check table column counts",
+        [&]()
+            {
+            ASSERT_EQ(3, GetColumnCount("ts_Parent"));
+            ASSERT_EQ(3, GetColumnCount("ts_Sub1"));
+            }
+    );
+
+    const auto SCHEMA2_HASH_ECDB_SCHEMA = "f4878d964a644b436dacb9fb48ce2e5965dd7aa5740386caf7006e9c2032ed18";
+    const auto SCHEMA2_HASH_ECDB_MAP = "03b35120cfc7a025601e8383bb2d143b80c61a6126d9f2769fd13de69f430e34";
+    const auto SCHEMA2_HASH_SQLITE_SCHEMA = "84bbd4adf50d92be2f91e99b1908c5bfae8ece0ba5f9e4f8609552f033c44088";
+    Test(
+        "import edited schema with some changes",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />
+                    <ECEntityClass typeName='Parent' modifier='None' >
+                        <ECCustomAttributes>
+                            <ClassMap xmlns='ECDbMap.02.00'>
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                            <ShareColumns xmlns='ECDbMap.02.00'>
+                                <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>
+                                <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                            </ShareColumns>
+                            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName='P1' typeName='int' />
+                   </ECEntityClass>
+                    <ECEntityClass typeName='Sub1' modifier='None'>
+                        <BaseClass>Parent</BaseClass>
+                        <ECProperty propertyName='S1' typeName='double' />
+                        <ECProperty propertyName='S2' typeName='double' />
+                        <ECProperty propertyName='S3' typeName='double' />
+                        <ECProperty propertyName='S4' typeName='double' />
+                        <ECProperty propertyName='S5' typeName='double' />
+                    </ECEntityClass>
+                </ECSchema>)xml"
+            );
+
+            auto newBriefcase = m_hub->CreateBriefcase();
+            ASSERT_EQ(
+                SharedSchemaChannel::Status::OK,
+                m_schemaChannel->Pull(
+                    *newBriefcase,
+                    [&]()
+                        {
+                        const auto SCHEMA_HASH_SQLITE_SCHEMA = "ae5a6aa1c3e672de4ac4dc406cee1187661c7b5807c02988012e72c140647985"; // What is this?
+                        CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA);
+                        ASSERT_TRUE(ForeignkeyCheck(*newBriefcase));
+                        ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
+                        }
+                )
+            );
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
+            CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "Check table column counts of edited schema",
+        [&]()
+            {
+            ASSERT_EQ(
+                SharedSchemaChannel::Status::OK,
+                m_schemaChannel->Pull(
+                    *m_briefcase,
+                    [&]()
+                        {
+                        const auto SCHEMA_HASH_SQLITE_SCHEMA = "f7c6cd08cd9cf6a6b39f6c048819b0ead2192e7fb67e4493025d20430742f5a1"; //What is this?
+                        ASSERT_EQ(3, GetColumnCount("ts_Parent"));
+                        ASSERT_EQ(7, GetColumnCount("ts_Sub1"));
+
+                        CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA);
+                        ASSERT_TRUE(ForeignkeyCheck(*m_briefcase));
+                        ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
+                        }
+                )
+            );
+            }
+    );
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncTestFixture, ImportMultipleSchemaVersions_AddNewProperty)
+    {
+    const auto SCHEMA1_HASH_ECDB_SCHEMA = "5c23555b96567e545629e02fccfcaf4ffdc181025242c5f53e8702da57356ea3";
+    const auto SCHEMA1_HASH_ECDB_MAP = "32608ea390282589dafbb36721fb70a9336a359434d056ab67dd245415c0f814";
+    const auto SCHEMA1_HASH_SQLITE_SCHEMA = "533fbcc8fc6a9a9efdb25aff7db7bdb91856955e6b8c236b3f5218b64361d533";
+    Test(
+        "import initial schema",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.2.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECEntityClass typeName='TestClass' modifier='None' >
+                    </ECEntityClass>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "Schema upgrade with lower minor version not allowed",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECEntityClass typeName='TestClass' modifier='None' >
+                        <ECProperty propertyName='TestProperty' displayLabel='Test Property' description='this is property' typeName='string' />
+                    </ECEntityClass>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "Verify newly added property must not exist at this point",
+        [&]()
+            {
+            auto testSchema = m_briefcase->Schemas().GetSchema("TestSchema");
+            ASSERT_NE(testSchema, nullptr);
+
+            auto testClass = testSchema->GetClassCP("TestClass");
+            ASSERT_NE(testClass, nullptr);
+
+            auto testProperty = testClass->GetPropertyP("TestProperty");
+            ASSERT_EQ(testProperty, nullptr);
+            }
+    );
+
+    const auto SCHEMA2_HASH_ECDB_SCHEMA = "19e2850510ac54893901108839240aa72f40b7a72cd6bd48c8dd3f47c8ef2b7b";
+    const auto SCHEMA2_HASH_ECDB_MAP = "82a4f93a397725447cf558de379c6f5a4c044c2de789edf25e9f889fbaf52a43";
+    const auto SCHEMA2_HASH_SQLITE_SCHEMA = "77af11ada178c9b759bec7717d606ddd7d1ccfae9168df93c3918729958ef815";
+    Test(
+        "import edited schema with higher minor version with some changes",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.3.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECEntityClass typeName='TestClass' modifier='None' >
+                        <ECProperty propertyName='TestProperty' displayLabel='Test Property' description='this is property' typeName='string' />
+                    </ECEntityClass>
+                </ECSchema>)xml"
+            );
+
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*m_briefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
+            CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "Verify newly added property must exist after third schema import",
+        [&]()
+            {
+            auto testSchema = m_briefcase->Schemas().GetSchema("TestSchema");
+            ASSERT_NE(testSchema, nullptr);
+
+            auto testClass = testSchema->GetClassCP("TestClass");
+            ASSERT_NE(testClass, nullptr);
+
+            auto testProperty = testClass->GetPropertyP("TestProperty");
+            ASSERT_NE(testProperty, nullptr);
+            ASSERT_EQ(testProperty->GetDisplayLabel(), "Test Property");
+            ASSERT_EQ(testProperty->GetDescription(), "this is property");
+
+            ReopenECDb();
+
+            ECSqlStatement statement;
+            ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(*m_briefcase, "SELECT DisplayLabel, Description FROM meta.ECPropertyDef WHERE Name='TestProperty'"));
+            ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+            ASSERT_STREQ("Test Property", statement.GetValueText(0));
+            ASSERT_STREQ("this is property", statement.GetValueText(1));
+            statement.Finalize();
+
+            ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(*m_briefcase, "SELECT TestProperty FROM ts.TestClass"));
+            ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
+            statement.Finalize();
+
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
+            CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            }
+    );
+    }
+
+// //---------------------------------------------------------------------------------------
+// // @bsimethod
+// //+---------------+---------------+---------------+---------------+---------------+------
+// // Doesn't create from file
+// TEST_F(SchemaSyncTestFixture, UpdateMultipleSchemasInDb)
+//     {
+//     const auto SCHEMA1_HASH_ECDB_SCHEMA = "5c23555b96567e545629e02fccfcaf4ffdc181025242c5f53e8702da57356ea3";
+//     const auto SCHEMA1_HASH_ECDB_MAP = "32608ea390282589dafbb36721fb70a9336a359434d056ab67dd245415c0f814";
+//     const auto SCHEMA1_HASH_SQLITE_SCHEMA = "533fbcc8fc6a9a9efdb25aff7db7bdb91856955e6b8c236b3f5218b64361d533";
+//     Test(
+//         "import initial schema",
+//         [&]()
+//             {
+//             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("updateStartupCompanyschema.ecdb", SchemaItem::CreateForFile("DSCacheSchema.01.00.00.ecschema.xml")));
+//             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+//             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+//             }
+//     );
+//     Test(
+//         "Schema upgrade with lower minor version not allowed",
+//         [&]()
+//             {
+//             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(SchemaItem::CreateForFile("DSCacheSchema.01.00.03.ecschema.xml")));
+//             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
+//             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+//             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+//             }
+//     );
+//     }
+
+// ---------------------------------------------------------------------------------------
+// @bsimethod
+// +---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncTestFixture, UnsettingSchemaAlias)
+    {
+    const auto SCHEMA1_HASH_ECDB_SCHEMA = "196c3dba02927f22033ef960281758702f3f48a5e52fa7e1dde012472ec7ea5d";
+    Test(
+        "import initial schema",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            }
+    );
+    Test(
+        "Schema alias can't be set to empty",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' alias='' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+                </ECSchema>)xml"
+            );
+            BeTest::SetFailOnAssert(false);
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
+            BeTest::SetFailOnAssert(true);
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            }
+    );
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncTestFixture, InvalidValueForSchemaAlias)
+    {
+    const auto SCHEMA1_HASH_ECDB_SCHEMA = "196c3dba02927f22033ef960281758702f3f48a5e52fa7e1dde012472ec7ea5d";
+    Test(
+        "import initial schema",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            }
+    );
+
+    const auto SCHEMA2_HASH_ECDB_SCHEMA = "615c7cbe8e5146d30d1ad2a078ef1d6d2b72cb835a9688a5f347b18a0dd8d149";
+    Test(
+        "import edited schema with some changes",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema1' alias='ts1' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
+            CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA); });
+            }
+    );
+
+    Test(
+        "Try Upgrading to already existing alias",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' alias='ts1' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
+            CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA); });
+            }
+    );
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncTestFixture, MajorVersionChange_WithoutMajorVersionIncremented)
+    {
+    const auto SCHEMA1_HASH_ECDB_SCHEMA = "af7be50d60a542eea7ee73b740d6577b990de976e0bed125a0ca57f89e14469c";
+    const auto SCHEMA1_HASH_ECDB_MAP = "fd957857f78f1211c894cd907c4f68fcc9a3cd9cd1f5066ad33575ce56899e8c";
+    const auto SCHEMA1_HASH_SQLITE_SCHEMA = "5f9d0f627116d1b5c25df711b3ace0455e1122e9552b90ebab2f5b4800f37653";
+    Test(
+        "import initial schema",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='3.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECEntityClass typeName='Foo' modifier='None'>
+                        <ECProperty propertyName='S' typeName='string' />
+                        <ECProperty propertyName='D' typeName='double' />
+                        <ECProperty propertyName='L' typeName='long' />
+                    </ECEntityClass>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "Major Version change without Major Version incremented is expected to be not supported",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='3.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "Schema Update with ECSchema Major Version decremented is expected to be not supported",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECEntityClass typeName='Foo' modifier='None'>
+                        <ECProperty propertyName='S' typeName='string' />
+                        <ECProperty propertyName='D' typeName='double' />
+                        <ECProperty propertyName='L' typeName='long' />
+                    </ECEntityClass>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncTestFixture, Delete_ECDbMapCANotSupported)
+    {
+    const auto SCHEMA1_HASH_ECDB_SCHEMA = "32d7cd8f9671cdd1ab18f7a9d4da2fa1a6ec689f21df0ef2c386fb1874dca69d";
+    const auto SCHEMA1_HASH_ECDB_MAP = "15f9bf3ac0037f5ce8c270d1014480dd46319bbe42aa9b3393ac95fdce07b745";
+    const auto SCHEMA1_HASH_SQLITE_SCHEMA = "66da69352d1835f2ce0c2d05ea1cb1baa8fcb9c7b4fd021ae29ba7c5fc73e683";
+    Test(
+        "import initial schema",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />
+                    <ECEntityClass typeName='Goo' modifier='None'>
+                        <ECCustomAttributes>
+                            <ClassMap xmlns='ECDbMap.02.00'>
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName='S' typeName='string' />
+                    </ECEntityClass>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "Delete ECDbMap CA",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />
+                    <ECEntityClass typeName='Goo' modifier='None'>
+                        <ECProperty propertyName='S' typeName='string' />
+                    </ECEntityClass>
+                </ECSchema>)xml"
+            );
+
+            auto newBriefcase = m_hub->CreateBriefcase();
+            ASSERT_EQ(
+                SharedSchemaChannel::Status::OK,
+                m_schemaChannel->Pull(
+                    *newBriefcase,
+                    [&]()
+                        {
+                        CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+                        ASSERT_TRUE(ForeignkeyCheck(*newBriefcase));
+                        ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
+                        }
+                )
+            );
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "Pull from shared channel and check hashes",
+        [&]()
+            {
+            ASSERT_EQ(
+                SharedSchemaChannel::Status::OK,
+                m_schemaChannel->Pull(
+                    *m_briefcase,
+                    [&]()
+                        {
+                        CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+                        ASSERT_TRUE(ForeignkeyCheck(*m_briefcase));
+                        ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
+                        }
+                )
+            );
+            }
+    );
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncTestFixture, Delete_ECEntityClass_OwnTable)
+    {
+    const auto SCHEMA1_HASH_ECDB_SCHEMA = "c7f8a071c0a9638b4fd840e3ede4aef82c3b264c37389457ee2f5a853ae9594f";
+    const auto SCHEMA1_HASH_ECDB_MAP = "8d7ec81880ecdd60c65416cd3a1dfa453d06b1bfc3e3671332e3d3cee596e9c2";
+    const auto SCHEMA1_HASH_SQLITE_SCHEMA = "ba51a2faf251723c905bdebb6154d0ebfddfb90a7e3ac5d181eac666e3316e61";
+    Test(
+        "import initial schema",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECEntityClass typeName='Foo' modifier='None'>
+                        <ECProperty propertyName='S' typeName='string' />
+                        <ECProperty propertyName='D' typeName='double' />
+                        <ECProperty propertyName='L' typeName='long' />
+                    </ECEntityClass>
+                    <ECEntityClass typeName='Goo' modifier='None'>
+                        <ECProperty propertyName='S' typeName='string' />
+                        <ECProperty propertyName='D' typeName='double' />
+                        <ECProperty propertyName='L' typeName='long' />
+                    </ECEntityClass>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "Insert values to initial schema",
+        [&]()
+            {
+            ECSqlStatement stmt;
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "INSERT INTO ts.Foo(S,D,L) VALUES ('test1', 1.3, 334)"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+            stmt.Finalize();
+
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "INSERT INTO ts.Foo(S,D,L) VALUES ('test2', 23.3, 234)"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+            stmt.Finalize();
+
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "INSERT INTO ts.Goo(S,D,L) VALUES ('test3', 44.32, 3344)"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+            stmt.Finalize();
+
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "INSERT INTO ts.Goo(S,D,L) VALUES ('test4', 13.3, 2345)"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+            stmt.Finalize();
+
+            ASSERT_TRUE(m_briefcase->TableExists("ts_Foo"));
+            ASSERT_NE(m_briefcase->Schemas().GetClass("TestSchema", "Foo"), nullptr);
+
+            ASSERT_TRUE(m_briefcase->TableExists("ts_Goo"));
+            ASSERT_NE(m_briefcase->Schemas().GetClass("TestSchema", "Goo"), nullptr);
+
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+
+    const auto SCHEMA2_HASH_ECDB_SCHEMA = "7ab31faa04f42e598075de77298548b18f933aa7e6e3333eee2603ac2298f030";
+    const auto SCHEMA2_HASH_ECDB_MAP = "0de8d96fbdff00a95da192a0c79dbfec8555e543eac1b4058784cf72411ba57e";
+    const auto SCHEMA2_HASH_SQLITE_SCHEMA = "cada7f8e10fef1a4b8bfd574c110b6ecb84653e8e4a769a50ec281b56a4b3c00";
+    Test(
+        "Delete class should be successful",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECEntityClass typeName='Goo' modifier='None'>
+                        <ECProperty propertyName='S' typeName='string' />
+                        <ECProperty propertyName='D' typeName='double' />
+                        <ECProperty propertyName='L' typeName='long' />
+                    </ECEntityClass>
+                </ECSchema>)xml"
+            );
+            m_briefcase->GetTracker()->EnableTracking(false);
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
+            m_briefcase->GetTracker()->EnableTracking(true);
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
+            CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "Select values from edited schema",
+        [&]()
+            {
+            //Following should not exist
+            ASSERT_EQ(m_briefcase->Schemas().GetClass("TestSchema", "Foo"), nullptr);
+            ASSERT_FALSE(m_briefcase->TableExists("ts_Foo"));
+
+            //Following should exist
+            ASSERT_TRUE(m_briefcase->TableExists("ts_Goo"));
+            ASSERT_NE(m_briefcase->Schemas().GetClass("TestSchema", "Goo"), nullptr);
+
+            ECSqlStatement stmt;
+            ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(*m_briefcase, "SELECT S, D, L FROM ts.Foo"));
+            ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
+            stmt.Finalize();
+
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "SELECT S, D, L FROM ts.Goo"));
+            ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+            stmt.Finalize();
+
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
+            CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            }
+    );
+
+    const auto SCHEMA3_HASH_ECDB_SCHEMA = "e34ba56177313a7b82c13ec695810ce7e38b14216cdef5e162a391bab7cdaade";
+    const auto SCHEMA3_HASH_ECDB_MAP = "7c022b8b2fbff36eaf40d2dc709c21a41b0ed4784a8a197ffa54c9d6e0887831";
+    const auto SCHEMA3_HASH_SQLITE_SCHEMA = "ba51a2faf251723c905bdebb6154d0ebfddfb90a7e3ac5d181eac666e3316e61";
+    Test(
+        "Add class should be successful",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='3.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECEntityClass typeName='Foo' modifier='None'>
+                        <ECProperty propertyName='S' typeName='string' />
+                        <ECProperty propertyName='D' typeName='double' />
+                        <ECProperty propertyName='L' typeName='long' />
+                    </ECEntityClass>
+                    <ECEntityClass typeName='Goo' modifier='None'>
+                        <ECProperty propertyName='S' typeName='string' />
+                        <ECProperty propertyName='D' typeName='double' />
+                        <ECProperty propertyName='L' typeName='long' />
+                    </ECEntityClass>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
+            CheckHashes(*m_briefcase, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP, SCHEMA3_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "Insert and select values from edited schema",
+        [&]()
+            {
+            ASSERT_TRUE(m_briefcase->TableExists("ts_Foo"));
+            ASSERT_NE(m_briefcase->Schemas().GetClass("TestSchema", "Foo"), nullptr);
+
+            ASSERT_TRUE(m_briefcase->TableExists("ts_Goo"));
+            ASSERT_NE(m_briefcase->Schemas().GetClass("TestSchema", "Goo"), nullptr);
+
+            ECSqlStatement stmt;
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "SELECT S, D, L FROM ts.Foo"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+            stmt.Finalize();
+
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "SELECT S, D, L FROM ts.Goo"));
+            ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+            stmt.Finalize();
+
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "INSERT INTO ts.Foo(S,D,L) VALUES ('test1', 1.3, 334)"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+            stmt.Finalize();
+
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "INSERT INTO ts.Foo(S,D,L) VALUES ('test2', 23.3, 234)"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+            stmt.Finalize();
+
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
+            CheckHashes(*m_briefcase, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP, SCHEMA3_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP); });
+            }
+    );
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncTestFixture, Delete_ECEntityClass_OwnTable_TrackerNotDisabled)
+    {
+    const auto SCHEMA1_HASH_ECDB_SCHEMA = "c7f8a071c0a9638b4fd840e3ede4aef82c3b264c37389457ee2f5a853ae9594f";
+    const auto SCHEMA1_HASH_ECDB_MAP = "8d7ec81880ecdd60c65416cd3a1dfa453d06b1bfc3e3671332e3d3cee596e9c2";
+    const auto SCHEMA1_HASH_SQLITE_SCHEMA = "ba51a2faf251723c905bdebb6154d0ebfddfb90a7e3ac5d181eac666e3316e61";
+    Test(
+        "import initial schema",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECEntityClass typeName='Foo' modifier='None'>
+                        <ECProperty propertyName='S' typeName='string' />
+                        <ECProperty propertyName='D' typeName='double' />
+                        <ECProperty propertyName='L' typeName='long' />
+                    </ECEntityClass>
+                    <ECEntityClass typeName='Goo' modifier='None'>
+                        <ECProperty propertyName='S' typeName='string' />
+                        <ECProperty propertyName='D' typeName='double' />
+                        <ECProperty propertyName='L' typeName='long' />
+                    </ECEntityClass>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "Delete class should not be successful",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECEntityClass typeName='Goo' modifier='None'>
+                        <ECProperty propertyName='S' typeName='string' />
+                        <ECProperty propertyName='D' typeName='double' />
+                        <ECProperty propertyName='L' typeName='long' />
+                    </ECEntityClass>
+                </ECSchema>)xml"
+            );
+            BeTest::SetFailOnAssert(false);
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
+            BeTest::SetFailOnAssert(true);
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_TPH)
+    {
+    const auto SCHEMA1_HASH_ECDB_SCHEMA = "3909058e8f808f06e094e0ccca25e3f373c501376d4e3764e5da9f2844b8a88f";
+    const auto SCHEMA1_HASH_ECDB_MAP = "9ce71ce4e533c0e9b8bf57198bae832a502d2ef9fc85bf6632d3a4994a9ec8b4";
+    const auto SCHEMA1_HASH_SQLITE_SCHEMA = "16559b7b4323066a05e869346c07e4f52505db2adf89f6c2bcfab2701739ddf2";
+    Test(
+        "import initial schema",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />
+                    <ECEntityClass typeName='Goo' modifier='None'>
+                        <ECCustomAttributes>
+                            <ClassMap xmlns='ECDbMap.02.00'>
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName='GS' typeName='string' />
+                        <ECProperty propertyName='GD' typeName='double' />
+                        <ECProperty propertyName='GL' typeName='long' />
+                    </ECEntityClass>
+                    <ECEntityClass typeName='Foo' modifier='None'>
+                        <BaseClass>Goo</BaseClass>
+                        <ECProperty propertyName='FS' typeName='string' />
+                        <ECProperty propertyName='FD' typeName='double' />
+                        <ECProperty propertyName='FL' typeName='long' />
+                    </ECEntityClass>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "Insert values to initial schema",
+        [&]()
+            {
+            ASSERT_TRUE(m_briefcase->TableExists("ts_Goo"));
+            ASSERT_NE(m_briefcase->Schemas().GetClass("TestSchema", "Goo"), nullptr);
+
+            ASSERT_NE(m_briefcase->Schemas().GetClass("TestSchema", "Foo"), nullptr);
+            ASSERT_FALSE(m_briefcase->TableExists("ts_Foo"));
+
+            ASSERT_EQ(8, GetColumnCount("ts_Goo"));
+
+            ECSqlStatement stmt;
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "INSERT INTO ts.Foo(FS,FD,FL) VALUES ('test1', 1.3, 334)"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+            stmt.Finalize();
+
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "INSERT INTO ts.Foo(FS,FD,FL) VALUES ('test2', 23.3, 234)"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+            stmt.Finalize();
+
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+            stmt.Finalize();
+
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+            stmt.Finalize();
+
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+
+    const auto SCHEMA2_HASH_ECDB_SCHEMA = "71ae05d6c0cdb615eaa64224e6f81394dd4255388d30eda7a56b45b87ce350bb";
+    const auto SCHEMA2_HASH_ECDB_MAP = "30633e146c8a31c57969fc262a33ab94dabb20268b622a426b8de4e8b6050b61";
+    const auto SCHEMA2_HASH_SQLITE_SCHEMA = "16559b7b4323066a05e869346c07e4f52505db2adf89f6c2bcfab2701739ddf2";
+    Test(
+        "Delete Foo class should be successful",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />
+                    <ECEntityClass typeName='Goo' modifier='None'>
+                        <ECCustomAttributes>
+                            <ClassMap xmlns='ECDbMap.02.00'>
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName='GS' typeName='string' />
+                        <ECProperty propertyName='GD' typeName='double' />
+                        <ECProperty propertyName='GL' typeName='long' />
+                    </ECEntityClass>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
+            CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "Select values from edited schema",
+        [&]()
+            {
+            //Following should not exist
+            ASSERT_EQ(m_briefcase->Schemas().GetClass("TestSchema", "Foo"), nullptr);
+            ASSERT_FALSE(m_briefcase->TableExists("ts_Foo"));
+
+            //Following should exist
+            ASSERT_TRUE(m_briefcase->TableExists("ts_Goo"));
+            ASSERT_NE(m_briefcase->Schemas().GetClass("TestSchema", "Goo"), nullptr);
+
+            //Verify number of columns should not change as we don't delete columns
+            ASSERT_EQ(8, GetColumnCount("ts_Goo"));
+
+            ECSqlStatement stmt;
+            ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(*m_briefcase, "SELECT FS, FD, FL FROM ts.Foo"));
+            ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
+            stmt.Finalize();
+
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "SELECT GS, GD, GL FROM ts.Goo"));
+            ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+            stmt.Finalize();
+
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
+            CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            }
+    );
+
+    const auto SCHEMA3_HASH_ECDB_SCHEMA = "99817469d21395253935dd4aeff611ea056e5bf3246a696157c10db99318e63f";
+    Test(
+        "Delete Goo class should be successful",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='3.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />
+                </ECSchema>)xml"
+            );
+            m_briefcase->GetTracker()->EnableTracking(false);
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
+            m_briefcase->GetTracker()->EnableTracking(true);
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
+            CheckHashes(*m_briefcase, SCHEMA3_HASH_ECDB_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA); });
+            }
+    );
+
+    Test("Check if schema is empty", [&]() { ASSERT_FALSE(m_briefcase->TableExists("ts_Goo")); });
+
+    const auto SCHEMA4_HASH_ECDB_SCHEMA = "4aac8d09932f3b6957a21bdf1714da366eecf7c7d99e21d4ffc178e79630b2db";
+    const auto SCHEMA4_HASH_ECDB_MAP = "55e2687dc83dafc38a619543de112865985c13b5c36e13b9a03d4656587a0467";
+    const auto SCHEMA4_HASH_SQLITE_SCHEMA = "4cd81a84ffd7e216822c864e570327987f12172d64dd88a764d606cba6ebf3d3";
+    Test(
+        "Adding new Goo class with ECDbMapCA applied on it is expected to be supported",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='4.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />
+                    <ECEntityClass typeName='Goo' modifier='None'>
+                        <ECCustomAttributes>
+                            <ClassMap xmlns='ECDbMap.02.00'>
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName='GS' typeName='string' />
+                        <ECProperty propertyName='GD' typeName='double' />
+                        <ECProperty propertyName='GL' typeName='long' />
+                    </ECEntityClass>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
+            CheckHashes(*m_briefcase, SCHEMA4_HASH_ECDB_SCHEMA, SCHEMA4_HASH_ECDB_MAP, SCHEMA4_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA4_HASH_ECDB_SCHEMA, SCHEMA4_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "Insert and select values from edited schema",
+        [&]()
+            {
+            //Following should not exist
+            ASSERT_EQ(m_briefcase->Schemas().GetClass("TestSchema", "Foo"), nullptr);
+            ASSERT_FALSE(m_briefcase->TableExists("ts_Foo"));
+
+            //Following should exist
+            ASSERT_TRUE(m_briefcase->TableExists("ts_Goo"));
+            ASSERT_NE(m_briefcase->Schemas().GetClass("TestSchema", "Goo"), nullptr);
+
+            ASSERT_EQ(5, GetColumnCount("ts_Goo"));
+
+            ECSqlStatement stmt;
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+            stmt.Finalize();
+
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+            stmt.Finalize();
+
+
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
+            CheckHashes(*m_briefcase, SCHEMA4_HASH_ECDB_SCHEMA, SCHEMA4_HASH_ECDB_MAP, SCHEMA4_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA4_HASH_ECDB_SCHEMA, SCHEMA4_HASH_ECDB_MAP); });
+            }
+    );
+
+    const auto SCHEMA5_HASH_ECDB_SCHEMA = "13848851d97b4fa032f4c5fbede142684b08638135e05a4666bdff37db219908";
+    const auto SCHEMA5_HASH_ECDB_MAP = "62f8e92fc2f15d29050e78f1b15e2bfbb427396abd2401bd14e1196bb3f777b7";
+    const auto SCHEMA5_HASH_SQLITE_SCHEMA = "16559b7b4323066a05e869346c07e4f52505db2adf89f6c2bcfab2701739ddf2";
+    Test(
+        "Adding new derived class should be successful",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='5.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />
+                    <ECEntityClass typeName='Goo' modifier='None'>
+                        <ECCustomAttributes>
+                            <ClassMap xmlns='ECDbMap.02.00'>
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName='GS' typeName='string' />
+                        <ECProperty propertyName='GD' typeName='double' />
+                        <ECProperty propertyName='GL' typeName='long' />
+                    </ECEntityClass>
+                    <ECEntityClass typeName='Foo' modifier='None'>
+                        <BaseClass>Goo</BaseClass>
+                        <ECProperty propertyName='FS' typeName='string' />
+                        <ECProperty propertyName='FD' typeName='double' />
+                        <ECProperty propertyName='FL' typeName='long' />
+                    </ECEntityClass>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
+            CheckHashes(*m_briefcase, SCHEMA5_HASH_ECDB_SCHEMA, SCHEMA5_HASH_ECDB_MAP, SCHEMA5_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA5_HASH_ECDB_SCHEMA, SCHEMA5_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "Insert and select values from edited schema",
+        [&]()
+            {
+            //should exist
+            ASSERT_FALSE(m_briefcase->TableExists("ts_Foo"));
+            ASSERT_NE(m_briefcase->Schemas().GetClass("TestSchema", "Foo"), nullptr);
+
+            //following should not exist
+            ASSERT_TRUE(m_briefcase->TableExists("ts_Goo"));
+            ASSERT_NE(m_briefcase->Schemas().GetClass("TestSchema", "Goo"), nullptr);
+
+            ASSERT_EQ(8, GetColumnCount("ts_Goo"));
+
+            ECSqlStatement stmt;
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "SELECT FS, FD, FL FROM ts.Foo"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+            stmt.Finalize();
+
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "SELECT GS, GD, GL FROM ts.Goo"));
+            ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+            stmt.Finalize();
+
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "INSERT INTO ts.Foo(FS,FD,FL) VALUES ('test1', 1.3, 334)"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+            stmt.Finalize();
+
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "INSERT INTO ts.Foo(FS,FD,FL) VALUES ('test2', 23.3, 234)"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+            stmt.Finalize();
+
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
+            CheckHashes(*m_briefcase, SCHEMA5_HASH_ECDB_SCHEMA, SCHEMA5_HASH_ECDB_MAP, SCHEMA5_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA5_HASH_ECDB_SCHEMA, SCHEMA5_HASH_ECDB_MAP); });
+            }
+    );
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_TPH_ShareColumns)
+    {
+    const auto SCHEMA1_HASH_ECDB_SCHEMA = "57557dd238919eee8d9449f2bfb9eb99375599970806377dc5287ecb38532f4f";
+    const auto SCHEMA1_HASH_ECDB_MAP = "b0d641919115e7f8bc8b45ff315a1d848b2d58f3a0c8559c5db40b373f915b94";
+    const auto SCHEMA1_HASH_SQLITE_SCHEMA = "5dfcae2814c747473d2e3d92fae39746d12fe3e1f4d54dd1444462c670eee54d";
+    Test(
+        "import initial schema",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />
+                    <ECEntityClass typeName='Base' modifier='None'>
+                        <ECCustomAttributes>
+                            <ClassMap xmlns='ECDbMap.02.00'>
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                            <ShareColumns xmlns='ECDbMap.02.00'>
+                                <MaxSharedColumnsBeforeOverflow>4</MaxSharedColumnsBeforeOverflow>
+                            </ShareColumns>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName='GS' typeName='string' />
+                        <ECProperty propertyName='GD' typeName='double' />
+                        <ECProperty propertyName='GL' typeName='long' />
+                    </ECEntityClass>
+                    <ECEntityClass typeName='Sub' modifier='None'>
+                        <BaseClass>Base</BaseClass>
+                        <ECProperty propertyName='FS' typeName='string' />
+                        <ECProperty propertyName='FD' typeName='double' />
+                        <ECProperty propertyName='FL' typeName='long' />
+                        <ECProperty propertyName='FI' typeName='int' />
+                    </ECEntityClass>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "Insert values to initial schema",
+        [&]()
+            {
+            //following table should exist.
+            ASSERT_TRUE(m_briefcase->TableExists("ts_Base"));
+            ASSERT_NE(m_briefcase->Schemas().GetClass("TestSchema", "Base"), nullptr);
+
+            //Following table should not exist
+            ASSERT_NE(m_briefcase->Schemas().GetClass("TestSchema", "Sub"), nullptr);
+            ASSERT_FALSE(m_briefcase->TableExists("ts_Sub"));
+
+            ASSERT_EQ(6, GetColumnCount("ts_Base"));
+            ASSERT_EQ(5, GetColumnCount("ts_Base_Overflow"));
+
+            ECSqlStatement stmt;
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "INSERT INTO ts.Sub(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+            stmt.Finalize();
+
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "INSERT INTO ts.Sub(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+            stmt.Finalize();
+
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "INSERT INTO ts.Base(GS,GD,GL) VALUES ('test3', 44.32, 3344)"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+            stmt.Finalize();
+
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "INSERT INTO ts.Base(GS,GD,GL) VALUES ('test4', 13.3, 2345)"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+            stmt.Finalize();
+
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+
+    const auto SCHEMA2_HASH_ECDB_SCHEMA = "8cdc8bf9cc4f2a466434800dd6c9b1cbe5bd1589d846dba7d8bdc4906176b1b9";
+    const auto SCHEMA2_HASH_ECDB_MAP = "07423d2427c5cb77993d4569c71b23473bb691790b9c2a086768a5cd5f4c9c3f";
+    const auto SCHEMA2_HASH_SQLITE_SCHEMA = "5dfcae2814c747473d2e3d92fae39746d12fe3e1f4d54dd1444462c670eee54d";
+    Test(
+        "Delete derived class should be successful",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />
+                    <ECEntityClass typeName='Base' modifier='None'>
+                        <ECCustomAttributes>
+                            <ClassMap xmlns='ECDbMap.02.00'>
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                            <ShareColumns xmlns='ECDbMap.02.00'>
+                                <MaxSharedColumnsBeforeOverflow>4</MaxSharedColumnsBeforeOverflow>
+                            </ShareColumns>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName='GS' typeName='string' />
+                        <ECProperty propertyName='GD' typeName='double' />
+                        <ECProperty propertyName='GL' typeName='long' />
+                    </ECEntityClass>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
+            CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "Select values from edited schema",
+        [&]()
+            {
+            //Following should not exist
+            ASSERT_EQ(m_briefcase->Schemas().GetClass("TestSchema", "Sub"), nullptr);
+            ASSERT_FALSE(m_briefcase->TableExists("ts_Sub"));
+
+            //Following should exist
+            ASSERT_TRUE(m_briefcase->TableExists("ts_Base"));
+            ASSERT_NE(m_briefcase->Schemas().GetClass("TestSchema", "Base"), nullptr);
+
+            ASSERT_EQ(6, GetColumnCount("ts_Base")) << "After deleting subclass Foo";
+
+            ECSqlStatement stmt;
+            ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(*m_briefcase, "SELECT FS, FD, FL FROM ts.Sub"));
+            ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
+            stmt.Finalize();
+
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "SELECT GS, GD, GL FROM ts.Base"));
+            ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+            stmt.Finalize();
+
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
+            CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "test that the index definitions in ec_Index are cleaned up when a table is deleted",
+        [&]()
+            {
+            Statement stmt;
+            ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*m_briefcase, "SELECT count(*) FROM ec_Index i JOIN ec_Table t ON i.TableId=t.Id WHERE t.Name LIKE 'ts_Base' COLLATE NOCASE"));
+            ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetSql();
+            ASSERT_EQ(1, stmt.GetValueInt(0)) << stmt.GetSql();
+            stmt.Finalize();
+            }
+    );
+
+    const auto SCHEMA3_HASH_ECDB_SCHEMA = "99817469d21395253935dd4aeff611ea056e5bf3246a696157c10db99318e63f";
+    Test(
+        "Delete class containing ECDbMap CA should be successful",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='3.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />
+                </ECSchema>)xml"
+            );
+            m_briefcase->GetTracker()->EnableTracking(false);
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
+            m_briefcase->GetTracker()->EnableTracking(true);
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
+            CheckHashes(*m_briefcase, SCHEMA3_HASH_ECDB_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA); });
+            }
+    );
+
+    Test("Base table should not exist", [&]() { ASSERT_FALSE(m_briefcase->TableExists("ts_Base")); });
+
+    const auto SCHEMA4_HASH_ECDB_SCHEMA = "4fedea135a9fefe7df72ce3fa7ea5363421112156a2fe61dbd68fb3ffeadf0aa";
+    const auto SCHEMA4_HASH_ECDB_MAP = "8e1e2d1afcd62125a23959c7ed52b8dfa4c8bada6ebeb810e9b415eeecc83312";
+    const auto SCHEMA4_HASH_SQLITE_SCHEMA = "351e3a23da01181b90915602d96a7346fab461425708e7ddc36797c2e4340402";
+    Test(
+        "Add Class with SharedTable:SharedColumns is expected to be supported",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='4.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />
+                    <ECEntityClass typeName='Base' modifier='None'>
+                        <ECCustomAttributes>
+                            <ClassMap xmlns='ECDbMap.02.00'>
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                            <ShareColumns xmlns='ECDbMap.02.00'>
+                                <MaxSharedColumnsBeforeOverflow>4</MaxSharedColumnsBeforeOverflow>
+                            </ShareColumns>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName='GS' typeName='string' />
+                        <ECProperty propertyName='GD' typeName='double' />
+                        <ECProperty propertyName='GL' typeName='long' />
+                    </ECEntityClass>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
+            CheckHashes(*m_briefcase, SCHEMA4_HASH_ECDB_SCHEMA, SCHEMA4_HASH_ECDB_MAP, SCHEMA4_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA4_HASH_ECDB_SCHEMA, SCHEMA4_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "Insert and select values from edited schema",
+        [&]()
+            {
+            //Following should not exist
+            ASSERT_EQ(m_briefcase->Schemas().GetClass("TestSchema", "Sub"), nullptr);
+            ASSERT_FALSE(m_briefcase->TableExists("ts_Sub"));
+
+            //Following should exist
+            ASSERT_TRUE(m_briefcase->TableExists("ts_Base"));
+            ASSERT_NE(m_briefcase->Schemas().GetClass("TestSchema", "Base"), nullptr);
+
+            ASSERT_EQ(5, GetColumnCount("ts_Base")) << "After deleting all classes and readding base class";
+
+            ECSqlStatement stmt;
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "INSERT INTO ts.Base(GS,GD,GL) VALUES ('test3', 44.32, 3344)"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+            stmt.Finalize();
+
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "INSERT INTO ts.Base(GS,GD,GL) VALUES ('test4', 13.3, 2345)"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+            stmt.Finalize();
+
+
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
+            CheckHashes(*m_briefcase, SCHEMA4_HASH_ECDB_SCHEMA, SCHEMA4_HASH_ECDB_MAP, SCHEMA4_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA4_HASH_ECDB_SCHEMA, SCHEMA4_HASH_ECDB_MAP); });
+            }
+    );
+
+    const auto SCHEMA5_HASH_ECDB_SCHEMA = "93c5cb374d14a205fc169693c4338a9f12d547b361f246e0f78f421a4bfbc182";
+    const auto SCHEMA5_HASH_ECDB_MAP = "b0d641919115e7f8bc8b45ff315a1d848b2d58f3a0c8559c5db40b373f915b94";
+    const auto SCHEMA5_HASH_SQLITE_SCHEMA = "5dfcae2814c747473d2e3d92fae39746d12fe3e1f4d54dd1444462c670eee54d";
+    Test(
+        "Adding new derived entity class is expected to be supported",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='5.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />
+                    <ECEntityClass typeName='Base' modifier='None'>
+                        <ECCustomAttributes>
+                            <ClassMap xmlns='ECDbMap.02.00'>
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                            <ShareColumns xmlns='ECDbMap.02.00'>
+                                <MaxSharedColumnsBeforeOverflow>4</MaxSharedColumnsBeforeOverflow>
+                            </ShareColumns>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName='GS' typeName='string' />
+                        <ECProperty propertyName='GD' typeName='double' />
+                        <ECProperty propertyName='GL' typeName='long' />
+                    </ECEntityClass>
+                    <ECEntityClass typeName='Sub' modifier='None'>
+                        <BaseClass>Base</BaseClass>
+                        <ECProperty propertyName='FS' typeName='string' />
+                        <ECProperty propertyName='FD' typeName='double' />
+                        <ECProperty propertyName='FL' typeName='long' />
+                        <ECProperty propertyName='FI' typeName='int' />
+                    </ECEntityClass>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
+            CheckHashes(*m_briefcase, SCHEMA5_HASH_ECDB_SCHEMA, SCHEMA5_HASH_ECDB_MAP, SCHEMA5_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA5_HASH_ECDB_SCHEMA, SCHEMA5_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "Insert and select values from edited schema",
+        [&]()
+            {
+            //Table should not exist
+            ASSERT_FALSE(m_briefcase->TableExists("ts_Sub"));
+            ASSERT_NE(m_briefcase->Schemas().GetClass("TestSchema", "Sub"), nullptr);
+
+            //Table should exist
+            ASSERT_TRUE(m_briefcase->TableExists("ts_Base"));
+            ASSERT_NE(m_briefcase->Schemas().GetClass("TestSchema", "Base"), nullptr);
+
+            ASSERT_EQ(6, GetColumnCount("ts_Base")) << "After readding subclass";
+            ASSERT_EQ(5, GetColumnCount("ts_Base_Overflow")) << "After readding subclass";
+
+            ECSqlStatement stmt;
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "SELECT FS, FD, FL FROM ts.Sub"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+            stmt.Finalize();
+
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "SELECT GS, GD, GL FROM ts.Base"));
+            ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+            stmt.Finalize();
+
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "INSERT INTO ts.Sub(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+            stmt.Finalize();
+
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "INSERT INTO ts.Sub(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+            stmt.Finalize();
+
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
+            CheckHashes(*m_briefcase, SCHEMA5_HASH_ECDB_SCHEMA, SCHEMA5_HASH_ECDB_MAP, SCHEMA5_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA5_HASH_ECDB_SCHEMA, SCHEMA5_HASH_ECDB_MAP); });
+            }
+    );
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_TPH_ShareColumns_TrackerNotDisabled)
+    {
+    const auto SCHEMA1_HASH_ECDB_SCHEMA = "57557dd238919eee8d9449f2bfb9eb99375599970806377dc5287ecb38532f4f";
+    const auto SCHEMA1_HASH_ECDB_MAP = "b0d641919115e7f8bc8b45ff315a1d848b2d58f3a0c8559c5db40b373f915b94";
+    const auto SCHEMA1_HASH_SQLITE_SCHEMA = "5dfcae2814c747473d2e3d92fae39746d12fe3e1f4d54dd1444462c670eee54d";
+    Test(
+        "import initial schema",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />
+                    <ECEntityClass typeName='Base' modifier='None'>
+                        <ECCustomAttributes>
+                            <ClassMap xmlns='ECDbMap.02.00'>
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                            <ShareColumns xmlns='ECDbMap.02.00'>
+                                <MaxSharedColumnsBeforeOverflow>4</MaxSharedColumnsBeforeOverflow>
+                            </ShareColumns>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName='GS' typeName='string' />
+                        <ECProperty propertyName='GD' typeName='double' />
+                        <ECProperty propertyName='GL' typeName='long' />
+                    </ECEntityClass>
+                    <ECEntityClass typeName='Sub' modifier='None'>
+                        <BaseClass>Base</BaseClass>
+                        <ECProperty propertyName='FS' typeName='string' />
+                        <ECProperty propertyName='FD' typeName='double' />
+                        <ECProperty propertyName='FL' typeName='long' />
+                        <ECProperty propertyName='FI' typeName='int' />
+                    </ECEntityClass>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "Insert values to initial schema",
+        [&]()
+            {
+            //following table should exist.
+            ASSERT_TRUE(m_briefcase->TableExists("ts_Base"));
+            ASSERT_NE(m_briefcase->Schemas().GetClass("TestSchema", "Base"), nullptr);
+
+            //Following table should not exist
+            ASSERT_NE(m_briefcase->Schemas().GetClass("TestSchema", "Sub"), nullptr);
+            ASSERT_FALSE(m_briefcase->TableExists("ts_Sub"));
+
+            ASSERT_EQ(6, GetColumnCount("ts_Base"));
+            ASSERT_EQ(5, GetColumnCount("ts_Base_Overflow"));
+
+            ECSqlStatement stmt;
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "INSERT INTO ts.Sub(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+            stmt.Finalize();
+
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "INSERT INTO ts.Sub(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+            stmt.Finalize();
+
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "INSERT INTO ts.Base(GS,GD,GL) VALUES ('test3', 44.32, 3344)"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+            stmt.Finalize();
+
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "INSERT INTO ts.Base(GS,GD,GL) VALUES ('test4', 13.3, 2345)"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+            stmt.Finalize();
+
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+
+    const auto SCHEMA2_HASH_ECDB_SCHEMA = "8cdc8bf9cc4f2a466434800dd6c9b1cbe5bd1589d846dba7d8bdc4906176b1b9";
+    const auto SCHEMA2_HASH_ECDB_MAP = "07423d2427c5cb77993d4569c71b23473bb691790b9c2a086768a5cd5f4c9c3f";
+    const auto SCHEMA2_HASH_SQLITE_SCHEMA = "5dfcae2814c747473d2e3d92fae39746d12fe3e1f4d54dd1444462c670eee54d";
+    Test(
+        "Delete derived class should be successful",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />
+                    <ECEntityClass typeName='Base' modifier='None'>
+                        <ECCustomAttributes>
+                            <ClassMap xmlns='ECDbMap.02.00'>
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                            <ShareColumns xmlns='ECDbMap.02.00'>
+                                <MaxSharedColumnsBeforeOverflow>4</MaxSharedColumnsBeforeOverflow>
+                            </ShareColumns>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName='GS' typeName='string' />
+                        <ECProperty propertyName='GD' typeName='double' />
+                        <ECProperty propertyName='GL' typeName='long' />
+                    </ECEntityClass>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
+            CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "Delete class containing ECDbMap CA should be successful",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='3.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />
+                </ECSchema>)xml"
+            );
+            BeTest::SetFailOnAssert(false);
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
+            BeTest::SetFailOnAssert(true);
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
@@ -13941,120 +15739,6 @@ TEST_F(SchemaSyncTestFixture, OverflowedStructClass_OverflowTableDoesNotExist_Ch
     );
     Test(
         "Final hash check",
-        [&]()
-            {
-            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
-            }
-    );
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaSyncTestFixture, SupportForInfAndNan) 
-    {
-    const auto SCHEMA1_HASH_ECDB_SCHEMA = "98ca374bec21b13ceefbd1bb340c8c95ba6b9cffc5d427ece0ff36b23972d44a";
-    const auto SCHEMA1_HASH_ECDB_MAP = "4252d7711daa71a6b06156e514fbe7617f6be42763795ef76250a0bb114b1510";
-    const auto SCHEMA1_HASH_SQLITE_SCHEMA = "e0f5d92f00848f9a3bb476c9f8d9e357a914cf68be754302c6e632d6ce4d6aa6";
-    Test(
-        "Import initial schema",
-        [&]()
-            {
-            auto schema = SchemaItem(
-                R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-                    <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
-                    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00.00" alias="bsca" />
-                    <ECEntityClass typeName="Element">
-                        <ECCustomAttributes>
-                            <ShareColumns xmlns="ECDbMap.02.00.00">
-                                <MaxSharedColumnsBeforeOverflow>4</MaxSharedColumnsBeforeOverflow>
-                            </ShareColumns>
-                            <ClassMap xmlns="ECDbMap.02.00.00">
-                                <MapStrategy>TablePerHierarchy</MapStrategy>
-                            </ClassMap>
-                        </ECCustomAttributes>
-                        <ECProperty propertyName="inf_pos" typeName="double" />
-                        <ECProperty propertyName="inf_neg" typeName="double" />
-                        <ECProperty propertyName="nan_val" typeName="double" />
-                    </ECEntityClass>
-                </ECSchema>)xml"
-            );
-            ASSERT_EQ(SchemaImportResult::OK, SetupECDb("test", schema));
-            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
-            }
-    );
-
-    Test(
-        "insert row",
-        [&]()
-            {
-            ECSqlStatement stmt;
-            ASSERT_EQ(stmt.Prepare(*m_briefcase, "insert into ts.Element(inf_pos,inf_neg,nan_val) values(?,?,?)"), ECSqlStatus::Success);
-            stmt.BindDouble(1,  INFINITY);
-            stmt.BindDouble(2, -INFINITY);
-            stmt.BindDouble(3,  NAN);
-            ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
-            }
-    );
-
-    Test(
-        "read row",
-        [&]()
-            {
-            ECSqlStatement stmt;
-            ASSERT_EQ(stmt.Prepare(*m_briefcase, "select inf_pos, inf_neg, nan_val from ts.Element"), ECSqlStatus::Success);
-            ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
-            auto inf_pos = stmt.GetValueDouble(0);
-            auto inf_neg = stmt.GetValueDouble(1);
-            auto nan_val = stmt.GetValueDouble(2);
-
-            ASSERT_EQ(std::isinf(inf_pos), true);
-            ASSERT_EQ(std::isinf(inf_neg), true);
-            ASSERT_EQ(std::isnan(nan_val), false);
-
-            auto inf_pos_isnull = stmt.IsValueNull(0);
-            auto inf_neg_isnull = stmt.IsValueNull(1);
-            auto nan_val_isnull = stmt.IsValueNull(2);
-
-            ASSERT_EQ(inf_pos_isnull, false);
-            ASSERT_EQ(inf_neg_isnull, false);
-            ASSERT_EQ(nan_val_isnull, true);
-            }
-    );
-
-    Test(
-        "jsoncpp must return null for inf",
-        [&]()
-            {
-            ECSqlStatement stmt;
-            ASSERT_EQ(stmt.Prepare(*m_briefcase, "select inf_pos, inf_neg, nan_val from ts.Element"), ECSqlStatus::Success);
-            ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
-            JsonECSqlSelectAdapter adaptor(stmt);
-            Json::Value jsonCpp;
-            EXPECT_EQ(SUCCESS, adaptor.GetRow(jsonCpp));
-            EXPECT_STREQ("{\"inf_neg\":null,\"inf_pos\":null}", jsonCpp.ToString().c_str());
-            }
-    );
-
-    Test(
-        "rapidjson must return null for inf",
-        [&]()
-            {
-            ECSqlStatement stmt;
-            ASSERT_EQ(stmt.Prepare(*m_briefcase, "select  inf_pos, inf_neg, nan_val from ts.Element"), ECSqlStatus::Success);
-            ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
-            JsonECSqlSelectAdapter adaptor(stmt);
-            BeJsDocument rapidJson;
-            EXPECT_EQ(SUCCESS, adaptor.GetRow(rapidJson));
-            Utf8String json = rapidJson.Stringify();
-            EXPECT_STREQ("{\"inf_pos\":", json.c_str());
-            }
-    );
-
-    Test(
-        "Check hashes",
         [&]()
             {
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
