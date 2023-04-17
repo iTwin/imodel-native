@@ -4,6 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 #include "testHarness.h"
 #include "SampleGeometry.h"
+#include <cmath>    // std::nan
 USING_NAMESPACE_BENTLEY_GEOMETRY_INTERNAL
 
 static bool s_noisy = false;
