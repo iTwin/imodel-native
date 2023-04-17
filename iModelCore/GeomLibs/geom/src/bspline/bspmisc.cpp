@@ -121,17 +121,11 @@ BsplineParam*   pParams         // <=> potentially modified only if poles given
     if (!pParams->closed)
         {
         double goodStartKnot = *pStart;
-        for (pP = pKnots; pP < pStart; ++pP)
-            {
-            if (BeNumerical::BeIsnan(goodStartKnot))
-                goodStartKnot = *pP;
-            }
+        for (pP = pKnots; BeNumerical::BeIsnan(goodStartKnot) && pP < pStart; ++pP)
+            goodStartKnot = *pP;
         double goodEndKnot = *pEnd;
-        for (pP = pKnots + numKnots - 1; pP > pEnd; --pP)
-            {
-            if (BeNumerical::BeIsnan(goodEndKnot))
-                goodEndKnot = *pP;
-            }
+        for (pP = pKnots + numKnots - 1; BeNumerical::BeIsnan(goodEndKnot) && pP > pEnd; --pP)
+            goodEndKnot = *pP;
         if (!BeNumerical::BeIsnan(goodStartKnot) && !BeNumerical::BeIsnan(goodEndKnot))
             {
             for (i = 0; i < pParams->order; ++i)
