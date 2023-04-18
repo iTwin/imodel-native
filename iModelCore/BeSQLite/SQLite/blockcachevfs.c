@@ -1,5 +1,3 @@
-
-
 #if !defined(__WIN32__) && (defined(WIN32) || defined(_WIN32))
 # define __WIN32__
 #endif
@@ -6665,8 +6663,8 @@ static int bcvDatabaseVtabBestIndex(
 #define BCV_HTTPLOG_VTAB_SCHEMA  \
   "CREATE TABLE bcv_http_log("   \
   "  id INTEGER,"                \
-  "  start_time INTEGER,"        \
-  "  end_time INTEGER,"          \
+  "  start_time TEXT,"           \
+  "  end_time TEXT,"             \
   "  method TEXT,"               \
   "  client TEXT,"               \
   "  logmsg TEXT,"               \
