@@ -11,7 +11,7 @@ import { NativeCloudSqlite } from "../NativeCloudSqlite";
 import { IModelJsNative } from "../NativeLibrary";
 import { getAssetsDir, getOutputDir, iModelJsNative } from "./utils";
 import { ChildProcess, spawn  } from "child_process";
-import { Guid, Logger, OpenMode } from "@itwin/core-bentley";
+import { Guid, OpenMode } from "@itwin/core-bentley";
 
 chaiuse(chaiAsPromised);
 
@@ -26,7 +26,7 @@ async function sleep(ms: number) {
 let azuriteExitedPromise: Promise<void>;
 let azurite: ChildProcess;
 
-describe.only("cloud sqlite", () => {
+describe("cloud sqlite", () => {
   let cache: IModelJsNative.CloudCache;
 
   const startAzurite = async () => {
