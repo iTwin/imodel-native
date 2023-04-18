@@ -190,7 +190,7 @@ struct SchemaSyncTestFixture : public ECDbTestFixture
     SchemaImportResult SetupECDb(Utf8CP ecdbName);
     SchemaImportResult SetupECDb(Utf8CP ecdbName, SchemaItem const& schema, SchemaManager::SchemaImportOptions opts = SchemaManager::SchemaImportOptions::None);
     SchemaImportResult ImportSchema(SchemaItem item, SchemaManager::SchemaImportOptions opts = SchemaManager::SchemaImportOptions::None);
-    DropSchemaResult DropSchema(Utf8CP schemaName, bool disableTracking = false);
+    DropSchemaResult DropSchema(Utf8CP schemaName);
     static Utf8String GetSchemaHash(ECDbCR db);
     static Utf8String GetMapHash(ECDbCR db);
     static Utf8String GetDbSchemaHash(ECDbCR db);

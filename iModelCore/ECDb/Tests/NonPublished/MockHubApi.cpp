@@ -149,15 +149,9 @@ SchemaImportResult SchemaSyncTestFixture::SetupECDb(Utf8CP ecdbName, SchemaItem 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DropSchemaResult SchemaSyncTestFixture::DropSchema(Utf8CP schemaName, bool disableTracking)
+DropSchemaResult SchemaSyncTestFixture::DropSchema(Utf8CP schemaName)
     {
-    if (disableTracking)
-        m_briefcase->GetTracker()->EnableTracking(false); // Remove this
-
     auto dropSuccess = m_briefcase->Schemas().DropSchema(schemaName);
-
-    if (disableTracking)
-        m_briefcase->GetTracker()->EnableTracking(true);  // Remove this
 
     if (dropSuccess.IsSuccess())
         EXPECT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
@@ -219,7 +213,7 @@ bool SchemaSyncTestFixture::ForeignkeyCheck(ECDbCR db) {
     if (rc == BE_SQLITE_DONE) {
         return true;
     }
-    while (rc == BE_SQLITE_ROW) {
+    while(rc == BE_SQLITE_ROW) {
         printf("%s\n",
                 SqlPrintfString("[table=%s], [rowid=%lld], [parent=%s], [fkid=%d]",
                                 stmt.GetValueText(0),
@@ -447,7 +441,7 @@ SchemaImportResult InMemoryECDb::ImportSchema(SchemaItem const& si) {
     bvector<ECN::ECSchemaP> schemas;
     ctx->GetCache().GetSchemas(schemas);
     bvector<ECN::ECSchemaCP> schemasIn(schemas.begin(), schemas.end());
-     // if (m_tracker != nullptr) m_tracker->SetHasEcSchemaChanges(true);
+   // if (m_tracker != nullptr) m_tracker->SetHasEcSchemaChanges(true);
     return Schemas().ImportSchemas(schemasIn, nullptr);
 }
 
@@ -542,8 +536,8 @@ void TrackedECDb::_OnDbClose() {
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::vector<ECDbChangeSet const*> ECDbChangeTracker::GetLocalChangesets() const {
-    std::vector<ECDbChangeSet const*> list;
-    for (auto& r : m_localChangesets) {
+    std::vector<ECDbChangeSet const*>  list;
+    for(auto& r : m_localChangesets) {
         list.push_back(r.get());
     }
     return list;
