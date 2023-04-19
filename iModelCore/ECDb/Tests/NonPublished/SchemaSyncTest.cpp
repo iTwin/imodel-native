@@ -742,11 +742,11 @@ TEST_F(SchemaSyncTestFixture, DeleteSchema_VerifyCustomAttributesAreDeletedAsWel
             }
     );
 
+    auto pipeClass = m_briefcase->Schemas().GetClass("TestSchema","Pipe");
     Test(
         "Check if classes exist",
         [&]()
             {
-            auto pipeClass = m_briefcase->Schemas().GetClass("TestSchema","Pipe");
             auto testCA1Class = m_briefcase->Schemas().GetClass("TestCA","TestCA1");
 
             ASSERT_NE(nullptr, pipeClass);
@@ -10883,9 +10883,6 @@ TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_JoinedTable_MaxSharedColu
     );
     }
 
-
-
-
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -11331,6 +11328,2504 @@ TEST_F(SchemaSyncTestFixture, DeleteECRelationships)
                         }
                 )
             );
+            }
+    );
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncTestFixture, DeleteECStructClassUnsupported)
+    {
+    const auto SCHEMA1_HASH_ECDB_SCHEMA = "40151b95cbaa57d553df6eab5afff14d535a646a335b9c07df7c29eec952e303";
+    const auto SCHEMA1_HASH_ECDB_MAP = "187df5f660c246dbe2d3f2c8571b1cc1821a068bc1071d266a40bd9a570901c6";
+    Test(
+        "import initial schema",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECStructClass typeName='ChangeInfoStruct' modifier='None'>
+                        <ECProperty propertyName='ChangeStatus' typeName='int' readOnly='false' />
+                    </ECStructClass>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "Deleting ECStructClass is expected to be not supported",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                </ECSchema>)xml"
+            );
+            // BeTest::SetFailOnAssert(false);
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
+            // BeTest::SetFailOnAssert(true);
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncTestFixture, UpdateECDbMapCA_DbIndexChanges)
+    {
+    const auto SCHEMA1_HASH_ECDB_SCHEMA = "637acde7ca044e96c5663602f2087d6e6e13a67791f93925b7380bd86871c41a";
+    const auto SCHEMA1_HASH_ECDB_MAP = "0ef928042698d3b19898a6a6c320ff424221dc7962476743dd7fe898d1e6d605";
+    const auto SCHEMA1_HASH_SQLITE_SCHEMA = "5bc0f3a9ca33bfdee5ca7eab4994ccec5cf4a8b9f668077b6d8310ffe74438c9";
+    Test(
+        "import initial schema",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />
+                    <ECEntityClass typeName='A'>
+                        <ECProperty propertyName='PA' typeName='int' />
+                    </ECEntityClass>
+                    <ECEntityClass typeName='B' modifier='Sealed'>
+                        <ECCustomAttributes>
+                            <DbIndexList xmlns='ECDbMap.02.00'>
+                                <Indexes>
+                                    <DbIndex>
+                                        <Name>IDX_Partial_Index</Name>
+                                        <IsUnique>False</IsUnique>
+                                        <Properties>
+                                            <string>AId.Id</string>
+                                        </Properties>
+                                    </DbIndex>
+                                </Indexes>
+                            </DbIndexList>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName='PB' typeName='int' />
+                        <ECNavigationProperty propertyName='AId' relationshipName='AHasB' direction='Backward' />
+                    </ECEntityClass>
+                    <ECRelationshipClass typeName='AHasB' strength='Embedding'>
+                        <Source cardinality='(0,1)' polymorphic='False'>
+                            <Class class ='A' />
+                        </Source>
+                        <Target cardinality='(0,N)' polymorphic='False'>
+                            <Class class ='B' />
+                        </Target>
+                    </ECRelationshipClass>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "Check values",
+        [&]()
+            {
+            auto b = m_briefcase->Schemas().GetClass("TestSchema", "B");
+            ASSERT_NE(b, nullptr);
+            auto ca = b->GetCustomAttribute("DbIndexList");
+            ASSERT_FALSE(ca.IsNull());
+
+            ECValue indexes, indexName;
+            ASSERT_EQ(ca->GetValue(indexes, "Indexes", 0), ECObjectsStatus::Success);
+            ASSERT_EQ(indexes.GetStruct()->GetValue(indexName, "Name"), ECObjectsStatus::Success);
+            ASSERT_STREQ(indexName.GetUtf8CP(), "IDX_Partial_Index");
+
+            Statement stmt;
+            ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*m_briefcase, "SELECT NULL FROM ec_Index WHERE Name='IDX_Partial_Index'"));
+            ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+            stmt.Finalize();
+
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "Modifying DbIndex::Name",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />
+                    <ECEntityClass typeName='A'>
+                        <ECProperty propertyName='PA' typeName='int' />
+                    </ECEntityClass>
+                    <ECEntityClass typeName='B' modifier='Sealed'>
+                        <ECCustomAttributes>
+                            <DbIndexList xmlns='ECDbMap.02.00'>
+                                <Indexes>
+                                    <DbIndex>
+                                        <Name>IDX_Partial</Name>
+                                        <IsUnique>False</IsUnique>
+                                        <Properties>
+                                            <string>AId.Id</string>
+                                        </Properties>
+                                    </DbIndex>
+                                </Indexes>
+                            </DbIndexList>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName='PB' typeName='int' />
+                        <ECNavigationProperty propertyName='AId' relationshipName='AHasB' direction='Backward' />
+                    </ECEntityClass>
+                    <ECRelationshipClass typeName='AHasB' strength='Embedding'>
+                        <Source cardinality='(0,1)' polymorphic='False'>
+                            <Class class ='A' />
+                        </Source>
+                        <Target cardinality='(0,N)' polymorphic='False'>
+                            <Class class ='B' />
+                        </Target>
+                    </ECRelationshipClass>
+                </ECSchema>)xml"
+            );
+
+            auto newBriefcase = m_hub->CreateBriefcase();
+            ASSERT_EQ(
+                SharedSchemaChannel::Status::OK,
+                m_schemaChannel->Pull(
+                    *newBriefcase,
+                    [&]()
+                        {
+                        CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+                        ASSERT_TRUE(ForeignkeyCheck(*newBriefcase));
+                        ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
+                        }
+                )
+            );
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
+            CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "Deleting DbIndex",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />
+                    <ECEntityClass typeName='A'>
+                        <ECProperty propertyName='PA' typeName='int' />
+                    </ECEntityClass>
+                    <ECEntityClass typeName='B'>
+                        <ECCustomAttributes>
+                            <ClassMap xmlns='ECDbMap.02.00'>
+                            </ClassMap>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName='PB' typeName='int' />
+                        <ECNavigationProperty propertyName='AId' relationshipName='AHasB' direction='Backward' />
+                    </ECEntityClass>
+                    <ECRelationshipClass typeName='AHasB' strength='Embedding'>
+                        <Source cardinality='(0,1)' polymorphic='False'>
+                            <Class class ='A' />
+                        </Source>
+                        <Target cardinality='(0,N)' polymorphic='False'>
+                            <Class class ='B' />
+                        </Target>
+                    </ECRelationshipClass>
+                </ECSchema>)xml"
+            );
+
+            auto newBriefcase = m_hub->CreateBriefcase();
+            ASSERT_EQ(
+                SharedSchemaChannel::Status::OK,
+                m_schemaChannel->Pull(
+                    *newBriefcase,
+                    [&]()
+                        {
+                        CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+                        ASSERT_TRUE(ForeignkeyCheck(*newBriefcase));
+                        ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
+                        }
+                )
+            );
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
+            CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsitest
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncTestFixture, AddNavigationProperty)
+    {
+    Utf8CP schemaTemplate = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    %s
+                    <ECEntityClass typeName="A" modifier="None">
+                        <ECProperty propertyName="Prop1" typeName="string" />
+                    </ECEntityClass>
+                   <ECEntityClass typeName="B" modifier="None">
+                        <ECProperty propertyName="Prop2" typeName="string" />
+                        %s
+                    </ECEntityClass>
+                    <ECRelationshipClass typeName="Rel" modifier="None">
+                            <Source multiplicity="(0..1)" polymorphic="True" roleLabel="owns">
+                              <Class class="A"/>
+                            </Source>
+                            <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is owned by">
+                              <Class class="B"/>
+                            </Target>
+                     </ECRelationshipClass>
+                </ECSchema>)xml";
+
+    const auto SCHEMA1_HASH_ECDB_SCHEMA = "0dab442f8b0686220fd413d9d3209b64befe5109294450eca1109b6507da44a1";
+    const auto SCHEMA1_HASH_ECDB_MAP = "aea9674f696e7f4022f0f51718377d04db7d2875428a6b7daaa16f14026d255d";
+    const auto SCHEMA1_HASH_SQLITE_SCHEMA = "f9bff300a58a7bb07ba22f6a7377fdd578c7e538ec3625166a9ffa362c945759";
+    Test(
+        "import initial schema",
+        [&]()
+            {
+            Utf8String schemaXml;
+            schemaXml.Sprintf(schemaTemplate, "", "");
+
+            ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate_addnavprop", SchemaItem(schemaXml)));
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "now add nav prop (logical FK)",
+        [&]()
+            {
+            Utf8String schemaXml;
+            schemaXml.Sprintf(schemaTemplate, "", R"xml(<ECNavigationProperty propertyName="A" relationshipName="Rel" direction="Backward"/>)xml");
+
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(SchemaItem(schemaXml)));
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "now add nav prop (physical FK)",
+        [&]()
+            {
+            Utf8String schemaXml;
+            schemaXml.Sprintf(schemaTemplate, R"xml(<ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>)xml",
+                        R"xml(<ECNavigationProperty propertyName="A" relationshipName="Rel" direction="Backward">
+                            <ECCustomAttributes>
+                                <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+                            </ECCustomAttributes>
+                        </ECNavigationProperty>)xml");
+
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(SchemaItem(schemaXml)));
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncTestFixture, DeleteNavigationProperty)
+    {
+    Utf8CP schemaTemplate = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+                    <ECEntityClass typeName="A" modifier="None">
+                        <ECProperty propertyName="Prop1" typeName="string" />
+                    </ECEntityClass>
+                   <ECEntityClass typeName="B" modifier="None">
+                        <ECCustomAttributes>
+                            <ClassMap xmlns="ECDbMap.02.00">
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                            <ShareColumns xmlns="ECDbMap.02.00"/>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName="Prop2" typeName="string" />
+                        %s
+                    </ECEntityClass>
+                    <ECRelationshipClass typeName="Rel" modifier="None">
+                            <Source multiplicity="(0..1)" polymorphic="True" roleLabel="owns">
+                              <Class class="A"/>
+                            </Source>
+                            <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is owned by">
+                              <Class class="B"/>
+                            </Target>
+                     </ECRelationshipClass>
+                </ECSchema>)xml";
+
+    const auto SCHEMA1_HASH_ECDB_SCHEMA = "909b6f993e4a169a6b427779ba200111ffd63ddcc455ca12aee97d271666e3f3";
+    const auto SCHEMA1_HASH_ECDB_MAP = "0e3ccd36edde4c9c57066dfd338fa46d824a212870067a9e9fe930d9c3c2f963";
+    const auto SCHEMA1_HASH_SQLITE_SCHEMA = "eeedaa46cd9adc8c22873dd50b9d81a83f7196e3a3f5ac45f11265dde8b38666";
+    Test(
+        "import initial schema",
+        [&]()
+            {
+            Utf8String schemaXml;
+            schemaXml.Sprintf(schemaTemplate,"1.0", R"xml(<ECNavigationProperty propertyName="A" relationshipName="Rel" direction="Backward"/>)xml");
+
+            ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate_deletenavprop", SchemaItem(schemaXml)));
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "now delete nav prop (logical FK)",
+        [&]()
+            {
+            Utf8String schemaXml;
+            schemaXml.Sprintf(schemaTemplate,"2.0", "");
+
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(SchemaItem(schemaXml)));
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+
+    const auto SCHEMA2_HASH_ECDB_SCHEMA = "2cf412efd228ea6c27e70279071af94449a081a5232009e004072786400e06f2";
+    const auto SCHEMA2_HASH_ECDB_MAP = "61c30bea6f021eab794ea2742e3b3b253b480eb4e1ea5f0dd8305f75de0a95d0";
+    const auto SCHEMA2_HASH_SQLITE_SCHEMA = "3cca6dc1285815073d703b4c7fa6345b29ee675848b9f71e870ee5548a0c818e";
+    Test(
+        "second initial schema",
+        [&]()
+            {
+            Utf8String schemaXml;
+            schemaXml.Sprintf(schemaTemplate,"1.0", R"xml(<ECNavigationProperty propertyName="A" relationshipName="Rel" direction="Backward">
+                            <ECCustomAttributes>
+                                <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+                            </ECCustomAttributes>
+                        </ECNavigationProperty>)xml");
+
+            ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate_deletenavprop", SchemaItem(schemaXml)));
+            CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "now delete nav prop (physical FK)",
+        [&]()
+            {
+            Utf8String schemaXml;
+            schemaXml.Sprintf(schemaTemplate,"2.0", "");
+
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(SchemaItem(schemaXml)));
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
+            CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            }
+    );
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsitest
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncTestFixture, AddForeignKeyConstraint)
+    {
+    Utf8CP schemaTemplate = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                   %s
+                    <ECEntityClass typeName="A" modifier="None">
+                        <ECProperty propertyName="Prop1" typeName="string" />
+                    </ECEntityClass>
+                   <ECEntityClass typeName="B" modifier="None">
+                        <ECProperty propertyName="Prop2" typeName="string" />
+                        <ECNavigationProperty propertyName="A" relationshipName="Rel" direction="Backward">
+                            <ECCustomAttributes>
+                            %s
+                            </ECCustomAttributes>
+                        </ECNavigationProperty>
+                    </ECEntityClass>
+                    <ECRelationshipClass typeName="Rel" modifier="None">
+                            <Source multiplicity="(0..1)" polymorphic="True" roleLabel="owns">
+                              <Class class="A"/>
+                            </Source>
+                            <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is owned by">
+                              <Class class="B"/>
+                            </Target>
+                     </ECRelationshipClass>
+                </ECSchema>)xml";
+
+    const auto SCHEMA1_HASH_ECDB_SCHEMA = "ec36c0c78773f4ced8573c2aab248dfb60d2a2c598c2d57762cfb131984c92de";
+    const auto SCHEMA1_HASH_ECDB_MAP = "bd1a814c0c4278144b8352cbc3f19933233edf7bf29b44670d071ed421d9829a";
+    const auto SCHEMA1_HASH_SQLITE_SCHEMA = "848e8c7519769a050ef826c336c6b04fc6708db81fff2e839d24a8b92a101d2e";
+    Test(
+        "import initial schema",
+        [&]()
+            {
+            Utf8String schemaXml;
+            schemaXml.Sprintf(schemaTemplate, "", "");
+
+            ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate_addforeignkeyconstraint", SchemaItem(schemaXml)));
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "now add FKConstraint CA",
+        [&]()
+            {
+            Utf8String schemaXml;
+            schemaXml.Sprintf(schemaTemplate, R"xml(<ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>)xml",
+                        R"xml(<ForeignKeyConstraint xmlns="ECDbMap.02.00"/>)xml");
+
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(SchemaItem(schemaXml)));
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsitest
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncTestFixture, AddLinkTableRelationshipMap)
+    {
+    Utf8CP schemaTemplate = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                   %s
+                    <ECEntityClass typeName="A" modifier="None">
+                        <ECProperty propertyName="Prop1" typeName="string" />
+                    </ECEntityClass>
+                   <ECEntityClass typeName="B" modifier="None">
+                        <ECProperty propertyName="Prop2" typeName="string" />
+                    </ECEntityClass>
+                    <ECRelationshipClass typeName="Rel" modifier="None">
+                            <ECCustomAttributes>
+                            %s
+                            </ECCustomAttributes>
+                            <Source multiplicity="%s" polymorphic="True" roleLabel="owns">
+                              <Class class="A"/>
+                            </Source>
+                            <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is owned by">
+                              <Class class="B"/>
+                            </Target>
+                     </ECRelationshipClass>
+                </ECSchema>)xml";
+
+    for (Utf8CP parentMultiplicity : {"(0..1)", {"(0..*)"}})
+        {
+        Test(
+            "import initial schema",
+            [&]()
+                {
+                Utf8String schemaXml;
+                schemaXml.Sprintf(schemaTemplate, "", "", parentMultiplicity);
+
+                ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate_addlinktablerelationshipmap", SchemaItem(schemaXml)));
+                }
+        );
+
+        Test(
+            "now add LinkTableRelationshipMap CA",
+            [&]()
+                {
+                Utf8String schemaXml;
+                schemaXml.Sprintf(schemaTemplate, R"xml(<ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>)xml",
+                            R"xml(<LinkTableRelationshipMap xmlns="ECDbMap.02.00"/>)xml", parentMultiplicity);
+
+                ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(SchemaItem(schemaXml)));
+                ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
+                }
+        );
+        }
+
+    Test(
+        "Check hashes",
+        [&]()
+            {
+            const auto SCHEMA_HASH_ECDB_SCHEMA = "580b67535f003c71a4cdba4302cf4677bf3973bfabdf5f531c98cf1cae821681";
+            const auto SCHEMA_HASH_ECDB_MAP = "aea9674f696e7f4022f0f51718377d04db7d2875428a6b7daaa16f14026d255d";
+            const auto SCHEMA_HASH_SQLITE_SCHEMA = "f9bff300a58a7bb07ba22f6a7377fdd578c7e538ec3625166a9ffa362c945759";
+            CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
+            }
+    );
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncTestFixture, Add_Class_NavigationProperty_RelationshipClass)
+    {
+    const auto SCHEMA1_HASH_ECDB_SCHEMA = "90be13f04338cd797f527b8065d8918a20ba3e92c69b1c3799b103f598886edf";
+    const auto SCHEMA1_HASH_ECDB_MAP = "6c849212bff95279f5eea47734e4bf4a77b04a33cc95e5de20c60602c16f0a7b";
+    const auto SCHEMA1_HASH_SQLITE_SCHEMA = "23e0479f1f76f94556724337c8d1c63baff8dc3021a35dc6efcbab352a654724";
+    Test(
+        "import initial schema",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECEntityClass typeName='A'>
+                        <ECProperty propertyName='PA' typeName='int' />
+                    </ECEntityClass>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+
+    const auto SCHEMA2_HASH_ECDB_SCHEMA = "9be976e84a9c5a1144fa560e7bd3396046a4bc84676b543d29e09eab031c8771";
+    const auto SCHEMA2_HASH_ECDB_MAP = "602831279820e1dfbdd1e6eb95cce981fa2169349654627227291a18b2d4e76b";
+    const auto SCHEMA2_HASH_SQLITE_SCHEMA = "39056b8e377dfefa9ea7a77e5c92e04f1b716f4aae339dd6f63b504ad2eebcbd";
+    Test(
+        "delete subclass of abstract rel constraint class",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.1' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECEntityClass typeName='A'>
+                        <ECProperty propertyName='PA' typeName='int' />
+                    </ECEntityClass>
+                    <ECEntityClass typeName='B'>
+                        <ECProperty propertyName='PB' typeName='int' />
+                        <ECNavigationProperty propertyName='AId' relationshipName='AHasB' direction='Backward' />
+                    </ECEntityClass>
+                    <ECRelationshipClass typeName='AHasB' strength='Embedding' modifier='Sealed'>
+                        <Source cardinality='(0,1)' polymorphic='False'>
+                            <Class class ='A' />
+                        </Source>
+                        <Target cardinality='(0,N)' polymorphic='False'>
+                            <Class class ='B' />
+                        </Target>
+                    </ECRelationshipClass>
+                </ECSchema>)xml"
+            );
+
+            auto newBriefcase = m_hub->CreateBriefcase();
+            ASSERT_EQ(
+                SharedSchemaChannel::Status::OK,
+                m_schemaChannel->Pull(
+                    *newBriefcase,
+                    [&]()
+                        {
+                        CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+                        ASSERT_TRUE(ForeignkeyCheck(*newBriefcase));
+                        ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
+                        }
+                )
+            );
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
+            CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "Check hashes and classes",
+        [&]()
+            {
+            ASSERT_EQ(
+                SharedSchemaChannel::Status::OK,
+                m_schemaChannel->Pull(
+                    *m_briefcase,
+                    [&]()
+                        {
+                        CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
+                        ASSERT_TRUE(ForeignkeyCheck(*m_briefcase));
+                        ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
+                        }
+                )
+            );
+            auto entityClass = m_briefcase->Schemas().GetClass("TestSchema", "B");
+            ASSERT_NE(entityClass, nullptr);
+
+            auto relClass = m_briefcase->Schemas().GetClass("TestSchema", "AHasB");
+            ASSERT_NE(relClass, nullptr);
+
+            auto navProp = entityClass->GetPropertyP("AId")->GetAsNavigationProperty();
+            ASSERT_NE(navProp, nullptr);
+            }
+    );
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncTestFixture, ValidateModifingAddingDeletingBaseClassNotSupported)
+    {
+    const auto SCHEMA1_HASH_ECDB_SCHEMA = "e2fecb1a3d7bce648175544841eb3b451f837d93f027da52072cfb672af1c481";
+    const auto SCHEMA1_HASH_ECDB_MAP = "d9a7f336de6566ba93c66675215ba7b9763a9094fb5d098f26a8db2621b73f4d";
+    const auto SCHEMA1_HASH_SQLITE_SCHEMA = "4bacc358a2275ef555ef887a19f0a37388b75f7ea374e2f2ac28412382b13dc5";
+    Test(
+        "import initial schema",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECEntityClass typeName='TestClass0' modifier='None' />
+                    <ECEntityClass typeName='TestClass' modifier='None' />
+                    <ECEntityClass typeName='Sub' modifier='None' >
+                        <BaseClass>TestClass</BaseClass>
+                    </ECEntityClass >
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "Deleting Base Class not allowed",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECEntityClass typeName='TestClass0' modifier='None' />
+                    <ECEntityClass typeName='TestClass' modifier='None' />
+                    <ECEntityClass typeName='Sub' modifier='None' >
+                    </ECEntityClass >
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "Modifying Base Class not allowed",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECEntityClass typeName='TestClass0' modifier='None' />
+                    <ECEntityClass typeName='TestClass' modifier='None' />
+                    <ECEntityClass typeName='Sub' modifier='None' >
+                        <BaseClass>TestClass0</BaseClass>
+                    </ECEntityClass >
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "Adding new Base Class not allowed",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECEntityClass typeName='TestClass0' modifier='None' />
+                    <ECEntityClass typeName='TestClass' modifier='None' />
+                    <ECEntityClass typeName='Sub' modifier='None' >
+                        <BaseClass>TestClass</BaseClass>
+                        <BaseClass>TestClass0</BaseClass>
+                    </ECEntityClass >
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncTestFixture, DeleteExistingECEnumeration)
+    {
+    const auto SCHEMA1_HASH_ECDB_SCHEMA = "415672227fed9420ade6f54300493f474ae7a70b55d6f156855be481a05310d4";
+    Test(
+        "import initial schema",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECEnumeration typeName='NonStrictEnum' backingTypeName='int' isStrict='False'>
+                        <ECEnumerator value = '0' displayLabel = 'txt' />
+                        <ECEnumerator value = '1' displayLabel = 'bat' />
+                    </ECEnumeration>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::OK, SetupECDb("DeleteExistingECEnumeration", schema));
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            }
+    );
+
+    Test(
+        "Deletion of ECEnumeration is not supported",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            }
+    );
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncTestFixture, ModifyECEnumeratorsOfPreEC32Enum)
+    {
+    Test(
+        "import initial schema",
+        [&]()
+            {
+            const auto SCHEMA_HASH_ECDB_SCHEMA = "a5c631b4aa11ef9fceb8156d7e6604f2a4d4e3854e63bce6e7fb9feac47a43ea";
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECEnumeration typeName='MyEnum' backingTypeName='int' isStrict='True'>
+                        <ECEnumerator value = '0' displayLabel = 'txt' />
+                        <ECEnumerator value = '1' displayLabel = 'log' />
+                    </ECEnumeration>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::OK, SetupECDb("ModifyECEnumeratorsOfPreEC32Enum", schema));
+            CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA); });
+            }
+    );
+
+    const auto SCHEMA1_HASH_ECDB_SCHEMA = "f6bed0bf12bf5cbaac3a3b6190db79d13c682db1a790d6c285a83806d8e8993d";
+    Test(
+        "Deleting enumerator display label",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECEnumeration typeName='MyEnum' backingTypeName='int' isStrict='True'>
+                        <ECEnumerator value = '0' />
+                        <ECEnumerator value = '1' />
+                    </ECEnumeration>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            }
+    );
+
+    Test(
+        "Deleting enumerator",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECEnumeration typeName='MyEnum' backingTypeName='int' isStrict='True'>
+                        <ECEnumerator value = '0' displayLabel = 'txt' />
+                    </ECEnumeration>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            }
+    );
+
+    const auto SCHEMA2_HASH_ECDB_SCHEMA = "ab15e6e97d83c967a0a8711fac21d24285ccceac2142c44a93cf700ab63568a6";
+    Test(
+        "Changing enumerator names when the old schema originates from pre EC3.2 is allowed",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>
+                    <ECEnumeration typeName='MyEnum' backingTypeName='int' isStrict='True'>
+                        <ECEnumerator name='TxtFile' value = '0' displayLabel = 'txt' />
+                        <ECEnumerator name='LogFile' value = '1' displayLabel = 'log' />
+                    </ECEnumeration>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
+            CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA); });
+            }
+    );
+
+    Test(
+        "Importing a pre EC3.2 schema as the old schemas's enumerator names were already changed away from the default name",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+                    <ECEnumeration typeName='MyEnum' backingTypeName='int' isStrict='True'>
+                        <ECEnumerator value = '0' displayLabel = 'txt' />
+                        <ECEnumerator value = '1' displayLabel = 'log' />
+                    </ECEnumeration>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
+            CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA); });
+            }
+    );
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncTestFixture, ModifyECEnumeratorsOfEC32Enum)
+    {
+    Test(
+        "import initial schema",
+        [&]()
+            {
+            const auto SCHEMA_HASH_ECDB_SCHEMA = "1cd5238890a8623c88e106ee8e71da12dd3736f82b160a8a71c89976933fb964";
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>
+                    <ECEnumeration typeName='MyEnum' backingTypeName='int' isStrict='True'>
+                        <ECEnumerator name='Txt' value = '0' displayLabel = 'txt' description='TXT Files'/>
+                        <ECEnumerator name='Log' value = '1' displayLabel = 'log' description='LOG Files'/>
+                    </ECEnumeration>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::OK, SetupECDb("ModifyECEnumeratorsOfEC32Enum", schema));
+            CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA); });
+            }
+    );
+
+    Test(
+        "Deleting enumerator display label",
+        [&]()
+            {
+            const auto SCHEMA_HASH_ECDB_SCHEMA = "ffc55b8d8984be36a33b3dd136f3f5c7e350d2e792eef5db96e1451af3b86ce6";
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>
+                    <ECEnumeration typeName='MyEnum' backingTypeName='int' isStrict='True'>
+                        <ECEnumerator name='Txt' value = '0' description='TXT Files'/>
+                        <ECEnumerator name='Log' value = '1' description='LOG Files'/>
+                    </ECEnumeration>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
+            CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA); });
+            }
+    );
+
+    const auto SCHEMA1_HASH_ECDB_SCHEMA = "34bf286700533110c6fbe540dc75f7edd90fdc6588319953d3598797299d9c00";
+    Test(
+        "Deleting enumerator description",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>
+                    <ECEnumeration typeName='MyEnum' backingTypeName='int' isStrict='True'>
+                        <ECEnumerator name='Txt' value = '0' displayLabel = 'txt'/>
+                        <ECEnumerator name='Log' value = '1' displayLabel = 'log'/>
+                    </ECEnumeration>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            }
+    );
+
+    Test(
+        "Modifying enumerator name is not supported",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>
+                    <ECEnumeration typeName='MyEnum' backingTypeName='int' isStrict='True'>
+                        <ECEnumerator name='Txt' value = '0' displayLabel = 'txt' description='TXT Files'/>
+                        <ECEnumerator name='Log2' value = '1' displayLabel = 'log' description='LOG Files'/>
+                    </ECEnumeration>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            }
+    );
+
+    Test(
+        "Deleting enumerator",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>
+                    <ECEnumeration typeName='MyEnum' backingTypeName='int' isStrict='True'>
+                        <ECEnumerator name='Log' value = '1' displayLabel = 'log' description='LOG Files' />
+                    </ECEnumeration>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            }
+    );
+
+    const auto SCHEMA2_HASH_ECDB_SCHEMA = "96885fd5a45ae32f69c4c83abb6e22799a2b982dd930ac1085fbfea4f0528c5e";
+    Test(
+        "Adding enumerator",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>
+                    <ECEnumeration typeName='MyEnum' backingTypeName='int' isStrict='True'>
+                        <ECEnumerator name='Txt' value = '0' displayLabel = 'txt' />
+                        <ECEnumerator name='Log' value = '1' displayLabel = 'log' />
+                        <ECEnumerator name='Csv' value = '2' displayLabel = 'csv' />
+                    </ECEnumeration>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
+            CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA); });
+            }
+    );
+
+    Test(
+        "Adding enumerator with EC3.2 schema should fail because existing enumerator names will not match",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+                    <ECEnumeration typeName='MyEnum' backingTypeName='int' isStrict='True'>
+                        <ECEnumerator value = '0' displayLabel = 'txt' />
+                        <ECEnumerator value = '1' displayLabel = 'log' />
+                        <ECEnumerator value = '2' displayLabel = 'csv' />
+                        <ECEnumerator value = '3' displayLabel = 'cpp' />
+                    </ECEnumeration>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
+            CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA); });
+            }
+    );
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncTestFixture, ModifyECEnumeratorNames)
+    {
+    Test(
+        "import initial pre EC3.2 schema",
+        [&]()
+            {
+            const auto SCHEMA_HASH_ECDB_SCHEMA = "a5c631b4aa11ef9fceb8156d7e6604f2a4d4e3854e63bce6e7fb9feac47a43ea";
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECEnumeration typeName='MyEnum' backingTypeName='int' isStrict='True'>
+                        <ECEnumerator value = '0' displayLabel = 'txt' />
+                        <ECEnumerator value = '1' displayLabel = 'log' />
+                    </ECEnumeration>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::OK, SetupECDb("ModifyECEnumeratorNames", schema));
+            CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA); });
+            }
+    );
+
+    const auto SCHEMA1_HASH_ECDB_SCHEMA = "ab15e6e97d83c967a0a8711fac21d24285ccceac2142c44a93cf700ab63568a6";
+    Test(
+        "Changing enumerator names when the old schema originates from pre EC3.2 is allowed",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>
+                    <ECEnumeration typeName='MyEnum' backingTypeName='int' isStrict='True'>
+                        <ECEnumerator name='TxtFile' value = '0' displayLabel = 'txt' />
+                        <ECEnumerator name='LogFile' value = '1' displayLabel = 'log' />
+                    </ECEnumeration>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            }
+    );
+
+    Test(
+        "Changing the names again after it was upgraded to EC3.2 is not allowed",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>
+                    <ECEnumeration typeName='MyEnum' backingTypeName='int' isStrict='True'>
+                        <ECEnumerator name='TxtFile1' value = '0' displayLabel = 'txt' />
+                        <ECEnumerator name='LogFile' value = '1' displayLabel = 'log' />
+                    </ECEnumeration>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            }
+    );
+
+    const auto SCHEMA2_HASH_ECDB_SCHEMA = "ab15e6e97d83c967a0a8711fac21d24285ccceac2142c44a93cf700ab63568a6";
+    Test(
+        "import initial EC3.2 schema",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>
+                    <ECEnumeration typeName='MyEnum' backingTypeName='int' isStrict='True'>
+                        <ECEnumerator name='TxtFile' value = '0' displayLabel = 'txt' />
+                        <ECEnumerator name='LogFile' value = '1' displayLabel = 'log' />
+                    </ECEnumeration>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::OK, SetupECDb("ModifyECEnumeratorNames", schema));
+            CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA); });
+            }
+    );
+
+    Test(
+        "Changing the names in an EC3.2 schema is not supported",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>
+                    <ECEnumeration typeName='MyEnum' backingTypeName='int' isStrict='True'>
+                        <ECEnumerator name='TxtFile1' value = '0' displayLabel = 'txt' />
+                        <ECEnumerator name='LogFile' value = '1' displayLabel = 'log' />
+                    </ECEnumeration>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
+            CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA); });
+            }
+    );
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncTestFixture, ModifyExistingECEnumeration)
+    {
+    Test(
+        "import initial schema",
+        [&]()
+            {
+            const auto SCHEMA_HASH_ECDB_SCHEMA = "cbbd84bab835742e70bcf82ce2d8a2bcd45e29fca7eb7af20f7b49a7c94bad27";
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECEnumeration typeName='NonStrictEnum' backingTypeName='int' isStrict='False'>
+                        <ECEnumerator value = '0' displayLabel = 'txt' />
+                    </ECEnumeration>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
+            CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA); });
+            }
+    );
+
+    Test(
+        "Upgrade with some attributes and import schema",
+        [&]()
+            {
+            const auto SCHEMA_HASH_ECDB_SCHEMA = "415672227fed9420ade6f54300493f474ae7a70b55d6f156855be481a05310d4";
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECEnumeration typeName='NonStrictEnum' backingTypeName='int' isStrict='False'>
+                        <ECEnumerator value = '0' displayLabel = 'txt' />
+                        <ECEnumerator value = '1' displayLabel = 'bat' />
+                    </ECEnumeration>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
+            CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA); });
+            }
+    );
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncTestFixture, ModifyIsEntityClass)
+    {
+    const auto SCHEMA1_HASH_ECDB_SCHEMA = "f658d8871c57de304786ad7a38b5340463fd7fa8e008edff9c63962bf5c55a77";
+    const auto SCHEMA1_HASH_ECDB_MAP = "32608ea390282589dafbb36721fb70a9336a359434d056ab67dd245415c0f814";
+    const auto SCHEMA1_HASH_SQLITE_SCHEMA = "533fbcc8fc6a9a9efdb25aff7db7bdb91856955e6b8c236b3f5218b64361d533";
+    Test(
+        "import initial schema",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECEntityClass typeName='TestClass' modifier='None' />
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "Changing ECClass::IsEntityClass is not supported",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECStructClass typeName='TestClass' modifier='None' />
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncTestFixture, ModifyIsStructClass)
+    {
+    const auto SCHEMA1_HASH_ECDB_SCHEMA = "d6779da832df90fdc5e695f6e46838de46f17697c17bce379f1505a47d6be552";
+    const auto SCHEMA1_HASH_ECDB_MAP = "187df5f660c246dbe2d3f2c8571b1cc1821a068bc1071d266a40bd9a570901c6";
+    Test(
+        "import initial schema",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECStructClass typeName='TestClass' />
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "Changing ECClass::IsStructClass is not supported",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECEntityClass typeName='TestClass' modifier='None' />
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncTestFixture, ModifyIsCustomAttributeClass)
+    {
+    const auto SCHEMA1_HASH_ECDB_SCHEMA = "bfec501acb9a41992346585c6074a99487e1b3d9ef019b6a0e109e949261f008";
+    const auto SCHEMA1_HASH_ECDB_MAP = "187df5f660c246dbe2d3f2c8571b1cc1821a068bc1071d266a40bd9a570901c6";
+    Test(
+        "import initial schema",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECCustomAttributeClass typeName='TestClass' appliesTo='EntityClass, RelationshipClass' />
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "Changing ECClass::IsCustomAttributeClass is not supported",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts_modified' displayLabel='Modified Test Schema' description='modified test schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECEntityClass typeName='TestClass' modifier='None' />
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncTestFixture, ModifyIsRelationshipClass)
+    {
+    const auto SCHEMA1_HASH_ECDB_SCHEMA = "93694e336458d096352d016deb3a03644582dc2500aaaf5f5589a9b2fbea97e5";
+    const auto SCHEMA1_HASH_ECDB_MAP = "b4fab7be1e0ee832dc6ae275f5d2ae6680c5be3bb03ec17dde46604fc365352f";
+    const auto SCHEMA1_HASH_SQLITE_SCHEMA = "fe060b45ef83e14c1eff11cbdd2ab8b864f5430a4d9ae2c39ee9581fcbf28a09";
+    Test(
+        "import initial schema",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECEntityClass typeName='A' modifier='None' >
+                        <ECNavigationProperty propertyName='Parent' relationshipName='RelClass' direction='Backward'/>
+                    </ECEntityClass>
+                    <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='embedding' >
+                        <Source cardinality='(0,1)' polymorphic='True'>
+                            <Class class='A' />
+                        </Source>
+                        <Target cardinality='(0,N)' polymorphic='True'>
+                            <Class class='A' />
+                        </Target>
+                    </ECRelationshipClass>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "Changing ECClass::IsRelationshipClass is not supported",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECEntityClass typeName='A' modifier='None' />
+                    <ECCustomAttributeClass typeName='RelClass' />
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncTestFixture, Multiplicity_EndTableNonPersistedSideCardianlityCannotBeChanged)
+    {
+    const auto SCHEMA1_HASH_ECDB_SCHEMA = "2004371e0ba722b2c2c13d9623b2e10e5215e87fca2ca82724cef2b208bbe809";
+    const auto SCHEMA1_HASH_ECDB_MAP = "349f65fea84d6e2fc1bbedc11ecab63ca7c7601814057e9560d5ef270f677e21";
+    const auto SCHEMA1_HASH_SQLITE_SCHEMA = "45aaf35a5dd662b06d031fe8479e6056900e5c5ac2224fd134065826001185ff";
+    Test(
+        "import initial schema",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>
+                    <ECEntityClass typeName='A' modifier='None' >
+                    </ECEntityClass>
+                    <ECEntityClass typeName='B' modifier='None' >
+                        <ECNavigationProperty propertyName='A' relationshipName='RelClass' direction='backward'/>
+                    </ECEntityClass>
+                    <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='embedding' strengthDirection='forward' >
+                        <Source multiplicity='(0..1)' roleLabel='A has B' polymorphic='False'>
+                            <Class class='A' />
+                        </Source>
+                        <Target multiplicity='(0..*)' roleLabel='B has A' polymorphic='False'>
+                            <Class class='B' />
+                        </Target>
+                    </ECRelationshipClass>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "end table non persisted side cardianlity cannot be changed",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>
+                    <ECEntityClass typeName='A' modifier='None' >
+                    </ECEntityClass>
+                    <ECEntityClass typeName='B' modifier='None' >
+                        <ECNavigationProperty propertyName='A' relationshipName='RelClass' direction='backward'/>
+                    </ECEntityClass>
+                    <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='embedding' strengthDirection='forward' >
+                        <Source multiplicity='(0..2)' roleLabel='A has B' polymorphic='False'>
+                            <Class class='A' />
+                        </Source>
+                        <Target multiplicity='(0..*)' roleLabel='B has A' polymorphic='False'>
+                            <Class class='B' />
+                        </Target>
+                    </ECRelationshipClass>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncTestFixture, Multiplicity_ChangetoLowerLimitNotSupported)
+    {
+    const auto SCHEMA1_HASH_ECDB_SCHEMA = "2004371e0ba722b2c2c13d9623b2e10e5215e87fca2ca82724cef2b208bbe809";
+    const auto SCHEMA1_HASH_ECDB_MAP = "349f65fea84d6e2fc1bbedc11ecab63ca7c7601814057e9560d5ef270f677e21";
+    const auto SCHEMA1_HASH_SQLITE_SCHEMA = "45aaf35a5dd662b06d031fe8479e6056900e5c5ac2224fd134065826001185ff";
+    Test(
+        "import initial schema",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>
+                    <ECEntityClass typeName='A' modifier='None' >
+                    </ECEntityClass>
+                    <ECEntityClass typeName='B' modifier='None' >
+                        <ECNavigationProperty propertyName='A' relationshipName='RelClass' direction='backward'/>
+                    </ECEntityClass>
+                    <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='embedding' strengthDirection='forward' >
+                        <Source multiplicity='(0..1)' roleLabel='A has B' polymorphic='False'>
+                            <Class class='A' />
+                        </Source>
+                        <Target multiplicity='(0..*)' roleLabel='B has A' polymorphic='False'>
+                            <Class class='B' />
+                        </Target>
+                    </ECRelationshipClass>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "changing lower limit of multiplicity is not allowed",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>
+                    <ECEntityClass typeName='A' modifier='None' >
+                    </ECEntityClass>
+                    <ECEntityClass typeName='B' modifier='None' >
+                        <ECNavigationProperty propertyName='A' relationshipName='RelClass' direction='backward'/>
+                    </ECEntityClass>
+                    <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='embedding' strengthDirection='forward' >
+                        <Source multiplicity='(0..1)' roleLabel='A has B' polymorphic='False'>
+                            <Class class='A' />
+                        </Source>
+                        <Target multiplicity='(1..*)' roleLabel='B has A' polymorphic='False'>
+                            <Class class='B' />
+                        </Target>
+                    </ECRelationshipClass>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncTestFixture, DisablePolymorphicNotSupported)
+    {
+    const auto SCHEMA1_HASH_ECDB_SCHEMA = "e71ed59586de84fbe469ab0237e75af6d7b53ef34155273fe88b1d0724b15793";
+    const auto SCHEMA1_HASH_ECDB_MAP = "fc15fb753581557451bfe91421335e870fae16c26068d4beac61e067f0d1df7a";
+    const auto SCHEMA1_HASH_SQLITE_SCHEMA = "6a5bca1806845949796efc27355d7924410e5901dedf37646330864282d0e5ae";
+    Test(
+        "import initial schema",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>
+                    <ECEntityClass typeName='A' modifier='None' >
+                    </ECEntityClass>
+                    <ECEntityClass typeName='B' modifier='None' >
+                    </ECEntityClass>
+                    <ECRelationshipClass typeName='R' modifier='Sealed' strength='embedding' >
+                        <Source multiplicity='(0..1)' roleLabel='A has B' polymorphic='true'>
+                            <Class class='A' />
+                        </Source>
+                        <Target multiplicity='(0..N)' roleLabel='B has A' polymorphic='true'>
+                            <Class class='B' />
+                        </Target>
+                    </ECRelationshipClass>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "changing Polymorphic from true to false is not allowed",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>
+                    <ECEntityClass typeName='A' modifier='None' >
+                    </ECEntityClass>
+                    <ECEntityClass typeName='B' modifier='None' >
+                    </ECEntityClass>
+                    <ECRelationshipClass typeName='R' modifier='Sealed' strength='embedding' >
+                        <Source multiplicity='(0..1)'  roleLabel='A has B' polymorphic='false'>
+                            <Class class='A' />
+                        </Source>
+                        <Target multiplicity='(0..N)'  roleLabel='B has A' polymorphic='false'>
+                            <Class class='B' />
+                        </Target>
+                    </ECRelationshipClass>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+    }
+
+
+
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncTestFixture, Polymorphic_LinkTable)
+    {
+    const auto SCHEMA1_HASH_ECDB_SCHEMA = "477ea7eb5d56ab4fc002645becdcb93b101552b9fdb9097223300962fd46b2e9";
+    const auto SCHEMA1_HASH_ECDB_MAP = "7f5d5cc7101c0ba9ed5d92dc5734183d29286ee5e91fa3cb5352811ee06e46eb";
+    const auto SCHEMA1_HASH_SQLITE_SCHEMA = "2f053fb1d579b73b2a0102c4675720dc0fc3c82b81af3205bc82a59d1d44426b";
+    Test(
+        "import initial schema",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>
+                    <ECEntityClass typeName='A' modifier='None' >
+                    </ECEntityClass>
+                    <ECEntityClass typeName='B' modifier='None' >
+                    </ECEntityClass>
+                    <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='embedding' strengthDirection='forward' >
+                        <Source multiplicity='(0..1)'  roleLabel='A has B' polymorphic='False'>
+                            <Class class='A' />
+                        </Source>
+                        <Target multiplicity='(0..N)'  roleLabel='B has A' polymorphic='False'>
+                            <Class class='B' />
+                        </Target>
+                    </ECRelationshipClass>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "check initial schema values",
+        [&]()
+            {
+            ECSqlStatement stmt;
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "SELECT * FROM ts.A"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+            stmt.Finalize();
+
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "SELECT * FROM ts.B"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+            stmt.Finalize();
+
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "SELECT * FROM ts.RelClass"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+            stmt.Finalize();
+
+            const auto relClass = m_briefcase->Schemas().GetClass("TestSchema", "RelClass")->GetRelationshipClassCP();
+            ASSERT_NE(relClass, nullptr);
+            ASSERT_FALSE(relClass->GetSource().GetIsPolymorphic());
+            ASSERT_FALSE(relClass->GetTarget().GetIsPolymorphic());
+
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "The class map for the link table ECRelationshipClass 'TestSchema:RelClass' maps to more than one table on the source constraint: ts_A,ts_A1",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>
+                    <ECEntityClass typeName='A' modifier='None' >
+                    </ECEntityClass>
+                    <ECEntityClass typeName='B' modifier='None' >
+                    </ECEntityClass>
+                    <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='embedding' strengthDirection='forward' >
+                        <Source multiplicity='(0..1)'  roleLabel='A has B' polymorphic='True'>
+                            <Class class='A' />
+                        </Source>
+                        <Target multiplicity='(0..N)'  roleLabel='B has A' polymorphic='True'>
+                            <Class class='B' />
+                        </Target>
+                    </ECRelationshipClass>
+                    <ECEntityClass typeName='A1' modifier='None' >
+                        <BaseClass>A</BaseClass>
+                    </ECEntityClass>
+                    <ECEntityClass typeName='B1' modifier='None' >
+                        <BaseClass>B</BaseClass>
+                    </ECEntityClass>
+                </ECSchema>)xml"
+            );
+
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+
+    const auto SCHEMA2_HASH_ECDB_SCHEMA = "464fee8b4044eac594c0efe9e3275c85a1cf0d98f974be33ac09f0d85e504a91";
+    const auto SCHEMA2_HASH_ECDB_MAP = "899c4de94118f8916e752bc2fa886986b4945aad3568cb01395d6bb8b30514bf";
+    const auto SCHEMA2_HASH_SQLITE_SCHEMA = "a94644aaaf6be97183584203f0230acf5dbb3888c3aadc69b6ae50d5105375ab";
+    Test(
+        "initialize second initial schema",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>
+                    <ECSchemaReference name = 'ECDbMap' version='02.00.00' alias = 'ecdbmap' />
+                    <ECEntityClass typeName='A' modifier='None' >
+                        <ECCustomAttributes>
+                            <ClassMap xmlns='ECDbMap.02.00.00'>
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                        </ECCustomAttributes>
+                    </ECEntityClass>
+                    <ECEntityClass typeName='B' modifier='None' >
+                        <ECCustomAttributes>
+                            <ClassMap xmlns='ECDbMap.02.00.00'>
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                        </ECCustomAttributes>
+                    </ECEntityClass>
+                    <ECRelationshipClass typeName='RelClass' modifier='Abstract' strength='embedding' strengthDirection='forward' >
+                        <ECCustomAttributes>
+                            <ClassMap xmlns='ECDbMap.02.00.00'>
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                        </ECCustomAttributes>
+                        <Source multiplicity='(0..1)'  roleLabel='A has B' polymorphic='False'>
+                            <Class class='A' />
+                        </Source>
+                        <Target multiplicity='(0..N)'  roleLabel='B has A' polymorphic='False'>
+                            <Class class='B' />
+                        </Target>
+                    </ECRelationshipClass>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaItemTph", schema));
+            CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "check second schema values",
+        [&]()
+            {
+            ECSqlStatement stmt;
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "SELECT * FROM ts.A"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+            stmt.Finalize();
+
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "SELECT * FROM ts.B"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+            stmt.Finalize();
+
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "SELECT * FROM ts.RelClass"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+            stmt.Finalize();
+
+            const auto relClass = m_briefcase->Schemas().GetClass("TestSchema", "RelClass")->GetRelationshipClassCP();
+            ASSERT_NE(relClass, nullptr);
+            ASSERT_FALSE(relClass->GetSource().GetIsPolymorphic());
+            ASSERT_FALSE(relClass->GetTarget().GetIsPolymorphic());
+
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
+            CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            }
+    );
+
+    const auto SCHEMA3_HASH_ECDB_SCHEMA = "e5f079d4943fa0d57c4ff0af03d05c5d25fe1759d67e25a3463763d977a095e2";
+    const auto SCHEMA3_HASH_ECDB_MAP = "0bbdb9be079f3f4c3b1e6849a31b25735c8fdf8e1fa62ca688d880f09f9e843f";
+    Test(
+        "changing RelationshipConstraint::IsPolymorphic is allowed",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>
+                    <ECSchemaReference name = 'ECDbMap' version='02.00.00' alias = 'ecdbmap' />
+                    <ECEntityClass typeName='A' modifier='None' >
+                        <ECCustomAttributes>
+                            <ClassMap xmlns='ECDbMap.02.00.00'>
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                        </ECCustomAttributes>
+                    </ECEntityClass>
+                    <ECEntityClass typeName='B' modifier='None' >
+                        <ECCustomAttributes>
+                            <ClassMap xmlns='ECDbMap.02.00.00'>
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                        </ECCustomAttributes>
+                    </ECEntityClass>
+                    <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='embedding' strengthDirection='forward' >
+                        <ECCustomAttributes>
+                            <ClassMap xmlns='ECDbMap.02.00.00'>
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                        </ECCustomAttributes>
+                        <Source multiplicity='(0..1)'  roleLabel='A has B' polymorphic='True'>
+                            <Class class='A' />
+                        </Source>
+                        <Target multiplicity='(0..N)' roleLabel='B has A' polymorphic='True'>
+                            <Class class='B' />
+                        </Target>
+                    </ECRelationshipClass>
+                    <ECEntityClass typeName='A1' modifier='None' >
+                        <BaseClass>A</BaseClass>
+                    </ECEntityClass>
+                    <ECEntityClass typeName='B1' modifier='None' >
+                        <BaseClass>B</BaseClass>
+                    </ECEntityClass>
+                </ECSchema>)xml"
+            );
+
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
+            CheckHashes(*m_briefcase, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "check updated schema values",
+        [&]()
+            {
+            ECSqlStatement stmt;
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "SELECT * FROM ts.A"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+            stmt.Finalize();
+
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "SELECT * FROM ts.B"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+            stmt.Finalize();
+
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "SELECT * FROM ts.RelClass"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+            stmt.Finalize();
+
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "SELECT * FROM ts.A1"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+            stmt.Finalize();
+
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "SELECT * FROM ts.B1"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+            stmt.Finalize();
+
+            const auto relClass = m_briefcase->Schemas().GetClass("TestSchema", "RelClass")->GetRelationshipClassCP();
+            ASSERT_NE(relClass, nullptr);
+            ASSERT_TRUE(relClass->GetSource().GetIsPolymorphic());
+            ASSERT_TRUE(relClass->GetTarget().GetIsPolymorphic());
+
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
+            CheckHashes(*m_briefcase, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP); });
+            }
+    );
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncTestFixture, Polymorphic_EndTable)
+    {
+    const auto SCHEMA1_HASH_ECDB_SCHEMA = "ab2e55e7a6eb54d99a91fd744c3e9f95701e8ceb30d236d42763913e17b49231";
+    const auto SCHEMA1_HASH_ECDB_MAP = "349f65fea84d6e2fc1bbedc11ecab63ca7c7601814057e9560d5ef270f677e21";
+    const auto SCHEMA1_HASH_SQLITE_SCHEMA = "45aaf35a5dd662b06d031fe8479e6056900e5c5ac2224fd134065826001185ff";
+    Test(
+        "import initial schema",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>
+                    <ECEntityClass typeName='A' modifier='None' >
+                    </ECEntityClass>
+                    <ECEntityClass typeName='B' modifier='None' >
+                        <ECNavigationProperty propertyName='A' relationshipName='RelClass' direction='backward'/>
+                    </ECEntityClass>
+                    <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='embedding' strengthDirection='forward' >
+                        <Source multiplicity='(0..1)' roleLabel='A has B' polymorphic='False'>
+                            <Class class='A' />
+                        </Source>
+                        <Target multiplicity='(0..N)' roleLabel='B has A' polymorphic='False'>
+                            <Class class='B' />
+                        </Target>
+                    </ECRelationshipClass>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "check initial schema values",
+        [&]()
+            {
+            ECSqlStatement stmt;
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "SELECT * FROM ts.A"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+            stmt.Finalize();
+
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "SELECT * FROM ts.B"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+            stmt.Finalize();
+
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "SELECT * FROM ts.RelClass"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+            stmt.Finalize();
+
+            const auto relClass = m_briefcase->Schemas().GetClass("TestSchema", "RelClass")->GetRelationshipClassCP();
+            ASSERT_NE(relClass, nullptr);
+            ASSERT_FALSE(relClass->GetSource().GetIsPolymorphic());
+            ASSERT_FALSE(relClass->GetTarget().GetIsPolymorphic());
+
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "Failed to map ECRelationshipClass 'TestSchema:RelClass'. The referenced end maps to more than one table",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>
+                    <ECEntityClass typeName='A' modifier='None' >
+                    </ECEntityClass>
+                    <ECEntityClass typeName='B' modifier='None' >
+                        <ECNavigationProperty propertyName='A' relationshipName='RelClass' direction='backward'/>
+                    </ECEntityClass>
+                    <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='embedding' strengthDirection='forward' >
+                        <Source multiplicity='(0..1)' roleLabel='A has B' polymorphic='True'>
+                            <Class class='A' />
+                        </Source>
+                        <Target multiplicity='(0..N)' roleLabel='B has A' polymorphic='True'>
+                            <Class class='B' />
+                        </Target>
+                    </ECRelationshipClass>
+                    <ECEntityClass typeName='A1' modifier='None' >
+                        <BaseClass>A</BaseClass>
+                    </ECEntityClass>
+                    <ECEntityClass typeName='B1' modifier='None' >
+                        <BaseClass>B</BaseClass>
+                    </ECEntityClass>
+                </ECSchema>)xml"
+            );
+            /*
+                Use class Change polymorphic=true and add derived classes
+                Add dervied class A->A1 and B->B2 FK Relationship
+            */
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+
+    const auto SCHEMA2_HASH_ECDB_SCHEMA = "b6fb1496f130dab0aa2d5912cf7b4fe6c09a4cbe5addf273d3b7e80863305746";
+    const auto SCHEMA2_HASH_ECDB_MAP = "fbae021e02376864dd33b2602b562aade7faf5d7928f6b82d9f65feb723102a5";
+    const auto SCHEMA2_HASH_SQLITE_SCHEMA = "8dba5e6123728118b507020259e2b56b4cb51cc9c79e6103383d4751561592a8";
+    Test(
+        "initialize second initial schema",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>
+                    <ECSchemaReference name = 'ECDbMap' version='02.00.00' alias = 'ecdbmap' />
+                    <ECEntityClass typeName='A' modifier='None' >
+                        <ECCustomAttributes>
+                            <ClassMap xmlns='ECDbMap.02.00.00'>
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                        </ECCustomAttributes>
+                    </ECEntityClass>
+                    <ECEntityClass typeName='B' modifier='None' >
+                        <ECNavigationProperty propertyName='A' relationshipName='RelClass' direction='backward'/>
+                    </ECEntityClass>
+                    <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='embedding' strengthDirection='forward' >
+                        <Source multiplicity='(0..1)' roleLabel='A has B' polymorphic='False'>
+                            <Class class='A' />
+                        </Source>
+                        <Target multiplicity='(0..N)' roleLabel='B has A' polymorphic='False'>
+                            <Class class='B' />
+                        </Target>
+                    </ECRelationshipClass>
+                </ECSchema>)xml"
+            );
+            /*
+                Same has TPH
+                Use class Change polymorphic=true and add derived classes
+                Add dervied class A->A1 and B->B2 FK Relationship
+            */
+            ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaItemTPH", schema));
+            CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "check second schema values",
+        [&]()
+            {
+            ECSqlStatement stmt;
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "SELECT * FROM ts.A"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+            stmt.Finalize();
+
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "SELECT * FROM ts.B"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+            stmt.Finalize();
+
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "SELECT * FROM ts.RelClass"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+            stmt.Finalize();
+
+            const auto relClass = m_briefcase->Schemas().GetClass("TestSchema", "RelClass")->GetRelationshipClassCP();
+            ASSERT_NE(relClass, nullptr);
+            ASSERT_FALSE(relClass->GetSource().GetIsPolymorphic());
+            ASSERT_FALSE(relClass->GetTarget().GetIsPolymorphic());
+
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
+            CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            }
+    );
+
+    const auto SCHEMA3_HASH_ECDB_SCHEMA = "d93ece995f70216b8273161fe7c6347d86223762cb1c8cdb04fda179cb26775e";
+    const auto SCHEMA3_HASH_ECDB_MAP = "2f413bd9f3fc52c3aedd74f5acc846a81c16cbec01374c867d8c21455a162bfb";
+    const auto SCHEMA3_HASH_SQLITE_SCHEMA = "1937df873cb078445eb6e5452b2dfe55c558f7bc3a1a12ddb8201a004399f14d";
+    Test(
+        "changing RelationshipConstraint::IsPolymorphic is allowed",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>
+                    <ECSchemaReference name = 'ECDbMap' version='02.00.00' alias = 'ecdbmap' />
+                    <ECEntityClass typeName='A' modifier='None' >
+                        <ECCustomAttributes>
+                            <ClassMap xmlns='ECDbMap.02.00.00'>
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                        </ECCustomAttributes>
+                    </ECEntityClass>
+                    <ECEntityClass typeName='B' modifier='None' >
+                        <ECNavigationProperty propertyName='A' relationshipName='RelClass' direction='backward'/>
+                    </ECEntityClass>
+                    <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='embedding' strengthDirection='forward' >
+                        <Source multiplicity='(0..1)' roleLabel='A has B' polymorphic='True'>
+                            <Class class='A' />
+                        </Source>
+                        <Target multiplicity='(0..N)' roleLabel='B has A' polymorphic='True'>
+                            <Class class='B' />
+                        </Target>
+                    </ECRelationshipClass>
+                    <ECEntityClass typeName='A1' modifier='None' >
+                        <BaseClass>A</BaseClass>
+                    </ECEntityClass>
+                    <ECEntityClass typeName='B1' modifier='None' >
+                        <BaseClass>B</BaseClass>
+                    </ECEntityClass>
+                </ECSchema>)xml"
+            );
+
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
+            CheckHashes(*m_briefcase, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP, SCHEMA3_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "check updated schema values",
+        [&]()
+            {
+            ECSqlStatement stmt;
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "SELECT * FROM ts.A"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+            stmt.Finalize();
+
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "SELECT * FROM ts.B"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+            stmt.Finalize();
+
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "SELECT * FROM ts.RelClass"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+            stmt.Finalize();
+
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "SELECT * FROM ts.A1"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+            stmt.Finalize();
+
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_briefcase, "SELECT * FROM ts.B1"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+            stmt.Finalize();
+
+            const auto relClass = m_briefcase->Schemas().GetClass("TestSchema", "RelClass")->GetRelationshipClassCP();
+            ASSERT_NE(relClass, nullptr);
+            ASSERT_TRUE(relClass->GetSource().GetIsPolymorphic());
+            ASSERT_TRUE(relClass->GetTarget().GetIsPolymorphic());
+
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
+            CheckHashes(*m_briefcase, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP, SCHEMA3_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP); });
+            }
+    );
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncTestFixture, ModifyRelationship)
+    {
+    const auto SCHEMA1_HASH_ECDB_SCHEMA = "93694e336458d096352d016deb3a03644582dc2500aaaf5f5589a9b2fbea97e5";
+    const auto SCHEMA1_HASH_ECDB_MAP = "b4fab7be1e0ee832dc6ae275f5d2ae6680c5be3bb03ec17dde46604fc365352f";
+    const auto SCHEMA1_HASH_SQLITE_SCHEMA = "fe060b45ef83e14c1eff11cbdd2ab8b864f5430a4d9ae2c39ee9581fcbf28a09";
+    Test(
+        "import initial schema",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECEntityClass typeName='A' modifier='None' >
+                        <ECNavigationProperty propertyName='Parent' relationshipName='RelClass' direction='Backward'/>
+                    </ECEntityClass>
+                    <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='embedding' strengthDirection='forward' >
+                        <Source cardinality='(0,1)' polymorphic='True'>
+                            <Class class='A' />
+                        </Source>
+                        <Target cardinality='(0,N)' polymorphic='True'>
+                            <Class class='A' />
+                        </Target>
+                    </ECRelationshipClass>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "changing Relationship Cardinality not allowed",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECEntityClass typeName='A' modifier='None' />
+                    <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='embedding' strengthDirection='forward' >
+                        <Source cardinality='(0,N)' polymorphic='True'>
+                            <Class class='A' />
+                        </Source>
+                        <Target cardinality='(0,N)' polymorphic='True'>
+                            <Class class='A' />
+                        </Target>
+                    </ECRelationshipClass>
+                </ECSchema>)xml"
+            );
+
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "changing Relationship Cardinality not allowed",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECEntityClass typeName='A' modifier='None' >
+                        <ECNavigationProperty propertyName='Parent' relationshipName='RelClass' direction='Backward'/>
+                    </ECEntityClass>
+                    <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='embedding' strengthDirection='forward' >
+                        <Source cardinality='(0,1)' polymorphic='True'>
+                            <Class class='A' />
+                        </Source>
+                        <Target cardinality='(0,1)' polymorphic='True'>
+                            <Class class='A' />
+                        </Target>
+                    </ECRelationshipClass>
+                </ECSchema>)xml"
+            );
+
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "changing Constraint Class not allowed",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECEntityClass typeName='A' modifier='None' >
+                        <ECNavigationProperty propertyName='Parent' relationshipName='RelClass' direction='Backward'/>
+                    </ECEntityClass>
+                    <ECEntityClass typeName='B' modifier='None' />
+                    <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='embedding' strengthDirection='forward' >
+                        <Source cardinality='(0,1)' polymorphic='True'>
+                            <Class class='B' />
+                        </Source>
+                        <Target cardinality='(0,N)' polymorphic='True'>
+                            <Class class='A' />
+                        </Target>
+                    </ECRelationshipClass>
+                </ECSchema>)xml"
+            );
+
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "changing Target Constraint Class not allowed",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECEntityClass typeName='A' modifier='None' />
+                    <ECEntityClass typeName='B' modifier='None' >
+                        <ECNavigationProperty propertyName='Parent' relationshipName='RelClass' direction='Backward'/>
+                    </ECEntityClass>
+                    <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='embedding' strengthDirection='forward' >
+                        <Source cardinality='(0,1)' polymorphic='True'>
+                            <Class class='A' />
+                        </Source>
+                        <Target cardinality='(0,N)' polymorphic='True'>
+                            <Class class='B' />
+                        </Target>
+                    </ECRelationshipClass>
+                </ECSchema>)xml"
+            );
+
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "changing NonPolymorphic Source not allowed",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECEntityClass typeName='A' modifier='None' >
+                        <ECNavigationProperty propertyName='Parent' relationshipName='RelClass' direction='Backward'/>
+                    </ECEntityClass>
+                    <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='embedding' strengthDirection='forward' >
+                        <Source cardinality='(0,1)' polymorphic='False'>
+                            <Class class='A' />
+                        </Source>
+                        <Target cardinality='(0,N)' polymorphic='True'>
+                            <Class class='A' />
+                        </Target>
+                    </ECRelationshipClass>
+                </ECSchema>)xml"
+            );
+
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "changing NonPolymorphic Target not allowed",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECEntityClass typeName='A' modifier='None' >
+                        <ECNavigationProperty propertyName='Parent' relationshipName='RelClass' direction='Backward'/>
+                    </ECEntityClass>
+                    <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='embedding' strengthDirection='forward' >
+                        <Source cardinality='(0,1)' polymorphic='True'>
+                            <Class class='A' />
+                        </Source>
+                        <Target cardinality='(0,N)' polymorphic='False'>
+                            <Class class='A' />
+                        </Target>
+                    </ECRelationshipClass>
+                </ECSchema>)xml"
+            );
+
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "changing relationship Strength not allowed",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECEntityClass typeName='A' modifier='None' >
+                        <ECNavigationProperty propertyName='Parent' relationshipName='RelClass' direction='Backward'/>
+                    </ECEntityClass>
+                    <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='referencing' strengthDirection='forward' >
+                        <Source cardinality='(0,1)' polymorphic='True'>
+                            <Class class='A' />
+                        </Source>
+                        <Target cardinality='(0,N)' polymorphic='True'>
+                            <Class class='A' />
+                        </Target>
+                    </ECRelationshipClass>
+                </ECSchema>)xml"
+            );
+
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "changing relationship Strength Direction not allowed",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECEntityClass typeName='A' modifier='None' >
+                        <ECNavigationProperty propertyName='Parent' relationshipName='RelClass' direction='Backward'/>
+                    </ECEntityClass>
+                    <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='embedding' strengthDirection='backward' >
+                        <Source cardinality='(0,1)' polymorphic='True'>
+                            <Class class='A' />
+                        </Source>
+                        <Target cardinality='(0,N)' polymorphic='True'>
+                            <Class class='A' />
+                        </Target>
+                    </ECRelationshipClass>
+                </ECSchema>)xml"
+            );
+
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncTestFixture, ModifyRelationshipConstrainsRoleLabel)
+    {
+    const auto SCHEMA1_HASH_ECDB_MAP = "576443ffbbd0fcc2d8112de5bea143aa20606bda1ac2ae882b92361aac89d1ae";
+    const auto SCHEMA1_HASH_SQLITE_SCHEMA = "ce3378023ce0804fa8fb01266337ff1f0fe8b0e8d5c1ad6933ba82272b776334";
+    Test(
+        "import initial schema",
+        [&]()
+            {
+            const auto SCHEMA_HASH_ECDB_SCHEMA = "0c0bbe5eb0aee5e0cc66288c5ccd9a711721ccae66d31ef505807ceeb6866939";
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />
+                    <ECEntityClass typeName='A' modifier='None' >
+                        <ECCustomAttributes>
+                            <ClassMap xmlns='ECDbMap.02.00'>
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName='propA' typeName='int' />
+                    </ECEntityClass>
+                    <ECEntityClass typeName='B' modifier='None' >
+                        <BaseClass>A</BaseClass>
+                        <ECProperty propertyName='propB' typeName='int' />
+                    </ECEntityClass>
+                    <ECEntityClass typeName='C' modifier='None' >
+                        <ECNavigationProperty propertyName='Parent' relationshipName='RelClass' direction='Backward'/>
+                    </ECEntityClass>
+                    <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='embedding' strengthDirection='forward' >
+                        <Source cardinality='(0,1)' roleLabel='A has C' polymorphic='True'>
+                            <Class class='A' />
+                        </Source>
+                        <Target cardinality='(0,N)' roleLabel='C belongs to A' polymorphic='True'>
+                            <Class class='C' />
+                        </Target>
+                    </ECRelationshipClass>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
+            CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "Modifying Source constraint class RoleLabel is expected to be successful",
+        [&]()
+            {
+            const auto SCHEMA_HASH_ECDB_SCHEMA = "35497a5b2e9f78e2759cfe86ed90e2fe8a09acdfbf96c044b2a5c90ad2463798";
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />
+                    <ECEntityClass typeName='A' modifier='None' >
+                        <ECCustomAttributes>
+                            <ClassMap xmlns='ECDbMap.02.00'>
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName='propA' typeName='int' />
+                    </ECEntityClass>
+                    <ECEntityClass typeName='B' modifier='None' >
+                        <BaseClass>A</BaseClass>
+                        <ECProperty propertyName='propB' typeName='int' />
+                    </ECEntityClass>
+                    <ECEntityClass typeName='C' modifier='None' >
+                        <ECNavigationProperty propertyName='Parent' relationshipName='RelClass' direction='Backward'/>
+                    </ECEntityClass>
+                    <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='embedding' strengthDirection='forward' >
+                        <Source cardinality='(0,1)' roleLabel='A has C Modified' polymorphic='True'>
+                            <Class class='A' />
+                        </Source>
+                        <Target cardinality='(0,N)' roleLabel='C belongs to A' polymorphic='True'>
+                            <Class class='C' />
+                        </Target>
+                    </ECRelationshipClass>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaItemTph", schema));
+            CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "Modifying Target Constraint class Role Label is expected to be successful",
+        [&]()
+            {
+            const auto SCHEMA_HASH_ECDB_SCHEMA = "70dc6416f986535e5c805851c22cd71f624bbc46fb7511a593b06ab89963f63d";
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />
+                    <ECEntityClass typeName='A' modifier='None' >
+                        <ECCustomAttributes>
+                            <ClassMap xmlns='ECDbMap.02.00'>
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName='propA' typeName='int' />
+                    </ECEntityClass>
+                    <ECEntityClass typeName='B' modifier='None' >
+                        <BaseClass>A</BaseClass>
+                        <ECProperty propertyName='propB' typeName='int' />
+                    </ECEntityClass>
+                    <ECEntityClass typeName='C' modifier='None' >
+                        <ECNavigationProperty propertyName='Parent' relationshipName='RelClass' direction='Backward'/>
+                    </ECEntityClass>
+                    <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='embedding' strengthDirection='forward' >
+                        <Source cardinality='(0,1)' roleLabel='A has C Modified' polymorphic='True'>
+                            <Class class='A' />
+                        </Source>
+                        <Target cardinality='(0,N)' roleLabel='C belongs to A Modified' polymorphic='True'>
+                            <Class class='C' />
+                        </Target>
+                    </ECRelationshipClass>
+                </ECSchema>)xml"
+            );
+
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
+            CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "Modifying both source and target class RoleLabels simultaneously is expected to be successful",
+        [&]()
+            {
+            const auto SCHEMA_HASH_ECDB_SCHEMA = "ea5bfa2d5384c9113a34c2b4ede5d811e11cb94fe52703f6fa9b1fe4538867a2";
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />
+                    <ECEntityClass typeName='A' modifier='None' >
+                        <ECCustomAttributes>
+                            <ClassMap xmlns='ECDbMap.02.00'>
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName='propA' typeName='int' />
+                    </ECEntityClass>
+                    <ECEntityClass typeName='B' modifier='None' >
+                        <BaseClass>A</BaseClass>
+                        <ECProperty propertyName='propB' typeName='int' />
+                    </ECEntityClass>
+                    <ECEntityClass typeName='C' modifier='None' >
+                        <ECNavigationProperty propertyName='Parent' relationshipName='RelClass' direction='Backward'/>
+                    </ECEntityClass>
+                    <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='embedding' strengthDirection='forward' >
+                        <Source cardinality='(0,1)' roleLabel='A has B and C' polymorphic='True'>
+                            <Class class='A' />
+                        </Source>
+                        <Target cardinality='(0,N)' roleLabel='B and C belong to A' polymorphic='True'>
+                            <Class class='C' />
+                        </Target>
+                    </ECRelationshipClass>
+                </ECSchema>)xml"
+            );
+
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
+            CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
