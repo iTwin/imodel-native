@@ -730,7 +730,7 @@ static ParseResult<Nullable<size_t>> ParseHierarchyLevelSizeLimitFromJson(RapidJ
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<ECPresentationResult> ECPresentationUtils::GetRootNodesCount(ECPresentationManager& manager, ECDbR db, RapidJsonValueCR paramsJson)
     {
-    IConnectionCPtr connection = manager.GetConnections().GetConnection(db);
+    IConnectionCPtr connection = manager.GetConnections().CreateConnection(db);
     if (connection.IsNull())
         return folly::makeFutureWith([](){return ECPresentationResult(ECPresentationStatus::InvalidArgument, "db: not open");});
 
@@ -761,7 +761,7 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetRootNodesCount(ECPre
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<ECPresentationResult> ECPresentationUtils::GetRootNodes(ECPresentationManager& manager, ECDbR db, RapidJsonValueCR paramsJson)
     {
-    IConnectionCPtr connection = manager.GetConnections().GetConnection(db);
+    IConnectionCPtr connection = manager.GetConnections().CreateConnection(db);
     if (connection.IsNull())
         return folly::makeFutureWith([](){return ECPresentationResult(ECPresentationStatus::InvalidArgument, "db: not open");});
 
@@ -821,7 +821,7 @@ static ParseResult<NavNodeKeyCPtr> ParseParentNodeKeyFromJson(IConnectionCR conn
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<ECPresentationResult> ECPresentationUtils::GetChildrenCount(ECPresentationManager& manager, ECDbR db, RapidJsonValueCR paramsJson)
     {
-    IConnectionCPtr connection = manager.GetConnections().GetConnection(db);
+    IConnectionCPtr connection = manager.GetConnections().CreateConnection(db);
     if (connection.IsNull())
         return folly::makeFutureWith([](){return ECPresentationResult(ECPresentationStatus::InvalidArgument, "db: not open");});
 
@@ -857,7 +857,7 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetChildrenCount(ECPres
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<ECPresentationResult> ECPresentationUtils::GetChildren(ECPresentationManager& manager, ECDbR db, RapidJsonValueCR paramsJson)
     {
-    IConnectionCPtr connection = manager.GetConnections().GetConnection(db);
+    IConnectionCPtr connection = manager.GetConnections().CreateConnection(db);
     if (connection.IsNull())
         return folly::makeFutureWith([](){return ECPresentationResult(ECPresentationStatus::InvalidArgument, "db: not open");});
 
@@ -898,7 +898,7 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetChildren(ECPresentat
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<ECPresentationResult> ECPresentationUtils::GetHierarchyLevelDescriptor(ECPresentationManager& manager, ECDbR db, RapidJsonValueCR paramsJson)
     {
-    IConnectionCPtr connection = manager.GetConnections().GetConnection(db);
+    IConnectionCPtr connection = manager.GetConnections().CreateConnection(db);
     if (connection.IsNull())
         return ECPresentationResult(ECPresentationStatus::InvalidArgument, "db: not open");
 
@@ -973,7 +973,7 @@ static ParseResult<bvector<bvector<ECInstanceKey>>> ParseECInstanceKeyPathsFromJ
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<ECPresentationResult> ECPresentationUtils::GetNodesPaths(ECPresentationManager& manager, ECDbR db, RapidJsonValueCR paramsJson)
     {
-    IConnectionCPtr connection = manager.GetConnections().GetConnection(db);
+    IConnectionCPtr connection = manager.GetConnections().CreateConnection(db);
     if (connection.IsNull())
         return folly::makeFutureWith([](){return ECPresentationResult(ECPresentationStatus::InvalidArgument, "db: not open");});
 
@@ -1019,6 +1019,10 @@ static ParseResult<Utf8String> ParseFilterTextFromJson(RapidJsonValueCR json)
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<ECPresentationResult> ECPresentationUtils::GetFilteredNodesPaths(ECPresentationManager& manager, ECDbR db, RapidJsonValueCR paramsJson)
     {
+    IConnectionCPtr connection = manager.GetConnections().CreateConnection(db);
+    if (connection.IsNull())
+        return folly::makeFutureWith([](){return ECPresentationResult(ECPresentationStatus::InvalidArgument, "db: not open");});
+
     auto rulesetParams = ParseRulesetParamsFromJson(paramsJson);
     if (rulesetParams.HasError())
         return ECPresentationResult(ECPresentationStatus::InvalidArgument, rulesetParams.GetError());
@@ -1127,7 +1131,7 @@ static std::unique_ptr<IContentFieldMatcher> CreateFieldMatcherFromJson(RapidJso
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<ECPresentationResult> ECPresentationUtils::GetContentSources(ECPresentationManager& manager, ECDbR db, RapidJsonValueCR paramsJson)
     {
-    IConnectionCPtr connection = manager.GetConnections().GetConnection(db);
+    IConnectionCPtr connection = manager.GetConnections().CreateConnection(db);
     if (connection.IsNull())
         return folly::makeFutureWith([](){return ECPresentationResult(ECPresentationStatus::InvalidArgument, "db: not open");});
 
@@ -1494,7 +1498,7 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<ECPresentationResult> ECPresentationUtils::GetContentDescriptor(ECPresentationManager& manager, ECDbR db, RapidJsonValueCR paramsJson)
     {
-    IConnectionCPtr connection = manager.GetConnections().GetConnection(db);
+    IConnectionCPtr connection = manager.GetConnections().CreateConnection(db);
     if (connection.IsNull())
         return folly::makeFutureWith([](){return ECPresentationResult(ECPresentationStatus::InvalidArgument, "db: not open");});
 
@@ -1536,7 +1540,7 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetContentDescriptor(EC
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<ECPresentationResult> ECPresentationUtils::GetContent(ECPresentationManager& manager, ECDbR db, RapidJsonValueCR paramsJson)
     {
-    IConnectionCPtr connection = manager.GetConnections().GetConnection(db);
+    IConnectionCPtr connection = manager.GetConnections().CreateConnection(db);
     if (connection.IsNull())
         return folly::makeFutureWith([](){return ECPresentationResult(ECPresentationStatus::InvalidArgument, "db: not open");});
 
@@ -1591,7 +1595,7 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetContent(ECPresentati
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<ECPresentationResult> ECPresentationUtils::GetContentSetSize(ECPresentationManager& manager, ECDbR db, RapidJsonValueCR paramsJson)
     {
-    IConnectionCPtr connection = manager.GetConnections().GetConnection(db);
+    IConnectionCPtr connection = manager.GetConnections().CreateConnection(db);
     if (connection.IsNull())
         return folly::makeFutureWith([](){return ECPresentationResult(ECPresentationStatus::InvalidArgument, "db: not open");});
 
@@ -1635,7 +1639,7 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetContentSetSize(ECPre
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<ECPresentationResult> ECPresentationUtils::GetPagedDistinctValues(ECPresentationManager& manager, ECDbR db, RapidJsonValueCR paramsJson)
     {
-    IConnectionCPtr connection = manager.GetConnections().GetConnection(db);
+    IConnectionCPtr connection = manager.GetConnections().CreateConnection(db);
     if (connection.IsNull())
         return folly::makeFutureWith([](){return ECPresentationResult(ECPresentationStatus::InvalidArgument, "db: not open");});
 
@@ -1696,7 +1700,7 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetPagedDistinctValues(
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<ECPresentationResult> ECPresentationUtils::GetDisplayLabel(ECPresentationManager& manager, ECDbR db, RapidJsonValueCR paramsJson)
     {
-    IConnectionCPtr connection = manager.GetConnections().GetConnection(db);
+    IConnectionCPtr connection = manager.GetConnections().CreateConnection(db);
     if (connection.IsNull())
         return folly::makeFutureWith([](){return ECPresentationResult(ECPresentationStatus::InvalidArgument, "db: not open");});
 
@@ -1779,7 +1783,7 @@ static ParseResult<int> ParseResultSetSizeFromJson(RapidJsonValueCR json)
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<ECPresentationResult> ECPresentationUtils::CompareHierarchies(ECPresentationManager& manager, ECDbR db, RapidJsonValueCR paramsJson)
     {
-    IConnectionCPtr connection = manager.GetConnections().GetConnection(db);
+    IConnectionCPtr connection = manager.GetConnections().CreateConnection(db);
     if (connection.IsNull())
         return folly::makeFutureWith([](){return ECPresentationResult(ECPresentationStatus::InvalidArgument, "db: not open");});
 
