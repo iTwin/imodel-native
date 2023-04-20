@@ -304,6 +304,10 @@ struct SQLiteOps {
         if (!_GetMyDb()->IsDbOpen())
             BeNapi::ThrowJsException(info.Env(), "db is not open");
     }
+    void RequireDbIsWritable(NapiInfoCR info) {
+        if (GetOpenedDb(info).IsReadonly())
+            BeNapi::ThrowJsException(info.Env(), "db is not open for write");
+    }
 
     Napi::Value IsOpen(NapiInfoCR info) {
         return Napi::Boolean::New(info.Env(), _GetMyDb()->IsDbOpen());
@@ -1135,7 +1139,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         RequireDbIsOpen(info);
         REQUIRE_ARGUMENT_ANY_OBJ(0, changeSet);
 
-        RevisionStatus status = JsInterop::DumpChangeSet(*m_dgndb, changeSet);
+        ChangesetStatus status = JsInterop::DumpChangeSet(*m_dgndb, changeSet);
         return Napi::Number::New(Env(), (int)status);
         }
 
@@ -1245,44 +1249,36 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
     }
 
     Napi::Value StartCreateChangeset(NapiInfoCR info) {
-        RequireDbIsOpen(info);
-        RevisionManagerR revisions = m_dgndb->Revisions();
-
-        if (revisions.IsCreatingRevision())
-            revisions.AbandonCreateRevision();
-
-        RevisionStatus status;
-        DgnRevisionPtr revision = revisions.StartCreateRevision(&status);
-        if (status != RevisionStatus::Success)
-            BeNapi::ThrowJsException(Env(), "Error creating changeset", (int) status);
+        RequireDbIsWritable(info);
+        TxnManagerR txns = m_dgndb->Txns();
+        txns.StopCreateChangeset(false); // if there's one in progress, just abandon it.
+        ChangesetPropsPtr changeset = txns.StartCreateChangeset();
+        if (!changeset.IsValid())
+            BeNapi::ThrowJsException(Env(), "Error creating changeset");
 
         BeJsNapiObject changesetInfo(Env());
-        changesetInfo[JsInterop::json_id()] = revision->GetChangesetId().c_str();
+        changesetInfo[JsInterop::json_id()] = changeset->GetChangesetId().c_str();
         changesetInfo[JsInterop::json_index()] = 0;
-        changesetInfo[JsInterop::json_parentId()] = revision->GetParentId().c_str();
-        changesetInfo[JsInterop::json_pathname()] = Utf8String(revision->GetRevisionChangesFile()).c_str();
-        changesetInfo[JsInterop::json_changesType()] = (int)(revision->ContainsSchemaChanges(*m_dgndb) ? 1 : 0);
+        changesetInfo[JsInterop::json_parentId()] = changeset->GetParentId().c_str();
+        changesetInfo[JsInterop::json_pathname()] = Utf8String(changeset->GetFileName()).c_str();
+        changesetInfo[JsInterop::json_changesType()] = (int)(changeset->ContainsSchemaChanges(*m_dgndb) ? 1 : 0);
         return changesetInfo;
     }
 
     void CompleteCreateChangeset(NapiInfoCR info) {
-        RequireDbIsOpen(info);
+        RequireDbIsWritable(info);
         REQUIRE_ARGUMENT_ANY_OBJ(0, optObj);
         BeJsConst opts(optObj);
         if (!opts.isNumericMember(JsInterop::json_index()))
             BeNapi::ThrowJsException(Env(), "changeset index must be supplied");
         int32_t index = opts[JsInterop::json_index()].GetInt();
 
-        auto stat = m_dgndb->Revisions().FinishCreateRevision(index);
-        if (stat != RevisionStatus::Success)
-            BeNapi::ThrowJsException(Env(), "Error finishing changeset", (int) stat);
+        m_dgndb->Txns().FinishCreateChangeset(index);
     }
 
     void AbandonCreateChangeset(NapiInfoCR info) {
-        RequireDbIsOpen(info);
-        RevisionManagerR revisions = m_dgndb->Revisions();
-        if (revisions.IsCreatingRevision())
-            revisions.AbandonCreateRevision();
+        RequireDbIsWritable(info);
+        m_dgndb->Txns().StopCreateChangeset(false);
     }
 
     Napi::Value AddChildPropagatesChangesToParentRelationship(NapiInfoCR info)     {
@@ -1933,7 +1929,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         REQUIRE_ARGUMENT_OBJ(0, NativeECDb, changeCacheECDb);
         REQUIRE_ARGUMENT_STRING(1, changesetFilePathStr);
         BeFileName changesetFilePath(changesetFilePathStr.c_str(), true);
-        RevisionChangesFileReader changeStream(changesetFilePath, GetDgnDb());
+        ChangesetFileReader changeStream(changesetFilePath, GetDgnDb());
         PERFLOG_START("iModelJsNative", "ExtractChangeSummary>ECDb::ExtractChangeSummary");
         ECInstanceKey changeSummaryKey;
         if (SUCCESS != ECDb::ExtractChangeSummary(changeSummaryKey, changeCacheECDb->GetECDb(), GetDgnDb(), ChangeSetArg(changeStream)))
@@ -1954,7 +1950,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         RequireDbIsOpen(info);
         int32_t index;
         Utf8String id;
-        m_dgndb->Revisions().GetParentRevision(index, id);
+        m_dgndb->Txns().GetParentChangesetIndex(index, id);
         BeJsNapiObject retVal(Env());
         retVal[JsInterop::json_id()] = id;
         if (index >= 0)
@@ -2229,19 +2225,19 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
     }
 
     void ApplyChangeset(NapiInfoCR info) {
-        RequireDbIsOpen(info);;
+        RequireDbIsWritable(info);;
         REQUIRE_ARGUMENT_ANY_OBJ(0, changeset);
 
         auto& db = GetDgnDb();
-        auto revision = JsInterop::GetRevision(db.GetDbGuid().ToString(), changeset);
+        auto revision = JsInterop::GetChangesetProps(db.GetDbGuid().ToString(), changeset);
 
-        auto currentId = db.Revisions().GetParentRevisionId();
-        RevisionStatus stat =  RevisionStatus::ParentMismatch;
+        auto currentId = db.Txns().GetParentChangesetId();
+        ChangesetStatus stat =  ChangesetStatus::Success;
         if (revision->GetParentId() == currentId)  // merge
-            stat = db.Revisions().MergeRevision(*revision);
+            stat = db.Txns().MergeChangeset(*revision);
         else if (revision->GetChangesetId() == currentId) //reverse
-            stat = db.Revisions().ReverseRevision(*revision);
-        if (RevisionStatus::Success != stat)
+            db.Txns().ReverseChangeset(*revision);
+        if (ChangesetStatus::Success != stat)
             BeNapi::ThrowJsException(Env(), "error applying changeset", (int)stat);
     }
 
@@ -2692,7 +2688,7 @@ struct NativeChangedElementsECDb : BeObjectWrap<NativeChangedElementsECDb>
 
             bool containsSchemaChanges;
             Utf8String dbGuid = mainDb->GetDgnDb().GetDbGuid().ToString();
-            auto revisionPtrs = JsInterop::GetRevisions(containsSchemaChanges, dbGuid, changeSets);
+            auto revisionPtrs = JsInterop::GetChangesetPropsVec(containsSchemaChanges, dbGuid, changeSets);
 
             m_manager->SetFilterSpatial(filterSpatial);
             m_manager->SetWantParents(wantParents);
@@ -2730,7 +2726,7 @@ struct NativeChangedElementsECDb : BeObjectWrap<NativeChangedElementsECDb>
                 m_manager = std::make_unique<ChangedElementsManager>(BeFileName(dbFilename));
 
             bool containsSchemaChanges;
-            auto revisionPtrs = JsInterop::GetRevisions(containsSchemaChanges, dbGuid, changeSets);
+            auto revisionPtrs = JsInterop::GetChangesetPropsVec(containsSchemaChanges, dbGuid, changeSets);
 
             m_manager->SetFilterSpatial(filterSpatial);
             m_manager->SetWantParents(wantParents);
@@ -4978,17 +4974,17 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
             {
             // error
             SaveErrorValue(retVal["error"], result.GetStatus(), result.GetErrorMessage().c_str());
-            return retVal;
             }
         else
             {
             // rapidjson response
             if (serializeResponse) {
                 auto str = result.GetSerializedSuccessResponse();
-                retVal["result"] = str.empty() ? "\"null\"" : str; // see note about null values for BeJsValue::Stringify
+                retVal["result"] = str.empty() ? "null" : str; // see note about null values for BeJsValue::Stringify
             } else
                 retVal["result"].From(result.GetSuccessResponse());
             }
+
         if (!result.GetDiagnostics().IsNull())
             retVal["diagnostics"].From(result.GetDiagnostics());
 
@@ -5091,9 +5087,9 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
 
         m_presentationManager->GetConnections().CreateConnection(db->GetDgnDb());
 
+        auto diagnostics = ECPresentation::Diagnostics::Scope::ResetAndCreate(requestId, ECPresentationUtils::CreateDiagnosticsOptions(params));
         try
             {
-            auto diagnostics = ECPresentation::Diagnostics::Scope::ResetAndCreate(requestId, ECPresentationUtils::CreateDiagnosticsOptions(params));
             std::shared_ptr<folly::Future<ECPresentationResult>> result = std::make_shared<folly::Future<ECPresentationResult>>(folly::makeFuture(ECPresentationResult(ECPresentationStatus::InvalidArgument, Utf8PrintfString("request.requestId = '%s'", requestId))));
             if (0 == strcmp("GetRootNodesCount", requestId))
                 *result = ECPresentationUtils::GetRootNodesCount(*m_presentationManager, db->GetDgnDb(), params);
@@ -5134,9 +5130,7 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
                 })
             .onError([this, requestGuid, startTime, diagnostics = *diagnostics, deferred = std::move(deferred)](folly::exception_wrapper e)
                 {
-                ECPresentationResult result = ECPresentationUtils::CreateResultFromException(e);
-                result.SetDiagnostics(diagnostics->BuildJson());
-
+                ECPresentationResult result = ECPresentationUtils::CreateResultFromException(e, diagnostics->BuildJson());
                 if (ECPresentationStatus::Canceled == result.GetStatus())
                     {
                     ECPresentationUtils::GetLogger().debugv("Request %s cancelled after %" PRIu64 " ms.",
@@ -5147,7 +5141,6 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
                     ECPresentationUtils::GetLogger().errorv("Request %s completed with error '%s' in %" PRIu64 " ms.",
                         requestGuid.c_str(), result.GetErrorMessage().c_str(), (BeTimeUtilities::GetCurrentTimeAsUnixMillis() - startTime));
                     }
-
                 ResolvePromise(deferred, std::move(result));
                 });
 
@@ -5156,10 +5149,15 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
                 result->cancel();
                 }));
             }
+        catch (std::exception const& e)
+            {
+            ECPresentationUtils::GetLogger().errorv("Failed to queue request %s", requestGuid.c_str());
+            deferred.Resolve(CreateReturnValue(ECPresentationUtils::CreateResultFromException(folly::exception_wrapper{std::current_exception(), e}, (*diagnostics)->BuildJson())));
+            }
         catch (...)
             {
             ECPresentationUtils::GetLogger().errorv("Failed to queue request %s", requestGuid.c_str());
-            deferred.Resolve(CreateReturnValue(ECPresentationResult(ECPresentationStatus::Error, "Unknown error creating request")));
+            deferred.Resolve(CreateReturnValue(ECPresentationUtils::CreateResultFromException(folly::exception_wrapper{std::current_exception()}, (*diagnostics)->BuildJson())));
             }
 
         return response;

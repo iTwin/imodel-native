@@ -9,8 +9,49 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ValueHelpers::GetEnumDisplayValue(Utf8StringR displayValue, ECEnumerationCR enumeration,
+    std::function<int()> const& getIntEnumId, std::function<Utf8CP()> const& getStrEnumId)
+    {
+    Utf8String rawValue;
+    ECEnumeratorCP enumerator = nullptr;
+    switch (enumeration.GetType())
+        {
+        case PRIMITIVETYPE_Integer:
+            {
+            int enumId = getIntEnumId();
+            rawValue.Sprintf("%d", enumId);
+            enumerator = enumeration.FindEnumerator(enumId);
+            break;
+            }
+        case PRIMITIVETYPE_String:
+            {
+            Utf8CP enumId = getStrEnumId();
+            rawValue = enumId;
+            enumerator = enumeration.FindEnumerator(enumId);
+            break;
+            }
+        }
+    if (nullptr == enumerator)
+        {
+        if (enumeration.GetIsStrict())
+            {
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_DEBUG, LOG_WARNING, Utf8PrintfString("Detected invalid value for '%s' enumeration: '%s'",
+                enumeration.GetFullName().c_str(), rawValue.c_str()));
+            }
+        displayValue = rawValue;
+        }
+    else
+        {
+        displayValue = enumerator->GetDisplayLabel();
+        }
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ValueHelpers::GetEnumPropertyDisplayValue(Utf8StringR displayValue, ECPropertyCR prop,
-    std::function<int()> getIntEnumId, std::function<Utf8CP()> getStrEnumId)
+    std::function<int()> const& getIntEnumId, std::function<Utf8CP()> const& getStrEnumId)
     {
     if (!prop.GetIsPrimitive() && !prop.GetIsPrimitiveArray())
         return ERROR;
@@ -19,35 +60,7 @@ BentleyStatus ValueHelpers::GetEnumPropertyDisplayValue(Utf8StringR displayValue
     if (nullptr == enumeration)
         return ERROR;
 
-    BeJsDocument rawDoc;
-    BeJsValue rawValue = rawDoc;
-    ECEnumeratorCP enumerator = nullptr;
-    switch (enumeration->GetType())
-        {
-        case PRIMITIVETYPE_Integer:
-            {
-            int enumId = getIntEnumId();
-            rawValue = enumId;
-            enumerator = enumeration->FindEnumerator(enumId);
-            break;
-            }
-        case PRIMITIVETYPE_String:
-            {
-            Utf8CP enumId = getStrEnumId();
-            rawValue = enumId;
-            enumerator = enumeration->FindEnumerator(enumId);
-            break;
-            }
-        }
-
-    if (nullptr == enumerator)
-        {
-        DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Failed to determine enumerator for `%s`, value `%s`",
-            enumeration->GetFullName().c_str(), rawValue.Stringify().c_str()));
-        }
-
-    displayValue = enumerator->GetDisplayLabel();
-    return SUCCESS;
+    return GetEnumDisplayValue(displayValue, *enumeration, getIntEnumId, getStrEnumId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -56,7 +69,10 @@ BentleyStatus ValueHelpers::GetEnumPropertyDisplayValue(Utf8StringR displayValue
 BentleyStatus ValueHelpers::GetEnumPropertyDisplayValue(Utf8StringR displayValue, ECPropertyCR prop, ECValueCR ecValue)
     {
     if (ecValue.IsNull())
-        return ERROR;
+        {
+        displayValue.clear();
+        return SUCCESS;
+        }
     return GetEnumPropertyDisplayValue(displayValue, prop,
         [&ecValue](){return ecValue.GetInteger();},
         [&ecValue](){return ecValue.GetUtf8CP();});
@@ -68,7 +84,10 @@ BentleyStatus ValueHelpers::GetEnumPropertyDisplayValue(Utf8StringR displayValue
 BentleyStatus ValueHelpers::GetEnumPropertyDisplayValue(Utf8StringR displayValue, ECPropertyCR prop, DbValue const& dbValue)
     {
     if (dbValue.IsNull())
-        return ERROR;
+        {
+        displayValue.clear();
+        return SUCCESS;
+        }
     return GetEnumPropertyDisplayValue(displayValue, prop,
         [&dbValue](){return dbValue.GetValueInt();},
         [&dbValue](){return dbValue.GetValueText();});
@@ -80,10 +99,28 @@ BentleyStatus ValueHelpers::GetEnumPropertyDisplayValue(Utf8StringR displayValue
 BentleyStatus ValueHelpers::GetEnumPropertyDisplayValue(Utf8StringR displayValue, ECPropertyCR prop, RapidJsonValueCR jsonValue)
     {
     if (jsonValue.IsNull())
-        return ERROR;
+        {
+        displayValue.clear();
+        return SUCCESS;
+        }
     return GetEnumPropertyDisplayValue(displayValue, prop,
         [&jsonValue](){return jsonValue.GetInt();},
         [&jsonValue](){return jsonValue.GetString();});
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ValueHelpers::GetEnumPropertyDisplayValue(Utf8StringR displayValue, ECEnumerationCR enumeration, DbValue const& dbValue)
+    {
+    if (dbValue.IsNull())
+        {
+        displayValue.clear();
+        return SUCCESS;
+        }
+    return GetEnumDisplayValue(displayValue, enumeration,
+        [&dbValue](){return dbValue.GetValueInt();},
+        [&dbValue](){return dbValue.GetValueText();});
     }
 
 /*---------------------------------------------------------------------------------**//**

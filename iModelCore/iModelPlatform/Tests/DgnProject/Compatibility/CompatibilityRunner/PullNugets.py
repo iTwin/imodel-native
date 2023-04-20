@@ -143,8 +143,8 @@ def main():
     imodel02IgnoreNugetVersions = {"2019.4.20.1"}
 
     # Profile version upgrade 2.0.0.5_4.0.0.3_3.1.0.2
-    imodelNativeMinimumNugetVersion = "2023.3.7.4"
-    imodelNativeIgnoreNugetVersions = {"2023.1.23.4", "2023.2.1.2"}
+    imodelNativeMinimumNugetVersion = "2023.3.28.3"
+    imodelNativeIgnoreNugetVersions = {"2023.1.23.4", "2023.2.1.2", "2023.3.7.4"}
 
     # The current EC3.3 tests won't work because they need to have the latest version of the CoreCA schema.
     # ec33MinimumNugetVersion = "2019.4.1.1"

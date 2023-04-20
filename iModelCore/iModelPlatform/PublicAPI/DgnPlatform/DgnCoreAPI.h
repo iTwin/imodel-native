@@ -14,7 +14,6 @@
 #include "ElementGeometry.h"
 #include "IAuxCoordSys.h"
 #include "TxnManager.h"
-#include "RevisionManager.h"
 #include "Render.h"
 #include "LineStyle.h"
 #include "ElementDependency.h"

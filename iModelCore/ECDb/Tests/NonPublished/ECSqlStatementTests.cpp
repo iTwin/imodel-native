@@ -10678,4 +10678,116 @@ TEST_F(ECSqlStatementTestFixture, ConfuseRealNumberWithClassName) {
     }
 
     }
+    
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, verify_inf_and_nan_handling) {
+    auto v1 = R"(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                    <ECEntityClass typeName="Element">
+                        <ECProperty propertyName="inf_pos" typeName="double" />
+                        <ECProperty propertyName="inf_neg" typeName="double" />
+                        <ECProperty propertyName="nan_val" typeName="double" />
+                    </ECEntityClass>
+                </ECSchema>)"_schema;
+
+    ASSERT_EQ(SUCCESS, SetupECDb("test.ecdb", v1));
+
+    if("insert row") {
+        ECSqlStatement stmt;
+        ASSERT_EQ(stmt.Prepare(m_ecdb, "insert into ts.Element(inf_pos,inf_neg,nan_val) values(?,?,?)"), ECSqlStatus::Success);
+        stmt.BindDouble(1,  std::numeric_limits<double>::infinity()); // ECSQL treat inf as null
+        stmt.BindDouble(2, -std::numeric_limits<double>::infinity()); // ECSQL treat inf as null
+        stmt.BindDouble(3,  std::numeric_limits<double>::quiet_NaN());// ECSQL treat nan as null
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
+    }
+    if("read row") {
+        ECSqlStatement stmt;
+        ASSERT_EQ(stmt.Prepare(m_ecdb, "select inf_pos, inf_neg, nan_val from ts.Element"), ECSqlStatus::Success);
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        auto inf_pos = stmt.GetValueDouble(0);
+        auto inf_neg = stmt.GetValueDouble(1);
+        auto nan_val = stmt.GetValueDouble(2);
+
+        ASSERT_EQ(std::isinf(inf_pos), false);
+        ASSERT_EQ(std::isinf(inf_neg), false);
+        ASSERT_EQ(std::isnan(nan_val), false);
+
+        auto inf_pos_isnull = stmt.IsValueNull(0);
+        auto inf_neg_isnull = stmt.IsValueNull(1);
+        auto nan_val_isnull = stmt.IsValueNull(2);
+
+        ASSERT_EQ(inf_pos_isnull, true);
+        ASSERT_EQ(inf_neg_isnull, true);
+        ASSERT_EQ(nan_val_isnull, true);
+    }
+    if ("jsoncpp must return null for inf") {
+        ECSqlStatement stmt;
+        ASSERT_EQ(stmt.Prepare(m_ecdb, "select inf_pos, inf_neg, nan_val from ts.Element"), ECSqlStatus::Success);
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        JsonECSqlSelectAdapter adaptor(stmt);
+        Json::Value jsonCpp;
+        EXPECT_EQ(SUCCESS, adaptor.GetRow(jsonCpp));
+        EXPECT_STREQ("{}", jsonCpp.ToString().c_str());
+    }
+    if ("rapidjson must return null for inf") {
+        ECSqlStatement stmt;
+        ASSERT_EQ(stmt.Prepare(m_ecdb, "select inf_pos, inf_neg, nan_val from ts.Element"), ECSqlStatus::Success);
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        JsonECSqlSelectAdapter adaptor(stmt);
+        BeJsDocument rapidJson;
+        EXPECT_EQ(SUCCESS, adaptor.GetRow(rapidJson));
+        Utf8String json = rapidJson.Stringify();
+        EXPECT_STREQ("{}", json.c_str());
+    }
+
+    // Simulate existing data with INF and NAN
+    Statement stmt1;
+    ASSERT_EQ(BE_SQLITE_OK, stmt1.Prepare(m_ecdb, "UPDATE ts_Element SET inf_pos=?, inf_neg=?, nan_val=?"));
+    stmt1.BindDouble(1,  std::numeric_limits<double>::infinity());
+    stmt1.BindDouble(2, -std::numeric_limits<double>::infinity());
+    stmt1.BindDouble(3,  std::numeric_limits<double>::quiet_NaN());
+    ASSERT_EQ(BE_SQLITE_DONE, stmt1.Step());
+
+
+    if("read row") {
+        ECSqlStatement stmt;
+        ASSERT_EQ(stmt.Prepare(m_ecdb, "select inf_pos, inf_neg, nan_val from ts.Element"), ECSqlStatus::Success);
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        auto inf_pos = stmt.GetValueDouble(0);
+        auto inf_neg = stmt.GetValueDouble(1);
+        auto nan_val = stmt.GetValueDouble(2);
+
+        ASSERT_EQ(std::isinf(inf_pos), true);
+        ASSERT_EQ(std::isinf(inf_neg), true);
+        ASSERT_EQ(std::isnan(nan_val), false);
+
+        auto inf_pos_isnull = stmt.IsValueNull(0);
+        auto inf_neg_isnull = stmt.IsValueNull(1);
+        auto nan_val_isnull = stmt.IsValueNull(2);
+
+        ASSERT_EQ(inf_pos_isnull, false);
+        ASSERT_EQ(inf_neg_isnull, false);
+        ASSERT_EQ(nan_val_isnull, true);
+    }
+    if ("jsoncpp must return null for inf") {
+        ECSqlStatement stmt;
+        ASSERT_EQ(stmt.Prepare(m_ecdb, "select inf_pos, inf_neg, nan_val from ts.Element"), ECSqlStatus::Success);
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        JsonECSqlSelectAdapter adaptor(stmt);
+        Json::Value jsonCpp;
+        EXPECT_EQ(SUCCESS, adaptor.GetRow(jsonCpp));
+        EXPECT_STREQ("{\"inf_neg\":null,\"inf_pos\":null}", jsonCpp.ToString().c_str());
+    }
+    if ("rapidjson must return null for inf") {
+        ECSqlStatement stmt;
+        ASSERT_EQ(stmt.Prepare(m_ecdb, "select inf_pos, inf_neg, nan_val from ts.Element"), ECSqlStatus::Success);
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        JsonECSqlSelectAdapter adaptor(stmt);
+        BeJsDocument rapidJson;
+        EXPECT_EQ(SUCCESS, adaptor.GetRow(rapidJson));
+        Utf8String json = rapidJson.Stringify();
+        EXPECT_STREQ("{\"inf_pos\":null,\"inf_neg\":null}", json.c_str());
+    }
+}
 END_ECDBUNITTESTS_NAMESPACE

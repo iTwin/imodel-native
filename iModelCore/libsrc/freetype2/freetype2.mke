@@ -19,7 +19,7 @@ BUILD_NO_STACK_CHECK = 1   # Don't want to modify third party code, but hopefull
 
 %include mdl.mki
 
-AppName         = freetype2
+AppName         = iTwinFreetype2
 CCompPDBName    = $(appName)
 o               = $(OutBuildDir)$(appName)/
 

@@ -1120,7 +1120,7 @@ TEST_F(ECSchemaHelperTests, GetRelationshipPaths_ReturnsPathsWithTargetInstanceC
 
     ECClassUseCounter counter;
     RelationshipPathSpecification pathToRelatedInstanceSpec(*new RelationshipStepSpecification(relAB->GetFullName(), RequiredRelationDirection::RequiredRelationDirection_Forward));
-    bvector<ECSchemaHelper::RelationshipPathsRequestParams::PathSpecification> pathSpecs = { ECSchemaHelper::RelationshipPathsRequestParams::PathSpecification(0, pathToRelatedInstanceSpec, true, {}) };
+    bvector<ECSchemaHelper::RelationshipPathsRequestParams::PathSpecification> pathSpecs = { ECSchemaHelper::RelationshipPathsRequestParams::PathSpecification(0, pathToRelatedInstanceSpec, { true }, {}) };
     ECSchemaHelper::RelationshipPathsRequestParams params(SelectClass<ECClass>(*classA, ""), pathSpecs, nullptr, bvector<RelatedClassPath>(), counter, true);
 
     ECSchemaHelper::RelationshipPathsResponse response = m_helper->GetRelationshipPaths(params);
@@ -1173,7 +1173,7 @@ TEST_F(ECSchemaHelperTests, GetRelationshipPaths_OmitsRelationshipPathsWithoutTa
 
     ECClassUseCounter counter;
     RelationshipPathSpecification pathToRelatedInstanceSpec(*new RelationshipStepSpecification(rel->GetFullName(), RequiredRelationDirection::RequiredRelationDirection_Forward));
-    bvector<ECSchemaHelper::RelationshipPathsRequestParams::PathSpecification> pathSpecs = { ECSchemaHelper::RelationshipPathsRequestParams::PathSpecification(0, pathToRelatedInstanceSpec, true, {}) };
+    bvector<ECSchemaHelper::RelationshipPathsRequestParams::PathSpecification> pathSpecs = { ECSchemaHelper::RelationshipPathsRequestParams::PathSpecification(0, pathToRelatedInstanceSpec, { true }, {}) };
     ECSchemaHelper::RelationshipPathsRequestParams params(SelectClass<ECClass>(*classA, ""), pathSpecs, nullptr, bvector<RelatedClassPath>(), counter, true);
     ECSchemaHelper::RelationshipPathsResponse response = m_helper->GetRelationshipPaths(params);
 
@@ -1182,7 +1182,7 @@ TEST_F(ECSchemaHelperTests, GetRelationshipPaths_OmitsRelationshipPathsWithoutTa
     RelatedClassPathCR path1 = response.GetPaths(0)[0].m_path;
     EXPECT_EQ(classA, path1[0].GetSourceClass());
     EXPECT_EQ(classB, &path1[0].GetTargetClass().GetClass());
-    EXPECT_TRUE(path1[0].GetTargetClass().IsSelectPolymorphic());
+    EXPECT_FALSE(path1[0].GetTargetClass().IsSelectPolymorphic());
     EXPECT_EQ(rel, &path1[0].GetRelationship().GetClass());
     EXPECT_TRUE(path1[0].IsForwardRelationship());
     EXPECT_EQ(2, path1.GetTargetsCount().Value());
@@ -1190,7 +1190,7 @@ TEST_F(ECSchemaHelperTests, GetRelationshipPaths_OmitsRelationshipPathsWithoutTa
     RelatedClassPathCR path2 = response.GetPaths(0)[1].m_path;
     EXPECT_EQ(classA, path2[0].GetSourceClass());
     EXPECT_EQ(classC, &path2[0].GetTargetClass().GetClass());
-    EXPECT_TRUE(path2[0].GetTargetClass().IsSelectPolymorphic());
+    EXPECT_FALSE(path2[0].GetTargetClass().IsSelectPolymorphic());
     EXPECT_EQ(rel, &path2[0].GetRelationship().GetClass());
     EXPECT_TRUE(path2[0].IsForwardRelationship());
     EXPECT_EQ(1, path2.GetTargetsCount().Value());
@@ -1242,7 +1242,7 @@ TEST_F(ECSchemaHelperTests, GetRelationshipPaths_OmitsRelationshipPathsWithoutTa
 
     ECClassUseCounter counter;
     RelationshipPathSpecification pathToRelatedInstanceSpec(*new RelationshipStepSpecification(rel->GetFullName(), RequiredRelationDirection::RequiredRelationDirection_Forward));
-    bvector<ECSchemaHelper::RelationshipPathsRequestParams::PathSpecification> pathSpecs = { ECSchemaHelper::RelationshipPathsRequestParams::PathSpecification(0, pathToRelatedInstanceSpec, true, {}) };
+    bvector<ECSchemaHelper::RelationshipPathsRequestParams::PathSpecification> pathSpecs = { ECSchemaHelper::RelationshipPathsRequestParams::PathSpecification(0, pathToRelatedInstanceSpec, { true }, {}) };
     ECSchemaHelper::RelationshipPathsRequestParams params(SelectClass<ECClass>(*classA, ""), pathSpecs, nullptr, bvector<RelatedClassPath>(), counter, false);
     ECSchemaHelper::RelationshipPathsResponse response = m_helper->GetRelationshipPaths(params);
 
@@ -1251,7 +1251,7 @@ TEST_F(ECSchemaHelperTests, GetRelationshipPaths_OmitsRelationshipPathsWithoutTa
     RelatedClassPathCR path1 = response.GetPaths(0)[0].m_path;
     EXPECT_EQ(classA, path1[0].GetSourceClass());
     EXPECT_EQ(classB, &path1[0].GetTargetClass().GetClass());
-    EXPECT_TRUE(path1[0].GetTargetClass().IsSelectPolymorphic());
+    EXPECT_FALSE(path1[0].GetTargetClass().IsSelectPolymorphic());
     EXPECT_EQ(rel, &path1[0].GetRelationship().GetClass());
     EXPECT_TRUE(path1[0].IsForwardRelationship());
     EXPECT_TRUE(path1.GetTargetsCount().IsNull());
@@ -1259,7 +1259,7 @@ TEST_F(ECSchemaHelperTests, GetRelationshipPaths_OmitsRelationshipPathsWithoutTa
     RelatedClassPathCR path2 = response.GetPaths(0)[1].m_path;
     EXPECT_EQ(classA, path2[0].GetSourceClass());
     EXPECT_EQ(classC, &path2[0].GetTargetClass().GetClass());
-    EXPECT_TRUE(path2[0].GetTargetClass().IsSelectPolymorphic());
+    EXPECT_FALSE(path2[0].GetTargetClass().IsSelectPolymorphic());
     EXPECT_EQ(rel, &path2[0].GetRelationship().GetClass());
     EXPECT_TRUE(path2[0].IsForwardRelationship());
     EXPECT_TRUE(path2.GetTargetsCount().IsNull());
@@ -1295,7 +1295,7 @@ TEST_F(ECSchemaHelperTests, GetRelationshipPaths_ReturnsPathsWithNonPolymorphicT
 
     ECClassUseCounter counter;
     RelationshipPathSpecification pathToRelatedInstanceSpec(*new RelationshipStepSpecification(relAB->GetFullName(), RequiredRelationDirection::RequiredRelationDirection_Forward));
-    bvector<ECSchemaHelper::RelationshipPathsRequestParams::PathSpecification> pathSpecs = { ECSchemaHelper::RelationshipPathsRequestParams::PathSpecification(0, pathToRelatedInstanceSpec, false, {"this.Prop = \"abc\""}) };
+    bvector<ECSchemaHelper::RelationshipPathsRequestParams::PathSpecification> pathSpecs = { ECSchemaHelper::RelationshipPathsRequestParams::PathSpecification(0, pathToRelatedInstanceSpec, { false }, {"this.Prop = \"abc\""}) };
     ECSchemaHelper::RelationshipPathsRequestParams params(SelectClass<ECClass>(*classA, ""), pathSpecs, nullptr, bvector<RelatedClassPath>(), counter, true);
 
     ECSchemaHelper::RelationshipPathsResponse response = m_helper->GetRelationshipPaths(params);
@@ -1332,7 +1332,7 @@ TEST_F(ECSchemaHelperTests, GetRelationshipPaths_DoesntReturnPathsWithNonPolymor
 
     ECClassUseCounter counter;
     RelationshipPathSpecification pathToRelatedInstanceSpec(*new RelationshipStepSpecification(relAB->GetFullName(), RequiredRelationDirection::RequiredRelationDirection_Forward));
-    bvector<ECSchemaHelper::RelationshipPathsRequestParams::PathSpecification> pathSpecs = { ECSchemaHelper::RelationshipPathsRequestParams::PathSpecification(0, pathToRelatedInstanceSpec, false, {"this.Prop = 456"}) };
+    bvector<ECSchemaHelper::RelationshipPathsRequestParams::PathSpecification> pathSpecs = { ECSchemaHelper::RelationshipPathsRequestParams::PathSpecification(0, pathToRelatedInstanceSpec, { false }, {"this.Prop = 456"}) };
     ECSchemaHelper::RelationshipPathsRequestParams params(SelectClass<ECClass>(*classA, ""), pathSpecs, nullptr, bvector<RelatedClassPath>(), counter, true);
 
     ECSchemaHelper::RelationshipPathsResponse response = m_helper->GetRelationshipPaths(params);
@@ -1380,7 +1380,7 @@ TEST_F(ECSchemaHelperTests, GetRelationshipPaths_ReturnsPathsWithPolymorphicTarg
 
     ECClassUseCounter counter;
     RelationshipPathSpecification pathToRelatedInstanceSpec(*new RelationshipStepSpecification(relAB->GetFullName(), RequiredRelationDirection::RequiredRelationDirection_Forward));
-    bvector<ECSchemaHelper::RelationshipPathsRequestParams::PathSpecification> pathSpecs = { ECSchemaHelper::RelationshipPathsRequestParams::PathSpecification(0, pathToRelatedInstanceSpec, true, {"this.Prop = 123"}) };
+    bvector<ECSchemaHelper::RelationshipPathsRequestParams::PathSpecification> pathSpecs = { ECSchemaHelper::RelationshipPathsRequestParams::PathSpecification(0, pathToRelatedInstanceSpec, { true }, {"this.Prop = 123"}) };
     ECSchemaHelper::RelationshipPathsRequestParams params(SelectClass<ECClass>(*classA, ""), pathSpecs, nullptr, bvector<RelatedClassPath>(), counter, true);
 
     ECSchemaHelper::RelationshipPathsResponse response = m_helper->GetRelationshipPaths(params);
@@ -1430,7 +1430,7 @@ TEST_F(ECSchemaHelperTests, GetRelationshipPaths_DoesntReturnPathsWithPolymorphi
 
     ECClassUseCounter counter;
     RelationshipPathSpecification pathToRelatedInstanceSpec(*new RelationshipStepSpecification(relAB->GetFullName(), RequiredRelationDirection::RequiredRelationDirection_Forward));
-    bvector<ECSchemaHelper::RelationshipPathsRequestParams::PathSpecification> pathSpecs = { ECSchemaHelper::RelationshipPathsRequestParams::PathSpecification(0, pathToRelatedInstanceSpec, true, {"this.Prop = 456"}) };
+    bvector<ECSchemaHelper::RelationshipPathsRequestParams::PathSpecification> pathSpecs = { ECSchemaHelper::RelationshipPathsRequestParams::PathSpecification(0, pathToRelatedInstanceSpec, { true }, {"this.Prop = 456"}) };
     ECSchemaHelper::RelationshipPathsRequestParams params(SelectClass<ECClass>(*classA, ""), pathSpecs, nullptr, bvector<RelatedClassPath>(), counter, true);
 
     ECSchemaHelper::RelationshipPathsResponse response = m_helper->GetRelationshipPaths(params);
@@ -1491,7 +1491,7 @@ TEST_F(ECSchemaHelperTests, GetRelationshipPaths_ReturnsPathsWithTargetInstances
         new RelationshipStepSpecification(relBC->GetFullName(), RequiredRelationDirection::RequiredRelationDirection_Forward)
         });
     bvector<ECSchemaHelper::RelationshipPathsRequestParams::PathSpecification> pathSpecs = { ECSchemaHelper::RelationshipPathsRequestParams::PathSpecification(0, pathToRelatedInstanceSpec,
-        false, {"this.PropB = \"bbb\"", "this.PropC = \"ddd\""})};
+        { false, false }, {"this.PropB = \"bbb\"", "this.PropC = \"ddd\""}) };
     ECSchemaHelper::RelationshipPathsRequestParams params(SelectClass<ECClass>(*classA, ""), pathSpecs, nullptr, bvector<RelatedClassPath>(), counter, true);
 
     ECSchemaHelper::RelationshipPathsResponse response = m_helper->GetRelationshipPaths(params);
@@ -1555,7 +1555,7 @@ TEST_F(ECSchemaHelperTests, GetRelationshipPaths_ReturnsPathsWithTargetInstances
         new RelationshipStepSpecification(relBC->GetFullName(), RequiredRelationDirection::RequiredRelationDirection_Forward)
         });
     bvector<ECSchemaHelper::RelationshipPathsRequestParams::PathSpecification> pathSpecs = { ECSchemaHelper::RelationshipPathsRequestParams::PathSpecification(0, pathToRelatedInstanceSpec,
-        false, {"this.PropB = \"bbb\""}) };
+        { false, false }, {"this.PropB = \"bbb\""}) };
     ECSchemaHelper::RelationshipPathsRequestParams params(SelectClass<ECClass>(*classA, ""), pathSpecs, nullptr, bvector<RelatedClassPath>(), counter, true);
 
     ECSchemaHelper::RelationshipPathsResponse response = m_helper->GetRelationshipPaths(params);
@@ -1605,7 +1605,7 @@ TEST_F(ECSchemaHelperTests, GetRelationshipPaths_ReturnsPathsWithRequestedTarget
 
     ECClassUseCounter counter;
     RelationshipPathSpecification pathToRelatedInstanceSpec(*new RelationshipStepSpecification(relAB->GetFullName(), RequiredRelationDirection::RequiredRelationDirection_Forward));
-    bvector<ECSchemaHelper::RelationshipPathsRequestParams::PathSpecification> pathSpecs = { ECSchemaHelper::RelationshipPathsRequestParams::PathSpecification(0, pathToRelatedInstanceSpec, false, {}) };
+    bvector<ECSchemaHelper::RelationshipPathsRequestParams::PathSpecification> pathSpecs = { ECSchemaHelper::RelationshipPathsRequestParams::PathSpecification(0, pathToRelatedInstanceSpec, { false }, {}) };
     ECSchemaHelper::RelationshipPathsRequestParams params(SelectClass<ECClass>(*classA, ""), pathSpecs, nullptr, bvector<RelatedClassPath>(), counter, true);
 
     ECSchemaHelper::RelationshipPathsResponse response = m_helper->GetRelationshipPaths(params);
@@ -1684,7 +1684,7 @@ TEST_F(ECSchemaHelperTests, GetRelationshipPaths_ReturnsPathsWhenIntermediateCla
         new RelationshipStepSpecification(relAB->GetFullName(), RequiredRelationDirection::RequiredRelationDirection_Forward),
         new RelationshipStepSpecification(relBC->GetFullName(), RequiredRelationDirection::RequiredRelationDirection_Forward)
         });
-    bvector<ECSchemaHelper::RelationshipPathsRequestParams::PathSpecification> pathSpecs = { ECSchemaHelper::RelationshipPathsRequestParams::PathSpecification(0, pathToRelatedInstanceSpec, true, {}) };
+    bvector<ECSchemaHelper::RelationshipPathsRequestParams::PathSpecification> pathSpecs = { ECSchemaHelper::RelationshipPathsRequestParams::PathSpecification(0, pathToRelatedInstanceSpec, { true, true }, {}) };
     ECSchemaHelper::RelationshipPathsRequestParams params(SelectClass<ECClass>(*classA, ""), pathSpecs, nullptr, bvector<RelatedClassPath>(), counter, true);
 
     ECSchemaHelper::RelationshipPathsResponse response = m_helper->GetRelationshipPaths(params);
@@ -1707,6 +1707,128 @@ TEST_F(ECSchemaHelperTests, GetRelationshipPaths_ReturnsPathsWhenIntermediateCla
     EXPECT_EQ(relBC, &path2[1].GetRelationship().GetClass());
     EXPECT_TRUE(path2[1].IsForwardRelationship());
     EXPECT_EQ(classC, &path2[1].GetTargetClass().GetClass());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(GetRelationshipPaths_PathsAreNotCreatedWhenLastStepSpecsIsInvalid, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B" />
+    <ECEntityClass typeName="C" />
+    <ECRelationshipClass typeName="A_B" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="ab" polymorphic="true">
+            <Class class="A"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="ba" polymorphic="true">
+            <Class class="B" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="B_C" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="bc" polymorphic="true">
+            <Class class="B" />
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="cb" polymorphic="true">
+            <Class class="C" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(ECSchemaHelperTests, GetRelationshipPaths_PathsAreNotCreatedWhenLastStepSpecsIsInvalid)
+    {
+    ECClassCP classA = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A");
+    ECClassCP classB = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "B");
+    ECClassCP classC = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "C");
+    ECRelationshipClassCP relAB = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A_B")->GetRelationshipClassCP();
+    ECRelationshipClassCP relBC = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "B_C")->GetRelationshipClassCP();
+
+    IECInstancePtr a = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr b = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    IECInstancePtr c = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC);
+
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relAB, *a, *b);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relBC, *b, *c);
+
+    CustomFunctionsInjector injectCustomFunctions(m_connections, *m_connection);
+
+    ECClassUseCounter counter;
+    RelationshipPathSpecification pathToRelatedInstanceSpec(
+        {
+        new RelationshipStepSpecification(relAB->GetFullName(), RequiredRelationDirection::RequiredRelationDirection_Forward), // A -> B
+        new RelationshipStepSpecification(relBC->GetFullName(), RequiredRelationDirection::RequiredRelationDirection_Backward), // C -> B invalid
+        });
+    bvector<ECSchemaHelper::RelationshipPathsRequestParams::PathSpecification> pathSpecs = { ECSchemaHelper::RelationshipPathsRequestParams::PathSpecification(0, pathToRelatedInstanceSpec, { true, true }, {}) };
+    ECSchemaHelper::RelationshipPathsRequestParams params(SelectClass<ECClass>(*classA, ""), pathSpecs, nullptr, bvector<RelatedClassPath>(), counter, true);
+
+    ECSchemaHelper::RelationshipPathsResponse response = m_helper->GetRelationshipPaths(params);
+    ASSERT_EQ(0, response.GetPaths(0).size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(GetRelationshipPaths_PathsAreNotCreatedWhenIntermediateStepSpecsIsInvalid, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B" />
+    <ECEntityClass typeName="C" />
+    <ECEntityClass typeName="D" />
+    <ECRelationshipClass typeName="A_B" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="ab" polymorphic="true">
+            <Class class="A"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="ba" polymorphic="true">
+            <Class class="B" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="B_C" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="bc" polymorphic="true">
+            <Class class="B" />
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="cb" polymorphic="true">
+            <Class class="C" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="C_D" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="cd" polymorphic="true">
+            <Class class="C" />
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="dc" polymorphic="true">
+            <Class class="D" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(ECSchemaHelperTests, GetRelationshipPaths_PathsAreNotCreatedWhenIntermediateStepSpecsIsInvalid)
+    {
+    ECClassCP classA = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A");
+    ECClassCP classB = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "B");
+    ECClassCP classC = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "C");
+    ECClassCP classD = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "D");
+    ECRelationshipClassCP relAB = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A_B")->GetRelationshipClassCP();
+    ECRelationshipClassCP relBC = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "B_C")->GetRelationshipClassCP();
+    ECRelationshipClassCP relCD = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "C_D")->GetRelationshipClassCP();
+
+    IECInstancePtr a = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr b = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    IECInstancePtr c = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC);
+    IECInstancePtr d = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classD);
+
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relAB, *a, *b);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relBC, *b, *c);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relCD, *c, *d);
+
+    CustomFunctionsInjector injectCustomFunctions(m_connections, *m_connection);
+
+    ECClassUseCounter counter;
+    RelationshipPathSpecification pathToRelatedInstanceSpec(
+        {
+        new RelationshipStepSpecification(relAB->GetFullName(), RequiredRelationDirection::RequiredRelationDirection_Forward), // A -> B
+        new RelationshipStepSpecification(relBC->GetFullName(), RequiredRelationDirection::RequiredRelationDirection_Backward), // C -> B invalid
+        new RelationshipStepSpecification(relCD->GetFullName(), RequiredRelationDirection::RequiredRelationDirection_Forward) // C -> D
+        });
+    bvector<ECSchemaHelper::RelationshipPathsRequestParams::PathSpecification> pathSpecs = { ECSchemaHelper::RelationshipPathsRequestParams::PathSpecification(0, pathToRelatedInstanceSpec, { true, true, true }, {}) };
+    ECSchemaHelper::RelationshipPathsRequestParams params(SelectClass<ECClass>(*classA, ""), pathSpecs, nullptr, bvector<RelatedClassPath>(), counter, true);
+
+    ECSchemaHelper::RelationshipPathsResponse response = m_helper->GetRelationshipPaths(params);
+    ASSERT_EQ(0, response.GetPaths(0).size());
     }
 
 #ifdef wip

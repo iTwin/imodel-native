@@ -4,6 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 #include "testHarness.h"
 #include "SampleGeometry.h"
+#include <cmath>    // std::nan
 USING_NAMESPACE_BENTLEY_GEOMETRY_INTERNAL
 
 static bool s_noisy = false;
@@ -1068,3 +1069,59 @@ TEST(BsplineSurface, ConeProjectionRoundTrip)
     Check::ClearGeometry ("BsplineSurface.ConeProjectionRoundTrip");
     }
 
+TEST(BsplineKnots, ValidateNans)
+    {
+    // start with uniform knots and weights
+    int numPoleColsU = 7, numPoleRowsV = 8, numPoles = numPoleColsU * numPoleRowsV;
+    bvector<DPoint3d> poles;
+    bvector<double> origWeights(numPoles, 1.0);
+    for (int i = 0; i < numPoleRowsV; i++)
+        for (int j = 0; j < numPoleColsU; j++)
+            poles.push_back(DPoint3d::From(i, j, sqrt(i*i + j*j)));
+    int orderU = 4, orderV = 5;
+    bool closedU = false, closedV = false;
+    MSBsplineSurfacePtr surface = MSBsplineSurface::CreateFromPolesAndOrder(poles, &origWeights, nullptr, orderU, numPoleColsU, closedU, nullptr, orderV, numPoleRowsV, closedV, true);
+    MSBsplineSurfacePtr origSurface = surface->Clone();
+    // mangle them
+    double corrupt = std::nan("1");
+    int numKnotsU = BsplineParam::NumberAllocatedKnots(numPoleColsU, orderU, closedU);
+    int numKnotsV = BsplineParam::NumberAllocatedKnots(numPoleRowsV, orderV, closedV);
+    for (int i = 0; i < numKnotsU; ++i)
+        if (!(i % 2))
+            surface->SetUKnots(i, &corrupt, 1);
+    for (int i = 0; i < numKnotsV; ++i)
+        if (i % 3)
+            surface->SetVKnots(i, &corrupt, 1);
+    for (int i = 0; i < numPoles; ++i)
+        if (!(i % 4))
+            surface->SetWeight(i, corrupt);
+    // recover
+    mdlBspline_validateSurfaceKnots(surface->uKnots, surface->vKnots, nullptr, surface->weights, &surface->uParams, &surface->vParams);
+    // compare
+    bvector<double> uKnots, vKnots, weights, origUKnots, origVKnots;
+    surface->GetUKnots(uKnots);
+    surface->GetVKnots(vKnots);
+    surface->GetWeights(weights);
+    origSurface->GetUKnots(origUKnots);
+    origSurface->GetVKnots(origVKnots);
+    auto isEqual = [](double a, double b) -> bool { return fabs(a-b) <= 1.0e-15; };
+    Check::True(std::equal(uKnots.data(), uKnots.data() + numKnotsU, origUKnots.data(), isEqual), "uniform uKnots corrected from NaN corruption");
+    Check::True(std::equal(vKnots.data(), vKnots.data() + numKnotsV, origVKnots.data(), isEqual), "uniform vKnots corrected from NaN corruption");
+    Check::True(std::equal(weights.data(), weights.data() + numPoles, origWeights.data(), isEqual), "unit weights corrected from NaN corruption");
+
+    // cover closed ext knot recomputation
+    closedU = true;
+    poles.resize(numPoleColsU);
+    MSBsplineCurvePtr curve = MSBsplineCurve::CreateFromPolesAndOrder(poles, nullptr, nullptr, orderU, closedU);
+    MSBsplineCurvePtr origCurve = curve->CreateCopy();
+    // mangle first and last interior knots
+    numKnotsU = BsplineParam::NumberAllocatedKnots(numPoleColsU, orderU, closedU);
+    curve->SetKnot(orderU, corrupt);
+    curve->SetKnot(numKnotsU - orderU - 1, corrupt);
+    // recover
+    mdlBspline_validateCurveKnots(curve->knots, nullptr, nullptr, &curve->params);
+    // compare
+    curve->GetKnots(uKnots);
+    origCurve->GetKnots(origUKnots);
+    Check::True(std::equal(uKnots.data(), uKnots.data() + numKnotsU, origUKnots.data(), isEqual), "closed exterior knots corrected from interior knot NaN corruption");
+    }

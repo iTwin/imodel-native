@@ -714,7 +714,7 @@ private:
         std::function<PresentationQueryContractFieldPtr(PresentationQueryContractFieldCR, PresentationQueryContractFieldCR, ECClassCR, Utf8StringCR)> const& valueSelectFieldFactory) const
         {
         ECClassUseCounter counter;
-        bvector<ECSchemaHelper::RelationshipPathsRequestParams::PathSpecification> pathSpecs = { ECSchemaHelper::RelationshipPathsRequestParams::PathSpecification(0, pathToRelatedInstanceSpec, false) };
+        bvector<ECSchemaHelper::RelationshipPathsRequestParams::PathSpecification> pathSpecs = { ECSchemaHelper::RelationshipPathsRequestParams::PathSpecification(0, pathToRelatedInstanceSpec, bvector<bool>(pathToRelatedInstanceSpec.GetSteps().size(), false)) };
         bvector<RelatedClassPath> noRelatedInstances;
         ECSchemaHelper::RelationshipPathsRequestParams params(m_selectClass, pathSpecs, nullptr, noRelatedInstances, counter, false);
         auto result = m_schemaHelper.GetRelationshipPaths(params);

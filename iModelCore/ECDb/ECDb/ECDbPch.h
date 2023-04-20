@@ -35,7 +35,6 @@
 
 #include "ECDbSqlFunctions.h"
 
-#include "ECDbValidationChecks.h"
 #include "DbMappingManager.h"
 #include "DbMapValidator.h"
 #include "MapStrategy.h"
@@ -63,7 +62,9 @@
 #include "ChangeIteratorImpl.h"
 #include "ChangeSummaryExtractor.h"
 #include "ConcurrentQueryManagerImpl.h"
+#include "QueryJsonAdaptor.h"
 #include "InstanceReaderImpl.h"
+#include "IntegrityChecker.h"
 #include "ECSql/NativeSqlBuilder.h"
 #include "ECSql/Parser/SqlScan.h"
 #include "ECSql/Parser/SqlNode.h"

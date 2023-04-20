@@ -139,14 +139,14 @@ struct ECSchemaHelper : NonCopyableClass
             {
             int m_targetIndex;
             RelationshipPathSpecification const* m_specification;
-            bool m_isTargetPolymorphic;
             bool m_applyTargetInstancesCheck;
+            bvector<bool> m_stepTargetsPolymorphism;
             bvector<Utf8String> m_stepInstanceFilters;
-            PathSpecification(int targetIndex, RelationshipPathSpecification const& spec, bool isTargetPolymorphic)
-                : m_targetIndex(targetIndex), m_specification(&spec), m_isTargetPolymorphic(isTargetPolymorphic), m_applyTargetInstancesCheck(false)
+            PathSpecification(int targetIndex, RelationshipPathSpecification const& spec, bvector<bool> stepTargetsPolymorphism)
+                : m_targetIndex(targetIndex), m_specification(&spec), m_stepTargetsPolymorphism(stepTargetsPolymorphism), m_applyTargetInstancesCheck(false)
                 {}
-            PathSpecification(int targetIndex, RelationshipPathSpecification const& spec, bool isTargetPolymorphic, bvector<Utf8String> stepInstanceFilters)
-                : m_targetIndex(targetIndex), m_specification(&spec), m_isTargetPolymorphic(isTargetPolymorphic), m_applyTargetInstancesCheck(true), m_stepInstanceFilters(stepInstanceFilters)
+            PathSpecification(int targetIndex, RelationshipPathSpecification const& spec, bvector<bool> stepTargetsPolymorphism, bvector<Utf8String> stepInstanceFilters)
+                : m_targetIndex(targetIndex), m_specification(&spec), m_stepTargetsPolymorphism(stepTargetsPolymorphism), m_applyTargetInstancesCheck(true), m_stepInstanceFilters(stepInstanceFilters)
                 {}
             };
 
