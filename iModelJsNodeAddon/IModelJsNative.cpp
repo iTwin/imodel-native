@@ -5042,6 +5042,8 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         std::shared_ptr<ECPresentationResult> resultPtr = std::make_shared<ECPresentationResult>(std::move(result));
         m_threadSafeFunc.BlockingCall([this, resultPtr, deferred = std::move(deferred)](Napi::Env, Napi::Function)
             {
+            // flush all our logs that accumulated while handling the request
+            s_jsLogger.FlushDeferred();
             deferred.Resolve(CreateReturnValue(*resultPtr, true));
             });
         }
@@ -5084,8 +5086,6 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
 
         ECPresentationUtils::GetLogger().debugv("Received request: %s. Assigned GUID: %s. Request params: %s",
             requestId, requestGuid.c_str(), BeRapidJsonUtilities::ToString(params).c_str());
-
-        m_presentationManager->GetConnections().CreateConnection(db->GetDgnDb());
 
         auto diagnostics = ECPresentation::Diagnostics::Scope::ResetAndCreate(requestId, ECPresentationUtils::CreateDiagnosticsOptions(params));
         try
