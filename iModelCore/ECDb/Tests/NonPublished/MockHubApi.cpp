@@ -28,7 +28,26 @@ SchemaImportResult SchemaSyncTestFixture::ImportSchemas(ECDbR ecdb, std::vector<
     bvector<ECSchemaCP> importSchemas;
     for(auto& item: items) {
         ECSchemaPtr schema;
-        ECSchema::ReadFromXmlString(schema, item.GetXmlString().c_str(), *schemaReadContext);
+        if (item.GetType() == SchemaItem::Type::File)
+            {
+            // Construct the path to the sample schema
+            BeFileName ecSchemaFilePath;
+            BeTest::GetHost().GetDocumentsRoot(ecSchemaFilePath);
+            ecSchemaFilePath.AppendToPath(L"ECDb");
+            ecSchemaFilePath.AppendToPath(L"Schemas");
+            ecSchemaFilePath.AppendToPath(item.GetFileName());
+
+            if (!ecSchemaFilePath.DoesPathExist())
+                return SchemaImportResult::ERROR;
+
+            schemaReadContext->AddSchemaPath(ecSchemaFilePath.GetName());
+            ECSchema::ReadFromXmlFile(schema, ecSchemaFilePath, *schemaReadContext);
+            }
+        else
+            {
+            BeAssert(item.GetType() == SchemaItem::Type::String);
+            ECSchema::ReadFromXmlString(schema, item.GetXmlString().c_str(), *schemaReadContext);
+            }
         if (!schema.IsValid()) {
             return SchemaImportResult::ERROR;
         }

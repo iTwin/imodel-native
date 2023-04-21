@@ -136,7 +136,7 @@ struct ECDbHub {
 //=======================================================================================
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct InMemoryECDb final : public BentleyApi::BeSQLite::EC::ECDb {
+struct InMemoryECDb final: public BentleyApi::BeSQLite::EC::ECDb {
     using Ptr = std::unique_ptr<InMemoryECDb>;
 
 private:
