@@ -1572,6 +1572,26 @@ public:
 };
 
 //=======================================================================================
+//! Holds the value of navigation property
+// @bsiclass
+//=======================================================================================
+struct NavigationPropertyValue
+{
+private:
+    LabelDefinitionCPtr m_label;
+    ECClassInstanceKey m_key;
+
+public:
+    NavigationPropertyValue() : m_label(nullptr) {}
+    NavigationPropertyValue(LabelDefinitionCPtr label, ECClassInstanceKeyCR key) : m_label(label), m_key(key) {}
+    bool IsValid() const {return m_label.IsValid() && m_key.IsValid();}
+    LabelDefinitionCR GetLabel() const {return *m_label;}
+    ECClassInstanceKeyCR GetKey() const {return m_key;}
+    ECPRESENTATION_EXPORT rapidjson::Document AsJson(ECPresentationSerializerContextR ctx, rapidjson::Document::AllocatorType* allocator = nullptr) const;
+    ECPRESENTATION_EXPORT rapidjson::Document AsJson(rapidjson::Document::AllocatorType* allocator = nullptr) const;
+};
+
+//=======================================================================================
 //! @ingroup GROUP_Presentation_Content
 // @bsiclass
 //=======================================================================================

@@ -35,9 +35,10 @@ private:
 private:
     ECPRESENTATION_EXPORT ContentQueryContract(uint64_t id, ContentDescriptorCR descriptor, ECClassCP ecClass, IQueryInfoProvider const&,
         PresentationQueryContractFieldPtr, bvector<RelatedClassPath>, bool, bool);
-    PresentationQueryContractFieldCPtr GetCalculatedPropertyField(Utf8StringCR, Utf8StringCR) const;
+    PresentationQueryContractFieldCPtr GetCalculatedPropertyField(Utf8StringCR, Utf8StringCR, Utf8StringCR) const;
     PresentationQueryContractFieldCPtr CreateInputKeysField(Utf8CP selectAlias) const;
     bool CreateContractFields(bvector<PresentationQueryContractFieldCPtr>&, bvector<ContentDescriptor::Field*> const&, ContentDescriptor::RelatedContentField const*) const;
+    ECClassCP GetPropertyClass(ContentDescriptor::RelatedContentField const* parentField) const;
 
 protected:
     ContentQueryContract const* _AsContentQueryContract() const override {return this;}

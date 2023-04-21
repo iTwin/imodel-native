@@ -42,7 +42,7 @@ public:
     bool IsBool() const { return m_type == Type::Bool; }
     bool IsInteger() const { return m_type == Type::Integer; }
     bool IsDouble() const { return m_type == Type::Double; }
-    bool IsString() const { return m_type == Type::String; }
+    bool IsString() const { return m_type == Type::String || m_type == Type::Name; }
     bool IsName() const { return m_type == Type::Name; }
     bool IsEmpty() const { return m_type == Type::Empty; }
     bool IsNull() const { return m_type == Type::Null; }

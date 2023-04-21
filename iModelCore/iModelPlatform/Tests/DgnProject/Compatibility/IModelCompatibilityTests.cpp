@@ -130,7 +130,19 @@ void Assert_BuiltinSchemaVersions_2_0_0_0 (TestIModel& testDb)
 //+---------------+---------------+---------------+---------------+---------------+------
 void Assert_BuiltinSchemaVersions_2_0_0_1(TestIModel& testDb)
     {
-    EXPECT_EQ(8, testDb.GetSchemaCount()) << testDb.GetDescription();
+    EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("CoreCustomAttributes") != nullptr) << testDb.GetDescription();
+    EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("ECDbMap") != nullptr) << testDb.GetDescription();
+    EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("ECDbFileInfo") != nullptr) << testDb.GetDescription();
+    EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("ECDbMeta") != nullptr) << testDb.GetDescription();
+    EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("ECDbSystem") != nullptr) << testDb.GetDescription();
+    EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("ECDbSchemaPolicies") != nullptr) << testDb.GetDescription();
+    EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("Generic") != nullptr) << testDb.GetDescription();
+    EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("BisCore") != nullptr) << testDb.GetDescription();
+
+    // BisCustomAttributes schema is added to the test files containing BisCore schema having reference schema BisCustomAttributes (e.g BisCore.1.0.16)
+    if (testDb.GetSchemaVersion("BisCore") >= SchemaVersion(1, 0, 16))
+        EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("BisCustomAttributes") != nullptr) << testDb.GetDescription();
+
     //iModel built-in schema versions
     // Note: don't assert on original ecxml version for schemas that don't get upgraded automatically. That is to error-prone to test
     if (testDb.GetSchemaUpgradeOptions().AreDomainUpgradesAllowed())
@@ -169,7 +181,19 @@ void Assert_BuiltinSchemaVersions_2_0_0_1(TestIModel& testDb)
 //+---------------+---------------+---------------+---------------+---------------+------
 void Assert_BuiltinSchemaVersions_2_0_0_4(TestIModel& testDb)
     {
-    EXPECT_EQ(8, testDb.GetSchemaCount()) << testDb.GetDescription();
+    EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("CoreCustomAttributes") != nullptr) << testDb.GetDescription();
+    EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("ECDbMap") != nullptr) << testDb.GetDescription();
+    EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("ECDbFileInfo") != nullptr) << testDb.GetDescription();
+    EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("ECDbMeta") != nullptr) << testDb.GetDescription();
+    EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("ECDbSystem") != nullptr) << testDb.GetDescription();
+    EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("ECDbSchemaPolicies") != nullptr) << testDb.GetDescription();
+    EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("Generic") != nullptr) << testDb.GetDescription();
+    EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("BisCore") != nullptr) << testDb.GetDescription();
+
+    // BisCustomAttributes schema is added to the test files containing BisCore schema having reference schema BisCustomAttributes (e.g BisCore.1.0.16)
+    if (testDb.GetSchemaVersion("BisCore") >= SchemaVersion(1, 0, 16))
+        EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("BisCustomAttributes") != nullptr) << testDb.GetDescription();
+
     //iModel built-in schema versions
     // Note: don't assert on original ecxml version for schemas that don't get upgraded automatically. That is to error-prone to test
     if (testDb.GetSchemaUpgradeOptions().AreDomainUpgradesAllowed())
@@ -205,7 +229,19 @@ void Assert_BuiltinSchemaVersions_2_0_0_4(TestIModel& testDb)
 
 void Assert_BuiltinSchemaVersions_2_0_0_5(TestIModel& testDb)
     {
-    EXPECT_EQ(8, testDb.GetSchemaCount()) << testDb.GetDescription();
+    EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("CoreCustomAttributes") != nullptr) << testDb.GetDescription();
+    EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("ECDbMap") != nullptr) << testDb.GetDescription();
+    EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("ECDbFileInfo") != nullptr) << testDb.GetDescription();
+    EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("ECDbMeta") != nullptr) << testDb.GetDescription();
+    EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("ECDbSystem") != nullptr) << testDb.GetDescription();
+    EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("ECDbSchemaPolicies") != nullptr) << testDb.GetDescription();
+    EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("Generic") != nullptr) << testDb.GetDescription();
+    EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("BisCore") != nullptr) << testDb.GetDescription();
+
+    // BisCustomAttributes schema is added to the test files containing BisCore schema having reference schema BisCustomAttributes (e.g BisCore.1.0.16)
+    if (testDb.GetSchemaVersion("BisCore") >= SchemaVersion(1, 0, 16))
+        EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("BisCustomAttributes") != nullptr) << testDb.GetDescription();
+
     //iModel built-in schema versions
     // Note: don't assert on original ecxml version for schemas that don't get upgraded automatically. That is to error-prone to test
     if (testDb.GetSchemaUpgradeOptions().AreDomainUpgradesAllowed())
@@ -786,9 +822,24 @@ TEST_F(IModelCompatibilityTestFixture, SchemaManager_EC31KindOfQuantities)
             ASSERT_TRUE(koq2 != nullptr) << testDb.GetDescription();
             testDb.AssertKindOfQuantity(*koq2, "TestSchema", koq2Name, nullptr, nullptr, "u:SQ_FT", JsonValue(R"json(["f:DefaultRealU(4)[u:SQ_FT]"])json"), 1.0);
             assertReferencedUnitsAndFormatsSchema(testDb, koq2->GetSchema());
-
             bvector<ECSchemaCP> schemas = testDb.GetDb().Schemas().GetSchemas(true);
-            ASSERT_EQ(11, schemas.size()) << testDb.GetDescription();
+
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("CoreCustomAttributes") != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("ECDbMap") != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("ECDbFileInfo") != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("ECDbMeta") != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("ECDbSystem") != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("ECDbSchemaPolicies") != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("Generic") != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("Units") != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("Formats") != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("TestSchema") != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("BisCore") != nullptr) << testDb.GetDescription();
+
+            // BisCustomAttributes schema is added to the test files containing BisCore schema having reference schema BisCustomAttributes (e.g BisCore.1.0.16)
+            if (testDb.GetSchemaVersion("BisCore") >= SchemaVersion(1, 0, 16))
+                EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("BisCustomAttributes") != nullptr) << testDb.GetDescription();
+
             bool containsUnitsSchema = false, containsFormatsSchema = false;
             for (ECSchemaCP schema : schemas)
                 {
@@ -1043,7 +1094,7 @@ TEST_F(IModelCompatibilityTestFixture, EC31SchemaImport)
             ASSERT_TRUE(deserializationCtx != nullptr) << testDb.GetDescription();
             const SchemaStatus schemaImportStat = testDb.GetDgnDb().ImportSchemas(deserializationCtx->GetCache().GetSchemas());
 
-            if (ProfileState::Age::Newer == testDb.GetECDbAge())
+            if (ProfileState::Age::Newer == testDb.GetECDbAge() && !testDb.DoesECDbVersionAllowSchemaImport())
                 {
                 EXPECT_EQ(SchemaStatus::SchemaImportFailed, schemaImportStat) << testDb.GetDescription();
                 continue;
@@ -1134,7 +1185,7 @@ TEST_F(IModelCompatibilityTestFixture, EC32SchemaImport_Enums)
             ASSERT_TRUE(deserializationCtx != nullptr) << testDb.GetDescription();
             const SchemaStatus schemaImportStat = testDb.GetDgnDb().ImportSchemas(deserializationCtx->GetCache().GetSchemas());
 
-            if (ProfileState::Age::Newer == testDb.GetECDbAge() || !testDb.SupportsFeature(ECDbFeature::NamedEnumerators))
+            if ((ProfileState::Age::Newer == testDb.GetECDbAge() && !testDb.DoesECDbVersionAllowSchemaImport()) || !testDb.SupportsFeature(ECDbFeature::NamedEnumerators))
                 {
                 EXPECT_EQ(SchemaStatus::SchemaImportFailed, schemaImportStat) << testDb.GetDescription();
                 continue;
@@ -1197,7 +1248,7 @@ TEST_F(IModelCompatibilityTestFixture, EC32SchemaImport_Koqs)
             ASSERT_TRUE(deserializationCtx != nullptr) << testDb.GetDescription();
             const SchemaStatus schemaImportStat = testDb.GetDgnDb().ImportSchemas(deserializationCtx->GetCache().GetSchemas());
 
-            if (ProfileState::Age::Newer == testDb.GetECDbAge() || !testDb.SupportsFeature(ECDbFeature::UnitsAndFormats))
+            if ((ProfileState::Age::Newer == testDb.GetECDbAge() && !testDb.DoesECDbVersionAllowSchemaImport()) || !testDb.SupportsFeature(ECDbFeature::UnitsAndFormats))
                 {
                 EXPECT_EQ(SchemaStatus::SchemaImportFailed, schemaImportStat) << testDb.GetDescription();
                 continue;
@@ -1284,7 +1335,7 @@ TEST_F(IModelCompatibilityTestFixture, EC31SchemaUpgrade_Formats_API)
 
             ASSERT_TRUE(deserializationCtx != nullptr) << testDb.GetDescription();
             SchemaStatus schemaImportStat = testDb.GetDgnDb().ImportSchemas(deserializationCtx->GetCache().GetSchemas());
-            if (testDb.GetECDbAge() == ProfileState::Age::Newer)
+            if (testDb.GetECDbAge() == ProfileState::Age::Newer && !testDb.DoesECDbVersionAllowSchemaImport())
                 {
                 EXPECT_EQ(SchemaStatus::SchemaImportFailed, schemaImportStat) << testDb.GetDescription();
                 continue;
@@ -1366,7 +1417,7 @@ TEST_F(IModelCompatibilityTestFixture, EC31Enum_SchemaUpgrade)
             ASSERT_TRUE(deserializationCtx != nullptr) << testDb.GetDescription();
             const SchemaStatus schemaImportStat = testDb.GetDgnDb().ImportSchemas(deserializationCtx->GetCache().GetSchemas());
 
-            if (ProfileState::Age::Newer == testDb.GetECDbAge())
+            if (ProfileState::Age::Newer == testDb.GetECDbAge() && !testDb.DoesECDbVersionAllowSchemaImport())
                 {
                 EXPECT_EQ(SchemaStatus::SchemaImportFailed, schemaImportStat) << testDb.GetDescription();
                 continue;
@@ -1455,7 +1506,7 @@ TEST_F(IModelCompatibilityTestFixture, EC31Koqs_SchemaUpgrade)
             ASSERT_TRUE(deserializationCtx != nullptr) << testDb.GetDescription();
             const SchemaStatus schemaImportStat = testDb.GetDgnDb().ImportSchemas(deserializationCtx->GetCache().GetSchemas());
 
-            if (ProfileState::Age::Newer == testDb.GetECDbAge())
+            if (ProfileState::Age::Newer == testDb.GetECDbAge() && !testDb.DoesECDbVersionAllowSchemaImport())
                 {
                 EXPECT_EQ(SchemaStatus::SchemaImportFailed, schemaImportStat) << testDb.GetDescription();
                 continue;
@@ -1548,7 +1599,7 @@ TEST_F(IModelCompatibilityTestFixture, EC31ToEC32SchemaUpgrade_Enums)
             ASSERT_TRUE(deserializationCtx != nullptr) << testDb.GetDescription();
             const SchemaStatus schemaImportStat = testDb.GetDgnDb().ImportSchemas(deserializationCtx->GetCache().GetSchemas());
 
-            if (ProfileState::Age::Newer == testDb.GetECDbAge() || !testDb.SupportsFeature(ECDbFeature::NamedEnumerators))
+            if ((ProfileState::Age::Newer == testDb.GetECDbAge() && !testDb.DoesECDbVersionAllowSchemaImport()) || !testDb.SupportsFeature(ECDbFeature::NamedEnumerators))
                 {
                 EXPECT_EQ(SchemaStatus::SchemaImportFailed, schemaImportStat) << testDb.GetDescription();
                 continue;
@@ -1636,7 +1687,7 @@ TEST_F(IModelCompatibilityTestFixture, EC31ToEC32SchemaUpgrade_Koqs)
             const SchemaStatus schemaImportStat = testDb.GetDgnDb().ImportSchemas(deserializationCtx->GetCache().GetSchemas());
 
             // If the ECDb version is newer or 
-            if (ProfileState::Age::Newer == testDb.GetECDbAge() || !testDb.SupportsFeature(ECDbFeature::UnitsAndFormats))
+            if ((ProfileState::Age::Newer == testDb.GetECDbAge() && !testDb.DoesECDbVersionAllowSchemaImport()) || !testDb.SupportsFeature(ECDbFeature::UnitsAndFormats))
                 {
                 EXPECT_EQ(SchemaStatus::SchemaImportFailed, schemaImportStat) << testDb.GetDescription();
                 continue;
@@ -1713,7 +1764,7 @@ TEST_F(IModelCompatibilityTestFixture, EC32SchemaUpgrade_Enums)
             ASSERT_TRUE(deserializationCtx != nullptr) << testDb.GetDescription();
             const SchemaStatus schemaImportStat = testDb.GetDgnDb().ImportSchemas(deserializationCtx->GetCache().GetSchemas());
 
-            if (ProfileState::Age::Newer == testDb.GetECDbAge() || !testDb.SupportsFeature(ECDbFeature::NamedEnumerators))
+            if ((ProfileState::Age::Newer == testDb.GetECDbAge() && !testDb.DoesECDbVersionAllowSchemaImport()) || !testDb.SupportsFeature(ECDbFeature::NamedEnumerators))
                 {
                 EXPECT_EQ(SchemaStatus::SchemaImportFailed, schemaImportStat) << testDb.GetDescription();
                 continue;
@@ -1799,7 +1850,7 @@ TEST_F(IModelCompatibilityTestFixture, EC32SchemaUpgrade_Koqs)
             ASSERT_TRUE(deserializationCtx != nullptr) << testDb.GetDescription();
             const SchemaStatus schemaImportStat = testDb.GetDgnDb().ImportSchemas(deserializationCtx->GetCache().GetSchemas());
 
-            if (ProfileState::Age::Newer == testDb.GetECDbAge() || !testDb.SupportsFeature(ECDbFeature::UnitsAndFormats))
+            if ((ProfileState::Age::Newer == testDb.GetECDbAge() && !testDb.DoesECDbVersionAllowSchemaImport()) || !testDb.SupportsFeature(ECDbFeature::UnitsAndFormats))
                 {
                 EXPECT_EQ(SchemaStatus::SchemaImportFailed, schemaImportStat) << testDb.GetDescription();
                 continue;
@@ -1849,7 +1900,7 @@ TEST_F(IModelCompatibilityTestFixture, AddDomain)
                 continue;
                 }
 
-            if (testFile.GetECDbAge() == ProfileState::Age::Newer)
+            if (testFile.GetECDbAge() == ProfileState::Age::Newer && !testDb.DoesECDbVersionAllowSchemaImport())
                 {
                 // schema import not possible to newer ECDb profile files
                 ASSERT_EQ(BE_SQLITE_ERROR_SchemaUpgradeFailed, openStat) << testDb.GetDescription();
@@ -1934,7 +1985,7 @@ TEST_F(IModelCompatibilityTestFixture, UpgradeDomainIModel)
                 continue;
                 }
 
-            if (testFile.GetECDbAge() == ProfileState::Age::Newer)
+            if (testFile.GetECDbAge() == ProfileState::Age::Newer && !testDb.DoesECDbVersionAllowSchemaImport())
                 {
                 // schema import not possible to newer ECDb profile files
                 ASSERT_EQ(BE_SQLITE_ERROR_SchemaUpgradeFailed, openStat) << testDb.GetDescription();

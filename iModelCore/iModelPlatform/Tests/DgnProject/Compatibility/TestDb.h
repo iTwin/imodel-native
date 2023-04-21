@@ -58,6 +58,7 @@ protected:
     ECDbR GetDb() const { return _GetDb(); }
     ECDb::OpenParams const& GetOpenParams() const { return _GetOpenParams(); }
     Utf8String GetDescription() const;
+    bool DoesECDbVersionAllowSchemaImport() const;
 
     bool SupportsFeature(ECDbFeature feature) const { return VersionSupportsFeature(GetDb().GetECDbProfileVersion(), feature); }
     static bool VersionSupportsFeature(ProfileVersion const&, ECDbFeature);

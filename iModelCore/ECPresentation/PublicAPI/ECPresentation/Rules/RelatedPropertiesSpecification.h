@@ -140,6 +140,9 @@ public:
     //! Should relationship category be created regardless of whether relationship properties were added.
     bool ShouldForceCreateRelationshipCategory() const {return m_forceCreateRelationshipCategory;}
     void SetForceCreateRelationshipCategory(bool value) {m_forceCreateRelationshipCategory = value; InvalidateHash();}
+
+    ECPRESENTATION_EXPORT bool AllRelationshipPropertiesIncluded() const;
+    ECPRESENTATION_EXPORT bool AllPropertiesIncluded() const;
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

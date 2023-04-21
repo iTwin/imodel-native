@@ -15,13 +15,13 @@
         </Bindings>
     </Part>
 
-    <Part Name="Freetype2Library" BentleyBuildMakeFile="freetype2.mke" ApiNumber="B02">
+    <Part Name="Freetype2Library" BentleyBuildMakeFile="freetype2.mke">
         <SubPart  LibType="Static" PartName="Zlib" PartFile="iModelCore\libsrc\compress\Zlib"/>
         <SubPart PartName="Notices"/>
         <Bindings>
             <VendorAPI Domain="freetype2"/>
-            <Libs>Delivery/$(libprefix)freetype2$(libext)</Libs>
-            <Assemblies>Delivery/$(shlibprefix)freetype2$(ApiNumber)$(shlibext)</Assemblies>
+            <Libs>Delivery/$(libprefix)iTwinFreetype2$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)iTwinFreetype2$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
