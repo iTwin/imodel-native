@@ -767,10 +767,8 @@ TEST_F(SchemaSyncTestFixture, DeleteSchema_VerifyCustomAttributesAreDeletedAsWel
         "Drop TestSchema returns arbitrary schema changes",
         [&]()
             {
-            BeTest::SetFailOnAssert(false);
+            ScopedDisableFailOnAssertion disableFailOnAssertion;
             ASSERT_FALSE(DropSchema("TestSchema").IsSuccess());
-            BeTest::SetFailOnAssert(true);
-
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
@@ -927,9 +925,8 @@ TEST_F(SchemaSyncTestFixture, DeleteSchema_Check_Table_Drop)
         "Drop BisCore returns arbitrary schema changes",
         [&]()
             {
-            BeTest::SetFailOnAssert(false);
+            ScopedDisableFailOnAssertion disableFailOnAssertion;
             ASSERT_FALSE(DropSchema("BisCore").IsSuccess());
-            BeTest::SetFailOnAssert(true);
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA5_HASH_ECDB_MAP, SCHEMA3_HASH_SQLITE_SCHEMA);
             }
     );
@@ -1236,9 +1233,8 @@ TEST_F(SchemaSyncTestFixture, DeleteSchema)
         "Delete TestSchema returns arbitrary schema changes",
         [&]()
             {
-            BeTest::SetFailOnAssert(false);
+            ScopedDisableFailOnAssertion disableFailOnAssertion;
             ASSERT_FALSE(DropSchema("TestSchema").IsSuccess());
-            BeTest::SetFailOnAssert(true);
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
             }
     );
@@ -4278,9 +4274,8 @@ TEST_F(SchemaSyncTestFixture, ClassModifier)
                 </ECSchema>)xml"
             );
 
-            BeTest::SetFailOnAssert(false);
+            ScopedDisableFailOnAssertion disableFailOnAssertion;
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
-            BeTest::SetFailOnAssert(true);
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
@@ -8923,9 +8918,8 @@ TEST_F(SchemaSyncTestFixture, UnsettingSchemaAlias)
                 <ECSchema schemaName='TestSchema' alias='' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
                 </ECSchema>)xml"
             );
-            BeTest::SetFailOnAssert(false);
+            ScopedDisableFailOnAssertion disableFailOnAssertion;
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
-            BeTest::SetFailOnAssert(true);
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
@@ -9220,9 +9214,8 @@ TEST_F(SchemaSyncTestFixture, Delete_ECEntityClass_OwnTable)
                     </ECEntityClass>
                 </ECSchema>)xml"
             );
-            BeTest::SetFailOnAssert(false);
+            ScopedDisableFailOnAssertion disableFailOnAssertion;
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
-            BeTest::SetFailOnAssert(true);
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
@@ -9408,9 +9401,8 @@ TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_TPH)
                     <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />
                 </ECSchema>)xml"
             );
-            BeTest::SetFailOnAssert(false);
+            ScopedDisableFailOnAssertion disableFailOnAssertion;
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
-            BeTest::SetFailOnAssert(true);
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
@@ -9657,9 +9649,8 @@ TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_TPH_ShareColumns)
                    <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />
                 </ECSchema>)xml"
             );
-            BeTest::SetFailOnAssert(false);
+            ScopedDisableFailOnAssertion disableFailOnAssertion;
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
-            BeTest::SetFailOnAssert(true);
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
@@ -9898,9 +9889,8 @@ TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_TPH_MaxSharedColumnsBefor
                     <ECSchemaReference name = 'ECDbMap' version='02.00' alias = 'ecdbmap' />
                 </ECSchema>)xml"
             );
-            BeTest::SetFailOnAssert(false);
+            ScopedDisableFailOnAssertion disableFailOnAssertion;
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
-            BeTest::SetFailOnAssert(true);
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
@@ -10161,9 +10151,8 @@ TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_JoinedTable)
                     </ECEntityClass>
                 </ECSchema>)xml"
             );
-            BeTest::SetFailOnAssert(false);
+            ScopedDisableFailOnAssertion disableFailOnAssertion;
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
-            BeTest::SetFailOnAssert(true);
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
@@ -10180,9 +10169,8 @@ TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_JoinedTable)
                     <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />
                 </ECSchema>)xml"
             );
-            BeTest::SetFailOnAssert(false);
+            ScopedDisableFailOnAssertion disableFailOnAssertion;
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
-            BeTest::SetFailOnAssert(true);
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
@@ -10461,9 +10449,8 @@ TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_JoinedTable_ShareColumns)
                     </ECEntityClass>
                 </ECSchema>)xml"
             );
-            BeTest::SetFailOnAssert(false);
+            ScopedDisableFailOnAssertion disableFailOnAssertion;
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
-            BeTest::SetFailOnAssert(true);
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
@@ -10480,9 +10467,8 @@ TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_JoinedTable_ShareColumns)
                     <ECSchemaReference name = 'ECDbMap' version='02.00' alias = 'ecdbmap' />
                 </ECSchema>)xml"
             );
-            BeTest::SetFailOnAssert(false);
+            ScopedDisableFailOnAssertion disableFailOnAssertion;
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
-            BeTest::SetFailOnAssert(true);
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
@@ -10764,9 +10750,8 @@ TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_JoinedTable_MaxSharedColu
                     </ECEntityClass>
                 </ECSchema>)xml"
             );
-            BeTest::SetFailOnAssert(false);
+            ScopedDisableFailOnAssertion disableFailOnAssertion;
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
-            BeTest::SetFailOnAssert(true);
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
@@ -10783,9 +10768,8 @@ TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_JoinedTable_MaxSharedColu
                     <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />
                 </ECSchema>)xml"
             );
-            BeTest::SetFailOnAssert(false);
+            ScopedDisableFailOnAssertion disableFailOnAssertion;
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
-            BeTest::SetFailOnAssert(true);
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
@@ -11302,9 +11286,8 @@ TEST_F(SchemaSyncTestFixture, DeleteECRelationships)
                         }
                 )
             );
-            BeTest::SetFailOnAssert(false);
+            ScopedDisableFailOnAssertion disableFailOnAssertion;
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
-            BeTest::SetFailOnAssert(true);
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
@@ -11365,9 +11348,7 @@ TEST_F(SchemaSyncTestFixture, DeleteECStructClassUnsupported)
                 <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
                 </ECSchema>)xml"
             );
-            // BeTest::SetFailOnAssert(false);
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
-            // BeTest::SetFailOnAssert(true);
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
@@ -21947,6 +21928,1113 @@ TEST_F(SchemaSyncTestFixture, MultiSessionSchemaImport_TPH_OnDerivedClass)
             {
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+// Another random hash
+TEST_F(SchemaSyncTestFixture, UpdateClass_AddStructProperty)
+    {
+    const auto SCHEMA1_HASH_ECDB_SCHEMA = "a85cb4bc03c77acd742934a5674b147d5f659c25ed2937277ccfc8d380aa8673";
+    const auto SCHEMA1_HASH_ECDB_MAP = "1dcc46de132feabc89cbac91d89945a19f8249d7f668123924495bfe9f516aaf";
+    const auto SCHEMA1_HASH_SQLITE_SCHEMA = "09b41632226f8839c9dab4977eb80dfd23a1c8233fdf2d0a1141aab82bc15c29";
+    Test(
+        "import initial schema",
+        [&]()
+            {
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />
+                    <ECStructClass typeName='ST' modifier='None'>
+                        <ECProperty propertyName='S1' typeName='int' readOnly='false' />
+                        <ECProperty propertyName='S2' typeName='int' readOnly='false' />
+                        <ECProperty propertyName='S3' typeName='int' readOnly='false' />
+                        <ECProperty propertyName='S4' typeName='int' readOnly='false' />
+                        <ECProperty propertyName='S5' typeName='int' readOnly='false' />
+                    </ECStructClass>
+                    <ECEntityClass typeName='Foo' modifier='None' >
+                        <ECCustomAttributes>
+                            <ClassMap xmlns='ECDbMap.02.00'>
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                            <ShareColumns xmlns='ECDbMap.02.00'>
+                                <MaxSharedColumnsBeforeOverflow>4</MaxSharedColumnsBeforeOverflow>
+                                <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
+                            </ShareColumns>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName='P1' typeName='int' />
+                        <ECProperty propertyName='P2' typeName='int' />
+                        <ECProperty propertyName='P3' typeName='int' />
+                    </ECEntityClass>
+                </ECSchema>)xml"
+            );
+            ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            }
+    );
+
+    const auto SCHEMA2_HASH_ECDB_SCHEMA = "ed1b4d34eb356bb87f7d2de04f87cf233e4ed5f243d236ecd6bd50b73cf7e508";
+    const auto SCHEMA2_HASH_ECDB_MAP = "61a3da504bf6f368e19037873cd4a9dfb3d4ae96b8e7355b0c1700357a757c2c";
+    Test(
+        "Adding StructProperty is supported",
+        [&]()
+            {
+            const auto SCHEMA_HASH_SQLITE_SCHEMA = "f5abc5c441b181da4304718eb784db74252a5505044fab31818d5913b31cc4ab";
+            auto schema = SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+                <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                    <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />
+                    <ECStructClass typeName='ST' modifier='None'>
+                        <ECProperty propertyName='S1' typeName='int' readOnly='false' />
+                        <ECProperty propertyName='S2' typeName='int' readOnly='false' />
+                        <ECProperty propertyName='S3' typeName='int' readOnly='false' />
+                        <ECProperty propertyName='S4' typeName='int' readOnly='false' />
+                        <ECProperty propertyName='S5' typeName='int' readOnly='false' />
+                    </ECStructClass>
+                    <ECEntityClass typeName='Foo' modifier='None' >
+                        <ECCustomAttributes>
+                            <ClassMap xmlns='ECDbMap.02.00'>
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                            <ShareColumns xmlns='ECDbMap.02.00'>
+                                <MaxSharedColumnsBeforeOverflow>4</MaxSharedColumnsBeforeOverflow>
+                                <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
+                            </ShareColumns>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName='P1' typeName='int' />
+                        <ECProperty propertyName='P2' typeName='int' />
+                        <ECProperty propertyName='P3' typeName='int' />
+                        <ECStructProperty propertyName='S' typeName='ST'/>
+                    </ECEntityClass>
+                </ECSchema>)xml"
+            );
+
+            auto newBriefcase = m_hub->CreateBriefcase();
+            ASSERT_EQ(
+                SharedSchemaChannel::Status::OK,
+                m_schemaChannel->Pull(
+                    *newBriefcase,
+                    [&]()
+                        {
+                        CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+                        ASSERT_TRUE(ForeignkeyCheck(*newBriefcase));
+                        ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
+                        }
+                )
+            );
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
+            CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            }
+    );
+
+    Test(
+        "Pull and check hashes",
+        [&]()
+            {
+            ASSERT_EQ(
+                SharedSchemaChannel::Status::OK,
+                m_schemaChannel->Pull(
+                    *m_briefcase,
+                    [&]()
+                        {
+                        const auto SCHEMA_HASH_SQLITE_SCHEMA = "0c91898b2420372f2c02b21896dd9c928f78fb17d723dabad0606a5dd0a93641";
+                        CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA);
+                        ASSERT_TRUE(ForeignkeyCheck(*m_briefcase));
+                        ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
+                        }
+                )
+            );
+            ASSERT_EQ(SUCCESS, m_briefcase->Schemas().CreateClassViewsInDb());
+            }
+    );
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncTestFixture, DisallowMajorSchemaUpgrade)
+    {
+    //Note: for each test schema we test it with the minor version being incremented and the major version being incremented
+    auto assertImport = [this](Utf8CP schemaTemplate, Utf8CP newSchemaVersion, SchemaManager::SchemaImportOptions options, std::tuple<Utf8CP, Utf8CP, Utf8CP> hashes)
+        {
+        auto initialSchema = SchemaItem(
+            R"xml(<?xml version="1.0" encoding="utf-8" ?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+                <ECEntityClass typeName="Parent" >
+                    <ECCustomAttributes>
+                        <ClassMap xmlns="ECDbMap.02.00">
+                            <MapStrategy>TablePerHierarchy</MapStrategy>
+                        </ClassMap>
+                        <ShareColumns xmlns="ECDbMap.02.00"/>
+                    </ECCustomAttributes>
+                    <ECProperty propertyName="Name" typeName="string" />
+                    <ECProperty propertyName="Code" typeName="int"/>
+                    <ECProperty propertyName="Val" typeName="int" />
+                </ECEntityClass>
+                <ECEntityClass typeName="Sub" >
+                    <BaseClass>Parent</BaseClass>
+                    <ECProperty propertyName="SubProp" typeName="string" />
+                </ECEntityClass>
+            </ECSchema>)xml"
+        );
+        SetupECDb("schemaupgrade_DisallowMajorSchemaUpgrade", initialSchema);
+        Utf8String schemaXml;
+        schemaXml.Sprintf(schemaTemplate, newSchemaVersion);
+        SchemaImportResult actualStat = ImportSchema(SchemaItem(schemaXml), options);
+        if (actualStat == SchemaImportResult::OK)
+            {
+            const auto [schemaHash, mapHash, dbSchemaHash] = hashes;
+            CheckHashes(*m_briefcase, schemaHash, mapHash, dbSchemaHash);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, schemaHash, mapHash); });
+            }
+        return actualStat;
+        };
+
+    // const auto SCHEMA1_HASH_ECDB_SCHEMA = "f125bc2cbb3c2eccf44c4f80b07f9091fa0172751d9a4494bed33a9cbdad5d80";
+    // const auto SCHEMA1_HASH_ECDB_MAP = "aad4ba89e506aa58452c801120bf1e662ad761a14332932283eab33113e7d419";
+    const auto SCHEMA1_HASH_SQLITE_SCHEMA = "616136b709172fd8b18c5d9213f3c87b5c3d05a852787260324b52e009c45ae4";
+    Test(
+        "Deleting a property",
+        [&]()
+            {
+            auto newSchema = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                <ECSchema schemaName="TestSchema" alias="ts" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+                    <ECEntityClass typeName="Parent" >
+                        <ECCustomAttributes>
+                           <ClassMap xmlns="ECDbMap.02.00">
+                               <MapStrategy>TablePerHierarchy</MapStrategy>
+                           </ClassMap>
+                           <ShareColumns xmlns="ECDbMap.02.00"/>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName="Name" typeName="string" />
+                        <ECProperty propertyName="Val" typeName="int" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="Sub" >
+                        <BaseClass>Parent</BaseClass>
+                        <ECProperty propertyName="SubProp" typeName="string" />
+                    </ECEntityClass>
+                </ECSchema>)xml";
+
+            EXPECT_EQ(
+                SchemaImportResult::ERROR,
+                assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::None, {"", "", ""})
+            ) << "Deleting a property on a shared column (must fail because it requires the major schema version to be incremented)";
+            EXPECT_EQ(
+                SchemaImportResult::ERROR,
+                assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, {"", "", ""})
+            ) << "Deleting a property on a shared column (must fail because it requires the major schema version to be incremented)";
+
+            const auto SCHEMA_HASH_ECDB_SCHEMA = "195373de08013c06a291d65f20a8cd9560999643512760fcaf4ff514ddb2226c";
+            const auto SCHEMA_HASH_ECDB_MAP = "4a10ee8f68f18a559ced9d42a70f626e1902808d616625e8aca5a604ebff9b87";
+            EXPECT_EQ(
+                SchemaImportResult::OK,
+                assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::None, {SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA})
+            ) << "Deleting a property on a shared column";
+            EXPECT_EQ(
+                SchemaImportResult::ERROR,
+                // assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)
+                assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, {"", "", ""})
+            ) << "Deleting a property on a shared column";
+            }
+    );
+
+    Test(
+        "Deleting a class",
+        [&]()
+            {
+            auto newSchema = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                <ECSchema schemaName="TestSchema" alias="ts" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+                    <ECEntityClass typeName="Parent" >
+                        <ECCustomAttributes>
+                           <ClassMap xmlns="ECDbMap.02.00">
+                               <MapStrategy>TablePerHierarchy</MapStrategy>
+                           </ClassMap>
+                           <ShareColumns xmlns="ECDbMap.02.00"/>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName="Name" typeName="string" />
+                        <ECProperty propertyName="Code" typeName="int"/>
+                        <ECProperty propertyName="Val" typeName="int" />
+                    </ECEntityClass>
+                </ECSchema>)xml";
+
+            EXPECT_EQ(
+                SchemaImportResult::ERROR,
+                assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::None, {"", "", ""})
+            ) << "Deleting a class (must fail because it requires the major schema version to be incremented)";
+            EXPECT_EQ(
+                SchemaImportResult::ERROR,
+                assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, {"", "", ""})
+            ) << "Deleting a class (must fail because it requires the major schema version to be incremented)";
+
+            const auto SCHEMA_HASH_ECDB_SCHEMA = "22176ec40a646fbc63f5ae7eee793dba7d58d920d8e5734a5734ad1611be6cb4";
+            const auto SCHEMA_HASH_ECDB_MAP = "ac70532d749a8c144d51cf686e6a61c46775b9e05ea451760fd229f7a107f0f9";
+            EXPECT_EQ(
+                SchemaImportResult::OK,
+                assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::None, {SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA})
+            ) << "Deleting a class";
+            EXPECT_EQ(
+                SchemaImportResult::ERROR,
+                assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, {"", "", ""})
+            ) << "Deleting a class";
+            }
+    );
+
+    Test(
+        "adding IsNullable constraint on existing property",
+        [&]()
+            {
+            auto newSchema = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                <ECSchema schemaName="TestSchema" alias="ts" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+                    <ECEntityClass typeName="Parent" >
+                        <ECCustomAttributes>
+                           <ClassMap xmlns="ECDbMap.02.00">
+                               <MapStrategy>TablePerHierarchy</MapStrategy>
+                           </ClassMap>
+                           <ShareColumns xmlns="ECDbMap.02.00"/>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName="Name" typeName="string" >
+                            <ECCustomAttributes>
+                               <PropertyMap xmlns="ECDbMap.02.00">
+                                 <IsNullable>False</IsNullable>
+                               </PropertyMap>
+                            </ECCustomAttributes>
+                        </ECProperty>
+                        <ECProperty propertyName="Code" typeName="int"/>
+                        <ECProperty propertyName="Val" typeName="int" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="Sub" >
+                        <BaseClass>Parent</BaseClass>
+                        <ECProperty propertyName="SubProp" typeName="string" />
+                    </ECEntityClass>
+                </ECSchema>)xml";
+
+            EXPECT_EQ(
+                SchemaImportResult::ERROR,
+                assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::None, {"", "", ""})
+            ) << "IsNullable on existing property is never supported because adding ECDbMap CA is not allowed";
+            EXPECT_EQ(
+                SchemaImportResult::ERROR,
+                assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, {"", "", ""})
+            ) << "IsNullable on existing property is never supported because adding ECDbMap CA is not allowed";
+            EXPECT_EQ(
+                SchemaImportResult::ERROR,
+                assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::None, {"", "", ""})
+            ) << "IsNullable on existing property is never supported because adding ECDbMap CA is not allowed";
+            EXPECT_EQ(
+                SchemaImportResult::ERROR,
+                assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, {"", "", ""})
+            ) << "IsNullable on existing property is never supported because adding ECDbMap CA is not allowed";
+            }
+    );
+
+    Test(
+        "adding IsNullable constraint on new property",
+        [&]()
+            {
+            auto newSchema = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                <ECSchema schemaName="TestSchema" alias="ts" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+                    <ECEntityClass typeName="Parent" >
+                        <ECCustomAttributes>
+                           <ClassMap xmlns="ECDbMap.02.00">
+                               <MapStrategy>TablePerHierarchy</MapStrategy>
+                           </ClassMap>
+                           <ShareColumns xmlns="ECDbMap.02.00"/>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName="Name" typeName="string" />
+                        <ECProperty propertyName="Code" typeName="int"/>
+                        <ECProperty propertyName="Val" typeName="int" />
+                        <ECProperty propertyName="NewProp" typeName="string" >
+                            <ECCustomAttributes>
+                               <PropertyMap xmlns="ECDbMap.02.00">
+                                 <IsNullable>False</IsNullable>
+                               </PropertyMap>
+                            </ECCustomAttributes>
+                        </ECProperty>
+                    </ECEntityClass>
+                    <ECEntityClass typeName="Sub" >
+                        <BaseClass>Parent</BaseClass>
+                        <ECProperty propertyName="SubProp" typeName="string" />
+                    </ECEntityClass>
+                </ECSchema>)xml";
+
+            const auto SCHEMA_HASH_ECDB_SCHEMA = "4561b3ffb11d88309497651e299d6f420786093397d93a98dc6ba4ddec9d86f5";
+            const auto SCHEMA_HASH_ECDB_MAP = "84a3a5e11259bae6a8800d8215f48b1e611d5bb77c3bac620da73b23f9e06a92";
+            const auto SCHEMA_HASH_SQLITE_SCHEMA = "2e503df7e76cb940852191fcae5feb0c7aa11bfddd09d3f22056260426db5c5d";
+            EXPECT_EQ(
+                SchemaImportResult::OK,
+                assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::None, {SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA})
+            ) << "IsNullable on new property in existing class is never supported because adding ECDbMap CA is not allowed";
+            EXPECT_EQ(
+                SchemaImportResult::OK,
+                assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, {SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA})
+            ) << "IsNullable on new property in existing class is never supported because adding ECDbMap CA is not allowed";
+            
+            const auto SCHEMA2_HASH_ECDB_SCHEMA = "5c24344e34e3d76c781f9a2ad0240fb0dc3fee393ae4189878821088900d53da";
+            EXPECT_EQ(
+                SchemaImportResult::OK,
+                assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::None, {SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA})
+            ) << "IsNullable on new property in existing class is never supported because adding ECDbMap CA is not allowed";
+            EXPECT_EQ(
+                SchemaImportResult::ERROR, 
+                assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, {"", "", ""})
+            ) << "IsNullable on new property in existing class is never supported because adding ECDbMap CA is not allowed";
+            }
+    );
+
+    Test(
+        "adding IsNullable constraint on property on new subclass",
+        [&]()
+            {
+            auto newSchema = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                <ECSchema schemaName="TestSchema" alias="ts" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+                    <ECEntityClass typeName="Parent" >
+                        <ECCustomAttributes>
+                           <ClassMap xmlns="ECDbMap.02.00">
+                               <MapStrategy>TablePerHierarchy</MapStrategy>
+                           </ClassMap>
+                           <ShareColumns xmlns="ECDbMap.02.00"/>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName="Name" typeName="string" />
+                        <ECProperty propertyName="Code" typeName="int"/>
+                        <ECProperty propertyName="Val" typeName="int" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="Sub" >
+                        <BaseClass>Parent</BaseClass>
+                        <ECProperty propertyName="SubProp" typeName="string" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="Sub2" >
+                        <BaseClass>Parent</BaseClass>
+                        <ECProperty propertyName="SubProp2" typeName="string" >
+                            <ECCustomAttributes>
+                               <PropertyMap xmlns="ECDbMap.02.00">
+                                 <IsNullable>False</IsNullable>
+                               </PropertyMap>
+                            </ECCustomAttributes>
+                        </ECProperty>
+                    </ECEntityClass>
+                </ECSchema>)xml";
+
+            const auto SCHEMA_HASH_ECDB_SCHEMA = "671394c182e8482addb19dd5e66665c8152dee2b808aea2ab7cfc261bdc0ebf4";
+            const auto SCHEMA_HASH_ECDB_MAP = "69bd23036dcf0d21216e0e4a663ad5d77092817016f552c278d6fbf3d14c59bf";
+            EXPECT_EQ(
+                SchemaImportResult::OK,
+                assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::None, {SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA})
+            ) << "IsNullable on property on new subclass";
+            EXPECT_EQ(
+                SchemaImportResult::OK,
+                assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, {SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA})
+            ) << "IsNullable on property on new subclass";
+
+            const auto SCHEMA2_HASH_ECDB_SCHEMA = "e453968f8137956a148f8ed02c76bf3b8cb8699dbb709f38e08a1c4411a11ee0";
+            const auto SCHEMA2_HASH_ECDB_MAP = "69bd23036dcf0d21216e0e4a663ad5d77092817016f552c278d6fbf3d14c59bf";
+            EXPECT_EQ(
+                SchemaImportResult::OK,
+                assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::None, {SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA})
+            ) << "IsNullable on property on new subclass works because ECDb ignores it because the class is not the root of the table.";
+            EXPECT_EQ(
+                SchemaImportResult::ERROR,
+                assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, {"", "", ""})
+            ) << "IsNullable on property on new subclass works because ECDb ignores it because the class is not the root of the table.";
+            }
+    );
+
+    Test(
+        "adding IsNullable constraint on property on new subclass in new schema",
+        [&]()
+            {
+            auto newSchema = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                <ECSchema schemaName="TestSchema2" alias="ts2" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="TestSchema" version="01.00" alias="ts"/>
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+                    <ECEntityClass typeName="Sub2" >
+                        <BaseClass>ts:Parent</BaseClass>
+                        <ECProperty propertyName="SubProp2" typeName="string" >
+                            <ECCustomAttributes>
+                               <PropertyMap xmlns="ECDbMap.02.00">
+                                 <IsNullable>False</IsNullable>
+                               </PropertyMap>
+                            </ECCustomAttributes>
+                        </ECProperty>
+                    </ECEntityClass>
+                </ECSchema>)xml";
+
+            const auto SCHEMA_HASH_ECDB_SCHEMA = "0b4bd446afb14a88532e8d737a06e7073a69a0a7658136ccd655d846a092a2d0";
+            const auto SCHEMA_HASH_ECDB_MAP = "69bd23036dcf0d21216e0e4a663ad5d77092817016f552c278d6fbf3d14c59bf";
+            EXPECT_EQ(
+                SchemaImportResult::OK,
+                assertImport(newSchema, "1.0", SchemaManager::SchemaImportOptions::None, {SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA})
+            ) << "IsNullable on property on new subclass in new schema";
+            EXPECT_EQ(
+                SchemaImportResult::OK,
+                assertImport(newSchema, "1.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, {SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA})
+            ) << "IsNullable on property on new subclass in new schema";
+            }
+    );
+
+    Test(
+        "adding IsUnique constraint on existing property",
+        [&]()
+            {
+            auto newSchema = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                <ECSchema schemaName="TestSchema" alias="ts" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+                    <ECEntityClass typeName="Parent" >
+                        <ECCustomAttributes>
+                           <ClassMap xmlns="ECDbMap.02.00">
+                               <MapStrategy>TablePerHierarchy</MapStrategy>
+                           </ClassMap>
+                           <ShareColumns xmlns="ECDbMap.02.00"/>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName="Name" typeName="string" >
+                            <ECCustomAttributes>
+                               <PropertyMap xmlns="ECDbMap.02.00">
+                                 <IsUnique>True</IsUnique>
+                               </PropertyMap>
+                            </ECCustomAttributes>
+                        </ECProperty>
+                        <ECProperty propertyName="Code" typeName="int"/>
+                        <ECProperty propertyName="Val" typeName="int" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="Sub" >
+                        <BaseClass>Parent</BaseClass>
+                        <ECProperty propertyName="SubProp" typeName="string" />
+                    </ECEntityClass>
+                </ECSchema>)xml";
+
+            EXPECT_EQ(
+                SchemaImportResult::ERROR,
+                assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::None, {"", "", ""})
+            ) << "IsUnique on existing property is never supported because adding ECDbMap CA is not allowed";
+            EXPECT_EQ(
+                SchemaImportResult::ERROR,
+                assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, {"", "", ""})
+            ) << "IsUnique on existing property is never supported because adding ECDbMap CA is not allowed";
+            EXPECT_EQ(
+                SchemaImportResult::ERROR,
+                assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::None, {"", "", ""})
+            ) << "IsUnique on existing property is never supported because adding ECDbMap CA is not allowed";
+            EXPECT_EQ(
+                SchemaImportResult::ERROR,
+                assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, {"", "", ""})
+            ) << "IsUnique on existing property is never supported because adding ECDbMap CA is not allowed";
+            }
+    );
+
+    Test(
+        "adding IsUnique constraint on new property",
+        [&]()
+            {
+            auto newSchema = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                <ECSchema schemaName="TestSchema" alias="ts" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+                    <ECEntityClass typeName="Parent" >
+                        <ECCustomAttributes>
+                           <ClassMap xmlns="ECDbMap.02.00">
+                               <MapStrategy>TablePerHierarchy</MapStrategy>
+                           </ClassMap>
+                           <ShareColumns xmlns="ECDbMap.02.00"/>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName="Name" typeName="string" />
+                        <ECProperty propertyName="Code" typeName="int"/>
+                        <ECProperty propertyName="Val" typeName="int" />
+                        <ECProperty propertyName="NewProp" typeName="string" >
+                            <ECCustomAttributes>
+                               <PropertyMap xmlns="ECDbMap.02.00">
+                                 <IsUnique>True</IsUnique>
+                               </PropertyMap>
+                            </ECCustomAttributes>
+                        </ECProperty>
+                    </ECEntityClass>
+                    <ECEntityClass typeName="Sub" >
+                        <BaseClass>Parent</BaseClass>
+                        <ECProperty propertyName="SubProp" typeName="string" />
+                    </ECEntityClass>
+                </ECSchema>)xml";
+
+            const auto SCHEMA_HASH_ECDB_SCHEMA = "26d2a2bb445fcff8d12c37d1a2fbfbce86ec4b14379c0eed1d8afc1ec3013eb0";
+            const auto SCHEMA_HASH_ECDB_MAP = "84a3a5e11259bae6a8800d8215f48b1e611d5bb77c3bac620da73b23f9e06a92";
+            const auto SCHEMA_HASH_SQLITE_SCHEMA = "2e503df7e76cb940852191fcae5feb0c7aa11bfddd09d3f22056260426db5c5d";
+            EXPECT_EQ(
+                SchemaImportResult::OK,
+                assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::None, {SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA})
+            ) << "IsUnique on new property in existing class is never supported because adding ECDbMap CA is not allowed";
+            EXPECT_EQ(
+                SchemaImportResult::OK,
+                assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, {SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA})
+            ) << "IsUnique on new property in existing class is never supported because adding ECDbMap CA is not allowed";
+
+            const auto SCHEMA2_HASH_ECDB_SCHEMA = "a451997ff9d0bee0747ce329514b1794cbf0ec8b707d0d395e48b597fd77624e";
+            EXPECT_EQ(
+                SchemaImportResult::OK,
+                assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::None, {SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA})
+            ) << "IsUnique on new property in existing class is never supported because adding ECDbMap CA is not allowed";
+            EXPECT_EQ(
+                SchemaImportResult::ERROR,
+                assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, {"", "", ""})
+            ) << "IsUnique on new property in existing class is never supported because adding ECDbMap CA is not allowed";
+            }
+    );
+
+    Test(
+        "adding IsUnique constraint on shared column",
+        [&]()
+            {
+            auto newSchema = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                <ECSchema schemaName="TestSchema" alias="ts" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+                    <ECEntityClass typeName="Parent" >
+                        <ECCustomAttributes>
+                           <ClassMap xmlns="ECDbMap.02.00">
+                               <MapStrategy>TablePerHierarchy</MapStrategy>
+                           </ClassMap>
+                           <ShareColumns xmlns="ECDbMap.02.00"/>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName="Name" typeName="string" />
+                        <ECProperty propertyName="Code" typeName="int"/>
+                        <ECProperty propertyName="Val" typeName="int" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="Sub" >
+                        <BaseClass>Parent</BaseClass>
+                        <ECProperty propertyName="SubProp" typeName="string" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="Sub2" >
+                        <BaseClass>Parent</BaseClass>
+                        <ECProperty propertyName="SubProp2" typeName="string" >
+                            <ECCustomAttributes>
+                               <PropertyMap xmlns="ECDbMap.02.00">
+                                 <IsUnique>True</IsUnique>
+                               </PropertyMap>
+                            </ECCustomAttributes>
+                        </ECProperty>
+                    </ECEntityClass>
+                </ECSchema>)xml";
+
+            const auto SCHEMA_HASH_ECDB_SCHEMA = "d74853b31042003e6571265a18e6050200703b792fa2d34128f698c06470597b";
+            const auto SCHEMA_HASH_ECDB_MAP = "69bd23036dcf0d21216e0e4a663ad5d77092817016f552c278d6fbf3d14c59bf";
+            EXPECT_EQ(
+                SchemaImportResult::OK,
+                assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::None, {SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA})
+            ) << "Adding unique index on shared column is ignored";
+            EXPECT_EQ(
+                SchemaImportResult::OK,
+                assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, {SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA})
+            ) << "Adding unique index on shared column is ignored";
+
+            const auto SCHEMA2_HASH_ECDB_SCHEMA = "180d8d41f2af2fde7a5102e622a82524eb39bc2ae9d374043544c145ee923b56";
+            EXPECT_EQ(
+                SchemaImportResult::OK,
+                assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::None, {SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA})
+            ) << "Adding unique index on shared column is ignored";
+            EXPECT_EQ(
+                SchemaImportResult::ERROR,
+                assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, {"", "", ""})
+            ) << "Adding unique index on shared column is ignored";
+            }
+    );
+
+    Test(
+        "adding IsUnique constraint on shared column with ScopedDisableFailOnAssertion",
+        [&]()
+            {
+            auto newSchema = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                <ECSchema schemaName="TestSchema2" alias="ts2" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="TestSchema" version="01.00" alias="ts"/>
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+                    <ECEntityClass typeName="Sub2" >
+                        <BaseClass>ts:Parent</BaseClass>
+                        <ECProperty propertyName="SubProp2" typeName="string" >
+                            <ECCustomAttributes>
+                               <PropertyMap xmlns="ECDbMap.02.00">
+                                 <IsUnique>True</IsUnique>
+                               </PropertyMap>
+                            </ECCustomAttributes>
+                        </ECProperty>
+                    </ECEntityClass>
+                </ECSchema>)xml";
+
+            ScopedDisableFailOnAssertion disableFailOnAssertion;
+            const auto SCHEMA_HASH_ECDB_SCHEMA = "243bf6ec9eb753ae841f8f5bdd79be4a3f108cd11e96fc9b0b3ea048139b3739";
+            const auto SCHEMA_HASH_ECDB_MAP = "69bd23036dcf0d21216e0e4a663ad5d77092817016f552c278d6fbf3d14c59bf";
+            EXPECT_EQ(
+                SchemaImportResult::OK,
+                assertImport(newSchema, "1.0", SchemaManager::SchemaImportOptions::None, {SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA})
+            ) << "Adding unique index on shared column is ignored";
+            EXPECT_EQ(
+                SchemaImportResult::OK,
+                assertImport(newSchema, "1.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, {SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA})
+            ) << "Adding unique index on shared column is ignored";
+            }
+    );
+
+    Test(
+        "adding unique index on existing property",
+        [&]()
+            {
+            auto newSchema = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                <ECSchema schemaName="TestSchema" alias="ts" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+                    <ECEntityClass typeName="Parent" >
+                        <ECCustomAttributes>
+                           <ClassMap xmlns="ECDbMap.02.00">
+                               <MapStrategy>TablePerHierarchy</MapStrategy>
+                           </ClassMap>
+                           <ShareColumns xmlns="ECDbMap.02.00"/>
+                           <DbIndexList xmlns="ECDbMap.02.00">
+                                <Indexes>
+                                    <DbIndex>
+                                        <Name>uix_Parent_Code</Name>
+                                        <IsUnique>True</IsUnique>
+                                        <Properties>
+                                            <string>Code</string>
+                                        </Properties>
+                                    </DbIndex>
+                                </Indexes>
+                           </DbIndexList>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName="Name" typeName="string" />
+                        <ECProperty propertyName="Code" typeName="int"/>
+                        <ECProperty propertyName="Val" typeName="int" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="Sub" >
+                        <BaseClass>Parent</BaseClass>
+                        <ECProperty propertyName="SubProp" typeName="string" />
+                    </ECEntityClass>
+                </ECSchema>)xml";
+
+            EXPECT_EQ(
+                SchemaImportResult::ERROR,
+                assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::None, {"", "", ""})
+            ) << "Unique index on existing property must fail because adding a ECDbMap CA on existing class is not allowed.";
+            EXPECT_EQ(
+                SchemaImportResult::ERROR,
+                assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, {"", "", ""})
+            ) << "Unique index on existing property must fail because adding a ECDbMap CA on existing class is not allowed.";
+            EXPECT_EQ(
+                SchemaImportResult::ERROR,
+                assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::None, {"", "", ""})
+            ) << "Unique index on existing property must fail because adding a ECDbMap CA on existing class is not allowed.";
+            EXPECT_EQ(
+                SchemaImportResult::ERROR,
+                assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, {"", "", ""})
+            ) << "Unique index on existing property must fail because adding a ECDbMap CA on existing class is not allowed.";
+            }
+    );
+
+    Test(
+        "adding unique index on new property",
+        [&]()
+            {
+            auto newSchema = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                <ECSchema schemaName="TestSchema" alias="ts" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+                    <ECEntityClass typeName="Parent" >
+                        <ECCustomAttributes>
+                           <ClassMap xmlns="ECDbMap.02.00">
+                               <MapStrategy>TablePerHierarchy</MapStrategy>
+                           </ClassMap>
+                           <ShareColumns xmlns="ECDbMap.02.00"/>
+                           <DbIndexList xmlns="ECDbMap.02.00">
+                                <Indexes>
+                                    <DbIndex>
+                                        <Name>uix_Parent_NewProp</Name>
+                                        <IsUnique>True</IsUnique>
+                                        <Properties>
+                                            <string>NewProp</string>
+                                        </Properties>
+                                    </DbIndex>
+                                </Indexes>
+                           </DbIndexList>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName="Name" typeName="string" />
+                        <ECProperty propertyName="Code" typeName="int"/>
+                        <ECProperty propertyName="Val" typeName="int" />
+                        <ECProperty propertyName="NewProp" typeName="int" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="Sub" >
+                        <BaseClass>Parent</BaseClass>
+                        <ECProperty propertyName="SubProp" typeName="string" />
+                    </ECEntityClass>
+                </ECSchema>)xml";
+
+            EXPECT_EQ(
+                SchemaImportResult::ERROR,
+                assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::None, {"", "", ""})
+            ) << "Unique index on new property in existing class must fail because adding a ECDbMap CA on existing class is not allowed.";
+            EXPECT_EQ(
+                SchemaImportResult::ERROR,
+                assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, {"", "", ""})
+            ) << "Unique index on new property in existing class must fail because adding a ECDbMap CA on existing class is not allowed.";
+            EXPECT_EQ(
+                SchemaImportResult::ERROR,
+                assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::None, {"", "", ""})
+            ) << "Unique index on new property in existing class must fail because adding a ECDbMap CA on existing class is not allowed.";
+            EXPECT_EQ(
+                SchemaImportResult::ERROR,
+                assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, {"", "", ""})
+            ) << "Unique index on new property in existing class must fail because adding a ECDbMap CA on existing class is not allowed.";
+            }
+    );
+
+    Test(
+        "adding unique index on new property on new subclass",
+        [&]()
+            {
+            auto newSchema = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                <ECSchema schemaName="TestSchema" alias="ts" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+                    <ECEntityClass typeName="Parent" >
+                        <ECCustomAttributes>
+                           <ClassMap xmlns="ECDbMap.02.00">
+                               <MapStrategy>TablePerHierarchy</MapStrategy>
+                           </ClassMap>
+                           <ShareColumns xmlns="ECDbMap.02.00"/>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName="Name" typeName="string" />
+                        <ECProperty propertyName="Code" typeName="int"/>
+                        <ECProperty propertyName="Val" typeName="int" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="Sub" >
+                        <BaseClass>Parent</BaseClass>
+                        <ECProperty propertyName="SubProp" typeName="string" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="Sub2" >
+                       <ECCustomAttributes>
+                           <DbIndexList xmlns="ECDbMap.02.00">
+                                <Indexes>
+                                    <DbIndex>
+                                        <Name>uix_Sub2_SubProp2</Name>
+                                        <IsUnique>True</IsUnique>
+                                        <Properties>
+                                            <string>SubProp2</string>
+                                        </Properties>
+                                    </DbIndex>
+                                </Indexes>
+                           </DbIndexList>
+                        </ECCustomAttributes>
+                        <BaseClass>Parent</BaseClass>
+                        <ECProperty propertyName="SubProp2" typeName="int" />
+                    </ECEntityClass>
+                </ECSchema>)xml";
+
+            const auto SCHEMA_HASH_ECDB_SCHEMA = "b98cdb52891c555f9946c3f272c0e730c92375e4cf72e881ff19e806223974ba";
+            const auto SCHEMA_HASH_ECDB_MAP = "0c6d064f5f21f92356151b3e9c52bd6cb2a2e8027987aa2687305dd780bda604";
+            const auto SCHEMA_HASH_SQLITE_SCHEMA = "6fda81ae8767e9b33a939e0560f5fbf05b519464a8044306c82ae67e15f5d7c1";
+            EXPECT_EQ(
+                SchemaImportResult::OK,
+                assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::None, {SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA})
+            ) << "Unique index on new property on new subclass";
+            EXPECT_EQ(
+                SchemaImportResult::OK,
+                assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, {SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA})
+            ) << "Unique index on new property on new subclass";
+            
+            const auto SCHEMA2_HASH_ECDB_SCHEMA = "680a3543a9081ad74d66031a907005d9db3a8463b0aa6540e2e818959dd5d2ed";
+            EXPECT_EQ(
+                SchemaImportResult::OK,
+                assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::None, {SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA})
+            ) << "Unique index on new property on new subclass";
+            EXPECT_EQ(
+                SchemaImportResult::ERROR,
+                assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, {"", "", ""})
+            ) << "Unique index on new property on new subclass";
+            }
+    );
+
+    Test(
+        "adding unique index on new property on new subclass in new schema",
+        [&]()
+            {
+            auto newSchema = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                <ECSchema schemaName="TestSchema2" alias="ts2" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="TestSchema" version="01.00" alias="ts"/>
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+                    <ECEntityClass typeName="Sub2" >
+                       <ECCustomAttributes>
+                           <DbIndexList xmlns="ECDbMap.02.00">
+                                <Indexes>
+                                    <DbIndex>
+                                        <Name>uix_Sub2_SubProp2</Name>
+                                        <IsUnique>True</IsUnique>
+                                        <Properties>
+                                            <string>SubProp2</string>
+                                        </Properties>
+                                    </DbIndex>
+                                </Indexes>
+                           </DbIndexList>
+                        </ECCustomAttributes>
+                        <BaseClass>ts:Parent</BaseClass>
+                        <ECProperty propertyName="SubProp2" typeName="int" />
+                    </ECEntityClass>
+                </ECSchema>)xml";
+
+            const auto SCHEMA_HASH_ECDB_SCHEMA = "fcb6e0baccd101db520b904fc6eebaf4337799b0f50e3daf84ccc83182e7d624";
+            const auto SCHEMA_HASH_ECDB_MAP = "0c6d064f5f21f92356151b3e9c52bd6cb2a2e8027987aa2687305dd780bda604";
+            const auto SCHEMA_HASH_SQLITE_SCHEMA = "6fda81ae8767e9b33a939e0560f5fbf05b519464a8044306c82ae67e15f5d7c1";
+            EXPECT_EQ(
+                SchemaImportResult::OK,
+                assertImport(newSchema, "1.0", SchemaManager::SchemaImportOptions::None, {SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA})
+            ) << "Unique index on new property on new subclass in new schema";
+            EXPECT_EQ(
+                SchemaImportResult::OK,
+                assertImport(newSchema, "1.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, {SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA})
+            ) << "Unique index on new property on new subclass in new schema";
+            }
+    );
+
+    Test(
+        "adding unique index on inherited property on new subclass",
+        [&]()
+            {
+            auto newSchema = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                <ECSchema schemaName="TestSchema" alias="ts" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+                    <ECEntityClass typeName="Parent" >
+                        <ECCustomAttributes>
+                           <ClassMap xmlns="ECDbMap.02.00">
+                               <MapStrategy>TablePerHierarchy</MapStrategy>
+                           </ClassMap>
+                           <ShareColumns xmlns="ECDbMap.02.00"/>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName="Name" typeName="string" />
+                        <ECProperty propertyName="Code" typeName="int"/>
+                        <ECProperty propertyName="Val" typeName="int" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="Sub" >
+                        <BaseClass>Parent</BaseClass>
+                        <ECProperty propertyName="SubProp" typeName="string" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="Sub2" >
+                       <ECCustomAttributes>
+                           <DbIndexList xmlns="ECDbMap.02.00">
+                                <Indexes>
+                                    <DbIndex>
+                                        <Name>uix_Sub2_Code</Name>
+                                        <IsUnique>True</IsUnique>
+                                        <Properties>
+                                            <string>Code</string>
+                                        </Properties>
+                                    </DbIndex>
+                                </Indexes>
+                           </DbIndexList>
+                        </ECCustomAttributes>
+                        <BaseClass>Parent</BaseClass>
+                        <ECProperty propertyName="SubProp2" typeName="int" />
+                    </ECEntityClass>
+                </ECSchema>)xml";
+
+            const auto SCHEMA_HASH_ECDB_SCHEMA = "972605d73b066e9afc243af438953a7241890c884c27d77b3463a27065b77b5a";
+            const auto SCHEMA_HASH_ECDB_MAP = "466ab4ba3fc8d57fa8098e2e9545f5cfe28eca890cf13e7b48eed38414d02adc";
+            const auto SCHEMA_HASH_SQLITE_SCHEMA = "7ba09e84f3a0aa7ac4ad0ff40a9408bbecc03b5ca432c1eb20ceeccc2b4ccaf1";
+            EXPECT_EQ(
+                SchemaImportResult::OK,
+                assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::None, {SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA})
+            ) << "Unique index on inherited property on new subclass";
+            EXPECT_EQ(
+                SchemaImportResult::OK,
+                assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, {SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA})
+            ) << "Unique index on inherited property on new subclass";
+            
+            const auto SCHEMA2_HASH_ECDB_SCHEMA = "bee85fca95ae89cc0c1c4bfb054b6d207ff99899dcfd0d24de93783dea9ac4c4";
+            EXPECT_EQ(
+                SchemaImportResult::OK,
+                assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::None, {SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA})
+            ) << "Unique index on inherited property on new subclass";
+            EXPECT_EQ(
+                SchemaImportResult::ERROR,
+                assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, {"", "", ""})
+            ) << "Unique index on inherited property on new subclass";
+            }
+    );
+
+    Test(
+        "adding unique index on inherited property on new subclass in new schema",
+        [&]()
+            {
+            auto newSchema = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                <ECSchema schemaName="TestSchema2" alias="ts2" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="TestSchema" version="01.00" alias="ts"/>
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+                    <ECEntityClass typeName="Sub2" >
+                       <ECCustomAttributes>
+                           <DbIndexList xmlns="ECDbMap.02.00">
+                                <Indexes>
+                                    <DbIndex>
+                                        <Name>uix_Sub2_Code</Name>
+                                        <IsUnique>True</IsUnique>
+                                        <Properties>
+                                            <string>Code</string>
+                                        </Properties>
+                                    </DbIndex>
+                                </Indexes>
+                           </DbIndexList>
+                        </ECCustomAttributes>
+                        <BaseClass>ts:Parent</BaseClass>
+                        <ECProperty propertyName="SubProp2" typeName="int" />
+                    </ECEntityClass>
+                </ECSchema>)xml";
+
+            const auto SCHEMA_HASH_ECDB_SCHEMA = "1a477603d314cee614e536c0e2f81e3bc06bbe7e75c7caed36edb1ddff22dcba";
+            const auto SCHEMA_HASH_ECDB_MAP = "466ab4ba3fc8d57fa8098e2e9545f5cfe28eca890cf13e7b48eed38414d02adc";
+            const auto SCHEMA_HASH_SQLITE_SCHEMA = "7ba09e84f3a0aa7ac4ad0ff40a9408bbecc03b5ca432c1eb20ceeccc2b4ccaf1";
+            EXPECT_EQ(
+                SchemaImportResult::OK,
+                assertImport(newSchema, "1.0", SchemaManager::SchemaImportOptions::None, {SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA})
+            ) << "Unique index on inherited property on new subclass in new schema";
+            EXPECT_EQ(
+                SchemaImportResult::OK,
+                assertImport(newSchema, "1.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, {SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA})
+            ) << "Unique index on inherited property on new subclass in new schema";
+            }
+    );
+
+    Test(
+        "adding physical FK on new class",
+        [&]()
+            {
+            auto newSchema = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                <ECSchema schemaName="TestSchema" alias="ts" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+                    <ECEntityClass typeName="Parent" >
+                        <ECCustomAttributes>
+                           <ClassMap xmlns="ECDbMap.02.00">
+                               <MapStrategy>TablePerHierarchy</MapStrategy>
+                           </ClassMap>
+                           <ShareColumns xmlns="ECDbMap.02.00"/>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName="Name" typeName="string" />
+                        <ECProperty propertyName="Code" typeName="int"/>
+                        <ECProperty propertyName="Val" typeName="int" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="Sub" >
+                        <BaseClass>Parent</BaseClass>
+                        <ECProperty propertyName="SubProp" typeName="string" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="Child" >
+                        <ECCustomAttributes>
+                           <ClassMap xmlns="ECDbMap.02.00">
+                               <MapStrategy>TablePerHierarchy</MapStrategy>
+                           </ClassMap>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName="Name" typeName="string" />
+                        <ECNavigationProperty propertyName="Parent" relationshipName="ParentHasChildren" direction="backward">
+                            <ECCustomAttributes>
+                                <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+                             </ECCustomAttributes>
+                        </ECNavigationProperty>
+                    </ECEntityClass>
+                    <ECRelationshipClass typeName="ParentHasChildren" modifier="Sealed" strength="embedding" strengthDirection="forward" >
+                        <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                            <Class class="Parent" />
+                        </Source>
+                        <Target multiplicity="(0..1)" polymorphic="True"  roleLabel="is contained by">
+                            <Class class="Child" />
+                        </Target>
+                     </ECRelationshipClass>
+                </ECSchema>)xml";
+
+            const auto SCHEMA_HASH_ECDB_SCHEMA = "ff049625a6ede950f13be6fd3d922cc15ed6f5f70e6daa215db23d45c4fa3c8f";
+            const auto SCHEMA_HASH_ECDB_MAP = "d07a65b5a384d2b2e18c71c1a14d41f601e26aa7ed4d70729ad64fc15fb9ee7e";
+            const auto SCHEMA_HASH_SQLITE_SCHEMA = "10d5a90079a310b3413384e50ea3cfea8c5232a73b91fa57740ca350fdc64f80";
+            EXPECT_EQ(
+                SchemaImportResult::OK,
+                assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::None, {SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA})
+            ) << "Physical FK on new class";
+            EXPECT_EQ(
+                SchemaImportResult::OK,
+                assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, {SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA})
+            ) << "Physical FK on new class";
+            
+            const auto SCHEMA2_HASH_ECDB_SCHEMA = "8d6772f7e3796a13a5724ec87179033777226f06977ef87be1f0401a012ef479";
+            EXPECT_EQ(
+                SchemaImportResult::OK,
+                assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::None, {SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA})
+            ) << "Physical FK on new class";
+            EXPECT_EQ(
+                SchemaImportResult::ERROR,
+                assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, {"", "", ""})
+            ) << "Physical FK on new class";
+            }
+    );
+
+    Test(
+        "adding physical FK on new nav prop in existing class",
+        [&]()
+            {
+            auto newSchema = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                <ECSchema schemaName="TestSchema" alias="ts" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+                    <ECEntityClass typeName="Parent" >
+                        <ECCustomAttributes>
+                           <ClassMap xmlns="ECDbMap.02.00">
+                               <MapStrategy>TablePerHierarchy</MapStrategy>
+                           </ClassMap>
+                           <ShareColumns xmlns="ECDbMap.02.00"/>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName="Name" typeName="string" />
+                        <ECProperty propertyName="Code" typeName="int"/>
+                        <ECProperty propertyName="Val" typeName="int" />
+                        <ECNavigationProperty propertyName="Sibling" relationshipName="GrandparentHasParent" direction="backward">
+                            <ECCustomAttributes>
+                                <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+                             </ECCustomAttributes>
+                        </ECNavigationProperty>
+                    </ECEntityClass>
+                    <ECEntityClass typeName="Sub" >
+                        <BaseClass>Parent</BaseClass>
+                        <ECProperty propertyName="SubProp" typeName="string" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="Grandparent" >
+                        <ECCustomAttributes>
+                           <ClassMap xmlns="ECDbMap.02.00">
+                               <MapStrategy>TablePerHierarchy</MapStrategy>
+                           </ClassMap>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName="Name" typeName="string" />
+                    </ECEntityClass>
+                    <ECRelationshipClass typeName="GrandparentHasParent" modifier="Sealed" strength="embedding" strengthDirection="forward" >
+                        <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                            <Class class="Grandparent" />
+                        </Source>
+                        <Target multiplicity="(0..1)" polymorphic="True"  roleLabel="is contained by">
+                            <Class class="Parent" />
+                        </Target>
+                     </ECRelationshipClass>
+                </ECSchema>)xml";
+
+            const auto SCHEMA_HASH_ECDB_SCHEMA = "c94610934f7a8db3a2db4fbe376163df97ba19b48d68240ecc64fb1033b64b3c";
+            const auto SCHEMA_HASH_ECDB_MAP = "6f5ff0efbc2a19c023da791462a32b527d48dabb01a5b628fbe8d6532a46f1b3";
+            const auto SCHEMA_HASH_SQLITE_SCHEMA = "fe61924d982bc1a50bfff5af0fec230c8995c0d277293e95fef8f89ffe5f83ce";
+            EXPECT_EQ(
+                SchemaImportResult::OK,
+                assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::None, {SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA})
+            ) << "Physical FK on new nav prop in existing class";
+            EXPECT_EQ(
+                SchemaImportResult::OK,
+                assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, {SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA})
+            ) << "Physical FK on new nav prop in existing class";
+
+            const auto SCHEMA2_HASH_ECDB_SCHEMA = "fad2eb642d7302ab88515d8afd12eda77b6a023e2b71153d5c1bc30abe765053";
+            EXPECT_EQ(
+                SchemaImportResult::OK,
+                assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::None, {SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA})
+            ) << "Physical FK on new nav prop in existing class";
+            EXPECT_EQ(
+                SchemaImportResult::ERROR,
+                assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, {"", "", ""})
+            ) << "Physical FK on new nav prop in existing class";
             }
     );
     }
