@@ -66,6 +66,29 @@ export namespace NativeCloudSqlite {
     readonly state: "" | "copied" | "deleted";
   }
 
+  /** Returned from 'CloudContainer.queryHttpLog' describing a row in the bcv_http_log table. */
+  export interface BcvHttpLog {
+    /** Unique, monotonically increasing id value */
+    readonly id: number;
+    /** Time request was made, as iso-8601 */
+    readonly startTime: string;
+    /** Time reply received, as iso-8601 (or NULL) */
+    readonly endTime: string | undefined;
+    /** "PUT", "GET", etc. */
+    readonly method: string;
+    /** Name of the client that caused this request. Name will be "prefetch" if it is a request triggered by a prefetch.
+     *  Name of client can be configured by passing a 'clientIdentifier' to a CloudContainer's ContainerProps.
+     *  Empty string otherwise.
+     */
+    readonly client: string;
+    /** Log message associated with request */
+    readonly logmsg: string;
+    /** URI of request */
+    readonly uri: string;
+    /** HTTP response code (e.g. 200) */
+    readonly httpcode: number;
+  }
+
   /** Properties for accessing a CloudContainer */
   export type ContainerAccessProps = AccountAccessProps & ContainerProps & {
     /** Duration for holding write lock, in seconds. After this time the write lock expires if not refreshed. Default is one hour. */

@@ -75,6 +75,62 @@ describe("cloud sqlite", () => {
     await shutdownAzurite();
   });
 
+  it("should query bcvHttpLog", async () => {
+    const containerId = Guid.createValue();
+    const containerProps: NativeCloudSqlite.ContainerAccessProps = {
+      accessName: azuriteUser,
+      storageType: "azure?emulator=127.0.0.1:10000&sas=0",
+      containerId,
+      accessToken: azuriteKey,
+      clientIdentifier: "ContainerIdentifier",
+      writeable: true,
+    };
+    const container = new iModelJsNative.CloudContainer(containerProps);
+    container.initializeContainer();
+    container.connect(cache);
+
+    let rows = container.queryHttpLog();
+    expect(rows.length).to.equal(2); // manifest and bcv_kv GETs.
+
+    rows = container.queryHttpLog({startFromId: 2});
+    expect(rows.length).to.equal(1);
+    expect(rows[0].id).to.equal(2);
+    const endTime = rows[0].endTime;
+
+    container.acquireWriteLock("test");
+    const dbTransfer = new iModelJsNative.CloudDbTransfer("upload", container, {localFileName: join(getAssetsDir(), "test.bim"), dbName: "test.bim" });
+    await dbTransfer.promise;
+    container.releaseWriteLock();
+    container.checkForChanges();
+
+    // 6 entries added by grabbing the write lock and checking for changes.
+    // 2 entries from before. Expect 7 total entries because we're filtering by endTime from before.
+    rows = container.queryHttpLog({finishedAtOrAfterTime: endTime, startFromId: 1});
+    expect(rows.length).to.equal(7);
+    expect(rows.find((value) => {
+      return value.id === 1;
+    })).to.equal(undefined);
+
+    rows = container.queryHttpLog({finishedAtOrAfterTime: endTime});
+    expect(rows.length).to.equal(7);
+    expect(rows.find((value) => {
+      return value.id === 1;
+    })).to.equal(undefined);
+
+    rows = container.queryHttpLog({finishedAtOrAfterTime: endTime, startFromId: 1, showOnlyFinished: true});
+    expect(rows.length).to.equal(7);
+    expect(rows.find((value) => {
+      return value.id === 1;
+    })).to.equal(undefined);
+
+    rows = container.queryHttpLog({showOnlyFinished: true});
+    expect(rows.length).to.equal(8);
+
+    rows = container.queryHttpLog({startFromId: 4, showOnlyFinished: true});
+    expect(rows.length).to.equal(5);
+
+  });
+
   it("should pass clientIdentifier through container to database", async () => {
     const containerId = Guid.createValue();
     const containerProps: NativeCloudSqlite.ContainerAccessProps = {

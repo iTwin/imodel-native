@@ -180,6 +180,7 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
         if (!IsContainerConnected())
             BeNapi::ThrowJsException(Env(), "container not connected to cache");
     }
+
     void RequireWriteLock() {
         RequireConnected();
         if (!m_writeLockHeld)
@@ -259,6 +260,71 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
         if (HasLocalChanges())
             BeNapi::ThrowJsException(Env(), "cannot obtain database hash with local changes");
         return Napi::String::New(Env(), m_cache->GetDatabaseHash(*this, dbName));
+    }
+
+    Napi::Value QueryHttpLog(NapiInfoCR info) {
+        RequireConnected();
+        int startFromId = 0;
+        Utf8String finishedAtOrAfterTime = "";
+        bool showOnlyFinished = false;
+        if (info[0].IsObject()) {
+            auto filterOpts = BeJsConst(info[0].As<Napi::Object>());
+            startFromId = filterOpts[JSON_NAME(startFromId)].asInt(0);
+            finishedAtOrAfterTime = filterOpts[JSON_NAME(finishedAtOrAfterTime)].asCString();
+            showOnlyFinished = filterOpts[JSON_NAME(showOnlyFinished)].asBool();
+        }
+
+        Utf8String sql = "SELECT * FROM bcv_http_log";
+        bool hasWhereClause = false;
+        if (startFromId != 0) {
+            sql += " WHERE id >= ?";
+            hasWhereClause = true;
+        }
+        if (showOnlyFinished) {
+            if (hasWhereClause) {
+                sql += " AND end_time IS NOT NULL";
+            } else {
+                sql += " WHERE end_time IS NOT NULL";
+                hasWhereClause = true;
+            }
+        }
+        if (!finishedAtOrAfterTime.empty()) {
+            if (hasWhereClause) {
+                sql += " AND julianday(end_time) >= julianday(?)";
+            } else {
+                sql += " WHERE julianday(end_time) >= julianday(?)";
+                hasWhereClause = true;
+            }
+        }
+
+        Statement stmt;
+        auto rc =  stmt.Prepare(m_containerDb, sql.c_str());
+        BeAssert (rc == BE_SQLITE_OK);
+        UNUSED_VARIABLE(rc);
+        if (startFromId != 0 && !finishedAtOrAfterTime.empty()) {
+            stmt.BindInt(1, startFromId);
+            stmt.BindText(2, finishedAtOrAfterTime.c_str(), Statement::MakeCopy::Yes);
+        } else if (startFromId != 0) {
+            stmt.BindInt(1, startFromId);
+        } else if (!finishedAtOrAfterTime.empty()) {
+            stmt.BindText(1, finishedAtOrAfterTime.c_str(), Statement::MakeCopy::Yes);
+        }
+
+        auto rows = Napi::Array::New(Env());
+        uint32_t index = 0;
+        while (BE_SQLITE_ROW == stmt.Step()) {
+            BeJsNapiObject value(Env());
+            value["id"] = stmt.GetValueInt(0);
+            value["startTime"] = stmt.GetValueText(1);
+            value["endTime"] = stmt.GetValueText(2);
+            value["method"] = stmt.GetValueText(3);
+            value["client"] = stmt.GetValueText(4);
+            value["logmsg"] = stmt.GetValueText(5);
+            value["uri"] = stmt.GetValueText(6);
+            value["httpcode"] = stmt.GetValueInt(7);
+            rows.Set(index++, value);
+        }
+        return rows;
     }
 
     Napi::Value QueryDatabases(NapiInfoCR info) {
@@ -584,6 +650,7 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
             InstanceMethod<&JsCloudContainer::QueryDatabase>("queryDatabase"),
             InstanceMethod<&JsCloudContainer::QueryDatabaseHash>("queryDatabaseHash"),
             InstanceMethod<&JsCloudContainer::QueryDatabases>("queryDatabases"),
+            InstanceMethod<&JsCloudContainer::QueryHttpLog>("queryHttpLog"),
             InstanceMethod<&JsCloudContainer::ReleaseWriteLock>("releaseWriteLock"),
             InstanceMethod<&JsCloudContainer::UploadChanges>("uploadChanges"),
         });
