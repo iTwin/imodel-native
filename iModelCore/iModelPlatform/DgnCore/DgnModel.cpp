@@ -627,6 +627,59 @@ DgnDbStatus DefinitionModel::_OnInsertElement(DgnElementR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+SheetIndexModelPtr SheetIndexModel::Create(DgnDbR db, DgnElementId modeledElementId)
+    {
+    ModelHandlerR handler = dgn_ModelHandler::SheetIndex::GetHandler();
+    DgnClassId classId = db.Domains().GetClassId(handler);
+    DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, classId, modeledElementId));
+    if (!classId.IsValid() || !model.IsValid())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    return dynamic_cast<SheetIndexModelP>(model.get());
+    }
+
+// /*---------------------------------------------------------------------------------**//**
+// * @bsimethod
+// +---------------+---------------+---------------+---------------+---------------+------*/
+SheetIndexModelPtr SheetIndexModel::Create(SheetIndexPartitionCR modeledElement)
+    {
+    return SheetIndexModel::Create(modeledElement.GetDgnDb(), modeledElement.GetElementId());
+    }
+
+// /*---------------------------------------------------------------------------------**//**
+// * @bsimethod
+// +---------------+---------------+---------------+---------------+---------------+------*/
+SheetIndexModelPtr SheetIndexModel::CreateAndInsert(SheetIndexPartitionCR modeledElement)
+    {
+    SheetIndexModelPtr model = Create(modeledElement);
+    return (model.IsValid() && (DgnDbStatus::Success == model->Insert())) ? model : nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus SheetIndexModel::_OnInsertElement(DgnElementR element)
+    {
+    if (nullptr == dynamic_cast<SheetIndexElementCP>(&element))
+        {
+        BeAssert(false);
+        return DgnDbStatus::WrongModel;
+        }
+
+    return T_Super::_OnInsertElement(element);
+    }
+
+// DgnDbStatus SheetIndexModel::_OnInsertElement(DgnElementR el)
+//     {
+//     return el.IsInformationContentElement() ? T_Super::_OnInsertElement(el) : DgnDbStatus::WrongModel;
+//     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DocumentListModel::_OnInsertElement(DgnElementR element)
     {
     // only Document elements go into a DocumentListModel

@@ -564,6 +564,40 @@ DgnDbStatus InformationPartitionElement::_OnUpdate(DgnElementCR original)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus SheetIndexPartition::_OnSubModelInsert(DgnModelCR model) const
+    {
+    // A SheetIndexPartition can only be modeled by an SheetIndexPartitionModel
+    return model.IsSheetIndexModel() ? T_Super::_OnSubModelInsert(model) : DgnDbStatus::ElementBlockedChange;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+SheetIndexPartitionPtr SheetIndexPartition::Create(SubjectCR parentSubject, Utf8StringCR name, Utf8CP description)
+    {
+    CreateParams createParams = InitCreateParams(parentSubject, name, dgn_ElementHandler::SheetIndexPartition::GetHandler());
+    if (!createParams.IsValid())
+        return nullptr;
+
+    SheetIndexPartitionPtr partition = new SheetIndexPartition(createParams);
+    if (description && *description)
+        partition->SetDescription(description);
+
+    return partition;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+SheetIndexPartitionCPtr SheetIndexPartition::CreateAndInsert(SubjectCR parentSubject, Utf8StringCR name, Utf8CP description)
+    {
+    SheetIndexPartitionPtr partition = Create(parentSubject, name, description);
+    return partition.IsValid() ? parentSubject.GetDgnDb().Elements().Insert<SheetIndexPartition>(*partition) : nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DefinitionPartition::_OnSubModelInsert(DgnModelCR model) const
     {
     // A DefinitionPartition can only be modeled by an DefinitionModel

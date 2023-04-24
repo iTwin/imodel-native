@@ -31,6 +31,7 @@ HANDLER_DEFINE_MEMBERS(Role)
 HANDLER_DEFINE_MEMBERS(Information)
 HANDLER_DEFINE_MEMBERS(InformationRecord)
 HANDLER_DEFINE_MEMBERS(Definition)
+HANDLER_DEFINE_MEMBERS(SheetIndex)
 HANDLER_DEFINE_MEMBERS(Dictionary)
 HANDLER_DEFINE_MEMBERS(DocumentList)
 HANDLER_DEFINE_MEMBERS(GroupInformation)
@@ -59,6 +60,7 @@ HANDLER_DEFINE_MEMBERS(InformationContent)
 HANDLER_DEFINE_MEMBERS(InformationRecord)
 HANDLER_DEFINE_MEMBERS(RenderTimeline)
 HANDLER_DEFINE_MEMBERS(GroupInformation)
+HANDLER_DEFINE_MEMBERS(SheetIndex)
 HANDLER_DEFINE_MEMBERS(InformationCarrier)
 HANDLER_DEFINE_MEMBERS(Document)
 HANDLER_DEFINE_MEMBERS(Drawing)
@@ -85,6 +87,7 @@ HANDLER_DEFINE_MEMBERS(GroupInformationPartition)
 HANDLER_DEFINE_MEMBERS(InformationRecordPartition)
 HANDLER_DEFINE_MEMBERS(PhysicalPartition)
 HANDLER_DEFINE_MEMBERS(SpatialLocationPartition)
+HANDLER_DEFINE_MEMBERS(SheetIndexPartition)
 HANDLER_DEFINE_MEMBERS(ExternalSource)
 HANDLER_DEFINE_MEMBERS(ExternalSourceGroup)
 HANDLER_DEFINE_MEMBERS(ExternalSourceAttachment)
@@ -130,6 +133,7 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(dgn_ModelHandler::Information::GetHandler());
     RegisterHandler(dgn_ModelHandler::InformationRecord::GetHandler());
     RegisterHandler(dgn_ModelHandler::Definition::GetHandler());
+    RegisterHandler(dgn_ModelHandler::SheetIndex::GetHandler());
     RegisterHandler(dgn_ModelHandler::DocumentList::GetHandler());
     RegisterHandler(dgn_ModelHandler::GroupInformation::GetHandler());
     RegisterHandler(dgn_ModelHandler::Link::GetHandler());
@@ -141,6 +145,7 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(dgn_ElementHandler::InformationRecord::GetHandler());
     RegisterHandler(dgn_ElementHandler::RenderTimeline::GetHandler());
     RegisterHandler(dgn_ElementHandler::GroupInformation::GetHandler());
+    RegisterHandler(dgn_ElementHandler::SheetIndex::GetHandler());
     RegisterHandler(dgn_ElementHandler::InformationCarrier::GetHandler());
     RegisterHandler(dgn_ElementHandler::Document::GetHandler());
     RegisterHandler(dgn_ElementHandler::Drawing::GetHandler());
@@ -191,6 +196,7 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(dgn_ElementHandler::LinkPartitionHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::PhysicalPartition::GetHandler());
     RegisterHandler(dgn_ElementHandler::SpatialLocationPartition::GetHandler());
+    RegisterHandler(dgn_ElementHandler::SheetIndexPartition::GetHandler());
 
     RegisterHandler(dgn_ElementHandler::AnnotationTextStyleHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::AnnotationFrameStyleHandler::GetHandler());

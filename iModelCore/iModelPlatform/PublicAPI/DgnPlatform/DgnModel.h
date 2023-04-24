@@ -34,6 +34,7 @@ struct Repository;
 struct Role;
 struct Spatial;
 struct SpatialLocation;
+struct SheetIndex;
 } // namespace dgn_ModelHandler
 
 #define DGNMODEL_DECLARE_MEMBERS(__ECClassName__,__superclass__)\
@@ -395,6 +396,7 @@ protected:
     virtual InformationModelCP _ToInformationModel() const {return nullptr;}
     virtual InformationRecordModelCP _ToInformationRecordModel() const {return nullptr;}
     virtual DefinitionModelCP _ToDefinitionModel() const {return nullptr;}
+    virtual SheetIndexModelCP _ToSheetIndexModel() const {return nullptr;}
     virtual GeometricModel2dCP _ToGeometricModel2d() const {return nullptr;}
     virtual GeometricModel3dCP _ToGeometricModel3d() const {return nullptr;}
     virtual GraphicalModel3dCP _ToGraphicalModel3d() const {return nullptr;}
@@ -527,6 +529,7 @@ public:
     DrawingModelCP ToDrawingModel() const {return _ToDrawingModel();} //!< more efficient substitute for dynamic_cast<DrawingModelCP>(model)
     SectionDrawingModelCP ToSectionDrawingModel() const {return _ToSectionDrawingModel();} //!< more efficient substitute for dynamic_cast<SectionDrawingModelCP>(model)
     Sheet::ModelCP ToSheetModel() const {return _ToSheetModel();} //!< more efficient substitute for dynamic_cast<SheetModelCP>(model)
+    SheetIndexModelCP ToSheetIndexModel() const {return _ToSheetIndexModel();}
     GeometricModelP ToGeometricModelP() {return const_cast<GeometricModelP>(_ToGeometricModel());} //!< more efficient substitute for dynamic_cast<GeometricModelP>(model)
     RoleModelP ToRoleModelP() {return const_cast<RoleModelP>(_ToRoleModel());} //!< more efficient substitute for dynamic_cast<RoleModelP>(model)
     InformationModelP ToInformationModelP() {return const_cast<InformationModelP>(_ToInformationModel());} //!< more efficient substitute for dynamic_cast<InformationModelP>(model)
@@ -540,6 +543,7 @@ public:
     DrawingModelP ToDrawingModelP() {return const_cast<DrawingModelP>(_ToDrawingModel());} //!< more efficient substitute for dynamic_cast<DrawingModelP>(model)
     SectionDrawingModelP ToSectionDrawingModelP() {return const_cast<SectionDrawingModelP>(_ToSectionDrawingModel());} //!< more efficient substitute for dynamic_cast<SectionDrawingModelP>(model)
     Sheet::ModelP ToSheetModelP() {return const_cast<Sheet::ModelP>(_ToSheetModel());}//!< more efficient substitute for dynamic_cast<SheetModelP>(model)
+    SheetIndexModelP ToSheetIndexModelP() {return const_cast<SheetIndexModelP>(_ToSheetIndexModel());}
 
     bool IsGeometricModel() const {return nullptr != ToGeometricModel();}
     bool IsSpatialModel() const {return nullptr != ToSpatialModel();}
@@ -552,6 +556,7 @@ public:
     bool IsInformationRecordModel() const {return nullptr != ToInformationRecordModel();}
     bool IsDefinitionModel() const {return nullptr != ToDefinitionModel();}
     bool IsSheetModel() const {return nullptr != ToSheetModel();}
+    bool IsSheetIndexModel() const {return nullptr != ToSheetIndexModel();}
     bool IsDrawingModel() const {return nullptr != ToDrawingModel();}
     bool IsDictionaryModel() const {return DictionaryId() == GetModelId();}
     //@}
@@ -1170,6 +1175,28 @@ public:
 };
 
 //=======================================================================================
+//! A model which contains SheetIndex related elements.
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE SheetIndexModel : InformationModel
+{
+    DGNMODEL_DECLARE_MEMBERS(BIS_CLASS_SheetIndexModel, InformationModel);
+    friend struct dgn_ModelHandler::SheetIndex;
+
+private:
+    static SheetIndexModelPtr Create(DgnDbR db, DgnElementId modeledElementId);
+
+protected:
+    SheetIndexModelCP _ToSheetIndexModel() const override final {return this;}
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element) override;
+
+    explicit SheetIndexModel(CreateParams const& params) : T_Super(params) {}
+    static SheetIndexModelPtr Create(CreateParams const& params) {return new SheetIndexModel(params);}
+public:
+    DGNPLATFORM_EXPORT static SheetIndexModelPtr Create(SheetIndexPartitionCR modeledElement);
+    DGNPLATFORM_EXPORT static SheetIndexModelPtr CreateAndInsert(SheetIndexPartitionCR modeledElement);
+};
+
+//=======================================================================================
 //! A model which contains information about this repository.
 //! @ingroup GROUP_DgnModel
 // @bsiclass
@@ -1425,6 +1452,12 @@ namespace dgn_ModelHandler
     struct EXPORT_VTABLE_ATTRIBUTE Definition : Information
     {
         MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_DefinitionModel, DefinitionModel, Definition, Information, DGNPLATFORM_EXPORT)
+    };
+
+    //! The ModelHandler for SheetIndexModel
+    struct EXPORT_VTABLE_ATTRIBUTE SheetIndex : Information
+    {
+        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_SheetIndexModel, SheetIndexModel, SheetIndex, Information, DGNPLATFORM_EXPORT)
     };
 
     //! The ModelHandler for DocumentListModel

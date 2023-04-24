@@ -167,6 +167,21 @@ LinkModelPtr DgnDbTestUtils::InsertLinkModel(DgnDbR db, Utf8CP partitionName)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+SheetIndexModelPtr DgnDbTestUtils::InsertSheetIndexModel(DgnDbR db, Utf8CP partitionName)
+    {
+    MUST_HAVE_HOST(nullptr);
+    SubjectCPtr rootSubject = db.Elements().GetRootSubject();
+    SheetIndexPartitionCPtr partition = SheetIndexPartition::CreateAndInsert(*rootSubject, partitionName);
+    EXPECT_TRUE(partition.IsValid());
+    SheetIndexModelPtr model = SheetIndexModel::CreateAndInsert(*partition);
+    EXPECT_TRUE(model.IsValid());
+    EXPECT_EQ(partition->GetSubModelId(), model->GetModelId());
+    return model;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 DefinitionModelPtr DgnDbTestUtils::InsertDefinitionModel(DgnDbR db, Utf8CP partitionName)
     {
     MUST_HAVE_HOST(nullptr);

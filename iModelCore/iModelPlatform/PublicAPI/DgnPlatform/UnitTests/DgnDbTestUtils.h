@@ -91,6 +91,10 @@ public:
     //! @note No need for caller to assert a valid return (asserts within implementation)
     static DefinitionModelPtr InsertDefinitionModel(DgnDbR, Utf8CP partitionName);
 
+    //! Insert a SheetIndexModel
+    //! @note Also creates a SheetIndexPartition for the SheetIndexModel to model
+    static SheetIndexModelPtr InsertSheetIndexModel(DgnDbR, Utf8CP partitionName);
+
     //! Insert a GroupInformationModel
     //! @note Also creates a GroupInformationPartition for the GroupInformationModel to model
     //! @note No need for caller to assert a valid return (asserts within implementation)

@@ -214,6 +214,12 @@ namespace dgn_ElementHandler
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_GroupInformationElement, Dgn::GroupInformationElement, GroupInformation, InformationContent, DGNPLATFORM_EXPORT)
     };
 
+    //! The ElementHandler for SheetIndexElement
+    struct EXPORT_VTABLE_ATTRIBUTE SheetIndex : InformationContent
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_SheetIndexElement, Dgn::SheetIndexElement, SheetIndex, InformationContent, DGNPLATFORM_EXPORT)
+    };
+
     struct EXPORT_VTABLE_ATTRIBUTE ExternalSource : InformationContent
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_ExternalSource, Dgn::ExternalSource, ExternalSource, InformationContent, DGNPLATFORM_EXPORT)
@@ -305,6 +311,12 @@ namespace dgn_ElementHandler
     struct EXPORT_VTABLE_ATTRIBUTE SpatialLocationPartition : InformationPartition
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_SpatialLocationPartition, Dgn::SpatialLocationPartition, SpatialLocationPartition, InformationPartition, DGNPLATFORM_EXPORT)
+    };
+
+    //! The ElementHandler for SheetIndexPartition
+    struct EXPORT_VTABLE_ATTRIBUTE SheetIndexPartition : InformationPartition
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_SheetIndexPartition, Dgn::SheetIndexPartition, SheetIndexPartition, InformationPartition, DGNPLATFORM_EXPORT)
     };
 };
 

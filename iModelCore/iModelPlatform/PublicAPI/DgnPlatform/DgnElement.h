@@ -25,11 +25,11 @@ namespace dgn_ElementHandler
 {
     struct Element;
     struct InformationCarrier;
-    struct InformationContent; struct InformationRecord; struct GroupInformation; struct Subject;
+    struct InformationContent; struct InformationRecord; struct GroupInformation; struct Subject; struct SheetIndex;
     struct Document; struct Drawing; struct SectionDrawing;
     struct DriverBundle;
     struct Definition; struct PhysicalType; struct GraphicalType2d; struct SpatialLocationType; struct TemplateRecipe2d; struct TemplateRecipe3d;
-    struct InformationPartition; struct DefinitionPartition; struct DocumentPartition; struct GroupInformationPartition; struct InformationRecordPartition; struct PhysicalPartition; struct SpatialLocationPartition;
+    struct InformationPartition; struct DefinitionPartition; struct DocumentPartition; struct GroupInformationPartition; struct InformationRecordPartition; struct PhysicalPartition; struct SpatialLocationPartition; struct SheetIndexPartition;
     struct Geometric2d; struct Annotation2d; struct DrawingGraphic;
     struct Geometric3d; struct Physical; struct SpatialLocation;
     struct Role;
@@ -3360,6 +3360,31 @@ public:
 };
 
 //=======================================================================================
+//! A SheetIndexPartition provides a starting point for a SheetIndexModel hierarchy
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE SheetIndexPartition : InformationPartitionElement
+{
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_SheetIndexPartition, InformationPartitionElement);
+    friend struct dgn_ElementHandler::SheetIndexPartition;
+
+protected:
+    DGNPLATFORM_EXPORT DgnDbStatus _OnSubModelInsert(DgnModelCR model) const override;
+    explicit SheetIndexPartition(CreateParams const& params) : T_Super(params) {}
+
+public:
+    //! Create a new SheetIndexPartition
+    //! @param[in] parentSubject The new SheetIndexPartition will be a child element of this Subject
+    //! @param[in] name The name of the new partition which will be used as the CodeValue
+    //! @param[in] description Optional description for this SheetIndexPartition
+    DGNPLATFORM_EXPORT static SheetIndexPartitionPtr Create(SubjectCR parentSubject, Utf8StringCR name, Utf8CP description=nullptr);
+    //! Create and insert a new SheetIndexPartition
+    //! @param[in] parentSubject The new SheetIndexPartition will be a child element of this Subject
+    //! @param[in] name The name of the new partition which will be used as the CodeValue
+    //! @param[in] description Optional description for this SheetIndexPartition
+    DGNPLATFORM_EXPORT static SheetIndexPartitionCPtr CreateAndInsert(SubjectCR parentSubject, Utf8StringCR name, Utf8CP description=nullptr);
+};
+
+//=======================================================================================
 //! An InformationCarrierElement is a proxy for an information carrier in the physical world.
 //! For example, the arrangement of ink on a paper document or an electronic file is an information carrier.
 //! The content is tracked separately from the carrier.
@@ -3780,6 +3805,18 @@ struct EXPORT_VTABLE_ATTRIBUTE GroupInformationElement : InformationReferenceEle
 
 protected:
     explicit GroupInformationElement(CreateParams const& params) : T_Super(params) {}
+};
+
+//=======================================================================================
+//! A SheetIndexElement resides in a SheetIndexModel.
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE SheetIndexElement : InformationReferenceElement
+{
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_SheetIndexElement, InformationReferenceElement);
+    friend struct dgn_ElementHandler::SheetIndex;
+
+protected:
+    explicit SheetIndexElement(CreateParams const& params) : T_Super(params) {}
 };
 
 //=======================================================================================
