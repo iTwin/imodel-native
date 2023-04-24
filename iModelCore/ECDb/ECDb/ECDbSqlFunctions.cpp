@@ -21,7 +21,9 @@ void PropExistsFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
         ctx.SetResultError("prop_exists(I,S]) expect two args");
         return;
     }
-
+    if (m_propMap.Empty()) {
+        m_propMap.Build(m_ecdb, true);
+    }
     DbValue const& classIdVal = args[0];
     if (classIdVal.IsNull() || classIdVal.GetValueType() != DbValueType::IntegerVal )
         return;
