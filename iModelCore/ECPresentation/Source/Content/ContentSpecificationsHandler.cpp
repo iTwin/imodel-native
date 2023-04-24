@@ -218,6 +218,8 @@ static ECSchemaHelper::RelationshipPathsResponse FindRelatedPropertyPaths(Conten
         RelationshipPathSpecification const* propertiesSource = propertySpec.GetPropertiesSource();
         if (propertiesSource)
             {
+            bvector<bool> stepTargetsPolymorphism;
+            stepTargetsPolymorphism.reserve(propertiesSource->GetSteps().size());
             bvector<Utf8String> stepTargetInstanceFilters;
             stepTargetInstanceFilters.reserve(propertiesSource->GetSteps().size());
             for (auto const& stackSpec : appendInfo.GetSource())
@@ -225,12 +227,16 @@ static ECSchemaHelper::RelationshipPathsResponse FindRelatedPropertyPaths(Conten
                 if (stackSpec->GetPropertiesSource())
                     {
                     for (size_t specIndex = 1; specIndex < stackSpec->GetPropertiesSource()->GetSteps().size(); ++specIndex)
+                        {
                         stepTargetInstanceFilters.push_back("");
+                        stepTargetsPolymorphism.push_back(stackSpec->IsPolymorphic());
+                        }                        
                     }
                 stepTargetInstanceFilters.push_back(stackSpec->GetInstanceFilter());
+                stepTargetsPolymorphism.push_back(stackSpec->IsPolymorphic());
                 }
 
-            pathSpecs.push_back(ECSchemaHelper::RelationshipPathsRequestParams::PathSpecification((int)i, *propertiesSource, propertySpec.IsPolymorphic(), stepTargetInstanceFilters));
+            pathSpecs.push_back(ECSchemaHelper::RelationshipPathsRequestParams::PathSpecification((int)i, *propertiesSource, stepTargetsPolymorphism, stepTargetInstanceFilters));
             continue;
             }
 
@@ -244,7 +250,7 @@ static ECSchemaHelper::RelationshipPathsResponse FindRelatedPropertyPaths(Conten
 
         tempPropertySources.push_back(std::make_unique<RelationshipPathSpecification>(*new RelationshipStepSpecification(
             relationshipClassNames, propertySpec.GetRequiredRelationDirection(), propertySpec.GetRelatedClassNames())));
-        pathSpecs.push_back(ECSchemaHelper::RelationshipPathsRequestParams::PathSpecification((int)i, *tempPropertySources.back().get(), propertySpec.IsPolymorphic(), {}));
+        pathSpecs.push_back(ECSchemaHelper::RelationshipPathsRequestParams::PathSpecification((int)i, *tempPropertySources.back(), bvector<bool>(tempPropertySources.back()->GetSteps().size(), propertySpec.IsPolymorphic()), {}));
         }
 
     // find all paths that match each spec (associated by index)
