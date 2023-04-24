@@ -11,7 +11,7 @@ import { NativeCloudSqlite } from "../NativeCloudSqlite";
 import { IModelJsNative } from "../NativeLibrary";
 import { getAssetsDir, getOutputDir, iModelJsNative } from "./utils";
 import { ChildProcess, spawn  } from "child_process";
-import { Guid, OpenMode } from "@itwin/core-bentley";
+import { BeDuration, Guid, OpenMode } from "@itwin/core-bentley";
 
 chaiuse(chaiAsPromised);
 
@@ -92,10 +92,14 @@ describe("cloud sqlite", () => {
     let rows = container.queryHttpLog();
     expect(rows.length).to.equal(2); // manifest and bcv_kv GETs.
 
+    // endTime to exclude these first 2 entries in later queries. 
+    await BeDuration.wait(100);
+    const endTime = new Date().toISOString();
+
     rows = container.queryHttpLog({startFromId: 2});
     expect(rows.length).to.equal(1);
     expect(rows[0].id).to.equal(2);
-    const endTime = rows[0].endTime;
+    
 
     container.acquireWriteLock("test");
     const dbTransfer = new iModelJsNative.CloudDbTransfer("upload", container, {localFileName: join(getAssetsDir(), "test.bim"), dbName: "test.bim" });
@@ -104,23 +108,23 @@ describe("cloud sqlite", () => {
     container.checkForChanges();
 
     // 6 entries added by grabbing the write lock and checking for changes.
-    // 2 entries from before. Expect 7 total entries because we're filtering by endTime from before.
+    // 2 entries from before. Expect 6 total entries because we're filtering by endTime from before.
     rows = container.queryHttpLog({finishedAtOrAfterTime: endTime, startFromId: 1});
-    expect(rows.length).to.equal(7);
+    expect(rows.length).to.equal(6);
     expect(rows.find((value) => {
-      return value.id === 1;
+      return value.id === 1 || value.id === 2;
     })).to.equal(undefined);
 
     rows = container.queryHttpLog({finishedAtOrAfterTime: endTime});
-    expect(rows.length).to.equal(7);
+    expect(rows.length).to.equal(6);
     expect(rows.find((value) => {
-      return value.id === 1;
+      return value.id === 1 || value.id === 2;
     })).to.equal(undefined);
 
     rows = container.queryHttpLog({finishedAtOrAfterTime: endTime, startFromId: 1, showOnlyFinished: true});
-    expect(rows.length).to.equal(7);
+    expect(rows.length).to.equal(6);
     expect(rows.find((value) => {
-      return value.id === 1;
+      return value.id === 1 || value.id === 2;
     })).to.equal(undefined);
 
     rows = container.queryHttpLog({showOnlyFinished: true});
