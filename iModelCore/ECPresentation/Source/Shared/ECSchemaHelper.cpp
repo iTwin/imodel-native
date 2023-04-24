@@ -1946,7 +1946,7 @@ static Utf8String CreateECClassIdSelectClause(SelectClass<TClass> const& selectC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Utf8String BuildPathInfoSelectClause(RelatedClassPathCR path, bool selectClassIdsPolymorphically)
+static Utf8String BuildPathInfoSelectClause(RelatedClassPathCR path, bvector<bool> const& stepsPolymorphism)
     {
     Utf8String clause = "'[";
     for (size_t i = 0; i < path.size(); ++i)
@@ -1974,13 +1974,14 @@ static Utf8String BuildPathInfoSelectClause(RelatedClassPathCR path, bool select
             targetInstanceFilterSelector = "null";
             }
 
-        bool selectRelationshipIdPolymorphically = selectClassIdsPolymorphically && nullptr == step.GetNavigationProperty();
-        bool selectTargetClassIdPolymorphically = selectClassIdsPolymorphically || (i < path.size() - 1);
+        bool selectRelationshipIdPolymorphically = stepsPolymorphism[i] && nullptr == step.GetNavigationProperty();
+        bool selectTargetClassIdPolymorphically = stepsPolymorphism[i];
 
         clause.append("{");
         clause.append("\"RelId\":' || CAST(").append(CreateECClassIdSelectClause(step.GetRelationship(), selectRelationshipIdPolymorphically)).append(" AS TEXT) || ',");
         clause.append("\"IsRelFwd\":").append(step.IsForwardRelationship() ? "true" : "false").append(",");
         clause.append("\"IsTgtOptional\":true").append(",");
+        clause.append("\"IsTgtPoly\":").append(selectTargetClassIdPolymorphically ? "false" : "true").append(",");
         clause.append("\"TgtClassId\":' || CAST(").append(CreateECClassIdSelectClause(step.GetTargetClass(), selectTargetClassIdPolymorphically)).append(" AS TEXT) || ',");
         clause.append("\"Filter\":").append(targetInstanceFilterSelector);
         clause.append("}");
@@ -2001,6 +2002,7 @@ static rapidjson::Document BuildPathInfoJsonFromRelationshipPath(RelatedClassPat
         stepInfoJson.AddMember("RelId", step.GetRelationship().GetClass().GetId().GetValue(), pathInfoJson.GetAllocator());
         stepInfoJson.AddMember("IsRelFwd", step.IsForwardRelationship(), pathInfoJson.GetAllocator());
         stepInfoJson.AddMember("IsTgtOptional", step.IsTargetOptional(), pathInfoJson.GetAllocator());
+        stepInfoJson.AddMember("IsTgtPoly", true, pathInfoJson.GetAllocator());
         stepInfoJson.AddMember("TgtClassId", step.GetTargetClass().GetClass().GetId().GetValue(), pathInfoJson.GetAllocator());
         pathInfoJson.PushBack(stepInfoJson, pathInfoJson.GetAllocator());
         }
@@ -2018,10 +2020,11 @@ static RelatedClassPath BuildPathFromPathInfoJsonAndTargetClassId(ECClassCR sour
         ECRelationshipClassCP relationship = schemas.GetClass(ECClassId(json[i]["RelId"].GetUint64()))->GetRelationshipClassCP();
         bool isRelationshipForward = json[i]["IsRelFwd"].GetBool();
         bool isTargetOptional = json[i]["IsTgtOptional"].GetBool();
+        bool isTargetPolymorphic = json[i]["IsTgtPoly"].GetBool();
         ECClassCP targetClass = schemas.GetClass(ECClassId(json[i]["TgtClassId"].GetUint64()));
         Utf8CP targetInstanceFilter = (json[i].HasMember("Filter") && json[i]["Filter"].IsString()) ? json[i]["Filter"].GetString() : nullptr;
         RelatedClass rc(*currSource, SelectClass<ECRelationshipClass>(*relationship, ""), isRelationshipForward,
-            SelectClass<ECClass>(*targetClass, ""), isTargetOptional);
+            SelectClass<ECClass>(*targetClass, "", isTargetPolymorphic), isTargetOptional);
         if (targetInstanceFilter)
             rc.SetTargetInstanceFilter(targetInstanceFilter);
         path.push_back(rc);
@@ -2048,7 +2051,7 @@ static PresentationQueryContractFieldPtr CreateTargetClassIdGroupingField(Select
 +---------------+---------------+---------------+---------------+---------------+------*/
 static UnionQueryBuilderPtr CreateRelationshipPathsWithTargetInstancesQuery(ECSchemaHelper const& helper, SelectClass<ECClass> const& sourceClass,
     RelationshipPathSpecification const& pathSpecification, InstanceFilteringParams const* sourceInstanceFilter, bvector<RelatedClassPath> const& relatedInstancePaths,
-    bool isTargetPolymorphic, bool countTargets, bvector<Utf8String> const& stepInstanceFilters)
+    bvector<bool> const& stepTargetsPolymorphism, bool countTargets, bvector<Utf8String> const& stepInstanceFilters)
     {
     ECClassCP requestedTargetClass = (!pathSpecification.GetSteps().empty() && !pathSpecification.GetSteps().back()->GetTargetClassName().empty())
         ? helper.GetECClass(pathSpecification.GetSteps().back()->GetTargetClassName().c_str()) : nullptr;
@@ -2063,14 +2066,14 @@ static UnionQueryBuilderPtr CreateRelationshipPathsWithTargetInstancesQuery(ECSc
 
     for (auto& path : paths)
         {
-        Utf8String pathInfoSelectClause = BuildPathInfoSelectClause(path, isTargetPolymorphic);
+        Utf8String pathInfoSelectClause = BuildPathInfoSelectClause(path, stepTargetsPolymorphism);
         for (RelatedClassR rc : path)
             rc.SetIsTargetOptional(false);
 
         SelectClassWithExcludes<ECClass> const& targetClass = !path.empty() ? path.back().GetTargetClass() : selectClass;
         auto sourceClassIdField = PresentationQueryContractSimpleField::Create("SourceECClassId", CreateECClassIdSelectClause(selectClass, true).c_str(), false);
         auto sourceECClassIdsField = PresentationQueryContractFunctionField::Create("SourceECClassIds", FUNCTION_NAME_JsonConcat, { sourceClassIdField }, false, true);
-        auto targetClassIdSelectField = PresentationQueryContractSimpleField::Create("TargetECClassId", CreateECClassIdSelectClause(targetClass, isTargetPolymorphic).c_str());
+        auto targetClassIdSelectField = PresentationQueryContractSimpleField::Create("TargetECClassId", CreateECClassIdSelectClause(targetClass, stepTargetsPolymorphism.back()).c_str());
         auto pathInfoField = PresentationQueryContractSimpleField::Create("PathInfo", pathInfoSelectClause.c_str(), false);
         auto requestedTargetECClassIdField = PresentationQueryContractSimpleField::Create("RequestedTargetECClassId", requestedTargetClass ? Utf8PrintfString("%" PRIu64, requestedTargetClass->GetId().GetValue()).c_str() : "0", false);
 
@@ -2101,9 +2104,10 @@ static UnionQueryBuilderPtr CreateRelationshipPathsWithTargetInstancesQuery(ECSc
             {
             sourceECClassIdsField,
             });
-        for (auto const& step : path)
+        for (size_t i = 0; i < path.size(); ++i)
             {
-            if (isTargetPolymorphic && step.GetNavigationProperty() == nullptr)
+            auto const& step = path[i];
+            if (stepTargetsPolymorphism[i] && step.GetNavigationProperty() == nullptr)
                 groupByContract->AddField(*CreateTargetClassIdGroupingField(step.GetRelationship()));
             groupByContract->AddField(*CreateTargetClassIdGroupingField(step.GetTargetClass()));
             }
@@ -2184,7 +2188,7 @@ Nullable<uint64_t> ECSchemaHelper::QueryTargetsCount(RelatedClassPathCR path, In
         targetCountsQuery->Join(relatedInstancePath);
 
     if (!targetClass.IsSelectPolymorphic())
-        targetCountsQuery->Where(Utf8PrintfString("[%s].[%s] = ?", targetClass.GetAlias().c_str(), targetClassIdSelectField->GetName()).c_str(), { std::make_shared<BoundQueryId>(targetClass.GetClass().GetId()) });
+        targetCountsQuery->Where(Utf8PrintfString("[%s].[ECClassId] IS (ONLY %s)", targetClass.GetAlias().c_str(), targetClass.GetClass().GetFullName()).c_str(), BoundQueryValuesList());
 
     if (sourceInstanceFilter)
         QueryBuilderHelpers::ApplyInstanceFilter(*targetCountsQuery, *sourceInstanceFilter);
@@ -2337,8 +2341,8 @@ ECSchemaHelper::RelationshipPathsResponse ECSchemaHelper::GetRelationshipPaths(R
     for (auto const& pathSpecEntry : *params.m_paths)
         {
         UnionQueryBuilderPtr specQuery = pathSpecEntry.m_applyTargetInstancesCheck
-            ? CreateRelationshipPathsWithTargetInstancesQuery(*this, params.m_source, *pathSpecEntry.m_specification, params.m_sourceInstanceFilter, params.m_relatedInstancePaths, pathSpecEntry.m_isTargetPolymorphic, params.m_countTargets, pathSpecEntry.m_stepInstanceFilters)
-            : CreateRelationshipPathQuery(*this, params.m_source, *pathSpecEntry.m_specification, pathSpecEntry.m_isTargetPolymorphic);
+            ? CreateRelationshipPathsWithTargetInstancesQuery(*this, params.m_source, *pathSpecEntry.m_specification, params.m_sourceInstanceFilter, params.m_relatedInstancePaths, pathSpecEntry.m_stepTargetsPolymorphism, params.m_countTargets, pathSpecEntry.m_stepInstanceFilters)
+            : CreateRelationshipPathQuery(*this, params.m_source, *pathSpecEntry.m_specification, pathSpecEntry.m_stepTargetsPolymorphism.back());
         if (specQuery.IsValid())
             {
             auto indexedQuery = ComplexQueryBuilder::Create();
@@ -2432,7 +2436,7 @@ bmap<Utf8String, bvector<RelatedClassPath>> ECSchemaHelper::GetRelatedInstancePa
     size_t specIndex = 0;
     auto pathSpecs = ContainerHelpers::TransformContainer<bvector<RelationshipPathsRequestParams::PathSpecification>>(relatedInstanceSpecs, [&specIndex](auto const& spec)
         {
-        return RelationshipPathsRequestParams::PathSpecification(specIndex++, spec->GetRelationshipPath(), false);
+        return RelationshipPathsRequestParams::PathSpecification(specIndex++, spec->GetRelationshipPath(), bvector<bool>(spec->GetRelationshipPath().GetSteps().size(), false));
         });
     bvector<RelatedClassPath> noRelatedInstances;
     ECSchemaHelper::RelationshipPathsRequestParams params(SelectClass<ECClass>(selectClass, ""), pathSpecs, nullptr, noRelatedInstances, relationshipsUseCount, false);

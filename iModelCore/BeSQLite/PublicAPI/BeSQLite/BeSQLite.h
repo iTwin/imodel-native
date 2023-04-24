@@ -900,6 +900,10 @@ public:
     //! Bind a DbValue from a BeSQLite function (1-based)
     BE_SQLITE_EXPORT DbResult BindDbValue(int paramNum, struct DbValue const& dbVal);
 
+    //! @private internal use only
+    //! Set value to NULL but also Bind a pointer. This is used by sql function ro virtual tables.
+    BE_SQLITE_EXPORT DbResult BindPointer(int col, void* ptr, const char* name, void (*destroy)(void*));
+
     //! Get the number of columns resulting from Step on this Statement (0-based)
     //! @see sqlite3_column_count
     BE_SQLITE_EXPORT int GetColumnCount();
@@ -1165,6 +1169,8 @@ public:
     uint64_t GetValueUInt64() const {return (uint64_t) GetValueInt64();}
     BE_SQLITE_EXPORT double      GetValueDouble() const;    //!< see sqlite3_value_double
     BE_SQLITE_EXPORT BeGuid      GetValueGuid() const;      //!< get the value as a GUID
+    BE_SQLITE_EXPORT unsigned int GetSubType() const; //!< see sqlite3_value_subtype
+    BE_SQLITE_EXPORT void*       GetValuePointer(Utf8CP name) const;      //!< get pointer
     template <class T_Id> T_Id   GetValueId() const {return T_Id(GetValueUInt64());}
 
     BE_SQLITE_EXPORT Utf8String Format(int detailLevel) const; //!< for debugging purposes.
@@ -3525,3 +3531,4 @@ struct LzmaUtility
 };
 
 END_BENTLEY_SQLITE_NAMESPACE
+

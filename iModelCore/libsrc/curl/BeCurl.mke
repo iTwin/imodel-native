@@ -30,8 +30,8 @@ AresLibDir = $(AresDir)src/lib/
 BeCurlLibDir        = $(SourceDir)lib/
 BeCurlDepends       = $(_MakeFileSpec) $(_MakeFilePath)BeCurlConfig.h
 MultiCompileDepends = $(_MakeFileSpec) $(BeCurlDepends)
-appName             = BeCurl
-o                   = $(OutBuildDir)BeCurl/
+appName             = iTwinCurl
+o                   = $(OutBuildDir)iTwinCurl/
 
 always:
     !~@mkdir $(o)
@@ -433,7 +433,7 @@ objs =% $(MultiCompileObjectList)
 #---------------------------------------------------------------------------------------+
 #   Create the library
 #---------------------------------------------------------------------------------------+
-DLM_NAME                    = BeCurl
+DLM_NAME                    = iTwinCurl
 DLM_OBJECT_FILES            = $(objs)
 DLM_EXPORT_OBJS             = $(DLM_OBJECT_FILES)
 DLM_OBJECT_DEST             = $(o)
@@ -445,7 +445,7 @@ DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
 DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
 DLM_CREATE_LIB_CONTEXT_LINK = 1
 
-LINKER_LIBRARIES            = $(BuildContext)SubParts/Libs/$(libprefix)BeOpenSSL$(libext) \
+LINKER_LIBRARIES            = $(BuildContext)SubParts/Libs/$(libprefix)iTwinOpenSSL$(libext) \
                               $(ContextSubPartsStaticLibs)$(libprefix)BeZlib$(libext) 
 
 %if $(TARGET_PLATFORM) == "Windows"

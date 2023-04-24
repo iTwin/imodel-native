@@ -541,7 +541,7 @@ QuerySet ContentQueryBuilder::CreateQuerySet(ContentDescriptor::NestedContentFie
 
     ContentDescriptorBuilder::Context descriptorContext(m_params.GetSchemaHelper(), m_params.GetConnections(), m_params.GetConnection(), m_params.GetCancellationToken(), m_params.GetRulesPreprocessor(), m_params.GetRuleset(),
         ContentDisplayType::Undefined, m_params.GetRulesetVariables(), m_params.GetCategorySupplier(), m_params.GetPropertyFormatter(), ECPresentation::UnitSystem::Undefined,
-        *NavNodeKeyListContainer::Create(), nullptr);
+        *NavNodeKeyListContainer::Create(), nullptr, m_params.GetUsedVariablesListener());
     ContentDescriptorPtr descriptor = ContentDescriptorBuilder(descriptorContext).CreateDescriptor(contentField);
     if (!descriptor.IsValid())
         {

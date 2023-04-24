@@ -55,11 +55,13 @@ $(o)ChangeSet$(oext) : $(baseDir)ChangeSet.cpp $(baseDir)/PublicAPI/BeSQLite/BeS
 
 $(o)CloudSqlite$(oext) : $(baseDir)CloudSqlite.cpp $(baseDir)/PublicAPI/BeSQLite/BeSQLite.h  $(baseDir)/PublicAPI/BeSQLite/ChangeSet.h ${MultiCompileDepends}
 
-$(o)RevisionChangesFile$(oext) : $(baseDir)RevisionChangesFile.cpp $(baseDir)/PublicAPI/BeSQLite/BeSQLite.h  $(baseDir)/PublicAPI/BeSQLite/RevisionChangesFile.h ${MultiCompileDepends}
+$(o)ChangesetFile$(oext) : $(baseDir)ChangesetFile.cpp $(baseDir)/PublicAPI/BeSQLite/BeSQLite.h  $(baseDir)/PublicAPI/BeSQLite/ChangesetFile.h ${MultiCompileDepends}
 
 $(o)BeSQLiteProfileManager$(oext) : $(baseDir)BeSQLiteProfileManager.cpp $(baseDir)/BeSQLiteProfileManager.h  $(baseDir)/PublicAPI/BeSQLite/BeSQLite.h ${MultiCompileDepends}
 
 $(o)Profiler$(oext) : $(baseDir)Profiler.cpp $(baseDir)/PublicAPI/BeSQLite/Profiler.h ${MultiCompileDepends}
+
+$(o)VirtualTab$(oext) : $(baseDir)VirtualTab.cpp $(baseDir)/PublicAPI/BeSQLite/VirtualTab.h ${MultiCompileDepends}
 
 $(o)BeLzma$(oext) : $(baseDir)BeLzma.cpp $(baseDir)/PublicAPI/BeSQLite/BeLzma.h ${MultiCompileDepends}
 
@@ -94,8 +96,8 @@ BeSQLiteRequiredLibs = $(ContextSubPartsStaticLibs)$(stlibprefix)BeZlib$(stlibex
 BeSQLiteRequiredLibs + $(ContextSubPartsStaticLibs)$(stlibprefix)snappy$(stlibext)
 BeSQLiteRequiredLibs + $(ContextSubPartsStaticLibs)$(stlibprefix)lzma$(stlibext)
 BeSQLiteRequiredLibs + $(ContextSubPartsLibs)$(libprefix)iTwinBentley$(libext)
-BeSQLiteRequiredLibs + $(ContextSubPartsLibs)$(stlibprefix)BeCurl$(stlibext)
-BeSQLiteRequiredLibs + $(ContextSubPartsLibs)$(stlibprefix)BeOpenSSL$(stlibext)
+BeSQLiteRequiredLibs + $(ContextSubPartsLibs)$(stlibprefix)iTwinCurl$(stlibext)
+BeSQLiteRequiredLibs + $(ContextSubPartsLibs)$(stlibprefix)iTwinOpenSSL$(stlibext)
 BeSQLiteRequiredLibs + $(ContextSubPartsLibs)$(stlibprefix)iTwin_google_re2$(stlibext)
 
 DLM_OBJECT_FILES    = $(objs)

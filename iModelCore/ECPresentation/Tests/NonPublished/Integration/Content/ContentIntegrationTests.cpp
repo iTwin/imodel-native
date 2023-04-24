@@ -5468,6 +5468,70 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsRemovedF
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(FindsCachedDescriptorWhenAllRelatedRulesetVariablesMatch, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="Property" typeName="string" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, FindsCachedDescriptorWhenAllRelatedRulesetVariablesMatch)
+    {
+    ECClassCP classA = GetClass("A");
+    IECInstancePtr instance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance) {instance.SetValue("Property", ECValue("Instance")); });
+    KeySetPtr input = KeySet::Create(*instance);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false);
+    contentRule->AddSpecification(*spec);
+    rules->AddPresentationRule(*contentRule);
+    spec->AddPropertyOverride(*new PropertySpecification("Property", 1000, "", nullptr, "GetVariableBoolValue(\"related\")"));
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor1 = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), 
+        RulesetVariables({ RulesetVariableEntry("related", true), RulesetVariableEntry("not_related", false) }), nullptr, 0, *input)));
+    ContentDescriptorCPtr descriptor2 = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), 
+        RulesetVariables({ RulesetVariableEntry("related", true), RulesetVariableEntry("not_related", true) }), nullptr, 0, *input)));
+
+    EXPECT_EQ(descriptor1, descriptor2);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(CreatesNewDescriptorWhenRelatedRulesetVariablesDontMatch, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="Property" typeName="string" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, CreatesNewDescriptorWhenRelatedRulesetVariablesDontMatch)
+    {
+    ECClassCP classA = GetClass("A");
+    IECInstancePtr instance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance) {instance.SetValue("Property", ECValue("Instance")); });
+    KeySetPtr input = KeySet::Create(*instance);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false);
+    contentRule->AddSpecification(*spec);
+    rules->AddPresentationRule(*contentRule);
+    spec->AddPropertyOverride(*new PropertySpecification("Property", 1000, "", nullptr, "GetVariableBoolValue(\"related\")"));
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor1 = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables({ RulesetVariableEntry("related", false) }), nullptr, 0, *input)));
+    ContentDescriptorCPtr descriptor2 = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables({ RulesetVariableEntry("related", true) }), nullptr, 0, *input)));
+
+    EXPECT_NE(descriptor1, descriptor2);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
 DEFINE_SCHEMA(ContentModifierAppliesPropertyHidingOverride, R"*(
     <ECEntityClass typeName="A">
         <ECProperty propertyName="Description" typeName="string" />
@@ -6579,6 +6643,122 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsCorrectEnumValues)
     EXPECT_STREQ("M", dispalyValues[descriptor->GetVisibleFields()[0]->GetUniqueName().c_str()].GetString());
     EXPECT_STREQ("Three", values[descriptor->GetVisibleFields()[1]->GetUniqueName().c_str()].GetString());
     EXPECT_STREQ("1", dispalyValues[descriptor->GetVisibleFields()[1]->GetUniqueName().c_str()].GetString());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(LoadsRawEnumValueWhenItsNotInEnumeration, R"*(
+    <ECEnumeration typeName="StrictIntegerEnum" backingTypeName="int" isStrict="True" description="" displayLabel="StrictIntegerEnum">
+        <ECEnumerator value="0" displayLabel="A" />
+    </ECEnumeration>
+    <ECEnumeration typeName="StrictStringEnum" backingTypeName="string" isStrict="True" description="" displayLabel="StrictStringEnum">
+        <ECEnumerator value="Zero" displayLabel="B" />
+    </ECEnumeration>
+    <ECEnumeration typeName="LooseIntegerEnum" backingTypeName="int" isStrict="True" description="" displayLabel="LooseIntegerEnum">
+        <ECEnumerator value="0" displayLabel="C" />
+    </ECEnumeration>
+    <ECEnumeration typeName="LooseStringEnum" backingTypeName="string" isStrict="True" description="" displayLabel="LooseStringEnum">
+        <ECEnumerator value="Zero" displayLabel="D" />
+    </ECEnumeration>
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="StrictIntEnum" typeName="StrictIntegerEnum" />
+        <ECProperty propertyName="StrictStrEnum" typeName="StrictStringEnum" />
+        <ECProperty propertyName="LooseIntEnum" typeName="LooseIntegerEnum" />
+        <ECProperty propertyName="LooseStrEnum" typeName="LooseStringEnum" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsRawEnumValueWhenItsNotInEnumeration)
+    {
+    // set up data set
+    ECClassCP classA = GetClass("A")->GetEntityClassCP();
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance)
+        {
+        instance.SetValue("StrictIntEnum", ECValue(1));
+        instance.SetValue("StrictStrEnum", ECValue("X"));
+        instance.SetValue("LooseIntEnum", ECValue(2));
+        instance.SetValue("LooseStrEnum", ECValue("Y"));
+        });
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false));
+    rules->AddPresentationRule(*rule);
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(4, descriptor->GetVisibleFields().size());
+
+    // request for content
+    ContentCPtr content = GetVerifiedContent(*descriptor);
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(2, contentSet.GetSize());
+
+    rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
+    rapidjson::Document expectedValues;
+    expectedValues.Parse(Utf8PrintfString(R"({
+        "%s": 1,
+        "%s": "X",
+        "%s": 2,
+        "%s": "Y"
+        })",
+        FIELD_NAME(classA, "StrictIntEnum"),
+        FIELD_NAME(classA, "StrictStrEnum"),
+        FIELD_NAME(classA, "LooseIntEnum"),
+        FIELD_NAME(classA, "LooseStrEnum")).c_str());
+    EXPECT_EQ(expectedValues, recordJson["Values"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
+    rapidjson::Document expectedDisplayValues;
+    expectedDisplayValues.Parse(Utf8PrintfString(R"({
+        "%s": "1",
+        "%s": "X",
+        "%s": "2",
+        "%s": "Y"
+        })",
+        FIELD_NAME(classA, "StrictIntEnum"),
+        FIELD_NAME(classA, "StrictStrEnum"),
+        FIELD_NAME(classA, "LooseIntEnum"),
+        FIELD_NAME(classA, "LooseStrEnum")).c_str());
+    EXPECT_EQ(expectedDisplayValues, recordJson["DisplayValues"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedDisplayValues) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["DisplayValues"]);
+
+    recordJson = contentSet.Get(1)->AsJson();
+    expectedValues.Parse(Utf8PrintfString(R"({
+        "%s": null,
+        "%s": null,
+        "%s": null,
+        "%s": null
+        })",
+        FIELD_NAME(classA, "StrictIntEnum"),
+        FIELD_NAME(classA, "StrictStrEnum"),
+        FIELD_NAME(classA, "LooseIntEnum"),
+        FIELD_NAME(classA, "LooseStrEnum")).c_str());
+    EXPECT_EQ(expectedValues, recordJson["Values"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
+    expectedDisplayValues.Parse(Utf8PrintfString(R"({
+        "%s": null,
+        "%s": null,
+        "%s": null,
+        "%s": null
+        })",
+        FIELD_NAME(classA, "StrictIntEnum"),
+        FIELD_NAME(classA, "StrictStrEnum"),
+        FIELD_NAME(classA, "LooseIntEnum"),
+        FIELD_NAME(classA, "LooseStrEnum")).c_str());
+    EXPECT_EQ(expectedDisplayValues, recordJson["DisplayValues"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedDisplayValues) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["DisplayValues"]);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -16810,4 +16990,3 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetContentForDisplayLabelGr
     // validate content
     RulesEngineTestHelpers::ValidateContentSet({ instanceB.get() }, *content);
     }
-

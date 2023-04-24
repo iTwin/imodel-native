@@ -17,11 +17,11 @@
     </Part>
 
     <!-- NOTE: Graphite uses "G" as a library suffix to disambiguate from Vancouver libraries -->
-    <Part Name="__Library" BentleyBuildMakeFile="BeOpenSSL.mke" ApiNumber="B02">
+    <Part Name="__Library" BentleyBuildMakeFile="BeOpenSSL.mke">
         <Bindings>
-            <Libs IfNotPresent="Continue">Delivery/$(stlibprefix)BeOpenSSL$(stlibdebugext)</Libs>
-            <Libs>Delivery/$(libprefix)BeOpenSSL$(libext)</Libs>
-            <Assemblies>Delivery/$(shlibprefix)BeOpenSSL$(ApiNumber)$(shlibext)</Assemblies>
+            <Libs IfNotPresent="Continue">Delivery/$(stlibprefix)iTwinOpenSSL$(stlibdebugext)</Libs>
+            <Libs>Delivery/$(libprefix)iTwinOpenSSL$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)iTwinOpenSSL$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
