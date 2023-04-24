@@ -92,14 +92,13 @@ describe("cloud sqlite", () => {
     let rows = container.queryHttpLog();
     expect(rows.length).to.equal(2); // manifest and bcv_kv GETs.
 
-    // endTime to exclude these first 2 entries in later queries. 
-    await BeDuration.wait(100);
+    // endTime to exclude these first 2 entries in later queries.
+    await BeDuration.wait(10);
     const endTime = new Date().toISOString();
 
     rows = container.queryHttpLog({startFromId: 2});
     expect(rows.length).to.equal(1);
     expect(rows[0].id).to.equal(2);
-    
 
     container.acquireWriteLock("test");
     const dbTransfer = new iModelJsNative.CloudDbTransfer("upload", container, {localFileName: join(getAssetsDir(), "test.bim"), dbName: "test.bim" });
