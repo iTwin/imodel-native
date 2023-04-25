@@ -92,7 +92,7 @@ public:
     static DefinitionModelPtr InsertDefinitionModel(DgnDbR, Utf8CP partitionName);
 
     //! Insert a SheetIndexModel
-    //! @note Also creates a SheetIndexPartition for the SheetIndexModel to model
+    //! @note Also creates a SheetIndexPartition for the SheetIndexModel
     static SheetIndexModelPtr InsertSheetIndexModel(DgnDbR, Utf8CP partitionName);
 
     //! Insert a GroupInformationModel

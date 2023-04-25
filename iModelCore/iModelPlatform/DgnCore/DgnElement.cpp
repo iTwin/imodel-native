@@ -566,7 +566,7 @@ DgnDbStatus InformationPartitionElement::_OnUpdate(DgnElementCR original)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus SheetIndexPartition::_OnSubModelInsert(DgnModelCR model) const
     {
-    // A SheetIndexPartition can only be modeled by an SheetIndexPartitionModel
+    // A SheetIndexPartition can only be modeled by an SheetIndexModel
     return model.IsSheetIndexModel() ? T_Super::_OnSubModelInsert(model) : DgnDbStatus::ElementBlockedChange;
     }
 
