@@ -1142,60 +1142,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, Guid_FilteringUsingDescript
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsitest
-+---------------+---------------+---------------+---------------+---------------+------*/
-DEFINE_SCHEMA(Guid_GetDistinctValues, R"*(
-    <ECEntityClass typeName="A">
-        <ECProperty propertyName="GuidProp" typeName="binary" extendedTypeName="BeGuid" />
-    </ECEntityClass>
-)*");
-TEST_F(RulesDrivenECPresentationManagerContentTests, Guid_GetDistinctValues)
-    {
-    ECClassCP classA = GetClass("A");
-    BeGuid instanceGuid1 = BeGuid(true);
-    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [instanceGuid1](IECInstanceR instance) {
-        instance.SetValue("GuidProp", ECValue((Byte*)&instanceGuid1, sizeof(BeGuid)));
-        });
-    BeGuid instanceGuid2 = BeGuid(true);
-    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [instanceGuid2](IECInstanceR instance) {
-        instance.SetValue("GuidProp", ECValue((Byte*)&instanceGuid2, sizeof(BeGuid)));
-        });
-    IECInstancePtr instance3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [instanceGuid2](IECInstanceR instance) {
-        instance.SetValue("GuidProp", ECValue((Byte*)&instanceGuid2, sizeof(BeGuid)));
-        });
-    KeySetPtr input = KeySet::Create(bvector<IECInstancePtr>{instance1, instance2, instance3});
-
-    // create the rule set
-    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
-    m_locater->AddRuleSet(*rules);
-    ContentRuleP contentRule = new ContentRule("", 1, false);
-    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false);
-    contentRule->AddSpecification(*spec);
-    rules->AddPresentationRule(*contentRule);
-
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *input)));
-
-    PagedDataContainer<DisplayValueGroupCPtr> values = GetValidatedResponse(m_manager->GetDistinctValues(AsyncDistinctValuesRequestParams::Create(s_project->GetECDb(),
-        *descriptor, std::make_unique<PropertiesContentFieldMatcher>(*classA->GetPropertyP("GuidProp"), RelatedClassPath()))));
-
-    //// validate default
-    //ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *input)));
-    //ASSERT_TRUE(descriptor.IsValid());
-    //ContentCPtr content = GetVerifiedContent(*descriptor);
-    //ASSERT_TRUE(content.IsValid());
-    //ASSERT_EQ(2, content->GetContentSet().GetSize());
-
-    //// validate filtered
-    //ContentDescriptorPtr ovr = ContentDescriptor::Create(*descriptor);
-    //Utf8StringCR instanceFilter = Utf8PrintfString("this.GuidProp = StrToGuid(\"%s\")", instanceGuid2.ToString().c_str());
-    //ovr->SetInstanceFilter(std::make_shared<InstanceFilterDefinition>(instanceFilter, *classA, bvector<RelatedClassPath>()));
-    //content = GetVerifiedContent(*ovr);
-    //ASSERT_TRUE(content.IsValid());
-    //ASSERT_EQ(1, content->GetContentSet().GetSize());
-    //RulesEngineTestHelpers::ValidateContentSet(bvector<IECInstanceCP>{instance2.get()}, * content);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 // @betest
 +---------------+---------------+---------------+---------------+---------------+------*/
 DEFINE_SCHEMA(ContentInstancesOfSpecificClasses_ReturnsValidDescriptorWhichDoesNotDependOnSelectedClasses, R"*(
@@ -12102,7 +12048,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyVa
 +---------------+---------------+---------------+---------------+---------------+------*/
 DEFINE_SCHEMA(LoadsStructWithArrayPropertyValue, R"*(
     <ECStructClass typeName="MyStruct">
-        <ECArrayProperty propertyName="IntProperty" typeName="int" extendedTypeName="extenderis"/>
+        <ECArrayProperty propertyName="IntProperty" typeName="int" />
     </ECStructClass>
     <ECEntityClass typeName="MyClass">
         <ECStructProperty propertyName="StructProperty" typeName="MyStruct" />
