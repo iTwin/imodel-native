@@ -954,6 +954,248 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DescriptorOverride_FiltersB
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(Guid_AppliesExtendedDataRule, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="GuidProp" typeName="binary" extendedTypeName="BeGuid" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, Guid_AppliesExtendedDataRule)
+    {
+    ECClassCP classA = GetClass("A");
+    BeGuid instanceGuid1;
+    instanceGuid1.FromString("182238d2-e836-4640-9b40-38be6ca49623");
+    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [instanceGuid1](IECInstanceR instance) {
+        instance.SetValue("GuidProp", ECValue((Byte*)&instanceGuid1, sizeof(BeGuid)));
+        });
+
+    KeySetPtr input = KeySet::Create(bvector<IECInstancePtr>{instance1});
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false);
+    contentRule->AddSpecification(*spec);
+    rules->AddPresentationRule(*contentRule);
+
+    ExtendedDataRule* ex1 = new ExtendedDataRule();
+    ex1->AddItem("stringified_guid", "GuidToStr(this.GuidProp)");
+    ex1->AddItem("not_stringified_guid", "this.GuidProp");
+    rules->AddPresentationRule(*ex1);
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *input)));
+    ASSERT_TRUE(descriptor.IsValid());
+
+    // validate content
+    ContentCPtr content = GetVerifiedContent(*descriptor);
+    ASSERT_TRUE(content.IsValid());
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    RapidJsonAccessor extendedData1 = contentSet[0]->GetUsersExtendedData();
+    ASSERT_TRUE(extendedData1.GetJson().IsObject());
+    ASSERT_EQ(2, extendedData1.GetJson().MemberCount());
+
+    ASSERT_TRUE(extendedData1.GetJson().HasMember("stringified_guid"));
+    EXPECT_STREQ(instanceGuid1.ToString().c_str(), extendedData1.GetJson()["stringified_guid"].GetString());
+
+    ASSERT_TRUE(extendedData1.GetJson().HasMember("not_stringified_guid"));
+    ASSERT_TRUE(extendedData1.GetJson()["not_stringified_guid"].IsNull());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(Guid_FilteringUsingSpecificationsFilter, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="GuidProp" typeName="binary" extendedTypeName="BeGuid" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, Guid_FilteringUsingSpecificationsFilter)
+    {
+    ECClassCP classA = GetClass("A");
+    BeGuid instanceGuid1;
+    instanceGuid1.FromString("182238d2-e836-4640-9b40-38be6ca49623");
+    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [instanceGuid1](IECInstanceR instance) {
+        instance.SetValue("GuidProp", ECValue((Byte*)&instanceGuid1, sizeof(BeGuid)));
+        });
+    BeGuid instanceGuid2;
+    instanceGuid2.FromString("814f3e14-63f2-4511-89a8-43ff3b527492");
+    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [instanceGuid2](IECInstanceR instance) {
+        instance.SetValue("GuidProp", ECValue((Byte*)&instanceGuid2, sizeof(BeGuid)));
+        });
+    KeySetPtr input = KeySet::Create(bvector<IECInstancePtr>{instance1, instance2});
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+    Utf8StringCR instanceFilter = Utf8PrintfString("this.GuidProp = StrToGuid(\"%s\")", instanceGuid2.ToString().c_str());
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, instanceFilter, classA->GetFullName(), false, false);
+    contentRule->AddSpecification(*spec);
+    rules->AddPresentationRule(*contentRule);
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *input)));
+    ASSERT_TRUE(descriptor.IsValid());
+
+    // validate content
+    ContentCPtr content = GetVerifiedContent(*descriptor);
+    ASSERT_TRUE(content.IsValid());
+    RulesEngineTestHelpers::ValidateContentSet(bvector<IECInstanceCP>{instance2.get()}, *content);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(Guid_FilteringUsingDescriptorsFieldsFilter, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="GuidProp" typeName="binary" extendedTypeName="BeGuid" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, Guid_FilteringUsingDescriptorsFieldsFilter)
+    {
+    ECClassCP classA = GetClass("A");
+    BeGuid instanceGuid1 = BeGuid(true);
+    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [instanceGuid1](IECInstanceR instance) {
+        instance.SetValue("GuidProp", ECValue((Byte*)&instanceGuid1, sizeof(BeGuid)));
+        });
+    BeGuid instanceGuid2 = BeGuid(true);
+    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [instanceGuid2](IECInstanceR instance) {
+        instance.SetValue("GuidProp", ECValue((Byte*)&instanceGuid2, sizeof(BeGuid)));
+        });
+    KeySetPtr input = KeySet::Create(bvector<IECInstancePtr>{instance1, instance2});
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    contentRule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false));
+    rules->AddPresentationRule(*contentRule);
+
+    // validate default
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *input)));
+    ASSERT_TRUE(descriptor.IsValid());
+    ContentCPtr content = GetVerifiedContent(*descriptor);
+    ASSERT_TRUE(content.IsValid());
+    ASSERT_EQ(2, content->GetContentSet().GetSize());
+
+    // validate filtered
+    ContentDescriptorPtr ovr = ContentDescriptor::Create(*descriptor);
+    Utf8StringCR fieldFilter = Utf8PrintfString("%s = StrToGuid(\"%s\")", FIELD_NAME(classA, "GuidProp"), instanceGuid2.ToString().c_str());
+    ovr->SetFieldsFilterExpression(fieldFilter);
+    content = GetVerifiedContent(*ovr);
+    ASSERT_TRUE(content.IsValid());
+    ASSERT_EQ(1, content->GetContentSet().GetSize());
+    RulesEngineTestHelpers::ValidateContentSet(bvector<IECInstanceCP>{instance2.get()}, *content);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(Guid_FilteringUsingDescriptorsInstanceFilter, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="GuidProp" typeName="binary" extendedTypeName="BeGuid" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, Guid_FilteringUsingDescriptorsInstanceFilter)
+    {
+    ECClassCP classA = GetClass("A");
+    BeGuid instanceGuid1 = BeGuid(true);
+    auto guid1 = instanceGuid1.ToString();
+    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [instanceGuid1](IECInstanceR instance) {
+        instance.SetValue("GuidProp", ECValue((Byte*)&instanceGuid1, sizeof(BeGuid)));
+        });
+    BeGuid instanceGuid2 = BeGuid(true);
+    auto guid2 = instanceGuid2.ToString();
+    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [instanceGuid2](IECInstanceR instance) {
+        instance.SetValue("GuidProp", ECValue((Byte*)&instanceGuid2, sizeof(BeGuid)));
+        });
+    KeySetPtr input = KeySet::Create(bvector<IECInstancePtr>{instance1, instance2});
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false);
+    contentRule->AddSpecification(*spec);
+    rules->AddPresentationRule(*contentRule);
+
+    // validate default
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *input)));
+    ASSERT_TRUE(descriptor.IsValid());
+    ContentCPtr content = GetVerifiedContent(*descriptor);
+    ASSERT_TRUE(content.IsValid());
+    ASSERT_EQ(2, content->GetContentSet().GetSize());
+
+    // validate filtered
+    ContentDescriptorPtr ovr = ContentDescriptor::Create(*descriptor);
+    Utf8StringCR instanceFilter = Utf8PrintfString("this.GuidProp = StrToGuid(\"%s\")", instanceGuid2.ToString().c_str());
+    ovr->SetInstanceFilter(std::make_shared<InstanceFilterDefinition>(instanceFilter, *classA, bvector<RelatedClassPath>()));
+    content = GetVerifiedContent(*ovr);
+    ASSERT_TRUE(content.IsValid());
+    ASSERT_EQ(1, content->GetContentSet().GetSize());
+    RulesEngineTestHelpers::ValidateContentSet(bvector<IECInstanceCP>{instance2.get()}, *content);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(Guid_GetDistinctValues, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="GuidProp" typeName="binary" extendedTypeName="BeGuid" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, Guid_GetDistinctValues)
+    {
+    ECClassCP classA = GetClass("A");
+    BeGuid instanceGuid1 = BeGuid(true);
+    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [instanceGuid1](IECInstanceR instance) {
+        instance.SetValue("GuidProp", ECValue((Byte*)&instanceGuid1, sizeof(BeGuid)));
+        });
+    BeGuid instanceGuid2 = BeGuid(true);
+    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [instanceGuid2](IECInstanceR instance) {
+        instance.SetValue("GuidProp", ECValue((Byte*)&instanceGuid2, sizeof(BeGuid)));
+        });
+    IECInstancePtr instance3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [instanceGuid2](IECInstanceR instance) {
+        instance.SetValue("GuidProp", ECValue((Byte*)&instanceGuid2, sizeof(BeGuid)));
+        });
+    KeySetPtr input = KeySet::Create(bvector<IECInstancePtr>{instance1, instance2, instance3});
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false);
+    contentRule->AddSpecification(*spec);
+    rules->AddPresentationRule(*contentRule);
+
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *input)));
+
+    PagedDataContainer<DisplayValueGroupCPtr> values = GetValidatedResponse(m_manager->GetDistinctValues(AsyncDistinctValuesRequestParams::Create(s_project->GetECDb(),
+        *descriptor, std::make_unique<PropertiesContentFieldMatcher>(*classA->GetPropertyP("GuidProp"), RelatedClassPath()))));
+
+    //// validate default
+    //ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *input)));
+    //ASSERT_TRUE(descriptor.IsValid());
+    //ContentCPtr content = GetVerifiedContent(*descriptor);
+    //ASSERT_TRUE(content.IsValid());
+    //ASSERT_EQ(2, content->GetContentSet().GetSize());
+
+    //// validate filtered
+    //ContentDescriptorPtr ovr = ContentDescriptor::Create(*descriptor);
+    //Utf8StringCR instanceFilter = Utf8PrintfString("this.GuidProp = StrToGuid(\"%s\")", instanceGuid2.ToString().c_str());
+    //ovr->SetInstanceFilter(std::make_shared<InstanceFilterDefinition>(instanceFilter, *classA, bvector<RelatedClassPath>()));
+    //content = GetVerifiedContent(*ovr);
+    //ASSERT_TRUE(content.IsValid());
+    //ASSERT_EQ(1, content->GetContentSet().GetSize());
+    //RulesEngineTestHelpers::ValidateContentSet(bvector<IECInstanceCP>{instance2.get()}, * content);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 // @betest
 +---------------+---------------+---------------+---------------+---------------+------*/
 DEFINE_SCHEMA(ContentInstancesOfSpecificClasses_ReturnsValidDescriptorWhichDoesNotDependOnSelectedClasses, R"*(
@@ -9740,6 +9982,76 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPrimitiveArrayProperty
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(LoadsGuidArrayPropertyValue, R"*(
+    <ECEntityClass typeName="MyClass">
+        <ECArrayProperty propertyName="GuidsArrayProperty" typeName="binary" extendedTypeName="BeGuid" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsGuidArrayPropertyValue)
+    {
+    // set up data set
+    ECClassCP ecClass = GetClass("MyClass");
+    BeGuid instanceGuid1;
+    instanceGuid1.FromString("182238d2-e836-4640-9b40-38be6ca49623");
+    BeGuid instanceGuid2;
+    instanceGuid2.FromString("814f3e14-63f2-4511-89a8-43ff3b527492");
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [instanceGuid1, instanceGuid2](IECInstanceR instance)
+        {
+        instance.AddArrayElements("GuidsArrayProperty", 2);
+        instance.SetValue("GuidsArrayProperty", ECValue((Byte*)&instanceGuid1, sizeof(BeGuid)), 0);
+        instance.SetValue("GuidsArrayProperty", ECValue((Byte*)&instanceGuid2, sizeof(BeGuid)), 1);
+        });
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rules->AddPresentationRule(*rule);
+
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", ecClass->GetFullName(), false, false);
+    rule->AddSpecification(*spec);
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ASSERT_TRUE(descriptor.IsValid());
+    ASSERT_EQ(1, descriptor->GetVisibleFields().size());
+    rapidjson::Document expectedFieldType;
+    expectedFieldType.Parse(Utf8PrintfString(R"({
+        "ValueFormat": "Array",
+        "TypeName": "binary[]",
+        "MemberType": {
+            "ValueFormat": "Primitive",
+            "TypeName": "binary"
+            }
+        })").c_str());
+    rapidjson::Document actualFieldType = descriptor->GetVisibleFields()[0]->GetTypeDescription().AsJson();
+    EXPECT_EQ(expectedFieldType, actualFieldType)
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedFieldType) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actualFieldType);
+
+    // request for content
+    ContentCPtr content = GetVerifiedContent(*descriptor);
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    rapidjson::Document recordJson1 = contentSet.Get(0)->AsJson();
+    rapidjson::Document expectedValues1;
+    expectedValues1.Parse(Utf8PrintfString(R"(
+        {
+        "%s": ["182238d2-e836-4640-9b40-38be6ca49623", "814f3e14-63f2-4511-89a8-43ff3b527492"]
+        })", FIELD_NAME(ecClass, "GuidsArrayProperty")).c_str());
+    EXPECT_EQ(expectedValues1, recordJson1["Values"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues1) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson1["Values"]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
 DEFINE_SCHEMA(LoadsPointsArrayPropertyValue, R"*(
     <ECEntityClass typeName="MyClass">
         <ECArrayProperty propertyName="PointsArrayProperty" typeName="point3d" />
@@ -11790,7 +12102,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyVa
 +---------------+---------------+---------------+---------------+---------------+------*/
 DEFINE_SCHEMA(LoadsStructWithArrayPropertyValue, R"*(
     <ECStructClass typeName="MyStruct">
-        <ECArrayProperty propertyName="IntProperty" typeName="int" />
+        <ECArrayProperty propertyName="IntProperty" typeName="int" extendedTypeName="extenderis"/>
     </ECStructClass>
     <ECEntityClass typeName="MyClass">
         <ECStructProperty propertyName="StructProperty" typeName="MyStruct" />

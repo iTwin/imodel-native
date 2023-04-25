@@ -269,7 +269,7 @@ rapidjson::Document ValueHelpers::GetPoint3dJson(DPoint3dCR pt, rapidjson::Memor
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document ValueHelpers::GetJsonFromPrimitiveValue(PrimitiveType primitiveType, IECSqlValue const& value, rapidjson::MemoryPoolAllocator<>* allocator)
+rapidjson::Document ValueHelpers::GetJsonFromPrimitiveValue(PrimitiveType primitiveType, IECSqlValue const& value, rapidjson::MemoryPoolAllocator<>* allocator, Utf8StringCR extendedType)
     {
     NULL_VALUE_PRECONDITION(value);
 
@@ -299,6 +299,9 @@ rapidjson::Document ValueHelpers::GetJsonFromPrimitiveValue(PrimitiveType primit
         case PRIMITIVETYPE_Point3d:
             return GetPoint3dJson(GetPoint3dFromSqlValue(value), allocator);
         case PRIMITIVETYPE_Binary:
+            if (extendedType == "BeGuid")
+                doc.SetString(value.GetGuid().ToString().c_str(), doc.GetAllocator());
+            return doc;
         case PRIMITIVETYPE_IGeometry:
             return doc;
         }
@@ -327,11 +330,17 @@ rapidjson::Document ValueHelpers::GetJsonFromStructValue(ECStructClassCR structC
                 doc.AddMember(propertyNameJson, GetJsonFromStructValue(*v.GetColumnInfo().GetStructType(), v, &doc.GetAllocator()), doc.GetAllocator());
                 break;
             case ValueKind::VALUEKIND_Array:
-                doc.AddMember(propertyNameJson, GetJsonFromArrayValue(v, &doc.GetAllocator()), doc.GetAllocator());
+                {
+                Utf8StringCR extendedType = v.GetColumnInfo().GetProperty()->GetIsPrimitiveArray() ? v.GetColumnInfo().GetProperty()->GetAsPrimitiveArrayProperty()->GetExtendedTypeName() : "";
+                doc.AddMember(propertyNameJson, GetJsonFromArrayValue(v, &doc.GetAllocator(), extendedType), doc.GetAllocator());
                 break;
+                }
             case ValueKind::VALUEKIND_Primitive:
-                doc.AddMember(propertyNameJson, GetJsonFromPrimitiveValue(v.GetColumnInfo().GetDataType().GetPrimitiveType(), v, &doc.GetAllocator()), doc.GetAllocator());
+                {
+                Utf8StringCR extendedType = v.GetColumnInfo().GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName();
+                doc.AddMember(propertyNameJson, GetJsonFromPrimitiveValue(v.GetColumnInfo().GetDataType().GetPrimitiveType(), v, &doc.GetAllocator(), extendedType), doc.GetAllocator());
                 break;
+                }
             }
         }
     return doc;
@@ -340,7 +349,7 @@ rapidjson::Document ValueHelpers::GetJsonFromStructValue(ECStructClassCR structC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document ValueHelpers::GetJsonFromArrayValue(IECSqlValue const& sqlValue, rapidjson::MemoryPoolAllocator<>* allocator)
+rapidjson::Document ValueHelpers::GetJsonFromArrayValue(IECSqlValue const& sqlValue, rapidjson::MemoryPoolAllocator<>* allocator, Utf8StringCR extendedType)
     {
     NULL_VALUE_PRECONDITION(sqlValue);
 
@@ -354,10 +363,13 @@ rapidjson::Document ValueHelpers::GetJsonFromArrayValue(IECSqlValue const& sqlVa
                 doc.PushBack(GetJsonFromStructValue(*v.GetColumnInfo().GetStructType(), v, &doc.GetAllocator()), doc.GetAllocator());
                 break;
             case ValueKind::VALUEKIND_Array:
-                doc.PushBack(GetJsonFromArrayValue(v, &doc.GetAllocator()), doc.GetAllocator());
+                {
+                Utf8String extendedArrayType = v.GetColumnInfo().GetProperty()->GetIsPrimitiveArray() ? v.GetColumnInfo().GetProperty()->GetAsPrimitiveArrayProperty()->GetExtendedTypeName() : "";
+                doc.PushBack(GetJsonFromArrayValue(v, &doc.GetAllocator(), extendedArrayType), doc.GetAllocator());
                 break;
+                }
             case ValueKind::VALUEKIND_Primitive:
-                doc.PushBack(GetJsonFromPrimitiveValue(v.GetColumnInfo().GetDataType().GetPrimitiveType(), v, &doc.GetAllocator()), doc.GetAllocator());
+                doc.PushBack(GetJsonFromPrimitiveValue(v.GetColumnInfo().GetDataType().GetPrimitiveType(), v, &doc.GetAllocator(), extendedType), doc.GetAllocator());
                 break;
             }
         }
@@ -367,15 +379,13 @@ rapidjson::Document ValueHelpers::GetJsonFromArrayValue(IECSqlValue const& sqlVa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document ValueHelpers::GetJsonFromString(PrimitiveType primitiveType, Utf8StringCR str, rapidjson::MemoryPoolAllocator<>* allocator)
+rapidjson::Document ValueHelpers::GetJsonFromString(PrimitiveType primitiveType, Utf8StringCR str, rapidjson::MemoryPoolAllocator<>* allocator, Utf8StringCR extendedType)
     {
     rapidjson::Document doc(allocator);
     switch (primitiveType)
         {
         case PRIMITIVETYPE_Boolean:
             doc.SetBool(str.EqualsI("true") || str.Equals("1"));
-            return doc;
-        case PRIMITIVETYPE_Binary:
             return doc;
         case PRIMITIVETYPE_DateTime:
             {
@@ -395,6 +405,10 @@ rapidjson::Document ValueHelpers::GetJsonFromString(PrimitiveType primitiveType,
         case PRIMITIVETYPE_Long:
             doc.SetInt64(std::stoll(str.c_str()));
             return doc;
+        case PRIMITIVETYPE_Binary:
+            if (extendedType == "BeGuid")
+                doc.SetString(str.c_str(), doc.GetAllocator());
+            return doc;
         case PRIMITIVETYPE_String:
             doc.SetString(str.c_str(), doc.GetAllocator());
             return doc;
@@ -409,7 +423,7 @@ rapidjson::Document ValueHelpers::GetJsonFromString(PrimitiveType primitiveType,
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECValue ValueHelpers::GetECValueFromSqlValue(PrimitiveType primitiveType, DbValue const& sqlValue)
+ECValue ValueHelpers::GetECValueFromSqlValue(PrimitiveType primitiveType, DbValue const& sqlValue, Utf8StringCR extendedType)
     {
     ECValue value;
     if (sqlValue.IsNull())
@@ -453,6 +467,9 @@ ECValue ValueHelpers::GetECValueFromSqlValue(PrimitiveType primitiveType, DbValu
             value.SetPoint3d(GetPoint3dFromJsonString(sqlValue.GetValueText()));
             break;
         case PRIMITIVETYPE_Binary:
+            if (extendedType == "BeGuid")
+                value.SetUtf8CP(sqlValue.GetValueGuid().ToString().c_str());
+            break;
         case PRIMITIVETYPE_IGeometry:
             break;
         default:
@@ -464,7 +481,7 @@ ECValue ValueHelpers::GetECValueFromSqlValue(PrimitiveType primitiveType, DbValu
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECValue ValueHelpers::GetECValueFromSqlValue(PrimitiveType primitiveType, IECSqlValue const& sqlValue)
+ECValue ValueHelpers::GetECValueFromSqlValue(PrimitiveType primitiveType, IECSqlValue const& sqlValue, Utf8StringCR extendedType)
     {
     if (VALUEKIND_Primitive != sqlValue.GetColumnInfo().GetDataType().GetTypeKind())
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Failed to convert IECSqlValue to ECValue - value is not primitive. Actual type: %d", (int)sqlValue.GetColumnInfo().GetDataType().GetTypeKind()));
@@ -511,6 +528,9 @@ ECValue ValueHelpers::GetECValueFromSqlValue(PrimitiveType primitiveType, IECSql
             value.SetPoint3d(GetPoint3dFromSqlValue(sqlValue));
             break;
         case PRIMITIVETYPE_Binary:
+            if (extendedType == "BeGuid")
+                value.SetUtf8CP(sqlValue.GetGuid().ToString().c_str());
+            break;
         case PRIMITIVETYPE_IGeometry:
             break;
         default:
@@ -570,8 +590,6 @@ ECValue ValueHelpers::GetECValueFromJson(PrimitiveType type, RapidJsonValueCR js
         case PRIMITIVETYPE_Boolean:
             value.SetBoolean(json.GetBool());
             break;
-        case PRIMITIVETYPE_Binary:
-            break;
         case PRIMITIVETYPE_DateTime:
             {
             DateTime dt;
@@ -594,6 +612,7 @@ ECValue ValueHelpers::GetECValueFromJson(PrimitiveType type, RapidJsonValueCR js
             else
                 value.SetLong(json.GetInt64());
             break;
+        case PRIMITIVETYPE_Binary:
         case PRIMITIVETYPE_String:
             value.SetUtf8CP(json.GetString());
             break;

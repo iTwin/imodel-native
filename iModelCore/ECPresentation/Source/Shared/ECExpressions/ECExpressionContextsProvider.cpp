@@ -49,11 +49,35 @@ private:
         evalResult.SetValueList(*IValueListResult::Create(values));
         return ExpressionStatus::Success;
         }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    static ExpressionStatus GuidToStr(EvaluationResult& evalResult, void*, EvaluationResultVector& args)
+        {
+        bvector<EvaluationResult> values;
+        if (args.size() == 0 || args.size() > 1)
+            return ExpressionStatus::WrongNumberOfArguments;
+
+        EvaluationResultCR arg = args[0];
+        if (!arg.IsECValue() && !arg.GetECValue()->IsBinary())
+            ExpressionStatus::IncompatibleTypes;
+
+        size_t guidSize = sizeof(BeGuid);
+        BeGuid* guid = (BeGuid*)arg.GetECValue()->GetBinary(guidSize);
+
+        if (!guid->IsValid())
+            return ExpressionStatus::IncompatibleTypes;
+
+        evalResult.InitECValue().SetUtf8CP(guid->ToString().c_str(), true);
+        return ExpressionStatus::Success;
+        }
 protected:
     Utf8CP _GetName() const override {return "CommonRulesEngineSymbols";}
     void _PublishSymbols(SymbolExpressionContextR context, bvector<Utf8String> const& requestedSymbolSets) const override
         {
         context.AddSymbol(*MethodSymbol::Create("Set", &CommonRulesEngineSymbolsProvider::CreateSet, nullptr, nullptr));
+        context.AddSymbol(*MethodSymbol::Create("GuidToStr", &CommonRulesEngineSymbolsProvider::GuidToStr, nullptr, nullptr));
         }
 public:
     CommonRulesEngineSymbolsProvider() {}

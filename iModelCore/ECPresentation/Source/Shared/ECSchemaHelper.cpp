@@ -2580,5 +2580,5 @@ ECValue ECInstancesHelper::GetValue(IConnectionCR connection, ECClassCR ecClass,
     if (BE_SQLITE_ROW != stepStatus)
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Unexpected statement step result: %d", (int)stepStatus));
 
-    return ValueHelpers::GetECValueFromSqlValue(ecProperty.GetAsPrimitiveProperty()->GetType(), stmt->GetValue(0));
+    return ValueHelpers::GetECValueFromSqlValue(ecProperty.GetAsPrimitiveProperty()->GetType(), stmt->GetValue(0), ecProperty.GetAsPrimitiveProperty()->GetExtendedTypeName());
     }

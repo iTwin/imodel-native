@@ -57,8 +57,9 @@ void NavigationQueryExtendedData::AddRangesData(ECPropertyCR prop, PropertyGroup
         {
         rapidjson::Value range(rapidjson::kObjectType);
         PrimitiveType type = prop.GetAsPrimitiveProperty()->GetType();
-        range.AddMember("from", ValueHelpers::GetJsonFromString(type, rangeSpec->GetFromValue(), &GetAllocator()), GetAllocator());
-        range.AddMember("to", ValueHelpers::GetJsonFromString(type, rangeSpec->GetToValue(), &GetAllocator()), GetAllocator());
+        Utf8String extendedType = prop.GetAsPrimitiveProperty()->GetExtendedTypeName();
+        range.AddMember("from", ValueHelpers::GetJsonFromString(type, rangeSpec->GetFromValue(), &GetAllocator(), extendedType), GetAllocator());
+        range.AddMember("to", ValueHelpers::GetJsonFromString(type, rangeSpec->GetToValue(), &GetAllocator(), extendedType), GetAllocator());
         if (!rangeSpec->GetImageId().empty())
             range.AddMember("imageId", rapidjson::StringRef(rangeSpec->GetImageId().c_str()), GetAllocator());
         if (!rangeSpec->GetLabel().empty())
