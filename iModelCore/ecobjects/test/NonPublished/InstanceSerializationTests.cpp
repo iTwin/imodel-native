@@ -909,6 +909,33 @@ TEST_F (InstanceSerializationTest, EmptyPropertyTags)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (InstanceSerializationTest, WhitespacePropertyTags)
+    {
+    // Ensure native impl produces same values as managed:
+    // "<StringProperty> </StringProperty>" => L" ", not a NULL string
+
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr schema;
+    ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath (L"SimpleTest_FirstSchema.01.00.ecschema.xml").c_str(), *schemaContext);
+
+    ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext (*schema);
+    Utf8CP instanceXml =   R"xml(<TestClass xmlns="SimpleTest_FirstSchema.01.00">
+                                    <StringMember> </StringMember>
+                                </TestClass>)xml";
+
+    IECInstancePtr instance;
+
+    IECInstance::ReadFromXmlString(instance, instanceXml, *instanceContext);
+    ECValue v;
+    EXPECT_EQ(ECObjectsStatus::Success, instance->GetValue(v, "StringMember"));
+
+    EXPECT_FALSE(v.IsNull());
+    EXPECT_STREQ(" ", v.GetUtf8CP());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(InstanceSerializationTest, ExpectSuccessWithIGeometryProperty)
     {
     ECSchemaPtr testSchema;

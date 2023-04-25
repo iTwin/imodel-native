@@ -97,7 +97,7 @@ struct ECPresentationUtils
     static NativeLogging::CategoryLogger GetLogger();
 
     static ECPresentation::Diagnostics::Options CreateDiagnosticsOptions(RapidJsonValueCR);
-    static ECPresentationResult CreateResultFromException(folly::exception_wrapper const&);
+    static ECPresentationResult CreateResultFromException(folly::exception_wrapper const&, rapidjson::Document&& diagnostics = rapidjson::Document());
 
     static ECPresentationManager* CreatePresentationManager(Dgn::PlatformLib::Host::IKnownLocationsAdmin&, IJsonLocalState&,
         std::shared_ptr<IUpdateRecordsHandler>, BeJsConst props);

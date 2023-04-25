@@ -102,7 +102,7 @@ BsplineParam*   pParams         // <=> potentially modified only if poles given
 )
     {
     bool        badFullKnots = false;
-    int         divisor, numKnots, i;
+    int         degree, divisor, numKnots, i;
     double      *pP, *pStart, *pEnd, *pNext, accum, step;
 
     if (!pKnots || !pParams)
@@ -110,16 +110,46 @@ BsplineParam*   pParams         // <=> potentially modified only if poles given
 
     numKnots = bspknot_numberKnots (pParams->numPoles, pParams->order, pParams->closed);
 
-    pStart = pKnots + pParams->order - 1;        // last external knot at beginning of knot vector
+    degree = pParams->order - 1;
+    pStart = pKnots + degree;                    // last external knot at beginning of knot vector
     pEnd = pKnots + numKnots - pParams->order;   // first external knot at end of knot vector
 
-    /* verify that the start knot is strictly less than the last order knots */
-    for (i = 0; i < pParams->order; i++)
+    // Below we check for NaN in knots and weights, caused by unknown tool(s) that
+    // erroneously set symbology on a B-spline element's non-graphical children.
+
+    // strip NaN values from open exterior knots (closed exterior knots are never persisted)
+    if (!pParams->closed)
         {
-        if (*pStart >= pEnd[i])
+        double goodStartKnot = *pStart;
+        for (pP = pKnots; BeNumerical::BeIsnan(goodStartKnot) && pP < pStart; ++pP)
+            goodStartKnot = *pP;
+        double goodEndKnot = *pEnd;
+        for (pP = pKnots + numKnots - 1; BeNumerical::BeIsnan(goodEndKnot) && pP > pEnd; --pP)
+            goodEndKnot = *pP;
+        if (!BeNumerical::BeIsnan(goodStartKnot) && !BeNumerical::BeIsnan(goodEndKnot))
             {
-            badFullKnots = true;
-            break;
+            for (i = 0; i < pParams->order; ++i)
+                {
+                if (BeNumerical::BeIsnan(pKnots[i]))
+                    pKnots[i] = goodStartKnot;
+                if (BeNumerical::BeIsnan(pEnd[i]))
+                    pEnd[i] = goodEndKnot;
+                }
+            }
+        }
+    if (BeNumerical::BeIsnan(*pStart) || BeNumerical::BeIsnan(*pEnd))
+        badFullKnots = true;
+
+    /* verify that the start knot is strictly less than the last order knots */
+    if (!badFullKnots)
+        {
+        for (i = 0; i < pParams->order; i++)
+            {
+            if (*pStart >= pEnd[i])
+                {
+                badFullKnots = true;
+                break;
+                }
             }
         }
 
@@ -131,9 +161,10 @@ BsplineParam*   pParams         // <=> potentially modified only if poles given
     else
         {
         /* replace any decreasing interior knots with uniformly spaced knots */
+        divisor = 0;
         for (pP = pStart + 1; pP < pEnd; pP++)
             {
-            if (*pP < *(pP-1))
+            if (*pP < *(pP-1) || BeNumerical::BeIsnan(*pP))
                 {
                 /* find the next valid knot */
                 divisor = 1;
@@ -154,6 +185,25 @@ BsplineParam*   pParams         // <=> potentially modified only if poles given
                 pP += divisor - 1;
                 }
             }
+
+        // recompute exterior closed knots if we fixed a knot
+        if (divisor > 0 && pParams->closed)
+            {
+            double span = *pEnd - *pStart;
+            int offset = numKnots - pParams->order - degree;
+            for (i = 0, pP = pKnots + offset; i < degree; ++i)
+                {
+                pKnots[i] = pP[i] - span;
+                pEnd[i + 1] = pStart[i + 1] + span;
+                }
+            }
+        }
+
+    if (pWeights)
+        {
+        for (i = 0; i < pParams->numPoles; ++i)
+            if (BeNumerical::BeIsnan(pWeights[i]))
+                pWeights[i] = 1.0;  // the pole is still weighted, but its weight has been lost!
         }
 
     // check for oversaturated exterior knots in open vector (interior knots that equal an exterior knot)
@@ -167,7 +217,7 @@ BsplineParam*   pParams         // <=> potentially modified only if poles given
             if (pKnots[i] - *pStart >= tol)
                 break;
 
-        for (i = numKnots - pParams->order - 1, nExcess1 = 0; i >= 0; i--, nExcess1++)
+        for (i = numKnots - degree, nExcess1 = 0; i >= 0; i--, nExcess1++)
             if (*pEnd - pKnots[i] >= tol)
                 break;
 
@@ -2387,6 +2437,14 @@ BsplineParam*   pVParams        // <=> potentially modified only if poles given
     if (SUCCESS != (status = mdlBspline_validateCurveKnots (pUKnots, NULL, NULL, pUParams)) ||
         SUCCESS != (status = mdlBspline_validateCurveKnots (pVKnots, NULL, NULL, pVParams)))
         return status;
+
+    // check for NaN: can happen if symbology erroneously set on weight element
+    if (pWeights)
+        {
+        for (int i = 0; i < pUParams->numPoles * pVParams->numPoles; ++i)
+            if (BeNumerical::BeIsnan(pWeights[i]))
+                pWeights[i] = 1.0;
+        }
 
     // check for oversaturated exterior knots in open vector (interior knots that equal an exterior knot)
     if (pPoles)

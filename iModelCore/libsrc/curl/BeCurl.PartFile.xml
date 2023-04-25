@@ -17,13 +17,13 @@
     </Part>
 
     <!-- NOTE: Graphite uses "G" as a library suffix to disambiguate from Vancouver libraries -->
-    <Part Name="Library" BentleyBuildMakeFile="BeCurl.mke" ApiNumber="B02">
+    <Part Name="Library" BentleyBuildMakeFile="BeCurl.mke">
         <SubPart PartName="PublicAPI" />
         <SubPart LibType="Static" PartName="Compress" PartFile="iModelCore\libsrc\compress\Zlib"/>
         <SubPart PartName="Library" PartFile="iModelCore\libsrc\openssl\BeOpenSSL"/>
         <Bindings>
-            <Libs>Delivery/$(libprefix)BeCurl$(libext)</Libs>
-            <Assemblies>Delivery/$(shlibprefix)BeCurl$(ApiNumber)$(shlibext)</Assemblies>
+            <Libs>Delivery/$(libprefix)iTwinCurl$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)iTwinCurl$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
