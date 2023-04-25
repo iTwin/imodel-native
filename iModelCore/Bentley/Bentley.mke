@@ -149,7 +149,7 @@ DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
 DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
 DLM_CREATE_LIB_CONTEXT_LINK = 1
 
-LINKER_LIBRARIES            = $(BuildContext)SubParts/Libs/$(libprefix)BeIcu4c$(libext)
+LINKER_LIBRARIES            = $(BuildContext)SubParts/Libs/$(libprefix)iTwinIcu4c$(libext)
 
 %if defined(DEBUG) && $(TARGET_PLATFORM)=="Windows"
     LINKER_LIBRARIES        + Dbghelp.lib

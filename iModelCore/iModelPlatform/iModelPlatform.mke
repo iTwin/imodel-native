@@ -127,7 +127,7 @@ $(CoreObjs)UnitDefinition$(oext) :                  $(DgnCoreDir)UnitDefinition.
 
 $(CoreObjs)TxnManager$(oext) :                      $(DgnCoreDir)TxnManager.cpp $(iModelPlatformAPISrc)TxnManager.h ${MultiCompileDepends}
 
-$(coreObjs)RevisionManager$(oext) :                 $(DgnCoreDir)RevisionManager.cpp $(iModelPlatformAPISrc)RevisionManager.h ${MultiCompileDepends}
+$(coreObjs)ChangesetTxns$(oext) :                   $(DgnCoreDir)ChangesetTxns.cpp $(iModelPlatformAPISrc)TxnManager.h ${MultiCompileDepends}
 
 $(CoreObjs)ElementDependency$(oext) :               $(DgnCoreDir)ElementDependency.cpp $(iModelPlatformAPISrc)TxnManager.h ${MultiCompileDepends}
 
@@ -444,7 +444,7 @@ LINKER_LIBRARIES        =   $(ContextSubpartsLibs)$(libprefix)iTwinSQLiteEC$(lib
                             $(ContextSubpartsLibs)$(libprefix)iTwinGeomSerialization$(libext) \
                             $(ContextSubpartsLibs)$(libprefix)iTwinGeoCoord$(libext)\
                             $(ContextSubpartsLibs)$(libprefix)iTwinXml$(libext) \
-                            $(ContextSubpartsLibs)$(libprefix)freetype2$(libext) \
+                            $(ContextSubpartsLibs)$(libprefix)iTwinFreetype2$(libext) \
                             $(ContextSubpartsLibs)$(libprefix)iTwinFolly$(libext) \
                             $(ContextSubPartsLibs)$(libprefix)iTwinECPresentation$(libext) \
                             $(ContextSubpartsLibs)$(libprefix)iTwinNapi$(libext)

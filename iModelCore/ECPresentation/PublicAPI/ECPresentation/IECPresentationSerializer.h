@@ -57,6 +57,7 @@ protected:
     virtual rapidjson::Document _AsJson(ContextR, ContentDescriptor const&, rapidjson::Document::AllocatorType*) const = 0;
 
     virtual rapidjson::Document _AsJson(ContextR, ContentSetItem const&, int, rapidjson::Document::AllocatorType*) const = 0;
+    virtual rapidjson::Document _AsJson(ContextR, NavigationPropertyValueCR, rapidjson::Document::AllocatorType*) const = 0;
     virtual rapidjson::Document _AsJson(ContextR, DisplayValueGroupCR, rapidjson::Document::AllocatorType*) const = 0;
 
     virtual rapidjson::Document _AsJson(ContextR, BeInt64Id const&, rapidjson::Document::AllocatorType*) const = 0;
@@ -150,6 +151,7 @@ public:
     rapidjson::Document AsJson(ContextR ctx, ContentDescriptor::Field::NestedContentTypeDescription const& nestedContentTypeDescription, rapidjson::Document::AllocatorType* allocator = nullptr) const;
 
     rapidjson::Document AsJson(ContextR ctx, ContentSetItem const& contentSetItem, int flags = ContentSetItem::SERIALIZE_All, rapidjson::Document::AllocatorType* allocator = nullptr) const {return _AsJson(ctx, contentSetItem, flags, allocator);}
+    rapidjson::Document AsJson(ContextR ctx, NavigationPropertyValueCR value, rapidjson::Document::AllocatorType* allocator = nullptr) const {return _AsJson(ctx, value, allocator);}
     rapidjson::Document AsJson(ContextR ctx, DisplayValueGroupCR value, rapidjson::Document::AllocatorType* allocator = nullptr) const {return _AsJson(ctx, value, allocator);}
 
     rapidjson::Document AsJson(ContextR ctx, NavNodeKey const& navNodeKey, rapidjson::Document::AllocatorType* allocator = nullptr) const;

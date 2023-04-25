@@ -529,6 +529,7 @@ DbResult    Statement::BindBlob(int col, void const* val, int size, MakeCopy mak
 DbResult    Statement::BindNull(int col) {return (DbResult)sqlite3_bind_null(m_stmt, col);}
 DbResult    Statement::BindVirtualSet(int col, VirtualSet const& intSet) {return BindInt64(col, (int64_t) &intSet);}
 DbResult    Statement::BindDbValue(int col, struct DbValue const& dbVal) {return (DbResult) sqlite3_bind_value(m_stmt, col, dbVal.GetSqlValueP());}
+DbResult    Statement::BindPointer(int col, void* ptr, const char* name, void(*destroy)(void*))  {return (DbResult) sqlite3_bind_pointer(m_stmt, col, ptr, name, destroy);}
 
 DbValueType Statement::GetColumnType(int col)   {return (DbValueType) sqlite3_column_type(m_stmt, col);}
 Utf8CP      Statement::GetColumnDeclaredType(int col) { return sqlite3_column_decltype(m_stmt, col); }
@@ -584,14 +585,15 @@ int         Statement::GetParameterIndex(Utf8CP name) {return sqlite3_bind_param
 int         Statement::GetParameterCount() { return sqlite3_bind_parameter_count(m_stmt); }
 Utf8CP      Statement::GetSql() const                {return sqlite3_sql(m_stmt);}
 
-DbValueType DbValue::GetValueType() const             {return (DbValueType) sqlite3_value_type(m_val);}
-int         DbValue::GetValueBytes() const            {return sqlite3_value_bytes(m_val);}
-void const* DbValue::GetValueBlob() const             {return sqlite3_value_blob(m_val);}
-Utf8CP      DbValue::GetValueText() const             {return (Utf8CP)sqlite3_value_text(m_val);}
-int         DbValue::GetValueInt() const              {return sqlite3_value_int(m_val);}
-int64_t     DbValue::GetValueInt64() const            {return sqlite3_value_int64(m_val);}
-double      DbValue::GetValueDouble() const           {return sqlite3_value_double(m_val);}
-
+DbValueType  DbValue::GetValueType() const               {return (DbValueType) sqlite3_value_type(m_val);}
+int          DbValue::GetValueBytes() const              {return sqlite3_value_bytes(m_val);}
+void const*  DbValue::GetValueBlob() const               {return sqlite3_value_blob(m_val);}
+Utf8CP       DbValue::GetValueText() const               {return (Utf8CP)sqlite3_value_text(m_val);}
+int          DbValue::GetValueInt() const                {return sqlite3_value_int(m_val);}
+int64_t      DbValue::GetValueInt64() const              {return sqlite3_value_int64(m_val);}
+double       DbValue::GetValueDouble() const             {return sqlite3_value_double(m_val);}
+void*        DbValue::GetValuePointer(Utf8CP name) const {return sqlite3_value_pointer(m_val, name); }
+unsigned int DbValue::GetSubType() const                 {return sqlite3_value_subtype(m_val); }
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -6406,4 +6408,3 @@ DbResult Db::Deserialize(DbBuffer& buffer, DbR db, DbDeserializeOptions opts, co
     }
     return rc;
 }
-

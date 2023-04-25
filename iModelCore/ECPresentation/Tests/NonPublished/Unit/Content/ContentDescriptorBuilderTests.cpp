@@ -26,7 +26,7 @@ void ContentDescriptorBuilderTests::SetUp()
         m_rulesetVariables, nullptr, m_schemaHelper->GetECExpressionsCache());
     m_context = std::make_unique<ContentDescriptorBuilder::Context>(*m_schemaHelper, m_connections, *m_connection, m_cancellationToken.get(), *m_rulesPreprocessor, *m_ruleset,
         ContentDisplayType::Undefined, s_emptyVariables, m_categorySupplier, nullptr, ECPresentation::UnitSystem::Undefined,
-        *NavNodeKeyListContainer::Create(), nullptr);
+        *NavNodeKeyListContainer::Create(), nullptr, nullptr);
     m_context->SetContentFlagsCalculator([](int defaultFlags) {return defaultFlags | (int)ContentFlags::SkipInstancesCheck;});
     m_descriptorBuilder = std::make_unique<ContentDescriptorBuilder>(*m_context);
     }

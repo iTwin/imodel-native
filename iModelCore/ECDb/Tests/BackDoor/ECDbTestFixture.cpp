@@ -512,6 +512,25 @@ ECN::ECSchemaPtr ECDbTestFixture::GetFormatsSchema(bool recreate)
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
+bool ECDbTestFixture::EnableECSqlExperimentalFeatures(ECDbCR conn, bool enable) {
+    ECSqlStatement stmt;
+    EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(conn, SqlPrintfString("PRAGMA experimental_features_enabled=%s", enable ? "true" : "false")));
+    EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+    return stmt.GetValueBoolean(0);
+}
+
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//--------------------------------------------------------------------------------------
+bool ECDbTestFixture::IsECSqlExperimentalFeaturesEnabled(ECDbCR conn){
+    ECSqlStatement stmt;
+    EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(conn, "PRAGMA experimental_features_enabled"));
+    EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+    return stmt.GetValueBoolean(0);
+}
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//--------------------------------------------------------------------------------------
 Json::Value GetPropertyMap(ECDbCR ecdb, Utf8CP className) {
     Utf8CP sql = R"(
         SELECT json_group_array(schemaName||':' || className|| ':' || accessString || ':' || tableName || ':' || columnName)

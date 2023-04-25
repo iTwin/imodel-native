@@ -193,23 +193,17 @@ struct SchemaVersionTestFixture : public DgnDbTestFixture
         ASSERT_TRUE(fileStatus == BeFileNameStatus::Success);
         }
 
-    DgnRevisionPtr CreateRevision()
+    ChangesetPropsPtr CreateRevision(Utf8CP extName)
         {
-        DgnRevisionPtr revision = m_db->Revisions().StartCreateRevision();
+        ChangesetPropsPtr revision = m_db->Txns().StartCreateChangeset(extName);
         if (!revision.IsValid())
             return nullptr;
 
-        RevisionStatus status = m_db->Revisions().FinishCreateRevision(-1);
-        if (RevisionStatus::Success != status)
-            {
-            BeAssert(false);
-            return nullptr;
-            }
-
+        m_db->Txns().FinishCreateChangeset(-1, extName != nullptr);
         return revision;
         }
 
-    void DumpRevision(DgnRevisionCR revision, Utf8CP summary)
+    void DumpRevision(ChangesetPropsCR revision, Utf8CP summary)
         {
 #ifdef DUMP_REVISION
         LOG.infov("---------------------------------------------------------");
@@ -502,7 +496,7 @@ TEST_F(SchemaVersionTestFixture, CreateAndMergeRevision)
     EXPECT_TRUE(testProperty == nullptr);
 
     SaveDb();
-    DgnRevisionPtr revision1 = CreateRevision();
+    ChangesetPropsPtr revision1 = CreateRevision("-cs1");
     EXPECT_TRUE(revision1.IsValid());
     EXPECT_TRUE(revision1->ContainsSchemaChanges(*m_db));
 
@@ -521,7 +515,7 @@ TEST_F(SchemaVersionTestFixture, CreateAndMergeRevision)
     EXPECT_TRUE(testProperty != nullptr);
 
     SaveDb();
-    DgnRevisionPtr revision2 = CreateRevision();
+    ChangesetPropsPtr revision2 = CreateRevision("-cs2");
     EXPECT_TRUE(revision2.IsValid());
     EXPECT_TRUE(revision2->ContainsSchemaChanges(*m_db));
 
@@ -600,7 +594,7 @@ TEST_F(SchemaVersionTestFixture, IncompatibleUpgrade)
     DgnElementId elIdA = cElA->GetElementId();
 
     SaveDb();
-    DgnRevisionPtr revision1 = CreateRevision();
+    ChangesetPropsPtr revision1 = CreateRevision("-cs1");
     DumpRevision(*revision1, "Revision 1");
     el = nullptr;
     cEl = nullptr;

@@ -312,7 +312,7 @@ SchemaReadStatus ECFormat::ReadXml(pugi::xml_node unitFormatNode, ECSchemaReadCo
 
     SetNumericSpec(spec);
     pugi::xml_node child = unitFormatNode.first_child();
-    if (child)
+    if (child && child.type() == pugi::xml_node_type::node_element)
         {
         if(0 != BeStringUtilities::StricmpAscii("Composite", child.name()))
             {

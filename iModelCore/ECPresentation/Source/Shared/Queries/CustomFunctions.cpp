@@ -1273,32 +1273,11 @@ struct GetECEnumerationValueScalar : ECPresentation::ScalarFunction
         if (nullptr == enumeration)
             HANDLE_CUSTOM_FUNCTION_FAILURE_RETURN(Utf8PrintfString("Enumeration '%s' not found in schema '%s'", enumClass, enumSchema));
 
-        ECEnumeratorCP enumerator = nullptr;
-        switch (enumeration->GetType())
-            {
-            case PRIMITIVETYPE_Integer:
-                {
-                if (args[2].GetValueType() != DbValueType::IntegerVal)
-                    HANDLE_CUSTOM_FUNCTION_FAILURE_RETURN(Utf8PrintfString("Enumeration '%s' values should be of integer type, but got: %d", enumeration->GetFullName().c_str(), args[2].GetValueType()));
+        Utf8String displayValue;
+        if (SUCCESS != ValueHelpers::GetEnumPropertyDisplayValue(displayValue, *enumeration, args[2]))
+            HANDLE_CUSTOM_FUNCTION_FAILURE_RETURN(Utf8PrintfString("Failed to parse enumeration '%s' value: '%s'", enumeration->GetFullName().c_str(), args[2].GetValueText()));
 
-                int valueId = args[2].GetValueInt();
-                enumerator = enumeration->FindEnumerator(valueId);
-                break;
-                }
-            case PRIMITIVETYPE_String:
-                {
-                if (args[2].GetValueType() != DbValueType::TextVal)
-                    HANDLE_CUSTOM_FUNCTION_FAILURE_RETURN(Utf8PrintfString("Enumeration '%s' values should be of string type, but got: %d", enumeration->GetFullName().c_str(), args[2].GetValueType()));
-
-                Utf8CP valueId = args[2].GetValueText();
-                enumerator = enumeration->FindEnumerator(valueId);
-                break;
-                }
-            }
-        if (nullptr == enumerator)
-            HANDLE_CUSTOM_FUNCTION_FAILURE_RETURN(Utf8PrintfString("Invalid enumeration '%s' value: '%s'", enumeration->GetFullName().c_str(), args[2].GetValueText()));
-
-        Utf8String json = LabelDefinition::Create(enumerator->GetDisplayLabel().c_str())->ToJsonString();
+        Utf8String json = LabelDefinition::Create(displayValue.c_str())->ToJsonString();
         ctx.SetResultText(json.c_str(), json.size(), Context::CopyData::Yes);
         }
     };

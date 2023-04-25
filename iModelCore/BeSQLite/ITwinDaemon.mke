@@ -53,8 +53,8 @@ EXE_LOPT1           = -entry:mainCRTStartup
         LINKER_LIBRARIES + wsock32.lib ws2_32.lib Advapi32.lib Wldap32.lib Crypt32.lib
         BENTLEY_WIN32_LINK_CommonOptions + -Ignore:4099
 %endif
-LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)$(stlibprefix)BeCurl$(stlibext)
-LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)$(stlibprefix)BeOpenSSL$(stlibext)
+LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)$(stlibprefix)iTwinCurl$(stlibext)
+LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)$(stlibprefix)iTwinOpenSSL$(stlibext)
 LINKER_LIBRARIES + $(CLibs)
 LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)$(stlibprefix)BeZlib$(stlibext)
 

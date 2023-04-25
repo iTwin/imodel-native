@@ -42,9 +42,9 @@ void ChangeTestFixture::SetUpTestCase()
 
     db->SaveChanges();
     // Create a dummy revision to purge transaction table for the test
-    DgnRevisionPtr rev = db->Revisions().StartCreateRevision();
+    ChangesetPropsPtr rev = db->Txns().StartCreateChangeset();
     BeAssert(rev.IsValid());
-    db->Revisions().FinishCreateRevision(-1);
+    db->Txns().FinishCreateChangeset(-1);
     }
 
 /*---------------------------------------------------------------------------------**//**
