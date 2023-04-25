@@ -663,19 +663,8 @@ SheetIndexModelPtr SheetIndexModel::CreateAndInsert(SheetIndexPartitionCR modele
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus SheetIndexModel::_OnInsertElement(DgnElementR element)
     {
-    if (nullptr == dynamic_cast<SheetIndexElementCP>(&element))
-        {
-        BeAssert(false);
-        return DgnDbStatus::WrongModel;
-        }
-
-    return T_Super::_OnInsertElement(element);
+    return element.IsInformationContentElement() ? T_Super::_OnInsertElement(element) : DgnDbStatus::WrongModel;
     }
-
-// DgnDbStatus SheetIndexModel::_OnInsertElement(DgnElementR el)
-//     {
-//     return el.IsInformationContentElement() ? T_Super::_OnInsertElement(el) : DgnDbStatus::WrongModel;
-//     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
