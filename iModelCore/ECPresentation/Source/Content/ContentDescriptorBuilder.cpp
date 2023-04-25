@@ -397,7 +397,7 @@ protected:
         // note: we don't want to these fields even if the above says we should..
         if (ecProperty.GetIsPrimitive())
             {
-            if (PRIMITIVETYPE_Binary == ecProperty.GetAsPrimitiveProperty()->GetType() && ecProperty.GetAsPrimitiveProperty()->GetExtendedTypeName() != "BeGuid")
+            if (PRIMITIVETYPE_Binary == ecProperty.GetAsPrimitiveProperty()->GetType() && ecProperty.GetAsPrimitiveProperty()->GetExtendedTypeName() != EXTENDED_TYPENAME_BeGuid)
                 {
                 DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Binary (not Guid) field is not supported - skip.");
                 return false;

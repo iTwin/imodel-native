@@ -299,7 +299,7 @@ rapidjson::Document ValueHelpers::GetJsonFromPrimitiveValue(PrimitiveType primit
         case PRIMITIVETYPE_Point3d:
             return GetPoint3dJson(GetPoint3dFromSqlValue(value), allocator);
         case PRIMITIVETYPE_Binary:
-            if (extendedType == "BeGuid")
+            if (extendedType == EXTENDED_TYPENAME_BeGuid)
                 doc.SetString(value.GetGuid().ToString().c_str(), doc.GetAllocator());
             return doc;
         case PRIMITIVETYPE_IGeometry:
@@ -406,7 +406,7 @@ rapidjson::Document ValueHelpers::GetJsonFromString(PrimitiveType primitiveType,
             doc.SetInt64(std::stoll(str.c_str()));
             return doc;
         case PRIMITIVETYPE_Binary:
-            if (extendedType == "BeGuid")
+            if (extendedType == EXTENDED_TYPENAME_BeGuid)
                 doc.SetString(str.c_str(), doc.GetAllocator());
             return doc;
         case PRIMITIVETYPE_String:
@@ -467,7 +467,7 @@ ECValue ValueHelpers::GetECValueFromSqlValue(PrimitiveType primitiveType, DbValu
             value.SetPoint3d(GetPoint3dFromJsonString(sqlValue.GetValueText()));
             break;
         case PRIMITIVETYPE_Binary:
-            if (extendedType == "BeGuid")
+            if (extendedType == EXTENDED_TYPENAME_BeGuid)
                 value.SetUtf8CP(sqlValue.GetValueGuid().ToString().c_str());
             break;
         case PRIMITIVETYPE_IGeometry:
@@ -528,7 +528,7 @@ ECValue ValueHelpers::GetECValueFromSqlValue(PrimitiveType primitiveType, IECSql
             value.SetPoint3d(GetPoint3dFromSqlValue(sqlValue));
             break;
         case PRIMITIVETYPE_Binary:
-            if (extendedType == "BeGuid")
+            if (extendedType == EXTENDED_TYPENAME_BeGuid)
                 value.SetUtf8CP(sqlValue.GetGuid().ToString().c_str());
             break;
         case PRIMITIVETYPE_IGeometry:
