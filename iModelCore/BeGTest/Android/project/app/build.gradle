@@ -43,6 +43,8 @@ android {
     dexOptions {
         javaMaxHeapSize "4g"
     } 
+
+    useNewApkCreator false
 }
 
 dependencies {
