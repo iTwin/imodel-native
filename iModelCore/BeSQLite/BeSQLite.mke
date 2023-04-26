@@ -61,6 +61,8 @@ $(o)BeSQLiteProfileManager$(oext) : $(baseDir)BeSQLiteProfileManager.cpp $(baseD
 
 $(o)Profiler$(oext) : $(baseDir)Profiler.cpp $(baseDir)/PublicAPI/BeSQLite/Profiler.h ${MultiCompileDepends}
 
+$(o)VirtualTab$(oext) : $(baseDir)VirtualTab.cpp $(baseDir)/PublicAPI/BeSQLite/VirtualTab.h ${MultiCompileDepends}
+
 $(o)BeLzma$(oext) : $(baseDir)BeLzma.cpp $(baseDir)/PublicAPI/BeSQLite/BeLzma.h ${MultiCompileDepends}
 
 $(o)BeBriefcaseBasedIdSequence$(oext) : $(baseDir)BeBriefcaseBasedIdSequence.cpp $(baseDir)/PublicAPI/BeSQLite/BeBriefcaseBasedIdSequence.h ${MultiCompileDepends}
@@ -92,8 +94,8 @@ BeSQLiteRequiredLibs = $(ContextSubPartsStaticLibs)$(stlibprefix)BeZlib$(stlibex
 BeSQLiteRequiredLibs + $(ContextSubPartsStaticLibs)$(stlibprefix)snappy$(stlibext)
 BeSQLiteRequiredLibs + $(ContextSubPartsStaticLibs)$(stlibprefix)lzma$(stlibext)
 BeSQLiteRequiredLibs + $(ContextSubPartsLibs)$(libprefix)iTwinBentley$(libext)
-BeSQLiteRequiredLibs + $(ContextSubPartsLibs)$(stlibprefix)BeCurl$(stlibext)
-BeSQLiteRequiredLibs + $(ContextSubPartsLibs)$(stlibprefix)BeOpenSSL$(stlibext)
+BeSQLiteRequiredLibs + $(ContextSubPartsLibs)$(stlibprefix)iTwinCurl$(stlibext)
+BeSQLiteRequiredLibs + $(ContextSubPartsLibs)$(stlibprefix)iTwinOpenSSL$(stlibext)
 BeSQLiteRequiredLibs + $(ContextSubPartsLibs)$(stlibprefix)iTwin_google_re2$(stlibext)
 
 DLM_OBJECT_FILES    = $(objs)
