@@ -300,7 +300,7 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
         Statement stmt;
         auto rc = stmt.Prepare(m_containerDb, sql.c_str());
         if (rc != BE_SQLITE_OK)
-            BeNapi::ThrowJsException(Env(), "Got error preparing select from bcv_http_log", rc);
+            BeNapi::ThrowJsException(Env(), Utf8PrintfString("Got error preparing %s", sql.c_str()).c_str(), rc);
 
         if (startFromId != 0 && !finishedAtOrAfterTime.empty()) {
             stmt.BindInt(1, startFromId);
