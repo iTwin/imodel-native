@@ -399,12 +399,12 @@ protected:
             {
             if (PRIMITIVETYPE_Binary == ecProperty.GetAsPrimitiveProperty()->GetType() && ecProperty.GetAsPrimitiveProperty()->GetExtendedTypeName() != EXTENDED_TYPENAME_BeGuid)
                 {
-                DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Binary (not Guid) field is not supported - skip.");
+                DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Non-guid binary fields are not supported - skip.");
                 return false;
                 }
             if (PRIMITIVETYPE_IGeometry == ecProperty.GetAsPrimitiveProperty()->GetType())
                 {
-                DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "IGeometry field is not supported - skip.");
+                DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "IGeometry fields are not supported - skip.");
                 return false;
                 }
             }

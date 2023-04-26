@@ -269,7 +269,7 @@ rapidjson::Document ValueHelpers::GetPoint3dJson(DPoint3dCR pt, rapidjson::Memor
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document ValueHelpers::GetJsonFromPrimitiveValue(PrimitiveType primitiveType, IECSqlValue const& value, rapidjson::MemoryPoolAllocator<>* allocator, Utf8StringCR extendedType)
+rapidjson::Document ValueHelpers::GetJsonFromPrimitiveValue(PrimitiveType primitiveType, Utf8StringCR extendedType, IECSqlValue const& value, rapidjson::MemoryPoolAllocator<>* allocator)
     {
     NULL_VALUE_PRECONDITION(value);
 
@@ -330,15 +330,12 @@ rapidjson::Document ValueHelpers::GetJsonFromStructValue(ECStructClassCR structC
                 doc.AddMember(propertyNameJson, GetJsonFromStructValue(*v.GetColumnInfo().GetStructType(), v, &doc.GetAllocator()), doc.GetAllocator());
                 break;
             case ValueKind::VALUEKIND_Array:
-                {
-                Utf8StringCR extendedType = v.GetColumnInfo().GetProperty()->GetIsPrimitiveArray() ? v.GetColumnInfo().GetProperty()->GetAsPrimitiveArrayProperty()->GetExtendedTypeName() : "";
-                doc.AddMember(propertyNameJson, GetJsonFromArrayValue(v, &doc.GetAllocator(), extendedType), doc.GetAllocator());
+                doc.AddMember(propertyNameJson, GetJsonFromArrayValue(v, &doc.GetAllocator()), doc.GetAllocator());
                 break;
-                }
             case ValueKind::VALUEKIND_Primitive:
                 {
                 Utf8StringCR extendedType = v.GetColumnInfo().GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName();
-                doc.AddMember(propertyNameJson, GetJsonFromPrimitiveValue(v.GetColumnInfo().GetDataType().GetPrimitiveType(), v, &doc.GetAllocator(), extendedType), doc.GetAllocator());
+                doc.AddMember(propertyNameJson, GetJsonFromPrimitiveValue(v.GetColumnInfo().GetDataType().GetPrimitiveType(), extendedType, v, &doc.GetAllocator()), doc.GetAllocator());
                 break;
                 }
             }
@@ -349,7 +346,7 @@ rapidjson::Document ValueHelpers::GetJsonFromStructValue(ECStructClassCR structC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document ValueHelpers::GetJsonFromArrayValue(IECSqlValue const& sqlValue, rapidjson::MemoryPoolAllocator<>* allocator, Utf8StringCR extendedType)
+rapidjson::Document ValueHelpers::GetJsonFromArrayValue(IECSqlValue const& sqlValue, rapidjson::MemoryPoolAllocator<>* allocator)
     {
     NULL_VALUE_PRECONDITION(sqlValue);
 
@@ -363,13 +360,17 @@ rapidjson::Document ValueHelpers::GetJsonFromArrayValue(IECSqlValue const& sqlVa
                 doc.PushBack(GetJsonFromStructValue(*v.GetColumnInfo().GetStructType(), v, &doc.GetAllocator()), doc.GetAllocator());
                 break;
             case ValueKind::VALUEKIND_Array:
-                {
-                Utf8String extendedArrayType = v.GetColumnInfo().GetProperty()->GetIsPrimitiveArray() ? v.GetColumnInfo().GetProperty()->GetAsPrimitiveArrayProperty()->GetExtendedTypeName() : "";
-                doc.PushBack(GetJsonFromArrayValue(v, &doc.GetAllocator(), extendedArrayType), doc.GetAllocator());
+                doc.PushBack(GetJsonFromArrayValue(v, &doc.GetAllocator()), doc.GetAllocator());
                 break;
-                }
             case ValueKind::VALUEKIND_Primitive:
-                doc.PushBack(GetJsonFromPrimitiveValue(v.GetColumnInfo().GetDataType().GetPrimitiveType(), v, &doc.GetAllocator(), extendedType), doc.GetAllocator());
+                ECPropertyCP property = v.GetColumnInfo().GetOriginProperty();
+                Utf8CP extendedType = "";
+                if (property->GetIsPrimitive())
+                    extendedType = property->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str();
+                else if (property->GetAsPrimitiveArrayProperty())
+                    extendedType = property->GetAsPrimitiveArrayProperty()->GetExtendedTypeName().c_str();
+
+                doc.PushBack(GetJsonFromPrimitiveValue(v.GetColumnInfo().GetDataType().GetPrimitiveType(), extendedType, v, &doc.GetAllocator()), doc.GetAllocator());
                 break;
             }
         }
@@ -379,7 +380,7 @@ rapidjson::Document ValueHelpers::GetJsonFromArrayValue(IECSqlValue const& sqlVa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document ValueHelpers::GetJsonFromString(PrimitiveType primitiveType, Utf8StringCR str, rapidjson::MemoryPoolAllocator<>* allocator, Utf8StringCR extendedType)
+rapidjson::Document ValueHelpers::GetJsonFromString(PrimitiveType primitiveType, Utf8StringCR extendedType, Utf8StringCR str, rapidjson::MemoryPoolAllocator<>* allocator)
     {
     rapidjson::Document doc(allocator);
     switch (primitiveType)
@@ -423,7 +424,7 @@ rapidjson::Document ValueHelpers::GetJsonFromString(PrimitiveType primitiveType,
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECValue ValueHelpers::GetECValueFromSqlValue(PrimitiveType primitiveType, DbValue const& sqlValue, Utf8StringCR extendedType)
+ECValue ValueHelpers::GetECValueFromSqlValue(PrimitiveType primitiveType, Utf8StringCR extendedType, DbValue const& sqlValue)
     {
     ECValue value;
     if (sqlValue.IsNull())
@@ -481,7 +482,7 @@ ECValue ValueHelpers::GetECValueFromSqlValue(PrimitiveType primitiveType, DbValu
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECValue ValueHelpers::GetECValueFromSqlValue(PrimitiveType primitiveType, IECSqlValue const& sqlValue, Utf8StringCR extendedType)
+ECValue ValueHelpers::GetECValueFromSqlValue(PrimitiveType primitiveType, Utf8StringCR extendedType, IECSqlValue const& sqlValue)
     {
     if (VALUEKIND_Primitive != sqlValue.GetColumnInfo().GetDataType().GetTypeKind())
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Failed to convert IECSqlValue to ECValue - value is not primitive. Actual type: %d", (int)sqlValue.GetColumnInfo().GetDataType().GetTypeKind()));

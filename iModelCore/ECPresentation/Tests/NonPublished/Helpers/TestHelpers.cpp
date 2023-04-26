@@ -469,7 +469,7 @@ static void AssertInstanceValueValid(IECInstanceCR instance, RapidJsonValueCR va
         {
         size_t sizeOfGuid = sizeof(BeGuid);
         BeGuid* guid = (BeGuid*)instanceValue.GetBinary(sizeOfGuid);
-        EXPECT_EQ(ECValue(guid->ToString().c_str()), GetECValueFromJson(value, *property));
+        EXPECT_EQ(guid->ToString(), value.GetString());
         }
     else 
         EXPECT_EQ(instanceValue, GetECValueFromJson(value, *property));
@@ -866,6 +866,13 @@ void RulesEngineTestHelpers::CacheNode(IHierarchyCacheR cache, Utf8StringCR conn
         cache.Cache(dsInfo);
         }
     cache.Cache(node, dsInfo.GetIdentifier(), 0, NodeVisibility::Visible);
+    }
+
+BeGuid RulesEngineTestHelpers::CreateGuidFromString(Utf8CP str)
+    {
+    BeGuid guid;
+    guid.FromString(str);
+    return guid;
     }
 
 /*---------------------------------------------------------------------------------**//**

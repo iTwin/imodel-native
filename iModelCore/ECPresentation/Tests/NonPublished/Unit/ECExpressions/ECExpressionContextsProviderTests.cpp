@@ -94,6 +94,7 @@ struct ECExpressionContextsProviderTests : ECPresentationTest
                     <ECProperty propertyName="Int" typeName="int" />
                     <ECArrayProperty propertyName="Ints" typeName="int" />
                     <ECProperty propertyName="String" typeName="string" />
+                    <ECProperty propertyName="Guid" typeName="binary" extendedTypeName="BeGuid" />
                 </ECEntityClass>
                 <ECEntityClass typeName="DerivedA">
                     <BaseClass>ClassA</BaseClass>
@@ -883,4 +884,62 @@ TEST_F (ECExpressionContextsProviderTests, Common_Set)
     ASSERT_TRUE(valueResult.IsECValue());
     EXPECT_TRUE(valueResult.GetECValue()->IsString());
     EXPECT_STREQ("2", valueResult.GetECValue()->GetUtf8CP());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECExpressionContextsProviderTests, Common_GuidToStr_Valid)
+    {
+    ECClassCP classA = GetSchema().GetClassCP("ClassA");
+    BeGuid validGuid = RulesEngineTestHelpers::CreateGuidFromString("182238d2-e836-4640-9b40-38be6ca49623");
+    IECInstancePtr instance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [validGuid](IECInstanceR instance)
+        {
+        instance.SetValue("Guid", ECValue((Byte*)&validGuid, sizeof(BeGuid)));
+        });
+    NavNodePtr navNode = TestNodesHelper::CreateInstanceNode(*s_connection, *instance);
+    ExpressionContextPtr ctx = ECExpressionContextsProvider::GetNodeRulesContext(ECExpressionContextsProvider::NodeRulesContextParameters(navNode.get(), *s_connection,
+        m_rulesetVariables, nullptr));
+
+    ECValue value = EvaluateAndGetResult("GuidToStr(ParentNode.ECInstance.Guid)", *ctx);
+    ASSERT_TRUE(value.IsString());
+    ASSERT_EQ(validGuid.ToString(), value.ToString());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECExpressionContextsProviderTests, Common_GuidToStr_Invalid)
+    {
+    ECClassCP classA = GetSchema().GetClassCP("ClassA");
+    BeGuid invalidGuid;
+    IECInstancePtr instance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [invalidGuid](IECInstanceR instance)
+        {
+        instance.SetValue("Guid", ECValue((Byte*)&invalidGuid, sizeof(BeGuid)));
+        });
+    NavNodePtr navNode = TestNodesHelper::CreateInstanceNode(*s_connection, *instance);
+    ExpressionContextPtr ctx = ECExpressionContextsProvider::GetNodeRulesContext(ECExpressionContextsProvider::NodeRulesContextParameters(navNode.get(), *s_connection,
+        m_rulesetVariables, nullptr));
+
+    ECValue value = EvaluateAndGetResult("GuidToStr(ParentNode.ECInstance.Guid)", *ctx);
+    ASSERT_TRUE(value.IsString());
+    ASSERT_EQ(invalidGuid.ToString(), value.ToString());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECExpressionContextsProviderTests, Common_GuidToStr_Null)
+    {
+    ECClassCP classA = GetSchema().GetClassCP("ClassA");
+    IECInstancePtr instance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance)
+        {
+        instance.SetValue("Guid", ECValue());
+        });
+    NavNodePtr navNode = TestNodesHelper::CreateInstanceNode(*s_connection, *instance);
+    ExpressionContextPtr ctx = ECExpressionContextsProvider::GetNodeRulesContext(ECExpressionContextsProvider::NodeRulesContextParameters(navNode.get(), *s_connection,
+        m_rulesetVariables, nullptr));
+
+    ECValue value = EvaluateAndGetResult("GuidToStr(ParentNode.ECInstance.Guid)", *ctx);
+    ASSERT_TRUE(value.IsNull());
     }

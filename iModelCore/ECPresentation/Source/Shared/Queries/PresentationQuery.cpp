@@ -2112,7 +2112,7 @@ public:
             // value and use it's type to parse sql value
             if (value.IsPrimitive())
                 {
-                return (m_values.end() != m_values.find(ValueHelpers::GetECValueFromSqlValue(value.GetPrimitiveType(), vals[0], "")));
+                return (m_values.end() != m_values.find(ValueHelpers::GetECValueFromSqlValue(value.GetPrimitiveType(), "", vals[0])));
                 }
             }
 

@@ -1662,18 +1662,41 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
     {
     // dataset
     ECClassCP classA = GetClass("A");
-    BeGuid instanceGuid1;
-    instanceGuid1.FromString("2d75965d-46ef-480a-adb8-42276dbb66a9");
-    BeGuid instanceGuid2;
-    instanceGuid2.FromString("814f3e14-63f2-4511-89a8-43ff3b527492");
-    BeGuid instanceGuid3;
-    instanceGuid3.FromString("182238d2-e836-4640-9b40-38be6ca49623");
-    IECInstancePtr a11 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [&](IECInstanceR instance){instance.SetValue("GuidProp", ECValue((Byte*)&instanceGuid1, sizeof(BeGuid))); instance.SetValue("FilterProp", ECValue((Byte*)&instanceGuid1, sizeof(BeGuid))); });
-    IECInstancePtr a12 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [&](IECInstanceR instance){instance.SetValue("GuidProp", ECValue((Byte*)&instanceGuid1, sizeof(BeGuid))); instance.SetValue("FilterProp", ECValue((Byte*)&instanceGuid1, sizeof(BeGuid))); });
-    IECInstancePtr a13 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [&](IECInstanceR instance){instance.SetValue("GuidProp", ECValue((Byte*)&instanceGuid1, sizeof(BeGuid))); instance.SetValue("FilterProp", ECValue((Byte*)&instanceGuid2, sizeof(BeGuid))); });
-    IECInstancePtr a21 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [&](IECInstanceR instance){instance.SetValue("GuidProp", ECValue((Byte*)&instanceGuid2, sizeof(BeGuid))); instance.SetValue("FilterProp", ECValue((Byte*)&instanceGuid1, sizeof(BeGuid))); });
-    IECInstancePtr a22 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [&](IECInstanceR instance){instance.SetValue("GuidProp", ECValue((Byte*)&instanceGuid2, sizeof(BeGuid))); instance.SetValue("FilterProp", ECValue((Byte*)&instanceGuid2, sizeof(BeGuid))); });
-    IECInstancePtr a3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [&](IECInstanceR instance){instance.SetValue("GuidProp", ECValue((Byte*)&instanceGuid3, sizeof(BeGuid))); instance.SetValue("FilterProp", ECValue((Byte*)&instanceGuid1, sizeof(BeGuid))); });
+    BeGuidCR labelGuid1 = RulesEngineTestHelpers::CreateGuidFromString("2d75965d-46ef-480a-adb8-42276dbb66a9");
+    BeGuidCR labelGuid2 = RulesEngineTestHelpers::CreateGuidFromString("814f3e14-63f2-4511-89a8-43ff3b527492");
+    BeGuidCR labelGuid3 = RulesEngineTestHelpers::CreateGuidFromString("182238d2-e836-4640-9b40-38be6ca49623");
+    BeGuid filterGuid1(true);
+    BeGuid filterGuid2(true);
+    IECInstancePtr a11 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [&](IECInstanceR instance)
+        {
+        instance.SetValue("GuidProp", ECValue((Byte*)&labelGuid1, sizeof(BeGuid)));
+        instance.SetValue("FilterProp", ECValue((Byte*)&filterGuid1, sizeof(BeGuid)));
+        });
+    IECInstancePtr a12 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [&](IECInstanceR instance)
+        {
+        instance.SetValue("GuidProp", ECValue((Byte*)&labelGuid1, sizeof(BeGuid)));
+        instance.SetValue("FilterProp", ECValue((Byte*)&filterGuid1, sizeof(BeGuid)));
+        });
+    IECInstancePtr a13 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [&](IECInstanceR instance)
+        {
+        instance.SetValue("GuidProp", ECValue((Byte*)&labelGuid1, sizeof(BeGuid)));
+        instance.SetValue("FilterProp", ECValue((Byte*)&filterGuid2, sizeof(BeGuid)));
+        });
+    IECInstancePtr a21 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [&](IECInstanceR instance)
+        {
+        instance.SetValue("GuidProp", ECValue((Byte*)&labelGuid2, sizeof(BeGuid)));
+        instance.SetValue("FilterProp", ECValue((Byte*)&filterGuid1, sizeof(BeGuid)));
+        });
+    IECInstancePtr a22 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [&](IECInstanceR instance)
+        {
+        instance.SetValue("GuidProp", ECValue((Byte*)&labelGuid2, sizeof(BeGuid)));
+        instance.SetValue("FilterProp", ECValue((Byte*)&filterGuid2, sizeof(BeGuid)));
+        });
+    IECInstancePtr a3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [&](IECInstanceR instance)
+        {
+        instance.SetValue("GuidProp", ECValue((Byte*)&labelGuid3, sizeof(BeGuid)));
+        instance.SetValue("FilterProp", ECValue((Byte*)&filterGuid1, sizeof(BeGuid)));
+        });
 
     // ruleset
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
@@ -1693,14 +1716,14 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
     auto hierarchy = ValidateHierarchy(params,
         ExpectedHierarchyListDef(true,
             {
-            ExpectedHierarchyDef(CreateLabelGroupingNodeValidator(instanceGuid1.ToString(), {a11, a12, a13}),
+            ExpectedHierarchyDef(CreateLabelGroupingNodeValidator(labelGuid1.ToString(), {a11, a12, a13}),
                 ExpectedHierarchyListDef(true,
                     {
                     CreateInstanceNodeValidator({ a11 }),
                     CreateInstanceNodeValidator({ a12 }),
                     CreateInstanceNodeValidator({ a13 }),
                     })),
-            ExpectedHierarchyDef(CreateLabelGroupingNodeValidator(instanceGuid2.ToString(), {a21, a22}),
+            ExpectedHierarchyDef(CreateLabelGroupingNodeValidator(labelGuid2.ToString(), {a21, a22}),
                 ExpectedHierarchyListDef(true,
                     {
                     CreateInstanceNodeValidator({ a21 }),
@@ -1721,10 +1744,10 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
     ValidateHierarchyLevelDescriptor(*m_manager, WithParentNode(params, hierarchy[1].node.get()), expectedDescriptor);
 
     // verify with instance filter
-    params.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>(Utf8PrintfString("GuidToStr(this.FilterProp) = \"%s\"", instanceGuid1.ToString().c_str())));
+    params.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>(Utf8PrintfString("GuidToStr(this.FilterProp) = \"%s\"", filterGuid1.ToString().c_str())));
     ValidateHierarchy(params,
         {
-        ExpectedHierarchyDef(CreateLabelGroupingNodeValidator(instanceGuid1.ToString(), { a11, a12 }),
+        ExpectedHierarchyDef(CreateLabelGroupingNodeValidator(labelGuid1.ToString(), { a11, a12 }),
             {
             CreateInstanceNodeValidator({ a11 }),
             CreateInstanceNodeValidator({ a12 }),

@@ -60,14 +60,17 @@ private:
             return ExpressionStatus::WrongNumberOfArguments;
 
         EvaluationResultCR arg = args[0];
-        if (!arg.IsECValue() && !arg.GetECValue()->IsBinary())
-            ExpressionStatus::IncompatibleTypes;
+        if (!arg.IsECValue() || !arg.GetECValue()->IsBinary())
+            return ExpressionStatus::IncompatibleTypes;
+
+        if (arg.GetECValue()->IsNull())
+            {
+            evalResult.InitECValue().SetToNull();
+            return ExpressionStatus::Success;
+            }
 
         size_t guidSize = sizeof(BeGuid);
         BeGuid* guid = (BeGuid*)arg.GetECValue()->GetBinary(guidSize);
-
-        if (!guid->IsValid())
-            return ExpressionStatus::IncompatibleTypes;
 
         evalResult.InitECValue().SetUtf8CP(guid->ToString().c_str(), true);
         return ExpressionStatus::Success;

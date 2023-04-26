@@ -2476,6 +2476,12 @@ Utf8String ECSchemaHelper::GetTypeName(ECPropertyCR property)
         if (extendedTypeName.length() > 0)
             return extendedTypeName;
         }
+    if (property.GetIsPrimitiveArray())
+        {
+        Utf8StringCR extendedTypeName = property.GetAsPrimitiveArrayProperty()->GetExtendedTypeName();
+        if (extendedTypeName.length() > 0)
+            return extendedTypeName;
+        }
     return property.GetTypeName();
     }
 
@@ -2580,5 +2586,5 @@ ECValue ECInstancesHelper::GetValue(IConnectionCR connection, ECClassCR ecClass,
     if (BE_SQLITE_ROW != stepStatus)
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Unexpected statement step result: %d", (int)stepStatus));
 
-    return ValueHelpers::GetECValueFromSqlValue(ecProperty.GetAsPrimitiveProperty()->GetType(), stmt->GetValue(0), ecProperty.GetAsPrimitiveProperty()->GetExtendedTypeName());
+    return ValueHelpers::GetECValueFromSqlValue(ecProperty.GetAsPrimitiveProperty()->GetType(), ecProperty.GetAsPrimitiveProperty()->GetExtendedTypeName(), stmt->GetValue(0));
     }

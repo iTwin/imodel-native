@@ -514,13 +514,20 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctGuidValues)
     // set up the dataset
     ECClassCP classA = GetClass("A");
 
-    BeGuid instanceGuid1;
-    instanceGuid1.FromString("182238d2-e836-4640-9b40-38be6ca49623");
-    BeGuid instanceGuid2;
-    instanceGuid2.FromString("814f3e14-63f2-4511-89a8-43ff3b527492");
-    IECInstancePtr a1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [instanceGuid1](IECInstanceR instance){instance.SetValue("Prop", ECValue((Byte*)&instanceGuid1, sizeof(BeGuid))); });
-    IECInstancePtr a2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [instanceGuid1](IECInstanceR instance){instance.SetValue("Prop", ECValue((Byte*)&instanceGuid1, sizeof(BeGuid))); });
-    IECInstancePtr a3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [instanceGuid2](IECInstanceR instance){instance.SetValue("Prop", ECValue((Byte*)&instanceGuid2, sizeof(BeGuid))); });
+    BeGuid instanceGuid1 = RulesEngineTestHelpers::CreateGuidFromString("182238d2-e836-4640-9b40-38be6ca49623");
+    BeGuid instanceGuid2 = RulesEngineTestHelpers::CreateGuidFromString("814f3e14-63f2-4511-89a8-43ff3b527492");
+    IECInstancePtr a1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [instanceGuid1](IECInstanceR instance)
+        {
+        instance.SetValue("Prop", ECValue((Byte*)&instanceGuid1, sizeof(BeGuid))); 
+        });
+    IECInstancePtr a2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [instanceGuid1](IECInstanceR instance)
+        {
+        instance.SetValue("Prop", ECValue((Byte*)&instanceGuid1, sizeof(BeGuid))); 
+        });
+    IECInstancePtr a3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [instanceGuid2](IECInstanceR instance)
+        {
+        instance.SetValue("Prop", ECValue((Byte*)&instanceGuid2, sizeof(BeGuid))); 
+        });
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
@@ -541,7 +548,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctGuidValues)
 
     EXPECT_STREQ(instanceGuid1.ToString().c_str(), values[0]->GetDisplayValue().c_str());
     EXPECT_EQ(1, values[0]->GetRawValues().size());
-
     EXPECT_EQ(instanceGuid1.ToString(), values[0]->GetRawValues()[0].GetString());
 
     EXPECT_STREQ(instanceGuid2.ToString().c_str(), values[1]->GetDisplayValue().c_str());

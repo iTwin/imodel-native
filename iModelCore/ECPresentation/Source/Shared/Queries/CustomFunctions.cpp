@@ -428,7 +428,7 @@ static Utf8String GetFormattedPropertyValue(PrimitiveECPropertyCR property, DbVa
     {
     if (sqlValue.IsNull())
         return "";
-    ECValue value = ValueHelpers::GetECValueFromSqlValue(property.GetType(), sqlValue, property.GetExtendedTypeName());
+    ECValue value = ValueHelpers::GetECValueFromSqlValue(property.GetType(), property.GetExtendedTypeName(), sqlValue);
     Utf8String formattedValue;
     if (nullptr != formatter && SUCCESS == formatter->GetFormattedPropertyValue(formattedValue, property, value, unitSystem))
         return formattedValue;
@@ -1699,7 +1699,7 @@ struct GetECPropertyValueDisplayLabelScalar : ECPropertyValueScalarBase
         if (ecProperty->GetIsPrimitive())
             {
             PrimitiveECPropertyCR primitiveProperty = *ecProperty->GetAsPrimitiveProperty();
-            ECValue value = ValueHelpers::GetECValueFromSqlValue(primitiveProperty.GetType(), args[2], primitiveProperty.GetExtendedTypeName());
+            ECValue value = ValueHelpers::GetECValueFromSqlValue(primitiveProperty.GetType(), primitiveProperty.GetExtendedTypeName(), args[2]);
             Utf8String formattedValue = GetFormattedPropertyValue(primitiveProperty, args[2], GetContext().GetPropertyFormatter(), GetContext().GetUnitSystem());
             labelDefinition->SetECValue(value, formattedValue.c_str());
             }
