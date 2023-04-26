@@ -4,8 +4,6 @@
 *--------------------------------------------------------------------------------------------*/
 #pragma once
 
-#include "rotconic.h"
-
 Public GEOMDLLIMPEXP void bsiCTrig_dotProduct
 
 (
