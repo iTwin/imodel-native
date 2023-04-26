@@ -82,7 +82,7 @@ describe("cloud sqlite", () => {
       storageType: "azure?emulator=127.0.0.1:10000&sas=0",
       containerId,
       accessToken: azuriteKey,
-      clientIdentifier: "ContainerIdentifier",
+      cloudSqliteLogId: "ContainerIdentifier",
       writeable: true,
     };
     const container = new iModelJsNative.CloudContainer(containerProps);
@@ -134,14 +134,14 @@ describe("cloud sqlite", () => {
 
   });
 
-  it("should pass clientIdentifier through container to database", async () => {
+  it("should pass cloudSqliteLogId through container to database", async () => {
     const containerId = Guid.createValue();
     const containerProps: NativeCloudSqlite.ContainerAccessProps = {
       accessName: azuriteUser,
       storageType: "azure?emulator=127.0.0.1:10000&sas=0",
       containerId,
       accessToken: azuriteKey,
-      clientIdentifier: "ContainerIdentifier",
+      cloudSqliteLogId: "ContainerIdentifier",
       writeable: true,
     };
     const container = new iModelJsNative.CloudContainer(containerProps);
@@ -159,7 +159,7 @@ describe("cloud sqlite", () => {
     const stmt = new iModelJsNative.SqliteStatement();
     stmt.prepare(db, "PRAGMA bcv_client");
     stmt.step();
-    expect(stmt.getValueString(0)).equal(containerProps.clientIdentifier);
+    expect(stmt.getValueString(0)).equal(containerProps.cloudSqliteLogId);
     stmt.dispose();
     db.closeIModel();
     container.disconnect();
@@ -168,7 +168,7 @@ describe("cloud sqlite", () => {
       accessName: azuriteUser,
       storageType: "azure?emulator=127.0.0.1:10000&sas=0",
       containerId,
-      clientIdentifier: "",
+      cloudSqliteLogId: "",
       accessToken: azuriteKey,
       writeable: true,
     };
@@ -180,7 +180,7 @@ describe("cloud sqlite", () => {
     db.openIModel("test.bim", OpenMode.Readonly, undefined, undefined, container2);
     stmt.prepare(db, "PRAGMA bcv_client");
     stmt.step();
-    expect(stmt.getValueString(0)).equal(containerProps2.clientIdentifier);
+    expect(stmt.getValueString(0)).equal(containerProps2.cloudSqliteLogId);
     stmt.dispose();
     db.closeIModel();
     container2.disconnect();

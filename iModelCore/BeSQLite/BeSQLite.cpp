@@ -2819,12 +2819,12 @@ DbResult Db::DoOpenDb(Utf8CP inName, OpenParams const& params) {
             return rc;
     }
 
-    Utf8String clientIdentifier = "";
-    Utf8String clientIdentifierKey = "clientIdentifier=";
+    Utf8String cloudSqliteLogId;
+    Utf8CP cloudSqliteLogIdKey = "cloudSqliteLogId=";
     for (auto const& param : params.m_queryParams) {
         m_openQueryParams.push_back(param);
-        if (param.ContainsI(clientIdentifierKey)) {
-            clientIdentifier = param.substr(clientIdentifierKey.size());
+        if (param.ContainsI(cloudSqliteLogIdKey)) {
+            cloudSqliteLogId = param.substr(strlen(cloudSqliteLogIdKey));
         }
     }
         
@@ -2862,8 +2862,8 @@ DbResult Db::DoOpenDb(Utf8CP inName, OpenParams const& params) {
         BeAssert(rc == BE_SQLITE_OK);
     }
 
-    if (!clientIdentifier.empty()) {
-        rc = TryExecuteSql(SqlPrintfString("PRAGMA bcv_client=\"%s\"", clientIdentifier.c_str()));
+    if (!cloudSqliteLogId.empty()) {
+        rc = TryExecuteSql(SqlPrintfString("PRAGMA bcv_client=\"%s\"", cloudSqliteLogId.c_str()));
         BeAssert(rc == BE_SQLITE_OK);
     }
 

@@ -167,7 +167,7 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
         m_accessToken = stringMember(obj, JSON_NAME(accessToken));
         m_writeable = boolMember(obj, JSON_NAME(writeable), false);
         m_durationSeconds = intMember(obj, JSON_NAME(durationSeconds), 0);
-        m_clientIdentifier = stringMember(obj, JSON_NAME(clientIdentifier), "");
+        m_cloudSqliteLogId = stringMember(obj, JSON_NAME(cloudSqliteLogId), "");
     }
 
     Napi::Value QueueWorker(NapiInfoCR info, CloudSqliteFn fn) {

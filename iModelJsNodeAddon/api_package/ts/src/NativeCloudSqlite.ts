@@ -50,7 +50,7 @@ export namespace NativeCloudSqlite {
      *  This Id will be used to identify, in log messages, all CloudSQLite client connections (also known as database connections) opened using this CloudContainer.
      *  This Id is mostly only relevant to give more clarity to logs produced running in daemon mode, where there are usually many active CloudContainers and by extension, many ongoing HTTP requests.
      */
-    clientIdentifier?: string;
+    cloudSqliteLogId?: string;
   }
 
   /** Returned from `CloudContainer.queryDatabase` describing one database in the container */
@@ -78,7 +78,7 @@ export namespace NativeCloudSqlite {
     /** "PUT", "GET", etc. */
     readonly method: string;
     /** Name of the client that caused this request. Name will be "prefetch" if it is a request triggered by a prefetch.
-     *  Name of client can be configured by passing a 'clientIdentifier' to a CloudContainer's ContainerProps.
+     *  Name of client can be configured by passing a 'cloudSqliteLogId' to a CloudContainer's ContainerProps.
      *  Empty string otherwise.
      */
     readonly client: string;
