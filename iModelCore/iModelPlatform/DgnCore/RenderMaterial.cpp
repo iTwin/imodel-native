@@ -101,7 +101,8 @@ Render::TextureMapping::Params RenderingAsset::TextureMap::GetTextureMapParams()
         return mapParams;
 
     Render::TextureMapping::Trans2x3 trans = GetTransform();
-    return Render::TextureMapping::Params(GetMode(), trans, GetPatternWeight(), Units::Relative != GetUnits());
+    Nullable<TextureMapping::ConstantLodParams> constantLodParams = GetConstantLodParams();
+    return Render::TextureMapping::Params(GetMode(), trans, GetPatternWeight(), Units::Relative != GetUnits(), GetUseConstantLod(), constantLodParams);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -110,6 +111,26 @@ Render::TextureMapping::Params RenderingAsset::TextureMap::GetTextureMapParams()
 RenderingAsset::TextureMap::Units RenderingAsset::TextureMap::GetUnits() const
     {
     return (Units) m_value[RENDER_MATERIAL_PatternScaleMode].asInt((int)Units::Relative);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool RenderingAsset::TextureMap::GetUseConstantLod() const
+    {
+    return m_value[RENDER_MATERIAL_PatternUseConstantLod].asBool(false);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::TextureMapping::ConstantLodParams RenderingAsset::TextureMap::GetConstantLodParams() const
+    {
+    return Render::TextureMapping::ConstantLodParams(
+        m_value[RENDER_MATERIAL_PatternConstantLodRepetitions].asDouble(1.0),
+        getDPoint2dValue(m_value, RENDER_MATERIAL_PatternConstantLodOffset),
+        m_value[RENDER_MATERIAL_PatternConstantLodMinDistanceClamp].asDouble(1.0),
+        m_value[RENDER_MATERIAL_PatternConstantLodMaxDistanceClamp].asDouble(4096.0 * 1024.0 * 1024.0) );
     }
 
 //---------------------------------------------------------------------------------------
