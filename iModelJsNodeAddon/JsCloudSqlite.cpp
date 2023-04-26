@@ -265,16 +265,16 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
     Napi::Value QueryHttpLog(NapiInfoCR info) {
         RequireConnected();
         int startFromId = 0;
-        Utf8String finishedAtOrAfterTime = "";
+        Utf8String finishedAtOrAfterTime;
         bool showOnlyFinished = false;
         if (info[0].IsObject()) {
-            auto filterOpts = BeJsConst(info[0].As<Napi::Object>());
+            auto filterOpts = BeJsConst(info[0]);
             startFromId = filterOpts[JSON_NAME(startFromId)].asInt(0);
             finishedAtOrAfterTime = filterOpts[JSON_NAME(finishedAtOrAfterTime)].asCString();
             showOnlyFinished = filterOpts[JSON_NAME(showOnlyFinished)].asBool();
         }
 
-        Utf8String sql = "SELECT * FROM bcv_http_log";
+        Utf8String sql = "SELECT id,start_time,end_time,method,client,logmsg,uri,httpcode FROM bcv_http_log";
         bool hasWhereClause = false;
         if (startFromId != 0) {
             sql += " WHERE id >= ?";
@@ -298,9 +298,10 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
         }
 
         Statement stmt;
-        auto rc =  stmt.Prepare(m_containerDb, sql.c_str());
-        BeAssert (rc == BE_SQLITE_OK);
-        UNUSED_VARIABLE(rc);
+        auto rc = stmt.Prepare(m_containerDb, sql.c_str());
+        if (rc != BE_SQLITE_OK)
+            BeNapi::ThrowJsException(Env(), "Got error preparing select from bcv_http_log", rc);
+
         if (startFromId != 0 && !finishedAtOrAfterTime.empty()) {
             stmt.BindInt(1, startFromId);
             stmt.BindText(2, finishedAtOrAfterTime.c_str(), Statement::MakeCopy::Yes);
