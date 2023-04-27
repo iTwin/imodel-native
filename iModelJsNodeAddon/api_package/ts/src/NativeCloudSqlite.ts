@@ -81,7 +81,7 @@ export namespace NativeCloudSqlite {
      *  Name of client can be configured by passing a 'cloudSqliteLogId' to a CloudContainer's ContainerProps.
      *  Empty string otherwise.
      */
-    readonly client: string;
+    readonly cloudSqliteLogId: string;
     /** Log message associated with request */
     readonly logmsg: string;
     /** URI of request */
