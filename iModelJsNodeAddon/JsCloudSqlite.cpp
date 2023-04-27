@@ -319,7 +319,7 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
             value["startTime"] = stmt.GetValueText(1);
             value["endTime"] = stmt.GetValueText(2);
             value["method"] = stmt.GetValueText(3);
-            value["client"] = stmt.GetValueText(4);
+            value["cloudSqliteLogId"] = stmt.GetValueText(4);
             value["logmsg"] = stmt.GetValueText(5);
             value["uri"] = stmt.GetValueText(6);
             value["httpcode"] = stmt.GetValueInt(7);
