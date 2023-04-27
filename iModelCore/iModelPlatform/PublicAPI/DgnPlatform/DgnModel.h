@@ -1187,7 +1187,6 @@ private:
 
 protected:
     SheetIndexModelCP _ToSheetIndexModel() const override final {return this;}
-    DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element) override;
 
     explicit SheetIndexModel(CreateParams const& params) : T_Super(params) {}
     static SheetIndexModelPtr Create(CreateParams const& params) {return new SheetIndexModel(params);}

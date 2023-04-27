@@ -661,14 +661,6 @@ SheetIndexModelPtr SheetIndexModel::CreateAndInsert(SheetIndexPartitionCR modele
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus SheetIndexModel::_OnInsertElement(DgnElementR element)
-    {
-    return element.IsInformationContentElement() ? T_Super::_OnInsertElement(element) : DgnDbStatus::WrongModel;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DocumentListModel::_OnInsertElement(DgnElementR element)
     {
     // only Document elements go into a DocumentListModel
