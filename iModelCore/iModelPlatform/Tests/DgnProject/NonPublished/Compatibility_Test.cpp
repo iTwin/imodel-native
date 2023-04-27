@@ -1157,7 +1157,13 @@ struct ECInstancesCompatibility : public DgnDbTestFixture
         //Inserting a Link Model.
         LinkModelPtr linkModel = DgnDbTestUtils::InsertLinkModel(*m_db, "TestLinkModel");
 
+        SheetIndexModelPtr sheetIndexModel;
         auto schema = m_db->Schemas().GetSchema("BisCore");
+        if (SchemaVersion(*schema) >= SchemaVersion(1, 0, 16))
+            {
+            //Inserting a SheetIndex Model.
+            sheetIndexModel = DgnDbTestUtils::InsertSheetIndexModel(*m_db, "TestSheetIndexModel");   
+            }
 
         SubjectCPtr rootSubject = m_db->Elements().GetRootSubject();
         ASSERT_TRUE(rootSubject.IsValid());
@@ -1188,10 +1194,8 @@ struct ECInstancesCompatibility : public DgnDbTestFixture
                     {
                     ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("Model", ECN::ECValue(DgnModel::RepositoryModelId())));
                     }
-                else if ((SchemaVersion(*schema) >= SchemaVersion(1, 0, 16)) && ((className == BIS_CLASS_SheetIndex) || (className == BIS_CLASS_SheetIndexFolder) || (className == BIS_CLASS_SheetIndexReference) || (className == BIS_CLASS_SheetReference)))
+                else if ((className == BIS_CLASS_SheetIndex) || (className == BIS_CLASS_SheetIndexFolder) || (className == BIS_CLASS_SheetIndexReference) || (className == BIS_CLASS_SheetReference))
                     {
-                    //Inserting a SheetIndex Model.
-                    SheetIndexModelPtr sheetIndexModel = DgnDbTestUtils::InsertSheetIndexModel(*m_db, "TestSheetIndexModel");
                     ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("Model", ECN::ECValue(sheetIndexModel->GetModelId())));
                     }
                 else
