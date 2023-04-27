@@ -1380,11 +1380,12 @@ TEST(bsptrim, MikeSurface)
     Check::ClearGeometry("bsptrim.MikeSurface");
     }
 
-#define BuildEugeneSurfaceTest
-#ifdef BuildEugeneSurfaceTest
 // A bicubic screw-thread B-surf with trim boundary
 TEST(bsptrim, EugeneSurface)
     {
+    if (!Check::GetEnableLongTests())
+        return; 
+
     bvector<double> uKnots;
     uKnots.insert(uKnots.end(), 4, 0.0);
     uKnots.insert(uKnots.end(), 3, 0.9584361106413882);
@@ -2426,4 +2427,3 @@ TEST(bsptrim, EugeneSurface)
 
     Check::ClearGeometry("bsptrim.EugeneSurface");
     }
-#endif
