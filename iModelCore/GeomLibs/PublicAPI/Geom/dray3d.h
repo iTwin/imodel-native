@@ -42,7 +42,7 @@ ValidatedDRay3d ValidatedNormalize () const;
 //! Initialize a ray from a segment.
 void InitFrom (DSegment3dCR segment);
 
-//! Initialize a ray from origina and vector
+//! Initialize a ray from original and vector
 void InitFromOriginAndVector (DPoint3dCR origin, DVec3dCR vector);
 
 //! Initialize a ray from 2d endpoints
@@ -175,7 +175,6 @@ DPoint3dCR      center,
 double          radius
 ) const;
 
-
 //!
 //! Return the intersection of the (unbounded) ray with a bilinear surface
 //! @param [out] intPoint 0, 1, or 2 intersection points.
@@ -184,7 +183,7 @@ double          radius
 //! @param [out] point00 00 (lower left) point of hyperboloid
 //! @param [out] point10 10 (lower right) point of hyperboloid
 //! @param [out] point01 01 (upper left) point of hyperboloid
-//! @param [out] point11 11 (upper right) poitn of hyperboloid
+//! @param [out] point11 11 (upper right) point of hyperboloid
 //! @return   number of intersections.
 //!
 int IntersectHyperbolicParaboloid

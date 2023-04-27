@@ -851,6 +851,7 @@ END_BENTLEY_GEOMETRY_NAMESPACE
 #include "AnalyticRoots.h"
 #include "TriDiagonalSolver.h"
 #include "BSIQuadrature.h"
+#include "LinearAlgebra.h"
 #include "XYBucketSearch.h"
 #ifndef NoGeomDSpiral2dBase
 #include "DSpiral2dBase.h"
@@ -861,14 +862,15 @@ END_BENTLEY_GEOMETRY_NAMESPACE
 #include "memfuncs.h"
 
 #include "capi/ccctangent_capi.h"
-
 #include "capi/dconic4d_capi.h"
 #include "capi/dmap4d_capi.h"
 #include "capi/doublefuncs_capi.h"
 #include "capi/dpoint3darray_capi.h"
 #include "capi/dpoint3ddvec3d_capi.h"
 #include "capi/drange3d_capi.h"
-
+#include "capi/dellipse3d_capi.h"
+#include "capi/dpoint3dconvertedtodvec3d_capi.h"
+#include "capi/dray3d_capi.h"
 #include "capi/ellipsefillet_capi.h"
 #include "capi/eigensys3d_capi.h"
 #include "capi/ellipticintegrals_capi.h"
@@ -878,7 +880,6 @@ END_BENTLEY_GEOMETRY_NAMESPACE
 #include "capi/frange3d_capi.h"
 #include "capi/graphicspoint_capi.h"
 #include "capi/linalg_capi.h"
-#include "LinearAlgebra.h"
 #include "capi/lineargeom_capi.h"
 #include "capi/polygon3d_capi.h"
 #include "capi/polygondecomp_capi.h"
@@ -890,6 +891,7 @@ END_BENTLEY_GEOMETRY_NAMESPACE
 #include "capi/quadeqn_capi.h"
 #include "capi/quadric_capi.h"
 #include "capi/rotations_capi.h"
+#include "capi/rotmatrix_capi.h"
 #include "capi/simpson_capi.h"
 #include "capi/svd_capi.h"
 
