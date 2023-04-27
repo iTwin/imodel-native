@@ -467,7 +467,7 @@ std::string SqlTypeDetector::Join(std::vector<std::string> const& v, const std::
     }
     std::string init = v.front();
     return std::accumulate(v.begin() + 1, v.end(), init,
-                           [&](std::string& s, const std::string& piece) -> decltype(auto) {
+                           [&](std::string s, const std::string& piece) -> decltype(auto) {
                                return s.append(sep).append(piece);
                            });
 }

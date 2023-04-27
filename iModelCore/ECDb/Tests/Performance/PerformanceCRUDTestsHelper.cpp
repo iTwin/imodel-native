@@ -580,7 +580,7 @@ void PerformanceCRUDTestsHelper::SetUpTestECDb(Utf8String destFileName)
         bvector<ECSchemaCP> schemas;
         schemas.push_back(testSchema.get());
 
-        ASSERT_EQ(BE_SQLITE_OK, SetupECDb(seedFileName.c_str()));
+        ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb(seedFileName.c_str()));
 
         EXPECT_EQ(BentleyStatus::SUCCESS, m_ecdb.Schemas().ImportSchemas(schemas));
         EXPECT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());

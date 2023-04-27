@@ -30,7 +30,7 @@ struct ECInstanceInserterTests : ECSqlAdapterTestFixture
 //+---------------+---------------+---------------+---------------+---------------+------
 void ECInstanceInserterTests::InsertInstances(Utf8CP className, Utf8CP schemaName, int numberOfInstances, bool populateAllProperties)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("insertInstances.ecdb", SchemaItem::CreateForFile("KitchenSink.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("insertInstances.ecdb", SchemaItem::CreateForFile("KitchenSink.01.00.00.ecschema.xml")));
 
     ECClassCP testClass = m_ecdb.Schemas().GetClass(schemaName, className);
 
@@ -80,7 +80,7 @@ void ECInstanceInserterTests::InsertInstances(Utf8CP className, Utf8CP schemaNam
 //+---------------+---------------+---------------+---------------+---------------+------
 void ECInstanceInserterTests::InsertRelationshipInstances(Utf8CP relationshipClassName, Utf8CP sourceClassName, Utf8CP targetClassName, Utf8CP schemaName, int numberOfSourceInstances, int numberOfTargetInstancesPerSource)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("insertInstances.ecdb", SchemaItem::CreateForFile("KitchenSink.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("insertInstances.ecdb", SchemaItem::CreateForFile("KitchenSink.01.00.00.ecschema.xml")));
 
     ECClassCP sourceClass = m_ecdb.Schemas().GetClass(schemaName, sourceClassName);
     ECClassCP targetClass = m_ecdb.Schemas().GetClass(schemaName, targetClassName);
@@ -122,7 +122,7 @@ void ECInstanceInserterTests::InsertRelationshipInstances(Utf8CP relationshipCla
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECInstanceInserterTests, InsertIntoRelationships)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("InsertIntoelationships.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("InsertIntoelationships.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     ECClassCP navPropRelClass = m_ecdb.Schemas().GetClass("ECSqlTest", "PSAHasP_N1");
     ASSERT_TRUE(navPropRelClass != nullptr);
@@ -173,7 +173,7 @@ TEST_F(ECInstanceInserterTests, InsertMultipleInstancesOfPrimitiveClassWithNullV
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECInstanceInserterTests, InsertIntoStructClass)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("insertInstances.ecdb", SchemaItem::CreateForFile("KitchenSink.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("insertInstances.ecdb", SchemaItem::CreateForFile("KitchenSink.01.00.00.ecschema.xml")));
 
     ECClassCP structClass = m_ecdb.Schemas().GetClass("KitchenSink", "Struct1");
     ASSERT_TRUE(structClass != nullptr);
@@ -186,7 +186,7 @@ TEST_F(ECInstanceInserterTests, InsertIntoStructClass)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECInstanceInserterTests, InsertIntoStructArray)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecinstanceinserterstructarray.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecinstanceinserterstructarray.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
           <ECEntityClass typeName="MyClass">
@@ -274,7 +274,7 @@ TEST_F(ECInstanceInserterTests, InsertIntoStructArray)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECInstanceInserterTests, InsertIntoNestedStructArray)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("InsertStructArray.ecdb", SchemaItem::CreateForFile("NestedStructArrayTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("InsertStructArray.ecdb", SchemaItem::CreateForFile("NestedStructArrayTest.01.00.00.ecschema.xml")));
 
     ECInstanceList instanceList = NestedStructArrayTestSchemaHelper::CreateECInstances(m_ecdb, 1, "ClassP");
 
@@ -318,7 +318,7 @@ TEST_F(ECInstanceInserterTests, InsertSingleInstanceOfComplexClass)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECInstanceInserterTests, InsertSingleRuleInstance)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("insertRulesInstances.ecdb", SchemaItem::CreateForFile("ECRules.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("insertRulesInstances.ecdb", SchemaItem::CreateForFile("ECRules.01.00.00.ecschema.xml")));
     ECSchemaCP rulesECSchema = m_ecdb.Schemas().GetSchema("ECRules");
     ASSERT_TRUE(rulesECSchema != nullptr);
 
@@ -358,7 +358,7 @@ TEST_F(ECInstanceInserterTests, InsertSingleRuleInstance)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECInstanceInserterTests, InsertWithUserProvidedECInstanceId)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("insertwithuserprovidedecinstanceid.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("insertwithuserprovidedecinstanceid.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     ECClassCP testClass = m_ecdb.Schemas().GetClass("ECSqlTest", "P");
     ASSERT_TRUE(testClass != nullptr);
@@ -441,7 +441,7 @@ TEST_F(ECInstanceInserterTests, InsertWithUserProvidedECInstanceId)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECInstanceInserterTests, InsertReadonlyProperty)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("insertreadonlyproperty.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("insertreadonlyproperty.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                                                      "<ECSchema schemaName='testSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                                                      "    <ECEntityClass typeName='A' >"
                                                                      "        <ECProperty propertyName='P1' typeName='int' readOnly='True'/>"
@@ -508,7 +508,7 @@ void AssertCurrentTimeStamp(ECDbR ecdb, ECInstanceId id, bool expectedIsNull, Ut
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECInstanceInserterTests, InsertWithCurrentTimeStampTrigger)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("insertwithcurrenttimestamptrigger.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("insertwithcurrenttimestamptrigger.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
     auto testClass = m_ecdb.Schemas().GetClass("ECSqlTest", "ClassWithLastModProp");
     ASSERT_TRUE(testClass != nullptr);
 
@@ -572,7 +572,7 @@ TEST_F(ECInstanceInserterTests, InsertWithCurrentTimeStampTrigger)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECInstanceInserterTests, CloseDbAfterInstanceInsertion)
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("InstanceInserterDb.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("InstanceInserterDb.ecdb"));
 
     ECSchemaPtr testSchema;
     ECEntityClassP testClass = nullptr;
@@ -610,7 +610,7 @@ TEST_F(ECInstanceInserterTests, CloseDbAfterInstanceInsertion)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECInstanceInserterTests, InsertInstanceWithOutProvidingSourceTargetClassIds)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("InsertRelationshipInstances.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("InsertRelationshipInstances.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='SchemaWithReuseColumn' nameSpacePrefix='rc' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -724,7 +724,7 @@ TEST_F(ECInstanceInserterTests, InsertInstanceWithOutProvidingSourceTargetClassI
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECInstanceInserterTests, InsertTimeOfDayValues)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("InsertTimeOfDayValues.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("InsertTimeOfDayValues.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="CoreCustomAttributes" version="01.00.01" alias="CoreCA"/>
             <ECEntityClass typeName="CalendarEntry" modifier="None">
@@ -811,7 +811,7 @@ TEST_F(ECInstanceInserterTests, InsertTimeOfDayValues)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlAdapterTestFixture, CheckClassBeforeOperation)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("StartupCompany.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("StartupCompany.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
 
     //Get two classes and create instance of second
     ECClassCP employee = m_ecdb.Schemas().GetClass("StartupCompany", "Employee");

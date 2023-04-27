@@ -19,7 +19,7 @@ struct ECSqlStatementCacheTests : ECDbTestFixture
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSqlStatementCacheTests, BindValuesToSameCachedStatementsMultipleTime)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ECSqlStatementCacheTest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ECSqlStatementCacheTest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     Utf8CP ecSqlInsert = "INSERT INTO ecsql.PSA(S,I) VALUES (?, ?)";
     Utf8CP ecSqlSelect = "SELECT S,I FROM ecsql.PSA";
@@ -81,7 +81,7 @@ TEST_F(ECSqlStatementCacheTests, BindValuesToSameCachedStatementsMultipleTime)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSqlStatementCacheTests, VerifyCachedStatementIsKeyedCorrectly)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ECSqlStatementCacheTest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ECSqlStatementCacheTest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
     BeFileName seedFile(m_ecdb.GetDbFileName(), true);
 
     Db datasource1, datasource2;
@@ -207,7 +207,7 @@ TEST_F(ECSqlStatementCacheTests, VerifyCachedStatementIsKeyedCorrectly)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSqlStatementCacheTests, VerifyCacheSizeMustNotExceedLimit)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ECSqlStatementCacheTest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ECSqlStatementCacheTest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     Utf8CP ecSql1 = "INSERT INTO ecsql.PSA(I,D) VALUES (?, ?)";
     Utf8CP ecSql2 = "SELECT * FROM ecsql.PSA";
@@ -234,7 +234,7 @@ TEST_F(ECSqlStatementCacheTests, VerifyCacheSizeMustNotExceedLimit)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementCacheTests, GetPreparedStatement)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ECSqlStatementCacheTest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ECSqlStatementCacheTest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     Utf8CP ecsql1 = "SELECT * FROM ecsql.PSA";
     Utf8CP ecsql2 = "SELECT * FROM ecsql.P";
@@ -281,7 +281,7 @@ TEST_F(ECSqlStatementCacheTests, GetPreparedStatement)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementCacheTests, GetAlreadyUsedPreparedStatement)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ECSqlStatementCacheTest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ECSqlStatementCacheTest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     Utf8CP ecsql = "SELECT * FROM ecsql.PSA";
 
@@ -316,7 +316,7 @@ TEST_F(ECSqlStatementCacheTests, GetAlreadyUsedPreparedStatement)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementCacheTests, PrepareFailure)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ECSqlStatementCacheTest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ECSqlStatementCacheTest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     ECSqlStatementCache cache(10);
     CachedECSqlStatementPtr stmt;
@@ -346,7 +346,7 @@ TEST_F(ECSqlStatementCacheTests, PrepareFailure)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementCacheTests, CacheExcess)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ECSqlStatementCacheTest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ECSqlStatementCacheTest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     Utf8CP ecsql1 = "SELECT * FROM ecsql.PSA";
     Utf8CP ecsql2 = "SELECT * FROM ecsql.P";

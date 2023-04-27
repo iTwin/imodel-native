@@ -28,7 +28,7 @@ void AssertFrequencyCount(Utf8CP ecsql, std::vector<std::pair<Utf8CP, int>> subs
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlToSqlGenerationTests, IndexOnSharedColumnIsUsedBySQLite)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("IndexOnSharedColumnIsUsedBySQLite.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IndexOnSharedColumnIsUsedBySQLite.ecdb", SchemaItem(
         R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
               <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
                   <ECEntityClass typeName="Parent" modifier="None">
@@ -144,7 +144,7 @@ TEST_F(ECSqlToSqlGenerationTests, IndexOnSharedColumnIsUsedBySQLite)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlToSqlGenerationTests, NavPropSharedColumnCasting)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("NavPropSharedColumnCasting.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("NavPropSharedColumnCasting.ecdb", SchemaItem(
         R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
           <ECEntityClass typeName="Parent" modifier="none">
@@ -200,7 +200,7 @@ TEST_F(ECSqlToSqlGenerationTests, NavPropSharedColumnCasting)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlToSqlGenerationTests, LinkTableSharedColumnCasting)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("NavPropSharedColumnCasting.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("NavPropSharedColumnCasting.ecdb", SchemaItem(
         R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
           <ECEntityClass typeName="Parent" modifier="none">
@@ -365,7 +365,7 @@ TEST_F(ECSqlToSqlGenerationTests, OptimisedJoins)
             </ECEntityClass>
         </ECSchema>)schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("OptimisedJoins.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("OptimisedJoins.ecdb", schemaItem));
     Utf8String sql = "";
 
     m_ecdb.GetECSqlConfig().SetOptimizationOption(OptimizationOptions::OptimizeJoinForNestedSelectQuery, false);
@@ -448,7 +448,7 @@ TEST_F(ECSqlToSqlGenerationTests, LinkTableJoinGeneration_TablePerHierarchy)
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("LinkTableJoinGeneration_TablePerHierarchy.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("LinkTableJoinGeneration_TablePerHierarchy.ecdb", schemaItem));
 
     ECClassCP linkTableRelClass = m_ecdb.Schemas().GetClass("TestSchema", "ElementRefersToElements");
     ASSERT_TRUE(linkTableRelClass != nullptr);
@@ -527,7 +527,7 @@ TEST_F(ECSqlToSqlGenerationTests, LinkTableJoinGeneration_OwnTable)
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("LinkTableJoinGeneration_OwnTable.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("LinkTableJoinGeneration_OwnTable.ecdb", schemaItem));
 
     ECClassCP linkTableRelClass = m_ecdb.Schemas().GetClass("TestSchema", "ElementRefersToElements");
     ASSERT_TRUE(linkTableRelClass != nullptr);
@@ -621,7 +621,7 @@ TEST_F(ECSqlToSqlGenerationTests, LinkTableJoinGeneration_MixinConstraintAndJoin
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("LinkTableJoinGeneration_OwnTable.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("LinkTableJoinGeneration_OwnTable.ecdb", schemaItem));
 
     AssertFrequencyCount("SELECT SourceECClassId, TargetECClassId FROM ts.ElementHasPeelableFruit",
         {{ "JOIN", 0 }, { "SourceECClassId", 2 }, { "TargetECClassId", 2 }}, false);
@@ -888,7 +888,7 @@ TEST_F(ECSqlToSqlGenerationTests, RoadRailPhysicalManyJoins)
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("RoadRailPhysicalManyJoins.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("RoadRailPhysicalManyJoins.ecdb", schemaItem));
     
     Utf8String sql = "";
 
@@ -1034,7 +1034,7 @@ TEST_F(ECSqlToSqlGenerationTests, SelectOnlyRequiredPropertiesOnSelfJoin)
             </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("SelectOnlyRequiredPropertiesOnSelfJoin.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("SelectOnlyRequiredPropertiesOnSelfJoin.ecdb", schemaItem));
 
     m_ecdb.SaveChanges();
     {

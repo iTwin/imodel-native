@@ -3,7 +3,7 @@
 #  See LICENSE.md in the repository root for full copyright notice.
 #---------------------------------------------------------------------------------------------
 NO_DEFAULT_CLANG_WARNINGS   = 1
-BUILD_WITH_C17=1
+BUILD_WITH_C20=1
 
 DISABLE_COMPILER_ANALYZE_FOR_UNIT_TESTS=1
 

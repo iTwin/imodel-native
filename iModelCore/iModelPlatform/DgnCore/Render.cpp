@@ -488,9 +488,11 @@ Material::CreateParams::CreateParams(MaterialKeyCR key, RenderingAssetCR asset, 
     Nullable<TextureMapping::NormalMapParams> normalMapParams;
     if (haveNormalMap) {
       double normalScale = asset.GetNormalScale();
-      bool invertGreen = 0 != (normalMap.GetUint32(RENDER_MATERIAL_NormalFlags) & RenderingAsset::TextureMap::NormalFlags::InvertGreen);
+      uint32_t flags = normalMap.GetUint32(RENDER_MATERIAL_NormalFlags);
+      bool invertGreen = 0 != (flags & RenderingAsset::TextureMap::NormalFlags::InvertGreen);
+      bool useConstantLod = 0 != (flags & RenderingAsset::TextureMap::NormalFlags::UseConstantLod);
       TextureCP pNormalTexture = havePatternMap ? normalTexture.get() : nullptr;
-      normalMapParams = TextureMapping::NormalMapParams(pNormalTexture, normalScale, invertGreen);
+      normalMapParams = TextureMapping::NormalMapParams(pNormalTexture, normalScale, invertGreen, useConstantLod);
     }
 
     // MicroStation's material editor permits the texture mapping mode, scales, etc etc to be configured per map, but
