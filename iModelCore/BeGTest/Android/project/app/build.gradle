@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 
 android {
 
-    compileSdkVersion 28
+    compileSdkVersion 30
     
     defaultConfig {
         applicationId "com.bentley.test"
@@ -10,7 +10,7 @@ android {
         testInstrumentationRunner "com.bentley.unittest.BeInstrumentationTestRunner"
         project.archivesBaseName = "Test"
         minSdkVersion 21
-        targetSdkVersion 28
+        targetSdkVersion 30
         versionCode 1
         versionName "1.0"
     }
@@ -42,9 +42,12 @@ android {
  
     dexOptions {
         javaMaxHeapSize "4g"
-    } 
+    }
 
-    useNewApkCreator false
+    packagingOptions {
+        exclude "AndroidManifest.xml"
+        exclude "resources.arsc"
+    }   
 }
 
 dependencies {
