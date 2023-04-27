@@ -365,7 +365,7 @@ rapidjson::Document ValueHelpers::GetJsonFromArrayValue(IECSqlValue const& sqlVa
             case ValueKind::VALUEKIND_Primitive:
                 ECPropertyCP property = v.GetColumnInfo().GetOriginProperty();
                 if (property == nullptr)
-                    DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Failed to get origin ECProperty from column. Path to property: %s", v.GetColumnInfo().GetPropertyPath().ToString()))
+                    DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Failed to get origin ECProperty from column. Path to property: %s", v.GetColumnInfo().GetPropertyPath().ToString().c_str()))
 
                 Utf8CP extendedType = "";
                 if (property->GetIsPrimitive())
