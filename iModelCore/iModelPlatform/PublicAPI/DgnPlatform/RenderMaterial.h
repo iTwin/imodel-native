@@ -65,6 +65,11 @@
 #define RENDER_MATERIAL_PatternWeight                               "pattern_weight"
 #define RENDER_MATERIAL_PatternMapping                              "pattern_mapping"
 #define RENDER_MATERIAL_PatternScaleMode                            "pattern_scalemode"
+#define RENDER_MATERIAL_PatternUseConstantLod                       "pattern_useconstantlod"
+#define RENDER_MATERIAL_PatternConstantLodRepetitions               "pattern_constantlod_repetitions"
+#define RENDER_MATERIAL_PatternConstantLodOffset                    "pattern_constantlod_offset"
+#define RENDER_MATERIAL_PatternConstantLodMinDistanceClamp          "pattern_constantlod_mindistanceclamp"
+#define RENDER_MATERIAL_PatternConstantLodMaxDistanceClamp          "pattern_constantlod_maxdistanceclamp"
 #define RENDER_MATERIAL_PatternTileSection                          "pattern_tilesection"
 #define RENDER_MATERIAL_PatternFlipU                                "pattern_u_flip"
 #define RENDER_MATERIAL_PatternTileDecalU                           "pattern_tile_decal_u"
@@ -224,6 +229,7 @@ public:
         enum NormalFlags : uint32_t
         {
             InvertGreen = 1 << 0,
+            UseConstantLod = 1 << 1,
         };
 
         BeJsConst m_value;
@@ -234,6 +240,8 @@ public:
         DGNPLATFORM_EXPORT DPoint2d GetScale() const;
         DGNPLATFORM_EXPORT DPoint2d GetOffset() const;
         DGNPLATFORM_EXPORT Units GetUnits() const;
+        DGNPLATFORM_EXPORT bool GetUseConstantLod() const;
+        DGNPLATFORM_EXPORT Render::TextureMapping::ConstantLodParams GetConstantLodParams() const;
         DGNPLATFORM_EXPORT Render::TextureMapping::Mode GetMode() const;
         DGNPLATFORM_EXPORT Render::TextureMapping::Params GetTextureMapParams() const;
         DGNPLATFORM_EXPORT DgnTextureId GetTextureId() const;
