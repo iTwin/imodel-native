@@ -3,6 +3,7 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "../TestFixture/DgnDbTestFixtures.h"
+#include "../Compatibility/CompatibilityTestFixture.h"
 
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_DPTEST
@@ -659,29 +660,34 @@ TEST_F(DgnModelTests, DefinitionModelCreation)
 TEST_F(DgnModelTests, SheetIndexModelCreation)
     {
     SetupSeedProject();
-    SheetIndexPartitionCPtr sheetIndexParttition = SheetIndexPartition::CreateAndInsert(*m_db->Elements().GetRootSubject(), "SheetIndexPartitionElement", "This is new SheetIndexPartition");
-    ASSERT_TRUE(sheetIndexParttition.IsValid());
-    ASSERT_TRUE(DgnDbTestUtils::CodeValueExists(*m_db, "SheetIndexPartitionElement"));
-    SheetIndexModelPtr sheetIndexModel = SheetIndexModel::CreateAndInsert(*sheetIndexParttition);
-    ASSERT_TRUE(sheetIndexModel.IsValid());
-    ASSERT_EQ(sheetIndexModel->GetModeledElementId(), sheetIndexParttition->GetElementId());
-    SheetIndexModelPtr sheetIndexModel1 = SheetIndexModel::CreateAndInsert(*sheetIndexParttition);
-    ASSERT_FALSE(sheetIndexModel1.IsValid());
+    auto schema = m_db->Schemas().GetSchema("BisCore");
 
-    SheetIndexPartitionPtr sheetIndexParttitionPtr = SheetIndexPartition::Create(*m_db->Elements().GetRootSubject(), "SheetIndexPartitionElement2", "This is second SheetIndexPartition");
-    SheetIndexPartitionCPtr sheetIndexParttition2 = m_db->Elements().Insert<SheetIndexPartition>(*sheetIndexParttitionPtr);
-    ASSERT_TRUE(sheetIndexParttition2.IsValid());
-    ASSERT_TRUE(DgnDbTestUtils::CodeValueExists(*m_db, "SheetIndexPartitionElement2"));
-    SheetIndexModelPtr sheetIndexModel2=SheetIndexModel::Create(*sheetIndexParttition2);
-    ASSERT_TRUE(sheetIndexModel2.IsValid());
-    ASSERT_EQ(DgnDbStatus::Success ,sheetIndexModel2->Insert());
-    ASSERT_EQ(sheetIndexModel2->GetModeledElementId(), sheetIndexParttition2->GetElementId());
-    ASSERT_EQ(sheetIndexModel->DictionaryId(), sheetIndexModel2->DictionaryId());
+    if ( SchemaVersion(*schema) >= SchemaVersion(1, 0, 16) )
+        {
+        SheetIndexPartitionCPtr sheetIndexParttition = SheetIndexPartition::CreateAndInsert(*m_db->Elements().GetRootSubject(), "SheetIndexPartitionElement", "This is new SheetIndexPartition");
+        ASSERT_TRUE(sheetIndexParttition.IsValid());
+        ASSERT_TRUE(DgnDbTestUtils::CodeValueExists(*m_db, "SheetIndexPartitionElement"));
+        SheetIndexModelPtr sheetIndexModel = SheetIndexModel::CreateAndInsert(*sheetIndexParttition);
+        ASSERT_TRUE(sheetIndexModel.IsValid());
+        ASSERT_EQ(sheetIndexModel->GetModeledElementId(), sheetIndexParttition->GetElementId());
+        SheetIndexModelPtr sheetIndexModel1 = SheetIndexModel::CreateAndInsert(*sheetIndexParttition);
+        ASSERT_FALSE(sheetIndexModel1.IsValid());
 
-    DgnCode partitionCode = InformationPartitionElement::CreateCode(*m_db->Elements().GetRootSubject(), "SheetIndexPartitionElement");
-    DgnElementId elementId=m_db->Elements().QueryElementIdByCode(partitionCode);
-    RefCountedCPtr<InformationPartitionElement> Infele = m_db->Elements().Get<InformationPartitionElement>(elementId);
-    ASSERT_EQ(Infele->GetDescription(), "This is new SheetIndexPartition");
+        SheetIndexPartitionPtr sheetIndexParttitionPtr = SheetIndexPartition::Create(*m_db->Elements().GetRootSubject(), "SheetIndexPartitionElement2", "This is second SheetIndexPartition");
+        SheetIndexPartitionCPtr sheetIndexParttition2 = m_db->Elements().Insert<SheetIndexPartition>(*sheetIndexParttitionPtr);
+        ASSERT_TRUE(sheetIndexParttition2.IsValid());
+        ASSERT_TRUE(DgnDbTestUtils::CodeValueExists(*m_db, "SheetIndexPartitionElement2"));
+        SheetIndexModelPtr sheetIndexModel2=SheetIndexModel::Create(*sheetIndexParttition2);
+        ASSERT_TRUE(sheetIndexModel2.IsValid());
+        ASSERT_EQ(DgnDbStatus::Success ,sheetIndexModel2->Insert());
+        ASSERT_EQ(sheetIndexModel2->GetModeledElementId(), sheetIndexParttition2->GetElementId());
+        ASSERT_EQ(sheetIndexModel->DictionaryId(), sheetIndexModel2->DictionaryId());
+
+        DgnCode partitionCode = InformationPartitionElement::CreateCode(*m_db->Elements().GetRootSubject(), "SheetIndexPartitionElement");
+        DgnElementId elementId=m_db->Elements().QueryElementIdByCode(partitionCode);
+        RefCountedCPtr<InformationPartitionElement> Infele = m_db->Elements().Get<InformationPartitionElement>(elementId);
+        ASSERT_EQ(Infele->GetDescription(), "This is new SheetIndexPartition");
+        }
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod

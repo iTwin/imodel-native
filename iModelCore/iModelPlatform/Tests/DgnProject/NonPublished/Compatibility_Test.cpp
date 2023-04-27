@@ -5,6 +5,7 @@
 #include "../TestFixture/DgnDbTestFixtures.h"
 #include <UnitTests/BackDoor/DgnPlatform/DgnDbTestUtils.h>
 #include <DgnPlatform/FunctionalDomain.h>
+#include "../Compatibility/CompatibilityTestFixture.h"
 
 USING_NAMESPACE_BENTLEY_DPTEST
 USING_NAMESPACE_BENTLEY_EC
@@ -1155,8 +1156,9 @@ struct ECInstancesCompatibility : public DgnDbTestFixture
 
         //Inserting a Link Model.
         LinkModelPtr linkModel = DgnDbTestUtils::InsertLinkModel(*m_db, "TestLinkModel");
-        //Inserting a SheetIndex Model.
-        SheetIndexModelPtr sheetIndexModel = DgnDbTestUtils::InsertSheetIndexModel(*m_db, "TestSheetIndexModel");
+
+        auto schema = m_db->Schemas().GetSchema("BisCore");
+
         SubjectCPtr rootSubject = m_db->Elements().GetRootSubject();
         ASSERT_TRUE(rootSubject.IsValid());
 
@@ -1186,8 +1188,10 @@ struct ECInstancesCompatibility : public DgnDbTestFixture
                     {
                     ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("Model", ECN::ECValue(DgnModel::RepositoryModelId())));
                     }
-                else if ((className == BIS_CLASS_SheetIndex) || (className == BIS_CLASS_SheetIndexFolder) || (className == BIS_CLASS_SheetIndexReference) || (className == BIS_CLASS_SheetReference))
+                else if ((SchemaVersion(*schema) >= SchemaVersion(1, 0, 16)) && ((className == BIS_CLASS_SheetIndex) || (className == BIS_CLASS_SheetIndexFolder) || (className == BIS_CLASS_SheetIndexReference) || (className == BIS_CLASS_SheetReference)))
                     {
+                    //Inserting a SheetIndex Model.
+                    SheetIndexModelPtr sheetIndexModel = DgnDbTestUtils::InsertSheetIndexModel(*m_db, "TestSheetIndexModel");
                     ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("Model", ECN::ECValue(sheetIndexModel->GetModelId())));
                     }
                 else
