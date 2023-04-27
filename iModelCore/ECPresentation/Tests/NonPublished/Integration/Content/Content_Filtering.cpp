@@ -407,13 +407,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DescriptorInstanceFilter_Us
     {
     ECClassCP classA = GetClass("A");
     BeGuid instanceGuid1 = BeGuid(true);
-    auto guid1 = instanceGuid1.ToString();
     IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [instanceGuid1](IECInstanceR instance)
         {
         instance.SetValue("GuidProp", ECValue((Byte*)&instanceGuid1, sizeof(BeGuid)));
         });
     BeGuid instanceGuid2 = BeGuid(true);
-    auto guid2 = instanceGuid2.ToString();
     IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [instanceGuid2](IECInstanceR instance)
         {
         instance.SetValue("GuidProp", ECValue((Byte*)&instanceGuid2, sizeof(BeGuid)));

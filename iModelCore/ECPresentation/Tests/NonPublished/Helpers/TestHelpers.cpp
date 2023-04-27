@@ -868,6 +868,9 @@ void RulesEngineTestHelpers::CacheNode(IHierarchyCacheR cache, Utf8StringCR conn
     cache.Cache(node, dsInfo.GetIdentifier(), 0, NodeVisibility::Visible);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 BeGuid RulesEngineTestHelpers::CreateGuidFromString(Utf8CP str)
     {
     BeGuid guid;

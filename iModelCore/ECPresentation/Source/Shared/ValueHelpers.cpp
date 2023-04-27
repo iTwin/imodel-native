@@ -364,10 +364,13 @@ rapidjson::Document ValueHelpers::GetJsonFromArrayValue(IECSqlValue const& sqlVa
                 break;
             case ValueKind::VALUEKIND_Primitive:
                 ECPropertyCP property = v.GetColumnInfo().GetOriginProperty();
+                if (property == nullptr)
+                    DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Failed to get origin ECProperty from column. Path to property: %s", v.GetColumnInfo().GetPropertyPath().ToString()))
+
                 Utf8CP extendedType = "";
                 if (property->GetIsPrimitive())
                     extendedType = property->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str();
-                else if (property->GetAsPrimitiveArrayProperty())
+                else if (property->GetIsPrimitiveArray())
                     extendedType = property->GetAsPrimitiveArrayProperty()->GetExtendedTypeName().c_str();
 
                 doc.PushBack(GetJsonFromPrimitiveValue(v.GetColumnInfo().GetDataType().GetPrimitiveType(), extendedType, v, &doc.GetAllocator()), doc.GetAllocator());
