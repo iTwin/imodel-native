@@ -215,10 +215,11 @@ public:
         };
     bvector<LineStyleGeometryCacheEntry>    m_lineStyleGeometryCache;
     int32_t                                 m_drawingStyledCurveVectorStack;
+    bool                                    m_exportRawParameters;
 
-    ExportGraphicsProcessor(DgnDbR db, IFacetOptionsR facetOptions, double decimationTolerance, bool generateLines, double minLineStyleComponentSize) :
+    ExportGraphicsProcessor(DgnDbR db, IFacetOptionsR facetOptions, double decimationTolerance, bool generateLines, double minLineStyleComponentSize, bool exportRawParameters = false) :
         m_db(db), m_facetOptions(facetOptions), m_gotBadPolyface(false), m_decimationTolerance(decimationTolerance),
-        m_generateLines(generateLines), m_minLineStyleComponentSize(minLineStyleComponentSize), m_drawingStyledCurveVectorStack(0) { }
+        m_generateLines(generateLines), m_minLineStyleComponentSize(minLineStyleComponentSize), m_drawingStyledCurveVectorStack(0), m_exportRawParameters(exportRawParameters) { }
     virtual ~ExportGraphicsProcessor() { }
 
 private:
@@ -361,15 +362,20 @@ void ResolveMeshDisplayProps(SimplifyGraphic& sg, PolyfaceQueryCR pf, MeshDispla
         result.color.SetAlpha((Byte)(transparency * 255.0));
         }
 
-    auto patternMap = asset.GetPatternMap();
-    if (patternMap.IsValid())
-        {
-        auto val = new Json::Value();
-        patternMap.m_value.SaveTo(*val);
-        result.patternMap = std::unique_ptr<Json::Value>(val);
+    if (!m_exportRawParameters) {
+        auto patternMap = asset.GetPatternMap();
+        if (patternMap.IsValid())
+            {
+            auto val = new Json::Value();
+            patternMap.m_value.SaveTo(*val);
+            result.patternMap = std::unique_ptr<Json::Value>(val);
+            }
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 bool VerifyTriangulationAndZeroBlocking(PolyfaceQueryCR pfQuery)
     {
     const int32_t* indices = pfQuery.GetPointIndexCP();
@@ -809,8 +815,8 @@ struct ExportGraphicsJob
     bvector<PartInstanceRecord>     m_instances;
     bool                            m_caughtException;
 
-ExportGraphicsJob(DgnDbR db, IFacetOptionsR fo, DgnElementId elId, bool saveInstances, double decimationTolerance, bool generateLines, double minLineStyleComponentSize)
-    : m_geom(db), m_db(db), m_processor(db, fo, decimationTolerance, generateLines, minLineStyleComponentSize), m_elementId(elId),
+ExportGraphicsJob(DgnDbR db, IFacetOptionsR fo, DgnElementId elId, bool saveInstances, double decimationTolerance, bool generateLines, double minLineStyleComponentSize, bool exportRawParameters = false) :
+    m_geom(db), m_db(db), m_processor(db, fo, decimationTolerance, generateLines, minLineStyleComponentSize, exportRawParameters), m_elementId(elId),
     m_context(m_processor, saveInstances ? &m_instances : nullptr), m_caughtException(false)
     {
     }
@@ -1003,6 +1009,11 @@ DgnDbStatus JsInterop::ExportGraphics(DgnDbR db, Napi::Object const& exportProps
     Napi::Function onLineGraphicsCb = exportProps.Get("onLineGraphics").As<Napi::Function>();
     bool generateLines = onLineGraphicsCb.IsFunction();
 
+    bool exportRawParameters = false;
+    Napi::Boolean napiExportRawParameters = exportProps.Get("exportRawParameters").As<Napi::Boolean>();
+    if (napiExportRawParameters.IsBoolean())
+        exportRawParameters = napiExportRawParameters.Value();
+
     for (uint32_t i = 0; i < elementIdArray.Length(); ++i)
         {
         Napi::HandleScope handleScope(Env());
@@ -1023,7 +1034,7 @@ DgnDbStatus JsInterop::ExportGraphics(DgnDbR db, Napi::Object const& exportProps
         if (status != DgnDbStatus::Success)
             continue;
 
-        auto job = new ExportGraphicsJob(db, *facetOptions.get(), elementId, saveInstances, decimationTolerance, generateLines, minLineStyleComponentSize);
+        auto job = new ExportGraphicsJob(db, *facetOptions.get(), elementId, saveInstances, decimationTolerance, generateLines, minLineStyleComponentSize, exportRawParameters);
         job->m_geom.m_categoryId = stmt->GetValueId<DgnCategoryId>(0);
         job->m_geom.m_placement = getPlacement(*stmt);
         job->m_geom.m_geomStream = std::move(geomStream);
@@ -1144,8 +1155,13 @@ DgnDbStatus JsInterop::ExportPartGraphics(DgnDbR db, Napi::Object const& exportP
     if (napiDecimationTolerance.IsNumber())
         decimationTolerance = napiDecimationTolerance.DoubleValue();
 
+    bool exportRawParameters = false;
+    Napi::Boolean napiExportRawParameters = exportProps.Get("exportRawParameters").As<Napi::Boolean>();
+    if (napiExportRawParameters.IsBoolean())
+        exportRawParameters = napiExportRawParameters.Value();
+
     IFacetOptionsPtr facetOptions = createFacetOptions(exportProps);
-    ExportGraphicsProcessor processor(db, *facetOptions.get(), decimationTolerance, generateLines, minLineStyleComponentSize);
+    ExportGraphicsProcessor processor(db, *facetOptions.get(), decimationTolerance, generateLines, minLineStyleComponentSize, exportRawParameters);
     ExportGraphicsContext context(processor, nullptr);
     context.SetDgnDb(db);
 
