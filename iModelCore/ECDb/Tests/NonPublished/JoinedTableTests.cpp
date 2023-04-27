@@ -201,7 +201,7 @@ TEST_F(JoinedTableTestFixture, TableLayout)
 
     for (TestItem const& testItem : testItems)
         {
-        ASSERT_EQ(SUCCESS, SetupECDb("joinedtablemapstrategy.ecdb", testItem.m_testSchema));
+        ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("joinedtablemapstrategy.ecdb", testItem.m_testSchema));
 
         AssertTableLayouts(m_ecdb, testItem.m_expectedTableLayout);
         m_ecdb.CloseDb();
@@ -465,7 +465,7 @@ TEST_F(JoinedTableTestFixture, BasicCRUD)
         fileNameSuffix++;
         Utf8String fileName;
         fileName.Sprintf("JoinedTableTest%d.ecdb", fileNameSuffix);
-        ASSERT_EQ(SUCCESS, SetupECDb(fileName.c_str(), testSchema));
+        ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb(fileName.c_str(), testSchema));
         for (Utf8StringCR nonSelectECSql : nonSelectECSqls)
             {
             assertNonSelectECSql(m_ecdb, nonSelectECSql.c_str());
@@ -507,7 +507,7 @@ TEST_F(JoinedTableTestFixture, BasicCRUD)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(JoinedTableTestFixture, Update)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("joinedtable.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("joinedtable.ecdb", SchemaItem(
         R"xml(<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                    <ECEntityClass typeName="Base" modifier="Abstract">
@@ -837,7 +837,7 @@ TEST_F(JoinedTableTestFixture, CRUDOnColumnTypes_Physical_Shared_Overflow)
         "    </ECEntityClass>"
         "</ECSchema>");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("crud.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("crud.ecdb", schemaItem));
 
     ECSqlStatement stmt;
     Utf8String sql;
@@ -920,7 +920,7 @@ TEST_F(JoinedTableTestFixture, CRUDOnColumnTypes_Physical_Shared_Overflow)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JoinedTableTestFixture, AcrossMultipleSchemaImports)
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("JoinedTablePerDirectSubclass.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("JoinedTablePerDirectSubclass.ecdb"));
     ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='ReferredSchema' nameSpacePrefix='rs' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -1012,7 +1012,7 @@ TEST_F(JoinedTableTestFixture,  Disqualifying_PolymorphicFilter)
         "    </ECEntityClass>"
         "</ECSchema>");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("JoinedTableTest.ecdb", testSchema));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("JoinedTableTest.ecdb", testSchema));
     auto prepareAndMatchSql = [&](Utf8String ecsql, std::vector<Utf8String> sqlFragments, ECSqlStatus status) {
         ECSqlStatement stmt;
         const auto prepareStatus = stmt.Prepare(m_ecdb, ecsql.c_str());
@@ -1093,7 +1093,7 @@ TEST_F(JoinedTableTestFixture,  Disqualifying_PrimaryJoinTerm)
         "    </ECEntityClass>"
         "</ECSchema>");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("JoinedTableTest.ecdb", testSchema));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("JoinedTableTest.ecdb", testSchema));
     auto prepareAndMatchSql = [&](Utf8String ecsql, std::vector<Utf8String> sqlFragments, ECSqlStatus status) {
         ECSqlStatement stmt;
         const auto prepareStatus = stmt.Prepare(m_ecdb, ecsql.c_str());
@@ -1158,7 +1158,7 @@ TEST_F(JoinedTableTestFixture, VerifyWhereClauseOptimization)
         "    </ECEntityClass>"
         "</ECSchema>");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("JoinedTableTest.ecdb", testSchema));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("JoinedTableTest.ecdb", testSchema));
 
     ECClassId gooClassId = m_ecdb.Schemas().GetClassId("JoinedTableTest", "Goo");
     ASSERT_TRUE(gooClassId.IsValid());
@@ -1256,7 +1256,7 @@ TEST_F(JoinedTableTestFixture, InsertWithParameterBinding)
         "    </ECEntityClass>"
         "</ECSchema>");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("JoinedTableTest.ecdb", testSchema));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("JoinedTableTest.ecdb", testSchema));
 
     ECSqlStatement stmt;
     //-----------------------------INSERT----------------------------------------------------
@@ -1390,7 +1390,7 @@ TEST_F(JoinedTableTestFixture, InsertWithUnnamedParameterBinding)
                           "    </ECEntityClass>"
                           "</ECSchema>");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("JoinedTableTest.ecdb", testSchema));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("JoinedTableTest.ecdb", testSchema));
 
     ECSqlStatement stmt;
     //-----------------------------INSERT----------------------------------------------------
@@ -1487,7 +1487,7 @@ TEST_F(JoinedTableTestFixture, AbstractBaseAndEmptyChildClass)
         "    </ECEntityClass>"
         "</ECSchema>");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("JoinedTableTest.ecdb", testSchema));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("JoinedTableTest.ecdb", testSchema));
 
     auto assert_ecsql = [this] (Utf8CP sql, ECSqlStatus expectedStatus, DbResult expectedStepStatus)
         {
@@ -1725,7 +1725,7 @@ TEST_F(JoinedTableTestFixture, SelfJoinRelationships)
         "  </ECRelationshipClass>"
         "</ECSchema>");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("JoinedTableTest.ecdb", testSchema));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("JoinedTableTest.ecdb", testSchema));
 
     ECClassId fooClassId = m_ecdb.Schemas().GetClassId("JoinedTableTest", "Foo");
 
@@ -1868,7 +1868,7 @@ TEST_F(JoinedTableTestFixture, BaseAndDirectDerivedClassRelationship)
         "  </ECRelationshipClass>"
         "</ECSchema>");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("JoinedTableTest.ecdb", testSchema));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("JoinedTableTest.ecdb", testSchema));
 
     ECClassId fooClassId = m_ecdb.Schemas().GetClassId("JoinedTableTest", "Foo");
     ECClassId gooClassId = m_ecdb.Schemas().GetClassId("JoinedTableTest", "Goo");
@@ -2022,7 +2022,7 @@ TEST_F(JoinedTableTestFixture, RelationshipBetweenSubClasses)
         "  </ECRelationshipClass>"
         "</ECSchema>");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("JoinedTableTest.ecdb", testSchema));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("JoinedTableTest.ecdb", testSchema));
     ECDbR db = m_ecdb;
     db.SaveChanges();
     ECClassId gooClassId = db.Schemas().GetClassId("JoinedTableTest", "Goo");
@@ -2175,7 +2175,7 @@ TEST_F(JoinedTableTestFixture, RelationshipWithStandAloneClass)
         "  </ECRelationshipClass>"
         "</ECSchema>");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("JoinedTableTest.ecdb", testSchema));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("JoinedTableTest.ecdb", testSchema));
     ECDbR db = m_ecdb;
 
     ECClassId fooClassId = db.Schemas().GetClassId("JoinedTableTest", "Foo");
@@ -2327,7 +2327,7 @@ TEST_F(JoinedTableTestFixture, RelationshipWithStandAloneClass1)
         "  </ECRelationshipClass>"
         "</ECSchema>");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("JoinedTableTest.ecdb", testSchema));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("JoinedTableTest.ecdb", testSchema));
     ECDbR db = m_ecdb;
 
     ECClassId fooClassId = db.Schemas().GetClassId("JoinedTableTest", "Foo");
@@ -2490,7 +2490,7 @@ TEST_F(JoinedTableTestFixture, PolymorphicRelationshipWithStandAloneClass)
         "   </ECRelationshipClass>"
         "</ECSchema>");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("JoinedTableTest.ecdb", testSchema));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("JoinedTableTest.ecdb", testSchema));
     ECDbR db = m_ecdb;
 
     ECClassId booClassId = db.Schemas().GetClassId("JoinedTableTest", "Boo");
@@ -2638,7 +2638,7 @@ TEST_F(JoinedTableTestFixture, DropFKConstraintForSharedColumnForSubClasses)
                         "  </ECRelationshipClass>"
                         "</ECSchema>");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("fkconstraintsonsharedcolumnsforsubclasses.ecdb", testItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("fkconstraintsonsharedcolumnsforsubclasses.ecdb", testItem));
     ECDbR ecdb = m_ecdb;
     m_ecdb.Schemas().CreateClassViewsInDb();
     ASSERT_FALSE(GetHelper().IsForeignKeyColumn("ts_B1Sub", "sc_02"));
@@ -2721,7 +2721,7 @@ TEST_F(JoinedTableTestFixture, VerifyONDeleteRestrictWithJoinedTable)
                         "  </ECRelationshipClass>"
                         "  </ECSchema>");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("ondeleterestrictforjoinedtable.ecdb", testItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ondeleterestrictforjoinedtable.ecdb", testItem));
     ECDbR ecdb = m_ecdb;
 
     ECInstanceKey sourceKey;
@@ -2778,7 +2778,7 @@ protected:
 //+---------------+---------------+---------------+---------------+---------------+------
 void JoinedTableECSqlStatementsTests::SetUpECSqlStatementTestsDb()
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("JoinedTableECSqlStatementTests.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("JoinedTableECSqlStatementTests.ecdb", SchemaItem(
         R"xml(<ECSchema schemaName="ECSqlStatementTests" alias="ECST" version="01.00" displayLabel="ECSqlStatementTests DataBase" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
     <ECStructClass typeName="ContactDetails" modifier="None">
@@ -2876,7 +2876,7 @@ void JoinedTableECSqlStatementsTests::SetUpECSqlStatementTestsDb()
 //+---------------+---------------+---------------+---------------+---------------+------
 void JoinedTableECSqlStatementsTests::SetUpNestedStructArrayDb()
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("JoinedTableECSqlStatementTests.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("JoinedTableECSqlStatementTests.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="NestedStructArrayTest" alias="nsat" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
@@ -3312,7 +3312,7 @@ TEST_F(JoinedTableTestFixture, JoinedTableForClassesWithoutBusinessProperties)
         "    </ECEntityClass>"
         "</ECSchema>");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("ClassesWithoutBusinessProperties.ecdb", testSchema));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ClassesWithoutBusinessProperties.ecdb", testSchema));
 
     //Verify that only one base table and one Secondary Table have been created, rest of the tables will not be mapped as joined table because they don't have business properties.
     Statement statement;
@@ -3381,7 +3381,7 @@ TEST_F(JoinedTableTestFixture, UpgradingOverflowECInstances_RootClassGetNewPrope
                 </ECEntityClass>
             </ECSchema>)xml");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("overflow_t.ecdb", v1));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("overflow_t.ecdb", v1));
     std::function<void(Utf8CP, DbResult)> ecsql = [&] (Utf8CP sql, DbResult r = BE_SQLITE_DONE)
         {
         ECSqlStatement stmt;
@@ -3642,7 +3642,7 @@ TEST_F(JoinedTableTestFixture, UpgradingOverflowECInstances_DerivedClassGetNewPr
             </ECEntityClass>
         </ECSchema>)xml");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("overflow_t.ecdb", v1));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("overflow_t.ecdb", v1));
     std::function<void(Utf8CP, DbResult)> ecsql = [&] (Utf8CP sql, DbResult r = BE_SQLITE_DONE)
         {
         ECSqlStatement stmt;

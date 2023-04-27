@@ -401,8 +401,8 @@ void moveFromTry(Try<void>& t);
  */
 template <typename F>
 typename std::enable_if<
-  !std::is_same<typename std::result_of<F()>::type, void>::value,
-  Try<typename std::result_of<F()>::type>>::type
+  !std::is_same<typename std::invoke_result<F>::type, void>::value,
+  Try<typename std::invoke_result<F>::type>>::type
 makeTryWith(F&& f);
 
 /*
@@ -414,7 +414,7 @@ makeTryWith(F&& f);
  */
 template <typename F>
 typename std::enable_if<
-  std::is_same<typename std::result_of<F()>::type, void>::value,
+  std::is_same<typename std::invoke_result<F>::type, void>::value,
   Try<void>>::type
 makeTryWith(F&& f);
 

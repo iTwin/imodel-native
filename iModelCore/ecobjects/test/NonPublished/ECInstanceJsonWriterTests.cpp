@@ -348,14 +348,14 @@ TEST_F(ECInstanceJsonWriterTests, WriteEmbeddedStructValueTest)
         structStructArrayMemberBuilder2(*m_structStructClass);
 
     SetStructStructProperties(structStructBuilder, 0, 3.14, "Pi 3 digits", nullptr, nullptr, 1, 4, { 1.0, 2.0, 4.0, 9.2 });
-    SetStructStructProperties(structStructArrayMemberBuilder1, +1234567890, 3.1415926535897932384626433832795028841971, u8"π 41 digits", nullptr, "EnumeratorB", 2, 2, { 16, 25 });
+    SetStructStructProperties(structStructArrayMemberBuilder1, +1234567890, 3.1415926535897932384626433832795028841971, Utf8Chars(u8"π 41 digits"), nullptr, "EnumeratorB", 2, 2, { 16, 25 });
     SetStructStructProperties(structStructArrayMemberBuilder2, -1234567890, 2.7182818284590452353602874713526624977572, "e 41 digits", nullptr, "EnumeratorB", 2, 0, {});
     SetStructProperties(structBuilder, 1, 2.0, "2.0", nullptr, "EnumeratorA", 1, 0, {}, &structStructBuilder, 2, { &structStructArrayMemberBuilder1, &structStructArrayMemberBuilder2 });
     sourceInstanceBuilder.EmplaceProperty("StructProperty", structBuilder);
 
     auto const sourceInstance = sourceInstanceBuilder.BuildInstance();
 
-    auto expectedJsonValue12 = BeJsDocument(u8R"(
+    auto expectedJsonValue12 = BeJsDocument(Utf8Chars(u8R"(
         {
            "StructProperty" : {
               "IntProperty" : 1,
@@ -388,9 +388,9 @@ TEST_F(ECInstanceJsonWriterTests, WriteEmbeddedStructValueTest)
                  }
               ]
            }
-        })");
+        })"));
 
-    auto expectedJsonValue34 = BeJsDocument(u8R"(
+    auto expectedJsonValue34 = BeJsDocument(Utf8Chars(u8R"(
         {
            "StructStructProperty" : {
               "IntProperty" : 0,
@@ -399,9 +399,9 @@ TEST_F(ECInstanceJsonWriterTests, WriteEmbeddedStructValueTest)
               "LooseEnumerationProperty" : 1,
               "DoubleArrayProperty" : [ 1, 2, 4, 9.2  ]
            }
-        })");
+        })"));
 
-    auto expectedJsonValue5 = BeJsDocument(u8R"(
+    auto expectedJsonValue5 = BeJsDocument(Utf8Chars(u8R"(
         {
            "StructStructProperty" : {
               "IntProperty" : 0,
@@ -441,7 +441,7 @@ TEST_F(ECInstanceJsonWriterTests, WriteEmbeddedStructValueTest)
                  }
               ]
            }
-        })");
+        })"));
 
     // Act
 
@@ -497,7 +497,7 @@ TEST_F(ECInstanceJsonWriterTests, WriteEmbeddedStructValueForPresentationTest)
         structStructArrayMemberBuilder1(*m_structStructClass),
         structStructArrayMemberBuilder2(*m_structStructClass);
 
-    SetStructStructProperties(structStructBuilder, nullptr, nullptr, u8"α β γ δ ε ζ η θ ι κ λ μ ν ξ ο π ρ ς σ τ υ φ χ ψ ω", nullptr, "EnumeratorB", nullptr, 1, { 7 });
+    SetStructStructProperties(structStructBuilder, nullptr, nullptr, Utf8Chars(u8"α β γ δ ε ζ η θ ι κ λ μ ν ξ ο π ρ ς σ τ υ φ χ ψ ω"), nullptr, "EnumeratorB", nullptr, 1, { 7 });
     SetStructStructProperties(structStructArrayMemberBuilder1, 333333, 3.333333, nullptr, nullptr, nullptr, 2, 1, { 9.0 });
     SetStructStructProperties(structStructArrayMemberBuilder2, nullptr, nullptr, nullptr, nullptr, nullptr/*"EnumeratorInvalid"*/, nullptr, 0, { });
     SetStructProperties(structBuilder, nullptr, 1.111111, "1.111111", nullptr, nullptr, 1, 0, { }, &structStructBuilder, 2, { &structStructArrayMemberBuilder1, &structStructArrayMemberBuilder2 });
@@ -505,7 +505,7 @@ TEST_F(ECInstanceJsonWriterTests, WriteEmbeddedStructValueForPresentationTest)
 
     auto const sourceInstance = sourceInstanceBuilder.BuildInstance();
 
-    auto expectedJsonValue12 = BeJsDocument(u8R"*(
+    auto expectedJsonValue12 = BeJsDocument(Utf8Chars(u8R"*(
         {
            "StructProperty" : {
               "StringProperty" : "1.111111",
@@ -546,9 +546,9 @@ TEST_F(ECInstanceJsonWriterTests, WriteEmbeddedStructValueForPresentationTest)
                  {}
               ]
            }
-        })*");
+        })*"));
 
-    auto expectedJsonValue34 = BeJsDocument(u8R"*(
+    auto expectedJsonValue34 = BeJsDocument(Utf8Chars(u8R"*(
         {
            "StructStructProperty" : {
               "StringProperty" : "α β γ δ ε ζ η θ ι κ λ μ ν ξ ο π ρ ς σ τ υ φ χ ψ ω",
@@ -561,9 +561,9 @@ TEST_F(ECInstanceJsonWriterTests, WriteEmbeddedStructValueForPresentationTest)
                  }
               ]
            }
-        })*");
+        })*"));
 
-    auto expectedJsonValue5 = BeJsDocument(u8R"*(
+    auto expectedJsonValue5 = BeJsDocument(Utf8Chars(u8R"*(
         {
            "StructStructProperty" : {
               "StringProperty" : "α β γ δ ε ζ η θ ι κ λ μ ν ξ ο π ρ ς σ τ υ φ χ ψ ω",
@@ -615,7 +615,7 @@ TEST_F(ECInstanceJsonWriterTests, WriteEmbeddedStructValueForPresentationTest)
                  {}
               ]
            }
-        })*");
+        })*"));
 
     // Act
 
@@ -671,7 +671,7 @@ TEST_F(ECInstanceJsonWriterTests, WritePrimitiveValueTest)
         structStructArrayMemberBuilder1(*m_structStructClass),
         structStructArrayMemberBuilder2(*m_structStructClass);
 
-    SetStructStructProperties(structStructBuilder, nullptr, nullptr, u8"α β γ δ ε ζ η θ ι κ λ μ ν ξ ο π ρ ς σ τ υ φ χ ψ ω", nullptr, "EnumeratorB", nullptr, 1, {7});
+    SetStructStructProperties(structStructBuilder, nullptr, nullptr, Utf8Chars(u8"α β γ δ ε ζ η θ ι κ λ μ ν ξ ο π ρ ς σ τ υ φ χ ψ ω"), nullptr, "EnumeratorB", nullptr, 1, {7});
     SetStructStructProperties(structStructArrayMemberBuilder1, 333333, 3.333333, nullptr, nullptr, nullptr, 2, 1, {9.0});
     SetStructStructProperties(structStructArrayMemberBuilder2, nullptr, nullptr, nullptr, nullptr, nullptr, 5, 0, { });
     SetStructProperties(structBuilder, nullptr, 1.111111, "1.111111", nullptr, nullptr, 7, 0, { }, &structStructBuilder, 2, { &structStructArrayMemberBuilder1, &structStructArrayMemberBuilder2 });
@@ -679,46 +679,46 @@ TEST_F(ECInstanceJsonWriterTests, WritePrimitiveValueTest)
 
     auto const sourceInstance = sourceInstanceBuilder.BuildInstance();
 
-    auto expectedJsonValue2 = BeJsDocument(u8R"(
+    auto expectedJsonValue2 = BeJsDocument(Utf8Chars(u8R"(
         {
            "DoubleProperty" : 1.111111
-        })");
+        })"));
 
-    auto expectedJsonValue3 = BeJsDocument(u8R"(
+    auto expectedJsonValue3 = BeJsDocument(Utf8Chars(u8R"(
         {
            "StringProperty" : "1.111111"
-        })");
+        })"));
 
-    auto expectedJsonValue5 = BeJsDocument(u8R"(
+    auto expectedJsonValue5 = BeJsDocument(Utf8Chars(u8R"(
         {
            "LooseEnumerationProperty" : 7
-        })");
+        })"));
 
-    auto expectedJsonValue8 = BeJsDocument(u8R"(
+    auto expectedJsonValue8 = BeJsDocument(Utf8Chars(u8R"(
         {
            "StringProperty" : "α β γ δ ε ζ η θ ι κ λ μ ν ξ ο π ρ ς σ τ υ φ χ ψ ω"
-        })");
+        })"));
 
-    auto expectedJsonValue9 = BeJsDocument(u8R"(
+    auto expectedJsonValue9 = BeJsDocument(Utf8Chars(u8R"(
         {
            "StrictEnumerationProperty" : "EnumeratorB"
-        })");
+        })"));
 
-    auto expectedJsonValue11 = BeJsDocument(u8R"(
+    auto expectedJsonValue11 = BeJsDocument(Utf8Chars(u8R"(
         {
            "DoubleProperty" : 1.111111,
            "StringProperty" : "1.111111",
            "LooseEnumerationProperty" : 7,
            "StrictEnumerationProperty" : "EnumeratorB"
-        })");
+        })"));
 
-    auto expectedJsonValue12 = BeJsDocument(u8R"(
+    auto expectedJsonValue12 = BeJsDocument(Utf8Chars(u8R"(
         {
            "DoubleProperty" : 1.111111,
            "StringProperty" : "α β γ δ ε ζ η θ ι κ λ μ ν ξ ο π ρ ς σ τ υ φ χ ψ ω",
            "LooseEnumerationProperty" : 7,
            "StrictEnumerationProperty" : "EnumeratorB"
-        })");
+        })"));
 
     // Act
 
@@ -823,7 +823,7 @@ TEST_F(ECInstanceJsonWriterTests, WritePrimitiveValueForPresentationTest)
         structStructArrayMemberBuilder1(*m_structStructClass),
         structStructArrayMemberBuilder2(*m_structStructClass);
 
-    SetStructStructProperties(structStructBuilder, nullptr, 3.14, u8"π", nullptr, "EnumeratorB", nullptr, 1, {7});
+    SetStructStructProperties(structStructBuilder, nullptr, 3.14, Utf8Chars(u8"π"), nullptr, "EnumeratorB", nullptr, 1, {7});
     SetStructStructProperties(structStructArrayMemberBuilder1, 333333, 3.333333, nullptr, nullptr, nullptr, 2, 1, {9.0});
     SetStructStructProperties(structStructArrayMemberBuilder2, nullptr, nullptr, nullptr, nullptr, nullptr, 5, 0, { });
     SetStructProperties(structBuilder, nullptr, 1.111111, "1.111111", nullptr, nullptr, 7, 0, { }, &structStructBuilder, 2, { &structStructArrayMemberBuilder1, &structStructArrayMemberBuilder2 });
@@ -831,45 +831,45 @@ TEST_F(ECInstanceJsonWriterTests, WritePrimitiveValueForPresentationTest)
 
     auto const sourceInstance = sourceInstanceBuilder.BuildInstance();
 
-    auto expectedJsonValue2 = BeJsDocument(u8R"(
+    auto expectedJsonValue2 = BeJsDocument(Utf8Chars(u8R"(
         {
            "DoubleProperty" : {
               "currentUnit" : "DefaultRealU(3)[u:CUB_M]",
               "formattedValue" : "4.206 m³",
               "rawValue" : 1.111111
            }
-        })");
+        })"));
 
-    auto expectedJsonValue3 = BeJsDocument(u8R"(
+    auto expectedJsonValue3 = BeJsDocument(Utf8Chars(u8R"(
         {
            "StringProperty" : "1.111111"
-        })");
+        })"));
 
-    auto expectedJsonValue5 = BeJsDocument(u8R"(
+    auto expectedJsonValue5 = BeJsDocument(Utf8Chars(u8R"(
         {
            "LooseEnumerationProperty" : 7
-        })");
+        })"));
 
-    auto expectedJsonValue7 = BeJsDocument(u8R"(
+    auto expectedJsonValue7 = BeJsDocument(Utf8Chars(u8R"(
         {
            "DoubleProperty" : {
               "currentUnit" : "DefaultRealU(3)[u:CUB_M]",
               "formattedValue" : "11.886 m³",
               "rawValue" : 3.14
            }
-        })");
+        })"));
 
-    auto expectedJsonValue8 = BeJsDocument(u8R"(
+    auto expectedJsonValue8 = BeJsDocument(Utf8Chars(u8R"(
         {
            "StringProperty" : "π"
-        })");
+        })"));
 
-    auto expectedJsonValue9 = BeJsDocument(u8R"(
+    auto expectedJsonValue9 = BeJsDocument(Utf8Chars(u8R"(
         {
            "StrictEnumerationProperty" : "EnumeratorB"
-        })");
+        })"));
 
-    auto expectedJsonValue11 = BeJsDocument(u8R"(
+    auto expectedJsonValue11 = BeJsDocument(Utf8Chars(u8R"(
         {
            "DoubleProperty" : {
               "currentUnit" : "DefaultRealU(3)[u:CUB_M]",
@@ -879,9 +879,9 @@ TEST_F(ECInstanceJsonWriterTests, WritePrimitiveValueForPresentationTest)
            "StringProperty" : "1.111111",
            "LooseEnumerationProperty" : 7,
            "StrictEnumerationProperty" : "EnumeratorB"
-        })");
+        })"));
 
-    auto expectedJsonValue12 = BeJsDocument(u8R"(
+    auto expectedJsonValue12 = BeJsDocument(Utf8Chars(u8R"(
         {
            "DoubleProperty" : {
               "currentUnit" : "DefaultRealU(3)[u:CUB_M]",
@@ -891,7 +891,7 @@ TEST_F(ECInstanceJsonWriterTests, WritePrimitiveValueForPresentationTest)
            "StringProperty" : "π",
            "LooseEnumerationProperty" : 7,
            "StrictEnumerationProperty" : "EnumeratorB"
-        })");
+        })"));
 
     // Act
 
@@ -999,7 +999,7 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToJsonTest)
         structStructArrayMemberBuilder2(*m_structStructClass);
 
     SetStructStructProperties(structStructBuilder, nullptr, 3.14, "Pi 3 digits", nullptr, nullptr, 1, 4, {1.0, 2.0, 4.0, 9.0});
-    SetStructStructProperties(structStructArrayMemberBuilder1, +1, 3.1415926535897932384626433832795028841971, u8"π 41 digits", nullptr, "EnumeratorB", 2, 2, {16, 25});
+    SetStructStructProperties(structStructArrayMemberBuilder1, +1, 3.1415926535897932384626433832795028841971, Utf8Chars(u8"π 41 digits"), nullptr, "EnumeratorB", 2, 2, {16, 25});
     SetStructStructProperties(structStructArrayMemberBuilder2, -1, 2.7182818284590452353602874713526624977572, "e 41 digits", nullptr, "EnumeratorB", 2, 0, {});
     SetStructProperties(structBuilder, nullptr, 2.0, "2.0", nullptr, "EnumeratorA", 1, 0, {}, &structStructBuilder, 2, { &structStructArrayMemberBuilder1, &structStructArrayMemberBuilder2 });
     sourceInstanceBuilder.EmplaceProperty("StructProperty", structBuilder);
@@ -1009,7 +1009,7 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToJsonTest)
     auto const targetInstance = targetInstanceBuilder.BuildInstance();
     targetInstance->SetInstanceId("targetInstanceId");
 
-    auto expectedJsonValue1 = BeJsDocument(u8R"(
+    auto expectedJsonValue1 = BeJsDocument(Utf8Chars(u8R"(
         {
            "SourceClass" : {
               "NavigationProperty" : {
@@ -1049,9 +1049,9 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToJsonTest)
            "ecClass" : "SourceClass",
            "ecSchema" : "Schema.01.00",
            "instanceId" : "sourceInstanceId"
-        })");
+        })"));
 
-    auto expectedJsonValue2 = BeJsDocument(u8R"(
+    auto expectedJsonValue2 = BeJsDocument(Utf8Chars(u8R"(
         {
            "MyClass" : {
               "NavigationProperty" : {
@@ -1099,9 +1099,9 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToJsonTest)
            },
            "ecClass" : "SourceClass",
            "ecSchema" : "Schema.01.00"
-        })");
+        })"));
 
-    auto expectedJsonValue3 = BeJsDocument(u8R"(
+    auto expectedJsonValue3 = BeJsDocument(Utf8Chars(u8R"(
         {
            "SourceClass" : {
               "NavigationProperty" : {
@@ -1149,9 +1149,9 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToJsonTest)
            "ecClass" : "SourceClass",
            "ecSchema" : "Schema.01.00",
            "instanceId" : "sourceInstanceId"
-        })");
+        })"));
 
-    auto expectedJsonValue4 = BeJsDocument(u8R"(
+    auto expectedJsonValue4 = BeJsDocument(Utf8Chars(u8R"(
         {
            "SourceClass" : {
               "NavigationProperty" : {
@@ -1190,9 +1190,9 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToJsonTest)
            },
            "ecClass" : "SourceClass",
            "ecSchema" : "Schema.01.00"
-        })");
+        })"));
 
-    auto expectedJsonValue5 = BeJsDocument(u8R"(
+    auto expectedJsonValue5 = BeJsDocument(Utf8Chars(u8R"(
         {
            "AnotherSourceClass" : {
               "NavigationProperty" : {
@@ -1277,13 +1277,13 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToJsonTest)
            "ecClass" : "TargetClass",
            "ecSchema" : "Schema.01.00",
            "instanceId" : "targetInstanceId"
-        })");
+        })"));
 
-    auto expectedJsonValue6 = BeJsDocument(u8R"(
+    auto expectedJsonValue6 = BeJsDocument(Utf8Chars(u8R"(
         {
            "ecClass" : "SourceClass",
            "ecSchema" : "Schema.01.00"
-        })");
+        })"));
 
     // Act
 
@@ -1355,7 +1355,7 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToPresentationJsonTest)
         structStructArrayMemberBuilder2(*m_structStructClass);
 
     SetStructStructProperties(structStructBuilder, nullptr, 3.14, "Pi 3 digits", nullptr, nullptr, 1, 1, { 7.0 });
-    SetStructStructProperties(structStructArrayMemberBuilder1, +1, 3.1415926535897932384626433832795028841971, u8"π 41 digits", nullptr, "EnumeratorB", 2, 1, { 25 });
+    SetStructStructProperties(structStructArrayMemberBuilder1, +1, 3.1415926535897932384626433832795028841971, Utf8Chars(u8"π 41 digits"), nullptr, "EnumeratorB", 2, 1, { 25 });
     SetStructStructProperties(structStructArrayMemberBuilder2, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, 0, { });
     SetStructProperties(structBuilder, nullptr, 2.0, "2.0", nullptr, "EnumeratorA", 1, 0, { }, &structStructBuilder, 2, { &structStructArrayMemberBuilder1, &structStructArrayMemberBuilder2 });
     sourceInstanceBuilder.EmplaceProperty("StructProperty", structBuilder);
@@ -1365,7 +1365,7 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToPresentationJsonTest)
     auto const targetInstance = targetInstanceBuilder.BuildInstance();
     targetInstance->SetInstanceId("targetInstanceId");
 
-    auto expectedJsonValue1 = BeJsDocument(u8R"*(
+    auto expectedJsonValue1 = BeJsDocument(Utf8Chars(u8R"*(
         {
            "SourceClass" : {
               "NavigationProperty" : {
@@ -1423,9 +1423,9 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToPresentationJsonTest)
            "ecClass" : "SourceClass",
            "ecSchema" : "Schema.01.00",
            "instanceId" : "sourceInstanceId"
-        })*");
+        })*"));
 
-    auto expectedJsonValue2 = BeJsDocument(u8R"*(
+    auto expectedJsonValue2 = BeJsDocument(Utf8Chars(u8R"*(
         {
            "SourceClass" : {
               "NavigationProperty" : {
@@ -1481,9 +1481,9 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToPresentationJsonTest)
            },
            "ecClass" : "SourceClass",
            "ecSchema" : "Schema.01.00"
-        })*");
+        })*"));
 
-    auto expectedJsonValue3 = BeJsDocument(u8R"*(
+    auto expectedJsonValue3 = BeJsDocument(Utf8Chars(u8R"*(
         {
            "SourceClass" : {
               "NavigationProperty" : {
@@ -1540,9 +1540,9 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToPresentationJsonTest)
            },
            "ecClass" : "SourceClass",
            "ecSchema" : "Schema.01.00"
-        })*");
+        })*"));
 
-    auto expectedJsonValue4 = BeJsDocument(u8R"*(
+    auto expectedJsonValue4 = BeJsDocument(Utf8Chars(u8R"*(
         {
            "AnotherSourceClass" : {
               "NavigationProperty" : {
@@ -1654,13 +1654,13 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToPresentationJsonTest)
            "ecClass" : "TargetClass",
            "ecSchema" : "Schema.01.00",
            "instanceId" : "targetInstanceId"
-        })*");
+        })*"));
 
-    auto expectedJsonValue5 = BeJsDocument(u8R"(
+    auto expectedJsonValue5 = BeJsDocument(Utf8Chars(u8R"(
         {
            "ecClass" : "SourceClass",
            "ecSchema" : "Schema.01.00"
-        })");
+        })"));
 
     // Act
 
@@ -1726,7 +1726,7 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToSchemaJsonTest)
         structStructArrayMemberBuilder2(*m_structStructClass);
 
     SetStructStructProperties(structStructBuilder, nullptr, nullptr, "No number", nullptr, nullptr, nullptr, 0, { });
-    SetStructStructProperties(structStructArrayMemberBuilder1, nullptr, 3.1415926535897932384626433832795028841971, u8"π 41 digits", nullptr, "EnumeratorB", nullptr, 1, { 25 });
+    SetStructStructProperties(structStructArrayMemberBuilder1, nullptr, 3.1415926535897932384626433832795028841971, Utf8Chars(u8"π 41 digits"), nullptr, "EnumeratorB", nullptr, 1, { 25 });
     SetStructStructProperties(structStructArrayMemberBuilder2, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, 0, { });
     SetStructProperties(structBuilder, nullptr, nullptr, nullptr, nullptr, "EnumeratorA", 1, 0, { }, &structStructBuilder, 2, { &structStructArrayMemberBuilder1, &structStructArrayMemberBuilder2 });
     sourceInstanceBuilder.EmplaceProperty("StructProperty", structBuilder);
@@ -1734,7 +1734,7 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToSchemaJsonTest)
     auto const sourceInstance = sourceInstanceBuilder.BuildInstance();
     auto const targetInstance = targetInstanceBuilder.BuildInstance();
 
-    auto expectedJsonValue1 = BeJsDocument(u8R"*(
+    auto expectedJsonValue1 = BeJsDocument(Utf8Chars(u8R"*(
         {
            "NavigationProperty" : {
               "id" : "0xd"
@@ -1766,9 +1766,9 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToSchemaJsonTest)
               }
            },
            "className" : "Schema.SourceClass"
-        })*");
+        })*"));
 
-    auto expectedJsonValue23 = BeJsDocument(u8R"*(
+    auto expectedJsonValue23 = BeJsDocument(Utf8Chars(u8R"*(
         {
            "NavigationProperty" : {
               "id" : "0xe",
@@ -1801,9 +1801,9 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToSchemaJsonTest)
               }
            },
            "className" : "Schema.SourceClass"
-        })*");
+        })*"));
 
-    auto expectedJsonValue4 = BeJsDocument(u8R"*(
+    auto expectedJsonValue4 = BeJsDocument(Utf8Chars(u8R"*(
         {
            "NavigationProperty" : {
               "id" : "0xe",
@@ -1836,9 +1836,9 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToSchemaJsonTest)
               }
            },
            "className" : "Schema.TargetClass"
-        })*");
+        })*"));
 
-    auto expectedJsonValue5 = BeJsDocument(u8R"*(
+    auto expectedJsonValue5 = BeJsDocument(Utf8Chars(u8R"*(
         {
            "NavigationProperty" : {
               "id" : "0xe"
@@ -1869,7 +1869,7 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToSchemaJsonTest)
                  "StringProperty" : "No number"
               }
            }
-        })*");
+        })*"));
 
     // Act
 
@@ -1933,7 +1933,7 @@ TEST_F(ECInstanceJsonWriterTests, WritePartialWritesIModelJsonGeometry)
 
    auto const sourceInstance = sourceInstanceBuilder.BuildInstance();
 
-   auto expectedJsonValue1 = BeJsDocument(u8R"(
+   auto expectedJsonValue1 = BeJsDocument(Utf8Chars(u8R"(
       {
          "StructProperty": {
             "GeometryProperty": {
@@ -1945,7 +1945,7 @@ TEST_F(ECInstanceJsonWriterTests, WritePartialWritesIModelJsonGeometry)
                }
             }
          }
-      })");
+      })"));
 
    // Act
 
