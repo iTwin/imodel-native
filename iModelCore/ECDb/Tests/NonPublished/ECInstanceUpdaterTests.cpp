@@ -15,7 +15,7 @@ struct ECInstanceUpdaterAgainstPrimitiveClassTests : ECInstanceUpdaterTests
     protected:
         void UpdateInstances(Utf8CP className, Utf8CP schemaName, int numberOfInstances, bool populateAllProperties)
             {
-            ASSERT_EQ(SUCCESS, SetupECDb("updateInstances.ecdb", SchemaItem::CreateForFile("KitchenSink.01.00.00.ecschema.xml")));
+            ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("updateInstances.ecdb", SchemaItem::CreateForFile("KitchenSink.01.00.00.ecschema.xml")));
             ECClassCP testClass = m_ecdb.Schemas().GetClass(schemaName, className);
 
             ECInstanceInserter inserter(m_ecdb, *testClass, nullptr);
@@ -106,7 +106,7 @@ TEST_F(ECInstanceUpdaterAgainstPrimitiveClassTests, UpdateSingleInstanceOfPrimit
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECInstanceUpdaterTests, UpdateRelationships)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("UpdateRelationships.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("UpdateRelationships.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     ECClassCP navPropRelClass = m_ecdb.Schemas().GetClass("ECSqlTest", "PSAHasP_N1");
     ASSERT_TRUE(navPropRelClass != nullptr);
@@ -125,7 +125,7 @@ TEST_F(ECInstanceUpdaterTests, UpdateRelationships)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECInstanceUpdaterTests, UpdateWithCurrentTimeStampTrigger)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("updatewithcurrenttimestamptrigger.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("updatewithcurrenttimestamptrigger.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
     ECClassCP testClass = m_ecdb.Schemas().GetClass("ECSqlTest", "ClassWithLastModProp");
     ASSERT_TRUE(testClass != nullptr);
 
@@ -196,7 +196,7 @@ TEST_F(ECInstanceUpdaterTests, UpdateWithCurrentTimeStampTrigger)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECInstanceUpdaterTests, ReadonlyProperties)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("updatereadonlyproperty.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("updatereadonlyproperty.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                                                      "<ECSchema schemaName='testSchema' alias='ts' version='01.00.00' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
                                                                      "    <ECEntityClass typeName='A' >"
                                                                      "        <ECProperty propertyName='RInt' typeName='int' readOnly='True'/>"
@@ -289,7 +289,7 @@ TEST_F(ECInstanceUpdaterTests, ReadonlyProperties)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECInstanceUpdaterTests, UpdaterBasedOnListOfPropertyIndices)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("updaterbasesonparameterindices.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("updaterbasesonparameterindices.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='testSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "    <ECEntityClass typeName='A' >"
@@ -354,7 +354,7 @@ TEST_F(ECInstanceUpdaterTests, UpdaterBasedOnListOfPropertyIndices)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECInstanceUpdaterTests, UpdaterBasedOnListOfPropertiesToBind)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("updaterbasesonlistofproperties.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("updaterbasesonlistofproperties.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='testSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "    <ECEntityClass typeName='A' >"
@@ -428,7 +428,7 @@ TEST_F(ECInstanceUpdaterTests, UpdaterBasedOnListOfPropertiesToBind)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECInstanceUpdaterTests, UpdateArrayProperty)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("updateArrayProperty.ecdb", SchemaItem::CreateForFile("KitchenSink.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("updateArrayProperty.ecdb", SchemaItem::CreateForFile("KitchenSink.01.00.00.ecschema.xml")));
 
     ECN::ECClassCP testClass = m_ecdb.Schemas().GetClass("KitchenSink", "TestClass");
     ASSERT_TRUE(testClass != nullptr);
@@ -496,7 +496,7 @@ TEST_F(ECInstanceUpdaterTests, UpdateArrayProperty)
 //Failing case, if number of property indices less then 1, updater should be invalid
 TEST_F(ECInstanceUpdaterTests, InvalidListOfPropertyIndices)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("updaterbasesonparameterindices.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("updaterbasesonparameterindices.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='testSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "    <ECEntityClass typeName='A'>"
@@ -518,7 +518,7 @@ TEST_F(ECInstanceUpdaterTests, InvalidListOfPropertyIndices)
 //Failing case, Update should fail it updater is invalid
 TEST_F(ECInstanceUpdaterTests, InvalidUpdater)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("updaterbasesonparameterindices.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("updaterbasesonparameterindices.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='testSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "    <ECEntityClass typeName='A' >"
@@ -590,7 +590,7 @@ TEST_F(ECInstanceUpdaterTests, LargeNumbersOfPropertiesMappingToOverflow)
             m_ecdb.SaveChanges();
             m_ecdb.CloseDb();
         }
-        ASSERT_EQ(SUCCESS, SetupECDb(fileName.c_str(), SchemaItem(ecschemaXml.c_str())));
+        ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb(fileName.c_str(), SchemaItem(ecschemaXml.c_str())));
 
         ECClassCP classWithPrims = m_ecdb.Schemas().GetClass("testSchema", "ClassWithPrimitiveProps");
         ASSERT_TRUE(classWithPrims != nullptr);
@@ -629,7 +629,7 @@ TEST_F(ECInstanceUpdaterTests, LargeNumbersOfPropertiesMappingToOverflow)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECInstanceUpdaterTests, UpdateTimeOfDayValues)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("UpdateTimeOfDayValues.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("UpdateTimeOfDayValues.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="CoreCustomAttributes" version="01.00.01" alias="CoreCA"/>
             <ECEntityClass typeName="CalendarEntry" modifier="None">

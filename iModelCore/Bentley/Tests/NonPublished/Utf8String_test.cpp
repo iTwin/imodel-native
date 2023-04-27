@@ -448,36 +448,39 @@ TEST(Utf8StringTest, Compare)
 //---------------------------------------------------------------------------------------
 TEST(Utf8StringTest,TrimUtf8) {
 
-    #define NBSP u8"\u00a0"
-    #define EMSPC u8"\u2003"
+    auto NBSP = Utf8Chars(u8"\u00a0");
+    auto EMSPC = Utf8Chars(u8"\u2003");
     static_assert(sizeof(EMSPC) - 1 == 3, "emspace char size was not 3");
-    #define TESTSPC NBSP EMSPC " \n\r\v\t"
+    Utf8String TESTSPC;
+    TESTSPC.append(NBSP);
+    TESTSPC.append(EMSPC);
+    TESTSPC.append(" \n\r\v\t");
 
     struct TestCase { Utf8String pretrim, expectedPostTrim; };
 
     std::array<TestCase, 6> cases = {
       TestCase{
-        "test" TESTSPC,
+        "test" + TESTSPC,
         "test"
       },
       TestCase{
-        TESTSPC "test",
+        TESTSPC + "test",
         "test"
       },
       TestCase{
-        TESTSPC "te" TESTSPC "st" TESTSPC,
-        "te" TESTSPC "st"
+        TESTSPC + "te" + TESTSPC + "st" + TESTSPC,
+        "te" + TESTSPC + "st"
       },
       TestCase{
-        TESTSPC "te" TESTSPC "st" TESTSPC TESTSPC TESTSPC,
-        "te" TESTSPC  "st"
+        TESTSPC + "te" + TESTSPC + "st" + TESTSPC + TESTSPC + TESTSPC,
+        "te" + TESTSPC + "st"
       },
       TestCase{
-        "te " TESTSPC " st",
-        "te " TESTSPC " st"
+        "te " + TESTSPC + " st",
+        "te " + TESTSPC + " st"
       },
       TestCase{
-        TESTSPC "this is a longish string without any non-ascii characters" TESTSPC, 
+        TESTSPC + "this is a longish string without any non-ascii characters" + TESTSPC, 
         "this is a longish string without any non-ascii characters",
       },
     };

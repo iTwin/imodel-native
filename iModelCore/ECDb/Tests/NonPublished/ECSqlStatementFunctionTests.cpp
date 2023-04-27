@@ -48,7 +48,7 @@ struct ECSqlStatementFunctionTestFixture : ECDbTestFixture
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementFunctionTestFixture, SearchCaseExp_Type)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("CaseExp.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("CaseExp.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
     ASSERT_EQ(SUCCESS, PopulateECDb(5));
     struct Test{
         Utf8CP sql;
@@ -103,7 +103,7 @@ TEST_F(ECSqlStatementFunctionTestFixture, SearchCaseExp_Type)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementFunctionTestFixture, IIF)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("CaseExp.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("CaseExp.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
     ASSERT_EQ(SUCCESS, PopulateECDb(5));
     std::vector<std::pair<Utf8CP, Utf8CP>> testDataset{
         {"SELECT IIF(ec_classname(ecclassid)='ECSqlTest:TH5', 'First','Second') FROM ecsql.TH5 LIMIT 1", "First" },
@@ -130,7 +130,7 @@ TEST_F(ECSqlStatementFunctionTestFixture, IIF)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementFunctionTestFixture, SearchCaseExp_Basic)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("CaseExp.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("CaseExp.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
     ASSERT_EQ(SUCCESS, PopulateECDb(5));
     std::vector<std::pair<Utf8CP, Utf8CP>> testDataset{
         {"SELECT CASE WHEN ec_classname(ecclassid)  =   'ECSqlTest:TH5' THEN 'First' ELSE 'Second' END FROM ecsql.TH5 LIMIT 1", "First" },
@@ -160,7 +160,7 @@ TEST_F(ECSqlStatementFunctionTestFixture, SearchCaseExp_Basic)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementFunctionTestFixture, TypeFilter)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("InstanceOfFunc.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("InstanceOfFunc.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
     ASSERT_EQ(SUCCESS, PopulateECDb(5));
     m_ecdb.SaveChanges();
     auto th1 = m_ecdb.Schemas().GetClassId("ECSqlTest", "TH1");
@@ -210,7 +210,7 @@ TEST_F(ECSqlStatementFunctionTestFixture, TypeFilter)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementFunctionTestFixture, InstanceOfFunc)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("InstanceOfFunc.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("InstanceOfFunc.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
     ASSERT_EQ(SUCCESS, PopulateECDb(5));
     auto th1 = m_ecdb.Schemas().GetClassId("ECSqlTest", "TH1");
     auto th2 = m_ecdb.Schemas().GetClassId("ECSqlTest", "TH2");
@@ -291,7 +291,7 @@ TEST_F(ECSqlStatementFunctionTestFixture, InstanceOfFunc)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementFunctionTestFixture, ClassNameFunc)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ec_classname.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ec_classname.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
     // ASSERT_EQ(SUCCESS, PopulateECDb(5));
 
     std::vector<std::pair<Utf8CP, Utf8CP>> testDataset {
@@ -330,7 +330,7 @@ TEST_F(ECSqlStatementFunctionTestFixture, ClassNameFunc)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementFunctionTestFixture, ClassIdFunc)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ec_classid.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ec_classid.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
     ECN::ECClassId th5ClassId = m_ecdb.Schemas().GetClassId("ECSqlTest", "TH5");
     ECN::ECClassId noClassId((uint64_t)0);
 
@@ -364,9 +364,9 @@ TEST_F(ECSqlStatementFunctionTestFixture, ClassIdFunc)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementFunctionTestFixture, BuiltinFunctions)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlbuiltinfunctiontest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlbuiltinfunctiontest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
     ASSERT_EQ(SUCCESS, PopulateECDb(5));
-    ASSERT_EQ(SUCCESS, m_ecdb.AttachChangeCache(ECDb::GetDefaultChangeCachePath(m_ecdb.GetDbFileName())));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, m_ecdb.AttachChangeCache(ECDb::GetDefaultChangeCachePath(m_ecdb.GetDbFileName())));
 
     std::vector<std::pair<Utf8CP, ExpectedResult>> testDataset {
             {"SELECT ABS(I) FROM ecsql.P LIMIT 1", ExpectedResult (ECN::PRIMITIVETYPE_Integer)},
@@ -484,7 +484,7 @@ TEST_F(ECSqlStatementFunctionTestFixture, BuiltinFunctions)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementFunctionTestFixture, CoalesceAndNullIf)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("builtinfunctiontests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::ReadWrite)));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("builtinfunctiontests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::ReadWrite)));
 
     {
     //insert two test rows
@@ -549,7 +549,7 @@ TEST_F(ECSqlStatementFunctionTestFixture, CoalesceAndNullIf)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementFunctionTestFixture, FunctionCallWithDistinct)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlbuiltinfunctiontest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::ReadWrite)));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlbuiltinfunctiontest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::ReadWrite)));
 
     auto getIntScalar = [] (ECDbCR ecdb, Utf8CP ecsql)
         {
@@ -628,7 +628,7 @@ TEST_F(ECSqlStatementFunctionTestFixture, FunctionCallWithDistinct)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementFunctionTestFixture, InVirtualSetFunction)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
     const int perClassRowCount = 10;
     ASSERT_EQ(SUCCESS, PopulateECDb( perClassRowCount));
 
@@ -765,7 +765,7 @@ TEST_F(ECSqlStatementFunctionTestFixture, InVirtualSetFunction)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementFunctionTestFixture, InVirtualSetValidation)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     ECSqlStatement statement;
     ASSERT_EQ(ECSqlStatus::InvalidECSql, statement.Prepare(m_ecdb, "SELECT InVirtualSet(1023, 1);")) << "First parameter should not be Primitive type";

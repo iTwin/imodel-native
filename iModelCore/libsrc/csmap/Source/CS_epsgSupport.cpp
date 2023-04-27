@@ -103,6 +103,11 @@ bool TcsEpsgCode::operator== (unsigned long epsgCode) const
 	bool equal = (EpsgCode == epsgCode);
 	return equal;
 }
+bool TcsEpsgCode::operator== (const TcsEpsgCode& rhs) const
+{
+	bool equal = (EpsgCode == rhs.EpsgCode);
+	return equal;
+}
 bool TcsEpsgCode::operator== (unsigned int epsgCode) const
 {
 	bool equal = (EpsgCode == static_cast<unsigned long>(epsgCode));

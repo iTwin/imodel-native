@@ -764,7 +764,7 @@ class FunctionRef<ReturnType(Args...)> final {
 
     static_assert(
         std::is_convertible<
-            typename std::result_of<ReferencedType&(Args && ...)>::type,
+            typename std::invoke_result<ReferencedType&, Args && ...>::type,
             ReturnType>::value,
         "FunctionRef cannot be constructed from object with "
         "incompatible function signature");

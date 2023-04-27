@@ -320,7 +320,7 @@ struct ChangeSummaryTestFixtureV1 : public ECDbTestFixture
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, SchemaAndApiConsistency)
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("changesummary_schemaandapiconsistency.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("changesummary_schemaandapiconsistency.ecdb"));
     ASSERT_EQ(BE_SQLITE_OK, AttachCache());
 
     //verify that the expected change summary cache file alias
@@ -365,7 +365,7 @@ TEST_F(ChangeSummaryTestFixture, SchemaAndApiConsistency)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, sqlite_stat1)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("change_statistic1.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("change_statistic1.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEntityClass typeName="Foo1">
@@ -403,7 +403,7 @@ TEST_F(ChangeSummaryTestFixture, sqlite_stat1)
     }
     m_ecdb.SaveChanges();
     m_ecdb.CloseDb();
-    ASSERT_EQ(SUCCESS, SetupECDb("change_statistic2.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("change_statistic2.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEntityClass typeName="Foo1">
@@ -440,7 +440,7 @@ TEST_F(ChangeSummaryTestFixture, sqlite_stat1)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, ChangesFunctionOptimizations)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ChangesFunctionOptimizations.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ChangesFunctionOptimizations.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEntityClass typeName="Foo">
@@ -550,7 +550,7 @@ TEST_F(ChangeSummaryTestFixture, ChangesFunctionOptimizations)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, ChangesFunctionInput)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ChangesFunctionInput.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ChangesFunctionInput.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEntityClass typeName="Foo1">
@@ -690,7 +690,7 @@ TEST_F(ChangeSummaryTestFixture, ChangesFunctionInput)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, ChangesFunctionOnlyForSelect)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ChangesFunctionOnlyForSelect.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ChangesFunctionOnlyForSelect.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEntityClass typeName="Foo">
@@ -745,7 +745,7 @@ TEST_F(ChangeSummaryTestFixture, ChangesFunctionOnlyForSelect)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, ValidCache_InvalidCache)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ValidCache_InvalidCache.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ValidCache_InvalidCache.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEntityClass typeName="Foo1">
@@ -867,7 +867,7 @@ TEST_F(ChangeSummaryTestFixture, ValidCache_InvalidCache)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, CloseClearCacheDestroyWithAttachedCache)
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("CloseClearCacheDestroyWithAttachedCache.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("CloseClearCacheDestroyWithAttachedCache.ecdb"));
     BeFileName ecdbPath(m_ecdb.GetDbFileName());
     BeFileName cachePath = ECDb::GetDefaultChangeCachePath(m_ecdb.GetDbFileName());
 
@@ -906,7 +906,7 @@ TEST_F(ChangeSummaryTestFixture, CloseClearCacheDestroyWithAttachedCache)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, AttachChangeCacheMethodInput)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("AttachChangeCacheMethodInput.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("AttachChangeCacheMethodInput.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEntityClass typeName="Foo1">
@@ -953,7 +953,7 @@ TEST_F(ChangeSummaryTestFixture, AttachChangeCacheMethodInput)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, IsChangeCacheAttached)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("IsChangeCacheAttached.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IsChangeCacheAttached.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEntityClass typeName="Foo1">
@@ -994,7 +994,7 @@ TEST_F(ChangeSummaryTestFixture, InMemoryPrimaryECDb)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, NonDefaultCachePath)
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("ChangeSummaryNonDefaultCachePath.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("ChangeSummaryNonDefaultCachePath.ecdb"));
 
     BeFileName ecdbPath(m_ecdb.GetDbFileName());
 
@@ -1034,7 +1034,7 @@ TEST_F(ChangeSummaryTestFixture, NonDefaultCachePath)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, ChangeSummaryExtendedProps)
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("ChangeSummaryExtendedProps.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("ChangeSummaryExtendedProps.ecdb"));
     ASSERT_EQ(BE_SQLITE_OK, AttachCache());
 
     TestChangeTracker tracker(m_ecdb);
@@ -1085,7 +1085,7 @@ TEST_F(ChangeSummaryTestFixture, ChangeSummaryExtendedProps)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, ChangeSummaryWithCustomMetaData)
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("ChangeSummaryWithCustomMetaData.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("ChangeSummaryWithCustomMetaData.ecdb"));
 
     BeFileName cacheFilePath = ECDb::GetDefaultChangeCachePath(m_ecdb.GetDbFileName());
     ECDb cacheFile;
@@ -1152,7 +1152,7 @@ TEST_F(ChangeSummaryTestFixture, ChangeSummaryWithCustomMetaData)
     cacheFile.SaveChanges();
     cacheFile.CloseDb();
 
-    ASSERT_EQ(SUCCESS, m_ecdb.AttachChangeCache(cacheFilePath));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, m_ecdb.AttachChangeCache(cacheFilePath));
     ASSERT_TRUE(m_ecdb.IsChangeCacheAttached());
     JsonValue csum = GetHelper().ExecuteSelectECSql("SELECT ECInstanceId,ExtendedProperties FROM change.ChangeSummary");
     ASSERT_EQ(1, csum.m_value.size());
@@ -1300,7 +1300,7 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflow)
     for (auto const& kvPair : testSchemas)
         {
         Utf8StringCR scenario = kvPair.first;
-        ASSERT_EQ(SUCCESS, SetupECDb("SimpleWorkflow.ecdb", *kvPair.second)) << scenario;
+        ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("SimpleWorkflow.ecdb", *kvPair.second)) << scenario;
         ASSERT_EQ(BE_SQLITE_OK, AttachCache()) << scenario;
 
         TestChangeTracker tracker(m_ecdb);
@@ -1506,7 +1506,7 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithPointProp)
     for (auto const& kvPair : testSchemas)
         {
         Utf8StringCR scenario = kvPair.first;
-        ASSERT_EQ(SUCCESS, SetupECDb("SimpleWorkflowWithPointProp.ecdb", *kvPair.second)) << scenario;
+        ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("SimpleWorkflowWithPointProp.ecdb", *kvPair.second)) << scenario;
         ASSERT_EQ(BE_SQLITE_OK, AttachCache()) << scenario;
 
         TestChangeTracker tracker(m_ecdb);
@@ -1790,7 +1790,7 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithStructProp)
     for (auto const& kvPair : testSchemas)
         {
         Utf8StringCR scenario = kvPair.first;
-        ASSERT_EQ(SUCCESS, SetupECDb("SimpleWorkflowWithStructProp.ecdb", *kvPair.second)) << scenario;
+        ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("SimpleWorkflowWithStructProp.ecdb", *kvPair.second)) << scenario;
         ASSERT_EQ(BE_SQLITE_OK, AttachCache()) << scenario;
 
         TestChangeTracker tracker(m_ecdb);
@@ -1973,7 +1973,7 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithStructProp)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropLogicalForeignKey_NonVirtualRelECClassId)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("SimpleWorkflowWithNavPropLogicalForeignKey_NonVirtualRelECClassId.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("SimpleWorkflowWithNavPropLogicalForeignKey_NonVirtualRelECClassId.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEntityClass typeName="Parent" modifier="Sealed">
@@ -2127,7 +2127,7 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropLogicalForeignKey_NonV
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavProp_MandatoryRelClassIdIsOmitted)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("SimpleWorkflowWithNavProp_MandatoryRelClassIdIsOmitted.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("SimpleWorkflowWithNavProp_MandatoryRelClassIdIsOmitted.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEntityClass typeName="Parent" modifier="Sealed">
@@ -2172,7 +2172,7 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavProp_MandatoryRelClassIdIs
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropLogicalForeignKey_VirtualRelECClassId)
     {
-        ASSERT_EQ(SUCCESS, SetupECDb("SimpleWorkflowWithNavPropLogicalForeignKey_VirtualRelECClassId.ecdb", SchemaItem(
+        ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("SimpleWorkflowWithNavPropLogicalForeignKey_VirtualRelECClassId.ecdb", SchemaItem(
             R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEntityClass typeName="Parent" modifier="Sealed">
@@ -2324,7 +2324,7 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropLogicalForeignKey_Virt
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, VirtualRelECClassId)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("VirtualRelECClassId.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("VirtualRelECClassId.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEntityClass typeName="Parent" modifier="Sealed">
@@ -2378,7 +2378,7 @@ TEST_F(ChangeSummaryTestFixture, VirtualRelECClassId)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropCascadeDelete)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("SimpleWorkflowWithNavPropCascadeDelete.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("SimpleWorkflowWithNavPropCascadeDelete.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
@@ -2540,7 +2540,7 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropCascadeDelete)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropLogicalForeignKey_NonRelationshipRelECClassId)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("SimpleWorkflowWithNavPropLogicalForeignKey_NonVirtualRelECClassId.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("SimpleWorkflowWithNavPropLogicalForeignKey_NonVirtualRelECClassId.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEntityClass typeName="Parent" modifier="Sealed">
@@ -2607,7 +2607,7 @@ TEST_F(ChangeSummaryTestFixture, DeletedLinkTableRow)
     // Case 1: Link table has FKs into end tables
             {
             // Classes must have a class id column -> TPH and not sealed
-            ASSERT_EQ(SUCCESS, SetupECDb("DeletedLinkTableRow.ecdb", SchemaItem(
+            ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("DeletedLinkTableRow.ecdb", SchemaItem(
                 R"xml(<?xml version="1.0" encoding="utf-8"?>
                 <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
@@ -2693,7 +2693,7 @@ TEST_F(ChangeSummaryTestFixture, DeletedLinkTableRow)
    // Case 2: Link table has no FKs into end tables
 
         {
-        ASSERT_EQ(SUCCESS, SetupECDb("DeletedLinkTableRow_NoFks.ecdb", SchemaItem(
+        ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("DeletedLinkTableRow_NoFks.ecdb", SchemaItem(
             R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
         <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
@@ -2800,7 +2800,7 @@ TEST_F(ChangeSummaryTestFixture, DeletedLinkTableRow)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, SchemaChange)
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("invalidsummarytest.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("invalidsummarytest.ecdb"));
     ASSERT_EQ(BE_SQLITE_OK, AttachCache());
 
     // Test1: Change to be_Prop table - should cause empty change summary without errors
@@ -2833,7 +2833,7 @@ TEST_F(ChangeSummaryTestFixture, SchemaChange)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, Crud)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("changeSummary_Crud.ecdb", SchemaItem(R"(<?xml version='1.0' encoding='utf-8'?>
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("changeSummary_Crud.ecdb", SchemaItem(R"(<?xml version='1.0' encoding='utf-8'?>
             <ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
                 <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />
                 <ECEntityClass typeName='Foo' modifier='None'>
@@ -2968,7 +2968,7 @@ TEST_F(ChangeSummaryTestFixture, Crud)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, PropertiesWithRegularColumns)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("overflowProperties.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("overflowProperties.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?> "
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -3101,7 +3101,7 @@ TEST_F(ChangeSummaryTestFixture, PropertiesWithRegularColumns)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, Overflow_PrimitiveProperties)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("overflowProperties.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("overflowProperties.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
@@ -3164,7 +3164,7 @@ TEST_F(ChangeSummaryTestFixture, Overflow_PrimitiveProperties)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, Overflow_StructProperty)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("overflowProperties.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("overflowProperties.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?> "
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -3227,7 +3227,7 @@ TEST_F(ChangeSummaryTestFixture, Overflow_StructProperty)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, Overflow_ArrayProperty)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("overflowProperties.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("overflowProperties.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?> "
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -3286,7 +3286,7 @@ TEST_F(ChangeSummaryTestFixture, Overflow_ArrayProperty)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, Overflow_ComplexPropertyTypes)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("overflowProperties.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("overflowProperties.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?> "
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -3359,7 +3359,7 @@ TEST_F(ChangeSummaryTestFixture, Overflow_ComplexPropertyTypes)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, Overflow_ArrayOfPoints)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("overflowProperties.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("overflowProperties.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?> "
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -3427,7 +3427,7 @@ TEST_F(ChangeSummaryTestFixture, Overflow_ArrayOfPoints)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, Overflow_ArrayOfStructs)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("overflowProperties.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("overflowProperties.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?> "
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -3505,7 +3505,7 @@ TEST_F(ChangeSummaryTestFixture, Overflow_ArrayOfStructs)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("RelationshipChangesFromCurrentTransaction.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("RelationshipChangesFromCurrentTransaction.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
     ASSERT_EQ(BE_SQLITE_OK, AttachCache());
     TestChangeTracker tracker(m_ecdb);
     tracker.EnableTracking(true);
@@ -3635,7 +3635,7 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, OverflowTables)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("overflowTables.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("overflowTables.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?> "
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -3852,7 +3852,7 @@ TEST_F(ChangeSummaryTestFixture, NoChangeTrackingInAttachedFile)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixtureV1, SchemaChange)
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("invalidsummarytest.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("invalidsummarytest.ecdb"));
 
     // Test1: Change to be_Prop table - should cause empty change summary without errors
     TestChangeTracker tracker(m_ecdb);
@@ -3887,7 +3887,7 @@ TEST_F(ChangeSummaryTestFixtureV1, SchemaChange)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixtureV1, Overflow_PrimitiveProperties)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("overflowProperties.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("overflowProperties.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
@@ -3953,7 +3953,7 @@ TEST_F(ChangeSummaryTestFixtureV1, Overflow_PrimitiveProperties)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixtureV1, Overflow_StructProperty)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("overflowProperties.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("overflowProperties.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?> "
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -4020,7 +4020,7 @@ TEST_F(ChangeSummaryTestFixtureV1, Overflow_StructProperty)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixtureV1, Overflow_ArrayProperty)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("overflowProperties.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("overflowProperties.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?> "
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -4084,7 +4084,7 @@ TEST_F(ChangeSummaryTestFixtureV1, Overflow_ArrayProperty)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixtureV1, Overflow_ComplexPropertyTypes)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("overflowProperties.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("overflowProperties.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?> "
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -4161,7 +4161,7 @@ TEST_F(ChangeSummaryTestFixtureV1, Overflow_ComplexPropertyTypes)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixtureV1, Overflow_ArrayOfPoints)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("overflowProperties.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("overflowProperties.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?> "
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -4233,7 +4233,7 @@ TEST_F(ChangeSummaryTestFixtureV1, Overflow_ArrayOfPoints)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixtureV1, Overflow_ArrayOfStructs)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("overflowProperties.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("overflowProperties.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?> "
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -4315,7 +4315,7 @@ TEST_F(ChangeSummaryTestFixtureV1, Overflow_ArrayOfStructs)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixtureV1, RelationshipChangesFromCurrentTransaction)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("RelationshipChangesFromCurrentTransaction.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("RelationshipChangesFromCurrentTransaction.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
     TestChangeTracker tracker(m_ecdb);
     tracker.EnableTracking(true);
 
@@ -4487,7 +4487,7 @@ TEST_F(ChangeSummaryTestFixtureV1, RelationshipChangesFromCurrentTransaction)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixtureV1, OverflowTables)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("overflowTables.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("overflowTables.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?> "
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -4599,7 +4599,7 @@ TEST_F(ChangeSummaryTestFixtureV1, OverflowTables)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixtureV1, PropertiesWithRegularColumns)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("overflowProperties.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("overflowProperties.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?> "
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"

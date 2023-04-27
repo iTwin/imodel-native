@@ -1040,7 +1040,7 @@ TEST (BeFileNameTests, BeMoveFile)
     dest.AppendToPath (expectedFileName);
     BeFile testFile;
     BeFileStatus status1 = testFile.Create(path, true);
-    ASSERT_TRUE(status1 == BeFileStatus::Success)<<"Failed to create file, file: "<<path;
+    ASSERT_TRUE(status1 == BeFileStatus::Success)<<"Failed to create file, file: "<<Utf8String(path);
     EXPECT_TRUE(testFile.IsOpen())<<"Open?";
     testFile.Close();
 

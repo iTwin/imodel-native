@@ -31,9 +31,9 @@ TEST_F(CrossSchemaUnitsContextTest, LoadJsonFormatSameSchema)
         </ECSchema>
     )xml";
 
-    ASSERT_EQ(SUCCESS, SetupECDb("CrossSchemaUnitsContextTest_LoadJsonFormat"));
-    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(schema1Xml)));
-    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(schema2Xml)));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("CrossSchemaUnitsContextTest_LoadJsonFormat"));
+    ASSERT_EQ(BentleyStatus::SUCCESS, GetHelper().ImportSchema(SchemaItem(schema1Xml)));
+    ASSERT_EQ(BentleyStatus::SUCCESS, GetHelper().ImportSchema(SchemaItem(schema2Xml)));
 
     Formatting::Format testFormat;
     ECFormatP testFormatNode;
@@ -74,7 +74,7 @@ TEST_F(CrossSchemaUnitsContextTest, LoadJsonFormatSameSchemaManagerContext)
         </ECSchema>
     )xml";
 
-    ASSERT_EQ(SUCCESS, SetupECDb("CrossSchemaUnitsContextTest_LoadJsonFormatManagerContext"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("CrossSchemaUnitsContextTest_LoadJsonFormatManagerContext"));
     ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(schema1Xml)));
     ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(schema2Xml)));
 
@@ -121,7 +121,7 @@ TEST_F(CrossSchemaUnitsContextTest, LoadJsonFormatDifferentSchema)
             </ECSchema>
         )xml";
 
-        ASSERT_EQ(SUCCESS, SetupECDb("CrossSchemaUnitsContextTest_LoadJsonFormat"));
+        ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("CrossSchemaUnitsContextTest_LoadJsonFormat"));
         ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(schema1Xml)));
         ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(schema2Xml)));
 
@@ -182,7 +182,7 @@ TEST_F(CrossSchemaUnitsContextTest, LoadJsonFormatUnknownUnit)
         </ECSchema>
     )xml";
 
-    ASSERT_EQ(SUCCESS, SetupECDb("CrossSchemaUnitsContextTest_LoadJsonFormat"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("CrossSchemaUnitsContextTest_LoadJsonFormat"));
     ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(schema1Xml)));
     ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(schema2Xml)));
 
@@ -214,7 +214,7 @@ TEST_F(CrossSchemaUnitsContextTest, LoadJsonFormatUnknownUnitManagerContext)
         </ECSchema>
     )xml";
 
-    ASSERT_EQ(SUCCESS, SetupECDb("CrossSchemaUnitsContextTest_LoadJsonFormat"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("CrossSchemaUnitsContextTest_LoadJsonFormat"));
     ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(schema1Xml)));
     ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(schema2Xml)));
 
@@ -249,7 +249,7 @@ TEST_F(CrossSchemaUnitsContextTest, CrossSchemaUnitsContextLookupsMustBeQualifie
 
     ECSchemaPtr schema1, schema2;
 
-    ASSERT_EQ(SUCCESS, SetupECDb("CrossSchemaUnitsContextTest_LoadJsonFormat"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("CrossSchemaUnitsContextTest_LoadJsonFormat"));
     ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(schema1Xml)));
     ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(schema2Xml)));
 
