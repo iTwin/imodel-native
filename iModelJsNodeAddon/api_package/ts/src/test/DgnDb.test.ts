@@ -510,4 +510,29 @@ describe("basic tests", () => {
       }],
     });
   });
+
+  it("testECSchemaConvert EC2 schema", async () => {
+    const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
+      <ECSchema schemaName="TestSchema" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+        <ECClass typeName="TestEntityClass" isDomainClass="true">
+          <ECProperty propertyName="Id" typeName="string" />
+          <ECProperty propertyName="ECInstanceId" typeName="string" />
+          <ECProperty propertyName="ECClassId" typeName="string" />
+          <ECProperty propertyName="SourceECInstanceId" typeName="string" />
+          <ECProperty propertyName="SourceId" typeName="string" />
+          <ECProperty propertyName="SourceECClassId" typeName="string" />
+          <ECProperty propertyName="TargetECInstanceId" typeName="string" />
+          <ECProperty propertyName="TargetId" typeName="string" />
+          <ECProperty propertyName="TargetECClassId" typeName="string" />
+        </ECClass>
+        <ECClass typeName="TestStructClass" isStruct="true">
+          <ECProperty propertyName="Id" typeName="string" />
+          <ECProperty propertyName="ECInstanceId" typeName="string" />
+          <ECProperty propertyName="ECClassId" typeName="string" />
+        </ECClass>
+      </ECSchema>`;
+
+    assert.isTrue(dgndb.isOpen());
+    assert.isTrue(dgndb.convertECSchema(schemaXml));
+  });
 });

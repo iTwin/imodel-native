@@ -6,6 +6,7 @@
 #include "IModelJsNative.h"
 #include <ECObjects/ECSchema.h>
 #include <ECObjects/ECName.h>
+#include <ECObjects/ECSchemaConverter.h>
 #include "ECSchemaXmlContextUtils.h"
 #include <Bentley/Desktop/FileSystem.h>
 #include <Bentley/PerformanceLogger.h>
@@ -1073,6 +1074,19 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         RequireDbIsOpen(info);
         return toJsString(Env(), GetDgnDb().GetTempFileBaseName());
     }
+
+    Napi::Value ConvertECSchema(NapiInfoCR info)
+        {
+        RequireDbIsOpen(info);
+        REQUIRE_ARGUMENT_STRING(0, schemaXml);
+
+        ECN::ECSchemaPtr schema;
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        ECN::SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml.c_str(), *context);
+        if (!schema.IsValid())
+            BeNapi::ThrowJsException(Env(), "The schema is not valid");
+        return Napi::Boolean::New(Env(), ECSchemaConverter::Convert(*schema.get(), *context.get()));
+        }
 
     Napi::Value SetGeometricModelTrackingEnabled(NapiInfoCR info)
         {
@@ -2296,6 +2310,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
             InstanceMethod("concurrentQueryExecute", &NativeDgnDb::ConcurrentQueryExecute),
             InstanceMethod("concurrentQueryResetConfig", &NativeDgnDb::ConcurrentQueryResetConfig),
             InstanceMethod("concurrentQueryShutdown", &NativeDgnDb::ConcurrentQueryShutdown),
+            InstanceMethod("convertECSchema", &NativeDgnDb::ConvertECSchema),
             InstanceMethod("createBRepGeometry", &NativeDgnDb::CreateBRepGeometry),
             InstanceMethod("createChangeCache", &NativeDgnDb::CreateChangeCache),
             InstanceMethod("createClassViewsInDb", &NativeDgnDb::CreateClassViewsInDb),
