@@ -3,7 +3,7 @@
 #  See LICENSE.md in the repository root for full copyright notice.
 #--------------------------------------------------------------------------------------*/
 DISABLE_COMPILER_ANALYZE_CHECK_UNINITIALIZED_MEMORY=1
-BUILD_WITH_C17=1
+BUILD_WITH_C20=1
 
 %include mdl.mki
 %include $(_MakeFileDir)../../../common/inc/geomlibsdev.mki

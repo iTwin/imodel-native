@@ -98,7 +98,7 @@ struct FileFormatCompatibilityTests : ECDbTestFixture
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(FileFormatCompatibilityTests, PrimitiveDataTypeFormat)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("primitivedatatypesformatfileformatcompatibility.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("primitivedatatypesformatfileformatcompatibility.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
                 <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECStructClass typeName="Types" modifier="Sealed">
@@ -978,7 +978,7 @@ TEST_F(FileFormatCompatibilityTests, ECEnumUpgrade)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(FileFormatCompatibilityTests, PreEC32Enums)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("PreEC32Enums.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("PreEC32Enums.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8" ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECEnumeration typeName="IntEnumNoDisplayLabel" description="1" backingTypeName="int" >
@@ -1123,7 +1123,7 @@ TEST_F(FileFormatCompatibilityTests, PreEC32Enums)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(FileFormatCompatibilityTests, PreEC32EnumsWithSchemaUpgrade)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("PreEC32EnumsWithSchemaUpgrade.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("PreEC32EnumsWithSchemaUpgrade.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8" ?>
               <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECEnumeration typeName="IntEnum" backingTypeName="int" >
@@ -1663,7 +1663,7 @@ TEST_F(FileFormatCompatibilityTests, ProfileUpgrade_Enums)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ForwardCompatibilitySafeguards.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ForwardCompatibilitySafeguards.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
               <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
@@ -2232,7 +2232,7 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_ECEnums)
     if (ECN::ECVersion::Latest > ECN::ECVersion::V3_1)
         return;
 
-    ASSERT_EQ(SUCCESS, SetupECDb("ForwardCompatibilitySafeguards_ECEnums.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ForwardCompatibilitySafeguards_ECEnums.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECEnumeration typeName="IntEnumNoDisplayLabel" backingTypeName="int" >
@@ -2566,7 +2566,7 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_KOQs)
     if (ECN::ECVersion::Latest > ECN::ECVersion::V3_1)
         return;
 
-    ASSERT_EQ(SUCCESS, SetupECDb("ForwardCompatibilitySafeguards_KOQs.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ForwardCompatibilitySafeguards_KOQs.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <KindOfQuantity typeName="MyKoq" persistenceUnit="CM" presentationUnits="FT;IN;M" relativeError=".5"/>
