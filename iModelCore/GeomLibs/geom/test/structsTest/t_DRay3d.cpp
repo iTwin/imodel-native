@@ -3,7 +3,8 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "testHarness.h"
-
+#include <stdlib.h>
+#include <chrono>
 
 void rayIntersectPlaneTest (DPoint3d planeOrigin, DVec3d planeU, DVec3d planeV, DPoint3d rayOrigin, double u, double v)
     {
@@ -275,4 +276,310 @@ TEST(DRay3d, DotVector)
     double dotProduct = ray0.DirectionDotVector(vec);
     double dotProductExpected = ray0.direction.DotProduct(vec);
     Check::Near(dotProduct, dotProductExpected);
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+/** Return a random number between -100 and 100 */
+int getRandomNumber()
+    {
+    return rand() % 200 - 100;
+    }
+TEST(DRay3d, IntersectTriangle)
+    {
+    DPoint3d origin;
+    DVec3d direction;
+    DRay3d ray;
+    DPoint3d trianglePoints[3];
+    DPoint3d intersection;
+    DPoint3d expectedIntersection;
+    DVec3d rotatedDirection;
+    DRay3d rotatedRay;
+    DPoint3d rotatedTrianglePoints[3];
+    DPoint3d rotatedIntersectionPoint;
+    DPoint3d rotatedOriginalIntersectionPoint;
+    RotMatrix rotationMatrix;
+    double angle = getRandomNumber();
+    DVec3d rotationAxis = DVec3d::From(getRandomNumber(), getRandomNumber(), getRandomNumber());
+    if (0 != rotationAxis.Magnitude())
+        {
+        rotationMatrix.InitIdentity();
+        }
+    else
+        {
+        rotationMatrix = RotMatrix::FromVectorAndRotationAngle(rotationAxis, angle);
+        }
+    origin = DPoint3d::From(3, 3, -5);
+    direction = DVec3d::From(0, 0, 1);
+    ray = DRay3d::FromOriginAndVector(origin, direction);
+    trianglePoints[0] = DPoint3d::From(2, 0, 0);
+    trianglePoints[1] = DPoint3d::From(10, 0, 0);
+    trianglePoints[2] = DPoint3d::From(2, 10, 0);
+    expectedIntersection = DPoint3d::From(3, 3, 0);
+    if (bsiDRay3d_intersectTriangleFast(&ray, &intersection, trianglePoints))
+    {
+        // ray intersects triangle at a triangle point
+        Check::Near(intersection, expectedIntersection, "ray intersects triangle at a point.");
+        rotationMatrix.Multiply(rotatedDirection, direction);
+        rotatedRay = DRay3d::FromOriginAndVector(origin, rotatedDirection);
+        rotationMatrix.Multiply(rotatedTrianglePoints[0], trianglePoints[0]);
+        rotationMatrix.Multiply(rotatedTrianglePoints[1], trianglePoints[1]);
+        rotationMatrix.Multiply(rotatedTrianglePoints[2], trianglePoints[2]);
+        
+        if (bsiDRay3d_intersectTriangleFast(&rotatedRay, &rotatedIntersectionPoint, rotatedTrianglePoints))
+            {
+            rotationMatrix.Multiply(rotatedOriginalIntersectionPoint, intersection);
+            // rotating original intersection points gives rotated intersection points
+            Check::Near(
+                rotatedIntersectionPoint, 
+                rotatedOriginalIntersectionPoint, 
+                "rotating original intersection points gives rotated intersection points."
+            );
+            }
+        else
+            {
+            Check::Fail("rotating original intersection points gives rotated intersection points.");
+            }
+        }
+    else
+        {
+        Check::Fail("ray intersects triangle at a point.");
+        }
+    origin = DPoint3d::From(2, 0, -2);
+    direction = DVec3d::From(0, 0, 1);
+    ray = DRay3d::FromOriginAndVector(origin, direction);
+    expectedIntersection = DPoint3d::From(2, 0, 0);
+    if (bsiDRay3d_intersectTriangleFast(&ray, &intersection, trianglePoints))
+        {
+        // ray intersects triangle at a triangle vertex
+        Check::Near(intersection, expectedIntersection, "ray intersects triangle at a triangle vertex.");
+        rotationMatrix.Multiply(rotatedDirection, direction);
+        rotatedRay = DRay3d::FromOriginAndVector(origin, rotatedDirection);
+        rotationMatrix.Multiply(rotatedTrianglePoints[0], trianglePoints[0]);
+        rotationMatrix.Multiply(rotatedTrianglePoints[1], trianglePoints[1]);
+        rotationMatrix.Multiply(rotatedTrianglePoints[2], trianglePoints[2]);
+        
+        if (bsiDRay3d_intersectTriangleFast(&rotatedRay, &rotatedIntersectionPoint, rotatedTrianglePoints))
+            {
+            rotationMatrix.Multiply(rotatedOriginalIntersectionPoint, intersection);
+            // rotating original intersection points gives rotated intersection points
+            Check::Near(
+                rotatedIntersectionPoint,
+                rotatedOriginalIntersectionPoint,
+                "rotating original intersection points gives rotated intersection points."
+                );
+            }
+        else
+            {
+            Check::Fail("rotating original intersection points gives rotated intersection points.");
+            }
+        }
+    else
+        {
+        Check::Fail("ray intersects triangle at a triangle vertex.");
+        }
+    origin = DPoint3d::From(5, 0, -2);
+    direction = DVec3d::From(0, 0, 1);
+    ray = DRay3d::FromOriginAndVector(origin, direction);
+    expectedIntersection = DPoint3d::From(5, 0, 0);
+    if (bsiDRay3d_intersectTriangleFast(&ray, &intersection, trianglePoints))
+        {
+        // ray intersects triangle at a triangle edge
+        Check::Near(intersection, expectedIntersection, "ray intersects triangle at a triangle edge.");
+        rotationMatrix.Multiply(rotatedDirection, direction);
+        rotatedRay = DRay3d::FromOriginAndVector(origin, rotatedDirection);
+        
+        if (bsiDRay3d_intersectTriangleFast(&rotatedRay, &rotatedIntersectionPoint, rotatedTrianglePoints))
+            {
+            rotationMatrix.Multiply(rotatedOriginalIntersectionPoint, intersection);
+            // rotating original intersection points gives rotated intersection points
+            Check::Near(
+                rotatedIntersectionPoint, 
+                rotatedOriginalIntersectionPoint,
+                "rotating original intersection points gives rotated intersection points."
+            );
+            }
+        else
+            {
+            Check::Fail("rotating original intersection points gives rotated intersection points.");
+            }
+        }
+    else
+        {
+        Check::Fail("ray intersects triangle at a triangle edge.");
+        }
+    origin = DPoint3d::From(5, 0, -2);
+    direction = DVec3d::From(0, 0, 1);
+    ray = DRay3d::FromOriginAndVector(origin, direction);
+    trianglePoints[0] = DPoint3d::From(2, 0, 0);
+    trianglePoints[1] = DPoint3d::From(2, 0, 0);
+    trianglePoints[2] = DPoint3d::From(2, 10, 0);
+    Check::False(
+        bsiDRay3d_intersectTriangleFast(&ray, &intersection, trianglePoints),
+        "expect no intersection when we have a degenerate triangle with two equal vertexes."
+    );
+    origin = DPoint3d::From(5, 0, -2);
+    direction = DVec3d::From(0, 0, 1);
+    ray = DRay3d::FromOriginAndVector(origin, direction);
+    trianglePoints[0] = DPoint3d::From(2, 0, 0);
+    trianglePoints[1] = DPoint3d::From(2, 0, 0);
+    trianglePoints[2] = DPoint3d::From(2, 0, 0);
+    Check::False(
+        bsiDRay3d_intersectTriangleFast(&ray, &intersection, trianglePoints),
+        "expect no intersection when we have a degenerate triangle with three equal vertexes."
+    );
+    origin = DPoint3d::From(0, 0, 0);
+    direction = DVec3d::From(1, 1, 0);
+    ray = DRay3d::FromOriginAndVector(origin, direction);
+    trianglePoints[0] = DPoint3d::From(2, 0, 0);
+    trianglePoints[1] = DPoint3d::From(10, 0, 0);
+    trianglePoints[2] = DPoint3d::From(2, 10, 0);
+    Check::False(
+        bsiDRay3d_intersectTriangleFast(&ray, &intersection, trianglePoints),
+        "expect no intersection when ray and triangle are co-planer."
+    );
+    origin = DPoint3d::From(0, 0, 1);
+    direction = DVec3d::From(1, 1, 0);
+    ray = DRay3d::FromOriginAndVector(origin, direction);
+    Check::False(
+        bsiDRay3d_intersectTriangleFast(&ray, &intersection, trianglePoints),
+        "expect no intersection when ray and triangle are parallel."
+    );
+    origin = DPoint3d::From(0, 0, 0);
+    direction = DVec3d::From(0, 0, 0);
+    ray = DRay3d::FromOriginAndVector(origin, direction);
+    Check::False(
+        bsiDRay3d_intersectTriangleFast(&ray, &intersection, trianglePoints),
+        "expect no intersection when ray direction is (0,0,0)."
+    );
+    origin = DPoint3d::From(10, 0, 0);
+    direction = DVec3d::From(1, 1, 1);
+    ray = DRay3d::FromOriginAndVector(origin, direction);
+    Check::False(
+        bsiDRay3d_intersectTriangleFast(&ray, &intersection, trianglePoints),
+        "expect no intersection when ray intersects triangle at ray origin."
+    );
+    origin = DPoint3d::From(5, 5, 5);
+    direction = DVec3d::From(0, 0, 1);
+    ray = DRay3d::FromOriginAndVector(origin, direction);
+    Check::False(
+        bsiDRay3d_intersectTriangleFast(&ray, &intersection, trianglePoints),
+        "ray intersects triangle behind the ray origin."
+    );
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(DRay3d, IntersectTriangleAccuracyAndPerformance)
+    {
+    if (!Check::GetEnableLongTests())
+        return;
+    const int N = 1000; // N*N is the number of times we shoot a random ray to a random triangle
+    bool exitTheTest = false;
+    DPoint3d origin;
+    DVec3d direction;
+    DRay3d ray;
+    DPoint3d trianglePoints[3];
+    DPoint3d intersectionPointSlow;
+    DPoint3d intersectionPointFast;
+    DPoint3d barycentric;
+    double rayParameter;
+    bool slowRet = false;
+    bool fastRet = false;
+    int hits = 0;
+    long long timeBySlowFunction = 0;
+    long long timeByFastFunction = 0;
+    std::chrono::time_point<std::chrono::high_resolution_clock> start;
+    std::chrono::time_point<std::chrono::high_resolution_clock> stop;
+    DVec3d rotatedDirection;
+    DRay3d rotatedRay;
+    DPoint3d rotatedTrianglePoints[3];
+    DPoint3d rotatedIntersectionPoint;
+    DPoint3d rotatedOriginalIntersectionPoint;
+    RotMatrix rotationMatrix;
+    double angle = getRandomNumber();
+    DVec3d rotationAxis = DVec3d::From(getRandomNumber(), getRandomNumber(), getRandomNumber());
+    if (0 != rotationAxis.Magnitude())
+        {
+        rotationMatrix.InitIdentity();
+        }
+    else
+        {
+        rotationMatrix = RotMatrix::FromVectorAndRotationAngle(rotationAxis, angle);
+        }
+    for (int i = 0; i < N && !exitTheTest; i++)
+        for (int j = 0; j < N && !exitTheTest; j++)
+        {
+            origin = DPoint3d::From(getRandomNumber(), getRandomNumber(), getRandomNumber());
+            direction = DVec3d::From(getRandomNumber(), getRandomNumber(), getRandomNumber());
+            ray = DRay3d::FromOriginAndVector(origin, direction);
+            trianglePoints[0] = DPoint3d::From(getRandomNumber(), getRandomNumber(), getRandomNumber());
+            trianglePoints[1] = DPoint3d::From(getRandomNumber(), getRandomNumber(), getRandomNumber());
+            trianglePoints[2] = DPoint3d::From(getRandomNumber(), getRandomNumber(), getRandomNumber());
+            // shoot ray at triangle using bsiDRay3d_intersectTriangle
+            start = std::chrono::high_resolution_clock::now();
+            slowRet = bsiDRay3d_intersectTriangle(
+                &ray, &intersectionPointSlow, &barycentric, &rayParameter, trianglePoints
+            );
+            stop = std::chrono::high_resolution_clock::now();
+            timeBySlowFunction = timeBySlowFunction + std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start).count();
+            // shoot ray at triangle using bsiDRay3d_intersectTriangleFast
+            start = std::chrono::high_resolution_clock::now();
+            fastRet = bsiDRay3d_intersectTriangleFast(&ray, &intersectionPointFast, trianglePoints);
+            stop = std::chrono::high_resolution_clock::now();
+            timeByFastFunction = timeByFastFunction + std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start).count();
+            // if ray hits the triangle via bsiDRay3d_intersectTriangle
+            if (slowRet && rayParameter > 0 
+                && barycentric.x >= 0 && barycentric.x <= 1 
+                && barycentric.y >= 0 && barycentric.y <= 1 
+                && barycentric.z >= 0 && barycentric.z <= 1)
+                {
+                if (fastRet) // if ray hits the triangle via bsiDRay3d_intersectTriangleFast
+                    {
+                    Check::Near(
+                        intersectionPointSlow,
+                        intersectionPointFast,
+                        "intersection points calculated by slow and fast functions are equal."
+                    );
+                    hits++;
+                    rotationMatrix.Multiply(rotatedDirection, direction);
+                    rotatedRay = DRay3d::FromOriginAndVector(origin, rotatedDirection);
+                    rotationMatrix.Multiply(rotatedTrianglePoints[0], trianglePoints[0]);
+                    rotationMatrix.Multiply(rotatedTrianglePoints[1], trianglePoints[1]);
+                    rotationMatrix.Multiply(rotatedTrianglePoints[2], trianglePoints[2]);
+                    // shoot rotated ray at rotated triangle
+                    if (bsiDRay3d_intersectTriangleFast(&rotatedRay, &rotatedIntersectionPoint, rotatedTrianglePoints))
+                        {
+                        rotationMatrix.Multiply(rotatedOriginalIntersectionPoint, intersectionPointFast);
+                        Check::Near(
+                            rotatedOriginalIntersectionPoint,
+                            rotatedIntersectionPoint,
+                            "rotating original intersection points gives rotated intersection points."
+                        );
+                        }
+                    else
+                        {
+                        Check::Fail("rated ray hits rotated triangle while original ray did not hit original triangle.");
+                        exitTheTest = true;
+                        }
+                    }
+                else
+                    {
+                    Check::Fail("slow function reported ray intersection while fast function did not.");
+                    exitTheTest = true;
+                    }   
+                }
+            else
+                if (fastRet)
+                    {
+                    Check::Fail("fast function reported ray intersection while slow function did not.");
+                    exitTheTest = true;
+                    }
+            }
+    if (!exitTheTest)
+        {
+        printf("%i intersections happened out of %i shoots \n", hits, N * N);
+        printf("Calls to bsiDRay3d_intersectTriangle     took %llu nanoseconds \n", timeBySlowFunction);
+        printf("Calls to bsiDRay3d_intersectTriangleFast took %llu nanoseconds \n", timeByFastFunction);
+        }
     }
