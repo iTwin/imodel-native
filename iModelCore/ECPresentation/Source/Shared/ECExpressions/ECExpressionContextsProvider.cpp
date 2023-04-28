@@ -70,7 +70,7 @@ private:
             }
 
         size_t guidSize = sizeof(BeGuid);
-        const BeGuid* guid = (const BeGuid*)arg.GetECValue()->GetBinary(guidSize);
+        BeGuidCP guid = (BeGuidCP)arg.GetECValue()->GetBinary(guidSize);
 
         evalResult.InitECValue().SetUtf8CP(guid->ToString().c_str(), true);
         return ExpressionStatus::Success;
@@ -196,7 +196,7 @@ public:
         }
     ExpressionContextPtr _GetContext() override
         {
-        if (nullptr != m_instanceContext.get())
+        if (m_instanceContext.IsValid())
             return m_instanceContext;
 
         ECInstancesNodeKey const* key = m_node->GetKey()->AsECInstanceNodeKey();

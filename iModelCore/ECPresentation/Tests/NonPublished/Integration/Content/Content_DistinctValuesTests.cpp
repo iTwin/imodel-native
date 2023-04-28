@@ -518,15 +518,15 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctGuidValues)
     BeGuid instanceGuid2 = RulesEngineTestHelpers::CreateGuidFromString("814f3e14-63f2-4511-89a8-43ff3b527492");
     IECInstancePtr a1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [instanceGuid1](IECInstanceR instance)
         {
-        instance.SetValue("Prop", ECValue((Byte*)&instanceGuid1, sizeof(BeGuid))); 
+        instance.SetValue("Prop", ECValue((const Byte*)&instanceGuid1, sizeof(BeGuid)));
         });
     IECInstancePtr a2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [instanceGuid1](IECInstanceR instance)
         {
-        instance.SetValue("Prop", ECValue((Byte*)&instanceGuid1, sizeof(BeGuid))); 
+        instance.SetValue("Prop", ECValue((const Byte*)&instanceGuid1, sizeof(BeGuid)));
         });
     IECInstancePtr a3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [instanceGuid2](IECInstanceR instance)
         {
-        instance.SetValue("Prop", ECValue((Byte*)&instanceGuid2, sizeof(BeGuid))); 
+        instance.SetValue("Prop", ECValue((const Byte*)&instanceGuid2, sizeof(BeGuid)));
         });
 
     // create the rule set

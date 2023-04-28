@@ -967,12 +967,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DescriptorOverride_FiltersB
     BeGuid instanceGuid1 = BeGuid(true);
     IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [instanceGuid1](IECInstanceR instance) 
         {
-        instance.SetValue("GuidProp", ECValue((Byte*)&instanceGuid1, sizeof(BeGuid)));
+        instance.SetValue("GuidProp", ECValue((const Byte*)&instanceGuid1, sizeof(BeGuid)));
         });
     BeGuid instanceGuid2 = BeGuid(true);
     IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [instanceGuid2](IECInstanceR instance)
         {
-        instance.SetValue("GuidProp", ECValue((Byte*)&instanceGuid2, sizeof(BeGuid)));
+        instance.SetValue("GuidProp", ECValue((const Byte*)&instanceGuid2, sizeof(BeGuid)));
         });
     KeySetPtr input = KeySet::Create(bvector<IECInstancePtr>{instance1, instance2});
 
@@ -1153,12 +1153,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     BeGuid instanceGuid1 = RulesEngineTestHelpers::CreateGuidFromString("182238d2-e836-4640-9b40-38be6ca49623");
     IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [instanceGuid1](IECInstanceR instance)
         {
-        instance.SetValue("GuidProp", ECValue((Byte*)&instanceGuid1, sizeof(BeGuid)));
+        instance.SetValue("GuidProp", ECValue((const Byte*)&instanceGuid1, sizeof(BeGuid)));
         });
     BeGuid instanceGuid2 = RulesEngineTestHelpers::CreateGuidFromString("814f3e14-63f2-4511-89a8-43ff3b527492");
     IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [instanceGuid2](IECInstanceR instance)
         {
-        instance.SetValue("GuidProp", ECValue((Byte*)&instanceGuid2, sizeof(BeGuid)));
+        instance.SetValue("GuidProp", ECValue((const Byte*)&instanceGuid2, sizeof(BeGuid)));
         });
     KeySetPtr input = KeySet::Create(bvector<IECInstancePtr>{instance1, instance2});
 
@@ -9841,7 +9841,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsGuidPropertyValue)
     BeGuid instanceGuid = RulesEngineTestHelpers::CreateGuidFromString("182238d2-e836-4640-9b40-38be6ca49623");
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [instanceGuid](IECInstanceR instance)
         {
-        instance.SetValue("GuidProperty", ECValue((Byte*)&instanceGuid, sizeof(BeGuid)));
+        instance.SetValue("GuidProperty", ECValue((const Byte*)&instanceGuid, sizeof(BeGuid)));
         });
 
     // create the rule set
@@ -9905,8 +9905,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsGuidArrayPropertyValue
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [instanceGuid1, instanceGuid2](IECInstanceR instance)
         {
         instance.AddArrayElements("GuidsArrayProperty", 2);
-        instance.SetValue("GuidsArrayProperty", ECValue((Byte*)&instanceGuid1, sizeof(BeGuid)), 0);
-        instance.SetValue("GuidsArrayProperty", ECValue((Byte*)&instanceGuid2, sizeof(BeGuid)), 1);
+        instance.SetValue("GuidsArrayProperty", ECValue((const Byte*)&instanceGuid1, sizeof(BeGuid)), 0);
+        instance.SetValue("GuidsArrayProperty", ECValue((const Byte*)&instanceGuid2, sizeof(BeGuid)), 1);
         });
 
     // create the rule set
@@ -14807,8 +14807,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, AppliesContentItemExtendedD
     BeGuid guid = RulesEngineTestHelpers::CreateGuidFromString("182238d2-e836-4640-9b40-38be6ca49623");
     IECInstancePtr element1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass1, [guid](IECInstanceR instance)
         {
-        instance.SetValue("CodeValue", ECValue("test value")); 
-        instance.SetValue("Guid", ECValue((Byte*)&guid, sizeof(BeGuid)));
+        instance.SetValue("CodeValue", ECValue("test value"));
+        instance.SetValue("Guid", ECValue((const Byte*)&guid, sizeof(BeGuid)));
         });
     IECInstancePtr element2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass2);
 

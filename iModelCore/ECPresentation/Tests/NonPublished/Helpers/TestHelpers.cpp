@@ -468,7 +468,7 @@ static void AssertInstanceValueValid(IECInstanceCR instance, RapidJsonValueCR va
     if (instanceValue.IsBinary() && property->GetIsPrimitive() && property->GetAsPrimitiveProperty()->GetExtendedTypeName() == EXTENDED_TYPENAME_BeGuid)
         {
         size_t sizeOfGuid = sizeof(BeGuid);
-        BeGuid* guid = (BeGuid*)instanceValue.GetBinary(sizeOfGuid);
+        BeGuidCP guid = (BeGuidCP)instanceValue.GetBinary(sizeOfGuid);
         EXPECT_EQ(guid->ToString(), value.GetString());
         }
     else 
