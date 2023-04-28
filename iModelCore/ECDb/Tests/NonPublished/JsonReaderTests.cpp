@@ -252,7 +252,7 @@ struct JsonECSqlSelectAdapterTests : public ECDbTestFixture {};
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonECSqlSelectAdapterTests, RepreparedStatements)
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("RepreparedStatements.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("RepreparedStatements.ecdb"));
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM meta.ECSchemaDef LIMIT 1"));
@@ -284,7 +284,7 @@ TEST_F(JsonECSqlSelectAdapterTests, RepreparedStatements)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonECSqlSelectAdapterTests, JsonMemberNames)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("JsonMemberNamesInJsonECSqlSelectAdapter.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("JsonMemberNamesInJsonECSqlSelectAdapter.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     ECClassId relClassId = m_ecdb.Schemas().GetClassId("ECSqlTest", "PSAHasP_N1");
     ASSERT_TRUE(relClassId.IsValid());
@@ -405,7 +405,7 @@ TEST_F(JsonECSqlSelectAdapterTests, JsonMemberNames)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonECSqlSelectAdapterTests, GetRowInstanceAndDuplicateMemberNames)
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("JsonECSqlSelectAdapterTests_GetRowInstanceAndDuplicateMemberNames.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("JsonECSqlSelectAdapterTests_GetRowInstanceAndDuplicateMemberNames.ecdb"));
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT s.ECInstanceId, c.ECInstanceId, c.Schema.Id id, c.Name, s.ECClassId, s.Name, s.ECClassId FROM meta.ECSchemaDef s JOIN meta.ECClassDef c ON c.Schema.Id=s.ECInstanceId"));
@@ -474,7 +474,7 @@ TEST_F(JsonECSqlSelectAdapterTests, GetRowInstanceAndDuplicateMemberNames)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonECSqlSelectAdapterTests, AppendToJson)
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("JsonECSqlSelectAdapterTests_AppendToJson.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("JsonECSqlSelectAdapterTests_AppendToJson.ecdb"));
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, Name, Type, Modifier FROM meta.ECClassDef LIMIT 1"));
@@ -545,7 +545,7 @@ TEST_F(JsonECSqlSelectAdapterTests, AppendToJson)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonECSqlSelectAdapterTests, SpecialSelectClauseItems)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("SpecialSelectClauseItemsInJsonECSqlSelectAdapter.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("SpecialSelectClauseItemsInJsonECSqlSelectAdapter.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
                                                                         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                                                             <ECStructClass typeName="MyStruct" >
                                                                                 <ECProperty propertyName="SomeNumber" typeName="int" />
@@ -820,7 +820,7 @@ TEST_F(JsonECSqlSelectAdapterTests, SpecialSelectClauseItems)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonECSqlSelectAdapterTests, ReservedWordsCollisions)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("jsonecsqlselectadapter_ReservedWordsCollisions.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("jsonecsqlselectadapter_ReservedWordsCollisions.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
                                                                         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                                                             <ECEntityClass typeName="Foo" >
                                                                                 <ECProperty propertyName="className" typeName="string" />
@@ -1103,7 +1103,7 @@ TEST_F(JsonECSqlSelectAdapterTests, ReservedWordsCollisions)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonECSqlSelectAdapterTests, DataTypes)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("jsonecsqlselectadapter_datatypes.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("jsonecsqlselectadapter_datatypes.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
                                                                         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                                                             <ECStructClass typeName="Person" >
                                                                                 <ECProperty propertyName="Name" typeName="string" />
@@ -1324,7 +1324,7 @@ TEST_F(JsonECSqlSelectAdapterTests, DataTypes)
 
     TEST_F(JsonECSqlSelectAdapterTests, AbbreviateBlobs)
         {
-        ASSERT_EQ(SUCCESS, SetupECDb("jsonecsqlselectadapter_datatypes.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("jsonecsqlselectadapter_datatypes.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
                                                                         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                                                             <ECEntityClass typeName="Foo" >
                                                                                 <ECProperty propertyName="Bi" typeName="binary" />
@@ -1472,7 +1472,7 @@ TEST_F(JsonECSqlSelectAdapterTests, DataTypes)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonECSqlSelectAdapterTests, LongDataType)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("jsonecsqlselectadapter_longtype.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("jsonecsqlselectadapter_longtype.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
                                                     <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                                         <ECEntityClass typeName="Foo" >
                                                             <ECProperty propertyName="L" typeName="long" />
@@ -1527,7 +1527,7 @@ TEST_F(JsonECSqlSelectAdapterTests, LongDataType)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonECSqlSelectAdapterTests, JsonStructAndArrays)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("jsonecsqlselectadapter_JsonStruct.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("jsonecsqlselectadapter_JsonStruct.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
                                                     <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                                         <ECStructClass typeName="MyStruct" >
                                                             <ECProperty propertyName="Alpha" typeName="int" />
@@ -1614,7 +1614,7 @@ struct JsonReaderTests : public ECDbTestFixture {};
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonReaderTests, PartialPoints)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("jsonreaderpartialpoints.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("jsonreaderpartialpoints.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ecsql.PSA(P2D.X,P3D.Y,PStructProp.p2d.y,PStructProp.p3d.z) VALUES(1.0, 2.0, 3.0, 4.0)"));
@@ -1758,7 +1758,7 @@ TEST_F(JsonReaderTests, PartialPoints)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonReaderTests, RoundTrip_ReadThenInsert)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("jsonroundtrip_readtheninsert.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("jsonroundtrip_readtheninsert.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     ECInstanceKey pKey;
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(pKey, "INSERT INTO ecsql.P(ECInstanceId) VALUES(NULL)"));

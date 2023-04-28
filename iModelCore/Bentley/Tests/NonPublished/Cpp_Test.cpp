@@ -705,12 +705,12 @@ void test_explicitConversionOperator ()
 #else
     void test_u8StringLiterals ()
         {
-        Utf8CP  utf8    = u8"This is a Unicode Character: \u2018.";
+        Utf8Chars utf8(u8"This is a Unicode Character: \u2018.");
         /*Utf16CP*/char16_t const* utf16   = u"This is a bigger Unicode Character: \u2018.";
         /*WCharCP*/char32_t const* utf32   = U"This is a Unicode Character: \u2018.";
         // *** TBD: tests
         
-    printf ("%s\n", utf8);
+    printf ("%s\n", &utf8);
     if (utf16 == NULL)
         printf ("why?");
     if (utf32 == NULL)

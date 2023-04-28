@@ -279,7 +279,7 @@ TEST_F(ReportedIssuesTestFixture, VerticalPartitionShouldNeverIncludeOverflowTab
     </ECSchema>)xml");
 
     BeFileName filePath(R"(D:\temp\final2.ecdb)");
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("union_err.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("union_err.ecdb"));
     ASSERT_EQ(SUCCESS, ImportSchemas({bisCore,functional,processFunctional}, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
 
     ECSqlStatement stmt;

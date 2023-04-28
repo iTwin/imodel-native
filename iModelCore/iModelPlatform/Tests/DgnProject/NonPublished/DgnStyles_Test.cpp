@@ -330,7 +330,7 @@ TEST_F(DgnLineStyleTest, InsertRasterComponentAsJson)
     jsonValue["flags"] = 12;
     jsonValue["trueWidth"] = 100;
     LsComponentId componentId(LsComponentType::RasterImage, 7);
-    EXPECT_TRUE(BSISUCCESS == LsComponent::AddRasterComponentAsJson(componentId, *project, jsonValue, image.GetByteStream().GetData(), image.GetByteStream().GetSize()));
+    EXPECT_TRUE(LINESTYLE_STATUS_Success == LsComponent::AddRasterComponentAsJson(componentId, *project, jsonValue, image.GetByteStream().GetData(), image.GetByteStream().GetSize()));
 
     // Add new line style
     DgnLineStyles& styleTable = project->LineStyles();

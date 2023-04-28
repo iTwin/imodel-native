@@ -46,7 +46,7 @@ TEST_F(ECDbTestFixture, Profile)
 
     //now create an ECDb file
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("ecdbprofiletest.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("ecdbprofiletest.ecdb"));
 
     EXPECT_TRUE(GetHelper().TableExists(PROFILE_TABLE)) << "ECDb profile table not found in ECDb file which was newly created.";
 
@@ -68,7 +68,7 @@ TEST_F(ECDbTestFixture, Profile)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbTestFixture, ProfileSchemas)
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("empty.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("empty.ecdb"));
 
     ECSchemaCP systemSchema = m_ecdb.Schemas().GetSchema("ECDbSystem");
     ASSERT_TRUE(systemSchema != nullptr);
@@ -108,7 +108,7 @@ TEST_F(ECDbTestFixture, GetECDbProfileVersion)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbTestFixture, CreateProfileFailsIfAlreadyCreated)
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("ecdbprofiletest2.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("ecdbprofiletest2.ecdb"));
 
     EXPECT_TRUE(GetHelper().TableExists(PROFILE_TABLE)) << "ECDb profile table not found in ECDb file which was newly created.";
 
@@ -235,7 +235,7 @@ TEST_F(ECDbTestFixture, CheckECDbProfileVersion)
         ASSERT_EQ(BE_SQLITE_OK, db.SaveChanges()) << versionStr;
         };
 
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("ecdbprofiletest.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("ecdbprofiletest.ecdb"));
     BeFileName filePath(m_ecdb.GetDbFileName());
     CloseECDb();
 
@@ -326,7 +326,7 @@ TEST_F(ECDbTestFixture, ImportSchemaByProfileVersion)
         ASSERT_EQ(BE_SQLITE_OK, db.SaveChanges()) << versionStr;
         };
 
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("ecdbprofileschemaimporttest.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("ecdbprofileschemaimporttest.ecdb"));
     BeFileName filePath(m_ecdb.GetDbFileName());
     CloseECDb();
 

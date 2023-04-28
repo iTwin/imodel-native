@@ -143,7 +143,7 @@ TEST_F(ECDbTestFixture, Settings)
         SchemaImportToken const* GetImportToken() const { return GetECDbSettingsManager().GetSchemaImportToken(); }
         };
 
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("settings.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("settings.ecdb"));
     BeFileName testFilePath(m_ecdb.GetDbFileName());
     CloseECDb();
 
@@ -250,7 +250,7 @@ TEST_F(ECDbTestFixture, TwoConnections)
     {
     BeFileName testECDbPath;
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("twoConnections.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("twoConnections.ecdb"));
     testECDbPath = BeFileName(m_ecdb.GetDbFileName());
     m_ecdb.CloseDb();
     }
@@ -337,7 +337,7 @@ TEST_F(ECDbTestFixture, TwoConnectionsWithBusyRetryHandler)
     {
     BeFileName testECDbPath;
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("twoConnectionsWithBusyRetryHandler.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("twoConnectionsWithBusyRetryHandler.ecdb"));
     testECDbPath = BeFileName(m_ecdb.GetDbFileName());
     m_ecdb.CloseDb();
     }
@@ -413,7 +413,7 @@ TEST_F(ECDbTestFixture, ResetInstanceIdSequence)
             }
         };
 
-    ASSERT_EQ(SUCCESS, SetupECDb("ResetInstanceIdSequence.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ResetInstanceIdSequence.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
                                                                         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                                                             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                                                                             <ECEntityClass typeName="A" >
@@ -471,11 +471,11 @@ TEST_F(ECDbTestFixture, ResetInstanceIdSequence)
     std::map<uint32_t, uint64_t> sequenceValuesPerBriefcase {{masterBriefcaseId.GetValue(), 0},
                                         {briefcaseAId.GetValue(), 0}, {briefcaseBId.GetValue(), 0}};
 
-    ASSERT_EQ(BE_SQLITE_OK, PopulateECDb(5));
+    ASSERT_EQ(BentleyStatus::SUCCESS, PopulateECDb(5));
     sequenceValuesPerBriefcase[masterBriefcaseId.GetValue()] = UINT64_C(40);
 
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ResetBriefcaseId(briefcaseAId));
-    ASSERT_EQ(BE_SQLITE_OK, PopulateECDb(5));
+    ASSERT_EQ(BentleyStatus::SUCCESS, PopulateECDb(5));
     sequenceValuesPerBriefcase[briefcaseAId.GetValue()] = UINT64_C(40);
 
     m_ecdb.CloseDb();
@@ -500,7 +500,7 @@ TEST_F(ECDbTestFixture, ResetInstanceIdSequence)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbTestFixture, GetAndAssignBriefcaseIdForDb)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecdbbriefcaseIdtest.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecdbbriefcaseIdtest.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
 
     BeBriefcaseId id = m_ecdb.GetBriefcaseId();
     ASSERT_TRUE(id.IsValid());
@@ -515,7 +515,7 @@ TEST_F(ECDbTestFixture, GetAndAssignBriefcaseIdForDb)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbTestFixture, GetAndChangeGUIDForDb)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecdbbriefcaseIdtest.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecdbbriefcaseIdtest.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
 
     BeGuid guid = m_ecdb.GetDbGuid();
     ASSERT_TRUE(guid.IsValid());
@@ -556,7 +556,7 @@ TEST_F(ECDbTestFixture, CurrentECDbProfileVersion)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbTestFixture, NewFileECDbProfileVersion)
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("newFile.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("newFile.ecdb"));
     ProfileVersion expectedVersion (4, 0, 0, 3);
     ASSERT_EQ(m_ecdb.GetECDbProfileVersion(), expectedVersion);
     }
@@ -576,7 +576,7 @@ class IssueListener : public ECN::IIssueListener
 TEST_F(ECDbTestFixture, TestGreatestAndLeastFunctionsWithLiterals)
     {
     IssueListener listener;
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("newFile.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("newFile.ecdb"));
     m_ecdb.AddIssueListener(listener);
 
     // Test DQL statements
@@ -688,7 +688,7 @@ TEST_F(ECDbTestFixture, TestGreatestAndLeastFunctionsWithLiterals)
 
 TEST_F(ECDbTestFixture, TestGreatestAndLeastFunctionsDQLAndDML)
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("newFile.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("newFile.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?> "
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"

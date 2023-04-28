@@ -78,7 +78,7 @@ class Random {
  private:
   template <class RNG>
   using ValidRNG = typename std::enable_if<
-      std::is_unsigned<typename std::result_of<RNG&()>::type>::value,
+      std::is_unsigned<typename std::invoke_result<RNG&>::type>::value,
       RNG>::type;
 
  public:
