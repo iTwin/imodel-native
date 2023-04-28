@@ -351,7 +351,7 @@ $(o)mqtt$(oext) : $(BeCurlLibDir)mqtt.c ${MultiCompileDepends}
 
 $(o)keylog$(oext) : $(BeCurlLibDir)vtls/keylog.c ${MultiCompileDepends}
 
-$(o)vquic$(oext) : $(BeCurlLibDir)vquic\vquic.c ${MultiCompileDepends}
+$(o)vquic$(oext) : $(BeCurlLibDir)vquic/vquic.c ${MultiCompileDepends}
 
 %if $(TARGET_PLATFORM) != "Windows" && $(TARGET_PLATFORM) != "iOS" && $(TARGET_PLATFORM) != "Android"
 
