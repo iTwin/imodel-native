@@ -398,9 +398,6 @@ double          radius
     }
 
 
-
-
-
 /*---------------------------------------------------------------------------------**//**
 * @description Compute (simple) intersection of a line and a triangle.
 *
@@ -456,6 +453,87 @@ DPoint3dCP    pTriangleXYZ
         result = true;
         }
     return result;
+    }
+
+/*---------------------------------------------------------------------------------**/
+/**
+* @description Compute (simple) intersection of a ray and a triangle.
+*
+* @remarks Tolerances work best when scaled by the size of the input coordinates. Best practice is for callers to
+* precompute the distance tolerance once, and then pass this distance tol into all subsequent invocations of this
+* method. Callers do not have to do this for the parameter tolerance, as this is unitless.
+*
+* @param pRay           IN      ray with which to intersect triangle
+* @param pXYZ           OUT     point of intersection
+* @param pTriangleXYZ   IN      array of 3 triangle vertex coords
+* @param distanceTol    IN      distance tolerance used to check if ray is parallel to the triangle or if we have
+* line intersection but not ray intersection. If negative or not given, defaults to 1.0e-5.
+* @param parameterTol   IN      parameter tolerance.  used to check if ray is parallel to the triangle or if we
+* have line intersection but not ray intersection. If negative or not given, defaults to 1.0e-15.
+* @return true if intersection computed. false if ray does not intersect the triangle or intersects behind ray origin.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool bsiDRay3d_intersectTriangleFast
+
+(
+    DRay3dCP pRay,
+    DPoint3dP pXYZ,
+    DPoint3dCP pTriangleXYZ,
+    double distanceTol,
+    double parameterTol
+)
+    {
+    DVec3d edge1, edge2, s, h, q;
+    if (distanceTol < 0) // we explicitly allow zero tolerance
+        distanceTol = 1.0e-5;
+    if (parameterTol < 0) // we explicitly allow zero tolerance
+        parameterTol = 1.0e-15;
+    edge1.DifferenceOf(pTriangleXYZ[1], pTriangleXYZ[0]);
+    edge2.DifferenceOf(pTriangleXYZ[2], pTriangleXYZ[0]);
+    h.CrossProduct(pRay->direction, edge2);
+    double a = edge1.DotProduct(h);
+    if (a >= -distanceTol && a <= distanceTol)
+        return false; // ray is parallel to the triangle (includes coplanar case)
+    double f = 1.0 / a;
+    s.DifferenceOf(pRay->origin, pTriangleXYZ[0]);
+    double u = f * s.DotProduct(h);
+    if (u < 0.0)
+    {
+        if (u > -parameterTol)
+            u = 0.0;
+        else
+            return false; // ray does not intersect the triangle
+    }
+    else if (u > 1.0)
+    {
+        if (u < 1.0 + parameterTol)
+            u = 1.0;
+        else
+            return false; // ray does not intersect the triangle
+    }
+    q.CrossProduct(s, edge1);
+    double v = f * pRay->direction.DotProduct(q);
+    if (v < 0.0)
+    {
+        if (v > -parameterTol)
+            v = 0.0;
+        else
+            return false; // ray does not intersect the triangle
+    }
+    else if (u + v > 1.0)
+    {
+        if (u + v < 1.0 + parameterTol)
+            v = 1.0 - u;
+        else
+            return false; // ray does not intersect the triangle
+    }
+    // at this stage, we know the line (parameterized as the ray) intersects the triangle
+    double t = f * edge2.DotProduct(q);
+    if (t <= distanceTol) // line intersection but not ray intersection
+        return false;
+    if (pXYZ)
+        pXYZ->SumOf(pRay->origin, pRay->direction, t); // ray intersection
+    return true;
     }
 
 END_BENTLEY_GEOMETRY_NAMESPACE

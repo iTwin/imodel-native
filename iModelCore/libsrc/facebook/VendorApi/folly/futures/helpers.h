@@ -94,16 +94,16 @@ Future<Unit> makeFuture();
 
 // makeFutureWith(Future<T>()) -> Future<T>
 template <class F>
-typename std::enable_if<isFuture<typename std::result_of<F()>::type>::value,
-                        typename std::result_of<F()>::type>::type
+typename std::enable_if<isFuture<typename std::invoke_result<F>::type>::value,
+                        typename std::invoke_result<F>::type>::type
 makeFutureWith(F&& func);
 
 // makeFutureWith(T()) -> Future<T>
 // makeFutureWith(void()) -> Future<Unit>
 template <class F>
 typename std::enable_if<
-    !(isFuture<typename std::result_of<F()>::type>::value),
-    Future<typename Unit::Lift<typename std::result_of<F()>::type>::type>>::type
+    !(isFuture<typename std::invoke_result<F>::type>::value),
+    Future<typename Unit::Lift<typename std::invoke_result<F>::type>::type>>::type
 makeFutureWith(F&& func);
 
 /// Make a failed Future from an exception_ptr.
@@ -265,7 +265,7 @@ using MaybeTryArg = typename std::conditional<
   detail::callableWith<F, T&&, Try<ItT>&&>::value, Try<ItT>, ItT>::type;
 
 template<typename F, typename T, typename Arg>
-using isFutureResult = isFuture<typename std::result_of<F(T&&, Arg&&)>::type>;
+using isFutureResult = isFuture<typename std::invoke_result<F, T&&, Arg&&>::type>;
 
 /** repeatedly calls func on every result, e.g.
     reduce(reduce(reduce(T initial, result of first), result of second), ...)
@@ -348,7 +348,7 @@ namespace futures {
  *  Cancellation is not supported.
  */
 template <class Policy, class FF>
-typename std::result_of<FF(size_t)>::type
+typename std::invoke_result<FF, size_t>::type
 retrying(Policy&& p, FF&& ff);
 
 /**

@@ -149,7 +149,7 @@ struct ThreadSafetyTests : public ECDbTestFixture  {};
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ThreadSafetyTests, MultipleThreadsSingleConnection)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("StartupCompany.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("StartupCompany.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
     ECInstanceKey acmeKey, bentleyKey, vwKey;
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(acmeKey, "INSERT INTO stco.Company(Name,NumberOfEmployees) VALUES('ACME', 123)"));
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(bentleyKey,"INSERT INTO stco.Company(Name,NumberOfEmployees) VALUES('Bentley', 4000)"));
@@ -213,7 +213,7 @@ TEST_F(ThreadSafetyTests, MultipleThreadsSingleConnection)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ThreadSafetyTests, MultipleThreadsSingleConnection_FailingGetClass)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ForwardCompatibilitySafeguards.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ForwardCompatibilitySafeguards.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECEntityClass typeName="A">
@@ -258,7 +258,7 @@ TEST_F(ThreadSafetyTests, MultipleThreadsSingleConnection_FailingGetClass)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ThreadSafetyTests, ConnectionPerThread_ECSQL)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("StartupCompany.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("StartupCompany.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
     ECInstanceKey acmeKey, bentleyKey, vwKey;
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(acmeKey, "INSERT INTO stco.Company(Name,NumberOfEmployees) VALUES('ACME', 123)"));
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(bentleyKey, "INSERT INTO stco.Company(Name,NumberOfEmployees) VALUES('Bentley', 4000)"));
@@ -328,7 +328,7 @@ TEST_F(ThreadSafetyTests, ConnectionPerThread_ECSQL)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ThreadSafetyTests, ConnectionPerThread_SQL)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("StartupCompany.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("StartupCompany.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
     BeFileName ecdbFileName(m_ecdb.GetDbFileName());
 
     ECInstanceKey acmeKey, bentleyKey, vwKey;

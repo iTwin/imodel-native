@@ -258,7 +258,7 @@ struct PerformanceQueryTests : public PopulateKitchenSinkDb
     public:
         void ConnectToDb()
             {
-            ASSERT_EQ(SUCCESS, SetupECDb("KitchenSinkDbWithInstances.ecdb", SchemaItem::CreateForFile("KitchenSink.01.00.00.ecschema.xml")));
+            ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("KitchenSinkDbWithInstances.ecdb", SchemaItem::CreateForFile("KitchenSink.01.00.00.ecschema.xml")));
             PopulateDb();
             }
 

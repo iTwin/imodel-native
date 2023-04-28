@@ -18,7 +18,7 @@ struct PerformanceECInstanceECSqlSelectAdapterTests : public ECDbTestFixture
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceECInstanceECSqlSelectAdapterTests, Constructor)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("performanceecinstanceecsqlselectadapter.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("performanceecinstanceecsqlselectadapter.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
     ASSERT_EQ(SUCCESS, PopulateECDb(10));
 
     auto assertCtor = [] (ECDbCR ecdb, Utf8CP ecsql, int opCount)

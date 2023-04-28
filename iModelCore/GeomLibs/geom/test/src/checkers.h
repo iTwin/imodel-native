@@ -94,10 +94,12 @@ enum class FailureMode
     Count
     };
 
+private: static const bool s_enableLongTests = false;
 private: static int s_failureCount;
 private: static FailureMode s_failureMode;
 public:
 static int GetMaxVolume (){return s_maxVolume;}
+static bool GetEnableLongTests() {return s_enableLongTests;}
 // Large numbers make more output
 // bvector output goes on at 10
 // restricted output of large structure (vu, mesh) goes on at 20

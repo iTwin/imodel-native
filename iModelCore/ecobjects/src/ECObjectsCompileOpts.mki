@@ -2,7 +2,7 @@
 #  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 #  See LICENSE.md in the repository root for full copyright notice.
 #---------------------------------------------------------------------------------------------
-BUILD_WITH_C17=1
+BUILD_WITH_C20=1
 
 nameToDefine    = __ECOBJECTS_BUILD__
 %include cdefapnd.mki

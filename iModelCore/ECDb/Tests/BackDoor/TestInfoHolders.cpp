@@ -124,7 +124,15 @@ Column const& Table::GetColumn(Utf8StringCR name) const
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-bool operator==(Table::Type lhs, Nullable<Table::Type> rhs) { return rhs == lhs; }
+bool operator==(Table::Type lhs, Nullable<Table::Type> rhs) {
+    //Note: a simple rhs == lhs won't work here, since the comparison could be reordered in c++20 to lhs == rhs, which would be recursive.
+
+    if (!rhs.IsValid()) {
+        return false;
+    }
+
+    return rhs.Value() == lhs;
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
