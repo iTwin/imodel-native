@@ -57,12 +57,12 @@ DerivedPropertyExp::DerivedPropertyExp(std::unique_ptr<ValueExp> valueExp, Utf8C
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-bool DerivedPropertyExp::IsComputed() const 
+bool DerivedPropertyExp::IsComputed() const
     {
     if (GetExpression()->GetType() == Exp::Type::PropertyName)
         {
         PropertyNameExp const& propertyNameExp = GetExpression()->GetAs<PropertyNameExp>();
-        if (propertyNameExp.IsPropertyRef()) 
+        if (propertyNameExp.IsPropertyRef())
             {
             return propertyNameExp.GetPropertyRef()->IsComputedExp();
             }
@@ -138,6 +138,26 @@ void DerivedPropertyExp::_ToECSql(ECSqlRenderContext& ctx) const
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+ExtractPropertyValueExp const* DerivedPropertyExp::TryGetExtractPropExp() const {
+    const Exp* exp = GetExpression();
+    while(exp) {
+        if (exp->GetType() == Exp::Type::ExtractProperty)
+            return exp->GetAsCP<ExtractPropertyValueExp>();
+        if (exp->GetType() == Exp::Type::PropertyName) {
+            auto prop = exp->GetAsCP<PropertyNameExp>();
+            if (!prop->IsPropertyRef())
+                return nullptr;
+            exp = prop->GetPropertyRef()->GetEndPointDerivedProperty().GetExpression();
+        } else if (exp->GetChildrenCount() == 1)
+            exp = exp->GetChildren()[0];
+        else
+            return nullptr;
+    }
+    return (ExtractPropertyValueExp const*)exp;
+}
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 bool DerivedPropertyExp::IsWildCard() const {
     if (GetExpression()->GetType() == Exp::Type::PropertyName) {
         return GetExpression()->GetAsCP<PropertyNameExp>()->IsWildCard();
@@ -194,7 +214,7 @@ void FromExp::FindRangeClassRefs(std::vector<RangeClassInfo>& classRefs, ClassRe
             case Type::ClassName:
             case Type::SubqueryRef:
             case Type::CommonTableBlockName: {
-                classRefs.push_back(RangeClassInfo(classRef.GetAs<RangeClassRefExp>(), scope)); 
+                classRefs.push_back(RangeClassInfo(classRef.GetAs<RangeClassRefExp>(), scope));
                 break;
             }
             case Type::QualifiedJoin:
@@ -284,7 +304,7 @@ std::vector<RangeClassInfo> FromExp::FindRangeClassRefExpressions() const
     Exp const* old = this;
     bool isTableSubQuery = isSubQuery(*old, cur);
     while (cur != nullptr && !isTableSubQuery)
-        {        
+        {
         old = cur;
         parent = cur->FindParent(Exp::Type::SingleSelect);
         cur = parent == nullptr ? nullptr : parent->GetAsCP<SingleSelectStatementExp>();
@@ -474,7 +494,7 @@ ComputedExp const* OrderByExp::FindIncompatibleOrderBySpecExpForUnion() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-Exp::FinalizeParseStatus OrderByExp::_FinalizeParsing(ECSqlParseContext& parseContext, FinalizeParseMode parseMode) 
+Exp::FinalizeParseStatus OrderByExp::_FinalizeParsing(ECSqlParseContext& parseContext, FinalizeParseMode parseMode)
     {
     if (parseMode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
         {
@@ -517,7 +537,7 @@ Exp::FinalizeParseStatus OrderByExp::_FinalizeParsing(ECSqlParseContext& parseCo
             }
         }
 
-    return FinalizeParseStatus::Completed;   
+    return FinalizeParseStatus::Completed;
     }
 
 //************************* OrderBySpecExp *******************************************
@@ -558,7 +578,7 @@ void OrderBySpecExp::_ToECSql(ECSqlRenderContext& ctx) const
 
             default:
                 break;
-        }   
+        }
     }
 
 //-----------------------------------------------------------------------------------------
@@ -788,7 +808,7 @@ PropertyMatchResult SingleSelectStatementExp::_FindProperty(ECSqlParseContext& c
                         if (endMap != nullptr) {
                             return PropertyMatchResult(options, propertyPath, effectivePath, derivedPropertyExp, 0);
                         }
-                    } 
+                    }
                     if (propertyNameExp->GetPropertyPath().ToString().EqualsIAscii(effectivePath.ToString().c_str())) {
                         return PropertyMatchResult(options, propertyPath, effectivePath, derivedPropertyExp, -4);
                     }
@@ -857,7 +877,7 @@ Utf8String SingleSelectStatementExp::_ToString() const
 void SingleSelectStatementExp::_ToECSql(ECSqlRenderContext& ctx) const
     {
     if (IsRowConstructor())
-        {        
+        {
         ctx.AppendToECSql("VALUES (").AppendToECSql(*GetSelection()).AppendToECSql(")");
         return;
         }
@@ -869,7 +889,7 @@ void SingleSelectStatementExp::_ToECSql(ECSqlRenderContext& ctx) const
         ctx.AppendToECSql(selectionType).AppendToECSql(" ");
 
     ctx.AppendToECSql(*GetSelection());
-    
+
     if (GetFrom() != nullptr) {
         ctx.AppendToECSql(" ").AppendToECSql(*GetFrom());
     }
@@ -961,7 +981,7 @@ void SubqueryRefExp::_ToECSql(ECSqlRenderContext& ctx) const
 
 
     ctx.AppendToECSql(*GetSubquery());
-    
+
     if (!GetAlias().empty())
         ctx.AppendToECSql(" AS ").AppendToECSql(GetAlias());
     }
@@ -1073,7 +1093,7 @@ void SelectStatementExp::_ToECSql(ECSqlRenderContext& ctx) const
 
     if (m_isAll)
         ctx.AppendToECSql(" ALL ");
-    
+
     ctx.AppendToECSql(*GetRhsStatement());
     }
 

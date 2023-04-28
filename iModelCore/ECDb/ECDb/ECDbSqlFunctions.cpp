@@ -46,8 +46,8 @@ std::unique_ptr<ExtractPropFunc> ExtractPropFunc::Create(ECDbCR ecdb) {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 void ExtractPropFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
-    if (nArgs != 3) {
-        ctx.SetResultError("extract_prop(I,I,S]) expect three args");
+    if (nArgs <= 3) {
+        ctx.SetResultError("extract_prop(I,I,S,P,I]) expect atleast three args");
         return;
     }
 
@@ -63,10 +63,28 @@ void ExtractPropFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
     if (accessStringVal.IsNull() || accessStringVal.GetValueType() != DbValueType::TextVal )
         return;
 
+    ECSqlField* field = nullptr;
+    ECSqlSelectPreparedStatement* stmt = nullptr;
+    int columnInfoIndex = -1;
+    if (nArgs == 5) {
+        auto& ptrArg = args[3];
+        if (ptrArg.FromBinding()) {
+            stmt = (ECSqlSelectPreparedStatement*)ptrArg.GetValuePointer(ECSqlSelectPreparedStatement::SELECT_PTR_NAME);
+            auto& colIdxArg = args[4];
+            if (colIdxArg.GetNumericType() == DbValueType::IntegerVal) {
+                columnInfoIndex = colIdxArg.GetValueInt();
+                if (columnInfoIndex < 0 && columnInfoIndex >= stmt->GetColumnCount() && !stmt->GetValue(columnInfoIndex).GetColumnInfo().IsDynamic()) {
+                    stmt = nullptr;
+                } else {
+                    field = stmt->GetField(columnInfoIndex);
+                }
+            }
+        }
+    }
 
     ECInstanceId instanceId(instanceIdVal.GetValueUInt64());
     ECN::ECClassId classId(classIdVal.GetValueUInt64());
-
+    if (field) field->SetDynamicColumnInfo(ECSqlColumnInfo());
     m_ecdb.GetInstanceReader().Seek(
         InstanceReader::Position(instanceId, classId, accessStringVal.GetValueText()),
         [&](InstanceReader::IRowContext const& row){
@@ -81,29 +99,33 @@ void ExtractPropFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
                 int blobSize = 0;
                 auto blob = val.GetBlob(&blobSize);
                 ctx.SetResultBlob(blob, blobSize);
+                if (field) field->SetDynamicColumnInfo(ci);
                 return;
             }
             if (type == ECN::PrimitiveType::PRIMITIVETYPE_Boolean) {
                 ctx.SetResultInt(val.GetBoolean()?1:0);
+                if (field) field->SetDynamicColumnInfo(ci);
                 return;
             }
             if (type == ECN::PrimitiveType::PRIMITIVETYPE_DateTime) {
-                double jdt;
-                val.GetDateTime().ToJulianDay(jdt);
-                ctx.SetResultDouble(jdt);
+                ctx.SetResultDouble(val.GetDouble());
+                if (field) field->SetDynamicColumnInfo(ci);
                 return;
             }
             if (type == ECN::PrimitiveType::PRIMITIVETYPE_Double) {
                 ctx.SetResultDouble(val.GetDouble());
+                if (field) field->SetDynamicColumnInfo(ci);
                 return;
             }
             if (type == ECN::PrimitiveType::PRIMITIVETYPE_Integer ||
                 type == ECN::PrimitiveType::PRIMITIVETYPE_Long) {
                 ctx.SetResultInt64(val.GetInt64());
+                if (field) field->SetDynamicColumnInfo(ci);
                 return;
             }
             if (type == ECN::PrimitiveType::PRIMITIVETYPE_String) {
                 ctx.SetResultText(val.GetText(), (int)strlen(val.GetText()), Context::CopyData::Yes );
+                if (field) field->SetDynamicColumnInfo(ci);
                 return;
             }
         }

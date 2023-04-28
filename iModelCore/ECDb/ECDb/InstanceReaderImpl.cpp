@@ -56,46 +56,63 @@ using PropertyExists=InstanceReader::Impl::PropertyExists;
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 void PropertyExists::Clear() const {
-    m_propMap.clear();
+    m_propHashTable.clear();
     m_props.clear();
-    m_classIds.clear();
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+-----
+void PropertyExists::Load() const{
+    Clear();
+    auto sql = R"x(
+        SELECT
+            [pm].[ClassId],
+            [pp].[AccessString] [prop]
+        FROM [main].[ec_PropertyMap] [pm]
+            JOIN [main].[ec_ClassMap] [cm] ON [cm].[ClassId] = [pm].[ClassId] AND [cm].[MapStrategy] NOT IN (0, 10, 11)
+            JOIN [main].[ec_PropertyPath] [pp] ON [pm].[PropertyPathId] = [pp].[Id]
+        UNION
+        SELECT
+            [pm].[ClassId],
+            SUBSTR ([pp].[AccessString], 0, INSTR ([pp].[AccessString], '.')) [prop]
+        FROM [main].[ec_PropertyMap] [pm]
+            JOIN [main].[ec_ClassMap] [cm] ON [cm].[ClassId] = [pm].[ClassId] AND [cm].[MapStrategy] NOT IN (0, 10, 11)
+            JOIN [main].[ec_PropertyPath] [pp] ON [pm].[PropertyPathId] = [pp].[Id] AND INSTR ([pp].[AccessString], '.') != 0
+    )x";
+
+    auto stmt = m_conn.GetCachedStatement(sql);
+    std::set<Utf8CP, CompareIUtf8Ascii> props;
+    std::set<ECN::ECClassId> classIds;
+    Entry entry;
+    while(stmt->Step() == BE_SQLITE_ROW) {
+        entry.m_classId = stmt->GetValueId<ECClassId>(0);
+        const auto accessString = stmt->GetValueText(1);
+        if (classIds.find(entry.m_classId) == classIds.end()) {
+            classIds.insert(entry.m_classId);
+            entry.m_accessString = nullptr;
+            m_propHashTable.insert(entry);
+        }
+        auto it = props.find(accessString);
+        if (it == props.end()) {
+            entry.m_accessString = m_props.emplace_back(std::make_unique<Utf8String>(accessString)).get()->c_str();
+            props.insert(entry.m_accessString);
+        } else {
+            entry.m_accessString = *it;
+        }
+        m_propHashTable.insert(entry);
+    }
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 bool PropertyExists::Exists(ECN::ECClassId classId, Utf8CP accessString) const {
-    if(!m_classIds.insert(classId).second){
-        const auto it = m_propMap.find(accessString);
-        if (it == m_propMap.end()) {
-            return false;
-        }
-        return it->second.find(classId) != it->second.end();
-    }
-
-    // load class access string
-    auto stmt = m_conn.GetCachedStatement("SELECT pp.AccessString FROM ec_PropertyMap pm JOIN ec_PropertyPath pp ON pp.Id = pm.PropertyPathId WHERE pm.ClassId = ?");
-    stmt->BindId(1, classId);
-    while(stmt->Step() == BE_SQLITE_ROW) {
-        const auto accessString = stmt->GetValueText(0);
-        if (accessString == nullptr) {
-            continue;
-        }
-        auto it = m_propMap.find(accessString);
-        if (it != m_propMap.end()) {
-            it->second.insert(classId);
-        } else {
-            m_props.push_back(std::make_unique<std::string>(accessString));
-            const auto cachedAccessStr = m_props.back().get()->c_str();
-            m_propMap.insert(std::make_pair(cachedAccessStr, std::set<ECN::ECClassId>()))
-                .first->second.insert(classId);
-        }
-    }
-    const auto it = m_propMap.find(accessString);
-    if (it == m_propMap.end()) {
-        return false;
-    }
-    return it->second.find(classId) != it->second.end();
+    if (m_propHashTable.empty()) Load();
+    Entry entry;
+    entry.m_classId = classId;
+    entry.m_accessString = accessString;
+    return m_propHashTable.find(entry) != m_propHashTable.end();
 }
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -111,12 +128,9 @@ BeJsValue SeekPos::GetJson(InstanceReader::JsonParams const& param) const {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 Property const* Class::FindProperty(Utf8CP propertyName) const {
-    for (const auto& prop : m_properties) {
-        if (prop->GetName().EqualsIAscii(propertyName)) {
-            return prop.get();
-        }
-    }
-    return nullptr;
+    auto it = m_propertyMap.find(propertyName);
+    if (it == m_propertyMap.end()) return nullptr;
+    return it->second;
 }
 
 //---------------------------------------------------------------------------------------
@@ -210,6 +224,7 @@ void Reader::Clear() const {
 //+---------------+---------------+---------------+---------------+---------------+------
 bool Reader::Seek(InstanceReader::Position const& pos, InstanceReader::RowCallback callback) const {
     BeMutexHolder holder(m_mutex);
+
     Position rsPos = pos;
     const auto thisClassName = pos.GetClassFullName();
     if (thisClassName != nullptr) {
@@ -228,6 +243,9 @@ bool Reader::Seek(InstanceReader::Position const& pos, InstanceReader::RowCallba
             lastClassId = classId;
         }
     }
+    // if (!m_propExists.Exists(pos.GetClassId(), pos.GetAccessString())) {
+    //     return false;
+    // }
 
     const auto whatChanged = m_seekPos.Compare(rsPos);
     bool hasRow = false;
@@ -251,14 +269,6 @@ bool Reader::Seek(InstanceReader::Position const& pos, InstanceReader::RowCallba
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 bool Reader::PrepareRowSchema(ECN::ECClassId classId, Utf8CP accessString) const {
-    /*
-        // Following may not be required as the FindProperty is also good enough
-        if (accessString != nullptr ){
-            if (!m_propExists.Exists(classId, accessString)) {
-                return false;
-            }
-        }
-    */
     const auto queryClass = GetOrAddClass(classId);
     if (queryClass == nullptr) {
         return false;
@@ -743,6 +753,7 @@ Class::Class(ECN::ECClassId classId, std::vector<Property::Ptr> properties)
     : m_id(classId), m_properties(std::move(properties)) {
         std::set<DbTableId> tableMap;
         for (auto& prop : m_properties) {
+            m_propertyMap.insert(std::make_pair(prop->GetName().c_str(), prop.get()));
             const auto id =prop->GetTable().GetId();
             const auto it = tableMap.find(id);
             if (it != tableMap.end()) {
@@ -1048,7 +1059,14 @@ TableView::Ptr TableView::CreateEntityTableView(ECDbCR conn, DbTable const& tbl,
 //+---------------+---------------+---------------+---------------+---------------+------
 TableView::Ptr TableView::Create(ECDbCR conn, DbTable const& tbl) {
     auto getRootClassMap = [&]() -> ClassMap const* {
-        const auto rootClass = conn.Schemas().Main().GetClass(tbl.GetExclusiveRootECClassId());
+        ECClassId rootClassId;
+        if (tbl.GetType() == DbTable::Type::Overflow) {
+            rootClassId = tbl.GetLinkNode().GetParent()->GetTable().GetExclusiveRootECClassId();
+        } else {
+            rootClassId = tbl.GetExclusiveRootECClassId();
+        }
+
+        const auto rootClass = conn.Schemas().Main().GetClass(rootClassId);
         if (rootClass != nullptr) {
             return conn.Schemas().Main().GetClassMap(*rootClass);
         }

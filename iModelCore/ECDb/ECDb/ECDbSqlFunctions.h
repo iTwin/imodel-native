@@ -202,7 +202,7 @@ struct ExtractPropFunc final : ScalarFunction {
         void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override;
 
     public:
-        explicit ExtractPropFunc(ECDbCR ecdb) : ScalarFunction(SQLFUNC_ExtractProp, 3, DbValueType::TextVal), m_ecdb(ecdb) {}
+        explicit ExtractPropFunc(ECDbCR ecdb) : ScalarFunction(SQLFUNC_ExtractProp, -1, DbValueType::TextVal), m_ecdb(ecdb) {}
         ~ExtractPropFunc() {}
          static std::unique_ptr<ExtractPropFunc> Create(ECDbCR);
 };

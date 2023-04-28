@@ -35,7 +35,7 @@ struct PropertyNameExp final : ValueExp
             DerivedPropertyExp const& LinkedTo() const { return m_linkedTo; }
             DerivedPropertyExp const& GetEndPointDerivedProperty() const;
             bool IsPure() const;
-            
+
             bool WasToNativeSqlCalled() const { return m_wasToNativeSqlCalled; }
             NativeSqlBuilder::List const& GetNativeSql() const { return m_nativeSqlSnippets; }
             BentleyStatus ToNativeSql(NativeSqlBuilder::List const&) const;
@@ -87,7 +87,7 @@ struct PropertyNameExp final : ValueExp
         bool IsLhsAssignmentOperandExpression() const;
         bool OriginateInASubQuery() const { return nullptr != this->FindParent(Exp::Type::Subquery); }
         bool IsWildCard() const;
- 
+
     };
 
 //=======================================================================================
@@ -98,7 +98,7 @@ private:
     PropertyPath m_instancePath;
     size_t m_classIdExpIdx;
     size_t m_instIdExpIdx;
-    
+
 public:
     explicit InstanceValueExp(Type, PropertyPath);
     virtual ~InstanceValueExp(){}
@@ -116,20 +116,29 @@ public:
 //! @bsiclass
 //+===============+===============+===============+===============+===============+======
 struct ExtractPropertyValueExp final : InstanceValueExp {
-    private:
-        PropertyPath m_targetPath;
-        void _ToECSql(ECSqlRenderContext& ctx) const override{
-            ctx.AppendToECSql(GetInstancePath().ToString().c_str());
-            ctx.AppendToECSql(" -> ");
-            ctx.AppendToECSql(m_targetPath.ToString().c_str());
+    constexpr static auto ANCHOR_NAME = "extract_prop";
+
+private:
+    PropertyPath m_targetPath;
+    void _ToECSql(ECSqlRenderContext& ctx) const override {
+        ctx.AppendToECSql(GetInstancePath().ToString().c_str());
+        ctx.AppendToECSql(" -> ");
+        ctx.AppendToECSql(m_targetPath.ToString().c_str());
         }
         Utf8String _ToString() const override { return "";}
+        mutable Utf8String m_anchor;
+
     public:
         ExtractPropertyValueExp(
-            PropertyPath instancePath, 
-            PropertyPath targetPath): 
+            PropertyPath instancePath,
+            PropertyPath targetPath):
                 InstanceValueExp(Type::ExtractProperty, instancePath), m_targetPath(targetPath) {
             SetTypeInfo(ECSqlTypeInfo::CreatePrimitive(ECN::PRIMITIVETYPE_String));
+        }
+        Utf8StringCR GetSqlAnchor(std::function<Utf8String(Utf8CP name)> gen = nullptr) const {
+            if (m_anchor.empty() && gen != nullptr)
+                m_anchor = gen(ANCHOR_NAME);
+            return m_anchor;
         }
         PropertyPath const& GetTargetPath() const { return m_targetPath; }
         virtual ~ExtractPropertyValueExp(){}
@@ -147,7 +156,7 @@ struct ExtractInstanceValueExp final : InstanceValueExp {
 
     public:
         ExtractInstanceValueExp(
-            PropertyPath instancePath): 
+            PropertyPath instancePath):
                 InstanceValueExp(Type::ExtractInstance, instancePath) {
                 SetTypeInfo(ECSqlTypeInfo::CreatePrimitive(ECN::PRIMITIVETYPE_String));
             }

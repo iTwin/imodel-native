@@ -20,21 +20,30 @@ ECSqlStatus ECSqlFieldFactory::CreateField(ECSqlPrepareContext& ctx, DerivedProp
     BeAssert(derivedProperty != nullptr && derivedProperty->IsComplete());
 
     ECSqlSelectPreparedStatement& selectPreparedStatement = GetPreparedStatement(ctx);
+    ExtractPropertyValueExp const* extractPropExp = derivedProperty->TryGetExtractPropExp();
+    if (extractPropExp) {
+        // replace anchor for extract function with actual parameter.
+        auto& anchorName = extractPropExp->GetSqlAnchor([&](Utf8CP name) {
+            return ctx.GetAnchors().CreateAnchor(name);
+        });
+        ctx.GetAnchors().QueueReplacementForAnchor(anchorName, SqlPrintfString(",%s,%d", ctx.GetThisStmtPtrParamDecl(), startColumnIndex));
+    }
 
     ValueExp const* valueExp = derivedProperty->GetExpression();
     PropertyNameExp const* propNameExp = nullptr;
-    if (valueExp->GetType() == Exp::Type::PropertyName)
+    if (valueExp->GetType() == Exp::Type::PropertyName && !extractPropExp)
         propNameExp = valueExp->GetAsCP<PropertyNameExp>();
 
+
     ECPropertyCP generatedProperty = nullptr;
-    ECSqlStatus stat = selectPreparedStatement.GetDynamicSelectClauseECClassR().GeneratePropertyIfRequired(generatedProperty, ctx, *derivedProperty, propNameExp);
+    ECSqlStatus stat = selectPreparedStatement.GetDynamicSelectClauseECClassR().GeneratePropertyIfRequired(generatedProperty, ctx, *derivedProperty, propNameExp, extractPropExp != nullptr);
     if (!stat.IsSuccess())
         return stat;
 
     if(generatedProperty == nullptr && propNameExp == nullptr)
         return ECSqlStatus::Error;
 
-    ECSqlColumnInfo ecsqlColumnInfo = CreateColumnInfoForProperty(ctx, generatedProperty, propNameExp);
+    ECSqlColumnInfo ecsqlColumnInfo = CreateColumnInfoForProperty(ctx, generatedProperty, propNameExp,  extractPropExp != nullptr);
 
     ECSqlTypeInfo const& valueTypeInfo = valueExp->GetTypeInfo();
     BeAssert(valueTypeInfo.GetKind() != ECSqlTypeInfo::Kind::Unset);
@@ -79,7 +88,7 @@ ECSqlStatus ECSqlFieldFactory::CreateField(ECSqlPrepareContext& ctx, DerivedProp
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-ECSqlColumnInfo ECSqlFieldFactory::CreateColumnInfoForProperty(ECSqlPrepareContext const& ctx, ECPropertyCP generatedProperty, PropertyNameExp const* propertyNameExp)
+ECSqlColumnInfo ECSqlFieldFactory::CreateColumnInfoForProperty(ECSqlPrepareContext const& ctx, ECPropertyCP generatedProperty, PropertyNameExp const* propertyNameExp, bool isDynamic)
     {
     bool isGenerated = generatedProperty != nullptr;
     bool isSystem = false;
@@ -91,7 +100,7 @@ ECSqlColumnInfo ECSqlFieldFactory::CreateColumnInfoForProperty(ECSqlPrepareConte
     if(propertyNameExpRefersToProperty && propertyNameExp->IsPropertyRef())
         {
         auto* propRef = propertyNameExp->GetPropertyRef();
-        propertyNameExpRefersToProperty = propRef->IsPure() && 
+        propertyNameExpRefersToProperty = propRef->IsPure() &&
                                           propRef->GetEndPointDerivedProperty().GetExpression()->GetType() == Exp::Type::PropertyName;
 
         if(propertyNameExpRefersToProperty)
@@ -110,7 +119,7 @@ ECSqlColumnInfo ECSqlFieldFactory::CreateColumnInfoForProperty(ECSqlPrepareConte
 
         if(!propertyNameExpRefersToProperty)
             {
-            return CreateTopLevelColumnInfo(ctx.Issues(), isSystem, true, std::move(propertyPath), ECSqlColumnInfo::RootClass(*rootClass, nullptr), nullptr);
+            return CreateTopLevelColumnInfo(ctx.Issues(), isSystem, true, std::move(propertyPath), ECSqlColumnInfo::RootClass(*rootClass, nullptr), nullptr, isDynamic);
             }
         }
 
@@ -125,37 +134,37 @@ ECSqlColumnInfo ECSqlFieldFactory::CreateColumnInfoForProperty(ECSqlPrepareConte
 
     BeAssert(ecsqlPropPath.Size() > 0 && "Error in program logic. Property path must not be empty.");
     const auto isVirtualProperty = propertyNameExp->IsVirtualProperty();
-    if (isVirtualProperty) 
+    if (isVirtualProperty)
         {
         if(isGenerated)
             {
-            return CreateTopLevelColumnInfo(ctx.Issues(), isSystem, true, std::move(propertyPath), ECSqlColumnInfo::RootClass(*rootClass, nullptr), ecsqlPropPath.GetLeafEntry().GetProperty());
+            return CreateTopLevelColumnInfo(ctx.Issues(), isSystem, true, std::move(propertyPath), ECSqlColumnInfo::RootClass(*rootClass, nullptr), ecsqlPropPath.GetLeafEntry().GetProperty(), isDynamic);
             }
 
         ECPropertyCP origProp = ecsqlPropPath.GetLeafEntry().GetProperty();
         ECPropertyCP leafProp = internalPropPath.Last().GetProperty();
         rootClass = &leafProp->GetClass();
-        return CreateTopLevelColumnInfo(ctx.Issues(), false, false, std::move(ecsqlPropPath), ECSqlColumnInfo::RootClass(*rootClass, "", rootClass->GetName().c_str()), origProp);
+        return CreateTopLevelColumnInfo(ctx.Issues(), false, false, std::move(ecsqlPropPath), ECSqlColumnInfo::RootClass(*rootClass, "", rootClass->GetName().c_str()), origProp, isDynamic);
         }
 
     ECPropertyCP leafProp = ecsqlPropPath.GetLeafEntry().GetProperty();
     if(isGenerated)
         {
-        return CreateTopLevelColumnInfo(ctx.Issues(), isSystem, true, std::move(propertyPath), ECSqlColumnInfo::RootClass(*rootClass, nullptr), ecsqlPropPath.GetLeafEntry().GetProperty());
+        return CreateTopLevelColumnInfo(ctx.Issues(), isSystem, true, std::move(propertyPath), ECSqlColumnInfo::RootClass(*rootClass, nullptr), ecsqlPropPath.GetLeafEntry().GetProperty(), isDynamic);
         }
 
     BeAssert((internalPropPath.GetClassMap() != nullptr) && "Error in program logic. PropertyPath must have been resolved.");
     ECClassCR ecClass = internalPropPath.GetClassMap()->GetClass();
     isSystem = leafProp != nullptr && ctx.GetECDb().Schemas().Main().GetSystemSchemaHelper().GetSystemPropertyInfo(*leafProp).IsSystemProperty();
     Utf8CP tableSpace = resolvedPropertyName->GetPropertyMap().GetClassMap().GetSchemaManager().GetTableSpace().GetName().c_str();
-    return CreateTopLevelColumnInfo(ctx.Issues(), isSystem, false, std::move(ecsqlPropPath), ECSqlColumnInfo::RootClass(ecClass, tableSpace, resolvedPropertyName->GetClassName()), leafProp);
+    return CreateTopLevelColumnInfo(ctx.Issues(), isSystem, false, std::move(ecsqlPropPath), ECSqlColumnInfo::RootClass(ecClass, tableSpace, resolvedPropertyName->GetClassName()), leafProp, isDynamic);
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlColumnInfo ECSqlFieldFactory::CreateTopLevelColumnInfo(IssueDataSource const& issues, bool isSystemProperty, bool isGeneratedProperty, ECSqlPropertyPath const& propertyPath, ECSqlColumnInfo::RootClass const& rootClass, ECPropertyCP originalProperty)
+ECSqlColumnInfo ECSqlFieldFactory::CreateTopLevelColumnInfo(IssueDataSource const& issues, bool isSystemProperty, bool isGeneratedProperty, ECSqlPropertyPath const& propertyPath, ECSqlColumnInfo::RootClass const& rootClass, ECPropertyCP originalProperty, bool isDynamic)
     {
     BeAssert(propertyPath.Size() > 0);
     ECPropertyCP ecProperty = propertyPath.GetLeafEntry().GetProperty();
@@ -163,7 +172,7 @@ ECSqlColumnInfo ECSqlFieldFactory::CreateTopLevelColumnInfo(IssueDataSource cons
     DateTime::Info dateTimeInfo;
     ECStructClassCP structType = nullptr;
     ECTypeDescriptor typeDescriptor = DetermineDataType(dateTimeInfo, structType, issues, *ecProperty);
-    return ECSqlColumnInfo(typeDescriptor, dateTimeInfo, structType, ecProperty, originalProperty, isSystemProperty, isGeneratedProperty, propertyPath, rootClass);
+    return ECSqlColumnInfo(typeDescriptor, dateTimeInfo, structType, ecProperty, originalProperty, isSystemProperty, isGeneratedProperty, propertyPath, rootClass, isDynamic);
     }
 
 //-----------------------------------------------------------------------------------------
@@ -268,7 +277,7 @@ ECSqlStatus ECSqlFieldFactory::CreateNavigationPropertyField(std::unique_ptr<ECS
     ECSqlStatus stat = CreateChildField(idField, ctx, sqlColumnIndex, newField->GetColumnInfo(), *ctx.GetECDb().Schemas().Main().GetSystemSchemaHelper().GetSystemProperty(ECSqlSystemPropertyInfo::NavigationId()));
     if (!stat.IsSuccess())
         return stat;
-    
+
     std::unique_ptr<ECSqlField> relClassIdField = nullptr;
     stat = CreateChildField(relClassIdField, ctx, sqlColumnIndex, newField->GetColumnInfo(), *ctx.GetECDb().Schemas().Main().GetSystemSchemaHelper().GetSystemProperty(ECSqlSystemPropertyInfo::NavigationRelECClassId()));
     if (!stat.IsSuccess())

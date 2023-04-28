@@ -1159,6 +1159,7 @@ public:
     bool IsNull()  const {return DbValueType::NullVal == GetValueType();} //!< return true if this value is null
     SqlValueP GetSqlValueP() const {return m_val;}  //!< for direct use of sqlite3 api
 
+    BE_SQLITE_EXPORT bool        FromBinding() const;              //!< see sqlite3_value_frombind
     BE_SQLITE_EXPORT DbValueType GetValueType() const;      //!< see sqlite3_value_type
     BE_SQLITE_EXPORT DbValueType GetNumericType() const;    //!< see sqlite3_value_numeric_type
     BE_SQLITE_EXPORT int         GetValueBytes() const;     //!< see sqlite3_value_bytes

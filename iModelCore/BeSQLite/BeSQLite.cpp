@@ -584,8 +584,8 @@ DbDupValue  Statement::GetDbValue(int col)
 int         Statement::GetParameterIndex(Utf8CP name) {return sqlite3_bind_parameter_index(m_stmt, name);}
 int         Statement::GetParameterCount() { return sqlite3_bind_parameter_count(m_stmt); }
 Utf8CP      Statement::GetSql() const                {return sqlite3_sql(m_stmt);}
-
-DbValueType  DbValue::GetValueType() const               {return (DbValueType) sqlite3_value_type(m_val);}
+DbValueType  DbValue::GetValueType() const               {return (DbValueType) sqlite3_value_numeric_type(m_val);}
+DbValueType  DbValue::GetNumericType() const             {return (DbValueType) sqlite3_value_type(m_val);}
 int          DbValue::GetValueBytes() const              {return sqlite3_value_bytes(m_val);}
 void const*  DbValue::GetValueBlob() const               {return sqlite3_value_blob(m_val);}
 Utf8CP       DbValue::GetValueText() const               {return (Utf8CP)sqlite3_value_text(m_val);}
@@ -594,6 +594,8 @@ int64_t      DbValue::GetValueInt64() const              {return sqlite3_value_i
 double       DbValue::GetValueDouble() const             {return sqlite3_value_double(m_val);}
 void*        DbValue::GetValuePointer(Utf8CP name) const {return sqlite3_value_pointer(m_val, name); }
 unsigned int DbValue::GetSubType() const                 {return sqlite3_value_subtype(m_val); }
+bool         DbValue::FromBinding() const                {return sqlite3_value_frombind(m_val);}
+
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
