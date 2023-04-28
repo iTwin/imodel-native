@@ -58,7 +58,7 @@ TEST_F(TableSpaceTestFixture, AttachedTableSpace)
     }
 
 
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("attachedtablespace.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("attachedtablespace.ecdb"));
     ASSERT_EQ(ECSqlStatus::InvalidECSql, GetHelper().PrepareECSql("SELECT * FROM ts.Parent"));
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachDb(attachedECDbPath.GetNameUtf8().c_str(), "attached"));
     ASSERT_TRUE(m_ecdb.IsTransactionActive());
@@ -137,7 +137,7 @@ TEST_F(TableSpaceTestFixture, AttachWithoutApi)
     }
 
 
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("attachedtablespace.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("attachedtablespace.ecdb"));
     ASSERT_EQ(ECSqlStatus::InvalidECSql, GetHelper().PrepareECSql("SELECT * FROM ts.Parent"));
     ASSERT_EQ(ECSqlStatus::InvalidECSql, GetHelper().PrepareECSql("SELECT * FROM attached.ts.Parent"));
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachDb(attachedECDbPath.GetNameUtf8().c_str(), "attached"));
@@ -220,7 +220,7 @@ TEST_F(TableSpaceTestFixture, ECDbAndNonECDbAttachedTableSpace)
     }
 
 
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("attachedtablespace_primary.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("attachedtablespace_primary.ecdb"));
     ASSERT_EQ(ECSqlStatus::InvalidECSql, GetHelper().PrepareECSql("SELECT * FROM ts.Parent"));
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachDb(attachedECDbPath.GetNameUtf8().c_str(), "attached"));
     ASSERT_TRUE(m_ecdb.IsTransactionActive()) << "Transaction is expected to be restarted after attach/detach";
@@ -371,7 +371,7 @@ TEST_F(TableSpaceTestFixture, AttachedTableSpace_IndexesAndRels)
             ASSERT_EQ(std::vector<Utf8String>({"ix_sessionsetting_val", "uix_sessionsetting_name"}), GetHelper().GetIndexNamesForTable("ts_SessionSetting", "settings"));
         };
 
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("AttachedTableSpace.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("AttachedTableSpace.ecdb"));
 
     assertSelectSettings(-1);
     assertSelectLinkTable(-1);
@@ -461,7 +461,7 @@ TEST_F(TableSpaceTestFixture, AttachedTableSpace_PhysicalForeignKey)
         return stmt.GetValueInt(0);
         };
 
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("AttachedTableSpace_PhysicalForeignKey.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("AttachedTableSpace_PhysicalForeignKey.ecdb"));
     ASSERT_EQ(BE_SQLITE_OK, attachSettingsFile());
     ASSERT_TRUE(GetHelper().TableSpaceExists("settings"));
     ASSERT_EQ(0, getRelCount());
@@ -502,7 +502,7 @@ TEST_F(TableSpaceTestFixture, AttachedTableSpace_PhysicalForeignKey)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(TableSpaceTestFixture, DetachTableSpace)
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("detachtablespace.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("detachtablespace.ecdb"));
 
     BeFileName attachedECDbPath;
 
@@ -597,7 +597,7 @@ TEST_F(TableSpaceTestFixture, JsonAdapter)
     Utf8String childId = childKey.GetInstanceId().ToHexStr();
     Utf8String relId = relKey.GetInstanceId().ToHexStr();
 
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("attachedtablespace_json.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("attachedtablespace_json.ecdb"));
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachDb(attachedDbPath.GetNameUtf8().c_str(), "att"));
 
     {
