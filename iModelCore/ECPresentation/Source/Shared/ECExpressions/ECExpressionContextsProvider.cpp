@@ -70,7 +70,7 @@ private:
             }
 
         size_t guidSize = sizeof(BeGuid);
-        BeGuid* guid = (BeGuid*)arg.GetECValue()->GetBinary(guidSize);
+        const BeGuid* guid = (const BeGuid*)arg.GetECValue()->GetBinary(guidSize);
 
         evalResult.InitECValue().SetUtf8CP(guid->ToString().c_str(), true);
         return ExpressionStatus::Success;
@@ -185,8 +185,9 @@ struct NodeECInstanceContextEvaluator : PropertySymbol::ContextEvaluator
 private:
     IConnectionCR m_connection;
     NavNodeCPtr m_node;
+    InstanceExpressionContextPtr m_instanceContext;
     NodeECInstanceContextEvaluator(IConnectionCR connection, NavNodeCR node)
-        : m_connection(connection), m_node(&node)
+        : m_connection(connection), m_node(&node), m_instanceContext(nullptr)
         {}
 public:
     static RefCountedPtr<NodeECInstanceContextEvaluator> Create(IConnectionCR connection, NavNodeCR node)
@@ -195,19 +196,22 @@ public:
         }
     ExpressionContextPtr _GetContext() override
         {
+        if (nullptr != m_instanceContext.get())
+            return m_instanceContext;
+
         ECInstancesNodeKey const* key = m_node->GetKey()->AsECInstanceNodeKey();
         if (nullptr == key || key->GetInstanceKeys().empty())
             return nullptr;
 
         // TODO: returning first instance key - what if node groups multiple instances???
         ECInstanceKey instanceKey(key->GetInstanceKeys().front().GetClass()->GetId(), key->GetInstanceKeys().front().GetId());
-        InstanceExpressionContextPtr instanceContext = InstanceExpressionContext::Create(nullptr);
+        m_instanceContext = InstanceExpressionContext::Create(nullptr);
         IECInstancePtr instance;
         ECInstancesHelper::LoadInstance(instance, m_connection, instanceKey);
         if (instance.IsValid())
-            instanceContext->SetInstance(*instance);
+            m_instanceContext->SetInstance(*instance);
 
-        return instanceContext;
+        return m_instanceContext;
         }
 };
 
