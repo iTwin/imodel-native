@@ -823,6 +823,222 @@ TEST_F(InstanceReaderFixture, instance_reader) {
         }
     }
 }
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceReaderFixture, dynamic_meta_data) {
+    ASSERT_EQ(SUCCESS, SetupECDb("meta_data.ecdb", SchemaItem(
+        R"xml(<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+            <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA" />
+            <ECEntityClass typeName="T000"
+                description="Test meta data">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <ShareColumns xmlns="ECDbMap.02.00">
+                        <MaxSharedColumnsBeforeOverflow>500</MaxSharedColumnsBeforeOverflow>
+                        <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
+                    </ShareColumns>
+                </ECCustomAttributes>
+            </ECEntityClass>
+            <ECEntityClass typeName="T100"><BaseClass>T000</BaseClass><ECProperty propertyName="a" typeName="int" extendedType ="property-a" description="info-a"/></ECEntityClass>
+            <ECEntityClass typeName="T200"><BaseClass>T000</BaseClass><ECProperty propertyName="b" typeName="int" extendedType ="property-b" description="info-b"/></ECEntityClass>
+            <ECEntityClass typeName="T110"><BaseClass>T100</BaseClass><ECProperty propertyName="c" typeName="int" extendedType ="property-c" description="info-c"/></ECEntityClass>
+            <ECEntityClass typeName="T120"><BaseClass>T100</BaseClass><ECProperty propertyName="d" typeName="int" extendedType ="property-d" description="info-d"/></ECEntityClass>
+            <ECEntityClass typeName="T211"><BaseClass>T200</BaseClass><ECProperty propertyName="e" typeName="int" extendedType ="property-e" description="info-e"/></ECEntityClass>
+            <ECEntityClass typeName="T212"><BaseClass>T200</BaseClass><ECProperty propertyName="f" typeName="int" extendedType ="property-f" description="info-f"/></ECEntityClass>
+            <ECEntityClass typeName="T111"><BaseClass>T110</BaseClass><ECProperty propertyName="g" typeName="int" extendedType ="property-g" description="info-g"/></ECEntityClass>
+            <ECEntityClass typeName="T112"><BaseClass>T110</BaseClass><ECProperty propertyName="h" typeName="int" extendedType ="property-h" description="info-h"/></ECEntityClass>
+            <ECEntityClass typeName="T121"><BaseClass>T120</BaseClass><ECProperty propertyName="i" typeName="int" extendedType ="property-i" description="info-i"/></ECEntityClass>
+            <ECEntityClass typeName="T122"><BaseClass>T120</BaseClass><ECProperty propertyName="j" typeName="int" extendedType ="property-j" description="info-j"/></ECEntityClass>
+        </ECSchema>)xml")));
+
+    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
+    auto exec = [&](Utf8CP ecsql) {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        EXPECT_EQ(BE_SQLITE_DONE, stmt.Step());
+        m_ecdb.SaveChanges();
+    };
+    auto assertDefault = [](ECSqlStatement& stmt, int cl, Utf8CP displayLabel, Utf8CP propertyName) {
+        ECSqlColumnInfo const* ci;
+        PrimitiveECPropertyCP pr;
+        Utf8CP className = "DynamicECSqlSelectClause";
+        ci = &stmt.GetColumnInfo(cl);
+        EXPECT_TRUE(ci->IsDynamic());
+        EXPECT_TRUE(ci->GetDataType().IsPrimitive());
+        pr = ci->GetProperty()->GetAsPrimitiveProperty();
+        EXPECT_FALSE(pr->HasId());
+        EXPECT_EQ(PrimitiveType::PRIMITIVETYPE_String, pr->GetType());
+        EXPECT_STRCASEEQ(className                   , pr->GetClass().GetName().c_str());
+        EXPECT_STRCASEEQ(propertyName                , pr->GetName().c_str());
+        EXPECT_STRCASEEQ(""                          , pr->GetDescription().c_str());
+        EXPECT_STRCASEEQ(displayLabel                , pr->GetDisplayLabel().c_str());
+        EXPECT_STRCASEEQ("json"                      , pr->GetExtendedTypeName().c_str());
+    };
+    auto assertDynamic = [](ECSqlStatement& stmt, int cl, Utf8CP displayLabel, Utf8CP propertyName, Utf8CP description, Utf8CP className, PrimitiveType t) {
+        ECSqlColumnInfo const* ci;
+        PrimitiveECPropertyCP pr;
+        ci = &stmt.GetColumnInfo(cl);
+        EXPECT_TRUE(ci->IsDynamic());
+        EXPECT_TRUE(ci->GetDataType().IsPrimitive());
+        pr = ci->GetProperty()->GetAsPrimitiveProperty();
+        EXPECT_TRUE(pr->HasId());
+        EXPECT_EQ(t                  , pr->GetType());
+        EXPECT_STRCASEEQ(className   , pr->GetClass().GetName().c_str());
+        EXPECT_STRCASEEQ(propertyName, pr->GetName().c_str());
+        EXPECT_STRCASEEQ(description , pr->GetDescription().c_str());
+        EXPECT_STRCASEEQ(displayLabel, pr->GetDisplayLabel().c_str());
+        EXPECT_STRCASEEQ(""          , pr->GetExtendedTypeName().c_str());
+    };
+    exec("insert into ts.t100 ( ecInstanceId, a       ) values ( 10, 100           )");
+    exec("insert into ts.t200 ( ecInstanceId, b       ) values ( 11, 101           )");
+    exec("insert into ts.t110 ( ecInstanceId, a, c    ) values ( 12, 102, 200      )");
+    exec("insert into ts.t120 ( ecInstanceId, a, d    ) values ( 13, 103, 201      )");
+    exec("insert into ts.t211 ( ecInstanceId, b, e    ) values ( 14, 104, 202      )");
+    exec("insert into ts.t212 ( ecInstanceId, b, f    ) values ( 15, 105, 203      )");
+    exec("insert into ts.t111 ( ecInstanceId, a, c, g ) values ( 16, 106, 204, 301 )");
+    exec("insert into ts.t112 ( ecInstanceId, a, c, h ) values ( 17, 107, 205, 302 )");
+    exec("insert into ts.t121 ( ecInstanceId, a, d, i ) values ( 18, 108, 206, 303 )");
+    exec("insert into ts.t122 ( ecInstanceId, a, d, j ) values ( 19, 109, 207, 304 )");
+
+    if ("") {
+        const auto sql = R"x(
+            select
+                ecInstanceId,
+                $->a,
+                $->b,
+                $->c,
+                $->d,
+                $->e,
+                $->f,
+                $->g,
+                $->h,
+                $->i,
+                $->j
+            from ts.t000
+        )x";
+
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, sql));
+        while(stmt.Step() == BE_SQLITE_ROW) {
+            auto ecInstanceId = stmt.GetValueInt(0);
+            if (ecInstanceId == 10) { // t100, a
+                assertDynamic(stmt, 1 , "a", "a", "info-a", "T100", PrimitiveType::PRIMITIVETYPE_Integer);
+                assertDefault(stmt, 2 , "$ -> b", "__x0024____x0020____x002D____x003E____x0020__b");
+                assertDefault(stmt, 3 , "$ -> c", "__x0024____x0020____x002D____x003E____x0020__c");
+                assertDefault(stmt, 4 , "$ -> d", "__x0024____x0020____x002D____x003E____x0020__d");
+                assertDefault(stmt, 5 , "$ -> e", "__x0024____x0020____x002D____x003E____x0020__e");
+                assertDefault(stmt, 6 , "$ -> f", "__x0024____x0020____x002D____x003E____x0020__f");
+                assertDefault(stmt, 7 , "$ -> g", "__x0024____x0020____x002D____x003E____x0020__g");
+                assertDefault(stmt, 8 , "$ -> h", "__x0024____x0020____x002D____x003E____x0020__h");
+                assertDefault(stmt, 9 , "$ -> i", "__x0024____x0020____x002D____x003E____x0020__i");
+                assertDefault(stmt, 10, "$ -> j", "__x0024____x0020____x002D____x003E____x0020__j");
+            } else if (ecInstanceId == 11) { // t200, b
+                assertDefault(stmt, 1 , "$ -> a", "__x0024____x0020____x002D____x003E____x0020__a");
+                assertDynamic(stmt, 2 , "b", "b", "info-b", "T200", PrimitiveType::PRIMITIVETYPE_Integer);
+                assertDefault(stmt, 3 , "$ -> c", "__x0024____x0020____x002D____x003E____x0020__c");
+                assertDefault(stmt, 4 , "$ -> d", "__x0024____x0020____x002D____x003E____x0020__d");
+                assertDefault(stmt, 5 , "$ -> e", "__x0024____x0020____x002D____x003E____x0020__e");
+                assertDefault(stmt, 6 , "$ -> f", "__x0024____x0020____x002D____x003E____x0020__f");
+                assertDefault(stmt, 7 , "$ -> g", "__x0024____x0020____x002D____x003E____x0020__g");
+                assertDefault(stmt, 8 , "$ -> h", "__x0024____x0020____x002D____x003E____x0020__h");
+                assertDefault(stmt, 9 , "$ -> i", "__x0024____x0020____x002D____x003E____x0020__i");
+                assertDefault(stmt, 10, "$ -> j", "__x0024____x0020____x002D____x003E____x0020__j");
+            } else if (ecInstanceId == 12) { // t110, a, c
+                assertDynamic(stmt, 1 , "a", "a", "info-a", "T100", PrimitiveType::PRIMITIVETYPE_Integer);
+                assertDefault(stmt, 2 , "$ -> b", "__x0024____x0020____x002D____x003E____x0020__b");
+                assertDynamic(stmt, 3 , "c", "c", "info-c", "T110", PrimitiveType::PRIMITIVETYPE_Integer);
+                assertDefault(stmt, 4 , "$ -> d", "__x0024____x0020____x002D____x003E____x0020__d");
+                assertDefault(stmt, 5 , "$ -> e", "__x0024____x0020____x002D____x003E____x0020__e");
+                assertDefault(stmt, 6 , "$ -> f", "__x0024____x0020____x002D____x003E____x0020__f");
+                assertDefault(stmt, 7 , "$ -> g", "__x0024____x0020____x002D____x003E____x0020__g");
+                assertDefault(stmt, 8 , "$ -> h", "__x0024____x0020____x002D____x003E____x0020__h");
+                assertDefault(stmt, 9 , "$ -> i", "__x0024____x0020____x002D____x003E____x0020__i");
+                assertDefault(stmt, 10, "$ -> j", "__x0024____x0020____x002D____x003E____x0020__j");
+            } else if (ecInstanceId == 13) { // t120, a, d
+                assertDynamic(stmt, 1 , "a", "a", "info-a", "T100", PrimitiveType::PRIMITIVETYPE_Integer);
+                assertDefault(stmt, 2 , "$ -> b", "__x0024____x0020____x002D____x003E____x0020__b");
+                assertDefault(stmt, 3 , "$ -> c", "__x0024____x0020____x002D____x003E____x0020__c");
+                assertDynamic(stmt, 4 , "d", "d", "info-d", "T120", PrimitiveType::PRIMITIVETYPE_Integer);
+                assertDefault(stmt, 5 , "$ -> e", "__x0024____x0020____x002D____x003E____x0020__e");
+                assertDefault(stmt, 6 , "$ -> f", "__x0024____x0020____x002D____x003E____x0020__f");
+                assertDefault(stmt, 7 , "$ -> g", "__x0024____x0020____x002D____x003E____x0020__g");
+                assertDefault(stmt, 8 , "$ -> h", "__x0024____x0020____x002D____x003E____x0020__h");
+                assertDefault(stmt, 9 , "$ -> i", "__x0024____x0020____x002D____x003E____x0020__i");
+                assertDefault(stmt, 10, "$ -> j", "__x0024____x0020____x002D____x003E____x0020__j");
+            } else if (ecInstanceId == 14) { // t211, b, e
+                assertDefault(stmt, 1 , "$ -> a", "__x0024____x0020____x002D____x003E____x0020__a");
+                assertDynamic(stmt, 2 , "b", "b", "info-b", "T200", PrimitiveType::PRIMITIVETYPE_Integer);
+                assertDefault(stmt, 3 , "$ -> c", "__x0024____x0020____x002D____x003E____x0020__c");
+                assertDefault(stmt, 4 , "$ -> d", "__x0024____x0020____x002D____x003E____x0020__d");
+                assertDynamic(stmt, 5 , "e", "e", "info-e", "T211", PrimitiveType::PRIMITIVETYPE_Integer);
+                assertDefault(stmt, 6 , "$ -> f", "__x0024____x0020____x002D____x003E____x0020__f");
+                assertDefault(stmt, 7 , "$ -> g", "__x0024____x0020____x002D____x003E____x0020__g");
+                assertDefault(stmt, 8 , "$ -> h", "__x0024____x0020____x002D____x003E____x0020__h");
+                assertDefault(stmt, 9 , "$ -> i", "__x0024____x0020____x002D____x003E____x0020__i");
+                assertDefault(stmt, 10, "$ -> j", "__x0024____x0020____x002D____x003E____x0020__j");
+            } else if (ecInstanceId == 15) { // t212, b, f
+                assertDefault(stmt, 1 , "$ -> a", "__x0024____x0020____x002D____x003E____x0020__a");
+                assertDynamic(stmt, 2 , "b", "b", "info-b", "T200", PrimitiveType::PRIMITIVETYPE_Integer);
+                assertDefault(stmt, 3 , "$ -> c", "__x0024____x0020____x002D____x003E____x0020__c");
+                assertDefault(stmt, 4 , "$ -> d", "__x0024____x0020____x002D____x003E____x0020__d");
+                assertDefault(stmt, 5 , "$ -> e", "__x0024____x0020____x002D____x003E____x0020__e");
+                assertDynamic(stmt, 6 , "f", "f", "info-f", "T212", PrimitiveType::PRIMITIVETYPE_Integer);
+                assertDefault(stmt, 7 , "$ -> g", "__x0024____x0020____x002D____x003E____x0020__g");
+                assertDefault(stmt, 8 , "$ -> h", "__x0024____x0020____x002D____x003E____x0020__h");
+                assertDefault(stmt, 9 , "$ -> i", "__x0024____x0020____x002D____x003E____x0020__i");
+                assertDefault(stmt, 10, "$ -> j", "__x0024____x0020____x002D____x003E____x0020__j");
+            } else if (ecInstanceId == 16) { // t111, a, c, g
+                assertDynamic(stmt, 1 , "a", "a", "info-a", "T100", PrimitiveType::PRIMITIVETYPE_Integer);
+                assertDefault(stmt, 2 , "$ -> b", "__x0024____x0020____x002D____x003E____x0020__b");
+                assertDynamic(stmt, 3 , "c", "c", "info-c", "T110", PrimitiveType::PRIMITIVETYPE_Integer);
+                assertDefault(stmt, 4 , "$ -> d", "__x0024____x0020____x002D____x003E____x0020__d");
+                assertDefault(stmt, 5 , "$ -> e", "__x0024____x0020____x002D____x003E____x0020__e");
+                assertDefault(stmt, 6 , "$ -> f", "__x0024____x0020____x002D____x003E____x0020__f");
+                assertDynamic(stmt, 7 , "g", "g", "info-g", "T111", PrimitiveType::PRIMITIVETYPE_Integer);
+                assertDefault(stmt, 8 , "$ -> h", "__x0024____x0020____x002D____x003E____x0020__h");
+                assertDefault(stmt, 9 , "$ -> i", "__x0024____x0020____x002D____x003E____x0020__i");
+                assertDefault(stmt, 10, "$ -> j", "__x0024____x0020____x002D____x003E____x0020__j");
+            } else if (ecInstanceId == 17) { // t112, a, c, h
+                assertDynamic(stmt, 1 , "a", "a", "info-a", "T100", PrimitiveType::PRIMITIVETYPE_Integer);
+                assertDefault(stmt, 2 , "$ -> b", "__x0024____x0020____x002D____x003E____x0020__b");
+                assertDynamic(stmt, 3 , "c", "c", "info-c", "T110", PrimitiveType::PRIMITIVETYPE_Integer);
+                assertDefault(stmt, 4 , "$ -> d", "__x0024____x0020____x002D____x003E____x0020__d");
+                assertDefault(stmt, 5 , "$ -> e", "__x0024____x0020____x002D____x003E____x0020__e");
+                assertDefault(stmt, 6 , "$ -> f", "__x0024____x0020____x002D____x003E____x0020__f");
+                assertDefault(stmt, 7 , "$ -> g", "__x0024____x0020____x002D____x003E____x0020__g");
+                assertDynamic(stmt, 8 , "h", "h", "info-h", "T112", PrimitiveType::PRIMITIVETYPE_Integer);
+                assertDefault(stmt, 9 , "$ -> i", "__x0024____x0020____x002D____x003E____x0020__i");
+                assertDefault(stmt, 10, "$ -> j", "__x0024____x0020____x002D____x003E____x0020__j");
+            } else if (ecInstanceId == 18) { // t121, a, d, i
+                assertDynamic(stmt, 1 , "a", "a", "info-a", "T100", PrimitiveType::PRIMITIVETYPE_Integer);
+                assertDefault(stmt, 2 , "$ -> b", "__x0024____x0020____x002D____x003E____x0020__b");
+                assertDefault(stmt, 3 , "$ -> c", "__x0024____x0020____x002D____x003E____x0020__c");
+                assertDynamic(stmt, 4 , "d", "d", "info-d", "T120", PrimitiveType::PRIMITIVETYPE_Integer);
+                assertDefault(stmt, 5 , "$ -> e", "__x0024____x0020____x002D____x003E____x0020__e");
+                assertDefault(stmt, 6 , "$ -> f", "__x0024____x0020____x002D____x003E____x0020__f");
+                assertDefault(stmt, 7 , "$ -> g", "__x0024____x0020____x002D____x003E____x0020__g");
+                assertDefault(stmt, 8 , "$ -> h", "__x0024____x0020____x002D____x003E____x0020__h");
+                assertDynamic(stmt, 9 , "i", "i", "info-i", "T121", PrimitiveType::PRIMITIVETYPE_Integer);
+                assertDefault(stmt, 10, "$ -> j", "__x0024____x0020____x002D____x003E____x0020__j");
+            } else if (ecInstanceId == 19) { // t122, a, d, j
+                assertDynamic(stmt, 1 , "a", "a", "info-a", "T100", PrimitiveType::PRIMITIVETYPE_Integer);
+                assertDefault(stmt, 2 , "$ -> b", "__x0024____x0020____x002D____x003E____x0020__b");
+                assertDefault(stmt, 3 , "$ -> c", "__x0024____x0020____x002D____x003E____x0020__c");
+                assertDynamic(stmt, 4 , "d", "d", "info-d", "T120", PrimitiveType::PRIMITIVETYPE_Integer);
+                assertDefault(stmt, 5 , "$ -> e", "__x0024____x0020____x002D____x003E____x0020__e");
+                assertDefault(stmt, 6 , "$ -> f", "__x0024____x0020____x002D____x003E____x0020__f");
+                assertDefault(stmt, 7 , "$ -> g", "__x0024____x0020____x002D____x003E____x0020__g");
+                assertDefault(stmt, 8 , "$ -> h", "__x0024____x0020____x002D____x003E____x0020__h");
+                assertDefault(stmt, 9 , "$ -> i", "__x0024____x0020____x002D____x003E____x0020__i");
+                assertDynamic(stmt, 10, "j", "j", "info-j", "T122", PrimitiveType::PRIMITIVETYPE_Integer);
+            }
+        }
+    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -915,7 +1131,7 @@ TEST_F(InstanceReaderFixture, extract_prop) {
     if ("use syntax to extract property") {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT $->s, $->i, $->d, $->p2d, $->p3d, $->bi, $->l, $->dt, $->b FROM ts.P"));
-        const auto expectedSQL = "SELECT extract_prop([P].[ECClassId],[P].[ECInstanceId],'s'),extract_prop([P].[ECClassId],[P].[ECInstanceId],'i'),extract_prop([P].[ECClassId],[P].[ECInstanceId],'d'),extract_prop([P].[ECClassId],[P].[ECInstanceId],'p2d'),extract_prop([P].[ECClassId],[P].[ECInstanceId],'p3d'),extract_prop([P].[ECClassId],[P].[ECInstanceId],'bi'),extract_prop([P].[ECClassId],[P].[ECInstanceId],'l'),extract_prop([P].[ECClassId],[P].[ECInstanceId],'dt'),extract_prop([P].[ECClassId],[P].[ECInstanceId],'b') FROM (SELECT [Id] ECInstanceId,73 ECClassId FROM [main].[ts_P]) [P]";
+        const auto expectedSQL = "SELECT extract_prop([P].[ECClassId],[P].[ECInstanceId],'s',:ecdb_this_ptr,0),extract_prop([P].[ECClassId],[P].[ECInstanceId],'i',:ecdb_this_ptr,1),extract_prop([P].[ECClassId],[P].[ECInstanceId],'d',:ecdb_this_ptr,2),extract_prop([P].[ECClassId],[P].[ECInstanceId],'p2d',:ecdb_this_ptr,3),extract_prop([P].[ECClassId],[P].[ECInstanceId],'p3d',:ecdb_this_ptr,4),extract_prop([P].[ECClassId],[P].[ECInstanceId],'bi',:ecdb_this_ptr,5),extract_prop([P].[ECClassId],[P].[ECInstanceId],'l',:ecdb_this_ptr,6),extract_prop([P].[ECClassId],[P].[ECInstanceId],'dt',:ecdb_this_ptr,7),extract_prop([P].[ECClassId],[P].[ECInstanceId],'b',:ecdb_this_ptr,8) FROM (SELECT [Id] ECInstanceId,73 ECClassId FROM [main].[ts_P]) [P]";
         EXPECT_STRCASEEQ(expectedSQL, stmt.GetNativeSql());
         if(stmt.Step() == BE_SQLITE_ROW) {
             int i = 0;
@@ -930,7 +1146,6 @@ TEST_F(InstanceReaderFixture, extract_prop) {
             ASSERT_EQ(stmt.GetValueBoolean(i++), kB);
         }
     }
-
 }
 
 //---------------------------------------------------------------------------------------
@@ -951,10 +1166,10 @@ TEST_F(InstanceReaderFixture, prop_exists) {
                         <ECProperty propertyName="Prop2" typeName="int" />
                     </ECEntityClass>
                     <ECEntityClass typeName="Sub">
-                      <BaseClass>Base</BaseClass>
-                      <ECProperty propertyName="SubProp1" typeName="string" />
-                      <ECProperty propertyName="SubProp2" typeName="int" />
-                     </ECEntityClass>
+                        <BaseClass>Base</BaseClass>
+                        <ECProperty propertyName="SubProp1" typeName="string" />
+                        <ECProperty propertyName="SubProp2" typeName="int" />
+                    </ECEntityClass>
                </ECSchema>)xml")));
     m_ecdb.SaveChanges();
 

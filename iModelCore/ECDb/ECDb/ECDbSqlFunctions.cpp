@@ -46,7 +46,7 @@ std::unique_ptr<ExtractPropFunc> ExtractPropFunc::Create(ECDbCR ecdb) {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 void ExtractPropFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
-    if (nArgs <= 3) {
+    if (nArgs < 3) {
         ctx.SetResultError("extract_prop(I,I,S,P,I]) expect atleast three args");
         return;
     }
@@ -63,6 +63,7 @@ void ExtractPropFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
     if (accessStringVal.IsNull() || accessStringVal.GetValueType() != DbValueType::TextVal )
         return;
 
+    // The 4th arg P is pointer to ECSqlStatement while 5th is columnIndex.
     ECSqlField* field = nullptr;
     ECSqlSelectPreparedStatement* stmt = nullptr;
     int columnInfoIndex = -1;
