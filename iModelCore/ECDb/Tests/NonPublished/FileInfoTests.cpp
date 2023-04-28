@@ -34,7 +34,7 @@ struct FileInfoTestFixture : ECDbTestFixture {};
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(FileInfoTestFixture, EmptyECDbHasFileInfoSchema)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecdbfileinfo.ecdb", SchemaItem(TEST_SCHEMA_XML)));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecdbfileinfo.ecdb", SchemaItem(TEST_SCHEMA_XML)));
     m_ecdb.Schemas().CreateClassViewsInDb();
 
     SchemaManager const& schemaManager = m_ecdb.Schemas();
@@ -80,7 +80,7 @@ TEST_F(FileInfoTestFixture, EmptyECDbHasFileInfoSchema)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(FileInfoTestFixture, PolymorphicQueryRightAfterCreation)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecdbfileinfo.ecdb", SchemaItem(TEST_SCHEMA_XML)));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecdbfileinfo.ecdb", SchemaItem(TEST_SCHEMA_XML)));
 
     ECSqlStatement selStmt0;
     ASSERT_EQ(ECSqlStatus::Success, selStmt0.Prepare(m_ecdb, "SELECT * FROM ecdbf.EmbeddedFileInfo"));
@@ -95,7 +95,7 @@ TEST_F(FileInfoTestFixture, PolymorphicQueryRightAfterCreation)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(FileInfoTestFixture, SubclassingExternalFileInfo)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("subclassingexternalfileinfo.ecdb",
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("subclassingexternalfileinfo.ecdb",
                                  SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
             <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECSchemaReference name="ECDbFileInfo" version="02.01" alias="ecdbf"/>
@@ -205,7 +205,7 @@ TEST_F(FileInfoTestFixture, SubclassingExternalFileInfo)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(FileInfoTestFixture, ECFEmbeddedFileBackedInstanceSupport)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecdbfileinfo.ecdb", SchemaItem(TEST_SCHEMA_XML)));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecdbfileinfo.ecdb", SchemaItem(TEST_SCHEMA_XML)));
 
     //test file
     Utf8CP testFileName = "ECSqlTest.01.00.00.ecschema.xml";
@@ -321,7 +321,7 @@ BeFileName SearchTestFile(Utf8CP testFileName)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(FileInfoTestFixture, FileInfoOwnershipConstraints)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecdbfileinfo.ecdb", SchemaItem(TEST_SCHEMA_XML)));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecdbfileinfo.ecdb", SchemaItem(TEST_SCHEMA_XML)));
 
     //Constraint: None of the properties can be null
     ECSqlStatement stmt;
@@ -461,7 +461,7 @@ void AssertPurge(ECDbCR ecdb, std::vector<std::pair<ECInstanceKey, ECInstanceKey
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(FileInfoTestFixture, Purge)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecdbfileinfo.ecdb", SchemaItem(TEST_SCHEMA_XML)));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecdbfileinfo.ecdb", SchemaItem(TEST_SCHEMA_XML)));
 
     ECInstanceKey fooKey;
     ECInstanceKey fooChildKey;

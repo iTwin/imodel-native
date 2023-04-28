@@ -487,11 +487,11 @@ Future<Unit> makeFuture() {
 
 // makeFutureWith(Future<T>()) -> Future<T>
 template <class F>
-typename std::enable_if<isFuture<typename std::result_of<F()>::type>::value,
-                        typename std::result_of<F()>::type>::type
+typename std::enable_if<isFuture<typename std::invoke_result<F>::type>::value,
+                        typename std::invoke_result<F>::type>::type
 makeFutureWith(F&& func) {
   using InnerType =
-      typename isFuture<typename std::result_of<F()>::type>::Inner;
+      typename isFuture<typename std::invoke_result<F>::type>::Inner;
   try {
     return func();
   } catch (std::exception& e) {
@@ -506,11 +506,11 @@ makeFutureWith(F&& func) {
 // makeFutureWith(void()) -> Future<Unit>
 template <class F>
 typename std::enable_if<
-    !(isFuture<typename std::result_of<F()>::type>::value),
-    Future<typename Unit::Lift<typename std::result_of<F()>::type>::type>>::type
+    !(isFuture<typename std::invoke_result<F>::type>::value),
+    Future<typename Unit::Lift<typename std::invoke_result<F>::type>::type>>::type
 makeFutureWith(F&& func) {
   using LiftedResult =
-      typename Unit::Lift<typename std::result_of<F()>::type>::type;
+      typename Unit::Lift<typename std::invoke_result<F>::type>::type;
   return makeFuture<LiftedResult>(makeTryWith([&func]() mutable {
     return func();
   }));
@@ -1186,9 +1186,9 @@ struct retrying_policy_traits {
 };
 
 template <class Policy, class FF>
-typename std::result_of<FF(size_t)>::type
+typename std::invoke_result<FF, size_t>::type
 retrying(size_t k, Policy&& p, FF&& ff) {
-  using F = typename std::result_of<FF(size_t)>::type;
+  using F = typename std::invoke_result<FF, size_t>::type;
   using T = typename F::value_type;
   auto f = ff(k++);
   return f.onError(
@@ -1205,7 +1205,7 @@ retrying(size_t k, Policy&& p, FF&& ff) {
 }
 
 template <class Policy, class FF>
-typename std::result_of<FF(size_t)>::type
+typename std::invoke_result<FF, size_t>::type
 retrying(Policy&& p, FF&& ff, retrying_policy_raw_tag) {
   auto q = [pm = std::forward<Policy>(p)](size_t k, exception_wrapper x) {
     return makeFuture<bool>(pm(k, x));
@@ -1214,7 +1214,7 @@ retrying(Policy&& p, FF&& ff, retrying_policy_raw_tag) {
 }
 
 template <class Policy, class FF>
-typename std::result_of<FF(size_t)>::type
+typename std::invoke_result<FF, size_t>::type
 retrying(Policy&& p, FF&& ff, retrying_policy_fut_tag) {
   return retrying(0, std::forward<Policy>(p), std::forward<FF>(ff));
 }
@@ -1311,7 +1311,7 @@ retryingPolicyCappedJitteredExponentialBackoff(
 }
 
 template <class Policy, class FF>
-typename std::result_of<FF(size_t)>::type
+typename std::invoke_result<FF, size_t>::type
 retrying(Policy&& p, FF&& ff) {
   using tag = typename detail::retrying_policy_traits<Policy>::tag;
   return detail::retrying(std::forward<Policy>(p), std::forward<FF>(ff), tag());

@@ -208,7 +208,7 @@ public:
 TEST_F(ConcurrentQueryFixture, StressTest) {
     GTEST_SKIP() << "This test take 15 sec and is meant for stress testing concurrent query for failures under load";
 
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("conn_query.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("conn_query.ecdb"));
     m_ecdb.AddFunction(SleepFunc::Instance());
     ConcurrentQueryMgr::Config::GetInstance().SetQuota(QueryQuota(std::chrono::seconds(10),1024*1025*1));
     ConcurrentQueryMgr::Config::GetInstance().SetWorkerThreadCount(std::thread::hardware_concurrency());
@@ -229,7 +229,7 @@ TEST_F(ConcurrentQueryFixture, StressTest) {
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ConcurrentQueryFixture, InterruptCheck_Timeout) {
 
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("conn_query.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("conn_query.ecdb"));
     auto config = ConcurrentQueryMgr::GetConfig(m_ecdb);
     config.SetQuota(QueryQuota(std::chrono::seconds(2), 1024));
     config.SetIgnoreDelay(false);
@@ -246,7 +246,7 @@ TEST_F(ConcurrentQueryFixture, InterruptCheck_Timeout) {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ConcurrentQueryFixture, InterruptCheck_MemoryLimitExceeded) {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("conn_query.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("conn_query.ecdb"));
 
     auto config = ConcurrentQueryMgr::GetConfig(m_ecdb);
     config.SetQuota(QueryQuota(std::chrono::seconds(10), 1000));
@@ -264,7 +264,7 @@ TEST_F(ConcurrentQueryFixture, InterruptCheck_MemoryLimitExceeded) {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ConcurrentQueryFixture, InterruptCheck_TimeLimitExceeded) {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("conn_query.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("conn_query.ecdb"));
 
     auto config = ConcurrentQueryMgr::GetConfig(m_ecdb);
     config.SetQuota(QueryQuota(std::chrono::seconds(1), 1000));
@@ -465,7 +465,7 @@ TEST_F(ConcurrentQueryFixture, ECSqlParams) {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ConcurrentQueryFixture, sqlite_only_eval_function_with_no_arg_or_constant_arg_only_once) {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("conn_query.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("conn_query.ecdb"));
     m_ecdb.AddFunction(CountFunc::Instance());
 
     const auto kRowCount = 10;
@@ -513,7 +513,7 @@ TEST_F(ConcurrentQueryFixture, sqlite_only_eval_function_with_no_arg_or_constant
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ConcurrentQueryFixture, DelayRequest) {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("conn_query.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("conn_query.ecdb"));
     ConcurrentQueryMgr::Config conf = ConcurrentQueryMgr::GetConfig(m_ecdb);
     conf.SetIgnoreDelay(false);
     ConcurrentQueryMgr::ResetConfig(m_ecdb, conf);
@@ -531,7 +531,7 @@ TEST_F(ConcurrentQueryFixture, DelayRequest) {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ConcurrentQueryFixture, RestartToken) {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("conn_query.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("conn_query.ecdb"));
     ConcurrentQueryMgr::Config conf = ConcurrentQueryMgr::GetConfig(m_ecdb);
     conf.SetIgnoreDelay(false);
     ConcurrentQueryMgr::ResetConfig(m_ecdb, conf);
@@ -581,7 +581,7 @@ TEST_F(ConcurrentQueryFixture, FutureAndCallback) {
             stmt.ClearBindings();
         };
     };
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("ConcurrentQuery_Simple.ecdb", testSchema));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ConcurrentQuery_Simple.ecdb", testSchema));
     const auto rowsInserted = 100;
     populateDb(rowsInserted, 512);
 
@@ -627,7 +627,7 @@ TEST_F(ConcurrentQueryFixture, ReaderSchema) {
             stmt.ClearBindings();
         };
     };
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("ConcurrentQuery_Simple.ecdb", testSchema));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ConcurrentQuery_Simple.ecdb", testSchema));
     const auto rowsInserted = 100;
     populateDb(rowsInserted, 512);
     ReopenECDb(ECDb::OpenParams(Db::OpenMode::Readonly));
@@ -713,7 +713,7 @@ TEST_F(ConcurrentQueryFixture, ReaderSchema) {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 // TEST_F(ConcurrentQueryFixture, pragma_file_info) {
-//     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("pragma_test.ecdb"));
+//     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("pragma_test.ecdb"));
 //     auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
 //     ECSqlReader reader(mgr, "PRAGMA file_info");
 //     int i = 0;
@@ -751,7 +751,7 @@ TEST_F(ConcurrentQueryFixture, ReaderBinding) {
             </ECEntityClass>
         </ECSchema>)xml");
 
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("ConcurrentQuery_Simple.ecdb", testSchema));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ConcurrentQuery_Simple.ecdb", testSchema));
 
     auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
     ECSqlReader  classReader(mgr, "select * from meta.ECClassDef where name=?",
@@ -811,7 +811,7 @@ TEST_F(ConcurrentQueryFixture, BlobIO) {
             </ECEntityClass>
         </ECSchema>)xml");
 
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("ConcurrentQuery_Simple.ecdb", testSchema));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ConcurrentQuery_Simple.ecdb", testSchema));
 
     auto createBuff = [](int size) {
         std::vector<uint8_t> buffer;

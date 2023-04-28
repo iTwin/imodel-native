@@ -31,7 +31,7 @@ struct ECSqlNavigationPropertyTestFixture : ECDbTestFixture
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlNavigationPropertyTestFixture, ResolvePropertyAlias)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("acessstr.ecdb",
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("acessstr.ecdb",
        SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
                         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                         <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
@@ -242,7 +242,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, RelECClassId)
     {
             {//Logical FK
             //EC3.1 schema
-            ASSERT_EQ(SUCCESS, SetupECDb("ecsqlnavpropsupport.ecdb",
+            ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlnavpropsupport.ecdb",
                                          SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                                     "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                                     "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
@@ -298,7 +298,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, RelECClassId)
 
             {//Physical FK
             //EC3.1 schema
-            ASSERT_EQ(SUCCESS, SetupECDb("ecsqlnavpropsupport.ecdb",
+            ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlnavpropsupport.ecdb",
                                          SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                                     "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                                     "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
@@ -364,7 +364,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, RelECClassId)
 
             {
             //EC3.0 schema
-            ASSERT_EQ(SUCCESS, SetupECDb("ecsqlnavpropsupport.ecdb",
+            ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlnavpropsupport.ecdb",
                  SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
                 <ECSchema schemaName="Workspace" nameSpacePrefix="WS" version="02.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
                     <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap"/>
@@ -424,7 +424,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, RelECClassId)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlNavigationPropertyTestFixture, LogicalForeignKeyWithNotNullAndUniqueConstraintsAndSharedCols)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ForeignKeyWithNotNullAndUniqueConstraintsAndSharedCols.ecdb",
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ForeignKeyWithNotNullAndUniqueConstraintsAndSharedCols.ecdb",
                                  SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
                         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                         <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
@@ -564,7 +564,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, LogicalForeignKeyWithNotNullAndUnique
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlNavigationPropertyTestFixture, LogicalForeignKeyWithNotNullAndUniqueConstraintsAndUnsharedCols)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("LogicalForeignKeyWithNotNullAndUniqueConstraintsAndUnsharedCols.ecdb",
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("LogicalForeignKeyWithNotNullAndUniqueConstraintsAndUnsharedCols.ecdb",
                                  SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
                         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                         <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
@@ -700,7 +700,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, LogicalForeignKeyWithNotNullAndUnique
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlNavigationPropertyTestFixture, PhysicalForeignKeyWithNotNullAndUniqueConstraintsAndUnsharedCols)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("PhysicalForeignKeyWithNotNullAndUniqueConstraintsAndUnsharedCols.ecdb",
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("PhysicalForeignKeyWithNotNullAndUniqueConstraintsAndUnsharedCols.ecdb",
                                  SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
                         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                         <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
@@ -956,7 +956,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, Overriding)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlNavigationPropertyTestFixture, ColumnOrder)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("navpropcolumnorder.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("navpropcolumnorder.ecdb", SchemaItem(
         R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                <ECEntityClass typeName="CodeSpec" modifier="Sealed">
@@ -1049,7 +1049,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, ColumnOrder)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlNavigationPropertyTestFixture, ClearBindings)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("navpropclearbindings.ecdb",
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("navpropclearbindings.ecdb",
                             SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
                         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                         <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
@@ -1120,7 +1120,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, ClearBindings)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlNavigationPropertyTestFixture, NavPropForVirtualRelClassId)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("NavPropForVirtualRelClassId.ecdb",SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("NavPropForVirtualRelClassId.ecdb",SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
@@ -1167,7 +1167,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, NavPropForVirtualRelClassId)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlNavigationPropertyTestFixture, BindingWithOptionalRelClassId)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlnavpropsupport.ecdb",
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlnavpropsupport.ecdb",
                             SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                        "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
@@ -1353,7 +1353,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, BindingWithOptionalRelClassId)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlNavigationPropertyTestFixture, BindingWithMandatoryRelClassId)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlnavpropsupport.ecdb",
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlnavpropsupport.ecdb",
                             SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                        "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
@@ -1647,7 +1647,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, BindingWithMandatoryRelClassId)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlNavigationPropertyTestFixture, GetValueWithOptionalRelClassId)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlnavpropsupport.ecdb",
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlnavpropsupport.ecdb",
                             SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                        "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
@@ -1753,7 +1753,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, GetValueWithOptionalRelClassId)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlNavigationPropertyTestFixture, GetValueWithMandatoryRelClassId)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlnavpropsupport.ecdb",
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlnavpropsupport.ecdb",
                             SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                        "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
@@ -1887,7 +1887,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, GetValueWithMandatoryRelClassId)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlNavigationPropertyTestFixture, NavigationPropertyFromOverflowTableIsDetectedAsDuplicate)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlnavpropsupport_ec.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlnavpropsupport_ec.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
                         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                             <ECEntityClass typeName="_From">
@@ -1931,7 +1931,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, NavigationPropertyFromOverflowTableIs
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlNavigationPropertyTestFixture, Null)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlnavpropsupport.ecdb",
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlnavpropsupport.ecdb",
                             SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                        "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
@@ -2158,7 +2158,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, Null)
 TEST_F(ECSqlNavigationPropertyTestFixture, CRUD)
     {
     const int rowCount = 3;
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlnavpropsupport.ecdb",
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlnavpropsupport.ecdb",
               SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                          "<ECSchema schemaName='TestSchema' alias='np' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                          "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
@@ -2348,7 +2348,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, CRUD)
 TEST_F(ECSqlNavigationPropertyTestFixture, ECInstanceAdapter)
     {
     const int rowCount = 3;
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlnavpropsupport.ecdb",
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlnavpropsupport.ecdb",
                            SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                       "<ECSchema schemaName='np' alias='np' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                       "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
@@ -2465,7 +2465,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, ECInstanceAdapter)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlNavigationPropertyTestFixture, JsonAdapter)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlnavpropsupport.ecdb",
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlnavpropsupport.ecdb",
                                  SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                             "<ECSchema schemaName='np' alias='np' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                             "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
@@ -2613,7 +2613,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, JsonAdapter)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlNavigationPropertyTestFixture, JoinedTable)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlnavpropsupport_joinedtable.ecdb",
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlnavpropsupport_joinedtable.ecdb",
                            SchemaItem(
                                R"xml(<?xml version='1.0' encoding='utf-8'?>
                                 <ECSchema schemaName='TestSchema' alias='np' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
@@ -3040,7 +3040,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, OverrideMixinNavProperty)
     </ECSchema>
     )xml";
 
-    ASSERT_EQ(SUCCESS, SetupECDb("DerivedNavProp.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("DerivedNavProp.ecdb"));
     ASSERT_EQ(SUCCESS, TestHelper(m_ecdb).ImportSchemas({SchemaItem(linRefSchema), SchemaItem(railSchemaXml)}))
         << "succeed overriding navigation property just for custom attr";
 
@@ -3145,7 +3145,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, NavPropOverridesMustHaveTheSameName)
         </ECSchema>
     )xml";
 
-    ASSERT_EQ(SUCCESS, SetupECDb("NavPropOverrides.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("NavPropOverrides.ecdb"));
     {
     Utf8String badSchemaXml;
     badSchemaXml.Sprintf(schemaXmlTemplate, "NavProp", "NavPropBanana");
@@ -3167,7 +3167,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, NavPropOverridesMustHaveTheSameName)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlNavigationPropertyTestFixture, EndTablePolymorphicRelationshipTest)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlnavpropsupport.ecdb",
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlnavpropsupport.ecdb",
                             SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                         "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"

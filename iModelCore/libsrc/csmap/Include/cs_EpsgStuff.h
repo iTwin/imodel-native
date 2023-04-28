@@ -344,6 +344,7 @@ public:
 	bool operator< (const std::wstring& epsgCode) const;
 	bool operator== (unsigned long epsgCode) const;
 	bool operator== (unsigned int epsgCode) const;
+	bool operator== (const TcsEpsgCode& rhs) const; // to avoid comparison term reordering issues in c++20
 	bool operator== (const std::wstring& epsgCode) const;
 	bool operator> (unsigned long epsgCode) const;
 	bool operator> (const std::wstring& epsgCode) const;
