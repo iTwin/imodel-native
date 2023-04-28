@@ -400,7 +400,7 @@ TEST_F(RapidJsonTests, RoundTripInt64)
 //---------------------------------------------------------------------------------------
 TEST_F(RapidJsonTests, InsertIntoECDb)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("RapidJsonInsertIntoECDb.ecdb", SchemaItem::CreateForFile("JsonTests.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("RapidJsonInsertIntoECDb.ecdb", SchemaItem::CreateForFile("JsonTests.01.00.00.ecschema.xml")));
 
     // Read JSON input from file
     BeFileName jsonInputFile;
@@ -1295,7 +1295,7 @@ struct SqliteJsonTests : public ECDbTestFixture
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SqliteJsonTests, Int64Rendering)
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("sqlitejsontests.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("sqlitejsontests.ecdb"));
 
     BeBriefcaseBasedId id(BeBriefcaseId(123), INT64_C(4129813293));
     const int64_t expectedPositiveInt64 = id.GetValue();
@@ -1327,7 +1327,7 @@ TEST_F(SqliteJsonTests, Int64Rendering)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SqliteJsonTests, RoundTripDoublesAndInt64)
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("sqlitejsontests.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("sqlitejsontests.ecdb"));
 
     const double expectedPositiveDouble = PI;
     const double expectedNegativeDouble = -1.0 / 17.0;

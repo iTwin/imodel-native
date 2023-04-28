@@ -5,6 +5,7 @@
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
 #include "BeXml/BeXml.h"
+#include <ECObjects/SchemaComparer.h>
 
 #include <iostream>
 #include <fstream>
@@ -2363,6 +2364,105 @@ TEST_F (SchemaDeserializationTest, ECNameValidation_NonASCIICharsAreProperlyEnCo
     encodeDecodeString ("你好");
     encodeDecodeString ("こんにちは");
     encodeDecodeString ("Здравствуйте");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaDeserializationTest, RoundtripSchemaWithEmptyElements)
+    {
+    /* We changed a flag in pugixml (pugi::parse_ws_pcdata_single) which causes elements with no children to parse their whitespace content
+    which by default was considered insignificant. This is to fix properties with only whitespaces in them, like <StringValue> </StringValue>.
+    It caused problems with Format because we did not expect this type of child.
+    The intent of this test is to verify we can load schemas with such "empty" (containing white space) elements
+    */
+    Utf8CP refSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="Ref" alias="ref" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">  </ECSchema>)xml";
+
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="MySchema" alias="ms" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="Ref" version="01.00.00" alias="ref"> </ECSchemaReference>
+        <ECCustomAttributes> </ECCustomAttributes>
+
+        <ECCustomAttributeClass typeName="GeneralCustomAttribute" appliesTo="Schema, AnyClass">
+            <ECProperty propertyName="Primitive" typeName="string"/>
+        </ECCustomAttributeClass>
+        <ECCustomAttributeClass typeName="SomeCustomAttribute" appliesTo="EntityClass"> </ECCustomAttributeClass>
+        
+        <ECEnumeration typeName="Enum1" backingTypeName="int" description="This is a description." displayLabel="This is a display label." isStrict="true" >
+            <ECEnumerator name="One" value="1" displayLabel="First"> </ECEnumerator>
+        </ECEnumeration>
+        <ECEntityClass typeName="A"> </ECEntityClass>
+        <ECEntityClass typeName="B">
+            <ECCustomAttributes> </ECCustomAttributes>
+        </ECEntityClass>
+        <ECEntityClass typeName="C">
+            <ECCustomAttributes>
+                <GeneralCustomAttribute xmlns="MySchema.01.00.00">  </GeneralCustomAttribute>
+            </ECCustomAttributes>
+        </ECEntityClass>
+        <ECEntityClass typeName="D">
+            <ECCustomAttributes>
+                <GeneralCustomAttribute xmlns="MySchema.01.00.00">
+                    <Primitive> </Primitive>
+                </GeneralCustomAttribute>
+            </ECCustomAttributes>
+            <ECProperty propertyName="a" typeName="string"> </ECProperty>
+            <ECArrayProperty  propertyName="b" typeName="long" minOccurs="0" maxOccurs="unbounded"> </ECArrayProperty>
+            <ECStructProperty  propertyName="c" typeName="S_A"> </ECStructProperty>
+            <ECStructArrayProperty  propertyName="d" typeName="S_A" minOccurs="0" maxOccurs="unbounded"> </ECStructArrayProperty>
+            <ECProperty propertyName="e" typeName="Enum1"> </ECProperty>
+            <ECNavigationProperty  propertyName="f" relationshipName="Rel_A" direction="forward"> </ECNavigationProperty>
+        </ECEntityClass>
+
+        <ECStructClass typeName="S_A"> </ECStructClass>
+        <ECRelationshipClass typeName="Rel_A" strength="referencing" strengthDirection="forward" modifier="Sealed">
+            <ECProperty propertyName="RelationshipProperty" typeName="string">  </ECProperty>
+            <Source  multiplicity="(0..1)" polymorphic="true" roleLabel="foo">
+                <Class class="D"> </Class>
+            </Source>
+            <Target  multiplicity="(0..1)" polymorphic="true" roleLabel="foo">
+                <Class class="D"> </Class>
+            </Target>
+        </ECRelationshipClass>
+
+        <UnitSystem typeName="SI"> </UnitSystem>
+        <Phenomenon typeName="LENGTH" definition="LENGTH" displayLabel="Length"> </Phenomenon>
+        <Unit typeName="M" phenomenon="LENGTH" unitSystem="SI" definition="M" displayLabel="m"> </Unit>
+        <Format typeName="DefaultReal" displayLabel="real" type="decimal" precision="6" formatTraits="keepSingleZero|keepDecimalPoint"> </Format>
+        <KindOfQuantity typeName="MyKindOfQuantity" displayLabel="LENGTH" persistenceUnit="M" relativeError="0.1"> </KindOfQuantity>
+    </ECSchema>)xml";
+
+    // Load schemas
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr refSchema;
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(refSchema, refSchemaXml, *context);
+    ASSERT_EQ(SchemaReadStatus::Success, status);
+    ECSchemaPtr schema;
+    status = ECSchema::ReadFromXmlString(schema, schemaXml, *context);
+    ASSERT_EQ(SchemaReadStatus::Success, status);
+    ASSERT_TRUE(schema.IsValid());
+
+    // Serialize to string
+    Utf8String schemaXmlSerialized;
+    ASSERT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(schemaXmlSerialized, ECVersion::Latest));
+
+    // Load from serialized string
+    ECSchemaReadContextPtr context2 = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr refSchema2;
+    status = ECSchema::ReadFromXmlString(refSchema2, refSchemaXml, *context2);
+    ASSERT_EQ(SchemaReadStatus::Success, status);
+    ECSchemaPtr schema2;
+    status = ECSchema::ReadFromXmlString(schema2, schemaXmlSerialized.c_str(), *context2);
+    ASSERT_EQ(SchemaReadStatus::Success, status);
+    ASSERT_TRUE(schema2.IsValid());
+
+    // Compare the schemas
+    SchemaComparer comparer;
+    SchemaComparer::Options comparerOptions = SchemaComparer::Options(SchemaComparer::DetailLevel::Full, SchemaComparer::DetailLevel::Full);
+    SchemaDiff diff;
+    ASSERT_EQ(BentleyStatus::SUCCESS, comparer.Compare(diff, context->GetCache().GetSchemas(), context2->GetCache().GetSchemas(), comparerOptions));
+    ASSERT_FALSE(diff.Changes().IsChanged());
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

@@ -716,7 +716,7 @@ protected:
 
     void ParsePropertyJson(Utf8CP value)
         {
-        Utf8PrintfString raw(u8R"*({ "TestProperty": %s })*", value);
+        Utf8PrintfString raw(Utf8Chars(u8R"*({ "TestProperty": %s })*"), value);
         ASSERT_EQ(SUCCESS, ParseJson(m_jsDoc, raw));
         ASSERT_EQ(SUCCESS, ParseJson(m_rapidJson, raw));
         }
@@ -903,7 +903,7 @@ TEST_F(JsonECInstanceConverterTestFixture, JsonToECInstance_Struct)
     AssertNullValue(*structInstance, "doubleProperty");
     AssertNullValue(*structInstance, "stringProperty");
 
-    ParseJsonString(u8R"*({ "doubleProperty": 1.1, "stringProperty": "S1" })*");
+    ParseJsonString(Utf8Chars(u8R"*({ "doubleProperty": 1.1, "stringProperty": "S1" })*"));
     EXPECT_EQ(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*structInstance, m_jsDoc, classLocater));
     AssertDoubleValue(*structInstance, "doubleProperty", 1.1);
     AssertStringValue(*structInstance, "stringProperty", "S1");
@@ -933,7 +933,7 @@ TEST_F(JsonECInstanceConverterTestFixture, JsonToECInstance_Struct)
     AssertNullValue(*testInstance, "testStruct.doubleProperty");
     AssertNullValue(*testInstance, "testStruct.stringProperty");
 
-    ParseJsonString(u8R"*({ "doubleProperty": null, "stringProperty": null })*");
+    ParseJsonString(Utf8Chars(u8R"*({ "doubleProperty": null, "stringProperty": null })*"));
     EXPECT_EQ(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*testInstance, m_jsDoc, classLocater));
     AssertNullValue(*testInstance, "doubleProperty");
     AssertNullValue(*testInstance, "stringProperty");
@@ -947,7 +947,7 @@ TEST_F(JsonECInstanceConverterTestFixture, JsonToECInstance_Struct)
     AssertNullValue(*testInstance, "testStruct.doubleProperty");
     AssertNullValue(*testInstance, "testStruct.stringProperty");
 
-    ParseJsonString(u8R"*({ "doubleProperty": 1.1, "stringProperty": "S1" })*");
+    ParseJsonString(Utf8Chars(u8R"*({ "doubleProperty": 1.1, "stringProperty": "S1" })*"));
     EXPECT_EQ(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*testInstance, m_jsDoc, classLocater));
     AssertNullValue(*testInstance, "testStruct");
     AssertNullValue(*testInstance, "testStruct.doubleProperty");
@@ -961,7 +961,7 @@ TEST_F(JsonECInstanceConverterTestFixture, JsonToECInstance_Struct)
     AssertDoubleValue(*testInstance, "doubleProperty", 1.1);
     AssertStringValue(*testInstance, "stringProperty", "S1");
 
-    ParseJsonString(u8R"*({ "doubleProperty": 1.1, "stringProperty": "S1", "testStruct": null })*");
+    ParseJsonString(Utf8Chars(u8R"*({ "doubleProperty": 1.1, "stringProperty": "S1", "testStruct": null })*"));
     EXPECT_EQ(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*testInstance, m_jsDoc, classLocater));
     AssertNullValue(*testInstance, "testStruct");
     AssertNullValue(*testInstance, "testStruct.doubleProperty");
@@ -975,7 +975,7 @@ TEST_F(JsonECInstanceConverterTestFixture, JsonToECInstance_Struct)
     AssertDoubleValue(*testInstance, "doubleProperty", 1.1);
     AssertStringValue(*testInstance, "stringProperty", "S1");
 
-    ParseJsonString(u8R"*({ "doubleProperty": 1.1, "stringProperty": "S1", "testStruct": { "doubleProperty": 2.2, "stringProperty": "S2" } })*");
+    ParseJsonString(Utf8Chars(u8R"*({ "doubleProperty": 1.1, "stringProperty": "S1", "testStruct": { "doubleProperty": 2.2, "stringProperty": "S2" } })*"));
     EXPECT_EQ(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*testInstance, m_jsDoc, classLocater));
     AssertDoubleValue(*testInstance, "doubleProperty", 1.1);
     AssertStringValue(*testInstance, "stringProperty", "S1");

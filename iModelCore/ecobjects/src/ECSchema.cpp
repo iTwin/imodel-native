@@ -3282,7 +3282,7 @@ SchemaReadStatus ECSchema::ReadFromXmlFile(ECSchemaPtr& schemaOut, WCharCP ecSch
     schemaOut = nullptr;
 
     pugi::xml_document doc;
-    pugi::xml_parse_result result = doc.load_file(ecSchemaXmlFile);
+    pugi::xml_parse_result result = doc.load_file(ecSchemaXmlFile, pugi::parse_default | pugi::parse_ws_pcdata_single);
     if(!result)
     {
         LOG.errorv ("Error loading XML file %ls: %s (error at char %d)", ecSchemaXmlFile, result.description(), result.offset);
@@ -3327,7 +3327,7 @@ SchemaReadStatus ECSchema::ReadFromXmlString(ECSchemaPtr& schemaOut, Utf8CP ecSc
     size_t stringByteCount = strlen (ecSchemaXml) * sizeof(Utf8Char);
 
     pugi::xml_document xmldoc;
-    pugi::xml_parse_result result = xmldoc.load_string(ecSchemaXml);
+    pugi::xml_parse_result result = xmldoc.load_string(ecSchemaXml, pugi::parse_default | pugi::parse_ws_pcdata_single);
 
     if (!result)
         {
@@ -3382,7 +3382,7 @@ SchemaReadStatus ECSchema::ReadFromXmlString(ECSchemaPtr& schemaOut, WCharCP ecS
         }
 
     pugi::xml_document xmldoc;
-    pugi::xml_parse_result result = xmldoc.load_string(xmlUtf8.c_str());
+    pugi::xml_parse_result result = xmldoc.load_string(xmlUtf8.c_str(), pugi::parse_default | pugi::parse_ws_pcdata_single);
 
     if (!result)
         {

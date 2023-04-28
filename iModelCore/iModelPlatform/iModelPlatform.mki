@@ -11,7 +11,7 @@ IntermediatePdbFile             = $(MultiCompileIntermediatePdbFile)
 SrciModelPlatform               =% $(_CurrentFilePath)
 PrivateApiSrc                   = $(SrciModelPlatform)PrivateApi/
 
-BUILD_WITH_C17=1
+BUILD_WITH_C20=1
 #----------------------------------------------------------------------
 # We're building the iModelPlatform dll
 #----------------------------------------------------------------------
