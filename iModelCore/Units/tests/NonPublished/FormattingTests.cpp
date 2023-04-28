@@ -904,7 +904,7 @@ TEST_F(FormatParsingSetTest, CompositeFormats)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(FormatParsingSetTest, CompositeFormats_IGNORED)
     {
-    TestValidParseToQuantity(u8"135°11'30 1/4\" ", arcDeg, 135.191736);
+    TestValidParseToQuantity(Utf8Chars(u8"135°11'30 1/4\" "), arcDeg, 135.191736);
 
     TestValidParseToQuantity("1 MILE 3 YRD 2 FT 6 IN", mile, 1*1     + 3.0/1760.0 + 2.0/5280.0 + 6.0/63360.0);
     TestValidParseToQuantity("1 MILE 3 YRD 2 FT 6 IN", yard, 1*1760  + 3*1        + 2.0/3.0    + 6.0/36.0);
@@ -1113,17 +1113,17 @@ TEST_F(FormatParsingSetTest, TestParseToStdSynonyms)
     auto lengthMap = bmap<Utf8String, BEU::UnitCP>();
     auto angleMap = bmap<Utf8String, BEU::UnitCP>();
     lengthMap["Feet"] = foot;
-    lengthMap[u8"фута"] = foot;
-    lengthMap[u8"фут"] = foot;
+    lengthMap[&Utf8Chars(u8"фута")] = foot;
+    lengthMap[&Utf8Chars(u8"фут")] = foot;
     lengthMap["'"] = foot;
     lengthMap["\""] = in;
-    lengthMap[u8"дюйма"] = in;
-    lengthMap[u8"дюйм"] = in;
+    lengthMap[&Utf8Chars(u8"дюйма")] = in;
+    lengthMap[&Utf8Chars(u8"дюйм")] = in;
     lengthMap["ft"] = foot;
     lengthMap["m"] = meter;
     lengthMap["meters"] = meter;
 
-    angleMap[Utf8String(u8"°")] = arcDeg;
+    angleMap[Utf8String(Utf8Chars(u8"°"))] = arcDeg;
     angleMap["'"] = arcMin;
     angleMap["''"] = arcSec;
 
@@ -1163,11 +1163,11 @@ TEST_F(FormatParsingSetTest, TestParseToStdSynonyms)
 
     VerifyQuantity("4'", "FT", "DefaultReal", 4.0, "FT");
     VerifyQuantity("4'6\"", "FT", "DefaultReal", 4.5, "FT");
-    VerifyQuantity(u8"135°11'30 1/4''", "ARC_DEG", "DefaultReal", 135.191736, "ARC_DEG");
-    VerifyQuantity(u8"135°11'30 1/4''", "ARC_DEG", "real", 2.359541, "RAD");
-    VerifyQuantity(u8"1 3/13 дюйма", "IN", "real", 1.2307692, "IN");
-    VerifyQuantity(u8"3 фута 4 дюйма", "IN", "real", 40.0, "IN");
-    VerifyQuantity(u8"1 фут 1 дюйм", "IN", "real", 13.0, "IN");
+    VerifyQuantity(Utf8Chars(u8"135°11'30 1/4''"), "ARC_DEG", "DefaultReal", 135.191736, "ARC_DEG");
+    VerifyQuantity(Utf8Chars(u8"135°11'30 1/4''"), "ARC_DEG", "real", 2.359541, "RAD");
+    VerifyQuantity(Utf8Chars(u8"1 3/13 дюйма"), "IN", "real", 1.2307692, "IN");
+    VerifyQuantity(Utf8Chars(u8"3 фута 4 дюйма"), "IN", "real", 40.0, "IN");
+    VerifyQuantity(Utf8Chars(u8"1 фут 1 дюйм"), "IN", "real", 13.0, "IN");
     }
 
 //---------------------------------------------------------------------------------------

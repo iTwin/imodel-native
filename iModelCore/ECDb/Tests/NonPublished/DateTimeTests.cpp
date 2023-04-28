@@ -187,7 +187,7 @@ struct DateTimeTestFixture : ECDbTestFixture
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DateTimeTestFixture, DifferingDateTimeInfos)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecdbdatetime.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecdbdatetime.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     ECSqlStatement statement;
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "INSERT INTO ecsqltest.PSADateTime(nodatetimeinfo, emptydatetimeinfo, utc, unspecified, dateonly, structwithdatetimes.nodatetimeinfo, structwithdatetimes.utc, structwithdatetimes.dateonly) VALUES (?,?,?,?,?,?,?,?)"));
@@ -236,7 +236,7 @@ TEST_F(DateTimeTestFixture, DifferingDateTimeInfos)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DateTimeTestFixture, ECSqlStatementGetValueDateTime)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecdbdatetime.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecdbdatetime.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     ECClassCP testClass = m_ecdb.Schemas().GetClass("ECSqlTest", "PSADateTime");
 
@@ -327,7 +327,7 @@ TEST_F(DateTimeTestFixture, ECSqlStatementGetValueDateTime)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DateTimeTestFixture, DateTimeStorageAccuracyTest)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecdbdatetime.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecdbdatetime.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
 
     //DateTime accuracy in ECDb(SQLite) is millisecs
     bvector<DateTime> testDateList;
@@ -374,7 +374,7 @@ TEST_F(DateTimeTestFixture, DateTimeStorageAccuracyTest)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DateTimeTestFixture, TimeOfDay)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("TimeOfDay.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("TimeOfDay.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="CoreCustomAttributes" version="01.00.01" alias="CoreCA"/>
             <ECEntityClass typeName="CalendarEntry" modifier="None">
@@ -436,7 +436,7 @@ TEST_F(DateTimeTestFixture, TimeOfDay)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DateTimeTestFixture, CURRENT_XXX)
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("CurrentXXX.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("CurrentXXX.ecdb"));
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT CURRENT_DATE, CURRENT_TIMESTAMP, CURRENT_TIME FROM meta.ECSchemaDef LIMIT 1"));

@@ -2084,9 +2084,9 @@ TEST(MSBsplineSurface, ClosestPoint)
 TEST(BsplineCurve, overStrokeFromLuca)
     {
     // Unescaped raw_json_text is in between the following multicharacter delimiters: foo( raw_json_text )foo
-    static Utf8CP s_inputs = u8R"foo([{"path":[{"bcurve":{"closed":false,"knots":[0.0,0.0,0.0,0.0,1.0,1.0,1.0,1.0],"order":4,"points":[[7565.44000,1134.0261211764747,165.43999999999956],[7597.0133333334103,1134.0261203431699,165.44000],[7628.5866666667879,1134.0261195604125,165.44000],[7660.1600000002071,1134.0261188244293,165.44000000011865]]}}]},{"path":[{"bcurve":{"closed":false,"knots":[0.0,0.0,0.0,0.0,1.0,1.0,1.0,1.0],"order":4,"points":[[7565.44000,1134.0261211764747,165.43999999999956],[7597.0133333334103,1124.0261203431699,165.44000],[7628.5866666667879,1144.0261195604125,165.44000],[7660.1600000002071,1134.0261188244293,165.44000000011865]]}}]}])foo";
+    static Utf8Chars s_inputs(u8R"foo([{"path":[{"bcurve":{"closed":false,"knots":[0.0,0.0,0.0,0.0,1.0,1.0,1.0,1.0],"order":4,"points":[[7565.44000,1134.0261211764747,165.43999999999956],[7597.0133333334103,1134.0261203431699,165.44000],[7628.5866666667879,1134.0261195604125,165.44000],[7660.1600000002071,1134.0261188244293,165.44000000011865]]}}]},{"path":[{"bcurve":{"closed":false,"knots":[0.0,0.0,0.0,0.0,1.0,1.0,1.0,1.0],"order":4,"points":[[7565.44000,1134.0261211764747,165.43999999999956],[7597.0133333334103,1124.0261203431699,165.44000],[7628.5866666667879,1144.0261195604125,165.44000],[7660.1600000002071,1134.0261188244293,165.44000000011865]]}}]}])foo");
     bvector<IGeometryPtr> inputs;
-    if (Check::True(IModelJson::TryIModelJsonStringToGeometry(s_inputs, inputs), "Parse inputs") &&
+    if (Check::True(IModelJson::TryIModelJsonStringToGeometry(&s_inputs, inputs), "Parse inputs") &&
         Check::Size(inputs.size(), 2, "Have two inputs"))
         {
         auto straight = inputs[0]->GetAsCurveVector();  // Luca's test case is a very nearly straight cubic Bezier curve in UOR
@@ -2119,9 +2119,9 @@ TEST(BsplineCurve, overStrokeFromLuca)
 TEST(BsplineCurve, UnclampedKnots)
     {
     // Unescaped raw_json_text is in between the following multicharacter delimiters: foo( raw_json_text )foo
-    static Utf8CP s_inputs = u8R"foo([{"bcurve":{"points":[[0,0,0,1],[5,5,0,1],[10,-5,0,1],[15,10,0,1],[20,-10,0,1],[25,15,0,1]],"knots":[1,1,2,3,4,5,6,7,8,8],"closed":false,"order":4}},{"bcurve":{"points":[[5,2.5,0,1],[6.66666666666,1.66666666667,0,1],[10,-5,0,1],[15,10,0,1],[18.33333333332,-3.33333333332,0,1],[20,-2.5,0,1]],"knots":[3,3,3,3,4,5,6,6,6,6],"closed":false,"order":4}}])foo";
+    static Utf8Chars s_inputs(u8R"foo([{"bcurve":{"points":[[0,0,0,1],[5,5,0,1],[10,-5,0,1],[15,10,0,1],[20,-10,0,1],[25,15,0,1]],"knots":[1,1,2,3,4,5,6,7,8,8],"closed":false,"order":4}},{"bcurve":{"points":[[5,2.5,0,1],[6.66666666666,1.66666666667,0,1],[10,-5,0,1],[15,10,0,1],[18.33333333332,-3.33333333332,0,1],[20,-2.5,0,1]],"knots":[3,3,3,3,4,5,6,6,6,6],"closed":false,"order":4}}])foo");
     bvector<IGeometryPtr> inputs;
-    if (Check::True(IModelJson::TryIModelJsonStringToGeometry(s_inputs, inputs), "Parse inputs") &&
+    if (Check::True(IModelJson::TryIModelJsonStringToGeometry(&s_inputs, inputs), "Parse inputs") &&
         Check::Size(inputs.size(), 2, "Have two inputs"))
         {
         // verify that the unclamped IMJS curve imports as a clamped curve 

@@ -335,7 +335,7 @@ TEST_F(IndexTests, InvalidUserDefinedIndexes)
 TEST_F(IndexTests, UserDefinedIndexesOnEntityClassSystemProperties)
     {
             {
-            ASSERT_EQ(SUCCESS, SetupECDb("UserDefinedIndexesOnSystemProperties_entityclass.ecdb", SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+            ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("UserDefinedIndexesOnSystemProperties_entityclass.ecdb", SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
             <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                 <ECEntityClass typeName="Foo" modifier="None">
@@ -451,7 +451,7 @@ TEST_F(IndexTests, UserDefinedIndexesOnEntityClassSystemProperties)
 
             {
             //index on nav prop (logical FK)
-            ASSERT_EQ(SUCCESS, SetupECDb("UserDefinedIndexesOnSystemProperties_navprop.ecdb", SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+            ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("UserDefinedIndexesOnSystemProperties_navprop.ecdb", SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
             <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                <ECEntityClass typeName="Parent" modifier="None">
@@ -599,7 +599,7 @@ TEST_F(IndexTests, UserDefinedIndexesOnEntityClassSystemProperties)
 
                 {
                 //index on nav prop (physical FK)
-                ASSERT_EQ(SUCCESS, SetupECDb("UserDefinedIndexesOnSystemProperties_navprop.ecdb", SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+                ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("UserDefinedIndexesOnSystemProperties_navprop.ecdb", SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
             <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                <ECEntityClass typeName="Parent" modifier="None">
@@ -761,7 +761,7 @@ TEST_F(IndexTests, UserDefinedIndexesOnEntityClassSystemProperties)
 
                     {
                     //index on nav prop (physical FK) with 1:1
-                    ASSERT_EQ(SUCCESS, SetupECDb("UserDefinedIndexesOnSystemProperties_navprop.ecdb", SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+                    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("UserDefinedIndexesOnSystemProperties_navprop.ecdb", SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
             <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                <ECEntityClass typeName="Parent" modifier="None">
@@ -814,7 +814,7 @@ TEST_F(IndexTests, UserDefinedIndexesOnEntityClassSystemProperties)
 
                     {
                     //index Point members
-                    ASSERT_EQ(SUCCESS, SetupECDb("UserDefinedIndexesOnSystemProperties_points.ecdb", SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+                    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("UserDefinedIndexesOnSystemProperties_points.ecdb", SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
             <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                 <ECEntityClass typeName="Foo" modifier="Sealed">
@@ -1131,7 +1131,7 @@ TEST_F(IndexTests, UserDefinedIndexesOnFKRelSystemProperties)
 TEST_F(IndexTests, UserDefinedIndexesOnLinkTableRelSystemProperties)
     {
             {
-            ASSERT_EQ(SUCCESS, SetupECDb("UserDefinedIndexesOnSystemProperties_linktable.ecdb", SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+            ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("UserDefinedIndexesOnSystemProperties_linktable.ecdb", SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
             <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                <ECEntityClass typeName="Parent" modifier="None">
@@ -1430,7 +1430,7 @@ TEST_F(IndexTests, UserDefinedIndexesOnLinkTableRelSystemProperties)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(IndexTests, UserDefinedIndexesOnStructMembers)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("UserDefinedIndexesOnStructMembers.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("UserDefinedIndexesOnStructMembers.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -1472,7 +1472,7 @@ TEST_F(IndexTests, UserDefinedIndexesOnStructMembers)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(IndexTests, UserDefinedIndexesOnTph)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("userdefinedindextest1.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("userdefinedindextest1.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts1' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -1509,7 +1509,7 @@ TEST_F(IndexTests, UserDefinedIndexesOnTph)
                      GetHelper().GetIndexDdl(indexName).c_str());
 
 
-    ASSERT_EQ(SUCCESS, SetupECDb("userdefinedindextest2.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("userdefinedindextest2.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -1559,7 +1559,7 @@ TEST_F(IndexTests, UserDefinedIndexesOnTph)
                      GetHelper().GetIndexDdl(indexName).c_str()) << indexName;
 
 
-    ASSERT_EQ(SUCCESS, SetupECDb("userdefinedindextest3.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("userdefinedindextest3.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts3' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -1599,7 +1599,7 @@ TEST_F(IndexTests, UserDefinedIndexesOnTph)
                      GetHelper().GetIndexDdl(indexName).c_str()) << indexName;
 
 
-    ASSERT_EQ(SUCCESS, SetupECDb("userdefinedindextest4.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("userdefinedindextest4.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts4' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -1687,7 +1687,7 @@ TEST_F(IndexTests, UserDefinedIndexesOnTph)
 
     
 
-    ASSERT_EQ(SUCCESS, SetupECDb("userdefinedindextest8.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("userdefinedindextest8.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts8' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='CoreCustomAttributes' version='01.00' prefix='CoreCA' />"
@@ -1816,7 +1816,7 @@ TEST_F(IndexTests, UserDefinedIndexesOnTph)
                      GetHelper().GetIndexDdl(indexName).c_str()) << indexName;
 
 
-    ASSERT_EQ(SUCCESS, SetupECDb("userdefinedindextest9.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("userdefinedindextest9.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' alias='ts9' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
@@ -2057,7 +2057,7 @@ TEST_F(IndexTests, UserDefinedUniqueIndexesOnNonTph)
         </ECSchema>)xml"))) << "index on abstract base class with multiple subclasses";
 
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("UserDefinedIndexesOnNonTph.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("UserDefinedIndexesOnNonTph.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
             <ECEntityClass typeName="Foo" modifier="Sealed">
@@ -2083,7 +2083,7 @@ TEST_F(IndexTests, UserDefinedUniqueIndexesOnNonTph)
     }
 
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("UserDefinedIndexesOnNonTph.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("UserDefinedIndexesOnNonTph.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
             <ECEntityClass typeName="Foo" modifier="Sealed">
@@ -2327,7 +2327,7 @@ TEST_F(IndexTests, UserDefinedNonUniqueIndexesOnNonTph)
         </ECSchema>)xml"))) << "index on abstract base class with multiple subclasses";
 
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("UserDefinedIndexesOnNonTph.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("UserDefinedIndexesOnNonTph.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
             <ECEntityClass typeName="Foo" modifier="Sealed">
@@ -2360,7 +2360,7 @@ TEST_F(IndexTests, UserDefinedNonUniqueIndexesOnNonTph)
 TEST_F(IndexTests, UserDefinedIndexWhenClassModifierIsUpgraded)
     {
             {
-            ASSERT_EQ(SUCCESS, SetupECDb("UserDefinedIndexWhenClassModifierIsUpgraded.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+            ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("UserDefinedIndexWhenClassModifierIsUpgraded.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
             <ECEntityClass typeName="Foo" modifier="Sealed">
@@ -2407,7 +2407,7 @@ TEST_F(IndexTests, UserDefinedIndexWhenClassModifierIsUpgraded)
             }
 
             {
-            ASSERT_EQ(SUCCESS, SetupECDb("UserDefinedIndexWhenClassModifierIsUpgraded.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+            ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("UserDefinedIndexWhenClassModifierIsUpgraded.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
             <ECEntityClass typeName="Base">
@@ -2475,7 +2475,7 @@ TEST_F(IndexTests, UserDefinedIndexWhenClassModifierIsUpgraded)
 
             }
             {
-            ASSERT_EQ(SUCCESS, SetupECDb("UserDefinedIndexWhenClassModifierIsUpgraded.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+            ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("UserDefinedIndexWhenClassModifierIsUpgraded.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEntityClass typeName="Foo" modifier="Abstract">
                 <ECProperty propertyName="Prop" typeName="int" />
@@ -2505,7 +2505,7 @@ TEST_F(IndexTests, UserDefinedIndexWhenClassModifierIsUpgraded)
             }
 
             {
-            ASSERT_EQ(SUCCESS, SetupECDb("UserDefinedIndexWhenClassModifierIsUpgraded.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+            ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("UserDefinedIndexWhenClassModifierIsUpgraded.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEntityClass typeName="Foo" modifier="None">
                 <ECProperty propertyName="Prop" typeName="int" />
@@ -2541,7 +2541,7 @@ TEST_F(IndexTests, UserDefinedIndexWhenClassModifierIsUpgraded)
 TEST_F(IndexTests, UserDefinedIndexesOnSharedColumns)
     {
             {
-            ASSERT_EQ(SUCCESS, SetupECDb("indexonsharedcolumns1.ecdb", SchemaItem(
+            ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("indexonsharedcolumns1.ecdb", SchemaItem(
                 R"xml(<?xml version='1.0' encoding='utf-8'?>
             <ECSchema schemaName="TestSchema" nameSpacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
         <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap" />
@@ -2609,7 +2609,7 @@ TEST_F(IndexTests, UserDefinedIndexesOnSharedColumns)
             }
 
             {
-            ASSERT_EQ(SUCCESS, SetupECDb("indexonsharedcolumns2.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+            ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("indexonsharedcolumns2.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
                 <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                     <ECEntityClass typeName="Base" modifier="None">
@@ -2662,7 +2662,7 @@ TEST_F(IndexTests, UserDefinedIndexesOnSharedColumns)
             }
 
             {
-            ASSERT_EQ(SUCCESS, SetupECDb("indexonsharedcolumns3.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+            ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("indexonsharedcolumns3.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
                 <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                     <ECEntityClass typeName="Parent" modifier="None">
@@ -2700,7 +2700,7 @@ TEST_F(IndexTests, UserDefinedIndexesOnSharedColumns)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(IndexTests, UserDefinedIndexWithWhereClauseAndPropertyMapCAIsNullable)
     {
-        ASSERT_EQ(SUCCESS, SetupECDb("notnullableproptest1.ecdb", SchemaItem(
+        ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("notnullableproptest1.ecdb", SchemaItem(
             "<?xml version='1.0' encoding='utf-8'?>"
             "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts1' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
             "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -2734,7 +2734,7 @@ TEST_F(IndexTests, UserDefinedIndexWithWhereClauseAndPropertyMapCAIsNullable)
                          GetHelper().GetIndexDdl(indexName).c_str()) << indexName;
 
 
-        ASSERT_EQ(SUCCESS, SetupECDb("notnullableproptest2.ecdb", SchemaItem(
+        ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("notnullableproptest2.ecdb", SchemaItem(
             "<?xml version='1.0' encoding='utf-8'?>"
             "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
             "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -2769,7 +2769,7 @@ TEST_F(IndexTests, UserDefinedIndexWithWhereClauseAndPropertyMapCAIsNullable)
                          GetHelper().GetIndexDdl(indexName).c_str()) << indexName;
 
 
-        ASSERT_EQ(SUCCESS, SetupECDb("notnullableproptest3.ecdb", SchemaItem(
+        ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("notnullableproptest3.ecdb", SchemaItem(
             "<?xml version='1.0' encoding='utf-8'?>"
             "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts3' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
             "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -2815,7 +2815,7 @@ TEST_F(IndexTests, UserDefinedIndexWithWhereClauseAndPropertyMapCAIsNullable)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(IndexTests, UserDefinedIndexWithWhereIsNotNull)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecdbmapindextest.ecdb", SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecdbmapindextest.ecdb", SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
                                                                      "   <ECSchemaReference name='ECDbMap' version='02.00' prefix ='ecdbmap' />"
                                                                      "   <ECEntityClass typeName = 'IndexClass' modifier='Sealed'>"
                                                                      "       <ECCustomAttributes>"
@@ -2879,7 +2879,7 @@ TEST_F(IndexTests, UserDefinedIndexWithWhereIsNotNull)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(IndexTests, UserDefinedUniqueIndex)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecdbmapindextest.ecdb", SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecdbmapindextest.ecdb", SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
                                                                      "   <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                                                                      "<ECEntityClass typeName='IndexClass2' modifier='Sealed'>"
                                                                      "   <ECCustomAttributes>"
@@ -3055,7 +3055,7 @@ TEST_F(IndexTests, DuplicateUserDefinedIndexes)
                 </ECSchema>)xml"))) << "Index with same name and different definition in subclass";
 
             {
-            ASSERT_EQ(SUCCESS, SetupECDb("DuplicateUserDefinedIndexes.ecdb", SchemaItem(
+            ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("DuplicateUserDefinedIndexes.ecdb", SchemaItem(
                 R"xml(<?xml version="1.0" encoding="utf-8"?>
                 <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
@@ -3139,7 +3139,7 @@ TEST_F(IndexTests, DuplicateUserDefinedIndexes)
             }
 
             {
-            ASSERT_EQ(SUCCESS, SetupECDb("DuplicateUserDefinedIndexes.ecdb", SchemaItem(
+            ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("DuplicateUserDefinedIndexes.ecdb", SchemaItem(
                 R"xml(<?xml version="1.0" encoding="utf-8"?>
                 <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
@@ -3196,7 +3196,7 @@ TEST_F(IndexTests, DuplicateUserDefinedIndexes)
 TEST_F(IndexTests, ImplicitIndexesForRelationships)
     {
             {
-            ASSERT_EQ(SUCCESS, SetupECDb("indexcreationforrelationships1.ecdb", SchemaItem(
+            ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("indexcreationforrelationships1.ecdb", SchemaItem(
                 R"xml(<?xml version="1.0" encoding="utf-8"?>
                 <ECSchema schemaName="TestSchema" alias="ts1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
@@ -3291,7 +3291,7 @@ TEST_F(IndexTests, ImplicitIndexesForRelationships)
             }
 
             {
-            ASSERT_EQ(SUCCESS, SetupECDb("indexcreationforrelationships2.ecdb", SchemaItem(
+            ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("indexcreationforrelationships2.ecdb", SchemaItem(
                 R"xml(<?xml version="1.0" encoding="utf-8"?>
                 <ECSchema schemaName="TestSchema" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
@@ -3337,7 +3337,7 @@ TEST_F(IndexTests, ImplicitIndexesForRelationships)
             }
 
             {
-            ASSERT_EQ(SUCCESS, SetupECDb("indexcreationforrelationships3.ecdb", SchemaItem(
+            ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("indexcreationforrelationships3.ecdb", SchemaItem(
                 "<?xml version='1.0' encoding='utf-8'?>"
                 "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts3' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                 "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -3378,7 +3378,7 @@ TEST_F(IndexTests, ImplicitIndexesForRelationships)
             }
 
             {
-            ASSERT_EQ(SUCCESS, SetupECDb("indexcreationforrelationships4.ecdb", SchemaItem(
+            ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("indexcreationforrelationships4.ecdb", SchemaItem(
                 "<?xml version='1.0' encoding='utf-8'?>"
                 "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts4' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                 "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -3418,7 +3418,7 @@ TEST_F(IndexTests, ImplicitIndexesForRelationships)
             }
 
             {
-            ASSERT_EQ(SUCCESS, SetupECDb("indexcreationforrelationships50.ecdb", SchemaItem(
+            ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("indexcreationforrelationships50.ecdb", SchemaItem(
                 R"xml(<?xml version="1.0" encoding="utf-8"?>
                 <ECSchema schemaName="TestSchema" alias="ts50" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
@@ -3471,7 +3471,7 @@ TEST_F(IndexTests, ImplicitIndexesForRelationships)
             }
 
             {
-            ASSERT_EQ(SUCCESS, SetupECDb("indexcreationforrelationships5.ecdb", SchemaItem(
+            ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("indexcreationforrelationships5.ecdb", SchemaItem(
                 "<?xml version='1.0' encoding='utf-8'?>"
                 "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts5' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                 "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -3525,7 +3525,7 @@ TEST_F(IndexTests, ImplicitIndexesForRelationships)
             }
 
             {
-            ASSERT_EQ(SUCCESS, SetupECDb("indexcreationforrelationships6.ecdb", SchemaItem(
+            ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("indexcreationforrelationships6.ecdb", SchemaItem(
                 "<?xml version='1.0' encoding='utf-8'?>"
                 "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts6' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                 "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -3579,7 +3579,7 @@ TEST_F(IndexTests, ImplicitIndexesForRelationships)
             }
 
             {
-            ASSERT_EQ(SUCCESS, SetupECDb("indexcreationforrelationships7.ecdb", SchemaItem(
+            ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("indexcreationforrelationships7.ecdb", SchemaItem(
                 "<?xml version='1.0' encoding='utf-8'?>"
                 "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts7' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                 "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -3633,7 +3633,7 @@ TEST_F(IndexTests, ImplicitIndexesForRelationships)
             }
 
             {
-            ASSERT_EQ(SUCCESS, SetupECDb("indexcreationforrelationships8.ecdb", SchemaItem(
+            ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("indexcreationforrelationships8.ecdb", SchemaItem(
                 R"xml(<?xml version="1.0" encoding="utf-8"?>
                 <ECSchema schemaName="TestSchema" alias="ts8" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
@@ -3709,7 +3709,7 @@ TEST_F(IndexTests, ImplicitIndexesForRelationships)
 
             {
             //Tests that AllowDuplicateRelationships Flag from LinkTableRelationshipMap CA is applied to subclasses
-            ASSERT_EQ(SUCCESS, SetupECDb("indexcreationforrelationships9.ecdb", SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts9\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
+            ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("indexcreationforrelationships9.ecdb", SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts9\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
                                                                                            "  <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
                                                                                            "  <ECEntityClass typeName='A' modifier='None'>"
                                                                                            "    <ECProperty propertyName='Name' typeName='string' />"
@@ -3771,7 +3771,7 @@ TEST_F(IndexTests, ImplicitIndexesForRelationships)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(IndexTests, ImplicitIndexesForRelationshipsOnSharedColumns)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ImplicitIndexesForRelationshipsOnSharedColumns.ecdb", SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ImplicitIndexesForRelationshipsOnSharedColumns.ecdb", SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
             <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                <ECEntityClass typeName="Parent" modifier="None">
@@ -3816,7 +3816,7 @@ TEST_F(IndexTests, ImplicitIndexesForRelationshipsOnSharedColumns)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(IndexTests, IndexSkippedForIdSpecificationCA)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("IdSpecification.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IdSpecification.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "<ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.13' alias='ecdbmap' />"
@@ -3868,7 +3868,7 @@ TEST_F(IndexTests, IndexSkippedForIdSpecificationCA)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(IndexTests, AddAdditionalIndex)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("AddIndex.ecdb", SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("AddIndex.ecdb", SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
             <ECEntityClass typeName="TestClass">
@@ -3944,7 +3944,7 @@ TEST_F(IndexTests, AddAdditionalIndex)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(IndexTests, ModifyIndexProperties)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ModifyIndexProperties.ecdb", SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ModifyIndexProperties.ecdb", SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
             <ECEntityClass typeName="TestClass">
@@ -4056,7 +4056,7 @@ TEST_F(IndexTests, ModifyIndexProperties)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(IndexTests, RemovingIndexFails)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("AddIndex.ecdb", SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("AddIndex.ecdb", SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
             <ECEntityClass typeName="TestClass">
@@ -4130,7 +4130,7 @@ TEST_F(IndexTests, RemovingIndexFails)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(IndexTests, ModifyingIndexFails)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("AddIndex.ecdb", SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("AddIndex.ecdb", SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
             <ECEntityClass typeName="TestClass">

@@ -113,7 +113,7 @@ TEST_F(SchemaRulesTestFixture, SchemaAlias)
 
 
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecdbschemarules_duplicateschemaaliases.ecdb", SchemaItem("<ECSchema schemaName='Schema1' alias='ns' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecdbschemarules_duplicateschemaaliases.ecdb", SchemaItem("<ECSchema schemaName='Schema1' alias='ns' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                                                                            "  <ECEntityClass typeName='TestClass1' >"
                                                                                            "    <ECProperty propertyName='TestProperty' typeName='string' />"
                                                                                            "  </ECEntityClass>"
@@ -411,7 +411,7 @@ TEST_F(SchemaRulesTestFixture, MixinsAndECDbMapCAs)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaRulesTestFixture, Instantiability)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecdbschemarules.ecdb", SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecdbschemarules.ecdb", SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                       <ECEntityClass typeName="AbstractClass" modifier="Abstract">
                           <ECProperty propertyName="Name" typeName="string" />
                       </ECEntityClass>
@@ -455,7 +455,7 @@ TEST_F(SchemaRulesTestFixture, Instantiability)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaRulesTestFixture, KindOfQuantities)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecdbschemarules_koq.ecdb", SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecdbschemarules_koq.ecdb", SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <KindOfQuantity typeName="MyKoq" relativeError="0.1" persistenceUnit="FT" />
                     <ECStructClass typeName="TestStruct" >
                        <ECProperty propertyName="Name" typeName="string"/>
@@ -1881,7 +1881,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipCardinality)
     {
             {
             //(1,1):(1,1) Physical FK
-            ASSERT_EQ(SUCCESS, SetupECDb("ecdbschemarules_cardinality.ecdb", SchemaItem(
+            ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecdbschemarules_cardinality.ecdb", SchemaItem(
                 "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                 "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                 "  <ECEntityClass typeName='A'>"
@@ -1938,7 +1938,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipCardinality)
 
             {
             //(1,1):(1,1) Logical FK
-            ASSERT_EQ(SUCCESS, SetupECDb("ecdbschemarules_cardinality.ecdb", SchemaItem(
+            ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecdbschemarules_cardinality.ecdb", SchemaItem(
                 "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                 "  <ECEntityClass typeName='A'>"
                 "    <ECProperty propertyName='Name' typeName='string' />"
@@ -1990,7 +1990,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipCardinality)
 
             {
             //(1,1):(1,N) (Physical FK)
-            ASSERT_EQ(SUCCESS, SetupECDb("ecdbschemarules_cardinality.ecdb", SchemaItem(
+            ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecdbschemarules_cardinality.ecdb", SchemaItem(
                 "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                 "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                 "  <ECEntityClass typeName='A'>"
@@ -2041,7 +2041,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipCardinality)
             }
             {
             //(1,1):(1,N) (logical FK)
-            ASSERT_EQ(SUCCESS, SetupECDb("ecdbschemarules_cardinality.ecdb", SchemaItem(
+            ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecdbschemarules_cardinality.ecdb", SchemaItem(
                 "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                 "  <ECEntityClass typeName='A'>"
                 "    <ECProperty propertyName='Name' typeName='string' />"
@@ -2088,7 +2088,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipCardinality)
 
             {
             //(0,1):(0,1)
-            ASSERT_EQ(SUCCESS, SetupECDb("ecdbschemarules_cardinality.ecdb", SchemaItem(
+            ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecdbschemarules_cardinality.ecdb", SchemaItem(
                 "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                 "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                 "  <ECEntityClass typeName='A'>"
@@ -2134,7 +2134,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipCardinality)
 
             {
             //(0,1):(0,N)
-            ASSERT_EQ(SUCCESS, SetupECDb("ecdbschemarules_cardinality.ecdb", SchemaItem(
+            ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecdbschemarules_cardinality.ecdb", SchemaItem(
                 "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                 "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                 "  <ECEntityClass typeName='A'>"
@@ -2180,7 +2180,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipCardinality)
 
         //**  self-joins
             {
-            ASSERT_EQ(SUCCESS, SetupECDb("relcardinality_selfjoins.ecdb", SchemaItem(
+            ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("relcardinality_selfjoins.ecdb", SchemaItem(
                 "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                 "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                 "  <ECEntityClass typeName='A'>"
@@ -2541,7 +2541,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipWithMultipleConstraintClasses)
 TEST_F(SchemaRulesTestFixture, RelationshipAsConstraintClass)
     {
             {
-            ASSERT_EQ(SUCCESS, SetupECDb("RelationshipAsConstraintClass.ecdb",SchemaItem(R"xml(<ECSchema schemaName="TestSchema1" alias="ts1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("RelationshipAsConstraintClass.ecdb",SchemaItem(R"xml(<ECSchema schemaName="TestSchema1" alias="ts1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECEntityClass typeName="A" >
                        <ECProperty propertyName="Name" typeName="string" />
                      </ECEntityClass>
@@ -2576,7 +2576,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipAsConstraintClass)
 
 
             {
-            ASSERT_EQ(SUCCESS, SetupECDb("RelationshipAsConstraintClass.ecdb",
+            ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("RelationshipAsConstraintClass.ecdb",
                                          SchemaItem(R"xml(<ECSchema schemaName="TestSchema2" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                      <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                      <ECEntityClass typeName="A" >
@@ -2616,7 +2616,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipAsConstraintClass)
             }
 
             {
-            ASSERT_EQ(SUCCESS, SetupECDb("RelationshipAsConstraintClass.ecdb",
+            ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("RelationshipAsConstraintClass.ecdb",
                 SchemaItem(R"xml(<ECSchema schemaName="TestSchema3" alias="ts3" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                      <ECEntityClass typeName="A" >
                        <ECProperty propertyName="Name" typeName="string" />
@@ -2652,7 +2652,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipAsConstraintClass)
             }
 
             {
-            ASSERT_EQ(SUCCESS, SetupECDb("RelationshipAsConstraintClass.ecdb",
+            ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("RelationshipAsConstraintClass.ecdb",
                     SchemaItem(R"xml(<ECSchema schemaName="TestSchema4" alias="ts4" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                      <ECEntityClass typeName="A" >
                        <ECProperty propertyName="Name" typeName="string" />
@@ -2701,7 +2701,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipAsConstraintClass)
             }
 
             {
-            ASSERT_EQ(SUCCESS, SetupECDb("RelationshipAsConstraintClass.ecdb",
+            ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("RelationshipAsConstraintClass.ecdb",
                      SchemaItem(R"xml(<ECSchema schemaName="TestSchema5" alias="ts5" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                      <ECEntityClass typeName="A" >
                        <ECProperty propertyName="Name" typeName="string" />
@@ -2823,7 +2823,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipAsConstraintClass)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaRulesTestFixture, LinkTableRelationshipMapStrategy)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("rellinktablemapstrategy.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("rellinktablemapstrategy.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                   "<ECSchema schemaName='Test1' alias='ts1' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                   "  <ECEntityClass typeName='A' >"
                                   "    <ECProperty propertyName='Name' typeName='string' />"
@@ -3241,7 +3241,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipMappingLimitations_SupportedCases)
         "</ECSchema>"))) << "N:N and holding";
 
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecdbrelationshipmappingrules_relwithoutnavprop.ecdb", SchemaItem("<ECSchema schemaName='TestSchema1' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecdbrelationshipmappingrules_relwithoutnavprop.ecdb", SchemaItem("<ECSchema schemaName='TestSchema1' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                                                                                    "  <ECEntityClass typeName='Parent' >"
                                                                                                    "    <ECProperty propertyName='ParentProp' typeName='long' />"
                                                                                                    "  </ECEntityClass>"
@@ -3292,7 +3292,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipMappingLimitations_SupportedCases)
 
 
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecdbrelationshipmappingrules_childtph.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecdbrelationshipmappingrules_childtph.ecdb", SchemaItem(
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
         "  <ECEntityClass typeName='Parent' >"
@@ -3345,7 +3345,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipMappingLimitations_SupportedCases)
 
 
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecdbrelationshipmappingrules_parenthierarchyinsharedtable.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecdbrelationshipmappingrules_parenthierarchyinsharedtable.ecdb", SchemaItem(
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
         "  <ECEntityClass typeName='Parent' >"
@@ -3398,7 +3398,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipMappingLimitations_SupportedCases)
 
 
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecdbrelationshipmappingrules_childreninseparatejoinedtables_fknotinjoinedtable.ecdb",
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecdbrelationshipmappingrules_childreninseparatejoinedtables_fknotinjoinedtable.ecdb",
                                  SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                             "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                                             "  <ECEntityClass typeName='Parent' >"
@@ -3456,7 +3456,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipMappingLimitations_SupportedCases)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaRulesTestFixture, RelationshipMappingLimitations_InvalidInECSql)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecdbrelationshipmappingrules_childreninseparatetables.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecdbrelationshipmappingrules_childreninseparatetables.ecdb", SchemaItem(
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "  <ECEntityClass typeName='Parent' >"
         "    <ECProperty propertyName='ParentProp' typeName='int' />"
