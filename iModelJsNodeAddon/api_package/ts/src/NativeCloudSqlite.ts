@@ -46,6 +46,11 @@ export namespace NativeCloudSqlite {
     writeable?: boolean;
     /** if true, container is attached in "secure" mode (blocks are encrypted). Only supported in daemon mode. */
     secure?: boolean;
+    /** An Id which enhances logging provided by CloudSQLite.
+     *  This Id will be used to identify, in log messages, all CloudSQLite client connections (also known as database connections) opened using this CloudContainer.
+     *  This Id is mostly only relevant to give more clarity to logs produced running in daemon mode, where there are usually many active CloudContainers and by extension, many ongoing HTTP requests.
+     */
+    cloudSqliteLogId?: string;
   }
 
   /** Returned from `CloudContainer.queryDatabase` describing one database in the container */
@@ -60,6 +65,29 @@ export namespace NativeCloudSqlite {
     readonly transactions: boolean;
     /** the state of this database. Indicates whether the database is new or deleted since last upload */
     readonly state: "" | "copied" | "deleted";
+  }
+
+  /** Returned from 'CloudContainer.queryHttpLog' describing a row in the bcv_http_log table. */
+  export interface BcvHttpLog {
+    /** Unique, monotonically increasing id value */
+    readonly id: number;
+    /** Time request was made, as iso-8601 */
+    readonly startTime: string;
+    /** Time reply received, as iso-8601 (or NULL) */
+    readonly endTime: string | undefined;
+    /** "PUT", "GET", etc. */
+    readonly method: string;
+    /** Name of the client that caused this request. Name will be "prefetch" if it is a request triggered by a prefetch.
+     *  Name of client can be configured by passing a 'cloudSqliteLogId' to a CloudContainer's ContainerProps.
+     *  Empty string otherwise.
+     */
+    readonly cloudSqliteLogId: string;
+    /** Log message associated with request */
+    readonly logmsg: string;
+    /** URI of request */
+    readonly uri: string;
+    /** HTTP response code (e.g. 200) */
+    readonly httpcode: number;
   }
 
   /** Properties for accessing a CloudContainer */

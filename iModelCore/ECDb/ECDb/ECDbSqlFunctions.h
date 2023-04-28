@@ -219,7 +219,6 @@ struct PropExistsFunc final : ScalarFunction , ECDb::IECDbCacheClearListener {
     public:
         explicit PropExistsFunc(ECDbCR ecdb) : ScalarFunction(SQLFUNC_PropExists, 2, DbValueType::IntegerVal), m_ecdb(ecdb) {
             const_cast<ECDbR>(m_ecdb).AddECDbCacheClearListener(*this);
-            m_propMap.Build(m_ecdb, true);
         }
         ~PropExistsFunc() { const_cast<ECDbR>(m_ecdb).RemoveECDbCacheClearListener(*this); }
         static std::unique_ptr<PropExistsFunc> Create(ECDbCR);
