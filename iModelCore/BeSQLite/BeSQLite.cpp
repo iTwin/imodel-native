@@ -2819,8 +2819,15 @@ DbResult Db::DoOpenDb(Utf8CP inName, OpenParams const& params) {
             return rc;
     }
 
-    for (auto const& param : params.m_queryParams)
+    Utf8String cloudSqliteLogId;
+    Utf8CP cloudSqliteLogIdKey = "cloudSqliteLogId=";
+    for (auto const& param : params.m_queryParams) {
         m_openQueryParams.push_back(param);
+        if (param.ContainsI(cloudSqliteLogIdKey)) {
+            cloudSqliteLogId = param.substr(strlen(cloudSqliteLogIdKey));
+        }
+    }
+        
 
     Utf8String uri = getDbUri(inName, params);
     SqlDbP sqlDb = nullptr;
@@ -2852,6 +2859,11 @@ DbResult Db::DoOpenDb(Utf8CP inName, OpenParams const& params) {
         m_dbFile->m_defaultTxn.SetTxnMode(BeSQLiteTxnMode::Immediate);
     } else if (m_dbFile->m_defaultTxn.GetTxnMode() == BeSQLiteTxnMode::Exclusive) {
         rc = TryExecuteSql("PRAGMA locking_mode=\"EXCLUSIVE\"");
+        BeAssert(rc == BE_SQLITE_OK);
+    }
+
+    if (!cloudSqliteLogId.empty()) {
+        rc = TryExecuteSql(SqlPrintfString("PRAGMA bcv_client=\"%s\"", cloudSqliteLogId.c_str()));
         BeAssert(rc == BE_SQLITE_OK);
     }
 
