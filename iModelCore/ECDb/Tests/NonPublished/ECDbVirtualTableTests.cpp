@@ -163,7 +163,7 @@ struct TokenizeModule : ECDbModule {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbVirtualTableTests, TokenizeModuleTest) {
-    ASSERT_EQ(SUCCESS, SetupECDb("vtab.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("vtab.ecdb"));
     (new TokenizeModule(m_ecdb))->Register();
     if ("unsorted") {
         ECSqlStatement stmt;
