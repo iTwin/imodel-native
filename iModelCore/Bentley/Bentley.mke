@@ -3,7 +3,7 @@
 #  See LICENSE.md in the repository root for full copyright notice.
 #---------------------------------------------------------------------------------------------
 ENABLE_CPP_CX_EXTENSIONS = 1
-BUILD_WITH_C17=1
+BUILD_WITH_C20=1
 
 %include mdl.mki
 

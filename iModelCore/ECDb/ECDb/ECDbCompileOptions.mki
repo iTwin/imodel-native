@@ -5,7 +5,7 @@
 appName                     = iTwinSQLiteEC
 CCompPDBName                = $(appName)
 
-BUILD_WITH_C17=1
+BUILD_WITH_C20=1
 publicApiDir                =% $(_CurrentFilePath)../PublicAPI/ECDb/
 buildDir                    = $(OutputRootDir)build/
 

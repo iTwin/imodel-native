@@ -32,7 +32,7 @@ struct ECSqlRangeTreeTests : ECDbTestFixture
     //+---------------+---------------+---------------+---------------+---------------+------
     void SetupTestFile()
         {
-        ASSERT_EQ(BE_SQLITE_OK, SetupECDb("rtreetest.ecdb"));
+        ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("rtreetest.ecdb"));
         //create rtree before importing the schema
         ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql("CREATE VIRTUAL TABLE demo_rtree USING rtree(ECInstanceId,minX,maxX,minY,maxY);"));
 

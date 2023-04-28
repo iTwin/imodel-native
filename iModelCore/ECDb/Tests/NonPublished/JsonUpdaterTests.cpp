@@ -14,7 +14,7 @@ struct JsonUpdaterTests : ECDbTestFixture {};
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonUpdaterTests, ValidInput)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("jsonupdater_validinput.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("jsonupdater_validinput.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
                                                     <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                                         <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA" />
                                                         <ECEntityClass typeName="Parent" >
@@ -197,7 +197,7 @@ TEST_F(JsonUpdaterTests, ValidInput)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonUpdaterTests, Options)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("jsonupdater_options.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("jsonupdater_options.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
                                                     <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                                         <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA" />
                                                         <ECEntityClass typeName="NoReadonlyProps" >
@@ -368,7 +368,7 @@ TEST_F(JsonUpdaterTests, Options)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonUpdaterTests, UpdateNavPropAndFkRelationship)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("jsonupdater_rels.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("jsonupdater_rels.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
                                                     <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                                         <ECEntityClass typeName="Parent" >
                                                             <ECProperty propertyName="Code" typeName="int" />
@@ -510,7 +510,7 @@ TEST_F(JsonUpdaterTests, UpdateNavPropAndFkRelationship)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonUpdaterTests, UpdateLinkTableRelationship)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("jsonupdater_rels.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("jsonupdater_rels.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
                                                     <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                                         <ECEntityClass typeName="Parent" >
                                                             <ECProperty propertyName="Code" typeName="int" />
@@ -626,7 +626,7 @@ TEST_F(JsonUpdaterTests, UpdateLinkTableRelationship)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonUpdaterTests, UpdateRelationshipProperty)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("updaterelationshipprop.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("updaterelationshipprop.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                                             "<ECSchema schemaName='test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                                             "    <ECEntityClass typeName='A' >"
                                                             "        <ECProperty propertyName='P1' typeName='int' />"
@@ -719,7 +719,7 @@ TEST_F(JsonUpdaterTests, UpdateReadonlyProperties)
     {
     ECInstanceKey key;
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("updateClassProperties.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("updateClassProperties.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                         "<ECSchema schemaName='testSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                         "    <ECEntityClass typeName='A' >"
                         "        <ECProperty propertyName='P1' typeName='int' />"
@@ -832,7 +832,7 @@ TEST_F(JsonUpdaterTests, UpdateReadonlyProperties)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonUpdaterTests, CommonGeometryJsonSerialization)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("cgjsonserialization.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8' ?>"
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("cgjsonserialization.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8' ?>"
                                                                   "<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                                                   "   <ECEntityClass typeName='SpatialLocation' >"
                                                                   "       <ECProperty propertyName='Center' typeName='Bentley.Geometry.Common.IGeometry' />"
@@ -918,7 +918,7 @@ TEST_F(JsonUpdaterTests, CommonGeometryJsonSerialization)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonUpdaterTests, ReadonlyProperties)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("updateClassProperties.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("updateClassProperties.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='testSchema' alias='ts' version='01.00.00' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
         "     <ECEntityClass typeName='Foo' >"
@@ -971,7 +971,7 @@ TEST_F(JsonUpdaterTests, ReadonlyProperties)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonUpdaterTests, UpdateTimeOfDayValues)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("UpdateTimeOfDayValues.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("UpdateTimeOfDayValues.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
             <ECEntityClass typeName="CalendarEntry" modifier="None">

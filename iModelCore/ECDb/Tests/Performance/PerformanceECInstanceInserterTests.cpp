@@ -354,7 +354,7 @@ struct PerformanceECSQLVersusECInstanceInserterTests : ECDbTestFixture
             Utf8CP testSchemaName = "Test";
 
             //********** Run performance test with ECInstanceInserter
-            ASSERT_EQ(SUCCESS, SetupECDb("ecinstanceinserterperformance.ecdb", SchemaItem(GetTestSchemaXml())));
+            ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecinstanceinserterperformance.ecdb", SchemaItem(GetTestSchemaXml())));
 
             StopWatch eciiInsertLogTimer("eciiInsertLogTimer", false);
             bool eciiHasRun = false;
@@ -366,7 +366,7 @@ struct PerformanceECSQLVersusECInstanceInserterTests : ECDbTestFixture
             m_ecdb.CloseDb();
 
             //********** Run performance test with ECSQL INSERT getting time zero have to take a look
-            ASSERT_EQ(SUCCESS, SetupECDb("ecsqlinsertperformance.ecdb", SchemaItem(GetTestSchemaXml())));
+            ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlinsertperformance.ecdb", SchemaItem(GetTestSchemaXml())));
 
             bool ecsqlHasRun = false;
             double ecsqlinsertInsertTiming = -1.0;
