@@ -77,6 +77,10 @@ $(BuildContext)Delivery/libxml2-license.txt : $(baseDir)Copyright
 dirToSearch = $(BuildContext)VendorAPI/icu4c/
 %include cincapnd.mki
 
+# Rather than change every file that has #include <private/buf.h>
+dirToSearch = $(baseDir)include/
+%include cincapnd.mki
+
 # In libxml, xmlversion is generated like this. 
 # There are a number of Bentley changes to the file and the version doesn't 
 # change between commits so I'm just going to to commit it as before.
