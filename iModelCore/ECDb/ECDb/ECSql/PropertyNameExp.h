@@ -121,9 +121,9 @@ struct ExtractPropertyValueExp final : InstanceValueExp {
 private:
     PropertyPath m_targetPath;
     void _ToECSql(ECSqlRenderContext& ctx) const override {
-        ctx.AppendToECSql(GetInstancePath().ToString().c_str());
-        ctx.AppendToECSql(" -> ");
-        ctx.AppendToECSql(m_targetPath.ToString().c_str());
+            ctx.AppendToECSql(GetInstancePath().ToString().c_str());
+            ctx.AppendToECSql(" -> ");
+            ctx.AppendToECSql(m_targetPath.ToString().c_str());
         }
         Utf8String _ToString() const override { return "";}
         mutable Utf8String m_anchor;

@@ -27,7 +27,7 @@ This document including important changes to syntax or file format.
     8. `check_class_ids`- checks persisted `ECClassId` in all data tables and make sure they are valid.
     9. `check_schema_load` - checks if all schemas can be loaded into memory.
 
-## `2/7/2023`: Add ECDb validity/integriy checks
+## `2/7/2023`: Add ECDb validity/integrity checks
 
 * ECSql version change to `1.0.3.1` as new syntax and runtime changes that does not break any existing syntax or runtime.
 * New PRAGMA commands added:

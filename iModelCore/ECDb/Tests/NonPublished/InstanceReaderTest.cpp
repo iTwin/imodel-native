@@ -9,7 +9,6 @@
 #include <filesystem>
 USING_NAMESPACE_BENTLEY_EC
 #include <ECDb/ConcurrentQueryManager.h>
-
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
 struct InstanceReaderFixture : ECDbTestFixture {
@@ -321,8 +320,11 @@ struct InstancePropPerfTest {
             return SUCCESS;
         }
 };
+
+
+
 #if 0
-TEST_F(InstanceReaderFixture, native_sql) {
+TEST_F(InstanceReaderFixture, performance_test) {
     InstancePropPerfTest gen;
     auto basePath = std::filesystem::path{"D:\\temp\\test-files"};
     auto reportOutDir = std::filesystem::path(basePath.c_str()).append("perf_data.db");
@@ -400,7 +402,7 @@ TEST_F(InstanceReaderFixture, native_sql) {
         saveResults(resultDb, param);
     };
 
-    int maxRows = 100000;
+    int maxRows = 1000000;
 
     for(auto pathname: std::filesystem::directory_iterator(basePath)) {
         if (!pathname.is_regular_file())
@@ -409,19 +411,22 @@ TEST_F(InstanceReaderFixture, native_sql) {
         if (!Utf8String(pathname.path().c_str()).EndsWithI(".bim"))
             continue;
 
+        if (!Utf8String(pathname.path().c_str()).EndsWithI("BT4_Bergen-D12_CM.bim"))
+            continue;
+
         // testReadInstances(pathname.path(), "BisCore.Element", maxRows);
         testReadInstances(pathname.path(), "BisCore.ElementAspect", maxRows);
 
         for (auto propCount : std::vector{1, 5, 10, 20}) {
-            // testReadProps(pathname.path(), "BisCore.Element", maxRows, propCount, InstancePropPerfTest::JInFilterAnyPropertyExists, true, true);
+            testReadProps(pathname.path(), "BisCore.Element", maxRows, propCount, InstancePropPerfTest::JInFilterNone, true, true);
             // testReadProps(pathname.path(), "BisCore.Element", maxRows, propCount, InstancePropPerfTest::JInFilterAnyPropertyIsNotNull, true, true);
             // testReadProps(pathname.path(), "BisCore.Element", maxRows, propCount, InstancePropPerfTest::JInFilterAllPropertiesAreNotNull, true, true);
             // testReadProps(pathname.path(), "BisCore.Element", maxRows, propCount, InstancePropPerfTest::JInFilterAllPropertiesExists, true, true);
 
-            testReadProps(pathname.path(), "BisCore.ElementAspect", maxRows, propCount, InstancePropPerfTest::JInFilterAnyPropertyExists, true, true);
-            testReadProps(pathname.path(), "BisCore.ElementAspect", maxRows, propCount, InstancePropPerfTest::JInFilterAnyPropertyIsNotNull, true, true);
-            testReadProps(pathname.path(), "BisCore.ElementAspect", maxRows, propCount, InstancePropPerfTest::JInFilterAllPropertiesAreNotNull, true, true);
-            testReadProps(pathname.path(), "BisCore.ElementAspect", maxRows, propCount, InstancePropPerfTest::JInFilterAllPropertiesExists, true, true);
+            testReadProps(pathname.path(), "BisCore.ElementAspect", maxRows, propCount, InstancePropPerfTest::JInFilterNone, true, true);
+            // testReadProps(pathname.path(), "BisCore.ElementAspect", maxRows, propCount, InstancePropPerfTest::JInFilterAnyPropertyIsNotNull, true, true);
+            // testReadProps(pathname.path(), "BisCore.ElementAspect", maxRows, propCount, InstancePropPerfTest::JInFilterAllPropertiesAreNotNull, true, true);
+            // testReadProps(pathname.path(), "BisCore.ElementAspect", maxRows, propCount, InstancePropPerfTest::JInFilterAllPropertiesExists, true, true);
         }
     }
 
