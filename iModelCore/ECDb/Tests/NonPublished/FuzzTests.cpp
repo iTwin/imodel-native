@@ -15,7 +15,7 @@ struct FuzzTestFixture : ECDbTestFixture {};
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(FuzzTestFixture, FuzzedECInstanceXml)
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("fuzz_getderivedclasses.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("fuzz_getderivedclasses.ecdb"));
     ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
             <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA" />

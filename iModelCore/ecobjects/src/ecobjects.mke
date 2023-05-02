@@ -2,7 +2,7 @@
 #  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 #  See LICENSE.md in the repository root for full copyright notice.
 #---------------------------------------------------------------------------------------------
-BUILD_WITH_C17=1
+BUILD_WITH_C20=1
 %include mdl.mki
 %include $(_MakeFilePath)../mki/ECObjects.mki
 
@@ -180,7 +180,7 @@ LINKER_LIBRARIES           = xmllite$(libext)
 %endif
 LINKER_LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)iTwinBentley$(libext)
 LINKER_LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)iTwinXml$(libext)
-LINKER_LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)BeLibxml2$(libext)
+LINKER_LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)iTwinLibxml2$(libext)
 LINKER_LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)iTwinGeom$(libext)
 LINKER_LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)iTwinGeomSerialization$(libext)
 LINKER_LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)iTwinJsonCpp$(stlibext)

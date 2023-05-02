@@ -659,20 +659,40 @@ struct TextureMapping
         DVec3d m_offset, m_scale, m_rotation;
     };
 
+    struct ConstantLodParams {
+      // The number of times the texture is repeated.  Increasing this will make the texture pattern appear smaller, decreasing it will make it larger.
+      double m_repetitions;
+      // An offset in world units used to shift the texture.
+      DPoint2d m_offset;
+      // The minimum distance (from the eye to the surface) at which to clamp the texture.
+      double m_minDistClamp;
+      // The maximum distance (from the eye to the surface) at which to clamp the texture.
+      double m_maxDistClamp;
+
+      ConstantLodParams(double repetitions=1, DPoint2d offset=DPoint2d::FromZero(), double minDistClamp=1.0, double maxDistClamp=1024.0 * 1024.0 * 4096.0)
+        : m_repetitions(repetitions), m_offset(offset), m_minDistClamp(minDistClamp), m_maxDistClamp(maxDistClamp) { }
+    };
+
     struct Params
     {
         Trans2x3 m_textureMat2x3;
         double m_textureWeight;
         Mode m_mapMode;
         bool m_worldMapping;
+        bool m_useConstantLod;
+        Nullable<ConstantLodParams> m_constantLodParams;
 
-        explicit Params(Mode mode=Mode::Parametric, Trans2x3 const& trans=Trans2x3::FromIdentity(), double weight=1.0, bool worldMapping=false)
-            : m_textureMat2x3(trans), m_textureWeight(weight), m_mapMode(mode), m_worldMapping(worldMapping) { }
+        explicit Params(Mode mode=Mode::Parametric, Trans2x3 const& trans=Trans2x3::FromIdentity(), double weight=1.0, bool worldMapping=false, bool useConstantLod=false, Nullable<ConstantLodParams> const& constantLodParams=nullptr)
+            : m_textureMat2x3(trans), m_textureWeight(weight), m_mapMode(mode), m_worldMapping(worldMapping), m_useConstantLod(useConstantLod), m_constantLodParams(constantLodParams) { }
 
         void SetMode(Mode val) {m_mapMode=val;}
         void SetWeight(double val) {m_textureWeight = val;} //<! Set weight for combining diffuse image and color
         void SetTransform(Trans2x3 const* val) {m_textureMat2x3 = nullptr != val ? *val : Trans2x3();} //<! Set Texture 2x3 transform
         void SetWorldMapping(bool val) {m_worldMapping = val;} //! if true world mapping, false for surface
+        void SetUseConstantLod(bool val) {m_useConstantLod = val;} //! if true, override mapping mode with constant LOD for the pattern map
+        void SetConstantLodParams(ConstantLodParams val) {m_constantLodParams = val;} //! constant LOD parameters
+
+        ConstantLodParams const* GetConstantLodParams() const { return m_constantLodParams.get(); }
 
         DGNPLATFORM_EXPORT BentleyStatus ComputeUVParams (bvector<DPoint2d>& params, PolyfaceVisitorCR visitor, ElevationDrapeParamsCP drapeParams = nullptr) const;
     };
@@ -684,9 +704,11 @@ struct TextureMapping
       double m_scale;
       // If true, the green channel needs to be inverted at display time.
       bool m_invertGreen;
+      // If true, override the mapping mode with constant LOD mapping for the normal map.
+      bool m_useConstantLod;
 
-      NormalMapParams(TextureCP texture=nullptr, double scale=1.0, bool invertGreen=false)
-        : m_texture(texture), m_scale(scale), m_invertGreen(invertGreen) { }
+      NormalMapParams(TextureCP texture=nullptr, double scale=1.0, bool invertGreen=false, bool useConstantLod=false)
+        : m_texture(texture), m_scale(scale), m_invertGreen(invertGreen), m_useConstantLod(useConstantLod) { }
     };
 
 private:

@@ -103,7 +103,7 @@ TEST_F(SchemaChangesetTestFixture, RevertAndReinstateSchemaChange)
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("revertAndReinstateSchemaChange.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("revertAndReinstateSchemaChange.ecdb", schemaItem));
     SchemaChangesetTestChangeTracker tracker(m_ecdb);
     tracker.EnableTracking(true);
     // CHANGESET 1------------------------------------------------------------------

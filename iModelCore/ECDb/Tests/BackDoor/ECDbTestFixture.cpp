@@ -81,7 +81,7 @@ BentleyStatus ECDbTestFixture::SetupECDb(Utf8CP ecdbFileName, SchemaItem const& 
             seedFileName.append(".ecdb");
 
             ECDb seedECDb;
-            if (SUCCESS != CreateECDb(seedECDb, seedFileName.c_str()))
+            if (DbResult::BE_SQLITE_OK != CreateECDb(seedECDb, seedFileName.c_str()))
                 return ERROR;
 
             if (SUCCESS != TestHelper(seedECDb).ImportSchema(schema))
@@ -567,7 +567,7 @@ ECInstanceKey InsertInstance(ECDbCR ecdb, Json::Value const& v) {
     EXPECT_TRUE(ecClass != nullptr);
     JsonInserter inserter(ecdb, *ecClass, nullptr);
     ECInstanceKey key;
-    EXPECT_EQ(SUCCESS, inserter.Insert(key, data));
+    EXPECT_EQ(DbResult::BE_SQLITE_OK, inserter.Insert(key, data));
     return key;
 };
 //---------------------------------------------------------------------------------------

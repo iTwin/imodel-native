@@ -2,7 +2,7 @@
 #  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 #  See LICENSE.md in the repository root for full copyright notice.
 #---------------------------------------------------------------------------------------------
-BUILD_WITH_C17=1
+BUILD_WITH_C20=1
 %include mdl.mki
 
 
@@ -498,7 +498,7 @@ LINKER_LIBRARIES            = $(ContextSubpartsLibs)$(BeSQLiteLib) \
                               $(ContextSubpartsLibs)$(BentleyGeomLib) \
                               $(ContextSubpartsLibs)$(libprefix)iTwinBentley$(libext) \
                               $(ContextSubpartsLibs)$(libprefix)iTwinXml$(libext) \
-                              $(ContextSubpartsLibs)$(libprefix)BeLibxml2$(libext) \
+                              $(ContextSubpartsLibs)$(libprefix)iTwinLibxml2$(libext) \
                               $(ContextSubpartsLibs)$(libprefix)iTwinJsonCpp$(stlibext) \
                               $(ContextSubpartsLibs)$(libprefix)iTwinGeomSerialization$(libext) \
                               $(ContextSubPartsLibs)$(stlibprefix)iTwin_google_re2$(stlibext)

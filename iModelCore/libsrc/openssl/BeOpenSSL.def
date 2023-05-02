@@ -2,7 +2,7 @@
 ; Exports for the BeOpenSSL library (Windows-only)
 ;
 
-LIBRARY BeOpenSSLB02
+LIBRARY iTwinOpenSSL
 
 EXPORTS
     gcm_ghash_4bit

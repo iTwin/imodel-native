@@ -83,7 +83,7 @@ TEST_F(SchemaManagerDispatcherTests, Bug556748ImportSeparateSchemaWithMixinWithO
         </ECSchema>
     )xml";
 
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("SchemaManagerDispatcher_ImportSchemaWithMixinWithOnlyMixinBases.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("SchemaManagerDispatcher_ImportSchemaWithMixinWithOnlyMixinBases.ecdb"));
     ECSchemaReadContextPtr readContext = ECSchemaReadContext::CreateContext();
 
     ECSchemaPtr schema1;

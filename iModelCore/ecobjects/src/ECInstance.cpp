@@ -4239,7 +4239,7 @@ InstanceReadStatus   IECInstance::ReadFromXmlFile(IECInstancePtr& ecInstance, WC
     ecInstance = NULL;
 
     pugi::xml_document xmldoc;
-    pugi::xml_parse_result status = xmldoc.load_file(ecInstanceFile);
+    pugi::xml_parse_result status = xmldoc.load_file(ecInstanceFile, pugi::parse_default | pugi::parse_ws_pcdata_single);
 
     if (!status)
         {
@@ -4258,7 +4258,7 @@ InstanceReadStatus   IECInstance::ReadFromXmlString(IECInstancePtr& ecInstance, 
     ecInstance = NULL;
     
     pugi::xml_document xmldoc;
-    pugi::xml_parse_result status = xmldoc.load_string(ecInstanceXml);
+    pugi::xml_parse_result status = xmldoc.load_string(ecInstanceXml, pugi::parse_default | pugi::parse_ws_pcdata_single);
 
     if (!status)
         {
@@ -4284,7 +4284,7 @@ InstanceReadStatus   IECInstance::ReadFromXmlString(IECInstancePtr& ecInstance, 
         LOG.errorv("Failed to convert instance xml from wchar to char (%ls)", ecInstanceXml);
         return InstanceReadStatus::XmlParseError;
         }
-    pugi::xml_parse_result status = xmldoc.load_string(instanceXmlUtf8.c_str());
+    pugi::xml_parse_result status = xmldoc.load_string(instanceXmlUtf8.c_str(), pugi::parse_default | pugi::parse_ws_pcdata_single);
 
     if (!status)
         {

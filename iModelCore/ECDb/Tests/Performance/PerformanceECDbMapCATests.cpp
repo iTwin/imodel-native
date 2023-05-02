@@ -17,7 +17,7 @@ TEST_F(PerformanceECDbMapCATests, CRUDPerformance_SharedTable_SharedColumnsForSu
     m_propertiesPerClass = 3;
     size_t hierarchyLevel = 3;
 
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("CRUDPerformance_SharedTable_SharedColumnsForSubClasses.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("CRUDPerformance_SharedTable_SharedColumnsForSubClasses.ecdb"));
 
     ECSchemaPtr testSchema;
     ECSchema::CreateSchema(testSchema, "testSchema", "ts", 1, 0, 0);
@@ -96,7 +96,7 @@ TEST_F(PerformanceECDbMapCATests, CRUDPerformance_SharedTableForSubClasses)
     m_instancesPerClass = 100;
     m_propertiesPerClass = 3;
     size_t hierarchyLevel = 3;
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("CRUDPerformance_SharedTableForSubClasses.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("CRUDPerformance_SharedTableForSubClasses.ecdb"));
 
     ECSchemaPtr testSchema;
     ECSchema::CreateSchema(testSchema, "testSchema", "ts", 1, 0, 0);
@@ -168,7 +168,7 @@ TEST_F(PerformanceECDbMapCATests, CRUDPerformance_DefaultClasses)
     m_instancesPerClass = 100;
     m_propertiesPerClass = 3;
     size_t hierarchyLevel = 3;
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("CRUDPerformance_DefaultClasses.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("CRUDPerformance_DefaultClasses.ecdb"));
 
     ECSchemaPtr testSchema;
     ECSchema::CreateSchema(testSchema, "testSchema", "ts", 1, 0, 0);

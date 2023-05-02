@@ -6,7 +6,7 @@
    %error This makefile must be launched from BentleyBuild
 %endif
 
-BUILD_WITH_C17=1
+BUILD_WITH_C20=1
 %include mdl.mki
 
 SrcDir              = $(_MakeFilePath)
@@ -58,7 +58,7 @@ EXE_OBJS + $(THIN_ARCHIVE_PATH)
 LINKER_LIBRARIES = $(SubpartLibs)$(libprefix)iTwinBentley$(libext)\
                    $(SubpartLibs)$(libprefix)iTwinSQLite$(libext)\
                    $(SubpartLibs)$(libprefix)iTwinSQLiteEC$(libext)\
-                   $(SubpartLibs)$(libprefix)BeLibxml2$(libext)\
+                   $(SubpartLibs)$(libprefix)iTwinLibxml2$(libext)\
                    $(SubpartLibs)$(libprefix)iTwinGeom$(libext)\
                    $(SubpartLibs)$(libprefix)iTwinPlatform$(libext)\
                    $(SubpartLibs)$(libprefix)iTwinECObjects$(libext)\

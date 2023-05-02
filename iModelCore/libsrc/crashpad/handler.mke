@@ -48,7 +48,7 @@ LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)$(stlibprefix)CrashpadClient$(stl
 LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)$(stlibprefix)BeZlib$(stlibext)
 
 %if $(TARGET_PLATFORM) == "Linux"
-    LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)$(stlibprefix)BeOpenSSL$(stlibext)
+    LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)$(stlibprefix)iTwinOpenSSL$(stlibext)
 %elif $(TARGET_PLATFORM) == "Windows"
     LINKER_LIBRARIES + advapi32.lib
     LINKER_LIBRARIES + powrprof.lib
