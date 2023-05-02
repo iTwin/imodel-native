@@ -3220,6 +3220,7 @@ struct NativeECSqlColumnInfo : BeObjectWrap<NativeECSqlColumnInfo>
             InstanceMethod("getRootClassTableSpace", &NativeECSqlColumnInfo::GetRootClassTableSpace),
             InstanceMethod("getRootClassName", &NativeECSqlColumnInfo::GetRootClassName),
             InstanceMethod("getRootClassAlias", &NativeECSqlColumnInfo::GetRootClassAlias)});
+            InstanceMethod("isDynamicProp", &NativeECSqlColumnInfo::IsDynamicProp)});
 
             exports.Set("ECSqlColumnInfo", t);
 
@@ -3334,7 +3335,17 @@ struct NativeECSqlColumnInfo : BeObjectWrap<NativeECSqlColumnInfo>
 
             return toJsString(Env(), prop->GetName());
             }
+        Napi::Value IsDynamicProp(NapiInfoCR info)
+            {
+            if (m_colInfo == nullptr)
+                THROW_JS_EXCEPTION("ECSqlColumnInfo is not initialized.");
 
+            ECPropertyCP prop = m_colInfo->IsDynamic();
+            if (prop == nullptr)
+                THROW_JS_EXCEPTION("ECSqlColumnInfo does not represent a property.");
+
+            return Napi::Boolean::New(Env(), m_colInfo->IsDynamic());
+            }
         Napi::Value GetOriginPropertyName(NapiInfoCR info)
             {
             if (m_colInfo == nullptr)

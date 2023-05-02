@@ -174,7 +174,7 @@ struct DbModule : NonCopyableClass {
         Utf8StringCR GetName() const { return m_name;  }
         Utf8StringCR GetDeclaration() const { return m_declaration; }
         DbR GetDb() { return m_db; }
-        virtual DbResult Connect(VirtualTable*& out, Config& conf, int argc, const char* const* argv) = 0;
+        virtual DbResult Connect(DbVirtualTable*& out, Config& conf, int argc, const char* const* argv) = 0;
 
         //! Register and transfer ownership to BeSQLite. It will automatically delete the instance of DbModule
         //! on which register is called.

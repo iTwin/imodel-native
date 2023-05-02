@@ -13,8 +13,9 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsiclass
 //=======================================================================================
 struct ClassPropsModule : BeSQLite::DbModule {
-    struct ClassPropsVirtualTable : VirtualTable {
-        struct ClassPropsCursor : Cursor {
+    constexpr static auto NAME = "contain_props";
+    struct ClassPropsVirtualTable : DbVirtualTable {
+        struct ClassPropsCursor : DbCursor {
             enum class Columns{
                 ClassId = 0,
                 Text = 1,
@@ -25,7 +26,7 @@ struct ClassPropsModule : BeSQLite::DbModule {
                 std::set<ECN::ECClassId>::const_iterator m_it;
 
             public:
-                ClassPropsCursor(ClassPropsVirtualTable& vt): Cursor(vt), m_it(m_classIds.begin()){}
+                ClassPropsCursor(ClassPropsVirtualTable& vt): DbCursor(vt), m_it(m_classIds.begin()){}
                 bool Eof() final { return m_it == m_classIds.end(); }
                 DbResult Next() final;
                 DbResult GetColumn(int i, Context& ctx) final;
@@ -33,13 +34,13 @@ struct ClassPropsModule : BeSQLite::DbModule {
                 DbResult Filter(int idxNum, const char* idxStr, int argc, DbValue* argv) final;
         };
         public:
-            ClassPropsVirtualTable(ClassPropsModule& module): VirtualTable(module) {}
-            DbResult Open(Cursor*& cur) override { cur = new ClassPropsCursor(*this); return BE_SQLITE_OK; }
+            ClassPropsVirtualTable(ClassPropsModule& module): DbVirtualTable(module) {}
+            DbResult Open(DbCursor*& cur) override { cur = new ClassPropsCursor(*this); return BE_SQLITE_OK; }
             DbResult BestIndex(IndexInfo& indexInfo) final;
     };
     public:
-        ClassPropsModule(DbR db): DbModule(db, "contain_props", "CREATE TABLE x(class_id,prop_json_array hidden)") {}
-        DbResult Connect(VirtualTable*& out, Config& conf, int argc, const char* const* argv) final;
+        ClassPropsModule(DbR db): DbModule(db, NAME, "CREATE TABLE x(class_id,prop_json_array hidden)") {}
+        DbResult Connect(DbVirtualTable*& out, Config& conf, int argc, const char* const* argv) final;
 };
 
 DbResult RegisterBuildInVTabs(ECDbR);
