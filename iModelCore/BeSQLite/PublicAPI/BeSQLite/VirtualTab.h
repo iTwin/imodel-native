@@ -16,7 +16,7 @@ BEGIN_BENTLEY_SQLITE_NAMESPACE
 struct DbModule : NonCopyableClass {
     public:
         // Eponymous-only virtual tables (they are useful as table-valued functions)
-        struct VirtualTable : NonCopyableClass  {
+        struct DbVirtualTable : NonCopyableClass  {
             struct IndexInfo final {
                 enum class Operator {
                     EQ = 2,
@@ -82,7 +82,7 @@ struct DbModule : NonCopyableClass {
 
             public:
                 struct CallbackData;
-                struct Cursor : NonCopyableClass {
+                struct DbCursor : NonCopyableClass {
                     public:
                         struct CallbackData;
                         struct Context {
@@ -106,15 +106,15 @@ struct DbModule : NonCopyableClass {
 
                     private:
                         CallbackData *m_ctx = nullptr;
-                        VirtualTable& m_table;
+                        DbVirtualTable& m_table;
 
                     public:
-                        BE_SQLITE_EXPORT Cursor(VirtualTable& vt);
-                        BE_SQLITE_EXPORT virtual ~Cursor();
+                        BE_SQLITE_EXPORT DbCursor(DbVirtualTable& vt);
+                        BE_SQLITE_EXPORT virtual ~DbCursor();
                         //! Internally used
                         CallbackData* GetCallbackData() { return m_ctx; }
                         //! return VTab
-                        VirtualTable& GetTable() { return m_table; }
+                        DbVirtualTable& GetTable() { return m_table; }
                         //! Check if EOF
                         virtual bool Eof() = 0;
                         //! Move to next row
@@ -135,15 +135,15 @@ struct DbModule : NonCopyableClass {
                 DbModule& m_module;
 
             public:
-                BE_SQLITE_EXPORT explicit VirtualTable(DbModule& module);
-                BE_SQLITE_EXPORT virtual ~VirtualTable();
+                BE_SQLITE_EXPORT explicit DbVirtualTable(DbModule& module);
+                BE_SQLITE_EXPORT virtual ~DbVirtualTable();
                 //! Set error message
                 BE_SQLITE_EXPORT void SetError(Utf8CP);
                 //! Internally used
                 CallbackData* GetCallbackData() { return m_ctx; }
                 DbModule& GetModule() { return m_module;  }
                 //! create and return cursor implementation
-                virtual DbResult Open(Cursor*& cur) = 0;
+                virtual DbResult Open(DbCursor*& cur) = 0;
                 //! set index info use by query planner
                 virtual DbResult BestIndex(IndexInfo& indexInfo) = 0;
         };
@@ -160,11 +160,13 @@ struct DbModule : NonCopyableClass {
             void SetTag(Tags tag) { m_tag = tag; }
             Tags GetTag() const { return m_tag; }
     };
-
     private:
         DbR m_db;
         Utf8String m_name;
         Utf8String m_declaration;
+
+    protected:
+        virtual DbResult _OnRegister() { return BE_SQLITE_OK; }
 
     public:
         DbModule(DbR db, Utf8CP name, Utf8CP declaration):m_name(name), m_db(db), m_declaration(declaration){}

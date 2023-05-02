@@ -679,10 +679,10 @@ ECSqlStatus ECSqlExpPreparer::PrepareTableValuedFunctionExp(NativeSqlBuilder::Li
                     exp.GetSchemaName().c_str(), exp.GetFunctionExp()->GetFunctionName().c_str());
                 return ECSqlStatus::InvalidECSql;
         }
-        builder.Append(valueSnippets.front());
         if (i > 0) {
             builder.AppendComma();
         }
+        builder.Append(valueSnippets.front());
     }
     builder.AppendParenRight();
     if (!exp.GetAlias().empty()) {
