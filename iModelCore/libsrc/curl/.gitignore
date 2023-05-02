@@ -6,3 +6,14 @@ vendor/packages
 vendor/projects
 vendor/tests
 vendor/winbuild
+vendor/.azure-pipelines.yml
+vendor/.circleci/
+vendor/.cirrus.yml
+vendor/.dcignore
+vendor/.dir-locals.el
+vendor/.git-blame-ignore-revs
+vendor/.gitattributes
+vendor/.github/
+vendor/.lift/
+vendor/.mailmap
+vendor/.reuse/
