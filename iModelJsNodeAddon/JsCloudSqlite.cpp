@@ -297,6 +297,7 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
                 hasWhereClause = true;
             }
         }
+        sql += " ORDER BY id ASC";
 
         Statement stmt;
         auto rc = stmt.Prepare(m_containerDb, sql.c_str());
