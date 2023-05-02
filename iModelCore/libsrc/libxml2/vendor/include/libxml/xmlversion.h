@@ -428,8 +428,19 @@ XMLPUBFUN void XMLCALL xmlCheckVersion(int version);
 #define LIBXML_LZMA_ENABLED
 #endif
 
-#ifdef __GNUC__
+#if defined(__clang__)
+#define XML_IGNORE_FPTR_CAST_WARNINGS \
+    _Pragma("GCC diagnostic push") \
+    _Pragma("GCC diagnostic ignored \"-Wpedantic\"") \
+    _Pragma("GCC diagnostic ignored \"-Wcast-function-type\"")
+#define XML_POP_WARNINGS \
+    _Pragma("GCC diagnostic pop")
+#else
+#define XML_IGNORE_FPTR_CAST_WARNINGS
+#define XML_POP_WARNINGS
+#endif
 
+#ifdef __GNUC__
 /**
  * ATTRIBUTE_UNUSED:
  *
