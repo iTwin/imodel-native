@@ -899,6 +899,16 @@ export declare namespace IModelJsNative {
     }): void;
   }
 
+  /** Filter options passed to CloudContainer.queryHttpLog */
+  interface BcvHttpLogFilterOptions {
+    /** only return rows whose ID is >= the provided id */
+    startFromId?: number;
+    /** only return rows whose endTime is null OR >= the provided endTime. */
+    finishedAtOrAfterTime?: string;
+    /** only return rows with a non-null end_time. */
+    showOnlyFinished?: boolean;
+  }
+
   /**
    * A cache for storing data from CloudSqlite databases. This object refers to a directory on a local filesystem
    * and is used to **connect** CloudContainers so they may be accessed. The contents of the cache directory are entirely
@@ -1062,6 +1072,13 @@ export declare namespace IModelJsNative {
      * @param dbName the name of the database of interest
      */
     public queryDatabase(dbName: string): NativeCloudSqlite.CachedDbProps | undefined;
+
+    /**
+     * query the bcv_http_log table
+     * @note the bcv_http_log table contains one row for each HTTP request made by the VFS or connected daemon.
+     * @note Entries are automatically removed from the table on a FIFO basis. By default entries which are 1 hr old will be removed.
+     */
+    public queryHttpLog(filterOptions?: BcvHttpLogFilterOptions): NativeCloudSqlite.BcvHttpLog[];
 
     /**
      * Get the SHA1 hash of the content of a database.
