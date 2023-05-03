@@ -947,10 +947,14 @@ export declare namespace IModelJsNative {
     public get containerId(): string;
     /** The *alias* to identify this CloudContainer in a CloudCache. Usually just the ContainerId. */
     public get alias(): string;
+    /** The logId. */
+    public get logId(): string;
     /** true if this CloudContainer is currently connected to a CloudCache via the `connect` method. */
     public get isConnected(): boolean;
     /** true if this CloudContainer was created with the `writeable` flag (and its `accessToken` supplies write access). */
     public get isWriteable(): boolean;
+    /** true if this container is public (doesn't require authorization ). */
+    public get isPublic(): boolean;
     /** true if this CloudContainer currently holds the write lock for its container in the cloud. */
     public get hasWriteLock(): boolean;
     /** true if this CloudContainer has local changes that have not be uploaded to its container in the cloud. */

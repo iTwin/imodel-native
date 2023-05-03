@@ -20,8 +20,8 @@ private:
 private:
     static rapidjson::Document GetFallbackValue(ECPropertyCR prop, IECSqlValue const& value, rapidjson::MemoryPoolAllocator<>* allocator);
 
-    static rapidjson::Document GetFallbackPrimitiveValue(ECPropertyCR prop, PrimitiveType type, IECSqlValue const& value, rapidjson::MemoryPoolAllocator<>* allocator);
-    rapidjson::Document GetFormattedPrimitiveValue(ECPropertyCR prop, PrimitiveType type, IECSqlValue const& value, rapidjson::MemoryPoolAllocator<>* allocator) const;
+    static rapidjson::Document GetFallbackPrimitiveValue(ECPropertyCR prop, PrimitiveType type, Utf8StringCR extendedType, IECSqlValue const& value, rapidjson::MemoryPoolAllocator<>* allocator);
+    rapidjson::Document GetFormattedPrimitiveValue(ECPropertyCR prop, PrimitiveType type, Utf8StringCR extendedType, IECSqlValue const& value, rapidjson::MemoryPoolAllocator<>* allocator) const;
 
     static rapidjson::Document GetFallbackStructValue(IECSqlValue const& structValue, rapidjson::MemoryPoolAllocator<>* allocator);
     rapidjson::Document GetFormattedStructValue(IECSqlValue const& structValue, rapidjson::MemoryPoolAllocator<>* allocator) const;
