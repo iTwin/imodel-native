@@ -10,7 +10,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DbResult ClassPropsModule::ClassPropsVirtualTable::ClassPropsCursor::Next() final {
+DbResult ClassPropsModule::ClassPropsVirtualTable::ClassPropsCursor::Next() {
     ++m_it;
     return BE_SQLITE_OK;
 }
@@ -18,7 +18,7 @@ DbResult ClassPropsModule::ClassPropsVirtualTable::ClassPropsCursor::Next() fina
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DbResult ClassPropsModule::ClassPropsVirtualTable::ClassPropsCursor::GetRowId(int64_t& rowId) final {
+DbResult ClassPropsModule::ClassPropsVirtualTable::ClassPropsCursor::GetRowId(int64_t& rowId) {
     rowId =(int64_t)((*m_it).GetValueUnchecked());
     return BE_SQLITE_OK;
 }
@@ -26,7 +26,7 @@ DbResult ClassPropsModule::ClassPropsVirtualTable::ClassPropsCursor::GetRowId(in
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DbResult ClassPropsModule::ClassPropsVirtualTable::ClassPropsCursor::GetColumn(int i, Context& ctx) final {
+DbResult ClassPropsModule::ClassPropsVirtualTable::ClassPropsCursor::GetColumn(int i, Context& ctx) {
     if ((Columns)i == Columns::Text) {
         ctx.SetResultText(m_props.c_str(), (int)m_props.size(), Context::CopyData::No);
     } else if ((Columns)i == Columns::ClassId && m_it != m_classIds.end()) {
@@ -38,7 +38,7 @@ DbResult ClassPropsModule::ClassPropsVirtualTable::ClassPropsCursor::GetColumn(i
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DbResult ClassPropsModule::ClassPropsVirtualTable::ClassPropsCursor::Filter(int idxNum, const char *idxStr, int argc, DbValue* argv) final {
+DbResult ClassPropsModule::ClassPropsVirtualTable::ClassPropsCursor::Filter(int idxNum, const char *idxStr, int argc, DbValue* argv) {
     int i = 0;
     bool recompute = true;
     if (idxNum & 1) {
@@ -97,7 +97,7 @@ DbResult ClassPropsModule::ClassPropsVirtualTable::ClassPropsCursor::Filter(int 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DbResult ClassPropsModule::ClassPropsVirtualTable::BestIndex(IndexInfo& indexInfo) final {
+DbResult ClassPropsModule::ClassPropsVirtualTable::BestIndex(IndexInfo& indexInfo) {
     int i, j;              /* Loop over constraints */
     int idxNum = 0;        /* The query plan bitmask */
     int unusableMask = 0;  /* Mask of unusable constraints */
@@ -143,7 +143,7 @@ DbResult ClassPropsModule::ClassPropsVirtualTable::BestIndex(IndexInfo& indexInf
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DbResult ClassPropsModule::Connect(VirtualTable*& out, Config& conf, int argc, const char* const* argv) final {
+DbResult ClassPropsModule::Connect(DbVirtualTable*& out, Config& conf, int argc, const char* const* argv) {
     out = new ClassPropsVirtualTable(*this);
     conf.SetTag(Config::Tags::Innocuous);
     return BE_SQLITE_OK;

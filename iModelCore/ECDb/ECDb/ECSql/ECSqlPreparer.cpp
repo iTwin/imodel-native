@@ -1822,10 +1822,6 @@ ECSqlStatus ECSqlExpPreparer::PrepareExtractPropertyExp(NativeSqlBuilder::List& 
     NativeSqlBuilder builder;
     NativeSqlBuilder::List classIdSql;
     NativeSqlBuilder::List instanceIdSql;
-    if (!ctx.GetECDb().GetECSqlConfig().GetExperimentalFeaturesEnabled()) {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Instance property access '%s' is experimental feature. Use 'PRAGMA experimental_features_enabled=true' to enable it.", exp.ToECSql().c_str());
-        return ECSqlStatus::InvalidECSql;
-    }
 
     auto rc = PrepareValueExp(classIdSql, ctx, exp.GetClassIdPropExp());
     if (rc != ECSqlStatus::Success) {
@@ -1857,11 +1853,6 @@ ECSqlStatus ECSqlExpPreparer::PrepareExtractInstanceExp(NativeSqlBuilder::List& 
     NativeSqlBuilder builder;
     NativeSqlBuilder::List classIdSql;
     NativeSqlBuilder::List instanceIdSql;
-
-    if (!ctx.GetECDb().GetECSqlConfig().GetExperimentalFeaturesEnabled()) {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Instance access '%s' is experimental feature. Use 'PRAGMA experimental_features_enabled=true' to enable it.", exp.ToECSql().c_str());
-        return ECSqlStatus::InvalidECSql;
-    }
 
     auto rc = PrepareValueExp(classIdSql, ctx, exp.GetClassIdPropExp());
     if (rc != ECSqlStatus::Success) {
