@@ -15,6 +15,7 @@ This document including important changes to syntax or file format.
 * Added support for dynamic property meta data for instance property.
   * `ColumnInfo::IsDynamic()` check is a ECSqlStatement output property has dynamic data and might change on each call to `Step()`
   * `ECSqlStatement::GetColumnInfo(int)` will update on each `Step()` for dynamic properties.
+  * Expose `IsDynamicProp()` via NativeAddon for use from typescript side.
 * Major improvement to Instance prop functionality where use of a virtual table to filter row base on property selected.
 * Fix bug that cause assertion when access instance that mapped to overflow table.
 * Instance prop continue to be a experimental feature.
