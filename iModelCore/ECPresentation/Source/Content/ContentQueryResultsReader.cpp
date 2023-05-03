@@ -412,7 +412,7 @@ void DistinctValuesAccumulator::ReadPrimitivePropertyRecord(ContentDescriptor::E
             DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Content, Utf8PrintfString("Expecting formatter value to be string, but it's not. Actual: '%s'", BeRapidJsonUtilities::ToString(formattedJson).c_str()));
 
         Utf8String displayValue = formattedJson.IsString() ? formattedJson.GetString() : "";
-        ECValue rawValue = ValueHelpers::GetECValueFromSqlValue(prop.GetProperty().GetAsPrimitiveProperty()->GetType(), value);
+        ECValue rawValue = ValueHelpers::GetECValueFromSqlValue(prop.GetProperty().GetAsPrimitiveProperty()->GetType(), prop.GetProperty().GetAsPrimitiveProperty()->GetExtendedTypeName(), value);
 
         auto it = currentRecords.find(displayValue);
         if (it == currentRecords.end())

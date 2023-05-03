@@ -393,12 +393,20 @@ protected:
             return false;
             }
 
-        // don't support binary and igeometry properties
+        // don't support binary (not guid) and igeometry properties
         // note: we don't want to these fields even if the above says we should..
-        if (ecProperty.GetIsPrimitive() && (PRIMITIVETYPE_Binary == ecProperty.GetAsPrimitiveProperty()->GetType() || PRIMITIVETYPE_IGeometry == ecProperty.GetAsPrimitiveProperty()->GetType()))
+        if (ecProperty.GetIsPrimitive())
             {
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Binary and IGeometry fields are not supported - skip.");
-            return false;
+            if (PRIMITIVETYPE_Binary == ecProperty.GetAsPrimitiveProperty()->GetType() && ecProperty.GetAsPrimitiveProperty()->GetExtendedTypeName() != EXTENDED_TYPENAME_BeGuid)
+                {
+                DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Non-guid binary fields are not supported - skip.");
+                return false;
+                }
+            if (PRIMITIVETYPE_IGeometry == ecProperty.GetAsPrimitiveProperty()->GetType())
+                {
+                DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "IGeometry fields are not supported - skip.");
+                return false;
+                }
             }
 
         return true;
