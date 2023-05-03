@@ -20,6 +20,9 @@ struct CalculatedPropertiesSpecification : PrioritizedPresentationKey
 private:
     Utf8String m_label;
     Utf8String m_value;
+    CustomRendererSpecificationCP m_renderer;
+    PropertyEditorSpecificationCP m_editor;
+    std::unique_ptr<PropertyCategoryIdentifier> m_categoryId;
 
 protected:
     ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationKeyCR other) const override;
@@ -35,16 +38,29 @@ protected:
     ECPRESENTATION_EXPORT void _WriteJson(BeJsValue) const override;
 
 public:
-    CalculatedPropertiesSpecification() {}
-    CalculatedPropertiesSpecification(Utf8String label, int priority, Utf8String value)
-        : PrioritizedPresentationKey(priority), m_label(label), m_value(value)
+    CalculatedPropertiesSpecification() : m_renderer(nullptr), m_editor(nullptr) {}
+    CalculatedPropertiesSpecification(Utf8String label, int priority, Utf8String value, CustomRendererSpecificationP rendererOverride = nullptr,
+        PropertyEditorSpecificationP editorOverride = nullptr, std::unique_ptr<PropertyCategoryIdentifier> categoryId = nullptr)
+        : PrioritizedPresentationKey(priority), m_label(label), m_value(value), m_renderer(rendererOverride),
+        m_editor(editorOverride), m_categoryId(std::move(categoryId))
         {}
+    ECPRESENTATION_EXPORT CalculatedPropertiesSpecification(CalculatedPropertiesSpecification const& other);
+    ECPRESENTATION_EXPORT CalculatedPropertiesSpecification(CalculatedPropertiesSpecification&& other);
 
     //! Get label expression.
     Utf8StringCR GetLabel() const {return m_label;}
 
     //! Get property value expression.
     Utf8StringCR GetValue() const {return m_value;}
+
+    CustomRendererSpecificationCP GetRenderer() const { return m_renderer; }
+    ECPRESENTATION_EXPORT void SetRenderer(CustomRendererSpecificationP renderer);
+
+    PropertyEditorSpecificationCP GetEditor() const { return m_editor; }
+    ECPRESENTATION_EXPORT void SetEditor(PropertyEditorSpecificationP editor);
+
+    PropertyCategoryIdentifier const* GetCategoryId() const { return m_categoryId.get(); }
+    void SetCategoryId(std::unique_ptr<PropertyCategoryIdentifier> categoryId) { m_categoryId = std::move(categoryId); InvalidateHash(); }
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE
