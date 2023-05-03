@@ -2820,14 +2820,14 @@ DbResult Db::DoOpenDb(Utf8CP inName, OpenParams const& params) {
     }
 
     Utf8String cloudSqliteLogId;
-    Utf8CP cloudSqliteLogIdKey = "cloudSqliteLogId=";
+    Utf8CP cloudSqliteLogIdKey = "logId=";
     for (auto const& param : params.m_queryParams) {
         m_openQueryParams.push_back(param);
         if (param.ContainsI(cloudSqliteLogIdKey)) {
             cloudSqliteLogId = param.substr(strlen(cloudSqliteLogIdKey));
         }
     }
-        
+
 
     Utf8String uri = getDbUri(inName, params);
     SqlDbP sqlDb = nullptr;
