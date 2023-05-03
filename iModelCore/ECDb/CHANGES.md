@@ -17,6 +17,7 @@ This document including important changes to syntax or file format.
   * `ECSqlStatement::GetColumnInfo(int)` will update on each `Step()` for dynamic properties.
 * Major improvement to Instance prop functionality where use of a virtual table to filter row base on property selected.
 * Fix bug that cause assertion when access instance that mapped to overflow table.
+* Instance prop continue to be a experimental feature.
 
 ## `4/10/2023`: Add comprehensive ECDb integrity checks and support for enable/disabling experimental features.
 
