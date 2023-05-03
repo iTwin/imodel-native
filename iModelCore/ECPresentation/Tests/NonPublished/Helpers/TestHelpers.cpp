@@ -464,7 +464,15 @@ static void AssertInstanceValueValid(IECInstanceCR instance, RapidJsonValueCR va
     ECValue instanceValue;
     ECObjectsStatus status = instance.GetValue(instanceValue, propertyName);
     EXPECT_EQ(ECObjectsStatus::Success, status);
-    EXPECT_EQ(instanceValue, GetECValueFromJson(value, *property));
+
+    if (instanceValue.IsBinary() && property->GetIsPrimitive() && property->GetAsPrimitiveProperty()->GetExtendedTypeName() == EXTENDED_TYPENAME_BeGuid)
+        {
+        size_t sizeOfGuid = sizeof(BeGuid);
+        BeGuidCP guid = (BeGuidCP)instanceValue.GetBinary(sizeOfGuid);
+        EXPECT_EQ(guid->ToString(), value.GetString());
+        }
+    else 
+        EXPECT_EQ(instanceValue, GetECValueFromJson(value, *property));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -858,6 +866,16 @@ void RulesEngineTestHelpers::CacheNode(IHierarchyCacheR cache, Utf8StringCR conn
         cache.Cache(dsInfo);
         }
     cache.Cache(node, dsInfo.GetIdentifier(), 0, NodeVisibility::Visible);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BeGuid RulesEngineTestHelpers::CreateGuidFromString(Utf8CP str)
+    {
+    BeGuid guid;
+    guid.FromString(str);
+    return guid;
     }
 
 /*---------------------------------------------------------------------------------**//**

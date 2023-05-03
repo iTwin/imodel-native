@@ -171,7 +171,7 @@ LabelDefinition const& LabelDefinition::SetECPropertyValue(ECPropertyCR ecProper
     {
     if (ecProperty.GetIsPrimitive())
         {
-        ECValue value = ValueHelpers::GetECValueFromSqlValue(ecProperty.GetAsPrimitiveProperty()->GetType(), dbValue);
+        ECValue value = ValueHelpers::GetECValueFromSqlValue(ecProperty.GetAsPrimitiveProperty()->GetType(), ecProperty.GetAsPrimitiveProperty()->GetExtendedTypeName(), dbValue);
         return SetECValue(value, displayValue);
         }
 

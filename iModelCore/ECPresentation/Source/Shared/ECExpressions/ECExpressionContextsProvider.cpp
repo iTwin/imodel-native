@@ -49,11 +49,38 @@ private:
         evalResult.SetValueList(*IValueListResult::Create(values));
         return ExpressionStatus::Success;
         }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    static ExpressionStatus GuidToStr(EvaluationResult& evalResult, void*, EvaluationResultVector& args)
+        {
+        bvector<EvaluationResult> values;
+        if (args.size() == 0 || args.size() > 1)
+            return ExpressionStatus::WrongNumberOfArguments;
+
+        EvaluationResultCR arg = args[0];
+        if (!arg.IsECValue() || !arg.GetECValue()->IsBinary())
+            return ExpressionStatus::IncompatibleTypes;
+
+        if (arg.GetECValue()->IsNull())
+            {
+            evalResult.InitECValue().SetToNull();
+            return ExpressionStatus::Success;
+            }
+
+        size_t guidSize = sizeof(BeGuid);
+        BeGuidCP guid = (BeGuidCP)arg.GetECValue()->GetBinary(guidSize);
+
+        evalResult.InitECValue().SetUtf8CP(guid->ToString().c_str(), true);
+        return ExpressionStatus::Success;
+        }
 protected:
     Utf8CP _GetName() const override {return "CommonRulesEngineSymbols";}
     void _PublishSymbols(SymbolExpressionContextR context, bvector<Utf8String> const& requestedSymbolSets) const override
         {
         context.AddSymbol(*MethodSymbol::Create("Set", &CommonRulesEngineSymbolsProvider::CreateSet, nullptr, nullptr));
+        context.AddSymbol(*MethodSymbol::Create("GuidToStr", &CommonRulesEngineSymbolsProvider::GuidToStr, nullptr, nullptr));
         }
 public:
     CommonRulesEngineSymbolsProvider() {}
@@ -158,8 +185,9 @@ struct NodeECInstanceContextEvaluator : PropertySymbol::ContextEvaluator
 private:
     IConnectionCR m_connection;
     NavNodeCPtr m_node;
+    InstanceExpressionContextPtr m_instanceContext;
     NodeECInstanceContextEvaluator(IConnectionCR connection, NavNodeCR node)
-        : m_connection(connection), m_node(&node)
+        : m_connection(connection), m_node(&node), m_instanceContext(nullptr)
         {}
 public:
     static RefCountedPtr<NodeECInstanceContextEvaluator> Create(IConnectionCR connection, NavNodeCR node)
@@ -168,19 +196,22 @@ public:
         }
     ExpressionContextPtr _GetContext() override
         {
+        if (m_instanceContext.IsValid())
+            return m_instanceContext;
+
         ECInstancesNodeKey const* key = m_node->GetKey()->AsECInstanceNodeKey();
         if (nullptr == key || key->GetInstanceKeys().empty())
             return nullptr;
 
         // TODO: returning first instance key - what if node groups multiple instances???
         ECInstanceKey instanceKey(key->GetInstanceKeys().front().GetClass()->GetId(), key->GetInstanceKeys().front().GetId());
-        InstanceExpressionContextPtr instanceContext = InstanceExpressionContext::Create(nullptr);
+        m_instanceContext = InstanceExpressionContext::Create(nullptr);
         IECInstancePtr instance;
         ECInstancesHelper::LoadInstance(instance, m_connection, instanceKey);
         if (instance.IsValid())
-            instanceContext->SetInstance(*instance);
+            m_instanceContext->SetInstance(*instance);
 
-        return instanceContext;
+        return m_instanceContext;
         }
 };
 
