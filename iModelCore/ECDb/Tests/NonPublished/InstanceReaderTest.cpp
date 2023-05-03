@@ -29,7 +29,7 @@ struct InstanceReaderFixture : ECDbTestFixture {
     }
 
 };
-
+#if 0
 struct InstancePropPerfTest {
     enum class PropFilter {
         None,
@@ -323,7 +323,7 @@ struct InstancePropPerfTest {
 
 
 
-#if 0
+
 TEST_F(InstanceReaderFixture, performance_test) {
     InstancePropPerfTest gen;
     auto basePath = std::filesystem::path{"D:\\temp\\test-files"};
@@ -432,6 +432,7 @@ TEST_F(InstanceReaderFixture, performance_test) {
 
 }
 #endif
+
 TEST_F(InstanceReaderFixture, experimental_check) {
     ASSERT_EQ(BE_SQLITE_OK, OpenECDbTestDataFile("test.bim"));
     ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
@@ -1286,103 +1287,6 @@ TEST_F(InstanceReaderFixture, extract_prop) {
             ASSERT_TRUE(stmt.GetValueDateTime (i++).Equals(kDt, true));
             ASSERT_EQ(stmt.GetValueBoolean(i++), kB);
         }
-    }
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(InstanceReaderFixture, prop_exists) {
-    ASSERT_EQ(SUCCESS, SetupECDb("PROP_EXISTS.ecdb", SchemaItem(
-        R"xml(<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
-                   <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
-                   <ECEntityClass typeName="Base" modifier="Abstract">
-                        <ECCustomAttributes>
-                            <ClassMap xmlns="ECDbMap.02.00">
-                                <MapStrategy>TablePerHierarchy</MapStrategy>
-                            </ClassMap>
-                            <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00"/>
-                        </ECCustomAttributes>
-                        <ECProperty propertyName="Prop1" typeName="string" />
-                        <ECProperty propertyName="Prop2" typeName="int" />
-                    </ECEntityClass>
-                    <ECEntityClass typeName="Sub">
-                        <BaseClass>Base</BaseClass>
-                        <ECProperty propertyName="SubProp1" typeName="string" />
-                        <ECProperty propertyName="SubProp2" typeName="int" />
-                    </ECEntityClass>
-               </ECSchema>)xml")));
-    m_ecdb.SaveChanges();
-
-    if ("case sensitive check") {
-        const auto sql =
-            "SELECT "
-            "   PROP_EXISTS(ec_classid('ts.Base'), 'ECClassId'   ),"
-            "   PROP_EXISTS(ec_classid('ts.Base'), 'ECInstanceId'),"
-            "   PROP_EXISTS(ec_classid('ts.Base'), 'Prop1'       ),"
-            "   PROP_EXISTS(ec_classId('ts.base'), 'Prop2'       ),"
-            "   PROP_EXISTS(ec_classid('ts.Base'), 'SubProp1'    ),"
-            "   PROP_EXISTS(ec_classid('ts.Base'), 'SubProp2'    ),"
-            "   PROP_EXISTS(ec_classid('ts.Sub'),  'ECClassId'   ),"
-            "   PROP_EXISTS(ec_classid('ts.Sub'),  'ECInstanceId'),"
-            "   PROP_EXISTS(ec_classid('ts.Sub'),  'Prop1'       ),"
-            "   PROP_EXISTS(ec_classId('ts.Sub'),  'Prop2'       ),"
-            "   PROP_EXISTS(ec_classid('ts.Sub'),  'SubProp1'    ),"
-            "   PROP_EXISTS(ec_classid('ts.Sub'),  'SubProp2'    )";
-
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, sql));
-
-        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
-
-        int i = 0;
-        ASSERT_EQ(stmt.GetValueInt(i++), 1);
-        ASSERT_EQ(stmt.GetValueInt(i++), 1);
-        ASSERT_EQ(stmt.GetValueInt(i++), 1);
-        ASSERT_EQ(stmt.GetValueInt(i++), 1);
-        ASSERT_EQ(stmt.GetValueInt(i++), 0); // SubProp1 does not exist in base
-        ASSERT_EQ(stmt.GetValueInt(i++), 0); // SubProp2 does not exist in base
-        ASSERT_EQ(stmt.GetValueInt(i++), 1);
-        ASSERT_EQ(stmt.GetValueInt(i++), 1);
-        ASSERT_EQ(stmt.GetValueInt(i++), 1);
-        ASSERT_EQ(stmt.GetValueInt(i++), 1);
-        ASSERT_EQ(stmt.GetValueInt(i++), 1);
-        ASSERT_EQ(stmt.GetValueInt(i++), 1);
-    }
-
-    if ("case insensitive check") {
-        const auto sql =
-            "SELECT "
-            "   PROP_EXISTS(ec_classid('ts.Base'), 'ECCLASSID'   ),"
-            "   PROP_EXISTS(ec_classid('ts.Base'), 'ECINSTANCEID'),"
-            "   PROP_EXISTS(ec_classid('ts.Base'), 'PROP1'       ),"
-            "   PROP_EXISTS(ec_classId('ts.base'), 'PROP2'       ),"
-            "   PROP_EXISTS(ec_classid('ts.Base'), 'SUBPROP1'    ),"
-            "   PROP_EXISTS(ec_classid('ts.Base'), 'SUBPROP2'    ),"
-            "   PROP_EXISTS(ec_classid('ts.Sub'),  'ECCLASSID'   ),"
-            "   PROP_EXISTS(ec_classid('ts.Sub'),  'ECINSTANCEID'),"
-            "   PROP_EXISTS(ec_classid('ts.Sub'),  'PROP1'       ),"
-            "   PROP_EXISTS(ec_classId('ts.Sub'),  'PROP2'       ),"
-            "   PROP_EXISTS(ec_classid('ts.Sub'),  'SUBPROP1'    ),"
-            "   PROP_EXISTS(ec_classid('ts.Sub'),  'SUBPROP2'    )";
-
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, sql));
-        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
-
-        int i = 0;
-        ASSERT_EQ(stmt.GetValueInt(i++), 1);
-        ASSERT_EQ(stmt.GetValueInt(i++), 1);
-        ASSERT_EQ(stmt.GetValueInt(i++), 1);
-        ASSERT_EQ(stmt.GetValueInt(i++), 1);
-        ASSERT_EQ(stmt.GetValueInt(i++), 0); // SubProp1 does not exist in base
-        ASSERT_EQ(stmt.GetValueInt(i++), 0); // SubProp2 does not exist in base
-        ASSERT_EQ(stmt.GetValueInt(i++), 1);
-        ASSERT_EQ(stmt.GetValueInt(i++), 1);
-        ASSERT_EQ(stmt.GetValueInt(i++), 1);
-        ASSERT_EQ(stmt.GetValueInt(i++), 1);
-        ASSERT_EQ(stmt.GetValueInt(i++), 1);
-        ASSERT_EQ(stmt.GetValueInt(i++), 1);
     }
 }
 

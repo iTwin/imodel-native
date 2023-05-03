@@ -5,7 +5,13 @@ This document including important changes to syntax or file format.
 | Module  | Version   |
 | ------- | --------- |
 | Profile | `4.0.0.3` |
-| ECSQL   | `1.1.0.0` |
+| ECSQL   | `1.2.0.0` |
+
+## `5/3/2023`: Enhanced Instance properties
+
+* ECSQL version changed from `1.1.0.0` -> `1.2.0.0`
+* **Removed** `PROP_EXISTS()` this is not required any more as instance prop now auto filtered internally.
+* Add VirtualTab 
 
 ## `4/10/2023`: Add comprehensive ECDb integrity checks and support for enable/disabling experimental features.
 

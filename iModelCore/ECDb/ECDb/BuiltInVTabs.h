@@ -13,7 +13,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsiclass
 //=======================================================================================
 struct ClassPropsModule : BeSQLite::DbModule {
-    constexpr static auto NAME = "contain_props";
+    constexpr static auto NAME = "class_props";
     struct ClassPropsVirtualTable : DbVirtualTable {
         struct ClassPropsCursor : DbCursor {
             enum class Columns{

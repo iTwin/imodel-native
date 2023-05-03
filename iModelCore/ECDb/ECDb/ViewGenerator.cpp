@@ -659,9 +659,15 @@ BentleyStatus ViewGenerator::RenderEntityClassMap(NativeSqlBuilder& viewSql, Con
 
     if (ctx.GetViewType() == ViewType::SelectFromView) {
         auto& selectCtx = ctx.GetAs<SelectFromViewContext>();
-        if (selectCtx.HasInstanceProps()) {
+        bool addPropFilter = true;
+        if (auto classIdPropMap = classMap.GetECClassIdPropertyMap()) {
+            if (!classIdPropMap->GetDataPropertyMaps().empty()) {
+                addPropFilter = !classIdPropMap->GetDataPropertyMaps().front()->GetColumn().IsVirtual();
+            }
+        }
+        if (selectCtx.HasInstanceProps() && addPropFilter) {
             auto instancePropFilter = selectCtx.MakeInstancePropsJsonArrayString();
-            viewSql.AppendFormatted(" INNER JOIN contain_props('%s') __cp__ ON __cp__.class_id = [%s].ECClassId ", instancePropFilter.c_str(), contextTable.GetName().c_str());
+            viewSql.AppendFormatted(" INNER JOIN %s('%s') __INST_PROP ON __INST_PROP.class_id = [%s].ECClassId ", ClassPropsModule::NAME, instancePropFilter.c_str(), contextTable.GetName().c_str());
         }
     }
 
