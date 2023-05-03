@@ -409,12 +409,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DescriptorInstanceFilter_Us
     BeGuid instanceGuid1 = BeGuid(true);
     IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [instanceGuid1](IECInstanceR instance)
         {
-        instance.SetValue("GuidProp", ECValue((const Byte*)&instanceGuid1, sizeof(BeGuid)));
+        instance.SetValue("GuidProp", ECValue((Byte const*)&instanceGuid1, sizeof(BeGuid)));
         });
     BeGuid instanceGuid2 = BeGuid(true);
     IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [instanceGuid2](IECInstanceR instance)
         {
-        instance.SetValue("GuidProp", ECValue((const Byte*)&instanceGuid2, sizeof(BeGuid)));
+        instance.SetValue("GuidProp", ECValue((Byte const*)&instanceGuid2, sizeof(BeGuid)));
         });
     KeySetPtr input = KeySet::Create(bvector<IECInstancePtr>{instance1, instance2});
 

@@ -1669,33 +1669,33 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
     BeGuid filterGuid2(true);
     IECInstancePtr a11 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [&](IECInstanceR instance)
         {
-        instance.SetValue("GuidProp", ECValue((const Byte*)&labelGuid1, sizeof(BeGuid)));
-        instance.SetValue("FilterProp", ECValue((const Byte*)&filterGuid1, sizeof(BeGuid)));
+        instance.SetValue("GuidProp", ECValue((Byte const*)&labelGuid1, sizeof(BeGuid)));
+        instance.SetValue("FilterProp", ECValue((Byte const*)&filterGuid1, sizeof(BeGuid)));
         });
     IECInstancePtr a12 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [&](IECInstanceR instance)
         {
-        instance.SetValue("GuidProp", ECValue((const Byte*)&labelGuid1, sizeof(BeGuid)));
-        instance.SetValue("FilterProp", ECValue((const Byte*)&filterGuid1, sizeof(BeGuid)));
+        instance.SetValue("GuidProp", ECValue((Byte const*)&labelGuid1, sizeof(BeGuid)));
+        instance.SetValue("FilterProp", ECValue((Byte const*)&filterGuid1, sizeof(BeGuid)));
         });
     IECInstancePtr a13 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [&](IECInstanceR instance)
         {
-        instance.SetValue("GuidProp", ECValue((const Byte*)&labelGuid1, sizeof(BeGuid)));
-        instance.SetValue("FilterProp", ECValue((const Byte*)&filterGuid2, sizeof(BeGuid)));
+        instance.SetValue("GuidProp", ECValue((Byte const*)&labelGuid1, sizeof(BeGuid)));
+        instance.SetValue("FilterProp", ECValue((Byte const*)&filterGuid2, sizeof(BeGuid)));
         });
     IECInstancePtr a21 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [&](IECInstanceR instance)
         {
-        instance.SetValue("GuidProp", ECValue((const Byte*)&labelGuid2, sizeof(BeGuid)));
-        instance.SetValue("FilterProp", ECValue((const Byte*)&filterGuid1, sizeof(BeGuid)));
+        instance.SetValue("GuidProp", ECValue((Byte const*)&labelGuid2, sizeof(BeGuid)));
+        instance.SetValue("FilterProp", ECValue((Byte const*)&filterGuid1, sizeof(BeGuid)));
         });
     IECInstancePtr a22 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [&](IECInstanceR instance)
         {
-        instance.SetValue("GuidProp", ECValue((const Byte*)&labelGuid2, sizeof(BeGuid)));
-        instance.SetValue("FilterProp", ECValue((const Byte*)&filterGuid2, sizeof(BeGuid)));
+        instance.SetValue("GuidProp", ECValue((Byte const*)&labelGuid2, sizeof(BeGuid)));
+        instance.SetValue("FilterProp", ECValue((Byte const*)&filterGuid2, sizeof(BeGuid)));
         });
     IECInstancePtr a3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [&](IECInstanceR instance)
         {
-        instance.SetValue("GuidProp", ECValue((const Byte*)&labelGuid3, sizeof(BeGuid)));
-        instance.SetValue("FilterProp", ECValue((const Byte*)&filterGuid1, sizeof(BeGuid)));
+        instance.SetValue("GuidProp", ECValue((Byte const*)&labelGuid3, sizeof(BeGuid)));
+        instance.SetValue("FilterProp", ECValue((Byte const*)&filterGuid1, sizeof(BeGuid)));
         });
 
     // ruleset
