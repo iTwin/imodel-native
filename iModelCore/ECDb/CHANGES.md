@@ -10,15 +10,16 @@ This document including important changes to syntax or file format.
 ## `5/3/2023`: Enhanced Instance properties
 
 * ECSQL version changed from `1.1.0.0` -> `1.2.0.0`
-* **Removed** `PROP_EXISTS()` this is not required any more as instance prop now auto filtered internally.
-* Add VirtualTab `class_props()` that is use to filter instance property queries rows.
-* Added support for dynamic property meta data for instance property.
-  * `ColumnInfo::IsDynamic()` check is a ECSqlStatement output property has dynamic data and might change on each call to `Step()`
+* **Removed** `PROP_EXISTS()` This is not required anymore as instance prop is now auto-filtered internally.
+* Add VirtualTab `class_props()` that is used to filter instance property query rows.
+* Added support for dynamic property metadata for instance property.
+  * `ColumnInfo::IsDynamic()` check is an ECSqlStatement output property that has dynamic data and might change on each call to `Step()`
   * `ECSqlStatement::GetColumnInfo(int)` will update on each `Step()` for dynamic properties.
-  * Expose `IsDynamicProp()` via NativeAddon for use from typescript side.
-* Major improvement to Instance prop functionality where use of a virtual table to filter row base on property selected.
-* Fix bug that cause assertion when access instance that mapped to overflow table.
-* Instance prop continue to be a experimental feature.
+  * Expose `IsDynamicProp()` via NativeAddon for use from the typescript side.
+* Major improvement to Instance prop functionality where the use of a virtual table to filter rows based on the property selected.
+* Fix bug that causes assertion when access instance that mapped to overflow table.
+* Instance prop continues to be an experimental feature.
+* Add [Instance Properties Docs](https://dev.azure.com/bentleycs/iModelTechnologies/_wiki/wikis/iModelTechnologies.wiki/35670/Instance-properties)
 
 ## `4/10/2023`: Add comprehensive ECDb integrity checks and support for enable/disabling experimental features.
 
