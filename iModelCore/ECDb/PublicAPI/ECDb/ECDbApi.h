@@ -18,3 +18,4 @@
 #include <ECDb/ConcurrentQueryManager.h>
 
 #include <ECDb/InstanceReader.h>
+#include <ECDb/ECDbVirtualTab.h>

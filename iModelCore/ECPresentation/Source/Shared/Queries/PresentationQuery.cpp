@@ -2058,6 +2058,7 @@ size_t PrimitiveECValueHasher::operator()(ECValueCR value) const
         case PRIMITIVETYPE_Long:
             hash ^= std::hash<int64_t>{}(value.GetLong()) << 2;
             break;
+        case PRIMITIVETYPE_Binary:
         case PRIMITIVETYPE_String:
             hash ^= std::hash<std::string>{}(value.GetUtf8CP()) << 2;
             break;
@@ -2073,7 +2074,6 @@ size_t PrimitiveECValueHasher::operator()(ECValueCR value) const
             hash ^= (std::hash<double>{}(point3d.x) ^ (std::hash<double>{}(point3d.y) << 8) ^ (std::hash<double>{}(point3d.z) << 16)) << 2;
             break;
             }
-        case PRIMITIVETYPE_Binary:
         case PRIMITIVETYPE_IGeometry:
             break;
         default:
@@ -2112,7 +2112,7 @@ public:
             // value and use it's type to parse sql value
             if (value.IsPrimitive())
                 {
-                return (m_values.end() != m_values.find(ValueHelpers::GetECValueFromSqlValue(value.GetPrimitiveType(), vals[0])));
+                return (m_values.end() != m_values.find(ValueHelpers::GetECValueFromSqlValue(value.GetPrimitiveType(), "", vals[0])));
                 }
             }
 

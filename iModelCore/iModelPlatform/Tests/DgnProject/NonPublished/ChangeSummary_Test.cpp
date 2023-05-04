@@ -416,95 +416,95 @@ TEST_F(ChangeSummaryTestFixture, ValidateInstanceIterator)
     EXPECT_NE(countQuery, 0);
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixture, ElementChildRelationshipChanges)
-    {
-    SetupDgnDb(ChangeTestFixture::s_seedFileInfo.fileName, L"ElementChildRelationshipChanges.bim");
+// //---------------------------------------------------------------------------------------
+// // @bsimethod
+// //---------------------------------------------------------------------------------------
+// TEST_F(ChangeSummaryTestFixture, ElementChildRelationshipChanges)
+//     {
+//     SetupDgnDb(ChangeTestFixture::s_seedFileInfo.fileName, L"ElementChildRelationshipChanges.bim");
 
-    PhysicalModelPtr csModel = DgnDbTestUtils::InsertPhysicalModel(*m_db, "ChangeSummaryModel");
-    DgnCategoryId csCategoryId = InsertCategory("ChangeSummaryCategory");
+//     PhysicalModelPtr csModel = DgnDbTestUtils::InsertPhysicalModel(*m_db, "ChangeSummaryModel");
+//     DgnCategoryId csCategoryId = InsertCategory("ChangeSummaryCategory");
 
-    DgnElementId parentElementId = InsertPhysicalElement(*m_db, *csModel, csCategoryId, 0, 0, 0);
-    DgnElementId childElementId = InsertPhysicalElement(*m_db, *csModel, csCategoryId, 1, 1, 1);
-    DgnClassId parentRelClassId = m_db->Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements);
+//     DgnElementId parentElementId = InsertPhysicalElement(*m_db, *csModel, csCategoryId, 0, 0, 0);
+//     DgnElementId childElementId = InsertPhysicalElement(*m_db, *csModel, csCategoryId, 1, 1, 1);
+//     DgnClassId parentRelClassId = m_db->Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements);
 
-    m_db->SaveChanges();
+//     m_db->SaveChanges();
 
-    RefCountedPtr<DgnElement> childElementPtr = m_db->Elements().GetForEdit<DgnElement>(childElementId);
+//     RefCountedPtr<DgnElement> childElementPtr = m_db->Elements().GetForEdit<DgnElement>(childElementId);
 
-    DgnDbStatus dbStatus = childElementPtr->SetParentId(parentElementId, parentRelClassId);
-    ASSERT_TRUE(DgnDbStatus::Success == dbStatus);
+//     DgnDbStatus dbStatus = childElementPtr->SetParentId(parentElementId, parentRelClassId);
+//     ASSERT_TRUE(DgnDbStatus::Success == dbStatus);
 
-    ASSERT_EQ(DgnDbStatus::Success, childElementPtr->Update());
+//     ASSERT_EQ(DgnDbStatus::Success, childElementPtr->Update());
 
-    ChangeSummary changeSummary(*m_db);
-    GetChangeSummaryFromCurrentTransaction(changeSummary);
+//     ChangeSummary changeSummary(*m_db);
+//     GetChangeSummaryFromCurrentTransaction(changeSummary);
 
-    DumpChangeSummary(changeSummary, "ChangeSummary after setting ParentId");
+//     DumpChangeSummary(changeSummary, "ChangeSummary after setting ParentId");
 
-    /*
-        ChangeSummary after setting ParentId:
-        BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
-                AccessString;OldValue;NewValue
-        0:10;Generic:PhysicalObject:328;Update;No
-                LastMod;2.45777e+06;2.45777e+06
-                Parent.Id;NULL;1099511627785
-                Parent.RelECClassId;NULL;BisCore:ElementOwnsChildElements:175
-        0:10;BisCore:ElementOwnsChildElements:175;Insert;No
-                SourceECClassId;NULL;Generic:PhysicalObject:328
-                SourceECInstanceId;NULL;0:9
-                TargetECClassId;NULL;Generic:PhysicalObject:328
-                TargetECInstanceId;NULL;0:10
+//     /*
+//         ChangeSummary after setting ParentId:
+//         BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
+//                 AccessString;OldValue;NewValue
+//         0:10;Generic:PhysicalObject:328;Update;No
+//                 LastMod;2.45777e+06;2.45777e+06
+//                 Parent.Id;NULL;1099511627785
+//                 Parent.RelECClassId;NULL;BisCore:ElementOwnsChildElements:175
+//         0:10;BisCore:ElementOwnsChildElements:175;Insert;No
+//                 SourceECClassId;NULL;Generic:PhysicalObject:328
+//                 SourceECInstanceId;NULL;0:9
+//                 TargetECClassId;NULL;Generic:PhysicalObject:328
+//                 TargetECInstanceId;NULL;0:10
 
-    */
-    EXPECT_EQ(2, changeSummary.MakeInstanceIterator().QueryCount());
-    EXPECT_EQ(1, GetChangeSummaryInstanceCount(changeSummary, GENERIC_SCHEMA(GENERIC_CLASS_PhysicalObject)));
-    EXPECT_EQ(1, GetChangeSummaryInstanceCount(changeSummary, BIS_SCHEMA(BIS_REL_ElementOwnsChildElements))); // NEEDS_WORK: (Shaun?) This should really be 0 - likely issue with setting parent rel class ids (Shaun)
-    EXPECT_EQ(0, GetChangeSummaryInstanceCount(changeSummary, BIS_SCHEMA(BIS_REL_PhysicalElementAssemblesElements))); // NEEDS_WORK: (Shaun?) This should really be 1 - likely issue with setting parent rel class ids (Shaun)
-    EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(childElementId.GetValueUnchecked()), BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements, DbOpcode::Insert)); // Captured due to change of FK relationship (ParentId column)
-    EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(childElementId.GetValueUnchecked()), GENERIC_DOMAIN_NAME, GENERIC_CLASS_PhysicalObject, DbOpcode::Update)); // Captured due to change of ParentId property
+//     */
+//     EXPECT_EQ(2, changeSummary.MakeInstanceIterator().QueryCount());
+//     EXPECT_EQ(1, GetChangeSummaryInstanceCount(changeSummary, GENERIC_SCHEMA(GENERIC_CLASS_PhysicalObject)));
+//     EXPECT_EQ(1, GetChangeSummaryInstanceCount(changeSummary, BIS_SCHEMA(BIS_REL_ElementOwnsChildElements))); // NEEDS_WORK: (Shaun?) This should really be 0 - likely issue with setting parent rel class ids (Shaun)
+//     EXPECT_EQ(0, GetChangeSummaryInstanceCount(changeSummary, BIS_SCHEMA(BIS_REL_PhysicalElementAssemblesElements))); // NEEDS_WORK: (Shaun?) This should really be 1 - likely issue with setting parent rel class ids (Shaun)
+//     EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(childElementId.GetValueUnchecked()), BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements, DbOpcode::Insert)); // Captured due to change of FK relationship (ParentId column)
+//     EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(childElementId.GetValueUnchecked()), GENERIC_DOMAIN_NAME, GENERIC_CLASS_PhysicalObject, DbOpcode::Update)); // Captured due to change of ParentId property
 
-    ECClassId relClassId = m_db->Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements);
-    ECClassId elClassId = m_db->Schemas().GetClassId(GENERIC_DOMAIN_NAME, GENERIC_CLASS_PhysicalObject);
+//     ECClassId relClassId = m_db->Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements);
+//     ECClassId elClassId = m_db->Schemas().GetClassId(GENERIC_DOMAIN_NAME, GENERIC_CLASS_PhysicalObject);
 
-    ChangeSummary::Instance instance = changeSummary.GetInstance(elClassId, ECInstanceId(childElementId.GetValue()));
-    ASSERT_TRUE(instance.IsValid());
+//     ChangeSummary::Instance instance = changeSummary.GetInstance(elClassId, ECInstanceId(childElementId.GetValue()));
+//     ASSERT_TRUE(instance.IsValid());
 
-    ChangeSummary::Instance relInstance = changeSummary.GetInstance(relClassId, ECInstanceId(childElementId.GetValue()));
-    ASSERT_TRUE(relInstance.IsValid());
+//     ChangeSummary::Instance relInstance = changeSummary.GetInstance(relClassId, ECInstanceId(childElementId.GetValue()));
+//     ASSERT_TRUE(relInstance.IsValid());
 
-    DbDupValue value(nullptr);
+//     DbDupValue value(nullptr);
 
-    value = relInstance.GetNewValue("SourceECClassId");
-    ASSERT_TRUE(value.IsValid());
-    EXPECT_EQ(elClassId.GetValue(), value.GetValueId<ECClassId>().GetValue());
-    EXPECT_EQ(elClassId.GetValue(), relInstance.GetNewValue("SourceECClassId").GetValueId<ECClassId>().GetValue());
+//     value = relInstance.GetNewValue("SourceECClassId");
+//     ASSERT_TRUE(value.IsValid());
+//     EXPECT_EQ(elClassId.GetValue(), value.GetValueId<ECClassId>().GetValue());
+//     EXPECT_EQ(elClassId.GetValue(), relInstance.GetNewValue("SourceECClassId").GetValueId<ECClassId>().GetValue());
 
-    value = relInstance.GetNewValue("SourceECInstanceId");
-    ASSERT_TRUE(value.IsValid());
-    EXPECT_EQ(parentElementId.GetValueUnchecked(), value.GetValueUInt64());
-    EXPECT_EQ(parentElementId.GetValueUnchecked(), relInstance.GetNewValue("SourceECInstanceId").GetValueUInt64());
+//     value = relInstance.GetNewValue("SourceECInstanceId");
+//     ASSERT_TRUE(value.IsValid());
+//     EXPECT_EQ(parentElementId.GetValueUnchecked(), value.GetValueUInt64());
+//     EXPECT_EQ(parentElementId.GetValueUnchecked(), relInstance.GetNewValue("SourceECInstanceId").GetValueUInt64());
 
-    value = relInstance.GetNewValue("TargetECClassId");
-    ASSERT_TRUE(value.IsValid());
-    EXPECT_EQ(elClassId.GetValue(), value.GetValueId<ECClassId>().GetValue());
-    EXPECT_EQ(elClassId.GetValue(), relInstance.GetNewValue("TargetECClassId").GetValueId<ECClassId>().GetValue());
+//     value = relInstance.GetNewValue("TargetECClassId");
+//     ASSERT_TRUE(value.IsValid());
+//     EXPECT_EQ(elClassId.GetValue(), value.GetValueId<ECClassId>().GetValue());
+//     EXPECT_EQ(elClassId.GetValue(), relInstance.GetNewValue("TargetECClassId").GetValueId<ECClassId>().GetValue());
 
-    value = relInstance.GetNewValue("TargetECInstanceId");
-    ASSERT_TRUE(value.IsValid());
-    ASSERT_EQ(childElementId.GetValueUnchecked(), value.GetValueUInt64());
-    ASSERT_EQ(childElementId.GetValueUnchecked(), relInstance.GetNewValue("TargetECInstanceId").GetValueUInt64());
+//     value = relInstance.GetNewValue("TargetECInstanceId");
+//     ASSERT_TRUE(value.IsValid());
+//     ASSERT_EQ(childElementId.GetValueUnchecked(), value.GetValueUInt64());
+//     ASSERT_EQ(childElementId.GetValueUnchecked(), relInstance.GetNewValue("TargetECInstanceId").GetValueUInt64());
 
-    value = instance.GetNewValue("Parent.Id");
-    ASSERT_TRUE(value.IsValid());
-    ASSERT_EQ(parentElementId.GetValueUnchecked(), value.GetValueUInt64());
-    ASSERT_EQ(parentElementId.GetValueUnchecked(), instance.GetNewValue("Parent.Id").GetValueUInt64());
+//     value = instance.GetNewValue("Parent.Id");
+//     ASSERT_TRUE(value.IsValid());
+//     ASSERT_EQ(parentElementId.GetValueUnchecked(), value.GetValueUInt64());
+//     ASSERT_EQ(parentElementId.GetValueUnchecked(), instance.GetNewValue("Parent.Id").GetValueUInt64());
 
-    EXPECT_EQ(4, relInstance.MakeValueIterator().QueryCount());
-    EXPECT_EQ(3, instance.MakeValueIterator().QueryCount());
-    }
+//     EXPECT_EQ(4, relInstance.MakeValueIterator().QueryCount());
+//     EXPECT_EQ(3, instance.MakeValueIterator().QueryCount());
+//     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod

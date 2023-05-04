@@ -11,6 +11,7 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 USING_NAMESPACE_ECPRESENTATIONTESTS
 
 #define STRATEGY_FILENAME       L"TaskManagerStressTestStrategy.json"
+#define ACTIONS_PER_ITERATION   10
 #define MAX_TASK_EXECUTION_TIME 100
 #define MAX_WORKER_THREADS      4
 
@@ -22,6 +23,7 @@ struct TestActionExecuteParams
     std::function<ECPresentationTasksManager&()> getManager;
     folly::Future<folly::Unit>* previousAction;
     std::function<void()> recreateTaskManager;
+    std::shared_ptr<Diagnostics::Scope> rootDiagnosticsScope;
     };
 
 /*=================================================================================**//**
@@ -124,7 +126,7 @@ struct TaskManagerStressTestChainedTaskAction : TaskManagerStressTestAction
             ? actionParams.previousAction->then([this]()
                 {
                 BeThreadUtilities::BeSleep(m_execTime);
-                }) 
+                })
             : folly::makeFuture();
         return { std::move(future), true };
         }
@@ -263,6 +265,80 @@ struct TaskManagerStressTestRecreateTaskManagerAction : TaskManagerStressTestAct
     };
 Utf8CP const TaskManagerStressTestRecreateTaskManagerAction::s_type = "RecreateTaskManager";
 
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct TaskManagerStressTestAddDiagnosticsAttributeAction : TaskManagerStressTestAction
+    {
+    static Utf8CP const s_type;
+    int m_scopesCount;
+    template<typename TRandomizer>
+    static std::unique_ptr<TaskManagerStressTestAction> CreateRandom(TRandomizer& randomizer)
+        {
+        auto action = std::make_unique<TaskManagerStressTestAddDiagnosticsAttributeAction>();
+        action->m_scopesCount = std::uniform_int_distribution<>(1, 10)(randomizer);
+        return action;
+        }
+    static std::unique_ptr<TaskManagerStressTestAction> FromJson(RapidJsonValueCR json)
+        {
+        auto action = std::make_unique<TaskManagerStressTestAddDiagnosticsAttributeAction>();
+        action->m_scopesCount = json["ScopesCount"].GetInt();
+        return action;
+        }
+    rapidjson::Document _ToJson(rapidjson::Document::AllocatorType* allocator) const override
+        {
+        rapidjson::Document json(allocator);
+        json.SetObject();
+        json.AddMember("Type", rapidjson::StringRef(s_type), json.GetAllocator());
+        json.AddMember("ScopesCount", m_scopesCount, json.GetAllocator());
+        return json;
+        }
+    TestActionExecuteResult _Execute(TestActionExecuteParams const& params) const override
+        {
+        return {
+            params.getManager().CreateAndExecute([this](IECPresentationTaskCR)
+                {
+                bvector<std::shared_ptr<Diagnostics::Scope>> scopes;
+                for (int i = 0; i < m_scopesCount; ++i)
+                    scopes.push_back(*Diagnostics::Scope::Create(std::to_string(i)));
+                scopes.back()->AddValueToArrayAttribute("x", "y", true);
+                }),
+            false
+            };
+        }
+    };
+Utf8CP const TaskManagerStressTestAddDiagnosticsAttributeAction::s_type = "AddDiagnosticsAttribute";
+
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct TaskManagerStressTestSerializeDiagnosticsAction : TaskManagerStressTestAction
+    {
+    static Utf8CP const s_type;
+    template<typename TRandomizer>
+    static std::unique_ptr<TaskManagerStressTestAction> CreateRandom(TRandomizer&)
+        {
+        return std::make_unique<TaskManagerStressTestSerializeDiagnosticsAction>();
+        }
+    static std::unique_ptr<TaskManagerStressTestAction> FromJson(RapidJsonValueCR json)
+        {
+        return std::make_unique<TaskManagerStressTestSerializeDiagnosticsAction>();
+        }
+    rapidjson::Document _ToJson(rapidjson::Document::AllocatorType* allocator) const override
+        {
+        rapidjson::Document json(allocator);
+        json.SetObject();
+        json.AddMember("Type", rapidjson::StringRef(s_type), json.GetAllocator());
+        return json;
+        }
+    TestActionExecuteResult _Execute(TestActionExecuteParams const& params) const override
+        {
+        params.rootDiagnosticsScope->BuildJson();
+        return { folly::unit, false };
+        }
+    };
+Utf8CP const TaskManagerStressTestSerializeDiagnosticsAction::s_type = "SerializeDiagnostics";
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -275,6 +351,8 @@ std::unique_ptr<TaskManagerStressTestAction> TaskManagerStressTestAction::FromJs
         std::make_pair(TaskManagerStressTestCancelPreviousAction::s_type, &TaskManagerStressTestCancelPreviousAction::FromJson),
         std::make_pair(TaskManagerStressTestCancelWithPredicateAction::s_type, &TaskManagerStressTestCancelWithPredicateAction::FromJson),
         std::make_pair(TaskManagerStressTestRecreateTaskManagerAction::s_type, &TaskManagerStressTestRecreateTaskManagerAction::FromJson),
+        std::make_pair(TaskManagerStressTestAddDiagnosticsAttributeAction::s_type, &TaskManagerStressTestAddDiagnosticsAttributeAction::FromJson),
+        std::make_pair(TaskManagerStressTestSerializeDiagnosticsAction::s_type, &TaskManagerStressTestSerializeDiagnosticsAction::FromJson),
         };
     auto iter = factories.find(json["Type"].GetString());
     if (factories.end() != iter)
@@ -295,6 +373,8 @@ std::unique_ptr<TaskManagerStressTestAction> TaskManagerStressTestAction::Create
         &TaskManagerStressTestCancelPreviousAction::CreateRandom,
         &TaskManagerStressTestCancelWithPredicateAction::CreateRandom,
         &TaskManagerStressTestRecreateTaskManagerAction::CreateRandom,
+        &TaskManagerStressTestAddDiagnosticsAttributeAction::CreateRandom,
+        &TaskManagerStressTestSerializeDiagnosticsAction::CreateRandom,
         };
     auto factory = factories[(size_t)std::uniform_int_distribution<unsigned>(0, factories.size() - 1)(randomizer)];
     return factory(randomizer);
@@ -387,7 +467,7 @@ struct TaskManagerStressTestStrategy
         std::mt19937 mt(rd());
         auto strategy = std::make_unique<TaskManagerStressTestStrategy>();
         strategy->m_threadsCount = std::uniform_int_distribution<unsigned>(1, MAX_WORKER_THREADS)(mt);
-        for (size_t i = 0; i < 10; ++i)
+        for (size_t i = 0; i < ACTIONS_PER_ITERATION; ++i)
             strategy->m_actions.push_back(TaskManagerStressTestAction::CreateRandom(mt));
         return strategy;
         }
@@ -434,6 +514,9 @@ struct TaskManagerStressTests : ECPresentationTest
             };
         createTaskManager();
 
+        auto diagnostics = Diagnostics::Scope::ResetAndCreate("root", Diagnostics::Options());
+        (*diagnostics)->SetCapturedAttributes({ "x" });
+
         std::vector<TestActionExecuteResult> results;
         for (auto const& action : s.m_actions)
             {
@@ -442,6 +525,7 @@ struct TaskManagerStressTests : ECPresentationTest
                 getTaskManager,
                 results.empty() ? nullptr : &results.back().future,
                 createTaskManager,
+                *diagnostics,
                 }));
             }
 
