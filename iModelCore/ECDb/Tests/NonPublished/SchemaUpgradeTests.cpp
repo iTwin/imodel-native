@@ -13812,8 +13812,13 @@ TEST_F(SchemaUpgradeTestFixture, DisallowMajorSchemaUpgrade)
 
     EXPECT_EQ(ERROR, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::None)) << "Deleting a property on a shared column (must fail because it requires the major schema version to be incremented)";
     EXPECT_EQ(ERROR, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << "Deleting a property on a shared column (must fail because it requires the major schema version to be incremented)";
+    EXPECT_EQ(ERROR, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas)) << "Deleting a property on a shared column (must fail because it requires the major schema version to be incremented)";
+    EXPECT_EQ(ERROR, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas)) << "Deleting a property on a shared column (must fail because it requires the major schema version to be incremented)";
+
     EXPECT_EQ(SUCCESS, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::None)) << "Deleting a property on a shared column";
     EXPECT_EQ(ERROR, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << "Deleting a property on a shared column";
+    EXPECT_EQ(SUCCESS, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas)) << "Deleting a property on a shared column";
+    EXPECT_EQ(ERROR, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas)) << "Deleting a property on a shared column";
 
     //Deleting a class
     newSchema = R"xml(<?xml version="1.0" encoding="utf-8" ?>
@@ -13834,8 +13839,13 @@ TEST_F(SchemaUpgradeTestFixture, DisallowMajorSchemaUpgrade)
 
     EXPECT_EQ(ERROR, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::None)) << "Deleting a class (must fail because it requires the major schema version to be incremented)";
     EXPECT_EQ(ERROR, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << "Deleting a class (must fail because it requires the major schema version to be incremented)";
+    EXPECT_EQ(ERROR, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas)) << "Deleting a class (must fail because it requires the major schema version to be incremented)";
+    EXPECT_EQ(ERROR, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas)) << "Deleting a class (must fail because it requires the major schema version to be incremented)";
+
     EXPECT_EQ(SUCCESS, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::None)) << "Deleting a class";
     EXPECT_EQ(ERROR, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << "Deleting a class";
+    EXPECT_EQ(SUCCESS, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas)) << "Deleting a class";
+    EXPECT_EQ(ERROR, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas)) << "Deleting a class";
 
     //adding IsNullable constraint
     newSchema = R"xml(<?xml version="1.0" encoding="utf-8" ?>
@@ -16928,5 +16938,86 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass) {
         ASSERT_TRUE (vs->IsColumnNull(3))  << "Expect ps4 to be null";
     }
 }
+
+TEST_F(SchemaUpgradeTestFixture, MajorSchemaUpgradeDeletePropertyAndClass)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("schemaupgrade_MajorSchemaUpgradeDeleteProperty.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                            <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+                                <ECEntityClass typeName="TestClass" >
+                                    <ECCustomAttributes>
+                                       <ClassMap xmlns="ECDbMap.02.00.00">
+                                           <MapStrategy>TablePerHierarchy</MapStrategy>
+                                       </ClassMap>
+                                       <ShareColumns xmlns="ECDbMap.02.00.00"/>
+                                    </ECCustomAttributes>
+                                    <ECProperty propertyName="Name" typeName="string" />
+                                    <ECProperty propertyName="Code" typeName="int" />
+                                </ECEntityClass>
+                                <ECEntityClass typeName="SubClassToDelete" >
+                                    <BaseClass>TestClass</BaseClass>
+                                    <ECProperty propertyName="SubProp" typeName="int" />
+                                </ECEntityClass>
+
+                                <ECEntityClass typeName="TestClassToDelete" >
+                                    <ECProperty propertyName="Name" typeName="string" />
+                                </ECEntityClass>
+                            </ECSchema>)xml")));
+
+    // Major Schema update: Delete Property and Class in a dynamic schema
+    Utf8CP majorSchemaChange = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                            <ECSchema schemaName="TestSchema" alias="ts" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+                                <ECSchemaReference name = 'CoreCustomAttributes' version = '01.00.00' alias = 'CoreCA' />
+                                
+                                <ECCustomAttributes>
+                                    <DynamicSchema xmlns = 'CoreCustomAttributes.01.00.00' />
+                                </ECCustomAttributes>
+
+                                <ECEntityClass typeName="TestClass" >
+                                    <ECCustomAttributes>
+                                       <ClassMap xmlns="ECDbMap.02.00.00">
+                                           <MapStrategy>TablePerHierarchy</MapStrategy>
+                                       </ClassMap>
+                                       <ShareColumns xmlns="ECDbMap.02.00.00"/>
+                                    </ECCustomAttributes>
+                                    <ECProperty propertyName="Name" typeName="string" />
+                                </ECEntityClass>
+                            </ECSchema>)xml";
+
+    for (const auto& [lineNumber, newSchemaVersion, importOptions, expectedResult] : std::vector<std::tuple<const int, Utf8CP, const SchemaManager::SchemaImportOptions, const BentleyStatus>>
+        {
+            { __LINE__, "1.1.0", SchemaManager::SchemaImportOptions::None, ERROR },
+            { __LINE__, "1.1.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, ERROR },
+            { __LINE__, "1.1.0", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, ERROR },
+            { __LINE__, "1.1.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, ERROR },
+
+            { __LINE__, "2.0.0", SchemaManager::SchemaImportOptions::None, SUCCESS },
+            { __LINE__, "2.0.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, ERROR },
+            { __LINE__, "2.0.0", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS },
+            { __LINE__, "2.0.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS },
+        })
+        {
+        Utf8PrintfString errorMsg("Test case at line %d has failed.\n", lineNumber);
+
+        EXPECT_EQ(expectedResult, GetHelper().ImportSchema(SchemaItem(Utf8PrintfString(majorSchemaChange, newSchemaVersion)), importOptions)) << errorMsg;
+        if (expectedResult == SUCCESS)
+            {
+            // Check if property "Code" was deleted
+            auto testClass = m_ecdb.Schemas().GetClass("TestSchema", "TestClass");
+            ASSERT_NE(testClass, nullptr) << errorMsg;
+
+            EXPECT_NE(testClass->GetPropertyP("Name"), nullptr) << errorMsg;
+            EXPECT_EQ(testClass->GetPropertyP("Code"), nullptr) << errorMsg;
+
+            // Check if classes "TestClassToDelete" and "SubClassToDelete" were deleted
+            EXPECT_EQ(m_ecdb.Schemas().GetClass("TestSchema", "TestClassToDelete"), nullptr) << errorMsg;
+            EXPECT_EQ(m_ecdb.Schemas().GetClass("TestSchema", "SubClassToDelete"), nullptr) << errorMsg;
+            }
+        ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AbandonChanges()) << errorMsg;
+        ASSERT_EQ(BE_SQLITE_OK, ReopenECDb()) << errorMsg;
+        }
+    }
+
 
 END_ECDBUNITTESTS_NAMESPACE
