@@ -165,8 +165,8 @@ struct Diagnostics
         void Log(DiagnosticsCategory, NativeLogging::SEVERITY devSeverity, NativeLogging::SEVERITY editorSeverity, Utf8String msg);
         void DevLog(DiagnosticsCategory, NativeLogging::SEVERITY, Utf8String msg);
         void EditorLog(DiagnosticsCategory, NativeLogging::SEVERITY, Utf8String msg);
-        void SetCapturedAttributes(bvector<Utf8CP> const& attributes);
-        void AddValueToArrayAttribute(Utf8CP name, Utf8String value, bool unique);
+        ECPRESENTATION_EXPORT void SetCapturedAttributes(bvector<Utf8CP> const& attributes);
+        ECPRESENTATION_EXPORT void AddValueToArrayAttribute(Utf8CP name, Utf8String value, bool unique);
     };
 
 private:

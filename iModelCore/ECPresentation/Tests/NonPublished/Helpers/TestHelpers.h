@@ -123,6 +123,8 @@ struct RulesEngineTestHelpers
 
     static void CacheNode(IHierarchyCacheR cache, Utf8StringCR connectionId, Utf8String rulesetId, NavNodeR node, BeGuidCR parentNodeId = BeGuid());
 
+    static BeGuid CreateGuidFromString(Utf8CP str);
+
     static void ImportSchema(ECDbR, std::function<void(ECSchemaR)> const& schemaBuilder);
     static bvector<ECEntityClassP> CreateNDerivedClasses(ECSchemaR schema, ECEntityClassCR baseClass, int numberOfChildClasses);
 

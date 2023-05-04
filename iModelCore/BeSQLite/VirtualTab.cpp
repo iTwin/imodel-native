@@ -17,25 +17,25 @@ USING_NAMESPACE_BENTLEY_SQLITE
 BEGIN_BENTLEY_SQLITE_NAMESPACE
 
 //=======================================================================================
-// @bsiclass DbModule::VirtualTable::Cursor::CallbackData
+// @bsiclass DbModule::DbVirtualTable::DbCursor::CallbackData
 //=======================================================================================
-struct DbModule::VirtualTable::Cursor::CallbackData {
+struct DbModule::DbVirtualTable::DbCursor::CallbackData {
     sqlite3_vtab_cursor base;
-    DbModule::VirtualTable::Cursor* m_this;
+    DbModule::DbVirtualTable::DbCursor* m_this;
 };
 
 //=======================================================================================
-// @bsiclass DbModule::VirtualTable::CallbackData
+// @bsiclass DbModule::DbVirtualTable::CallbackData
 //=======================================================================================
-struct DbModule::VirtualTable::CallbackData {
+struct DbModule::DbVirtualTable::CallbackData {
     sqlite3_vtab base;
-    DbModule::VirtualTable* m_this;
+    DbModule::DbVirtualTable* m_this;
 };
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DbModule::VirtualTable::Cursor::Cursor(DbModule::VirtualTable& vt):m_table(vt){
+DbModule::DbVirtualTable::DbCursor::DbCursor(DbModule::DbVirtualTable& vt):m_table(vt){
     m_ctx = new CallbackData();
     m_ctx->m_this = this;
     memset(&m_ctx->base, 0, sizeof(m_ctx->base));
@@ -44,12 +44,12 @@ DbModule::VirtualTable::Cursor::Cursor(DbModule::VirtualTable& vt):m_table(vt){
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DbModule::VirtualTable::Cursor::~Cursor() { delete m_ctx; }
+DbModule::DbVirtualTable::DbCursor::~DbCursor() { delete m_ctx; }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DbModule::VirtualTable::VirtualTable(DbModule& module):m_module(module) {
+DbModule::DbVirtualTable::DbVirtualTable(DbModule& module):m_module(module) {
     m_ctx = new CallbackData();
     m_ctx->m_this = this;
     memset(&m_ctx->base, 0, sizeof(m_ctx->base));
@@ -58,12 +58,12 @@ DbModule::VirtualTable::VirtualTable(DbModule& module):m_module(module) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DbModule::VirtualTable::~VirtualTable() { delete m_ctx; }
+DbModule::DbVirtualTable::~DbVirtualTable() { delete m_ctx; }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void DbModule::VirtualTable::SetError(Utf8CP error) {
+void DbModule::DbVirtualTable::SetError(Utf8CP error) {
 	if (error == nullptr)
         m_ctx->base.zErrMsg = 0;
 	else
@@ -73,21 +73,21 @@ void DbModule::VirtualTable::SetError(Utf8CP error) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void DbModule::VirtualTable::Cursor::Context::SetResultBlob(void const* value, int length, CopyData doCopy) {sqlite3_result_blob((sqlite3_context*) this, value, length, (sqlite3_destructor_type) doCopy);}
-void DbModule::VirtualTable::Cursor::Context::SetResultDouble(double val){sqlite3_result_double((sqlite3_context*) this, val);}
-void DbModule::VirtualTable::Cursor::Context::SetResultError(Utf8CP val, int len){sqlite3_result_error((sqlite3_context*) this, val, len);}
-void DbModule::VirtualTable::Cursor::Context::SetResultError_toobig(){sqlite3_result_error_toobig((sqlite3_context*) this);}
-void DbModule::VirtualTable::Cursor::Context::SetResultError_nomem(){sqlite3_result_error_nomem((sqlite3_context*) this);}
-void DbModule::VirtualTable::Cursor::Context::SetResultError_code(int val){sqlite3_result_error_code((sqlite3_context*) this, val);}
-void DbModule::VirtualTable::Cursor::Context::SetResultInt(int val){sqlite3_result_int((sqlite3_context*) this, val);}
-void DbModule::VirtualTable::Cursor::Context::SetResultInt64(int64_t val){sqlite3_result_int64((sqlite3_context*) this, val);}
-void DbModule::VirtualTable::Cursor::Context::SetResultNull(){sqlite3_result_null((sqlite3_context*) this);}
-void DbModule::VirtualTable::Cursor::Context::SetResultText(Utf8CP val, int length, CopyData doCopy){sqlite3_result_text((sqlite3_context*) this, val, length,(sqlite3_destructor_type) doCopy);}
-void DbModule::VirtualTable::Cursor::Context::SetResultZeroblob(int length){sqlite3_result_zeroblob((sqlite3_context*)this, length);}
-void DbModule::VirtualTable::Cursor::Context::SetResultValue(DbValue val){sqlite3_result_value((sqlite3_context*)this, val.GetSqlValueP());}
-void DbModule::VirtualTable::Cursor::Context::SetResultPointer(void* ptr,const char* name ,void(*destroy)(void*) ){sqlite3_result_pointer((sqlite3_context*)this, ptr, name, destroy);}
-void DbModule::VirtualTable::Cursor::Context::SetResultZeroBlob(int n){sqlite3_result_zeroblob((sqlite3_context*)this, n);}
-void DbModule::VirtualTable::Cursor::Context::SetSubType(int type){sqlite3_result_subtype((sqlite3_context*)this, type);}
+void DbModule::DbVirtualTable::DbCursor::Context::SetResultBlob(void const* value, int length, CopyData doCopy) {sqlite3_result_blob((sqlite3_context*) this, value, length, (sqlite3_destructor_type) doCopy);}
+void DbModule::DbVirtualTable::DbCursor::Context::SetResultDouble(double val){sqlite3_result_double((sqlite3_context*) this, val);}
+void DbModule::DbVirtualTable::DbCursor::Context::SetResultError(Utf8CP val, int len){sqlite3_result_error((sqlite3_context*) this, val, len);}
+void DbModule::DbVirtualTable::DbCursor::Context::SetResultError_toobig(){sqlite3_result_error_toobig((sqlite3_context*) this);}
+void DbModule::DbVirtualTable::DbCursor::Context::SetResultError_nomem(){sqlite3_result_error_nomem((sqlite3_context*) this);}
+void DbModule::DbVirtualTable::DbCursor::Context::SetResultError_code(int val){sqlite3_result_error_code((sqlite3_context*) this, val);}
+void DbModule::DbVirtualTable::DbCursor::Context::SetResultInt(int val){sqlite3_result_int((sqlite3_context*) this, val);}
+void DbModule::DbVirtualTable::DbCursor::Context::SetResultInt64(int64_t val){sqlite3_result_int64((sqlite3_context*) this, val);}
+void DbModule::DbVirtualTable::DbCursor::Context::SetResultNull(){sqlite3_result_null((sqlite3_context*) this);}
+void DbModule::DbVirtualTable::DbCursor::Context::SetResultText(Utf8CP val, int length, CopyData doCopy){sqlite3_result_text((sqlite3_context*) this, val, length,(sqlite3_destructor_type) doCopy);}
+void DbModule::DbVirtualTable::DbCursor::Context::SetResultZeroblob(int length){sqlite3_result_zeroblob((sqlite3_context*)this, length);}
+void DbModule::DbVirtualTable::DbCursor::Context::SetResultValue(DbValue val){sqlite3_result_value((sqlite3_context*)this, val.GetSqlValueP());}
+void DbModule::DbVirtualTable::DbCursor::Context::SetResultPointer(void* ptr,const char* name ,void(*destroy)(void*) ){sqlite3_result_pointer((sqlite3_context*)this, ptr, name, destroy);}
+void DbModule::DbVirtualTable::DbCursor::Context::SetResultZeroBlob(int n){sqlite3_result_zeroblob((sqlite3_context*)this, n);}
+void DbModule::DbVirtualTable::DbCursor::Context::SetSubType(int type){sqlite3_result_subtype((sqlite3_context*)this, type);}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -105,7 +105,7 @@ static int vtabConnect(sqlite3* db,
                     sqlite3_vtab** ppVtab,
                     char** pzErr){
     DbModule* module= (DbModule*)(pAux);
-    DbModule::VirtualTable* vt = nullptr;
+    DbModule::DbVirtualTable* vt = nullptr;
 	DbModule::Config conf;
 	auto rc = (int)module->Connect(vt, conf, argc, argv);
     if (rc != SQLITE_OK) {
@@ -123,7 +123,7 @@ static int vtabConnect(sqlite3* db,
 // @bsimethod
 //---------------------------------------------------------------------------------------
 static int vtabDisconnect(sqlite3_vtab *pVtab){
-  delete ((DbModule::VirtualTable::CallbackData*)pVtab)->m_this;
+  delete ((DbModule::DbVirtualTable::CallbackData*)pVtab)->m_this;
   return BE_SQLITE_OK;
 }
 
@@ -131,8 +131,8 @@ static int vtabDisconnect(sqlite3_vtab *pVtab){
 // @bsimethod
 //---------------------------------------------------------------------------------------
 static int vtabOpen(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCursor){
-    auto vt = (DbModule::VirtualTable::CallbackData*)(p);
-    DbModule::VirtualTable::Cursor* cur;
+    auto vt = (DbModule::DbVirtualTable::CallbackData*)(p);
+    DbModule::DbVirtualTable::DbCursor* cur;
     auto rc = vt->m_this->Open(cur);
     if (rc != BE_SQLITE_OK) {
         if (cur) delete cur;
@@ -146,7 +146,7 @@ static int vtabOpen(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCursor){
 // @bsimethod
 //---------------------------------------------------------------------------------------
 static int vtabClose(sqlite3_vtab_cursor *pCur){
-    auto cur = (DbModule::VirtualTable::Cursor::CallbackData*)pCur;
+    auto cur = (DbModule::DbVirtualTable::DbCursor::CallbackData*)pCur;
     auto rc = cur->m_this->Close();
     delete cur->m_this;
     return (int)rc;
@@ -157,7 +157,7 @@ static int vtabClose(sqlite3_vtab_cursor *pCur){
 //---------------------------------------------------------------------------------------
 static int vtabRowId(sqlite3_vtab_cursor *cur, sqlite_int64 *pRowid){
     int64_t rowId;
-    auto rc = ((DbModule::VirtualTable::Cursor::CallbackData*)(cur))->m_this->GetRowId(rowId);
+    auto rc = ((DbModule::DbVirtualTable::DbCursor::CallbackData*)(cur))->m_this->GetRowId(rowId);
     if (pRowid) {
         *pRowid = (int64_t)rowId;
     }
@@ -167,11 +167,11 @@ static int vtabRowId(sqlite3_vtab_cursor *cur, sqlite_int64 *pRowid){
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-static int vtabNext(sqlite3_vtab_cursor *cur){ return (int)((DbModule::VirtualTable::Cursor::CallbackData*)(cur))->m_this->Next(); }
-static int vtabColumn( sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int i ){ return (int)(((DbModule::VirtualTable::Cursor::CallbackData*)(cur))->m_this->GetColumn(i, (DbModule::VirtualTable::Cursor::Context&)*ctx)); }
-static int vtabEof(sqlite3_vtab_cursor *cur){ return (int)(((DbModule::VirtualTable::Cursor::CallbackData*)(cur))->m_this->Eof()); }
-static int vtabFilter(sqlite3_vtab_cursor *pVtabCursor, int idxNum, const char *idxStr, int argc, sqlite3_value **argv){ return (int)(((DbModule::VirtualTable::Cursor::CallbackData*)(pVtabCursor))->m_this->Filter(idxNum, idxStr, argc, (DbValue*)argv)); }
-static int vtabBestIndex(sqlite3_vtab *pVTab, sqlite3_index_info *pIdxInfo ){ return ((DbModule::VirtualTable::CallbackData*)(pVTab))->m_this->BestIndex((DbModule::VirtualTable::IndexInfo&)(*pIdxInfo)); }
+static int vtabNext(sqlite3_vtab_cursor *cur){ return (int)((DbModule::DbVirtualTable::DbCursor::CallbackData*)(cur))->m_this->Next(); }
+static int vtabColumn( sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int i ){ return (int)(((DbModule::DbVirtualTable::DbCursor::CallbackData*)(cur))->m_this->GetColumn(i, (DbModule::DbVirtualTable::DbCursor::Context&)*ctx)); }
+static int vtabEof(sqlite3_vtab_cursor *cur){ return (int)(((DbModule::DbVirtualTable::DbCursor::CallbackData*)(cur))->m_this->Eof()); }
+static int vtabFilter(sqlite3_vtab_cursor *pVtabCursor, int idxNum, const char *idxStr, int argc, sqlite3_value **argv){ return (int)(((DbModule::DbVirtualTable::DbCursor::CallbackData*)(pVtabCursor))->m_this->Filter(idxNum, idxStr, argc, (DbValue*)argv)); }
+static int vtabBestIndex(sqlite3_vtab *pVTab, sqlite3_index_info *pIdxInfo ){ return ((DbModule::DbVirtualTable::CallbackData*)(pVTab))->m_this->BestIndex((DbModule::DbVirtualTable::IndexInfo&)(*pIdxInfo)); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -199,13 +199,18 @@ DbResult DbModule::Register() {
         0,                  /* xFindMethod */
         0,                  /* xRename */
     };
+
+    const auto rc = _OnRegister();
+    if (rc != BE_SQLITE_OK)
+        return rc;
+
     return (DbResult)sqlite3_create_module_v2(m_db.GetSqlDb(), m_name.c_str(), &s_module, this, vtabDestroy);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void DbModule::VirtualTable::IndexInfo::SetIdxStr(const char* idxStr, bool makeCopy) {
+void DbModule::DbVirtualTable::IndexInfo::SetIdxStr(const char* idxStr, bool makeCopy) {
     auto info = (sqlite3_index_info*)this;
     if (makeCopy) {
         auto len = (int)(strlen(idxStr) + 1);
@@ -222,34 +227,34 @@ void DbModule::VirtualTable::IndexInfo::SetIdxStr(const char* idxStr, bool makeC
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-int DbModule::VirtualTable::IndexInfo::ConstraintUsage::GetArgvIndex() const { return ((sqlite3_index_info::sqlite3_index_constraint_usage const*)this)->argvIndex;}
-void DbModule::VirtualTable::IndexInfo::ConstraintUsage::SetArgvIndex(int argvIndex) { ((sqlite3_index_info::sqlite3_index_constraint_usage*)this)->argvIndex = argvIndex; }
-bool DbModule::VirtualTable::IndexInfo::ConstraintUsage::GetOmit() const {return (bool)(((sqlite3_index_info::sqlite3_index_constraint_usage const*)this)->omit);}
-void DbModule::VirtualTable::IndexInfo::ConstraintUsage::SetOmit(bool omit){ ((sqlite3_index_info::sqlite3_index_constraint_usage*)this)->omit = omit ? 1: 0; }
-int DbModule::VirtualTable::IndexInfo::IndexOrderBy::GetColumn() const { return ((sqlite3_index_info::sqlite3_index_orderby const*)this)->iColumn; }
-bool DbModule::VirtualTable::IndexInfo::IndexOrderBy::GetDesc() const{ return (bool)(((sqlite3_index_info::sqlite3_index_orderby const*)this)->desc); }
-int DbModule::VirtualTable::IndexInfo::IndexConstraint::GetColumn() const { return ((sqlite3_index_info::sqlite3_index_constraint const *)this)->iColumn; }
-DbModule::VirtualTable::IndexInfo::Operator DbModule::VirtualTable::IndexInfo::IndexConstraint::GetOp() const { return (Operator)(((sqlite3_index_info::sqlite3_index_constraint const*)this)->op); }
-bool DbModule::VirtualTable::IndexInfo::IndexConstraint::IsUsable() const { return (bool)(((sqlite3_index_info::sqlite3_index_constraint const *)this)->usable); }
-int DbModule::VirtualTable::IndexInfo::GetConstraintCount() const { return ((sqlite3_index_info const*)this)->nConstraint; }
-const DbModule::VirtualTable::IndexInfo::IndexConstraint* DbModule::VirtualTable::IndexInfo::GetConstraint(int i)  const { return ( const IndexConstraint*)&(((sqlite3_index_info const*)this)->aConstraint[i]); }
-int DbModule::VirtualTable::IndexInfo::GetIndexOrderByCount() const{ return ((sqlite3_index_info const*)this)->nOrderBy; }
-const DbModule::VirtualTable::IndexInfo::IndexOrderBy* DbModule::VirtualTable::IndexInfo::GetOrderBy(int i)  const { return (IndexOrderBy const*)&(((sqlite3_index_info const*)this)->aOrderBy[i]); }
-int DbModule::VirtualTable::IndexInfo::GetConstraintUsageCount() const { return GetConstraintCount(); }
-DbModule::VirtualTable::IndexInfo::ConstraintUsage* DbModule::VirtualTable::IndexInfo::GetConstraintUsage(int i)  { return (ConstraintUsage*)&(((sqlite3_index_info*)this)->aConstraintUsage[i]); }
-void DbModule::VirtualTable::IndexInfo::SetIdxNum(int idxNum) { ((sqlite3_index_info*)this)->idxNum = idxNum; }
-int DbModule::VirtualTable::IndexInfo::GetIdxNum() const{ return ((sqlite3_index_info const *)this)->idxNum; }
-const char* DbModule::VirtualTable::IndexInfo::GetIdStr() const { return ((sqlite3_index_info const *)this)->idxStr; }
-bool DbModule::VirtualTable::IndexInfo::GetOrderByConsumed() const { return ((sqlite3_index_info const *)this)->orderByConsumed; }
-void DbModule::VirtualTable::IndexInfo::SetOrderByConsumed(bool orderByConsumed) { ((sqlite3_index_info*)this)->orderByConsumed = orderByConsumed ? 1 : 0; }
-double DbModule::VirtualTable::IndexInfo::GetEstimatedCost() const{ return ((sqlite3_index_info const *)this)->estimatedCost; }
-void DbModule::VirtualTable::IndexInfo::SetEstimatedCost(double estimatedCost) { ((sqlite3_index_info*)this)->estimatedCost = estimatedCost; }
-int64_t DbModule::VirtualTable::IndexInfo::GetEstimatedRows() const{ return ((sqlite3_index_info const *)this)->estimatedRows; }
-void DbModule::VirtualTable::IndexInfo::SetEstimatedRows(int64_t estimatedRows) { ((sqlite3_index_info*)this)->estimatedRows = estimatedRows; }
-DbModule::VirtualTable::IndexInfo::ScanFlags DbModule::VirtualTable::IndexInfo::GetIdxFlags() const { return (ScanFlags)(((sqlite3_index_info const*)this)->idxFlags); }
-void DbModule::VirtualTable::IndexInfo::SetIdxFlags(ScanFlags idxFlags){ ((sqlite3_index_info*)this)->idxFlags =  (int)idxFlags; }
-int64_t DbModule::VirtualTable::IndexInfo::GetColUsed() const { return ((sqlite3_index_info const *)this)->colUsed; }
-void DbModule::VirtualTable::IndexInfo::SetColUsed(int64_t colUsed) { ((sqlite3_index_info*)this)->colUsed =  colUsed; }
-bool DbModule::VirtualTable::IndexInfo::IsDistinct() const { return (bool)sqlite3_vtab_distinct((sqlite3_index_info*)const_cast<IndexInfo*>(this)); }
+int DbModule::DbVirtualTable::IndexInfo::ConstraintUsage::GetArgvIndex() const { return ((sqlite3_index_info::sqlite3_index_constraint_usage const*)this)->argvIndex;}
+void DbModule::DbVirtualTable::IndexInfo::ConstraintUsage::SetArgvIndex(int argvIndex) { ((sqlite3_index_info::sqlite3_index_constraint_usage*)this)->argvIndex = argvIndex; }
+bool DbModule::DbVirtualTable::IndexInfo::ConstraintUsage::GetOmit() const {return (bool)(((sqlite3_index_info::sqlite3_index_constraint_usage const*)this)->omit);}
+void DbModule::DbVirtualTable::IndexInfo::ConstraintUsage::SetOmit(bool omit){ ((sqlite3_index_info::sqlite3_index_constraint_usage*)this)->omit = omit ? 1: 0; }
+int DbModule::DbVirtualTable::IndexInfo::IndexOrderBy::GetColumn() const { return ((sqlite3_index_info::sqlite3_index_orderby const*)this)->iColumn; }
+bool DbModule::DbVirtualTable::IndexInfo::IndexOrderBy::GetDesc() const{ return (bool)(((sqlite3_index_info::sqlite3_index_orderby const*)this)->desc); }
+int DbModule::DbVirtualTable::IndexInfo::IndexConstraint::GetColumn() const { return ((sqlite3_index_info::sqlite3_index_constraint const *)this)->iColumn; }
+DbModule::DbVirtualTable::IndexInfo::Operator DbModule::DbVirtualTable::IndexInfo::IndexConstraint::GetOp() const { return (Operator)(((sqlite3_index_info::sqlite3_index_constraint const*)this)->op); }
+bool DbModule::DbVirtualTable::IndexInfo::IndexConstraint::IsUsable() const { return (bool)(((sqlite3_index_info::sqlite3_index_constraint const *)this)->usable); }
+int DbModule::DbVirtualTable::IndexInfo::GetConstraintCount() const { return ((sqlite3_index_info const*)this)->nConstraint; }
+const DbModule::DbVirtualTable::IndexInfo::IndexConstraint* DbModule::DbVirtualTable::IndexInfo::GetConstraint(int i)  const { return ( const IndexConstraint*)&(((sqlite3_index_info const*)this)->aConstraint[i]); }
+int DbModule::DbVirtualTable::IndexInfo::GetIndexOrderByCount() const{ return ((sqlite3_index_info const*)this)->nOrderBy; }
+const DbModule::DbVirtualTable::IndexInfo::IndexOrderBy* DbModule::DbVirtualTable::IndexInfo::GetOrderBy(int i)  const { return (IndexOrderBy const*)&(((sqlite3_index_info const*)this)->aOrderBy[i]); }
+int DbModule::DbVirtualTable::IndexInfo::GetConstraintUsageCount() const { return GetConstraintCount(); }
+DbModule::DbVirtualTable::IndexInfo::ConstraintUsage* DbModule::DbVirtualTable::IndexInfo::GetConstraintUsage(int i)  { return (ConstraintUsage*)&(((sqlite3_index_info*)this)->aConstraintUsage[i]); }
+void DbModule::DbVirtualTable::IndexInfo::SetIdxNum(int idxNum) { ((sqlite3_index_info*)this)->idxNum = idxNum; }
+int DbModule::DbVirtualTable::IndexInfo::GetIdxNum() const{ return ((sqlite3_index_info const *)this)->idxNum; }
+const char* DbModule::DbVirtualTable::IndexInfo::GetIdStr() const { return ((sqlite3_index_info const *)this)->idxStr; }
+bool DbModule::DbVirtualTable::IndexInfo::GetOrderByConsumed() const { return ((sqlite3_index_info const *)this)->orderByConsumed; }
+void DbModule::DbVirtualTable::IndexInfo::SetOrderByConsumed(bool orderByConsumed) { ((sqlite3_index_info*)this)->orderByConsumed = orderByConsumed ? 1 : 0; }
+double DbModule::DbVirtualTable::IndexInfo::GetEstimatedCost() const{ return ((sqlite3_index_info const *)this)->estimatedCost; }
+void DbModule::DbVirtualTable::IndexInfo::SetEstimatedCost(double estimatedCost) { ((sqlite3_index_info*)this)->estimatedCost = estimatedCost; }
+int64_t DbModule::DbVirtualTable::IndexInfo::GetEstimatedRows() const{ return ((sqlite3_index_info const *)this)->estimatedRows; }
+void DbModule::DbVirtualTable::IndexInfo::SetEstimatedRows(int64_t estimatedRows) { ((sqlite3_index_info*)this)->estimatedRows = estimatedRows; }
+DbModule::DbVirtualTable::IndexInfo::ScanFlags DbModule::DbVirtualTable::IndexInfo::GetIdxFlags() const { return (ScanFlags)(((sqlite3_index_info const*)this)->idxFlags); }
+void DbModule::DbVirtualTable::IndexInfo::SetIdxFlags(ScanFlags idxFlags){ ((sqlite3_index_info*)this)->idxFlags =  (int)idxFlags; }
+int64_t DbModule::DbVirtualTable::IndexInfo::GetColUsed() const { return ((sqlite3_index_info const *)this)->colUsed; }
+void DbModule::DbVirtualTable::IndexInfo::SetColUsed(int64_t colUsed) { ((sqlite3_index_info*)this)->colUsed =  colUsed; }
+bool DbModule::DbVirtualTable::IndexInfo::IsDistinct() const { return (bool)sqlite3_vtab_distinct((sqlite3_index_info*)const_cast<IndexInfo*>(this)); }
 
 END_BENTLEY_SQLITE_NAMESPACE

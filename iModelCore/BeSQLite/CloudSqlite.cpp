@@ -25,6 +25,8 @@ Utf8String Db::OpenParams::SetFromContainer(Utf8CP dbName, CloudContainerP conta
     m_skipFileCheck = true;
     m_fromContainer = true;
     AddQueryParam(Utf8PrintfString("vfs=%s", container->m_cache->m_name.c_str()).c_str());
+    if (!container->m_logId.empty())
+        AddQueryParam(Utf8PrintfString("logId=%s", container->m_logId.c_str()).c_str());
     return Utf8String("/") + container->m_alias + "/" + dbName;
 }
 
