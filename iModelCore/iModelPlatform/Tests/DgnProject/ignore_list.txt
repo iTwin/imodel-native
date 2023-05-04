@@ -1,4 +1,4 @@
-﻿ChangeSummaryTestFixture.ElementChildRelationshipChanges
+ChangeSummaryTestFixture.ElementChildRelationshipChanges
     # Flakey on NDEBUG builds (at least on PRG machines).
     # [ RUN      ] ChangeSummaryTestFixture.ElementChildRelationshipChanges
     # d:\vsts_a\46\bbsrc\imodel02\iModelCore\DgnPlatform\Tests\DgnProject\NonPublished\ChangeSummary_Test.cpp(646): error:       Expected: 3
