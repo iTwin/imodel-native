@@ -30,6 +30,7 @@ struct InstanceReaderFixture : ECDbTestFixture {
 
 };
 #if 0
+// Instance perf test
 struct InstancePropPerfTest {
     enum class PropFilter {
         None,
