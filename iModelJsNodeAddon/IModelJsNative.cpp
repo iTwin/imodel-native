@@ -1887,7 +1887,9 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         JsInterop::SchemaImportOptions options;
         const auto maybeEcSchemaContextVal = jsOpts.Get(JsInterop::json_ecSchemaXmlContext());
         options.m_schemaLockHeld = jsOpts.Get(JsInterop::json_schemaLockHeld()).ToBoolean();
-        options.m_sharedChannelUri = jsOpts.Get(JsInterop::json_sharedSchemaChannelUri()).ToString().Utf8Value();
+        auto jsSharedSchemaChannelUri = jsOpts.Get(JsInterop::json_sharedSchemaChannelUri());
+        if (jsSharedSchemaChannelUri.IsString())
+            options.m_sharedChannelUri = jsSharedSchemaChannelUri.ToString().Utf8Value();
         if (!maybeEcSchemaContextVal.IsUndefined())
             {
             if (!NativeECSchemaXmlContext::HasInstance(maybeEcSchemaContextVal))
@@ -1905,10 +1907,12 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         RequireDbIsOpen(info);
         REQUIRE_ARGUMENT_STRING_ARRAY(0, schemaFileNames);
         OPTIONAL_ARGUMENT_ANY_OBJ(1, jsOpts, Napi::Object::New(Env()));
-        JsInterop::SchemaImportOptions opts;
-        opts.m_schemaLockHeld = jsOpts.Get(JsInterop::json_schemaLockHeld()).ToBoolean();
-        opts.m_sharedChannelUri = jsOpts.Get(JsInterop::json_sharedSchemaChannelUri()).ToString().Utf8Value();
-        DbResult result = JsInterop::ImportSchemas(GetDgnDb(), schemaFileNames, SchemaSourceType::XmlString, opts);
+        JsInterop::SchemaImportOptions options;
+        options.m_schemaLockHeld = jsOpts.Get(JsInterop::json_schemaLockHeld()).ToBoolean();
+        auto jsSharedSchemaChannelUri = jsOpts.Get(JsInterop::json_sharedSchemaChannelUri());
+        if (jsSharedSchemaChannelUri.IsString())
+            options.m_sharedChannelUri = jsSharedSchemaChannelUri.ToString().Utf8Value();
+        DbResult result = JsInterop::ImportSchemas(GetDgnDb(), schemaFileNames, SchemaSourceType::XmlString, options);
         return Napi::Number::New(Env(), (int)result);
         }
 

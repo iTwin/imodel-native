@@ -6,15 +6,19 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC;
 //***************************************************************************************
 // SharedSchemaDb
 //***************************************************************************************
+// Default SHA  hashes
+const char* SchemaSyncTestFixture::DEFAULT_SHA3_256_ECDB_SCHEMA = "44c5d675cdab562b732a90b8c0128149daaa7a2beefbcbddb576f7bf059cec33";
+const char* SchemaSyncTestFixture::DEFAULT_SHA3_256_ECDB_MAP = "9c7834d13177336f0fa57105b9c1175b912b2e12e62ca2224482c0ffd9dfd337";
+const char* SchemaSyncTestFixture::DEFAULT_SHA3_256_SQLITE_SCHEMA = "c4ca1cdd07de041e71f3e8d4b1942d29da89653c85276025d786688b6f576443";
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-
 void SchemaSyncTestFixture::Test(Utf8CP name, std::function<void()> test){
     std::cerr << "  " <<  "\xF8" << " " << name << std::endl;
     test();
 }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -24,7 +28,26 @@ SchemaImportResult SchemaSyncTestFixture::ImportSchemas(ECDbR ecdb, std::vector<
     bvector<ECSchemaCP> importSchemas;
     for(auto& item: items) {
         ECSchemaPtr schema;
-        ECSchema::ReadFromXmlString(schema, item.GetXmlString().c_str(), *schemaReadContext);
+        if (item.GetType() == SchemaItem::Type::File)
+            {
+            // Construct the path to the sample schema
+            BeFileName ecSchemaFilePath;
+            BeTest::GetHost().GetDocumentsRoot(ecSchemaFilePath);
+            ecSchemaFilePath.AppendToPath(L"ECDb");
+            ecSchemaFilePath.AppendToPath(L"Schemas");
+            ecSchemaFilePath.AppendToPath(item.GetFileName());
+
+            if (!ecSchemaFilePath.DoesPathExist())
+                return SchemaImportResult::ERROR;
+
+            schemaReadContext->AddSchemaPath(ecSchemaFilePath.GetName());
+            ECSchema::ReadFromXmlFile(schema, ecSchemaFilePath, *schemaReadContext);
+            }
+        else
+            {
+            BeAssert(item.GetType() == SchemaItem::Type::String);
+            ECSchema::ReadFromXmlString(schema, item.GetXmlString().c_str(), *schemaReadContext);
+            }
         if (!schema.IsValid()) {
             return SchemaImportResult::ERROR;
         }
@@ -43,6 +66,14 @@ SchemaImportResult SchemaSyncTestFixture::ImportSchema(ECDbR ecdb, SchemaItem it
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+SchemaImportResult SchemaSyncTestFixture::ImportSchema(SchemaItem item, SchemaManager::SchemaImportOptions opts)
+    {
+    return ImportSchemas(*m_briefcase, std::vector<SchemaItem> {item}, opts, GetSharedChannelUri());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 std::unique_ptr<TrackedECDb> SchemaSyncTestFixture::OpenECDb(Utf8CP asFileNam) {
     auto ecdb = std::make_unique<TrackedECDb>();
     if (BE_SQLITE_OK != ecdb->OpenBeSQLiteDb(asFileNam, Db::OpenParams(Db::OpenMode::ReadWrite))) {
@@ -50,6 +81,104 @@ std::unique_ptr<TrackedECDb> SchemaSyncTestFixture::OpenECDb(Utf8CP asFileNam) {
     }
     return std::move(ecdb);
 }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult SchemaSyncTestFixture::ReopenECDb()
+    {
+    if (!m_briefcase->IsDbOpen())
+        return BE_SQLITE_ERROR;
+
+    auto saveStatus = m_briefcase->SaveChanges();
+    if (saveStatus != BE_SQLITE_OK)
+        {
+        printf("Failed to save changes");
+        return saveStatus;
+        }
+
+    Utf8String filename = m_briefcase->GetDbFileName();
+
+    m_briefcase->CloseDb();
+    m_briefcase = OpenECDb(filename.c_str());
+    if (m_briefcase == nullptr)
+        return BE_SQLITE_ERROR;
+
+    return BE_SQLITE_OK;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void SchemaSyncTestFixture::CloseECDb()
+    {
+    if (m_briefcase->IsDbOpen())
+        m_briefcase->SaveChanges();
+    m_briefcase->CloseDb();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaImportResult SchemaSyncTestFixture::SetupECDb(Utf8CP ecdbName)
+    {
+    m_hub = std::make_unique<ECDbHub>(ECDbHub());
+    m_briefcase = m_hub->CreateBriefcase();
+    m_schemaChannel = std::make_unique<SharedSchemaDb>(SharedSchemaDb(ecdbName));
+    if (SharedSchemaChannel::Status::OK != m_briefcase->Schemas().GetSharedChannel().Init(GetSharedChannelUri()))
+        return SchemaImportResult::ERROR;
+
+    EXPECT_EQ(BE_SQLITE_OK, m_briefcase->PullMergePush("init"));
+    EXPECT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
+
+    m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb); });
+    CheckHashes(*m_briefcase);
+
+    return SchemaImportResult::OK;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaImportResult SchemaSyncTestFixture::SetupECDb(Utf8CP ecdbName, SchemaItem const& schema, SchemaManager::SchemaImportOptions opts)
+    {
+    m_hub = std::make_unique<ECDbHub>(ECDbHub());
+    m_briefcase = m_hub->CreateBriefcase();
+    m_schemaChannel = std::make_unique<SharedSchemaDb>(SharedSchemaDb(ecdbName));
+    if (SharedSchemaChannel::Status::OK != m_briefcase->Schemas().GetSharedChannel().Init(GetSharedChannelUri()))
+        return SchemaImportResult::ERROR;
+
+    EXPECT_EQ(BE_SQLITE_OK, m_briefcase->PullMergePush("init"));
+    EXPECT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
+
+    m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb); });
+    CheckHashes(*m_briefcase);
+
+    if (SchemaImportResult::OK != SchemaSyncTestFixture::ImportSchema(*m_briefcase, schema, opts, GetSharedChannelUri()))
+        {
+        EXPECT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
+        return SchemaImportResult::ERROR;
+        }
+
+    EXPECT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
+
+    return SchemaImportResult::OK;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DropSchemaResult SchemaSyncTestFixture::DropSchema(Utf8CP schemaName)
+    {
+    auto dropSuccess = m_briefcase->Schemas().DropSchema(schemaName);
+
+    if (dropSuccess.IsSuccess())
+        EXPECT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
+    else
+        EXPECT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
+
+    return dropSuccess;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -126,6 +255,25 @@ void SchemaSyncTestFixture::PrintHash(ECDbR ecdb, Utf8CP desc) {
     printf("\t   Map: SHA3-%s\n", GetMapHash(ecdb).c_str());
     printf("\t    Db: SHA3-%s\n", GetDbSchemaHash(ecdb).c_str());
 }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void SchemaSyncTestFixture::CheckHashes(ECDbR ecdb, Utf8CP schemaHash, Utf8CP mapHash, Utf8CP dbSchemaHash, bool strictCheck)
+    {
+    if (strictCheck)
+        {
+        ASSERT_STREQ(schemaHash, GetSchemaHash(ecdb).c_str());
+        ASSERT_STREQ(mapHash, GetMapHash(ecdb).c_str());
+        ASSERT_STREQ(dbSchemaHash, GetDbSchemaHash(ecdb).c_str());
+        }
+    else
+        {
+        EXPECT_STREQ(schemaHash, GetSchemaHash(ecdb).c_str());
+        EXPECT_STREQ(mapHash, GetMapHash(ecdb).c_str());
+        EXPECT_STREQ(dbSchemaHash, GetDbSchemaHash(ecdb).c_str());
+        }
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -239,7 +387,6 @@ SharedSchemaChannel::Status SharedSchemaDb::Pull(ECDbR ecdb, std::function<void(
     return rc;
 }
 
-
 //***************************************************************************************
 // InMemoryECDb
 //***************************************************************************************
@@ -293,6 +440,7 @@ InMemoryECDb::Ptr InMemoryECDb::CreateSnapshot(DbResult* outRc) {
     }
     return nullptr;
 }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -300,6 +448,10 @@ InMemoryECDb::Ptr InMemoryECDb::Create() {
 	return Ptr(new InMemoryECDb());
 
 }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 SchemaImportResult InMemoryECDb::ImportSchema(SchemaItem const& si) {
     auto ctx = ECSchemaReadContextPtr();
     if (ECDbTestFixture::ReadECSchema(ctx, *this, si) != SUCCESS)
@@ -374,7 +526,6 @@ void TrackedECDb::SetupTracker(std::unique_ptr<ECDbChangeTracker> tracker) {
     this->SetChangeTracker(m_tracker.get());
     m_tracker->EnableTracking(true);
 }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -756,6 +907,7 @@ int ECDbHub::PushNewChangeset(ECDbChangeSet::Ptr changeset) {
 	m_changesets.push_back(std::move(changeset));
 	return (int)(m_changesets.size()) - 1;
 }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -800,6 +952,7 @@ struct PrintChangeSet {
             printf("====================================================\n");
         }
 };
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/

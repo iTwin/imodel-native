@@ -53,7 +53,7 @@ struct ECDbChangeSet : public BeSQLite::ChangeSet {
 struct ECDbChangeTracker : BeSQLite::ChangeTracker {
     using Ptr = std::unique_ptr<ECDbChangeTracker>;
 
-   private:
+private:
     ECDbR m_mdb;
     std::vector<ECDbChangeSet::Ptr> m_localChangesets;
     bset<std::string> m_tableToIgnore;
@@ -65,7 +65,7 @@ private:
             return TrackChangesForTable::No;
         return TrackChangesForTable::Yes;
     }
-   public:
+public:
     ECDbChangeTracker(ECDbR db) : m_mdb(db) {
         AddRef();
         SetDb(&db);
@@ -139,11 +139,11 @@ struct ECDbHub {
 struct InMemoryECDb final: public BentleyApi::BeSQLite::EC::ECDb {
     using Ptr = std::unique_ptr<InMemoryECDb>;
 
-   private:
+private:
     virtual void _OnDbClose() override;
     InMemoryECDb();
-   public:
 
+public:
     InMemoryECDb::Ptr CreateSnapshot(DbResult* outRc = nullptr);
     SchemaImportResult ImportSchema(SchemaItem const& si);
     bool WriteToDisk(Utf8CP fileName, const char* zSchema = nullptr, bool overrideFile = true) const;
@@ -173,15 +173,40 @@ struct SharedSchemaDb final {
 //=======================================================================================
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct SchemaSyncTestFixture : public ECDbTestFixture {
+struct SchemaSyncTestFixture : public ECDbTestFixture
+    {
+    static const char* DEFAULT_SHA3_256_ECDB_SCHEMA;
+    static const char* DEFAULT_SHA3_256_ECDB_MAP;
+    static const char* DEFAULT_SHA3_256_SQLITE_SCHEMA;
+    std::unique_ptr<ECDbHub> m_hub;
+    std::unique_ptr<TrackedECDb> m_briefcase;
+    std::unique_ptr<SharedSchemaDb> m_schemaChannel;
+
     static SchemaImportResult ImportSchemas(ECDbR ecdb, std::vector<SchemaItem> items, SchemaManager::SchemaImportOptions opts = SchemaManager::SchemaImportOptions::None, SharedSchemaChannel::ChannelUri uri = SharedSchemaChannel::ChannelUri());
     static SchemaImportResult ImportSchema(ECDbR ecdb, SchemaItem item, SchemaManager::SchemaImportOptions opts = SchemaManager::SchemaImportOptions::None, SharedSchemaChannel::ChannelUri uri = SharedSchemaChannel::ChannelUri());
-    static std::unique_ptr<TrackedECDb> OpenECDb(Utf8CP asFileNam);
+    static std::unique_ptr<TrackedECDb> OpenECDb(Utf8CP asFileName);
+    DbResult ReopenECDb();
+    void CloseECDb();
+    SchemaImportResult SetupECDb(Utf8CP ecdbName);
+    SchemaImportResult SetupECDb(Utf8CP ecdbName, SchemaItem const& schema, SchemaManager::SchemaImportOptions opts = SchemaManager::SchemaImportOptions::None);
+    SchemaImportResult ImportSchema(SchemaItem item, SchemaManager::SchemaImportOptions opts = SchemaManager::SchemaImportOptions::None);
+    DropSchemaResult DropSchema(Utf8CP schemaName);
     static Utf8String GetSchemaHash(ECDbCR db);
     static Utf8String GetMapHash(ECDbCR db);
     static Utf8String GetDbSchemaHash(ECDbCR db);
     static bool ForeignkeyCheck(ECDbCR db);
     static void PrintHash(ECDbR ecdb, Utf8CP desc);
+    static void CheckHashes(ECDbR ecdb, Utf8CP schemaHash = DEFAULT_SHA3_256_ECDB_SCHEMA, Utf8CP mapHash = DEFAULT_SHA3_256_ECDB_MAP, Utf8CP dbSchemaHash = DEFAULT_SHA3_256_SQLITE_SCHEMA, bool strictCheck = false);
     static std::string GetIndexDDL(ECDbCR ecdb, Utf8CP indexName);
     static void Test(Utf8CP name, std::function<void()> test);
-};
+    SharedSchemaChannel::ChannelUri GetSharedChannelUri()
+        {
+        return m_schemaChannel != nullptr ? m_schemaChannel->GetChannelUri() : SharedSchemaChannel::ChannelUri();
+        }
+    int GetColumnCount(Utf8CP dbTableName) const
+        {
+        bvector<Utf8String> cols;
+        m_briefcase->GetColumns(cols, dbTableName);
+        return (int) cols.size();
+        }
+    };
