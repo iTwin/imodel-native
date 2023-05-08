@@ -17019,5 +17019,298 @@ TEST_F(SchemaUpgradeTestFixture, MajorSchemaUpgradeDeletePropertyAndClass)
         }
     }
 
+TEST_F(SchemaUpgradeTestFixture, MajorSchemaUpgradePropertyTypeChangeFromPrim)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("schemaupgrade_MajorSchemaUpgradeTypeChangeFromPrim.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+                                <ECEntityClass typeName="TestClass" >
+                                    <ECCustomAttributes>
+                                       <ClassMap xmlns="ECDbMap.02.00">
+                                           <MapStrategy>TablePerHierarchy</MapStrategy>
+                                       </ClassMap>
+                                       <ShareColumns xmlns="ECDbMap.02.00"/>
+                                    </ECCustomAttributes>
+                                    <ECProperty propertyName="Name" typeName="string" />
+                                </ECEntityClass>
+                            </ECSchema>)xml")));
+
+    // Major Schema updates
+    Utf8CP newSchema = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                            <ECSchema schemaName="TestSchema" alias="ts" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                <ECSchemaReference name = 'CoreCustomAttributes' version = '01.00' alias = 'CoreCA' />
+                                <ECCustomAttributes>
+                                    <DynamicSchema xmlns = 'CoreCustomAttributes.01.00' />
+                                </ECCustomAttributes>
+
+                                <ECEnumeration typeName='UnstrictEnum' backingTypeName='int' isStrict='False'>
+                                    <ECEnumerator value = '0' displayLabel = 'txt' />
+                                    <ECEnumerator value = '1' displayLabel = 'bat' />
+                                </ECEnumeration>
+                                <ECEnumeration typeName='StrictEnum' backingTypeName='int' isStrict='True'>
+                                    <ECEnumerator value = '10' displayLabel = 'txt' />
+                                    <ECEnumerator value = '11' displayLabel = 'bat' />
+                                </ECEnumeration>
+
+                                <ECEntityClass typeName="TestClass" >
+                                    <ECCustomAttributes>
+                                       <ClassMap xmlns="ECDbMap.02.00">
+                                           <MapStrategy>TablePerHierarchy</MapStrategy>
+                                       </ClassMap>
+                                       <ShareColumns xmlns="ECDbMap.02.00"/>
+                                    </ECCustomAttributes>
+                                    <ECProperty propertyName="Name" typeName="%s" />
+                                </ECEntityClass>
+                            </ECSchema>)xml";
+
+    for (const auto& [lineNumber, newSchemaVersion, changedPropertyTypeName, importOption, expectedResult] 
+        : std::vector<std::tuple<const int, Utf8CP, const Utf8String, const SchemaManager::SchemaImportOptions, const BentleyStatus>>
+        {
+            // Change type to Primitive without changing major version. All should fail
+            { __LINE__, "1.1", "int", SchemaManager::SchemaImportOptions::None, ERROR },
+            { __LINE__, "1.1", "int", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, ERROR },
+            { __LINE__, "1.1", "int", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, ERROR },
+            { __LINE__, "1.1", "int", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, ERROR },
+
+            // Change type to Primitive and changing major version. Should pass if import option AllowMajorSchemaUpgradeForDynamicSchemas is given
+            { __LINE__, "2.0", "int", SchemaManager::SchemaImportOptions::None, SUCCESS },
+            { __LINE__, "2.0", "int", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, ERROR },
+            { __LINE__, "2.0", "int", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS },
+            { __LINE__, "2.0", "int", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS },
+
+            // Change type to Unstrict Enum without changing major version. All should fail
+            { __LINE__, "1.1", "UnstrictEnum", SchemaManager::SchemaImportOptions::None, ERROR },
+            { __LINE__, "1.1", "UnstrictEnum", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, ERROR },
+            { __LINE__, "1.1", "UnstrictEnum", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, ERROR },
+            { __LINE__, "1.1", "UnstrictEnum", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, ERROR },
+
+            // Change type to Unstrict Enum and changing major version. Should pass if import option AllowMajorSchemaUpgradeForDynamicSchemas is given
+            { __LINE__, "2.0", "UnstrictEnum", SchemaManager::SchemaImportOptions::None, SUCCESS },
+            { __LINE__, "2.0", "UnstrictEnum", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, ERROR },
+            { __LINE__, "2.0", "UnstrictEnum", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS },
+            { __LINE__, "2.0", "UnstrictEnum", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS },
+
+            // Change type to Strict Enum without changing major version. Change to Strict Enum is not supported. All should fail.
+            { __LINE__, "1.1", "StrictEnum", SchemaManager::SchemaImportOptions::None, ERROR },
+            { __LINE__, "1.1", "StrictEnum", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, ERROR },
+            { __LINE__, "1.1", "StrictEnum", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, ERROR },
+            { __LINE__, "1.1", "StrictEnum", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, ERROR },
+
+            { __LINE__, "2.0", "StrictEnum", SchemaManager::SchemaImportOptions::None, ERROR },
+            { __LINE__, "2.0", "StrictEnum", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, ERROR },
+            { __LINE__, "2.0", "StrictEnum", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, ERROR },
+            { __LINE__, "2.0", "StrictEnum", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, ERROR },
+        })
+        {
+        Utf8PrintfString errorMsg("Test case at line %d has failed.\n", lineNumber);
+        EXPECT_EQ(expectedResult, GetHelper().ImportSchema(SchemaItem(Utf8PrintfString(newSchema, newSchemaVersion, changedPropertyTypeName.c_str())), importOption)) << errorMsg;
+        if (expectedResult == SUCCESS)
+            {
+            auto testClass = m_ecdb.Schemas().GetClass("TestSchema", "TestClass");
+            ASSERT_TRUE(testClass != nullptr) << errorMsg;
+
+            if (changedPropertyTypeName.EqualsI("int"))
+                {
+                EXPECT_TRUE(testClass->GetPropertyP("Name")->GetTypeFullName().EqualsI(changedPropertyTypeName)) << errorMsg;
+                }
+            else
+                {
+                auto enumeration = testClass->GetPropertyP("Name")->GetAsPrimitiveProperty()->GetEnumeration();
+                ASSERT_TRUE(enumeration != nullptr);
+
+                EXPECT_EQ(enumeration->GetFullName(), Utf8PrintfString("TestSchema:%s", changedPropertyTypeName.c_str()));
+                EXPECT_TRUE(enumeration->GetTypeName().EqualsI("int")) << errorMsg;
+                }
+            }
+            // Reset test setup for next case
+            ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AbandonChanges()) << errorMsg;
+            ASSERT_EQ(BE_SQLITE_OK, ReopenECDb()) << errorMsg;
+        }
+    }
+
+TEST_F(SchemaUpgradeTestFixture, MajorSchemaUpgradePropertyTypeChangeFromEnum)
+    {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("schemaupgrade_MajorSchemaUpgradePropertyTypeChangeFromEnum.ecdb"));
+
+    constexpr Utf8CP dynamicSchema = R"xml(<ECSchemaReference name = 'CoreCustomAttributes' version = '01.00' alias = 'CoreCA' />
+                                    <ECCustomAttributes>
+                                        <DynamicSchema xmlns = 'CoreCustomAttributes.01.00' />
+                                    </ECCustomAttributes>)xml";
+
+    Utf8CP testSchemaTemplate = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                            <ECSchema schemaName="TestSchema" alias="ts" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+                                %s
+
+                                <ECEnumeration typeName='UnstrictEnumInt' backingTypeName='int' isStrict='False'>
+                                    <ECEnumerator value = '0' displayLabel = 'txt' />
+                                    <ECEnumerator value = '1' displayLabel = 'bat' />
+                                </ECEnumeration>
+                                <ECEnumeration typeName='UnstrictEnumString' backingTypeName='string' isStrict='False'>
+                                    <ECEnumerator value = 'val0' displayLabel = 'txt' />
+                                    <ECEnumerator value = 'val1' displayLabel = 'bat' />
+                                </ECEnumeration>
+
+                                <ECEnumeration typeName='StrictEnumInt' backingTypeName='int' isStrict='True'>
+                                    <ECEnumerator value = '10' displayLabel = 'txt' />
+                                    <ECEnumerator value = '11' displayLabel = 'bat' />
+                                </ECEnumeration>
+                                <ECEnumeration typeName='StrictEnumString' backingTypeName='string' isStrict='True'>
+                                    <ECEnumerator value = 'val10' displayLabel = 'txt' />
+                                    <ECEnumerator value = 'val11' displayLabel = 'bat' />
+                                </ECEnumeration>
+
+                                <ECEntityClass typeName="TestClass" >
+                                    <ECCustomAttributes>
+                                       <ClassMap xmlns="ECDbMap.02.00">
+                                           <MapStrategy>TablePerHierarchy</MapStrategy>
+                                       </ClassMap>
+                                       <ShareColumns xmlns="ECDbMap.02.00"/>
+                                    </ECCustomAttributes>
+                                    <ECProperty propertyName="Name" typeName="%s" />
+                                </ECEntityClass>
+                            </ECSchema>)xml";
+
+
+    for (const auto& [lineNumber, newSchemaVersion, basePropertyTypeName, changedPropertyTypeName, importOption, expectedResult] 
+        : std::vector<std::tuple<const int, Utf8CP, Utf8CP, const Utf8String, const SchemaManager::SchemaImportOptions, const BentleyStatus>>
+        {
+            // Test Case set 1 : Base property is Unstrict enum
+            // Change type to Primitive without changing major version. All should pass.
+            { __LINE__, "1.1", "UnstrictEnumInt", "int", SchemaManager::SchemaImportOptions::None, SUCCESS },
+            { __LINE__, "1.1", "UnstrictEnumInt", "int", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, SUCCESS },
+            { __LINE__, "1.1", "UnstrictEnumInt", "int", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS },
+            { __LINE__, "1.1", "UnstrictEnumInt", "int", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS },
+
+            // Change type to same Primitive and changing major version. Should pass if import option None or AllowMajorSchemaUpgradeForDynamicSchemas is given.
+            { __LINE__, "2.0", "UnstrictEnumInt", "int", SchemaManager::SchemaImportOptions::None, SUCCESS },
+            { __LINE__, "2.0", "UnstrictEnumInt", "int", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, ERROR },
+            { __LINE__, "2.0", "UnstrictEnumInt", "int", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS },
+            { __LINE__, "2.0", "UnstrictEnumInt", "int", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS },
+
+            // Change type to different Primitive without changing major version. All should fail
+            { __LINE__, "1.1", "UnstrictEnumInt", "string", SchemaManager::SchemaImportOptions::None, ERROR },
+            { __LINE__, "1.1", "UnstrictEnumInt", "string", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, ERROR },
+            { __LINE__, "1.1", "UnstrictEnumInt", "string", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, ERROR },
+            { __LINE__, "1.1", "UnstrictEnumInt", "string", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, ERROR },
+
+            // Change type to different Primitive and changing major version. Should pass if import option None or AllowMajorSchemaUpgradeForDynamicSchemas is given.
+            { __LINE__, "2.0", "UnstrictEnumInt", "string", SchemaManager::SchemaImportOptions::None, SUCCESS },
+            { __LINE__, "2.0", "UnstrictEnumInt", "string", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, ERROR },
+            { __LINE__, "2.0", "UnstrictEnumInt", "string", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS },
+            { __LINE__, "2.0", "UnstrictEnumInt", "string", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS },
+
+            // Change type to different Unstrict Enum without changing major version. All should fail
+            { __LINE__, "1.1", "UnstrictEnumInt", "UnstrictEnumString", SchemaManager::SchemaImportOptions::None, ERROR },
+            { __LINE__, "1.1", "UnstrictEnumInt", "UnstrictEnumString", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, ERROR },
+            { __LINE__, "1.1", "UnstrictEnumInt", "UnstrictEnumString", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, ERROR },
+            { __LINE__, "1.1", "UnstrictEnumInt", "UnstrictEnumString", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, ERROR },
+
+            // Change type to different Unstrict Enum and changing major version. Should pass if import option None or AllowMajorSchemaUpgradeForDynamicSchemas is given.
+            { __LINE__, "2.0", "UnstrictEnumInt", "UnstrictEnumString", SchemaManager::SchemaImportOptions::None, SUCCESS },
+            { __LINE__, "2.0", "UnstrictEnumInt", "UnstrictEnumString", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, ERROR },
+            { __LINE__, "2.0", "UnstrictEnumInt", "UnstrictEnumString", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS },
+            { __LINE__, "2.0", "UnstrictEnumInt", "UnstrictEnumString", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS },
+
+            // Change type to Strict Enum.
+            // **Special case: We allow the change to a strict enum for the scenario where we are NOT changing the primitive type of the enum.
+            // All other scenarios should fail.
+            { __LINE__, "1.1", "UnstrictEnumInt", "StrictEnumInt", SchemaManager::SchemaImportOptions::None, SUCCESS },
+            { __LINE__, "1.1", "UnstrictEnumInt", "StrictEnumInt", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, SUCCESS },
+            { __LINE__, "1.1", "UnstrictEnumInt", "StrictEnumInt", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS },
+            { __LINE__, "1.1", "UnstrictEnumInt", "StrictEnumInt", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS },
+
+            { __LINE__, "1.1", "UnstrictEnumInt", "StrictEnumString", SchemaManager::SchemaImportOptions::None, ERROR },
+            { __LINE__, "1.1", "UnstrictEnumInt", "StrictEnumString", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, ERROR },
+            { __LINE__, "1.1", "UnstrictEnumInt", "StrictEnumString", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, ERROR },
+            { __LINE__, "1.1", "UnstrictEnumInt", "StrictEnumString", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, ERROR },
+
+            { __LINE__, "2.0", "UnstrictEnumInt", "StrictEnumInt", SchemaManager::SchemaImportOptions::None, SUCCESS },
+            { __LINE__, "2.0", "UnstrictEnumInt", "StrictEnumInt", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, ERROR },
+            { __LINE__, "2.0", "UnstrictEnumInt", "StrictEnumInt", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS },
+            { __LINE__, "2.0", "UnstrictEnumInt", "StrictEnumInt", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS },
+            
+            { __LINE__, "2.0", "UnstrictEnumInt", "StrictEnumString", SchemaManager::SchemaImportOptions::None, ERROR },
+            { __LINE__, "2.0", "UnstrictEnumInt", "StrictEnumString", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, ERROR },
+            { __LINE__, "2.0", "UnstrictEnumInt", "StrictEnumString", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, ERROR },
+            { __LINE__, "2.0", "UnstrictEnumInt", "StrictEnumString", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, ERROR },
+
+            // Test Case set 2 : Base property is Strict enum
+            // Change type to non-enum Primitive type without changing major version. All should pass.
+            { __LINE__, "1.1", "StrictEnumInt", "int", SchemaManager::SchemaImportOptions::None, SUCCESS },
+            { __LINE__, "1.1", "StrictEnumInt", "int", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, SUCCESS },
+            { __LINE__, "1.1", "StrictEnumInt", "int", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS },
+            { __LINE__, "1.1", "StrictEnumInt", "int", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS },
+
+            // Change type to same Primitive and changing major version. Should pass if import option None or AllowMajorSchemaUpgradeForDynamicSchemas is given.
+            { __LINE__, "2.0", "StrictEnumInt", "int", SchemaManager::SchemaImportOptions::None, SUCCESS },
+            { __LINE__, "2.0", "StrictEnumInt", "int", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, ERROR },
+            { __LINE__, "2.0", "StrictEnumInt", "int", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS },
+            { __LINE__, "2.0", "StrictEnumInt", "int", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS },
+
+            // Change type to different Primitive without changing major version. All should fail
+            { __LINE__, "1.1", "StrictEnumInt", "string", SchemaManager::SchemaImportOptions::None, ERROR },
+            { __LINE__, "1.1", "StrictEnumInt", "string", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, ERROR },
+            { __LINE__, "1.1", "StrictEnumInt", "string", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, ERROR },
+            { __LINE__, "1.1", "StrictEnumInt", "string", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, ERROR },
+
+            // Change type to different Primitive and changing major version. Should pass if import option None or AllowMajorSchemaUpgradeForDynamicSchemas is given.
+            { __LINE__, "2.0", "StrictEnumInt", "string", SchemaManager::SchemaImportOptions::None, SUCCESS },
+            { __LINE__, "2.0", "StrictEnumInt", "string", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, ERROR },
+            { __LINE__, "2.0", "StrictEnumInt", "string", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS },
+            { __LINE__, "2.0", "StrictEnumInt", "string", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS },
+
+            // Change type to different Unstrict Enum without changing major version. All should fail
+            { __LINE__, "1.1", "StrictEnumInt", "UnstrictEnumString", SchemaManager::SchemaImportOptions::None, ERROR },
+            { __LINE__, "1.1", "StrictEnumInt", "UnstrictEnumString", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, ERROR },
+            { __LINE__, "1.1", "StrictEnumInt", "UnstrictEnumString", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, ERROR },
+            { __LINE__, "1.1", "StrictEnumInt", "UnstrictEnumString", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, ERROR },
+
+            // Change type to different Unstrict Enum and changing major version. Should pass if import option None or AllowMajorSchemaUpgradeForDynamicSchemas is given.
+            { __LINE__, "2.0", "StrictEnumInt", "UnstrictEnumString", SchemaManager::SchemaImportOptions::None, SUCCESS },
+            { __LINE__, "2.0", "StrictEnumInt", "UnstrictEnumString", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, ERROR },
+            { __LINE__, "2.0", "StrictEnumInt", "UnstrictEnumString", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS },
+            { __LINE__, "2.0", "StrictEnumInt", "UnstrictEnumString", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS },
+
+            // Change to Strict Enum is not supported. All should fail.
+            { __LINE__, "1.1", "StrictEnumInt", "StrictEnumString", SchemaManager::SchemaImportOptions::None, ERROR },
+            { __LINE__, "1.1", "StrictEnumInt", "StrictEnumString", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, ERROR },
+            { __LINE__, "1.1", "StrictEnumInt", "StrictEnumString", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, ERROR },
+            { __LINE__, "1.1", "StrictEnumInt", "StrictEnumString", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, ERROR },
+            { __LINE__, "2.0", "StrictEnumInt", "StrictEnumString", SchemaManager::SchemaImportOptions::None, ERROR },
+            { __LINE__, "2.0", "StrictEnumInt", "StrictEnumString", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, ERROR },
+            { __LINE__, "2.0", "StrictEnumInt", "StrictEnumString", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, ERROR },
+            { __LINE__, "2.0", "StrictEnumInt", "StrictEnumString", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, ERROR },
+        })
+        {
+        Utf8PrintfString errorMsg("Test case at line %d has failed.\n", lineNumber);
+        // Import base schema
+        ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(Utf8PrintfString(testSchemaTemplate, "1.0", "", basePropertyTypeName)), SchemaManager::SchemaImportOptions::None)) << errorMsg;
+
+        // Import major schema changes
+        EXPECT_EQ(expectedResult, GetHelper().ImportSchema(SchemaItem(Utf8PrintfString(testSchemaTemplate, newSchemaVersion, dynamicSchema, changedPropertyTypeName.c_str())), importOption)) << errorMsg;
+        if (expectedResult == SUCCESS)
+            {
+            auto testClass = m_ecdb.Schemas().GetClass("TestSchema", "TestClass");
+            ASSERT_TRUE(testClass != nullptr) << errorMsg;
+
+            if (changedPropertyTypeName.EqualsI("int") || changedPropertyTypeName.EqualsI("string"))
+                {
+                EXPECT_TRUE(testClass->GetPropertyP("Name")->GetTypeFullName().EqualsI(changedPropertyTypeName)) << errorMsg;
+                }
+            else
+                {
+                auto enumeration = testClass->GetPropertyP("Name")->GetAsPrimitiveProperty()->GetEnumeration();
+                ASSERT_TRUE(enumeration != nullptr);
+
+                EXPECT_EQ(enumeration->GetFullName(), Utf8PrintfString("TestSchema:%s", changedPropertyTypeName.c_str()));
+                EXPECT_TRUE(enumeration->GetTypeName().EqualsI(changedPropertyTypeName.ContainsI("String") ? "string" : "int")) << errorMsg;
+                }
+            }
+            // Reset test setup for next case
+            ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AbandonChanges()) << errorMsg;
+            ASSERT_EQ(BE_SQLITE_OK, ReopenECDb()) << errorMsg;
+        }
+    }
 
 END_ECDBUNITTESTS_NAMESPACE

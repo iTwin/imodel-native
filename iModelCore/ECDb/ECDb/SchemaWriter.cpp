@@ -1932,7 +1932,7 @@ BentleyStatus SchemaWriter::ReplaceCAEntry(Context& ctx, IECInstanceR customAttr
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-bool SchemaWriter::IsPropertyTypeChangeSupported(Utf8StringR error, StringChange& typeChange, ECPropertyCR oldProperty, ECPropertyCR newProperty)
+bool SchemaWriter::IsPropertyTypeChangeSupported(Utf8StringR error, StringChange& typeChange, ECPropertyCR oldProperty, ECPropertyCR newProperty, bool isPrimitiveTypeChangeAllowed)
     {
     //changing from primitive to enum and enum to primitive is supported with same type and enum is unstrict
     if (oldProperty.GetIsPrimitive() && newProperty.GetIsPrimitive())
@@ -1943,6 +1943,9 @@ bool SchemaWriter::IsPropertyTypeChangeSupported(Utf8StringR error, StringChange
         ECEnumerationCP bEnum = b->GetEnumeration();
         if (!aEnum && !bEnum)
             {
+            if (isPrimitiveTypeChangeAllowed)
+                return true;
+
             error.Sprintf("ECSchema Upgrade failed. ECProperty %s.%s: Changing the type of a Primitive ECProperty is not supported. Cannot convert from '%s' to '%s'",
                           oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str(), typeChange.GetOld().Value().c_str(), typeChange.GetNew().Value().c_str());
             return false;
@@ -1952,6 +1955,9 @@ bool SchemaWriter::IsPropertyTypeChangeSupported(Utf8StringR error, StringChange
             {
             if (aEnum->GetType() != b->GetType())
                 {
+                if (isPrimitiveTypeChangeAllowed)
+                    return true;
+
                 error.Sprintf("ECSchema Upgrade failed. ECProperty %s.%s: ECEnumeration specified for property must have same primitive type as new primitive property type",
                               oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
 
@@ -1964,6 +1970,9 @@ bool SchemaWriter::IsPropertyTypeChangeSupported(Utf8StringR error, StringChange
             {
             if (a->GetType() != bEnum->GetType())
                 {
+                if (isPrimitiveTypeChangeAllowed && !bEnum->GetIsStrict())
+                    return true;
+
                 error.Sprintf("ECSchema Upgrade failed. ECProperty %s.%s: Primitive type change to ECEnumeration which as different type then existing primitive property",
                               oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
 
@@ -1985,6 +1994,9 @@ bool SchemaWriter::IsPropertyTypeChangeSupported(Utf8StringR error, StringChange
             {
             if (aEnum->GetType() != bEnum->GetType())
                 {
+                if (isPrimitiveTypeChangeAllowed && !bEnum->GetIsStrict())
+                    return true;
+
                 error.Sprintf("ECSchema Upgrade failed. ECProperty %s.%s: Exisitng ECEnumeration has different primitive type from the new ECEnumeration specified",
                               oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
 
@@ -2085,7 +2097,8 @@ BentleyStatus SchemaWriter::UpdateProperty(Context& ctx, PropertyChange& propert
     if (propertyChange.TypeName().IsChanged())
         {
         Utf8String error;
-        if (!IsPropertyTypeChangeSupported(error, propertyChange.TypeName(), oldProperty, newProperty))
+        const auto isPrimitiveTypeChangeAllowed = ctx.IsMajorSchemaVersionChange(oldProperty.GetClass().GetSchema().GetId()) && (ctx.AreMajorSchemaVersionChangesAllowed() || (ctx.IsMajorSchemaVersionChangeAllowedForDynamicSchemas() && newProperty.GetClass().GetSchema().IsDynamicSchema()));
+        if (!IsPropertyTypeChangeSupported(error, propertyChange.TypeName(), oldProperty, newProperty, isPrimitiveTypeChangeAllowed))
             {
             if (ctx.IgnoreIllegalDeletionsAndModifications())
                 {
@@ -2127,6 +2140,9 @@ BentleyStatus SchemaWriter::UpdateProperty(Context& ctx, PropertyChange& propert
         }
 
     SqlUpdateBuilder sqlUpdateBuilder("ec_Property");
+
+    if (propertyChange.TypeName().IsChanged() && !oldProperty.GetAsPrimitiveProperty()->GetEnumeration() && !newProperty.GetAsPrimitiveProperty()->GetEnumeration())
+        sqlUpdateBuilder.AddSetExp("PrimitiveType", Enum::ToInt(newProperty.GetAsPrimitiveProperty()->GetType()));
 
     if (propertyChange.MinimumLength().IsChanged())
         {
