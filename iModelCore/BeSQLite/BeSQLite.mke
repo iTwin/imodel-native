@@ -16,7 +16,7 @@
 
 GCC_NOSTRICT = 1
 HAVE_PERMISSION_TO_COMPILE_AT_W3 = 1
-BUILD_WITH_C17=1
+BUILD_WITH_C20=1
 
 # VERACODE - requires default runtime checks (e.g. cannot explicitly set any -RTC options).
 %if !defined(IS_VERACODE_BUILD)
@@ -80,6 +80,8 @@ $(o)bentley-sqlite$(oext) : $(SQLiteDir)bentley-sqlite.c ${MultiCompileDepends} 
 
 $(o)bcvutil$(oext) : $(SQLiteDir)bcvutil.c ${MultiCompileDepends} ${bcvheaders}
 
+$(o)bcvlog$(oext): $(SQLiteDir)bcvlog.c ${MultiCompileDepends} ${bcvheaders}
+
 $(o)simplexml$(oext) : $(SQLiteDir)simplexml.c ${MultiCompileDepends} ${bcvheaders}
 
 $(o)bcvmodule$(oext) : $(SQLiteDir)bcvmodule.c ${MultiCompileDepends} ${bcvheaders}
@@ -88,7 +90,7 @@ $(o)bcvmodule$(oext) : $(SQLiteDir)bcvmodule.c ${MultiCompileDepends} ${bcvheade
 
 %include MultiCppCompileGo.mki
 
-objs +% $(o)bentley-sqlite$(oext) $(o)bcvutil$(oext) $(o)bcvmodule$(oext) $(o)simplexml$(oext)
+objs +% $(o)bentley-sqlite$(oext) $(o)bcvutil$(oext) $(o)bcvmodule$(oext) $(o)simplexml$(oext) $(o)bcvlog$(oext)
 
 BeSQLiteRequiredLibs = $(ContextSubPartsStaticLibs)$(stlibprefix)BeZlib$(stlibext)
 BeSQLiteRequiredLibs + $(ContextSubPartsStaticLibs)$(stlibprefix)snappy$(stlibext)

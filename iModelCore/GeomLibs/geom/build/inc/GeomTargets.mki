@@ -75,6 +75,8 @@ $(OUT_DIR)dconic4d$(OUT_EXT)        : $(geomSrcStructs)dconic4d.cpp         $(OT
 
 #$(OUT_DIR)frange2d$(OUT_EXT)        : $(geomSrcStructs)frange2d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
+$(OUT_DIR)dray3d$(OUT_EXT)          : $(geomSrcStructs)dray3d.cpp           $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
 
 # (end structs_sources_pubinc.mki)
 
@@ -894,4 +896,3 @@ $(OUT_DIR)BSIRect$(OUT_EXT)         :$(geomSrcIntegerTYpes)BSIRect.cpp $(OTHER_D
 OUT_DIR = BAD_OUT_DIR_VALUE_INHERITED_FROM_SOURCES.MKI
 OUT_EXT = BAD_OUT_EXT_VALUE_INHERITED_FROM_SOURCES.MKI
 OTHER_DEPENDENCIES = BAD_OTHER_DEPENDENCIES_VALUE_INHERITED_FROM_SOURCES.MKI
-

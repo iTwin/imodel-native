@@ -45,6 +45,7 @@ describe("cloud sqlite", () => {
     const container = new iModelJsNative.CloudContainer(containerProps);
     expect(container.isConnected).is.false;
     expect(container.hasWriteLock).is.false;
+    expect(container.isPublic).is.false;
     expect(container.accessToken).equal(containerProps.accessToken);
     const newToken = "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==";
     container.accessToken = newToken; // test setter
@@ -59,5 +60,9 @@ describe("cloud sqlite", () => {
     // eslint-disable-next-line @typescript-eslint/promise-function-async
     expect(() => container.uploadChanges()).to.throw(notAttached);
     expect(() => container.checkForChanges()).to.throw(notAttached);
+
+    containerProps.isPublic = true;
+    const c2 = new iModelJsNative.CloudContainer(containerProps);
+    expect(c2.isPublic).is.true;
   });
 });

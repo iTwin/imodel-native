@@ -65,7 +65,7 @@ jobs:
     displayName: Pull, Build & Run on Linux
 
     pool:
-      name: iModelTechCI
+      name: iModelTechLnxDeb11 
       demands:
       - Agent.OS -equals Linux
 

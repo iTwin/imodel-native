@@ -46,6 +46,10 @@ export namespace NativeCloudSqlite {
     writeable?: boolean;
     /** if true, container is attached in "secure" mode (blocks are encrypted). Only supported in daemon mode. */
     secure?: boolean;
+    /** true if the container is public (doesn't require authentication) */
+    isPublic?: boolean;
+    /** string attached to log messages from CloudSQLite. This is most useful for identifying usage from daemon mode. */
+    logId?: string;
   }
 
   /** Returned from `CloudContainer.queryDatabase` describing one database in the container */
@@ -60,6 +64,28 @@ export namespace NativeCloudSqlite {
     readonly transactions: boolean;
     /** the state of this database. Indicates whether the database is new or deleted since last upload */
     readonly state: "" | "copied" | "deleted";
+  }
+
+  /** Returned from 'CloudContainer.queryHttpLog' describing a row in the bcv_http_log table. */
+  export interface BcvHttpLog {
+    /** Unique, monotonically increasing id value */
+    readonly id: number;
+    /** Time request was made, as iso-8601 */
+    readonly startTime: string;
+    /** Time reply received, as iso-8601 (or NULL) */
+    readonly endTime: string | undefined;
+    /** "PUT", "GET", etc. */
+    readonly method: string;
+    /** Name of the client that caused this request. Name will be "prefetch" if it is a request triggered by a prefetch.
+     *  Name of client can be configured by passing a 'logId' to a CloudContainer's ContainerProps.
+     */
+    readonly logId: string;
+    /** Log message associated with request */
+    readonly logmsg: string;
+    /** URI of request */
+    readonly uri: string;
+    /** HTTP response code (e.g. 200) */
+    readonly httpcode: number;
   }
 
   /** Properties for accessing a CloudContainer */

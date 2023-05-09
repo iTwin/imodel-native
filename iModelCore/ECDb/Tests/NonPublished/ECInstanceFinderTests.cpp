@@ -19,7 +19,7 @@ struct ECInstanceFinderTests : ECDbTestFixture {};
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECInstanceFinderTests, FindRelatedInstances_MultipleSeedInstancesOfSameClass_AllRelatedInstances)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("FindRelatedInstances.ecdb", SchemaItem::CreateForFile("ECSqlStatementTests.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("FindRelatedInstances.ecdb", SchemaItem::CreateForFile("ECSqlStatementTests.01.00.00.ecschema.xml")));
     NestedStructArrayTestSchemaHelper::PopulateECSqlStatementTestsDb(m_ecdb);
 
     ECSqlStatement stmt;

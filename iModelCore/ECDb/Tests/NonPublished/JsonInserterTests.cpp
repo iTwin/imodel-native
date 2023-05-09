@@ -16,7 +16,7 @@ struct JsonInserterTests : public ECDbTestFixture {};
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonInserterTests, InsertJsonCppJSON)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("insertUsingJsonAPI.ecdb", SchemaItem::CreateForFile("JsonTests.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("insertUsingJsonAPI.ecdb", SchemaItem::CreateForFile("JsonTests.01.00.00.ecschema.xml")));
 
     // Read JSON input from file
     BeFileName jsonInputFile;
@@ -75,7 +75,7 @@ TEST_F(JsonInserterTests, InsertJsonCppJSON)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonInserterTests, InsertNavProps)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("jsoninserter_navprops.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("jsoninserter_navprops.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
                                                     <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                                         <ECEntityClass typeName="Parent" >
                                                             <ECProperty propertyName="Code" typeName="int" />
@@ -211,7 +211,7 @@ TEST_F(JsonInserterTests, InsertNavProps)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonInserterTests, InsertLinkTableRels)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("jsoninserter_rels.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("jsoninserter_rels.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
                                                     <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                                         <ECEntityClass typeName="Parent" >
                                                             <ECProperty propertyName="Code" typeName="int" />
@@ -297,7 +297,7 @@ TEST_F(JsonInserterTests, InsertLinkTableRels)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonInserterTests, InsertRapidJson)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("InsertUsingRapidJson.ecdb", SchemaItem::CreateForFile("JsonTests.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("InsertUsingRapidJson.ecdb", SchemaItem::CreateForFile("JsonTests.01.00.00.ecschema.xml")));
 
     // Read JSON input from file
     BeFileName jsonInputFile;
@@ -349,7 +349,7 @@ TEST_F(JsonInserterTests, InsertRapidJson)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonInserterTests, InsertRapidJson2)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("insertrapidjson.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("insertrapidjson.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "    <ECEntityClass typeName='Parent' modifier='None'>"
@@ -401,7 +401,7 @@ TEST_F(JsonInserterTests, InsertRapidJson2)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonInserterTests, InsertPartialPointJson)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("InsertPartialPointJson.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("InsertPartialPointJson.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     ECClassCP testClass = m_ecdb.Schemas().GetClass("ECSqlTest", "PSA");
     ASSERT_TRUE(testClass != nullptr);
@@ -441,7 +441,7 @@ TEST_F(JsonInserterTests, InsertPartialPointJson)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonInserterTests, RoundTrip_InsertThenRead)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("jsonroundtrip_insertthenread.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("jsonroundtrip_insertthenread.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     ECInstanceKey pKey;
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(pKey, "INSERT INTO ecsql.P(ECInstanceId) VALUES(NULL)"));
@@ -540,7 +540,7 @@ TEST_F(JsonInserterTests, RoundTrip_InsertThenRead)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonInserterTests, CreateRoot_ExistingRoot_ReturnsSameKey)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("schemaupgradetest.ecdb", SchemaItem::CreateForFile("DSCacheSchema.01.00.03.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schemaupgradetest.ecdb", SchemaItem::CreateForFile("DSCacheSchema.01.00.03.ecschema.xml")));
 
     IECClassLocaterR classLocater = m_ecdb.GetClassLocater();
     ECClassCP rootClass = classLocater.LocateClass("DSCacheSchema", "Root");
@@ -578,7 +578,7 @@ TEST_F(JsonInserterTests, CreateRoot_ExistingRoot_ReturnsSameKey)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonInserterTests, ConstrainedArrayProps)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("JsonInserter_ConstrainedArrayProps.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("JsonInserter_ConstrainedArrayProps.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
                                                     <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                                        <ECEntityClass typeName="Foo">
                                                             <ECArrayProperty propertyName="PrimArray" typeName="int" minOccurs="5" maxOccurs="10" />
@@ -659,7 +659,7 @@ TEST_F(JsonInserterTests, ConstrainedArrayProps)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonInserterTests, InsertTimeOfDayValues)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("InsertTimeOfDayValues.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("InsertTimeOfDayValues.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
             <ECEntityClass typeName="CalendarEntry" modifier="None">

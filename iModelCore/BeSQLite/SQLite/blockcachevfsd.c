@@ -41,6 +41,8 @@
 
 /* Default values of various command line parameters. */
 #define BCV_DEFAULT_CACHEFILE_SIZE   (1024*1024*1024)
+#define BCV_DEFAULT_HTTPLOG_TIMEOUT  3600
+#define BCV_DEFAULT_HTTPLOG_NENTRY   -1
 
 #define LARGEST_INT64  (0xffffffff|(((i64)0x7fffffff)<<32))
 
@@ -73,6 +75,9 @@ struct CommandSwitches {
   int mLog;                       /* Mask of daemon events to log */
   int bReadyMessage;              /* Daemon outputs "ready" message */
   int nHttpTimeout;               /* Value of --httptimeout option */
+
+  int nHttpLogTimeout;            /* Value of --httplogtimeout option */
+  int nHttpLogNentry;             /* Value of --httplognentry option */
 };
 
 #define BCV_LOG_MESSAGE   0x01
@@ -138,11 +143,13 @@ static void *bdMallocZero(int n){
   return pRet;
 }
 
+#if 0
 static void *bdBufferDup(const void *aIn, int nIn){
   void *pRet = bdMalloc(nIn);
   memcpy(pRet, aIn, nIn);
   return pRet;
 }
+#endif
 
 static char *bdStrdup(const char *zIn){
   char *zRet = 0;
@@ -276,9 +283,16 @@ static int parse_seconds(const char *zSeconds){
 
 static int parse_integer(const char *zInt){
   i64 ret = 0;
-  int i;
+  int i = 0;
+  int bMinus = 0;
 
-  for(i=0; zInt[i]; i++){
+  if( zInt[0]=='-' ){
+    i = bMinus = 1;
+  }else if( zInt[0]=='+' ){
+    i = 1;
+  }
+
+  for(; zInt[i]; i++){
     if( zInt[i]<'0' || zInt[i]>'9' ){
       fatal_error("parse error in integer: %s", zInt);
     }
@@ -290,7 +304,7 @@ static int parse_integer(const char *zInt){
     }
   }
 
-  return (int)ret;
+  return (int)ret * (bMinus ? -1 : 1);
 }
 
 
@@ -327,6 +341,8 @@ static int parse_integer(const char *zInt){
 #define COMMANDLINE_NONONCE      38
 #define COMMANDLINE_AUTODETACH   39
 #define COMMANDLINE_HTTPTIMEOUT  40
+#define COMMANDLINE_HTTPLOGTIMEOUT 41
+#define COMMANDLINE_HTTPLOGNENTRY  42
 
 #define COMMAND_ALL              0xFFFFFFFF
 #define COMMAND_DAEMON           0x40000000
@@ -366,6 +382,8 @@ static void parse_more_switches(
     { "-user",           COMMAND_CMDLINE        , COMMANDLINE_USER         },
     { "-authentication", COMMAND_CMDLINE        , COMMANDLINE_SECRET,      },
     { "-httptimeout",    COMMAND_DAEMON         , COMMANDLINE_HTTPTIMEOUT  },
+    { "-httplogtimeout", COMMAND_DAEMON         , COMMANDLINE_HTTPLOGTIMEOUT },
+    { "-httplognentry",  COMMAND_DAEMON         , COMMANDLINE_HTTPLOGNENTRY  },
     { 0, 0 }
   };
 
@@ -404,6 +422,8 @@ static void parse_more_switches(
       case COMMANDLINE_ALIAS:
       case COMMANDLINE_AUTODETACH:
       case COMMANDLINE_HTTPTIMEOUT:
+      case COMMANDLINE_HTTPLOGTIMEOUT:
+      case COMMANDLINE_HTTPLOGNENTRY:
         i++;
         if( i==nArg ){
           fatal_error("option requires an argument: %s\n", azArg[i-1]);
@@ -563,6 +583,12 @@ static void parse_more_switches(
       case COMMANDLINE_HTTPTIMEOUT:
         pCmd->nHttpTimeout = parse_seconds(azArg[i]);
         break;
+      case COMMANDLINE_HTTPLOGTIMEOUT:
+        pCmd->nHttpLogTimeout = parse_seconds(azArg[i]);
+        break;
+      case COMMANDLINE_HTTPLOGNENTRY:
+        pCmd->nHttpLogNentry = parse_integer(azArg[i]);
+        break;
       default:
         break;
     }
@@ -577,6 +603,8 @@ static void parse_switches(
   u32 mask
 ){
   memset(pCmd, 0, sizeof(CommandSwitches));
+  pCmd->nHttpLogTimeout = BCV_DEFAULT_HTTPLOG_TIMEOUT;
+  pCmd->nHttpLogNentry = BCV_DEFAULT_HTTPLOG_NENTRY;
   parse_more_switches(pCmd, (const char**)azArg, nArg, piFail, mask);
 }
 
@@ -1051,6 +1079,7 @@ struct DClient {
   DClient *pNext;                 /* Next client belonging to this daemon */
   int iClientId;                  /* Client id */
   BCV_SOCKET_TYPE fd;             /* Localhost socket for this client */
+  char *zClientId;                /* PRAGMA bcv_client */
 
   Container *pCont;               /* Container this client reads from */
   i64 iDbId;                      /* Id of accessed database */
@@ -1335,7 +1364,8 @@ static void bdLogRecvMsg(DaemonCtx *p, DClient *pClient, BcvMessage *pMsg){
       case BCV_MESSAGE_CMD: {
         int eCmd = pMsg->u.cmd.eCmd;
         daemon_msg_log(p, "%d->D: CMD(%s)", pClient->iClientId, 
-          eCmd==BCV_CMD_POLL ? "poll" : "???"
+          eCmd==BCV_CMD_POLL ? "poll" : 
+          eCmd==BCV_CMD_CLIENT ? "client" : "???"
         );
         break;
       }
@@ -1485,6 +1515,9 @@ static void bdDisconnectClient(
   }
   bcvCloseLocal(pClient->pCloseFd);
   pClient->pCloseFd = 0;
+
+  sqlite3_free(pClient->zClientId);
+  pClient->zClientId = 0;
 
   /* Free the client structure itself */
   bdClientDecrRefcount(pClient);
@@ -2019,7 +2052,10 @@ static void bdHandleReadMsg(DaemonCtx *p, DClient *pClient){
 
     pDLCtx = bdFetchCtx(pClient, pEntry);
     bcvfsBlockidToText(aName, nName, zName);
+    bcvDispatchClientId(p->pDisp, pClient->zClientId);
+    bcvDispatchLogmsg(p->pDisp, "demand %d of %s",iBlk,pClient->pManDb->zDName);
     bdDispatchFetch(p->pDisp, pBcv, zName, 0, 0, pDLCtx, bdBlockDownloadCb);
+    bcvDispatchClientId(p->pDisp, 0);
 
   }else if( pEntry->bValid==0 ){
     /* Case (2) - wait */
@@ -2056,6 +2092,7 @@ static void bdHandleReadMsg(DaemonCtx *p, DClient *pClient){
   }
 }
 
+#if 0
 static void log_db_blocks(DaemonCtx *pCtx, Manifest *pMan, int iDb){
   ManifestDb *pDb = &pMan->aDb[iDb];
   int ii;
@@ -2070,6 +2107,7 @@ static void log_db_blocks(DaemonCtx *pCtx, Manifest *pMan, int iDb){
     );
   }
 }
+#endif
 
 /*
 ** This callback is invoked when a GET request for a manifest file made
@@ -2266,6 +2304,22 @@ static void bdHandlePass(
   sqlite3_free(pMsg);
 }
 
+static void bdHandleClient(
+  DaemonCtx *p, 
+  DClient *pClient, 
+  BcvMessage *pMsg
+){
+  BcvMessage reply;
+
+  sqlite3_free(pClient->zClientId);
+  pClient->zClientId = bdStrdup(pMsg->u.cmd.zAuth);
+
+  memset(&reply, 0, sizeof(reply));
+  reply.eType = BCV_MESSAGE_REPLY;
+  bdSendMsg(p, pClient, &reply);
+  sqlite3_free(pMsg);
+}
+
 static void bdSendPrefetchReply(DClient *pClient){
   BcvMessage msg;
   DClient *pIter = 0;
@@ -2399,7 +2453,12 @@ static void bdHandlePrefetch(
       pClient->prefetch.nOutstanding++;
       pDL = bdFetchCtx(pClient, pEntry);
       bcvfsBlockidToText(pEntry->aName, nName, zName);
+      bcvDispatchClientId(p->pDisp, "prefetch");
+      bcvDispatchLogmsg(p->pDisp, 
+          "prefetch %d of %s", iBlk, pClient->pManDb->zDName
+      );
       bdDispatchFetch(p->pDisp, pBcv, zName, 0, 0, pDL, bdPrefetchCb);
+      bcvDispatchClientId(p->pDisp, 0);
     }
   }
 
@@ -2450,7 +2509,11 @@ static void bdHandleClientMessage(
         bdHandleEnd(p, pClient, pMsg);
         break;
       case BCV_MESSAGE_CMD:
-        pClient->pMsg = pMsg;
+        if( pMsg->u.cmd.eCmd==BCV_CMD_POLL ){
+          pClient->pMsg = pMsg;
+        }else{
+          bdHandleClient(p, pClient, pMsg);
+        }
         break;
       case BCV_MESSAGE_PASS:
         bdHandlePass(p, pClient, pMsg);
@@ -2631,6 +2694,10 @@ static int main_daemon(int argc, char **argv){
   /* Allocate a dispatcher object for the daemon to use */
   rc = bcvDispatchNew(&p->pDisp);
   if( rc!=SQLITE_OK ) fatal_oom_error();
+  p->c.pLog = bcvLogNew();
+  bcvLogConfig(p->c.pLog, SQLITE_BCV_HTTPLOG_TIMEOUT, pCmd->nHttpLogTimeout);
+  bcvLogConfig(p->c.pLog, SQLITE_BCV_HTTPLOG_NENTRY, pCmd->nHttpLogNentry);
+  bcvDispatchLogObj(p->pDisp, p->c.pLog);
   bcvDispatchVerbose(p->pDisp, (pCmd->mLog & BCV_LOG_VERBOSE) ? 1 : 0);
   bcvDispatchTimeout(p->pDisp, pCmd->nHttpTimeout);
   if( pCmd->mLog & (BCV_LOG_HTTP|BCV_LOG_HTTPRETRY) ){
