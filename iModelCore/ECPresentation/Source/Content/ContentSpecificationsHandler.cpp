@@ -312,6 +312,9 @@ static bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> CreateF
                 }
 
             ECRelationshipConstraintClassList const* classes = GetClassFromRelationship(helper, spec);
+            if (nullptr == classes)
+                continue;
+
             for (ECClassCP ecClass : *classes)
                 {
                 if (!ecClass->Is(modifierClass) && !modifierClass->Is(ecClass))

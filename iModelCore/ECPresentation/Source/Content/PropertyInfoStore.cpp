@@ -48,6 +48,15 @@ void ClassPropertyOverridesInfo::Merge(ClassPropertyOverridesInfo const& source)
         else
             iter->second.Merge(entry.second);
         }
+
+    for (auto const& category : source.m_availableCategories)
+        {
+        auto iter = std::find_if(m_availableCategories.begin(), m_availableCategories.end(), [&category](PropertyCategorySpecificationP const& spec) { return spec->GetId().Equals(category->GetId()); });
+        if (m_availableCategories.end() == iter)
+            m_availableCategories.push_back(category);
+        else if ((*iter)->GetPriority() < category->GetPriority())
+            *iter = category;
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -117,9 +126,9 @@ ClassPropertyOverridesInfo::NullablePrioritizedValue<Utf8String> const& ClassPro
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassPropertyOverridesInfo::NullablePrioritizedValue<std::shared_ptr<CategoryOverrideInfo const>> const& ClassPropertyOverridesInfo::GetCategoryOverride(ECPropertyCR prop) const
+ClassPropertyOverridesInfo::NullablePrioritizedValue<PropertyCategoryIdentifier const*> const& ClassPropertyOverridesInfo::GetCategoryOverride(ECPropertyCR prop) const
     {
-    return GetOverrides<std::shared_ptr<CategoryOverrideInfo const>>(prop, [](Overrides const& ovr) -> NullablePrioritizedValue<std::shared_ptr<CategoryOverrideInfo const>> const& {return ovr.GetCategoryOverride();});
+    return GetOverrides<PropertyCategoryIdentifier const*>(prop, [](Overrides const& ovr) -> NullablePrioritizedValue<PropertyCategoryIdentifier const*> const& {return ovr.GetCategoryOverride();});
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -219,18 +228,7 @@ static BentleyStatus CreatePropertyCategoryFromSpec(bvector<std::shared_ptr<Prop
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static std::unique_ptr<CategoryOverrideInfo> CreateCategoryOverride(PropertyCategoryIdentifier const& id, PropertyCategorySpecificationsList const& categorySpecs)
-    {
-    bvector<std::shared_ptr<PropertyCategoryRef>> categories;
-    if (SUCCESS == CreatePropertyCategoryFromSpec(categories, id, categorySpecs))
-        return std::make_unique<CategoryOverrideInfo>(categories);
-    return nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-static ClassPropertyOverridesInfo::Overrides CreateOverrides(PropertySpecificationCR spec, PropertyCategorySpecificationsList const& categorySpecifications)
+static ClassPropertyOverridesInfo::Overrides CreateOverrides(PropertySpecificationCR spec)
     {
     ClassPropertyOverridesInfo::Overrides ovr(spec.GetOverridesPriority());
     if (nullptr != spec.GetRendererOverride())
@@ -248,11 +246,8 @@ static ClassPropertyOverridesInfo::Overrides CreateOverrides(PropertySpecificati
     if (!spec.GetLabelOverride().empty())
         ovr.SetLabelOverride(spec.GetLabelOverride());
     if (nullptr != spec.GetCategoryId())
-        {
-        auto categoryOverride = CreateCategoryOverride(*spec.GetCategoryId(), categorySpecifications);
-        if (categoryOverride != nullptr)
-            ovr.SetCategoryOverride(std::move(categoryOverride));
-        }
+        ovr.SetCategoryOverride(spec.GetCategoryId());
+
     if (spec.IsDisplayed().IsValid())
         ovr.SetDisplayOverride(spec.IsDisplayed());
 
@@ -279,13 +274,30 @@ static ClassPropertyOverridesInfo::Overrides CreateDefaultHiddenPropertiesOverri
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PropertyInfoStore::CollectPropertyOverrides(ECClassCP ecClass, PropertySpecificationCR spec, PropertyCategorySpecificationsList const& categorySpecifications)
+void PropertyInfoStore::CollectPropertyOverrides(ECClassCP ecClass, PropertySpecificationCR spec)
     {
     ClassPropertyOverridesInfo info;
     if (spec.GetPropertyName().Equals("*"))
-        info.SetClassOverrides(ecClass, CreateOverrides(spec, categorySpecifications));
+        info.SetClassOverrides(ecClass, CreateOverrides(spec));
     else
-        info.SetPropertyOverrides(spec.GetPropertyName(), CreateOverrides(spec, categorySpecifications));
+        info.SetPropertyOverrides(spec.GetPropertyName(), CreateOverrides(spec));
+
+    auto iter = m_perClassPropertyOverrides.find(ecClass);
+    if (m_perClassPropertyOverrides.end() == iter)
+        m_perClassPropertyOverrides[ecClass] = info;
+    else
+        iter->second.Merge(info);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void PropertyInfoStore::CollectCategories(ECClassCP ecClass, PropertyCategorySpecificationsList const& categorySpecifications)
+    {
+    ClassPropertyOverridesInfo info;
+    for (PropertyCategorySpecificationP spec : categorySpecifications)
+        info.SetAsAvailableCategory(spec);
+
     auto iter = m_perClassPropertyOverrides.find(ecClass);
     if (m_perClassPropertyOverrides.end() == iter)
         m_perClassPropertyOverrides[ecClass] = info;
@@ -300,18 +312,19 @@ void PropertyInfoStore::InitPropertyOverrides(ContentSpecificationCP specificati
     {
     if (nullptr != specification)
         {
+        CollectCategories(nullptr, specification->GetPropertyCategories());
         for (PropertySpecificationCP propertySpec : specification->GetPropertyOverrides())
-            CollectPropertyOverrides(nullptr, *propertySpec, specification->GetPropertyCategories());
+            CollectPropertyOverrides(nullptr, *propertySpec);
         }
 
     for (ContentModifierCP modifier : contentModifiers)
         {
         DiagnosticsHelpers::ReportRule(*modifier);
+        ECClassCP ecClass = m_schemaHelper.GetECClass(modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str());
+
+        CollectCategories(ecClass, modifier->GetPropertyCategories());
         for (PropertySpecificationCP propertySpec : modifier->GetPropertyOverrides())
-            {
-            ECClassCP ecClass = m_schemaHelper.GetECClass(modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str());
-            CollectPropertyOverrides(ecClass, *propertySpec, modifier->GetPropertyCategories());
-            }
+            CollectPropertyOverrides(ecClass, *propertySpec);
         }
     }
 
@@ -476,24 +489,71 @@ Utf8String PropertyInfoStore::GetLabelOverride(ECPropertyCR prop, ECClassCR ecCl
     return "";
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+std::unique_ptr<CategoryOverrideInfo const> PropertyInfoStore::GetCategoryOverrideFromCache(PropertyCategoryIdentifier const& id) const
+    {
+    if (id.GetType() != PropertyCategoryIdentifierType::Id)
+        return nullptr;
+
+    auto override = m_categoryOverridesCache.find(id);
+    if (override != m_categoryOverridesCache.end())
+        return std::make_unique<CategoryOverrideInfo>(override->second);
+    return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+std::unique_ptr<CategoryOverrideInfo const> PropertyInfoStore::GetCategoryOverride(PropertyCategoryIdentifier const& id, PropertyCategorySpecificationsList const& categorySpecs) const
+    {
+    // check for category overrides in cache
+    auto cachedOverride = GetCategoryOverrideFromCache(id);
+    if (nullptr != cachedOverride)
+        return cachedOverride;
+
+    // create new category override and insert to cache
+    bvector<std::shared_ptr<PropertyCategoryRef>> categories;
+    if (SUCCESS == CreatePropertyCategoryFromSpec(categories, id, categorySpecs))
+        {
+        m_categoryOverridesCache.insert({ id, categories });
+        return std::make_unique<CategoryOverrideInfo>(categories);
+        }
+    return nullptr;
+    }
+
 /*-----------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+-----------+------*/
 std::unique_ptr<CategoryOverrideInfo const> PropertyInfoStore::GetCategoryOverride(ECPropertyCR prop, ECClassCR ecClass, PropertySpecificationCP customOverride, PropertyCategorySpecificationsList const* scopeCategorySpecs) const
     {
-    auto const& ovr = GetOverrides(ecClass).GetCategoryOverride(prop);
+    auto const& classOverrides = GetOverrides(ecClass);
+    auto const& categoryOverride = classOverrides.GetCategoryOverride(prop);
     bool hasPropertySpecCategoryOverride = customOverride && scopeCategorySpecs && nullptr != customOverride->GetCategoryId();
 
     if (hasPropertySpecCategoryOverride)
         {
-        if (ovr.IsValid() && ovr.Value().priority > customOverride->GetOverridesPriority())
-            return std::make_unique<CategoryOverrideInfo>(*ovr.Value().value);
+        if (categoryOverride.IsValid() && categoryOverride.Value().priority > customOverride->GetOverridesPriority())
+            return GetCategoryOverride(*categoryOverride.Value().value, classOverrides.GetAvailableCategories());
 
-        return CreateCategoryOverride(*customOverride->GetCategoryId(), *scopeCategorySpecs);
+        return GetCategoryOverride(*customOverride->GetCategoryId(), *scopeCategorySpecs);
         }
 
-    if (ovr.IsValid())
-        return std::make_unique<CategoryOverrideInfo>(*ovr.Value().value);
+    if (categoryOverride.IsValid())
+        return GetCategoryOverride(*categoryOverride.Value().value, classOverrides.GetAvailableCategories());
+
+    return nullptr;
+    }
+
+/*-----------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+-----------+------*/
+std::unique_ptr<CategoryOverrideInfo const> PropertyInfoStore::GetCategoryOverride(ECClassCP ecClass, CalculatedPropertiesSpecificationCR spec, PropertyCategorySpecificationsList const* scopeCategorySpecs) const
+    {
+    auto const& classOverrides = m_perClassPropertyOverrides.find(ecClass);
+    if (classOverrides != m_perClassPropertyOverrides.end() && spec.GetCategoryId())
+        return GetCategoryOverride(*spec.GetCategoryId(), classOverrides->second.GetAvailableCategories());
 
     return nullptr;
     }

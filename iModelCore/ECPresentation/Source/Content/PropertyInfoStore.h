@@ -96,7 +96,7 @@ struct ClassPropertyOverridesInfo
         NullablePrioritizedValue<std::shared_ptr<ContentFieldRenderer const>> m_renderer;
         NullablePrioritizedValue<std::shared_ptr<ContentFieldEditor const>> m_editor;
         NullablePrioritizedValue<Utf8String> m_labelOverride;
-        NullablePrioritizedValue<std::shared_ptr<CategoryOverrideInfo const>> m_category;
+        NullablePrioritizedValue<PropertyCategoryIdentifier const*> m_category;
         NullablePrioritizedValue<bool> m_doNotHideOtherPropertiesOnDisplayOverride;
         NullablePrioritizedValue<bool> m_isReadOnly;
         NullablePrioritizedValue<int> m_priority;
@@ -112,8 +112,8 @@ struct ClassPropertyOverridesInfo
         NullablePrioritizedValue<std::shared_ptr<ContentFieldEditor const>> const& GetEditorOverride() const {return m_editor;}
         void SetLabelOverride(Utf8String ovr) {m_labelOverride = PrioritizedValue<Utf8String>({ m_defaultPriority, ovr });}
         NullablePrioritizedValue<Utf8String> const& GetLabelOverride() const {return m_labelOverride;}
-        void SetCategoryOverride(std::shared_ptr<CategoryOverrideInfo const> ovr) {m_category = PrioritizedValue<std::shared_ptr<CategoryOverrideInfo const>>({ m_defaultPriority, ovr });}
-        NullablePrioritizedValue<std::shared_ptr<CategoryOverrideInfo const>> const& GetCategoryOverride() const {return m_category;}
+        void SetCategoryOverride(PropertyCategoryIdentifier const* ovr) {m_category = PrioritizedValue<PropertyCategoryIdentifier const*>({ m_defaultPriority, ovr });}
+        NullablePrioritizedValue<PropertyCategoryIdentifier const*> const& GetCategoryOverride() const {return m_category;}
         void SetDoNotHideOtherPropertiesOnDisplayOverride(bool ovr) {m_doNotHideOtherPropertiesOnDisplayOverride = PrioritizedValue<bool>({ m_defaultPriority, ovr });}
         NullablePrioritizedValue<bool> const& GetDoNotHideOtherPropertiesOnDisplayOverride() const {return m_doNotHideOtherPropertiesOnDisplayOverride;}
         void SetReadOnlyOverride(bool ovr) {m_isReadOnly = PrioritizedValue<bool>({ m_defaultPriority, ovr });}
@@ -125,6 +125,7 @@ struct ClassPropertyOverridesInfo
 private:
     bmap<ECClassCP, Overrides> m_defaultClassPropertyOverrides;
     bmap<Utf8String, Overrides> m_propertyOverrides;
+    PropertyCategorySpecificationsList m_availableCategories;
 
 private:
     template<typename TValue>
@@ -135,13 +136,15 @@ public:
     NullablePrioritizedValue<std::shared_ptr<ContentFieldRenderer const>> const& GetContentFieldRendererOverride(ECPropertyCR) const;
     NullablePrioritizedValue<std::shared_ptr<ContentFieldEditor const>> const& GetContentFieldEditorOverride(ECPropertyCR) const;
     NullablePrioritizedValue<Utf8String> const& GetLabelOverride(ECPropertyCR) const;
-    NullablePrioritizedValue<std::shared_ptr<CategoryOverrideInfo const>> const& GetCategoryOverride(ECPropertyCR) const;
+    NullablePrioritizedValue<PropertyCategoryIdentifier const*> const& GetCategoryOverride(ECPropertyCR) const;
     NullablePrioritizedValue<bool> const& GetDoNotHideOtherPropertiesOnDisplayOverride(ECPropertyCR) const;
     NullablePrioritizedValue<bool> const& GetReadOnlyOverride(ECPropertyCR) const;
     NullablePrioritizedValue<int> const& GetPriorityOverride(ECPropertyCR) const;
     bmap<Utf8String, Overrides> const& GetPropertyOverrides() const {return m_propertyOverrides;}
+    PropertyCategorySpecificationsList const& GetAvailableCategories() const { return m_availableCategories; }
     void SetClassOverrides(ECClassCP ecClass, Overrides ovr) {m_defaultClassPropertyOverrides[ecClass] = ovr;}
     void SetPropertyOverrides(Utf8StringCR ecPropertyName, Overrides ovr) {m_propertyOverrides[ecPropertyName] = ovr;}
+    void SetAsAvailableCategory(PropertyCategorySpecificationP spec) {m_availableCategories.push_back(spec);}
     void Merge(ClassPropertyOverridesInfo const&);
 };
 
@@ -150,15 +153,38 @@ public:
 +===============+===============+===============+===============+===============+======*/
 struct PropertyInfoStore
 {
+    struct CategoryIdentifier
+    {
+    private:
+        PropertyCategoryIdentifierType m_type;
+        Utf8String m_categoryId;
+    public:
+        CategoryIdentifier(PropertyCategoryIdentifier const& identifier) : m_type(identifier.GetType())
+            {
+            if (identifier.GetType() == PropertyCategoryIdentifierType::Id)
+                m_categoryId = identifier.AsIdIdentifier()->GetCategoryId();
+            else
+                m_categoryId = "";
+            }
+        bool operator<(CategoryIdentifier const& other) const
+            {
+            return m_type < other.m_type || (m_type == other.m_type && m_categoryId.CompareTo(other.m_categoryId) < 0);
+            }
+    };
+
 private:
     ECSchemaHelper const& m_schemaHelper;
     bmap<ECClassCP, ClassPropertyOverridesInfo> m_perClassPropertyOverrides;
     mutable bmap<ECClassCP, ClassPropertyOverridesInfo> m_aggregatedOverrides; // property overrides, including base class properties
+    mutable bmap<CategoryIdentifier, CategoryOverrideInfo> m_categoryOverridesCache;
 
 private:
-    void CollectPropertyOverrides(ECClassCP ecClass, PropertySpecificationCR spec, PropertyCategorySpecificationsList const&);
+    void CollectPropertyOverrides(ECClassCP ecClass, PropertySpecificationCR spec);
+    void CollectCategories(ECClassCP ecClass, PropertyCategorySpecificationsList const& categorySpecifications);
     void InitPropertyOverrides(ContentSpecificationCP specification, bvector<ContentModifierCP> const& contentModifiers);
     ClassPropertyOverridesInfo const& GetOverrides(ECClassCR ecClass) const;
+    std::unique_ptr<CategoryOverrideInfo const> GetCategoryOverride(PropertyCategoryIdentifier const&, PropertyCategorySpecificationsList const&) const;
+    std::unique_ptr<CategoryOverrideInfo const> GetCategoryOverrideFromCache(PropertyCategoryIdentifier const& id) const;
 
 public:
     PropertyInfoStore(ECSchemaHelper const& helper, bvector<ContentModifierCP> const& contentModifiers, ContentSpecificationCP spec);
@@ -167,6 +193,7 @@ public:
     std::shared_ptr<ContentFieldEditor const> GetPropertyEditor(ECPropertyCR, ECClassCR, PropertySpecificationCP = nullptr) const;
     Utf8String GetLabelOverride(ECPropertyCR, ECClassCR, PropertySpecificationCP = nullptr) const;
     std::unique_ptr<CategoryOverrideInfo const> GetCategoryOverride(ECPropertyCR, ECClassCR, PropertySpecificationCP = nullptr, PropertyCategorySpecificationsList const* = nullptr) const;
+    std::unique_ptr<CategoryOverrideInfo const> GetCategoryOverride(ECClassCP, CalculatedPropertiesSpecificationCR, PropertyCategorySpecificationsList const* = nullptr) const;
     Nullable<bool> GetReadOnlyOverride(ECPropertyCR, ECClassCR, PropertySpecificationCP = nullptr) const;
     Nullable<int32_t> GetPriorityOverride(ECPropertyCR, ECClassCR, PropertySpecificationCP = nullptr) const;
 };
