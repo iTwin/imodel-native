@@ -92,14 +92,9 @@ BeSQLiteRequiredLibs = $(ContextSubPartsStaticLibs)$(stlibprefix)BeZlib$(stlibex
 BeSQLiteRequiredLibs + $(ContextSubPartsStaticLibs)$(stlibprefix)snappy$(stlibext)
 BeSQLiteRequiredLibs + $(ContextSubPartsStaticLibs)$(stlibprefix)lzma$(stlibext)
 BeSQLiteRequiredLibs + $(ContextSubPartsLibs)$(libprefix)iTwinBentley$(libext)
-<<<<<<< HEAD
 BeSQLiteRequiredLibs + $(ContextSubPartsLibs)$(libprefix)iTwinJsonCpp$(libext)
-BeSQLiteRequiredLibs + $(ContextSubPartsLibs)$(stlibprefix)BeCurl$(stlibext)
-BeSQLiteRequiredLibs + $(ContextSubPartsLibs)$(stlibprefix)BeOpenSSL$(stlibext)
-=======
 BeSQLiteRequiredLibs + $(ContextSubPartsLibs)$(stlibprefix)iTwinCurl$(stlibext)
 BeSQLiteRequiredLibs + $(ContextSubPartsLibs)$(stlibprefix)iTwinOpenSSL$(stlibext)
->>>>>>> fc876a04 (Renamed the libsrc DLLs so they won't conflict with the ones from thirdparty in the audit tool. (#237))
 BeSQLiteRequiredLibs + $(ContextSubPartsLibs)$(stlibprefix)iTwin_google_re2$(stlibext)
 
 DLM_OBJECT_FILES    = $(objs)
