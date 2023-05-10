@@ -57,6 +57,11 @@ public:
     //! @note No need for caller to assert a valid return (asserts within implementation)
     static InformationRecordModelPtr InsertInformationRecordModel(DgnDbR, Utf8CP partitionName);
 
+    //! Insert a SheetIndexModel
+    //! @note Also creates a SheetIndexPartition element for the SheetINdexModel to model
+    //! @note No need for caller to assert a valid return (asserts within implementation)
+    static DgnModelPtr InsertSheetIndexModel(DgnDbR, Utf8CP partitionName);
+
     //! Insert a Drawing element
     //! @note No need for caller to assert a valid return (asserts within implementation)
     static DrawingPtr InsertDrawing(DocumentListModelCR model, Utf8CP name);

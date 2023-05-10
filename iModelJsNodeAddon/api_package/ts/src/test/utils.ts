@@ -69,8 +69,9 @@ export function logTest(msg: string) {
   console.log(`Test: ${msg}`); // eslint-disable-line no-console
 }
 
+let _addon: undefined | typeof IModelJsNative;
 function loadAddon() {
-  return useLocalBuild ? loadLocalBuildOfAddon() : loadInstalledAddon();
+  return _addon ??= useLocalBuild ? loadLocalBuildOfAddon() : loadInstalledAddon();
 }
 
 export const iModelJsNative: typeof IModelJsNative = loadAddon();
