@@ -1146,19 +1146,18 @@ struct ECInstancesCompatibility : public DgnDbTestFixture
     * @bsimethod
     //Inserts instances for the InformationReferenceElement class heirarchy
     +---------------+---------------+---------------+---------------+---------------+------------------*/
-    void ECInstancesCompatibility::InsertInstancesForInformationReferenceElement(ECClassCP className)
+    void ECInstancesCompatibility::InsertInstancesForInformationReferenceElement(ECClassCP ecClassCP)
         {
         printf("\n\nInserting instances for InformationReferenceElement heirarchy:\n\n");
 
         List.clear();
         ASSERT_TRUE(List.empty());
 
-        //Inserting a Link Model.
-        LinkModelPtr linkModel = DgnDbTestUtils::InsertLinkModel(*m_db, "TestLinkModel");
+        CodeSpecId partitionCodeSpecId = m_db->CodeSpecs().QueryCodeSpecId(BIS_CODESPEC_InformationPartitionElement);
         SubjectCPtr rootSubject = m_db->Elements().GetRootSubject();
         ASSERT_TRUE(rootSubject.IsValid());
 
-        std::vector<ECClassCP> DerivedClassList = getDerivedClasses(className);
+        std::vector<ECClassCP> DerivedClassList = getDerivedClasses(ecClassCP);
 
         for (ECClassCP ecClass : DerivedClassList)
             {
@@ -1173,22 +1172,44 @@ struct ECInstancesCompatibility : public DgnDbTestFixture
                 ASSERT_TRUE(ClassInstance.IsValid());
 
                 //Setting values for Model and Code
+                DgnModelPtr modelPtr;
                 DgnCode code = DgnCode::CreateEmpty();
                 if (className == BIS_CLASS_Subject)
                     {
-                    ECN::ECClassCP relClass = ecClass->GetSchema().GetClassCP(BIS_REL_SubjectOwnsSubjects);
-                    ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("Model", ECN::ECValue(DgnModel::RepositoryModelId())));
+                    modelPtr = m_db->GetRepositoryModel();
+                    ECN::ECClassCP relClass = ecClass->GetSchema().GetClassCP(BIS_REL_SubjectOwnsSubjects);                    
                     ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("Parent", ECN::ECValue(rootSubject->GetElementId(), relClass->GetId())));
                     }
-                else if ((className == BIS_CLASS_ExternalSource) || (className == BIS_CLASS_ExternalSourceAttachment) || (className == BIS_CLASS_ExternalSourceGroup))
+                else if ((className == BIS_CLASS_ExternalSource) || 
+                    (className == BIS_CLASS_ExternalSourceAttachment) || 
+                    (className == BIS_CLASS_ExternalSourceGroup) ||
+                    (className == BIS_CLASS_RepositoryLink))
                     {
-                    ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("Model", ECN::ECValue(DgnModel::RepositoryModelId())));
+                    modelPtr = m_db->GetRepositoryModel();
+                    }
+                else if ((className == "SheetIndex") || 
+                    (className == "SheetReference") || 
+                    (className == "SheetIndexReference") ||
+                    (className == "SheetIndexFolder"))
+                    {                     
+                    DgnCode partitionCode(partitionCodeSpecId, m_db->Elements().GetRootSubjectId(), "TestSheetIndexModel");
+                    DgnElementId partitionId = m_db->Elements().QueryElementIdByCode(partitionCode);
+                    if (partitionId.IsValid())
+                        modelPtr = m_db->Models().GetModel(DgnModelId(partitionId.GetValue()));
+                    else
+                        modelPtr = DgnDbTestUtils::InsertSheetIndexModel(*m_db, partitionCode.GetValueUtf8CP());
                     }
                 else
                     {
-                    ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("Model", ECN::ECValue(linkModel->GetModelId())));
+                    DgnCode partitionCode(partitionCodeSpecId, m_db->Elements().GetRootSubjectId(), "TestLinkModel");
+                    DgnElementId partitionId = m_db->Elements().QueryElementIdByCode(partitionCode);
+                    if (partitionId.IsValid())
+                        modelPtr = m_db->Models().GetModel(DgnModelId(partitionId.GetValue()));
+                    else
+                        modelPtr = DgnDbTestUtils::InsertLinkModel(*m_db, partitionCode.GetValueUtf8CP());
                     }
 
+                ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("Model", ECN::ECValue(modelPtr->GetModelId())));
                 ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeSpec", ECN::ECValue(code.GetCodeSpecId())));
                 ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeScope", ECN::ECValue(code.GetScopeElementId(*m_db))));
                 ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeValue", ECN::ECValue(code.GetValueUtf8CP())));

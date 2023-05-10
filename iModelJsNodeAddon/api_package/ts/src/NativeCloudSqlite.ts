@@ -26,16 +26,12 @@ export namespace NativeCloudSqlite {
     LOG_HTTP = 0x0001, LOG_UPLOAD = 0x0002, LOG_CLEANUP = 0x0004, LOG_EVENT = 0x0008
   }
 
-  /** Properties that specify how to access the account for a cloud blob-store container. */
-  export interface AccountAccessProps {
-    /** blob storage module: e.g. "azure", "google", "aws". May also include URI style parameters. */
-    storageType: string;
-    /** blob store account name, or a URI for custom domains. */
-    accessName: string;
-  }
-
   /** Properties of a CloudContainer. */
   export interface ContainerProps {
+    /** blob storage module */
+    storageType: "azure" | "google" | "aws";
+    /** base URI for container. */
+    baseUri: string;
     /** the name of the container. */
     containerId: string;
     /** an alias for the container. Defaults to `containerId` */
@@ -76,9 +72,7 @@ export namespace NativeCloudSqlite {
     readonly endTime: string | undefined;
     /** "PUT", "GET", etc. */
     readonly method: string;
-    /** Name of the client that caused this request. Name will be "prefetch" if it is a request triggered by a prefetch.
-     *  Name of client can be configured by passing a 'logId' to a CloudContainer's ContainerProps.
-     */
+    /**  String configured by 'logId' in ContainerProps. Will be "prefetch" if request was triggered by a prefetch. */
     readonly logId: string;
     /** Log message associated with request */
     readonly logmsg: string;
@@ -89,9 +83,9 @@ export namespace NativeCloudSqlite {
   }
 
   /** Properties for accessing a CloudContainer */
-  export type ContainerAccessProps = AccountAccessProps & ContainerProps & {
+  export type ContainerAccessProps = ContainerProps & {
     /** Duration for holding write lock, in seconds. After this time the write lock expires if not refreshed. Default is one hour. */
-    durationSeconds?: number;
+    lockExpireSeconds?: number;
   };
 
   /** The name of a CloudSqlite database within a CloudContainer. */
@@ -160,7 +154,7 @@ export namespace NativeCloudSqlite {
     /** options for spawn */
     spawnOptions?: child_process.SpawnOptions;
   }
-  export type DaemonCommandArg = DbNameProp & AccountAccessProps & CacheProps & ContainerProps;
+  export type DaemonCommandArg = DbNameProp & CacheProps & ContainerProps;
 
   export class Daemon {
     public static exeName(props: DaemonProps) {
