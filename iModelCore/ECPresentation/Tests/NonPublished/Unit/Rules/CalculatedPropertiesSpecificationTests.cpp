@@ -1,0 +1,187 @@
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See LICENSE.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
+#include "PresentationRulesTests.h"
+#include <ECPresentation/Rules/PresentationRules.h>
+
+USING_NAMESPACE_BENTLEY_ECPRESENTATION
+USING_NAMESPACE_ECPRESENTATIONTESTS
+
+/*---------------------------------------------------------------------------------**//**
+* @bsiclass
++---------------+---------------+---------------+---------------+---------------+------*/
+struct CalculatedPropertiesSpecificationTests : PresentationRulesTests
+    {
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsiclass
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CalculatedPropertiesSpecificationTests, CopyConstructor)
+    {
+    auto source = new CalculatedPropertiesSpecification("a", 1, "1");
+    source->SetEditor(new PropertyEditorSpecification());
+    source->SetRenderer(new CustomRendererSpecification());
+    source->SetCategoryId(PropertyCategoryIdentifier::CreateForId("a"));
+    Utf8String sourceHash = source->GetHash();
+
+    // copy
+    CalculatedPropertiesSpecification target(*source);
+    // delete source
+    DELETE_AND_CLEAR(source);
+    // calculate target hash and confirm it matches source
+    EXPECT_EQ(sourceHash, target.GetHash());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsiclass
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CalculatedPropertiesSpecificationTests, MoveConstructor)
+    {
+    auto source = new CalculatedPropertiesSpecification("a", 1, "1");
+    source->SetEditor(new PropertyEditorSpecification());
+    source->SetRenderer(new CustomRendererSpecification());
+    source->SetCategoryId(PropertyCategoryIdentifier::CreateForId("a"));
+    Utf8String sourceHash = source->GetHash();
+
+    // copy
+    CalculatedPropertiesSpecification target(std::move(*source));
+    // delete source
+    DELETE_AND_CLEAR(source);
+    // calculate target hash and confirm it matches source
+    EXPECT_EQ(sourceHash, target.GetHash());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CalculatedPropertiesSpecificationTests, LoadsFromJson)
+    {
+    static Utf8CP jsonString = R"({
+        "label": "calculated property",
+        "value": "calculated value",
+        "renderer": {
+            "rendererName": "custom renderer"
+        },
+        "editor": {
+            "editorName": "custom editor"
+        },
+        "categoryId": "categoryId",
+        "priority": 10
+    })";
+    BeJsDocument json(jsonString);
+    EXPECT_FALSE(json.isNull());
+
+    CalculatedPropertiesSpecification spec;
+    EXPECT_TRUE(spec.ReadJson(json));
+    EXPECT_STREQ("calculated property", spec.GetLabel().c_str());
+    EXPECT_STREQ("calculated value", spec.GetValue().c_str());
+    EXPECT_STREQ("custom renderer", spec.GetRenderer()->GetRendererName().c_str());
+    EXPECT_STREQ("custom editor", spec.GetEditor()->GetEditorName().c_str());
+    EXPECT_STREQ("categoryId", spec.GetCategoryId()->AsIdIdentifier()->GetCategoryId().c_str());
+    EXPECT_EQ(10, spec.GetPriority());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CalculatedPropertiesSpecificationTests, LoadsFromJsonWithDefaultValues)
+    {
+    static Utf8CP jsonString = R"({
+        "label": "calculated property",
+        "value": "calculated value"
+    })";
+    BeJsDocument json(jsonString);
+    EXPECT_FALSE(json.isNull());
+
+    CalculatedPropertiesSpecification spec;
+    EXPECT_TRUE(spec.ReadJson(json));
+    EXPECT_STREQ("calculated property", spec.GetLabel().c_str());
+    EXPECT_STREQ("calculated value", spec.GetValue().c_str());
+    EXPECT_EQ(nullptr, spec.GetRenderer());
+    EXPECT_EQ(nullptr, spec.GetEditor());
+    EXPECT_EQ(nullptr, spec.GetCategoryId());
+    EXPECT_EQ(1000, spec.GetPriority());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CalculatedPropertiesSpecificationTests, WriteToJson)
+    {
+    CalculatedPropertiesSpecification spec("custom label", 123, "custom value");
+    spec.SetRenderer(new CustomRendererSpecification("custom renderer"));
+    spec.SetEditor(new PropertyEditorSpecification("custom editor"));
+    spec.SetCategoryId(PropertyCategoryIdentifier::CreateForId("category id"));
+    BeJsDocument json = spec.WriteJson();
+    BeJsDocument expected(R"({
+        "label": "custom label",
+        "priority": 123,
+        "value": "custom value",
+        "renderer": {
+            "rendererName": "custom renderer"
+        },
+        "editor": {
+            "editorName": "custom editor"
+        },
+        "categoryId": {
+            "type": "Id",
+            "categoryId": "category id"
+        }
+    })");
+    EXPECT_TRUE(expected.isExactEqual(json));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsiclass
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CalculatedPropertiesSpecificationTests, ComputesCorrectHashes)
+    {
+    Utf8CP DEFAULT_HASH = "1557340c4b482efb431717c6ffdd867b";
+
+    // first we make sure that introducing additional attributes with default values don't affect the hash
+    CalculatedPropertiesSpecification defaultSpec;
+    EXPECT_STREQ(DEFAULT_HASH, defaultSpec.GetHash().c_str());
+
+    // then we make sure that copy has the same hash
+    CalculatedPropertiesSpecification copySpec(defaultSpec);
+    EXPECT_STREQ(DEFAULT_HASH, copySpec.GetHash().c_str());
+
+    // then we test that each attribute affects the hash
+    CalculatedPropertiesSpecification specWithPropertyName(defaultSpec);
+    specWithPropertyName.SetLabel("a");
+    EXPECT_STRNE(defaultSpec.GetHash().c_str(), specWithPropertyName.GetHash().c_str());
+    specWithPropertyName.SetLabel("");
+    EXPECT_STREQ(defaultSpec.GetHash().c_str(), specWithPropertyName.GetHash().c_str());
+
+    CalculatedPropertiesSpecification specWithLabelOverride(defaultSpec);
+    specWithLabelOverride.SetValue("10");
+    EXPECT_STRNE(defaultSpec.GetHash().c_str(), specWithLabelOverride.GetHash().c_str());
+    specWithLabelOverride.SetValue("");
+    EXPECT_STREQ(defaultSpec.GetHash().c_str(), specWithLabelOverride.GetHash().c_str());
+
+    CalculatedPropertiesSpecification specWithRendererOverride(defaultSpec);
+    specWithRendererOverride.SetRenderer(new CustomRendererSpecification());
+    EXPECT_STRNE(defaultSpec.GetHash().c_str(), specWithRendererOverride.GetHash().c_str());
+    specWithRendererOverride.SetRenderer(nullptr);
+    EXPECT_STREQ(defaultSpec.GetHash().c_str(), specWithRendererOverride.GetHash().c_str());
+
+    CalculatedPropertiesSpecification specWithEditorOverride(defaultSpec);
+    specWithEditorOverride.SetEditor(new PropertyEditorSpecification());
+    EXPECT_STRNE(defaultSpec.GetHash().c_str(), specWithEditorOverride.GetHash().c_str());
+    specWithEditorOverride.SetEditor(nullptr);
+    EXPECT_STREQ(defaultSpec.GetHash().c_str(), specWithEditorOverride.GetHash().c_str());
+
+    CalculatedPropertiesSpecification specWithCategoryId(defaultSpec);
+    specWithCategoryId.SetCategoryId(PropertyCategoryIdentifier::CreateForId("a"));
+    EXPECT_STRNE(defaultSpec.GetHash().c_str(), specWithCategoryId.GetHash().c_str());
+    specWithCategoryId.SetCategoryId(nullptr);
+    EXPECT_STREQ(defaultSpec.GetHash().c_str(), specWithCategoryId.GetHash().c_str());
+
+    CalculatedPropertiesSpecification specWithPriorityOverride(defaultSpec);
+    specWithPriorityOverride.SetPriority(10);
+    EXPECT_STRNE(defaultSpec.GetHash().c_str(), specWithPriorityOverride.GetHash().c_str());
+    specWithPriorityOverride.SetPriority(1000);
+    EXPECT_STREQ(defaultSpec.GetHash().c_str(), specWithPriorityOverride.GetHash().c_str());
+    }
