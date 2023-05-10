@@ -189,7 +189,7 @@ static int evp_pkey_asym_cipher_init(EVP_PKEY_CTX *ctx, int operation,
         ERR_raise(ERR_LIB_EVP, EVP_R_OPERATION_NOT_SUPPORTED_FOR_THIS_KEYTYPE);
         return -2;
     }
-    switch (ctx->operation) {
+    switch(ctx->operation) {
     case EVP_PKEY_OP_ENCRYPT:
         if (ctx->pmeth->encrypt_init == NULL)
             return 1;
@@ -303,12 +303,14 @@ static EVP_ASYM_CIPHER *evp_asym_cipher_new(OSSL_PROVIDER *prov)
 {
     EVP_ASYM_CIPHER *cipher = OPENSSL_zalloc(sizeof(EVP_ASYM_CIPHER));
 
-    if (cipher == NULL)
+    if (cipher == NULL) {
+        ERR_raise(ERR_LIB_EVP, ERR_R_MALLOC_FAILURE);
         return NULL;
+    }
 
     cipher->lock = CRYPTO_THREAD_lock_new();
     if (cipher->lock == NULL) {
-        ERR_raise(ERR_LIB_EVP, ERR_R_CRYPTO_LIB);
+        ERR_raise(ERR_LIB_EVP, ERR_R_MALLOC_FAILURE);
         OPENSSL_free(cipher);
         return NULL;
     }
@@ -329,7 +331,7 @@ static void *evp_asym_cipher_from_algorithm(int name_id,
     int gparamfncnt = 0, sparamfncnt = 0;
 
     if ((cipher = evp_asym_cipher_new(prov)) == NULL) {
-        ERR_raise(ERR_LIB_EVP, ERR_R_EVP_LIB);
+        ERR_raise(ERR_LIB_EVP, ERR_R_MALLOC_FAILURE);
         goto err;
     }
 

@@ -29,11 +29,10 @@ static OSSL_ENCODER *ossl_encoder_new(void)
 {
     OSSL_ENCODER *encoder = NULL;
 
-    if ((encoder = OPENSSL_zalloc(sizeof(*encoder))) == NULL)
-        return NULL;
-    if ((encoder->base.lock = CRYPTO_THREAD_lock_new()) == NULL) {
+    if ((encoder = OPENSSL_zalloc(sizeof(*encoder))) == NULL
+        || (encoder->base.lock = CRYPTO_THREAD_lock_new()) == NULL) {
         OSSL_ENCODER_free(encoder);
-        ERR_raise(ERR_LIB_OSSL_ENCODER, ERR_R_CRYPTO_LIB);
+        ERR_raise(ERR_LIB_OSSL_ENCODER, ERR_R_MALLOC_FAILURE);
         return NULL;
     }
 
@@ -610,7 +609,9 @@ OSSL_ENCODER_CTX *OSSL_ENCODER_CTX_new(void)
 {
     OSSL_ENCODER_CTX *ctx;
 
-    ctx = OPENSSL_zalloc(sizeof(*ctx));
+    if ((ctx = OPENSSL_zalloc(sizeof(*ctx))) == NULL)
+        ERR_raise(ERR_LIB_OSSL_ENCODER, ERR_R_MALLOC_FAILURE);
+
     return ctx;
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2007-2021 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2007-2022 The OpenSSL Project Authors. All Rights Reserved.
  * Copyright Nokia 2007-2019
  * Copyright Siemens AG 2015-2019
  *
@@ -181,11 +181,11 @@ char *snprint_PKIStatusInfo_parts(int status, int fail_info,
             || (status_string = ossl_cmp_PKIStatus_to_string(status)) == NULL)
         return NULL;
 
-#define ADVANCE_BUFFER  \
-    if (printed_chars < 0 || (size_t)printed_chars >= bufsize)  \
-        return NULL; \
-    write_ptr += printed_chars; \
-    bufsize -= printed_chars;
+#define ADVANCE_BUFFER                                         \
+        if (printed_chars < 0 || (size_t)printed_chars >= bufsize) \
+            return NULL; \
+        write_ptr += printed_chars; \
+        bufsize -= printed_chars;
 
     printed_chars = BIO_snprintf(write_ptr, bufsize, "%s", status_string);
     ADVANCE_BUFFER;
