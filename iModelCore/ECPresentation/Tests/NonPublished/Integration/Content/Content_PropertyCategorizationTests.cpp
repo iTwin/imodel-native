@@ -439,12 +439,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategorization_Calc
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
-    contentRule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false));
+    ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false);
+    spec->AddCalculatedProperty(*new CalculatedPropertiesSpecification("CalculatedProp", 1000, ""));
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
-
-    ContentModifierP modifier = new ContentModifier(classA->GetSchema().GetName(), classA->GetName());
-    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("CalculatedProp", 1000, ""));
-    rules->AddPresentationRule(*modifier);
 
     // validate descriptor
     ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
@@ -468,12 +466,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategorization_Calc
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
-    contentRule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false));
+    ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false);
+    spec->AddCalculatedProperty(*new CalculatedPropertiesSpecification("CalculatedProp", 1000, "", nullptr, nullptr, PropertyCategoryIdentifier::CreateForId("doesnt-exist")));
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
-
-    ContentModifierP modifier = new ContentModifier(classA->GetSchema().GetName(), classA->GetName());
-    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("CalculatedProp", 1000, "", nullptr, nullptr, PropertyCategoryIdentifier::CreateForId("doesnt-exist")));
-    rules->AddPresentationRule(*modifier);
 
     // validate descriptor
     ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
@@ -497,12 +493,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategorization_Calc
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
-    contentRule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false));
+    ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false);
+    spec->AddCalculatedProperty(*new CalculatedPropertiesSpecification("CalculatedProp", 1000, "", nullptr, nullptr, PropertyCategoryIdentifier::CreateForDefaultParent()));
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
-
-    ContentModifierP modifier = new ContentModifier(classA->GetSchema().GetName(), classA->GetName());
-    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("CalculatedProp", 1000, "", nullptr, nullptr, PropertyCategoryIdentifier::CreateForDefaultParent()));
-    rules->AddPresentationRule(*modifier);
 
     // validate descriptor
     ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
@@ -526,12 +520,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategorization_Calc
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
-    contentRule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false));
+    ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false);
+    spec->AddCalculatedProperty(*new CalculatedPropertiesSpecification("CalculatedProp", 1000, "", nullptr, nullptr, PropertyCategoryIdentifier::CreateForRoot()));
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
-
-    ContentModifierP modifier = new ContentModifier(classA->GetSchema().GetName(), classA->GetName());
-    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("CalculatedProp", 1000, "", nullptr, nullptr, PropertyCategoryIdentifier::CreateForRoot()));
-    rules->AddPresentationRule(*modifier);
 
     // validate descriptor
     ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
@@ -555,13 +547,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategorization_Calc
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
-    contentRule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false));
+    ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false);
+    spec->AddPropertyCategory(*new PropertyCategorySpecification("custom", "Custom"));
+    spec->AddCalculatedProperty(*new CalculatedPropertiesSpecification("CalculatedProp", 1000, "", nullptr, nullptr, PropertyCategoryIdentifier::CreateForId("custom")));
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
-
-    ContentModifierP modifier = new ContentModifier(classA->GetSchema().GetName(), classA->GetName());
-    modifier->AddPropertyCategory(*new PropertyCategorySpecification("custom", "Custom"));
-    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("CalculatedProp", 1000, "", nullptr, nullptr, PropertyCategoryIdentifier::CreateForId("custom")));
-    rules->AddPresentationRule(*modifier);
 
     // validate descriptor
     ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
@@ -585,13 +575,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategorization_Calc
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
-    contentRule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false));
+    ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false);
+    spec->AddPropertyCategory(*new PropertyCategorySpecification("custom", "Custom", "", 1000, false, nullptr, PropertyCategoryIdentifier::CreateForDefaultParent()));
+    spec->AddCalculatedProperty(*new CalculatedPropertiesSpecification("CalculatedProp", 1000, "", nullptr, nullptr, PropertyCategoryIdentifier::CreateForId("custom")));
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
-
-    ContentModifierP modifier = new ContentModifier(classA->GetSchema().GetName(), classA->GetName());
-    modifier->AddPropertyCategory(*new PropertyCategorySpecification("custom", "Custom", "", 1000, false, nullptr, PropertyCategoryIdentifier::CreateForDefaultParent()));
-    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("CalculatedProp", 1000, "", nullptr, nullptr, PropertyCategoryIdentifier::CreateForId("custom")));
-    rules->AddPresentationRule(*modifier);
 
     // validate descriptor
     ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
@@ -615,13 +603,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategorization_Calc
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
-    contentRule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false));
+    ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false);
+    spec->AddPropertyCategory(*new PropertyCategorySpecification("custom", "Custom", "", 1000, false, nullptr, PropertyCategoryIdentifier::CreateForRoot()));
+    spec->AddCalculatedProperty(*new CalculatedPropertiesSpecification("CalculatedProp", 1000, "", nullptr, nullptr, PropertyCategoryIdentifier::CreateForId("custom"))); 
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
-
-    ContentModifierP modifier = new ContentModifier(classA->GetSchema().GetName(), classA->GetName());
-    modifier->AddPropertyCategory(*new PropertyCategorySpecification("custom", "Custom", "", 1000, false, nullptr, PropertyCategoryIdentifier::CreateForRoot()));
-    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("CalculatedProp", 1000, "", nullptr, nullptr, PropertyCategoryIdentifier::CreateForId("custom")));
-    rules->AddPresentationRule(*modifier);
 
     // validate descriptor
     ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
@@ -4585,6 +4571,43 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategoryOverride_Pr
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
     EXPECT_STREQ("Category 1", descriptor->GetVisibleFields()[0]->GetCategory()->GetLabel().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(PropertyCategoryOverride_CategoryOverridesAreCachedAndUseSameCategoryOverrideInstance, R"*(
+    <ECEntityClass typeName="ClassA">
+        <ECProperty propertyName="UserLabel" typeName="string" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategoryOverride_CategoryOverridesAreCachedAndUseSameCategoryOverrideInstance)
+    {
+    ECClassCP classA = GetClass("ClassA");
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false);
+    spec->AddPropertyOverride(*new PropertySpecification("UserLabel", 1, "", PropertyCategoryIdentifier::CreateForId("category-id")));
+    spec->AddCalculatedProperty(*new CalculatedPropertiesSpecification("a", 1, "2", nullptr, nullptr, PropertyCategoryIdentifier::CreateForId("category-id")));
+    contentRule->AddSpecification(*spec);
+    rules->AddPresentationRule(*contentRule);
+
+    ContentModifierP categoriesModifier1 = new ContentModifier(classA->GetSchema().GetName(), classA->GetName());
+    categoriesModifier1->AddPropertyCategory(*new PropertyCategorySpecification("category-id", "Category 1", "", 2));
+    categoriesModifier1->SetPriority(1);
+    rules->AddPresentationRule(*categoriesModifier1);
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(2, descriptor->GetVisibleFields().size());
+
+    std::shared_ptr<ContentDescriptor::Category const> const& propertyCategory = descriptor->GetVisibleFields()[0]->GetCategory();
+    std::shared_ptr<ContentDescriptor::Category const> const& calculatedPropertyCategory = descriptor->GetVisibleFields()[1]->GetCategory();
+    EXPECT_EQ(propertyCategory, calculatedPropertyCategory);
     }
 
 /*---------------------------------------------------------------------------------**//**

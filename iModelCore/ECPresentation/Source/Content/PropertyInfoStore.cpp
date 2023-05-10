@@ -494,9 +494,6 @@ Utf8String PropertyInfoStore::GetLabelOverride(ECPropertyCR prop, ECClassCR ecCl
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::unique_ptr<CategoryOverrideInfo const> PropertyInfoStore::GetCategoryOverrideFromCache(PropertyCategoryIdentifier const& id) const
     {
-    if (id.GetType() != PropertyCategoryIdentifierType::Id)
-        return nullptr;
-
     auto override = m_categoryOverridesCache.find(id);
     if (override != m_categoryOverridesCache.end())
         return std::make_unique<CategoryOverrideInfo>(override->second);
