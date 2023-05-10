@@ -817,8 +817,8 @@ TEST_F(BeSQliteTestFixture, Profiler)
 // @bsiclass
 //=======================================================================================
 struct SeriesModule : DbModule {
-    struct SeriesTable : VirtualTable {
-        struct SeriesCursor : Cursor {
+    struct SeriesTable : DbVirtualTable {
+        struct SeriesCursor : DbCursor {
             enum class Columns{
                 Value = 0,
                 Start = 1,
@@ -833,7 +833,7 @@ struct SeriesModule : DbModule {
                 int64_t m_mxValue = 0;
                 int64_t m_iStep = 0;
             public:
-                SeriesCursor(SeriesTable& vt): Cursor(vt){}
+                SeriesCursor(SeriesTable& vt): DbCursor(vt){}
                 bool Eof() final {
                     if (m_isDesc ) {
                         return m_iValue < m_mnValue;
@@ -910,8 +910,8 @@ struct SeriesModule : DbModule {
                 }
         };
         public:
-            SeriesTable(SeriesModule& module): VirtualTable(module) {}
-            DbResult Open(Cursor*& cur) override {
+            SeriesTable(SeriesModule& module): DbVirtualTable(module) {}
+            DbResult Open(DbCursor*& cur) override {
                 cur = new SeriesCursor(*this);
                 return BE_SQLITE_OK;
             }
@@ -976,7 +976,7 @@ struct SeriesModule : DbModule {
     };
     public:
         SeriesModule(DbR db): DbModule(db, "generate_series", "CREATE TABLE x(value,start hidden,stop hidden,step hidden)") {}
-        DbResult Connect(VirtualTable*& out, Config& conf, int argc, const char* const* argv) final {
+        DbResult Connect(DbVirtualTable*& out, Config& conf, int argc, const char* const* argv) final {
             out = new SeriesTable(*this);
             conf.SetTag(Config::Tags::Innocuous);
             return BE_SQLITE_OK;
@@ -1004,8 +1004,8 @@ TEST_F(BeSQliteTestFixture, TableValueFunction_SeriesModule) {
 // @bsiclass
 //=======================================================================================
 struct TokenizeModule : DbModule {
-    struct TokenizeTable : VirtualTable {
-        struct TokenizeCursor : Cursor {
+    struct TokenizeTable : DbVirtualTable {
+        struct TokenizeCursor : DbCursor {
             enum class Columns{
                 Token = 0,
                 Text = 1,
@@ -1018,7 +1018,7 @@ struct TokenizeModule : DbModule {
                 bvector<Utf8String> m_tokens;
 
             public:
-                TokenizeCursor(TokenizeTable& vt): Cursor(vt){}
+                TokenizeCursor(TokenizeTable& vt): DbCursor(vt){}
                 bool Eof() final { return m_iRowid < 1 || m_iRowid > (int64_t)m_tokens.size() ; }
                 DbResult Next() final {
                     ++m_iRowid;
@@ -1062,8 +1062,8 @@ struct TokenizeModule : DbModule {
                 }
         };
         public:
-            TokenizeTable(TokenizeModule& module): VirtualTable(module) {}
-            DbResult Open(Cursor*& cur) override {
+            TokenizeTable(TokenizeModule& module): DbVirtualTable(module) {}
+            DbResult Open(DbCursor*& cur) override {
                 cur = new TokenizeCursor(*this);
                 return BE_SQLITE_OK;
             }
@@ -1119,7 +1119,7 @@ struct TokenizeModule : DbModule {
     };
     public:
         TokenizeModule(DbR db): DbModule(db, "tokenize_text", "CREATE TABLE x(token,buffer hidden,delimiter hidden)") {}
-        DbResult Connect(VirtualTable*& out, Config& conf, int argc, const char* const* argv) final {
+        DbResult Connect(DbVirtualTable*& out, Config& conf, int argc, const char* const* argv) final {
             out = new TokenizeTable(*this);
             conf.SetTag(Config::Tags::Innocuous);
             return BE_SQLITE_OK;

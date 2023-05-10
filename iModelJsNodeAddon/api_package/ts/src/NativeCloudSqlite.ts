@@ -26,16 +26,12 @@ export namespace NativeCloudSqlite {
     LOG_HTTP = 0x0001, LOG_UPLOAD = 0x0002, LOG_CLEANUP = 0x0004, LOG_EVENT = 0x0008
   }
 
-  /** Properties that specify how to access the account for a cloud blob-store container. */
-  export interface AccountAccessProps {
-    /** blob storage module: e.g. "azure", "google", "aws". May also include URI style parameters. */
-    storageType: string;
-    /** blob store account name, or a URI for custom domains. */
-    accessName: string;
-  }
-
   /** Properties of a CloudContainer. */
   export interface ContainerProps {
+    /** blob storage module */
+    storageType: "azure" | "google" | "aws";
+    /** base URI for container. */
+    baseUri: string;
     /** the name of the container. */
     containerId: string;
     /** an alias for the container. Defaults to `containerId` */
@@ -46,6 +42,10 @@ export namespace NativeCloudSqlite {
     writeable?: boolean;
     /** if true, container is attached in "secure" mode (blocks are encrypted). Only supported in daemon mode. */
     secure?: boolean;
+    /** true if the container is public (doesn't require authentication) */
+    isPublic?: boolean;
+    /** string attached to log messages from CloudSQLite. This is most useful for identifying usage from daemon mode. */
+    logId?: string;
   }
 
   /** Returned from `CloudContainer.queryDatabase` describing one database in the container */
@@ -62,10 +62,30 @@ export namespace NativeCloudSqlite {
     readonly state: "" | "copied" | "deleted";
   }
 
+  /** Returned from 'CloudContainer.queryHttpLog' describing a row in the bcv_http_log table. */
+  export interface BcvHttpLog {
+    /** Unique, monotonically increasing id value */
+    readonly id: number;
+    /** Time request was made, as iso-8601 */
+    readonly startTime: string;
+    /** Time reply received, as iso-8601 (or NULL) */
+    readonly endTime: string | undefined;
+    /** "PUT", "GET", etc. */
+    readonly method: string;
+    /**  String configured by 'logId' in ContainerProps. Will be "prefetch" if request was triggered by a prefetch. */
+    readonly logId: string;
+    /** Log message associated with request */
+    readonly logmsg: string;
+    /** URI of request */
+    readonly uri: string;
+    /** HTTP response code (e.g. 200) */
+    readonly httpcode: number;
+  }
+
   /** Properties for accessing a CloudContainer */
-  export type ContainerAccessProps = AccountAccessProps & ContainerProps & {
+  export type ContainerAccessProps = ContainerProps & {
     /** Duration for holding write lock, in seconds. After this time the write lock expires if not refreshed. Default is one hour. */
-    durationSeconds?: number;
+    lockExpireSeconds?: number;
   };
 
   /** The name of a CloudSqlite database within a CloudContainer. */
@@ -134,7 +154,7 @@ export namespace NativeCloudSqlite {
     /** options for spawn */
     spawnOptions?: child_process.SpawnOptions;
   }
-  export type DaemonCommandArg = DbNameProp & AccountAccessProps & CacheProps & ContainerProps;
+  export type DaemonCommandArg = DbNameProp & CacheProps & ContainerProps;
 
   export class Daemon {
     public static exeName(props: DaemonProps) {

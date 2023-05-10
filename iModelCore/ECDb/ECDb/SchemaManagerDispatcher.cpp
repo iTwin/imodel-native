@@ -2145,5 +2145,14 @@ void MainSchemaManager::GatherRootClasses(
     }
 
 
-
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult ECDbModule::_OnRegister() {
+    auto& vm = GetECDb().Schemas().Main().GetVirtualSchemaManager();
+    if (SUCCESS != vm.Add(m_ecSchema)) {
+        return BE_SQLITE_ERROR;
+    }
+    return BE_SQLITE_OK;
+}
 END_BENTLEY_SQLITE_EC_NAMESPACE

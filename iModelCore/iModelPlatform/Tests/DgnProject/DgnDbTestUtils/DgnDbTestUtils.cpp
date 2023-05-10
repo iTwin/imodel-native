@@ -167,6 +167,51 @@ LinkModelPtr DgnDbTestUtils::InsertLinkModel(DgnDbR db, Utf8CP partitionName)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+DgnModelPtr DgnDbTestUtils::InsertSheetIndexModel(DgnDbR db, Utf8CP partitionName)
+{
+    MUST_HAVE_HOST(nullptr);
+    SubjectCPtr rootSubject = db.Elements().GetRootSubject();
+
+    ECN::ECClassCP ecClass = db.Schemas().GetClass(BIS_ECSCHEMA_NAME, "SheetIndexPartition");
+    ECN::StandaloneECInstancePtr ClassInstance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    EXPECT_TRUE(ClassInstance.IsValid());
+
+    //Setting values for Model and Code
+    DgnCode code = DgnCode::CreateEmpty();
+    ECN::ECClassCP relClass = ecClass->GetSchema().GetClassCP(BIS_REL_SubjectOwnsPartitionElements);
+    EXPECT_EQ(ECN::ECObjectsStatus::Success, ClassInstance->SetValue("Model", ECN::ECValue(DgnModel::RepositoryModelId())));
+    EXPECT_EQ(ECN::ECObjectsStatus::Success, ClassInstance->SetValue("Parent", ECN::ECValue(rootSubject->GetElementId(), relClass->GetId())));
+
+    EXPECT_EQ(ECN::ECObjectsStatus::Success, ClassInstance->SetValue("CodeSpec", ECN::ECValue(code.GetCodeSpecId())));
+    EXPECT_EQ(ECN::ECObjectsStatus::Success, ClassInstance->SetValue("CodeScope", ECN::ECValue(code.GetScopeElementId(db))));
+    EXPECT_EQ(ECN::ECObjectsStatus::Success, ClassInstance->SetValue("CodeValue", ECN::ECValue(code.GetValueUtf8CP())));
+
+    DgnElementPtr ele = db.Elements().CreateElement(*ClassInstance);
+    EXPECT_TRUE(ele.IsValid()) << "Element creation failed for Class: " << ecClass->GetName().c_str();
+
+    DgnDbStatus stat = DgnDbStatus::Success;
+    DgnElementCPtr eleP = ele->Insert(&stat);
+    EXPECT_TRUE(eleP.IsValid()) << "Insertion failed for Class: " << ecClass->GetName().c_str();
+    EXPECT_EQ(DgnDbStatus::Success, stat);
+
+    ECN::ECClassCP modelClass = db.Schemas().GetClass(BIS_ECSCHEMA_NAME, "SheetIndexModel");
+    ECN::StandaloneECInstancePtr modelInstance = modelClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    EXPECT_TRUE(modelInstance.IsValid());
+
+    EXPECT_EQ(ECN::ECObjectsStatus::Success, modelInstance->SetValue("ModeledElement", ECN::ECValue(eleP->GetElementId())));
+
+    DgnModelPtr model = db.Models().CreateModel(&stat, *modelInstance);
+    EXPECT_TRUE(model.IsValid());
+
+    EXPECT_EQ(DgnDbStatus::Success, model->Insert());
+    EXPECT_TRUE(model->GetModelId().IsValid());
+    EXPECT_EQ(eleP->GetSubModelId(), model->GetModelId());
+    return model;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 DefinitionModelPtr DgnDbTestUtils::InsertDefinitionModel(DgnDbR db, Utf8CP partitionName)
     {
     MUST_HAVE_HOST(nullptr);

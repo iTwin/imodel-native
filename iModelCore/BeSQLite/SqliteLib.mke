@@ -50,6 +50,8 @@ $(o)simplexml$(oext): $(SQLiteDir)simplexml.c ${MultiCompileDepends} ${bcvheader
 
 $(o)bcvutil$(oext): $(SQLiteDir)bcvutil.c ${MultiCompileDepends} ${bcvheaders}
 
+$(o)bcvlog$(oext): $(SQLiteDir)bcvlog.c ${MultiCompileDepends} ${bcvheaders}
+
 $(o)bcvmodule$(oext) : $(SQLiteDir)bcvmodule.c ${MultiCompileDepends} ${bcvheaders} ${bcvheaders}
 
 $(o)blockcachevfs$(oext): $(SQLiteDir)blockcachevfs.c ${MultiCompileDepends} ${bcvheaders}

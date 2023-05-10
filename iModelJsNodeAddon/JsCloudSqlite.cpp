@@ -147,26 +147,32 @@ struct JsCloudUtil : CloudUtil {
  * JavaScript object for accessing cloud containers via SQLite.
  */
 struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
-    int m_durationSeconds;
+    int m_lockExpireSeconds;
 
     DEFINE_CONSTRUCTOR;
 
     JsCloudContainer(NapiInfoCR info) : Napi::ObjectWrap<JsCloudContainer>(info) {
         REQUIRE_ARGUMENT_ANY_OBJ(0, obj);
-        m_accessName = stringMember(obj, JSON_NAME(accessName));
+
+        m_baseUri = stringMember(obj, JSON_NAME(baseUri));
         m_containerId = stringMember(obj, JSON_NAME(containerId));
-        if (m_accessName.empty())
-            BeNapi::ThrowJsException(obj.Env(), "accessName missing from CloudContainer constructor");
+        if (m_baseUri.empty())
+            BeNapi::ThrowJsException(obj.Env(), "baseUri missing from CloudContainer constructor");
         if (m_containerId.empty())
             BeNapi::ThrowJsException(obj.Env(), "containerId missing from CloudContainer constructor");
 
         m_storageType = stringMember(obj, JSON_NAME(storageType), "azure");
+        if (m_storageType.Trim().StartsWith("azure"))
+            m_storageType = "azure?customuri=1&sas=1";
+
         m_alias = stringMember(obj, JSON_NAME(alias));
         if (m_alias.empty())
             m_alias = m_containerId;
         m_accessToken = stringMember(obj, JSON_NAME(accessToken));
         m_writeable = boolMember(obj, JSON_NAME(writeable), false);
-        m_durationSeconds = intMember(obj, JSON_NAME(durationSeconds), 0);
+        m_lockExpireSeconds = intMember(obj, JSON_NAME(lockExpireSeconds), 0);
+        m_logId = stringMember(obj, JSON_NAME(logId), "");
+        m_isPublic = boolMember(obj, JSON_NAME(isPublic), false);
     }
 
     Napi::Value QueueWorker(NapiInfoCR info, CloudSqliteFn fn) {
@@ -179,6 +185,7 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
         if (!IsContainerConnected())
             BeNapi::ThrowJsException(Env(), "container not connected to cache");
     }
+
     void RequireWriteLock() {
         RequireConnected();
         if (!m_writeLockHeld)
@@ -258,6 +265,73 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
         if (HasLocalChanges())
             BeNapi::ThrowJsException(Env(), "cannot obtain database hash with local changes");
         return Napi::String::New(Env(), m_cache->GetDatabaseHash(*this, dbName));
+    }
+
+    Napi::Value QueryHttpLog(NapiInfoCR info) {
+        RequireConnected();
+        int startFromId = 0;
+        Utf8String finishedAtOrAfterTime;
+        bool showOnlyFinished = false;
+        if (info[0].IsObject()) {
+            auto filterOpts = BeJsConst(info[0]);
+            startFromId = filterOpts[JSON_NAME(startFromId)].asInt(0);
+            finishedAtOrAfterTime = filterOpts[JSON_NAME(finishedAtOrAfterTime)].asCString();
+            showOnlyFinished = filterOpts[JSON_NAME(showOnlyFinished)].asBool();
+        }
+
+        Utf8String sql = "SELECT id,start_time,end_time,method,client,logmsg,uri,httpcode FROM bcv_http_log";
+        bool hasWhereClause = false;
+        if (startFromId != 0) {
+            sql += " WHERE id >= ?";
+            hasWhereClause = true;
+        }
+        if (showOnlyFinished) {
+            if (hasWhereClause) {
+                sql += " AND end_time IS NOT NULL";
+            } else {
+                sql += " WHERE end_time IS NOT NULL";
+                hasWhereClause = true;
+            }
+        }
+        if (!finishedAtOrAfterTime.empty()) {
+            if (hasWhereClause) {
+                sql += " AND julianday(end_time) >= julianday(?)";
+            } else {
+                sql += " WHERE julianday(end_time) >= julianday(?)";
+                hasWhereClause = true;
+            }
+        }
+        sql += " ORDER BY id ASC";
+
+        Statement stmt;
+        auto rc = stmt.Prepare(m_containerDb, sql.c_str());
+        if (rc != BE_SQLITE_OK)
+            BeNapi::ThrowJsException(Env(), Utf8PrintfString("Got error preparing %s", sql.c_str()).c_str(), rc);
+
+        if (startFromId != 0 && !finishedAtOrAfterTime.empty()) {
+            stmt.BindInt(1, startFromId);
+            stmt.BindText(2, finishedAtOrAfterTime.c_str(), Statement::MakeCopy::Yes);
+        } else if (startFromId != 0) {
+            stmt.BindInt(1, startFromId);
+        } else if (!finishedAtOrAfterTime.empty()) {
+            stmt.BindText(1, finishedAtOrAfterTime.c_str(), Statement::MakeCopy::Yes);
+        }
+
+        auto rows = Napi::Array::New(Env());
+        uint32_t index = 0;
+        while (BE_SQLITE_ROW == stmt.Step()) {
+            BeJsNapiObject value(Env());
+            value["id"] = stmt.GetValueInt(0);
+            value["startTime"] = stmt.GetValueText(1);
+            value["endTime"] = stmt.GetValueText(2);
+            value["method"] = stmt.GetValueText(3);
+            value["logId"] = stmt.GetValueText(4);
+            value["logmsg"] = stmt.GetValueText(5);
+            value["uri"] = stmt.GetValueText(6);
+            value["httpcode"] = stmt.GetValueInt(7);
+            rows.Set(index++, value);
+        }
+        return rows;
     }
 
     Napi::Value QueryDatabases(NapiInfoCR info) {
@@ -453,11 +527,11 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
         m_containerDb.TryExecuteSql("BEGIN");
         CheckLock(); // throws if already locked by another user
 
-        m_durationSeconds = std::min((int) (12*SECONDS_PER_HOUR), std::max((int)SECONDS_PER_HOUR, m_durationSeconds));
+        m_lockExpireSeconds = std::min((int) (12*SECONDS_PER_HOUR), std::max((int)SECONDS_PER_HOUR, m_lockExpireSeconds));
         BeJsDocument lockedBy;
         lockedBy[JSON_NAME(guid)] = m_cache->m_guid;
         lockedBy[JSON_NAME(user)] = user;
-        lockedBy[JSON_NAME(expires)] = GetServerDateString(m_durationSeconds * 1000);
+        lockedBy[JSON_NAME(expires)] = GetServerDateString(m_lockExpireSeconds * 1000);
 
         Statement stmt;
         auto rc = stmt.Prepare(m_containerDb, "REPLACE INTO bcv_kv(value,name) VALUES(?,?)");
@@ -551,9 +625,11 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
     static bool IsInstance(Napi::Object val) { return val.InstanceOf(Constructor().Value()); }
     Napi::Value IsConnected(NapiInfoCR info) { return Napi::Boolean::New(Env(), IsContainerConnected()); }
     Napi::Value IsWriteable(NapiInfoCR info) { return Napi::Boolean::New(Env(), m_writeable); }
+    Napi::Value IsPublic(NapiInfoCR info) { return Napi::Boolean::New(Env(), m_isPublic); }
     Napi::Value HasWriteLock(NapiInfoCR info) { return Napi::Boolean::New(Env(), m_writeLockHeld); }
     Napi::Value GetAccessToken(NapiInfoCR info) { return Napi::String::New(Env(), m_accessToken); }
     Napi::Value GetContainerId(NapiInfoCR info) { return Napi::String::New(Env(), m_containerId); }
+    Napi::Value GetLogId(NapiInfoCR info) { return Napi::String::New(Env(), m_logId); }
     Napi::Value GetAlias(NapiInfoCR info) { return Napi::String::New(Env(), m_alias); }
     void SetAccessToken(NapiInfoCR info, Napi::Value const& value) { m_accessToken = value.As<Napi::String>().Utf8Value(); }
 
@@ -564,11 +640,13 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
             InstanceAccessor<&JsCloudContainer::GetAccessToken, &JsCloudContainer::SetAccessToken>("accessToken"),
             InstanceAccessor<&JsCloudContainer::GetAlias>("alias"),
             InstanceAccessor<&JsCloudContainer::GetContainerId>("containerId"),
+            InstanceAccessor<&JsCloudContainer::GetLogId>("logId"),
             InstanceAccessor<&JsCloudContainer::GetNumCleanupBlocks>("garbageBlocks"),
             InstanceAccessor<&JsCloudContainer::HasLocalChangesJs>("hasLocalChanges"),
             InstanceAccessor<&JsCloudContainer::HasWriteLock>("hasWriteLock"),
             InstanceAccessor<&JsCloudContainer::IsConnected>("isConnected"),
             InstanceAccessor<&JsCloudContainer::IsWriteable>("isWriteable"),
+            InstanceAccessor<&JsCloudContainer::IsPublic>("isPublic"),
             InstanceAccessor<&JsCloudContainer::GetBlockSize>("blockSize"),
             InstanceMethod<&JsCloudContainer::AbandonChanges>("abandonChanges"),
             InstanceMethod<&JsCloudContainer::AcquireWriteLockJs>("acquireWriteLock"),
@@ -583,6 +661,7 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
             InstanceMethod<&JsCloudContainer::QueryDatabase>("queryDatabase"),
             InstanceMethod<&JsCloudContainer::QueryDatabaseHash>("queryDatabaseHash"),
             InstanceMethod<&JsCloudContainer::QueryDatabases>("queryDatabases"),
+            InstanceMethod<&JsCloudContainer::QueryHttpLog>("queryHttpLog"),
             InstanceMethod<&JsCloudContainer::ReleaseWriteLock>("releaseWriteLock"),
             InstanceMethod<&JsCloudContainer::UploadChanges>("uploadChanges"),
         });

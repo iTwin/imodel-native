@@ -310,7 +310,10 @@ void Diagnostics::Scope::AddValueToArrayAttribute(Utf8CP name, Utf8String value,
         {
         auto parentScope = m_parentScope.lock();
         if (parentScope)
+            {
+            lock.unlock();
             parentScope->AddValueToArrayAttribute(name, value, unique);
+            }
         return;
         }
 

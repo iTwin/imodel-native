@@ -82,18 +82,20 @@ struct CloudContainer {
     BeEvent<CloudContainer*> m_onDisconnect;
     CloudVdb m_containerDb;
     Utf8String m_storageType;
-    Utf8String m_accessName;
+    Utf8String m_baseUri;
     Utf8String m_containerId;
     Utf8String m_alias;
     Utf8String m_accessToken;
+    Utf8String m_logId;
     bool m_writeLockHeld = false;
     bool m_writeable = false;
     bool m_secure = false;
+    bool m_isPublic = false;
 
     CloudContainer() {}
     ~CloudContainer() { Disconnect(false); }
-    CloudContainer(Utf8StringCR storageType, Utf8StringCR accessName, Utf8StringCR containerId, Utf8StringCR alias, Utf8StringCR accessToken) :
-        m_storageType(storageType), m_accessName(accessName), m_containerId(containerId), m_alias(alias), m_accessToken(accessToken) {}
+    CloudContainer(Utf8StringCR storageType, Utf8StringCR baseUri, Utf8StringCR containerId, Utf8StringCR alias, Utf8StringCR accessToken) :
+        m_storageType(storageType), m_baseUri(baseUri), m_containerId(containerId), m_alias(alias), m_accessToken(accessToken) {}
 
     CloudResult CallSqliteFn(std::function<int(Utf8P*)> fn, Utf8CP fnName) { return m_cache->CallSqliteFn(fn, fnName); }
     bool IsContainerConnected() const { return nullptr != m_cache; }
