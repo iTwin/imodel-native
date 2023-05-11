@@ -150,7 +150,7 @@ static ECRelationshipConstraintClassList const* GetClassFromRelationship(ECSchem
     RelationshipPathSpecification const* pathSpec = spec.GetPropertiesSource();
     if (nullptr == pathSpec)
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_INFO, LOG_ERROR, Utf8PrintfString("Related properties specification do not contain relationship path specification."));
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_INFO, LOG_ERROR, Utf8PrintfString("Related properties specification does not contain relationship path specification."));
         return nullptr;
         }
     RelationshipStepSpecification const* relationshipStep = pathSpec->GetSteps().back();
@@ -164,7 +164,8 @@ static ECRelationshipConstraintClassList const* GetClassFromRelationship(ECSchem
             return &relationshipClass->GetTarget().GetConstraintClasses();
         }
 
-    DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_INFO, LOG_ERROR, Utf8PrintfString("Failed to get relationship constraints from relationship step specification: %s. Direction: %s.", relationshipStep->GetRelationshipClassName().c_str(), direction));
+    DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_INFO, LOG_ERROR, Utf8PrintfString("Failed to get relationship constraints from relationship step specification: %s. Direction: %s.",
+        relationshipStep->GetRelationshipClassName().c_str(), CommonToolsInternal::FormatRequiredDirectionString(direction)));
     return nullptr;
     }
 
