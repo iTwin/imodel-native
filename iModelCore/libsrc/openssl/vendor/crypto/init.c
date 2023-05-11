@@ -389,10 +389,6 @@ void OPENSSL_cleanup(void)
 #ifndef OPENSSL_NO_COMP
     OSSL_TRACE(INIT, "OPENSSL_cleanup: ossl_comp_zlib_cleanup()\n");
     ossl_comp_zlib_cleanup();
-    OSSL_TRACE(INIT, "OPENSSL_cleanup: ossl_comp_brotli_cleanup()\n");
-    ossl_comp_brotli_cleanup();
-    OSSL_TRACE(INIT, "OPENSSL_cleanup: ossl_comp_zstd_cleanup()\n");
-    ossl_comp_zstd_cleanup();
 #endif
 
     if (async_inited) {
@@ -710,8 +706,10 @@ int OPENSSL_atexit(void (*handler)(void))
     }
 #endif
 
-    if ((newhand = OPENSSL_malloc(sizeof(*newhand))) == NULL)
+    if ((newhand = OPENSSL_malloc(sizeof(*newhand))) == NULL) {
+        ERR_raise(ERR_LIB_CRYPTO, ERR_R_MALLOC_FAILURE);
         return 0;
+    }
 
     newhand->handler = handler;
     newhand->next = stop_handlers;

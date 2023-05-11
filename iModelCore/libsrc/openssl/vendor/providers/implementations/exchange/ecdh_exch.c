@@ -126,7 +126,7 @@ int ecdh_match_params(const EC_KEY *priv, const EC_KEY *peer)
 
     ctx = BN_CTX_new_ex(ossl_ec_key_get_libctx(priv));
     if (ctx == NULL) {
-        ERR_raise(ERR_LIB_PROV, ERR_R_BN_LIB);
+        ERR_raise(ERR_LIB_PROV, ERR_R_MALLOC_FAILURE);
         return 0;
     }
     ret = group_priv != NULL
@@ -378,7 +378,7 @@ int ecdh_get_ctx_params(void *vpecdhctx, OSSL_PARAM params[])
     if (p != NULL
             && !OSSL_PARAM_set_utf8_string(p, pectx->kdf_md == NULL
                                            ? ""
-                                           : EVP_MD_get0_name(pectx->kdf_md))) {
+                                           : EVP_MD_get0_name(pectx->kdf_md))){
         return 0;
     }
 
@@ -451,7 +451,7 @@ int ecdh_plain_derive(void *vpecdhctx, unsigned char *secret,
     }
 
     if ((group = EC_KEY_get0_group(pecdhctx->k)) == NULL
-            || (cofactor = EC_GROUP_get0_cofactor(group)) == NULL)
+            || (cofactor = EC_GROUP_get0_cofactor(group)) == NULL )
         return 0;
 
     /*
@@ -524,8 +524,10 @@ int ecdh_X9_63_kdf_derive(void *vpecdhctx, unsigned char *secret,
     }
     if (!ecdh_plain_derive(vpecdhctx, NULL, &stmplen, 0))
         return 0;
-    if ((stmp = OPENSSL_secure_malloc(stmplen)) == NULL)
+    if ((stmp = OPENSSL_secure_malloc(stmplen)) == NULL) {
+        ERR_raise(ERR_LIB_PROV, ERR_R_MALLOC_FAILURE);
         return 0;
+    }
     if (!ecdh_plain_derive(vpecdhctx, stmp, &stmplen, stmplen))
         goto err;
 

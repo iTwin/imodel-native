@@ -132,8 +132,10 @@ static int ok_new(BIO *bi)
 {
     BIO_OK_CTX *ctx;
 
-    if ((ctx = OPENSSL_zalloc(sizeof(*ctx))) == NULL)
+    if ((ctx = OPENSSL_zalloc(sizeof(*ctx))) == NULL) {
+        ERR_raise(ERR_LIB_EVP, ERR_R_MALLOC_FAILURE);
         return 0;
+    }
 
     ctx->cont = 1;
     ctx->sigio = 1;

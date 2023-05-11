@@ -8,6 +8,7 @@
  * in the file LICENSE in the source distribution or at
  * https://www.openssl.org/source/license.html
  */
+
 #ifndef OSSL_CRYPTO_DSO_CONF_H
     # define OSSL_CRYPTO_DSO_CONF_H
     # pragma once

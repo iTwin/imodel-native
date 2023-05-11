@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2022 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2019-2023 The OpenSSL Project Authors. All Rights Reserved.
  * Copyright (c) 2019, Oracle and/or its affiliates.  All rights reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
@@ -54,8 +54,10 @@ static OSSL_PARAM_BLD_DEF *param_push(OSSL_PARAM_BLD *bld, const char *key,
 {
     OSSL_PARAM_BLD_DEF *pd = OPENSSL_zalloc(sizeof(*pd));
 
-    if (pd == NULL)
+    if (pd == NULL) {
+        ERR_raise(ERR_LIB_CRYPTO, ERR_R_MALLOC_FAILURE);
         return NULL;
+    }
     pd->key = key;
     pd->type = type;
     pd->size = size;
@@ -190,20 +192,23 @@ int OSSL_PARAM_BLD_push_double(OSSL_PARAM_BLD *bld, const char *key,
     return param_push_num(bld, key, &num, sizeof(num), OSSL_PARAM_REAL);
 }
 
-static int push_BN(OSSL_PARAM_BLD *bld, const char *key,
-                   const BIGNUM *bn, size_t sz, int type)
+int OSSL_PARAM_BLD_push_BN(OSSL_PARAM_BLD *bld, const char *key,
+                           const BIGNUM *bn)
+{
+    return OSSL_PARAM_BLD_push_BN_pad(bld, key, bn,
+                                      bn == NULL ? 0 : BN_num_bytes(bn));
+}
+
+int OSSL_PARAM_BLD_push_BN_pad(OSSL_PARAM_BLD *bld, const char *key,
+                               const BIGNUM *bn, size_t sz)
 {
     int n, secure = 0;
     OSSL_PARAM_BLD_DEF *pd;
 
-    if (!ossl_assert(type == OSSL_PARAM_UNSIGNED_INTEGER
-                     || type == OSSL_PARAM_INTEGER))
-        return 0;
-
     if (bn != NULL) {
-        if (type == OSSL_PARAM_UNSIGNED_INTEGER && BN_is_negative(bn)) {
+        if (BN_is_negative(bn)) {
             ERR_raise_data(ERR_LIB_CRYPTO, ERR_R_UNSUPPORTED,
-                           "Negative big numbers are unsupported for OSSL_PARAM_UNSIGNED_INTEGER");
+                           "Negative big numbers are unsupported for OSSL_PARAM");
             return 0;
         }
 
@@ -223,30 +228,11 @@ static int push_BN(OSSL_PARAM_BLD *bld, const char *key,
         if (sz == 0)
             sz++;
     }
-    pd = param_push(bld, key, sz, sz, type, secure);
+    pd = param_push(bld, key, sz, sz, OSSL_PARAM_UNSIGNED_INTEGER, secure);
     if (pd == NULL)
         return 0;
     pd->bn = bn;
     return 1;
-}
-
-int OSSL_PARAM_BLD_push_BN(OSSL_PARAM_BLD *bld, const char *key,
-                           const BIGNUM *bn)
-{
-    if (BN_is_negative(bn))
-        return push_BN(bld, key, bn, bn == NULL ? 0 : BN_num_bytes(bn) + 1,
-                       OSSL_PARAM_INTEGER);
-    return push_BN(bld, key, bn, bn == NULL ? 0 : BN_num_bytes(bn),
-                   OSSL_PARAM_UNSIGNED_INTEGER);
-}
-
-int OSSL_PARAM_BLD_push_BN_pad(OSSL_PARAM_BLD *bld, const char *key,
-                               const BIGNUM *bn, size_t sz)
-{
-    if (BN_is_negative(bn))
-        return push_BN(bld, key, bn, bn == NULL ? 0 : BN_num_bytes(bn),
-                       OSSL_PARAM_INTEGER);
-    return push_BN(bld, key, bn, sz, OSSL_PARAM_UNSIGNED_INTEGER);
 }
 
 int OSSL_PARAM_BLD_push_utf8_string(OSSL_PARAM_BLD *bld, const char *key,
@@ -346,10 +332,7 @@ static OSSL_PARAM *param_bld_convert(OSSL_PARAM_BLD *bld, OSSL_PARAM *param,
         param[i].data = p;
         if (pd->bn != NULL) {
             /* BIGNUM */
-            if (pd->type == OSSL_PARAM_UNSIGNED_INTEGER)
-                BN_bn2nativepad(pd->bn, (unsigned char *)p, pd->size);
-            else
-                BN_signed_bn2native(pd->bn, (unsigned char *)p, pd->size);
+            BN_bn2nativepad(pd->bn, (unsigned char *)p, pd->size);
         } else if (pd->type == OSSL_PARAM_OCTET_PTR
                    || pd->type == OSSL_PARAM_UTF8_PTR) {
             /* PTR */
@@ -392,6 +375,7 @@ OSSL_PARAM *OSSL_PARAM_BLD_to_param(OSSL_PARAM_BLD *bld)
     }
     params = OPENSSL_malloc(total);
     if (params == NULL) {
+        ERR_raise(ERR_LIB_CRYPTO, ERR_R_MALLOC_FAILURE);
         OPENSSL_secure_free(s);
         return NULL;
     }

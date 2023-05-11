@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2022 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2019-2023 The OpenSSL Project Authors. All Rights Reserved.
  * Copyright (c) 2019, Oracle and/or its affiliates.  All rights reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
@@ -1018,32 +1018,24 @@ OSSL_PARAM OSSL_PARAM_construct_time_t(const char *key, time_t *buf)
 
 int OSSL_PARAM_get_BN(const OSSL_PARAM *p, BIGNUM **val)
 {
-    BIGNUM *b = NULL;
+    BIGNUM *b;
 
     if (val == NULL || p == NULL) {
         err_null_argument;
         return 0;
     }
-
-    switch (p->data_type) {
-    case OSSL_PARAM_UNSIGNED_INTEGER:
-        b = BN_native2bn(p->data, (int)p->data_size, *val);
-        break;
-    case OSSL_PARAM_INTEGER:
-        b = BN_signed_native2bn(p->data, (int)p->data_size, *val);
-        break;
-    default:
+    if (p->data_type != OSSL_PARAM_UNSIGNED_INTEGER) {
         err_bad_type;
-        break;
-    }
-
-    if (b == NULL) {
-        ERR_raise(ERR_LIB_CRYPTO, ERR_R_BN_LIB);
         return 0;
     }
 
-    *val = b;
-    return 1;
+    b = BN_native2bn(p->data, (int)p->data_size, *val);
+    if (b != NULL) {
+        *val = b;
+        return 1;
+    }
+    ERR_raise(ERR_LIB_CRYPTO, ERR_R_MALLOC_FAILURE);
+    return 0;
 }
 
 int OSSL_PARAM_set_BN(OSSL_PARAM *p, const BIGNUM *val)
@@ -1059,15 +1051,18 @@ int OSSL_PARAM_set_BN(OSSL_PARAM *p, const BIGNUM *val)
         err_null_argument;
         return 0;
     }
-    if (p->data_type == OSSL_PARAM_UNSIGNED_INTEGER && BN_is_negative(val)) {
+    if (p->data_type != OSSL_PARAM_UNSIGNED_INTEGER) {
         err_bad_type;
         return 0;
     }
 
+    /* For the moment, only positive values are permitted */
+    if (BN_is_negative(val)) {
+        err_unsigned_negative;
+        return 0;
+    }
+
     bytes = (size_t)BN_num_bytes(val);
-    /* We add 1 byte for signed numbers, to make space for a sign extension */
-    if (p->data_type == OSSL_PARAM_INTEGER)
-        bytes++;
     /* We make sure that at least one byte is used, so zero is properly set */
     if (bytes == 0)
         bytes++;
@@ -1077,22 +1072,9 @@ int OSSL_PARAM_set_BN(OSSL_PARAM *p, const BIGNUM *val)
         return 1;
     if (p->data_size >= bytes) {
         p->return_size = p->data_size;
-
-        switch (p->data_type) {
-        case OSSL_PARAM_UNSIGNED_INTEGER:
-            if (BN_bn2nativepad(val, p->data, p->data_size) >= 0)
-                return 1;
-            ERR_raise(ERR_LIB_CRYPTO, CRYPTO_R_INTEGER_OVERFLOW);
-            break;
-        case OSSL_PARAM_INTEGER:
-            if (BN_signed_bn2native(val, p->data, p->data_size) >= 0)
-                return 1;
-            ERR_raise(ERR_LIB_CRYPTO, CRYPTO_R_INTEGER_OVERFLOW);
-            break;
-        default:
-            err_bad_type;
-            break;
-        }
+        if (BN_bn2nativepad(val, p->data, p->data_size) >= 0)
+            return 1;
+        ERR_raise(ERR_LIB_CRYPTO, CRYPTO_R_INTEGER_OVERFLOW);
         return 0;
     }
     err_too_small;
@@ -1287,8 +1269,10 @@ static int get_string_internal(const OSSL_PARAM *p, void **val,
     if (*val == NULL) {
         char *const q = OPENSSL_malloc(alloc_sz);
 
-        if (q == NULL)
+        if (q == NULL) {
+            ERR_raise(ERR_LIB_CRYPTO, ERR_R_MALLOC_FAILURE);
             return 0;
+        }
         *val = q;
         *max_len = alloc_sz;
     }
