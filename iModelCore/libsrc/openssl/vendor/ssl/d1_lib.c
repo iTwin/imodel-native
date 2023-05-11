@@ -193,7 +193,11 @@ int dtls1_clear(SSL *s)
         return 0;
 
     if (s->method->version == DTLS_ANY_VERSION)
+<<<<<<< HEAD
         s->version = DTLS_MAX_VERSION;
+=======
+        s->version = DTLS_MAX_VERSION_INTERNAL;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 #ifndef OPENSSL_NO_DTLS1_METHOD
     else if (s->options & SSL_OP_CISCO_ANYCONNECT)
         s->client_version = s->version = DTLS1_BAD_VER;
@@ -352,7 +356,11 @@ static void dtls1_double_timeout(SSL *s)
 void dtls1_stop_timer(SSL *s)
 {
     /* Reset everything */
+<<<<<<< HEAD
     memset(&s->d1->timeout, 0, sizeof(s->d1->timeout));
+=======
+    s->d1->timeout_num_alerts = 0;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     memset(&s->d1->next_timeout, 0, sizeof(s->d1->next_timeout));
     s->d1->timeout_duration_us = 1000000;
     BIO_ctrl(SSL_get_rbio(s), BIO_CTRL_DGRAM_SET_NEXT_TIMEOUT, 0,
@@ -368,7 +376,11 @@ int dtls1_check_timeout_num(SSL *s)
     s->d1->timeout.num_alerts++;
 
     /* Reduce MTU after 2 unsuccessful retransmissions */
+<<<<<<< HEAD
     if (s->d1->timeout.num_alerts > 2
+=======
+    if (s->d1->timeout_num_alerts > 2
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         && !(SSL_get_options(s) & SSL_OP_NO_QUERY_MTU)) {
         mtu =
             BIO_ctrl(SSL_get_wbio(s), BIO_CTRL_DGRAM_GET_FALLBACK_MTU, 0, NULL);
@@ -488,7 +500,11 @@ int DTLSv1_listen(SSL *s, BIO_ADDR *client)
     }
 
     if (!ssl3_setup_buffers(s)) {
+<<<<<<< HEAD
         /* SSLerr already called */
+=======
+        /* ERR_raise() already called */
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return -1;
     }
     buf = RECORD_LAYER_get_rbuf(&s->rlayer)->buf;
@@ -522,7 +538,11 @@ int DTLSv1_listen(SSL *s, BIO_ADDR *client)
         }
 
         if (!PACKET_buf_init(&pkt, buf, n)) {
+<<<<<<< HEAD
             SSLerr(SSL_F_DTLSV1_LISTEN, ERR_R_INTERNAL_ERROR);
+=======
+            ERR_raise(ERR_LIB_SSL, ERR_R_INTERNAL_ERROR);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return -1;
         }
 
@@ -639,7 +659,11 @@ int DTLSv1_listen(SSL *s, BIO_ADDR *client)
          */
         if (DTLS_VERSION_LT(clientvers, (unsigned int)s->method->version) &&
             s->method->version != DTLS_ANY_VERSION) {
+<<<<<<< HEAD
             SSLerr(SSL_F_DTLSV1_LISTEN, SSL_R_WRONG_VERSION_NUMBER);
+=======
+            ERR_raise(ERR_LIB_SSL, SSL_R_WRONG_VERSION_NUMBER);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             goto end;
         }
 
@@ -665,7 +689,11 @@ int DTLSv1_listen(SSL *s, BIO_ADDR *client)
              * We have a cookie, so lets check it.
              */
             if (s->ctx->app_verify_cookie_cb == NULL) {
+<<<<<<< HEAD
                 SSLerr(SSL_F_DTLSV1_LISTEN, SSL_R_NO_VERIFY_COOKIE_CALLBACK);
+=======
+                ERR_raise(ERR_LIB_SSL, SSL_R_NO_VERIFY_COOKIE_CALLBACK);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                 /* This is fatal */
                 return -1;
             }
@@ -782,7 +810,11 @@ int DTLSv1_listen(SSL *s, BIO_ADDR *client)
                                 DTLS1_RT_HEADER_LENGTH, s, s->msg_callback_arg);
 
             if ((tmpclient = BIO_ADDR_new()) == NULL) {
+<<<<<<< HEAD
                 SSLerr(SSL_F_DTLSV1_LISTEN, ERR_R_MALLOC_FAILURE);
+=======
+                ERR_raise(ERR_LIB_SSL, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                 goto end;
             }
 

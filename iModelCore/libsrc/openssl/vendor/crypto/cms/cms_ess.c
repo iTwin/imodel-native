@@ -59,7 +59,12 @@ CMS_ReceiptRequest *CMS_ReceiptRequest_create0(unsigned char *id, int idlen,
     else {
         if (!ASN1_STRING_set(rr->signedContentIdentifier, NULL, 32))
             goto merr;
+<<<<<<< HEAD
         if (RAND_bytes(rr->signedContentIdentifier->data, 32) <= 0)
+=======
+        if (RAND_bytes_ex(libctx, rr->signedContentIdentifier->data, 32,
+                          0) <= 0)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             goto err;
     }
 
@@ -77,7 +82,11 @@ CMS_ReceiptRequest *CMS_ReceiptRequest_create0(unsigned char *id, int idlen,
     return rr;
 
  merr:
+<<<<<<< HEAD
     CMSerr(CMS_F_CMS_RECEIPTREQUEST_CREATE0, ERR_R_MALLOC_FAILURE);
+=======
+    ERR_raise(ERR_LIB_CMS, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
  err:
     CMS_ReceiptRequest_free(rr);
@@ -102,7 +111,11 @@ int CMS_add1_ReceiptRequest(CMS_SignerInfo *si, CMS_ReceiptRequest *rr)
 
  merr:
     if (!r)
+<<<<<<< HEAD
         CMSerr(CMS_F_CMS_ADD1_RECEIPTREQUEST, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_CMS, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
     OPENSSL_free(rrder);
 
@@ -160,7 +173,11 @@ int cms_msgSigDigest_add1(CMS_SignerInfo *dest, CMS_SignerInfo *src)
     }
     if (!CMS_signed_add1_attr_by_NID(dest, NID_id_smime_aa_msgSigDigest,
                                      V_ASN1_OCTET_STRING, dig, diglen)) {
+<<<<<<< HEAD
         CMSerr(CMS_F_CMS_MSGSIGDIGEST_ADD1, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_CMS, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
     return 1;

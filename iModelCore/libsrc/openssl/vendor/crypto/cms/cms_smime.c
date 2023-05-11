@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright 2008-2020 The OpenSSL Project Authors. All Rights Reserved.
+=======
+ * Copyright 2008-2023 The OpenSSL Project Authors. All Rights Reserved.
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -38,7 +42,11 @@ static int cms_copy_content(BIO *out, BIO *in, unsigned int flags)
     tmpout = cms_get_text_bio(out, flags);
 
     if (tmpout == NULL) {
+<<<<<<< HEAD
         CMSerr(CMS_F_CMS_COPY_CONTENT, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_CMS, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 
@@ -227,19 +235,33 @@ CMS_ContentInfo *CMS_EncryptedData_encrypt(BIO *in, const EVP_CIPHER *cipher,
 static int cms_signerinfo_verify_cert(CMS_SignerInfo *si,
                                       X509_STORE *store,
                                       STACK_OF(X509) *certs,
+<<<<<<< HEAD
                                       STACK_OF(X509_CRL) *crls)
+=======
+                                      STACK_OF(X509_CRL) *crls,
+                                      STACK_OF(X509) **chain,
+                                      const CMS_CTX *cms_ctx)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 {
     X509_STORE_CTX *ctx = X509_STORE_CTX_new();
     X509 *signer;
     int i, j, r = 0;
 
     if (ctx == NULL) {
+<<<<<<< HEAD
         CMSerr(CMS_F_CMS_SIGNERINFO_VERIFY_CERT, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_CMS, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
     CMS_SignerInfo_get0_algs(si, NULL, &signer, NULL, NULL);
     if (!X509_STORE_CTX_init(ctx, store, signer, certs)) {
+<<<<<<< HEAD
         CMSerr(CMS_F_CMS_SIGNERINFO_VERIFY_CERT, CMS_R_STORE_INIT_ERROR);
+=======
+        ERR_raise(ERR_LIB_CMS, CMS_R_STORE_INIT_ERROR);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
     X509_STORE_CTX_set_default(ctx, "smime_sign");
@@ -307,7 +329,19 @@ int CMS_verify(CMS_ContentInfo *cms, STACK_OF(X509) *certs,
 
     /* Attempt to verify all signers certs */
 
+<<<<<<< HEAD
     if (!(flags & CMS_NO_SIGNER_CERT_VERIFY)) {
+=======
+    if ((flags & CMS_NO_SIGNER_CERT_VERIFY) == 0 || cadesVerify) {
+        if (cadesVerify) {
+            /* Certificate trust chain is required to check CAdES signature */
+            si_chains = OPENSSL_zalloc(scount * sizeof(si_chains[0]));
+            if (si_chains == NULL) {
+                ERR_raise(ERR_LIB_CMS, ERR_R_MALLOC_FAILURE);
+                goto err;
+            }
+        }
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         cms_certs = CMS_get1_certs(cms);
         if (!(flags & CMS_NOCRL))
             crls = CMS_get1_crls(cms);
@@ -343,7 +377,11 @@ int CMS_verify(CMS_ContentInfo *cms, STACK_OF(X509) *certs,
         len = BIO_get_mem_data(dcont, &ptr);
         tmpin = (len == 0) ? dcont : BIO_new_mem_buf(ptr, len);
         if (tmpin == NULL) {
+<<<<<<< HEAD
             CMSerr(CMS_F_CMS_VERIFY, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_CMS, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             goto err2;
         }
     } else
@@ -358,8 +396,13 @@ int CMS_verify(CMS_ContentInfo *cms, STACK_OF(X509) *certs,
          * included content doesn't override detached content.
          */
         tmpout = cms_get_text_bio(out, flags);
+<<<<<<< HEAD
         if (!tmpout) {
             CMSerr(CMS_F_CMS_VERIFY, ERR_R_MALLOC_FAILURE);
+=======
+        if (tmpout == NULL) {
+            ERR_raise(ERR_LIB_CMS, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             goto err;
         }
         cmsbio = CMS_dataInit(cms, tmpout);
@@ -414,6 +457,14 @@ int CMS_verify(CMS_ContentInfo *cms, STACK_OF(X509) *certs,
         BIO_free_all(tmpout);
 
  err2:
+<<<<<<< HEAD
+=======
+    if (si_chains != NULL) {
+        for (i = 0; i < scount; ++i)
+            sk_X509_pop_free(si_chains[i], X509_free);
+        OPENSSL_free(si_chains);
+    }
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     sk_X509_pop_free(cms_certs, X509_free);
     sk_X509_CRL_pop_free(crls, X509_CRL_free);
 
@@ -439,7 +490,11 @@ CMS_ContentInfo *CMS_sign(X509 *signcert, EVP_PKEY *pkey,
     CMS_ContentInfo *cms;
     int i;
 
+<<<<<<< HEAD
     cms = CMS_ContentInfo_new();
+=======
+    cms = CMS_ContentInfo_new_ex(libctx, propq);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     if (cms == NULL || !CMS_SignedData_init(cms))
         goto merr;
     if (flags & CMS_ASCIICRLF
@@ -454,6 +509,10 @@ CMS_ContentInfo *CMS_sign(X509 *signcert, EVP_PKEY *pkey,
 
     for (i = 0; i < sk_X509_num(certs); i++) {
         X509 *x = sk_X509_value(certs, i);
+<<<<<<< HEAD
+=======
+
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         if (!CMS_add1_cert(cms, x))
             goto merr;
     }
@@ -468,7 +527,11 @@ CMS_ContentInfo *CMS_sign(X509 *signcert, EVP_PKEY *pkey,
         goto err;
 
  merr:
+<<<<<<< HEAD
     CMSerr(CMS_F_CMS_SIGN, ERR_R_MALLOC_FAILURE);
+=======
+    ERR_raise(ERR_LIB_CMS, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
  err:
     CMS_ContentInfo_free(cms);
@@ -549,8 +612,17 @@ CMS_ContentInfo *CMS_encrypt(STACK_OF(X509) *certs, BIO *data,
     CMS_ContentInfo *cms;
     int i;
     X509 *recip;
+<<<<<<< HEAD
     cms = CMS_EnvelopedData_create(cipher);
     if (!cms)
+=======
+
+
+    cms = (EVP_CIPHER_get_flags(cipher) & EVP_CIPH_FLAG_AEAD_CIPHER)
+          ? CMS_AuthEnvelopedData_create_ex(cipher, libctx, propq)
+          : CMS_EnvelopedData_create_ex(cipher, libctx, propq);
+    if (cms == NULL)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto merr;
     for (i = 0; i < sk_X509_num(certs); i++) {
         recip = sk_X509_value(certs, i);
@@ -570,7 +642,11 @@ CMS_ContentInfo *CMS_encrypt(STACK_OF(X509) *certs, BIO *data,
         goto err;
 
  merr:
+<<<<<<< HEAD
     CMSerr(CMS_F_CMS_ENCRYPT, ERR_R_MALLOC_FAILURE);
+=======
+    ERR_raise(ERR_LIB_CMS, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  err:
     CMS_ContentInfo_free(cms);
     return NULL;

@@ -7,9 +7,68 @@
  * https://www.openssl.org/source/license.html
  */
 
+<<<<<<< HEAD
 #include "internal/constant_time.h"
 #include "ssl_local.h"
 #include "internal/cryptlib.h"
+=======
+/*
+ * This file has no dependencies on the rest of libssl because it is shared
+ * with the providers. It contains functions for low level MAC calculations.
+ * Responsibility for this lies with the HMAC implementation in the
+ * providers. However there are legacy code paths in libssl which also need to
+ * do this. In time those legacy code paths can be removed and this file can be
+ * moved out of libssl.
+ */
+
+
+/*
+ * MD5 and SHA-1 low level APIs are deprecated for public use, but still ok for
+ * internal use.
+ */
+#include "internal/deprecated.h"
+
+#include "internal/constant_time.h"
+#include "internal/cryptlib.h"
+
+#include <openssl/evp.h>
+#ifndef FIPS_MODULE
+# include <openssl/md5.h>
+#endif
+#include <openssl/sha.h>
+
+char ssl3_cbc_record_digest_supported(const EVP_MD_CTX *ctx);
+int ssl3_cbc_digest_record(const EVP_MD *md,
+                           unsigned char *md_out,
+                           size_t *md_out_size,
+                           const unsigned char *header,
+                           const unsigned char *data,
+                           size_t data_size,
+                           size_t data_plus_mac_plus_padding_size,
+                           const unsigned char *mac_secret,
+                           size_t mac_secret_length, char is_sslv3);
+
+# define l2n(l,c)        (*((c)++)=(unsigned char)(((l)>>24)&0xff), \
+                         *((c)++)=(unsigned char)(((l)>>16)&0xff), \
+                         *((c)++)=(unsigned char)(((l)>> 8)&0xff), \
+                         *((c)++)=(unsigned char)(((l)    )&0xff))
+
+# define l2n6(l,c)       (*((c)++)=(unsigned char)(((l)>>40)&0xff), \
+                         *((c)++)=(unsigned char)(((l)>>32)&0xff), \
+                         *((c)++)=(unsigned char)(((l)>>24)&0xff), \
+                         *((c)++)=(unsigned char)(((l)>>16)&0xff), \
+                         *((c)++)=(unsigned char)(((l)>> 8)&0xff), \
+                         *((c)++)=(unsigned char)(((l)    )&0xff))
+
+# define l2n8(l,c)       (*((c)++)=(unsigned char)(((l)>>56)&0xff), \
+                         *((c)++)=(unsigned char)(((l)>>48)&0xff), \
+                         *((c)++)=(unsigned char)(((l)>>40)&0xff), \
+                         *((c)++)=(unsigned char)(((l)>>32)&0xff), \
+                         *((c)++)=(unsigned char)(((l)>>24)&0xff), \
+                         *((c)++)=(unsigned char)(((l)>>16)&0xff), \
+                         *((c)++)=(unsigned char)(((l)>> 8)&0xff), \
+                         *((c)++)=(unsigned char)(((l)    )&0xff))
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
 #include <openssl/md5.h>
 #include <openssl/sha.h>
@@ -31,11 +90,19 @@
  * u32toLE serialises an unsigned, 32-bit number (n) as four bytes at (p) in
  * little-endian order. The value of p is advanced by four.
  */
+<<<<<<< HEAD
 #define u32toLE(n, p) \
         (*((p)++)=(unsigned char)(n), \
          *((p)++)=(unsigned char)(n>>8), \
          *((p)++)=(unsigned char)(n>>16), \
          *((p)++)=(unsigned char)(n>>24))
+=======
+# define u32toLE(n, p) \
+         (*((p)++)=(unsigned char)(n), \
+          *((p)++)=(unsigned char)(n>>8), \
+          *((p)++)=(unsigned char)(n>>16), \
+          *((p)++)=(unsigned char)(n>>24))
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
 /*
  * These functions serialize the state of a hash and thus perform the
@@ -195,16 +262,24 @@ int ssl3_cbc_digest_record(const EVP_MD_CTX *ctx,
         md_transform =
             (void (*)(void *ctx, const unsigned char *block))SHA256_Transform;
         md_size = 224 / 8;
+<<<<<<< HEAD
         break;
     case NID_sha256:
+=======
+     } else if (EVP_MD_is_a(md, "SHA2-256")) {
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         if (SHA256_Init((SHA256_CTX *)md_state.c) <= 0)
             return 0;
         md_final_raw = tls1_sha256_final_raw;
         md_transform =
             (void (*)(void *ctx, const unsigned char *block))SHA256_Transform;
         md_size = 32;
+<<<<<<< HEAD
         break;
     case NID_sha384:
+=======
+     } else if (EVP_MD_is_a(md, "SHA2-384")) {
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         if (SHA384_Init((SHA512_CTX *)md_state.c) <= 0)
             return 0;
         md_final_raw = tls1_sha512_final_raw;
@@ -455,7 +530,12 @@ int ssl3_cbc_digest_record(const EVP_MD_CTX *ctx,
     md_ctx = EVP_MD_CTX_new();
     if (md_ctx == NULL)
         goto err;
+<<<<<<< HEAD
     if (EVP_DigestInit_ex(md_ctx, EVP_MD_CTX_md(ctx), NULL /* engine */ ) <= 0)
+=======
+
+    if (EVP_DigestInit_ex(md_ctx, md, NULL /* engine */ ) <= 0)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     if (is_sslv3) {
         /* We repurpose |hmac_pad| to contain the SSLv3 pad2 block. */

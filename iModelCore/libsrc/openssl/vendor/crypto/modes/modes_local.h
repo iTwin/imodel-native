@@ -144,6 +144,15 @@ struct gcm128_context {
 #endif
 };
 
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/modes/modes_local.h
+=======
+/*
+ * The maximum permitted number of cipher blocks per data unit in XTS mode.
+ * Reference IEEE Std 1619-2018.
+ */
+#define XTS_MAX_BLOCKS_PER_DATA_UNIT            (1<<20)
+
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/include/crypto/modes.h
 struct xts128_context {
     void *key1, *key2;
     block128_f block1, block2;

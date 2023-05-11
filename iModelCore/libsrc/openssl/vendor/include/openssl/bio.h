@@ -55,6 +55,10 @@ extern "C" {
 # ifndef OPENSSL_NO_SCTP
 #  define BIO_TYPE_DGRAM_SCTP    (24|BIO_TYPE_SOURCE_SINK|BIO_TYPE_DESCRIPTOR)
 # endif
+<<<<<<< HEAD
+=======
+# define BIO_TYPE_CORE_TO_PROV   (25|BIO_TYPE_SOURCE_SINK)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
 #define BIO_TYPE_START           128
 
@@ -141,6 +145,37 @@ extern "C" {
 
 # define BIO_CTRL_DGRAM_SET_PEEK_MODE      71
 
+<<<<<<< HEAD
+=======
+/*
+ * internal BIO:
+ * # define BIO_CTRL_SET_KTLS_SEND                 72
+ * # define BIO_CTRL_SET_KTLS_SEND_CTRL_MSG        74
+ * # define BIO_CTRL_CLEAR_KTLS_CTRL_MSG           75
+ */
+
+# define BIO_CTRL_GET_KTLS_SEND                 73
+# define BIO_CTRL_GET_KTLS_RECV                 76
+
+# define BIO_CTRL_DGRAM_SCTP_WAIT_FOR_DRY       77
+# define BIO_CTRL_DGRAM_SCTP_MSG_WAITING        78
+
+/* BIO_f_prefix controls */
+# define BIO_CTRL_SET_PREFIX                    79
+# define BIO_CTRL_SET_INDENT                    80
+# define BIO_CTRL_GET_INDENT                    81
+
+# ifndef OPENSSL_NO_KTLS
+#  define BIO_get_ktls_send(b)         \
+     (BIO_ctrl(b, BIO_CTRL_GET_KTLS_SEND, 0, NULL) > 0)
+#  define BIO_get_ktls_recv(b)         \
+     (BIO_ctrl(b, BIO_CTRL_GET_KTLS_RECV, 0, NULL) > 0)
+# else
+#  define BIO_get_ktls_send(b)  (0)
+#  define BIO_get_ktls_recv(b)  (0)
+# endif
+
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 /* modifiers */
 # define BIO_FP_READ             0x02
 # define BIO_FP_WRITE            0x04
@@ -171,6 +206,11 @@ extern "C" {
 # define BIO_FLAGS_NONCLEAR_RST  0x400
 # define BIO_FLAGS_IN_EOF        0x800
 
+<<<<<<< HEAD
+=======
+/* the BIO FLAGS values 0x1000 to 0x4000 are reserved for internal KTLS flags */
+
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 typedef union bio_addr_st BIO_ADDR;
 typedef struct bio_addrinfo_st BIO_ADDRINFO;
 
@@ -523,6 +563,14 @@ int BIO_ctrl_reset_read_request(BIO *b);
          (int)BIO_ctrl(b, BIO_CTRL_DGRAM_SET_PEER, 0, (char *)(peer))
 # define BIO_dgram_get_mtu_overhead(b) \
          (unsigned int)BIO_ctrl((b), BIO_CTRL_DGRAM_GET_MTU_OVERHEAD, 0, NULL)
+<<<<<<< HEAD
+=======
+
+/* ctrl macros for BIO_f_prefix */
+# define BIO_set_prefix(b,p) BIO_ctrl((b), BIO_CTRL_SET_PREFIX, 0, (void *)(p))
+# define BIO_set_indent(b,i) BIO_ctrl((b), BIO_CTRL_SET_INDENT, (i), NULL)
+# define BIO_get_indent(b) BIO_ctrl((b), BIO_CTRL_GET_INDENT, 0, NULL)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
 #define BIO_get_ex_new_index(l, p, newf, dupf, freef) \
     CRYPTO_get_ex_new_index(CRYPTO_EX_INDEX_BIO, l, p, newf, dupf, freef)
@@ -623,6 +671,10 @@ int BIO_dgram_sctp_msg_waiting(BIO *b);
 # ifndef OPENSSL_NO_SOCK
 int BIO_sock_should_retry(int i);
 int BIO_sock_non_fatal_error(int error);
+<<<<<<< HEAD
+=======
+int BIO_socket_wait(int fd, int for_read, time_t max_time);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 # endif
 
 int BIO_fd_should_retry(int i);

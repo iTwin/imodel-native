@@ -587,8 +587,13 @@ static int asn1_template_noexp_d2i(ASN1_VALUE **val,
             }
         }
 
+<<<<<<< HEAD
         if (!*val) {
             ASN1err(ASN1_F_ASN1_TEMPLATE_NOEXP_D2I, ERR_R_MALLOC_FAILURE);
+=======
+        if (*val == NULL) {
+            ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             goto err;
         }
 
@@ -619,7 +624,11 @@ static int asn1_template_noexp_d2i(ASN1_VALUE **val,
             }
             len -= p - q;
             if (!sk_ASN1_VALUE_push((STACK_OF(ASN1_VALUE) *)*val, skfield)) {
+<<<<<<< HEAD
                 ASN1err(ASN1_F_ASN1_TEMPLATE_NOEXP_D2I, ERR_R_MALLOC_FAILURE);
+=======
+                ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                 ASN1_item_free(skfield, ASN1_ITEM_ptr(tt->item));
                 goto err;
             }
@@ -764,7 +773,11 @@ static int asn1_d2i_ex_primitive(ASN1_VALUE **pval,
         len = buf.length;
         /* Append a final null to string */
         if (!BUF_MEM_grow_clean(&buf, len + 1)) {
+<<<<<<< HEAD
             ASN1err(ASN1_F_ASN1_D2I_EX_PRIMITIVE, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             goto err;
         }
         buf.data[len] = 0;
@@ -888,7 +901,11 @@ static int asn1_ex_c2i(ASN1_VALUE **pval, const unsigned char *cont, int len,
         if (!*pval) {
             stmp = ASN1_STRING_type_new(utype);
             if (stmp == NULL) {
+<<<<<<< HEAD
                 ASN1err(ASN1_F_ASN1_EX_C2I, ERR_R_MALLOC_FAILURE);
+=======
+                ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                 goto err;
             }
             *pval = (ASN1_VALUE *)stmp;
@@ -904,7 +921,11 @@ static int asn1_ex_c2i(ASN1_VALUE **pval, const unsigned char *cont, int len,
             *free_cont = 0;
         } else {
             if (!ASN1_STRING_set(stmp, cont, len)) {
+<<<<<<< HEAD
                 ASN1err(ASN1_F_ASN1_EX_C2I, ERR_R_MALLOC_FAILURE);
+=======
+                ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                 ASN1_STRING_free(stmp);
                 *pval = NULL;
                 goto err;
@@ -1063,7 +1084,11 @@ static int collect_data(BUF_MEM *buf, const unsigned char **p, long plen)
     if (buf) {
         len = buf->length;
         if (!BUF_MEM_grow_clean(buf, len + plen)) {
+<<<<<<< HEAD
             ASN1err(ASN1_F_COLLECT_DATA, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return 0;
         }
         memcpy(buf->data + len, *p, plen);

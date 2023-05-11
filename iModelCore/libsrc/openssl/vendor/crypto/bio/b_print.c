@@ -824,7 +824,11 @@ doapr_outch(char **sbuffer,
         *maxlen += BUFFER_INC;
         if (*buffer == NULL) {
             if ((*buffer = OPENSSL_malloc(*maxlen)) == NULL) {
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/bio/b_print.c
                 BIOerr(BIO_F_DOAPR_OUTCH, ERR_R_MALLOC_FAILURE);
+=======
+                ERR_raise(ERR_LIB_BIO, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/bio/bio_print.c
                 return 0;
             }
             if (*currlen > 0) {
@@ -836,8 +840,10 @@ doapr_outch(char **sbuffer,
         } else {
             char *tmpbuf;
             tmpbuf = OPENSSL_realloc(*buffer, *maxlen);
-            if (tmpbuf == NULL)
+            if (tmpbuf == NULL) {
+                ERR_raise(ERR_LIB_BIO, ERR_R_MALLOC_FAILURE);
                 return 0;
+            }
             *buffer = tmpbuf;
         }
     }

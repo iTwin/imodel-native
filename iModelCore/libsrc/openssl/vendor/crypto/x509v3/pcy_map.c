@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/pcy_map.c
  * Copyright 2004-2016 The OpenSSL Project Authors. All Rights Reserved.
+=======
+ * Copyright 2004-2022 The OpenSSL Project Authors. All Rights Reserved.
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/pcy_map.c
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy

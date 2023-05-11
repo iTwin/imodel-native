@@ -3025,8 +3025,13 @@ static EC_GROUP *ec_group_new_from_data(const ec_list_element curve)
     if (curve.data == NULL)
         return EC_GROUP_new(curve.meth != NULL ? curve.meth() : NULL);
 
+<<<<<<< HEAD
     if ((ctx = BN_CTX_new()) == NULL) {
         ECerr(EC_F_EC_GROUP_NEW_FROM_DATA, ERR_R_MALLOC_FAILURE);
+=======
+    if ((ctx = BN_CTX_new_ex(libctx)) == NULL) {
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 

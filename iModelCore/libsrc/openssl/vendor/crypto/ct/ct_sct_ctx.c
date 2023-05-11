@@ -24,8 +24,25 @@ SCT_CTX *SCT_CTX_new(void)
 {
     SCT_CTX *sctx = OPENSSL_zalloc(sizeof(*sctx));
 
+<<<<<<< HEAD
     if (sctx == NULL)
         CTerr(CT_F_SCT_CTX_NEW, ERR_R_MALLOC_FAILURE);
+=======
+    if (sctx == NULL) {
+        ERR_raise(ERR_LIB_CT, ERR_R_MALLOC_FAILURE);
+        return NULL;
+    }
+
+    sctx->libctx = libctx;
+    if (propq != NULL) {
+        sctx->propq = OPENSSL_strdup(propq);
+        if (sctx->propq == NULL) {
+            ERR_raise(ERR_LIB_CT, ERR_R_MALLOC_FAILURE);
+            OPENSSL_free(sctx);
+            return NULL;
+        }
+    }
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
     return sctx;
 }

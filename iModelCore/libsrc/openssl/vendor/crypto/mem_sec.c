@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright 2015-2020 The OpenSSL Project Authors. All Rights Reserved.
+=======
+ * Copyright 2015-2023 The OpenSSL Project Authors. All Rights Reserved.
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  * Copyright 2004-2014, Akamai Technologies. All Rights Reserved.
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
@@ -119,14 +123,23 @@ int CRYPTO_secure_malloc_initialized(void)
 
 void *CRYPTO_secure_malloc(size_t num, const char *file, int line)
 {
+<<<<<<< HEAD
 #ifdef OPENSSL_SECURE_MEMORY
+=======
+#ifndef OPENSSL_NO_SECURE_MEMORY
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     void *ret;
     size_t actual_size;
 
     if (!secure_mem_initialized) {
         return CRYPTO_malloc(num, file, line);
     }
+<<<<<<< HEAD
     CRYPTO_THREAD_write_lock(sec_malloc_lock);
+=======
+    if (!CRYPTO_THREAD_write_lock(sec_malloc_lock))
+        return NULL;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     ret = sh_malloc(num);
     actual_size = ret ? sh_actual_size(ret) : 0;
     secure_mem_used += actual_size;

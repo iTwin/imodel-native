@@ -89,6 +89,10 @@ static int pkey_rsa_copy(EVP_PKEY_CTX *dst, EVP_PKEY_CTX *src)
     dctx->pad_mode = sctx->pad_mode;
     dctx->md = sctx->md;
     dctx->mgf1md = sctx->mgf1md;
+<<<<<<< HEAD
+=======
+    dctx->saltlen = sctx->saltlen;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     if (sctx->oaep_label) {
         OPENSSL_free(dctx->oaep_label);
         dctx->oaep_label = OPENSSL_memdup(sctx->oaep_label, sctx->oaep_labellen);
@@ -103,8 +107,14 @@ static int setup_tbuf(RSA_PKEY_CTX *ctx, EVP_PKEY_CTX *pk)
 {
     if (ctx->tbuf != NULL)
         return 1;
+<<<<<<< HEAD
     if ((ctx->tbuf = OPENSSL_malloc(EVP_PKEY_size(pk->pkey))) == NULL) {
         RSAerr(RSA_F_SETUP_TBUF, ERR_R_MALLOC_FAILURE);
+=======
+    if ((ctx->tbuf =
+            OPENSSL_malloc(RSA_size(EVP_PKEY_get0_RSA(pk->pkey)))) == NULL) {
+        ERR_raise(ERR_LIB_RSA, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
     return 1;
@@ -151,7 +161,11 @@ static int pkey_rsa_sign(EVP_PKEY_CTX *ctx, unsigned char *sig,
                 return -1;
             }
             if (!setup_tbuf(rctx, ctx)) {
+<<<<<<< HEAD
                 RSAerr(RSA_F_PKEY_RSA_SIGN, ERR_R_MALLOC_FAILURE);
+=======
+                ERR_raise(ERR_LIB_RSA, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                 return -1;
             }
             memcpy(rctx->tbuf, tbs, tbslen);
@@ -339,8 +353,12 @@ static int pkey_rsa_decrypt(EVP_PKEY_CTX *ctx,
                                                 rctx->oaep_labellen,
                                                 rctx->md, rctx->mgf1md);
     } else {
+<<<<<<< HEAD
         ret = RSA_private_decrypt(inlen, in, out, ctx->pkey->pkey.rsa,
                                   rctx->pad_mode);
+=======
+        ret = RSA_private_decrypt(inlen, in, out, rsa, rctx->pad_mode);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     }
     *outlen = constant_time_select_s(constant_time_msb_s(ret), *outlen, ret);
     ret = constant_time_select_int(constant_time_msb(ret), ret, 1);

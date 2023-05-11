@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright 1995-2016 The OpenSSL Project Authors. All Rights Reserved.
+=======
+ * Copyright 1995-2022 The OpenSSL Project Authors. All Rights Reserved.
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -49,9 +53,20 @@ static int encode_pkcs1(unsigned char **out, int *out_len, int type,
                RSA_R_THE_ASN1_OBJECT_IDENTIFIER_IS_NOT_KNOWN_FOR_THIS_MD);
         return 0;
     }
+<<<<<<< HEAD
     parameter.type = V_ASN1_NULL;
     parameter.value.ptr = NULL;
     sig.algor->parameter = &parameter;
+=======
+    dig_info_len = di_prefix_len + m_len;
+    dig_info = OPENSSL_malloc(dig_info_len);
+    if (dig_info == NULL) {
+        ERR_raise(ERR_LIB_RSA, ERR_R_MALLOC_FAILURE);
+        return 0;
+    }
+    memcpy(dig_info, di_prefix, di_prefix_len);
+    memcpy(dig_info + di_prefix_len, m, m_len);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
     sig.digest = &digest;
     sig.digest->data = (unsigned char *)m;
@@ -136,6 +151,7 @@ int int_rsa_verify(int type, const unsigned char *m, unsigned int m_len,
     /* Recover the encoded digest. */
     decrypt_buf = OPENSSL_malloc(siglen);
     if (decrypt_buf == NULL) {
+<<<<<<< HEAD
         RSAerr(RSA_F_INT_RSA_VERIFY, ERR_R_MALLOC_FAILURE);
         goto err;
     }
@@ -143,7 +159,11 @@ int int_rsa_verify(int type, const unsigned char *m, unsigned int m_len,
     decrypt_len = RSA_public_decrypt((int)siglen, sigbuf, decrypt_buf, rsa,
                                      RSA_PKCS1_PADDING);
     if (decrypt_len <= 0)
+=======
+        ERR_raise(ERR_LIB_RSA, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
+    }
 
     if (type == NID_md5_sha1) {
         /*

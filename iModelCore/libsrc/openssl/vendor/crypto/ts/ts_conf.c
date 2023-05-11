@@ -71,8 +71,18 @@ STACK_OF(X509) *TS_CONF_load_certs(const char *file)
     allcerts = PEM_X509_INFO_read_bio(certs, NULL, NULL, NULL);
     for (i = 0; i < sk_X509_INFO_num(allcerts); i++) {
         X509_INFO *xi = sk_X509_INFO_value(allcerts, i);
+<<<<<<< HEAD
         if (xi->x509) {
             sk_X509_push(othercerts, xi->x509);
+=======
+
+        if (xi->x509 != NULL) {
+            if (!X509_add_cert(othercerts, xi->x509, X509_ADD_FLAG_DEFAULT)) {
+                sk_X509_pop_free(othercerts, X509_free);
+                othercerts = NULL;
+                goto end;
+            }
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             xi->x509 = NULL;
         }
     }

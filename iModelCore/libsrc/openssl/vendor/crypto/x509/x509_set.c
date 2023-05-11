@@ -61,7 +61,11 @@ int X509_set_subject_name(X509 *x, X509_NAME *name)
     return X509_NAME_set(&x->cert_info.subject, name);
 }
 
+<<<<<<< HEAD
 int x509_set1_time(ASN1_TIME **ptm, const ASN1_TIME *tm)
+=======
+int ossl_x509_set1_time(ASN1_TIME **ptm, const ASN1_TIME *tm)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 {
     ASN1_TIME *in;
     in = *ptm;
@@ -79,14 +83,22 @@ int X509_set1_notBefore(X509 *x, const ASN1_TIME *tm)
 {
     if (x == NULL)
         return 0;
+<<<<<<< HEAD
     return x509_set1_time(&x->cert_info.validity.notBefore, tm);
+=======
+    return ossl_x509_set1_time(&x->cert_info.validity.notBefore, tm);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 }
 
 int X509_set1_notAfter(X509 *x, const ASN1_TIME *tm)
 {
     if (x == NULL)
         return 0;
+<<<<<<< HEAD
     return x509_set1_time(&x->cert_info.validity.notAfter, tm);
+=======
+    return ossl_x509_set1_time(&x->cert_info.validity.notAfter, tm);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 }
 
 int X509_set_pubkey(X509 *x, EVP_PKEY *pkey)

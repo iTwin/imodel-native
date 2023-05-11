@@ -196,8 +196,15 @@ static int slg_write(BIO *b, const char *in, int inl)
         /* The default */
     };
 
+<<<<<<< HEAD
     if ((buf = OPENSSL_malloc(inl + 1)) == NULL) {
         BIOerr(BIO_F_SLG_WRITE, ERR_R_MALLOC_FAILURE);
+=======
+    if (inl < 0)
+        return 0;
+    if ((buf = OPENSSL_malloc(inl + 1)) == NULL) {
+        ERR_raise(ERR_LIB_BIO, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
     memcpy(buf, in, inl);

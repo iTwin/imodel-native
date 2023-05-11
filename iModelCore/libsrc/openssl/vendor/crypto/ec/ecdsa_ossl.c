@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright 2002-2019 The OpenSSL Project Authors. All Rights Reserved.
+=======
+ * Copyright 2002-2023 The OpenSSL Project Authors. All Rights Reserved.
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -13,6 +17,53 @@
 #include <openssl/rand.h>
 #include "crypto/bn.h"
 #include "ec_local.h"
+<<<<<<< HEAD
+=======
+
+#define MIN_ECDSA_SIGN_ORDERBITS 64
+/*
+ * It is highly unlikely that a retry will happen,
+ * Multiple retries would indicate that something is wrong
+ * with the group parameters (which would normally only happen
+ * with a bad custom group).
+ */
+#define MAX_ECDSA_SIGN_RETRIES 8
+
+int ossl_ecdsa_sign_setup(EC_KEY *eckey, BN_CTX *ctx_in, BIGNUM **kinvp,
+                          BIGNUM **rp)
+{
+    if (eckey->group->meth->ecdsa_sign_setup == NULL) {
+        ERR_raise(ERR_LIB_EC, EC_R_CURVE_DOES_NOT_SUPPORT_ECDSA);
+        return 0;
+    }
+
+    return eckey->group->meth->ecdsa_sign_setup(eckey, ctx_in, kinvp, rp);
+}
+
+ECDSA_SIG *ossl_ecdsa_sign_sig(const unsigned char *dgst, int dgst_len,
+                               const BIGNUM *in_kinv, const BIGNUM *in_r,
+                               EC_KEY *eckey)
+{
+    if (eckey->group->meth->ecdsa_sign_sig == NULL) {
+        ERR_raise(ERR_LIB_EC, EC_R_CURVE_DOES_NOT_SUPPORT_ECDSA);
+        return NULL;
+    }
+
+    return eckey->group->meth->ecdsa_sign_sig(dgst, dgst_len,
+                                              in_kinv, in_r, eckey);
+}
+
+int ossl_ecdsa_verify_sig(const unsigned char *dgst, int dgst_len,
+                          const ECDSA_SIG *sig, EC_KEY *eckey)
+{
+    if (eckey->group->meth->ecdsa_verify_sig == NULL) {
+        ERR_raise(ERR_LIB_EC, EC_R_CURVE_DOES_NOT_SUPPORT_ECDSA);
+        return 0;
+    }
+
+    return eckey->group->meth->ecdsa_verify_sig(dgst, dgst_len, sig, eckey);
+}
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
 int ossl_ecdsa_sign(int type, const unsigned char *dgst, int dlen,
                     unsigned char *sig, unsigned int *siglen,
@@ -58,8 +109,13 @@ static int ecdsa_sign_setup(EC_KEY *eckey, BN_CTX *ctx_in,
     }
 
     if ((ctx = ctx_in) == NULL) {
+<<<<<<< HEAD
         if ((ctx = BN_CTX_new()) == NULL) {
             ECerr(EC_F_ECDSA_SIGN_SETUP, ERR_R_MALLOC_FAILURE);
+=======
+        if ((ctx = BN_CTX_new_ex(eckey->libctx)) == NULL) {
+            ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return 0;
         }
     }
@@ -68,7 +124,11 @@ static int ecdsa_sign_setup(EC_KEY *eckey, BN_CTX *ctx_in,
     r = BN_new();               /* this value is later returned in *rp */
     X = BN_new();
     if (k == NULL || r == NULL || X == NULL) {
+<<<<<<< HEAD
         ECerr(EC_F_ECDSA_SIGN_SETUP, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
     if ((tmp_point = EC_POINT_new(group)) == NULL) {
@@ -79,7 +139,9 @@ static int ecdsa_sign_setup(EC_KEY *eckey, BN_CTX *ctx_in,
 
     /* Preallocate space */
     order_bits = BN_num_bits(order);
-    if (!BN_set_bit(k, order_bits)
+    /* Check the number of bits here so that an infinite loop is not possible */
+    if (order_bits < MIN_ECDSA_SIGN_ORDERBITS
+        || !BN_set_bit(k, order_bits)
         || !BN_set_bit(r, order_bits)
         || !BN_set_bit(X, order_bits))
         goto err;
@@ -90,6 +152,7 @@ static int ecdsa_sign_setup(EC_KEY *eckey, BN_CTX *ctx_in,
             if (dgst != NULL) {
                 if (!BN_generate_dsa_nonce(k, order, priv_key,
                                            dgst, dlen, ctx)) {
+<<<<<<< HEAD
                     ECerr(EC_F_ECDSA_SIGN_SETUP,
                           EC_R_RANDOM_NUMBER_GENERATION_FAILED);
                     goto err;
@@ -98,6 +161,14 @@ static int ecdsa_sign_setup(EC_KEY *eckey, BN_CTX *ctx_in,
                 if (!BN_priv_rand_range(k, order)) {
                     ECerr(EC_F_ECDSA_SIGN_SETUP,
                           EC_R_RANDOM_NUMBER_GENERATION_FAILED);
+=======
+                    ERR_raise(ERR_LIB_EC, EC_R_RANDOM_NUMBER_GENERATION_FAILED);
+                    goto err;
+                }
+            } else {
+                if (!BN_priv_rand_range_ex(k, order, 0, ctx)) {
+                    ERR_raise(ERR_LIB_EC, EC_R_RANDOM_NUMBER_GENERATION_FAILED);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                     goto err;
                 }
             }
@@ -156,6 +227,7 @@ ECDSA_SIG *ossl_ecdsa_sign_sig(const unsigned char *dgst, int dgst_len,
                                EC_KEY *eckey)
 {
     int ok = 0, i;
+    int retries = 0;
     BIGNUM *kinv = NULL, *s, *m = NULL;
     const BIGNUM *order, *ckinv;
     BN_CTX *ctx = NULL;
@@ -182,20 +254,32 @@ ECDSA_SIG *ossl_ecdsa_sign_sig(const unsigned char *dgst, int dgst_len,
 
     ret = ECDSA_SIG_new();
     if (ret == NULL) {
+<<<<<<< HEAD
         ECerr(EC_F_OSSL_ECDSA_SIGN_SIG, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return NULL;
     }
     ret->r = BN_new();
     ret->s = BN_new();
     if (ret->r == NULL || ret->s == NULL) {
+<<<<<<< HEAD
         ECerr(EC_F_OSSL_ECDSA_SIGN_SIG, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
     s = ret->s;
 
     if ((ctx = BN_CTX_new()) == NULL
         || (m = BN_new()) == NULL) {
+<<<<<<< HEAD
         ECerr(EC_F_OSSL_ECDSA_SIGN_SIG, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 
@@ -218,14 +302,22 @@ ECDSA_SIG *ossl_ecdsa_sign_sig(const unsigned char *dgst, int dgst_len,
     do {
         if (in_kinv == NULL || in_r == NULL) {
             if (!ecdsa_sign_setup(eckey, ctx, &kinv, &ret->r, dgst, dgst_len)) {
+<<<<<<< HEAD
                 ECerr(EC_F_OSSL_ECDSA_SIGN_SIG, ERR_R_ECDSA_LIB);
+=======
+                ERR_raise(ERR_LIB_EC, ERR_R_ECDSA_LIB);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                 goto err;
             }
             ckinv = kinv;
         } else {
             ckinv = in_kinv;
             if (BN_copy(ret->r, in_r) == NULL) {
+<<<<<<< HEAD
                 ECerr(EC_F_OSSL_ECDSA_SIGN_SIG, ERR_R_MALLOC_FAILURE);
+=======
+                ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                 goto err;
             }
         }
@@ -263,6 +355,11 @@ ECDSA_SIG *ossl_ecdsa_sign_sig(const unsigned char *dgst, int dgst_len,
              */
             if (in_kinv != NULL && in_r != NULL) {
                 ECerr(EC_F_OSSL_ECDSA_SIGN_SIG, EC_R_NEED_NEW_SETUP_VALUES);
+                goto err;
+            }
+            /* Avoid infinite loops cause by invalid group parameters */
+            if (retries++ > MAX_ECDSA_SIGN_RETRIES) {
+                ERR_raise(ERR_LIB_EC, EC_R_TOO_MANY_RETRIES);
                 goto err;
             }
         } else {
@@ -339,7 +436,11 @@ int ossl_ecdsa_verify_sig(const unsigned char *dgst, int dgst_len,
 
     ctx = BN_CTX_new();
     if (ctx == NULL) {
+<<<<<<< HEAD
         ECerr(EC_F_OSSL_ECDSA_VERIFY_SIG, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return -1;
     }
     BN_CTX_start(ctx);
@@ -398,7 +499,11 @@ int ossl_ecdsa_verify_sig(const unsigned char *dgst, int dgst_len,
     }
 
     if ((point = EC_POINT_new(group)) == NULL) {
+<<<<<<< HEAD
         ECerr(EC_F_OSSL_ECDSA_VERIFY_SIG, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
     if (!EC_POINT_mul(group, point, u1, pub_key, u2, ctx)) {

@@ -1,7 +1,13 @@
 /*
  * Copyright 1995-2017 The OpenSSL Project Authors. All Rights Reserved.
  *
+<<<<<<< HEAD
  * Licensed under the OpenSSL license (the "License").  You may not use
+=======
+ * Copyright 1995-2022 The OpenSSL Project Authors. All Rights Reserved.
+ *
+ * Licensed under the Apache License 2.0 (the "License").  You may not use
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  * this file except in compliance with the License.  You can obtain a copy
  * in the file LICENSE in the source distribution or at
  * https://www.openssl.org/source/license.html
@@ -118,6 +124,39 @@ extern "C" {
     struct X509_algor_st;
 DEFINE_STACK_OF(X509_ALGOR)
 
+<<<<<<< HEAD
+=======
+/* Stacks for types not otherwise defined in this header */
+SKM_DEFINE_STACK_OF_INTERNAL(X509_ALGOR, X509_ALGOR, X509_ALGOR)
+#define sk_X509_ALGOR_num(sk) OPENSSL_sk_num(ossl_check_const_X509_ALGOR_sk_type(sk))
+#define sk_X509_ALGOR_value(sk, idx) ((X509_ALGOR *)OPENSSL_sk_value(ossl_check_const_X509_ALGOR_sk_type(sk), (idx)))
+#define sk_X509_ALGOR_new(cmp) ((STACK_OF(X509_ALGOR) *)OPENSSL_sk_new(ossl_check_X509_ALGOR_compfunc_type(cmp)))
+#define sk_X509_ALGOR_new_null() ((STACK_OF(X509_ALGOR) *)OPENSSL_sk_new_null())
+#define sk_X509_ALGOR_new_reserve(cmp, n) ((STACK_OF(X509_ALGOR) *)OPENSSL_sk_new_reserve(ossl_check_X509_ALGOR_compfunc_type(cmp), (n)))
+#define sk_X509_ALGOR_reserve(sk, n) OPENSSL_sk_reserve(ossl_check_X509_ALGOR_sk_type(sk), (n))
+#define sk_X509_ALGOR_free(sk) OPENSSL_sk_free(ossl_check_X509_ALGOR_sk_type(sk))
+#define sk_X509_ALGOR_zero(sk) OPENSSL_sk_zero(ossl_check_X509_ALGOR_sk_type(sk))
+#define sk_X509_ALGOR_delete(sk, i) ((X509_ALGOR *)OPENSSL_sk_delete(ossl_check_X509_ALGOR_sk_type(sk), (i)))
+#define sk_X509_ALGOR_delete_ptr(sk, ptr) ((X509_ALGOR *)OPENSSL_sk_delete_ptr(ossl_check_X509_ALGOR_sk_type(sk), ossl_check_X509_ALGOR_type(ptr)))
+#define sk_X509_ALGOR_push(sk, ptr) OPENSSL_sk_push(ossl_check_X509_ALGOR_sk_type(sk), ossl_check_X509_ALGOR_type(ptr))
+#define sk_X509_ALGOR_unshift(sk, ptr) OPENSSL_sk_unshift(ossl_check_X509_ALGOR_sk_type(sk), ossl_check_X509_ALGOR_type(ptr))
+#define sk_X509_ALGOR_pop(sk) ((X509_ALGOR *)OPENSSL_sk_pop(ossl_check_X509_ALGOR_sk_type(sk)))
+#define sk_X509_ALGOR_shift(sk) ((X509_ALGOR *)OPENSSL_sk_shift(ossl_check_X509_ALGOR_sk_type(sk)))
+#define sk_X509_ALGOR_pop_free(sk, freefunc) OPENSSL_sk_pop_free(ossl_check_X509_ALGOR_sk_type(sk),ossl_check_X509_ALGOR_freefunc_type(freefunc))
+#define sk_X509_ALGOR_insert(sk, ptr, idx) OPENSSL_sk_insert(ossl_check_X509_ALGOR_sk_type(sk), ossl_check_X509_ALGOR_type(ptr), (idx))
+#define sk_X509_ALGOR_set(sk, idx, ptr) ((X509_ALGOR *)OPENSSL_sk_set(ossl_check_X509_ALGOR_sk_type(sk), (idx), ossl_check_X509_ALGOR_type(ptr)))
+#define sk_X509_ALGOR_find(sk, ptr) OPENSSL_sk_find(ossl_check_X509_ALGOR_sk_type(sk), ossl_check_X509_ALGOR_type(ptr))
+#define sk_X509_ALGOR_find_ex(sk, ptr) OPENSSL_sk_find_ex(ossl_check_X509_ALGOR_sk_type(sk), ossl_check_X509_ALGOR_type(ptr))
+#define sk_X509_ALGOR_find_all(sk, ptr, pnum) OPENSSL_sk_find_all(ossl_check_X509_ALGOR_sk_type(sk), ossl_check_X509_ALGOR_type(ptr), pnum)
+#define sk_X509_ALGOR_sort(sk) OPENSSL_sk_sort(ossl_check_X509_ALGOR_sk_type(sk))
+#define sk_X509_ALGOR_is_sorted(sk) OPENSSL_sk_is_sorted(ossl_check_const_X509_ALGOR_sk_type(sk))
+#define sk_X509_ALGOR_dup(sk) ((STACK_OF(X509_ALGOR) *)OPENSSL_sk_dup(ossl_check_const_X509_ALGOR_sk_type(sk)))
+#define sk_X509_ALGOR_deep_copy(sk, copyfunc, freefunc) ((STACK_OF(X509_ALGOR) *)OPENSSL_sk_deep_copy(ossl_check_const_X509_ALGOR_sk_type(sk), ossl_check_X509_ALGOR_copyfunc_type(copyfunc), ossl_check_X509_ALGOR_freefunc_type(freefunc)))
+#define sk_X509_ALGOR_set_cmp_func(sk, cmp) ((sk_X509_ALGOR_compfunc)OPENSSL_sk_set_cmp_func(ossl_check_X509_ALGOR_sk_type(sk), ossl_check_X509_ALGOR_compfunc_type(cmp)))
+
+
+
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 # define ASN1_STRING_FLAG_BITS_LEFT 0x08/* Set if 0x07 has bits left value */
 /*
  * This indicates that the ASN1_STRING is not a real value but just a place

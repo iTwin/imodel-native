@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/bio/b_sock.c
  * Copyright 1995-2018 The OpenSSL Project Authors. All Rights Reserved.
+=======
+ * Copyright 1995-2022 The OpenSSL Project Authors. All Rights Reserved.
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/bio/bio_sock.c
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -257,7 +261,11 @@ int BIO_accept(int sock, char **ip_port)
             *ip_port = NULL;
 
         if (*ip_port == NULL) {
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/bio/b_sock.c
             BIOerr(BIO_F_BIO_ACCEPT, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_BIO, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/bio/bio_sock.c
             BIO_closesocket(ret);
             ret = (int)INVALID_SOCKET;
         } else {

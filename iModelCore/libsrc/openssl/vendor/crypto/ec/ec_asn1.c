@@ -13,6 +13,10 @@
 #include <openssl/asn1t.h>
 #include <openssl/objects.h>
 #include "internal/nelem.h"
+<<<<<<< HEAD
+=======
+#include "crypto/asn1_dsa.h"
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
 int EC_GROUP_get_basis_type(const EC_GROUP *group)
 {
@@ -268,7 +272,11 @@ static int ec_asn1_group2fieldid(const EC_GROUP *group, X9_62_FIELDID *field)
 
     if (nid == NID_X9_62_prime_field) {
         if ((tmp = BN_new()) == NULL) {
+<<<<<<< HEAD
             ECerr(EC_F_EC_ASN1_GROUP2FIELDID, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             goto err;
         }
         /* the parameters are specified by the prime number p */
@@ -297,7 +305,11 @@ static int ec_asn1_group2fieldid(const EC_GROUP *group, X9_62_FIELDID *field)
         char_two = field->p.char_two;
 
         if (char_two == NULL) {
+<<<<<<< HEAD
             ECerr(EC_F_EC_ASN1_GROUP2FIELDID, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             goto err;
         }
 
@@ -323,7 +335,11 @@ static int ec_asn1_group2fieldid(const EC_GROUP *group, X9_62_FIELDID *field)
 
             char_two->p.tpBasis = ASN1_INTEGER_new();
             if (char_two->p.tpBasis == NULL) {
+<<<<<<< HEAD
                 ECerr(EC_F_EC_ASN1_GROUP2FIELDID, ERR_R_MALLOC_FAILURE);
+=======
+                ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                 goto err;
             }
             if (!ASN1_INTEGER_set(char_two->p.tpBasis, (long)k)) {
@@ -338,7 +354,11 @@ static int ec_asn1_group2fieldid(const EC_GROUP *group, X9_62_FIELDID *field)
 
             char_two->p.ppBasis = X9_62_PENTANOMIAL_new();
             if (char_two->p.ppBasis == NULL) {
+<<<<<<< HEAD
                 ECerr(EC_F_EC_ASN1_GROUP2FIELDID, ERR_R_MALLOC_FAILURE);
+=======
+                ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                 goto err;
             }
 
@@ -351,7 +371,11 @@ static int ec_asn1_group2fieldid(const EC_GROUP *group, X9_62_FIELDID *field)
             /* for ONB the parameters are (asn1) NULL */
             char_two->p.onBasis = ASN1_NULL_new();
             if (char_two->p.onBasis == NULL) {
+<<<<<<< HEAD
                 ECerr(EC_F_EC_ASN1_GROUP2FIELDID, ERR_R_MALLOC_FAILURE);
+=======
+                ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                 goto err;
             }
         }
@@ -380,7 +404,11 @@ static int ec_asn1_group2curve(const EC_GROUP *group, X9_62_CURVE *curve)
         return 0;
 
     if ((tmp_1 = BN_new()) == NULL || (tmp_2 = BN_new()) == NULL) {
+<<<<<<< HEAD
         ECerr(EC_F_EC_ASN1_GROUP2CURVE, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 
@@ -398,7 +426,11 @@ static int ec_asn1_group2curve(const EC_GROUP *group, X9_62_CURVE *curve)
     len = ((size_t)EC_GROUP_get_degree(group) + 7) / 8;
     if ((a_buf = OPENSSL_malloc(len)) == NULL
         || (b_buf = OPENSSL_malloc(len)) == NULL) {
+<<<<<<< HEAD
         ECerr(EC_F_EC_ASN1_GROUP2CURVE, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
     if (BN_bn2binpad(tmp_1, a_buf, len) < 0
@@ -418,7 +450,11 @@ static int ec_asn1_group2curve(const EC_GROUP *group, X9_62_CURVE *curve)
     if (group->seed) {
         if (!curve->seed)
             if ((curve->seed = ASN1_BIT_STRING_new()) == NULL) {
+<<<<<<< HEAD
                 ECerr(EC_F_EC_ASN1_GROUP2CURVE, ERR_R_MALLOC_FAILURE);
+=======
+                ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                 goto err;
             }
         curve->seed->flags &= ~(ASN1_STRING_FLAG_BITS_LEFT | 0x07);
@@ -456,7 +492,11 @@ ECPARAMETERS *EC_GROUP_get_ecparameters(const EC_GROUP *group,
 
     if (params == NULL) {
         if ((ret = ECPARAMETERS_new()) == NULL) {
+<<<<<<< HEAD
             ECerr(EC_F_EC_GROUP_GET_ECPARAMETERS, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             goto err;
         }
     } else
@@ -492,7 +532,11 @@ ECPARAMETERS *EC_GROUP_get_ecparameters(const EC_GROUP *group,
     }
     if (ret->base == NULL && (ret->base = ASN1_OCTET_STRING_new()) == NULL) {
         OPENSSL_free(buffer);
+<<<<<<< HEAD
         ECerr(EC_F_EC_GROUP_GET_ECPARAMETERS, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
     ASN1_STRING_set0(ret->base, buffer, len);
@@ -537,7 +581,11 @@ ECPKPARAMETERS *EC_GROUP_get_ecpkparameters(const EC_GROUP *group,
 
     if (ret == NULL) {
         if ((ret = ECPKPARAMETERS_new()) == NULL) {
+<<<<<<< HEAD
             ECerr(EC_F_EC_GROUP_GET_ECPKPARAMETERS, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return NULL;
         }
     } else {
@@ -642,7 +690,11 @@ EC_GROUP *EC_GROUP_new_from_ecparameters(const ECPARAMETERS *params)
         }
 
         if ((p = BN_new()) == NULL) {
+<<<<<<< HEAD
             ECerr(EC_F_EC_GROUP_NEW_FROM_ECPARAMETERS, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             goto err;
         }
 
@@ -763,7 +815,11 @@ EC_GROUP *EC_GROUP_new_from_ecparameters(const ECPARAMETERS *params)
         }
         OPENSSL_free(ret->seed);
         if ((ret->seed = OPENSSL_malloc(params->curve->seed->length)) == NULL) {
+<<<<<<< HEAD
             ECerr(EC_F_EC_GROUP_NEW_FROM_ECPARAMETERS, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             goto err;
         }
         memcpy(ret->seed, params->curve->seed->data,
@@ -1014,7 +1070,11 @@ EC_KEY *d2i_ECPrivateKey(EC_KEY **a, const unsigned char **in, long len)
 
     if (a == NULL || *a == NULL) {
         if ((ret = EC_KEY_new()) == NULL) {
+<<<<<<< HEAD
             ECerr(EC_F_D2I_ECPRIVATEKEY, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             goto err;
         }
     } else
@@ -1098,7 +1158,11 @@ int i2d_ECPrivateKey(EC_KEY *a, unsigned char **out)
     }
 
     if ((priv_key = EC_PRIVATEKEY_new()) == NULL) {
+<<<<<<< HEAD
         ECerr(EC_F_I2D_ECPRIVATEKEY, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 
@@ -1126,7 +1190,11 @@ int i2d_ECPrivateKey(EC_KEY *a, unsigned char **out)
     if (!(a->enc_flag & EC_PKEY_NO_PUBKEY)) {
         priv_key->publicKey = ASN1_BIT_STRING_new();
         if (priv_key->publicKey == NULL) {
+<<<<<<< HEAD
             ECerr(EC_F_I2D_ECPRIVATEKEY, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             goto err;
         }
 
@@ -1175,7 +1243,11 @@ EC_KEY *d2i_ECParameters(EC_KEY **a, const unsigned char **in, long len)
 
     if (a == NULL || *a == NULL) {
         if ((ret = EC_KEY_new()) == NULL) {
+<<<<<<< HEAD
             ECerr(EC_F_D2I_ECPARAMETERS, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return NULL;
         }
     } else
@@ -1233,7 +1305,11 @@ int i2o_ECPublicKey(const EC_KEY *a, unsigned char **out)
 
     if (*out == NULL) {
         if ((*out = OPENSSL_malloc(buf_len)) == NULL) {
+<<<<<<< HEAD
             ECerr(EC_F_I2O_ECPUBLICKEY, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return 0;
         }
         new_buffer = 1;
@@ -1265,7 +1341,11 @@ ECDSA_SIG *ECDSA_SIG_new(void)
 {
     ECDSA_SIG *sig = OPENSSL_zalloc(sizeof(*sig));
     if (sig == NULL)
+<<<<<<< HEAD
         ECerr(EC_F_ECDSA_SIG_NEW, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     return sig;
 }
 

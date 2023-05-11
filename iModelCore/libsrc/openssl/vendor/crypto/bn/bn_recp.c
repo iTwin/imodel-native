@@ -22,7 +22,11 @@ BN_RECP_CTX *BN_RECP_CTX_new(void)
     BN_RECP_CTX *ret;
 
     if ((ret = OPENSSL_zalloc(sizeof(*ret))) == NULL) {
+<<<<<<< HEAD
         BNerr(BN_F_BN_RECP_CTX_NEW, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_BN, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return NULL;
     }
 

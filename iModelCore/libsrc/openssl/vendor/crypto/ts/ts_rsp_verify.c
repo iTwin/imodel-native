@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2021 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2006-2022 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -152,6 +152,10 @@ int TS_RESP_verify_signature(PKCS7 *token, STACK_OF(X509) *certs,
 
  err:
     BIO_free_all(p7bio);
+<<<<<<< HEAD
+=======
+    sk_X509_free(untrusted);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     sk_X509_pop_free(chain, X509_free);
     sk_X509_free(signers);
 
@@ -172,7 +176,11 @@ static int ts_verify_cert(X509_STORE *store, STACK_OF(X509) *untrusted,
     *chain = NULL;
     cert_ctx = X509_STORE_CTX_new();
     if (cert_ctx == NULL) {
+<<<<<<< HEAD
         TSerr(TS_F_TS_VERIFY_CERT, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_TS, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
     if (!X509_STORE_CTX_init(cert_ctx, store, signer, untrusted))
@@ -589,13 +597,21 @@ static int ts_compute_imprint(BIO *data, TS_TST_INFO *tst_info,
         goto err;
     *imprint_len = length;
     if ((*imprint = OPENSSL_malloc(*imprint_len)) == NULL) {
+<<<<<<< HEAD
         TSerr(TS_F_TS_COMPUTE_IMPRINT, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_TS, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 
     md_ctx = EVP_MD_CTX_new();
     if (md_ctx == NULL) {
+<<<<<<< HEAD
         TSerr(TS_F_TS_COMPUTE_IMPRINT, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_TS, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
     if (!EVP_DigestInit(md_ctx, md))

@@ -146,6 +146,11 @@ static X509_EXTENSION *do_ext_i2d(const X509V3_EXT_METHOD *method,
         unsigned char *p;
 
         ext_len = method->i2d(ext_struc, NULL);
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_conf.c
+=======
+        if (ext_len <= 0)
+            goto merr;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_conf.c
         if ((ext_der = OPENSSL_malloc(ext_len)) == NULL)
             goto merr;
         p = ext_der;
@@ -165,7 +170,11 @@ static X509_EXTENSION *do_ext_i2d(const X509V3_EXT_METHOD *method,
     return ext;
 
  merr:
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_conf.c
     X509V3err(X509V3_F_DO_EXT_I2D, ERR_R_MALLOC_FAILURE);
+=======
+    ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_conf.c
     OPENSSL_free(ext_der);
     ASN1_OCTET_STRING_free(ext_oct);
     return NULL;
@@ -189,6 +198,10 @@ X509_EXTENSION *X509V3_EXT_i2d(int ext_nid, int crit, void *ext_struc)
 static int v3_check_critical(const char **value)
 {
     const char *p = *value;
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_conf.c
+=======
+
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_conf.c
     if ((strlen(p) < 9) || strncmp(p, "critical,", 9))
         return 0;
     p += 9;
@@ -203,6 +216,10 @@ static int v3_check_generic(const char **value)
 {
     int gen_type = 0;
     const char *p = *value;
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_conf.c
+=======
+
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_conf.c
     if ((strlen(p) >= 4) && strncmp(p, "DER:", 4) == 0) {
         p += 4;
         gen_type = 1;
@@ -249,7 +266,11 @@ static X509_EXTENSION *v3_generic_extension(const char *ext, const char *value,
     }
 
     if ((oct = ASN1_OCTET_STRING_new()) == NULL) {
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_conf.c
         X509V3err(X509V3_F_V3_GENERIC_EXTENSION, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_conf.c
         goto err;
     }
 
@@ -309,7 +330,12 @@ int X509V3_EXT_add_nconf_sk(CONF *conf, X509V3_CTX *ctx, const char *section,
         return 0;
     for (i = 0; i < sk_CONF_VALUE_num(nval); i++) {
         val = sk_CONF_VALUE_value(nval, i);
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_conf.c
         if ((ext = X509V3_EXT_nconf(conf, ctx, val->name, val->value)) == NULL)
+=======
+        if ((ext = X509V3_EXT_nconf_int(conf, ctx, val->section,
+                                        val->name, val->value)) == NULL)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_conf.c
             return 0;
         if (ctx->flags == X509V3_CTX_REPLACE)
             delete_ext(*sk, ext);

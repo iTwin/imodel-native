@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright 1995-2019 The OpenSSL Project Authors. All Rights Reserved.
+=======
+ * Copyright 1995-2023 The OpenSSL Project Authors. All Rights Reserved.
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -99,7 +103,11 @@ static int rsa_ossl_public_encrypt(int flen, const unsigned char *from,
     num = BN_num_bytes(rsa->n);
     buf = OPENSSL_malloc(num);
     if (ret == NULL || buf == NULL) {
+<<<<<<< HEAD
         RSAerr(RSA_F_RSA_OSSL_PUBLIC_ENCRYPT, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_RSA, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 
@@ -254,7 +262,11 @@ static int rsa_ossl_private_encrypt(int flen, const unsigned char *from,
     num = BN_num_bytes(rsa->n);
     buf = OPENSSL_malloc(num);
     if (ret == NULL || buf == NULL) {
+<<<<<<< HEAD
         RSAerr(RSA_F_RSA_OSSL_PRIVATE_ENCRYPT, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_RSA, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 
@@ -301,7 +313,11 @@ static int rsa_ossl_private_encrypt(int flen, const unsigned char *from,
 
     if (blinding != NULL) {
         if (!local_blinding && ((unblind = BN_CTX_get(ctx)) == NULL)) {
+<<<<<<< HEAD
             RSAerr(RSA_F_RSA_OSSL_PRIVATE_ENCRYPT, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_RSA, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             goto err;
         }
         if (!rsa_blinding_convert(blinding, f, unblind, ctx))
@@ -318,7 +334,11 @@ static int rsa_ossl_private_encrypt(int flen, const unsigned char *from,
     } else {
         BIGNUM *d = BN_new();
         if (d == NULL) {
+<<<<<<< HEAD
             RSAerr(RSA_F_RSA_OSSL_PRIVATE_ENCRYPT, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_RSA, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             goto err;
         }
         if (rsa->d == NULL) {
@@ -380,7 +400,11 @@ static int rsa_ossl_private_decrypt(int flen, const unsigned char *from,
     BIGNUM *unblind = NULL;
     BN_BLINDING *blinding = NULL;
 
+<<<<<<< HEAD
     if ((ctx = BN_CTX_new()) == NULL)
+=======
+    if ((ctx = BN_CTX_new_ex(rsa->libctx)) == NULL)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     BN_CTX_start(ctx);
     f = BN_CTX_get(ctx);
@@ -388,7 +412,11 @@ static int rsa_ossl_private_decrypt(int flen, const unsigned char *from,
     num = BN_num_bytes(rsa->n);
     buf = OPENSSL_malloc(num);
     if (ret == NULL || buf == NULL) {
+<<<<<<< HEAD
         RSAerr(RSA_F_RSA_OSSL_PRIVATE_DECRYPT, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_RSA, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 
@@ -397,8 +425,12 @@ static int rsa_ossl_private_decrypt(int flen, const unsigned char *from,
      * top '0' bytes
      */
     if (flen > num) {
+<<<<<<< HEAD
         RSAerr(RSA_F_RSA_OSSL_PRIVATE_DECRYPT,
                RSA_R_DATA_GREATER_THAN_MOD_LEN);
+=======
+        ERR_raise(ERR_LIB_RSA, RSA_R_DATA_GREATER_THAN_MOD_LEN);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 
@@ -422,7 +454,11 @@ static int rsa_ossl_private_decrypt(int flen, const unsigned char *from,
 
     if (blinding != NULL) {
         if (!local_blinding && ((unblind = BN_CTX_get(ctx)) == NULL)) {
+<<<<<<< HEAD
             RSAerr(RSA_F_RSA_OSSL_PRIVATE_DECRYPT, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_RSA, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             goto err;
         }
         if (!rsa_blinding_convert(blinding, f, unblind, ctx))
@@ -440,7 +476,11 @@ static int rsa_ossl_private_decrypt(int flen, const unsigned char *from,
     } else {
         BIGNUM *d = BN_new();
         if (d == NULL) {
+<<<<<<< HEAD
             RSAerr(RSA_F_RSA_OSSL_PRIVATE_DECRYPT, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_RSA, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             goto err;
         }
         if (rsa->d == NULL) {
@@ -465,11 +505,28 @@ static int rsa_ossl_private_decrypt(int flen, const unsigned char *from,
         BN_free(d);
     }
 
+<<<<<<< HEAD
     if (blinding)
         if (!rsa_blinding_invert(blinding, ret, unblind, ctx))
             goto err;
 
     j = BN_bn2binpad(ret, buf, num);
+=======
+    if (blinding) {
+        /*
+         * ossl_bn_rsa_do_unblind() combines blinding inversion and
+         * 0-padded BN BE serialization
+         */
+        j = ossl_bn_rsa_do_unblind(ret, blinding, unblind, rsa->n, ctx,
+                                   buf, num);
+        if (j == 0)
+            goto err;
+    } else {
+        j = BN_bn2binpad(ret, buf, num);
+        if (j < 0)
+            goto err;
+    }
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
     switch (padding) {
     case RSA_PKCS1_PADDING:
@@ -533,7 +590,11 @@ static int rsa_ossl_public_decrypt(int flen, const unsigned char *from,
     num = BN_num_bytes(rsa->n);
     buf = OPENSSL_malloc(num);
     if (ret == NULL || buf == NULL) {
+<<<<<<< HEAD
         RSAerr(RSA_F_RSA_OSSL_PUBLIC_DECRYPT, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_RSA, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 

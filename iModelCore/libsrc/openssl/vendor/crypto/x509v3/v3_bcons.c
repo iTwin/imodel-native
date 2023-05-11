@@ -60,7 +60,11 @@ static BASIC_CONSTRAINTS *v2i_BASIC_CONSTRAINTS(X509V3_EXT_METHOD *method,
     int i;
 
     if ((bcons = BASIC_CONSTRAINTS_new()) == NULL) {
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_bcons.c
         X509V3err(X509V3_F_V2I_BASIC_CONSTRAINTS, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_bcons.c
         return NULL;
     }
     for (i = 0; i < sk_CONF_VALUE_num(values); i++) {

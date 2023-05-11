@@ -208,7 +208,11 @@ static char *dlfcn_merger(DSO *dso, const char *filespec1,
     if (!filespec2 || (filespec1 != NULL && filespec1[0] == '/')) {
         merged = OPENSSL_strdup(filespec1);
         if (merged == NULL) {
+<<<<<<< HEAD
             DSOerr(DSO_F_DLFCN_MERGER, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_DSO, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return NULL;
         }
     }
@@ -218,7 +222,11 @@ static char *dlfcn_merger(DSO *dso, const char *filespec1,
     else if (!filespec1) {
         merged = OPENSSL_strdup(filespec2);
         if (merged == NULL) {
+<<<<<<< HEAD
             DSOerr(DSO_F_DLFCN_MERGER, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_DSO, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return NULL;
         }
     } else {
@@ -240,7 +248,11 @@ static char *dlfcn_merger(DSO *dso, const char *filespec1,
         }
         merged = OPENSSL_malloc(len + 2);
         if (merged == NULL) {
+<<<<<<< HEAD
             DSOerr(DSO_F_DLFCN_MERGER, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_DSO, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return NULL;
         }
         strcpy(merged, filespec2);

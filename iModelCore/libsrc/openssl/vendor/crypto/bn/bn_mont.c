@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright 1995-2018 The OpenSSL Project Authors. All Rights Reserved.
+=======
+ * Copyright 1995-2023 The OpenSSL Project Authors. All Rights Reserved.
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -230,7 +234,11 @@ BN_MONT_CTX *BN_MONT_CTX_new(void)
     BN_MONT_CTX *ret;
 
     if ((ret = OPENSSL_malloc(sizeof(*ret))) == NULL) {
+<<<<<<< HEAD
         BNerr(BN_F_BN_MONT_CTX_NEW, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_BN, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return NULL;
     }
 

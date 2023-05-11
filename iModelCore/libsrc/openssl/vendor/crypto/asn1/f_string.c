@@ -99,7 +99,11 @@ int a2i_ASN1_STRING(BIO *bp, ASN1_STRING *bs, char *buf, int size)
         if (num + i > slen) {
             sp = OPENSSL_realloc(s, (unsigned int)num + i * 2);
             if (sp == NULL) {
+<<<<<<< HEAD
                 ASN1err(ASN1_F_A2I_ASN1_STRING, ERR_R_MALLOC_FAILURE);
+=======
+                ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                 OPENSSL_free(s);
                 return 0;
             }

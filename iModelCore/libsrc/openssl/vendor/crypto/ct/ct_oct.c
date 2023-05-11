@@ -179,7 +179,11 @@ int i2o_SCT_signature(const SCT *sct, unsigned char **out)
         } else {
             pstart = p = OPENSSL_malloc(len);
             if (p == NULL) {
+<<<<<<< HEAD
                 CTerr(CT_F_I2O_SCT_SIGNATURE, ERR_R_MALLOC_FAILURE);
+=======
+                ERR_raise(ERR_LIB_CT, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                 goto err;
             }
             *out = p;
@@ -226,7 +230,11 @@ int i2o_SCT(const SCT *sct, unsigned char **out)
     } else {
         pstart = p = OPENSSL_malloc(len);
         if (p == NULL) {
+<<<<<<< HEAD
             CTerr(CT_F_I2O_SCT, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_CT, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             goto err;
         }
         *out = p;
@@ -331,7 +339,11 @@ int i2o_SCT_LIST(const STACK_OF(SCT) *a, unsigned char **pp)
                 return -1;
             }
             if ((*pp = OPENSSL_malloc(len)) == NULL) {
+<<<<<<< HEAD
                 CTerr(CT_F_I2O_SCT_LIST, ERR_R_MALLOC_FAILURE);
+=======
+                ERR_raise(ERR_LIB_CT, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                 return -1;
             }
             is_pp_new = 1;

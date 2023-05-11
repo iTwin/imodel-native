@@ -107,7 +107,11 @@ int asn1_d2i_read_bio(BIO *in, BUF_MEM **pb)
 
     b = BUF_MEM_new();
     if (b == NULL) {
+<<<<<<< HEAD
         ASN1err(ASN1_F_ASN1_D2I_READ_BIO, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return -1;
     }
 
@@ -117,7 +121,11 @@ int asn1_d2i_read_bio(BIO *in, BUF_MEM **pb)
             want -= (len - off);
 
             if (len + want < len || !BUF_MEM_grow_clean(b, len + want)) {
+<<<<<<< HEAD
                 ASN1err(ASN1_F_ASN1_D2I_READ_BIO, ERR_R_MALLOC_FAILURE);
+=======
+                ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                 goto err;
             }
             i = BIO_read(in, &(b->data[len]), want);
@@ -187,7 +195,11 @@ int asn1_d2i_read_bio(BIO *in, BUF_MEM **pb)
                     size_t chunk = want > chunk_max ? chunk_max : want;
 
                     if (!BUF_MEM_grow_clean(b, len + chunk)) {
+<<<<<<< HEAD
                         ASN1err(ASN1_F_ASN1_D2I_READ_BIO, ERR_R_MALLOC_FAILURE);
+=======
+                        ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                         goto err;
                     }
                     want -= chunk;

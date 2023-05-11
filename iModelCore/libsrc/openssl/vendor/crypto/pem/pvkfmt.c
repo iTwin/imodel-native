@@ -16,9 +16,17 @@
 #include <openssl/pem.h>
 #include <openssl/rand.h>
 #include <openssl/bn.h>
+<<<<<<< HEAD
 #if !defined(OPENSSL_NO_RSA) && !defined(OPENSSL_NO_DSA)
 # include <openssl/dsa.h>
 # include <openssl/rsa.h>
+=======
+#include <openssl/dsa.h>
+#include <openssl/rsa.h>
+#include "internal/cryptlib.h"
+#include "crypto/pem.h"
+#include "crypto/evp.h"
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
 /*
  * Utility function: read a DWORD (4 byte unsigned integer) in little endian
@@ -51,6 +59,68 @@ static int read_lebn(const unsigned char **in, unsigned int nbyte, BIGNUM **r)
     return 1;
 }
 
+<<<<<<< HEAD
+=======
+/*
+ * Create an EVP_PKEY from a type specific key.
+ * This takes ownership of |key|, as long as the |evp_type| is acceptable
+ * (EVP_PKEY_RSA or EVP_PKEY_DSA), even if the resulting EVP_PKEY wasn't
+ * created.
+ */
+#define isdss_to_evp_type(isdss)                                \
+    (isdss == 0 ? EVP_PKEY_RSA : isdss == 1 ? EVP_PKEY_DSA : EVP_PKEY_NONE)
+static EVP_PKEY *evp_pkey_new0_key(void *key, int evp_type)
+{
+    EVP_PKEY *pkey = NULL;
+
+    /*
+     * It's assumed that if |key| is NULL, something went wrong elsewhere
+     * and suitable errors are already reported.
+     */
+    if (key == NULL)
+        return NULL;
+
+    if (!ossl_assert(evp_type == EVP_PKEY_RSA || evp_type == EVP_PKEY_DSA)) {
+        ERR_raise(ERR_LIB_PEM, ERR_R_INTERNAL_ERROR);
+        return NULL;
+    }
+
+    if ((pkey = EVP_PKEY_new()) != NULL) {
+        switch (evp_type) {
+        case EVP_PKEY_RSA:
+            if (EVP_PKEY_set1_RSA(pkey, key))
+                break;
+            EVP_PKEY_free(pkey);
+            pkey = NULL;
+            break;
+#ifndef OPENSSL_NO_DSA
+        case EVP_PKEY_DSA:
+            if (EVP_PKEY_set1_DSA(pkey, key))
+                break;
+            EVP_PKEY_free(pkey);
+            pkey = NULL;
+            break;
+#endif
+        }
+    }
+
+    switch (evp_type) {
+    case EVP_PKEY_RSA:
+        RSA_free(key);
+        break;
+#ifndef OPENSSL_NO_DSA
+    case EVP_PKEY_DSA:
+        DSA_free(key);
+        break;
+#endif
+    }
+
+    if (pkey == NULL)
+        ERR_raise(ERR_LIB_PEM, ERR_R_MALLOC_FAILURE);
+    return pkey;
+}
+
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 /* Convert private key blob to EVP_PKEY: RSA and DSA keys supported */
 
 # define MS_PUBLICKEYBLOB        0x6
@@ -222,7 +292,11 @@ static EVP_PKEY *do_b2i_bio(BIO *in, int ispub)
     }
     buf = OPENSSL_malloc(length);
     if (buf == NULL) {
+<<<<<<< HEAD
         PEMerr(PEM_F_DO_B2I_BIO, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_PEM, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
     p = buf;
@@ -255,8 +329,12 @@ static EVP_PKEY *b2i_dss(const unsigned char **in,
     nbyte = (bitlen + 7) >> 3;
 
     dsa = DSA_new();
+<<<<<<< HEAD
     ret = EVP_PKEY_new();
     if (dsa == NULL || ret == NULL)
+=======
+    if (dsa == NULL)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto memerr;
     if (!read_lebn(&p, nbyte, &pbn))
         goto memerr;
@@ -304,7 +382,11 @@ static EVP_PKEY *b2i_dss(const unsigned char **in,
     return ret;
 
  memerr:
+<<<<<<< HEAD
     PEMerr(PEM_F_B2I_DSS, ERR_R_MALLOC_FAILURE);
+=======
+    ERR_raise(ERR_LIB_PEM, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     DSA_free(dsa);
     BN_free(pbn);
     BN_free(qbn);
@@ -328,8 +410,12 @@ static EVP_PKEY *b2i_rsa(const unsigned char **in,
     nbyte = (bitlen + 7) >> 3;
     hnbyte = (bitlen + 15) >> 4;
     rsa = RSA_new();
+<<<<<<< HEAD
     ret = EVP_PKEY_new();
     if (rsa == NULL || ret == NULL)
+=======
+    if (rsa == NULL)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto memerr;
     e = BN_new();
     if (e == NULL)
@@ -366,9 +452,15 @@ static EVP_PKEY *b2i_rsa(const unsigned char **in,
         goto memerr;
     RSA_free(rsa);
     *in = pin;
+<<<<<<< HEAD
     return ret;
  memerr:
     PEMerr(PEM_F_B2I_RSA, ERR_R_MALLOC_FAILURE);
+=======
+    return rsa;
+ memerr:
+    ERR_raise(ERR_LIB_PEM, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     BN_free(e);
     BN_free(n);
     BN_free(p);
@@ -448,8 +540,14 @@ static int do_i2b(unsigned char **out, EVP_PKEY *pk, int ispub)
         p = *out;
     else {
         if ((p = OPENSSL_malloc(outlen)) == NULL) {
+<<<<<<< HEAD
             PEMerr(PEM_F_DO_I2B, ERR_R_MALLOC_FAILURE);
             return -1;
+=======
+            ERR_raise(ERR_LIB_PEM, ERR_R_MALLOC_FAILURE);
+            outlen = -1;
+            goto end;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         }
         *out = p;
         noinc = 1;
@@ -654,11 +752,16 @@ static int do_PVK_header(const unsigned char **in, unsigned int length,
     return 1;
 }
 
+<<<<<<< HEAD
+=======
+#ifndef OPENSSL_NO_RC4
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 static int derive_pvk_key(unsigned char *key,
                           const unsigned char *salt, unsigned int saltlen,
                           const unsigned char *pass, int passlen)
 {
     EVP_MD_CTX *mctx = EVP_MD_CTX_new();
+<<<<<<< HEAD
     int rv = 1;
     if (mctx == NULL
         || !EVP_DigestInit_ex(mctx, EVP_sha1(), NULL)
@@ -668,6 +771,25 @@ static int derive_pvk_key(unsigned char *key,
         rv = 0;
 
     EVP_MD_CTX_free(mctx);
+=======
+    int rv = 0;
+    EVP_MD *sha1 = NULL;
+
+    if ((sha1 = EVP_MD_fetch(libctx, SN_sha1, propq)) == NULL)
+        goto err;
+
+    if (mctx == NULL
+        || !EVP_DigestInit_ex(mctx, sha1, NULL)
+        || !EVP_DigestUpdate(mctx, salt, saltlen)
+        || !EVP_DigestUpdate(mctx, pass, passlen)
+        || !EVP_DigestFinal_ex(mctx, key, NULL))
+        goto err;
+
+    rv = 1;
+err:
+    EVP_MD_CTX_free(mctx);
+    EVP_MD_free(sha1);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     return rv;
 }
 
@@ -682,6 +804,15 @@ static EVP_PKEY *do_PVK_body(const unsigned char **in,
     unsigned char keybuf[20];
 
     EVP_CIPHER_CTX *cctx = EVP_CIPHER_CTX_new();
+<<<<<<< HEAD
+=======
+
+    if (cctx == NULL) {
+        ERR_raise(ERR_LIB_PEM, ERR_R_MALLOC_FAILURE);
+        goto err;
+    }
+
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     if (saltlen) {
         char psbuf[PEM_BUFSIZE];
         int enctmplen, inlen;
@@ -695,11 +826,19 @@ static EVP_PKEY *do_PVK_body(const unsigned char **in,
         }
         enctmp = OPENSSL_malloc(keylen + 8);
         if (enctmp == NULL) {
+<<<<<<< HEAD
             PEMerr(PEM_F_DO_PVK_BODY, ERR_R_MALLOC_FAILURE);
             goto err;
         }
         if (!derive_pvk_key(keybuf, p, saltlen,
                             (unsigned char *)psbuf, inlen))
+=======
+            ERR_raise(ERR_LIB_PEM, ERR_R_MALLOC_FAILURE);
+            goto err;
+        }
+        if (!derive_pvk_key(keybuf, p, saltlen,
+                            (unsigned char *)psbuf, inlen, libctx, propq))
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             goto err;
         p += saltlen;
         /* Copy BLOBHEADER across, decrypt rest */
@@ -743,7 +882,87 @@ static EVP_PKEY *do_PVK_body(const unsigned char **in,
         OPENSSL_cleanse(keybuf, sizeof(keybuf));
         OPENSSL_free(enctmp);
     }
+<<<<<<< HEAD
     return ret;
+=======
+    return key;
+}
+
+static void *do_PVK_key_bio(BIO *in, pem_password_cb *cb, void *u,
+                            int *isdss, int *ispub,
+                            OSSL_LIB_CTX *libctx, const char *propq)
+{
+    unsigned char pvk_hdr[24], *buf = NULL;
+    const unsigned char *p;
+    int buflen;
+    void *key = NULL;
+    unsigned int saltlen, keylen;
+
+    if (BIO_read(in, pvk_hdr, 24) != 24) {
+        ERR_raise(ERR_LIB_PEM, PEM_R_PVK_DATA_TOO_SHORT);
+        return NULL;
+    }
+    p = pvk_hdr;
+
+    if (!ossl_do_PVK_header(&p, 24, 0, &saltlen, &keylen))
+        return 0;
+    buflen = (int)keylen + saltlen;
+    buf = OPENSSL_malloc(buflen);
+    if (buf == NULL) {
+        ERR_raise(ERR_LIB_PEM, ERR_R_MALLOC_FAILURE);
+        return 0;
+    }
+    p = buf;
+    if (BIO_read(in, buf, buflen) != buflen) {
+        ERR_raise(ERR_LIB_PEM, PEM_R_PVK_DATA_TOO_SHORT);
+        goto err;
+    }
+    key = do_PVK_body_key(&p, saltlen, keylen, cb, u, isdss, ispub, libctx, propq);
+
+ err:
+    OPENSSL_clear_free(buf, buflen);
+    return key;
+}
+
+#ifndef OPENSSL_NO_DSA
+DSA *b2i_DSA_PVK_bio_ex(BIO *in, pem_password_cb *cb, void *u,
+                        OSSL_LIB_CTX *libctx, const char *propq)
+{
+    int isdss = 1;
+    int ispub = 0;               /* PVK keys are always private */
+
+    return do_PVK_key_bio(in, cb, u, &isdss, &ispub, libctx, propq);
+}
+
+DSA *b2i_DSA_PVK_bio(BIO *in, pem_password_cb *cb, void *u)
+{
+    return b2i_DSA_PVK_bio_ex(in, cb, u, NULL, NULL);
+}
+#endif
+
+RSA *b2i_RSA_PVK_bio_ex(BIO *in, pem_password_cb *cb, void *u,
+                        OSSL_LIB_CTX *libctx, const char *propq)
+{
+    int isdss = 0;
+    int ispub = 0;               /* PVK keys are always private */
+
+    return do_PVK_key_bio(in, cb, u, &isdss, &ispub, libctx, propq);
+}
+
+RSA *b2i_RSA_PVK_bio(BIO *in, pem_password_cb *cb, void *u)
+{
+    return b2i_RSA_PVK_bio_ex(in, cb, u, NULL, NULL);
+}
+
+EVP_PKEY *b2i_PVK_bio_ex(BIO *in, pem_password_cb *cb, void *u,
+                         OSSL_LIB_CTX *libctx, const char *propq)
+{
+    int isdss = -1;
+    int ispub = -1;
+    void *key = do_PVK_key_bio(in, cb, u, &isdss, &ispub, NULL, NULL);
+
+    return evp_pkey_new0_key(key, isdss_to_evp_type(isdss));
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 }
 
 EVP_PKEY *b2i_PVK_bio(BIO *in, pem_password_cb *cb, void *u)
@@ -798,7 +1017,11 @@ static int i2b_PVK(unsigned char **out, EVP_PKEY *pk, int enclevel,
     } else {
         start = p = OPENSSL_malloc(outlen);
         if (p == NULL) {
+<<<<<<< HEAD
             PEMerr(PEM_F_I2B_PVK, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_PEM, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return -1;
         }
     }
@@ -836,7 +1059,13 @@ static int i2b_PVK(unsigned char **out, EVP_PKEY *pk, int enclevel,
             goto error;
         }
         if (!derive_pvk_key(keybuf, salt, PVK_SALTLEN,
+<<<<<<< HEAD
                             (unsigned char *)psbuf, inlen))
+=======
+                            (unsigned char *)psbuf, inlen, libctx, propq))
+            goto error;
+        if ((rc4 = EVP_CIPHER_fetch(libctx, "RC4", propq)) == NULL)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             goto error;
         if (enclevel == 1)
             memset(keybuf + 5, 0, 11);

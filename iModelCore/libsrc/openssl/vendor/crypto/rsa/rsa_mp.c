@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright 2017-2018 The OpenSSL Project Authors. All Rights Reserved.
+=======
+ * Copyright 2017-2022 The OpenSSL Project Authors. All Rights Reserved.
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  * Copyright 2017 BaishanCloud. All rights reserved.
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
@@ -32,9 +36,15 @@ RSA_PRIME_INFO *rsa_multip_info_new(void)
 {
     RSA_PRIME_INFO *pinfo;
 
+<<<<<<< HEAD
     /* create a RSA_PRIME_INFO structure */
     if ((pinfo = OPENSSL_zalloc(sizeof(RSA_PRIME_INFO))) == NULL) {
         RSAerr(RSA_F_RSA_MULTIP_INFO_NEW, ERR_R_MALLOC_FAILURE);
+=======
+    /* create an RSA_PRIME_INFO structure */
+    if ((pinfo = OPENSSL_zalloc(sizeof(RSA_PRIME_INFO))) == NULL) {
+        ERR_raise(ERR_LIB_RSA, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return NULL;
     }
     if ((pinfo->r = BN_secure_new()) == NULL)

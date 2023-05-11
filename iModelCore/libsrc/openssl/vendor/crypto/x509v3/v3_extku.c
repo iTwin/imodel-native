@@ -79,7 +79,11 @@ static void *v2i_EXTENDED_KEY_USAGE(const X509V3_EXT_METHOD *method,
 
     extku = sk_ASN1_OBJECT_new_reserve(NULL, num);
     if (extku == NULL) {
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_extku.c
         X509V3err(X509V3_F_V2I_EXTENDED_KEY_USAGE, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_extku.c
         sk_ASN1_OBJECT_free(extku);
         return NULL;
     }

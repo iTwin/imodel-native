@@ -25,6 +25,36 @@
  */
 static const time_t SCT_CLOCK_DRIFT_TOLERANCE = 300;
 
+<<<<<<< HEAD
+=======
+CT_POLICY_EVAL_CTX *CT_POLICY_EVAL_CTX_new_ex(OSSL_LIB_CTX *libctx,
+                                              const char *propq)
+{
+    CT_POLICY_EVAL_CTX *ctx = OPENSSL_zalloc(sizeof(CT_POLICY_EVAL_CTX));
+
+    if (ctx == NULL) {
+        ERR_raise(ERR_LIB_CT, ERR_R_MALLOC_FAILURE);
+        return NULL;
+    }
+
+    ctx->libctx = libctx;
+    if (propq != NULL) {
+        ctx->propq = OPENSSL_strdup(propq);
+        if (ctx->propq == NULL) {
+            ERR_raise(ERR_LIB_CT, ERR_R_MALLOC_FAILURE);
+            OPENSSL_free(ctx);
+            return NULL;
+        }
+    }
+
+    /* time(NULL) shouldn't ever fail, so don't bother checking for -1. */
+    ctx->epoch_time_in_ms = (uint64_t)(time(NULL) + SCT_CLOCK_DRIFT_TOLERANCE) *
+            1000;
+
+    return ctx;
+}
+
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 CT_POLICY_EVAL_CTX *CT_POLICY_EVAL_CTX_new(void)
 {
     CT_POLICY_EVAL_CTX *ctx = OPENSSL_zalloc(sizeof(CT_POLICY_EVAL_CTX));

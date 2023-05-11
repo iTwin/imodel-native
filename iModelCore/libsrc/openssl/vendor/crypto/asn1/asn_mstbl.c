@@ -106,7 +106,11 @@ static int do_tcreate(const char *value, const char *name)
         rv = ASN1_STRING_TABLE_add(nid, tbl_min, tbl_max,
                                    tbl_mask, tbl_flags);
         if (!rv)
+<<<<<<< HEAD
             ASN1err(ASN1_F_DO_TCREATE, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     }
     sk_CONF_VALUE_pop_free(lst, X509V3_conf_free);
     return rv;

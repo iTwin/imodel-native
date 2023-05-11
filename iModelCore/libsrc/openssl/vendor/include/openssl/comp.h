@@ -39,7 +39,11 @@ COMP_METHOD *COMP_zlib(void);
 #define COMP_zlib_cleanup() while(0) continue
 #endif
 
+<<<<<<< HEAD
 # ifdef HEADER_BIO_H
+=======
+# ifdef OPENSSL_BIO_H
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 #  ifdef ZLIB
 const BIO_METHOD *BIO_f_zlib(void);
 #  endif

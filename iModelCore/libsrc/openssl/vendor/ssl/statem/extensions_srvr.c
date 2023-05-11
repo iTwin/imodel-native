@@ -59,10 +59,16 @@ int tls_parse_ctos_renegotiate(SSL *s, PACKET *pkt, unsigned int context,
         return 0;
     }
 
+<<<<<<< HEAD
     if (memcmp(data, s->s3->previous_client_finished,
                s->s3->previous_client_finished_len)) {
         SSLfatal(s, SSL_AD_HANDSHAKE_FAILURE, SSL_F_TLS_PARSE_CTOS_RENEGOTIATE,
                  SSL_R_RENEGOTIATION_MISMATCH);
+=======
+    if (memcmp(data, s->s3.previous_client_finished,
+               s->s3.previous_client_finished_len)) {
+        SSLfatal(s, SSL_AD_HANDSHAKE_FAILURE, SSL_R_RENEGOTIATION_MISMATCH);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
 
@@ -244,7 +250,10 @@ int tls_parse_ctos_srp(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
 }
 #endif
 
+<<<<<<< HEAD
 #ifndef OPENSSL_NO_EC
+=======
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 int tls_parse_ctos_ec_pt_formats(SSL *s, PACKET *pkt, unsigned int context,
                                  X509 *x, size_t chainidx)
 {
@@ -278,16 +287,27 @@ int tls_parse_ctos_session_ticket(SSL *s, PACKET *pkt, unsigned int context,
             !s->ext.session_ticket_cb(s, PACKET_data(pkt),
                                   PACKET_remaining(pkt),
                                   s->ext.session_ticket_cb_arg)) {
+<<<<<<< HEAD
         SSLfatal(s, SSL_AD_INTERNAL_ERROR,
                  SSL_F_TLS_PARSE_CTOS_SESSION_TICKET, ERR_R_INTERNAL_ERROR);
+=======
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
 
     return 1;
 }
 
+<<<<<<< HEAD
 int tls_parse_ctos_sig_algs_cert(SSL *s, PACKET *pkt, unsigned int context,
                                  X509 *x, size_t chainidx)
+=======
+int tls_parse_ctos_sig_algs_cert(SSL *s, PACKET *pkt,
+                                 ossl_unused unsigned int context,
+                                 ossl_unused X509 *x,
+                                 ossl_unused size_t chainidx)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 {
     PACKET supported_sig_algs;
 
@@ -370,8 +390,12 @@ int tls_parse_ctos_status_request(SSL *s, PACKET *pkt, unsigned int context,
     if (PACKET_remaining(&responder_id_list) > 0) {
         s->ext.ocsp.ids = sk_OCSP_RESPID_new_null();
         if (s->ext.ocsp.ids == NULL) {
+<<<<<<< HEAD
             SSLfatal(s, SSL_AD_INTERNAL_ERROR,
                      SSL_F_TLS_PARSE_CTOS_STATUS_REQUEST, ERR_R_MALLOC_FAILURE);
+=======
+            SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return 0;
         }
     } else {
@@ -705,12 +729,18 @@ int tls_parse_ctos_key_share(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
             continue;
         }
 
+<<<<<<< HEAD
         if ((s->s3->peer_tmp = ssl_generate_param_group(group_id)) == NULL) {
             SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_PARSE_CTOS_KEY_SHARE,
+=======
+        if ((s->s3.peer_tmp = ssl_generate_param_group(s, group_id)) == NULL) {
+            SSLfatal(s, SSL_AD_INTERNAL_ERROR,
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                    SSL_R_UNABLE_TO_FIND_ECDH_PARAMETERS);
             return 0;
         }
 
+<<<<<<< HEAD
         s->s3->group_id = group_id;
 
         if (!EVP_PKEY_set1_tls_encodedpoint(s->s3->peer_tmp,
@@ -718,6 +748,16 @@ int tls_parse_ctos_key_share(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
                 PACKET_remaining(&encoded_pt))) {
             SSLfatal(s, SSL_AD_ILLEGAL_PARAMETER,
                      SSL_F_TLS_PARSE_CTOS_KEY_SHARE, SSL_R_BAD_ECPOINT);
+=======
+        s->s3.group_id = group_id;
+        /* Cache the selected group ID in the SSL_SESSION */
+        s->session->kex_group = group_id;
+
+        if (tls13_set_encoded_pub_key(s->s3.peer_tmp,
+                                      PACKET_data(&encoded_pt),
+                                      PACKET_remaining(&encoded_pt)) <= 0) {
+            SSLfatal(s, SSL_AD_ILLEGAL_PARAMETER, SSL_R_BAD_ECPOINT);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return 0;
         }
 
@@ -745,7 +785,11 @@ int tls_parse_ctos_cookie(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
 
     /* Ignore any cookie if we're not set up to verify it */
     if (s->ctx->verify_stateless_cookie_cb == NULL
+<<<<<<< HEAD
             || (s->s3->flags & TLS1_FLAGS_STATELESS) == 0)
+=======
+            || (s->s3.flags & TLS1_FLAGS_STATELESS) == 0)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 1;
 
     if (!PACKET_as_length_prefixed_2(pkt, &cookie)) {
@@ -767,6 +811,7 @@ int tls_parse_ctos_cookie(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
 
     /* Verify the HMAC of the cookie */
     hctx = EVP_MD_CTX_create();
+<<<<<<< HEAD
     pkey = EVP_PKEY_new_raw_private_key(EVP_PKEY_HMAC, NULL,
                                         s->session_ctx->ext.cookie_hmac_key,
                                         sizeof(s->session_ctx->ext
@@ -776,11 +821,26 @@ int tls_parse_ctos_cookie(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
         EVP_PKEY_free(pkey);
         SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_PARSE_CTOS_COOKIE,
                  ERR_R_MALLOC_FAILURE);
+=======
+    pkey = EVP_PKEY_new_raw_private_key_ex(s->ctx->libctx, "HMAC",
+                                           s->ctx->propq,
+                                           s->session_ctx->ext.cookie_hmac_key,
+                                           sizeof(s->session_ctx->ext.cookie_hmac_key));
+    if (hctx == NULL || pkey == NULL) {
+        EVP_MD_CTX_free(hctx);
+        EVP_PKEY_free(pkey);
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
 
     hmaclen = SHA256_DIGEST_LENGTH;
+<<<<<<< HEAD
     if (EVP_DigestSignInit(hctx, NULL, EVP_sha256(), NULL, pkey) <= 0
+=======
+    if (EVP_DigestSignInit_ex(hctx, NULL, "SHA2-256", s->ctx->libctx,
+                              s->ctx->propq, pkey, NULL) <= 0
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             || EVP_DigestSign(hctx, hmac, &hmaclen, data,
                               rawlen - SHA256_DIGEST_LENGTH) <= 0
             || hmaclen != SHA256_DIGEST_LENGTH) {
@@ -870,8 +930,12 @@ int tls_parse_ctos_cookie(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
     /* Verify the app cookie */
     if (s->ctx->verify_stateless_cookie_cb(s, PACKET_data(&appcookie),
                                      PACKET_remaining(&appcookie)) == 0) {
+<<<<<<< HEAD
         SSLfatal(s, SSL_AD_ILLEGAL_PARAMETER, SSL_F_TLS_PARSE_CTOS_COOKIE,
                  SSL_R_COOKIE_MISMATCH);
+=======
+        SSLfatal(s, SSL_AD_ILLEGAL_PARAMETER, SSL_R_COOKIE_MISMATCH);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
 
@@ -891,7 +955,11 @@ int tls_parse_ctos_cookie(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
             || !WPACKET_memcpy(&hrrpkt, hrrrandom, SSL3_RANDOM_SIZE)
             || !WPACKET_sub_memcpy_u8(&hrrpkt, s->tmp_session_id,
                                       s->tmp_session_id_len)
+<<<<<<< HEAD
             || !s->method->put_cipher_by_char(s->s3->tmp.new_cipher, &hrrpkt,
+=======
+            || !s->method->put_cipher_by_char(s->s3.tmp.new_cipher, &hrrpkt,
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                                               &ciphlen)
             || !WPACKET_put_bytes_u8(&hrrpkt, 0)
             || !WPACKET_start_sub_packet_u16(&hrrpkt)) {
@@ -951,7 +1019,10 @@ int tls_parse_ctos_cookie(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
     return 1;
 }
 
+<<<<<<< HEAD
 #ifndef OPENSSL_NO_EC
+=======
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 int tls_parse_ctos_supported_groups(SSL *s, PACKET *pkt, unsigned int context,
                                     X509 *x, size_t chainidx)
 {
@@ -1222,7 +1293,11 @@ int tls_parse_ctos_psk(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
              * rounding errors.
              */
             if (id == 0
+<<<<<<< HEAD
                     && sess->timeout >= (long)agesec
+=======
+                    && sess->timeout >= (time_t)agesec
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                     && agems / (uint32_t)1000 == agesec
                     && ticket_age <= agems + 1000
                     && ticket_age + TICKET_AGE_ALLOWANCE >= agems + 1000) {
@@ -1234,8 +1309,19 @@ int tls_parse_ctos_psk(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
             }
         }
 
+<<<<<<< HEAD
         md = ssl_md(sess->cipher->algorithm2);
         if (md != ssl_md(s->s3->tmp.new_cipher->algorithm2)) {
+=======
+        md = ssl_md(s->ctx, sess->cipher->algorithm2);
+        if (md == NULL) {
+            SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
+            goto err;
+        }
+        if (!EVP_MD_is_a(md,
+                EVP_MD_get0_name(ssl_md(s->ctx,
+                                        s->s3.tmp.new_cipher->algorithm2)))) {
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             /* The ciphersuite is not compatible with this session. */
             SSL_SESSION_free(sess);
             sess = NULL;
@@ -1288,8 +1374,15 @@ err:
     return 0;
 }
 
+<<<<<<< HEAD
 int tls_parse_ctos_post_handshake_auth(SSL *s, PACKET *pkt, unsigned int context,
                                        X509 *x, size_t chainidx)
+=======
+int tls_parse_ctos_post_handshake_auth(SSL *s, PACKET *pkt,
+                                       ossl_unused unsigned int context,
+                                       ossl_unused X509 *x,
+                                       ossl_unused size_t chainidx)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 {
     if (PACKET_remaining(pkt) != 0) {
         SSLfatal(s, SSL_AD_DECODE_ERROR, SSL_F_TLS_PARSE_CTOS_POST_HANDSHAKE_AUTH,
@@ -1378,7 +1471,10 @@ EXT_RETURN tls_construct_stoc_maxfragmentlen(SSL *s, WPACKET *pkt,
     return EXT_RETURN_SENT;
 }
 
+<<<<<<< HEAD
 #ifndef OPENSSL_NO_EC
+=======
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 EXT_RETURN tls_construct_stoc_ec_pt_formats(SSL *s, WPACKET *pkt,
                                             unsigned int context, X509 *x,
                                             size_t chainidx)
@@ -1407,7 +1503,10 @@ EXT_RETURN tls_construct_stoc_ec_pt_formats(SSL *s, WPACKET *pkt,
 }
 #endif
 
+<<<<<<< HEAD
 #ifndef OPENSSL_NO_EC
+=======
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 EXT_RETURN tls_construct_stoc_supported_groups(SSL *s, WPACKET *pkt,
                                                unsigned int context, X509 *x,
                                                size_t chainidx)
@@ -1428,6 +1527,10 @@ EXT_RETURN tls_construct_stoc_supported_groups(SSL *s, WPACKET *pkt,
     }
 
     /* Copy group ID if supported */
+<<<<<<< HEAD
+=======
+    version = SSL_version(s);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     for (i = 0; i < numgroups; i++) {
         uint16_t group = groups[i];
 
@@ -1541,9 +1644,15 @@ EXT_RETURN tls_construct_stoc_next_proto_neg(SSL *s, WPACKET *pkt,
     const unsigned char *npa;
     unsigned int npalen;
     int ret;
+<<<<<<< HEAD
     int npn_seen = s->s3->npn_seen;
 
     s->s3->npn_seen = 0;
+=======
+    int npn_seen = s->s3.npn_seen;
+
+    s->s3.npn_seen = 0;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     if (!npn_seen || s->ctx->ext.npn_advertised_cb == NULL)
         return EXT_RETURN_NOT_SENT;
 
@@ -1658,9 +1767,13 @@ EXT_RETURN tls_construct_stoc_supported_versions(SSL *s, WPACKET *pkt,
                                                  size_t chainidx)
 {
     if (!ossl_assert(SSL_IS_TLS13(s))) {
+<<<<<<< HEAD
         SSLfatal(s, SSL_AD_INTERNAL_ERROR,
                  SSL_F_TLS_CONSTRUCT_STOC_SUPPORTED_VERSIONS,
                  ERR_R_INTERNAL_ERROR);
+=======
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return EXT_RETURN_FAIL;
     }
 
@@ -1729,6 +1842,7 @@ EXT_RETURN tls_construct_stoc_key_share(SSL *s, WPACKET *pkt,
         return EXT_RETURN_FAIL;
     }
 
+<<<<<<< HEAD
     skey = ssl_generate_pkey(ckey);
     if (skey == NULL) {
         SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_CONSTRUCT_STOC_KEY_SHARE,
@@ -1744,6 +1858,20 @@ EXT_RETURN tls_construct_stoc_key_share(SSL *s, WPACKET *pkt,
         EVP_PKEY_free(skey);
         return EXT_RETURN_FAIL;
     }
+=======
+    if ((ginf = tls1_group_id_lookup(s->ctx, s->s3.group_id)) == NULL) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
+        return EXT_RETURN_FAIL;
+    }
+
+    if (!ginf->is_kem) {
+        /* Regular KEX */
+        skey = ssl_generate_pkey(s, ckey);
+        if (skey == NULL) {
+            SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_MALLOC_FAILURE);
+            return EXT_RETURN_FAIL;
+        }
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
     if (!WPACKET_sub_memcpy_u16(pkt, encodedPoint, encoded_pt_len)
             || !WPACKET_close(pkt)) {
@@ -1782,8 +1910,12 @@ EXT_RETURN tls_construct_stoc_cookie(SSL *s, WPACKET *pkt, unsigned int context,
         return EXT_RETURN_NOT_SENT;
 
     if (s->ctx->gen_stateless_cookie_cb == NULL) {
+<<<<<<< HEAD
         SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_CONSTRUCT_STOC_COOKIE,
                  SSL_R_NO_COOKIE_CALLBACK_SET);
+=======
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_R_NO_COOKIE_CALLBACK_SET);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return EXT_RETURN_FAIL;
     }
 
@@ -1794,8 +1926,13 @@ EXT_RETURN tls_construct_stoc_cookie(SSL *s, WPACKET *pkt, unsigned int context,
             || !WPACKET_reserve_bytes(pkt, MAX_COOKIE_SIZE, &cookie)
             || !WPACKET_put_bytes_u16(pkt, COOKIE_STATE_FORMAT_VERSION)
             || !WPACKET_put_bytes_u16(pkt, TLS1_3_VERSION)
+<<<<<<< HEAD
             || !WPACKET_put_bytes_u16(pkt, s->s3->group_id)
             || !s->method->put_cipher_by_char(s->s3->tmp.new_cipher, pkt,
+=======
+            || !WPACKET_put_bytes_u16(pkt, s->s3.group_id)
+            || !s->method->put_cipher_by_char(s->s3.tmp.new_cipher, pkt,
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                                               &ciphlen)
                /* Is there a key_share extension present in this HRR? */
             || !WPACKET_put_bytes_u8(pkt, s->s3->peer_tmp == NULL)
@@ -1830,8 +1967,12 @@ EXT_RETURN tls_construct_stoc_cookie(SSL *s, WPACKET *pkt, unsigned int context,
 
     /* Generate the application cookie */
     if (s->ctx->gen_stateless_cookie_cb(s, appcookie1, &appcookielen) == 0) {
+<<<<<<< HEAD
         SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_CONSTRUCT_STOC_COOKIE,
                  SSL_R_COOKIE_GEN_CALLBACK_FAILURE);
+=======
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_R_COOKIE_GEN_CALLBACK_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return EXT_RETURN_FAIL;
     }
 
@@ -1855,6 +1996,7 @@ EXT_RETURN tls_construct_stoc_cookie(SSL *s, WPACKET *pkt, unsigned int context,
 
     /* HMAC the cookie */
     hctx = EVP_MD_CTX_create();
+<<<<<<< HEAD
     pkey = EVP_PKEY_new_raw_private_key(EVP_PKEY_HMAC, NULL,
                                         s->session_ctx->ext.cookie_hmac_key,
                                         sizeof(s->session_ctx->ext
@@ -1866,6 +2008,19 @@ EXT_RETURN tls_construct_stoc_cookie(SSL *s, WPACKET *pkt, unsigned int context,
     }
 
     if (EVP_DigestSignInit(hctx, NULL, EVP_sha256(), NULL, pkey) <= 0
+=======
+    pkey = EVP_PKEY_new_raw_private_key_ex(s->ctx->libctx, "HMAC",
+                                           s->ctx->propq,
+                                           s->session_ctx->ext.cookie_hmac_key,
+                                           sizeof(s->session_ctx->ext.cookie_hmac_key));
+    if (hctx == NULL || pkey == NULL) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_MALLOC_FAILURE);
+        goto err;
+    }
+
+    if (EVP_DigestSignInit_ex(hctx, NULL, "SHA2-256", s->ctx->libctx,
+                              s->ctx->propq, pkey, NULL) <= 0
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             || EVP_DigestSign(hctx, hmac, &hmaclen, cookie,
                               totcookielen) <= 0) {
         SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_CONSTRUCT_STOC_COOKIE,
@@ -1913,8 +2068,13 @@ EXT_RETURN tls_construct_stoc_cryptopro_bug(SSL *s, WPACKET *pkt,
         0x06, 0x06, 0x2a, 0x85, 0x03, 0x02, 0x02, 0x17
     };
 
+<<<<<<< HEAD
     if (((s->s3->tmp.new_cipher->id & 0xFFFF) != 0x80
          && (s->s3->tmp.new_cipher->id & 0xFFFF) != 0x81)
+=======
+    if (((s->s3.tmp.new_cipher->id & 0xFFFF) != 0x80
+         && (s->s3.tmp.new_cipher->id & 0xFFFF) != 0x81)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             || (SSL_get_options(s) & SSL_OP_CRYPTOPRO_TLSEXT_BUG) == 0)
         return EXT_RETURN_NOT_SENT;
 

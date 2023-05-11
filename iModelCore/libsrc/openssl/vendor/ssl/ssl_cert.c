@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2022 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2023 The OpenSSL Project Authors. All Rights Reserved.
  * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
@@ -23,6 +23,16 @@
 #include "ssl_local.h"
 #include "ssl_cert_table.h"
 #include "internal/thread_once.h"
+#ifndef OPENSSL_NO_POSIX_IO
+# include <sys/stat.h>
+# ifdef _WIN32
+#  define stat _stat
+# endif
+#endif
+
+#ifndef S_ISDIR
+# define S_ISDIR(a) (((a) & S_IFMT) == S_IFDIR)
+#endif
 
 static int ssl_security_default_callback(const SSL *s, const SSL_CTX *ctx,
                                          int op, int bits, int nid, void *other,
@@ -52,7 +62,11 @@ CERT *ssl_cert_new(void)
     CERT *ret = OPENSSL_zalloc(sizeof(*ret));
 
     if (ret == NULL) {
+<<<<<<< HEAD
         SSLerr(SSL_F_SSL_CERT_NEW, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_SSL, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return NULL;
     }
 
@@ -63,7 +77,11 @@ CERT *ssl_cert_new(void)
     ret->sec_ex = NULL;
     ret->lock = CRYPTO_THREAD_lock_new();
     if (ret->lock == NULL) {
+<<<<<<< HEAD
         SSLerr(SSL_F_SSL_CERT_NEW, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_SSL, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         OPENSSL_free(ret);
         return NULL;
     }
@@ -77,7 +95,11 @@ CERT *ssl_cert_dup(CERT *cert)
     int i;
 
     if (ret == NULL) {
+<<<<<<< HEAD
         SSLerr(SSL_F_SSL_CERT_DUP, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_SSL, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return NULL;
     }
 
@@ -85,7 +107,11 @@ CERT *ssl_cert_dup(CERT *cert)
     ret->key = &ret->pkeys[cert->key - cert->pkeys];
     ret->lock = CRYPTO_THREAD_lock_new();
     if (ret->lock == NULL) {
+<<<<<<< HEAD
         SSLerr(SSL_F_SSL_CERT_DUP, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_SSL, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         OPENSSL_free(ret);
         return NULL;
     }
@@ -114,7 +140,11 @@ CERT *ssl_cert_dup(CERT *cert)
         if (cpk->chain) {
             rpk->chain = X509_chain_up_ref(cpk->chain);
             if (!rpk->chain) {
+<<<<<<< HEAD
                 SSLerr(SSL_F_SSL_CERT_DUP, ERR_R_MALLOC_FAILURE);
+=======
+                ERR_raise(ERR_LIB_SSL, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                 goto err;
             }
         }
@@ -123,7 +153,11 @@ CERT *ssl_cert_dup(CERT *cert)
             ret->pkeys[i].serverinfo =
                 OPENSSL_malloc(cert->pkeys[i].serverinfo_length);
             if (ret->pkeys[i].serverinfo == NULL) {
+<<<<<<< HEAD
                 SSLerr(SSL_F_SSL_CERT_DUP, ERR_R_MALLOC_FAILURE);
+=======
+                ERR_raise(ERR_LIB_SSL, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                 goto err;
             }
             ret->pkeys[i].serverinfo_length = cert->pkeys[i].serverinfo_length;
@@ -360,6 +394,16 @@ void ssl_cert_set_cert_cb(CERT *c, int (*cb) (SSL *ssl, void *arg), void *arg)
     c->cert_cb_arg = arg;
 }
 
+<<<<<<< HEAD
+=======
+/*
+ * Verify a certificate chain
+ * Return codes:
+ *  1: Verify success
+ *  0: Verify failure or error
+ * -1: Retry required
+ */
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 int ssl_verify_cert_chain(SSL *s, STACK_OF(X509) *sk)
 {
     X509 *x;
@@ -376,9 +420,15 @@ int ssl_verify_cert_chain(SSL *s, STACK_OF(X509) *sk)
     else
         verify_store = s->ctx->cert_store;
 
+<<<<<<< HEAD
     ctx = X509_STORE_CTX_new();
     if (ctx == NULL) {
         SSLerr(SSL_F_SSL_VERIFY_CERT_CHAIN, ERR_R_MALLOC_FAILURE);
+=======
+    ctx = X509_STORE_CTX_new_ex(s->ctx->libctx, s->ctx->propq);
+    if (ctx == NULL) {
+        ERR_raise(ERR_LIB_SSL, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
 
@@ -421,9 +471,15 @@ int ssl_verify_cert_chain(SSL *s, STACK_OF(X509) *sk)
     if (s->verify_callback)
         X509_STORE_CTX_set_verify_cb(ctx, s->verify_callback);
 
+<<<<<<< HEAD
     if (s->ctx->app_verify_callback != NULL)
         i = s->ctx->app_verify_callback(ctx, s->ctx->app_verify_arg);
     else
+=======
+    if (s->ctx->app_verify_callback != NULL) {
+        i = s->ctx->app_verify_callback(ctx, s->ctx->app_verify_arg);
+    } else {
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         i = X509_verify_cert(ctx);
 
     s->verify_result = X509_STORE_CTX_get_error(ctx);
@@ -432,7 +488,11 @@ int ssl_verify_cert_chain(SSL *s, STACK_OF(X509) *sk)
     if (X509_STORE_CTX_get0_chain(ctx) != NULL) {
         s->verified_chain = X509_STORE_CTX_get1_chain(ctx);
         if (s->verified_chain == NULL) {
+<<<<<<< HEAD
             SSLerr(SSL_F_SSL_VERIFY_CERT_CHAIN, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_SSL, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             i = 0;
         }
     }
@@ -461,13 +521,21 @@ STACK_OF(X509_NAME) *SSL_dup_CA_list(const STACK_OF(X509_NAME) *sk)
 
     ret = sk_X509_NAME_new_reserve(NULL, num);
     if (ret == NULL) {
+<<<<<<< HEAD
         SSLerr(SSL_F_SSL_DUP_CA_LIST, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_SSL, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return NULL;
     }
     for (i = 0; i < num; i++) {
         name = X509_NAME_dup(sk_X509_NAME_value(sk, i));
         if (name == NULL) {
+<<<<<<< HEAD
             SSLerr(SSL_F_SSL_DUP_CA_LIST, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_SSL, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             sk_X509_NAME_pop_free(ret, X509_NAME_free);
             return NULL;
         }
@@ -513,13 +581,21 @@ void SSL_set_client_CA_list(SSL *s, STACK_OF(X509_NAME) *name_list)
 
 const STACK_OF(X509_NAME) *SSL_get0_peer_CA_list(const SSL *s)
 {
+<<<<<<< HEAD
     return s->s3 != NULL ? s->s3->tmp.peer_ca_names : NULL;
+=======
+    return s->s3.tmp.peer_ca_names;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 }
 
 STACK_OF(X509_NAME) *SSL_get_client_CA_list(const SSL *s)
 {
     if (!s->server)
+<<<<<<< HEAD
         return s->s3 != NULL ?  s->s3->tmp.peer_ca_names : NULL;
+=======
+        return s->s3.tmp.peer_ca_names;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     return s->client_ca_names != NULL ?  s->client_ca_names
                                       : s->ctx->client_ca_names;
 }
@@ -610,11 +686,24 @@ STACK_OF(X509_NAME) *SSL_load_client_CA_file(const char *file)
     LHASH_OF(X509_NAME) *name_hash = lh_X509_NAME_new(xname_hash, xname_cmp);
 
     if ((name_hash == NULL) || (in == NULL)) {
+<<<<<<< HEAD
         SSLerr(SSL_F_SSL_LOAD_CLIENT_CA_FILE, ERR_R_MALLOC_FAILURE);
         goto err;
     }
 
     if (!BIO_read_filename(in, file))
+=======
+        ERR_raise(ERR_LIB_SSL, ERR_R_MALLOC_FAILURE);
+        goto err;
+    }
+
+    x = X509_new_ex(libctx, propq);
+    if (x == NULL) {
+        ERR_raise(ERR_LIB_SSL, ERR_R_MALLOC_FAILURE);
+        goto err;
+    }
+    if (BIO_read_filename(in, file) <= 0)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
 
     for (;;) {
@@ -623,7 +712,11 @@ STACK_OF(X509_NAME) *SSL_load_client_CA_file(const char *file)
         if (ret == NULL) {
             ret = sk_X509_NAME_new_null();
             if (ret == NULL) {
+<<<<<<< HEAD
                 SSLerr(SSL_F_SSL_LOAD_CLIENT_CA_FILE, ERR_R_MALLOC_FAILURE);
+=======
+                ERR_raise(ERR_LIB_SSL, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                 goto err;
             }
         }
@@ -672,7 +765,11 @@ int SSL_add_file_cert_subjects_to_stack(STACK_OF(X509_NAME) *stack,
     in = BIO_new(BIO_s_file());
 
     if (in == NULL) {
+<<<<<<< HEAD
         SSLerr(SSL_F_SSL_ADD_FILE_CERT_SUBJECTS_TO_STACK, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_SSL, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 
@@ -720,6 +817,7 @@ int SSL_add_dir_cert_subjects_to_stack(STACK_OF(X509_NAME) *stack,
     while ((filename = OPENSSL_DIR_read(&d, dir))) {
         char buf[1024];
         int r;
+        struct stat st;
 
         if (strlen(dir) + strlen(filename) + 2 > sizeof(buf)) {
             SSLerr(SSL_F_SSL_ADD_DIR_CERT_SUBJECTS_TO_STACK,
@@ -731,6 +829,9 @@ int SSL_add_dir_cert_subjects_to_stack(STACK_OF(X509_NAME) *stack,
 #else
         r = BIO_snprintf(buf, sizeof(buf), "%s/%s", dir, filename);
 #endif
+        /* Skip subdirectories */
+        if (!stat(buf, &st) && S_ISDIR(st.st_mode))
+            continue;
         if (r <= 0 || r >= (int)sizeof(buf))
             goto err;
         if (!SSL_add_file_cert_subjects_to_stack(stack, buf))
@@ -762,10 +863,18 @@ int ssl_build_cert_chain(SSL *s, SSL_CTX *ctx, int flags)
     X509_STORE_CTX *xs_ctx = NULL;
     STACK_OF(X509) *chain = NULL, *untrusted = NULL;
     X509 *x;
+<<<<<<< HEAD
     int i, rv = 0;
 
     if (!cpk->x509) {
         SSLerr(SSL_F_SSL_BUILD_CERT_CHAIN, SSL_R_NO_CERTIFICATE_SET);
+=======
+    SSL_CTX *real_ctx = (s == NULL) ? ctx : s->ctx;
+    int i, rv = 0;
+
+    if (!cpk->x509) {
+        ERR_raise(ERR_LIB_SSL, SSL_R_NO_CERTIFICATE_SET);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
     /* Rearranging and check the chain: add everything to a store */
@@ -795,7 +904,11 @@ int ssl_build_cert_chain(SSL *s, SSL_CTX *ctx, int flags)
 
     xs_ctx = X509_STORE_CTX_new();
     if (xs_ctx == NULL) {
+<<<<<<< HEAD
         SSLerr(SSL_F_SSL_BUILD_CERT_CHAIN, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_SSL, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
     if (!X509_STORE_CTX_init(xs_ctx, chain_store, cpk->x509, untrusted)) {
@@ -844,7 +957,11 @@ int ssl_build_cert_chain(SSL *s, SSL_CTX *ctx, int flags)
         x = sk_X509_value(chain, i);
         rv = ssl_security_cert(s, ctx, x, 0, 0);
         if (rv != 1) {
+<<<<<<< HEAD
             SSLerr(SSL_F_SSL_BUILD_CERT_CHAIN, rv);
+=======
+            ERR_raise(ERR_LIB_SSL, rv);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             sk_X509_pop_free(chain, X509_free);
             rv = 0;
             goto err;
@@ -950,6 +1067,7 @@ static int ssl_security_default_callback(const SSL *s, const SSL_CTX *ctx,
         }
     case SSL_SECOP_VERSION:
         if (!SSL_IS_DTLS(s)) {
+<<<<<<< HEAD
             /* SSLv3 not allowed at level 2 */
             if (nid <= SSL3_VERSION && level >= 2)
                 return 0;
@@ -958,6 +1076,10 @@ static int ssl_security_default_callback(const SSL *s, const SSL_CTX *ctx,
                 return 0;
             /* TLS v1.2 only for level 4 and above */
             if (nid <= TLS1_1_VERSION && level >= 4)
+=======
+            /* SSLv3, TLS v1.0 and TLS v1.1 only allowed at level 0 */
+            if (nid <= TLS1_1_VERSION && level > 0)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                 return 0;
         } else {
             /* DTLS v1.2 only for level 4 and above */

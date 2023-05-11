@@ -5,6 +5,10 @@
 .align	16
 aesni_encrypt:
 .cfi_startproc	
+<<<<<<< HEAD
+=======
+.byte	243,15,30,250
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 	movups	(%rdi),%xmm2
 	movl	240(%rdx),%eax
 	movups	(%rdx),%xmm0
@@ -31,6 +35,10 @@ aesni_encrypt:
 .align	16
 aesni_decrypt:
 .cfi_startproc	
+<<<<<<< HEAD
+=======
+.byte	243,15,30,250
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 	movups	(%rdi),%xmm2
 	movl	240(%rdx),%eax
 	movups	(%rdx),%xmm0
@@ -518,6 +526,10 @@ _aesni_decrypt8:
 .align	16
 aesni_ecb_encrypt:
 .cfi_startproc	
+<<<<<<< HEAD
+=======
+.byte	243,15,30,250
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 	andq	$-16,%rdx
 	jz	.Lecb_ret
 
@@ -862,6 +874,10 @@ aesni_ecb_encrypt:
 .align	16
 aesni_ccm64_encrypt_blocks:
 .cfi_startproc	
+<<<<<<< HEAD
+=======
+.byte	243,15,30,250
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 	movl	240(%rcx),%eax
 	movdqu	(%r8),%xmm6
 	movdqa	.Lincrement64(%rip),%xmm9
@@ -927,6 +943,10 @@ aesni_ccm64_encrypt_blocks:
 .align	16
 aesni_ccm64_decrypt_blocks:
 .cfi_startproc	
+<<<<<<< HEAD
+=======
+.byte	243,15,30,250
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 	movl	240(%rcx),%eax
 	movups	(%r8),%xmm6
 	movdqu	(%r9),%xmm3
@@ -1026,6 +1046,10 @@ aesni_ccm64_decrypt_blocks:
 .align	16
 aesni_ctr32_encrypt_blocks:
 .cfi_startproc	
+<<<<<<< HEAD
+=======
+.byte	243,15,30,250
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 	cmpq	$1,%rdx
 	jne	.Lctr32_bulk
 
@@ -1604,6 +1628,10 @@ aesni_ctr32_encrypt_blocks:
 .align	16
 aesni_xts_encrypt:
 .cfi_startproc	
+<<<<<<< HEAD
+=======
+.byte	243,15,30,250
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 	leaq	(%rsp),%r11
 .cfi_def_cfa_register	%r11
 	pushq	%rbp
@@ -2074,6 +2102,10 @@ aesni_xts_encrypt:
 .align	16
 aesni_xts_decrypt:
 .cfi_startproc	
+<<<<<<< HEAD
+=======
+.byte	243,15,30,250
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 	leaq	(%rsp),%r11
 .cfi_def_cfa_register	%r11
 	pushq	%rbp
@@ -2581,6 +2613,10 @@ aesni_xts_decrypt:
 .align	32
 aesni_ocb_encrypt:
 .cfi_startproc	
+<<<<<<< HEAD
+=======
+.byte	243,15,30,250
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 	leaq	(%rsp),%rax
 	pushq	%rbx
 .cfi_adjust_cfa_offset	8
@@ -3008,6 +3044,10 @@ __ocb_encrypt1:
 .align	32
 aesni_ocb_decrypt:
 .cfi_startproc	
+<<<<<<< HEAD
+=======
+.byte	243,15,30,250
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 	leaq	(%rsp),%rax
 	pushq	%rbx
 .cfi_adjust_cfa_offset	8
@@ -3445,6 +3485,10 @@ __ocb_decrypt1:
 .align	16
 aesni_cbc_encrypt:
 .cfi_startproc	
+<<<<<<< HEAD
+=======
+.byte	243,15,30,250
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 	testq	%rdx,%rdx
 	jz	.Lcbc_ret
 

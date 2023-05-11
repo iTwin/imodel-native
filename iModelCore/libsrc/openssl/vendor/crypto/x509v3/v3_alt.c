@@ -227,7 +227,11 @@ static GENERAL_NAMES *v2i_issuer_alt(X509V3_EXT_METHOD *method,
     int i;
 
     if (gens == NULL) {
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_alt.c
         X509V3err(X509V3_F_V2I_ISSUER_ALT, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_san.c
         sk_GENERAL_NAME_free(gens);
         return NULL;
     }
@@ -278,8 +282,12 @@ static int copy_issuer(X509V3_CTX *ctx, GENERAL_NAMES *gens)
 
     num = sk_GENERAL_NAME_num(ialt);
     if (!sk_GENERAL_NAME_reserve(gens, num)) {
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_alt.c
         X509V3err(X509V3_F_COPY_ISSUER, ERR_R_MALLOC_FAILURE);
         sk_GENERAL_NAME_free(ialt);
+=======
+        ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_san.c
         goto err;
     }
 
@@ -307,7 +315,11 @@ static GENERAL_NAMES *v2i_subject_alt(X509V3_EXT_METHOD *method,
 
     gens = sk_GENERAL_NAME_new_reserve(NULL, num);
     if (gens == NULL) {
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_alt.c
         X509V3err(X509V3_F_V2I_SUBJECT_ALT, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_san.c
         sk_GENERAL_NAME_free(gens);
         return NULL;
     }
@@ -371,14 +383,22 @@ static int copy_email(X509V3_CTX *ctx, GENERAL_NAMES *gens, int move_p)
             i--;
         }
         if (email == NULL || (gen = GENERAL_NAME_new()) == NULL) {
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_alt.c
             X509V3err(X509V3_F_COPY_EMAIL, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_san.c
             goto err;
         }
         gen->d.ia5 = email;
         email = NULL;
         gen->type = GEN_EMAIL;
         if (!sk_GENERAL_NAME_push(gens, gen)) {
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_alt.c
             X509V3err(X509V3_F_COPY_EMAIL, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_san.c
             goto err;
         }
         gen = NULL;
@@ -404,7 +424,11 @@ GENERAL_NAMES *v2i_GENERAL_NAMES(const X509V3_EXT_METHOD *method,
 
     gens = sk_GENERAL_NAME_new_reserve(NULL, num);
     if (gens == NULL) {
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_alt.c
         X509V3err(X509V3_F_V2I_GENERAL_NAMES, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_san.c
         sk_GENERAL_NAME_free(gens);
         return NULL;
     }
@@ -445,7 +469,11 @@ GENERAL_NAME *a2i_GENERAL_NAME(GENERAL_NAME *out,
     else {
         gen = GENERAL_NAME_new();
         if (gen == NULL) {
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_alt.c
             X509V3err(X509V3_F_A2I_GENERAL_NAME, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_san.c
             return NULL;
         }
     }
@@ -503,7 +531,11 @@ GENERAL_NAME *a2i_GENERAL_NAME(GENERAL_NAME *out,
         if ((gen->d.ia5 = ASN1_IA5STRING_new()) == NULL ||
             !ASN1_STRING_set(gen->d.ia5, (unsigned char *)value,
                              strlen(value))) {
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_alt.c
             X509V3err(X509V3_F_A2I_GENERAL_NAME, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_san.c
             goto err;
         }
     }

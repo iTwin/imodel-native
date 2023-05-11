@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright 2002-2019 The OpenSSL Project Authors. All Rights Reserved.
+=======
+ * Copyright 2002-2022 The OpenSSL Project Authors. All Rights Reserved.
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -67,6 +71,39 @@ static int module_init(CONF_MODULE *pmod, const char *name, const char *value,
 static CONF_MODULE *module_load_dso(const CONF *cnf, const char *name,
                                     const char *value);
 
+<<<<<<< HEAD
+=======
+static int conf_modules_finish_int(void);
+
+static void module_lists_free(void)
+{
+    CRYPTO_THREAD_lock_free(module_list_lock);
+    module_list_lock = NULL;
+
+    sk_CONF_MODULE_free(supported_modules);
+    supported_modules = NULL;
+
+    sk_CONF_IMODULE_free(initialized_modules);
+    initialized_modules = NULL;
+}
+
+DEFINE_RUN_ONCE_STATIC(do_init_module_list_lock)
+{
+    module_list_lock = CRYPTO_THREAD_lock_new();
+    if (module_list_lock == NULL) {
+        ERR_raise(ERR_LIB_CONF, ERR_R_MALLOC_FAILURE);
+        return 0;
+    }
+
+    return 1;
+}
+
+static int conf_diagnostics(const CONF *cnf)
+{
+    return _CONF_get_number(cnf, NULL, "config_diagnostics") != 0;
+}
+
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 /* Main function: load modules from a CONF structure */
 
 int CONF_modules_load(const CONF *cnf, const char *appname,
@@ -234,10 +271,17 @@ static CONF_MODULE *module_add(DSO *dso, const char *name,
     if (supported_modules == NULL)
         supported_modules = sk_CONF_MODULE_new_null();
     if (supported_modules == NULL)
+<<<<<<< HEAD
         return NULL;
     if ((tmod = OPENSSL_zalloc(sizeof(*tmod))) == NULL) {
         CONFerr(CONF_F_MODULE_ADD, ERR_R_MALLOC_FAILURE);
         return NULL;
+=======
+        goto err;
+    if ((tmod = OPENSSL_zalloc(sizeof(*tmod))) == NULL) {
+        ERR_raise(ERR_LIB_CONF, ERR_R_MALLOC_FAILURE);
+        goto err;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     }
 
     tmod->dso = dso;
@@ -318,14 +362,25 @@ static int module_init(CONF_MODULE *pmod, const char *name, const char *value,
 
     if (initialized_modules == NULL) {
         initialized_modules = sk_CONF_IMODULE_new_null();
+<<<<<<< HEAD
         if (!initialized_modules) {
             CONFerr(CONF_F_MODULE_INIT, ERR_R_MALLOC_FAILURE);
+=======
+        if (initialized_modules == NULL) {
+            CRYPTO_THREAD_unlock(module_list_lock);
+            ERR_raise(ERR_LIB_CONF, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             goto err;
         }
     }
 
     if (!sk_CONF_IMODULE_push(initialized_modules, imod)) {
+<<<<<<< HEAD
         CONFerr(CONF_F_MODULE_INIT, ERR_R_MALLOC_FAILURE);
+=======
+        CRYPTO_THREAD_unlock(module_list_lock);
+        ERR_raise(ERR_LIB_CONF, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 

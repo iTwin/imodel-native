@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright 1998-2018 The OpenSSL Project Authors. All Rights Reserved.
+=======
+ * Copyright 1998-2023 The OpenSSL Project Authors. All Rights Reserved.
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -34,13 +38,21 @@ BN_BLINDING *BN_BLINDING_new(const BIGNUM *A, const BIGNUM *Ai, BIGNUM *mod)
     bn_check_top(mod);
 
     if ((ret = OPENSSL_zalloc(sizeof(*ret))) == NULL) {
+<<<<<<< HEAD
         BNerr(BN_F_BN_BLINDING_NEW, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_BN, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return NULL;
     }
 
     ret->lock = CRYPTO_THREAD_lock_new();
     if (ret->lock == NULL) {
+<<<<<<< HEAD
         BNerr(BN_F_BN_BLINDING_NEW, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_BN, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         OPENSSL_free(ret);
         return NULL;
     }

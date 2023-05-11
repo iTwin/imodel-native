@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright 2008-2020 The OpenSSL Project Authors. All Rights Reserved.
+=======
+ * Copyright 2008-2023 The OpenSSL Project Authors. All Rights Reserved.
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -19,6 +23,103 @@
 IMPLEMENT_ASN1_FUNCTIONS(CMS_ContentInfo)
 IMPLEMENT_ASN1_PRINT_FUNCTION(CMS_ContentInfo)
 
+<<<<<<< HEAD
+=======
+CMS_ContentInfo *d2i_CMS_ContentInfo(CMS_ContentInfo **a,
+                                     const unsigned char **in, long len)
+{
+    CMS_ContentInfo *ci;
+    const CMS_CTX *ctx = ossl_cms_get0_cmsctx(a == NULL ? NULL : *a);
+
+    ci = (CMS_ContentInfo *)ASN1_item_d2i_ex((ASN1_VALUE **)a, in, len,
+                                          (CMS_ContentInfo_it()),
+                                          ossl_cms_ctx_get0_libctx(ctx),
+                                          ossl_cms_ctx_get0_propq(ctx));
+    if (ci != NULL) {
+        ERR_set_mark();
+        ossl_cms_resolve_libctx(ci);
+        ERR_pop_to_mark();
+    }
+    return ci;
+}
+
+int i2d_CMS_ContentInfo(const CMS_ContentInfo *a, unsigned char **out)
+{
+    return ASN1_item_i2d((const ASN1_VALUE *)a, out, (CMS_ContentInfo_it()));
+}
+
+CMS_ContentInfo *CMS_ContentInfo_new_ex(OSSL_LIB_CTX *libctx, const char *propq)
+{
+    CMS_ContentInfo *ci;
+
+    ci = (CMS_ContentInfo *)ASN1_item_new_ex(ASN1_ITEM_rptr(CMS_ContentInfo),
+                                             libctx, propq);
+    if (ci != NULL) {
+        ci->ctx.libctx = libctx;
+        ci->ctx.propq = NULL;
+        if (propq != NULL) {
+            ci->ctx.propq = OPENSSL_strdup(propq);
+            if (ci->ctx.propq == NULL) {
+                CMS_ContentInfo_free(ci);
+                ci = NULL;
+                ERR_raise(ERR_LIB_PROV, ERR_R_MALLOC_FAILURE);
+            }
+        }
+    }
+    return ci;
+}
+
+CMS_ContentInfo *CMS_ContentInfo_new(void)
+{
+    return CMS_ContentInfo_new_ex(NULL, NULL);
+}
+
+void CMS_ContentInfo_free(CMS_ContentInfo *cms)
+{
+    if (cms != NULL) {
+        OPENSSL_free(cms->ctx.propq);
+        ASN1_item_free((ASN1_VALUE *)cms, ASN1_ITEM_rptr(CMS_ContentInfo));
+    }
+}
+
+const CMS_CTX *ossl_cms_get0_cmsctx(const CMS_ContentInfo *cms)
+{
+    return cms != NULL ? &cms->ctx : NULL;
+}
+
+OSSL_LIB_CTX *ossl_cms_ctx_get0_libctx(const CMS_CTX *ctx)
+{
+    return ctx != NULL ? ctx->libctx : NULL;
+}
+
+const char *ossl_cms_ctx_get0_propq(const CMS_CTX *ctx)
+{
+    return ctx != NULL ? ctx->propq : NULL;
+}
+
+void ossl_cms_resolve_libctx(CMS_ContentInfo *ci)
+{
+    int i;
+    CMS_CertificateChoices *cch;
+    STACK_OF(CMS_CertificateChoices) **pcerts;
+    const CMS_CTX *ctx = ossl_cms_get0_cmsctx(ci);
+    OSSL_LIB_CTX *libctx = ossl_cms_ctx_get0_libctx(ctx);
+    const char *propq = ossl_cms_ctx_get0_propq(ctx);
+
+    ossl_cms_SignerInfos_set_cmsctx(ci);
+    ossl_cms_RecipientInfos_set_cmsctx(ci);
+
+    pcerts = cms_get0_certificate_choices(ci);
+    if (pcerts != NULL) {
+        for (i = 0; i < sk_CMS_CertificateChoices_num(*pcerts); i++) {
+            cch = sk_CMS_CertificateChoices_value(*pcerts, i);
+            if (cch->type == CMS_CERTCHOICE_CERT)
+                ossl_x509_set0_libctx(cch->d.certificate, libctx, propq);
+        }
+    }
+}
+
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 const ASN1_OBJECT *CMS_get0_type(const CMS_ContentInfo *cms)
 {
     return cms->contentType;
@@ -138,7 +239,11 @@ int CMS_dataFinal(CMS_ContentInfo *cms, BIO *cmsbio)
         return 1;
 
     case NID_pkcs7_signed:
+<<<<<<< HEAD
         return cms_SignedData_final(cms, cmsbio);
+=======
+        return ossl_cms_SignedData_final(cms, cmsbio);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
     case NID_pkcs7_digest:
         return cms_DigestedData_do_final(cms, cmsbio, 0);
@@ -278,7 +383,11 @@ int CMS_set_detached(CMS_ContentInfo *cms, int detached)
         (*pos)->flags |= ASN1_STRING_FLAG_CONT;
         return 1;
     }
+<<<<<<< HEAD
     CMSerr(CMS_F_CMS_SET_DETACHED, ERR_R_MALLOC_FAILURE);
+=======
+    ERR_raise(ERR_LIB_CMS, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     return 0;
 }
 
@@ -297,8 +406,13 @@ BIO *cms_DigestAlgorithm_init_bio(X509_ALGOR *digestAlgorithm)
         goto err;
     }
     mdbio = BIO_new(BIO_f_md());
+<<<<<<< HEAD
     if (mdbio == NULL || !BIO_set_md(mdbio, digest)) {
         CMSerr(CMS_F_CMS_DIGESTALGORITHM_INIT_BIO, CMS_R_MD_BIO_INIT_ERROR);
+=======
+    if (mdbio == NULL || BIO_set_md(mdbio, digest) <= 0) {
+        ERR_raise(ERR_LIB_CMS, CMS_R_MD_BIO_INIT_ERROR);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
     return mdbio;
@@ -469,11 +583,12 @@ int CMS_add0_crl(CMS_ContentInfo *cms, X509_CRL *crl)
 
 int CMS_add1_crl(CMS_ContentInfo *cms, X509_CRL *crl)
 {
-    int r;
-    r = CMS_add0_crl(cms, crl);
-    if (r > 0)
-        X509_CRL_up_ref(crl);
-    return r;
+    if (!X509_CRL_up_ref(crl))
+        return 0;
+    if (CMS_add0_crl(cms, crl))
+        return 1;
+    X509_CRL_free(crl);
+    return 0;
 }
 
 STACK_OF(X509) *CMS_get1_certs(CMS_ContentInfo *cms)
@@ -488,12 +603,17 @@ STACK_OF(X509) *CMS_get1_certs(CMS_ContentInfo *cms)
     for (i = 0; i < sk_CMS_CertificateChoices_num(*pcerts); i++) {
         cch = sk_CMS_CertificateChoices_value(*pcerts, i);
         if (cch->type == 0) {
+<<<<<<< HEAD
             if (!certs) {
                 certs = sk_X509_new_null();
                 if (!certs)
                     return NULL;
             }
             if (!sk_X509_push(certs, cch->d.certificate)) {
+=======
+            if (!ossl_x509_add_cert_new(&certs, cch->d.certificate,
+                                        X509_ADD_FLAG_UP_REF)) {
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                 sk_X509_pop_free(certs, X509_free);
                 return NULL;
             }
@@ -557,14 +677,22 @@ int cms_set1_ias(CMS_IssuerAndSerialNumber **pias, X509 *cert)
         goto err;
     if (!X509_NAME_set(&ias->issuer, X509_get_issuer_name(cert)))
         goto err;
+<<<<<<< HEAD
     if (!ASN1_STRING_copy(ias->serialNumber, X509_get_serialNumber(cert)))
+=======
+    if (!ASN1_STRING_copy(ias->serialNumber, X509_get0_serialNumber(cert)))
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     M_ASN1_free_of(*pias, CMS_IssuerAndSerialNumber);
     *pias = ias;
     return 1;
  err:
     M_ASN1_free_of(ias, CMS_IssuerAndSerialNumber);
+<<<<<<< HEAD
     CMSerr(CMS_F_CMS_SET1_IAS, ERR_R_MALLOC_FAILURE);
+=======
+    ERR_raise(ERR_LIB_CMS, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     return 0;
 }
 
@@ -579,7 +707,11 @@ int cms_set1_keyid(ASN1_OCTET_STRING **pkeyid, X509 *cert)
     }
     keyid = ASN1_STRING_dup(cert_keyid);
     if (!keyid) {
+<<<<<<< HEAD
         CMSerr(CMS_F_CMS_SET1_KEYID, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_CMS, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
     ASN1_OCTET_STRING_free(*pkeyid);

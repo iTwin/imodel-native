@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright 1999-2018 The OpenSSL Project Authors. All Rights Reserved.
+=======
+ * Copyright 1999-2021 The OpenSSL Project Authors. All Rights Reserved.
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -107,7 +111,11 @@ X509_ALGOR *PKCS5_pbe2_set_iv(const EVP_CIPHER *cipher, int iter,
 
     pbe2->keyfunc = PKCS5_pbkdf2_set(iter, salt, saltlen, prf_nid, keylen);
 
+<<<<<<< HEAD
     if (!pbe2->keyfunc)
+=======
+    if (pbe2->keyfunc == NULL)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto merr;
 
     /* Now set up top level AlgorithmIdentifier */
@@ -129,7 +137,11 @@ X509_ALGOR *PKCS5_pbe2_set_iv(const EVP_CIPHER *cipher, int iter,
     return ret;
 
  merr:
+<<<<<<< HEAD
     ASN1err(ASN1_F_PKCS5_PBE2_SET_IV, ERR_R_MALLOC_FAILURE);
+=======
+    ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
  err:
     EVP_CIPHER_CTX_free(ctx);
@@ -161,6 +173,11 @@ X509_ALGOR *PKCS5_pbkdf2_set(int iter, unsigned char *salt, int saltlen,
     kdf->salt->value.octet_string = osalt;
     kdf->salt->type = V_ASN1_OCTET_STRING;
 
+<<<<<<< HEAD
+=======
+    if (saltlen < 0)
+        goto merr;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     if (saltlen == 0)
         saltlen = PKCS5_SALT_LEN;
     if ((osalt->data = OPENSSL_malloc(saltlen)) == NULL)
@@ -170,7 +187,11 @@ X509_ALGOR *PKCS5_pbkdf2_set(int iter, unsigned char *salt, int saltlen,
 
     if (salt)
         memcpy(osalt->data, salt, saltlen);
+<<<<<<< HEAD
     else if (RAND_bytes(osalt->data, saltlen) <= 0)
+=======
+    else if (RAND_bytes_ex(libctx, osalt->data, saltlen, 0) <= 0)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto merr;
 
     if (iter <= 0)
@@ -214,7 +235,11 @@ X509_ALGOR *PKCS5_pbkdf2_set(int iter, unsigned char *salt, int saltlen,
     return keyfunc;
 
  merr:
+<<<<<<< HEAD
     ASN1err(ASN1_F_PKCS5_PBKDF2_SET, ERR_R_MALLOC_FAILURE);
+=======
+    ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     PBKDF2PARAM_free(kdf);
     X509_ALGOR_free(keyfunc);
     return NULL;

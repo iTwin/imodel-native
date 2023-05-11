@@ -31,9 +31,15 @@ int PEM_SignFinal(EVP_MD_CTX *ctx, unsigned char *sigret,
     int i, ret = 0;
     unsigned int m_len;
 
+<<<<<<< HEAD
     m = OPENSSL_malloc(EVP_PKEY_size(pkey));
     if (m == NULL) {
         PEMerr(PEM_F_PEM_SIGNFINAL, ERR_R_MALLOC_FAILURE);
+=======
+    m = OPENSSL_malloc(EVP_PKEY_get_size(pkey));
+    if (m == NULL) {
+        ERR_raise(ERR_LIB_PEM, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 

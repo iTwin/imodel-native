@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2021 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2023 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -32,9 +32,32 @@ static int asn1_print_info(BIO *bp, int tag, int xclass, int constructed,
         p = "cons: ";
     else
         p = "prim: ";
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/asn1/asn1_par.c
     if (BIO_write(bp, p, 6) < 6)
         goto err;
     BIO_indent(bp, indent, 128);
+=======
+    if (constructed != (V_ASN1_CONSTRUCTED | 1)) {
+        if (BIO_snprintf(str, sizeof(str), "%5ld:d=%-2d hl=%ld l=%4ld %s",
+                         offset, depth, (long)hl, len, p) <= 0)
+            goto err;
+    } else {
+        if (BIO_snprintf(str, sizeof(str), "%5ld:d=%-2d hl=%ld l=inf  %s",
+                         offset, depth, (long)hl, p) <= 0)
+            goto err;
+    }
+    if (bp != NULL) {
+        if (BIO_set_prefix(bp, str) <= 0) {
+            if ((bio = BIO_new(BIO_f_prefix())) == NULL
+                    || (bp = BIO_push(bio, bp)) == NULL)
+                goto err;
+            pop_f_prefix = 1;
+        }
+        saved_indent = BIO_get_indent(bp);
+        if (BIO_set_prefix(bp, str) <= 0 || BIO_set_indent(bp, indent) <= 0)
+            goto err;
+    }
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/asn1/asn1_parse.c
 
     p = str;
     if ((xclass & V_ASN1_PRIVATE) == V_ASN1_PRIVATE)

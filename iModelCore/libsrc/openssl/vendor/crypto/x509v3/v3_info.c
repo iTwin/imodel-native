@@ -91,7 +91,11 @@ static STACK_OF(CONF_VALUE) *i2v_AUTHORITY_INFO_ACCESS(
 
     return tret;
  err:
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_info.c
     X509V3err(X509V3_F_I2V_AUTHORITY_INFO_ACCESS, ERR_R_MALLOC_FAILURE);
+=======
+    ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_info.c
     if (ret == NULL && tret != NULL)
         sk_CONF_VALUE_pop_free(tret, X509V3_conf_free);
     return NULL;
@@ -111,14 +115,22 @@ static AUTHORITY_INFO_ACCESS *v2i_AUTHORITY_INFO_ACCESS(X509V3_EXT_METHOD
     char *objtmp, *ptmp;
 
     if ((ainfo = sk_ACCESS_DESCRIPTION_new_reserve(NULL, num)) == NULL) {
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_info.c
         X509V3err(X509V3_F_V2I_AUTHORITY_INFO_ACCESS, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_info.c
         return NULL;
     }
     for (i = 0; i < num; i++) {
         cnf = sk_CONF_VALUE_value(nval, i);
         if ((acc = ACCESS_DESCRIPTION_new()) == NULL) {
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_info.c
             X509V3err(X509V3_F_V2I_AUTHORITY_INFO_ACCESS,
                       ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_info.c
             goto err;
         }
         sk_ACCESS_DESCRIPTION_push(ainfo, acc); /* Cannot fail due to reserve */
@@ -133,9 +145,14 @@ static AUTHORITY_INFO_ACCESS *v2i_AUTHORITY_INFO_ACCESS(X509V3_EXT_METHOD
         ctmp.value = cnf->value;
         if (!v2i_GENERAL_NAME_ex(acc->location, method, ctx, &ctmp, 0))
             goto err;
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_info.c
         if ((objtmp = OPENSSL_strndup(cnf->name, objlen)) == NULL) {
             X509V3err(X509V3_F_V2I_AUTHORITY_INFO_ACCESS,
                       ERR_R_MALLOC_FAILURE);
+=======
+        if ((objtmp = OPENSSL_strndup(cnf->name, ptmp - cnf->name)) == NULL) {
+            ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_info.c
             goto err;
         }
         acc->method = OBJ_txt2obj(objtmp, 0);

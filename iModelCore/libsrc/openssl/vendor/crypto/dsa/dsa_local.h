@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright 2007-2016 The OpenSSL Project Authors. All Rights Reserved.
+=======
+ * Copyright 2007-2022 The OpenSSL Project Authors. All Rights Reserved.
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -64,6 +68,7 @@ struct dsa_method {
     int (*dsa_keygen) (DSA *dsa);
 };
 
+<<<<<<< HEAD
 int dsa_builtin_paramgen(DSA *ret, size_t bits, size_t qbits,
                          const EVP_MD *evpmd, const unsigned char *seed_in,
                          size_t seed_len, unsigned char *seed_out,
@@ -75,3 +80,6 @@ int dsa_builtin_paramgen2(DSA *ret, size_t L, size_t N,
                           size_t seed_len, int idx, unsigned char *seed_out,
                           int *counter_ret, unsigned long *h_ret,
                           BN_GENCB *cb);
+=======
+DSA_SIG *ossl_dsa_do_sign_int(const unsigned char *dgst, int dlen, DSA *dsa);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))

@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright 1999-2020 The OpenSSL Project Authors. All Rights Reserved.
+=======
+ * Copyright 1999-2022 The OpenSSL Project Authors. All Rights Reserved.
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -25,8 +29,13 @@ PKCS7 *PKCS7_sign(X509 *signcert, EVP_PKEY *pkey, STACK_OF(X509) *certs,
     PKCS7 *p7;
     int i;
 
+<<<<<<< HEAD
     if ((p7 = PKCS7_new()) == NULL) {
         PKCS7err(PKCS7_F_PKCS7_SIGN, ERR_R_MALLOC_FAILURE);
+=======
+    if ((p7 = PKCS7_new_ex(libctx, propq)) == NULL) {
+        ERR_raise(ERR_LIB_PKCS7, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return NULL;
     }
 
@@ -68,7 +77,11 @@ int PKCS7_final(PKCS7 *p7, BIO *data, int flags)
     int ret = 0;
 
     if ((p7bio = PKCS7_dataInit(p7, NULL)) == NULL) {
+<<<<<<< HEAD
         PKCS7err(PKCS7_F_PKCS7_FINAL, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_PKCS7, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
 
@@ -135,7 +148,11 @@ PKCS7_SIGNER_INFO *PKCS7_sign_add_signer(PKCS7 *p7, X509 *signcert,
         /* Add SMIMECapabilities */
         if (!(flags & PKCS7_NOSMIMECAP)) {
             if ((smcap = sk_X509_ALGOR_new_null()) == NULL) {
+<<<<<<< HEAD
                 PKCS7err(PKCS7_F_PKCS7_SIGN_ADD_SIGNER, ERR_R_MALLOC_FAILURE);
+=======
+                ERR_raise(ERR_LIB_PKCS7, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                 goto err;
             }
             if (!add_cipher_smcap(smcap, NID_aes_256_cbc, -1)
@@ -213,6 +230,10 @@ int PKCS7_verify(PKCS7 *p7, STACK_OF(X509) *certs, X509_STORE *store,
     int i, j = 0, k, ret = 0;
     BIO *p7bio = NULL;
     BIO *tmpin = NULL, *tmpout = NULL;
+<<<<<<< HEAD
+=======
+    const PKCS7_CTX *p7_ctx;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
     if (!p7) {
         PKCS7err(PKCS7_F_PKCS7_VERIFY, PKCS7_R_INVALID_NULL_POINTER);
@@ -226,7 +247,11 @@ int PKCS7_verify(PKCS7 *p7, STACK_OF(X509) *certs, X509_STORE *store,
 
     /* Check for no data and no content: no data to verify signature */
     if (PKCS7_get_detached(p7) && !indata) {
+<<<<<<< HEAD
         PKCS7err(PKCS7_F_PKCS7_VERIFY, PKCS7_R_NO_CONTENT);
+=======
+        ERR_raise(ERR_LIB_PKCS7, PKCS7_R_NO_CONTENT);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
 
@@ -239,7 +264,11 @@ int PKCS7_verify(PKCS7 *p7, STACK_OF(X509) *certs, X509_STORE *store,
          * process is different, but the existing PKCs7 verification works.
          */
         if (!PKCS7_get_detached(p7) && indata) {
+<<<<<<< HEAD
             PKCS7err(PKCS7_F_PKCS7_VERIFY, PKCS7_R_CONTENT_AND_DATA_PRESENT);
+=======
+            ERR_raise(ERR_LIB_PKCS7, PKCS7_R_CONTENT_AND_DATA_PRESENT);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return 0;
         }
     }
@@ -303,7 +332,11 @@ int PKCS7_verify(PKCS7 *p7, STACK_OF(X509) *certs, X509_STORE *store,
         len = BIO_get_mem_data(indata, &ptr);
         tmpin = (len == 0) ? indata : BIO_new_mem_buf(ptr, len);
         if (tmpin == NULL) {
+<<<<<<< HEAD
             PKCS7err(PKCS7_F_PKCS7_VERIFY, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_PKCS7, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             goto err;
         }
     } else
@@ -314,7 +347,11 @@ int PKCS7_verify(PKCS7 *p7, STACK_OF(X509) *certs, X509_STORE *store,
 
     if (flags & PKCS7_TEXT) {
         if ((tmpout = BIO_new(BIO_s_mem())) == NULL) {
+<<<<<<< HEAD
             PKCS7err(PKCS7_F_PKCS7_VERIFY, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_PKCS7, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             goto err;
         }
         BIO_set_mem_eof_return(tmpout, 0);
@@ -323,7 +360,11 @@ int PKCS7_verify(PKCS7 *p7, STACK_OF(X509) *certs, X509_STORE *store,
 
     /* We now have to 'read' from p7bio to calculate digests etc. */
     if ((buf = OPENSSL_malloc(BUFFERSIZE)) == NULL) {
+<<<<<<< HEAD
         PKCS7err(PKCS7_F_PKCS7_VERIFY, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_PKCS7, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
     for (;;) {
@@ -399,7 +440,11 @@ STACK_OF(X509) *PKCS7_get0_signers(PKCS7 *p7, STACK_OF(X509) *certs,
     }
 
     if ((signers = sk_X509_new_null()) == NULL) {
+<<<<<<< HEAD
         PKCS7err(PKCS7_F_PKCS7_GET0_SIGNERS, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_PKCS7, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return NULL;
     }
 
@@ -417,8 +462,12 @@ STACK_OF(X509) *PKCS7_get0_signers(PKCS7 *p7, STACK_OF(X509) *certs,
                 X509_find_by_issuer_and_serial(p7->d.sign->cert,
                                                ias->issuer, ias->serial);
         if (!signer) {
+<<<<<<< HEAD
             PKCS7err(PKCS7_F_PKCS7_GET0_SIGNERS,
                      PKCS7_R_SIGNER_CERTIFICATE_NOT_FOUND);
+=======
+            ERR_raise(ERR_LIB_PKCS7, PKCS7_R_SIGNER_CERTIFICATE_NOT_FOUND);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             sk_X509_free(signers);
             return 0;
         }
@@ -440,8 +489,14 @@ PKCS7 *PKCS7_encrypt(STACK_OF(X509) *certs, BIO *in, const EVP_CIPHER *cipher,
     BIO *p7bio = NULL;
     int i;
     X509 *x509;
+<<<<<<< HEAD
     if ((p7 = PKCS7_new()) == NULL) {
         PKCS7err(PKCS7_F_PKCS7_ENCRYPT, ERR_R_MALLOC_FAILURE);
+=======
+
+    if ((p7 = PKCS7_new_ex(libctx, propq)) == NULL) {
+        ERR_raise(ERR_LIB_PKCS7, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return NULL;
     }
 
@@ -486,7 +541,11 @@ int PKCS7_decrypt(PKCS7 *p7, EVP_PKEY *pkey, X509 *cert, BIO *data, int flags)
     }
 
     if (!PKCS7_type_is_enveloped(p7)) {
+<<<<<<< HEAD
         PKCS7err(PKCS7_F_PKCS7_DECRYPT, PKCS7_R_WRONG_CONTENT_TYPE);
+=======
+        ERR_raise(ERR_LIB_PKCS7, PKCS7_R_WRONG_CONTENT_TYPE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
 
@@ -505,12 +564,20 @@ int PKCS7_decrypt(PKCS7 *p7, EVP_PKEY *pkey, X509 *cert, BIO *data, int flags)
         BIO *tmpbuf, *bread;
         /* Encrypt BIOs can't do BIO_gets() so add a buffer BIO */
         if ((tmpbuf = BIO_new(BIO_f_buffer())) == NULL) {
+<<<<<<< HEAD
             PKCS7err(PKCS7_F_PKCS7_DECRYPT, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_PKCS7, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             BIO_free_all(tmpmem);
             return 0;
         }
         if ((bread = BIO_push(tmpbuf, tmpmem)) == NULL) {
+<<<<<<< HEAD
             PKCS7err(PKCS7_F_PKCS7_DECRYPT, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_PKCS7, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             BIO_free_all(tmpbuf);
             BIO_free_all(tmpmem);
             return 0;
@@ -524,7 +591,11 @@ int PKCS7_decrypt(PKCS7 *p7, EVP_PKEY *pkey, X509 *cert, BIO *data, int flags)
         return ret;
     }
     if ((buf = OPENSSL_malloc(BUFFERSIZE)) == NULL) {
+<<<<<<< HEAD
         PKCS7err(PKCS7_F_PKCS7_DECRYPT, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_PKCS7, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
     for (;;) {

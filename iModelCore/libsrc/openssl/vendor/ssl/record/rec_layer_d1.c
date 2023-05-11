@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2021 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2005-2022 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -21,7 +21,11 @@ int DTLS_RECORD_LAYER_new(RECORD_LAYER *rl)
     DTLS_RECORD_LAYER *d;
 
     if ((d = OPENSSL_malloc(sizeof(*d))) == NULL) {
+<<<<<<< HEAD
         SSLerr(SSL_F_DTLS_RECORD_LAYER_NEW, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_SSL, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
 
@@ -77,6 +81,11 @@ void DTLS_RECORD_LAYER_clear(RECORD_LAYER *rl)
 
     while ((item = pqueue_pop(d->processed_rcds.q)) != NULL) {
         rdata = (DTLS1_RECORD_DATA *)item->data;
+<<<<<<< HEAD
+=======
+        if (rl->s->options & SSL_OP_CLEANSE_PLAINTEXT)
+            OPENSSL_cleanse(rdata->rbuf.buf, rdata->rbuf.len);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         OPENSSL_free(rdata->rbuf.buf);
         OPENSSL_free(item->data);
         pitem_free(item);
@@ -84,6 +93,11 @@ void DTLS_RECORD_LAYER_clear(RECORD_LAYER *rl)
 
     while ((item = pqueue_pop(d->buffered_app_data.q)) != NULL) {
         rdata = (DTLS1_RECORD_DATA *)item->data;
+<<<<<<< HEAD
+=======
+        if (rl->s->options & SSL_OP_CLEANSE_PLAINTEXT)
+            OPENSSL_cleanse(rdata->rbuf.buf, rdata->rbuf.len);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         OPENSSL_free(rdata->rbuf.buf);
         OPENSSL_free(item->data);
         pitem_free(item);
@@ -262,9 +276,13 @@ int dtls1_process_buffered_records(SSL *s)
                  * current record is from a different epoch. But that cannot
                  * be the case because we already checked the epoch above
                  */
+<<<<<<< HEAD
                  SSLfatal(s, SSL_AD_INTERNAL_ERROR,
                           SSL_F_DTLS1_PROCESS_BUFFERED_RECORDS,
                           ERR_R_INTERNAL_ERROR);
+=======
+                 SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                  return 0;
             }
 #ifndef OPENSSL_NO_SCTP
@@ -284,7 +302,11 @@ int dtls1_process_buffered_records(SSL *s)
             if (!replayok || !dtls1_process_record(s, bitmap)) {
                 if (ossl_statem_in_error(s)) {
                     /* dtls1_process_record called SSLfatal() */
+<<<<<<< HEAD
                     return -1;
+=======
+                    return 0;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                 }
                 /* dump this record */
                 rr->length = 0;
@@ -358,8 +380,12 @@ int dtls1_read_bytes(SSL *s, int type, int *recvd_type, unsigned char *buf,
     if ((type && (type != SSL3_RT_APPLICATION_DATA) &&
          (type != SSL3_RT_HANDSHAKE)) ||
         (peek && (type != SSL3_RT_APPLICATION_DATA))) {
+<<<<<<< HEAD
         SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_DTLS1_READ_BYTES,
                  ERR_R_INTERNAL_ERROR);
+=======
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return -1;
     }
 
@@ -377,10 +403,17 @@ int dtls1_read_bytes(SSL *s, int type, int *recvd_type, unsigned char *buf,
     s->rwstate = SSL_NOTHING;
 
     /*-
+<<<<<<< HEAD
      * s->s3->rrec.type         - is the type of record
      * s->s3->rrec.data,    - data
      * s->s3->rrec.off,     - offset into 'data' for next read
      * s->s3->rrec.length,  - number of bytes.
+=======
+     * s->s3.rrec.type     - is the type of record
+     * s->s3.rrec.data,    - data
+     * s->s3.rrec.off,     - offset into 'data' for next read
+     * s->s3.rrec.length,  - number of bytes.
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
      */
     rr = s->rlayer.rrec;
 
@@ -445,8 +478,13 @@ int dtls1_read_bytes(SSL *s, int type, int *recvd_type, unsigned char *buf,
 
     /* we now have a packet which can be read and processed */
 
+<<<<<<< HEAD
     if (s->s3->change_cipher_spec /* set when we receive ChangeCipherSpec,
                                    * reset by ssl3_get_finished */
+=======
+    if (s->s3.change_cipher_spec /* set when we receive ChangeCipherSpec,
+                                  * reset by ssl3_get_finished */
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         && (SSL3_RECORD_get_type(rr) != SSL3_RT_HANDSHAKE)) {
         /*
          * We now have application data between CCS and Finished. Most likely
@@ -488,7 +526,11 @@ int dtls1_read_bytes(SSL *s, int type, int *recvd_type, unsigned char *buf,
          */
         if (SSL_in_init(s) && (type == SSL3_RT_APPLICATION_DATA) &&
             (s->enc_read_ctx == NULL)) {
+<<<<<<< HEAD
             SSLfatal(s, SSL_AD_UNEXPECTED_MESSAGE, SSL_F_DTLS1_READ_BYTES,
+=======
+            SSLfatal(s, SSL_AD_UNEXPECTED_MESSAGE,
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                      SSL_R_APP_DATA_IN_HANDSHAKE);
             return -1;
         }
@@ -517,6 +559,11 @@ int dtls1_read_bytes(SSL *s, int type, int *recvd_type, unsigned char *buf,
             if (SSL3_RECORD_get_length(rr) == 0)
                 SSL3_RECORD_set_read(rr);
         } else {
+<<<<<<< HEAD
+=======
+            if (s->options & SSL_OP_CLEANSE_PLAINTEXT)
+                OPENSSL_cleanse(&(SSL3_RECORD_get_data(rr)[SSL3_RECORD_get_off(rr)]), n);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             SSL3_RECORD_sub_length(rr, n);
             SSL3_RECORD_add_off(rr, n);
             if (SSL3_RECORD_get_length(rr) == 0) {
@@ -533,7 +580,11 @@ int dtls1_read_bytes(SSL *s, int type, int *recvd_type, unsigned char *buf,
          */
         if (BIO_dgram_is_sctp(SSL_get_rbio(s)) &&
             s->d1->shutdown_received
+<<<<<<< HEAD
             && !BIO_dgram_sctp_msg_waiting(SSL_get_rbio(s))) {
+=======
+            && BIO_dgram_sctp_msg_waiting(SSL_get_rbio(s)) <= 0) {
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             s->shutdown |= SSL_RECEIVED_SHUTDOWN;
             return 0;
         }
@@ -557,8 +608,12 @@ int dtls1_read_bytes(SSL *s, int type, int *recvd_type, unsigned char *buf,
                 || !PACKET_get_1(&alert, &alert_level)
                 || !PACKET_get_1(&alert, &alert_descr)
                 || PACKET_remaining(&alert) != 0) {
+<<<<<<< HEAD
             SSLfatal(s, SSL_AD_UNEXPECTED_MESSAGE, SSL_F_DTLS1_READ_BYTES,
                      SSL_R_INVALID_ALERT);
+=======
+            SSLfatal(s, SSL_AD_UNEXPECTED_MESSAGE, SSL_R_INVALID_ALERT);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return -1;
         }
 
@@ -577,12 +632,20 @@ int dtls1_read_bytes(SSL *s, int type, int *recvd_type, unsigned char *buf,
         }
 
         if (alert_level == SSL3_AL_WARNING) {
+<<<<<<< HEAD
             s->s3->warn_alert = alert_descr;
+=======
+            s->s3.warn_alert = alert_descr;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             SSL3_RECORD_set_read(rr);
 
             s->rlayer.alert_count++;
             if (s->rlayer.alert_count == MAX_WARN_ALERT_COUNT) {
+<<<<<<< HEAD
                 SSLfatal(s, SSL_AD_UNEXPECTED_MESSAGE, SSL_F_DTLS1_READ_BYTES,
+=======
+                SSLfatal(s, SSL_AD_UNEXPECTED_MESSAGE,
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                          SSL_R_TOO_MANY_WARN_ALERTS);
                 return -1;
             }
@@ -595,7 +658,11 @@ int dtls1_read_bytes(SSL *s, int type, int *recvd_type, unsigned char *buf,
                  * that nothing gets discarded.
                  */
                 if (BIO_dgram_is_sctp(SSL_get_rbio(s)) &&
+<<<<<<< HEAD
                     BIO_dgram_sctp_msg_waiting(SSL_get_rbio(s))) {
+=======
+                    BIO_dgram_sctp_msg_waiting(SSL_get_rbio(s)) > 0) {
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                     s->d1->shutdown_received = 1;
                     s->rwstate = SSL_READING;
                     BIO_clear_retry_flags(SSL_get_rbio(s));
@@ -607,6 +674,7 @@ int dtls1_read_bytes(SSL *s, int type, int *recvd_type, unsigned char *buf,
                 return 0;
             }
         } else if (alert_level == SSL3_AL_FATAL) {
+<<<<<<< HEAD
             char tmp[16];
 
             s->rwstate = SSL_NOTHING;
@@ -615,13 +683,24 @@ int dtls1_read_bytes(SSL *s, int type, int *recvd_type, unsigned char *buf,
                      SSL_AD_REASON_OFFSET + alert_descr);
             BIO_snprintf(tmp, sizeof tmp, "%d", alert_descr);
             ERR_add_error_data(2, "SSL alert number ", tmp);
+=======
+            s->rwstate = SSL_NOTHING;
+            s->s3.fatal_alert = alert_descr;
+            SSLfatal_data(s, SSL_AD_NO_ALERT,
+                          SSL_AD_REASON_OFFSET + alert_descr,
+                          "SSL alert number %d", alert_descr);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             s->shutdown |= SSL_RECEIVED_SHUTDOWN;
             SSL3_RECORD_set_read(rr);
             SSL_CTX_remove_session(s->session_ctx, s->session);
             return 0;
         } else {
+<<<<<<< HEAD
             SSLfatal(s, SSL_AD_ILLEGAL_PARAMETER, SSL_F_DTLS1_READ_BYTES,
                      SSL_R_UNKNOWN_ALERT_TYPE);
+=======
+            SSLfatal(s, SSL_AD_ILLEGAL_PARAMETER, SSL_R_UNKNOWN_ALERT_TYPE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return -1;
         }
 
@@ -705,8 +784,12 @@ int dtls1_read_bytes(SSL *s, int type, int *recvd_type, unsigned char *buf,
          * finished
          */
         if (!ossl_assert(SSL_is_init_finished(s))) {
+<<<<<<< HEAD
             SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_DTLS1_READ_BYTES,
                      ERR_R_INTERNAL_ERROR);
+=======
+            SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return -1;
         }
 
@@ -742,8 +825,12 @@ int dtls1_read_bytes(SSL *s, int type, int *recvd_type, unsigned char *buf,
 
     switch (SSL3_RECORD_get_type(rr)) {
     default:
+<<<<<<< HEAD
         SSLfatal(s, SSL_AD_UNEXPECTED_MESSAGE, SSL_F_DTLS1_READ_BYTES,
                  SSL_R_UNEXPECTED_RECORD);
+=======
+        SSLfatal(s, SSL_AD_UNEXPECTED_MESSAGE, SSL_R_UNEXPECTED_RECORD);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return -1;
     case SSL3_RT_CHANGE_CIPHER_SPEC:
     case SSL3_RT_ALERT:
@@ -753,8 +840,12 @@ int dtls1_read_bytes(SSL *s, int type, int *recvd_type, unsigned char *buf,
          * SSL3_RT_HANDSHAKE when ossl_statem_get_in_handshake(s) is true, but
          * that should not happen when type != rr->type
          */
+<<<<<<< HEAD
         SSLfatal(s, SSL_AD_UNEXPECTED_MESSAGE, SSL_F_DTLS1_READ_BYTES,
                  ERR_R_INTERNAL_ERROR);
+=======
+        SSLfatal(s, SSL_AD_UNEXPECTED_MESSAGE, ERR_R_INTERNAL_ERROR);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return -1;
     case SSL3_RT_APPLICATION_DATA:
         /*
@@ -764,6 +855,7 @@ int dtls1_read_bytes(SSL *s, int type, int *recvd_type, unsigned char *buf,
          * application data at this point (session renegotiation not yet
          * started), we will indulge it.
          */
+<<<<<<< HEAD
         if (s->s3->in_read_app_data &&
             (s->s3->total_renegotiations != 0) &&
             ossl_statem_app_data_allowed(s)) {
@@ -772,6 +864,15 @@ int dtls1_read_bytes(SSL *s, int type, int *recvd_type, unsigned char *buf,
         } else {
             SSLfatal(s, SSL_AD_UNEXPECTED_MESSAGE, SSL_F_DTLS1_READ_BYTES,
                      SSL_R_UNEXPECTED_RECORD);
+=======
+        if (s->s3.in_read_app_data &&
+            (s->s3.total_renegotiations != 0) &&
+            ossl_statem_app_data_allowed(s)) {
+            s->s3.in_read_app_data = 2;
+            return -1;
+        } else {
+            SSLfatal(s, SSL_AD_UNEXPECTED_MESSAGE, SSL_R_UNEXPECTED_RECORD);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return -1;
         }
     }
@@ -815,13 +916,21 @@ int do_dtls1_write(SSL *s, int type, const unsigned char *buf,
      * the buffer.
      */
     if (!ossl_assert(SSL3_BUFFER_get_left(wb) == 0)) {
+<<<<<<< HEAD
         SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_DO_DTLS1_WRITE,
                  ERR_R_INTERNAL_ERROR);
+=======
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
 
     /* If we have an alert to send, lets send it */
+<<<<<<< HEAD
     if (s->s3->alert_dispatch) {
+=======
+    if (s->s3.alert_dispatch) {
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         i = s->method->ssl_dispatch_alert(s);
         if (i <= 0)
             return i;
@@ -832,23 +941,39 @@ int do_dtls1_write(SSL *s, int type, const unsigned char *buf,
         return 0;
 
     if (len > ssl_get_max_send_fragment(s)) {
+<<<<<<< HEAD
         SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_DO_DTLS1_WRITE,
                  SSL_R_EXCEEDS_MAX_FRAGMENT_SIZE);
+=======
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_R_EXCEEDS_MAX_FRAGMENT_SIZE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
 
     sess = s->session;
 
+<<<<<<< HEAD
     if ((sess == NULL) ||
         (s->enc_write_ctx == NULL) || (EVP_MD_CTX_md(s->write_hash) == NULL))
+=======
+    if ((sess == NULL)
+            || (s->enc_write_ctx == NULL)
+            || (EVP_MD_CTX_get0_md(s->write_hash) == NULL))
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         clear = 1;
 
     if (clear)
         mac_size = 0;
     else {
+<<<<<<< HEAD
         mac_size = EVP_MD_CTX_size(s->write_hash);
         if (mac_size < 0) {
             SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_DO_DTLS1_WRITE,
+=======
+        mac_size = EVP_MD_CTX_get_size(s->write_hash);
+        if (mac_size < 0) {
+            SSLfatal(s, SSL_AD_INTERNAL_ERROR,
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                      SSL_R_EXCEEDS_MAX_FRAGMENT_SIZE);
             return -1;
         }
@@ -880,9 +1005,19 @@ int do_dtls1_write(SSL *s, int type, const unsigned char *buf,
 
     /* Explicit IV length, block ciphers appropriate version flag */
     if (s->enc_write_ctx) {
+<<<<<<< HEAD
         int mode = EVP_CIPHER_CTX_mode(s->enc_write_ctx);
         if (mode == EVP_CIPH_CBC_MODE) {
             eivlen = EVP_CIPHER_CTX_iv_length(s->enc_write_ctx);
+=======
+        int mode = EVP_CIPHER_CTX_get_mode(s->enc_write_ctx);
+        if (mode == EVP_CIPH_CBC_MODE) {
+            eivlen = EVP_CIPHER_CTX_get_iv_length(s->enc_write_ctx);
+            if (eivlen < 0) {
+                SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_R_LIBRARY_BUG);
+                return -1;
+            }
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             if (eivlen <= 1)
                 eivlen = 0;
         }
@@ -908,8 +1043,12 @@ int do_dtls1_write(SSL *s, int type, const unsigned char *buf,
     /* first we compress */
     if (s->compress != NULL) {
         if (!ssl3_do_compress(s, &wr)) {
+<<<<<<< HEAD
             SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_DO_DTLS1_WRITE,
                      SSL_R_COMPRESSION_FAILURE);
+=======
+            SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_R_COMPRESSION_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return -1;
         }
     } else {
@@ -928,8 +1067,12 @@ int do_dtls1_write(SSL *s, int type, const unsigned char *buf,
         if (!s->method->ssl3_enc->mac(s, &wr,
                                       &(p[SSL3_RECORD_get_length(&wr) + eivlen]),
                                       1)) {
+<<<<<<< HEAD
             SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_DO_DTLS1_WRITE,
                      ERR_R_INTERNAL_ERROR);
+=======
+            SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return -1;
         }
         SSL3_RECORD_add_length(&wr, mac_size);
@@ -942,10 +1085,16 @@ int do_dtls1_write(SSL *s, int type, const unsigned char *buf,
     if (eivlen)
         SSL3_RECORD_add_length(&wr, eivlen);
 
+<<<<<<< HEAD
     if (s->method->ssl3_enc->enc(s, &wr, 1, 1) < 1) {
         if (!ossl_statem_in_error(s)) {
             SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_DO_DTLS1_WRITE,
                      ERR_R_INTERNAL_ERROR);
+=======
+    if (s->method->ssl3_enc->enc(s, &wr, 1, 1, NULL, mac_size) < 1) {
+        if (!ossl_statem_in_error(s)) {
+            SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         }
         return -1;
     }
@@ -953,8 +1102,12 @@ int do_dtls1_write(SSL *s, int type, const unsigned char *buf,
     if (SSL_WRITE_ETM(s) && mac_size != 0) {
         if (!s->method->ssl3_enc->mac(s, &wr,
                                       &(p[SSL3_RECORD_get_length(&wr)]), 1)) {
+<<<<<<< HEAD
             SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_DO_DTLS1_WRITE,
                      ERR_R_INTERNAL_ERROR);
+=======
+            SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return -1;
         }
         SSL3_RECORD_add_length(&wr, mac_size);

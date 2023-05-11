@@ -14,12 +14,27 @@
 #include <openssl/evp.h>
 #include <openssl/err.h>
 #include <openssl/rand.h>
+<<<<<<< HEAD
 #include <openssl/rand_drbg.h>
 #include <openssl/engine.h>
 #include "crypto/evp.h"
 #include "evp_local.h"
 
 int EVP_CIPHER_CTX_reset(EVP_CIPHER_CTX *c)
+=======
+#ifndef FIPS_MODULE
+# include <openssl/engine.h>
+#endif
+#include <openssl/params.h>
+#include <openssl/core_names.h>
+#include "internal/cryptlib.h"
+#include "internal/provider.h"
+#include "internal/core.h"
+#include "crypto/evp.h"
+#include "evp_local.h"
+
+int EVP_CIPHER_CTX_reset(EVP_CIPHER_CTX *ctx)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 {
     if (c == NULL)
         return 1;
@@ -79,7 +94,92 @@ int EVP_CipherInit_ex(EVP_CIPHER_CTX *ctx, const EVP_CIPHER *cipher,
         && (cipher == NULL || cipher->nid == ctx->cipher->nid))
         goto skip_to_init;
 #endif
+<<<<<<< HEAD
     if (cipher) {
+=======
+
+    /*
+     * If there are engines involved then we should use legacy handling for now.
+     */
+    if (ctx->engine != NULL
+#if !defined(OPENSSL_NO_ENGINE) && !defined(FIPS_MODULE)
+            || tmpimpl != NULL
+#endif
+            || impl != NULL
+            || (cipher != NULL && cipher->origin == EVP_ORIG_METH)
+            || (cipher == NULL && ctx->cipher != NULL
+                               && ctx->cipher->origin == EVP_ORIG_METH)) {
+        if (ctx->cipher == ctx->fetched_cipher)
+            ctx->cipher = NULL;
+        EVP_CIPHER_free(ctx->fetched_cipher);
+        ctx->fetched_cipher = NULL;
+        goto legacy;
+    }
+    /*
+     * Ensure a context left lying around from last time is cleared
+     * (legacy code)
+     */
+    if (cipher != NULL && ctx->cipher != NULL) {
+        if (ctx->cipher->cleanup != NULL && !ctx->cipher->cleanup(ctx))
+            return 0;
+        OPENSSL_clear_free(ctx->cipher_data, ctx->cipher->ctx_size);
+        ctx->cipher_data = NULL;
+    }
+
+    /* Start of non-legacy code below */
+
+    /* Ensure a context left lying around from last time is cleared */
+    if (cipher != NULL && ctx->cipher != NULL) {
+        unsigned long flags = ctx->flags;
+
+        EVP_CIPHER_CTX_reset(ctx);
+        /* Restore encrypt and flags */
+        ctx->encrypt = enc;
+        ctx->flags = flags;
+    }
+
+    if (cipher == NULL)
+        cipher = ctx->cipher;
+
+    if (cipher->prov == NULL) {
+#ifdef FIPS_MODULE
+        /* We only do explicit fetches inside the FIPS module */
+        ERR_raise(ERR_LIB_EVP, EVP_R_INITIALIZATION_ERROR);
+        return 0;
+#else
+        EVP_CIPHER *provciph =
+            EVP_CIPHER_fetch(NULL,
+                             cipher->nid == NID_undef ? "NULL"
+                                                      : OBJ_nid2sn(cipher->nid),
+                             "");
+
+        if (provciph == NULL)
+            return 0;
+        cipher = provciph;
+        EVP_CIPHER_free(ctx->fetched_cipher);
+        ctx->fetched_cipher = provciph;
+#endif
+    }
+
+    if (cipher->prov != NULL) {
+        if (!EVP_CIPHER_up_ref((EVP_CIPHER *)cipher)) {
+            ERR_raise(ERR_LIB_EVP, EVP_R_INITIALIZATION_ERROR);
+            return 0;
+        }
+        EVP_CIPHER_free(ctx->fetched_cipher);
+        ctx->fetched_cipher = (EVP_CIPHER *)cipher;
+    }
+    ctx->cipher = cipher;
+    if (ctx->algctx == NULL) {
+        ctx->algctx = ctx->cipher->newctx(ossl_provider_ctx(cipher->prov));
+        if (ctx->algctx == NULL) {
+            ERR_raise(ERR_LIB_EVP, EVP_R_INITIALIZATION_ERROR);
+            return 0;
+        }
+    }
+
+    if ((ctx->flags & EVP_CIPH_NO_PADDING) != 0) {
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         /*
          * Ensure a context left lying around from last time is cleared (the
          * previous check attempted to avoid this if the same ENGINE and
@@ -129,7 +229,11 @@ int EVP_CipherInit_ex(EVP_CIPHER_CTX *ctx, const EVP_CIPHER *cipher,
             ctx->cipher_data = OPENSSL_zalloc(ctx->cipher->ctx_size);
             if (ctx->cipher_data == NULL) {
                 ctx->cipher = NULL;
+<<<<<<< HEAD
                 EVPerr(EVP_F_EVP_CIPHERINIT_EX, ERR_R_MALLOC_FAILURE);
+=======
+                ERR_raise(ERR_LIB_EVP, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                 return 0;
             }
         } else {
@@ -479,6 +583,7 @@ int EVP_DecryptUpdate(EVP_CIPHER_CTX *ctx, unsigned char *out, int *outl,
 
     if (EVP_CIPHER_CTX_test_flags(ctx, EVP_CIPH_FLAG_LENGTH_BITS))
         cmpl = (cmpl + 7) / 8;
+<<<<<<< HEAD
 
     /*
      * CCM mode needs to know about the case where inl == 0 - it means the
@@ -490,6 +595,8 @@ int EVP_DecryptUpdate(EVP_CIPHER_CTX *ctx, unsigned char *out, int *outl,
         *outl = 0;
         return inl == 0;
     }
+=======
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
     if (ctx->cipher->flags & EVP_CIPH_FLAG_CUSTOM_CIPHER) {
         if (b == 1 && is_partially_overlapping(out, in, cmpl)) {
@@ -703,7 +810,11 @@ int EVP_CIPHER_CTX_copy(EVP_CIPHER_CTX *out, const EVP_CIPHER_CTX *in)
         out->cipher_data = OPENSSL_malloc(in->cipher->ctx_size);
         if (out->cipher_data == NULL) {
             out->cipher = NULL;
+<<<<<<< HEAD
             EVPerr(EVP_F_EVP_CIPHER_CTX_COPY, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_EVP, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return 0;
         }
         memcpy(out->cipher_data, in->cipher_data, in->cipher->ctx_size);
@@ -717,3 +828,251 @@ int EVP_CIPHER_CTX_copy(EVP_CIPHER_CTX *out, const EVP_CIPHER_CTX *in)
         }
     return 1;
 }
+<<<<<<< HEAD
+=======
+
+EVP_CIPHER *evp_cipher_new(void)
+{
+    EVP_CIPHER *cipher = OPENSSL_zalloc(sizeof(EVP_CIPHER));
+
+    if (cipher != NULL) {
+        cipher->lock = CRYPTO_THREAD_lock_new();
+        if (cipher->lock == NULL) {
+            OPENSSL_free(cipher);
+            return NULL;
+        }
+        cipher->refcnt = 1;
+    }
+    return cipher;
+}
+
+/*
+ * FIPS module note: since internal fetches will be entirely
+ * provider based, we know that none of its code depends on legacy
+ * NIDs or any functionality that use them.
+ */
+#ifndef FIPS_MODULE
+/* After removal of legacy support get rid of the need for legacy NIDs */
+static void set_legacy_nid(const char *name, void *vlegacy_nid)
+{
+    int nid;
+    int *legacy_nid = vlegacy_nid;
+    /*
+     * We use lowest level function to get the associated method, because
+     * higher level functions such as EVP_get_cipherbyname() have changed
+     * to look at providers too.
+     */
+    const void *legacy_method = OBJ_NAME_get(name, OBJ_NAME_TYPE_CIPHER_METH);
+
+    if (*legacy_nid == -1)       /* We found a clash already */
+        return;
+    if (legacy_method == NULL)
+        return;
+    nid = EVP_CIPHER_get_nid(legacy_method);
+    if (*legacy_nid != NID_undef && *legacy_nid != nid) {
+        *legacy_nid = -1;
+        return;
+    }
+    *legacy_nid = nid;
+}
+#endif
+
+static void *evp_cipher_from_algorithm(const int name_id,
+                                       const OSSL_ALGORITHM *algodef,
+                                       OSSL_PROVIDER *prov)
+{
+    const OSSL_DISPATCH *fns = algodef->implementation;
+    EVP_CIPHER *cipher = NULL;
+    int fnciphcnt = 0, fnctxcnt = 0;
+
+    if ((cipher = evp_cipher_new()) == NULL) {
+        ERR_raise(ERR_LIB_EVP, ERR_R_MALLOC_FAILURE);
+        return NULL;
+    }
+
+#ifndef FIPS_MODULE
+    cipher->nid = NID_undef;
+    if (!evp_names_do_all(prov, name_id, set_legacy_nid, &cipher->nid)
+            || cipher->nid == -1) {
+        ERR_raise(ERR_LIB_EVP, ERR_R_INTERNAL_ERROR);
+        EVP_CIPHER_free(cipher);
+        return NULL;
+    }
+#endif
+
+    cipher->name_id = name_id;
+    if ((cipher->type_name = ossl_algorithm_get1_first_name(algodef)) == NULL) {
+        EVP_CIPHER_free(cipher);
+        return NULL;
+    }
+    cipher->description = algodef->algorithm_description;
+
+    for (; fns->function_id != 0; fns++) {
+        switch (fns->function_id) {
+        case OSSL_FUNC_CIPHER_NEWCTX:
+            if (cipher->newctx != NULL)
+                break;
+            cipher->newctx = OSSL_FUNC_cipher_newctx(fns);
+            fnctxcnt++;
+            break;
+        case OSSL_FUNC_CIPHER_ENCRYPT_INIT:
+            if (cipher->einit != NULL)
+                break;
+            cipher->einit = OSSL_FUNC_cipher_encrypt_init(fns);
+            fnciphcnt++;
+            break;
+        case OSSL_FUNC_CIPHER_DECRYPT_INIT:
+            if (cipher->dinit != NULL)
+                break;
+            cipher->dinit = OSSL_FUNC_cipher_decrypt_init(fns);
+            fnciphcnt++;
+            break;
+        case OSSL_FUNC_CIPHER_UPDATE:
+            if (cipher->cupdate != NULL)
+                break;
+            cipher->cupdate = OSSL_FUNC_cipher_update(fns);
+            fnciphcnt++;
+            break;
+        case OSSL_FUNC_CIPHER_FINAL:
+            if (cipher->cfinal != NULL)
+                break;
+            cipher->cfinal = OSSL_FUNC_cipher_final(fns);
+            fnciphcnt++;
+            break;
+        case OSSL_FUNC_CIPHER_CIPHER:
+            if (cipher->ccipher != NULL)
+                break;
+            cipher->ccipher = OSSL_FUNC_cipher_cipher(fns);
+            break;
+        case OSSL_FUNC_CIPHER_FREECTX:
+            if (cipher->freectx != NULL)
+                break;
+            cipher->freectx = OSSL_FUNC_cipher_freectx(fns);
+            fnctxcnt++;
+            break;
+        case OSSL_FUNC_CIPHER_DUPCTX:
+            if (cipher->dupctx != NULL)
+                break;
+            cipher->dupctx = OSSL_FUNC_cipher_dupctx(fns);
+            break;
+        case OSSL_FUNC_CIPHER_GET_PARAMS:
+            if (cipher->get_params != NULL)
+                break;
+            cipher->get_params = OSSL_FUNC_cipher_get_params(fns);
+            break;
+        case OSSL_FUNC_CIPHER_GET_CTX_PARAMS:
+            if (cipher->get_ctx_params != NULL)
+                break;
+            cipher->get_ctx_params = OSSL_FUNC_cipher_get_ctx_params(fns);
+            break;
+        case OSSL_FUNC_CIPHER_SET_CTX_PARAMS:
+            if (cipher->set_ctx_params != NULL)
+                break;
+            cipher->set_ctx_params = OSSL_FUNC_cipher_set_ctx_params(fns);
+            break;
+        case OSSL_FUNC_CIPHER_GETTABLE_PARAMS:
+            if (cipher->gettable_params != NULL)
+                break;
+            cipher->gettable_params = OSSL_FUNC_cipher_gettable_params(fns);
+            break;
+        case OSSL_FUNC_CIPHER_GETTABLE_CTX_PARAMS:
+            if (cipher->gettable_ctx_params != NULL)
+                break;
+            cipher->gettable_ctx_params =
+                OSSL_FUNC_cipher_gettable_ctx_params(fns);
+            break;
+        case OSSL_FUNC_CIPHER_SETTABLE_CTX_PARAMS:
+            if (cipher->settable_ctx_params != NULL)
+                break;
+            cipher->settable_ctx_params =
+                OSSL_FUNC_cipher_settable_ctx_params(fns);
+            break;
+        }
+    }
+    if ((fnciphcnt != 0 && fnciphcnt != 3 && fnciphcnt != 4)
+            || (fnciphcnt == 0 && cipher->ccipher == NULL)
+            || fnctxcnt != 2) {
+        /*
+         * In order to be a consistent set of functions we must have at least
+         * a complete set of "encrypt" functions, or a complete set of "decrypt"
+         * functions, or a single "cipher" function. In all cases we need both
+         * the "newctx" and "freectx" functions.
+         */
+        EVP_CIPHER_free(cipher);
+        ERR_raise(ERR_LIB_EVP, EVP_R_INVALID_PROVIDER_FUNCTIONS);
+        return NULL;
+    }
+    cipher->prov = prov;
+    if (prov != NULL)
+        ossl_provider_up_ref(prov);
+
+    if (!evp_cipher_cache_constants(cipher)) {
+        EVP_CIPHER_free(cipher);
+        ERR_raise(ERR_LIB_EVP, EVP_R_CACHE_CONSTANTS_FAILED);
+        cipher = NULL;
+    }
+
+    return cipher;
+}
+
+static int evp_cipher_up_ref(void *cipher)
+{
+    return EVP_CIPHER_up_ref(cipher);
+}
+
+static void evp_cipher_free(void *cipher)
+{
+    EVP_CIPHER_free(cipher);
+}
+
+EVP_CIPHER *EVP_CIPHER_fetch(OSSL_LIB_CTX *ctx, const char *algorithm,
+                             const char *properties)
+{
+    EVP_CIPHER *cipher =
+        evp_generic_fetch(ctx, OSSL_OP_CIPHER, algorithm, properties,
+                          evp_cipher_from_algorithm, evp_cipher_up_ref,
+                          evp_cipher_free);
+
+    return cipher;
+}
+
+int EVP_CIPHER_up_ref(EVP_CIPHER *cipher)
+{
+    int ref = 0;
+
+    if (cipher->origin == EVP_ORIG_DYNAMIC)
+        CRYPTO_UP_REF(&cipher->refcnt, &ref, cipher->lock);
+    return 1;
+}
+
+void evp_cipher_free_int(EVP_CIPHER *cipher)
+{
+    OPENSSL_free(cipher->type_name);
+    ossl_provider_free(cipher->prov);
+    CRYPTO_THREAD_lock_free(cipher->lock);
+    OPENSSL_free(cipher);
+}
+
+void EVP_CIPHER_free(EVP_CIPHER *cipher)
+{
+    int i;
+
+    if (cipher == NULL || cipher->origin != EVP_ORIG_DYNAMIC)
+        return;
+
+    CRYPTO_DOWN_REF(&cipher->refcnt, &i, cipher->lock);
+    if (i > 0)
+        return;
+    evp_cipher_free_int(cipher);
+}
+
+void EVP_CIPHER_do_all_provided(OSSL_LIB_CTX *libctx,
+                                void (*fn)(EVP_CIPHER *mac, void *arg),
+                                void *arg)
+{
+    evp_generic_do_all(libctx, OSSL_OP_CIPHER,
+                       (void (*)(void *, void *))fn, arg,
+                       evp_cipher_from_algorithm, evp_cipher_up_ref,
+                       evp_cipher_free);
+}
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))

@@ -134,9 +134,15 @@ int X509_TRUST_add(int id, int flags, int (*ck) (X509_TRUST *, X509 *, int),
     /* Get existing entry if any */
     idx = X509_TRUST_get_by_id(id);
     /* Need a new entry */
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509/x509_trs.c
     if (idx == -1) {
         if ((trtmp = OPENSSL_malloc(sizeof(*trtmp))) == NULL) {
             X509err(X509_F_X509_TRUST_ADD, ERR_R_MALLOC_FAILURE);
+=======
+    if (idx < 0) {
+        if ((trtmp = OPENSSL_malloc(sizeof(*trtmp))) == NULL) {
+            ERR_raise(ERR_LIB_X509, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/x509_trust.c
             return 0;
         }
         trtmp->flags = X509_TRUST_DYNAMIC;
@@ -148,7 +154,11 @@ int X509_TRUST_add(int id, int flags, int (*ck) (X509_TRUST *, X509 *, int),
         OPENSSL_free(trtmp->name);
     /* dup supplied name */
     if ((trtmp->name = OPENSSL_strdup(name)) == NULL) {
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509/x509_trs.c
         X509err(X509_F_X509_TRUST_ADD, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_X509, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/x509_trust.c
         goto err;
     }
     /* Keep the dynamic flag of existing entry */
@@ -165,11 +175,19 @@ int X509_TRUST_add(int id, int flags, int (*ck) (X509_TRUST *, X509 *, int),
     if (idx == -1) {
         if (trtable == NULL
             && (trtable = sk_X509_TRUST_new(tr_cmp)) == NULL) {
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509/x509_trs.c
             X509err(X509_F_X509_TRUST_ADD, ERR_R_MALLOC_FAILURE);
             goto err;;
         }
         if (!sk_X509_TRUST_push(trtable, trtmp)) {
             X509err(X509_F_X509_TRUST_ADD, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_X509, ERR_R_MALLOC_FAILURE);
+            goto err;;
+        }
+        if (!sk_X509_TRUST_push(trtable, trtmp)) {
+            ERR_raise(ERR_LIB_X509, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/x509_trust.c
             goto err;
         }
     }

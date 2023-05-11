@@ -25,12 +25,23 @@ int ssl3_do_change_cipher_spec(SSL *s)
             return 0;
         }
 
+<<<<<<< HEAD
         s->session->cipher = s->s3->tmp.new_cipher;
         if (!s->method->ssl3_enc->setup_key_block(s))
+=======
+        s->session->cipher = s->s3.tmp.new_cipher;
+        if (!s->method->ssl3_enc->setup_key_block(s)) {
+            /* SSLfatal() already called */
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return 0;
     }
 
+<<<<<<< HEAD
     if (!s->method->ssl3_enc->change_cipher_state(s, i))
+=======
+    if (!s->method->ssl3_enc->change_cipher_state(s, i)) {
+        /* SSLfatal() already called */
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
 
     return 1;
@@ -54,9 +65,15 @@ int ssl3_send_alert(SSL *s, int level, int desc)
     if ((level == SSL3_AL_FATAL) && (s->session != NULL))
         SSL_CTX_remove_session(s->session_ctx, s->session);
 
+<<<<<<< HEAD
     s->s3->alert_dispatch = 1;
     s->s3->send_alert[0] = level;
     s->s3->send_alert[1] = desc;
+=======
+    s->s3.alert_dispatch = 1;
+    s->s3.send_alert[0] = level;
+    s->s3.send_alert[1] = desc;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     if (!RECORD_LAYER_write_pending(&s->rlayer)) {
         /* data still being written out? */
         return s->method->ssl_dispatch_alert(s);
@@ -75,12 +92,21 @@ int ssl3_dispatch_alert(SSL *s)
     void (*cb) (const SSL *ssl, int type, int val) = NULL;
     size_t written;
 
+<<<<<<< HEAD
     s->s3->alert_dispatch = 0;
     alertlen = 2;
     i = do_ssl3_write(s, SSL3_RT_ALERT, &s->s3->send_alert[0], &alertlen, 1, 0,
                       &written);
     if (i <= 0) {
         s->s3->alert_dispatch = 1;
+=======
+    s->s3.alert_dispatch = 0;
+    alertlen = 2;
+    i = do_ssl3_write(s, SSL3_RT_ALERT, &s->s3.send_alert[0], &alertlen, 1, 0,
+                      &written);
+    if (i <= 0) {
+        s->s3.alert_dispatch = 1;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     } else {
         /*
          * Alert sent to BIO - now flush. If the message does not get sent due
@@ -89,7 +115,11 @@ int ssl3_dispatch_alert(SSL *s)
         (void)BIO_flush(s->wbio);
 
         if (s->msg_callback)
+<<<<<<< HEAD
             s->msg_callback(1, s->version, SSL3_RT_ALERT, s->s3->send_alert,
+=======
+            s->msg_callback(1, s->version, SSL3_RT_ALERT, s->s3.send_alert,
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                             2, s, s->msg_callback_arg);
 
         if (s->info_callback != NULL)
@@ -98,7 +128,11 @@ int ssl3_dispatch_alert(SSL *s)
             cb = s->ctx->info_callback;
 
         if (cb != NULL) {
+<<<<<<< HEAD
             j = (s->s3->send_alert[0] << 8) | s->s3->send_alert[1];
+=======
+            j = (s->s3.send_alert[0] << 8) | s->s3.send_alert[1];
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             cb(s, SSL_CB_WRITE_ALERT, j);
         }
     }

@@ -63,7 +63,11 @@ void *CRYPTO_memdup(const void *data, size_t siz, const char* file, int line)
 
     ret = CRYPTO_malloc(siz, file, line);
     if (ret == NULL) {
+<<<<<<< HEAD
         CRYPTOerr(CRYPTO_F_CRYPTO_MEMDUP, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_CRYPTO, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return NULL;
     }
     return memcpy(ret, data, siz);
@@ -184,6 +188,118 @@ unsigned char *OPENSSL_hexstr2buf(const char *str, long *len)
 }
 
 /*
+<<<<<<< HEAD
+=======
+ * Given a string of hex digits convert to a buffer
+ */
+int OPENSSL_hexstr2buf_ex(unsigned char *buf, size_t buf_n, size_t *buflen,
+                          const char *str, const char sep)
+{
+    return hexstr2buf_sep(buf, buf_n, buflen, str, sep);
+}
+
+unsigned char *ossl_hexstr2buf_sep(const char *str, long *buflen,
+                                   const char sep)
+{
+    unsigned char *buf;
+    size_t buf_n, tmp_buflen;
+
+    buf_n = strlen(str);
+    if (buf_n <= 1) {
+        ERR_raise(ERR_LIB_CRYPTO, CRYPTO_R_HEX_STRING_TOO_SHORT);
+        return NULL;
+    }
+    buf_n /= 2;
+    if ((buf = OPENSSL_malloc(buf_n)) == NULL) {
+        ERR_raise(ERR_LIB_CRYPTO, ERR_R_MALLOC_FAILURE);
+        return NULL;
+    }
+
+    if (buflen != NULL)
+        *buflen = 0;
+    tmp_buflen = 0;
+    if (hexstr2buf_sep(buf, buf_n, &tmp_buflen, str, sep)) {
+        if (buflen != NULL)
+            *buflen = (long)tmp_buflen;
+        return buf;
+    }
+    OPENSSL_free(buf);
+    return NULL;
+}
+
+unsigned char *OPENSSL_hexstr2buf(const char *str, long *buflen)
+{
+    return ossl_hexstr2buf_sep(str, buflen, DEFAULT_SEPARATOR);
+}
+
+static int buf2hexstr_sep(char *str, size_t str_n, size_t *strlength,
+                          const unsigned char *buf, size_t buflen,
+                          const char sep)
+{
+    static const char hexdig[] = "0123456789ABCDEF";
+    const unsigned char *p;
+    char *q;
+    size_t i;
+    int has_sep = (sep != CH_ZERO);
+    size_t len = has_sep ? buflen * 3 : 1 + buflen * 2;
+
+    if (strlength != NULL)
+        *strlength = len;
+    if (str == NULL)
+        return 1;
+
+    if (str_n < (unsigned long)len) {
+        ERR_raise(ERR_LIB_CRYPTO, CRYPTO_R_TOO_SMALL_BUFFER);
+        return 0;
+    }
+
+    q = str;
+    for (i = 0, p = buf; i < buflen; i++, p++) {
+        *q++ = hexdig[(*p >> 4) & 0xf];
+        *q++ = hexdig[*p & 0xf];
+        if (has_sep)
+            *q++ = sep;
+    }
+    if (has_sep)
+        --q;
+    *q = CH_ZERO;
+
+#ifdef CHARSET_EBCDIC
+    ebcdic2ascii(str, str, q - str - 1);
+#endif
+    return 1;
+}
+
+int OPENSSL_buf2hexstr_ex(char *str, size_t str_n, size_t *strlength,
+                          const unsigned char *buf, size_t buflen,
+                          const char sep)
+{
+    return buf2hexstr_sep(str, str_n, strlength, buf, buflen, sep);
+}
+
+char *ossl_buf2hexstr_sep(const unsigned char *buf, long buflen, char sep)
+{
+    char *tmp;
+    size_t tmp_n;
+
+    if (buflen == 0)
+        return OPENSSL_zalloc(1);
+
+    tmp_n = (sep != CH_ZERO) ? buflen * 3 : 1 + buflen * 2;
+    if ((tmp = OPENSSL_malloc(tmp_n)) == NULL) {
+        ERR_raise(ERR_LIB_CRYPTO, ERR_R_MALLOC_FAILURE);
+        return NULL;
+    }
+
+    if (buf2hexstr_sep(tmp, tmp_n, NULL, buf, buflen, sep))
+        return tmp;
+    OPENSSL_free(tmp);
+    return NULL;
+}
+
+
+/*
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  * Given a buffer of length 'len' return a OPENSSL_malloc'ed string with its
  * hex representation @@@ (Contents of buffer are always kept in ASCII, also
  * on EBCDIC machines)

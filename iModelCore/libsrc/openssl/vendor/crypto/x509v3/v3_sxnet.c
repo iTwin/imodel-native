@@ -135,7 +135,11 @@ int SXNET_add_id_ulong(SXNET **psx, unsigned long lzone, const char *user,
 
     if ((izone = ASN1_INTEGER_new()) == NULL
         || !ASN1_INTEGER_set(izone, lzone)) {
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_sxnet.c
         X509V3err(X509V3_F_SXNET_ADD_ID_ULONG, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_sxnet.c
         ASN1_INTEGER_free(izone);
         return 0;
     }
@@ -169,7 +173,10 @@ int SXNET_add_id_INTEGER(SXNET **psx, ASN1_INTEGER *zone, const char *user,
             goto err;
         if (!ASN1_INTEGER_set(sx->version, 0))
             goto err;
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_sxnet.c
         *psx = sx;
+=======
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_sxnet.c
     } else
         sx = *psx;
     if (SXNET_get_id_INTEGER(sx, zone)) {
@@ -179,8 +186,11 @@ int SXNET_add_id_INTEGER(SXNET **psx, ASN1_INTEGER *zone, const char *user,
 
     if ((id = SXNETID_new()) == NULL)
         goto err;
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_sxnet.c
     if (userlen == -1)
         userlen = strlen(user);
+=======
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_sxnet.c
 
     if (!ASN1_OCTET_STRING_set(id->user, (const unsigned char *)user, userlen))
         goto err;
@@ -190,7 +200,11 @@ int SXNET_add_id_INTEGER(SXNET **psx, ASN1_INTEGER *zone, const char *user,
     return 1;
 
  err:
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_sxnet.c
     X509V3err(X509V3_F_SXNET_ADD_ID_INTEGER, ERR_R_MALLOC_FAILURE);
+=======
+    ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_sxnet.c
     SXNETID_free(id);
     SXNET_free(sx);
     *psx = NULL;
@@ -218,7 +232,11 @@ ASN1_OCTET_STRING *SXNET_get_id_ulong(SXNET *sx, unsigned long lzone)
 
     if ((izone = ASN1_INTEGER_new()) == NULL
         || !ASN1_INTEGER_set(izone, lzone)) {
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_sxnet.c
         X509V3err(X509V3_F_SXNET_GET_ID_ULONG, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_sxnet.c
         ASN1_INTEGER_free(izone);
         return NULL;
     }

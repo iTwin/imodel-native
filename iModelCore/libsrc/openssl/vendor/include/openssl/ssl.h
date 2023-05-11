@@ -336,6 +336,7 @@ typedef int (*SSL_verify_cb)(int preverify_ok, X509_STORE_CTX *x509_ctx);
  * (only with deprecated DTLSv1_client_method())  */
 #  define SSL_OP_CISCO_ANYCONNECT                        0x00008000U
 # endif
+<<<<<<< HEAD
 
 /* As server, disallow session resumption on renegotiation */
 # define SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION   0x00010000U
@@ -345,6 +346,57 @@ typedef int (*SSL_verify_cb)(int preverify_ok, X509_STORE_CTX *x509_ctx);
 # define SSL_OP_ALLOW_UNSAFE_LEGACY_RENEGOTIATION        0x00040000U
 /* Disable encrypt-then-mac */
 # define SSL_OP_NO_ENCRYPT_THEN_MAC                      0x00080000U
+=======
+    /* As server, disallow session resumption on renegotiation */
+# define SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION   SSL_OP_BIT(16)
+    /* Don't use compression even if supported */
+# define SSL_OP_NO_COMPRESSION                           SSL_OP_BIT(17)
+    /* Permit unsafe legacy renegotiation */
+# define SSL_OP_ALLOW_UNSAFE_LEGACY_RENEGOTIATION        SSL_OP_BIT(18)
+    /* Disable encrypt-then-mac */
+# define SSL_OP_NO_ENCRYPT_THEN_MAC                      SSL_OP_BIT(19)
+    /*
+     * Enable TLSv1.3 Compatibility mode. This is on by default. A future
+     * version of OpenSSL may have this disabled by default.
+     */
+# define SSL_OP_ENABLE_MIDDLEBOX_COMPAT                  SSL_OP_BIT(20)
+    /*
+     * Prioritize Chacha20Poly1305 when client does.
+     * Modifies SSL_OP_CIPHER_SERVER_PREFERENCE
+     */
+# define SSL_OP_PRIORITIZE_CHACHA                        SSL_OP_BIT(21)
+    /*
+     * Set on servers to choose the cipher according to server's preferences.
+     */
+# define SSL_OP_CIPHER_SERVER_PREFERENCE                 SSL_OP_BIT(22)
+    /*
+     * If set, a server will allow a client to issue a SSLv3.0 version
+     * number as latest version supported in the premaster secret, even when
+     * TLSv1.0 (version 3.1) was announced in the client hello. Normally
+     * this is forbidden to prevent version rollback attacks.
+     */
+# define SSL_OP_TLS_ROLLBACK_BUG                         SSL_OP_BIT(23)
+    /*
+     * Switches off automatic TLSv1.3 anti-replay protection for early data.
+     * This is a server-side option only (no effect on the client).
+     */
+# define SSL_OP_NO_ANTI_REPLAY                           SSL_OP_BIT(24)
+# define SSL_OP_NO_SSLv3                                 SSL_OP_BIT(25)
+# define SSL_OP_NO_TLSv1                                 SSL_OP_BIT(26)
+# define SSL_OP_NO_TLSv1_2                               SSL_OP_BIT(27)
+# define SSL_OP_NO_TLSv1_1                               SSL_OP_BIT(28)
+# define SSL_OP_NO_TLSv1_3                               SSL_OP_BIT(29)
+# define SSL_OP_NO_DTLSv1                                SSL_OP_BIT(26)
+# define SSL_OP_NO_DTLSv1_2                              SSL_OP_BIT(27)
+    /* Disallow all renegotiation */
+# define SSL_OP_NO_RENEGOTIATION                         SSL_OP_BIT(30)
+    /*
+     * Make server add server-hello extension from early version of
+     * cryptopro draft, when GOST ciphersuite is negotiated. Required for
+     * interoperability with CryptoPro CSP 3.x
+     */
+# define SSL_OP_CRYPTOPRO_TLSEXT_BUG                     SSL_OP_BIT(31)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
 /*
  * Enable TLSv1.3 Compatibility mode. This is on by default. A future version
@@ -1305,6 +1357,11 @@ DECLARE_PEM_rw(SSL_SESSION, SSL_SESSION)
 # define SSL_CTRL_GET_MAX_PROTO_VERSION          131
 # define SSL_CTRL_GET_SIGNATURE_NID              132
 # define SSL_CTRL_GET_TMP_KEY                    133
+<<<<<<< HEAD
+=======
+# define SSL_CTRL_GET_NEGOTIATED_GROUP           134
+# define SSL_CTRL_SET_RETRY_VERIFY               136
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 # define SSL_CTRL_GET_VERIFY_CERT_STORE          137
 # define SSL_CTRL_GET_CHAIN_CERT_STORE           138
 # define SSL_CERT_SET_FIRST                      1
@@ -2145,7 +2202,11 @@ size_t SSL_get_num_tickets(const SSL *s);
 int SSL_CTX_set_num_tickets(SSL_CTX *ctx, size_t num_tickets);
 size_t SSL_CTX_get_num_tickets(const SSL_CTX *ctx);
 
+<<<<<<< HEAD
 # if OPENSSL_API_COMPAT < 0x10100000L
+=======
+# ifndef OPENSSL_NO_DEPRECATED_1_1_0
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 #  define SSL_cache_hit(s) SSL_session_reused(s)
 # endif
 
@@ -2442,6 +2503,13 @@ void SSL_set_allow_early_data_cb(SSL *s,
                                  SSL_allow_early_data_cb_fn cb,
                                  void *arg);
 
+<<<<<<< HEAD
+=======
+/* store the default cipher strings inside the library */
+const char *OSSL_default_cipher_list(void);
+const char *OSSL_default_ciphersuites(void);
+
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 # ifdef  __cplusplus
 }
 # endif

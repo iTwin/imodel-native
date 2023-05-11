@@ -160,7 +160,11 @@ int custom_ext_parse(SSL *s, unsigned int context, unsigned int ext_type,
 
     if (meth->parse_cb(s, ext_type, context, ext_data, ext_size, x, chainidx,
                        &al, meth->parse_arg) <= 0) {
+<<<<<<< HEAD
         SSLfatal(s, al, SSL_F_CUSTOM_EXT_PARSE, SSL_R_BAD_EXTENSION);
+=======
+        SSLfatal(s, al, SSL_R_BAD_EXTENSION);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
 
@@ -210,7 +214,11 @@ int custom_ext_add(SSL *s, int context, WPACKET *pkt, X509 *x, size_t chainidx,
                                          meth->add_arg);
 
             if (cb_retval < 0) {
+<<<<<<< HEAD
                 SSLfatal(s, al, SSL_F_CUSTOM_EXT_ADD, SSL_R_CALLBACK_FAILED);
+=======
+                SSLfatal(s, al, SSL_R_CALLBACK_FAILED);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                 return 0;       /* error */
             }
             if (cb_retval == 0)
@@ -221,8 +229,12 @@ int custom_ext_add(SSL *s, int context, WPACKET *pkt, X509 *x, size_t chainidx,
                 || !WPACKET_start_sub_packet_u16(pkt)
                 || (outlen > 0 && !WPACKET_memcpy(pkt, out, outlen))
                 || !WPACKET_close(pkt)) {
+<<<<<<< HEAD
             SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_CUSTOM_EXT_ADD,
                      ERR_R_INTERNAL_ERROR);
+=======
+            SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return 0;
         }
         if ((context & SSL_EXT_CLIENT_HELLO) != 0) {
@@ -230,8 +242,12 @@ int custom_ext_add(SSL *s, int context, WPACKET *pkt, X509 *x, size_t chainidx,
              * We can't send duplicates: code logic should prevent this.
              */
             if (!ossl_assert((meth->ext_flags & SSL_EXT_FLAG_SENT) == 0)) {
+<<<<<<< HEAD
                 SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_CUSTOM_EXT_ADD,
                          ERR_R_INTERNAL_ERROR);
+=======
+                SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                 return 0;
             }
             /*

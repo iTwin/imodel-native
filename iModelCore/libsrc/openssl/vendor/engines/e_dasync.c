@@ -189,6 +189,7 @@ static int dasync_cipher_nids[] = {
 
 static int bind_dasync(ENGINE *e)
 {
+<<<<<<< HEAD
     /* Setup RSA_METHOD */
     if ((dasync_rsa_method = RSA_meth_new("Dummy Async RSA method", 0)) == NULL
         || RSA_meth_set_pub_enc(dasync_rsa_method, dasync_pub_enc) == 0
@@ -200,6 +201,13 @@ static int bind_dasync(ENGINE *e)
         || RSA_meth_set_init(dasync_rsa_method, dasync_rsa_init) == 0
         || RSA_meth_set_finish(dasync_rsa_method, dasync_rsa_finish) == 0) {
         DASYNCerr(DASYNC_F_BIND_DASYNC, DASYNC_R_INIT_FAILED);
+=======
+    /* Setup RSA */
+    ;
+    if ((dasync_rsa_orig = EVP_PKEY_meth_find(EVP_PKEY_RSA)) == NULL
+        || (dasync_rsa = EVP_PKEY_meth_new(EVP_PKEY_RSA,
+                                           EVP_PKEY_FLAG_AUTOARGLEN)) == NULL)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
 

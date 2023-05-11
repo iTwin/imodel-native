@@ -134,7 +134,11 @@ ASN1_BIT_STRING *c2i_ASN1_BIT_STRING(ASN1_BIT_STRING **a,
     *pp = p;
     return ret;
  err:
+<<<<<<< HEAD
     ASN1err(ASN1_F_C2I_ASN1_BIT_STRING, i);
+=======
+    ERR_raise(ERR_LIB_ASN1, i);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     if ((a == NULL) || (*a != ret))
         ASN1_BIT_STRING_free(ret);
     return NULL;
@@ -164,7 +168,11 @@ int ASN1_BIT_STRING_set_bit(ASN1_BIT_STRING *a, int n, int value)
             return 1;         /* Don't need to set */
         c = OPENSSL_clear_realloc(a->data, a->length, w + 1);
         if (c == NULL) {
+<<<<<<< HEAD
             ASN1err(ASN1_F_ASN1_BIT_STRING_SET_BIT, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return 0;
         }
         if (w + 1 - a->length > 0)

@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright 2001-2019 The OpenSSL Project Authors. All Rights Reserved.
+=======
+ * Copyright 2001-2022 The OpenSSL Project Authors. All Rights Reserved.
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved
  *
  * Licensed under the OpenSSL license (the "License").  You may not use

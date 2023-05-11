@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright 2015-2018 The OpenSSL Project Authors. All Rights Reserved.
+=======
+ * Copyright 2015-2022 The OpenSSL Project Authors. All Rights Reserved.
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -302,6 +306,46 @@ static void destroy_ciphers(void)
     _hidden_aes_128_cbc = NULL;
 }
 
+<<<<<<< HEAD
+=======
+/* Key loading */
+static EVP_PKEY *load_key(ENGINE *eng, const char *key_id, int pub,
+                          UI_METHOD *ui_method, void *ui_data)
+{
+    BIO *in;
+    EVP_PKEY *key;
+
+    if (OPENSSL_strncasecmp(key_id, "ot:", 3) != 0)
+        return NULL;
+    key_id += 3;
+
+    fprintf(stderr, "[ossltest]Loading %s key %s\n",
+            pub ? "Public" : "Private", key_id);
+    in = BIO_new_file(key_id, "r");
+    if (!in)
+        return NULL;
+    if (pub)
+        key = PEM_read_bio_PUBKEY(in, NULL, 0, NULL);
+    else
+        key = PEM_read_bio_PrivateKey(in, NULL, 0, NULL);
+    BIO_free(in);
+    return key;
+}
+
+static EVP_PKEY *ossltest_load_privkey(ENGINE *eng, const char *key_id,
+                                       UI_METHOD *ui_method, void *ui_data)
+{
+    return load_key(eng, key_id, 0, ui_method, ui_data);
+}
+
+static EVP_PKEY *ossltest_load_pubkey(ENGINE *eng, const char *key_id,
+                                      UI_METHOD *ui_method, void *ui_data)
+{
+    return load_key(eng, key_id, 1, ui_method, ui_data);
+}
+
+
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 static int bind_ossltest(ENGINE *e)
 {
     /* Ensure the ossltest error handling is set up */

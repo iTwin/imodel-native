@@ -22,10 +22,25 @@ extern BIO *bio_err;
 void h__dump(unsigned char *p, int len);
 #endif
 
+<<<<<<< HEAD
 /* PKCS12 compatible key/IV generation */
 #ifndef min
 # define min(a,b) ((a) < (b) ? (a) : (b))
 #endif
+=======
+    if (pass == NULL) {
+        unipass = NULL;
+        uniplen = 0;
+    } else if (!OPENSSL_asc2uni(pass, passlen, &unipass, &uniplen)) {
+        ERR_raise(ERR_LIB_PKCS12, ERR_R_MALLOC_FAILURE);
+        return 0;
+    }
+    ret = PKCS12_key_gen_uni_ex(unipass, uniplen, salt, saltlen, id, iter,
+                                n, out, md_type, ctx, propq);
+    OPENSSL_clear_free(unipass, uniplen);
+    return ret > 0;
+}
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
 int PKCS12_key_gen_asc(const char *pass, int passlen, unsigned char *salt,
                        int saltlen, int id, int iter, int n,
@@ -38,8 +53,13 @@ int PKCS12_key_gen_asc(const char *pass, int passlen, unsigned char *salt,
     if (!pass) {
         unipass = NULL;
         uniplen = 0;
+<<<<<<< HEAD
     } else if (!OPENSSL_asc2uni(pass, passlen, &unipass, &uniplen)) {
         PKCS12err(PKCS12_F_PKCS12_KEY_GEN_ASC, ERR_R_MALLOC_FAILURE);
+=======
+    } else if (!OPENSSL_utf82uni(pass, passlen, &unipass, &uniplen)) {
+        ERR_raise(ERR_LIB_PKCS12, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
     ret = PKCS12_key_gen_uni(unipass, uniplen, salt, saltlen,

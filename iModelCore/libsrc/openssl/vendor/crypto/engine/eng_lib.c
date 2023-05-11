@@ -32,7 +32,11 @@ ENGINE *ENGINE_new(void)
 
     if (!RUN_ONCE(&engine_lock_init, do_engine_lock_init)
         || (ret = OPENSSL_zalloc(sizeof(*ret))) == NULL) {
+<<<<<<< HEAD
         ENGINEerr(ENGINE_F_ENGINE_NEW, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_ENGINE, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return NULL;
     }
     ret->struct_ref = 1;
@@ -128,7 +132,11 @@ static ENGINE_CLEANUP_ITEM *int_cleanup_item(ENGINE_CLEANUP_CB *cb)
     ENGINE_CLEANUP_ITEM *item;
 
     if ((item = OPENSSL_malloc(sizeof(*item))) == NULL) {
+<<<<<<< HEAD
         ENGINEerr(ENGINE_F_INT_CLEANUP_ITEM, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_ENGINE, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return NULL;
     }
     item->cb = cb;

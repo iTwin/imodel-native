@@ -75,16 +75,35 @@ EC_KEY *EC_KEY_new_method(ENGINE *engine)
     EC_KEY *ret = OPENSSL_zalloc(sizeof(*ret));
 
     if (ret == NULL) {
+<<<<<<< HEAD
         ECerr(EC_F_EC_KEY_NEW_METHOD, ERR_R_MALLOC_FAILURE);
         return NULL;
+=======
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+        return NULL;
+    }
+
+    ret->libctx = libctx;
+    if (propq != NULL) {
+        ret->propq = OPENSSL_strdup(propq);
+        if (ret->propq == NULL) {
+            ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+            goto err;
+        }
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     }
 
     ret->references = 1;
     ret->lock = CRYPTO_THREAD_lock_new();
     if (ret->lock == NULL) {
+<<<<<<< HEAD
         ECerr(EC_F_EC_KEY_NEW_METHOD, ERR_R_MALLOC_FAILURE);
         OPENSSL_free(ret);
         return NULL;
+=======
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+        goto err;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     }
 
     ret->meth = EC_KEY_get_default_method();

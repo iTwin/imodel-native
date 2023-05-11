@@ -364,12 +364,17 @@ DECLARE_ASN1_ALLOC_FUNCTIONS(CMS_IssuerAndSerialNumber)
 
 BIO *cms_content_bio(CMS_ContentInfo *cms);
 
+<<<<<<< HEAD
 CMS_ContentInfo *cms_Data_create(void);
+=======
+CMS_ContentInfo *ossl_cms_Data_create(OSSL_LIB_CTX *ctx, const char *propq);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
 CMS_ContentInfo *cms_DigestedData_create(const EVP_MD *md);
 BIO *cms_DigestedData_init_bio(CMS_ContentInfo *cms);
 int cms_DigestedData_do_final(CMS_ContentInfo *cms, BIO *chain, int verify);
 
+<<<<<<< HEAD
 BIO *cms_SignedData_init_bio(CMS_ContentInfo *cms);
 int cms_SignedData_final(CMS_ContentInfo *cms, BIO *chain);
 int cms_set1_SignerIdentifier(CMS_SignerIdentifier *sid, X509 *cert,
@@ -379,6 +384,17 @@ int cms_SignerIdentifier_get0_signer_id(CMS_SignerIdentifier *sid,
                                         X509_NAME **issuer,
                                         ASN1_INTEGER **sno);
 int cms_SignerIdentifier_cert_cmp(CMS_SignerIdentifier *sid, X509 *cert);
+=======
+BIO *ossl_cms_SignedData_init_bio(CMS_ContentInfo *cms);
+int ossl_cms_SignedData_final(CMS_ContentInfo *cms, BIO *chain);
+int ossl_cms_set1_SignerIdentifier(CMS_SignerIdentifier *sid, X509 *cert,
+                                   int type, const CMS_CTX *ctx);
+int ossl_cms_SignerIdentifier_get0_signer_id(CMS_SignerIdentifier *sid,
+                                             ASN1_OCTET_STRING **keyid,
+                                             X509_NAME **issuer,
+                                             ASN1_INTEGER **sno);
+int ossl_cms_SignerIdentifier_cert_cmp(CMS_SignerIdentifier *sid, X509 *cert);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
 CMS_ContentInfo *cms_CompressedData_create(int comp_nid);
 BIO *cms_CompressedData_init_bio(CMS_ContentInfo *cms);

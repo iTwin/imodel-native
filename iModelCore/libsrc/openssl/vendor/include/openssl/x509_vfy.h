@@ -273,6 +273,7 @@ void X509_STORE_free(X509_STORE *v);
 int X509_STORE_lock(X509_STORE *ctx);
 int X509_STORE_unlock(X509_STORE *ctx);
 int X509_STORE_up_ref(X509_STORE *v);
+<<<<<<< HEAD
 STACK_OF(X509_OBJECT) *X509_STORE_get0_objects(X509_STORE *v);
 
 STACK_OF(X509) *X509_STORE_CTX_get1_certs(X509_STORE_CTX *st, X509_NAME *nm);
@@ -283,16 +284,35 @@ int X509_STORE_set_trust(X509_STORE *ctx, int trust);
 int X509_STORE_set1_param(X509_STORE *ctx, X509_VERIFY_PARAM *pm);
 X509_VERIFY_PARAM *X509_STORE_get0_param(X509_STORE *ctx);
 
+=======
+STACK_OF(X509_OBJECT) *X509_STORE_get0_objects(const X509_STORE *v);
+STACK_OF(X509) *X509_STORE_get1_all_certs(X509_STORE *st);
+STACK_OF(X509) *X509_STORE_CTX_get1_certs(X509_STORE_CTX *st,
+                                          const X509_NAME *nm);
+STACK_OF(X509_CRL) *X509_STORE_CTX_get1_crls(const X509_STORE_CTX *st,
+                                             const X509_NAME *nm);
+int X509_STORE_set_flags(X509_STORE *ctx, unsigned long flags);
+int X509_STORE_set_purpose(X509_STORE *ctx, int purpose);
+int X509_STORE_set_trust(X509_STORE *ctx, int trust);
+int X509_STORE_set1_param(X509_STORE *ctx, const X509_VERIFY_PARAM *pm);
+X509_VERIFY_PARAM *X509_STORE_get0_param(const X509_STORE *ctx);
+
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 void X509_STORE_set_verify(X509_STORE *ctx, X509_STORE_CTX_verify_fn verify);
 #define X509_STORE_set_verify_func(ctx, func) \
             X509_STORE_set_verify((ctx),(func))
 void X509_STORE_CTX_set_verify(X509_STORE_CTX *ctx,
                                X509_STORE_CTX_verify_fn verify);
+<<<<<<< HEAD
 X509_STORE_CTX_verify_fn X509_STORE_get_verify(X509_STORE *ctx);
+=======
+X509_STORE_CTX_verify_fn X509_STORE_get_verify(const X509_STORE *ctx);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 void X509_STORE_set_verify_cb(X509_STORE *ctx,
                               X509_STORE_CTX_verify_cb verify_cb);
 # define X509_STORE_set_verify_cb_func(ctx,func) \
             X509_STORE_set_verify_cb((ctx),(func))
+<<<<<<< HEAD
 X509_STORE_CTX_verify_cb X509_STORE_get_verify_cb(X509_STORE *ctx);
 void X509_STORE_set_get_issuer(X509_STORE *ctx,
                                X509_STORE_CTX_get_issuer_fn get_issuer);
@@ -318,19 +338,58 @@ X509_STORE_CTX_check_policy_fn X509_STORE_get_check_policy(X509_STORE *ctx);
 void X509_STORE_set_lookup_certs(X509_STORE *ctx,
                                  X509_STORE_CTX_lookup_certs_fn lookup_certs);
 X509_STORE_CTX_lookup_certs_fn X509_STORE_get_lookup_certs(X509_STORE *ctx);
+=======
+X509_STORE_CTX_verify_cb X509_STORE_get_verify_cb(const X509_STORE *ctx);
+void X509_STORE_set_get_issuer(X509_STORE *ctx,
+                               X509_STORE_CTX_get_issuer_fn get_issuer);
+X509_STORE_CTX_get_issuer_fn X509_STORE_get_get_issuer(const X509_STORE *ctx);
+void X509_STORE_set_check_issued(X509_STORE *ctx,
+                                 X509_STORE_CTX_check_issued_fn check_issued);
+X509_STORE_CTX_check_issued_fn X509_STORE_get_check_issued(const X509_STORE *ctx);
+void X509_STORE_set_check_revocation(X509_STORE *ctx,
+                                     X509_STORE_CTX_check_revocation_fn check_revocation);
+X509_STORE_CTX_check_revocation_fn
+    X509_STORE_get_check_revocation(const X509_STORE *ctx);
+void X509_STORE_set_get_crl(X509_STORE *ctx,
+                            X509_STORE_CTX_get_crl_fn get_crl);
+X509_STORE_CTX_get_crl_fn X509_STORE_get_get_crl(const X509_STORE *ctx);
+void X509_STORE_set_check_crl(X509_STORE *ctx,
+                              X509_STORE_CTX_check_crl_fn check_crl);
+X509_STORE_CTX_check_crl_fn X509_STORE_get_check_crl(const X509_STORE *ctx);
+void X509_STORE_set_cert_crl(X509_STORE *ctx,
+                             X509_STORE_CTX_cert_crl_fn cert_crl);
+X509_STORE_CTX_cert_crl_fn X509_STORE_get_cert_crl(const X509_STORE *ctx);
+void X509_STORE_set_check_policy(X509_STORE *ctx,
+                                 X509_STORE_CTX_check_policy_fn check_policy);
+X509_STORE_CTX_check_policy_fn X509_STORE_get_check_policy(const X509_STORE *ctx);
+void X509_STORE_set_lookup_certs(X509_STORE *ctx,
+                                 X509_STORE_CTX_lookup_certs_fn lookup_certs);
+X509_STORE_CTX_lookup_certs_fn X509_STORE_get_lookup_certs(const X509_STORE *ctx);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 void X509_STORE_set_lookup_crls(X509_STORE *ctx,
                                 X509_STORE_CTX_lookup_crls_fn lookup_crls);
 #define X509_STORE_set_lookup_crls_cb(ctx, func) \
     X509_STORE_set_lookup_crls((ctx), (func))
+<<<<<<< HEAD
 X509_STORE_CTX_lookup_crls_fn X509_STORE_get_lookup_crls(X509_STORE *ctx);
 void X509_STORE_set_cleanup(X509_STORE *ctx,
                             X509_STORE_CTX_cleanup_fn cleanup);
 X509_STORE_CTX_cleanup_fn X509_STORE_get_cleanup(X509_STORE *ctx);
+=======
+X509_STORE_CTX_lookup_crls_fn X509_STORE_get_lookup_crls(const X509_STORE *ctx);
+void X509_STORE_set_cleanup(X509_STORE *ctx,
+                            X509_STORE_CTX_cleanup_fn cleanup);
+X509_STORE_CTX_cleanup_fn X509_STORE_get_cleanup(const X509_STORE *ctx);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
 #define X509_STORE_get_ex_new_index(l, p, newf, dupf, freef) \
     CRYPTO_get_ex_new_index(CRYPTO_EX_INDEX_X509_STORE, l, p, newf, dupf, freef)
 int X509_STORE_set_ex_data(X509_STORE *ctx, int idx, void *data);
+<<<<<<< HEAD
 void *X509_STORE_get_ex_data(X509_STORE *ctx, int idx);
+=======
+void *X509_STORE_get_ex_data(const X509_STORE *ctx, int idx);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
 X509_STORE_CTX *X509_STORE_CTX_new(void);
 
@@ -482,9 +541,29 @@ void *X509_LOOKUP_get_method_data(const X509_LOOKUP *ctx);
 X509_STORE *X509_LOOKUP_get_store(const X509_LOOKUP *ctx);
 int X509_LOOKUP_shutdown(X509_LOOKUP *ctx);
 
+<<<<<<< HEAD
 int X509_STORE_load_locations(X509_STORE *ctx,
                               const char *file, const char *dir);
 int X509_STORE_set_default_paths(X509_STORE *ctx);
+=======
+int X509_STORE_load_file(X509_STORE *ctx, const char *file);
+int X509_STORE_load_path(X509_STORE *ctx, const char *path);
+int X509_STORE_load_store(X509_STORE *ctx, const char *store);
+int X509_STORE_load_locations(X509_STORE *ctx,
+                                               const char *file,
+                                               const char *dir);
+int X509_STORE_set_default_paths(X509_STORE *ctx);
+
+int X509_STORE_load_file_ex(X509_STORE *ctx, const char *file,
+                            OSSL_LIB_CTX *libctx, const char *propq);
+int X509_STORE_load_store_ex(X509_STORE *ctx, const char *store,
+                             OSSL_LIB_CTX *libctx, const char *propq);
+int X509_STORE_load_locations_ex(X509_STORE *ctx, const char *file,
+                                 const char *dir, OSSL_LIB_CTX *libctx,
+                                 const char *propq);
+int X509_STORE_set_default_paths_ex(X509_STORE *ctx, OSSL_LIB_CTX *libctx,
+                                    const char *propq);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
 #define X509_STORE_CTX_get_ex_new_index(l, p, newf, dupf, freef) \
     CRYPTO_get_ex_new_index(CRYPTO_EX_INDEX_X509_STORE_CTX, l, p, newf, dupf, freef)

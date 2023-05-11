@@ -9,7 +9,10 @@
 
 #include "e_os.h"
 #include "internal/sockets.h"
+<<<<<<< HEAD
 #include "internal/refcount.h"
+=======
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
 /* BEGIN BIO_ADDRINFO/BIO_ADDR stuff. */
 
@@ -74,11 +77,19 @@ struct bio_addrinfo_st {
 
 union bio_addr_st {
     struct sockaddr sa;
+<<<<<<< HEAD
 # ifdef AF_INET6
     struct sockaddr_in6 s_in6;
 # endif
     struct sockaddr_in s_in;
 # ifdef AF_UNIX
+=======
+# if OPENSSL_USE_IPV6
+    struct sockaddr_in6 s_in6;
+# endif
+    struct sockaddr_in s_in;
+# ifndef OPENSSL_NO_UNIX_SOCK
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     struct sockaddr_un s_un;
 # endif
 };

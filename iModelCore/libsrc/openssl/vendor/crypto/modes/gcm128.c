@@ -716,6 +716,116 @@ void gcm_ghash_p8(u64 Xi[2], const u128 Htable[16], const u8 *inp,
 # endif
 #endif
 
+<<<<<<< HEAD
+=======
+static void gcm_get_funcs(struct gcm_funcs_st *ctx)
+{
+    /* set defaults -- overridden below as needed */
+    ctx->ginit = gcm_init_4bit;
+#if !defined(GHASH_ASM) || defined(INCLUDE_C_GMULT_4BIT)
+    ctx->gmult = gcm_gmult_4bit;
+#else
+    ctx->gmult = NULL;
+#endif
+#if !defined(GHASH_ASM) && !defined(OPENSSL_SMALL_FOOTPRINT)
+    ctx->ghash = gcm_ghash_4bit;
+#else
+    ctx->ghash = NULL;
+#endif
+
+#if defined(GHASH_ASM_X86_OR_64)
+# if !defined(GHASH_ASM_X86) || defined(OPENSSL_IA32_SSE2)
+    /* x86_64 */
+    if (OPENSSL_ia32cap_P[1] & (1 << 1)) { /* check PCLMULQDQ bit */
+        if (((OPENSSL_ia32cap_P[1] >> 22) & 0x41) == 0x41) { /* AVX+MOVBE */
+            ctx->ginit = gcm_init_avx;
+            ctx->gmult = gcm_gmult_avx;
+            ctx->ghash = gcm_ghash_avx;
+        } else {
+            ctx->ginit = gcm_init_clmul;
+            ctx->gmult = gcm_gmult_clmul;
+            ctx->ghash = gcm_ghash_clmul;
+        }
+        return;
+    }
+# endif
+# if defined(GHASH_ASM_X86)
+    /* x86 only */
+#  if defined(OPENSSL_IA32_SSE2)
+    if (OPENSSL_ia32cap_P[0] & (1 << 25)) { /* check SSE bit */
+        ctx->gmult = gcm_gmult_4bit_mmx;
+        ctx->ghash = gcm_ghash_4bit_mmx;
+        return;
+    }
+#  else
+    if (OPENSSL_ia32cap_P[0] & (1 << 23)) { /* check MMX bit */
+        ctx->gmult = gcm_gmult_4bit_mmx;
+        ctx->ghash = gcm_ghash_4bit_mmx;
+        return;
+    }
+#  endif
+    ctx->gmult = gcm_gmult_4bit_x86;
+    ctx->ghash = gcm_ghash_4bit_x86;
+    return;
+# else
+    /* x86_64 fallback defaults */
+    ctx->gmult = gcm_gmult_4bit;
+    ctx->ghash = gcm_ghash_4bit;
+    return;
+# endif
+#elif defined(GHASH_ASM_ARM)
+    /* ARM defaults */
+    ctx->gmult = gcm_gmult_4bit;
+    ctx->ghash = gcm_ghash_4bit;
+# ifdef PMULL_CAPABLE
+    if (PMULL_CAPABLE) {
+        ctx->ginit = (gcm_init_fn)gcm_init_v8;
+        ctx->gmult = gcm_gmult_v8;
+        ctx->ghash = gcm_ghash_v8;
+    }
+# elif defined(NEON_CAPABLE)
+    if (NEON_CAPABLE) {
+        ctx->ginit = gcm_init_neon;
+        ctx->gmult = gcm_gmult_neon;
+        ctx->ghash = gcm_ghash_neon;
+    }
+# endif
+    return;
+#elif defined(GHASH_ASM_SPARC)
+    /* SPARC defaults */
+    ctx->gmult = gcm_gmult_4bit;
+    ctx->ghash = gcm_ghash_4bit;
+    if (OPENSSL_sparcv9cap_P[0] & SPARCV9_VIS3) {
+        ctx->ginit = gcm_init_vis3;
+        ctx->gmult = gcm_gmult_vis3;
+        ctx->ghash = gcm_ghash_vis3;
+    }
+    return;
+#elif defined(GHASH_ASM_PPC)
+    /* PowerPC does not define GHASH_ASM; defaults set above */
+    if (OPENSSL_ppccap_P & PPC_CRYPTO207) {
+        ctx->ginit = gcm_init_p8;
+        ctx->gmult = gcm_gmult_p8;
+        ctx->ghash = gcm_ghash_p8;
+    }
+    return;
+#elif defined(GHASH_ASM_RISCV) && __riscv_xlen == 64
+    /* RISCV defaults; gmult already set above */
+    ctx->ghash = NULL;
+    if (RISCV_HAS_ZBB() && RISCV_HAS_ZBC()) {
+        ctx->ginit = gcm_init_clmul_rv64i_zbb_zbc;
+        ctx->gmult = gcm_gmult_clmul_rv64i_zbb_zbc;
+    }
+    return;
+#elif defined(GHASH_ASM)
+    /* all other architectures use the generic names */
+    ctx->gmult = gcm_gmult_4bit;
+    ctx->ghash = gcm_ghash_4bit;
+    return;
+#endif
+}
+
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 void CRYPTO_gcm128_init(GCM128_CONTEXT *ctx, void *key, block128_f block)
 {
     const union {

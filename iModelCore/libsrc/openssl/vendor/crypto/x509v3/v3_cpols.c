@@ -104,7 +104,11 @@ static STACK_OF(POLICYINFO) *r2i_certpol(X509V3_EXT_METHOD *method,
 
     pols = sk_POLICYINFO_new_reserve(NULL, num);
     if (pols == NULL) {
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_cpols.c
         X509V3err(X509V3_F_R2I_CERTPOL, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_cpols.c
         goto err;
     }
 
@@ -145,14 +149,22 @@ static STACK_OF(POLICYINFO) *r2i_certpol(X509V3_EXT_METHOD *method,
             pol = POLICYINFO_new();
             if (pol == NULL) {
                 ASN1_OBJECT_free(pobj);
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_cpols.c
                 X509V3err(X509V3_F_R2I_CERTPOL, ERR_R_MALLOC_FAILURE);
+=======
+                ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_cpols.c
                 goto err;
             }
             pol->policyid = pobj;
         }
         if (!sk_POLICYINFO_push(pols, pol)) {
             POLICYINFO_free(pol);
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_cpols.c
             X509V3err(X509V3_F_R2I_CERTPOL, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_cpols.c
             goto err;
         }
     }
@@ -194,7 +206,11 @@ static POLICYINFO *policy_section(X509V3_CTX *ctx,
             if (!sk_POLICYQUALINFO_push(pol->qualifiers, qual))
                 goto merr;
             if ((qual->pqualid = OBJ_nid2obj(NID_id_qt_cps)) == NULL) {
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_cpols.c
                 X509V3err(X509V3_F_POLICY_SECTION, ERR_R_INTERNAL_ERROR);
+=======
+                ERR_raise(ERR_LIB_X509V3, ERR_R_INTERNAL_ERROR);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_cpols.c
                 goto err;
             }
             if ((qual->d.cpsuri = ASN1_IA5STRING_new()) == NULL)
@@ -202,7 +218,11 @@ static POLICYINFO *policy_section(X509V3_CTX *ctx,
             if (!ASN1_STRING_set(qual->d.cpsuri, cnf->value,
                                  strlen(cnf->value)))
                 goto merr;
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_cpols.c
         } else if (!name_cmp(cnf->name, "userNotice")) {
+=======
+        } else if (!ossl_v3_name_cmp(cnf->name, "userNotice")) {
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_cpols.c
             STACK_OF(CONF_VALUE) *unot;
             if (*cnf->value != '@') {
                 X509V3err(X509V3_F_POLICY_SECTION,
@@ -240,7 +260,11 @@ static POLICYINFO *policy_section(X509V3_CTX *ctx,
     return pol;
 
  merr:
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_cpols.c
     X509V3err(X509V3_F_POLICY_SECTION, ERR_R_MALLOC_FAILURE);
+=======
+    ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_cpols.c
 
  err:
     POLICYINFO_free(pol);
@@ -293,7 +317,11 @@ static POLICYQUALINFO *notice_section(X509V3_CTX *ctx,
     if ((qual = POLICYQUALINFO_new()) == NULL)
         goto merr;
     if ((qual->pqualid = OBJ_nid2obj(NID_id_qt_unotice)) == NULL) {
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_cpols.c
         X509V3err(X509V3_F_NOTICE_SECTION, ERR_R_INTERNAL_ERROR);
+=======
+        ERR_raise(ERR_LIB_X509V3, ERR_R_INTERNAL_ERROR);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_cpols.c
         goto err;
     }
     if ((not = USERNOTICE_new()) == NULL)
@@ -363,7 +391,11 @@ static POLICYQUALINFO *notice_section(X509V3_CTX *ctx,
     return qual;
 
  merr:
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_cpols.c
     X509V3err(X509V3_F_NOTICE_SECTION, ERR_R_MALLOC_FAILURE);
+=======
+    ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_cpols.c
 
  err:
     POLICYQUALINFO_free(qual);
@@ -380,7 +412,11 @@ static int nref_nos(STACK_OF(ASN1_INTEGER) *nnums, STACK_OF(CONF_VALUE) *nos)
     for (i = 0; i < sk_CONF_VALUE_num(nos); i++) {
         cnf = sk_CONF_VALUE_value(nos, i);
         if ((aint = s2i_ASN1_INTEGER(NULL, cnf->name)) == NULL) {
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_cpols.c
             X509V3err(X509V3_F_NREF_NOS, X509V3_R_INVALID_NUMBER);
+=======
+            ERR_raise(ERR_LIB_X509V3, X509V3_R_INVALID_NUMBER);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_cpols.c
             goto err;
         }
         if (!sk_ASN1_INTEGER_push(nnums, aint))
@@ -390,7 +426,11 @@ static int nref_nos(STACK_OF(ASN1_INTEGER) *nnums, STACK_OF(CONF_VALUE) *nos)
 
  merr:
     ASN1_INTEGER_free(aint);
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_cpols.c
     X509V3err(X509V3_F_NREF_NOS, ERR_R_MALLOC_FAILURE);
+=======
+    ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_cpols.c
 
  err:
     return 0;

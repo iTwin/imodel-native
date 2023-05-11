@@ -438,6 +438,73 @@ static int devcrypto_ciphers(ENGINE *e, const EVP_CIPHER **cipher,
     return *cipher != NULL;
 }
 
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/engine/eng_devcrypto.c
+=======
+static void devcrypto_select_all_ciphers(int *cipher_list)
+{
+    size_t i;
+
+    for (i = 0; i < OSSL_NELEM(cipher_data); i++)
+        cipher_list[i] = 1;
+}
+
+static int cryptodev_select_cipher_cb(const char *str, int len, void *usr)
+{
+    int *cipher_list = (int *)usr;
+    char *name;
+    const EVP_CIPHER *EVP;
+    size_t i;
+
+    if (len == 0)
+        return 1;
+    if (usr == NULL || (name = OPENSSL_strndup(str, len)) == NULL)
+        return 0;
+    EVP = EVP_get_cipherbyname(name);
+    if (EVP == NULL)
+        fprintf(stderr, "devcrypto: unknown cipher %s\n", name);
+    else if ((i = find_cipher_data_index(EVP_CIPHER_get_nid(EVP))) != (size_t)-1)
+        cipher_list[i] = 1;
+    else
+        fprintf(stderr, "devcrypto: cipher %s not available\n", name);
+    OPENSSL_free(name);
+    return 1;
+}
+
+static void dump_cipher_info(void)
+{
+    size_t i;
+    const char *name;
+
+    fprintf (stderr, "Information about ciphers supported by the /dev/crypto"
+             " engine:\n");
+#ifndef CIOCGSESSINFO
+    fprintf(stderr, "CIOCGSESSINFO (session info call) unavailable\n");
+#endif
+    for (i = 0; i < OSSL_NELEM(cipher_data); i++) {
+        name = OBJ_nid2sn(cipher_data[i].nid);
+        fprintf (stderr, "Cipher %s, NID=%d, /dev/crypto info: id=%d, ",
+                 name ? name : "unknown", cipher_data[i].nid,
+                 cipher_data[i].devcryptoid);
+        if (cipher_driver_info[i].status == DEVCRYPTO_STATUS_NO_CIOCGSESSION ) {
+            fprintf (stderr, "CIOCGSESSION (session open call) failed\n");
+            continue;
+        }
+        fprintf (stderr, "driver=%s ", cipher_driver_info[i].driver_name ?
+                 cipher_driver_info[i].driver_name : "unknown");
+        if (cipher_driver_info[i].accelerated == DEVCRYPTO_ACCELERATED)
+            fprintf(stderr, "(hw accelerated)");
+        else if (cipher_driver_info[i].accelerated == DEVCRYPTO_NOT_ACCELERATED)
+            fprintf(stderr, "(software)");
+        else
+            fprintf(stderr, "(acceleration status unknown)");
+        if (cipher_driver_info[i].status == DEVCRYPTO_STATUS_FAILURE)
+            fprintf (stderr, ". Cipher setup failed");
+        fprintf(stderr, "\n");
+    }
+    fprintf(stderr, "\n");
+}
+
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/engines/e_devcrypto.c
 /*
  * We only support digests if the cryptodev implementation supports multiple
  * data updates and session copying.  Otherwise, we would be forced to maintain

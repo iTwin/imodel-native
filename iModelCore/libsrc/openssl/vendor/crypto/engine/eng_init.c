@@ -82,7 +82,11 @@ int ENGINE_init(ENGINE *e)
         return 0;
     }
     if (!RUN_ONCE(&engine_lock_init, do_engine_lock_init)) {
+<<<<<<< HEAD
         ENGINEerr(ENGINE_F_ENGINE_INIT, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_ENGINE, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
     CRYPTO_THREAD_write_lock(global_engine_lock);

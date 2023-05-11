@@ -112,8 +112,12 @@ EXT_RETURN tls_construct_ctos_srp(SSL *s, WPACKET *pkt, unsigned int context,
 }
 #endif
 
+<<<<<<< HEAD
 #ifndef OPENSSL_NO_EC
 static int use_ecc(SSL *s)
+=======
+static int use_ecc(SSL *s, int min_version, int max_version)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 {
     int i, end, ret = 0;
     unsigned long alg_k, alg_a;
@@ -189,7 +193,22 @@ EXT_RETURN tls_construct_ctos_supported_groups(SSL *s, WPACKET *pkt,
     const uint16_t *pgroups = NULL;
     size_t num_groups = 0, i;
 
+<<<<<<< HEAD
     if (!use_ecc(s))
+=======
+    reason = ssl_get_min_max_version(s, &min_version, &max_version, NULL);
+    if (reason != 0) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, reason);
+        return EXT_RETURN_FAIL;
+    }
+
+    /*
+     * We only support EC groups in TLSv1.2 or below, and in DTLS. Therefore
+     * if we don't have EC support then we don't send this extension.
+     */
+    if (!use_ecc(s, min_version, max_version)
+            && (SSL_IS_DTLS(s) || max_version < TLS1_3_VERSION))
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return EXT_RETURN_NOT_SENT;
 
     /*
@@ -684,6 +703,12 @@ EXT_RETURN tls_construct_ctos_key_share(SSL *s, WPACKET *pkt,
         curve_id = s->s3->group_id;
     } else {
         for (i = 0; i < num_groups; i++) {
+<<<<<<< HEAD
+=======
+
+            if (!tls_group_allowed(s, pgroups[i], SSL_SECOP_CURVE_SUPPORTED))
+                continue;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
             if (!tls_curve_allowed(s, pgroups[i], SSL_SECOP_CURVE_SUPPORTED))
                 continue;
@@ -956,7 +981,11 @@ EXT_RETURN tls_construct_ctos_padding(SSL *s, WPACKET *pkt,
     if (s->session->ssl_version == TLS1_3_VERSION
             && s->session->ext.ticklen != 0
             && s->session->cipher != NULL) {
+<<<<<<< HEAD
         const EVP_MD *md = ssl_md(s->session->cipher->algorithm2);
+=======
+        const EVP_MD *md = ssl_md(s->ctx, s->session->cipher->algorithm2);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
         if (md != NULL) {
             /*
@@ -1034,7 +1063,11 @@ EXT_RETURN tls_construct_ctos_psk(SSL *s, WPACKET *pkt, unsigned int context,
                      ERR_R_INTERNAL_ERROR);
             return EXT_RETURN_FAIL;
         }
+<<<<<<< HEAD
         mdres = ssl_md(s->session->cipher->algorithm2);
+=======
+        mdres = ssl_md(s->ctx, s->session->cipher->algorithm2);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         if (mdres == NULL) {
             /*
              * Don't recognize this cipher so we can't use the session.
@@ -1106,7 +1139,11 @@ EXT_RETURN tls_construct_ctos_psk(SSL *s, WPACKET *pkt, unsigned int context,
         return EXT_RETURN_NOT_SENT;
 
     if (s->psksession != NULL) {
+<<<<<<< HEAD
         mdpsk = ssl_md(s->psksession->cipher->algorithm2);
+=======
+        mdpsk = ssl_md(s->ctx, s->psksession->cipher->algorithm2);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         if (mdpsk == NULL) {
             /*
              * Don't recognize this cipher so we can't use the session.
@@ -1203,8 +1240,14 @@ EXT_RETURN tls_construct_ctos_psk(SSL *s, WPACKET *pkt, unsigned int context,
 }
 
 EXT_RETURN tls_construct_ctos_post_handshake_auth(SSL *s, WPACKET *pkt,
+<<<<<<< HEAD
                                                   unsigned int context,
                                                   X509 *x, size_t chainidx)
+=======
+                                                  ossl_unused unsigned int context,
+                                                  ossl_unused X509 *x,
+                                                  ossl_unused size_t chainidx)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 {
 #ifndef OPENSSL_NO_TLS1_3
     if (!s->pha_enabled)
@@ -1365,7 +1408,10 @@ int tls_parse_stoc_server_name(SSL *s, PACKET *pkt, unsigned int context,
     return 1;
 }
 
+<<<<<<< HEAD
 #ifndef OPENSSL_NO_EC
+=======
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 int tls_parse_stoc_ec_pt_formats(SSL *s, PACKET *pkt, unsigned int context,
                                  X509 *x, size_t chainidx)
 {
@@ -1417,8 +1463,12 @@ int tls_parse_stoc_session_ticket(SSL *s, PACKET *pkt, unsigned int context,
         !s->ext.session_ticket_cb(s, PACKET_data(pkt),
                               PACKET_remaining(pkt),
                               s->ext.session_ticket_cb_arg)) {
+<<<<<<< HEAD
         SSLfatal(s, SSL_AD_HANDSHAKE_FAILURE,
                  SSL_F_TLS_PARSE_STOC_SESSION_TICKET, SSL_R_BAD_EXTENSION);
+=======
+        SSLfatal(s, SSL_AD_HANDSHAKE_FAILURE, SSL_R_BAD_EXTENSION);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
 
@@ -1458,8 +1508,12 @@ int tls_parse_stoc_status_request(SSL *s, PACKET *pkt, unsigned int context,
         return 0;
     }
     if (!SSL_IS_TLS13(s) && PACKET_remaining(pkt) > 0) {
+<<<<<<< HEAD
         SSLfatal(s, SSL_AD_DECODE_ERROR,
                  SSL_F_TLS_PARSE_STOC_STATUS_REQUEST, SSL_R_BAD_EXTENSION);
+=======
+        SSLfatal(s, SSL_AD_DECODE_ERROR, SSL_R_BAD_EXTENSION);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
 
@@ -1509,8 +1563,12 @@ int tls_parse_stoc_sct(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
             s->ext.scts = OPENSSL_malloc(size);
             if (s->ext.scts == NULL) {
                 s->ext.scts_len = 0;
+<<<<<<< HEAD
                 SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_PARSE_STOC_SCT,
                          ERR_R_MALLOC_FAILURE);
+=======
+                SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                 return 0;
             }
             if (!PACKET_copy_bytes(pkt, s->ext.scts, size)) {
@@ -1584,8 +1642,12 @@ int tls_parse_stoc_npn(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
 
     /* We must have requested it. */
     if (s->ctx->ext.npn_select_cb == NULL) {
+<<<<<<< HEAD
         SSLfatal(s, SSL_AD_UNSUPPORTED_EXTENSION, SSL_F_TLS_PARSE_STOC_NPN,
                  SSL_R_BAD_EXTENSION);
+=======
+        SSLfatal(s, SSL_AD_UNSUPPORTED_EXTENSION, SSL_R_BAD_EXTENSION);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
 
@@ -1871,8 +1933,39 @@ int tls_parse_stoc_key_share(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
          * This isn't for the group that we sent in the original
          * key_share!
          */
+<<<<<<< HEAD
         SSLfatal(s, SSL_AD_ILLEGAL_PARAMETER, SSL_F_TLS_PARSE_STOC_KEY_SHARE,
                  SSL_R_BAD_KEY_SHARE);
+=======
+        SSLfatal(s, SSL_AD_ILLEGAL_PARAMETER, SSL_R_BAD_KEY_SHARE);
+        return 0;
+    }
+    /* Retain this group in the SSL_SESSION */
+    if (!s->hit) {
+        s->session->kex_group = group_id;
+    } else if (group_id != s->session->kex_group) {
+        /*
+         * If this is a resumption but changed what group was used, we need
+         * to record the new group in the session, but the session is not
+         * a new session and could be in use by other threads.  So, make
+         * a copy of the session to record the new information so that it's
+         * useful for any sessions resumed from tickets issued on this
+         * connection.
+         */
+        SSL_SESSION *new_sess;
+
+        if ((new_sess = ssl_session_dup(s->session, 0)) == NULL) {
+            SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_MALLOC_FAILURE);
+            return 0;
+        }
+        SSL_SESSION_free(s->session);
+        s->session = new_sess;
+        s->session->kex_group = group_id;
+    }
+
+    if ((ginf = tls1_group_id_lookup(s->ctx, group_id)) == NULL) {
+        SSLfatal(s, SSL_AD_ILLEGAL_PARAMETER, SSL_R_BAD_KEY_SHARE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
 

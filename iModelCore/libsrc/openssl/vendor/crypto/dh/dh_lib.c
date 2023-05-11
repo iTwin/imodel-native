@@ -44,14 +44,22 @@ DH *DH_new_method(ENGINE *engine)
     DH *ret = OPENSSL_zalloc(sizeof(*ret));
 
     if (ret == NULL) {
+<<<<<<< HEAD
         DHerr(DH_F_DH_NEW_METHOD, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_DH, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return NULL;
     }
 
     ret->references = 1;
     ret->lock = CRYPTO_THREAD_lock_new();
     if (ret->lock == NULL) {
+<<<<<<< HEAD
         DHerr(DH_F_DH_NEW_METHOD, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_DH, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         OPENSSL_free(ret);
         return NULL;
     }

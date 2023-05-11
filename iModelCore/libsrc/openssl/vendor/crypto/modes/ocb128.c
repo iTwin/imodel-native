@@ -156,7 +156,11 @@ int CRYPTO_ocb128_init(OCB128_CONTEXT *ctx, void *keyenc, void *keydec,
     ctx->l_index = 0;
     ctx->max_l_index = 5;
     if ((ctx->l = OPENSSL_malloc(ctx->max_l_index * 16)) == NULL) {
+<<<<<<< HEAD
         CRYPTOerr(CRYPTO_F_CRYPTO_OCB128_INIT, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_CRYPTO, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
 
@@ -203,7 +207,11 @@ int CRYPTO_ocb128_copy_ctx(OCB128_CONTEXT *dest, OCB128_CONTEXT *src,
         dest->keydec = keydec;
     if (src->l) {
         if ((dest->l = OPENSSL_malloc(src->max_l_index * 16)) == NULL) {
+<<<<<<< HEAD
             CRYPTOerr(CRYPTO_F_CRYPTO_OCB128_COPY_CTX, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_CRYPTO, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return 0;
         }
         memcpy(dest->l, src->l, (src->l_index + 1) * 16);

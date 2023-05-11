@@ -638,6 +638,46 @@ file path as a string, adapted to the local operating system.
 
 sub data_file {
     return __data_file(@_);
+<<<<<<< HEAD
+=======
+}
+
+=over 4
+
+=item B<result_dir>
+
+C<result_dir> returns the directory where test output files should be placed
+as a string, adapted to the local operating system.
+
+=back
+
+=cut
+
+sub result_dir {
+    BAIL_OUT("Must run setup() first") if (! $test_name);
+
+    return catfile($directories{RESULTS});
+}
+
+=over 4
+
+=item B<result_file FILENAME>
+
+FILENAME is the name of a test output file.
+C<result_file> returns the path of the given file as a string,
+prepending to the file name the path to the directory where test output files
+should be placed, adapted to the local operating system.
+
+=back
+
+=cut
+
+sub result_file {
+    BAIL_OUT("Must run setup() first") if (! $test_name);
+
+    my $f = pop;
+    return catfile(result_dir(),@_,$f);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 }
 
 =over 4

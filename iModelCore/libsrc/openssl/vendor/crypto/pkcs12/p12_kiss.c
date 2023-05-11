@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright 1999-2016 The OpenSSL Project Authors. All Rights Reserved.
+=======
+ * Copyright 1999-2021 The OpenSSL Project Authors. All Rights Reserved.
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -57,12 +61,19 @@ int PKCS12_parse(PKCS12 *p12, const char *pass, EVP_PKEY **pkey, X509 **cert,
      * password are two different things...
      */
 
+<<<<<<< HEAD
     if (!pass || !*pass) {
         if (PKCS12_verify_mac(p12, NULL, 0))
+=======
+    if (pass == NULL || *pass == '\0') {
+        if (!PKCS12_mac_present(p12)
+            || PKCS12_verify_mac(p12, NULL, 0))
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             pass = NULL;
         else if (PKCS12_verify_mac(p12, "", 0))
             pass = "";
         else {
+<<<<<<< HEAD
             PKCS12err(PKCS12_F_PKCS12_PARSE, PKCS12_R_MAC_VERIFY_FAILURE);
             goto err;
         }
@@ -76,6 +87,20 @@ int PKCS12_parse(PKCS12 *p12, const char *pass, EVP_PKEY **pkey, X509 **cert,
 
     if (!ocerts) {
         PKCS12err(PKCS12_F_PKCS12_PARSE, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_PKCS12, PKCS12_R_MAC_VERIFY_FAILURE);
+            goto err;
+        }
+    } else if (!PKCS12_verify_mac(p12, pass, -1)) {
+        ERR_raise(ERR_LIB_PKCS12, PKCS12_R_MAC_VERIFY_FAILURE);
+        goto err;
+    }
+
+    /* If needed, allocate stack for other certificates */
+    if ((cert != NULL || ca != NULL)
+            && (ocerts = sk_X509_new_null()) == NULL) {
+        ERR_raise(ERR_LIB_PKCS12, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 

@@ -50,7 +50,11 @@ ASN1_OBJECT *OBJ_dup(const ASN1_OBJECT *o)
     return r;
  err:
     ASN1_OBJECT_free(r);
+<<<<<<< HEAD
     OBJerr(OBJ_F_OBJ_DUP, ERR_R_MALLOC_FAILURE);
+=======
+    ERR_raise(ERR_LIB_OBJ, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     return NULL;
 }
 

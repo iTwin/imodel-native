@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright 1995-2018 The OpenSSL Project Authors. All Rights Reserved.
+=======
+ * Copyright 1995-2022 The OpenSSL Project Authors. All Rights Reserved.
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -41,11 +45,19 @@ int EVP_SealInit(EVP_CIPHER_CTX *ctx, const EVP_CIPHER *type,
         goto err;
 
     for (i = 0; i < npubk; i++) {
+<<<<<<< HEAD
         ekl[i] =
             EVP_PKEY_encrypt_old(ek[i], key, EVP_CIPHER_CTX_key_length(ctx),
                                  pubk[i]);
         if (ekl[i] <= 0) {
             rv = -1;
+=======
+        size_t keylen = len;
+
+        pctx = EVP_PKEY_CTX_new_from_pkey(libctx, pubk[i], NULL);
+        if (pctx == NULL) {
+            ERR_raise(ERR_LIB_EVP, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             goto err;
         }
     }

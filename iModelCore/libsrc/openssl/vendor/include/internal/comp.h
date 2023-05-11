@@ -9,4 +9,8 @@
 
 #include <openssl/comp.h>
 
+<<<<<<< HEAD
 void comp_zlib_cleanup_int(void);
+=======
+void ossl_comp_zlib_cleanup(void);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))

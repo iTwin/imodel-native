@@ -20,7 +20,15 @@ GENERATE[ecp_nistz256-avx2.s]=asm/ecp_nistz256-avx2.pl $(PERLASM_SCHEME)
 GENERATE[ecp_nistz256-sparcv9.S]=asm/ecp_nistz256-sparcv9.pl $(PERLASM_SCHEME)
 INCLUDE[ecp_nistz256-sparcv9.o]=..
 
+<<<<<<< HEAD
 GENERATE[ecp_nistz256-armv4.S]=asm/ecp_nistz256-armv4.pl $(PERLASM_SCHEME)
+=======
+INCLUDE[ecp_s390x_nistp.o]=..
+INCLUDE[ecx_s390x.o]=..
+INCLUDE[ecx_meth.o]=..
+
+GENERATE[ecp_nistz256-armv4.S]=asm/ecp_nistz256-armv4.pl
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 INCLUDE[ecp_nistz256-armv4.o]=..
 GENERATE[ecp_nistz256-armv8.S]=asm/ecp_nistz256-armv8.pl $(PERLASM_SCHEME)
 INCLUDE[ecp_nistz256-armv8.o]=..

@@ -20,7 +20,11 @@ X509_LOOKUP *X509_LOOKUP_new(X509_LOOKUP_METHOD *method)
     X509_LOOKUP *ret = OPENSSL_zalloc(sizeof(*ret));
 
     if (ret == NULL) {
+<<<<<<< HEAD
         X509err(X509_F_X509_LOOKUP_NEW, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_X509, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return NULL;
     }
 
@@ -162,31 +166,55 @@ X509_STORE *X509_STORE_new(void)
     X509_STORE *ret = OPENSSL_zalloc(sizeof(*ret));
 
     if (ret == NULL) {
+<<<<<<< HEAD
         X509err(X509_F_X509_STORE_NEW, ERR_R_MALLOC_FAILURE);
         return NULL;
     }
     if ((ret->objs = sk_X509_OBJECT_new(x509_object_cmp)) == NULL) {
         X509err(X509_F_X509_STORE_NEW, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_X509, ERR_R_MALLOC_FAILURE);
+        return NULL;
+    }
+    if ((ret->objs = sk_X509_OBJECT_new(x509_object_cmp)) == NULL) {
+        ERR_raise(ERR_LIB_X509, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
     ret->cache = 1;
     if ((ret->get_cert_methods = sk_X509_LOOKUP_new_null()) == NULL) {
+<<<<<<< HEAD
         X509err(X509_F_X509_STORE_NEW, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_X509, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 
     if ((ret->param = X509_VERIFY_PARAM_new()) == NULL) {
+<<<<<<< HEAD
         X509err(X509_F_X509_STORE_NEW, ERR_R_MALLOC_FAILURE);
         goto err;
     }
     if (!CRYPTO_new_ex_data(CRYPTO_EX_INDEX_X509_STORE, ret, &ret->ex_data)) {
         X509err(X509_F_X509_STORE_NEW, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_X509, ERR_R_MALLOC_FAILURE);
+        goto err;
+    }
+    if (!CRYPTO_new_ex_data(CRYPTO_EX_INDEX_X509_STORE, ret, &ret->ex_data)) {
+        ERR_raise(ERR_LIB_X509, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 
     ret->lock = CRYPTO_THREAD_lock_new();
     if (ret->lock == NULL) {
+<<<<<<< HEAD
         X509err(X509_F_X509_STORE_NEW, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_X509, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 
@@ -237,7 +265,11 @@ int X509_STORE_up_ref(X509_STORE *vfy)
     if (CRYPTO_UP_REF(&vfy->references, &i, vfy->lock) <= 0)
         return 0;
 
+<<<<<<< HEAD
     REF_PRINT_COUNT("X509_STORE", a);
+=======
+    REF_PRINT_COUNT("X509_STORE", vfy);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     REF_ASSERT_ISNT(i < 2);
     return ((i > 1) ? 1 : 0);
 }
@@ -258,7 +290,11 @@ X509_LOOKUP *X509_STORE_add_lookup(X509_STORE *v, X509_LOOKUP_METHOD *m)
     /* a new one */
     lu = X509_LOOKUP_new(m);
     if (lu == NULL) {
+<<<<<<< HEAD
         X509err(X509_F_X509_STORE_ADD_LOOKUP, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_X509, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return NULL;
     }
 
@@ -266,7 +302,11 @@ X509_LOOKUP *X509_STORE_add_lookup(X509_STORE *v, X509_LOOKUP_METHOD *m)
     if (sk_X509_LOOKUP_push(v->get_cert_methods, lu))
         return lu;
     /* malloc failed */
+<<<<<<< HEAD
     X509err(X509_F_X509_STORE_ADD_LOOKUP, ERR_R_MALLOC_FAILURE);
+=======
+    ERR_raise(ERR_LIB_X509, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     X509_LOOKUP_free(lu);
     return NULL;
 }
@@ -286,10 +326,19 @@ X509_OBJECT *X509_STORE_CTX_get_obj_by_subject(X509_STORE_CTX *vs,
     return ret;
 }
 
+<<<<<<< HEAD
 int X509_STORE_CTX_get_by_subject(X509_STORE_CTX *vs, X509_LOOKUP_TYPE type,
                                   X509_NAME *name, X509_OBJECT *ret)
 {
     X509_STORE *store = vs->ctx;
+=======
+/* Also fill the cache with all matching certificates */
+int X509_STORE_CTX_get_by_subject(const X509_STORE_CTX *vs,
+                                  X509_LOOKUP_TYPE type,
+                                  const X509_NAME *name, X509_OBJECT *ret)
+{
+    X509_STORE *store = vs->store;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     X509_LOOKUP *lu;
     X509_OBJECT stmp, *tmp;
     int i, j;
@@ -300,15 +349,26 @@ int X509_STORE_CTX_get_by_subject(X509_STORE_CTX *vs, X509_LOOKUP_TYPE type,
     stmp.type = X509_LU_NONE;
     stmp.data.ptr = NULL;
 
+<<<<<<< HEAD
 
     X509_STORE_lock(store);
+=======
+    if (!X509_STORE_lock(store))
+        return 0;
+
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     tmp = X509_OBJECT_retrieve_by_subject(store->objs, type, name);
     X509_STORE_unlock(store);
 
     if (tmp == NULL || type == X509_LU_CRL) {
         for (i = 0; i < sk_X509_LOOKUP_num(store->get_cert_methods); i++) {
             lu = sk_X509_LOOKUP_value(store->get_cert_methods, i);
+<<<<<<< HEAD
             j = X509_LOOKUP_by_subject(lu, type, name, &stmp);
+=======
+            j = X509_LOOKUP_by_subject_ex(lu, type, name, &stmp, vs->libctx,
+                                          vs->propq);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             if (j) {
                 tmp = &stmp;
                 break;
@@ -368,7 +428,11 @@ static int x509_store_add(X509_STORE *store, void *x, int crl) {
 int X509_STORE_add_cert(X509_STORE *ctx, X509 *x)
 {
     if (!x509_store_add(ctx, x, 0)) {
+<<<<<<< HEAD
         X509err(X509_F_X509_STORE_ADD_CERT, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_X509, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
     return 1;
@@ -377,7 +441,11 @@ int X509_STORE_add_cert(X509_STORE *ctx, X509 *x)
 int X509_STORE_add_crl(X509_STORE *ctx, X509_CRL *x)
 {
     if (!x509_store_add(ctx, x, 1)) {
+<<<<<<< HEAD
         X509err(X509_F_X509_STORE_ADD_CRL, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_X509, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
     return 1;
@@ -420,7 +488,11 @@ X509_OBJECT *X509_OBJECT_new(void)
     X509_OBJECT *ret = OPENSSL_zalloc(sizeof(*ret));
 
     if (ret == NULL) {
+<<<<<<< HEAD
         X509err(X509_F_X509_OBJECT_NEW, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_X509, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return NULL;
     }
     ret->type = X509_LU_NONE;
@@ -494,6 +566,7 @@ static int x509_object_idx_cnt(STACK_OF(X509_OBJECT) *h, X509_LOOKUP_TYPE type,
         return -1;
     }
 
+<<<<<<< HEAD
     idx = sk_X509_OBJECT_find(h, &stmp);
     if (idx >= 0 && pnmatch) {
         int tidx;
@@ -507,6 +580,9 @@ static int x509_object_idx_cnt(STACK_OF(X509_OBJECT) *h, X509_LOOKUP_TYPE type,
             (*pnmatch)++;
         }
     }
+=======
+    idx = sk_X509_OBJECT_find_all(h, &stmp, pnmatch);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     return idx;
 }
 
@@ -527,12 +603,54 @@ X509_OBJECT *X509_OBJECT_retrieve_by_subject(STACK_OF(X509_OBJECT) *h,
     return sk_X509_OBJECT_value(h, idx);
 }
 
+<<<<<<< HEAD
 STACK_OF(X509_OBJECT) *X509_STORE_get0_objects(X509_STORE *v)
+=======
+STACK_OF(X509_OBJECT) *X509_STORE_get0_objects(const X509_STORE *v)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 {
     return v->objs;
 }
 
+<<<<<<< HEAD
 STACK_OF(X509) *X509_STORE_CTX_get1_certs(X509_STORE_CTX *ctx, X509_NAME *nm)
+=======
+STACK_OF(X509) *X509_STORE_get1_all_certs(X509_STORE *store)
+{
+    STACK_OF(X509) *sk;
+    STACK_OF(X509_OBJECT) *objs;
+    int i;
+
+    if (store == NULL) {
+        ERR_raise(ERR_LIB_X509, ERR_R_PASSED_NULL_PARAMETER);
+        return NULL;
+    }
+    if ((sk = sk_X509_new_null()) == NULL)
+        return NULL;
+    if (!X509_STORE_lock(store))
+        goto out_free;
+
+    objs = X509_STORE_get0_objects(store);
+    for (i = 0; i < sk_X509_OBJECT_num(objs); i++) {
+        X509 *cert = X509_OBJECT_get0_X509(sk_X509_OBJECT_value(objs, i));
+
+        if (cert != NULL
+            && !X509_add_cert(sk, cert, X509_ADD_FLAG_UP_REF))
+            goto err;
+    }
+    X509_STORE_unlock(store);
+    return sk;
+
+ err:
+    X509_STORE_unlock(store);
+ out_free:
+    sk_X509_pop_free(sk, X509_free);
+    return NULL;
+}
+
+STACK_OF(X509) *X509_STORE_CTX_get1_certs(X509_STORE_CTX *ctx,
+                                          const X509_NAME *nm)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 {
     int i, idx, cnt;
     STACK_OF(X509) *sk = NULL;
@@ -541,6 +659,12 @@ STACK_OF(X509) *X509_STORE_CTX_get1_certs(X509_STORE_CTX *ctx, X509_NAME *nm)
     X509_STORE *store = ctx->ctx;
 
     if (store == NULL)
+<<<<<<< HEAD
+=======
+        return NULL;
+
+    if (!X509_STORE_lock(store))
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return NULL;
 
     X509_STORE_lock(store);
@@ -576,12 +700,15 @@ STACK_OF(X509) *X509_STORE_CTX_get1_certs(X509_STORE_CTX *ctx, X509_NAME *nm)
         if (!X509_up_ref(x)) {
             X509_STORE_unlock(store);
             sk_X509_pop_free(sk, X509_free);
+<<<<<<< HEAD
             return NULL;
         }
         if (!sk_X509_push(sk, x)) {
             X509_STORE_unlock(store);
             X509_free(x);
             sk_X509_pop_free(sk, X509_free);
+=======
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return NULL;
         }
     }
@@ -589,7 +716,12 @@ STACK_OF(X509) *X509_STORE_CTX_get1_certs(X509_STORE_CTX *ctx, X509_NAME *nm)
     return sk;
 }
 
+<<<<<<< HEAD
 STACK_OF(X509_CRL) *X509_STORE_CTX_get1_crls(X509_STORE_CTX *ctx, X509_NAME *nm)
+=======
+STACK_OF(X509_CRL) *X509_STORE_CTX_get1_crls(const X509_STORE_CTX *ctx,
+                                             const X509_NAME *nm)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 {
     int i, idx, cnt;
     STACK_OF(X509_CRL) *sk = sk_X509_CRL_new_null();
@@ -607,7 +739,14 @@ STACK_OF(X509_CRL) *X509_STORE_CTX_get1_crls(X509_STORE_CTX *ctx, X509_NAME *nm)
         return NULL;
     }
     X509_OBJECT_free(xobj);
+<<<<<<< HEAD
     X509_STORE_lock(store);
+=======
+    if (!X509_STORE_lock(store)) {
+        sk_X509_CRL_free(sk);
+        return NULL;
+    }
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     idx = x509_object_idx_cnt(store->objs, X509_LU_CRL, nm, &cnt);
     if (idx < 0) {
         X509_STORE_unlock(store);
@@ -765,12 +904,20 @@ int X509_STORE_set_trust(X509_STORE *ctx, int trust)
     return X509_VERIFY_PARAM_set_trust(ctx->param, trust);
 }
 
+<<<<<<< HEAD
 int X509_STORE_set1_param(X509_STORE *ctx, X509_VERIFY_PARAM *param)
+=======
+int X509_STORE_set1_param(X509_STORE *ctx, const X509_VERIFY_PARAM *param)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 {
     return X509_VERIFY_PARAM_set1(ctx->param, param);
 }
 
+<<<<<<< HEAD
 X509_VERIFY_PARAM *X509_STORE_get0_param(X509_STORE *ctx)
+=======
+X509_VERIFY_PARAM *X509_STORE_get0_param(const X509_STORE *ctx)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 {
     return ctx->param;
 }
@@ -780,7 +927,11 @@ void X509_STORE_set_verify(X509_STORE *ctx, X509_STORE_CTX_verify_fn verify)
     ctx->verify = verify;
 }
 
+<<<<<<< HEAD
 X509_STORE_CTX_verify_fn X509_STORE_get_verify(X509_STORE *ctx)
+=======
+X509_STORE_CTX_verify_fn X509_STORE_get_verify(const X509_STORE *ctx)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 {
     return ctx->verify;
 }
@@ -791,7 +942,11 @@ void X509_STORE_set_verify_cb(X509_STORE *ctx,
     ctx->verify_cb = verify_cb;
 }
 
+<<<<<<< HEAD
 X509_STORE_CTX_verify_cb X509_STORE_get_verify_cb(X509_STORE *ctx)
+=======
+X509_STORE_CTX_verify_cb X509_STORE_get_verify_cb(const X509_STORE *ctx)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 {
     return ctx->verify_cb;
 }
@@ -802,7 +957,11 @@ void X509_STORE_set_get_issuer(X509_STORE *ctx,
     ctx->get_issuer = get_issuer;
 }
 
+<<<<<<< HEAD
 X509_STORE_CTX_get_issuer_fn X509_STORE_get_get_issuer(X509_STORE *ctx)
+=======
+X509_STORE_CTX_get_issuer_fn X509_STORE_get_get_issuer(const X509_STORE *ctx)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 {
     return ctx->get_issuer;
 }
@@ -813,7 +972,11 @@ void X509_STORE_set_check_issued(X509_STORE *ctx,
     ctx->check_issued = check_issued;
 }
 
+<<<<<<< HEAD
 X509_STORE_CTX_check_issued_fn X509_STORE_get_check_issued(X509_STORE *ctx)
+=======
+X509_STORE_CTX_check_issued_fn X509_STORE_get_check_issued(const X509_STORE *ctx)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 {
     return ctx->check_issued;
 }
@@ -824,7 +987,11 @@ void X509_STORE_set_check_revocation(X509_STORE *ctx,
     ctx->check_revocation = check_revocation;
 }
 
+<<<<<<< HEAD
 X509_STORE_CTX_check_revocation_fn X509_STORE_get_check_revocation(X509_STORE *ctx)
+=======
+X509_STORE_CTX_check_revocation_fn X509_STORE_get_check_revocation(const X509_STORE *ctx)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 {
     return ctx->check_revocation;
 }
@@ -835,7 +1002,11 @@ void X509_STORE_set_get_crl(X509_STORE *ctx,
     ctx->get_crl = get_crl;
 }
 
+<<<<<<< HEAD
 X509_STORE_CTX_get_crl_fn X509_STORE_get_get_crl(X509_STORE *ctx)
+=======
+X509_STORE_CTX_get_crl_fn X509_STORE_get_get_crl(const X509_STORE *ctx)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 {
     return ctx->get_crl;
 }
@@ -846,7 +1017,11 @@ void X509_STORE_set_check_crl(X509_STORE *ctx,
     ctx->check_crl = check_crl;
 }
 
+<<<<<<< HEAD
 X509_STORE_CTX_check_crl_fn X509_STORE_get_check_crl(X509_STORE *ctx)
+=======
+X509_STORE_CTX_check_crl_fn X509_STORE_get_check_crl(const X509_STORE *ctx)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 {
     return ctx->check_crl;
 }
@@ -857,7 +1032,11 @@ void X509_STORE_set_cert_crl(X509_STORE *ctx,
     ctx->cert_crl = cert_crl;
 }
 
+<<<<<<< HEAD
 X509_STORE_CTX_cert_crl_fn X509_STORE_get_cert_crl(X509_STORE *ctx)
+=======
+X509_STORE_CTX_cert_crl_fn X509_STORE_get_cert_crl(const X509_STORE *ctx)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 {
     return ctx->cert_crl;
 }
@@ -868,7 +1047,11 @@ void X509_STORE_set_check_policy(X509_STORE *ctx,
     ctx->check_policy = check_policy;
 }
 
+<<<<<<< HEAD
 X509_STORE_CTX_check_policy_fn X509_STORE_get_check_policy(X509_STORE *ctx)
+=======
+X509_STORE_CTX_check_policy_fn X509_STORE_get_check_policy(const X509_STORE *ctx)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 {
     return ctx->check_policy;
 }
@@ -879,7 +1062,11 @@ void X509_STORE_set_lookup_certs(X509_STORE *ctx,
     ctx->lookup_certs = lookup_certs;
 }
 
+<<<<<<< HEAD
 X509_STORE_CTX_lookup_certs_fn X509_STORE_get_lookup_certs(X509_STORE *ctx)
+=======
+X509_STORE_CTX_lookup_certs_fn X509_STORE_get_lookup_certs(const X509_STORE *ctx)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 {
     return ctx->lookup_certs;
 }
@@ -890,7 +1077,11 @@ void X509_STORE_set_lookup_crls(X509_STORE *ctx,
     ctx->lookup_crls = lookup_crls;
 }
 
+<<<<<<< HEAD
 X509_STORE_CTX_lookup_crls_fn X509_STORE_get_lookup_crls(X509_STORE *ctx)
+=======
+X509_STORE_CTX_lookup_crls_fn X509_STORE_get_lookup_crls(const X509_STORE *ctx)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 {
     return ctx->lookup_crls;
 }
@@ -901,7 +1092,11 @@ void X509_STORE_set_cleanup(X509_STORE *ctx,
     ctx->cleanup = ctx_cleanup;
 }
 
+<<<<<<< HEAD
 X509_STORE_CTX_cleanup_fn X509_STORE_get_cleanup(X509_STORE *ctx)
+=======
+X509_STORE_CTX_cleanup_fn X509_STORE_get_cleanup(const X509_STORE *ctx)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 {
     return ctx->cleanup;
 }
@@ -911,7 +1106,11 @@ int X509_STORE_set_ex_data(X509_STORE *ctx, int idx, void *data)
     return CRYPTO_set_ex_data(&ctx->ex_data, idx, data);
 }
 
+<<<<<<< HEAD
 void *X509_STORE_get_ex_data(X509_STORE *ctx, int idx)
+=======
+void *X509_STORE_get_ex_data(const X509_STORE *ctx, int idx)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 {
     return CRYPTO_get_ex_data(&ctx->ex_data, idx);
 }

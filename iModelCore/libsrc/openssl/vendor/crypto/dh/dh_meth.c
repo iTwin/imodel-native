@@ -25,7 +25,11 @@ DH_METHOD *DH_meth_new(const char *name, int flags)
         OPENSSL_free(dhm);
     }
 
+<<<<<<< HEAD
     DHerr(DH_F_DH_METH_NEW, ERR_R_MALLOC_FAILURE);
+=======
+    ERR_raise(ERR_LIB_DH, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     return NULL;
 }
 
@@ -51,7 +55,11 @@ DH_METHOD *DH_meth_dup(const DH_METHOD *dhm)
         OPENSSL_free(ret);
     }
 
+<<<<<<< HEAD
     DHerr(DH_F_DH_METH_DUP, ERR_R_MALLOC_FAILURE);
+=======
+    ERR_raise(ERR_LIB_DH, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     return NULL;
 }
 
@@ -65,7 +73,11 @@ int DH_meth_set1_name(DH_METHOD *dhm, const char *name)
     char *tmpname = OPENSSL_strdup(name);
 
     if (tmpname == NULL) {
+<<<<<<< HEAD
         DHerr(DH_F_DH_METH_SET1_NAME, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_DH, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
 

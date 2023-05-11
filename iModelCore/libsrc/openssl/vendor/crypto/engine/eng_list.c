@@ -217,7 +217,11 @@ ENGINE *ENGINE_get_first(void)
     ENGINE *ret;
 
     if (!RUN_ONCE(&engine_lock_init, do_engine_lock_init)) {
+<<<<<<< HEAD
         ENGINEerr(ENGINE_F_ENGINE_GET_FIRST, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_ENGINE, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return NULL;
     }
 
@@ -236,7 +240,11 @@ ENGINE *ENGINE_get_last(void)
     ENGINE *ret;
 
     if (!RUN_ONCE(&engine_lock_init, do_engine_lock_init)) {
+<<<<<<< HEAD
         ENGINEerr(ENGINE_F_ENGINE_GET_LAST, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_ENGINE, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return NULL;
     }
 
@@ -370,7 +378,11 @@ ENGINE *ENGINE_by_id(const char *id)
         return NULL;
     }
     if (!RUN_ONCE(&engine_lock_init, do_engine_lock_init)) {
+<<<<<<< HEAD
         ENGINEerr(ENGINE_F_ENGINE_BY_ID, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_ENGINE, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return NULL;
     }
 

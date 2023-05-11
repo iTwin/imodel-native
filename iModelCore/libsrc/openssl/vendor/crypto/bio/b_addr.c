@@ -44,7 +44,11 @@ BIO_ADDR *BIO_ADDR_new(void)
     BIO_ADDR *ret = OPENSSL_zalloc(sizeof(*ret));
 
     if (ret == NULL) {
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/bio/b_addr.c
         BIOerr(BIO_F_BIO_ADDR_NEW, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_BIO, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/bio/bio_addr.c
         return NULL;
     }
 
@@ -258,7 +262,11 @@ static int addr_strings(const BIO_ADDR *ap, int numeric,
             OPENSSL_free(*service);
             *service = NULL;
         }
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/bio/b_addr.c
         BIOerr(BIO_F_ADDR_STRINGS, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_BIO, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/bio/bio_addr.c
         return 0;
     }
 
@@ -553,6 +561,9 @@ int BIO_parse_hostserv(const char *hostserv, char **host, char **service,
  memerr:
     BIOerr(BIO_F_BIO_PARSE_HOSTSERV, ERR_R_MALLOC_FAILURE);
     return 0;
+ memerr:
+    ERR_raise(ERR_LIB_BIO, ERR_R_MALLOC_FAILURE);
+    return 0;
 }
 
 /* addrinfo_wrap is used to build our own addrinfo "chain".
@@ -570,7 +581,11 @@ static int addrinfo_wrap(int family, int socktype,
                          BIO_ADDRINFO **bai)
 {
     if ((*bai = OPENSSL_zalloc(sizeof(**bai))) == NULL) {
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/bio/b_addr.c
         BIOerr(BIO_F_ADDRINFO_WRAP, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_BIO, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/bio/bio_addr.c
         return 0;
     }
 
@@ -669,7 +684,11 @@ int BIO_lookup_ex(const char *host, const char *service, int lookup_type,
         if (addrinfo_wrap(family, socktype, host, strlen(host), 0, res))
             return 1;
         else
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/bio/b_addr.c
             BIOerr(BIO_F_BIO_LOOKUP_EX, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_BIO, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/bio/bio_addr.c
         return 0;
     }
 #endif
@@ -712,7 +731,11 @@ int BIO_lookup_ex(const char *host, const char *service, int lookup_type,
 # endif
 # ifdef EAI_MEMORY
         case EAI_MEMORY:
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/bio/b_addr.c
             BIOerr(BIO_F_BIO_LOOKUP_EX, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_BIO, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/bio/bio_addr.c
             break;
 # endif
         case 0:
@@ -769,7 +792,11 @@ int BIO_lookup_ex(const char *host, const char *service, int lookup_type,
 #endif
 
         if (!RUN_ONCE(&bio_lookup_init, do_bio_lookup_init)) {
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/bio/b_addr.c
             BIOerr(BIO_F_BIO_LOOKUP_EX, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_BIO, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/bio/bio_addr.c
             ret = 0;
             goto err;
         }
@@ -911,7 +938,11 @@ int BIO_lookup_ex(const char *host, const char *service, int lookup_type,
              addrinfo_malloc_err:
                 BIO_ADDRINFO_free(*res);
                 *res = NULL;
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/bio/b_addr.c
                 BIOerr(BIO_F_BIO_LOOKUP_EX, ERR_R_MALLOC_FAILURE);
+=======
+                ERR_raise(ERR_LIB_BIO, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/bio/bio_addr.c
                 ret = 0;
                 goto err;
             }

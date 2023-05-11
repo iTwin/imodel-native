@@ -111,7 +111,11 @@ static int win32_load(DSO *dso)
     }
     p = OPENSSL_malloc(sizeof(*p));
     if (p == NULL) {
+<<<<<<< HEAD
         DSOerr(DSO_F_WIN32_LOAD, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_DSO, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
     *p = h;
@@ -216,7 +220,11 @@ static struct file_st *win32_splitter(DSO *dso, const char *filename,
 
     result = OPENSSL_zalloc(sizeof(*result));
     if (result == NULL) {
+<<<<<<< HEAD
         DSOerr(DSO_F_WIN32_SPLITTER, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_DSO, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return NULL;
     }
 
@@ -335,7 +343,11 @@ static char *win32_joiner(DSO *dso, const struct file_st *file_split)
 
     result = OPENSSL_malloc(len + 1);
     if (result == NULL) {
+<<<<<<< HEAD
         DSOerr(DSO_F_WIN32_JOINER, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_DSO, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return NULL;
     }
 
@@ -401,24 +413,40 @@ static char *win32_merger(DSO *dso, const char *filespec1,
     if (!filespec2) {
         merged = OPENSSL_strdup(filespec1);
         if (merged == NULL) {
+<<<<<<< HEAD
             DSOerr(DSO_F_WIN32_MERGER, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_DSO, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return NULL;
         }
     } else if (!filespec1) {
         merged = OPENSSL_strdup(filespec2);
         if (merged == NULL) {
+<<<<<<< HEAD
             DSOerr(DSO_F_WIN32_MERGER, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_DSO, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return NULL;
         }
     } else {
         filespec1_split = win32_splitter(dso, filespec1, 0);
         if (!filespec1_split) {
+<<<<<<< HEAD
             DSOerr(DSO_F_WIN32_MERGER, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_DSO, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return NULL;
         }
         filespec2_split = win32_splitter(dso, filespec2, 1);
         if (!filespec2_split) {
+<<<<<<< HEAD
             DSOerr(DSO_F_WIN32_MERGER, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_DSO, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             OPENSSL_free(filespec1_split);
             return NULL;
         }

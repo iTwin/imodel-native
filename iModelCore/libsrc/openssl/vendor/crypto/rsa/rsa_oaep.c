@@ -84,7 +84,11 @@ int RSA_padding_add_PKCS1_OAEP_mgf1(unsigned char *to, int tlen,
     dbmask_len = emlen - mdlen;
     dbmask = OPENSSL_malloc(dbmask_len);
     if (dbmask == NULL) {
+<<<<<<< HEAD
         RSAerr(RSA_F_RSA_PADDING_ADD_PKCS1_OAEP_MGF1, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_RSA, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 
@@ -156,14 +160,22 @@ int RSA_padding_check_PKCS1_OAEP_mgf1(unsigned char *to, int tlen,
     dblen = num - mdlen - 1;
     db = OPENSSL_malloc(dblen);
     if (db == NULL) {
+<<<<<<< HEAD
         RSAerr(RSA_F_RSA_PADDING_CHECK_PKCS1_OAEP_MGF1, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_RSA, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto cleanup;
     }
 
     em = OPENSSL_malloc(num);
     if (em == NULL) {
+<<<<<<< HEAD
         RSAerr(RSA_F_RSA_PADDING_CHECK_PKCS1_OAEP_MGF1,
                ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_RSA, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto cleanup;
     }
 

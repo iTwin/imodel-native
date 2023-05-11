@@ -1,7 +1,13 @@
 /*
  * Copyright 1999-2016 The OpenSSL Project Authors. All Rights Reserved.
  *
+<<<<<<< HEAD
  * Licensed under the OpenSSL license (the "License").  You may not use
+=======
+ * Copyright 1999-2022 The OpenSSL Project Authors. All Rights Reserved.
+ *
+ * Licensed under the Apache License 2.0 (the "License").  You may not use
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  * this file except in compliance with the License.  You can obtain a copy
  * in the file LICENSE in the source distribution or at
  * https://www.openssl.org/source/license.html
@@ -198,6 +204,13 @@ int PKCS12_parse(PKCS12 *p12, const char *pass, EVP_PKEY **pkey, X509 **cert,
 PKCS12 *PKCS12_create(const char *pass, const char *name, EVP_PKEY *pkey,
                       X509 *cert, STACK_OF(X509) *ca, int nid_key, int nid_cert,
                       int iter, int mac_iter, int keytype);
+<<<<<<< HEAD
+=======
+PKCS12 *PKCS12_create_ex(const char *pass, const char *name, EVP_PKEY *pkey,
+                         X509 *cert, STACK_OF(X509) *ca, int nid_key, int nid_cert,
+                         int iter, int mac_iter, int keytype,
+                         OSSL_LIB_CTX *ctx, const char *propq);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
 PKCS12_SAFEBAG *PKCS12_add_cert(STACK_OF(PKCS12_SAFEBAG) **pbags, X509 *cert);
 PKCS12_SAFEBAG *PKCS12_add_key(STACK_OF(PKCS12_SAFEBAG) **pbags,

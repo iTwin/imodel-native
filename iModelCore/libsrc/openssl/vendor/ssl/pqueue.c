@@ -20,7 +20,11 @@ pitem *pitem_new(unsigned char *prio64be, void *data)
     pitem *item = OPENSSL_malloc(sizeof(*item));
 
     if (item == NULL) {
+<<<<<<< HEAD
         SSLerr(SSL_F_PITEM_NEW, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_SSL, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return NULL;
     }
 
@@ -40,7 +44,11 @@ pqueue *pqueue_new(void)
     pqueue *pq = OPENSSL_zalloc(sizeof(*pq));
 
     if (pq == NULL)
+<<<<<<< HEAD
         SSLerr(SSL_F_PQUEUE_NEW, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_SSL, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
     return pq;
 }

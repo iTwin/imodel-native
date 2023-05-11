@@ -25,7 +25,11 @@ X509 *X509_REQ_to_X509(X509_REQ *r, int days, EVP_PKEY *pkey)
     EVP_PKEY *pubkey = NULL;
 
     if ((ret = X509_new()) == NULL) {
+<<<<<<< HEAD
         X509err(X509_F_X509_REQ_TO_X509, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_X509, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return NULL;
     }
 

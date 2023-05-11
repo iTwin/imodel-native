@@ -60,13 +60,21 @@ static hm_fragment *dtls1_hm_fragment_new(size_t frag_len, int reassembly)
     unsigned char *bitmask = NULL;
 
     if ((frag = OPENSSL_malloc(sizeof(*frag))) == NULL) {
+<<<<<<< HEAD
         SSLerr(SSL_F_DTLS1_HM_FRAGMENT_NEW, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_SSL, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return NULL;
     }
 
     if (frag_len) {
         if ((buf = OPENSSL_malloc(frag_len)) == NULL) {
+<<<<<<< HEAD
             SSLerr(SSL_F_DTLS1_HM_FRAGMENT_NEW, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_SSL, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             OPENSSL_free(frag);
             return NULL;
         }
@@ -79,7 +87,11 @@ static hm_fragment *dtls1_hm_fragment_new(size_t frag_len, int reassembly)
     if (reassembly) {
         bitmask = OPENSSL_zalloc(RSMBLY_BITMASK_SIZE(frag_len));
         if (bitmask == NULL) {
+<<<<<<< HEAD
             SSLerr(SSL_F_DTLS1_HM_FRAGMENT_NEW, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_SSL, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             OPENSSL_free(buf);
             OPENSSL_free(frag);
             return NULL;
@@ -132,17 +144,30 @@ int dtls1_do_write(SSL *s, int type)
 
     if (s->write_hash) {
         if (s->enc_write_ctx
+<<<<<<< HEAD
             && (EVP_CIPHER_flags(EVP_CIPHER_CTX_cipher(s->enc_write_ctx)) &
                 EVP_CIPH_FLAG_AEAD_CIPHER) != 0)
             mac_size = 0;
         else
             mac_size = EVP_MD_CTX_size(s->write_hash);
+=======
+            && (EVP_CIPHER_get_flags(EVP_CIPHER_CTX_get0_cipher(s->enc_write_ctx)) &
+                EVP_CIPH_FLAG_AEAD_CIPHER) != 0)
+            mac_size = 0;
+        else
+            mac_size = EVP_MD_CTX_get_size(s->write_hash);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     } else
         mac_size = 0;
 
     if (s->enc_write_ctx &&
+<<<<<<< HEAD
         (EVP_CIPHER_CTX_mode(s->enc_write_ctx) == EVP_CIPH_CBC_MODE))
         blocksize = 2 * EVP_CIPHER_CTX_block_size(s->enc_write_ctx);
+=======
+        (EVP_CIPHER_CTX_get_mode(s->enc_write_ctx) == EVP_CIPH_CBC_MODE))
+        blocksize = 2 * EVP_CIPHER_CTX_get_block_size(s->enc_write_ctx);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     else
         blocksize = 0;
 
@@ -328,7 +353,11 @@ int dtls1_do_write(SSL *s, int type)
     return 0;
 }
 
+<<<<<<< HEAD
 int dtls_get_message(SSL *s, int *mt, size_t *len)
+=======
+int dtls_get_message(SSL *s, int *mt)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 {
     struct hm_header_st *msg_hdr;
     unsigned char *p;
@@ -403,6 +432,50 @@ int dtls_get_message(SSL *s, int *mt, size_t *len)
 }
 
 /*
+<<<<<<< HEAD
+=======
+ * Actually we already have the message body - but this is an opportunity for
+ * DTLS to do any further processing it wants at the same point that TLS would
+ * be asked for the message body.
+ */
+int dtls_get_message_body(SSL *s, size_t *len)
+{
+    unsigned char *msg = (unsigned char *)s->init_buf->data;
+    size_t msg_len = s->init_num + DTLS1_HM_HEADER_LENGTH;
+
+    if (s->s3.tmp.message_type == SSL3_MT_CHANGE_CIPHER_SPEC) {
+        /* Nothing to be done */
+        goto end;
+    }
+    /*
+     * If receiving Finished, record MAC of prior handshake messages for
+     * Finished verification.
+     */
+    if (*(s->init_buf->data) == SSL3_MT_FINISHED && !ssl3_take_mac(s)) {
+        /* SSLfatal() already called */
+        return 0;
+    }
+
+    if (s->version == DTLS1_BAD_VER) {
+        msg += DTLS1_HM_HEADER_LENGTH;
+        msg_len -= DTLS1_HM_HEADER_LENGTH;
+    }
+
+    if (!ssl3_finish_mac(s, msg, msg_len))
+        return 0;
+
+    if (s->msg_callback)
+        s->msg_callback(0, s->version, SSL3_RT_HANDSHAKE,
+                        s->init_buf->data, s->init_num + DTLS1_HM_HEADER_LENGTH,
+                        s, s->msg_callback_arg);
+
+ end:
+    *len = s->init_num;
+    return 1;
+}
+
+/*
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  * dtls1_max_handshake_message_len returns the maximum number of bytes
  * permitted in a DTLS handshake message for |s|. The minimum is 16KB, but
  * may be greater if the maximum certificate list size requires it.
@@ -741,6 +814,10 @@ static int dtls_get_reassembled_message(SSL *s, int *errtype, size_t *len)
     int i, ret, recvd_type;
     struct hm_header_st msg_hdr;
     size_t readbytes;
+<<<<<<< HEAD
+=======
+    int chretran = 0;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
     *errtype = 0;
 
@@ -801,8 +878,12 @@ static int dtls_get_reassembled_message(SSL *s, int *errtype, size_t *len)
      * Fragments must not span records.
      */
     if (frag_len > RECORD_LAYER_get_rrec_length(&s->rlayer)) {
+<<<<<<< HEAD
         SSLfatal(s, SSL_AD_ILLEGAL_PARAMETER,
                  SSL_F_DTLS_GET_REASSEMBLED_MESSAGE, SSL_R_BAD_LENGTH);
+=======
+        SSLfatal(s, SSL_AD_ILLEGAL_PARAMETER, SSL_R_BAD_LENGTH);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto f_err;
     }
 
@@ -902,7 +983,11 @@ static int dtls_get_reassembled_message(SSL *s, int *errtype, size_t *len)
  * for these 2 messages, we need to
  * ssl->enc_read_ctx                    re-init
  * ssl->rlayer.read_sequence            zero
+<<<<<<< HEAD
  * ssl->s3->read_mac_secret             re-init
+=======
+ * ssl->s3.read_mac_secret             re-init
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  * ssl->session->read_sym_enc           assign
  * ssl->session->read_compression       assign
  * ssl->session->read_hash              assign
@@ -913,9 +998,13 @@ int dtls_construct_change_cipher_spec(SSL *s, WPACKET *pkt)
         s->d1->next_handshake_write_seq++;
 
         if (!WPACKET_put_bytes_u16(pkt, s->d1->handshake_write_seq)) {
+<<<<<<< HEAD
             SSLfatal(s, SSL_AD_INTERNAL_ERROR,
                      SSL_F_DTLS_CONSTRUCT_CHANGE_CIPHER_SPEC,
                      ERR_R_INTERNAL_ERROR);
+=======
+            SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return 0;
         }
     }

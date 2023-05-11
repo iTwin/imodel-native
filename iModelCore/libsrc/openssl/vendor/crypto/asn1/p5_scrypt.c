@@ -135,7 +135,11 @@ X509_ALGOR *PKCS5_pbe2_set_scrypt(const EVP_CIPHER *cipher,
     return ret;
 
  merr:
+<<<<<<< HEAD
     ASN1err(ASN1_F_PKCS5_PBE2_SET_SCRYPT, ERR_R_MALLOC_FAILURE);
+=======
+    ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
  err:
     PBE2PARAM_free(pbe2);
@@ -202,7 +206,11 @@ static X509_ALGOR *pkcs5_scrypt_set(const unsigned char *salt, size_t saltlen,
     return keyfunc;
 
  merr:
+<<<<<<< HEAD
     ASN1err(ASN1_F_PKCS5_SCRYPT_SET, ERR_R_MALLOC_FAILURE);
+=======
+    ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  err:
     SCRYPT_PARAMS_free(sparam);
     X509_ALGOR_free(keyfunc);

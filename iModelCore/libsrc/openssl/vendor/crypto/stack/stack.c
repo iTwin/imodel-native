@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright 1995-2018 The OpenSSL Project Authors. All Rights Reserved.
+=======
+ * Copyright 1995-2022 The OpenSSL Project Authors. All Rights Reserved.
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -66,6 +70,7 @@ OPENSSL_STACK *OPENSSL_sk_dup(const OPENSSL_STACK *sk)
     memcpy(ret->data, sk->data, sizeof(void *) * sk->num);
     return ret;
  err:
+    ERR_raise(ERR_LIB_CRYPTO, ERR_R_MALLOC_FAILURE);
     OPENSSL_sk_free(ret);
     return NULL;
 }
@@ -111,6 +116,14 @@ OPENSSL_STACK *OPENSSL_sk_deep_copy(const OPENSSL_STACK *sk,
         }
     }
     return ret;
+<<<<<<< HEAD
+=======
+
+ err:
+    ERR_raise(ERR_LIB_CRYPTO, ERR_R_MALLOC_FAILURE);
+    OPENSSL_sk_free(ret);
+    return NULL;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 }
 
 OPENSSL_STACK *OPENSSL_sk_new_null(void)
@@ -178,7 +191,11 @@ static int sk_reserve(OPENSSL_STACK *st, int n, int exact)
          * so |num_alloc| value is |n| or |min_nodes| if greater than |n|.
          */
         if ((st->data = OPENSSL_zalloc(sizeof(void *) * num_alloc)) == NULL) {
+<<<<<<< HEAD
             CRYPTOerr(CRYPTO_F_SK_RESERVE, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_CRYPTO, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return 0;
         }
         st->num_alloc = num_alloc;
@@ -196,8 +213,10 @@ static int sk_reserve(OPENSSL_STACK *st, int n, int exact)
     }
 
     tmpdata = OPENSSL_realloc((void *)st->data, sizeof(void *) * num_alloc);
-    if (tmpdata == NULL)
+    if (tmpdata == NULL) {
+        ERR_raise(ERR_LIB_CRYPTO, ERR_R_MALLOC_FAILURE);
         return 0;
+    }
 
     st->data = tmpdata;
     st->num_alloc = num_alloc;
@@ -208,8 +227,10 @@ OPENSSL_STACK *OPENSSL_sk_new_reserve(OPENSSL_sk_compfunc c, int n)
 {
     OPENSSL_STACK *st = OPENSSL_zalloc(sizeof(OPENSSL_STACK));
 
-    if (st == NULL)
+    if (st == NULL) {
+        ERR_raise(ERR_LIB_CRYPTO, ERR_R_MALLOC_FAILURE);
         return NULL;
+    }
 
     st->comp = c;
 

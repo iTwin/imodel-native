@@ -282,7 +282,11 @@ static void *v2i_crld(const X509V3_EXT_METHOD *method,
     return crld;
 
  merr:
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_crld.c
     X509V3err(X509V3_F_V2I_CRLD, ERR_R_MALLOC_FAILURE);
+=======
+    ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_crld.c
  err:
     GENERAL_NAME_free(gen);
     GENERAL_NAMES_free(gens);
@@ -400,7 +404,11 @@ static void *v2i_idp(const X509V3_EXT_METHOD *method, X509V3_CTX *ctx,
     return idp;
 
  merr:
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_crld.c
     X509V3err(X509V3_F_V2I_IDP, ERR_R_MALLOC_FAILURE);
+=======
+    ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_crld.c
  err:
     ISSUING_DIST_POINT_free(idp);
     return NULL;

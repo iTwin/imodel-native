@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright 2010-2020 The OpenSSL Project Authors. All Rights Reserved.
+=======
+ * Copyright 2010-2022 The OpenSSL Project Authors. All Rights Reserved.
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -48,7 +52,11 @@ CMAC_CTX *CMAC_CTX_new(void)
     CMAC_CTX *ctx;
 
     if ((ctx = OPENSSL_malloc(sizeof(*ctx))) == NULL) {
+<<<<<<< HEAD
         CRYPTOerr(CRYPTO_F_CMAC_CTX_NEW, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_CRYPTO, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return NULL;
     }
     ctx->cctx = EVP_CIPHER_CTX_new();

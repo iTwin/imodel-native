@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright 1995-2019 The OpenSSL Project Authors. All Rights Reserved.
+=======
+ * Copyright 1995-2023 The OpenSSL Project Authors. All Rights Reserved.
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -117,7 +121,11 @@ static int pkcs7_encode_rinfo(PKCS7_RECIP_INFO *ri,
     ek = OPENSSL_malloc(eklen);
 
     if (ek == NULL) {
+<<<<<<< HEAD
         PKCS7err(PKCS7_F_PKCS7_ENCODE_RINFO, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_PKCS7, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 
@@ -153,12 +161,15 @@ static int pkcs7_decrypt_rinfo(unsigned char **pek, int *peklen,
     if (EVP_PKEY_decrypt_init(pctx) <= 0)
         goto err;
 
+<<<<<<< HEAD
     if (EVP_PKEY_CTX_ctrl(pctx, -1, EVP_PKEY_OP_DECRYPT,
                           EVP_PKEY_CTRL_PKCS7_DECRYPT, 0, ri) <= 0) {
         PKCS7err(PKCS7_F_PKCS7_DECRYPT_RINFO, PKCS7_R_CTRL_ERROR);
         goto err;
     }
 
+=======
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     if (EVP_PKEY_decrypt(pctx, NULL, &eklen,
                          ri->enc_key->data, ri->enc_key->length) <= 0)
         goto err;
@@ -166,7 +177,11 @@ static int pkcs7_decrypt_rinfo(unsigned char **pek, int *peklen,
     ek = OPENSSL_malloc(eklen);
 
     if (ek == NULL) {
+<<<<<<< HEAD
         PKCS7err(PKCS7_F_PKCS7_DECRYPT_RINFO, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_PKCS7, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 
@@ -620,7 +635,11 @@ static int do_pkcs7_signed_attrib(PKCS7_SIGNER_INFO *si, EVP_MD_CTX *mctx)
     /* Add signing time if not already present */
     if (!PKCS7_get_signed_attribute(si, NID_pkcs9_signingTime)) {
         if (!PKCS7_add0_attrib_signing_time(si, NULL)) {
+<<<<<<< HEAD
             PKCS7err(PKCS7_F_DO_PKCS7_SIGNED_ATTRIB, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_PKCS7, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return 0;
         }
     }
@@ -631,7 +650,11 @@ static int do_pkcs7_signed_attrib(PKCS7_SIGNER_INFO *si, EVP_MD_CTX *mctx)
         return 0;
     }
     if (!PKCS7_add1_attrib_digest(si, md_data, md_len)) {
+<<<<<<< HEAD
         PKCS7err(PKCS7_F_DO_PKCS7_SIGNED_ATTRIB, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_PKCS7, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
 
@@ -665,7 +688,11 @@ int PKCS7_dataFinal(PKCS7 *p7, BIO *bio)
 
     ctx_tmp = EVP_MD_CTX_new();
     if (ctx_tmp == NULL) {
+<<<<<<< HEAD
         PKCS7err(PKCS7_F_PKCS7_DATAFINAL, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_PKCS7, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
 
@@ -683,7 +710,11 @@ int PKCS7_dataFinal(PKCS7 *p7, BIO *bio)
         if (os == NULL) {
             os = ASN1_OCTET_STRING_new();
             if (os == NULL) {
+<<<<<<< HEAD
                 PKCS7err(PKCS7_F_PKCS7_DATAFINAL, ERR_R_MALLOC_FAILURE);
+=======
+                ERR_raise(ERR_LIB_PKCS7, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                 goto err;
             }
             p7->d.signed_and_enveloped->enc_data->enc_data = os;
@@ -695,7 +726,11 @@ int PKCS7_dataFinal(PKCS7 *p7, BIO *bio)
         if (os == NULL) {
             os = ASN1_OCTET_STRING_new();
             if (os == NULL) {
+<<<<<<< HEAD
                 PKCS7err(PKCS7_F_PKCS7_DATAFINAL, ERR_R_MALLOC_FAILURE);
+=======
+                ERR_raise(ERR_LIB_PKCS7, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                 goto err;
             }
             p7->d.enveloped->enc_data->enc_data = os;
@@ -831,7 +866,11 @@ int PKCS7_SIGNER_INFO_sign(PKCS7_SIGNER_INFO *si)
 
     mctx = EVP_MD_CTX_new();
     if (mctx == NULL) {
+<<<<<<< HEAD
         PKCS7err(PKCS7_F_PKCS7_SIGNER_INFO_SIGN, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_PKCS7, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 
@@ -912,14 +951,22 @@ int PKCS7_dataVerify(X509_STORE *cert_store, X509_STORE_CTX *ctx, BIO *bio,
 
     /* were we able to find the cert in passed to us */
     if (x509 == NULL) {
+<<<<<<< HEAD
         PKCS7err(PKCS7_F_PKCS7_DATAVERIFY,
                  PKCS7_R_UNABLE_TO_FIND_CERTIFICATE);
+=======
+        ERR_raise(ERR_LIB_PKCS7, PKCS7_R_UNABLE_TO_FIND_CERTIFICATE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 
     /* Lets verify */
     if (!X509_STORE_CTX_init(ctx, cert_store, x509, cert)) {
+<<<<<<< HEAD
         PKCS7err(PKCS7_F_PKCS7_DATAVERIFY, ERR_R_X509_LIB);
+=======
+        ERR_raise(ERR_LIB_PKCS7, ERR_R_X509_LIB);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
     X509_STORE_CTX_set_purpose(ctx, X509_PURPOSE_SMIME_SIGN);
@@ -949,7 +996,11 @@ int PKCS7_signatureVerify(BIO *bio, PKCS7 *p7, PKCS7_SIGNER_INFO *si,
 
     mdc_tmp = EVP_MD_CTX_new();
     if (mdc_tmp == NULL) {
+<<<<<<< HEAD
         PKCS7err(PKCS7_F_PKCS7_SIGNATUREVERIFY, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_PKCS7, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 
@@ -1031,7 +1082,11 @@ int PKCS7_signatureVerify(BIO *bio, PKCS7 *p7, PKCS7_SIGNER_INFO *si,
 
     os = si->enc_digest;
     pkey = X509_get0_pubkey(x509);
+<<<<<<< HEAD
     if (!pkey) {
+=======
+    if (pkey == NULL) {
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         ret = -1;
         goto err;
     }

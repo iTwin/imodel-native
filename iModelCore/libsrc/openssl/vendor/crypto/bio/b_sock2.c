@@ -12,6 +12,10 @@
 #include <errno.h>
 
 #include "bio_local.h"
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/bio/b_sock2.c
+=======
+#include "internal/ktls.h"
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/bio/bio_sock2.c
 
 #include <openssl/err.h>
 

@@ -18,11 +18,158 @@
 
 int EVP_PKEY_paramgen_init(EVP_PKEY_CTX *ctx)
 {
+<<<<<<< HEAD
     int ret;
     if (!ctx || !ctx->pmeth || !ctx->pmeth->paramgen) {
         EVPerr(EVP_F_EVP_PKEY_PARAMGEN_INIT,
                EVP_R_OPERATION_NOT_SUPPORTED_FOR_THIS_KEYTYPE);
         return -2;
+=======
+    return gen_init(ctx, EVP_PKEY_OP_PARAMGEN);
+}
+
+int EVP_PKEY_keygen_init(EVP_PKEY_CTX *ctx)
+{
+    return gen_init(ctx, EVP_PKEY_OP_KEYGEN);
+}
+
+static int ossl_callback_to_pkey_gencb(const OSSL_PARAM params[], void *arg)
+{
+    EVP_PKEY_CTX *ctx = arg;
+    const OSSL_PARAM *param = NULL;
+    int p = -1, n = -1;
+
+    if (ctx->pkey_gencb == NULL)
+        return 1;                /* No callback?  That's fine */
+
+    if ((param = OSSL_PARAM_locate_const(params, OSSL_GEN_PARAM_POTENTIAL))
+        == NULL
+        || !OSSL_PARAM_get_int(param, &p))
+        return 0;
+    if ((param = OSSL_PARAM_locate_const(params, OSSL_GEN_PARAM_ITERATION))
+        == NULL
+        || !OSSL_PARAM_get_int(param, &n))
+        return 0;
+
+    ctx->keygen_info[0] = p;
+    ctx->keygen_info[1] = n;
+
+    return ctx->pkey_gencb(ctx);
+}
+
+int EVP_PKEY_generate(EVP_PKEY_CTX *ctx, EVP_PKEY **ppkey)
+{
+    int ret = 0;
+    EVP_PKEY *allocated_pkey = NULL;
+    /* Legacy compatible keygen callback info, only used with provider impls */
+    int gentmp[2];
+
+    if (ppkey == NULL)
+        return -1;
+
+    if (ctx == NULL)
+        goto not_supported;
+
+    if ((ctx->operation & EVP_PKEY_OP_TYPE_GEN) == 0)
+        goto not_initialized;
+
+    if (*ppkey == NULL)
+        *ppkey = allocated_pkey = EVP_PKEY_new();
+
+    if (*ppkey == NULL) {
+        ERR_raise(ERR_LIB_EVP, ERR_R_MALLOC_FAILURE);
+        return -1;
+    }
+
+    if (ctx->op.keymgmt.genctx == NULL)
+        goto legacy;
+
+    /*
+     * Asssigning gentmp to ctx->keygen_info is something our legacy
+     * implementations do.  Because the provider implementations aren't
+     * allowed to reach into our EVP_PKEY_CTX, we need to provide similar
+     * space for backward compatibility.  It's ok that we attach a local
+     * variable, as it should only be useful in the calls down from here.
+     * This is cleared as soon as it isn't useful any more, i.e. directly
+     * after the evp_keymgmt_util_gen() call.
+     */
+    ctx->keygen_info = gentmp;
+    ctx->keygen_info_count = 2;
+
+    ret = 1;
+    if (ctx->pkey != NULL) {
+        EVP_KEYMGMT *tmp_keymgmt = ctx->keymgmt;
+        void *keydata =
+            evp_pkey_export_to_provider(ctx->pkey, ctx->libctx,
+                                        &tmp_keymgmt, ctx->propquery);
+
+        if (tmp_keymgmt == NULL)
+            goto not_supported;
+        /*
+         * It's ok if keydata is NULL here.  The backend is expected to deal
+         * with that as it sees fit.
+         */
+        ret = evp_keymgmt_gen_set_template(ctx->keymgmt,
+                                           ctx->op.keymgmt.genctx, keydata);
+    }
+
+    /*
+     * the returned value from evp_keymgmt_util_gen() is cached in *ppkey,
+     * so we do not need to save it, just check it.
+     */
+    ret = ret
+        && (evp_keymgmt_util_gen(*ppkey, ctx->keymgmt, ctx->op.keymgmt.genctx,
+                                 ossl_callback_to_pkey_gencb, ctx)
+            != NULL);
+
+    ctx->keygen_info = NULL;
+
+#ifndef FIPS_MODULE
+    /* In case |*ppkey| was originally a legacy key */
+    if (ret)
+        evp_pkey_free_legacy(*ppkey);
+#endif
+
+    /*
+     * Because we still have legacy keys
+     */
+    (*ppkey)->type = ctx->legacy_keytype;
+
+    goto end;
+
+ legacy:
+#ifdef FIPS_MODULE
+    goto not_supported;
+#else
+    /*
+     * If we get here then we're using legacy paramgen/keygen. In that case
+     * the pkey in ctx (if there is one) had better not be provided (because the
+     * legacy methods may not know how to handle it). However we can only get
+     * here if ctx->op.keymgmt.genctx == NULL, but that should never be the case
+     * if ctx->pkey is provided because we don't allow this when we initialise
+     * the ctx.
+     */
+    if (ctx->pkey != NULL && !ossl_assert(!evp_pkey_is_provided(ctx->pkey)))
+        goto not_accessible;
+
+    switch (ctx->operation) {
+    case EVP_PKEY_OP_PARAMGEN:
+        ret = ctx->pmeth->paramgen(ctx, *ppkey);
+        break;
+    case EVP_PKEY_OP_KEYGEN:
+        ret = ctx->pmeth->keygen(ctx, *ppkey);
+        break;
+    default:
+        goto not_supported;
+    }
+#endif
+
+ end:
+    if (ret <= 0) {
+        if (allocated_pkey != NULL)
+            *ppkey = NULL;
+        EVP_PKEY_free(allocated_pkey);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     }
     ctx->operation = EVP_PKEY_OP_PARAMGEN;
     if (!ctx->pmeth->paramgen_init)
@@ -189,7 +336,31 @@ int EVP_PKEY_check(EVP_PKEY_CTX *ctx)
         return -2;
     }
 
+<<<<<<< HEAD
     return pkey->ameth->pkey_check(pkey);
+=======
+    if (ppkey == NULL)
+        return -1;
+
+    if (*ppkey == NULL)
+        allocated_pkey = *ppkey = EVP_PKEY_new();
+
+    if (*ppkey == NULL) {
+        ERR_raise(ERR_LIB_EVP, ERR_R_MALLOC_FAILURE);
+        return -1;
+    }
+
+    keydata = evp_keymgmt_util_fromdata(*ppkey, ctx->keymgmt, selection, params);
+    if (keydata == NULL) {
+        if (allocated_pkey != NULL) {
+            *ppkey = NULL;
+            EVP_PKEY_free(allocated_pkey);
+        }
+        return 0;
+    }
+    /* keydata is cached in *ppkey, so we need not bother with it further */
+    return 1;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 }
 
 int EVP_PKEY_public_check(EVP_PKEY_CTX *ctx)

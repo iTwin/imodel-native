@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright 1999-2016 The OpenSSL Project Authors. All Rights Reserved.
+=======
+ * Copyright 1999-2022 The OpenSSL Project Authors. All Rights Reserved.
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -30,7 +34,11 @@ unsigned char *PKCS12_pbe_crypt(const X509_ALGOR *algor,
     EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
 
     if (ctx == NULL) {
+<<<<<<< HEAD
         PKCS12err(PKCS12_F_PKCS12_PBE_CRYPT, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_PKCS12, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 
@@ -42,9 +50,14 @@ unsigned char *PKCS12_pbe_crypt(const X509_ALGOR *algor,
         goto err;
     }
 
+<<<<<<< HEAD
     if ((out = OPENSSL_malloc(inlen + EVP_CIPHER_CTX_block_size(ctx)))
             == NULL) {
         PKCS12err(PKCS12_F_PKCS12_PBE_CRYPT, ERR_R_MALLOC_FAILURE);
+=======
+    if ((out = OPENSSL_malloc(max_out_len)) == NULL) {
+        ERR_raise(ERR_LIB_PKCS12, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 
@@ -131,7 +144,11 @@ ASN1_OCTET_STRING *PKCS12_item_i2d_encrypt(X509_ALGOR *algor,
     int inlen;
 
     if ((oct = ASN1_OCTET_STRING_new()) == NULL) {
+<<<<<<< HEAD
         PKCS12err(PKCS12_F_PKCS12_ITEM_I2D_ENCRYPT, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_PKCS12, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
     inlen = ASN1_item_i2d(obj, &in, it);

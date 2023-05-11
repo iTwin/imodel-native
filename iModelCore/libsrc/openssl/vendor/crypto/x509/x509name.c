@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright 1995-2018 The OpenSSL Project Authors. All Rights Reserved.
+=======
+ * Copyright 1995-2022 The OpenSSL Project Authors. All Rights Reserved.
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -224,7 +228,11 @@ int X509_NAME_add_entry(X509_NAME *name, const X509_NAME_ENTRY *ne, int loc,
         goto err;
     new_name->set = set;
     if (!sk_X509_NAME_ENTRY_insert(sk, new_name, loc)) {
+<<<<<<< HEAD
         X509err(X509_F_X509_NAME_ADD_ENTRY, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_X509, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
     if (inc) {

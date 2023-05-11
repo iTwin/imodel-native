@@ -10,6 +10,36 @@
 #include "ec_local.h"
 #include <openssl/err.h>
 
+<<<<<<< HEAD
+=======
+int EC_GROUP_check_named_curve(const EC_GROUP *group, int nist_only,
+                               BN_CTX *ctx)
+{
+    int nid;
+    BN_CTX *new_ctx = NULL;
+
+    if (group == NULL) {
+        ERR_raise(ERR_LIB_EC, ERR_R_PASSED_NULL_PARAMETER);
+        return NID_undef;
+    }
+
+    if (ctx == NULL) {
+        ctx = new_ctx = BN_CTX_new_ex(NULL);
+        if (ctx == NULL) {
+            ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+            return NID_undef;
+        }
+    }
+
+    nid = ossl_ec_curve_nid_from_params(group, ctx);
+    if (nid > 0 && nist_only && EC_curve_nid2nist(nid) == NULL)
+        nid = NID_undef;
+
+    BN_CTX_free(new_ctx);
+    return nid;
+}
+
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 int EC_GROUP_check(const EC_GROUP *group, BN_CTX *ctx)
 {
     int ret = 0;
@@ -24,7 +54,11 @@ int EC_GROUP_check(const EC_GROUP *group, BN_CTX *ctx)
     if (ctx == NULL) {
         ctx = new_ctx = BN_CTX_new();
         if (ctx == NULL) {
+<<<<<<< HEAD
             ECerr(EC_F_EC_GROUP_CHECK, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             goto err;
         }
     }

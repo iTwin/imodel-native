@@ -175,7 +175,11 @@ static int vms_load(DSO *dso)
 
     p = DSO_MALLOC(sizeof(*p));
     if (p == NULL) {
+<<<<<<< HEAD
         DSOerr(DSO_F_VMS_LOAD, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_DSO, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 
@@ -451,7 +455,11 @@ static char *vms_merger(DSO *dso, const char *filespec1,
     merged[nam.NAMX_ESL] = '\0';
     return merged;
  malloc_err:
+<<<<<<< HEAD
     DSOerr(DSO_F_VMS_MERGER, ERR_R_MALLOC_FAILURE);
+=======
+    ERR_raise(ERR_LIB_DSO, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 }
 
 static char *vms_name_converter(DSO *dso, const char *filename)

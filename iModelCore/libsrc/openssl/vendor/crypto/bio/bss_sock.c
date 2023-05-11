@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright 1995-2020 The OpenSSL Project Authors. All Rights Reserved.
+=======
+ * Copyright 1995-2021 The OpenSSL Project Authors. All Rights Reserved.
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -110,10 +114,27 @@ static int sock_read(BIO *b, char *out, int outl)
 
 static int sock_write(BIO *b, const char *in, int inl)
 {
+<<<<<<< HEAD
     int ret;
 
     clear_socket_error();
     ret = writesocket(b->num, in, inl);
+=======
+    int ret = 0;
+
+    clear_socket_error();
+# ifndef OPENSSL_NO_KTLS
+    if (BIO_should_ktls_ctrl_msg_flag(b)) {
+        unsigned char record_type = (intptr_t)b->ptr;
+        ret = ktls_send_ctrl_message(b->num, record_type, in, inl);
+        if (ret >= 0) {
+            ret = inl;
+            BIO_clear_ktls_ctrl_msg_flag(b);
+        }
+    } else
+# endif
+        ret = writesocket(b->num, in, inl);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     BIO_clear_retry_flags(b);
     if (ret <= 0) {
         if (BIO_sock_should_retry(ret))
@@ -126,6 +147,12 @@ static long sock_ctrl(BIO *b, int cmd, long num, void *ptr)
 {
     long ret = 1;
     int *ip;
+<<<<<<< HEAD
+=======
+# ifndef OPENSSL_NO_KTLS
+    ktls_crypto_info_t *crypto_info;
+# endif
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
     switch (cmd) {
     case BIO_C_SET_FD:
@@ -153,8 +180,34 @@ static long sock_ctrl(BIO *b, int cmd, long num, void *ptr)
     case BIO_CTRL_FLUSH:
         ret = 1;
         break;
+<<<<<<< HEAD
     case BIO_CTRL_EOF:
         ret = (b->flags & BIO_FLAGS_IN_EOF) != 0 ? 1 : 0;
+=======
+# ifndef OPENSSL_NO_KTLS
+    case BIO_CTRL_SET_KTLS:
+        crypto_info = (ktls_crypto_info_t *)ptr;
+        ret = ktls_start(b->num, crypto_info, num);
+        if (ret)
+            BIO_set_ktls_flag(b, num);
+        break;
+    case BIO_CTRL_GET_KTLS_SEND:
+        return BIO_should_ktls_flag(b, 1) != 0;
+    case BIO_CTRL_GET_KTLS_RECV:
+        return BIO_should_ktls_flag(b, 0) != 0;
+    case BIO_CTRL_SET_KTLS_TX_SEND_CTRL_MSG:
+        BIO_set_ktls_ctrl_msg_flag(b);
+        b->ptr = (void *)num;
+        ret = 0;
+        break;
+    case BIO_CTRL_CLEAR_KTLS_TX_CTRL_MSG:
+        BIO_clear_ktls_ctrl_msg_flag(b);
+        ret = 0;
+        break;
+# endif
+    case BIO_CTRL_EOF:
+        ret = (b->flags & BIO_FLAGS_IN_EOF) != 0;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         break;
     default:
         ret = 0;

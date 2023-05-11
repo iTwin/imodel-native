@@ -21,16 +21,28 @@ PKCS12_SAFEBAG *PKCS12_item_pack_safebag(void *obj, const ASN1_ITEM *it,
     PKCS12_SAFEBAG *safebag;
 
     if ((bag = PKCS12_BAGS_new()) == NULL) {
+<<<<<<< HEAD
         PKCS12err(PKCS12_F_PKCS12_ITEM_PACK_SAFEBAG, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_PKCS12, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return NULL;
     }
     bag->type = OBJ_nid2obj(nid1);
     if (!ASN1_item_pack(obj, it, &bag->value.octet)) {
+<<<<<<< HEAD
         PKCS12err(PKCS12_F_PKCS12_ITEM_PACK_SAFEBAG, ERR_R_MALLOC_FAILURE);
         goto err;
     }
     if ((safebag = PKCS12_SAFEBAG_new()) == NULL) {
         PKCS12err(PKCS12_F_PKCS12_ITEM_PACK_SAFEBAG, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_PKCS12, ERR_R_MALLOC_FAILURE);
+        goto err;
+    }
+    if ((safebag = PKCS12_SAFEBAG_new()) == NULL) {
+        ERR_raise(ERR_LIB_PKCS12, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
     safebag->value.bag = bag;
@@ -48,12 +60,20 @@ PKCS7 *PKCS12_pack_p7data(STACK_OF(PKCS12_SAFEBAG) *sk)
     PKCS7 *p7;
 
     if ((p7 = PKCS7_new()) == NULL) {
+<<<<<<< HEAD
         PKCS12err(PKCS12_F_PKCS12_PACK_P7DATA, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_PKCS12, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return NULL;
     }
     p7->type = OBJ_nid2obj(NID_pkcs7_data);
     if ((p7->d.data = ASN1_OCTET_STRING_new()) == NULL) {
+<<<<<<< HEAD
         PKCS12err(PKCS12_F_PKCS12_PACK_P7DATA, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_PKCS12, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 
@@ -89,8 +109,13 @@ PKCS7 *PKCS12_pack_p7encdata(int pbe_nid, const char *pass, int passlen,
     X509_ALGOR *pbe;
     const EVP_CIPHER *pbe_ciph;
 
+<<<<<<< HEAD
     if ((p7 = PKCS7_new()) == NULL) {
         PKCS12err(PKCS12_F_PKCS12_PACK_P7ENCDATA, ERR_R_MALLOC_FAILURE);
+=======
+    if ((p7 = PKCS7_new_ex(ctx, propq)) == NULL) {
+        ERR_raise(ERR_LIB_PKCS12, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return NULL;
     }
     if (!PKCS7_set_type(p7, NID_pkcs7_encrypted)) {
@@ -106,8 +131,13 @@ PKCS7 *PKCS12_pack_p7encdata(int pbe_nid, const char *pass, int passlen,
     else
         pbe = PKCS5_pbe_set(pbe_nid, iter, salt, saltlen);
 
+<<<<<<< HEAD
     if (!pbe) {
         PKCS12err(PKCS12_F_PKCS12_PACK_P7ENCDATA, ERR_R_MALLOC_FAILURE);
+=======
+    if (pbe == NULL) {
+        ERR_raise(ERR_LIB_PKCS12, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
     X509_ALGOR_free(p7->d.encrypted->enc_data->algorithm);
@@ -154,11 +184,34 @@ int PKCS12_pack_authsafes(PKCS12 *p12, STACK_OF(PKCS7) *safes)
 
 STACK_OF(PKCS7) *PKCS12_unpack_authsafes(const PKCS12 *p12)
 {
+<<<<<<< HEAD
+=======
+    STACK_OF(PKCS7) *p7s;
+    PKCS7 *p7;
+    int i;
+
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     if (!PKCS7_type_is_data(p12->authsafes)) {
         PKCS12err(PKCS12_F_PKCS12_UNPACK_AUTHSAFES,
                   PKCS12_R_CONTENT_TYPE_NOT_DATA);
         return NULL;
     }
+<<<<<<< HEAD
     return ASN1_item_unpack(p12->authsafes->d.data,
                             ASN1_ITEM_rptr(PKCS12_AUTHSAFES));
+=======
+    p7s = ASN1_item_unpack(p12->authsafes->d.data,
+                           ASN1_ITEM_rptr(PKCS12_AUTHSAFES));
+    if (p7s != NULL) {
+        for (i = 0; i < sk_PKCS7_num(p7s); i++) {
+            p7 = sk_PKCS7_value(p7s, i);
+            if (!ossl_pkcs7_ctx_propagate(p12->authsafes, p7))
+                goto err;
+        }
+    }
+    return p7s;
+err:
+    sk_PKCS7_free(p7s);
+    return NULL;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 }

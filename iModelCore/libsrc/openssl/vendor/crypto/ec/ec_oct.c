@@ -137,7 +137,11 @@ size_t EC_POINT_point2buf(const EC_GROUP *group, const EC_POINT *point,
     if (len == 0)
         return 0;
     if ((buf = OPENSSL_malloc(len)) == NULL) {
+<<<<<<< HEAD
         ECerr(EC_F_EC_POINT_POINT2BUF, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
     len = EC_POINT_point2oct(group, point, form, buf, len, ctx);

@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright 2016-2018 The OpenSSL Project Authors. All Rights Reserved.
+=======
+ * Copyright 2016-2022 The OpenSSL Project Authors. All Rights Reserved.
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -59,7 +63,11 @@ static CTLOG_STORE_LOAD_CTX *ctlog_store_load_ctx_new(void)
     CTLOG_STORE_LOAD_CTX *ctx = OPENSSL_zalloc(sizeof(*ctx));
 
     if (ctx == NULL)
+<<<<<<< HEAD
         CTerr(CT_F_CTLOG_STORE_LOAD_CTX_NEW, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_CT, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
     return ctx;
 }
@@ -94,12 +102,31 @@ CTLOG_STORE *CTLOG_STORE_new(void)
     CTLOG_STORE *ret = OPENSSL_zalloc(sizeof(*ret));
 
     if (ret == NULL) {
+<<<<<<< HEAD
         CTerr(CT_F_CTLOG_STORE_NEW, ERR_R_MALLOC_FAILURE);
         return NULL;
     }
 
     ret->logs = sk_CTLOG_new_null();
     if (ret->logs == NULL)
+=======
+        ERR_raise(ERR_LIB_CT, ERR_R_MALLOC_FAILURE);
+        return NULL;
+    }
+
+    ret->libctx = libctx;
+    if (propq != NULL) {
+        ret->propq = OPENSSL_strdup(propq);
+        if (ret->propq == NULL) {
+            ERR_raise(ERR_LIB_CT, ERR_R_MALLOC_FAILURE);
+            goto err;
+        }
+    }
+
+    ret->logs = sk_CTLOG_new_null();
+    if (ret->logs == NULL) {
+        ERR_raise(ERR_LIB_CT, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
 
     return ret;
@@ -188,7 +215,11 @@ static int ctlog_store_load_log(const char *log_name, int log_name_len,
 
 mem_err:
     CTLOG_free(ct_log);
+<<<<<<< HEAD
     CTerr(CT_F_CTLOG_STORE_LOAD_LOG, ERR_R_MALLOC_FAILURE);
+=======
+    ERR_raise(ERR_LIB_CT, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     return -1;
 }
 
@@ -239,13 +270,31 @@ CTLOG *CTLOG_new(EVP_PKEY *public_key, const char *name)
     CTLOG *ret = OPENSSL_zalloc(sizeof(*ret));
 
     if (ret == NULL) {
+<<<<<<< HEAD
         CTerr(CT_F_CTLOG_NEW, ERR_R_MALLOC_FAILURE);
         return NULL;
+=======
+        ERR_raise(ERR_LIB_CT, ERR_R_MALLOC_FAILURE);
+        return NULL;
+    }
+
+    ret->libctx = libctx;
+    if (propq != NULL) {
+        ret->propq = OPENSSL_strdup(propq);
+        if (ret->propq == NULL) {
+            ERR_raise(ERR_LIB_CT, ERR_R_MALLOC_FAILURE);
+            goto err;
+        }
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     }
 
     ret->name = OPENSSL_strdup(name);
     if (ret->name == NULL) {
+<<<<<<< HEAD
         CTerr(CT_F_CTLOG_NEW, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_CT, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 

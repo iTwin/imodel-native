@@ -268,6 +268,7 @@ static void build_SYS_str_reasons(void)
 }
 #endif
 
+<<<<<<< HEAD
 #define err_clear_data(p, i) \
         do { \
             if ((p)->err_data_flags[i] & ERR_TXT_MALLOCED) {\
@@ -286,6 +287,8 @@ static void build_SYS_str_reasons(void)
             (p)->err_line[i] = -1; \
         } while (0)
 
+=======
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 static void ERR_STATE_free(ERR_STATE *s)
 {
     int i;
@@ -293,7 +296,11 @@ static void ERR_STATE_free(ERR_STATE *s)
     if (s == NULL)
         return;
     for (i = 0; i < ERR_NUM_ERRORS; i++) {
+<<<<<<< HEAD
         err_clear_data(s, i);
+=======
+        err_clear(s, i, 1);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     }
     OPENSSL_free(s);
 }
@@ -912,13 +919,21 @@ int ERR_set_mark(void)
 {
     ERR_STATE *es;
 
+<<<<<<< HEAD
     es = ERR_get_state();
+=======
+    es = ossl_err_get_state_int();
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     if (es == NULL)
         return 0;
 
     if (es->bottom == es->top)
         return 0;
+<<<<<<< HEAD
     es->err_flags[es->top] |= ERR_FLAG_MARK;
+=======
+    es->err_marks[es->top]++;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     return 1;
 }
 
@@ -926,19 +941,32 @@ int ERR_pop_to_mark(void)
 {
     ERR_STATE *es;
 
+<<<<<<< HEAD
     es = ERR_get_state();
+=======
+    es = ossl_err_get_state_int();
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     if (es == NULL)
         return 0;
 
     while (es->bottom != es->top
+<<<<<<< HEAD
            && (es->err_flags[es->top] & ERR_FLAG_MARK) == 0) {
         err_clear(es, es->top);
+=======
+           && es->err_marks[es->top] == 0) {
+        err_clear(es, es->top, 0);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         es->top = es->top > 0 ? es->top - 1 : ERR_NUM_ERRORS - 1;
     }
 
     if (es->bottom == es->top)
         return 0;
+<<<<<<< HEAD
     es->err_flags[es->top] &= ~ERR_FLAG_MARK;
+=======
+    es->err_marks[es->top]--;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     return 1;
 }
 
@@ -947,19 +975,31 @@ int ERR_clear_last_mark(void)
     ERR_STATE *es;
     int top;
 
+<<<<<<< HEAD
     es = ERR_get_state();
+=======
+    es = ossl_err_get_state_int();
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     if (es == NULL)
         return 0;
 
     top = es->top;
     while (es->bottom != top
+<<<<<<< HEAD
            && (es->err_flags[top] & ERR_FLAG_MARK) == 0) {
+=======
+           && es->err_marks[top] == 0) {
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         top = top > 0 ? top - 1 : ERR_NUM_ERRORS - 1;
     }
 
     if (es->bottom == top)
         return 0;
+<<<<<<< HEAD
     es->err_flags[top] &= ~ERR_FLAG_MARK;
+=======
+    es->err_marks[top]--;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     return 1;
 }
 

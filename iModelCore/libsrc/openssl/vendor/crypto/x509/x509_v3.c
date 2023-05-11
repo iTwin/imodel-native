@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright 1995-2018 The OpenSSL Project Authors. All Rights Reserved.
+=======
+ * Copyright 1995-2022 The OpenSSL Project Authors. All Rights Reserved.
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -101,7 +105,11 @@ STACK_OF(X509_EXTENSION) *X509v3_add_ext(STACK_OF(X509_EXTENSION) **x,
     STACK_OF(X509_EXTENSION) *sk = NULL;
 
     if (x == NULL) {
+<<<<<<< HEAD
         X509err(X509_F_X509V3_ADD_EXT, ERR_R_PASSED_NULL_PARAMETER);
+=======
+        ERR_raise(ERR_LIB_X509, ERR_R_PASSED_NULL_PARAMETER);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err2;
     }
 
@@ -125,7 +133,11 @@ STACK_OF(X509_EXTENSION) *X509v3_add_ext(STACK_OF(X509_EXTENSION) **x,
         *x = sk;
     return sk;
  err:
+<<<<<<< HEAD
     X509err(X509_F_X509V3_ADD_EXT, ERR_R_MALLOC_FAILURE);
+=======
+    ERR_raise(ERR_LIB_X509, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  err2:
     X509_EXTENSION_free(new_ex);
     if (x != NULL && *x == NULL)
@@ -159,8 +171,12 @@ X509_EXTENSION *X509_EXTENSION_create_by_OBJ(X509_EXTENSION **ex,
 
     if ((ex == NULL) || (*ex == NULL)) {
         if ((ret = X509_EXTENSION_new()) == NULL) {
+<<<<<<< HEAD
             X509err(X509_F_X509_EXTENSION_CREATE_BY_OBJ,
                     ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_X509, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return NULL;
         }
     } else

@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright 2006-2019 The OpenSSL Project Authors. All Rights Reserved.
+=======
+ * Copyright 2006-2022 The OpenSSL Project Authors. All Rights Reserved.
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -51,7 +55,11 @@ static int pkey_dh_init(EVP_PKEY_CTX *ctx)
     DH_PKEY_CTX *dctx;
 
     if ((dctx = OPENSSL_zalloc(sizeof(*dctx))) == NULL) {
+<<<<<<< HEAD
         DHerr(DH_F_PKEY_DH_INIT, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_DH, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
     dctx->prime_len = 2048;
@@ -458,12 +466,22 @@ static int pkey_dh_derive(EVP_PKEY_CTX *ctx, unsigned char *key,
         if (*keylen != dctx->kdf_outlen)
             return 0;
         ret = 0;
+<<<<<<< HEAD
         Zlen = DH_size(dh);
         Z = OPENSSL_malloc(Zlen);
         if (Z == NULL) {
             goto err;
         }
         if (DH_compute_key_padded(Z, dhpub, dh) <= 0)
+=======
+        if ((Zlen = DH_size(dh)) <= 0)
+            return 0;
+        if ((Z = OPENSSL_malloc(Zlen)) == NULL) {
+            ERR_raise(ERR_LIB_DH, ERR_R_MALLOC_FAILURE);
+            return 0;
+        }
+        if (DH_compute_key_padded(Z, dhpubbn, dh) <= 0)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             goto err;
         if (!DH_KDF_X9_42(key, *keylen, Z, Zlen, dctx->kdf_oid,
                           dctx->kdf_ukm, dctx->kdf_ukmlen, dctx->kdf_md))

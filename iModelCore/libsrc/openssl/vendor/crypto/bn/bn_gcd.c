@@ -522,7 +522,11 @@ BIGNUM *BN_mod_inverse(BIGNUM *in,
     if (ctx == NULL) {
         ctx = new_ctx = BN_CTX_new();
         if (ctx == NULL) {
+<<<<<<< HEAD
             BNerr(BN_F_BN_MOD_INVERSE, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_BN, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return NULL;
         }
     }

@@ -98,6 +98,7 @@ DEFINE_RUN_ONCE_STATIC(ossl_init_ssl_base)
      */
     SSL_COMP_get_compression_methods();
 #endif
+<<<<<<< HEAD
     /* initialize cipher/digest methods table */
     if (!ssl_load_ciphers())
         return 0;
@@ -106,6 +107,10 @@ DEFINE_RUN_ONCE_STATIC(ossl_init_ssl_base)
     fprintf(stderr, "OPENSSL_INIT: ossl_init_ssl_base: "
             "SSL_add_ssl_module()\n");
 #endif
+=======
+    ssl_sort_cipher_list();
+    OSSL_TRACE(INIT,"ossl_init_ssl_base: SSL_add_ssl_module()\n");
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     /*
      * We ignore an error return here. Not much we can do - but not that bad
      * either. We can still safely continue.

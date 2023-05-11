@@ -1,5 +1,5 @@
 /*
- * Copyright 2004-2021 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2004-2022 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -85,7 +85,11 @@ X509_VERIFY_PARAM *X509_VERIFY_PARAM_new(void)
 
     param = OPENSSL_zalloc(sizeof(*param));
     if (param == NULL) {
+<<<<<<< HEAD
         X509err(X509_F_X509_VERIFY_PARAM_NEW, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_X509, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return NULL;
     }
     param->trust = X509_TRUST_DEFAULT;

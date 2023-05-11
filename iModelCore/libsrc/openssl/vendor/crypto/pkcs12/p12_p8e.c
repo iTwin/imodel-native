@@ -58,7 +58,11 @@ X509_SIG *PKCS8_set0_pbe(const char *pass, int passlen,
     p8 = OPENSSL_zalloc(sizeof(*p8));
 
     if (p8 == NULL) {
+<<<<<<< HEAD
         PKCS12err(PKCS12_F_PKCS8_SET0_PBE, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_PKCS12, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         ASN1_OCTET_STRING_free(enckey);
         return NULL;
     }

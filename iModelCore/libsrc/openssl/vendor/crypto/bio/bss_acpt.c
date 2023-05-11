@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright 1995-2020 The OpenSSL Project Authors. All Rights Reserved.
+=======
+ * Copyright 1995-2023 The OpenSSL Project Authors. All Rights Reserved.
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -93,7 +97,11 @@ static BIO_ACCEPT *BIO_ACCEPT_new(void)
     BIO_ACCEPT *ret;
 
     if ((ret = OPENSSL_zalloc(sizeof(*ret))) == NULL) {
+<<<<<<< HEAD
         BIOerr(BIO_F_BIO_ACCEPT_NEW, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_BIO, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return NULL;
     }
     ret->accept_family = BIO_FAMILY_IPANY;

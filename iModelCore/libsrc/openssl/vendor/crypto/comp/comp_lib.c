@@ -20,7 +20,11 @@ COMP_CTX *COMP_CTX_new(COMP_METHOD *meth)
     COMP_CTX *ret;
 
     if ((ret = OPENSSL_zalloc(sizeof(*ret))) == NULL) {
+<<<<<<< HEAD
         COMPerr(COMP_F_COMP_CTX_NEW, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_COMP, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return NULL;
     }
     ret->meth = meth;

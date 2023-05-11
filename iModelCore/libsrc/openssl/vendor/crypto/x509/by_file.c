@@ -81,7 +81,21 @@ int X509_load_cert_file(X509_LOOKUP *ctx, const char *file, int type)
     in = BIO_new(BIO_s_file());
 
     if ((in == NULL) || (BIO_read_filename(in, file) <= 0)) {
+<<<<<<< HEAD
         X509err(X509_F_X509_LOAD_CERT_FILE, ERR_R_SYS_LIB);
+=======
+        ERR_raise(ERR_LIB_X509, ERR_R_SYS_LIB);
+        goto err;
+    }
+
+    if (type != X509_FILETYPE_PEM && type != X509_FILETYPE_ASN1) {
+        ERR_raise(ERR_LIB_X509, X509_R_BAD_X509_FILETYPE);
+        goto err;
+    }
+    x = X509_new_ex(libctx, propq);
+    if (x == NULL) {
+        ERR_raise(ERR_LIB_X509, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 

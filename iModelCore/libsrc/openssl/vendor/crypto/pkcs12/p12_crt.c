@@ -28,9 +28,16 @@ static int copy_bag_attr(PKCS12_SAFEBAG *bag, EVP_PKEY *pkey, int nid)
     return 1;
 }
 
+<<<<<<< HEAD
 PKCS12 *PKCS12_create(const char *pass, const char *name, EVP_PKEY *pkey, X509 *cert,
                       STACK_OF(X509) *ca, int nid_key, int nid_cert, int iter,
                       int mac_iter, int keytype)
+=======
+PKCS12 *PKCS12_create_ex(const char *pass, const char *name, EVP_PKEY *pkey,
+                         X509 *cert, STACK_OF(X509) *ca, int nid_key, int nid_cert,
+                         int iter, int mac_iter, int keytype,
+                         OSSL_LIB_CTX *ctx, const char *propq)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 {
     PKCS12 *p12 = NULL;
     STACK_OF(PKCS7) *safes = NULL;
@@ -132,6 +139,17 @@ PKCS12 *PKCS12_create(const char *pass, const char *name, EVP_PKEY *pkey, X509 *
 
 }
 
+<<<<<<< HEAD
+=======
+PKCS12 *PKCS12_create(const char *pass, const char *name, EVP_PKEY *pkey, X509 *cert,
+                      STACK_OF(X509) *ca, int nid_key, int nid_cert, int iter,
+                      int mac_iter, int keytype)
+{
+    return PKCS12_create_ex(pass, name, pkey, cert, ca, nid_key, nid_cert,
+                            iter, mac_iter, keytype, NULL, NULL);
+}
+
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 PKCS12_SAFEBAG *PKCS12_add_cert(STACK_OF(PKCS12_SAFEBAG) **pbags, X509 *cert)
 {
     PKCS12_SAFEBAG *bag = NULL;
@@ -244,6 +262,13 @@ int PKCS12_add_safe(STACK_OF(PKCS7) **psafes, STACK_OF(PKCS12_SAFEBAG) *bags,
     PKCS7_free(p7);
     return 0;
 
+<<<<<<< HEAD
+=======
+int PKCS12_add_safe(STACK_OF(PKCS7) **psafes, STACK_OF(PKCS12_SAFEBAG) *bags,
+                    int nid_safe, int iter, const char *pass)
+{
+    return PKCS12_add_safe_ex(psafes, bags, nid_safe, iter, pass, NULL, NULL);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 }
 
 static int pkcs12_add_bag(STACK_OF(PKCS12_SAFEBAG) **pbags,

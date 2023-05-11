@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright 2017-2019 The OpenSSL Project Authors. All Rights Reserved.
+=======
+ * Copyright 2017-2022 The OpenSSL Project Authors. All Rights Reserved.
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  * Copyright 2017 Ribose Inc. All Rights Reserved.
  * Ported from Ribose contributions from Botan.
  *
@@ -42,9 +46,15 @@ int sm2_compute_z_digest(uint8_t *out,
     uint8_t e_byte = 0;
 
     hash = EVP_MD_CTX_new();
+<<<<<<< HEAD
     ctx = BN_CTX_new();
     if (hash == NULL || ctx == NULL) {
         SM2err(SM2_F_SM2_COMPUTE_Z_DIGEST, ERR_R_MALLOC_FAILURE);
+=======
+    ctx = BN_CTX_new_ex(ossl_ec_key_get_libctx(key));
+    if (hash == NULL || ctx == NULL) {
+        ERR_raise(ERR_LIB_SM2, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto done;
     }
 
@@ -57,7 +67,11 @@ int sm2_compute_z_digest(uint8_t *out,
     yA = BN_CTX_get(ctx);
 
     if (yA == NULL) {
+<<<<<<< HEAD
         SM2err(SM2_F_SM2_COMPUTE_Z_DIGEST, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_SM2, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto done;
     }
 
@@ -100,7 +114,11 @@ int sm2_compute_z_digest(uint8_t *out,
     p_bytes = BN_num_bytes(p);
     buf = OPENSSL_zalloc(p_bytes);
     if (buf == NULL) {
+<<<<<<< HEAD
         SM2err(SM2_F_SM2_COMPUTE_Z_DIGEST, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_SM2, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto done;
     }
 
@@ -148,13 +166,27 @@ static BIGNUM *sm2_compute_msg_hash(const EVP_MD *digest,
     BIGNUM *e = NULL;
 
     if (md_size < 0) {
+<<<<<<< HEAD
         SM2err(SM2_F_SM2_COMPUTE_MSG_HASH, SM2_R_INVALID_DIGEST);
+=======
+        ERR_raise(ERR_LIB_SM2, SM2_R_INVALID_DIGEST);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto done;
     }
 
     z = OPENSSL_zalloc(md_size);
     if (hash == NULL || z == NULL) {
+<<<<<<< HEAD
         SM2err(SM2_F_SM2_COMPUTE_MSG_HASH, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_SM2, ERR_R_MALLOC_FAILURE);
+        goto done;
+    }
+
+    fetched_digest = EVP_MD_fetch(libctx, EVP_MD_get0_name(digest), propq);
+    if (fetched_digest == NULL) {
+        ERR_raise(ERR_LIB_SM2, ERR_R_INTERNAL_ERROR);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto done;
     }
 
@@ -198,9 +230,15 @@ static ECDSA_SIG *sm2_sig_gen(const EC_KEY *key, const BIGNUM *e)
     BIGNUM *tmp = NULL;
 
     kG = EC_POINT_new(group);
+<<<<<<< HEAD
     ctx = BN_CTX_new();
     if (kG == NULL || ctx == NULL) {
         SM2err(SM2_F_SM2_SIG_GEN, ERR_R_MALLOC_FAILURE);
+=======
+    ctx = BN_CTX_new_ex(libctx);
+    if (kG == NULL || ctx == NULL) {
+        ERR_raise(ERR_LIB_SM2, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto done;
     }
 
@@ -210,7 +248,11 @@ static ECDSA_SIG *sm2_sig_gen(const EC_KEY *key, const BIGNUM *e)
     x1 = BN_CTX_get(ctx);
     tmp = BN_CTX_get(ctx);
     if (tmp == NULL) {
+<<<<<<< HEAD
         SM2err(SM2_F_SM2_SIG_GEN, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_SM2, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto done;
     }
 
@@ -222,7 +264,11 @@ static ECDSA_SIG *sm2_sig_gen(const EC_KEY *key, const BIGNUM *e)
     s = BN_new();
 
     if (r == NULL || s == NULL) {
+<<<<<<< HEAD
         SM2err(SM2_F_SM2_SIG_GEN, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_SM2, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto done;
     }
 
@@ -263,7 +309,11 @@ static ECDSA_SIG *sm2_sig_gen(const EC_KEY *key, const BIGNUM *e)
 
         sig = ECDSA_SIG_new();
         if (sig == NULL) {
+<<<<<<< HEAD
             SM2err(SM2_F_SM2_SIG_GEN, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_SM2, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             goto done;
         }
 
@@ -299,7 +349,11 @@ static int sm2_sig_verify(const EC_KEY *key, const ECDSA_SIG *sig,
     ctx = BN_CTX_new();
     pt = EC_POINT_new(group);
     if (ctx == NULL || pt == NULL) {
+<<<<<<< HEAD
         SM2err(SM2_F_SM2_SIG_VERIFY, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_SM2, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto done;
     }
 
@@ -307,7 +361,11 @@ static int sm2_sig_verify(const EC_KEY *key, const ECDSA_SIG *sig,
     t = BN_CTX_get(ctx);
     x1 = BN_CTX_get(ctx);
     if (x1 == NULL) {
+<<<<<<< HEAD
         SM2err(SM2_F_SM2_SIG_VERIFY, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_SM2, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto done;
     }
 
@@ -449,7 +507,11 @@ int sm2_verify(const unsigned char *dgst, int dgstlen,
 
     s = ECDSA_SIG_new();
     if (s == NULL) {
+<<<<<<< HEAD
         SM2err(SM2_F_SM2_VERIFY, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_SM2, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto done;
     }
     if (d2i_ECDSA_SIG(&s, &p, sig_len) == NULL) {

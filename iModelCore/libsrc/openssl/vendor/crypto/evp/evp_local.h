@@ -41,6 +41,178 @@ struct evp_cipher_ctx_st {
     unsigned char final[EVP_MAX_BLOCK_LENGTH]; /* possible final block */
 } /* EVP_CIPHER_CTX */ ;
 
+<<<<<<< HEAD
+=======
+struct evp_mac_ctx_st {
+    EVP_MAC *meth;               /* Method structure */
+    /*
+     * Opaque ctx returned from a providers MAC algorithm implementation
+     * OSSL_FUNC_mac_newctx()
+     */
+    void *algctx;
+} /* EVP_MAC_CTX */;
+
+struct evp_kdf_ctx_st {
+    EVP_KDF *meth;              /* Method structure */
+    /*
+     * Opaque ctx returned from a providers KDF algorithm implementation
+     * OSSL_FUNC_kdf_newctx()
+     */
+    void *algctx;
+} /* EVP_KDF_CTX */ ;
+
+struct evp_rand_ctx_st {
+    EVP_RAND *meth;             /* Method structure */
+    /*
+     * Opaque ctx returned from a providers rand algorithm implementation
+     * OSSL_FUNC_rand_newctx()
+     */
+    void *algctx;
+    EVP_RAND_CTX *parent;       /* Parent EVP_RAND or NULL if none */
+    CRYPTO_REF_COUNT refcnt;    /* Context reference count */
+    CRYPTO_RWLOCK *refcnt_lock;
+} /* EVP_RAND_CTX */ ;
+
+struct evp_keymgmt_st {
+    int id;                      /* libcrypto internal */
+
+    int name_id;
+    char *type_name;
+    const char *description;
+    OSSL_PROVIDER *prov;
+    CRYPTO_REF_COUNT refcnt;
+    CRYPTO_RWLOCK *lock;
+
+    /* Constructor(s), destructor, information */
+    OSSL_FUNC_keymgmt_new_fn *new;
+    OSSL_FUNC_keymgmt_free_fn *free;
+    OSSL_FUNC_keymgmt_get_params_fn *get_params;
+    OSSL_FUNC_keymgmt_gettable_params_fn *gettable_params;
+    OSSL_FUNC_keymgmt_set_params_fn *set_params;
+    OSSL_FUNC_keymgmt_settable_params_fn *settable_params;
+
+    /* Generation, a complex constructor */
+    OSSL_FUNC_keymgmt_gen_init_fn *gen_init;
+    OSSL_FUNC_keymgmt_gen_set_template_fn *gen_set_template;
+    OSSL_FUNC_keymgmt_gen_set_params_fn *gen_set_params;
+    OSSL_FUNC_keymgmt_gen_settable_params_fn *gen_settable_params;
+    OSSL_FUNC_keymgmt_gen_fn *gen;
+    OSSL_FUNC_keymgmt_gen_cleanup_fn *gen_cleanup;
+
+    OSSL_FUNC_keymgmt_load_fn *load;
+
+    /* Key object checking */
+    OSSL_FUNC_keymgmt_query_operation_name_fn *query_operation_name;
+    OSSL_FUNC_keymgmt_has_fn *has;
+    OSSL_FUNC_keymgmt_validate_fn *validate;
+    OSSL_FUNC_keymgmt_match_fn *match;
+
+    /* Import and export routines */
+    OSSL_FUNC_keymgmt_import_fn *import;
+    OSSL_FUNC_keymgmt_import_types_fn *import_types;
+    OSSL_FUNC_keymgmt_export_fn *export;
+    OSSL_FUNC_keymgmt_export_types_fn *export_types;
+    OSSL_FUNC_keymgmt_dup_fn *dup;
+} /* EVP_KEYMGMT */ ;
+
+struct evp_keyexch_st {
+    int name_id;
+    char *type_name;
+    const char *description;
+    OSSL_PROVIDER *prov;
+    CRYPTO_REF_COUNT refcnt;
+    CRYPTO_RWLOCK *lock;
+
+    OSSL_FUNC_keyexch_newctx_fn *newctx;
+    OSSL_FUNC_keyexch_init_fn *init;
+    OSSL_FUNC_keyexch_set_peer_fn *set_peer;
+    OSSL_FUNC_keyexch_derive_fn *derive;
+    OSSL_FUNC_keyexch_freectx_fn *freectx;
+    OSSL_FUNC_keyexch_dupctx_fn *dupctx;
+    OSSL_FUNC_keyexch_set_ctx_params_fn *set_ctx_params;
+    OSSL_FUNC_keyexch_settable_ctx_params_fn *settable_ctx_params;
+    OSSL_FUNC_keyexch_get_ctx_params_fn *get_ctx_params;
+    OSSL_FUNC_keyexch_gettable_ctx_params_fn *gettable_ctx_params;
+} /* EVP_KEYEXCH */;
+
+struct evp_signature_st {
+    int name_id;
+    char *type_name;
+    const char *description;
+    OSSL_PROVIDER *prov;
+    CRYPTO_REF_COUNT refcnt;
+    CRYPTO_RWLOCK *lock;
+
+    OSSL_FUNC_signature_newctx_fn *newctx;
+    OSSL_FUNC_signature_sign_init_fn *sign_init;
+    OSSL_FUNC_signature_sign_fn *sign;
+    OSSL_FUNC_signature_verify_init_fn *verify_init;
+    OSSL_FUNC_signature_verify_fn *verify;
+    OSSL_FUNC_signature_verify_recover_init_fn *verify_recover_init;
+    OSSL_FUNC_signature_verify_recover_fn *verify_recover;
+    OSSL_FUNC_signature_digest_sign_init_fn *digest_sign_init;
+    OSSL_FUNC_signature_digest_sign_update_fn *digest_sign_update;
+    OSSL_FUNC_signature_digest_sign_final_fn *digest_sign_final;
+    OSSL_FUNC_signature_digest_sign_fn *digest_sign;
+    OSSL_FUNC_signature_digest_verify_init_fn *digest_verify_init;
+    OSSL_FUNC_signature_digest_verify_update_fn *digest_verify_update;
+    OSSL_FUNC_signature_digest_verify_final_fn *digest_verify_final;
+    OSSL_FUNC_signature_digest_verify_fn *digest_verify;
+    OSSL_FUNC_signature_freectx_fn *freectx;
+    OSSL_FUNC_signature_dupctx_fn *dupctx;
+    OSSL_FUNC_signature_get_ctx_params_fn *get_ctx_params;
+    OSSL_FUNC_signature_gettable_ctx_params_fn *gettable_ctx_params;
+    OSSL_FUNC_signature_set_ctx_params_fn *set_ctx_params;
+    OSSL_FUNC_signature_settable_ctx_params_fn *settable_ctx_params;
+    OSSL_FUNC_signature_get_ctx_md_params_fn *get_ctx_md_params;
+    OSSL_FUNC_signature_gettable_ctx_md_params_fn *gettable_ctx_md_params;
+    OSSL_FUNC_signature_set_ctx_md_params_fn *set_ctx_md_params;
+    OSSL_FUNC_signature_settable_ctx_md_params_fn *settable_ctx_md_params;
+} /* EVP_SIGNATURE */;
+
+struct evp_asym_cipher_st {
+    int name_id;
+    char *type_name;
+    const char *description;
+    OSSL_PROVIDER *prov;
+    CRYPTO_REF_COUNT refcnt;
+    CRYPTO_RWLOCK *lock;
+
+    OSSL_FUNC_asym_cipher_newctx_fn *newctx;
+    OSSL_FUNC_asym_cipher_encrypt_init_fn *encrypt_init;
+    OSSL_FUNC_asym_cipher_encrypt_fn *encrypt;
+    OSSL_FUNC_asym_cipher_decrypt_init_fn *decrypt_init;
+    OSSL_FUNC_asym_cipher_decrypt_fn *decrypt;
+    OSSL_FUNC_asym_cipher_freectx_fn *freectx;
+    OSSL_FUNC_asym_cipher_dupctx_fn *dupctx;
+    OSSL_FUNC_asym_cipher_get_ctx_params_fn *get_ctx_params;
+    OSSL_FUNC_asym_cipher_gettable_ctx_params_fn *gettable_ctx_params;
+    OSSL_FUNC_asym_cipher_set_ctx_params_fn *set_ctx_params;
+    OSSL_FUNC_asym_cipher_settable_ctx_params_fn *settable_ctx_params;
+} /* EVP_ASYM_CIPHER */;
+
+struct evp_kem_st {
+    int name_id;
+    char *type_name;
+    const char *description;
+    OSSL_PROVIDER *prov;
+    CRYPTO_REF_COUNT refcnt;
+    CRYPTO_RWLOCK *lock;
+
+    OSSL_FUNC_kem_newctx_fn *newctx;
+    OSSL_FUNC_kem_encapsulate_init_fn *encapsulate_init;
+    OSSL_FUNC_kem_encapsulate_fn *encapsulate;
+    OSSL_FUNC_kem_decapsulate_init_fn *decapsulate_init;
+    OSSL_FUNC_kem_decapsulate_fn *decapsulate;
+    OSSL_FUNC_kem_freectx_fn *freectx;
+    OSSL_FUNC_kem_dupctx_fn *dupctx;
+    OSSL_FUNC_kem_get_ctx_params_fn *get_ctx_params;
+    OSSL_FUNC_kem_gettable_ctx_params_fn *gettable_ctx_params;
+    OSSL_FUNC_kem_set_ctx_params_fn *set_ctx_params;
+    OSSL_FUNC_kem_settable_ctx_params_fn *settable_ctx_params;
+} /* EVP_KEM */;
+
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 int PKCS5_v2_PBKDF2_keyivgen(EVP_CIPHER_CTX *ctx, const char *pass,
                              int passlen, ASN1_TYPE *param,
                              const EVP_CIPHER *c, const EVP_MD *md,

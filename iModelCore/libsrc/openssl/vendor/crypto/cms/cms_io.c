@@ -28,7 +28,11 @@ int CMS_stream(unsigned char ***boundary, CMS_ContentInfo *cms)
         *boundary = &(*pos)->data;
         return 1;
     }
+<<<<<<< HEAD
     CMSerr(CMS_F_CMS_STREAM, ERR_R_MALLOC_FAILURE);
+=======
+    ERR_raise(ERR_LIB_CMS, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     return 0;
 }
 

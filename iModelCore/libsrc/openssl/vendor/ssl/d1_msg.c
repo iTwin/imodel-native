@@ -41,7 +41,11 @@ int dtls1_dispatch_alert(SSL *s)
     unsigned char *ptr = &buf[0];
     size_t written;
 
+<<<<<<< HEAD
     s->s3->alert_dispatch = 0;
+=======
+    s->s3.alert_dispatch = 0;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
     memset(buf, 0, sizeof(buf));
     *ptr++ = s->s3->send_alert[0];
@@ -49,13 +53,21 @@ int dtls1_dispatch_alert(SSL *s)
 
     i = do_dtls1_write(s, SSL3_RT_ALERT, &buf[0], sizeof(buf), 0, &written);
     if (i <= 0) {
+<<<<<<< HEAD
         s->s3->alert_dispatch = 1;
+=======
+        s->s3.alert_dispatch = 1;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         /* fprintf( stderr, "not done with alert\n" ); */
     } else {
         (void)BIO_flush(s->wbio);
 
         if (s->msg_callback)
+<<<<<<< HEAD
             s->msg_callback(1, s->version, SSL3_RT_ALERT, s->s3->send_alert,
+=======
+            s->msg_callback(1, s->version, SSL3_RT_ALERT, s->s3.send_alert,
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                             2, s, s->msg_callback_arg);
 
         if (s->info_callback != NULL)
@@ -64,7 +76,11 @@ int dtls1_dispatch_alert(SSL *s)
             cb = s->ctx->info_callback;
 
         if (cb != NULL) {
+<<<<<<< HEAD
             j = (s->s3->send_alert[0] << 8) | s->s3->send_alert[1];
+=======
+            j = (s->s3.send_alert[0] << 8) | s->s3.send_alert[1];
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             cb(s, SSL_CB_WRITE_ALERT, j);
         }
     }

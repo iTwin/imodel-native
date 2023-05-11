@@ -24,7 +24,11 @@ SCT *SCT_new(void)
     SCT *sct = OPENSSL_zalloc(sizeof(*sct));
 
     if (sct == NULL) {
+<<<<<<< HEAD
         CTerr(CT_F_SCT_NEW, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_CT, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return NULL;
     }
 
@@ -106,7 +110,11 @@ int SCT_set1_log_id(SCT *sct, const unsigned char *log_id, size_t log_id_len)
     if (log_id != NULL && log_id_len > 0) {
         sct->log_id = OPENSSL_memdup(log_id, log_id_len);
         if (sct->log_id == NULL) {
+<<<<<<< HEAD
             CTerr(CT_F_SCT_SET1_LOG_ID, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_CT, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return 0;
         }
         sct->log_id_len = log_id_len;
@@ -158,7 +166,11 @@ int SCT_set1_extensions(SCT *sct, const unsigned char *ext, size_t ext_len)
     if (ext != NULL && ext_len > 0) {
         sct->ext = OPENSSL_memdup(ext, ext_len);
         if (sct->ext == NULL) {
+<<<<<<< HEAD
             CTerr(CT_F_SCT_SET1_EXTENSIONS, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_CT, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return 0;
         }
         sct->ext_len = ext_len;
@@ -184,7 +196,11 @@ int SCT_set1_signature(SCT *sct, const unsigned char *sig, size_t sig_len)
     if (sig != NULL && sig_len > 0) {
         sct->sig = OPENSSL_memdup(sig, sig_len);
         if (sct->sig == NULL) {
+<<<<<<< HEAD
             CTerr(CT_F_SCT_SET1_SIGNATURE, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_CT, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return 0;
         }
         sct->sig_len = sig_len;

@@ -35,12 +35,15 @@ my %shared_info;
         };
     },
     'bsd-gcc-shared' => sub { return $shared_info{'linux-shared'}; },
+<<<<<<< HEAD
     'bsd-shared' => sub {
         return $shared_info{'gnu-shared'} if detect_gnu_ld();
         return {
             shared_ldflag     => '-shared -nostdlib',
         };
     },
+=======
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     'darwin-shared' => {
         module_ldflags        => '-bundle',
         shared_ldflag         => '-dynamiclib -current_version $(SHLIB_VERSION_NUMBER) -compatibility_version $(SHLIB_VERSION_NUMBER)',

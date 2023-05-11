@@ -269,11 +269,14 @@ OPENSSLDIR=$(OPENSSLDIR_dev)$(OPENSSLDIR_dir)
 ENGINESDIR=$(ENGINESDIR_dev)$(ENGINESDIR_dir)
 endif
 
+<<<<<<< HEAD
 # $(libdir) is chosen to be compatible with the GNU coding standards
 libdir={- File::Spec::Win32->file_name_is_absolute($libdir)
           ? $libdir : '$(INSTALLTOP)/$(LIBDIR)' -}
 {- output_on() if $config{target} !~ /^mingw/; "" -}
 
+=======
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 MANDIR=$(INSTALLTOP)/share/man
 DOCDIR=$(INSTALLTOP)/share/doc/$(BASENAME)
 HTMLDIR=$(DOCDIR)/html
@@ -743,7 +746,11 @@ install_runtime_libs: build_libs
 	@ : {- output_off() if windowsdll(); "" -}
 	@$(PERL) $(SRCDIR)/util/mkdir-p.pl "$(DESTDIR)$(libdir)"
 	@ : {- output_on() if windowsdll(); output_off() unless windowsdll(); "" -}
+<<<<<<< HEAD
 	@$(PERL) $(SRCDIR)/util/mkdir-p.pl "$(DESTDIR)$(INSTALLTOP)/bin"
+=======
+	@$(PERL) $(SRCDIR)/util/mkdir-p.pl $(DESTDIR)$(INSTALLTOP)/bin
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 	@ : {- output_on() unless windowsdll(); "" -}
 	@$(ECHO) "*** Installing runtime libraries"
 	@set -e; for s in dummy $(INSTALL_SHLIBS); do \
@@ -751,10 +758,17 @@ install_runtime_libs: build_libs
 		fn=`basename $$s`; \
 		: {- output_off() unless windowsdll(); "" -}; \
 		$(ECHO) "install $$s -> $(DESTDIR)$(INSTALLTOP)/bin/$$fn"; \
+<<<<<<< HEAD
 		cp $$s "$(DESTDIR)$(INSTALLTOP)/bin/$$fn.new"; \
 		chmod 755 "$(DESTDIR)$(INSTALLTOP)/bin/$$fn.new"; \
 		mv -f "$(DESTDIR)$(INSTALLTOP)/bin/$$fn.new" \
 		      "$(DESTDIR)$(INSTALLTOP)/bin/$$fn"; \
+=======
+		cp $$s $(DESTDIR)$(INSTALLTOP)/bin/$$fn.new; \
+		chmod 755 $(DESTDIR)$(INSTALLTOP)/bin/$$fn.new; \
+		mv -f $(DESTDIR)$(INSTALLTOP)/bin/$$fn.new \
+		      $(DESTDIR)$(INSTALLTOP)/bin/$$fn; \
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 		: {- output_on() unless windowsdll(); "" -}{- output_off() if windowsdll(); "" -}; \
 		$(ECHO) "install $$s -> $(DESTDIR)$(libdir)/$$fn"; \
 		cp $$s "$(DESTDIR)$(libdir)/$$fn.new"; \
@@ -766,25 +780,43 @@ install_runtime_libs: build_libs
 
 install_programs: install_runtime_libs build_programs
 	@[ -n "$(INSTALLTOP)" ] || (echo INSTALLTOP should not be empty; exit 1)
+<<<<<<< HEAD
 	@$(PERL) $(SRCDIR)/util/mkdir-p.pl "$(DESTDIR)$(INSTALLTOP)/bin"
+=======
+	@$(PERL) $(SRCDIR)/util/mkdir-p.pl $(DESTDIR)$(INSTALLTOP)/bin
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 	@$(ECHO) "*** Installing runtime programs"
 	@set -e; for x in dummy $(INSTALL_PROGRAMS); do \
 		if [ "$$x" = "dummy" ]; then continue; fi; \
 		fn=`basename $$x`; \
 		$(ECHO) "install $$x -> $(DESTDIR)$(INSTALLTOP)/bin/$$fn"; \
+<<<<<<< HEAD
 		cp $$x "$(DESTDIR)$(INSTALLTOP)/bin/$$fn.new"; \
 		chmod 755 "$(DESTDIR)$(INSTALLTOP)/bin/$$fn.new"; \
 		mv -f "$(DESTDIR)$(INSTALLTOP)/bin/$$fn.new" \
 		      "$(DESTDIR)$(INSTALLTOP)/bin/$$fn"; \
+=======
+		cp $$x $(DESTDIR)$(INSTALLTOP)/bin/$$fn.new; \
+		chmod 755 $(DESTDIR)$(INSTALLTOP)/bin/$$fn.new; \
+		mv -f $(DESTDIR)$(INSTALLTOP)/bin/$$fn.new \
+		      $(DESTDIR)$(INSTALLTOP)/bin/$$fn; \
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 	done
 	@set -e; for x in dummy $(BIN_SCRIPTS); do \
 		if [ "$$x" = "dummy" ]; then continue; fi; \
 		fn=`basename $$x`; \
 		$(ECHO) "install $$x -> $(DESTDIR)$(INSTALLTOP)/bin/$$fn"; \
+<<<<<<< HEAD
 		cp $$x "$(DESTDIR)$(INSTALLTOP)/bin/$$fn.new"; \
 		chmod 755 "$(DESTDIR)$(INSTALLTOP)/bin/$$fn.new"; \
 		mv -f "$(DESTDIR)$(INSTALLTOP)/bin/$$fn.new" \
 		      "$(DESTDIR)$(INSTALLTOP)/bin/$$fn"; \
+=======
+		cp $$x $(DESTDIR)$(INSTALLTOP)/bin/$$fn.new; \
+		chmod 755 $(DESTDIR)$(INSTALLTOP)/bin/$$fn.new; \
+		mv -f $(DESTDIR)$(INSTALLTOP)/bin/$$fn.new \
+		      $(DESTDIR)$(INSTALLTOP)/bin/$$fn; \
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 	done
 
 uninstall_runtime: uninstall_programs uninstall_runtime_libs
@@ -796,16 +828,26 @@ uninstall_programs:
 		if [ "$$x" = "dummy" ]; then continue; fi; \
 		fn=`basename $$x`; \
 		$(ECHO) "$(RM) $(DESTDIR)$(INSTALLTOP)/bin/$$fn"; \
+<<<<<<< HEAD
 		$(RM) "$(DESTDIR)$(INSTALLTOP)/bin/$$fn"; \
+=======
+		$(RM) $(DESTDIR)$(INSTALLTOP)/bin/$$fn; \
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 	done;
 	@set -e; for x in dummy $(BIN_SCRIPTS); \
 	do  \
 		if [ "$$x" = "dummy" ]; then continue; fi; \
 		fn=`basename $$x`; \
 		$(ECHO) "$(RM) $(DESTDIR)$(INSTALLTOP)/bin/$$fn"; \
+<<<<<<< HEAD
 		$(RM) "$(DESTDIR)$(INSTALLTOP)/bin/$$fn"; \
 	done
 	-$(RMDIR) "$(DESTDIR)$(INSTALLTOP)/bin"
+=======
+		$(RM) $(DESTDIR)$(INSTALLTOP)/bin/$$fn; \
+	done
+	-$(RMDIR) $(DESTDIR)$(INSTALLTOP)/bin
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
 uninstall_runtime_libs:
 	@$(ECHO) "*** Uninstalling runtime libraries"
@@ -814,7 +856,11 @@ uninstall_runtime_libs:
 		if [ "$$s" = "dummy" ]; then continue; fi; \
 		fn=`basename $$s`; \
 		$(ECHO) "$(RM) $(DESTDIR)$(INSTALLTOP)/bin/$$fn"; \
+<<<<<<< HEAD
 		$(RM) "$(DESTDIR)$(INSTALLTOP)/bin/$$fn"; \
+=======
+		$(RM) $(DESTDIR)$(INSTALLTOP)/bin/$$fn; \
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 	done
 	@ : {- output_on() unless windowsdll(); "" -}
 
@@ -850,11 +896,28 @@ update: generate errors ordinals
 generate: generate_apps generate_crypto_bn generate_crypto_objects \
           generate_crypto_conf generate_crypto_asn1 generate_fuzz_oids
 
+<<<<<<< HEAD
 .PHONY: doc-nits
 doc-nits:
 	(cd $(SRCDIR); $(PERL) util/find-doc-nits -n -p ) >doc-nits
 	@if [ -s doc-nits ] ; then cat doc-nits ; exit 1; \
 	else echo 'doc-nits: no errors.'; rm doc-nits ; fi
+=======
+generate_buildinfo: generate_doc_buildinfo
+
+.PHONY: doc-nits md-nits
+doc-nits: build_generated_pods
+	$(PERL) $(SRCDIR)/util/find-doc-nits -c -n -l -e
+
+# This uses "mdl", the markdownlint application, which is written in ruby.
+# The source is at https://github.com/markdownlint/markdownlint
+# If you have ruby installed, "gem install mdl" should work.
+# Another option is at https://snapcraft.io/install/mdl/debian
+# Finally, there's a Node.js version, which we haven't tried, that
+# can be found at https://github.com/DavidAnson/markdownlint
+md-nits:
+	mdl -s util/markdownlint.rb .
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
 # Test coverage is a good idea for the future
 #coverage: $(PROGRAMS) $(TESTPROGRAMS)
@@ -915,9 +978,93 @@ errors:
                 -conf $$E `basename $$E .ec`.c ; \
           done )
 
+<<<<<<< HEAD
 ordinals:
 	$(PERL) $(SRCDIR)/util/mkdef.pl crypto update
 	$(PERL) $(SRCDIR)/util/mkdef.pl ssl update
+=======
+{- use File::Basename;
+
+   my @sslheaders_tmpl =
+       qw( include/openssl/ssl.h
+           include/openssl/ssl2.h
+           include/openssl/ssl3.h
+           include/openssl/sslerr.h
+           include/openssl/tls1.h
+           include/openssl/dtls1.h
+           include/openssl/srtp.h
+           include/openssl/sslerr_legacy.h );
+   my @cryptoheaders_tmpl =
+       qw( include/internal/dso.h
+           include/internal/o_dir.h
+           include/internal/err.h
+           include/internal/evp.h
+           include/internal/pem.h
+           include/internal/asn1.h
+           include/internal/sslconf.h );
+   my @cryptoskipheaders = ( @sslheaders_tmpl,
+       qw( include/openssl/conf_api.h
+           include/openssl/ebcdic.h
+           include/openssl/opensslconf.h
+           include/openssl/symhacks.h ) );
+   our %cryptoheaders = ();
+   our %sslheaders = ();
+   foreach my $d ( qw( include/openssl include/internal ) ) {
+       my @header_patterns =
+           map { catfile($config{sourcedir}, $d, $_) } ( '*.h', '*.h.in' );
+       foreach my $f ( map { glob($_) } @header_patterns ) {
+           my $base = basename($f);
+           my $base_in = basename($f, '.in');
+           my $dir = catfile($config{sourcedir}, $d);
+           if ($base ne $base_in) {
+               # We have a .h.in file, which means the header file is in the
+               # build tree.
+               $base = $base_in;
+               $dir = catfile($config{builddir}, $d);
+           }
+           my $new_f = catfile($dir, $base);
+           my $fn = "$d/$base";
+           # The logic to add files to @cryptoheaders is a bit complex.  The
+           # file to be added must be either in the public header directory
+           # or one of the pre-declared internal headers, and must under no
+           # circumstances be one of those that must be skipped.
+           $cryptoheaders{$new_f} = 1
+               if (($d eq 'include/openssl'
+                    || ( grep { $_ eq $fn } @cryptoheaders_tmpl ))
+                   && !( grep { $_ eq $fn } @cryptoskipheaders ));
+           # The logic to add files to @sslheaders is much simpler...
+           $sslheaders{$new_f} = 1 if grep { $_ eq $fn } @sslheaders_tmpl;
+       }
+   }
+   "";
+-}
+CRYPTOHEADERS={- join(" \\\n" . ' ' x 14,
+                      fill_lines(" ", $COLUMNS - 14, sort keys %cryptoheaders)) -}
+SSLHEADERS={- join(" \\\n" . ' ' x 11,
+                   fill_lines(" ", $COLUMNS - 11, sort keys %sslheaders)) -}
+
+renumber: build_generated
+	$(PERL) $(SRCDIR)/util/mknum.pl --version $(VERSION_NUMBER) --no-warnings \
+                --ordinals $(SRCDIR)/util/libcrypto.num \
+                --symhacks $(SRCDIR)/include/openssl/symhacks.h \
+                --renumber \
+                $(CRYPTOHEADERS)
+	$(PERL) $(SRCDIR)/util/mknum.pl --version $(VERSION_NUMBER) --no-warnings \
+                --ordinals $(SRCDIR)/util/libssl.num \
+                --symhacks $(SRCDIR)/include/openssl/symhacks.h \
+                --renumber \
+                $(SSLHEADERS)
+
+ordinals: build_generated
+	$(PERL) $(SRCDIR)/util/mknum.pl --version $(VERSION_NUMBER) --no-warnings \
+                --ordinals $(SRCDIR)/util/libcrypto.num \
+                --symhacks $(SRCDIR)/include/openssl/symhacks.h \
+                $(CRYPTOHEADERS)
+	$(PERL) $(SRCDIR)/util/mknum.pl --version $(VERSION_NUMBER) --no-warnings \
+                --ordinals $(SRCDIR)/util/libssl.num \
+                --symhacks $(SRCDIR)/include/openssl/symhacks.h \
+                $(SSLHEADERS)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
 test_ordinals:
 	( cd test; \

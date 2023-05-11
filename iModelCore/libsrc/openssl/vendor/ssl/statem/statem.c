@@ -111,12 +111,16 @@ void ossl_statem_set_renegotiate(SSL *s)
     s->statem.request_state = TLS_ST_SW_HELLO_REQ;
 }
 
+<<<<<<< HEAD
 /*
  * Put the state machine into an error state and send an alert if appropriate.
  * This is a permanent error for the current connection.
  */
 void ossl_statem_fatal(SSL *s, int al, int func, int reason, const char *file,
                        int line)
+=======
+void ossl_statem_send_fatal(SSL *s, int al)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 {
     ERR_put_error(ERR_LIB_SSL, func, reason, file, line);
     /* We shouldn't call SSLfatal() twice. Once is enough */
@@ -130,6 +134,26 @@ void ossl_statem_fatal(SSL *s, int al, int func, int reason, const char *file,
 }
 
 /*
+<<<<<<< HEAD
+=======
+ * Error reporting building block that's used instead of ERR_set_error().
+ * In addition to what ERR_set_error() does, this puts the state machine
+ * into an error state and sends an alert if appropriate.
+ * This is a permanent error for the current connection.
+ */
+void ossl_statem_fatal(SSL *s, int al, int reason, const char *fmt, ...)
+{
+    va_list args;
+
+    va_start(args, fmt);
+    ERR_vset_error(ERR_LIB_SSL, reason, fmt, args);
+    va_end(args);
+
+    ossl_statem_send_fatal(s, al);
+}
+
+/*
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  * This macro should only be called if we are already expecting to be in
  * a fatal error state. We verify that we are, and set it if not (this would
  * indicate a bug).
@@ -319,7 +343,11 @@ static int state_machine(SSL *s, int server)
          * If we are stateless then we already called SSL_clear() - don't do
          * it again and clear the STATELESS flag itself.
          */
+<<<<<<< HEAD
         if ((s->s3->flags & TLS1_FLAGS_STATELESS) == 0 && !SSL_clear(s))
+=======
+        if ((s->s3.flags & TLS1_FLAGS_STATELESS) == 0 && !SSL_clear(s))
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return -1;
     }
 #ifndef OPENSSL_NO_SCTP
@@ -390,8 +418,12 @@ static int state_machine(SSL *s, int server)
         }
 
         if (!ssl3_setup_buffers(s)) {
+<<<<<<< HEAD
             SSLfatal(s, SSL_AD_NO_ALERT, SSL_F_STATE_MACHINE,
                      ERR_R_INTERNAL_ERROR);
+=======
+            SSLfatal(s, SSL_AD_NO_ALERT, ERR_R_INTERNAL_ERROR);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             goto end;
         }
         s->init_num = 0;
@@ -606,8 +638,13 @@ static SUB_STATE_RETURN read_state_machine(SSL *s)
 
             /* dtls_get_message already did this */
             if (!SSL_IS_DTLS(s)
+<<<<<<< HEAD
                     && s->s3->tmp.message_size > 0
                     && !grow_init_buf(s, s->s3->tmp.message_size
+=======
+                    && s->s3.tmp.message_size > 0
+                    && !grow_init_buf(s, s->s3.tmp.message_size
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                                          + SSL3_HM_HEADER_LENGTH)) {
                 SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_READ_STATE_MACHINE,
                          ERR_R_BUF_LIB);
@@ -618,8 +655,18 @@ static SUB_STATE_RETURN read_state_machine(SSL *s)
             /* Fall through */
 
         case READ_STATE_BODY:
+<<<<<<< HEAD
             if (!SSL_IS_DTLS(s)) {
                 /* We already got this above for DTLS */
+=======
+            if (SSL_IS_DTLS(s)) {
+                /*
+                 * Actually we already have the body, but we give DTLS the
+                 * opportunity to do any further processing.
+                 */
+                ret = dtls_get_message_body(s, &len);
+            } else {
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                 ret = tls_get_message_body(s, &len);
                 if (ret == 0) {
                     /* Could be non-blocking IO */
@@ -840,10 +887,31 @@ static SUB_STATE_RETURN write_state_machine(SSL *s)
                          ERR_R_INTERNAL_ERROR);
                 return SUB_STATE_ERROR;
             }
+<<<<<<< HEAD
             if (confunc != NULL && !confunc(s, &pkt)) {
                 WPACKET_cleanup(&pkt);
                 check_fatal(s, SSL_F_WRITE_STATE_MACHINE);
                 return SUB_STATE_ERROR;
+=======
+            if (confunc != NULL) {
+                int tmpret;
+
+                tmpret = confunc(s, &pkt);
+                if (tmpret <= 0) {
+                    WPACKET_cleanup(&pkt);
+                    check_fatal(s);
+                    return SUB_STATE_ERROR;
+                } else if (tmpret == 2) {
+                    /*
+                     * The construction function decided not to construct the
+                     * message after all and continue. Skip sending.
+                     */
+                    WPACKET_cleanup(&pkt);
+                    st->write_state = WRITE_STATE_POST_WORK;
+                    st->write_state_work = WORK_MORE_A;
+                    break;
+                } /* else success */
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             }
             if (!ssl_close_construct_packet(s, &pkt, mt)
                     || !WPACKET_finish(&pkt)) {

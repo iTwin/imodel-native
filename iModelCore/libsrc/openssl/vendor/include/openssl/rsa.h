@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright 1995-2018 The OpenSSL Project Authors. All Rights Reserved.
+=======
+ * Copyright 1995-2022 The OpenSSL Project Authors. All Rights Reserved.
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -182,15 +186,27 @@ extern "C" {
 
 # define EVP_PKEY_CTRL_RSA_KEYGEN_PRIMES  (EVP_PKEY_ALG_CTRL + 13)
 
+<<<<<<< HEAD
 # define RSA_PKCS1_PADDING       1
 # define RSA_SSLV23_PADDING      2
 # define RSA_NO_PADDING          3
 # define RSA_PKCS1_OAEP_PADDING  4
 # define RSA_X931_PADDING        5
+=======
+# define RSA_PKCS1_PADDING          1
+# define RSA_NO_PADDING             3
+# define RSA_PKCS1_OAEP_PADDING     4
+# define RSA_X931_PADDING           5
+
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 /* EVP_PKEY_ only */
 # define RSA_PKCS1_PSS_PADDING   6
 
+<<<<<<< HEAD
 # define RSA_PKCS1_PADDING_SIZE  11
+=======
+# define RSA_PKCS1_PADDING_SIZE    11
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
 # define RSA_set_app_data(s,arg)         RSA_set_ex_data(s,0,arg)
 # define RSA_get_app_data(s)             RSA_get_ex_data(s,0)

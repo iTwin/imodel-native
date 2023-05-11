@@ -215,11 +215,19 @@ int PKCS12_setup_mac(PKCS12 *p12, int iter, unsigned char *salt, int saltlen,
         return PKCS12_ERROR;
     if (iter > 1) {
         if ((p12->mac->iter = ASN1_INTEGER_new()) == NULL) {
+<<<<<<< HEAD
             PKCS12err(PKCS12_F_PKCS12_SETUP_MAC, ERR_R_MALLOC_FAILURE);
             return 0;
         }
         if (!ASN1_INTEGER_set(p12->mac->iter, iter)) {
             PKCS12err(PKCS12_F_PKCS12_SETUP_MAC, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_PKCS12, ERR_R_MALLOC_FAILURE);
+            return 0;
+        }
+        if (!ASN1_INTEGER_set(p12->mac->iter, iter)) {
+            ERR_raise(ERR_LIB_PKCS12, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return 0;
         }
     }
@@ -228,6 +236,20 @@ int PKCS12_setup_mac(PKCS12 *p12, int iter, unsigned char *salt, int saltlen,
     if ((p12->mac->salt->data = OPENSSL_malloc(saltlen)) == NULL) {
         PKCS12err(PKCS12_F_PKCS12_SETUP_MAC, ERR_R_MALLOC_FAILURE);
         return 0;
+<<<<<<< HEAD
+=======
+    if ((p12->mac->salt->data = OPENSSL_malloc(saltlen)) == NULL) {
+        ERR_raise(ERR_LIB_PKCS12, ERR_R_MALLOC_FAILURE);
+        return 0;
+    }
+    p12->mac->salt->length = saltlen;
+    if (salt == NULL) {
+        if (RAND_bytes_ex(p12->authsafes->ctx.libctx, p12->mac->salt->data,
+                          (size_t)saltlen, 0) <= 0)
+            return 0;
+    } else {
+        memcpy(p12->mac->salt->data, salt, saltlen);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     }
     p12->mac->salt->length = saltlen;
     if (!salt) {
@@ -238,7 +260,11 @@ int PKCS12_setup_mac(PKCS12 *p12, int iter, unsigned char *salt, int saltlen,
     X509_SIG_getm(p12->mac->dinfo, &macalg, NULL);
     if (!X509_ALGOR_set0(macalg, OBJ_nid2obj(EVP_MD_type(md_type)),
                          V_ASN1_NULL, NULL)) {
+<<<<<<< HEAD
         PKCS12err(PKCS12_F_PKCS12_SETUP_MAC, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_PKCS12, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
 

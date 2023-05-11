@@ -29,11 +29,22 @@ extern "C" {
  * 0.9.4          0x0090400f
  * 1.2.3z         0x102031af
  *
+<<<<<<< HEAD
  * For continuity reasons (because 0.9.5 is already out, and is coded
  * 0x00905100), between 0.9.5 and 0.9.6 the coding of the patch level
  * part is slightly different, by setting the highest bit.  This means
  * that 0.9.5a looks like this: 0x0090581f.  At 0.9.6, we can start
  * with 0x0090600S...
+=======
+ * These macros express version number MAJOR.MINOR.PATCH exactly
+ */
+# define OPENSSL_VERSION_MAJOR  3
+# define OPENSSL_VERSION_MINOR  1
+# define OPENSSL_VERSION_PATCH  0
+
+/*
+ * Additional version information
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  *
  * (Prior to 0.9.3-dev a different scheme was used: 0.9.2b is 0x0922.)
  * (Prior to 0.9.5a beta1, a different scheme was used: MMNNFFRBB for
@@ -42,6 +53,7 @@ extern "C" {
 # define OPENSSL_VERSION_NUMBER  0x1010113fL
 # define OPENSSL_VERSION_TEXT    "OpenSSL 1.1.1s  1 Nov 2022"
 
+<<<<<<< HEAD
 /*-
  * The macros below are to be used for shared library (.so, .dll, ...)
  * versioning.  That kind of versioning works a bit differently between
@@ -52,6 +64,49 @@ extern "C" {
  * scheme, the version number is usually part of the file name, like this:
  *
  *      libcrypto.so.0.9
+=======
+/* Could be: #define OPENSSL_VERSION_PRE_RELEASE "-alpha.1" */
+# define OPENSSL_VERSION_PRE_RELEASE ""
+/* Could be: #define OPENSSL_VERSION_BUILD_METADATA "+fips" */
+/* Could be: #define OPENSSL_VERSION_BUILD_METADATA "+vendor.1" */
+# define OPENSSL_VERSION_BUILD_METADATA ""
+
+/*
+ * Note: The OpenSSL Project will never define OPENSSL_VERSION_BUILD_METADATA
+ * to be anything but the empty string.  Its use is entirely reserved for
+ * others
+ */
+
+/*
+ * Shared library version
+ *
+ * This is strictly to express ABI version, which may or may not
+ * be related to the API version expressed with the macros above.
+ * This is defined in free form.
+ */
+# define OPENSSL_SHLIB_VERSION 3
+
+/*
+ * SECTION 2: USEFUL MACROS
+ */
+
+/* For checking general API compatibility when preprocessing */
+# define OPENSSL_VERSION_PREREQ(maj,min)                                \
+    ((OPENSSL_VERSION_MAJOR << 16) + OPENSSL_VERSION_MINOR >= ((maj) << 16) + (min))
+
+/*
+ * Macros to get the version in easily digested string form, both the short
+ * "MAJOR.MINOR.PATCH" variant (where MAJOR, MINOR and PATCH are replaced
+ * with the values from the corresponding OPENSSL_VERSION_ macros) and the
+ * longer variant with OPENSSL_VERSION_PRE_RELEASE_STR and
+ * OPENSSL_VERSION_BUILD_METADATA_STR appended.
+ */
+# define OPENSSL_VERSION_STR "3.1.0"
+# define OPENSSL_FULL_VERSION_STR "3.1.0"
+
+/*
+ * SECTION 3: ADDITIONAL METADATA
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  *
  * Some unixen also make a softlink with the major version number only:
  *
@@ -91,11 +146,33 @@ extern "C" {
  * macro SHLIB_VERSION_HISTORY.  The numbers are separated by colons and
  * should only keep the versions that are binary compatible with the current.
  */
+<<<<<<< HEAD
 # define SHLIB_VERSION_HISTORY ""
 # define SHLIB_VERSION_NUMBER "1.1"
+=======
+# define OPENSSL_RELEASE_DATE "14 Mar 2023"
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
 
+<<<<<<< HEAD
 #ifdef  __cplusplus
+=======
+# define OPENSSL_VERSION_TEXT "OpenSSL 3.1.0 14 Mar 2023"
+
+/* Synthesize OPENSSL_VERSION_NUMBER with the layout 0xMNN00PPSL */
+# ifdef OPENSSL_VERSION_PRE_RELEASE
+#  define _OPENSSL_VERSION_PRE_RELEASE 0x0L
+# else
+#  define _OPENSSL_VERSION_PRE_RELEASE 0xfL
+# endif
+# define OPENSSL_VERSION_NUMBER          \
+    ( (OPENSSL_VERSION_MAJOR<<28)        \
+      |(OPENSSL_VERSION_MINOR<<20)       \
+      |(OPENSSL_VERSION_PATCH<<4)        \
+      |_OPENSSL_VERSION_PRE_RELEASE )
+
+# ifdef  __cplusplus
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 }
 #endif
 #endif                          /* HEADER_OPENSSLV_H */

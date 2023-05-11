@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2021 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1999-2022 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -20,6 +20,7 @@ static void x509v3_cache_extensions(X509 *x);
 
 static int check_ssl_ca(const X509 *x);
 static int check_purpose_ssl_client(const X509_PURPOSE *xp, const X509 *x,
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_purp.c
                                     int ca);
 static int check_purpose_ssl_server(const X509_PURPOSE *xp, const X509 *x,
                                     int ca);
@@ -36,6 +37,26 @@ static int check_purpose_timestamp_sign(const X509_PURPOSE *xp, const X509 *x,
                                         int ca);
 static int no_check(const X509_PURPOSE *xp, const X509 *x, int ca);
 static int ocsp_helper(const X509_PURPOSE *xp, const X509 *x, int ca);
+=======
+                                    int require_ca);
+static int check_purpose_ssl_server(const X509_PURPOSE *xp, const X509 *x,
+                                    int require_ca);
+static int check_purpose_ns_ssl_server(const X509_PURPOSE *xp, const X509 *x,
+                                       int require_ca);
+static int purpose_smime(const X509 *x, int require_ca);
+static int check_purpose_smime_sign(const X509_PURPOSE *xp, const X509 *x,
+                                    int require_ca);
+static int check_purpose_smime_encrypt(const X509_PURPOSE *xp, const X509 *x,
+                                       int require_ca);
+static int check_purpose_crl_sign(const X509_PURPOSE *xp, const X509 *x,
+                                  int require_ca);
+static int check_purpose_timestamp_sign(const X509_PURPOSE *xp, const X509 *x,
+                                        int require_ca);
+static int no_check_purpose(const X509_PURPOSE *xp, const X509 *x,
+                            int require_ca);
+static int check_purpose_ocsp_helper(const X509_PURPOSE *xp, const X509 *x,
+                                     int require_ca);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_purp.c
 
 static int xp_cmp(const X509_PURPOSE *const *a, const X509_PURPOSE *const *b);
 static void xptable_free(X509_PURPOSE *p);
@@ -76,7 +97,11 @@ static int xp_cmp(const X509_PURPOSE *const *a, const X509_PURPOSE *const *b)
  * really can't because it does recalculate hashes and do other non-const
  * things.
  */
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_purp.c
 int X509_check_purpose(X509 *x, int id, int ca)
+=======
+int X509_check_purpose(X509 *x, int id, int require_ca)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_purp.c
 {
     int idx;
     const X509_PURPOSE *pt;
@@ -92,7 +117,11 @@ int X509_check_purpose(X509 *x, int id, int ca)
     if (idx == -1)
         return -1;
     pt = X509_PURPOSE_get0(idx);
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_purp.c
     return pt->check_purpose(pt, x, ca);
+=======
+    return pt->check_purpose(pt, x, require_ca);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_purp.c
 }
 
 int X509_PURPOSE_set(int *p, int purpose)
@@ -166,7 +195,11 @@ int X509_PURPOSE_add(int id, int trust, int flags,
     /* Need a new entry */
     if (idx == -1) {
         if ((ptmp = OPENSSL_malloc(sizeof(*ptmp))) == NULL) {
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_purp.c
             X509V3err(X509V3_F_X509_PURPOSE_ADD, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_purp.c
             return 0;
         }
         ptmp->flags = X509_PURPOSE_DYNAMIC;
@@ -181,8 +214,13 @@ int X509_PURPOSE_add(int id, int trust, int flags,
     /* dup supplied name */
     ptmp->name = OPENSSL_strdup(name);
     ptmp->sname = OPENSSL_strdup(sname);
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_purp.c
     if (!ptmp->name || !ptmp->sname) {
         X509V3err(X509V3_F_X509_PURPOSE_ADD, ERR_R_MALLOC_FAILURE);
+=======
+    if (ptmp->name == NULL|| ptmp->sname == NULL) {
+        ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_purp.c
         goto err;
     }
     /* Keep the dynamic flag of existing entry */
@@ -199,11 +237,19 @@ int X509_PURPOSE_add(int id, int trust, int flags,
     if (idx == -1) {
         if (xptable == NULL
             && (xptable = sk_X509_PURPOSE_new(xp_cmp)) == NULL) {
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_purp.c
             X509V3err(X509V3_F_X509_PURPOSE_ADD, ERR_R_MALLOC_FAILURE);
             goto err;
         }
         if (!sk_X509_PURPOSE_push(xptable, ptmp)) {
             X509V3err(X509V3_F_X509_PURPOSE_ADD, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+            goto err;
+        }
+        if (!sk_X509_PURPOSE_push(xptable, ptmp)) {
+            ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_purp.c
             goto err;
         }
     }
@@ -357,10 +403,18 @@ static int check_sig_alg_match(const EVP_PKEY *pkey, const X509 *subject)
         pkey_sig_nid = EVP_PKEY_base_id(pkey);
     if (OBJ_find_sigid_algs(OBJ_obj2nid(subject->cert_info.signature.algorithm),
                             NULL, &subj_sig_nid) == 0)
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_purp.c
         return X509_V_ERR_UNSUPPORTED_SIGNATURE_ALGORITHM;
     if (pkey_sig_nid != EVP_PKEY_type(subj_sig_nid))
         return X509_V_ERR_SIGNATURE_ALGORITHM_MISMATCH;
     return X509_V_OK;
+=======
+         return X509_V_ERR_UNSUPPORTED_SIGNATURE_ALGORITHM;
+    if (EVP_PKEY_is_a(issuer_key, OBJ_nid2sn(subj_sig_nid))
+        || (EVP_PKEY_is_a(issuer_key, "RSA") && subj_sig_nid == NID_rsassaPss))
+        return X509_V_OK;
+    return X509_V_ERR_SIGNATURE_ALGORITHM_MISMATCH;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_purp.c
 }
 
 #define V1_ROOT (EXFLAG_V1|EXFLAG_SS)
@@ -387,14 +441,26 @@ static void x509v3_cache_extensions(X509 *x)
         return;
 #endif
 
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_purp.c
     CRYPTO_THREAD_write_lock(x->lock);
     if (x->ex_flags & EXFLAG_SET) {
+=======
+    if (!CRYPTO_THREAD_write_lock(x->lock))
+        return 0;
+    if (x->ex_flags & EXFLAG_SET) { /* Cert has already been processed */
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_purp.c
         CRYPTO_THREAD_unlock(x->lock);
         return;
     }
 
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_purp.c
+=======
+    /* Cache the SHA1 digest of the cert */
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_purp.c
     if (!X509_digest(x, EVP_sha1(), x->sha1_hash, NULL))
         x->ex_flags |= (EXFLAG_NO_FINGERPRINT | EXFLAG_INVALID);
+
+    ERR_set_mark();
 
     /* V1 should mean no extensions ... */
     if (!X509_get_version(x))
@@ -422,7 +488,11 @@ static void x509v3_cache_extensions(X509 *x)
         x->ex_flags |= EXFLAG_INVALID;
     }
     /* Handle proxy certificates */
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_purp.c
     if ((pci = X509_get_ext_d2i(x, NID_proxyCertInfo, &i, NULL))) {
+=======
+    if ((pci = X509_get_ext_d2i(x, NID_proxyCertInfo, &i, NULL)) != NULL) {
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_purp.c
         if (x->ex_flags & EXFLAG_CA
             || X509_get_ext_by_NID(x, NID_subject_alt_name, -1) >= 0
             || X509_get_ext_by_NID(x, NID_issuer_alt_name, -1) >= 0) {
@@ -530,6 +600,8 @@ static void x509v3_cache_extensions(X509 *x)
         x->ex_flags |= EXFLAG_INVALID;
     if (!setup_crldp(x))
         x->ex_flags |= EXFLAG_INVALID;
+    else if (res < 0)
+        goto err;
 
 #ifndef OPENSSL_NO_RFC3779
     x->rfc3779_addr = X509_get_ext_d2i(x, NID_sbgp_ipAddrBlock, &i, NULL);
@@ -561,7 +633,23 @@ static void x509v3_cache_extensions(X509 *x)
      * all stores are visible on all processors. Hence the release fence.
      */
 #endif
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_purp.c
     CRYPTO_THREAD_unlock(x->lock);
+=======
+    ERR_pop_to_mark();
+    if ((x->ex_flags & (EXFLAG_INVALID | EXFLAG_NO_FINGERPRINT)) == 0) {
+        CRYPTO_THREAD_unlock(x->lock);
+        return 1;
+    }
+    if ((x->ex_flags & EXFLAG_INVALID) != 0)
+        ERR_raise(ERR_LIB_X509, X509V3_R_INVALID_CERTIFICATE);
+    /* If computing sha1_hash failed the error queue already reflects this. */
+
+ err:
+    x->ex_flags |= EXFLAG_SET; /* indicate that cert has been processed */
+    CRYPTO_THREAD_unlock(x->lock);
+    return 0;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_purp.c
 }
 
 /*-
@@ -636,11 +724,19 @@ static int check_ssl_ca(const X509 *x)
 }
 
 static int check_purpose_ssl_client(const X509_PURPOSE *xp, const X509 *x,
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_purp.c
                                     int ca)
 {
     if (xku_reject(x, XKU_SSL_CLIENT))
         return 0;
     if (ca)
+=======
+                                    int require_ca)
+{
+    if (xku_reject(x, XKU_SSL_CLIENT))
+        return 0;
+    if (require_ca)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_purp.c
         return check_ssl_ca(x);
     /* We need to do digital signatures or key agreement */
     if (ku_reject(x, KU_DIGITAL_SIGNATURE | KU_KEY_AGREEMENT))
@@ -660,11 +756,19 @@ static int check_purpose_ssl_client(const X509_PURPOSE *xp, const X509 *x,
         KU_DIGITAL_SIGNATURE|KU_KEY_ENCIPHERMENT|KU_KEY_AGREEMENT
 
 static int check_purpose_ssl_server(const X509_PURPOSE *xp, const X509 *x,
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_purp.c
                                     int ca)
 {
     if (xku_reject(x, XKU_SSL_SERVER | XKU_SGC))
         return 0;
     if (ca)
+=======
+                                    int require_ca)
+{
+    if (xku_reject(x, XKU_SSL_SERVER | XKU_SGC))
+        return 0;
+    if (require_ca)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_purp.c
         return check_ssl_ca(x);
 
     if (ns_reject(x, NS_SSL_SERVER))
@@ -677,11 +781,19 @@ static int check_purpose_ssl_server(const X509_PURPOSE *xp, const X509 *x,
 }
 
 static int check_purpose_ns_ssl_server(const X509_PURPOSE *xp, const X509 *x,
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_purp.c
                                        int ca)
 {
     int ret;
     ret = check_purpose_ssl_server(xp, x, ca);
     if (!ret || ca)
+=======
+                                       int require_ca)
+{
+    int ret;
+    ret = check_purpose_ssl_server(xp, x, require_ca);
+    if (!ret || require_ca)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_purp.c
         return ret;
     /* We need to encipher or Netscape complains */
     if (ku_reject(x, KU_KEY_ENCIPHERMENT))
@@ -690,6 +802,7 @@ static int check_purpose_ns_ssl_server(const X509_PURPOSE *xp, const X509 *x,
 }
 
 /* common S/MIME checks */
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_purp.c
 static int purpose_smime(const X509 *x, int ca)
 {
     if (xku_reject(x, XKU_SMIME))
@@ -700,6 +813,18 @@ static int purpose_smime(const X509 *x, int ca)
         if (!ca_ret)
             return 0;
         /* check nsCertType if present */
+=======
+static int purpose_smime(const X509 *x, int require_ca)
+{
+    if (xku_reject(x, XKU_SMIME))
+        return 0;
+    if (require_ca) {
+        int ca_ret;
+        ca_ret = check_ca(x);
+        if (ca_ret == 0)
+            return 0;
+        /* Check nsCertType if present */
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_purp.c
         if (ca_ret != 5 || x->ex_nscert & NS_SMIME_CA)
             return ca_ret;
         else
@@ -717,11 +842,19 @@ static int purpose_smime(const X509 *x, int ca)
 }
 
 static int check_purpose_smime_sign(const X509_PURPOSE *xp, const X509 *x,
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_purp.c
                                     int ca)
 {
     int ret;
     ret = purpose_smime(x, ca);
     if (!ret || ca)
+=======
+                                    int require_ca)
+{
+    int ret;
+    ret = purpose_smime(x, require_ca);
+    if (!ret || require_ca)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_purp.c
         return ret;
     if (ku_reject(x, KU_DIGITAL_SIGNATURE | KU_NON_REPUDIATION))
         return 0;
@@ -729,11 +862,19 @@ static int check_purpose_smime_sign(const X509_PURPOSE *xp, const X509 *x,
 }
 
 static int check_purpose_smime_encrypt(const X509_PURPOSE *xp, const X509 *x,
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_purp.c
                                        int ca)
 {
     int ret;
     ret = purpose_smime(x, ca);
     if (!ret || ca)
+=======
+                                       int require_ca)
+{
+    int ret;
+    ret = purpose_smime(x, require_ca);
+    if (!ret || require_ca)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_purp.c
         return ret;
     if (ku_reject(x, KU_KEY_ENCIPHERMENT))
         return 0;
@@ -741,9 +882,15 @@ static int check_purpose_smime_encrypt(const X509_PURPOSE *xp, const X509 *x,
 }
 
 static int check_purpose_crl_sign(const X509_PURPOSE *xp, const X509 *x,
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_purp.c
                                   int ca)
 {
     if (ca) {
+=======
+                                  int require_ca)
+{
+    if (require_ca) {
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_purp.c
         int ca_ret;
         if ((ca_ret = check_ca(x)) != 2)
             return ca_ret;
@@ -759,26 +906,43 @@ static int check_purpose_crl_sign(const X509_PURPOSE *xp, const X509 *x,
  * OCSP helper: this is *not* a full OCSP check. It just checks that each CA
  * is valid. Additional checks must be made on the chain.
  */
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_purp.c
 
 static int ocsp_helper(const X509_PURPOSE *xp, const X509 *x, int ca)
+=======
+static int check_purpose_ocsp_helper(const X509_PURPOSE *xp, const X509 *x,
+                                     int require_ca)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_purp.c
 {
     /*
      * Must be a valid CA.  Should we really support the "I don't know" value
      * (2)?
      */
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_purp.c
     if (ca)
+=======
+    if (require_ca)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_purp.c
         return check_ca(x);
     /* leaf certificate is checked in OCSP_verify() */
     return 1;
 }
 
 static int check_purpose_timestamp_sign(const X509_PURPOSE *xp, const X509 *x,
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_purp.c
                                         int ca)
+=======
+                                        int require_ca)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_purp.c
 {
     int i_ext;
 
     /* If ca is true we must return if this is a valid CA certificate. */
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_purp.c
     if (ca)
+=======
+    if (require_ca)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_purp.c
         return check_ca(x);
 
     /*
@@ -792,7 +956,11 @@ static int check_purpose_timestamp_sign(const X509_PURPOSE *xp, const X509 *x,
             !(x->ex_kusage & (KU_NON_REPUDIATION | KU_DIGITAL_SIGNATURE))))
         return 0;
 
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_purp.c
     /* Only time stamp key usage is permitted and it's required. */
+=======
+    /* Only timestamp key usage is permitted and it's required. */
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_purp.c
     if (!(x->ex_flags & EXFLAG_XKUSAGE) || x->ex_xkusage != XKU_TIMESTAMP)
         return 0;
 
@@ -804,6 +972,15 @@ static int check_purpose_timestamp_sign(const X509_PURPOSE *xp, const X509 *x,
             return 0;
     }
 
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_purp.c
+=======
+    return 1;
+}
+
+static int no_check_purpose(const X509_PURPOSE *xp, const X509 *x,
+                            int require_ca)
+{
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_purp.c
     return 1;
 }
 

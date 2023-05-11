@@ -5429,8 +5429,15 @@ static void sc_muladd(uint8_t *s, const uint8_t *a, const uint8_t *b,
     s[31] = (uint8_t) (s11 >> 17);
 }
 
+<<<<<<< HEAD
 int ED25519_sign(uint8_t *out_sig, const uint8_t *message, size_t message_len,
                  const uint8_t public_key[32], const uint8_t private_key[32])
+=======
+int
+ossl_ed25519_sign(uint8_t *out_sig, const uint8_t *message, size_t message_len,
+                  const uint8_t public_key[32], const uint8_t private_key[32],
+                  OSSL_LIB_CTX *libctx, const char *propq)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 {
     uint8_t az[SHA512_DIGEST_LENGTH];
     uint8_t nonce[SHA512_DIGEST_LENGTH];
@@ -5438,28 +5445,55 @@ int ED25519_sign(uint8_t *out_sig, const uint8_t *message, size_t message_len,
     uint8_t hram[SHA512_DIGEST_LENGTH];
     SHA512_CTX hash_ctx;
 
+<<<<<<< HEAD
     SHA512_Init(&hash_ctx);
     SHA512_Update(&hash_ctx, private_key, 32);
     SHA512_Final(az, &hash_ctx);
+=======
+    if (sha512 == NULL || hash_ctx == NULL)
+        goto err;
+
+    if (!EVP_DigestInit_ex(hash_ctx, sha512, NULL)
+        || !EVP_DigestUpdate(hash_ctx, private_key, 32)
+        || !EVP_DigestFinal_ex(hash_ctx, az, &sz))
+        goto err;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
     az[0] &= 248;
     az[31] &= 63;
     az[31] |= 64;
 
+<<<<<<< HEAD
     SHA512_Init(&hash_ctx);
     SHA512_Update(&hash_ctx, az + 32, 32);
     SHA512_Update(&hash_ctx, message, message_len);
     SHA512_Final(nonce, &hash_ctx);
+=======
+    if (!EVP_DigestInit_ex(hash_ctx, sha512, NULL)
+        || !EVP_DigestUpdate(hash_ctx, az + 32, 32)
+        || !EVP_DigestUpdate(hash_ctx, message, message_len)
+        || !EVP_DigestFinal_ex(hash_ctx, nonce, &sz))
+        goto err;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
     x25519_sc_reduce(nonce);
     ge_scalarmult_base(&R, nonce);
     ge_p3_tobytes(out_sig, &R);
 
+<<<<<<< HEAD
     SHA512_Init(&hash_ctx);
     SHA512_Update(&hash_ctx, out_sig, 32);
     SHA512_Update(&hash_ctx, public_key, 32);
     SHA512_Update(&hash_ctx, message, message_len);
     SHA512_Final(hram, &hash_ctx);
+=======
+    if (!EVP_DigestInit_ex(hash_ctx, sha512, NULL)
+        || !EVP_DigestUpdate(hash_ctx, out_sig, 32)
+        || !EVP_DigestUpdate(hash_ctx, public_key, 32)
+        || !EVP_DigestUpdate(hash_ctx, message, message_len)
+        || !EVP_DigestFinal_ex(hash_ctx, hram, &sz))
+        goto err;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
     x25519_sc_reduce(hram);
     sc_muladd(out_sig + 32, hram, az, nonce);
@@ -5473,8 +5507,15 @@ int ED25519_sign(uint8_t *out_sig, const uint8_t *message, size_t message_len,
 
 static const char allzeroes[15];
 
+<<<<<<< HEAD
 int ED25519_verify(const uint8_t *message, size_t message_len,
                    const uint8_t signature[64], const uint8_t public_key[32])
+=======
+int
+ossl_ed25519_verify(const uint8_t *message, size_t message_len,
+                    const uint8_t signature[64], const uint8_t public_key[32],
+                    OSSL_LIB_CTX *libctx, const char *propq)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 {
     int i;
     ge_p3 A;
@@ -5526,11 +5567,27 @@ int ED25519_verify(const uint8_t *message, size_t message_len,
     fe_neg(A.X, A.X);
     fe_neg(A.T, A.T);
 
+<<<<<<< HEAD
     SHA512_Init(&hash_ctx);
     SHA512_Update(&hash_ctx, r, 32);
     SHA512_Update(&hash_ctx, public_key, 32);
     SHA512_Update(&hash_ctx, message, message_len);
     SHA512_Final(h, &hash_ctx);
+=======
+    sha512 = EVP_MD_fetch(libctx, SN_sha512, propq);
+    if (sha512 == NULL)
+        return 0;
+    hash_ctx = EVP_MD_CTX_new();
+    if (hash_ctx == NULL)
+        goto err;
+
+    if (!EVP_DigestInit_ex(hash_ctx, sha512, NULL)
+        || !EVP_DigestUpdate(hash_ctx, r, 32)
+        || !EVP_DigestUpdate(hash_ctx, public_key, 32)
+        || !EVP_DigestUpdate(hash_ctx, message, message_len)
+        || !EVP_DigestFinal_ex(hash_ctx, h, &sz))
+        goto err;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
     x25519_sc_reduce(h);
 
@@ -5538,7 +5595,15 @@ int ED25519_verify(const uint8_t *message, size_t message_len,
 
     ge_tobytes(rcheck, &R);
 
+<<<<<<< HEAD
     return CRYPTO_memcmp(rcheck, r, sizeof(rcheck)) == 0;
+=======
+    res = CRYPTO_memcmp(rcheck, r, sizeof(rcheck)) == 0;
+err:
+    EVP_MD_free(sha512);
+    EVP_MD_CTX_free(hash_ctx);
+    return res;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 }
 
 void ED25519_public_from_private(uint8_t out_public_key[32],

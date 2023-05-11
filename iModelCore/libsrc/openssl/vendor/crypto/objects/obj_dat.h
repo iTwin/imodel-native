@@ -10,7 +10,11 @@
  */
 
 /* Serialized OID's */
+<<<<<<< HEAD
 static const unsigned char so[7762] = {
+=======
+static const unsigned char so[8076] = {
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     0x2A,0x86,0x48,0x86,0xF7,0x0D,                 /* [    0] OBJ_rsadsi */
     0x2A,0x86,0x48,0x86,0xF7,0x0D,0x01,            /* [    6] OBJ_pkcs */
     0x2A,0x86,0x48,0x86,0xF7,0x0D,0x02,0x02,       /* [   13] OBJ_md2 */
@@ -1076,9 +1080,54 @@ static const unsigned char so[7762] = {
     0x2A,0x85,0x03,0x07,0x01,0x02,0x01,0x01,0x04,  /* [ 7736] OBJ_id_tc26_gost_3410_2012_256_paramSetD */
     0x2A,0x86,0x48,0x86,0xF7,0x0D,0x02,0x0C,       /* [ 7745] OBJ_hmacWithSHA512_224 */
     0x2A,0x86,0x48,0x86,0xF7,0x0D,0x02,0x0D,       /* [ 7753] OBJ_hmacWithSHA512_256 */
+<<<<<<< HEAD
 };
 
 #define NUM_NID 1195
+=======
+    0x28,0xCC,0x45,0x03,0x04,                      /* [ 7761] OBJ_gmac */
+    0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x13,  /* [ 7766] OBJ_kmac128 */
+    0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x14,  /* [ 7775] OBJ_kmac256 */
+    0x2B,0x06,0x01,0x04,0x01,0x8D,0x3A,0x0C,0x02,0x01,  /* [ 7784] OBJ_blake2bmac */
+    0x2B,0x06,0x01,0x04,0x01,0x8D,0x3A,0x0C,0x02,0x02,  /* [ 7794] OBJ_blake2smac */
+    0x2A,0x81,0x1C,0xCF,0x55,0x01,0x83,0x75,       /* [ 7804] OBJ_SM2_with_SM3 */
+    0x2B,0x06,0x01,0x05,0x05,0x07,0x08,0x09,       /* [ 7812] OBJ_id_on_SmtpUTF8Mailbox */
+    0x2B,0x06,0x01,0x05,0x05,0x07,0x08,0x05,       /* [ 7820] OBJ_XmppAddr */
+    0x2B,0x06,0x01,0x05,0x05,0x07,0x08,0x07,       /* [ 7828] OBJ_SRVName */
+    0x2B,0x06,0x01,0x05,0x05,0x07,0x08,0x08,       /* [ 7836] OBJ_NAIRealm */
+    0x2B,0x06,0x01,0x05,0x05,0x07,0x03,0x1D,       /* [ 7844] OBJ_cmcArchive */
+    0x2B,0x06,0x01,0x05,0x05,0x07,0x03,0x1E,       /* [ 7852] OBJ_id_kp_bgpsec_router */
+    0x2B,0x06,0x01,0x05,0x05,0x07,0x03,0x1F,       /* [ 7860] OBJ_id_kp_BrandIndicatorforMessageIdentification */
+    0x2B,0x06,0x01,0x05,0x05,0x07,0x03,0x20,       /* [ 7868] OBJ_cmKGA */
+    0x2B,0x06,0x01,0x05,0x05,0x07,0x04,0x11,       /* [ 7876] OBJ_id_it_caCerts */
+    0x2B,0x06,0x01,0x05,0x05,0x07,0x04,0x12,       /* [ 7884] OBJ_id_it_rootCaKeyUpdate */
+    0x2B,0x06,0x01,0x05,0x05,0x07,0x04,0x13,       /* [ 7892] OBJ_id_it_certReqTemplate */
+    0x2A,0x85,0x03,0x64,0x05,                      /* [ 7900] OBJ_OGRNIP */
+    0x2A,0x85,0x03,0x64,0x71,                      /* [ 7905] OBJ_classSignTool */
+    0x2A,0x85,0x03,0x64,0x71,0x01,                 /* [ 7910] OBJ_classSignToolKC1 */
+    0x2A,0x85,0x03,0x64,0x71,0x02,                 /* [ 7916] OBJ_classSignToolKC2 */
+    0x2A,0x85,0x03,0x64,0x71,0x03,                 /* [ 7922] OBJ_classSignToolKC3 */
+    0x2A,0x85,0x03,0x64,0x71,0x04,                 /* [ 7928] OBJ_classSignToolKB1 */
+    0x2A,0x85,0x03,0x64,0x71,0x05,                 /* [ 7934] OBJ_classSignToolKB2 */
+    0x2A,0x85,0x03,0x64,0x71,0x06,                 /* [ 7940] OBJ_classSignToolKA1 */
+    0x2A,0x86,0x48,0x86,0xF7,0x0D,0x01,0x09,0x10,0x01,0x18,  /* [ 7946] OBJ_id_ct_routeOriginAuthz */
+    0x2A,0x86,0x48,0x86,0xF7,0x0D,0x01,0x09,0x10,0x01,0x1A,  /* [ 7957] OBJ_id_ct_rpkiManifest */
+    0x2A,0x86,0x48,0x86,0xF7,0x0D,0x01,0x09,0x10,0x01,0x23,  /* [ 7968] OBJ_id_ct_rpkiGhostbusters */
+    0x2A,0x86,0x48,0x86,0xF7,0x0D,0x01,0x09,0x10,0x01,0x24,  /* [ 7979] OBJ_id_ct_resourceTaggedAttest */
+    0x2B,0x06,0x01,0x05,0x05,0x07,0x0E,            /* [ 7990] OBJ_id_cp */
+    0x2B,0x06,0x01,0x05,0x05,0x07,0x01,0x1C,       /* [ 7997] OBJ_sbgp_ipAddrBlockv2 */
+    0x2B,0x06,0x01,0x05,0x05,0x07,0x01,0x1D,       /* [ 8005] OBJ_sbgp_autonomousSysNumv2 */
+    0x2B,0x06,0x01,0x05,0x05,0x07,0x0E,0x02,       /* [ 8013] OBJ_ipAddr_asNumber */
+    0x2B,0x06,0x01,0x05,0x05,0x07,0x0E,0x03,       /* [ 8021] OBJ_ipAddr_asNumberv2 */
+    0x2B,0x06,0x01,0x05,0x05,0x07,0x30,0x0A,       /* [ 8029] OBJ_rpkiManifest */
+    0x2B,0x06,0x01,0x05,0x05,0x07,0x30,0x0B,       /* [ 8037] OBJ_signedObject */
+    0x2B,0x06,0x01,0x05,0x05,0x07,0x30,0x0D,       /* [ 8045] OBJ_rpkiNotify */
+    0x2A,0x86,0x48,0x86,0xF7,0x0D,0x01,0x09,0x10,0x01,0x2F,  /* [ 8053] OBJ_id_ct_geofeedCSVwithCRLF */
+    0x2A,0x86,0x48,0x86,0xF7,0x0D,0x01,0x09,0x10,0x01,0x30,  /* [ 8064] OBJ_id_ct_signedChecklist */
+};
+
+#define NUM_NID 1248
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 static const ASN1_OBJECT nid_objs[NUM_NID] = {
     {"UNDEF", "undefined", NID_undef},
     {"rsadsi", "RSA Data Security, Inc.", NID_rsadsi, 6, &so[0]},
@@ -2275,9 +2324,68 @@ static const ASN1_OBJECT nid_objs[NUM_NID] = {
     {"magma-mac", "magma-mac", NID_magma_mac},
     {"hmacWithSHA512-224", "hmacWithSHA512-224", NID_hmacWithSHA512_224, 8, &so[7745]},
     {"hmacWithSHA512-256", "hmacWithSHA512-256", NID_hmacWithSHA512_256, 8, &so[7753]},
+<<<<<<< HEAD
 };
 
 #define NUM_SN 1186
+=======
+    {"GMAC", "gmac", NID_gmac, 5, &so[7761]},
+    {"KMAC128", "kmac128", NID_kmac128, 9, &so[7766]},
+    {"KMAC256", "kmac256", NID_kmac256, 9, &so[7775]},
+    {"AES-128-SIV", "aes-128-siv", NID_aes_128_siv},
+    {"AES-192-SIV", "aes-192-siv", NID_aes_192_siv},
+    {"AES-256-SIV", "aes-256-siv", NID_aes_256_siv},
+    {"BLAKE2BMAC", "blake2bmac", NID_blake2bmac, 10, &so[7784]},
+    {"BLAKE2SMAC", "blake2smac", NID_blake2smac, 10, &so[7794]},
+    {"SSHKDF", "sshkdf", NID_sshkdf},
+    {"SM2-SM3", "SM2-with-SM3", NID_SM2_with_SM3, 8, &so[7804]},
+    {"SSKDF", "sskdf", NID_sskdf},
+    {"X963KDF", "x963kdf", NID_x963kdf},
+    {"X942KDF", "x942kdf", NID_x942kdf},
+    {"id-on-SmtpUTF8Mailbox", "Smtp UTF8 Mailbox", NID_id_on_SmtpUTF8Mailbox, 8, &so[7812]},
+    {"id-on-xmppAddr", "XmppAddr", NID_XmppAddr, 8, &so[7820]},
+    {"id-on-dnsSRV", "SRVName", NID_SRVName, 8, &so[7828]},
+    {"id-on-NAIRealm", "NAIRealm", NID_NAIRealm, 8, &so[7836]},
+    {"modp_1536", "modp_1536", NID_modp_1536},
+    {"modp_2048", "modp_2048", NID_modp_2048},
+    {"modp_3072", "modp_3072", NID_modp_3072},
+    {"modp_4096", "modp_4096", NID_modp_4096},
+    {"modp_6144", "modp_6144", NID_modp_6144},
+    {"modp_8192", "modp_8192", NID_modp_8192},
+    {"KxGOST18", "kx-gost18", NID_kx_gost18},
+    {"cmcArchive", "CMC Archive Server", NID_cmcArchive, 8, &so[7844]},
+    {"id-kp-bgpsec-router", "BGPsec Router", NID_id_kp_bgpsec_router, 8, &so[7852]},
+    {"id-kp-BrandIndicatorforMessageIdentification", "Brand Indicator for Message Identification", NID_id_kp_BrandIndicatorforMessageIdentification, 8, &so[7860]},
+    {"cmKGA", "Certificate Management Key Generation Authority", NID_cmKGA, 8, &so[7868]},
+    {"id-it-caCerts", "id-it-caCerts", NID_id_it_caCerts, 8, &so[7876]},
+    {"id-it-rootCaKeyUpdate", "id-it-rootCaKeyUpdate", NID_id_it_rootCaKeyUpdate, 8, &so[7884]},
+    {"id-it-certReqTemplate", "id-it-certReqTemplate", NID_id_it_certReqTemplate, 8, &so[7892]},
+    {"OGRNIP", "OGRNIP", NID_OGRNIP, 5, &so[7900]},
+    {"classSignTool", "Class of Signing Tool", NID_classSignTool, 5, &so[7905]},
+    {"classSignToolKC1", "Class of Signing Tool KC1", NID_classSignToolKC1, 6, &so[7910]},
+    {"classSignToolKC2", "Class of Signing Tool KC2", NID_classSignToolKC2, 6, &so[7916]},
+    {"classSignToolKC3", "Class of Signing Tool KC3", NID_classSignToolKC3, 6, &so[7922]},
+    {"classSignToolKB1", "Class of Signing Tool KB1", NID_classSignToolKB1, 6, &so[7928]},
+    {"classSignToolKB2", "Class of Signing Tool KB2", NID_classSignToolKB2, 6, &so[7934]},
+    {"classSignToolKA1", "Class of Signing Tool KA1", NID_classSignToolKA1, 6, &so[7940]},
+    {"id-ct-routeOriginAuthz", "id-ct-routeOriginAuthz", NID_id_ct_routeOriginAuthz, 11, &so[7946]},
+    {"id-ct-rpkiManifest", "id-ct-rpkiManifest", NID_id_ct_rpkiManifest, 11, &so[7957]},
+    {"id-ct-rpkiGhostbusters", "id-ct-rpkiGhostbusters", NID_id_ct_rpkiGhostbusters, 11, &so[7968]},
+    {"id-ct-resourceTaggedAttest", "id-ct-resourceTaggedAttest", NID_id_ct_resourceTaggedAttest, 11, &so[7979]},
+    {"id-cp", "id-cp", NID_id_cp, 7, &so[7990]},
+    {"sbgp-ipAddrBlockv2", "sbgp-ipAddrBlockv2", NID_sbgp_ipAddrBlockv2, 8, &so[7997]},
+    {"sbgp-autonomousSysNumv2", "sbgp-autonomousSysNumv2", NID_sbgp_autonomousSysNumv2, 8, &so[8005]},
+    {"ipAddr-asNumber", "ipAddr-asNumber", NID_ipAddr_asNumber, 8, &so[8013]},
+    {"ipAddr-asNumberv2", "ipAddr-asNumberv2", NID_ipAddr_asNumberv2, 8, &so[8021]},
+    {"rpkiManifest", "RPKI Manifest", NID_rpkiManifest, 8, &so[8029]},
+    {"signedObject", "Signed Object", NID_signedObject, 8, &so[8037]},
+    {"rpkiNotify", "RPKI Notify", NID_rpkiNotify, 8, &so[8045]},
+    {"id-ct-geofeedCSVwithCRLF", "id-ct-geofeedCSVwithCRLF", NID_id_ct_geofeedCSVwithCRLF, 11, &so[8053]},
+    {"id-ct-signedChecklist", "id-ct-signedChecklist", NID_id_ct_signedChecklist, 11, &so[8064]},
+};
+
+#define NUM_SN 1239
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 static const unsigned int sn_objs[NUM_SN] = {
      364,    /* "AD_DVCS" */
      419,    /* "AES-128-CBC" */
@@ -2869,7 +2977,18 @@ static const unsigned int sn_objs[NUM_SN] = {
      332,    /* "id-cmc-senderNonce" */
      327,    /* "id-cmc-statusInfo" */
      331,    /* "id-cmc-transactionId" */
+<<<<<<< HEAD
      787,    /* "id-ct-asciiTextWithCRLF" */
+=======
+    1238,    /* "id-cp" */
+     787,    /* "id-ct-asciiTextWithCRLF" */
+    1246,    /* "id-ct-geofeedCSVwithCRLF" */
+    1237,    /* "id-ct-resourceTaggedAttest" */
+    1234,    /* "id-ct-routeOriginAuthz" */
+    1236,    /* "id-ct-rpkiGhostbusters" */
+    1235,    /* "id-ct-rpkiManifest" */
+    1247,    /* "id-ct-signedChecklist" */
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     1060,    /* "id-ct-xml" */
     1108,    /* "id-dsa-with-sha3-224" */
     1109,    /* "id-dsa-with-sha3-256" */
@@ -2891,6 +3010,10 @@ static const unsigned int sn_objs[NUM_SN] = {
      260,    /* "id-it" */
      302,    /* "id-it-caKeyUpdateInfo" */
      298,    /* "id-it-caProtEncCert" */
+<<<<<<< HEAD
+=======
+    1225,    /* "id-it-certReqTemplate" */
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
      311,    /* "id-it-confirmWaitTime" */
      303,    /* "id-it-currentCRL" */
      300,    /* "id-it-encKeyPairTypes" */
@@ -2900,6 +3023,10 @@ static const unsigned int sn_objs[NUM_SN] = {
      312,    /* "id-it-origPKIMessage" */
      301,    /* "id-it-preferredSymmAlg" */
      309,    /* "id-it-revPassphrase" */
+<<<<<<< HEAD
+=======
+    1224,    /* "id-it-rootCaKeyUpdate" */
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
      299,    /* "id-it-signKeyPairTypes" */
      305,    /* "id-it-subscriptionRequest" */
      306,    /* "id-it-subscriptionResponse" */
@@ -3400,6 +3527,10 @@ static const unsigned int sn_objs[NUM_SN] = {
      604,    /* "setext-pinAny" */
      603,    /* "setext-pinSecure" */
      605,    /* "setext-track2" */
+<<<<<<< HEAD
+=======
+    1244,    /* "signedObject" */
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
       52,    /* "signingTime" */
      454,    /* "simpleSecurityObject" */
      496,    /* "singleLevelQuality" */
@@ -3467,7 +3598,11 @@ static const unsigned int sn_objs[NUM_SN] = {
     1093,    /* "x509ExtAdmission" */
 };
 
+<<<<<<< HEAD
 #define NUM_LN 1186
+=======
+#define NUM_LN 1239
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 static const unsigned int ln_objs[NUM_LN] = {
      363,    /* "AD Time Stamping" */
      405,    /* "ANSI X9.62" */
@@ -3477,6 +3612,10 @@ static const unsigned int ln_objs[NUM_LN] = {
      177,    /* "Authority Information Access" */
      365,    /* "Basic OCSP Response" */
      285,    /* "Biometric Info" */
+<<<<<<< HEAD
+=======
+    1221,    /* "Brand Indicator for Message Identification" */
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
      179,    /* "CA Issuers" */
      785,    /* "CA Repository" */
     1131,    /* "CMC Certificate Authority" */
@@ -3604,6 +3743,10 @@ static const unsigned int ln_objs[NUM_LN] = {
      371,    /* "OCSP Service Locator" */
      180,    /* "OCSP Signing" */
     1005,    /* "OGRN" */
+<<<<<<< HEAD
+=======
+    1226,    /* "OGRNIP" */
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
      161,    /* "PBES2" */
       69,    /* "PBKDF2" */
      162,    /* "PBMAC1" */
@@ -3674,6 +3817,10 @@ static const unsigned int ln_objs[NUM_LN] = {
      920,    /* "X9.42 DH" */
      184,    /* "X9.57" */
      185,    /* "X9.57 CM ?" */
+<<<<<<< HEAD
+=======
+    1209,    /* "XmppAddr" */
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
      478,    /* "aRecord" */
      289,    /* "aaControls" */
      287,    /* "ac-auditEntity" */
@@ -4075,7 +4222,18 @@ static const unsigned int ln_objs[NUM_LN] = {
      332,    /* "id-cmc-senderNonce" */
      327,    /* "id-cmc-statusInfo" */
      331,    /* "id-cmc-transactionId" */
+<<<<<<< HEAD
      787,    /* "id-ct-asciiTextWithCRLF" */
+=======
+    1238,    /* "id-cp" */
+     787,    /* "id-ct-asciiTextWithCRLF" */
+    1246,    /* "id-ct-geofeedCSVwithCRLF" */
+    1237,    /* "id-ct-resourceTaggedAttest" */
+    1234,    /* "id-ct-routeOriginAuthz" */
+    1236,    /* "id-ct-rpkiGhostbusters" */
+    1235,    /* "id-ct-rpkiManifest" */
+    1247,    /* "id-ct-signedChecklist" */
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     1060,    /* "id-ct-xml" */
      408,    /* "id-ecPublicKey" */
      508,    /* "id-hex-multipart-message" */
@@ -4083,6 +4241,10 @@ static const unsigned int ln_objs[NUM_LN] = {
      260,    /* "id-it" */
      302,    /* "id-it-caKeyUpdateInfo" */
      298,    /* "id-it-caProtEncCert" */
+<<<<<<< HEAD
+=======
+    1225,    /* "id-it-certReqTemplate" */
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
      311,    /* "id-it-confirmWaitTime" */
      303,    /* "id-it-currentCRL" */
      300,    /* "id-it-encKeyPairTypes" */
@@ -4092,6 +4254,10 @@ static const unsigned int ln_objs[NUM_LN] = {
      312,    /* "id-it-origPKIMessage" */
      301,    /* "id-it-preferredSymmAlg" */
      309,    /* "id-it-revPassphrase" */
+<<<<<<< HEAD
+=======
+    1224,    /* "id-it-rootCaKeyUpdate" */
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
      299,    /* "id-it-signKeyPairTypes" */
      305,    /* "id-it-subscriptionRequest" */
      306,    /* "id-it-subscriptionResponse" */
@@ -4609,6 +4775,11 @@ static const unsigned int ln_objs[NUM_LN] = {
     1139,    /* "sm4-ctr" */
     1133,    /* "sm4-ecb" */
     1135,    /* "sm4-ofb" */
+<<<<<<< HEAD
+=======
+    1203,    /* "sshkdf" */
+    1205,    /* "sskdf" */
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
       16,    /* "stateOrProvinceName" */
      660,    /* "streetAddress" */
      498,    /* "subtreeMaximumQuality" */
@@ -4657,7 +4828,11 @@ static const unsigned int ln_objs[NUM_LN] = {
      125,    /* "zlib compression" */
 };
 
+<<<<<<< HEAD
 #define NUM_OBJ 1071
+=======
+#define NUM_OBJ 1110
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 static const unsigned int obj_objs[NUM_OBJ] = {
        0,    /* OBJ_undef                        0 */
      181,    /* OBJ_iso                          1 */
@@ -4904,6 +5079,10 @@ static const unsigned int obj_objs[NUM_OBJ] = {
      637,    /* OBJ_set_brand_Diners             2 23 42 8 30 */
      638,    /* OBJ_set_brand_AmericanExpress    2 23 42 8 34 */
      639,    /* OBJ_set_brand_JCB                2 23 42 8 35 */
+<<<<<<< HEAD
+=======
+    1195,    /* OBJ_gmac                         1 0 9797 3 4 */
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     1141,    /* OBJ_oscca                        1 2 156 10197 */
      805,    /* OBJ_cryptopro                    1 2 643 2 2 */
      806,    /* OBJ_cryptocom                    1 2 643 2 9 */
@@ -5277,6 +5456,12 @@ static const unsigned int obj_objs[NUM_OBJ] = {
      311,    /* OBJ_id_it_confirmWaitTime        1 3 6 1 5 5 7 4 14 */
      312,    /* OBJ_id_it_origPKIMessage         1 3 6 1 5 5 7 4 15 */
      784,    /* OBJ_id_it_suppLangTags           1 3 6 1 5 5 7 4 16 */
+<<<<<<< HEAD
+=======
+    1223,    /* OBJ_id_it_caCerts                1 3 6 1 5 5 7 4 17 */
+    1224,    /* OBJ_id_it_rootCaKeyUpdate        1 3 6 1 5 5 7 4 18 */
+    1225,    /* OBJ_id_it_certReqTemplate        1 3 6 1 5 5 7 4 19 */
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
      313,    /* OBJ_id_regCtrl                   1 3 6 1 5 5 7 5 1 */
      314,    /* OBJ_id_regInfo                   1 3 6 1 5 5 7 5 2 */
      323,    /* OBJ_id_alg_des40                 1 3 6 1 5 5 7 6 1 */
@@ -5659,6 +5844,13 @@ static const unsigned int obj_objs[NUM_OBJ] = {
     1059,    /* OBJ_id_smime_ct_authEnvelopedData 1 2 840 113549 1 9 16 1 23 */
      787,    /* OBJ_id_ct_asciiTextWithCRLF      1 2 840 113549 1 9 16 1 27 */
     1060,    /* OBJ_id_ct_xml                    1 2 840 113549 1 9 16 1 28 */
+<<<<<<< HEAD
+=======
+    1236,    /* OBJ_id_ct_rpkiGhostbusters       1 2 840 113549 1 9 16 1 35 */
+    1237,    /* OBJ_id_ct_resourceTaggedAttest   1 2 840 113549 1 9 16 1 36 */
+    1246,    /* OBJ_id_ct_geofeedCSVwithCRLF     1 2 840 113549 1 9 16 1 47 */
+    1247,    /* OBJ_id_ct_signedChecklist        1 2 840 113549 1 9 16 1 48 */
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
      212,    /* OBJ_id_smime_aa_receiptRequest   1 2 840 113549 1 9 16 2 1 */
      213,    /* OBJ_id_smime_aa_securityLabel    1 2 840 113549 1 9 16 2 2 */
      214,    /* OBJ_id_smime_aa_mlExpandHistory  1 2 840 113549 1 9 16 2 3 */

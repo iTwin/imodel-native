@@ -722,7 +722,12 @@ WORK_STATE ossl_statem_server_pre_work(SSL *s, WORK_STATE wst)
         return WORK_FINISHED_CONTINUE;
 
     case TLS_ST_SW_SESSION_TICKET:
+<<<<<<< HEAD
         if (SSL_IS_TLS13(s) && s->sent_tickets == 0) {
+=======
+        if (SSL_IS_TLS13(s) && s->sent_tickets == 0
+                && s->ext.extra_tickets_expected == 0) {
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             /*
              * Actually this is the end of the handshake, but we're going
              * straight into writing the session ticket out. So we finish off
@@ -731,7 +736,12 @@ WORK_STATE ossl_statem_server_pre_work(SSL *s, WORK_STATE wst)
              * Calls SSLfatal as required.
              */
             return tls_finish_handshake(s, wst, 0, 0);
+<<<<<<< HEAD
         } if (SSL_IS_DTLS(s)) {
+=======
+        }
+        if (SSL_IS_DTLS(s)) {
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             /*
              * We're into the last flight. We don't retransmit the last flight
              * unless we need to, so we don't use the timer
@@ -1299,17 +1309,26 @@ int dtls_construct_hello_verify_request(SSL *s, WPACKET *pkt)
     if (s->ctx->app_gen_cookie_cb == NULL ||
         s->ctx->app_gen_cookie_cb(s, s->d1->cookie,
                                   &cookie_leni) == 0 ||
+<<<<<<< HEAD
         cookie_leni > 255) {
         SSLfatal(s, SSL_AD_NO_ALERT, SSL_F_DTLS_CONSTRUCT_HELLO_VERIFY_REQUEST,
                  SSL_R_COOKIE_GEN_CALLBACK_FAILURE);
+=======
+        cookie_leni > DTLS1_COOKIE_LENGTH) {
+        SSLfatal(s, SSL_AD_NO_ALERT, SSL_R_COOKIE_GEN_CALLBACK_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
     s->d1->cookie_len = cookie_leni;
 
     if (!dtls_raw_hello_verify_request(pkt, s->d1->cookie,
                                               s->d1->cookie_len)) {
+<<<<<<< HEAD
         SSLfatal(s, SSL_AD_NO_ALERT, SSL_F_DTLS_CONSTRUCT_HELLO_VERIFY_REQUEST,
                  ERR_R_INTERNAL_ERROR);
+=======
+        SSLfatal(s, SSL_AD_NO_ALERT, ERR_R_INTERNAL_ERROR);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
 
@@ -1380,6 +1399,13 @@ static void ssl_check_for_safari(SSL *s, const CLIENTHELLO_MSG *hello)
 }
 #endif                          /* !OPENSSL_NO_EC */
 
+<<<<<<< HEAD
+=======
+#define RENEG_OPTIONS_OK(options) \
+    ((options & SSL_OP_NO_RENEGOTIATION) == 0 \
+     && (options & SSL_OP_ALLOW_CLIENT_RENEGOTIATION) != 0)
+
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 MSG_PROCESS_RETURN tls_process_client_hello(SSL *s, PACKET *pkt)
 {
     /* |cookie| will only be initialized for DTLS. */
@@ -1390,8 +1416,12 @@ MSG_PROCESS_RETURN tls_process_client_hello(SSL *s, PACKET *pkt)
     /* Check if this is actually an unexpected renegotiation ClientHello */
     if (s->renegotiate == 0 && !SSL_IS_FIRST_HANDSHAKE(s)) {
         if (!ossl_assert(!SSL_IS_TLS13(s))) {
+<<<<<<< HEAD
             SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_PROCESS_CLIENT_HELLO,
                      ERR_R_INTERNAL_ERROR);
+=======
+            SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             goto err;
         }
         if ((s->options & SSL_OP_NO_RENEGOTIATION) != 0
@@ -1689,9 +1719,13 @@ static int tls_early_post_process_client_hello(SSL *s)
 
     /* TLSv1.3 specifies that a ClientHello must end on a record boundary */
     if (SSL_IS_TLS13(s) && RECORD_LAYER_processed_read_pending(&s->rlayer)) {
+<<<<<<< HEAD
         SSLfatal(s, SSL_AD_UNEXPECTED_MESSAGE,
                  SSL_F_TLS_EARLY_POST_PROCESS_CLIENT_HELLO,
                  SSL_R_NOT_ON_RECORD_BOUNDARY);
+=======
+        SSLfatal(s, SSL_AD_UNEXPECTED_MESSAGE, SSL_R_NOT_ON_RECORD_BOUNDARY);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 
@@ -1975,7 +2009,11 @@ static int tls_early_post_process_client_hello(SSL *s)
      * options, we will now look for them.  We have complen-1 compression
      * algorithms from the client, starting at q.
      */
+<<<<<<< HEAD
     s->s3->tmp.new_compression = NULL;
+=======
+    s->s3.tmp.new_compression = NULL;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     if (SSL_IS_TLS13(s)) {
         /*
          * We already checked above that the NULL compression method appears in
@@ -2133,7 +2171,11 @@ static int tls_handle_status_request(SSL *s)
              * Set current certificate to one we will use so SSL_get_certificate
              * et al can pick it up.
              */
+<<<<<<< HEAD
             s->cert->key = s->s3->tmp.cert;
+=======
+            s->cert->key = s->s3.tmp.cert;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             ret = s->ctx->ext.status_cb(s, s->ctx->ext.status_arg);
             switch (ret) {
                 /* We don't want to send a status request response */
@@ -2168,10 +2210,17 @@ int tls_handle_alpn(SSL *s)
     const unsigned char *selected = NULL;
     unsigned char selected_len = 0;
 
+<<<<<<< HEAD
     if (s->ctx->ext.alpn_select_cb != NULL && s->s3->alpn_proposed != NULL) {
         int r = s->ctx->ext.alpn_select_cb(s, &selected, &selected_len,
                                            s->s3->alpn_proposed,
                                            (unsigned int)s->s3->alpn_proposed_len,
+=======
+    if (s->ctx->ext.alpn_select_cb != NULL && s->s3.alpn_proposed != NULL) {
+        int r = s->ctx->ext.alpn_select_cb(s, &selected, &selected_len,
+                                           s->s3.alpn_proposed,
+                                           (unsigned int)s->s3.alpn_proposed_len,
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                                            s->ctx->ext.alpn_select_cb_arg);
 
         if (r == SSL_TLSEXT_ERR_OK) {
@@ -2296,7 +2345,11 @@ WORK_STATE tls_post_process_client_hello(SSL *s, WORK_STATE wst)
                 if (s->not_resumable_session_cb != NULL)
                     s->session->not_resumable =
                         s->not_resumable_session_cb(s,
+<<<<<<< HEAD
                             ((s->s3->tmp.new_cipher->algorithm_mkey
+=======
+                            ((s->s3.tmp.new_cipher->algorithm_mkey
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                               & (SSL_kDHE | SSL_kECDHE)) != 0));
                 if (s->session->not_resumable)
                     /* do not send a session ticket */
@@ -2380,8 +2433,12 @@ int tls_construct_server_hello(SSL *s, WPACKET *pkt)
                                s->hello_retry_request == SSL_HRR_PENDING
                                    ? hrrrandom : s->s3->server_random,
                                SSL3_RANDOM_SIZE)) {
+<<<<<<< HEAD
         SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_CONSTRUCT_SERVER_HELLO,
                  ERR_R_INTERNAL_ERROR);
+=======
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
 
@@ -2417,8 +2474,12 @@ int tls_construct_server_hello(SSL *s, WPACKET *pkt)
     }
 
     if (sl > sizeof(s->session->session_id)) {
+<<<<<<< HEAD
         SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_CONSTRUCT_SERVER_HELLO,
                  ERR_R_INTERNAL_ERROR);
+=======
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
 
@@ -2433,10 +2494,16 @@ int tls_construct_server_hello(SSL *s, WPACKET *pkt)
 #endif
 
     if (!WPACKET_sub_memcpy_u8(pkt, session_id, sl)
+<<<<<<< HEAD
             || !s->method->put_cipher_by_char(s->s3->tmp.new_cipher, pkt, &len)
             || !WPACKET_put_bytes_u8(pkt, compm)) {
         SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_CONSTRUCT_SERVER_HELLO,
                  ERR_R_INTERNAL_ERROR);
+=======
+            || !s->method->put_cipher_by_char(s->s3.tmp.new_cipher, pkt, &len)
+            || !WPACKET_put_bytes_u8(pkt, compm)) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
 
@@ -2502,6 +2569,10 @@ int tls_construct_server_key_exchange(SSL *s, WPACKET *pkt)
     EVP_MD_CTX *md_ctx = EVP_MD_CTX_new();
     EVP_PKEY_CTX *pctx = NULL;
     size_t paramlen, paramoffset;
+<<<<<<< HEAD
+=======
+    int freer = 0, ret = 0;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
     if (!WPACKET_get_total_written(pkt, &paramoffset)) {
         SSLfatal(s, SSL_AD_INTERNAL_ERROR,
@@ -2510,8 +2581,12 @@ int tls_construct_server_key_exchange(SSL *s, WPACKET *pkt)
     }
 
     if (md_ctx == NULL) {
+<<<<<<< HEAD
         SSLfatal(s, SSL_AD_INTERNAL_ERROR,
                  SSL_F_TLS_CONSTRUCT_SERVER_KEY_EXCHANGE, ERR_R_MALLOC_FAILURE);
+=======
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 
@@ -2546,8 +2621,12 @@ int tls_construct_server_key_exchange(SSL *s, WPACKET *pkt)
             pkdhp = cert->dh_tmp;
         }
         if ((pkdhp == NULL) && (s->cert->dh_tmp_cb != NULL)) {
+<<<<<<< HEAD
             DH *dhp = s->cert->dh_tmp_cb(s, 0, 1024);
             pkdh = ssl_dh_to_pkey(dhp);
+=======
+            pkdh = ssl_dh_to_pkey(s->cert->dh_tmp_cb(s, 0, 1024));
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             if (pkdh == NULL) {
                 SSLfatal(s, SSL_AD_INTERNAL_ERROR,
                          SSL_F_TLS_CONSTRUCT_SERVER_KEY_EXCHANGE,
@@ -2772,7 +2851,11 @@ int tls_construct_server_key_exchange(SSL *s, WPACKET *pkt)
         size_t siglen, tbslen;
         int rv;
 
+<<<<<<< HEAD
         if (pkey == NULL || !tls1_lookup_md(lu, &md)) {
+=======
+        if (pkey == NULL || !tls1_lookup_md(s->ctx, lu, &md)) {
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             /* Should never happen */
             SSLfatal(s, SSL_AD_INTERNAL_ERROR,
                      SSL_F_TLS_CONSTRUCT_SERVER_KEY_EXCHANGE,
@@ -2793,6 +2876,7 @@ int tls_construct_server_key_exchange(SSL *s, WPACKET *pkt)
                      ERR_R_INTERNAL_ERROR);
             goto err;
         }
+<<<<<<< HEAD
         /*
          * Create the signature. We don't know the actual length of the sig
          * until after we've created it, so we reserve enough bytes for it
@@ -2805,6 +2889,14 @@ int tls_construct_server_key_exchange(SSL *s, WPACKET *pkt)
             SSLfatal(s, SSL_AD_INTERNAL_ERROR,
                      SSL_F_TLS_CONSTRUCT_SERVER_KEY_EXCHANGE,
                      ERR_R_INTERNAL_ERROR);
+=======
+
+        if (EVP_DigestSignInit_ex(md_ctx, &pctx,
+                                  md == NULL ? NULL : EVP_MD_get0_name(md),
+                                  s->ctx->libctx, s->ctx->propq, pkey,
+                                  NULL) <= 0) {
+            SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             goto err;
         }
         if (lu->sig == EVP_PKEY_RSA_PSS) {
@@ -2834,6 +2926,13 @@ int tls_construct_server_key_exchange(SSL *s, WPACKET *pkt)
         }
     }
 
+<<<<<<< HEAD
+=======
+    ret = 1;
+ err:
+    EVP_PKEY_free(pkdh);
+    OPENSSL_free(encodedPoint);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     EVP_MD_CTX_free(md_ctx);
     return 1;
  err:
@@ -2856,6 +2955,7 @@ int tls_construct_certificate_request(SSL *s, WPACKET *pkt)
             s->pha_context_len = 32;
             if ((s->pha_context = OPENSSL_malloc(s->pha_context_len)) == NULL) {
                 s->pha_context_len = 0;
+<<<<<<< HEAD
                 SSLfatal(s, SSL_AD_INTERNAL_ERROR,
                          SSL_F_TLS_CONSTRUCT_CERTIFICATE_REQUEST,
                          ERR_R_INTERNAL_ERROR);
@@ -2867,6 +2967,16 @@ int tls_construct_certificate_request(SSL *s, WPACKET *pkt)
                 SSLfatal(s, SSL_AD_INTERNAL_ERROR,
                          SSL_F_TLS_CONSTRUCT_CERTIFICATE_REQUEST,
                          ERR_R_INTERNAL_ERROR);
+=======
+                SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
+                return 0;
+            }
+            if (RAND_bytes_ex(s->ctx->libctx, s->pha_context,
+                                     s->pha_context_len, 0) <= 0
+                    || !WPACKET_sub_memcpy_u8(pkt, s->pha_context,
+                                              s->pha_context_len)) {
+                SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                 return 0;
             }
             /* reset the handshake hash back to just after the ClientFinished */
@@ -2876,9 +2986,13 @@ int tls_construct_certificate_request(SSL *s, WPACKET *pkt)
             }
         } else {
             if (!WPACKET_put_bytes_u8(pkt, 0)) {
+<<<<<<< HEAD
                 SSLfatal(s, SSL_AD_INTERNAL_ERROR,
                          SSL_F_TLS_CONSTRUCT_CERTIFICATE_REQUEST,
                          ERR_R_INTERNAL_ERROR);
+=======
+                SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                 return 0;
             }
         }
@@ -2895,8 +3009,12 @@ int tls_construct_certificate_request(SSL *s, WPACKET *pkt)
     /* get the list of acceptable cert types */
     if (!WPACKET_start_sub_packet_u8(pkt)
         || !ssl3_get_req_cert_type(s, pkt) || !WPACKET_close(pkt)) {
+<<<<<<< HEAD
         SSLfatal(s, SSL_AD_INTERNAL_ERROR,
                  SSL_F_TLS_CONSTRUCT_CERTIFICATE_REQUEST, ERR_R_INTERNAL_ERROR);
+=======
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
 
@@ -2908,9 +3026,13 @@ int tls_construct_certificate_request(SSL *s, WPACKET *pkt)
                 || !WPACKET_set_flags(pkt, WPACKET_FLAGS_NON_ZERO_LENGTH)
                 || !tls12_copy_sigalgs(s, pkt, psigs, nl)
                 || !WPACKET_close(pkt)) {
+<<<<<<< HEAD
             SSLfatal(s, SSL_AD_INTERNAL_ERROR,
                      SSL_F_TLS_CONSTRUCT_CERTIFICATE_REQUEST,
                      ERR_R_INTERNAL_ERROR);
+=======
+            SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return 0;
         }
     }
@@ -2922,7 +3044,11 @@ int tls_construct_certificate_request(SSL *s, WPACKET *pkt)
 
  done:
     s->certreqs_sent++;
+<<<<<<< HEAD
     s->s3->tmp.cert_request = 1;
+=======
+    s->s3.tmp.cert_request = 1;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     return 1;
 }
 
@@ -2976,10 +3102,16 @@ static int tls_process_cke_psk_preamble(SSL *s, PACKET *pkt)
     s->s3->tmp.psk = OPENSSL_memdup(psk, psklen);
     OPENSSL_cleanse(psk, psklen);
 
+<<<<<<< HEAD
     if (s->s3->tmp.psk == NULL) {
         s->s3->tmp.psklen = 0;
         SSLfatal(s, SSL_AD_INTERNAL_ERROR,
                  SSL_F_TLS_PROCESS_CKE_PSK_PREAMBLE, ERR_R_MALLOC_FAILURE);
+=======
+    if (s->s3.tmp.psk == NULL) {
+        s->s3.tmp.psklen = 0;
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
 
@@ -3005,6 +3137,11 @@ static int tls_process_cke_rsa(SSL *s, PACKET *pkt)
     RSA *rsa = NULL;
     unsigned char *rsa_decrypt = NULL;
     int ret = 0;
+<<<<<<< HEAD
+=======
+    EVP_PKEY_CTX *ctx = NULL;
+    OSSL_PARAM params[3], *p = params;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
     rsa = EVP_PKEY_get0_RSA(s->cert->pkeys[SSL_PKEY_RSA].privatekey);
     if (rsa == NULL) {
@@ -3025,6 +3162,7 @@ static int tls_process_cke_rsa(SSL *s, PACKET *pkt)
         }
     }
 
+<<<<<<< HEAD
     /*
      * We want to be sure that the plaintext buffer size makes it safe to
      * iterate over the entire size of a premaster secret
@@ -3042,6 +3180,19 @@ static int tls_process_cke_rsa(SSL *s, PACKET *pkt)
         SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_PROCESS_CKE_RSA,
                  ERR_R_MALLOC_FAILURE);
         return 0;
+=======
+    outlen = SSL_MAX_MASTER_KEY_LENGTH;
+    rsa_decrypt = OPENSSL_malloc(outlen);
+    if (rsa_decrypt == NULL) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_MALLOC_FAILURE);
+        return 0;
+    }
+
+    ctx = EVP_PKEY_CTX_new_from_pkey(s->ctx->libctx, rsa, s->ctx->propq);
+    if (ctx == NULL) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_MALLOC_FAILURE);
+        goto err;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     }
 
     /*
@@ -3326,8 +3477,12 @@ static int tls_process_cke_srp(SSL *s, PACKET *pkt)
     OPENSSL_free(s->session->srp_username);
     s->session->srp_username = OPENSSL_strdup(s->srp_ctx.login);
     if (s->session->srp_username == NULL) {
+<<<<<<< HEAD
         SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_PROCESS_CKE_SRP,
                  ERR_R_MALLOC_FAILURE);
+=======
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
 
@@ -3375,10 +3530,16 @@ static int tls_process_cke_gost(SSL *s, PACKET *pkt)
         pk = s->cert->pkeys[SSL_PKEY_GOST01].privatekey;
     }
 
+<<<<<<< HEAD
     pkey_ctx = EVP_PKEY_CTX_new(pk, NULL);
     if (pkey_ctx == NULL) {
         SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_PROCESS_CKE_GOST,
                  ERR_R_MALLOC_FAILURE);
+=======
+    pkey_ctx = EVP_PKEY_CTX_new_from_pkey(s->ctx->libctx, pk, s->ctx->propq);
+    if (pkey_ctx == NULL) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
     if (EVP_PKEY_decrypt_init(pkey_ctx) <= 0) {
@@ -3455,6 +3616,87 @@ static int tls_process_cke_gost(SSL *s, PACKET *pkt)
 #endif
 }
 
+<<<<<<< HEAD
+=======
+static int tls_process_cke_gost18(SSL *s, PACKET *pkt)
+{
+#ifndef OPENSSL_NO_GOST
+    unsigned char rnd_dgst[32];
+    EVP_PKEY_CTX *pkey_ctx = NULL;
+    EVP_PKEY *pk = NULL;
+    unsigned char premaster_secret[32];
+    const unsigned char *start = NULL;
+    size_t outlen = 32, inlen = 0;
+    int ret = 0;
+    int cipher_nid = ossl_gost18_cke_cipher_nid(s);
+
+    if (cipher_nid == NID_undef) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
+        return 0;
+    }
+
+    if (ossl_gost_ukm(s, rnd_dgst) <= 0) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
+        goto err;
+    }
+
+    /* Get our certificate private key */
+    pk = s->cert->pkeys[SSL_PKEY_GOST12_512].privatekey != NULL ?
+         s->cert->pkeys[SSL_PKEY_GOST12_512].privatekey :
+         s->cert->pkeys[SSL_PKEY_GOST12_256].privatekey;
+    if (pk == NULL) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_R_BAD_HANDSHAKE_STATE);
+        goto err;
+    }
+
+    pkey_ctx = EVP_PKEY_CTX_new_from_pkey(s->ctx->libctx, pk, s->ctx->propq);
+    if (pkey_ctx == NULL) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_MALLOC_FAILURE);
+        goto err;
+    }
+    if (EVP_PKEY_decrypt_init(pkey_ctx) <= 0) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
+        goto err;
+    }
+
+    /* Reuse EVP_PKEY_CTRL_SET_IV, make choice in engine code depending on size */
+    if (EVP_PKEY_CTX_ctrl(pkey_ctx, -1, EVP_PKEY_OP_DECRYPT,
+                          EVP_PKEY_CTRL_SET_IV, 32, rnd_dgst) <= 0) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_R_LIBRARY_BUG);
+        goto err;
+    }
+
+    if (EVP_PKEY_CTX_ctrl(pkey_ctx, -1, EVP_PKEY_OP_DECRYPT,
+                          EVP_PKEY_CTRL_CIPHER, cipher_nid, NULL) <= 0) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_R_LIBRARY_BUG);
+        goto err;
+    }
+    inlen = PACKET_remaining(pkt);
+    start = PACKET_data(pkt);
+
+    if (EVP_PKEY_decrypt(pkey_ctx, premaster_secret, &outlen, start, inlen) <= 0) {
+        SSLfatal(s, SSL_AD_DECODE_ERROR, SSL_R_DECRYPTION_FAILED);
+        goto err;
+    }
+    /* Generate master secret */
+    if (!ssl_generate_master_secret(s, premaster_secret,
+         sizeof(premaster_secret), 0)) {
+         /* SSLfatal() already called */
+         goto err;
+    }
+    ret = 1;
+
+ err:
+    EVP_PKEY_CTX_free(pkey_ctx);
+    return ret;
+#else
+    /* Should never happen */
+    SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
+    return 0;
+#endif
+}
+
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 MSG_PROCESS_RETURN tls_process_client_key_exchange(SSL *s, PACKET *pkt)
 {
     unsigned long alg_k;
@@ -3608,8 +3850,12 @@ MSG_PROCESS_RETURN tls_process_client_certificate(SSL *s, PACKET *pkt)
     s->statem.enc_read_state = ENC_READ_STATE_VALID;
 
     if ((sk = sk_X509_new_null()) == NULL) {
+<<<<<<< HEAD
         SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_PROCESS_CLIENT_CERTIFICATE,
                  ERR_R_MALLOC_FAILURE);
+=======
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 
@@ -3617,8 +3863,12 @@ MSG_PROCESS_RETURN tls_process_client_certificate(SSL *s, PACKET *pkt)
                             || (s->pha_context == NULL && PACKET_remaining(&context) != 0)
                             || (s->pha_context != NULL &&
                                 !PACKET_equal(&context, s->pha_context, s->pha_context_len)))) {
+<<<<<<< HEAD
         SSLfatal(s, SSL_AD_DECODE_ERROR, SSL_F_TLS_PROCESS_CLIENT_CERTIFICATE,
                  SSL_R_INVALID_CONTEXT);
+=======
+        SSLfatal(s, SSL_AD_DECODE_ERROR, SSL_R_INVALID_CONTEXT);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 
@@ -3639,10 +3889,16 @@ MSG_PROCESS_RETURN tls_process_client_certificate(SSL *s, PACKET *pkt)
         }
 
         certstart = certbytes;
+<<<<<<< HEAD
         x = d2i_X509(NULL, (const unsigned char **)&certbytes, l);
         if (x == NULL) {
             SSLfatal(s, SSL_AD_DECODE_ERROR,
                      SSL_F_TLS_PROCESS_CLIENT_CERTIFICATE, ERR_R_ASN1_LIB);
+=======
+        x = X509_new_ex(s->ctx->libctx, s->ctx->propq);
+        if (x == NULL) {
+            SSLfatal(s, SSL_AD_DECODE_ERROR, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             goto err;
         }
         if (certbytes != (certstart + l)) {
@@ -3675,9 +3931,13 @@ MSG_PROCESS_RETURN tls_process_client_certificate(SSL *s, PACKET *pkt)
         }
 
         if (!sk_X509_push(sk, x)) {
+<<<<<<< HEAD
             SSLfatal(s, SSL_AD_INTERNAL_ERROR,
                      SSL_F_TLS_PROCESS_CLIENT_CERTIFICATE,
                      ERR_R_MALLOC_FAILURE);
+=======
+            SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             goto err;
         }
         x = NULL;
@@ -3737,9 +3997,13 @@ MSG_PROCESS_RETURN tls_process_client_certificate(SSL *s, PACKET *pkt)
 
     if (s->post_handshake_auth == SSL_PHA_REQUESTED) {
         if ((new_sess = ssl_session_dup(s->session, 0)) == 0) {
+<<<<<<< HEAD
             SSLfatal(s, SSL_AD_INTERNAL_ERROR,
                      SSL_F_TLS_PROCESS_CLIENT_CERTIFICATE,
                      ERR_R_MALLOC_FAILURE);
+=======
+            SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             goto err;
         }
 
@@ -3792,11 +4056,18 @@ MSG_PROCESS_RETURN tls_process_client_certificate(SSL *s, PACKET *pkt)
 
 int tls_construct_server_certificate(SSL *s, WPACKET *pkt)
 {
+<<<<<<< HEAD
     CERT_PKEY *cpk = s->s3->tmp.cert;
 
     if (cpk == NULL) {
         SSLfatal(s, SSL_AD_INTERNAL_ERROR,
                  SSL_F_TLS_CONSTRUCT_SERVER_CERTIFICATE, ERR_R_INTERNAL_ERROR);
+=======
+    CERT_PKEY *cpk = s->s3.tmp.cert;
+
+    if (cpk == NULL) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
 
@@ -3805,8 +4076,12 @@ int tls_construct_server_certificate(SSL *s, WPACKET *pkt)
      * for the server Certificate message
      */
     if (SSL_IS_TLS13(s) && !WPACKET_put_bytes_u8(pkt, 0)) {
+<<<<<<< HEAD
         SSLfatal(s, SSL_AD_INTERNAL_ERROR,
                  SSL_F_TLS_CONSTRUCT_SERVER_CERTIFICATE, ERR_R_INTERNAL_ERROR);
+=======
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
     if (!ssl3_output_cert_chain(s, pkt, cpk)) {
@@ -3862,6 +4137,13 @@ static int create_ticket_prequel(SSL *s, WPACKET *pkt, uint32_t age_add,
     return 1;
 }
 
+<<<<<<< HEAD
+=======
+/*
+ * Returns 1 on success, 0 to abort construction of the ticket (non-fatal), or
+ * -1 on fatal error
+ */
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 static int construct_stateless_ticket(SSL *s, WPACKET *pkt, uint32_t age_add,
                                       unsigned char *tick_nonce)
 {
@@ -3876,7 +4158,11 @@ static int construct_stateless_ticket(SSL *s, WPACKET *pkt, uint32_t age_add,
     SSL_CTX *tctx = s->session_ctx;
     unsigned char iv[EVP_MAX_IV_LENGTH];
     unsigned char key_name[TLSEXT_KEYNAME_LENGTH];
+<<<<<<< HEAD
     int iv_len, ok = 0;
+=======
+    int iv_len, ok = -1;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     size_t macoffset, macendoffset;
 
     /* get session encoding length */
@@ -3892,16 +4178,26 @@ static int construct_stateless_ticket(SSL *s, WPACKET *pkt, uint32_t age_add,
     }
     senc = OPENSSL_malloc(slen_full);
     if (senc == NULL) {
+<<<<<<< HEAD
         SSLfatal(s, SSL_AD_INTERNAL_ERROR,
                  SSL_F_CONSTRUCT_STATELESS_TICKET, ERR_R_MALLOC_FAILURE);
+=======
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 
     ctx = EVP_CIPHER_CTX_new();
+<<<<<<< HEAD
     hctx = HMAC_CTX_new();
     if (ctx == NULL || hctx == NULL) {
         SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_CONSTRUCT_STATELESS_TICKET,
                  ERR_R_MALLOC_FAILURE);
+=======
+    hctx = ssl_hmac_new(tctx);
+    if (ctx == NULL || hctx == NULL) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 
@@ -3944,6 +4240,7 @@ static int construct_stateless_ticket(SSL *s, WPACKET *pkt, uint32_t age_add,
      * Initialize HMAC and cipher contexts. If callback present it does
      * all the work otherwise use generated values from parent ctx.
      */
+<<<<<<< HEAD
     if (tctx->ext.ticket_key_cb) {
         /* if 0 is returned, write an empty ticket */
         int ret = tctx->ext.ticket_key_cb(s, key_name, iv, ctx,
@@ -3951,6 +4248,37 @@ static int construct_stateless_ticket(SSL *s, WPACKET *pkt, uint32_t age_add,
 
         if (ret == 0) {
 
+=======
+#ifndef OPENSSL_NO_DEPRECATED_3_0
+    if (tctx->ext.ticket_key_evp_cb != NULL || tctx->ext.ticket_key_cb != NULL)
+#else
+    if (tctx->ext.ticket_key_evp_cb != NULL)
+#endif
+    {
+        int ret = 0;
+
+        if (tctx->ext.ticket_key_evp_cb != NULL)
+            ret = tctx->ext.ticket_key_evp_cb(s, key_name, iv, ctx,
+                                              ssl_hmac_get0_EVP_MAC_CTX(hctx),
+                                              1);
+#ifndef OPENSSL_NO_DEPRECATED_3_0
+        else if (tctx->ext.ticket_key_cb != NULL)
+            /* if 0 is returned, write an empty ticket */
+            ret = tctx->ext.ticket_key_cb(s, key_name, iv, ctx,
+                                          ssl_hmac_get0_HMAC_CTX(hctx), 1);
+#endif
+
+        if (ret == 0) {
+            /*
+             * In TLSv1.2 we construct a 0 length ticket. In TLSv1.3 a 0
+             * length ticket is not allowed so we abort construction of the
+             * ticket
+             */
+            if (SSL_IS_TLS13(s)) {
+                ok = 0;
+                goto err;
+            }
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             /* Put timeout and length */
             if (!WPACKET_put_bytes_u32(pkt, 0)
                     || !WPACKET_put_bytes_u16(pkt, 0)) {
@@ -3961,7 +4289,11 @@ static int construct_stateless_ticket(SSL *s, WPACKET *pkt, uint32_t age_add,
             }
             OPENSSL_free(senc);
             EVP_CIPHER_CTX_free(ctx);
+<<<<<<< HEAD
             HMAC_CTX_free(hctx);
+=======
+            ssl_hmac_free(hctx);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return 1;
         }
         if (ret < 0) {
@@ -3971,10 +4303,25 @@ static int construct_stateless_ticket(SSL *s, WPACKET *pkt, uint32_t age_add,
         }
         iv_len = EVP_CIPHER_CTX_iv_length(ctx);
     } else {
+<<<<<<< HEAD
         const EVP_CIPHER *cipher = EVP_aes_256_cbc();
 
         iv_len = EVP_CIPHER_iv_length(cipher);
         if (RAND_bytes(iv, iv_len) <= 0
+=======
+        EVP_CIPHER *cipher = EVP_CIPHER_fetch(s->ctx->libctx, "AES-256-CBC",
+                                              s->ctx->propq);
+
+        if (cipher == NULL) {
+            /* Error is already recorded */
+            SSLfatal_alert(s, SSL_AD_INTERNAL_ERROR);
+            goto err;
+        }
+
+        iv_len = EVP_CIPHER_get_iv_length(cipher);
+        if (iv_len < 0
+                || RAND_bytes_ex(s->ctx->libctx, iv, iv_len, 0) <= 0
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                 || !EVP_EncryptInit_ex(ctx, cipher, NULL,
                                        tctx->ext.secure->tick_aes_key, iv)
                 || !HMAC_Init_ex(hctx, tctx->ext.secure->tick_hmac_key,
@@ -4056,6 +4403,23 @@ static int construct_stateful_ticket(SSL *s, WPACKET *pkt, uint32_t age_add,
     return 1;
 }
 
+<<<<<<< HEAD
+=======
+static void tls_update_ticket_counts(SSL *s)
+{
+    /*
+     * Increment both |sent_tickets| and |next_ticket_nonce|. |sent_tickets|
+     * gets reset to 0 if we send more tickets following a post-handshake
+     * auth, but |next_ticket_nonce| does not.  If we're sending extra
+     * tickets, decrement the count of pending extra tickets.
+     */
+    s->sent_tickets++;
+    s->next_ticket_nonce++;
+    if (s->ext.extra_tickets_expected > 0)
+        s->ext.extra_tickets_expected--;
+}
+
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 int tls_construct_new_session_ticket(SSL *s, WPACKET *pkt)
 {
     SSL_CTX *tctx = s->session_ctx;
@@ -4064,6 +4428,10 @@ int tls_construct_new_session_ticket(SSL *s, WPACKET *pkt)
         unsigned char age_add_c[sizeof(uint32_t)];
         uint32_t age_add;
     } age_add_u;
+<<<<<<< HEAD
+=======
+    int ret = 0;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
     age_add_u.age_add = 0;
 
@@ -4104,10 +4472,16 @@ int tls_construct_new_session_ticket(SSL *s, WPACKET *pkt)
             /* SSLfatal() already called */
             goto err;
         }
+<<<<<<< HEAD
         if (RAND_bytes(age_add_u.age_add_c, sizeof(age_add_u)) <= 0) {
             SSLfatal(s, SSL_AD_INTERNAL_ERROR,
                      SSL_F_TLS_CONSTRUCT_NEW_SESSION_TICKET,
                      ERR_R_INTERNAL_ERROR);
+=======
+        if (RAND_bytes_ex(s->ctx->libctx, age_add_u.age_add_c,
+                          sizeof(age_add_u), 0) <= 0) {
+            SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             goto err;
         }
         s->session->ext.tick_age_add = age_add_u.age_add;
@@ -4130,16 +4504,26 @@ int tls_construct_new_session_ticket(SSL *s, WPACKET *pkt)
         }
         s->session->master_key_length = hashlen;
 
+<<<<<<< HEAD
         s->session->time = (long)time(NULL);
         if (s->s3->alpn_selected != NULL) {
+=======
+        s->session->time = time(NULL);
+        ssl_session_calculate_timeout(s->session);
+        if (s->s3.alpn_selected != NULL) {
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             OPENSSL_free(s->session->ext.alpn_selected);
             s->session->ext.alpn_selected =
                 OPENSSL_memdup(s->s3->alpn_selected, s->s3->alpn_selected_len);
             if (s->session->ext.alpn_selected == NULL) {
                 s->session->ext.alpn_selected_len = 0;
+<<<<<<< HEAD
                 SSLfatal(s, SSL_AD_INTERNAL_ERROR,
                          SSL_F_TLS_CONSTRUCT_NEW_SESSION_TICKET,
                          ERR_R_MALLOC_FAILURE);
+=======
+                SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                 goto err;
             }
             s->session->ext.alpn_selected_len = s->s3->alpn_selected_len;
@@ -4149,9 +4533,13 @@ int tls_construct_new_session_ticket(SSL *s, WPACKET *pkt)
 
     if (tctx->generate_ticket_cb != NULL &&
         tctx->generate_ticket_cb(s, tctx->ticket_cb_data) == 0) {
+<<<<<<< HEAD
         SSLfatal(s, SSL_AD_INTERNAL_ERROR,
                  SSL_F_TLS_CONSTRUCT_NEW_SESSION_TICKET,
                  ERR_R_INTERNAL_ERROR);
+=======
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
     /*
@@ -4167,10 +4555,27 @@ int tls_construct_new_session_ticket(SSL *s, WPACKET *pkt)
             /* SSLfatal() already called */
             goto err;
         }
+<<<<<<< HEAD
     } else if (!construct_stateless_ticket(s, pkt, age_add_u.age_add,
                                            tick_nonce)) {
         /* SSLfatal() already called */
         goto err;
+=======
+    } else {
+        int tmpret;
+
+        tmpret = construct_stateless_ticket(s, pkt, age_add_u.age_add,
+                                            tick_nonce);
+        if (tmpret != 1) {
+            if (tmpret == 0) {
+                ret = 2; /* Non-fatal. Abort construction but continue */
+                /* We count this as a success so update the counts anwyay */
+                tls_update_ticket_counts(s);
+            }
+            /* else SSLfatal() already called */
+            goto err;
+        }
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     }
 
     if (SSL_IS_TLS13(s)) {
@@ -4190,7 +4595,11 @@ int tls_construct_new_session_ticket(SSL *s, WPACKET *pkt)
         ssl_update_cache(s, SSL_SESS_CACHE_SERVER);
     }
 
+<<<<<<< HEAD
     return 1;
+=======
+    ret = 1;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  err:
     return 0;
 }

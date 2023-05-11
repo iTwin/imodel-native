@@ -7,7 +7,17 @@
  * https://www.openssl.org/source/license.html
  */
 
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/store/loader_file.c
 #include "e_os.h"
+=======
+/* THIS ENGINE IS FOR TESTING PURPOSES ONLY. */
+
+/* This file has quite some overlap with providers/implementations/storemgmt/file_store.c */
+
+/* We need to use some engine deprecated APIs */
+#define OPENSSL_SUPPRESS_DEPRECATED
+
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/engines/e_loader_attic.c
 #include <string.h>
 #include <sys/stat.h>
 #include <ctype.h>
@@ -35,6 +45,10 @@
 # define stat    _stat
 #endif
 
+#ifdef _WIN32
+# define stat _stat
+#endif
+
 #ifndef S_ISDIR
 # define S_ISDIR(a) (((a) & S_IFMT) == S_IFDIR)
 #endif
@@ -51,7 +65,11 @@ static char *file_get_pass(const UI_METHOD *ui_method, char *pass,
     char *prompt = NULL;
 
     if (ui == NULL) {
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/store/loader_file.c
         OSSL_STOREerr(OSSL_STORE_F_FILE_GET_PASS, ERR_R_MALLOC_FAILURE);
+=======
+        ATTICerr(0, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/engines/e_loader_attic.c
         return NULL;
     }
 
@@ -59,9 +77,14 @@ static char *file_get_pass(const UI_METHOD *ui_method, char *pass,
         UI_set_method(ui, ui_method);
     UI_add_user_data(ui, data);
 
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/store/loader_file.c
     if ((prompt = UI_construct_prompt(ui, "pass phrase",
                                       prompt_info)) == NULL) {
         OSSL_STOREerr(OSSL_STORE_F_FILE_GET_PASS, ERR_R_MALLOC_FAILURE);
+=======
+    if ((prompt = UI_construct_prompt(ui, desc, info)) == NULL) {
+        ATTICerr(0, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/engines/e_loader_attic.c
         pass = NULL;
     } else if (!UI_add_input_string(ui, prompt, UI_INPUT_FLAG_DEFAULT_PWD,
                                     pass, 0, maxsize - 1)) {
@@ -116,6 +139,94 @@ static int file_get_pem_pass(char *buf, int num, int w, void *data)
     return pass == NULL ? 0 : strlen(pass);
 }
 
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/store/loader_file.c
+=======
+/*
+ * Check if |str| ends with |suffix| preceded by a space, and if it does,
+ * return the index of that space.  If there is no such suffix in |str|,
+ * return -1.
+ * For |str| == "FOO BAR" and |suffix| == "BAR", the returned value is 3.
+ */
+static int check_suffix(const char *str, const char *suffix)
+{
+    int str_len = strlen(str);
+    int suffix_len = strlen(suffix) + 1;
+    const char *p = NULL;
+
+    if (suffix_len >= str_len)
+        return -1;
+    p = str + str_len - suffix_len;
+    if (*p != ' '
+        || strcmp(p + 1, suffix) != 0)
+        return -1;
+    return p - str;
+}
+
+/*
+ * EMBEDDED is a special type of OSSL_STORE_INFO, specially for the file
+ * handlers, so we define it internally.  This uses the possibility to
+ * create an OSSL_STORE_INFO with a generic data pointer and arbitrary
+ * type number.
+ *
+ * This is used by a FILE_HANDLER's try_decode function to signal that it
+ * has decoded the incoming blob into a new blob, and that the attempted
+ * decoding should be immediately restarted with the new blob, using the
+ * new PEM name.
+ */
+/* Negative numbers are never used for public OSSL_STORE_INFO types */
+#define STORE_INFO_EMBEDDED       -1
+
+/* This is the embedded data */
+struct embedded_st {
+    BUF_MEM *blob;
+    char *pem_name;
+};
+
+/* Helper functions */
+static struct embedded_st *get0_EMBEDDED(OSSL_STORE_INFO *info)
+{
+    return OSSL_STORE_INFO_get0_data(STORE_INFO_EMBEDDED, info);
+}
+
+static void store_info_free(OSSL_STORE_INFO *info)
+{
+    struct embedded_st *data;
+
+    if (info != NULL && (data = get0_EMBEDDED(info)) != NULL) {
+        BUF_MEM_free(data->blob);
+        OPENSSL_free(data->pem_name);
+        OPENSSL_free(data);
+    }
+    OSSL_STORE_INFO_free(info);
+}
+
+static OSSL_STORE_INFO *new_EMBEDDED(const char *new_pem_name,
+                                     BUF_MEM *embedded)
+{
+    OSSL_STORE_INFO *info = NULL;
+    struct embedded_st *data = NULL;
+
+    if ((data = OPENSSL_zalloc(sizeof(*data))) == NULL
+        || (info = OSSL_STORE_INFO_new(STORE_INFO_EMBEDDED, data)) == NULL) {
+        ATTICerr(0, ERR_R_MALLOC_FAILURE);
+        OPENSSL_free(data);
+        return NULL;
+    }
+
+    data->blob = embedded;
+    data->pem_name =
+        new_pem_name == NULL ? NULL : OPENSSL_strdup(new_pem_name);
+
+    if (new_pem_name != NULL && data->pem_name == NULL) {
+        ATTICerr(0, ERR_R_MALLOC_FAILURE);
+        store_info_free(info);
+        info = NULL;
+    }
+
+    return info;
+}
+
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/engines/e_loader_attic.c
 /*-
  *  The file scheme decoders
  *  ------------------------
@@ -265,6 +376,15 @@ static OSSL_STORE_INFO *try_decode_PKCS12(const char *pem_name,
                         (void)sk_X509_shift(chain);
                     }
                 }
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/store/loader_file.c
+=======
+                EVP_PKEY_free(pkey);
+                X509_free(cert);
+                sk_X509_pop_free(chain, X509_free);
+                store_info_free(osi_pkey);
+                store_info_free(osi_cert);
+                store_info_free(osi_ca);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/engines/e_loader_attic.c
                 if (!ok) {
                     OSSL_STORE_INFO_free(osi_ca);
                     OSSL_STORE_INFO_free(osi_cert);
@@ -350,8 +470,12 @@ static OSSL_STORE_INFO *try_decode_PKCS8Encrypted(const char *pem_name,
     *matchcount = 1;
 
     if ((mem = BUF_MEM_new()) == NULL) {
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/store/loader_file.c
         OSSL_STOREerr(OSSL_STORE_F_TRY_DECODE_PKCS8ENCRYPTED,
                       ERR_R_MALLOC_FAILURE);
+=======
+        ATTICerr(0, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/engines/e_loader_attic.c
         goto nop8;
     }
 
@@ -374,8 +498,12 @@ static OSSL_STORE_INFO *try_decode_PKCS8Encrypted(const char *pem_name,
 
     store_info = ossl_store_info_new_EMBEDDED(PEM_STRING_PKCS8INF, mem);
     if (store_info == NULL) {
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/store/loader_file.c
         OSSL_STOREerr(OSSL_STORE_F_TRY_DECODE_PKCS8ENCRYPTED,
                       ERR_R_MALLOC_FAILURE);
+=======
+        ATTICerr(0, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/engines/e_loader_attic.c
         goto nop8;
     }
 
@@ -815,12 +943,20 @@ static OSSL_STORE_LOADER_CTX *file_open(const OSSL_STORE_LOADER *loader,
      * There's a special case if the URI also contains an authority, then
      * the full URI shouldn't be used as a path anywhere.
      */
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/store/loader_file.c
     if (strncasecmp(uri, "file:", 5) == 0) {
+=======
+    if (OPENSSL_strncasecmp(uri, "file:", 5) == 0) {
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/engines/e_loader_attic.c
         const char *p = &uri[5];
 
         if (strncmp(&uri[5], "//", 2) == 0) {
             path_data_n--;           /* Invalidate using the full URI */
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/store/loader_file.c
             if (strncasecmp(&uri[7], "localhost/", 10) == 0) {
+=======
+            if (OPENSSL_strncasecmp(&uri[7], "localhost/", 10) == 0) {
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/engines/e_loader_attic.c
                 p = &uri[16];
             } else if (uri[7] == '/') {
                 p = &uri[7];
@@ -876,9 +1012,20 @@ static OSSL_STORE_LOADER_CTX *file_open(const OSSL_STORE_LOADER *loader,
 
     ctx = OPENSSL_zalloc(sizeof(*ctx));
     if (ctx == NULL) {
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/store/loader_file.c
         OSSL_STOREerr(OSSL_STORE_F_FILE_OPEN, ERR_R_MALLOC_FAILURE);
         return NULL;
     }
+=======
+        ATTICerr(0, ERR_R_MALLOC_FAILURE);
+        return NULL;
+    }
+    ctx->uri = OPENSSL_strdup(uri);
+    if (ctx->uri == NULL) {
+        ATTICerr(0, ERR_R_MALLOC_FAILURE);
+        goto err;
+    }
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/engines/e_loader_attic.c
 
     if (S_ISDIR(st.st_mode)) {
         /*
@@ -905,6 +1052,7 @@ static OSSL_STORE_LOADER_CTX *file_open(const OSSL_STORE_LOADER *loader,
             }
             ctx->_.dir.end_reached = 1;
         }
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/store/loader_file.c
     } else {
         BIO *buff = NULL;
         char peekbuf[4096] = { 0, };
@@ -921,6 +1069,19 @@ static OSSL_STORE_LOADER_CTX *file_open(const OSSL_STORE_LOADER *loader,
             if (strstr(peekbuf, "-----BEGIN ") != NULL)
                 ctx->type = is_pem;
         }
+=======
+    } else if ((ctx->_.file.file = BIO_new_file(path, "rb")) == NULL
+               || !file_find_type(ctx)) {
+        BIO_free_all(ctx->_.file.file);
+        goto err;
+    }
+    if (propq != NULL) {
+        ctx->propq = OPENSSL_strdup(propq);
+        if (ctx->propq == NULL) {
+            ATTICerr(0, ERR_R_MALLOC_FAILURE);
+            goto err;
+        }
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/engines/e_loader_attic.c
     }
 
     return ctx;
@@ -929,6 +1090,43 @@ static OSSL_STORE_LOADER_CTX *file_open(const OSSL_STORE_LOADER *loader,
     return NULL;
 }
 
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/store/loader_file.c
+=======
+static OSSL_STORE_LOADER_CTX *file_open
+    (const OSSL_STORE_LOADER *loader, const char *uri,
+     const UI_METHOD *ui_method, void *ui_data)
+{
+    return file_open_ex(loader, uri, NULL, NULL, ui_method, ui_data);
+}
+
+static OSSL_STORE_LOADER_CTX *file_attach
+    (const OSSL_STORE_LOADER *loader, BIO *bp,
+     OSSL_LIB_CTX *libctx, const char *propq,
+     const UI_METHOD *ui_method, void *ui_data)
+{
+    OSSL_STORE_LOADER_CTX *ctx = NULL;
+
+    if ((ctx = OPENSSL_zalloc(sizeof(*ctx))) == NULL
+        || (propq != NULL && (ctx->propq = OPENSSL_strdup(propq)) == NULL)) {
+        ATTICerr(0, ERR_R_MALLOC_FAILURE);
+        OSSL_STORE_LOADER_CTX_free(ctx);
+        return NULL;
+    }
+    ctx->libctx = libctx;
+    ctx->flags |= FILE_FLAG_ATTACHED;
+    ctx->_.file.file = bp;
+    if (!file_find_type(ctx)) {
+        /* Safety measure */
+        ctx->_.file.file = NULL;
+        goto err;
+    }
+    return ctx;
+err:
+    OSSL_STORE_LOADER_CTX_free(ctx);
+    return NULL;
+}
+
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/engines/e_loader_attic.c
 static int file_ctrl(OSSL_STORE_LOADER_CTX *ctx, int cmd, va_list args)
 {
     int ret = 1;
@@ -1035,8 +1233,12 @@ static OSSL_STORE_INFO *file_load_try_decode(OSSL_STORE_LOADER_CTX *ctx,
                            * OSSL_NELEM(file_handlers));
 
         if (matching_handlers == NULL) {
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/store/loader_file.c
             OSSL_STOREerr(OSSL_STORE_F_FILE_LOAD_TRY_DECODE,
                           ERR_R_MALLOC_FAILURE);
+=======
+            ATTICerr(0, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/engines/e_loader_attic.c
             goto err;
         }
 
@@ -1206,7 +1408,11 @@ static int file_name_to_uri(OSSL_STORE_LOADER_CTX *ctx, const char *name,
 
         *data = OPENSSL_zalloc(calculated_length);
         if (*data == NULL) {
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/store/loader_file.c
             OSSL_STOREerr(OSSL_STORE_F_FILE_NAME_TO_URI, ERR_R_MALLOC_FAILURE);
+=======
+            ATTICerr(0, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/engines/e_loader_attic.c
             return 0;
         }
 

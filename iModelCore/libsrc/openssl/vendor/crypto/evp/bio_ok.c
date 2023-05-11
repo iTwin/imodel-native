@@ -134,7 +134,11 @@ static int ok_new(BIO *bi)
     BIO_OK_CTX *ctx;
 
     if ((ctx = OPENSSL_zalloc(sizeof(*ctx))) == NULL) {
+<<<<<<< HEAD
         EVPerr(EVP_F_OK_NEW, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_EVP, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
 

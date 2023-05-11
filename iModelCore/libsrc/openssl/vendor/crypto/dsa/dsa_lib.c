@@ -51,14 +51,22 @@ DSA *DSA_new_method(ENGINE *engine)
     DSA *ret = OPENSSL_zalloc(sizeof(*ret));
 
     if (ret == NULL) {
+<<<<<<< HEAD
         DSAerr(DSA_F_DSA_NEW_METHOD, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_DSA, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return NULL;
     }
 
     ret->references = 1;
     ret->lock = CRYPTO_THREAD_lock_new();
     if (ret->lock == NULL) {
+<<<<<<< HEAD
         DSAerr(DSA_F_DSA_NEW_METHOD, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_DSA, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         OPENSSL_free(ret);
         return NULL;
     }

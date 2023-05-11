@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright 2012-2020 The OpenSSL Project Authors. All Rights Reserved.
+=======
+ * Copyright 2012-2022 The OpenSSL Project Authors. All Rights Reserved.
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -522,6 +526,16 @@ static const ssl_trace_tbl ssl_groups_tbl[] = {
     {28, "brainpoolP512r1"},
     {29, "ecdh_x25519"},
     {30, "ecdh_x448"},
+<<<<<<< HEAD
+=======
+    {34, "GC256A"},
+    {35, "GC256B"},
+    {36, "GC256C"},
+    {37, "GC256D"},
+    {38, "GC512A"},
+    {39, "GC512B"},
+    {40, "GC512C"},
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     {256, "ffdhe2048"},
     {257, "ffdhe3072"},
     {258, "ffdhe4096"},
@@ -1039,7 +1053,11 @@ static int ssl_print_server_hello(BIO *bio, int indent,
 
 static int ssl_get_keyex(const char **pname, const SSL *ssl)
 {
+<<<<<<< HEAD
     unsigned long alg_k = ssl->s3->tmp.new_cipher->algorithm_mkey;
+=======
+    unsigned long alg_k = ssl->s3.tmp.new_cipher->algorithm_mkey;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
     if (alg_k & SSL_kRSA) {
         *pname = "rsa";

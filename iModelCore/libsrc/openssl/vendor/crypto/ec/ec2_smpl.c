@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright 2002-2019 The OpenSSL Project Authors. All Rights Reserved.
+=======
+ * Copyright 2002-2022 The OpenSSL Project Authors. All Rights Reserved.
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
@@ -181,8 +185,12 @@ int ec_GF2m_simple_group_check_discriminant(const EC_GROUP *group,
     if (ctx == NULL) {
         ctx = new_ctx = BN_CTX_new();
         if (ctx == NULL) {
+<<<<<<< HEAD
             ECerr(EC_F_EC_GF2M_SIMPLE_GROUP_CHECK_DISCRIMINANT,
                   ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             goto err;
         }
     }
@@ -793,7 +801,11 @@ int ec_GF2m_simple_ladder_post(const EC_GROUP *group,
     t1 = BN_CTX_get(ctx);
     t2 = BN_CTX_get(ctx);
     if (t2 == NULL) {
+<<<<<<< HEAD
         ECerr(EC_F_EC_GF2M_SIMPLE_LADDER_POST, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 
@@ -872,7 +884,11 @@ int ec_GF2m_simple_points_mul(const EC_GROUP *group, EC_POINT *r,
      */
 
     if ((t = EC_POINT_new(group)) == NULL) {
+<<<<<<< HEAD
         ECerr(EC_F_EC_GF2M_SIMPLE_POINTS_MUL, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
 

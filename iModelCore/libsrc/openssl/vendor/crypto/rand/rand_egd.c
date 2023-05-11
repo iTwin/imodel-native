@@ -53,9 +53,71 @@ struct sockaddr_un {
     short sun_family;           /* AF_UNIX */
     char sun_path[108];         /* path name (gag) */
 };
+<<<<<<< HEAD
 #  endif                         /* NO_SYS_UN_H */
 #  include <string.h>
 #  include <errno.h>
+=======
+# endif                         /* NO_SYS_UN_H */
+# include <string.h>
+# include <errno.h>
+
+# if defined(OPENSSL_SYS_TANDEM)
+/*
+ * HPNS:
+ *
+ *  This code forces the use of compatibility mode if required on HPE NonStop
+ *  when coreutils PRNGD is used and then restores the previous mode
+ *  after establishing the socket. This is not required on x86 where hardware
+ *  randomization should be used instead of EGD available as of OpenSSL 3.0.
+ *  Use --with-rand-seed=rdcpu when configuring x86 with 3.0 and above.
+ *
+ *  Needs review:
+ *
+ *  The better long-term solution is to either run two EGD's each in one of
+ *  the two modes or revise the EGD code to listen on two different sockets
+ *  (each in one of the two modes) or use the hardware randomizer.
+ */
+_variable
+int hpns_socket(int family,
+                int type,
+                int protocol,
+                char* transport)
+{
+    int  socket_rc;
+    char current_transport[20];
+
+#  define AF_UNIX_PORTABILITY    "$ZAFN2"
+#  define AF_UNIX_COMPATIBILITY  "$ZPLS"
+
+    if (!_arg_present(transport) || transport == NULL || transport[0] == '\0')
+        return socket(family, type, protocol);
+
+    socket_transport_name_get(AF_UNIX, current_transport, 20);
+
+    if (strcmp(current_transport,transport) == 0)
+        return socket(family, type, protocol);
+
+    /* set the requested socket transport */
+    if (socket_transport_name_set(AF_UNIX, transport))
+        return -1;
+
+    socket_rc = socket(family,type,protocol);
+
+    /* set mode back to what it was */
+    if (socket_transport_name_set(AF_UNIX, current_transport))
+        return -1;
+
+    return socket_rc;
+}
+
+/*#define socket(a,b,c,...) hpns_socket(a,b,c,__VA_ARGS__) */
+
+static int hpns_connect_attempt = 0;
+
+# endif /* defined(OPENSSL_SYS_HPNS) */
+
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
 int RAND_query_egd_bytes(const char *path, unsigned char *buf, int bytes)
 {

@@ -243,6 +243,10 @@ int (*EVP_CIPHER_meth_get_ctrl(const EVP_CIPHER *cipher))(EVP_CIPHER_CTX *,
 # define         EVP_CIPH_XTS_MODE               0x10001
 # define         EVP_CIPH_WRAP_MODE              0x10002
 # define         EVP_CIPH_OCB_MODE               0x10003
+<<<<<<< HEAD
+=======
+# define         EVP_CIPH_SIV_MODE               0x10004
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 # define         EVP_CIPH_MODE                   0xF0007
 /* Set if variable length cipher */
 # define         EVP_CIPH_VARIABLE_LENGTH        0x8
@@ -583,6 +587,13 @@ __owur int EVP_EncryptInit(EVP_CIPHER_CTX *ctx, const EVP_CIPHER *cipher,
                                   const EVP_CIPHER *cipher, ENGINE *impl,
                                   const unsigned char *key,
                                   const unsigned char *iv);
+<<<<<<< HEAD
+=======
+__owur int EVP_EncryptInit_ex2(EVP_CIPHER_CTX *ctx, const EVP_CIPHER *cipher,
+                               const unsigned char *key,
+                               const unsigned char *iv,
+                               const OSSL_PARAM params[]);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 /*__owur*/ int EVP_EncryptUpdate(EVP_CIPHER_CTX *ctx, unsigned char *out,
                                  int *outl, const unsigned char *in, int inl);
 /*__owur*/ int EVP_EncryptFinal_ex(EVP_CIPHER_CTX *ctx, unsigned char *out,
@@ -596,6 +607,13 @@ __owur int EVP_DecryptInit(EVP_CIPHER_CTX *ctx, const EVP_CIPHER *cipher,
                                   const EVP_CIPHER *cipher, ENGINE *impl,
                                   const unsigned char *key,
                                   const unsigned char *iv);
+<<<<<<< HEAD
+=======
+__owur int EVP_DecryptInit_ex2(EVP_CIPHER_CTX *ctx, const EVP_CIPHER *cipher,
+                               const unsigned char *key,
+                               const unsigned char *iv,
+                               const OSSL_PARAM params[]);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 /*__owur*/ int EVP_DecryptUpdate(EVP_CIPHER_CTX *ctx, unsigned char *out,
                                  int *outl, const unsigned char *in, int inl);
 __owur int EVP_DecryptFinal(EVP_CIPHER_CTX *ctx, unsigned char *outm,
@@ -631,12 +649,30 @@ __owur int EVP_DigestVerify(EVP_MD_CTX *ctx, const unsigned char *sigret,
                             size_t siglen, const unsigned char *tbs,
                             size_t tbslen);
 
+<<<<<<< HEAD
 /*__owur*/ int EVP_DigestSignInit(EVP_MD_CTX *ctx, EVP_PKEY_CTX **pctx,
                                   const EVP_MD *type, ENGINE *e,
                                   EVP_PKEY *pkey);
 __owur int EVP_DigestSignFinal(EVP_MD_CTX *ctx, unsigned char *sigret,
                                size_t *siglen);
 
+=======
+int EVP_DigestSignInit_ex(EVP_MD_CTX *ctx, EVP_PKEY_CTX **pctx,
+                          const char *mdname, OSSL_LIB_CTX *libctx,
+                          const char *props, EVP_PKEY *pkey,
+                          const OSSL_PARAM params[]);
+/*__owur*/ int EVP_DigestSignInit(EVP_MD_CTX *ctx, EVP_PKEY_CTX **pctx,
+                                  const EVP_MD *type, ENGINE *e,
+                                  EVP_PKEY *pkey);
+int EVP_DigestSignUpdate(EVP_MD_CTX *ctx, const void *data, size_t dsize);
+__owur int EVP_DigestSignFinal(EVP_MD_CTX *ctx, unsigned char *sigret,
+                               size_t *siglen);
+
+int EVP_DigestVerifyInit_ex(EVP_MD_CTX *ctx, EVP_PKEY_CTX **pctx,
+                            const char *mdname, OSSL_LIB_CTX *libctx,
+                            const char *props, EVP_PKEY *pkey,
+                            const OSSL_PARAM params[]);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 __owur int EVP_DigestVerifyInit(EVP_MD_CTX *ctx, EVP_PKEY_CTX **pctx,
                                 const EVP_MD *type, ENGINE *e,
                                 EVP_PKEY *pkey);
@@ -1405,6 +1441,18 @@ int EVP_PKEY_derive_init(EVP_PKEY_CTX *ctx);
 int EVP_PKEY_derive_set_peer(EVP_PKEY_CTX *ctx, EVP_PKEY *peer);
 int EVP_PKEY_derive(EVP_PKEY_CTX *ctx, unsigned char *key, size_t *keylen);
 
+<<<<<<< HEAD
+=======
+int EVP_PKEY_encapsulate_init(EVP_PKEY_CTX *ctx, const OSSL_PARAM params[]);
+int EVP_PKEY_encapsulate(EVP_PKEY_CTX *ctx,
+                         unsigned char *wrappedkey, size_t *wrappedkeylen,
+                         unsigned char *genkey, size_t *genkeylen);
+int EVP_PKEY_decapsulate_init(EVP_PKEY_CTX *ctx, const OSSL_PARAM params[]);
+int EVP_PKEY_decapsulate(EVP_PKEY_CTX *ctx,
+                         unsigned char *unwrapped, size_t *unwrappedlen,
+                         const unsigned char *wrapped, size_t wrappedlen);
+
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 typedef int EVP_PKEY_gen_cb(EVP_PKEY_CTX *ctx);
 
 int EVP_PKEY_paramgen_init(EVP_PKEY_CTX *ctx);

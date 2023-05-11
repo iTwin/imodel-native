@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright 2015-2018 The OpenSSL Project Authors. All Rights Reserved.
+=======
+ * Copyright 2015-2021 The OpenSSL Project Authors. All Rights Reserved.
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -110,4 +114,25 @@ struct asn1_pctx_st {
     unsigned long str_flags;
 } /* ASN1_PCTX */ ;
 
+<<<<<<< HEAD
 int asn1_d2i_read_bio(BIO *in, BUF_MEM **pb);
+=======
+/* ASN1 type functions */
+
+int ossl_asn1_type_set_octetstring_int(ASN1_TYPE *a, long num,
+                                       unsigned char *data, int len);
+int ossl_asn1_type_get_octetstring_int(const ASN1_TYPE *a, long *num,
+                                       unsigned char *data, int max_len);
+
+int ossl_x509_algor_new_from_md(X509_ALGOR **palg, const EVP_MD *md);
+const EVP_MD *ossl_x509_algor_get_md(X509_ALGOR *alg);
+X509_ALGOR *ossl_x509_algor_mgf1_decode(X509_ALGOR *alg);
+int ossl_x509_algor_md_to_mgf1(X509_ALGOR **palg, const EVP_MD *mgf1md);
+int ossl_asn1_time_print_ex(BIO *bp, const ASN1_TIME *tm, unsigned long flags);
+
+EVP_PKEY * ossl_d2i_PrivateKey_legacy(int keytype, EVP_PKEY **a,
+                                      const unsigned char **pp, long length,
+                                      OSSL_LIB_CTX *libctx, const char *propq);
+
+#endif /* ndef OSSL_CRYPTO_ASN1_H */
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))

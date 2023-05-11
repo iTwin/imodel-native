@@ -66,7 +66,11 @@ static int x509v3_add_len_value(const char *name, const char *value,
         goto err;
     return 1;
  err:
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_utl.c
     X509V3err(X509V3_F_X509V3_ADD_LEN_VALUE, ERR_R_MALLOC_FAILURE);
+=======
+    ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_utl.c
     if (sk_allocated) {
         sk_CONF_VALUE_free(*extlist);
         *extlist = NULL;
@@ -147,7 +151,11 @@ static char *bignum_to_string(const BIGNUM *bn)
     len = strlen(tmp) + 3;
     ret = OPENSSL_malloc(len);
     if (ret == NULL) {
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_utl.c
         X509V3err(X509V3_F_BIGNUM_TO_STRING, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_utl.c
         OPENSSL_free(tmp);
         return NULL;
     }
@@ -173,7 +181,11 @@ char *i2s_ASN1_ENUMERATED(X509V3_EXT_METHOD *method, const ASN1_ENUMERATED *a)
         return NULL;
     if ((bntmp = ASN1_ENUMERATED_to_BN(a, NULL)) == NULL
         || (strtmp = bignum_to_string(bntmp)) == NULL)
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_utl.c
         X509V3err(X509V3_F_I2S_ASN1_ENUMERATED, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_utl.c
     BN_free(bntmp);
     return strtmp;
 }
@@ -187,7 +199,11 @@ char *i2s_ASN1_INTEGER(X509V3_EXT_METHOD *method, const ASN1_INTEGER *a)
         return NULL;
     if ((bntmp = ASN1_INTEGER_to_BN(a, NULL)) == NULL
         || (strtmp = bignum_to_string(bntmp)) == NULL)
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_utl.c
         X509V3err(X509V3_F_I2S_ASN1_INTEGER, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_utl.c
     BN_free(bntmp);
     return strtmp;
 }
@@ -204,7 +220,11 @@ ASN1_INTEGER *s2i_ASN1_INTEGER(X509V3_EXT_METHOD *method, const char *value)
     }
     bn = BN_new();
     if (bn == NULL) {
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_utl.c
         X509V3err(X509V3_F_S2I_ASN1_INTEGER, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_utl.c
         return NULL;
     }
     if (value[0] == '-') {
@@ -320,7 +340,11 @@ STACK_OF(CONF_VALUE) *X509V3_parse_list(const char *line)
     /* We are going to modify the line so copy it first */
     linebuf = OPENSSL_strdup(line);
     if (linebuf == NULL) {
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_utl.c
         X509V3err(X509V3_F_X509V3_PARSE_LIST, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_utl.c
         goto err;
     }
     state = HDR_NAME;
@@ -704,7 +728,11 @@ static int wildcard_match(const unsigned char *prefix, size_t prefix_len,
     }
     /* IDNA labels cannot match partial wildcards */
     if (!allow_idna &&
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_utl.c
         subject_len >= 4 && strncasecmp((char *)subject, "xn--", 4) == 0)
+=======
+        subject_len >= 4 && OPENSSL_strncasecmp((char *)subject, "xn--", 4) == 0)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_utl.c
         return 0;
     /* The wildcard may match a literal '*' */
     if (wildcard_end == wildcard_start + 1 && *wildcard_start == '*')
@@ -763,7 +791,11 @@ static const unsigned char *valid_star(const unsigned char *p, size_t len,
                    || ('A' <= p[i] && p[i] <= 'Z')
                    || ('0' <= p[i] && p[i] <= '9')) {
             if ((state & LABEL_START) != 0
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_utl.c
                 && len - i >= 4 && strncasecmp((char *)&p[i], "xn--", 4) == 0)
+=======
+                && len - i >= 4 && OPENSSL_strncasecmp((char *)&p[i], "xn--", 4) == 0)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_utl.c
                 state |= LABEL_IDNA;
             state &= ~(LABEL_HYPHEN | LABEL_START);
         } else if (p[i] == '.') {

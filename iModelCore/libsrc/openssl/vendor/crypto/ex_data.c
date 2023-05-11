@@ -169,14 +169,22 @@ int CRYPTO_get_ex_new_index(int class_index, long argl, void *argp,
          * "app_data" routines use ex_data index zero.  See RT 3710. */
         if (ip->meth == NULL
             || !sk_EX_CALLBACK_push(ip->meth, NULL)) {
+<<<<<<< HEAD
             CRYPTOerr(CRYPTO_F_CRYPTO_GET_EX_NEW_INDEX, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_CRYPTO, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             goto err;
         }
     }
 
     a = (EX_CALLBACK *)OPENSSL_malloc(sizeof(*a));
     if (a == NULL) {
+<<<<<<< HEAD
         CRYPTOerr(CRYPTO_F_CRYPTO_GET_EX_NEW_INDEX, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_CRYPTO, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
     a->argl = argl;
@@ -186,7 +194,11 @@ int CRYPTO_get_ex_new_index(int class_index, long argl, void *argp,
     a->free_func = free_func;
 
     if (!sk_EX_CALLBACK_push(ip->meth, NULL)) {
+<<<<<<< HEAD
         CRYPTOerr(CRYPTO_F_CRYPTO_GET_EX_NEW_INDEX, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_CRYPTO, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         OPENSSL_free(a);
         goto err;
     }
@@ -231,7 +243,11 @@ int CRYPTO_new_ex_data(int class_index, void *obj, CRYPTO_EX_DATA *ad)
     CRYPTO_THREAD_unlock(ex_data_lock);
 
     if (mx > 0 && storage == NULL) {
+<<<<<<< HEAD
         CRYPTOerr(CRYPTO_F_CRYPTO_NEW_EX_DATA, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_CRYPTO, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
     for (i = 0; i < mx; i++) {
@@ -284,7 +300,11 @@ int CRYPTO_dup_ex_data(int class_index, CRYPTO_EX_DATA *to,
     if (mx == 0)
         return 1;
     if (storage == NULL) {
+<<<<<<< HEAD
         CRYPTOerr(CRYPTO_F_CRYPTO_DUP_EX_DATA, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_CRYPTO, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
     /*
@@ -372,14 +392,22 @@ int CRYPTO_set_ex_data(CRYPTO_EX_DATA *ad, int idx, void *val)
 
     if (ad->sk == NULL) {
         if ((ad->sk = sk_void_new_null()) == NULL) {
+<<<<<<< HEAD
             CRYPTOerr(CRYPTO_F_CRYPTO_SET_EX_DATA, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_CRYPTO, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return 0;
         }
     }
 
     for (i = sk_void_num(ad->sk); i <= idx; ++i) {
         if (!sk_void_push(ad->sk, NULL)) {
+<<<<<<< HEAD
             CRYPTOerr(CRYPTO_F_CRYPTO_SET_EX_DATA, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_CRYPTO, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return 0;
         }
     }

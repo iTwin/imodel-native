@@ -112,7 +112,11 @@ int OBJ_NAME_new_index(unsigned long (*hash_func) (const char *),
         name_funcs = OPENSSL_zalloc(sizeof(*name_funcs));
         CRYPTO_mem_ctrl(CRYPTO_MEM_CHECK_ENABLE);
         if (name_funcs == NULL) {
+<<<<<<< HEAD
             OBJerr(OBJ_F_OBJ_NAME_NEW_INDEX, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_OBJ, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             ret = 0;
             goto out;
         }
@@ -124,7 +128,11 @@ int OBJ_NAME_new_index(unsigned long (*hash_func) (const char *),
         CRYPTO_mem_ctrl(CRYPTO_MEM_CHECK_ENABLE);
 
         if (!push) {
+<<<<<<< HEAD
             OBJerr(OBJ_F_OBJ_NAME_NEW_INDEX, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_OBJ, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             OPENSSL_free(name_funcs);
             ret = 0;
             goto out;

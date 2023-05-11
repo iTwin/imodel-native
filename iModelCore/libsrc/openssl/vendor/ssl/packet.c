@@ -8,8 +8,13 @@
  */
 
 #include "internal/cryptlib.h"
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/ssl/packet.c
 #include "packet_local.h"
 #include <openssl/sslerr.h>
+=======
+#include "internal/packet.h"
+#include <openssl/err.h>
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/packet.c
 
 #define DEFAULT_BUF_SIZE    256
 
@@ -95,7 +100,11 @@ static int wpacket_intern_init_len(WPACKET *pkt, size_t lenbytes)
     pkt->written = 0;
 
     if ((pkt->subs = OPENSSL_zalloc(sizeof(*pkt->subs))) == NULL) {
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/ssl/packet.c
         SSLerr(SSL_F_WPACKET_INTERN_INIT_LEN, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_CRYPTO, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/packet.c
         return 0;
     }
 
@@ -209,9 +218,29 @@ static int wpacket_intern_close(WPACKET *pkt, WPACKET_SUB *sub, int doclose)
     }
 
     /* Write out the WPACKET length if needed */
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/ssl/packet.c
     if (sub->lenbytes > 0
                 && !put_value(&GETBUF(pkt)[sub->packet_len], packlen,
                               sub->lenbytes))
+=======
+    if (sub->lenbytes > 0) {
+        unsigned char *buf = GETBUF(pkt);
+
+        if (buf != NULL
+                && !put_value(&buf[sub->packet_len], packlen,
+                              sub->lenbytes))
+            return 0;
+    } else if (pkt->endfirst && sub->parent != NULL
+               && (packlen != 0
+                   || (sub->flags
+                       & WPACKET_FLAGS_ABANDON_ON_ZERO_LENGTH) == 0)) {
+        size_t tmplen = packlen;
+        size_t numlenbytes = 1;
+
+        while ((tmplen = tmplen >> 8) > 0)
+            numlenbytes++;
+        if (!WPACKET_put_bytes__(pkt, packlen, numlenbytes))
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/packet.c
             return 0;
 
     if (doclose) {
@@ -278,8 +307,17 @@ int WPACKET_start_sub_packet_len__(WPACKET *pkt, size_t lenbytes)
     if (!ossl_assert(pkt->subs != NULL))
         return 0;
 
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/ssl/packet.c
     if ((sub = OPENSSL_zalloc(sizeof(*sub))) == NULL) {
         SSLerr(SSL_F_WPACKET_START_SUB_PACKET_LEN__, ERR_R_MALLOC_FAILURE);
+=======
+    /* We don't support lenbytes greater than 0 when doing endfirst writing */
+    if (lenbytes > 0 && pkt->endfirst)
+        return 0;
+
+    if ((sub = OPENSSL_zalloc(sizeof(*sub))) == NULL) {
+        ERR_raise(ERR_LIB_CRYPTO, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/packet.c
         return 0;
     }
 

@@ -28,7 +28,11 @@ X509_REQ *X509_to_X509_REQ(X509 *x, EVP_PKEY *pkey, const EVP_MD *md)
 
     ret = X509_REQ_new();
     if (ret == NULL) {
+<<<<<<< HEAD
         X509err(X509_F_X509_TO_X509_REQ, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_X509, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 
@@ -85,11 +89,16 @@ int X509_REQ_check_private_key(X509_REQ *x, EVP_PKEY *k)
     int ok = 0;
 
     xk = X509_REQ_get_pubkey(x);
+<<<<<<< HEAD
     switch (EVP_PKEY_cmp(xk, k)) {
+=======
+    switch (EVP_PKEY_eq(xk, k)) {
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     case 1:
         ok = 1;
         break;
     case 0:
+<<<<<<< HEAD
         X509err(X509_F_X509_REQ_CHECK_PRIVATE_KEY,
                 X509_R_KEY_VALUES_MISMATCH);
         break;
@@ -112,6 +121,15 @@ int X509_REQ_check_private_key(X509_REQ *x, EVP_PKEY *k)
         }
 #endif
         X509err(X509_F_X509_REQ_CHECK_PRIVATE_KEY, X509_R_UNKNOWN_KEY_TYPE);
+=======
+        ERR_raise(ERR_LIB_X509, X509_R_KEY_VALUES_MISMATCH);
+        break;
+    case -1:
+        ERR_raise(ERR_LIB_X509, X509_R_KEY_TYPE_MISMATCH);
+        break;
+    case -2:
+        ERR_raise(ERR_LIB_X509, X509_R_UNKNOWN_KEY_TYPE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     }
 
     EVP_PKEY_free(xk);

@@ -17,10 +17,14 @@
 static int final_renegotiate(SSL *s, unsigned int context, int sent);
 static int init_server_name(SSL *s, unsigned int context);
 static int final_server_name(SSL *s, unsigned int context, int sent);
+<<<<<<< HEAD
 #ifndef OPENSSL_NO_EC
 static int init_ec_point_formats(SSL *s, unsigned int context);
 static int final_ec_pt_formats(SSL *s, unsigned int context, int sent);
 #endif
+=======
+static int final_ec_pt_formats(SSL *s, unsigned int context, int sent);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 static int init_session_ticket(SSL *s, unsigned int context);
 #ifndef OPENSSL_NO_OCSP
 static int init_status_request(SSL *s, unsigned int context);
@@ -42,6 +46,7 @@ static int tls_parse_certificate_authorities(SSL *s, PACKET *pkt,
                                              size_t chainidx);
 #ifndef OPENSSL_NO_SRP
 static int init_srp(SSL *s, unsigned int context);
+<<<<<<< HEAD
 #endif
 static int init_etm(SSL *s, unsigned int context);
 static int init_ems(SSL *s, unsigned int context);
@@ -50,6 +55,15 @@ static int init_psk_kex_modes(SSL *s, unsigned int context);
 #ifndef OPENSSL_NO_EC
 static int final_key_share(SSL *s, unsigned int context, int sent);
 #endif
+=======
+#endif
+static int init_ec_point_formats(SSL *s, unsigned int context);
+static int init_etm(SSL *s, unsigned int context);
+static int init_ems(SSL *s, unsigned int context);
+static int final_ems(SSL *s, unsigned int context, int sent);
+static int init_psk_kex_modes(SSL *s, unsigned int context);
+static int final_key_share(SSL *s, unsigned int context, int sent);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 #ifndef OPENSSL_NO_SRTP
 static int init_srtp(SSL *s, unsigned int context);
 #endif
@@ -576,8 +590,12 @@ int tls_collect_extensions(SSL *s, PACKET *packet, unsigned int context,
     num_exts = OSSL_NELEM(ext_defs) + (exts != NULL ? exts->meths_count : 0);
     raw_extensions = OPENSSL_zalloc(num_exts * sizeof(*raw_extensions));
     if (raw_extensions == NULL) {
+<<<<<<< HEAD
         SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_COLLECT_EXTENSIONS,
                  ERR_R_MALLOC_FAILURE);
+=======
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
 
@@ -815,16 +833,24 @@ int tls_construct_extensions(SSL *s, WPACKET *pkt, unsigned int context,
                  (SSL_EXT_CLIENT_HELLO | SSL_EXT_TLS1_2_SERVER_HELLO)) != 0
                 && !WPACKET_set_flags(pkt,
                                      WPACKET_FLAGS_ABANDON_ON_ZERO_LENGTH))) {
+<<<<<<< HEAD
         SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_CONSTRUCT_EXTENSIONS,
                  ERR_R_INTERNAL_ERROR);
+=======
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
 
     if ((context & SSL_EXT_CLIENT_HELLO) != 0) {
         reason = ssl_get_min_max_version(s, &min_version, &max_version, NULL);
         if (reason != 0) {
+<<<<<<< HEAD
             SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_CONSTRUCT_EXTENSIONS,
                      reason);
+=======
+            SSLfatal(s, SSL_AD_INTERNAL_ERROR, reason);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return 0;
         }
     }
@@ -867,8 +893,12 @@ int tls_construct_extensions(SSL *s, WPACKET *pkt, unsigned int context,
     }
 
     if (!WPACKET_close(pkt)) {
+<<<<<<< HEAD
         SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_CONSTRUCT_EXTENSIONS,
                  ERR_R_INTERNAL_ERROR);
+=======
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
 
@@ -913,6 +943,18 @@ static int final_renegotiate(SSL *s, unsigned int context, int sent)
     return 1;
 }
 
+<<<<<<< HEAD
+=======
+static ossl_inline void ssl_tsan_decr(const SSL_CTX *ctx,
+                                      TSAN_QUALIFIER int *stat)
+{
+    if (ssl_tsan_lock(ctx)) {
+        tsan_decr(stat);
+        ssl_tsan_unlock(ctx);
+    }
+}
+
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 static int init_server_name(SSL *s, unsigned int context)
 {
     if (s->server) {
@@ -932,8 +974,12 @@ static int final_server_name(SSL *s, unsigned int context, int sent)
     int was_ticket = (SSL_get_options(s) & SSL_OP_NO_TICKET) == 0;
 
     if (!ossl_assert(s->ctx != NULL) || !ossl_assert(s->session_ctx != NULL)) {
+<<<<<<< HEAD
         SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_FINAL_SERVER_NAME,
                  ERR_R_INTERNAL_ERROR);
+=======
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
 
@@ -971,9 +1017,15 @@ static int final_server_name(SSL *s, unsigned int context, int sent)
      * exceed sess_accept (zero) for the new context.
      */
     if (SSL_IS_FIRST_HANDSHAKE(s) && s->ctx != s->session_ctx
+<<<<<<< HEAD
 		    && s->hello_retry_request == SSL_HRR_NONE) {
         tsan_counter(&s->ctx->stats.sess_accept);
         tsan_decr(&s->session_ctx->stats.sess_accept);
+=======
+            && s->hello_retry_request == SSL_HRR_NONE) {
+        ssl_tsan_counter(s->ctx, &s->ctx->stats.sess_accept);
+        ssl_tsan_decr(s->session_ctx, &s->session_ctx->stats.sess_accept);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     }
 
     /*
@@ -1027,6 +1079,7 @@ static int final_server_name(SSL *s, unsigned int context, int sent)
     }
 }
 
+<<<<<<< HEAD
 #ifndef OPENSSL_NO_EC
 static int init_ec_point_formats(SSL *s, unsigned int context)
 {
@@ -1037,6 +1090,8 @@ static int init_ec_point_formats(SSL *s, unsigned int context)
     return 1;
 }
 
+=======
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 static int final_ec_pt_formats(SSL *s, unsigned int context, int sent)
 {
     unsigned long alg_k, alg_a;
@@ -1155,7 +1210,11 @@ static int init_sig_algs(SSL *s, unsigned int context)
     return 1;
 }
 
+<<<<<<< HEAD
 static int init_sig_algs_cert(SSL *s, unsigned int context)
+=======
+static int init_sig_algs_cert(SSL *s, ossl_unused unsigned int context)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 {
     /* Clear any signature algorithms extension received */
     OPENSSL_free(s->s3->tmp.peer_cert_sigalgs);
@@ -1175,6 +1234,18 @@ static int init_srp(SSL *s, unsigned int context)
 }
 #endif
 
+<<<<<<< HEAD
+=======
+static int init_ec_point_formats(SSL *s, unsigned int context)
+{
+    OPENSSL_free(s->ext.peer_ecpointformats);
+    s->ext.peer_ecpointformats = NULL;
+    s->ext.peer_ecpointformats_len = 0;
+
+    return 1;
+}
+
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 static int init_etm(SSL *s, unsigned int context)
 {
     s->ext.use_etm = 0;
@@ -1287,7 +1358,11 @@ static int init_srtp(SSL *s, unsigned int context)
 static int final_sig_algs(SSL *s, unsigned int context, int sent)
 {
     if (!sent && SSL_IS_TLS13(s) && !s->hit) {
+<<<<<<< HEAD
         SSLfatal(s, TLS13_AD_MISSING_EXTENSION, SSL_F_FINAL_SIG_ALGS,
+=======
+        SSLfatal(s, TLS13_AD_MISSING_EXTENSION,
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                  SSL_R_MISSING_SIGALGS_EXTENSION);
         return 0;
     }
@@ -1295,9 +1370,15 @@ static int final_sig_algs(SSL *s, unsigned int context, int sent)
     return 1;
 }
 
+<<<<<<< HEAD
 #ifndef OPENSSL_NO_EC
 static int final_key_share(SSL *s, unsigned int context, int sent)
 {
+=======
+static int final_key_share(SSL *s, unsigned int context, int sent)
+{
+#if !defined(OPENSSL_NO_TLS1_3)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     if (!SSL_IS_TLS13(s))
         return 1;
 
@@ -1614,8 +1695,14 @@ int tls_psk_do_binder(SSL *s, const EVP_MD *md, const unsigned char *msgstart,
         goto err;
     }
 
+<<<<<<< HEAD
     mackey = EVP_PKEY_new_raw_private_key(EVP_PKEY_HMAC, NULL, finishedkey,
                                           hashsize);
+=======
+    mackey = EVP_PKEY_new_raw_private_key_ex(s->ctx->libctx, "HMAC",
+                                             s->ctx->propq, finishedkey,
+                                             hashsize);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     if (mackey == NULL) {
         SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_PSK_DO_BINDER,
                  ERR_R_INTERNAL_ERROR);
@@ -1626,7 +1713,12 @@ int tls_psk_do_binder(SSL *s, const EVP_MD *md, const unsigned char *msgstart,
         binderout = tmpbinder;
 
     bindersize = hashsize;
+<<<<<<< HEAD
     if (EVP_DigestSignInit(mctx, NULL, md, NULL, mackey) <= 0
+=======
+    if (EVP_DigestSignInit_ex(mctx, NULL, EVP_MD_get0_name(md), s->ctx->libctx,
+                              s->ctx->propq, mackey, NULL) <= 0
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             || EVP_DigestSignUpdate(mctx, hash, hashsize) <= 0
             || EVP_DigestSignFinal(mctx, binderout, &bindersize) <= 0
             || bindersize != hashsize) {
@@ -1723,7 +1815,11 @@ static int final_maxfragmentlen(SSL *s, unsigned int context, int sent)
     return 1;
 }
 
+<<<<<<< HEAD
 static int init_post_handshake_auth(SSL *s, unsigned int context)
+=======
+static int init_post_handshake_auth(SSL *s, ossl_unused unsigned int context)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 {
     s->post_handshake_auth = SSL_PHA_NONE;
 

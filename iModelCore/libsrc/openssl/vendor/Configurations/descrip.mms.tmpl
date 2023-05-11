@@ -56,9 +56,146 @@
       map { $unified_info{sharednames}->{$_} || () }
       grep(!/\.a$/, @{$unified_info{install}->{libraries}});
 
+<<<<<<< HEAD
   # This is a horrible hack, but is needed because recursive inclusion of files
   # in different directories does not work well with HP C.
   my $sd = sourcedir("crypto", "async", "arch");
+=======
+  # Configured flags
+
+  our @cnf_asflags = ($target{asflags} || (), @{$config{asflags}});
+  our @cnf_defines = (@{$target{defines}}, @{$config{defines}});
+  our @cnf_includes = (@{$target{includes}}, @{$config{includes}});
+  our @cnf_cppflags = ($target{cppflags} || (), @{$config{cppflags}});
+  our @cnf_cflags = ($target{cflags} || (), @{$config{cflags}});
+  our @cnf_cxxflags = ($target{cxxflags} || (), @{$config{cxxflags}});
+  our @cnf_ldflags = ($target{lflags} || (), @{$config{lflags}});
+  our @cnf_ex_libs = (map{ ",$_" } @{$target{ex_libs}}, @{$config{ex_libs}});
+
+  # Variables starting with $lib_ are used to build library object files
+  # and shared libraries.
+  # Variables starting with $dso_ are used to build DSOs and their object files.
+  # Variables starting with $bin_ are used to build programs and their object
+  # files.
+
+  # The following array is special and is treated separately from the rest of
+  # the lib_ variables.
+  our @lib_cppincludes = (@{$target{lib_includes}}, @{$target{shared_includes}},
+                          @{$config{lib_includes}}, @{$config{shared_includes}},
+                          @cnf_includes);
+
+  our $lib_cppdefines =
+      join(',', @{$target{lib_defines}}, @{$target{shared_defines}},
+                @{$config{lib_defines}}, @{$config{shared_defines}},
+                @cnf_defines,
+                'OPENSSLDIR="""$(OPENSSLDIR_C)"""',
+                'ENGINESDIR="""$(ENGINESDIR_C)"""',
+                'MODULESDIR="""$(MODULESDIR_C)"""'
+                )
+      . '$(DEFINES)'
+      . "'extradefines'";
+  our $lib_asflags =
+      join(' ', $target{lib_asflags} || (), @{$config{lib_asflags}},
+                @cnf_asflags, '$(ASFLAGS)');
+  our $lib_cppflags =
+      join('', $target{lib_cppflags} || (), $target{shared_cppflags} || (),
+               @{$config{lib_cppflags}}, @{$config{shared_cppflag}},
+               @cnf_cppflags, '/DEFINE=('.$lib_cppdefines.')', '$(CPPFLAGS)');
+  my @lib_cflags = ( $target{lib_cflags} // () );
+  my @lib_cflags_no_inst = ( $target{no_inst_lib_cflags} // @lib_cflags );
+  my @lib_cflags_cont = ( $target{shared_cflag} || (),
+                          @{$config{lib_cflags}}, @{$config{shared_cflag}},
+                          $cnf_cflags, '$(CFLAGS)');
+  our $lib_cflags = join('', @lib_cflags, @lib_cflags_cont );
+  our $lib_cflags_no_inst = join('', @lib_cflags_no_inst, @lib_cflags_cont );
+  our $lib_ldflags =
+      join('', $target{lib_lflags} || (), $target{shared_ldflag} || (),
+               @{$config{lib_lflags}}, @{$config{shared_ldflag}},
+               @cnf_ldflags, '$(LDFLAGS)');
+  our $lib_ex_libs = join('', @cnf_ex_libs, '$(EX_LIBS)');
+
+  # The following array is special and is treated separately from the rest of
+  # the dso_ variables.
+  our @dso_cppincludes = (@{$target{dso_includes}}, @{$target{module_includes}},
+                          @{$config{dso_includes}}, @{$config{module_includes}},
+                          @cnf_includes);
+
+  our $dso_cppdefines =
+      join(',', @{$target{dso_defines}}, @{$target{module_defines}},
+                @{$config{dso_defines}}, @{$config{module_defines}},
+                @cnf_defines,
+                )
+      . '$(DEFINES)'
+      . "'extradefines'";
+  our $dso_asflags =
+      join(' ', $target{dso_asflags} || (), $target{module_asflags} || (),
+                @{$config{dso_asflags}}, @{$config{module_asflags}},
+                @cnf_asflags, '$(ASFLAGS)');
+  our $dso_cppflags =
+      join('', $target{dso_cppflags} || (), $target{module_cppflags} || (),
+               @{$config{dso_cppflags}}, @{$config{module_cppflag}},
+               @cnf_cppflags,
+               '/DEFINE=('.$dso_cppdefines.')',
+               '$(CPPFLAGS)');
+  my @dso_cflags = ( $target{dso_cflags} // () );
+  my @dso_cflags_no_inst = ( $target{no_inst_dso_cflags} // @dso_cflags );
+  my @dso_cflags_cont = ( $target{module_cflag} || (),
+                          @{$config{dso_cflags}}, @{$config{module_cflag}},
+                          $cnf_cflags, '$(CFLAGS)');
+  our $dso_cflags = join('', @dso_cflags, @dso_cflags_cont );
+  our $dso_cflags_no_inst = join('', @dso_cflags_no_inst, @dso_cflags_cont );
+  our $dso_ldflags =
+      join('', $target{dso_lflags} || (), $target{module_ldflag} || (),
+               @{$config{dso_lflags}}, @{$config{module_ldflag}},
+               @cnf_ldflags, '$(LDFLAGS)');
+  our $dso_ex_libs = join('', @cnf_ex_libs, '$(EX_LIBS)');
+
+  # The following array is special and is treated separately from the rest of
+  # the bin_ variables.
+  our @bin_cppincludes = (@{$target{bin_includes}},
+                          @{$config{bin_includes}},
+                          @cnf_includes);
+
+  our $bin_cppdefines =
+      join(',', @{$target{bin_defines}},
+                @{$config{bin_defines}},
+                @cnf_defines,
+                )
+      . '$(DEFINES)'
+      . "'extradefines'";
+  our $bin_asflags =
+      join(' ', $target{bin_asflags} || (),
+                @{$config{bin_asflags}},
+                @cnf_asflags, '$(ASFLAGS)');
+  our $bin_cppflags =
+      join('', $target{bin_cppflags} || (),
+               @{$config{bin_cppflags}},
+               @cnf_cppflags,
+               '/DEFINE=('.$bin_cppdefines.')',
+               '$(CPPFLAGS)');
+  my @bin_cflags = ( $target{bin_cflags} // () );
+  my @bin_cflags_no_inst = ( $target{no_inst_bin_cflags} // @bin_cflags );
+  my @bin_cflags_cont = ( @{$config{bin_cflags}},
+                          $cnf_cflags, '$(CFLAGS)');
+  our $bin_cflags = join('', @bin_cflags, @bin_cflags_cont );
+  our $bin_cflags_no_inst = join('', @bin_cflags_no_inst, @bin_cflags_cont );
+  our $bin_cflags =
+      join('', $target{bin_cflags} || (),
+               @{$config{bin_cflags}},
+               @cnf_cflags, '$(CFLAGS)');
+  our $bin_ldflags =
+      join('', $target{bin_lflags} || (),
+               @{$config{bin_lflags}},
+               @cnf_ldflags, '$(LDFLAGS)');
+  our $bin_ex_libs = join('', @cnf_ex_libs, '$(EX_LIBS)');
+
+  # This is a horrible hack, but is needed because recursive inclusion of files
+  # in different directories does not work well with VMS C.  We try to help by
+  # specifying extra relative directories.  They must always be in Unix format,
+  # relative to the directory where the .c file is located.  The logic is that
+  # any inclusion, merged with one of these relative directories, will find the
+  # requested inclusion file.
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
   foreach (grep /\[\.crypto\.async\.arch\].*\.o$/, keys %{$unified_info{sources}}) {
       (my $x = $_) =~ s|\.o$|.OBJ|;
       $unified_info{before}->{$x}
@@ -82,6 +219,31 @@
           = qq(deassign statem
         deassign record);
   }
+<<<<<<< HEAD
+=======
+  foreach (grep /\[\.crypto\.ec\.curve448.arch_(?:32|64)\].*?\.o$/, keys %{$unified_info{sources}}) {
+      my $obj = platform->obj($_);
+      push @{$unified_info{includes_extra}->{$obj}}, qw(../);
+  }
+  foreach (grep /\[\.ssl\.(?:record|statem)\].*?\.o$/, keys %{$unified_info{sources}}) {
+      my $obj = platform->obj($_);
+      # Most of the files in [.ssl.record] and [.ssl.statem] include
+      # "../ssl_local.h", which includes things like "record/record.h".
+      # Adding "../" as an inclusion directory helps making this sort of header
+      # from these directories.
+      push @{$unified_info{includes_extra}->{$obj}}, qw(../);
+
+  }
+  foreach (grep /\[\.test\].*?\.o$/, keys %{$unified_info{sources}}) {
+      my $obj = platform->obj($_);
+      push @{$unified_info{includes_extra}->{$obj}}, qw(../ssl ./helpers);
+  }
+  foreach (grep /\[\.test\.helpers\].*?\.o$/, keys %{$unified_info{sources}}) {
+      my $obj = platform->obj($_);
+      push @{$unified_info{includes_extra}->{$obj}}, qw(../../ssl);
+  }
+
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
   # This makes sure things get built in the order they need
   # to. You're welcome.
   sub dependmagic {

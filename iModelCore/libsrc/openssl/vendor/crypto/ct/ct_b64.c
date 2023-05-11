@@ -35,7 +35,11 @@ static int ct_base64_decode(const char *in, unsigned char **out)
     outlen = (inlen / 4) * 3;
     outbuf = OPENSSL_malloc(outlen);
     if (outbuf == NULL) {
+<<<<<<< HEAD
         CTerr(CT_F_CT_BASE64_DECODE, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_CT, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 
@@ -71,7 +75,11 @@ SCT *SCT_new_from_base64(unsigned char version, const char *logid_base64,
     int declen;
 
     if (sct == NULL) {
+<<<<<<< HEAD
         CTerr(CT_F_SCT_NEW_FROM_BASE64, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_CT, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return NULL;
     }
 

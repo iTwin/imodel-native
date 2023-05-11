@@ -13,7 +13,15 @@
 #include "ec_local.h"
 #include "internal/refcount.h"
 #include <openssl/err.h>
+<<<<<<< HEAD
 #include <openssl/engine.h>
+=======
+#ifndef FIPS_MODULE
+# include <openssl/engine.h>
+#endif
+#include <openssl/self_test.h>
+#include "prov/providercommon.h"
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 #include "crypto/bn.h"
 
 EC_KEY *EC_KEY_new(void)
@@ -247,10 +255,38 @@ int ec_key_simple_generate_key(EC_KEY *eckey)
     return ok;
 }
 
+<<<<<<< HEAD
 int ec_key_simple_generate_public_key(EC_KEY *eckey)
 {
     return EC_POINT_mul(eckey->group, eckey->pub_key, eckey->priv_key, NULL,
                         NULL, NULL);
+=======
+int ossl_ec_key_simple_generate_key(EC_KEY *eckey)
+{
+    return ec_generate_key(eckey, 0);
+}
+
+int ossl_ec_key_simple_generate_public_key(EC_KEY *eckey)
+{
+    int ret;
+    BN_CTX *ctx = BN_CTX_new_ex(eckey->libctx);
+
+    if (ctx == NULL)
+        return 0;
+
+    /*
+     * See SP800-56AR3 5.6.1.2.2: Step (8)
+     * pub_key = priv_key * G (where G is a point on the curve)
+     */
+    ret = EC_POINT_mul(eckey->group, eckey->pub_key, eckey->priv_key, NULL,
+                       NULL, ctx);
+
+    BN_CTX_free(ctx);
+    if (ret == 1)
+        eckey->dirty_cnt++;
+
+    return ret;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 }
 
 int EC_KEY_check_key(const EC_KEY *eckey)
@@ -664,7 +700,11 @@ int ec_key_simple_oct2priv(EC_KEY *eckey, const unsigned char *buf, size_t len)
     if (eckey->priv_key == NULL)
         eckey->priv_key = BN_secure_new();
     if (eckey->priv_key == NULL) {
+<<<<<<< HEAD
         ECerr(EC_F_EC_KEY_SIMPLE_OCT2PRIV, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
     if (BN_bin2bn(buf, len, eckey->priv_key) == NULL) {
@@ -683,7 +723,11 @@ size_t EC_KEY_priv2buf(const EC_KEY *eckey, unsigned char **pbuf)
     if (len == 0)
         return 0;
     if ((buf = OPENSSL_malloc(len)) == NULL) {
+<<<<<<< HEAD
         ECerr(EC_F_EC_KEY_PRIV2BUF, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
     len = EC_KEY_priv2oct(eckey, buf, len);

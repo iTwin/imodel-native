@@ -81,6 +81,7 @@ extern struct OPENSSL_s390xcap_st OPENSSL_s390xcap_P;
 # define S390X_QUERY		0
 
 /* kimd/klmd */
+<<<<<<< HEAD
 # define S390X_SHA3_224		32
 # define S390X_SHA3_256		33
 # define S390X_SHA3_384		34
@@ -88,6 +89,18 @@ extern struct OPENSSL_s390xcap_st OPENSSL_s390xcap_P;
 # define S390X_SHAKE_128	36
 # define S390X_SHAKE_256	37
 # define S390X_GHASH		65
+=======
+# define S390X_SHA_1            1
+# define S390X_SHA_256          2
+# define S390X_SHA_512          3
+# define S390X_SHA3_224         32
+# define S390X_SHA3_256         33
+# define S390X_SHA3_384         34
+# define S390X_SHA3_512         35
+# define S390X_SHAKE_128        36
+# define S390X_SHAKE_256        37
+# define S390X_GHASH            65
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
 /* km/kmc/kmac/kmctr/kmo/kmf/kma */
 # define S390X_AES_128		18

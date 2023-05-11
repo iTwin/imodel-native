@@ -51,7 +51,11 @@ int ASN1_STRING_set_default_mask_asc(const char *p)
     char *end;
 
     if (strncmp(p, "MASK:", 5) == 0) {
+<<<<<<< HEAD
         if (!p[5])
+=======
+        if (p[5] == '\0')
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return 0;
         mask = strtoul(p + 5, &end, 0);
         if (*end)
@@ -157,7 +161,11 @@ static ASN1_STRING_TABLE *stable_get(int nid)
     if (tmp != NULL && tmp->flags & STABLE_FLAGS_MALLOC)
         return tmp;
     if ((rv = OPENSSL_zalloc(sizeof(*rv))) == NULL) {
+<<<<<<< HEAD
         ASN1err(ASN1_F_STABLE_GET, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return NULL;
     }
     if (!sk_ASN1_STRING_TABLE_push(stable, rv)) {
@@ -187,7 +195,11 @@ int ASN1_STRING_TABLE_add(int nid,
 
     tmp = stable_get(nid);
     if (tmp == NULL) {
+<<<<<<< HEAD
         ASN1err(ASN1_F_ASN1_STRING_TABLE_ADD, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
     if (minsize >= 0)

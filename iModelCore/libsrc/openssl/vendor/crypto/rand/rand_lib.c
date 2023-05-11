@@ -959,6 +959,7 @@ int RAND_pseudo_bytes(unsigned char *buf, int num)
 }
 #endif
 
+<<<<<<< HEAD
 int RAND_status(void)
 {
     const RAND_METHOD *meth = RAND_get_rand_method();
@@ -967,3 +968,322 @@ int RAND_status(void)
         return meth->status();
     return 0;
 }
+=======
+static EVP_RAND_CTX *rand_new_drbg(OSSL_LIB_CTX *libctx, EVP_RAND_CTX *parent,
+                                   unsigned int reseed_interval,
+                                   time_t reseed_time_interval)
+{
+    EVP_RAND *rand;
+    RAND_GLOBAL *dgbl = rand_get_global(libctx);
+    EVP_RAND_CTX *ctx;
+    OSSL_PARAM params[7], *p = params;
+    char *name, *cipher;
+
+    if (dgbl == NULL)
+        return NULL;
+    name = dgbl->rng_name != NULL ? dgbl->rng_name : "CTR-DRBG";
+    rand = EVP_RAND_fetch(libctx, name, dgbl->rng_propq);
+    if (rand == NULL) {
+        ERR_raise(ERR_LIB_RAND, RAND_R_UNABLE_TO_FETCH_DRBG);
+        return NULL;
+    }
+    ctx = EVP_RAND_CTX_new(rand, parent);
+    EVP_RAND_free(rand);
+    if (ctx == NULL) {
+        ERR_raise(ERR_LIB_RAND, RAND_R_UNABLE_TO_CREATE_DRBG);
+        return NULL;
+    }
+
+    /*
+     * Rather than trying to decode the DRBG settings, just pass them through
+     * and rely on the other end to ignore those it doesn't care about.
+     */
+    cipher = dgbl->rng_cipher != NULL ? dgbl->rng_cipher : "AES-256-CTR";
+    *p++ = OSSL_PARAM_construct_utf8_string(OSSL_DRBG_PARAM_CIPHER,
+                                            cipher, 0);
+    if (dgbl->rng_digest != NULL)
+        *p++ = OSSL_PARAM_construct_utf8_string(OSSL_DRBG_PARAM_DIGEST,
+                                                dgbl->rng_digest, 0);
+    if (dgbl->rng_propq != NULL)
+        *p++ = OSSL_PARAM_construct_utf8_string(OSSL_DRBG_PARAM_PROPERTIES,
+                                                dgbl->rng_propq, 0);
+    *p++ = OSSL_PARAM_construct_utf8_string(OSSL_ALG_PARAM_MAC, "HMAC", 0);
+    *p++ = OSSL_PARAM_construct_uint(OSSL_DRBG_PARAM_RESEED_REQUESTS,
+                                     &reseed_interval);
+    *p++ = OSSL_PARAM_construct_time_t(OSSL_DRBG_PARAM_RESEED_TIME_INTERVAL,
+                                       &reseed_time_interval);
+    *p = OSSL_PARAM_construct_end();
+    if (!EVP_RAND_instantiate(ctx, 0, 0, NULL, 0, params)) {
+        ERR_raise(ERR_LIB_RAND, RAND_R_ERROR_INSTANTIATING_DRBG);
+        EVP_RAND_CTX_free(ctx);
+        return NULL;
+    }
+    return ctx;
+}
+
+/*
+ * Get the primary random generator.
+ * Returns pointer to its EVP_RAND_CTX on success, NULL on failure.
+ *
+ */
+EVP_RAND_CTX *RAND_get0_primary(OSSL_LIB_CTX *ctx)
+{
+    RAND_GLOBAL *dgbl = rand_get_global(ctx);
+    EVP_RAND_CTX *ret;
+
+    if (dgbl == NULL)
+        return NULL;
+
+    if (!CRYPTO_THREAD_read_lock(dgbl->lock))
+        return NULL;
+
+    ret = dgbl->primary;
+    CRYPTO_THREAD_unlock(dgbl->lock);
+
+    if (ret != NULL)
+        return ret;
+
+    if (!CRYPTO_THREAD_write_lock(dgbl->lock))
+        return NULL;
+
+    ret = dgbl->primary;
+    if (ret != NULL) {
+        CRYPTO_THREAD_unlock(dgbl->lock);
+        return ret;
+    }
+
+#ifndef FIPS_MODULE
+    if (dgbl->seed == NULL) {
+        ERR_set_mark();
+        dgbl->seed = rand_new_seed(ctx);
+        ERR_pop_to_mark();
+    }
+#endif
+
+    ret = dgbl->primary = rand_new_drbg(ctx, dgbl->seed,
+                                        PRIMARY_RESEED_INTERVAL,
+                                        PRIMARY_RESEED_TIME_INTERVAL);
+    /*
+    * The primary DRBG may be shared between multiple threads so we must
+    * enable locking.
+    */
+    if (ret != NULL && !EVP_RAND_enable_locking(ret)) {
+        ERR_raise(ERR_LIB_EVP, EVP_R_UNABLE_TO_ENABLE_LOCKING);
+        EVP_RAND_CTX_free(ret);
+        ret = dgbl->primary = NULL;
+    }
+    CRYPTO_THREAD_unlock(dgbl->lock);
+
+    return ret;
+}
+
+/*
+ * Get the public random generator.
+ * Returns pointer to its EVP_RAND_CTX on success, NULL on failure.
+ */
+EVP_RAND_CTX *RAND_get0_public(OSSL_LIB_CTX *ctx)
+{
+    RAND_GLOBAL *dgbl = rand_get_global(ctx);
+    EVP_RAND_CTX *rand, *primary;
+
+    if (dgbl == NULL)
+        return NULL;
+
+    rand = CRYPTO_THREAD_get_local(&dgbl->public);
+    if (rand == NULL) {
+        primary = RAND_get0_primary(ctx);
+        if (primary == NULL)
+            return NULL;
+
+        ctx = ossl_lib_ctx_get_concrete(ctx);
+        /*
+         * If the private is also NULL then this is the first time we've
+         * used this thread.
+         */
+        if (CRYPTO_THREAD_get_local(&dgbl->private) == NULL
+                && !ossl_init_thread_start(NULL, ctx, rand_delete_thread_state))
+            return NULL;
+        rand = rand_new_drbg(ctx, primary, SECONDARY_RESEED_INTERVAL,
+                             SECONDARY_RESEED_TIME_INTERVAL);
+        CRYPTO_THREAD_set_local(&dgbl->public, rand);
+    }
+    return rand;
+}
+
+/*
+ * Get the private random generator.
+ * Returns pointer to its EVP_RAND_CTX on success, NULL on failure.
+ */
+EVP_RAND_CTX *RAND_get0_private(OSSL_LIB_CTX *ctx)
+{
+    RAND_GLOBAL *dgbl = rand_get_global(ctx);
+    EVP_RAND_CTX *rand, *primary;
+
+    if (dgbl == NULL)
+        return NULL;
+
+    rand = CRYPTO_THREAD_get_local(&dgbl->private);
+    if (rand == NULL) {
+        primary = RAND_get0_primary(ctx);
+        if (primary == NULL)
+            return NULL;
+
+        ctx = ossl_lib_ctx_get_concrete(ctx);
+        /*
+         * If the public is also NULL then this is the first time we've
+         * used this thread.
+         */
+        if (CRYPTO_THREAD_get_local(&dgbl->public) == NULL
+                && !ossl_init_thread_start(NULL, ctx, rand_delete_thread_state))
+            return NULL;
+        rand = rand_new_drbg(ctx, primary, SECONDARY_RESEED_INTERVAL,
+                             SECONDARY_RESEED_TIME_INTERVAL);
+        CRYPTO_THREAD_set_local(&dgbl->private, rand);
+    }
+    return rand;
+}
+
+int RAND_set0_public(OSSL_LIB_CTX *ctx, EVP_RAND_CTX *rand)
+{
+    RAND_GLOBAL *dgbl = rand_get_global(ctx);
+    EVP_RAND_CTX *old;
+    int r;
+
+    if (dgbl == NULL)
+        return 0;
+    old = CRYPTO_THREAD_get_local(&dgbl->public);
+    if ((r = CRYPTO_THREAD_set_local(&dgbl->public, rand)) > 0)
+        EVP_RAND_CTX_free(old);
+    return r;
+}
+
+int RAND_set0_private(OSSL_LIB_CTX *ctx, EVP_RAND_CTX *rand)
+{
+    RAND_GLOBAL *dgbl = rand_get_global(ctx);
+    EVP_RAND_CTX *old;
+    int r;
+
+    if (dgbl == NULL)
+        return 0;
+    old = CRYPTO_THREAD_get_local(&dgbl->private);
+    if ((r = CRYPTO_THREAD_set_local(&dgbl->private, rand)) > 0)
+        EVP_RAND_CTX_free(old);
+    return r;
+}
+
+#ifndef FIPS_MODULE
+static int random_set_string(char **p, const char *s)
+{
+    char *d = NULL;
+
+    if (s != NULL) {
+        d = OPENSSL_strdup(s);
+        if (d == NULL) {
+            ERR_raise(ERR_LIB_CRYPTO, ERR_R_MALLOC_FAILURE);
+            return 0;
+        }
+    }
+    OPENSSL_free(*p);
+    *p = d;
+    return 1;
+}
+
+/*
+ * Load the DRBG definitions from a configuration file.
+ */
+static int random_conf_init(CONF_IMODULE *md, const CONF *cnf)
+{
+    STACK_OF(CONF_VALUE) *elist;
+    CONF_VALUE *cval;
+    RAND_GLOBAL *dgbl = rand_get_global(NCONF_get0_libctx((CONF *)cnf));
+    int i, r = 1;
+
+    OSSL_TRACE1(CONF, "Loading random module: section %s\n",
+                CONF_imodule_get_value(md));
+
+    /* Value is a section containing RANDOM configuration */
+    elist = NCONF_get_section(cnf, CONF_imodule_get_value(md));
+    if (elist == NULL) {
+        ERR_raise(ERR_LIB_CRYPTO, CRYPTO_R_RANDOM_SECTION_ERROR);
+        return 0;
+    }
+
+    if (dgbl == NULL)
+        return 0;
+
+    for (i = 0; i < sk_CONF_VALUE_num(elist); i++) {
+        cval = sk_CONF_VALUE_value(elist, i);
+        if (OPENSSL_strcasecmp(cval->name, "random") == 0) {
+            if (!random_set_string(&dgbl->rng_name, cval->value))
+                return 0;
+        } else if (OPENSSL_strcasecmp(cval->name, "cipher") == 0) {
+            if (!random_set_string(&dgbl->rng_cipher, cval->value))
+                return 0;
+        } else if (OPENSSL_strcasecmp(cval->name, "digest") == 0) {
+            if (!random_set_string(&dgbl->rng_digest, cval->value))
+                return 0;
+        } else if (OPENSSL_strcasecmp(cval->name, "properties") == 0) {
+            if (!random_set_string(&dgbl->rng_propq, cval->value))
+                return 0;
+        } else if (OPENSSL_strcasecmp(cval->name, "seed") == 0) {
+            if (!random_set_string(&dgbl->seed_name, cval->value))
+                return 0;
+        } else if (OPENSSL_strcasecmp(cval->name, "seed_properties") == 0) {
+            if (!random_set_string(&dgbl->seed_propq, cval->value))
+                return 0;
+        } else {
+            ERR_raise_data(ERR_LIB_CRYPTO,
+                           CRYPTO_R_UNKNOWN_NAME_IN_RANDOM_SECTION,
+                           "name=%s, value=%s", cval->name, cval->value);
+            r = 0;
+        }
+    }
+    return r;
+}
+
+
+static void random_conf_deinit(CONF_IMODULE *md)
+{
+    OSSL_TRACE(CONF, "Cleaned up random\n");
+}
+
+void ossl_random_add_conf_module(void)
+{
+    OSSL_TRACE(CONF, "Adding config module 'random'\n");
+    CONF_module_add("random", random_conf_init, random_conf_deinit);
+}
+
+int RAND_set_DRBG_type(OSSL_LIB_CTX *ctx, const char *drbg, const char *propq,
+                       const char *cipher, const char *digest)
+{
+    RAND_GLOBAL *dgbl = rand_get_global(ctx);
+
+    if (dgbl == NULL)
+        return 0;
+    if (dgbl->primary != NULL) {
+        ERR_raise(ERR_LIB_CRYPTO, RAND_R_ALREADY_INSTANTIATED);
+        return 0;
+    }
+    return random_set_string(&dgbl->rng_name, drbg)
+        && random_set_string(&dgbl->rng_propq, propq)
+        && random_set_string(&dgbl->rng_cipher, cipher)
+        && random_set_string(&dgbl->rng_digest, digest);
+}
+
+int RAND_set_seed_source_type(OSSL_LIB_CTX *ctx, const char *seed,
+                              const char *propq)
+{
+    RAND_GLOBAL *dgbl = rand_get_global(ctx);
+
+    if (dgbl == NULL)
+        return 0;
+    if (dgbl->primary != NULL) {
+        ERR_raise(ERR_LIB_CRYPTO, RAND_R_ALREADY_INSTANTIATED);
+        return 0;
+    }
+    return random_set_string(&dgbl->seed_name, seed)
+        && random_set_string(&dgbl->seed_propq, propq);
+}
+
+#endif
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))

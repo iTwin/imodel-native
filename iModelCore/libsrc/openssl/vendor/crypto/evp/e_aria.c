@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright 2017-2019 The OpenSSL Project Authors. All Rights Reserved.
+=======
+ * Copyright 2017-2022 The OpenSSL Project Authors. All Rights Reserved.
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  * Copyright (c) 2017, Oracle and/or its affiliates.  All rights reserved.
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
@@ -70,7 +74,11 @@ static int aria_init_key(EVP_CIPHER_CTX *ctx, const unsigned char *key,
         ret = aria_set_decrypt_key(key, EVP_CIPHER_CTX_key_length(ctx) * 8,
                                         EVP_CIPHER_CTX_get_cipher_data(ctx));
     if (ret < 0) {
+<<<<<<< HEAD
         EVPerr(EVP_F_ARIA_INIT_KEY,EVP_R_ARIA_KEY_SETUP_FAILED);
+=======
+        ERR_raise(ERR_LIB_EVP,EVP_R_ARIA_KEY_SETUP_FAILED);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
     return 1;
@@ -218,7 +226,11 @@ static int aria_gcm_init_key(EVP_CIPHER_CTX *ctx, const unsigned char *key,
         CRYPTO_gcm128_init(&gctx->gcm, &gctx->ks,
                            (block128_f) aria_encrypt);
         if (ret < 0) {
+<<<<<<< HEAD
             EVPerr(EVP_F_ARIA_GCM_INIT_KEY,EVP_R_ARIA_KEY_SETUP_FAILED);
+=======
+            ERR_raise(ERR_LIB_EVP,EVP_R_ARIA_KEY_SETUP_FAILED);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return 0;
         }
 
@@ -267,7 +279,11 @@ static int aria_gcm_ctrl(EVP_CIPHER_CTX *c, int type, int arg, void *ptr)
             if (gctx->iv != EVP_CIPHER_CTX_iv_noconst(c))
                 OPENSSL_free(gctx->iv);
             if ((gctx->iv = OPENSSL_malloc(arg)) == NULL) {
+<<<<<<< HEAD
                 EVPerr(EVP_F_ARIA_GCM_CTRL, ERR_R_MALLOC_FAILURE);
+=======
+                ERR_raise(ERR_LIB_EVP, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                 return 0;
             }
         }
@@ -376,7 +392,11 @@ static int aria_gcm_ctrl(EVP_CIPHER_CTX *c, int type, int arg, void *ptr)
                 gctx_out->iv = EVP_CIPHER_CTX_iv_noconst(out);
             else {
                 if ((gctx_out->iv = OPENSSL_malloc(gctx->ivlen)) == NULL) {
+<<<<<<< HEAD
                     EVPerr(EVP_F_ARIA_GCM_CTRL, ERR_R_MALLOC_FAILURE);
+=======
+                    ERR_raise(ERR_LIB_EVP, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                     return 0;
                 }
                 memcpy(gctx_out->iv, gctx->iv, gctx->ivlen);
@@ -515,7 +535,11 @@ static int aria_ccm_init_key(EVP_CIPHER_CTX *ctx, const unsigned char *key,
         CRYPTO_ccm128_init(&cctx->ccm, cctx->M, cctx->L,
                            &cctx->ks, (block128_f) aria_encrypt);
         if (ret < 0) {
+<<<<<<< HEAD
             EVPerr(EVP_F_ARIA_CCM_INIT_KEY,EVP_R_ARIA_KEY_SETUP_FAILED);
+=======
+            ERR_raise(ERR_LIB_EVP,EVP_R_ARIA_KEY_SETUP_FAILED);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return 0;
         }
         cctx->str = NULL;

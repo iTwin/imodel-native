@@ -92,8 +92,21 @@ custom_ext_parse_cb                     datatype
 pem_password_cb                         datatype
 ssl_ct_validation_cb                    datatype
 #
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/util/private.num
 BIO_append_filename                     define
 BIO_destroy_bio_pair                    define
+=======
+ASN1_BIT_STRING_digest                  define
+BIO_append_filename                     define
+BIO_destroy_bio_pair                    define
+BIO_ctrl_dgram_connect                  define
+BIO_ctrl_set_connected                  define
+BIO_dgram_get_mtu_overhead              define
+BIO_dgram_get_peer                      define
+BIO_dgram_set_peer                      define
+BIO_dgram_recv_timedout                 define
+BIO_dgram_send_timedout                 define
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/util/other.syms
 BIO_do_accept                           define
 BIO_do_connect                          define
 BIO_do_handshake                        define
@@ -306,6 +319,60 @@ OpenSSL_add_all_algorithms              define deprecated 1.1.0
 OpenSSL_add_all_ciphers                 define deprecated 1.1.0
 OpenSSL_add_all_digests                 define deprecated 1.1.0
 OpenSSL_add_ssl_algorithms              define
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/util/private.num
+=======
+OSSL_CMP_exec_IR_ses                    define
+OSSL_CMP_exec_CR_ses                    define
+OSSL_CMP_exec_P10CR_ses                 define
+OSSL_CMP_exec_KUR_ses                   define
+OSSL_CMP_CTX_set_log_verbosity          define
+OSSL_CMP_CR                             define
+OSSL_CMP_IR                             define
+OSSL_CMP_KUR                            define
+OSSL_CMP_LOG_ALERT                      define
+OSSL_CMP_LOG_CRIT                       define
+OSSL_CMP_LOG_DEBUG                      define
+OSSL_CMP_LOG_EMERG                      define
+OSSL_CMP_LOG_ERR                        define
+OSSL_CMP_LOG_INFO                       define
+OSSL_CMP_LOG_NOTICE                     define
+OSSL_CMP_LOG_TRACE                      define
+OSSL_CMP_LOG_WARNING                    define
+OSSL_CMP_MSTR_HELPER                    define
+OSSL_CMP_MSTR                           define
+OSSL_CMP_P10CR                          define
+OSSL_CMP_certConf_cb_t                  datatype
+OSSL_CMP_log_cb_t                       datatype
+OSSL_CMP_severity                       datatype
+OSSL_CMP_transfer_cb_t                  datatype
+OSSL_CMP_SRV_cert_request_cb_t          datatype
+OSSL_CMP_SRV_rr_cb_t                    datatype
+OSSL_CMP_SRV_certConf_cb_t              datatype
+OSSL_CMP_SRV_genm_cb_t                  datatype
+OSSL_CMP_SRV_error_cb_t                 datatype
+OSSL_CMP_SRV_pollReq_cb_t               datatype
+OSSL_CORE_MAKE_FUNC                     define
+OSSL_PARAM_TYPE                         define
+OSSL_PARAM_octet_ptr                    define
+OSSL_PARAM_octet_string                 define
+OSSL_PARAM_utf8_ptr                     define
+OSSL_PARAM_BN                           define
+OSSL_PARAM_TYPE                         generic
+OSSL_PARAM_construct_TYPE               generic
+OSSL_PARAM_utf8_string                  define
+OSSL_PARAM_get_TYPE                     generic
+OSSL_PARAM_END                          define
+OSSL_PARAM_set_TYPE                     generic
+OSSL_ENCODER_PUBKEY_TO_DER_PQ           define
+OSSL_ENCODER_PrivateKey_TO_DER_PQ       define
+OSSL_ENCODER_Parameters_TO_DER_PQ       define
+OSSL_ENCODER_PUBKEY_TO_PEM_PQ           define
+OSSL_ENCODER_PrivateKey_TO_PEM_PQ       define
+OSSL_ENCODER_Parameters_TO_PEM_PQ       define
+OSSL_ENCODER_PUBKEY_TO_TEXT_PQ          define
+OSSL_ENCODER_PrivateKey_TO_TEXT_PQ      define
+OSSL_ENCODER_Parameters_TO_TEXT_PQ      define
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/util/other.syms
 PEM_FLAG_EAY_COMPATIBLE                 define
 PEM_FLAG_ONLY_B64                       define
 PEM_FLAG_SECURE                         define

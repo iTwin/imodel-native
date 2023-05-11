@@ -36,7 +36,11 @@ int RSA_sign_ASN1_OCTET_STRING(int type,
     }
     s = OPENSSL_malloc((unsigned int)j + 1);
     if (s == NULL) {
+<<<<<<< HEAD
         RSAerr(RSA_F_RSA_SIGN_ASN1_OCTET_STRING, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_RSA, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
     p = s;
@@ -69,7 +73,11 @@ int RSA_verify_ASN1_OCTET_STRING(int dtype,
 
     s = OPENSSL_malloc((unsigned int)siglen);
     if (s == NULL) {
+<<<<<<< HEAD
         RSAerr(RSA_F_RSA_VERIFY_ASN1_OCTET_STRING, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_RSA, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
     i = RSA_public_decrypt((int)siglen, sigbuf, s, rsa, RSA_PKCS1_PADDING);

@@ -114,7 +114,12 @@ if ( $internal ) {
     die "Cannot mix -internal and -static\n" if $static;
     die "Extra parameters given.\n" if @ARGV;
     @source = ( glob('crypto/*.c'), glob('crypto/*/*.c'),
+<<<<<<< HEAD
                 glob('ssl/*.c'), glob('ssl/*/*.c') );
+=======
+                glob('ssl/*.c'), glob('ssl/*/*.c'), glob('providers/*.c'),
+                glob('providers/*/*.c'), glob('providers/*/*/*.c') );
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 } else {
     die "-module isn't useful without -internal\n" if scalar keys %modules > 0;
     @source = @ARGV;
@@ -482,6 +487,14 @@ EOF
 EOF
         if ( ! $static ) {
             print OUT <<"EOF";
+<<<<<<< HEAD
+=======
+# define ${lib}err(f, r) ERR_${lib}_error(0, (r), OPENSSL_FILE, OPENSSL_LINE)
+
+EOF
+            if ( ! $static ) {
+                print OUT <<"EOF";
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
 # ifdef  __cplusplus
 extern \"C\" {
@@ -677,7 +690,12 @@ ${st}void ERR_${lib}_error(int function, int reason, char *file, int line)
 {
     if (lib_code == 0)
         lib_code = ERR_get_next_error_library();
+<<<<<<< HEAD
     ERR_PUT_error(lib_code, function, reason, file, line);
+=======
+    ERR_raise(lib_code, reason);
+    ERR_set_debug(file, line, NULL);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 }
 EOF
 

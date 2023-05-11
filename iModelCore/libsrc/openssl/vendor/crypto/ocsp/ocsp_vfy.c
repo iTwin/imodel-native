@@ -25,6 +25,77 @@ static int ocsp_req_find_signer(X509 **psigner, OCSP_REQUEST *req,
                                 X509_NAME *nm, STACK_OF(X509) *certs,
                                 unsigned long flags);
 
+<<<<<<< HEAD
+=======
+/* Returns 1 on success, 0 on failure, or -1 on fatal error */
+static int ocsp_verify_signer(X509 *signer, int response,
+                              X509_STORE *st, unsigned long flags,
+                              STACK_OF(X509) *untrusted, STACK_OF(X509) **chain)
+{
+    X509_STORE_CTX *ctx = X509_STORE_CTX_new();
+    X509_VERIFY_PARAM *vp;
+    int ret = -1;
+
+    if (ctx == NULL) {
+        ERR_raise(ERR_LIB_OCSP, ERR_R_MALLOC_FAILURE);
+        goto end;
+    }
+    if (!X509_STORE_CTX_init(ctx, st, signer, untrusted)) {
+        ERR_raise(ERR_LIB_OCSP, ERR_R_X509_LIB);
+        goto end;
+    }
+    if ((vp = X509_STORE_CTX_get0_param(ctx)) == NULL)
+        goto end;
+    if ((flags & OCSP_PARTIAL_CHAIN) != 0)
+        X509_VERIFY_PARAM_set_flags(vp, X509_V_FLAG_PARTIAL_CHAIN);
+    if (response
+            && X509_get_ext_by_NID(signer, NID_id_pkix_OCSP_noCheck, -1) >= 0)
+        /*
+         * Locally disable revocation status checking for OCSP responder cert.
+         * Done here for CRLs; should be done also for OCSP-based checks.
+         */
+        X509_VERIFY_PARAM_clear_flags(vp, X509_V_FLAG_CRL_CHECK);
+    X509_STORE_CTX_set_purpose(ctx, X509_PURPOSE_OCSP_HELPER);
+    X509_STORE_CTX_set_trust(ctx, X509_TRUST_OCSP_REQUEST);
+
+    ret = X509_verify_cert(ctx);
+    if (ret <= 0) {
+        int err = X509_STORE_CTX_get_error(ctx);
+
+        ERR_raise_data(ERR_LIB_OCSP, OCSP_R_CERTIFICATE_VERIFY_ERROR,
+                       "Verify error: %s", X509_verify_cert_error_string(err));
+        goto end;
+    }
+    if (chain != NULL)
+        *chain = X509_STORE_CTX_get1_chain(ctx);
+
+ end:
+    X509_STORE_CTX_free(ctx);
+    return ret;
+}
+
+static int ocsp_verify(OCSP_REQUEST *req, OCSP_BASICRESP *bs,
+                       X509 *signer, unsigned long flags)
+{
+    EVP_PKEY *skey;
+    int ret = 1;
+
+    if ((flags & OCSP_NOSIGS) == 0) {
+        if ((skey = X509_get0_pubkey(signer)) == NULL) {
+            ERR_raise(ERR_LIB_OCSP, OCSP_R_NO_SIGNER_KEY);
+            return -1;
+        }
+        if (req != NULL)
+            ret = OCSP_REQUEST_verify(req, skey, signer->libctx, signer->propq);
+        else
+            ret = OCSP_BASICRESP_verify(bs, skey, signer->libctx, signer->propq);
+        if (ret <= 0)
+            ERR_raise(ERR_LIB_OCSP, OCSP_R_SIGNATURE_FAILURE);
+    }
+    return ret;
+}
+
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 /* Verify a basic response message */
 
 int OCSP_basic_verify(OCSP_BASICRESP *bs, STACK_OF(X509) *certs,
@@ -124,10 +195,15 @@ int OCSP_basic_verify(OCSP_BASICRESP *bs, STACK_OF(X509) *certs,
         ret = 1;
     }
  end:
+<<<<<<< HEAD
     X509_STORE_CTX_free(ctx);
     sk_X509_pop_free(chain, X509_free);
     if (bs->certs && certs)
         sk_X509_free(untrusted);
+=======
+    sk_X509_pop_free(chain, X509_free);
+    sk_X509_free(untrusted);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     return ret;
 
  err:

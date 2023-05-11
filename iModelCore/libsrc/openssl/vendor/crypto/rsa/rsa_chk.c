@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright 1999-2017 The OpenSSL Project Authors. All Rights Reserved.
+=======
+ * Copyright 1999-2022 The OpenSSL Project Authors. All Rights Reserved.
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -48,7 +52,11 @@ int RSA_check_key_ex(const RSA *key, BN_GENCB *cb)
     if (i == NULL || j == NULL || k == NULL || l == NULL
             || m == NULL || ctx == NULL) {
         ret = -1;
+<<<<<<< HEAD
         RSAerr(RSA_F_RSA_CHECK_KEY_EX, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_RSA, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 

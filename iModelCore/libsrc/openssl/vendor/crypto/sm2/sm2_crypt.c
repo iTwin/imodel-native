@@ -141,9 +141,15 @@ int sm2_encrypt(const EC_KEY *key,
 
     kG = EC_POINT_new(group);
     kP = EC_POINT_new(group);
+<<<<<<< HEAD
     ctx = BN_CTX_new();
     if (kG == NULL || kP == NULL || ctx == NULL) {
         SM2err(SM2_F_SM2_ENCRYPT, ERR_R_MALLOC_FAILURE);
+=======
+    ctx = BN_CTX_new_ex(libctx);
+    if (kG == NULL || kP == NULL || ctx == NULL) {
+        ERR_raise(ERR_LIB_SM2, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto done;
     }
 
@@ -163,7 +169,11 @@ int sm2_encrypt(const EC_KEY *key,
     C3 = OPENSSL_zalloc(C3_size);
 
     if (x2y2 == NULL || C3 == NULL) {
+<<<<<<< HEAD
         SM2err(SM2_F_SM2_ENCRYPT, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_SM2, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto done;
     }
 
@@ -190,7 +200,11 @@ int sm2_encrypt(const EC_KEY *key,
 
     msg_mask = OPENSSL_zalloc(msg_len);
     if (msg_mask == NULL) {
+<<<<<<< HEAD
        SM2err(SM2_F_SM2_ENCRYPT, ERR_R_MALLOC_FAILURE);
+=======
+       ERR_raise(ERR_LIB_SM2, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
        goto done;
    }
 
@@ -219,7 +233,11 @@ int sm2_encrypt(const EC_KEY *key,
     ctext_struct.C2 = ASN1_OCTET_STRING_new();
 
     if (ctext_struct.C3 == NULL || ctext_struct.C2 == NULL) {
+<<<<<<< HEAD
        SM2err(SM2_F_SM2_ENCRYPT, ERR_R_MALLOC_FAILURE);
+=======
+       ERR_raise(ERR_LIB_SM2, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
        goto done;
     }
     if (!ASN1_OCTET_STRING_set(ctext_struct.C3, C3, C3_size)
@@ -301,7 +319,11 @@ int sm2_decrypt(const EC_KEY *key,
 
     ctx = BN_CTX_new();
     if (ctx == NULL) {
+<<<<<<< HEAD
         SM2err(SM2_F_SM2_DECRYPT, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_SM2, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto done;
     }
 
@@ -319,13 +341,21 @@ int sm2_decrypt(const EC_KEY *key,
     computed_C3 = OPENSSL_zalloc(hash_size);
 
     if (msg_mask == NULL || x2y2 == NULL || computed_C3 == NULL) {
+<<<<<<< HEAD
         SM2err(SM2_F_SM2_DECRYPT, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_SM2, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto done;
     }
 
     C1 = EC_POINT_new(group);
     if (C1 == NULL) {
+<<<<<<< HEAD
         SM2err(SM2_F_SM2_DECRYPT, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_SM2, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto done;
     }
 
@@ -351,7 +381,11 @@ int sm2_decrypt(const EC_KEY *key,
 
     hash = EVP_MD_CTX_new();
     if (hash == NULL) {
+<<<<<<< HEAD
         SM2err(SM2_F_SM2_DECRYPT, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_SM2, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto done;
     }
 

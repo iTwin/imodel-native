@@ -20,6 +20,63 @@ static void SSL_SESSION_list_remove(SSL_CTX *ctx, SSL_SESSION *s);
 static void SSL_SESSION_list_add(SSL_CTX *ctx, SSL_SESSION *s);
 static int remove_session_lock(SSL_CTX *ctx, SSL_SESSION *c, int lck);
 
+<<<<<<< HEAD
+=======
+DEFINE_STACK_OF(SSL_SESSION)
+
+__owur static int sess_timedout(time_t t, SSL_SESSION *ss)
+{
+    /* if timeout overflowed, it can never timeout! */
+    if (ss->timeout_ovf)
+        return 0;
+    return t > ss->calc_timeout;
+}
+
+/*
+ * Returns -1/0/+1 as other XXXcmp-type functions
+ * Takes overflow of calculated timeout into consideration
+ */
+__owur static int timeoutcmp(SSL_SESSION *a, SSL_SESSION *b)
+{
+    /* if only one overflowed, then it is greater */
+    if (a->timeout_ovf && !b->timeout_ovf)
+        return 1;
+    if (!a->timeout_ovf && b->timeout_ovf)
+        return -1;
+    /* No overflow, or both overflowed, so straight compare is safe */
+    if (a->calc_timeout < b->calc_timeout)
+        return -1;
+    if (a->calc_timeout > b->calc_timeout)
+        return 1;
+    return 0;
+}
+
+/*
+ * Calculates effective timeout, saving overflow state
+ * Locking must be done by the caller of this function
+ */
+void ssl_session_calculate_timeout(SSL_SESSION *ss)
+{
+#ifndef __DJGPP__ /* time_t is unsigned on djgpp */
+    /* Force positive timeout */
+    if (ss->timeout < 0)
+        ss->timeout = 0;
+#endif
+    ss->calc_timeout = ss->time + ss->timeout;
+    /*
+     * |timeout| is always zero or positive, so the check for
+     * overflow only needs to consider if |time| is positive
+     */
+    ss->timeout_ovf = ss->time > 0 && ss->calc_timeout < ss->time;
+    /*
+     * N.B. Realistic overflow can only occur in our lifetimes on a
+     *      32-bit machine with signed time_t, in January 2038.
+     *      However, There are no controls to limit the |timeout|
+     *      value, except to keep it positive.
+     */
+}
+
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 /*
  * SSL_get_session() and SSL_get1_session() are problematic in TLS1.3 because,
  * unlike in earlier protocol versions, the session ticket may not have been
@@ -44,7 +101,12 @@ SSL_SESSION *SSL_get1_session(SSL *ssl)
      * somebody doesn't free ssl->session between when we check it's non-null
      * and when we up the reference count.
      */
+<<<<<<< HEAD
     CRYPTO_THREAD_read_lock(ssl->lock);
+=======
+    if (!CRYPTO_THREAD_read_lock(ssl->lock))
+        return NULL;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     sess = ssl->session;
     if (sess)
         SSL_SESSION_up_ref(sess);
@@ -71,17 +133,29 @@ SSL_SESSION *SSL_SESSION_new(void)
 
     ss = OPENSSL_zalloc(sizeof(*ss));
     if (ss == NULL) {
+<<<<<<< HEAD
         SSLerr(SSL_F_SSL_SESSION_NEW, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_SSL, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return NULL;
     }
 
     ss->verify_result = 1;      /* avoid 0 (= X509_V_OK) just in case */
     ss->references = 1;
     ss->timeout = 60 * 5 + 4;   /* 5 minute timeout by default */
+<<<<<<< HEAD
     ss->time = (unsigned long)time(NULL);
     ss->lock = CRYPTO_THREAD_lock_new();
     if (ss->lock == NULL) {
         SSLerr(SSL_F_SSL_SESSION_NEW, ERR_R_MALLOC_FAILURE);
+=======
+    ss->time = time(NULL);
+    ssl_session_calculate_timeout(ss);
+    ss->lock = CRYPTO_THREAD_lock_new();
+    if (ss->lock == NULL) {
+        ERR_raise(ERR_LIB_SSL, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         OPENSSL_free(ss);
         return NULL;
     }
@@ -218,7 +292,11 @@ SSL_SESSION *ssl_session_dup(SSL_SESSION *src, int ticket)
 
     return dest;
  err:
+<<<<<<< HEAD
     SSLerr(SSL_F_SSL_SESSION_DUP, ERR_R_MALLOC_FAILURE);
+=======
+    ERR_raise(ERR_LIB_SSL, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     SSL_SESSION_free(dest);
     return NULL;
 }
@@ -259,7 +337,11 @@ static int def_generate_session_id(SSL *ssl, unsigned char *id,
 {
     unsigned int retry = 0;
     do
+<<<<<<< HEAD
         if (RAND_bytes(id, *id_len) <= 0)
+=======
+        if (RAND_bytes_ex(ssl->ctx->libctx, id, *id_len, 0) <= 0)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return 0;
     while (SSL_has_matching_session_id(ssl, id, *id_len) &&
            (++retry < MAX_SESS_ID_ATTEMPTS)) ;
@@ -320,8 +402,19 @@ int ssl_generate_session_id(SSL *s, SSL_SESSION *ss)
     }
 
     /* Choose which callback will set the session ID */
+<<<<<<< HEAD
     CRYPTO_THREAD_read_lock(s->lock);
     CRYPTO_THREAD_read_lock(s->session_ctx->lock);
+=======
+    if (!CRYPTO_THREAD_read_lock(s->lock))
+        return 0;
+    if (!CRYPTO_THREAD_read_lock(s->session_ctx->lock)) {
+        CRYPTO_THREAD_unlock(s->lock);
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR,
+                 SSL_R_SESSION_ID_CONTEXT_UNINITIALIZED);
+        return 0;
+    }
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     if (s->generate_session_id)
         cb = s->generate_session_id;
     else if (s->session_ctx->generate_session_id)
@@ -366,8 +459,12 @@ int ssl_get_new_session(SSL *s, int session)
     SSL_SESSION *ss = NULL;
 
     if ((ss = SSL_SESSION_new()) == NULL) {
+<<<<<<< HEAD
         SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_SSL_GET_NEW_SESSION,
                  ERR_R_MALLOC_FAILURE);
+=======
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
 
@@ -580,8 +677,13 @@ int ssl_get_prev_session(SSL *s, CLIENTHELLO_MSG *hello)
         goto err;
     }
 
+<<<<<<< HEAD
     if (ret->timeout < (long)(time(NULL) - ret->time)) { /* timeout */
         tsan_counter(&s->session_ctx->stats.sess_timeout);
+=======
+    if (sess_timedout(time(NULL), ret)) {
+        ssl_tsan_counter(s->session_ctx, &s->session_ctx->stats.sess_timeout);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         if (try_session_cache) {
             /* session was from the cache, so remove it */
             SSL_CTX_remove_session(s->session_ctx, ret);
@@ -679,9 +781,37 @@ int SSL_CTX_add_session(SSL_CTX *ctx, SSL_SESSION *c)
         s = c;
     }
 
+<<<<<<< HEAD
     /* Put at the head of the queue unless it is already in the cache */
     if (s == NULL)
         SSL_SESSION_list_add(ctx, c);
+=======
+    /* Adjust last used time, and add back into the cache at the appropriate spot */
+    if (ctx->session_cache_mode & SSL_SESS_CACHE_UPDATE_TIME) {
+        c->time = time(NULL);
+        ssl_session_calculate_timeout(c);
+    }
+
+    if (s == NULL) {
+        /*
+         * new cache entry -- remove old ones if cache has become too large
+         * delete cache entry *before* add, so we don't remove the one we're adding!
+         */
+
+        ret = 1;
+
+        if (SSL_CTX_sess_get_cache_size(ctx) > 0) {
+            while (SSL_CTX_sess_number(ctx) >= SSL_CTX_sess_get_cache_size(ctx)) {
+                if (!remove_session_lock(ctx, ctx->session_cache_tail, 0))
+                    break;
+                else
+                    ssl_tsan_counter(ctx, &ctx->stats.sess_cache_full);
+            }
+        }
+    }
+
+    SSL_SESSION_list_add(ctx, c);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
     if (s != NULL) {
         /*
@@ -823,7 +953,13 @@ int SSL_SESSION_set1_id(SSL_SESSION *s, const unsigned char *sid,
 
 long SSL_SESSION_set_timeout(SSL_SESSION *s, long t)
 {
+<<<<<<< HEAD
     if (s == NULL)
+=======
+    time_t new_timeout = (time_t)t;
+
+    if (s == NULL || t < 0)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     s->timeout = t;
     return 1;
@@ -833,18 +969,31 @@ long SSL_SESSION_get_timeout(const SSL_SESSION *s)
 {
     if (s == NULL)
         return 0;
+<<<<<<< HEAD
     return s->timeout;
+=======
+    return (long)s->timeout;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 }
 
 long SSL_SESSION_get_time(const SSL_SESSION *s)
 {
     if (s == NULL)
         return 0;
+<<<<<<< HEAD
     return s->time;
+=======
+    return (long)s->time;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 }
 
 long SSL_SESSION_set_time(SSL_SESSION *s, long t)
 {
+<<<<<<< HEAD
+=======
+    time_t new_time = (time_t)t;
+
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     if (s == NULL)
         return 0;
     s->time = t;
@@ -1023,7 +1172,11 @@ int SSL_set_session_ticket_ext(SSL *s, void *ext_data, int ext_len)
         s->ext.session_ticket =
             OPENSSL_malloc(sizeof(TLS_SESSION_TICKET_EXT) + ext_len);
         if (s->ext.session_ticket == NULL) {
+<<<<<<< HEAD
             SSLerr(SSL_F_SSL_SET_SESSION_TICKET_EXT, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_SSL, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return 0;
         }
 
@@ -1050,6 +1203,7 @@ typedef struct timeout_param_st {
 
 static void timeout_cb(SSL_SESSION *s, TIMEOUT_PARAM *p)
 {
+<<<<<<< HEAD
     if ((p->time == 0) || (p->time > (s->time + s->timeout))) { /* timeout */
         /*
          * The reason we don't call SSL_CTX_remove_session() is to save on
@@ -1061,9 +1215,50 @@ static void timeout_cb(SSL_SESSION *s, TIMEOUT_PARAM *p)
         if (p->ctx->remove_session_cb != NULL)
             p->ctx->remove_session_cb(p->ctx, s);
         SSL_SESSION_free(s);
+=======
+    STACK_OF(SSL_SESSION) *sk;
+    SSL_SESSION *current;
+    unsigned long i;
+
+    if (!CRYPTO_THREAD_write_lock(s->lock))
+        return;
+
+    sk = sk_SSL_SESSION_new_null();
+    i = lh_SSL_SESSION_get_down_load(s->sessions);
+    lh_SSL_SESSION_set_down_load(s->sessions, 0);
+
+    /*
+     * Iterate over the list from the back (oldest), and stop
+     * when a session can no longer be removed.
+     * Add the session to a temporary list to be freed outside
+     * the SSL_CTX lock.
+     * But still do the remove_session_cb() within the lock.
+     */
+    while (s->session_cache_tail != NULL) {
+        current = s->session_cache_tail;
+        if (t == 0 || sess_timedout((time_t)t, current)) {
+            lh_SSL_SESSION_delete(s->sessions, current);
+            SSL_SESSION_list_remove(s, current);
+            current->not_resumable = 1;
+            if (s->remove_session_cb != NULL)
+                s->remove_session_cb(s, current);
+            /*
+             * Throw the session on a stack, it's entirely plausible
+             * that while freeing outside the critical section, the
+             * session could be re-added, so avoid using the next/prev
+             * pointers. If the stack failed to create, or the session
+             * couldn't be put on the stack, just free it here
+             */
+            if (sk == NULL || !sk_SSL_SESSION_push(sk, current))
+                SSL_SESSION_free(current);
+        } else {
+            break;
+        }
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     }
 }
 
+<<<<<<< HEAD
 IMPLEMENT_LHASH_DOALL_ARG(SSL_SESSION, TIMEOUT_PARAM);
 
 void SSL_CTX_flush_sessions(SSL_CTX *s, long t)
@@ -1084,6 +1279,8 @@ void SSL_CTX_flush_sessions(SSL_CTX *s, long t)
     CRYPTO_THREAD_unlock(s->lock);
 }
 
+=======
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 int ssl_clear_bad_session(SSL *s)
 {
     if ((s->session != NULL) &&

@@ -20,8 +20,13 @@ long BIO_debug_callback(BIO *bio, int cmd, const char *argp,
     BIO *b;
     char buf[256];
     char *p;
+<<<<<<< HEAD
     long r = 1;
     int len, left;
+=======
+    int left;
+    size_t l = 0;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
     if (BIO_CB_RETURN & cmd)
         r = ret;
@@ -80,7 +85,11 @@ long BIO_debug_callback(BIO *bio, int cmd, const char *argp,
         BIO_snprintf(p, left, "puts return %ld\n", ret);
         break;
     case BIO_CB_RETURN | BIO_CB_CTRL:
+<<<<<<< HEAD
         BIO_snprintf(p, left, "ctrl return %ld\n", ret);
+=======
+        BIO_snprintf(p, left, "ctrl return %d\n", ret);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         break;
     default:
         BIO_snprintf(p, left, "bio callback - unknown type (%d)\n", cmd);
@@ -94,5 +103,9 @@ long BIO_debug_callback(BIO *bio, int cmd, const char *argp,
     else
         fputs(buf, stderr);
 #endif
+<<<<<<< HEAD
     return r;
+=======
+    return ret;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 }

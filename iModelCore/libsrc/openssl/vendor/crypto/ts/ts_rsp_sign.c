@@ -14,6 +14,12 @@
 #include <openssl/ts.h>
 #include <openssl/pkcs7.h>
 #include <openssl/crypto.h>
+<<<<<<< HEAD
+=======
+#include "internal/cryptlib.h"
+#include "internal/sizes.h"
+#include "crypto/ess.h"
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 #include "ts_local.h"
 
 static ASN1_INTEGER *def_serial_cb(struct TS_resp_ctx *, void *);
@@ -61,7 +67,11 @@ static ASN1_INTEGER *def_serial_cb(struct TS_resp_ctx *ctx, void *data)
     return serial;
 
  err:
+<<<<<<< HEAD
     TSerr(TS_F_DEF_SERIAL_CB, ERR_R_MALLOC_FAILURE);
+=======
+    ERR_raise(ERR_LIB_TS, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     TS_RESP_CTX_set_status_info(ctx, TS_STATUS_REJECTION,
                                 "Error during serial number generation.");
     ASN1_INTEGER_free(serial);
@@ -75,7 +85,11 @@ static int def_time_cb(struct TS_resp_ctx *ctx, void *data,
 {
     struct timeval tv;
     if (gettimeofday(&tv, NULL) != 0) {
+<<<<<<< HEAD
         TSerr(TS_F_DEF_TIME_CB, TS_R_TIME_SYSCALL_ERROR);
+=======
+        ERR_raise(ERR_LIB_TS, TS_R_TIME_SYSCALL_ERROR);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         TS_RESP_CTX_set_status_info(ctx, TS_STATUS_REJECTION,
                                     "Time is not available.");
         TS_RESP_CTX_add_failure_info(ctx, TS_INFO_TIME_NOT_AVAILABLE);
@@ -94,7 +108,11 @@ static int def_time_cb(struct TS_resp_ctx *ctx, void *data,
 {
     time_t t;
     if (time(&t) == (time_t)-1) {
+<<<<<<< HEAD
         TSerr(TS_F_DEF_TIME_CB, TS_R_TIME_SYSCALL_ERROR);
+=======
+        ERR_raise(ERR_LIB_TS, TS_R_TIME_SYSCALL_ERROR);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         TS_RESP_CTX_set_status_info(ctx, TS_STATUS_REJECTION,
                                     "Time is not available.");
         TS_RESP_CTX_add_failure_info(ctx, TS_INFO_TIME_NOT_AVAILABLE);
@@ -124,8 +142,22 @@ TS_RESP_CTX *TS_RESP_CTX_new(void)
     TS_RESP_CTX *ctx;
 
     if ((ctx = OPENSSL_zalloc(sizeof(*ctx))) == NULL) {
+<<<<<<< HEAD
         TSerr(TS_F_TS_RESP_CTX_NEW, ERR_R_MALLOC_FAILURE);
         return NULL;
+=======
+        ERR_raise(ERR_LIB_TS, ERR_R_MALLOC_FAILURE);
+        return NULL;
+    }
+
+    if (propq != NULL) {
+        ctx->propq = OPENSSL_strdup(propq);
+        if (ctx->propq == NULL) {
+            OPENSSL_free(ctx);
+            ERR_raise(ERR_LIB_TS, ERR_R_MALLOC_FAILURE);
+            return NULL;
+        }
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     }
 
     ctx->signer_md = EVP_sha256();
@@ -189,12 +221,21 @@ int TS_RESP_CTX_set_def_policy(TS_RESP_CTX *ctx, const ASN1_OBJECT *def_policy)
         goto err;
     return 1;
  err:
+<<<<<<< HEAD
     TSerr(TS_F_TS_RESP_CTX_SET_DEF_POLICY, ERR_R_MALLOC_FAILURE);
+=======
+    ERR_raise(ERR_LIB_TS, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     return 0;
 }
 
 int TS_RESP_CTX_set_certs(TS_RESP_CTX *ctx, STACK_OF(X509) *certs)
 {
+<<<<<<< HEAD
+=======
+    sk_X509_pop_free(ctx->certs, X509_free);
+    ctx->certs = NULL;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
     sk_X509_pop_free(ctx->certs, X509_free);
     ctx->certs = NULL;
@@ -222,7 +263,11 @@ int TS_RESP_CTX_add_policy(TS_RESP_CTX *ctx, const ASN1_OBJECT *policy)
 
     return 1;
  err:
+<<<<<<< HEAD
     TSerr(TS_F_TS_RESP_CTX_ADD_POLICY, ERR_R_MALLOC_FAILURE);
+=======
+    ERR_raise(ERR_LIB_TS, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     ASN1_OBJECT_free(copy);
     return 0;
 }
@@ -237,7 +282,11 @@ int TS_RESP_CTX_add_md(TS_RESP_CTX *ctx, const EVP_MD *md)
 
     return 1;
  err:
+<<<<<<< HEAD
     TSerr(TS_F_TS_RESP_CTX_ADD_MD, ERR_R_MALLOC_FAILURE);
+=======
+    ERR_raise(ERR_LIB_TS, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     return 0;
 }
 
@@ -270,7 +319,11 @@ int TS_RESP_CTX_set_accuracy(TS_RESP_CTX *ctx,
     return 1;
  err:
     TS_RESP_CTX_accuracy_free(ctx);
+<<<<<<< HEAD
     TSerr(TS_F_TS_RESP_CTX_SET_ACCURACY, ERR_R_MALLOC_FAILURE);
+=======
+    ERR_raise(ERR_LIB_TS, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     return 0;
 }
 
@@ -325,7 +378,11 @@ int TS_RESP_CTX_set_status_info(TS_RESP_CTX *ctx,
     ret = 1;
  err:
     if (!ret)
+<<<<<<< HEAD
         TSerr(TS_F_TS_RESP_CTX_SET_STATUS_INFO, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_TS, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     TS_STATUS_INFO_free(si);
     ASN1_UTF8STRING_free(utf8_text);
     return ret;
@@ -353,7 +410,11 @@ int TS_RESP_CTX_add_failure_info(TS_RESP_CTX *ctx, int failure)
         goto err;
     return 1;
  err:
+<<<<<<< HEAD
     TSerr(TS_F_TS_RESP_CTX_ADD_FAILURE_INFO, ERR_R_MALLOC_FAILURE);
+=======
+    ERR_raise(ERR_LIB_TS, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     return 0;
 }
 
@@ -386,7 +447,11 @@ TS_RESP *TS_RESP_create_response(TS_RESP_CTX *ctx, BIO *req_bio)
     ts_RESP_CTX_init(ctx);
 
     if ((ctx->response = TS_RESP_new()) == NULL) {
+<<<<<<< HEAD
         TSerr(TS_F_TS_RESP_CREATE_RESPONSE, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_TS, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto end;
     }
     if ((ctx->request = d2i_TS_REQ_bio(req_bio, NULL)) == NULL) {
@@ -648,8 +713,13 @@ static int ts_RESP_sign(TS_RESP_CTX *ctx)
         goto err;
     }
 
+<<<<<<< HEAD
     if ((p7 = PKCS7_new()) == NULL) {
         TSerr(TS_F_TS_RESP_SIGN, ERR_R_MALLOC_FAILURE);
+=======
+    if ((p7 = PKCS7_new_ex(ctx->libctx, ctx->propq)) == NULL) {
+        ERR_raise(ERR_LIB_TS, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
     if (!PKCS7_set_type(p7, NID_pkcs7_signed))
@@ -705,7 +775,11 @@ static int ts_RESP_sign(TS_RESP_CTX *ctx)
     if (!ts_TST_INFO_content_new(p7))
         goto err;
     if ((p7bio = PKCS7_dataInit(p7, NULL)) == NULL) {
+<<<<<<< HEAD
         TSerr(TS_F_TS_RESP_SIGN, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_TS, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
     if (!i2d_TS_TST_INFO_bio(p7bio, ctx->tst_info)) {

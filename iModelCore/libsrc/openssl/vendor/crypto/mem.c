@@ -191,10 +191,15 @@ void ossl_malloc_setup_failures(void)
 
 void *CRYPTO_malloc(size_t num, const char *file, int line)
 {
+<<<<<<< HEAD
     void *ret = NULL;
 
     INCREMENT(malloc_count);
     if (malloc_impl != NULL && malloc_impl != CRYPTO_malloc)
+=======
+    INCREMENT(malloc_count);
+    if (malloc_impl != CRYPTO_malloc)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return malloc_impl(num, file, line);
 
     if (num == 0)
@@ -209,6 +214,7 @@ void *CRYPTO_malloc(size_t num, const char *file, int line)
          */
         allow_customize = 0;
     }
+<<<<<<< HEAD
 #ifndef OPENSSL_NO_CRYPTO_MDEBUG
     if (call_malloc_debug) {
         CRYPTO_mem_debug_malloc(NULL, num, 0, file, line);
@@ -223,6 +229,10 @@ void *CRYPTO_malloc(size_t num, const char *file, int line)
 #endif
 
     return ret;
+=======
+
+    return malloc(num);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 }
 
 void *CRYPTO_zalloc(size_t num, const char *file, int line)

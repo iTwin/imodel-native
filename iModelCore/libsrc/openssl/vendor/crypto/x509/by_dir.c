@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright 1995-2019 The OpenSSL Project Authors. All Rights Reserved.
+=======
+ * Copyright 1995-2023 The OpenSSL Project Authors. All Rights Reserved.
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -95,19 +99,31 @@ static int new_dir(X509_LOOKUP *lu)
     BY_DIR *a = OPENSSL_malloc(sizeof(*a));
 
     if (a == NULL) {
+<<<<<<< HEAD
         X509err(X509_F_NEW_DIR, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_X509, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
 
     if ((a->buffer = BUF_MEM_new()) == NULL) {
+<<<<<<< HEAD
         X509err(X509_F_NEW_DIR, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_X509, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
     a->dirs = NULL;
     a->lock = CRYPTO_THREAD_lock_new();
     if (a->lock == NULL) {
         BUF_MEM_free(a->buffer);
+<<<<<<< HEAD
         X509err(X509_F_NEW_DIR, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_X509, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
     lu->method_data = a;
@@ -182,13 +198,21 @@ static int add_cert_dir(BY_DIR *ctx, const char *dir, int type)
             if (ctx->dirs == NULL) {
                 ctx->dirs = sk_BY_DIR_ENTRY_new_null();
                 if (!ctx->dirs) {
+<<<<<<< HEAD
                     X509err(X509_F_ADD_CERT_DIR, ERR_R_MALLOC_FAILURE);
+=======
+                    ERR_raise(ERR_LIB_X509, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                     return 0;
                 }
             }
             ent = OPENSSL_malloc(sizeof(*ent));
             if (ent == NULL) {
+<<<<<<< HEAD
                 X509err(X509_F_ADD_CERT_DIR, ERR_R_MALLOC_FAILURE);
+=======
+                ERR_raise(ERR_LIB_X509, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                 return 0;
             }
             ent->dir_type = type;
@@ -200,7 +224,11 @@ static int add_cert_dir(BY_DIR *ctx, const char *dir, int type)
             }
             if (!sk_BY_DIR_ENTRY_push(ctx->dirs, ent)) {
                 by_dir_entry_free(ent);
+<<<<<<< HEAD
                 X509err(X509_F_ADD_CERT_DIR, ERR_R_MALLOC_FAILURE);
+=======
+                ERR_raise(ERR_LIB_X509, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                 return 0;
             }
         }
@@ -260,7 +288,11 @@ static int get_cert_by_subject(X509_LOOKUP *xl, X509_LOOKUP_TYPE type,
         ent = sk_BY_DIR_ENTRY_value(ctx->dirs, i);
         j = strlen(ent->dir) + 1 + 8 + 6 + 1 + 1;
         if (!BUF_MEM_grow(b, j)) {
+<<<<<<< HEAD
             X509err(X509_F_GET_CERT_BY_SUBJECT, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_X509, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             goto finish;
         }
         if (type == X509_LU_CRL && ent->hashes) {
@@ -353,7 +385,11 @@ static int get_cert_by_subject(X509_LOOKUP *xl, X509_LOOKUP_TYPE type,
                 hent = OPENSSL_malloc(sizeof(*hent));
                 if (hent == NULL) {
                     CRYPTO_THREAD_unlock(ctx->lock);
+<<<<<<< HEAD
                     X509err(X509_F_GET_CERT_BY_SUBJECT, ERR_R_MALLOC_FAILURE);
+=======
+                    ERR_raise(ERR_LIB_X509, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                     ok = 0;
                     goto finish;
                 }
@@ -362,7 +398,11 @@ static int get_cert_by_subject(X509_LOOKUP *xl, X509_LOOKUP_TYPE type,
                 if (!sk_BY_DIR_HASH_push(ent->hashes, hent)) {
                     CRYPTO_THREAD_unlock(ctx->lock);
                     OPENSSL_free(hent);
+<<<<<<< HEAD
                     X509err(X509_F_GET_CERT_BY_SUBJECT, ERR_R_MALLOC_FAILURE);
+=======
+                    ERR_raise(ERR_LIB_X509, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                     ok = 0;
                     goto finish;
                 }

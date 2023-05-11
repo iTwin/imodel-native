@@ -165,6 +165,27 @@ void OPENSSL_cpuid_setup(void)
      * Unified code works because it never triggers SIGILL on Apple
      * devices...
      */
+<<<<<<< HEAD
+=======
+#   else
+    {
+        unsigned int feature;
+        size_t len = sizeof(feature);
+        char uarch[64];
+
+        if (sysctlbyname("hw.optional.armv8_2_sha512", &feature, &len, NULL, 0) == 0 && feature == 1)
+            OPENSSL_armcap_P |= ARMV8_SHA512;
+        feature = 0;
+        if (sysctlbyname("hw.optional.armv8_2_sha3", &feature, &len, NULL, 0) == 0 && feature == 1) {
+            OPENSSL_armcap_P |= ARMV8_SHA3;
+            len = sizeof(uarch);
+            if ((sysctlbyname("machdep.cpu.brand_string", uarch, &len, NULL, 0) == 0) &&
+                (strncmp(uarch, "Apple M1", 8) == 0))
+                OPENSSL_armcap_P |= ARMV8_UNROLL8_EOR3;
+        }
+    }
+#   endif
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 # endif
 
     OPENSSL_armcap_P = 0;

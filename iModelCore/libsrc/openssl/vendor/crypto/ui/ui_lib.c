@@ -25,13 +25,21 @@ UI *UI_new_method(const UI_METHOD *method)
     UI *ret = OPENSSL_zalloc(sizeof(*ret));
 
     if (ret == NULL) {
+<<<<<<< HEAD
         UIerr(UI_F_UI_NEW_METHOD, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_UI, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return NULL;
     }
 
     ret->lock = CRYPTO_THREAD_lock_new();
     if (ret->lock == NULL) {
+<<<<<<< HEAD
         UIerr(UI_F_UI_NEW_METHOD, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_UI, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         OPENSSL_free(ret);
         return NULL;
     }
@@ -212,7 +220,11 @@ int UI_dup_input_string(UI *ui, const char *prompt, int flags,
     if (prompt != NULL) {
         prompt_copy = OPENSSL_strdup(prompt);
         if (prompt_copy == NULL) {
+<<<<<<< HEAD
             UIerr(UI_F_UI_DUP_INPUT_STRING, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_UI, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return 0;
         }
     }
@@ -240,7 +252,11 @@ int UI_dup_verify_string(UI *ui, const char *prompt, int flags,
     if (prompt != NULL) {
         prompt_copy = OPENSSL_strdup(prompt);
         if (prompt_copy == NULL) {
+<<<<<<< HEAD
             UIerr(UI_F_UI_DUP_VERIFY_STRING, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_UI, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return -1;
         }
     }
@@ -271,7 +287,11 @@ int UI_dup_input_boolean(UI *ui, const char *prompt, const char *action_desc,
     if (prompt != NULL) {
         prompt_copy = OPENSSL_strdup(prompt);
         if (prompt_copy == NULL) {
+<<<<<<< HEAD
             UIerr(UI_F_UI_DUP_INPUT_BOOLEAN, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_UI, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             goto err;
         }
     }
@@ -279,7 +299,11 @@ int UI_dup_input_boolean(UI *ui, const char *prompt, const char *action_desc,
     if (action_desc != NULL) {
         action_desc_copy = OPENSSL_strdup(action_desc);
         if (action_desc_copy == NULL) {
+<<<<<<< HEAD
             UIerr(UI_F_UI_DUP_INPUT_BOOLEAN, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_UI, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             goto err;
         }
     }
@@ -287,7 +311,11 @@ int UI_dup_input_boolean(UI *ui, const char *prompt, const char *action_desc,
     if (ok_chars != NULL) {
         ok_chars_copy = OPENSSL_strdup(ok_chars);
         if (ok_chars_copy == NULL) {
+<<<<<<< HEAD
             UIerr(UI_F_UI_DUP_INPUT_BOOLEAN, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_UI, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             goto err;
         }
     }
@@ -295,7 +323,11 @@ int UI_dup_input_boolean(UI *ui, const char *prompt, const char *action_desc,
     if (cancel_chars != NULL) {
         cancel_chars_copy = OPENSSL_strdup(cancel_chars);
         if (cancel_chars_copy == NULL) {
+<<<<<<< HEAD
             UIerr(UI_F_UI_DUP_INPUT_BOOLEAN, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_UI, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             goto err;
         }
     }
@@ -324,7 +356,11 @@ int UI_dup_info_string(UI *ui, const char *text)
     if (text != NULL) {
         text_copy = OPENSSL_strdup(text);
         if (text_copy == NULL) {
+<<<<<<< HEAD
             UIerr(UI_F_UI_DUP_INFO_STRING, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_UI, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return -1;
         }
     }
@@ -346,7 +382,11 @@ int UI_dup_error_string(UI *ui, const char *text)
     if (text != NULL) {
         text_copy = OPENSSL_strdup(text);
         if (text_copy == NULL) {
+<<<<<<< HEAD
             UIerr(UI_F_UI_DUP_ERROR_STRING, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_UI, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return -1;
         }
     }
@@ -375,7 +415,11 @@ char *UI_construct_prompt(UI *ui, const char *object_desc,
         len += sizeof(prompt3) - 1;
 
         if ((prompt = OPENSSL_malloc(len + 1)) == NULL) {
+<<<<<<< HEAD
             UIerr(UI_F_UI_CONSTRUCT_PROMPT, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_UI, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return NULL;
         }
         OPENSSL_strlcpy(prompt, prompt1, len + 1);
@@ -414,7 +458,11 @@ int UI_dup_user_data(UI *ui, void *user_data)
 
     duplicate = ui->meth->ui_duplicate_data(ui, user_data);
     if (duplicate == NULL) {
+<<<<<<< HEAD
         UIerr(UI_F_UI_DUP_USER_DATA, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_UI, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return -1;
     }
 
@@ -605,7 +653,11 @@ UI_METHOD *UI_create_method(const char *name)
         if (ui_method)
             OPENSSL_free(ui_method->name);
         OPENSSL_free(ui_method);
+<<<<<<< HEAD
         UIerr(UI_F_UI_CREATE_METHOD, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_UI, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return NULL;
     }
     return ui_method;

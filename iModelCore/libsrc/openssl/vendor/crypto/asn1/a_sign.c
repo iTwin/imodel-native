@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright 1995-2016 The OpenSSL Project Authors. All Rights Reserved.
+=======
+ * Copyright 1995-2021 The OpenSSL Project Authors. All Rights Reserved.
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -34,7 +38,11 @@ int ASN1_sign(i2d_of_void *i2d, X509_ALGOR *algor1, X509_ALGOR *algor2,
     X509_ALGOR *a;
 
     if (ctx == NULL) {
+<<<<<<< HEAD
         ASN1err(ASN1_F_ASN1_SIGN, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
     for (i = 0; i < 2; i++) {
@@ -81,7 +89,11 @@ int ASN1_sign(i2d_of_void *i2d, X509_ALGOR *algor1, X509_ALGOR *algor2,
     buf_out = OPENSSL_malloc(outll);
     if (buf_in == NULL || buf_out == NULL) {
         outl = 0;
+<<<<<<< HEAD
         ASN1err(ASN1_F_ASN1_SIGN, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
     p = buf_in;
@@ -122,11 +134,15 @@ int ASN1_item_sign(const ASN1_ITEM *it, X509_ALGOR *algor1,
     EVP_MD_CTX *ctx = EVP_MD_CTX_new();
 
     if (ctx == NULL) {
+<<<<<<< HEAD
         ASN1err(ASN1_F_ASN1_ITEM_SIGN, ERR_R_MALLOC_FAILURE);
         return 0;
     }
     if (!EVP_DigestSignInit(ctx, NULL, type, NULL, pkey)) {
         EVP_MD_CTX_free(ctx);
+=======
+        ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
 
@@ -202,6 +218,19 @@ int ASN1_item_sign_ctx(const ASN1_ITEM *it,
         if (algor2)
             X509_ALGOR_set0(algor2, OBJ_nid2obj(signid), paramtype, NULL);
 
+<<<<<<< HEAD
+=======
+        if (pkey->ameth->pkey_flags & ASN1_PKEY_SIGPARAM_NULL)
+            paramtype = V_ASN1_NULL;
+        else
+            paramtype = V_ASN1_UNDEF;
+
+        if (algor1)
+            X509_ALGOR_set0(algor1, OBJ_nid2obj(signid), paramtype, NULL);
+        if (algor2)
+            X509_ALGOR_set0(algor2, OBJ_nid2obj(signid), paramtype, NULL);
+
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     }
 
     buf_len = ASN1_item_i2d(asn, &buf_in, it);
@@ -215,7 +244,11 @@ int ASN1_item_sign_ctx(const ASN1_ITEM *it,
     buf_out = OPENSSL_malloc(outll);
     if (buf_in == NULL || buf_out == NULL) {
         outl = 0;
+<<<<<<< HEAD
         ASN1err(ASN1_F_ASN1_ITEM_SIGN_CTX, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 

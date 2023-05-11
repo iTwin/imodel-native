@@ -157,14 +157,23 @@ static int dynamic_set_data_ctx(ENGINE *e, dynamic_data_ctx **ctx)
     int ret = 1;
 
     if (c == NULL) {
+<<<<<<< HEAD
         ENGINEerr(ENGINE_F_DYNAMIC_SET_DATA_CTX, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_ENGINE, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
     c->dirs = sk_OPENSSL_STRING_new_null();
     if (c->dirs == NULL) {
+<<<<<<< HEAD
         ENGINEerr(ENGINE_F_DYNAMIC_SET_DATA_CTX, ERR_R_MALLOC_FAILURE);
         OPENSSL_free(c);
         return 0;
+=======
+        ERR_raise(ERR_LIB_ENGINE, ERR_R_MALLOC_FAILURE);
+        goto end;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     }
     c->DYNAMIC_F1 = "v_check";
     c->DYNAMIC_F2 = "bind_engine";
@@ -350,12 +359,20 @@ static int dynamic_ctrl(ENGINE *e, int cmd, long i, void *p, void (*f) (void))
         {
             char *tmp_str = OPENSSL_strdup(p);
             if (tmp_str == NULL) {
+<<<<<<< HEAD
                 ENGINEerr(ENGINE_F_DYNAMIC_CTRL, ERR_R_MALLOC_FAILURE);
+=======
+                ERR_raise(ERR_LIB_ENGINE, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                 return 0;
             }
             if (!sk_OPENSSL_STRING_push(ctx->dirs, tmp_str)) {
                 OPENSSL_free(tmp_str);
+<<<<<<< HEAD
                 ENGINEerr(ENGINE_F_DYNAMIC_CTRL, ERR_R_MALLOC_FAILURE);
+=======
+                ERR_raise(ERR_LIB_ENGINE, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                 return 0;
             }
         }

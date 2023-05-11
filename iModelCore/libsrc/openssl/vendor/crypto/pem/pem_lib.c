@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2022 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2023 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -341,7 +341,11 @@ int PEM_ASN1_write_bio(i2d_of_void *i2d, const char *name, BIO *bp,
     /* actually it needs the cipher block size extra... */
     data = OPENSSL_malloc((unsigned int)dsize + 20);
     if (data == NULL) {
+<<<<<<< HEAD
         PEMerr(PEM_F_PEM_ASN1_WRITE_BIO, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_PEM, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
     p = data;
@@ -493,7 +497,11 @@ int PEM_get_EVP_CIPHER_INFO(char *header, EVP_CIPHER_INFO *cipher)
         return 1;
 
     if (strncmp(header, ProcType, sizeof(ProcType)-1) != 0) {
+<<<<<<< HEAD
         PEMerr(PEM_F_PEM_GET_EVP_CIPHER_INFO, PEM_R_NOT_PROC_TYPE);
+=======
+        ERR_raise(ERR_LIB_PEM, PEM_R_NOT_PROC_TYPE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
     header += sizeof(ProcType)-1;
@@ -506,7 +514,11 @@ int PEM_get_EVP_CIPHER_INFO(char *header, EVP_CIPHER_INFO *cipher)
     /* We expect "ENCRYPTED" followed by optional white-space + line break */
     if (strncmp(header, ENCRYPTED, sizeof(ENCRYPTED)-1) != 0 ||
         strspn(header+sizeof(ENCRYPTED)-1, " \t\r\n") == 0) {
+<<<<<<< HEAD
         PEMerr(PEM_F_PEM_GET_EVP_CIPHER_INFO, PEM_R_NOT_ENCRYPTED);
+=======
+        ERR_raise(ERR_LIB_PEM, PEM_R_NOT_ENCRYPTED);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
     header += sizeof(ENCRYPTED)-1;
@@ -521,7 +533,11 @@ int PEM_get_EVP_CIPHER_INFO(char *header, EVP_CIPHER_INFO *cipher)
      * We expect "DEK-Info: algo[,hex-parameters]"
      */
     if (strncmp(header, DEKInfo, sizeof(DEKInfo)-1) != 0) {
+<<<<<<< HEAD
         PEMerr(PEM_F_PEM_GET_EVP_CIPHER_INFO, PEM_R_NOT_DEK_INFO);
+=======
+        ERR_raise(ERR_LIB_PEM, PEM_R_NOT_DEK_INFO);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
     header += sizeof(DEKInfo)-1;
@@ -655,7 +671,11 @@ int PEM_write_bio(BIO *bp, const char *name, const char *header,
 
  err:
     if (retval == 0)
+<<<<<<< HEAD
         PEMerr(PEM_F_PEM_WRITE_BIO, reason);
+=======
+        ERR_raise(ERR_LIB_PEM, reason);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     EVP_ENCODE_CTX_free(ctx);
     OPENSSL_clear_free(buf, PEM_BUFSIZE * 8);
     return retval;
@@ -734,7 +754,11 @@ static int get_name(BIO *bp, char **name, unsigned int flags)
      */
     linebuf = pem_malloc(LINESIZE + 1, flags);
     if (linebuf == NULL) {
+<<<<<<< HEAD
         PEMerr(PEM_F_GET_NAME, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_PEM, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
 
@@ -757,7 +781,11 @@ static int get_name(BIO *bp, char **name, unsigned int flags)
     len = len - BEGINLEN - TAILLEN + 1;
     *name = pem_malloc(len, flags);
     if (*name == NULL) {
+<<<<<<< HEAD
         PEMerr(PEM_F_GET_NAME, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_PEM, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
     memcpy(*name, linebuf + BEGINLEN, len);
@@ -801,7 +829,11 @@ static int get_header_and_data(BIO *bp, BIO **header, BIO **data, char *name,
      * that will be added by sanitize_line() (the extra '1'). */
     linebuf = pem_malloc(LINESIZE + 1, flags);
     if (linebuf == NULL) {
+<<<<<<< HEAD
         PEMerr(PEM_F_GET_HEADER_AND_DATA, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_PEM, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
 
@@ -853,7 +885,11 @@ static int get_header_and_data(BIO *bp, BIO **header, BIO **data, char *name,
             namelen = strlen(name);
             if (strncmp(p, name, namelen) != 0 ||
                 strncmp(p + namelen, tailstr, TAILLEN) != 0) {
+<<<<<<< HEAD
                 PEMerr(PEM_F_GET_HEADER_AND_DATA, PEM_R_BAD_END_LINE);
+=======
+                ERR_raise(ERR_LIB_PEM, PEM_R_BAD_END_LINE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                 goto err;
             }
             if (got_header == MAYBE_HEADER) {
@@ -919,7 +955,11 @@ int PEM_read_bio_ex(BIO *bp, char **name_out, char **header,
     headerB = BIO_new(bmeth);
     dataB = BIO_new(bmeth);
     if (headerB == NULL || dataB == NULL) {
+<<<<<<< HEAD
         PEMerr(PEM_F_PEM_READ_BIO_EX, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_PEM, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto end;
     }
 
@@ -937,7 +977,11 @@ int PEM_read_bio_ex(BIO *bp, char **name_out, char **header,
 
     ctx = EVP_ENCODE_CTX_new();
     if (ctx == NULL) {
+<<<<<<< HEAD
         PEMerr(PEM_F_PEM_READ_BIO_EX, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_PEM, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto end;
     }
 
@@ -955,12 +999,19 @@ int PEM_read_bio_ex(BIO *bp, char **name_out, char **header,
     headerlen = BIO_get_mem_data(headerB, NULL);
     *header = pem_malloc(headerlen + 1, flags);
     *data = pem_malloc(len, flags);
+<<<<<<< HEAD
     if (*header == NULL || *data == NULL) {
         pem_free(*header, flags, 0);
         pem_free(*data, flags, 0);
         goto end;
     }
     BIO_read(headerB, *header, headerlen);
+=======
+    if (*header == NULL || *data == NULL)
+        goto out_free;
+    if (headerlen != 0 && BIO_read(headerB, *header, headerlen) != headerlen)
+        goto out_free;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     (*header)[headerlen] = '\0';
     BIO_read(dataB, *data, len);
     *len_out = len;
@@ -968,6 +1019,14 @@ int PEM_read_bio_ex(BIO *bp, char **name_out, char **header,
     name = NULL;
     ret = 1;
 
+<<<<<<< HEAD
+=======
+out_free:
+    pem_free(*header, flags, 0);
+    *header = NULL;
+    pem_free(*data, flags, 0);
+    *data = NULL;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 end:
     EVP_ENCODE_CTX_free(ctx);
     pem_free(name, flags, 0);

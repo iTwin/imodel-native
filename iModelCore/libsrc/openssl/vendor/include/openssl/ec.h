@@ -358,8 +358,41 @@ EC_GROUP *EC_GROUP_new_curve_GF2m(const BIGNUM *p, const BIGNUM *a,
                                   const BIGNUM *b, BN_CTX *ctx);
 # endif
 
+<<<<<<< HEAD
 /** Creates a EC_GROUP object with a curve specified by a NID
  *  \param  nid  NID of the OID of the curve name
+=======
+/**
+ * Creates a EC_GROUP object with a curve specified by parameters.
+ * The parameters may be explicit or a named curve,
+ *  \param  params A list of parameters describing the group.
+ *  \param  libctx The associated library context or NULL for the default
+ *                 context
+ *  \param  propq  A property query string
+ *  \return newly created EC_GROUP object with specified parameters or NULL
+ *          if an error occurred
+ */
+EC_GROUP *EC_GROUP_new_from_params(const OSSL_PARAM params[],
+                                   OSSL_LIB_CTX *libctx, const char *propq);
+
+/**
+ * Creates a EC_GROUP object with a curve specified by a NID
+ *  \param  libctx The associated library context or NULL for the default
+ *                 context
+ *  \param  propq  A property query string
+ *  \param  nid    NID of the OID of the curve name
+ *  \return newly created EC_GROUP object with specified curve or NULL
+ *          if an error occurred
+ */
+EC_GROUP *EC_GROUP_new_by_curve_name_ex(OSSL_LIB_CTX *libctx, const char *propq,
+                                        int nid);
+
+/**
+ * Creates a EC_GROUP object with a curve specified by a NID. Same as
+ * EC_GROUP_new_by_curve_name_ex but the libctx and propq are always
+ * NULL.
+ *  \param  nid    NID of the OID of the curve name
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  *  \return newly created EC_GROUP object with specified curve or NULL
  *          if an error occurred
  */

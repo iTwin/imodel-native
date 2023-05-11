@@ -306,8 +306,11 @@ extern FILE *_imp___iob;
 /***********************************************/
 
 # if defined(OPENSSL_SYS_WINDOWS)
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/e_os.h
 #  define strcasecmp _stricmp
 #  define strncasecmp _strnicmp
+=======
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/include/internal/e_os.h
 #  if (_MSC_VER >= 1310) && !defined(_WIN32_WCE)
 #   define open _open
 #   define fdopen _fdopen
@@ -345,6 +348,115 @@ struct servent *getservbyname(const char *name, const char *proto);
 # endif
 /* end vxworks */
 
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/e_os.h
+=======
+/* system-specific variants defining ossl_sleep() */
+#if defined(OPENSSL_SYS_UNIX) || defined(__DJGPP__)
+# include <unistd.h>
+static ossl_inline void ossl_sleep(unsigned long millis)
+{
+# ifdef OPENSSL_SYS_VXWORKS
+    struct timespec ts;
+    ts.tv_sec = (long int) (millis / 1000);
+    ts.tv_nsec = (long int) (millis % 1000) * 1000000ul;
+    nanosleep(&ts, NULL);
+# elif defined(__TANDEM)
+#  if !defined(_REENTRANT)
+#   include <cextdecs.h(PROCESS_DELAY_)>
+    /* HPNS does not support usleep for non threaded apps */
+    PROCESS_DELAY_(millis * 1000);
+#  elif defined(_SPT_MODEL_)
+#   include <spthread.h>
+#   include <spt_extensions.h>
+    usleep(millis * 1000);
+#  else
+    usleep(millis * 1000);
+#  endif
+# else
+    usleep(millis * 1000);
+# endif
+}
+#elif defined(_WIN32)
+# include <windows.h>
+static ossl_inline void ossl_sleep(unsigned long millis)
+{
+    Sleep(millis);
+}
+#else
+/* Fallback to a busy wait */
+static ossl_inline void ossl_sleep(unsigned long millis)
+{
+    struct timeval start, now;
+    unsigned long elapsedms;
+
+    gettimeofday(&start, NULL);
+    do {
+        gettimeofday(&now, NULL);
+        elapsedms = (((now.tv_sec - start.tv_sec) * 1000000)
+                     + now.tv_usec - start.tv_usec) / 1000;
+    } while (elapsedms < millis);
+}
+#endif /* defined OPENSSL_SYS_UNIX */
+
+/* ----------------------------- HP NonStop -------------------------------- */
+/* Required to support platform variant without getpid() and pid_t. */
+# if defined(__TANDEM) && defined(_GUARDIAN_TARGET)
+#  include <strings.h>
+#  include <netdb.h>
+#  define getservbyname(name,proto)          getservbyname((char*)name,proto)
+#  define gethostbyname(name)                gethostbyname((char*)name)
+#  define ioctlsocket(a,b,c)	ioctl(a,b,c)
+#  ifdef NO_GETPID
+inline int nssgetpid();
+#   ifndef NSSGETPID_MACRO
+#    define NSSGETPID_MACRO
+#    include <cextdecs.h(PROCESSHANDLE_GETMINE_)>
+#    include <cextdecs.h(PROCESSHANDLE_DECOMPOSE_)>
+       inline int nssgetpid()
+       {
+         short phandle[10]={0};
+         union pseudo_pid {
+          struct {
+           short cpu;
+           short pin;
+         } cpu_pin ;
+         int ppid;
+        } ppid = { 0 };
+        PROCESSHANDLE_GETMINE_(phandle);
+        PROCESSHANDLE_DECOMPOSE_(phandle, &ppid.cpu_pin.cpu, &ppid.cpu_pin.pin);
+        return ppid.ppid;
+       }
+#    define getpid(a) nssgetpid(a)
+#   endif /* NSSGETPID_MACRO */
+#  endif /* NO_GETPID */
+/*#  define setsockopt(a,b,c,d,f) setsockopt(a,b,c,(char*)d,f)*/
+/*#  define getsockopt(a,b,c,d,f) getsockopt(a,b,c,(char*)d,f)*/
+/*#  define connect(a,b,c) connect(a,(struct sockaddr *)b,c)*/
+/*#  define bind(a,b,c) bind(a,(struct sockaddr *)b,c)*/
+/*#  define sendto(a,b,c,d,e,f) sendto(a,(char*)b,c,d,(struct sockaddr *)e,f)*/
+#  if defined(OPENSSL_THREADS) && !defined(_PUT_MODEL_)
+  /*
+   * HPNS SPT threads
+   */
+#   define  SPT_THREAD_SIGNAL 1
+#   define  SPT_THREAD_AWARE 1
+#   include <spthread.h>
+#   undef close
+#   define close spt_close
+/*
+#   define get_last_socket_error()	errno
+#   define clear_socket_error()	errno=0
+#   define ioctlsocket(a,b,c)	ioctl(a,b,c)
+#   define closesocket(s)		close(s)
+#   define readsocket(s,b,n)	read((s),(char*)(b),(n))
+#   define writesocket(s,b,n)	write((s),(char*)(b),(n)
+*/
+#   define accept(a,b,c)        accept(a,(struct sockaddr *)b,c)
+#   define recvfrom(a,b,c,d,e,f) recvfrom(a,b,(socklen_t)c,d,e,f)
+#  endif
+# endif
+
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/include/internal/e_os.h
 # ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
 #  define CRYPTO_memcmp memcmp
 # endif

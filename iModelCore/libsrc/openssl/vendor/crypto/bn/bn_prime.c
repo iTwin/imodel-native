@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright 1995-2020 The OpenSSL Project Authors. All Rights Reserved.
+=======
+ * Copyright 1995-2022 The OpenSSL Project Authors. All Rights Reserved.
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -76,8 +80,15 @@ int BN_generate_prime_ex(BIGNUM *ret, int bits, int safe,
     }
 
     mods = OPENSSL_zalloc(sizeof(*mods) * NUMPRIMES);
+<<<<<<< HEAD
     if (mods == NULL)
         goto err;
+=======
+    if (mods == NULL) {
+        ERR_raise(ERR_LIB_BN, ERR_R_MALLOC_FAILURE);
+        return 0;
+    }
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
     ctx = BN_CTX_new();
     if (ctx == NULL)

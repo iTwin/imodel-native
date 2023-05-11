@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2021 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2022 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -102,7 +102,11 @@ static int x509_name_ex_new(ASN1_VALUE **val, const ASN1_ITEM *it)
     return 1;
 
  memerr:
+<<<<<<< HEAD
     ASN1err(ASN1_F_X509_NAME_EX_NEW, ERR_R_MALLOC_FAILURE);
+=======
+    ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     if (ret) {
         sk_X509_NAME_ENTRY_free(ret->entries);
         OPENSSL_free(ret);
@@ -273,7 +277,11 @@ static int x509_name_encode(X509_NAME *a)
  memerr:
     sk_STACK_OF_X509_NAME_ENTRY_pop_free(intname.s,
                                          local_sk_X509_NAME_ENTRY_free);
+<<<<<<< HEAD
     ASN1err(ASN1_F_X509_NAME_ENCODE, ERR_R_MALLOC_FAILURE);
+=======
+    ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     return -1;
 }
 
@@ -314,7 +322,11 @@ static int x509_name_canon(X509_NAME *a)
     }
     intname = sk_STACK_OF_X509_NAME_ENTRY_new_null();
     if (intname == NULL) {
+<<<<<<< HEAD
         X509err(X509_F_X509_NAME_CANON, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_X509, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
     for (i = 0; i < sk_X509_NAME_ENTRY_num(a->entries); i++) {
@@ -325,25 +337,41 @@ static int x509_name_canon(X509_NAME *a)
                 goto err;
             if (!sk_STACK_OF_X509_NAME_ENTRY_push(intname, entries)) {
                 sk_X509_NAME_ENTRY_free(entries);
+<<<<<<< HEAD
                 X509err(X509_F_X509_NAME_CANON, ERR_R_MALLOC_FAILURE);
+=======
+                ERR_raise(ERR_LIB_X509, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                 goto err;
             }
             set = entry->set;
         }
         tmpentry = X509_NAME_ENTRY_new();
         if (tmpentry == NULL) {
+<<<<<<< HEAD
             X509err(X509_F_X509_NAME_CANON, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_X509, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             goto err;
         }
         tmpentry->object = OBJ_dup(entry->object);
         if (tmpentry->object == NULL) {
+<<<<<<< HEAD
             X509err(X509_F_X509_NAME_CANON, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_X509, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             goto err;
         }
         if (!asn1_string_canon(tmpentry->value, entry->value))
             goto err;
         if (!sk_X509_NAME_ENTRY_push(entries, tmpentry)) {
+<<<<<<< HEAD
             X509err(X509_F_X509_NAME_CANON, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_X509, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             goto err;
         }
         tmpentry = NULL;
@@ -357,7 +385,11 @@ static int x509_name_canon(X509_NAME *a)
 
     p = OPENSSL_malloc(a->canon_enclen);
     if (p == NULL) {
+<<<<<<< HEAD
         X509err(X509_F_X509_NAME_CANON, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_X509, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 

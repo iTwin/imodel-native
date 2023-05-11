@@ -177,6 +177,26 @@ static int def_load(CONF *conf, const char *name, long *line)
     return ret;
 }
 
+<<<<<<< HEAD
+=======
+
+/* Parse a boolean value and fill in *flag. Return 0 on error. */
+static int parsebool(const char *pval, int *flag)
+{
+    if (OPENSSL_strcasecmp(pval, "on") == 0
+            || OPENSSL_strcasecmp(pval, "true") == 0) {
+        *flag = 1;
+    } else if (OPENSSL_strcasecmp(pval, "off") == 0
+            || OPENSSL_strcasecmp(pval, "false") == 0) {
+        *flag = 0;
+    } else {
+        ERR_raise(ERR_LIB_CONF, CONF_R_INVALID_PRAGMA);
+        return 0;
+    }
+    return 1;
+}
+
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 static int def_load_bio(CONF *conf, BIO *in, long *line)
 {
 /* The macro BUFSIZE conflicts with a system macro in VxWorks */
@@ -206,12 +226,20 @@ static int def_load_bio(CONF *conf, BIO *in, long *line)
 
     section = OPENSSL_strdup("default");
     if (section == NULL) {
+<<<<<<< HEAD
         CONFerr(CONF_F_DEF_LOAD_BIO, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_CONF, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 
     if (_CONF_new_data(conf) == 0) {
+<<<<<<< HEAD
         CONFerr(CONF_F_DEF_LOAD_BIO, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_CONF, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 
@@ -362,7 +390,57 @@ static int def_load_bio(CONF *conf, BIO *in, long *line)
                 psection = section;
             }
             p = eat_ws(conf, end);
+<<<<<<< HEAD
             if (strncmp(pname, ".include", 8) == 0
+=======
+            if (strncmp(pname, ".pragma", 7) == 0
+                && (p != pname + 7 || *p == '=')) {
+                char *pval;
+
+                if (*p == '=') {
+                    p++;
+                    p = eat_ws(conf, p);
+                }
+                trim_ws(conf, p);
+
+                /* Pragma values take the form keyword:value */
+                pval = strchr(p, ':');
+                if (pval == NULL || pval == p || pval[1] == '\0') {
+                    ERR_raise(ERR_LIB_CONF, CONF_R_INVALID_PRAGMA);
+                    goto err;
+                }
+
+                *pval++ = '\0';
+                trim_ws(conf, p);
+                pval = eat_ws(conf, pval);
+
+                /*
+                 * Known pragmas:
+                 *
+                 * dollarid     takes "on", "true or "off", "false"
+                 * abspath      takes "on", "true or "off", "false"
+                 * includedir   directory prefix
+                 */
+                if (strcmp(p, "dollarid") == 0) {
+                    if (!parsebool(pval, &conf->flag_dollarid))
+                        goto err;
+                } else if (strcmp(p, "abspath") == 0) {
+                    if (!parsebool(pval, &conf->flag_abspath))
+                        goto err;
+                } else if (strcmp(p, "includedir") == 0) {
+                    OPENSSL_free(conf->includedir);
+                    if ((conf->includedir = OPENSSL_strdup(pval)) == NULL) {
+                        ERR_raise(ERR_LIB_CONF, ERR_R_MALLOC_FAILURE);
+                        goto err;
+                    }
+                }
+
+                /*
+                 * We *ignore* any unknown pragma.
+                 */
+                continue;
+            } else if (strncmp(pname, ".include", 8) == 0
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                 && (p != pname + 8 || *p == '=')) {
                 char *include = NULL;
                 BIO *next;
@@ -374,6 +452,36 @@ static int def_load_bio(CONF *conf, BIO *in, long *line)
                 trim_ws(conf, p);
                 if (!str_copy(conf, psection, &include, p))
                     goto err;
+<<<<<<< HEAD
+=======
+
+                if (include_dir != NULL && !ossl_is_absolute_path(include)) {
+                    size_t newlen = strlen(include_dir) + strlen(include) + 2;
+
+                    include_path = OPENSSL_malloc(newlen);
+                    if (include_path == NULL) {
+                        ERR_raise(ERR_LIB_CONF, ERR_R_MALLOC_FAILURE);
+                        OPENSSL_free(include);
+                        goto err;
+                    }
+
+                    OPENSSL_strlcpy(include_path, include_dir, newlen);
+                    if (!ossl_ends_with_dirsep(include_path))
+                        OPENSSL_strlcat(include_path, "/", newlen);
+                    OPENSSL_strlcat(include_path, include, newlen);
+                    OPENSSL_free(include);
+                } else {
+                    include_path = include;
+                }
+
+                if (conf->flag_abspath
+                        && !ossl_is_absolute_path(include_path)) {
+                    ERR_raise(ERR_LIB_CONF, CONF_R_RELATIVE_PATH);
+                    OPENSSL_free(include_path);
+                    goto err;
+                }
+
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                 /* get the BIO of the included file */
 #ifndef OPENSSL_NO_POSIX_IO
                 next = process_include(include, &dirctx, &dirpath);
@@ -389,13 +497,21 @@ static int def_load_bio(CONF *conf, BIO *in, long *line)
                     /* push the currently processing BIO onto stack */
                     if (biosk == NULL) {
                         if ((biosk = sk_BIO_new_null()) == NULL) {
+<<<<<<< HEAD
                             CONFerr(CONF_F_DEF_LOAD_BIO, ERR_R_MALLOC_FAILURE);
+=======
+                            ERR_raise(ERR_LIB_CONF, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                             BIO_free(next);
                             goto err;
                         }
                     }
                     if (!sk_BIO_push(biosk, in)) {
+<<<<<<< HEAD
                         CONFerr(CONF_F_DEF_LOAD_BIO, ERR_R_MALLOC_FAILURE);
+=======
+                        ERR_raise(ERR_LIB_CONF, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                         BIO_free(next);
                         goto err;
                     }
@@ -413,13 +529,21 @@ static int def_load_bio(CONF *conf, BIO *in, long *line)
             trim_ws(conf, start);
 
             if ((v = OPENSSL_malloc(sizeof(*v))) == NULL) {
+<<<<<<< HEAD
                 CONFerr(CONF_F_DEF_LOAD_BIO, ERR_R_MALLOC_FAILURE);
+=======
+                ERR_raise(ERR_LIB_CONF, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                 goto err;
             }
             v->name = OPENSSL_strdup(pname);
             v->value = NULL;
             if (v->name == NULL) {
+<<<<<<< HEAD
                 CONFerr(CONF_F_DEF_LOAD_BIO, ERR_R_MALLOC_FAILURE);
+=======
+                ERR_raise(ERR_LIB_CONF, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                 goto err;
             }
             if (!str_copy(conf, psection, &(v->value), start))
@@ -437,7 +561,11 @@ static int def_load_bio(CONF *conf, BIO *in, long *line)
             } else
                 tv = sv;
             if (_CONF_add_string(conf, tv, v) == 0) {
+<<<<<<< HEAD
                 CONFerr(CONF_F_DEF_LOAD_BIO, ERR_R_MALLOC_FAILURE);
+=======
+                ERR_raise(ERR_LIB_CONF, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                 goto err;
             }
             v = NULL;
@@ -644,7 +772,11 @@ static int str_copy(CONF *conf, char *section, char **pto, char *from)
                 goto err;
             }
             if (!BUF_MEM_grow_clean(buf, newsize)) {
+<<<<<<< HEAD
                 CONFerr(CONF_F_STR_COPY, ERR_R_MALLOC_FAILURE);
+=======
+                ERR_raise(ERR_LIB_CONF, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                 goto err;
             }
             while (*p)
@@ -728,8 +860,15 @@ static BIO *get_next_file(const char *path, OPENSSL_DIR_CTX **dirctx)
         namelen = strlen(filename);
 
 
+<<<<<<< HEAD
         if ((namelen > 5 && strcasecmp(filename + namelen - 5, ".conf") == 0)
             || (namelen > 4 && strcasecmp(filename + namelen - 4, ".cnf") == 0)) {
+=======
+        if ((namelen > 5
+             && OPENSSL_strcasecmp(filename + namelen - 5, ".conf") == 0)
+             || (namelen > 4
+                 && OPENSSL_strcasecmp(filename + namelen - 4, ".cnf") == 0)) {
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             size_t newlen;
             char *newpath;
             BIO *bio;
@@ -737,7 +876,11 @@ static BIO *get_next_file(const char *path, OPENSSL_DIR_CTX **dirctx)
             newlen = pathlen + namelen + 2;
             newpath = OPENSSL_zalloc(newlen);
             if (newpath == NULL) {
+<<<<<<< HEAD
                 CONFerr(CONF_F_GET_NEXT_FILE, ERR_R_MALLOC_FAILURE);
+=======
+                ERR_raise(ERR_LIB_CONF, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                 break;
             }
 #ifdef OPENSSL_SYS_VMS

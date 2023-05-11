@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright 2006-2020 The OpenSSL Project Authors. All Rights Reserved.
+=======
+ * Copyright 2006-2022 The OpenSSL Project Authors. All Rights Reserved.
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -585,7 +589,197 @@ static int ec_pkey_param_check(const EVP_PKEY *pkey)
     return EC_GROUP_check(eckey->group, NULL);
 }
 
+<<<<<<< HEAD
 const EVP_PKEY_ASN1_METHOD eckey_asn1_meth = {
+=======
+static
+size_t ec_pkey_dirty_cnt(const EVP_PKEY *pkey)
+{
+    return pkey->pkey.ec->dirty_cnt;
+}
+
+static
+int ec_pkey_export_to(const EVP_PKEY *from, void *to_keydata,
+                      OSSL_FUNC_keymgmt_import_fn *importer,
+                      OSSL_LIB_CTX *libctx, const char *propq)
+{
+    const EC_KEY *eckey = NULL;
+    const EC_GROUP *ecg = NULL;
+    unsigned char *pub_key_buf = NULL, *gen_buf = NULL;
+    size_t pub_key_buflen;
+    OSSL_PARAM_BLD *tmpl;
+    OSSL_PARAM *params = NULL;
+    const BIGNUM *priv_key = NULL;
+    const EC_POINT *pub_point = NULL;
+    int selection = 0;
+    int rv = 0;
+    BN_CTX *bnctx = NULL;
+
+    if (from == NULL
+            || (eckey = from->pkey.ec) == NULL
+            || (ecg = EC_KEY_get0_group(eckey)) == NULL)
+        return 0;
+
+    tmpl = OSSL_PARAM_BLD_new();
+    if (tmpl == NULL)
+        return 0;
+
+    /*
+     * EC_POINT_point2buf() can generate random numbers in some
+     * implementations so we need to ensure we use the correct libctx.
+     */
+    bnctx = BN_CTX_new_ex(libctx);
+    if (bnctx == NULL)
+        goto err;
+    BN_CTX_start(bnctx);
+
+    /* export the domain parameters */
+    if (!ossl_ec_group_todata(ecg, tmpl, NULL, libctx, propq, bnctx, &gen_buf))
+        goto err;
+    selection |= OSSL_KEYMGMT_SELECT_DOMAIN_PARAMETERS;
+
+    priv_key = EC_KEY_get0_private_key(eckey);
+    pub_point = EC_KEY_get0_public_key(eckey);
+
+    if (pub_point != NULL) {
+        /* convert pub_point to a octet string according to the SECG standard */
+        point_conversion_form_t format = EC_KEY_get_conv_form(eckey);
+
+        if ((pub_key_buflen = EC_POINT_point2buf(ecg, pub_point,
+                                                 format,
+                                                 &pub_key_buf, bnctx)) == 0
+            || !OSSL_PARAM_BLD_push_octet_string(tmpl,
+                                                 OSSL_PKEY_PARAM_PUB_KEY,
+                                                 pub_key_buf,
+                                                 pub_key_buflen))
+            goto err;
+        selection |= OSSL_KEYMGMT_SELECT_PUBLIC_KEY;
+    }
+
+    if (priv_key != NULL) {
+        size_t sz;
+        int ecbits;
+        int ecdh_cofactor_mode;
+
+        /*
+         * Key import/export should never leak the bit length of the secret
+         * scalar in the key.
+         *
+         * For this reason, on export we use padded BIGNUMs with fixed length.
+         *
+         * When importing we also should make sure that, even if short lived,
+         * the newly created BIGNUM is marked with the BN_FLG_CONSTTIME flag as
+         * soon as possible, so that any processing of this BIGNUM might opt for
+         * constant time implementations in the backend.
+         *
+         * Setting the BN_FLG_CONSTTIME flag alone is never enough, we also have
+         * to preallocate the BIGNUM internal buffer to a fixed public size big
+         * enough that operations performed during the processing never trigger
+         * a realloc which would leak the size of the scalar through memory
+         * accesses.
+         *
+         * Fixed Length
+         * ------------
+         *
+         * The order of the large prime subgroup of the curve is our choice for
+         * a fixed public size, as that is generally the upper bound for
+         * generating a private key in EC cryptosystems and should fit all valid
+         * secret scalars.
+         *
+         * For padding on export we just use the bit length of the order
+         * converted to bytes (rounding up).
+         *
+         * For preallocating the BIGNUM storage we look at the number of "words"
+         * required for the internal representation of the order, and we
+         * preallocate 2 extra "words" in case any of the subsequent processing
+         * might temporarily overflow the order length.
+         */
+        ecbits = EC_GROUP_order_bits(ecg);
+        if (ecbits <= 0)
+            goto err;
+
+        sz = (ecbits + 7 ) / 8;
+        if (!OSSL_PARAM_BLD_push_BN_pad(tmpl,
+                                        OSSL_PKEY_PARAM_PRIV_KEY,
+                                        priv_key, sz))
+            goto err;
+        selection |= OSSL_KEYMGMT_SELECT_PRIVATE_KEY;
+
+        /*
+         * The ECDH Cofactor Mode is defined only if the EC_KEY actually
+         * contains a private key, so we check for the flag and export it only
+         * in this case.
+         */
+        ecdh_cofactor_mode =
+            (EC_KEY_get_flags(eckey) & EC_FLAG_COFACTOR_ECDH) ? 1 : 0;
+
+        /* Export the ECDH_COFACTOR_MODE parameter */
+        if (!OSSL_PARAM_BLD_push_int(tmpl,
+                                     OSSL_PKEY_PARAM_USE_COFACTOR_ECDH,
+                                     ecdh_cofactor_mode))
+            goto err;
+        selection |= OSSL_KEYMGMT_SELECT_OTHER_PARAMETERS;
+    }
+
+    params = OSSL_PARAM_BLD_to_param(tmpl);
+
+    /* We export, the provider imports */
+    rv = importer(to_keydata, selection, params);
+
+ err:
+    OSSL_PARAM_BLD_free(tmpl);
+    OSSL_PARAM_free(params);
+    OPENSSL_free(pub_key_buf);
+    OPENSSL_free(gen_buf);
+    BN_CTX_end(bnctx);
+    BN_CTX_free(bnctx);
+    return rv;
+}
+
+static int ec_pkey_import_from(const OSSL_PARAM params[], void *vpctx)
+{
+    EVP_PKEY_CTX *pctx = vpctx;
+    EVP_PKEY *pkey = EVP_PKEY_CTX_get0_pkey(pctx);
+    EC_KEY *ec = EC_KEY_new_ex(pctx->libctx, pctx->propquery);
+
+    if (ec == NULL) {
+        ERR_raise(ERR_LIB_DH, ERR_R_MALLOC_FAILURE);
+        return 0;
+    }
+
+    if (!ossl_ec_group_fromdata(ec, params)
+        || !ossl_ec_key_otherparams_fromdata(ec, params)
+        || !ossl_ec_key_fromdata(ec, params, 1)
+        || !EVP_PKEY_assign_EC_KEY(pkey, ec)) {
+        EC_KEY_free(ec);
+        return 0;
+    }
+    return 1;
+}
+
+static int ec_pkey_copy(EVP_PKEY *to, EVP_PKEY *from)
+{
+    EC_KEY *eckey = from->pkey.ec;
+    EC_KEY *dupkey = NULL;
+    int ret;
+
+    if (eckey != NULL) {
+        dupkey = EC_KEY_dup(eckey);
+        if (dupkey == NULL)
+            return 0;
+    } else {
+        /* necessary to properly copy empty SM2 keys */
+        return EVP_PKEY_set_type(to, from->type);
+    }
+
+    ret = EVP_PKEY_assign_EC_KEY(to, dupkey);
+    if (!ret)
+        EC_KEY_free(dupkey);
+    return ret;
+}
+
+const EVP_PKEY_ASN1_METHOD ossl_eckey_asn1_meth = {
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     EVP_PKEY_EC,
     EVP_PKEY_EC,
     0,

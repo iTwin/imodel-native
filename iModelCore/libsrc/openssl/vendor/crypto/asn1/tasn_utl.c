@@ -76,7 +76,11 @@ int asn1_do_lock(ASN1_VALUE **pval, int op, const ASN1_ITEM *it)
         *lck = ret = 1;
         *lock = CRYPTO_THREAD_lock_new();
         if (*lock == NULL) {
+<<<<<<< HEAD
             ASN1err(ASN1_F_ASN1_DO_LOCK, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return -1;
         }
         break;
@@ -144,8 +148,15 @@ int asn1_enc_save(ASN1_VALUE **pval, const unsigned char *in, int inlen,
         return 1;
 
     OPENSSL_free(enc->enc);
+<<<<<<< HEAD
     if ((enc->enc = OPENSSL_malloc(inlen)) == NULL) {
         ASN1err(ASN1_F_ASN1_ENC_SAVE, ERR_R_MALLOC_FAILURE);
+=======
+    if (inlen <= 0)
+        return 0;
+    if ((enc->enc = OPENSSL_malloc(inlen)) == NULL) {
+        ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
     memcpy(enc->enc, in, inlen);

@@ -45,7 +45,11 @@ static int dsa_pub_decode(EVP_PKEY *pkey, X509_PUBKEY *pubkey)
 
     } else if ((ptype == V_ASN1_NULL) || (ptype == V_ASN1_UNDEF)) {
         if ((dsa = DSA_new()) == NULL) {
+<<<<<<< HEAD
             DSAerr(DSA_F_DSA_PUB_DECODE, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_DSA, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             goto err;
         }
     } else {
@@ -88,12 +92,20 @@ static int dsa_pub_encode(X509_PUBKEY *pk, const EVP_PKEY *pkey)
     if (pkey->save_parameters && dsa->p && dsa->q && dsa->g) {
         str = ASN1_STRING_new();
         if (str == NULL) {
+<<<<<<< HEAD
             DSAerr(DSA_F_DSA_PUB_ENCODE, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_DSA, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             goto err;
         }
         str->length = i2d_DSAparams(dsa, &str->data);
         if (str->length <= 0) {
+<<<<<<< HEAD
             DSAerr(DSA_F_DSA_PUB_ENCODE, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_DSA, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             goto err;
         }
         ptype = V_ASN1_SEQUENCE;
@@ -103,7 +115,11 @@ static int dsa_pub_encode(X509_PUBKEY *pk, const EVP_PKEY *pkey)
     pubint = BN_to_ASN1_INTEGER(dsa->pub_key, NULL);
 
     if (pubint == NULL) {
+<<<<<<< HEAD
         DSAerr(DSA_F_DSA_PUB_ENCODE, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_DSA, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 
@@ -111,7 +127,11 @@ static int dsa_pub_encode(X509_PUBKEY *pk, const EVP_PKEY *pkey)
     ASN1_INTEGER_free(pubint);
 
     if (penclen <= 0) {
+<<<<<<< HEAD
         DSAerr(DSA_F_DSA_PUB_ENCODE, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_DSA, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 
@@ -215,13 +235,21 @@ static int dsa_priv_encode(PKCS8_PRIV_KEY_INFO *p8, const EVP_PKEY *pkey)
     params = ASN1_STRING_new();
 
     if (params == NULL) {
+<<<<<<< HEAD
         DSAerr(DSA_F_DSA_PRIV_ENCODE, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_DSA, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 
     params->length = i2d_DSAparams(pkey->pkey.dsa, &params->data);
     if (params->length <= 0) {
+<<<<<<< HEAD
         DSAerr(DSA_F_DSA_PRIV_ENCODE, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_DSA, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
     params->type = V_ASN1_SEQUENCE;
@@ -510,6 +538,57 @@ static int dsa_pkey_ctrl(EVP_PKEY *pkey, int op, long arg1, void *arg2)
 
     }
 
+<<<<<<< HEAD
+=======
+    if ((params = OSSL_PARAM_BLD_to_param(tmpl)) == NULL)
+        goto err;
+
+    /* We export, the provider imports */
+    rv = importer(to_keydata, selection, params);
+
+    OSSL_PARAM_free(params);
+ err:
+    OSSL_PARAM_BLD_free(tmpl);
+    return rv;
+}
+
+static int dsa_pkey_import_from(const OSSL_PARAM params[], void *vpctx)
+{
+    EVP_PKEY_CTX *pctx = vpctx;
+    EVP_PKEY *pkey = EVP_PKEY_CTX_get0_pkey(pctx);
+    DSA *dsa = ossl_dsa_new(pctx->libctx);
+
+    if (dsa == NULL) {
+        ERR_raise(ERR_LIB_DSA, ERR_R_MALLOC_FAILURE);
+        return 0;
+    }
+
+    if (!ossl_dsa_ffc_params_fromdata(dsa, params)
+        || !ossl_dsa_key_fromdata(dsa, params, 1)
+        || !EVP_PKEY_assign_DSA(pkey, dsa)) {
+        DSA_free(dsa);
+        return 0;
+    }
+    return 1;
+}
+
+static int dsa_pkey_copy(EVP_PKEY *to, EVP_PKEY *from)
+{
+    DSA *dsa = from->pkey.dsa;
+    DSA *dupkey = NULL;
+    int ret;
+
+    if (dsa != NULL) {
+        dupkey = ossl_dsa_dup(dsa, OSSL_KEYMGMT_SELECT_ALL);
+        if (dupkey == NULL)
+            return 0;
+    }
+
+    ret = EVP_PKEY_assign_DSA(to, dupkey);
+    if (!ret)
+        DSA_free(dupkey);
+    return ret;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 }
 
 /* NB these are sorted in pkey_id order, lowest first */

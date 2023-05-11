@@ -62,7 +62,11 @@ static int asn1_item_flags_i2d(ASN1_VALUE *val, unsigned char **out,
         if (len <= 0)
             return len;
         if ((buf = OPENSSL_malloc(len)) == NULL) {
+<<<<<<< HEAD
             ASN1err(ASN1_F_ASN1_ITEM_FLAGS_I2D, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return -1;
         }
         p = buf;
@@ -398,12 +402,19 @@ static int asn1_set_seq_out(STACK_OF(ASN1_VALUE) *sk, unsigned char **out,
         else {
             derlst = OPENSSL_malloc(sk_ASN1_VALUE_num(sk)
                                     * sizeof(*derlst));
-            if (derlst == NULL)
+            if (derlst == NULL) {
+                ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
                 return 0;
+            }
             tmpdat = OPENSSL_malloc(skcontlen);
             if (tmpdat == NULL) {
+<<<<<<< HEAD
                 OPENSSL_free(derlst);
                 return 0;
+=======
+                ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
+                goto err;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             }
         }
     }

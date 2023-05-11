@@ -96,7 +96,11 @@ static TLS_FEATURE *v2i_TLS_FEATURE(const X509V3_EXT_METHOD *method,
     long tlsextid;
 
     if ((tlsf = sk_ASN1_INTEGER_new_null()) == NULL) {
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_tlsf.c
         X509V3err(X509V3_F_V2I_TLS_FEATURE, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_tlsf.c
         return NULL;
     }
 
@@ -125,7 +129,11 @@ static TLS_FEATURE *v2i_TLS_FEATURE(const X509V3_EXT_METHOD *method,
         if ((ai = ASN1_INTEGER_new()) == NULL
                 || !ASN1_INTEGER_set(ai, tlsextid)
                 || sk_ASN1_INTEGER_push(tlsf, ai) <= 0) {
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_tlsf.c
             X509V3err(X509V3_F_V2I_TLS_FEATURE, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_tlsf.c
             goto err;
         }
     }

@@ -67,6 +67,7 @@
 
 #if !defined(DATA_ORDER_IS_BIG_ENDIAN) && !defined(DATA_ORDER_IS_LITTLE_ENDIAN)
 # error "DATA_ORDER must be defined!"
+<<<<<<< HEAD
 #endif
 
 #ifndef HASH_CBLOCK
@@ -97,6 +98,60 @@
 
 #if defined(DATA_ORDER_IS_BIG_ENDIAN)
 
+=======
+#endif
+
+#ifndef HASH_CBLOCK
+# error "HASH_CBLOCK must be defined!"
+#endif
+#ifndef HASH_LONG
+# error "HASH_LONG must be defined!"
+#endif
+#ifndef HASH_CTX
+# error "HASH_CTX must be defined!"
+#endif
+
+#ifndef HASH_UPDATE
+# error "HASH_UPDATE must be defined!"
+#endif
+#ifndef HASH_TRANSFORM
+# error "HASH_TRANSFORM must be defined!"
+#endif
+#ifndef HASH_FINAL
+# error "HASH_FINAL must be defined!"
+#endif
+
+#ifndef HASH_BLOCK_DATA_ORDER
+# error "HASH_BLOCK_DATA_ORDER must be defined!"
+#endif
+
+#define ROTATE(a,n)     (((a)<<(n))|(((a)&0xffffffff)>>(32-(n))))
+
+#ifndef PEDANTIC
+# if defined(__GNUC__) && __GNUC__>=2 && \
+     !defined(OPENSSL_NO_ASM) && !defined(OPENSSL_NO_INLINE_ASM)
+#  if defined(__riscv_zbb) || defined(__riscv_zbkb)
+#   if __riscv_xlen == 64
+#   undef ROTATE
+#   define ROTATE(x, n) ({ MD32_REG_T ret;            \
+                       asm ("roriw %0, %1, %2"        \
+                       : "=r"(ret)                    \
+                       : "r"(x), "i"(32 - (n))); ret;})
+#   endif
+#   if __riscv_xlen == 32
+#   undef ROTATE
+#   define ROTATE(x, n) ({ MD32_REG_T ret;            \
+                       asm ("rori %0, %1, %2"         \
+                       : "=r"(ret)                    \
+                       : "r"(x), "i"(32 - (n))); ret;})
+#   endif
+#  endif
+# endif
+#endif
+
+#if defined(DATA_ORDER_IS_BIG_ENDIAN)
+
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 # define HOST_c2l(c,l)  (l =(((unsigned long)(*((c)++)))<<24),          \
                          l|=(((unsigned long)(*((c)++)))<<16),          \
                          l|=(((unsigned long)(*((c)++)))<< 8),          \

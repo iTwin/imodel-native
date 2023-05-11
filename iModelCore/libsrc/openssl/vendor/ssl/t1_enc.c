@@ -38,6 +38,7 @@ static int tls1_PRF(SSL *s,
             SSLerr(SSL_F_TLS1_PRF, ERR_R_INTERNAL_ERROR);
         return 0;
     }
+<<<<<<< HEAD
     pctx = EVP_PKEY_CTX_new_id(EVP_PKEY_TLS1_PRF, NULL);
     if (pctx == NULL || EVP_PKEY_derive_init(pctx) <= 0
         || EVP_PKEY_CTX_set_tls1_prf_md(pctx, md) <= 0
@@ -53,6 +54,10 @@ static int tls1_PRF(SSL *s,
                      ERR_R_INTERNAL_ERROR);
         else
             SSLerr(SSL_F_TLS1_PRF, ERR_R_INTERNAL_ERROR);
+=======
+    kdf = EVP_KDF_fetch(s->ctx->libctx, OSSL_KDF_NAME_TLS1_PRF, s->ctx->propq);
+    if (kdf == NULL)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 
@@ -78,6 +83,94 @@ static int tls1_generate_key_block(SSL *s, unsigned char *km, size_t num)
     return ret;
 }
 
+<<<<<<< HEAD
+=======
+#ifndef OPENSSL_NO_KTLS
+ /*
+  * Count the number of records that were not processed yet from record boundary.
+  *
+  * This function assumes that there are only fully formed records read in the
+  * record layer. If read_ahead is enabled, then this might be false and this
+  * function will fail.
+  */
+# ifndef OPENSSL_NO_KTLS_RX
+static int count_unprocessed_records(SSL *s)
+{
+    SSL3_BUFFER *rbuf = RECORD_LAYER_get_rbuf(&s->rlayer);
+    PACKET pkt, subpkt;
+    int count = 0;
+
+    if (!PACKET_buf_init(&pkt, rbuf->buf + rbuf->offset, rbuf->left))
+        return -1;
+
+    while (PACKET_remaining(&pkt) > 0) {
+        /* Skip record type and version */
+        if (!PACKET_forward(&pkt, 3))
+            return -1;
+
+        /* Read until next record */
+        if (!PACKET_get_length_prefixed_2(&pkt, &subpkt))
+            return -1;
+
+        count += 1;
+    }
+
+    return count;
+}
+# endif
+#endif
+
+
+int tls_provider_set_tls_params(SSL *s, EVP_CIPHER_CTX *ctx,
+                                const EVP_CIPHER *ciph,
+                                const EVP_MD *md)
+{
+    /*
+     * Provided cipher, the TLS padding/MAC removal is performed provider
+     * side so we need to tell the ctx about our TLS version and mac size
+     */
+    OSSL_PARAM params[3], *pprm = params;
+    size_t macsize = 0;
+    int imacsize = -1;
+
+    if ((EVP_CIPHER_get_flags(ciph) & EVP_CIPH_FLAG_AEAD_CIPHER) == 0
+               /*
+                * We look at s->ext.use_etm instead of SSL_READ_ETM() or
+                * SSL_WRITE_ETM() because this test applies to both reading
+                * and writing.
+                */
+            && !s->ext.use_etm)
+        imacsize = EVP_MD_get_size(md);
+    if (imacsize >= 0)
+        macsize = (size_t)imacsize;
+
+    *pprm++ = OSSL_PARAM_construct_int(OSSL_CIPHER_PARAM_TLS_VERSION,
+                                       &s->version);
+    *pprm++ = OSSL_PARAM_construct_size_t(OSSL_CIPHER_PARAM_TLS_MAC_SIZE,
+                                          &macsize);
+    *pprm = OSSL_PARAM_construct_end();
+
+    if (!EVP_CIPHER_CTX_set_params(ctx, params)) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
+        return 0;
+    }
+
+    return 1;
+}
+
+
+static int tls_iv_length_within_key_block(const EVP_CIPHER *c)
+{
+    /* If GCM/CCM mode only part of IV comes from PRF */
+    if (EVP_CIPHER_get_mode(c) == EVP_CIPH_GCM_MODE)
+        return EVP_GCM_TLS_FIXED_IV_LEN;
+    else if (EVP_CIPHER_get_mode(c) == EVP_CIPH_CCM_MODE)
+        return EVP_CCM_TLS_FIXED_IV_LEN;
+    else
+        return EVP_CIPHER_get_iv_length(c);
+}
+
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 int tls1_change_cipher_state(SSL *s, int which)
 {
     unsigned char *p, *mac_secret;
@@ -94,6 +187,19 @@ int tls1_change_cipher_state(SSL *s, int which)
     EVP_PKEY *mac_key;
     size_t n, i, j, k, cl;
     int reuse_dd = 0;
+<<<<<<< HEAD
+=======
+#ifndef OPENSSL_NO_KTLS
+    ktls_crypto_info_t crypto_info;
+    unsigned char *rec_seq;
+    void *rl_sequence;
+# ifndef OPENSSL_NO_KTLS_RX
+    int count_unprocessed;
+    int bit;
+# endif
+    BIO *bio;
+#endif
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
     c = s->s3->tmp.new_sym_enc;
     m = s->s3->tmp.new_hash;
@@ -104,20 +210,40 @@ int tls1_change_cipher_state(SSL *s, int which)
 
     if (which & SSL3_CC_READ) {
         if (s->ext.use_etm)
+<<<<<<< HEAD
             s->s3->flags |= TLS1_FLAGS_ENCRYPT_THEN_MAC_READ;
         else
             s->s3->flags &= ~TLS1_FLAGS_ENCRYPT_THEN_MAC_READ;
 
         if (s->s3->tmp.new_cipher->algorithm2 & TLS1_STREAM_MAC)
+=======
+            s->s3.flags |= TLS1_FLAGS_ENCRYPT_THEN_MAC_READ;
+        else
+            s->s3.flags &= ~TLS1_FLAGS_ENCRYPT_THEN_MAC_READ;
+
+        if (s->s3.tmp.new_cipher->algorithm2 & TLS1_STREAM_MAC)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             s->mac_flags |= SSL_MAC_FLAG_READ_MAC_STREAM;
         else
             s->mac_flags &= ~SSL_MAC_FLAG_READ_MAC_STREAM;
 
+<<<<<<< HEAD
         if (s->enc_read_ctx != NULL) {
             reuse_dd = 1;
         } else if ((s->enc_read_ctx = EVP_CIPHER_CTX_new()) == NULL) {
             SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS1_CHANGE_CIPHER_STATE,
                      ERR_R_MALLOC_FAILURE);
+=======
+        if (s->s3.tmp.new_cipher->algorithm2 & TLS1_TLSTREE)
+            s->mac_flags |= SSL_MAC_FLAG_READ_MAC_TLSTREE;
+        else
+            s->mac_flags &= ~SSL_MAC_FLAG_READ_MAC_TLSTREE;
+
+        if (s->enc_read_ctx != NULL) {
+            reuse_dd = 1;
+        } else if ((s->enc_read_ctx = EVP_CIPHER_CTX_new()) == NULL) {
+            SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             goto err;
         } else {
             /*
@@ -127,8 +253,15 @@ int tls1_change_cipher_state(SSL *s, int which)
         }
         dd = s->enc_read_ctx;
         mac_ctx = ssl_replace_hash(&s->read_hash, NULL);
+<<<<<<< HEAD
         if (mac_ctx == NULL)
             goto err;
+=======
+        if (mac_ctx == NULL) {
+            SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
+            goto err;
+        }
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 #ifndef OPENSSL_NO_COMP
         COMP_CTX_free(s->expand);
         s->expand = NULL;
@@ -136,7 +269,10 @@ int tls1_change_cipher_state(SSL *s, int which)
             s->expand = COMP_CTX_new(comp->method);
             if (s->expand == NULL) {
                 SSLfatal(s, SSL_AD_INTERNAL_ERROR,
+<<<<<<< HEAD
                          SSL_F_TLS1_CHANGE_CIPHER_STATE,
+=======
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                          SSL_R_COMPRESSION_LIBRARY_ERROR);
                 goto err;
             }
@@ -147,6 +283,7 @@ int tls1_change_cipher_state(SSL *s, int which)
          */
         if (!SSL_IS_DTLS(s))
             RECORD_LAYER_reset_read_sequence(&s->rlayer);
+<<<<<<< HEAD
         mac_secret = &(s->s3->read_mac_secret[0]);
         mac_secret_size = &(s->s3->read_mac_secret_size);
     } else {
@@ -310,10 +447,176 @@ int tls1_change_cipher_state(SSL *s, int which)
                                 (int)*mac_secret_size, mac_secret)) {
         SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS1_CHANGE_CIPHER_STATE,
                  ERR_R_INTERNAL_ERROR);
+=======
+        mac_secret = &(s->s3.read_mac_secret[0]);
+        mac_secret_size = &(s->s3.read_mac_secret_size);
+    } else {
+        s->statem.enc_write_state = ENC_WRITE_STATE_INVALID;
+        if (s->ext.use_etm)
+            s->s3.flags |= TLS1_FLAGS_ENCRYPT_THEN_MAC_WRITE;
+        else
+            s->s3.flags &= ~TLS1_FLAGS_ENCRYPT_THEN_MAC_WRITE;
+
+        if (s->s3.tmp.new_cipher->algorithm2 & TLS1_STREAM_MAC)
+            s->mac_flags |= SSL_MAC_FLAG_WRITE_MAC_STREAM;
+        else
+            s->mac_flags &= ~SSL_MAC_FLAG_WRITE_MAC_STREAM;
+
+        if (s->s3.tmp.new_cipher->algorithm2 & TLS1_TLSTREE)
+            s->mac_flags |= SSL_MAC_FLAG_WRITE_MAC_TLSTREE;
+        else
+            s->mac_flags &= ~SSL_MAC_FLAG_WRITE_MAC_TLSTREE;
+        if (s->enc_write_ctx != NULL && !SSL_IS_DTLS(s)) {
+            reuse_dd = 1;
+        } else if ((s->enc_write_ctx = EVP_CIPHER_CTX_new()) == NULL) {
+            SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_MALLOC_FAILURE);
+            goto err;
+        }
+        dd = s->enc_write_ctx;
+        if (SSL_IS_DTLS(s)) {
+            mac_ctx = EVP_MD_CTX_new();
+            if (mac_ctx == NULL) {
+                SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_MALLOC_FAILURE);
+                goto err;
+            }
+            s->write_hash = mac_ctx;
+        } else {
+            mac_ctx = ssl_replace_hash(&s->write_hash, NULL);
+            if (mac_ctx == NULL) {
+                SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_MALLOC_FAILURE);
+                goto err;
+            }
+        }
+#ifndef OPENSSL_NO_COMP
+        COMP_CTX_free(s->compress);
+        s->compress = NULL;
+        if (comp != NULL) {
+            s->compress = COMP_CTX_new(comp->method);
+            if (s->compress == NULL) {
+                SSLfatal(s, SSL_AD_INTERNAL_ERROR,
+                         SSL_R_COMPRESSION_LIBRARY_ERROR);
+                goto err;
+            }
+        }
+#endif
+        /*
+         * this is done by dtls1_reset_seq_numbers for DTLS
+         */
+        if (!SSL_IS_DTLS(s))
+            RECORD_LAYER_reset_write_sequence(&s->rlayer);
+        mac_secret = &(s->s3.write_mac_secret[0]);
+        mac_secret_size = &(s->s3.write_mac_secret_size);
+    }
+
+    if (reuse_dd)
+        EVP_CIPHER_CTX_reset(dd);
+
+    p = s->s3.tmp.key_block;
+    i = *mac_secret_size = s->s3.tmp.new_mac_secret_size;
+
+    cl = EVP_CIPHER_get_key_length(c);
+    j = cl;
+    k = tls_iv_length_within_key_block(c);
+    if ((which == SSL3_CHANGE_CIPHER_CLIENT_WRITE) ||
+        (which == SSL3_CHANGE_CIPHER_SERVER_READ)) {
+        ms = &(p[0]);
+        n = i + i;
+        key = &(p[n]);
+        n += j + j;
+        iv = &(p[n]);
+        n += k + k;
+    } else {
+        n = i;
+        ms = &(p[n]);
+        n += i + j;
+        key = &(p[n]);
+        n += j + k;
+        iv = &(p[n]);
+        n += k;
+    }
+
+    if (n > s->s3.tmp.key_block_length) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
+        goto err;
+    }
+
+    memcpy(mac_secret, ms, i);
+
+    if (!(EVP_CIPHER_get_flags(c) & EVP_CIPH_FLAG_AEAD_CIPHER)) {
+        if (mac_type == EVP_PKEY_HMAC) {
+            mac_key = EVP_PKEY_new_raw_private_key_ex(s->ctx->libctx, "HMAC",
+                                                      s->ctx->propq, mac_secret,
+                                                      *mac_secret_size);
+        } else {
+            /*
+             * If its not HMAC then the only other types of MAC we support are
+             * the GOST MACs, so we need to use the old style way of creating
+             * a MAC key.
+             */
+            mac_key = EVP_PKEY_new_mac_key(mac_type, NULL, mac_secret,
+                                           (int)*mac_secret_size);
+        }
+        if (mac_key == NULL
+            || EVP_DigestSignInit_ex(mac_ctx, NULL, EVP_MD_get0_name(m),
+                                     s->ctx->libctx, s->ctx->propq, mac_key,
+                                     NULL) <= 0) {
+            EVP_PKEY_free(mac_key);
+            SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
+            goto err;
+        }
+        EVP_PKEY_free(mac_key);
+    }
+
+    OSSL_TRACE_BEGIN(TLS) {
+        BIO_printf(trc_out, "which = %04X, mac key:\n", which);
+        BIO_dump_indent(trc_out, ms, i, 4);
+    } OSSL_TRACE_END(TLS);
+
+    if (EVP_CIPHER_get_mode(c) == EVP_CIPH_GCM_MODE) {
+        if (!EVP_CipherInit_ex(dd, c, NULL, key, NULL, (which & SSL3_CC_WRITE))
+            || EVP_CIPHER_CTX_ctrl(dd, EVP_CTRL_GCM_SET_IV_FIXED, (int)k,
+                                    iv) <= 0) {
+            SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
+            goto err;
+        }
+    } else if (EVP_CIPHER_get_mode(c) == EVP_CIPH_CCM_MODE) {
+        int taglen;
+        if (s->s3.tmp.
+            new_cipher->algorithm_enc & (SSL_AES128CCM8 | SSL_AES256CCM8))
+            taglen = EVP_CCM8_TLS_TAG_LEN;
+        else
+            taglen = EVP_CCM_TLS_TAG_LEN;
+        if (!EVP_CipherInit_ex(dd, c, NULL, NULL, NULL, (which & SSL3_CC_WRITE))
+            || (EVP_CIPHER_CTX_ctrl(dd, EVP_CTRL_AEAD_SET_IVLEN, 12, NULL) <= 0)
+            || (EVP_CIPHER_CTX_ctrl(dd, EVP_CTRL_AEAD_SET_TAG, taglen, NULL) <= 0)
+            || (EVP_CIPHER_CTX_ctrl(dd, EVP_CTRL_CCM_SET_IV_FIXED, (int)k, iv) <= 0)
+            || !EVP_CipherInit_ex(dd, NULL, NULL, key, NULL, -1)) {
+            SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
+            goto err;
+        }
+    } else {
+        if (!EVP_CipherInit_ex(dd, c, NULL, key, iv, (which & SSL3_CC_WRITE))) {
+            SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
+            goto err;
+        }
+    }
+    /* Needed for "composite" AEADs, such as RC4-HMAC-MD5 */
+    if ((EVP_CIPHER_get_flags(c) & EVP_CIPH_FLAG_AEAD_CIPHER)
+        && *mac_secret_size
+        && EVP_CIPHER_CTX_ctrl(dd, EVP_CTRL_AEAD_SET_MAC_KEY,
+                                (int)*mac_secret_size, mac_secret) <= 0) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
+        goto err;
+    }
+    if (EVP_CIPHER_get0_provider(c) != NULL
+            && !tls_provider_set_tls_params(s, dd, c, m)) {
+        /* SSLfatal already called */
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
     s->statem.enc_write_state = ENC_WRITE_STATE_VALID;
 
+<<<<<<< HEAD
 #ifdef SSL_DEBUG
     printf("which = %04X\nkey=", which);
     {
@@ -329,6 +632,89 @@ int tls1_change_cipher_state(SSL *s, int which)
     }
     printf("\n");
 #endif
+=======
+#ifndef OPENSSL_NO_KTLS
+    if (s->compress || (s->options & SSL_OP_ENABLE_KTLS) == 0)
+        goto skip_ktls;
+
+    /* ktls supports only the maximum fragment size */
+    if (ssl_get_max_send_fragment(s) != SSL3_RT_MAX_PLAIN_LENGTH)
+        goto skip_ktls;
+
+    /* check that cipher is supported */
+    if (!ktls_check_supported_cipher(s, c, dd))
+        goto skip_ktls;
+
+    if (which & SSL3_CC_WRITE)
+        bio = s->wbio;
+    else
+        bio = s->rbio;
+
+    if (!ossl_assert(bio != NULL)) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
+        goto err;
+    }
+
+    /* All future data will get encrypted by ktls. Flush the BIO or skip ktls */
+    if (which & SSL3_CC_WRITE) {
+       if (BIO_flush(bio) <= 0)
+           goto skip_ktls;
+    }
+
+    /* ktls doesn't support renegotiation */
+    if ((BIO_get_ktls_send(s->wbio) && (which & SSL3_CC_WRITE)) ||
+        (BIO_get_ktls_recv(s->rbio) && (which & SSL3_CC_READ))) {
+        SSLfatal(s, SSL_AD_NO_RENEGOTIATION, ERR_R_INTERNAL_ERROR);
+        goto err;
+    }
+
+    if (which & SSL3_CC_WRITE)
+        rl_sequence = RECORD_LAYER_get_write_sequence(&s->rlayer);
+    else
+        rl_sequence = RECORD_LAYER_get_read_sequence(&s->rlayer);
+
+    if (!ktls_configure_crypto(s, c, dd, rl_sequence, &crypto_info, &rec_seq,
+                               iv, key, ms, *mac_secret_size))
+        goto skip_ktls;
+
+    if (which & SSL3_CC_READ) {
+# ifndef OPENSSL_NO_KTLS_RX
+        count_unprocessed = count_unprocessed_records(s);
+        if (count_unprocessed < 0)
+            goto skip_ktls;
+
+        /* increment the crypto_info record sequence */
+        while (count_unprocessed) {
+            for (bit = 7; bit >= 0; bit--) { /* increment */
+                ++rec_seq[bit];
+                if (rec_seq[bit] != 0)
+                    break;
+            }
+            count_unprocessed--;
+        }
+# else
+        goto skip_ktls;
+# endif
+    }
+
+    /* ktls works with user provided buffers directly */
+    if (BIO_set_ktls(bio, &crypto_info, which & SSL3_CC_WRITE)) {
+        if (which & SSL3_CC_WRITE)
+            ssl3_release_write_buffer(s);
+        SSL_set_options(s, SSL_OP_NO_RENEGOTIATION);
+    }
+
+ skip_ktls:
+#endif                          /* OPENSSL_NO_KTLS */
+    s->statem.enc_write_state = ENC_WRITE_STATE_VALID;
+
+    OSSL_TRACE_BEGIN(TLS) {
+        BIO_printf(trc_out, "which = %04X, key:\n", which);
+        BIO_dump_indent(trc_out, key, EVP_CIPHER_get_key_length(c), 4);
+        BIO_printf(trc_out, "iv:\n");
+        BIO_dump_indent(trc_out, iv, k, 4);
+    } OSSL_TRACE_END(TLS);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
     return 1;
  err:
@@ -348,6 +734,7 @@ int tls1_setup_key_block(SSL *s)
     if (s->s3->tmp.key_block_length != 0)
         return 1;
 
+<<<<<<< HEAD
     if (!ssl_cipher_get_evp(s->session, &c, &hash, &mac_type, &mac_secret_size,
                             &comp, s->ext.use_etm)) {
         SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS1_SETUP_KEY_BLOCK,
@@ -360,13 +747,34 @@ int tls1_setup_key_block(SSL *s)
     s->s3->tmp.new_mac_pkey_type = mac_type;
     s->s3->tmp.new_mac_secret_size = mac_secret_size;
     num = EVP_CIPHER_key_length(c) + mac_secret_size + EVP_CIPHER_iv_length(c);
+=======
+    if (!ssl_cipher_get_evp(s->ctx, s->session, &c, &hash, &mac_type,
+                            &mac_secret_size, &comp, s->ext.use_etm)) {
+        /* Error is already recorded */
+        SSLfatal_alert(s, SSL_AD_INTERNAL_ERROR);
+        return 0;
+    }
+
+    ssl_evp_cipher_free(s->s3.tmp.new_sym_enc);
+    s->s3.tmp.new_sym_enc = c;
+    ssl_evp_md_free(s->s3.tmp.new_hash);
+    s->s3.tmp.new_hash = hash;
+    s->s3.tmp.new_mac_pkey_type = mac_type;
+    s->s3.tmp.new_mac_secret_size = mac_secret_size;
+    num = mac_secret_size + EVP_CIPHER_get_key_length(c)
+          + tls_iv_length_within_key_block(c);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     num *= 2;
 
     ssl3_cleanup_key_block(s);
 
     if ((p = OPENSSL_malloc(num)) == NULL) {
+<<<<<<< HEAD
         SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS1_SETUP_KEY_BLOCK,
                  ERR_R_MALLOC_FAILURE);
+=======
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 
@@ -425,6 +833,23 @@ int tls1_setup_key_block(SSL *s)
             if (s->session->cipher->algorithm_enc == SSL_RC4)
                 s->s3->need_empty_fragments = 0;
 #endif
+        }
+    }
+
+    if (!(s->options & SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS)
+        && s->method->version <= TLS1_VERSION) {
+        /*
+         * enable vulnerability countermeasure for CBC ciphers with known-IV
+         * problem (http://www.openssl.org/~bodo/tls-cbc.txt)
+         */
+        s->s3.need_empty_fragments = 1;
+
+        if (s->session->cipher != NULL) {
+            if (s->session->cipher->algorithm_enc == SSL_eNULL)
+                s->s3.need_empty_fragments = 0;
+
+            if (s->session->cipher->algorithm_enc == SSL_RC4)
+                s->s3.need_empty_fragments = 0;
         }
     }
 
@@ -592,11 +1017,19 @@ int tls1_export_keying_material(SSL *s, unsigned char *out, size_t olen,
 
     goto ret;
  err1:
+<<<<<<< HEAD
     SSLerr(SSL_F_TLS1_EXPORT_KEYING_MATERIAL, SSL_R_TLS_ILLEGAL_EXPORTER_LABEL);
     rv = 0;
     goto ret;
  err2:
     SSLerr(SSL_F_TLS1_EXPORT_KEYING_MATERIAL, ERR_R_MALLOC_FAILURE);
+=======
+    ERR_raise(ERR_LIB_SSL, SSL_R_TLS_ILLEGAL_EXPORTER_LABEL);
+    rv = 0;
+    goto ret;
+ err2:
+    ERR_raise(ERR_LIB_SSL, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     rv = 0;
  ret:
     OPENSSL_clear_free(val, vallen);

@@ -77,14 +77,23 @@ STACK_OF(X509_ATTRIBUTE) *X509at_add1_attr(STACK_OF(X509_ATTRIBUTE) **x,
     STACK_OF(X509_ATTRIBUTE) *sk = NULL;
 
     if (x == NULL) {
+<<<<<<< HEAD
         X509err(X509_F_X509AT_ADD1_ATTR, ERR_R_PASSED_NULL_PARAMETER);
         goto err2;
+=======
+        ERR_raise(ERR_LIB_X509, ERR_R_PASSED_NULL_PARAMETER);
+        return NULL;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     }
 
     if (*x == NULL) {
         if ((sk = sk_X509_ATTRIBUTE_new_null()) == NULL)
             goto err;
+<<<<<<< HEAD
     } else
+=======
+    } else {
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         sk = *x;
 
     if ((new_attr = X509_ATTRIBUTE_dup(attr)) == NULL)
@@ -95,7 +104,11 @@ STACK_OF(X509_ATTRIBUTE) *X509at_add1_attr(STACK_OF(X509_ATTRIBUTE) **x,
         *x = sk;
     return sk;
  err:
+<<<<<<< HEAD
     X509err(X509_F_X509AT_ADD1_ATTR, ERR_R_MALLOC_FAILURE);
+=======
+    ERR_raise(ERR_LIB_X509, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  err2:
     X509_ATTRIBUTE_free(new_attr);
     sk_X509_ATTRIBUTE_free(sk);
@@ -165,6 +178,26 @@ void *X509at_get0_data_by_OBJ(const STACK_OF(X509_ATTRIBUTE) *x,
     return X509_ATTRIBUTE_get0_data(at, 0, type, NULL);
 }
 
+<<<<<<< HEAD
+=======
+STACK_OF(X509_ATTRIBUTE) *ossl_x509at_dup(const STACK_OF(X509_ATTRIBUTE) *x)
+{
+    int i, n;
+    STACK_OF(X509_ATTRIBUTE) *sk = NULL;
+
+    n = sk_X509_ATTRIBUTE_num(x);
+    for (i = 0; i < n; ++i) {
+        X509_ATTRIBUTE *attr = sk_X509_ATTRIBUTE_value(x, i);
+
+        if (X509at_add1_attr(&sk, attr) == NULL) {
+            sk_X509_ATTRIBUTE_pop_free(sk, X509_ATTRIBUTE_free);
+            return NULL;
+        }
+    }
+    return sk;
+}
+
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 X509_ATTRIBUTE *X509_ATTRIBUTE_create_by_NID(X509_ATTRIBUTE **attr, int nid,
                                              int atrtype, const void *data,
                                              int len)
@@ -192,8 +225,12 @@ X509_ATTRIBUTE *X509_ATTRIBUTE_create_by_OBJ(X509_ATTRIBUTE **attr,
 
     if ((attr == NULL) || (*attr == NULL)) {
         if ((ret = X509_ATTRIBUTE_new()) == NULL) {
+<<<<<<< HEAD
             X509err(X509_F_X509_ATTRIBUTE_CREATE_BY_OBJ,
                     ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_X509, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return NULL;
         }
     } else
@@ -254,7 +291,11 @@ int X509_ATTRIBUTE_set1_data(X509_ATTRIBUTE *attr, int attrtype,
         stmp = ASN1_STRING_set_by_NID(NULL, data, len, attrtype,
                                       OBJ_obj2nid(attr->object));
         if (!stmp) {
+<<<<<<< HEAD
             X509err(X509_F_X509_ATTRIBUTE_SET1_DATA, ERR_R_ASN1_LIB);
+=======
+            ERR_raise(ERR_LIB_X509, ERR_R_ASN1_LIB);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return 0;
         }
         atype = stmp->type;
@@ -287,7 +328,11 @@ int X509_ATTRIBUTE_set1_data(X509_ATTRIBUTE *attr, int attrtype,
         goto err;
     return 1;
  err:
+<<<<<<< HEAD
     X509err(X509_F_X509_ATTRIBUTE_SET1_DATA, ERR_R_MALLOC_FAILURE);
+=======
+    ERR_raise(ERR_LIB_X509, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     ASN1_TYPE_free(ttmp);
     ASN1_STRING_free(stmp);
     return 0;

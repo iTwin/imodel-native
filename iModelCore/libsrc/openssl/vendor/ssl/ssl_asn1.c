@@ -159,8 +159,13 @@ int i2d_SSL_SESSION(SSL_SESSION *in, unsigned char **pp)
     ssl_session_oinit(&as.session_id_context, &sid_ctx,
                       in->sid_ctx, in->sid_ctx_length);
 
+<<<<<<< HEAD
     as.time = in->time;
     as.timeout = in->timeout;
+=======
+    as.time = (int64_t)in->time;
+    as.timeout = (int64_t)in->timeout;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     as.verify_result = in->verify_result;
 
     as.peer = in->peer;
@@ -296,6 +301,7 @@ SSL_SESSION *d2i_SSL_SESSION(SSL_SESSION **a, const unsigned char **pp,
     ret->master_key_length = tmpl;
 
     if (as->time != 0)
+<<<<<<< HEAD
         ret->time = (long)as->time;
     else
         ret->time = (long)time(NULL);
@@ -304,6 +310,17 @@ SSL_SESSION *d2i_SSL_SESSION(SSL_SESSION **a, const unsigned char **pp,
         ret->timeout = (long)as->timeout;
     else
         ret->timeout = 3;
+=======
+        ret->time = (time_t)as->time;
+    else
+        ret->time = time(NULL);
+
+    if (as->timeout != 0)
+        ret->timeout = (time_t)as->timeout;
+    else
+        ret->timeout = 3;
+    ssl_session_calculate_timeout(ret);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
     X509_free(ret->peer);
     ret->peer = as->peer;

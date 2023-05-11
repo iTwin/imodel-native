@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright 2008-2020 The OpenSSL Project Authors. All Rights Reserved.
+=======
+ * Copyright 2008-2022 The OpenSSL Project Authors. All Rights Reserved.
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -72,7 +76,11 @@ int i2d_ASN1_bio_stream(BIO *out, ASN1_VALUE *val, BIO *in, int flags,
         BIO *bio, *tbio;
         bio = BIO_new_NDEF(out, val, it);
         if (!bio) {
+<<<<<<< HEAD
             ASN1err(ASN1_F_I2D_ASN1_BIO_STREAM, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return 0;
         }
         SMIME_crlf_copy(in, bio, flags);
@@ -102,7 +110,11 @@ static int B64_write_ASN1(BIO *out, ASN1_VALUE *val, BIO *in, int flags,
     int r;
     b64 = BIO_new(BIO_f_base64());
     if (b64 == NULL) {
+<<<<<<< HEAD
         ASN1err(ASN1_F_B64_WRITE_ASN1, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
     /*
@@ -134,7 +146,11 @@ static ASN1_VALUE *b64_read_asn1(BIO *bio, const ASN1_ITEM *it)
     ASN1_VALUE *val;
 
     if ((b64 = BIO_new(BIO_f_base64())) == NULL) {
+<<<<<<< HEAD
         ASN1err(ASN1_F_B64_READ_ASN1, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
     bio = BIO_push(b64, bio);
@@ -494,7 +510,12 @@ int SMIME_crlf_copy(BIO *in, BIO *out, int flags)
      * when streaming as we don't end up with one OCTET STRING per line.
      */
     bf = BIO_new(BIO_f_buffer());
+<<<<<<< HEAD
     if (bf == NULL)
+=======
+    if (bf == NULL) {
+        ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     out = BIO_push(bf, out);
     if (flags & SMIME_BINARY) {

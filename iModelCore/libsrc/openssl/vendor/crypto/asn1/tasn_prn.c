@@ -38,7 +38,11 @@ ASN1_PCTX *ASN1_PCTX_new(void)
 
     ret = OPENSSL_zalloc(sizeof(*ret));
     if (ret == NULL) {
+<<<<<<< HEAD
         ASN1err(ASN1_F_ASN1_PCTX_NEW, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return NULL;
     }
     return ret;

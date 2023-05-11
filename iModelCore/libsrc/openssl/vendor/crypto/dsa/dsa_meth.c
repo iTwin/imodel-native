@@ -33,7 +33,11 @@ DSA_METHOD *DSA_meth_new(const char *name, int flags)
         OPENSSL_free(dsam);
     }
 
+<<<<<<< HEAD
     DSAerr(DSA_F_DSA_METH_NEW, ERR_R_MALLOC_FAILURE);
+=======
+    ERR_raise(ERR_LIB_DSA, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     return NULL;
 }
 
@@ -59,7 +63,11 @@ DSA_METHOD *DSA_meth_dup(const DSA_METHOD *dsam)
         OPENSSL_free(ret);
     }
 
+<<<<<<< HEAD
     DSAerr(DSA_F_DSA_METH_DUP, ERR_R_MALLOC_FAILURE);
+=======
+    ERR_raise(ERR_LIB_DSA, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     return NULL;
 }
 
@@ -73,7 +81,11 @@ int DSA_meth_set1_name(DSA_METHOD *dsam, const char *name)
     char *tmpname = OPENSSL_strdup(name);
 
     if (tmpname == NULL) {
+<<<<<<< HEAD
         DSAerr(DSA_F_DSA_METH_SET1_NAME, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_DSA, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
 

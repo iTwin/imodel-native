@@ -531,6 +531,7 @@ void OPENSSL_cleanup(void)
      */
 
 #ifndef OPENSSL_NO_COMP
+<<<<<<< HEAD
     if (zlib_inited) {
 #ifdef OPENSSL_INIT_DEBUG
         fprintf(stderr, "OPENSSL_INIT: OPENSSL_cleanup: "
@@ -538,6 +539,10 @@ void OPENSSL_cleanup(void)
 #endif
         comp_zlib_cleanup_int();
     }
+=======
+    OSSL_TRACE(INIT, "OPENSSL_cleanup: ossl_comp_zlib_cleanup()\n");
+    ossl_comp_zlib_cleanup();
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 #endif
 
     if (async_inited) {
@@ -805,7 +810,11 @@ int OPENSSL_atexit(void (*handler)(void))
 #endif
 
     if ((newhand = OPENSSL_malloc(sizeof(*newhand))) == NULL) {
+<<<<<<< HEAD
         CRYPTOerr(CRYPTO_F_OPENSSL_ATEXIT, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_CRYPTO, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
 

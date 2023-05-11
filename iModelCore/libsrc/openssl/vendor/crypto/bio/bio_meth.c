@@ -25,7 +25,11 @@ int BIO_get_new_index(void)
     int newval;
 
     if (!RUN_ONCE(&bio_type_init, do_bio_type_init)) {
+<<<<<<< HEAD
         BIOerr(BIO_F_BIO_GET_NEW_INDEX, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_BIO, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return -1;
     }
     if (!CRYPTO_UP_REF(&bio_count, &newval, bio_type_lock))
@@ -40,7 +44,11 @@ BIO_METHOD *BIO_meth_new(int type, const char *name)
     if (biom == NULL
             || (biom->name = OPENSSL_strdup(name)) == NULL) {
         OPENSSL_free(biom);
+<<<<<<< HEAD
         BIOerr(BIO_F_BIO_METH_NEW, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_BIO, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return NULL;
     }
     biom->type = type;

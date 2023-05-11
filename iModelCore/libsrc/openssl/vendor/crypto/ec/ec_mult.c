@@ -51,7 +51,11 @@ static EC_PRE_COMP *ec_pre_comp_new(const EC_GROUP *group)
 
     ret = OPENSSL_zalloc(sizeof(*ret));
     if (ret == NULL) {
+<<<<<<< HEAD
         ECerr(EC_F_EC_PRE_COMP_NEW, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return ret;
     }
 
@@ -62,7 +66,11 @@ static EC_PRE_COMP *ec_pre_comp_new(const EC_GROUP *group)
 
     ret->lock = CRYPTO_THREAD_lock_new();
     if (ret->lock == NULL) {
+<<<<<<< HEAD
         ECerr(EC_F_EC_PRE_COMP_NEW, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         OPENSSL_free(ret);
         return NULL;
     }
@@ -165,7 +173,11 @@ int ec_scalar_mul_ladder(const EC_GROUP *group, EC_POINT *r,
 
     if (((p = EC_POINT_new(group)) == NULL)
         || ((s = EC_POINT_new(group)) == NULL)) {
+<<<<<<< HEAD
         ECerr(EC_F_EC_SCALAR_MUL_LADDER, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 
@@ -189,7 +201,11 @@ int ec_scalar_mul_ladder(const EC_GROUP *group, EC_POINT *r,
     lambda = BN_CTX_get(ctx);
     k = BN_CTX_get(ctx);
     if (k == NULL) {
+<<<<<<< HEAD
         ECerr(EC_F_EC_SCALAR_MUL_LADDER, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 
@@ -513,7 +529,11 @@ int ec_wNAF_mul(const EC_GROUP *group, EC_POINT *r, const BIGNUM *scalar,
         wNAF[0] = NULL;         /* preliminary pivot */
 
     if (wsize == NULL || wNAF_len == NULL || wNAF == NULL || val_sub == NULL) {
+<<<<<<< HEAD
         ECerr(EC_F_EC_WNAF_MUL, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 
@@ -625,7 +645,11 @@ int ec_wNAF_mul(const EC_GROUP *group, EC_POINT *r, const BIGNUM *scalar,
                     wNAF[i + 1] = NULL;
                     wNAF[i] = OPENSSL_malloc(wNAF_len[i]);
                     if (wNAF[i] == NULL) {
+<<<<<<< HEAD
                         ECerr(EC_F_EC_WNAF_MUL, ERR_R_MALLOC_FAILURE);
+=======
+                        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                         OPENSSL_free(tmp_wNAF);
                         goto err;
                     }
@@ -654,7 +678,11 @@ int ec_wNAF_mul(const EC_GROUP *group, EC_POINT *r, const BIGNUM *scalar,
      */
     val = OPENSSL_malloc((num_val + 1) * sizeof(val[0]));
     if (val == NULL) {
+<<<<<<< HEAD
         ECerr(EC_F_EC_WNAF_MUL, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
     val[num_val] = NULL;        /* pivot element */
@@ -880,7 +908,11 @@ int ec_wNAF_precompute_mult(EC_GROUP *group, BN_CTX *ctx)
 
     points = OPENSSL_malloc(sizeof(*points) * (num + 1));
     if (points == NULL) {
+<<<<<<< HEAD
         ECerr(EC_F_EC_WNAF_PRECOMPUTE_MULT, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 
@@ -888,14 +920,22 @@ int ec_wNAF_precompute_mult(EC_GROUP *group, BN_CTX *ctx)
     var[num] = NULL;            /* pivot */
     for (i = 0; i < num; i++) {
         if ((var[i] = EC_POINT_new(group)) == NULL) {
+<<<<<<< HEAD
             ECerr(EC_F_EC_WNAF_PRECOMPUTE_MULT, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             goto err;
         }
     }
 
     if ((tmp_point = EC_POINT_new(group)) == NULL
         || (base = EC_POINT_new(group)) == NULL) {
+<<<<<<< HEAD
         ECerr(EC_F_EC_WNAF_PRECOMPUTE_MULT, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 

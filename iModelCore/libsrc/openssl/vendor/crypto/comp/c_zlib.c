@@ -204,12 +204,53 @@ static int zlib_stateful_expand_block(COMP_CTX *ctx, unsigned char *out,
     return olen - state->istream.avail_out;
 }
 
+<<<<<<< HEAD
+=======
+static CRYPTO_ONCE zlib_once = CRYPTO_ONCE_STATIC_INIT;
+DEFINE_RUN_ONCE_STATIC(ossl_comp_zlib_init)
+{
+# ifdef ZLIB_SHARED
+    /* LIBZ may be externally defined, and we should respect that value */
+#  ifndef LIBZ
+#   if defined(OPENSSL_SYS_WINDOWS) || defined(OPENSSL_SYS_WIN32)
+#    define LIBZ "ZLIB1"
+#   elif defined(OPENSSL_SYS_VMS)
+#    define LIBZ "LIBZ"
+#   else
+#    define LIBZ "z"
+#   endif
+#  endif
+
+    zlib_dso = DSO_load(NULL, LIBZ, NULL, 0);
+    if (zlib_dso != NULL) {
+        p_compress = (compress_ft) DSO_bind_func(zlib_dso, "compress");
+        p_inflateEnd = (inflateEnd_ft) DSO_bind_func(zlib_dso, "inflateEnd");
+        p_inflate = (inflate_ft) DSO_bind_func(zlib_dso, "inflate");
+        p_inflateInit_ = (inflateInit__ft) DSO_bind_func(zlib_dso, "inflateInit_");
+        p_deflateEnd = (deflateEnd_ft) DSO_bind_func(zlib_dso, "deflateEnd");
+        p_deflate = (deflate_ft) DSO_bind_func(zlib_dso, "deflate");
+        p_deflateInit_ = (deflateInit__ft) DSO_bind_func(zlib_dso, "deflateInit_");
+        p_zError = (zError__ft) DSO_bind_func(zlib_dso, "zError");
+
+        if (p_compress == NULL || p_inflateEnd == NULL
+                || p_inflate == NULL || p_inflateInit_ == NULL
+                || p_deflateEnd == NULL || p_deflate == NULL
+                || p_deflateInit_ == NULL || p_zError == NULL) {
+            ossl_comp_zlib_cleanup();
+            return 0;
+        }
+    }
+# endif
+    return 1;
+}
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 #endif
 
 COMP_METHOD *COMP_zlib(void)
 {
     COMP_METHOD *meth = &zlib_method_nozlib;
 
+<<<<<<< HEAD
 #ifdef ZLIB_SHARED
     /* LIBZ may be externally defined, and we should respect that value */
 # ifndef LIBZ
@@ -254,12 +295,22 @@ COMP_METHOD *COMP_zlib(void)
 #endif
 #if defined(ZLIB)
     meth = &zlib_stateful_method;
+=======
+#ifdef ZLIB
+    if (RUN_ONCE(&zlib_once, ossl_comp_zlib_init))
+        meth = &zlib_stateful_method;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 #endif
 
     return meth;
 }
 
+<<<<<<< HEAD
 void comp_zlib_cleanup_int(void)
+=======
+/* Also called from OPENSSL_cleanup() */
+void ossl_comp_zlib_cleanup(void)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 {
 #ifdef ZLIB_SHARED
     DSO_free(zlib_dso);
@@ -327,7 +378,11 @@ static int bio_zlib_new(BIO *bi)
 # endif
     ctx = OPENSSL_zalloc(sizeof(*ctx));
     if (ctx == NULL) {
+<<<<<<< HEAD
         COMPerr(COMP_F_BIO_ZLIB_NEW, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_COMP, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
     ctx->ibufsize = ZLIB_DEFAULT_BUFSIZE;
@@ -381,7 +436,16 @@ static int bio_zlib_read(BIO *b, char *out, int outl)
     if (!ctx->ibuf) {
         ctx->ibuf = OPENSSL_malloc(ctx->ibufsize);
         if (ctx->ibuf == NULL) {
+<<<<<<< HEAD
             COMPerr(COMP_F_BIO_ZLIB_READ, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_COMP, ERR_R_MALLOC_FAILURE);
+            return 0;
+        }
+        if ((ret = inflateInit(zin)) != Z_OK) {
+            ERR_raise_data(ERR_LIB_COMP, COMP_R_ZLIB_INFLATE_ERROR,
+                           "zlib error: %s", zError(ret));
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return 0;
         }
         inflateInit(zin);
@@ -442,7 +506,18 @@ static int bio_zlib_write(BIO *b, const char *in, int inl)
         ctx->obuf = OPENSSL_malloc(ctx->obufsize);
         /* Need error here */
         if (ctx->obuf == NULL) {
+<<<<<<< HEAD
             COMPerr(COMP_F_BIO_ZLIB_WRITE, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_COMP, ERR_R_MALLOC_FAILURE);
+            return 0;
+        }
+        ctx->optr = ctx->obuf;
+        ctx->ocount = 0;
+        if ((ret = deflateInit(zout, ctx->comp_level)) != Z_OK) {
+            ERR_raise_data(ERR_LIB_COMP, COMP_R_ZLIB_DEFLATE_ERROR,
+                           "zlib error: %s", zError(ret));
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return 0;
         }
         ctx->optr = ctx->obuf;

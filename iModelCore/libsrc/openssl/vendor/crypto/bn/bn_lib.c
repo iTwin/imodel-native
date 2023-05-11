@@ -244,7 +244,11 @@ BIGNUM *BN_new(void)
     BIGNUM *ret;
 
     if ((ret = OPENSSL_zalloc(sizeof(*ret))) == NULL) {
+<<<<<<< HEAD
         BNerr(BN_F_BN_NEW, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_BN, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return NULL;
     }
     ret->flags = BN_FLG_MALLOCED;
@@ -279,7 +283,11 @@ static BN_ULONG *bn_expand_internal(const BIGNUM *b, int words)
     else
         a = OPENSSL_zalloc(words * sizeof(*a));
     if (a == NULL) {
+<<<<<<< HEAD
         BNerr(BN_F_BN_EXPAND_INTERNAL, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_BN, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return NULL;
     }
 
@@ -593,6 +601,27 @@ int BN_bn2lebinpad(const BIGNUM *a, unsigned char *to, int tolen)
     return bn2binpad(a, to, tolen, little);
 }
 
+<<<<<<< HEAD
+=======
+BIGNUM *BN_native2bn(const unsigned char *s, int len, BIGNUM *ret)
+{
+    DECLARE_IS_ENDIAN;
+
+    if (IS_LITTLE_ENDIAN)
+        return BN_lebin2bn(s, len, ret);
+    return BN_bin2bn(s, len, ret);
+}
+
+int BN_bn2nativepad(const BIGNUM *a, unsigned char *to, int tolen)
+{
+    DECLARE_IS_ENDIAN;
+
+    if (IS_LITTLE_ENDIAN)
+        return BN_bn2lebinpad(a, to, tolen);
+    return BN_bn2binpad(a, to, tolen);
+}
+
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 int BN_ucmp(const BIGNUM *a, const BIGNUM *b)
 {
     int i;
@@ -947,7 +976,11 @@ BN_GENCB *BN_GENCB_new(void)
     BN_GENCB *ret;
 
     if ((ret = OPENSSL_malloc(sizeof(*ret))) == NULL) {
+<<<<<<< HEAD
         BNerr(BN_F_BN_GENCB_NEW, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_BN, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return NULL;
     }
 

@@ -31,7 +31,11 @@ int EVP_SignFinal(EVP_MD_CTX *ctx, unsigned char *sigret,
         int rv = 0;
         EVP_MD_CTX *tmp_ctx = EVP_MD_CTX_new();
         if (tmp_ctx == NULL) {
+<<<<<<< HEAD
             EVPerr(EVP_F_EVP_SIGNFINAL, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_EVP, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return 0;
         }
         rv = EVP_MD_CTX_copy_ex(tmp_ctx, ctx);

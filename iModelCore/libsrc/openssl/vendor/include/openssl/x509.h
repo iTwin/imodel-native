@@ -424,7 +424,11 @@ int i2d_PKCS8_PRIV_KEY_INFO_fp(FILE *fp, PKCS8_PRIV_KEY_INFO *p8inf);
 int i2d_PKCS8PrivateKeyInfo_fp(FILE *fp, EVP_PKEY *key);
 int i2d_PrivateKey_fp(FILE *fp, EVP_PKEY *pkey);
 EVP_PKEY *d2i_PrivateKey_fp(FILE *fp, EVP_PKEY **a);
+<<<<<<< HEAD
 int i2d_PUBKEY_fp(FILE *fp, EVP_PKEY *pkey);
+=======
+int i2d_PUBKEY_fp(FILE *fp, const EVP_PKEY *pkey);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 EVP_PKEY *d2i_PUBKEY_fp(FILE *fp, EVP_PKEY **a);
 # endif
 
@@ -462,7 +466,11 @@ int i2d_PKCS8_PRIV_KEY_INFO_bio(BIO *bp, PKCS8_PRIV_KEY_INFO *p8inf);
 int i2d_PKCS8PrivateKeyInfo_bio(BIO *bp, EVP_PKEY *key);
 int i2d_PrivateKey_bio(BIO *bp, EVP_PKEY *pkey);
 EVP_PKEY *d2i_PrivateKey_bio(BIO *bp, EVP_PKEY **a);
+<<<<<<< HEAD
 int i2d_PUBKEY_bio(BIO *bp, EVP_PKEY *pkey);
+=======
+int i2d_PUBKEY_bio(BIO *bp, const EVP_PKEY *pkey);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 EVP_PKEY *d2i_PUBKEY_bio(BIO *bp, EVP_PKEY **a);
 
 X509 *X509_dup(X509 *x509);
@@ -1026,6 +1034,10 @@ PKCS8_pkey_get0_attrs(const PKCS8_PRIV_KEY_INFO *p8);
 int PKCS8_pkey_add1_attr_by_NID(PKCS8_PRIV_KEY_INFO *p8, int nid, int type,
                                 const unsigned char *bytes, int len);
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 int X509_PUBKEY_set0_param(X509_PUBKEY *pub, ASN1_OBJECT *aobj,
                            int ptype, void *pval,
                            unsigned char *penc, int penclen);

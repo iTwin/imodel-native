@@ -63,7 +63,11 @@ OSSL_STORE_CTX *OSSL_STORE_open(const char *uri, const UI_METHOD *ui_method,
     OPENSSL_strlcpy(scheme_copy, uri, sizeof(scheme_copy));
     if ((p = strchr(scheme_copy, ':')) != NULL) {
         *p++ = '\0';
+<<<<<<< HEAD
         if (strcasecmp(scheme_copy, "file") != 0) {
+=======
+        if (OPENSSL_strcasecmp(scheme_copy, "file") != 0) {
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             if (strncmp(p, "//", 2) == 0)
                 schemes_n--;         /* Invalidate the file scheme */
             schemes[schemes_n++] = scheme_copy;
@@ -74,14 +78,68 @@ OSSL_STORE_CTX *OSSL_STORE_open(const char *uri, const UI_METHOD *ui_method,
 
     /* Try each scheme until we find one that could open the URI */
     for (i = 0; loader_ctx == NULL && i < schemes_n; i++) {
+<<<<<<< HEAD
         if ((loader = ossl_store_get0_loader_int(schemes[i])) != NULL)
             loader_ctx = loader->open(loader, uri, ui_method, ui_data);
+=======
+        scheme = schemes[i];
+        OSSL_TRACE1(STORE, "Looking up scheme %s\n", scheme);
+#ifndef OPENSSL_NO_DEPRECATED_3_0
+        ERR_set_mark();
+        if ((loader = ossl_store_get0_loader_int(scheme)) != NULL) {
+            ERR_clear_last_mark();
+            no_loader_found = 0;
+            if (loader->open_ex != NULL)
+                loader_ctx = loader->open_ex(loader, uri, libctx, propq,
+                                             ui_method, ui_data);
+            else
+                loader_ctx = loader->open(loader, uri, ui_method, ui_data);
+        } else {
+            ERR_pop_to_mark();
+        }
+#endif
+        if (loader == NULL
+            && (fetched_loader =
+                OSSL_STORE_LOADER_fetch(libctx, scheme, propq)) != NULL) {
+            const OSSL_PROVIDER *provider =
+                OSSL_STORE_LOADER_get0_provider(fetched_loader);
+            void *provctx = OSSL_PROVIDER_get0_provider_ctx(provider);
+
+            no_loader_found = 0;
+            loader_ctx = fetched_loader->p_open(provctx, uri);
+            if (loader_ctx == NULL) {
+                OSSL_STORE_LOADER_free(fetched_loader);
+                fetched_loader = NULL;
+            } else if(!loader_set_params(fetched_loader, loader_ctx,
+                                         params, propq)) {
+                (void)fetched_loader->p_close(loader_ctx);
+                OSSL_STORE_LOADER_free(fetched_loader);
+                fetched_loader = NULL;
+            }
+            loader = fetched_loader;
+        }
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     }
     if (loader_ctx == NULL)
         goto err;
 
+<<<<<<< HEAD
     if ((ctx = OPENSSL_zalloc(sizeof(*ctx))) == NULL) {
         OSSL_STOREerr(OSSL_STORE_F_OSSL_STORE_OPEN, ERR_R_MALLOC_FAILURE);
+=======
+    OSSL_TRACE2(STORE, "Opened %s => %p\n", uri, (void *)loader_ctx);
+
+    if ((propq != NULL && (propq_copy = OPENSSL_strdup(propq)) == NULL)
+        || (ctx = OPENSSL_zalloc(sizeof(*ctx))) == NULL) {
+        ERR_raise(ERR_LIB_OSSL_STORE, ERR_R_MALLOC_FAILURE);
+        goto err;
+    }
+
+    if (ui_method != NULL
+        && (!ossl_pw_set_ui_method(&ctx->pwdata, ui_method, ui_data)
+            || !ossl_pw_enable_passphrase_caching(&ctx->pwdata))) {
+        ERR_raise(ERR_LIB_OSSL_STORE, ERR_R_CRYPTO_LIB);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 
@@ -111,6 +169,12 @@ OSSL_STORE_CTX *OSSL_STORE_open(const char *uri, const UI_METHOD *ui_method,
          */
         (void)loader->close(loader_ctx);
     }
+<<<<<<< HEAD
+=======
+    OSSL_STORE_LOADER_free(fetched_loader);
+    OPENSSL_free(propq_copy);
+    OPENSSL_free(ctx);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     return NULL;
 }
 
@@ -160,7 +224,89 @@ int OSSL_STORE_find(OSSL_STORE_CTX *ctx, OSSL_STORE_SEARCH *search)
         return 0;
     }
 
+<<<<<<< HEAD
     return ctx->loader->find(ctx->loader_ctx, search);
+=======
+    if (ctx->fetched_loader != NULL) {
+        OSSL_PARAM_BLD *bld;
+        OSSL_PARAM *params;
+        /* OSSL_STORE_SEARCH_BY_NAME, OSSL_STORE_SEARCH_BY_ISSUER_SERIAL*/
+        void *name_der = NULL;
+        int name_der_sz;
+        /* OSSL_STORE_SEARCH_BY_ISSUER_SERIAL */
+        BIGNUM *number = NULL;
+
+        if (ctx->fetched_loader->p_set_ctx_params == NULL) {
+            ERR_raise(ERR_LIB_OSSL_STORE, OSSL_STORE_R_UNSUPPORTED_OPERATION);
+            return 0;
+        }
+
+        if ((bld = OSSL_PARAM_BLD_new()) == NULL) {
+            ERR_raise(ERR_LIB_OSSL_STORE, ERR_R_MALLOC_FAILURE);
+            return 0;
+        }
+
+        ret = 0;                 /* Assume the worst */
+
+        switch (search->search_type) {
+        case OSSL_STORE_SEARCH_BY_NAME:
+            if ((name_der_sz = i2d_X509_NAME(search->name,
+                                             (unsigned char **)&name_der)) > 0
+                && OSSL_PARAM_BLD_push_octet_string(bld,
+                                                    OSSL_STORE_PARAM_SUBJECT,
+                                                    name_der, name_der_sz))
+                ret = 1;
+            break;
+        case OSSL_STORE_SEARCH_BY_ISSUER_SERIAL:
+            if ((name_der_sz = i2d_X509_NAME(search->name,
+                                             (unsigned char **)&name_der)) > 0
+                && (number = ASN1_INTEGER_to_BN(search->serial, NULL)) != NULL
+                && OSSL_PARAM_BLD_push_octet_string(bld,
+                                                    OSSL_STORE_PARAM_ISSUER,
+                                                    name_der, name_der_sz)
+                && OSSL_PARAM_BLD_push_BN(bld, OSSL_STORE_PARAM_SERIAL,
+                                          number))
+                ret = 1;
+            break;
+        case OSSL_STORE_SEARCH_BY_KEY_FINGERPRINT:
+            if (OSSL_PARAM_BLD_push_utf8_string(bld, OSSL_STORE_PARAM_DIGEST,
+                                                EVP_MD_get0_name(search->digest),
+                                                0)
+                && OSSL_PARAM_BLD_push_octet_string(bld,
+                                                    OSSL_STORE_PARAM_FINGERPRINT,
+                                                    search->string,
+                                                    search->stringlength))
+                ret = 1;
+            break;
+        case OSSL_STORE_SEARCH_BY_ALIAS:
+            if (OSSL_PARAM_BLD_push_utf8_string(bld, OSSL_STORE_PARAM_ALIAS,
+                                                (char *)search->string,
+                                                search->stringlength))
+                ret = 1;
+            break;
+        }
+        if (ret) {
+            params = OSSL_PARAM_BLD_to_param(bld);
+            ret = ctx->fetched_loader->p_set_ctx_params(ctx->loader_ctx,
+                                                        params);
+            OSSL_PARAM_free(params);
+        }
+        OSSL_PARAM_BLD_free(bld);
+        OPENSSL_free(name_der);
+        BN_free(number);
+    } else {
+#ifndef OPENSSL_NO_DEPRECATED_3_0
+        /* legacy loader section */
+        if (ctx->loader->find == NULL) {
+            ERR_raise(ERR_LIB_OSSL_STORE, OSSL_STORE_R_UNSUPPORTED_OPERATION);
+            return 0;
+        }
+        ret = ctx->loader->find(ctx->loader_ctx, search);
+#endif
+    }
+
+    return ret;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 }
 
 OSSL_STORE_INFO *OSSL_STORE_load(OSSL_STORE_CTX *ctx)
@@ -252,8 +398,12 @@ OSSL_STORE_INFO *OSSL_STORE_INFO_new_NAME(char *name)
     OSSL_STORE_INFO *info = store_info_new(OSSL_STORE_INFO_NAME, NULL);
 
     if (info == NULL) {
+<<<<<<< HEAD
         OSSL_STOREerr(OSSL_STORE_F_OSSL_STORE_INFO_NEW_NAME,
                       ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_OSSL_STORE, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return NULL;
     }
 
@@ -280,8 +430,21 @@ OSSL_STORE_INFO *OSSL_STORE_INFO_new_PARAMS(EVP_PKEY *params)
     OSSL_STORE_INFO *info = store_info_new(OSSL_STORE_INFO_PARAMS, params);
 
     if (info == NULL)
+<<<<<<< HEAD
         OSSL_STOREerr(OSSL_STORE_F_OSSL_STORE_INFO_NEW_PARAMS,
                       ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_OSSL_STORE, ERR_R_MALLOC_FAILURE);
+    return info;
+}
+
+OSSL_STORE_INFO *OSSL_STORE_INFO_new_PUBKEY(EVP_PKEY *pkey)
+{
+    OSSL_STORE_INFO *info = OSSL_STORE_INFO_new(OSSL_STORE_INFO_PUBKEY, pkey);
+
+    if (info == NULL)
+        ERR_raise(ERR_LIB_OSSL_STORE, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     return info;
 }
 
@@ -290,8 +453,12 @@ OSSL_STORE_INFO *OSSL_STORE_INFO_new_PKEY(EVP_PKEY *pkey)
     OSSL_STORE_INFO *info = store_info_new(OSSL_STORE_INFO_PKEY, pkey);
 
     if (info == NULL)
+<<<<<<< HEAD
         OSSL_STOREerr(OSSL_STORE_F_OSSL_STORE_INFO_NEW_PKEY,
                       ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_OSSL_STORE, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     return info;
 }
 
@@ -300,8 +467,12 @@ OSSL_STORE_INFO *OSSL_STORE_INFO_new_CERT(X509 *x509)
     OSSL_STORE_INFO *info = store_info_new(OSSL_STORE_INFO_CERT, x509);
 
     if (info == NULL)
+<<<<<<< HEAD
         OSSL_STOREerr(OSSL_STORE_F_OSSL_STORE_INFO_NEW_CERT,
                       ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_OSSL_STORE, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     return info;
 }
 
@@ -310,8 +481,12 @@ OSSL_STORE_INFO *OSSL_STORE_INFO_new_CRL(X509_CRL *crl)
     OSSL_STORE_INFO *info = store_info_new(OSSL_STORE_INFO_CRL, crl);
 
     if (info == NULL)
+<<<<<<< HEAD
         OSSL_STOREerr(OSSL_STORE_F_OSSL_STORE_INFO_NEW_CRL,
                       ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_OSSL_STORE, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     return info;
 }
 
@@ -336,12 +511,19 @@ char *OSSL_STORE_INFO_get1_NAME(const OSSL_STORE_INFO *info)
         char *ret = OPENSSL_strdup(info->_.name.name);
 
         if (ret == NULL)
+<<<<<<< HEAD
             OSSL_STOREerr(OSSL_STORE_F_OSSL_STORE_INFO_GET1_NAME,
                           ERR_R_MALLOC_FAILURE);
         return ret;
     }
     OSSL_STOREerr(OSSL_STORE_F_OSSL_STORE_INFO_GET1_NAME,
                   OSSL_STORE_R_NOT_A_NAME);
+=======
+            ERR_raise(ERR_LIB_OSSL_STORE, ERR_R_MALLOC_FAILURE);
+        return ret;
+    }
+    ERR_raise(ERR_LIB_OSSL_STORE, OSSL_STORE_R_NOT_A_NAME);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     return NULL;
 }
 
@@ -359,12 +541,19 @@ char *OSSL_STORE_INFO_get1_NAME_description(const OSSL_STORE_INFO *info)
                                    ? info->_.name.desc : "");
 
         if (ret == NULL)
+<<<<<<< HEAD
             OSSL_STOREerr(OSSL_STORE_F_OSSL_STORE_INFO_GET1_NAME_DESCRIPTION,
                      ERR_R_MALLOC_FAILURE);
         return ret;
     }
     OSSL_STOREerr(OSSL_STORE_F_OSSL_STORE_INFO_GET1_NAME_DESCRIPTION,
                   OSSL_STORE_R_NOT_A_NAME);
+=======
+            ERR_raise(ERR_LIB_OSSL_STORE, ERR_R_MALLOC_FAILURE);
+        return ret;
+    }
+    ERR_raise(ERR_LIB_OSSL_STORE, OSSL_STORE_R_NOT_A_NAME);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     return NULL;
 }
 
@@ -488,8 +677,12 @@ OSSL_STORE_SEARCH *OSSL_STORE_SEARCH_by_name(X509_NAME *name)
     OSSL_STORE_SEARCH *search = OPENSSL_zalloc(sizeof(*search));
 
     if (search == NULL) {
+<<<<<<< HEAD
         OSSL_STOREerr(OSSL_STORE_F_OSSL_STORE_SEARCH_BY_NAME,
                       ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_OSSL_STORE, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return NULL;
     }
 
@@ -504,8 +697,12 @@ OSSL_STORE_SEARCH *OSSL_STORE_SEARCH_by_issuer_serial(X509_NAME *name,
     OSSL_STORE_SEARCH *search = OPENSSL_zalloc(sizeof(*search));
 
     if (search == NULL) {
+<<<<<<< HEAD
         OSSL_STOREerr(OSSL_STORE_F_OSSL_STORE_SEARCH_BY_ISSUER_SERIAL,
                       ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_OSSL_STORE, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return NULL;
     }
 
@@ -522,8 +719,12 @@ OSSL_STORE_SEARCH *OSSL_STORE_SEARCH_by_key_fingerprint(const EVP_MD *digest,
     OSSL_STORE_SEARCH *search = OPENSSL_zalloc(sizeof(*search));
 
     if (search == NULL) {
+<<<<<<< HEAD
         OSSL_STOREerr(OSSL_STORE_F_OSSL_STORE_SEARCH_BY_KEY_FINGERPRINT,
                       ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_OSSL_STORE, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return NULL;
     }
 
@@ -550,8 +751,12 @@ OSSL_STORE_SEARCH *OSSL_STORE_SEARCH_by_alias(const char *alias)
     OSSL_STORE_SEARCH *search = OPENSSL_zalloc(sizeof(*search));
 
     if (search == NULL) {
+<<<<<<< HEAD
         OSSL_STOREerr(OSSL_STORE_F_OSSL_STORE_SEARCH_BY_ALIAS,
                       ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_OSSL_STORE, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return NULL;
     }
 
@@ -652,9 +857,15 @@ OSSL_STORE_CTX *ossl_store_attach_pem_bio(BIO *bp, const UI_METHOD *ui_method,
         || ((loader_ctx = ossl_store_file_attach_pem_bio_int(bp)) == NULL))
         goto done;
     if ((ctx = OPENSSL_zalloc(sizeof(*ctx))) == NULL) {
+<<<<<<< HEAD
         OSSL_STOREerr(OSSL_STORE_F_OSSL_STORE_ATTACH_PEM_BIO,
                      ERR_R_MALLOC_FAILURE);
         goto done;
+=======
+        ERR_clear_last_mark();
+        ERR_raise(ERR_LIB_OSSL_STORE, ERR_R_MALLOC_FAILURE);
+        return NULL;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     }
 
     ctx->loader = loader;

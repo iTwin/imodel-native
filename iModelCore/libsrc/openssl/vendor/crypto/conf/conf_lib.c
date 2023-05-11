@@ -183,7 +183,11 @@ CONF *NCONF_new(CONF_METHOD *meth)
 
     ret = meth->create(meth);
     if (ret == NULL) {
+<<<<<<< HEAD
         CONFerr(CONF_F_NCONF_NEW, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_CONF, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return NULL;
     }
 

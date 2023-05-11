@@ -61,7 +61,11 @@ static void *v2i_POLICY_CONSTRAINTS(const X509V3_EXT_METHOD *method,
     int i;
 
     if ((pcons = POLICY_CONSTRAINTS_new()) == NULL) {
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_pcons.c
         X509V3err(X509V3_F_V2I_POLICY_CONSTRAINTS, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_pcons.c
         return NULL;
     }
     for (i = 0; i < sk_CONF_VALUE_num(values); i++) {

@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright 1995-2016 The OpenSSL Project Authors. All Rights Reserved.
+=======
+ * Copyright 1995-2022 The OpenSSL Project Authors. All Rights Reserved.
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -45,6 +49,70 @@ static int rinf_cb(int operation, ASN1_VALUE **pval, const ASN1_ITEM *it,
     return 1;
 }
 
+<<<<<<< HEAD
+=======
+static int req_cb(int operation, ASN1_VALUE **pval, const ASN1_ITEM *it,
+                  void *exarg)
+{
+    X509_REQ *ret = (X509_REQ *)*pval;
+
+    switch (operation) {
+    case ASN1_OP_D2I_PRE:
+        ASN1_OCTET_STRING_free(ret->distinguishing_id);
+        /* fall through */
+    case ASN1_OP_NEW_POST:
+        ret->distinguishing_id = NULL;
+        break;
+
+    case ASN1_OP_FREE_POST:
+        ASN1_OCTET_STRING_free(ret->distinguishing_id);
+        OPENSSL_free(ret->propq);
+        break;
+    case ASN1_OP_DUP_POST:
+        {
+            X509_REQ *old = exarg;
+
+            if (!ossl_x509_req_set0_libctx(ret, old->libctx, old->propq))
+                return 0;
+            if (old->req_info.pubkey != NULL) {
+                EVP_PKEY *pkey = X509_PUBKEY_get0(old->req_info.pubkey);
+
+                if (pkey != NULL) {
+                    pkey = EVP_PKEY_dup(pkey);
+                    if (pkey == NULL) {
+                        ERR_raise(ERR_LIB_X509, ERR_R_MALLOC_FAILURE);
+                        return 0;
+                    }
+                    if (!X509_PUBKEY_set(&ret->req_info.pubkey, pkey)) {
+                        EVP_PKEY_free(pkey);
+                        ERR_raise(ERR_LIB_X509, ERR_R_INTERNAL_ERROR);
+                        return 0;
+                    }
+                    EVP_PKEY_free(pkey);
+                }
+            }
+        }
+        break;
+    case ASN1_OP_GET0_LIBCTX:
+        {
+            OSSL_LIB_CTX **libctx = exarg;
+
+            *libctx = ret->libctx;
+        }
+        break;
+    case ASN1_OP_GET0_PROPQ:
+        {
+            const char **propq = exarg;
+
+            *propq = ret->propq;
+        }
+        break;
+    }
+
+    return 1;
+}
+
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 ASN1_SEQUENCE_enc(X509_REQ_INFO, enc, rinf_cb) = {
         ASN1_SIMPLE(X509_REQ_INFO, version, ASN1_INTEGER),
         ASN1_SIMPLE(X509_REQ_INFO, subject, X509_NAME),

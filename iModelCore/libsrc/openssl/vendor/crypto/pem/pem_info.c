@@ -51,7 +51,11 @@ STACK_OF(X509_INFO) *PEM_X509_INFO_read_bio(BIO *bp, STACK_OF(X509_INFO) *sk,
 
     if (sk == NULL) {
         if ((ret = sk_X509_INFO_new_null()) == NULL) {
+<<<<<<< HEAD
             PEMerr(PEM_F_PEM_X509_INFO_READ_BIO, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_PEM, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             goto err;
         }
     } else

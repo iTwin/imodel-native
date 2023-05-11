@@ -121,7 +121,11 @@ static int process_pci_value(CONF_VALUE *val,
         if (!*policy) {
             *policy = ASN1_OCTET_STRING_new();
             if (*policy == NULL) {
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_pci.c
                 X509V3err(X509V3_F_PROCESS_PCI_VALUE, ERR_R_MALLOC_FAILURE);
+=======
+                ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_pci.c
                 X509V3_conf_err(val);
                 return 0;
             }
@@ -153,7 +157,11 @@ static int process_pci_value(CONF_VALUE *val,
                 OPENSSL_free((*policy)->data);
                 (*policy)->data = NULL;
                 (*policy)->length = 0;
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_pci.c
                 X509V3err(X509V3_F_PROCESS_PCI_VALUE, ERR_R_MALLOC_FAILURE);
+=======
+                ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_pci.c
                 X509V3_conf_err(val);
                 goto err;
             }
@@ -179,8 +187,12 @@ static int process_pci_value(CONF_VALUE *val,
                     OPENSSL_free((*policy)->data);
                     (*policy)->data = NULL;
                     (*policy)->length = 0;
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_pci.c
                     X509V3err(X509V3_F_PROCESS_PCI_VALUE,
                               ERR_R_MALLOC_FAILURE);
+=======
+                    ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_pci.c
                     X509V3_conf_err(val);
                     BIO_free_all(b);
                     goto err;
@@ -216,7 +228,11 @@ static int process_pci_value(CONF_VALUE *val,
                 OPENSSL_free((*policy)->data);
                 (*policy)->data = NULL;
                 (*policy)->length = 0;
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_pci.c
                 X509V3err(X509V3_F_PROCESS_PCI_VALUE, ERR_R_MALLOC_FAILURE);
+=======
+                ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_pci.c
                 X509V3_conf_err(val);
                 goto err;
             }
@@ -227,7 +243,11 @@ static int process_pci_value(CONF_VALUE *val,
             goto err;
         }
         if (!tmp_data) {
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_pci.c
             X509V3err(X509V3_F_PROCESS_PCI_VALUE, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_pci.c
             X509V3_conf_err(val);
             goto err;
         }
@@ -301,7 +321,11 @@ static PROXY_CERT_INFO_EXTENSION *r2i_pci(X509V3_EXT_METHOD *method,
 
     pci = PROXY_CERT_INFO_EXTENSION_new();
     if (pci == NULL) {
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_pci.c
         X509V3err(X509V3_F_R2I_PCI, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_pci.c
         goto err;
     }
 

@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright 2005-2018 The OpenSSL Project Authors. All Rights Reserved.
+=======
+ * Copyright 2005-2022 The OpenSSL Project Authors. All Rights Reserved.
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -92,7 +96,11 @@ int RSA_verify_PKCS1_PSS_mgf1(RSA *rsa, const unsigned char *mHash,
     H = EM + maskedDBLen;
     DB = OPENSSL_malloc(maskedDBLen);
     if (DB == NULL) {
+<<<<<<< HEAD
         RSAerr(RSA_F_RSA_VERIFY_PKCS1_PSS_MGF1, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_RSA, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
     if (PKCS1_MGF1(DB, maskedDBLen, H, hLen, mgf1Hash) < 0)
@@ -196,11 +204,18 @@ int RSA_padding_add_PKCS1_PSS_mgf1(RSA *rsa, unsigned char *EM,
     if (sLen > 0) {
         salt = OPENSSL_malloc(sLen);
         if (salt == NULL) {
+<<<<<<< HEAD
             RSAerr(RSA_F_RSA_PADDING_ADD_PKCS1_PSS_MGF1,
                    ERR_R_MALLOC_FAILURE);
             goto err;
         }
         if (RAND_bytes(salt, sLen) <= 0)
+=======
+            ERR_raise(ERR_LIB_RSA, ERR_R_MALLOC_FAILURE);
+            goto err;
+        }
+        if (RAND_bytes_ex(rsa->libctx, salt, sLen, 0) <= 0)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             goto err;
     }
     maskedDBLen = emLen - hLen - 1;

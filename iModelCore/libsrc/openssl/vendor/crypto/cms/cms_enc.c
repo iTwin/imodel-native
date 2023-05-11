@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright 2008-2018 The OpenSSL Project Authors. All Rights Reserved.
+=======
+ * Copyright 2008-2022 The OpenSSL Project Authors. All Rights Reserved.
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -38,7 +42,11 @@ BIO *cms_EncryptedContent_init_bio(CMS_EncryptedContentInfo *ec)
 
     b = BIO_new(BIO_f_cipher());
     if (b == NULL) {
+<<<<<<< HEAD
         CMSerr(CMS_F_CMS_ENCRYPTEDCONTENT_INIT_BIO, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_CMS, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return NULL;
     }
 
@@ -86,7 +94,11 @@ BIO *cms_EncryptedContent_init_bio(CMS_EncryptedContentInfo *ec)
     if (!enc || !ec->key) {
         tkey = OPENSSL_malloc(tkeylen);
         if (tkey == NULL) {
+<<<<<<< HEAD
             CMSerr(CMS_F_CMS_ENCRYPTEDCONTENT_INIT_BIO, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_CMS, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             goto err;
         }
         if (EVP_CIPHER_CTX_rand_key(ctx, tkey) <= 0)
@@ -134,7 +146,11 @@ BIO *cms_EncryptedContent_init_bio(CMS_EncryptedContentInfo *ec)
     if (enc) {
         calg->parameter = ASN1_TYPE_new();
         if (calg->parameter == NULL) {
+<<<<<<< HEAD
             CMSerr(CMS_F_CMS_ENCRYPTEDCONTENT_INIT_BIO, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_CMS, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             goto err;
         }
         if (EVP_CIPHER_param_to_asn1(ctx, calg->parameter) <= 0) {
@@ -169,7 +185,11 @@ int cms_EncryptedContent_init(CMS_EncryptedContentInfo *ec,
     ec->cipher = cipher;
     if (key) {
         if ((ec->key = OPENSSL_malloc(keylen)) == NULL) {
+<<<<<<< HEAD
             CMSerr(CMS_F_CMS_ENCRYPTEDCONTENT_INIT, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_CMS, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return 0;
         }
         memcpy(ec->key, key, keylen);
@@ -191,7 +211,11 @@ int CMS_EncryptedData_set1_key(CMS_ContentInfo *cms, const EVP_CIPHER *ciph,
     if (ciph) {
         cms->d.encryptedData = M_ASN1_new_of(CMS_EncryptedData);
         if (!cms->d.encryptedData) {
+<<<<<<< HEAD
             CMSerr(CMS_F_CMS_ENCRYPTEDDATA_SET1_KEY, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_CMS, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return 0;
         }
         cms->contentType = OBJ_nid2obj(NID_pkcs7_encrypted);

@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright 2008-2021 The OpenSSL Project Authors. All Rights Reserved.
+=======
+ * Copyright 2008-2023 The OpenSSL Project Authors. All Rights Reserved.
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -34,8 +38,13 @@ static CMS_EnvelopedData *cms_enveloped_data_init(CMS_ContentInfo *cms)
 {
     if (cms->d.other == NULL) {
         cms->d.envelopedData = M_ASN1_new_of(CMS_EnvelopedData);
+<<<<<<< HEAD
         if (!cms->d.envelopedData) {
             CMSerr(CMS_F_CMS_ENVELOPED_DATA_INIT, ERR_R_MALLOC_FAILURE);
+=======
+        if (cms->d.envelopedData == NULL) {
+            ERR_raise(ERR_LIB_CMS, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return NULL;
         }
         cms->d.envelopedData->version = 0;
@@ -48,7 +57,31 @@ static CMS_EnvelopedData *cms_enveloped_data_init(CMS_ContentInfo *cms)
     return cms_get0_enveloped(cms);
 }
 
+<<<<<<< HEAD
 int cms_env_asn1_ctrl(CMS_RecipientInfo *ri, int cmd)
+=======
+static CMS_AuthEnvelopedData *
+cms_auth_enveloped_data_init(CMS_ContentInfo *cms)
+{
+    if (cms->d.other == NULL) {
+        cms->d.authEnvelopedData = M_ASN1_new_of(CMS_AuthEnvelopedData);
+        if (cms->d.authEnvelopedData == NULL) {
+            ERR_raise(ERR_LIB_CMS, ERR_R_MALLOC_FAILURE);
+            return NULL;
+        }
+        /* Defined in RFC 5083 - Section 2.1. "AuthEnvelopedData Type" */
+        cms->d.authEnvelopedData->version = 0;
+        cms->d.authEnvelopedData->authEncryptedContentInfo->contentType =
+            OBJ_nid2obj(NID_pkcs7_data);
+        ASN1_OBJECT_free(cms->contentType);
+        cms->contentType = OBJ_nid2obj(NID_id_smime_ct_authEnvelopedData);
+        return cms->d.authEnvelopedData;
+    }
+    return ossl_cms_get0_auth_enveloped(cms);
+}
+
+int ossl_cms_env_asn1_ctrl(CMS_RecipientInfo *ri, int cmd)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 {
     EVP_PKEY *pkey;
     int i;
@@ -110,6 +143,35 @@ CMS_ContentInfo *CMS_EnvelopedData_create(const EVP_CIPHER *cipher)
         goto merr;
     env = cms_enveloped_data_init(cms);
     if (env == NULL)
+<<<<<<< HEAD
+=======
+        goto merr;
+
+    if (!ossl_cms_EncryptedContent_init(env->encryptedContentInfo, cipher, NULL,
+                                        0, ossl_cms_get0_cmsctx(cms)))
+        goto merr;
+    return cms;
+ merr:
+    CMS_ContentInfo_free(cms);
+    ERR_raise(ERR_LIB_CMS, ERR_R_MALLOC_FAILURE);
+    return NULL;
+}
+
+CMS_ContentInfo *CMS_EnvelopedData_create(const EVP_CIPHER *cipher)
+{
+    return CMS_EnvelopedData_create_ex(cipher, NULL, NULL);
+}
+
+CMS_ContentInfo *
+CMS_AuthEnvelopedData_create_ex(const EVP_CIPHER *cipher, OSSL_LIB_CTX *libctx,
+                                const char *propq)
+{
+    CMS_ContentInfo *cms;
+    CMS_AuthEnvelopedData *aenv;
+
+    cms = CMS_ContentInfo_new_ex(libctx, propq);
+    if (cms == NULL)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto merr;
     if (!cms_EncryptedContent_init(env->encryptedContentInfo,
                                    cipher, NULL, 0))
@@ -117,7 +179,11 @@ CMS_ContentInfo *CMS_EnvelopedData_create(const EVP_CIPHER *cipher)
     return cms;
  merr:
     CMS_ContentInfo_free(cms);
+<<<<<<< HEAD
     CMSerr(CMS_F_CMS_ENVELOPEDDATA_CREATE, ERR_R_MALLOC_FAILURE);
+=======
+    ERR_raise(ERR_LIB_CMS, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     return NULL;
 }
 
@@ -187,7 +253,11 @@ CMS_RecipientInfo *CMS_add1_recipient_cert(CMS_ContentInfo *cms,
 
     /* Initialize recipient info */
     ri = M_ASN1_new_of(CMS_RecipientInfo);
+<<<<<<< HEAD
     if (!ri)
+=======
+    if (ri == NULL)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto merr;
 
     pk = X509_get0_pubkey(recip);
@@ -215,13 +285,21 @@ CMS_RecipientInfo *CMS_add1_recipient_cert(CMS_ContentInfo *cms,
 
     }
 
+<<<<<<< HEAD
     if (!sk_CMS_RecipientInfo_push(env->recipientInfos, ri))
+=======
+    if (!sk_CMS_RecipientInfo_push(ris, ri))
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto merr;
 
     return ri;
 
  merr:
+<<<<<<< HEAD
     CMSerr(CMS_F_CMS_ADD1_RECIPIENT_CERT, ERR_R_MALLOC_FAILURE);
+=======
+    ERR_raise(ERR_LIB_CMS, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  err:
     M_ASN1_free_of(ri, CMS_RecipientInfo);
     return NULL;
@@ -333,7 +411,11 @@ static int cms_RecipientInfo_ktri_encrypt(CMS_ContentInfo *cms,
     ek = OPENSSL_malloc(eklen);
 
     if (ek == NULL) {
+<<<<<<< HEAD
         CMSerr(CMS_F_CMS_RECIPIENTINFO_KTRI_ENCRYPT, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_CMS, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 
@@ -395,21 +477,29 @@ static int cms_RecipientInfo_ktri_decrypt(CMS_ContentInfo *cms,
     if (!cms_env_asn1_ctrl(ri, 1))
         goto err;
 
+<<<<<<< HEAD
     if (EVP_PKEY_CTX_ctrl(ktri->pctx, -1, EVP_PKEY_OP_DECRYPT,
                           EVP_PKEY_CTRL_CMS_DECRYPT, 0, ri) <= 0) {
         CMSerr(CMS_F_CMS_RECIPIENTINFO_KTRI_DECRYPT, CMS_R_CTRL_ERROR);
         goto err;
     }
 
+=======
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     if (EVP_PKEY_decrypt(ktri->pctx, NULL, &eklen,
                          ktri->encryptedKey->data,
                          ktri->encryptedKey->length) <= 0)
         goto err;
 
     ek = OPENSSL_malloc(eklen);
+<<<<<<< HEAD
 
     if (ek == NULL) {
         CMSerr(CMS_F_CMS_RECIPIENTINFO_KTRI_DECRYPT, ERR_R_MALLOC_FAILURE);
+=======
+    if (ek == NULL) {
+        ERR_raise(ERR_LIB_CMS, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 
@@ -543,7 +633,11 @@ CMS_RecipientInfo *CMS_add0_recipient_key(CMS_ContentInfo *cms, int nid,
             goto merr;
     }
 
+<<<<<<< HEAD
     if (!sk_CMS_RecipientInfo_push(env->recipientInfos, ri))
+=======
+    if (!sk_CMS_RecipientInfo_push(ris, ri))
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto merr;
 
     /* After this point no calls can fail */
@@ -568,7 +662,11 @@ CMS_RecipientInfo *CMS_add0_recipient_key(CMS_ContentInfo *cms, int nid,
     return ri;
 
  merr:
+<<<<<<< HEAD
     CMSerr(CMS_F_CMS_ADD0_RECIPIENT_KEY, ERR_R_MALLOC_FAILURE);
+=======
+    ERR_raise(ERR_LIB_CMS, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  err:
     M_ASN1_free_of(ri, CMS_RecipientInfo);
     return NULL;
@@ -624,6 +722,31 @@ int CMS_RecipientInfo_set0_key(CMS_RecipientInfo *ri,
     return 1;
 }
 
+<<<<<<< HEAD
+=======
+static EVP_CIPHER *cms_get_key_wrap_cipher(size_t keylen, const CMS_CTX *ctx)
+{
+    const char *alg = NULL;
+
+    switch(keylen) {
+    case 16:
+        alg = "AES-128-WRAP";
+        break;
+    case 24:
+        alg = "AES-192-WRAP";
+        break;
+    case 32:
+        alg = "AES-256-WRAP";
+        break;
+    default:
+        return NULL;
+    }
+    return EVP_CIPHER_fetch(ossl_cms_ctx_get0_libctx(ctx), alg,
+                            ossl_cms_ctx_get0_propq(ctx));
+}
+
+
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 /* Encrypt content key in KEK recipient info */
 
 static int cms_RecipientInfo_kekri_encrypt(CMS_ContentInfo *cms,
@@ -652,9 +775,20 @@ static int cms_RecipientInfo_kekri_encrypt(CMS_ContentInfo *cms,
     }
 
     wkey = OPENSSL_malloc(ec->keylen + 8);
+<<<<<<< HEAD
 
     if (wkey == NULL) {
         CMSerr(CMS_F_CMS_RECIPIENTINFO_KEKRI_ENCRYPT, ERR_R_MALLOC_FAILURE);
+=======
+    if (wkey == NULL) {
+        ERR_raise(ERR_LIB_CMS, ERR_R_MALLOC_FAILURE);
+        goto err;
+    }
+
+    ctx = EVP_CIPHER_CTX_new();
+    if (ctx == NULL) {
+        ERR_raise(ERR_LIB_CMS, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 
@@ -722,9 +856,20 @@ static int cms_RecipientInfo_kekri_decrypt(CMS_ContentInfo *cms,
     }
 
     ukey = OPENSSL_malloc(kekri->encryptedKey->length - 8);
+<<<<<<< HEAD
 
     if (ukey == NULL) {
         CMSerr(CMS_F_CMS_RECIPIENTINFO_KEKRI_DECRYPT, ERR_R_MALLOC_FAILURE);
+=======
+    if (ukey == NULL) {
+        ERR_raise(ERR_LIB_CMS, ERR_R_MALLOC_FAILURE);
+        goto err;
+    }
+
+    ctx = EVP_CIPHER_CTX_new();
+    if (ctx == NULL) {
+        ERR_raise(ERR_LIB_CMS, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 
@@ -901,6 +1046,134 @@ BIO *cms_EnvelopedData_init_bio(CMS_ContentInfo *cms)
     BIO_free(ret);
     return NULL;
 
+<<<<<<< HEAD
+=======
+BIO *ossl_cms_EnvelopedData_init_bio(CMS_ContentInfo *cms)
+{
+    if (cms->d.envelopedData->encryptedContentInfo->cipher != NULL) {
+         /* If cipher is set it's encryption */
+         return cms_EnvelopedData_Encryption_init_bio(cms);
+    }
+
+    /* If cipher is not set it's decryption */
+    return cms_EnvelopedData_Decryption_init_bio(cms);
+}
+
+BIO *ossl_cms_AuthEnvelopedData_init_bio(CMS_ContentInfo *cms)
+{
+    CMS_EncryptedContentInfo *ec;
+    STACK_OF(CMS_RecipientInfo) *rinfos;
+    int ok = 0;
+    BIO *ret;
+    CMS_AuthEnvelopedData *aenv = cms->d.authEnvelopedData;
+
+    /* Get BIO first to set up key */
+    ec = aenv->authEncryptedContentInfo;
+    /* Set tag for decryption */
+    if (ec->cipher == NULL) {
+        ec->tag = aenv->mac->data;
+        ec->taglen = aenv->mac->length;
+    }
+    ret = ossl_cms_EncryptedContent_init_bio(ec, ossl_cms_get0_cmsctx(cms));
+
+    /* If error or no cipher end of processing */
+    if (ret == NULL || ec->cipher == NULL)
+        return ret;
+
+    /* Now encrypt content key according to each RecipientInfo type */
+    rinfos = aenv->recipientInfos;
+    if (cms_env_encrypt_content_key(cms, rinfos) < 0) {
+        ERR_raise(ERR_LIB_CMS, CMS_R_ERROR_SETTING_RECIPIENTINFO);
+        goto err;
+    }
+
+    /* And finally set the version */
+    aenv->version = 0;
+
+    ok = 1;
+
+ err:
+    cms_env_clear_ec(ec);
+    if (ok)
+        return ret;
+    BIO_free(ret);
+    return NULL;
+}
+
+int ossl_cms_EnvelopedData_final(CMS_ContentInfo *cms, BIO *chain)
+{
+    CMS_EnvelopedData *env = NULL;
+    EVP_CIPHER_CTX *ctx = NULL;
+    BIO *mbio = BIO_find_type(chain, BIO_TYPE_CIPHER);
+
+    env = ossl_cms_get0_enveloped(cms);
+    if (env == NULL)
+        return 0;
+
+    if (mbio == NULL) {
+        ERR_raise(ERR_LIB_CMS, CMS_R_CONTENT_NOT_FOUND);
+        return 0;
+    }
+
+    BIO_get_cipher_ctx(mbio, &ctx);
+
+    /*
+     * If the selected cipher supports unprotected attributes,
+     * deal with it using special ctrl function
+     */
+    if ((EVP_CIPHER_get_flags(EVP_CIPHER_CTX_get0_cipher(ctx))
+            & EVP_CIPH_FLAG_CIPHER_WITH_MAC) != 0) {
+        if (env->unprotectedAttrs == NULL)
+            env->unprotectedAttrs = sk_X509_ATTRIBUTE_new_null();
+
+        if (env->unprotectedAttrs == NULL) {
+            ERR_raise(ERR_LIB_CMS, ERR_R_MALLOC_FAILURE);
+            return 0;
+        }
+
+        if (EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_PROCESS_UNPROTECTED,
+                                1, env->unprotectedAttrs) <= 0) {
+            ERR_raise(ERR_LIB_CMS, CMS_R_CTRL_FAILURE);
+            return 0;
+        }
+    }
+
+    cms_env_set_version(cms->d.envelopedData);
+    return 1;
+}
+
+int ossl_cms_AuthEnvelopedData_final(CMS_ContentInfo *cms, BIO *cmsbio)
+{
+    EVP_CIPHER_CTX *ctx;
+    unsigned char *tag = NULL;
+    int taglen, ok = 0;
+
+    BIO_get_cipher_ctx(cmsbio, &ctx);
+
+    /* 
+     * The tag is set only for encryption. There is nothing to do for
+     * decryption.
+     */
+    if (!EVP_CIPHER_CTX_is_encrypting(ctx))
+        return 1;
+
+    taglen = EVP_CIPHER_CTX_get_tag_length(ctx);
+    if (taglen <= 0
+            || (tag = OPENSSL_malloc(taglen)) == NULL
+            || EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_GET_TAG, taglen,
+                                   tag) <= 0) {
+        ERR_raise(ERR_LIB_CMS, CMS_R_CIPHER_GET_TAG);
+        goto err;
+    }
+
+    if (!ASN1_OCTET_STRING_set(cms->d.authEnvelopedData->mac, tag, taglen))
+        goto err;
+
+    ok = 1;
+err:
+    OPENSSL_free(tag);
+    return ok;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 }
 
 /*

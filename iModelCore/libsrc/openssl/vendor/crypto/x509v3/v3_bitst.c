@@ -64,7 +64,11 @@ ASN1_BIT_STRING *v2i_ASN1_BIT_STRING(X509V3_EXT_METHOD *method,
     int i;
     BIT_STRING_BITNAME *bnam;
     if ((bs = ASN1_BIT_STRING_new()) == NULL) {
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_bitst.c
         X509V3err(X509V3_F_V2I_ASN1_BIT_STRING, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_bitst.c
         return NULL;
     }
     for (i = 0; i < sk_CONF_VALUE_num(nval); i++) {
@@ -73,8 +77,12 @@ ASN1_BIT_STRING *v2i_ASN1_BIT_STRING(X509V3_EXT_METHOD *method,
             if (strcmp(bnam->sname, val->name) == 0
                 || strcmp(bnam->lname, val->name) == 0) {
                 if (!ASN1_BIT_STRING_set_bit(bs, bnam->bitnum, 1)) {
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_bitst.c
                     X509V3err(X509V3_F_V2I_ASN1_BIT_STRING,
                               ERR_R_MALLOC_FAILURE);
+=======
+                    ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_bitst.c
                     ASN1_BIT_STRING_free(bs);
                     return NULL;
                 }

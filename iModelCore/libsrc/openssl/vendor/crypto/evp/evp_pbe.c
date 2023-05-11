@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright 1999-2018 The OpenSSL Project Authors. All Rights Reserved.
+=======
+ * Copyright 1999-2022 The OpenSSL Project Authors. All Rights Reserved.
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -75,7 +79,11 @@ static const EVP_PBE_CTL builtin_pbe[] = {
      NID_id_GostR3411_2012_512, 0},
     {EVP_PBE_TYPE_PRF, NID_hmacWithSHA512_224, -1, NID_sha512_224, 0},
     {EVP_PBE_TYPE_PRF, NID_hmacWithSHA512_256, -1, NID_sha512_256, 0},
+<<<<<<< HEAD
     {EVP_PBE_TYPE_KDF, NID_id_pbkdf2, -1, -1, PKCS5_v2_PBKDF2_keyivgen},
+=======
+    {EVP_PBE_TYPE_KDF, NID_id_pbkdf2, -1, -1, PKCS5_v2_PBKDF2_keyivgen, &PKCS5_v2_PBKDF2_keyivgen_ex},
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 #ifndef OPENSSL_NO_SCRYPT
     {EVP_PBE_TYPE_KDF, NID_id_scrypt, -1, -1, PKCS5_v2_scrypt_keyivgen}
 #endif
@@ -184,7 +192,11 @@ int EVP_PBE_alg_add_type(int pbe_type, int pbe_nid, int cipher_nid,
     return 1;
 
  err:
+<<<<<<< HEAD
     EVPerr(EVP_F_EVP_PBE_ALG_ADD_TYPE, ERR_R_MALLOC_FAILURE);
+=======
+    ERR_raise(ERR_LIB_EVP, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     return 0;
 }
 

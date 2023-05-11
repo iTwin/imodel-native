@@ -283,7 +283,11 @@ static int do_dump(unsigned long lflags, char_io *io_ch, void *arg,
     if (der_len <= 0)
         return -1;
     if ((der_buf = OPENSSL_malloc(der_len)) == NULL) {
+<<<<<<< HEAD
         ASN1err(ASN1_F_DO_DUMP, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return -1;
     }
     p = der_buf;

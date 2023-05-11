@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright 1995-2018 The OpenSSL Project Authors. All Rights Reserved.
+=======
+ * Copyright 1995-2022 The OpenSSL Project Authors. All Rights Reserved.
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -60,12 +64,20 @@ static int linebuffer_new(BIO *bi)
     BIO_LINEBUFFER_CTX *ctx;
 
     if ((ctx = OPENSSL_malloc(sizeof(*ctx))) == NULL) {
+<<<<<<< HEAD
         BIOerr(BIO_F_LINEBUFFER_NEW, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_BIO, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
     ctx->obuf = OPENSSL_malloc(DEFAULT_LINEBUFFER_SIZE);
     if (ctx->obuf == NULL) {
+<<<<<<< HEAD
         BIOerr(BIO_F_LINEBUFFER_NEW, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_BIO, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         OPENSSL_free(ctx);
         return 0;
     }
@@ -295,7 +307,11 @@ static long linebuffer_ctrl(BIO *b, int cmd, long num, void *ptr)
     }
     return ret;
  malloc_error:
+<<<<<<< HEAD
     BIOerr(BIO_F_LINEBUFFER_CTRL, ERR_R_MALLOC_FAILURE);
+=======
+    ERR_raise(ERR_LIB_BIO, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     return 0;
 }
 

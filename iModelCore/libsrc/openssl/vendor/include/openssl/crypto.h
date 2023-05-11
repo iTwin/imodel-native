@@ -438,6 +438,18 @@ int CRYPTO_THREAD_cleanup_local(CRYPTO_THREAD_LOCAL *key);
 CRYPTO_THREAD_ID CRYPTO_THREAD_get_current_id(void);
 int CRYPTO_THREAD_compare_id(CRYPTO_THREAD_ID a, CRYPTO_THREAD_ID b);
 
+<<<<<<< HEAD
+=======
+OSSL_LIB_CTX *OSSL_LIB_CTX_new(void);
+OSSL_LIB_CTX *OSSL_LIB_CTX_new_from_dispatch(const OSSL_CORE_HANDLE *handle,
+                                             const OSSL_DISPATCH *in);
+OSSL_LIB_CTX *OSSL_LIB_CTX_new_child(const OSSL_CORE_HANDLE *handle,
+                                     const OSSL_DISPATCH *in);
+int OSSL_LIB_CTX_load_config(OSSL_LIB_CTX *ctx, const char *config_file);
+void OSSL_LIB_CTX_free(OSSL_LIB_CTX *);
+OSSL_LIB_CTX *OSSL_LIB_CTX_get0_global_default(void);
+OSSL_LIB_CTX *OSSL_LIB_CTX_set0_default(OSSL_LIB_CTX *libctx);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
 # ifdef  __cplusplus
 }

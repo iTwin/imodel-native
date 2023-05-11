@@ -25,7 +25,11 @@ RSA_METHOD *RSA_meth_new(const char *name, int flags)
         OPENSSL_free(meth);
     }
 
+<<<<<<< HEAD
     RSAerr(RSA_F_RSA_METH_NEW, ERR_R_MALLOC_FAILURE);
+=======
+    ERR_raise(ERR_LIB_RSA, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     return NULL;
 }
 
@@ -51,7 +55,11 @@ RSA_METHOD *RSA_meth_dup(const RSA_METHOD *meth)
         OPENSSL_free(ret);
     }
 
+<<<<<<< HEAD
     RSAerr(RSA_F_RSA_METH_DUP, ERR_R_MALLOC_FAILURE);
+=======
+    ERR_raise(ERR_LIB_RSA, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     return NULL;
 }
 
@@ -65,7 +73,11 @@ int RSA_meth_set1_name(RSA_METHOD *meth, const char *name)
     char *tmpname = OPENSSL_strdup(name);
 
     if (tmpname == NULL) {
+<<<<<<< HEAD
         RSAerr(RSA_F_RSA_METH_SET1_NAME, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_RSA, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
 

@@ -189,7 +189,11 @@ size_t rand_pool_acquire_entropy(RAND_POOL *pool)
         /* Get wall clock time, take 8 bits. */
         clock_gettime(CLOCK_REALTIME, &ts);
         v = (unsigned char)(ts.tv_nsec & 0xFF);
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/rand/rand_unix.c
         rand_pool_add(pool, arg, &v, sizeof(v) , 2);
+=======
+        ossl_rand_pool_add(pool, arg, &v, sizeof(v) , 2);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/providers/implementations/rands/seeding/rand_unix.c
     }
     return rand_pool_entropy_available(pool);
 }

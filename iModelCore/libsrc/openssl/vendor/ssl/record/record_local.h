@@ -65,6 +65,11 @@ void dtls1_record_bitmap_update(SSL *s, DTLS1_BITMAP *bitmap);
 #define SSL3_BUFFER_add_offset(b, o)        ((b)->offset += (o))
 #define SSL3_BUFFER_is_initialised(b)       ((b)->buf != NULL)
 #define SSL3_BUFFER_set_default_len(b, l)   ((b)->default_len = (l))
+<<<<<<< HEAD
+=======
+#define SSL3_BUFFER_set_app_buffer(b, l)    ((b)->app_buffer = (l))
+#define SSL3_BUFFER_is_app_buffer(b)        ((b)->app_buffer)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
 void SSL3_BUFFER_clear(SSL3_BUFFER *b);
 void SSL3_BUFFER_set_data(SSL3_BUFFER *b, const unsigned char *d, size_t n);
@@ -88,6 +93,10 @@ int ssl3_release_write_buffer(SSL *s);
 #define SSL3_RECORD_get_input(r)                ((r)->input)
 #define SSL3_RECORD_set_input(r, i)             ((r)->input = (i))
 #define SSL3_RECORD_reset_input(r)              ((r)->input = (r)->data)
+<<<<<<< HEAD
+=======
+#define SSL3_RECORD_reset_data(r)               ((r)->data = (r)->input)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 #define SSL3_RECORD_get_seq_num(r)              ((r)->seq_num)
 #define SSL3_RECORD_get_off(r)                  ((r)->off)
 #define SSL3_RECORD_set_off(r, o)               ((r)->off = (o))
@@ -104,6 +113,7 @@ void SSL3_RECORD_set_seq_num(SSL3_RECORD *r, const unsigned char *seq_num);
 int ssl3_get_record(SSL *s);
 __owur int ssl3_do_compress(SSL *ssl, SSL3_RECORD *wr);
 __owur int ssl3_do_uncompress(SSL *ssl, SSL3_RECORD *rr);
+<<<<<<< HEAD
 int ssl3_cbc_copy_mac(unsigned char *out,
                        const SSL3_RECORD *rec, size_t md_size);
 __owur int ssl3_cbc_remove_padding(SSL3_RECORD *rec,
@@ -111,6 +121,23 @@ __owur int ssl3_cbc_remove_padding(SSL3_RECORD *rec,
 __owur int tls1_cbc_remove_padding(const SSL *s,
                                    SSL3_RECORD *rec,
                                    size_t block_size, size_t mac_size);
+=======
+__owur int ssl3_cbc_remove_padding_and_mac(size_t *reclen,
+                                           size_t origreclen,
+                                           unsigned char *recdata,
+                                           unsigned char **mac,
+                                           int *alloced,
+                                           size_t block_size, size_t mac_size,
+                                           OSSL_LIB_CTX *libctx);
+__owur int tls1_cbc_remove_padding_and_mac(size_t *reclen,
+                                           size_t origreclen,
+                                           unsigned char *recdata,
+                                           unsigned char **mac,
+                                           int *alloced,
+                                           size_t block_size, size_t mac_size,
+                                           int aead,
+                                           OSSL_LIB_CTX *libctx);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 int dtls1_process_record(SSL *s, DTLS1_BITMAP *bitmap);
 __owur int dtls1_get_record(SSL *s);
 int early_data_count_ok(SSL *s, size_t length, size_t overhead, int send);

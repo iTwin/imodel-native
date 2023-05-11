@@ -65,7 +65,15 @@ static c448_error_t hash_init_with_dom(EVP_MD_CTX *hashctx, uint8_t prehashed,
                        - (for_prehash == 0 ? 1 : 0));
     dom[1] = (uint8_t)context_len;
 
+<<<<<<< HEAD
     if (!EVP_DigestInit_ex(hashctx, EVP_shake256(), NULL)
+=======
+    shake256 = EVP_MD_fetch(ctx, "SHAKE256", propq);
+    if (shake256 == NULL)
+        return C448_FAILURE;
+
+    if (!EVP_DigestInit_ex(hashctx, shake256, NULL)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             || !EVP_DigestUpdate(hashctx, dom_s, strlen(dom_s))
             || !EVP_DigestUpdate(hashctx, dom, sizeof(dom))
             || !EVP_DigestUpdate(hashctx, context, context_len))
@@ -335,6 +343,7 @@ c448_error_t c448_ed448_verify_prehash(
                              context_len);
 }
 
+<<<<<<< HEAD
 int ED448_sign(uint8_t *out_sig, const uint8_t *message, size_t message_len,
                const uint8_t public_key[57], const uint8_t private_key[57],
                const uint8_t *context, size_t context_len)
@@ -355,6 +364,53 @@ int ED448_verify(const uint8_t *message, size_t message_len,
 int ED448ph_sign(uint8_t *out_sig, const uint8_t hash[64],
                  const uint8_t public_key[57], const uint8_t private_key[57],
                  const uint8_t *context, size_t context_len)
+=======
+int
+ossl_ed448_sign(OSSL_LIB_CTX *ctx, uint8_t *out_sig, const uint8_t *message,
+                size_t message_len, const uint8_t public_key[57],
+                const uint8_t private_key[57], const uint8_t *context,
+                size_t context_len, const char *propq)
+{
+    return ossl_c448_ed448_sign(ctx, out_sig, private_key, public_key, message,
+                                message_len, 0, context, context_len,
+                                propq) == C448_SUCCESS;
+}
+
+int
+ossl_ed448_verify(OSSL_LIB_CTX *ctx, const uint8_t *message, size_t message_len,
+                  const uint8_t signature[114], const uint8_t public_key[57],
+                  const uint8_t *context, size_t context_len, const char *propq)
+{
+    return ossl_c448_ed448_verify(ctx, signature, public_key, message,
+                                  message_len, 0, context, (uint8_t)context_len,
+                                  propq) == C448_SUCCESS;
+}
+
+int
+ossl_ed448ph_sign(OSSL_LIB_CTX *ctx, uint8_t *out_sig, const uint8_t hash[64],
+                  const uint8_t public_key[57], const uint8_t private_key[57],
+                  const uint8_t *context, size_t context_len, const char *propq)
+{
+    return ossl_c448_ed448_sign_prehash(ctx, out_sig, private_key, public_key,
+                                        hash, context, context_len,
+                                        propq) == C448_SUCCESS;
+}
+
+int
+ossl_ed448ph_verify(OSSL_LIB_CTX *ctx, const uint8_t hash[64],
+                    const uint8_t signature[114], const uint8_t public_key[57],
+                    const uint8_t *context, size_t context_len,
+                    const char *propq)
+{
+    return ossl_c448_ed448_verify_prehash(ctx, signature, public_key, hash,
+                                          context, (uint8_t)context_len,
+                                          propq) == C448_SUCCESS;
+}
+
+int
+ossl_ed448_public_from_private(OSSL_LIB_CTX *ctx, uint8_t out_public_key[57],
+                               const uint8_t private_key[57], const char *propq)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 {
     return c448_ed448_sign_prehash(out_sig, private_key, public_key, hash,
                                    context, context_len) == C448_SUCCESS;

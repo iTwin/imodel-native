@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2021 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2005-2022 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -197,12 +197,15 @@ static void dgram_adjust_rcv_timeout(BIO *b)
 {
 # if defined(SO_RCVTIMEO)
     bio_dgram_data *data = (bio_dgram_data *)b->ptr;
+<<<<<<< HEAD
     union {
         size_t s;
         int i;
     } sz = {
         0
     };
+=======
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
     /* Is a timer active? */
     if (data->next_timeout.tv_sec > 0 || data->next_timeout.tv_usec > 0) {
@@ -212,21 +215,36 @@ static void dgram_adjust_rcv_timeout(BIO *b)
 #  ifdef OPENSSL_SYS_WINDOWS
         int timeout;
 
+<<<<<<< HEAD
         sz.i = sizeof(timeout);
         if (getsockopt(b->num, SOL_SOCKET, SO_RCVTIMEO,
                        (void *)&timeout, &sz.i) < 0) {
+=======
+        int sz = sizeof(timeout);
+        if (getsockopt(b->num, SOL_SOCKET, SO_RCVTIMEO,
+                       (void *)&timeout, &sz) < 0) {
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             perror("getsockopt");
         } else {
             data->socket_timeout.tv_sec = timeout / 1000;
             data->socket_timeout.tv_usec = (timeout % 1000) * 1000;
         }
 #  else
+<<<<<<< HEAD
         sz.i = sizeof(data->socket_timeout);
         if (getsockopt(b->num, SOL_SOCKET, SO_RCVTIMEO,
                        &(data->socket_timeout), (void *)&sz) < 0) {
             perror("getsockopt");
         } else if (sizeof(sz.s) != sizeof(sz.i) && sz.i == 0)
             OPENSSL_assert(sz.s <= sizeof(data->socket_timeout));
+=======
+        socklen_t sz = sizeof(data->socket_timeout);
+        if (getsockopt(b->num, SOL_SOCKET, SO_RCVTIMEO,
+                       &(data->socket_timeout), &sz) < 0) {
+            perror("getsockopt");
+        } else
+            OPENSSL_assert((size_t)sz <= sizeof(data->socket_timeout));
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 #  endif
 
         /* Get current time */
@@ -401,6 +419,10 @@ static long dgram_ctrl(BIO *b, int cmd, long num, void *ptr)
     long ret = 1;
     int *ip;
     bio_dgram_data *data = NULL;
+<<<<<<< HEAD
+=======
+# ifndef __DJGPP__
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     int sockopt_val = 0;
     int d_errno;
 # if defined(OPENSSL_SYS_LINUX) && (defined(IP_MTU_DISCOVER) || defined(IP_MTU))
@@ -619,9 +641,15 @@ static long dgram_ctrl(BIO *b, int cmd, long num, void *ptr)
             int timeout;
             struct timeval *tv = (struct timeval *)ptr;
 
+<<<<<<< HEAD
             sz.i = sizeof(timeout);
             if (getsockopt(b->num, SOL_SOCKET, SO_RCVTIMEO,
                            (void *)&timeout, &sz.i) < 0) {
+=======
+            sz = sizeof(timeout);
+            if (getsockopt(b->num, SOL_SOCKET, SO_RCVTIMEO,
+                           (void *)&timeout, &sz) < 0) {
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                 perror("getsockopt");
                 ret = -1;
             } else {
@@ -630,6 +658,7 @@ static long dgram_ctrl(BIO *b, int cmd, long num, void *ptr)
                 ret = sizeof(*tv);
             }
 #  else
+<<<<<<< HEAD
             sz.i = sizeof(struct timeval);
             if (getsockopt(b->num, SOL_SOCKET, SO_RCVTIMEO,
                            ptr, (void *)&sz) < 0) {
@@ -640,6 +669,17 @@ static long dgram_ctrl(BIO *b, int cmd, long num, void *ptr)
                 ret = (int)sz.s;
             } else
                 ret = sz.i;
+=======
+            socklen_t sz = sizeof(struct timeval);
+            if (getsockopt(b->num, SOL_SOCKET, SO_RCVTIMEO,
+                           ptr, &sz) < 0) {
+                perror("getsockopt");
+                ret = -1;
+            } else {
+                OPENSSL_assert((size_t)sz <= sizeof(struct timeval));
+                ret = (int)sz;
+            }
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 #  endif
         }
         break;
@@ -676,9 +716,15 @@ static long dgram_ctrl(BIO *b, int cmd, long num, void *ptr)
             int timeout;
             struct timeval *tv = (struct timeval *)ptr;
 
+<<<<<<< HEAD
             sz.i = sizeof(timeout);
             if (getsockopt(b->num, SOL_SOCKET, SO_SNDTIMEO,
                            (void *)&timeout, &sz.i) < 0) {
+=======
+            sz = sizeof(timeout);
+            if (getsockopt(b->num, SOL_SOCKET, SO_SNDTIMEO,
+                           (void *)&timeout, &sz) < 0) {
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                 perror("getsockopt");
                 ret = -1;
             } else {
@@ -687,6 +733,7 @@ static long dgram_ctrl(BIO *b, int cmd, long num, void *ptr)
                 ret = sizeof(*tv);
             }
 #  else
+<<<<<<< HEAD
             sz.i = sizeof(struct timeval);
             if (getsockopt(b->num, SOL_SOCKET, SO_SNDTIMEO,
                            ptr, (void *)&sz) < 0) {
@@ -697,6 +744,17 @@ static long dgram_ctrl(BIO *b, int cmd, long num, void *ptr)
                 ret = (int)sz.s;
             } else
                 ret = sz.i;
+=======
+            socklen_t sz = sizeof(struct timeval);
+            if (getsockopt(b->num, SOL_SOCKET, SO_SNDTIMEO,
+                           ptr, &sz) < 0) {
+                perror("getsockopt");
+                ret = -1;
+            } else {
+                OPENSSL_assert((size_t)sz <= sizeof(struct timeval));
+                ret = (int)sz;
+            }
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 #  endif
         }
         break;
@@ -736,8 +794,13 @@ static long dgram_ctrl(BIO *b, int cmd, long num, void *ptr)
                 ret = -1;
             }
 # elif defined(OPENSSL_SYS_LINUX) && defined(IP_MTU_DISCOVER) && defined (IP_PMTUDISC_PROBE)
+<<<<<<< HEAD
             if ((sockopt_val = num ? IP_PMTUDISC_PROBE : IP_PMTUDISC_DONT),
                 (ret = setsockopt(b->num, IPPROTO_IP, IP_MTU_DISCOVER,
+=======
+            sockopt_val = num ? IP_PMTUDISC_PROBE : IP_PMTUDISC_DONT;
+            if ((ret = setsockopt(b->num, IPPROTO_IP, IP_MTU_DISCOVER,
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                                   &sockopt_val, sizeof(sockopt_val))) < 0) {
                 perror("setsockopt");
                 ret = -1;
@@ -763,8 +826,13 @@ static long dgram_ctrl(BIO *b, int cmd, long num, void *ptr)
                 ret = -1;
             }
 #  elif defined(OPENSSL_SYS_LINUX) && defined(IPV6_MTUDISCOVER)
+<<<<<<< HEAD
             if ((sockopt_val = num ? IP_PMTUDISC_PROBE : IP_PMTUDISC_DONT),
                 (ret = setsockopt(b->num, IPPROTO_IPV6, IPV6_MTU_DISCOVER,
+=======
+            sockopt_val = num ? IP_PMTUDISC_PROBE : IP_PMTUDISC_DONT;
+            if ((ret = setsockopt(b->num, IPPROTO_IPV6, IPV6_MTU_DISCOVER,
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                                   &sockopt_val, sizeof(sockopt_val))) < 0) {
                 perror("setsockopt");
                 ret = -1;
@@ -960,7 +1028,11 @@ static int dgram_sctp_new(BIO *bi)
     bi->init = 0;
     bi->num = 0;
     if ((data = OPENSSL_zalloc(sizeof(*data))) == NULL) {
+<<<<<<< HEAD
         BIOerr(BIO_F_DGRAM_SCTP_NEW, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_BIO, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
 #  ifdef SCTP_PR_SCTP_NONE
@@ -1195,7 +1267,11 @@ static int dgram_sctp_read(BIO *b, char *out, int outl)
                 (socklen_t) (sizeof(sctp_assoc_t) + 256 * sizeof(uint8_t));
             authchunks = OPENSSL_malloc(optlen);
             if (authchunks == NULL) {
+<<<<<<< HEAD
                 BIOerr(BIO_F_DGRAM_SCTP_READ, ERR_R_MALLOC_FAILURE);
+=======
+                ERR_raise(ERR_LIB_BIO, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                 return -1;
             }
             memset(authchunks, 0, optlen);
@@ -1907,6 +1983,7 @@ static void get_current_time(struct timeval *t)
 {
 # if defined(_WIN32)
     SYSTEMTIME st;
+<<<<<<< HEAD
     union {
         unsigned __int64 ul;
         FILETIME ft;
@@ -1923,6 +2000,24 @@ static void get_current_time(struct timeval *t)
     t->tv_usec = ((int)(now.ul % 10000000)) / 10;
 # else
     gettimeofday(t, NULL);
+=======
+    unsigned __int64 now_ul;
+    FILETIME now_ft;
+
+    GetSystemTime(&st);
+    SystemTimeToFileTime(&st, &now_ft);
+    now_ul = ((unsigned __int64)now_ft.dwHighDateTime << 32) | now_ft.dwLowDateTime;
+#  ifdef  __MINGW32__
+    now_ul -= 116444736000000000ULL;
+#  else
+    now_ul -= 116444736000000000UI64; /* re-bias to 1/1/1970 */
+#  endif
+    t->tv_sec = (long)(now_ul / 10000000);
+    t->tv_usec = ((int)(now_ul % 10000000)) / 10;
+# else
+    if (gettimeofday(t, NULL) < 0)
+        perror("gettimeofday");
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 # endif
 }
 

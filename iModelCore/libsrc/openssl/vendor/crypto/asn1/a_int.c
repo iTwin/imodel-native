@@ -310,8 +310,13 @@ ASN1_INTEGER *c2i_ASN1_INTEGER(ASN1_INTEGER **a, const unsigned char **pp,
         (*a) = ret;
     return ret;
  err:
+<<<<<<< HEAD
     ASN1err(ASN1_F_C2I_ASN1_INTEGER, ERR_R_MALLOC_FAILURE);
     if ((a == NULL) || (*a != ret))
+=======
+    ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
+    if (a == NULL || *a != ret)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         ASN1_INTEGER_free(ret);
     return NULL;
 }
@@ -440,7 +445,11 @@ ASN1_INTEGER *d2i_ASN1_UINTEGER(ASN1_INTEGER **a, const unsigned char **pp,
     *pp = p;
     return ret;
  err:
+<<<<<<< HEAD
     ASN1err(ASN1_F_D2I_ASN1_UINTEGER, i);
+=======
+    ERR_raise(ERR_LIB_ASN1, i);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     if ((a == NULL) || (*a != ret))
         ASN1_INTEGER_free(ret);
     return NULL;
@@ -473,7 +482,11 @@ static ASN1_STRING *bn_to_asn1_string(const BIGNUM *bn, ASN1_STRING *ai,
         len = 1;
 
     if (ASN1_STRING_set(ret, NULL, len) == 0) {
+<<<<<<< HEAD
         ASN1err(ASN1_F_BN_TO_ASN1_STRING, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 

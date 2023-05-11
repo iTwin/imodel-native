@@ -1235,7 +1235,11 @@ static NISTP224_PRE_COMP *nistp224_pre_comp_new(void)
     NISTP224_PRE_COMP *ret = OPENSSL_zalloc(sizeof(*ret));
 
     if (!ret) {
+<<<<<<< HEAD
         ECerr(EC_F_NISTP224_PRE_COMP_NEW, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return ret;
     }
 
@@ -1243,7 +1247,11 @@ static NISTP224_PRE_COMP *nistp224_pre_comp_new(void)
 
     ret->lock = CRYPTO_THREAD_lock_new();
     if (ret->lock == NULL) {
+<<<<<<< HEAD
         ECerr(EC_F_NISTP224_PRE_COMP_NEW, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         OPENSSL_free(ret);
         return NULL;
     }
@@ -1482,7 +1490,11 @@ int ec_GFp_nistp224_points_mul(const EC_GROUP *group, EC_POINT *r,
                 OPENSSL_malloc(sizeof(felem) * (num_points * 17 + 1));
         if ((secrets == NULL) || (pre_comp == NULL)
             || (mixed && (tmp_felems == NULL))) {
+<<<<<<< HEAD
             ECerr(EC_F_EC_GFP_NISTP224_POINTS_MUL, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             goto err;
         }
 

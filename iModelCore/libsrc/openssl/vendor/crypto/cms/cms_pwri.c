@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright 2009-2018 The OpenSSL Project Authors. All Rights Reserved.
+=======
+ * Copyright 2009-2022 The OpenSSL Project Authors. All Rights Reserved.
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -80,6 +84,13 @@ CMS_RecipientInfo *CMS_add0_recipient_password(CMS_ContentInfo *cms,
         goto merr;
     }
     ctx = EVP_CIPHER_CTX_new();
+<<<<<<< HEAD
+=======
+    if (ctx == NULL) {
+        ERR_raise(ERR_LIB_CMS, ERR_R_MALLOC_FAILURE);
+        goto err;
+    }
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
     if (EVP_EncryptInit_ex(ctx, kekciph, NULL, NULL, NULL) <= 0) {
         CMSerr(CMS_F_CMS_ADD0_RECIPIENT_PASSWORD, ERR_R_EVP_LIB);
@@ -97,7 +108,11 @@ CMS_RecipientInfo *CMS_add0_recipient_password(CMS_ContentInfo *cms,
         }
         encalg->parameter = ASN1_TYPE_new();
         if (!encalg->parameter) {
+<<<<<<< HEAD
             CMSerr(CMS_F_CMS_ADD0_RECIPIENT_PASSWORD, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_CMS, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             goto err;
         }
         if (EVP_CIPHER_param_to_asn1(ctx, encalg->parameter) <= 0) {
@@ -152,13 +167,21 @@ CMS_RecipientInfo *CMS_add0_recipient_password(CMS_ContentInfo *cms,
     CMS_RecipientInfo_set0_password(ri, pass, passlen);
     pwri->version = 0;
 
+<<<<<<< HEAD
     if (!sk_CMS_RecipientInfo_push(env->recipientInfos, ri))
+=======
+    if (!sk_CMS_RecipientInfo_push(ris, ri))
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto merr;
 
     return ri;
 
  merr:
+<<<<<<< HEAD
     CMSerr(CMS_F_CMS_ADD0_RECIPIENT_PASSWORD, ERR_R_MALLOC_FAILURE);
+=======
+    ERR_raise(ERR_LIB_CMS, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  err:
     EVP_CIPHER_CTX_free(ctx);
     if (ri)
@@ -189,7 +212,11 @@ static int kek_unwrap_key(unsigned char *out, size_t *outlen,
         return 0;
     }
     if ((tmp = OPENSSL_malloc(inlen)) == NULL) {
+<<<<<<< HEAD
         CMSerr(CMS_F_KEK_UNWRAP_KEY, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_CMS, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
     /* setup IV by decrypting last two blocks */
@@ -319,8 +346,13 @@ int cms_RecipientInfo_pwri_crypt(CMS_ContentInfo *cms, CMS_RecipientInfo *ri,
 
     kekctx = EVP_CIPHER_CTX_new();
     if (kekctx == NULL) {
+<<<<<<< HEAD
         CMSerr(CMS_F_CMS_RECIPIENTINFO_PWRI_CRYPT, ERR_R_MALLOC_FAILURE);
         return 0;
+=======
+        ERR_raise(ERR_LIB_CMS, ERR_R_MALLOC_FAILURE);
+        goto err;
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     }
     /* Fixup cipher based on AlgorithmIdentifier to set IV etc */
     if (!EVP_CipherInit_ex(kekctx, kekcipher, NULL, NULL, NULL, en_de))
@@ -363,7 +395,11 @@ int cms_RecipientInfo_pwri_crypt(CMS_ContentInfo *cms, CMS_RecipientInfo *ri,
         key = OPENSSL_malloc(pwri->encryptedKey->length);
 
         if (key == NULL) {
+<<<<<<< HEAD
             CMSerr(CMS_F_CMS_RECIPIENTINFO_PWRI_CRYPT, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_CMS, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             goto err;
         }
         if (!kek_unwrap_key(key, &keylen,

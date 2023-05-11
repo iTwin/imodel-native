@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright 2015-2018 The OpenSSL Project Authors. All Rights Reserved.
+=======
+ * Copyright 2015-2021 The OpenSSL Project Authors. All Rights Reserved.
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -39,7 +43,11 @@ static async_ctx *async_ctx_new(void)
 
     nctx = OPENSSL_malloc(sizeof(*nctx));
     if (nctx == NULL) {
+<<<<<<< HEAD
         ASYNCerr(ASYNC_F_ASYNC_CTX_NEW, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_ASYNC, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 
@@ -81,7 +89,11 @@ static ASYNC_JOB *async_job_new(void)
 
     job = OPENSSL_zalloc(sizeof(*job));
     if (job == NULL) {
+<<<<<<< HEAD
         ASYNCerr(ASYNC_F_ASYNC_JOB_NEW, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_ASYNC, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return NULL;
     }
 
@@ -226,7 +238,11 @@ int ASYNC_start_job(ASYNC_JOB **job, ASYNC_WAIT_CTX *wctx, int *ret,
         if (args != NULL) {
             ctx->currjob->funcargs = OPENSSL_malloc(size);
             if (ctx->currjob->funcargs == NULL) {
+<<<<<<< HEAD
                 ASYNCerr(ASYNC_F_ASYNC_START_JOB, ERR_R_MALLOC_FAILURE);
+=======
+                ERR_raise(ERR_LIB_ASYNC, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                 async_release_job(ctx->currjob);
                 ctx->currjob = NULL;
                 return ASYNC_ERR;
@@ -331,13 +347,21 @@ int ASYNC_init_thread(size_t max_size, size_t init_size)
 
     pool = OPENSSL_zalloc(sizeof(*pool));
     if (pool == NULL) {
+<<<<<<< HEAD
         ASYNCerr(ASYNC_F_ASYNC_INIT_THREAD, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_ASYNC, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
 
     pool->jobs = sk_ASYNC_JOB_new_reserve(NULL, init_size);
     if (pool->jobs == NULL) {
+<<<<<<< HEAD
         ASYNCerr(ASYNC_F_ASYNC_INIT_THREAD, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_ASYNC, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         OPENSSL_free(pool);
         return 0;
     }

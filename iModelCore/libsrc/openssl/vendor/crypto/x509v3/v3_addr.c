@@ -909,7 +909,11 @@ static void *v2i_IPAddrBlocks(const struct v3_ext_method *method,
     int i;
 
     if ((addr = sk_IPAddressFamily_new(IPAddressFamily_cmp)) == NULL) {
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_addr.c
         X509V3err(X509V3_F_V2I_IPADDRBLOCKS, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_addr.c
         return NULL;
     }
 
@@ -966,7 +970,11 @@ static void *v2i_IPAddrBlocks(const struct v3_ext_method *method,
             s = OPENSSL_strdup(val->value);
         }
         if (s == NULL) {
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_addr.c
             X509V3err(X509V3_F_V2I_IPADDRBLOCKS, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_addr.c
             goto err;
         }
 
@@ -1010,7 +1018,11 @@ static void *v2i_IPAddrBlocks(const struct v3_ext_method *method,
                 goto err;
             }
             if (!X509v3_addr_add_prefix(addr, afi, safi, min, prefixlen)) {
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_addr.c
                 X509V3err(X509V3_F_V2I_IPADDRBLOCKS, ERR_R_MALLOC_FAILURE);
+=======
+                ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_addr.c
                 goto err;
             }
             break;
@@ -1036,13 +1048,21 @@ static void *v2i_IPAddrBlocks(const struct v3_ext_method *method,
                 goto err;
             }
             if (!X509v3_addr_add_range(addr, afi, safi, min, max)) {
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_addr.c
                 X509V3err(X509V3_F_V2I_IPADDRBLOCKS, ERR_R_MALLOC_FAILURE);
+=======
+                ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_addr.c
                 goto err;
             }
             break;
         case '\0':
             if (!X509v3_addr_add_prefix(addr, afi, safi, min, length * 8)) {
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_addr.c
                 X509V3err(X509V3_F_V2I_IPADDRBLOCKS, ERR_R_MALLOC_FAILURE);
+=======
+                ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_addr.c
                 goto err;
             }
             break;
@@ -1225,8 +1245,12 @@ static int addr_validate_path_internal(X509_STORE_CTX *ctx,
         validation_err(X509_V_ERR_INVALID_EXTENSION);
     (void)sk_IPAddressFamily_set_cmp_func(ext, IPAddressFamily_cmp);
     if ((child = sk_IPAddressFamily_dup(ext)) == NULL) {
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_addr.c
         X509V3err(X509V3_F_ADDR_VALIDATE_PATH_INTERNAL,
                   ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_addr.c
         if (ctx != NULL)
             ctx->error = X509_V_ERR_OUT_OF_MEM;
         ret = 0;

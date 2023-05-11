@@ -174,7 +174,11 @@ char *X509_NAME_oneline(const X509_NAME *a, char *buf, int len)
         *p = '\0';
     return p;
  err:
+<<<<<<< HEAD
     X509err(X509_F_X509_NAME_ONELINE, ERR_R_MALLOC_FAILURE);
+=======
+    ERR_raise(ERR_LIB_X509, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  end:
     BUF_MEM_free(b);
     return NULL;

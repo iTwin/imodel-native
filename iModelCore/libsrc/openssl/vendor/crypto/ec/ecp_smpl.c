@@ -250,8 +250,12 @@ int ec_GFp_simple_group_check_discriminant(const EC_GROUP *group, BN_CTX *ctx)
     if (ctx == NULL) {
         ctx = new_ctx = BN_CTX_new();
         if (ctx == NULL) {
+<<<<<<< HEAD
             ECerr(EC_F_EC_GFP_SIMPLE_GROUP_CHECK_DISCRIMINANT,
                   ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             goto err;
         }
     }
@@ -1431,7 +1435,11 @@ int ec_GFp_simple_blind_coordinates(const EC_GROUP *group, EC_POINT *p,
     lambda = BN_CTX_get(ctx);
     temp = BN_CTX_get(ctx);
     if (temp == NULL) {
+<<<<<<< HEAD
         ECerr(EC_F_EC_GFP_SIMPLE_BLIND_COORDINATES, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto end;
     }
 

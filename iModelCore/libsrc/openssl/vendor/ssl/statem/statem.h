@@ -132,6 +132,7 @@ __owur int ossl_statem_accept(SSL *s);
 __owur int ossl_statem_connect(SSL *s);
 void ossl_statem_clear(SSL *s);
 void ossl_statem_set_renegotiate(SSL *s);
+<<<<<<< HEAD
 void ossl_statem_fatal(SSL *s, int al, int func, int reason, const char *file,
                        int line);
 # define SSL_AD_NO_ALERT    -1
@@ -141,6 +142,17 @@ void ossl_statem_fatal(SSL *s, int al, int func, int reason, const char *file,
 # else
 #  define SSLfatal(s, al, f, r)  ossl_statem_fatal((s), (al), (f), (r), NULL, 0)
 # endif
+=======
+void ossl_statem_send_fatal(SSL *s, int al);
+void ossl_statem_fatal(SSL *s, int al, int reason, const char *fmt, ...);
+# define SSL_AD_NO_ALERT    -1
+# define SSLfatal_alert(s, al) ossl_statem_send_fatal((s), (al))
+# define SSLfatal(s, al, r) SSLfatal_data((s), (al), (r), NULL)
+# define SSLfatal_data                                          \
+    (ERR_new(),                                                 \
+     ERR_set_debug(OPENSSL_FILE, OPENSSL_LINE, OPENSSL_FUNC),   \
+     ossl_statem_fatal)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
 int ossl_statem_in_error(const SSL *s);
 void ossl_statem_set_in_init(SSL *s, int init);

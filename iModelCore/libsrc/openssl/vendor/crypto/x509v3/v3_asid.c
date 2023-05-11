@@ -300,16 +300,24 @@ static int ASIdentifierChoice_is_canonical(ASIdentifierChoice *choice)
         if ((bn == NULL && (bn = BN_new()) == NULL) ||
             ASN1_INTEGER_to_BN(a_max, bn) == NULL ||
             !BN_add_word(bn, 1)) {
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_asid.c
             X509V3err(X509V3_F_ASIDENTIFIERCHOICE_IS_CANONICAL,
                       ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_asid.c
             goto done;
         }
 
         if ((a_max_plus_one =
                 BN_to_ASN1_INTEGER(bn, orig = a_max_plus_one)) == NULL) {
             a_max_plus_one = orig;
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_asid.c
             X509V3err(X509V3_F_ASIDENTIFIERCHOICE_IS_CANONICAL,
                       ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_asid.c
             goto done;
         }
 
@@ -425,16 +433,24 @@ static int ASIdentifierChoice_canonize(ASIdentifierChoice *choice)
         if ((bn == NULL && (bn = BN_new()) == NULL) ||
             ASN1_INTEGER_to_BN(a_max, bn) == NULL ||
             !BN_add_word(bn, 1)) {
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_asid.c
             X509V3err(X509V3_F_ASIDENTIFIERCHOICE_CANONIZE,
                       ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_asid.c
             goto done;
         }
 
         if ((a_max_plus_one =
                  BN_to_ASN1_INTEGER(bn, orig = a_max_plus_one)) == NULL) {
             a_max_plus_one = orig;
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_asid.c
             X509V3err(X509V3_F_ASIDENTIFIERCHOICE_CANONIZE,
                       ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_asid.c
             goto done;
         }
 
@@ -446,8 +462,12 @@ static int ASIdentifierChoice_canonize(ASIdentifierChoice *choice)
             switch (a->type) {
             case ASIdOrRange_id:
                 if ((r = OPENSSL_malloc(sizeof(*r))) == NULL) {
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_asid.c
                     X509V3err(X509V3_F_ASIDENTIFIERCHOICE_CANONIZE,
                               ERR_R_MALLOC_FAILURE);
+=======
+                    ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_asid.c
                     goto done;
                 }
                 r->min = a_min;
@@ -523,7 +543,11 @@ static void *v2i_ASIdentifiers(const struct v3_ext_method *method,
     int i;
 
     if ((asid = ASIdentifiers_new()) == NULL) {
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_asid.c
         X509V3err(X509V3_F_V2I_ASIDENTIFIERS, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_asid.c
         return NULL;
     }
 
@@ -588,13 +612,21 @@ static void *v2i_ASIdentifiers(const struct v3_ext_method *method,
          */
         if (!is_range) {
             if (!X509V3_get_value_int(val, &min)) {
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_asid.c
                 X509V3err(X509V3_F_V2I_ASIDENTIFIERS, ERR_R_MALLOC_FAILURE);
+=======
+                ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_asid.c
                 goto err;
             }
         } else {
             char *s = OPENSSL_strdup(val->value);
             if (s == NULL) {
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_asid.c
                 X509V3err(X509V3_F_V2I_ASIDENTIFIERS, ERR_R_MALLOC_FAILURE);
+=======
+                ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_asid.c
                 goto err;
             }
             s[i1] = '\0';
@@ -602,7 +634,11 @@ static void *v2i_ASIdentifiers(const struct v3_ext_method *method,
             max = s2i_ASN1_INTEGER(NULL, s + i2);
             OPENSSL_free(s);
             if (min == NULL || max == NULL) {
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_asid.c
                 X509V3err(X509V3_F_V2I_ASIDENTIFIERS, ERR_R_MALLOC_FAILURE);
+=======
+                ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_asid.c
                 goto err;
             }
             if (ASN1_INTEGER_cmp(min, max) > 0) {
@@ -612,7 +648,11 @@ static void *v2i_ASIdentifiers(const struct v3_ext_method *method,
             }
         }
         if (!X509v3_asid_add_id_or_range(asid, which, min, max)) {
+<<<<<<< HEAD:iModelCore/libsrc/openssl/vendor/crypto/x509v3/v3_asid.c
             X509V3err(X509V3_F_V2I_ASIDENTIFIERS, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276)):iModelCore/libsrc/openssl/vendor/crypto/x509/v3_asid.c
             goto err;
         }
         min = max = NULL;

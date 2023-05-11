@@ -9,9 +9,17 @@
 
 /* Internal ASN1 structures and functions: not for application use */
 
+<<<<<<< HEAD
 int asn1_time_to_tm(struct tm *tm, const ASN1_TIME *d);
 int asn1_utctime_to_tm(struct tm *tm, const ASN1_UTCTIME *d);
 int asn1_generalizedtime_to_tm(struct tm *tm, const ASN1_GENERALIZEDTIME *d);
+=======
+typedef const ASN1_VALUE const_ASN1_VALUE;
+SKM_DEFINE_STACK_OF(const_ASN1_VALUE, const ASN1_VALUE, ASN1_VALUE)
+
+int ossl_asn1_time_to_tm(struct tm *tm, const ASN1_TIME *d);
+int ossl_asn1_utctime_to_tm(struct tm *tm, const ASN1_UTCTIME *d);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
 /* ASN1 scan context structure */
 

@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright 1995-2019 The OpenSSL Project Authors. All Rights Reserved.
+=======
+ * Copyright 1995-2022 The OpenSSL Project Authors. All Rights Reserved.
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -75,6 +79,7 @@ static int rsa_builtin_keygen(RSA *rsa, int bits, int primes, BIGNUM *e_value,
 
     if (bits < RSA_MIN_MODULUS_BITS) {
         ok = 0;             /* we set our own err */
+<<<<<<< HEAD
         RSAerr(RSA_F_RSA_BUILTIN_KEYGEN, RSA_R_KEY_SIZE_TOO_SMALL);
         goto err;
     }
@@ -82,6 +87,21 @@ static int rsa_builtin_keygen(RSA *rsa, int bits, int primes, BIGNUM *e_value,
     if (primes < RSA_DEFAULT_PRIME_NUM || primes > rsa_multip_cap(bits)) {
         ok = 0;             /* we set our own err */
         RSAerr(RSA_F_RSA_BUILTIN_KEYGEN, RSA_R_KEY_PRIME_NUM_INVALID);
+=======
+        ERR_raise(ERR_LIB_RSA, RSA_R_KEY_SIZE_TOO_SMALL);
+        goto err;
+    }
+
+    /* A bad value for e can cause infinite loops */
+    if (e_value != NULL && !ossl_rsa_check_public_exponent(e_value)) {
+        ERR_raise(ERR_LIB_RSA, RSA_R_PUB_EXPONENT_OUT_OF_RANGE);
+        return 0;
+    }
+
+    if (primes < RSA_DEFAULT_PRIME_NUM || primes > ossl_rsa_multip_cap(bits)) {
+        ok = 0;             /* we set our own err */
+        ERR_raise(ERR_LIB_RSA, RSA_R_KEY_PRIME_NUM_INVALID);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 

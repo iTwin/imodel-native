@@ -1651,7 +1651,11 @@ static int s390x_aes_gcm_ctrl(EVP_CIPHER_CTX *c, int type, int arg, void *ptr)
                     OPENSSL_free(gctx->iv);
 
                 if ((gctx->iv = OPENSSL_malloc(len)) == NULL) {
+<<<<<<< HEAD
                     EVPerr(EVP_F_S390X_AES_GCM_CTRL, ERR_R_MALLOC_FAILURE);
+=======
+                    ERR_raise(ERR_LIB_EVP, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                     return 0;
                 }
             }
@@ -1770,7 +1774,11 @@ static int s390x_aes_gcm_ctrl(EVP_CIPHER_CTX *c, int type, int arg, void *ptr)
             len = S390X_gcm_ivpadlen(gctx->ivlen);
 
             if ((gctx_out->iv = OPENSSL_malloc(len)) == NULL) {
+<<<<<<< HEAD
                 EVPerr(EVP_F_S390X_AES_GCM_CTRL, ERR_R_MALLOC_FAILURE);
+=======
+                ERR_raise(ERR_LIB_EVP, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                 return 0;
             }
 
@@ -1832,6 +1840,20 @@ static int s390x_aes_gcm_tls_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out,
     if (out != in || len < (EVP_GCM_TLS_EXPLICIT_IV_LEN + EVP_GCM_TLS_TAG_LEN))
         return -1;
 
+<<<<<<< HEAD
+=======
+    /*
+     * Check for too many keys as per FIPS 140-2 IG A.5 "Key/IV Pair Uniqueness
+     * Requirements from SP 800-38D".  The requirements is for one party to the
+     * communication to fail after 2^64 - 1 keys.  We do this on the encrypting
+     * side only.
+     */
+    if (ctx->encrypt && ++gctx->tls_enc_records == 0) {
+        ERR_raise(ERR_LIB_EVP, EVP_R_TOO_MANY_RECORDS);
+        goto err;
+    }
+
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     if (EVP_CIPHER_CTX_ctrl(ctx, enc ? EVP_CTRL_GCM_IV_GEN
                                      : EVP_CTRL_GCM_SET_IV_INV,
                             EVP_GCM_TLS_EXPLICIT_IV_LEN, out) <= 0)
@@ -2868,7 +2890,11 @@ static int aes_gcm_ctrl(EVP_CIPHER_CTX *c, int type, int arg, void *ptr)
             if (gctx->iv != c->iv)
                 OPENSSL_free(gctx->iv);
             if ((gctx->iv = OPENSSL_malloc(arg)) == NULL) {
+<<<<<<< HEAD
                 EVPerr(EVP_F_AES_GCM_CTRL, ERR_R_MALLOC_FAILURE);
+=======
+                ERR_raise(ERR_LIB_EVP, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                 return 0;
             }
         }
@@ -2969,7 +2995,11 @@ static int aes_gcm_ctrl(EVP_CIPHER_CTX *c, int type, int arg, void *ptr)
                 gctx_out->iv = out->iv;
             else {
                 if ((gctx_out->iv = OPENSSL_malloc(gctx->ivlen)) == NULL) {
+<<<<<<< HEAD
                     EVPerr(EVP_F_AES_GCM_CTRL, ERR_R_MALLOC_FAILURE);
+=======
+                    ERR_raise(ERR_LIB_EVP, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                     return 0;
                 }
                 memcpy(gctx_out->iv, gctx->iv, gctx->ivlen);
@@ -3072,6 +3102,21 @@ static int aes_gcm_tls_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out,
     if (out != in
         || len < (EVP_GCM_TLS_EXPLICIT_IV_LEN + EVP_GCM_TLS_TAG_LEN))
         return -1;
+<<<<<<< HEAD
+=======
+
+    /*
+     * Check for too many keys as per FIPS 140-2 IG A.5 "Key/IV Pair Uniqueness
+     * Requirements from SP 800-38D".  The requirements is for one party to the
+     * communication to fail after 2^64 - 1 keys.  We do this on the encrypting
+     * side only.
+     */
+    if (ctx->encrypt && ++gctx->tls_enc_records == 0) {
+        ERR_raise(ERR_LIB_EVP, EVP_R_TOO_MANY_RECORDS);
+        goto err;
+    }
+
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     /*
      * Set IV from start of buffer or generate IV and write to start of
      * buffer.
@@ -3192,6 +3237,24 @@ static int aes_gcm_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out,
     if (gctx->tls_aad_len >= 0)
         return aes_gcm_tls_cipher(ctx, out, in, len);
 
+<<<<<<< HEAD
+=======
+#ifdef FIPS_MODULE
+    /*
+     * FIPS requires generation of AES-GCM IV's inside the FIPS module.
+     * The IV can still be set externally (the security policy will state that
+     * this is not FIPS compliant). There are some applications
+     * where setting the IV externally is the only option available.
+     */
+    if (!gctx->iv_set) {
+        if (!ctx->encrypt || !aes_gcm_iv_generate(gctx, 0))
+            return -1;
+        CRYPTO_gcm128_setiv(&gctx->gcm, gctx->iv, gctx->ivlen);
+        gctx->iv_set = 1;
+        gctx->iv_gen_rand = 1;
+    }
+#else
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     if (!gctx->iv_set)
         return -1;
     if (in) {

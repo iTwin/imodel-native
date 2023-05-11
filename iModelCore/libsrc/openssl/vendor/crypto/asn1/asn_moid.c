@@ -84,7 +84,11 @@ static int do_create(const char *value, const char *name)
         }
         p++;
         if ((lntmp = OPENSSL_malloc((p - ln) + 1)) == NULL) {
+<<<<<<< HEAD
             ASN1err(ASN1_F_DO_CREATE, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return 0;
         }
         memcpy(lntmp, ln, p - ln);

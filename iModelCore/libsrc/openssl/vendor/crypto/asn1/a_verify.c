@@ -32,7 +32,11 @@ int ASN1_verify(i2d_of_void *i2d, X509_ALGOR *a, ASN1_BIT_STRING *signature,
     int ret = -1, i, inl;
 
     if (ctx == NULL) {
+<<<<<<< HEAD
         ASN1err(ASN1_F_ASN1_VERIFY, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
     i = OBJ_obj2nid(a->algorithm);
@@ -54,7 +58,11 @@ int ASN1_verify(i2d_of_void *i2d, X509_ALGOR *a, ASN1_BIT_STRING *signature,
     }
     buf_in = OPENSSL_malloc((unsigned int)inl);
     if (buf_in == NULL) {
+<<<<<<< HEAD
         ASN1err(ASN1_F_ASN1_VERIFY, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
     p = buf_in;
@@ -159,7 +167,11 @@ int ASN1_item_verify(const ASN1_ITEM *it, X509_ALGOR *a,
         goto err;
     }
     if (buf_in == NULL) {
+<<<<<<< HEAD
         ASN1err(ASN1_F_ASN1_ITEM_VERIFY, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
     inll = inl;

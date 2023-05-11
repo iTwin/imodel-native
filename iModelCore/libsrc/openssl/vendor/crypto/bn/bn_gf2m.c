@@ -471,8 +471,17 @@ int BN_GF2m_mod_mul(BIGNUM *r, const BIGNUM *a, const BIGNUM *b,
     bn_check_top(a);
     bn_check_top(b);
     bn_check_top(p);
+<<<<<<< HEAD
     if ((arr = OPENSSL_malloc(sizeof(*arr) * max)) == NULL)
         goto err;
+=======
+
+    arr = OPENSSL_malloc(sizeof(*arr) * max);
+    if (arr == NULL) {
+        ERR_raise(ERR_LIB_BN, ERR_R_MALLOC_FAILURE);
+        return 0;
+    }
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     ret = BN_GF2m_poly2arr(p, arr, max);
     if (!ret || ret > max) {
         BNerr(BN_F_BN_GF2M_MOD_MUL, BN_R_INVALID_LENGTH);
@@ -529,8 +538,17 @@ int BN_GF2m_mod_sqr(BIGNUM *r, const BIGNUM *a, const BIGNUM *p, BN_CTX *ctx)
 
     bn_check_top(a);
     bn_check_top(p);
+<<<<<<< HEAD
     if ((arr = OPENSSL_malloc(sizeof(*arr) * max)) == NULL)
         goto err;
+=======
+
+    arr = OPENSSL_malloc(sizeof(*arr) * max);
+    if (arr == NULL) {
+        ERR_raise(ERR_LIB_BN, ERR_R_MALLOC_FAILURE);
+        return 0;
+    }
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     ret = BN_GF2m_poly2arr(p, arr, max);
     if (!ret || ret > max) {
         BNerr(BN_F_BN_GF2M_MOD_SQR, BN_R_INVALID_LENGTH);
@@ -903,8 +921,17 @@ int BN_GF2m_mod_exp(BIGNUM *r, const BIGNUM *a, const BIGNUM *b,
     bn_check_top(a);
     bn_check_top(b);
     bn_check_top(p);
+<<<<<<< HEAD
     if ((arr = OPENSSL_malloc(sizeof(*arr) * max)) == NULL)
         goto err;
+=======
+
+    arr = OPENSSL_malloc(sizeof(*arr) * max);
+    if (arr == NULL) {
+        ERR_raise(ERR_LIB_BN, ERR_R_MALLOC_FAILURE);
+        return 0;
+    }
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     ret = BN_GF2m_poly2arr(p, arr, max);
     if (!ret || ret > max) {
         BNerr(BN_F_BN_GF2M_MOD_EXP, BN_R_INVALID_LENGTH);
@@ -962,8 +989,17 @@ int BN_GF2m_mod_sqrt(BIGNUM *r, const BIGNUM *a, const BIGNUM *p, BN_CTX *ctx)
     int *arr = NULL;
     bn_check_top(a);
     bn_check_top(p);
+<<<<<<< HEAD
     if ((arr = OPENSSL_malloc(sizeof(*arr) * max)) == NULL)
         goto err;
+=======
+
+    arr = OPENSSL_malloc(sizeof(*arr) * max);
+    if (arr == NULL) {
+        ERR_raise(ERR_LIB_BN, ERR_R_MALLOC_FAILURE);
+        return 0;
+    }
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     ret = BN_GF2m_poly2arr(p, arr, max);
     if (!ret || ret > max) {
         BNerr(BN_F_BN_GF2M_MOD_SQRT, BN_R_INVALID_LENGTH);
@@ -1092,8 +1128,16 @@ int BN_GF2m_mod_solve_quad(BIGNUM *r, const BIGNUM *a, const BIGNUM *p,
     int *arr = NULL;
     bn_check_top(a);
     bn_check_top(p);
+<<<<<<< HEAD
     if ((arr = OPENSSL_malloc(sizeof(*arr) * max)) == NULL)
+=======
+
+    arr = OPENSSL_malloc(sizeof(*arr) * max);
+    if (arr == NULL) {
+        ERR_raise(ERR_LIB_BN, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
+    }
     ret = BN_GF2m_poly2arr(p, arr, max);
     if (!ret || ret > max) {
         BNerr(BN_F_BN_GF2M_MOD_SOLVE_QUAD, BN_R_INVALID_LENGTH);

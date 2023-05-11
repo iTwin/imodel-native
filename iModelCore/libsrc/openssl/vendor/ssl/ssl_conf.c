@@ -391,7 +391,14 @@ static int cmd_Options(SSL_CONF_CTX *cctx, const char *value)
         SSL_FLAG_TBL("AllowNoDHEKEX", SSL_OP_ALLOW_NO_DHE_KEX),
         SSL_FLAG_TBL("PrioritizeChaCha", SSL_OP_PRIORITIZE_CHACHA),
         SSL_FLAG_TBL("MiddleboxCompat", SSL_OP_ENABLE_MIDDLEBOX_COMPAT),
+<<<<<<< HEAD
         SSL_FLAG_TBL_INV("AntiReplay", SSL_OP_NO_ANTI_REPLAY)
+=======
+        SSL_FLAG_TBL_INV("AntiReplay", SSL_OP_NO_ANTI_REPLAY),
+        SSL_FLAG_TBL_INV("ExtendedMasterSecret", SSL_OP_NO_EXTENDED_MASTER_SECRET),
+        SSL_FLAG_TBL_INV("CANames", SSL_OP_DISABLE_TLSEXT_CA_NAMES),
+        SSL_FLAG_TBL("KTLS", SSL_OP_ENABLE_KTLS)
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     };
     if (value == NULL)
         return -3;
@@ -471,9 +478,17 @@ static int do_store(SSL_CONF_CTX *cctx,
     X509_STORE **st;
     if (cctx->ctx)
         cert = cctx->ctx->cert;
+<<<<<<< HEAD
     else if (cctx->ssl)
         cert = cctx->ssl->cert;
     else
+=======
+        ctx = cctx->ctx;
+    } else if (cctx->ssl != NULL) {
+        cert = cctx->ssl->cert;
+        ctx = cctx->ssl->ctx;
+    } else {
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 1;
     st = verify_store ? &cert->verify_store : &cert->chain_store;
     if (*st == NULL) {
@@ -636,6 +651,10 @@ static const ssl_conf_cmd_tbl ssl_conf_cmds[] = {
     SSL_CONF_CMD_SWITCH("no_middlebox", 0),
     SSL_CONF_CMD_SWITCH("anti_replay", SSL_CONF_FLAG_SERVER),
     SSL_CONF_CMD_SWITCH("no_anti_replay", SSL_CONF_FLAG_SERVER),
+<<<<<<< HEAD
+=======
+    SSL_CONF_CMD_SWITCH("no_etm", 0),
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     SSL_CONF_CMD_STRING(SignatureAlgorithms, "sigalgs", 0),
     SSL_CONF_CMD_STRING(ClientSignatureAlgorithms, "client_sigalgs", 0),
     SSL_CONF_CMD_STRING(Curves, "curves", 0),
@@ -718,6 +737,11 @@ static const ssl_switch_tbl ssl_cmd_switches[] = {
     {SSL_OP_NO_ANTI_REPLAY, SSL_TFLAG_INV},
     /* no_anti_replay */
     {SSL_OP_NO_ANTI_REPLAY, 0},
+<<<<<<< HEAD
+=======
+    /* no Encrypt-then-Mac */
+    {SSL_OP_NO_ENCRYPT_THEN_MAC, 0},
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 };
 
 static int ssl_conf_cmd_skip_prefix(SSL_CONF_CTX *cctx, const char **pcmd)

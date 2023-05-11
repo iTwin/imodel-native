@@ -58,7 +58,11 @@ static int ssl_new(BIO *bi)
     BIO_SSL *bs = OPENSSL_zalloc(sizeof(*bs));
 
     if (bs == NULL) {
+<<<<<<< HEAD
         BIOerr(BIO_F_SSL_NEW, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_BIO, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
     BIO_set_init(bi, 0);

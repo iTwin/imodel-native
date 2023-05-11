@@ -61,7 +61,11 @@ int cms_DigestedData_do_final(CMS_ContentInfo *cms, BIO *chain, int verify)
     CMS_DigestedData *dd;
 
     if (mctx == NULL) {
+<<<<<<< HEAD
         CMSerr(CMS_F_CMS_DIGESTEDDATA_DO_FINAL, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_CMS, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
 

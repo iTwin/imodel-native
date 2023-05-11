@@ -593,12 +593,20 @@ const EVP_MD *ssl_md(int idx)
 
 const EVP_MD *ssl_handshake_md(SSL *s)
 {
+<<<<<<< HEAD
     return ssl_md(ssl_get_algorithm2(s));
+=======
+    return ssl_md(s->ctx, ssl_get_algorithm2(s));
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 }
 
 const EVP_MD *ssl_prf_md(SSL *s)
 {
+<<<<<<< HEAD
     return ssl_md(ssl_get_algorithm2(s) >> TLS1_PRF_DGST_SHIFT);
+=======
+    return ssl_md(s->ctx, ssl_get_algorithm2(s) >> TLS1_PRF_DGST_SHIFT);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 }
 
 #define ITEM_SEP(a) \
@@ -781,12 +789,22 @@ static void ssl_cipher_apply_rule(uint32_t cipher_id, uint32_t alg_mkey,
     const SSL_CIPHER *cp;
     int reverse = 0;
 
+<<<<<<< HEAD
 #ifdef CIPHER_DEBUG
     fprintf(stderr,
             "Applying rule %d with %08x/%08x/%08x/%08x/%08x %08x (%d)\n",
             rule, alg_mkey, alg_auth, alg_enc, alg_mac, min_tls,
             algo_strength, strength_bits);
 #endif
+=======
+    OSSL_TRACE_BEGIN(TLS_CIPHER){
+        BIO_printf(trc_out,
+                   "Applying rule %d with %08x/%08x/%08x/%08x/%08x %08x (%d)\n",
+                   rule, (unsigned int)alg_mkey, (unsigned int)alg_auth,
+                   (unsigned int)alg_enc, (unsigned int)alg_mac, min_tls,
+                   (unsigned int)algo_strength, (int)strength_bits);
+    }
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 
     if (rule == CIPHER_DEL || rule == CIPHER_BUMP)
         reverse = 1;            /* needed to maintain sorting between currently
@@ -928,7 +946,11 @@ static int ssl_cipher_strength_sort(CIPHER_ORDER **head_p,
 
     number_uses = OPENSSL_zalloc(sizeof(int) * (max_strength_bits + 1));
     if (number_uses == NULL) {
+<<<<<<< HEAD
         SSLerr(SSL_F_SSL_CIPHER_STRENGTH_SORT, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_SSL, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
 
@@ -1392,7 +1414,11 @@ int SSL_set_ciphersuites(SSL *s, const char *str)
             s->cipher_list = sk_SSL_CIPHER_dup(cipher_list);
     }
     if (ret && s->cipher_list != NULL)
+<<<<<<< HEAD
         return update_cipher_list(&s->cipher_list, &s->cipher_list_by_id,
+=======
+        return update_cipher_list(s->ctx, &s->cipher_list, &s->cipher_list_by_id,
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                                   s->tls13_ciphersuites);
 
     return ret;
@@ -1441,7 +1467,11 @@ STACK_OF(SSL_CIPHER) *ssl_create_cipher_list(const SSL_METHOD *ssl_method,
 
     co_list = OPENSSL_malloc(sizeof(*co_list) * num_of_ciphers);
     if (co_list == NULL) {
+<<<<<<< HEAD
         SSLerr(SSL_F_SSL_CREATE_CIPHER_LIST, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_SSL, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return NULL;          /* Failure */
     }
 
@@ -1555,7 +1585,11 @@ STACK_OF(SSL_CIPHER) *ssl_create_cipher_list(const SSL_METHOD *ssl_method,
     ca_list = OPENSSL_malloc(sizeof(*ca_list) * num_of_alias_max);
     if (ca_list == NULL) {
         OPENSSL_free(co_list);
+<<<<<<< HEAD
         SSLerr(SSL_F_SSL_CREATE_CIPHER_LIST, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_SSL, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return NULL;          /* Failure */
     }
     ssl_cipher_collect_aliases(ca_list, num_of_group_aliases,
@@ -1569,7 +1603,11 @@ STACK_OF(SSL_CIPHER) *ssl_create_cipher_list(const SSL_METHOD *ssl_method,
     ok = 1;
     rule_p = rule_str;
     if (strncmp(rule_str, "DEFAULT", 7) == 0) {
+<<<<<<< HEAD
         ok = ssl_cipher_process_rulestr(SSL_DEFAULT_CIPHER_LIST,
+=======
+        ok = ssl_cipher_process_rulestr(OSSL_default_cipher_list(),
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
                                         &head, &tail, ca_list, c);
         rule_p += 7;
         if (*rule_p == ':')
@@ -1643,7 +1681,11 @@ char *SSL_CIPHER_description(const SSL_CIPHER *cipher, char *buf, int len)
     if (buf == NULL) {
         len = 128;
         if ((buf = OPENSSL_malloc(len)) == NULL) {
+<<<<<<< HEAD
             SSLerr(SSL_F_SSL_CIPHER_DESCRIPTION, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_SSL, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             return NULL;
         }
     } else if (len < 128) {
@@ -1981,8 +2023,12 @@ int SSL_COMP_add_compression_method(int id, COMP_METHOD *cm)
     CRYPTO_mem_ctrl(CRYPTO_MEM_CHECK_DISABLE);
     comp = OPENSSL_malloc(sizeof(*comp));
     if (comp == NULL) {
+<<<<<<< HEAD
         CRYPTO_mem_ctrl(CRYPTO_MEM_CHECK_ENABLE);
         SSLerr(SSL_F_SSL_COMP_ADD_COMPRESSION_METHOD, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_SSL, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 1;
     }
 
@@ -1998,8 +2044,12 @@ int SSL_COMP_add_compression_method(int id, COMP_METHOD *cm)
     }
     if (ssl_comp_methods == NULL || !sk_SSL_COMP_push(ssl_comp_methods, comp)) {
         OPENSSL_free(comp);
+<<<<<<< HEAD
         CRYPTO_mem_ctrl(CRYPTO_MEM_CHECK_ENABLE);
         SSLerr(SSL_F_SSL_COMP_ADD_COMPRESSION_METHOD, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_SSL, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 1;
     }
     CRYPTO_mem_ctrl(CRYPTO_MEM_CHECK_ENABLE);

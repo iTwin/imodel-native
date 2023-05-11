@@ -30,7 +30,11 @@ signed char *bn_compute_wNAF(const BIGNUM *scalar, int w, size_t *ret_len)
     if (BN_is_zero(scalar)) {
         r = OPENSSL_malloc(1);
         if (r == NULL) {
+<<<<<<< HEAD
             BNerr(BN_F_BN_COMPUTE_WNAF, ERR_R_MALLOC_FAILURE);
+=======
+            ERR_raise(ERR_LIB_BN, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
             goto err;
         }
         r[0] = 0;
@@ -63,7 +67,11 @@ signed char *bn_compute_wNAF(const BIGNUM *scalar, int w, size_t *ret_len)
                                   * BN_num_bits(scalar) + 1)
                                   */
     if (r == NULL) {
+<<<<<<< HEAD
         BNerr(BN_F_BN_COMPUTE_WNAF, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_BN, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         goto err;
     }
     window_val = scalar->d[0] & mask;
@@ -188,7 +196,11 @@ void bn_set_static_words(BIGNUM *a, const BN_ULONG *words, int size)
 int bn_set_words(BIGNUM *a, const BN_ULONG *words, int num_words)
 {
     if (bn_wexpand(a, num_words) == NULL) {
+<<<<<<< HEAD
         BNerr(BN_F_BN_SET_WORDS, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_BN, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
 

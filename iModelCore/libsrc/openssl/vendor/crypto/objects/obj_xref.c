@@ -103,8 +103,14 @@ int OBJ_add_sigid(int signid, int dig_id, int pkey_id)
         sigx_app = sk_nid_triple_new(sigx_cmp);
     if (sigx_app == NULL)
         return 0;
+<<<<<<< HEAD
     if ((ntr = OPENSSL_malloc(sizeof(*ntr))) == NULL) {
         OBJerr(OBJ_F_OBJ_ADD_SIGID, ERR_R_MALLOC_FAILURE);
+=======
+
+    if ((ntr = OPENSSL_malloc(sizeof(*ntr))) == NULL) {
+        ERR_raise(ERR_LIB_OBJ, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
     ntr->sign_id = signid;

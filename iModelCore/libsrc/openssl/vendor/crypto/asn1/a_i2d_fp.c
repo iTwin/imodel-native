@@ -43,7 +43,11 @@ int ASN1_i2d_bio(i2d_of_void *i2d, BIO *out, unsigned char *x)
 
     b = OPENSSL_malloc(n);
     if (b == NULL) {
+<<<<<<< HEAD
         ASN1err(ASN1_F_ASN1_I2D_BIO, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
 
@@ -91,7 +95,11 @@ int ASN1_item_i2d_bio(const ASN1_ITEM *it, BIO *out, void *x)
 
     n = ASN1_item_i2d(x, &b, it);
     if (b == NULL) {
+<<<<<<< HEAD
         ASN1err(ASN1_F_ASN1_ITEM_I2D_BIO, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
 

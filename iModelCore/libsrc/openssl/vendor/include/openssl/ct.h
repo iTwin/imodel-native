@@ -67,6 +67,16 @@ DEFINE_STACK_OF(CTLOG)
  * The caller is responsible for calling CT_POLICY_EVAL_CTX_free when finished
  * with the CT_POLICY_EVAL_CTX.
  */
+<<<<<<< HEAD
+=======
+CT_POLICY_EVAL_CTX *CT_POLICY_EVAL_CTX_new_ex(OSSL_LIB_CTX *libctx,
+                                              const char *propq);
+                                                       
+/*
+ * The same as CT_POLICY_EVAL_CTX_new_ex() but the default library
+ * context and property query string is used.
+ */
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 CT_POLICY_EVAL_CTX *CT_POLICY_EVAL_CTX_new(void);
 
 /* Deletes a policy evaluation context and anything it owns. */

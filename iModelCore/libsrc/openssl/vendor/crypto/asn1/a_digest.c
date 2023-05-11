@@ -32,7 +32,11 @@ int ASN1_digest(i2d_of_void *i2d, const EVP_MD *type, char *data,
         return 0;
     }
     if ((str = OPENSSL_malloc(inl)) == NULL) {
+<<<<<<< HEAD
         ASN1err(ASN1_F_ASN1_DIGEST, ERR_R_MALLOC_FAILURE);
+=======
+        ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
         return 0;
     }
     p = str;

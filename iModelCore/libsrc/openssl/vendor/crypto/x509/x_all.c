@@ -41,6 +41,14 @@ int NETSCAPE_SPKI_verify(NETSCAPE_SPKI *a, EVP_PKEY *r)
 
 int X509_sign(X509 *x, EVP_PKEY *pkey, const EVP_MD *md)
 {
+<<<<<<< HEAD
+=======
+    if (x == NULL) {
+        ERR_raise(ERR_LIB_X509, ERR_R_PASSED_NULL_PARAMETER);
+        return 0;
+    }
+
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     /*
      * Setting the modified flag before signing it. This makes the cached
      * encoding to be ignored, so even if the certificate fields have changed,
@@ -56,6 +64,13 @@ int X509_sign(X509 *x, EVP_PKEY *pkey, const EVP_MD *md)
 
 int X509_sign_ctx(X509 *x, EVP_MD_CTX *ctx)
 {
+<<<<<<< HEAD
+=======
+    if (x == NULL) {
+        ERR_raise(ERR_LIB_X509, ERR_R_PASSED_NULL_PARAMETER);
+        return 0;
+    }
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
     x->cert_info.enc.modified = 1;
     return ASN1_item_sign_ctx(ASN1_ITEM_rptr(X509_CINF),
                               &x->cert_info.signature,
@@ -195,7 +210,19 @@ int i2d_X509_REQ_fp(FILE *fp, X509_REQ *req)
 
 X509_REQ *d2i_X509_REQ_bio(BIO *bp, X509_REQ **req)
 {
+<<<<<<< HEAD
     return ASN1_item_d2i_bio(ASN1_ITEM_rptr(X509_REQ), bp, req);
+=======
+    OSSL_LIB_CTX *libctx = NULL;
+    const char *propq = NULL;
+
+    if (req != NULL && *req != NULL) {
+        libctx = (*req)->libctx;
+        propq = (*req)->propq;
+    }
+
+    return ASN1_item_d2i_bio_ex(ASN1_ITEM_rptr(X509_REQ), bp, req, libctx, propq);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 }
 
 int i2d_X509_REQ_bio(BIO *bp, X509_REQ *req)
@@ -394,15 +421,25 @@ int X509_CRL_digest(const X509_CRL *data, const EVP_MD *type,
         memcpy(md, data->sha1_hash, sizeof(data->sha1_hash));
         return 1;
     }
+<<<<<<< HEAD
     return (ASN1_item_digest
             (ASN1_ITEM_rptr(X509_CRL), type, (char *)data, md, len));
+=======
+    return ossl_asn1_item_digest_ex(ASN1_ITEM_rptr(X509_CRL), type, (char *)data,
+                                    md, len, data->libctx, data->propq);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 }
 
 int X509_REQ_digest(const X509_REQ *data, const EVP_MD *type,
                     unsigned char *md, unsigned int *len)
 {
+<<<<<<< HEAD
     return (ASN1_item_digest
             (ASN1_ITEM_rptr(X509_REQ), type, (char *)data, md, len));
+=======
+    return ossl_asn1_item_digest_ex(ASN1_ITEM_rptr(X509_REQ), type, (char *)data,
+                                    md, len, data->libctx, data->propq);
+>>>>>>> 56ac539c (copy over openssl 3.1 (#276))
 }
 
 int X509_NAME_digest(const X509_NAME *data, const EVP_MD *type,
