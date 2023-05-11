@@ -31,11 +31,11 @@
         </Bindings>
     </Part>
 
-    <Part Name="__Library" BentleyBuildMakeFile="BeIcu4cLibrary.mke" ApiNumber="B02">
+    <Part Name="__Library" BentleyBuildMakeFile="BeIcu4cLibrary.mke">
         <Bindings>
-            <Assemblies IfNotPresent="Continue">Delivery/$(shlibprefix)BeIcu4c$(ApiNumber)$(shlibext)</Assemblies>
-            <Libs>Delivery/$(libprefix)BeIcu4c$(libext)</Libs>
-            <Libs IfNotPresent="Continue">Delivery/$(stlibprefix)BeIcu4c$(stlibdebugext)</Libs>
+            <Assemblies IfNotPresent="Continue">Delivery/$(shlibprefix)iTwinIcu4c$(shlibext)</Assemblies>
+            <Libs>Delivery/$(libprefix)iTwinIcu4c$(libext)</Libs>
+            <Libs IfNotPresent="Continue">Delivery/$(stlibprefix)iTwinIcu4c$(stlibdebugext)</Libs>
         </Bindings>
     </Part>
 

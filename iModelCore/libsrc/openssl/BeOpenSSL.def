@@ -2,7 +2,7 @@
 ; Exports for the BeOpenSSL library (Windows-only)
 ;
 
-LIBRARY BeOpenSSLB02
+LIBRARY iTwinOpenSSL
 
 EXPORTS
     _shadow_DES_check_key

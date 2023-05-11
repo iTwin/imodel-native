@@ -29,9 +29,9 @@ BUILD_NO_STACK_CHECK = 1   # Don't want to modify third party code, but hopefull
 #----------------------------------------------------------
 %include mdl.mki
 
-appName = BeOpenSSL
+appName = iTwinOpenSSL
 vendorSrc = $(_MakeFilePath)vendor/
-o = $(OutputRootDir)build/BeOpenSSL/
+o = $(OutputRootDir)build/iTwinOpenSSL/
 
 always:
     !~@mkdir $(o)
@@ -1547,7 +1547,7 @@ objs =% $(MultiCompileObjectList)
 #----------------------------------------------------------------------------------------
 #   Create the library
 #----------------------------------------------------------------------------------------
-DLM_NAME                    = BeOpenSSL
+DLM_NAME                    = iTwinOpenSSL
 DLM_OBJECT_FILES            = $(objs)
 DLM_EXPORT_OBJS             = $(DLM_OBJECT_FILES)
 DLM_OBJECT_DEST             = $(o)
