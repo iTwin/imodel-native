@@ -15,6 +15,7 @@
     #include <Visualization/Visualization.h>
 #endif
 #include <DgnPlatform/EntityIdsChangeGroup.h>
+#include <ECObjects/ECSchemaConverter.h>
 #include <chrono>
 #include <tuple>
 
@@ -918,6 +919,50 @@ DbResult JsInterop::ImportSchemas(DgnDbR dgndb, bvector<Utf8String> const& schem
     SchemaStatus status = dgndb.ImportSchemas(schemas, opts.m_schemaLockHeld); // NOTE: this calls DgnDb::ImportSchemas which has additional processing over SchemaManager::ImportSchemas
     if (status != SchemaStatus::Success)
         return DgnDb::SchemaStatusToDbResult(status, true);
+
+    return dgndb.SaveChanges();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult JsInterop::ConvertEC2Schemas(DgnDbR dgndb, bvector<Utf8String> const& schemaXmlStrings, SchemaSourceType sourceType, const SchemaImportOptions& opts)
+    {
+    if (0 == schemaXmlStrings.size())
+        return BE_SQLITE_ERROR;
+
+    ECSchemaReadContextPtr schemaContext = opts.m_customSchemaContext;
+    if (schemaContext.IsNull())
+        schemaContext = ECSchemaReadContext::CreateContext(false /*=acceptLegacyImperfectLatestCompatibleMatch*/, true /*=includeFilesWithNoVerExt*/);
+
+    JsInterop::AddFallbackSchemaLocaters(dgndb, schemaContext);
+    bvector<ECSchemaPtr> schemas;
+
+    for (Utf8String schemaXmlString : schemaXmlStrings)
+        {
+        ECSchemaPtr schema;
+        SchemaReadStatus schemaStatus = SchemaReadStatus::Success;
+        if (sourceType == SchemaSourceType::XmlString)
+            schemaStatus = ECSchema::ReadFromXmlString(schema, schemaXmlString.c_str(), *schemaContext);
+
+        if (SchemaReadStatus::DuplicateSchema == schemaStatus)
+            continue;
+
+        if (SchemaReadStatus::Success != schemaStatus)
+            return BE_SQLITE_ERROR;
+
+        schemas.push_back(schema);
+        }
+
+    if (0 == schemas.size())
+        return BE_SQLITE_ERROR;
+
+    for (ECSchemaPtr schema : schemas)
+        {
+        bool status = ECSchemaConverter::Convert(*schema, *schemaContext);
+        if (!status)
+            return DbResult::BE_SQLITE_ERROR;
+        }
 
     return dgndb.SaveChanges();
     }

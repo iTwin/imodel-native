@@ -6,7 +6,6 @@
 #include "IModelJsNative.h"
 #include <ECObjects/ECSchema.h>
 #include <ECObjects/ECName.h>
-#include <ECObjects/ECSchemaConverter.h>
 #include "ECSchemaXmlContextUtils.h"
 #include <Bentley/Desktop/FileSystem.h>
 #include <Bentley/PerformanceLogger.h>
@@ -1075,19 +1074,6 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         return toJsString(Env(), GetDgnDb().GetTempFileBaseName());
     }
 
-    Napi::Value ConvertECSchema(NapiInfoCR info)
-        {
-        RequireDbIsOpen(info);
-        REQUIRE_ARGUMENT_STRING(0, schemaXml);
-
-        ECN::ECSchemaPtr schema;
-        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-        ECN::SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml.c_str(), *context);
-        if (!schema.IsValid())
-            BeNapi::ThrowJsException(Env(), "The schema is not valid");
-        return Napi::Boolean::New(Env(), ECSchemaConverter::Convert(*schema.get(), *context.get()));
-        }
-
     Napi::Value SetGeometricModelTrackingEnabled(NapiInfoCR info)
         {
         RequireDbIsOpen(info);
@@ -1802,6 +1788,27 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         return Napi::Number::New(Env(), (int)result);
         }
 
+    Napi::Value ConvertEC2Schemas(NapiInfoCR info)
+        {
+        RequireDbIsOpen(info);
+        REQUIRE_ARGUMENT_STRING_ARRAY(0, schemaXmlStrings);
+        REQUIRE_ARGUMENT_ANY_OBJ(1, jsOpts);
+
+        JsInterop::SchemaImportOptions options;
+        options.m_schemaLockHeld = jsOpts.Get(JsInterop::json_schemaLockHeld()).ToBoolean();
+        const auto& maybeEcSchemaContextVal = jsOpts.Get(JsInterop::json_ecSchemaXmlContext());
+        if (!maybeEcSchemaContextVal.IsUndefined())
+            {
+            if (!NativeECSchemaXmlContext::HasInstance(maybeEcSchemaContextVal))
+                THROW_JS_TYPE_EXCEPTION("if SchemaImportOptions.ecSchemaXmlContext is defined, it must be an object of type NativeECSchemaXmlContext")
+            options.m_customSchemaContext = NativeECSchemaXmlContext::Unwrap(maybeEcSchemaContextVal.As<Napi::Object>())->GetContext();
+            }
+
+        DbResult result = JsInterop::ConvertEC2Schemas(GetDgnDb(), schemaXmlStrings, SchemaSourceType::XmlString, options);
+
+        return Napi::Number::New(Env(), (int)result);
+        }
+
     Napi::Value ImportXmlSchemas(NapiInfoCR info)
         {
         RequireDbIsOpen(info);
@@ -2310,7 +2317,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
             InstanceMethod("concurrentQueryExecute", &NativeDgnDb::ConcurrentQueryExecute),
             InstanceMethod("concurrentQueryResetConfig", &NativeDgnDb::ConcurrentQueryResetConfig),
             InstanceMethod("concurrentQueryShutdown", &NativeDgnDb::ConcurrentQueryShutdown),
-            InstanceMethod("convertECSchema", &NativeDgnDb::ConvertECSchema),
+            InstanceMethod("convertEC2Schemas", &NativeDgnDb::ConvertEC2Schemas),
             InstanceMethod("createBRepGeometry", &NativeDgnDb::CreateBRepGeometry),
             InstanceMethod("createChangeCache", &NativeDgnDb::CreateChangeCache),
             InstanceMethod("createClassViewsInDb", &NativeDgnDb::CreateClassViewsInDb),

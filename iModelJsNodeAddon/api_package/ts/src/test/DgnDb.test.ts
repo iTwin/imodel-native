@@ -511,7 +511,7 @@ describe("basic tests", () => {
     });
   });
 
-  it("testECSchemaConvert EC2 schema", async () => {
+  it("testConvertEC2Schemas", async () => {
     const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
       <ECSchema schemaName="TestSchema" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
         <ECClass typeName="TestEntityClass" isDomainClass="true">
@@ -533,6 +533,9 @@ describe("basic tests", () => {
       </ECSchema>`;
 
     assert.isTrue(dgndb.isOpen());
-    assert.isTrue(dgndb.convertECSchema(schemaXml));
+    const rc = dgndb.convertEC2Schemas([schemaXml], { schemaLockHeld: false });
+    assert.equal(rc, DbResult.BE_SQLITE_OK);
+    dgndb.saveChanges();
+    dgndb.closeIModel();
   });
 });
