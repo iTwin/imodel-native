@@ -6,6 +6,7 @@
 .align	16
 gcm_gmult_4bit:
 .cfi_startproc	
+.byte	243,15,30,250
 	pushq	%rbx
 .cfi_adjust_cfa_offset	8
 .cfi_offset	%rbx,-16
@@ -117,6 +118,7 @@ gcm_gmult_4bit:
 .align	16
 gcm_ghash_4bit:
 .cfi_startproc	
+.byte	243,15,30,250
 	pushq	%rbx
 .cfi_adjust_cfa_offset	8
 .cfi_offset	%rbx,-16
@@ -864,6 +866,7 @@ gcm_init_clmul:
 .align	16
 gcm_gmult_clmul:
 .cfi_startproc	
+.byte	243,15,30,250
 .L_gmult_clmul:
 	movdqu	(%rdi),%xmm0
 	movdqa	.Lbswap_mask(%rip),%xmm5
@@ -917,6 +920,7 @@ gcm_gmult_clmul:
 .align	32
 gcm_ghash_clmul:
 .cfi_startproc	
+.byte	243,15,30,250
 .L_ghash_clmul:
 	movdqa	.Lbswap_mask(%rip),%xmm10
 
@@ -1310,6 +1314,7 @@ gcm_init_avx:
 .align	32
 gcm_gmult_avx:
 .cfi_startproc	
+.byte	243,15,30,250
 	jmp	.L_gmult_clmul
 .cfi_endproc	
 .size	gcm_gmult_avx,.-gcm_gmult_avx
@@ -1318,6 +1323,7 @@ gcm_gmult_avx:
 .align	32
 gcm_ghash_avx:
 .cfi_startproc	
+.byte	243,15,30,250
 	jmp	.L_ghash_clmul
 .cfi_endproc	
 .size	gcm_ghash_avx,.-gcm_ghash_avx
