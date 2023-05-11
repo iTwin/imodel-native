@@ -20,16 +20,14 @@ struct CalculatedPropertiesSpecificationTests : PresentationRulesTests
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CalculatedPropertiesSpecificationTests, CopyConstructor)
     {
-    auto source = new CalculatedPropertiesSpecification("a", 1, "1");
-    source->SetEditor(new PropertyEditorSpecification());
-    source->SetRenderer(new CustomRendererSpecification());
-    source->SetCategoryId(PropertyCategoryIdentifier::CreateForId("a"));
-    Utf8String sourceHash = source->GetHash();
+    auto source = CalculatedPropertiesSpecification("a", 1, "1");
+    source.SetEditor(new PropertyEditorSpecification());
+    source.SetRenderer(new CustomRendererSpecification());
+    source.SetCategoryId(PropertyCategoryIdentifier::CreateForId("a"));
+    Utf8String sourceHash = source.GetHash();
 
     // copy
-    CalculatedPropertiesSpecification target(*source);
-    // delete source
-    DELETE_AND_CLEAR(source);
+    CalculatedPropertiesSpecification target(source);
     // calculate target hash and confirm it matches source
     EXPECT_EQ(sourceHash, target.GetHash());
     }
@@ -39,16 +37,14 @@ TEST_F(CalculatedPropertiesSpecificationTests, CopyConstructor)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CalculatedPropertiesSpecificationTests, MoveConstructor)
     {
-    auto source = new CalculatedPropertiesSpecification("a", 1, "1");
-    source->SetEditor(new PropertyEditorSpecification());
-    source->SetRenderer(new CustomRendererSpecification());
-    source->SetCategoryId(PropertyCategoryIdentifier::CreateForId("a"));
-    Utf8String sourceHash = source->GetHash();
+    auto source = CalculatedPropertiesSpecification("a", 1, "1");
+    source.SetEditor(new PropertyEditorSpecification());
+    source.SetRenderer(new CustomRendererSpecification());
+    source.SetCategoryId(PropertyCategoryIdentifier::CreateForId("a"));
+    Utf8String sourceHash = source.GetHash();
 
     // copy
-    CalculatedPropertiesSpecification target(std::move(*source));
-    // delete source
-    DELETE_AND_CLEAR(source);
+    CalculatedPropertiesSpecification target(std::move(source));
     // calculate target hash and confirm it matches source
     EXPECT_EQ(sourceHash, target.GetHash());
     }

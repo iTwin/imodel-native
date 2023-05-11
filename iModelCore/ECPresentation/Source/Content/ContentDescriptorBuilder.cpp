@@ -193,7 +193,7 @@ public:
         RelationshipMeaning meaning, bool isInNestedContent, PropertySpecificationCP overrides, PropertyCategorySpecificationsList const* scopePropertyCategories)
         {
         // category overrides in presentation rules take highest precedence
-        std::unique_ptr<CategoryOverrideInfo const> categoryOverride = m_context.GetPropertyInfos().GetCategoryOverride(ecProperty, actualClass, overrides, scopePropertyCategories);
+        CategoryOverrideInfo const* categoryOverride = m_context.GetPropertyInfos().GetCategoryOverride(ecProperty, actualClass, overrides, scopePropertyCategories);
         if (categoryOverride)
             return PrepareCategoryForReturn(*categoryOverride);
 
@@ -225,7 +225,7 @@ public:
     std::shared_ptr<ContentDescriptor::Category> GetCalculatedFieldCategory(ECClassCP ecClass, CalculatedPropertiesSpecificationCR spec, RelatedClassPathCR pathFromSelectToPropertyClass,
         RelationshipMeaning meaning, PropertyCategorySpecificationsList const* scopeCategorySpecs = nullptr)
         {
-        std::shared_ptr<CategoryOverrideInfo const> categoryOverride = m_context.GetPropertyInfos().GetCategoryOverride(ecClass, spec, scopeCategorySpecs);
+        CategoryOverrideInfo const* categoryOverride = m_context.GetPropertyInfos().GetCategoryOverride(ecClass, spec, scopeCategorySpecs);
         if (categoryOverride)
             return PrepareCategoryForReturn(*categoryOverride);
 

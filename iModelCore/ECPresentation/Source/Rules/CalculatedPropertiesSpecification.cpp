@@ -37,6 +37,15 @@ CalculatedPropertiesSpecification::CalculatedPropertiesSpecification(CalculatedP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+CalculatedPropertiesSpecification::~CalculatedPropertiesSpecification()
+    {
+    DELETE_AND_CLEAR(m_renderer);
+    DELETE_AND_CLEAR(m_editor);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 Utf8CP CalculatedPropertiesSpecification::_GetXmlElementName() const {return CALCULATED_PROPERTIES_SPECIFICATION_XML_CHILD_NAME;}
 
 /*---------------------------------------------------------------------------------**//**

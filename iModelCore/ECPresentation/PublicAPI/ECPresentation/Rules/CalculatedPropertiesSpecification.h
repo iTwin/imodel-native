@@ -46,6 +46,7 @@ public:
         {}
     ECPRESENTATION_EXPORT CalculatedPropertiesSpecification(CalculatedPropertiesSpecification const& other);
     ECPRESENTATION_EXPORT CalculatedPropertiesSpecification(CalculatedPropertiesSpecification&& other);
+    ECPRESENTATION_EXPORT ~CalculatedPropertiesSpecification();
 
     //! Get label expression.
     Utf8StringCR GetLabel() const {return m_label;}

@@ -144,7 +144,7 @@ public:
     PropertyCategorySpecificationsList const& GetAvailableCategories() const { return m_availableCategories; }
     void SetClassOverrides(ECClassCP ecClass, Overrides ovr) {m_defaultClassPropertyOverrides[ecClass] = ovr;}
     void SetPropertyOverrides(Utf8StringCR ecPropertyName, Overrides ovr) {m_propertyOverrides[ecPropertyName] = ovr;}
-    void SetAsAvailableCategory(PropertyCategorySpecificationP spec) {m_availableCategories.push_back(spec);}
+    void SetAsAvailableCategories(PropertyCategorySpecificationsList const& categories) { m_availableCategories = categories; }
     void Merge(ClassPropertyOverridesInfo const&);
 };
 
@@ -153,22 +153,24 @@ public:
 +===============+===============+===============+===============+===============+======*/
 struct PropertyInfoStore
 {
-    struct CategoryIdentifier
+    struct CategoryOverridesCacheKey
     {
     private:
         PropertyCategoryIdentifierType m_type;
         Utf8String m_categoryId;
     public:
-        CategoryIdentifier(PropertyCategoryIdentifier const& identifier) : m_type(identifier.GetType())
+        CategoryOverridesCacheKey(PropertyCategoryIdentifier const& identifier) : m_type(identifier.GetType())
             {
             if (identifier.GetType() == PropertyCategoryIdentifierType::Id)
                 m_categoryId = identifier.AsIdIdentifier()->GetCategoryId();
             else
                 m_categoryId = "";
             }
-        bool operator<(CategoryIdentifier const& other) const
+        bool operator<(CategoryOverridesCacheKey const& other) const
             {
-            return m_type < other.m_type || (m_type == other.m_type && m_categoryId.CompareTo(other.m_categoryId) < 0);
+            NUMERIC_LESS_COMPARE(m_type, other.m_type);
+            STR_LESS_COMPARE(m_categoryId.c_str(), other.m_categoryId.c_str());
+            return false;
             }
     };
 
@@ -176,15 +178,14 @@ private:
     ECSchemaHelper const& m_schemaHelper;
     bmap<ECClassCP, ClassPropertyOverridesInfo> m_perClassPropertyOverrides;
     mutable bmap<ECClassCP, ClassPropertyOverridesInfo> m_aggregatedOverrides; // property overrides, including base class properties
-    mutable bmap<CategoryIdentifier, CategoryOverrideInfo> m_categoryOverridesCache;
+    mutable bmap<CategoryOverridesCacheKey, CategoryOverrideInfo> m_categoryOverridesCache;
 
 private:
     void CollectPropertyOverrides(ECClassCP ecClass, PropertySpecificationCR spec);
     void CollectCategories(ECClassCP ecClass, PropertyCategorySpecificationsList const& categorySpecifications);
     void InitPropertyOverrides(ContentSpecificationCP specification, bvector<ContentModifierCP> const& contentModifiers);
     ClassPropertyOverridesInfo const& GetOverrides(ECClassCR ecClass) const;
-    std::unique_ptr<CategoryOverrideInfo const> GetCategoryOverride(PropertyCategoryIdentifier const&, PropertyCategorySpecificationsList const&) const;
-    std::unique_ptr<CategoryOverrideInfo const> GetCategoryOverrideFromCache(PropertyCategoryIdentifier const& id) const;
+    CategoryOverrideInfo const* GetCategoryOverride(PropertyCategoryIdentifier const&, PropertyCategorySpecificationsList const&) const;
 
 public:
     PropertyInfoStore(ECSchemaHelper const& helper, bvector<ContentModifierCP> const& contentModifiers, ContentSpecificationCP spec);
@@ -192,8 +193,8 @@ public:
     std::shared_ptr<ContentFieldRenderer const> GetPropertyRenderer(ECPropertyCR, ECClassCR, PropertySpecificationCP = nullptr) const;
     std::shared_ptr<ContentFieldEditor const> GetPropertyEditor(ECPropertyCR, ECClassCR, PropertySpecificationCP = nullptr) const;
     Utf8String GetLabelOverride(ECPropertyCR, ECClassCR, PropertySpecificationCP = nullptr) const;
-    std::unique_ptr<CategoryOverrideInfo const> GetCategoryOverride(ECPropertyCR, ECClassCR, PropertySpecificationCP = nullptr, PropertyCategorySpecificationsList const* = nullptr) const;
-    std::unique_ptr<CategoryOverrideInfo const> GetCategoryOverride(ECClassCP, CalculatedPropertiesSpecificationCR, PropertyCategorySpecificationsList const* = nullptr) const;
+    CategoryOverrideInfo const* GetCategoryOverride(ECPropertyCR, ECClassCR, PropertySpecificationCP = nullptr, PropertyCategorySpecificationsList const* = nullptr) const;
+    CategoryOverrideInfo const* GetCategoryOverride(ECClassCP, CalculatedPropertiesSpecificationCR, PropertyCategorySpecificationsList const* = nullptr) const;
     Nullable<bool> GetReadOnlyOverride(ECPropertyCR, ECClassCR, PropertySpecificationCP = nullptr) const;
     Nullable<int32_t> GetPriorityOverride(ECPropertyCR, ECClassCR, PropertySpecificationCP = nullptr) const;
 };

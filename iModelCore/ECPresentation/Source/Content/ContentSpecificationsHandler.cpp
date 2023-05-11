@@ -149,7 +149,10 @@ static ECRelationshipConstraintClassList const* GetClassFromRelationship(ECSchem
     {
     RelationshipPathSpecification const* pathSpec = spec.GetPropertiesSource();
     if (nullptr == pathSpec)
+        {
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_INFO, LOG_ERROR, Utf8PrintfString("Related properties specification do not contain relationship path specification."));
         return nullptr;
+        }
     RelationshipStepSpecification const* relationshipStep = pathSpec->GetSteps().back();
     auto direction = relationshipStep->GetRelationDirection();
     ECRelationshipClassCP relationshipClass = helper.GetECClass(relationshipStep->GetRelationshipClassName().c_str())->GetRelationshipClassCP();
@@ -160,6 +163,8 @@ static ECRelationshipConstraintClassList const* GetClassFromRelationship(ECSchem
         case RequiredRelationDirection_Forward:
             return &relationshipClass->GetTarget().GetConstraintClasses();
         }
+
+    DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_INFO, LOG_ERROR, Utf8PrintfString("Failed to get relationship constraints from relationship step specification: %s. Direction: %s.", relationshipStep->GetRelationshipClassName().c_str(), direction));
     return nullptr;
     }
 
@@ -230,7 +235,7 @@ static ECSchemaHelper::RelationshipPathsResponse FindRelatedPropertyPaths(Conten
                         {
                         stepTargetInstanceFilters.push_back("");
                         stepTargetsPolymorphism.push_back(stackSpec->IsPolymorphic());
-                        }                        
+                        }
                     }
                 stepTargetInstanceFilters.push_back(stackSpec->GetInstanceFilter());
                 stepTargetsPolymorphism.push_back(stackSpec->IsPolymorphic());
@@ -300,11 +305,11 @@ static bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> CreateF
         handledModifiersInPrevIteration = 0;
         for (auto& modifier : modifiers)
             {
-            if (modifier == nullptr || !modifier->ShouldApplyOnNestedContent())
+            if (nullptr == modifier || !modifier->ShouldApplyOnNestedContent())
                 continue;
 
             ECClassCP modifierClass = helper.GetECClass(modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str());
-            if (modifierClass == nullptr)
+            if (nullptr == modifierClass)
                 {
                 DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_INFO, LOG_ERROR, Utf8PrintfString("Content modifier specifies non-existing class: %s.%s.",
                     modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str()));
