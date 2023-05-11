@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2021 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2020-2022 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -124,7 +124,7 @@ static void *evp_rand_from_algorithm(int name_id,
 #endif
 
     if ((rand = evp_rand_new()) == NULL) {
-        ERR_raise(ERR_LIB_EVP, ERR_R_EVP_LIB);
+        ERR_raise(ERR_LIB_EVP, ERR_R_MALLOC_FAILURE);
         return NULL;
     }
     rand->name_id = name_id;
@@ -339,11 +339,9 @@ EVP_RAND_CTX *EVP_RAND_CTX_new(EVP_RAND *rand, EVP_RAND_CTX *parent)
     }
 
     ctx = OPENSSL_zalloc(sizeof(*ctx));
-    if (ctx == NULL)
-        return NULL;
-    if ((ctx->refcnt_lock = CRYPTO_THREAD_lock_new()) == NULL) {
+    if (ctx == NULL || (ctx->refcnt_lock = CRYPTO_THREAD_lock_new()) == NULL) {
         OPENSSL_free(ctx);
-        ERR_raise(ERR_LIB_EVP, ERR_R_CRYPTO_LIB);
+        ERR_raise(ERR_LIB_EVP, ERR_R_MALLOC_FAILURE);
         return NULL;
     }
     if (parent != NULL) {
@@ -359,7 +357,7 @@ EVP_RAND_CTX *EVP_RAND_CTX_new(EVP_RAND *rand, EVP_RAND_CTX *parent)
     if ((ctx->algctx = rand->newctx(ossl_provider_ctx(rand->prov), parent_ctx,
                                     parent_dispatch)) == NULL
             || !EVP_RAND_up_ref(rand)) {
-        ERR_raise(ERR_LIB_EVP, ERR_R_EVP_LIB);
+        ERR_raise(ERR_LIB_EVP, ERR_R_MALLOC_FAILURE);
         rand->freectx(ctx->algctx);
         CRYPTO_THREAD_lock_free(ctx->refcnt_lock);
         OPENSSL_free(ctx);

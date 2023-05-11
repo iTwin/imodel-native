@@ -280,7 +280,6 @@ typedef int (*tls_session_secret_cb_fn)(SSL *s, void *secret, int *secret_len,
 #define SSL_EXT_TLS1_3_CERTIFICATE              0x1000
 #define SSL_EXT_TLS1_3_NEW_SESSION_TICKET       0x2000
 #define SSL_EXT_TLS1_3_CERTIFICATE_REQUEST      0x4000
-#define SSL_EXT_TLS1_3_CERTIFICATE_COMPRESSION  0x8000
 
 /* Typedefs for handling custom extensions */
 
@@ -411,17 +410,6 @@ typedef int (*SSL_async_callback_fn)(SSL *s, void *arg);
      * interoperability with CryptoPro CSP 3.x
      */
 # define SSL_OP_CRYPTOPRO_TLSEXT_BUG                     SSL_OP_BIT(31)
-/*
- * Disable RFC8879 certificate compression
- * SSL_OP_NO_TX_CERTIFICATE_COMPRESSION: don't send compressed certificates,
- *     and ignore the extension when received.
- * SSL_OP_NO_RX_CERTIFICATE_COMPRESSION: don't send the extension, and
- *     subsequently indicating that receiving is not supported
- */
-# define SSL_OP_NO_TX_CERTIFICATE_COMPRESSION            SSL_OP_BIT(32)
-# define SSL_OP_NO_RX_CERTIFICATE_COMPRESSION            SSL_OP_BIT(33)
-    /* Enable KTLS TX zerocopy on Linux */
-# define SSL_OP_ENABLE_KTLS_TX_ZEROCOPY_SENDFILE         SSL_OP_BIT(34)
 
 /*
  * Option "collections."
@@ -957,7 +945,6 @@ uint32_t SSL_get_recv_max_early_data(const SSL *s);
 # include <openssl/tls1.h>      /* This is mostly sslv3 with a few tweaks */
 # include <openssl/dtls1.h>     /* Datagram TLS */
 # include <openssl/srtp.h>      /* Support for the use_srtp extension */
-# include <openssl/quic.h>
 
 #ifdef  __cplusplus
 extern "C" {
@@ -1010,7 +997,6 @@ typedef enum {
     DTLS_ST_CR_HELLO_VERIFY_REQUEST,
     TLS_ST_CR_SRVR_HELLO,
     TLS_ST_CR_CERT,
-    TLS_ST_CR_COMP_CERT,
     TLS_ST_CR_CERT_STATUS,
     TLS_ST_CR_KEY_EXCH,
     TLS_ST_CR_CERT_REQ,
@@ -1020,7 +1006,6 @@ typedef enum {
     TLS_ST_CR_FINISHED,
     TLS_ST_CW_CLNT_HELLO,
     TLS_ST_CW_CERT,
-    TLS_ST_CW_COMP_CERT,
     TLS_ST_CW_KEY_EXCH,
     TLS_ST_CW_CERT_VRFY,
     TLS_ST_CW_CHANGE,
@@ -1031,12 +1016,10 @@ typedef enum {
     DTLS_ST_SW_HELLO_VERIFY_REQUEST,
     TLS_ST_SW_SRVR_HELLO,
     TLS_ST_SW_CERT,
-    TLS_ST_SW_COMP_CERT,
     TLS_ST_SW_KEY_EXCH,
     TLS_ST_SW_CERT_REQ,
     TLS_ST_SW_SRVR_DONE,
     TLS_ST_SR_CERT,
-    TLS_ST_SR_COMP_CERT,
     TLS_ST_SR_KEY_EXCH,
     TLS_ST_SR_CERT_VRFY,
     TLS_ST_SR_NEXT_PROTO,
@@ -1328,7 +1311,6 @@ DECLARE_PEM_rw(SSL_SESSION, SSL_SESSION)
 # define SSL_CTRL_GET_SIGNATURE_NID              132
 # define SSL_CTRL_GET_TMP_KEY                    133
 # define SSL_CTRL_GET_NEGOTIATED_GROUP           134
-# define SSL_CTRL_GET_IANA_GROUPS                135
 # define SSL_CTRL_SET_RETRY_VERIFY               136
 # define SSL_CTRL_GET_VERIFY_CERT_STORE          137
 # define SSL_CTRL_GET_CHAIN_CERT_STORE           138
@@ -1434,8 +1416,6 @@ DECLARE_PEM_rw(SSL_SESSION, SSL_SESSION)
 
 # define SSL_get1_groups(s, glist) \
         SSL_ctrl(s,SSL_CTRL_GET_GROUPS,0,(int*)(glist))
-# define SSL_get0_iana_groups(s, plst) \
-        SSL_ctrl(s,SSL_CTRL_GET_IANA_GROUPS,0,(uint16_t **)(plst))
 # define SSL_CTX_set1_groups(ctx, glist, glistlen) \
         SSL_CTX_ctrl(ctx,SSL_CTRL_SET_GROUPS,glistlen,(int *)(glist))
 # define SSL_CTX_set1_groups_list(ctx, s) \
@@ -1883,8 +1863,6 @@ size_t SSL_client_hello_get0_ciphers(SSL *s, const unsigned char **out);
 size_t SSL_client_hello_get0_compression_methods(SSL *s,
                                                  const unsigned char **out);
 int SSL_client_hello_get1_extensions_present(SSL *s, int **out, size_t *outlen);
-int SSL_client_hello_get_extension_order(SSL *s, uint16_t *exts,
-                                         size_t *num_exts);
 int SSL_client_hello_get0_ext(SSL *s, unsigned int type,
                               const unsigned char **out, size_t *outlen);
 
@@ -2247,31 +2225,6 @@ size_t SSL_get_num_tickets(const SSL *s);
 int SSL_CTX_set_num_tickets(SSL_CTX *ctx, size_t num_tickets);
 size_t SSL_CTX_get_num_tickets(const SSL_CTX *ctx);
 
-/* QUIC support */
-int SSL_tick(SSL *s);
-__owur int SSL_get_tick_timeout(SSL *s, struct timeval *tv);
-__owur int SSL_get_rpoll_descriptor(SSL *s, BIO_POLL_DESCRIPTOR *desc);
-__owur int SSL_get_wpoll_descriptor(SSL *s, BIO_POLL_DESCRIPTOR *desc);
-__owur int SSL_net_read_desired(SSL *s);
-__owur int SSL_net_write_desired(SSL *s);
-__owur int SSL_set_blocking_mode(SSL *s, int blocking);
-__owur int SSL_get_blocking_mode(SSL *s);
-__owur int SSL_set_initial_peer_addr(SSL *s, const BIO_ADDR *peer_addr);
-
-typedef struct ssl_shutdown_ex_args_st {
-    uint64_t    quic_error_code;
-    const char  *quic_reason;
-} SSL_SHUTDOWN_EX_ARGS;
-
-#define SSL_SHUTDOWN_FLAG_RAPID             (1U << 0)
-#define SSL_SHUTDOWN_FLAG_NO_STREAM_FLUSH   (1U << 1)
-
-__owur int SSL_shutdown_ex(SSL *ssl, uint64_t flags,
-                           const SSL_SHUTDOWN_EX_ARGS *args,
-                           size_t args_len);
-
-__owur int SSL_stream_conclude(SSL *ssl, uint64_t flags);
-
 # ifndef OPENSSL_NO_DEPRECATED_1_1_0
 #  define SSL_cache_hit(s) SSL_session_reused(s)
 # endif
@@ -2570,22 +2523,6 @@ void SSL_set_allow_early_data_cb(SSL *s,
 /* store the default cipher strings inside the library */
 const char *OSSL_default_cipher_list(void);
 const char *OSSL_default_ciphersuites(void);
-
-/* RFC8879 Certificate compression APIs */
-
-int SSL_CTX_compress_certs(SSL_CTX *ctx, int alg);
-int SSL_compress_certs(SSL *ssl, int alg);
-
-int SSL_CTX_set1_cert_comp_preference(SSL_CTX *ctx, int *algs, size_t len);
-int SSL_set1_cert_comp_preference(SSL *ssl, int *algs, size_t len);
-
-int SSL_CTX_set1_compressed_cert(SSL_CTX *ctx, int algorithm, unsigned char *comp_data,
-                                size_t comp_length, size_t orig_length);
-int SSL_set1_compressed_cert(SSL *ssl, int algorithm, unsigned char *comp_data,
-                            size_t comp_length, size_t orig_length);
-size_t SSL_CTX_get1_compressed_cert(SSL_CTX *ctx, int alg, unsigned char **data, size_t *orig_len);
-size_t SSL_get1_compressed_cert(SSL *ssl, int alg, unsigned char **data, size_t *orig_len);
-
 
 # ifdef  __cplusplus
 }

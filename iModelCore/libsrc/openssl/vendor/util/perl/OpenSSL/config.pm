@@ -501,7 +501,7 @@ EOF
             if ( $ISA64 == 1 && $KERNEL_BITS eq '' ) {
                 print <<EOF;
 WARNING! To build 64-bit package, do this:
-         KERNEL_BITS=64 $WHERE/Configure [options...]
+         KERNEL_BITS=64 $WHERE/Configure \[\[ options \]\]
 EOF
                 maybe_abort();
             }
@@ -525,7 +525,7 @@ EOF
 
             print <<EOF;
 WARNING! To build 32-bit package, do this:
-         KERNEL_BITS=32 $WHERE/Configure [options...]
+         KERNEL_BITS=32 $WHERE/Configure \[\[ options \]\]
 EOF
             maybe_abort();
             return { target => "darwin64-x86_64" };
@@ -780,10 +780,8 @@ EOF
       [ 'powerpc64le-.*-.*bsd.*', { target => "BSD-ppc64le" } ],
       [ 'riscv64-.*-.*bsd.*',     { target => "BSD-riscv64" } ],
       [ 'sparc64-.*-.*bsd.*',     { target => "BSD-sparc64" } ],
-      [ 'ia64-.*-openbsd.*',      { target => "BSD-nodef-ia64" } ],
       [ 'ia64-.*-.*bsd.*',        { target => "BSD-ia64" } ],
       [ 'x86_64-.*-dragonfly.*',  { target => "BSD-x86_64" } ],
-      [ 'amd64-.*-openbsd.*',     { target => "BSD-nodef-x86_64" } ],
       [ 'amd64-.*-.*bsd.*',       { target => "BSD-x86_64" } ],
       [ 'arm64-.*-.*bsd.*',       { target => "BSD-aarch64" } ],
       [ 'armv6-.*-.*bsd.*',       { target => "BSD-armv4" } ],
@@ -805,7 +803,6 @@ EOF
                      disable => [ 'sse2' ] };
         }
       ],
-      [ '.*-.*-openbsd.*',        { target => "BSD-nodef-generic32" } ],
       [ '.*-.*-.*bsd.*',          { target => "BSD-generic32" } ],
       [ 'x86_64-.*-haiku',        { target => "haiku-x86_64" } ],
       [ '.*-.*-haiku',            { target => "haiku-x86" } ],

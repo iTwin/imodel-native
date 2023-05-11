@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2021 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2020-2022 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -22,7 +22,7 @@ size_t ossl_rand_get_entropy(ossl_unused const OSSL_CORE_HANDLE *handle,
 
     pool = ossl_rand_pool_new(entropy, 1, min_len, max_len);
     if (pool == NULL) {
-        ERR_raise(ERR_LIB_RAND, ERR_R_RAND_LIB);
+        ERR_raise(ERR_LIB_RAND, ERR_R_MALLOC_FAILURE);
         return 0;
     }
 
@@ -53,7 +53,7 @@ size_t ossl_rand_get_nonce(ossl_unused const OSSL_CORE_HANDLE *handle,
 
     pool = ossl_rand_pool_new(0, 0, min_len, max_len);
     if (pool == NULL) {
-        ERR_raise(ERR_LIB_RAND, ERR_R_RAND_LIB);
+        ERR_raise(ERR_LIB_RAND, ERR_R_MALLOC_FAILURE);
         return 0;
     }
 

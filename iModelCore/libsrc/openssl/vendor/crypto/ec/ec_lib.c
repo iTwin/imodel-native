@@ -19,7 +19,6 @@
 #include <openssl/core_names.h>
 #include <openssl/err.h>
 #include <openssl/opensslv.h>
-#include <openssl/param_build.h>
 #include "crypto/ec.h"
 #include "internal/nelem.h"
 #include "ec_local.h"
@@ -41,14 +40,18 @@ EC_GROUP *ossl_ec_group_new_ex(OSSL_LIB_CTX *libctx, const char *propq,
     }
 
     ret = OPENSSL_zalloc(sizeof(*ret));
-    if (ret == NULL)
+    if (ret == NULL) {
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
         return NULL;
+    }
 
     ret->libctx = libctx;
     if (propq != NULL) {
         ret->propq = OPENSSL_strdup(propq);
-        if (ret->propq == NULL)
+        if (ret->propq == NULL) {
+            ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
             goto err;
+        }
     }
     ret->meth = meth;
     if ((ret->meth->flags & EC_FLAGS_CUSTOM_CURVE) == 0) {
@@ -243,8 +246,10 @@ int EC_GROUP_copy(EC_GROUP *dest, const EC_GROUP *src)
 
     if (src->seed) {
         OPENSSL_free(dest->seed);
-        if ((dest->seed = OPENSSL_malloc(src->seed_len)) == NULL)
+        if ((dest->seed = OPENSSL_malloc(src->seed_len)) == NULL) {
+            ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
             return 0;
+        }
         if (!memcpy(dest->seed, src->seed, src->seed_len))
             return 0;
         dest->seed_len = src->seed_len;
@@ -527,8 +532,10 @@ size_t EC_GROUP_set_seed(EC_GROUP *group, const unsigned char *p, size_t len)
     if (!len || !p)
         return 1;
 
-    if ((group->seed = OPENSSL_malloc(len)) == NULL)
+    if ((group->seed = OPENSSL_malloc(len)) == NULL) {
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
         return 0;
+    }
     memcpy(group->seed, p, len);
     group->seed_len = len;
 
@@ -719,8 +726,10 @@ EC_POINT *EC_POINT_new(const EC_GROUP *group)
     }
 
     ret = OPENSSL_zalloc(sizeof(*ret));
-    if (ret == NULL)
+    if (ret == NULL) {
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
         return NULL;
+    }
 
     ret->meth = group->meth;
     ret->curve_name = group->curve_name;
@@ -1573,7 +1582,7 @@ EC_GROUP *EC_GROUP_new_from_params(const OSSL_PARAM params[],
     /* If it gets here then we are trying explicit parameters */
     bnctx = BN_CTX_new_ex(libctx);
     if (bnctx == NULL) {
-        ERR_raise(ERR_LIB_EC, ERR_R_BN_LIB);
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
         return 0;
     }
     BN_CTX_start(bnctx);
@@ -1583,7 +1592,7 @@ EC_GROUP *EC_GROUP_new_from_params(const OSSL_PARAM params[],
     b = BN_CTX_get(bnctx);
     order = BN_CTX_get(bnctx);
     if (order == NULL) {
-        ERR_raise(ERR_LIB_EC, ERR_R_BN_LIB);
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
         goto err;
     }
 
@@ -1748,39 +1757,4 @@ EC_GROUP *EC_GROUP_new_from_params(const OSSL_PARAM params[],
 
     return group;
 #endif /* FIPS_MODULE */
-}
-
-OSSL_PARAM *EC_GROUP_to_params(const EC_GROUP *group, OSSL_LIB_CTX *libctx,
-                               const char *propq, BN_CTX *bnctx)
-{
-    OSSL_PARAM_BLD *tmpl = NULL;
-    BN_CTX *new_bnctx = NULL;
-    unsigned char *gen_buf = NULL;
-    OSSL_PARAM *params = NULL;
-
-    if (group == NULL)
-        goto err;
-
-    tmpl = OSSL_PARAM_BLD_new();
-    if (tmpl == NULL)
-        goto err;
-
-    if (bnctx == NULL)
-        bnctx = new_bnctx = BN_CTX_new_ex(libctx);
-    if (bnctx == NULL)
-        goto err;
-    BN_CTX_start(bnctx);
-
-    if (!ossl_ec_group_todata(
-            group, tmpl, NULL, libctx, propq, bnctx, &gen_buf))
-        goto err;
-
-    params = OSSL_PARAM_BLD_to_param(tmpl);
-
- err:
-    OSSL_PARAM_BLD_free(tmpl);
-    OPENSSL_free(gen_buf);
-    BN_CTX_end(bnctx);
-    BN_CTX_free(new_bnctx);
-    return params;
 }

@@ -142,25 +142,10 @@ custom_ext_free_cb                      datatype
 custom_ext_parse_cb                     datatype
 pem_password_cb                         datatype
 ssl_ct_validation_cb                    datatype
-ASYNC_stack_alloc_fn                    datatype
-ASYNC_stack_free_fn                     datatype
-PKCS12_create_cb                        datatype
 #
 ASN1_BIT_STRING_digest                  define
-BIO_IS_ERRNO                            define
-BIO_UNPACK_ERRNO                        define
 BIO_append_filename                     define
 BIO_destroy_bio_pair                    define
-BIO_dgram_get_local_addr_cap            define
-BIO_dgram_get_local_addr_enable         define
-BIO_dgram_set_local_addr_enable         define
-BIO_dgram_set_no_trunc                  define
-BIO_dgram_get_no_trunc                  define
-BIO_dgram_get_caps                      define
-BIO_dgram_set_caps                      define
-BIO_dgram_get_effective_caps            define
-BIO_dgram_get_mtu                       define
-BIO_dgram_set_mtu                       define
 BIO_ctrl_dgram_connect                  define
 BIO_ctrl_set_connected                  define
 BIO_dgram_get_mtu_overhead              define
@@ -191,7 +176,6 @@ BIO_get_conn_address                    define
 BIO_get_conn_hostname                   define
 BIO_get_conn_port                       define
 BIO_get_conn_ip_family                  define
-BIO_get_conn_mode                       define
 BIO_get_fd                              define
 BIO_get_fp                              define
 BIO_get_indent                          define
@@ -225,7 +209,6 @@ BIO_set_conn_address                    define
 BIO_set_conn_hostname                   define
 BIO_set_conn_port                       define
 BIO_set_conn_ip_family                  define
-BIO_set_conn_mode                       define
 BIO_set_fd                              define
 BIO_set_fp                              define
 BIO_set_indent                          define
@@ -241,8 +224,6 @@ BIO_set_ssl                             define
 BIO_set_ssl_mode                        define
 BIO_set_ssl_renegotiate_bytes           define
 BIO_set_ssl_renegotiate_timeout         define
-BIO_set_tfo                             define
-BIO_set_tfo_accept                      define
 BIO_set_write_buf_size                  define
 BIO_set_write_buffer_size               define
 BIO_should_io_special                   define
@@ -264,8 +245,6 @@ DES_ede2_cfb64_encrypt                  define
 DES_ede2_ofb64_encrypt                  define
 DTLS_get_link_min_mtu                   define
 DTLS_set_link_mtu                       define
-DTLSv1_get_timeout                      define
-DTLSv1_handle_timeout                   define
 ENGINE_cleanup                          define deprecated 1.1.0
 ERR_FATAL_ERROR                         define
 ERR_GET_LIB                             define
@@ -429,8 +408,6 @@ OSSL_CMP_exec_IR_ses                    define
 OSSL_CMP_exec_CR_ses                    define
 OSSL_CMP_exec_P10CR_ses                 define
 OSSL_CMP_exec_KUR_ses                   define
-OSSL_CMP_CTX_get0_trusted               define
-OSSL_CMP_CTX_set0_trusted               define
 OSSL_CMP_CTX_set_log_verbosity          define
 OSSL_CMP_CR                             define
 OSSL_CMP_IR                             define
@@ -567,7 +544,6 @@ SSL_clear_chain_certs                   define
 SSL_clear_mode                          define
 SSL_disable_ct                          define
 SSL_get0_chain_certs                    define
-SSL_get0_iana_groups                    define
 SSL_get0_session                        define
 SSL_get0_chain_cert_store               define
 SSL_get0_verify_cert_store              define
