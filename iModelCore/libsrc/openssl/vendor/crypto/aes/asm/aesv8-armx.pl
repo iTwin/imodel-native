@@ -1835,6 +1835,175 @@ $code.=<<___	if ($flavour !~ /64/);
 	vmov.32		${ivec}[3],$tctr2
 	sub		$len,$len,#3		// bias
 	vorr		$dat2,$ivec,$ivec
+___
+$code.=<<___	if ($flavour =~ /64/);
+	cmp		$len,#32
+	b.lo		.Loop3x_ctr32
+
+	add		w13,$ctr,#1
+	add		w14,$ctr,#2
+	vorr		$dat3,$dat0,$dat0
+	rev		w13,w13
+	vorr		$dat4,$dat0,$dat0
+	rev		w14,w14
+	vmov.32		${dat3}[3],w13
+	sub		$len,$len,#2		// bias
+	vmov.32		${dat4}[3],w14
+	add		$ctr,$ctr,#2
+	b		.Loop5x_ctr32
+
+.align	4
+.Loop5x_ctr32:
+	aese		$dat0,q8
+	aesmc		$dat0,$dat0
+	aese		$dat1,q8
+	aesmc		$dat1,$dat1
+	aese		$dat2,q8
+	aesmc		$dat2,$dat2
+	aese		$dat3,q8
+	aesmc		$dat3,$dat3
+	aese		$dat4,q8
+	aesmc		$dat4,$dat4
+	vld1.32		{q8},[$key_],#16
+	subs		$cnt,$cnt,#2
+	aese		$dat0,q9
+	aesmc		$dat0,$dat0
+	aese		$dat1,q9
+	aesmc		$dat1,$dat1
+	aese		$dat2,q9
+	aesmc		$dat2,$dat2
+	aese		$dat3,q9
+	aesmc		$dat3,$dat3
+	aese		$dat4,q9
+	aesmc		$dat4,$dat4
+	vld1.32		{q9},[$key_],#16
+	b.gt		.Loop5x_ctr32
+
+	mov		$key_,$key
+	aese		$dat0,q8
+	aesmc		$dat0,$dat0
+	aese		$dat1,q8
+	aesmc		$dat1,$dat1
+	aese		$dat2,q8
+	aesmc		$dat2,$dat2
+	aese		$dat3,q8
+	aesmc		$dat3,$dat3
+	aese		$dat4,q8
+	aesmc		$dat4,$dat4
+	vld1.32	 	{q8},[$key_],#16	// re-pre-load rndkey[0]
+
+	aese		$dat0,q9
+	aesmc		$dat0,$dat0
+	aese		$dat1,q9
+	aesmc		$dat1,$dat1
+	aese		$dat2,q9
+	aesmc		$dat2,$dat2
+	aese		$dat3,q9
+	aesmc		$dat3,$dat3
+	aese		$dat4,q9
+	aesmc		$dat4,$dat4
+	vld1.32	 	{q9},[$key_],#16	// re-pre-load rndkey[1]
+
+	aese		$dat0,q12
+	aesmc		$dat0,$dat0
+	 add		$tctr0,$ctr,#1
+	 add		$tctr1,$ctr,#2
+	aese		$dat1,q12
+	aesmc		$dat1,$dat1
+	 add		$tctr2,$ctr,#3
+	 add		w13,$ctr,#4
+	aese		$dat2,q12
+	aesmc		$dat2,$dat2
+	 add		w14,$ctr,#5
+	 rev		$tctr0,$tctr0
+	aese		$dat3,q12
+	aesmc		$dat3,$dat3
+	 rev		$tctr1,$tctr1
+	 rev		$tctr2,$tctr2
+	aese		$dat4,q12
+	aesmc		$dat4,$dat4
+	 rev		w13,w13
+	 rev		w14,w14
+
+	aese		$dat0,q13
+	aesmc		$dat0,$dat0
+	aese		$dat1,q13
+	aesmc		$dat1,$dat1
+	aese		$dat2,q13
+	aesmc		$dat2,$dat2
+	aese		$dat3,q13
+	aesmc		$dat3,$dat3
+	aese		$dat4,q13
+	aesmc		$dat4,$dat4
+
+	aese		$dat0,q14
+	aesmc		$dat0,$dat0
+	 vld1.8		{$in0},[$inp],#16
+	aese		$dat1,q14
+	aesmc		$dat1,$dat1
+	 vld1.8		{$in1},[$inp],#16
+	aese		$dat2,q14
+	aesmc		$dat2,$dat2
+	 vld1.8		{$in2},[$inp],#16
+	aese		$dat3,q14
+	aesmc		$dat3,$dat3
+	 vld1.8		{$in3},[$inp],#16
+	aese		$dat4,q14
+	aesmc		$dat4,$dat4
+	 vld1.8		{$in4},[$inp],#16
+
+	aese		$dat0,q15
+	 veor		$in0,$in0,$rndlast
+	aese		$dat1,q15
+	 veor		$in1,$in1,$rndlast
+	aese		$dat2,q15
+	 veor		$in2,$in2,$rndlast
+	aese		$dat3,q15
+	 veor		$in3,$in3,$rndlast
+	aese		$dat4,q15
+	 veor		$in4,$in4,$rndlast
+
+	veor		$in0,$in0,$dat0
+	 vorr		$dat0,$ivec,$ivec
+	veor		$in1,$in1,$dat1
+	 vorr		$dat1,$ivec,$ivec
+	veor		$in2,$in2,$dat2
+	 vorr		$dat2,$ivec,$ivec
+	veor		$in3,$in3,$dat3
+	 vorr		$dat3,$ivec,$ivec
+	veor		$in4,$in4,$dat4
+	 vorr		$dat4,$ivec,$ivec
+
+	vst1.8		{$in0},[$out],#16
+	 vmov.32	${dat0}[3],$tctr0
+	vst1.8		{$in1},[$out],#16
+	 vmov.32	${dat1}[3],$tctr1
+	vst1.8		{$in2},[$out],#16
+	 vmov.32	${dat2}[3],$tctr2
+	vst1.8		{$in3},[$out],#16
+	 vmov.32	${dat3}[3],w13
+	vst1.8		{$in4},[$out],#16
+	 vmov.32	${dat4}[3],w14
+
+	mov		$cnt,$rounds
+	cbz		$len,.Lctr32_done
+
+	add		$ctr,$ctr,#5
+	subs		$len,$len,#5
+	b.hs		.Loop5x_ctr32
+
+	add		$len,$len,#5
+	sub		$ctr,$ctr,#5
+
+	cmp		$len,#2
+	mov		$step,#16
+	cclr		$step,lo
+	b.ls		.Lctr32_tail
+
+	sub		$len,$len,#3		// bias
+	add		$ctr,$ctr,#3
+___
+$code.=<<___;
 	b		.Loop3x_ctr32
 
 .align	4

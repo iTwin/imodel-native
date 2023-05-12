@@ -155,8 +155,10 @@ int OBJ_add_sigid(int signid, int dig_id, int pkey_id)
     if (!obj_sig_init())
         return 0;
 
-    if ((ntr = OPENSSL_malloc(sizeof(*ntr))) == NULL)
+    if ((ntr = OPENSSL_malloc(sizeof(*ntr))) == NULL) {
+        ERR_raise(ERR_LIB_OBJ, ERR_R_MALLOC_FAILURE);
         return 0;
+    }
     ntr->sign_id = signid;
     ntr->hash_id = dig_id;
     ntr->pkey_id = pkey_id;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2022 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2008-2023 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -60,6 +60,7 @@ CMS_ContentInfo *CMS_ContentInfo_new_ex(OSSL_LIB_CTX *libctx, const char *propq)
             if (ci->ctx.propq == NULL) {
                 CMS_ContentInfo_free(ci);
                 ci = NULL;
+                ERR_raise(ERR_LIB_PROV, ERR_R_MALLOC_FAILURE);
             }
         }
     }
@@ -174,7 +175,7 @@ BIO *CMS_dataInit(CMS_ContentInfo *cms, BIO *icont)
     case NID_pkcs7_digest:
         cmsbio = ossl_cms_DigestedData_init_bio(cms);
         break;
-#ifndef OPENSSL_NO_ZLIB
+#ifdef ZLIB
     case NID_id_smime_ct_compressedData:
         cmsbio = ossl_cms_CompressedData_init_bio(cms);
         break;
@@ -208,13 +209,6 @@ err:
 
 /* unfortunately cannot constify SMIME_write_ASN1() due to this function */
 int CMS_dataFinal(CMS_ContentInfo *cms, BIO *cmsbio)
-{
-    return ossl_cms_DataFinal(cms, cmsbio, NULL, 0);
-}
-
-int ossl_cms_DataFinal(CMS_ContentInfo *cms, BIO *cmsbio,
-                       const unsigned char *precomp_md,
-                       unsigned int precomp_mdlen)
 {
     ASN1_OCTET_STRING **pos = CMS_get0_content(cms);
 
@@ -253,7 +247,7 @@ int ossl_cms_DataFinal(CMS_ContentInfo *cms, BIO *cmsbio,
         return ossl_cms_AuthEnvelopedData_final(cms, cmsbio);
 
     case NID_pkcs7_signed:
-        return ossl_cms_SignedData_final(cms, cmsbio, precomp_md, precomp_mdlen);
+        return ossl_cms_SignedData_final(cms, cmsbio);
 
     case NID_pkcs7_digest:
         return ossl_cms_DigestedData_do_final(cms, cmsbio, 0);
@@ -403,7 +397,7 @@ int CMS_set_detached(CMS_ContentInfo *cms, int detached)
         (*pos)->flags |= ASN1_STRING_FLAG_CONT;
         return 1;
     }
-    ERR_raise(ERR_LIB_CMS, ERR_R_ASN1_LIB);
+    ERR_raise(ERR_LIB_CMS, ERR_R_MALLOC_FAILURE);
     return 0;
 }
 
@@ -437,7 +431,7 @@ BIO *ossl_cms_DigestAlgorithm_init_bio(X509_ALGOR *digestAlgorithm,
     (void)ERR_pop_to_mark();
 
     mdbio = BIO_new(BIO_f_md());
-    if (mdbio == NULL || !BIO_set_md(mdbio, digest)) {
+    if (mdbio == NULL || BIO_set_md(mdbio, digest) <= 0) {
         ERR_raise(ERR_LIB_CMS, CMS_R_MD_BIO_INIT_ERROR);
         goto err;
     }
@@ -620,11 +614,12 @@ int CMS_add0_crl(CMS_ContentInfo *cms, X509_CRL *crl)
 
 int CMS_add1_crl(CMS_ContentInfo *cms, X509_CRL *crl)
 {
-    int r;
-    r = CMS_add0_crl(cms, crl);
-    if (r > 0)
-        X509_CRL_up_ref(crl);
-    return r;
+    if (!X509_CRL_up_ref(crl))
+        return 0;
+    if (CMS_add0_crl(cms, crl))
+        return 1;
+    X509_CRL_free(crl);
+    return 0;
 }
 
 STACK_OF(X509) *CMS_get1_certs(CMS_ContentInfo *cms)
@@ -642,7 +637,7 @@ STACK_OF(X509) *CMS_get1_certs(CMS_ContentInfo *cms)
         if (cch->type == 0) {
             if (!ossl_x509_add_cert_new(&certs, cch->d.certificate,
                                         X509_ADD_FLAG_UP_REF)) {
-                OSSL_STACK_OF_X509_free(certs);
+                sk_X509_pop_free(certs, X509_free);
                 return NULL;
             }
         }
@@ -701,23 +696,18 @@ int ossl_cms_set1_ias(CMS_IssuerAndSerialNumber **pias, X509 *cert)
 {
     CMS_IssuerAndSerialNumber *ias;
     ias = M_ASN1_new_of(CMS_IssuerAndSerialNumber);
-    if (!ias) {
-        ERR_raise(ERR_LIB_CMS, ERR_R_ASN1_LIB);
+    if (!ias)
         goto err;
-    }
-    if (!X509_NAME_set(&ias->issuer, X509_get_issuer_name(cert))) {
-        ERR_raise(ERR_LIB_CMS, ERR_R_X509_LIB);
+    if (!X509_NAME_set(&ias->issuer, X509_get_issuer_name(cert)))
         goto err;
-    }
-    if (!ASN1_STRING_copy(ias->serialNumber, X509_get0_serialNumber(cert))) {
-        ERR_raise(ERR_LIB_CMS, ERR_R_ASN1_LIB);
+    if (!ASN1_STRING_copy(ias->serialNumber, X509_get0_serialNumber(cert)))
         goto err;
-    }
     M_ASN1_free_of(*pias, CMS_IssuerAndSerialNumber);
     *pias = ias;
     return 1;
  err:
     M_ASN1_free_of(ias, CMS_IssuerAndSerialNumber);
+    ERR_raise(ERR_LIB_CMS, ERR_R_MALLOC_FAILURE);
     return 0;
 }
 
@@ -732,7 +722,7 @@ int ossl_cms_set1_keyid(ASN1_OCTET_STRING **pkeyid, X509 *cert)
     }
     keyid = ASN1_STRING_dup(cert_keyid);
     if (!keyid) {
-        ERR_raise(ERR_LIB_CMS, ERR_R_ASN1_LIB);
+        ERR_raise(ERR_LIB_CMS, ERR_R_MALLOC_FAILURE);
         return 0;
     }
     ASN1_OCTET_STRING_free(*pkeyid);
