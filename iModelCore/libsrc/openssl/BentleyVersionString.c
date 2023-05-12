@@ -5,7 +5,7 @@
 
 // This exists so that Mike's special audit tool can easily identify the underlying openssl version of this library.
 
-#ifdef _MSC_VER
+#ifdef _MSC_VER 
 
 // Under MSVC, this adds the string as a new PE section that DumpBin can easily isolate.
 // This supposedly originated in a 'VersionSegment.h' file, but I don't see it...
