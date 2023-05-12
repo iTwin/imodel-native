@@ -514,26 +514,17 @@ describe("basic tests", () => {
   it("testConvertEC2Schemas", async () => {
     const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
       <ECSchema schemaName="TestSchema" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-        <ECClass typeName="TestEntityClass" isDomainClass="true">
-          <ECProperty propertyName="Id" typeName="string" />
-          <ECProperty propertyName="ECInstanceId" typeName="string" />
-          <ECProperty propertyName="ECClassId" typeName="string" />
-          <ECProperty propertyName="SourceECInstanceId" typeName="string" />
-          <ECProperty propertyName="SourceId" typeName="string" />
-          <ECProperty propertyName="SourceECClassId" typeName="string" />
-          <ECProperty propertyName="TargetECInstanceId" typeName="string" />
-          <ECProperty propertyName="TargetId" typeName="string" />
-          <ECProperty propertyName="TargetECClassId" typeName="string" />
-        </ECClass>
-        <ECClass typeName="TestStructClass" isStruct="true">
-          <ECProperty propertyName="Id" typeName="string" />
-          <ECProperty propertyName="ECInstanceId" typeName="string" />
-          <ECProperty propertyName="ECClassId" typeName="string" />
-        </ECClass>
+        <ECSchemaReference name="RefSchema" version="01.00" prefix="rs" />
+        <ECClass typeName="TestEntityClass" isDomainClass="true" />
+      </ECSchema>`;
+
+    const refSchema = `<?xml version="1.0" encoding="UTF-8"?>
+      <ECSchema schemaName="RefSchema" nameSpacePrefix="rs" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+        <ECClass typeName="TestStructClass" isStruct="true" />
       </ECSchema>`;
 
     assert.isTrue(dgndb.isOpen());
-    const rc = dgndb.convertEC2Schemas([schemaXml], { schemaLockHeld: false });
+    const rc = dgndb.convertEC2Schemas([refSchema, schemaXml], { schemaLockHeld: false });
     assert.equal(rc, DbResult.BE_SQLITE_OK);
     dgndb.saveChanges();
     dgndb.closeIModel();

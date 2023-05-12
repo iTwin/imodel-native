@@ -926,9 +926,9 @@ DbResult JsInterop::ImportSchemas(DgnDbR dgndb, bvector<Utf8String> const& schem
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DbResult JsInterop::ConvertEC2Schemas(DgnDbR dgndb, bvector<Utf8String> const& schemaXmlStrings, SchemaSourceType sourceType, const SchemaImportOptions& opts)
+DbResult JsInterop::ConvertEC2Schemas(DgnDbR dgndb, bvector<Utf8String> const& schemaSources, SchemaSourceType sourceType, const SchemaImportOptions& opts)
     {
-    if (0 == schemaXmlStrings.size())
+    if (0 == schemaSources.size())
         return BE_SQLITE_ERROR;
 
     ECSchemaReadContextPtr schemaContext = opts.m_customSchemaContext;
@@ -938,12 +938,20 @@ DbResult JsInterop::ConvertEC2Schemas(DgnDbR dgndb, bvector<Utf8String> const& s
     JsInterop::AddFallbackSchemaLocaters(dgndb, schemaContext);
     bvector<ECSchemaPtr> schemas;
 
-    for (Utf8String schemaXmlString : schemaXmlStrings)
+    for (Utf8String schemaSource : schemaSources)
         {
         ECSchemaPtr schema;
-        SchemaReadStatus schemaStatus = SchemaReadStatus::Success;
-        if (sourceType == SchemaSourceType::XmlString)
-            schemaStatus = ECSchema::ReadFromXmlString(schema, schemaXmlString.c_str(), *schemaContext);
+        SchemaReadStatus schemaStatus;
+        if (sourceType == SchemaSourceType::File)
+            {
+            BeFileName schemaFile(schemaSource.c_str(), BentleyCharEncoding::Utf8);
+            if (!schemaFile.DoesPathExist())
+                return BE_SQLITE_ERROR_FileNotFound;
+
+            schema = ECSchema::LocateSchema(schemaSource.c_str(), *schemaContext, SchemaMatchType::Exact, &schemaStatus);
+            }
+        else
+            schemaStatus = ECSchema::ReadFromXmlString(schema, schemaSource.c_str(), *schemaContext);
 
         if (SchemaReadStatus::DuplicateSchema == schemaStatus)
             continue;
@@ -961,7 +969,7 @@ DbResult JsInterop::ConvertEC2Schemas(DgnDbR dgndb, bvector<Utf8String> const& s
         {
         bool status = ECSchemaConverter::Convert(*schema, *schemaContext);
         if (!status)
-            return DbResult::BE_SQLITE_ERROR;
+            return BE_SQLITE_ERROR;
         }
 
     return dgndb.SaveChanges();
