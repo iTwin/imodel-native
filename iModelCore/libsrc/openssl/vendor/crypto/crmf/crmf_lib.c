@@ -1,5 +1,5 @@
 /*-
- * Copyright 2007-2021 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2007-2022 The OpenSSL Project Authors. All Rights Reserved.
  * Copyright Nokia 2007-2018
  * Copyright Siemens AG 2015-2019
  *
@@ -31,7 +31,6 @@
 #include "crmf_local.h"
 #include "internal/constant_time.h"
 #include "internal/sizes.h"
-#include "crypto/x509.h"
 
 /* explicit #includes not strictly needed since implied by the above: */
 #include <openssl/crmf.h>
@@ -80,6 +79,7 @@ int OSSL_CRMF_MSG_set1_##ctrlinf##_##atyp(OSSL_CRMF_MSG *msg, const valt *in) \
     OSSL_CRMF_ATTRIBUTETYPEANDVALUE_free(atav);                           \
     return 0;                                                             \
 }
+
 
 /*-
  * Pushes the given control attribute into the controls stack of a CertRequest
@@ -243,6 +243,7 @@ IMPLEMENT_CRMF_CTRL_FUNC(utf8Pairs, ASN1_UTF8STRING, regInfo)
 /* id-regInfo-certReq to regInfo (section 7.2) */
 IMPLEMENT_CRMF_CTRL_FUNC(certReq, OSSL_CRMF_CERTREQUEST, regInfo)
 
+
 /* retrieves the certificate template of crm */
 OSSL_CRMF_CERTTEMPLATE *OSSL_CRMF_MSG_get0_tmpl(const OSSL_CRMF_MSG *crm)
 {
@@ -252,6 +253,7 @@ OSSL_CRMF_CERTTEMPLATE *OSSL_CRMF_MSG_get0_tmpl(const OSSL_CRMF_MSG *crm)
     }
     return crm->certReq->certTemplate;
 }
+
 
 int OSSL_CRMF_MSG_set0_validity(OSSL_CRMF_MSG *crm,
                                 ASN1_TIME *notBefore, ASN1_TIME *notAfter)
@@ -271,6 +273,7 @@ int OSSL_CRMF_MSG_set0_validity(OSSL_CRMF_MSG *crm,
     tmpl->validity = vld;
     return 1;
 }
+
 
 int OSSL_CRMF_MSG_set_certReqId(OSSL_CRMF_MSG *crm, int rid)
 {
@@ -311,6 +314,7 @@ int OSSL_CRMF_MSG_get_certReqId(const OSSL_CRMF_MSG *crm)
     return crmf_asn1_get_int(crm->certReq->certReqId);
 }
 
+
 int OSSL_CRMF_MSG_set0_extensions(OSSL_CRMF_MSG *crm,
                                   X509_EXTENSIONS *exts)
 {
@@ -330,6 +334,7 @@ int OSSL_CRMF_MSG_set0_extensions(OSSL_CRMF_MSG *crm,
     tmpl->extensions = exts;
     return 1;
 }
+
 
 int OSSL_CRMF_MSG_push0_extension(OSSL_CRMF_MSG *crm,
                                   X509_EXTENSION *ext)
@@ -365,16 +370,11 @@ static int create_popo_signature(OSSL_CRMF_POPOSIGNINGKEY *ps,
                                  OSSL_LIB_CTX *libctx, const char *propq)
 {
     char name[80] = "";
-    EVP_PKEY *pub;
 
     if (ps == NULL || cr == NULL || pkey == NULL) {
         ERR_raise(ERR_LIB_CRMF, CRMF_R_NULL_ARGUMENT);
         return 0;
     }
-    pub = X509_PUBKEY_get0(cr->certTemplate->publicKey);
-    if (!ossl_x509_check_private_key(pub, pkey))
-        return 0;
-
     if (ps->poposkInput != NULL) {
         /* We do not support cases 1+2 defined in RFC 4211, section 4.1 */
         ERR_raise(ERR_LIB_CRMF, CRMF_R_POPOSKINPUT_NOT_SUPPORTED);
@@ -389,6 +389,7 @@ static int create_popo_signature(OSSL_CRMF_POPOSIGNINGKEY *ps,
                              ps->algorithmIdentifier, NULL, ps->signature, cr,
                              NULL, pkey, digest, libctx, propq);
 }
+
 
 int OSSL_CRMF_MSG_create_popo(int meth, OSSL_CRMF_MSG *crm,
                               EVP_PKEY *pkey, const EVP_MD *digest,
@@ -505,12 +506,6 @@ int OSSL_CRMF_MSGS_verify_popo(const OSSL_CRMF_MSGS *reqs,
                 ERR_raise(ERR_LIB_CRMF, CRMF_R_POPO_INCONSISTENT_PUBLIC_KEY);
                 return 0;
             }
-
-            /*
-             * Should check at this point the contents of the authInfo sub-field
-             * as requested in FR #19807 according to RFC 4211 section 4.1.
-             */
-
             it = ASN1_ITEM_rptr(OSSL_CRMF_POPOSIGNINGKEYINPUT);
             asn = sig->poposkInput;
         } else {
@@ -527,24 +522,12 @@ int OSSL_CRMF_MSGS_verify_popo(const OSSL_CRMF_MSGS *reqs,
             return 0;
         break;
     case OSSL_CRMF_POPO_KEYENC:
-        /*
-         * When OSSL_CMP_certrep_new() supports encrypted certs,
-         * should return 1 if the type of req->popo->value.keyEncipherment
-         * is OSSL_CRMF_POPOPRIVKEY_SUBSEQUENTMESSAGE and
-         * its value.subsequentMessage == OSSL_CRMF_SUBSEQUENTMESSAGE_ENCRCERT
-         */
     case OSSL_CRMF_POPO_KEYAGREE:
     default:
         ERR_raise(ERR_LIB_CRMF, CRMF_R_UNSUPPORTED_POPO_METHOD);
         return 0;
     }
     return 1;
-}
-
-const X509_PUBKEY
-*OSSL_CRMF_CERTTEMPLATE_get0_publicKey(const OSSL_CRMF_CERTTEMPLATE *tmpl)
-{
-    return tmpl != NULL ? tmpl->publicKey : NULL;
 }
 
 /* retrieves the serialNumber of the given cert template or NULL on error */
@@ -555,20 +538,20 @@ const ASN1_INTEGER
 }
 
 const X509_NAME
-*OSSL_CRMF_CERTTEMPLATE_get0_subject(const OSSL_CRMF_CERTTEMPLATE *tmpl)
+    *OSSL_CRMF_CERTTEMPLATE_get0_subject(const OSSL_CRMF_CERTTEMPLATE *tmpl)
 {
     return tmpl != NULL ? tmpl->subject : NULL;
 }
 
 /* retrieves the issuer name of the given cert template or NULL on error */
 const X509_NAME
-*OSSL_CRMF_CERTTEMPLATE_get0_issuer(const OSSL_CRMF_CERTTEMPLATE *tmpl)
+    *OSSL_CRMF_CERTTEMPLATE_get0_issuer(const OSSL_CRMF_CERTTEMPLATE *tmpl)
 {
     return tmpl != NULL ? tmpl->issuer : NULL;
 }
 
 X509_EXTENSIONS
-*OSSL_CRMF_CERTTEMPLATE_get0_extensions(const OSSL_CRMF_CERTTEMPLATE *tmpl)
+    *OSSL_CRMF_CERTTEMPLATE_get0_extensions(const OSSL_CRMF_CERTTEMPLATE *tmpl)
 {
     return tmpl != NULL ? tmpl->extensions : NULL;
 }
@@ -581,8 +564,7 @@ const X509_NAME *OSSL_CRMF_CERTID_get0_issuer(const OSSL_CRMF_CERTID *cid)
 }
 
 /* retrieves the serialNumber of the given CertId or NULL on error */
-const ASN1_INTEGER *OSSL_CRMF_CERTID_get0_serialNumber(const OSSL_CRMF_CERTID
-                                                       *cid)
+const ASN1_INTEGER *OSSL_CRMF_CERTID_get0_serialNumber(const OSSL_CRMF_CERTID *cid)
 {
     return cid != NULL ? cid->serialNumber : NULL;
 }
@@ -614,6 +596,7 @@ int OSSL_CRMF_CERTTEMPLATE_fill(OSSL_CRMF_CERTTEMPLATE *tmpl,
         return 0;
     return 1;
 }
+
 
 /*-
  * Decrypts the certificate in the given encryptedValue using private key pkey.

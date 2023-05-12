@@ -195,7 +195,7 @@ All rights reserved.
     "OpenSSL Wiki"
 
 [migration_guide(7ossl)]:
-    <https://www.openssl.org/docs/manmaster/man7/migration_guide.html>
+    <https://www.openssl.org/docs/man3.0/man7/migration_guide.html>
     "OpenSSL Migration Guide"
 
 [RFC 8446]:

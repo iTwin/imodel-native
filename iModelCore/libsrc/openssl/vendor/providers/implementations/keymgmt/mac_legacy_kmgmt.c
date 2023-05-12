@@ -194,8 +194,10 @@ static int mac_key_fromdata(MAC_KEY *key, const OSSL_PARAM params[])
         OPENSSL_secure_clear_free(key->priv_key, key->priv_key_len);
         /* allocate at least one byte to distinguish empty key from no key set */
         key->priv_key = OPENSSL_secure_malloc(p->data_size > 0 ? p->data_size : 1);
-        if (key->priv_key == NULL)
+        if (key->priv_key == NULL) {
+            ERR_raise(ERR_LIB_PROV, ERR_R_MALLOC_FAILURE);
             return 0;
+        }
         memcpy(key->priv_key, p->data, p->data_size);
         key->priv_key_len = p->data_size;
     }
@@ -208,8 +210,10 @@ static int mac_key_fromdata(MAC_KEY *key, const OSSL_PARAM params[])
         }
         OPENSSL_free(key->properties);
         key->properties = OPENSSL_strdup(p->data);
-        if (key->properties == NULL)
+        if (key->properties == NULL) {
+            ERR_raise(ERR_LIB_PROV, ERR_R_MALLOC_FAILURE);
             return 0;
+        }
     }
 
     if (key->cmac && !ossl_prov_cipher_load_from_params(&key->cipher, params,
@@ -425,8 +429,10 @@ static int mac_gen_set_params(void *genctx, const OSSL_PARAM params[])
             return 0;
         }
         gctx->priv_key = OPENSSL_secure_malloc(p->data_size);
-        if (gctx->priv_key == NULL)
+        if (gctx->priv_key == NULL) {
+            ERR_raise(ERR_LIB_PROV, ERR_R_MALLOC_FAILURE);
             return 0;
+        }
         memcpy(gctx->priv_key, p->data, p->data_size);
         gctx->priv_key_len = p->data_size;
     }
@@ -480,7 +486,7 @@ static void *mac_gen(void *genctx, OSSL_CALLBACK *cb, void *cbarg)
         return NULL;
 
     if ((key = ossl_mac_key_new(gctx->libctx, 0)) == NULL) {
-        ERR_raise(ERR_LIB_PROV, ERR_R_PROV_LIB);
+        ERR_raise(ERR_LIB_PROV, ERR_R_MALLOC_FAILURE);
         return NULL;
     }
 

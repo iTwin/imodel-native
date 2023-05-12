@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2021 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2019-2022 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -114,11 +114,6 @@ static const OSSL_ALGORITHM deflt_digests[] = {
     { PROV_NAMES_SHA3_384, "provider=default", ossl_sha3_384_functions },
     { PROV_NAMES_SHA3_512, "provider=default", ossl_sha3_512_functions },
 
-    { PROV_NAMES_KECCAK_224, "provider=default", ossl_keccak_224_functions },
-    { PROV_NAMES_KECCAK_256, "provider=default", ossl_keccak_256_functions },
-    { PROV_NAMES_KECCAK_384, "provider=default", ossl_keccak_384_functions },
-    { PROV_NAMES_KECCAK_512, "provider=default", ossl_keccak_512_functions },
-
     /*
      * KECCAK-KMAC-128 and KECCAK-KMAC-256 as hashes are mostly useful for
      * the KMAC-128 and KMAC-256.
@@ -198,9 +193,6 @@ static const OSSL_ALGORITHM_CAPABLE deflt_ciphers[] = {
     ALG(PROV_NAMES_AES_128_SIV, ossl_aes128siv_functions),
     ALG(PROV_NAMES_AES_192_SIV, ossl_aes192siv_functions),
     ALG(PROV_NAMES_AES_256_SIV, ossl_aes256siv_functions),
-    ALG(PROV_NAMES_AES_128_GCM_SIV, ossl_aes128gcm_siv_functions),
-    ALG(PROV_NAMES_AES_192_GCM_SIV, ossl_aes192gcm_siv_functions),
-    ALG(PROV_NAMES_AES_256_GCM_SIV, ossl_aes256gcm_siv_functions),
 #endif /* OPENSSL_NO_SIV */
     ALG(PROV_NAMES_AES_256_GCM, ossl_aes256gcm_functions),
     ALG(PROV_NAMES_AES_192_GCM, ossl_aes192gcm_functions),
@@ -304,7 +296,6 @@ static const OSSL_ALGORITHM_CAPABLE deflt_ciphers[] = {
     ALG(PROV_NAMES_SM4_CTR, ossl_sm4128ctr_functions),
     ALG(PROV_NAMES_SM4_OFB, ossl_sm4128ofb128_functions),
     ALG(PROV_NAMES_SM4_CFB, ossl_sm4128cfb128_functions),
-    ALG(PROV_NAMES_SM4_XTS, ossl_sm4128xts_functions),
 #endif /* OPENSSL_NO_SM4 */
 #ifndef OPENSSL_NO_CHACHA
     ALG(PROV_NAMES_ChaCha20, ossl_chacha20_functions),
@@ -353,8 +344,6 @@ static const OSSL_ALGORITHM deflt_kdfs[] = {
     { PROV_NAMES_SCRYPT, "provider=default", ossl_kdf_scrypt_functions },
 #endif
     { PROV_NAMES_KRB5KDF, "provider=default", ossl_kdf_krb5kdf_functions },
-    { PROV_NAMES_HMAC_DRBG_KDF, "provider=default",
-      ossl_kdf_hmac_drbg_functions },
     { NULL, NULL, NULL }
 };
 
@@ -419,11 +408,6 @@ static const OSSL_ALGORITHM deflt_asym_cipher[] = {
 
 static const OSSL_ALGORITHM deflt_asym_kem[] = {
     { PROV_NAMES_RSA, "provider=default", ossl_rsa_asym_kem_functions },
-#ifndef OPENSSL_NO_EC
-    { PROV_NAMES_X25519, "provider=default", ossl_ecx_asym_kem_functions },
-    { PROV_NAMES_X448, "provider=default", ossl_ecx_asym_kem_functions },
-    { PROV_NAMES_EC, "provider=default", ossl_ec_asym_kem_functions },
-#endif
     { NULL, NULL, NULL }
 };
 
