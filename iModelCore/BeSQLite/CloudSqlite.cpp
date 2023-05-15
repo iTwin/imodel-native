@@ -155,7 +155,7 @@ void CloudCache::Destroy() {
         m_cloudDb.CloseDb();
 
     for (auto entry : m_containers)
-        entry->Disconnect(true);
+        entry->Disconnect(false, true);
 
     m_containers.clear();
 
@@ -275,10 +275,11 @@ CloudResult CloudContainer::Connect(CloudCache& cache) {
  * Disconnect this container from the CloudCache. If the containerDb is open, close it first.
  * @note This function does nothing if the CloudContainer is not connected to a CloudCache. See CloudContainer::Connect
  */
-CloudResult CloudContainer::Disconnect(bool fromCacheDtor) {
+CloudResult CloudContainer::Disconnect(bool isDetach, bool fromCacheDtor) {
     if (nullptr == m_cache)
         return CloudResult();
 
+    OnDisconnect(isDetach);
     m_onDisconnect.RaiseEvent(this);
 
     CloseDbIfOpen();
@@ -292,20 +293,9 @@ CloudResult CloudContainer::Disconnect(bool fromCacheDtor) {
         if (entry != containers.end())
             containers.erase(entry);
     }
+    OnDisconnected(isDetach);
 
-    return CloudResult();
-}
-
-/**
- * Permanently disconnect and then detach this container from the CloudCache.
- * @note This function does nothing if the CloudContainer is not connected to a CloudCache. See CloudContainer::Connect
- */
-CloudResult CloudContainer::Detach() {
-    if (nullptr == m_cache)
-        return CloudResult();
-    auto thisCache = m_cache;
-    auto stat = Disconnect(false);
-    return !stat.IsSuccess() ? stat : thisCache->CallSqliteFn([&](Utf8P* msg) { return sqlite3_bcvfs_detach(thisCache->m_vfs, m_alias.c_str(), msg); }, "detach");
+    return isDetach ? thisCache->CallSqliteFn([&](Utf8P* msg) { return sqlite3_bcvfs_detach(thisCache->m_vfs, m_alias.c_str(), msg); }, "detach") :  CloudResult();
 }
 
 static int uploadBusy(void* container, int nTries) {
