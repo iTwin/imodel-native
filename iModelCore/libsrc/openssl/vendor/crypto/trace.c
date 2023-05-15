@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2022 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2019-2023 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -18,7 +18,6 @@
 #include "internal/nelem.h"
 #include "internal/refcount.h"
 #include "crypto/cryptlib.h"
-#include "crypto/ctype.h"
 
 #ifndef OPENSSL_NO_TRACE
 
@@ -530,28 +529,4 @@ void OSSL_trace_end(int category, BIO * channel)
         CRYPTO_THREAD_unlock(trace_lock);
     }
 #endif
-}
-
-int OSSL_trace_string(BIO *out, int text, int full,
-                      const unsigned char *data, size_t size)
-{
-    unsigned char buf[OSSL_TRACE_STRING_MAX + 1];
-    int len, i;
-
-    if (!full && size > OSSL_TRACE_STRING_MAX) {
-        BIO_printf(out, "[len %zu limited to %d]: ",
-                   size, OSSL_TRACE_STRING_MAX);
-        len = OSSL_TRACE_STRING_MAX;
-    } else {
-        len = (int)size;
-    }
-    if (!text) { /* mask control characters while preserving newlines */
-        for (i = 0; i < len; i++, data++)
-            buf[i] = (char)*data != '\n' && ossl_iscntrl((int)*data)
-                ? ' ' : *data;
-        if (len == 0 || data[-1] != '\n')
-            buf[len++] = '\n';
-        data = buf;
-    }
-    return BIO_printf(out, "%.*s", len, data);
 }

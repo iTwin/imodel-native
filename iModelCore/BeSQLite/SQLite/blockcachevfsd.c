@@ -1551,7 +1551,7 @@ static void bcvCreateDir(int *pRc, BcvCommon *p, const char *zCont){
       "%s" BCV_PATH_SEPARATOR "%s", p->zDir, zCont
   );
   if( *pRc==SQLITE_OK && stat(zDir, &buf)<0 ){
-    if( osMkdir(zDir, 0755)<0 && stat(zDir, &buf)<0 ){
+    if( osMkdir(zDir, 0770)<0 && stat(zDir, &buf)<0 ){
       *pRc = SQLITE_CANTOPEN;
     }
   }

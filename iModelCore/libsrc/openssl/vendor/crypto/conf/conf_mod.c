@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2021 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2002-2022 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -100,7 +100,7 @@ DEFINE_RUN_ONCE_STATIC(do_init_module_list_lock)
 {
     module_list_lock = CRYPTO_THREAD_lock_new();
     if (module_list_lock == NULL) {
-        ERR_raise(ERR_LIB_CONF, ERR_R_CRYPTO_LIB);
+        ERR_raise(ERR_LIB_CONF, ERR_R_MALLOC_FAILURE);
         return 0;
     }
 
@@ -332,8 +332,10 @@ static CONF_MODULE *module_add(DSO *dso, const char *name,
         supported_modules = sk_CONF_MODULE_new_null();
     if (supported_modules == NULL)
         goto err;
-    if ((tmod = OPENSSL_zalloc(sizeof(*tmod))) == NULL)
+    if ((tmod = OPENSSL_zalloc(sizeof(*tmod))) == NULL) {
+        ERR_raise(ERR_LIB_CONF, ERR_R_MALLOC_FAILURE);
         goto err;
+    }
 
     tmod->dso = dso;
     tmod->name = OPENSSL_strdup(name);
@@ -433,14 +435,14 @@ static int module_init(CONF_MODULE *pmod, const char *name, const char *value,
         initialized_modules = sk_CONF_IMODULE_new_null();
         if (initialized_modules == NULL) {
             CRYPTO_THREAD_unlock(module_list_lock);
-            ERR_raise(ERR_LIB_CONF, ERR_R_CRYPTO_LIB);
+            ERR_raise(ERR_LIB_CONF, ERR_R_MALLOC_FAILURE);
             goto err;
         }
     }
 
     if (!sk_CONF_IMODULE_push(initialized_modules, imod)) {
         CRYPTO_THREAD_unlock(module_list_lock);
-        ERR_raise(ERR_LIB_CONF, ERR_R_CRYPTO_LIB);
+        ERR_raise(ERR_LIB_CONF, ERR_R_MALLOC_FAILURE);
         goto err;
     }
 

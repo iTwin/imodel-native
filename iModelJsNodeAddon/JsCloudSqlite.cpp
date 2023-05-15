@@ -147,26 +147,30 @@ struct JsCloudUtil : CloudUtil {
  * JavaScript object for accessing cloud containers via SQLite.
  */
 struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
-    int m_durationSeconds;
+    int m_lockExpireSeconds;
 
     DEFINE_CONSTRUCTOR;
 
     JsCloudContainer(NapiInfoCR info) : Napi::ObjectWrap<JsCloudContainer>(info) {
         REQUIRE_ARGUMENT_ANY_OBJ(0, obj);
-        m_accessName = stringMember(obj, JSON_NAME(accessName));
+
+        m_baseUri = stringMember(obj, JSON_NAME(baseUri));
         m_containerId = stringMember(obj, JSON_NAME(containerId));
-        if (m_accessName.empty())
-            BeNapi::ThrowJsException(obj.Env(), "accessName missing from CloudContainer constructor");
+        if (m_baseUri.empty())
+            BeNapi::ThrowJsException(obj.Env(), "baseUri missing from CloudContainer constructor");
         if (m_containerId.empty())
             BeNapi::ThrowJsException(obj.Env(), "containerId missing from CloudContainer constructor");
 
         m_storageType = stringMember(obj, JSON_NAME(storageType), "azure");
+        if (m_storageType.Trim().StartsWith("azure"))
+            m_storageType = "azure?customuri=1&sas=1";
+
         m_alias = stringMember(obj, JSON_NAME(alias));
         if (m_alias.empty())
             m_alias = m_containerId;
         m_accessToken = stringMember(obj, JSON_NAME(accessToken));
         m_writeable = boolMember(obj, JSON_NAME(writeable), false);
-        m_durationSeconds = intMember(obj, JSON_NAME(durationSeconds), 0);
+        m_lockExpireSeconds = intMember(obj, JSON_NAME(lockExpireSeconds), 0);
         m_logId = stringMember(obj, JSON_NAME(logId), "");
         m_isPublic = boolMember(obj, JSON_NAME(isPublic), false);
     }
@@ -523,11 +527,11 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
         m_containerDb.TryExecuteSql("BEGIN");
         CheckLock(); // throws if already locked by another user
 
-        m_durationSeconds = std::min((int) (12*SECONDS_PER_HOUR), std::max((int)SECONDS_PER_HOUR, m_durationSeconds));
+        m_lockExpireSeconds = std::min((int) (12*SECONDS_PER_HOUR), std::max((int)SECONDS_PER_HOUR, m_lockExpireSeconds));
         BeJsDocument lockedBy;
         lockedBy[JSON_NAME(guid)] = m_cache->m_guid;
         lockedBy[JSON_NAME(user)] = user;
-        lockedBy[JSON_NAME(expires)] = GetServerDateString(m_durationSeconds * 1000);
+        lockedBy[JSON_NAME(expires)] = GetServerDateString(m_lockExpireSeconds * 1000);
 
         Statement stmt;
         auto rc = stmt.Prepare(m_containerDb, "REPLACE INTO bcv_kv(value,name) VALUES(?,?)");

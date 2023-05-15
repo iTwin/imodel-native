@@ -50,10 +50,10 @@ int ASN1_STRING_set_default_mask_asc(const char *p)
     unsigned long mask;
     char *end;
 
-    if (CHECK_AND_SKIP_PREFIX(p, "MASK:")) {
-        if (*p == '\0')
+    if (strncmp(p, "MASK:", 5) == 0) {
+        if (p[5] == '\0')
             return 0;
-        mask = strtoul(p, &end, 0);
+        mask = strtoul(p + 5, &end, 0);
         if (*end)
             return 0;
     } else if (strcmp(p, "nombstr") == 0)
@@ -159,8 +159,10 @@ static ASN1_STRING_TABLE *stable_get(int nid)
     tmp = ASN1_STRING_TABLE_get(nid);
     if (tmp != NULL && tmp->flags & STABLE_FLAGS_MALLOC)
         return tmp;
-    if ((rv = OPENSSL_zalloc(sizeof(*rv))) == NULL)
+    if ((rv = OPENSSL_zalloc(sizeof(*rv))) == NULL) {
+        ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
         return NULL;
+    }
     if (!sk_ASN1_STRING_TABLE_push(stable, rv)) {
         OPENSSL_free(rv);
         return NULL;
@@ -188,7 +190,7 @@ int ASN1_STRING_TABLE_add(int nid,
 
     tmp = stable_get(nid);
     if (tmp == NULL) {
-        ERR_raise(ERR_LIB_ASN1, ERR_R_ASN1_LIB);
+        ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
         return 0;
     }
     if (minsize >= 0)

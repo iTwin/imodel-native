@@ -29,8 +29,8 @@
 /*@ whitespace at EOL: */ 
 // /*@ end-of-line comment style not allowed (for C90 compatibility) */
  /*@0 intra-line comment indent off by 1, reported unless sloppy-cmt */
-/*X */ /*@2 missing spc or '*' after comment start reported unless sloppy-spc */
-/* X*/ /*@ missing space before comment end , reported unless sloppy-spc */
+/*X */ /*@2 no space nor '*' after comment start, reported unless sloppy-spc */
+/* X*/ /*@ no space before comment end , reported unless sloppy-spc */
 /*@ comment starting delimiter: /* inside intra-line comment */
  /*@0
   *@ above multi-line comment start indent off by 1, reported unless sloppy-cmt; this comment line is too long
@@ -40,21 +40,17 @@
  *@ comment starting delimiter: /* inside multi-line comment
 *@ multi-line comment indent off by -1
  *X*@ no spc after leading '*' in multi-line comment, reported unless sloppy-spc
- *@0 more than two spaces after .   in comment, no more reported
- *@0 more than two spaces after ?   in comment, no more reported
- *@0 more than two spaces after !   in comment, no more reported
+ *@0 more than two spaces after .   in comment, reported unless sloppy-spc
+ *@0 more than two spaces after ?   in comment, reported unless sloppy-spc
+ *@0 more than two spaces after !   in comment, reported unless sloppy-spc
 */ /*@ multi-line comment end indent off by -1 (relative to comment start) */
 */ /*@ unexpected comment ending delimiter outside comment */
-/*- '-' for formatted comment not allowed in intra-line comment */
 /*@ comment line is 4 columns tooooooooooooooooo wide, reported unless sloppy-len */
 /*@ comment line is 5 columns toooooooooooooooooooooooooooooooooooooooooooooo wide */
-#if ~0              /*@ '#if' with constant condition */
- #endif             /*@ indent of preproc. directive off by 1 (must be 0) */
-#define X (1 +  1)  /*@0 extra space in body, reported unless sloppy-spc */
-#define Y   1       /*@ extra space before body, reported unless sloppy-spc */ \
-#define Z           /*@2 preprocessor directive within multi-line directive */
+#define X   1       /*@0 extra space false negative due to coincidence */
+ #define Y  2       /*@ indent of preprocessor directive off by 1 (must be 0) */
 typedef struct  {   /*@0 extra space in code, reported unless sloppy-spc */
-    enum {          /*@1 extra space  in intra-line comment, no more reported */
+    enum {          /*@1 extra space  in comment, reported unless sloppy-spc */
            w = 0 /*@ hanging expr indent off by 1, or 3 for lines after '{' */
              && 1,  /*@ hanging expr indent off by 3, or -1 for leading '&&' */
          x = 1,     /*@ hanging expr indent off by -1 */
@@ -67,9 +63,7 @@ typedef struct  {   /*@0 extra space in code, reported unless sloppy-spc */
     } s_type;       /*@ statement/type declaration indent off by 4 */
 int* somefunc();    /*@ no space before '*' in type decl, r unless sloppy-spc */
 void main(int n) {  /*@ opening brace at end of function definition header */
-    for (; ; ) ;    /*@ space before ')', reported unless sloppy-spc */
-    for ( ; x; y) ; /*@2 space after '(' and before ';', unless sloppy-spc */
-    for (;;n++) {   /*@ missing space after ';', reported unless sloppy-spc */
+    for (;;n++) {   /*@ no space after ';', reported unless sloppy-spc */
         return;     /*@0 (1-line) single statement in braces */
     }}              /*@2 code after '}' outside expr */
 }                   /*@ unexpected closing brace (too many '}') outside expr */
@@ -104,15 +98,13 @@ int f (int a,       /*@ space after fn before '(', reported unless sloppy-spc */
 # define MAC(A) (A) /*@ nesting indent of preprocessor directive off by 1 */
              ? 1    /*@ hanging expr indent off by 1 */
               : 2); /*@ hanging expr indent off by 2, or 1 for leading ':' */
-    if(a            /*@ missing space after 'if', reported unless sloppy-spc */
+    if(a            /*@ no space after 'if', reported unless sloppy-spc */
           /*@0 intra-line comment indent off by -1 (not: by 3 due to '&&') */
            && ! 0   /*@2 space after '!', reported unless sloppy-spc */
          || b ==    /*@ hanging expr indent off by 2, or -2 for leading '||' */
-       (x<<= 1) +   /*@ missing space before '<<=' reported unless sloppy-spc */
-       (xx+= 2) +   /*@ missing space before '+=', reported unless sloppy-spc */
-       (a^ 1) +     /*@ missing space before '^', reported unless sloppy-spc */
-       (y *=z) +    /*@ missing space after '*=' reported unless sloppy-spc */
-       a %2 /       /*@ missing space after '%', reported unless sloppy-spc */
+       (xx+= 2) +   /*@ no space before '+=', reported unless sloppy-spc */
+       (a^ 1) +     /*@ no space before '^', reported unless sloppy-spc */
+       a %2 /       /*@ no space after '%', reported unless sloppy-spc */
        1 +/* */     /*@ no space before comment, reported unless sloppy-spc */
        /* */+       /*@ no space after comment, reported unless sloppy-spc */
        s. e_member) /*@ space after '.', reported unless sloppy-spc */
@@ -121,7 +113,7 @@ int f (int a,       /*@ space after fn before '(', reported unless sloppy-spc */
     if (a ++)       /*@ space before postfix '++', reported unless sloppy-spc */
     {               /*@ {' not on same line as preceding 'if' */
         c;          /*@0 single stmt in braces, reported on 1-stmt */
-    } else          /*@ missing '{' on same line after '} else' */
+    } else          /*@ no '{' on same line after '} else' */
       {             /*@ statement indent off by 2 */
         d;          /*@0 single stmt in braces, reported on 1-stmt */
           }         /*@ statement indent off by 6 */
@@ -131,18 +123,18 @@ int f (int a,       /*@ space after fn before '(', reported unless sloppy-spc */
         while ( 2); /*@ space after '(', reported unless sloppy-spc */
     b; c;           /*@ more than one statement per line */
   outer:            /*@ outer label special indent off by 1 */
-    do{             /*@ missing space before '{', reported unless sloppy-spc */
+    do{             /*@ no space before '{', reported unless sloppy-spc */
      inner:         /*@ inner label normal indent off by 1 */
         f (3,       /*@ space after fn before '(', reported unless sloppy-spc */
            4);      /*@0 false negative: should report single stmt in braces */
     }               /*@0 'while' not on same line as preceding '}' */
-    while (a+ 0);   /*@2 missing space before '+', reported unless sloppy-spc */
+    while (a+ 0);   /*@2 no space before '+', reported unless sloppy-spc */
     switch (b ) {   /*@ space before ')', reported unless sloppy-spc */
    case 1:          /*@ 'case' special statement indent off by -1 */
-    case(2):       /*@ missing space after 'case', reported unless sloppy-spc */
+    case(2):        /*@ no space after 'case', reported unless sloppy-spc */
     default: ;      /*@ code after 'default:' */
 }                   /*@ statement indent off by -4 */
-    return(      /*@ missing space after 'return', reported unless sloppy-spc */
+    return(         /*@ no space after 'return', reported unless sloppy-spc */
            x); }    /*@ code before block-level '}' */
 /* Here the tool should stop complaining apart from the below issues at EOF */
 
@@ -350,7 +342,7 @@ void f_looong_body()
 
     ;               /*@ 2 essentially blank lines before, if !sloppy-spc */
 }                   /*@ function body length > 200 lines */
-#if X               /*@0 unclosed #if */
+#if 0               /*@0 unclosed #if */
 struct t {          /*@0 unclosed brace at decl/block level */
     enum {          /*@0 unclosed brace at enum/expression level */
           v = (1    /*@0 unclosed parenthesis */

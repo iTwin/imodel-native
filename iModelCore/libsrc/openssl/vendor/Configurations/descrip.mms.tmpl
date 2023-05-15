@@ -209,12 +209,12 @@
                @cnf_ldflags, '$(LDFLAGS)');
   our $bin_ex_libs = join('', @cnf_ex_libs, '$(EX_LIBS)');
 
-  # These are horrible hacks, but are needed because recursive inclusion of
-  # files in different directories does not work well with VMS C.  We try to
-  # help by specifying extra relative directories.  They must always be in Unix
-  # format, relative to the directory where the .c file is located.  The logic
-  # is that any inclusion, merged with one of these relative directories, will
-  # find the requested inclusion file.
+  # This is a horrible hack, but is needed because recursive inclusion of files
+  # in different directories does not work well with VMS C.  We try to help by
+  # specifying extra relative directories.  They must always be in Unix format,
+  # relative to the directory where the .c file is located.  The logic is that
+  # any inclusion, merged with one of these relative directories, will find the
+  # requested inclusion file.
   foreach (grep /\[\.crypto\.async\.arch\].*\.o$/, keys %{$unified_info{sources}}) {
       my $obj = platform->obj($_);
       push @{$unified_info{includes_extra}->{$obj}}, qw(../);
@@ -227,20 +227,6 @@
       my $obj = platform->obj($_);
       push @{$unified_info{includes_extra}->{$obj}}, qw(../);
   }
-  foreach (grep /\[\.ssl\].*?\.o$/, keys %{$unified_info{sources}}) {
-      my $obj = platform->obj($_);
-      # Most of the files in [.ssl] include "ssl_local.h" which includes things
-      # like "record/record.h".  Adding "./" as an inclusion directory helps
-      # making this sort of header from these directories.
-      push @{$unified_info{includes_extra}->{$obj}}, qw(./);
-  }
-  foreach (grep /\[\.ssl\].*?ssl_lib\.o$/, keys %{$unified_info{sources}}) {
-      my $obj = platform->obj($_);
-      # Some files in [.ssl] include "quic/quic_local.h", which in turn
-      # includes "../ssl_local.h".  Adding "./quic" as an inclusion directory
-      # helps making this sort of header from these directories.
-      push @{$unified_info{includes_extra}->{$obj}}, qw(./quic);
-  }
   foreach (grep /\[\.ssl\.(?:record|statem)\].*?\.o$/, keys %{$unified_info{sources}}) {
       my $obj = platform->obj($_);
       # Most of the files in [.ssl.record] and [.ssl.statem] include
@@ -250,24 +236,9 @@
       push @{$unified_info{includes_extra}->{$obj}}, qw(../);
 
   }
-  foreach (grep /\[\.ssl\.record\.methods\].*?\.o$/, keys %{$unified_info{sources}}) {
-      my $obj = platform->obj($_);
-      # Most of the files in [.ssl.record.methods] include "../../ssl_local.h"
-      # which includes things like "record/record.h".  Adding "../../" as an
-      # inclusion directory helps making this sort of header from these
-      # directories.
-      push @{$unified_info{includes_extra}->{$obj}}, qw(../../);
-  }
   foreach (grep /\[\.test\].*?\.o$/, keys %{$unified_info{sources}}) {
       my $obj = platform->obj($_);
       push @{$unified_info{includes_extra}->{$obj}}, qw(../ssl ./helpers);
-      # Some of the sources in [.test] also include headers like
-      # "../ssl/record/methods/recmethod_local.h", which in turn might include
-      # "../../ssl_local.h", so these object files need yet another hack.
-      # We could make this specific to just the object files that are affected
-      # directly, but that would end up with more whack-a-mole of this sort, so
-      # nah, we do it broadly.
-      push @{$unified_info{includes_extra}->{$obj}}, qw(../ssl/record/methods);
   }
   foreach (grep /\[\.test\.helpers\].*?\.o$/, keys %{$unified_info{sources}}) {
       my $obj = platform->obj($_);

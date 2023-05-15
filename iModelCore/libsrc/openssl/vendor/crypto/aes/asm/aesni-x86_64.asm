@@ -6,6 +6,7 @@ PUBLIC	aesni_encrypt
 ALIGN	16
 aesni_encrypt	PROC PUBLIC
 
+DB	243,15,30,250
 	movups	xmm2,XMMWORD PTR[rcx]
 	mov	eax,DWORD PTR[240+r8]
 	movups	xmm0,XMMWORD PTR[r8]
@@ -32,6 +33,7 @@ PUBLIC	aesni_decrypt
 ALIGN	16
 aesni_decrypt	PROC PUBLIC
 
+DB	243,15,30,250
 	movups	xmm2,XMMWORD PTR[rcx]
 	mov	eax,DWORD PTR[240+r8]
 	movups	xmm0,XMMWORD PTR[r8]
@@ -530,6 +532,7 @@ $L$SEH_begin_aesni_ecb_encrypt::
 
 
 
+DB	243,15,30,250
 	lea	rsp,QWORD PTR[((-88))+rsp]
 	movaps	XMMWORD PTR[rsp],xmm6
 	movaps	XMMWORD PTR[16+rsp],xmm7
@@ -905,6 +908,7 @@ $L$SEH_begin_aesni_ccm64_encrypt_blocks::
 
 
 
+DB	243,15,30,250
 	lea	rsp,QWORD PTR[((-88))+rsp]
 	movaps	XMMWORD PTR[rsp],xmm6
 	movaps	XMMWORD PTR[16+rsp],xmm7
@@ -1001,6 +1005,7 @@ $L$SEH_begin_aesni_ccm64_decrypt_blocks::
 
 
 
+DB	243,15,30,250
 	lea	rsp,QWORD PTR[((-88))+rsp]
 	movaps	XMMWORD PTR[rsp],xmm6
 	movaps	XMMWORD PTR[16+rsp],xmm7
@@ -1130,6 +1135,7 @@ $L$SEH_begin_aesni_ctr32_encrypt_blocks::
 
 
 
+DB	243,15,30,250
 	cmp	rdx,1
 	jne	$L$ctr32_bulk
 
@@ -1744,6 +1750,7 @@ $L$SEH_begin_aesni_xts_encrypt::
 
 
 
+DB	243,15,30,250
 	lea	r11,QWORD PTR[rsp]
 
 	push	rbp
@@ -2250,6 +2257,7 @@ $L$SEH_begin_aesni_xts_decrypt::
 
 
 
+DB	243,15,30,250
 	lea	r11,QWORD PTR[rsp]
 
 	push	rbp
@@ -2793,6 +2801,7 @@ $L$SEH_begin_aesni_ocb_encrypt::
 
 
 
+DB	243,15,30,250
 	lea	rax,QWORD PTR[rsp]
 	push	rbx
 
@@ -3252,6 +3261,7 @@ $L$SEH_begin_aesni_ocb_decrypt::
 
 
 
+DB	243,15,30,250
 	lea	rax,QWORD PTR[rsp]
 	push	rbx
 
@@ -3721,6 +3731,7 @@ $L$SEH_begin_aesni_cbc_encrypt::
 
 
 
+DB	243,15,30,250
 	test	rdx,rdx
 	jz	$L$cbc_ret
 
