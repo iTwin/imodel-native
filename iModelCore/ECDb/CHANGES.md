@@ -19,7 +19,7 @@ This document including important changes to syntax or file format.
 * Major improvement to Instance prop functionality where the use of a virtual table to filter rows based on the property selected.
 * Fix bug that causes assertion when access instance that mapped to overflow table.
 * Instance prop continues to be an experimental feature.
-* Add [Instance Properties Docs](https://dev.azure.com/bentleycs/iModelTechnologies/_wiki/wikis/iModelTechnologies.wiki/35670/Instance-properties)
+* Add instance properties docs on wiki.
 
 ## `4/10/2023`: Add comprehensive ECDb integrity checks and support for enable/disabling experimental features.
 
