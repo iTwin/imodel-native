@@ -223,9 +223,9 @@ public:
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
     std::shared_ptr<ContentDescriptor::Category> GetCalculatedFieldCategory(ECClassCP ecClass, CalculatedPropertiesSpecificationCR spec, RelatedClassPathCR pathFromSelectToPropertyClass,
-        RelationshipMeaning meaning, PropertyCategorySpecificationsList const* scopeCategorySpecs = nullptr)
+        RelationshipMeaning meaning)
         {
-        CategoryOverrideInfo const* categoryOverride = m_context.GetPropertyInfos().GetCategoryOverride(ecClass, spec, scopeCategorySpecs);
+        CategoryOverrideInfo const* categoryOverride = m_context.GetPropertyInfos().GetCategoryOverride(ecClass, spec);
         if (categoryOverride)
             return PrepareCategoryForReturn(*categoryOverride);
 
@@ -345,7 +345,7 @@ protected:
     ContentDescriptor::CalculatedPropertyField* CreateCalculatedPropertyField(ECClassCP ecClass, Utf8StringCR name, CalculatedPropertiesSpecificationCR spec, 
         RelatedClassPathCR pathFromSelectToPropertyClass, RelationshipMeaning relationshipMeaning)
         {
-        ContentDescriptor::CalculatedPropertyField* field = new ContentDescriptor::CalculatedPropertyField(m_categoriesSupplier.GetCalculatedFieldCategory(ecClass, spec, pathFromSelectToPropertyClass, relationshipMeaning, m_scopePropertyCategories),
+        ContentDescriptor::CalculatedPropertyField* field = new ContentDescriptor::CalculatedPropertyField(m_categoriesSupplier.GetCalculatedFieldCategory(ecClass, spec, pathFromSelectToPropertyClass, relationshipMeaning),
             spec.GetLabel(), name, spec.GetValue(), ecClass, spec.GetPriority());
 
         if (nullptr != spec.GetRenderer())

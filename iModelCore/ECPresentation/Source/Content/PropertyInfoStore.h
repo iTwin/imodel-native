@@ -194,7 +194,7 @@ public:
     std::shared_ptr<ContentFieldEditor const> GetPropertyEditor(ECPropertyCR, ECClassCR, PropertySpecificationCP = nullptr) const;
     Utf8String GetLabelOverride(ECPropertyCR, ECClassCR, PropertySpecificationCP = nullptr) const;
     CategoryOverrideInfo const* GetCategoryOverride(ECPropertyCR, ECClassCR, PropertySpecificationCP = nullptr, PropertyCategorySpecificationsList const* = nullptr) const;
-    CategoryOverrideInfo const* GetCategoryOverride(ECClassCP, CalculatedPropertiesSpecificationCR, PropertyCategorySpecificationsList const* = nullptr) const;
+    CategoryOverrideInfo const* GetCategoryOverride(ECClassCP, CalculatedPropertiesSpecificationCR) const;
     Nullable<bool> GetReadOnlyOverride(ECPropertyCR, ECClassCR, PropertySpecificationCP = nullptr) const;
     Nullable<int32_t> GetPriorityOverride(ECPropertyCR, ECClassCR, PropertySpecificationCP = nullptr) const;
 };

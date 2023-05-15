@@ -522,8 +522,9 @@ CategoryOverrideInfo const* PropertyInfoStore::GetCategoryOverride(ECPropertyCR 
             return GetCategoryOverride(*categoryOverride.Value().value, classOverrides.GetAvailableCategories());
 
         // try to get categories from local scope
-        if (!scopeCategorySpecs->empty())
-            return GetCategoryOverride(*customOverride->GetCategoryId(), *scopeCategorySpecs);
+        auto overrideFromLocalScope = GetCategoryOverride(*customOverride->GetCategoryId(), *scopeCategorySpecs);
+        if (nullptr != overrideFromLocalScope)
+            return overrideFromLocalScope;
 
         // if local scope is empty, get from global scope
         return GetCategoryOverride(*customOverride->GetCategoryId(), classOverrides.GetAvailableCategories());
@@ -538,12 +539,21 @@ CategoryOverrideInfo const* PropertyInfoStore::GetCategoryOverride(ECPropertyCR 
 /*-----------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+-----------+------*/
-CategoryOverrideInfo const* PropertyInfoStore::GetCategoryOverride(ECClassCP ecClass, CalculatedPropertiesSpecificationCR spec, PropertyCategorySpecificationsList const* scopeCategorySpecs) const
+CategoryOverrideInfo const* PropertyInfoStore::GetCategoryOverride(ECClassCP ecClass, CalculatedPropertiesSpecificationCR spec) const
     {
-    auto const& classOverrides = m_perClassPropertyOverrides.find(ecClass);
-    if (classOverrides != m_perClassPropertyOverrides.end() && spec.GetCategoryId())
-        return GetCategoryOverride(*spec.GetCategoryId(), classOverrides->second.GetAvailableCategories());
+    if (spec.GetCategoryId() == nullptr)
+        return nullptr;
 
+    if (ecClass != nullptr)
+        {
+        auto const& classOverrides = GetOverrides(*ecClass);
+        return GetCategoryOverride(*spec.GetCategoryId(), classOverrides.GetAvailableCategories());
+        }
+
+    auto const& classOverrides = m_perClassPropertyOverrides.find(ecClass);
+    if (classOverrides != m_perClassPropertyOverrides.end())
+        return GetCategoryOverride(*spec.GetCategoryId(), classOverrides->second.GetAvailableCategories());
+        
     return nullptr;
     }
 
