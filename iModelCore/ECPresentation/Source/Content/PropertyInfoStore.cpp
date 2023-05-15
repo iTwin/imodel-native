@@ -521,7 +521,12 @@ CategoryOverrideInfo const* PropertyInfoStore::GetCategoryOverride(ECPropertyCR 
         if (categoryOverride.IsValid() && categoryOverride.Value().priority > customOverride->GetOverridesPriority())
             return GetCategoryOverride(*categoryOverride.Value().value, classOverrides.GetAvailableCategories());
 
-        return GetCategoryOverride(*customOverride->GetCategoryId(), *scopeCategorySpecs);
+        // try to get categories from local scope
+        if (!scopeCategorySpecs->empty())
+            return GetCategoryOverride(*customOverride->GetCategoryId(), *scopeCategorySpecs);
+
+        // if local scope is empty, get from global scope
+        return GetCategoryOverride(*customOverride->GetCategoryId(), classOverrides.GetAvailableCategories());
         }
 
     if (categoryOverride.IsValid())
