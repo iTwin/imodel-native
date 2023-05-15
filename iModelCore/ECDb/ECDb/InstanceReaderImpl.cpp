@@ -243,10 +243,6 @@ bool Reader::Seek(InstanceReader::Position const& pos, InstanceReader::RowCallba
             lastClassId = classId;
         }
     }
-    // if (!m_propExists.Exists(pos.GetClassId(), pos.GetAccessString())) {
-    //     return false;
-    // }
-
     const auto whatChanged = m_seekPos.Compare(rsPos);
     bool hasRow = false;
     if (whatChanged == SeekPos::CompareResult::SameRowAndSchema) {
