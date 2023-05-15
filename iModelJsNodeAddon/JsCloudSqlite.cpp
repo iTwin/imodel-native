@@ -227,22 +227,24 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
         CallJsMemberFunc("onConnected", {thisObj});
     }
 
+    void OnDisconnect(bool isDetach) override {
+        CallJsMemberFunc("onDisconnect", {Value(), Napi::Boolean::New(Env(), isDetach)});
+    }
+    void OnDisconnected(bool isDetach) override {
+        CallJsMemberFunc("onDisconnected", {Value(), Napi::Boolean::New(Env(), isDetach)});
+    }
+
     void Disconnect(NapiInfoCR info) {
         if (!IsContainerConnected())
             return;
 
         BeJsConst args(info[0]);
         bool isDetach = args.isObject() && args["detach"].GetBoolean(false);
-        std::vector<napi_value> funcArgs = {Value(), Napi::Boolean::New(Env(), isDetach)};
-
-        CallJsMemberFunc("onDisconnect", funcArgs);
-
-        auto stat = isDetach ? CloudContainer::Detach() : CloudContainer::Disconnect(false);
+        auto stat = CloudContainer::Disconnect(isDetach, false);
         if (!stat.IsSuccess())
             BeNapi::ThrowJsException(Env(), stat.m_error.c_str(), stat.m_status);
 
         Value().Set("cache", Env().Undefined());
-        CallJsMemberFunc("onDisconnected", funcArgs);
     }
 
     void PollManifest(NapiInfoCR info) {
