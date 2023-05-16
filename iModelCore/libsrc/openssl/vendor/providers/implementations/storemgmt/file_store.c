@@ -155,7 +155,7 @@ static struct file_ctx_st *file_open_stream(BIO *source, const char *uri,
     struct file_ctx_st *ctx;
 
     if ((ctx = new_file_ctx(IS_FILE, uri, provctx)) == NULL) {
-        ERR_raise(ERR_LIB_PROV, ERR_R_PROV_LIB);
+        ERR_raise(ERR_LIB_PROV, ERR_R_MALLOC_FAILURE);
         goto err;
     }
 
@@ -172,7 +172,7 @@ static void *file_open_dir(const char *path, const char *uri, void *provctx)
     struct file_ctx_st *ctx;
 
     if ((ctx = new_file_ctx(IS_DIR, uri, provctx)) == NULL) {
-        ERR_raise(ERR_LIB_PROV, ERR_R_PROV_LIB);
+        ERR_raise(ERR_LIB_PROV, ERR_R_MALLOC_FAILURE);
         return NULL;
     }
 
@@ -201,7 +201,7 @@ static void *file_open(void *provctx, const char *uri)
         unsigned int check_absolute:1;
     } path_data[2];
     size_t path_data_n = 0, i;
-    const char *path, *p = uri, *q;
+    const char *path;
     BIO *bio;
 
     ERR_set_mark();
@@ -213,18 +213,20 @@ static void *file_open(void *provctx, const char *uri)
     path_data[path_data_n++].path = uri;
 
     /*
-     * Second step, if the URI appears to start with the "file" scheme,
+     * Second step, if the URI appears to start with the 'file' scheme,
      * extract the path and make that the second path to check.
      * There's a special case if the URI also contains an authority, then
      * the full URI shouldn't be used as a path anywhere.
      */
-    if (CHECK_AND_SKIP_CASE_PREFIX(p, "file:")) {
-        q = p;
-        if (CHECK_AND_SKIP_CASE_PREFIX(q, "//")) {
+    if (OPENSSL_strncasecmp(uri, "file:", 5) == 0) {
+        const char *p = &uri[5];
+
+        if (strncmp(&uri[5], "//", 2) == 0) {
             path_data_n--;           /* Invalidate using the full URI */
-            if (CHECK_AND_SKIP_CASE_PREFIX(q, "localhost/")
-                    || CHECK_AND_SKIP_CASE_PREFIX(q, "/")) {
-                p = q - 1;
+            if (OPENSSL_strncasecmp(&uri[7], "localhost/", 10) == 0) {
+                p = &uri[16];
+            } else if (uri[7] == '/') {
+                p = &uri[7];
             } else {
                 ERR_clear_last_mark();
                 ERR_raise(ERR_LIB_PROV, PROV_R_URI_AUTHORITY_UNSUPPORTED);
@@ -234,7 +236,7 @@ static void *file_open(void *provctx, const char *uri)
 
         path_data[path_data_n].check_absolute = 1;
 #ifdef _WIN32
-        /* Windows "file:" URIs with a drive letter start with a '/' */
+        /* Windows file: URIs with a drive letter start with a / */
         if (p[0] == '/' && p[2] == ':' && p[3] == '/') {
             char c = tolower(p[1]);
 
@@ -422,7 +424,7 @@ static int file_setup_decoders(struct file_ctx_st *ctx)
     /* Setup for this session, so only if not already done */
     if (ctx->_.file.decoderctx == NULL) {
         if ((ctx->_.file.decoderctx = OSSL_DECODER_CTX_new()) == NULL) {
-            ERR_raise(ERR_LIB_PROV, ERR_R_OSSL_DECODER_LIB);
+            ERR_raise(ERR_LIB_PROV, ERR_R_MALLOC_FAILURE);
             goto err;
         }
 
@@ -558,8 +560,10 @@ static char *file_name_to_uri(struct file_ctx_st *ctx, const char *name)
             + strlen(name) + 1 /* \0 */;
 
         data = OPENSSL_zalloc(calculated_length);
-        if (data == NULL)
+        if (data == NULL) {
+            ERR_raise(ERR_LIB_PROV, ERR_R_MALLOC_FAILURE);
             return NULL;
+        }
 
         OPENSSL_strlcat(data, ctx->uri, calculated_length);
         OPENSSL_strlcat(data, pathsep, calculated_length);

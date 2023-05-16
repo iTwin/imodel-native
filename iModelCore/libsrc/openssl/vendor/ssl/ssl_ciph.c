@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2021 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2022 The OpenSSL Project Authors. All Rights Reserved.
  * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved
  * Copyright 2005 Nokia. All rights reserved.
  *
@@ -626,15 +626,14 @@ const EVP_MD *ssl_md(SSL_CTX *ctx, int idx)
     return ctx->ssl_digest_methods[idx];
 }
 
-const EVP_MD *ssl_handshake_md(SSL_CONNECTION *s)
+const EVP_MD *ssl_handshake_md(SSL *s)
 {
-    return ssl_md(SSL_CONNECTION_GET_CTX(s), ssl_get_algorithm2(s));
+    return ssl_md(s->ctx, ssl_get_algorithm2(s));
 }
 
-const EVP_MD *ssl_prf_md(SSL_CONNECTION *s)
+const EVP_MD *ssl_prf_md(SSL *s)
 {
-    return ssl_md(SSL_CONNECTION_GET_CTX(s),
-                  ssl_get_algorithm2(s) >> TLS1_PRF_DGST_SHIFT);
+    return ssl_md(s->ctx, ssl_get_algorithm2(s) >> TLS1_PRF_DGST_SHIFT);
 }
 
 #define ITEM_SEP(a) \
@@ -817,7 +816,7 @@ static void ssl_cipher_apply_rule(uint32_t cipher_id, uint32_t alg_mkey,
     const SSL_CIPHER *cp;
     int reverse = 0;
 
-    OSSL_TRACE_BEGIN(TLS_CIPHER) {
+    OSSL_TRACE_BEGIN(TLS_CIPHER){
         BIO_printf(trc_out,
                    "Applying rule %d with %08x/%08x/%08x/%08x/%08x %08x (%d)\n",
                    rule, (unsigned int)alg_mkey, (unsigned int)alg_auth,
@@ -970,8 +969,10 @@ static int ssl_cipher_strength_sort(CIPHER_ORDER **head_p,
     }
 
     number_uses = OPENSSL_zalloc(sizeof(int) * (max_strength_bits + 1));
-    if (number_uses == NULL)
+    if (number_uses == NULL) {
+        ERR_raise(ERR_LIB_SSL, ERR_R_MALLOC_FAILURE);
         return 0;
+    }
 
     /*
      * Now find the strength_bits values actually used
@@ -1009,7 +1010,7 @@ static int ssl_cipher_process_rulestr(const char *rule_str,
 
     retval = 1;
     l = rule_str;
-    for (;;) {
+    for ( ; ; ) {
         ch = *l;
 
         if (ch == '\0')
@@ -1050,9 +1051,9 @@ static int ssl_cipher_process_rulestr(const char *rule_str,
             while (((ch >= 'A') && (ch <= 'Z')) ||
                    ((ch >= '0') && (ch <= '9')) ||
                    ((ch >= 'a') && (ch <= 'z')) ||
-                   (ch == '-') || (ch == '_') || (ch == '.') || (ch == '='))
+                   (ch == '-') || (ch == '.') || (ch == '='))
 #else
-            while (isalnum((unsigned char)ch) || (ch == '-') || (ch == '_') || (ch == '.')
+            while (isalnum((unsigned char)ch) || (ch == '-') || (ch == '.')
                    || (ch == '='))
 #endif
             {
@@ -1099,11 +1100,6 @@ static int ssl_cipher_process_rulestr(const char *rule_str,
             while (ca_list[j]) {
                 if (strncmp(buf, ca_list[j]->name, buflen) == 0
                     && (ca_list[j]->name[buflen] == '\0')) {
-                    found = 1;
-                    break;
-                } else if (ca_list[j]->stdname != NULL
-                           && strncmp(buf, ca_list[j]->stdname, buflen) == 0
-                           && ca_list[j]->stdname[buflen] == '\0') {
                     found = 1;
                     break;
                 } else
@@ -1222,10 +1218,10 @@ static int ssl_cipher_process_rulestr(const char *rule_str,
          */
         if (rule == CIPHER_SPECIAL) { /* special command */
             ok = 0;
-            if ((buflen == 8) && HAS_PREFIX(buf, "STRENGTH")) {
+            if ((buflen == 8) && strncmp(buf, "STRENGTH", 8) == 0) {
                 ok = ssl_cipher_strength_sort(head_p, tail_p);
-            } else if (buflen == 10 && CHECK_AND_SKIP_PREFIX(buf, "SECLEVEL=")) {
-                int level = *buf - '0';
+            } else if (buflen == 10 && strncmp(buf, "SECLEVEL=", 9) == 0) {
+                int level = buf[9] - '0';
                 if (level < 0 || level > 5) {
                     ERR_raise(ERR_LIB_SSL, SSL_R_INVALID_COMMAND);
                 } else {
@@ -1265,14 +1261,14 @@ static int check_suiteb_cipher_list(const SSL_METHOD *meth, CERT *c,
                                     const char **prule_str)
 {
     unsigned int suiteb_flags = 0, suiteb_comb2 = 0;
-    if (HAS_PREFIX(*prule_str, "SUITEB128ONLY")) {
+    if (strncmp(*prule_str, "SUITEB128ONLY", 13) == 0) {
         suiteb_flags = SSL_CERT_FLAG_SUITEB_128_LOS_ONLY;
-    } else if (HAS_PREFIX(*prule_str, "SUITEB128C2")) {
+    } else if (strncmp(*prule_str, "SUITEB128C2", 11) == 0) {
         suiteb_comb2 = 1;
         suiteb_flags = SSL_CERT_FLAG_SUITEB_128_LOS;
-    } else if (HAS_PREFIX(*prule_str, "SUITEB128")) {
+    } else if (strncmp(*prule_str, "SUITEB128", 9) == 0) {
         suiteb_flags = SSL_CERT_FLAG_SUITEB_128_LOS;
-    } else if (HAS_PREFIX(*prule_str, "SUITEB192")) {
+    } else if (strncmp(*prule_str, "SUITEB192", 9) == 0) {
         suiteb_flags = SSL_CERT_FLAG_SUITEB_192_LOS;
     }
 
@@ -1434,22 +1430,15 @@ int SSL_CTX_set_ciphersuites(SSL_CTX *ctx, const char *str)
 int SSL_set_ciphersuites(SSL *s, const char *str)
 {
     STACK_OF(SSL_CIPHER) *cipher_list;
-    SSL_CONNECTION *sc = SSL_CONNECTION_FROM_SSL(s);
-    int ret;
+    int ret = set_ciphersuites(&(s->tls13_ciphersuites), str);
 
-    if (sc == NULL)
-        return 0;
-
-    ret = set_ciphersuites(&(sc->tls13_ciphersuites), str);
-
-    if (sc->cipher_list == NULL) {
+    if (s->cipher_list == NULL) {
         if ((cipher_list = SSL_get_ciphers(s)) != NULL)
-            sc->cipher_list = sk_SSL_CIPHER_dup(cipher_list);
+            s->cipher_list = sk_SSL_CIPHER_dup(cipher_list);
     }
-    if (ret && sc->cipher_list != NULL)
-        return update_cipher_list(s->ctx, &sc->cipher_list,
-                                  &sc->cipher_list_by_id,
-                                  sc->tls13_ciphersuites);
+    if (ret && s->cipher_list != NULL)
+        return update_cipher_list(s->ctx, &s->cipher_list, &s->cipher_list_by_id,
+                                  s->tls13_ciphersuites);
 
     return ret;
 }
@@ -1496,8 +1485,10 @@ STACK_OF(SSL_CIPHER) *ssl_create_cipher_list(SSL_CTX *ctx,
     num_of_ciphers = ssl_method->num_ciphers();
 
     co_list = OPENSSL_malloc(sizeof(*co_list) * num_of_ciphers);
-    if (co_list == NULL)
+    if (co_list == NULL) {
+        ERR_raise(ERR_LIB_SSL, ERR_R_MALLOC_FAILURE);
         return NULL;          /* Failure */
+    }
 
     ssl_cipher_collect_ciphers(ssl_method, num_of_ciphers,
                                disabled_mkey, disabled_auth, disabled_enc,
@@ -1608,6 +1599,7 @@ STACK_OF(SSL_CIPHER) *ssl_create_cipher_list(SSL_CTX *ctx,
     ca_list = OPENSSL_malloc(sizeof(*ca_list) * num_of_alias_max);
     if (ca_list == NULL) {
         OPENSSL_free(co_list);
+        ERR_raise(ERR_LIB_SSL, ERR_R_MALLOC_FAILURE);
         return NULL;          /* Failure */
     }
     ssl_cipher_collect_aliases(ca_list, num_of_group_aliases,
@@ -1620,7 +1612,7 @@ STACK_OF(SSL_CIPHER) *ssl_create_cipher_list(SSL_CTX *ctx,
      */
     ok = 1;
     rule_p = rule_str;
-    if (HAS_PREFIX(rule_str, "DEFAULT")) {
+    if (strncmp(rule_str, "DEFAULT", 7) == 0) {
         ok = ssl_cipher_process_rulestr(OSSL_default_cipher_list(),
                                         &head, &tail, ca_list, c);
         rule_p += 7;
@@ -1709,8 +1701,10 @@ char *SSL_CIPHER_description(const SSL_CIPHER *cipher, char *buf, int len)
 
     if (buf == NULL) {
         len = 128;
-        if ((buf = OPENSSL_malloc(len)) == NULL)
+        if ((buf = OPENSSL_malloc(len)) == NULL) {
+            ERR_raise(ERR_LIB_SSL, ERR_R_MALLOC_FAILURE);
             return NULL;
+        }
     } else if (len < 128) {
         return NULL;
     }
@@ -2052,8 +2046,10 @@ int SSL_COMP_add_compression_method(int id, COMP_METHOD *cm)
     }
 
     comp = OPENSSL_malloc(sizeof(*comp));
-    if (comp == NULL)
+    if (comp == NULL) {
+        ERR_raise(ERR_LIB_SSL, ERR_R_MALLOC_FAILURE);
         return 1;
+    }
 
     comp->id = id;
     comp->method = cm;
@@ -2065,7 +2061,7 @@ int SSL_COMP_add_compression_method(int id, COMP_METHOD *cm)
     }
     if (ssl_comp_methods == NULL || !sk_SSL_COMP_push(ssl_comp_methods, comp)) {
         OPENSSL_free(comp);
-        ERR_raise(ERR_LIB_SSL, ERR_R_CRYPTO_LIB);
+        ERR_raise(ERR_LIB_SSL, ERR_R_MALLOC_FAILURE);
         return 1;
     }
     return 0;
@@ -2099,11 +2095,10 @@ int SSL_COMP_get_id(const SSL_COMP *comp)
 #endif
 }
 
-const SSL_CIPHER *ssl_get_cipher_by_char(SSL_CONNECTION *s,
-                                         const unsigned char *ptr,
+const SSL_CIPHER *ssl_get_cipher_by_char(SSL *ssl, const unsigned char *ptr,
                                          int all)
 {
-    const SSL_CIPHER *c = SSL_CONNECTION_GET_SSL(s)->method->get_cipher_by_char(ptr);
+    const SSL_CIPHER *c = ssl->method->get_cipher_by_char(ptr);
 
     if (c == NULL || (!all && c->valid == 0))
         return NULL;
