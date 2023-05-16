@@ -524,8 +524,8 @@ describe("basic tests", () => {
       </ECSchema>`;
 
     assert.isTrue(dgndb.isOpen());
-    const rc = dgndb.convertEC2Schemas([refSchema, schemaXml], { schemaLockHeld: false });
-    assert.equal(rc, DbResult.BE_SQLITE_OK);
+    const ec3Schemas: string[] = dgndb.convertEC2XmlSchemas([schemaXml, refSchema], { schemaLockHeld: false });
+    assert.equal(ec3Schemas.length, 2);
     dgndb.saveChanges();
     dgndb.closeIModel();
   });

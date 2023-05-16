@@ -2929,6 +2929,19 @@ public:
     ECOBJECTS_EXPORT static SearchPathSchemaFileLocaterPtr CreateSearchPathSchemaFileLocater(bvector<WString> const& searchPaths, bool includeFilesWithNoVerExt=false);
 };
 
+//=======================================================================================
+//! Reads schemas from a given set of Xml strings
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE StringSchemaLocater : IECSchemaLocater, NonCopyableClass
+{
+private:
+    bmap<Utf8String, Utf8String> m_schemaXml;
+protected:
+    ECOBJECTS_EXPORT ECSchemaPtr _LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext) override;
+public:
+    ECOBJECTS_EXPORT void AddSchemaString(Utf8String schemaName, Utf8String schemaXml) {m_schemaXml[schemaName] = schemaXml;}
+};
+
 struct SupplementalSchemaInfo;
 typedef RefCountedPtr<SupplementalSchemaInfo> SupplementalSchemaInfoPtr;
 
@@ -3106,6 +3119,7 @@ private:
 friend struct ECSchemaDownConverter;
 
 friend struct SearchPathSchemaFileLocater;
+friend struct StringSchemaLocater;
 friend struct SupplementedSchemaBuilder;
 friend struct SchemaXmlReader;
 friend struct SchemaXmlReaderImpl;
@@ -4136,6 +4150,9 @@ public:
     //!Loops through a schema's classes and properties and removes control characters from their descriptions, display labels, and role labels.
     //! @param[in]  schema  pointer to the schema which will be looped through
     ECOBJECTS_EXPORT static void RemoveInvalidDisplayCharacters(ECSchemaR schema);
+
+    //! The schemaXml will be read to obtain the SchemaKey, ECXML Major and Minor versions.
+    ECOBJECTS_EXPORT static SchemaReadStatus ReadSchemaStub(Utf8StringR schemaXml, SchemaKey& schemaKey, uint32_t& ecXmlMajorVersion, uint32_t& ecXmlMinorVersion);
 };
 
 //*=================================================================================**//**

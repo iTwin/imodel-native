@@ -926,9 +926,9 @@ DbResult JsInterop::ImportSchemas(DgnDbR dgndb, bvector<Utf8String> const& schem
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DbResult JsInterop::ConvertEC2Schemas(DgnDbR dgndb, bvector<Utf8String> const& schemaSources, SchemaSourceType sourceType, const SchemaImportOptions& opts)
+DbResult JsInterop::ConvertEC2XmlSchemas(DgnDbR dgndb, bvector<Utf8String> const& ec2XmlStrings, const SchemaImportOptions& opts, bvector<Utf8String>& ec3XmlStrings)
     {
-    if (0 == schemaSources.size())
+    if (0 == ec2XmlStrings.size())
         return BE_SQLITE_ERROR;
 
     ECSchemaReadContextPtr schemaContext = opts.m_customSchemaContext;
@@ -936,43 +936,56 @@ DbResult JsInterop::ConvertEC2Schemas(DgnDbR dgndb, bvector<Utf8String> const& s
         schemaContext = ECSchemaReadContext::CreateContext(false /*=acceptLegacyImperfectLatestCompatibleMatch*/, true /*=includeFilesWithNoVerExt*/);
 
     JsInterop::AddFallbackSchemaLocaters(dgndb, schemaContext);
-    bvector<ECSchemaPtr> schemas;
+    bvector<bpair<SchemaKey, ECSchemaPtr>> schemaKeyPairs;
 
-    for (Utf8String schemaSource : schemaSources)
+    StringSchemaLocater locater;
+    for (Utf8String ec2XmlString : ec2XmlStrings)
         {
+        SchemaKey key;
+        uint32_t ecXmlMajorVersion, ecXmlMinorVersion;
+        SchemaReadStatus status = ECSchema::ReadSchemaStub(ec2XmlString, key, ecXmlMajorVersion, ecXmlMinorVersion);
+        if (SchemaReadStatus::Success != status)
+            return BE_SQLITE_ERROR;
+        locater.AddSchemaString(key.GetName(), ec2XmlString);
+        schemaKeyPairs.push_back(std::make_pair(key, nullptr));
+        }
+    schemaContext->AddSchemaLocater(locater);
+
+    for (int i = 0; i < ec2XmlStrings.size(); i++)
+        {
+        Utf8String ec2XmlString = ec2XmlStrings[i];
         ECSchemaPtr schema;
-        SchemaReadStatus schemaStatus;
-        if (sourceType == SchemaSourceType::File)
-            {
-            BeFileName schemaFile(schemaSource.c_str(), BentleyCharEncoding::Utf8);
-            if (!schemaFile.DoesPathExist())
-                return BE_SQLITE_ERROR_FileNotFound;
+        SchemaReadStatus schemaStatus = ECSchema::ReadFromXmlString(schema, ec2XmlString.c_str(), *schemaContext);
 
-            schema = ECSchema::LocateSchema(schemaSource.c_str(), *schemaContext, SchemaMatchType::Exact, &schemaStatus);
-            }
-        else
-            schemaStatus = ECSchema::ReadFromXmlString(schema, schemaSource.c_str(), *schemaContext);
-
-        if (SchemaReadStatus::DuplicateSchema == schemaStatus)
+        if (SchemaReadStatus::DuplicateSchema == schemaStatus && schemaKeyPairs[i].second == nullptr)
+        {
+            schema = ECSchema::LocateSchema(schemaKeyPairs[i].first, *schemaContext);
+            schemaKeyPairs[i].second = schema;
             continue;
+        }
 
         if (SchemaReadStatus::Success != schemaStatus)
             return BE_SQLITE_ERROR;
 
-        schemas.push_back(schema);
+        schemaKeyPairs[i].second = schema;
         }
 
-    if (0 == schemas.size())
+    if (0 == schemaKeyPairs.size())
         return BE_SQLITE_ERROR;
 
-    for (ECSchemaPtr schema : schemas)
+    for (bpair<SchemaKey, ECSchemaPtr>& schemaPair : schemaKeyPairs)
         {
-        bool status = ECSchemaConverter::Convert(*schema, *schemaContext);
-        if (!status)
-            return BE_SQLITE_ERROR;
+        if (schemaPair.second != nullptr)
+            {
+            Utf8String schemaXml;
+            SchemaWriteStatus writeStatus = schemaPair.second->WriteToXmlString(schemaXml);
+            if (SchemaWriteStatus::Success != writeStatus)
+                return BE_SQLITE_ERROR;
+            ec3XmlStrings.push_back(schemaXml);
+            }
         }
 
-    return dgndb.SaveChanges();
+    return BE_SQLITE_OK;
     }
 
 //---------------------------------------------------------------------------------------

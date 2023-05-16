@@ -467,7 +467,7 @@ export declare namespace IModelJsNative {
     public concurrentQueryExecute(request: DbRequest, onResponse: ConcurrentQuery.OnResponse): void;
     public concurrentQueryResetConfig(config?: QueryConfig): QueryConfig;
     public concurrentQueryShutdown(): void;
-    public convertEC2Schemas(serializedXmlSchemas: string[], options?: SchemaImportOptions): DbResult;
+    public convertEC2XmlSchemas(ec2XmlSchemas: string[], options?: SchemaImportOptions): string[];
     public createBRepGeometry(createProps: any/* BRepGeometryCreate */): IModelStatus;
     public createChangeCache(changeCacheFile: ECDb, changeCachePath: string): DbResult;
     public createClassViewsInDb(): BentleyStatus;

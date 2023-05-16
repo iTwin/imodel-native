@@ -3211,6 +3211,18 @@ ECSchemaPtr SearchPathSchemaFileLocater::_LocateSchema(SchemaKeyR key, SchemaMat
     return schemaOut;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaPtr StringSchemaLocater::_LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext)
+    {
+    ECSchemaPtr schema;
+    auto schemaXml = m_schemaXml.find(key.m_schemaName);
+    if (schemaXml != m_schemaXml.end())
+        ECSchema::ReadFromXmlString(schema, schemaXml->second.c_str(), schemaContext);
+    return schema;
+    }
+
 struct ChecksumHelper
 {
     static Utf8String ComputeCheckSumForString(Utf8CP string, size_t len)
@@ -3788,6 +3800,23 @@ void ECSchema::RemoveInvalidDisplayCharacters(ECSchemaR schema)
                 }
             }
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaReadStatus ECSchema::ReadSchemaStub(Utf8StringR schemaXml, SchemaKey& schemaKey, uint32_t& ecXmlMajorVersion, uint32_t& ecXmlMinorVersion)
+    {
+    pugi::xml_document xmlDoc;
+    pugi::xml_parse_result parseResult = xmlDoc.load_string(schemaXml.c_str());
+    if(!parseResult)
+        {
+        LOG.errorv("Error loading XML string: %s (error at char %d)", parseResult.description(), parseResult.offset);
+        return SchemaReadStatus::FailedToParseXml;
+        }
+
+    pugi::xml_node schemaNode;
+    return SchemaXmlReader::ReadSchemaStub(schemaKey, ecXmlMajorVersion, ecXmlMinorVersion, schemaNode, xmlDoc);
     }
 
 /////////////////////////////////////////////////////////////////////////////////////////

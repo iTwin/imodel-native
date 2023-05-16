@@ -1788,10 +1788,10 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         return Napi::Number::New(Env(), (int)result);
         }
 
-    Napi::Value ConvertEC2Schemas(NapiInfoCR info)
+    Napi::Value ConvertEC2XmlSchemas(NapiInfoCR info)
         {
         RequireDbIsOpen(info);
-        REQUIRE_ARGUMENT_STRING_ARRAY(0, schemaXmlStrings);
+        REQUIRE_ARGUMENT_STRING_ARRAY(0, ec2XmlStrings);
         REQUIRE_ARGUMENT_ANY_OBJ(1, jsOpts);
 
         JsInterop::SchemaImportOptions options;
@@ -1804,9 +1804,15 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
             options.m_customSchemaContext = NativeECSchemaXmlContext::Unwrap(maybeEcSchemaContextVal.As<Napi::Object>())->GetContext();
             }
 
-        DbResult result = JsInterop::ConvertEC2Schemas(GetDgnDb(), schemaXmlStrings, SchemaSourceType::XmlString, options);
+        bvector<Utf8String> ec3XmlStrings;
+        DbResult result = JsInterop::ConvertEC2XmlSchemas(GetDgnDb(), ec2XmlStrings, options, ec3XmlStrings);
 
-        return Napi::Number::New(Env(), (int)result);
+        uint32_t index = 0;
+        auto ret = Napi::Array::New(Env(), ec3XmlStrings.size());
+        for (auto ec3XmlString : ec3XmlStrings)
+            ret.Set(index++, Napi::String::New(Env(), ec3XmlString.c_str()));
+
+        return ret;
         }
 
     Napi::Value ImportXmlSchemas(NapiInfoCR info)
@@ -2317,7 +2323,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
             InstanceMethod("concurrentQueryExecute", &NativeDgnDb::ConcurrentQueryExecute),
             InstanceMethod("concurrentQueryResetConfig", &NativeDgnDb::ConcurrentQueryResetConfig),
             InstanceMethod("concurrentQueryShutdown", &NativeDgnDb::ConcurrentQueryShutdown),
-            InstanceMethod("convertEC2Schemas", &NativeDgnDb::ConvertEC2Schemas),
+            InstanceMethod("convertEC2XmlSchemas", &NativeDgnDb::ConvertEC2XmlSchemas),
             InstanceMethod("createBRepGeometry", &NativeDgnDb::CreateBRepGeometry),
             InstanceMethod("createChangeCache", &NativeDgnDb::CreateChangeCache),
             InstanceMethod("createClassViewsInDb", &NativeDgnDb::CreateClassViewsInDb),
