@@ -1,5 +1,6 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 chr{
     AuxExemplarCharacters{"[]"}
     Ellipsis{
@@ -16,13 +17,14 @@ chr{
         " ꮼ ꮽ ꮾ ꮿ ᏸ ᏹ ᏺ ᏻ ᏼ]"
     }
     ExemplarCharactersIndex{"[Ꭰ Ꭶ Ꭽ Ꮃ Ꮉ Ꮎ Ꮖ Ꮜ Ꮣ Ꮬ Ꮳ Ꮹ Ꮿ]"}
-    ExemplarCharactersNumbers{"[\\- , . % ‰ + 0 1 2 3 4 5 6 7 8 9]"}
+    ExemplarCharactersNumbers{"[\\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]"}
     ExemplarCharactersPunctuation{
-        "[\\- ‐ – — , ; \\: ! ? . … ' ‘ ’ \u0022 “ ” ( ) \\[ \\] § @ * / \\& # † ‡ ′ "
-        "″]"
+        "[\\- ‐ ‑ – — , ; \\: ! ? . … ' ‘ ’ \u0022 “ ” ( ) \\[ \\] § @ * / \\& # † ‡ "
+        "′ ″]"
     }
     MoreInformation{"?"}
     NumberElements{
+        default{"latn"}
         latn{
             miscPatterns{
                 approximately{"~{0}"}
@@ -32,6 +34,8 @@ chr{
             }
             patterns{
                 accountingFormat{"¤#,##0.00;(¤#,##0.00)"}
+                accountingFormat%alphaNextToNumber{"¤ #,##0.00;(¤ #,##0.00)"}
+                accountingFormat%noCurrency{"#,##0.00;(#,##0.00)"}
                 currencyFormat{"¤#,##0.00"}
                 decimalFormat{"#,##0.###"}
                 percentFormat{"#,##0%"}
@@ -140,6 +144,56 @@ chr{
                         other{"¤000T"}
                     }
                 }
+                currencyFormat%alphaNextToNumber{
+                    1000{
+                        one{"¤ 0K"}
+                        other{"¤ 0K"}
+                    }
+                    10000{
+                        one{"¤ 00K"}
+                        other{"¤ 00K"}
+                    }
+                    100000{
+                        one{"¤ 000K"}
+                        other{"¤ 000K"}
+                    }
+                    1000000{
+                        one{"¤ 0M"}
+                        other{"¤ 0M"}
+                    }
+                    10000000{
+                        one{"¤ 00M"}
+                        other{"¤ 00M"}
+                    }
+                    100000000{
+                        one{"¤ 000M"}
+                        other{"¤ 000M"}
+                    }
+                    1000000000{
+                        one{"¤ 0B"}
+                        other{"¤ 0B"}
+                    }
+                    10000000000{
+                        one{"¤ 00B"}
+                        other{"¤ 00B"}
+                    }
+                    100000000000{
+                        one{"¤ 000B"}
+                        other{"¤ 000B"}
+                    }
+                    1000000000000{
+                        one{"¤ 0T"}
+                        other{"¤ 0T"}
+                    }
+                    10000000000000{
+                        one{"¤ 00T"}
+                        other{"¤ 00T"}
+                    }
+                    100000000000000{
+                        one{"¤ 000T"}
+                        other{"¤ 000T"}
+                    }
+                }
                 decimalFormat{
                     1000{
                         one{"0K"}
@@ -203,6 +257,7 @@ chr{
                 percentSign{"%"}
                 plusSign{"+"}
                 superscriptingExponent{"×"}
+                timeSeparator{":"}
             }
         }
         minimalPairs{
@@ -214,8 +269,9 @@ chr{
                 other{"{0} ᏏᎢᎦ"}
             }
         }
+        minimumGroupingDigits{"1"}
+        native{"latn"}
     }
-    Version{"2.1.49.82"}
     calendar{
         generic{
             DateTimePatterns{
@@ -228,10 +284,26 @@ chr{
                 "MMM d, y G",
                 "M/d/y GGGGG",
                 "{1}, {0}",
+                "{1}, {0}",
+                "{1}, {0}",
+                "{1}, {0}",
+                "{1}, {0}",
+            }
+            DateTimePatterns%atTime{
                 "{1} ᎤᎾᎢ {0}",
                 "{1} ᎤᎾᎢ {0}",
                 "{1}, {0}",
                 "{1}, {0}",
+            }
+            DateTimeSkeletons{
+                "ahmmsszzzz",
+                "ahmmssz",
+                "ahmmss",
+                "ahmm",
+                "GyMMMMEEEEd",
+                "GyMMMMd",
+                "GyMMMd",
+                "GGGGGyMd",
             }
             availableFormats{
                 Bh{"h B"}
@@ -249,6 +321,7 @@ chr{
                 GyMMM{"MMM y G"}
                 GyMMMEd{"E, MMM d, y G"}
                 GyMMMd{"MMM d, y G"}
+                GyMd{"M/d/y GGGGG"}
                 H{"HH"}
                 Hm{"H:mm"}
                 Hms{"H:mm:ss"}
@@ -410,10 +483,26 @@ chr{
                 "MMM d, y",
                 "M/d/yy",
                 "{1}, {0}",
+                "{1}, {0}",
+                "{1}, {0}",
+                "{1}, {0}",
+                "{1}, {0}",
+            }
+            DateTimePatterns%atTime{
                 "{1} ᎤᎾᎢ {0}",
                 "{1} ᎤᎾᎢ {0}",
                 "{1}, {0}",
                 "{1}, {0}",
+            }
+            DateTimeSkeletons{
+                "ahmmsszzzz",
+                "ahmmssz",
+                "ahmmss",
+                "ahmm",
+                "yMMMMEEEEd",
+                "yMMMMd",
+                "yMMMd",
+                "yyMd",
             }
             appendItems{
                 Timezone{"{0} {1}"}
@@ -434,6 +523,7 @@ chr{
                 GyMMM{"MMM y G"}
                 GyMMMEd{"E, MMM d, y G"}
                 GyMMMd{"MMM d, y G"}
+                GyMd{"M/d/y GGGGG"}
                 H{"HH"}
                 Hm{"HH:mm"}
                 Hms{"HH:mm:ss"}
@@ -444,8 +534,8 @@ chr{
                 MMM{"LLL"}
                 MMMEd{"E, MMM d"}
                 MMMMW{
-                    one{"’ᏒᎾᏙᏓᏆᏍᏗ’ W ’ᎾᎿ’ MMMM"}
-                    other{"’ᏒᎾᏙᏓᏆᏍᏗ’ W ’ᎾᎿ’ MMMM"}
+                    one{"ᏒᎾᏙᏓᏆᏍᏗ W ᎾᎿ MMMM"}
+                    other{"ᏒᎾᏙᏓᏆᏍᏗ W ᎾᎿ MMMM"}
                 }
                 MMMMd{"MMMM d"}
                 MMMd{"MMM d"}
@@ -1001,6 +1091,11 @@ chr{
         }
         day-narrow{
             dn{"ᎢᎦ"}
+            relative{
+                "-1"{"ᏒᎯ"}
+                "0"{"ᎪᎯ ᎢᎦ"}
+                "1"{"ᏌᎾᎴᎢ"}
+            }
             relativeTime{
                 future{
                     one{"ᎾᎿ {0} ᎢᎦ"}
@@ -1014,6 +1109,11 @@ chr{
         }
         day-short{
             dn{"ᎢᎦ"}
+            relative{
+                "-1"{"ᏒᎯ"}
+                "0"{"ᎪᎯ ᎢᎦ"}
+                "1"{"ᏌᎾᎴᎢ"}
+            }
             relativeTime{
                 future{
                     one{"ᎾᎿ {0} ᎢᎦ"}
@@ -1258,6 +1358,11 @@ chr{
         }
         month-narrow{
             dn{"ᎧᎸ."}
+            relative{
+                "-1"{"ᎧᎸ. ᏥᎨᏒ"}
+                "0"{"ᎯᎠ ᎧᎸ."}
+                "1"{"ᏔᎵᏁ ᎧᎸ."}
+            }
             relativeTime{
                 future{
                     one{"ᎾᎿ {0} ᎧᎸ."}
@@ -1271,6 +1376,11 @@ chr{
         }
         month-short{
             dn{"ᎧᎸ."}
+            relative{
+                "-1"{"ᎧᎸ. ᏥᎨᏒ"}
+                "0"{"ᎯᎠ ᎧᎸ."}
+                "1"{"ᎯᎠ ᎧᎸ."}
+            }
             relativeTime{
                 future{
                     one{"ᎾᎿ {0} ᎧᎸ."}
@@ -1644,6 +1754,11 @@ chr{
         }
         week-narrow{
             dn{"ᏒᎾ."}
+            relative{
+                "-1"{"ᏥᏛᎵᏱᎵᏒᎢ."}
+                "0"{"ᎯᎠ ᎠᎵᎵᏌ."}
+                "1"{"ᏐᏆᎴᏅᎲ."}
+            }
             relativePeriod{"Ꮎ ᏒᎾᏙᏓᏆᏍᏗ ᎾᏍᎩ {0}"}
             relativeTime{
                 future{
@@ -1658,6 +1773,11 @@ chr{
         }
         week-short{
             dn{"ᏒᎾ."}
+            relative{
+                "-1"{"ᏥᏛᎵᏱᎵᏒᎢ."}
+                "0"{"ᎯᎠ ᎠᎵᎵᏌ."}
+                "1"{"ᏐᏆᎴᏅᎲ."}
+            }
             relativePeriod{"Ꮎ ᏒᎾᏙᏓᏆᏍᏗ ᎾᏍᎩ {0}"}
             relativeTime{
                 future{
@@ -1717,6 +1837,11 @@ chr{
         }
         year-narrow{
             dn{"ᎤᏕ."}
+            relative{
+                "-1"{"ᎡᏘ. ᏥᎨᏒ"}
+                "0"{"ᎯᎠ ᏧᏕᏘᏴᏒᏘ."}
+                "1"{"ᎡᏘᏴᎢ."}
+            }
             relativeTime{
                 future{
                     one{"ᎾᎿ {0} ᎤᏕ."}
@@ -1730,6 +1855,11 @@ chr{
         }
         year-short{
             dn{"ᎤᏕ."}
+            relative{
+                "-1"{"ᎡᏘ. ᏥᎨᏒ"}
+                "0"{"ᎯᎠ ᏧᏕᏘᏴᏒᏘ."}
+                "1"{"ᎡᏘᏴᎢ."}
+            }
             relativeTime{
                 future{
                     one{"ᎾᎿ {0} ᎤᏕ."}
@@ -1753,6 +1883,18 @@ chr{
     }
     listPattern{
         or{
+            2{"{0} ᎠᎴᏱᎩ {1}"}
+            end{"{0}, ᎠᎴᏱᎩ {1}"}
+            middle{"{0}, {1}"}
+            start{"{0}, {1}"}
+        }
+        or-narrow{
+            2{"{0} ᎠᎴᏱᎩ {1}"}
+            end{"{0}, ᎠᎴᏱᎩ {1}"}
+            middle{"{0}, {1}"}
+            start{"{0}, {1}"}
+        }
+        or-short{
             2{"{0} ᎠᎴᏱᎩ {1}"}
             end{"{0}, ᎠᎴᏱᎩ {1}"}
             middle{"{0}, {1}"}
@@ -1825,6 +1967,24 @@ chr{
                 "[\\-‒⁻₋−➖﹣－]",
                 "[,،٫、︐︑﹐﹑，､]",
                 "[+⁺₊➕﬩﹢＋]",
+            }
+            stricter{
+                "[,٫︐﹐，]",
+                "[.․﹒．｡]",
+            }
+        }
+    }
+    personNames{
+        nameOrderLocales{
+            givenFirst{
+                "und",
+                "chr",
+            }
+            surnameFirst{
+                "ko",
+                "vi",
+                "yue",
+                "zh",
             }
         }
     }

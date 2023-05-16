@@ -1,5 +1,6 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 ja{
     Countries{
         001{"世界"}
@@ -287,6 +288,8 @@ ja{
         VU{"バヌアツ"}
         WF{"ウォリス・フツナ"}
         WS{"サモア"}
+        XA{"疑似アクセント"}
+        XB{"疑似 BIDI"}
         XK{"コソボ"}
         YE{"イエメン"}
         YT{"マヨット"}
@@ -309,8 +312,9 @@ ja{
         CI{"象牙海岸"}
         CZ{"チェコ共和国"}
         FK{"フォークランド諸島 (マルビーナス諸島)"}
+        NZ{"アオテアロア・ニュージーランド"}
         SZ{"スワジランド"}
         TL{"東チモール"}
+        TR{"テュルキエ"}
     }
-    Version{"2.1.49.82"}
 }

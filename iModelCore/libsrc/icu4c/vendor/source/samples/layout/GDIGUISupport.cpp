@@ -2,7 +2,7 @@
  *******************************************************************************
  *
  *   © 2016 and later: Unicode, Inc. and others.
- *   License & terms of use: http://www.unicode.org/copyright.html#License
+ *   License & terms of use: http://www.unicode.org/copyright.html
  *
  *******************************************************************************
  *******************************************************************************
@@ -23,6 +23,6 @@
 
 void GDIGUISupport::postErrorMessage(const char *message, const char *title)
 {
-    MessageBoxA(NULL, message, title, MB_ICONERROR);
+    MessageBoxA(nullptr, message, title, MB_ICONERROR);
 }
 
