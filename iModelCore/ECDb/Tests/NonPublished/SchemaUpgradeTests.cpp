@@ -17364,7 +17364,7 @@ TEST_F(SchemaUpgradeTestFixture, MajorSchemaUpgradePropertyTypeChangeFromEnum)
 
     constexpr Utf8CP errorMsgMajorVersionDisabled = "ECSchema Upgrade failed. ECSchema TestSchema.01.00.00: Major schema version changes are disabled.  New Schema TestSchema.02.00.00";
     constexpr Utf8CP errorMsgEnumToDifferentType = "ECSchema Upgrade failed. ECProperty TestSchema:TestClass.Name: ECEnumeration specified for property must have same primitive type as new primitive property type";
-    constexpr Utf8CP errorMsgEnumFromDifferentType = "ECSchema Upgrade failed. ECProperty TestSchema:TestClass.Name: Exisitng ECEnumeration has different primitive type from the new ECEnumeration specified";
+    constexpr Utf8CP errorMsgEnumFromDifferentType = "ECSchema Upgrade failed. ECProperty TestSchema:TestClass.Name: Existing ECEnumeration has different primitive type from the new ECEnumeration specified";
 
     for (const auto& [lineNumber, newSchemaVersion, basePropertyTypeName, changedPropertyTypeName, importOption, expectedResult, expectedErrorMessage] 
         : std::vector<std::tuple<const int, Utf8CP, Utf8CP, const Utf8String, const SchemaManager::SchemaImportOptions, const BentleyStatus, Utf8CP>>
@@ -17656,6 +17656,87 @@ TEST_F(SchemaUpgradeTestFixture, MajorSchemaUpgradeVerifyDeletionOfPropertyAndCl
         // Check that instances for the re-added classes have been deleted
         EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql("SELECT Name, Code, SubProp FROM ts.SubClassToDelete"));
         EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql("SELECT NamePropToDelete FROM ts.TestClassToDelete"));
+        
+        ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    }
+
+TEST_F(SchemaUpgradeTestFixture, MajorSchemaUpgradeVerifyDataAfterTypeChange)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("schemaupgrade_MajorSchemaUpgradeVerifyDataAfterTypeChange.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+                                <ECEntityClass typeName="TestClass" >
+                                    <ECCustomAttributes>
+                                       <ClassMap xmlns="ECDbMap.02.00.00">
+                                           <MapStrategy>TablePerHierarchy</MapStrategy>
+                                       </ClassMap>
+                                       <ShareColumns xmlns="ECDbMap.02.00.00"/>
+                                    </ECCustomAttributes>
+
+                                    <ECProperty propertyName="intToLong" typeName="int" />
+                                    <ECProperty propertyName="intToDouble" typeName="int" />
+                                    <ECProperty propertyName="intToString" typeName="int" />
+                                    <ECProperty propertyName="intToBinary" typeName="int" />
+                                    <ECProperty propertyName="intToBoolean" typeName="int" />
+                                    <ECProperty propertyName="intToDatetime" typeName="int" />
+
+                                    <ECProperty propertyName="stringToLong" typeName="string" />
+                                    <ECProperty propertyName="stringToDouble" typeName="string" />
+                                    <ECProperty propertyName="stringToInt" typeName="string" />
+                                    <ECProperty propertyName="stringToBinary" typeName="string" />
+                                    <ECProperty propertyName="stringToBoolean" typeName="string" />
+                                    <ECProperty propertyName="stringToDatetime" typeName="string" />
+                                </ECEntityClass>
+                            </ECSchema>)xml")));
+
+    // Populate with dummy property values
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.TestClass(intToLong, intToDouble, intToString, intToBinary, intToBoolean, intToDatetime, stringToLong, stringToDouble, stringToInt, stringToBinary, stringToBoolean, stringToDatetime) VALUES (10, 10, 10, 10, 10, 10, '10', '10', '10', '10', '10', '10')");
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+      
+    // Check that the data has been created    
+    EXPECT_EQ(JsonValue(R"json([{"intToBinary":10,"intToBoolean":10,"intToDatetime":10,"intToDouble":10,"intToLong":10,"intToString":10,"stringToBinary":"10","stringToBoolean":"10","stringToDatetime":"10","stringToDouble":"10","stringToInt":"10","stringToLong":"10"}])json"),
+        GetHelper().ExecuteSelectECSql("SELECT intToLong, intToDouble, intToString, intToBinary, intToBoolean, intToDatetime, stringToLong, stringToDouble, stringToInt, stringToBinary, stringToBoolean, stringToDatetime FROM ts.TestClass"));
+
+    // Perform a major schema change where we delete property "Code" and the classes "SubClassToDelete" and "TestClassToDelete"
+    constexpr Utf8CP majorSchemaChange = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                            <ECSchema schemaName="TestSchema" alias="ts" version="2.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+                                <ECSchemaReference name = 'CoreCustomAttributes' version = '01.00.00' alias = 'CoreCA' />
+                                
+                                <ECCustomAttributes>
+                                    <DynamicSchema xmlns = 'CoreCustomAttributes.01.00.00' />
+                                </ECCustomAttributes>
+
+                                <ECEntityClass typeName="TestClass" >
+                                    <ECCustomAttributes>
+                                       <ClassMap xmlns="ECDbMap.02.00.00">
+                                           <MapStrategy>TablePerHierarchy</MapStrategy>
+                                       </ClassMap>
+                                       <ShareColumns xmlns="ECDbMap.02.00.00"/>
+                                    </ECCustomAttributes>
+                                    
+                                    <ECProperty propertyName="intToLong" typeName="long" />
+                                    <ECProperty propertyName="intToDouble" typeName="double" />
+                                    <ECProperty propertyName="intToString" typeName="string" />
+                                    <ECProperty propertyName="intToBinary" typeName="binary" />
+                                    <ECProperty propertyName="intToBoolean" typeName="boolean" />
+                                    <ECProperty propertyName="intToDatetime" typeName="datetime" />
+
+                                    <ECProperty propertyName="stringToLong" typeName="long" />
+                                    <ECProperty propertyName="stringToDouble" typeName="double" />
+                                    <ECProperty propertyName="stringToInt" typeName="int" />
+                                    <ECProperty propertyName="stringToBinary" typeName="binary" />
+                                    <ECProperty propertyName="stringToBoolean" typeName="boolean" />
+                                    <ECProperty propertyName="stringToDatetime" typeName="datetime" />
+                                </ECEntityClass>
+                            </ECSchema>)xml";
+
+        ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(majorSchemaChange), SchemaManager::SchemaImportOptions::None));
+
+        // Test the values for the properties after primitive type has been changed
+        EXPECT_EQ(JsonValue(R"json([{"intToBinary":"encoding=base64;MTA=","intToBoolean":true,"intToDatetime":"-4713-12-04T12:00:00.000","intToDouble":10.0,"intToLong":10,"intToString":"10","stringToBinary":"encoding=base64;MTA=",
+                "stringToBoolean":true,"stringToDatetime":"-4713-12-04T12:00:00.000","stringToDouble":10.0,"stringToInt":10,"stringToLong":10}])json"),
+        GetHelper().ExecuteSelectECSql("SELECT intToLong, intToDouble, intToString, intToBinary, intToBoolean, intToDatetime, stringToLong, stringToDouble, stringToInt, stringToBinary, stringToBoolean, stringToDatetime FROM ts.TestClass"));
         
         ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
     }

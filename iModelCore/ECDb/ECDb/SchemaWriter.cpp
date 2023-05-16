@@ -1943,7 +1943,7 @@ bool SchemaWriter::IsPropertyTypeChangeSupported(Utf8StringR error, StringChange
         ECEnumerationCP bEnum = b->GetEnumeration();
         if (!aEnum && !bEnum)
             {
-            if (isPrimitiveTypeChangeAllowed && (newProperty.GetAsPrimitiveProperty()->GetType() != PRIMITIVETYPE_Point2d && newProperty.GetAsPrimitiveProperty()->GetType() != PRIMITIVETYPE_Point3d))
+            if (isPrimitiveTypeChangeAllowed && a->GetType() != PRIMITIVETYPE_Point2d && a->GetType() != PRIMITIVETYPE_Point3d && b->GetType() != PRIMITIVETYPE_Point2d && b->GetType() != PRIMITIVETYPE_Point3d)
                 return true;
 
             error.Sprintf("ECSchema Upgrade failed. ECProperty %s.%s: Changing the type of a Primitive ECProperty is not supported. Cannot convert from '%s' to '%s'",
@@ -1955,7 +1955,7 @@ bool SchemaWriter::IsPropertyTypeChangeSupported(Utf8StringR error, StringChange
             {
             if (aEnum->GetType() != b->GetType())
                 {
-                if (isPrimitiveTypeChangeAllowed && (newProperty.GetAsPrimitiveProperty()->GetType() != PRIMITIVETYPE_Point2d && newProperty.GetAsPrimitiveProperty()->GetType() != PRIMITIVETYPE_Point3d))
+                if (isPrimitiveTypeChangeAllowed && aEnum->GetType() != PRIMITIVETYPE_Point2d && aEnum->GetType() != PRIMITIVETYPE_Point3d && b->GetType() != PRIMITIVETYPE_Point2d && b->GetType() != PRIMITIVETYPE_Point3d)
                     return true;
 
                 error.Sprintf("ECSchema Upgrade failed. ECProperty %s.%s: ECEnumeration specified for property must have same primitive type as new primitive property type",
@@ -1970,7 +1970,7 @@ bool SchemaWriter::IsPropertyTypeChangeSupported(Utf8StringR error, StringChange
             {
             if (a->GetType() != bEnum->GetType())
                 {
-                if (isPrimitiveTypeChangeAllowed && !bEnum->GetIsStrict() && (bEnum->GetType() != PRIMITIVETYPE_Point2d && bEnum->GetType() != PRIMITIVETYPE_Point3d))
+                if (isPrimitiveTypeChangeAllowed && !bEnum->GetIsStrict() && a->GetType() != PRIMITIVETYPE_Point2d && a->GetType() != PRIMITIVETYPE_Point3d && bEnum->GetType() != PRIMITIVETYPE_Point2d && bEnum->GetType() != PRIMITIVETYPE_Point3d)
                     return true;
 
                 error.Sprintf("ECSchema Upgrade failed. ECProperty %s.%s: Primitive type change to ECEnumeration which as different type then existing primitive property",
@@ -1994,10 +1994,10 @@ bool SchemaWriter::IsPropertyTypeChangeSupported(Utf8StringR error, StringChange
             {
             if (aEnum->GetType() != bEnum->GetType())
                 {
-                if (isPrimitiveTypeChangeAllowed && !bEnum->GetIsStrict() && (bEnum->GetType() != PRIMITIVETYPE_Point2d && bEnum->GetType() != PRIMITIVETYPE_Point3d))
+                if (isPrimitiveTypeChangeAllowed && !bEnum->GetIsStrict() && aEnum->GetType() != PRIMITIVETYPE_Point2d && aEnum->GetType() != PRIMITIVETYPE_Point3d && bEnum->GetType() != PRIMITIVETYPE_Point2d && bEnum->GetType() != PRIMITIVETYPE_Point3d)
                     return true;
 
-                error.Sprintf("ECSchema Upgrade failed. ECProperty %s.%s: Exisitng ECEnumeration has different primitive type from the new ECEnumeration specified",
+                error.Sprintf("ECSchema Upgrade failed. ECProperty %s.%s: Existing ECEnumeration has different primitive type from the new ECEnumeration specified",
                               oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
 
                 return false;
