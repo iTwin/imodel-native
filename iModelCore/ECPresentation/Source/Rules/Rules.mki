@@ -72,7 +72,7 @@ $(o)SelectedNodeInstancesSpecification$(oext)              : $(PresentationRules
 
 $(o)PropertySpecification$(oext)                           : $(PresentationRulesSourceDirectory)PropertySpecification.cpp $(PresentationRulesDependencies)
 
-$(o)CalculatedPropertySpecification$(oext)                 : $(PresentationRulesSourceDirectory)CalculatedPropertySpecification.cpp $(PresentationRulesDependencies)
+$(o)CalculatedPropertiesSpecification$(oext)               : $(PresentationRulesSourceDirectory)CalculatedPropertiesSpecification.cpp $(PresentationRulesDependencies)
 
 $(o)RelatedInstanceSpecification$(oext)                    : $(PresentationRulesSourceDirectory)RelatedInstanceSpecification.cpp $(PresentationRulesDependencies)
 
