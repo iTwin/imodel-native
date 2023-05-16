@@ -1,7 +1,7 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 sk{
-    Version{"2.1.48.42"}
     zoneStrings{
         "Africa:Abidjan"{
             ec{"Abidjan"}
@@ -956,6 +956,7 @@ sk{
         }
         "Etc:UTC"{
             ls{"koordinovaný svetový čas"}
+            ss{"UTC"}
         }
         "Etc:Unknown"{
             ec{"neznáme mesto"}
@@ -1760,7 +1761,9 @@ sk{
             ls{"niuejský čas"}
         }
         "meta:Norfolk"{
-            ls{"norfolský čas"}
+            ld{"norfolský letný čas"}
+            lg{"norfolský čas"}
+            ls{"norfolský štandardný čas"}
         }
         "meta:Noronha"{
             ld{"letný čas súostrovia Fernando de Noronha"}
@@ -1943,6 +1946,9 @@ sk{
             ld{"jekaterinburský letný čas"}
             lg{"jekaterinburský čas"}
             ls{"jekaterinburský štandardný čas"}
+        }
+        "meta:Yukon"{
+            ls{"yukonský čas"}
         }
         fallbackFormat{"{1} ({0})"}
         gmtFormat{"GMT{0}"}

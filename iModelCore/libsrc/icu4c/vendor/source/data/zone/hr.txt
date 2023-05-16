@@ -1,7 +1,7 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 hr{
-    Version{"2.1.48.42"}
     zoneStrings{
         "Africa:Abidjan"{
             ec{"Abidjan"}
@@ -168,6 +168,9 @@ hr{
         "America:Anguilla"{
             ec{"Angvila"}
         }
+        "America:Antigua"{
+            ec{"Antigua"}
+        }
         "America:Araguaina"{
             ec{"Araguaina"}
         }
@@ -247,7 +250,7 @@ hr{
             ec{"Cayenne"}
         }
         "America:Cayman"{
-            ec{"Kajman"}
+            ec{"Cayman"}
         }
         "America:Chicago"{
             ec{"Chicago"}
@@ -655,7 +658,7 @@ hr{
             ec{"Aktobe"}
         }
         "Asia:Ashgabat"{
-            ec{"Ashgabat"}
+            ec{"Ašgabat"}
         }
         "Asia:Atyrau"{
             ec{"Atyrau"}
@@ -688,7 +691,7 @@ hr{
             ec{"Kolkata"}
         }
         "Asia:Chita"{
-            ec{"Chita"}
+            ec{"Čita"}
         }
         "Asia:Choibalsan"{
             ec{"Choibalsan"}
@@ -880,7 +883,7 @@ hr{
             ec{"Jakutsk"}
         }
         "Asia:Yekaterinburg"{
-            ec{"Ekaterinburg"}
+            ec{"Jekaterinburg"}
         }
         "Asia:Yerevan"{
             ec{"Erevan"}
@@ -888,11 +891,14 @@ hr{
         "Atlantic:Azores"{
             ec{"Azorski otoci"}
         }
+        "Atlantic:Bermuda"{
+            ec{"Bermuda"}
+        }
         "Atlantic:Canary"{
             ec{"Kanari"}
         }
         "Atlantic:Cape_Verde"{
-            ec{"Zelenortski Otoci"}
+            ec{"Cape Verde"}
         }
         "Atlantic:Faeroe"{
             ec{"Ferojski otoci"}
@@ -961,7 +967,7 @@ hr{
             ec{"Andora"}
         }
         "Europe:Astrakhan"{
-            ec{"Astrakhan"}
+            ec{"Astrahan"}
         }
         "Europe:Athens"{
             ec{"Atena"}
@@ -1086,7 +1092,7 @@ hr{
             ec{"Saratov"}
         }
         "Europe:Simferopol"{
-            ec{"Simferopol"}
+            ec{"Simferopolj"}
         }
         "Europe:Skopje"{
             ec{"Skoplje"}
@@ -1143,13 +1149,13 @@ hr{
             ec{"Chagos"}
         }
         "Indian:Christmas"{
-            ec{"Božićni otok"}
+            ec{"Christmas"}
         }
         "Indian:Cocos"{
-            ec{"Kokosovi otoci"}
+            ec{"Cocos"}
         }
         "Indian:Comoro"{
-            ec{"Komori"}
+            ec{"Comoro"}
         }
         "Indian:Kerguelen"{
             ec{"Kerguelen"}
@@ -1182,7 +1188,7 @@ hr{
             ec{"Chatham"}
         }
         "Pacific:Easter"{
-            ec{"Uskršnji otok"}
+            ec{"Easter"}
         }
         "Pacific:Efate"{
             ec{"Efate"}
@@ -1430,9 +1436,9 @@ hr{
             ls{"bolivijsko vrijeme"}
         }
         "meta:Brasilia"{
-            ld{"brazilijsko ljetno vrijeme"}
-            lg{"brazilijsko vrijeme"}
-            ls{"brazilijsko standardno vrijeme"}
+            ld{"brazilsko ljetno vrijeme"}
+            lg{"brazilsko vrijeme"}
+            ls{"brazilsko standardno vrijeme"}
         }
         "meta:Brunei"{
             ls{"vrijeme za Brunej Darussalam"}
@@ -1544,10 +1550,10 @@ hr{
             ls{"standardno vrijeme Fidžija"}
         }
         "meta:French_Guiana"{
-            ls{"vrijeme Francuske Gvajane"}
+            ls{"vrijeme Francuske Gijane"}
         }
         "meta:French_Southern"{
-            ls{"južnofrancusko i antarktičko vrijeme"}
+            ls{"vrijeme Francuskih južnih i antarktičkih teritorija"}
         }
         "meta:GMT"{
             ls{"univerzalno vrijeme"}
@@ -1670,7 +1676,7 @@ hr{
             ls{"lankansko vrijeme"}
         }
         "meta:Line_Islands"{
-            ls{"vrijeme Otoka Line"}
+            ls{"vrijeme Ekvatorskih otoka"}
         }
         "meta:Lord_Howe"{
             ld{"ljetno vrijeme otoka Lord Howe"}
@@ -1758,7 +1764,9 @@ hr{
             ls{"vrijeme Niuea"}
         }
         "meta:Norfolk"{
-            ls{"vrijeme Otoka Norfolk"}
+            ld{"ljetno vrijeme Otoka Norfolk"}
+            lg{"vrijeme Otoka Norfolk"}
+            ls{"standardno vrijeme Otoka Norfolk"}
         }
         "meta:Noronha"{
             ld{"ljetno vrijeme grada Fernando de Noronha"}
@@ -1813,10 +1821,10 @@ hr{
             ls{"standardno vrijeme za Sveti Petar i Mikelon"}
         }
         "meta:Pitcairn"{
-            ls{"vrijeme Pitcairna"}
+            ls{"pitcairnsko vrijeme"}
         }
         "meta:Ponape"{
-            ls{"vrijeme Ponapea"}
+            ls{"ponapejsko vrijeme"}
         }
         "meta:Pyongyang"{
             ls{"pjongjanško vrijeme"}
@@ -1938,9 +1946,12 @@ hr{
             ls{"jakutsko standardno vrijeme"}
         }
         "meta:Yekaterinburg"{
-            ld{"ekaterinburško ljetno vrijeme"}
-            lg{"ekaterinburško vrijeme"}
-            ls{"ekaterinburško standardno vrijeme"}
+            ld{"jekaterinburško ljetno vrijeme"}
+            lg{"jekaterinburško vrijeme"}
+            ls{"jekaterinburško standardno vrijeme"}
+        }
+        "meta:Yukon"{
+            ls{"jukonško vrijeme"}
         }
         fallbackFormat{"{1} ({0})"}
         gmtFormat{"GMT{0}"}

@@ -1,5 +1,6 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 sl{
     Countries{
         001{"svet"}
@@ -74,7 +75,7 @@ sl{
         CA{"Kanada"}
         CC{"Kokosovi otoki"}
         CD{"Demokratična republika Kongo"}
-        CF{"Centralnoafriška republika"}
+        CF{"Srednjeafriška republika"}
         CG{"Kongo - Brazzaville"}
         CH{"Švica"}
         CI{"Slonokoščena obala"}
@@ -133,7 +134,7 @@ sl{
         GU{"Guam"}
         GW{"Gvineja Bissau"}
         GY{"Gvajana"}
-        HK{"Posebno administrativno območje LR Kitajske Hongkong"}
+        HK{"Posebno upravno območje Ljudske republike Kitajske Hongkong"}
         HM{"Heardov otok in McDonaldovi otoki"}
         HN{"Honduras"}
         HR{"Hrvaška"}
@@ -187,7 +188,7 @@ sl{
         ML{"Mali"}
         MM{"Mjanmar (Burma)"}
         MN{"Mongolija"}
-        MO{"Posebno administrativno območje LR Kitajske Macao"}
+        MO{"Posebno upravno območje Ljudske republike Kitajske Macao"}
         MP{"Severni Marianski otoki"}
         MQ{"Martinik"}
         MR{"Mavretanija"}
@@ -253,7 +254,7 @@ sl{
         SV{"Salvador"}
         SX{"Sint Maarten"}
         SY{"Sirija"}
-        SZ{"Svazi"}
+        SZ{"Esvatini"}
         TA{"Tristan da Cunha"}
         TC{"Otoki Turks in Caicos"}
         TD{"Čad"}
@@ -300,7 +301,7 @@ sl{
     Countries%short{
         GB{"ZK"}
         HK{"Hongkong"}
-        MO{"Posebno administrativno območje LR Kitajske Macao"}
+        MO{"Macao"}
         PS{"Palestina"}
         UN{"ZN"}
         US{"ZDA"}
@@ -311,7 +312,9 @@ sl{
         CI{"Côte d’Ivoire"}
         CZ{"Češka republika"}
         FK{"Falklandski otoki (Malvini)"}
+        NZ{"Aotearoa Nova Zelandija"}
+        SZ{"Svazi"}
         TL{"Vzhodni Timor"}
+        TR{"Türkiye"}
     }
-    Version{"2.1.48.42"}
 }

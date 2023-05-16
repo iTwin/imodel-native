@@ -1,7 +1,7 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 ml{
-    Version{"2.1.48.42"}
     zoneStrings{
         "Africa:Abidjan"{
             ec{"അബിദ്‌ജാൻ‌"}
@@ -257,6 +257,9 @@ ml{
         }
         "America:Chihuahua"{
             ec{"ചിഹ്വാഹ"}
+        }
+        "America:Ciudad_Juarez"{
+            ec{"സിയുഡാഡ് ഹുവാരസ്"}
         }
         "America:Coral_Harbour"{
             ec{"ഏറ്റികോക്കൺ"}
@@ -583,7 +586,7 @@ ml{
             ec{"തിയുവാന"}
         }
         "America:Toronto"{
-            ec{"ടൊറണ്ടോ"}
+            ec{"ടൊറന്റോ"}
         }
         "America:Tortola"{
             ec{"ടോർ‌ട്ടോള"}
@@ -1223,6 +1226,9 @@ ml{
         "Pacific:Johnston"{
             ec{"ജോൺസ്റ്റൺ"}
         }
+        "Pacific:Kanton"{
+            ec{"കാൻട്ടൻ"}
+        }
         "Pacific:Kiritimati"{
             ec{"കിരിറ്റിമാറ്റി"}
         }
@@ -1284,7 +1290,7 @@ ml{
             ec{"ടോംഗാടാപു"}
         }
         "Pacific:Truk"{
-            ec{"ട്രക്"}
+            ec{"ചക്"}
         }
         "Pacific:Wake"{
             ec{"വെയ്ക്"}
@@ -1752,7 +1758,9 @@ ml{
             ls{"ന്യൂയി സമയം"}
         }
         "meta:Norfolk"{
-            ls{"നോർഫാക്ക് ദ്വീപുകൾ സമയം"}
+            ld{"നോർഫാക്ക് ദ്വീപ് ഡേലൈറ്റ് സമയം"}
+            lg{"നോർഫാക്ക് ദ്വീപ് സമയം"}
+            ls{"നോർഫാക്ക് ദ്വീപ് സ്റ്റാൻഡേർഡ് സമയം"}
         }
         "meta:Noronha"{
             ld{"ഫെർണാഡോ ഡി നൊറോൻഹ ഗ്രീഷ്‌മകാല സമയം"}
@@ -1935,6 +1943,9 @@ ml{
             ld{"യെക്കാറ്റരിൻബർഗ് ഗ്രീഷ്‌മകാല സമയം"}
             lg{"യെക്കാറ്റരിൻബർഗ് സമയം"}
             ls{"യെക്കാറ്റരിൻബർഗ് സ്റ്റാൻഡേർഡ് സമയം"}
+        }
+        "meta:Yukon"{
+            ls{"യൂക്കോൺ സമയം"}
         }
         fallbackFormat{"{1} ({0})"}
         gmtFormat{"ജിഎംടി {0}"}
