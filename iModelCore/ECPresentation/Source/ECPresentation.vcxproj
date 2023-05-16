@@ -75,7 +75,7 @@
     <ClInclude Include="..\PublicAPI\ECPresentation\RulesetVariables.h" />
     <ClInclude Include="..\PublicAPI\ECPresentation\Rules\AllInstanceNodesSpecification.h" />
     <ClInclude Include="..\PublicAPI\ECPresentation\Rules\AllRelatedInstanceNodesSpecification.h" />
-    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\CalculatedPropertySpecification.h" />
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\CalculatedPropertiesSpecification.h" />
     <ClInclude Include="..\PublicAPI\ECPresentation\Rules\CheckBoxRule.h" />
     <ClInclude Include="..\PublicAPI\ECPresentation\Rules\ChildNodeRule.h" />
     <ClInclude Include="..\PublicAPI\ECPresentation\Rules\ChildNodeSpecification.h" />
@@ -208,7 +208,7 @@
     <ClCompile Include="RuleSetLocater.cpp" />
     <ClCompile Include="Rules\AllInstanceNodesSpecification.cpp" />
     <ClCompile Include="Rules\AllRelatedInstanceNodesSpecification.cpp" />
-    <ClCompile Include="Rules\CalculatedPropertySpecification.cpp" />
+    <ClCompile Include="Rules\CalculatedPropertiesSpecification.cpp" />
     <ClCompile Include="Rules\CheckBoxRule.cpp" />
     <ClCompile Include="Rules\ChildNodeRule.cpp" />
     <ClCompile Include="Rules\ChildNodeSpecification.cpp" />
