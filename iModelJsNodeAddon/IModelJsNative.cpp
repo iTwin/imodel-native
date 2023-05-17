@@ -5062,7 +5062,7 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
     void ResolvePromise(Napi::Promise::Deferred const& deferred, ECPresentationResult&& result)
         {
         std::shared_ptr<ECPresentationResult> resultPtr = std::make_shared<ECPresentationResult>(std::move(result));
-        m_threadSafeFunc.BlockingCall([this, resultPtr, deferred = std::move(deferred)](Napi::Env env, Napi::Function)
+        m_threadSafeFunc.BlockingCall([resultPtr, deferred = std::move(deferred)](Napi::Env env, Napi::Function)
             {
             // flush all our logs that accumulated while handling the request
             s_jsLogger.FlushDeferred();
