@@ -177,7 +177,7 @@ initFromResourceBundle(UErrorCode& sts) {
 
             // BENTLEY_CHANGE - we create a custom subset of data, so revert to prior snippet which merely asserted.
             //UPRV_UNREACHABLE_ASSERT;
-            U_ASSERT(0)
+            U_ASSERT(0);
         } else {
             LocalUResourceBundlePointer typeMapEntry;
 
