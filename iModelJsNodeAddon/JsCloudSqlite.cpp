@@ -409,17 +409,12 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
     }
 
     void InitializeContainer(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_ANY_OBJ(0, opts);
         JsCloudUtil handle;
         auto result = handle.Init(*this);
         if (result.IsSuccess()) {
-            int blockSize = 64 * 1024;
-            bool checksumName = false;
-            if (info[0].IsObject()) {
-                auto opts = BeJsConst(info[0].As<Napi::Object>());
-                blockSize = opts[JSON_NAME(blockSize)].asInt(64 * 1024);
-                checksumName = opts[JSON_NAME(checksumBlockNames)].asBool(false);
-            }
-            result = handle.InitializeContainer(checksumName ? 24 : 16, blockSize);
+            bool checksumName = boolMember(opts, JSON_NAME(checksumBlockNames), false);
+            result = handle.InitializeContainer(checksumName ? 24 : 16, requireInt(opts, JSON_NAME(blockSize)));
         }
         if (result.m_status != BE_SQLITE_OK)
             BeNapi::ThrowJsException(Env(), result.m_error.c_str(), result.m_status);
