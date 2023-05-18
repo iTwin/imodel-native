@@ -1,7 +1,7 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 he{
-    Version{"2.1.48.42"}
     zoneStrings{
         "Africa:Abidjan"{
             ec{"אביג׳אן"}
@@ -94,7 +94,7 @@ he{
             ec{"קינשסה"}
         }
         "Africa:Lagos"{
-            ec{"לגוס"}
+            ec{"לאגוס"}
         }
         "Africa:Libreville"{
             ec{"ליברוויל"}
@@ -257,6 +257,9 @@ he{
         }
         "America:Chihuahua"{
             ec{"צ׳יוואווה"}
+        }
+        "America:Ciudad_Juarez"{
+            ec{"סיודד חוארס"}
         }
         "America:Coral_Harbour"{
             ec{"אטיקוקן"}
@@ -472,13 +475,13 @@ he{
             ec{"נורוניה"}
         }
         "America:North_Dakota:Beulah"{
-            ec{"ביולה, צפון דקוטה"}
+            ec{"ביולה, דקוטה הצפונית"}
         }
         "America:North_Dakota:Center"{
-            ec{"סנטר, צפון דקוטה"}
+            ec{"סנטר, דקוטה הצפונית"}
         }
         "America:North_Dakota:New_Salem"{
-            ec{"ניו סיילם, צפון דקוטה"}
+            ec{"ניו סיילם, דקוטה הצפונית"}
         }
         "America:Ojinaga"{
             ec{"אוג׳ינאגה"}
@@ -604,7 +607,7 @@ he{
             ec{"ילונייף"}
         }
         "Antarctica:Casey"{
-            ec{"קאסיי"}
+            ec{"קייסי"}
         }
         "Antarctica:Davis"{
             ec{"דיוויס"}
@@ -613,7 +616,7 @@ he{
             ec{"דומון ד׳אורוויל"}
         }
         "Antarctica:Macquarie"{
-            ec{"מקרי"}
+            ec{"מקווארי"}
         }
         "Antarctica:Mawson"{
             ec{"מוסון"}
@@ -628,7 +631,7 @@ he{
             ec{"רות׳רה"}
         }
         "Antarctica:Syowa"{
-            ec{"סיוואה"}
+            ec{"סייווה"}
         }
         "Antarctica:Troll"{
             ec{"טרול"}
@@ -865,7 +868,7 @@ he{
             ec{"טומסק"}
         }
         "Asia:Ulaanbaatar"{
-            ec{"אולאאנבטאר"}
+            ec{"אולאן באטור"}
         }
         "Asia:Urumqi"{
             ec{"אורומקי"}
@@ -874,7 +877,7 @@ he{
             ec{"אוסט-נרה"}
         }
         "Asia:Vientiane"{
-            ec{"האנוי"}
+            ec{"ויינטיאן"}
         }
         "Asia:Vladivostok"{
             ec{"ולדיווסטוק"}
@@ -1223,6 +1226,9 @@ he{
         "Pacific:Johnston"{
             ec{"ג׳ונסטון"}
         }
+        "Pacific:Kanton"{
+            ec{"קנטון"}
+        }
         "Pacific:Kiritimati"{
             ec{"קיריטימאטי"}
         }
@@ -1410,9 +1416,9 @@ he{
             ls{"שעון מערב אוסטרליה (חורף)"}
         }
         "meta:Azerbaijan"{
-            ld{"שעון אזרבייג׳אן (קיץ)"}
-            lg{"שעון אזרבייג׳אן"}
-            ls{"שעון אזרבייג׳אן (חורף)"}
+            ld{"שעון אזרבייג׳ן (קיץ)"}
+            lg{"שעון אזרבייג׳ן"}
+            ls{"שעון אזרבייג׳ן (חורף)"}
         }
         "meta:Azores"{
             ld{"שעון האיים האזוריים (קיץ)"}
@@ -1706,9 +1712,9 @@ he{
             ls{"שעון מערב מקסיקו (חורף)"}
         }
         "meta:Mongolia"{
-            ld{"שעון אולן בטור (קיץ)"}
-            lg{"שעון אולן בטור"}
-            ls{"שעון אולן בטור (חורף)"}
+            ld{"שעון אולאן באטור (קיץ)"}
+            lg{"שעון אולאן באטור"}
+            ls{"שעון אולאן באטור (חורף)"}
         }
         "meta:Moscow"{
             ld{"שעון מוסקבה (קיץ)"}
@@ -1743,7 +1749,9 @@ he{
             ls{"שעון ניואה"}
         }
         "meta:Norfolk"{
-            ls{"שעון האי נורפוק"}
+            ld{"שעון האי נורפוק (קיץ)"}
+            lg{"שעון האי נורפוק"}
+            ls{"שעון האי נורפוק (חורף)"}
         }
         "meta:Noronha"{
             ld{"שעון פרננדו די נורוניה (קיץ)"}
@@ -1926,6 +1934,9 @@ he{
             ld{"שעון יקטרינבורג (קיץ)"}
             lg{"שעון יקטרינבורג"}
             ls{"שעון יקטרינבורג (חורף)"}
+        }
+        "meta:Yukon"{
+            ls{"שעון יוקון"}
         }
         fallbackFormat{"{1} ({0})"}
         gmtFormat{"GMT{0}‎"}

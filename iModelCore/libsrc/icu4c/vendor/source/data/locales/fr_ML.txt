@@ -1,5 +1,6 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 fr_ML{
     NumberElements{
         latn{
@@ -8,7 +9,6 @@ fr_ML{
             }
         }
     }
-    Version{"2.1.47.70"}
     calendar{
         gregorian{
             DateTimePatterns{
@@ -21,6 +21,12 @@ fr_ML{
                 "d MMM y",
                 "dd/MM/y",
                 "{1}, {0}",
+                "{1}, {0}",
+                "{1}, {0}",
+                "{1}, {0}",
+                "{1}, {0}",
+            }
+            DateTimePatterns%atTime{
                 "{1} 'à' {0}",
                 "{1} 'à' {0}",
                 "{1}, {0}",

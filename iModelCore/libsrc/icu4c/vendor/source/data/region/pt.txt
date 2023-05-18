@@ -1,5 +1,6 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 pt{
     Countries{
         001{"Mundo"}
@@ -56,7 +57,7 @@ pt{
         BE{"Bélgica"}
         BF{"Burquina Faso"}
         BG{"Bulgária"}
-        BH{"Bahrein"}
+        BH{"Barein"}
         BI{"Burundi"}
         BJ{"Benin"}
         BL{"São Bartolomeu"}
@@ -112,7 +113,7 @@ pt{
         FJ{"Fiji"}
         FK{"Ilhas Malvinas"}
         FM{"Micronésia"}
-        FO{"Ilhas Faroe"}
+        FO{"Ilhas Faroé"}
         FR{"França"}
         GA{"Gabão"}
         GB{"Reino Unido"}
@@ -178,7 +179,7 @@ pt{
         LY{"Líbia"}
         MA{"Marrocos"}
         MC{"Mônaco"}
-        MD{"Moldova"}
+        MD{"Moldávia"}
         ME{"Montenegro"}
         MF{"São Martinho"}
         MG{"Madagascar"}
@@ -253,7 +254,7 @@ pt{
         SV{"El Salvador"}
         SX{"Sint Maarten"}
         SY{"Síria"}
-        SZ{"Suazilândia"}
+        SZ{"Essuatíni"}
         TA{"Tristão da Cunha"}
         TC{"Ilhas Turcas e Caicos"}
         TD{"Chade"}
@@ -288,7 +289,7 @@ pt{
         WF{"Wallis e Futuna"}
         WS{"Samoa"}
         XA{"Pseudossotaques"}
-        XB{"Pseudobidi"}
+        XB{"Pseudobidirecional"}
         XK{"Kosovo"}
         YE{"Iêmen"}
         YT{"Mayotte"}
@@ -298,7 +299,6 @@ pt{
         ZZ{"Região desconhecida"}
     }
     Countries%short{
-        GB{"Reino Unido"}
         HK{"Hong Kong"}
         MO{"Macau"}
         PS{"Palestina"}
@@ -310,8 +310,9 @@ pt{
         CG{"Congo"}
         CI{"Côte d’Ivoire"}
         CZ{"República Tcheca"}
-        FK{"Ilhas Falkland (Ilhas Malvinas)"}
+        FK{"Ilhas Malvinas (Ilhas Falkland)"}
+        NZ{"Aotearoa da Nova Zelândia"}
+        SZ{"Suazilândia"}
         TL{"República Democrática de Timor-Leste"}
     }
-    Version{"2.1.48.42"}
 }

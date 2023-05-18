@@ -45,6 +45,8 @@ $(BuildDir)dtintrv$(oext) : $(SourceDir)common/dtintrv.cpp ${MultiCompileDepends
 
 $(BuildDir)edits$(oext) : $(SourceDir)common/edits.cpp ${MultiCompileDepends}
 
+$(BuildDir)emojiprops$(oext) : $(SourceDir)common/emojiprops.cpp ${MultiCompileDepends}
+
 $(BuildDir)errorcode$(oext) : $(SourceDir)common/errorcode.cpp ${MultiCompileDepends}
 
 $(BuildDir)filteredbrk$(oext) : $(SourceDir)common/filteredbrk.cpp ${MultiCompileDepends}
@@ -59,11 +61,17 @@ $(BuildDir)loadednormalizer2impl$(oext) : $(SourceDir)common/loadednormalizer2im
 
 $(BuildDir)localebuilder$(oext) : $(SourceDir)common/localebuilder.cpp ${MultiCompileDepends}
 
+$(BuildDir)localematcher$(oext) : $(SourceDir)common/localematcher.cpp ${MultiCompileDepends}
+
+$(BuildDir)localeprioritylist$(oext) : $(SourceDir)common/localeprioritylist.cpp ${MultiCompileDepends}
+
 $(BuildDir)locavailable$(oext) : $(SourceDir)common/locavailable.cpp ${MultiCompileDepends}
 
 $(BuildDir)locbased$(oext) : $(SourceDir)common/locbased.cpp ${MultiCompileDepends}
 
 $(BuildDir)locdispnames$(oext) : $(SourceDir)common/locdispnames.cpp ${MultiCompileDepends}
+
+$(BuildDir)locdistance$(oext) : $(SourceDir)common/locdistance.cpp ${MultiCompileDepends}
 
 $(BuildDir)locdspnm$(oext) : $(SourceDir)common/locdspnm.cpp ${MultiCompileDepends}
 
@@ -71,13 +79,21 @@ $(BuildDir)locid$(oext) : $(SourceDir)common/locid.cpp ${MultiCompileDepends}
 
 $(BuildDir)loclikely$(oext) : $(SourceDir)common/loclikely.cpp ${MultiCompileDepends}
 
+$(BuildDir)loclikelysubtags$(oext) : $(SourceDir)common/loclikelysubtags.cpp ${MultiCompileDepends}
+
 $(BuildDir)locmap$(oext) : $(SourceDir)common/locmap.cpp ${MultiCompileDepends}
 
 $(BuildDir)locresdata$(oext) : $(SourceDir)common/locresdata.cpp ${MultiCompileDepends}
 
 $(BuildDir)locutil$(oext) : $(SourceDir)common/locutil.cpp ${MultiCompileDepends}
 
+$(BuildDir)lsr$(oext) : $(SourceDir)common/lsr.cpp ${MultiCompileDepends}
+
+$(BuildDir)lstmbe$(oext) : $(SourceDir)common/lstmbe.cpp ${MultiCompileDepends}
+
 $(BuildDir)messagepattern$(oext) : $(SourceDir)common/messagepattern.cpp ${MultiCompileDepends}
+
+$(BuildDir)mlbe$(oext) : $(SourceDir)common/mlbe.cpp ${MultiCompileDepends}
 
 $(BuildDir)normalizer2$(oext) : $(SourceDir)common/normalizer2.cpp ${MultiCompileDepends}
 
@@ -120,6 +136,8 @@ $(BuildDir)rbbitblb$(oext) : $(SourceDir)common/rbbitblb.cpp ${MultiCompileDepen
 $(BuildDir)resbund$(oext) : $(SourceDir)common/resbund.cpp ${MultiCompileDepends}
 
 $(BuildDir)resbund_cnv$(oext) : $(SourceDir)common/resbund_cnv.cpp ${MultiCompileDepends}
+
+$(BuildDir)restrace$(oext) : $(SourceDir)common/restrace.cpp ${MultiCompileDepends}
 
 $(BuildDir)resource$(oext) : $(SourceDir)common/resource.cpp ${MultiCompileDepends}
 
@@ -493,19 +511,21 @@ $(BuildDir)decimfmt$(oext) : $(SourceDir)i18n/decimfmt.cpp ${MultiCompileDepends
 
 $(BuildDir)decNumber$(oext) : $(SourceDir)i18n/decNumber.cpp ${MultiCompileDepends}
 
+$(BuildDir)displayoptions$(oext) : $(SourceDir)i18n/displayoptions.cpp ${MultiCompileDepends}
+
 $(BuildDir)double-conversion-bignum-dtoa$(oext) : $(SourceDir)i18n/double-conversion-bignum-dtoa.cpp ${MultiCompileDepends}
 
 $(BuildDir)double-conversion-bignum$(oext) : $(SourceDir)i18n/double-conversion-bignum.cpp ${MultiCompileDepends}
 
 $(BuildDir)double-conversion-cached-powers$(oext) : $(SourceDir)i18n/double-conversion-cached-powers.cpp ${MultiCompileDepends}
 
-$(BuildDir)double-conversion-diy-fp$(oext) : $(SourceDir)i18n/double-conversion-diy-fp.cpp ${MultiCompileDepends}
+$(BuildDir)double-conversion-double-to-string$(oext) : $(SourceDir)i18n/double-conversion-double-to-string.cpp ${MultiCompileDepends}
 
 $(BuildDir)double-conversion-fast-dtoa$(oext) : $(SourceDir)i18n/double-conversion-fast-dtoa.cpp ${MultiCompileDepends}
 
-$(BuildDir)double-conversion-strtod$(oext) : $(SourceDir)i18n/double-conversion-strtod.cpp ${MultiCompileDepends}
+$(BuildDir)double-conversion-string-to-double$(oext) : $(SourceDir)i18n/double-conversion-string-to-double.cpp ${MultiCompileDepends}
 
-$(BuildDir)double-conversion$(oext) : $(SourceDir)i18n/double-conversion.cpp ${MultiCompileDepends}
+$(BuildDir)double-conversion-strtod$(oext) : $(SourceDir)i18n/double-conversion-strtod.cpp ${MultiCompileDepends}
 
 $(BuildDir)dtfmtsym$(oext) : $(SourceDir)i18n/dtfmtsym.cpp ${MultiCompileDepends}
 
@@ -528,6 +548,8 @@ $(BuildDir)fmtable$(oext) : $(SourceDir)i18n/fmtable.cpp ${MultiCompileDepends}
 $(BuildDir)fmtable_cnv$(oext) : $(SourceDir)i18n/fmtable_cnv.cpp ${MultiCompileDepends}
 
 $(BuildDir)format$(oext) : $(SourceDir)i18n/format.cpp ${MultiCompileDepends}
+
+$(BuildDir)formatted_string_builder$(oext) : $(SourceDir)i18n/formatted_string_builder.cpp ${MultiCompileDepends}
 
 $(BuildDir)formattedval_iterimpl$(oext) : $(SourceDir)i18n/formattedval_iterimpl.cpp ${MultiCompileDepends}
 
@@ -555,6 +577,8 @@ $(BuildDir)inputext$(oext) : $(SourceDir)i18n/inputext.cpp ${MultiCompileDepends
 
 $(BuildDir)islamcal$(oext) : $(SourceDir)i18n/islamcal.cpp ${MultiCompileDepends}
 
+$(BuildDir)iso8601cal$(oext) : $(SourceDir)i18n/iso8601cal.cpp ${MultiCompileDepends}
+
 $(BuildDir)japancal$(oext) : $(SourceDir)i18n/japancal.cpp ${MultiCompileDepends}
 
 $(BuildDir)listformatter$(oext) : $(SourceDir)i18n/listformatter.cpp ${MultiCompileDepends}
@@ -562,6 +586,8 @@ $(BuildDir)listformatter$(oext) : $(SourceDir)i18n/listformatter.cpp ${MultiComp
 $(BuildDir)measfmt$(oext) : $(SourceDir)i18n/measfmt.cpp ${MultiCompileDepends}
 
 $(BuildDir)measunit$(oext) : $(SourceDir)i18n/measunit.cpp ${MultiCompileDepends}
+
+$(BuildDir)measunit_extra$(oext) : $(SourceDir)i18n/measunit_extra.cpp ${MultiCompileDepends}
 
 $(BuildDir)measure$(oext) : $(SourceDir)i18n/measure.cpp ${MultiCompileDepends}
 
@@ -576,8 +602,6 @@ $(BuildDir)nfrule$(oext) : $(SourceDir)i18n/nfrule.cpp ${MultiCompileDepends}
 $(BuildDir)nfsubs$(oext) : $(SourceDir)i18n/nfsubs.cpp ${MultiCompileDepends}
 
 $(BuildDir)nortrans$(oext) : $(SourceDir)i18n/nortrans.cpp ${MultiCompileDepends}
-
-$(BuildDir)nounit$(oext) : $(SourceDir)i18n/nounit.cpp ${MultiCompileDepends}
 
 $(BuildDir)nultrans$(oext) : $(SourceDir)i18n/nultrans.cpp ${MultiCompileDepends}
 
@@ -625,9 +649,13 @@ $(BuildDir)number_rounding$(oext) : $(SourceDir)i18n/number_rounding.cpp ${Multi
 
 $(BuildDir)number_scientific$(oext) : $(SourceDir)i18n/number_scientific.cpp ${MultiCompileDepends}
 
+$(BuildDir)number_simple$(oext) : $(SourceDir)i18n/number_simple.cpp ${MultiCompileDepends}
+
 $(BuildDir)number_skeletons$(oext) : $(SourceDir)i18n/number_skeletons.cpp ${MultiCompileDepends}
 
-$(BuildDir)number_stringbuilder$(oext) : $(SourceDir)i18n/number_stringbuilder.cpp ${MultiCompileDepends}
+$(BuildDir)number_symbolswrapper$(oext) : $(SourceDir)i18n/number_symbolswrapper.cpp ${MultiCompileDepends}
+
+$(BuildDir)number_usageprefs$(oext) : $(SourceDir)i18n/number_usageprefs.cpp ${MultiCompileDepends}
 
 $(BuildDir)number_utils$(oext) : $(SourceDir)i18n/number_utils.cpp ${MultiCompileDepends}
 
@@ -647,11 +675,11 @@ $(BuildDir)numparse_parsednumber$(oext) : $(SourceDir)i18n/numparse_parsednumber
 
 $(BuildDir)numparse_scientific$(oext) : $(SourceDir)i18n/numparse_scientific.cpp ${MultiCompileDepends}
 
-$(BuildDir)numparse_stringsegment$(oext) : $(SourceDir)i18n/numparse_stringsegment.cpp ${MultiCompileDepends}
-
 $(BuildDir)numparse_symbols$(oext) : $(SourceDir)i18n/numparse_symbols.cpp ${MultiCompileDepends}
 
 $(BuildDir)numparse_validators$(oext) : $(SourceDir)i18n/numparse_validators.cpp ${MultiCompileDepends}
+
+$(BuildDir)numrange_capi$(oext) : $(SourceDir)i18n/numrange_capi.cpp ${MultiCompileDepends}
 
 $(BuildDir)numrange_fluent$(oext) : $(SourceDir)i18n/numrange_fluent.cpp ${MultiCompileDepends}
 
@@ -662,6 +690,8 @@ $(BuildDir)numsys$(oext) : $(SourceDir)i18n/numsys.cpp ${MultiCompileDepends}
 $(BuildDir)olsontz$(oext) : $(SourceDir)i18n/olsontz.cpp ${MultiCompileDepends}
 
 $(BuildDir)persncal$(oext) : $(SourceDir)i18n/persncal.cpp ${MultiCompileDepends}
+
+$(BuildDir)pluralranges$(oext) : $(SourceDir)i18n/pluralranges.cpp ${MultiCompileDepends}
 
 $(BuildDir)plurfmt$(oext) : $(SourceDir)i18n/plurfmt.cpp ${MultiCompileDepends}
 
@@ -726,6 +756,8 @@ $(BuildDir)smpdtfst$(oext) : $(SourceDir)i18n/smpdtfst.cpp ${MultiCompileDepends
 $(BuildDir)sortkey$(oext) : $(SourceDir)i18n/sortkey.cpp ${MultiCompileDepends}
 
 $(BuildDir)standardplural$(oext) : $(SourceDir)i18n/standardplural.cpp ${MultiCompileDepends}
+
+$(BuildDir)string_segment$(oext) : $(SourceDir)i18n/string_segment.cpp ${MultiCompileDepends}
 
 $(BuildDir)strmatch$(oext) : $(SourceDir)i18n/strmatch.cpp ${MultiCompileDepends}
 
@@ -800,6 +832,14 @@ $(BuildDir)umsg$(oext) : $(SourceDir)i18n/umsg.cpp ${MultiCompileDepends}
 $(BuildDir)unesctrn$(oext) : $(SourceDir)i18n/unesctrn.cpp ${MultiCompileDepends}
 
 $(BuildDir)uni2name$(oext) : $(SourceDir)i18n/uni2name.cpp ${MultiCompileDepends}
+
+$(BuildDir)units_complexconverter$(oext) : $(SourceDir)i18n/units_complexconverter.cpp ${MultiCompileDepends}
+
+$(BuildDir)units_converter$(oext) : $(SourceDir)i18n/units_converter.cpp ${MultiCompileDepends}
+
+$(BuildDir)units_data$(oext) : $(SourceDir)i18n/units_data.cpp ${MultiCompileDepends}
+
+$(BuildDir)units_router$(oext) : $(SourceDir)i18n/units_router.cpp ${MultiCompileDepends}
 
 $(BuildDir)unum$(oext) : $(SourceDir)i18n/unum.cpp ${MultiCompileDepends}
 

@@ -1,5 +1,6 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 dz{
     AuxExemplarCharacters{
         "[\u0F84 ཊ ཋ ཌ ཎ \u0F7E ཥ \u0F80 \u0F7B \u0F7D \u0F9A \u0F9B \u0F9C \u0F9E "
@@ -17,10 +18,10 @@ dz{
         "\u0FB1 \u0FB2 \u0FB3 \u0FB5 \u0FB6 \u0FB7]"
     }
     ExemplarCharactersIndex{"[ཀ ཁ ག ང ཅ ཆ ཇ ཉ ཏ ཐ ད ན པ ཕ བ མ ཙ ཚ ཛ ཝ ཞ ཟ འ ཡ ར ལ ཤ ས ཧ ཨ]"}
-    ExemplarCharactersNumbers{"[\\- , . % ‰ + 0༠ 1༡ 2༢ 3༣ 4༤ 5༥ 6༦ 7༧ 8༨ 9༩]"}
+    ExemplarCharactersNumbers{"[\\- ‑ , . % ‰ + 0༠ 1༡ 2༢ 3༣ 4༤ 5༥ 6༦ 7༧ 8༨ 9༩]"}
     ExemplarCharactersPunctuation{
-        "[\\- ‐ – — , ; \\: ! ? . … ' ‘ ’ \u0022 “ ” ( ) \\[ \\] ༼ ༽ § @ * / \\& # † "
-        "‡ ༄ ༅ ༆ ༈ ༉ ༊ ࿐ ࿑ ༒ ࿒ ࿓ ࿔ ༶ ྾ ྿ ༌ ། ༎ ༏ ༐ ༑ ༔ ༴]"
+        "[\\- ‐ ‑ – — , ; \\: ! ? . … ' ‘ ’ \u0022 “ ” ( ) \\[ \\] ༼ ༽ § @ * / \\& # "
+        "† ‡ ༄ ༅ ༆ ༈ ༉ ༊ ࿐ ࿑ ༒ ࿒ ࿓ ࿔ ༶ ྾ ྿ ༌ ། ༎ ༏ ༐ ༑ ༔ ༴]"
     }
     MoreInformation{"?"}
     NumberElements{
@@ -87,7 +88,7 @@ dz{
         }
         minimalPairs{
             plural{
-                other{"ཉིནམ་ {0} "}
+                other{"ཉིནམ་ {0}"}
             }
         }
         native{"tibt"}
@@ -106,7 +107,6 @@ dz{
             }
         }
     }
-    Version{"2.1.47.82"}
     calendar{
         generic{
             DateTimePatterns{
@@ -123,6 +123,16 @@ dz{
                 "{1} {0}",
                 "{1} {0}",
                 "{1} {0}",
+            }
+            DateTimeSkeletons{
+                "ahmmsszzzz",
+                "ahmmssz",
+                "ahmmss",
+                "ahmm",
+                "GyMMMMEEEEdd",
+                "GyMMMMdd",
+                "GyMMMdd",
+                "GGGGGyMMdd",
             }
             availableFormats{
                 Ed{"d E"}
@@ -278,6 +288,16 @@ dz{
                 "{1} {0}",
                 "{1} {0}",
                 "{1} {0}",
+            }
+            DateTimeSkeletons{
+                "ahmmsszzzz",
+                "ahmmssz",
+                "ahmmss",
+                "ahmm",
+                "yMMMMEEEEdd",
+                "yMMMMdd",
+                "yMMMdd",
+                "yMMdd",
             }
             availableFormats{
                 Ed{"d E"}

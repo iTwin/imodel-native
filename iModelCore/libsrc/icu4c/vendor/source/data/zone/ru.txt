@@ -1,7 +1,7 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 ru{
-    Version{"2.1.49.82"}
     zoneStrings{
         "Africa:Abidjan"{
             ec{"Абиджан"}
@@ -258,6 +258,9 @@ ru{
         "America:Chihuahua"{
             ec{"Чиуауа"}
         }
+        "America:Ciudad_Juarez"{
+            ec{"Сьюдад-Хуарес"}
+        }
         "America:Coral_Harbour"{
             ec{"Корал-Харбор"}
         }
@@ -403,7 +406,7 @@ ru{
             ec{"Луисвилл"}
         }
         "America:Lower_Princes"{
-            ec{"Лоуэр-Принсес-Куортер"}
+            ec{"Лоуэр-Принс-Куотер"}
         }
         "America:Maceio"{
             ec{"Масейо"}
@@ -487,7 +490,7 @@ ru{
             ec{"Панама"}
         }
         "America:Pangnirtung"{
-            ec{"Пангниртунг"}
+            ec{"Пангниртанг"}
         }
         "America:Paramaribo"{
             ec{"Парамарибо"}
@@ -1223,6 +1226,9 @@ ru{
         "Pacific:Johnston"{
             ec{"Джонстон"}
         }
+        "Pacific:Kanton"{
+            ec{"Кантон"}
+        }
         "Pacific:Kiritimati"{
             ec{"Киритимати"}
         }
@@ -1523,7 +1529,7 @@ ru{
             ls{"Восточная Европа, стандартное время"}
         }
         "meta:Europe_Further_Eastern"{
-            ls{"Минское время"}
+            ls{"Московское время"}
         }
         "meta:Europe_Western"{
             ld{"Западная Европа, летнее время"}
@@ -1754,7 +1760,9 @@ ru{
             ls{"Ниуэ"}
         }
         "meta:Norfolk"{
-            ls{"Норфолк"}
+            ld{"Норфолк, летнее время"}
+            lg{"Норфолк"}
+            ls{"Норфолк, стандартное время"}
         }
         "meta:Noronha"{
             ld{"Фернанду-ди-Норонья, летнее время"}
@@ -1937,6 +1945,9 @@ ru{
             ld{"Екатеринбург, летнее время"}
             lg{"Екатеринбург"}
             ls{"Екатеринбург, стандартное время"}
+        }
+        "meta:Yukon"{
+            ls{"Юкон"}
         }
         fallbackFormat{"{1} ({0})"}
         gmtFormat{"GMT{0}"}

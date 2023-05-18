@@ -1,7 +1,7 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 th{
-    Version{"2.1.49.82"}
     zoneStrings{
         "Africa:Abidjan"{
             ec{"อาบีจาน"}
@@ -257,6 +257,9 @@ th{
         }
         "America:Chihuahua"{
             ec{"ชีวาวา"}
+        }
+        "America:Ciudad_Juarez"{
+            ec{"ซิวดัดฮัวเรซ"}
         }
         "America:Coral_Harbour"{
             ec{"คอรัลฮาร์เบอร์"}
@@ -889,7 +892,7 @@ th{
             ec{"เยเรวาน"}
         }
         "Atlantic:Azores"{
-            ec{"อาซอเรส"}
+            ec{"อะโซร์ส"}
         }
         "Atlantic:Bermuda"{
             ec{"เบอร์มิวดา"}
@@ -1222,6 +1225,9 @@ th{
         }
         "Pacific:Johnston"{
             ec{"จอห์นสตัน"}
+        }
+        "Pacific:Kanton"{
+            ec{"แคนทอน"}
         }
         "Pacific:Kiritimati"{
             ec{"คิริทิมาตี"}
@@ -1754,7 +1760,9 @@ th{
             ls{"เวลานีอูเอ"}
         }
         "meta:Norfolk"{
-            ls{"เวลาเกาะนอร์ฟอล์ก"}
+            ld{"เวลาออมแสงเกาะนอร์ฟอล์ก"}
+            lg{"เวลาเกาะนอร์ฟอล์ก"}
+            ls{"เวลามาตรฐานเกาะนอร์ฟอล์ก"}
         }
         "meta:Noronha"{
             ld{"เวลาฤดูร้อนของหมู่เกาะเฟอร์นันโด"}
@@ -1938,6 +1946,13 @@ th{
             lg{"เวลาเยคาเตรินบูร์ก"}
             ls{"เวลามาตรฐานเยคาเตรินบูร์ก"}
         }
+        "meta:Yukon"{
+            ls{"เวลายูคอน"}
+        }
+        fallbackFormat{"{1} ({0})"}
+        gmtFormat{"GMT{0}"}
+        gmtZeroFormat{"GMT"}
+        hourFormat{"+HH:mm;-HH:mm"}
         regionFormat{"เวลา{0}"}
         regionFormatDaylight{"เวลาออมแสง{0}"}
         regionFormatStandard{"เวลามาตรฐาน{0}"}
