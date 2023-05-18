@@ -107,12 +107,18 @@ struct FNV1HashBuilder final {
                 UpdateChar(AsciiTolower(bytes[i]));
             }
         }
+        void UpdateNoCaseAsciiCharCP(char const* bytes) {
+            size_t i = 0;
+            while(bytes[i] != 0) {
+                UpdateChar(AsciiTolower(bytes[i]));
+                ++i;
+            }
+        }
         void Reset() { m_hashCode = 14695981039346656037ull; }
         void UpdateString(Utf8StringCR str) {UpdateBytes((uint8_t const*)str.c_str(), str.length());}
         void UpdateCharCP(Utf8CP str) {UpdateBytes((uint8_t const*)str, strlen(str));}
         void UpdateCharCP(Utf8CP str, size_t sz) {UpdateBytes((uint8_t const*)str, sz);}
         void UpdateNoCaseAsciiString(Utf8StringCR str) {UpdateNoCaseAsciiCharCP(str.c_str(), str.length());}
-        void UpdateNoCaseAsciiCharCP(Utf8CP str) {UpdateNoCaseAsciiCharCP(str, strlen(str));}
         void UpdateNoCaseAsciiCharCP(Utf8CP str, size_t sz) {UpdateNoCaseAsciiChars(str, sz);}
         void UpdateUInt64(uint64_t v) {UpdateBytes((uint8_t const*)&v, sizeof(v));}
         void UpdateInt64(int64_t v) {UpdateBytes((uint8_t const*)&v, sizeof(v));}

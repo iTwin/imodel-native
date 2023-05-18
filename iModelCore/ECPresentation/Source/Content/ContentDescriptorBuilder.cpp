@@ -193,7 +193,7 @@ public:
         RelationshipMeaning meaning, bool isInNestedContent, PropertySpecificationCP overrides, PropertyCategorySpecificationsList const* scopePropertyCategories)
         {
         // category overrides in presentation rules take highest precedence
-        std::unique_ptr<CategoryOverrideInfo const> categoryOverride = m_context.GetPropertyInfos().GetCategoryOverride(ecProperty, actualClass, overrides, scopePropertyCategories);
+        CategoryOverrideInfo const* categoryOverride = m_context.GetPropertyInfos().GetCategoryOverride(ecProperty, actualClass, overrides, scopePropertyCategories);
         if (categoryOverride)
             return PrepareCategoryForReturn(*categoryOverride);
 
@@ -222,9 +222,16 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
-    std::shared_ptr<ContentDescriptor::Category> GetCalculatedFieldCategory()
+    std::shared_ptr<ContentDescriptor::Category> GetCalculatedFieldCategory(ECClassCP ecClass, CalculatedPropertiesSpecificationCR spec, RelatedClassPathCR pathFromSelectToPropertyClass,
+        RelationshipMeaning meaning)
         {
-        // TODO: support category overrides for calculated fields
+        CategoryOverrideInfo const* categoryOverride = m_context.GetPropertyInfos().GetCategoryOverride(ecClass, spec);
+        if (categoryOverride)
+            return PrepareCategoryForReturn(*categoryOverride);
+
+        if (nullptr != ecClass && !pathFromSelectToPropertyClass.empty() && meaning == RelationshipMeaning::SameInstance)
+            return PrepareCategoryForReturn(m_context.GetPropertyCategories().CreateECClassCategory(*ecClass), ParentOption::ParentFromStackOrDefault);
+
         return GetParentCategory(true);
         }
 
@@ -330,6 +337,22 @@ protected:
         if (nullptr != m_context.GetPropertyFormatter() && SUCCESS == m_context.GetPropertyFormatter()->GetFormattedPropertyLabel(displayLabel, ecProperty, propertyClass, pathFromSelectToPropertyClass, relationshipMeaning))
             return displayLabel;
         return ecProperty.GetDisplayLabel();
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    ContentDescriptor::CalculatedPropertyField* CreateCalculatedPropertyField(ECClassCP ecClass, Utf8StringCR name, CalculatedPropertiesSpecificationCR spec, 
+        RelatedClassPathCR pathFromSelectToPropertyClass, RelationshipMeaning relationshipMeaning)
+        {
+        ContentDescriptor::CalculatedPropertyField* field = new ContentDescriptor::CalculatedPropertyField(m_categoriesSupplier.GetCalculatedFieldCategory(ecClass, spec, pathFromSelectToPropertyClass, relationshipMeaning),
+            spec.GetLabel(), name, spec.GetValue(), ecClass, spec.GetPriority());
+
+        if (nullptr != spec.GetRenderer())
+            field->SetRenderer(ContentFieldRenderer::FromSpec(*spec.GetRenderer()));
+        if (nullptr != spec.GetEditor())
+            field->SetEditor(ContentFieldEditor::FromSpec(*spec.GetEditor()));
+        return field;
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -573,7 +596,7 @@ protected:
                 return ContentSpecificationsHandler::PropertyAppendResult(false);
             }
 
-        m_descriptor.AddRootField(*new ContentDescriptor::CalculatedPropertyField(m_categoriesSupplier.GetCalculatedFieldCategory(), spec.GetLabel(), name, spec.GetValue(), ecClass, spec.GetPriority()));
+        m_descriptor.AddRootField(*CreateCalculatedPropertyField(ecClass, name, spec, RelatedClassPath(), RelationshipMeaning::SameInstance));
         return ContentSpecificationsHandler::PropertyAppendResult(true);
         }
 
@@ -924,7 +947,8 @@ protected:
                 return ContentSpecificationsHandler::PropertyAppendResult(false);
                 }
             }
-        m_relatedContentField.GetFields().push_back(new ContentDescriptor::CalculatedPropertyField(m_categoriesSupplier.GetCalculatedFieldCategory(), spec.GetLabel(), name, spec.GetValue(), ecClass, spec.GetPriority()));
+
+        m_relatedContentField.GetFields().push_back(CreateCalculatedPropertyField(ecClass, name, spec, m_relatedContentField.GetPathFromSelectToContentClass(), m_relatedContentField.GetRelationshipMeaning()));
         m_relatedContentField.GetFields().back()->SetParent(&m_relatedContentField);
         return ContentSpecificationsHandler::PropertyAppendResult(true);
         }
@@ -1350,7 +1374,7 @@ public:
 
         if (nullptr == m_descriptor->GetDisplayLabelField())
             {
-            auto fieldCategory = CategoriesSupplier(*m_categoriesSupplierContext).GetCalculatedFieldCategory();
+            auto fieldCategory = CategoriesSupplier(*m_categoriesSupplierContext).GetParentCategory(true);
             ContentDescriptor::DisplayLabelField* field = new ContentDescriptor::DisplayLabelField(fieldCategory, CommonStrings::FIELD_DISPLAYLABEL);
             field->SetLabelOverrideSpecs(QueryBuilderHelpers::GetLabelOverrideValuesMap(GetContext().GetSchemaHelper(), GetContext().GetRulesPreprocessor().GetInstanceLabelOverrides()));
             m_descriptor->AddRootField(*field);
