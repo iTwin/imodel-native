@@ -524,7 +524,7 @@ describe("basic tests", () => {
       </ECSchema>`;
 
     assert.isTrue(dgndb.isOpen());
-    const ec3Schemas: string[] = dgndb.convertEC2XmlSchemas([ec2SchemaXml, ec2RefSchema], { schemaLockHeld: false });
+    const ec3Schemas: string[] = dgndb.convertEC2XmlSchemas([ec2SchemaXml, ec2RefSchema]);
     assert.equal(ec3Schemas.length, 2);
     assert.isTrue(ec3Schemas[0].includes("http://www.bentley.com/schemas/Bentley.ECXML.3.2"));
     assert.isTrue(ec3Schemas[1].includes("http://www.bentley.com/schemas/Bentley.ECXML.3.2"));

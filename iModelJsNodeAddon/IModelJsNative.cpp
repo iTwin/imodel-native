@@ -1792,20 +1792,11 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         {
         RequireDbIsOpen(info);
         REQUIRE_ARGUMENT_STRING_ARRAY(0, ec2XmlStrings);
-        REQUIRE_ARGUMENT_ANY_OBJ(1, jsOpts);
-
-        JsInterop::SchemaImportOptions options;
-        options.m_schemaLockHeld = jsOpts.Get(JsInterop::json_schemaLockHeld()).ToBoolean();
-        const auto& maybeEcSchemaContextVal = jsOpts.Get(JsInterop::json_ecSchemaXmlContext());
-        if (!maybeEcSchemaContextVal.IsUndefined())
-            {
-            if (!NativeECSchemaXmlContext::HasInstance(maybeEcSchemaContextVal))
-                THROW_JS_TYPE_EXCEPTION("if SchemaImportOptions.ecSchemaXmlContext is defined, it must be an object of type NativeECSchemaXmlContext")
-            options.m_customSchemaContext = NativeECSchemaXmlContext::Unwrap(maybeEcSchemaContextVal.As<Napi::Object>())->GetContext();
-            }
 
         bvector<Utf8String> ec3XmlStrings;
-        DbResult result = JsInterop::ConvertEC2XmlSchemas(GetDgnDb(), ec2XmlStrings, options, ec3XmlStrings);
+        DbResult result = JsInterop::ConvertEC2XmlSchemas(GetDgnDb(), ec2XmlStrings, ec3XmlStrings);
+        if (result != DbResult::BE_SQLITE_OK)
+            THROW_JS_EXCEPTION("Failed to convert ec2 xml schemas");
 
         uint32_t index = 0;
         auto ret = Napi::Array::New(Env(), ec3XmlStrings.size());

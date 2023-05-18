@@ -926,18 +926,15 @@ DbResult JsInterop::ImportSchemas(DgnDbR dgndb, bvector<Utf8String> const& schem
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DbResult JsInterop::ConvertEC2XmlSchemas(DgnDbR dgndb, bvector<Utf8String> const& ec2XmlStrings, const SchemaImportOptions& opts, bvector<Utf8String>& ec3XmlStrings)
+DbResult JsInterop::ConvertEC2XmlSchemas(DgnDbR dgndb, bvector<Utf8String> const& ec2XmlStrings, bvector<Utf8String>& ec3XmlStrings)
     {
     if (0 == ec2XmlStrings.size())
         return BE_SQLITE_ERROR;
 
-    ECSchemaReadContextPtr schemaContext = opts.m_customSchemaContext;
-    if (schemaContext.IsNull())
-        schemaContext = ECSchemaReadContext::CreateContext(false /*=acceptLegacyImperfectLatestCompatibleMatch*/, true /*=includeFilesWithNoVerExt*/);
-
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext(false /*=acceptLegacyImperfectLatestCompatibleMatch*/, true /*=includeFilesWithNoVerExt*/);
     JsInterop::AddFallbackSchemaLocaters(dgndb, schemaContext);
-    bvector<bpair<SchemaKey, ECSchemaPtr>> schemaKeyPairs;
 
+    bvector<bpair<SchemaKey, ECSchemaPtr>> schemaKeyPairs;
     StringSchemaLocater locater;
     for (Utf8String ec2XmlString : ec2XmlStrings)
         {
@@ -976,6 +973,9 @@ DbResult JsInterop::ConvertEC2XmlSchemas(DgnDbR dgndb, bvector<Utf8String> const
         {
         if (schemaPair.second != nullptr)
             {
+            bool conversionStatus = ECSchemaConverter::Convert(*(schemaPair.second), *schemaContext);
+            if (!conversionStatus)
+                return BE_SQLITE_ERROR;
             Utf8String schemaXml;
             SchemaWriteStatus writeStatus = schemaPair.second->WriteToXmlString(schemaXml);
             if (SchemaWriteStatus::Success != writeStatus)
