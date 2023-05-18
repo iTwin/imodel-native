@@ -511,21 +511,23 @@ describe("basic tests", () => {
     });
   });
 
-  it("testConvertEC2Schemas", async () => {
-    const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
+  it("testConvertEC2XmlSchemas", async () => {
+    const ec2SchemaXml = `<?xml version="1.0" encoding="UTF-8"?>
       <ECSchema schemaName="TestSchema" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
         <ECSchemaReference name="RefSchema" version="01.00" prefix="rs" />
         <ECClass typeName="TestEntityClass" isDomainClass="true" />
       </ECSchema>`;
 
-    const refSchema = `<?xml version="1.0" encoding="UTF-8"?>
+    const ec2RefSchema = `<?xml version="1.0" encoding="UTF-8"?>
       <ECSchema schemaName="RefSchema" nameSpacePrefix="rs" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
         <ECClass typeName="TestStructClass" isStruct="true" />
       </ECSchema>`;
 
     assert.isTrue(dgndb.isOpen());
-    const ec3Schemas: string[] = dgndb.convertEC2XmlSchemas([schemaXml, refSchema], { schemaLockHeld: false });
+    const ec3Schemas: string[] = dgndb.convertEC2XmlSchemas([ec2SchemaXml, ec2RefSchema], { schemaLockHeld: false });
     assert.equal(ec3Schemas.length, 2);
+    assert.isTrue(ec3Schemas[0].includes("http://www.bentley.com/schemas/Bentley.ECXML.3.2"));
+    assert.isTrue(ec3Schemas[1].includes("http://www.bentley.com/schemas/Bentley.ECXML.3.2"));
     dgndb.saveChanges();
     dgndb.closeIModel();
   });
