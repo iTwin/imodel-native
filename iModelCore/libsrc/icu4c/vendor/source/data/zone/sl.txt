@@ -1,7 +1,7 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 sl{
-    Version{"2.1.48.42"}
     zoneStrings{
         "Africa:Abidjan"{
             ec{"Abidžan"}
@@ -472,7 +472,7 @@ sl{
             ec{"Noronha"}
         }
         "America:North_Dakota:Beulah"{
-            ec{"Beulah, North Dakota"}
+            ec{"Beulah, Severna Dakota"}
         }
         "America:North_Dakota:Center"{
             ec{"Center, Severna Dakota"}
@@ -688,7 +688,7 @@ sl{
             ec{"Brunej"}
         }
         "Asia:Calcutta"{
-            ec{"Kolkata"}
+            ec{"Kalkuta"}
         }
         "Asia:Chita"{
             ec{"Čita"}
@@ -697,7 +697,7 @@ sl{
             ec{"Čojbalsan"}
         }
         "Asia:Colombo"{
-            ec{"Colombo"}
+            ec{"Kolombo"}
         }
         "Asia:Damascus"{
             ec{"Damask"}
@@ -810,6 +810,9 @@ sl{
         "Asia:Qatar"{
             ec{"Katar"}
         }
+        "Asia:Qostanay"{
+            ec{"Kostanaj"}
+        }
         "Asia:Qyzylorda"{
             ec{"Kizlorda"}
         }
@@ -898,7 +901,7 @@ sl{
             ec{"Zelenortski otoki"}
         }
         "Atlantic:Faeroe"{
-            ec{"Faroe"}
+            ec{"Ferski otoki"}
         }
         "Atlantic:Madeira"{
             ec{"Madeira"}
@@ -1717,7 +1720,9 @@ sl{
             ls{"Niuejski čas"}
         }
         "meta:Norfolk"{
-            ls{"Čas: Norfolški otoki"}
+            ld{"Poletni čas: Norfolški otoki"}
+            lg{"Čas: Norfolški otoki"}
+            ls{"Standardni čas: Norfolški otoki"}
         }
         "meta:Noronha"{
             ld{"Fernando de Noronški poletni čas"}
@@ -1892,6 +1897,9 @@ sl{
             ld{"Jekaterinburški poletni čas"}
             lg{"Jekaterinburški čas"}
             ls{"Jekaterinburški standardni čas"}
+        }
+        "meta:Yukon"{
+            ls{"Jukonski čas"}
         }
         fallbackFormat{"{1} ({0})"}
         gmtFormat{"GMT{0}"}

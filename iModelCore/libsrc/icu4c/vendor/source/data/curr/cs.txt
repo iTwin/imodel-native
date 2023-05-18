@@ -1,5 +1,6 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 cs{
     Currencies{
         ADP{
@@ -1115,7 +1116,7 @@ cs{
             "francouzský UIC frank",
         }
         XOF{
-            "CFA",
+            "F CFA",
             "CFA/BCEAO frank",
         }
         XPD{
@@ -1141,6 +1142,10 @@ cs{
         XTS{
             "XTS",
             "kód zvlášť vyhrazený pro testovací účely",
+        }
+        XUA{
+            "XUA",
+            "XUA",
         }
         XXX{
             "XXX",
@@ -1208,9 +1213,12 @@ cs{
         }
     }
     Currencies%narrow{
+        AFN{"؋"}
+        AMD{"֏"}
         AOA{"Kz"}
         ARS{"$"}
         AUD{"$"}
+        AZN{"₼"}
         BAM{"KM"}
         BBD{"$"}
         BDT{"৳"}
@@ -1239,6 +1247,7 @@ cs{
         FKP{"£"}
         GBP{"£"}
         GEL{"₾"}
+        GHS{"GH₵"}
         GIP{"£"}
         GNF{"FG"}
         GTQ{"Q"}
@@ -1263,6 +1272,8 @@ cs{
         LBP{"L£"}
         LKR{"Rs"}
         LRD{"$"}
+        LTL{"Lt"}
+        LVL{"Ls"}
         MGA{"Ar"}
         MMK{"K"}
         MNT{"₮"}
@@ -1306,7 +1317,6 @@ cs{
         ZMW{"ZK"}
     }
     Currencies%variant{
-        GEL{"₾"}
         TRY{"TL"}
     }
     CurrencyPlurals{
@@ -2052,7 +2062,7 @@ cs{
             few{"izraelské nové šekely"}
             many{"izraelského nového šekelu"}
             one{"izraelský nový šekel"}
-            other{"izraelských nový šekelů"}
+            other{"izraelských nových šekelů"}
         }
         INR{
             few{"indické rupie"}
@@ -3117,5 +3127,4 @@ cs{
         one{"{0} {1}"}
         other{"{0} {1}"}
     }
-    Version{"2.1.48.44"}
 }

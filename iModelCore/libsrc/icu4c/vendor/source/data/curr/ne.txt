@@ -1,5 +1,6 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 ne{
     Currencies{
         AED{
@@ -338,6 +339,10 @@ ne{
             "LRD",
             "लिबेरियाली डलर",
         }
+        LSL{
+            "LSL",
+            "लेसोथो लोटी",
+        }
         LTL{
             "LTL",
             "लिथुनियाली लिटास",
@@ -631,7 +636,7 @@ ne{
             "पूर्वी क्यारिबियन डलर",
         }
         XOF{
-            "CFA",
+            "F CFA",
             "सीएफ्‌ए फ्रान्क बीसीइएओ",
         }
         XPF{
@@ -660,12 +665,104 @@ ne{
         }
     }
     Currencies%narrow{
+        AOA{"Kz"}
+        ARS{"$"}
+        AUD{"$"}
+        BAM{"KM"}
+        BBD{"$"}
+        BDT{"৳"}
+        BMD{"$"}
+        BND{"$"}
+        BOB{"Bs"}
+        BRL{"R$"}
+        BSD{"$"}
+        BWP{"P"}
+        BYN{"р."}
+        BZD{"$"}
+        CAD{"$"}
+        CLP{"$"}
+        CNY{"¥"}
+        COP{"$"}
+        CRC{"₡"}
+        CUC{"$"}
+        CUP{"$"}
+        CZK{"Kč"}
+        DKK{"kr"}
+        DOP{"$"}
+        EGP{"E£"}
+        EUR{"€"}
+        FJD{"$"}
+        FKP{"£"}
+        GBP{"£"}
+        GEL{"₾"}
+        GIP{"£"}
+        GNF{"FG"}
+        GTQ{"Q"}
+        GYD{"$"}
+        HKD{"$"}
+        HNL{"L"}
+        HRK{"kn"}
+        HUF{"Ft"}
+        IDR{"Rp"}
+        ILS{"₪"}
+        INR{"₹"}
+        ISK{"kr"}
+        JMD{"$"}
+        JPY{"¥"}
+        KHR{"៛"}
+        KMF{"CF"}
+        KPW{"₩"}
+        KRW{"₩"}
+        KYD{"$"}
+        KZT{"₸"}
+        LAK{"₭"}
+        LBP{"L£"}
+        LKR{"Rs"}
+        LRD{"$"}
+        MGA{"Ar"}
+        MMK{"K"}
+        MNT{"₮"}
+        MUR{"Rs"}
+        MXN{"$"}
+        MYR{"RM"}
+        NAD{"$"}
+        NGN{"₦"}
+        NIO{"C$"}
+        NOK{"kr"}
         NPR{"रू"}
+        NZD{"$"}
+        PHP{"₱"}
+        PKR{"Rs"}
+        PLN{"zł"}
+        PYG{"₲"}
+        RON{"lei"}
+        RUB{"₽"}
+        RWF{"RF"}
+        SBD{"$"}
+        SEK{"kr"}
+        SGD{"$"}
+        SHP{"£"}
+        SRD{"$"}
+        SSP{"£"}
         STN{"Db"}
+        SYP{"£"}
+        THB{"฿"}
+        TOP{"T$"}
+        TRY{"₺"}
+        TTD{"$"}
+        TWD{"$"}
+        UAH{"₴"}
+        USD{"$"}
+        UYU{"$"}
+        VEF{"Bs"}
+        VND{"₫"}
+        XCD{"$"}
+        ZAR{"R"}
+        ZMW{"ZK"}
     }
     Currencies%variant{
-        GEL{"₾"}
         NPR{"Rs"}
+        TRY{"TL"}
     }
     CurrencyPlurals{
         AED{
@@ -905,7 +1002,7 @@ ne{
             other{"क्रोएशियाली कुना"}
         }
         HTG{
-            one{"हैटियाली"}
+            one{"हैटियाली गुर्ड"}
             other{"हैटियाली गुर्ड"}
         }
         HUF{
@@ -999,6 +1096,10 @@ ne{
         LRD{
             one{"लिबेरियाली डलर"}
             other{"लिबेरियाली डलर"}
+        }
+        LSL{
+            one{"लेसोथो लोटी"}
+            other{"लेसोथो लोटिस"}
         }
         LTL{
             one{"लिथुनियाली लिटास"}
@@ -1254,7 +1355,7 @@ ne{
         }
         USD{
             one{"अमेरिकी डलर"}
-            other{"संयुक्त राज्य डलर"}
+            other{"अमेरिकी डलर"}
         }
         UYU{
             one{"उरूगुवायाली पेसो"}
@@ -1321,5 +1422,4 @@ ne{
             other{"जाम्बियाली क्वाचा"}
         }
     }
-    Version{"2.1.49.82"}
 }

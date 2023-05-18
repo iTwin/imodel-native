@@ -1,5 +1,6 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 sk{
     Currencies{
         ADP{
@@ -688,7 +689,7 @@ sk{
         }
         MRU{
             "MRU",
-            "mauritánska ukija",
+            "mauritánska ouguiya",
         }
         MTL{
             "MTL",
@@ -940,7 +941,7 @@ sk{
         }
         SZL{
             "SZL",
-            "svazijské lilangeni",
+            "svazijský lilangeni",
         }
         THB{
             "THB",
@@ -1115,7 +1116,7 @@ sk{
             "francúzsky UIC frank",
         }
         XOF{
-            "CFA",
+            "F CFA",
             "západoafrický frank",
         }
         XPD{
@@ -1237,6 +1238,8 @@ sk{
         DKK{"kr"}
         DOP{"$"}
         EGP{"E£"}
+        ESP{"₧"}
+        EUR{"€"}
         FJD{"$"}
         FKP{"£"}
         GBP{"£"}
@@ -1265,6 +1268,8 @@ sk{
         LBP{"L£"}
         LKR{"Rs"}
         LRD{"$"}
+        LTL{"Lt"}
+        LVL{"Ls"}
         MGA{"Ar"}
         MMK{"K"}
         MNT{"₮"}
@@ -1283,6 +1288,7 @@ sk{
         PYG{"₲"}
         RON{"lei"}
         RUB{"₽"}
+        RUR{"р."}
         RWF{"RF"}
         SBD{"$"}
         SEK{"kr"}
@@ -1290,6 +1296,7 @@ sk{
         SHP{"£"}
         SRD{"$"}
         SSP{"£"}
+        STN{"Db"}
         SYP{"£"}
         THB{"฿"}
         TOP{"T$"}
@@ -1306,7 +1313,6 @@ sk{
         ZMW{"ZK"}
     }
     Currencies%variant{
-        GEL{"₾"}
         RUB{"₽"}
         TRY{"TL"}
     }
@@ -2338,10 +2344,10 @@ sk{
             other{"mauritánskych ukijí (1973–2017)"}
         }
         MRU{
-            few{"mauritánske ukije"}
-            many{"mauritánskej ukije"}
-            one{"mauritánska ukija"}
-            other{"mauritánskych ukijí"}
+            few{"mauritánske ouguiye"}
+            many{"mauritánskej ouguiye"}
+            one{"mauritánska ouguiya"}
+            other{"mauritánskych ouguiyí"}
         }
         MTL{
             few{"maltské líry"}
@@ -2718,7 +2724,7 @@ sk{
         SZL{
             few{"svazijské lilangeni"}
             many{"svazijského lilangeni"}
-            one{"svazijské lilangeni"}
+            one{"svazijský lilangeni"}
             other{"svazijských lilangeni"}
         }
         THB{
@@ -3130,5 +3136,4 @@ sk{
         one{"{0} {1}"}
         other{"{0} {1}"}
     }
-    Version{"2.1.48.42"}
 }

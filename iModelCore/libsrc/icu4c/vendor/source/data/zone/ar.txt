@@ -1,7 +1,7 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 ar{
-    Version{"2.1.49.82"}
     zoneStrings{
         "Africa:Abidjan"{
             ec{"أبيدجان"}
@@ -257,6 +257,9 @@ ar{
         }
         "America:Chihuahua"{
             ec{"تشيواوا"}
+        }
+        "America:Ciudad_Juarez"{
+            ec{"سيوداد خواريز"}
         }
         "America:Coral_Harbour"{
             ec{"كورال هاربر"}
@@ -646,7 +649,7 @@ ar{
             ec{"ألماتي"}
         }
         "Asia:Amman"{
-            ec{"عمان"}
+            ec{"عمّان"}
         }
         "Asia:Anadyr"{
             ec{"أندير"}
@@ -1223,6 +1226,9 @@ ar{
         "Pacific:Johnston"{
             ec{"جونستون"}
         }
+        "Pacific:Kanton"{
+            ec{"كانتون"}
+        }
         "Pacific:Kiritimati"{
             ec{"كيريتي ماتي"}
         }
@@ -1724,7 +1730,9 @@ ar{
             ls{"توقيت نيوي"}
         }
         "meta:Norfolk"{
-            ls{"توقيت جزيرة نورفولك"}
+            ld{"توقيت جزيرة نورفولك الصيفي"}
+            lg{"توقيت جزيرة نورفولك"}
+            ls{"توقيت جزيرة نورفولك الرسمي"}
         }
         "meta:Noronha"{
             ld{"توقيت فرناندو دي نورونها الصيفي"}
@@ -1902,6 +1910,9 @@ ar{
             ld{"توقيت يكاترينبورغ الصيفي"}
             lg{"توقيت يكاترينبورغ"}
             ls{"توقيت يكاترينبورغ الرسمي"}
+        }
+        "meta:Yukon"{
+            ls{"توقيت يوكون"}
         }
         fallbackFormat{"{1} ({0})"}
         gmtFormat{"غرينتش{0}"}

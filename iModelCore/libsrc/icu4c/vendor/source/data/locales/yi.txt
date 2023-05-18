@@ -1,5 +1,6 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 yi{
     AuxExemplarCharacters{"[\u200E\u200F]"}
     ExemplarCharacters{
@@ -8,8 +9,8 @@ yi{
         "\u05BF} ף צ ץ ק ר ש {ש\u05C2} {ת\u05BC} ת]"
     }
     ExemplarCharactersIndex{"[\u05C2 \u05BC \u05BF א ב ג ד ה ו ז ח ט י כ ל מ נ ס ע פ צ ק ר ש ת]"}
-    ExemplarCharactersNumbers{"[\\- , . % ‰ + 0 1 2 3 4 5 6 7 8 9]"}
-    ExemplarCharactersPunctuation{"[\\- ‐ – — , ; \\: ! ? . ׳ ' \u0022 ( ) \\[ \\] / ״ ־]"}
+    ExemplarCharactersNumbers{"[\\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]"}
+    ExemplarCharactersPunctuation{"[\\- ‐ ‑ – — , ; \\: ! ? . ' ׳ \u0022 ״ ( ) \\[ \\] / ־]"}
     NumberElements{
         default{"latn"}
         latn{
@@ -29,7 +30,6 @@ yi{
         native{"latn"}
         traditional{"hebr"}
     }
-    Version{"2.1.47.82"}
     calendar{
         generic{
             DateTimePatterns{
@@ -74,6 +74,16 @@ yi{
                 "{1} {0}",
                 "{1}, {0}",
                 "{1} {0}",
+            }
+            DateTimeSkeletons{
+                "HHmmsszzzz",
+                "HHmmssz",
+                "HHmmss",
+                "HHmm",
+                "yMMMMEEEEd",
+                "yMMMMd",
+                "yMMMd",
+                "yyMMdd",
             }
             appendItems{
                 Timezone{"{1} {0}"}
@@ -314,6 +324,28 @@ yi{
                 "{1} {0}",
                 "{1} {0}",
                 "{1} {0}",
+            }
+            DateTimeSkeletons{
+                "HHmmsszzzz",
+                "HHmmssz",
+                "HHmmss",
+                "HHmm",
+                {
+                    "yMMMMEEEEd",
+                    "hebr",
+                }
+                {
+                    "yMMMMd",
+                    "hebr",
+                }
+                {
+                    "yMMMMd",
+                    "hebr",
+                }
+                {
+                    "yMMMMd",
+                    "hebr",
+                }
             }
             availableFormats{
                 Gy{"y G"}
