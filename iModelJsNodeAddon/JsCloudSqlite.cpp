@@ -412,7 +412,7 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
         JsCloudUtil handle;
         auto result = handle.Init(*this);
         if (result.IsSuccess()) {
-            int blockSize = 0;
+            int blockSize = 64 * 1024;
             bool checksumName = false;
             if (info[0].IsObject()) {
                 auto opts = BeJsConst(info[0].As<Napi::Object>());
