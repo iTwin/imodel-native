@@ -39,6 +39,9 @@ private:
     rapidjson::Document m_diagnostics;
     mutable Utf8String m_serializedSuccessResponse;
 
+private:
+    void SerializeSuccessResponse() const;
+
 public:
     //! Don't allow copying
     ECPresentationResult(ECPresentationResult const& other) = delete;
@@ -47,18 +50,18 @@ public:
     //! Create a success result with response
     ECPresentationResult(BeJsDocument&& successResponse, bool serializeResponse, rapidjson::Document&& diagnostics = rapidjson::Document())
         : m_status(ECPresentationStatus::Success), m_successResponse(std::move(successResponse)), m_diagnostics(std::move(diagnostics))
-    {
+        {
         if (serializeResponse)
-            GetSerializedSuccessResponse();
-    }
+            SerializeSuccessResponse();
+        }
     //! Create a success result with response
     ECPresentationResult(BeJsConst successResponse, bool serializeResponse, rapidjson::Document&& diagnostics = rapidjson::Document())
         : m_status(ECPresentationStatus::Success), m_diagnostics(std::move(diagnostics))
-    {
+        {
         m_successResponse.From(successResponse);
         if (serializeResponse)
-            GetSerializedSuccessResponse();
-    }
+            SerializeSuccessResponse();
+        }
     //! Create an error result
     ECPresentationResult(ECPresentationStatus errorCode, Utf8String message, rapidjson::Document&& diagnostics = rapidjson::Document())
         : m_status(errorCode), m_errorMessage(message), m_diagnostics(std::move(diagnostics))
@@ -85,7 +88,8 @@ public:
     Utf8StringCR GetErrorMessage() const {return m_errorMessage;}
     rapidjson::Document const& GetDiagnostics() const {return m_diagnostics;}
     BeJsConst GetSuccessResponse() const {return m_successResponse;}
-    Utf8StringCR GetSerializedSuccessResponse() const;
+    Utf8StringCR GetSerializedSuccessResponse() const {SerializeSuccessResponse(); return m_serializedSuccessResponse;}
+    Utf8StringR GetSerializedSuccessResponse() {SerializeSuccessResponse(); return m_serializedSuccessResponse;}
 };
 
 //=======================================================================================

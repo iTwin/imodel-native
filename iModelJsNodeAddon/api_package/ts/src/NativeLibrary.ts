@@ -1200,7 +1200,7 @@ export declare namespace IModelJsNative {
     public addRuleset(serializedRuleset: string): ECPresentationManagerResponse<string>;
     public removeRuleset(rulesetId: string, hash: string): ECPresentationManagerResponse<boolean>;
     public clearRulesets(): ECPresentationManagerResponse<void>;
-    public handleRequest(db: DgnDb, options: string): { result: Promise<ECPresentationManagerResponse<string>>, cancel: () => void };
+    public handleRequest(db: DgnDb, options: string): { result: Promise<ECPresentationManagerResponse<Buffer>>, cancel: () => void };
     public getUpdateInfo(): ECPresentationManagerResponse<any>;
     public dispose(): void;
   }
