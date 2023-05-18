@@ -82,6 +82,7 @@ struct CloudContainer {
     BeEvent<CloudContainer*> m_onDisconnect;
     CloudVdb m_containerDb;
     Utf8String m_storageType;
+    Utf8String m_storageParams;
     Utf8String m_baseUri;
     Utf8String m_containerId;
     Utf8String m_alias;
@@ -100,6 +101,7 @@ struct CloudContainer {
     CloudResult CallSqliteFn(std::function<int(Utf8P*)> fn, Utf8CP fnName) { return m_cache->CallSqliteFn(fn, fnName); }
     bool IsContainerConnected() const { return nullptr != m_cache; }
 
+    Utf8String GetOpenParams() const { return m_storageType + m_storageParams; }
     void CloseDbIfOpen() {
         if (m_containerDb.IsDbOpen())
             m_containerDb.CloseDb();
