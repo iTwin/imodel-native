@@ -4151,8 +4151,8 @@ public:
     //! @param[in]  schema  pointer to the schema which will be looped through
     ECOBJECTS_EXPORT static void RemoveInvalidDisplayCharacters(ECSchemaR schema);
 
-    //! The schemaXml will be read to obtain the SchemaKey, ECXML Major and Minor versions.
-    ECOBJECTS_EXPORT static SchemaReadStatus ReadSchemaStub(Utf8StringR schemaXml, SchemaKey& schemaKey, uint32_t& ecXmlMajorVersion, uint32_t& ecXmlMinorVersion);
+    //! The schemaXml will be read to obtain the SchemaKey
+    ECOBJECTS_EXPORT static SchemaReadStatus ReadSchemaKey(Utf8StringR schemaXml, SchemaKey& schemaKey);
 };
 
 //*=================================================================================**//**

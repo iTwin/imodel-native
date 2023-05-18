@@ -3805,7 +3805,7 @@ void ECSchema::RemoveInvalidDisplayCharacters(ECSchemaR schema)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaReadStatus ECSchema::ReadSchemaStub(Utf8StringR schemaXml, SchemaKey& schemaKey, uint32_t& ecXmlMajorVersion, uint32_t& ecXmlMinorVersion)
+SchemaReadStatus ECSchema::ReadSchemaKey(Utf8StringR schemaXml, SchemaKey& schemaKey)
     {
     pugi::xml_document xmlDoc;
     pugi::xml_parse_result parseResult = xmlDoc.load_string(schemaXml.c_str());
@@ -3815,6 +3815,7 @@ SchemaReadStatus ECSchema::ReadSchemaStub(Utf8StringR schemaXml, SchemaKey& sche
         return SchemaReadStatus::FailedToParseXml;
         }
 
+    uint32_t ecXmlMajorVersion, ecXmlMinorVersion;
     pugi::xml_node schemaNode;
     return SchemaXmlReader::ReadSchemaStub(schemaKey, ecXmlMajorVersion, ecXmlMinorVersion, schemaNode, xmlDoc);
     }

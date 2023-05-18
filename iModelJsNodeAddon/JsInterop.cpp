@@ -942,8 +942,7 @@ DbResult JsInterop::ConvertEC2XmlSchemas(DgnDbR dgndb, bvector<Utf8String> const
     for (Utf8String ec2XmlString : ec2XmlStrings)
         {
         SchemaKey key;
-        uint32_t ecXmlMajorVersion, ecXmlMinorVersion;
-        SchemaReadStatus status = ECSchema::ReadSchemaStub(ec2XmlString, key, ecXmlMajorVersion, ecXmlMinorVersion);
+        SchemaReadStatus status = ECSchema::ReadSchemaKey(ec2XmlString, key);
         if (SchemaReadStatus::Success != status)
             return BE_SQLITE_ERROR;
         locater.AddSchemaString(key.GetName(), ec2XmlString);
