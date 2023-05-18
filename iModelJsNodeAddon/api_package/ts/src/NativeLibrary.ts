@@ -975,7 +975,7 @@ export declare namespace IModelJsNative {
      * initialize a cloud blob-store container to be used as a new Sqlite CloudContainer. This creates the manifest, and should be
      * performed on an empty container. If an existing manifest is present, it is destroyed and a new one is created (essentially emptying the container.)
      */
-    public initializeContainer(opts?: { checksumBlockNames?: boolean, blockSize: number }): void;
+    public initializeContainer(opts: { checksumBlockNames?: boolean, blockSize: number }): void;
 
     /**
      * Attempt to acquire the write lock for this CloudContainer. For this to succeed:
