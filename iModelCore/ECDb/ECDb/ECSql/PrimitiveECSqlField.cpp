@@ -15,9 +15,22 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 PrimitiveECSqlField::PrimitiveECSqlField(ECSqlSelectPreparedStatement& stmt, ECSqlColumnInfo const& ecsqlColumnInfo, int columnIndex)
     : ECSqlField(stmt, ecsqlColumnInfo, false, false), m_sqliteColumnIndex(columnIndex)
     {
-    if (m_ecsqlColumnInfo.GetDataType().GetPrimitiveType() == PRIMITIVETYPE_DateTime)
-        {
-        ECPropertyCP property = m_ecsqlColumnInfo.GetProperty();
+    UpdateDateTimeMetaData();
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+void PrimitiveECSqlField::_OnDynamicPropertyUpdated()  {
+    UpdateDateTimeMetaData();
+}
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+void PrimitiveECSqlField::UpdateDateTimeMetaData() {
+    auto& columnInfo = GetColumnInfo();
+    if (columnInfo.GetDataType().GetPrimitiveType() == PRIMITIVETYPE_DateTime) {
+        ECPropertyCP property = columnInfo.GetProperty();
         BeAssert(property != nullptr && "ColumnInfo::GetProperty can return null. Please double-check");
         if (CoreCustomAttributeHelper::GetDateTimeInfo(m_datetimeMetadata, *property) != ECObjectsStatus::Success)
             {
@@ -28,9 +41,8 @@ PrimitiveECSqlField::PrimitiveECSqlField(ECSqlSelectPreparedStatement& stmt, ECS
 
         if (!m_datetimeMetadata.IsValid())
             m_datetimeMetadata = DateTime::Info::CreateForDateTime(DateTime::Kind::Unspecified); //default
-        }
     }
-
+}
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------

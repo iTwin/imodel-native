@@ -713,6 +713,7 @@ export declare namespace IModelJsNative {
     public isEnum(): boolean;
     public isGeneratedProperty(): boolean;
     public isSystemProperty(): boolean;
+    public isDynamicProp(): boolean;
   }
 
   class ECSqlValue {

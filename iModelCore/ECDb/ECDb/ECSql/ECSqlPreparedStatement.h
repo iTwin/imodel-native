@@ -38,10 +38,11 @@ struct IECSqlPreparedStatement
         virtual int _GetParameterIndex(Utf8CP parameterName) const = 0;
         virtual int _TryGetParameterIndex(Utf8CP parameterName) const = 0;
         virtual ECSqlStatus _Reset() = 0;
-        virtual ECSqlStatus _ClearBindings() = 0;
         virtual Utf8CP _GetNativeSql() const = 0;
 
     protected:
+        virtual ECSqlStatus _ClearBindings() = 0;
+
         IECSqlPreparedStatement(ECDb const& ecdb, ECSqlType type, bool isCompoundStmt) : m_ecdb(ecdb), m_type(type), m_isCompoundStatement(isCompoundStmt), m_dataSourceDb(nullptr) {}
         void SetDataSourceDb(Db const& db) { m_dataSourceDb = &db; }
         BentleyStatus AssertIsValid() const;
@@ -80,10 +81,11 @@ private:
     IECSqlBinder& _GetBinder(int parameterIndex) const override;
     int _GetParameterIndex(Utf8CP parameterName) const override;
     int _TryGetParameterIndex(Utf8CP parameterName) const override;
-    ECSqlStatus _ClearBindings() override;
     Utf8CP _GetNativeSql() const override { return m_sqliteStatement.GetSql(); }
 
 protected:
+    ECSqlStatus _ClearBindings() override;
+
     SingleECSqlPreparedStatement(ECDb const& ecdb, ECSqlType type) : IECSqlPreparedStatement(ecdb, type, false) {}
 
     ECSqlStatus _Prepare(ECSqlPrepareContext&, Exp const&) override;
@@ -236,19 +238,26 @@ struct CompoundECSqlPreparedStatement : IECSqlPreparedStatement
 //=======================================================================================
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct ECSqlSelectPreparedStatement final : SingleECSqlPreparedStatement
+struct ECSqlSelectPreparedStatement final : public SingleECSqlPreparedStatement
     {
+    constexpr static auto SELECT_PTR_NAME = "#select#";
     private:
         DynamicSelectClauseECClass m_dynamicSelectClauseECClass;
         std::vector<std::unique_ptr<ECSqlField>> m_fields;
         //Calls to OnAfterStep/Reset on ECSqlFields can be very many, so only call it on fields that require it.
         std::vector<ECSqlField*> m_fieldsRequiringOnAfterStep;
         std::vector<ECSqlField*> m_fieldsRequiringReset;
-
+        int m_thisStmtBindIndex = 0;
         ECSqlStatus _Reset() override;
 
         ECSqlStatus ResetFields() const;
         ECSqlStatus OnAfterStep() const;
+
+        void BindThisPtr();
+        virtual ECSqlStatus _ClearBindings() final;
+
+    protected:
+        ECSqlStatus _Prepare(ECSqlPrepareContext& ctx, Exp const& exp) override;
 
     public:
         explicit ECSqlSelectPreparedStatement(ECDb const& ecdb) : SingleECSqlPreparedStatement(ecdb, ECSqlType::Select) {}
@@ -257,7 +266,7 @@ struct ECSqlSelectPreparedStatement final : SingleECSqlPreparedStatement
 
         int GetColumnCount() const;
         IECSqlValue const& GetValue(int columnIndex) const;
-
+        ECSqlField* GetField(int columnIndex);
         void AddField(std::unique_ptr<ECSqlField>);
         DynamicSelectClauseECClass& GetDynamicSelectClauseECClassR() { return m_dynamicSelectClauseECClass; }
     };

@@ -143,7 +143,7 @@ struct ECSqlPropertyPath final
 
         //! Gets the property path entry at the specified @p index
         //! @remarks The 0-based index is counted from top-level property to leaf property, i.e. the index represents
-        //!          the nesting level within the property path. So index 0 points to the 
+        //!          the nesting level within the property path. So index 0 points to the
         //!          top-level property (root property), and the greatest
         //!          index (ECSqlPropertyPath::Size - 1) points to the leaf property.
         //!          Callers must make sure that @p index is not out of bounds. Otherwise the behavior is undefined.
@@ -196,7 +196,7 @@ struct ECSqlColumnInfo final
     {
     //! Represents the ECClass of the top-level ECProperty backing this column.
     //! @remarks When nesting into a struct or array this method still always returns the ECClass
-    //! from the top-level property, i.e. it is an ECClass from the FROM or JOIN clause. 
+    //! from the top-level property, i.e. it is an ECClass from the FROM or JOIN clause.
     //! It does not return the ECClass of ECSqlColumnInfo::GetProperty.
     //! @e Example
     //! For the ECSQL <c>SELECT Address FROM myschema.Company</c> where Address is a property of the ECStruct @c Location,
@@ -235,13 +235,36 @@ struct ECSqlColumnInfo final
         ECN::ECPropertyCP m_originProperty = nullptr;
         bool m_isSystemProperty = false;
         bool m_isGeneratedProperty = false;
+        bool m_isDynamic = false;
         ECSqlPropertyPath m_propertyPath;
         RootClass m_rootClass;
 
     public:
 #if !defined (DOCUMENTATION_GENERATOR)
         ECSqlColumnInfo();
-        ECSqlColumnInfo(ECN::ECTypeDescriptor const&, DateTime::Info const&, ECN::ECStructClassCP, ECN::ECPropertyCP, ECN::ECPropertyCP, bool isSystemProperty, bool isGeneratedProperty, ECSqlPropertyPath const&, RootClass const&);
+        ECSqlColumnInfo(
+            ECN::ECTypeDescriptor const&,
+            DateTime::Info const&,
+            ECN::ECStructClassCP,
+            ECN::ECPropertyCP,
+            ECN::ECPropertyCP,
+            bool isSystemProperty,
+            bool isGeneratedProperty,
+            ECSqlPropertyPath const&,
+            RootClass const&,
+            bool isDynamic = false);
+        ECSqlColumnInfo(const ECSqlColumnInfo& rhs, bool isDynamic):
+            m_dataType(rhs.m_dataType),
+            m_dateTimeInfo(rhs.m_dateTimeInfo),
+            m_structType(rhs.m_structType),
+            m_property(rhs.m_property),
+            m_originProperty(rhs.m_originProperty),
+            m_isSystemProperty(rhs.m_isSystemProperty),
+            m_isGeneratedProperty(rhs.m_isGeneratedProperty),
+            m_rootClass(rhs.m_rootClass),
+            m_propertyPath(rhs.m_propertyPath),
+            m_isDynamic(isDynamic){}
+
 #endif
 
         ~ECSqlColumnInfo() {}
@@ -255,7 +278,7 @@ struct ECSqlColumnInfo final
         //! Gets the data type of the column represented by this info object.
         //! @return Column data type
         ECN::ECTypeDescriptor const& GetDataType() const { return m_dataType; }
-        
+
         //! Gets datetime metadata if the column's data type is DateTime or DateTime array.
         //! @return Datetime metadata for DateTime or DateTime array columns
         DateTime::Info const& GetDateTimeInfo() const { BeAssert((m_dataType.IsPrimitive() || m_dataType.IsPrimitiveArray()) && m_dataType.GetPrimitiveType() == ECN::PRIMITIVETYPE_DateTime); return m_dateTimeInfo; }
@@ -279,12 +302,16 @@ struct ECSqlColumnInfo final
         //! @return Enumeration type for ECEnumeration columns and nullptr otherwise
         ECDB_EXPORT ECN::ECEnumerationCP GetEnumType() const;
 
+        //! Gets if property is dynamic. If property is dynamic its column info might change on Step()
+        //! @return true if the property is dynamic
+        bool IsDynamic() const { return m_isDynamic; }
+
         //! Indicates whether the property returned from ECSqlColumnInfo::GetProperty is an ECSQL system property.
         //! @return true if ECSqlColumnInfo::GetProperty is an ECSQL system property. false otherwise.
         //! @see @ref ECSqlSystemProperties
         bool IsSystemProperty() const { return m_isSystemProperty; }
 
-        //! Indicates whether the property returned from GetProperty is a generated one or whether it 
+        //! Indicates whether the property returned from GetProperty is a generated one or whether it
         //! directly refers to an existing ECProperty of one of the classes in the FROM or JOIN clauses.
         //!
         //! For select clause expressions that do not simply refer to an ECProperty from the FROM or JOIN clauses, but instead
@@ -297,8 +324,8 @@ struct ECSqlColumnInfo final
         //! GetOriginProperty() can be used to access the real property for an aliased column instead of the generated property.
         //!
         //! @e Example
-        //! For the ECSQL <c>SELECT AssetID, Length * Breadth AS Area FROM myschema.Cubicle</c> the first column (@c AssetID) would 
-        //! not be a generated property, but the second (@c Area) would be. 
+        //! For the ECSQL <c>SELECT AssetID, Length * Breadth AS Area FROM myschema.Cubicle</c> the first column (@c AssetID) would
+        //! not be a generated property, but the second (@c Area) would be.
         //! @note Using a column alias always generates a property. So in the ECSQL <c>SELECT AssetID AS 'Cubicle ID' FROM myschema.Cubicle</c>
         //! the first column would be a generated property and its name would be 'Cubicle ID'.
         //! @return true, if the property for this column is generated. false,
@@ -311,13 +338,16 @@ struct ECSqlColumnInfo final
 
         //! Gets the ECClass of the top-level ECProperty backing this column.
         //! @remarks When nesting into a struct or array this method still always returns the ECClass
-        //! from the top-level property, i.e. it is an ECClass from the FROM or JOIN clause. 
+        //! from the top-level property, i.e. it is an ECClass from the FROM or JOIN clause.
         //! It does not return the ECClass of ECSqlColumnInfo::GetProperty.
         //! @e Example
         //! For the ECSQL <c>SELECT Address FROM myschema.Company</c> where Address is a property of the ECStruct @c Location,
         //! GetRootClass of the first column returns the ECN::ECClass 'Company' and not the ECStruct type 'Location'.
         //! @return Column's ECClass reference
-        RootClass const& GetRootClass() const { BeAssert(IsValid() && "Must not call GetRootClass if IsValid is false"); return m_rootClass; }
+        RootClass const& GetRootClass() const {
+            BeAssert(IsValid() && "Must not call GetRootClass if IsValid is false");
+            return m_rootClass;
+        }
     };
 
 typedef ECSqlColumnInfo const& ECSqlColumnInfoCR;

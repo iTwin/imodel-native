@@ -29,34 +29,35 @@ struct InstanceReader::Impl final {
     //+===============+===============+===============+===============+===============+======
     struct PropertyExists final {
         private:
+            struct Entry {
+                ECN::ECClassId m_classId;
+                Utf8CP m_accessString;
+            };
             struct NoCaseAsciiStrHash final {
-                size_t operator ()(const std::string& val) const {
+                size_t operator ()(const Entry& val) const {
                     FNV1HashBuilder builder;
-                    builder.UpdateNoCaseAsciiString(val);
-                    return static_cast<size_t>(builder.GetHashCode());
-                }
-                size_t operator ()(const char* val) const {
-                    FNV1HashBuilder builder;
-                    builder.UpdateNoCaseAsciiCharCP(val);
+                    builder.UpdateUInt64(val.m_classId.GetValue());
+                    if(val.m_accessString) builder.UpdateNoCaseAsciiCharCP(val.m_accessString);
                     return static_cast<size_t>(builder.GetHashCode());
                 }
             };
             struct  NoCaseAsciiStrEqual final {
-                bool operator ()(const std::string& lhs,const std::string& rhs ) const {
-                    return lhs.size() == rhs.size() && BeStringUtilities::StricmpAscii(lhs.c_str(), rhs.c_str()) == 0;
-                }
-                bool operator ()(const char* lhs, const char* rhs ) const {
-                    return BeStringUtilities::StricmpAscii(lhs, rhs) == 0;
+                bool operator ()(const Entry& lhs,const Entry& rhs ) const {
+                    return (lhs.m_classId == rhs.m_classId)
+                        && ((lhs.m_accessString == nullptr) != (rhs.m_accessString == nullptr))
+                        && (rhs.m_accessString == nullptr || BeStringUtilities::StricmpAscii(lhs.m_accessString, rhs.m_accessString) == 0);
                 }
             };
-            mutable std::vector<std::unique_ptr<std::string>> m_props;
-            mutable std::unordered_map<const char*, std::set<ECN::ECClassId>, NoCaseAsciiStrHash, NoCaseAsciiStrEqual> m_propMap;
-            mutable std::set<ECN::ECClassId> m_classIds;
+            mutable std::vector<std::unique_ptr<Utf8String>> m_props;
+            mutable std::unordered_set<Entry, NoCaseAsciiStrHash, NoCaseAsciiStrEqual> m_propHashTable;
             ECDbCR m_conn;
+
         public:
             PropertyExists(ECDbCR conn):m_conn(conn){}
-            void Clear() const ;
+            void Clear() const;
+            void Load() const;
             bool Exists(ECN::ECClassId classId, Utf8CP accessString) const;
+            bool Exists(ECN::ECClassId classId) const { return Exists(classId, nullptr); }
     };
     //=======================================================================================
     //! @bsiclass
@@ -139,6 +140,7 @@ struct InstanceReader::Impl final {
         private:
             std::vector<TableView const*> m_tables;
             std::vector<Property::Ptr> m_properties;
+            std::map<Utf8CP,  Property const*, CompareIUtf8Ascii> m_propertyMap;
             ECN::ECClassId m_id;
 
         public:

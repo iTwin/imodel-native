@@ -14,4 +14,22 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 Statement& ECSqlField::GetSqliteStatement() const { return m_preparedECSqlStatement.GetSqliteStatement(); }
 
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void ECSqlField::SetDynamicColumnInfo(ECSqlColumnInfoCR info) {
+    if (!m_ecsqlColumnInfo.IsDynamic())
+        return;
+
+    if (info.IsValid()) {
+        if (info.GetDataType() != m_ecsqlColumnInfo.GetDataType() || (info.GetProperty() != m_ecsqlColumnInfo.GetProperty())) {
+            m_ecsqlDynamicColumnInfo = ECSqlColumnInfo(info, true);
+            _OnDynamicPropertyUpdated();
+        }
+    } else {
+        m_ecsqlDynamicColumnInfo = ECSqlColumnInfo();
+        _OnDynamicPropertyUpdated();
+    }
+}
+
 END_BENTLEY_SQLITE_EC_NAMESPACE
