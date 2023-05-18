@@ -224,17 +224,8 @@ public:
     Utf8StringCR GetSchemaName() const { return m_schemaAlias; }
     Utf8StringCR GetClassName() const { return m_className;}
     bool DisqualifyPrimaryJoin() const {return m_disqualifyPrimaryJoin;}
-    MemberFunctionCallExp const* GetMemberFunctionCallExp() const
-        {
-        if (GetChildren().empty())
-            return nullptr;
-
-        Exp const* childExp = GetChildren()[0];
-        if (childExp->GetType() != Exp::Type::MemberFunctionCall)
-            return nullptr;
-
-        return childExp->GetAsCP<MemberFunctionCallExp>();
-        }
+    MemberFunctionCallExp const* GetMemberFunctionCallExp() const;
+    std::set<Utf8String, CompareIUtf8Ascii> GetInstancePropNames() const;
     };
 //=======================================================================================
 //! @bsiclass
