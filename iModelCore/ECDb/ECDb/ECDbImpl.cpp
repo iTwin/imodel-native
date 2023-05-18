@@ -3,7 +3,7 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-
+#include <BeSQLite/VirtualTab.h>
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -478,7 +478,6 @@ void ECDb::Impl::RegisterBuiltinFunctions() const
     m_ecdb.AddFunction(StrToGuid::GetSingleton());
     m_ecdb.AddFunction(IdToHex::GetSingleton());
     m_ecdb.AddFunction(HexToId::GetSingleton());
-
     m_changeManager.RegisterSqlFunctions();
 
     m_classNameFunc = ClassNameFunc::Create(m_ecdb);
@@ -501,9 +500,7 @@ void ECDb::Impl::RegisterBuiltinFunctions() const
     if (m_extractPropFunc != nullptr)
         m_ecdb.AddFunction(*m_extractPropFunc);
 
-    m_propExistsFunc = PropExistsFunc::Create(m_ecdb);
-    if (m_propExistsFunc != nullptr)
-        m_ecdb.AddFunction(*m_propExistsFunc);
+    RegisterBuildInVTabs(m_ecdb);
    }
 
 //---------------------------------------------------------------------------------------
@@ -540,10 +537,6 @@ void ECDb::Impl::UnregisterBuiltinFunctions() const
     if (m_extractPropFunc != nullptr) {
         m_ecdb.RemoveFunction(*m_extractPropFunc);
         m_extractPropFunc = nullptr;
-    }
-    if (m_propExistsFunc != nullptr) {
-        m_ecdb.RemoveFunction(*m_propExistsFunc);
-        m_propExistsFunc = nullptr;
     }
     }
 

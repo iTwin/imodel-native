@@ -1324,7 +1324,7 @@ static QueryClauseAndBindings CreateJoinsClause(bvector<std::shared_ptr<JoinClau
                         joinedClassName = classWithRelationshipJoin->m_join.GetAlias();
                     joinClause.append(" ON ").append(Utf8PrintfString(joinedClassJoinClause.c_str(), joinedClassName.c_str(), classWithRelationshipJoin->m_using.GetAlias().c_str()));
                     joinClause.append(andJoinFilterClause);
-                    joinedRelationships.Insert(joinedClassName, relationshipJoinInfo);
+                    joinedRelationships.Insert(joinedClassName, joinedClassInfo);
                     prev = joinedClassInfo;
                     }
                 }
