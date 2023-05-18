@@ -82,6 +82,7 @@ struct CloudContainer {
     BeEvent<CloudContainer*> m_onDisconnect;
     CloudVdb m_containerDb;
     Utf8String m_storageType;
+    Utf8String m_storageParams;
     Utf8String m_baseUri;
     Utf8String m_containerId;
     Utf8String m_alias;

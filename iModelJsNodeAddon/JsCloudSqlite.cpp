@@ -162,8 +162,10 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
             BeNapi::ThrowJsException(obj.Env(), "containerId missing from CloudContainer constructor");
 
         m_storageType = stringMember(obj, JSON_NAME(storageType), "azure");
-        if (m_storageType.Trim().StartsWith("azure"))
-            m_storageType = "azure?customuri=1&sas=1";
+        if (m_storageType.Trim().StartsWith("azure")) {
+            m_storageType = "azure";
+            m_storageParams = "?customuri=1&sas=1";
+        }
 
         m_alias = stringMember(obj, JSON_NAME(alias));
         if (m_alias.empty())
@@ -414,7 +416,7 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
             bool checksumName = false;
             if (info[0].IsObject()) {
                 auto opts = BeJsConst(info[0].As<Napi::Object>());
-                blockSize = opts[JSON_NAME(blockSize)].asInt(0);
+                blockSize = opts[JSON_NAME(blockSize)].asInt(64 * 1024);
                 checksumName = opts[JSON_NAME(checksumBlockNames)].asBool(false);
             }
             result = handle.InitializeContainer(checksumName ? 24 : 16, blockSize);
@@ -631,6 +633,8 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
     Napi::Value HasWriteLock(NapiInfoCR info) { return Napi::Boolean::New(Env(), m_writeLockHeld); }
     Napi::Value GetAccessToken(NapiInfoCR info) { return Napi::String::New(Env(), m_accessToken); }
     Napi::Value GetContainerId(NapiInfoCR info) { return Napi::String::New(Env(), m_containerId); }
+    Napi::Value GetBaseUri(NapiInfoCR info) { return Napi::String::New(Env(), m_baseUri); }
+    Napi::Value GetStorageType(NapiInfoCR info) { return Napi::String::New(Env(), m_storageType); }
     Napi::Value GetLogId(NapiInfoCR info) { return Napi::String::New(Env(), m_logId); }
     Napi::Value GetAlias(NapiInfoCR info) { return Napi::String::New(Env(), m_alias); }
     void SetAccessToken(NapiInfoCR info, Napi::Value const& value) { m_accessToken = value.As<Napi::String>().Utf8Value(); }
@@ -640,10 +644,12 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
         Napi::HandleScope scope(env);
         Napi::Function t = DefineClass(env, className, {
             InstanceAccessor<&JsCloudContainer::GetAccessToken, &JsCloudContainer::SetAccessToken>("accessToken"),
+            InstanceAccessor<&JsCloudContainer::GetBaseUri>("baseUri"),
             InstanceAccessor<&JsCloudContainer::GetAlias>("alias"),
             InstanceAccessor<&JsCloudContainer::GetContainerId>("containerId"),
             InstanceAccessor<&JsCloudContainer::GetLogId>("logId"),
             InstanceAccessor<&JsCloudContainer::GetNumCleanupBlocks>("garbageBlocks"),
+            InstanceAccessor<&JsCloudContainer::GetStorageType>("storageType"),
             InstanceAccessor<&JsCloudContainer::HasLocalChangesJs>("hasLocalChanges"),
             InstanceAccessor<&JsCloudContainer::HasWriteLock>("hasWriteLock"),
             InstanceAccessor<&JsCloudContainer::IsConnected>("isConnected"),
