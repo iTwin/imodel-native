@@ -157,12 +157,5 @@ For primitive types that has single value, following will return typed value whi
     3. Type change for composite primitive types Point2d and Point3d is NOT supported.
     4. Type change to and from an un-strict enum that has a different primitive type is now supported.
     5. Type change to a strict enum of a different primitive type is NOT supported.
-    6. When a property type is changed, the data will get set to default values as per the new primitive type specified.
-        * For example, if an integer property had it's value set to 10, following will be the values after a major schema upgrade when the type is changed to a different primitive:
-            1. string: "10"
-            2. long: 10
-            3. double: 10.0
-            4. binary: "encoding=base64;MTA="
-            5. boolean: true
-            6. datetime: "-4713-12-04T12:00:00.000"
+    6. When a property type is changed, the data will not change/update as per the new primitive type specified.
     7. It is the user's responsibility to handle the data changes required when a property's type is changed to a different primitive type.
