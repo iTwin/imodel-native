@@ -1,5 +1,6 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 hi{
     Currencies{
         AED{
@@ -94,6 +95,10 @@ hi{
             "BTN",
             "भूटानी नंगलट्रम",
         }
+        BUK{
+            "BUK",
+            "बर्मी क्यात",
+        }
         BWP{
             "BWP",
             "बोत्सवानियाई पुला",
@@ -128,7 +133,7 @@ hi{
         }
         CNH{
             "CNH",
-            "चीनी यूआन",
+            "चीनी युआन (ऑफ़शोर)",
         }
         CNY{
             "CN¥",
@@ -634,6 +639,10 @@ hi{
             "TOP",
             "टोंगन पांगा",
         }
+        TPE{
+            "TPE",
+            "तिमोरी एस्कूडो",
+        }
         TRL{
             "TRL",
             "पुरानी तुर्की लीरा",
@@ -680,7 +689,7 @@ hi{
         }
         UZS{
             "UZS",
-            "उज़्बेकिस्तान सोम",
+            "उज़्बेकिस्तानी सोम",
         }
         VEB{
             "VEB",
@@ -698,6 +707,10 @@ hi{
             "₫",
             "वियतनामी डोंग",
         }
+        VNN{
+            "VNN",
+            "वियतनामी डोंग (1978–1985)",
+        }
         VUV{
             "VUV",
             "वनुआतू वातू",
@@ -714,8 +727,12 @@ hi{
             "EC$",
             "पूर्वी कैरिबियाई डॉलर",
         }
+        XEU{
+            "XEU",
+            "यूरोपीय मुद्रा इकाई",
+        }
         XOF{
-            "CFA",
+            "F CFA",
             "पश्चिमी अफ़्रीकी CFA फ़्रैंक",
         }
         XPF{
@@ -744,11 +761,104 @@ hi{
         }
     }
     Currencies%narrow{
+        AOA{"Kz"}
+        ARS{"$"}
+        AUD{"$"}
+        BAM{"KM"}
+        BBD{"$"}
+        BDT{"৳"}
+        BMD{"$"}
+        BND{"$"}
+        BOB{"Bs"}
+        BRL{"R$"}
+        BSD{"$"}
+        BWP{"P"}
+        BYN{"р."}
+        BZD{"$"}
+        CAD{"$"}
+        CLP{"$"}
+        CNY{"¥"}
+        COP{"$"}
+        CRC{"₡"}
+        CUC{"$"}
+        CUP{"$"}
+        CZK{"Kč"}
+        DKK{"kr"}
+        DOP{"$"}
+        EGP{"E£"}
+        EUR{"€"}
+        FJD{"$"}
+        FKP{"£"}
+        GBP{"£"}
+        GEL{"₾"}
+        GIP{"£"}
+        GNF{"FG"}
+        GTQ{"Q"}
+        GYD{"$"}
+        HKD{"$"}
+        HNL{"L"}
+        HRK{"kn"}
+        HUF{"Ft"}
+        IDR{"Rp"}
+        ILS{"₪"}
+        INR{"₹"}
+        ISK{"kr"}
+        JMD{"$"}
+        JPY{"¥"}
+        KHR{"៛"}
+        KMF{"CF"}
+        KPW{"₩"}
+        KRW{"₩"}
+        KYD{"$"}
+        KZT{"₸"}
+        LAK{"₭"}
+        LBP{"L£"}
+        LKR{"Rs"}
+        LRD{"$"}
+        MGA{"Ar"}
+        MMK{"K"}
+        MNT{"₮"}
+        MUR{"Rs"}
+        MXN{"$"}
+        MYR{"RM"}
+        NAD{"$"}
+        NGN{"₦"}
+        NIO{"C$"}
+        NOK{"kr"}
+        NPR{"Rs"}
+        NZD{"$"}
+        PHP{"₱"}
+        PKR{"Rs"}
+        PLN{"zł"}
+        PYG{"₲"}
         RON{"लेई"}
+        RUB{"₽"}
+        RWF{"RF"}
+        SBD{"$"}
+        SEK{"kr"}
+        SGD{"$"}
+        SHP{"£"}
+        SRD{"$"}
+        SSP{"£"}
+        STN{"Db"}
+        SYP{"£"}
+        THB{"฿"}
+        TOP{"T$"}
+        TRY{"₺"}
+        TTD{"$"}
         TWD{"NT$"}
+        UAH{"₴"}
+        USD{"$"}
+        UYU{"$"}
+        VEF{"Bs"}
+        VND{"₫"}
+        XCD{"$"}
+        ZAR{"R"}
+        ZMW{"ZK"}
     }
     Currencies%variant{
         GEL{"ლ"}
+        TRY{"TL"}
     }
     CurrencyPlurals{
         AED{
@@ -872,8 +982,8 @@ hi{
             other{"चिली पेसो"}
         }
         CNH{
-            one{"चीनी यूआन"}
-            other{"चीनी यूआन"}
+            one{"चीनी युआन (ऑफ़शोर)"}
+            other{"चीनी युआन (ऑफ़शोर)"}
         }
         CNY{
             one{"चीनी युआन"}
@@ -1005,7 +1115,7 @@ hi{
         }
         INR{
             one{"भारतीय रुपया"}
-            other{"भारतीय रूपए"}
+            other{"भारतीय रुपए"}
         }
         IQD{
             one{"इराकी दिनार"}
@@ -1082,6 +1192,10 @@ hi{
         LRD{
             one{"लाइबेरियाई डॉलर"}
             other{"लाइबेरियाई डॉलर"}
+        }
+        LSL{
+            one{"लेसोथो लोटी"}
+            other{"लेसोथो लोटी"}
         }
         LTL{
             one{"लिथुआनियाई लितास"}
@@ -1344,8 +1458,8 @@ hi{
             other{"उरुग्वियन पेसो"}
         }
         UZS{
-            one{"उज़्बेकिस्तान सोम"}
-            other{"उज़्बेकिस्तान सोम"}
+            one{"उज़्बेकिस्तानी सोम"}
+            other{"उज़्बेकिस्तानी सोम"}
         }
         VEF{
             one{"वेनेज़ुएला बोलिवर (2008–2018)"}
@@ -1374,6 +1488,10 @@ hi{
         XCD{
             one{"पूर्वी कैरिबियाई डॉलर"}
             other{"पूर्वी कैरिबियाई डॉलर"}
+        }
+        XEU{
+            one{"यूरोपीय मुद्रा इकाई"}
+            other{"यूरोपीय मुद्रा इकाई"}
         }
         XOF{
             one{"पश्चिमी अफ़्रीकी CFA फ़्रैंक"}
@@ -1404,5 +1522,4 @@ hi{
         one{"{0} {1}"}
         other{"{0} {1}"}
     }
-    Version{"2.1.49.82"}
 }

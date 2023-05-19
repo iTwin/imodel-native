@@ -1,5 +1,6 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 fr{
     Currencies{
         ADP{
@@ -528,7 +529,7 @@ fr{
         }
         LAK{
             "LAK",
-            "kip loatien",
+            "kip laotien",
         }
         LBP{
             "£LB",
@@ -916,7 +917,7 @@ fr{
         }
         TTD{
             "$TT",
-            "dollar trinidadien",
+            "dollar de Trinité-et-Tobago",
         }
         TWD{
             "TWD",
@@ -991,7 +992,7 @@ fr{
             "vatu vanuatuan",
         }
         WST{
-            "WS$",
+            "$WS",
             "tala samoan",
         }
         XAF{
@@ -1043,7 +1044,7 @@ fr{
             "franc UIC",
         }
         XOF{
-            "CFA",
+            "F CFA",
             "franc CFA (BCEAO)",
         }
         XPD{
@@ -1210,7 +1211,7 @@ fr{
         STN{"Db"}
         SYP{"£"}
         THB{"฿"}
-        TOP{"T$"}
+        TOP{"$T"}
         TRY{"₺"}
         TTD{"$"}
         TWD{"NT$"}
@@ -1224,7 +1225,6 @@ fr{
         ZMW{"Kw"}
     }
     Currencies%variant{
-        GEL{"₾"}
         TRY{"LT"}
     }
     CurrencyPlurals{
@@ -1753,8 +1753,8 @@ fr{
             other{"tenges kazakhs"}
         }
         LAK{
-            one{"kip loatien"}
-            other{"kips loatiens"}
+            one{"kip laotien"}
+            other{"kips laotiens"}
         }
         LBP{
             one{"livre libanaise"}
@@ -2353,5 +2353,4 @@ fr{
         one{"{0} {1}"}
         other{"{0} {1}"}
     }
-    Version{"2.1.49.82"}
 }

@@ -1,5 +1,6 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 fil{
     Countries{
         001{"Mundo"}
@@ -266,7 +267,7 @@ fil{
         TM{"Turkmenistan"}
         TN{"Tunisia"}
         TO{"Tonga"}
-        TR{"Turkey"}
+        TR{"Türkiye"}
         TT{"Trinidad & Tobago"}
         TV{"Tuvalu"}
         TW{"Taiwan"}
@@ -311,7 +312,7 @@ fil{
         CI{"Ivory Coast"}
         CZ{"Czech Republic"}
         FK{"Falkland Islands (Islas Malvinas)"}
+        NZ{"Aotearoa New Zealand"}
         TL{"East Timor"}
     }
-    Version{"2.1.49.82"}
 }

@@ -1,7 +1,7 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 en{
-    Version{"2.1.48.65"}
     zoneStrings{
         "Africa:Sao_Tome"{
             ec{"São Tomé"}
@@ -34,8 +34,7 @@ en{
             ld{"Irish Standard Time"}
         }
         "Europe:Kiev"{
-            ec{"Kiev"}
-            ec%formal{"Kyiv"}
+            ec{"Kyiv"}
         }
         "Europe:London"{
             ld{"British Summer Time"}
@@ -535,7 +534,9 @@ en{
             ls{"Niue Time"}
         }
         "meta:Norfolk"{
-            ls{"Norfolk Island Time"}
+            ld{"Norfolk Island Daylight Time"}
+            lg{"Norfolk Island Time"}
+            ls{"Norfolk Island Standard Time"}
         }
         "meta:Noronha"{
             ld{"Fernando de Noronha Summer Time"}
@@ -718,6 +719,9 @@ en{
             ld{"Yekaterinburg Summer Time"}
             lg{"Yekaterinburg Time"}
             ls{"Yekaterinburg Standard Time"}
+        }
+        "meta:Yukon"{
+            ls{"Yukon Time"}
         }
         fallbackFormat{"{1} ({0})"}
         gmtFormat{"GMT{0}"}

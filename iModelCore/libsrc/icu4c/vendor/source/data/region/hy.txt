@@ -1,5 +1,6 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 hy{
     Countries{
         001{"Աշխարհ"}
@@ -77,7 +78,7 @@ hy{
         CF{"Կենտրոնական Աֆրիկյան Հանրապետություն"}
         CG{"Կոնգո - Բրազավիլ"}
         CH{"Շվեյցարիա"}
-        CI{"Կոտ դ’Իվուար"}
+        CI{"Կոտ դ՚Իվուար"}
         CK{"Կուկի կղզիներ"}
         CL{"Չիլի"}
         CM{"Կամերուն"}
@@ -287,6 +288,8 @@ hy{
         VU{"Վանուատու"}
         WF{"Ուոլիս և Ֆուտունա"}
         WS{"Սամոա"}
+        XA{"կեղծ տարբերիչներ"}
+        XB{"կեղծ երկուղղված"}
         XK{"Կոսովո"}
         YE{"Եմեն"}
         YT{"Մայոտ"}
@@ -309,8 +312,8 @@ hy{
         CI{"Փղոսկրի Ափ"}
         CZ{"Չեխիայի Հանրապետություն"}
         FK{"Ֆոլքլենդյան (Մալվինյան) կղզիներ"}
+        NZ{"Աոտեարոա Նոր Զելանդիա"}
         SZ{"Սվազիլենդ"}
         TL{"Արևելյան Թիմոր"}
     }
-    Version{"2.1.49.82"}
 }

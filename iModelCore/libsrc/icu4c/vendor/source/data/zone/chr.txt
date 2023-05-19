@@ -1,7 +1,7 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 chr{
-    Version{"2.1.49.82"}
     zoneStrings{
         "Africa:Abidjan"{
             ec{"ᎠᏈᏣᏂ"}
@@ -807,6 +807,9 @@ chr{
         "Asia:Qatar"{
             ec{"ᎧᏔᎵ"}
         }
+        "Asia:Qostanay"{
+            ec{"ᎧᏍᏔᏁ"}
+        }
         "Asia:Qyzylorda"{
             ec{"ᎩᏏᎶᎳᏓ"}
         }
@@ -1219,6 +1222,9 @@ chr{
         }
         "Pacific:Johnston"{
             ec{"ᏣᏂᏏᏂ"}
+        }
+        "Pacific:Kanton"{
+            ec{"ᎧᏛᏂ"}
         }
         "Pacific:Kiritimati"{
             ec{"ᎩᎵᏘᎹᏘ"}
@@ -1728,7 +1734,9 @@ chr{
             ls{"ᏂᏳ ᎠᏟᎢᎵᏒ"}
         }
         "meta:Norfolk"{
-            ls{"ᏃᎵᏬᎵᎩ ᎤᎦᏚᏛᎢ ᎠᏟᎢᎵᏒ"}
+            ld{"ᏃᎵᏬᎵᎩ ᎤᎦᏚᏛᎢ ᎪᎩ ᎠᏟᎢᎵᏒ"}
+            lg{"ᏃᎵᏬᎵᎩ ᎤᎦᏚᏛᎢ ᎠᏟᎢᎵᏒ"}
+            ls{"ᏃᎵᏬᎵᎩ ᎤᎦᏚᏛᎢ ᎠᏟᎶᏍᏗ ᎠᏟᎢᎵᏒ"}
         }
         "meta:Noronha"{
             ld{"ᏪᎾᏅᏙ Ꮥ ᏃᎶᎾᎭ ᎪᎩ ᎠᏟᎢᎵᏒ"}
@@ -1898,6 +1906,9 @@ chr{
             ld{"ᏰᎧᏖᎵᏂᏊᎦ ᎪᎩ ᎠᏟᎢᎵᏒ"}
             lg{"ᏰᎧᏖᎵᏂᏊᎦ ᎠᏟᎢᎵᏒ"}
             ls{"ᏰᎧᏖᎵᏂᏊᎦ ᎠᏟᎶᏍᏗ ᎠᏟᎢᎵᏒ"}
+        }
+        "meta:Yukon"{
+            ls{"ᏳᎧᏂ ᎠᏟᎢᎵᏒ"}
         }
         fallbackFormat{"{1} ({0})"}
         gmtFormat{"GMT{0}"}

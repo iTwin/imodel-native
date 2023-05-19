@@ -1,7 +1,7 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 lv{
-    Version{"2.1.48.43"}
     zoneStrings{
         "Africa:Abidjan"{
             ec{"Abidžana"}
@@ -257,6 +257,9 @@ lv{
         }
         "America:Chihuahua"{
             ec{"Čivava"}
+        }
+        "America:Ciudad_Juarez"{
+            ec{"Huaresa"}
         }
         "America:Coral_Harbour"{
             ec{"Atikokana"}
@@ -810,6 +813,9 @@ lv{
         "Asia:Qatar"{
             ec{"Katara"}
         }
+        "Asia:Qostanay"{
+            ec{"Kostanaja"}
+        }
         "Asia:Qyzylorda"{
             ec{"Kizilorda"}
         }
@@ -1219,6 +1225,9 @@ lv{
         }
         "Pacific:Johnston"{
             ec{"Džonstona atols"}
+        }
+        "Pacific:Kanton"{
+            ec{"Kantona"}
         }
         "Pacific:Kiritimati"{
             ec{"Kirisimasi"}
@@ -1726,7 +1735,9 @@ lv{
             ls{"Niues laiks"}
         }
         "meta:Norfolk"{
-            ls{"Norfolkas salas laiks"}
+            ld{"Norfolkas salas vasaras laiks"}
+            lg{"Norfolkas salas laiks"}
+            ls{"Norfolkas salas ziemas laiks"}
         }
         "meta:Noronha"{
             ld{"Fernandu di Noroņas vasaras laiks"}
@@ -1901,6 +1912,9 @@ lv{
             ld{"Jekaterinburgas vasaras laiks"}
             lg{"Jekaterinburgas laiks"}
             ls{"Jekaterinburgas ziemas laiks"}
+        }
+        "meta:Yukon"{
+            ls{"Jukonas laiks"}
         }
         fallbackFormat{"{0} ({1})"}
         gmtFormat{"GMT{0}"}
