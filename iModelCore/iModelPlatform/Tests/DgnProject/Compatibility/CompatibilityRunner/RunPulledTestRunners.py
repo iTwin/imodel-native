@@ -11,19 +11,36 @@ from shutil import rmtree
 #------------------------------------------------------------------------
 # bsimethod
 #------------------------------------------------------------------------
-def getIgnoreList():
+def getIgnoreList(testRunner):
     scriptDir = os.path.dirname(os.path.realpath(__file__))
     ignoreListPath = os.path.join(scriptDir, "ignore_list.txt")
     fileData = open(ignoreListPath, "r")
-    ignoreList = fileData.read().split('\n')
-    ignoreList = [x for x in ignoreList if not x.startswith('##')]
+    rawList = fileData.read().split('\n')
     fileData.close()
+    rawList = [x for x in rawList if not x.startswith('##')]
+    rawList = list(filter(None, rawList))
+
+    ignoreList = []
+    for item in rawList:
+        if item.count(".") <= 1:
+            print("Test format in the ignore list is not correct");
+            print("Please follow the correct format:");
+            print("-> TestRunnerName.version.TestFixtureName.TestName");
+            print("-> Example: testRunnerNuget_bim0200_x64.2019.2.22.1.CompatibilityTestFixture.ECSqlColumnInfoForAliases");
+            print("->    Note: Use `*` in place of TestRunnerName.version for applying it on all old test runners");
+            sys.exit(1)
+
+        cleanedItem = item.rsplit('.', 2)
+        if cleanedItem[0].lower() == testRunner.lower() or cleanedItem[0].lower() == "*":
+            cleanedItem = cleanedItem[1] + "." + cleanedItem[2] 
+            ignoreList.append(cleanedItem)
+
     return ignoreList
 
 #------------------------------------------------------------------------
 # bsimethod
 #------------------------------------------------------------------------
-def createGTestFilter(exeDir):
+def createGTestFilter(exeDir, testRunner):
     exePath = os.path.join(exeDir, "iModelEvolutionTests.exe")
     sys.stdout.flush();
     output = subprocess.Popen([exePath, "--gtest_list_tests"], stdout=subprocess.PIPE).communicate()[0].decode()
@@ -40,7 +57,7 @@ def createGTestFilter(exeDir):
 
     fixture = ''
     gtestCommand = ''
-    ignoreList = getIgnoreList();
+    ignoreList = getIgnoreList(testRunner);
     for item in testsList:
         if item.endswith('.'):
             fixture = item
@@ -73,7 +90,7 @@ def main():
                 print ("Compatibility test runner '{0}' does not exist.".format(exePath), file=sys.stderr)
                 hasError = True
             try:
-                gtestCommandArg = createGTestFilter(fullPath)
+                gtestCommandArg = createGTestFilter(fullPath, subdir)
                 gtestFilter = "--gtest_filter=" + gtestCommandArg;
                 print ("Test runner '" + exePath + "' started...")
                 print(gtestFilter)
