@@ -18,6 +18,7 @@ using namespace BentleyApi::BeSQLite::EC;
 struct ECDbChangeTracker;
 struct ECDbHub;
 
+
 //=======================================================================================
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
@@ -210,3 +211,7 @@ struct SchemaSyncTestFixture : public ECDbTestFixture
         return (int) cols.size();
         }
     };
+
+#define ASSERT_ECDB_SCHEMA_HASH(ECDB, HASH)   ASSERT_STREQ(HASH, SchemaSyncTestFixture::GetSchemaHash(ECDB).c_str())   << "File: " << (ECDB).GetDbFileName();
+#define ASSERT_ECDB_MAP_HASH(ECDB, HASH)      ASSERT_STREQ(HASH, SchemaSyncTestFixture::GetMapHash(ECDB).c_str())      << "File: " << (ECDB).GetDbFileName();
+#define ASSERT_SQLITE_SCHEMA_HASH(ECDB, HASH) ASSERT_STREQ(HASH, SchemaSyncTestFixture::GetDbSchemaHash(ECDB).c_str()) << "File: " << (ECDB).GetDbFileName();

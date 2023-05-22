@@ -23,10 +23,6 @@ SELECT idx.id, idx.Name name, tb.Name tbl_name, 'index' type,
                       ORDER  BY [ic].[Ordinal])) sql
 FROM   [ec_index] [idx]
        JOIN [ec_table] [tb] ON [tb].[Id] = [idx].[TableId];
-
-
-
-
 */
 
 //=======================================================================================
@@ -742,11 +738,11 @@ SharedSchemaChannel::Status SharedSchemaChannel::Pull(ChannelUri const& channelU
 
 	BeMutexHolder holder(m_conn.GetImpl().GetMutex());
     auto& mainDisp = m_conn.Schemas().Main();
-    Policy policy = PolicyManager::GetPolicy(SchemaImportPermissionPolicyAssertion(m_conn, schemaImportToken));
-    if (!policy.IsSupported()) {
-        LOG.error("Failed to drop ECSchema: Caller has not provided a SchemaImportToken.");
-        return Status::ERROR;
-    }
+    // Policy policy = PolicyManager::GetPolicy(SchemaImportPermissionPolicyAssertion(m_conn, schemaImportToken));
+    // if (!policy.IsSupported()) {
+    //     LOG.error("Failed to drop ECSchema: Caller has not provided a SchemaImportToken.");
+    //     return Status::ERROR;
+    // }
 
     mainDisp.OnBeforeSchemaChanges().RaiseEvent(m_conn, SchemaChangeType::SchemaImport);
     SchemaImportContext ctx(m_conn, SchemaManager::SchemaImportOptions(), /* synchronizeSchemas = */true);

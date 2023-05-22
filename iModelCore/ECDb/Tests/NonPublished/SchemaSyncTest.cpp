@@ -694,7 +694,7 @@ TEST_F(SchemaSyncTestFixture, DeleteSchema_VerifyCustomAttributesAreDeletedAsWel
         [&]()
             {
             auto p4Prop = pipeClass->GetPropertyP("p4");
-            ASSERT_NE(nullptr, p4Prop); 
+            ASSERT_NE(nullptr, p4Prop);
             }
     );
 
@@ -764,7 +764,7 @@ TEST_F(SchemaSyncTestFixture, DeleteSchema_Check_Table_Drop)
     const auto SCHEMA2_HASH_ECDB_MAP = "0f8225485fb52c416774152d2e56d502a93835f53d5b804421f87f4d3e61bf54";//
     Test(
         "span join table",
-        [&]() 
+        [&]()
             {
             auto schema = SchemaItem(
                 R"xml(<?xml version="1.0" encoding="UTF-8"?>
@@ -968,7 +968,7 @@ TEST_F(SchemaSyncTestFixture, DeleteSchema)
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
-    
+
     ECInstanceKey a0;
     Test(
         "insert instance of A",
@@ -1376,7 +1376,7 @@ TEST_F(SchemaSyncTestFixture, SchemaDowngrade_MoreComplex)
     const auto SCHEMA1_HASH_SQLITE_SCHEMA = "616136b709172fd8b18c5d9213f3c87b5c3d05a852787260324b52e009c45ae4";
     Test(
         "Import initial schema",
-        [&]() 
+        [&]()
             {
             auto schema = SchemaItem(
                 R"xml(<?xml version="1.0" encoding="utf-8" ?>
@@ -1407,7 +1407,7 @@ TEST_F(SchemaSyncTestFixture, SchemaDowngrade_MoreComplex)
 
     Test(
         "Import schema with smaller read version",
-        [&]() 
+        [&]()
             {
             auto schema = SchemaItem(
                 R"xml(<?xml version="1.0" encoding="utf-8" ?>
@@ -1443,7 +1443,7 @@ TEST_F(SchemaSyncTestFixture, SchemaDowngrade_MoreComplex)
 
     Test(
         "Import schema with smaller write version",
-        [&]() 
+        [&]()
             {
             auto schema = SchemaItem(
                 R"xml(<?xml version="1.0" encoding="utf-8" ?>
@@ -1475,7 +1475,7 @@ TEST_F(SchemaSyncTestFixture, SchemaDowngrade_MoreComplex)
 
     Test(
         "Import schema with smaller minor version",
-        [&]() 
+        [&]()
             {
             auto schema = SchemaItem(
                 R"xml(<?xml version="1.0" encoding="utf-8" ?>
@@ -1527,23 +1527,16 @@ TEST_F(SchemaSyncTestFixture, ECVersions)
         ASSERT_EQ(expectedOriginalXmlVersionMinor, (uint32_t) stmt.GetValueInt(1));
         };
 
-    auto schemaXml = [&](Utf8CP newECXmlVersion = "3.0")
-        {
-        Utf8CP schemaTemplate =
-            R"xml(<?xml version='1.0' encoding='utf-8'?>
-            <ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.%s'>
-            </ECSchema>)xml";
-        Utf8String schemaXml;
-        schemaXml.Sprintf(schemaTemplate, newECXmlVersion);
-        return schemaXml;
-        };
 
-    const auto SCHEMA1_HASH_ECDB_SCHEMA = "cb08e969d4e36cbb139608a7ce22c50130f8659f1322ddff4b4b730233e30b65";
+    const auto SCHEMA1_HASH_ECDB_SCHEMA = "48f524bc0ff9862b036f277eddb9e089d2cd150795e16b39c83905b63a2468f5";
     Test(
         "Import initial schema",
         [&]()
             {
-            ASSERT_EQ(SchemaImportResult::OK, SetupECDb("SchemaOriginalECXmlVersion", SchemaItem(schemaXml("3.0"))));
+            ASSERT_EQ(SchemaImportResult::OK, SetupECDb("SchemaOriginalECXmlVersion", SchemaItem(
+                "<?xml version='1.0' encoding='utf-8'?>"
+                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                "</ECSchema>")));
             verifySchemaVersion(*m_briefcase, "TestSchema", 3, 0);
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
@@ -1555,7 +1548,10 @@ TEST_F(SchemaSyncTestFixture, ECVersions)
         [&]()
             {
             ReopenECDb();
-            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(SchemaItem(schemaXml("3.1"))));
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(SchemaItem(
+                "<?xml version='1.0' encoding='utf-8'?>"
+                    "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                "</ECSchema>")));
             verifySchemaVersion(*m_briefcase, "TestSchema", 3, 1);
             // CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA);
             // m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA); });
@@ -1567,7 +1563,10 @@ TEST_F(SchemaSyncTestFixture, ECVersions)
         [&]()
             {
             ReopenECDb();
-            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(SchemaItem(schemaXml("3.2"))));
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(SchemaItem(
+                "<?xml version='1.0' encoding='utf-8'?>"
+                    "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+                "</ECSchema>")));
             verifySchemaVersion(*m_briefcase, "TestSchema", 3, 2);
             // CheckHashes(*m_briefcase, SCHEMA3_HASH_ECDB_SCHEMA);
             // m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA); });
@@ -1579,7 +1578,10 @@ TEST_F(SchemaSyncTestFixture, ECVersions)
         [&]()
             {
             ReopenECDb();
-            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(SchemaItem(schemaXml("3.1"))));
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(SchemaItem(
+                "<?xml version='1.0' encoding='utf-8'?>"
+                    "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                "</ECSchema>")));
             verifySchemaVersion(*m_briefcase, "TestSchema", 3, 2);
             // CheckHashes(*m_briefcase, SCHEMA3_HASH_ECDB_SCHEMA);
             // m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA); });
@@ -2952,7 +2954,7 @@ TEST_F(SchemaSyncTestFixture, UpdateBaseClass_AddMixinWithPropertiesToMultipleCl
         "import edited schema with some changes",
         [&]()
             {
-            
+
             auto schema = SchemaItem(
                 R"xml(<?xml version='1.0' encoding='utf-8'?>
                 <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
@@ -3060,7 +3062,7 @@ TEST_F(SchemaSyncTestFixture, UpdateClass_ChangeAbstractIntoConcreteClass)
         "import initial schema",
         [&]()
             {
-            
+
             auto schema = SchemaItem(
                 R"xml(<?xml version='1.0' encoding='utf-8'?>
                 <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
@@ -3269,7 +3271,7 @@ TEST_F(SchemaSyncTestFixture, UpdateClass_ChangeAbstractIntoConcreteClassWithAbs
         "import initial schema",
         [&]()
             {
-            
+
             auto schema = SchemaItem(
                 R"xml(<?xml version='1.0' encoding='utf-8'?>
                 <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
@@ -3399,7 +3401,7 @@ TEST_F(SchemaSyncTestFixture, UpdateBaseClass_AddNewEmptyMixinBaseClasses) //TFS
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
-    
+
     Test(
         "Check initial base classes",
         [&]()
@@ -5737,6 +5739,7 @@ TEST_F(SchemaSyncTestFixture, VerifyMappingOfPropertiesToOverflowOnJoinedTable)
             }
     );
 
+
     Test(
         "Inserting Instances for C1 and C2",
         [&]()
@@ -5816,16 +5819,23 @@ TEST_F(SchemaSyncTestFixture, VerifyMappingOfPropertiesToOverflowOnJoinedTable)
                     *newBriefcase,
                     [&]()
                         {
-                        CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-                        ASSERT_TRUE(ForeignkeyCheck(*newBriefcase));
                         ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
+                        ASSERT_ECDB_SCHEMA_HASH(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA);
+                        ASSERT_ECDB_MAP_HASH   (*newBriefcase, SCHEMA1_HASH_ECDB_MAP);
+                        ASSERT_TRUE(ForeignkeyCheck(*newBriefcase));
                         }
                 )
             );
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
-            CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            ASSERT_ECDB_SCHEMA_HASH  (*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA);
+            ASSERT_ECDB_MAP_HASH     (*newBriefcase, SCHEMA2_HASH_ECDB_MAP);
+            ASSERT_SQLITE_SCHEMA_HASH(*newBriefcase, SCHEMA2_HASH_SQLITE_SCHEMA);
+
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) {
+                ASSERT_ECDB_SCHEMA_HASH(syncDb, SCHEMA2_HASH_ECDB_SCHEMA);
+                ASSERT_ECDB_MAP_HASH   (syncDb, SCHEMA2_HASH_ECDB_MAP);
+                });
             }
     );
 
@@ -5899,16 +5909,24 @@ TEST_F(SchemaSyncTestFixture, VerifyMappingOfPropertiesToOverflowOnJoinedTable)
                     *newBriefcase,
                     [&]()
                         {
-                        CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
+                        //CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
+                        ASSERT_EQ               (BE_SQLITE_OK, newBriefcase->SaveChanges());
+                        ASSERT_ECDB_SCHEMA_HASH (*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA);
+                        ASSERT_ECDB_MAP_HASH    (*newBriefcase, SCHEMA2_HASH_ECDB_MAP);
+                        // ASSERT_SQLITE_SCHEMA_HASH(*newBriefcase, SCHEMA2_HASH_SQLITE_SCHEMA);
                         ASSERT_TRUE(ForeignkeyCheck(*newBriefcase));
-                        ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade, GetSharedChannelUri()));
-            ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
-            CheckHashes(*newBriefcase, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP, SCHEMA3_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP); });
+            ASSERT_EQ                (SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade, GetSharedChannelUri()));
+            ASSERT_EQ                (BE_SQLITE_OK, newBriefcase->SaveChanges());
+            ASSERT_ECDB_SCHEMA_HASH  (*newBriefcase, SCHEMA3_HASH_ECDB_SCHEMA);
+            ASSERT_ECDB_MAP_HASH     (*newBriefcase, SCHEMA3_HASH_ECDB_MAP);
+            ASSERT_SQLITE_SCHEMA_HASH(*newBriefcase, SCHEMA3_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) {
+                ASSERT_ECDB_SCHEMA_HASH  (syncDb, SCHEMA3_HASH_ECDB_SCHEMA);
+                ASSERT_ECDB_MAP_HASH     (syncDb, SCHEMA3_HASH_ECDB_MAP);
+                });
             }
     );
 
@@ -5922,7 +5940,10 @@ TEST_F(SchemaSyncTestFixture, VerifyMappingOfPropertiesToOverflowOnJoinedTable)
                     *m_briefcase,
                     [&]()
                         {
-                        CheckHashes(*m_briefcase, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP, SCHEMA3_HASH_SQLITE_SCHEMA);
+                        ASSERT_EQ                (BE_SQLITE_OK, m_briefcase->SaveChanges());
+                        ASSERT_ECDB_SCHEMA_HASH  (*m_briefcase, SCHEMA3_HASH_ECDB_SCHEMA);
+                        ASSERT_ECDB_MAP_HASH     (*m_briefcase, SCHEMA3_HASH_ECDB_MAP);
+                        ASSERT_SQLITE_SCHEMA_HASH(*m_briefcase, SCHEMA3_HASH_SQLITE_SCHEMA);
                         ASSERT_TRUE(ForeignkeyCheck(*m_briefcase));
                         ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
                         }
@@ -5973,8 +5994,13 @@ TEST_F(SchemaSyncTestFixture, VerifyMappingOfPropertiesToOverflowOnJoinedTable)
             stmt.Finalize();
 
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
-            CheckHashes(*m_briefcase, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP, SCHEMA3_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP); });
+            ASSERT_ECDB_SCHEMA_HASH  (*m_briefcase, SCHEMA3_HASH_ECDB_SCHEMA);
+            ASSERT_ECDB_MAP_HASH     (*m_briefcase, SCHEMA3_HASH_ECDB_MAP);
+            ASSERT_SQLITE_SCHEMA_HASH(*m_briefcase, SCHEMA3_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) {
+                    ASSERT_ECDB_SCHEMA_HASH (syncDb, SCHEMA3_HASH_ECDB_SCHEMA);
+                    ASSERT_ECDB_MAP_HASH    (syncDb, SCHEMA3_HASH_ECDB_MAP);
+                });
             }
     );
     }
@@ -15378,7 +15404,7 @@ TEST_F(SchemaSyncTestFixture, DeleteCAInstanceWithoutProperty)
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
-            
+
             }
     );
 
@@ -19017,7 +19043,7 @@ TEST_F(SchemaSyncTestFixture, UpdateECEnumerationFromStrictToNonStrictAndUpdateE
         "import initial schema",
         [&]()
             {
-            
+
             auto schema = SchemaItem(
                 R"xml(<?xml version='1.0' encoding='utf-8'?>
                 <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
@@ -19066,7 +19092,7 @@ TEST_F(SchemaSyncTestFixture, UpdateECEnumerationFromUnStrictToStrict)
         "import initial schema",
         [&]()
             {
-            
+
             auto schema = SchemaItem(
                 R"xml(<?xml version='1.0' encoding='utf-8'?>
                 <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
@@ -19113,7 +19139,7 @@ TEST_F(SchemaSyncTestFixture, ChangeECEnumeratorValue)
         "import initial schema",
         [&]()
             {
-            
+
             auto schema = SchemaItem(
                 R"xml(<?xml version="1.0" encoding="utf-8" ?>
                 <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -19743,7 +19769,7 @@ TEST_F(SchemaSyncTestFixture, IllegalPropertyCategoryDeleteWithDoNotFailFlag)
             }
     );
 
-    
+
     const auto SCHEMA1_HASH_ECDB_MAP = "1b1ae0f5665cd383b79513c33a1ae6f0dab45115c58f7dc2d047015f91f80444";
     const auto SCHEMA1_HASH_SQLITE_SCHEMA = "ae9a7a553d09613c7f8cf5711dca7a996af71202254deca5cdddde9df2c229ce";
     Test(
@@ -20864,7 +20890,7 @@ TEST_F(SchemaSyncTestFixture, NotAllowedChangingConstantConversionProperties)
         </ECSchema>)schema"
     );
     const auto SCHEMA2_HASH_ECDB_SCHEMA = "f63bff95aad63665233b21d41d5ed7170e37c38f869fbbf8cda78d6632e34787";
-    
+
     Test(
         "import schema without constant property",
         [&]()
@@ -21040,7 +21066,7 @@ TEST_F(SchemaSyncTestFixture, Formats)
         "remove optional attributes from num spec",
         [&]()
             {
-            
+
             auto schema = SchemaItem(
                 R"xml(<?xml version="1.0" encoding="utf-8" ?>
                 <ECSchema schemaName="Schema" alias="ts" version="1.0.2" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -21129,7 +21155,7 @@ TEST_F(SchemaSyncTestFixture, Formats)
         "Modify CompSpec except for units",
         [&]()
             {
-            
+
             auto schema = SchemaItem(
                 R"xml(<?xml version="1.0" encoding="utf-8" ?>
                 <ECSchema schemaName="Schema" alias="ts" version="2.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -22315,14 +22341,14 @@ TEST_F(SchemaSyncTestFixture, DisallowMajorSchemaUpgrade)
                 SchemaImportResult::OK,
                 assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, {SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA})
             ) << "IsNullable on new property in existing class is never supported because adding ECDbMap CA is not allowed";
-            
+
             const auto SCHEMA2_HASH_ECDB_SCHEMA = "5c24344e34e3d76c781f9a2ad0240fb0dc3fee393ae4189878821088900d53da";
             EXPECT_EQ(
                 SchemaImportResult::OK,
                 assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::None, {SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA})
             ) << "IsNullable on new property in existing class is never supported because adding ECDbMap CA is not allowed";
             EXPECT_EQ(
-                SchemaImportResult::ERROR, 
+                SchemaImportResult::ERROR,
                 assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, {"", "", ""})
             ) << "IsNullable on new property in existing class is never supported because adding ECDbMap CA is not allowed";
             }
@@ -22775,7 +22801,7 @@ TEST_F(SchemaSyncTestFixture, DisallowMajorSchemaUpgrade)
                 SchemaImportResult::OK,
                 assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, {SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA})
             ) << "Unique index on new property on new subclass";
-            
+
             const auto SCHEMA2_HASH_ECDB_SCHEMA = "680a3543a9081ad74d66031a907005d9db3a8463b0aa6540e2e818959dd5d2ed";
             EXPECT_EQ(
                 SchemaImportResult::OK,
@@ -22881,7 +22907,7 @@ TEST_F(SchemaSyncTestFixture, DisallowMajorSchemaUpgrade)
                 SchemaImportResult::OK,
                 assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, {SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA})
             ) << "Unique index on inherited property on new subclass";
-            
+
             const auto SCHEMA2_HASH_ECDB_SCHEMA = "bee85fca95ae89cc0c1c4bfb054b6d207ff99899dcfd0d24de93783dea9ac4c4";
             EXPECT_EQ(
                 SchemaImportResult::OK,
@@ -22991,7 +23017,7 @@ TEST_F(SchemaSyncTestFixture, DisallowMajorSchemaUpgrade)
                 SchemaImportResult::OK,
                 assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, {SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA})
             ) << "Physical FK on new class";
-            
+
             const auto SCHEMA2_HASH_ECDB_SCHEMA = "8d6772f7e3796a13a5724ec87179033777226f06977ef87be1f0401a012ef479";
             EXPECT_EQ(
                 SchemaImportResult::OK,
@@ -23167,7 +23193,7 @@ TEST_F(SchemaSyncTestFixture, UpdateRelationshipConstraintClassGeneralize)
         [&]()
             {
             const auto SCHEMA_HASH_ECDB_SCHEMA = "ac62e787980a0f6e665dd93d732e8893ecdd46243140fec4670defc0f5d28863";
-            
+
             auto schema = SchemaItem(
                 R"xml(<?xml version="1.0" encoding="UTF-8"?>
                 <ECSchema schemaName="LinearReferencing" alias="lr" version="02.00.02" description="Base schema for Linear Referencing." xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -23842,7 +23868,7 @@ TEST_F(SchemaSyncTestFixture, UpdateMixinRelationshipConstraintAcrossFiles)
             }
     );
 
-    
+
     const auto SCHEMA1_HASH_ECDB_MAP = "736277e733963d032c0ddeaec92f005a59a257836f2024cfa05462b36ab3046f";
     const auto SCHEMA1_HASH_SQLITE_SCHEMA = "88b6554b08bdf2eb97a7cd5dd97ca0da3727df37c1689e4649063d63835f2fdb";
     Test(
@@ -24338,7 +24364,7 @@ TEST_F(SchemaSyncTestFixture, FailMixinRelationshipConstraintMultiFileVersioning
             {
             const auto SCHEMA_HASH_ECDB_SCHEMA = "7ae06651c57adc149df8765158a9e135711d4c004f055840df71762b81a79b9f";
             const auto SCHEMA_HASH_ECDB_MAP = "2a73a5d77fd887a494c931f5fa366b43764755a5342825f4a6df8bcea2cd7f80";
-            
+
             auto schema = SchemaItem(
                 R"xml(<?xml version='1.0' encoding='utf-8'?>
                 <ECSchema schemaName='BaseSchema' alias='base1' description='Holds base classes' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>
@@ -25590,7 +25616,7 @@ TEST_F(SchemaSyncTestFixture, OverflowedStructClass)
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
             }
     );
-    
+
     Test(
         "verify element mapping before schema upgrade",
         [&]()

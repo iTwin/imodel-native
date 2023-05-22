@@ -263,15 +263,15 @@ void SchemaSyncTestFixture::CheckHashes(ECDbR ecdb, Utf8CP schemaHash, Utf8CP ma
     {
     if (strictCheck)
         {
-        ASSERT_STREQ(schemaHash, GetSchemaHash(ecdb).c_str());
-        ASSERT_STREQ(mapHash, GetMapHash(ecdb).c_str());
-        ASSERT_STREQ(dbSchemaHash, GetDbSchemaHash(ecdb).c_str());
+        ASSERT_STREQ(schemaHash, GetSchemaHash(ecdb).c_str())       << "File: " << ecdb.GetDbFileName();
+        ASSERT_STREQ(mapHash, GetMapHash(ecdb).c_str())             << "File: " << ecdb.GetDbFileName();
+        ASSERT_STREQ(dbSchemaHash, GetDbSchemaHash(ecdb).c_str())   << "File: " << ecdb.GetDbFileName();
         }
     else
         {
-        EXPECT_STREQ(schemaHash, GetSchemaHash(ecdb).c_str());
-        EXPECT_STREQ(mapHash, GetMapHash(ecdb).c_str());
-        EXPECT_STREQ(dbSchemaHash, GetDbSchemaHash(ecdb).c_str());
+        EXPECT_STREQ(schemaHash, GetSchemaHash(ecdb).c_str())       << "File: " << ecdb.GetDbFileName();
+        EXPECT_STREQ(mapHash, GetMapHash(ecdb).c_str())             << "File: " << ecdb.GetDbFileName();
+        EXPECT_STREQ(dbSchemaHash, GetDbSchemaHash(ecdb).c_str())   << "File: " << ecdb.GetDbFileName();
         }
     }
 
