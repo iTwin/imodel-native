@@ -969,15 +969,23 @@ DbResult JsInterop::ConvertEC2XmlSchemas(DgnDbR dgndb, bvector<Utf8String> const
     if (0 == schemaKeyPairs.size())
         return BE_SQLITE_ERROR;
 
-    for (bpair<SchemaKey, ECSchemaPtr>& schemaPair : schemaKeyPairs)
+    // Make a copy of the schemaKeyPairs bvector
+    bvector<ECSchemaCP> schemas;
+    // Use std::transform to extract the ECSchemaPtr
+    std::transform(schemaKeyPairs.begin(), schemaKeyPairs.end(), std::back_inserter(schemas),
+        [](const bpair<SchemaKey, ECSchemaPtr>& schemaPair) { return schemaPair.second.get(); });
+
+    ECSchema::SortSchemasInDependencyOrder(schemas);
+
+    for (ECSchemaCP schema : schemas)
         {
-        if (schemaPair.second != nullptr)
+        if (schema != nullptr)
             {
-            bool conversionStatus = ECSchemaConverter::Convert(*(schemaPair.second), *schemaContext);
+            bool conversionStatus = ECSchemaConverter::Convert(*const_cast<ECSchemaP> (schema), *schemaContext);
             if (!conversionStatus)
                 return BE_SQLITE_ERROR;
             Utf8String schemaXml;
-            SchemaWriteStatus writeStatus = schemaPair.second->WriteToXmlString(schemaXml);
+            SchemaWriteStatus writeStatus = schema->WriteToXmlString(schemaXml);
             if (SchemaWriteStatus::Success != writeStatus)
                 return BE_SQLITE_ERROR;
             ec3XmlStrings.push_back(schemaXml);
