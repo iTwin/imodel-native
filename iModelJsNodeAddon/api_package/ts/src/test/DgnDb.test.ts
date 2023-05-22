@@ -230,7 +230,7 @@ describe("basic tests", () => {
 
     db.getSchemaProps("PresentationRules");
     bisProps = db.getSchemaProps("BisCore");
-    assert.isTrue(bisProps.version === "01.00.15"); // PR references 01.00.15, so importing PR will cause it to upgrade.
+    assert.isTrue(bisProps.version >= "01.00.15"); // PR references 01.00.15+, so importing PR will cause it to upgrade.
   });
 
   it("testSchemaImportPrefersExistingAndLocalOverStandard", () => {

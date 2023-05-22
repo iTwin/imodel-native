@@ -259,17 +259,18 @@ static std::map<std::pair<Utf8String, ECPresentation::UnitSystem>, std::shared_p
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR ECPresentationResult::GetSerializedSuccessResponse() const
+void ECPresentationResult::SerializeSuccessResponse() const
     {
-    static Utf8String const s_empty;
     if (IsError())
-        return s_empty;
-
-    if (m_serializedSuccessResponse.empty())
         {
-        m_serializedSuccessResponse = m_successResponse.Stringify();
+        m_serializedSuccessResponse.clear();
+        return;
         }
-    return m_serializedSuccessResponse;
+
+    if (!m_serializedSuccessResponse.empty())
+        return;
+
+    m_serializedSuccessResponse = m_successResponse.Stringify();
     }
 
 /*---------------------------------------------------------------------------------**//**

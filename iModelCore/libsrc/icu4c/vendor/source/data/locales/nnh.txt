@@ -1,5 +1,6 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 nnh{
     AuxExemplarCharacters{"[q r x]"}
     ExemplarCharacters{
@@ -12,7 +13,7 @@ nnh{
         "[A B C D E Ɛ F G H I J K L M N Ŋ O Ɔ P {Pf} R S {Sh} T {Ts} U Ʉ V W Ẅ Y Ÿ Z "
         "ʼ]"
     }
-    ExemplarCharactersNumbers{"[\\- , . % ‰ + 0 1 2 3 4 5 6 7 8 9]"}
+    ExemplarCharactersNumbers{"[\\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]"}
     ExemplarCharactersPunctuation{"[, ; \\: ! ? . ' ‘ ’ « »]"}
     NumberElements{
         latn{
@@ -28,7 +29,6 @@ nnh{
             }
         }
     }
-    Version{"2.1.47.82"}
     calendar{
         generic{
             DateTimePatterns{
@@ -45,6 +45,16 @@ nnh{
                 "{1}, {0}",
                 "{1} {0}",
                 "{1} {0}",
+            }
+            DateTimeSkeletons{
+                "HHmmsszzzz",
+                "HHmmssz",
+                "HHmmss",
+                "HHmm",
+                "GyMMMMEEEEd",
+                "GyMMMMd",
+                "GyMMMd",
+                "GGGGGyyMMdd",
             }
             availableFormats{
                 yMEd{"E , 'lyɛ'̌ʼ d 'na' M, y"}
@@ -77,6 +87,16 @@ nnh{
                 "{1}, {0}",
                 "{1} {0}",
                 "{1} {0}",
+            }
+            DateTimeSkeletons{
+                "HHmmsszzzz",
+                "HHmmssz",
+                "HHmmss",
+                "HHmm",
+                "yMMMMEEEEd",
+                "yMMMMd",
+                "yMMMd",
+                "yyMMdd",
             }
             availableFormats{
                 yMEd{"E , 'lyɛ'̌ʼ d 'na' M, y"}

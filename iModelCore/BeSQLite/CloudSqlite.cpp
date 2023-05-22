@@ -155,7 +155,7 @@ void CloudCache::Destroy() {
         m_cloudDb.CloseDb();
 
     for (auto entry : m_containers)
-        entry->Disconnect(true);
+        entry->Disconnect(false, true);
 
     m_containers.clear();
 
@@ -197,7 +197,7 @@ int CloudCache::GetNumCleanupBlocks(CloudContainer& container) {
     auto rc = stmt.Prepare(m_cloudDb, "SELECT ncleanup FROM bcv_container WHERE container=? AND user=?");
     if (rc == BE_SQLITE_OK) {
         stmt.BindText(1, container.m_containerId, Statement::MakeCopy::No);
-        stmt.BindText(2, container.m_accessName, Statement::MakeCopy::No);
+        stmt.BindText(2, container.m_baseUri, Statement::MakeCopy::No);
         rc = stmt.Step();
     }
     return BE_SQLITE_ROW == rc ? stmt.GetValueInt(0) : -1;
@@ -209,7 +209,7 @@ bool CloudCache::IsAttached(CloudContainer& container) {
     auto rc = stmt.Prepare(m_cloudDb, "SELECT 1 FROM bcv_container WHERE container=? AND user=?");
     if (rc == BE_SQLITE_OK) {
         stmt.BindText(1, container.m_containerId, Statement::MakeCopy::No);
-        stmt.BindText(2, container.m_accessName, Statement::MakeCopy::No);
+        stmt.BindText(2, container.m_baseUri, Statement::MakeCopy::No);
         rc = stmt.Step();
     }
     return BE_SQLITE_ROW == rc;
@@ -226,17 +226,17 @@ CloudResult CloudCache::CallSqliteFn(std::function<int(Utf8P*)> fn, Utf8CP funcN
     return CloudResult(stat, stat == 0 ? "" : Utf8PrintfString("%s error: %s", funcName, msg.m_msg ? msg.m_msg : Db::InterpretDbResult((DbResult)stat)).c_str());
 }
 
-CloudContainer* CloudCache::FindMatching(Utf8CP accessName, Utf8CP containerName) {
+CloudContainer* CloudCache::FindMatching(Utf8CP baseUri, Utf8CP containerName) {
     for (auto entry : m_containers) {
-        if (entry->m_containerId.Equals(containerName) && entry->m_accessName.Equals(accessName))
+        if (entry->m_containerId.Equals(containerName) && entry->m_baseUri.Equals(baseUri))
             return entry;
     }
     return nullptr;
 }
 
 /** callback to find the authorization token for one of the containers attached to this CloudCache */
-int CloudCache::FindToken(Utf8CP storage, Utf8CP accessName, Utf8CP containerName, Utf8P* token) {
-    auto container = FindMatching(accessName, containerName);
+int CloudCache::FindToken(Utf8CP storage, Utf8CP baseUri, Utf8CP containerName, Utf8P* token) {
+    auto container = FindMatching(baseUri, containerName);
     if (nullptr == container)
         return SQLITE_AUTH;
 
@@ -250,12 +250,12 @@ int CloudCache::FindToken(Utf8CP storage, Utf8CP accessName, Utf8CP containerNam
 CloudResult CloudContainer::Connect(CloudCache& cache) {
     if (nullptr != m_cache)
         return CloudResult(1, "container already attached");
-    if (nullptr != cache.FindMatching(m_accessName.c_str(), m_containerId.c_str()))
+    if (nullptr != cache.FindMatching(m_baseUri.c_str(), m_containerId.c_str()))
         return CloudResult(1, "container with that name already attached");
 
     cache.m_containers.push_back(this); // needed for authorization from attach.
     if (!cache.IsAttached(*this)) {
-        auto result = cache.CallSqliteFn([&](Utf8P* msg) { return sqlite3_bcvfs_attach(cache.m_vfs, m_storageType.c_str(), m_accessName.c_str(), m_containerId.c_str(), m_alias.c_str(), SQLITE_BCV_ATTACH_IFNOT, msg); }, "attach");
+        auto result = cache.CallSqliteFn([&](Utf8P* msg) { return sqlite3_bcvfs_attach(cache.m_vfs, GetOpenParams().c_str(), m_baseUri.c_str(), m_containerId.c_str(), m_alias.c_str(), SQLITE_BCV_ATTACH_IFNOT, msg); }, "attach");
         if (!result.IsSuccess()) {
             cache.m_containers.pop_back(); // failed, remove from list
             return result;
@@ -275,10 +275,11 @@ CloudResult CloudContainer::Connect(CloudCache& cache) {
  * Disconnect this container from the CloudCache. If the containerDb is open, close it first.
  * @note This function does nothing if the CloudContainer is not connected to a CloudCache. See CloudContainer::Connect
  */
-CloudResult CloudContainer::Disconnect(bool fromCacheDtor) {
+CloudResult CloudContainer::Disconnect(bool isDetach, bool fromCacheDtor) {
     if (nullptr == m_cache)
         return CloudResult();
 
+    OnDisconnect(isDetach);
     m_onDisconnect.RaiseEvent(this);
 
     CloseDbIfOpen();
@@ -292,20 +293,9 @@ CloudResult CloudContainer::Disconnect(bool fromCacheDtor) {
         if (entry != containers.end())
             containers.erase(entry);
     }
+    OnDisconnected(isDetach);
 
-    return CloudResult();
-}
-
-/**
- * Permanently disconnect and then detach this container from the CloudCache.
- * @note This function does nothing if the CloudContainer is not connected to a CloudCache. See CloudContainer::Connect
- */
-CloudResult CloudContainer::Detach() {
-    if (nullptr == m_cache)
-        return CloudResult();
-    auto thisCache = m_cache;
-    auto stat = Disconnect(false);
-    return !stat.IsSuccess() ? stat : thisCache->CallSqliteFn([&](Utf8P* msg) { return sqlite3_bcvfs_detach(thisCache->m_vfs, m_alias.c_str(), msg); }, "detach");
+    return isDetach ? thisCache->CallSqliteFn([&](Utf8P* msg) { return sqlite3_bcvfs_detach(thisCache->m_vfs, m_alias.c_str(), msg); }, "detach") :  CloudResult();
 }
 
 static int uploadBusy(void* container, int nTries) {
@@ -412,7 +402,7 @@ CloudPrefetch::PrefetchStatus CloudPrefetch::Run(int nRequest, int timeout) {
  * @param httpTimeout if >0, the number of seconds to wait before considering an http request as timed out. Timed out requests will be tried. Default is 60 seconds.
  */
 CloudResult CloudUtil::Init(CloudContainer const& container, int logLevel, int nRequest, int httpTimeout) {
-    int stat = sqlite3_bcv_open(container.m_storageType.c_str(), container.m_accessName.c_str(), container.m_accessToken.c_str(), container.m_containerId.c_str(), &m_handle);
+    int stat = sqlite3_bcv_open(container.GetOpenParams().c_str(), container.m_baseUri.c_str(), container.m_accessToken.c_str(), container.m_containerId.c_str(), &m_handle);
     if (SQLITE_OK != stat)
         return CloudResult(stat,  Utf8PrintfString("cannot open CloudContainer: %s", sqlite3_bcv_errmsg(m_handle)).c_str());
 

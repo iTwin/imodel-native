@@ -2367,7 +2367,7 @@ void SnapContext::DoSnap(BeJsValue out, BeJsConst in, DgnDbR db, ICancellableR c
         if (nullptr != source)
             status = helper.GetClosestCurve(*source, haveSubCategory ? &subCategoryId : nullptr, haveGeomClass ? &geomClass : nullptr, haveGeomClass ? nullptr : &viewFlags, &cancel);
         else
-            status = helper.GetClosestCurve(foundNonElemGeom->second, db, haveSubCategory ? &subCategoryId : nullptr, haveGeomClass ? &geomClass : nullptr, haveGeomClass ? nullptr : &viewFlags, &cancel);
+            status = helper.GetClosestCurve(foundNonElemGeom->second, db, nullptr, nullptr, &viewFlags, &cancel);
 
         if (SnapStatus::Success != status)
             {

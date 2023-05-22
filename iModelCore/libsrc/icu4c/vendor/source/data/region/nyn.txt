@@ -1,5 +1,6 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 nyn{
     Countries{
         AD{"Andora"}
@@ -127,7 +128,6 @@ nyn{
         MD{"Moridova"}
         MG{"Madagasika"}
         MH{"Ebizinga bya Marshaa"}
-        MK{"Masedoonia"}
         ML{"Mari"}
         MM{"Myanamar"}
         MN{"Mongoria"}
@@ -227,5 +227,4 @@ nyn{
         ZM{"Zambia"}
         ZW{"Zimbabwe"}
     }
-    Version{"2.1.47.82"}
 }

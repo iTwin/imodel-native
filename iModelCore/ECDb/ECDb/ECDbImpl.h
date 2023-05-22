@@ -159,7 +159,6 @@ private:
     mutable std::unique_ptr<IdFactory> m_idFactory;
     mutable std::unique_ptr<ExtractInstFunc> m_extractInstFunc;
     mutable std::unique_ptr<ExtractPropFunc> m_extractPropFunc;
-    mutable std::unique_ptr<PropExistsFunc> m_propExistsFunc;
     mutable EC::ECSqlConfig m_ecSqlConfig;
     mutable std::unique_ptr<PragmaManager> m_pragmaProcessor;
     //Mirrored ECDb methods are only called by ECDb (friend), therefore private

@@ -1,5 +1,6 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 tk{
     Countries{
         001{"Dünýä"}
@@ -179,15 +180,15 @@ tk{
         MA{"Marokko"}
         MC{"Monako"}
         MD{"Moldowa"}
-        ME{"Montenegro"}
+        ME{"Çernogoriýa"}
         MF{"Sen-Marten"}
         MG{"Madagaskar"}
         MH{"Marşall adalary"}
         MK{"Demirgazyk Makedoniýa"}
         ML{"Mali"}
-        MM{"Mýanma (Burma)"}
+        MM{"Mýanma (Birma)"}
         MN{"Mongoliýa"}
-        MO{"Makau AAS Hytaý"}
+        MO{"Makao AAS Hytaý"}
         MP{"Demirgazyk Mariana adalary"}
         MQ{"Martinika"}
         MR{"Mawritaniýa"}
@@ -253,7 +254,7 @@ tk{
         SV{"Salwador"}
         SX{"Sint-Marten"}
         SY{"Siriýa"}
-        SZ{"Swazilend"}
+        SZ{"Eswatini"}
         TA{"Tristan-da-Kunýa"}
         TC{"Terks we Kaýkos adalary"}
         TD{"Çad"}
@@ -298,9 +299,8 @@ tk{
         ZZ{"Näbelli sebit"}
     }
     Countries%short{
-        GB{"Birleşen Patyşalyk"}
         HK{"Gonkong"}
-        MO{"Makau"}
+        MO{"Makao"}
         PS{"Palestina"}
         US{"ABŞ"}
     }
@@ -310,7 +310,8 @@ tk{
         CI{"Şirmaýy kenar"}
         CZ{"Çeh Respublikasy"}
         FK{"Folklend (Malwina) adalary"}
+        NZ{"Aotearoa Täze Zelandiýa"}
+        SZ{"Swazilend"}
         TL{"Gündogar Timor"}
     }
-    Version{"2.1.49.82"}
 }

@@ -1,7 +1,7 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 fa{
-    Version{"2.1.49.82"}
     zoneStrings{
         "Africa:Abidjan"{
             ec{"آبیجان"}
@@ -154,7 +154,7 @@ fa{
             ec{"طرابلس"}
         }
         "Africa:Tunis"{
-            ec{"شهر تونس"}
+            ec{"تونس"}
         }
         "Africa:Windhoek"{
             ec{"ویندهوک"}
@@ -257,6 +257,9 @@ fa{
         }
         "America:Chihuahua"{
             ec{"چیواوا"}
+        }
+        "America:Ciudad_Juarez"{
+            ec{"سیوداد خوارز"}
         }
         "America:Coral_Harbour"{
             ec{"اتکوکان"}
@@ -646,7 +649,7 @@ fa{
             ec{"آلماتی"}
         }
         "Asia:Amman"{
-            ec{"عمّان"}
+            ec{"عَمان"}
         }
         "Asia:Anadyr"{
             ec{"آنادیر"}
@@ -1223,6 +1226,9 @@ fa{
         "Pacific:Johnston"{
             ec{"جانستون"}
         }
+        "Pacific:Kanton"{
+            ec{"کانتون"}
+        }
         "Pacific:Kiritimati"{
             ec{"کریتیماتی"}
         }
@@ -1723,9 +1729,9 @@ fa{
             ls{"وقت عادی کالدونیای جدید"}
         }
         "meta:New_Zealand"{
-            ld{"وقت تابستانی زلاند نو"}
-            lg{"وقت زلاند نو"}
-            ls{"وقت عادی زلاند نو"}
+            ld{"وقت تابستانی نیوزیلند"}
+            lg{"وقت نیوزیلند"}
+            ls{"وقت عادی نیوزیلند"}
         }
         "meta:Newfoundland"{
             ld{"وقت تابستانی نیوفاندلند"}
@@ -1736,7 +1742,9 @@ fa{
             ls{"وقت نیوئه"}
         }
         "meta:Norfolk"{
-            ls{"وقت جزایر نورفولک"}
+            ld{"وقت تابستانی جزیرهٔ نورفولک"}
+            lg{"وقت جزیرهٔ نورفولک"}
+            ls{"وقت عادی جزیرهٔ نورفولک"}
         }
         "meta:Noronha"{
             ld{"وقت تابستانی فرناندو دی نورونیا"}
@@ -1805,7 +1813,7 @@ fa{
             ls{"وقت عادی قیزیل‌اوردا"}
         }
         "meta:Reunion"{
-            ls{"وقت ریونیون"}
+            ls{"وقت رئونیون"}
         }
         "meta:Rothera"{
             ls{"وقت روترا"}
@@ -1919,6 +1927,9 @@ fa{
             ld{"وقت تابستانی یکاترینبورگ"}
             lg{"وقت یکاترینبورگ"}
             ls{"وقت عادی یکاترینبورگ"}
+        }
+        "meta:Yukon"{
+            ls{"وقت یوکان"}
         }
         fallbackFormat{"{1} ({0})"}
         gmtFormat{"{0} گرینویچ"}

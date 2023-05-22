@@ -722,6 +722,7 @@ export declare namespace IModelJsNative {
     public isEnum(): boolean;
     public isGeneratedProperty(): boolean;
     public isSystemProperty(): boolean;
+    public isDynamicProp(): boolean;
   }
 
   class ECSqlValue {
@@ -951,6 +952,10 @@ export declare namespace IModelJsNative {
     public readonly cache?: CloudCache;
     /** Create a new instance of a CloudContainer. It must be connected to a CloudCache for most operations. */
     public constructor(props: NativeCloudSqlite.ContainerAccessProps);
+    /** the baseUri of this container */
+    public get baseUri(): string;
+    /** the storageType of this container */
+    public get storageType(): string;
     /** The ContainerId. */
     public get containerId(): string;
     /** The *alias* to identify this CloudContainer in a CloudCache. Usually just the ContainerId. */
@@ -979,7 +984,7 @@ export declare namespace IModelJsNative {
      * initialize a cloud blob-store container to be used as a new Sqlite CloudContainer. This creates the manifest, and should be
      * performed on an empty container. If an existing manifest is present, it is destroyed and a new one is created (essentially emptying the container.)
      */
-    public initializeContainer(opts?: { checksumBlockNames?: boolean, blockSize?: number }): void;
+    public initializeContainer(opts: { checksumBlockNames?: boolean, blockSize: number }): void;
 
     /**
      * Attempt to acquire the write lock for this CloudContainer. For this to succeed:
@@ -1209,7 +1214,7 @@ export declare namespace IModelJsNative {
     public addRuleset(serializedRuleset: string): ECPresentationManagerResponse<string>;
     public removeRuleset(rulesetId: string, hash: string): ECPresentationManagerResponse<boolean>;
     public clearRulesets(): ECPresentationManagerResponse<void>;
-    public handleRequest(db: DgnDb, options: string): { result: Promise<ECPresentationManagerResponse<string>>, cancel: () => void };
+    public handleRequest(db: DgnDb, options: string): { result: Promise<ECPresentationManagerResponse<Buffer>>, cancel: () => void };
     public getUpdateInfo(): ECPresentationManagerResponse<any>;
     public dispose(): void;
   }

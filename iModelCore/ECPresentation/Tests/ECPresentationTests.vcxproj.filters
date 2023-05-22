@@ -141,6 +141,9 @@
     <ClCompile Include="NonPublished\Unit\Rules\AllRelatedInstanceNodesSpecificationTests.cpp">
       <Filter>Unit\Rules</Filter>
     </ClCompile>
+    <ClCompile Include="NonPublished\Unit\Rules\CalculatedPropertiesSpecificationTests.cpp">
+      <Filter>Unit\Rules</Filter>
+    </ClCompile>
     <ClCompile Include="NonPublished\Unit\Rules\CheckBoxPresRuleTests.cpp">
       <Filter>Unit\Rules</Filter>
     </ClCompile>

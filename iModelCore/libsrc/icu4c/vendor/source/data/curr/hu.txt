@@ -1,5 +1,6 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 hu{
     Currencies{
         ADP{
@@ -17,6 +18,10 @@ hu{
         AFN{
             "AFN",
             "afgán afghani",
+        }
+        ALK{
+            "ALK",
+            "albán lek (1946–1965)",
         }
         ALL{
             "ALL",
@@ -86,6 +91,10 @@ hu{
             "BAM",
             "bosznia-hercegovinai konvertibilis márka",
         }
+        BAN{
+            "BAN",
+            "bosznia-hercegovinai új dínár (1994–1997)",
+        }
         BBD{
             "BBD",
             "barbadosi dollár",
@@ -110,9 +119,17 @@ hu{
             "BGL",
             "Bolgár kemény leva",
         }
+        BGM{
+            "BGM",
+            "bolgár szocialista leva",
+        }
         BGN{
             "BGN",
             "bolgár új leva",
+        }
+        BGO{
+            "BGO",
+            "bolgár leva (1879–1952)",
         }
         BHD{
             "BHD",
@@ -188,7 +205,7 @@ hu{
         }
         BYN{
             "BYN",
-            "fehérorosz rubel",
+            "belarusz rubel",
         }
         BYR{
             "BYR",
@@ -264,7 +281,7 @@ hu{
         }
         CVE{
             "CVE",
-            "Cape Verde-i escudo",
+            "Zöld-foki escudo",
         }
         CYP{
             "CYP",
@@ -540,7 +557,7 @@ hu{
         }
         LSL{
             "LSL",
-            "Lesothoi loti",
+            "lesothoi loti",
         }
         LTL{
             "LTL",
@@ -582,6 +599,10 @@ hu{
             "MAF",
             "Marokkói frank",
         }
+        MDC{
+            "MDC",
+            "moldáv kupon",
+        }
         MDL{
             "MDL",
             "moldován lei",
@@ -597,6 +618,10 @@ hu{
         MKD{
             "MKD",
             "macedon dínár",
+        }
+        MKN{
+            "MKN",
+            "macedón dénár (1992–1993)",
         }
         MLF{
             "MLF",
@@ -868,7 +893,7 @@ hu{
         }
         SZL{
             "SZL",
-            "szváziföldi lilangeni",
+            "szvázi lilangeni",
         }
         THB{
             "THB",
@@ -980,7 +1005,11 @@ hu{
         }
         VND{
             "VND",
-            "vietnami dong",
+            "vietnámi dong",
+        }
+        VNN{
+            "VNN",
+            "vietnámi dong (1978–1985)",
         }
         VUV{
             "VUV",
@@ -1039,7 +1068,7 @@ hu{
             "Francia UIC-frank",
         }
         XOF{
-            "CFA",
+            "F CFA",
             "CFA frank BCEAO",
         }
         XPD{
@@ -1086,6 +1115,10 @@ hu{
             "YUN",
             "Jugoszláv konvertibilis dínár",
         }
+        YUR{
+            "YUR",
+            "jugoszláv reformált dinár (1992–1993)",
+        }
         ZAL{
             "ZAL",
             "Dél-afrikai rand (pénzügyi)",
@@ -1124,31 +1157,104 @@ hu{
         }
     }
     Currencies%narrow{
+        AOA{"Kz"}
         ARS{"$"}
+        AUD{"$"}
+        BAM{"KM"}
+        BBD{"$"}
+        BDT{"৳"}
+        BMD{"$"}
+        BND{"$"}
+        BOB{"Bs"}
         BRL{"R$"}
+        BSD{"$"}
+        BWP{"P"}
+        BYN{"р."}
+        BZD{"$"}
+        CAD{"$"}
+        CLP{"$"}
         CNY{"¥"}
         COP{"$"}
+        CRC{"₡"}
+        CUC{"$"}
+        CUP{"$"}
+        CZK{"Kč"}
         DKK{"kr"}
+        DOP{"$"}
+        EGP{"E£"}
         EUR{"€"}
+        FJD{"$"}
+        FKP{"£"}
         GBP{"£"}
+        GEL{"₾"}
+        GIP{"£"}
+        GNF{"FG"}
+        GTQ{"Q"}
         GYD{"$"}
         HKD{"$"}
+        HNL{"L"}
         HRK{"kn"}
+        HUF{"Ft"}
+        IDR{"Rp"}
+        ILS{"₪"}
+        INR{"₹"}
         ISK{"kr"}
+        JMD{"$"}
         JPY{"¥"}
+        KHR{"៛"}
+        KMF{"CF"}
         KPW{"₩"}
         KRW{"₩"}
+        KYD{"$"}
+        KZT{"₸"}
+        LAK{"₭"}
+        LBP{"L£"}
+        LKR{"Rs"}
+        LRD{"$"}
+        MGA{"Ar"}
+        MMK{"K"}
         MNT{"₮"}
+        MUR{"Rs"}
+        MXN{"$"}
+        MYR{"RM"}
+        NAD{"$"}
+        NGN{"₦"}
+        NIO{"C$"}
         NOK{"kr"}
+        NPR{"Rs"}
+        NZD{"$"}
+        PHP{"₱"}
+        PKR{"Rs"}
         PLN{"zł"}
         PYG{"₲"}
+        RON{"lei"}
+        RUB{"₽"}
+        RUR{"RUR"}
+        RWF{"RF"}
+        SBD{"$"}
         SEK{"kr"}
+        SGD{"$"}
+        SHP{"£"}
         SRD{"$"}
+        SSP{"£"}
+        STN{"Db"}
+        SYP{"£"}
+        THB{"฿"}
+        TOP{"T$"}
+        TRY{"₺"}
+        TTD{"$"}
         TWD{"NT$"}
+        UAH{"₴"}
+        USD{"$"}
         UYU{"$"}
+        VEF{"Bs"}
+        VND{"₫"}
+        XCD{"$"}
+        ZAR{"R"}
+        ZMW{"ZK"}
     }
     Currencies%variant{
-        GEL{"₾"}
+        TRY{"TL"}
     }
     CurrencyPlurals{
         ADP{
@@ -1166,6 +1272,10 @@ hu{
         AFN{
             one{"afgán afghani"}
             other{"afgán afghani"}
+        }
+        ALK{
+            one{"albán lek (1946–1965)"}
+            other{"albán lek (1946–1965)"}
         }
         ALL{
             one{"albán lek"}
@@ -1235,6 +1345,10 @@ hu{
             one{"bosznia-hercegovinai konvertibilis márka"}
             other{"bosznia-hercegovinai konvertibilis márka"}
         }
+        BAN{
+            one{"bosznia-hercegovinai új dínár (1994–1997)"}
+            other{"bosznia-hercegovinai új dínár (1994–1997)"}
+        }
         BBD{
             one{"barbadosi dollár"}
             other{"barbadosi dollár"}
@@ -1259,9 +1373,17 @@ hu{
             one{"Bolgár kemény leva"}
             other{"Bolgár kemény leva"}
         }
+        BGM{
+            one{"bolgár szocialista leva"}
+            other{"bolgár szocialista leva"}
+        }
         BGN{
             one{"bolgár új leva"}
             other{"bolgár új leva"}
+        }
+        BGO{
+            one{"bolgár leva (1879–1952)"}
+            other{"bolgár leva (1879–1952)"}
         }
         BHD{
             one{"bahreini dinár"}
@@ -1323,13 +1445,21 @@ hu{
             one{"bhutáni ngultrum"}
             other{"bhutáni ngultrum"}
         }
+        BUK{
+            one{"burmai kjap"}
+            other{"burmai kjap"}
+        }
         BWP{
             one{"botswanai pula"}
             other{"botswanai pula"}
         }
+        BYB{
+            one{"fehérorosz új rubel (1994–1999)"}
+            other{"fehérorosz új rubel (1994–1999)"}
+        }
         BYN{
-            one{"fehérorosz rubel"}
-            other{"fehérorosz rubel"}
+            one{"belarusz rubel"}
+            other{"belarusz rubel"}
         }
         BYR{
             one{"fehérorosz rubel (2000–2016)"}
@@ -1371,6 +1501,14 @@ hu{
             one{"Costa Rica-i colon"}
             other{"Costa Rica-i colon"}
         }
+        CSD{
+            one{"szerb dinár (2002–2006)"}
+            other{"szerb dinár (2002–2006)"}
+        }
+        CSK{
+            one{"csehszlovák kemény korona"}
+            other{"csehszlovák kemény korona"}
+        }
         CUC{
             one{"kubai konvertibilis peso"}
             other{"kubai konvertibilis peso"}
@@ -1380,8 +1518,8 @@ hu{
             other{"kubai peso"}
         }
         CVE{
-            one{"Cape Verde-i escudo"}
-            other{"Cape Verde-i escudo"}
+            one{"Zöld-foki escudo"}
+            other{"Zöld-foki escudo"}
         }
         CZK{
             one{"cseh korona"}
@@ -1403,6 +1541,10 @@ hu{
             one{"algériai dínár"}
             other{"algériai dínár"}
         }
+        EEK{
+            one{"észt korona"}
+            other{"észt korona"}
+        }
         EGP{
             one{"egyiptomi font"}
             other{"egyiptomi font"}
@@ -1410,6 +1552,18 @@ hu{
         ERN{
             one{"eritreai nakfa"}
             other{"eritreai nakfa"}
+        }
+        ESA{
+            one{"spanyol peseta (A–kontó)"}
+            other{"spanyol peseta (A–kontó)"}
+        }
+        ESB{
+            one{"spanyol peseta (konvertibilis kontó)"}
+            other{"spanyol peseta (konvertibilis kontó)"}
+        }
+        ESP{
+            one{"spanyol peseta"}
+            other{"spanyol peseta"}
         }
         ETB{
             one{"etiópiai birr"}
@@ -1455,6 +1609,10 @@ hu{
             one{"Egyenlítői-guineai ekwele"}
             other{"Egyenlítői-guineai ekwele"}
         }
+        GRD{
+            one{"görög drachma"}
+            other{"görög drachma"}
+        }
         GTQ{
             one{"guatemalai quetzal"}
             other{"guatemalai quetzal"}
@@ -1470,6 +1628,10 @@ hu{
         HNL{
             one{"hodurasi lempira"}
             other{"hodurasi lempira"}
+        }
+        HRD{
+            one{"horvát dínár"}
+            other{"horvát dínár"}
         }
         HRK{
             one{"horvát kuna"}
@@ -1506,6 +1668,10 @@ hu{
         ISK{
             one{"izlandi korona"}
             other{"izlandi korona"}
+        }
+        ITL{
+            one{"olasz líra"}
+            other{"olasz líra"}
         }
         JMD{
             one{"jamaicai dollár"}
@@ -1571,9 +1737,21 @@ hu{
             one{"libériai dollár"}
             other{"libériai dollár"}
         }
+        LSL{
+            one{"lesothoi loti"}
+            other{"lesothoi loti"}
+        }
         LTL{
             one{"litvániai litas"}
             other{"litvániai litas"}
+        }
+        LUC{
+            one{"luxemburgi konvertibilis frank"}
+            other{"luxemburgi konvertibilis frank"}
+        }
+        LUL{
+            one{"luxemburgi pénzügyi frank"}
+            other{"luxemburgi pénzügyi frank"}
         }
         LVL{
             one{"lett lats"}
@@ -1587,6 +1765,10 @@ hu{
             one{"marokkói dirham"}
             other{"marokkói dirham"}
         }
+        MDC{
+            one{"moldáv kupon"}
+            other{"moldáv kupon"}
+        }
         MDL{
             one{"moldován lei"}
             other{"moldován lei"}
@@ -1598,6 +1780,10 @@ hu{
         MKD{
             one{"macedon dínár"}
             other{"macedon dínár"}
+        }
+        MKN{
+            one{"macedón dénár (1992–1993)"}
+            other{"macedón dénár (1992–1993)"}
         }
         MMK{
             one{"mianmari kyat"}
@@ -1619,6 +1805,14 @@ hu{
             one{"mauritániai ouguiya"}
             other{"mauritániai ouguiya"}
         }
+        MTL{
+            one{"máltai líra"}
+            other{"máltai líra"}
+        }
+        MTP{
+            one{"máltai font"}
+            other{"máltai font"}
+        }
         MUR{
             one{"mauritiusi rúpia"}
             other{"mauritiusi rúpia"}
@@ -1635,6 +1829,14 @@ hu{
             one{"mexikói peso"}
             other{"mexikói peso"}
         }
+        MXP{
+            one{"mexikói ezüst peso (1861–1992)"}
+            other{"mexikói ezüst peso (1861–1992)"}
+        }
+        MXV{
+            one{"mexikói befektetési egység (UDI)"}
+            other{"mexikói befektetési egység (UDI)"}
+        }
         MYR{
             one{"malajziai ringgit"}
             other{"malajziai ringgit"}
@@ -1650,6 +1852,10 @@ hu{
         NGN{
             one{"nigériai naira"}
             other{"nigériai naira"}
+        }
+        NIC{
+            one{"nicaraguai córdoba (1988–1911)"}
+            other{"nicaraguai córdoba (1988–1911)"}
         }
         NIO{
             one{"nicaraguai córdoba"}
@@ -1675,9 +1881,17 @@ hu{
             one{"panamai balboa"}
             other{"panamai balboa"}
         }
+        PEI{
+            one{"perui inti"}
+            other{"perui inti"}
+        }
         PEN{
             one{"perui sol"}
             other{"perui sol"}
+        }
+        PES{
+            one{"perui sol (1863–1965)"}
+            other{"perui sol (1863–1965)"}
         }
         PGK{
             one{"pápua új-guineai kina"}
@@ -1694,6 +1908,14 @@ hu{
         PLN{
             one{"lengyel zloty"}
             other{"lengyel zloty"}
+        }
+        PLZ{
+            one{"lengyel zloty (PLZ)"}
+            other{"lengyel zloty (PLZ)"}
+        }
+        PTE{
+            one{"portugál escudo"}
+            other{"portugál escudo"}
         }
         PYG{
             one{"paraguayi guarani"}
@@ -1767,6 +1989,14 @@ hu{
             one{"Szent Ilona-i font"}
             other{"Szent Ilona-i font"}
         }
+        SIT{
+            one{"szlovén tolár"}
+            other{"szlovén tolár"}
+        }
+        SKK{
+            one{"szlovák korona"}
+            other{"szlovák korona"}
+        }
         SLL{
             one{"Sierra Leone-i leone"}
             other{"Sierra Leone-i leone"}
@@ -1791,13 +2021,21 @@ hu{
             one{"São Tomé és Príncipe-i dobra"}
             other{"São Tomé és Príncipe-i dobra"}
         }
+        SUR{
+            one{"szovjet rubel"}
+            other{"szovjet rubel"}
+        }
+        SVC{
+            one{"salvadori colón"}
+            other{"salvadori colón"}
+        }
         SYP{
             one{"szíriai font"}
             other{"szíriai font"}
         }
         SZL{
-            one{"szváziföldi lilangeni"}
-            other{"szváziföldi lilangeni"}
+            one{"szvázi lilangeni"}
+            other{"szvázi lilangeni"}
         }
         THB{
             one{"thai baht"}
@@ -1823,6 +2061,10 @@ hu{
             one{"tongai paanga"}
             other{"tongai paanga"}
         }
+        TPE{
+            one{"timori escudo"}
+            other{"timori escudo"}
+        }
         TRL{
             one{"török líra (1922–2005)"}
             other{"török líra (1922–2005)"}
@@ -1847,6 +2089,10 @@ hu{
             one{"ukrán hrivnya"}
             other{"ukrán hrivnya"}
         }
+        UAK{
+            one{"ukrán karbovanec"}
+            other{"ukrán karbovanec"}
+        }
         UGS{
             one{"Ugandai shilling (1966–1987)"}
             other{"Ugandai shilling (1966–1987)"}
@@ -1858,6 +2104,14 @@ hu{
         USD{
             one{"USA-dollár"}
             other{"USA-dollár"}
+        }
+        USN{
+            one{"USA-dollár (következő napi)"}
+            other{"USA-dollár (következő napi)"}
+        }
+        USS{
+            one{"USA-dollár (aznapi)"}
+            other{"USA-dollár (aznapi)"}
         }
         UYI{
             one{"Uruguayi peso en unidades indexadas"}
@@ -1888,8 +2142,12 @@ hu{
             other{"venezuelai bolivar"}
         }
         VND{
-            one{"vietnami dong"}
-            other{"vietnami dong"}
+            one{"vietnámi dong"}
+            other{"vietnámi dong"}
+        }
+        VNN{
+            one{"vietnámi dong (1978–1985)"}
+            other{"vietnámi dong (1978–1985)"}
         }
         VUV{
             one{"vanuatui vatu"}
@@ -1951,6 +2209,22 @@ hu{
             one{"jemeni rial"}
             other{"jemeni rial"}
         }
+        YUD{
+            one{"jugoszláv kemény dinár (1966–1990)"}
+            other{"jugoszláv kemény dinár (1966–1990)"}
+        }
+        YUM{
+            one{"jugoszláv új dinár (1994–2002)"}
+            other{"jugoszláv új dinár (1994–2002)"}
+        }
+        YUN{
+            one{"jugoszláv konvertibilis dinár (1990–1992)"}
+            other{"jugoszláv konvertibilis dinár (1990–1992)"}
+        }
+        YUR{
+            one{"jugoszláv reformált dinár (1992–1993)"}
+            other{"jugoszláv reformált dinár (1992–1993)"}
+        }
         ZAR{
             one{"dél-afrikai rand"}
             other{"dél-afrikai rand"}
@@ -1972,5 +2246,4 @@ hu{
         one{"{0} {1}"}
         other{"{0} {1}"}
     }
-    Version{"2.1.48.42"}
 }

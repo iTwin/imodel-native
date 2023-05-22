@@ -5,7 +5,28 @@ This document including important changes to syntax or file format.
 | Module  | Version   |
 | ------- | --------- |
 | Profile | `4.0.0.3` |
-| ECSQL   | `1.1.0.0` |
+| ECSQL   | `1.2.0.0` |
+
+## `5/22/2023`: Add PRAGMA checksum(ecdb_schema|ecdb_map|sqlite_schema)
+* ECSql version change to `1.0.4.1` as new syntax and runtime changes that does not break any existing syntax or runtime.
+* PRAGMA checksum(ecdb_schema|ecdb_map|sqlite_schema)
+    * `PRAGMA checksum(ecdb_schema)`: Compute SHA1 checksum for not null data in ec_* table that hold schemas.
+    * `PRAGMA checksum(ecdb_map)`: Compute SHA1 checksum for not null data in ec_* table that hold mapping.
+    * `PRAGMA checksum(sqlite_schema)`: Compute SHA1 checksum over ddl store in sqlite_master for all facets.
+
+## `5/3/2023`: Enhanced Instance properties
+
+* ECSQL version changed from `1.1.0.0` -> `1.2.0.0`
+* **Removed** `PROP_EXISTS()` This is not required anymore as instance prop is now auto-filtered internally.
+* Add VirtualTab `class_props()` that is used to filter instance property query rows.
+* Added support for dynamic property metadata for instance property.
+  * `ColumnInfo::IsDynamic()` check is an ECSqlStatement output property that has dynamic data and might change on each call to `Step()`
+  * `ECSqlStatement::GetColumnInfo(int)` will update on each `Step()` for dynamic properties.
+  * Expose `IsDynamicProp()` via NativeAddon for use from the typescript side.
+* Major improvement to Instance prop functionality where the use of a virtual table to filter rows based on the property selected.
+* Fix bug that causes assertion when access instance that mapped to overflow table.
+* Instance prop continues to be an experimental feature.
+* Add instance properties docs on wiki.
 
 ## `4/10/2023`: Add comprehensive ECDb integrity checks and support for enable/disabling experimental features.
 
@@ -26,14 +47,6 @@ This document including important changes to syntax or file format.
     7. `check_linktable_fk_ids`- checks if `SourceECInstanceId` or `TargetECInstanceId`  of a link table matches a valid row in primary class.
     8. `check_class_ids`- checks persisted `ECClassId` in all data tables and make sure they are valid.
     9. `check_schema_load` - checks if all schemas can be loaded into memory.
-
-## `2/13/2023`: Add PRAGMA checksum(ecdb_schema|ecdb_map|sqlite_schema)
-* ECSql version change to `1.0.4.1` as new syntax and runtime changes that does not break any existing syntax or runtime.
-* PRAGMA checksum(ecdb_schema|ecdb_map|sqlite_schema)
-    * `PRAGMA checksum(ecdb_schema)`: Compute SHA1 checksum for not null data in ec_* table that hold schemas.
-    * `PRAGMA checksum(ecdb_map)`: Compute SHA1 checksum for not null data in ec_* table that hold mapping.
-    * `PRAGMA checksum(sqlite_schema)`: Compute SHA1 checksum over ddl store in sqlite_master for all facets.
-
 
 ## `2/7/2023`: Add ECDb validity/integrity checks
 

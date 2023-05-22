@@ -3331,16 +3331,18 @@ struct NativeECSqlColumnInfo : BeObjectWrap<NativeECSqlColumnInfo>
             {
             Napi::HandleScope scope(env);
             Napi::Function t = DefineClass(env, "ECSqlColumnInfo", {
-            InstanceMethod("getType", &NativeECSqlColumnInfo::GetType),
-            InstanceMethod("getPropertyName", &NativeECSqlColumnInfo::GetPropertyName),
-            InstanceMethod("getOriginPropertyName", &NativeECSqlColumnInfo::GetOriginPropertyName),
-            InstanceMethod("getAccessString", &NativeECSqlColumnInfo::GetAccessString),
-            InstanceMethod("isSystemProperty", &NativeECSqlColumnInfo::IsSystemProperty),
-            InstanceMethod("isGeneratedProperty", &NativeECSqlColumnInfo::IsGeneratedProperty),
-            InstanceMethod("isEnum", &NativeECSqlColumnInfo::IsEnum),
-            InstanceMethod("getRootClassTableSpace", &NativeECSqlColumnInfo::GetRootClassTableSpace),
-            InstanceMethod("getRootClassName", &NativeECSqlColumnInfo::GetRootClassName),
-            InstanceMethod("getRootClassAlias", &NativeECSqlColumnInfo::GetRootClassAlias)});
+                InstanceMethod("getType", &NativeECSqlColumnInfo::GetType),
+                InstanceMethod("getPropertyName", &NativeECSqlColumnInfo::GetPropertyName),
+                InstanceMethod("getOriginPropertyName", &NativeECSqlColumnInfo::GetOriginPropertyName),
+                InstanceMethod("getAccessString", &NativeECSqlColumnInfo::GetAccessString),
+                InstanceMethod("isSystemProperty", &NativeECSqlColumnInfo::IsSystemProperty),
+                InstanceMethod("isGeneratedProperty", &NativeECSqlColumnInfo::IsGeneratedProperty),
+                InstanceMethod("isEnum", &NativeECSqlColumnInfo::IsEnum),
+                InstanceMethod("getRootClassTableSpace", &NativeECSqlColumnInfo::GetRootClassTableSpace),
+                InstanceMethod("getRootClassName", &NativeECSqlColumnInfo::GetRootClassName),
+                InstanceMethod("getRootClassAlias", &NativeECSqlColumnInfo::GetRootClassAlias),
+                InstanceMethod("isDynamicProp", &NativeECSqlColumnInfo::IsDynamicProp),
+            });
 
             exports.Set("ECSqlColumnInfo", t);
 
@@ -3455,7 +3457,13 @@ struct NativeECSqlColumnInfo : BeObjectWrap<NativeECSqlColumnInfo>
 
             return toJsString(Env(), prop->GetName());
             }
+        Napi::Value IsDynamicProp(NapiInfoCR info)
+            {
+            if (m_colInfo == nullptr)
+                THROW_JS_EXCEPTION("ECSqlColumnInfo is not initialized.");
 
+            return Napi::Boolean::New(Env(), m_colInfo->IsDynamic());
+            }
         Napi::Value GetOriginPropertyName(NapiInfoCR info)
             {
             if (m_colInfo == nullptr)
@@ -5088,7 +5096,30 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         SET_CONSTRUCTOR(t);
         }
 
-    static Napi::Value CreateReturnValue(Napi::Env env, ECPresentationResult const& result, bool serializeResponse = false)
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    static void SetSerializedResponse(Napi::Env env, BeJsNapiObject obj, Utf8CP memberName, Utf8StringR serializedResponse)
+        {
+        if (serializedResponse.empty())
+            {
+            obj[memberName] = "null";
+            return;
+            }
+
+        Utf8StringP strP = new Utf8String();
+        strP->swap(serializedResponse);
+        Napi::Value val = Napi::Buffer<Utf8Char>::New(env, strP->data(), strP->size(), [](Napi::Env, Utf8Char*, void* ptr)
+            {
+            delete reinterpret_cast<Utf8StringP>(ptr);
+            }, strP);
+        obj.AsNapiValueRef()->m_napiVal.As<Napi::Object>().Set(memberName, val);
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    static Napi::Value CreateReturnValue(Napi::Env env, ECPresentationResult& result, bool serializeResponse = false)
         {
         BeJsNapiObject retVal(env);
         if (result.IsError())
@@ -5098,11 +5129,10 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
             }
         else
             {
-            // rapidjson response
-            if (serializeResponse) {
-                auto str = result.GetSerializedSuccessResponse();
-                retVal["result"] = str.empty() ? "null" : str; // see note about null values for BeJsValue::Stringify
-            } else
+            // success
+            if (serializeResponse)
+                SetSerializedResponse(env, retVal, "result", result.GetSerializedSuccessResponse());
+            else
                 retVal["result"].From(result.GetSuccessResponse());
             }
 
@@ -5153,7 +5183,7 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         BeAssert(m_presentationManager == nullptr);
         }
 
-    Napi::Value CreateReturnValue(ECPresentationResult const& result, bool serializeResponse = false)
+    Napi::Value CreateReturnValue(ECPresentationResult&& result, bool serializeResponse = false)
         {
         return CreateReturnValue(Env(), result, serializeResponse);
         }
@@ -5161,11 +5191,11 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
     void ResolvePromise(Napi::Promise::Deferred const& deferred, ECPresentationResult&& result)
         {
         std::shared_ptr<ECPresentationResult> resultPtr = std::make_shared<ECPresentationResult>(std::move(result));
-        m_threadSafeFunc.BlockingCall([this, resultPtr, deferred = std::move(deferred)](Napi::Env, Napi::Function)
+        m_threadSafeFunc.BlockingCall([resultPtr, deferred = std::move(deferred)](Napi::Env env, Napi::Function)
             {
             // flush all our logs that accumulated while handling the request
             s_jsLogger.FlushDeferred();
-            deferred.Resolve(CreateReturnValue(*resultPtr, true));
+            deferred.Resolve(CreateReturnValue(env, *resultPtr, true));
             });
         }
 
@@ -5298,28 +5328,28 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         {
         REQUIRE_ARGUMENT_STRING_ARRAY(0, directories);
         ECPresentationResult result = ECPresentationUtils::SetupRulesetDirectories(*m_presentationManager, directories);
-        return CreateReturnValue(result);
+        return CreateReturnValue(std::move(result));
         }
 
     Napi::Value SetupSupplementalRulesetDirectories(NapiInfoCR info)
         {
         REQUIRE_ARGUMENT_STRING_ARRAY(0, directories);
         ECPresentationResult result = ECPresentationUtils::SetupSupplementalRulesetDirectories(*m_presentationManager, directories);
-        return CreateReturnValue(result);
+        return CreateReturnValue(std::move(result));
         }
 
     Napi::Value GetRulesets(NapiInfoCR info)
         {
         REQUIRE_ARGUMENT_STRING(0, rulesetId);
         ECPresentationResult result = ECPresentationUtils::GetRulesets(*m_ruleSetLocater, rulesetId);
-        return CreateReturnValue(result, true);
+        return CreateReturnValue(std::move(result), true);
         }
 
     Napi::Value AddRuleset(NapiInfoCR info)
         {
         REQUIRE_ARGUMENT_STRING(0, rulesetJsonString);
         ECPresentationResult result = ECPresentationUtils::AddRuleset(*m_ruleSetLocater, rulesetJsonString);
-        return CreateReturnValue(result);
+        return CreateReturnValue(std::move(result));
         }
 
     Napi::Value RemoveRuleset(NapiInfoCR info)
@@ -5327,13 +5357,13 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         REQUIRE_ARGUMENT_STRING(0, rulesetId);
         REQUIRE_ARGUMENT_STRING(1, hash);
         ECPresentationResult result = ECPresentationUtils::RemoveRuleset(*m_ruleSetLocater, rulesetId, hash);
-        return CreateReturnValue(result);
+        return CreateReturnValue(std::move(result));
         }
 
     Napi::Value ClearRulesets(NapiInfoCR info)
         {
         ECPresentationResult result = ECPresentationUtils::ClearRulesets(*m_ruleSetLocater);
-        return CreateReturnValue(result);
+        return CreateReturnValue(std::move(result));
         }
 
     Napi::Value GetRulesetVariableValue(NapiInfoCR info)
@@ -5342,7 +5372,7 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         REQUIRE_ARGUMENT_STRING(1, variableId);
         REQUIRE_ARGUMENT_STRING(2, type);
         ECPresentationResult result = ECPresentationUtils::GetRulesetVariableValue(*m_presentationManager, rulesetId, variableId, type);
-        return CreateReturnValue(result);
+        return CreateReturnValue(std::move(result));
         }
 
     Napi::Value SetRulesetVariableValue(NapiInfoCR info)
@@ -5352,7 +5382,7 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         REQUIRE_ARGUMENT_STRING(2, variableType);
         REQUIRE_ARGUMENT_ANY_OBJ(3, value);
         ECPresentationResult result = ECPresentationUtils::SetRulesetVariableValue(*m_presentationManager, ruleSetId, variableId, variableType, value);
-        return CreateReturnValue(result);
+        return CreateReturnValue(std::move(result));
         }
 
     Napi::Value UnsetRulesetVariableValue(NapiInfoCR info)
@@ -5360,7 +5390,7 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         REQUIRE_ARGUMENT_STRING(0, ruleSetId);
         REQUIRE_ARGUMENT_STRING(1, variableId);
         ECPresentationResult result = ECPresentationUtils::UnsetRulesetVariableValue(*m_presentationManager, ruleSetId, variableId);
-        return CreateReturnValue(result);
+        return CreateReturnValue(std::move(result));
         }
 
     Napi::Value GetUpdateInfo(NapiInfoCR info)

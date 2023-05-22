@@ -147,26 +147,32 @@ struct JsCloudUtil : CloudUtil {
  * JavaScript object for accessing cloud containers via SQLite.
  */
 struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
-    int m_durationSeconds;
+    int m_lockExpireSeconds;
 
     DEFINE_CONSTRUCTOR;
 
     JsCloudContainer(NapiInfoCR info) : Napi::ObjectWrap<JsCloudContainer>(info) {
         REQUIRE_ARGUMENT_ANY_OBJ(0, obj);
-        m_accessName = stringMember(obj, JSON_NAME(accessName));
+
+        m_baseUri = stringMember(obj, JSON_NAME(baseUri));
         m_containerId = stringMember(obj, JSON_NAME(containerId));
-        if (m_accessName.empty())
-            BeNapi::ThrowJsException(obj.Env(), "accessName missing from CloudContainer constructor");
+        if (m_baseUri.empty())
+            BeNapi::ThrowJsException(obj.Env(), "baseUri missing from CloudContainer constructor");
         if (m_containerId.empty())
             BeNapi::ThrowJsException(obj.Env(), "containerId missing from CloudContainer constructor");
 
         m_storageType = stringMember(obj, JSON_NAME(storageType), "azure");
+        if (m_storageType.Trim().StartsWith("azure")) {
+            m_storageType = "azure";
+            m_storageParams = "?customuri=1&sas=1";
+        }
+
         m_alias = stringMember(obj, JSON_NAME(alias));
         if (m_alias.empty())
             m_alias = m_containerId;
         m_accessToken = stringMember(obj, JSON_NAME(accessToken));
         m_writeable = boolMember(obj, JSON_NAME(writeable), false);
-        m_durationSeconds = intMember(obj, JSON_NAME(durationSeconds), 0);
+        m_lockExpireSeconds = intMember(obj, JSON_NAME(lockExpireSeconds), 0);
         m_logId = stringMember(obj, JSON_NAME(logId), "");
         m_isPublic = boolMember(obj, JSON_NAME(isPublic), false);
     }
@@ -223,22 +229,24 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
         CallJsMemberFunc("onConnected", {thisObj});
     }
 
+    void OnDisconnect(bool isDetach) override {
+        CallJsMemberFunc("onDisconnect", {Value(), Napi::Boolean::New(Env(), isDetach)});
+    }
+    void OnDisconnected(bool isDetach) override {
+        CallJsMemberFunc("onDisconnected", {Value(), Napi::Boolean::New(Env(), isDetach)});
+    }
+
     void Disconnect(NapiInfoCR info) {
         if (!IsContainerConnected())
             return;
 
         BeJsConst args(info[0]);
         bool isDetach = args.isObject() && args["detach"].GetBoolean(false);
-        std::vector<napi_value> funcArgs = {Value(), Napi::Boolean::New(Env(), isDetach)};
-
-        CallJsMemberFunc("onDisconnect", funcArgs);
-
-        auto stat = isDetach ? CloudContainer::Detach() : CloudContainer::Disconnect(false);
+        auto stat = CloudContainer::Disconnect(isDetach, false);
         if (!stat.IsSuccess())
             BeNapi::ThrowJsException(Env(), stat.m_error.c_str(), stat.m_status);
 
         Value().Set("cache", Env().Undefined());
-        CallJsMemberFunc("onDisconnected", funcArgs);
     }
 
     void PollManifest(NapiInfoCR info) {
@@ -401,17 +409,12 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
     }
 
     void InitializeContainer(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_ANY_OBJ(0, opts);
         JsCloudUtil handle;
         auto result = handle.Init(*this);
         if (result.IsSuccess()) {
-            int blockSize = 0;
-            bool checksumName = false;
-            if (info[0].IsObject()) {
-                auto opts = BeJsConst(info[0].As<Napi::Object>());
-                blockSize = opts[JSON_NAME(blockSize)].asInt(0);
-                checksumName = opts[JSON_NAME(checksumBlockNames)].asBool(false);
-            }
-            result = handle.InitializeContainer(checksumName ? 24 : 16, blockSize);
+            bool checksumName = boolMember(opts, JSON_NAME(checksumBlockNames), false);
+            result = handle.InitializeContainer(checksumName ? 24 : 16, requireInt(opts, JSON_NAME(blockSize)));
         }
         if (result.m_status != BE_SQLITE_OK)
             BeNapi::ThrowJsException(Env(), result.m_error.c_str(), result.m_status);
@@ -523,11 +526,11 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
         m_containerDb.TryExecuteSql("BEGIN");
         CheckLock(); // throws if already locked by another user
 
-        m_durationSeconds = std::min((int) (12*SECONDS_PER_HOUR), std::max((int)SECONDS_PER_HOUR, m_durationSeconds));
+        m_lockExpireSeconds = std::min((int) (12*SECONDS_PER_HOUR), std::max((int)SECONDS_PER_HOUR, m_lockExpireSeconds));
         BeJsDocument lockedBy;
         lockedBy[JSON_NAME(guid)] = m_cache->m_guid;
         lockedBy[JSON_NAME(user)] = user;
-        lockedBy[JSON_NAME(expires)] = GetServerDateString(m_durationSeconds * 1000);
+        lockedBy[JSON_NAME(expires)] = GetServerDateString(m_lockExpireSeconds * 1000);
 
         Statement stmt;
         auto rc = stmt.Prepare(m_containerDb, "REPLACE INTO bcv_kv(value,name) VALUES(?,?)");
@@ -625,6 +628,8 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
     Napi::Value HasWriteLock(NapiInfoCR info) { return Napi::Boolean::New(Env(), m_writeLockHeld); }
     Napi::Value GetAccessToken(NapiInfoCR info) { return Napi::String::New(Env(), m_accessToken); }
     Napi::Value GetContainerId(NapiInfoCR info) { return Napi::String::New(Env(), m_containerId); }
+    Napi::Value GetBaseUri(NapiInfoCR info) { return Napi::String::New(Env(), m_baseUri); }
+    Napi::Value GetStorageType(NapiInfoCR info) { return Napi::String::New(Env(), m_storageType); }
     Napi::Value GetLogId(NapiInfoCR info) { return Napi::String::New(Env(), m_logId); }
     Napi::Value GetAlias(NapiInfoCR info) { return Napi::String::New(Env(), m_alias); }
     void SetAccessToken(NapiInfoCR info, Napi::Value const& value) { m_accessToken = value.As<Napi::String>().Utf8Value(); }
@@ -634,10 +639,12 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
         Napi::HandleScope scope(env);
         Napi::Function t = DefineClass(env, className, {
             InstanceAccessor<&JsCloudContainer::GetAccessToken, &JsCloudContainer::SetAccessToken>("accessToken"),
+            InstanceAccessor<&JsCloudContainer::GetBaseUri>("baseUri"),
             InstanceAccessor<&JsCloudContainer::GetAlias>("alias"),
             InstanceAccessor<&JsCloudContainer::GetContainerId>("containerId"),
             InstanceAccessor<&JsCloudContainer::GetLogId>("logId"),
             InstanceAccessor<&JsCloudContainer::GetNumCleanupBlocks>("garbageBlocks"),
+            InstanceAccessor<&JsCloudContainer::GetStorageType>("storageType"),
             InstanceAccessor<&JsCloudContainer::HasLocalChangesJs>("hasLocalChanges"),
             InstanceAccessor<&JsCloudContainer::HasWriteLock>("hasWriteLock"),
             InstanceAccessor<&JsCloudContainer::IsConnected>("isConnected"),

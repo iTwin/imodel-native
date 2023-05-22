@@ -175,7 +175,7 @@ size_t ossl_pool_acquire_entropy(RAND_POOL *pool)
         /* Get wall clock time, take 8 bits. */
         clock_gettime(CLOCK_REALTIME, &ts);
         v = (unsigned char)(ts.tv_nsec & 0xFF);
-        ossl_rand_pool_add(pool, arg, &v, sizeof(v), 2);
+        ossl_rand_pool_add(pool, arg, &v, sizeof(v) , 2);
     }
     return ossl_rand_pool_entropy_available(pool);
 }
@@ -319,7 +319,9 @@ static ssize_t sysctl_random(char *buf, size_t buflen)
 #     define __NR_getrandom    352
 #    elif defined(__cris__)
 #     define __NR_getrandom    356
-#    else /* generic (f.e. aarch64, loongarch, loongarch64) */
+#    elif defined(__aarch64__)
+#     define __NR_getrandom    278
+#    else /* generic */
 #     define __NR_getrandom    278
 #    endif
 #   endif

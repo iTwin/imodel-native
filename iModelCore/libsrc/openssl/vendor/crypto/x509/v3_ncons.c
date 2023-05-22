@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2021 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2003-2023 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -9,7 +9,6 @@
 
 #include "internal/cryptlib.h"
 #include "internal/numbers.h"
-#include "internal/safe_math.h"
 #include <stdio.h>
 #include "crypto/asn1.h"
 #include <openssl/asn1t.h>
@@ -20,8 +19,6 @@
 #include "crypto/x509.h"
 #include "crypto/punycode.h"
 #include "ext_dat.h"
-
-OSSL_SAFE_MATH_SIGNED(int, int)
 
 static void *v2i_NAME_CONSTRAINTS(const X509V3_EXT_METHOD *method,
                                   X509V3_CTX *ctx,
@@ -135,16 +132,14 @@ static void *v2i_NAME_CONSTRAINTS(const X509V3_EXT_METHOD *method,
     GENERAL_SUBTREE *sub = NULL;
 
     ncons = NAME_CONSTRAINTS_new();
-    if (ncons == NULL) {
-        ERR_raise(ERR_LIB_X509V3, ERR_R_ASN1_LIB);
-        goto err;
-    }
+    if (ncons == NULL)
+        goto memerr;
     for (i = 0; i < sk_CONF_VALUE_num(nval); i++) {
         val = sk_CONF_VALUE_value(nval, i);
-        if (HAS_PREFIX(val->name, "permitted") && val->name[9]) {
+        if (strncmp(val->name, "permitted", 9) == 0 && val->name[9]) {
             ptree = &ncons->permittedSubtrees;
             tval.name = val->name + 10;
-        } else if (HAS_PREFIX(val->name, "excluded") && val->name[8]) {
+        } else if (strncmp(val->name, "excluded", 8) == 0 && val->name[8]) {
             ptree = &ncons->excludedSubtrees;
             tval.name = val->name + 9;
         } else {
@@ -153,25 +148,21 @@ static void *v2i_NAME_CONSTRAINTS(const X509V3_EXT_METHOD *method,
         }
         tval.value = val->value;
         sub = GENERAL_SUBTREE_new();
-        if (sub == NULL) {
-            ERR_raise(ERR_LIB_X509V3, ERR_R_ASN1_LIB);
+        if (sub == NULL)
+            goto memerr;
+        if (!v2i_GENERAL_NAME_ex(sub->base, method, ctx, &tval, 1))
             goto err;
-        }
-        if (!v2i_GENERAL_NAME_ex(sub->base, method, ctx, &tval, 1)) {
-            ERR_raise(ERR_LIB_X509V3, ERR_R_X509V3_LIB);
-            goto err;
-        }
         if (*ptree == NULL)
             *ptree = sk_GENERAL_SUBTREE_new_null();
-        if (*ptree == NULL || !sk_GENERAL_SUBTREE_push(*ptree, sub)) {
-            ERR_raise(ERR_LIB_X509V3, ERR_R_CRYPTO_LIB);
-            goto err;
-        }
+        if (*ptree == NULL || !sk_GENERAL_SUBTREE_push(*ptree, sub))
+            goto memerr;
         sub = NULL;
     }
 
     return ncons;
 
+ memerr:
+    ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
  err:
     NAME_CONSTRAINTS_free(ncons);
     GENERAL_SUBTREE_free(sub);
@@ -232,16 +223,16 @@ static int print_nc_ipadd(BIO *bp, ASN1_OCTET_STRING *ip)
 
 static int add_lengths(int *out, int a, int b)
 {
-    int err = 0;
-
     /* sk_FOO_num(NULL) returns -1 but is effectively 0 when iterating. */
     if (a < 0)
         a = 0;
     if (b < 0)
         b = 0;
 
-    *out = safe_add_int(a, b, &err);
-    return !err;
+    if (a > INT_MAX - b)
+        return 0;
+    *out = a + b;
+    return 1;
 }
 
 /*-
