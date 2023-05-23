@@ -541,7 +541,18 @@ static CURLcode chop_write(struct Curl_easy *data,
     return pausewrite(data, type, ptr, len);
 
   /* Determine the callback(s) to use. */
+<<<<<<< HEAD
   if(type & CLIENTWRITE_BODY)
+=======
+  if(type & CLIENTWRITE_BODY) {
+#ifdef USE_WEBSOCKETS
+    if(conn->handler->protocol & (CURLPROTO_WS|CURLPROTO_WSS)) {
+      writebody = Curl_ws_writecb;
+      writebody_ptr = data;
+    }
+    else
+#endif
+>>>>>>> 9f82eed7 (Updated Curl to 8.1.0 (#290))
     writebody = data->set.fwrite_func;
   if((type & CLIENTWRITE_HEADER) &&
      (data->set.fwrite_header || data->set.writeheader)) {

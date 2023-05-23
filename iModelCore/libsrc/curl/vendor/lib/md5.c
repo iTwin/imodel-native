@@ -58,6 +58,31 @@
 #if defined(USE_GNUTLS)
 
 #include <nettle/md5.h>
+<<<<<<< HEAD
+=======
+#elif defined(USE_OPENSSL_MD5)
+#include <openssl/md5.h>
+#elif defined(USE_WOLFSSL_MD5)
+#include <wolfssl/openssl/md5.h>
+#elif defined(USE_MBEDTLS)
+#include <mbedtls/md5.h>
+#elif (defined(__MAC_OS_X_VERSION_MAX_ALLOWED) && \
+              (__MAC_OS_X_VERSION_MAX_ALLOWED >= 1040) && \
+       defined(__MAC_OS_X_VERSION_MIN_REQUIRED) && \
+              (__MAC_OS_X_VERSION_MIN_REQUIRED < 101500)) || \
+      (defined(__IPHONE_OS_VERSION_MAX_ALLOWED) && \
+              (__IPHONE_OS_VERSION_MAX_ALLOWED >= 20000) && \
+       defined(__IPHONE_OS_VERSION_MIN_REQUIRED) && \
+              (__IPHONE_OS_VERSION_MIN_REQUIRED < 130000))
+#define AN_APPLE_OS
+#include <CommonCrypto/CommonDigest.h>
+#elif defined(USE_WIN32_CRYPTO)
+#include <wincrypt.h>
+#endif
+
+/* The last 3 #include files should be in this order */
+#include "curl_printf.h"
+>>>>>>> 9f82eed7 (Updated Curl to 8.1.0 (#290))
 #include "curl_memory.h"
 /* The last #include file should be: */
 #include "memdebug.h"

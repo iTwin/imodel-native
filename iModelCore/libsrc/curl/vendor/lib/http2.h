@@ -38,11 +38,14 @@
  */
 void Curl_http2_ver(char *p, size_t len);
 
+<<<<<<< HEAD
 const char *Curl_http2_strerror(uint32_t err);
 
 CURLcode Curl_http2_init(struct connectdata *conn);
 void Curl_http2_init_state(struct UrlState *state);
 void Curl_http2_init_userset(struct UserDefined *set);
+=======
+>>>>>>> 9f82eed7 (Updated Curl to 8.1.0 (#290))
 CURLcode Curl_http2_request_upgrade(struct dynbuf *req,
                                     struct Curl_easy *data);
 CURLcode Curl_http2_setup(struct Curl_easy *data, struct connectdata *conn);

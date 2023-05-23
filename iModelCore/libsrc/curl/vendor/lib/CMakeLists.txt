@@ -102,6 +102,34 @@ set_target_properties(${LIB_NAME} PROPERTIES
   OUTPUT_NAME ${LIBCURL_OUTPUT_NAME}
   )
 
+<<<<<<< HEAD
+=======
+if(CMAKE_SYSTEM_NAME STREQUAL "AIX" OR
+  CMAKE_SYSTEM_NAME STREQUAL "Linux" OR
+  CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR
+  CMAKE_SYSTEM_NAME STREQUAL "SunOS" OR
+  CMAKE_SYSTEM_NAME STREQUAL "GNU/kFreeBSD" OR
+
+  # FreeBSD comes with the a.out and elf flavours
+  # but a.out was supported up to version 3.x and
+  # elf from 3.x. I cannot imagine someone running
+  # CMake on those ancient systems
+  CMAKE_SYSTEM_NAME STREQUAL "FreeBSD" OR
+
+  CMAKE_SYSTEM_NAME STREQUAL "Haiku")
+
+  math(EXPR CMAKESONAME "${VERSIONCHANGE} - ${VERSIONDEL}")
+  set(CMAKEVERSION "${CMAKESONAME}.${VERSIONDEL}.${VERSIONADD}")
+
+  set_target_properties(${LIB_NAME} PROPERTIES
+    VERSION ${CMAKEVERSION}
+    SOVERSION ${CMAKESONAME}
+  )
+
+endif()
+
+
+>>>>>>> 9f82eed7 (Updated Curl to 8.1.0 (#290))
 if(HIDES_CURL_PRIVATE_SYMBOLS)
   set_property(TARGET ${LIB_NAME} APPEND PROPERTY COMPILE_DEFINITIONS "CURL_HIDDEN_SYMBOLS")
   set_property(TARGET ${LIB_NAME} APPEND PROPERTY COMPILE_FLAGS ${CURL_CFLAG_SYMBOLS_HIDE})
@@ -126,6 +154,17 @@ if(WIN32)
       set_target_properties(${LIB_NAME} PROPERTIES IMPORT_SUFFIX "_imp.lib")
     endif()
   endif()
+else()
+  # on not-Windows, check for writable argv[]
+    include(CheckCSourceRuns)
+    check_c_source_runs("
+int main(int argc, char **argv)
+{
+  (void)argc;
+  argv[0][0] = ' ';
+  return (argv[0][0] == ' ')?0:1;
+}"
+      HAVE_WRITABLE_ARGV)
 endif()
 
 target_include_directories(${LIB_NAME} INTERFACE

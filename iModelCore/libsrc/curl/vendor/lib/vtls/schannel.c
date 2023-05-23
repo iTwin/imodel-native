@@ -855,10 +855,17 @@ schannel_connect_step1(struct Curl_easy *data, struct connectdata *conn,
 
   if(!backend->cred) {
     char *snihost;
+<<<<<<< HEAD
     result = schannel_acquire_credential_handle(data, conn, sockindex);
     if(result != CURLE_OK) {
+=======
+    result = schannel_acquire_credential_handle(cf, data);
+    if(result)
+>>>>>>> 9f82eed7 (Updated Curl to 8.1.0 (#290))
       return result;
-    }
+    /* schannel_acquire_credential_handle() sets backend->cred accordingly or
+       it returns error otherwise. */
+
     /* A hostname associated with the credential is needed by
        InitializeSecurityContext for SNI and other reasons. */
     snihost = Curl_ssl_snihost(data, SSL_HOST_NAME(), NULL);

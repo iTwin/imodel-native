@@ -57,6 +57,37 @@
 #endif
 #endif /* USE_MBEDTLS */
 
+<<<<<<< HEAD
+=======
+#if defined(USE_OPENSSL_SHA256)
+
+/* When OpenSSL or wolfSSL is available we use their SHA256-functions. */
+#if defined(USE_OPENSSL)
+#include <openssl/evp.h>
+#elif defined(USE_WOLFSSL)
+#include <wolfssl/openssl/evp.h>
+#endif
+
+#elif defined(USE_GNUTLS)
+#include <nettle/sha.h>
+#elif defined(USE_MBEDTLS)
+#include <mbedtls/sha256.h>
+#elif (defined(__MAC_OS_X_VERSION_MAX_ALLOWED) && \
+              (__MAC_OS_X_VERSION_MAX_ALLOWED >= 1040)) || \
+      (defined(__IPHONE_OS_VERSION_MAX_ALLOWED) && \
+              (__IPHONE_OS_VERSION_MAX_ALLOWED >= 20000))
+#include <CommonCrypto/CommonDigest.h>
+#define AN_APPLE_OS
+#elif defined(USE_WIN32_CRYPTO)
+#include <wincrypt.h>
+#endif
+
+/* The last 3 #include files should be in this order */
+#include "curl_printf.h"
+#include "curl_memory.h"
+#include "memdebug.h"
+
+>>>>>>> 9f82eed7 (Updated Curl to 8.1.0 (#290))
 /* Please keep the SSL backend-specific #if branches in this order:
  *
  * 1. USE_OPENSSL

@@ -60,6 +60,7 @@ CURLcode Curl_getworkingpath(struct Curl_easy *data,
     else
       memcpy(real_path, working_path, 1 + working_path_len);
   }
+<<<<<<< HEAD
   else if(data->conn->handler->protocol & CURLPROTO_SFTP) {
     if((working_path_len > 1) && (working_path[1] == '~')) {
       size_t homelen = strlen(homedir);
@@ -85,6 +86,30 @@ CURLcode Curl_getworkingpath(struct Curl_easy *data,
         return CURLE_OUT_OF_MEMORY;
       }
       memcpy(real_path, working_path, 1 + working_path_len);
+=======
+  else if((data->conn->handler->protocol & CURLPROTO_SFTP) &&
+          (!strcmp("/~", working_path) ||
+           ((working_path_len > 2) && !memcmp(working_path, "/~/", 3)))) {
+    if(Curl_dyn_add(&npath, homedir)) {
+      free(working_path);
+      return CURLE_OUT_OF_MEMORY;
+    }
+    if(working_path_len > 2) {
+      size_t len;
+      const char *p;
+      int copyfrom = 3;
+      /* Copy a separating '/' if homedir does not end with one */
+      len = Curl_dyn_len(&npath);
+      p = Curl_dyn_ptr(&npath);
+      if(len && (p[len-1] != '/'))
+        copyfrom = 2;
+
+      if(Curl_dyn_addn(&npath,
+                       &working_path[copyfrom], working_path_len - copyfrom)) {
+        free(working_path);
+        return CURLE_OUT_OF_MEMORY;
+      }
+>>>>>>> 9f82eed7 (Updated Curl to 8.1.0 (#290))
     }
   }
 

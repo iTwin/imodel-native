@@ -24,6 +24,8 @@
 
 #include "curl_setup.h"
 #include "socketpair.h"
+#include "urldata.h"
+#include "rand.h"
 
 #if !defined(HAVE_SOCKETPAIR) && !defined(CURL_DISABLE_SOCKETPAIR)
 #ifdef WIN32
@@ -111,6 +113,7 @@ int Curl_socketpair(int domain, int type, int protocol,
   socks[1] = accept(listener, NULL, NULL);
   if(socks[1] == CURL_SOCKET_BAD)
     goto error;
+<<<<<<< HEAD
 
   /* verify that nothing else connected */
   addrlen = sizeof(a.inaddr);
@@ -125,6 +128,61 @@ int Curl_socketpair(int domain, int type, int protocol,
      a.inaddr.sin_addr.s_addr != a2.inaddr.sin_addr.s_addr ||
      a.inaddr.sin_port != a2.inaddr.sin_port)
     goto error;
+=======
+  else {
+    struct curltime start = Curl_now();
+    char rnd[9];
+    char check[sizeof(rnd)];
+    char *p = &check[0];
+    size_t s = sizeof(check);
+
+    if(Curl_rand(NULL, (unsigned char *)rnd, sizeof(rnd)))
+      goto error;
+
+    /* write data to the socket */
+    swrite(socks[0], rnd, sizeof(rnd));
+    /* verify that we read the correct data */
+    do {
+      ssize_t nread;
+
+      pfd[0].fd = socks[1];
+      pfd[0].events = POLLIN;
+      pfd[0].revents = 0;
+      (void)Curl_poll(pfd, 1, 1000); /* one second */
+
+      nread = sread(socks[1], p, s);
+      if(nread == -1) {
+        int sockerr = SOCKERRNO;
+        /* Don't block forever */
+        if(Curl_timediff(Curl_now(), start) > (60 * 1000))
+          goto error;
+        if(
+#ifdef WSAEWOULDBLOCK
+          /* This is how Windows does it */
+          (WSAEWOULDBLOCK == sockerr)
+#else
+          /* errno may be EWOULDBLOCK or on some systems EAGAIN when it
+             returned due to its inability to send off data without
+             blocking. We therefore treat both error codes the same here */
+          (EWOULDBLOCK == sockerr) || (EAGAIN == sockerr) ||
+          (EINTR == sockerr) || (EINPROGRESS == sockerr)
+#endif
+          ) {
+          continue;
+        }
+        goto error;
+      }
+      s -= nread;
+      if(s) {
+        p += nread;
+        continue;
+      }
+      if(memcmp(rnd, check, sizeof(check)))
+        goto error;
+      break;
+    } while(1);
+  }
+>>>>>>> 9f82eed7 (Updated Curl to 8.1.0 (#290))
 
   sclose(listener);
   return 0;

@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 #! /usr/bin/env python
+=======
+#!/usr/bin/env python3
+>>>>>>> 9f82eed7 (Updated Curl to 8.1.0 (#290))
 ###
 #
 #       build_glob.py : Build the global_functions.h and global_functions.c

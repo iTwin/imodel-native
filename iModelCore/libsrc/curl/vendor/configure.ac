@@ -173,7 +173,7 @@ curl_headers_msg="enabled (--disable-headers-api)"
     ssl_backends=
      curl_h1_msg="enabled (internal)"
      curl_h2_msg="no      (--with-nghttp2, --with-hyper)"
-     curl_h3_msg="no      (--with-ngtcp2, --with-quiche --with-msh3)"
+     curl_h3_msg="no      (--with-ngtcp2 --with-nghttp3, --with-quiche, --with-msh3)"
 
 enable_altsvc="yes"
 hsts="yes"
@@ -289,6 +289,104 @@ AS_HELP_STRING([--with-nss=PATH],[where to look for NSS, PATH points to the inst
   fi
 )
 
+<<<<<<< HEAD
+=======
+TEST_NGHTTPX=nghttpx
+AC_ARG_WITH(test-nghttpx,dnl
+AS_HELP_STRING([--with-test-nghttpx=PATH],[where to find nghttpx for testing]),
+  TEST_NGHTTPX=$withval
+  if test X"$OPT_TEST_NGHTTPX" = "Xno" ; then
+      TEST_NGHTTPX=""
+  fi
+)
+AC_SUBST(TEST_NGHTTPX)
+
+CADDY=caddy
+AC_ARG_WITH(test-caddy,dnl
+AS_HELP_STRING([--with-test-caddy=PATH],[where to find caddy for testing]),
+  CADDY=$withval
+  if test X"$OPT_CADDY" = "Xno" ; then
+      CADDY=""
+  fi
+)
+AC_SUBST(CADDY)
+
+dnl we'd like a httpd+apachectl as test server
+dnl
+HTTPD_ENABLED="maybe"
+AC_ARG_WITH(test-httpd, [AS_HELP_STRING([--with-test-httpd=PATH],
+                         [where to find httpd/apache2 for testing])],
+  [request_httpd=$withval], [request_httpd=check])
+if test x"$request_httpd" = "xcheck" -o x"$request_httpd" = "xyes"; then
+  if test -x "/usr/sbin/apache2" -a -x "/usr/sbin/apache2ctl"; then
+    # common location on distros (debian/ubuntu)
+    HTTPD="/usr/sbin/apache2"
+    APACHECTL="/usr/sbin/apache2ctl"
+    AC_PATH_PROG([APXS], [apxs])
+    if test "x$APXS" = "x"; then
+      AC_MSG_NOTICE([apache2-dev not installed, httpd tests disabled])
+      HTTPD_ENABLED="no"
+    fi
+  else
+    AC_PATH_PROG([HTTPD], [httpd])
+    if test "x$HTTPD" = "x"; then
+      AC_PATH_PROG([HTTPD], [apache2])
+    fi
+    AC_PATH_PROG([APACHECTL], [apachectl])
+    AC_PATH_PROG([APXS], [apxs])
+    if test "x$HTTPD" = "x" -o "x$APACHECTL" = "x"; then
+      AC_MSG_NOTICE([httpd/apache2 not in PATH, http tests disabled])
+      HTTPD_ENABLED="no"
+    fi
+    if test "x$APXS" = "x"; then
+      AC_MSG_NOTICE([apxs not in PATH, http tests disabled])
+      HTTPD_ENABLED="no"
+    fi
+  fi
+elif test x"$request_httpd" != "xno"; then
+  HTTPD="${request_httpd}/bin/httpd"
+  APACHECTL="${request_httpd}/bin/apachectl"
+  APXS="${request_httpd}/bin/apxs"
+  if test ! -x "${HTTPD}"; then
+    AC_MSG_NOTICE([httpd not found as ${HTTPD}, http tests disabled])
+    HTTPD_ENABLED="no"
+  elif test ! -x "${APACHECTL}"; then
+    AC_MSG_NOTICE([apachectl not found as ${APACHECTL}, http tests disabled])
+    HTTPD_ENABLED="no"
+  elif test ! -x "${APXS}"; then
+    AC_MSG_NOTICE([apxs not found as ${APXS}, http tests disabled])
+    HTTPD_ENABLED="no"
+  else
+    AC_MSG_NOTICE([using HTTPD=$HTTPD for tests])
+  fi
+fi
+if test x"$HTTPD_ENABLED" = "xno"; then
+  HTTPD=""
+  APACHECTL=""
+  APXS=""
+fi
+AC_SUBST(HTTPD)
+AC_SUBST(APACHECTL)
+AC_SUBST(APXS)
+
+dnl the nghttpx we might use in httpd testing
+if test "x$TEST_NGHTTPX" != "x" -a "x$TEST_NGHTTPX" != "xnghttpx"; then
+  HTTPD_NGHTTPX="$TEST_NGHTTPX"
+else
+  AC_PATH_PROG([HTTPD_NGHTTPX], [nghttpx], [],
+    [$PATH:/usr/bin:/usr/local/bin])
+fi
+AC_SUBST(HTTPD_NGHTTPX)
+
+dnl the Caddy server we might use in testing
+if test "x$TEST_CADDY" != "x"; then
+  CADDY="$TEST_CADDY"
+else
+  AC_PATH_PROG([CADDY], [caddy])
+fi
+AC_SUBST(CADDY)
+
+>>>>>>> 9f82eed7 (Updated Curl to 8.1.0 (#290))
 dnl If no TLS choice has been made, check if it was explicitly disabled or
 dnl error out to force the user to decide.
 if test -z "$TLSCHOICE"; then
@@ -1642,9 +1740,17 @@ AC_MSG_CHECKING([if argv can be written to])
 CURL_RUN_IFELSE([[
 int main(int argc, char **argv)
 {
+#ifdef _WIN32
+  /* on Windows, writing to the argv does not hide the argument in
+     process lists so it can just be skipped */
+  (void)argc;
+  (void)argv;
+  return 1;
+#else
   (void)argc;
   argv[0][0] = ' ';
   return (argv[0][0] == ' ')?0:1;
+#endif
 }
 ]],[
   curl_cv_writable_argv=yes
@@ -3016,7 +3122,7 @@ if test X"$want_quiche" != Xno; then
     if test "x$cross_compiling" != "xyes"; then
       DIR_QUICHE=`echo $LD_QUICHE | $SED -e 's/^-L//'`
     fi
-    AC_CHECK_LIB(quiche, quiche_connect,
+    AC_CHECK_LIB(quiche, quiche_conn_send_ack_eliciting,
       [
        AC_CHECK_HEADERS(quiche.h,
           experimental="$experimental HTTP3"
@@ -3275,6 +3381,9 @@ o=$CPPFLAGS
 CPPFLAGS="-I$srcdir/include $CPPFLAGS"
 AX_COMPILE_CHECK_SIZEOF(curl_off_t, [
 #include <curl/system.h>
+])
+CURL_SIZEOF(curl_socket_t, [
+#include <curl/curl.h>
 ])
 CPPFLAGS=$o
 
@@ -4424,6 +4533,12 @@ AC_CONFIG_FILES([Makefile \
            tests/server/Makefile \
            tests/libtest/Makefile \
            tests/unit/Makefile \
+<<<<<<< HEAD
+=======
+           tests/http/config.ini \
+           tests/http/Makefile \
+           tests/http/clients/Makefile \
+>>>>>>> 9f82eed7 (Updated Curl to 8.1.0 (#290))
            packages/Makefile \
            packages/vms/Makefile \
            curl-config \

@@ -751,7 +751,11 @@ wolfssl_connect_step2(struct Curl_easy *data, struct connectdata *conn,
   }
 
 #ifdef HAVE_ALPN
+<<<<<<< HEAD
   if(conn->bits.tls_enable_alpn) {
+=======
+  if(connssl->alpn) {
+>>>>>>> 9f82eed7 (Updated Curl to 8.1.0 (#290))
     int rc;
     char *protocol = NULL;
     unsigned short protocol_len = 0;

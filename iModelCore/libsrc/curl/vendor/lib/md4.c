@@ -24,7 +24,7 @@
 
 #include "curl_setup.h"
 
-#if !defined(CURL_DISABLE_CRYPTO_AUTH)
+#if defined(USE_CURL_NTLM_CORE)
 
 #include "curl_md4.h"
 #include "warnless.h"
@@ -61,6 +61,29 @@
 #if defined(USE_GNUTLS)
 
 #include <nettle/md4.h>
+<<<<<<< HEAD
+=======
+/* When OpenSSL or wolfSSL is available, we use their MD4 functions. */
+#elif defined(USE_WOLFSSL) && !defined(WOLFSSL_NO_MD4)
+#include <wolfssl/openssl/md4.h>
+#elif defined(USE_OPENSSL) && !defined(OPENSSL_NO_MD4)
+#include <openssl/md4.h>
+#elif (defined(__MAC_OS_X_VERSION_MAX_ALLOWED) && \
+              (__MAC_OS_X_VERSION_MAX_ALLOWED >= 1040) && \
+       defined(__MAC_OS_X_VERSION_MIN_REQUIRED) && \
+              (__MAC_OS_X_VERSION_MIN_REQUIRED < 101500)) || \
+      (defined(__IPHONE_OS_VERSION_MAX_ALLOWED) && \
+              (__IPHONE_OS_VERSION_MAX_ALLOWED >= 20000) && \
+       defined(__IPHONE_OS_VERSION_MIN_REQUIRED) && \
+              (__IPHONE_OS_VERSION_MIN_REQUIRED < 130000))
+#define AN_APPLE_OS
+#include <CommonCrypto/CommonDigest.h>
+#elif defined(USE_WIN32_CRYPTO)
+#include <wincrypt.h>
+#elif(defined(USE_MBEDTLS) && defined(MBEDTLS_MD4_C))
+#include <mbedtls/md4.h>
+#endif
+>>>>>>> 9f82eed7 (Updated Curl to 8.1.0 (#290))
 
 #include "curl_memory.h"
 
@@ -516,4 +539,4 @@ void Curl_md4it(unsigned char *output, const unsigned char *input,
   MD4_Final(output, &ctx);
 }
 
-#endif /* CURL_DISABLE_CRYPTO_AUTH */
+#endif /* USE_CURL_NTLM_CORE */

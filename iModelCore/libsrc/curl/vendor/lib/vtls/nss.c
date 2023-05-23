@@ -843,14 +843,25 @@ static SECStatus nss_auth_cert_hook(void *arg, PRFileDesc *fd, PRBool checksig,
  */
 static void HandshakeCallback(PRFileDesc *sock, void *arg)
 {
+<<<<<<< HEAD
   struct Curl_easy *data = (struct Curl_easy *)arg;
   struct connectdata *conn = data->conn;
+=======
+  struct Curl_cfilter *cf = (struct Curl_cfilter *)arg;
+  struct ssl_connect_data *connssl = cf->ctx;
+  struct Curl_easy *data = connssl->backend->data;
+>>>>>>> 9f82eed7 (Updated Curl to 8.1.0 (#290))
   unsigned int buflenmax = 50;
   unsigned char buf[50];
   unsigned int buflen;
   SSLNextProtoState state;
 
+<<<<<<< HEAD
   if(!conn->bits.tls_enable_npn && !conn->bits.tls_enable_alpn) {
+=======
+  DEBUGASSERT(data);
+  if(!connssl->alpn) {
+>>>>>>> 9f82eed7 (Updated Curl to 8.1.0 (#290))
     return;
   }
 
@@ -2143,8 +2154,14 @@ static CURLcode nss_setup_connect(struct Curl_easy *data,
 #endif
 
 #ifdef SSL_ENABLE_ALPN
+<<<<<<< HEAD
   if(SSL_OptionSet(backend->handle, SSL_ENABLE_ALPN, conn->bits.tls_enable_alpn
                    ? PR_TRUE : PR_FALSE) != SECSuccess)
+=======
+  if(SSL_OptionSet(backend->handle, SSL_ENABLE_ALPN,
+                   connssl->alpn ? PR_TRUE : PR_FALSE)
+      != SECSuccess)
+>>>>>>> 9f82eed7 (Updated Curl to 8.1.0 (#290))
     goto error;
 #endif
 

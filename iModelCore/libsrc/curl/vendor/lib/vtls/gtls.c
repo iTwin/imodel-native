@@ -1264,7 +1264,35 @@ Curl_gtls_verifyserver(struct Curl_easy *data,
 
   gnutls_x509_crt_deinit(x509_cert);
 
+<<<<<<< HEAD
   if(conn->bits.tls_enable_alpn) {
+=======
+  return result;
+}
+
+static CURLcode gtls_verifyserver(struct Curl_cfilter *cf,
+                                  struct Curl_easy *data,
+                                  gnutls_session_t session)
+{
+  struct ssl_connect_data *connssl = cf->ctx;
+  struct ssl_primary_config *conn_config = Curl_ssl_cf_get_primary_config(cf);
+  struct ssl_config_data *ssl_config = Curl_ssl_cf_get_config(cf, data);
+  const char *pinned_key = Curl_ssl_cf_is_proxy(cf)?
+    data->set.str[STRING_SSL_PINNEDPUBLICKEY_PROXY]:
+    data->set.str[STRING_SSL_PINNEDPUBLICKEY];
+  CURLcode result;
+
+  result = Curl_gtls_verifyserver(data, session, conn_config, ssl_config,
+                                  connssl->hostname, connssl->dispname,
+                                  pinned_key);
+  if(result)
+    goto out;
+
+  if(connssl->alpn) {
+    gnutls_datum_t proto;
+    int rc;
+
+>>>>>>> 9f82eed7 (Updated Curl to 8.1.0 (#290))
     rc = gnutls_alpn_get_selected_protocol(session, &proto);
     if(rc == 0) {
       infof(data, VTLS_INFOF_ALPN_ACCEPTED_LEN_1STR, proto.size,

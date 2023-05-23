@@ -27,6 +27,9 @@
 
 bool Curl_is_absolute_url(const char *url, char *scheme, size_t buflen);
 
+CURLUcode Curl_url_set_authority(CURLU *u, const char *authority,
+                                 unsigned int flags);
+
 #ifdef DEBUGBUILD
 CURLUcode Curl_parse_port(struct Curl_URL *u, char *hostname, bool);
 #endif

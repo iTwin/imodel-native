@@ -26,7 +26,11 @@
 
 #include "curl_setup.h"
 
+<<<<<<< HEAD:iModelCore/libsrc/curl/vendor/lib/vquic/quiche.h
 #ifdef USE_QUICHE
+=======
+#if defined(USE_NGTCP2) && defined(USE_NGHTTP3)
+>>>>>>> 9f82eed7 (Updated Curl to 8.1.0 (#290)):iModelCore/libsrc/curl/vendor/lib/vquic/curl_ngtcp2.h
 
 #include <quiche.h>
 #include <openssl/ssl.h>

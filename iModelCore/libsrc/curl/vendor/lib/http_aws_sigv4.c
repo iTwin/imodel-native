@@ -68,6 +68,309 @@ static void sha256_to_hex(char *dst, unsigned char *sha, size_t dst_l)
   }
 }
 
+<<<<<<< HEAD
+=======
+static char *find_date_hdr(struct Curl_easy *data, const char *sig_hdr)
+{
+  char *tmp = Curl_checkheaders(data, sig_hdr, strlen(sig_hdr));
+
+  if(tmp)
+    return tmp;
+  return Curl_checkheaders(data, STRCONST("Date"));
+}
+
+/* remove whitespace, and lowercase all headers */
+static void trim_headers(struct curl_slist *head)
+{
+  struct curl_slist *l;
+  for(l = head; l; l = l->next) {
+    char *value; /* to read from */
+    char *store;
+    size_t colon = strcspn(l->data, ":");
+    Curl_strntolower(l->data, l->data, colon);
+
+    value = &l->data[colon];
+    if(!*value)
+      continue;
+    ++value;
+    store = value;
+
+    /* skip leading whitespace */
+    while(*value && ISBLANK(*value))
+      value++;
+
+    while(*value) {
+      int space = 0;
+      while(*value && ISBLANK(*value)) {
+        value++;
+        space++;
+      }
+      if(space) {
+        /* replace any number of consecutive whitespace with a single space,
+           unless at the end of the string, then nothing */
+        if(*value)
+          *store++ = ' ';
+      }
+      else
+        *store++ = *value++;
+    }
+    *store = 0; /* null terminate */
+  }
+}
+
+/* maximum length for the aws sivg4 parts */
+#define MAX_SIGV4_LEN 64
+#define MAX_SIGV4_LEN_TXT "64"
+
+#define DATE_HDR_KEY_LEN (MAX_SIGV4_LEN + sizeof("X--Date"))
+
+#define MAX_HOST_LEN 255
+/* FQDN + host: */
+#define FULL_HOST_LEN (MAX_HOST_LEN + sizeof("host:"))
+
+/* string been x-PROVIDER-date:TIMESTAMP, I need +1 for ':' */
+#define DATE_FULL_HDR_LEN (DATE_HDR_KEY_LEN + TIMESTAMP_SIZE + 1)
+
+/* timestamp should point to a buffer of at last TIMESTAMP_SIZE bytes */
+static CURLcode make_headers(struct Curl_easy *data,
+                             const char *hostname,
+                             char *timestamp,
+                             char *provider1,
+                             char **date_header,
+                             char *content_sha256_header,
+                             struct dynbuf *canonical_headers,
+                             struct dynbuf *signed_headers)
+{
+  char date_hdr_key[DATE_HDR_KEY_LEN];
+  char date_full_hdr[DATE_FULL_HDR_LEN];
+  struct curl_slist *head = NULL;
+  struct curl_slist *tmp_head = NULL;
+  CURLcode ret = CURLE_OUT_OF_MEMORY;
+  struct curl_slist *l;
+  int again = 1;
+
+  /* provider1 mid */
+  Curl_strntolower(provider1, provider1, strlen(provider1));
+  provider1[0] = Curl_raw_toupper(provider1[0]);
+
+  msnprintf(date_hdr_key, DATE_HDR_KEY_LEN, "X-%s-Date", provider1);
+
+  /* provider1 lowercase */
+  Curl_strntolower(provider1, provider1, 1); /* first byte only */
+  msnprintf(date_full_hdr, DATE_FULL_HDR_LEN,
+            "x-%s-date:%s", provider1, timestamp);
+
+  if(Curl_checkheaders(data, STRCONST("Host"))) {
+    head = NULL;
+  }
+  else {
+    char full_host[FULL_HOST_LEN + 1];
+
+    if(data->state.aptr.host) {
+      size_t pos;
+
+      if(strlen(data->state.aptr.host) > FULL_HOST_LEN) {
+        ret = CURLE_URL_MALFORMAT;
+        goto fail;
+      }
+      strcpy(full_host, data->state.aptr.host);
+      /* remove /r/n as the separator for canonical request must be '\n' */
+      pos = strcspn(full_host, "\n\r");
+      full_host[pos] = 0;
+    }
+    else {
+      if(strlen(hostname) > MAX_HOST_LEN) {
+        ret = CURLE_URL_MALFORMAT;
+        goto fail;
+      }
+      msnprintf(full_host, FULL_HOST_LEN, "host:%s", hostname);
+    }
+
+    head = curl_slist_append(NULL, full_host);
+    if(!head)
+      goto fail;
+  }
+
+
+  if(*content_sha256_header) {
+    tmp_head = curl_slist_append(head, content_sha256_header);
+    if(!tmp_head)
+      goto fail;
+    head = tmp_head;
+  }
+
+  for(l = data->set.headers; l; l = l->next) {
+    tmp_head = curl_slist_append(head, l->data);
+    if(!tmp_head)
+      goto fail;
+    head = tmp_head;
+  }
+
+  trim_headers(head);
+
+  *date_header = find_date_hdr(data, date_hdr_key);
+  if(!*date_header) {
+    tmp_head = curl_slist_append(head, date_full_hdr);
+    if(!tmp_head)
+      goto fail;
+    head = tmp_head;
+    *date_header = curl_maprintf("%s: %s", date_hdr_key, timestamp);
+  }
+  else {
+    char *value;
+
+    *date_header = strdup(*date_header);
+    if(!*date_header)
+      goto fail;
+
+    value = strchr(*date_header, ':');
+    if(!value)
+      goto fail;
+    ++value;
+    while(ISBLANK(*value))
+      ++value;
+    strncpy(timestamp, value, TIMESTAMP_SIZE - 1);
+    timestamp[TIMESTAMP_SIZE - 1] = 0;
+  }
+
+  /* alpha-sort in a case sensitive manner */
+  do {
+    again = 0;
+    for(l = head; l; l = l->next) {
+      struct curl_slist *next = l->next;
+
+      if(next && strcmp(l->data, next->data) > 0) {
+        char *tmp = l->data;
+
+        l->data = next->data;
+        next->data = tmp;
+        again = 1;
+      }
+    }
+  } while(again);
+
+  for(l = head; l; l = l->next) {
+    char *tmp;
+
+    if(Curl_dyn_add(canonical_headers, l->data))
+      goto fail;
+    if(Curl_dyn_add(canonical_headers, "\n"))
+      goto fail;
+
+    tmp = strchr(l->data, ':');
+    if(tmp)
+      *tmp = 0;
+
+    if(l != head) {
+      if(Curl_dyn_add(signed_headers, ";"))
+        goto fail;
+    }
+    if(Curl_dyn_add(signed_headers, l->data))
+      goto fail;
+  }
+
+  ret = CURLE_OK;
+fail:
+  curl_slist_free_all(head);
+
+  return ret;
+}
+
+#define CONTENT_SHA256_KEY_LEN (MAX_SIGV4_LEN + sizeof("X--Content-Sha256"))
+/* add 2 for ": " between header name and value */
+#define CONTENT_SHA256_HDR_LEN (CONTENT_SHA256_KEY_LEN + 2 + \
+                                SHA256_HEX_LENGTH)
+
+/* try to parse a payload hash from the content-sha256 header */
+static char *parse_content_sha_hdr(struct Curl_easy *data,
+                                   const char *provider1,
+                                   size_t *value_len)
+{
+  char key[CONTENT_SHA256_KEY_LEN];
+  size_t key_len;
+  char *value;
+  size_t len;
+
+  key_len = msnprintf(key, sizeof(key), "x-%s-content-sha256", provider1);
+
+  value = Curl_checkheaders(data, key, key_len);
+  if(!value)
+    return NULL;
+
+  value = strchr(value, ':');
+  if(!value)
+    return NULL;
+  ++value;
+
+  while(*value && ISBLANK(*value))
+    ++value;
+
+  len = strlen(value);
+  while(len > 0 && ISBLANK(value[len-1]))
+    --len;
+
+  *value_len = len;
+  return value;
+}
+
+static CURLcode calc_payload_hash(struct Curl_easy *data,
+                                  unsigned char *sha_hash, char *sha_hex)
+{
+  const char *post_data = data->set.postfields;
+  size_t post_data_len = 0;
+  CURLcode result;
+
+  if(post_data) {
+    if(data->set.postfieldsize < 0)
+      post_data_len = strlen(post_data);
+    else
+      post_data_len = (size_t)data->set.postfieldsize;
+  }
+  result = Curl_sha256it(sha_hash, (const unsigned char *) post_data,
+                         post_data_len);
+  if(!result)
+    sha256_to_hex(sha_hex, sha_hash);
+  return result;
+}
+
+#define S3_UNSIGNED_PAYLOAD "UNSIGNED-PAYLOAD"
+
+static CURLcode calc_s3_payload_hash(struct Curl_easy *data,
+                                     Curl_HttpReq httpreq, char *provider1,
+                                     unsigned char *sha_hash,
+                                     char *sha_hex, char *header)
+{
+  bool empty_method = (httpreq == HTTPREQ_GET || httpreq == HTTPREQ_HEAD);
+  /* The request method or filesize indicate no request payload */
+  bool empty_payload = (empty_method || data->set.filesize == 0);
+  /* The POST payload is in memory */
+  bool post_payload = (httpreq == HTTPREQ_POST && data->set.postfields);
+  CURLcode ret = CURLE_OUT_OF_MEMORY;
+
+  if(empty_payload || post_payload) {
+    /* Calculate a real hash when we know the request payload */
+    ret = calc_payload_hash(data, sha_hash, sha_hex);
+    if(ret)
+      goto fail;
+  }
+  else {
+    /* Fall back to s3's UNSIGNED-PAYLOAD */
+    size_t len = sizeof(S3_UNSIGNED_PAYLOAD) - 1;
+    DEBUGASSERT(len < SHA256_HEX_LENGTH); /* 16 < 65 */
+    memcpy(sha_hex, S3_UNSIGNED_PAYLOAD, len);
+    sha_hex[len] = 0;
+  }
+
+  /* format the required content-sha256 header */
+  msnprintf(header, CONTENT_SHA256_HDR_LEN,
+            "x-%s-content-sha256: %s", provider1, sha_hex);
+
+  ret = CURLE_OK;
+fail:
+  return ret;
+}
+
+>>>>>>> 9f82eed7 (Updated Curl to 8.1.0 (#290))
 CURLcode Curl_output_aws_sigv4(struct Curl_easy *data, bool proxy)
 {
   CURLcode ret = CURLE_OUT_OF_MEMORY;

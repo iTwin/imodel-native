@@ -25,8 +25,12 @@
  ***************************************************************************/
 
 #include "curl_setup.h"
+
+#if !defined(CURL_DISABLE_PROXY) && !defined(CURL_DISABLE_HTTP)
+
 #include "urldata.h"
 
+<<<<<<< HEAD
 #if !defined(CURL_DISABLE_PROXY) && !defined(CURL_DISABLE_HTTP)
 /* ftp can use this as well */
 CURLcode Curl_proxyCONNECT(struct Curl_easy *data,
@@ -37,6 +41,16 @@ CURLcode Curl_proxyCONNECT(struct Curl_easy *data,
 #define PROXY_TIMEOUT (3600*1000)
 
 CURLcode Curl_proxy_connect(struct Curl_easy *data, int sockindex);
+=======
+/* Default proxy timeout in milliseconds */
+#define PROXY_TIMEOUT (3600*1000)
+
+void Curl_cf_http_proxy_get_host(struct Curl_cfilter *cf,
+                                 struct Curl_easy *data,
+                                 const char **phost,
+                                 const char **pdisplay_host,
+                                 int *pport);
+>>>>>>> 9f82eed7 (Updated Curl to 8.1.0 (#290))
 
 bool Curl_connect_complete(struct connectdata *conn);
 bool Curl_connect_ongoing(struct connectdata *conn);
@@ -52,6 +66,7 @@ void Curl_connect_done(struct Curl_easy *data);
 #define Curl_connect_done(x)
 #endif
 
+<<<<<<< HEAD
 void Curl_connect_free(struct Curl_easy *data);
 
 /* struct for HTTP CONNECT state data */
@@ -77,5 +92,11 @@ struct http_connect_state {
   BIT(chunked_encoding);
   BIT(close_connection);
 };
+=======
+#endif /* !CURL_DISABLE_PROXY  && !CURL_DISABLE_HTTP */
+
+#define IS_HTTPS_PROXY(t) (((t) == CURLPROXY_HTTPS) ||  \
+                           ((t) == CURLPROXY_HTTPS2))
+>>>>>>> 9f82eed7 (Updated Curl to 8.1.0 (#290))
 
 #endif /* HEADER_CURL_HTTP_PROXY_H */

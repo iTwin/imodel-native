@@ -866,8 +866,13 @@ static CURLcode bearssl_connect_step3(struct Curl_easy *data,
   DEBUGASSERT(ssl_connect_3 == connssl->connecting_state);
   DEBUGASSERT(backend);
 
+<<<<<<< HEAD
   if(conn->bits.tls_enable_alpn) {
     const char *protocol;
+=======
+  if(connssl->alpn) {
+    const char *proto;
+>>>>>>> 9f82eed7 (Updated Curl to 8.1.0 (#290))
 
     protocol = br_ssl_engine_get_selected_protocol(&backend->ctx.eng);
     if(protocol) {
@@ -933,8 +938,13 @@ static ssize_t bearssl_send(struct Curl_easy *data, int sockindex,
   DEBUGASSERT(backend);
 
   for(;;) {
+<<<<<<< HEAD
     *err = bearssl_run_until(data, conn, sockindex, BR_SSL_SENDAPP);
     if (*err != CURLE_OK)
+=======
+    *err = bearssl_run_until(cf, data, BR_SSL_SENDAPP);
+    if(*err)
+>>>>>>> 9f82eed7 (Updated Curl to 8.1.0 (#290))
       return -1;
     app = br_ssl_engine_sendapp_buf(&backend->ctx.eng, &applen);
     if(!app) {

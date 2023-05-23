@@ -147,6 +147,7 @@ CURLsslset Curl_init_sslset_nolock(curl_sslbackend id, const char *name,
 #define CURL_SHA256_DIGEST_LENGTH 32 /* fixed size */
 #endif
 
+<<<<<<< HEAD
 /* see https://www.iana.org/assignments/tls-extensiontype-values/ */
 #define ALPN_HTTP_1_1_LENGTH 8
 #define ALPN_HTTP_1_1 "http/1.1"
@@ -188,6 +189,8 @@ CURLsslset Curl_init_sslset_nolock(curl_sslbackend id, const char *name,
   data->set.str[STRING_SSL_PINNEDPUBLICKEY]
 #endif
 
+=======
+>>>>>>> 9f82eed7 (Updated Curl to 8.1.0 (#290))
 char *Curl_ssl_snihost(struct Curl_easy *data, const char *host, size_t *olen);
 bool Curl_ssl_config_matches(struct ssl_primary_config *data,
                              struct ssl_primary_config *needle);

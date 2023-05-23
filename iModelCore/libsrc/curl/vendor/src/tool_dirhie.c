@@ -80,7 +80,7 @@ static void show_dir_errno(FILE *errors, const char *name)
             "exceeded your quota.\n", name);
     break;
 #endif
-  default :
+  default:
     fprintf(errors, "Error creating directory %s.\n", name);
     break;
   }

@@ -339,7 +339,7 @@ long proto2num(struct OperationConfig *config, long *val, const char *str)
 
     /* Process token modifiers */
     while(!ISALNUM(*token)) { /* may be NULL if token is all modifiers */
-      switch (*token++) {
+      switch(*token++) {
       case '=':
         action = set;
         break;

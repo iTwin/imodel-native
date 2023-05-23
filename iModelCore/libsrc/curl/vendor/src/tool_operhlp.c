@@ -75,6 +75,7 @@ bool stdin_upload(const char *uploadfile)
  */
 char *add_file_name_to_url(char *url, const char *filename)
 {
+<<<<<<< HEAD
   /* If no file name part is given in the URL, we add this file name */
   char *ptr = strstr(url, "://");
   CURL *curl = curl_easy_init(); /* for url escaping */
@@ -95,6 +96,37 @@ char *add_file_name_to_url(char *url, const char *filename)
     const char *filep = strrchr(filename, '/');
     char *file2 = strrchr(filep?filep:filename, '\\');
     char *encfile;
+=======
+  CURLcode result = CURLE_URL_MALFORMAT;
+  CURLUcode uerr;
+  CURLU *uh = curl_url();
+  char *path = NULL;
+  char *query = NULL;
+  if(uh) {
+    char *ptr;
+    uerr = curl_url_set(uh, CURLUPART_URL, *inurlp,
+                    CURLU_GUESS_SCHEME|CURLU_NON_SUPPORT_SCHEME);
+    if(uerr) {
+      result = urlerr_cvt(uerr);
+      goto fail;
+    }
+    uerr = curl_url_get(uh, CURLUPART_PATH, &path, 0);
+    if(uerr) {
+      result = urlerr_cvt(uerr);
+      goto fail;
+    }
+    uerr = curl_url_get(uh, CURLUPART_QUERY, &query, 0);
+    if(!uerr && query) {
+      curl_free(query);
+      curl_free(path);
+      curl_url_cleanup(uh);
+      return CURLE_OK;
+    }
+    ptr = strrchr(path, '/');
+    if(!ptr || !*++ptr) {
+      /* The URL path has no file name part, add the local file name. In order
+         to be able to do so, we have to create a new URL in another buffer.*/
+>>>>>>> 9f82eed7 (Updated Curl to 8.1.0 (#290))
 
     if(file2)
       filep = file2 + 1;

@@ -509,7 +509,11 @@ static void close_async_handshake(struct ssl_connect_data *connssl)
   BACKEND->iocport = -1;
 }
 
+<<<<<<< HEAD
 static int pipe_ssloverssl(struct connectdata *conn, int sockindex,
+=======
+static int pipe_ssloverssl(struct Curl_cfilter *cf, struct Curl_easy *data,
+>>>>>>> 9f82eed7 (Updated Curl to 8.1.0 (#290))
                            int directions)
 {
 #ifndef CURL_DISABLE_PROXY
@@ -594,7 +598,11 @@ static void close_one(struct ssl_connect_data *connssl, struct Curl_easy *data,
     gskit_status(data, gsk_secure_soc_close(&BACKEND->handle),
               "gsk_secure_soc_close()", 0);
     /* Last chance to drain output. */
+<<<<<<< HEAD
     while(pipe_ssloverssl(conn, sockindex, SOS_WRITE) > 0)
+=======
+    while(pipe_ssloverssl(cf, data, SOS_WRITE) > 0)
+>>>>>>> 9f82eed7 (Updated Curl to 8.1.0 (#290))
       ;
     BACKEND->handle = (gsk_handle) NULL;
 #ifndef CURL_DISABLE_PROXY
@@ -623,13 +631,21 @@ static ssize_t gskit_send(struct Curl_easy *data, int sockindex,
 
   DEBUGASSERT(BACKEND);
 
+<<<<<<< HEAD
   if(pipe_ssloverssl(conn, sockindex, SOS_WRITE) >= 0) {
+=======
+  if(pipe_ssloverssl(cf, data, SOS_WRITE) >= 0) {
+>>>>>>> 9f82eed7 (Updated Curl to 8.1.0 (#290))
     cc = gskit_status(data,
                       gsk_secure_soc_write(BACKEND->handle,
                                            (char *) mem, (int) len, &written),
                       "gsk_secure_soc_write()", CURLE_SEND_ERROR);
     if(cc == CURLE_OK)
+<<<<<<< HEAD
       if(pipe_ssloverssl(conn, sockindex, SOS_WRITE) < 0)
+=======
+      if(pipe_ssloverssl(cf, data, SOS_WRITE) < 0)
+>>>>>>> 9f82eed7 (Updated Curl to 8.1.0 (#290))
         cc = CURLE_SEND_ERROR;
   }
   if(cc != CURLE_OK) {
@@ -650,7 +666,11 @@ static ssize_t gskit_recv(struct Curl_easy *data, int num, char *buf,
 
   DEBUGASSERT(BACKEND);
 
+<<<<<<< HEAD
   if(pipe_ssloverssl(conn, num, SOS_READ) >= 0) {
+=======
+  if(pipe_ssloverssl(cf, data, SOS_READ) >= 0) {
+>>>>>>> 9f82eed7 (Updated Curl to 8.1.0 (#290))
     int buffsize = buffersize > (size_t) INT_MAX? INT_MAX: (int) buffersize;
     cc = gskit_status(data, gsk_secure_soc_read(BACKEND->handle,
                                                 buf, buffsize, &nread),
@@ -708,12 +728,21 @@ static CURLcode gskit_connect_step1(struct Curl_easy *data,
   struct ssl_connect_data *connssl = &conn->ssl[sockindex];
   gsk_handle envir;
   CURLcode result;
+<<<<<<< HEAD
   const char * const keyringfile = SSL_CONN_CONFIG(CAfile);
   const char * const keyringpwd = SSL_SET_OPTION(key_passwd);
   const char * const keyringlabel = SSL_SET_OPTION(primary.clientcert);
   const long int ssl_version = SSL_CONN_CONFIG(version);
   const bool verifypeer = SSL_CONN_CONFIG(verifypeer);
   const char * const hostname = SSL_HOST_NAME();
+=======
+  const char * const keyringfile = conn_config->CAfile;
+  const char * const keyringpwd = ssl_config->key_passwd;
+  const char * const keyringlabel = ssl_config->primary.clientcert;
+  const long int ssl_version = conn_config->version;
+  const bool verifypeer = conn_config->verifypeer;
+  const char *hostname = connssl->hostname;
+>>>>>>> 9f82eed7 (Updated Curl to 8.1.0 (#290))
   const char *sni;
   unsigned int protoflags = 0;
   Qso_OverlappedIO_t commarea;
@@ -938,7 +967,7 @@ static CURLcode gskit_connect_step1(struct Curl_easy *data,
   }
 
   /* Error: rollback. */
-  close_one(connssl, data, conn, sockindex);
+  close_one(cf, data);
   return result;
 }
 
@@ -1115,7 +1144,11 @@ static CURLcode gskit_connect_common(struct Curl_easy *data,
 
   /* Handle handshake pipelining. */
   if(!result)
+<<<<<<< HEAD
     if(pipe_ssloverssl(conn, sockindex, SOS_READ | SOS_WRITE) < 0)
+=======
+    if(pipe_ssloverssl(cf, data, SOS_READ | SOS_WRITE) < 0)
+>>>>>>> 9f82eed7 (Updated Curl to 8.1.0 (#290))
       result = CURLE_SSL_CONNECT_ERROR;
 
   /* Step 2: check if handshake is over. */
@@ -1134,7 +1167,11 @@ static CURLcode gskit_connect_common(struct Curl_easy *data,
 
   /* Handle handshake pipelining. */
   if(!result)
+<<<<<<< HEAD
     if(pipe_ssloverssl(conn, sockindex, SOS_READ | SOS_WRITE) < 0)
+=======
+    if(pipe_ssloverssl(cf, data, SOS_READ | SOS_WRITE) < 0)
+>>>>>>> 9f82eed7 (Updated Curl to 8.1.0 (#290))
       result = CURLE_SSL_CONNECT_ERROR;
 
   /* Step 3: gather certificate info, verify host. */
@@ -1142,7 +1179,7 @@ static CURLcode gskit_connect_common(struct Curl_easy *data,
     result = gskit_connect_step3(data, conn, sockindex);
 
   if(result)
-    close_one(connssl, data, conn, sockindex);
+    close_one(cf, data);
   else if(connssl->connecting_state == ssl_connect_done) {
     connssl->state = ssl_connection_complete;
     connssl->connecting_state = ssl_connect_1;
@@ -1277,7 +1314,7 @@ static int gskit_check_cxn(struct connectdata *cxn)
   err = 0;
   errlen = sizeof(err);
 
-  if(getsockopt(cxn->sock[FIRSTSOCKET], SOL_SOCKET, SO_ERROR,
+  if(getsockopt(Curl_conn_cf_get_socket(cf, data), SOL_SOCKET, SO_ERROR,
                  (unsigned char *) &err, &errlen) ||
      errlen != sizeof(err) || err)
     return 0; /* connection has been closed */

@@ -25,6 +25,17 @@
  ***************************************************************************/
 #include "curl_setup.h"
 
+<<<<<<< HEAD
+=======
+#if defined(USE_MSH3) && !defined(_WIN32)
+#include <pthread.h>
+#endif
+
+#include "bufq.h"
+#include "dynhds.h"
+#include "ws.h"
+
+>>>>>>> 9f82eed7 (Updated Curl to 8.1.0 (#290))
 typedef enum {
   HTTPREQ_GET,
   HTTPREQ_POST,
@@ -36,11 +47,15 @@ typedef enum {
 
 #ifndef CURL_DISABLE_HTTP
 
+<<<<<<< HEAD
 #ifdef USE_NGHTTP2
 #include <nghttp2/nghttp2.h>
 #endif
 
 #if defined(_WIN32) && defined(ENABLE_QUIC)
+=======
+#if defined(ENABLE_QUIC)
+>>>>>>> 9f82eed7 (Updated Curl to 8.1.0 (#290))
 #include <stdint.h>
 #endif
 
@@ -50,6 +65,19 @@ extern const struct Curl_handler Curl_handler_http;
 extern const struct Curl_handler Curl_handler_https;
 #endif
 
+<<<<<<< HEAD
+=======
+#ifdef USE_WEBSOCKETS
+extern const struct Curl_handler Curl_handler_ws;
+
+#ifdef USE_SSL
+extern const struct Curl_handler Curl_handler_wss;
+#endif
+#endif /* websockets */
+
+struct dynhds;
+
+>>>>>>> 9f82eed7 (Updated Curl to 8.1.0 (#290))
 /* Header specific functions */
 bool Curl_compareheader(const char *headerline,  /* line to check */
                         const char *header,   /* header keyword _with_ colon */
@@ -84,6 +112,10 @@ CURLcode Curl_add_custom_headers(struct Curl_easy *data,
                                  void *headers
 #endif
   );
+CURLcode Curl_dynhds_add_custom(struct Curl_easy *data,
+                                bool is_connect,
+                                struct dynhds *hds);
+
 CURLcode Curl_http_compile_trailers(struct curl_slist *trailers,
                                     struct dynbuf *buf,
                                     struct Curl_easy *handle);
@@ -165,6 +197,7 @@ CURLcode Curl_http_auth_act(struct Curl_easy *data);
 
 #endif /* CURL_DISABLE_HTTP */
 
+<<<<<<< HEAD
 #ifdef USE_NGHTTP3
 struct h3out; /* see ngtcp2 */
 #endif
@@ -192,6 +225,8 @@ struct h3out; /* see ngtcp2 */
 #endif /* _WIN32 */
 #endif /* USE_MSH3 */
 
+=======
+>>>>>>> 9f82eed7 (Updated Curl to 8.1.0 (#290))
 /****************************************************************************
  * HTTP unique setup
  ***************************************************************************/
@@ -219,10 +254,13 @@ struct HTTP {
   } sending;
 
 #ifndef CURL_DISABLE_HTTP
+  void *h2_ctx;              /* HTTP/2 implementation context */
+  void *h3_ctx;              /* HTTP/3 implementation context */
   struct dynbuf send_buffer; /* used if the request couldn't be sent in one
                                 chunk, points to an allocated send_buffer
                                 struct */
 #endif
+<<<<<<< HEAD
 #ifdef USE_NGHTTP2
   /*********** for HTTP/2 we store stream-local data here *************/
   int32_t stream_id; /* stream we are interested in */
@@ -332,6 +370,8 @@ struct http_conn {
 #else
   int unused; /* prevent a compiler warning */
 #endif
+=======
+>>>>>>> 9f82eed7 (Updated Curl to 8.1.0 (#290))
 };
 
 CURLcode Curl_http_size(struct Curl_easy *data);
@@ -366,10 +406,87 @@ Curl_http_output_auth(struct Curl_easy *data,
                       bool proxytunnel); /* TRUE if this is the request setting
                                             up the proxy tunnel */
 
+<<<<<<< HEAD
 /*
  * Curl_allow_auth_to_host() tells if authentication, cookies or other
  * "sensitive data" can (still) be sent to this host.
  */
 bool Curl_allow_auth_to_host(struct Curl_easy *data);
+=======
+/* Decode HTTP status code string. */
+CURLcode Curl_http_decode_status(int *pstatus, const char *s, size_t len);
+
+
+/**
+ * All about a core HTTP request, excluding body and trailers
+ */
+struct http_req {
+  char method[12];
+  char *scheme;
+  char *authority;
+  char *path;
+  struct dynhds headers;
+  struct dynhds trailers;
+};
+
+/**
+ * Create a HTTP request struct.
+ */
+CURLcode Curl_http_req_make(struct http_req **preq,
+                            const char *method, size_t m_len,
+                            const char *scheme, size_t s_len,
+                            const char *authority, size_t a_len,
+                            const char *path, size_t p_len);
+
+CURLcode Curl_http_req_make2(struct http_req **preq,
+                             const char *method, size_t m_len,
+                             CURLU *url, const char *scheme_default);
+
+void Curl_http_req_free(struct http_req *req);
+
+#define HTTP_PSEUDO_METHOD ":method"
+#define HTTP_PSEUDO_SCHEME ":scheme"
+#define HTTP_PSEUDO_AUTHORITY ":authority"
+#define HTTP_PSEUDO_PATH ":path"
+#define HTTP_PSEUDO_STATUS ":status"
+
+/**
+ * Create the list of HTTP/2 headers which represent the request,
+ * using HTTP/2 pseudo headers preceeding the `req->headers`.
+ *
+ * Applies the following transformations:
+ * - if `authority` is set, any "Host" header is removed.
+ * - if `authority` is unset and a "Host" header is present, use
+ *   that as `authority` and remove "Host"
+ * - removes and Connection header fields as defined in rfc9113 ch. 8.2.2
+ * - lower-cases the header field names
+ *
+ * @param h2_headers will contain the HTTP/2 headers on success
+ * @param req        the request to transform
+ * @param data       the handle to lookup defaults like ' :scheme' from
+ */
+CURLcode Curl_http_req_to_h2(struct dynhds *h2_headers,
+                             struct http_req *req, struct Curl_easy *data);
+
+/**
+ * All about a core HTTP response, excluding body and trailers
+ */
+struct http_resp {
+  int status;
+  char *description;
+  struct dynhds headers;
+  struct dynhds trailers;
+  struct http_resp *prev;
+};
+
+/**
+ * Create a HTTP response struct.
+ */
+CURLcode Curl_http_resp_make(struct http_resp **presp,
+                             int status,
+                             const char *description);
+
+void Curl_http_resp_free(struct http_resp *resp);
+>>>>>>> 9f82eed7 (Updated Curl to 8.1.0 (#290))
 
 #endif /* HEADER_CURL_HTTP_H */

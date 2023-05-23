@@ -99,11 +99,21 @@
 #define PACKAGE_STRING "curl -"
 #define PACKAGE_TARNAME "curl"
 #define PACKAGE_VERSION "-"
+
+#if defined(USE_AMISSL)
+#define CURL_CA_PATH "AmiSSL:Certs"
+#elif defined(__MORPHOS__)
+#define CURL_CA_BUNDLE "MOSSYS:Data/SSL/curl-ca-bundle.crt"
+#else
 #define CURL_CA_BUNDLE "s:curl-ca-bundle.crt"
+<<<<<<< HEAD
 
 #define SELECT_TYPE_ARG1 int
 #define SELECT_TYPE_ARG234 (fd_set *)
 #define SELECT_TYPE_ARG5 (struct timeval *)
+=======
+#endif
+>>>>>>> 9f82eed7 (Updated Curl to 8.1.0 (#290))
 
 #define STDC_HEADERS 1
 #define TIME_WITH_SYS_TIME 1
