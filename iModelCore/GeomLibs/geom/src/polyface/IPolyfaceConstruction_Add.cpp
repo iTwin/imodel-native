@@ -3964,7 +3964,7 @@ double   totalSweepRadians,
 bool     capped
 )
     {
-    if (curve->IsUnionRegion () && curve->IsParityRegion ())    // We don't trust the loops on anything more than a single....
+    if (curve->IsUnionRegion () || curve->IsParityRegion ())    // We don't trust the loops on anything more than a single....
         {
         LocalCoordinateSelect frameType = LOCAL_COORDINATE_SCALE_UnitAxesAtStart;
         Transform localToWorld, worldToLocal;
