@@ -25,11 +25,14 @@ def getIgnoreList(currentTestRunnerKey):
 
     for item in rawList:
         if item.count(".") <= 1:
-            print("Test format in the ignore list is not correct");
-            print("Please follow the correct format:");
-            print("-> TestRunnerName.version.TestFixtureName.TestName");
-            print("-> Example: testRunnerNuget_bim0200_x64.2019.2.22.1.CompatibilityTestFixture.ECSqlColumnInfoForAliases");
-            print("->    Note: Use `*` in place of TestRunnerName.version for applying it on all old test runners");
+            print("Test format in the ignore list is not correct")
+            print("Please follow the correct format:")
+            print("-> TestRunnerName.version.TestFixtureName.TestName")
+            print("-> Example: testRunnerNuget_bim0200_x64.2019.2.22.1.CompatibilityTestFixture.ECSqlColumnInfoForAliases")
+            print("->    Note: Use `*` in place of TestRunnerName.version for applying it on all old test runners")
+            print("To skip a test for all test runners of only a specific stream, use following format:")
+            print("-> TestRunnerName.*.TestFixtureName.TestName")
+            print("-> Example: testRunnerNuget_bim0200_x64.*.CompatibilityTestFixture.ECSqlColumnInfoForAliases")
             sys.exit(1)
 
         testRunnerInfo = item.split(".", 2)
