@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2022 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2020-2023 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -784,7 +784,6 @@ MAKE_DECODER("ED448", ed448, ecx, SubjectPublicKeyInfo);
 # ifndef OPENSSL_NO_SM2
 MAKE_DECODER("SM2", sm2, ec, PrivateKeyInfo);
 MAKE_DECODER("SM2", sm2, ec, SubjectPublicKeyInfo);
-MAKE_DECODER("SM2", sm2, sm2, type_specific_no_pub);
 # endif
 #endif
 MAKE_DECODER("RSA", rsa, rsa, PrivateKeyInfo);

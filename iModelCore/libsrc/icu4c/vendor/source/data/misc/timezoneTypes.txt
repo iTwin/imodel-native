@@ -1,12 +1,15 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 timezoneTypes:table(nofallback){
     bcpTypeAlias{
         tz{
             aqams{"nzakl"}
+            camtr{"cator"}
             cnckg{"cnsha"}
             cnhrb{"cnsha"}
             cnkhg{"cnurc"}
+            gaza{"gazastrp"}
             usnavajo{"usden"}
         }
     }
@@ -27,6 +30,8 @@ timezoneTypes:table(nofallback){
             "America:Indiana:Indianapolis"{"America/Indianapolis"}
             "America:Kentucky:Louisville"{"America/Louisville"}
             "America:Knox_IN"{"America/Indiana/Knox"}
+            "America:Montreal"{"America/Toronto"}
+            "America:Nuuk"{"America/Godthab"}
             "America:Porto_Acre"{"America/Rio_Branco"}
             "America:Rosario"{"America/Cordoba"}
             "America:Shiprock"{"America/Denver"}
@@ -84,12 +89,14 @@ timezoneTypes:table(nofallback){
             "Etc:Universal"{"Etc/UTC"}
             "Etc:Zulu"{"Etc/UTC"}
             "Europe:Belfast"{"Europe/London"}
+            "Europe:Kyiv"{"Europe/Kiev"}
             "Europe:Nicosia"{"Asia/Nicosia"}
             "Europe:Tiraspol"{"Europe/Chisinau"}
             "Mexico:BajaNorte"{"America/Tijuana"}
             "Mexico:BajaSur"{"America/Mazatlan"}
             "Mexico:General"{"America/Mexico_City"}
             "Pacific:Chuuk"{"Pacific/Truk"}
+            "Pacific:Kanton"{"Pacific/Enderbury"}
             "Pacific:Pohnpei"{"Pacific/Ponape"}
             "Pacific:Samoa"{"Pacific/Pago_Pago"}
             "Pacific:Yap"{"Pacific/Truk"}
@@ -231,6 +238,7 @@ timezoneTypes:table(nofallback){
             "America:Cayman"{"kygec"}
             "America:Chicago"{"uschi"}
             "America:Chihuahua"{"mxchi"}
+            "America:Ciudad_Juarez"{"mxcjs"}
             "America:Coral_Harbour"{"cayzs"}
             "America:Cordoba"{"arcor"}
             "America:Costa_Rica"{"crsjo"}
@@ -296,7 +304,6 @@ timezoneTypes:table(nofallback){
             "America:Moncton"{"camon"}
             "America:Monterrey"{"mxmty"}
             "America:Montevideo"{"uymvd"}
-            "America:Montreal"{"camtr"}
             "America:Montserrat"{"msmni"}
             "America:Nassau"{"bsnas"}
             "America:New_York"{"usnyc"}
@@ -385,7 +392,7 @@ timezoneTypes:table(nofallback){
             "Asia:Dubai"{"aedxb"}
             "Asia:Dushanbe"{"tjdyu"}
             "Asia:Famagusta"{"cyfmg"}
-            "Asia:Gaza"{"gaza"}
+            "Asia:Gaza"{"gazastrp"}
             "Asia:Hebron"{"hebron"}
             "Asia:Hong_Kong"{"hkhkg"}
             "Asia:Hovd"{"mnhvd"}

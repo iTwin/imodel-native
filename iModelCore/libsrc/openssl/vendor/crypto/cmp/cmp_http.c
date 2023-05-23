@@ -1,5 +1,5 @@
 /*
- * Copyright 2007-2021 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2007-2022 The OpenSSL Project Authors. All Rights Reserved.
  * Copyright Nokia 2007-2019
  * Copyright Siemens AG 2015-2019
  *
@@ -14,6 +14,7 @@
 
 #include <openssl/asn1t.h>
 #include <openssl/http.h>
+#include "internal/sockets.h"
 
 #include <openssl/cmp.h>
 #include "cmp_local.h"

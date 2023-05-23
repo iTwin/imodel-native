@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2022 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2019-2023 The OpenSSL Project Authors. All Rights Reserved.
  * Copyright (c) 2019, Oracle and/or its affiliates.  All rights reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
@@ -502,13 +502,14 @@ int ossl_method_store_fetch(OSSL_METHOD_STORE *store,
     int ret = 0;
     int j, best = -1, score, optional;
 
-#ifndef FIPS_MODULE
-    if (!OPENSSL_init_crypto(OPENSSL_INIT_LOAD_CONFIG, NULL))
-        return 0;
-#endif
-
     if (nid <= 0 || method == NULL || store == NULL)
         return 0;
+
+#ifndef FIPS_MODULE
+    if (ossl_lib_ctx_is_default(store->ctx)
+            && !OPENSSL_init_crypto(OPENSSL_INIT_LOAD_CONFIG, NULL))
+        return 0;
+#endif
 
     /* This only needs to be a read lock, because the query won't create anything */
     if (!ossl_property_read_lock(store))
@@ -665,7 +666,7 @@ static void ossl_method_cache_flush_some(OSSL_METHOD_STORE *store)
     store->cache_nelem = state.nelem;
     /* Without a timer, update the global seed */
     if (state.using_global_seed)
-        tsan_add(&global_seed, state.seed);
+        tsan_store(&global_seed, state.seed);
 }
 
 int ossl_method_store_cache_get(OSSL_METHOD_STORE *store, OSSL_PROVIDER *prov,

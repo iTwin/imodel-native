@@ -1,5 +1,5 @@
 /*
- * Copyright 2007-2022 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2007-2023 The OpenSSL Project Authors. All Rights Reserved.
  * Copyright Nokia 2007-2019
  * Copyright Siemens AG 2015-2019
  *
@@ -11,6 +11,7 @@
 
 #include "cmp_local.h"
 #include "internal/cryptlib.h"
+#include "internal/e_os.h" /* ossl_sleep() */
 
 /* explicit #includes not strictly needed since implied by the above: */
 #include <openssl/bio.h>
@@ -327,7 +328,7 @@ static int poll_for_response(OSSL_CMP_CTX *ctx, int sleep, int rid,
             OSSL_CMP_MSG_free(prep);
             prep = NULL;
             if (sleep) {
-                OSSL_sleep((unsigned long)(1000 * check_after));
+                ossl_sleep((unsigned long)(1000 * check_after));
             } else {
                 if (checkAfter != NULL)
                     *checkAfter = (int)check_after;
@@ -487,24 +488,51 @@ int OSSL_CMP_certConf_cb(OSSL_CMP_CTX *ctx, X509 *cert, int fail_info,
 {
     X509_STORE *out_trusted = OSSL_CMP_CTX_get_certConf_cb_arg(ctx);
     STACK_OF(X509) *chain = NULL;
-
     (void)text; /* make (artificial) use of var to prevent compiler warning */
 
     if (fail_info != 0) /* accept any error flagged by CMP core library */
         return fail_info;
 
-    ossl_cmp_debug(ctx, "trying to build chain for newly enrolled cert");
-    chain = X509_build_chain(cert, ctx->untrusted, out_trusted /* maybe NULL */,
-                             0, ctx->libctx, ctx->propq);
+    if (out_trusted == NULL) {
+        ossl_cmp_debug(ctx, "trying to build chain for newly enrolled cert");
+        chain = X509_build_chain(cert, ctx->untrusted, out_trusted,
+                                 0, ctx->libctx, ctx->propq);
+    } else {
+        X509_STORE_CTX *csc = X509_STORE_CTX_new_ex(ctx->libctx, ctx->propq);
+
+        ossl_cmp_debug(ctx, "validating newly enrolled cert");
+        if (csc == NULL)
+            goto err;
+        if (!X509_STORE_CTX_init(csc, out_trusted, cert, ctx->untrusted))
+            goto err;
+        /* disable any cert status/revocation checking etc. */
+        X509_VERIFY_PARAM_clear_flags(X509_STORE_CTX_get0_param(csc),
+                                      ~(X509_V_FLAG_USE_CHECK_TIME
+                                        | X509_V_FLAG_NO_CHECK_TIME
+                                        | X509_V_FLAG_PARTIAL_CHAIN
+                                        | X509_V_FLAG_POLICY_CHECK));
+        if (X509_verify_cert(csc) <= 0)
+            goto err;
+
+        if (!ossl_x509_add_certs_new(&chain,  X509_STORE_CTX_get0_chain(csc),
+                                     X509_ADD_FLAG_UP_REF | X509_ADD_FLAG_NO_DUP
+                                     | X509_ADD_FLAG_NO_SS)) {
+            sk_X509_free(chain);
+            chain = NULL;
+        }
+    err:
+        X509_STORE_CTX_free(csc);
+    }
+
     if (sk_X509_num(chain) > 0)
         X509_free(sk_X509_shift(chain)); /* remove leaf (EE) cert */
     if (out_trusted != NULL) {
         if (chain == NULL) {
-            ossl_cmp_err(ctx, "failed building chain for newly enrolled cert");
+            ossl_cmp_err(ctx, "failed to validate newly enrolled cert");
             fail_info = 1 << OSSL_CMP_PKIFAILUREINFO_incorrectData;
         } else {
             ossl_cmp_debug(ctx,
-                           "succeeded building proper chain for newly enrolled cert");
+                           "success validating newly enrolled cert");
         }
     } else if (chain == NULL) {
         ossl_cmp_warn(ctx, "could not build approximate chain for newly enrolled cert, resorting to received extraCerts");
@@ -514,7 +542,7 @@ int OSSL_CMP_certConf_cb(OSSL_CMP_CTX *ctx, X509 *cert, int fail_info,
                        "success building approximate chain for newly enrolled cert");
     }
     (void)ossl_cmp_ctx_set1_newChain(ctx, chain);
-    OSSL_STACK_OF_X509_free(chain);
+    sk_X509_pop_free(chain, X509_free);
 
     return fail_info;
 }
@@ -701,6 +729,7 @@ int OSSL_CMP_try_certreq(OSSL_CMP_CTX *ctx, int req_type,
 X509 *OSSL_CMP_exec_certreq(OSSL_CMP_CTX *ctx, int req_type,
                             const OSSL_CRMF_MSG *crm)
 {
+
     OSSL_CMP_MSG *rep = NULL;
     int is_p10 = req_type == OSSL_CMP_PKIBODY_P10CR;
     int rid = is_p10 ? -1 : OSSL_CMP_CERTREQID;
@@ -808,8 +837,7 @@ int OSSL_CMP_exec_RR_ses(OSSL_CMP_CTX *ctx)
         OSSL_CRMF_CERTTEMPLATE *tmpl =
             sk_OSSL_CMP_REVDETAILS_value(rr->body->value.rr, rsid)->certDetails;
         const X509_NAME *issuer = OSSL_CRMF_CERTTEMPLATE_get0_issuer(tmpl);
-        const ASN1_INTEGER *serial =
-            OSSL_CRMF_CERTTEMPLATE_get0_serialNumber(tmpl);
+        const ASN1_INTEGER *serial = OSSL_CRMF_CERTTEMPLATE_get0_serialNumber(tmpl);
 
         if (sk_OSSL_CRMF_CERTID_num(rrep->revCerts) != num_RevDetails) {
             ERR_raise(ERR_LIB_CMP, CMP_R_WRONG_RP_COMPONENT_COUNT);

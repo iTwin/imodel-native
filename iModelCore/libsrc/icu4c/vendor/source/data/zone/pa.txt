@@ -1,7 +1,7 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 pa{
-    Version{"2.1.48.20"}
     zoneStrings{
         "Africa:Abidjan"{
             ec{"ਅਬੀਦਜਾਨ"}
@@ -257,6 +257,9 @@ pa{
         }
         "America:Chihuahua"{
             ec{"ਚਿਹੁਆਹੁਆ"}
+        }
+        "America:Ciudad_Juarez"{
+            ec{"ਸਿਉਡਾਡ ਹੁਆਰੇਜ਼"}
         }
         "America:Coral_Harbour"{
             ec{"ਐਟੀਕੋਕਨ"}
@@ -811,7 +814,7 @@ pa{
             ec{"ਕਤਰ"}
         }
         "Asia:Qostanay"{
-            ec{"ਕੋਸਟਨੇਏ"}
+            ec{"ਕੋਸਤਾਨਾਏ"}
         }
         "Asia:Qyzylorda"{
             ec{"ਕਿਜ਼ੀਲੋਰਡਾ"}
@@ -1222,6 +1225,9 @@ pa{
         }
         "Pacific:Johnston"{
             ec{"ਜੋਨਸਟਨ"}
+        }
+        "Pacific:Kanton"{
+            ec{"ਕੈਂਟੋਨ"}
         }
         "Pacific:Kiritimati"{
             ec{"ਕਿਰਿਤਿਮਤੀ"}
@@ -1740,7 +1746,9 @@ pa{
             ls{"ਨੀਊ ਵੇਲਾ"}
         }
         "meta:Norfolk"{
-            ls{"ਨੋਰਫੌਕ ਆਈਲੈਂਡ ਵੇਲਾ"}
+            ld{"ਨੋਰਫੌਕ ਆਈਲੈਂਡ ਪ੍ਰਕਾਸ਼ ਵੇਲਾ"}
+            lg{"ਨੋਰਫੌਕ ਆਈਲੈਂਡ ਵੇਲਾ"}
+            ls{"ਨੋਰਫੌਕ ਆਈਲੈਂਡ ਮਿਆਰੀ ਵੇਲਾ"}
         }
         "meta:Noronha"{
             ld{"ਫਰਨਾਂਡੋ ਡੇ ਨੋਰੋਨਹਾ ਗਰਮੀਆਂ ਦਾ ਵੇਲਾ"}
@@ -1918,6 +1926,9 @@ pa{
             ld{"ਯਕੇਤਰਿਨਬਰਗ ਗਰਮੀਆਂ ਦਾ ਵੇਲਾ"}
             lg{"ਯਕੇਤਰਿਨਬਰਗ ਵੇਲਾ"}
             ls{"ਯਕੇਤਰਿਨਬਰਗ ਮਿਆਰੀ ਵੇਲਾ"}
+        }
+        "meta:Yukon"{
+            ls{"ਯੂਕੋਨ ਸਮਾਂ"}
         }
         fallbackFormat{"{1} ({0})"}
         gmtFormat{"GMT{0}"}

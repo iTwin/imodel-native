@@ -1,36 +1,17 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 en_GB{
     %%Parent{"en_001"}
-    Version{"2.1.47.86"}
-    calendar{
-        generic{
-            availableFormats{
-                MEd{"E dd/MM"}
-                MMMEd{"E d MMM"}
-            }
-            intervalFormats{
-                M{
-                    M{"M–M"}
-                }
-                MMMd{
-                    d{"d–d MMM"}
-                }
-                Md{
-                    M{"dd/MM–dd/MM"}
-                    d{"dd/MM–dd/MM"}
-                }
-                d{
-                    d{"d–d"}
-                }
-                y{
-                    y{"y–y G"}
-                }
-                yMMMd{
-                    d{"d–d MMM y G"}
-                }
+    NumberElements{
+        latn{
+            miscPatterns{
+                range{"{0}–{1}"}
             }
         }
+        minimumGroupingDigits{"1"}
+    }
+    calendar{
         gregorian{
             DateTimePatterns{
                 "HH:mm:ss zzzz",
@@ -42,116 +23,148 @@ en_GB{
                 "d MMM y",
                 "dd/MM/y",
                 "{1}, {0}",
-                "{1} 'at' {0}",
-                "{1} 'at' {0}",
+                "{1}, {0}",
+                "{1}, {0}",
                 "{1}, {0}",
                 "{1}, {0}",
             }
-            dayPeriod{
+            DateTimeSkeletons{
+                "HHmmsszzzz",
+                "HHmmssz",
+                "HHmmss",
+                "HHmm",
+                "yMMMMEEEEd",
+                "yMMMMd",
+                "yMMMd",
+                "yMMdd",
+            }
+            dayNames{
                 format{
-                    abbreviated{
-                        noon{"noon"}
-                    }
                     narrow{
-                        noon{"n"}
-                    }
-                    wide{
-                        noon{"noon"}
+                        "S",
+                        "M",
+                        "T",
+                        "W",
+                        "T",
+                        "F",
+                        "S",
                     }
                 }
                 stand-alone{
-                    narrow{
-                        pm{"pm"}
+                    abbreviated{
+                        "Sun",
+                        "Mon",
+                        "Tue",
+                        "Wed",
+                        "Thu",
+                        "Fri",
+                        "Sat",
+                    }
+                    short{
+                        "Su",
+                        "Mo",
+                        "Tu",
+                        "We",
+                        "Th",
+                        "Fr",
+                        "Sa",
+                    }
+                    wide{
+                        "Sunday",
+                        "Monday",
+                        "Tuesday",
+                        "Wednesday",
+                        "Thursday",
+                        "Friday",
+                        "Saturday",
                     }
                 }
             }
-            intervalFormats{
-                H{
-                    H{"HH–HH"}
-                }
-                Hm{
-                    H{"HH:mm–HH:mm"}
-                    m{"HH:mm–HH:mm"}
-                }
-                Hmv{
-                    H{"HH:mm–HH:mm v"}
-                    m{"HH:mm–HH:mm v"}
-                }
-                Hv{
-                    H{"HH–HH v"}
-                }
-                M{
-                    M{"M–M"}
-                }
-                MMMd{
-                    d{"d–d MMM"}
-                }
-                d{
-                    d{"d–d"}
-                }
-                h{
-                    h{"h–h a"}
-                }
-                hv{
-                    h{"h–h a v"}
-                }
-                y{
-                    y{"y–y"}
-                }
-                yMMMd{
-                    d{"d–d MMM y"}
+            dayPeriod{
+                stand-alone{
+                    narrow{
+                        midnight{"midnight"}
+                        noon{"noon"}
+                    }
                 }
             }
-        }
-        islamic{
-            availableFormats{
-                MEd{"E dd/MM"}
-                MMMEd{"E d MMM"}
+            monthNames{
+                format{
+                    narrow{
+                        "J",
+                        "F",
+                        "M",
+                        "A",
+                        "M",
+                        "J",
+                        "J",
+                        "A",
+                        "S",
+                        "O",
+                        "N",
+                        "D",
+                    }
+                }
+                stand-alone{
+                    abbreviated{
+                        "Jan",
+                        "Feb",
+                        "Mar",
+                        "Apr",
+                        "May",
+                        "Jun",
+                        "Jul",
+                        "Aug",
+                        "Sept",
+                        "Oct",
+                        "Nov",
+                        "Dec",
+                    }
+                    wide{
+                        "January",
+                        "February",
+                        "March",
+                        "April",
+                        "May",
+                        "June",
+                        "July",
+                        "August",
+                        "September",
+                        "October",
+                        "November",
+                        "December",
+                    }
+                }
+            }
+            quarters{
+                format{
+                    narrow{
+                        "1",
+                        "2",
+                        "3",
+                        "4",
+                    }
+                }
+                stand-alone{
+                    abbreviated{
+                        "Q1",
+                        "Q2",
+                        "Q3",
+                        "Q4",
+                    }
+                    wide{
+                        "1st quarter",
+                        "2nd quarter",
+                        "3rd quarter",
+                        "4th quarter",
+                    }
+                }
             }
         }
     }
-    characterLabel{
-        math_symbols{"maths symbol"}
-    }
-    fields{
-        day{
-            relative{
-                "-1"{"yesterday"}
-                "0"{"today"}
-                "1"{"tomorrow"}
-            }
-        }
-        day-narrow{
-            relative{
-                "-1"{"yesterday"}
-                "0"{"today"}
-                "1"{"tomorrow"}
-            }
-        }
-        day-short{
-            relative{
-                "-1"{"yesterday"}
-            }
-            relativeTime{
-                future{
-                    other{"in {0} days"}
-                }
-                past{
-                    other{"{0} days ago"}
-                }
-            }
-        }
-    }
-    listPattern{
-        or{
-            end{"{0} or {1}"}
-        }
-        standard{
-            end{"{0} and {1}"}
-        }
-        standard-short{
-            2{"{0} and {1}"}
-            end{"{0} and {1}"}
+    personNames{
+        initialPattern{
+            initial{"{0}"}
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 et{
     Countries{
         001{"maailm"}
@@ -115,7 +116,7 @@ et{
         FO{"Fääri saared"}
         FR{"Prantsusmaa"}
         GA{"Gabon"}
-        GB{"Suurbritannia"}
+        GB{"Ühendkuningriik"}
         GD{"Grenada"}
         GE{"Gruusia"}
         GF{"Prantsuse Guajaana"}
@@ -274,7 +275,7 @@ et{
         UA{"Ukraina"}
         UG{"Uganda"}
         UM{"Ühendriikide hajasaared"}
-        UN{"Ühendatud Rahvaste Organisatsioon"}
+        UN{"Ühinenud Rahvaste Organisatsioon"}
         US{"Ameerika Ühendriigid"}
         UY{"Uruguay"}
         UZ{"Usbekistan"}
@@ -295,7 +296,7 @@ et{
         ZA{"Lõuna-Aafrika Vabariik"}
         ZM{"Sambia"}
         ZW{"Zimbabwe"}
-        ZZ{"Tundmatu piirkond"}
+        ZZ{"tundmatu piirkond"}
     }
     Countries%short{
         GB{"ÜK"}
@@ -309,10 +310,10 @@ et{
         CD{"Kongo-Kinshasa"}
         CG{"Kongo-Brazzaville"}
         CI{"Elevandiluurannik"}
-        CZ{"Tšehhia"}
-        FK{"Malviini saared"}
+        CZ{"Tšehhi Vabariik"}
+        FK{"Falklandi saared (Malviini saared)"}
+        NZ{"Aotearoa Uus-Meremaa"}
         SZ{"eSwatini"}
         TL{"Timor-Leste"}
     }
-    Version{"2.1.48.42"}
 }

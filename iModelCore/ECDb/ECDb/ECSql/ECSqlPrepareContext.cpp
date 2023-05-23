@@ -151,6 +151,47 @@ bvector<Utf8String> ECSqlPrepareContext::SelectClauseInfo::Split(Utf8StringCR ac
     return output;
     }
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String ECSqlPrepareContext::SqlAnchors::CreateAnchorStr(Utf8CP name, size_t id){
+    Utf8String anchor;
+    anchor.Sprintf("/*<%s>: %" PRIu64 "*/", name, id);
+    return anchor;
+}
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String ECSqlPrepareContext::SqlAnchors::CreateAnchor(Utf8CP name)
+    {
+    const auto newId = m_anchors.size() + 1;
+    auto newAnchorName = CreateAnchorStr(name, newId);
+    m_anchors[newAnchorName] = "";
+    return newAnchorName;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECSqlPrepareContext::SqlAnchors::QueueReplacementForAnchor(Utf8StringCR anchorName, Utf8CP replacement)
+    {
+    auto it = m_anchors.find(anchorName);
+    if (it == m_anchors.end() || !it->second.empty())
+        return;
+    it->second.assign(replacement);
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECSqlPrepareContext::SqlAnchors::ExecutePendingReplacements(NativeSqlBuilder& builder)
+    {
+    for(auto& v : m_anchors)
+        builder.Replace(v.first.c_str(), v.second.c_str());
+
+    m_anchors.clear();
+    }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
 

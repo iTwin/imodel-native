@@ -306,7 +306,6 @@ OSSL_DEPRECATEDIN_3_0 int
 # define         EVP_CIPH_WRAP_MODE              0x10002
 # define         EVP_CIPH_OCB_MODE               0x10003
 # define         EVP_CIPH_SIV_MODE               0x10004
-# define         EVP_CIPH_GCM_SIV_MODE           0x10005
 # define         EVP_CIPH_MODE                   0xF0007
 /* Set if variable length cipher */
 # define         EVP_CIPH_VARIABLE_LENGTH        0x8
@@ -673,7 +672,7 @@ void BIO_set_md(BIO *, const EVP_MD *md);
 # define BIO_get_cipher_status(b)   BIO_ctrl(b,BIO_C_GET_CIPHER_STATUS,0,NULL)
 # define BIO_get_cipher_ctx(b,c_pp) BIO_ctrl(b,BIO_C_GET_CIPHER_CTX,0,(c_pp))
 
-__owur int EVP_Cipher(EVP_CIPHER_CTX *c,
+/*__owur*/ int EVP_Cipher(EVP_CIPHER_CTX *c,
                           unsigned char *out,
                           const unsigned char *in, unsigned int inl);
 
@@ -751,7 +750,7 @@ int EVP_CIPHER_CTX_test_flags(const EVP_CIPHER_CTX *ctx, int flags);
 
 __owur int EVP_EncryptInit(EVP_CIPHER_CTX *ctx, const EVP_CIPHER *cipher,
                            const unsigned char *key, const unsigned char *iv);
-__owur int EVP_EncryptInit_ex(EVP_CIPHER_CTX *ctx,
+/*__owur*/ int EVP_EncryptInit_ex(EVP_CIPHER_CTX *ctx,
                                   const EVP_CIPHER *cipher, ENGINE *impl,
                                   const unsigned char *key,
                                   const unsigned char *iv);
@@ -759,16 +758,16 @@ __owur int EVP_EncryptInit_ex2(EVP_CIPHER_CTX *ctx, const EVP_CIPHER *cipher,
                                const unsigned char *key,
                                const unsigned char *iv,
                                const OSSL_PARAM params[]);
-__owur int EVP_EncryptUpdate(EVP_CIPHER_CTX *ctx, unsigned char *out,
+/*__owur*/ int EVP_EncryptUpdate(EVP_CIPHER_CTX *ctx, unsigned char *out,
                                  int *outl, const unsigned char *in, int inl);
-__owur int EVP_EncryptFinal_ex(EVP_CIPHER_CTX *ctx, unsigned char *out,
+/*__owur*/ int EVP_EncryptFinal_ex(EVP_CIPHER_CTX *ctx, unsigned char *out,
                                    int *outl);
-__owur int EVP_EncryptFinal(EVP_CIPHER_CTX *ctx, unsigned char *out,
+/*__owur*/ int EVP_EncryptFinal(EVP_CIPHER_CTX *ctx, unsigned char *out,
                                 int *outl);
 
 __owur int EVP_DecryptInit(EVP_CIPHER_CTX *ctx, const EVP_CIPHER *cipher,
                            const unsigned char *key, const unsigned char *iv);
-__owur int EVP_DecryptInit_ex(EVP_CIPHER_CTX *ctx,
+/*__owur*/ int EVP_DecryptInit_ex(EVP_CIPHER_CTX *ctx,
                                   const EVP_CIPHER *cipher, ENGINE *impl,
                                   const unsigned char *key,
                                   const unsigned char *iv);
@@ -776,17 +775,17 @@ __owur int EVP_DecryptInit_ex2(EVP_CIPHER_CTX *ctx, const EVP_CIPHER *cipher,
                                const unsigned char *key,
                                const unsigned char *iv,
                                const OSSL_PARAM params[]);
-__owur int EVP_DecryptUpdate(EVP_CIPHER_CTX *ctx, unsigned char *out,
+/*__owur*/ int EVP_DecryptUpdate(EVP_CIPHER_CTX *ctx, unsigned char *out,
                                  int *outl, const unsigned char *in, int inl);
 __owur int EVP_DecryptFinal(EVP_CIPHER_CTX *ctx, unsigned char *outm,
                             int *outl);
-__owur int EVP_DecryptFinal_ex(EVP_CIPHER_CTX *ctx, unsigned char *outm,
+/*__owur*/ int EVP_DecryptFinal_ex(EVP_CIPHER_CTX *ctx, unsigned char *outm,
                                    int *outl);
 
 __owur int EVP_CipherInit(EVP_CIPHER_CTX *ctx, const EVP_CIPHER *cipher,
                           const unsigned char *key, const unsigned char *iv,
                           int enc);
-__owur int EVP_CipherInit_ex(EVP_CIPHER_CTX *ctx,
+/*__owur*/ int EVP_CipherInit_ex(EVP_CIPHER_CTX *ctx,
                                  const EVP_CIPHER *cipher, ENGINE *impl,
                                  const unsigned char *key,
                                  const unsigned char *iv, int enc);
@@ -820,18 +819,18 @@ __owur int EVP_DigestVerify(EVP_MD_CTX *ctx, const unsigned char *sigret,
                             size_t siglen, const unsigned char *tbs,
                             size_t tbslen);
 
-__owur int EVP_DigestSignInit_ex(EVP_MD_CTX *ctx, EVP_PKEY_CTX **pctx,
+int EVP_DigestSignInit_ex(EVP_MD_CTX *ctx, EVP_PKEY_CTX **pctx,
                           const char *mdname, OSSL_LIB_CTX *libctx,
                           const char *props, EVP_PKEY *pkey,
                           const OSSL_PARAM params[]);
-__owur int EVP_DigestSignInit(EVP_MD_CTX *ctx, EVP_PKEY_CTX **pctx,
+/*__owur*/ int EVP_DigestSignInit(EVP_MD_CTX *ctx, EVP_PKEY_CTX **pctx,
                                   const EVP_MD *type, ENGINE *e,
                                   EVP_PKEY *pkey);
-__owur int EVP_DigestSignUpdate(EVP_MD_CTX *ctx, const void *data, size_t dsize);
+int EVP_DigestSignUpdate(EVP_MD_CTX *ctx, const void *data, size_t dsize);
 __owur int EVP_DigestSignFinal(EVP_MD_CTX *ctx, unsigned char *sigret,
                                size_t *siglen);
 
-__owur int EVP_DigestVerifyInit_ex(EVP_MD_CTX *ctx, EVP_PKEY_CTX **pctx,
+int EVP_DigestVerifyInit_ex(EVP_MD_CTX *ctx, EVP_PKEY_CTX **pctx,
                             const char *mdname, OSSL_LIB_CTX *libctx,
                             const char *props, EVP_PKEY *pkey,
                             const OSSL_PARAM params[]);
@@ -1926,17 +1925,14 @@ int EVP_PKEY_derive_set_peer(EVP_PKEY_CTX *ctx, EVP_PKEY *peer);
 int EVP_PKEY_derive(EVP_PKEY_CTX *ctx, unsigned char *key, size_t *keylen);
 
 int EVP_PKEY_encapsulate_init(EVP_PKEY_CTX *ctx, const OSSL_PARAM params[]);
-int EVP_PKEY_auth_encapsulate_init(EVP_PKEY_CTX *ctx, EVP_PKEY *authpriv,
-                                   const OSSL_PARAM params[]);
 int EVP_PKEY_encapsulate(EVP_PKEY_CTX *ctx,
                          unsigned char *wrappedkey, size_t *wrappedkeylen,
                          unsigned char *genkey, size_t *genkeylen);
 int EVP_PKEY_decapsulate_init(EVP_PKEY_CTX *ctx, const OSSL_PARAM params[]);
-int EVP_PKEY_auth_decapsulate_init(EVP_PKEY_CTX *ctx, EVP_PKEY *authpub,
-                                   const OSSL_PARAM params[]);
 int EVP_PKEY_decapsulate(EVP_PKEY_CTX *ctx,
                          unsigned char *unwrapped, size_t *unwrappedlen,
                          const unsigned char *wrapped, size_t wrappedlen);
+
 typedef int EVP_PKEY_gen_cb(EVP_PKEY_CTX *ctx);
 
 int EVP_PKEY_fromdata_init(EVP_PKEY_CTX *ctx);

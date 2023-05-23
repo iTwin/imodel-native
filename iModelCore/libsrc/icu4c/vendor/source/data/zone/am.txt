@@ -1,7 +1,7 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 am{
-    Version{"2.1.49.82"}
     zoneStrings{
         "Africa:Abidjan"{
             ec{"አቢጃን"}
@@ -257,6 +257,9 @@ am{
         }
         "America:Chihuahua"{
             ec{"ቺሁዋውአ"}
+        }
+        "America:Ciudad_Juarez"{
+            ec{"ሳዮዳድ ሁዋሬዝ"}
         }
         "America:Coral_Harbour"{
             ec{"አቲኮካን"}
@@ -810,6 +813,9 @@ am{
         "Asia:Qatar"{
             ec{"ኳታር"}
         }
+        "Asia:Qostanay"{
+            ec{"ኮስታናይ"}
+        }
         "Asia:Qyzylorda"{
             ec{"ኩይዚሎርዳ"}
         }
@@ -1219,6 +1225,9 @@ am{
         }
         "Pacific:Johnston"{
             ec{"ጆንስተን"}
+        }
+        "Pacific:Kanton"{
+            ec{"ካንቶን"}
         }
         "Pacific:Kiritimati"{
             ec{"ኪሪቲማቲ"}
@@ -1717,7 +1726,9 @@ am{
             ls{"የኒዩዌ ሰዓት"}
         }
         "meta:Norfolk"{
-            ls{"የኖርፎልክ ደሴቶች ሰዓት"}
+            ld{"የኖርፎልክ ደሴቶች የቀን የሰዓት አቆጣጠር"}
+            lg{"የኖርፎልክ ደሴቶች ሰዓት"}
+            ls{"የኖርፎልክ ደሴቶች መደበኛ የሰዓት አቆጣጠር"}
         }
         "meta:Noronha"{
             ld{"የፈርናንዶ ዲ ኖሮንሃ የበጋ የሰዓት አቆጣጠር"}
@@ -1892,6 +1903,9 @@ am{
             ld{"የየካተሪንበርግ የበጋ ሰዓት አቆጣጠር"}
             lg{"የየካተሪንበርግ ሰዓት አቆጣጠር"}
             ls{"የየካተሪንበርግ መደበኛ ሰዓት አቆጣጠር"}
+        }
+        "meta:Yukon"{
+            ls{"የዩኮን ጊዜ"}
         }
         fallbackFormat{"{1} ({0})"}
         gmtFormat{"ጂ ኤም ቲ{0}"}

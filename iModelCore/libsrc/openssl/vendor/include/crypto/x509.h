@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2021 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2015-2023 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -309,7 +309,7 @@ struct x509_object_st {
 };
 
 int ossl_a2i_ipadd(unsigned char *ipout, const char *ipasc);
-int ossl_x509_set1_time(int *modified, ASN1_TIME **ptm, const ASN1_TIME *tm);
+int ossl_x509_set1_time(ASN1_TIME **ptm, const ASN1_TIME *tm);
 int ossl_x509_print_ex_brief(BIO *bio, X509 *cert, unsigned long neg_cflags);
 int ossl_x509v3_cache_extensions(X509 *x);
 int ossl_x509_init_sig_info(X509 *x);
@@ -364,7 +364,6 @@ int ossl_i2d_X448_PUBKEY(const ECX_KEY *a, unsigned char **pp);
 # endif /* OPENSSL_NO_EC */
 EVP_PKEY *ossl_d2i_PUBKEY_legacy(EVP_PKEY **a, const unsigned char **pp,
                                  long length);
-int ossl_x509_check_private_key(const EVP_PKEY *k, const EVP_PKEY *pkey);
 
 int x509v3_add_len_value_uchar(const char *name, const unsigned char *value,
                                size_t vallen, STACK_OF(CONF_VALUE) **extlist);

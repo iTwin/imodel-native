@@ -33,7 +33,7 @@ int ASN1_verify(i2d_of_void *i2d, X509_ALGOR *a, ASN1_BIT_STRING *signature,
     int ret = -1, i, inl;
 
     if (ctx == NULL) {
-        ERR_raise(ERR_LIB_ASN1, ERR_R_EVP_LIB);
+        ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
         goto err;
     }
     i = OBJ_obj2nid(a->algorithm);
@@ -54,8 +54,10 @@ int ASN1_verify(i2d_of_void *i2d, X509_ALGOR *a, ASN1_BIT_STRING *signature,
         goto err;
     }
     buf_in = OPENSSL_malloc((unsigned int)inl);
-    if (buf_in == NULL)
+    if (buf_in == NULL) {
+        ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
         goto err;
+    }
     p = buf_in;
 
     i2d(data, &p);
@@ -204,7 +206,7 @@ int ASN1_item_verify_ctx(const ASN1_ITEM *it, const X509_ALGOR *alg,
         goto err;
     }
     if (buf_in == NULL) {
-        ERR_raise(ERR_LIB_ASN1, ERR_R_ASN1_LIB);
+        ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
         goto err;
     }
     inll = inl;

@@ -95,7 +95,9 @@ static void *kdf_hkdf_new(void *provctx)
     if (!ossl_prov_is_running())
         return NULL;
 
-    if ((ctx = OPENSSL_zalloc(sizeof(*ctx))) != NULL)
+    if ((ctx = OPENSSL_zalloc(sizeof(*ctx))) == NULL)
+        ERR_raise(ERR_LIB_PROV, ERR_R_MALLOC_FAILURE);
+    else
         ctx->provctx = provctx;
     return ctx;
 }

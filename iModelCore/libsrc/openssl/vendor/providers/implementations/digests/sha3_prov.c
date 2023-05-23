@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2022 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2019-2023 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -204,11 +204,6 @@ static int s390x_keccakc_final(unsigned char *md, void *vctx, int padding)
     return 1;
 }
 
-static int s390x_keccak_final(unsigned char *md, void *vctx)
-{
-    return s390x_keccakc_final(md, vctx, 0x01);
-}
-
 static int s390x_kmac_final(unsigned char *md, void *vctx)
 {
     return s390x_keccakc_final(md, vctx, 0x04);
@@ -218,12 +213,6 @@ static PROV_SHA3_METHOD sha3_s390x_md =
 {
     s390x_sha3_absorb,
     s390x_sha3_final
-};
-
-static PROV_SHA3_METHOD keccak_s390x_md =
-{
-    s390x_sha3_absorb,
-    s390x_keccak_final
 };
 
 static PROV_SHA3_METHOD shake_s390x_md =
@@ -360,12 +349,6 @@ static int shake_set_ctx_params(void *vctx, const OSSL_PARAM params[])
                           SHA3_BLOCKSIZE(bitlen), SHA3_MDSIZE(bitlen),         \
                           SHA3_FLAGS)
 
-#define IMPLEMENT_KECCAK_functions(bitlen)                                     \
-    SHA3_newctx(keccak, KECCAK_##bitlen, keccak_##bitlen, bitlen, '\x01')      \
-    PROV_FUNC_SHA3_DIGEST(keccak_##bitlen, bitlen,                             \
-                          SHA3_BLOCKSIZE(bitlen), SHA3_MDSIZE(bitlen),         \
-                          SHA3_FLAGS)
-
 #define IMPLEMENT_SHAKE_functions(bitlen)                                      \
     SHA3_newctx(shake, SHAKE_##bitlen, shake_##bitlen, bitlen, '\x1f')         \
     PROV_FUNC_SHAKE_DIGEST(shake_##bitlen, bitlen,                             \
@@ -385,14 +368,6 @@ IMPLEMENT_SHA3_functions(256)
 IMPLEMENT_SHA3_functions(384)
 /* ossl_sha3_512_functions */
 IMPLEMENT_SHA3_functions(512)
-/* ossl_keccak_224_functions */
-IMPLEMENT_KECCAK_functions(224)
-/* ossl_keccak_256_functions */
-IMPLEMENT_KECCAK_functions(256)
-/* ossl_keccak_384_functions */
-IMPLEMENT_KECCAK_functions(384)
-/* ossl_keccak_512_functions */
-IMPLEMENT_KECCAK_functions(512)
 /* ossl_shake_128_functions */
 IMPLEMENT_SHAKE_functions(128)
 /* ossl_shake_256_functions */

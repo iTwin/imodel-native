@@ -128,8 +128,10 @@ EVP_PKEY_METHOD *EVP_PKEY_meth_new(int id, int flags)
     EVP_PKEY_METHOD *pmeth;
 
     pmeth = OPENSSL_zalloc(sizeof(*pmeth));
-    if (pmeth == NULL)
+    if (pmeth == NULL) {
+        ERR_raise(ERR_LIB_EVP, ERR_R_MALLOC_FAILURE);
         return NULL;
+    }
 
     pmeth->pkey_id = id;
     pmeth->flags = flags | EVP_PKEY_FLAG_DYNAMIC;
@@ -314,6 +316,8 @@ static EVP_PKEY_CTX *int_ctx_new(OSSL_LIB_CTX *libctx,
         ERR_raise(ERR_LIB_EVP, EVP_R_UNSUPPORTED_ALGORITHM);
     } else {
         ret = OPENSSL_zalloc(sizeof(*ret));
+        if (ret == NULL)
+            ERR_raise(ERR_LIB_EVP, ERR_R_MALLOC_FAILURE);
     }
 
 #if !defined(OPENSSL_NO_ENGINE) && !defined(FIPS_MODULE)
@@ -477,8 +481,10 @@ EVP_PKEY_CTX *EVP_PKEY_CTX_dup(const EVP_PKEY_CTX *pctx)
     }
 # endif
     rctx = OPENSSL_zalloc(sizeof(*rctx));
-    if (rctx == NULL)
+    if (rctx == NULL) {
+        ERR_raise(ERR_LIB_EVP, ERR_R_MALLOC_FAILURE);
         return NULL;
+    }
 
     if (pctx->pkey != NULL)
         EVP_PKEY_up_ref(pctx->pkey);
@@ -608,13 +614,13 @@ int EVP_PKEY_meth_add0(const EVP_PKEY_METHOD *pmeth)
 {
     if (app_pkey_methods == NULL) {
         app_pkey_methods = sk_EVP_PKEY_METHOD_new(pmeth_cmp);
-        if (app_pkey_methods == NULL) {
-            ERR_raise(ERR_LIB_EVP, ERR_R_CRYPTO_LIB);
+        if (app_pkey_methods == NULL){
+            ERR_raise(ERR_LIB_EVP, ERR_R_MALLOC_FAILURE);
             return 0;
         }
     }
     if (!sk_EVP_PKEY_METHOD_push(app_pkey_methods, pmeth)) {
-        ERR_raise(ERR_LIB_EVP, ERR_R_CRYPTO_LIB);
+        ERR_raise(ERR_LIB_EVP, ERR_R_MALLOC_FAILURE);
         return 0;
     }
     sk_EVP_PKEY_METHOD_sort(app_pkey_methods);
@@ -860,7 +866,7 @@ int evp_pkey_ctx_set_params_strict(EVP_PKEY_CTX *ctx, OSSL_PARAM *params)
 
         for (p = params; p->key != NULL; p++) {
             /* Check the ctx actually understands this parameter */
-            if (OSSL_PARAM_locate_const(settable, p->key) == NULL)
+            if (OSSL_PARAM_locate_const(settable, p->key) == NULL )
                 return -2;
         }
     }
@@ -883,9 +889,9 @@ int evp_pkey_ctx_get_params_strict(EVP_PKEY_CTX *ctx, OSSL_PARAM *params)
         const OSSL_PARAM *gettable = EVP_PKEY_CTX_gettable_params(ctx);
         const OSSL_PARAM *p;
 
-        for (p = params; p->key != NULL; p++) {
+        for (p = params; p->key != NULL; p++ ) {
             /* Check the ctx actually understands this parameter */
-            if (OSSL_PARAM_locate_const(gettable, p->key) == NULL)
+            if (OSSL_PARAM_locate_const(gettable, p->key) == NULL )
                 return -2;
         }
     }
@@ -1479,13 +1485,17 @@ static int evp_pkey_ctx_store_cached_data(EVP_PKEY_CTX *ctx,
         evp_pkey_ctx_free_cached_data(ctx, cmd, name);
         if (name != NULL) {
             ctx->cached_parameters.dist_id_name = OPENSSL_strdup(name);
-            if (ctx->cached_parameters.dist_id_name == NULL)
+            if (ctx->cached_parameters.dist_id_name == NULL) {
+                ERR_raise(ERR_LIB_EVP, ERR_R_MALLOC_FAILURE);
                 return 0;
+            }
         }
         if (data_len > 0) {
             ctx->cached_parameters.dist_id = OPENSSL_memdup(data, data_len);
-            if (ctx->cached_parameters.dist_id == NULL)
+            if (ctx->cached_parameters.dist_id == NULL) {
+                ERR_raise(ERR_LIB_EVP, ERR_R_MALLOC_FAILURE);
                 return 0;
+            }
         }
         ctx->cached_parameters.dist_id_set = 1;
         ctx->cached_parameters.dist_id_len = data_len;

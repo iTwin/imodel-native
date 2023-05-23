@@ -3,7 +3,7 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #pragma once
-#include "ECDbSqlFunctions.h"
+#include "BuiltInFuncs.h"
 #include "DbUtilities.h"
 #include "SqlNames.h"
 

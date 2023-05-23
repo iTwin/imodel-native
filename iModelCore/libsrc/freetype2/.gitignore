@@ -5,3 +5,4 @@ vendor/docs/oldlogs
 vendor/docs/reference
 vendor/objs
 vendor/tests
+vendor/subprojects

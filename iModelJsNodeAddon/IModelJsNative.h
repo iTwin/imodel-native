@@ -314,6 +314,12 @@ inline static Utf8String requireString(Napi::Object const& obj, Utf8CP name) {
         BeNapi::ThrowJsException(obj.Env(), Utf8PrintfString("must supply %s", name).c_str());
     return strVal;
 }
+inline static int requireInt(Napi::Object const& obj, Utf8CP name) {
+    auto member = obj.Get(name);
+    if (!member.IsNumber())
+        BeNapi::ThrowJsException(obj.Env(), Utf8PrintfString("must supply %s", name).c_str());
+    return  member.ToNumber().Int32Value();
+}
 inline static bool requireBool(Napi::Object const& obj, Utf8CP name) {
     auto member = obj.Get(name);
     if (!member.IsBoolean())
@@ -372,9 +378,9 @@ struct JsInterop {
         ECSchemaReadContextPtr m_customSchemaContext = nullptr;
         };
 
-    BE_JSON_NAME(accessName)
     BE_JSON_NAME(accessToken)
     BE_JSON_NAME(alias)
+    BE_JSON_NAME(baseUri)
     BE_JSON_NAME(blob)
     BE_JSON_NAME(blockSize)
     BE_JSON_NAME(briefcaseId)
@@ -394,7 +400,6 @@ struct JsInterop {
     BE_JSON_NAME(dbName)
     BE_JSON_NAME(defaultTxn)
     BE_JSON_NAME(description)
-    BE_JSON_NAME(durationSeconds)
     BE_JSON_NAME(ecefLocation)
     BE_JSON_NAME(ecSchemaXmlContext)
     BE_JSON_NAME(element)
@@ -414,6 +419,7 @@ struct JsInterop {
     BE_JSON_NAME(isPublic)
     BE_JSON_NAME(localFileName)
     BE_JSON_NAME(lockedBy)
+    BE_JSON_NAME(lockExpireSeconds)
     BE_JSON_NAME(logId)
     BE_JSON_NAME(logMask)
     BE_JSON_NAME(modelExtents)
