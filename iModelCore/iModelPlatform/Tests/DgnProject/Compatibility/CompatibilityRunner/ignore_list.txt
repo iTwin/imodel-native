@@ -1,8 +1,13 @@
-##Ignore List Format
+############################################################################################################################
+##                                              Ignore List Format
 ##TestRunnerName.version.TestFixtureName.TestName
 ##Example: iModelEvolutionTestRunnerNuget_bim0200_x64.2019.2.22.1.ECDbCompatibilityTestFixture.ECSqlColumnInfoForAliases
 ##Note: Use * in place of TestRunnerName.version for applying it on all old test runners
-##
+##Example: *.ECDbCompatibilityTestFixture.ECSqlColumnInfoForAliases
+##To skip a test for all test runners of only a specific stream, use following format:
+##TestRunnerName.*.TestFixtureName.TestName
+##Example: testRunnerNuget_bim0200_x64.*.CompatibilityTestFixture.ECSqlColumnInfoForAliases
+############################################################################################################################
 ##Ignoring this test running from NuGet package files of different streams (e.g bim0200) as now ExtendedType is not persisted and added on the fly 
 *.ECDbCompatibilityTestFixture.ECSqlColumnInfoForAliases
 *.IModelCompatibilityTestFixture.ECSqlColumnInfoForAliases
