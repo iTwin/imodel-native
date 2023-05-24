@@ -1,8 +1,8 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 yue_Hans{
     %%Parent{"root"}
-    Version{"2.1.49.82"}
     zoneStrings{
         "Africa:Abidjan"{
             ec{"阿比让"}
@@ -258,6 +258,9 @@ yue_Hans{
         }
         "America:Chihuahua"{
             ec{"奇华华"}
+        }
+        "America:Ciudad_Juarez"{
+            ec{"华雷斯城"}
         }
         "America:Coral_Harbour"{
             ec{"阿蒂科肯"}
@@ -811,6 +814,9 @@ yue_Hans{
         "Asia:Qatar"{
             ec{"卡达"}
         }
+        "Asia:Qostanay"{
+            ec{"科斯塔奈"}
+        }
         "Asia:Qyzylorda"{
             ec{"克孜勒奥尔达"}
         }
@@ -1220,6 +1226,9 @@ yue_Hans{
         }
         "Pacific:Johnston"{
             ec{"强斯顿"}
+        }
+        "Pacific:Kanton"{
+            ec{"坎顿"}
         }
         "Pacific:Kiritimati"{
             ec{"基里地马地岛"}
@@ -1752,7 +1761,9 @@ yue_Hans{
             ls{"纽埃岛时间"}
         }
         "meta:Norfolk"{
-            ls{"诺福克岛时间"}
+            ld{"诺福克岛夏令时间"}
+            lg{"诺福克岛时间"}
+            ls{"诺福克岛标准时间"}
         }
         "meta:Noronha"{
             ld{"费尔南多 - 迪诺罗尼亚夏令时间"}
@@ -1935,6 +1946,9 @@ yue_Hans{
             ld{"叶卡捷琳堡夏令时间"}
             lg{"叶卡捷琳堡时间"}
             ls{"叶卡捷琳堡标准时间"}
+        }
+        "meta:Yukon"{
+            ls{"育空时间"}
         }
         fallbackFormat{"{1} ({0})"}
         gmtFormat{"GMT{0}"}

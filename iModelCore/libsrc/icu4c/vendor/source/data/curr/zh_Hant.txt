@@ -1,5 +1,6 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 zh_Hant{
     %%Parent{"root"}
     Currencies{
@@ -185,7 +186,7 @@ zh_Hant{
         }
         BRL{
             "R$",
-            "巴西里拉",
+            "巴西雷亞爾",
         }
         BRN{
             "BRN",
@@ -266,6 +267,10 @@ zh_Hant{
         CNH{
             "CNH",
             "人民幣（離岸）",
+        }
+        CNX{
+            "CNX",
+            "CNX",
         }
         CNY{
             "CN¥",
@@ -973,11 +978,11 @@ zh_Hant{
         }
         TRL{
             "TRL",
-            "土耳其里拉",
+            "土耳其里拉 (1922–2005)",
         }
         TRY{
             "TRY",
-            "新土耳其里拉",
+            "土耳其里拉",
         }
         TTD{
             "TTD",
@@ -1112,7 +1117,7 @@ zh_Hant{
             "法國法郎 (UIC)",
         }
         XOF{
-            "CFA",
+            "F CFA",
             "法郎 (CFA–BCEAO)",
         }
         XPD{
@@ -1212,6 +1217,7 @@ zh_Hant{
         TWD{"NT$"}
     }
     Currencies%narrow{
+        AMD{"֏"}
         AOA{"Kz"}
         ARS{"$"}
         AUD{"$"}
@@ -1237,11 +1243,11 @@ zh_Hant{
         DKK{"kr"}
         DOP{"$"}
         EGP{"E£"}
+        ESP{"₧"}
         EUR{"€"}
         FJD{"$"}
         FKP{"£"}
         GBP{"£"}
-        GEL{"₾"}
         GIP{"£"}
         GNF{"FG"}
         GTQ{"Q"}
@@ -1266,8 +1272,6 @@ zh_Hant{
         LBP{"L£"}
         LKR{"Rs"}
         LRD{"$"}
-        LTL{"Lt"}
-        LVL{"Ls"}
         MGA{"Ar"}
         MMK{"K"}
         MNT{"₮"}
@@ -1286,6 +1290,7 @@ zh_Hant{
         PYG{"₲"}
         RON{"L"}
         RUB{"₽"}
+        RUR{"р."}
         RWF{"RF"}
         SBD{"$"}
         SEK{"kr"}
@@ -1299,6 +1304,7 @@ zh_Hant{
         TOP{"T$"}
         TRY{"₺"}
         TTD{"$"}
+        TWD{"$"}
         UAH{"₴"}
         USD{"$"}
         UYU{"$"}
@@ -1309,7 +1315,6 @@ zh_Hant{
         ZMW{"ZK"}
     }
     Currencies%variant{
-        GEL{"₾"}
         TRY{"TL"}
     }
     CurrencyPlurals{
@@ -1449,7 +1454,7 @@ zh_Hant{
             other{"巴西克魯賽羅 (1990–1993)"}
         }
         BRL{
-            other{"巴西里拉"}
+            other{"巴西雷亞爾"}
         }
         BRN{
             other{"巴西克如爾達農瓦"}
@@ -2040,10 +2045,10 @@ zh_Hant{
             other{"帝汶埃斯庫多"}
         }
         TRL{
-            other{"土耳其里拉"}
+            other{"土耳其里拉 (1922–2005)"}
         }
         TRY{
-            other{"新土耳其里拉"}
+            other{"土耳其里拉"}
         }
         TTD{
             other{"千里達及托巴哥元"}
@@ -2220,5 +2225,4 @@ zh_Hant{
     CurrencyUnitPatterns{
         other{"{0} {1}"}
     }
-    Version{"2.1.49.82"}
 }

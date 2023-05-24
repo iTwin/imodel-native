@@ -373,6 +373,43 @@ Utf8CP CompoundECSqlPreparedStatement::_GetNativeSql() const
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+ECSqlStatus ECSqlSelectPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp const& exp) {
+    auto rc = SingleECSqlPreparedStatement::_Prepare(ctx, exp);
+    if (GetSqliteStatement().IsPrepared()) {
+        m_thisStmtBindIndex = GetSqliteStatement().GetParameterIndex(ctx.GetThisStmtPtrParamDecl());
+        BindThisPtr();
+    }
+    return rc;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+ECSqlField* ECSqlSelectPreparedStatement::GetField(int columnIndex) {
+    if (columnIndex >= 0 && columnIndex < m_fields.size())
+        return m_fields[columnIndex].get();
+    return nullptr;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void ECSqlSelectPreparedStatement::BindThisPtr() {
+    if (m_thisStmtBindIndex > 0)
+        GetSqliteStatement().BindPointer(m_thisStmtBindIndex, this, SELECT_PTR_NAME, nullptr);
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+ECSqlStatus ECSqlSelectPreparedStatement::_ClearBindings()  {
+    auto rc = SingleECSqlPreparedStatement::_ClearBindings();
+    BindThisPtr();
+    return rc;
+}
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 DbResult ECSqlSelectPreparedStatement::Step()
     {
     if (SUCCESS != AssertIsValid())

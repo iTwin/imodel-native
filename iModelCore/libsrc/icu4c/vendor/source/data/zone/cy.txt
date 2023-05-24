@@ -1,7 +1,7 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 cy{
-    Version{"2.1.49.82"}
     zoneStrings{
         "Africa:Abidjan"{
             ec{"Abidjan"}
@@ -14,9 +14,6 @@ cy{
         }
         "Africa:Algiers"{
             ec{"Alger"}
-        }
-        "Africa:Asmera"{
-            ec{"Asmera"}
         }
         "Africa:Bamako"{
             ec{"Bamako"}
@@ -550,7 +547,7 @@ cy{
             ec{"Sitka"}
         }
         "America:St_Barthelemy"{
-            ec{"St. Barthelemy"}
+            ec{"St. Barthélemy"}
         }
         "America:St_Johns"{
             ec{"St. John’s"}
@@ -810,6 +807,9 @@ cy{
         "Asia:Qatar"{
             ec{"Qatar"}
         }
+        "Asia:Qostanay"{
+            ec{"Kostanay"}
+        }
         "Asia:Qyzylorda"{
             ec{"Qyzylorda"}
         }
@@ -893,9 +893,6 @@ cy{
         }
         "Atlantic:Canary"{
             ec{"Yr Ynysoedd Dedwydd"}
-        }
-        "Atlantic:Cape_Verde"{
-            ec{"Cabo Verde"}
         }
         "Atlantic:Faeroe"{
             ec{"Ffaro"}
@@ -1055,9 +1052,6 @@ cy{
         "Europe:Monaco"{
             ec{"Monaco"}
         }
-        "Europe:Moscow"{
-            ec{"Moscfa"}
-        }
         "Europe:Oslo"{
             ec{"Oslo"}
         }
@@ -1132,9 +1126,6 @@ cy{
         }
         "Europe:Zagreb"{
             ec{"Zagreb"}
-        }
-        "Europe:Zaporozhye"{
-            ec{"Zaporizhzhya"}
         }
         "Europe:Zurich"{
             ec{"Zurich"}
@@ -1405,7 +1396,7 @@ cy{
             ls{"Amser Bhutan"}
         }
         "meta:Bolivia"{
-            ls{"Amser Bolivia"}
+            ls{"Amser Bolifia"}
         }
         "meta:Brasilia"{
             ld{"Amser Haf Brasília"}
@@ -1460,9 +1451,9 @@ cy{
             ls{"Amser Safonol Ynysoedd Cook"}
         }
         "meta:Cuba"{
-            ld{"Amser Haf Cuba"}
-            lg{"Amser Cuba"}
-            ls{"Amser Safonol Cuba"}
+            ld{"Amser Haf Ciwa"}
+            lg{"Amser Ciwba"}
+            ls{"Amser Safonol Ciwba"}
         }
         "meta:Davis"{
             ls{"Amser Davis"}
@@ -1607,15 +1598,15 @@ cy{
             ls{"Amser Safonol Israel"}
         }
         "meta:Japan"{
-            ld{"Amser Haf Siapan"}
-            lg{"Amser Siapan"}
-            ls{"Amser Safonol Siapan"}
+            ld{"Amser Haf Japan"}
+            lg{"Amser Japan"}
+            ls{"Amser Safonol Japan"}
         }
         "meta:Kazakhstan_Eastern"{
             ls{"Amser Dwyrain Kazakhstan"}
         }
         "meta:Kazakhstan_Western"{
-            ls{"Amser Gorllewin Casachstan"}
+            ls{"Amser Gorllewin Kazakhstan"}
         }
         "meta:Korea"{
             ld{"Amser Haf Corea"}
@@ -1717,7 +1708,9 @@ cy{
             ls{"Amser Niue"}
         }
         "meta:Norfolk"{
-            ls{"Amser Ynys Norfolk"}
+            ld{"Amser Haf Ynys Norfolk"}
+            lg{"Amser Ynys Norfolk"}
+            ls{"Amser Safonol Ynys Norfolk"}
         }
         "meta:Noronha"{
             ld{"Amser Haf Fernando de Noronha"}
@@ -1852,9 +1845,9 @@ cy{
             ls{"Amser Safonol Uruguay"}
         }
         "meta:Uzbekistan"{
-            ld{"Amser Haf Wsbecistan"}
-            lg{"Amser Wsbecistan"}
-            ls{"Amser Safonol Wsbecistan"}
+            ld{"Amser Haf Uzbekistan"}
+            lg{"Amser Uzbekistan"}
+            ls{"Amser Safonol Uzbekistan"}
         }
         "meta:Vanuatu"{
             ld{"Amser Haf Vanuatu"}
@@ -1892,6 +1885,9 @@ cy{
             ld{"Amser Haf Yekaterinburg"}
             lg{"Amser Yekaterinburg"}
             ls{"Amser Safonol Yekaterinburg"}
+        }
+        "meta:Yukon"{
+            ls{"Amser Yukon"}
         }
         fallbackFormat{"{1} ({0})"}
         gmtFormat{"GMT{0}"}

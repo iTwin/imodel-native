@@ -1,16 +1,18 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 en_AU{
     %%Parent{"en_001"}
-    ExemplarCharactersNumbers{"[↑]"}
     NumberElements{
         latn{
+            miscPatterns{
+                range{"{0}–{1}"}
+            }
             symbols{
                 exponential{"e"}
             }
         }
     }
-    Version{"2.1.48.43"}
     calendar{
         chinese{
             monthNames{
@@ -45,6 +47,20 @@ en_AU{
                         "Mo11",
                         "Mo12",
                     }
+                    narrow{
+                        "1",
+                        "2",
+                        "3",
+                        "4",
+                        "5",
+                        "6",
+                        "7",
+                        "8",
+                        "9",
+                        "10",
+                        "11",
+                        "12",
+                    }
                     wide{
                         "First Month",
                         "Second Month",
@@ -68,16 +84,28 @@ en_AU{
                 yMd{"dd/MM/y"}
             }
             intervalFormats{
+                GyMEd{
+                    G{"E dd/MM/y GGGGG – E dd/MM/y GGGGG"}
+                    M{"E dd/MM/y – E dd/MM/y GGGGG"}
+                    d{"E dd/MM/y – E dd/MM/y GGGGG"}
+                    y{"E dd/MM/y – E dd/MM/y GGGGG"}
+                }
+                GyMMMEd{
+                    G{"E d MMM y G – E d MMM y G"}
+                    M{"E d MMM – E d MMM y G"}
+                    d{"E d MMM – E d MMM y G"}
+                    y{"E d MMM y – E d MMM y G"}
+                }
                 MEd{
-                    M{"E, d/M – E, d/M"}
-                    d{"E, d/M – E, d/M"}
+                    M{"E, d/M – E, d/M"}
+                    d{"E, d/M – E, d/M"}
                 }
                 MMMEd{
-                    M{"E, d MMM – E, d MMM"}
-                    d{"E, d MMM – E, d MMM"}
+                    M{"E, d MMM – E, d MMM"}
+                    d{"E, d MMM – E, d MMM"}
                 }
                 yMMMEd{
-                    d{"E, d MMM – E, d MMM y G"}
+                    d{"E, d MMM – E, d MMM y G"}
                 }
             }
         }
@@ -87,21 +115,32 @@ en_AU{
                 "pm",
             }
             DateTimePatterns{
-                "h:mm:ss a zzzz",
-                "h:mm:ss a z",
-                "h:mm:ss a",
-                "h:mm a",
+                "h:mm:ss a zzzz",
+                "h:mm:ss a z",
+                "h:mm:ss a",
+                "h:mm a",
                 "EEEE, d MMMM y",
                 "d MMMM y",
                 "d MMM y",
                 "d/M/yy",
                 "{1}, {0}",
-                "{1} 'at' {0}",
-                "{1} 'at' {0}",
+                "{1}, {0}",
+                "{1}, {0}",
                 "{1}, {0}",
                 "{1}, {0}",
             }
+            DateTimeSkeletons{
+                "ahmmsszzzz",
+                "ahmmssz",
+                "ahmmss",
+                "ahmm",
+                "yMMMMEEEEd",
+                "yMMMMd",
+                "yMMMd",
+                "yyMd",
+            }
             availableFormats{
+                GyMd{"d/M/y GGGGG"}
                 MEd{"E, d/M"}
                 Md{"d/M"}
             }
@@ -116,17 +155,17 @@ en_AU{
                         "F.",
                         "Sa.",
                     }
-                    short{
-                        "Su",
+                }
+                stand-alone{
+                    abbreviated{
+                        "Sun",
                         "Mon",
-                        "Tu",
+                        "Tue",
                         "Wed",
-                        "Th",
+                        "Thu",
                         "Fri",
                         "Sat",
                     }
-                }
-                stand-alone{
                     narrow{
                         "Su.",
                         "M.",
@@ -137,13 +176,22 @@ en_AU{
                         "Sa.",
                     }
                     short{
-                        "Su",
+                        "Sun",
                         "Mon",
                         "Tu",
                         "Wed",
-                        "Th",
+                        "Thu",
                         "Fri",
                         "Sat",
+                    }
+                    wide{
+                        "Sunday",
+                        "Monday",
+                        "Tuesday",
+                        "Wednesday",
+                        "Thursday",
+                        "Friday",
+                        "Saturday",
                     }
                 }
             }
@@ -179,14 +227,80 @@ en_AU{
                         noon{"midday"}
                     }
                     narrow{
+                        afternoon1{"afternoon"}
+                        am{"am"}
+                        evening1{"evening"}
+                        midnight{"midnight"}
+                        morning1{"morning"}
+                        night1{"night"}
                         noon{"midday"}
+                        pm{"pm"}
                     }
                     wide{
                         noon{"midday"}
                     }
                 }
             }
+            intervalFormats{
+                GyMEd{
+                    G{"E, d/M/y G – E, d/M/y G"}
+                    M{"E, d/M/y – E, d/M/y G"}
+                    d{"E, d/M/y – E, d/M/y G"}
+                    y{"E, d/M/y – E, d/M/y G"}
+                }
+                GyMMMEd{
+                    G{"E, d MMM, y G – E, d MMM, y G"}
+                    M{"E, d MMM – E, d MMM, y G"}
+                    d{"E, d MMM – E, d MMM, y G"}
+                    y{"E, d MMM, y – E, d MMM, y G"}
+                }
+                GyMMMd{
+                    G{"d MMM, y G – d MMM, y G"}
+                    M{"d MMM – d MMM, y G"}
+                    d{"d – d MMM, y G"}
+                    y{"d MMM, y – d MMM, y G"}
+                }
+                GyMd{
+                    G{"d/M/y G – d/M/y G"}
+                    M{"d/M/y – d/M/y G"}
+                    d{"d/M/y – d/M/y G"}
+                    y{"d/M/y – d/M/y G"}
+                }
+                MMMd{
+                    d{"d – d MMM"}
+                }
+            }
             monthNames{
+                format{
+                    abbreviated{
+                        "Jan",
+                        "Feb",
+                        "Mar",
+                        "Apr",
+                        "May",
+                        "June",
+                        "July",
+                        "Aug",
+                        "Sept",
+                        "Oct",
+                        "Nov",
+                        "Dec",
+                    }
+                    narrow{
+                        "J",
+                        "F",
+                        "M",
+                        "A",
+                        "M",
+                        "J",
+                        "J",
+                        "A",
+                        "S",
+                        "O",
+                        "N",
+                        "D",
+                    }
+                }
                 stand-alone{
                     abbreviated{
                         "Jan",
@@ -197,18 +311,287 @@ en_AU{
                         "Jun",
                         "Jul",
                         "Aug",
-                        "Sep",
+                        "Sept",
                         "Oct",
                         "Nov",
                         "Dec",
+                    }
+                    wide{
+                        "January",
+                        "February",
+                        "March",
+                        "April",
+                        "May",
+                        "June",
+                        "July",
+                        "August",
+                        "September",
+                        "October",
+                        "November",
+                        "December",
+                    }
+                }
+            }
+            quarters{
+                format{
+                    narrow{
+                        "1",
+                        "2",
+                        "3",
+                        "4",
+                    }
+                }
+                stand-alone{
+                    abbreviated{
+                        "Q1",
+                        "Q2",
+                        "Q3",
+                        "Q4",
+                    }
+                    wide{
+                        "1st quarter",
+                        "2nd quarter",
+                        "3rd quarter",
+                        "4th quarter",
+                    }
+                }
+            }
+        }
+        indian{
+            monthNames{
+                format{
+                    abbreviated{
+                        "Chaitra",
+                        "Vaisakha",
+                        "Jyaistha",
+                        "Asadha",
+                        "Sravana",
+                        "Bhadra",
+                        "Asvina",
+                        "Kartika",
+                        "Agrahayana",
+                        "Pausa",
+                        "Magha",
+                        "Phalguna",
+                    }
+                    narrow{
+                        "1",
+                        "2",
+                        "3",
+                        "4",
+                        "5",
+                        "6",
+                        "7",
+                        "8",
+                        "9",
+                        "10",
+                        "11",
+                        "12",
+                    }
+                    wide{
+                        "Chaitra",
+                        "Vaisakha",
+                        "Jyaistha",
+                        "Asadha",
+                        "Sravana",
+                        "Bhadra",
+                        "Asvina",
+                        "Kartika",
+                        "Agrahayana",
+                        "Pausa",
+                        "Magha",
+                        "Phalguna",
+                    }
+                }
+                stand-alone{
+                    abbreviated{
+                        "Chaitra",
+                        "Vaisakha",
+                        "Jyaistha",
+                        "Asadha",
+                        "Sravana",
+                        "Bhadra",
+                        "Asvina",
+                        "Kartika",
+                        "Agrahayana",
+                        "Pausa",
+                        "Magha",
+                        "Phalguna",
+                    }
+                    narrow{
+                        "1",
+                        "2",
+                        "3",
+                        "4",
+                        "5",
+                        "6",
+                        "7",
+                        "8",
+                        "9",
+                        "10",
+                        "11",
+                        "12",
+                    }
+                    wide{
+                        "Chaitra",
+                        "Vaisakha",
+                        "Jyaistha",
+                        "Asadha",
+                        "Sravana",
+                        "Bhadra",
+                        "Asvina",
+                        "Kartika",
+                        "Agrahayana",
+                        "Pausa",
+                        "Magha",
+                        "Phalguna",
                     }
                 }
             }
         }
         islamic{
+            DateTimePatterns{
+                "h:mm:ss a zzzz",
+                "h:mm:ss a z",
+                "h:mm:ss a",
+                "h:mm a",
+                "EEEE, d MMMM y G",
+                "d MMMM y G",
+                "d MMM y G",
+                "dd/MM/y GGGGG",
+                "{1}, {0}",
+                "{1}, {0}",
+                "{1}, {0}",
+                "{1}, {0}",
+                "{1}, {0}",
+            }
+            DateTimeSkeletons{
+                "ahmmsszzzz",
+                "ahmmssz",
+                "ahmmss",
+                "ahmm",
+                "GyMMMMEEEEd",
+                "GyMMMMd",
+                "GyMMMd",
+                "GGGGGyMMdd",
+            }
             availableFormats{
+                E{"ccc"}
+                Ed{"E d"}
+                Gy{"y G"}
+                GyMMM{"MMM y G"}
+                GyMMMEd{"E, d MMM y G"}
+                GyMMMd{"d MMM y G"}
+                M{"LL"}
+                MMM{"LLL"}
+                MMMEd{"E, d MMM"}
+                MMMMd{"d MMMM"}
+                MMMd{"d MMM"}
+                Md{"dd/MM"}
+                d{"d"}
+                y{"y G"}
                 yMEd{"E, dd/MM/y"}
                 yMd{"dd/MM/y"}
+                yyyy{"y G"}
+                yyyyM{"MM/y GGGGG"}
+                yyyyMEd{"E, dd/MM/y GGGGG"}
+                yyyyMMM{"MMM y G"}
+                yyyyMMMEd{"E, d MMM y G"}
+                yyyyMMMM{"MMMM y G"}
+                yyyyMMMd{"d MMM y G"}
+                yyyyMd{"dd/MM/y GGGGG"}
+                yyyyQQQ{"QQQ y G"}
+                yyyyQQQQ{"QQQQ y G"}
+            }
+            monthNames{
+                format{
+                    abbreviated{
+                        "Muh.",
+                        "Saf.",
+                        "Rab. I",
+                        "Rab. II",
+                        "Jum. I",
+                        "Jum. II",
+                        "Raj.",
+                        "Sha.",
+                        "Ram.",
+                        "Shaw.",
+                        "Dhuʻl-Q.",
+                        "Dhuʻl-H.",
+                    }
+                    narrow{
+                        "1",
+                        "2",
+                        "3",
+                        "4",
+                        "5",
+                        "6",
+                        "7",
+                        "8",
+                        "9",
+                        "10",
+                        "11",
+                        "12",
+                    }
+                    wide{
+                        "Muharram",
+                        "Safar",
+                        "Rabiʻ I",
+                        "Rabiʻ II",
+                        "Jumada I",
+                        "Jumada II",
+                        "Rajab",
+                        "Shaʻban",
+                        "Ramadan",
+                        "Shawwal",
+                        "Dhuʻl-Qiʻdah",
+                        "Dhuʻl-Hijjah",
+                    }
+                }
+                stand-alone{
+                    abbreviated{
+                        "Muh.",
+                        "Saf.",
+                        "Rab. I",
+                        "Rab. II",
+                        "Jum. I",
+                        "Jum. II",
+                        "Raj.",
+                        "Sha.",
+                        "Ram.",
+                        "Shaw.",
+                        "Dhuʻl-Q.",
+                        "Dhuʻl-H.",
+                    }
+                    narrow{
+                        "1",
+                        "2",
+                        "3",
+                        "4",
+                        "5",
+                        "6",
+                        "7",
+                        "8",
+                        "9",
+                        "10",
+                        "11",
+                        "12",
+                    }
+                    wide{
+                        "Muharram",
+                        "Safar",
+                        "Rabiʻ I",
+                        "Rabiʻ II",
+                        "Jumada I",
+                        "Jumada II",
+                        "Rajab",
+                        "Shaʻban",
+                        "Ramadan",
+                        "Shawwal",
+                        "Dhuʻl-Qiʻdah",
+                        "Dhuʻl-Hijjah",
+                    }
+                }
             }
         }
     }
@@ -224,20 +607,6 @@ en_AU{
         upwards_arrows{"upward arrows"}
     }
     fields{
-        day{
-            relative{
-                "-1"{"yesterday"}
-                "0"{"today"}
-                "1"{"tomorrow"}
-            }
-        }
-        day-narrow{
-            relativeTime{
-                future{
-                    other{"in {0} days"}
-                }
-            }
-        }
         fri-short{
             relativeTime{
                 future{
@@ -251,23 +620,25 @@ en_AU{
             }
         }
         hour-narrow{
-            dn{"h"}
             relativeTime{
                 future{
+                    one{"in {0} hr"}
                     other{"in {0} hrs"}
                 }
                 past{
+                    one{"{0} hr ago"}
                     other{"{0} hrs ago"}
                 }
             }
         }
         hour-short{
-            dn{"h"}
             relativeTime{
                 future{
+                    one{"in {0} hr"}
                     other{"in {0} hrs"}
                 }
                 past{
+                    one{"{0} hr ago"}
                     other{"{0} hrs ago"}
                 }
             }
@@ -339,10 +710,11 @@ en_AU{
         quarter-narrow{
             relativeTime{
                 future{
+                    one{"in {0} qtr"}
                     other{"in {0} qtrs"}
                 }
                 past{
-                    one{"in {0} qtr ago"}
+                    one{"{0} qtr ago"}
                     other{"{0} qtrs ago"}
                 }
             }
@@ -350,6 +722,7 @@ en_AU{
         quarter-short{
             relativeTime{
                 future{
+                    one{"in {0} qtr"}
                     other{"in {0} qtrs"}
                 }
                 past{
@@ -432,13 +805,6 @@ en_AU{
                 }
             }
         }
-        wed-narrow{
-            relativeTime{
-                past{
-                    one{"{0} W ago"}
-                }
-            }
-        }
         wed-short{
             relativeTime{
                 future{
@@ -454,9 +820,11 @@ en_AU{
         week-narrow{
             relativeTime{
                 future{
+                    one{"in {0} wk"}
                     other{"in {0} wks"}
                 }
                 past{
+                    one{"{0} wk ago"}
                     other{"{0} wks ago"}
                 }
             }
@@ -464,9 +832,11 @@ en_AU{
         week-short{
             relativeTime{
                 future{
+                    one{"in {0} wk"}
                     other{"in {0} wks"}
                 }
                 past{
+                    one{"{0} wk ago"}
                     other{"{0} wks ago"}
                 }
             }
@@ -480,9 +850,11 @@ en_AU{
         year-narrow{
             relativeTime{
                 future{
+                    one{"in {0} yr"}
                     other{"in {0} yrs"}
                 }
                 past{
+                    one{"{0} yr ago"}
                     other{"{0} yrs ago"}
                 }
             }
@@ -490,23 +862,14 @@ en_AU{
         year-short{
             relativeTime{
                 future{
+                    one{"in {0} yr"}
                     other{"in {0} yrs"}
                 }
                 past{
+                    one{"{0} yr ago"}
                     other{"{0} yrs ago"}
                 }
             }
-        }
-    }
-    listPattern{
-        or{
-            end{"{0} or {1}"}
-        }
-        standard{
-            end{"{0} and {1}"}
-        }
-        standard-short{
-            end{"{0} and {1}"}
         }
     }
 }

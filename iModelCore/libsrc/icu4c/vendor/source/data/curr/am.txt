@@ -1,5 +1,6 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 am{
     Currencies{
         AED{
@@ -240,7 +241,7 @@ am{
         }
         HRK{
             "HRK",
-            "HRK",
+            "የክሮሽያ ኩና",
         }
         HTG{
             "HTG",
@@ -639,7 +640,7 @@ am{
             "የምዕራብ ካሪብያን ዶላር",
         }
         XOF{
-            "CFA",
+            "F CFA",
             "የምዕራብ አፍሪካ ሴፋ ፍራንክ",
         }
         XPF{
@@ -768,7 +769,6 @@ am{
         ZMW{"ZK"}
     }
     Currencies%variant{
-        GEL{"₾"}
         TRY{"TL"}
     }
     CurrencyPlurals{
@@ -1104,6 +1104,10 @@ am{
             one{"የላይቤሪያ ዶላር"}
             other{"የላይቤሪያ ዶላር"}
         }
+        LSL{
+            one{"የሌሶቶ ሎቲ"}
+            other{"የሌሶቶ ሎቲ"}
+        }
         LTL{
             one{"ሊቱዌንያን ሊታስ"}
             other{"ሊቱዌንያን ሊታስ"}
@@ -1433,5 +1437,4 @@ am{
         one{"{0} {1}"}
         other{"{0} {1}"}
     }
-    Version{"2.1.49.82"}
 }

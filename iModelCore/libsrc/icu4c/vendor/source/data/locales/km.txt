@@ -1,5 +1,6 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 km{
     AuxExemplarCharacters{"[\u17B4\u17B5\u200B \u17CC \u17CE \u17CF \u17D1 ឝ ឞ]"}
     Ellipsis{
@@ -15,8 +16,12 @@ km{
         "ន ប ផ ព ភ ម យ រ ឫ ឬ ល ឭ ឮ វ ស ហ ឡ អ {អា} ឥ ឦ ឧ {ឧក} ឩ ឪ ឯ ឰ ឱ ឲ ឳ ា \u17B7 "
         "\u17B8 \u17B9 \u17BA \u17BB \u17BC \u17BD ើ ឿ ៀ េ ែ ៃ ោ ៅ \u17C6 ះ \u17D2]"
     }
-    ExemplarCharactersNumbers{"[\\- , . % ‰ + 0 1 2 3 4 5 6 7 8 9]"}
-    ExemplarCharactersPunctuation{"[\\- , ៖ ! ? . ។ ៕ ‘ ’ \u0022 “ ” ( ) \\[ \\] \\{ \\} ៙ ៚]"}
+    ExemplarCharactersIndex{
+        "[ក ខ គ ឃ ង ច ឆ ជ ឈ ញ ដ ឋ ឌ ឍ ណ ត ថ ទ ធ ន ប ផ ព ភ ម យ រ ឫ ឬ ល ឭ ឮ វ ស ហ ឡ អ ឥ"
+        " ឦ ឧ ឩ ឪ ឯ ឰ ឱ ឳ]"
+    }
+    ExemplarCharactersNumbers{"[\\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]"}
+    ExemplarCharactersPunctuation{"[\\- ‑ , ៖ ! ? . ។ ៕ ‘ ’ \u0022 “ ” ( ) \\[ \\] \\{ \\} ៙ ៚]"}
     MoreInformation{"?"}
     NumberElements{
         default{"latn"}
@@ -29,7 +34,10 @@ km{
             }
             patterns{
                 accountingFormat{"#,##0.00¤;(#,##0.00¤)"}
+                accountingFormat%alphaNextToNumber{"#,##0.00 ¤;(#,##0.00 ¤)"}
+                accountingFormat%noCurrency{"#,##0.00;(#,##0.00)"}
                 currencyFormat{"#,##0.00¤"}
+                decimalFormat{"#,##0.###"}
                 percentFormat{"#,##0%"}
                 scientificFormat{"#E0"}
             }
@@ -112,6 +120,44 @@ km{
                         other{"¤000 ទ្រីលាន"}
                     }
                 }
+                currencyFormat%alphaNextToNumber{
+                    1000{
+                        other{"¤ 0 ពាន់"}
+                    }
+                    10000{
+                        other{"¤ 00 ពាន់"}
+                    }
+                    100000{
+                        other{"¤ 000 ពាន់"}
+                    }
+                    1000000{
+                        other{"¤ 0 លាន"}
+                    }
+                    10000000{
+                        other{"¤ 00 លាន"}
+                    }
+                    100000000{
+                        other{"¤ 000 លាន"}
+                    }
+                    1000000000{
+                        other{"¤ 0 ប៊ីលាន"}
+                    }
+                    10000000000{
+                        other{"¤ 00 ប៊ីលាន"}
+                    }
+                    100000000000{
+                        other{"¤ 000 ប៊ីលាន"}
+                    }
+                    1000000000000{
+                        other{"¤ 0 ទ្រីលាន"}
+                    }
+                    10000000000000{
+                        other{"¤ 00 ទ្រីលាន"}
+                    }
+                    100000000000000{
+                        other{"¤ 000 ទ្រីលាន"}
+                    }
+                }
                 decimalFormat{
                     1000{
                         other{"0ពាន់"}
@@ -157,9 +203,11 @@ km{
                 group{"."}
                 infinity{"∞"}
                 list{";"}
+                minusSign{"-"}
                 nan{"NaN"}
                 perMille{"‰"}
                 percentSign{"%"}
+                plusSign{"+"}
                 superscriptingExponent{"×"}
                 timeSeparator{":"}
             }
@@ -172,9 +220,9 @@ km{
                 other{"{0} ថ្ងៃ"}
             }
         }
+        minimumGroupingDigits{"1"}
         native{"khmr"}
     }
-    Version{"2.1.49.82"}
     calendar{
         generic{
             DateTimePatterns{
@@ -187,10 +235,26 @@ km{
                 "d MMM y G",
                 "d/M/y GGGGG",
                 "{1}, {0}",
+                "{1}, {0}",
+                "{1}, {0}",
+                "{1}, {0}",
+                "{1}, {0}",
+            }
+            DateTimePatterns%atTime{
                 "{1} នៅ​ម៉ោង {0}",
                 "{1} នៅ​ម៉ោង {0}",
                 "{1}, {0}",
                 "{1}, {0}",
+            }
+            DateTimeSkeletons{
+                "ahmmsszzzz",
+                "ahmmssz",
+                "ahmmss",
+                "ahmm",
+                "GyMMMMEEEEd",
+                "GyMMMMd",
+                "GyMMMd",
+                "GGGGGyMd",
             }
             availableFormats{
                 Bh{"h B"}
@@ -237,13 +301,49 @@ km{
             }
             intervalFormats{
                 Bh{
-                    B{"h B – h B"}
                     h{"h – h B"}
                 }
                 Bhm{
-                    B{"h:mm B – h:mm B"}
                     h{"h:mm – h:mm B"}
                     m{"h:mm – h:mm B"}
+                }
+                Gy{
+                    G{"y G – y G"}
+                    y{"y – y G"}
+                }
+                GyM{
+                    G{"M/y GGGGG – M/y GGGGG"}
+                    M{"M/y – M/y GGGGG"}
+                    y{"M/y – M/y GGGGG"}
+                }
+                GyMEd{
+                    G{"E d/M/y GGGGG – E d/M/y GGGGG"}
+                    M{"E d/M/y – E d/M/y GGGGG"}
+                    d{"E d/M/y – E d/M/y GGGGG"}
+                    y{"E d/M/y – E d/M/y GGGGG"}
+                }
+                GyMMM{
+                    G{"MMM y G – MMM y G"}
+                    M{"MMM – MMM y G"}
+                    y{"MMM y – MMM y G"}
+                }
+                GyMMMEd{
+                    G{"E d MMM y G – E d MMM y G"}
+                    M{"E d MMM – E d MMM y G"}
+                    d{"E d MMM – E d MMM y G"}
+                    y{"E d MMM y – E d MMM y G"}
+                }
+                GyMMMd{
+                    G{"d MMM y G – d MMM y G"}
+                    M{"d MMM – d MMM y G"}
+                    d{"d – d MMM y G"}
+                    y{"d MMM y – d MMM y G"}
+                }
+                GyMd{
+                    G{"d/M/y GGGGG – d/M/y GGGGG"}
+                    M{"d/M/y – d/M/y GGGGG"}
+                    d{"d/M/y – d/M/y GGGGG"}
+                    y{"d/M/y – d/M/y GGGGG"}
                 }
                 H{
                     H{"H–H"}
@@ -329,7 +429,7 @@ km{
                     y{"MMMM y – MMMM y G"}
                 }
                 yMMMd{
-                    M{"MMM d – MMM d, y G"}
+                    M{"d MMM – d MMM y G"}
                     d{"d–d MMM y G"}
                     y{"d MMM, y – d MMM, y G"}
                 }
@@ -363,10 +463,26 @@ km{
                 "d MMM y",
                 "d/M/yy",
                 "{1}, {0}",
+                "{1}, {0}",
+                "{1}, {0}",
+                "{1}, {0}",
+                "{1}, {0}",
+            }
+            DateTimePatterns%atTime{
                 "{1} នៅ​ម៉ោង {0}",
                 "{1} នៅ​ម៉ោង {0}",
                 "{1}, {0}",
                 "{1}, {0}",
+            }
+            DateTimeSkeletons{
+                "ahmmsszzzz",
+                "ahmmssz",
+                "ahmmss",
+                "ahmm",
+                "yMMMMEEEEd",
+                "yMMMMd",
+                "yMMMd",
+                "yyMd",
             }
             appendItems{
                 Timezone{"{0} {1}"}
@@ -581,13 +697,49 @@ km{
             }
             intervalFormats{
                 Bh{
-                    B{"h B – h B"}
                     h{"h – h B"}
                 }
                 Bhm{
-                    B{"h:mm B – h:mm B"}
                     h{"h:mm – h:mm B"}
                     m{"h:mm – h:mm B"}
+                }
+                Gy{
+                    G{"y G – y G"}
+                    y{"y – y G"}
+                }
+                GyM{
+                    G{"M/y GGGGG – M/y GGGGG"}
+                    M{"M/y – M/y GGGGG"}
+                    y{"M/y – M/y GGGGG"}
+                }
+                GyMEd{
+                    G{"E d/M/y GGGGG – E d/M/y GGGGG"}
+                    M{"E d/M/y – E d/M/y GGGGG"}
+                    d{"E d/M/y – E d/M/y GGGGG"}
+                    y{"E d/M/y – E d/M/y GGGGG"}
+                }
+                GyMMM{
+                    G{"MMM y G – MMM y G"}
+                    M{"MMM – MMM y G"}
+                    y{"MMM y – MMM y G"}
+                }
+                GyMMMEd{
+                    G{"E d MMM y G – E d MMM y G"}
+                    M{"E d MMM – E d MMM y G"}
+                    d{"E d MMM – E d MMM y G"}
+                    y{"E d MMM y – E d MMM y G"}
+                }
+                GyMMMd{
+                    G{"d MMM y G – d MMM y G"}
+                    M{"d MMM – d MMM y G"}
+                    d{"d – d MMM y G"}
+                    y{"d MMM y – d MMM y G"}
+                }
+                GyMd{
+                    G{"d/M/y GGGGG – d/M/y GGGGG"}
+                    M{"d/M/y – d/M/y GGGGG"}
+                    d{"d/M/y – d/M/y GGGGG"}
+                    y{"d/M/y – d/M/y GGGGG"}
                 }
                 H{
                     H{"HH – HH"}
@@ -1655,8 +1807,32 @@ km{
             middle{"{0}, {1}"}
             start{"{0}, {1}"}
         }
+        or-narrow{
+            2{"{0} ឬ {1}"}
+            end{"{0} ឬ {1}"}
+            middle{"{0}, {1}"}
+            start{"{0}, {1}"}
+        }
+        or-short{
+            2{"{0} ឬ {1}"}
+            end{"{0} ឬ {1}"}
+            middle{"{0}, {1}"}
+            start{"{0}, {1}"}
+        }
         standard{
             2{"{0} និង​{1}"}
+            end{"{0} និង {1}"}
+            middle{"{0}, {1}"}
+            start{"{0}, {1}"}
+        }
+        standard-narrow{
+            2{"{0}, {1}"}
+            end{"{0}, {1}"}
+            middle{"{0}, {1}"}
+            start{"{0}, {1}"}
+        }
+        standard-short{
+            2{"{0} និង {1}"}
             end{"{0} និង {1}"}
             middle{"{0}, {1}"}
             start{"{0}, {1}"}
@@ -1684,5 +1860,68 @@ km{
         UK{"ចក្រភព​អង់គ្លេស"}
         US{"សហរដ្ឋអាមេរិក"}
         metric{"រង្វាស់​ប្រវែង"}
+    }
+    personNames{
+        foreignSpaceReplacement{" "}
+        nameOrderLocales{
+            surnameFirst{
+                "ja",
+                "km",
+                "ko",
+                "vi",
+                "yue",
+                "zh",
+            }
+        }
+        namePattern{
+            givenFirst-long-addressing-formal{"{title} {surname}"}
+            givenFirst-long-addressing-informal{"{given-informal}"}
+            givenFirst-long-monogram-formal{
+                "{given-monogram-allCaps}{given2-monogram-allCaps}{surname-core-monog"
+                "ram-allCaps}"
+            }
+            givenFirst-long-monogram-informal{"{given-informal-monogram-allCaps}{surname-monogram-allCaps}"}
+            givenFirst-long-referring-formal{"{title} {given} {given2} {surname} {generation}, {credentials}"}
+            givenFirst-long-referring-informal{"{given-informal} {surname}"}
+            givenFirst-medium-addressing-formal{"{title} {surname}"}
+            givenFirst-medium-addressing-informal{"{given-informal}"}
+            givenFirst-medium-monogram-formal{"{surname-monogram-allCaps}"}
+            givenFirst-medium-monogram-informal{"{given-informal-monogram-allCaps}"}
+            givenFirst-medium-referring-formal{"{given} {given2-initial} {surname} {generation}, {credentials}"}
+            givenFirst-medium-referring-informal{"{given-informal} {surname}"}
+            givenFirst-short-addressing-formal{"{title} {surname}"}
+            givenFirst-short-addressing-informal{"{given-informal}"}
+            givenFirst-short-monogram-formal{"{surname-monogram-allCaps}"}
+            givenFirst-short-monogram-informal{"{given-informal-monogram-allCaps}"}
+            givenFirst-short-referring-formal{"{given-initial} {given2-initial} {surname}"}
+            givenFirst-short-referring-informal{"{given-informal} {surname-initial}"}
+            sorting-long-referring-formal{"{surname-core}, {given} {given2} {surname-prefix}"}
+            sorting-long-referring-informal{"{surname}, {given-informal}"}
+            sorting-medium-referring-formal{"{surname-core}, {given} {given2-initial} {surname-prefix}"}
+            sorting-medium-referring-informal{"{surname}, {given-informal}"}
+            sorting-short-referring-formal{"{surname-core}, {given-initial} {given2-initial} {surname-prefix}"}
+            sorting-short-referring-informal{"{surname}, {given-informal}"}
+            surnameFirst-long-addressing-formal{"{title} {surname}"}
+            surnameFirst-long-addressing-informal{"{given-informal}"}
+            surnameFirst-long-monogram-formal{
+                "{surname-core-monogram-allCaps}{given-monogram-allCaps}{given2-monog"
+                "ram-allCaps}"
+            }
+            surnameFirst-long-monogram-informal{"{surname-monogram-allCaps}{given-informal-monogram-allCaps}"}
+            surnameFirst-long-referring-formal{"{surname} {title} {given} {given2} {generation}, {credentials}"}
+            surnameFirst-long-referring-informal{"{surname} {given-informal}"}
+            surnameFirst-medium-addressing-formal{"{title} {surname}"}
+            surnameFirst-medium-addressing-informal{"{given-informal}"}
+            surnameFirst-medium-monogram-formal{"{surname-monogram-allCaps}"}
+            surnameFirst-medium-monogram-informal{"{given-informal-monogram-allCaps}"}
+            surnameFirst-medium-referring-formal{"{surname} {given} {given2-initial} {generation}, {credentials}"}
+            surnameFirst-medium-referring-informal{"{surname} {given-informal}"}
+            surnameFirst-short-addressing-formal{"{title} {surname}"}
+            surnameFirst-short-addressing-informal{"{given-informal}"}
+            surnameFirst-short-monogram-formal{"{surname-monogram-allCaps}"}
+            surnameFirst-short-monogram-informal{"{given-informal-monogram-allCaps}"}
+            surnameFirst-short-referring-formal{"{surname} {given-initial} {given2-initial}"}
+            surnameFirst-short-referring-informal{"{surname} {given-initial}"}
+        }
     }
 }

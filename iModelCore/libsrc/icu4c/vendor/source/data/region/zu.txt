@@ -1,5 +1,6 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 zu{
     Countries{
         001{"umhlaba"}
@@ -107,7 +108,7 @@ zu{
         ES{"i-Spain"}
         ET{"i-Ethiopia"}
         EU{"i-European Union"}
-        EZ{"EZ"}
+        EZ{"I-Eurozone"}
         FI{"i-Finland"}
         FJ{"i-Fiji"}
         FK{"i-Falkland Islands"}
@@ -134,7 +135,7 @@ zu{
         GW{"i-Guinea-Bissau"}
         GY{"i-Guyana"}
         HK{"i-Hong Kong SAR China"}
-        HM{"i-Heard Island ne-McDonald Islands"}
+        HM{"I-Heard & McDonald Island"}
         HN{"i-Honduras"}
         HR{"i-Croatia"}
         HT{"i-Haiti"}
@@ -183,7 +184,7 @@ zu{
         MF{"i-Saint Martin"}
         MG{"i-Madagascar"}
         MH{"i-Marshall Islands"}
-        MK{"i-Macedonia"}
+        MK{"i-North Macedonia"}
         ML{"iMali"}
         MM{"i-Myanmar (Burma)"}
         MN{"i-Mongolia"}
@@ -273,7 +274,7 @@ zu{
         TZ{"i-Tanzania"}
         UA{"i-Ukraine"}
         UG{"i-Uganda"}
-        UM{"i-U.S. Minor Outlying Islands"}
+        UM{"I-U.S. Outlying Islands"}
         UN{"I-United Nations"}
         US{"i-United States"}
         UY{"i-Uruguay"}
@@ -311,9 +312,8 @@ zu{
         CI{"i-Ivory Coast"}
         CZ{"i-Czech Republic"}
         FK{"i-Falkland Islands (Islas Malvinas)"}
-        MK{"i-Macedonia (FYROM)"}
-        SZ{"SZ"}
+        NZ{"i-Aotearoa New Zealand"}
         TL{"i-East Timor"}
+        TR{"i-Türkiye"}
     }
-    Version{"2.1.48.17"}
 }

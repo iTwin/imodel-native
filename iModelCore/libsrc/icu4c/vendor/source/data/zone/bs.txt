@@ -1,7 +1,7 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 bs{
-    Version{"2.1.49.82"}
     zoneStrings{
         "Africa:Abidjan"{
             ec{"Abidjan"}
@@ -661,7 +661,7 @@ bs{
             ec{"Ašhabad"}
         }
         "Asia:Atyrau"{
-            ec{"Atyrau"}
+            ec{"Atiraj"}
         }
         "Asia:Baghdad"{
             ec{"Bagdad"}
@@ -809,6 +809,9 @@ bs{
         }
         "Asia:Qatar"{
             ec{"Katar"}
+        }
+        "Asia:Qostanay"{
+            ec{"Kostanaj"}
         }
         "Asia:Qyzylorda"{
             ec{"Kizilorda"}
@@ -1510,11 +1513,17 @@ bs{
             ld{"Centralnoevropsko ljetno vrijeme"}
             lg{"Centralnoevropsko vrijeme"}
             ls{"Centralnoevropsko standardno vrijeme"}
+            sd{"CEST"}
+            sg{"CET"}
+            ss{"CET"}
         }
         "meta:Europe_Eastern"{
             ld{"Istočnoevropsko ljetno vrijeme"}
             lg{"Istočnoevropsko vrijeme"}
             ls{"Istočnoevropsko standardno vrijeme"}
+            sd{"EEST"}
+            sg{"EET"}
+            ss{"EET"}
         }
         "meta:Europe_Further_Eastern"{
             ls{"Dalekoistočnoevropsko vrijeme"}
@@ -1523,6 +1532,9 @@ bs{
             ld{"Zapadnoevropsko ljetno vrijeme"}
             lg{"Zapadnoevropsko vrijeme"}
             ls{"Zapadnoevropsko standardno vrijeme"}
+            sd{"WEST"}
+            sg{"WET"}
+            ss{"WET"}
         }
         "meta:Falkland"{
             ld{"Folklandsko ljetno vrijeme"}
@@ -1542,6 +1554,7 @@ bs{
         }
         "meta:GMT"{
             ls{"Griničko vrijeme"}
+            ss{"GMT"}
         }
         "meta:Galapagos"{
             ls{"Galapagosko vrijeme"}
@@ -1748,7 +1761,9 @@ bs{
             ls{"Vrijeme na Ostrvu Niue"}
         }
         "meta:Norfolk"{
-            ls{"Norfolško vrijeme"}
+            ld{"Norfolško ljetno vrijeme"}
+            lg{"Norfolško vrijeme"}
+            ls{"Norfolško standardno vrijeme"}
         }
         "meta:Noronha"{
             ld{"Ljetno vrijeme na ostrvu Fernando di Noronja"}
@@ -1931,6 +1946,9 @@ bs{
             ld{"Jekaterinburško ljetno vrijeme"}
             lg{"Jekaterinburško vrijeme"}
             ls{"Jekaterinburško standardno vrijeme"}
+        }
+        "meta:Yukon"{
+            ls{"Jukonsko vrijeme"}
         }
         fallbackFormat{"{1} ({0})"}
         gmtFormat{"GMT {0}"}
