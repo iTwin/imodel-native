@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 
 import sys, os
 import libxml2
@@ -10,7 +11,7 @@ mainXSD = str()
 signature = str()
 dictXSD = dict()
 
-def gatherFiles():	
+def gatherFiles():
     for file in filenames:
         if (file[-5] in ["a", "b", "c"]) and (file[-3:] == 'xsd'):
             # newfilename = string.replace(filename, ' ', '_')

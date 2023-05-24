@@ -84,6 +84,8 @@ $(o)ftmm$(oext) : $(BaseDir)vendor/src/base/ftmm.c ${CommonDependencies}
 
 $(o)ftstroke$(oext) : $(BaseDir)vendor/src/base/ftstroke.c ${CommonDependencies}
 
+$(o)ftsvg$(oext) : $(BaseDir)vendor/src/svg/ftsvg.c ${CommonDependencies}
+
 $(o)ftsynth$(oext) : $(BaseDir)vendor/src/base/ftsynth.c ${CommonDependencies}
 
 $(o)ftsystem$(oext) : $(BaseDir)vendor/src/base/ftsystem.c ${CommonDependencies}
