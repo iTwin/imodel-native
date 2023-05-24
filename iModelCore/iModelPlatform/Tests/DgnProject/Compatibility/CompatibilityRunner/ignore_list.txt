@@ -13,6 +13,5 @@
 *.IModelCompatibilityTestFixture.ECSqlColumnInfoForAliases
 ##Ignoring these tests for old test runners because schema count will be incremented by 1 for test files containing BisCore schema 
 ##having new reference schema BisCustomAttributes (e.g BisCore.1.0.16), old test runners can not be updated to support this change
-iModelEvolutionTestRunnerNuget_bim0200dev_x64.2018.9.14.2.IModelCompatibilityTestFixture.BuiltinSchemaVersions
-iModelEvolutionTestRunnerNuget_imodelNative_x64.2023.3.28.3.IModelCompatibilityTestFixture.BuiltinSchemaVersions
+*.IModelCompatibilityTestFixture.BuiltinSchemaVersions
 *.IModelCompatibilityTestFixture.SchemaManager_EC31KindOfQuantities
