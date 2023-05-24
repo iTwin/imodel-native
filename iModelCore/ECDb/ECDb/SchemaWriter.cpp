@@ -3283,12 +3283,11 @@ BentleyStatus SchemaWriter::DeleteClass(Context& ctx, ClassChange& classChange, 
     if (!ctx.IsMajorSchemaVersionChange(deletedClass.GetSchema().GetId()) || (!ctx.AreMajorSchemaVersionChangesAllowed() && (!ctx.IsMajorSchemaVersionChangeAllowedForDynamicSchemas() || !isDynamicSchema)))
         {
         if (ctx.IgnoreIllegalDeletionsAndModifications())
-                {
-                LOG.infov("Ignoring upgrade error:  ECSchema Upgrade failed. ECSchema %s: Cannot delete ECClass '%s'. This is a major ECSchema change. Either major schema version changes are disabled "
-                    "or the 'Read' version number of the ECSchema was not incremented.",
-                    deletedClass.GetSchema().GetFullSchemaName().c_str(), deletedClass.GetName().c_str());
-                return SUCCESS;
-                }
+            {
+            LOG.infov("Ignoring upgrade error:  ECSchema Upgrade failed. ECSchema %s: Cannot delete ECClass '%s'. This is a major ECSchema change. Either major schema version changes are disabled "
+                "or the 'Read' version number of the ECSchema was not incremented.", deletedClass.GetSchema().GetFullSchemaName().c_str(), deletedClass.GetName().c_str());
+            return SUCCESS;
+            }
 
         ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "ECSchema Upgrade failed. ECSchema %s: Cannot delete ECClass '%s'. This is a major ECSchema change. Either major schema version changes are disabled "
                          "or the 'Read' version number of the ECSchema was not incremented.",
