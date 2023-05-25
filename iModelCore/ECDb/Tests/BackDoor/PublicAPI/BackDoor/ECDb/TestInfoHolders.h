@@ -73,78 +73,8 @@ struct AccessString final
     Utf8String ToString() const { Utf8String str; str.Sprintf("%s:%s.%s", m_schemaNameOrAlias.c_str(), m_className.c_str(), m_propAccessString.c_str()); return str; }
     };
 
-
-struct Column;
-
-struct Table final
-    {
-    enum class Type
-        {
-        Primary = 0,
-        Joined = 1,
-        Existing = 2,
-        Overflow = 3,
-        Virtual = 4
-        };
-
-    private:
-        Utf8String m_name;
-        Nullable<Type> m_type;
-        Utf8String m_parentTableName;
-        ECN::ECClassId m_exclusiveRootClassId;
-        std::vector<Column> m_columns;
-        std::map<Utf8String, size_t> m_columnLookupMap;
-
-        //avoid triggering destructor for static non-POD members -> hold as pointer and never free it
-        static Column const* s_nullColumn;
-
-    public:
-        Table() {}
-        Table(Utf8StringCR name, Type type, Utf8StringCR parentTableName, ECN::ECClassId exclusiveRootClassId) : m_name(name), m_type(type), m_parentTableName(parentTableName), m_exclusiveRootClassId(exclusiveRootClassId) {}
-        Table(Table&& rhs) : m_name(std::move(rhs.m_name)), m_type(std::move(rhs.m_type)), m_parentTableName(std::move(rhs.m_parentTableName)), m_exclusiveRootClassId(std::move(rhs.m_exclusiveRootClassId)),
-            m_columns(std::move(rhs.m_columns)), m_columnLookupMap(std::move(rhs.m_columnLookupMap)) {}
-
-        Table& operator=(Table&& rhs)
-            {
-            if (this != &rhs)
-                {
-                m_name = std::move(rhs.m_name);
-                m_type = std::move(rhs.m_type);
-                m_parentTableName = std::move(rhs.m_parentTableName);
-                m_exclusiveRootClassId = std::move(rhs.m_exclusiveRootClassId);
-                m_columns = std::move(rhs.m_columns);
-                m_columnLookupMap = std::move(rhs.m_columnLookupMap);
-                }
-
-            return *this;
-            }
-
-        void AddColumn(Column&&);
-
-        bool Exists() const { return !m_name.empty(); }
-
-        Utf8StringCR GetName() const { return m_name; }
-        Nullable<Type> GetType() const { return m_type; }
-        Utf8StringCR GetParentTable() const { return m_parentTableName; }
-        ECN::ECClassId GetExclusiveRootClassId() const { return m_exclusiveRootClassId; }
-
-        std::vector<Column> const& GetColumns() const { return m_columns; }
-        Column const& GetColumn(Utf8StringCR name) const;
-    };
-
-// GTest Format customizations for types not handled by GTest
-
-bool operator==(Table::Type lhs, Nullable<Table::Type> rhs);
-
-void PrintTo(Nullable<Table::Type>, std::ostream*);
-void PrintTo(Table::Type, std::ostream*);
-
-
-
 enum class Virtual { Yes, No };
 
-// GTest Format customizations for types not handled by GTest
-void PrintTo(Virtual, std::ostream*);
 
 //=======================================================================================
 // @bsiclass
@@ -258,6 +188,75 @@ struct Column final
         Kind GetKind() const { return m_kind; }
         Nullable<uint32_t> GetOrdinalInPrimaryKey() const { return m_ordinalInPrimaryKey; }
     };
+
+
+struct Table final
+    {
+    enum class Type
+        {
+        Primary = 0,
+        Joined = 1,
+        Existing = 2,
+        Overflow = 3,
+        Virtual = 4
+        };
+
+    private:
+        Utf8String m_name;
+        Nullable<Type> m_type;
+        Utf8String m_parentTableName;
+        ECN::ECClassId m_exclusiveRootClassId;
+        std::vector<Column> m_columns;
+        std::map<Utf8String, size_t> m_columnLookupMap;
+
+        //avoid triggering destructor for static non-POD members -> hold as pointer and never free it
+        static Column const* s_nullColumn;
+
+    public:
+        Table() {}
+        Table(Utf8StringCR name, Type type, Utf8StringCR parentTableName, ECN::ECClassId exclusiveRootClassId) : m_name(name), m_type(type), m_parentTableName(parentTableName), m_exclusiveRootClassId(exclusiveRootClassId) {}
+        Table(Table&& rhs) : m_name(std::move(rhs.m_name)), m_type(std::move(rhs.m_type)), m_parentTableName(std::move(rhs.m_parentTableName)), m_exclusiveRootClassId(std::move(rhs.m_exclusiveRootClassId)),
+            m_columns(std::move(rhs.m_columns)), m_columnLookupMap(std::move(rhs.m_columnLookupMap)) {}
+
+        Table& operator=(Table&& rhs)
+            {
+            if (this != &rhs)
+                {
+                m_name = std::move(rhs.m_name);
+                m_type = std::move(rhs.m_type);
+                m_parentTableName = std::move(rhs.m_parentTableName);
+                m_exclusiveRootClassId = std::move(rhs.m_exclusiveRootClassId);
+                m_columns = std::move(rhs.m_columns);
+                m_columnLookupMap = std::move(rhs.m_columnLookupMap);
+                }
+
+            return *this;
+            }
+
+        void AddColumn(Column&&);
+
+        bool Exists() const { return !m_name.empty(); }
+
+        Utf8StringCR GetName() const { return m_name; }
+        Nullable<Type> GetType() const { return m_type; }
+        Utf8StringCR GetParentTable() const { return m_parentTableName; }
+        ECN::ECClassId GetExclusiveRootClassId() const { return m_exclusiveRootClassId; }
+
+        std::vector<Column> const& GetColumns() const { return m_columns; }
+        Column const& GetColumn(Utf8StringCR name) const;
+    };
+
+// GTest Format customizations for types not handled by GTest
+
+bool operator==(Table::Type lhs, Nullable<Table::Type> rhs);
+
+void PrintTo(Nullable<Table::Type>, std::ostream*);
+void PrintTo(Table::Type, std::ostream*);
+
+
+
+// GTest Format customizations for types not handled by GTest
+void PrintTo(Virtual, std::ostream*);
 
 // GTest Format customizations for types not handled by GTest
 void PrintTo(Column const&, std::ostream*);
