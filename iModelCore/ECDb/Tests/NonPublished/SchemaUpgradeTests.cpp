@@ -7561,27 +7561,27 @@ TEST_F(SchemaUpgradeTestFixture, DeleteECRelationships)
     AssertSchemaUpdate(relationshipWithForeignKeyMapping, filePath, {false, false}, "Deleting ECRelationship with ForeignKey Mapping", "ECSchema Upgrade failed. ECSchema TestSchema.01.00.00: Deleting ECClass 'EndTableRelationship' failed. Deleting ECRelationshipClass with ForeignKey mapping is not supported.");
 
     constexpr Utf8CP relationshipWithForeignKeyMappingDynamicSchema =
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'CoreCustomAttributes' version = '01.00.00' prefix='coreCA' />"           
-        "   <ECCustomAttributes>"
-        "       <DynamicSchema xmlns = 'CoreCustomAttributes.01.00.00' />"
-        "   </ECCustomAttributes>"
-        "   <ECEntityClass typeName='Foo' modifier='None'>"
-        "       <ECProperty propertyName='S1' typeName='string' />"
-        "   </ECEntityClass>"
-        "   <ECEntityClass typeName='Roo' modifier='None'>"
-        "       <ECProperty propertyName='S3' typeName='string' />"
-        "   </ECEntityClass>"
-        "    <ECRelationshipClass typeName='LinkTableRelationship' modifier='Sealed' strength='referencing' strengthDirection='forward' >"
-        "       <Source cardinality='(0,N)' polymorphic='True'>"
-        "           <Class class='Foo' />"
-        "       </Source>"
-        "       <Target cardinality='(0,N)' polymorphic='True'>"
-        "           <Class class='Roo' />"
-        "       </Target>"
-        "     </ECRelationshipClass>"
-        "</ECSchema>";
+        R"xml(<?xml version='1.0' encoding='utf-8'?>"
+        <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+            <ECSchemaReference name = 'CoreCustomAttributes' version = '01.00.00' prefix='coreCA' />
+            <ECCustomAttributes>
+                <DynamicSchema xmlns = 'CoreCustomAttributes.01.00.00' />
+            </ECCustomAttributes>
+            <ECEntityClass typeName='Foo' modifier='None'>
+                <ECProperty propertyName='S1' typeName='string' />
+            </ECEntityClass>
+            <ECEntityClass typeName='Roo' modifier='None'>
+                <ECProperty propertyName='S3' typeName='string' />
+            </ECEntityClass>
+            <ECRelationshipClass typeName='LinkTableRelationship' modifier='Sealed' strength='referencing' strengthDirection='forward' >
+                <Source cardinality='(0,N)' polymorphic='True'>
+                    <Class class='Foo' />
+                </Source>
+                <Target cardinality='(0,N)' polymorphic='True'>
+                    <Class class='Roo' />
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml";
 
     AssertSchemaUpdate(relationshipWithForeignKeyMappingDynamicSchema, filePath, {false, false}, "Deleting ECRelationship with ForeignKey Mapping", "ECSchema Upgrade failed. ECSchema TestSchema.01.00.00: Deleting ECClass 'EndTableRelationship' failed. Deleting ECRelationshipClass with ForeignKey mapping is not supported.");
 
@@ -7614,14 +7614,14 @@ TEST_F(SchemaUpgradeTestFixture, DeleteECRelationships)
 TEST_F(SchemaUpgradeTestFixture, DeleteECRelationshipConstraintClassUnsupported)
     {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schemaupdate.ecdb", SchemaItem(
-        R"xml(<ECSchema schemaName="TestSchema" nameSpacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
-          <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap" />
+        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
           <ECEntityClass typeName="Element" modifier="Abstract">
             <ECCustomAttributes>
-                    <ClassMap xmlns="ECDbMap.02.00">
+                    <ClassMap xmlns="ECDbMap.02.00.00">
                         <MapStrategy>TablePerHierarchy</MapStrategy>
                 </ClassMap>
-                    <ShareColumns xmlns="ECDbMap.02.00">
+                    <ShareColumns xmlns="ECDbMap.02.00.00">
                       <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
                     </ShareColumns>
             </ECCustomAttributes>
@@ -7637,10 +7637,10 @@ TEST_F(SchemaUpgradeTestFixture, DeleteECRelationshipConstraintClassUnsupported)
             <ECProperty propertyName="Name" typeName="string" />
           </ECEntityClass>
           <ECRelationshipClass typeName="GeometrySourceHasGeometry" strength="embedding" modifier="Sealed">
-            <Source cardinality="(0,1)" polymorphic="True">
+            <Source multiplicity="(0..1)" polymorphic="True" roleLabel="owns">
               <Class class="GeometrySource" />
             </Source>
-            <Target cardinality="(0,N)" polymorphic="True">
+            <Target multiplicity="(0..1)" polymorphic="True" roleLabel="is owned by">
               <Class class="ElementGeometry" />
             </Target>
           </ECRelationshipClass>
@@ -7650,18 +7650,18 @@ TEST_F(SchemaUpgradeTestFixture, DeleteECRelationshipConstraintClassUnsupported)
     m_ecdb.AddIssueListener(issueListener);
 
     ASSERT_EQ(ERROR, ImportSchema(SchemaItem(
-        R"xml(<ECSchema schemaName="TestSchema" nameSpacePrefix="ts" version="2.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
-          <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap" />
-          <ECSchemaReference name = 'CoreCustomAttributes' version = '01.00.00' prefix='coreCA' />
+        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="2.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+          <ECSchemaReference name = 'CoreCustomAttributes' version = '01.00.00' alias='coreCA' />
             <ECCustomAttributes>
                 <DynamicSchema xmlns = 'CoreCustomAttributes.01.00.00' />
             </ECCustomAttributes>
           <ECEntityClass typeName="Element" modifier="Abstract">
             <ECCustomAttributes>
-                    <ClassMap xmlns="ECDbMap.02.00">
+                    <ClassMap xmlns="ECDbMap.02.00.00">
                         <MapStrategy>TablePerHierarchy</MapStrategy>
                 </ClassMap>
-                    <ShareColumns xmlns="ECDbMap.02.00">
+                    <ShareColumns xmlns="ECDbMap.02.00.00">
                       <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
                     </ShareColumns>
             </ECCustomAttributes>
@@ -7673,10 +7673,10 @@ TEST_F(SchemaUpgradeTestFixture, DeleteECRelationshipConstraintClassUnsupported)
             <ECProperty propertyName="Name" typeName="string" />
           </ECEntityClass>
           <ECRelationshipClass typeName="GeometrySourceHasGeometry" strength="embedding" modifier="Sealed">
-            <Source cardinality="(0,1)" polymorphic="True">
+            <Source multiplicity="(0..1)" polymorphic="True" roleLabel="owns">
               <Class class="GeometrySource" />
             </Source>
-            <Target cardinality="(0,N)" polymorphic="True">
+            <Target multiplicity="(0..1)" polymorphic="True" roleLabel="is owned by">
               <Class class="ExtendedElement" />
             </Target>
           </ECRelationshipClass>
@@ -7947,18 +7947,18 @@ TEST_F(SchemaUpgradeTestFixture, DeleteNavigationProperty)
 
 TEST_F(SchemaUpgradeTestFixture, DeleteNavigationPropertyDynamicSchema)
     {
-    Utf8CP schemaTemplate = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+    Utf8CP schemaTemplate = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                    <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
                     %s
                     <ECEntityClass typeName="A" modifier="None">
                         <ECProperty propertyName="Prop1" typeName="string" />
                     </ECEntityClass>
                    <ECEntityClass typeName="B" modifier="None">
                         <ECCustomAttributes>
-                            <ClassMap xmlns="ECDbMap.02.00">
+                            <ClassMap xmlns="ECDbMap.02.00.00">
                                 <MapStrategy>TablePerHierarchy</MapStrategy>
                             </ClassMap>
-                            <ShareColumns xmlns="ECDbMap.02.00"/>
+                            <ShareColumns xmlns="ECDbMap.02.00.00"/>
                         </ECCustomAttributes>
                         <ECProperty propertyName="Prop2" typeName="string" />
                         %s
@@ -7974,16 +7974,16 @@ TEST_F(SchemaUpgradeTestFixture, DeleteNavigationPropertyDynamicSchema)
                 </ECSchema>)xml";
 
     Utf8String schemaV1Xml;
-    schemaV1Xml.Sprintf(schemaTemplate,"1.0", "", R"xml(<ECNavigationProperty propertyName="A" relationshipName="Rel" direction="Backward"/>)xml");
+    schemaV1Xml.Sprintf(schemaTemplate,"1.0.0", "", R"xml(<ECNavigationProperty propertyName="A" relationshipName="Rel" direction="Backward"/>)xml");
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schemaupdate_deletenavprop.ecdb", SchemaItem(schemaV1Xml))) << "Schema import with " << schemaV1Xml.c_str();
 
-    constexpr Utf8CP dynamicSchema = R"xml(<ECSchemaReference name = 'CoreCustomAttributes' version = '01.00' alias = 'CoreCA' />
+    constexpr Utf8CP dynamicSchema = R"xml(<ECSchemaReference name = 'CoreCustomAttributes' version = '01.00.00' alias = 'CoreCA' />
                                     <ECCustomAttributes>
-                                        <DynamicSchema xmlns = 'CoreCustomAttributes.01.00' />
+                                        <DynamicSchema xmlns = 'CoreCustomAttributes.01.00.00' />
                                     </ECCustomAttributes>)xml";
     //now delete nav prop (logical FK)
     Utf8String schemaV2Xml;
-    schemaV2Xml.Sprintf(schemaTemplate,"2.0", dynamicSchema, "");
+    schemaV2Xml.Sprintf(schemaTemplate,"2.0.0", dynamicSchema, "");
 
     IssueListener issueListener;
     m_ecdb.AddIssueListener(issueListener);
@@ -7994,9 +7994,9 @@ TEST_F(SchemaUpgradeTestFixture, DeleteNavigationPropertyDynamicSchema)
     m_ecdb.AbandonChanges();
 
     //now delete nav prop (physical FK)
-    schemaV1Xml.Sprintf(schemaTemplate,"1.0", "", R"xml(<ECNavigationProperty propertyName="A" relationshipName="Rel" direction="Backward">
+    schemaV1Xml.Sprintf(schemaTemplate,"1.0.0", "", R"xml(<ECNavigationProperty propertyName="A" relationshipName="Rel" direction="Backward">
                             <ECCustomAttributes>
-                                <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+                                <ForeignKeyConstraint xmlns="ECDbMap.02.00.00"/>
                             </ECCustomAttributes>
                         </ECNavigationProperty>)xml");
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schemaupdate_deletenavprop.ecdb", SchemaItem(schemaV1Xml))) << "Schema import with " << schemaV1Xml.c_str();
