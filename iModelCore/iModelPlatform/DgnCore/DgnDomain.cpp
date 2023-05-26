@@ -613,11 +613,21 @@ SchemaStatus DgnDomains::DoValidateSchema(ECSchemaCR appSchema, bool isSchemaRea
         }
     SchemaKeyCR bimSchemaKey = bimSchema->GetSchemaKey();
 
-    if (appSchema.IsDynamicSchema() && 0 == bimSchemaKey.CompareByVersion(appSchemaKey) && canBeUpgradedWithoutVersionChange(appSchema))
+    if (appSchema.IsDynamicSchema())
         {
-        LOG.debugv("Schema found in the BIM %s has the same version as that in the application %s.  The schema is dynamic so its contents must be checked for updates.", bimSchemaKey.GetFullSchemaName().c_str(), appSchemaKey.GetFullSchemaName().c_str());
-        return SchemaStatus::SchemaIsDynamic;
+        if (0 == bimSchemaKey.CompareByVersion(appSchemaKey) && canBeUpgradedWithoutVersionChange(appSchema))
+            {
+            LOG.debugv("Schema found in the BIM %s has the same version as that in the application %s.  The schema is dynamic so its contents must be checked for updates.", bimSchemaKey.GetFullSchemaName().c_str(), appSchemaKey.GetFullSchemaName().c_str());
+            return SchemaStatus::SchemaIsDynamic;
+            }
+
+        if (appSchema.IsDynamicSchema() && appSchemaKey.GetVersionRead() > bimSchemaKey.GetVersionRead())   // Major version change done for a dynamic schema
+            {
+            LOG.infov("Major version change detected. Schema in BIM %s. Schema in application %s", bimSchemaKey.GetFullSchemaName().c_str(), appSchemaKey.GetFullSchemaName().c_str());
+            return SchemaStatus::SchemaIsDynamic;
+            }
         }
+
 
     if (appSchemaKey.GetVersionRead() == bimSchemaKey.GetVersionRead() && appSchemaKey.GetVersionWrite() == bimSchemaKey.GetVersionWrite() && appSchemaKey.GetVersionMinor() <= bimSchemaKey.GetVersionMinor())
         return SchemaStatus::Success; // Most common case
@@ -701,7 +711,7 @@ SchemaStatus DgnDomains::DoImportSchemas(bvector<ECSchemaCP> const &importSchema
         return SchemaStatus::Success;
 
     // always disallow major schema upgrades for domain schema imports. Major schema upgrades are only allowed across software generations
-    importOptions |= SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade;
+    importOptions = importOptions | SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas;
 
     DgnDbR dgndb = GetDgnDb();
     if (dgndb.IsReadonly()) {
