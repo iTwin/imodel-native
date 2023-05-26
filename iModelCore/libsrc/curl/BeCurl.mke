@@ -411,6 +411,8 @@ $(o)vquic$(oext) : $(BeCurlLibDir)vquic/vquic.c ${MultiCompileDepends}
 
     $(o)ares__timeval$(oext) : $(AresLibDir)ares__timeval.c ${MultiCompileDepends}
 
+    $(o)ares_rand$(oext) : $(AresLibDir)ares_rand.c ${MultiCompileDepends}
+
     $(o)ares__read_line$(oext) : $(AresLibDir)ares__read_line.c ${MultiCompileDepends}
 
     $(o)ares_strsplit$(oext) : $(AresLibDir)ares_strsplit.c ${MultiCompileDepends}
@@ -422,6 +424,8 @@ $(o)vquic$(oext) : $(BeCurlLibDir)vquic/vquic.c ${MultiCompileDepends}
     $(o)ares_expand_name$(oext) : $(AresLibDir)ares_expand_name.c ${MultiCompileDepends}
 
     $(o)ares_free_string$(oext) : $(AresLibDir)ares_free_string.c ${MultiCompileDepends}
+
+    $(o)ares_inet_ntop$(oext) : $(AresLibDir)ares_inet_ntop.c ${MultiCompileDepends}
 
     $(o)ares_gethostbyaddr$(oext) : $(AresLibDir)ares_gethostbyaddr.c ${MultiCompileDepends}
 
