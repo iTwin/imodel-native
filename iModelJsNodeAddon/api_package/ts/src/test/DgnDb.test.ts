@@ -512,6 +512,7 @@ describe("basic tests", () => {
   });
 
   it("testConvertEC2XmlSchemas", async () => {
+    assert.isTrue(dgndb.isOpen());
     const ec2SchemaXml = `<?xml version="1.0" encoding="UTF-8"?>
       <ECSchema schemaName="TestSchema" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
         <ECSchemaReference name="RefSchema" version="01.00" prefix="rs" />
@@ -523,12 +524,103 @@ describe("basic tests", () => {
         <ECClass typeName="TestStructClass" isStruct="true" />
       </ECSchema>`;
 
-    assert.isTrue(dgndb.isOpen());
     const ec3Schemas: string[] = dgndb.convertEC2XmlSchemas([ec2SchemaXml, ec2RefSchema]);
     assert.equal(ec3Schemas.length, 2);
-    assert.isTrue(ec3Schemas[0].includes("http://www.bentley.com/schemas/Bentley.ECXML.3.2"));
-    assert.isTrue(ec3Schemas[1].includes("http://www.bentley.com/schemas/Bentley.ECXML.3.2"));
-    dgndb.saveChanges();
-    dgndb.closeIModel();
+    // converted EC3 schemas are always sorted in dependancy order: RefSchema-> TestSchema
+    const ec3RefSchema = ec3Schemas[0];
+    const ec3SchemaXml = ec3Schemas[1];
+
+    assert.isTrue(ec3RefSchema.includes("http://www.bentley.com/schemas/Bentley.ECXML.3.2"));
+    assert.isTrue(ec3SchemaXml.includes("http://www.bentley.com/schemas/Bentley.ECXML.3.2"));
+  });
+
+  it("testConvertEC2XmlSchemas enumeration in ref schema", async () => {
+    const writeDbFileName = copyFile("testSchemaConvert.bim", dbFileName);
+    // Without ProfileOptions.Upgrade, we get: Error | ECDb | Failed to import schema 'RefSchema.01.00.00'. Current ECDb profile version (4.0.0.1) only support schemas with EC version < 3.2. ECDb profile version upgrade is required to import schemas with EC Version >= 3.2.
+    const db: IModelJsNative.DgnDb = openDgnDb(writeDbFileName, { profile: ProfileOptions.Upgrade, schemaLockHeld: true });
+    assert.isTrue(db !== undefined);
+    assert.isTrue(db.isOpen());
+
+    const schemaXML = `<?xml version='1.0' encoding='UTF-8'?>
+      <ECSchema schemaName='Trap' version='78.00' nameSpacePrefix='tr' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>
+        <ECSchemaReference name='EditorCustomAttributes' version='01.00' prefix='beca' />
+        <ECSchemaReference name='TrapRef' version='78.00' prefix='trRef' />
+        <ECClass typeName='A' isStruct='false' isCustomAttributeClass='false' isDomainClass='true'>
+          <BaseClass>trRef:D</BaseClass>
+          <ECProperty propertyName='TitleA' typeName='int' displayLabel='Title'>
+            <ECCustomAttributes>
+              <StandardValues xmlns='EditorCustomAttributes.01.00'>
+                <ValueMap>
+                  <ValueMap>
+                    <DisplayString>Sensei</DisplayString>
+                    <Value>0</Value>
+                  </ValueMap>
+                </ValueMap>
+              </StandardValues>
+            </ECCustomAttributes>
+          </ECProperty>
+        </ECClass>
+      </ECSchema>`;
+
+    const schemaXMLRef = `<?xml version='1.0' encoding='UTF-8'?>
+      <ECSchema schemaName='TrapRef' version='78.00' nameSpacePrefix='trRef' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>
+        <ECSchemaReference name='BisCore' version='01.00' prefix='bis' />
+        <ECSchemaReference name='EditorCustomAttributes' version='01.00' prefix='beca' />
+        <ECClass typeName='D' isStruct='false' isCustomAttributeClass='false' isDomainClass='true'>
+          <BaseClass>bis:GraphicalElement3d</BaseClass>
+          <ECProperty propertyName='TitleA' typeName='int' displayLabel='Title'>
+            <ECCustomAttributes>
+              <StandardValues xmlns='EditorCustomAttributes.01.00'>
+                <ValueMap>
+                  <ValueMap>
+                    <DisplayString>Sensei</DisplayString>
+                    <Value>0</Value>
+                  </ValueMap>
+                </ValueMap>
+              </StandardValues>
+            </ECCustomAttributes>
+          </ECProperty>
+       </ECClass>
+      </ECSchema>`;
+
+    const ec3Schemas: string[] = db.convertEC2XmlSchemas([schemaXML, schemaXMLRef]);
+    // converted EC3 schemas are always sorted in dependancy order. Last schemas would be TrapRef -> Trap
+    const ec3RefSchema = ec3Schemas[ec3Schemas.length - 2];
+    const ec3SchemaXml = ec3Schemas[ec3Schemas.length - 1];
+
+    assert.isTrue(ec3RefSchema.includes("http://www.bentley.com/schemas/Bentley.ECXML.3.2"));
+    assert.isTrue(ec3SchemaXml.includes("http://www.bentley.com/schemas/Bentley.ECXML.3.2"));
+
+    const rc = db.importXmlSchemas(ec3Schemas, { schemaLockHeld: true });
+    assert.equal(rc, DbResult.BE_SQLITE_OK);
+    db.saveChanges();
+
+    const refSchema: IModelJsNative.SchemaProps = db.getSchemaProps("TrapRef");
+    const schema: IModelJsNative.SchemaProps = db.getSchemaProps("Trap");
+
+    const query = async (ecsql: string) => {
+      const request: DbQueryRequest = {
+        kind: DbRequestKind.ECSql,
+        query: ecsql,
+      };
+      return new Promise<DbQueryResponse>((resolve) => {
+        db.concurrentQueryExecute(request, (response) => {
+          resolve(response as DbQueryResponse);
+        });
+      });
+    };
+
+    // Enumeration should have been created in refschema
+    let resp = await query(`SELECT e.Name FROM meta.ECSchemaDef s JOIN meta.ECEnumerationDef e USING meta.SchemaOwnsEnumerations WHERE s.Name='${refSchema.name}'`);
+    assert(resp.status === DbResponseStatus.Done);
+    assert(resp.rowCount === 1);
+    assert(resp.error === "");
+    assert(resp.data[0], "D_TitleA");
+
+    // Enumeration should not have been created in schema
+    resp = await query(`SELECT e.Name, e.* FROM meta.ECSchemaDef s JOIN meta.ECEnumerationDef e USING meta.SchemaOwnsEnumerations WHERE s.Name='${schema.name}'`);
+    assert(resp.status === DbResponseStatus.Done);
+    assert(resp.rowCount === 0);
+    assert(resp.error === "");
   });
 });
