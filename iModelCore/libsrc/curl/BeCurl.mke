@@ -423,8 +423,6 @@ $(o)vquic$(oext) : $(BeCurlLibDir)vquic/vquic.c ${MultiCompileDepends}
 
     $(o)ares_free_string$(oext) : $(AresLibDir)ares_free_string.c ${MultiCompileDepends}
 
-    $(o)ares_inet_ntop$(oext) : $(AresLibDir)ares_inet_ntop.c ${MultiCompileDepends}
-
     $(o)ares_gethostbyaddr$(oext) : $(AresLibDir)ares_gethostbyaddr.c ${MultiCompileDepends}
 
     $(o)ares_create_query$(oext) : $(AresLibDir)ares_create_query.c ${MultiCompileDepends}
