@@ -271,7 +271,7 @@ TEST_F(DynamicSchemaTest, ImportingDynamicSchemaWithSchemaHasBehaviorRequiresVer
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(DynamicSchemaTest, CannotImportDynamicSchemaWithDifferentReadVersion)
+TEST_F(DynamicSchemaTest, CannotImportDynamicSchemaWithOlderReadVersion)
     {
     Utf8CP schemaXml = R"xml(
         <ECSchema schemaName="Asset" alias="asset" version="2.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -315,12 +315,12 @@ TEST_F(DynamicSchemaTest, CannotImportDynamicSchemaWithDifferentReadVersion)
             </ECEntityClass>
         </ECSchema>
         )xml";
-    TestSchemaUpgrade("Asset", fileName, updatedSchemaXml2, SchemaStatus::SchemaTooOld, [](DgnDbPtr db) {
+    TestSchemaUpgrade("Asset", fileName, updatedSchemaXml2, SchemaStatus::Success, [](DgnDbPtr db) {
         EXPECT_TRUE(db->Schemas().ContainsSchema("Asset"));
         ECSchemaCP assetSchema = db->Schemas().GetSchema("Asset");
         ASSERT_NE(assetSchema, nullptr);
         ECClassCP ecClass = assetSchema->GetClassCP("Pipe");
-        ASSERT_EQ(ecClass, nullptr);
+        ASSERT_NE(ecClass, nullptr);
         });
     }
 

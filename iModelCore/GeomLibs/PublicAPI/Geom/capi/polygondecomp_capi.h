@@ -4,6 +4,8 @@
 *--------------------------------------------------------------------------------------------*/
 #pragma once
 
+#include <Geom/ClipPlane.h>
+
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
 struct ClipPlaneTree;

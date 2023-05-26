@@ -1,4 +1,5 @@
-# makefile for libpng
+# makefile for libpng on win-arm64
+# Copyright (C) 2021 Gabor Kertesz
 # Copyright (C) 1998 Tim Wegner
 # Copyright (C) 2006,2009,2011,2014 Glenn Randers-Pehrson
 #
@@ -7,7 +8,7 @@
 # and license in png.h
 #
 # Assumes that zlib.lib, zconf.h, and zlib.h have been copied to ..\zlib
-# To use, do "nmake /f scripts\makefile.vcwin32"
+# To use, do "nmake /f scripts\makefile.vcwin-arm64"
 
 # -------- Microsoft Visual C++ 2.0 and later --------
 
@@ -16,7 +17,7 @@ CC = cl
 LD = link
 AR = lib
 CPPFLAGS = -I..\zlib
-CFLAGS  = -nologo -D_CRT_SECURE_NO_DEPRECATE -D_CRT_SECURE_NO_WARNINGS -MD -O2 -W3
+CFLAGS  = -nologo -D_CRT_SECURE_NO_DEPRECATE -D_CRT_SECURE_NO_WARNINGS -DPNG_ARM_NEON_OPT=1 -MD -O2 -W3
 LDFLAGS = -nologo
 ARFLAGS = -nologo
 CP = copy
@@ -36,7 +37,8 @@ O=.obj
 OBJS1 = png$(O) pngerror$(O) pngget$(O) pngmem$(O) pngpread$(O)
 OBJS2 = pngread$(O) pngrio$(O) pngrtran$(O) pngrutil$(O) pngset$(O)
 OBJS3 = pngtrans$(O) pngwio$(O) pngwrite$(O) pngwtran$(O) pngwutil$(O)
-OBJS  = $(OBJS1) $(OBJS2) $(OBJS3)
+OBJS4 = arm_init$(O) filter_neon_intrinsics$(O) palette_neon_intrinsics$(O)
+OBJS  = $(OBJS1) $(OBJS2) $(OBJS3) $(OBJS4)
 
 # Targets
 all: libpng.lib
@@ -88,6 +90,15 @@ pngwtran$(O): png.h pngconf.h pnglibconf.h pngpriv.h pngstruct.h pnginfo.h pngde
 
 pngwutil$(O): png.h pngconf.h pnglibconf.h pngpriv.h pngstruct.h pnginfo.h pngdebug.h
 	$(CC) -c $(CPPFLAGS) $(CFLAGS) $*.c $(ERRFILE)
+
+arm_init$(O): png.h pngconf.h pnglibconf.h pngpriv.h pngstruct.h pnginfo.h pngdebug.h
+	$(CC) -c $(CPPFLAGS) $(CFLAGS) arm\$*.c $(ERRFILE)
+
+filter_neon_intrinsics$(O): png.h pngconf.h pnglibconf.h pngpriv.h pngstruct.h pnginfo.h pngdebug.h
+	$(CC) -c $(CPPFLAGS) $(CFLAGS) arm\$*.c $(ERRFILE)
+
+palette_neon_intrinsics$(O): png.h pngconf.h pnglibconf.h pngpriv.h pngstruct.h pnginfo.h pngdebug.h
+	$(CC) -c $(CPPFLAGS) $(CFLAGS) arm\$*.c $(ERRFILE)
 
 libpng.lib: $(OBJS)
 	-$(RM) $@

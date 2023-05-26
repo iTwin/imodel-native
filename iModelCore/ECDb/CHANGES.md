@@ -130,3 +130,32 @@ For primitive types that has single value, following will return typed value whi
       1. **Minor**: Any breaking change to `Runtime` e.g. Removing support for a previously accessible sql function or change it in a way where it will not work as before. In this case `Prepare()` phase may or may not detect a failure but result are not as expected as it use to in previous version. e.g. Remove a sql function or change required argument or format of its return value.
       2. **Sub1**:  Backward compatible change to `Syntax`. For example adding new syntax but not breaking any existing.
       3. **Sub2**:  Backward compatible change to `Runtime`. For example adding a new sql function.
+
+## `5/16/2023`: Enable property and class deletion, property type change for dynamic schemas with a major schema update
+
+* Added new schema import option "AllowMajorSchemaUpgradeForDynamicSchemas".
+    1. "AllowMajorSchemaUpgradeForDynamicSchemas" takes precedence over the "DisallowMajorSchemaUpgrade" import option, but only for dynamic schemas.
+    2. If major schema upgrades have been disabled by using the import option "DisallowMajorSchemaUpgrade" and the user wants to perform a major schema upgrade on a dynamic schema, the new option "AllowMajorSchemaUpgradeForDynamicSchemas" needs to be added to enable the upgrade.
+    3. "AllowMajorSchemaUpgradeForDynamicSchemas" has no effect on schemas that are not dynamic.
+
+* Enable deletion of properties in dynamic schemas with a major schema upgrade.
+    1. Properties can be deleted only if they belong to an ECClass which is mapped to a shared column.
+    2. Navigation properties cannot be deleted.
+    3. When a property is deleted with a major schema upgrade, the data that it contains is set to NULL.
+
+* Enable deletion of classes in dynamic schemas with a major schema upgrade.
+    1. Classes can only be deleted from a dynamic schema with a major schema upgrade only if:
+        1. The class does not have a derived class.
+        2. The class is not an ECStructClass.
+        3. The class is not an ECRelationshipClass with a Foreign Key mapped.
+        4. The class has not been specified in a relationship constraint.
+    2. If the class to be deleted has instances present, all the instances are deleted as well.
+
+* Enable property type change in dynamic schemas with a major schema upgrade.
+    1. Changing property type from a primitive type to another primitive type is now supported with a major schema upgrade.
+    2. Type can be changed in any combination from the primitive set { int, long, double, binary, boolean, datetime }.
+    3. Type change for composite primitive types Point2d and Point3d is NOT supported.
+    4. Type change to and from an un-strict enum that has a different primitive type is now supported.
+    5. Type change to a strict enum of a different primitive type is NOT supported.
+    6. When a property type is changed, the data will not change/update as per the new primitive type specified.
+    7. It is the user's responsibility to handle the data changes required when a property's type is changed to a different primitive type.
