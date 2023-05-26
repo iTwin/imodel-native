@@ -552,8 +552,6 @@
 
 /* Platform-independent functions */
 #ifndef PNG_ABORT
-// BENTLEY_CHANGE - Cannot call ExitProcess under WinRT... falling back to abort() seems as good as anything for this kind of thing.
-#  if defined(_WINDOWS_) && !(defined(WINAPI_FAMILY) && WINAPI_FAMILY_APP == WINAPI_FAMILY)
 #  define PNG_ABORT() abort()
 #endif
 
