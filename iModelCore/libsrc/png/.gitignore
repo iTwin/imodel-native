@@ -1,5 +1,6 @@
-vendor\mips
-vendor\powerpc
-vendor\projects
-vendor\tests
-vendor\contrib\testpngs
+vendor/mips
+vendor/powerpc
+vendor/projects
+vendor/tests
+vendor/contrib/testpngs
+vendor/ci
