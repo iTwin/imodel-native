@@ -289,6 +289,7 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
             DisallowMajorSchemaUpgrade                  = 1 << 1,   //! If specified, schema upgrades where the major version has changed, are not supported.
             DoNotFailForDeletionsOrModifications        = 1 << 2,   //! This is for the case of domain schemas that differ between files even though the schema name and versions are unchanged.  In such a case, we only want to merge in acceptable changes, not delete anything
             AllowDataTransformDuringSchemaUpgrade       = 1 << 4,   //! The allow schema upgrade to transform data if needed.
+            AllowMajorSchemaUpgradeForDynamicSchemas    = 1 << 5,   //! If specified, schema upgrades where the major version has changed are only supported for dynamic schemas. Takes precedence over DisallowMajorSchemaUpgrade.
             };
 
 #if !defined (DOCUMENTATION_GENERATOR)
