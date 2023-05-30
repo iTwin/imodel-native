@@ -1622,3 +1622,123 @@ TEST_F(RevisionTestFixture, IterateOverRedundantSchemaChange)
     for (const auto& entry : entityIdsChangeGroup.relationshipOps)
         DONT_EXPECT() << "relationship:" << dbOpToStr(entry.second) << " " << entry.first.ToHexStr() << "";
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, CheckProfileVersionUpdateAfterMerge)
+    {
+    // Setup baseline
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"CheckProfileVersionUpdateAfterMerge.bim");
+    EXPECT_EQ(BE_SQLITE_OK, m_db->SaveChanges("Initialized db"));
+    ChangesetPropsPtr initialRevision = CreateRevision("-initialize");
+    EXPECT_TRUE(initialRevision.IsValid());
+    BackupTestFile();
+
+    BeFileName fileName = BeFileName(m_db->GetDbFileName(), true);
+    
+    auto initialDgnDbVersion = m_db->GetProfileVersion();
+    auto initialECDbVersion = m_db->GetECDbProfileVersion();
+
+    // Revision 1 (Update profile versions)
+    {
+    DbResult result = m_db->ExecuteSql("UPDATE be_Prop SET StrData = '{\"major\":99,\"minor\":98,\"sub1\":97,\"sub2\":96}' WHERE Namespace = 'ec_Db' and Name = 'SchemaVersion'");
+    EXPECT_EQ(result, DbResult::BE_SQLITE_OK);
+    }
+    {
+    DbResult result = m_db->ExecuteSql("UPDATE be_Prop SET StrData = '{\"major\":89,\"minor\":88,\"sub1\":87,\"sub2\":86}' WHERE Namespace = 'dgn_Db' and Name = 'SchemaVersion'");
+    EXPECT_EQ(result, DbResult::BE_SQLITE_OK);
+    }
+
+    EXPECT_EQ(BE_SQLITE_OK, m_db->SaveChanges("Revision 1: updates profile version"));
+
+    //InsertFloor(5, 5); //make some changes so TxnManager knows something changed
+    ChangesetPropsPtr revision = CreateRevision("-profileUpgrade");
+    EXPECT_TRUE(revision.IsValid());
+
+    RestoreTestFile();
+
+    {
+    auto dgnDbVersion = m_db->GetProfileVersion();
+    auto ecDbVersion = m_db->GetECDbProfileVersion();
+    EXPECT_EQ(0, dgnDbVersion.CompareTo(initialDgnDbVersion));
+    EXPECT_EQ(0, ecDbVersion.CompareTo(initialECDbVersion));
+    }
+    
+    EXPECT_EQ(ChangesetStatus::Success, m_db->Txns().MergeChangeset(*revision));
+
+    {
+    auto dgnDbVersion = m_db->GetProfileVersion();
+    auto ecDbVersion = m_db->GetECDbProfileVersion();
+    EXPECT_EQ(89, dgnDbVersion.GetMajor());
+    EXPECT_EQ(88, dgnDbVersion.GetMinor());
+    EXPECT_EQ(87, dgnDbVersion.GetSub1());
+    EXPECT_EQ(86, dgnDbVersion.GetSub2());
+    EXPECT_EQ(99, ecDbVersion.GetMajor());
+    EXPECT_EQ(98, ecDbVersion.GetMinor());
+    EXPECT_EQ(97, ecDbVersion.GetSub1());
+    EXPECT_EQ(96, ecDbVersion.GetSub2());
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, BrokenECDbProfileInRevision)
+    {
+    // Setup baseline
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"BrokenECDbProfileInRevision.bim");
+    EXPECT_EQ(BE_SQLITE_OK, m_db->SaveChanges("Initialized db"));
+    ChangesetPropsPtr initialRevision = CreateRevision("-initialize");
+    EXPECT_TRUE(initialRevision.IsValid());
+    BackupTestFile();
+
+    BeFileName fileName = BeFileName(m_db->GetDbFileName(), true);
+    
+    // Revision 1 (Update profile versions)
+    {
+    DbResult result = m_db->ExecuteSql("UPDATE be_Prop SET StrData = '____no___valid___json' WHERE Namespace = 'ec_Db' and Name = 'SchemaVersion'");
+    EXPECT_EQ(result, DbResult::BE_SQLITE_OK);
+    }
+
+    EXPECT_EQ(BE_SQLITE_OK, m_db->SaveChanges("Revision 1: updates profile version"));
+
+    //InsertFloor(5, 5); //make some changes so TxnManager knows something changed
+    ChangesetPropsPtr revision = CreateRevision("-profileUpgrade");
+    EXPECT_TRUE(revision.IsValid());
+
+    RestoreTestFile();
+    
+    EXPECT_EQ(ChangesetStatus::ApplyError, m_db->Txns().MergeChangeset(*revision));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, BrokenDgnDbProfileInRevision)
+    {
+    // Setup baseline
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"BrokenDgnDbProfileInRevision.bim");
+    EXPECT_EQ(BE_SQLITE_OK, m_db->SaveChanges("Initialized db"));
+    ChangesetPropsPtr initialRevision = CreateRevision("-initialize");
+    EXPECT_TRUE(initialRevision.IsValid());
+    BackupTestFile();
+
+    BeFileName fileName = BeFileName(m_db->GetDbFileName(), true);
+    
+    // Revision 1 (Update profile versions)
+    {
+    DbResult result = m_db->ExecuteSql("UPDATE be_Prop SET StrData = '____no___valid___json' WHERE Namespace = 'dgn_Db' and Name = 'SchemaVersion'");
+    EXPECT_EQ(result, DbResult::BE_SQLITE_OK);
+    }
+
+    EXPECT_EQ(BE_SQLITE_OK, m_db->SaveChanges("Revision 1: updates profile version"));
+
+    //InsertFloor(5, 5); //make some changes so TxnManager knows something changed
+    ChangesetPropsPtr revision = CreateRevision("-profileUpgrade");
+    EXPECT_TRUE(revision.IsValid());
+
+    RestoreTestFile();
+    
+    EXPECT_EQ(ChangesetStatus::ApplyError, m_db->Txns().MergeChangeset(*revision));
+    }

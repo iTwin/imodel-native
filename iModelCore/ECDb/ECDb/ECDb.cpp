@@ -102,7 +102,11 @@ DbResult ECDb::_AfterSchemaChangeSetApplied() const
 //---------------+---------------+---------------+---------------+---------------+------
 DbResult ECDb::_AfterDataChangeSetApplied()
     {
-    BentleyStatus status = ResetInstanceIdSequence(GetBriefcaseId());
+    BentleyStatus status = m_pimpl->GetProfileManager().RefreshProfileVersion();
+    if (status != SUCCESS)
+        return BE_SQLITE_ERROR;
+
+    status = ResetInstanceIdSequence(GetBriefcaseId());
     if (status != SUCCESS)
         return BE_SQLITE_ERROR;
     return BE_SQLITE_OK;

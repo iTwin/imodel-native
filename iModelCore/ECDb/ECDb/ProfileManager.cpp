@@ -66,6 +66,19 @@ ProfileState ProfileManager::CheckProfileVersion() const
     return Db::CheckProfileVersion(ECDb::CurrentECDbProfileVersion(), m_profileVersion, ECDb::MinimumUpgradableECDbProfileVersion(), PROFILENAME);
     }
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+BentleyStatus ProfileManager::RefreshProfileVersion() const
+    {
+    m_profileVersion = ProfileVersion(0, 0, 0, 0);
+
+    if (BE_SQLITE_OK != ReadProfileVersion())
+        return BentleyStatus::ERROR;
+
+    return BentleyStatus::SUCCESS;
+    }
+
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
