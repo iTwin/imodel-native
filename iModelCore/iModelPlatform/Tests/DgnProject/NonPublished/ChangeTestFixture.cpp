@@ -151,9 +151,13 @@ DgnElementId ChangeTestFixture::InsertPhysicalElement(DgnDbR db, PhysicalModelR 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-// Helper Test for applying a changeset
 /*TEST_F(ChangeTestFixture, Apply_Changeset)
     {
+    // *** Helper Test for applying a changeset ***
+    // This test is not intended to ever run during a build, instead it can be used to easily
+    // debug changeset application issues. To obtain the files necessary, the itwin-console application
+    // can be used.
+
     NativeLogging::Logging::SetLogger(&NativeLogging::ConsoleLogger::GetLogger());
     NativeLogging::ConsoleLogger::GetLogger().SetSeverity("ECDb", BentleyApi::NativeLogging::LOG_TRACE);
     NativeLogging::ConsoleLogger::GetLogger().SetSeverity("ECObjectsNative", BentleyApi::NativeLogging::LOG_TRACE);
