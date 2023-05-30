@@ -239,9 +239,12 @@ TEST_F(SchemaManagerTests, SchemaImportOptionsDoNotOverlap)
     ASSERT_EQ(0, (int)(SchemaManager::SchemaImportOptions::None & SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues));
     ASSERT_EQ(0, (int)(SchemaManager::SchemaImportOptions::None & SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade));
     ASSERT_EQ(0, (int)(SchemaManager::SchemaImportOptions::None & SchemaManager::SchemaImportOptions::DoNotFailForDeletionsOrModifications));
+    ASSERT_EQ(0, (int)(SchemaManager::SchemaImportOptions::None & SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas));
     ASSERT_EQ(0, (int)(SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues & SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade));
     ASSERT_EQ(0, (int)(SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues & SchemaManager::SchemaImportOptions::DoNotFailForDeletionsOrModifications));
+    ASSERT_EQ(0, (int)(SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues & SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas));
     ASSERT_EQ(0, (int)(SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade & SchemaManager::SchemaImportOptions::DoNotFailForDeletionsOrModifications));
+    ASSERT_EQ(0, (int)(SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade & SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas));
     }
 
 //---------------------------------------------------------------------------------------

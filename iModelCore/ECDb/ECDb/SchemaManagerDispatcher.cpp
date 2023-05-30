@@ -1899,9 +1899,11 @@ BentleyStatus MainSchemaManager::PurgeOrphanTables(SchemaImportContext& ctx) con
             tableNames.append(tableName);
             isFirstTable = false;
             }
-
-        m_ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to import schemas: it would change the database schema in a backwards incompatible way, so that older versions of the software could not work with the file anymore. ECDb would have to delete these tables: %s", tableNames.c_str());
-        return ERROR;
+        if (!Enum::Contains(ctx.GetOptions(), SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas))
+            {
+            m_ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to import schemas: it would change the database schema in a backwards incompatible way, so that older versions of the software could not work with the file anymore. ECDb would have to delete these tables: %s", tableNames.c_str());
+            return ERROR;
+            }
         }
 
     for (Utf8StringCR name : tablesToDrop)
