@@ -314,6 +314,12 @@ inline static Utf8String requireString(Napi::Object const& obj, Utf8CP name) {
         BeNapi::ThrowJsException(obj.Env(), Utf8PrintfString("must supply %s", name).c_str());
     return strVal;
 }
+inline static int requireInt(Napi::Object const& obj, Utf8CP name) {
+    auto member = obj.Get(name);
+    if (!member.IsNumber())
+        BeNapi::ThrowJsException(obj.Env(), Utf8PrintfString("must supply %s", name).c_str());
+    return  member.ToNumber().Int32Value();
+}
 inline static bool requireBool(Napi::Object const& obj, Utf8CP name) {
     auto member = obj.Get(name);
     if (!member.IsBoolean())

@@ -2,7 +2,7 @@
 *******************************************************************************
 *
 *   © 2016 and later: Unicode, Inc. and others.
-*   License & terms of use: http://www.unicode.org/copyright.html#License
+*   License & terms of use: http://www.unicode.org/copyright.html
 *
 *******************************************************************************
 *******************************************************************************
@@ -19,7 +19,7 @@
 
 using namespace icu;
 
-U_CFUNC int c_main(void);
+U_CFUNC int c_main();
 
 void printUnicodeString(const UnicodeString &s) {
     char charBuf[1000];
@@ -96,7 +96,7 @@ void printAt(BreakIterator &boundary, int32_t pos )
 }
 
 /* Creating and using text boundaries */
-int main( void )
+int main()
 {
     puts("ICU Break Iterator Sample Program\n");
     puts("C++ Break Iteration\n");

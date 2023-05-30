@@ -33,7 +33,7 @@
 #include "ECDbMapSchemaHelper.h"
 #include "PolicyManager.h"
 
-#include "ECDbSqlFunctions.h"
+#include "BuiltInFuncs.h"
 
 #include "DbMappingManager.h"
 #include "DbMapValidator.h"
@@ -65,6 +65,7 @@
 #include "QueryJsonAdaptor.h"
 #include "InstanceReaderImpl.h"
 #include "IntegrityChecker.h"
+#include "BuiltInVTabs.h"
 #include "ECSql/NativeSqlBuilder.h"
 #include "ECSql/Parser/SqlScan.h"
 #include "ECSql/Parser/SqlNode.h"

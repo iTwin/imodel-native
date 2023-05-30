@@ -1,5 +1,6 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 si{
     Currencies{
         AED{
@@ -334,6 +335,10 @@ si{
             "LRD",
             "ලයිබේරියානු ඩොලර්",
         }
+        LSL{
+            "LSL",
+            "ලෙසෝතෝ ලොටි",
+        }
         LTL{
             "LTL",
             "ලිතුවේනියානු",
@@ -656,24 +661,106 @@ si{
         }
     }
     Currencies%narrow{
+        AFN{"؋"}
+        AMD{"֏"}
+        AOA{"Kz"}
+        ARS{"$"}
+        AUD{"$"}
+        AZN{"₼"}
+        BAM{"KM"}
+        BBD{"$"}
+        BDT{"৳"}
+        BMD{"$"}
+        BND{"$"}
+        BOB{"Bs"}
+        BRL{"R$"}
+        BSD{"$"}
+        BWP{"P"}
         BYN{"р."}
+        BZD{"$"}
+        CAD{"$"}
+        CLP{"$"}
+        CNY{"¥"}
+        COP{"$"}
+        CRC{"₡"}
+        CUC{"$"}
+        CUP{"$"}
+        CZK{"Kč"}
+        DKK{"kr"}
+        DOP{"$"}
+        EGP{"E£"}
+        EUR{"€"}
+        FJD{"$"}
+        FKP{"£"}
+        GBP{"£"}
         GEL{"₾"}
+        GHS{"GH₵"}
+        GIP{"£"}
+        GNF{"FG"}
+        GTQ{"Q"}
+        GYD{"$"}
+        HKD{"$"}
+        HNL{"L"}
+        HRK{"kn"}
+        HUF{"Ft"}
+        IDR{"Rp"}
+        ILS{"₪"}
+        INR{"₹"}
+        ISK{"kr"}
+        JMD{"$"}
+        JPY{"¥"}
+        KHR{"៛"}
+        KMF{"CF"}
+        KPW{"₩"}
         KRW{"₩"}
+        KYD{"$"}
         KZT{"₸"}
+        LAK{"₭"}
         LBP{"L£"}
         LKR{"රු."}
+        LRD{"$"}
+        MGA{"Ar"}
+        MMK{"K"}
+        MNT{"₮"}
+        MUR{"Rs"}
+        MXN{"$"}
         MYR{"RM"}
+        NAD{"$"}
+        NGN{"₦"}
+        NIO{"C$"}
+        NOK{"kr"}
+        NPR{"Rs"}
+        NZD{"$"}
         PHP{"₱"}
+        PKR{"Rs"}
+        PLN{"zł"}
+        PYG{"₲"}
+        RON{"lei"}
+        RUB{"₽"}
+        RWF{"RF"}
         SBD{"$"}
+        SEK{"kr"}
         SGD{"$"}
+        SHP{"£"}
+        SRD{"$"}
+        SSP{"£"}
         STN{"Db"}
         SYP{"£"}
+        THB{"฿"}
         TOP{"T$"}
         TRY{"₺"}
+        TTD{"$"}
         TWD{"NT$"}
+        UAH{"₴"}
+        USD{"$"}
+        UYU{"$"}
+        VEF{"Bs"}
+        VND{"₫"}
+        XCD{"$"}
+        ZAR{"R"}
+        ZMW{"ZK"}
     }
     Currencies%variant{
-        GEL{"₾"}
         RUB{"₽"}
         TRY{"TL"}
     }
@@ -1010,6 +1097,10 @@ si{
             one{"ලයිබේරියානු ඩොලර්"}
             other{"ලයිබේරියානු ඩොලර්"}
         }
+        LSL{
+            one{"ලෙසෝතෝ ලොටි"}
+            other{"ලෙසෝතෝ ලොටිස්"}
+        }
         LTL{
             one{"ලිතුවේනියානු"}
             other{"ලිතුවේනියානු"}
@@ -1307,8 +1398,8 @@ si{
             other{"ප්‍රංශ පොලිනීසියානු ෆ්‍රෑන්ක්"}
         }
         XXX{
-            one{"නොදත් මුදල්"}
-            other{"නොදත් මුදල්"}
+            one{"(නොදත් මුදල් ඒකකය)"}
+            other{"(නොදත් මුදල්)"}
         }
         YER{
             one{"යේමන රියාල්"}
@@ -1327,5 +1418,4 @@ si{
         one{"{1}{0}"}
         other{"{1}{0}"}
     }
-    Version{"2.1.48.17"}
 }

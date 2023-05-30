@@ -1,7 +1,7 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 te{
-    Version{"2.1.48.17"}
     zoneStrings{
         "Africa:Abidjan"{
             ec{"అబిడ్జాన్"}
@@ -257,6 +257,9 @@ te{
         }
         "America:Chihuahua"{
             ec{"చువావా"}
+        }
+        "America:Ciudad_Juarez"{
+            ec{"సియుదాద్ హ్వారెజ్"}
         }
         "America:Coral_Harbour"{
             ec{"అటికోకన్"}
@@ -1223,6 +1226,9 @@ te{
         "Pacific:Johnston"{
             ec{"జాన్సటన్"}
         }
+        "Pacific:Kanton"{
+            ec{"కాంతోన్"}
+        }
         "Pacific:Kiritimati"{
             ec{"కిరీటిమాటి"}
         }
@@ -1595,7 +1601,7 @@ te{
             ls{"హోవ్డ్ ప్రామాణిక సమయం"}
         }
         "meta:India"{
-            ls{"భారతదేశ సమయం"}
+            ls{"భారతదేశ ప్రామాణిక సమయం"}
             ss{"IST"}
         }
         "meta:Indian_Ocean"{
@@ -1752,7 +1758,9 @@ te{
             ls{"నియూ సమయం"}
         }
         "meta:Norfolk"{
-            ls{"నార్ఫోక్ దీవి సమయం"}
+            ld{"నార్ఫోక్ దీవి పగటి సమయం"}
+            lg{"నార్ఫోక్ దీవి సమయం"}
+            ls{"నార్ఫోక్ దీవి ప్రామాణిక సమయం"}
         }
         "meta:Noronha"{
             ld{"ఫెర్నాండో డి నొరోన్హా వేసవి సమయం"}
@@ -1935,6 +1943,9 @@ te{
             ld{"యెకటెరిన్‌బర్గ్ వేసవి సమయం"}
             lg{"యెకటెరిన్‌బర్గ్ సమయం"}
             ls{"యెకటెరిన్‌బర్గ్ ప్రామాణిక సమయం"}
+        }
+        "meta:Yukon"{
+            ls{"యుకోన్ సమయం"}
         }
         fallbackFormat{"{1} ({0})"}
         gmtFormat{"GMT{0}"}

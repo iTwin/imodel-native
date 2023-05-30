@@ -3210,16 +3210,18 @@ struct NativeECSqlColumnInfo : BeObjectWrap<NativeECSqlColumnInfo>
             {
             Napi::HandleScope scope(env);
             Napi::Function t = DefineClass(env, "ECSqlColumnInfo", {
-            InstanceMethod("getType", &NativeECSqlColumnInfo::GetType),
-            InstanceMethod("getPropertyName", &NativeECSqlColumnInfo::GetPropertyName),
-            InstanceMethod("getOriginPropertyName", &NativeECSqlColumnInfo::GetOriginPropertyName),
-            InstanceMethod("getAccessString", &NativeECSqlColumnInfo::GetAccessString),
-            InstanceMethod("isSystemProperty", &NativeECSqlColumnInfo::IsSystemProperty),
-            InstanceMethod("isGeneratedProperty", &NativeECSqlColumnInfo::IsGeneratedProperty),
-            InstanceMethod("isEnum", &NativeECSqlColumnInfo::IsEnum),
-            InstanceMethod("getRootClassTableSpace", &NativeECSqlColumnInfo::GetRootClassTableSpace),
-            InstanceMethod("getRootClassName", &NativeECSqlColumnInfo::GetRootClassName),
-            InstanceMethod("getRootClassAlias", &NativeECSqlColumnInfo::GetRootClassAlias)});
+                InstanceMethod("getType", &NativeECSqlColumnInfo::GetType),
+                InstanceMethod("getPropertyName", &NativeECSqlColumnInfo::GetPropertyName),
+                InstanceMethod("getOriginPropertyName", &NativeECSqlColumnInfo::GetOriginPropertyName),
+                InstanceMethod("getAccessString", &NativeECSqlColumnInfo::GetAccessString),
+                InstanceMethod("isSystemProperty", &NativeECSqlColumnInfo::IsSystemProperty),
+                InstanceMethod("isGeneratedProperty", &NativeECSqlColumnInfo::IsGeneratedProperty),
+                InstanceMethod("isEnum", &NativeECSqlColumnInfo::IsEnum),
+                InstanceMethod("getRootClassTableSpace", &NativeECSqlColumnInfo::GetRootClassTableSpace),
+                InstanceMethod("getRootClassName", &NativeECSqlColumnInfo::GetRootClassName),
+                InstanceMethod("getRootClassAlias", &NativeECSqlColumnInfo::GetRootClassAlias),
+                InstanceMethod("isDynamicProp", &NativeECSqlColumnInfo::IsDynamicProp),
+            });
 
             exports.Set("ECSqlColumnInfo", t);
 
@@ -3334,7 +3336,13 @@ struct NativeECSqlColumnInfo : BeObjectWrap<NativeECSqlColumnInfo>
 
             return toJsString(Env(), prop->GetName());
             }
+        Napi::Value IsDynamicProp(NapiInfoCR info)
+            {
+            if (m_colInfo == nullptr)
+                THROW_JS_EXCEPTION("ECSqlColumnInfo is not initialized.");
 
+            return Napi::Boolean::New(Env(), m_colInfo->IsDynamic());
+            }
         Napi::Value GetOriginPropertyName(NapiInfoCR info)
             {
             if (m_colInfo == nullptr)

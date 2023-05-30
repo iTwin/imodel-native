@@ -72,6 +72,7 @@ ECSqlStatus ECSqlPreparer::Prepare(Utf8StringR nativeSql, ECSqlPrepareContext& c
                 return ECSqlStatus::Error;
         }
 
+    context.GetAnchors().ExecutePendingReplacements(context.GetSqlBuilder());
     nativeSql.assign(context.GetSqlBuilder().GetSql());
     return ECSqlStatus::Success;
     }
@@ -547,9 +548,11 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
             case ECSqlType::Select:
             {
             if (ctx.GetECDb().GetECSqlConfig().GetOptimizationOption(OptimizationOptions::OptimizeJoinForNestedSelectQuery))
-                RemovePropertyRefs(ctx, exp, classMap);
+            RemovePropertyRefs(ctx, exp, classMap);
+
             NativeSqlBuilder classViewSql;
-            if (SUCCESS != ViewGenerator::GenerateSelectFromViewSql(classViewSql, ctx, classMap, exp.GetPolymorphicInfo(), exp.DisqualifyPrimaryJoin(), exp.GetMemberFunctionCallExp()))
+            auto instanceProps = exp.GetInstancePropNames();
+            if (SUCCESS != ViewGenerator::GenerateSelectFromViewSql(classViewSql, ctx, classMap, exp.GetPolymorphicInfo(), exp.DisqualifyPrimaryJoin(), exp.GetMemberFunctionCallExp(), &instanceProps))
                 return ECSqlStatus::InvalidECSql;
 
             classViewSql.AppendSpace().AppendEscaped(exp.GetId());
@@ -1820,7 +1823,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareExtractPropertyExp(NativeSqlBuilder::List& 
     NativeSqlBuilder::List classIdSql;
     NativeSqlBuilder::List instanceIdSql;
     if (!ctx.GetECDb().GetECSqlConfig().GetExperimentalFeaturesEnabled()) {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Instance property access '%s' is experimental feature. Use 'PRAGMA experimental_feature=true' to enable it.", exp.ToECSql().c_str());
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Instance property access '%s' is experimental feature. Use 'PRAGMA experimental_features_enabled=true' to enable it.", exp.ToECSql().c_str());
         return ECSqlStatus::InvalidECSql;
     }
 
@@ -1834,10 +1837,13 @@ ECSqlStatus ECSqlExpPreparer::PrepareExtractPropertyExp(NativeSqlBuilder::List& 
         return rc;
     }
 
-    builder.AppendFormatted("extract_prop(%s,%s,'%s')",
+    builder.AppendFormatted("extract_prop(%s,%s,'%s'%s)",
         classIdSql.front().GetSql().c_str(),
         instanceIdSql.front().GetSql().c_str(),
-        exp.GetTargetPath().ToString().c_str());
+        exp.GetTargetPath().ToString().c_str(),
+        exp.GetSqlAnchor([&](Utf8CP name) {
+            return ctx.GetAnchors().CreateAnchor(name);
+        }).c_str());
 
     nativeSqlSnippets.push_back(std::move(builder));
     return ECSqlStatus::Success;
@@ -1851,12 +1857,10 @@ ECSqlStatus ECSqlExpPreparer::PrepareExtractInstanceExp(NativeSqlBuilder::List& 
     NativeSqlBuilder builder;
     NativeSqlBuilder::List classIdSql;
     NativeSqlBuilder::List instanceIdSql;
-
     if (!ctx.GetECDb().GetECSqlConfig().GetExperimentalFeaturesEnabled()) {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Instance access '%s' is experimental feature. Use 'PRAGMA experimental_feature=true' to enable it.", exp.ToECSql().c_str());
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Instance access '%s' is experimental feature. Use 'PRAGMA experimental_features_enabled=true' to enable it.", exp.ToECSql().c_str());
         return ECSqlStatus::InvalidECSql;
     }
-
     auto rc = PrepareValueExp(classIdSql, ctx, exp.GetClassIdPropExp());
     if (rc != ECSqlStatus::Success) {
         return rc;
@@ -1936,7 +1940,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareValueExp(NativeSqlBuilder::List& nativeSqlS
             }
             default:
                 break;
-        }
+            }
 
     BeAssert(false && "ECSqlPreparer::PrepareValueExp> Unhandled ValueExp subclass.");
     return ECSqlStatus::Error;
@@ -2107,7 +2111,7 @@ BooleanSqlOperator ECSqlExpPreparer::DetermineCompoundLogicalOpForCompoundExpres
 
             default:
                 return BooleanSqlOperator::And;
-        }
+            }
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

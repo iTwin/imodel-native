@@ -1,14 +1,17 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 jv{
     Countries{
         001{"Donya"}
         002{"Afrika"}
+        003{"Amérika Lor"}
         005{"Amérika Kidul"}
         009{"Oséania"}
         011{"Afrika Kulon"}
         013{"Amérika Tengah"}
         014{"Afrika Wétan"}
+        015{"Afrika Lor"}
         017{"Afrika Sisih Tengah"}
         018{"Afrika Sisih Kidul"}
         019{"Amérika"}
@@ -27,6 +30,7 @@ jv{
         145{"Asia Kulon"}
         150{"Éropah"}
         151{"Éropah Wétan"}
+        154{"Éropah Lor"}
         155{"Éropah Kulon"}
         202{"Afrika Kidule Sahara"}
         419{"Amérika Latin"}
@@ -56,6 +60,7 @@ jv{
         BH{"Bahrain"}
         BI{"Burundi"}
         BJ{"Bénin"}
+        BL{"Saint Barthélémi"}
         BM{"Bermuda"}
         BN{"Brunéi"}
         BO{"Bolivia"}
@@ -107,6 +112,7 @@ jv{
         FI{"Finlan"}
         FJ{"Fiji"}
         FK{"Kapuloan Falkland"}
+        FM{"Féderasi Mikronésia"}
         FO{"Kapuloan Faro"}
         FR{"Prancis"}
         GA{"Gabon"}
@@ -121,6 +127,8 @@ jv{
         GM{"Gambia"}
         GN{"Guinea"}
         GP{"Guadélup"}
+        GQ{"Guinéa Katulistiwa"}
+        GR{"Grikenlan"}
         GS{"Georgia Kidul lan Kapuloan Sandwich Kidul"}
         GT{"Guatémala"}
         GU{"Guam"}
@@ -137,6 +145,7 @@ jv{
         IE{"Républik Irlan"}
         IL{"Israèl"}
         IM{"Pulo Man"}
+        IN{"Indhia"}
         IO{"Wilayah Inggris nang Segoro Hindia"}
         IQ{"Irak"}
         IR{"Iran"}
@@ -151,6 +160,8 @@ jv{
         KH{"Kamboja"}
         KI{"Kiribati"}
         KM{"Komoro"}
+        KN{"Saint Kits lan Nèvis"}
+        KP{"Korea Lor"}
         KR{"Koréa Kidul"}
         KW{"Kuwait"}
         KY{"Kapuloan Kéman"}
@@ -173,6 +184,7 @@ jv{
         MF{"Santa Martin"}
         MG{"Madagaskar"}
         MH{"Kapuloan Marshall"}
+        MK{"Républik Makédonia Lor"}
         ML{"Mali"}
         MM{"Myanmar (Burma)"}
         MN{"Mongolia"}
@@ -199,6 +211,7 @@ jv{
         NP{"Népal"}
         NR{"Nauru"}
         NU{"Niue"}
+        NZ{"Selandia Anyar"}
         OM{"Oman"}
         PA{"Panama"}
         PE{"Peru"}
@@ -207,6 +220,7 @@ jv{
         PH{"Pilipina"}
         PK{"Pakistan"}
         PL{"Polen"}
+        PM{"Saint Pièr lan Mikuélon"}
         PN{"Kapuloan Pitcairn"}
         PR{"Puèrto Riko"}
         PS{"Tlatah Palèstina"}
@@ -217,6 +231,7 @@ jv{
         QO{"Oseania Paling Njaba"}
         RE{"Réunion"}
         RO{"Ruméni"}
+        RS{"Sèrbi"}
         RU{"Rusia"}
         RW{"Rwanda"}
         SA{"Arab Saudi"}
@@ -225,6 +240,7 @@ jv{
         SD{"Sudan"}
         SE{"Swèdhen"}
         SG{"Singapura"}
+        SH{"Saint Héléna"}
         SI{"Slovénia"}
         SJ{"Svalbard lan Jan Mayen"}
         SK{"Slowak"}
@@ -264,6 +280,7 @@ jv{
         UY{"Uruguay"}
         UZ{"Usbèkistan"}
         VA{"Kutha Vatikan"}
+        VC{"Saint Vinsen lan Grénadin"}
         VE{"Vénésuéla"}
         VG{"Kapuloan Virgin Britania"}
         VI{"Kapuloan Virgin Amérika"}
@@ -271,6 +288,8 @@ jv{
         VU{"Vanuatu"}
         WF{"Wallis lan Futuna"}
         WS{"Samoa"}
+        XA{"Logat Semu"}
+        XB{"Rong Arah Semu"}
         XK{"Kosovo"}
         YE{"Yaman"}
         YT{"Mayotte"}
@@ -282,6 +301,7 @@ jv{
     Countries%short{
         GB{"KM"}
         HK{"Hong Kong"}
+        MO{"Macau"}
         PS{"Palèstina"}
         US{"AS"}
     }
@@ -290,7 +310,7 @@ jv{
         CG{"Républik Kongo"}
         CZ{"Républik Céko"}
         FK{"Kapuloan Falkland (Islas Malvinas)"}
+        SZ{"(Swasiland)"}
         TL{"Timor Wétan"}
     }
-    Version{"2.1.48.44"}
 }

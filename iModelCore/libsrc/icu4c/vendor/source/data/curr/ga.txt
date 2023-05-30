@@ -1,5 +1,6 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 ga{
     Currencies{
         ADP{
@@ -54,6 +55,10 @@ ga{
             "ARA",
             "Austral Airgintíneach",
         }
+        ARL{
+            "ARL",
+            "ARL",
+        }
         ARM{
             "ARM",
             "Peso na hAirgintíne (1881–1970)",
@@ -68,7 +73,7 @@ ga{
         }
         ATS{
             "ATS",
-            "ATS",
+            "Scilling na hOstaire",
         }
         AUD{
             "A$",
@@ -94,6 +99,10 @@ ga{
             "BAM",
             "Marg Inmhalartaithe na Boisnia-Heirseagaivéine",
         }
+        BAN{
+            "BAN",
+            "BAN",
+        }
         BBD{
             "BBD",
             "Dollar Bharbadós",
@@ -104,7 +113,7 @@ ga{
         }
         BEC{
             "BEC",
-            "BEC",
+            "Franc na Beilge (inmhalartaithe)",
         }
         BEF{
             "BEF",
@@ -112,7 +121,7 @@ ga{
         }
         BEL{
             "BEL",
-            "BEL",
+            "Franc na Beilge (airgeadais)",
         }
         BGL{
             "BGL",
@@ -145,6 +154,10 @@ ga{
         BOB{
             "BOB",
             "Boliviano",
+        }
+        BOL{
+            "BOL",
+            "BOL",
         }
         BOP{
             "BOP",
@@ -240,7 +253,7 @@ ga{
         }
         CNH{
             "CNH",
-            "CNH",
+            "Yuan na Síne (seachairgeadra)",
         }
         CNY{
             "CN¥",
@@ -249,6 +262,10 @@ ga{
         COP{
             "COP",
             "Peso na Colóime",
+        }
+        COU{
+            "COU",
+            "COU",
         }
         CRC{
             "CRC",
@@ -284,7 +301,7 @@ ga{
         }
         DDM{
             "DDM",
-            "DDM",
+            "Marc Ghearmáin an Oirthir",
         }
         DEM{
             "DEM",
@@ -326,6 +343,14 @@ ga{
             "ERN",
             "Nakfa na hEiritré",
         }
+        ESA{
+            "ESA",
+            "ESA",
+        }
+        ESB{
+            "ESB",
+            "ESB",
+        }
         ESP{
             "ESP",
             "Peseta na Spáinne",
@@ -352,7 +377,7 @@ ga{
         }
         FRF{
             "FRF",
-            "FRF",
+            "Franc na Fraince",
         }
         GBP{
             "£",
@@ -506,6 +531,14 @@ ga{
             "KPW",
             "Won na Cóiré Thuaidh",
         }
+        KRH{
+            "KRH",
+            "KRH",
+        }
+        KRO{
+            "KRO",
+            "KRO",
+        }
         KRW{
             "₩",
             "Won na Cóiré Theas",
@@ -552,7 +585,7 @@ ga{
         }
         LUC{
             "LUC",
-            "LUC",
+            "Franc Inmhalartach Lucsamburgach",
         }
         LUF{
             "LUF",
@@ -564,7 +597,7 @@ ga{
         }
         LVR{
             "LVR",
-            "LVR",
+            "Rúbal na Laitvia",
         }
         LYD{
             "LYD",
@@ -593,6 +626,10 @@ ga{
         MKD{
             "MKD",
             "Denar na Macadóine",
+        }
+        MKN{
+            "MKN",
+            "MKN",
         }
         MLF{
             "MLF",
@@ -652,7 +689,7 @@ ga{
         }
         MXV{
             "MXV",
-            "MXV",
+            "Aonad Infheistíochta Meicsiceach",
         }
         MYR{
             "MYR",
@@ -727,7 +764,7 @@ ga{
             "Kina Nua-Ghuine Phapua",
         }
         PHP{
-            "PHP",
+            "₱",
             "Peso na nOileán Filipíneach",
         }
         PKR{
@@ -1035,7 +1072,7 @@ ga{
             "UIC-Franc Francach",
         }
         XOF{
-            "CFA",
+            "F CFA",
             "Franc CFA Iarthar na hAfraice",
         }
         XPD{
@@ -1049,6 +1086,14 @@ ga{
         XPT{
             "XPT",
             "Platanam",
+        }
+        XRE{
+            "XRE",
+            "XRE",
+        }
+        XSU{
+            "XSU",
+            "XSU",
         }
         XXX{
             "XXX",
@@ -1072,7 +1117,11 @@ ga{
         }
         YUN{
             "YUN",
-            "YUN",
+            "Dinar Inmhalartaithe Iúgslavach (1990–1992)",
+        }
+        YUR{
+            "YUR",
+            "YUR",
         }
         ZAL{
             "ZAL",
@@ -1116,6 +1165,7 @@ ga{
         BRL{"R$"}
         BSD{"$"}
         BWP{"P"}
+        BYN{"BYN"}
         BZD{"$"}
         CAD{"$"}
         CLP{"$"}
@@ -1158,6 +1208,8 @@ ga{
         LBP{"L£"}
         LKR{"Rs"}
         LRD{"$"}
+        LTL{"Lt"}
+        LVL{"Ls"}
         MGA{"Ar"}
         MMK{"K"}
         MNT{"₮"}
@@ -1618,11 +1670,11 @@ ga{
             two{"pheso na Sile"}
         }
         CNH{
-            few{"CNH"}
-            many{"CNH"}
-            one{"CNH"}
-            other{"CNH"}
-            two{"CNH"}
+            few{"Yuan na Síne (seachairgeadra)"}
+            many{"Yuan na Síne (seachairgeadra)"}
+            one{"Yuan na Síne (seachairgeadra)"}
+            other{"Yuan na Síne (seachairgeadra)"}
+            two{"Yuan na Síne (seachairgeadra)"}
         }
         CNY{
             few{"yuan na Síne"}
@@ -2143,10 +2195,10 @@ ga{
             two{"dhollar na Libéire"}
         }
         LSL{
-            few{"Loti Leosóta"}
-            many{"Loti Leosóta"}
-            one{"Loti Leosóta"}
-            other{"Loti Leosóta"}
+            few{"loti Leosóta"}
+            many{"loti Leosóta"}
+            one{"loti Leosóta"}
+            other{"loti Leosóta"}
             two{"Loti Leosóta"}
         }
         LTL{
@@ -2164,11 +2216,11 @@ ga{
             two{"Talonas Liotuánach"}
         }
         LUC{
-            few{"LUC"}
-            many{"LUC"}
-            one{"LUC"}
-            other{"LUC"}
-            two{"LUC"}
+            few{"Franc Inmhalartach Lucsamburgach"}
+            many{"Franc Inmhalartach Lucsamburgach"}
+            one{"Franc Inmhalartach Lucsamburgach"}
+            other{"Franc Inmhalartach Lucsamburgach"}
+            two{"Franc Inmhalartach Lucsamburgach"}
         }
         LUF{
             few{"Franc Lucsamburg"}
@@ -3137,5 +3189,4 @@ ga{
         other{"{0} {1}"}
         two{"{0} {1}"}
     }
-    Version{"2.1.49.82"}
 }
