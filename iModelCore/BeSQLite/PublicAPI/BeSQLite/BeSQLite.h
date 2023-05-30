@@ -409,7 +409,7 @@ public:
     bool operator>(BeVersionCR rhs) const { return CompareTo(rhs) > 0; }
     bool operator>=(BeVersionCR rhs) const { return CompareTo(rhs) >= 0; }
     BE_SQLITE_EXPORT Utf8String ToJson() const;
-    BE_SQLITE_EXPORT void FromJson(Utf8CP);
+    BE_SQLITE_EXPORT BentleyStatus FromJson(Utf8CP);
 };
 //=======================================================================================
 // @bsiclass
