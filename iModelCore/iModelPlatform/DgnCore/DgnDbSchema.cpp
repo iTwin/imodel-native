@@ -530,9 +530,9 @@ ProfileState DgnDb::_CheckProfileVersion() const
 
     bool isOlderVersion = false;
     BentleyStatus readStatus = ReadProfileVersion(isOlderVersion);
-    if(readStatus != BentleyStatus::SUCCESS)
+    if (readStatus != BentleyStatus::SUCCESS)
         {
-        if(isOlderVersion)
+        if (isOlderVersion)
             return ProfileState::Older(ProfileState::CanOpen::No, false); // report Graphite05 and DgnDb0601 as too old rather than invalid
 
         return ProfileState::Error();
@@ -555,8 +555,7 @@ BentleyStatus DgnDb::ReadProfileVersion(bool& isOlderVersion) const
         return BentleyStatus::ERROR;
         }
 
-    m_profileVersion.FromJson(versionString.c_str());
-    return BentleyStatus::SUCCESS;
+    return m_profileVersion.FromJson(versionString.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**

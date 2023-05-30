@@ -1640,7 +1640,6 @@ TEST_F(RevisionTestFixture, CheckProfileVersionUpdateAfterMerge)
     auto initialDgnDbVersion = m_db->GetProfileVersion();
     auto initialECDbVersion = m_db->GetECDbProfileVersion();
 
-    // Revision 1 (Update profile versions)
     {
     DbResult result = m_db->ExecuteSql("UPDATE be_Prop SET StrData = '{\"major\":99,\"minor\":98,\"sub1\":97,\"sub2\":96}' WHERE Namespace = 'ec_Db' and Name = 'SchemaVersion'");
     EXPECT_EQ(result, DbResult::BE_SQLITE_OK);
@@ -1652,7 +1651,6 @@ TEST_F(RevisionTestFixture, CheckProfileVersionUpdateAfterMerge)
 
     EXPECT_EQ(BE_SQLITE_OK, m_db->SaveChanges("Revision 1: updates profile version"));
 
-    //InsertFloor(5, 5); //make some changes so TxnManager knows something changed
     ChangesetPropsPtr revision = CreateRevision("-profileUpgrade");
     EXPECT_TRUE(revision.IsValid());
 
@@ -1695,7 +1693,6 @@ TEST_F(RevisionTestFixture, BrokenECDbProfileInRevision)
 
     BeFileName fileName = BeFileName(m_db->GetDbFileName(), true);
     
-    // Revision 1 (Update profile versions)
     {
     DbResult result = m_db->ExecuteSql("UPDATE be_Prop SET StrData = '____no___valid___json' WHERE Namespace = 'ec_Db' and Name = 'SchemaVersion'");
     EXPECT_EQ(result, DbResult::BE_SQLITE_OK);
@@ -1703,13 +1700,12 @@ TEST_F(RevisionTestFixture, BrokenECDbProfileInRevision)
 
     EXPECT_EQ(BE_SQLITE_OK, m_db->SaveChanges("Revision 1: updates profile version"));
 
-    //InsertFloor(5, 5); //make some changes so TxnManager knows something changed
     ChangesetPropsPtr revision = CreateRevision("-profileUpgrade");
     EXPECT_TRUE(revision.IsValid());
 
     RestoreTestFile();
     
-    EXPECT_EQ(ChangesetStatus::ApplyError, m_db->Txns().MergeChangeset(*revision));
+    expectToThrow([&]() { m_db->Txns().MergeChangeset(*revision); }, "failed to apply changes");
     }
 
 //---------------------------------------------------------------------------------------
@@ -1726,7 +1722,6 @@ TEST_F(RevisionTestFixture, BrokenDgnDbProfileInRevision)
 
     BeFileName fileName = BeFileName(m_db->GetDbFileName(), true);
     
-    // Revision 1 (Update profile versions)
     {
     DbResult result = m_db->ExecuteSql("UPDATE be_Prop SET StrData = '____no___valid___json' WHERE Namespace = 'dgn_Db' and Name = 'SchemaVersion'");
     EXPECT_EQ(result, DbResult::BE_SQLITE_OK);
@@ -1734,11 +1729,10 @@ TEST_F(RevisionTestFixture, BrokenDgnDbProfileInRevision)
 
     EXPECT_EQ(BE_SQLITE_OK, m_db->SaveChanges("Revision 1: updates profile version"));
 
-    //InsertFloor(5, 5); //make some changes so TxnManager knows something changed
     ChangesetPropsPtr revision = CreateRevision("-profileUpgrade");
     EXPECT_TRUE(revision.IsValid());
 
     RestoreTestFile();
     
-    EXPECT_EQ(ChangesetStatus::ApplyError, m_db->Txns().MergeChangeset(*revision));
+    expectToThrow([&]() { m_db->Txns().MergeChangeset(*revision); }, "failed to apply changes");
     }

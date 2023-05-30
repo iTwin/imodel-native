@@ -383,7 +383,7 @@ DbResult DgnDb::_AfterDataChangeSetApplied()
     m_profileVersion = DgnDbProfileVersion(0, 0, 0, 0); //reset to default
     bool isOlder;
     BentleyStatus profileVersionStatus = ReadProfileVersion(isOlder);
-    if(profileVersionStatus != SUCCESS)
+    if (profileVersionStatus != SUCCESS)
         {
         LOG.error("Failed to read DgnDb profile version after applying changeset");
         return DbResult::BE_SQLITE_ERROR_InvalidProfileVersion;
