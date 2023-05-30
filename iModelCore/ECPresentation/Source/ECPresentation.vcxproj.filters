@@ -114,7 +114,7 @@
     <ClInclude Include="..\PublicAPI\ECPresentation\Rules\AllRelatedInstanceNodesSpecification.h">
       <Filter>Header Files\Rules</Filter>
     </ClInclude>
-    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\CalculatedPropertySpecification.h">
+    <ClInclude Include="..\PublicAPI\ECPresentation\Rules\CalculatedPropertiesSpecification.h">
       <Filter>Header Files\Rules</Filter>
     </ClInclude>
     <ClInclude Include="..\PublicAPI\ECPresentation\Rules\CheckBoxRule.h">
@@ -515,7 +515,7 @@
     <ClCompile Include="Rules\AllRelatedInstanceNodesSpecification.cpp">
       <Filter>Source Files\Rules</Filter>
     </ClCompile>
-    <ClCompile Include="Rules\CalculatedPropertySpecification.cpp">
+    <ClCompile Include="Rules\CalculatedPropertiesSpecification.cpp">
       <Filter>Source Files\Rules</Filter>
     </ClCompile>
     <ClCompile Include="Rules\CheckBoxRule.cpp">

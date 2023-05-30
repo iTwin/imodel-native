@@ -184,7 +184,7 @@ TEST_F(PerformanceSchemaImportTests, SchemaWithCustomAttributeImportPerformance)
         double importTime = 0.0;
         double schemaExportTime = 0.0;
 
-        ASSERT_EQ(BE_SQLITE_OK, SetupECDb("schemaWithCAImportPerformance.ecdb"));
+        ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("schemaWithCAImportPerformance.ecdb"));
 
         ecSchema = PerformanceSchemaImportTests::CreateTestSchema(500, 10, true, true, true, i);
         ASSERT_TRUE(ecSchema.IsValid());
@@ -218,7 +218,7 @@ TEST_F(PerformanceSchemaImportTests, SchemaWithCustomAttributeImportPerformance)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(PerformanceSchemaImportTests, ImportSimpleSchema)
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("ImportSimpleSchema.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("ImportSimpleSchema.ecdb"));
 
     ECSchemaReadContextPtr context = nullptr;
     ASSERT_EQ(SUCCESS, ReadECSchema(context, m_ecdb, SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
@@ -241,7 +241,7 @@ TEST_F(PerformanceSchemaImportTests, CreateEmptyECDb)
     StopWatch timer(true);
     for (int i = 0; i < opCount; i++)
         {
-        ASSERT_EQ(BE_SQLITE_OK, SetupECDb("empty.ecdb"));
+        ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("empty.ecdb"));
         m_ecdb.CloseDb();
         }
     timer.Stop();
@@ -253,7 +253,7 @@ TEST_F(PerformanceSchemaImportTests, CreateEmptyECDb)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(PerformanceSchemaImportTests, ImportProcessPhysicalSchema)
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("ImportProcessPhysicalSchema.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("ImportProcessPhysicalSchema.ecdb"));
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql("CREATE VIRTUAL TABLE dgn_SpatialIndex USING rtree(ElementId,MinX,MaxX,MinY,MaxY,MinZ,MaxZ)"));
 
     ECSchemaReadContextPtr context = ECN::ECSchemaReadContext::CreateContext();
@@ -285,7 +285,7 @@ TEST_F(PerformanceSchemaImportTests, ImportProcessPhysicalSchema)
 TEST_F(PerformanceSchemaImportTests, UpgradeLargeSchema_FlatHierarchy)
     {
     const int numberOfClasses = 150;
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("UpgradeLargeSchema_FlatHierarchy.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("UpgradeLargeSchema_FlatHierarchy.ecdb"));
 
     ECSchemaReadContextPtr context = nullptr;
     ASSERT_EQ(SUCCESS, ReadECSchema(context, m_ecdb, SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
@@ -355,7 +355,7 @@ TEST_F(PerformanceSchemaImportTests, UpgradeLargeSchema_FlatHierarchy)
 TEST_F(PerformanceSchemaImportTests, UpgradeLargeSchema_DeepHierarchy)
     {
     const int numberOfClasses = 50;
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("UpgradeLargeSchema_DeepHierarchy.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("UpgradeLargeSchema_DeepHierarchy.ecdb"));
 
     ECSchemaReadContextPtr context = nullptr;
     ASSERT_EQ(SUCCESS, ReadECSchema(context, m_ecdb, SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
@@ -429,7 +429,7 @@ TEST_F(PerformanceSchemaImportTests, UpgradeLargeSchema_ManyClassesAndProperties
     {
     const int numberOfClasses = 1000;
     const int numberOfProperties = 70;
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("UpgradeLargeSchema_ManyClassesAndProperties.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("UpgradeLargeSchema_ManyClassesAndProperties.ecdb"));
 
     ECSchemaReadContextPtr context = nullptr;
     ASSERT_EQ(SUCCESS, ReadECSchema(context, m_ecdb, SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>

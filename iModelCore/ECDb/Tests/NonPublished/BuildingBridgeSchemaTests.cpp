@@ -505,7 +505,7 @@ TEST_F(BuildingBridgeSchemaTestFixture, UpdateH2DynamicSchema_CV_BR_OBElementAsp
 </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("updateH2DynamicSchema_CV_BR_OBElementAspect.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("updateH2DynamicSchema_CV_BR_OBElementAspect.ecdb", schemaItem));
 
     //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<ECSchema schemaName="HS2" alias="HS2" version="01.00.11" displayLabel="HS2" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">

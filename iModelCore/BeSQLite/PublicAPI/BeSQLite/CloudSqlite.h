@@ -82,35 +82,41 @@ struct CloudContainer {
     BeEvent<CloudContainer*> m_onDisconnect;
     CloudVdb m_containerDb;
     Utf8String m_storageType;
-    Utf8String m_accessName;
+    Utf8String m_storageParams;
+    Utf8String m_baseUri;
     Utf8String m_containerId;
     Utf8String m_alias;
     Utf8String m_accessToken;
+    Utf8String m_logId;
     bool m_writeLockHeld = false;
     bool m_writeable = false;
     bool m_secure = false;
+    bool m_isPublic = false;
 
     CloudContainer() {}
-    ~CloudContainer() { Disconnect(false); }
-    CloudContainer(Utf8StringCR storageType, Utf8StringCR accessName, Utf8StringCR containerId, Utf8StringCR alias, Utf8StringCR accessToken) :
-        m_storageType(storageType), m_accessName(accessName), m_containerId(containerId), m_alias(alias), m_accessToken(accessToken) {}
+    ~CloudContainer() { Disconnect(false, false); }
+    CloudContainer(Utf8StringCR storageType, Utf8StringCR baseUri, Utf8StringCR containerId, Utf8StringCR alias, Utf8StringCR accessToken) :
+        m_storageType(storageType), m_baseUri(baseUri), m_containerId(containerId), m_alias(alias), m_accessToken(accessToken) {}
 
     CloudResult CallSqliteFn(std::function<int(Utf8P*)> fn, Utf8CP fnName) { return m_cache->CallSqliteFn(fn, fnName); }
     bool IsContainerConnected() const { return nullptr != m_cache; }
 
+    Utf8String GetOpenParams() const { return m_storageType + m_storageParams; }
     void CloseDbIfOpen() {
         if (m_containerDb.IsDbOpen())
             m_containerDb.CloseDb();
     }
 
+    virtual void OnDisconnect(bool isDetach) {}
+    virtual void OnDisconnected(bool isDetach) {}
+
     BE_SQLITE_EXPORT CloudResult Connect(CloudCache&);
-    BE_SQLITE_EXPORT CloudResult Disconnect(bool fromCacheDtor);
+    BE_SQLITE_EXPORT CloudResult Disconnect(bool isDetach, bool fromCacheDtor);
     BE_SQLITE_EXPORT CloudResult PollManifest();
     BE_SQLITE_EXPORT CloudResult UploadChanges();
     BE_SQLITE_EXPORT CloudResult RevertChanges();
     BE_SQLITE_EXPORT CloudResult CopyDatabase(Utf8StringCR dbFrom, Utf8StringCR dbTo);
     BE_SQLITE_EXPORT CloudResult DeleteDatabase(Utf8StringCR dbName);
-    BE_SQLITE_EXPORT CloudResult Detach();
 };
 
 /**

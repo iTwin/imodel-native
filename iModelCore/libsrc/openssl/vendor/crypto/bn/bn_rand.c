@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2021 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2023 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -41,8 +41,10 @@ static int bnrand(BNRAND_FLAG flag, BIGNUM *rnd, int bits, int top, int bottom,
     mask = 0xff << (bit + 1);
 
     buf = OPENSSL_malloc(bytes);
-    if (buf == NULL)
+    if (buf == NULL) {
+        ERR_raise(ERR_LIB_BN, ERR_R_MALLOC_FAILURE);
         goto err;
+    }
 
     /* make a random number and set the top and bottom bits */
     b = flag == NORMAL ? RAND_bytes_ex(libctx, buf, bytes, strength)

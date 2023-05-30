@@ -1,7 +1,7 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 ne{
-    Version{"2.1.49.82"}
     zoneStrings{
         "Africa:Abidjan"{
             ec{"अविड्जान"}
@@ -257,6 +257,9 @@ ne{
         }
         "America:Chihuahua"{
             ec{"चिहुवाहुवा"}
+        }
+        "America:Ciudad_Juarez"{
+            ec{"जुआरेज सहर"}
         }
         "America:Coral_Harbour"{
             ec{"एटिकोकान"}
@@ -810,6 +813,9 @@ ne{
         "Asia:Qatar"{
             ec{"कतार"}
         }
+        "Asia:Qostanay"{
+            ec{"कस्टाने"}
+        }
         "Asia:Qyzylorda"{
             ec{"किजिलोर्डा"}
         }
@@ -1219,6 +1225,9 @@ ne{
         }
         "Pacific:Johnston"{
             ec{"जोन्सटन"}
+        }
+        "Pacific:Kanton"{
+            ec{"कान्टोन"}
         }
         "Pacific:Kiritimati"{
             ec{"किरितिमाटी"}
@@ -1707,7 +1716,9 @@ ne{
             ls{"निउए समय"}
         }
         "meta:Norfolk"{
-            ls{"नोर्फल्क टापू समय"}
+            ld{"नोर्फोक टापूको ग्रीष्मकालीन समय"}
+            lg{"नोर्फोक टापूको समय"}
+            ls{"नोर्फोक टापूको मानक समय"}
         }
         "meta:Noronha"{
             ld{"फर्नान्डो डे नोरोन्हा ग्रीष्मकालीन समय"}
@@ -1877,6 +1888,9 @@ ne{
             ld{"येकाटेरिनबर्ग ग्रीष्मकालीन समय"}
             lg{"येकाटेरिनबर्ग समय"}
             ls{"येकाटेरिनबर्ग मानक समय"}
+        }
+        "meta:Yukon"{
+            ls{"युकोनको समय"}
         }
         fallbackFormat{"{1} ({0})"}
         gmtFormat{"GMT{0}"}

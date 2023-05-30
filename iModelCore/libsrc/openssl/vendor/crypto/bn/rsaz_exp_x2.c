@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2021 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2020-2023 The OpenSSL Project Authors. All Rights Reserved.
  * Copyright (c) 2020-2021, Intel Corporation. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
@@ -254,7 +254,6 @@ int ossl_rsaz_mod_exp_avx512_x2(BN_ULONG *res1,
 
     bn_reduce_once_in_place(res1, /*carry=*/0, m1, storage, factor_size);
     bn_reduce_once_in_place(res2, /*carry=*/0, m2, storage, factor_size);
-
 err:
     if (storage != NULL) {
         OPENSSL_cleanse(storage, storage_len_bytes);
@@ -403,10 +402,11 @@ int RSAZ_mod_exp_x2_ifma256(BN_ULONG *out,
 
     /* Exponentiation */
     {
-        const int rem = modulus_bitsize % exp_win_size;
-        const BN_ULONG table_idx_mask = exp_win_mask;
+        int rem = modulus_bitsize % exp_win_size;
+        int delta = rem ? rem : exp_win_size;
+        BN_ULONG table_idx_mask = exp_win_mask;
 
-        int exp_bit_no = modulus_bitsize - rem;
+        int exp_bit_no = modulus_bitsize - delta;
         int exp_chunk_no = exp_bit_no / 64;
         int exp_chunk_shift = exp_bit_no % 64;
 
@@ -425,7 +425,6 @@ int RSAZ_mod_exp_x2_ifma256(BN_ULONG *out,
         /* Process 1-st exp window - just init result */
         red_table_idx_0 = expz[exp_chunk_no + 0 * (exp_digits + 1)];
         red_table_idx_1 = expz[exp_chunk_no + 1 * (exp_digits + 1)];
-
         /*
          * The function operates with fixed moduli sizes divisible by 64,
          * thus table index here is always in supported range [0, EXP_WIN_SIZE).

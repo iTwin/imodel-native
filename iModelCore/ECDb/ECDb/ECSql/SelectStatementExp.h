@@ -57,13 +57,13 @@ struct DerivedPropertyExp final : Exp
 
         void _ToECSql(ECSqlRenderContext&) const override;
         Utf8String _ToString() const override { Utf8String str("DerivedProperty [Column alias: "); str.append(m_columnAlias).append("]"); return str; }
-        
+
     public:
         DerivedPropertyExp(std::unique_ptr<ValueExp> valueExp, Utf8CP columnAlias);
 
         ValueExp const* GetExpression() const { return GetChild<ValueExp>(0); }
         Utf8String GetName() const;
-        
+
         Utf8StringCR GetColumnAlias() const;
         Utf8StringCR GetCteColumnName() const { return m_cteColumnName; }
         Utf8StringCR GetNestedAlias() const { return m_cteColumnName.empty() ? m_nestedAlias : m_cteColumnName; }
@@ -81,6 +81,7 @@ struct DerivedPropertyExp final : Exp
         bool IsComputed() const;
         bool OriginateInASubQuery() const { return nullptr != this->FindParent(Exp::Type::Subquery); }
         bool IsWildCard() const;
+        ExtractPropertyValueExp const* TryGetExtractPropExp() const;
     };
 
 //=======================================================================================
@@ -290,12 +291,12 @@ struct SingleSelectStatementExp final : QueryExp
         bool IsRowConstructor() const { return m_fromClauseIndex == UNSET_CHILDINDEX;}
 
         SqlSetQuantifier GetSelectionType() const { return m_selectionType; }
-        FromExp const* GetFrom() const 
-            { 
+        FromExp const* GetFrom() const
+            {
             if (m_fromClauseIndex < 0)
                 return nullptr;
 
-            return GetChild<FromExp>((size_t) m_fromClauseIndex); 
+            return GetChild<FromExp>((size_t) m_fromClauseIndex);
             }
 
         WhereExp const* GetWhere() const
@@ -345,7 +346,7 @@ struct SingleSelectStatementExp final : QueryExp
 
             return GetChild<OptionsExp>((size_t) m_optionsClauseIndex);
             }
-        
+
 
         bool IsCoreSelect() const { return m_limitOffsetClauseIndex == UNSET_CHILDINDEX && m_optionsClauseIndex == UNSET_CHILDINDEX; }
     };
@@ -357,7 +358,7 @@ struct SingleSelectStatementExp final : QueryExp
 struct SelectStatementExp;
 struct SubqueryExp final : QueryExp
     {
-    private:       
+    private:
         void _ToECSql(ECSqlRenderContext&) const override;
         Utf8String _ToString() const override { return "Subquery"; }
 
@@ -415,7 +416,7 @@ struct SelectStatementExp final : QueryExp
             } while(cur != nullptr);
             return list;
         }
-        
+
     };
 
 

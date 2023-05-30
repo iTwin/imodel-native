@@ -15,7 +15,7 @@ struct PerformanceJsonInserter : ECDbTestFixture
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceJsonInserter, InsertJsonCppUsingPresistanceAPI)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("performancejsoninserter.ecdb", SchemaItem::CreateForFile("JsonTests.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("performancejsoninserter.ecdb", SchemaItem::CreateForFile("JsonTests.01.00.00.ecschema.xml")));
 
     // Read JSON input from file
     BeFileName jsonInputFile;
@@ -58,7 +58,7 @@ TEST_F(PerformanceJsonInserter, InsertJsonCppUsingPresistanceAPI)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceJsonInserter, InsertRapidJsonUsingPresistanceAPI)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("performancejsoninserter.ecdb", SchemaItem::CreateForFile("JsonTests.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("performancejsoninserter.ecdb", SchemaItem::CreateForFile("JsonTests.01.00.00.ecschema.xml")));
 
     // Read JSON input from file
     BeFileName jsonInputFile;

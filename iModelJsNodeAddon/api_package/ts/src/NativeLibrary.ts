@@ -713,6 +713,7 @@ export declare namespace IModelJsNative {
     public isEnum(): boolean;
     public isGeneratedProperty(): boolean;
     public isSystemProperty(): boolean;
+    public isDynamicProp(): boolean;
   }
 
   class ECSqlValue {
@@ -899,6 +900,16 @@ export declare namespace IModelJsNative {
     }): void;
   }
 
+  /** Filter options passed to CloudContainer.queryHttpLog */
+  interface BcvHttpLogFilterOptions {
+    /** only return rows whose ID is >= the provided id */
+    startFromId?: number;
+    /** only return rows whose endTime is null OR >= the provided endTime. */
+    finishedAtOrAfterTime?: string;
+    /** only return rows with a non-null end_time. */
+    showOnlyFinished?: boolean;
+  }
+
   /**
    * A cache for storing data from CloudSqlite databases. This object refers to a directory on a local filesystem
    * and is used to **connect** CloudContainers so they may be accessed. The contents of the cache directory are entirely
@@ -932,14 +943,22 @@ export declare namespace IModelJsNative {
     public readonly cache?: CloudCache;
     /** Create a new instance of a CloudContainer. It must be connected to a CloudCache for most operations. */
     public constructor(props: NativeCloudSqlite.ContainerAccessProps);
+    /** the baseUri of this container */
+    public get baseUri(): string;
+    /** the storageType of this container */
+    public get storageType(): string;
     /** The ContainerId. */
     public get containerId(): string;
     /** The *alias* to identify this CloudContainer in a CloudCache. Usually just the ContainerId. */
     public get alias(): string;
+    /** The logId. */
+    public get logId(): string;
     /** true if this CloudContainer is currently connected to a CloudCache via the `connect` method. */
     public get isConnected(): boolean;
     /** true if this CloudContainer was created with the `writeable` flag (and its `accessToken` supplies write access). */
     public get isWriteable(): boolean;
+    /** true if this container is public (doesn't require authorization ). */
+    public get isPublic(): boolean;
     /** true if this CloudContainer currently holds the write lock for its container in the cloud. */
     public get hasWriteLock(): boolean;
     /** true if this CloudContainer has local changes that have not be uploaded to its container in the cloud. */
@@ -956,7 +975,7 @@ export declare namespace IModelJsNative {
      * initialize a cloud blob-store container to be used as a new Sqlite CloudContainer. This creates the manifest, and should be
      * performed on an empty container. If an existing manifest is present, it is destroyed and a new one is created (essentially emptying the container.)
      */
-    public initializeContainer(opts?: { checksumBlockNames?: boolean, blockSize?: number }): void;
+    public initializeContainer(opts: { checksumBlockNames?: boolean, blockSize: number }): void;
 
     /**
      * Attempt to acquire the write lock for this CloudContainer. For this to succeed:
@@ -1062,6 +1081,13 @@ export declare namespace IModelJsNative {
      * @param dbName the name of the database of interest
      */
     public queryDatabase(dbName: string): NativeCloudSqlite.CachedDbProps | undefined;
+
+    /**
+     * query the bcv_http_log table
+     * @note the bcv_http_log table contains one row for each HTTP request made by the VFS or connected daemon.
+     * @note Entries are automatically removed from the table on a FIFO basis. By default entries which are 1 hr old will be removed.
+     */
+    public queryHttpLog(filterOptions?: BcvHttpLogFilterOptions): NativeCloudSqlite.BcvHttpLog[];
 
     /**
      * Get the SHA1 hash of the content of a database.
@@ -1179,7 +1205,7 @@ export declare namespace IModelJsNative {
     public addRuleset(serializedRuleset: string): ECPresentationManagerResponse<string>;
     public removeRuleset(rulesetId: string, hash: string): ECPresentationManagerResponse<boolean>;
     public clearRulesets(): ECPresentationManagerResponse<void>;
-    public handleRequest(db: DgnDb, options: string): { result: Promise<ECPresentationManagerResponse<string>>, cancel: () => void };
+    public handleRequest(db: DgnDb, options: string): { result: Promise<ECPresentationManagerResponse<Buffer>>, cancel: () => void };
     public getUpdateInfo(): ECPresentationManagerResponse<any>;
     public dispose(): void;
   }

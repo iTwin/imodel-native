@@ -29,11 +29,10 @@ static OSSL_DECODER *ossl_decoder_new(void)
 {
     OSSL_DECODER *decoder = NULL;
 
-    if ((decoder = OPENSSL_zalloc(sizeof(*decoder))) == NULL)
-        return NULL;
-    if ((decoder->base.lock = CRYPTO_THREAD_lock_new()) == NULL) {
+    if ((decoder = OPENSSL_zalloc(sizeof(*decoder))) == NULL
+        || (decoder->base.lock = CRYPTO_THREAD_lock_new()) == NULL) {
         OSSL_DECODER_free(decoder);
-        ERR_raise(ERR_LIB_OSSL_DECODER, ERR_R_CRYPTO_LIB);
+        ERR_raise(ERR_LIB_OSSL_DECODER, ERR_R_MALLOC_FAILURE);
         return NULL;
     }
 
@@ -626,7 +625,9 @@ OSSL_DECODER_CTX *OSSL_DECODER_CTX_new(void)
 {
     OSSL_DECODER_CTX *ctx;
 
-    ctx = OPENSSL_zalloc(sizeof(*ctx));
+    if ((ctx = OPENSSL_zalloc(sizeof(*ctx))) == NULL)
+        ERR_raise(ERR_LIB_OSSL_DECODER, ERR_R_MALLOC_FAILURE);
+
     return ctx;
 }
 

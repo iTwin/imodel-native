@@ -24,6 +24,10 @@
 #include "cstring.h"
 #include "uresimp.h"
 #include "unicode/coll.h"
+#include "unicode/stringpiece.h"
+#include "charstr.h"
+
+U_NAMESPACE_USE
 
 #ifdef UCOL_TRACE_SIT
 # include <stdio.h>
@@ -82,7 +86,6 @@ static const char providerKeyword[]  = "@sp=";
 static const int32_t locElementCount = UCOL_SIT_LOCELEMENT_MAX+1;
 static const int32_t locElementCapacity = 32;
 static const int32_t loc3066Capacity = 256;
-static const int32_t locProviderCapacity = 10;
 static const int32_t internalBufferSize = 512;
 
 /* structure containing specification of a collator. Initialized
@@ -90,19 +93,29 @@ static const int32_t internalBufferSize = 512;
  * collator instance
  */
 struct CollatorSpec {
-    char locElements[locElementCount][locElementCapacity];
-    char locale[loc3066Capacity];
-    char provider[locProviderCapacity];
+    inline CollatorSpec();
+
+    CharString locElements[locElementCount];
+    CharString locale;
     UColAttributeValue options[UCOL_ATTRIBUTE_COUNT];
     uint32_t variableTopValue;
-    UChar variableTopString[locElementCapacity];
+    char16_t variableTopString[locElementCapacity];
     int32_t variableTopStringLen;
     UBool variableTopSet;
-    struct {
-        const char *start;
-        int32_t len;
-    } entries[UCOL_SIT_ITEMS_COUNT];
+    CharString entries[UCOL_SIT_ITEMS_COUNT];
 };
+
+CollatorSpec::CollatorSpec() :
+locale(),
+variableTopValue(0),
+variableTopString(),
+variableTopSet(false)
+ {
+    // set collation options to default
+    for(int32_t i = 0; i < UCOL_ATTRIBUTE_COUNT; i++) {
+        options[i] = UCOL_DEFAULT;
+    }
+}
 
 
 /* structure for converting between character attribute
@@ -156,18 +169,13 @@ static const char* U_CALLCONV
 _processLocaleElement(CollatorSpec *spec, uint32_t value, const char* string,
                       UErrorCode *status)
 {
-    int32_t len = 0;
     do {
         if(value == UCOL_SIT_LANGUAGE || value == UCOL_SIT_KEYWORD || value == UCOL_SIT_PROVIDER) {
-            spec->locElements[value][len++] = uprv_tolower(*string);
+            spec->locElements[value].append(uprv_tolower(*string), *status);
         } else {
-            spec->locElements[value][len++] = *string;
+            spec->locElements[value].append(*string, *status);
         }
-    } while(*(++string) != '_' && *string && len < locElementCapacity);
-    if(len >= locElementCapacity) {
-        *status = U_BUFFER_OVERFLOW_ERROR;
-        return string;
-    }
+    } while(*(++string) != '_' && *string && U_SUCCESS(*status));
     // don't skip the underscore at the end
     return string;
 }
@@ -181,11 +189,11 @@ _processRFC3066Locale(CollatorSpec *spec, uint32_t, const char* string,
     char terminator = *string;
     string++;
     const char *end = uprv_strchr(string+1, terminator);
-    if(end == NULL || end - string >= loc3066Capacity) {
+    if(end == nullptr || end - string >= loc3066Capacity) {
         *status = U_BUFFER_OVERFLOW_ERROR;
         return string;
     } else {
-        uprv_strncpy(spec->locale, string, end-string);
+        spec->locale.copyFrom(CharString(string, static_cast<int32_t>(end-string), *status), *status);
         return end+1;
     }
 }
@@ -209,10 +217,10 @@ _processCollatorOption(CollatorSpec *spec, uint32_t option, const char* string,
 U_CDECL_END
 
 
-static UChar
+static char16_t
 readHexCodeUnit(const char **string, UErrorCode *status)
 {
-    UChar result = 0;
+    char16_t result = 0;
     int32_t value = 0;
     char c;
     int32_t noDigits = 0;
@@ -230,7 +238,7 @@ readHexCodeUnit(const char **string, UErrorCode *status)
 #endif    
             return 0;
         }
-        result = (result << 4) | (UChar)value;
+        result = (result << 4) | (char16_t)value;
         noDigits++;
         (*string)++;
     }
@@ -262,7 +270,7 @@ _processVariableTop(CollatorSpec *spec, uint32_t value1, const char* string, UEr
         spec->variableTopValue = readHexCodeUnit(&string, status);
     }
     if(U_SUCCESS(*status)) {
-        spec->variableTopSet = TRUE;
+        spec->variableTopSet = true;
     }
     return string;
 }
@@ -306,9 +314,12 @@ const char* ucol_sit_readOption(const char *start, CollatorSpec *spec,
 
   for(i = 0; i < UCOL_SIT_ITEMS_COUNT; i++) {
       if(*start == options[i].optionStart) {
-          spec->entries[i].start = start;
           const char* end = options[i].action(spec, options[i].attr, start+1, status);
-          spec->entries[i].len = (int32_t)(end - start);
+#ifdef UCOL_TRACE_SIT
+          fprintf(stderr, "***Set %d to %s...\n", i, start);
+#endif
+          // assume 'start' does not go away through all this
+          spec->entries[i].copyFrom(CharString(start, (int32_t)(end - start), *status), *status);
           return end;
       }
   }
@@ -317,18 +328,6 @@ const char* ucol_sit_readOption(const char *start, CollatorSpec *spec,
   fprintf(stderr, "%s:%d: Unknown option at '%s': %s\n", __FILE__, __LINE__, start, u_errorName(*status));
 #endif
   return start;
-}
-
-static
-void ucol_sit_initCollatorSpecs(CollatorSpec *spec)
-{
-    // reset everything
-    uprv_memset(spec, 0, sizeof(CollatorSpec));
-    // set collation options to default
-    int32_t i = 0;
-    for(i = 0; i < UCOL_ATTRIBUTE_COUNT; i++) {
-        spec->options[i] = UCOL_DEFAULT;
-    }
 }
 
 static const char*
@@ -357,26 +356,23 @@ int32_t ucol_sit_dumpSpecs(CollatorSpec *s, char *destination, int32_t capacity,
     char optName;
     if(U_SUCCESS(*status)) {
         for(i = 0; i < UCOL_SIT_ITEMS_COUNT; i++) {
-            if(s->entries[i].start) {
+            if(!s->entries[i].isEmpty()) {
                 if(len) {
                     if(len < capacity) {
                         uprv_strcat(destination, "_");
                     }
                     len++;
                 }
-                optName = *(s->entries[i].start);
+                optName = s->entries[i][0];
                 if(optName == languageArg || optName == regionArg || optName == variantArg || optName == keywordArg) {
-                    for(j = 0; j < s->entries[i].len; j++) {
+                    for(j = 0; j < s->entries[i].length(); j++) {
                         if(len + j < capacity) {
-                            destination[len+j] = uprv_toupper(*(s->entries[i].start+j));
+                            destination[len+j] = uprv_toupper(s->entries[i][j]);
                         }
                     }
-                    len += s->entries[i].len;
+                    len += s->entries[i].length();
                 } else {
-                    len += s->entries[i].len;
-                    if(len < capacity) {
-                        uprv_strncat(destination,s->entries[i].start, s->entries[i].len);
-                    }
+                    len += s->entries[i].extract(destination + len, capacity - len, *status);
                 }
             }
         }
@@ -387,40 +383,40 @@ int32_t ucol_sit_dumpSpecs(CollatorSpec *s, char *destination, int32_t capacity,
 }
 
 static void
-ucol_sit_calculateWholeLocale(CollatorSpec *s) {
+ucol_sit_calculateWholeLocale(CollatorSpec *s, UErrorCode &status) {
     // put the locale together, unless we have a done
     // locale
-    if(s->locale[0] == 0) {
+    if(s->locale.isEmpty()) {
         // first the language
-        uprv_strcat(s->locale, s->locElements[UCOL_SIT_LANGUAGE]);
+        s->locale.append(s->locElements[UCOL_SIT_LANGUAGE], status);
         // then the script, if present
-        if(*(s->locElements[UCOL_SIT_SCRIPT])) {
-            uprv_strcat(s->locale, "_");
-            uprv_strcat(s->locale, s->locElements[UCOL_SIT_SCRIPT]);
+        if(!s->locElements[UCOL_SIT_SCRIPT].isEmpty()) {
+            s->locale.append("_", status);
+            s->locale.append(s->locElements[UCOL_SIT_SCRIPT], status);
         }
         // then the region, if present
-        if(*(s->locElements[UCOL_SIT_REGION])) {
-            uprv_strcat(s->locale, "_");
-            uprv_strcat(s->locale, s->locElements[UCOL_SIT_REGION]);
-        } else if(*(s->locElements[UCOL_SIT_VARIANT])) { // if there is a variant, we need an underscore
-            uprv_strcat(s->locale, "_");
+        if(!s->locElements[UCOL_SIT_REGION].isEmpty()) {
+            s->locale.append("_", status);
+            s->locale.append(s->locElements[UCOL_SIT_REGION], status);
+        } else if(!s->locElements[UCOL_SIT_VARIANT].isEmpty()) { // if there is a variant, we need an underscore
+            s->locale.append("_", status);
         }
         // add variant, if there
-        if(*(s->locElements[UCOL_SIT_VARIANT])) {
-            uprv_strcat(s->locale, "_");
-            uprv_strcat(s->locale, s->locElements[UCOL_SIT_VARIANT]);
+        if(!s->locElements[UCOL_SIT_VARIANT].isEmpty()) {
+            s->locale.append("_", status);
+            s->locale.append(s->locElements[UCOL_SIT_VARIANT], status);
         }
 
         // if there is a collation keyword, add that too
-        if(*(s->locElements[UCOL_SIT_KEYWORD])) {
-            uprv_strcat(s->locale, collationKeyword);
-            uprv_strcat(s->locale, s->locElements[UCOL_SIT_KEYWORD]);
+        if(!s->locElements[UCOL_SIT_KEYWORD].isEmpty()) {
+            s->locale.append(collationKeyword, status);
+            s->locale.append(s->locElements[UCOL_SIT_KEYWORD], status);
         }
 
         // if there is a provider keyword, add that too
-        if(*(s->locElements[UCOL_SIT_PROVIDER])) {
-            uprv_strcat(s->locale, providerKeyword);
-            uprv_strcat(s->locale, s->locElements[UCOL_SIT_PROVIDER]);
+        if(!s->locElements[UCOL_SIT_PROVIDER].isEmpty()) {
+            s->locale.append(providerKeyword, status);
+            s->locale.append(s->locElements[UCOL_SIT_PROVIDER], status);
         }
     }
 }
@@ -451,18 +447,17 @@ ucol_prepareShortStringOpen( const char *definition,
 
     // analyse the string in order to get everything we need.
     CollatorSpec s;
-    ucol_sit_initCollatorSpecs(&s);
     ucol_sit_readSpecs(&s, definition, parseError, status);
-    ucol_sit_calculateWholeLocale(&s);
+    ucol_sit_calculateWholeLocale(&s, *status);
 
     char buffer[internalBufferSize];
     uprv_memset(buffer, 0, internalBufferSize);
-    uloc_canonicalize(s.locale, buffer, internalBufferSize, status);
+    uloc_canonicalize(s.locale.data(), buffer, internalBufferSize, status);
 
     UResourceBundle *b = ures_open(U_ICUDATA_COLL, buffer, status);
     /* we try to find stuff from keyword */
-    UResourceBundle *collations = ures_getByKey(b, "collations", NULL, status);
-    UResourceBundle *collElem = NULL;
+    UResourceBundle *collations = ures_getByKey(b, "collations", nullptr, status);
+    UResourceBundle *collElem = nullptr;
     char keyBuffer[256];
     // if there is a keyword, we pick it up and try to get elements
     int32_t keyLen = uloc_getKeywordValue(buffer, "collation", keyBuffer, sizeof(keyBuffer), status);
@@ -474,10 +469,10 @@ ucol_prepareShortStringOpen( const char *definition,
     if(keyLen == 0) {
       // no keyword
       // we try to find the default setting, which will give us the keyword value
-      UResourceBundle *defaultColl = ures_getByKeyWithFallback(collations, "default", NULL, status);
+      UResourceBundle *defaultColl = ures_getByKeyWithFallback(collations, "default", nullptr, status);
       if(U_SUCCESS(*status)) {
         int32_t defaultKeyLen = 0;
-        const UChar *defaultKey = ures_getString(defaultColl, &defaultKeyLen, status);
+        const char16_t *defaultKey = ures_getString(defaultColl, &defaultKeyLen, status);
         u_UCharsToChars(defaultKey, keyBuffer, defaultKeyLen);
         keyBuffer[defaultKeyLen] = 0;
       } else {
@@ -522,13 +517,15 @@ ucol_openFromShortString( const char *definition,
     // analyse the string in order to get everything we need.
     const char *string = definition;
     CollatorSpec s;
-    ucol_sit_initCollatorSpecs(&s);
     string = ucol_sit_readSpecs(&s, definition, parseError, status);
-    ucol_sit_calculateWholeLocale(&s);
+    ucol_sit_calculateWholeLocale(&s, *status);
 
     char buffer[internalBufferSize];
     uprv_memset(buffer, 0, internalBufferSize);
-    uloc_canonicalize(s.locale, buffer, internalBufferSize, status);
+#ifdef UCOL_TRACE_SIT
+    fprintf(stderr, "DEF %s, DATA %s, ERR %s\n", definition, s.locale.data(), u_errorName(*status));
+#endif
+    uloc_canonicalize(s.locale.data(), buffer, internalBufferSize, status);
 
     UCollator *result = ucol_open(buffer, status);
     int32_t i = 0;
@@ -542,7 +539,7 @@ ucol_openFromShortString( const char *definition,
             if(U_FAILURE(*status)) {
                 parseError->offset = (int32_t)(string - definition);
                 ucol_close(result);
-                return NULL;
+                return nullptr;
             }
 
         }
@@ -558,7 +555,7 @@ ucol_openFromShortString( const char *definition,
 
     if(U_FAILURE(*status)) { // here it can only be a bogus value
         ucol_close(result);
-        result = NULL;
+        result = nullptr;
     }
 
     UTRACE_EXIT_PTR_STATUS(result, *status);
@@ -574,7 +571,7 @@ ucol_getShortDefinitionString(const UCollator *coll,
                               UErrorCode *status)
 {
     if(U_FAILURE(*status)) return 0;
-    if(coll == NULL) {
+    if(coll == nullptr) {
         *status = U_ILLEGAL_ARGUMENT_ERROR;
         return 0;
     }
@@ -604,7 +601,6 @@ ucol_normalizeShortDefinitionString(const char *definition,
 
     // validate
     CollatorSpec s;
-    ucol_sit_initCollatorSpecs(&s);
     ucol_sit_readSpecs(&s, definition, parseError, status);
     return ucol_sit_dumpSpecs(&s, destination, capacity, status);
 }
@@ -622,7 +618,7 @@ ucol_getContractions( const UCollator *coll,
                   USet *contractions,
                   UErrorCode *status)
 {
-  ucol_getContractionsAndExpansions(coll, contractions, NULL, FALSE, status);
+  ucol_getContractionsAndExpansions(coll, contractions, nullptr, false, status);
   return uset_getItemCount(contractions);
 }
 
@@ -646,12 +642,12 @@ ucol_getContractionsAndExpansions( const UCollator *coll,
     if(U_FAILURE(*status)) {
         return;
     }
-    if(coll == NULL) {
+    if(coll == nullptr) {
         *status = U_ILLEGAL_ARGUMENT_ERROR;
         return;
     }
     const icu::RuleBasedCollator *rbc = icu::RuleBasedCollator::rbcFromUCollator(coll);
-    if(rbc == NULL) {
+    if(rbc == nullptr) {
         *status = U_UNSUPPORTED_ERROR;
         return;
     }

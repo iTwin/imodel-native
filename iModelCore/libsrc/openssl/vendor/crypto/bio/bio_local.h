@@ -9,7 +9,6 @@
 
 #include "internal/e_os.h"
 #include "internal/sockets.h"
-#include "internal/bio_addr.h"
 
 /* BEGIN BIO_ADDRINFO/BIO_ADDR stuff. */
 
@@ -64,6 +63,17 @@ struct bio_addrinfo_st {
     struct bio_addrinfo_st *bai_next;
 };
 # endif
+
+union bio_addr_st {
+    struct sockaddr sa;
+# if OPENSSL_USE_IPV6
+    struct sockaddr_in6 s_in6;
+# endif
+    struct sockaddr_in s_in;
+# ifndef OPENSSL_NO_UNIX_SOCK
+    struct sockaddr_un s_un;
+# endif
+};
 #endif
 
 /* END BIO_ADDRINFO/BIO_ADDR stuff. */
@@ -132,12 +142,6 @@ struct sockaddr *BIO_ADDR_sockaddr_noconst(BIO_ADDR *ap);
 socklen_t BIO_ADDR_sockaddr_size(const BIO_ADDR *ap);
 socklen_t BIO_ADDRINFO_sockaddr_size(const BIO_ADDRINFO *bai);
 const struct sockaddr *BIO_ADDRINFO_sockaddr(const BIO_ADDRINFO *bai);
-
-# if defined(OPENSSL_SYS_WINDOWS) && defined(WSAID_WSARECVMSG)
-#  define BIO_HAVE_WSAMSG
-extern LPFN_WSARECVMSG bio_WSARecvMsg;
-extern LPFN_WSASENDMSG bio_WSASendMsg;
-# endif
 #endif
 
 extern CRYPTO_RWLOCK *bio_type_lock;

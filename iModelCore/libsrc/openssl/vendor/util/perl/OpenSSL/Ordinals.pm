@@ -1,5 +1,5 @@
 #! /usr/bin/env perl
-# Copyright 2018-2021 The OpenSSL Project Authors. All Rights Reserved.
+# Copyright 2018-2023 The OpenSSL Project Authors. All Rights Reserved.
 #
 # Licensed under the Apache License 2.0 (the "License").  You may not use
 # this file except in compliance with the License.  You can obtain a copy
@@ -414,8 +414,6 @@ sub _parse_features {
         my $def = $';
 
         if ($def =~ m{^ZLIB$})                      { $features{$&} =  $op; }
-        if ($def =~ m{^BROTLI$})                    { $features{$&} =  $op; }
-        if ($def =~ m{^ZSTD$})                      { $features{$&} =  $op; }
         if ($def =~ m{^OPENSSL_USE_})               { $features{$'} =  $op; }
         if ($def =~ m{^OPENSSL_NO_})                { $features{$'} = !$op; }
     }

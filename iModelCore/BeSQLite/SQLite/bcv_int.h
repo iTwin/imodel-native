@@ -114,6 +114,8 @@ typedef struct BcvContainer BcvContainer;
 typedef struct BcvWrapper BcvWrapper;
 typedef struct BcvBuffer BcvBuffer;
 typedef struct BcvEncryptionKey BcvEncryptionKey;
+typedef struct BcvLog BcvLog;
+
 
 
 struct Manifest {
@@ -210,6 +212,9 @@ struct BcvCommon {
   i64 iLruTick;
   int nHash;                      /* Number of hash buckets */
   int nBlk;                       /* Number of blocks in cache file */
+
+  /* Virtual table log object */
+  BcvLog *pLog;
 
   /* To access blocksdb.bcv */
   sqlite3 *bdb;                   /* Open database handle */
@@ -308,6 +313,7 @@ void bcvMHashFree(ManifestHash *pHash);
 
 
 void bcvBufferAppendU32(int *pRc, BcvBuffer *p, u32 iVal);
+void bcvBufferAppendU64(int *pRc, BcvBuffer *p, u64 iVal);
 void bcvBufferMsgString(int *pRc, BcvBuffer *p, const char *zStr);
 void bcvBufferMsgBlob(int *pRc, BcvBuffer *p, const u8 *aData, int nData);
 void bcvBufferZero(BcvBuffer *p);
@@ -424,6 +430,7 @@ void bcvDispatchFree(BcvDispatch*);
 void bcvDispatchVerbose(BcvDispatch*, int);
 void bcvDispatchTimeout(BcvDispatch*, int);
 void bcvDispatchLog(BcvDispatch*, void*, void (*xLog)(void*,int,const char*));
+void bcvDispatchLogObj(BcvDispatch*, BcvLog*);
 
 int bcvDispatchFetch(
   BcvDispatch *p,
@@ -477,6 +484,7 @@ int bcvDispatchList(
 );
 
 int bcvDispatchLogmsg(BcvDispatch *p, const char *zFmt, ...);
+int bcvDispatchClientId(BcvDispatch *p, const char *z);
 
 int bcvCreateModuleUnsafe(const char*, sqlite3_bcv_module*, void*);
 
@@ -616,7 +624,8 @@ struct BcvPrefetchReply {
 /*
 ** Candidate values for BcvCmdMsg.eCmd
 */
-#define BCV_CMD_POLL   2
+#define BCV_CMD_POLL     2
+#define BCV_CMD_CLIENT   3
 
 struct BcvMessage {
   int eType;                      /* BCV_MESSAGE_* value */
@@ -670,4 +679,39 @@ int bcvDecrypt(BcvEncryptionKey*, sqlite3_int64, u8*, u8*, int);
 int bcvEncrypt(BcvEncryptionKey*, sqlite3_int64, u8*, u8*, int);
 
 const char *bcvRequestHeader(const u8 *aHdrs, int nHdrs, const char *zHdr);
+
+/* Allocate a new log object.  */
+BcvLog *bcvLogNew();
+
+/* Free a log object.  */
+void bcvLogDelete(BcvLog*);
+
+/*
+** The different reasons cloudsqlite might make an http request.
+*/
+#define BCV_REQUEST_BLOCK_DEMAND       /* GET a block on demand */
+#define BCV_REQUEST_BLOCK_PREFETCH     /* GET a block as part of a prefetch */
+#define BCV_REQUEST_MANIFEST           /* GET a manifest */
+#define BCV_REQUEST_BCV_KV             /* GET a bcv.kv database file */
+
+int bcvLogRequest(
+  BcvLog *pLog, 
+  const char *zClientId,          /* Id of client that made this request */
+  const char *zMsg,               /* Log message accompanying request */
+  int eMethod,                    /* SQLITE_BCV_METHOD_* constant */
+  int nRetry,                     /* 0 for first attempt, 1 for second... */
+  const char *zUri,               /* Logging URI of request */
+  i64 *piLogId                    /* OUT: Logging id */
+);
+
+int bcvLogReply(
+  BcvLog *pLog,
+  i64 iLogId,
+  int httpcode,
+  i64 *piMs
+);
+
+int bcvLogGetData(BcvLog *pLog, BcvBuffer *pBuf);
+void bcvTimeToString(i64 iTime, char *zBuf);
+void bcvLogConfig(BcvLog *pLog, int op, i64 iVal);
 

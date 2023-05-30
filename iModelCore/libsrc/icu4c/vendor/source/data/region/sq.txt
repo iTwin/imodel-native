@@ -1,5 +1,6 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 sq{
     Countries{
         001{"Bota"}
@@ -303,7 +304,6 @@ sq{
         MO{"Makao"}
         PS{"Palestinë"}
         UN{"OKB"}
-        US{"SHBA"}
     }
     Countries%variant{
         CD{"Kongo (RDK)"}
@@ -311,8 +311,8 @@ sq{
         CI{"Bregu i Fildishtë"}
         CZ{"Republika Çeke"}
         FK{"Ishujt Falkland (Malvine)"}
+        NZ{"Zelanda e Re-Aotearoa"}
         SZ{"Suazilend"}
         TL{"Timori Lindor"}
     }
-    Version{"2.1.48.42"}
 }

@@ -314,6 +314,12 @@ inline static Utf8String requireString(Napi::Object const& obj, Utf8CP name) {
         BeNapi::ThrowJsException(obj.Env(), Utf8PrintfString("must supply %s", name).c_str());
     return strVal;
 }
+inline static int requireInt(Napi::Object const& obj, Utf8CP name) {
+    auto member = obj.Get(name);
+    if (!member.IsNumber())
+        BeNapi::ThrowJsException(obj.Env(), Utf8PrintfString("must supply %s", name).c_str());
+    return  member.ToNumber().Int32Value();
+}
 inline static bool requireBool(Napi::Object const& obj, Utf8CP name) {
     auto member = obj.Get(name);
     if (!member.IsBoolean())
@@ -372,9 +378,9 @@ struct JsInterop {
         ECSchemaReadContextPtr m_customSchemaContext = nullptr;
         };
 
-    BE_JSON_NAME(accessName)
     BE_JSON_NAME(accessToken)
     BE_JSON_NAME(alias)
+    BE_JSON_NAME(baseUri)
     BE_JSON_NAME(blob)
     BE_JSON_NAME(blockSize)
     BE_JSON_NAME(briefcaseId)
@@ -394,7 +400,6 @@ struct JsInterop {
     BE_JSON_NAME(dbName)
     BE_JSON_NAME(defaultTxn)
     BE_JSON_NAME(description)
-    BE_JSON_NAME(durationSeconds)
     BE_JSON_NAME(ecefLocation)
     BE_JSON_NAME(ecSchemaXmlContext)
     BE_JSON_NAME(element)
@@ -403,6 +408,7 @@ struct JsInterop {
     BE_JSON_NAME(face)
     BE_JSON_NAME(fileExt)
     BE_JSON_NAME(fileName)
+    BE_JSON_NAME(finishedAtOrAfterTime)
     BE_JSON_NAME(fonts)
     BE_JSON_NAME(forceUseId)
     BE_JSON_NAME(globalOrigin)
@@ -410,8 +416,11 @@ struct JsInterop {
     BE_JSON_NAME(httpTimeout)
     BE_JSON_NAME(id)
     BE_JSON_NAME(index)
+    BE_JSON_NAME(isPublic)
     BE_JSON_NAME(localFileName)
     BE_JSON_NAME(lockedBy)
+    BE_JSON_NAME(lockExpireSeconds)
+    BE_JSON_NAME(logId)
     BE_JSON_NAME(logMask)
     BE_JSON_NAME(modelExtents)
     BE_JSON_NAME(minRequests)
@@ -434,8 +443,10 @@ struct JsInterop {
     BE_JSON_NAME(row)
     BE_JSON_NAME(secure)
     BE_JSON_NAME(schemaLockHeld)
+    BE_JSON_NAME(showOnlyFinished)
     BE_JSON_NAME(size)
     BE_JSON_NAME(skipFileCheck)
+    BE_JSON_NAME(startFromId)
     BE_JSON_NAME(state)
     BE_JSON_NAME(storageType)
     BE_JSON_NAME(subId)

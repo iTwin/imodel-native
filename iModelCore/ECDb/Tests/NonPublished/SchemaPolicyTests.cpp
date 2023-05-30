@@ -15,7 +15,7 @@ struct SchemaPolicyTestFixture : ECDbTestFixture {};
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaPolicyTestFixture, SchemaPolicesNotIncludedByDefault)
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("SchemaPolicesNotIncludedByDefault.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("SchemaPolicesNotIncludedByDefault.ecdb"));
     ASSERT_FALSE(m_ecdb.Schemas().ContainsSchema("ECDbSchemaPolicies"));
     }
 //---------------------------------------------------------------------------------------
@@ -628,7 +628,7 @@ TEST_F(SchemaPolicyTestFixture, NoAdditionalRootEntityClasses)
         </ECSchema>)xml")}));
 
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("schemapolicies1.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("schemapolicies1.ecdb"));
     ASSERT_EQ(SUCCESS, ImportSchemas({SchemaItem(
         R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="OptingInSchema" alias="master" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
@@ -657,7 +657,7 @@ TEST_F(SchemaPolicyTestFixture, NoAdditionalRootEntityClasses)
     }
 
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("schemapolicies2.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("schemapolicies2.ecdb"));
     ASSERT_EQ(SUCCESS, ImportSchemas({SchemaItem(
         R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="OptingInSchema" alias="master" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
@@ -754,7 +754,7 @@ TEST_F(SchemaPolicyTestFixture, NoAdditionalRootEntityClasses)
     }
 
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("schemapolicies3.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schemapolicies3.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="SchemaBeforeOptingInSchemaIsImported" alias="pre" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECEntityClass typeName="PreA" modifier="None" >
@@ -804,7 +804,7 @@ TEST_F(SchemaPolicyTestFixture, NoAdditionalRootEntityClasses)
     }
 
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("schemapolicies3.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schemapolicies3.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="SchemaBeforeOptingInSchemaIsImported" alias="pre" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECEntityClass typeName="PreA" modifier="None" >
@@ -934,7 +934,7 @@ TEST_F(SchemaPolicyTestFixture, NoAdditionalLinkTables)
         </ECSchema>)xml")}));
 
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("schemapolicies1.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("schemapolicies1.ecdb"));
     ASSERT_EQ(SUCCESS, ImportSchemas({SchemaItem(
         R"xml(<?xml version="1.0" encoding="UTF-8"?>
             <ECSchema schemaName="Core" alias="core" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
@@ -977,7 +977,7 @@ TEST_F(SchemaPolicyTestFixture, NoAdditionalLinkTables)
     }
 
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("schemapolicies2.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schemapolicies2.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="UTF-8"?>
             <ECSchema schemaName="Core" alias="core" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECEntityClass typeName="CoreA" modifier="None" >
@@ -1079,7 +1079,7 @@ TEST_F(SchemaPolicyTestFixture, NoAdditionalLinkTables)
     }
 
         {
-        ASSERT_EQ(BE_SQLITE_OK, SetupECDb("schemapolicies3.ecdb"));
+        ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("schemapolicies3.ecdb"));
         ASSERT_EQ(SUCCESS, ImportSchemas({SchemaItem(
             R"xml(<?xml version="1.0" encoding="UTF-8"?>
             <ECSchema schemaName="Core" alias="core" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
@@ -1117,7 +1117,7 @@ TEST_F(SchemaPolicyTestFixture, NoAdditionalLinkTables)
         }
 
         {
-        ASSERT_EQ(SUCCESS, SetupECDb("schemapolicies3.ecdb", SchemaItem(
+        ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schemapolicies3.ecdb", SchemaItem(
             R"xml(<?xml version="1.0" encoding="UTF-8"?>
             <ECSchema schemaName="Core" alias="core" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECEntityClass typeName="CoreA" modifier="None" >
@@ -1163,7 +1163,7 @@ TEST_F(SchemaPolicyTestFixture, NoAdditionalLinkTables)
         }
 
         {
-        ASSERT_EQ(BE_SQLITE_OK, SetupECDb("schemapolicies4.ecdb"));
+        ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("schemapolicies4.ecdb"));
         ASSERT_EQ(SUCCESS, ImportSchemas({SchemaItem(
             R"xml(<?xml version="1.0" encoding="UTF-8"?>
             <ECSchema schemaName="Core" alias="core" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
@@ -1221,7 +1221,7 @@ TEST_F(SchemaPolicyTestFixture, NoAdditionalLinkTables)
 TEST_F(SchemaPolicyTestFixture, NoAdditionalForeignKeyConstraints)
     {
         {
-            ASSERT_EQ(BE_SQLITE_OK, SetupECDb("SchemaPolicies_NoAdditionalForeignKeys.ecdb"));
+            ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("SchemaPolicies_NoAdditionalForeignKeys.ecdb"));
             ASSERT_EQ(SUCCESS, ImportSchemas({SchemaItem(
                 R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="Core" alias="core" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
@@ -1284,7 +1284,7 @@ TEST_F(SchemaPolicyTestFixture, NoAdditionalForeignKeyConstraints)
           }
 
         {
-        ASSERT_EQ(BE_SQLITE_OK, SetupECDb("SchemaPolicies_NoAdditionalForeignKeys.ecdb"));
+        ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("SchemaPolicies_NoAdditionalForeignKeys.ecdb"));
         ASSERT_EQ(SUCCESS, ImportSchemas({SchemaItem(
             R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="Core" alias="core" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
@@ -1458,7 +1458,7 @@ TEST_F(SchemaPolicyTestFixture, ExceptionTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaPolicyTestFixture, UpdatingECDbSchemas)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("schemapolicy_updatingecdbschemas.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schemapolicy_updatingecdbschemas.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
                 <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
                     <ECSchemaReference name="ECDbSchemaPolicies" version="01.00" alias="ecdbpol"/>
                     <ECCustomAttributes>

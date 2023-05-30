@@ -37,19 +37,20 @@ describe("cloud sqlite", () => {
 
   it("container", async () => {
     const containerProps: NativeCloudSqlite.ContainerAccessProps = {
-      accessName: "account1",
+      baseUri: "http://127.0.0.1:10000/devstoreaccount1",
       storageType: "azure",
       containerId: "abc-123",
       accessToken: "bad",
+      lockExpireSeconds: 1,
     };
     const container = new iModelJsNative.CloudContainer(containerProps);
     expect(container.isConnected).is.false;
     expect(container.hasWriteLock).is.false;
+    expect(container.isPublic).is.false;
     expect(container.accessToken).equal(containerProps.accessToken);
-    const newToken = "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==";
+    const newToken = "bad-token";
     container.accessToken = newToken; // test setter
     expect(container.accessToken).equal(newToken);
-    expect(() => container.connect(cache)).to.throw("attach error").property("errorNumber").equal(403);
 
     const notAttached = "container not connected to cache";
     // eslint-disable-next-line @typescript-eslint/promise-function-async
@@ -59,5 +60,9 @@ describe("cloud sqlite", () => {
     // eslint-disable-next-line @typescript-eslint/promise-function-async
     expect(() => container.uploadChanges()).to.throw(notAttached);
     expect(() => container.checkForChanges()).to.throw(notAttached);
+
+    containerProps.isPublic = true;
+    const c2 = new iModelJsNative.CloudContainer(containerProps);
+    expect(c2.isPublic).is.true;
   });
 });

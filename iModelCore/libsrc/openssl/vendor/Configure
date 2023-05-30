@@ -1,6 +1,6 @@
 #! /usr/bin/env perl
 # -*- mode: perl; -*-
-# Copyright 2016-2022 The OpenSSL Project Authors. All Rights Reserved.
+# Copyright 2016-2023 The OpenSSL Project Authors. All Rights Reserved.
 #
 # Licensed under the Apache License 2.0 (the "License").  You may not use
 # this file except in compliance with the License.  You can obtain a copy
@@ -27,7 +27,7 @@ use OpenSSL::config;
 my $orig_death_handler = $SIG{__DIE__};
 $SIG{__DIE__} = \&death_handler;
 
-my $usage="Usage: Configure [no-<feature> ...] [enable-<feature> ...] [-Dxxx] [-lxxx] [-Lxxx] [-fxxx] [-Kxxx] [no-hw-xxx|no-hw] [[no-]threads] [[no-]thread-pool] [[no-]default-thread-pool] [[no-]shared] [[no-]zlib|zlib-dynamic] [no-asm] [no-egd] [sctp] [386] [--prefix=DIR] [--openssldir=OPENSSLDIR] [--with-xxx[=vvv]] [--config=FILE] os/compiler[:flags]\n";
+my $usage="Usage: Configure [no-<cipher> ...] [enable-<cipher> ...] [-Dxxx] [-lxxx] [-Lxxx] [-fxxx] [-Kxxx] [no-hw-xxx|no-hw] [[no-]threads] [[no-]shared] [[no-]zlib|zlib-dynamic] [no-asm] [no-egd] [sctp] [386] [--prefix=DIR] [--openssldir=OPENSSLDIR] [--with-xxx[=vvv]] [--config=FILE] os/compiler[:flags]\n";
 
 my $banner = <<"EOF";
 
@@ -81,10 +81,6 @@ EOF
 # [no-]threads  [don't] try to create a library that is suitable for
 #               multithreaded applications (default is "threads" if we
 #               know how to do it)
-# [no-]thread-pool
-#               [don't] allow thread pool functionality
-# [no-]default-thread-pool
-#               [don't] allow default thread pool functionality
 # [no-]shared   [don't] try to create shared libraries when supported.
 # [no-]pic      [don't] try to build position independent code when supported.
 #               If disabled, it also disables shared and dynamic-engine.
@@ -92,10 +88,8 @@ EOF
 # no-egd        do not compile support for the entropy-gathering daemon APIs
 # [no-]zlib     [don't] compile support for zlib compression.
 # zlib-dynamic  Like "zlib", but the zlib library is expected to be a shared
-#               library and will be loaded at run-time by the OpenSSL library.
+#               library and will be loaded in run-time by the OpenSSL library.
 # sctp          include SCTP support
-# enable-quic   include QUIC support (currently just for developers as the
-#               implementation is by no means complete and usable)
 # no-uplink     Don't build support for UPLINK interface.
 # enable-weak-ssl-ciphers
 #               Enable weak ciphers that are disabled by default.
@@ -167,8 +161,7 @@ my @gcc_devteam_warn = qw(
     -Wsign-compare
     -Wshadow
     -Wformat
-    -Wno-type-limits
-    -Wno-tautological-constant-out-of-range-compare
+    -Wtype-limits
     -Wundef
     -Werror
     -Wmissing-prototypes
@@ -417,14 +410,11 @@ my @disablables = (
     "autoload-config",
     "bf",
     "blake2",
-    "brotli",
-    "brotli-dynamic",
     "buildtest-c++",
     "bulk",
     "cached-fetch",
     "camellia",
     "capieng",
-    "winstore",
     "cast",
     "chacha",
     "cmac",
@@ -433,7 +423,6 @@ my @disablables = (
     "comp",
     "crypto-mdebug",
     "ct",
-    "default-thread-pool",
     "deprecated",
     "des",
     "devcryptoeng",
@@ -478,7 +467,6 @@ my @disablables = (
     "poly1305",
     "posix-io",
     "psk",
-    "quic",
     "rc2",
     "rc4",
     "rc5",
@@ -504,8 +492,6 @@ my @disablables = (
     "static-engine",
     "stdio",
     "tests",
-    "tfo",
-    "thread-pool",
     "threads",
     "tls",
     "trace",
@@ -518,8 +504,6 @@ my @disablables = (
     "whirlpool",
     "zlib",
     "zlib-dynamic",
-    "zstd",
-    "zstd-dynamic",
     );
 foreach my $proto ((@tls, @dtls))
         {
@@ -551,8 +535,6 @@ my %deprecated_disablables = (
 our %disabled = ( # "what"         => "comment"
                   "fips"                => "default",
                   "asan"                => "default",
-                  "brotli"              => "default",
-                  "brotli-dynamic"      => "default",
                   "buildtest-c++"       => "default",
                   "crypto-mdebug"       => "default",
                   "crypto-mdebug-backtrace" => "default",
@@ -565,20 +547,16 @@ our %disabled = ( # "what"         => "comment"
                   "ktls"                => "default",
                   "md2"                 => "default",
                   "msan"                => "default",
-                  "quic"                => "default",
                   "rc5"                 => "default",
                   "sctp"                => "default",
                   "ssl3"                => "default",
                   "ssl3-method"         => "default",
-                  "tfo"                 => "default",
                   "trace"               => "default",
                   "ubsan"               => "default",
                   "unit-test"           => "default",
                   "weak-ssl-ciphers"    => "default",
                   "zlib"                => "default",
                   "zlib-dynamic"        => "default",
-                  "zstd"                => "default",
-                  "zstd-dynamic"        => "default",
                 );
 
 # Note: => pair form used for aesthetics, not to truly make a hash table
@@ -598,7 +576,6 @@ my @disable_cascades = (
                              "seed", "siphash", "siv",
                              "sm3", "sm4", "srp",
                              "srtp", "ssl3-method", "ssl-trace",
-                             "tfo",
                              "ts", "ui-console", "whirlpool",
                              "fips-securitychecks" ],
     sub { $config{processor} eq "386" }
@@ -606,12 +583,10 @@ my @disable_cascades = (
     "ssl"               => [ "ssl3" ],
     "ssl3-method"       => [ "ssl3" ],
     "zlib"              => [ "zlib-dynamic" ],
-    "brotli"            => [ "brotli-dynamic" ],
-    "zstd"              => [ "zstd-dynamic" ],
     "des"               => [ "mdc2" ],
     "ec"                => [ "ec2m", "ecdsa", "ecdh", "sm2", "gost" ],
-    "dgram"             => [ "dtls", "quic", "sctp" ],
-    "sock"              => [ "dgram", "tfo" ],
+    "dgram"             => [ "dtls", "sctp" ],
+    "sock"              => [ "dgram" ],
     "dtls"              => [ @dtls ],
     sub { 0 == scalar grep { !$disabled{$_} } @dtls }
                         => [ "dtls" ],
@@ -653,7 +628,7 @@ my @disable_cascades = (
     "stdio"             => [ "apps", "capieng", "egd" ],
     "apps"              => [ "tests" ],
     "tests"             => [ "external-tests" ],
-    "comp"              => [ "zlib", "brotli", "zstd" ],
+    "comp"              => [ "zlib" ],
     "sm3"               => [ "sm2" ],
     sub { !$disabled{"unit-test"} } => [ "heartbeats" ],
 
@@ -665,9 +640,6 @@ my @disable_cascades = (
     "cmp"               => [ "crmf" ],
 
     "fips"              => [ "fips-securitychecks", "acvp-tests" ],
-
-    "threads"           => [ "thread-pool" ],
-    "thread-pool"       => [ "default-thread-pool" ],
 
     "deprecated-3.0"    => [ "engine", "srp" ]
     );
@@ -914,14 +886,6 @@ while (@argvcopy)
                         {
                         delete $disabled{"zlib"};
                         }
-                elsif ($1 eq "brotli-dynamic")
-                        {
-                        delete $disabled{"brotli"};
-                        }
-                elsif ($1 eq "zstd-dynamic")
-                        {
-                        delete $disabled{"zstd"};
-                        }
                 my $algo = $1;
                 delete $disabled{$algo};
 
@@ -997,22 +961,6 @@ while (@argvcopy)
                 elsif (/^--with-zlib-include=(.*)$/)
                         {
                         $withargs{zlib_include}=$1;
-                        }
-                elsif (/^--with-brotli-lib=(.*)$/)
-                        {
-                        $withargs{brotli_lib}=$1;
-                        }
-                elsif (/^--with-brotli-include=(.*)$/)
-                        {
-                        $withargs{brotli_include}=$1;
-                        }
-                elsif (/^--with-zstd-lib=(.*)$/)
-                        {
-                        $withargs{zstd_lib}=$1;
-                        }
-                elsif (/^--with-zstd-include=(.*)$/)
-                        {
-                        $withargs{zstd_include}=$1;
                         }
                 elsif (/^--with-fuzzer-lib=(.*)$/)
                         {
@@ -1769,12 +1717,6 @@ unless ($disabled{ktls}) {
     }
 }
 
-unless ($disabled{winstore}) {
-    unless ($target =~ /^(?:Cygwin|mingw|VC-|BC-)/) {
-        disable('not-windows', 'winstore');
-    }
-}
-
 push @{$config{openssl_other_defines}}, "OPENSSL_NO_KTLS" if ($disabled{ktls});
 
 # Get the extra flags used when building shared libraries and modules.  We
@@ -1846,7 +1788,7 @@ foreach my $what (sort keys %disabled) {
 
     if (!grep { $what eq $_ } ( 'buildtest-c++', 'fips', 'threads', 'shared',
                                 'module', 'pic', 'dynamic-engine', 'makedepend',
-                                'sse2', 'legacy' )) {
+                                'zlib-dynamic', 'zlib', 'sse2', 'legacy' )) {
         (my $WHAT = uc $what) =~ s|-|_|g;
         my $skipdir = $what;
 

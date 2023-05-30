@@ -34,6 +34,8 @@ private:
 
     int _GetArrayLength() const override;
     IECSqlValueIterable const& _GetArrayIterable() const override;
+    void _OnDynamicPropertyUpdated() override;
+    void UpdateDateTimeMetaData();
 
 public:
     PrimitiveECSqlField(ECSqlSelectPreparedStatement&, ECSqlColumnInfo const&, int ecsqlColumnIndex);

@@ -10,6 +10,7 @@
 
 #include <time.h>
 #include <chrono>
+#include <functional>
 
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
     struct _FILETIME;
@@ -273,6 +274,14 @@ public:
     //! Get the elapsed time between Start() and Stop() on this timer.
     BeDuration GetElapsed() {return m_stop - m_start;}
     double GetElapsedSeconds() {return GetElapsed();}
+
+    //! Measure time of a method.
+    static BeDuration Measure(std::function<void()> func)
+        {
+        auto sp = StopWatch(true);
+        func();
+        return sp.GetCurrent();
+        }
     };
 
 //=======================================================================================

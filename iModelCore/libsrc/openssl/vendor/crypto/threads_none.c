@@ -21,9 +21,10 @@ CRYPTO_RWLOCK *CRYPTO_THREAD_lock_new(void)
 {
     CRYPTO_RWLOCK *lock;
 
-    if ((lock = CRYPTO_zalloc(sizeof(unsigned int), NULL, 0)) == NULL)
+    if ((lock = OPENSSL_zalloc(sizeof(unsigned int))) == NULL) {
         /* Don't set error, to avoid recursion blowup. */
         return NULL;
+    }
 
     *(unsigned int *)lock = 1;
 

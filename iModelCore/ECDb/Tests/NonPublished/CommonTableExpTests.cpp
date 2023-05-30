@@ -18,7 +18,7 @@ struct CommonTableExpTestFixture : ECDbTestFixture {};
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(CommonTableExpTestFixture, PureRowConstructorQuery) {
-    ASSERT_EQ(SUCCESS, SetupECDb("cte_syntax.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("cte_syntax.ecdb"));
 
 
     if (true) {
@@ -47,7 +47,7 @@ TEST_F(CommonTableExpTestFixture, PureRowConstructorQuery) {
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(CommonTableExpTestFixture, MetaQuery) {
-    ASSERT_EQ(SUCCESS, SetupECDb("cte_test_meta.ecdb", SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("cte_test_meta.ecdb", SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
     <ECSchema schemaName='TestSchema' alias='ts' version='10.10.10' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
         <ECEntityClass typeName='A' >
             <ECProperty propertyName="a_prop" typeName="string" />
@@ -208,7 +208,7 @@ TEST_F(CommonTableExpTestFixture, MetaQuery) {
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(CommonTableExpTestFixture, RecursiveQuery) {
-    ASSERT_EQ(SUCCESS, SetupECDb("cte_test.ecdb", SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("cte_test.ecdb", SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
     <ECSchema schemaName='TestSchema' alias='ts' version='10.10.10' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
         <ECEntityClass typeName='Element' >
             <ECProperty propertyName="Subject" typeName="string" description="" />
@@ -411,7 +411,7 @@ TEST_F(CommonTableExpTestFixture, RecursiveQuery) {
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(CommonTableExpTestFixture, SqliteExample) {
-    ASSERT_EQ(SUCCESS, SetupECDb("cte_syntax.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("cte_syntax.ecdb"));
     // FROM ONLY cnt should fail. 
     // x in following has to be primitive value
     if (true) {
@@ -706,7 +706,7 @@ TEST_F(CommonTableExpTestFixture, SqliteExample) {
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(CommonTableExpTestFixture, alias_to_cte) {
-    ASSERT_EQ(SUCCESS, SetupECDb("cte_test_meta.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("cte_test_meta.ecdb"));
     if ("simple_nested_no_alias") {
         auto query = R"(
             with recursive

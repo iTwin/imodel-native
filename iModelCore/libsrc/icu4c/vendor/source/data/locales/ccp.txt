@@ -1,5 +1,6 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 ccp{
     AuxExemplarCharacters{"[]"}
     ExemplarCharacters{
@@ -13,8 +14,8 @@ ccp{
         "𑄜 𑄝 𑄞 𑄟 𑄠 𑄡 𑄢 𑄣 𑄤 𑄥 𑄦]"
     }
     ExemplarCharactersPunctuation{
-        "[\\- ‐ – — , ; \\: ! ? 𑅃 . … 𑅁 𑅂 𑅀 ' ‘ ’ \u0022 “ ” ( ) \\[ \\] § @ * / "
-        "\\& # † ‡ ′ ″]"
+        "[\\- ‐ ‑ – — , ; \\: ! ? 𑅃 . … 𑅁 𑅂 𑅀 ' ‘ ’ \u0022 “ ” ( ) \\[ \\] § @ * "
+        "/ \\& # † ‡ ′ ″]"
     }
     NumberElements{
         cakm{
@@ -83,7 +84,6 @@ ccp{
         minimumGroupingDigits{"1"}
         native{"cakm"}
     }
-    Version{"2.1.48.88"}
     calendar{
         generic{
             DateTimePatterns{
@@ -100,6 +100,16 @@ ccp{
                 "{1} {0}",
                 "{1} {0}",
                 "{1} {0}",
+            }
+            DateTimeSkeletons{
+                "ahmmsszzzz",
+                "ahmmssz",
+                "ahmmss",
+                "ahmm",
+                "GyMMMMEEEEd",
+                "GyMMMMd",
+                "GyMMMd",
+                "GGGGGyMd",
             }
             availableFormats{
                 E{"ccc"}
@@ -261,6 +271,16 @@ ccp{
                 "{1} {0}",
                 "{1} {0}",
                 "{1} {0}",
+            }
+            DateTimeSkeletons{
+                "ahmmsszzzz",
+                "ahmmssz",
+                "ahmmss",
+                "ahmm",
+                "yMMMMEEEEd",
+                "yMMMMd",
+                "yMMMd",
+                "yyMd",
             }
             appendItems{
                 Timezone{"{0} {1}"}
@@ -444,7 +464,7 @@ ccp{
                 }
                 abbreviated%variant{
                     "𑄈𑄳𑄢𑄨𑄌𑄴𑄑𑄧𑄛𑄫𑄢𑄴𑄝𑄛𑄴𑄘𑄧",
-                    "CE",
+                    "𑄈𑄳𑄢𑄨𑄌𑄴𑄑𑄛𑄴𑄘𑄧",
                 }
                 wide{
                     "𑄈𑄳𑄢𑄨𑄌𑄴𑄑𑄴𑄛𑄫𑄢𑄴𑄝𑄧",
@@ -452,7 +472,7 @@ ccp{
                 }
                 wide%variant{
                     "𑄈𑄳𑄢𑄨𑄌𑄴𑄑𑄴𑄛𑄫𑄢𑄴𑄝𑄛𑄴𑄘𑄧",
-                    "CE",
+                    "𑄈𑄳𑄢𑄨𑄌𑄴𑄑𑄛𑄴𑄘𑄧",
                 }
             }
             intervalFormats{

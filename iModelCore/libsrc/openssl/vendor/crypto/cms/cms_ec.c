@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2022 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2006-2023 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -12,7 +12,6 @@
 #include <openssl/err.h>
 #include <openssl/decoder.h>
 #include "internal/sizes.h"
-#include "crypto/asn1.h"
 #include "crypto/evp.h"
 #include "cms_local.h"
 
@@ -278,11 +277,12 @@ static int ecdh_cms_encrypt(CMS_RecipientInfo *ri)
 
         penclen = EVP_PKEY_get1_encoded_public_key(pkey, &penc);
         ASN1_STRING_set0(pubkey, penc, penclen);
-        ossl_asn1_string_set_bits_left(pubkey, 0);
+        pubkey->flags &= ~(ASN1_STRING_FLAG_BITS_LEFT | 0x07);
+        pubkey->flags |= ASN1_STRING_FLAG_BITS_LEFT;
 
         penc = NULL;
-        (void)X509_ALGOR_set0(talg, OBJ_nid2obj(NID_X9_62_id_ecPublicKey),
-                              V_ASN1_UNDEF, NULL); /* cannot fail */
+        X509_ALGOR_set0(talg, OBJ_nid2obj(NID_X9_62_id_ecPublicKey),
+                        V_ASN1_UNDEF, NULL);
     }
 
     /* See if custom parameters set */
@@ -346,7 +346,7 @@ static int ecdh_cms_encrypt(CMS_RecipientInfo *ri)
 
     penclen = CMS_SharedInfo_encode(&penc, wrap_alg, ukm, keylen);
 
-    if (penclen == 0)
+    if (penclen <= 0)
         goto err;
 
     if (EVP_PKEY_CTX_set0_ecdh_kdf_ukm(pctx, penc, penclen) <= 0)
@@ -365,9 +365,9 @@ static int ecdh_cms_encrypt(CMS_RecipientInfo *ri)
         goto err;
     ASN1_STRING_set0(wrap_str, penc, penclen);
     penc = NULL;
-    rv = X509_ALGOR_set0(talg, OBJ_nid2obj(kdf_nid), V_ASN1_SEQUENCE, wrap_str);
-    if (!rv)
-        ASN1_STRING_free(wrap_str);
+    X509_ALGOR_set0(talg, OBJ_nid2obj(kdf_nid), V_ASN1_SEQUENCE, wrap_str);
+
+    rv = 1;
 
  err:
     OPENSSL_free(penc);

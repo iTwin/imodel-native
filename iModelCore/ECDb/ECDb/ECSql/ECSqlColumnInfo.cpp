@@ -18,8 +18,8 @@ ECSqlColumnInfo::ECSqlColumnInfo() {}
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlColumnInfo::ECSqlColumnInfo(ECTypeDescriptor const& dataType, DateTime::Info const& dateTimeInfo, ECN::ECStructClassCP structType, ECPropertyCP ecProperty, ECPropertyCP originProperty, bool isSystemProperty, bool isGeneratedProperty, ECSqlPropertyPath const& propertyPath, RootClass const& rootClass)
-    : m_dataType(dataType), m_dateTimeInfo(dateTimeInfo), m_structType(structType), m_property(ecProperty), m_originProperty(originProperty), m_isSystemProperty(isSystemProperty), m_isGeneratedProperty(isGeneratedProperty), m_propertyPath(propertyPath), m_rootClass(rootClass)
+ECSqlColumnInfo::ECSqlColumnInfo(ECTypeDescriptor const& dataType, DateTime::Info const& dateTimeInfo, ECN::ECStructClassCP structType, ECPropertyCP ecProperty, ECPropertyCP originProperty, bool isSystemProperty, bool isGeneratedProperty, ECSqlPropertyPath const& propertyPath, RootClass const& rootClass, bool isDynamic)
+    : m_dataType(dataType), m_dateTimeInfo(dateTimeInfo), m_structType(structType), m_property(ecProperty), m_originProperty(originProperty), m_isSystemProperty(isSystemProperty), m_isGeneratedProperty(isGeneratedProperty), m_propertyPath(propertyPath), m_rootClass(rootClass),m_isDynamic(isDynamic)
     {}
 
 //--------------------------------------------------------------------------------------

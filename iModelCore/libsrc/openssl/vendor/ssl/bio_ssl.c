@@ -57,8 +57,10 @@ static int ssl_new(BIO *bi)
 {
     BIO_SSL *bs = OPENSSL_zalloc(sizeof(*bs));
 
-    if (bs == NULL)
+    if (bs == NULL) {
+        ERR_raise(ERR_LIB_BIO, ERR_R_MALLOC_FAILURE);
         return 0;
+    }
     BIO_set_init(bi, 0);
     BIO_set_data(bi, bs);
     /* Clear all flags */
@@ -225,23 +227,19 @@ static long ssl_ctrl(BIO *b, int cmd, long num, void *ptr)
     BIO *dbio, *bio;
     long ret = 1;
     BIO *next;
-    SSL_CONNECTION *sc = NULL;
 
     bs = BIO_get_data(b);
     next = BIO_next(b);
     ssl = bs->ssl;
-    if ((ssl == NULL
-         || (sc = SSL_CONNECTION_FROM_SSL(ssl)) == NULL)
-        && cmd != BIO_C_SET_SSL)
+    if ((ssl == NULL) && (cmd != BIO_C_SET_SSL))
         return 0;
-    /* TODO(QUIC): The rbio/wbio might be from QUIC_CONNECTION instead */
     switch (cmd) {
     case BIO_CTRL_RESET:
         SSL_shutdown(ssl);
 
-        if (sc->handshake_func == ssl->method->ssl_connect)
+        if (ssl->handshake_func == ssl->method->ssl_connect)
             SSL_set_connect_state(ssl);
-        else if (sc->handshake_func == ssl->method->ssl_accept)
+        else if (ssl->handshake_func == ssl->method->ssl_accept)
             SSL_set_accept_state(ssl);
 
         if (!SSL_clear(ssl)) {
@@ -251,8 +249,8 @@ static long ssl_ctrl(BIO *b, int cmd, long num, void *ptr)
 
         if (next != NULL)
             ret = BIO_ctrl(next, cmd, num, ptr);
-        else if (sc->rbio != NULL)
-            ret = BIO_ctrl(sc->rbio, cmd, num, ptr);
+        else if (ssl->rbio != NULL)
+            ret = BIO_ctrl(ssl->rbio, cmd, num, ptr);
         else
             ret = 1;
         break;
@@ -313,20 +311,20 @@ static long ssl_ctrl(BIO *b, int cmd, long num, void *ptr)
         BIO_set_shutdown(b, (int)num);
         break;
     case BIO_CTRL_WPENDING:
-        ret = BIO_ctrl(sc->wbio, cmd, num, ptr);
+        ret = BIO_ctrl(ssl->wbio, cmd, num, ptr);
         break;
     case BIO_CTRL_PENDING:
         ret = SSL_pending(ssl);
         if (ret == 0)
-            ret = BIO_pending(sc->rbio);
+            ret = BIO_pending(ssl->rbio);
         break;
     case BIO_CTRL_FLUSH:
         BIO_clear_retry_flags(b);
-        ret = BIO_ctrl(sc->wbio, cmd, num, ptr);
+        ret = BIO_ctrl(ssl->wbio, cmd, num, ptr);
         BIO_copy_next_retry(b);
         break;
     case BIO_CTRL_PUSH:
-        if ((next != NULL) && (next != sc->rbio)) {
+        if ((next != NULL) && (next != ssl->rbio)) {
             /*
              * We are going to pass ownership of next to the SSL object...but
              * we don't own a reference to pass yet - so up ref
@@ -380,21 +378,13 @@ static long ssl_ctrl(BIO *b, int cmd, long num, void *ptr)
         ret = (dbs->ssl != NULL);
         break;
     case BIO_C_GET_FD:
-        ret = BIO_ctrl(sc->rbio, cmd, num, ptr);
+        ret = BIO_ctrl(ssl->rbio, cmd, num, ptr);
         break;
     case BIO_CTRL_SET_CALLBACK:
         ret = 0; /* use callback ctrl */
         break;
-    case BIO_CTRL_GET_RPOLL_DESCRIPTOR:
-        if (!SSL_get_rpoll_descriptor(ssl, (BIO_POLL_DESCRIPTOR *)ptr))
-            ret = 0;
-        break;
-    case BIO_CTRL_GET_WPOLL_DESCRIPTOR:
-        if (!SSL_get_wpoll_descriptor(ssl, (BIO_POLL_DESCRIPTOR *)ptr))
-            ret = 0;
-        break;
     default:
-        ret = BIO_ctrl(sc->rbio, cmd, num, ptr);
+        ret = BIO_ctrl(ssl->rbio, cmd, num, ptr);
         break;
     }
     return ret;
@@ -410,7 +400,7 @@ static long ssl_callback_ctrl(BIO *b, int cmd, BIO_info_cb *fp)
     ssl = bs->ssl;
     switch (cmd) {
     case BIO_CTRL_SET_CALLBACK:
-        ret = BIO_callback_ctrl(SSL_get_rbio(ssl), cmd, fp);
+        ret = BIO_callback_ctrl(ssl->rbio, cmd, fp);
         break;
     default:
         ret = 0;

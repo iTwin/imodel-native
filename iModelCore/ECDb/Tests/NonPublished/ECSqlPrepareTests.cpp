@@ -83,7 +83,7 @@ TEST_F(ECSqlPrepareTestFixture, ReservedTokens)
     
     for (SchemaItem const& schemaItem : schemas)
         {
-        ASSERT_EQ(SUCCESS, SetupECDb("ReservedECSQLTokens.ecdb", schemaItem));
+        ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ReservedECSQLTokens.ecdb", schemaItem));
         ECN::ECSchemaCP schema = m_ecdb.Schemas().GetSchema("TestSchema");
         ASSERT_TRUE(schema != nullptr);
 
@@ -150,7 +150,7 @@ TEST_F(ECSqlPrepareTestFixture, ReservedTokens)
 
     for (SchemaItem const& schema : schemas)
         {
-        ASSERT_EQ(SUCCESS, SetupECDb("ReservedECSQLTokens.ecdb", schema));
+        ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ReservedECSQLTokens.ecdb", schema));
         ECN::ECClassCP cl = m_ecdb.Schemas().GetClass("TestSchema", "Foo");
         ASSERT_TRUE(cl != nullptr);
 
@@ -1598,7 +1598,7 @@ TEST_F(ECSqlSelectPrepareTests, NestedSubqueries)
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("NestedSubqueries.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("NestedSubqueries.ecdb", schemaItem));
     if (true)
         {
         ECInstanceKey key;
@@ -2416,7 +2416,7 @@ TEST_F(ECSqlUpdatePrepareTests, TargetClass)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlUpdatePrepareTests, AbstractClass)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlupdate_abstractclass.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlupdate_abstractclass.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
                                                     <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                                         <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                                                         <ECEntityClass typeName="BaseAbstractNoSubclasses" modifier="Abstract">

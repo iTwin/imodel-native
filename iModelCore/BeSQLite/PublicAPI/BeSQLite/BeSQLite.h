@@ -196,6 +196,10 @@ namespace MemorySize {
 
 typedef struct CloudContainer* CloudContainerP;
 
+struct ProfileVersion;
+typedef ProfileVersion& ProfileVersionR;
+typedef ProfileVersion const& ProfileVersionCR;
+
 //=======================================================================================
 //! A 16-byte Globally Unique Id. A value of all zeros means "Invalid Id".
 // @bsiclass
@@ -398,6 +402,8 @@ public:
     explicit ProfileVersion(Utf8CP json) {FromJson(json);}
     bool operator==(BeVersionCR rhs) const { return CompareTo(rhs) == 0; }
     bool operator!=(BeVersionCR rhs) const { return CompareTo(rhs) != 0; }
+    bool operator==(ProfileVersionCR rhs) const { return CompareTo(rhs) == 0; }
+    bool operator!=(ProfileVersionCR rhs) const { return CompareTo(rhs) != 0; }
     bool operator<(BeVersionCR rhs) const { return CompareTo(rhs) < 0; }
     bool operator<=(BeVersionCR rhs) const { return CompareTo(rhs) <= 0; }
     bool operator>(BeVersionCR rhs) const { return CompareTo(rhs) > 0; }
@@ -1159,6 +1165,7 @@ public:
     bool IsNull()  const {return DbValueType::NullVal == GetValueType();} //!< return true if this value is null
     SqlValueP GetSqlValueP() const {return m_val;}  //!< for direct use of sqlite3 api
 
+    BE_SQLITE_EXPORT bool        FromBinding() const;              //!< see sqlite3_value_frombind
     BE_SQLITE_EXPORT DbValueType GetValueType() const;      //!< see sqlite3_value_type
     BE_SQLITE_EXPORT DbValueType GetNumericType() const;    //!< see sqlite3_value_numeric_type
     BE_SQLITE_EXPORT int         GetValueBytes() const;     //!< see sqlite3_value_bytes

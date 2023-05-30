@@ -1826,9 +1826,11 @@ BentleyStatus MainSchemaManager::PurgeOrphanTables(SchemaImportContext& ctx) con
             tableNames.append(tableName);
             isFirstTable = false;
             }
-
-        m_ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to import schemas: it would change the database schema in a backwards incompatible way, so that older versions of the software could not work with the file anymore. ECDb would have to delete these tables: %s", tableNames.c_str());
-        return ERROR;
+        if (!Enum::Contains(ctx.GetOptions(), SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas))
+            {
+            m_ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to import schemas: it would change the database schema in a backwards incompatible way, so that older versions of the software could not work with the file anymore. ECDb would have to delete these tables: %s", tableNames.c_str());
+            return ERROR;
+            }
         }
 
     for (Utf8StringCR name : tablesToDrop)
@@ -2145,5 +2147,14 @@ void MainSchemaManager::GatherRootClasses(
     }
 
 
-
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult ECDbModule::_OnRegister() {
+    auto& vm = GetECDb().Schemas().Main().GetVirtualSchemaManager();
+    if (SUCCESS != vm.Add(m_ecSchema)) {
+        return BE_SQLITE_ERROR;
+    }
+    return BE_SQLITE_OK;
+}
 END_BENTLEY_SQLITE_EC_NAMESPACE
