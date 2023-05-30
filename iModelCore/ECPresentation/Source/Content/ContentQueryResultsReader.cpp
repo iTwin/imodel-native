@@ -401,7 +401,7 @@ void DistinctValuesAccumulator::ReadPrimitivePropertyRecord(ContentDescriptor::E
     {
     ContentValuesFormatter formatter(m_propertyFormatter, m_unitSystem);
     IECSqlValue const& value = statement.GetValue(0);
-    bmap<Utf8String, bvector<std::pair<ECValue, Utf8String>>> currentRecords;
+    bmap<Utf8String, bvector<std::pair<ECValue, Utf8StringCP>>> currentRecords;
     for (ContentDescriptor::Property const& prop : propertiesField.GetProperties())
         {
         if (!prop.GetProperty().GetIsPrimitive())
@@ -416,17 +416,18 @@ void DistinctValuesAccumulator::ReadPrimitivePropertyRecord(ContentDescriptor::E
         ECValue rawValue = ValueHelpers::GetECValueFromSqlValue(prop.GetProperty().GetAsPrimitiveProperty()->GetType(), extendedType, value);
 
         auto it = currentRecords.find(displayValue);
+        auto entry = std::make_pair(rawValue, &extendedType);
         if (it == currentRecords.end())
-            currentRecords.emplace(displayValue, bvector<std::pair<ECValue, Utf8String>>({std::make_pair(rawValue, extendedType)}));
-        else if (!ContainerHelpers::Contains(it->second, std::make_pair(rawValue, extendedType)))
-            it->second.push_back(std::make_pair(rawValue, extendedType));
+            currentRecords.emplace(displayValue, bvector<std::pair<ECValue, Utf8StringCP>>({entry}));
+        else if (!ContainerHelpers::Contains(it->second, [entry](auto record) {return entry.first.Equals(record.first) && entry.second->Equals(record.second->c_str()); }))
+            it->second.push_back(entry);
         }
 
-    for (auto pair : currentRecords)
+    for (auto const& pair : currentRecords)
         {
         DisplayValueGroupR group = GetOrCreateDisplayValueGroup(pair.first);
         for (auto valueInGroup : pair.second)
-            group.GetRawValues().push_back(ValueHelpers::GetJsonFromECValue(valueInGroup.first, valueInGroup.second, &group.GetRawValuesAllocator()));
+            group.GetRawValues().push_back(ValueHelpers::GetJsonFromECValue(valueInGroup.first, *valueInGroup.second, &group.GetRawValuesAllocator()));
         }
     }
 

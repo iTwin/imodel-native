@@ -1229,7 +1229,7 @@ static rapidjson::Document GetPoint3dJson(DPoint3dCR pt, rapidjson::MemoryPoolAl
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static rapidjson::Document GetJsonFromECValue(ECValueCR ecValue, rapidjson::MemoryPoolAllocator<>* allocator)
+static rapidjson::Document GetJsonFromECValue(ECValueCR ecValue, Utf8StringCR extendedType, rapidjson::MemoryPoolAllocator<>* allocator)
     {
     rapidjson::Document doc(allocator);
     if (ecValue.IsUninitialized() || ecValue.IsNull())
@@ -1246,12 +1246,13 @@ static rapidjson::Document GetJsonFromECValue(ECValueCR ecValue, rapidjson::Memo
             doc.SetBool(ecValue.GetBoolean());
             return doc;
         case PRIMITIVETYPE_Binary:
-            {
-            size_t guidSize = sizeof(BeGuid);
-            BeGuid const* guid = (BeGuid const*)ecValue.GetBinary(guidSize);
-            doc.SetString(guid->ToString().c_str(), doc.GetAllocator());
+            if (extendedType == EXTENDEDTYPENAME_BeGuid)
+                {
+                size_t guidSize = sizeof(BeGuid);
+                BeGuid const* guid = (BeGuid const*)ecValue.GetBinary(guidSize);
+                doc.SetString(guid->ToString().c_str(), doc.GetAllocator());
+                }
             return doc;
-            }
         case PRIMITIVETYPE_DateTime:
             doc.SetString(ecValue.GetDateTime().ToString().c_str(), doc.GetAllocator());
             return doc;
@@ -1428,8 +1429,9 @@ std::unique_ptr<BoundQueryValue> IModelJsBoundQueryValueSerializer::_FromJson(Be
         if (0 == valueType)
             return nullptr;
 
-        ECValue value = GetECValueFromJson((PrimitiveType)valueType, "", ToRapidJson(json["value"])); // TODO: change to BeJsConst after converting RapidJson usage to BeJsConst
-        return std::make_unique<BoundQueryECValue>(std::move(value));
+        Utf8CP extendedType = json["valueTypeExtended"].asCString();
+        ECValue value = GetECValueFromJson((PrimitiveType)valueType, extendedType, ToRapidJson(json["value"])); // TODO: change to BeJsConst after converting RapidJson usage to BeJsConst
+        return std::make_unique<BoundQueryECValue>(std::move(value), extendedType);
         }
     if (0 == strcmp(BOUNDQUERYVALUETYPE_ValueSet, type.c_str()))
         {
@@ -1470,7 +1472,10 @@ rapidjson::Document IModelJsBoundQueryValueSerializer::_ToJson(BoundQueryECValue
     json.SetObject();
     json.AddMember("type", BOUNDQUERYVALUETYPE_ECValue, json.GetAllocator());
     json.AddMember("valueType", rapidjson::StringRef(PrimitiveTypeAsString(boundQueryECValue.GetValue().GetPrimitiveType())), json.GetAllocator());
-    json.AddMember("value", GetJsonFromECValue(boundQueryECValue.GetValue(), &json.GetAllocator()), json.GetAllocator());
+    Utf8StringCR extendedType = boundQueryECValue.GetExtendedType();
+    if (extendedType != "")
+        json.AddMember("valueTypeExtended", rapidjson::Value(extendedType.c_str(), json.GetAllocator()), json.GetAllocator());
+    json.AddMember("value", GetJsonFromECValue(boundQueryECValue.GetValue(), extendedType, &json.GetAllocator()), json.GetAllocator());
     return json;
     }
 
@@ -1496,7 +1501,7 @@ rapidjson::Document IModelJsBoundQueryValueSerializer::_ToJson(BoundECValueSet c
     rapidjson::Value valuesJson;
     valuesJson.SetArray();
     boundECValueSet.ForEachValue([&](ECValue const& value) {
-        valuesJson.PushBack(GetJsonFromECValue(value, &json.GetAllocator()), json.GetAllocator());
+        valuesJson.PushBack(GetJsonFromECValue(value, extendedType, &json.GetAllocator()), json.GetAllocator());
         });
     json.AddMember("value", valuesJson, json.GetAllocator());
     return json;

@@ -45,7 +45,8 @@ std::unique_ptr<BoundQueryValue> DefaultBoundQueryValueSerializer::_FromJson(BeJ
         {
         rapidjson::Document doc;
         doc.Parse(json["value"].Stringify().c_str());
-        ECValue value = ValueHelpers::GetECValueFromJson((PrimitiveType)json["value-type"].GetInt(), "", ValueHelpers::ToRapidJson(json["value"])); // TODO: change to BeJsConst after converting RapidJson usage to BeJsConst
+        Utf8CP extendedType = json["value-type-extended"].asCString();
+        ECValue value = ValueHelpers::GetECValueFromJson((PrimitiveType)json["value-type"].GetInt(), extendedType, ValueHelpers::ToRapidJson(json["value"])); // TODO: change to BeJsConst after converting RapidJson usage to BeJsConst
         return std::make_unique<BoundQueryECValue>(std::move(value));
         }
     if (0 == strcmp(BOUNDQUERYVALUETYPE_ValueSet, type))
@@ -87,7 +88,10 @@ rapidjson::Document DefaultBoundQueryValueSerializer::_ToJson(BoundQueryECValue 
     json.SetObject();
     json.AddMember("type", BOUNDQUERYVALUETYPE_ECValue, json.GetAllocator());
     json.AddMember("value-type", (int)boundQueryECValue.GetValue().GetPrimitiveType(), json.GetAllocator());
-    json.AddMember("value", ValueHelpers::GetJsonFromECValue(boundQueryECValue.GetValue(), "", &json.GetAllocator()), json.GetAllocator());
+    Utf8StringCR extendedType = boundQueryECValue.GetExtendedType();
+    if (extendedType != "")
+        json.AddMember("value-type-extended", rapidjson::Value(extendedType.c_str(), json.GetAllocator()), json.GetAllocator());
+    json.AddMember("value", ValueHelpers::GetJsonFromECValue(boundQueryECValue.GetValue(), extendedType, &json.GetAllocator()), json.GetAllocator());
     return json;
     }
 

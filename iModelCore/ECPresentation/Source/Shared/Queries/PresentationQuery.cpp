@@ -2097,7 +2097,7 @@ private:
     std::unordered_set<ECValue, PrimitiveECValueHasher> m_values;
     Utf8String m_extendedType;
 public:
-    ECValueVirtualSet(bvector<ECValue> values, Utf8CP extendedType)
+    ECValueVirtualSet(bvector<ECValue> values, Utf8String extendedType)
         : m_values(ContainerHelpers::MoveTransformContainer<std::unordered_set<ECValue, PrimitiveECValueHasher>>(values)), m_extendedType(extendedType)
         {}
     std::unordered_set<ECValue, PrimitiveECValueHasher> const& GetValues() const { return m_values; }
@@ -2131,7 +2131,7 @@ public:
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String BoundECValueSet::GetExtendedType() const
+Utf8StringCR BoundECValueSet::GetExtendedType() const
     {
     return static_cast<ECValueVirtualSet const*>(m_set.get())->GetExtendedType();
     }
@@ -2166,7 +2166,7 @@ void BoundECValueSet::ForEachValue(std::function<void(ECValue const&)> const& cb
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BoundECValueSet::BoundECValueSet(bvector<ECValue> values, Utf8CP extendedType)
+BoundECValueSet::BoundECValueSet(bvector<ECValue> values, Utf8String extendedType)
     : m_set(std::make_unique<ECValueVirtualSet>(std::move(values), extendedType))
     {}
 
