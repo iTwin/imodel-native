@@ -140,9 +140,10 @@ protected:
         return serializer._ToJson(*this, alloc);
         }
 public:
-    ECPRESENTATION_EXPORT BoundECValueSet(bvector<ECValue>);
+    ECPRESENTATION_EXPORT BoundECValueSet(bvector<ECValue>, Utf8CP = nullptr);
     ECPRESENTATION_EXPORT BoundECValueSet(BoundECValueSet const& other);
     ECPRESENTATION_EXPORT Nullable<PrimitiveType> GetValueType() const;
+    ECPRESENTATION_EXPORT Utf8String GetExtendedType() const;
     ECPRESENTATION_EXPORT void ForEachValue(std::function<void(ECValue const&)> const& cb) const;
 };
 

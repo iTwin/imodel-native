@@ -401,7 +401,7 @@ void DistinctValuesAccumulator::ReadPrimitivePropertyRecord(ContentDescriptor::E
     {
     ContentValuesFormatter formatter(m_propertyFormatter, m_unitSystem);
     IECSqlValue const& value = statement.GetValue(0);
-    bmap<Utf8String, bvector<ECValue>> currentRecords;
+    bmap<Utf8String, bvector<std::pair<ECValue, Utf8String>>> currentRecords;
     for (ContentDescriptor::Property const& prop : propertiesField.GetProperties())
         {
         if (!prop.GetProperty().GetIsPrimitive())
@@ -412,20 +412,21 @@ void DistinctValuesAccumulator::ReadPrimitivePropertyRecord(ContentDescriptor::E
             DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Content, Utf8PrintfString("Expecting formatter value to be string, but it's not. Actual: '%s'", BeRapidJsonUtilities::ToString(formattedJson).c_str()));
 
         Utf8String displayValue = formattedJson.IsString() ? formattedJson.GetString() : "";
-        ECValue rawValue = ValueHelpers::GetECValueFromSqlValue(prop.GetProperty().GetAsPrimitiveProperty()->GetType(), prop.GetProperty().GetAsPrimitiveProperty()->GetExtendedTypeName(), value);
+        Utf8StringCR extendedType = prop.GetProperty().GetAsPrimitiveProperty()->GetExtendedTypeName();
+        ECValue rawValue = ValueHelpers::GetECValueFromSqlValue(prop.GetProperty().GetAsPrimitiveProperty()->GetType(), extendedType, value);
 
         auto it = currentRecords.find(displayValue);
         if (it == currentRecords.end())
-            currentRecords.emplace(displayValue, bvector<ECValue>({rawValue}));
-        else if (!ContainerHelpers::Contains(it->second, rawValue))
-            it->second.push_back(rawValue);
+            currentRecords.emplace(displayValue, bvector<std::pair<ECValue, Utf8String>>({std::make_pair(rawValue, extendedType)}));
+        else if (!ContainerHelpers::Contains(it->second, std::make_pair(rawValue, extendedType)))
+            it->second.push_back(std::make_pair(rawValue, extendedType));
         }
 
     for (auto pair : currentRecords)
         {
         DisplayValueGroupR group = GetOrCreateDisplayValueGroup(pair.first);
         for (auto valueInGroup : pair.second)
-            group.GetRawValues().push_back(ValueHelpers::GetJsonFromECValue(valueInGroup, &group.GetRawValuesAllocator()));
+            group.GetRawValues().push_back(ValueHelpers::GetJsonFromECValue(valueInGroup.first, valueInGroup.second, &group.GetRawValuesAllocator()));
         }
     }
 

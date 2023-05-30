@@ -117,7 +117,7 @@ private:
     LabelDefinition(LabelDefinitionCR);
     LabelDefinition(Utf8CP displayValue, Utf8CP typeName, std::unique_ptr<RawValueBase> rawValue) : m_displayValue(displayValue), m_typeName(typeName), m_rawValue(std::move(rawValue)) { }
     LabelDefinition(Utf8CP value, Utf8CP displayValue = nullptr) : LabelDefinition() { SetStringValue(value, displayValue); }
-    LabelDefinition(ECValueCR value, Utf8CP displayValue = nullptr) : LabelDefinition() { SetECValue(value, displayValue); }
+    LabelDefinition(ECValueCR value, Utf8CP extendedType = nullptr, Utf8CP displayValue = nullptr) : LabelDefinition() { SetECValue(value, extendedType, displayValue); }
     LabelDefinition(ECPropertyCR ecProperty, DbValue const& dbValue, Utf8CP displayValue = nullptr) : LabelDefinition() { SetECPropertyValue(ecProperty, dbValue, displayValue); }
     LabelDefinition(RapidJsonValueCR value, Utf8CP typeName, Utf8CP displayValue) : LabelDefinition() { SetJsonValue(displayValue, typeName, value); }
     LabelDefinition(Utf8CP displayValue, std::unique_ptr<CompositeRawValue> value) : LabelDefinition() { SetCompositeValue(displayValue, std::move(value)); }
@@ -132,7 +132,7 @@ public:
     //! Create using string value as display label.
     static LabelDefinitionPtr Create(Utf8CP value, Utf8CP displayValue = nullptr) { return new LabelDefinition(value, displayValue); }
     //! Create using ECValue as display label.
-    static LabelDefinitionPtr Create(ECValueCR value, Utf8CP displayValue = nullptr) { return new LabelDefinition(value, displayValue); }
+    static LabelDefinitionPtr Create(ECValueCR value, Utf8CP extendedType = nullptr, Utf8CP displayValue = nullptr) { return new LabelDefinition(value, extendedType, displayValue); }
     //! Create using ECProperty value as display label.
     static LabelDefinitionPtr Create(ECPropertyCR ecProperty, DbValue const& dbValue, Utf8CP displayValue = nullptr) { return new LabelDefinition(ecProperty, dbValue, displayValue); }
     //! Create using json value as display label.
@@ -159,7 +159,7 @@ public:
     //! Set string value as display label.
     ECPRESENTATION_EXPORT LabelDefinitionCR SetStringValue(Utf8CP value, Utf8CP displayValue = nullptr);
     //! Set ECValue as display label.
-    ECPRESENTATION_EXPORT LabelDefinitionCR SetECValue(ECValueCR value, Utf8CP displayValue = nullptr);
+    ECPRESENTATION_EXPORT LabelDefinitionCR SetECValue(ECValueCR value, Utf8CP extendedType = nullptr, Utf8CP displayValue = nullptr);
     //! Set ECProperty value as display label.
     ECPRESENTATION_EXPORT LabelDefinitionCR SetECPropertyValue(ECPropertyCR ecProperty, DbValue const& dbValue, Utf8CP displayValue = nullptr);
     //! Set json value as display label.

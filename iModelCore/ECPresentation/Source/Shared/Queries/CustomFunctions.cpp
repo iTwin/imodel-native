@@ -58,7 +58,7 @@ static void ProcessLabelOverride(LabelDefinitionPtr& labelDefinition, CustomFunc
             if (value.IsString())
                 labelDefinition = LabelDefinition::FromString(displayValue.c_str());
             else
-                labelDefinition->SetECValue(value, displayValue.c_str());
+                labelDefinition->SetECValue(value, nullptr, displayValue.c_str());
             if (nullptr != context.GetUsedClassesListener())
                 {
                 UsedClassesHelper::NotifyListenerWithUsedClasses(*context.GetUsedClassesListener(),
@@ -915,6 +915,9 @@ struct GetPropertyValueJsonScalar : ECPresentation::ScalarFunction
                 case PRIMITIVETYPE_Point3d:
                     value.SetString(args[0].GetValueText(), value.GetAllocator());
                     break;
+                case PRIMITIVETYPE_Binary:
+                    value.SetString(args[0].GetValueGuid().ToString().c_str(), value.GetAllocator());
+                    break;
                 }
             }
         auto serialized = BeRapidJsonUtilities::ToString(value);
@@ -1701,7 +1704,7 @@ struct GetECPropertyValueDisplayLabelScalar : ECPropertyValueScalarBase
             PrimitiveECPropertyCR primitiveProperty = *ecProperty->GetAsPrimitiveProperty();
             ECValue value = ValueHelpers::GetECValueFromSqlValue(primitiveProperty.GetType(), primitiveProperty.GetExtendedTypeName(), args[2]);
             Utf8String formattedValue = GetFormattedPropertyValue(primitiveProperty, args[2], GetContext().GetPropertyFormatter(), GetContext().GetUnitSystem());
-            labelDefinition->SetECValue(value, formattedValue.c_str());
+            labelDefinition->SetECValue(value, primitiveProperty.GetExtendedTypeName().c_str(), formattedValue.c_str());
             }
         else if (!labelDefinition->IsDefinitionValid())
             labelDefinition->SetStringValue(valueStr);
