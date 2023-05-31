@@ -419,7 +419,7 @@ void DistinctValuesAccumulator::ReadPrimitivePropertyRecord(ContentDescriptor::E
         auto entry = std::make_pair(rawValue, &extendedType);
         if (it == currentRecords.end())
             currentRecords.emplace(displayValue, bvector<std::pair<ECValue, Utf8StringCP>>({entry}));
-        else if (!ContainerHelpers::Contains(it->second, [entry](auto record) {return entry.first.Equals(record.first) && entry.second->Equals(record.second->c_str()); }))
+        else if (!ContainerHelpers::Contains(it->second, [&entry](auto const& record) {return entry.first.Equals(record.first) && entry.second->Equals(record.second->c_str());}))
             it->second.push_back(entry);
         }
 
