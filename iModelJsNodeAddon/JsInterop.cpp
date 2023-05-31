@@ -858,7 +858,15 @@ void JsInterop::AddFallbackSchemaLocaters(ECDbR db, ECSchemaReadContextPtr schem
     {
     // Add the db then the standard schema paths as fallback locations to load referenced schemas.
     schemaContext->SetFinalSchemaLocater(db.GetSchemaLocater());
+    AddFallbackSchemaLocaters(schemaContext);
+    }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void JsInterop::AddFallbackSchemaLocaters(ECSchemaReadContextPtr schemaContext)
+    {
+    // Add the standard schema paths as fallback locations to load referenced schemas.
     BeFileName rootDir = PlatformLib::GetHost().GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
     rootDir.AppendToPath(L"ECSchemas");
     BeFileName dgnPath = rootDir;
@@ -926,13 +934,15 @@ DbResult JsInterop::ImportSchemas(DgnDbR dgndb, bvector<Utf8String> const& schem
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DbResult JsInterop::ConvertEC2XmlSchemas(DgnDbR dgndb, bvector<Utf8String> const& ec2XmlStrings, bvector<Utf8String>& ec3XmlStrings)
+DbResult JsInterop::ConvertEC2XmlSchemas(bvector<Utf8String> const& ec2XmlStrings, bvector<Utf8String>& ec3XmlStrings, ECSchemaReadContextPtr schemaContext)
     {
     if (0 == ec2XmlStrings.size())
         return BE_SQLITE_ERROR;
 
-    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext(false /*=acceptLegacyImperfectLatestCompatibleMatch*/, true /*=includeFilesWithNoVerExt*/);
-    JsInterop::AddFallbackSchemaLocaters(dgndb, schemaContext);
+    if (schemaContext.IsNull())
+        schemaContext = ECSchemaReadContext::CreateContext(false /*=acceptLegacyImperfectLatestCompatibleMatch*/, true /*=includeFilesWithNoVerExt*/);
+
+    JsInterop::AddFallbackSchemaLocaters(schemaContext);
 
     bvector<bpair<SchemaKey, ECSchemaPtr>> schemaKeyPairs;
     StringSchemaLocater locater;

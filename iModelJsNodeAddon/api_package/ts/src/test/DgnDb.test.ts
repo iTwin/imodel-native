@@ -512,7 +512,6 @@ describe("basic tests", () => {
   });
 
   it("testConvertEC2XmlSchemas", async () => {
-    assert.isTrue(dgndb.isOpen());
     const ec2SchemaXml = `<?xml version="1.0" encoding="UTF-8"?>
       <ECSchema schemaName="TestSchema" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
         <ECSchemaReference name="RefSchema" version="01.00" prefix="rs" />
@@ -524,7 +523,7 @@ describe("basic tests", () => {
         <ECClass typeName="TestStructClass" isStruct="true" />
       </ECSchema>`;
 
-    const ec3Schemas: string[] = dgndb.convertEC2XmlSchemas([ec2SchemaXml, ec2RefSchema]);
+    const ec3Schemas: string[] = iModelJsNative.SchemaUtility.convertEC2XmlSchemas([ec2SchemaXml, ec2RefSchema]);
     assert.equal(ec3Schemas.length, 2);
     // converted EC3 schemas are always sorted in dependancy order: RefSchema-> TestSchema
     const ec3RefSchema = ec3Schemas[0];
@@ -535,12 +534,6 @@ describe("basic tests", () => {
   });
 
   it("testConvertEC2XmlSchemas enumeration in ref schema", async () => {
-    const writeDbFileName = copyFile("testSchemaConvert.bim", dbFileName);
-    // Without ProfileOptions.Upgrade, we get: Error | ECDb | Failed to import schema 'RefSchema.01.00.00'. Current ECDb profile version (4.0.0.1) only support schemas with EC version < 3.2. ECDb profile version upgrade is required to import schemas with EC Version >= 3.2.
-    const db: IModelJsNative.DgnDb = openDgnDb(writeDbFileName, { profile: ProfileOptions.Upgrade, schemaLockHeld: true });
-    assert.isTrue(db !== undefined);
-    assert.isTrue(db.isOpen());
-
     const schemaXML = `<?xml version='1.0' encoding='UTF-8'?>
       <ECSchema schemaName='Trap' version='78.00' nameSpacePrefix='tr' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>
         <ECSchemaReference name='EditorCustomAttributes' version='01.00' prefix='beca' />
@@ -583,13 +576,19 @@ describe("basic tests", () => {
        </ECClass>
       </ECSchema>`;
 
-    const ec3Schemas: string[] = db.convertEC2XmlSchemas([schemaXML, schemaXMLRef]);
+    const ec3Schemas: string[] = iModelJsNative.SchemaUtility.convertEC2XmlSchemas([schemaXML, schemaXMLRef]);
     // converted EC3 schemas are always sorted in dependancy order. Last schemas would be TrapRef -> Trap
     const ec3RefSchema = ec3Schemas[ec3Schemas.length - 2];
     const ec3SchemaXml = ec3Schemas[ec3Schemas.length - 1];
 
     assert.isTrue(ec3RefSchema.includes("http://www.bentley.com/schemas/Bentley.ECXML.3.2"));
     assert.isTrue(ec3SchemaXml.includes("http://www.bentley.com/schemas/Bentley.ECXML.3.2"));
+
+    const writeDbFileName = copyFile("SchemaConvertEnum.bim", dbFileName);
+    // Without ProfileOptions.Upgrade, we get: Error | ECDb | Failed to import schema 'RefSchema.01.00.00'. Current ECDb profile version (4.0.0.1) only support schemas with EC version < 3.2. ECDb profile version upgrade is required to import schemas with EC Version >= 3.2.
+    const db: IModelJsNative.DgnDb = openDgnDb(writeDbFileName, { profile: ProfileOptions.Upgrade, schemaLockHeld: true });
+    assert.isTrue(db !== undefined);
+    assert.isTrue(db.isOpen());
 
     const rc = db.importXmlSchemas(ec3Schemas, { schemaLockHeld: true });
     assert.equal(rc, DbResult.BE_SQLITE_OK);
@@ -619,6 +618,92 @@ describe("basic tests", () => {
 
     // Enumeration should not have been created in schema
     resp = await query(`SELECT e.Name, e.* FROM meta.ECSchemaDef s JOIN meta.ECEnumerationDef e USING meta.SchemaOwnsEnumerations WHERE s.Name='${schema.name}'`);
+    assert(resp.status === DbResponseStatus.Done);
+    assert(resp.rowCount === 0);
+    assert(resp.error === "");
+  });
+
+  it("testConvertEC2XmlSchemas ref schema is in schemaContext", async () => {
+    const schemaXMLRef = `<?xml version='1.0' encoding='UTF-8'?>
+      <ECSchema schemaName='TrapRef' version='78.00' nameSpacePrefix='trRef' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>
+        <ECSchemaReference name='BisCore' version='01.00' prefix='bis' />
+        <ECSchemaReference name='EditorCustomAttributes' version='01.00' prefix='beca' />
+        <ECClass typeName='D' isStruct='false' isCustomAttributeClass='false' isDomainClass='true'>
+          <BaseClass>bis:GraphicalElement3d</BaseClass>
+          <ECProperty propertyName='TitleA' typeName='int' displayLabel='Title'>
+            <ECCustomAttributes>
+              <StandardValues xmlns='EditorCustomAttributes.01.00'>
+                <ValueMap>
+                  <ValueMap>
+                    <DisplayString>Sensei</DisplayString>
+                    <Value>0</Value>
+                  </ValueMap>
+                </ValueMap>
+              </StandardValues>
+            </ECCustomAttributes>
+          </ECProperty>
+       </ECClass>
+      </ECSchema>`;
+
+    const refSchemaPath = path.join(getOutputDir(), "TrapRef.78.00.00.ecschema.xml");
+    fs.writeFileSync(refSchemaPath, schemaXMLRef);
+
+    const schemaContext = new iModelJsNative.ECSchemaXmlContext();
+    schemaContext.addSchemaPath(getOutputDir());
+
+    const schemaXML = `<?xml version='1.0' encoding='UTF-8'?>
+      <ECSchema schemaName='Trap' version='78.00' nameSpacePrefix='tr' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>
+        <ECSchemaReference name='EditorCustomAttributes' version='01.00' prefix='beca' />
+        <ECSchemaReference name='TrapRef' version='78.00' prefix='trRef' />
+        <ECClass typeName='A' isStruct='false' isCustomAttributeClass='false' isDomainClass='true'>
+          <BaseClass>trRef:D</BaseClass>
+          <ECProperty propertyName='TitleA' typeName='int' displayLabel='Title'>
+            <ECCustomAttributes>
+              <StandardValues xmlns='EditorCustomAttributes.01.00'>
+                <ValueMap>
+                  <ValueMap>
+                    <DisplayString>Sensei</DisplayString>
+                    <Value>0</Value>
+                  </ValueMap>
+                </ValueMap>
+              </StandardValues>
+            </ECCustomAttributes>
+          </ECProperty>
+        </ECClass>
+      </ECSchema>`;
+
+    const ec3Schemas: string[] = iModelJsNative.SchemaUtility.convertEC2XmlSchemas([schemaXML], schemaContext);
+    // converted EC3 schemas are always sorted in dependancy order. Last schemas would be Trap
+    const ec3SchemaXml = ec3Schemas[ec3Schemas.length - 1];
+
+    assert.isTrue(ec3SchemaXml.includes("http://www.bentley.com/schemas/Bentley.ECXML.3.2"));
+
+    const writeDbFileName = copyFile("SchemaConvertContext.bim", dbFileName);
+    // Without ProfileOptions.Upgrade, we get: Error | ECDb | Failed to import schema 'RefSchema.01.00.00'. Current ECDb profile version (4.0.0.1) only support schemas with EC version < 3.2. ECDb profile version upgrade is required to import schemas with EC Version >= 3.2.
+    const db: IModelJsNative.DgnDb = openDgnDb(writeDbFileName, { profile: ProfileOptions.Upgrade, schemaLockHeld: true });
+    assert.isTrue(db !== undefined);
+    assert.isTrue(db.isOpen());
+
+    const rc = db.importXmlSchemas(ec3Schemas, { schemaLockHeld: true });
+    assert.equal(rc, DbResult.BE_SQLITE_OK);
+    db.saveChanges();
+
+    const schema: IModelJsNative.SchemaProps = db.getSchemaProps("Trap");
+
+    const query = async (ecsql: string) => {
+      const request: DbQueryRequest = {
+        kind: DbRequestKind.ECSql,
+        query: ecsql,
+      };
+      return new Promise<DbQueryResponse>((resolve) => {
+        db.concurrentQueryExecute(request, (response) => {
+          resolve(response as DbQueryResponse);
+        });
+      });
+    };
+
+    // Enumeration should not have been created in schema
+    const resp = await query(`SELECT e.Name, e.* FROM meta.ECSchemaDef s JOIN meta.ECEnumerationDef e USING meta.SchemaOwnsEnumerations WHERE s.Name='${schema.name}'`);
     assert(resp.status === DbResponseStatus.Done);
     assert(resp.rowCount === 0);
     assert(resp.error === "");

@@ -467,7 +467,6 @@ export declare namespace IModelJsNative {
     public concurrentQueryExecute(request: DbRequest, onResponse: ConcurrentQuery.OnResponse): void;
     public concurrentQueryResetConfig(config?: QueryConfig): QueryConfig;
     public concurrentQueryShutdown(): void;
-    public convertEC2XmlSchemas(ec2XmlSchemas: string[]): string[];
     public createBRepGeometry(createProps: any/* BRepGeometryCreate */): IModelStatus;
     public createChangeCache(changeCacheFile: ECDb, changeCachePath: string): DbResult;
     public createClassViewsInDb(): BentleyStatus;
@@ -631,6 +630,15 @@ export declare namespace IModelJsNative {
     public static getUncompressSize(sourceFile: string): string;
     public static normalizeLzmaParams(lzmaPropsJson?: string): string;
     public static recompressRevision(sourceFile: string, targetFile: string, lzmaPropsJson?: string): BentleyStatus;
+  }
+
+  /**
+   * The native object for SchemaUtility
+   * @internal
+   */
+  class SchemaUtility {
+    constructor();
+    public static convertEC2XmlSchemas(ec2XmlSchemas: string[], schemaContext?: ECSchemaXmlContext): string[];
   }
 
   class ECDb implements IDisposable, IConcurrentQueryManager {

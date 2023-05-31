@@ -1788,24 +1788,6 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         return Napi::Number::New(Env(), (int)result);
         }
 
-    Napi::Value ConvertEC2XmlSchemas(NapiInfoCR info)
-        {
-        RequireDbIsOpen(info);
-        REQUIRE_ARGUMENT_STRING_ARRAY(0, ec2XmlStrings);
-
-        bvector<Utf8String> ec3XmlStrings;
-        DbResult result = JsInterop::ConvertEC2XmlSchemas(GetDgnDb(), ec2XmlStrings, ec3XmlStrings);
-        if (result != DbResult::BE_SQLITE_OK)
-            THROW_JS_EXCEPTION("Failed to convert ec2 xml schemas");
-
-        uint32_t index = 0;
-        auto ret = Napi::Array::New(Env(), ec3XmlStrings.size());
-        for (auto ec3XmlString : ec3XmlStrings)
-            ret.Set(index++, Napi::String::New(Env(), ec3XmlString.c_str()));
-
-        return ret;
-        }
-
     Napi::Value ImportXmlSchemas(NapiInfoCR info)
         {
         RequireDbIsOpen(info);
@@ -2314,7 +2296,6 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
             InstanceMethod("concurrentQueryExecute", &NativeDgnDb::ConcurrentQueryExecute),
             InstanceMethod("concurrentQueryResetConfig", &NativeDgnDb::ConcurrentQueryResetConfig),
             InstanceMethod("concurrentQueryShutdown", &NativeDgnDb::ConcurrentQueryShutdown),
-            InstanceMethod("convertEC2XmlSchemas", &NativeDgnDb::ConvertEC2XmlSchemas),
             InstanceMethod("createBRepGeometry", &NativeDgnDb::CreateBRepGeometry),
             InstanceMethod("createChangeCache", &NativeDgnDb::CreateChangeCache),
             InstanceMethod("createClassViewsInDb", &NativeDgnDb::CreateClassViewsInDb),
@@ -2626,6 +2607,60 @@ struct NativeRevisionUtility : BeObjectWrap<NativeRevisionUtility>
         });
 
         exports.Set("RevisionUtility", t);
+
+        SET_CONSTRUCTOR(t)
+        }
+    };
+
+//=======================================================================================
+//  Projects the SchemaUtility class into JS.
+//! @bsiclass
+//=======================================================================================
+struct NativeSchemaUtility : BeObjectWrap<NativeSchemaUtility>
+    {
+    private:
+        DEFINE_CONSTRUCTOR
+
+    public:
+        NativeSchemaUtility(NapiInfoCR info) : BeObjectWrap<NativeSchemaUtility>(info) {}
+        ~NativeSchemaUtility() {SetInDestructor();}
+
+    static Napi::Value ConvertEC2XmlSchemas(NapiInfoCR info)
+        {
+        REQUIRE_ARGUMENT_STRING_ARRAY(0, ec2XmlStrings);
+
+        ECSchemaReadContextPtr customContext = nullptr;
+        if (ARGUMENT_IS_PRESENT(1)) {
+            const auto& maybeEcSchemaContextVal = info[1].As<Napi::Object>();
+            if (!maybeEcSchemaContextVal.IsUndefined())
+                {
+                if (!NativeECSchemaXmlContext::HasInstance(maybeEcSchemaContextVal))
+                    THROW_JS_TYPE_EXCEPTION("if ecSchemaXmlContext is passed as an argument, it must be an object of type NativeECSchemaXmlContext")
+                customContext = NativeECSchemaXmlContext::Unwrap(maybeEcSchemaContextVal.As<Napi::Object>())->GetContext();
+                }
+        }
+
+        bvector<Utf8String> ec3XmlStrings;
+        DbResult result = JsInterop::ConvertEC2XmlSchemas(ec2XmlStrings, ec3XmlStrings, customContext);
+        if (result != DbResult::BE_SQLITE_OK)
+            THROW_JS_EXCEPTION("Failed to convert ec2 xml schemas");
+
+        uint32_t index = 0;
+        auto ret = Napi::Array::New(info.Env(), ec3XmlStrings.size());
+        for (auto ec3XmlString : ec3XmlStrings)
+            ret.Set(index++, Napi::String::New(info.Env(), ec3XmlString.c_str()));
+
+        return ret;
+        }
+
+    static void Init(Napi::Env& env, Napi::Object exports)
+        {
+        Napi::HandleScope scope(env);
+        Napi::Function t = DefineClass(env, "SchemaUtility", {
+            StaticMethod("convertEC2XmlSchemas", &NativeSchemaUtility::ConvertEC2XmlSchemas),
+        });
+
+        exports.Set("SchemaUtility", t);
 
         SET_CONSTRUCTOR(t)
         }
@@ -5959,6 +5994,7 @@ static Napi::Object registerModule(Napi::Env env, Napi::Object exports) {
     NativeDgnDb::Init(env, exports);
     NativeGeoServices::Init(env, exports);
     NativeRevisionUtility::Init(env, exports);
+    NativeSchemaUtility::Init(env, exports);
     NativeECDb::Init(env, exports);
     NativeChangesetReader::Init(env, exports);
     NativeChangedElementsECDb::Init(env, exports);
