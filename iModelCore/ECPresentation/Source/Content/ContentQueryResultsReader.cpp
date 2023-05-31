@@ -393,6 +393,14 @@ void DistinctValuesAccumulator::ReadNavigationPropertyRecord(ContentDescriptor::
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool CompareRecords(std::pair<ECValue, Utf8StringCP> const& record1, std::pair<ECValue, Utf8StringCP> const& record2)
+    {
+    return record1.first.Equals(record2.first) && (record1.second == record2.second || 0 == strcmp(record1.second->c_str(), record2.second->c_str()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * note: we have to handle each property in the field separately just because formatter
 * might format same raw values differently for different properties
 * @bsimethod
@@ -419,7 +427,7 @@ void DistinctValuesAccumulator::ReadPrimitivePropertyRecord(ContentDescriptor::E
         auto entry = std::make_pair(rawValue, &extendedType);
         if (it == currentRecords.end())
             currentRecords.emplace(displayValue, bvector<std::pair<ECValue, Utf8StringCP>>({entry}));
-        else if (!ContainerHelpers::Contains(it->second, [&entry](auto const& record) {return entry.first.Equals(record.first) && entry.second->Equals(record.second->c_str());}))
+        else if (!ContainerHelpers::Contains(it->second, [&entry](auto const& record) {return CompareRecords(entry, record);}))
             it->second.push_back(entry);
         }
 
