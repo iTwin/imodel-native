@@ -10,7 +10,7 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC;
 const char* SchemaSyncTestFixture::DEFAULT_SHA3_256_ECDB_SCHEMA = "44c5d675cdab562b732a90b8c0128149daaa7a2beefbcbddb576f7bf059cec33";
 const char* SchemaSyncTestFixture::DEFAULT_SHA3_256_ECDB_MAP = "9c7834d13177336f0fa57105b9c1175b912b2e12e62ca2224482c0ffd9dfd337";
 const char* SchemaSyncTestFixture::DEFAULT_SHA3_256_SQLITE_SCHEMA = "c4ca1cdd07de041e71f3e8d4b1942d29da89653c85276025d786688b6f576443";
-
+const char* SchemaSyncTestFixture::DEFAULT_SHA3_256_CHANNEL_SQLITE_SCHEMA = "114aebfc89d430c79bfd1bbbb5796837a91d02d8cb409dcdd83ba5d1dc074eb4";
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -131,7 +131,7 @@ SchemaImportResult SchemaSyncTestFixture::SetupECDb(Utf8CP ecdbName)
     EXPECT_EQ(BE_SQLITE_OK, m_briefcase->PullMergePush("init"));
     EXPECT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
 
-    m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb); });
+    m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb); });
     CheckHashes(*m_briefcase);
 
     return SchemaImportResult::OK;
@@ -151,7 +151,7 @@ SchemaImportResult SchemaSyncTestFixture::SetupECDb(Utf8CP ecdbName, SchemaItem 
     EXPECT_EQ(BE_SQLITE_OK, m_briefcase->PullMergePush("init"));
     EXPECT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
 
-    m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb); });
+    m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb); });
     CheckHashes(*m_briefcase);
 
     if (SchemaImportResult::OK != SchemaSyncTestFixture::ImportSchema(*m_briefcase, schema, opts, GetSharedChannelUri()))

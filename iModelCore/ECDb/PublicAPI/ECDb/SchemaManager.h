@@ -39,6 +39,7 @@ struct SharedSchemaChannel final {
         ERROR_READONLY,
         ERROR_INVALID_SHARED_CHANNEL,
         ERROR_UNABLE_TO_ATTACH,
+        ERROR_SYNC_SQL_SCHEMA,
     };
     //=======================================================================================
     // @bsiclass
@@ -125,6 +126,9 @@ private:
     Status PullInternal(ChannelUri const&, TableList);
     Status PushInternal(ChannelUri const&, TableList);
     Status VerifyChannel(ChannelUri const&, bool isPull) const;
+    DbResult PullSqlSchema(DbR conn);
+    DbResult PushSqlSchema(DbR conn);
+
 public:
     SharedSchemaChannel(SharedSchemaChannel&&) = delete;
     SharedSchemaChannel(SharedSchemaChannel const&)=delete;
