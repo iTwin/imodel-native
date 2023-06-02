@@ -94,13 +94,17 @@ public:
         {
         int major = 0, minor = 0, sub1 = 0, sub2 = 0;
         int result = Utf8String::Sscanf_safe(versionStr, format, &major, &minor, &sub1, &sub2);
-        if (result != 4)
-            return BentleyStatus::ERROR;
-        m_major = (uint16_t) (0xFFFF & major);
-        m_minor = (uint16_t) (0xFFFF & minor);
-        m_sub1 = (uint16_t) (0xFFFF & sub1);
-        m_sub2 = (uint16_t) (0xFFFF & sub2);
-        return BentleyStatus::SUCCESS;
+        if (result >= 1)
+            m_major = (uint16_t) (0xFFFF & major);
+        if (result >= 2)
+            m_minor = (uint16_t) (0xFFFF & minor);
+        if (result >= 3)
+            m_sub1 = (uint16_t) (0xFFFF & sub1);
+        if (result >= 4)
+            m_sub2 = (uint16_t) (0xFFFF & sub2);
+
+        //Even with a custom version string, we still require to match at least one digit.
+        return (result >= 1 ? BentleyStatus::SUCCESS : BentleyStatus::ERROR);
         }
     };
 

@@ -257,3 +257,54 @@ TEST_F (VersionTests, OperatorGreaterOrEqual_Less_False)
     EXPECT_FALSE (BeVersion (1, 1, 1, 2) >= BeVersion (1, 1, 2, 1));
     EXPECT_FALSE (BeVersion (1, 1, 1, 1) >= BeVersion (1, 1, 1, 2));
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (VersionTests, FromString_NormalInput)
+    {
+    BeVersion version;
+    EXPECT_EQ (BentleyStatus::SUCCESS, version.FromString("{\"major\":3,\"minor\":1,\"sub1\":0,\"sub2\":2}"));
+    EXPECT_EQ (3, version.GetMajor());
+    EXPECT_EQ (1, version.GetMinor());
+    EXPECT_EQ (0, version.GetSub1());
+    EXPECT_EQ (2, version.GetSub2());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (VersionTests, FromString_InvalidString)
+    {
+    BeVersion version;
+    EXPECT_EQ (BentleyStatus::ERROR, version.FromString("***THIS_IS_NO_VERSION***"));
+    EXPECT_EQ (0, version.GetMajor());
+    EXPECT_EQ (0, version.GetMinor());
+    EXPECT_EQ (0, version.GetSub1());
+    EXPECT_EQ (0, version.GetSub2());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (VersionTests, FromString_LessDigits)
+    {
+    BeVersion version;
+    EXPECT_EQ (BentleyStatus::ERROR, version.FromString("02.05.01"));
+    EXPECT_EQ (2, version.GetMajor());
+    EXPECT_EQ (5, version.GetMinor());
+    EXPECT_EQ (1, version.GetSub1());
+    EXPECT_EQ (0, version.GetSub2());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (VersionTests, FromString_WSClientCustomFormat)
+    {
+    BeVersion version("Bentley-WSG/5.1.2", "Bentley-WSG/%d.%d.%d.%d");
+    EXPECT_EQ (5, version.GetMajor());
+    EXPECT_EQ (1, version.GetMinor());
+    EXPECT_EQ (2, version.GetSub1());
+    EXPECT_EQ (0, version.GetSub2());
+    }
