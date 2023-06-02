@@ -89,14 +89,18 @@ public:
     //! Parses version string into a BeVersion.
     //! @param[in] versionStr Version string
     //! @param[in] format Format string. <b>Only %d is permitted as format specifier for the version digits.</b>
-    void FromString(Utf8CP versionStr, Utf8CP format = VERSION_PARSE_FORMAT)
+    //! @return Success if 4 versions were parsed, Error otherwise
+    BentleyStatus FromString(Utf8CP versionStr, Utf8CP format = VERSION_PARSE_FORMAT)
         {
         int major = 0, minor = 0, sub1 = 0, sub2 = 0;
-        Utf8String::Sscanf_safe(versionStr, format, &major, &minor, &sub1, &sub2);
+        int result = Utf8String::Sscanf_safe(versionStr, format, &major, &minor, &sub1, &sub2);
+        if (result != 4)
+            return BentleyStatus::ERROR;
         m_major = (uint16_t) (0xFFFF & major);
         m_minor = (uint16_t) (0xFFFF & minor);
         m_sub1 = (uint16_t) (0xFFFF & sub1);
         m_sub2 = (uint16_t) (0xFFFF & sub2);
+        return BentleyStatus::SUCCESS;
         }
     };
 
