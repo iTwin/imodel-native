@@ -46,6 +46,7 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
     #define FUNCTION_NAME_GetPropertyDisplayValue   "GetPropertyDisplayValue"
 #endif
 #define FUNCTION_NAME_GetRelatedDisplayLabel        "GetRelatedDisplayLabel"
+#define FUNCTION_NAME_GuidToStr                     "GuidToStr"
 #define FUNCTION_NAME_ToBase36                      "ToBase36"
 #define FUNCTION_NAME_ParseBriefcaseId              "ParseBriefcaseId"
 #define FUNCTION_NAME_ParseLocalId                  "ParseLocalId"
