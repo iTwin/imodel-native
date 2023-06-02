@@ -264,7 +264,7 @@ TEST_F (VersionTests, OperatorGreaterOrEqual_Less_False)
 TEST_F (VersionTests, FromString_NormalInput)
     {
     BeVersion version;
-    EXPECT_EQ (BentleyStatus::SUCCESS, version.FromString("{\"major\":3,\"minor\":1,\"sub1\":0,\"sub2\":2}"));
+    EXPECT_EQ (BentleyStatus::SUCCESS, version.FromString("3.1.0.2"));
     EXPECT_EQ (3, version.GetMajor());
     EXPECT_EQ (1, version.GetMinor());
     EXPECT_EQ (0, version.GetSub1());
@@ -290,7 +290,7 @@ TEST_F (VersionTests, FromString_InvalidString)
 TEST_F (VersionTests, FromString_LessDigits)
     {
     BeVersion version;
-    EXPECT_EQ (BentleyStatus::ERROR, version.FromString("02.05.01"));
+    EXPECT_EQ (BentleyStatus::SUCCESS, version.FromString("02.05.01"));
     EXPECT_EQ (2, version.GetMajor());
     EXPECT_EQ (5, version.GetMinor());
     EXPECT_EQ (1, version.GetSub1());
@@ -307,4 +307,17 @@ TEST_F (VersionTests, FromString_WSClientCustomFormat)
     EXPECT_EQ (1, version.GetMinor());
     EXPECT_EQ (2, version.GetSub1());
     EXPECT_EQ (0, version.GetSub2());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (VersionTests, FromString_ECDbCustomFormat)
+    {
+    BeVersion version;
+    EXPECT_EQ (BentleyStatus::SUCCESS, version.FromString("{\"major\":3,\"minor\":1,\"sub1\":0,\"sub2\":2}", "{\"major\":%d,\"minor\":%d,\"sub1\":%d,\"sub2\":%d}"));
+    EXPECT_EQ (3, version.GetMajor());
+    EXPECT_EQ (1, version.GetMinor());
+    EXPECT_EQ (0, version.GetSub1());
+    EXPECT_EQ (2, version.GetSub2());
     }
