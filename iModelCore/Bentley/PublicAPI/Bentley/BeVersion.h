@@ -89,7 +89,7 @@ public:
     //! Parses version string into a BeVersion.
     //! @param[in] versionStr Version string
     //! @param[in] format Format string. <b>Only %d is permitted as format specifier for the version digits.</b>
-    //! @return Success if 4 versions were parsed, Error otherwise
+    //! @return Success if at least one digit was matched, Error otherwise
     BentleyStatus FromString(Utf8CP versionStr, Utf8CP format = VERSION_PARSE_FORMAT)
         {
         int major = 0, minor = 0, sub1 = 0, sub2 = 0;
