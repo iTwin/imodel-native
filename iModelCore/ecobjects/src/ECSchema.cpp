@@ -3216,11 +3216,31 @@ ECSchemaPtr SearchPathSchemaFileLocater::_LocateSchema(SchemaKeyR key, SchemaMat
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaPtr StringSchemaLocater::_LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext)
     {
-    ECSchemaPtr schema;
-    auto schemaXml = m_schemaXml.find(key.m_schemaName);
-    if (schemaXml != m_schemaXml.end())
-        ECSchema::ReadFromXmlString(schema, schemaXml->second.c_str(), schemaContext);
-    return schema;
+    bpair<SchemaKey, SchemaMatchType> lookup = make_bpair<SchemaKey, SchemaMatchType>(key, matchType);
+    bmap<bpair<SchemaKey, SchemaMatchType>, ECSchemaPtr>::iterator iter = m_knownSchemas.find(lookup);
+    if (iter != m_knownSchemas.end())
+        return iter->second;
+
+    //Get cached version of the schema
+    ECSchemaPtr schemaOut = schemaContext.GetFoundSchema(key, SchemaMatchType::Exact);;
+    if (schemaOut.IsValid())
+        {
+        m_knownSchemas.Insert(make_bpair<SchemaKey, SchemaMatchType>(key, SchemaMatchType::Exact), schemaOut);
+        return schemaOut;
+        }
+
+    auto schemaXml = m_schemaXmls.find(key.GetName());
+    if (schemaXml != m_schemaXmls.end())
+        {
+        if (SchemaReadStatus::Success != ECSchema::ReadFromXmlString(schemaOut, schemaXml->second.c_str(), schemaContext))
+            {
+            m_knownSchemas.Insert(lookup, nullptr);
+            return nullptr;
+            }
+        }
+
+    m_knownSchemas.Insert(lookup, schemaOut);
+    return schemaOut;
     }
 
 struct ChecksumHelper

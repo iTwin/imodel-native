@@ -934,10 +934,10 @@ DbResult JsInterop::ImportSchemas(DgnDbR dgndb, bvector<Utf8String> const& schem
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DbResult JsInterop::ConvertEC2XmlSchemas(bvector<Utf8String> const& ec2XmlStrings, bvector<Utf8String>& ec3XmlStrings, ECSchemaReadContextPtr schemaContext)
+BentleyStatus JsInterop::ConvertEC2XmlSchemas(bvector<Utf8String> const& ec2XmlStrings, bvector<Utf8String>& ec3XmlStrings, ECSchemaReadContextPtr schemaContext)
     {
     if (0 == ec2XmlStrings.size())
-        return BE_SQLITE_ERROR;
+        return BentleyStatus::ERROR;
 
     if (schemaContext.IsNull())
         schemaContext = ECSchemaReadContext::CreateContext(false /*=acceptLegacyImperfectLatestCompatibleMatch*/, true /*=includeFilesWithNoVerExt*/);
@@ -951,8 +951,8 @@ DbResult JsInterop::ConvertEC2XmlSchemas(bvector<Utf8String> const& ec2XmlString
         SchemaKey key;
         SchemaReadStatus status = ECSchema::ReadSchemaKey(ec2XmlString, key);
         if (SchemaReadStatus::Success != status)
-            return BE_SQLITE_ERROR;
-        locater.AddSchemaString(key.GetName(), ec2XmlString);
+            return BentleyStatus::ERROR;
+        locater.AddSchemaString(key, ec2XmlString);
         schemaKeyPairs.push_back(std::make_pair(key, nullptr));
         }
     schemaContext->AddSchemaLocater(locater);
@@ -960,24 +960,15 @@ DbResult JsInterop::ConvertEC2XmlSchemas(bvector<Utf8String> const& ec2XmlString
     for (int i = 0; i < ec2XmlStrings.size(); i++)
         {
         Utf8String ec2XmlString = ec2XmlStrings[i];
-        ECSchemaPtr schema;
-        SchemaReadStatus schemaStatus = ECSchema::ReadFromXmlString(schema, ec2XmlString.c_str(), *schemaContext);
-
-        if (SchemaReadStatus::DuplicateSchema == schemaStatus && schemaKeyPairs[i].second == nullptr)
-        {
-            schema = ECSchema::LocateSchema(schemaKeyPairs[i].first, *schemaContext);
-            schemaKeyPairs[i].second = schema;
-            continue;
-        }
-
-        if (SchemaReadStatus::Success != schemaStatus)
-            return BE_SQLITE_ERROR;
+        ECSchemaPtr schema = ECSchema::LocateSchema(schemaKeyPairs[i].first, *schemaContext);
+        if (!schema.IsValid())
+            return BentleyStatus::ERROR;
 
         schemaKeyPairs[i].second = schema;
         }
 
     if (0 == schemaKeyPairs.size())
-        return BE_SQLITE_ERROR;
+        return BentleyStatus::ERROR;
 
     // Make a copy of the schemaKeyPairs bvector
     bvector<ECSchemaCP> schemas;
@@ -993,16 +984,16 @@ DbResult JsInterop::ConvertEC2XmlSchemas(bvector<Utf8String> const& ec2XmlString
             {
             bool conversionStatus = ECSchemaConverter::Convert(*const_cast<ECSchemaP> (schema), *schemaContext);
             if (!conversionStatus)
-                return BE_SQLITE_ERROR;
+                return BentleyStatus::ERROR;
             Utf8String schemaXml;
             SchemaWriteStatus writeStatus = schema->WriteToXmlString(schemaXml);
             if (SchemaWriteStatus::Success != writeStatus)
-                return BE_SQLITE_ERROR;
+                return BentleyStatus::ERROR;
             ec3XmlStrings.push_back(schemaXml);
             }
         }
 
-    return BE_SQLITE_OK;
+    return BentleyStatus::SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------

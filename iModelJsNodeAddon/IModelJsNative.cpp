@@ -2641,8 +2641,8 @@ struct NativeSchemaUtility : BeObjectWrap<NativeSchemaUtility>
         }
 
         bvector<Utf8String> ec3XmlStrings;
-        DbResult result = JsInterop::ConvertEC2XmlSchemas(ec2XmlStrings, ec3XmlStrings, customContext);
-        if (result != DbResult::BE_SQLITE_OK)
+        BentleyStatus result = JsInterop::ConvertEC2XmlSchemas(ec2XmlStrings, ec3XmlStrings, customContext);
+        if (result != BentleyStatus::SUCCESS)
             THROW_JS_EXCEPTION("Failed to convert ec2 xml schemas");
 
         uint32_t index = 0;
