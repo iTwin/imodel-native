@@ -196,7 +196,7 @@ bool NavNodeExtendedData::SetChildrenArtifacts(bvector<NodeArtifacts> allArtifac
             {
             rapidjson::Value nodeArtifactJson(rapidjson::kObjectType);
             nodeArtifactJson.AddMember("type", entry.second.GetPrimitiveType(), GetAllocator());
-            nodeArtifactJson.AddMember("value", ValueHelpers::GetJsonFromECValue(entry.second, &GetAllocator()), GetAllocator());
+            nodeArtifactJson.AddMember("value", ValueHelpers::GetJsonFromECValue(entry.second, "", &GetAllocator()), GetAllocator());
             nodeArtifactsJson.AddMember(rapidjson::Value(entry.first.c_str(), GetAllocator()), std::move(nodeArtifactJson), GetAllocator());
             }
         allArtifactsJson.PushBack(std::move(nodeArtifactsJson), GetAllocator());
@@ -232,7 +232,7 @@ bvector<NodeArtifacts> NavNodeExtendedData::GetChildrenArtifacts() const
                 continue;
 
             PrimitiveType type = (PrimitiveType)nodeArtifactJson["type"].GetInt();
-            ECValue value = ValueHelpers::GetECValueFromJson(type, nodeArtifactJson["value"]);
+            ECValue value = ValueHelpers::GetECValueFromJson(type, "", nodeArtifactJson["value"]);
             nodeArtifacts.Insert(iter->name.GetString(), value);
             }
 

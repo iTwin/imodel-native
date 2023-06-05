@@ -337,7 +337,7 @@ void NavNode::AddUsersExtendedData(Utf8CP key, ECValueCR value)
     {
     if (nullptr == m_usersExtendedData)
         InitUsersExtendedData();
-    m_usersExtendedData->AddMember(rapidjson::Value(key, m_allocator), ValueHelpers::GetJsonFromECValue(value, &m_allocator), m_allocator);
+    m_usersExtendedData->AddMember(rapidjson::Value(key, m_allocator), ValueHelpers::GetJsonFromECValue(value, "", &m_allocator), m_allocator);
     }
 
 /*---------------------------------------------------------------------------------**//**

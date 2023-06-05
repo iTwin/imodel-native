@@ -393,6 +393,14 @@ void DistinctValuesAccumulator::ReadNavigationPropertyRecord(ContentDescriptor::
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool CompareRecords(std::pair<ECValue, Utf8StringCP> const& record1, std::pair<ECValue, Utf8StringCP> const& record2)
+    {
+    return record1.first.Equals(record2.first) && (record1.second == record2.second || 0 == strcmp(record1.second->c_str(), record2.second->c_str()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * note: we have to handle each property in the field separately just because formatter
 * might format same raw values differently for different properties
 * @bsimethod
@@ -401,7 +409,7 @@ void DistinctValuesAccumulator::ReadPrimitivePropertyRecord(ContentDescriptor::E
     {
     ContentValuesFormatter formatter(m_propertyFormatter, m_unitSystem);
     IECSqlValue const& value = statement.GetValue(0);
-    bmap<Utf8String, bvector<ECValue>> currentRecords;
+    bmap<Utf8String, bvector<std::pair<ECValue, Utf8StringCP>>> currentRecords;
     for (ContentDescriptor::Property const& prop : propertiesField.GetProperties())
         {
         if (!prop.GetProperty().GetIsPrimitive())
@@ -412,20 +420,22 @@ void DistinctValuesAccumulator::ReadPrimitivePropertyRecord(ContentDescriptor::E
             DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Content, Utf8PrintfString("Expecting formatter value to be string, but it's not. Actual: '%s'", BeRapidJsonUtilities::ToString(formattedJson).c_str()));
 
         Utf8String displayValue = formattedJson.IsString() ? formattedJson.GetString() : "";
-        ECValue rawValue = ValueHelpers::GetECValueFromSqlValue(prop.GetProperty().GetAsPrimitiveProperty()->GetType(), prop.GetProperty().GetAsPrimitiveProperty()->GetExtendedTypeName(), value);
+        Utf8StringCR extendedType = prop.GetProperty().GetAsPrimitiveProperty()->GetExtendedTypeName();
+        ECValue rawValue = ValueHelpers::GetECValueFromSqlValue(prop.GetProperty().GetAsPrimitiveProperty()->GetType(), extendedType, value);
 
         auto it = currentRecords.find(displayValue);
+        auto entry = std::make_pair(rawValue, &extendedType);
         if (it == currentRecords.end())
-            currentRecords.emplace(displayValue, bvector<ECValue>({rawValue}));
-        else if (!ContainerHelpers::Contains(it->second, rawValue))
-            it->second.push_back(rawValue);
+            currentRecords.emplace(displayValue, bvector<std::pair<ECValue, Utf8StringCP>>({entry}));
+        else if (!ContainerHelpers::Contains(it->second, [&entry](auto const& record) {return CompareRecords(entry, record);}))
+            it->second.push_back(entry);
         }
 
-    for (auto pair : currentRecords)
+    for (auto const& pair : currentRecords)
         {
         DisplayValueGroupR group = GetOrCreateDisplayValueGroup(pair.first);
         for (auto valueInGroup : pair.second)
-            group.GetRawValues().push_back(ValueHelpers::GetJsonFromECValue(valueInGroup, &group.GetRawValuesAllocator()));
+            group.GetRawValues().push_back(ValueHelpers::GetJsonFromECValue(valueInGroup.first, *valueInGroup.second, &group.GetRawValuesAllocator()));
         }
     }
 
