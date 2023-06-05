@@ -2062,7 +2062,7 @@ size_t PrimitiveECValueHasher::operator()(ECValueCR value) const
         case PRIMITIVETYPE_Binary:
             {
             size_t guidSize = sizeof(BeGuid);
-            hash ^= std::hash<std::string_view>{}(std::string_view((char*)value.GetBinary(guidSize), guidSize)) << 2;
+            hash ^= std::hash<std::string_view>{}(std::string_view((const char*)value.GetBinary(guidSize), guidSize)) << 2;
             break;
             }
         case PRIMITIVETYPE_String:
