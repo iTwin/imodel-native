@@ -471,8 +471,8 @@ ECValue ValueHelpers::GetECValueFromSqlValue(PrimitiveType primitiveType, Utf8St
             value.SetPoint3d(GetPoint3dFromJsonString(sqlValue.GetValueText()));
             break;
         case PRIMITIVETYPE_Binary:
-            if (extendedType == EXTENDED_TYPENAME_BeGuid)
-                value.SetUtf8CP(sqlValue.GetValueGuid().ToString().c_str());
+            if (extendedType == EXTENDED_TYPENAME_BeGuid && sizeof(BeGuid) == sqlValue.GetValueBytes())
+                value.SetBinary((Byte const*)sqlValue.GetValueBlob(), sizeof(BeGuid), true);
             break;
         case PRIMITIVETYPE_IGeometry:
             break;
@@ -533,7 +533,12 @@ ECValue ValueHelpers::GetECValueFromSqlValue(PrimitiveType primitiveType, Utf8St
             break;
         case PRIMITIVETYPE_Binary:
             if (extendedType == EXTENDED_TYPENAME_BeGuid)
-                value.SetUtf8CP(sqlValue.GetGuid().ToString().c_str());
+                {
+                int size = 0;
+                void const* blob = sqlValue.GetBlob(&size);
+                if (size == sizeof(BeGuid))
+                    value.SetBinary((Byte const*)blob, size, true);
+                }
             break;
         case PRIMITIVETYPE_IGeometry:
             break;
@@ -580,7 +585,7 @@ ECValue ValueHelpers::GetECValueFromString(PrimitiveType valueType, Utf8StringCR
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECValue ValueHelpers::GetECValueFromJson(PrimitiveType type, RapidJsonValueCR json)
+ECValue ValueHelpers::GetECValueFromJson(PrimitiveType type, Utf8StringCR extendedType, RapidJsonValueCR json)
     {
     ECValue value;
     if (json.IsNull())
@@ -617,6 +622,13 @@ ECValue ValueHelpers::GetECValueFromJson(PrimitiveType type, RapidJsonValueCR js
                 value.SetLong(json.GetInt64());
             break;
         case PRIMITIVETYPE_Binary:
+            if (extendedType == EXTENDED_TYPENAME_BeGuid)
+                {
+                BeGuid guid;
+                guid.FromString(json.GetString());
+                value.SetBinary((Byte const*)&guid, sizeof(BeGuid), true);
+                }
+            break;
         case PRIMITIVETYPE_String:
             value.SetUtf8CP(json.GetString());
             break;
@@ -635,11 +647,11 @@ ECValue ValueHelpers::GetECValueFromJson(PrimitiveType type, RapidJsonValueCR js
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<ECValue> ValueHelpers::GetECValueSetFromJson(PrimitiveType type, RapidJsonValueCR json)
+bvector<ECValue> ValueHelpers::GetECValueSetFromJson(PrimitiveType type, Utf8StringCR extendedType, RapidJsonValueCR json)
     {
     bvector<ECValue> ecValues;
     for (rapidjson::SizeType i = 0; i < json.Size(); i++)
-        ecValues.push_back(GetECValueFromJson(type, json[i]));
+        ecValues.push_back(GetECValueFromJson(type, extendedType, json[i]));
 
     return ecValues;
     }
@@ -647,7 +659,7 @@ bvector<ECValue> ValueHelpers::GetECValueSetFromJson(PrimitiveType type, RapidJs
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document ValueHelpers::GetJsonFromECValue(ECValueCR ecValue, rapidjson::MemoryPoolAllocator<>* allocator)
+rapidjson::Document ValueHelpers::GetJsonFromECValue(ECValueCR ecValue, Utf8StringCR extendedType, rapidjson::MemoryPoolAllocator<>* allocator)
     {
     rapidjson::Document doc(allocator);
     if (ecValue.IsUninitialized() || ecValue.IsNull())
@@ -664,6 +676,12 @@ rapidjson::Document ValueHelpers::GetJsonFromECValue(ECValueCR ecValue, rapidjso
             doc.SetBool(ecValue.GetBoolean());
             return doc;
         case PRIMITIVETYPE_Binary:
+            if (extendedType == EXTENDED_TYPENAME_BeGuid)
+                {
+                size_t guidSize = sizeof(BeGuid);
+                BeGuid const* guid = (BeGuid const*)ecValue.GetBinary(guidSize);
+                doc.SetString(guid->ToString().c_str(), doc.GetAllocator());
+                }
             return doc;
         case PRIMITIVETYPE_DateTime:
             doc.SetString(ecValue.GetDateTime().ToString().c_str(), doc.GetAllocator());

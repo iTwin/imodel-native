@@ -1452,7 +1452,7 @@ bvector<ECClassInstanceKey> const& ContentSetItem::GetPropertyValueKeys(FieldPro
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ContentSetItem::AddUsersExtendedData(Utf8CP key, ECValueCR value)
     {
-    m_extendedData.AddMember(rapidjson::Value(key, m_extendedData.GetAllocator()), ValueHelpers::GetJsonFromECValue(value, &m_extendedData.GetAllocator()), m_extendedData.GetAllocator());
+    m_extendedData.AddMember(rapidjson::Value(key, m_extendedData.GetAllocator()), ValueHelpers::GetJsonFromECValue(value, "", &m_extendedData.GetAllocator()), m_extendedData.GetAllocator());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1704,6 +1704,20 @@ BentleyStatus DefaultPropertyFormatter::_ApplyDateTimeFormatting(Utf8StringR for
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus DefaultPropertyFormatter::_ApplyBinaryFormatting(Utf8StringR formattedValue, ECPropertyCR ecProperty, ECValueCR ecValue) const
+    {
+    if (!ecProperty.GetIsPrimitive() || ecProperty.GetAsPrimitiveProperty()->GetExtendedTypeName() != EXTENDED_TYPENAME_BeGuid)
+        return ERROR;
+
+    size_t guidSize = sizeof(BeGuid);
+    BeGuid const* guid = (BeGuid const*)ecValue.GetBinary(guidSize);
+    formattedValue = guid->ToString();
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DefaultPropertyFormatter::_GetFormattedPropertyValue(Utf8StringR formattedValue, ECPropertyCR ecProperty, ECValueCR ecValue, ECPresentation::UnitSystem unitSystem) const
     {
     if (ecValue.IsNull())
@@ -1728,6 +1742,9 @@ BentleyStatus DefaultPropertyFormatter::_GetFormattedPropertyValue(Utf8StringR f
         return SUCCESS;
 
     if (ecValue.IsDateTime() && SUCCESS == _ApplyDateTimeFormatting(formattedValue, ecValue.GetDateTime()))
+        return SUCCESS;
+
+    if (ecValue.IsBinary() && SUCCESS == _ApplyBinaryFormatting(formattedValue, ecProperty, ecValue))
         return SUCCESS;
 
     return ERROR;

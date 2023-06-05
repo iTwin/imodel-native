@@ -58,7 +58,7 @@ static void ProcessLabelOverride(LabelDefinitionPtr& labelDefinition, CustomFunc
             if (value.IsString())
                 labelDefinition = LabelDefinition::FromString(displayValue.c_str());
             else
-                labelDefinition->SetECValue(value, displayValue.c_str());
+                labelDefinition->SetECValue(value, nullptr, displayValue.c_str());
             if (nullptr != context.GetUsedClassesListener())
                 {
                 UsedClassesHelper::NotifyListenerWithUsedClasses(*context.GetUsedClassesListener(),
@@ -915,6 +915,9 @@ struct GetPropertyValueJsonScalar : ECPresentation::ScalarFunction
                 case PRIMITIVETYPE_Point3d:
                     value.SetString(args[0].GetValueText(), value.GetAllocator());
                     break;
+                case PRIMITIVETYPE_Binary:
+                    value.SetString(args[0].GetValueGuid().ToString().c_str(), value.GetAllocator());
+                    break;
                 }
             }
         auto serialized = BeRapidJsonUtilities::ToString(value);
@@ -1372,6 +1375,24 @@ public:
 
 /*=================================================================================**//**
 * Parameters:
+* - binary value
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct GuidToStrScalar : ECPresentation::ScalarFunction
+    {
+    GuidToStrScalar(CustomFunctionsManager const& manager)
+        : ScalarFunction(FUNCTION_NAME_GuidToStr, 1, DbValueType::TextVal, manager)
+        {}
+    void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
+        {
+        ARGUMENTS_COUNT_PRECONDITION(1);
+        Utf8String guidStr = args[0].GetValueGuid().ToString();
+        ctx.SetResultText(guidStr.c_str(), guidStr.size(), DbFunction::Context::CopyData::Yes);
+        }
+    };
+
+/*=================================================================================**//**
+* Parameters:
 * - NavNodeLabelDefinition json string
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
@@ -1701,7 +1722,7 @@ struct GetECPropertyValueDisplayLabelScalar : ECPropertyValueScalarBase
             PrimitiveECPropertyCR primitiveProperty = *ecProperty->GetAsPrimitiveProperty();
             ECValue value = ValueHelpers::GetECValueFromSqlValue(primitiveProperty.GetType(), primitiveProperty.GetExtendedTypeName(), args[2]);
             Utf8String formattedValue = GetFormattedPropertyValue(primitiveProperty, args[2], GetContext().GetPropertyFormatter(), GetContext().GetUnitSystem());
-            labelDefinition->SetECValue(value, formattedValue.c_str());
+            labelDefinition->SetECValue(value, primitiveProperty.GetExtendedTypeName().c_str(), formattedValue.c_str());
             }
         else if (!labelDefinition->IsDefinitionValid())
             labelDefinition->SetStringValue(valueStr);
@@ -2023,6 +2044,7 @@ void CustomFunctionsInjector::CreateFunctions()
     m_functions.push_back(std::make_shared<EvaluateECExpressionScalar>(CustomFunctionsManager::GetManager()));
     m_functions.push_back(std::make_shared<GetECEnumerationValueScalar>(CustomFunctionsManager::GetManager()));
     m_functions.push_back(std::make_shared<GetInstanceKeyScalar>(CustomFunctionsManager::GetManager()));
+    m_functions.push_back(std::make_shared<GuidToStrScalar>(CustomFunctionsManager::GetManager()));
 #ifdef wip_skipped_instance_keys_performance_issue
     m_functions.push_back(std::make_shared<ECInstanceKeysArrayScalar>(CustomFunctionsManager::GetManager()));
 #endif
