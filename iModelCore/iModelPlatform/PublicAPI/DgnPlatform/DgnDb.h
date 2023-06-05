@@ -217,6 +217,7 @@ private:
 
     BeSQLite::DbResult InitializeSchemas(BeSQLite::Db::OpenParams const& params);
     BeSQLite::DbResult ProcessRevisions(BeSQLite::Db::OpenParams const& params);
+    BentleyStatus ReadProfileVersion(bool& isOlderVersion) const;
 
 protected:
     friend struct Txns;
