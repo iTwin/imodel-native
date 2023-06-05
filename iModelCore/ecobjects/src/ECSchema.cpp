@@ -3216,30 +3216,24 @@ ECSchemaPtr SearchPathSchemaFileLocater::_LocateSchema(SchemaKeyR key, SchemaMat
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaPtr StringSchemaLocater::_LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext)
     {
-    bpair<SchemaKey, SchemaMatchType> lookup = make_bpair<SchemaKey, SchemaMatchType>(key, matchType);
-    bmap<bpair<SchemaKey, SchemaMatchType>, ECSchemaPtr>::iterator iter = m_knownSchemas.find(lookup);
-    if (iter != m_knownSchemas.end())
-        return iter->second;
+    bmap<Utf8String, std::tuple<Utf8String, SchemaKey, ECSchemaPtr>>::iterator iter = m_knownSchemas.find(key.GetName());
+    if (iter == m_knownSchemas.end())
+        return nullptr;
 
-    //Get cached version of the schema
-    ECSchemaPtr schemaOut = schemaContext.GetFoundSchema(key, SchemaMatchType::Exact);;
-    if (schemaOut.IsValid())
-        {
-        m_knownSchemas.Insert(make_bpair<SchemaKey, SchemaMatchType>(key, SchemaMatchType::Exact), schemaOut);
-        return schemaOut;
-        }
+    const std::tuple<Utf8String, SchemaKey, ECSchemaPtr>& knownSchema = iter->second;
+    Utf8StringCR expectedSchemaXml =std::get<0>(knownSchema);
+    SchemaKeyCR expectedSchemaKey = std::get<1>(knownSchema);
+    ECSchemaPtr expectedECSchema = std::get<2>(knownSchema);
+    if (!expectedSchemaKey.Matches(key, matchType))
+        return nullptr;
+    if (expectedECSchema.IsValid())
+        return expectedECSchema;
 
-    auto schemaXml = m_schemaXmls.find(key.GetName());
-    if (schemaXml != m_schemaXmls.end())
-        {
-        if (SchemaReadStatus::Success != ECSchema::ReadFromXmlString(schemaOut, schemaXml->second.c_str(), schemaContext))
-            {
-            m_knownSchemas.Insert(lookup, nullptr);
-            return nullptr;
-            }
-        }
-
-    m_knownSchemas.Insert(lookup, schemaOut);
+    // Read schema from Xml string if the cached schema is invalid
+    ECSchemaPtr schemaOut;
+    if (SchemaReadStatus::Success != ECSchema::ReadFromXmlString(schemaOut, expectedSchemaXml.c_str(), schemaContext))
+        return nullptr;
+    m_knownSchemas[key.GetName()] = std::make_tuple(expectedSchemaXml, expectedSchemaKey, schemaOut);
     return schemaOut;
     }
 
