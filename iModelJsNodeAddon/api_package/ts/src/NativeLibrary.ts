@@ -94,10 +94,9 @@ export class NativeLibrary {
       try {
         this._nativeLib = require(`./${NativeLibrary.archName}/${NativeLibrary.nodeAddonName}`) as typeof IModelJsNative; // eslint-disable-line @typescript-eslint/no-var-requires
       } catch (err: any) {
-        if (/The specified module could not be found/.test(err.message) && process.platform === "win32")
-          err.message += "\nThis error may occur when trying to run an iTwin.js backend without"
-            + " having installed the prerequisites. See the following link for all prerequisites:"
-            + "\nhttps://www.itwinjs.org/learning/supportedplatforms/#backend-prerequisites";
+        err.message += "\nThis error may occur when trying to run an iTwin.js backend without"
+          + " having installed the prerequisites. See the following link for all prerequisites:"
+          + "\nhttps://www.itwinjs.org/learning/supportedplatforms/#backend-prerequisites";
         throw err;
       }
       if (this.isDevBuild)
