@@ -785,9 +785,9 @@ DbResult Db::FreeMemory() const { return (DbResult)sqlite3_db_release_memory(m_d
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ProfileVersion::FromJson(Utf8CP val)
+BentleyStatus ProfileVersion::FromJson(Utf8CP val)
     {
-    FromString(val, "{\"major\":%d,\"minor\":%d,\"sub1\":%d,\"sub2\":%d}");
+    return FromString(val, "{\"major\":%d,\"minor\":%d,\"sub1\":%d,\"sub2\":%d}");
     }
 
 /*---------------------------------------------------------------------------------**//**
