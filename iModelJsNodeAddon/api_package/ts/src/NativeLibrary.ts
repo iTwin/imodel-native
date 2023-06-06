@@ -91,7 +91,15 @@ export class NativeLibrary {
   public static get nativeLib() { return this.load(); }
   public static load() {
     if (!this._nativeLib) {
-      this._nativeLib = require(`./${NativeLibrary.archName}/${NativeLibrary.nodeAddonName}`) as typeof IModelJsNative; // eslint-disable-line @typescript-eslint/no-var-requires
+      try {
+        this._nativeLib = require(`./${NativeLibrary.archName}/${NativeLibrary.nodeAddonName}`) as typeof IModelJsNative; // eslint-disable-line @typescript-eslint/no-var-requires
+      } catch (err: any) {
+        if (/The specified module could not be found/.test(err.message) && process.platform === "win32")
+          err.message += "\nThis error may occur when trying to run an iTwin.js backend without"
+            + " having installed the prerequisites. See the following link for all prerequisites:"
+            + "\nhttps://www.itwinjs.org/learning/supportedplatforms/#backend-prerequisites";
+        throw err;
+      }
       if (this.isDevBuild)
         // eslint-disable-next-line no-console
         console.log("\x1b[36m", `using dev build from ${__dirname}\n`, "\x1b[0m");
