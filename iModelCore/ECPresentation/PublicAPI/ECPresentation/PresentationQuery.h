@@ -62,6 +62,7 @@ struct EXPORT_VTABLE_ATTRIBUTE BoundQueryECValue : BoundQueryValue
 {
 private:
     ECValue m_value;
+    Utf8String m_extendedType;
 protected:
     ECPRESENTATION_EXPORT bool _Equals(BoundQueryValue const&) const override;
     ECPRESENTATION_EXPORT BeSQLite::EC::ECSqlStatus _Bind(BeSQLite::EC::ECSqlStatement&, uint32_t index) const override;
@@ -70,8 +71,9 @@ protected:
         return serializer._ToJson(*this, alloc);
         }
 public:
-    BoundQueryECValue(ECValue value) : m_value(std::move(value)) {}
+    BoundQueryECValue(ECValue value, Utf8String extendedValueType = "") : m_value(std::move(value)), m_extendedType(extendedValueType) {}
     ECValue const& GetValue() const { return m_value; }
+    Utf8StringCR GetExtendedType() const { return m_extendedType; }
 };
 
 /*=================================================================================**//**
@@ -140,9 +142,10 @@ protected:
         return serializer._ToJson(*this, alloc);
         }
 public:
-    ECPRESENTATION_EXPORT BoundECValueSet(bvector<ECValue>);
+    ECPRESENTATION_EXPORT BoundECValueSet(bvector<ECValue>, Utf8String extendedValueType = "");
     ECPRESENTATION_EXPORT BoundECValueSet(BoundECValueSet const& other);
     ECPRESENTATION_EXPORT Nullable<PrimitiveType> GetValueType() const;
+    ECPRESENTATION_EXPORT Utf8StringCR GetExtendedType() const;
     ECPRESENTATION_EXPORT void ForEachValue(std::function<void(ECValue const&)> const& cb) const;
 };
 

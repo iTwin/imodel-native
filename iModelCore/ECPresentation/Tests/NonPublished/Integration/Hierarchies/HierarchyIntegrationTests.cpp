@@ -1633,6 +1633,73 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
 /*---------------------------------------------------------------------------------**//**
 * @betest
 +---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(InstanceNodesOfSpecificClasses_GroupedByLabel_Groups4InstancesWith2GroupingNodes_GuidProperty, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="GuidProp" typeName="binary" extendedTypeName="BeGuid" />
+    </ECEntityClass>
+    <ECEntityClass typeName="B">
+        <ECProperty propertyName="GuidProp" typeName="binary" extendedTypeName="BeGuid" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificClasses_GroupedByLabel_Groups4InstancesWith2GroupingNodes_GuidProperty)
+    {
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+
+    BeGuid instanceGuidA = RulesEngineTestHelpers::CreateGuidFromString("814f3e14-63f2-4511-89a8-43ff3b527492");
+    BeGuid instanceGuidB = RulesEngineTestHelpers::CreateGuidFromString("182238d2-e836-4640-9b40-38be6ca49623");
+
+    // insert some instances
+    auto instanceB1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [instanceGuidB](IECInstanceR instance)
+        {
+        instance.SetValue("GuidProp", ECValue((Byte const*)&instanceGuidB, sizeof(BeGuid)));
+        });
+    auto instanceB2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [instanceGuidB](IECInstanceR instance)
+        {
+        instance.SetValue("GuidProp", ECValue((Byte const*)&instanceGuidB, sizeof(BeGuid)));
+        });
+    auto instanceA1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [instanceGuidA](IECInstanceR instance)
+        {
+        instance.SetValue("GuidProp", ECValue((Byte const*)&instanceGuidA, sizeof(BeGuid)));
+        });
+    auto instanceA2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [instanceGuidA](IECInstanceR instance)
+        {
+        instance.SetValue("GuidProp", ECValue((Byte const*)&instanceGuidA, sizeof(BeGuid)));
+        });
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    rules->AddPresentationRule(*new InstanceLabelOverride(1, true, classB->GetFullName(), "GuidProp"));
+    rules->AddPresentationRule(*new InstanceLabelOverride(1, true, classA->GetFullName(), "GuidProp"));
+    RootNodeRule* rule = new RootNodeRule();
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, true, false, "", Utf8PrintfString("%s,%s", classB->GetFullName(), classA->GetName().c_str()), false));
+    rules->AddPresentationRule(*rule);
+
+    auto params = AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables());
+    ValidateHierarchy(params,
+        ExpectedHierarchyListDef(true,
+            {
+            ExpectedHierarchyDef(CreateLabelGroupingNodeValidator(instanceGuidA.ToString(), { instanceA1, instanceA2 }),
+                ExpectedHierarchyListDef(true,
+                    {
+                    CreateInstanceNodeValidator({ instanceA1 }),
+                    CreateInstanceNodeValidator({ instanceA2 })
+                    })),
+            ExpectedHierarchyDef(CreateLabelGroupingNodeValidator(instanceGuidB.ToString(), { instanceB1, instanceB2 }),
+                ExpectedHierarchyListDef(true,
+                    {
+                    CreateInstanceNodeValidator({ instanceB1 }),
+                    CreateInstanceNodeValidator({ instanceB2 })
+                    }))
+            })
+        );
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest
++---------------+---------------+---------------+---------------+---------------+------*/
 DEFINE_SCHEMA(InstanceNodesOfSpecificClasses_GroupedByClassAndByLabel, R"*(
     <ECEntityClass typeName="A" />
     <ECEntityClass typeName="B">
@@ -1926,6 +1993,44 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
 
     // make sure we have 1 node
     ASSERT_EQ(1, nodes.GetSize());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(InstanceNodesOfSpecificClasses_InstanceFilter_GuidProperty, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="GuidProp" typeName="binary" extendedTypeName="BeGuid" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificClasses_InstanceFilter_GuidProperty)
+    {
+    ECClassCP classA = GetClass("A");
+
+    BeGuid instanceGuidA = RulesEngineTestHelpers::CreateGuidFromString("814f3e14-63f2-4511-89a8-43ff3b527492");
+    BeGuid instanceGuidB = RulesEngineTestHelpers::CreateGuidFromString("182238d2-e836-4640-9b40-38be6ca49623");
+
+    // insert some instances
+    auto instanceA = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [instanceGuidA](IECInstanceR instance)
+        {
+        instance.SetValue("GuidProp", ECValue((Byte const*)&instanceGuidA, sizeof(BeGuid)));
+        });
+    auto instanceB = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [instanceGuidB](IECInstanceR instance)
+        {
+        instance.SetValue("GuidProp", ECValue((Byte const*)&instanceGuidB, sizeof(BeGuid)));
+        });
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    Utf8PrintfString instanceFilter("GuidToStr(this.GuidProp) = \"%s\"", instanceGuidA.ToString().c_str());
+    RootNodeRule* rule = new RootNodeRule();
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, instanceFilter, classA->GetFullName(), false));
+    rules->AddPresentationRule(*rule);
+
+    auto params = AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables());
+    ValidateHierarchy(params, { ExpectedHierarchyDef(CreateInstanceNodeValidator({ instanceA })) });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -6129,6 +6234,38 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_D
 /*---------------------------------------------------------------------------------**//**
 * @betest
 +---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(Grouping_PropertyGroup_DoesNotCreateGroupForSingleItem_GuidProperty, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="GuidProp" typeName="binary" extendedTypeName="BeGuid" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_DoesNotCreateGroupForSingleItem_GuidProperty)
+    {
+    // insert instance
+    IECInstancePtr instance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *GetClass("A"));
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rule = new RootNodeRule();
+    AllInstanceNodesSpecificationP allInstanceNodesSpecification = new AllInstanceNodesSpecification(1, false, false, false, false, false, GetSchema()->GetName());
+    rule->AddSpecification(*allInstanceNodesSpecification);
+    rules->AddPresentationRule(*rule);
+
+    GroupingRuleP groupingRule = new GroupingRule("", 1, false, GetSchema()->GetName(), "A", "", "", "");
+    PropertyGroupP propertyGroup = new PropertyGroup("", "", false, "GuidProp", "");
+    groupingRule->AddGroup(*propertyGroup);
+    rules->AddPresentationRule(*groupingRule);
+
+    auto params = AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables());
+    ValidateHierarchy(params, { ExpectedHierarchyDef(CreateInstanceNodeValidator({ instance })) });
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @betest
++---------------+---------------+---------------+---------------+---------------+------*/
 DEFINE_SCHEMA(Grouping_PropertyGroup_CreatesGroupForSingleItem, R"*(
     <ECEntityClass typeName="A">
         <ECProperty propertyName="Property" typeName="string" />
@@ -6153,15 +6290,67 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_C
     groupingRule->AddGroup(*propertyGroup);
     rules->AddPresentationRule(*groupingRule);
 
-    // request for nodes
-    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
-        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
-        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
-        );
+    auto params = AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables());
+    ValidateHierarchy(params,
+        {
+        ExpectedHierarchyDef(CreatePropertyGroupingNodeValidator({ instance }, { ECValue() }), 
+            {
+            ExpectedHierarchyDef(CreateInstanceNodeValidator({ instance }))
+            })
+        });
+    }
 
-    // make sure we have 1 A property grouping node
-    ASSERT_EQ(1, nodes.GetSize());
-    VerifyPropertyGroupingNode(rules->GetRuleSetId(), *nodes[0], nullptr, { instance }, { ECValue() });
+/*---------------------------------------------------------------------------------**//**
+* @betest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(Grouping_PropertyGroup_CreatesGroupForSingleItem_GuidProperty, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="GuidProp" typeName="binary" extendedTypeName="BeGuid" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_CreatesGroupForSingleItem_GuidProperty)
+    {
+    ECClassCP classA = GetClass("A");
+
+    // insert instance
+    BeGuid instanceGuid1 = RulesEngineTestHelpers::CreateGuidFromString("814f3e14-63f2-4511-89a8-43ff3b527492");
+    BeGuid instanceGuid2 = RulesEngineTestHelpers::CreateGuidFromString("182238d2-e836-4640-9b40-38be6ca49623");
+
+    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [instanceGuid1](IECInstanceR instance) 
+        {
+        instance.SetValue("GuidProp", ECValue((Byte const*)&instanceGuid1, sizeof(BeGuid)));
+        });
+    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [instanceGuid2](IECInstanceR instance)
+        {
+        instance.SetValue("GuidProp", ECValue((Byte const*)&instanceGuid2, sizeof(BeGuid)));
+        });
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rule = new RootNodeRule();
+    AllInstanceNodesSpecificationP allInstanceNodesSpecification = new AllInstanceNodesSpecification(1, false, false, false, false, false, GetSchema()->GetName());
+    rule->AddSpecification(*allInstanceNodesSpecification);
+    rules->AddPresentationRule(*rule);
+
+    GroupingRuleP groupingRule = new GroupingRule("", 1, false, GetSchema()->GetName(), classA->GetName(), "", "", "");
+    PropertyGroupP propertyGroup = new PropertyGroup("", "", true, "GuidProp");
+    groupingRule->AddGroup(*propertyGroup);
+    rules->AddPresentationRule(*groupingRule);
+
+    auto params = AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables());
+    ValidateHierarchy(params,
+        {
+        ExpectedHierarchyDef(CreatePropertyGroupingNodeValidator({ instance1 }, { ECValue((Byte const*)&instanceGuid1, sizeof(BeGuid)) }),
+            {
+            CreateInstanceNodeValidator({ instance1 })
+            }),
+        ExpectedHierarchyDef(CreatePropertyGroupingNodeValidator({ instance2 }, { ECValue((Byte const*)&instanceGuid2, sizeof(BeGuid)) }),
+            {
+            CreateInstanceNodeValidator({ instance2 })
+            })
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -12906,6 +13095,42 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceLabelOverride_Da
     NavNodeCPtr node = rootNodes[0];
     EXPECT_STREQ("2019-11-28T00:00:00.000Z", node->GetLabelDefinition().GetRawValue()->AsSimpleValue()->GetValue().GetString());
     EXPECT_STREQ("dateTime", node->GetLabelDefinition().GetTypeName().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(InstanceLabelOverride_GuidPropertyValue, R"*(
+    <ECEntityClass typeName="Element">
+        <ECProperty propertyName="GuidProp" typeName="binary" extendedTypeName="BeGuid" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceLabelOverride_GuidPropertyValue)
+    {
+    ECClassCP element = GetClass("Element");
+    BeGuid instanceGuid = RulesEngineTestHelpers::CreateGuidFromString("182238d2-e836-4640-9b40-38be6ca49623");
+    IECInstancePtr instance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *element, [instanceGuid](IECInstanceR instance)
+        {
+        instance.SetValue("GuidProp", ECValue((Byte const*)&instanceGuid, sizeof(BeGuid)));
+        });
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rootRule = new RootNodeRule("", 1000, false, TargetTree_Both, true);
+    rules->AddPresentationRule(*rootRule);
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false,
+        "", element->GetFullName(), true));
+
+    InstanceLabelOverride* labelOverrideRule = new InstanceLabelOverride(1, false, element->GetFullName(), { new InstanceLabelOverridePropertyValueSpecification("GuidProp") });
+    rules->AddPresentationRule(*labelOverrideRule);
+
+    auto params = AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables());
+    ValidateHierarchy(params,
+        {
+        ExpectedHierarchyDef(CreateCustomNodeValidator("ECInstancesNode", instanceGuid.ToString()))
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
