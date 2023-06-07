@@ -13652,7 +13652,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, ReturnsSimilarNode11Time
     rootRule->AddSpecification(*CreateCustomNodeSpecification("Root"));
 
     ChildNodeRule* childRule = new ChildNodeRule("", 1000, false);
-    childRule->AddSpecification(*CreateCustomNodeSpecification("Child", [&](CustomNodeSpecificationR spec) { spec.SetSuppressSimilarAncestorsCheck(false); }));
+    childRule->AddSpecification(*CreateCustomNodeSpecification("Child", [&](CustomNodeSpecificationR spec) { spec.SetSuppressSimilarAncestorsCheck(true); }));
     rules->AddPresentationRule(*childRule);
 
     // request for nodes
