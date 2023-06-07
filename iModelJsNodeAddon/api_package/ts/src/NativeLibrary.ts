@@ -638,6 +638,7 @@ export declare namespace IModelJsNative {
    */
   class SchemaUtility {
     constructor();
+    /** Converts given schemas and their reference schemas to EC3.2 schemas */
     public static convertEC2XmlSchemas(ec2XmlSchemas: string[], schemaContext?: ECSchemaXmlContext): string[];
   }
 
