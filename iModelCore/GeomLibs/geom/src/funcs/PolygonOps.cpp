@@ -529,7 +529,7 @@ int PolygonOps::CoordinateFrameAndRank
     // usually get a good area and normal and all is fine.
     // if degenerate to edge, get an arbitrary normal to the edge.
     double area = bsiPolygon_polygonNormalAndArea (&normal, &origin, pXYZIn, (int)numBeforeDisconnect);
-    auto distantIndex = DPoint3dOps::MostDistantIndex (pXYZIn, numBeforeDisconnect, pXYZIn[0]);
+    auto distantIndex = DPoint3dOps::MostDistantIndex (pXYZIn, (int)numBeforeDisconnect, pXYZIn[0]);
     if (distantIndex >= numBeforeDisconnect)
         return 0;
     
