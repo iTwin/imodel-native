@@ -13671,7 +13671,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, ReturnsSimilarNode11Time
         auto childNodes = RulesEngineTestHelpers::GetValidatedNodes(
             [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), parent.get()), pageOptions)).get(); },
             [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), parent.get())).get(); }
-        );
+            );
         ASSERT_EQ(1, childNodes.GetSize());
         parent = childNodes[0];
         VerifyCustomNode(*childNodes[0], "Child", Utf8String("Child"));
