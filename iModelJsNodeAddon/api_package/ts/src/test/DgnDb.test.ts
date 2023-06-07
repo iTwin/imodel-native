@@ -546,7 +546,7 @@ describe("basic tests", () => {
       assert.isTrue(ec3SchemaXml.includes("http://www.bentley.com/schemas/Bentley.ECXML.3.2"));
     });
 
-    it("rename reserved words", () => {
+    it("rename reserved words", async () => {
       const ec2SchemaXml = `<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
           <ECSchemaReference name='BisCore' version='01.00' prefix='bis' />
@@ -586,40 +586,41 @@ describe("basic tests", () => {
       expect(schema.name).equal("TestSchema");
       assert.isTrue(schema.version === "01.00.00");
 
+      let resp = await query(db, `SELECT p.Name FROM meta.ECPropertyDef p JOIN meta.ECClassDef c USING meta.ClassOwnsLocalProperties JOIN meta.ECSchemaDef s USING meta.SchemaOwnsClasses WHERE s.Name='TestSchema' AND c.Name='TestEntityClass' ORDER BY p.Ordinal`);
+      assert(resp.status === DbResponseStatus.Done);
+      assert(resp.error === "");
+      assert(resp.rowCount === 9);
+
       // Function to check if a property exists in the given class/struct metadata
-      const doesPropertyExist = (metadata: any, propertyName: string) => {
-        const properties = metadata.properties;
-        return Object.keys(properties).some((property: string) => property === propertyName);
+      const doesPropertyExist = (properties: any, propertyName: string) => {
+        return Object.values(properties).some((property: any) => property[0] === propertyName);
       };
 
-      const classMeta = db.getECClassMetaData("TestSchema", "TestEntityClass");
-      assert(classMeta.result);
-      const classMetaData = JSON.parse(classMeta.result);
+      assert.isFalse(doesPropertyExist(resp.data, "Id")); // The Id property is a reserved keyword and should have been renamed
+      assert.isFalse(doesPropertyExist(resp.data, "ECClassId"));  // The ECClassId property is a reserved keyword and should have been renamed
+      assert.isFalse(doesPropertyExist(resp.data, "ECInstanceId")); // The ECInstanceId property is a reserved keyword and should have been renamed
+      assert.isTrue(doesPropertyExist(resp.data, "TestSchema_Id_"));  // The Id property is a reserved keyword and should have been renamed
+      assert.isTrue(doesPropertyExist(resp.data, "TestSchema_ECClassId_")); // The ECClassId property is a reserved keyword and should have been renamed
+      assert.isTrue(doesPropertyExist(resp.data, "TestSchema_ECInstanceId_"));  // The ECInstanceId property is a reserved keyword and should have been renamed
 
-      assert.isFalse(doesPropertyExist(classMetaData, "id")); // The id property is a reserved keyword and should have been renamed
-      assert.isFalse(doesPropertyExist(classMetaData, "eCClassId"));  // The eCClassId property is a reserved keyword and should have been renamed
-      assert.isFalse(doesPropertyExist(classMetaData, "eCInstanceId")); // The eCInstanceId property is a reserved keyword and should have been renamed
-      assert.isTrue(doesPropertyExist(classMetaData, "testSchema_Id_"));  // The id property is a reserved keyword and should have been renamed
-      assert.isTrue(doesPropertyExist(classMetaData, "testSchema_ECClassId_")); // The eCClassId property is a reserved keyword and should have been renamed
-      assert.isTrue(doesPropertyExist(classMetaData, "testSchema_ECInstanceId_"));  // The eCInstanceId property is a reserved keyword and should have been renamed
+      assert.isTrue(doesPropertyExist(resp.data, "SourceECInstanceId"));  // The SourceECInstanceId property is allowed on Entity classes and should not be renamed
+      assert.isTrue(doesPropertyExist(resp.data, "SourceId"));  // The SourceId property is allowed on Entity classes and should not be renamed
+      assert.isTrue(doesPropertyExist(resp.data, "SourceECClassId")); // The SourceECClassId property is allowed on Entity classes and should not be renamed
+      assert.isTrue(doesPropertyExist(resp.data, "TargetECInstanceId"));  // The TargetECInstanceId property is allowed on Entity classes and should not be renamed
+      assert.isTrue(doesPropertyExist(resp.data, "TargetId"));  // The TargetId property is allowed on Entity classes and should not be renamed
+      assert.isTrue(doesPropertyExist(resp.data, "TargetECClassId")); // The TargetECClassId property is allowed on Entity classes and should not be renamed
 
-      assert.isTrue(doesPropertyExist(classMetaData, "sourceECInstanceId"));  // The sourceECInstanceId property is allowed on Entity classes and should not be renamed
-      assert.isTrue(doesPropertyExist(classMetaData, "sourceId"));  // The sourceId property is allowed on Entity classes and should not be renamed
-      assert.isTrue(doesPropertyExist(classMetaData, "sourceECClassId")); // The sourceECClassId property is allowed on Entity classes and should not be renamed
-      assert.isTrue(doesPropertyExist(classMetaData, "targetECInstanceId"));  // The targetECInstanceId property is allowed on Entity classes and should not be renamed
-      assert.isTrue(doesPropertyExist(classMetaData, "targetId"));  // The targetId property is allowed on Entity classes and should not be renamed
-      assert.isTrue(doesPropertyExist(classMetaData, "targetECClassId")); // The targetECClassId property is allowed on Entity classes and should not be renamed
+      resp = await query(db, `SELECT p.Name FROM meta.ECPropertyDef p JOIN meta.ECClassDef c USING meta.ClassOwnsLocalProperties JOIN meta.ECSchemaDef s USING meta.SchemaOwnsClasses WHERE s.Name='TestSchema' AND c.Name='TestStructClass' ORDER BY p.Ordinal`);
+      assert(resp.status === DbResponseStatus.Done);
+      assert(resp.error === "");
+      assert(resp.rowCount === 3);
 
-      const structMeta = db.getECClassMetaData("TestSchema", "TestStructClass");
-      assert(structMeta.result);
-      const structMetaData = JSON.parse(structMeta.result);
-
-      assert.isTrue(doesPropertyExist(structMetaData, "id")); // The id property is not a reserved keyword for Struct classes and should not be renamed
-      assert.isTrue(doesPropertyExist(structMetaData, "eCClassId"));  // The eCClassId property is not a reserved keyword for Struct classes and should not be renamed
-      assert.isTrue(doesPropertyExist(structMetaData, "eCInstanceId")); // The eCInstanceId property is not a reserved keyword for Struct classes and should not be renamed
-      assert.isFalse(doesPropertyExist(structMetaData, "testSchema_Id_"));  // The id property is not a reserved keyword for Struct classes and should not be renamed
-      assert.isFalse(doesPropertyExist(structMetaData, "testSchema_ECClassId_")); // The eCClassId property is not a reserved keyword for Struct classes and should not be renamed
-      assert.isFalse(doesPropertyExist(structMetaData, "testSchema_ECInstanceId_"));  // The eCInstanceId property is not a reserved keyword for Struct classes and should not be renamed
+      assert.isTrue(doesPropertyExist(resp.data, "Id"));  // The Id property is not a reserved keyword for Struct classes and should not be renamed
+      assert.isTrue(doesPropertyExist(resp.data, "ECClassId")); // The ECClassId property is not a reserved keyword for Struct classes and should not be renamed
+      assert.isTrue(doesPropertyExist(resp.data, "ECInstanceId"));  // The ECInstanceId property is not a reserved keyword for Struct classes and should not be renamed
+      assert.isFalse(doesPropertyExist(resp.data, "TestSchema_Id_")); // The Id property is not a reserved keyword for Struct classes and should not be renamed
+      assert.isFalse(doesPropertyExist(resp.data, "TestSchema_ECClassId_"));  // The ECClassId property is not a reserved keyword for Struct classes and should not be renamed
+      assert.isFalse(doesPropertyExist(resp.data, "TestSchema_ECInstanceId_")); // The ECInstanceId property is not a reserved keyword for Struct classes and should not be renamed
     });
 
     it("enumeration in ref schema", async () => {
@@ -684,20 +685,24 @@ describe("basic tests", () => {
       db.saveChanges();
 
       const refSchema: IModelJsNative.SchemaProps = db.getSchemaProps("TrapRef");
+      expect(refSchema.name).equal("TrapRef");
+      assert.isTrue(refSchema.version === "78.00.00");
       const schema: IModelJsNative.SchemaProps = db.getSchemaProps("Trap");
+      expect(schema.name).equal("Trap");
+      assert.isTrue(schema.version === "78.00.00");
 
       // Enumeration should have been created in refschema
       let resp = await query(db, `SELECT e.Name FROM meta.ECSchemaDef s JOIN meta.ECEnumerationDef e USING meta.SchemaOwnsEnumerations WHERE s.Name='${refSchema.name}'`);
       assert(resp.status === DbResponseStatus.Done);
-      assert(resp.rowCount === 1);
       assert(resp.error === "");
+      assert(resp.rowCount === 1);
       assert(resp.data[0], "D_TitleA");
 
       // Enumeration should not have been created in schema
       resp = await query(db, `SELECT e.Name, e.* FROM meta.ECSchemaDef s JOIN meta.ECEnumerationDef e USING meta.SchemaOwnsEnumerations WHERE s.Name='${schema.name}'`);
       assert(resp.status === DbResponseStatus.Done);
-      assert(resp.rowCount === 0);
       assert(resp.error === "");
+      assert(resp.rowCount === 0);
     });
 
     it("reference schema is in schemaContext", async () => {
@@ -766,12 +771,9 @@ describe("basic tests", () => {
       db.saveChanges();
 
       const schema: IModelJsNative.SchemaProps = db.getSchemaProps("Trap");
-
-      // Enumeration should not have been created in schema
-      const resp = await query(db, `SELECT e.Name, e.* FROM meta.ECSchemaDef s JOIN meta.ECEnumerationDef e USING meta.SchemaOwnsEnumerations WHERE s.Name='${schema.name}'`);
-      assert(resp.status === DbResponseStatus.Done);
-      assert(resp.rowCount === 0);
-      assert(resp.error === "");
+      assert(schema.references?.length === 1);
+      assert(schema.references[0]!.name === "TrapRef");
+      assert(schema.references[0]!.version === "78.00.00");
     });
   });
 });
