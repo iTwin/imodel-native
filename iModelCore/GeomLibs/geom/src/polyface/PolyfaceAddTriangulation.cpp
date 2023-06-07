@@ -91,8 +91,8 @@ bool IPolyfaceConstruction::AddTriangulation (bvector <DPoint3d> const &original
     if (maxEdgeLength > 0)
         buildSimpleIndices = false;
 
-    bvector<DPoint3d> outPoints;   // Possibly augmented by intersections
-    outPoints.reserve(numPoints);
+    bvector<DPoint3d> outPoints;        // Possibly augmented by intersections
+    outPoints.reserve(numPoints + 1);   // preallocate enough for simple case 
 
     if (maxEdgeLength > 0)
         {
@@ -108,25 +108,14 @@ bool IPolyfaceConstruction::AddTriangulation (bvector <DPoint3d> const &original
         }            
     else if (buildSimpleIndices)
         {
-        size_t n = points.size ();
-        // strip off trailing points.
-        while (n > 1 && points[0].AlmostEqual (points[n-1]))
-            n--;
-        // build a single loop over all points (one-based indices with 0 terminator), ignoring repeats
+        // build a single loop over all points (one-based indices with 0 terminator)
         loopIndex.push_back (1);
         outPoints.push_back (points[0]);
-        for (size_t ii = 1; ii < n; ii++)
+        for (size_t ii = 1; ii < points.size(); ii++)
             {
-            if (!points[ii].AlmostEqual (outPoints.back ()))
-                {
-                outPoints.push_back (points[ii]);
-                loopIndex.push_back ((int)outPoints.size ());   // 1 based index !!!
-                }
-            }
-        if (outPoints.back ().AlmostEqual (outPoints.front ()))
-            {
-            outPoints.pop_back ();
-            loopIndex.pop_back ();
+            // adjacent/wraparound duplicates have already been removed from points 
+            outPoints.push_back (points[ii]);
+            loopIndex.push_back ((int)(ii + 1));
             }
         loopIndex.push_back (0);
         }
@@ -134,6 +123,9 @@ bool IPolyfaceConstruction::AddTriangulation (bvector <DPoint3d> const &original
         {
         return false;
         }
+
+    if (outPoints.size() < 3)
+        return false;
 
     // Remap indices into polyface ...
     DVec3d polygonNormal;
