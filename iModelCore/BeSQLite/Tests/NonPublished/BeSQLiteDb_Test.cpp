@@ -32,6 +32,293 @@ DbResult SetupDb(Db& db, WCharCP dbName)
     return result;
     }
 
+TEST(BeSQLiteDb, BeDbUri_Open)
+ {
+    BeFileName tempDir;
+    BeTest::GetHost().GetTempDir(tempDir);
+    BeSQLiteLib::Initialize(tempDir);
+
+    auto getFileUri = [&](Utf8CP dbName) {
+        BeFileName dbFileName;
+        BeTest::GetHost().GetOutputRoot(dbFileName);
+        dbFileName.AppendUtf8(dbName);
+        return BeDbUri(dbFileName.GetNameUtf8(), BeDbUri::Schema::FILE);
+    };
+
+    auto dbUri = getFileUri("test.db");
+    dbUri.SetOpenMode(Db::OpenMode::Create);
+    ASSERT_FALSE(dbUri.LocalFileExists());
+    Db db;
+    ASSERT_EQ(BE_SQLITE_OK, db.Open(dbUri));
+    db.SaveChanges();
+    ASSERT_TRUE(dbUri.LocalFileExists());
+    auto memUri = BeDbUri("").SetOpenMode(Db::OpenMode::Memory);
+
+ }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(BeSQLiteDb, BeDbUri_EscapeAndEncoding)
+ {
+    BeDbUri u1("file:///c:/dir/my foo.db?x=1&y=abc");
+
+    ASSERT_STREQ(u1.ToString().c_str(), "file:/C:/dir/my%20foo.db?x=1&y=abc");
+    ASSERT_EQ(u1.GetParams().GetInt64("x"), 1);
+    ASSERT_STREQ(u1.GetParams().GetString("y").c_str(), "abc");
+    u1.GetParams().Erase("x");
+    ASSERT_STREQ(u1.ToString().c_str(), "file:/C:/dir/my%20foo.db?y=abc");
+
+    BeDbUri u2("d:\\abc foo\\a.db");
+    u2.GetParams()
+        .SetString("vfs", "foo")
+        .SetInt64("xm", 1023453)
+        .SetBool("vg", true);
+
+    ASSERT_STREQ(u2.ToString().c_str(), "file:/d:/abc%20foo/a.db?vfs=foo&vg=1&xm=1023453");
+    ASSERT_EQ   (u2.GetParams().GetBool("vg") , true);
+    ASSERT_EQ   (u2.GetParams().GetInt64("xm"), 1023453);
+    ASSERT_STREQ(u2.GetParams().GetString("vfs").c_str(), "foo");
+
+    ASSERT_STREQ(u2.GetCanonicalPath().c_str(), "d:/abc%20foo/a.db");
+    ASSERT_STREQ(u2.GetCanonicalUnescapedPath().c_str(), "d:/abc foo/a.db");
+    ASSERT_STREQ(u2.GetPreferedPath().c_str(), "d:\\abc foo\\a.db");
+
+    BeDbUri u3("d:\\abc foo\\a.db", BeDbUri::Schema::FILE);
+    u3.GetParams()
+        .SetString("vfs", "foo")
+        .SetInt64("xm", 1023453)
+        .SetBool("vg", true);
+
+    ASSERT_STREQ(u3.ToString().c_str(), "file:/d:/abc%20foo/a.db?vfs=foo&vg=1&xm=1023453");
+    ASSERT_EQ   (u3.GetParams().GetBool("vg") , true);
+    ASSERT_EQ   (u3.GetParams().GetInt64("xm"), 1023453);
+    ASSERT_STREQ(u3.GetParams().GetString("vfs").c_str(), "foo");
+
+    BeDbUri u4("d:\\abc foo\\a.d");
+    u4.GetParams()
+        .SetString("vfs:r", "?- ");
+    ASSERT_STREQ(u4.ToString().c_str(), "file:/d:/abc%20foo/a.d?vfs%3Ar=%3F-%20");
+    ASSERT_STREQ(u4.GetParams().GetString("vfs:r").c_str(), "?- ");
+ }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ TEST(BeSQLiteDb, BeDbUri_MoveAndCopy)
+ {
+    Utf8String uri = "file:/a.db?app_id=6713199&domain_schema_upgrade=2&encoding=1&expiration_date=2023-05-25T12%3A36%3A29.387Z&fail_if_db_exists=0&immutable=1&is_cloud_db=1&logId=09998&mode=rwc&page_size=1024&raw=1&schema_lock_held=1&skip_file_check=1&temp_file_base=c%3A%5Ctemp&txn_mode=3&upgrade_profile=1&vfs=bcvfs";
+    BeDbUri u0(uri);
+
+    BeDbUri u1 = u0;
+    ASSERT_STRCASEEQ(u1.ToString().c_str(), uri.c_str());
+
+    BeDbUri u2 (u0);
+    ASSERT_STRCASEEQ(u2.ToString().c_str(), uri.c_str());
+
+    BeDbUri u3 (std::move(u1));
+    ASSERT_STRCASEEQ(u1.ToString().c_str(), "file:");
+    ASSERT_STRCASEEQ(u3.ToString().c_str(), uri.c_str());
+
+    BeDbUri u4 = std::move(u2);
+    ASSERT_STRCASEEQ(u2.ToString().c_str(), "file:");
+    ASSERT_STRCASEEQ(u4.ToString().c_str(), uri.c_str());
+
+ }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(BeSQLiteDb, BeDbUri_BuiltInParams)
+    {
+    // check default
+    BeDbUri u0("a.db", BeDbUri::Schema::FILE);
+    ASSERT_STREQ(u0.ToString().c_str(), "file:/a.db");
+    ASSERT_FALSE(u0.HasAppId());
+    ASSERT_FALSE(u0.HasCloudSqliteLogId());
+    ASSERT_FALSE(u0.HasDefaultTxnMode());
+    ASSERT_FALSE(u0.HasDomainSchemaUpgradeMode());
+    ASSERT_FALSE(u0.HasEncoding());
+    ASSERT_FALSE(u0.HasExpirationDate());
+    ASSERT_FALSE(u0.HasFailIfDbExists());
+    ASSERT_FALSE(u0.HasImmutable());
+    ASSERT_FALSE(u0.HasIsCloudDb());
+    ASSERT_FALSE(u0.HasOpenMode());
+    ASSERT_FALSE(u0.HasPageSize());
+    ASSERT_FALSE(u0.HasProfileUpgradeOptions());
+    ASSERT_FALSE(u0.HasRawSqlite());
+    ASSERT_FALSE(u0.HasSchemaLockHeld());
+    ASSERT_FALSE(u0.HasSkipFileCheck());
+    ASSERT_FALSE(u0.HasTempFileBase());
+    ASSERT_FALSE(u0.HasVfs());
+
+    // Check default values
+    ASSERT_EQ((uint64_t)'BeDb', u0.GetAppId());
+    ASSERT_STRCASEEQ("", u0.GetCloudSqliteLogId().c_str());
+    ASSERT_EQ(DefaultTxn::Yes, u0.GetDefaultTxnMode());
+    ASSERT_EQ(DomainSchemaUpgradeMode::CheckRequiredUpgrades, u0.GetDomainSchemaUpgradeMode());
+    ASSERT_EQ(Db::Encoding::Utf8, u0.GetEncoding());
+    ASSERT_STRCASEEQ(DateTime().ToString().c_str(), u0.GetExpirationDate().ToString().c_str());
+    ASSERT_EQ(true, u0.GetFailIfDbExists());
+    ASSERT_EQ(false, u0.GetImmutable());
+    ASSERT_EQ(false, u0.GetIsCloudDb());
+    ASSERT_EQ(Db::OpenMode::Readonly, u0.GetOpenMode());
+    ASSERT_EQ(Db::PageSize::PAGESIZE_4K, u0.GetPageSize());
+    ASSERT_EQ(Db::ProfileUpgradeOptions::None, u0.GetProfileUpgradeOptions());
+    ASSERT_EQ(false, u0.GetRawSqlite());
+    ASSERT_EQ(false, u0.GetSchemaLockHeld());
+    ASSERT_EQ(false, u0.GetSkipFileCheck());
+    ASSERT_STRCASEEQ("", u0.GetTempFileBase().c_str());
+    ASSERT_STRCASEEQ("", u0.GetVfs().c_str());
+
+    // Known param count
+    ASSERT_EQ(17, BeDbUri::KnownParams::GetKnownParameters().size());
+
+    // Set all know param to different value
+    BeDbUri u1("a.db", BeDbUri::Schema::FILE);
+    auto expiry = DateTime::FromString("2023-05-25T12:36:29.387Z");
+    u1
+        .SetAppId('foo')
+        .SetCloudSqliteLogId("09998")
+        .SetDefaultTxnMode(DefaultTxn::Exclusive)
+        .SetDomainSchemaUpgradeMode(DomainSchemaUpgradeMode::Upgrade)
+        .SetEncoding(Db::Encoding::Utf16)
+        .SetExpirationDate(expiry)
+        .SetFailIfDbExists(false)
+        .SetImmutable(true)
+        .SetIsCloudDb(true)
+        .SetOpenMode(Db::OpenMode::Create)
+        .SetPageSize(Db::PageSize::PAGESIZE_1K)
+        .SetProfileUpgradeOptions(Db::ProfileUpgradeOptions::Upgrade)
+        .SetRawSqlite(true)
+        .SetSchemaLockHeld(true)
+        .SetSkipFileCheck(true)
+        .SetTempFileBase("c:\\temp")
+        .SetVfs("bcvfs");
+
+    auto expectedURI = "file:/a.db?app_id=6713199&domain_schema_upgrade=2&encoding=1&expiration_date=2023-05-25T12%3A36%3A29.387Z&fail_if_db_exists=0&immutable=1&is_cloud_db=1&logId=09998&mode=rwc&page_size=1024&raw=1&schema_lock_held=1&skip_file_check=1&temp_file_base=c%3A%5Ctemp&txn_mode=3&upgrade_profile=1&vfs=bcvfs";
+
+    ASSERT_STREQ(u1.ToString().c_str(), expectedURI);
+    ASSERT_TRUE(u1.HasAppId());
+    ASSERT_TRUE(u1.HasCloudSqliteLogId());
+    ASSERT_TRUE(u1.HasDefaultTxnMode());
+    ASSERT_TRUE(u1.HasDomainSchemaUpgradeMode());
+    ASSERT_TRUE(u1.HasEncoding());
+    ASSERT_TRUE(u1.HasExpirationDate());
+    ASSERT_TRUE(u1.HasFailIfDbExists());
+    ASSERT_TRUE(u1.HasImmutable());
+    ASSERT_TRUE(u1.HasIsCloudDb());
+    ASSERT_TRUE(u1.HasOpenMode());
+    ASSERT_TRUE(u1.HasPageSize());
+    ASSERT_TRUE(u1.HasProfileUpgradeOptions());
+    ASSERT_TRUE(u1.HasRawSqlite());
+    ASSERT_TRUE(u1.HasSchemaLockHeld());
+    ASSERT_TRUE(u1.HasSkipFileCheck());
+    ASSERT_TRUE(u1.HasTempFileBase());
+    ASSERT_TRUE(u1.HasVfs());
+
+    // Check default values
+    ASSERT_EQ((uint64_t)'foo', u1.GetAppId());
+    ASSERT_STRCASEEQ("09998", u1.GetCloudSqliteLogId().c_str());
+    ASSERT_EQ(DefaultTxn::Exclusive, u1.GetDefaultTxnMode());
+    ASSERT_EQ(DomainSchemaUpgradeMode::Upgrade, u1.GetDomainSchemaUpgradeMode());
+    ASSERT_EQ(Db::Encoding::Utf16, u1.GetEncoding());
+    ASSERT_STRCASEEQ(expiry.ToString().c_str(), u1.GetExpirationDate().ToString().c_str());
+    ASSERT_EQ(false, u1.GetFailIfDbExists());
+    ASSERT_EQ(true, u1.GetImmutable());
+    ASSERT_EQ(true, u1.GetIsCloudDb());
+    ASSERT_EQ(Db::OpenMode::Create, u1.GetOpenMode());
+    ASSERT_EQ(Db::PageSize::PAGESIZE_1K, u1.GetPageSize());
+    ASSERT_EQ(Db::ProfileUpgradeOptions::Upgrade,  u1.GetProfileUpgradeOptions());
+    ASSERT_EQ(true, u1.GetRawSqlite());
+    ASSERT_EQ(true, u1.GetSchemaLockHeld());
+    ASSERT_EQ(true, u1.GetSkipFileCheck());
+    ASSERT_STRCASEEQ("c:\\temp", u1.GetTempFileBase().c_str());
+    ASSERT_STRCASEEQ("bcvfs", u1.GetVfs().c_str());
+
+
+    // parse string
+    BeDbUri u2(u1.ToString());
+    ASSERT_STREQ(u2.ToString().c_str(), expectedURI);
+    ASSERT_TRUE(u2.HasAppId());
+    ASSERT_TRUE(u2.HasCloudSqliteLogId());
+    ASSERT_TRUE(u2.HasDefaultTxnMode());
+    ASSERT_TRUE(u2.HasDomainSchemaUpgradeMode());
+    ASSERT_TRUE(u2.HasEncoding());
+    ASSERT_TRUE(u2.HasExpirationDate());
+    ASSERT_TRUE(u2.HasFailIfDbExists());
+    ASSERT_TRUE(u2.HasImmutable());
+    ASSERT_TRUE(u2.HasIsCloudDb());
+    ASSERT_TRUE(u2.HasOpenMode());
+    ASSERT_TRUE(u2.HasPageSize());
+    ASSERT_TRUE(u2.HasProfileUpgradeOptions());
+    ASSERT_TRUE(u2.HasRawSqlite());
+    ASSERT_TRUE(u2.HasSchemaLockHeld());
+    ASSERT_TRUE(u2.HasSkipFileCheck());
+    ASSERT_TRUE(u2.HasTempFileBase());
+    ASSERT_TRUE(u2.HasVfs());
+
+    // Check default values
+    ASSERT_EQ((uint64_t)'foo', u2.GetAppId());
+    ASSERT_STRCASEEQ("09998", u2.GetCloudSqliteLogId().c_str());
+    ASSERT_EQ(DefaultTxn::Exclusive, u2.GetDefaultTxnMode());
+    ASSERT_EQ(DomainSchemaUpgradeMode::Upgrade, u2.GetDomainSchemaUpgradeMode());
+    ASSERT_EQ(Db::Encoding::Utf16, u2.GetEncoding());
+    ASSERT_STRCASEEQ(expiry.ToString().c_str(), u2.GetExpirationDate().ToString().c_str());
+    ASSERT_EQ(false, u2.GetFailIfDbExists());
+    ASSERT_EQ(true, u2.GetImmutable());
+    ASSERT_EQ(true, u2.GetIsCloudDb());
+    ASSERT_EQ(Db::OpenMode::Create, u2.GetOpenMode());
+    ASSERT_EQ(Db::PageSize::PAGESIZE_1K, u2.GetPageSize());
+    ASSERT_EQ(Db::ProfileUpgradeOptions::Upgrade,  u2.GetProfileUpgradeOptions());
+    ASSERT_EQ(true, u2.GetRawSqlite());
+    ASSERT_EQ(true, u2.GetSchemaLockHeld());
+    ASSERT_EQ(true, u2.GetSkipFileCheck());
+    ASSERT_STRCASEEQ("c:\\temp", u2.GetTempFileBase().c_str());
+    ASSERT_STRCASEEQ("bcvfs", u2.GetVfs().c_str());
+
+    // Erase
+    u2.EraseAppId();
+    u2.EraseCloudSqliteLogId();
+    u2.EraseDefaultTxnMode();
+    u2.EraseDomainSchemaUpgradeMode();
+    u2.EraseEncoding();
+    u2.EraseExpirationDate();
+    u2.EraseFailIfDbExists();
+    u2.EraseImmutable();
+    u2.EraseIsCloudDb();
+    u2.EraseOpenMode();
+    u2.ErasePageSize();
+    u2.EraseProfileUpgradeOptions();
+    u2.EraseRawSqlite();
+    u2.EraseSchemaLockHeld();
+    u2.EraseSkipFileCheck();
+    u2.EraseTempFileBase();
+    u2.EraseVfs();
+
+    // verify known param are deleted
+    ASSERT_FALSE(u2.HasAppId());
+    ASSERT_FALSE(u2.HasCloudSqliteLogId());
+    ASSERT_FALSE(u2.HasDefaultTxnMode());
+    ASSERT_FALSE(u2.HasDomainSchemaUpgradeMode());
+    ASSERT_FALSE(u2.HasEncoding());
+    ASSERT_FALSE(u2.HasExpirationDate());
+    ASSERT_FALSE(u2.HasFailIfDbExists());
+    ASSERT_FALSE(u2.HasImmutable());
+    ASSERT_FALSE(u2.HasIsCloudDb());
+    ASSERT_FALSE(u2.HasOpenMode());
+    ASSERT_FALSE(u2.HasPageSize());
+    ASSERT_FALSE(u2.HasProfileUpgradeOptions());
+    ASSERT_FALSE(u2.HasRawSqlite());
+    ASSERT_FALSE(u2.HasSchemaLockHeld());
+    ASSERT_FALSE(u2.HasSkipFileCheck());
+    ASSERT_FALSE(u2.HasTempFileBase());
+    ASSERT_FALSE(u2.HasVfs());
+
+    ASSERT_STREQ(u2.ToString().c_str(), "file:/a.db");
+
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/

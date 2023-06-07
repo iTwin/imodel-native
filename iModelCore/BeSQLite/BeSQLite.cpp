@@ -20,11 +20,16 @@
 #include <Bentley/bvector.h>
 #include <Bentley/bmap.h>
 #include <string>
+#include <regex>
 #include "BeSQLiteProfileManager.h"
 #include <prg.h>
 #include <unordered_map>
 #include <list>
 #include <re2/re2.h>
+#include <filesystem>
+
+#define NOMINMAX 1
+#include <curl/curl.h>
 
 static NativeLogging::CategoryLogger LOG("BeSQLite");
 static NativeLogging::CategoryLogger NativeSqliteLog("SQLite");
@@ -1172,8 +1177,11 @@ Utf8String DbFile::ExplainQuery(Utf8CP sql, bool explainPlan, bool suppressDiagn
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Db::Db() : m_embeddedFiles(*this), m_dbFile(nullptr), m_statements(35){}
-Db::~Db() {DoCloseDb();}
+Db::Db() : m_embeddedFiles(*this), m_dbFile(nullptr), m_statements(35), m_uri(new BeDbUri()){}
+Db::~Db() {
+    DoCloseDb();
+    delete m_uri;
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -1996,6 +2004,8 @@ DbResult Db::CreateNewDb(Utf8CP inName, CreateParams const& params, BeGuid dbGui
         return rc;
     }
 
+    *m_uri = BeDbUri(inName);
+
     // Bloom filter introduce in 3.38 has issue with certain queries and fix was in ANALYZE
     // command which had a rounding error. We need to keep bloom filter disabled for now until
     // we are able to run ANALYZE on all new checkpoints and old one if necessary.
@@ -2641,7 +2651,7 @@ void Db::DoCloseDb()
         return;
 
     m_appData.Clear();
-
+    *m_uri = BeDbUri("");
     m_statements.Empty();
     DELETE_AND_CLEAR(m_dbFile);
     }
@@ -2740,6 +2750,10 @@ Utf8CP Db::GetDbFileName() const
     {
     return  (m_dbFile && m_dbFile->m_sqlDb) ? sqlite3_db_filename(m_dbFile->m_sqlDb, "main") : nullptr;
     }
+
+
+
+BeDbUri const& Db::GetUri() const { return *m_uri; }
 
 #define IS_SQLITE_FILE_SIGNATURE(toCheck) (0 == memcmp((Utf8CP)header, toCheck, strlen(toCheck)))
 
@@ -2924,6 +2938,34 @@ DbResult Db::DoProfileUpgrade(OpenParams const& params) {
         return rc;
     }
     return rc;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult Db::Open(BeDbUri const& uri) {
+    if (uri.GetOpenMode() == OpenMode::Create || uri.GetOpenMode() == OpenMode::Memory) {
+        Db::CreateParams params;
+        params.m_encoding = uri.GetEncoding();
+        params.m_pagesize = uri.GetPageSize();
+        params.m_applicationId = (CreateParams::ApplicationId)uri.GetAppId();
+        params.m_failIfDbExists = uri.GetFailIfDbExists();
+        params.m_expirationDate = uri.GetExpirationDate();
+        params.m_skipFileCheck = uri.GetSkipFileCheck();
+        params.m_tempfileBase = uri.GetTempFileBase();
+        params.m_rawSQLite = uri.GetRawSqlite();
+        return CreateNewDb(uri.ToString().c_str(), params);
+    }
+    Db::OpenParams params(uri.GetOpenMode());
+    params.m_openMode = uri.GetOpenMode();
+    params.m_rawSQLite = uri.GetRawSqlite();
+    params.m_fromContainer = uri.GetIsCloudDb();
+    params.m_schemaLockHeld = uri.GetSchemaLockHeld();
+    params.m_skipFileCheck = uri.GetSkipFileCheck();
+    params.m_tempfileBase = uri.GetTempFileBase();
+    params.m_profileUpgradeOptions = uri.GetProfileUpgradeOptions();
+    params.m_startDefaultTxn = uri.GetDefaultTxnMode();
+    return OpenBeSQLiteDb(uri.ToString().c_str(), params);
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -6379,6 +6421,7 @@ std::pair<DbBuffer::SqlMemP, uint64_t>  DbBuffer::Detach() {
     return pair;
 }
 
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -6421,4 +6464,203 @@ DbResult Db::Deserialize(DbBuffer& buffer, DbR db, DbDeserializeOptions opts, co
         }
     }
     return rc;
+}
+
+Utf8String BeDbUri::Normalize(Utf8StringCR messy_path) {
+    std::filesystem::path path((std::string)messy_path);
+    std::filesystem::path canonicalPath = std::filesystem::weakly_canonical(path);
+    std::string s_input = canonicalPath.make_preferred().generic_string();
+    std::regex space("[[:space:]]");
+    std::string s_output;
+    return std::regex_replace(s_input, space, std::string("%20"));
+}
+
+Utf8String BeDbUri::GetPreferedPath() const {
+    std::filesystem::path canonicalPath((std::string)_canonicalPath);
+    Utf8String input = Utf8String(canonicalPath.make_preferred().c_str());
+    input.ReplaceAll("%20", " ");
+    return input;
+}
+Utf8String BeDbUri::GetCanonicalUnescapedPath() const {
+    Utf8String unescaped = _canonicalPath;
+    unescaped.ReplaceAll("%20", " ");
+    return unescaped;
+}
+bool BeDbUri::LocalFileExists() const {
+    std::filesystem::path path((std::string)_canonicalPath);
+    return std::filesystem::exists(path) && !std::filesystem::is_directory(path);
+}
+Utf8CP BeDbUri::GetSchemaStr(Schema s) {
+    if (s == Schema::NONE)
+        return "";
+    if (s == Schema::FILE)
+        return "file:";
+    return nullptr;
+}
+BeDbUri::BeDbUri(Utf8StringCR uri, Schema schema) : _params(uri), _schema(schema) {
+    const auto n = uri.find("?");
+    Utf8String temp;
+    if (n != Utf8String::npos)
+        temp = uri.substr(0, n );
+    else
+        temp = uri;
+
+    Utf8String fileSchema = GetSchemaStr(Schema::FILE);
+    if (temp.StartsWith(fileSchema.c_str())){
+        _schema = Schema::FILE;
+        temp = temp.substr(fileSchema.length());
+        temp.ReplaceAll("//", "");
+    }
+    _canonicalPath = Normalize(temp);
+}
+
+Utf8String BeDbUri::ToString() const {
+    Utf8String str = GetSchemaStr(_schema);
+    if(!str.empty() && !_canonicalPath.empty() && _canonicalPath[0] != '/'){
+        str.append("/");
+    }
+    str.append(_canonicalPath);
+    str.append(_params.ToString());
+    return str;
+}
+BeDbUri::Params& BeDbUri::Params::Erase(Utf8String key) {
+    auto it = _params.find(key);
+    if (it != _params.end())
+        _params.erase(it);
+    return *this;
+}
+Utf8String BeDbUri::Params::Encode(Utf8String const& str){
+    auto curl = curl_easy_init();
+    auto escaped = curl_easy_escape(curl, str.c_str(), (int)str.length());
+    Utf8String ret(escaped);
+    curl_free(escaped);
+    return ret;
+}
+Utf8String BeDbUri::Params::Decode(Utf8String const& str){
+    auto curl = curl_easy_init();
+    auto unescaped = curl_easy_unescape(curl, str.c_str(), (int)str.length(), nullptr);
+    Utf8String ret(unescaped);
+    curl_free(unescaped);
+    return ret;
+}
+
+BeDbUri::Params::Params(Utf8String const& uri){
+     const auto n = uri.find("?");
+    if (n != Utf8String::npos) {
+        Utf8String temp = uri.substr(n+1);
+        bvector<Utf8String> params;
+        BeStringUtilities::Split(temp.c_str(), "&", params);
+        for (auto& param: params) {
+            bvector<Utf8String> keyValPair;
+            BeStringUtilities::Split(param.c_str(), "=", keyValPair);
+            if (keyValPair.size() == 2) {
+                _params[Decode(keyValPair.front())] = Decode(keyValPair.back());
+            }
+        }
+    }
+}
+BeDbUri::Params& BeDbUri::Params::SetInt64(Utf8String key, int64_t val){
+    BeInt64Id id((uint64_t)val);
+    _params[key] = id.ToString();
+    return* this;
+}
+BeDbUri::Params& BeDbUri::Params::SetString(Utf8String key, Utf8String val){
+    _params[key] = val;
+    return* this;
+}
+BeDbUri::Params& BeDbUri::Params::SetBool(Utf8String key, bool val){
+    _params[key] = val ? "1" : "0";
+    return* this;
+}
+Utf8String BeDbUri::Params::GetString(Utf8String key, Utf8String defaultVal) const {
+    if (!Contains(key))
+        return defaultVal;
+    return _params.find(key)->second;
+}
+int64_t BeDbUri::Params::GetInt64(Utf8String key, int64_t defaultVal ) const {
+    if (!Contains(key))
+        return defaultVal;
+
+    auto val = GetString(key, "");
+    return (int64_t)BeInt64Id::FromString(val.c_str()).GetValueUnchecked();
+}
+bool BeDbUri::Params::GetBool(Utf8String key, bool defaultVal ) const {
+    if (!Contains(key))
+        return defaultVal;
+
+    return GetInt64(key, 0) != 0;
+}
+std::vector<Utf8String> BeDbUri::Params::GetKeys() const {
+    std::vector<Utf8String> keys;
+    for (auto& it: _params)
+        keys.push_back(it.first);
+    return keys;
+}
+bool BeDbUri::Params::Contains(Utf8String key) const {
+    return _params.find(key) != _params.end();
+}
+Utf8String BeDbUri::Params::ToString() const {
+    Utf8String str;
+    if (_params.empty()) {
+        return str;
+    }
+    str = "?";
+    auto it = std::begin(_params);
+    for (; it != std::end(_params); ++it) {
+        if(it != std::begin(_params))
+            str.append("&");
+        str.append(Encode(it->first)).append("=").append(Encode(it->second));
+    }
+    return str;
+}
+
+Db::OpenMode BeDbUri::KnownParams::ParseOpenMode(Utf8StringCR str) {
+    if (str.EqualsIAscii(VALUE_Mode_Create))
+        return Db::OpenMode::Create;
+    else if (str.EqualsIAscii(VALUE_Mode_Readonly))
+        return Db::OpenMode::Readonly;
+    else if (str.EqualsIAscii(VALUE_Mode_ReadWrite))
+        return Db::OpenMode::ReadWrite;
+    else if (str.EqualsIAscii(VALUE_Mode_Memory))
+        return Db::OpenMode::ReadWrite;
+
+    return Db::OpenMode::Readonly;
+}
+
+Utf8String BeDbUri::KnownParams::ToString(Db::OpenMode v) {
+    switch(v){
+        case Db::OpenMode::Create: return VALUE_Mode_Create;
+        case Db::OpenMode::Readonly: return VALUE_Mode_Readonly;
+        case Db::OpenMode::ReadWrite: return VALUE_Mode_ReadWrite;
+        case Db::OpenMode::Memory: return VALUE_Mode_Memory;
+    }
+    BeAssert(false && "unhandled enum value for Db::OpenMode");
+    return "";
+}
+bool BeDbUri::KnownParams::IsKnownParameter(Utf8CP str) {
+    auto& knownParams = GetKnownParameters();
+    return knownParams.find(str) != knownParams.end();
+}
+
+std::set<Utf8CP, BeDbUri::NoCaseCompare> const& BeDbUri::KnownParams::GetKnownParameters() {
+    static std::set<Utf8CP, NoCaseCompare> s_knownParms = {
+        KnownParams::PARAM_AppId,
+        KnownParams::PARAM_CloudSqliteLogId,
+        KnownParams::PARAM_DomainSchemaUpgradeMode,
+        KnownParams::PARAM_Encoding,
+        KnownParams::PARAM_ExpirationDate,
+        KnownParams::PARAM_FailIfDbExists,
+        KnownParams::PARAM_Immutable,
+        KnownParams::PARAM_IsCloudDb,
+        KnownParams::PARAM_Mode,
+        KnownParams::PARAM_PageSize,
+        KnownParams::PARAM_ProfileUpgrade,
+        KnownParams::PARAM_RawSqlite,
+        KnownParams::PARAM_SchemaLockHeld,
+        KnownParams::PARAM_SkipFileCheck,
+        KnownParams::PARAM_TempFileBase,
+        KnownParams::PARAM_TxnMode,
+        KnownParams::PARAM_Vfs,
+    };
+    return s_knownParms;
 }

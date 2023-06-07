@@ -13,6 +13,8 @@
 #include <type_traits>
 #include <functional>
 #include <chrono>
+#include <set>
+#include <map>
 #include <Bentley/Logging.h>
 
 /** @namespace BentleyApi::BeSQLite Classes used to access a SQLite database. */
@@ -195,7 +197,6 @@ namespace MemorySize {
 };
 
 typedef struct CloudContainer* CloudContainerP;
-
 struct ProfileVersion;
 typedef ProfileVersion& ProfileVersionR;
 typedef ProfileVersion const& ProfileVersionCR;
@@ -391,6 +392,15 @@ enum class WalCheckpointMode {
     Truncate=3, /* Like RESTART but also truncate WAL */
 };
 
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+enum class DomainSchemaUpgradeMode : int {
+    CheckRequiredUpgrades = 0,    //!< Domain schemas will be validated for any required upgrades. Any errors will be reported back, and cause the application to fail opening the DgnDb.
+    CheckRecommendedUpgrades = 1, //!< Domain schemas will be validated for any required or optional upgrades. Any errors will be reported back, and cause the application to fail opening the DgnDb.
+    Upgrade = 2,                  //!< Domain schemas will be upgraded if necessary. However, only compatible schema upgrades will be allowed - these are typically additions of classes, properties, and changes to custom attributes.
+    SkipCheck = 3                 //!< Domain schemas will neither be validated nor be upgraded. Used only internally.
+};
 //=======================================================================================
 //! A 4-digit number that specifies the version of the "profile" (schema) of a Db
 // @bsiclass
@@ -760,7 +770,7 @@ using TraceStmtEvent = BeEvent<TraceContext const&, Utf8CP>;
 using TraceProfileEvent = BeEvent<TraceContext const &, int64_t>;
 using TraceRowEvent = BeEvent<TraceContext const &>;
 using TraceCloseEvent = BeEvent<SqlDbP,Utf8CP>;
-
+struct BeDbUri;
 //=======================================================================================
 //! A wrapper for a SQLite Prepared Statement. Every BeSQLite::Statement object associated with a BeSQLite::Db must be deleted
 //! before the database is closed.
@@ -2466,6 +2476,13 @@ public:
     BE_SQLITE_EXPORT DbTxnState GetTxnState(Utf8CP schema = nullptr) const;
 };
 
+enum class DomainUpgradeOptions : int {
+    CheckRequiredUpgrades = 0,    //!< Domain schemas will be validated for any required upgrades. Any errors will be reported back, and cause the application to fail opening the DgnDb.
+    CheckRecommendedUpgrades = 1, //!< Domain schemas will be validated for any required or optional upgrades. Any errors will be reported back, and cause the application to fail opening the DgnDb.
+    Upgrade = 2,                  //!< Domain schemas will be upgraded if necessary. However, only compatible schema upgrades will be allowed - these are typically additions of classes, properties, and changes to custom attributes.
+    SkipCheck = 3                 //!< Domain schemas will neither be validated nor be upgraded. Used only internally.
+};
+
 //=======================================================================================
 //! A BeSQLite database file. This class is a wrapper around the SQLite datatype "sqlite3"
 //! @note Refer to the SQLite documentation for the details of SQLite.
@@ -2490,7 +2507,7 @@ public:
     };
 
     //! Whether to open an BeSQLite::Db readonly or readwrite.
-    enum class OpenMode {Readonly = 1<<0, ReadWrite = 1<<1, Create = ReadWrite|(1<<2)};
+    enum class OpenMode {Readonly = 1<<0, ReadWrite = 1<<1, Create = ReadWrite|(1<<2), Memory = 1<<7};
 
     //=======================================================================================
     //! Options that control whether a profile upgrade should be performed when opening a file
@@ -2680,16 +2697,17 @@ protected:
     };
 
     DbFile* m_dbFile;
-    bool m_isCloudDb = false;
+    bool m_isCloudDb = false; // !URI no need
     StatementCache m_statements;
+    BeDbUri* m_uri; // forward declaration
     DbEmbeddedFileTable m_embeddedFiles;
     mutable AppDataCollection m_appData;
 
     // The query params used to open this database, so that code that opens another connection can reuse them.
-    bvector<Utf8String> m_openQueryParams;
+    bvector<Utf8String> m_openQueryParams; // !URI no need
 
     // a fileName that can be used as the "base" for creating temporary files related to this Db. If not present, use the file name.
-    Utf8String m_tempfileBase;
+    Utf8String m_tempfileBase; // !URI no need
 
     //! Called after a new Db had been created.
     //! Override to perform additional processing when Db is created
@@ -2859,7 +2877,7 @@ public:
     //! @param[in] openParams the parameters that determine aspects of the opened database file.
     //! @return ::BE_SQLITE_OK if the database was successfully opened, or error code as explained above otherwise.
     BE_SQLITE_EXPORT DbResult OpenBeSQLiteDb(Utf8CP dbName, OpenParams const& openParams);
-
+    BE_SQLITE_EXPORT DbResult Open(BeDbUri const&);
     //! @copydoc Db::OpenBeSQLiteDb(Utf8CP, OpenParams const&)
     DbResult OpenBeSQLiteDb(BeFileNameCR dbName, OpenParams const& openParams) {return OpenBeSQLiteDb(dbName.GetNameUtf8().c_str(),openParams);}
 
@@ -2910,6 +2928,8 @@ public:
 
     //! @return The name of the physical file associated with this Db. nullptr if Db is not opened.
     BE_SQLITE_EXPORT Utf8CP GetDbFileName() const;
+
+    BE_SQLITE_EXPORT BeDbUri const& GetUri() const;
 
     // Get the "base" name that can be used for creating a temporary file related to this Db. Callers should append a unique string to this value (e.g "-tiles")
     // to form a full path for a temporary file. The path is guaranteed to be a filename in an existing writable directory.
@@ -3308,6 +3328,205 @@ public:
 
     BE_SQLITE_EXPORT DbBuffer Serialize(const char *zSchema = nullptr) const;
     BE_SQLITE_EXPORT static DbResult Deserialize(DbBuffer& buffer, DbR db, DbDeserializeOptions opts = DbDeserializeOptions::FreeOnClose, const char *zSchema = nullptr, std::function<void(DbR)> beforeDefaultTxnStarts = nullptr);
+};
+
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+struct BeDbUri final {
+    enum class Schema {
+        NONE,
+        FILE,
+    };
+    struct NoCaseCompare {
+        bool operator()(Utf8CP s1, Utf8CP s2) const { return BeStringUtilities::StricmpAscii(s1, s2) < 0; }
+        bool operator()(Utf8StringCR s1, Utf8StringCR s2) const { return BeStringUtilities::StricmpAscii(s1.c_str(), s2.c_str()) < 0;  }
+    };
+    struct Params final {
+        private :
+            std::map<Utf8String, Utf8String, NoCaseCompare> _params; // moveable
+            static Utf8String Encode(Utf8StringCR str);
+            static Utf8String Decode(Utf8StringCR str);
+        public:
+            Params(const Params&) = default;
+            Params& operator=(const Params&) = default;
+            Params(Params&&) = default;
+            Params& operator=(Params&&) = default;
+            BE_SQLITE_EXPORT explicit Params(Utf8String const& uri);
+            BE_SQLITE_EXPORT Params& SetInt64(Utf8String, int64_t);
+            BE_SQLITE_EXPORT Params& SetString(Utf8String, Utf8String);
+            BE_SQLITE_EXPORT Params& SetBool(Utf8String, bool);
+            BE_SQLITE_EXPORT Params& Erase(Utf8String);
+            BE_SQLITE_EXPORT Utf8String GetString(Utf8String, Utf8String defaultVal = "") const;
+            BE_SQLITE_EXPORT int64_t GetInt64(Utf8String, int64_t defaultVal = 0) const;
+            BE_SQLITE_EXPORT bool GetBool(Utf8String, bool defaultVal = false) const;
+            BE_SQLITE_EXPORT std::vector<Utf8String> GetKeys() const;
+            BE_SQLITE_EXPORT bool Contains(Utf8String) const;
+            BE_SQLITE_EXPORT Utf8String ToString() const;
+    };
+
+    struct KnownParams final {
+
+        //! param name and readable param values
+        constexpr static const char* PARAM_AppId = "app_id";
+        constexpr static const char* PARAM_CloudSqliteLogId = "logId";
+        constexpr static const char* PARAM_DomainSchemaUpgradeMode = "domain_schema_upgrade";
+        constexpr static const char* PARAM_Encoding = "encoding";
+        constexpr static const char* PARAM_ExpirationDate = "expiration_date";
+        constexpr static const char* PARAM_FailIfDbExists = "fail_if_db_exists";
+        constexpr static const char* PARAM_Immutable = "immutable";
+        constexpr static const char* PARAM_IsCloudDb = "is_cloud_db";
+        constexpr static const char* PARAM_Mode = "mode";
+        constexpr static const char* VALUE_Mode_Create = "rwc";
+        constexpr static const char* VALUE_Mode_Memory = "memory";
+        constexpr static const char* VALUE_Mode_Readonly = "ro";
+        constexpr static const char* VALUE_Mode_ReadWrite = "rw";
+        constexpr static const char* PARAM_PageSize = "page_size";
+        constexpr static const char* PARAM_ProfileUpgrade = "upgrade_profile";
+        constexpr static const char* PARAM_RawSqlite = "raw";
+        constexpr static const char* PARAM_SchemaLockHeld = "schema_lock_held";
+        constexpr static const char* PARAM_SkipFileCheck = "skip_file_check";
+        constexpr static const char* PARAM_TempFileBase = "temp_file_base";
+        constexpr static const char* PARAM_TxnMode = "txn_mode";
+        constexpr static const char* PARAM_Vfs = "vfs";
+        BE_SQLITE_EXPORT static bool IsKnownParameter(Utf8CP str);
+        BE_SQLITE_EXPORT static std::set<Utf8CP, NoCaseCompare> const& GetKnownParameters();
+        BE_SQLITE_EXPORT static Db::OpenMode ParseOpenMode(Utf8StringCR str);
+        BE_SQLITE_EXPORT static Utf8String ToString(Db::OpenMode);
+    };
+
+private:
+    Utf8String _canonicalPath;
+    Schema _schema;
+    Params _params;
+    static Utf8CP GetSchemaStr(Schema s);
+    static Utf8String Normalize(Utf8StringCR str);
+
+public:
+    BE_SQLITE_EXPORT BeDbUri(Utf8StringCR uri = "", Schema schema=Schema::FILE);
+    BeDbUri(const BeDbUri&) = default;
+    BeDbUri& operator=(const BeDbUri&) = default;
+    BeDbUri(BeDbUri&&) = default;
+    BeDbUri& operator=(BeDbUri&&) = default;
+    // Check if file exists
+    BE_SQLITE_EXPORT bool LocalFileExists() const;
+    Params& GetParams() { return _params; }
+    // Returns canonical generic path
+    Utf8String const& GetCanonicalPath() const { return _canonicalPath; }
+    Schema GetUriSchema() const { return _schema; }
+    // Returns uri string
+    BE_SQLITE_EXPORT Utf8String ToString() const;
+    // Returns canonical prefered path for local os
+    BE_SQLITE_EXPORT Utf8String GetPreferedPath() const;
+    // Returns unescaped canonical path
+    BE_SQLITE_EXPORT Utf8String GetCanonicalUnescapedPath() const;
+
+    //! handled by sqlite3_open_v2()
+    BeDbUri& SetOpenMode(Db::OpenMode v) { _params.SetString(KnownParams::PARAM_Mode, KnownParams::ToString(v)); return *this;}
+    Db::OpenMode GetOpenMode(Db::OpenMode defaultVal = Db::OpenMode::Readonly) const { return KnownParams::ParseOpenMode(_params.GetString(KnownParams::PARAM_Mode, KnownParams::ToString(defaultVal))); }
+    bool HasOpenMode() const { return _params.Contains(KnownParams::PARAM_Mode);}
+    BeDbUri& EraseOpenMode() { _params.Erase(KnownParams::PARAM_Mode); return *this;}
+
+    BeDbUri& SetOpenModeReadonly() { return SetOpenMode(Db::OpenMode::Readonly); }
+    BeDbUri& SetOpenModeReadWrite() { return SetOpenMode(Db::OpenMode::ReadWrite); }
+    BeDbUri& SetOpenModeCreate() { return SetOpenMode(Db::OpenMode::Create); }
+    BeDbUri& SetOpenModeMemory() { return SetOpenMode(Db::OpenMode::Memory); }
+
+    //! handled by BeSQlite::OpenBeSQLiteDb()
+    BeDbUri& SetEncoding(Db::Encoding v) { _params.SetInt64(KnownParams::PARAM_Encoding, (int64_t)v); return *this;}
+    Db::Encoding GetEncoding(Db::Encoding defaultVal = Db::Encoding::Utf8) const { return (Db::Encoding)_params.GetInt64(KnownParams::PARAM_Encoding, (int64_t)defaultVal); }
+    bool HasEncoding() const { return _params.Contains(KnownParams::PARAM_Encoding);}
+    BeDbUri& EraseEncoding() { _params.Erase(KnownParams::PARAM_Encoding); return *this;}
+
+     //! handled by DgnDb::_OnDbOpen()
+    BeDbUri& SetDomainSchemaUpgradeMode(DomainSchemaUpgradeMode v) { _params.SetInt64(KnownParams::PARAM_DomainSchemaUpgradeMode, (int64_t)v); return *this;}
+    DomainSchemaUpgradeMode GetDomainSchemaUpgradeMode(DomainSchemaUpgradeMode defaultVal = DomainSchemaUpgradeMode::CheckRequiredUpgrades) const { return (DomainSchemaUpgradeMode)_params.GetInt64(KnownParams::PARAM_DomainSchemaUpgradeMode, (int64_t)defaultVal); }
+    bool HasDomainSchemaUpgradeMode() const { return _params.Contains(KnownParams::PARAM_DomainSchemaUpgradeMode);}
+    BeDbUri& EraseDomainSchemaUpgradeMode() { _params.Erase(KnownParams::PARAM_DomainSchemaUpgradeMode); return *this;}
+
+     //! handled by BeSQlite::OpenBeSQLiteDb()
+    BeDbUri& SetDefaultTxnMode(DefaultTxn v) { _params.SetInt64(KnownParams::PARAM_TxnMode, (int64_t)v); return *this;}
+    DefaultTxn GetDefaultTxnMode(DefaultTxn defaultVal = DefaultTxn::Yes) const{ return (DefaultTxn)_params.GetInt64(KnownParams::PARAM_TxnMode, (int64_t)defaultVal); }
+    bool HasDefaultTxnMode() const { return _params.Contains(KnownParams::PARAM_TxnMode);}
+    BeDbUri& EraseDefaultTxnMode() { _params.Erase(KnownParams::PARAM_TxnMode); return *this;}
+
+     //! handled by BeSQlite::OpenBeSQLiteDb()
+    BeDbUri& SetRawSqlite(bool v) { _params.SetBool(KnownParams::PARAM_RawSqlite, v); return *this;}
+    bool GetRawSqlite(bool defaultVal = false) const { return _params.GetBool(KnownParams::PARAM_RawSqlite, defaultVal); }
+    bool HasRawSqlite() const { return _params.Contains(KnownParams::PARAM_RawSqlite);}
+    BeDbUri& EraseRawSqlite() { _params.Erase(KnownParams::PARAM_RawSqlite); return *this;}
+
+     //! handled by BeSQlite::OpenBeSQLiteDb()
+    BeDbUri& SetFailIfDbExists(bool v) { _params.SetBool(KnownParams::PARAM_FailIfDbExists, v); return *this;}
+    bool GetFailIfDbExists(bool defaultVal = true) const { return _params.GetBool(KnownParams::PARAM_FailIfDbExists, defaultVal); }
+    bool HasFailIfDbExists() const { return _params.Contains(KnownParams::PARAM_FailIfDbExists);}
+    BeDbUri& EraseFailIfDbExists() { _params.Erase(KnownParams::PARAM_FailIfDbExists); return *this;}
+
+     //! handled by cloud Sqlite
+    BeDbUri& SetIsCloudDb(bool v) { _params.SetBool(KnownParams::PARAM_IsCloudDb, v); return *this;}
+    bool GetIsCloudDb(bool defaultVal = false) const{ return _params.GetBool(KnownParams::PARAM_IsCloudDb, defaultVal); }
+    bool HasIsCloudDb() const { return _params.Contains(KnownParams::PARAM_IsCloudDb);}
+    BeDbUri& EraseIsCloudDb() { _params.Erase(KnownParams::PARAM_IsCloudDb); return *this;}
+
+     //! handled by BeSQlite::OpenBeSQLiteDb()
+    BeDbUri& SetSkipFileCheck(bool v) { _params.SetBool(KnownParams::PARAM_SkipFileCheck, v); return *this;}
+    bool GetSkipFileCheck(bool defaultVal = false) const{ return _params.GetBool(KnownParams::PARAM_SkipFileCheck, defaultVal); }
+    bool HasSkipFileCheck() const { return _params.Contains(KnownParams::PARAM_SkipFileCheck);}
+    BeDbUri& EraseSkipFileCheck() { _params.Erase(KnownParams::PARAM_SkipFileCheck); return *this;}
+
+    //! handled by ECDb::ImportSchema()
+    BeDbUri& SetSchemaLockHeld(bool v){ _params.SetBool(KnownParams::PARAM_SchemaLockHeld, v); return *this;}
+    bool GetSchemaLockHeld(bool defaultVal = false) const{ return _params.GetBool(KnownParams::PARAM_SchemaLockHeld, defaultVal); }
+    bool HasSchemaLockHeld() const { return _params.Contains(KnownParams::PARAM_SchemaLockHeld);}
+    BeDbUri& EraseSchemaLockHeld() { _params.Erase(KnownParams::PARAM_SchemaLockHeld); return *this;}
+
+    //! handled by BeSQlite::OpenBeSQLiteDb()
+    BeDbUri& SetProfileUpgradeOptions (Db::ProfileUpgradeOptions v){ _params.SetInt64(KnownParams::PARAM_ProfileUpgrade, (int64_t)v); return *this;}
+    Db::ProfileUpgradeOptions GetProfileUpgradeOptions(Db::ProfileUpgradeOptions defaultVal = Db::ProfileUpgradeOptions::None) const { return (Db::ProfileUpgradeOptions)_params.GetInt64(KnownParams::PARAM_ProfileUpgrade, (int64_t)defaultVal); }
+    bool HasProfileUpgradeOptions() const { return _params.Contains(KnownParams::PARAM_ProfileUpgrade);}
+    BeDbUri& EraseProfileUpgradeOptions() { _params.Erase(KnownParams::PARAM_ProfileUpgrade); return *this;}
+
+     //! handled by BeSQlite::OpenBeSQLiteDb()
+    BeDbUri& SetTempFileBase(Utf8StringCR v) { _params.SetString(KnownParams::PARAM_TempFileBase, v); return *this;}
+    Utf8String GetTempFileBase(Utf8String defaultVal = "") const { return _params.GetString(KnownParams::PARAM_TempFileBase, defaultVal); }
+    bool HasTempFileBase() const { return _params.Contains(KnownParams::PARAM_TempFileBase);}
+    BeDbUri& EraseTempFileBase() { _params.Erase(KnownParams::PARAM_TempFileBase); return *this;}
+
+     //! handled by BeSQlite::OpenBeSQLiteDb()
+    BeDbUri& SetExpirationDate(DateTimeCR v){ _params.SetString(KnownParams::PARAM_ExpirationDate, v.ToString()); return *this;}
+    DateTime GetExpirationDate(DateTime defaultVal = DateTime()) const{ return DateTime::FromString(_params.GetString(KnownParams::PARAM_ExpirationDate, defaultVal.ToString())); }
+    bool HasExpirationDate() const { return _params.Contains(KnownParams::PARAM_ExpirationDate);}
+    BeDbUri& EraseExpirationDate() { _params.Erase(KnownParams::PARAM_ExpirationDate); return *this;}
+
+     //! handled by BeSQlite::CreateNewDb()
+    BeDbUri& SetAppId(uint64_t v){ _params.SetInt64(KnownParams::PARAM_AppId, (int64_t)v); return *this;}
+    uint64_t GetAppId(uint64_t defaultVal = 'BeDb') const{ return (uint64_t)_params.GetInt64(KnownParams::PARAM_AppId, defaultVal); }
+    bool HasAppId() const { return _params.Contains(KnownParams::PARAM_AppId);}
+    BeDbUri& EraseAppId() { _params.Erase(KnownParams::PARAM_AppId); return *this;}
+
+     //! handled by BeSQlite::CreateNewDb()
+    BeDbUri& SetPageSize(Db::PageSize v){ _params.SetInt64(KnownParams::PARAM_PageSize, (int64_t)v); return *this;}
+    Db::PageSize GetPageSize(Db::PageSize defaultVal = Db::PageSize::PAGESIZE_4K) const { return (Db::PageSize)_params.GetInt64(KnownParams::PARAM_PageSize, (int64_t)defaultVal); }
+    bool HasPageSize() const { return _params.Contains(KnownParams::PARAM_PageSize);}
+    BeDbUri& ErasePageSize() { _params.Erase(KnownParams::PARAM_PageSize); return *this;}
+
+    //! handled by sqlite3_open_v2()
+    BeDbUri& SetImmutable(bool v){ _params.SetBool(KnownParams::PARAM_Immutable, v); return *this;}
+    bool GetImmutable(bool defaultVal = false) const { return _params.GetBool(KnownParams::PARAM_Immutable, defaultVal); }
+    bool HasImmutable() const { return _params.Contains(KnownParams::PARAM_Immutable);}
+    BeDbUri& EraseImmutable() { _params.Erase(KnownParams::PARAM_Immutable); return *this;}
+
+     //! handled by Cloud Sqlite
+    BeDbUri& SetCloudSqliteLogId(Utf8StringCR v) { _params.SetString(KnownParams::PARAM_CloudSqliteLogId, v); return *this;}
+    Utf8String GetCloudSqliteLogId(Utf8String defaultVal = "") const { return _params.GetString(KnownParams::PARAM_CloudSqliteLogId, defaultVal); }
+    bool HasCloudSqliteLogId() const { return _params.Contains(KnownParams::PARAM_CloudSqliteLogId);}
+    BeDbUri& EraseCloudSqliteLogId() { _params.Erase(KnownParams::PARAM_CloudSqliteLogId); return *this;}
+
+    //! handled by sqlite3_open_v2()
+    BeDbUri& SetVfs(Utf8StringCR v){ _params.SetString(KnownParams::PARAM_Vfs, v); return *this;}
+    Utf8String GetVfs(Utf8String defaultVal = "") const { return _params.GetString(KnownParams::PARAM_Vfs, defaultVal); }
+    bool HasVfs() const { return _params.Contains(KnownParams::PARAM_Vfs);}
+    BeDbUri& EraseVfs() { _params.Erase(KnownParams::PARAM_Vfs); return *this;}
 };
 
 //=======================================================================================
