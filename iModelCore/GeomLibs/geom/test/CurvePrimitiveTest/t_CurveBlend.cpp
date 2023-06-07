@@ -21,30 +21,30 @@ TEST(CurveCurve, FilletSegmentSegment)
             DSegment3d::From (0,0,0, 10,0,0));
     ICurvePrimitivePtr line2 = ICurvePrimitive::CreateLine (
             DSegment3d::From (5,0,0, 5, 10,0));
-    Check::StartScope ("FilletBetweenLines");            
+    Check::StartScope ("FilletBetweenLines");
     bvector<CurveCurve::FilletDetail> arc0, arc1;
     double radius = 3;
     CurveCurve::CollectFilletArcs (*line1, *line2, radius, true, arc0);
     CurveCurve::CollectFilletArcs (*line1, *line2, radius, false, arc1);
-    
+
     Check::Size (4, arc0.size (), "ExtendedLines");
     Check::Size (2, arc1.size (), "BoundedLines");
 
     Check::EndScope ();
-               
-        
-    Check::StartScope ("ParabolicBlendBetweenLines");            
+
+
+    Check::StartScope ("ParabolicBlendBetweenLines");
 
     bvector<BlendDetail> parabola0, parabola1;
     CurveCurve::CollectBlends (*line1, *line2, CURVE_CURVE_BLEND_BisectorParabola, radius, radius, true, parabola0);
     CurveCurve::CollectBlends (*line1, *line2, CURVE_CURVE_BLEND_BisectorParabola, radius, radius, false, parabola1);
     // Peter  --- This should produce 4 extended blends and 2 for nonextended .......
     Check::Size (4, parabola0.size (), "Extended");
-    Check::Size (2, parabola1.size (), "Bounded");    
-    
+    Check::Size (2, parabola1.size (), "Bounded");
+
     Check::EndScope ();
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -61,23 +61,23 @@ TEST(CurveCurve, FilletLinestring)
     bvector<CurveCurve::FilletDetail> arcs;
 
     CurveCurve::CollectFilletArcs (*linestring, *linestring, radius, false, arcs);
-    // We expect a single fillet at each interior vertex ....    
+    // We expect a single fillet at each interior vertex ....
     Check::Size (points.size () - 2, arcs.size (), "Internal fillets");
-    
+
     Check::EndScope ();
-    
-    
+
+
     Check::StartScope ("ParabolicBlendWithinLinestring");
 
     bvector<BlendDetail> parabolas;
     CurveCurve::CollectBlends (*linestring, *linestring, CURVE_CURVE_BLEND_BisectorParabola, radius, radius, false, parabolas);
     Check::Size (points.size () - 2, parabolas.size (), "Internal blends");
-    
+
     Check::EndScope ();
-    
-    
-    }    
-    
+
+
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -94,7 +94,7 @@ TEST(CurveCurve, FilletLineArc)
     DPoint3d pointA0, pointA1;
     arcA->GetStartEnd (pointA0, pointA1);
     ICurvePrimitivePtr lineB = ICurvePrimitive::CreateLine (DSegment3d::From (pointA0, pointA1));
-    Check::StartScope ("FilletLineArc");            
+    Check::StartScope ("FilletLineArc");
     bvector<CurveCurve::FilletDetail> arc0, arc1;
     double rF = 0.5;
 
@@ -136,7 +136,7 @@ TEST(CurveCurve, FilletLineStringArc)
 
 
     ICurvePrimitivePtr lineB = ICurvePrimitive::CreateLineString (points);
-    Check::StartScope ("FilletLineArc");            
+    Check::StartScope ("FilletLineArc");
     bvector<CurveCurve::FilletDetail> arc0, arc1;
     double rF = 0.5;
 
@@ -167,21 +167,21 @@ TEST(CurveCurve, FilletArcArc)
     DEllipse3d ellipseB = DEllipse3d::From (rA,-rB,0,   rB, 0, 0,   0,rB, 0,    0.0, Angle::Pi ());
     ICurvePrimitivePtr prim1 = ICurvePrimitive::CreateArc (ellipseA);
     ICurvePrimitivePtr prim2 = ICurvePrimitive::CreateArc (ellipseB);
-    bvector<CurveCurve::FilletDetail> arc0, arc1;    
+    bvector<CurveCurve::FilletDetail> arc0, arc1;
     CurveCurve::CollectFilletArcs (*prim1, *prim2, rF, true, arc0);
     CurveCurve::CollectFilletArcs (*prim1, *prim2, rF, false, arc1);
-    
+
     Check::Size (8, arc0.size (), "Extended");
     Check::Size (4, arc1.size (), "Bounded");
-    
-    
+
+
     Check::EndScope ();
     }
 
 void AddPoint (bvector<DPoint3d> &points, double x, double y, double z = 0.0)
     {
     points.push_back (DPoint3d::From (x, y, z));
-    }    
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -198,7 +198,7 @@ TEST(Curve,CloneWithFilletsA)
     CurveVectorPtr pathB = pathA->CloneWithFillets (radius);
     Check::Size (3, pathB->CountPrimitivesOfType (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line), "Post-Fillet lines");
     Check::Size (2, pathB->CountPrimitivesOfType (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc), "Post-Fillet arcs");
-    
+
     CurveVectorPtr pathC = pathA->CloneWithBlends (CURVE_CURVE_BLEND_BisectorParabola, radius, radius);
     Check::Size (3, pathC->CountPrimitivesOfType (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line), "Post-Blend lines");
     Check::Size (2, pathC->CountPrimitivesOfType (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_BsplineCurve), "Post-Blend parabolas");
@@ -208,7 +208,7 @@ TEST(Curve,CloneWithFilletsA)
     pathD->ConsolidateAdjacentPrimitives ();
     size_t sizeD1 = pathD->size ();
     Check::Size (sizeD0, sizeD1, "ConsolidateAdjacentPrimitives should have no effect here");
-    
+
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -239,14 +239,14 @@ TEST(Curve,CloneWithFilletsB)
     double lengthB = pathB->Length ();
     Check::Near (expectedLengthA, lengthA, "Rectangle Perimeter");
     Check::Near (expectedLengthB, lengthB, "Filleted Rectangle Perimeter");
-    
+
     // Increase fillet size so no fillets ....
     double bigRadius = 10.0;
     CurveVectorPtr pathC = pathA->CloneWithFillets (bigRadius);
     Check::Size (4, pathC->CountPrimitivesOfType (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line), "Post-Fillet lines");
-    Check::Size (0, pathC->CountPrimitivesOfType (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc), "Post-Fillet arcs");    
+    Check::Size (0, pathC->CountPrimitivesOfType (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc), "Post-Fillet arcs");
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -407,7 +407,7 @@ TEST(CloneOffset, RectangleOffset)
                 if (!Check::Near (2.0 * ax + 2.0 * ay + 8.0 * offset, pathB->Length (), "Line offset length"))
                     Check::SaveTransformed (DSegment3d::From (x0, y0,0.2, x1,y1,0.2));
                 }
-                        
+
             CurveVectorPtr pathC;
             GetOffsets (pathA, offset, 0.001, pathC);
             Check::SaveTransformed(pathC);
@@ -415,13 +415,13 @@ TEST(CloneOffset, RectangleOffset)
 
             if (offset > 0.0)
                 Check::Near (2.0 * ax + 2.0 * ay + 4.0 * offset * Angle::PiOver2 (), pathC->Length (), "Arc offset length");
-                
+
             CurveOffsetOptions options (offset);
             options.SetChamferAngle (chamferAngle);
             if (chamferAngle > 0.0)
                 options.SetArcAngle (0.0);
             else
-                options.SetArcAngle (0.1); 
+                options.SetArcAngle (0.1);
             CurveVectorPtr pathD = pathA->AreaOffset(options);
             Check::SaveTransformed (pathD);
             }
@@ -606,7 +606,7 @@ TEST(CloneOffset, ArcOffset0)
     AddPoint (points, ax, ay);
     AddPoint (points, 0.0, ay);
     AddPoint (points, 0.0, b);
-    
+
     CurveVectorPtr pathA = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer);
     pathA->push_back (ICurvePrimitive::CreateLineString (points));
     pathA->push_back (ICurvePrimitive::CreateArc (DEllipse3d::FromVectors
@@ -616,12 +616,14 @@ TEST(CloneOffset, ArcOffset0)
                 DVec3d::From (0, -b, 0),
                 0.0, Angle::PiOver2 ()
                 )));
+    Check::SaveTransformed(*pathA);
 
-    for (double offset = 1.5; offset > -2.0; offset -= 1.0)
+    for (double offset = 1.5; offset > -1.0; offset -= 1.0)
         {
         Check::StartScope ("Offset from arc", offset);
         CurveOffsetOptions options (offset);
         CurveVectorPtr pathB = pathA->AreaOffset(options);
+        Check::SaveTransformed(*pathB);
         if (s_noisy > 4)
             {
             Check::Print (pathA, "BaseCurve");
@@ -629,29 +631,78 @@ TEST(CloneOffset, ArcOffset0)
             }
         Check::EndScope ();
         }
+        Check::ClearGeometry("CloneOffset.ArcOffset0");
     }
-    
+
+TEST(CloneOffset, OpenCurve)
+    {
+        CurveVectorPtr pathA = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
+        pathA->push_back(ICurvePrimitive::CreateArc(DEllipse3d::FromVectors(
+            DPoint3d::From(1, 1, 0),
+            DVec3d::From(-1, 0, 0),
+            DVec3d::From(0, -1, 0),
+            0.0, Angle::PiOver2())));
+
+        for (double offset = 1.5; offset > -1.0; offset -= 1.0)
+        {
+            Check::StartScope("Offset from arc", offset);
+            CurveOffsetOptions options(offset);
+            CurveVectorPtr pathB = pathA->AreaOffset(options);
+            if (s_noisy > 4)
+            {
+            Check::Print(pathA, "BaseCurve");
+            Check::Print(pathB, "Offset");
+            }
+            Check::EndScope();
+        }
+    }
+
+TEST(CloneOffset, BoundaryTypeNone)
+    {
+        CurveVectorPtr pathA = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None);
+        pathA->push_back(ICurvePrimitive::CreateArc(DEllipse3d::FromVectors(
+            DPoint3d::From(1, 1, 0),
+            DVec3d::From(-1, 0, 0),
+            DVec3d::From(0, -1, 0),
+            0.0,
+            Angle::PiOver2())));
+
+        for (double offset = 1.5; offset > -1.0; offset -= 1.0)
+        {
+            Check::StartScope("Offset from arc", offset);
+            CurveOffsetOptions options(offset);
+            CurveVectorPtr pathB = pathA->AreaOffset(options);
+            if (s_noisy > 4)
+            {
+            Check::Print(pathA, "BaseCurve");
+            Check::Print(pathB, "Offset");
+            }
+            Check::EndScope();
+        }
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CloneOffset, ArcOffset1)
     {
-    
+
     CurveVectorPtr diskA= CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer);
     diskA->Add (ICurvePrimitive::CreateArc (DEllipse3d::FromXYMajorMinor (0,0, 0, 5,5, 0, 0.0, Angle::TwoPi ())));
     CurveVectorPtr diskB= CurveVector::Create (CurveVector::BOUNDARY_TYPE_Inner);
     diskB->Add (ICurvePrimitive::CreateArc (DEllipse3d::FromXYMajorMinor (0,0, 0, 1,1, 0, 0.0, -Angle::TwoPi ())));
-    
+
     CurveVectorPtr parityRegion = CurveVector::Create (CurveVector::BOUNDARY_TYPE_ParityRegion);
     parityRegion->Add (diskA);
     parityRegion->Add (diskB);
+    Check::SaveTransformed(*parityRegion);
 
     for (double offset = 1.5; offset > -2.0; offset -= 1.0)
         {
         Check::StartScope ("Offset from arc", offset);
         CurveOffsetOptions options (offset);
         CurveVectorPtr regionB = parityRegion->AreaOffset(options);
+        Check::SaveTransformed(*regionB);
         if (s_noisy > 0)
             {
             Check::Print (parityRegion, "BaseCurve");
@@ -662,8 +713,9 @@ TEST(CloneOffset, ArcOffset1)
             Check::Print (regionB, "ConsolidatedOffset");
         Check::EndScope ();
         }
+        Check::ClearGeometry("CloneOffset.ArcOffset1");
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -689,7 +741,7 @@ TEST(CloneOffset, RightTriangleOffset)
             }
         }
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -775,7 +827,7 @@ ICurvePrimitivePtr ConstructBsplineCurveFromEndsAndTangents (DPoint3dCR pointA, 
         weights.push_back (w);
         weights.push_back (1.0);
         MSBsplineCurvePtr curvePtr = MSBsplineCurve::CreateFromPolesAndOrder (poles, &weights, NULL, 3, false, false);
-        return ICurvePrimitive::CreateBsplineCurve (curvePtr);        
+        return ICurvePrimitive::CreateBsplineCurve (curvePtr);
         }
     return NULL;
     }
@@ -795,7 +847,7 @@ ICurvePrimitivePtr ConstructBsplineCurveFromEndsAndTangents (DPoint3dCR pointA, 
     chain->push_back (curve);
     if (s_noisy > 0)
         Check::Print (chain, "unitTurn curve");
-    
+
     bvector<DPoint3d> strokes;
     IFacetOptionsPtr options = IFacetOptions::CreateForCurves ();
     curve->AddStrokes (strokes, *options);
@@ -826,7 +878,7 @@ void TestPathMatch (CurveVectorPtr &cvA, CurveVectorPtr &cvB, ValidatedDouble ex
     pathB->SetPath (cvB);
     bvector<PathLocationDetailPair> pathAIntervals;
     bvector<PathLocationDetailPair> pathBIntervals;
-    
+
     static double distanceTol = Angle::SmallAngle ();
     DRange1d strictPositive (distanceTol, DBL_MAX);
     DRange1d nonNegative (-distanceTol, DBL_MAX);
@@ -889,7 +941,7 @@ void TestPathMatch (CurveVectorPtr &cvA, CurveVectorPtr &cvB, ValidatedDouble ex
                 }
             }
         }
-    } 
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -907,7 +959,7 @@ TEST(CurveCurve,MatchXYLineSegments)
         DPoint3d::From (60,0,0)
         };
 
-    bvector<DPoint3d> pointB        
+    bvector<DPoint3d> pointB
         {
         DPoint3d::From (5,0,0),
         DPoint3d::From (10,0,0),
@@ -935,7 +987,7 @@ TEST(CurveCurve,MatchXYLineSegments_AlmostParallel)
 
     for (double yy : bvector<double> {0, 1.0e-15, 1.0e-13, 1.0e-12, 2.0e-8})
         {
-    Check::StartScope ("yy", yy);            
+    Check::StartScope ("yy", yy);
         CurveVectorPtr cvA = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open);
         CurveVectorPtr cvB = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open);
         bvector<DPoint3d> pointA
@@ -944,7 +996,7 @@ TEST(CurveCurve,MatchXYLineSegments_AlmostParallel)
             DPoint3d::From (20,0,0),
             };
         // make the "other" line just a little non-parallel
-        bvector<DPoint3d> pointB        
+        bvector<DPoint3d> pointB
             {
             DPoint3d::From (3,yy,0),
             DPoint3d::From (8,-yy * 0.2342367,0),
@@ -959,7 +1011,7 @@ TEST(CurveCurve,MatchXYLineSegments_AlmostParallel)
         if (yy > 1.0e-10)
             expectedOverlap = 0.0;
         TestPathMatch (cvA, cvB, ValidatedDouble (expectedOverlap));
-    Check::EndScope ();            
+    Check::EndScope ();
         }
     }
 
@@ -1159,7 +1211,7 @@ double ApproximateOffsetArea (char const * name, ICurvePrimitivePtr const &baseC
     Check::Print (length, "baseLength");
     Check::Print (offsetDistance, "offset");
     Check::Print (area, "area");
-    return area;    
+    return area;
     }
 
 ICurvePrimitivePtr CloneAsBspline (ICurvePrimitivePtr const &source)
@@ -1502,7 +1554,7 @@ TEST(CurveCurve,TaperFilletTaperOutOfBounds)
     // These two paths are perpendicular lines, with distance 0 at their intersection.
     // The outer loops select combinations of positive and negative signs for offset.
     // The inner loops run taper search from start spots before, along, and after the curve bodies.
-    // All cases converge to "first quadrant" arcs solutions (with negative offset, parts of the solution curve are 
+    // All cases converge to "first quadrant" arcs solutions (with negative offset, parts of the solution curve are
     //   shifted to the other side -- but the arcs still go to the quadrant.)
     for (double signA : signs)
         {
@@ -1628,7 +1680,7 @@ TEST(CurveCurve,MultiRadiusBlend)
                 errors++;
             if (!testCurveCurveConstructMultiRadiusBlend (*arcA, *arcB, 0.3, 0.3, angleA1, distanceA1, radii, distanceB, 2.0 * angleB, reverse))
                 errors++;
-            
+
             }
         }
     Check::ClearGeometry ("CurveCurve.MultiRadiusBlend");
@@ -1647,14 +1699,14 @@ TEST(CurveVectorWithDistanceIndex,XYLength1)
     cvA->push_back (lineA);
     auto pathA = CurveVectorWithDistanceIndex::Create ();
     pathA->SetPath (cvA);
-    
+
     Check::Near (ax, pathA->TotalPathLengthXY ());
     Check::Near (hypot (ax, az), pathA->TotalPathLength ());
 
     auto cvB = cvA->CloneAsBsplines ();
     auto pathB = CurveVectorWithDistanceIndex::Create ();
     pathB->SetPath (cvB);
-    
+
     Check::Near (ax, pathB->TotalPathLengthXY ());
     Check::Near (hypot (ax, az), pathB->TotalPathLength ());
 
@@ -1671,7 +1723,7 @@ TEST(CurveVectorWithDistanceIndex,XYLength2)
             1,0,0,0,
             0,0,-1,0,
             0,1,0,0
-            );    
+            );
     auto spiral = ICurvePrimitive::CreateSpiralBearingRadiusLengthRadius
             (
             DSpiral2dBase::TransitionType_Clothoid,
@@ -1681,7 +1733,7 @@ TEST(CurveVectorWithDistanceIndex,XYLength2)
             0.0, 1.0
             );
 
-    
+
     auto cvA = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open);
     cvA->push_back (spiral);
     auto pathA = CurveVectorWithDistanceIndex::Create ();
@@ -1733,7 +1785,7 @@ TEST(CurveCurve,TaperFilletTaperOnCurveVectorWithDistanceIndex_ConceptStationExa
     for (double taper : tapers)
         {
         double e = 0.60960000000000003;
-        
+
         double dA = 111.65317409719319;
         double dB = 111.65317309718409;
         if (s_noisy)
@@ -1745,7 +1797,7 @@ TEST(CurveCurve,TaperFilletTaperOnCurveVectorWithDistanceIndex_ConceptStationExa
             Check::Print (e, "setback");
             Check::Print (filletRadius, "filletRadius");
             }
-        
+
         auto blend = CurveCurve::ConstructTaperFilletTaper (*pathA, *pathB, e, taper, filletRadius, e, taper,
                 dA, dB);
         if (Check::True (blend.IsValid ()))
@@ -2178,7 +2230,7 @@ TEST(Spiral,Stroke)
     UsageSums strokeLengthSum;
     UsageSums chordErrorSum;
     UsageSums xyISum, xy2Sum;
-    DMatrix4d matrix2 = 
+    DMatrix4d matrix2 =
         DMatrix4d::FromRowValues
             (
             2,0,0,0,
@@ -2287,7 +2339,7 @@ bool TestCCI (ICurvePrimitiveR curve1, ICurvePrimitiveR curve2, double f1, doubl
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Spiral,Intersection)
     {
-    // Spiral 
+    // Spiral
     auto spiral1 = ICurvePrimitive::CreateSpiralBearingRadiusLengthRadius
             (
             DSpiral2dBase::TransitionType_Clothoid,
@@ -2309,7 +2361,7 @@ TEST(Spiral,Intersection)
 
     auto line = ICurvePrimitive::CreateLine (
             DSegment3d::From (0,0,0, 20,0,0));
-    
+
     auto arc = ICurvePrimitive::CreateArc (
             DEllipse3d::FromStartTangentNormalRadiusSweep (
                 DPoint3d::From(0,0,0),
@@ -2331,7 +2383,7 @@ TEST(Spiral,Intersection)
 
             }
         }
-    
+
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2339,7 +2391,7 @@ TEST(Spiral,Intersection)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Spiral,PartialSpiralMappings)
     {
-    // Spiral 
+    // Spiral
     int spiralSave = ICurvePrimitive::SelectSpiralImplementation (2);
     for (int spiralSelect : {1, 2})
         {
@@ -2401,7 +2453,7 @@ TEST(VariableRadiusOffset,Arc)
     double r0 = 10.0;
     auto masterArc = ICurvePrimitive::CreateArc
             (
-            DEllipse3d::From 
+            DEllipse3d::From
                 (
                 0,0,0,
                 r0,0,0,
@@ -2420,12 +2472,12 @@ TEST(VariableRadiusOffset,Arc)
     //bcurveA->NormalizeKnots ();
     auto primitiveA = ICurvePrimitive::CreateBsplineCurve (bcurveA);
     Check::Print (*primitiveA);
-    if (Check::True (primitiveA.IsValid ()))  
+    if (Check::True (primitiveA.IsValid ()))
         {
         CurveOffsetOptions options (0.0);    // That�s an offset distance arg, but you will supply distinct start and end distances later .
         options.SetBCurveMethod (0);
         options.SetBCurvePointsPerKnot(1);
-       
+
         auto offsetAsBCurve = bcurveA->CreateCopyOffsetXY(distance0, distance1, options);
         if (Check::True (offsetAsBCurve.IsValid ()))
             {
@@ -2469,7 +2521,7 @@ TEST(VariableRadiusOffset,Arc)
                 }
             }
         }
-    
+
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2593,7 +2645,7 @@ TEST(CurveVector,OffsetLineArcJaggies)
     Check::ClearGeometry ("CurveVector.OffsetLineArcJaggies");
     }
 #endif
-	
+
 void Test_ConstructArcs_PointTangentCurveTangent (DPoint3dCR pointA, DVec3dCR tangentA, ICurvePrimitiveCR primitive)
     {
     bvector<CurveCurve::FilletDetail> arcs;
@@ -3063,7 +3115,7 @@ TEST(OffsetLinestring, FractalOffset)
         Check::Shift(0, -ay, 0);
 
 
-        for (double offsetFactor : {0.01, 0.05, -0.010, -0.020, -0.030})            
+        for (double offsetFactor : {0.01, 0.05, -0.010, -0.020, -0.030})
             {
             double offsetDistance = offsetFactor * range.low.Distance (range.high);
             // SaveAndRestoreCheckTransform  shifter(0, by, 0);
@@ -3109,7 +3161,7 @@ void AddCP (double x, double y, double tangentRadians)
     m_matrix.push_back (RotMatrix::FromRowValues(
         m_w * (1.0 + m_mu * nx * nx), m_w * m_mu * nx * ny, 0,
         m_w * m_mu * nx * ny, m_w * (1.0 + m_mu * ny * ny), 0,
-        0,                0,                        1)); 
+        0,                0,                        1));
     }
 
 void AppendBezcoffs2d (bvector<double> &coffs, DVec3dCR xy, RotMatrixCR matrix)
@@ -3434,7 +3486,7 @@ TEST(LineString,OffsetB)
         DPoint3d::From (x0 + 8 * a, y0 + 6 * a),
         DPoint3d::From (x0 + 8 * a, y0 + 8 * a)
         };
-    // create various inflections at point3 
+    // create various inflections at point3
     for (auto f : bvector<double> { 0.1, 0.01, 0.001, 0.0001})
         {
         points[3] = DPoint3d::FromInterpolateAndPerpendicularXY (points[2], 0.5, points[4], f);
@@ -3501,7 +3553,7 @@ CurveVectorWithDistanceIndexCR path,
 IGeometryPtr const& carGeometry,
 double frameStep,       // step between placements of the rear bogie.
 double bogieDistance,        // bogie-to-bogie distance
-double maxTurnAngle = Angle::DegreesToRadians (45.0)    // maximum plausible turn angle 
+double maxTurnAngle = Angle::DegreesToRadians (45.0)    // maximum plausible turn angle
 )
     {
     // make an arc to be placed in each frame and the intersected with the curve ahead.
@@ -3672,7 +3724,7 @@ TEST(PathToRegion, openPolylines)
         for (auto & points : paths)
             {
             SaveAndRestoreCheckTransform shifter(30, 0, 0);
-            auto cv = CurveVector::CreateLinear(points, 
+            auto cv = CurveVector::CreateLinear(points,
                 points.back ().AlmostEqual (points.front ()) ? CurveVector::BOUNDARY_TYPE_Outer : CurveVector::BOUNDARY_TYPE_Open);
             Check::SaveTransformed(*cv);
             Check::Shift(0, 20, 0);
@@ -4021,7 +4073,7 @@ void appendChildren (CurveVectorR chain, ICurvePrimitivePtr &source, bool revers
 * <li> Form triangulation of chordal approximation.
 * <li> Identify short edges closing gaps between the input paths.
 * <li> Extract chains from the original and gap edges.
-* <li> 
+* <li>
 * </ul>
 */
 CurveVectorPtr LinkFirstLevelPathsXY(CurveVectorCR curves, double maxGap)
@@ -4349,7 +4401,6 @@ void testArcFragment(DEllipse3d arcA, double f0, double f1, int parameterization
         }
     }
 
-
 TEST(CommonPath, ArcFragments)
     {
     for (int parameterAction : {0,1})
@@ -4369,4 +4420,76 @@ TEST(CommonPath, ArcFragments)
         Check::EndScope ();
         }
     Check::ClearGeometry("CommonPath.ArcFragments");
+    }
+
+TEST(CloneOffset, SharpestCornersOffset)
+    {
+    bvector<double> distances;
+    distances.push_back(-2.0);
+    distances.push_back(-1.0);
+    distances.push_back(1.0);
+    distances.push_back(2.0);
+
+    bvector<DPoint3d> points;
+    points.push_back(DPoint3d::From(6, 3, 0));
+    points.push_back(DPoint3d::From(-3, 3, 0));
+    points.push_back(DPoint3d::From(-6, -3, 0));
+    points.push_back(DPoint3d::From(3, -3, 0));
+    points.push_back(DPoint3d::From(6, 3, 0));
+    CurveVectorPtr pathA = CurveVector::CreateLinear(points, CurveVector::BOUNDARY_TYPE_Outer);
+    Check::Print(points, "Polygon");
+    Check::SaveTransformed(*pathA);
+
+    for (double d : distances)
+    {
+        CurveOffsetOptions options(d);
+        options.SetChamferAngle(PI);
+        options.SetArcAngle(PI);
+        options.SetAllowSharpestCorners(true);
+        CurveVectorPtr pathB = pathA->AreaOffset(options);
+        Check::Print(pathB, "Offset");
+        Check::Print(d, "Distance");
+        Check::SaveTransformed(*pathB);
+    }
+    Check::ClearGeometry("CloneOffset.SharpestCornersOffset");
+    }
+
+TEST(CloneOffset, StarShape)
+    {
+    bvector<double> distances;
+    distances.push_back(-2.0);
+    distances.push_back(-1.0);
+    distances.push_back(1.0);
+    distances.push_back(2.0);
+
+    bvector<DPoint3d> points;
+    points.push_back(DPoint3d::From(0, 6, 0));
+    points.push_back(DPoint3d::From(-0.1, 3, 0));
+    points.push_back(DPoint3d::From(-3, 3, 0));
+    points.push_back(DPoint3d::From(-2, 0, 0));
+    points.push_back(DPoint3d::From(-3, -3, 0));
+    points.push_back(DPoint3d::From(-0.1, -3, 0));
+    points.push_back(DPoint3d::From(0, -6, 0));
+    points.push_back(DPoint3d::From(0.1, -3, 0));
+    points.push_back(DPoint3d::From(3, -3, 0));
+    points.push_back(DPoint3d::From(2, 0, 0));
+    points.push_back(DPoint3d::From(3, 3, 0));
+    points.push_back(DPoint3d::From(0.1, 3, 0));
+    points.push_back(DPoint3d::From(0, 6, 0));
+    CurveVectorPtr pathA = CurveVector::CreateLinear(points, CurveVector::BOUNDARY_TYPE_Outer);
+    Check::Print(points, "StartShape");
+    Check::SaveTransformed(*pathA);
+
+    for (double d : distances)
+        {
+        CurveOffsetOptions options(d);
+        options.SetChamferAngle(PI);
+        options.SetArcAngle(PI);
+        options.SetAllowSharpestCorners(true);
+        CurveVectorPtr pathB = pathA->AreaOffset(options);
+        Check::Print(pathB, "Offset");
+        Check::Print(d, "Distance");
+        Check::SaveTransformed(*pathB);
+        }
+    Check::ClearGeometry("CloneOffset.StarShape");
     }

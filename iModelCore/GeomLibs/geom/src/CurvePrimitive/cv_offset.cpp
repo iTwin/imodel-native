@@ -43,18 +43,12 @@ void CurveOffsetOptions::SetTolerance (double tolerance)
 
 void CurveOffsetOptions::SetOffsetDistance (double distance){m_offsetDistance = distance;}
 void CurveOffsetOptions::SetArcAngle (double radians)       {m_arcAngle = radians;}
-void CurveOffsetOptions::SetChamferAngle (double radians)
-    {
-    m_chamferAngle = radians;
-    double maxChamfer = s_maxChamferFraction * Angle::Pi ();
-    if (m_chamferAngle > maxChamfer)
-        m_chamferAngle = maxChamfer;
-    }
-
+void CurveOffsetOptions::SetChamferAngle (double radians)   {m_chamferAngle = radians;}
 void CurveOffsetOptions::SetForceClosure (bool value)       {m_forceClosure = value;}
-void CurveOffsetOptions::SetBCurvePointsPerKnot (int  value)       {m_bCurvePointsPerKnot = value;}
+void CurveOffsetOptions::SetBCurvePointsPerKnot (int  value){m_bCurvePointsPerKnot = value;}
 void CurveOffsetOptions::SetBCurveMethod (int  value)       {m_bCurveMethod = value;}
-void CurveOffsetOptions::SetOutputSelector(int  value) { m_outputSelector = value; }
+void CurveOffsetOptions::SetOutputSelector(int  value)      { m_outputSelector = value; }
+void CurveOffsetOptions::SetAllowSharpestCorners(bool value){ m_allowSharpestCorners = value; }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -67,7 +61,7 @@ double CurveOffsetOptions::GetChamferAngle () const    {return m_chamferAngle;}
 int    CurveOffsetOptions::GetBCurvePointsPerKnot () const {return m_bCurvePointsPerKnot;}
 int    CurveOffsetOptions::GetBCurveMethod () const {return m_bCurveMethod;}
 int    CurveOffsetOptions::GetOutputSelector() const { return m_outputSelector; }
-
+bool CurveOffsetOptions::GetAllowSharpestCorners() const { return m_allowSharpestCorners; }
 
 struct OffsetItem
 {
@@ -141,7 +135,7 @@ void SetFraction (int index, double fraction)
     m_cutbackFraction[index] = fraction;
     m_connectState[index] = CONNECT_TENTATIVE_FRACTION;
     }
-    
+
 void SetState (int index, int value)
     {
     index = FixIndex (index);
@@ -155,6 +149,12 @@ static bool SetCutbackFractions (OffsetItem &offsetA, OffsetItem &offsetB, Curve
     double offsetDistance = options.GetOffsetDistance ();
     double arcAngle = options.GetArcAngle ();
     double chamferAngle = options.GetChamferAngle ();
+    if (!options.GetAllowSharpestCorners())
+        {
+        double maxChamfer = s_maxChamferFraction * Angle::Pi();
+        if (chamferAngle > maxChamfer)
+            chamferAngle = maxChamfer;
+        }
     double signedTurnAngle = offsetDistance > 0.0 ? turnAngle : -turnAngle;
     if (arcAngle > 0.0 && signedTurnAngle > arcAngle)
         {
@@ -231,13 +231,19 @@ static bool AppendOuterArcStrokes (CurveVectorR collector, OffsetItem &offset, i
         }
     return true;
     }
-    
+
 static bool AppendSimpleJoint (CurveVectorR collector, OffsetItem &offsetA, OffsetItem &offsetB, CurveOffsetOptionsCR options)
     {
     double turnAngle = offsetA.m_offsetTangent[1].direction.AngleToXY (offsetB.m_offsetTangent[0].direction);
     double offsetDistance = options.GetOffsetDistance ();
     double arcAngle = options.GetArcAngle ();
     double chamferAngle = options.GetChamferAngle ();
+    if (!options.GetAllowSharpestCorners())
+        {
+        double maxChamfer = s_maxChamferFraction * Angle::Pi();
+        if (chamferAngle > maxChamfer)
+            chamferAngle = maxChamfer;
+        }
     double signedTurnAngle = offsetDistance > 0.0 ? turnAngle : -turnAngle;
     bvector<DPoint3d>points;
 #define Almost180 Angle::DegreesToRadians (179.0)
@@ -249,7 +255,7 @@ static bool AppendSimpleJoint (CurveVectorR collector, OffsetItem &offsetA, Offs
         {
         offsetA.DefineOutputArc (-1, offsetB, offsetDistance);
         ICurvePrimitivePtr curve = ICurvePrimitive::CreateArc (offsetA.m_outboundArc);
-        collector.push_back (curve);        
+        collector.push_back (curve);
         return true;
         }
     else if (chamferAngle > 0.0)
@@ -264,7 +270,7 @@ static bool AppendSimpleJoint (CurveVectorR collector, OffsetItem &offsetA, Offs
     // hm...
     offsetA.DefineOutputArc (turnAngle > Angle::PiOver2 () ? 2 : 1, offsetB, offsetDistance);
     ICurvePrimitivePtr curve = ICurvePrimitive::CreateArc (offsetA.m_outboundArc);
-    collector.push_back (curve);        
+    collector.push_back (curve);
     return false;
     }
 
@@ -280,7 +286,7 @@ ICurvePrimitivePtr CreateResolvedOffset ()
     else
         return m_offsetCurve;
     }
-    
+
 DPoint3d ResolvedEndpoint (int index)
     {
     double f = m_cutbackFraction[FixIndex(index)];
@@ -298,8 +304,8 @@ PathOffsetContext (CurveOffsetOptionsCR options)
     : m_options (options)   // just copy it in...
     {
     }
-    
-// Collect all simple offsets.  Return false if 
+
+// Collect all simple offsets.  Return false if
 bool LoadSimpleOffsets (CurveVectorCR path)
     {
     bool stat = true;
@@ -354,7 +360,7 @@ void AppendResolvedJoint (CurveVectorR collector, OffsetItem &dataA, OffsetItem 
         ICurvePrimitivePtr curve = ICurvePrimitive::CreateArc (dataA.m_outboundArc);
         collector.push_back (curve);
         return;
-        
+
         // ??
         }
     else
@@ -392,7 +398,7 @@ CurveVectorPtr OutputWithSimpleJoints (CurveVector::BoundaryType btype, bool xyO
     if (numBase < numPrimitive)
         OffsetItem::AppendSimplePrimitive (*result, m_simpleOffsets[numBase]);
     if (result.IsValid ())
-        result->ConsolidateAdjacentPrimitives (true, xyOnly);        
+        result->ConsolidateAdjacentPrimitives (true, xyOnly);
     return result;
     }
 
@@ -415,7 +421,7 @@ CurveVectorPtr JoinOffsets (CurveVector::BoundaryType btype)
         }
     for (ptrdiff_t i = 0; i < numPrimitive; i++)
         m_simpleOffsets[i].VerifyFractions ();
-    
+
     for (ptrdiff_t i = 0; i < numPrimitive; i++)
         {
         AppendResolvedPrimitive (*result, m_simpleOffsets[i]);
@@ -715,7 +721,7 @@ CurveVectorR collector
         region->push_back (ICurvePrimitive::CreateLineString (points, 3));
         collector.push_back (ICurvePrimitive::CreateChildCurveVector (region));
         }
-    }    
+    }
 
 
 static void CollectJoint (
@@ -763,9 +769,14 @@ CurveVectorR collector
     else
         {
         double chamferRadians = options.GetChamferAngle ();
-        double maxChamferAngle = Angle::PiOver2 ();
-        if (chamferRadians <= 0.0 || chamferRadians > maxChamferAngle)
-            chamferRadians = maxChamferAngle;
+        if (!options.GetAllowSharpestCorners()) // clamp chamferRadians unless user allows sharpest corners
+            {
+            double maxChamferAngle = Angle::PiOver2();
+            if (s_maxChamferFraction < 0.5)
+                maxChamferAngle = s_maxChamferFraction * Angle::Pi();
+            if (chamferRadians <= 0.0 || chamferRadians > maxChamferAngle)
+                chamferRadians = maxChamferAngle;
+            }
         static double roundoffShift = 0.99999;
         int numTurn = (int)(roundoffShift + absTheta / chamferRadians);
         double alpha = 0.5 * theta / (double)numTurn;
@@ -803,8 +814,8 @@ CurveVectorR collector
 
 
 static void CollectOffsetArea (
-ICurvePrimitiveCP curveA,       //  may be used to clip at curveB.start
-ICurvePrimitiveCR curveB,       // Create pure offset from here -- ends move perpendicular.
+ICurvePrimitiveCP curveA,       // may be used to clip at curveB.start
+ICurvePrimitiveCR curveB,       // create pure offset from here -- ends move perpendicular.
 ICurvePrimitiveCP curveC,       // create joint solid from curveB.end to curveC.start
 CurveOffsetOptionsCR options,
 CurveVectorR collector
@@ -825,14 +836,17 @@ CurveVectorR collector
         curveC->FractionToPoint (0.0, tangentC0);
     DSegment3d segment;
     DEllipse3d arc;
-    if (curveB.TryGetLine (segment))
-        {
-        CollectOffsetSegment (tangentA1, segment, tangentC0, options, collector);
-        }
-    else if (curveB.TryGetArc (arc))
-        {
-        CollectOffsetCircularArc (tangentA1, arc, tangentC0, options, collector);
-        }
+    if (NULL != curveA)
+    {
+        if (curveB.TryGetLine(segment))
+            {
+            CollectOffsetSegment (tangentA1, segment, tangentC0, options, collector);
+            }
+        else if (curveB.TryGetArc (arc))
+            {
+            CollectOffsetCircularArc (tangentA1, arc, tangentC0, options, collector);
+            }
+    }
 #ifdef primitiveSupport
     else
         CollectOffsetPrimitive (tangentA1, arc, tangentC0, options, collector);
