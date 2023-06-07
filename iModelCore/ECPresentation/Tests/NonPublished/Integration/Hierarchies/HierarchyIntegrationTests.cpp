@@ -13641,6 +13641,66 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, ReturnsSimilarNode11Time
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(ReturnsSimilarNode11TimesIfSimilarAncestorsCheckIsDisabled_CustomNodes, R"*(
+    <ECEntityClass typeName="A" />
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, ReturnsSimilarNode11TimesIfSimilarAncestorsCheckIsDisabled_CustomNodes)
+    {
+    ECClassCP classA = GetClass("A");
+    IECInstancePtr a = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rootRule = new RootNodeRule("", 1000, false, TargetTree_Both, true);
+    rules->AddPresentationRule(*rootRule);
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false,
+        "", classA->GetFullName(), false));
+
+    ChildNodeRule* childRule = new ChildNodeRule("", 1000, false);
+    childRule->AddSpecification(*CreateCustomNodeSpecification("Custom", [&](CustomNodeSpecificationR spec) 
+        {
+        spec.SetSuppressSimilarAncestorsCheck(true);
+        auto nestedChildRule = new ChildNodeRule("HasChildren = True", 1000, false);
+        nestedChildRule->AddSpecification(*CreateCustomNodeSpecification("Custom"));
+        spec.AddNestedRule(*nestedChildRule);
+        }));
+    rules->AddPresentationRule(*childRule);
+
+    // request for nodes
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes(
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
+        );
+    ASSERT_EQ(1, rootNodes.GetSize());
+    VerifyNodeInstance(rules->GetRuleSetId(), *rootNodes[0], *a);
+    EXPECT_TRUE(rootNodes[0]->HasChildren());
+
+    NavNodeCPtr parent = rootNodes[0];
+    int count = 11;
+    while (count--)
+        {
+        auto childNodes = RulesEngineTestHelpers::GetValidatedNodes(
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), parent.get()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), parent.get())).get(); }
+        );
+        parent = childNodes[0];
+        ASSERT_EQ(1, childNodes.GetSize());
+        VerifyCustomNode(*childNodes[0], "Custom", Utf8String("Custom"));
+        EXPECT_EQ((count > 0), childNodes[0]->HasChildren());
+        }
+
+    auto finalChildNodes = RulesEngineTestHelpers::GetValidatedNodes(
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), parent.get()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), parent.get())).get(); }
+        );
+    ASSERT_EQ(0, finalChildNodes.GetSize());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
 DEFINE_SCHEMA(AllowsMultipleGroupingNodesBasedOnSameSpecificationIfGroupedNodesAreDifferent, R"*(
     <ECEntityClass typeName="A" />
     <ECRelationshipClass typeName="A_To_A" strength="referencing" strengthDirection="Backward" modifier="Sealed">
