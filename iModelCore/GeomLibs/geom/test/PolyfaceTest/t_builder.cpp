@@ -151,3 +151,44 @@ TEST(PolyfaceBuilder, PolygonEdgeStitch)
         Check::ClearGeometry ("PolyfaceBuilder.PolygonEdgeStitch");
 
         }
+
+TEST(PolyfaceBuilder, RegionRotationalSweep)
+    {
+    CurveVectorPtr solid = CurveVector::Create(CurveVector::BoundaryType::BOUNDARY_TYPE_Outer, ICurvePrimitive::CreateRectangle(1, 1, 6, 6, 0));
+    CurveVectorPtr hole0 = CurveVector::Create(CurveVector::BoundaryType::BOUNDARY_TYPE_Outer, ICurvePrimitive::CreateRectangle(2, 2, 3, 3, 0));
+    CurveVectorPtr hole1 = CurveVector::Create(CurveVector::BoundaryType::BOUNDARY_TYPE_Outer, ICurvePrimitive::CreateArc(DEllipse3d::FromCenterRadiusXY(DPoint3d::From(4.5, 4.5), 0.5)));
+    CurveVectorPtr unionRegion = CurveVector::AreaUnion(*hole0, *hole1);
+    CurveVectorPtr parityRegion = CurveVector::AreaDifference(*solid, *unionRegion);
+
+    IFacetOptionsPtr options = IFacetOptions::CreateForSurfaces();
+    options->SetNormalsRequired(true);
+    options->SetParamsRequired(true);
+    options->SetAngleTolerance(0.1);
+    options->SetParamMode(FACET_PARAM_01BothAxes);
+
+    DRay3d axis = DRay3d::FromOriginAndVector(DPoint3d::FromZero(), DVec3d::From(1,0,0));
+    double sweep = Angle::PiOver2();
+    bool capped = true;
+
+    if (true)
+        {
+        IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create (*options);
+        builder->AddRotationalSweep(unionRegion, axis.origin, axis.direction, sweep, capped);
+        Check::SaveTransformed(DSegment3d::From(axis.origin, axis.FractionParameterToPoint(2.0)));
+        Check::SaveTransformed(*unionRegion);
+        Check::SaveTransformed(*builder->GetClientMeshPtr());
+        }
+
+    Check::Shift(10, 0);
+
+    if (true)
+        {
+        IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create (*options);
+        builder->AddRotationalSweep(parityRegion, axis.origin, axis.direction, sweep, capped);
+        Check::SaveTransformed(DSegment3d::From(axis.origin, axis.FractionParameterToPoint(2.0)));
+        Check::SaveTransformed(*parityRegion);
+        Check::SaveTransformed(*builder->GetClientMeshPtr());
+        }
+
+    Check::ClearGeometry("PolyfaceBuilder.RegionRotationalSweep");
+    }
