@@ -111,81 +111,6 @@ void DefineOutputArc (int numJointPoints, OffsetItem & next, double offsetDistan
     next.m_connectState[0] = CONNECT_BY_JOINT_GEOMETRY;
     }
 
-int FixIndex (int index)
-    {
-    return index <= 0 ? 0 : 1;
-    }
-
-bool IsVerifyableState (int value)
-    {
-    return value == CONNECT_CONFIRMED_FRACTION || value == CONNECT_TENTATIVE_FRACTION;
-    }
-
-bool VerifyFractions ()
-    {
-    m_approvedFractions =
-           IsVerifyableState (m_connectState[0])
-        && IsVerifyableState (m_connectState[1])
-        && m_cutbackFraction[0] < m_cutbackFraction[1];
-    return m_approvedFractions;
-    }
-void SetFraction (int index, double fraction)
-    {
-    index = FixIndex (index);
-    m_cutbackFraction[index] = fraction;
-    m_connectState[index] = CONNECT_TENTATIVE_FRACTION;
-    }
-
-void SetState (int index, int value)
-    {
-    index = FixIndex (index);
-    m_connectState[index] = value;
-    }
-// Set the fractions for extending offsetA to offsetB.
-static bool SetCutbackFractions (OffsetItem &offsetA, OffsetItem &offsetB, CurveOffsetOptionsCR options)
-    {
-    DSegment3d segmentA, segmentB;
-    double turnAngle = offsetA.m_offsetTangent[1].direction.AngleToXY (offsetB.m_offsetTangent[0].direction);
-    double offsetDistance = options.GetOffsetDistance ();
-    double arcAngle = options.GetArcAngle ();
-    double chamferAngle = options.GetChamferAngle ();
-    if (!options.GetAllowSharpestCorners())
-        {
-        double maxChamfer = s_maxChamferFraction * Angle::Pi();
-        if (chamferAngle > maxChamfer)
-            chamferAngle = maxChamfer;
-        }
-    double signedTurnAngle = offsetDistance > 0.0 ? turnAngle : -turnAngle;
-    if (arcAngle > 0.0 && signedTurnAngle > arcAngle)
-        {
-        offsetA.DefineOutputArc (-1, offsetB, offsetDistance);
-        return true;
-        }
-    else if (chamferAngle > 0.0 && signedTurnAngle > chamferAngle)
-        {
-        int numPart = (int) ((signedTurnAngle / chamferAngle) + 0.999999999);
-        offsetA.DefineOutputArc (numPart, offsetB, offsetDistance);
-        return true;
-        }
-    else if (   offsetA.m_offsetCurve->TryGetLine (segmentA)
-        && offsetB.m_offsetCurve->TryGetLine (segmentB)
-        )
-        {
-        double fractionA, fractionB;
-        DPoint3d pointA, pointB;
-        if (DSegment3d::IntersectXY (fractionA, fractionB, pointA, pointB, segmentA, segmentB))
-            {
-            offsetA.SetFraction (1, fractionA);
-            offsetB.SetFraction (0, fractionB);
-            return true;
-            }
-        }
-
-    offsetA.DefineOutputArc (0, offsetB, offsetDistance);
-    return false;
-    }
-
-
 // Set the fractions for extending offsetA to offsetB.
 static bool AppendSimplePrimitive (CurveVectorR collector, OffsetItem &offset)
     {
@@ -273,27 +198,6 @@ static bool AppendSimpleJoint (CurveVectorR collector, OffsetItem &offsetA, Offs
     collector.push_back (curve);
     return false;
     }
-
-
-static bool IsOuterTurn (DVec3dCR tangentA, DVec3dCR tangentB, double offset)
-    {
-    return tangentA.CrossProductXY (tangentB) * offset > 0.0;
-    }
-ICurvePrimitivePtr CreateResolvedOffset ()
-    {
-    if (m_approvedFractions)
-        return m_offsetCurve->CloneBetweenFractions (m_cutbackFraction[0], m_cutbackFraction[1], true);
-    else
-        return m_offsetCurve;
-    }
-
-DPoint3d ResolvedEndpoint (int index)
-    {
-    double f = m_cutbackFraction[FixIndex(index)];
-    DPoint3d point;
-    m_offsetCurve->FractionToPoint (f, point);
-    return point;
-    }
 };
 
 struct PathOffsetContext
@@ -321,60 +225,6 @@ bool LoadSimpleOffsets (CurveVectorCR path)
     return stat;
     }
 
-void AppendResolvedPrimitive (CurveVectorR collector, OffsetItem &data)
-    {
-    ICurvePrimitivePtr curve = data.CreateResolvedOffset ();
-    if (curve.IsValid ())
-        {
-        collector.push_back (curve);
-        }
-    }
-
-void AppendResolvedJoint (CurveVectorR collector, OffsetItem &dataA, OffsetItem &dataB, CurveOffsetOptionsCR options)
-    {
-    double r;
-    static int s_default = 0;
-    if (dataA.m_connectState[1] == OffsetItem::CONNECT_BY_JOINT_GEOMETRY)
-        {
-        if (dataA.m_numJointPoints == -1)
-            {
-            ICurvePrimitivePtr curve = ICurvePrimitive::CreateArc (dataA.m_outboundArc);
-            collector.push_back (curve);
-            return;
-            }
-        }
-    if (dataA.m_connectState[1] == OffsetItem::CONNECT_CONFIRMED_FRACTION
-            && dataB.m_connectState[0] == OffsetItem::CONNECT_CONFIRMED_FRACTION
-            )
-        {
-        DPoint3d pointA = dataA.ResolvedEndpoint (1);
-        DPoint3d pointB = dataB.ResolvedEndpoint(0);
-        if (!DPoint3dOps::AlmostEqual (pointA, pointB))
-            {
-            ICurvePrimitivePtr curve = ICurvePrimitive::CreateLine (DSegment3d::From (pointA, pointB));
-            collector.push_back (curve);
-            }
-        }
-    else if (s_default == 1 && dataA.m_outboundArc.IsCircular (r))
-        {
-        ICurvePrimitivePtr curve = ICurvePrimitive::CreateArc (dataA.m_outboundArc);
-        collector.push_back (curve);
-        return;
-
-        // ??
-        }
-    else
-        {
-        DPoint3d pointA = dataA.ResolvedEndpoint (1);
-        DPoint3d pointB = dataB.ResolvedEndpoint(0);
-        if (!DPoint3dOps::AlmostEqual (pointA, pointB))
-            {
-            ICurvePrimitivePtr curve = ICurvePrimitive::CreateLine (DSegment3d::From (pointA, pointB));
-            collector.push_back (curve);
-            }
-        }
-    }
-
 CurveVectorPtr OutputWithSimpleJoints (CurveVector::BoundaryType btype, bool xyOnly)
     {
     CurveVectorPtr result = CurveVector::Create (btype);
@@ -399,42 +249,6 @@ CurveVectorPtr OutputWithSimpleJoints (CurveVector::BoundaryType btype, bool xyO
         OffsetItem::AppendSimplePrimitive (*result, m_simpleOffsets[numBase]);
     if (result.IsValid ())
         result->ConsolidateAdjacentPrimitives (true, xyOnly);
-    return result;
-    }
-
-CurveVectorPtr JoinOffsets (CurveVector::BoundaryType btype)
-    {
-    CurveVectorPtr result = CurveVector::Create (btype);
-    bool closed =  btype == CurveVector::BOUNDARY_TYPE_Outer
-                || btype == CurveVector::BOUNDARY_TYPE_Inner;
-    ptrdiff_t   numPrimitive = m_simpleOffsets.size ();
-    ptrdiff_t numBase = numPrimitive;
-    if (!closed)
-        numBase--;
-
-    for (ptrdiff_t i = 0; i < numBase; i++)
-        {
-        ptrdiff_t j = i + 1;
-        if (j >= numBase)
-            j = 0;
-        OffsetItem::SetCutbackFractions (m_simpleOffsets[i], m_simpleOffsets[j], m_options);
-        }
-    for (ptrdiff_t i = 0; i < numPrimitive; i++)
-        m_simpleOffsets[i].VerifyFractions ();
-
-    for (ptrdiff_t i = 0; i < numPrimitive; i++)
-        {
-        AppendResolvedPrimitive (*result, m_simpleOffsets[i]);
-        if (i <= numBase)
-            {
-            ptrdiff_t j = i + 1;
-            if (j >= numBase)
-                j = 0;
-            AppendResolvedJoint (*result, m_simpleOffsets[i], m_simpleOffsets[j], m_options);
-            }
-        }
-    if (result.IsValid ())
-        result->ConsolidateAdjacentPrimitives ();
     return result;
     }
 };
@@ -772,8 +586,6 @@ CurveVectorR collector
         if (!options.GetAllowSharpestCorners()) // clamp chamferRadians unless user allows sharpest corners
             {
             double maxChamferAngle = Angle::PiOver2();
-            if (s_maxChamferFraction < 0.5)
-                maxChamferAngle = s_maxChamferFraction * Angle::Pi();
             if (chamferRadians <= 0.0 || chamferRadians > maxChamferAngle)
                 chamferRadians = maxChamferAngle;
             }

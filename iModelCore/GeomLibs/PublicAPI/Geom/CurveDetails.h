@@ -517,8 +517,8 @@ double m_offsetDistance;
 bool   m_forceClosure;
 bool m_allowSharpestCorners; // Whether to remove the internal turn angle upper bound for sharp corner construction.
                              // By default, a sharp corner is not created at a joint when the turn angle is too large,
-                             // so as to avoid offsets whose ranges blow up. Internally, this is implemented by applying
-                             // an upper bound of min(PI/2, s_maxChamferFraction*PI) to `m_chamferAngle`.
+                             // so as to avoid offsets whose ranges blow up. Internally, this is implemented by applying an
+                             // upper bound to `m_chamferAngle`.
                              // When `m_allowSharpestCorners` is true, this internal upper bound is removed, allowing sharp
                              // corners for turn angles up to `m_chamferAngle`. Thus, if you know your input turn angles
                              // are no greater than `m_chamferAngle`, you can create an offset with sharp corners at
