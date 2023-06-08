@@ -1177,10 +1177,9 @@ Utf8String DbFile::ExplainQuery(Utf8CP sql, bool explainPlan, bool suppressDiagn
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Db::Db() : m_embeddedFiles(*this), m_dbFile(nullptr), m_statements(35), m_uri(new BeDbUri()){}
+Db::Db() : m_embeddedFiles(*this), m_dbFile(nullptr), m_statements(35){}
 Db::~Db() {
     DoCloseDb();
-    delete m_uri;
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2004,8 +2003,6 @@ DbResult Db::CreateNewDb(Utf8CP inName, CreateParams const& params, BeGuid dbGui
         return rc;
     }
 
-    *m_uri = BeDbUri(inName);
-
     // Bloom filter introduce in 3.38 has issue with certain queries and fix was in ANALYZE
     // command which had a rounding error. We need to keep bloom filter disabled for now until
     // we are able to run ANALYZE on all new checkpoints and old one if necessary.
@@ -2651,7 +2648,7 @@ void Db::DoCloseDb()
         return;
 
     m_appData.Clear();
-    *m_uri = BeDbUri("");
+    m_uri.clear();
     m_statements.Empty();
     DELETE_AND_CLEAR(m_dbFile);
     }
@@ -2753,7 +2750,7 @@ Utf8CP Db::GetDbFileName() const
 
 
 
-BeDbUri const& Db::GetUri() const { return *m_uri; }
+BeDbUri Db::GetUri() const { return BeDbUri(m_uri); }
 
 #define IS_SQLITE_FILE_SIGNATURE(toCheck) (0 == memcmp((Utf8CP)header, toCheck, strlen(toCheck)))
 
@@ -6421,7 +6418,6 @@ std::pair<DbBuffer::SqlMemP, uint64_t>  DbBuffer::Detach() {
     return pair;
 }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -6466,30 +6462,47 @@ DbResult Db::Deserialize(DbBuffer& buffer, DbR db, DbDeserializeOptions opts, co
     return rc;
 }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String BeDbUri::Normalize(Utf8StringCR messy_path) {
     std::filesystem::path path((std::string)messy_path);
     std::filesystem::path canonicalPath = std::filesystem::weakly_canonical(path);
-    std::string s_input = canonicalPath.make_preferred().generic_string();
+    std::string genericPath = canonicalPath.make_preferred().generic_string();
     std::regex space("[[:space:]]");
-    std::string s_output;
-    return std::regex_replace(s_input, space, std::string("%20"));
+    return std::regex_replace(genericPath, space, std::string("%20"));
 }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String BeDbUri::GetPreferedPath() const {
-    std::filesystem::path canonicalPath((std::string)_canonicalPath);
-    Utf8String input = Utf8String(canonicalPath.make_preferred().c_str());
-    input.ReplaceAll("%20", " ");
-    return input;
+    std::filesystem::path canonicalPath((std::string)m_canonicalPath);
+    Utf8String preferredPath = Utf8String(canonicalPath.make_preferred().c_str());
+    preferredPath.ReplaceAll("%20", " ");
+    return preferredPath;
 }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String BeDbUri::GetCanonicalUnescapedPath() const {
-    Utf8String unescaped = _canonicalPath;
+    Utf8String unescaped = m_canonicalPath;
     unescaped.ReplaceAll("%20", " ");
     return unescaped;
 }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 bool BeDbUri::LocalFileExists() const {
-    std::filesystem::path path((std::string)_canonicalPath);
+    std::filesystem::path path((std::string)m_canonicalPath);
     return std::filesystem::exists(path) && !std::filesystem::is_directory(path);
 }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 Utf8CP BeDbUri::GetSchemaStr(Schema s) {
     if (s == Schema::NONE)
         return "";
@@ -6497,7 +6510,11 @@ Utf8CP BeDbUri::GetSchemaStr(Schema s) {
         return "file:";
     return nullptr;
 }
-BeDbUri::BeDbUri(Utf8StringCR uri, Schema schema) : _params(uri), _schema(schema) {
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BeDbUri::BeDbUri(Utf8StringCR uri, Schema schema) : m_params(uri), m_schema(schema) {
     const auto n = uri.find("?");
     Utf8String temp;
     if (n != Utf8String::npos)
@@ -6507,28 +6524,39 @@ BeDbUri::BeDbUri(Utf8StringCR uri, Schema schema) : _params(uri), _schema(schema
 
     Utf8String fileSchema = GetSchemaStr(Schema::FILE);
     if (temp.StartsWith(fileSchema.c_str())){
-        _schema = Schema::FILE;
+        m_schema = Schema::FILE;
         temp = temp.substr(fileSchema.length());
         temp.ReplaceAll("//", "");
     }
-    _canonicalPath = Normalize(temp);
+    m_canonicalPath = Normalize(temp);
 }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String BeDbUri::ToString() const {
-    Utf8String str = GetSchemaStr(_schema);
-    if(!str.empty() && !_canonicalPath.empty() && _canonicalPath[0] != '/'){
+    Utf8String str = GetSchemaStr(m_schema);
+    if(!str.empty() && !m_canonicalPath.empty() && m_canonicalPath[0] != '/'){
         str.append("/");
     }
-    str.append(_canonicalPath);
-    str.append(_params.ToString());
+    str.append(m_canonicalPath);
+    str.append(m_params.ToString());
     return str;
 }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 BeDbUri::Params& BeDbUri::Params::Erase(Utf8String key) {
-    auto it = _params.find(key);
-    if (it != _params.end())
-        _params.erase(it);
+    auto it = m_params.find(key);
+    if (it != m_params.end())
+        m_params.erase(it);
     return *this;
 }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String BeDbUri::Params::Encode(Utf8String const& str){
     auto curl = curl_easy_init();
     auto escaped = curl_easy_escape(curl, str.c_str(), (int)str.length());
@@ -6536,6 +6564,10 @@ Utf8String BeDbUri::Params::Encode(Utf8String const& str){
     curl_free(escaped);
     return ret;
 }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String BeDbUri::Params::Decode(Utf8String const& str){
     auto curl = curl_easy_init();
     auto unescaped = curl_easy_unescape(curl, str.c_str(), (int)str.length(), nullptr);
@@ -6544,6 +6576,9 @@ Utf8String BeDbUri::Params::Decode(Utf8String const& str){
     return ret;
 }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 BeDbUri::Params::Params(Utf8String const& uri){
      const auto n = uri.find("?");
     if (n != Utf8String::npos) {
@@ -6554,29 +6589,49 @@ BeDbUri::Params::Params(Utf8String const& uri){
             bvector<Utf8String> keyValPair;
             BeStringUtilities::Split(param.c_str(), "=", keyValPair);
             if (keyValPair.size() == 2) {
-                _params[Decode(keyValPair.front())] = Decode(keyValPair.back());
+                m_params[Decode(keyValPair.front())] = Decode(keyValPair.back());
             }
         }
     }
 }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 BeDbUri::Params& BeDbUri::Params::SetInt64(Utf8String key, int64_t val){
     BeInt64Id id((uint64_t)val);
-    _params[key] = id.ToString();
+    m_params[key] = id.ToString();
     return* this;
 }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 BeDbUri::Params& BeDbUri::Params::SetString(Utf8String key, Utf8String val){
-    _params[key] = val;
+    m_params[key] = val;
     return* this;
 }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 BeDbUri::Params& BeDbUri::Params::SetBool(Utf8String key, bool val){
-    _params[key] = val ? "1" : "0";
+    m_params[key] = val ? "1" : "0";
     return* this;
 }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String BeDbUri::Params::GetString(Utf8String key, Utf8String defaultVal) const {
     if (!Contains(key))
         return defaultVal;
-    return _params.find(key)->second;
+    return m_params.find(key)->second;
 }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 int64_t BeDbUri::Params::GetInt64(Utf8String key, int64_t defaultVal ) const {
     if (!Contains(key))
         return defaultVal;
@@ -6584,36 +6639,55 @@ int64_t BeDbUri::Params::GetInt64(Utf8String key, int64_t defaultVal ) const {
     auto val = GetString(key, "");
     return (int64_t)BeInt64Id::FromString(val.c_str()).GetValueUnchecked();
 }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 bool BeDbUri::Params::GetBool(Utf8String key, bool defaultVal ) const {
     if (!Contains(key))
         return defaultVal;
 
     return GetInt64(key, 0) != 0;
 }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 std::vector<Utf8String> BeDbUri::Params::GetKeys() const {
     std::vector<Utf8String> keys;
-    for (auto& it: _params)
+    for (auto& it: m_params)
         keys.push_back(it.first);
     return keys;
 }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 bool BeDbUri::Params::Contains(Utf8String key) const {
-    return _params.find(key) != _params.end();
+    return m_params.find(key) != m_params.end();
 }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String BeDbUri::Params::ToString() const {
     Utf8String str;
-    if (_params.empty()) {
+    if (m_params.empty()) {
         return str;
     }
     str = "?";
-    auto it = std::begin(_params);
-    for (; it != std::end(_params); ++it) {
-        if(it != std::begin(_params))
+    auto it = std::begin(m_params);
+    for (; it != std::end(m_params); ++it) {
+        if(it != std::begin(m_params))
             str.append("&");
         str.append(Encode(it->first)).append("=").append(Encode(it->second));
     }
     return str;
 }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 Db::OpenMode BeDbUri::KnownParams::ParseOpenMode(Utf8StringCR str) {
     if (str.EqualsIAscii(VALUE_Mode_Create))
         return Db::OpenMode::Create;
@@ -6627,6 +6701,9 @@ Db::OpenMode BeDbUri::KnownParams::ParseOpenMode(Utf8StringCR str) {
     return Db::OpenMode::Readonly;
 }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String BeDbUri::KnownParams::ToString(Db::OpenMode v) {
     switch(v){
         case Db::OpenMode::Create: return VALUE_Mode_Create;
@@ -6637,11 +6714,18 @@ Utf8String BeDbUri::KnownParams::ToString(Db::OpenMode v) {
     BeAssert(false && "unhandled enum value for Db::OpenMode");
     return "";
 }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 bool BeDbUri::KnownParams::IsKnownParameter(Utf8CP str) {
     auto& knownParams = GetKnownParameters();
     return knownParams.find(str) != knownParams.end();
 }
+/*---------------------------------------------------------------------------------**//**
 
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 std::set<Utf8CP, BeDbUri::NoCaseCompare> const& BeDbUri::KnownParams::GetKnownParameters() {
     static std::set<Utf8CP, NoCaseCompare> s_knownParms = {
         KnownParams::PARAM_AppId,

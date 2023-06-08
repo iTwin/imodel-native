@@ -2699,7 +2699,7 @@ protected:
     DbFile* m_dbFile;
     bool m_isCloudDb = false; // !URI no need
     StatementCache m_statements;
-    BeDbUri* m_uri; // forward declaration
+    Utf8String m_uri;
     DbEmbeddedFileTable m_embeddedFiles;
     mutable AppDataCollection m_appData;
 
@@ -2929,7 +2929,7 @@ public:
     //! @return The name of the physical file associated with this Db. nullptr if Db is not opened.
     BE_SQLITE_EXPORT Utf8CP GetDbFileName() const;
 
-    BE_SQLITE_EXPORT BeDbUri const& GetUri() const;
+    BE_SQLITE_EXPORT BeDbUri GetUri() const;
 
     // Get the "base" name that can be used for creating a temporary file related to this Db. Callers should append a unique string to this value (e.g "-tiles")
     // to form a full path for a temporary file. The path is guaranteed to be a filename in an existing writable directory.
@@ -3344,7 +3344,7 @@ struct BeDbUri final {
     };
     struct Params final {
         private :
-            std::map<Utf8String, Utf8String, NoCaseCompare> _params; // moveable
+            std::map<Utf8String, Utf8String, NoCaseCompare> m_params; // moveable
             static Utf8String Encode(Utf8StringCR str);
             static Utf8String Decode(Utf8StringCR str);
         public:
@@ -3396,9 +3396,9 @@ struct BeDbUri final {
     };
 
 private:
-    Utf8String _canonicalPath;
-    Schema _schema;
-    Params _params;
+    Utf8String m_canonicalPath;
+    Schema m_schema;
+    Params m_params;
     static Utf8CP GetSchemaStr(Schema s);
     static Utf8String Normalize(Utf8StringCR str);
 
@@ -3410,10 +3410,10 @@ public:
     BeDbUri& operator=(BeDbUri&&) = default;
     // Check if file exists
     BE_SQLITE_EXPORT bool LocalFileExists() const;
-    Params& GetParams() { return _params; }
+    Params& GetParams() { return m_params; }
     // Returns canonical generic path
-    Utf8String const& GetCanonicalPath() const { return _canonicalPath; }
-    Schema GetUriSchema() const { return _schema; }
+    Utf8String const& GetCanonicalPath() const { return m_canonicalPath; }
+    Schema GetUriSchema() const { return m_schema; }
     // Returns uri string
     BE_SQLITE_EXPORT Utf8String ToString() const;
     // Returns canonical prefered path for local os
@@ -3422,10 +3422,10 @@ public:
     BE_SQLITE_EXPORT Utf8String GetCanonicalUnescapedPath() const;
 
     //! handled by sqlite3_open_v2()
-    BeDbUri& SetOpenMode(Db::OpenMode v) { _params.SetString(KnownParams::PARAM_Mode, KnownParams::ToString(v)); return *this;}
-    Db::OpenMode GetOpenMode(Db::OpenMode defaultVal = Db::OpenMode::Readonly) const { return KnownParams::ParseOpenMode(_params.GetString(KnownParams::PARAM_Mode, KnownParams::ToString(defaultVal))); }
-    bool HasOpenMode() const { return _params.Contains(KnownParams::PARAM_Mode);}
-    BeDbUri& EraseOpenMode() { _params.Erase(KnownParams::PARAM_Mode); return *this;}
+    BeDbUri& SetOpenMode(Db::OpenMode v) { m_params.SetString(KnownParams::PARAM_Mode, KnownParams::ToString(v)); return *this;}
+    Db::OpenMode GetOpenMode(Db::OpenMode defaultVal = Db::OpenMode::Readonly) const { return KnownParams::ParseOpenMode(m_params.GetString(KnownParams::PARAM_Mode, KnownParams::ToString(defaultVal))); }
+    bool HasOpenMode() const { return m_params.Contains(KnownParams::PARAM_Mode);}
+    BeDbUri& EraseOpenMode() { m_params.Erase(KnownParams::PARAM_Mode); return *this;}
 
     BeDbUri& SetOpenModeReadonly() { return SetOpenMode(Db::OpenMode::Readonly); }
     BeDbUri& SetOpenModeReadWrite() { return SetOpenMode(Db::OpenMode::ReadWrite); }
@@ -3433,100 +3433,100 @@ public:
     BeDbUri& SetOpenModeMemory() { return SetOpenMode(Db::OpenMode::Memory); }
 
     //! handled by BeSQlite::OpenBeSQLiteDb()
-    BeDbUri& SetEncoding(Db::Encoding v) { _params.SetInt64(KnownParams::PARAM_Encoding, (int64_t)v); return *this;}
-    Db::Encoding GetEncoding(Db::Encoding defaultVal = Db::Encoding::Utf8) const { return (Db::Encoding)_params.GetInt64(KnownParams::PARAM_Encoding, (int64_t)defaultVal); }
-    bool HasEncoding() const { return _params.Contains(KnownParams::PARAM_Encoding);}
-    BeDbUri& EraseEncoding() { _params.Erase(KnownParams::PARAM_Encoding); return *this;}
+    BeDbUri& SetEncoding(Db::Encoding v) { m_params.SetInt64(KnownParams::PARAM_Encoding, (int64_t)v); return *this;}
+    Db::Encoding GetEncoding(Db::Encoding defaultVal = Db::Encoding::Utf8) const { return (Db::Encoding)m_params.GetInt64(KnownParams::PARAM_Encoding, (int64_t)defaultVal); }
+    bool HasEncoding() const { return m_params.Contains(KnownParams::PARAM_Encoding);}
+    BeDbUri& EraseEncoding() { m_params.Erase(KnownParams::PARAM_Encoding); return *this;}
 
      //! handled by DgnDb::_OnDbOpen()
-    BeDbUri& SetDomainSchemaUpgradeMode(DomainSchemaUpgradeMode v) { _params.SetInt64(KnownParams::PARAM_DomainSchemaUpgradeMode, (int64_t)v); return *this;}
-    DomainSchemaUpgradeMode GetDomainSchemaUpgradeMode(DomainSchemaUpgradeMode defaultVal = DomainSchemaUpgradeMode::CheckRequiredUpgrades) const { return (DomainSchemaUpgradeMode)_params.GetInt64(KnownParams::PARAM_DomainSchemaUpgradeMode, (int64_t)defaultVal); }
-    bool HasDomainSchemaUpgradeMode() const { return _params.Contains(KnownParams::PARAM_DomainSchemaUpgradeMode);}
-    BeDbUri& EraseDomainSchemaUpgradeMode() { _params.Erase(KnownParams::PARAM_DomainSchemaUpgradeMode); return *this;}
+    BeDbUri& SetDomainSchemaUpgradeMode(DomainSchemaUpgradeMode v) { m_params.SetInt64(KnownParams::PARAM_DomainSchemaUpgradeMode, (int64_t)v); return *this;}
+    DomainSchemaUpgradeMode GetDomainSchemaUpgradeMode(DomainSchemaUpgradeMode defaultVal = DomainSchemaUpgradeMode::CheckRequiredUpgrades) const { return (DomainSchemaUpgradeMode)m_params.GetInt64(KnownParams::PARAM_DomainSchemaUpgradeMode, (int64_t)defaultVal); }
+    bool HasDomainSchemaUpgradeMode() const { return m_params.Contains(KnownParams::PARAM_DomainSchemaUpgradeMode);}
+    BeDbUri& EraseDomainSchemaUpgradeMode() { m_params.Erase(KnownParams::PARAM_DomainSchemaUpgradeMode); return *this;}
 
      //! handled by BeSQlite::OpenBeSQLiteDb()
-    BeDbUri& SetDefaultTxnMode(DefaultTxn v) { _params.SetInt64(KnownParams::PARAM_TxnMode, (int64_t)v); return *this;}
-    DefaultTxn GetDefaultTxnMode(DefaultTxn defaultVal = DefaultTxn::Yes) const{ return (DefaultTxn)_params.GetInt64(KnownParams::PARAM_TxnMode, (int64_t)defaultVal); }
-    bool HasDefaultTxnMode() const { return _params.Contains(KnownParams::PARAM_TxnMode);}
-    BeDbUri& EraseDefaultTxnMode() { _params.Erase(KnownParams::PARAM_TxnMode); return *this;}
+    BeDbUri& SetDefaultTxnMode(DefaultTxn v) { m_params.SetInt64(KnownParams::PARAM_TxnMode, (int64_t)v); return *this;}
+    DefaultTxn GetDefaultTxnMode(DefaultTxn defaultVal = DefaultTxn::Yes) const{ return (DefaultTxn)m_params.GetInt64(KnownParams::PARAM_TxnMode, (int64_t)defaultVal); }
+    bool HasDefaultTxnMode() const { return m_params.Contains(KnownParams::PARAM_TxnMode);}
+    BeDbUri& EraseDefaultTxnMode() { m_params.Erase(KnownParams::PARAM_TxnMode); return *this;}
 
      //! handled by BeSQlite::OpenBeSQLiteDb()
-    BeDbUri& SetRawSqlite(bool v) { _params.SetBool(KnownParams::PARAM_RawSqlite, v); return *this;}
-    bool GetRawSqlite(bool defaultVal = false) const { return _params.GetBool(KnownParams::PARAM_RawSqlite, defaultVal); }
-    bool HasRawSqlite() const { return _params.Contains(KnownParams::PARAM_RawSqlite);}
-    BeDbUri& EraseRawSqlite() { _params.Erase(KnownParams::PARAM_RawSqlite); return *this;}
+    BeDbUri& SetRawSqlite(bool v) { m_params.SetBool(KnownParams::PARAM_RawSqlite, v); return *this;}
+    bool GetRawSqlite(bool defaultVal = false) const { return m_params.GetBool(KnownParams::PARAM_RawSqlite, defaultVal); }
+    bool HasRawSqlite() const { return m_params.Contains(KnownParams::PARAM_RawSqlite);}
+    BeDbUri& EraseRawSqlite() { m_params.Erase(KnownParams::PARAM_RawSqlite); return *this;}
 
      //! handled by BeSQlite::OpenBeSQLiteDb()
-    BeDbUri& SetFailIfDbExists(bool v) { _params.SetBool(KnownParams::PARAM_FailIfDbExists, v); return *this;}
-    bool GetFailIfDbExists(bool defaultVal = true) const { return _params.GetBool(KnownParams::PARAM_FailIfDbExists, defaultVal); }
-    bool HasFailIfDbExists() const { return _params.Contains(KnownParams::PARAM_FailIfDbExists);}
-    BeDbUri& EraseFailIfDbExists() { _params.Erase(KnownParams::PARAM_FailIfDbExists); return *this;}
+    BeDbUri& SetFailIfDbExists(bool v) { m_params.SetBool(KnownParams::PARAM_FailIfDbExists, v); return *this;}
+    bool GetFailIfDbExists(bool defaultVal = true) const { return m_params.GetBool(KnownParams::PARAM_FailIfDbExists, defaultVal); }
+    bool HasFailIfDbExists() const { return m_params.Contains(KnownParams::PARAM_FailIfDbExists);}
+    BeDbUri& EraseFailIfDbExists() { m_params.Erase(KnownParams::PARAM_FailIfDbExists); return *this;}
 
      //! handled by cloud Sqlite
-    BeDbUri& SetIsCloudDb(bool v) { _params.SetBool(KnownParams::PARAM_IsCloudDb, v); return *this;}
-    bool GetIsCloudDb(bool defaultVal = false) const{ return _params.GetBool(KnownParams::PARAM_IsCloudDb, defaultVal); }
-    bool HasIsCloudDb() const { return _params.Contains(KnownParams::PARAM_IsCloudDb);}
-    BeDbUri& EraseIsCloudDb() { _params.Erase(KnownParams::PARAM_IsCloudDb); return *this;}
+    BeDbUri& SetIsCloudDb(bool v) { m_params.SetBool(KnownParams::PARAM_IsCloudDb, v); return *this;}
+    bool GetIsCloudDb(bool defaultVal = false) const{ return m_params.GetBool(KnownParams::PARAM_IsCloudDb, defaultVal); }
+    bool HasIsCloudDb() const { return m_params.Contains(KnownParams::PARAM_IsCloudDb);}
+    BeDbUri& EraseIsCloudDb() { m_params.Erase(KnownParams::PARAM_IsCloudDb); return *this;}
 
      //! handled by BeSQlite::OpenBeSQLiteDb()
-    BeDbUri& SetSkipFileCheck(bool v) { _params.SetBool(KnownParams::PARAM_SkipFileCheck, v); return *this;}
-    bool GetSkipFileCheck(bool defaultVal = false) const{ return _params.GetBool(KnownParams::PARAM_SkipFileCheck, defaultVal); }
-    bool HasSkipFileCheck() const { return _params.Contains(KnownParams::PARAM_SkipFileCheck);}
-    BeDbUri& EraseSkipFileCheck() { _params.Erase(KnownParams::PARAM_SkipFileCheck); return *this;}
+    BeDbUri& SetSkipFileCheck(bool v) { m_params.SetBool(KnownParams::PARAM_SkipFileCheck, v); return *this;}
+    bool GetSkipFileCheck(bool defaultVal = false) const{ return m_params.GetBool(KnownParams::PARAM_SkipFileCheck, defaultVal); }
+    bool HasSkipFileCheck() const { return m_params.Contains(KnownParams::PARAM_SkipFileCheck);}
+    BeDbUri& EraseSkipFileCheck() { m_params.Erase(KnownParams::PARAM_SkipFileCheck); return *this;}
 
     //! handled by ECDb::ImportSchema()
-    BeDbUri& SetSchemaLockHeld(bool v){ _params.SetBool(KnownParams::PARAM_SchemaLockHeld, v); return *this;}
-    bool GetSchemaLockHeld(bool defaultVal = false) const{ return _params.GetBool(KnownParams::PARAM_SchemaLockHeld, defaultVal); }
-    bool HasSchemaLockHeld() const { return _params.Contains(KnownParams::PARAM_SchemaLockHeld);}
-    BeDbUri& EraseSchemaLockHeld() { _params.Erase(KnownParams::PARAM_SchemaLockHeld); return *this;}
+    BeDbUri& SetSchemaLockHeld(bool v){ m_params.SetBool(KnownParams::PARAM_SchemaLockHeld, v); return *this;}
+    bool GetSchemaLockHeld(bool defaultVal = false) const{ return m_params.GetBool(KnownParams::PARAM_SchemaLockHeld, defaultVal); }
+    bool HasSchemaLockHeld() const { return m_params.Contains(KnownParams::PARAM_SchemaLockHeld);}
+    BeDbUri& EraseSchemaLockHeld() { m_params.Erase(KnownParams::PARAM_SchemaLockHeld); return *this;}
 
     //! handled by BeSQlite::OpenBeSQLiteDb()
-    BeDbUri& SetProfileUpgradeOptions (Db::ProfileUpgradeOptions v){ _params.SetInt64(KnownParams::PARAM_ProfileUpgrade, (int64_t)v); return *this;}
-    Db::ProfileUpgradeOptions GetProfileUpgradeOptions(Db::ProfileUpgradeOptions defaultVal = Db::ProfileUpgradeOptions::None) const { return (Db::ProfileUpgradeOptions)_params.GetInt64(KnownParams::PARAM_ProfileUpgrade, (int64_t)defaultVal); }
-    bool HasProfileUpgradeOptions() const { return _params.Contains(KnownParams::PARAM_ProfileUpgrade);}
-    BeDbUri& EraseProfileUpgradeOptions() { _params.Erase(KnownParams::PARAM_ProfileUpgrade); return *this;}
+    BeDbUri& SetProfileUpgradeOptions (Db::ProfileUpgradeOptions v){ m_params.SetInt64(KnownParams::PARAM_ProfileUpgrade, (int64_t)v); return *this;}
+    Db::ProfileUpgradeOptions GetProfileUpgradeOptions(Db::ProfileUpgradeOptions defaultVal = Db::ProfileUpgradeOptions::None) const { return (Db::ProfileUpgradeOptions)m_params.GetInt64(KnownParams::PARAM_ProfileUpgrade, (int64_t)defaultVal); }
+    bool HasProfileUpgradeOptions() const { return m_params.Contains(KnownParams::PARAM_ProfileUpgrade);}
+    BeDbUri& EraseProfileUpgradeOptions() { m_params.Erase(KnownParams::PARAM_ProfileUpgrade); return *this;}
 
      //! handled by BeSQlite::OpenBeSQLiteDb()
-    BeDbUri& SetTempFileBase(Utf8StringCR v) { _params.SetString(KnownParams::PARAM_TempFileBase, v); return *this;}
-    Utf8String GetTempFileBase(Utf8String defaultVal = "") const { return _params.GetString(KnownParams::PARAM_TempFileBase, defaultVal); }
-    bool HasTempFileBase() const { return _params.Contains(KnownParams::PARAM_TempFileBase);}
-    BeDbUri& EraseTempFileBase() { _params.Erase(KnownParams::PARAM_TempFileBase); return *this;}
+    BeDbUri& SetTempFileBase(Utf8StringCR v) { m_params.SetString(KnownParams::PARAM_TempFileBase, v); return *this;}
+    Utf8String GetTempFileBase(Utf8String defaultVal = "") const { return m_params.GetString(KnownParams::PARAM_TempFileBase, defaultVal); }
+    bool HasTempFileBase() const { return m_params.Contains(KnownParams::PARAM_TempFileBase);}
+    BeDbUri& EraseTempFileBase() { m_params.Erase(KnownParams::PARAM_TempFileBase); return *this;}
 
      //! handled by BeSQlite::OpenBeSQLiteDb()
-    BeDbUri& SetExpirationDate(DateTimeCR v){ _params.SetString(KnownParams::PARAM_ExpirationDate, v.ToString()); return *this;}
-    DateTime GetExpirationDate(DateTime defaultVal = DateTime()) const{ return DateTime::FromString(_params.GetString(KnownParams::PARAM_ExpirationDate, defaultVal.ToString())); }
-    bool HasExpirationDate() const { return _params.Contains(KnownParams::PARAM_ExpirationDate);}
-    BeDbUri& EraseExpirationDate() { _params.Erase(KnownParams::PARAM_ExpirationDate); return *this;}
+    BeDbUri& SetExpirationDate(DateTimeCR v){ m_params.SetString(KnownParams::PARAM_ExpirationDate, v.ToString()); return *this;}
+    DateTime GetExpirationDate(DateTime defaultVal = DateTime()) const{ return DateTime::FromString(m_params.GetString(KnownParams::PARAM_ExpirationDate, defaultVal.ToString())); }
+    bool HasExpirationDate() const { return m_params.Contains(KnownParams::PARAM_ExpirationDate);}
+    BeDbUri& EraseExpirationDate() { m_params.Erase(KnownParams::PARAM_ExpirationDate); return *this;}
 
      //! handled by BeSQlite::CreateNewDb()
-    BeDbUri& SetAppId(uint64_t v){ _params.SetInt64(KnownParams::PARAM_AppId, (int64_t)v); return *this;}
-    uint64_t GetAppId(uint64_t defaultVal = 'BeDb') const{ return (uint64_t)_params.GetInt64(KnownParams::PARAM_AppId, defaultVal); }
-    bool HasAppId() const { return _params.Contains(KnownParams::PARAM_AppId);}
-    BeDbUri& EraseAppId() { _params.Erase(KnownParams::PARAM_AppId); return *this;}
+    BeDbUri& SetAppId(uint64_t v){ m_params.SetInt64(KnownParams::PARAM_AppId, (int64_t)v); return *this;}
+    uint64_t GetAppId(uint64_t defaultVal = 'BeDb') const{ return (uint64_t)m_params.GetInt64(KnownParams::PARAM_AppId, defaultVal); }
+    bool HasAppId() const { return m_params.Contains(KnownParams::PARAM_AppId);}
+    BeDbUri& EraseAppId() { m_params.Erase(KnownParams::PARAM_AppId); return *this;}
 
      //! handled by BeSQlite::CreateNewDb()
-    BeDbUri& SetPageSize(Db::PageSize v){ _params.SetInt64(KnownParams::PARAM_PageSize, (int64_t)v); return *this;}
-    Db::PageSize GetPageSize(Db::PageSize defaultVal = Db::PageSize::PAGESIZE_4K) const { return (Db::PageSize)_params.GetInt64(KnownParams::PARAM_PageSize, (int64_t)defaultVal); }
-    bool HasPageSize() const { return _params.Contains(KnownParams::PARAM_PageSize);}
-    BeDbUri& ErasePageSize() { _params.Erase(KnownParams::PARAM_PageSize); return *this;}
+    BeDbUri& SetPageSize(Db::PageSize v){ m_params.SetInt64(KnownParams::PARAM_PageSize, (int64_t)v); return *this;}
+    Db::PageSize GetPageSize(Db::PageSize defaultVal = Db::PageSize::PAGESIZE_4K) const { return (Db::PageSize)m_params.GetInt64(KnownParams::PARAM_PageSize, (int64_t)defaultVal); }
+    bool HasPageSize() const { return m_params.Contains(KnownParams::PARAM_PageSize);}
+    BeDbUri& ErasePageSize() { m_params.Erase(KnownParams::PARAM_PageSize); return *this;}
 
     //! handled by sqlite3_open_v2()
-    BeDbUri& SetImmutable(bool v){ _params.SetBool(KnownParams::PARAM_Immutable, v); return *this;}
-    bool GetImmutable(bool defaultVal = false) const { return _params.GetBool(KnownParams::PARAM_Immutable, defaultVal); }
-    bool HasImmutable() const { return _params.Contains(KnownParams::PARAM_Immutable);}
-    BeDbUri& EraseImmutable() { _params.Erase(KnownParams::PARAM_Immutable); return *this;}
+    BeDbUri& SetImmutable(bool v){ m_params.SetBool(KnownParams::PARAM_Immutable, v); return *this;}
+    bool GetImmutable(bool defaultVal = false) const { return m_params.GetBool(KnownParams::PARAM_Immutable, defaultVal); }
+    bool HasImmutable() const { return m_params.Contains(KnownParams::PARAM_Immutable);}
+    BeDbUri& EraseImmutable() { m_params.Erase(KnownParams::PARAM_Immutable); return *this;}
 
      //! handled by Cloud Sqlite
-    BeDbUri& SetCloudSqliteLogId(Utf8StringCR v) { _params.SetString(KnownParams::PARAM_CloudSqliteLogId, v); return *this;}
-    Utf8String GetCloudSqliteLogId(Utf8String defaultVal = "") const { return _params.GetString(KnownParams::PARAM_CloudSqliteLogId, defaultVal); }
-    bool HasCloudSqliteLogId() const { return _params.Contains(KnownParams::PARAM_CloudSqliteLogId);}
-    BeDbUri& EraseCloudSqliteLogId() { _params.Erase(KnownParams::PARAM_CloudSqliteLogId); return *this;}
+    BeDbUri& SetCloudSqliteLogId(Utf8StringCR v) { m_params.SetString(KnownParams::PARAM_CloudSqliteLogId, v); return *this;}
+    Utf8String GetCloudSqliteLogId(Utf8String defaultVal = "") const { return m_params.GetString(KnownParams::PARAM_CloudSqliteLogId, defaultVal); }
+    bool HasCloudSqliteLogId() const { return m_params.Contains(KnownParams::PARAM_CloudSqliteLogId);}
+    BeDbUri& EraseCloudSqliteLogId() { m_params.Erase(KnownParams::PARAM_CloudSqliteLogId); return *this;}
 
     //! handled by sqlite3_open_v2()
-    BeDbUri& SetVfs(Utf8StringCR v){ _params.SetString(KnownParams::PARAM_Vfs, v); return *this;}
-    Utf8String GetVfs(Utf8String defaultVal = "") const { return _params.GetString(KnownParams::PARAM_Vfs, defaultVal); }
-    bool HasVfs() const { return _params.Contains(KnownParams::PARAM_Vfs);}
-    BeDbUri& EraseVfs() { _params.Erase(KnownParams::PARAM_Vfs); return *this;}
+    BeDbUri& SetVfs(Utf8StringCR v){ m_params.SetString(KnownParams::PARAM_Vfs, v); return *this;}
+    Utf8String GetVfs(Utf8String defaultVal = "") const { return m_params.GetString(KnownParams::PARAM_Vfs, defaultVal); }
+    bool HasVfs() const { return m_params.Contains(KnownParams::PARAM_Vfs);}
+    BeDbUri& EraseVfs() { m_params.Erase(KnownParams::PARAM_Vfs); return *this;}
 };
 
 //=======================================================================================
