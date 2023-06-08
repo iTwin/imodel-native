@@ -201,7 +201,7 @@ TEST(PolyfaceBuilder, RegionRotationalSweep)
         Check::SaveTransformed(*parityRegion);
         auto mesh = builder->GetClientMeshPtr();
         Check::SaveTransformed(*mesh);
-        if (Check::True(parityRegion->CentroidAreaXY(centroid, area)) &
+        if (Check::True(parityRegion->CentroidAreaXY(centroid, area)) &&
             Check::True(axis.ProjectPointUnbounded(axisPoint, param, centroid)))
             {
             centroidTravelDist = sweep * axisPoint.Distance(centroid);
