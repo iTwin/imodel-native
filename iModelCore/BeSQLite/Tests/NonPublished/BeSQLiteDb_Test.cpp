@@ -131,6 +131,9 @@ TEST(BeSQLiteDb, BeDbUri_EscapeAndEncoding)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BeSQLiteDb, BeDbUri_BuiltInParams)
     {
+    BeFileName tempDir;
+    BeTest::GetHost().GetTempDir(tempDir);
+    BeSQLiteLib::Initialize(tempDir); // use by BeGuid to call sqlite3_randomness
     // check default
     BeDbUri u0("a.db", BeDbUri::Schema::FILE);
     ASSERT_STREQ(u0.ToString().c_str(), "file:/a.db");
@@ -151,6 +154,7 @@ TEST(BeSQLiteDb, BeDbUri_BuiltInParams)
     ASSERT_FALSE(u0.HasSkipFileCheck());
     ASSERT_FALSE(u0.HasTempFileBase());
     ASSERT_FALSE(u0.HasVfs());
+    ASSERT_FALSE(u0.HasDbGuid());
 
     // Check default values
     ASSERT_EQ((uint64_t)'BeDb', u0.GetAppId());
@@ -170,10 +174,12 @@ TEST(BeSQLiteDb, BeDbUri_BuiltInParams)
     ASSERT_EQ(false, u0.GetSkipFileCheck());
     ASSERT_STRCASEEQ("", u0.GetTempFileBase().c_str());
     ASSERT_STRCASEEQ("", u0.GetVfs().c_str());
+    ASSERT_STRCASEEQ("00000000-0000-0000-0000-000000000000", u0.GetDbGuid().ToString().c_str());
 
     // Known param count
-    ASSERT_EQ(17, BeDbUri::KnownParams::GetKnownParameters().size());
-
+    ASSERT_EQ(18, BeDbUri::KnownParams::GetKnownParameters().size());
+    BeGuid dbGuid;
+    dbGuid.FromString("2e94156a-a57f-4676-a2ea-28cb7aa47019");
     // Set all know param to different value
     BeDbUri u1("a.db", BeDbUri::Schema::FILE);
     auto expiry = DateTime::FromString("2023-05-25T12:36:29.387Z");
@@ -194,10 +200,10 @@ TEST(BeSQLiteDb, BeDbUri_BuiltInParams)
         .SetSchemaLockHeld(true)
         .SetSkipFileCheck(true)
         .SetTempFileBase("c:\\temp")
-        .SetVfs("bcvfs");
+        .SetVfs("bcvfs")
+        .SetDbGuid(dbGuid);
 
-    auto expectedURI = "file:/a.db?app_id=6713199&domain_schema_upgrade=2&encoding=1&expiration_date=2023-05-25T12%3A36%3A29.387Z&fail_if_db_exists=0&immutable=1&is_cloud_db=1&logId=09998&mode=rwc&page_size=1024&raw=1&schema_lock_held=1&skip_file_check=1&temp_file_base=c%3A%5Ctemp&txn_mode=3&upgrade_profile=1&vfs=bcvfs";
-
+    auto expectedURI = "file:/a.db?app_id=6713199&db_guid=2e94156a-a57f-4676-a2ea-28cb7aa47019&domain_schema_upgrade=2&encoding=1&expiration_date=2023-05-25T12%3A36%3A29.387Z&fail_if_db_exists=0&immutable=1&is_cloud_db=1&logId=09998&mode=rwc&page_size=1024&raw=1&schema_lock_held=1&skip_file_check=1&temp_file_base=c%3A%5Ctemp&txn_mode=3&upgrade_profile=1&vfs=bcvfs";
     ASSERT_STREQ(u1.ToString().c_str(), expectedURI);
     ASSERT_TRUE(u1.HasAppId());
     ASSERT_TRUE(u1.HasCloudSqliteLogId());
@@ -216,6 +222,8 @@ TEST(BeSQLiteDb, BeDbUri_BuiltInParams)
     ASSERT_TRUE(u1.HasSkipFileCheck());
     ASSERT_TRUE(u1.HasTempFileBase());
     ASSERT_TRUE(u1.HasVfs());
+    ASSERT_TRUE(u1.HasDbGuid());
+
 
     // Check default values
     ASSERT_EQ((uint64_t)'foo', u1.GetAppId());
@@ -235,7 +243,7 @@ TEST(BeSQLiteDb, BeDbUri_BuiltInParams)
     ASSERT_EQ(true, u1.GetSkipFileCheck());
     ASSERT_STRCASEEQ("c:\\temp", u1.GetTempFileBase().c_str());
     ASSERT_STRCASEEQ("bcvfs", u1.GetVfs().c_str());
-
+    ASSERT_STRCASEEQ(dbGuid.ToString().c_str(), u1.GetDbGuid().ToString().c_str());
 
     // parse string
     BeDbUri u2(u1.ToString());
@@ -257,6 +265,7 @@ TEST(BeSQLiteDb, BeDbUri_BuiltInParams)
     ASSERT_TRUE(u2.HasSkipFileCheck());
     ASSERT_TRUE(u2.HasTempFileBase());
     ASSERT_TRUE(u2.HasVfs());
+    ASSERT_TRUE(u2.HasDbGuid());
 
     // Check default values
     ASSERT_EQ((uint64_t)'foo', u2.GetAppId());
@@ -276,6 +285,8 @@ TEST(BeSQLiteDb, BeDbUri_BuiltInParams)
     ASSERT_EQ(true, u2.GetSkipFileCheck());
     ASSERT_STRCASEEQ("c:\\temp", u2.GetTempFileBase().c_str());
     ASSERT_STRCASEEQ("bcvfs", u2.GetVfs().c_str());
+    ASSERT_STRCASEEQ(dbGuid.ToString().c_str(), u2.GetDbGuid().ToString().c_str());
+
 
     // Erase
     u2.EraseAppId();
@@ -295,6 +306,7 @@ TEST(BeSQLiteDb, BeDbUri_BuiltInParams)
     u2.EraseSkipFileCheck();
     u2.EraseTempFileBase();
     u2.EraseVfs();
+    u2.EraseDbGuid();
 
     // verify known param are deleted
     ASSERT_FALSE(u2.HasAppId());
@@ -314,6 +326,7 @@ TEST(BeSQLiteDb, BeDbUri_BuiltInParams)
     ASSERT_FALSE(u2.HasSkipFileCheck());
     ASSERT_FALSE(u2.HasTempFileBase());
     ASSERT_FALSE(u2.HasVfs());
+    ASSERT_FALSE(u2.HasDbGuid());
 
     ASSERT_STREQ(u2.ToString().c_str(), "file:/a.db");
 

@@ -2405,7 +2405,7 @@ struct DbFile : NonCopyableClass
 
 protected:
     typedef RefCountedPtr<struct ChangeTracker> ChangeTrackerPtr;
-    typedef RefCountedPtr<BusyRetry> BusyRetryPtr;
+    typedef RefCountedPtr<struct BusyRetry> BusyRetryPtr;
     typedef bvector<Savepoint*> DbTxns;
     typedef DbTxns::iterator DbTxnIter;
     struct TraceEvents: NonCopyableClass
@@ -2466,6 +2466,9 @@ protected:
     BE_SQLITE_EXPORT void DisableAllTraceEvents() const;
     void AddDataUpdateCallback(DataUpdateCallback&) const;
     void RemoveDataUpdateCallback() const;
+        //! Override current busy handler with one user defined
+    DbResult SetBusyHandler(RefCountedPtr<BusyRetry>);
+    DbResult SetBusyTimeout(int ms);
     static int TraceCallback(unsigned, void*, void*, void*);
 public:
     Utf8String ExplainQuery(Utf8CP sql, bool explainPlan, bool suppressDiagnostics) const;
@@ -2916,6 +2919,9 @@ public:
     //! @note If the database file exists before this call, its page size and encoding are not changed.
     BE_SQLITE_EXPORT DbResult CreateNewDb(Utf8CP dbName,CreateParams const& params=CreateParams(),  BeGuid dbGuid=BeGuid() );
 
+    //! Override current busy handler with one user defined
+    BE_SQLITE_EXPORT DbResult SetBusyHandler(RefCountedPtr<BusyRetry>);
+    BE_SQLITE_EXPORT DbResult SetBusyTimeout(int ms);
     DbResult CreateNewDb(BeFileNameCR dbName, CreateParams const& params = CreateParams(), BeGuid dbGuid = BeGuid()) { return CreateNewDb(dbName.GetNameUtf8().c_str(), params, dbGuid); }
 
     //! Determine whether this Db refers to a currently opened file.
@@ -3363,6 +3369,9 @@ struct BeDbUri final {
             BE_SQLITE_EXPORT std::vector<Utf8String> GetKeys() const;
             BE_SQLITE_EXPORT bool Contains(Utf8String) const;
             BE_SQLITE_EXPORT Utf8String ToString() const;
+            BE_SQLITE_EXPORT void From(BeDbUri::Params const& params, bool overrideExisting = true);
+            void From(BeDbUri const& uri, bool overrideExisting = true) { From(uri.GetParams(), overrideExisting); }
+            void Reset() { m_params.clear(); }
     };
 
     struct KnownParams final {
@@ -3388,6 +3397,7 @@ struct BeDbUri final {
         constexpr static const char* PARAM_SkipFileCheck = "skip_file_check";
         constexpr static const char* PARAM_TempFileBase = "temp_file_base";
         constexpr static const char* PARAM_TxnMode = "txn_mode";
+        constexpr static const char* PARAM_DbGuid = "db_guid";
         constexpr static const char* PARAM_Vfs = "vfs";
         BE_SQLITE_EXPORT static bool IsKnownParameter(Utf8CP str);
         BE_SQLITE_EXPORT static std::set<Utf8CP, NoCaseCompare> const& GetKnownParameters();
@@ -3411,6 +3421,7 @@ public:
     // Check if file exists
     BE_SQLITE_EXPORT bool LocalFileExists() const;
     Params& GetParams() { return m_params; }
+    Params const& GetParams() const { return m_params; }
     // Returns canonical generic path
     Utf8String const& GetCanonicalPath() const { return m_canonicalPath; }
     Schema GetUriSchema() const { return m_schema; }
@@ -3527,6 +3538,11 @@ public:
     Utf8String GetVfs(Utf8String defaultVal = "") const { return m_params.GetString(KnownParams::PARAM_Vfs, defaultVal); }
     bool HasVfs() const { return m_params.Contains(KnownParams::PARAM_Vfs);}
     BeDbUri& EraseVfs() { m_params.Erase(KnownParams::PARAM_Vfs); return *this;}
+
+    BeDbUri& SetDbGuid(BeGuid const& v){ m_params.SetString(KnownParams::PARAM_DbGuid, v.ToString()); return *this;}
+    BeGuid GetDbGuid(BeGuid defaultVal = BeGuid()) const { BeGuid v; v.FromString(m_params.GetString(KnownParams::PARAM_DbGuid, defaultVal.ToString().c_str()).c_str()); return v; }
+    bool HasDbGuid() const { return m_params.Contains(KnownParams::PARAM_DbGuid);}
+    BeDbUri& EraseDbGuid() { m_params.Erase(KnownParams::PARAM_DbGuid); return *this;}
 };
 
 //=======================================================================================

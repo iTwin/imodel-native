@@ -912,6 +912,40 @@ static int besqliteBusyHandler(void* retry, int count) {return ((BusyRetry const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+DbResult DbFile::SetBusyHandler(RefCountedPtr<BusyRetry> handler) {
+    m_retry = handler.get();
+    return (DbResult)sqlite3_busy_handler(m_sqlDb, besqliteBusyHandler, handler.get());
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult DbFile::SetBusyTimeout(int ms) {
+    m_retry = nullptr;
+    return (DbResult)sqlite3_busy_timeout(m_sqlDb, ms);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult Db::SetBusyHandler(RefCountedPtr<BusyRetry> handler) {
+    if (m_dbFile)
+        return m_dbFile->SetBusyHandler(handler);
+    return BE_SQLITE_ERROR_NOTOPEN;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult Db::SetBusyTimeout(int ms) {
+    if (m_dbFile)
+        return m_dbFile->SetBusyTimeout(ms);
+    return BE_SQLITE_ERROR_NOTOPEN;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 DbFile::DbFile(SqlDbP sqlDb, BusyRetry* retry, BeSQLiteTxnMode defaultTxnMode) : m_sqlDb(sqlDb), m_cachedProps(nullptr), m_blvCache(*this),
             m_defaultTxn(*this, "default", defaultTxnMode), m_statements(10), m_regexFunc(RegExpFunc::Create()),m_regexExtractFunc(RegExpExtractFunc::Create())
     {
@@ -919,8 +953,7 @@ DbFile::DbFile(SqlDbP sqlDb, BusyRetry* retry, BeSQLiteTxnMode defaultTxnMode) :
     m_allowImplicitTxns = false;
     m_dataVersion = 0;
     m_readonly = false;
-    m_retry = retry ? retry : new BusyRetry();
-    sqlite3_busy_handler(sqlDb, besqliteBusyHandler, m_retry.get());
+    SetBusyHandler(retry ? retry : new BusyRetry());
     AddFunction(*m_regexFunc);
     AddFunction(*m_regexExtractFunc);
     }
@@ -6547,6 +6580,17 @@ Utf8String BeDbUri::ToString() const {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+void BeDbUri::Params::From(BeDbUri::Params const& params, bool overrideExisting) {
+    for (auto& key : params.GetKeys()){
+        if (Contains(key) && !overrideExisting)
+            continue;
+        SetString(key, params.GetString(key));
+    }
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 BeDbUri::Params& BeDbUri::Params::Erase(Utf8String key) {
     auto it = m_params.find(key);
     if (it != m_params.end())
@@ -6745,6 +6789,8 @@ std::set<Utf8CP, BeDbUri::NoCaseCompare> const& BeDbUri::KnownParams::GetKnownPa
         KnownParams::PARAM_TempFileBase,
         KnownParams::PARAM_TxnMode,
         KnownParams::PARAM_Vfs,
+        KnownParams::PARAM_DbGuid,
+
     };
     return s_knownParms;
 }
