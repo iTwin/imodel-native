@@ -20,7 +20,8 @@ CurveOffsetOptions::CurveOffsetOptions (double offsetDistance)
     m_chamferAngle = Angle::PiOver2 ();
     m_forceClosure = false;
     m_offsetDistance = offsetDistance;
-    SetTolerance (s_defaultRelTol * fabs (offsetDistance));
+    m_allowSharpestCorners = false;
+    SetTolerance(s_defaultRelTol * fabs(offsetDistance));
     SetBCurvePointsPerKnot (2);
     m_outputSelector = 0;
     for (int i = 0; i < _countof (m_unusedDouble); i++)
