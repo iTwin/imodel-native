@@ -43,13 +43,13 @@ public:
     static rapidjson::Document GetJsonFromStructValue(ECN::ECStructClassCR, BeSQLite::EC::IECSqlValue const&, rapidjson::MemoryPoolAllocator<>*);
     static rapidjson::Document GetJsonFromArrayValue(BeSQLite::EC::IECSqlValue const&, rapidjson::MemoryPoolAllocator<>*);
     static rapidjson::Document GetJsonFromString(ECN::PrimitiveType, Utf8StringCR, Utf8StringCR, rapidjson::MemoryPoolAllocator<>*);
-    ECPRESENTATION_EXPORT static rapidjson::Document GetJsonFromECValue(ECN::ECValueCR, rapidjson::MemoryPoolAllocator<>*);
+    ECPRESENTATION_EXPORT static rapidjson::Document GetJsonFromECValue(ECN::ECValueCR, Utf8StringCR, rapidjson::MemoryPoolAllocator<>*);
 
     static ECN::ECValue GetECValueFromSqlValue(ECN::PrimitiveType, Utf8StringCR, BeSQLite::DbValue const&);
     static ECN::ECValue GetECValueFromSqlValue(ECN::PrimitiveType, Utf8StringCR, BeSQLite::EC::IECSqlValue const&);
     static ECN::ECValue GetECValueFromString(ECN::PrimitiveType, Utf8StringCR);
-    ECPRESENTATION_EXPORT static ECN::ECValue GetECValueFromJson(ECN::PrimitiveType, RapidJsonValueCR);
-    ECPRESENTATION_EXPORT static bvector<ECN::ECValue> GetECValueSetFromJson(ECN::PrimitiveType, RapidJsonValueCR);
+    ECPRESENTATION_EXPORT static ECN::ECValue GetECValueFromJson(ECN::PrimitiveType, Utf8StringCR, RapidJsonValueCR);
+    ECPRESENTATION_EXPORT static bvector<ECN::ECValue> GetECValueSetFromJson(ECN::PrimitiveType, Utf8StringCR, RapidJsonValueCR);
 
     static rapidjson::Document GetECInstanceKeyAsJson(ECInstanceKeyCR, rapidjson::MemoryPoolAllocator<>* = nullptr);
     static Utf8String GetECInstanceKeyAsJsonString(ECInstanceKeyCR);

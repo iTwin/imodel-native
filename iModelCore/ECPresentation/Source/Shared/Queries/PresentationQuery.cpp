@@ -9,6 +9,7 @@
 #include "PresentationQuery.h"
 #include "../ValueHelpers.h"
 #include "../../Hierarchies/NavigationQuery.h"
+#include <string_view>
 
 // *** NEEDS WORK: clang for android complains that GetECClassClause and ContractHasNonAggregateFields are unused
 // ***              and that ConstraintSupportsClass "is not needed and will not be emitted". I don't understand
@@ -2059,6 +2060,11 @@ size_t PrimitiveECValueHasher::operator()(ECValueCR value) const
             hash ^= std::hash<int64_t>{}(value.GetLong()) << 2;
             break;
         case PRIMITIVETYPE_Binary:
+            {
+            size_t guidSize = sizeof(BeGuid);
+            hash ^= std::hash<std::string_view>{}(std::string_view((const char*)value.GetBinary(guidSize), guidSize)) << 2;
+            break;
+            }
         case PRIMITIVETYPE_String:
             hash ^= std::hash<std::string>{}(value.GetUtf8CP()) << 2;
             break;
@@ -2089,12 +2095,14 @@ struct ECValueVirtualSet : BeSQLite::VirtualSet
 {
 private:
     std::unordered_set<ECValue, PrimitiveECValueHasher> m_values;
+    Utf8String m_extendedType;
 public:
-    ECValueVirtualSet(bvector<ECValue> values)
-        : m_values(ContainerHelpers::MoveTransformContainer<std::unordered_set<ECValue, PrimitiveECValueHasher>>(values))
+    ECValueVirtualSet(bvector<ECValue> values, Utf8String extendedType)
+        : m_values(ContainerHelpers::MoveTransformContainer<std::unordered_set<ECValue, PrimitiveECValueHasher>>(values)), m_extendedType(extendedType)
         {}
     std::unordered_set<ECValue, PrimitiveECValueHasher> const& GetValues() const { return m_values; }
-    bool Equals(ECValueVirtualSet const& otherSet) const { return m_values == otherSet.m_values; }
+    Utf8StringCR GetExtendedType() const { return m_extendedType; }
+    bool Equals(ECValueVirtualSet const& otherSet) const { return m_extendedType == otherSet.m_extendedType && m_values == otherSet.m_values; }
     void Insert(ECValue value) { m_values.insert(std::move(value)); }
     bool _IsInSet(int nVals, BeSQLite::DbValue const* vals) const {
         if (nVals < 1 || nVals > 1)
@@ -2112,13 +2120,21 @@ public:
             // value and use it's type to parse sql value
             if (value.IsPrimitive())
                 {
-                return (m_values.end() != m_values.find(ValueHelpers::GetECValueFromSqlValue(value.GetPrimitiveType(), "", vals[0])));
+                return (m_values.end() != m_values.find(ValueHelpers::GetECValueFromSqlValue(value.GetPrimitiveType(), m_extendedType, vals[0])));
                 }
             }
 
         return false;
         }
 };
+
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8StringCR BoundECValueSet::GetExtendedType() const
+    {
+    return static_cast<ECValueVirtualSet const*>(m_set.get())->GetExtendedType();
+    }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
@@ -2150,8 +2166,8 @@ void BoundECValueSet::ForEachValue(std::function<void(ECValue const&)> const& cb
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BoundECValueSet::BoundECValueSet(bvector<ECValue> values)
-    : m_set(std::make_unique<ECValueVirtualSet>(std::move(values)))
+BoundECValueSet::BoundECValueSet(bvector<ECValue> values, Utf8String extendedType)
+    : m_set(std::make_unique<ECValueVirtualSet>(std::move(values), extendedType))
     {}
 
 /*---------------------------------------------------------------------------------**//**
