@@ -262,7 +262,7 @@ PresentationQueryBuilderPtr ECClassGroupingNodesQueryContract::CreateInstanceKey
     auto query = ComplexQueryBuilder::Create();
     query->SelectAll();
     query->From(*GetInstanceKeysSelectQuery().Clone());
-    query->Where(Utf8PrintfString("[%s] IS (%s%s)", ECClassIdFieldName, isPolymorphic ? "" : "ONLY ", ecClass.GetFullName()).c_str(), BoundQueryValuesList());
+    query->Where(Utf8PrintfString("[%s] IS (%s%s)", ECClassIdFieldName, isPolymorphic ? "" : "ONLY ", ecClass.GetECSqlName().c_str()).c_str(), BoundQueryValuesList());
     return query;
     }
 
