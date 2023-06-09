@@ -7,7 +7,6 @@
         
 
 
-
         {
             "name": "Debug specific iModelPlatformTest",
             "type": "cppvsdbg",
