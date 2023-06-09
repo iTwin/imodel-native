@@ -178,6 +178,11 @@ struct LimitOffsetExp final : Exp
 struct OrderBySpecExp final : Exp
     {
     public:
+        enum class NullsOrder {
+            First,
+            Last,
+            NotSpecified
+        };
         enum class SortDirection
             {
             Ascending,
@@ -186,15 +191,20 @@ struct OrderBySpecExp final : Exp
             };
     private:
         SortDirection m_direction;
-
+        NullsOrder m_nullsOrder;
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
         void _ToECSql(ECSqlRenderContext&) const override;
         Utf8String _ToString() const override;
 
     public:
-        OrderBySpecExp(std::unique_ptr<ComputedExp>& expr, SortDirection direction) : Exp(Type::OrderBySpec), m_direction(direction) { AddChild(std::move(expr)); }
+        OrderBySpecExp(std::unique_ptr<ComputedExp>& expr, SortDirection direction, NullsOrder nullsOrder) :
+            Exp(Type::OrderBySpec),
+            m_nullsOrder(nullsOrder),
+            m_direction(direction) { AddChild(std::move(expr)); }
         ComputedExp const* GetSortExpression() const { return GetChild<ComputedExp>(0); }
         SortDirection GetSortDirection() const { return m_direction; }
+        NullsOrder GetNullsOrder() const { return m_nullsOrder; }
+
     };
 
 //=======================================================================================

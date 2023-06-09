@@ -236,6 +236,7 @@ namespace connectivity
                             {OSQLParseNode::value_exp, "value_exp"},
                             {OSQLParseNode::values_or_query_spec, "values_or_query_spec"},
                             {OSQLParseNode::where_clause, "where_clause"},
+                            {OSQLParseNode::opt_null_order, "opt_null_order"},
                     };
                 size_t nRuleMapCount = sizeof(aRuleDescriptions) / sizeof(aRuleDescriptions[0]);
                 OSL_ENSURE(nRuleMapCount == size_t(OSQLParseNode::rule_count), "OSQLParser::OSQLParser: added a new rule? Adjust this map!");

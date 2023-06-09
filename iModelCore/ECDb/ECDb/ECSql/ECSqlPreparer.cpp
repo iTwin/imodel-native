@@ -1019,6 +1019,18 @@ ECSqlStatus ECSqlExpPreparer::PrepareOrderByExp(ECSqlPrepareContext& ctx, OrderB
                     case OrderBySpecExp::SortDirection::NotSpecified:
                         break; //default direction is ASCENDING
                 }
+            switch (specification.GetNullsOrder())
+                {
+                    case OrderBySpecExp::NullsOrder::First:
+                        orderBySqlBuilder.Append(" NULLS FIRST");
+                        break;
+
+                    case OrderBySpecExp::NullsOrder::Last:
+                        orderBySqlBuilder.Append(" NULLS LAST");
+                        break;
+                    case OrderBySpecExp::NullsOrder::NotSpecified:
+                        break; //default direction is ASCENDING
+                }
             isFirstSnippet = false;
             isFirstSpec = false; //needs to be inside the inner loop so that empty sqlSnippets are handled correctly
             }
