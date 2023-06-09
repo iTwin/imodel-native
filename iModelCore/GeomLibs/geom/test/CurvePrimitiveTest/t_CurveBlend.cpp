@@ -4454,6 +4454,91 @@ TEST(CloneOffset, SharpestCornersOffset)
     Check::ClearGeometry("CloneOffset.SharpestCornersOffset");
     }
 
+TEST(CloneOffset, Parallelogram)
+    {
+    bvector<DPoint3d> points;
+    double a = 100;
+    double b = 20;
+    double c = 40;
+    points.push_back(DPoint3d::From(0, 0, 0));
+    points.push_back(DPoint3d::From(a, 0, 0));
+    points.push_back(DPoint3d::From(a + c, b, 0));
+    points.push_back(DPoint3d::From(c, b, 0));
+    points.push_back(DPoint3d::From(0, 0, 0));
+    CurveVectorPtr pathA = CurveVector::CreateLinear(points, CurveVector::BOUNDARY_TYPE_Outer);
+    Check::Print(points, "Parallelogram");
+    Check::SaveTransformed(*pathA);
+
+    for (double distance = -3.0; distance <= 3.0; distance++)
+    {
+        CurveOffsetOptions options(distance);
+        options.SetChamferAngle(PI);
+        options.SetArcAngle(PI);
+        options.SetAllowSharpestCorners(true);
+        CurveVectorPtr pathB = pathA->AreaOffset(options);
+        Check::Print(pathB, "Offset");
+        Check::Print(distance, "Distance");
+        Check::SaveTransformed(*pathB);
+
+        DPoint3d centroid;
+        DVec3d normal;
+        double area;
+        (*pathB).CentroidNormalArea(centroid, normal, area);
+        /**
+         * The parallelogram points are
+         *
+         *   (40,20)-------------(140,20)
+         *         /            /
+         *        /            /
+         *       /            /
+         *  (0,0)------------(100,0)
+         *
+         * Our goal is to find the offsets area.
+         * First lets find the points of offset with negative distance (inside parallelogram).
+         *
+         * Consider left edge, i,e,. line from (0,0) to (40,20). The line equation for this edge is "y = x/2".
+         * Now we want to find the equation of line perpendicular to y = x/2 with negative distance "-d".
+         * If vector A = (40,20)-(0,0) = (40,20), then perpendicular vector to A toward the inside of
+         * parallelogram is B = (20,-40).
+         * Now calculate C = B/|B| = (20,40)/sqrt(400+1600) = (1/sqrt(5), -2/sqrt(5)).
+         * We know perpendicular line has the same slope (1/2) and passes through
+         * (0,0) + distance*C = (d/sqrt(5), -2*d/sqrt(5)).
+         * Therefore, perpendicular line equation is:
+         * y+(2*d/sqrt(5)) = (1/2)(x-d/sqrt(5))
+         * or
+         * y = (x-d*sqrt(5))/2
+         *
+         * We know left edge of offset points are (x0,d) and (x1,20-d). By inserting them into the
+         * perpendicular line equation we can find x0 and x1:
+         * d = (x0-d*sqrt(5))/2  ==> x0 = (2+sqrt(5))*d
+         * 20-d = (x1-d*sqrt(5))/2  ==> x1 = 40+(sqrt(5)-2)*d
+         *
+         * So points of left edge are ((2+sqrt(5))*d, d) and (40+(sqrt(5)-2)*d, 20-d).
+         * Doing similar calculation for right edge gives us points (100+(2-sqrt(5))*d, d) and
+         * (140-(sqrt(5)+2)*d, 20-d).
+         *
+         * So the points of offset with negative distance (inside parallelogram) are:
+         * ((2+sqrt(5))*d, d)
+         * (100+(2-sqrt(5))*d, d)
+         * (140-(sqrt(5)+2)*d, 20-d)
+         * (40+(sqrt(5)-2)*d, 20-d)
+         *
+         * Similarly, the points of offset with positive distance (outside parallelogram) are:
+         * (-(2+sqrt(5))*d, -d)
+         * (100+(sqrt(5)-2)*d, -d)
+         * (140+(sqrt(5)+2)*d, 20+d)
+         * (40+(2-sqrt(5))*d, 20+d)
+         *
+         * Therefore, for both positive and negative distance the base is 100+2*d and height is
+         * 100+2*sqrt(5)*d so area is
+         * (20 + 2 * distance) * (100 + 2 * Math.Sqrt(5.0) * distance)
+         */
+        double expectedArea = (b + 2 * distance) * (a + 2 * sqrt(5) * distance);
+        Check::Near(area, expectedArea);
+    }
+    Check::ClearGeometry("CloneOffset.Parallelogram");
+    }
+
 TEST(CloneOffset, StarShape)
     {
     bvector<double> distances;
