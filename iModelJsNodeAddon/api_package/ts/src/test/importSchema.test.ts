@@ -86,11 +86,6 @@ describe("ImportSchema", () => {
     db.saveChanges();
     db.closeIModel();
 
-    Logger.initializeToConsole();
-    Logger.setLevel(NativeLoggerCategory.DgnCore, LogLevel.Trace);
-    Logger.setLevel(NativeLoggerCategory.ECObjectsNative, LogLevel.Trace);
-    iModelJsNative.logger = Logger;
-
     db.openIModel(dbpath, OpenMode.ReadWrite);
 
     db.importXmlSchemas([testSchemaXmlV10], { schemaLockHeld: true });
