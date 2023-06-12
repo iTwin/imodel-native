@@ -3316,6 +3316,28 @@ TEST(Loop, ClosureTest)
     Check::ClearGeometry("Loop.ClosureTest");
     }
 
+IFacetOptionsPtr createFacetOptions(double chordTolerance, bool wantEdgeChains = false)
+    {
+    static double       s_defaultAngleTolerance = msGeomConst_piOver2;
+    IFacetOptionsPtr    opts = IFacetOptions::Create();
+
+    opts->SetChordTolerance(chordTolerance);
+    opts->SetAngleTolerance(s_defaultAngleTolerance);
+    opts->SetMaxPerFace(100);
+    opts->SetConvexFacetsRequired(true);             // Defer triangulation of facets to simple fans.
+    opts->SetCurvedSurfaceMaxPerFace(3);
+    opts->SetParamsRequired(true);
+    opts->SetNormalsRequired(true);
+    opts->SetEdgeChainsRequired(wantEdgeChains);
+
+    // Avoid Parasolid concurrency bottlenecks.
+    opts->SetIgnoreHiddenBRepEntities(true);
+    opts->SetOmitBRepEdgeChainIds(true);
+    opts->SetBRepIgnoredFeatureSize(chordTolerance * 2.5); // s_minRangeBoxSize from Tile.cpp...
+
+    return opts;
+    }
+
 TEST(LinearSweep, HasCurvedFaceOrEdge)
     {
     bvector<IGeometryPtr> geomList;
@@ -3324,15 +3346,14 @@ TEST(LinearSweep, HasCurvedFaceOrEdge)
     if (Check::True(1 == geomList.size(), "size") && Check::True(nullptr != (solid = geomList[0]->GetAsISolidPrimitive()), "solid"))
         {
         Check::True(solid->HasCurvedFaceOrEdge(), "curved");
-        auto opts = IFacetOptions::Create();
-        opts->SetChordTolerance(0.1);
+        auto opts = createFacetOptions(100.0);
         auto builder = IPolyfaceConstruction::Create(*opts);
         Check::True(builder->AddSolidPrimitive(*solid), "add");
         auto pf = builder->GetClientMeshPtr();
         Check::True(pf.IsValid(), "valid mesh");
         auto count1 = pf->Point().size();
 
-        opts->SetChordTolerance(0.01);
+        opts = createFacetOptions(0.01);
         builder = IPolyfaceConstruction::Create(*opts);
         builder->AddSolidPrimitive(*solid);
         pf = builder->GetClientMeshPtr();
