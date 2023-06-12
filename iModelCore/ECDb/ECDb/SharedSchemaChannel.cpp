@@ -104,7 +104,10 @@ struct SharedSchemaChannelHelper final {
 	// @bsimethod
 	//+---------------+---------------+---------------+---------------+---------------+------
 	static DbResult DropDataTables(DbR conn) {
-		Statement stmt;
+		if (!conn.TableExists("ec_Table")) {
+            return BE_SQLITE_OK;
+        }
+        Statement stmt;
         StringList tables;
         auto rc = stmt.Prepare(conn, "SELECT [Name] FROM [ec_Table] WHERE [Type] IN (" SQLVAL_DbTable_Type_Primary "," SQLVAL_DbTable_Type_Joined "," SQLVAL_DbTable_Type_Overflow R"x() AND Name NOT LIKE 'ecdbf\_%' ESCAPE '\' ORDER BY [Type] DESC)x");
 		if (rc != BE_SQLITE_OK) {
@@ -433,7 +436,9 @@ SharedSchemaChannel::Status SharedSchemaChannel::Init(ChannelUri const& channelU
     }
 
     Db sharedDb;
-    auto rc = sharedDb.OpenBeSQLiteDb(channelURI.GetUri().c_str(), Db::OpenParams(Db::OpenMode::ReadWrite, DefaultTxn::Yes));
+	Db::OpenParams openParams(Db::OpenMode::ReadWrite, DefaultTxn::Yes);
+    ParseQueryParams(openParams, channelURI);
+    auto rc = sharedDb.OpenBeSQLiteDb(channelURI.GetUri().c_str(), openParams);
 	if (rc != BE_SQLITE_OK) {
         m_conn.GetImpl().Issues().ReportV(
 			IssueSeverity::Error, IssueCategory::SharedSchemaChannel, IssueType::ECDbIssue,
@@ -505,6 +510,24 @@ SharedSchemaChannel::Status SharedSchemaChannel::Init(ChannelUri const& channelU
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+void SharedSchemaChannel::ParseQueryParams(Db::OpenParams& params, ChannelUri const& uri){
+    const auto n = uri.GetUri().find("?");
+	if (n == Utf8String::npos)
+        return;
+
+    Utf8String queryParamsStr = uri.GetUri().substr(n + 1);
+    bvector<Utf8String> queryParams;
+    BeStringUtilities::Split(queryParamsStr.c_str(), "&", queryParams);
+	for(auto& queryParam: queryParams)
+        params.AddQueryParam(queryParam.c_str());
+
+    params.m_fromContainer = true;
+    params.m_skipFileCheck = true;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 SharedSchemaChannel::Status SharedSchemaChannel::VerifyChannel(ChannelUri const& channelURI, bool isPull) const{
 	if (m_conn.IsReadonly()) {
 		m_conn.GetImpl().Issues().Report(
@@ -516,15 +539,19 @@ SharedSchemaChannel::Status SharedSchemaChannel::VerifyChannel(ChannelUri const&
 	ECDb sharedDb;
     DbResult rc = BE_SQLITE_OK;
     if (isPull) {
-		rc = sharedDb.OpenBeSQLiteDb(channelURI.GetUri().c_str(), Db::OpenParams(Db::OpenMode::Readonly));
-		if (rc != BE_SQLITE_OK) {
+        Db::OpenParams openParams(Db::OpenMode::Readonly);
+        ParseQueryParams(openParams, channelURI);
+        rc = sharedDb.OpenBeSQLiteDb(channelURI.GetUri().c_str(), openParams);
+        if (rc != BE_SQLITE_OK) {
 				m_conn.GetImpl().Issues().ReportV(
 					IssueSeverity::Error, IssueCategory::SharedSchemaChannel, IssueType::ECDbIssue,
 					"Fail to to open shared schema channel db in readonly mode: (%s)", channelURI.GetUri().c_str());
 			return Status::ERROR_OPENING_SHARED_DB;
 		}
 	} else {
-		rc = sharedDb.OpenBeSQLiteDb(channelURI.GetUri().c_str(), Db::OpenParams(Db::OpenMode::ReadWrite));
+		Db::OpenParams openParams(Db::OpenMode::ReadWrite);
+        ParseQueryParams(openParams, channelURI);
+		rc = sharedDb.OpenBeSQLiteDb(channelURI.GetUri().c_str(), openParams);
 		if (rc != BE_SQLITE_OK) {
 				m_conn.GetImpl().Issues().ReportV(
 					IssueSeverity::Error, IssueCategory::SharedSchemaChannel, IssueType::ECDbIssue,
@@ -605,7 +632,7 @@ SharedSchemaChannel::Status SharedSchemaChannel::PullInternal(ChannelUri const& 
         return Status::ERROR;
     }
 
-    auto rc = m_conn.AttachDb(channelURI.GetUri().c_str(), SharedSchemaChannelHelper::ALIAS_SHARED_DB);
+    auto rc = m_conn.AttachDb(channelURI.GetDbAttachUri().c_str(), SharedSchemaChannelHelper::ALIAS_SHARED_DB);
 	if (rc != BE_SQLITE_OK) {
 		m_conn.GetImpl().Issues().ReportV(
 			IssueSeverity::Error, IssueCategory::SharedSchemaChannel, IssueType::ECDbIssue,
@@ -730,7 +757,7 @@ SharedSchemaChannel::Status SharedSchemaChannel::PushInternal(ChannelUri const& 
         return Status::ERROR;
     }
 
-    auto rc = m_conn.AttachDb(channelURI.GetUri().c_str(), SharedSchemaChannelHelper::ALIAS_SHARED_DB);
+    auto rc = m_conn.AttachDb(channelURI.GetDbAttachUri().c_str(), SharedSchemaChannelHelper::ALIAS_SHARED_DB);
 	if (rc != BE_SQLITE_OK) {
 		m_conn.GetImpl().Issues().ReportV(
 			IssueSeverity::Error, IssueCategory::SharedSchemaChannel, IssueType::ECDbIssue,
@@ -939,7 +966,9 @@ DbResult SharedSchemaChannel::UpdateOrCreateSharedChannelInfo(DbR channelDb) {
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult SharedSchemaChannel::UpdateOrCreateSharedChannelInfo(ChannelUri channelUri) {
     Db conn;
-    auto rc = conn.OpenBeSQLiteDb(channelUri.GetUri().c_str(), Db::OpenMode(Db::OpenMode::ReadWrite));
+	Db::OpenParams openParams(Db::OpenMode::ReadWrite);
+    ParseQueryParams(openParams, channelUri);
+    auto rc = conn.OpenBeSQLiteDb(channelUri.GetUri().c_str(), openParams);
     if (rc != BE_SQLITE_OK) {
         return BE_SQLITE_ERROR;
     }
@@ -997,7 +1026,9 @@ SharedSchemaChannel::SharedChannelInfo SharedSchemaChannel::ChannelUri::GetInfo(
     }
 
 	Db conn;
-	if (conn.OpenBeSQLiteDb(m_uri.c_str(), Db::OpenParams(Db::OpenMode::Readonly)) != BE_SQLITE_OK) {
+	Db::OpenParams openParams(Db::OpenMode::Readonly);
+    ParseQueryParams(openParams, *this);
+	if (conn.OpenBeSQLiteDb(m_uri.c_str(), openParams) != BE_SQLITE_OK) {
 		return SharedChannelInfo();
 	}
     return SharedChannelInfo::From(conn);

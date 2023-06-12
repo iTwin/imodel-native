@@ -111,6 +111,14 @@ struct SharedSchemaChannel final {
             ChannelUri(Utf8CP uri = ""):m_uri(uri){};
             Utf8StringCR GetUri() const { return m_uri; }
             bool IsEmpty() const {return m_uri.empty();}
+            Utf8String GetDbAttachUri() const {
+                if (m_uri.StartsWith("file:") || m_uri.find("?") == Utf8String::npos)
+                    return m_uri;
+
+                Utf8String uri = "file:" + m_uri;
+                uri.ReplaceAll("\\", "/");
+                return uri;
+            }
             ECDB_EXPORT SharedChannelInfo GetInfo() const;
     };
 private:
@@ -128,6 +136,7 @@ private:
     Status VerifyChannel(ChannelUri const&, bool isPull) const;
     DbResult PullSqlSchema(DbR conn);
     DbResult PushSqlSchema(DbR conn);
+    static void ParseQueryParams(Db::OpenParams&, ChannelUri const& uri);
 
 public:
     SharedSchemaChannel(SharedSchemaChannel&&) = delete;
