@@ -6,11 +6,11 @@ import { assert, expect } from "chai";
 import * as fs from "fs";
 import * as path from "path";
 import { getOutputDir, iModelJsNative } from "./utils";
-import { Guid, OpenMode, Logger } from "@itwin/core-bentley";
+import { Guid, Logger, OpenMode } from "@itwin/core-bentley";
 import { Code, ElementProps } from "@itwin/core-common";
 import { NativeLoggerCategory } from "../NativeLibrary";
 import { LogLevel } from "@itwin/core-bentley/lib/cjs/Logger";
-import { loadMetaData, clearRegistry } from "./loadMetaData";
+import { clearRegistry, loadMetaData } from "./loadMetaData";
 
 const testSchemaXmlV10 = `<?xml version="1.0" encoding="UTF-8"?>
 <ECSchema schemaName="Test" alias="test" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -108,7 +108,7 @@ describe("ImportSchema", () => {
     const el1v10 = db.getElement({ id: el1Id });
     expect(el1v10).has.property("property1");
     expect(el1v10).not.has.property("property2");
-    expect((el1v10 as any)["property1"]).eq(testInformationRecordElementV10.property1);
+    expect((el1v10 as any).property1).eq(testInformationRecordElementV10.property1);
 
     db.saveChanges();
 
@@ -131,14 +131,14 @@ describe("ImportSchema", () => {
     const el1v11 = db.getElement({ id: el1Id });
     expect(el1v11).has.property("property1");
     expect(el1v11).not.has.property("property2");
-    expect((el1v11 as any)["property1"]).eq(testInformationRecordElementV10.property1);
+    expect((el1v11 as any).property1).eq(testInformationRecordElementV10.property1);
 
     const el2Id = db.insertElement(testInformationRecordElementV11);
     const el2v11 = db.getElement({ id: el2Id });
     expect(el2v11).has.property("property1");
     expect(el2v11).has.property("property2");
-    expect((el2v11 as any)["property1"]).eq(testInformationRecordElementV11.property1);
-    expect((el2v11 as any)["property2"]).eq(testInformationRecordElementV11.property2);
+    expect((el2v11 as any).property1).eq(testInformationRecordElementV11.property1);
+    expect((el2v11 as any).property2).eq(testInformationRecordElementV11.property2);
 
     // Verify that Foo schema was added to the db
     const fooInfoClassV98 = loadMetaData(db, "Foo:FooInformationRecordElement");

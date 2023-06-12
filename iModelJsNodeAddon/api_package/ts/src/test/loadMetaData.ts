@@ -8,7 +8,7 @@ interface CustomAttribute {
   /** The class of the CustomAttribute */
   ecclass: string;
   /** An object whose properties correspond by name to the properties of this custom attribute instance. */
-  properties: { [propName: string]: any; };
+  properties: { [propName: string]: any };
 }
 
 interface PropertyMetaDataProps {
@@ -42,7 +42,7 @@ interface EntityMetaDataProps {
   /** The Custom Attributes for this class */
   customAttributes?: CustomAttribute[];
   /** An object whose properties correspond by name to the properties of this class. */
-  properties: { [propName: string]: PropertyMetaDataProps; };
+  properties: { [propName: string]: PropertyMetaDataProps };
 }
 
 const registry = new Map<string, EntityMetaDataProps>();
