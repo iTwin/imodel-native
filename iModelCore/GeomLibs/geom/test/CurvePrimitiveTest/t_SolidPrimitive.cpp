@@ -3315,3 +3315,12 @@ TEST(Loop, ClosureTest)
         }
     Check::ClearGeometry("Loop.ClosureTest");
     }
+
+TEST(LinearSweep, HasCurvedFaceOrEdge)
+    {
+    bvector<IGeometryPtr> geomList;
+    ISolidPrimitivePtr solid;
+    ReadDgnjsGeometry(geomList, 1, L"CurveVector", L"LoopClosure", L"pmconne");
+    if (Check::True(1 == geomList.size(), "size") && Check::True(nullptr != (solid = geomList[0]->GetAsISolidPrimitive()), "solid"))
+        Check::True(solid->HasCurvedFaceOrEdge(), "curved");
+    }
