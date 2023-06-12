@@ -148,6 +148,36 @@ DgnElementId ChangeTestFixture::InsertPhysicalElement(DgnDbR db, PhysicalModelR 
     return elementId;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+/*TEST_F(ChangeTestFixture, Apply_Changeset)
+    {
+    // *** Helper Test for applying a changeset ***
+    // This test is not intended to ever run during a build, instead it can be used to easily
+    // debug changeset application issues. To obtain the files necessary, the itwin-console application
+    // can be used.
+
+    NativeLogging::Logging::SetLogger(&NativeLogging::ConsoleLogger::GetLogger());
+    NativeLogging::ConsoleLogger::GetLogger().SetSeverity("ECDb", BentleyApi::NativeLogging::LOG_TRACE);
+    NativeLogging::ConsoleLogger::GetLogger().SetSeverity("ECObjectsNative", BentleyApi::NativeLogging::LOG_TRACE);
+    BeFileName fileName(L"E:\\data\\bim\\78ac966c-a2cd-46d7-b287-797d6f3a9ccc\\ba0aae9a-04aa-45ee-814b-69d9a7b346d8\\out\\11146.bim");
+    DbResult status;
+    m_db = DgnDb::OpenIModelDb(&status, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::SkipCheck)));
+    ASSERT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, status);
+    BeFileName change1FileName(L"E:\\data\\bim\\78ac966c-a2cd-46d7-b287-797d6f3a9ccc\\ba0aae9a-04aa-45ee-814b-69d9a7b346d8\\cs\\ea0d6e98b43ec68f375fd453f9b9039ccb2d4634.cs");
+    //Dgn::ChangesetFileReader changeStream(change1FileName, *m_db);
+
+    ChangesetProps changeset("ea0d6e98b43ec68f375fd453f9b9039ccb2d4634", 11138, "18a44651392ba36ab42e8e31963edcec43dd8792", m_db->GetDbGuid().ToString(), change1FileName);
+    changeset.SetDateTime(DateTime::FromString("2023-05-25T12:36:29.387Z"));
+
+    Dgn::ChangesetStatus cStatus = m_db->Txns().MergeChangeset(changeset);
+    ASSERT_EQ(Dgn::ChangesetStatus::Success, cStatus);
+    m_db->SaveChanges();
+
+    m_db->CloseDb();
+    }*/
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------

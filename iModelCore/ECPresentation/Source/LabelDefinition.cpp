@@ -153,14 +153,14 @@ LabelDefinition const& LabelDefinition::SetStringValue(Utf8CP value, Utf8CP disp
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-LabelDefinition const& LabelDefinition::SetECValue(ECValueCR value, Utf8CP displayValue)
+LabelDefinition const& LabelDefinition::SetECValue(ECValueCR value, Utf8CP extendedType, Utf8CP displayValue)
     {
     if (value.IsUninitialized() || value.IsNull())
         return *this;
 
     m_displayValue = nullptr != displayValue ? displayValue : value.ToString().c_str();
     m_typeName = ValueHelpers::PrimitiveTypeAsString(value.GetPrimitiveType());
-    m_rawValue = std::make_unique<SimpleRawValue>(ValueHelpers::GetJsonFromECValue(value, nullptr));
+    m_rawValue = std::make_unique<SimpleRawValue>(ValueHelpers::GetJsonFromECValue(value, extendedType, nullptr));
     return *this;
     }
 
@@ -171,8 +171,9 @@ LabelDefinition const& LabelDefinition::SetECPropertyValue(ECPropertyCR ecProper
     {
     if (ecProperty.GetIsPrimitive())
         {
-        ECValue value = ValueHelpers::GetECValueFromSqlValue(ecProperty.GetAsPrimitiveProperty()->GetType(), ecProperty.GetAsPrimitiveProperty()->GetExtendedTypeName(), dbValue);
-        return SetECValue(value, displayValue);
+        Utf8StringCR extendedType = ecProperty.GetAsPrimitiveProperty()->GetExtendedTypeName();
+        ECValue value = ValueHelpers::GetECValueFromSqlValue(ecProperty.GetAsPrimitiveProperty()->GetType(), extendedType, dbValue);
+        return SetECValue(value, extendedType.c_str(), displayValue);
         }
 
     return SetStringValue(displayValue);

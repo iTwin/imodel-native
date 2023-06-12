@@ -724,20 +724,13 @@ SchemaStatus DgnDomains::DoImportSchemas(bvector<ECSchemaCP> const &importSchema
         return SchemaStatus::SchemaImportFailed;
     }
 
-    if (dgndb.IsBriefcase()) {
-        if (dgndb.Txns().HasLocalChanges()) {
-            // The dgnv8converter generates changes to the be_EmbedFile table just prior to importing a generated schema. Don't reject the schema just for that.
-            if ((importOptions & SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues) != SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues) {
-                BeAssert(false && "Cannot upgrade schemas when there are local changes. Commit any outstanding changes");
-                return SchemaStatus::DbHasLocalChanges;
-            }
-        }
-    }
-
     if (LOG.isSeverityEnabled(SEVERITY::LOG_DEBUG)) {
         LOG.debug("Schemas to be imported:");
         for (ECSchemaCP schema : importSchemas)
             LOG.debugv("\t%s", schema->GetFullSchemaName().c_str());
+
+        if (dgndb.IsBriefcase() && dgndb.Txns().HasLocalChanges())
+            LOG.debug("ImportSchemas called while there are local changes and/or txns in the briefcase.");
     }
 
     dgndb.Txns().SetHasEcSchemaChanges(true);

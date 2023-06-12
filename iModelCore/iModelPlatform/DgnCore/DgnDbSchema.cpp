@@ -528,19 +528,34 @@ ProfileState DgnDb::_CheckProfileVersion() const
     {
     ProfileState ecdbProfileState = T_Super::_CheckProfileVersion();
 
-    Utf8String versionString;
-    DbResult stat = QueryProperty(versionString, DgnProjectProperty::ProfileVersion());
-    if (BE_SQLITE_ROW != stat)
+    bool isOlderVersion = false;
+    BentleyStatus readStatus = ReadProfileVersion(isOlderVersion);
+    if (readStatus != BentleyStatus::SUCCESS)
         {
-        if (BE_SQLITE_ROW == QueryProperty(versionString, DgnDbProfileVersion::LegacyDbProfileVersionProperty()))
+        if (isOlderVersion)
             return ProfileState::Older(ProfileState::CanOpen::No, false); // report Graphite05 and DgnDb0601 as too old rather than invalid
 
         return ProfileState::Error();
         }
 
-    m_profileVersion.FromJson(versionString.c_str());
     ProfileState dgndbProfileState = CheckProfileVersion(DgnDbProfileVersion::GetCurrent(), m_profileVersion, DgnDbProfileVersion(DGNDB_SUPPORTED_VERSION_Major, DGNDB_SUPPORTED_VERSION_Minor, 0, 0), "DgnDb");
     return ecdbProfileState.Merge(dgndbProfileState);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus DgnDb::ReadProfileVersion(bool& isOlderVersion) const
+    {
+    Utf8String versionString;
+    DbResult stat = QueryProperty(versionString, DgnProjectProperty::ProfileVersion());
+    if (BE_SQLITE_ROW != stat)
+        {
+        isOlderVersion = (BE_SQLITE_ROW == QueryProperty(versionString, DgnDbProfileVersion::LegacyDbProfileVersionProperty()));
+        return BentleyStatus::ERROR;
+        }
+
+    return m_profileVersion.FromJson(versionString.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**

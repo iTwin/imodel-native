@@ -2141,9 +2141,9 @@ TEST_F(DefaultECPresentationSerializerTests, ContenteSerializationContentSetItem
 //---------------------------------------------------------------------------------------
 // @betest
 //---------------------------------------------------------------------------------------
-TEST_F(DefaultECPresentationSerializerTests, NavNodeLabelDefinitionSerialization)
+TEST_F(DefaultECPresentationSerializerTests, NavNodeLabelDefinitionSerialization_DateTime)
     {
-    LabelDefinitionPtr labelDefinition = LabelDefinition::Create(ECValue(DateTime(DateTime::Kind::Utc, 2019, 12, 12, 12, 30, 30)), "2019/12/12");
+    LabelDefinitionPtr labelDefinition = LabelDefinition::Create(ECValue(DateTime(DateTime::Kind::Utc, 2019, 12, 12, 12, 30, 30)), nullptr, "2019/12/12");
     rapidjson::Document actual = labelDefinition->AsJson();
 
     rapidjson::Document expected;
@@ -2151,6 +2151,48 @@ TEST_F(DefaultECPresentationSerializerTests, NavNodeLabelDefinitionSerialization
         "DisplayValue": "2019/12/12",
         "RawValue": "2019-12-12T12:30:30.000Z",
         "TypeName": "dateTime"
+        })");
+
+    EXPECT_EQ(expected, actual)
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expected) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actual);
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest
+//---------------------------------------------------------------------------------------
+TEST_F(DefaultECPresentationSerializerTests, NavNodeLabelDefinitionSerialization_Binary_Guid)
+    {
+    BeGuid instanceGuid = RulesEngineTestHelpers::CreateGuidFromString("182238d2-e836-4640-9b40-38be6ca49623");
+    LabelDefinitionPtr labelDefinition = LabelDefinition::Create(ECValue((Byte const*)&instanceGuid, sizeof(BeGuid)), "BeGuid", "ValidGuid");
+    rapidjson::Document actual = labelDefinition->AsJson();
+
+    rapidjson::Document expected;
+    expected.Parse(R"({
+        "DisplayValue": "ValidGuid",
+        "RawValue": "182238d2-e836-4640-9b40-38be6ca49623",
+        "TypeName": "binary"
+        })");
+
+    EXPECT_EQ(expected, actual)
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expected) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actual);
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest
+//---------------------------------------------------------------------------------------
+TEST_F(DefaultECPresentationSerializerTests, NavNodeLabelDefinitionSerialization_Binary_NotGuid)
+    {
+    BeGuid instanceGuid = RulesEngineTestHelpers::CreateGuidFromString("182238d2-e836-4640-9b40-38be6ca49623");
+    LabelDefinitionPtr labelDefinition = LabelDefinition::Create(ECValue((Byte const*)&instanceGuid, sizeof(BeGuid)), nullptr, "InvalidGuid");
+    rapidjson::Document actual = labelDefinition->AsJson();
+
+    rapidjson::Document expected;
+    expected.Parse(R"({
+        "DisplayValue": "InvalidGuid",
+        "RawValue": null,
+        "TypeName": "binary"
         })");
 
     EXPECT_EQ(expected, actual)

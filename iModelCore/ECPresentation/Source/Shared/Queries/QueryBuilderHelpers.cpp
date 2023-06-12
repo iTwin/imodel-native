@@ -1137,8 +1137,9 @@ QueryClauseAndBindings QueryBuilderHelpers::CreatePropertyGroupFilteringClause(E
         {
         DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "Filtering by property values");
         PrimitiveType groupedValuesType = ecProperty.GetIsPrimitive() ? ecProperty.GetAsPrimitiveProperty()->GetType() : ecProperty.GetIsNavigation() ? PRIMITIVETYPE_Long : PRIMITIVETYPE_String;
+        Utf8CP extendedType = ecProperty.GetIsPrimitive() ? ecProperty.GetAsPrimitiveProperty()->GetExtendedTypeName().c_str() : "";
         return QueryClauseAndBindings(Utf8String("InVirtualSet(?, ").append(propertyValueSelector).append(")"),
-            { std::make_shared<BoundECValueSet>(ValueHelpers::GetECValueSetFromJson(groupedValuesType, groupingValues)) });
+            { std::make_shared<BoundECValueSet>(ValueHelpers::GetECValueSetFromJson(groupedValuesType, extendedType, groupingValues), extendedType) });
         }
 
     DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "Filtering by property value ranges");

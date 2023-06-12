@@ -2188,7 +2188,7 @@ Nullable<uint64_t> ECSchemaHelper::QueryTargetsCount(RelatedClassPathCR path, In
         targetCountsQuery->Join(relatedInstancePath);
 
     if (!targetClass.IsSelectPolymorphic())
-        targetCountsQuery->Where(Utf8PrintfString("[%s].[ECClassId] IS (ONLY %s)", targetClass.GetAlias().c_str(), targetClass.GetClass().GetFullName()).c_str(), BoundQueryValuesList());
+        targetCountsQuery->Where(Utf8PrintfString("[%s].[ECClassId] IS (ONLY %s)", targetClass.GetAlias().c_str(), targetClass.GetClass().GetECSqlName().c_str()).c_str(), BoundQueryValuesList());
 
     if (sourceInstanceFilter)
         QueryBuilderHelpers::ApplyInstanceFilter(*targetCountsQuery, *sourceInstanceFilter);
