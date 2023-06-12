@@ -67,9 +67,17 @@ $(o)base64$(oext) : $(BeCurlLibDir)base64.c ${MultiCompileDepends}
 
 $(o)bufref$(oext) : $(BeCurlLibDir)bufref.c ${MultiCompileDepends}
 
+$(o)bufq$(oext) : $(BeCurlLibDir)bufq.c ${MultiCompileDepends}
+
 $(o)c-hyper$(oext) : $(BeCurlLibDir)c-hyper.c ${MultiCompileDepends}
 
 $(o)cf-https-connect$(oext) : $(BeCurlLibDir)cf-https-connect.c ${MultiCompileDepends}
+
+$(o)cf-h1-proxy$(oext) : $(BeCurlLibDir)cf-h1-proxy.c ${MultiCompileDepends}
+
+$(o)cf-h2-proxy$(oext) : $(BeCurlLibDir)cf-h2-proxy.c ${MultiCompileDepends}
+
+$(o)cf-haproxy$(oext) : $(BeCurlLibDir)cf-haproxy.c ${MultiCompileDepends}
 
 $(o)cf-socket$(oext) : $(BeCurlLibDir)cf-socket.c ${MultiCompileDepends}
 
@@ -119,6 +127,8 @@ $(o)dict$(oext) : $(BeCurlLibDir)dict.c ${MultiCompileDepends}
 
 $(o)doh$(oext) : $(BeCurlLibDir)doh.c ${MultiCompileDepends}
 
+$(o)dynhds$(oext) : $(BeCurlLibDir)dynhds.c ${MultiCompileDepends}
+
 $(o)easy$(oext) : $(BeCurlLibDir)easy.c ${MultiCompileDepends}
 
 $(o)escape$(oext) : $(BeCurlLibDir)escape.c ${MultiCompileDepends}
@@ -141,8 +151,6 @@ $(o)getinfo$(oext) : $(BeCurlLibDir)getinfo.c ${MultiCompileDepends}
 
 $(o)gopher$(oext) : $(BeCurlLibDir)gopher.c ${MultiCompileDepends}
 
-$(o)h2h3$(oext) : $(BeCurlLibDir)h2h3.c ${MultiCompileDepends}
-
 $(o)hash$(oext) : $(BeCurlLibDir)hash.c ${MultiCompileDepends}
 
 $(o)headers$(oext) : $(BeCurlLibDir)headers.c ${MultiCompileDepends}
@@ -162,6 +170,8 @@ $(o)hostsyn$(oext) : $(BeCurlLibDir)hostsyn.c ${MultiCompileDepends}
 $(o)hsts$(oext) : $(BeCurlLibDir)hsts.c ${MultiCompileDepends}
 
 $(o)http$(oext) : $(BeCurlLibDir)http.c ${MultiCompileDepends}
+
+$(o)http1$(oext) : $(BeCurlLibDir)http1.c ${MultiCompileDepends}
 
 $(o)http2$(oext) : $(BeCurlLibDir)http2.c ${MultiCompileDepends}
 

@@ -179,6 +179,7 @@ struct SchemaSyncTestFixture : public ECDbTestFixture
     static const char* DEFAULT_SHA3_256_ECDB_SCHEMA;
     static const char* DEFAULT_SHA3_256_ECDB_MAP;
     static const char* DEFAULT_SHA3_256_SQLITE_SCHEMA;
+    static const char* DEFAULT_SHA3_256_CHANNEL_SQLITE_SCHEMA;
     std::unique_ptr<ECDbHub> m_hub;
     std::unique_ptr<TrackedECDb> m_briefcase;
     std::unique_ptr<SharedSchemaDb> m_schemaChannel;
@@ -198,6 +199,10 @@ struct SchemaSyncTestFixture : public ECDbTestFixture
     static bool ForeignkeyCheck(ECDbCR db);
     static void PrintHash(ECDbR ecdb, Utf8CP desc);
     static void CheckHashes(ECDbR ecdb, Utf8CP schemaHash = DEFAULT_SHA3_256_ECDB_SCHEMA, Utf8CP mapHash = DEFAULT_SHA3_256_ECDB_MAP, Utf8CP dbSchemaHash = DEFAULT_SHA3_256_SQLITE_SCHEMA, bool strictCheck = false);
+    static void CheckSyncHashes(ECDbR ecdb, Utf8CP schemaHash = DEFAULT_SHA3_256_ECDB_SCHEMA, Utf8CP mapHash = DEFAULT_SHA3_256_ECDB_MAP, Utf8CP dbSchemaHash = DEFAULT_SHA3_256_CHANNEL_SQLITE_SCHEMA, bool strictCheck = false) {
+        CheckHashes(ecdb, schemaHash, mapHash, dbSchemaHash, strictCheck);
+    }
+
     static std::string GetIndexDDL(ECDbCR ecdb, Utf8CP indexName);
     static void Test(Utf8CP name, std::function<void()> test);
     SharedSchemaChannel::ChannelUri GetSharedChannelUri()

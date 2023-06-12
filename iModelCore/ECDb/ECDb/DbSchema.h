@@ -612,6 +612,7 @@ private:
     DbTable* LoadTable(Utf8StringCR name) const;
     DbTable* LoadTable(DbTableId) const;
     BentleyStatus LoadColumns(DbTable&) const;
+    BentleyStatus LoadTableForeignKeyListFromSqliteSchema(DbTable& table) const;
     BentleyStatus InsertTable(DbTable const&) const;
     BentleyStatus InsertColumn(DbColumn const&, int columnOrdinal, int primaryKeyOrdinal) const;
     BentleyStatus UpdateColumn(DbColumn const&, int columnOrdinal, int primaryKeyOrdinal) const;

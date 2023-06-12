@@ -39,6 +39,7 @@ struct SharedSchemaChannel final {
         ERROR_READONLY,
         ERROR_INVALID_SHARED_CHANNEL,
         ERROR_UNABLE_TO_ATTACH,
+        ERROR_SYNC_SQL_SCHEMA,
     };
     //=======================================================================================
     // @bsiclass
@@ -125,6 +126,9 @@ private:
     Status PullInternal(ChannelUri const&, TableList);
     Status PushInternal(ChannelUri const&, TableList);
     Status VerifyChannel(ChannelUri const&, bool isPull) const;
+    DbResult PullSqlSchema(DbR conn);
+    DbResult PushSqlSchema(DbR conn);
+
 public:
     SharedSchemaChannel(SharedSchemaChannel&&) = delete;
     SharedSchemaChannel(SharedSchemaChannel const&)=delete;
@@ -407,6 +411,7 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
             DisallowMajorSchemaUpgrade                  = 1 << 1,   //! If specified, schema upgrades where the major version has changed, are not supported.
             DoNotFailForDeletionsOrModifications        = 1 << 2,   //! This is for the case of domain schemas that differ between files even though the schema name and versions are unchanged.  In such a case, we only want to merge in acceptable changes, not delete anything
             AllowDataTransformDuringSchemaUpgrade       = 1 << 4,   //! The allow schema upgrade to transform data if needed.
+            AllowMajorSchemaUpgradeForDynamicSchemas    = 1 << 5,   //! If specified, schema upgrades where the major version has changed are only supported for dynamic schemas. Takes precedence over DisallowMajorSchemaUpgrade.
             };
 #if !defined (DOCUMENTATION_GENERATOR)
         struct Dispatcher;

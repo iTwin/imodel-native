@@ -1933,7 +1933,7 @@ BentleyStatus SchemaWriter::ReplaceCAEntry(Context& ctx, IECInstanceR customAttr
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-bool SchemaWriter::IsPropertyTypeChangeSupported(Utf8StringR error, StringChange& typeChange, ECPropertyCR oldProperty, ECPropertyCR newProperty)
+bool SchemaWriter::IsPropertyTypeChangeSupported(Utf8StringR error, StringChange& typeChange, ECPropertyCR oldProperty, ECPropertyCR newProperty, bool isPrimitiveTypeChangeAllowed)
     {
     //changing from primitive to enum and enum to primitive is supported with same type and enum is unstrict
     if (oldProperty.GetIsPrimitive() && newProperty.GetIsPrimitive())
@@ -1944,6 +1944,9 @@ bool SchemaWriter::IsPropertyTypeChangeSupported(Utf8StringR error, StringChange
         ECEnumerationCP bEnum = b->GetEnumeration();
         if (!aEnum && !bEnum)
             {
+            if (isPrimitiveTypeChangeAllowed && a->GetType() != PRIMITIVETYPE_Point2d && a->GetType() != PRIMITIVETYPE_Point3d && b->GetType() != PRIMITIVETYPE_Point2d && b->GetType() != PRIMITIVETYPE_Point3d)
+                return true;
+
             error.Sprintf("ECSchema Upgrade failed. ECProperty %s.%s: Changing the type of a Primitive ECProperty is not supported. Cannot convert from '%s' to '%s'",
                           oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str(), typeChange.GetOld().Value().c_str(), typeChange.GetNew().Value().c_str());
             return false;
@@ -1953,6 +1956,9 @@ bool SchemaWriter::IsPropertyTypeChangeSupported(Utf8StringR error, StringChange
             {
             if (aEnum->GetType() != b->GetType())
                 {
+                if (isPrimitiveTypeChangeAllowed && aEnum->GetType() != PRIMITIVETYPE_Point2d && aEnum->GetType() != PRIMITIVETYPE_Point3d && b->GetType() != PRIMITIVETYPE_Point2d && b->GetType() != PRIMITIVETYPE_Point3d)
+                    return true;
+
                 error.Sprintf("ECSchema Upgrade failed. ECProperty %s.%s: ECEnumeration specified for property must have same primitive type as new primitive property type",
                               oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
 
@@ -1965,6 +1971,9 @@ bool SchemaWriter::IsPropertyTypeChangeSupported(Utf8StringR error, StringChange
             {
             if (a->GetType() != bEnum->GetType())
                 {
+                if (isPrimitiveTypeChangeAllowed && !bEnum->GetIsStrict() && a->GetType() != PRIMITIVETYPE_Point2d && a->GetType() != PRIMITIVETYPE_Point3d && bEnum->GetType() != PRIMITIVETYPE_Point2d && bEnum->GetType() != PRIMITIVETYPE_Point3d)
+                    return true;
+
                 error.Sprintf("ECSchema Upgrade failed. ECProperty %s.%s: Primitive type change to ECEnumeration which as different type then existing primitive property",
                               oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
 
@@ -1986,7 +1995,10 @@ bool SchemaWriter::IsPropertyTypeChangeSupported(Utf8StringR error, StringChange
             {
             if (aEnum->GetType() != bEnum->GetType())
                 {
-                error.Sprintf("ECSchema Upgrade failed. ECProperty %s.%s: Exisitng ECEnumeration has different primitive type from the new ECEnumeration specified",
+                if (isPrimitiveTypeChangeAllowed && !bEnum->GetIsStrict() && aEnum->GetType() != PRIMITIVETYPE_Point2d && aEnum->GetType() != PRIMITIVETYPE_Point3d && bEnum->GetType() != PRIMITIVETYPE_Point2d && bEnum->GetType() != PRIMITIVETYPE_Point3d)
+                    return true;
+
+                error.Sprintf("ECSchema Upgrade failed. ECProperty %s.%s: Existing ECEnumeration has different primitive type from the new ECEnumeration specified",
                               oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
 
                 return false;
@@ -2086,7 +2098,8 @@ BentleyStatus SchemaWriter::UpdateProperty(Context& ctx, PropertyChange& propert
     if (propertyChange.TypeName().IsChanged())
         {
         Utf8String error;
-        if (!IsPropertyTypeChangeSupported(error, propertyChange.TypeName(), oldProperty, newProperty))
+        const auto isPrimitiveTypeChangeAllowed = ctx.IsMajorSchemaVersionChange(oldProperty.GetClass().GetSchema().GetId()) && (ctx.AreMajorSchemaVersionChangesAllowed() || (ctx.IsMajorSchemaVersionChangeAllowedForDynamicSchemas() && newProperty.GetClass().GetSchema().IsDynamicSchema()));
+        if (!IsPropertyTypeChangeSupported(error, propertyChange.TypeName(), oldProperty, newProperty, isPrimitiveTypeChangeAllowed))
             {
             if (ctx.IgnoreIllegalDeletionsAndModifications())
                 {
@@ -2128,6 +2141,9 @@ BentleyStatus SchemaWriter::UpdateProperty(Context& ctx, PropertyChange& propert
         }
 
     SqlUpdateBuilder sqlUpdateBuilder("ec_Property");
+
+    if (propertyChange.TypeName().IsChanged() && !oldProperty.GetAsPrimitiveProperty()->GetEnumeration() && !newProperty.GetAsPrimitiveProperty()->GetEnumeration())
+        sqlUpdateBuilder.AddSetExp("PrimitiveType", Enum::ToInt(newProperty.GetAsPrimitiveProperty()->GetType()));
 
     if (propertyChange.MinimumLength().IsChanged())
         {
@@ -3057,7 +3073,7 @@ BentleyStatus SchemaWriter::UpdateProperties(Context& ctx, PropertyChanges& prop
                 }
 
             ECPropertyCP newProperty = newClass.GetPropertyP(change.GetChangeName(), true);
-            if (SUCCESS != DeleteProperty(ctx, change, *oldProperty, newProperty))
+            if (SUCCESS != DeleteProperty(ctx, change, *oldProperty, newProperty, newClass.GetSchema().IsDynamicSchema()))
                 {
                 LOG.debugv("SchemaWriter::UpdateProperties - Failed to DeleteProperty %s:%s", oldClass.GetFullName(), oldProperty->GetName().c_str());
                 return ERROR;
@@ -3263,15 +3279,14 @@ BentleyStatus SchemaWriter::DeleteCustomAttributeClass(Context& ctx, ECCustomAtt
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaWriter::DeleteClass(Context& ctx, ClassChange& classChange, ECClassCR deletedClass)
+BentleyStatus SchemaWriter::DeleteClass(Context& ctx, ClassChange& classChange, ECClassCR deletedClass, bool isDynamicSchema)
     {
-    if (!ctx.AreMajorSchemaVersionChangesAllowed() || !ctx.IsMajorSchemaVersionChange(deletedClass.GetSchema().GetId()))
+    if (!ctx.IsMajorSchemaVersionChange(deletedClass.GetSchema().GetId()) || (!ctx.AreMajorSchemaVersionChangesAllowed() && (!ctx.IsMajorSchemaVersionChangeAllowedForDynamicSchemas() || !isDynamicSchema)))
         {
         if (ctx.IgnoreIllegalDeletionsAndModifications())
             {
             LOG.infov("Ignoring upgrade error:  ECSchema Upgrade failed. ECSchema %s: Cannot delete ECClass '%s'. This is a major ECSchema change. Either major schema version changes are disabled "
-                                 "or the 'Read' version number of the ECSchema was not incremented.",
-                                 deletedClass.GetSchema().GetFullSchemaName().c_str(), deletedClass.GetName().c_str());
+                "or the 'Read' version number of the ECSchema was not incremented.", deletedClass.GetSchema().GetFullSchemaName().c_str(), deletedClass.GetName().c_str());
             return SUCCESS;
             }
 
@@ -3334,6 +3349,8 @@ BentleyStatus SchemaWriter::DeleteClass(Context& ctx, ClassChange& classChange, 
         if (DeleteInstances(ctx, deletedClass) != SUCCESS)
             return ERROR;
         }
+
+    LOG.infov("ECSchema %s: ECClass '%s' is being deleted.", deletedClass.GetSchema().GetFullSchemaName().c_str(), deletedClass.GetName().c_str());
 
     CachedStatementPtr stmt = ctx.GetCachedStatement("DELETE FROM main.ec_Class WHERE Id=?");
     stmt->BindId(1, deletedClass.GetId());
@@ -3412,25 +3429,26 @@ BentleyStatus SchemaWriter::DeleteCustomAttributes(Context& ctx, ECContainerId i
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaWriter::DeleteProperty(Context& ctx, PropertyChange& propertyChange, ECPropertyCR deletedProperty, ECPropertyCP newBaseProperty)
+BentleyStatus SchemaWriter::DeleteProperty(Context& ctx, PropertyChange& propertyChange, ECPropertyCR deletedProperty, ECPropertyCP newBaseProperty, bool isDynamicSchema)
     {
     ECClassCR ecClass = deletedProperty.GetClass();
     bool isOverriddenProperty = newBaseProperty != nullptr;
 
     // fail if major version changes are not allowed or major version has not been incremented, but continue if newBaseProperty is available, meaning we are merely removing an overridden property
-    if ((!ctx.AreMajorSchemaVersionChangesAllowed() || !ctx.IsMajorSchemaVersionChange(deletedProperty.GetClass().GetSchema().GetId())) && !isOverriddenProperty)
+    // Allow Major schema upgrade for dynamic schemas if AllowMajorSchemaUpgradeForDynamicSchemas import option is set irrespective of the DisallowMajorSchemaUpgrade import option
+    if (!ctx.IsMajorSchemaVersionChange(deletedProperty.GetClass().GetSchema().GetId()) && !isOverriddenProperty || (!ctx.AreMajorSchemaVersionChangesAllowed() && (!ctx.IsMajorSchemaVersionChangeAllowedForDynamicSchemas() || !isDynamicSchema)))
         {
         if (ctx.IgnoreIllegalDeletionsAndModifications())
-            {
-            LOG.infov("Ignoring update error: ECSchema Upgrade failed. ECSchema %s: Cannot delete ECProperty '%s.%s'. This is a major ECSchema change. Either major schema version changes are disabled "
-                                 "or the 'Read' version number of the ECSchema was not incremented.",
-                                 ecClass.GetSchema().GetFullSchemaName().c_str(), ecClass.GetName().c_str(), deletedProperty.GetName().c_str());
-            return SUCCESS;
-            }
+                {
+                LOG.infov("Ignoring update error: ECSchema Upgrade failed. ECSchema %s: Cannot delete ECProperty '%s.%s'. This is a major ECSchema change. Either major schema version changes are disabled "
+                                "or the 'Read' version number of the ECSchema was not incremented.",
+                                ecClass.GetSchema().GetFullSchemaName().c_str(), ecClass.GetName().c_str(), deletedProperty.GetName().c_str());
+                return SUCCESS;
+                }
 
         ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "ECSchema Upgrade failed. ECSchema %s: Cannot delete ECProperty '%s.%s'. This is a major ECSchema change. Either major schema version changes are disabled "
-                             "or the 'Read' version number of the ECSchema was not incremented.",
-                             ecClass.GetSchema().GetFullSchemaName().c_str(), ecClass.GetName().c_str(), deletedProperty.GetName().c_str());
+                       "or the 'Read' version number of the ECSchema was not incremented.",
+                        ecClass.GetSchema().GetFullSchemaName().c_str(), ecClass.GetName().c_str(), deletedProperty.GetName().c_str());
         return ERROR;
         }
 
@@ -3527,6 +3545,8 @@ BentleyStatus SchemaWriter::DeleteProperty(Context& ctx, PropertyChange& propert
 
     if(isOverriddenProperty)
         ctx.ImportCtx().RemapManager().CollectRemapInfosFromDeletedPropertyOverride(deletedProperty.GetId());
+    
+    LOG.infov("ECClass %s: ECProperty '%s' is being deleted.", ecClass.GetFullName(), deletedProperty.GetName().c_str());
     //Delete ECProperty entry make sure ec_Column is already deleted or set to null
     auto res = ctx.GetECDb().ExecuteSql(SqlPrintfString("DELETE FROM main.ec_Property WHERE Id=%s",
         deletedProperty.GetId().ToString(BeInt64Id::UseHex::Yes).c_str()));
@@ -3601,7 +3621,7 @@ BentleyStatus SchemaWriter::UpdateClasses(Context& ctx, ClassChanges& classChang
                 return ERROR;
                 }
 
-            if (SUCCESS != DeleteClass(ctx, change, *oldClass))
+            if (SUCCESS != DeleteClass(ctx, change, *oldClass, newSchema.IsDynamicSchema()))
                 {
                 LOG.debugv("SchemaWriter::UpdateClasses - failed to DeleteClass %s", oldClass->GetFullName());
                 return ERROR;
@@ -4884,7 +4904,7 @@ BentleyStatus SchemaWriter::UpdateSchema(Context& ctx, SchemaChange& schemaChang
             return ERROR;
             }
 
-        if (!ctx.AreMajorSchemaVersionChangesAllowed())
+        if (!ctx.AreMajorSchemaVersionChangesAllowed() && !(newSchema.IsDynamicSchema() && ctx.IsMajorSchemaVersionChangeAllowedForDynamicSchemas()))
             {
             ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "ECSchema Upgrade failed. ECSchema %s: Major schema version changes are disabled.  New Schema %s",
                                     oldSchema.GetFullSchemaName().c_str(), newSchema.GetFullSchemaName().c_str());

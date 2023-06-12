@@ -4,6 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 
+#define TABLE_SQLSCHEMA "sync_SqlSchema"
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -465,7 +466,13 @@ SharedSchemaChannel::Status SharedSchemaChannel::Init(ChannelUri const& channelU
 			"Fail to re-create meta table(s) in shared schema channel (%s). %s", channelURI.GetUri().c_str(), BeSQLiteLib::GetErrorString(rc));
         return Status::ERROR_FAIL_TO_INIT_SHARED_DB;
 	}
-
+    rc = sharedDb.TryExecuteSql("create table if not exists " TABLE_SQLSCHEMA "(id integer primary key, Type text, Name text, TableName text, Sql text)");
+	if (rc != BE_SQLITE_OK) {
+        m_conn.GetImpl().Issues().ReportV(
+			IssueSeverity::Error, IssueCategory::SharedSchemaChannel, IssueType::ECDbIssue,
+			"Fail to create sync table (" TABLE_SQLSCHEMA ") in shared schema channel (%s). %s", channelURI.GetUri().c_str(), BeSQLiteLib::GetErrorString(rc));
+        return Status::ERROR_FAIL_TO_INIT_SHARED_DB;
+	}
     rc = UpdateOrCreateSharedChannelInfo(sharedDb);
     if (rc != BE_SQLITE_OK) {
         m_conn.GetImpl().Issues().ReportV(
@@ -609,7 +616,14 @@ SharedSchemaChannel::Status SharedSchemaChannel::PullInternal(ChannelUri const& 
         return Status::ERROR_UNABLE_TO_ATTACH;
 	}
 
-	// pull changes ================================================
+    rc = PullSqlSchema(m_conn);
+	if (rc != BE_SQLITE_OK) {
+		m_conn.AbandonChanges();
+		m_conn.DetachDb(SharedSchemaChannelHelper::ALIAS_SHARED_DB);
+        return Status::ERROR_SYNC_SQL_SCHEMA;
+    }
+
+    // pull changes ================================================
     const auto fromAlias = SharedSchemaChannelHelper::ALIAS_SHARED_DB;
 	const auto toAlias = SharedSchemaChannelHelper::ALIAS_MAIN_DB;
 
@@ -644,6 +658,59 @@ SharedSchemaChannel::Status SharedSchemaChannel::PullInternal(ChannelUri const& 
     return Status::OK;
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult SharedSchemaChannel::PullSqlSchema(DbR conn) {
+
+    Utf8String facetsThatDoesNotExitsSql = SqlPrintfString(
+		"SELECT [s].[sql] FROM [%s].[" TABLE_SQLSCHEMA "] [s] WHERE NOT EXISTS (SELECT 1 FROM [%s].[sqlite_master] m WHERE [m].[type]=[s].[type] AND [m].[name]=[s].[name]) ORDER BY [s].[id]",
+		SharedSchemaChannelHelper::ALIAS_SHARED_DB,
+		SharedSchemaChannelHelper::ALIAS_MAIN_DB
+	).GetUtf8CP();
+
+    Statement stmt;
+    auto rc = stmt.Prepare(conn, facetsThatDoesNotExitsSql.c_str());
+	if (rc != BE_SQLITE_OK) {
+        LOG.errorv("PullSqlSchema() unable to prepare statement (%s): %s", facetsThatDoesNotExitsSql.c_str(), conn.GetLastError().c_str());
+        return rc;
+    }
+
+	while ((rc=stmt.Step()) == BE_SQLITE_ROW) {
+        auto sql = stmt.GetValueText(0);
+        rc = conn.ExecuteDdl(sql);
+		if (rc != BE_SQLITE_OK) {
+			LOG.errorv("PullSqlSchema() fail to execute ddl (%s): %s", sql, conn.GetLastError().c_str());
+        	return rc;
+    	}
+    }
+
+    return rc == BE_SQLITE_DONE ? BE_SQLITE_OK : rc;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult SharedSchemaChannel::PushSqlSchema(DbR conn) {
+    Utf8String truncatSql = SqlPrintfString("DELETE FROM [%s].[" TABLE_SQLSCHEMA "]", SharedSchemaChannelHelper::ALIAS_SHARED_DB).GetUtf8CP();
+    auto rc = conn.TryExecuteSql(truncatSql.c_str());
+    if (rc != BE_SQLITE_OK) {
+		LOG.errorv("PushSqlSchema() unable to prepare statement (%s): %s", truncatSql.c_str(), conn.GetLastError().c_str());
+        return rc;
+    }
+    Utf8String bulkInsertSql = SqlPrintfString(
+		"INSERT INTO [%s].[" TABLE_SQLSCHEMA "](Type,Name,TableName,Sql) "
+		"SELECT [type], [name], [tbl_name], [sql] FROM [%s].[sqlite_master] WHERE [name] NOT LIKE 'sqlite%%'",
+		SharedSchemaChannelHelper::ALIAS_SHARED_DB,
+		SharedSchemaChannelHelper::ALIAS_MAIN_DB).GetUtf8CP();
+
+    rc = conn.TryExecuteSql(bulkInsertSql.c_str());
+    if (rc != BE_SQLITE_OK) {
+		LOG.errorv("PushSqlSchema() fail to update sql schema (%s): %s", bulkInsertSql.c_str(), conn.GetLastError().c_str());
+        return rc;
+    }
+    return BE_SQLITE_OK;
+}
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -688,6 +755,13 @@ SharedSchemaChannel::Status SharedSchemaChannel::PushInternal(ChannelUri const& 
 
     tables.insert(tables.end(), additionTables.begin(), additionTables.end());
     rc = SharedSchemaChannelHelper::SyncData(m_conn, tables, fromAlias, toAlias);
+    if (rc != BE_SQLITE_OK) {
+		m_conn.AbandonChanges();
+		m_conn.DetachDb(SharedSchemaChannelHelper::ALIAS_SHARED_DB);
+        return Status::ERROR;
+    }
+
+    rc = PushSqlSchema(m_conn);
     if (rc != BE_SQLITE_OK) {
 		m_conn.AbandonChanges();
 		m_conn.DetachDb(SharedSchemaChannelHelper::ALIAS_SHARED_DB);

@@ -123,7 +123,7 @@ TEST_F(SchemaSyncTestFixture, FullSchemaSyncWorkflow)
         "check syncDb, b1, b2 and b3 hashes",
         [&]()
             {
-            schemaChannel.WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb); });
+            schemaChannel.WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb); });
             CheckHashes(*b1);
             CheckHashes(*b2);
             CheckHashes(*b3);
@@ -158,7 +158,7 @@ TEST_F(SchemaSyncTestFixture, FullSchemaSyncWorkflow)
                     ASSERT_EQ(pipe1->GetPropertyCount(), 2);
                     ASSERT_FALSE(syncDb.TableExists("ts_Pipe1"));
                     ASSERT_STRCASEEQ(GetIndexDDL(syncDb, "idx_pipe1_p1").c_str(), "");
-                    CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); // SQLITE_SCHEMA hash should not change
+                    CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); // SQLITE_SCHEMA hash should not change
                     ASSERT_TRUE(ForeignkeyCheck(syncDb));
                     }
             );
@@ -244,7 +244,7 @@ TEST_F(SchemaSyncTestFixture, FullSchemaSyncWorkflow)
                     ASSERT_NE(pipe1, nullptr);
                     ASSERT_EQ(pipe1->GetPropertyCount(), 4);
                     ASSERT_STRCASEEQ(GetIndexDDL(syncDb, "idx_pipe1_p1").c_str(), "");
-                    CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP);
+                    CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP);
                     ASSERT_TRUE(ForeignkeyCheck(syncDb));
                     }
             );
@@ -419,7 +419,7 @@ TEST_F(SchemaSyncTestFixture, InvalidSchemaChannelWithInitializedSharedChannel)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*b1, SchemaItem(schemaXMLBuilder()), SchemaManager::SchemaImportOptions::None, (SharedSchemaChannel::ChannelUri) ""));
             ASSERT_EQ(BE_SQLITE_OK, b1->AbandonChanges());
             CheckHashes(*b1);
-            schemaChannel.WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb); });
+            schemaChannel.WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb); });
             }
     );
 
@@ -430,7 +430,7 @@ TEST_F(SchemaSyncTestFixture, InvalidSchemaChannelWithInitializedSharedChannel)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*b1, SchemaItem(schemaXMLBuilder()), SchemaManager::SchemaImportOptions::None, (SharedSchemaChannel::ChannelUri) ";"));
             ASSERT_EQ(BE_SQLITE_OK, b1->AbandonChanges());
             CheckHashes(*b1);
-            schemaChannel.WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb); });
+            schemaChannel.WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb); });
             }
     );
 
@@ -441,7 +441,7 @@ TEST_F(SchemaSyncTestFixture, InvalidSchemaChannelWithInitializedSharedChannel)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*b1, SchemaItem(schemaXMLBuilder()), SchemaManager::SchemaImportOptions::None, (SharedSchemaChannel::ChannelUri) " "));
             ASSERT_EQ(BE_SQLITE_OK, b1->AbandonChanges());
             CheckHashes(*b1);
-            schemaChannel.WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb); });
+            schemaChannel.WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb); });
             }
     );
 
@@ -455,7 +455,7 @@ TEST_F(SchemaSyncTestFixture, InvalidSchemaChannelWithInitializedSharedChannel)
             );
             ASSERT_EQ(BE_SQLITE_OK, b1->AbandonChanges());
             CheckHashes(*b1);
-            schemaChannel.WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb); });
+            schemaChannel.WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb); });
             }
     );
 
@@ -474,7 +474,7 @@ TEST_F(SchemaSyncTestFixture, InvalidSchemaChannelWithInitializedSharedChannel)
             );
             ASSERT_EQ(BE_SQLITE_OK, b1->AbandonChanges());
             CheckHashes(*b1);
-            schemaChannel.WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb); });
+            schemaChannel.WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb); });
             }
     );
 
@@ -493,7 +493,7 @@ TEST_F(SchemaSyncTestFixture, InvalidSchemaChannelWithInitializedSharedChannel)
             );
             ASSERT_EQ(BE_SQLITE_OK, b1->AbandonChanges());
             CheckHashes(*b1);
-            schemaChannel.WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb); });
+            schemaChannel.WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb); });
             }
     );
     }
@@ -518,7 +518,7 @@ TEST_F(SchemaSyncTestFixture, PushSchemaToNewSchemaChannelWhenExistingSchemaChan
             {
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*b1, SchemaItem(schemaXMLBuilder()), SchemaManager::SchemaImportOptions::None, emptyUri));
             CheckHashes(*b1);
-            schemaChannel.WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb); });
+            schemaChannel.WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb); });
             ASSERT_EQ(BE_SQLITE_OK, b1->AbandonChanges());
             }
     );
@@ -555,7 +555,7 @@ TEST_F(SchemaSyncTestFixture, BriefcasePushesInvalidEmptyECSchema)
                 </ECSchema>)xml"
             );
             ASSERT_EQ(SchemaImportResult::ERROR, SetupECDb("sync-db", schema)) << "Import of invalid schema";
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb); });
             CheckHashes(*m_briefcase);
             }
     );
@@ -584,7 +584,7 @@ TEST_F(SchemaSyncTestFixture, SecondBriefcasePushesSchema)
         [&]()
             {
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*b2, SchemaItem(schemaXMLBuilder()), SchemaManager::SchemaImportOptions::None, schemaChannel.GetChannelUri()));
-            schemaChannel.WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb); });
+            schemaChannel.WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb); });
             CheckHashes(*b1);
             CheckHashes(*b2);
             ASSERT_EQ(BE_SQLITE_OK, b2->AbandonChanges());
@@ -600,7 +600,7 @@ TEST_F(SchemaSyncTestFixture, SecondBriefcasePushesSchema)
             CheckHashes(*b2);
 
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*b2, SchemaItem(schemaXMLBuilder()), SchemaManager::SchemaImportOptions::None, schemaChannel.GetChannelUri()));
-            schemaChannel.WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            schemaChannel.WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             CheckHashes(*b1);
             CheckHashes(*b2, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             }
@@ -641,7 +641,7 @@ TEST_F(SchemaSyncTestFixture, DeleteSchema_VerifyCustomAttributesAreDeletedAsWel
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schema_del", testCa));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -673,7 +673,7 @@ TEST_F(SchemaSyncTestFixture, DeleteSchema_VerifyCustomAttributesAreDeletedAsWel
             );
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -705,7 +705,7 @@ TEST_F(SchemaSyncTestFixture, DeleteSchema_VerifyCustomAttributesAreDeletedAsWel
             ScopedDisableFailOnAssertion disableFailOnAssertion;
             ASSERT_FALSE(DropSchema("TestSchema").IsSuccess());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
     }
@@ -756,7 +756,7 @@ TEST_F(SchemaSyncTestFixture, DeleteSchema_Check_Table_Drop)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schema_del", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -781,7 +781,7 @@ TEST_F(SchemaSyncTestFixture, DeleteSchema_Check_Table_Drop)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -813,7 +813,7 @@ TEST_F(SchemaSyncTestFixture, DeleteSchema_Check_Table_Drop)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP, SCHEMA3_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP); });
             }
     );
 
@@ -937,7 +937,7 @@ TEST_F(SchemaSyncTestFixture, DeleteSchema)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schema_del", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -965,7 +965,7 @@ TEST_F(SchemaSyncTestFixture, DeleteSchema)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -1189,7 +1189,7 @@ TEST_F(SchemaSyncTestFixture, UpdateECSchemaAttributes)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("UpdateECSchemaAttributes", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -1206,7 +1206,7 @@ TEST_F(SchemaSyncTestFixture, UpdateECSchemaAttributes)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -1233,7 +1233,7 @@ TEST_F(SchemaSyncTestFixture, UpdateECSchemaAttributes)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA); });
             }
     );
     }
@@ -1273,7 +1273,7 @@ TEST_F(SchemaSyncTestFixture, ModifySchemaVersion)
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("SchemaUpgrade_ModifySchemaVersion", SchemaItem(schemaXml("10.10.10"))));
             assertVersion(m_briefcase->Schemas().GetSchema("TestSchema1"), 10, 10, 10);
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -1286,7 +1286,7 @@ TEST_F(SchemaSyncTestFixture, ModifySchemaVersion)
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             assertVersion(m_briefcase->Schemas().GetSchema("TestSchema1"), 10, 11, 9);
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -1299,7 +1299,7 @@ TEST_F(SchemaSyncTestFixture, ModifySchemaVersion)
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             assertVersion(m_briefcase->Schemas().GetSchema("TestSchema1"), 11, 10, 9);
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -1312,7 +1312,7 @@ TEST_F(SchemaSyncTestFixture, ModifySchemaVersion)
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             assertVersion(m_briefcase->Schemas().GetSchema("TestSchema1"), 12, 10, 8);
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -1325,7 +1325,7 @@ TEST_F(SchemaSyncTestFixture, ModifySchemaVersion)
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             assertVersion(m_briefcase->Schemas().GetSchema("TestSchema1"), 13, 1, 7);
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -1337,7 +1337,7 @@ TEST_F(SchemaSyncTestFixture, ModifySchemaVersion)
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             assertVersion(m_briefcase->Schemas().GetSchema("TestSchema1"), 13, 1, 7);
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -1349,7 +1349,7 @@ TEST_F(SchemaSyncTestFixture, ModifySchemaVersion)
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             assertVersion(m_briefcase->Schemas().GetSchema("TestSchema1"), 13, 1, 7);
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -1361,7 +1361,7 @@ TEST_F(SchemaSyncTestFixture, ModifySchemaVersion)
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             assertVersion(m_briefcase->Schemas().GetSchema("TestSchema1"), 13, 1, 7);
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
@@ -1401,7 +1401,7 @@ TEST_F(SchemaSyncTestFixture, SchemaDowngrade_MoreComplex)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("SchemaDowngrade", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -1437,7 +1437,7 @@ TEST_F(SchemaSyncTestFixture, SchemaDowngrade_MoreComplex)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -1469,7 +1469,7 @@ TEST_F(SchemaSyncTestFixture, SchemaDowngrade_MoreComplex)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -1496,7 +1496,7 @@ TEST_F(SchemaSyncTestFixture, SchemaDowngrade_MoreComplex)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -1539,7 +1539,7 @@ TEST_F(SchemaSyncTestFixture, ECVersions)
                 "</ECSchema>")));
             verifySchemaVersion(*m_briefcase, "TestSchema", 3, 0);
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -1554,7 +1554,7 @@ TEST_F(SchemaSyncTestFixture, ECVersions)
                 "</ECSchema>")));
             verifySchemaVersion(*m_briefcase, "TestSchema", 3, 1);
             // CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA);
-            // m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA); });
+            // m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -1569,7 +1569,7 @@ TEST_F(SchemaSyncTestFixture, ECVersions)
                 "</ECSchema>")));
             verifySchemaVersion(*m_briefcase, "TestSchema", 3, 2);
             // CheckHashes(*m_briefcase, SCHEMA3_HASH_ECDB_SCHEMA);
-            // m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA); });
+            // m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -1584,7 +1584,7 @@ TEST_F(SchemaSyncTestFixture, ECVersions)
                 "</ECSchema>")));
             verifySchemaVersion(*m_briefcase, "TestSchema", 3, 2);
             // CheckHashes(*m_briefcase, SCHEMA3_HASH_ECDB_SCHEMA);
-            // m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA); });
+            // m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA); });
             }
     );
     }
@@ -1609,7 +1609,7 @@ TEST_F(SchemaSyncTestFixture, UpdateECClassAttributes)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("UpdateECClassAttributes", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -1627,7 +1627,7 @@ TEST_F(SchemaSyncTestFixture, UpdateECClassAttributes)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -1670,7 +1670,7 @@ TEST_F(SchemaSyncTestFixture, AddingUpdatingAndDeletingMinMax)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schema_update_minMax", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -1734,7 +1734,7 @@ TEST_F(SchemaSyncTestFixture, AddingUpdatingAndDeletingMinMax)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -1804,7 +1804,7 @@ TEST_F(SchemaSyncTestFixture, AddingUpdatingAndDeletingPriority)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schema_update_priority", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -1842,7 +1842,7 @@ TEST_F(SchemaSyncTestFixture, AddingUpdatingAndDeletingPriority)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -1900,7 +1900,7 @@ TEST_F(SchemaSyncTestFixture, UpdateBaseClass_Update_Mixin_AppliesToEntityClass_
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("appliesToEntityClass", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -1950,7 +1950,7 @@ TEST_F(SchemaSyncTestFixture, UpdateBaseClass_Update_Mixin_AppliesToEntityClass_
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -2007,7 +2007,7 @@ TEST_F(SchemaSyncTestFixture, UpdateBaseClass_Update_Mixin_AppliesToEntityClass_
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("appliesToEntityClass_props", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -2056,7 +2056,7 @@ TEST_F(SchemaSyncTestFixture, UpdateBaseClass_Update_Mixin_AppliesToEntityClass_
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             // ERROR ECDb - ECSchema Upgrade failed. MixIn TestSchema:IOptionA: Modifing 'AppliesToEntityClass' from TestSchema:SubElement to TestSchema:SupportOption is only
             // supported TestSchema:SubElement derived from TestSchema:SupportOption.ERROR ECDb - ECSchema Upgrade failed. MixIn TestSchema:IOptionA: Modifing 'AppliesToEntityClass'
             // from TestSchema:SubElement to TestSchema:SupportOption is only supported TestSchema:SubElement derived from TestSchema:SupportOption.
@@ -2106,7 +2106,7 @@ TEST_F(SchemaSyncTestFixture, UpdateBaseClass_UpdateEmptyMixinBaseClass) //TFS#9
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -2158,7 +2158,7 @@ TEST_F(SchemaSyncTestFixture, UpdateBaseClass_UpdateEmptyMixinBaseClass) //TFS#9
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -2218,7 +2218,7 @@ TEST_F(SchemaSyncTestFixture, UpdateBaseClass_UpdateEmptyMixinBaseClassWithNoneE
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -2273,7 +2273,7 @@ TEST_F(SchemaSyncTestFixture, UpdateBaseClass_UpdateEmptyMixinBaseClassWithNoneE
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -2293,7 +2293,7 @@ TEST_F(SchemaSyncTestFixture, UpdateBaseClass_UpdateEmptyMixinBaseClassWithNoneE
 
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
     }
@@ -2333,7 +2333,7 @@ TEST_F(SchemaSyncTestFixture, UpdateBaseClass_AddMixinBaseClassWithProperties)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -2381,7 +2381,7 @@ TEST_F(SchemaSyncTestFixture, UpdateBaseClass_AddMixinBaseClassWithProperties)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -2424,7 +2424,7 @@ TEST_F(SchemaSyncTestFixture, UpdateBaseClass_AddMixinBaseClassWithProperties)
 
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
     }
@@ -2464,7 +2464,7 @@ TEST_F(SchemaSyncTestFixture, UpdateBaseClass_AddPropertiesToEmptyMixinBaseClass
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -2513,7 +2513,7 @@ TEST_F(SchemaSyncTestFixture, UpdateBaseClass_AddPropertiesToEmptyMixinBaseClass
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -2554,7 +2554,7 @@ TEST_F(SchemaSyncTestFixture, UpdateBaseClass_AddPropertiesToEmptyMixinBaseClass
 
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
     }
@@ -2596,7 +2596,7 @@ TEST_F(SchemaSyncTestFixture, UpdateBaseClass_AddMixinWithPropertiesUsingTablePe
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -2660,7 +2660,7 @@ TEST_F(SchemaSyncTestFixture, UpdateBaseClass_AddMixinWithPropertiesUsingTablePe
             );
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -2720,7 +2720,7 @@ TEST_F(SchemaSyncTestFixture, UpdateBaseClass_AddMixinWithPropertiesUsingTablePe
 
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
     }
@@ -2763,7 +2763,7 @@ TEST_F(SchemaSyncTestFixture, UpdateBaseClass_AddMixinWithPropertiesUsingJoinedT
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
             }
     );
 
@@ -2829,7 +2829,7 @@ TEST_F(SchemaSyncTestFixture, UpdateBaseClass_AddMixinWithPropertiesUsingJoinedT
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -2889,7 +2889,7 @@ TEST_F(SchemaSyncTestFixture, UpdateBaseClass_AddMixinWithPropertiesUsingJoinedT
 
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
@@ -2925,7 +2925,7 @@ TEST_F(SchemaSyncTestFixture, UpdateBaseClass_AddMixinWithPropertiesToMultipleCl
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
             }
     );
 
@@ -2985,7 +2985,7 @@ TEST_F(SchemaSyncTestFixture, UpdateBaseClass_AddMixinWithPropertiesToMultipleCl
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -3045,7 +3045,7 @@ TEST_F(SchemaSyncTestFixture, UpdateBaseClass_AddMixinWithPropertiesToMultipleCl
 
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
@@ -3081,7 +3081,7 @@ TEST_F(SchemaSyncTestFixture, UpdateClass_ChangeAbstractIntoConcreteClass)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -3123,7 +3123,7 @@ TEST_F(SchemaSyncTestFixture, UpdateClass_ChangeAbstractIntoConcreteClass)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
@@ -3164,7 +3164,7 @@ TEST_F(SchemaSyncTestFixture, UpdateClass_ChangeAbstractIntoConcreteClassUsingTa
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -3213,7 +3213,7 @@ TEST_F(SchemaSyncTestFixture, UpdateClass_ChangeAbstractIntoConcreteClassUsingTa
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -3254,7 +3254,7 @@ TEST_F(SchemaSyncTestFixture, UpdateClass_ChangeAbstractIntoConcreteClassUsingTa
 
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
@@ -3300,7 +3300,7 @@ TEST_F(SchemaSyncTestFixture, UpdateClass_ChangeAbstractIntoConcreteClassWithAbs
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -3352,7 +3352,7 @@ TEST_F(SchemaSyncTestFixture, UpdateClass_ChangeAbstractIntoConcreteClassWithAbs
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
@@ -3398,7 +3398,7 @@ TEST_F(SchemaSyncTestFixture, UpdateBaseClass_AddNewEmptyMixinBaseClasses) //TFS
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -3450,7 +3450,7 @@ TEST_F(SchemaSyncTestFixture, UpdateBaseClass_AddNewEmptyMixinBaseClasses) //TFS
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -3510,7 +3510,7 @@ TEST_F(SchemaSyncTestFixture, UpdateBaseClass_AddNewNoneEmptyMixinBaseClasses) /
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -3561,7 +3561,7 @@ TEST_F(SchemaSyncTestFixture, UpdateBaseClass_AddNewNoneEmptyMixinBaseClasses) /
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
@@ -3610,7 +3610,7 @@ TEST_F(SchemaSyncTestFixture, UpdateBaseClass_RemoveNoneEmptyMixinBaseClasses) /
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -3662,7 +3662,7 @@ TEST_F(SchemaSyncTestFixture, UpdateBaseClass_RemoveNoneEmptyMixinBaseClasses) /
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
@@ -3711,7 +3711,7 @@ TEST_F(SchemaSyncTestFixture, UpdateBaseClass_RemoveEmptyMixinBaseClasses) //TFS
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -3764,7 +3764,7 @@ TEST_F(SchemaSyncTestFixture, UpdateBaseClass_RemoveEmptyMixinBaseClasses) //TFS
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -3810,7 +3810,7 @@ TEST_F(SchemaSyncTestFixture, TryRemoveMixinCustomAttribute_Simple) //TFS#917566
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -3830,7 +3830,7 @@ TEST_F(SchemaSyncTestFixture, TryRemoveMixinCustomAttribute_Simple) //TFS#917566
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
@@ -3858,7 +3858,7 @@ TEST_F(SchemaSyncTestFixture, TryAddMixinCustomAttribute_Simple) //TFS#917566
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -3885,7 +3885,7 @@ TEST_F(SchemaSyncTestFixture, TryAddMixinCustomAttribute_Simple) //TFS#917566
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
@@ -3921,7 +3921,7 @@ TEST_F(SchemaSyncTestFixture, TryRemoveMixinCustomAttribute_Complex) //TFS#91756
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -3949,7 +3949,7 @@ TEST_F(SchemaSyncTestFixture, TryRemoveMixinCustomAttribute_Complex) //TFS#91756
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
@@ -3976,7 +3976,7 @@ TEST_F(SchemaSyncTestFixture, UpdateECPropertyAttributes)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("UpdateECClassAttributes", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -3996,7 +3996,7 @@ TEST_F(SchemaSyncTestFixture, UpdateECPropertyAttributes)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema)) << "Modifying ECProperty display label and description is expected to be supported";
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -4012,7 +4012,7 @@ TEST_F(SchemaSyncTestFixture, UpdateECPropertyAttributes)
 
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
@@ -4046,7 +4046,7 @@ TEST_F(SchemaSyncTestFixture, UpdatingECDbMapCAIsNotSupported)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -4072,7 +4072,7 @@ TEST_F(SchemaSyncTestFixture, UpdatingECDbMapCAIsNotSupported)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
@@ -4129,7 +4129,7 @@ TEST_F(SchemaSyncTestFixture, ClassModifier)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -4161,7 +4161,7 @@ TEST_F(SchemaSyncTestFixture, ClassModifier)
 
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -4212,7 +4212,7 @@ TEST_F(SchemaSyncTestFixture, ClassModifier)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
@@ -4255,7 +4255,7 @@ TEST_F(SchemaSyncTestFixture, UpdateECClassModifierToAbstract)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -4275,7 +4275,7 @@ TEST_F(SchemaSyncTestFixture, UpdateECClassModifierToAbstract)
 
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -4310,7 +4310,7 @@ TEST_F(SchemaSyncTestFixture, UpdateECClassModifierToAbstract)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
@@ -4337,7 +4337,7 @@ TEST_F(SchemaSyncTestFixture, ModifyECClassModifierFromAbstract)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate_modifyclassmodifiertoabstract", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -4371,7 +4371,7 @@ TEST_F(SchemaSyncTestFixture, ModifyECClassModifierFromAbstract)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -4405,7 +4405,7 @@ TEST_F(SchemaSyncTestFixture, ModifyECClassModifierFromAbstract)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -4451,7 +4451,7 @@ TEST_F(SchemaSyncTestFixture, UnsealingClasses)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("UnsealingClasses", schema));
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
             }
     );
 
@@ -4478,7 +4478,7 @@ TEST_F(SchemaSyncTestFixture, UnsealingClasses)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
             }
     );
 
@@ -4509,7 +4509,7 @@ TEST_F(SchemaSyncTestFixture, UnsealingClasses)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("UnsealingClasses", schema));
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -4539,7 +4539,7 @@ TEST_F(SchemaSyncTestFixture, UnsealingClasses)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
@@ -4573,7 +4573,7 @@ TEST_F(SchemaSyncTestFixture, DeleteProperty_OwnTable)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -4612,7 +4612,7 @@ TEST_F(SchemaSyncTestFixture, DeleteProperty_OwnTable)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
@@ -4665,7 +4665,7 @@ TEST_F(SchemaSyncTestFixture, DeleteProperties_TPH)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -4692,7 +4692,7 @@ TEST_F(SchemaSyncTestFixture, DeleteProperties_TPH)
 
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -4742,7 +4742,7 @@ TEST_F(SchemaSyncTestFixture, DeleteProperties_TPH)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -4769,7 +4769,7 @@ TEST_F(SchemaSyncTestFixture, DeleteProperties_TPH)
 
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -4796,7 +4796,7 @@ TEST_F(SchemaSyncTestFixture, DeleteProperties_TPH)
 
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -4823,7 +4823,7 @@ TEST_F(SchemaSyncTestFixture, DeleteProperties_TPH)
 
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
     }
@@ -4877,7 +4877,7 @@ TEST_F(SchemaSyncTestFixture, DeleteProperties_JoinedTable)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -4904,7 +4904,7 @@ TEST_F(SchemaSyncTestFixture, DeleteProperties_JoinedTable)
 
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -4955,7 +4955,7 @@ TEST_F(SchemaSyncTestFixture, DeleteProperties_JoinedTable)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -4982,7 +4982,7 @@ TEST_F(SchemaSyncTestFixture, DeleteProperties_JoinedTable)
 
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -5009,7 +5009,7 @@ TEST_F(SchemaSyncTestFixture, DeleteProperties_JoinedTable)
 
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -5036,7 +5036,7 @@ TEST_F(SchemaSyncTestFixture, DeleteProperties_JoinedTable)
 
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
     }
@@ -5064,7 +5064,7 @@ TEST_F(SchemaSyncTestFixture, AddDeleteVirtualColumns)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -5101,7 +5101,7 @@ TEST_F(SchemaSyncTestFixture, AddDeleteVirtualColumns)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
             }
     );
     }
@@ -5146,7 +5146,7 @@ TEST_F(SchemaSyncTestFixture, DeleteOverriddenProperties)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -5186,7 +5186,7 @@ TEST_F(SchemaSyncTestFixture, DeleteOverriddenProperties)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
@@ -5223,7 +5223,7 @@ TEST_F(SchemaSyncTestFixture, UpdateCAProperties)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -5270,7 +5270,7 @@ TEST_F(SchemaSyncTestFixture, UpdateCAProperties)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -5344,7 +5344,7 @@ TEST_F(SchemaSyncTestFixture, UpdateCAProperties)
 
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
@@ -5366,7 +5366,7 @@ TEST_F(SchemaSyncTestFixture, AddNewEntityClass)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -5400,7 +5400,7 @@ TEST_F(SchemaSyncTestFixture, AddNewEntityClass)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -5449,7 +5449,7 @@ TEST_F(SchemaSyncTestFixture, AddNewEntityClass)
 
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
     }
@@ -5482,7 +5482,7 @@ TEST_F(SchemaSyncTestFixture, AddNewSubClassForBaseWithTPH)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -5526,7 +5526,7 @@ TEST_F(SchemaSyncTestFixture, AddNewSubClassForBaseWithTPH)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -5572,7 +5572,7 @@ TEST_F(SchemaSyncTestFixture, AddNewSubClassForBaseWithTPH)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP, SCHEMA3_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP); });
             }
     );
     }
@@ -5613,7 +5613,7 @@ TEST_F(SchemaSyncTestFixture, AddNewClass_NewProperty_TPH_ShareColumns)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -5667,7 +5667,7 @@ TEST_F(SchemaSyncTestFixture, AddNewClass_NewProperty_TPH_ShareColumns)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
     }
@@ -5735,7 +5735,7 @@ TEST_F(SchemaSyncTestFixture, VerifyMappingOfPropertiesToOverflowOnJoinedTable)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -5755,7 +5755,7 @@ TEST_F(SchemaSyncTestFixture, VerifyMappingOfPropertiesToOverflowOnJoinedTable)
             assertSelectSql(*m_briefcase, "SELECT * FROM ts_C2_Overflow", 3, 1, "C1IdECClassIdos1");
 
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -5776,7 +5776,7 @@ TEST_F(SchemaSyncTestFixture, VerifyMappingOfPropertiesToOverflowOnJoinedTable)
 
     const auto SCHEMA2_HASH_ECDB_SCHEMA = "3d1099acdee3ee310287bbd41f7da83f2a76379b03b5ff5816fd2a704733c7d6";
     const auto SCHEMA2_HASH_ECDB_MAP = "0fa95b092bd284fbf574afacc413263e566d879dd4fbbd6ec126e5949d44a379";
-    const auto SCHEMA2_HASH_SQLITE_SCHEMA = "c81d0d817930d4a5015881ac11a63b3c15595a5ea74490a85ff61a0ba25ef5c6";
+    const auto SCHEMA2_HASH_SQLITE_SCHEMA = "ad0c8c282f69657ae9098e1981442a2640a9e90b6c32a66f00fd86fa605718e1";
     Test(
         "Adding New Entity Class",
         [&]()
@@ -5856,7 +5856,7 @@ TEST_F(SchemaSyncTestFixture, VerifyMappingOfPropertiesToOverflowOnJoinedTable)
 
     const auto SCHEMA3_HASH_ECDB_SCHEMA = "5e184f0eb5eac83e37864babf3265119721fdfec5a07d6a9388ab592a0f06808";
     const auto SCHEMA3_HASH_ECDB_MAP = "f1ad5502c3d7f0b2fe51bdfbdd4616301fa108ed054cc05daf851cc9bc2306aa";
-    const auto SCHEMA3_HASH_SQLITE_SCHEMA = "1f1cbc4d26ed14f4946aa009b6d03fc391a79e76b25935e62642af4bd3be1e9e";
+    const auto SCHEMA3_HASH_SQLITE_SCHEMA = "5239e92a1238d2977278eebd248cdab1215890526bb0f15757877cbe04afd739";
     Test(
         "Adding Entity Classes C31 and C32",
         [&]()
@@ -6028,7 +6028,7 @@ TEST_F(SchemaSyncTestFixture, AddNewClassModifyAllExistingAttributes)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -6066,7 +6066,7 @@ TEST_F(SchemaSyncTestFixture, AddNewClassModifyAllExistingAttributes)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -6175,7 +6175,7 @@ TEST_F(SchemaSyncTestFixture, AddNewECDbMapCANotSupported)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -6216,7 +6216,7 @@ TEST_F(SchemaSyncTestFixture, AddNewECDbMapCANotSupported)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
@@ -6251,7 +6251,7 @@ TEST_F(SchemaSyncTestFixture, AppendNewCA)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -6301,7 +6301,7 @@ TEST_F(SchemaSyncTestFixture, AppendNewCA)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -6367,7 +6367,7 @@ TEST_F(SchemaSyncTestFixture, AppendNewCA)
 
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
     }
@@ -6392,7 +6392,7 @@ TEST_F(SchemaSyncTestFixture, AddNewCA)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -6435,7 +6435,7 @@ TEST_F(SchemaSyncTestFixture, AddNewCA)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -6501,7 +6501,7 @@ TEST_F(SchemaSyncTestFixture, AddNewCA)
 
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
     }
@@ -6527,7 +6527,7 @@ TEST_F(SchemaSyncTestFixture, AddNewECProperty)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -6563,7 +6563,7 @@ TEST_F(SchemaSyncTestFixture, AddNewECProperty)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -6609,7 +6609,7 @@ TEST_F(SchemaSyncTestFixture, AddNewECProperty)
 
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
     }
@@ -6649,7 +6649,7 @@ TEST_F(SchemaSyncTestFixture, DeleteOverridePropertyOutOfOrderAndThenAddAnewProp
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("AddPropertyToBaseClass", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -6695,7 +6695,7 @@ TEST_F(SchemaSyncTestFixture, DeleteOverridePropertyOutOfOrderAndThenAddAnewProp
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -6744,7 +6744,7 @@ TEST_F(SchemaSyncTestFixture, DeleteOverridePropertyOutOfOrderAndThenAddAnewProp
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP); });
             }
     );
     }
@@ -6782,7 +6782,7 @@ TEST_F(SchemaSyncTestFixture, AddPropertyToBaseClass)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("AddPropertyToBaseClass", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -6835,7 +6835,7 @@ TEST_F(SchemaSyncTestFixture, AddPropertyToBaseClass)
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
 
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -6937,7 +6937,7 @@ TEST_F(SchemaSyncTestFixture, AddPropertyToSubclassThenPropertyToBaseClass_TPH_S
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("AddPropertyToSubclassThenPropertyToBaseClass_TPH_SharedColumns", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -6999,7 +6999,7 @@ TEST_F(SchemaSyncTestFixture, AddPropertyToSubclassThenPropertyToBaseClass_TPH_S
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
 
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -7070,7 +7070,7 @@ TEST_F(SchemaSyncTestFixture, AddPropertyToSubclassThenPropertyToBaseClass_TPH_S
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
 
             CheckHashes(*m_briefcase, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP, SCHEMA3_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP); });
             }
     );
 
@@ -7166,7 +7166,7 @@ TEST_F(SchemaSyncTestFixture, AddPropertyToSubclassThenPropertyToBaseClass_TPH_J
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("AddPropertyToSubclassThenPropertyToBaseClass_TPH_JoinedTable_SharedCols", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -7250,7 +7250,7 @@ TEST_F(SchemaSyncTestFixture, AddPropertyToSubclassThenPropertyToBaseClass_TPH_J
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
 
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -7343,7 +7343,7 @@ TEST_F(SchemaSyncTestFixture, AddPropertyToSubclassThenPropertyToBaseClass_TPH_J
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
 
             CheckHashes(*m_briefcase, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP, SCHEMA3_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP); });
             }
     );
 
@@ -7453,7 +7453,7 @@ TEST_F(SchemaSyncTestFixture, AddPropertyToSubclassThenPropertyToBaseClass_TPH_J
                 )
             );
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -7537,7 +7537,7 @@ TEST_F(SchemaSyncTestFixture, AddPropertyToSubclassThenPropertyToBaseClass_TPH_J
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
 
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -7630,7 +7630,7 @@ TEST_F(SchemaSyncTestFixture, AddPropertyToSubclassThenPropertyToBaseClass_TPH_J
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
 
             CheckHashes(*m_briefcase, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP, SCHEMA3_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP); });
             }
     );
 
@@ -7733,7 +7733,7 @@ TEST_F(SchemaSyncTestFixture, AddPropertyToSubclassThenPropertyToBaseClass_TPH_J
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("AddPropertyToSubclassThenPropertyToBaseClass_TPH_JoinedTable_SharedCols_AddedBasePropToOverflow", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -7817,7 +7817,7 @@ TEST_F(SchemaSyncTestFixture, AddPropertyToSubclassThenPropertyToBaseClass_TPH_J
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
 
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -7910,7 +7910,7 @@ TEST_F(SchemaSyncTestFixture, AddPropertyToSubclassThenPropertyToBaseClass_TPH_J
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
 
             CheckHashes(*m_briefcase, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP, SCHEMA3_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP); });
             }
     );
 
@@ -7984,7 +7984,7 @@ TEST_F(SchemaSyncTestFixture, Add_Delete_ECProperty_ShareColumns)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -8034,7 +8034,7 @@ TEST_F(SchemaSyncTestFixture, Add_Delete_ECProperty_ShareColumns)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -8065,7 +8065,7 @@ TEST_F(SchemaSyncTestFixture, Add_Delete_ECProperty_ShareColumns)
 
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
     }
@@ -8093,7 +8093,7 @@ TEST_F(SchemaSyncTestFixture, AddNewPropertyModifyAllExistingAttributes)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -8131,7 +8131,7 @@ TEST_F(SchemaSyncTestFixture, AddNewPropertyModifyAllExistingAttributes)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -8209,7 +8209,7 @@ TEST_F(SchemaSyncTestFixture, AddNewPropertyModifyAllExistingAttributes)
 
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
     }
@@ -8236,7 +8236,7 @@ TEST_F(SchemaSyncTestFixture, AddNewCAOnProperty)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -8282,7 +8282,7 @@ TEST_F(SchemaSyncTestFixture, AddNewCAOnProperty)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -8357,7 +8357,7 @@ TEST_F(SchemaSyncTestFixture, AddNewCAOnProperty)
 
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
     }
@@ -8393,7 +8393,7 @@ TEST_F(SchemaSyncTestFixture, UpdateECDbMapCA_AddMaxSharedColumnsBeforeOverflow)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -8440,7 +8440,7 @@ TEST_F(SchemaSyncTestFixture, UpdateECDbMapCA_AddMaxSharedColumnsBeforeOverflow)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
@@ -8481,7 +8481,7 @@ TEST_F(SchemaSyncTestFixture, MaxSharedColumnsBeforeOverflowForSubClasses_AddPro
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -8537,7 +8537,7 @@ TEST_F(SchemaSyncTestFixture, MaxSharedColumnsBeforeOverflowForSubClasses_AddPro
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -8599,8 +8599,15 @@ TEST_F(SchemaSyncTestFixture, MaxSharedColumnsBeforeOverflowWithJoinedTable_AddP
                 </ECSchema>)xml"
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
-            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            // CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            ASSERT_ECDB_SCHEMA_HASH  (*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
+            ASSERT_ECDB_MAP_HASH     (*m_briefcase, SCHEMA1_HASH_ECDB_MAP);
+            ASSERT_SQLITE_SCHEMA_HASH(*m_briefcase, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) {
+                //CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP);
+                    ASSERT_ECDB_SCHEMA_HASH  (syncDb, SCHEMA1_HASH_ECDB_SCHEMA);
+                    ASSERT_ECDB_MAP_HASH     (syncDb, SCHEMA1_HASH_ECDB_MAP);
+                });
             }
     );
 
@@ -8615,7 +8622,7 @@ TEST_F(SchemaSyncTestFixture, MaxSharedColumnsBeforeOverflowWithJoinedTable_AddP
 
     const auto SCHEMA2_HASH_ECDB_SCHEMA = "f4878d964a644b436dacb9fb48ce2e5965dd7aa5740386caf7006e9c2032ed18";
     const auto SCHEMA2_HASH_ECDB_MAP = "03b35120cfc7a025601e8383bb2d143b80c61a6126d9f2769fd13de69f430e34";
-    const auto SCHEMA2_HASH_SQLITE_SCHEMA = "84bbd4adf50d92be2f91e99b1908c5bfae8ece0ba5f9e4f8609552f033c44088";
+    const auto SCHEMA2_HASH_SQLITE_SCHEMA = "f7c6cd08cd9cf6a6b39f6c048819b0ead2192e7fb67e4493025d20430742f5a1";
     Test(
         "import edited schema with some changes",
         [&]()
@@ -8655,7 +8662,10 @@ TEST_F(SchemaSyncTestFixture, MaxSharedColumnsBeforeOverflowWithJoinedTable_AddP
                     *newBriefcase,
                     [&]()
                         {
-                        CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+                        // CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+                        ASSERT_ECDB_SCHEMA_HASH  (*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA);
+                        ASSERT_ECDB_MAP_HASH     (*newBriefcase, SCHEMA1_HASH_ECDB_MAP);
+                        ASSERT_SQLITE_SCHEMA_HASH(*newBriefcase, SCHEMA1_HASH_SQLITE_SCHEMA);
                         ASSERT_TRUE(ForeignkeyCheck(*newBriefcase));
                         ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
                         }
@@ -8663,8 +8673,15 @@ TEST_F(SchemaSyncTestFixture, MaxSharedColumnsBeforeOverflowWithJoinedTable_AddP
             );
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
-            CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            // CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
+            ASSERT_ECDB_SCHEMA_HASH  (*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA);
+            ASSERT_ECDB_MAP_HASH     (*newBriefcase, SCHEMA2_HASH_ECDB_MAP);
+            ASSERT_SQLITE_SCHEMA_HASH(*newBriefcase, SCHEMA2_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) {
+                ASSERT_ECDB_SCHEMA_HASH  (*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA);
+                ASSERT_ECDB_MAP_HASH     (*newBriefcase, SCHEMA2_HASH_ECDB_MAP);
+                //CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP);
+                });
             }
     );
 
@@ -8712,7 +8729,7 @@ TEST_F(SchemaSyncTestFixture, ImportMultipleSchemaVersions_AddNewProperty)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -8731,7 +8748,7 @@ TEST_F(SchemaSyncTestFixture, ImportMultipleSchemaVersions_AddNewProperty)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -8769,7 +8786,7 @@ TEST_F(SchemaSyncTestFixture, ImportMultipleSchemaVersions_AddNewProperty)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*m_briefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -8803,7 +8820,7 @@ TEST_F(SchemaSyncTestFixture, ImportMultipleSchemaVersions_AddNewProperty)
 
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
     }
@@ -8822,7 +8839,7 @@ TEST_F(SchemaSyncTestFixture, UpdateMultipleSchemasInDb)
             {
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("updateStartupCompanyschema.ecdb", SchemaItem::CreateForFile("DSCacheSchema.01.00.00.ecschema.xml")));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     Test(
@@ -8832,7 +8849,7 @@ TEST_F(SchemaSyncTestFixture, UpdateMultipleSchemasInDb)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(SchemaItem::CreateForFile("DSCacheSchema.01.00.03.ecschema.xml")));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
@@ -8854,7 +8871,7 @@ TEST_F(SchemaSyncTestFixture, UnsettingSchemaAlias)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
             }
     );
     Test(
@@ -8870,7 +8887,7 @@ TEST_F(SchemaSyncTestFixture, UnsettingSchemaAlias)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
             }
     );
     }
@@ -8892,7 +8909,7 @@ TEST_F(SchemaSyncTestFixture, InvalidValueForSchemaAlias)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -8909,7 +8926,7 @@ TEST_F(SchemaSyncTestFixture, InvalidValueForSchemaAlias)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -8925,7 +8942,7 @@ TEST_F(SchemaSyncTestFixture, InvalidValueForSchemaAlias)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
             }
     );
     }
@@ -8954,7 +8971,7 @@ TEST_F(SchemaSyncTestFixture, MajorVersionChange_WithoutMajorVersionIncremented)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -8970,7 +8987,7 @@ TEST_F(SchemaSyncTestFixture, MajorVersionChange_WithoutMajorVersionIncremented)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -8991,7 +9008,7 @@ TEST_F(SchemaSyncTestFixture, MajorVersionChange_WithoutMajorVersionIncremented)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
@@ -9024,7 +9041,7 @@ TEST_F(SchemaSyncTestFixture, Delete_ECDbMapCANotSupported)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -9058,7 +9075,7 @@ TEST_F(SchemaSyncTestFixture, Delete_ECDbMapCANotSupported)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -9111,7 +9128,7 @@ TEST_F(SchemaSyncTestFixture, Delete_ECEntityClass_OwnTable)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -9144,7 +9161,7 @@ TEST_F(SchemaSyncTestFixture, Delete_ECEntityClass_OwnTable)
 
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -9166,7 +9183,7 @@ TEST_F(SchemaSyncTestFixture, Delete_ECEntityClass_OwnTable)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -9199,7 +9216,7 @@ TEST_F(SchemaSyncTestFixture, Delete_ECEntityClass_OwnTable)
 
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
@@ -9240,7 +9257,7 @@ TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_TPH)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -9275,7 +9292,7 @@ TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_TPH)
 
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -9304,7 +9321,7 @@ TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_TPH)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -9334,7 +9351,7 @@ TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_TPH)
 
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -9352,7 +9369,7 @@ TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_TPH)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -9387,7 +9404,7 @@ TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_TPH)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP); });
             }
     );
 
@@ -9424,7 +9441,7 @@ TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_TPH)
 
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP); });
             }
     );
     }
@@ -9469,7 +9486,7 @@ TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_TPH_ShareColumns)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -9507,7 +9524,7 @@ TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_TPH_ShareColumns)
 
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -9539,7 +9556,7 @@ TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_TPH_ShareColumns)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -9568,7 +9585,7 @@ TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_TPH_ShareColumns)
 
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -9598,7 +9615,7 @@ TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_TPH_ShareColumns)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -9636,7 +9653,7 @@ TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_TPH_ShareColumns)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -9674,7 +9691,7 @@ TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_TPH_ShareColumns)
 
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
@@ -9719,7 +9736,7 @@ TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_TPH_MaxSharedColumnsBefor
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -9756,7 +9773,7 @@ TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_TPH_MaxSharedColumnsBefor
 
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -9788,7 +9805,7 @@ TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_TPH_MaxSharedColumnsBefor
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -9817,7 +9834,7 @@ TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_TPH_MaxSharedColumnsBefor
 
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -9835,7 +9852,7 @@ TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_TPH_MaxSharedColumnsBefor
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -9876,7 +9893,7 @@ TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_TPH_MaxSharedColumnsBefor
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP, SCHEMA3_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP); });
             }
     );
 
@@ -9914,7 +9931,7 @@ TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_TPH_MaxSharedColumnsBefor
 
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP, SCHEMA3_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP); });
             }
     );
     }
@@ -9961,7 +9978,7 @@ TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_JoinedTable)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -10002,7 +10019,7 @@ TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_JoinedTable)
 
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -10036,7 +10053,7 @@ TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_JoinedTable)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -10069,7 +10086,7 @@ TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_JoinedTable)
 
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -10096,7 +10113,7 @@ TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_JoinedTable)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -10114,7 +10131,7 @@ TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_JoinedTable)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -10155,7 +10172,7 @@ TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_JoinedTable)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP); });
             }
     );
 
@@ -10196,7 +10213,7 @@ TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_JoinedTable)
 
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP); });
             }
     );
     }
@@ -10247,7 +10264,7 @@ TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_JoinedTable_ShareColumns)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -10290,7 +10307,7 @@ TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_JoinedTable_ShareColumns)
 
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -10328,7 +10345,7 @@ TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_JoinedTable_ShareColumns)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -10361,7 +10378,7 @@ TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_JoinedTable_ShareColumns)
 
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -10392,7 +10409,7 @@ TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_JoinedTable_ShareColumns)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -10410,7 +10427,7 @@ TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_JoinedTable_ShareColumns)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -10455,7 +10472,7 @@ TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_JoinedTable_ShareColumns)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP); });
             }
     );
 
@@ -10497,7 +10514,7 @@ TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_JoinedTable_ShareColumns)
 
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP); });
             }
     );
     }
@@ -10548,7 +10565,7 @@ TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_JoinedTable_MaxSharedColu
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -10589,7 +10606,7 @@ TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_JoinedTable_MaxSharedColu
 
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -10627,7 +10644,7 @@ TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_JoinedTable_MaxSharedColu
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -10660,7 +10677,7 @@ TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_JoinedTable_MaxSharedColu
 
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -10691,7 +10708,7 @@ TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_JoinedTable_MaxSharedColu
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -10709,7 +10726,7 @@ TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_JoinedTable_MaxSharedColu
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -10756,7 +10773,7 @@ TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_JoinedTable_MaxSharedColu
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP, SCHEMA3_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP); });
             }
     );
 
@@ -10798,7 +10815,7 @@ TEST_F(SchemaSyncTestFixture, Delete_Add_ECEntityClass_JoinedTable_MaxSharedColu
 
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP, SCHEMA3_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP); });
             }
     );
     }
@@ -10846,7 +10863,7 @@ TEST_F(SchemaSyncTestFixture, DeleteSubclassOfRelationshipConstraintConstraint)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -10898,7 +10915,7 @@ TEST_F(SchemaSyncTestFixture, DeleteSubclassOfRelationshipConstraintConstraint)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -10975,7 +10992,7 @@ TEST_F(SchemaSyncTestFixture, DeleteConcreteImplementationOfAbstractConstraintCl
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -11003,7 +11020,7 @@ TEST_F(SchemaSyncTestFixture, DeleteConcreteImplementationOfAbstractConstraintCl
 
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -11061,7 +11078,7 @@ TEST_F(SchemaSyncTestFixture, DeleteConcreteImplementationOfAbstractConstraintCl
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -11133,7 +11150,7 @@ TEST_F(SchemaSyncTestFixture, DeleteECRelationships)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -11177,7 +11194,7 @@ TEST_F(SchemaSyncTestFixture, DeleteECRelationships)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -11223,7 +11240,7 @@ TEST_F(SchemaSyncTestFixture, DeleteECRelationships)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -11268,7 +11285,7 @@ TEST_F(SchemaSyncTestFixture, DeleteECStructClassUnsupported)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -11284,7 +11301,7 @@ TEST_F(SchemaSyncTestFixture, DeleteECStructClassUnsupported)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
@@ -11337,7 +11354,7 @@ TEST_F(SchemaSyncTestFixture, UpdateECDbMapCA_DbIndexChanges)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -11362,7 +11379,7 @@ TEST_F(SchemaSyncTestFixture, UpdateECDbMapCA_DbIndexChanges)
 
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -11421,7 +11438,7 @@ TEST_F(SchemaSyncTestFixture, UpdateECDbMapCA_DbIndexChanges)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -11471,7 +11488,7 @@ TEST_F(SchemaSyncTestFixture, UpdateECDbMapCA_DbIndexChanges)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
@@ -11512,7 +11529,7 @@ TEST_F(SchemaSyncTestFixture, AddNavigationProperty)
 
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate_addnavprop", SchemaItem(schemaXml)));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -11526,7 +11543,7 @@ TEST_F(SchemaSyncTestFixture, AddNavigationProperty)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(SchemaItem(schemaXml)));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -11545,7 +11562,7 @@ TEST_F(SchemaSyncTestFixture, AddNavigationProperty)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(SchemaItem(schemaXml)));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
@@ -11592,7 +11609,7 @@ TEST_F(SchemaSyncTestFixture, DeleteNavigationProperty)
 
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate_deletenavprop", SchemaItem(schemaXml)));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -11606,7 +11623,7 @@ TEST_F(SchemaSyncTestFixture, DeleteNavigationProperty)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(SchemaItem(schemaXml)));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -11626,7 +11643,7 @@ TEST_F(SchemaSyncTestFixture, DeleteNavigationProperty)
 
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate_deletenavprop", SchemaItem(schemaXml)));
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -11640,7 +11657,7 @@ TEST_F(SchemaSyncTestFixture, DeleteNavigationProperty)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(SchemaItem(schemaXml)));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
     }
@@ -11685,7 +11702,7 @@ TEST_F(SchemaSyncTestFixture, AddForeignKeyConstraint)
 
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate_addforeignkeyconstraint", SchemaItem(schemaXml)));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -11700,7 +11717,7 @@ TEST_F(SchemaSyncTestFixture, AddForeignKeyConstraint)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(SchemaItem(schemaXml)));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
@@ -11766,7 +11783,7 @@ TEST_F(SchemaSyncTestFixture, AddLinkTableRelationshipMap)
             const auto SCHEMA_HASH_ECDB_MAP = "aea9674f696e7f4022f0f51718377d04db7d2875428a6b7daaa16f14026d255d";
             const auto SCHEMA_HASH_SQLITE_SCHEMA = "f9bff300a58a7bb07ba22f6a7377fdd578c7e538ec3625166a9ffa362c945759";
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
             }
     );
     }
@@ -11793,7 +11810,7 @@ TEST_F(SchemaSyncTestFixture, Add_Class_NavigationProperty_RelationshipClass)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -11841,7 +11858,7 @@ TEST_F(SchemaSyncTestFixture, Add_Class_NavigationProperty_RelationshipClass)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -11897,7 +11914,7 @@ TEST_F(SchemaSyncTestFixture, ValidateModifingAddingDeletingBaseClassNotSupporte
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -11917,7 +11934,7 @@ TEST_F(SchemaSyncTestFixture, ValidateModifingAddingDeletingBaseClassNotSupporte
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -11938,7 +11955,7 @@ TEST_F(SchemaSyncTestFixture, ValidateModifingAddingDeletingBaseClassNotSupporte
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -11960,7 +11977,7 @@ TEST_F(SchemaSyncTestFixture, ValidateModifingAddingDeletingBaseClassNotSupporte
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
@@ -11986,7 +12003,7 @@ TEST_F(SchemaSyncTestFixture, DeleteExistingECEnumeration)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("DeleteExistingECEnumeration", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -12002,7 +12019,7 @@ TEST_F(SchemaSyncTestFixture, DeleteExistingECEnumeration)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
             }
     );
     }
@@ -12028,7 +12045,7 @@ TEST_F(SchemaSyncTestFixture, ModifyECEnumeratorsOfPreEC32Enum)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("ModifyECEnumeratorsOfPreEC32Enum", schema));
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -12049,7 +12066,7 @@ TEST_F(SchemaSyncTestFixture, ModifyECEnumeratorsOfPreEC32Enum)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -12068,7 +12085,7 @@ TEST_F(SchemaSyncTestFixture, ModifyECEnumeratorsOfPreEC32Enum)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -12089,7 +12106,7 @@ TEST_F(SchemaSyncTestFixture, ModifyECEnumeratorsOfPreEC32Enum)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -12109,7 +12126,7 @@ TEST_F(SchemaSyncTestFixture, ModifyECEnumeratorsOfPreEC32Enum)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA); });
             }
     );
     }
@@ -12135,7 +12152,7 @@ TEST_F(SchemaSyncTestFixture, ModifyECEnumeratorsOfEC32Enum)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("ModifyECEnumeratorsOfEC32Enum", schema));
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -12156,7 +12173,7 @@ TEST_F(SchemaSyncTestFixture, ModifyECEnumeratorsOfEC32Enum)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -12177,7 +12194,7 @@ TEST_F(SchemaSyncTestFixture, ModifyECEnumeratorsOfEC32Enum)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -12197,7 +12214,7 @@ TEST_F(SchemaSyncTestFixture, ModifyECEnumeratorsOfEC32Enum)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -12216,7 +12233,7 @@ TEST_F(SchemaSyncTestFixture, ModifyECEnumeratorsOfEC32Enum)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -12238,7 +12255,7 @@ TEST_F(SchemaSyncTestFixture, ModifyECEnumeratorsOfEC32Enum)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -12260,7 +12277,7 @@ TEST_F(SchemaSyncTestFixture, ModifyECEnumeratorsOfEC32Enum)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA); });
             }
     );
     }
@@ -12286,7 +12303,7 @@ TEST_F(SchemaSyncTestFixture, ModifyECEnumeratorNames)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("ModifyECEnumeratorNames", schema));
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -12307,7 +12324,7 @@ TEST_F(SchemaSyncTestFixture, ModifyECEnumeratorNames)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -12327,7 +12344,7 @@ TEST_F(SchemaSyncTestFixture, ModifyECEnumeratorNames)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -12347,7 +12364,7 @@ TEST_F(SchemaSyncTestFixture, ModifyECEnumeratorNames)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("ModifyECEnumeratorNames", schema));
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -12367,7 +12384,7 @@ TEST_F(SchemaSyncTestFixture, ModifyECEnumeratorNames)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA); });
             }
     );
     }
@@ -12392,7 +12409,7 @@ TEST_F(SchemaSyncTestFixture, ModifyExistingECEnumeration)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -12413,7 +12430,7 @@ TEST_F(SchemaSyncTestFixture, ModifyExistingECEnumeration)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA); });
             }
     );
     }
@@ -12438,7 +12455,7 @@ TEST_F(SchemaSyncTestFixture, ModifyIsEntityClass)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -12455,7 +12472,7 @@ TEST_F(SchemaSyncTestFixture, ModifyIsEntityClass)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
@@ -12479,7 +12496,7 @@ TEST_F(SchemaSyncTestFixture, ModifyIsStructClass)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -12496,7 +12513,7 @@ TEST_F(SchemaSyncTestFixture, ModifyIsStructClass)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
@@ -12520,7 +12537,7 @@ TEST_F(SchemaSyncTestFixture, ModifyIsCustomAttributeClass)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -12537,7 +12554,7 @@ TEST_F(SchemaSyncTestFixture, ModifyIsCustomAttributeClass)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
@@ -12572,7 +12589,7 @@ TEST_F(SchemaSyncTestFixture, ModifyIsRelationshipClass)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -12590,7 +12607,7 @@ TEST_F(SchemaSyncTestFixture, ModifyIsRelationshipClass)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
@@ -12627,7 +12644,7 @@ TEST_F(SchemaSyncTestFixture, Multiplicity_EndTableNonPersistedSideCardianlityCa
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -12656,7 +12673,7 @@ TEST_F(SchemaSyncTestFixture, Multiplicity_EndTableNonPersistedSideCardianlityCa
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
@@ -12693,7 +12710,7 @@ TEST_F(SchemaSyncTestFixture, Multiplicity_ChangetoLowerLimitNotSupported)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -12722,7 +12739,7 @@ TEST_F(SchemaSyncTestFixture, Multiplicity_ChangetoLowerLimitNotSupported)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
@@ -12758,7 +12775,7 @@ TEST_F(SchemaSyncTestFixture, DisablePolymorphicNotSupported)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -12786,7 +12803,7 @@ TEST_F(SchemaSyncTestFixture, DisablePolymorphicNotSupported)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
@@ -12822,7 +12839,7 @@ TEST_F(SchemaSyncTestFixture, Polymorphic_LinkTable)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -12850,7 +12867,7 @@ TEST_F(SchemaSyncTestFixture, Polymorphic_LinkTable)
 
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -12885,7 +12902,7 @@ TEST_F(SchemaSyncTestFixture, Polymorphic_LinkTable)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -12931,7 +12948,7 @@ TEST_F(SchemaSyncTestFixture, Polymorphic_LinkTable)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaItemTph", schema));
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -12959,7 +12976,7 @@ TEST_F(SchemaSyncTestFixture, Polymorphic_LinkTable)
 
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -13012,7 +13029,7 @@ TEST_F(SchemaSyncTestFixture, Polymorphic_LinkTable)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP); });
             }
     );
 
@@ -13048,7 +13065,7 @@ TEST_F(SchemaSyncTestFixture, Polymorphic_LinkTable)
 
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP); });
             }
     );
     }
@@ -13085,7 +13102,7 @@ TEST_F(SchemaSyncTestFixture, Polymorphic_EndTable)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -13113,7 +13130,7 @@ TEST_F(SchemaSyncTestFixture, Polymorphic_EndTable)
 
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -13152,7 +13169,7 @@ TEST_F(SchemaSyncTestFixture, Polymorphic_EndTable)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -13194,7 +13211,7 @@ TEST_F(SchemaSyncTestFixture, Polymorphic_EndTable)
             */
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaItemTPH", schema));
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -13222,7 +13239,7 @@ TEST_F(SchemaSyncTestFixture, Polymorphic_EndTable)
 
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -13267,7 +13284,7 @@ TEST_F(SchemaSyncTestFixture, Polymorphic_EndTable)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP, SCHEMA3_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP); });
             }
     );
 
@@ -13303,7 +13320,7 @@ TEST_F(SchemaSyncTestFixture, Polymorphic_EndTable)
 
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP, SCHEMA3_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP); });
             }
     );
     }
@@ -13338,7 +13355,7 @@ TEST_F(SchemaSyncTestFixture, ModifyRelationship)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -13364,7 +13381,7 @@ TEST_F(SchemaSyncTestFixture, ModifyRelationship)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -13392,7 +13409,7 @@ TEST_F(SchemaSyncTestFixture, ModifyRelationship)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -13421,7 +13438,7 @@ TEST_F(SchemaSyncTestFixture, ModifyRelationship)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -13450,7 +13467,7 @@ TEST_F(SchemaSyncTestFixture, ModifyRelationship)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -13478,7 +13495,7 @@ TEST_F(SchemaSyncTestFixture, ModifyRelationship)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -13506,7 +13523,7 @@ TEST_F(SchemaSyncTestFixture, ModifyRelationship)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -13534,7 +13551,7 @@ TEST_F(SchemaSyncTestFixture, ModifyRelationship)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -13562,7 +13579,7 @@ TEST_F(SchemaSyncTestFixture, ModifyRelationship)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
@@ -13610,7 +13627,7 @@ TEST_F(SchemaSyncTestFixture, ModifyRelationshipConstrainsRoleLabel)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -13651,7 +13668,7 @@ TEST_F(SchemaSyncTestFixture, ModifyRelationshipConstrainsRoleLabel)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -13693,7 +13710,7 @@ TEST_F(SchemaSyncTestFixture, ModifyRelationshipConstrainsRoleLabel)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -13735,7 +13752,7 @@ TEST_F(SchemaSyncTestFixture, ModifyRelationshipConstrainsRoleLabel)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
@@ -13769,7 +13786,7 @@ TEST_F(SchemaSyncTestFixture, ModifyECProperties)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -13809,7 +13826,7 @@ TEST_F(SchemaSyncTestFixture, ModifyECProperties)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -13849,7 +13866,7 @@ TEST_F(SchemaSyncTestFixture, ModifyECProperties)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -13889,7 +13906,7 @@ TEST_F(SchemaSyncTestFixture, ModifyECProperties)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -13929,7 +13946,7 @@ TEST_F(SchemaSyncTestFixture, ModifyECProperties)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -13969,7 +13986,7 @@ TEST_F(SchemaSyncTestFixture, ModifyECProperties)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -14009,7 +14026,7 @@ TEST_F(SchemaSyncTestFixture, ModifyECProperties)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -14049,7 +14066,7 @@ TEST_F(SchemaSyncTestFixture, ModifyECProperties)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -14092,7 +14109,7 @@ TEST_F(SchemaSyncTestFixture, ModifyECProperties)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -14160,7 +14177,7 @@ TEST_F(SchemaSyncTestFixture, ExtendedTypeName)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("ModifyExtendedTypeName", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -14194,7 +14211,7 @@ TEST_F(SchemaSyncTestFixture, ExtendedTypeName)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -14229,7 +14246,7 @@ TEST_F(SchemaSyncTestFixture, ExtendedTypeName)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -14264,7 +14281,7 @@ TEST_F(SchemaSyncTestFixture, ExtendedTypeName)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -14318,7 +14335,7 @@ TEST_F(SchemaSyncTestFixture, ModifyNavigationProperty)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -14362,7 +14379,7 @@ TEST_F(SchemaSyncTestFixture, ModifyNavigationProperty)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
@@ -14391,7 +14408,7 @@ TEST_F(SchemaSyncTestFixture, ModifyPropToReadOnly)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -14422,7 +14439,7 @@ TEST_F(SchemaSyncTestFixture, ModifyPropToReadOnly)
 
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -14444,7 +14461,7 @@ TEST_F(SchemaSyncTestFixture, ModifyPropToReadOnly)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -14495,7 +14512,7 @@ TEST_F(SchemaSyncTestFixture, ModifyPropToReadOnly)
 
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -14517,7 +14534,7 @@ TEST_F(SchemaSyncTestFixture, ModifyPropToReadOnly)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -14559,7 +14576,7 @@ TEST_F(SchemaSyncTestFixture, ModifyPropToReadOnly)
 
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
@@ -14588,7 +14605,7 @@ TEST_F(SchemaSyncTestFixture, ModifyPropToReadOnlyOnClientBriefcase)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -14621,7 +14638,7 @@ TEST_F(SchemaSyncTestFixture, ModifyPropToReadOnlyOnClientBriefcase)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
@@ -14673,7 +14690,7 @@ TEST_F(SchemaSyncTestFixture, ModifyCustomAttributePropertyValues)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -14732,7 +14749,7 @@ TEST_F(SchemaSyncTestFixture, ModifyCustomAttributePropertyValues)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -14796,7 +14813,7 @@ TEST_F(SchemaSyncTestFixture, DeleteECCustomAttributeClass_Complex)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate_customAttributes", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -14835,7 +14852,7 @@ TEST_F(SchemaSyncTestFixture, DeleteECCustomAttributeClass_Complex)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -14885,7 +14902,7 @@ TEST_F(SchemaSyncTestFixture, DeleteECCustomAttributeClass_Complex)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP, SCHEMA3_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP); });
             }
     );
 
@@ -14921,7 +14938,7 @@ TEST_F(SchemaSyncTestFixture, DeleteECCustomAttributeClass_Complex)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA4_HASH_ECDB_SCHEMA, SCHEMA4_HASH_ECDB_MAP, SCHEMA3_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA4_HASH_ECDB_SCHEMA, SCHEMA4_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA4_HASH_ECDB_SCHEMA, SCHEMA4_HASH_ECDB_MAP); });
             }
     );
 
@@ -14981,7 +14998,7 @@ TEST_F(SchemaSyncTestFixture, DeleteECCustomAttributeClass_Simple)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -15013,7 +15030,7 @@ TEST_F(SchemaSyncTestFixture, DeleteECCustomAttributeClass_Simple)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -15073,7 +15090,7 @@ TEST_F(SchemaSyncTestFixture, DeleteCustomAttribute)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("deleteca", schema));
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -15104,7 +15121,7 @@ TEST_F(SchemaSyncTestFixture, DeleteCustomAttribute)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     Test(
@@ -15138,7 +15155,7 @@ TEST_F(SchemaSyncTestFixture, DeleteCustomAttribute)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     Test(
@@ -15167,7 +15184,7 @@ TEST_F(SchemaSyncTestFixture, DeleteCustomAttribute)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -15236,7 +15253,7 @@ TEST_F(SchemaSyncTestFixture, ChangesToExisitingTable)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -15302,7 +15319,7 @@ TEST_F(SchemaSyncTestFixture, ChangesToExisitingTable)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -15367,7 +15384,7 @@ TEST_F(SchemaSyncTestFixture, DeleteCAInstanceWithoutProperty)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("deletecainstancewithoutproperty", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -15403,7 +15420,7 @@ TEST_F(SchemaSyncTestFixture, DeleteCAInstanceWithoutProperty)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
 
             }
     );
@@ -15466,7 +15483,7 @@ TEST_F(SchemaSyncTestFixture, AddKoQAndUpdatePropertiesWithKoQ)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("AddKoQAndUpdatePropertiesWithKoQ", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -15506,7 +15523,7 @@ TEST_F(SchemaSyncTestFixture, AddKoQAndUpdatePropertiesWithKoQ)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -15573,7 +15590,7 @@ TEST_F(SchemaSyncTestFixture, ModifyPropertyType_PrimitiveToNonStrictEnum)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -15611,7 +15628,7 @@ TEST_F(SchemaSyncTestFixture, ModifyPropertyType_PrimitiveToNonStrictEnum)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -15667,7 +15684,7 @@ TEST_F(SchemaSyncTestFixture, ModifyPropertyType_PrimitiveToStrictEnum)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -15704,7 +15721,7 @@ TEST_F(SchemaSyncTestFixture, ModifyPropertyType_PrimitiveToStrictEnum)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -15754,7 +15771,7 @@ TEST_F(SchemaSyncTestFixture, ReplaceKindOfQuantityWithSamePersistenceUnit)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("ReplaceKindOfQuantityWithSamePersistenceUnit", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -15795,7 +15812,7 @@ TEST_F(SchemaSyncTestFixture, ReplaceKindOfQuantityWithSamePersistenceUnit)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -15854,7 +15871,7 @@ TEST_F(SchemaSyncTestFixture, ReplaceKindOfQuantityWithDifferentPersistenceUnit)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("ReplaceKindOfQuantityWithDifferentPersistenceUnit", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -15895,7 +15912,7 @@ TEST_F(SchemaSyncTestFixture, ReplaceKindOfQuantityWithDifferentPersistenceUnit)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -15943,7 +15960,7 @@ TEST_F(SchemaSyncTestFixture, ReplaceKindOfQuantityWithDifferentPersistenceUnit)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -15992,7 +16009,7 @@ TEST_F(SchemaSyncTestFixture, ReplaceKindOfQuantityWithDifferentPersistenceUnit)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -16039,7 +16056,7 @@ TEST_F(SchemaSyncTestFixture, ReplaceKindOfQuantityWithDifferentPersistenceUnit)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -16090,7 +16107,7 @@ TEST_F(SchemaSyncTestFixture, ReplaceKindOfQuantityWithDifferentPersistenceUnit)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -16140,7 +16157,7 @@ TEST_F(SchemaSyncTestFixture, DeleteKindOfQuantityFromECSchema)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -16174,7 +16191,7 @@ TEST_F(SchemaSyncTestFixture, DeleteKindOfQuantityFromECSchema)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -16229,7 +16246,7 @@ TEST_F(SchemaSyncTestFixture, ModifyECArrayProperty_KOQToKOQ)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -16272,7 +16289,7 @@ TEST_F(SchemaSyncTestFixture, ModifyECArrayProperty_KOQToKOQ)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -16348,7 +16365,7 @@ TEST_F(SchemaSyncTestFixture, ModifyECArrayProperty_KOQToKOQ)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
@@ -16378,7 +16395,7 @@ TEST_F(SchemaSyncTestFixture, RemoveKindOfQuantityFromECArrayProperty)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -16428,7 +16445,7 @@ TEST_F(SchemaSyncTestFixture, RemoveKindOfQuantityFromECArrayProperty)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -16477,7 +16494,7 @@ TEST_F(SchemaSyncTestFixture, RemoveKindOfQuantityFromECProperty)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -16527,7 +16544,7 @@ TEST_F(SchemaSyncTestFixture, RemoveKindOfQuantityFromECProperty)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -16578,7 +16595,7 @@ TEST_F(SchemaSyncTestFixture, RemoveKindOfQuantityFromECPropertyUsingCA)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("ReplaceKindOfQuantityWithDifferentPersistenceUnit", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -16636,7 +16653,7 @@ TEST_F(SchemaSyncTestFixture, RemoveKindOfQuantityFromECPropertyUsingCA)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -16679,7 +16696,7 @@ TEST_F(SchemaSyncTestFixture, RemoveKindOfQuantityFromECPropertyUsingCA)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -16724,7 +16741,7 @@ TEST_F(SchemaSyncTestFixture, RemoveKindOfQuantityFromECPropertyUsingCA)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -16771,7 +16788,7 @@ TEST_F(SchemaSyncTestFixture, RemoveKindOfQuantityFromECPropertyUsingCA)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -16822,7 +16839,7 @@ TEST_F(SchemaSyncTestFixture, KoQDeleteWithDoNotFailFlag)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupgrade_KindOfQuantity", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -16840,7 +16857,7 @@ TEST_F(SchemaSyncTestFixture, KoQDeleteWithDoNotFailFlag)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema, SchemaManager::SchemaImportOptions::DoNotFailForDeletionsOrModifications));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -16875,7 +16892,7 @@ TEST_F(SchemaSyncTestFixture, KoQModificationWithDoNotFailFlag)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupgrade_KindOfQuantity", schema));
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -16895,7 +16912,7 @@ TEST_F(SchemaSyncTestFixture, KoQModificationWithDoNotFailFlag)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema, SchemaManager::SchemaImportOptions::DoNotFailForDeletionsOrModifications));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -16931,7 +16948,7 @@ TEST_F(SchemaSyncTestFixture, IllegalKoQModificationWithDoNotFailFlag)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupgrade_KindOfQuantity", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -16950,7 +16967,7 @@ TEST_F(SchemaSyncTestFixture, IllegalKoQModificationWithDoNotFailFlag)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema, SchemaManager::SchemaImportOptions::DoNotFailForDeletionsOrModifications));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -17018,7 +17035,7 @@ TEST_F(SchemaSyncTestFixture, KindOfQuantity)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupgrade_KindOfQuantity", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -17051,7 +17068,7 @@ TEST_F(SchemaSyncTestFixture, KindOfQuantity)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -17071,7 +17088,7 @@ TEST_F(SchemaSyncTestFixture, KindOfQuantity)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -17091,7 +17108,7 @@ TEST_F(SchemaSyncTestFixture, KindOfQuantity)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -17114,7 +17131,7 @@ TEST_F(SchemaSyncTestFixture, KindOfQuantity)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -17153,7 +17170,7 @@ TEST_F(SchemaSyncTestFixture, KindOfQuantity)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA3_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -17198,7 +17215,7 @@ TEST_F(SchemaSyncTestFixture, ModifyPropertyType_PrimitiveToPrimitive)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -17231,7 +17248,7 @@ TEST_F(SchemaSyncTestFixture, ModifyPropertyType_PrimitiveToPrimitive)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -17281,7 +17298,7 @@ TEST_F(SchemaSyncTestFixture, ModifyPropertyType_EnumToPrimitive)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -17319,7 +17336,7 @@ TEST_F(SchemaSyncTestFixture, ModifyPropertyType_EnumToPrimitive)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -17385,7 +17402,7 @@ TEST_F(SchemaSyncTestFixture, ModifyPropertyType_EnumToEnum)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -17430,7 +17447,7 @@ TEST_F(SchemaSyncTestFixture, ModifyPropertyType_EnumToEnum)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -17498,7 +17515,7 @@ TEST_F(SchemaSyncTestFixture, ModifyPropertyTypeString_EnumToPrimitive)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -17536,7 +17553,7 @@ TEST_F(SchemaSyncTestFixture, ModifyPropertyTypeString_EnumToPrimitive)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -17591,7 +17608,7 @@ TEST_F(SchemaSyncTestFixture, ModifyPropertyTypeString_PrimitiveToUnStrictEnum)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -17629,7 +17646,7 @@ TEST_F(SchemaSyncTestFixture, ModifyPropertyTypeString_PrimitiveToUnStrictEnum)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -17687,7 +17704,7 @@ TEST_F(SchemaSyncTestFixture, ModifyEnumType_IntToString)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -17724,7 +17741,7 @@ TEST_F(SchemaSyncTestFixture, ModifyEnumType_IntToString)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -17774,7 +17791,7 @@ TEST_F(SchemaSyncTestFixture, RemoveExistingEnum)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -17807,7 +17824,7 @@ TEST_F(SchemaSyncTestFixture, RemoveExistingEnum)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -17865,7 +17882,7 @@ TEST_F(SchemaSyncTestFixture, AddNewRelationship)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -17913,7 +17930,7 @@ TEST_F(SchemaSyncTestFixture, AddNewRelationship)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -17955,7 +17972,7 @@ TEST_F(SchemaSyncTestFixture, AddNewRelationship)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -18002,7 +18019,7 @@ TEST_F(SchemaSyncTestFixture, AddNewRelationship)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP, SCHEMA3_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP); });
             }
     );
 
@@ -18074,7 +18091,7 @@ TEST_F(SchemaSyncTestFixture, AddNewDerivedEndTableRelationship)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -18143,7 +18160,7 @@ TEST_F(SchemaSyncTestFixture, AddNewDerivedEndTableRelationship)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -18329,7 +18346,7 @@ TEST_F(SchemaSyncTestFixture, AddNewDerivedLinkTableRelationship)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -18454,7 +18471,7 @@ TEST_F(SchemaSyncTestFixture, AddNewDerivedLinkTableRelationship)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -18627,7 +18644,7 @@ TEST_F(SchemaSyncTestFixture, AddMaxSharedColumnsBeforeOverflow)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate_addmaxsharedcolumnsbeforeoverflow", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -18678,7 +18695,7 @@ TEST_F(SchemaSyncTestFixture, AddMaxSharedColumnsBeforeOverflow)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -18742,7 +18759,7 @@ TEST_F(SchemaSyncTestFixture, DeleteMaxSharedColumnsBeforeOverflow)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate_deletemaxsharedcolumnsbeforeoverflow", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -18791,7 +18808,7 @@ TEST_F(SchemaSyncTestFixture, DeleteMaxSharedColumnsBeforeOverflow)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -18837,7 +18854,7 @@ TEST_F(SchemaSyncTestFixture, AddEnumAndEnumProperty)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("AddEnumAndEnumProperty", schema));
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
             }
     );
 
@@ -18864,7 +18881,7 @@ TEST_F(SchemaSyncTestFixture, AddEnumAndEnumProperty)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
             }
     );
 
@@ -18906,7 +18923,7 @@ TEST_F(SchemaSyncTestFixture, AddingECEnumerationIntegerType)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -18929,7 +18946,7 @@ TEST_F(SchemaSyncTestFixture, AddingECEnumerationIntegerType)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -18980,7 +18997,7 @@ TEST_F(SchemaSyncTestFixture, AddingECEnumerationStringType)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -19003,7 +19020,7 @@ TEST_F(SchemaSyncTestFixture, AddingECEnumerationStringType)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -19055,7 +19072,7 @@ TEST_F(SchemaSyncTestFixture, UpdateECEnumerationFromStrictToNonStrictAndUpdateE
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -19077,7 +19094,7 @@ TEST_F(SchemaSyncTestFixture, UpdateECEnumerationFromStrictToNonStrictAndUpdateE
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
             }
     );
     }
@@ -19104,7 +19121,7 @@ TEST_F(SchemaSyncTestFixture, UpdateECEnumerationFromUnStrictToStrict)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -19124,7 +19141,7 @@ TEST_F(SchemaSyncTestFixture, UpdateECEnumerationFromUnStrictToStrict)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
             }
     );
     }
@@ -19155,7 +19172,7 @@ TEST_F(SchemaSyncTestFixture, ChangeECEnumeratorValue)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("ChangeECEnumeratorValue", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -19179,7 +19196,7 @@ TEST_F(SchemaSyncTestFixture, ChangeECEnumeratorValue)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -19203,7 +19220,7 @@ TEST_F(SchemaSyncTestFixture, ChangeECEnumeratorValue)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
             }
     );
     }
@@ -19233,7 +19250,7 @@ TEST_F(SchemaSyncTestFixture, ModifyEnumeratorNameInPre32ECSchema)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("ModifyEnumeratorNameInPre32ECSchema", schema));
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -19258,7 +19275,7 @@ TEST_F(SchemaSyncTestFixture, ModifyEnumeratorNameInPre32ECSchema)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -19282,7 +19299,7 @@ TEST_F(SchemaSyncTestFixture, ModifyEnumeratorNameInPre32ECSchema)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -19306,7 +19323,7 @@ TEST_F(SchemaSyncTestFixture, ModifyEnumeratorNameInPre32ECSchema)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("ModifyEnumeratorNameInPre32ECSchema", schema));
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -19330,7 +19347,7 @@ TEST_F(SchemaSyncTestFixture, ModifyEnumeratorNameInPre32ECSchema)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -19354,7 +19371,7 @@ TEST_F(SchemaSyncTestFixture, ModifyEnumeratorNameInPre32ECSchema)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA); });
             }
     );
     }
@@ -19380,7 +19397,7 @@ TEST_F(SchemaSyncTestFixture, UpdateECEnumerationAddDeleteEnumerators)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -19402,7 +19419,7 @@ TEST_F(SchemaSyncTestFixture, UpdateECEnumerationAddDeleteEnumerators)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
             }
     );
     }
@@ -19435,7 +19452,7 @@ TEST_F(SchemaSyncTestFixture, PropertyCategoryAddUpdateDelete)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("getpropertycategories", schema));
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
             }
     );
 
@@ -19515,7 +19532,7 @@ TEST_F(SchemaSyncTestFixture, PropertyCategoryAddUpdateDelete)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -19601,7 +19618,7 @@ TEST_F(SchemaSyncTestFixture, PropertyCategoryAddUpdateDelete)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
@@ -19635,7 +19652,7 @@ TEST_F(SchemaSyncTestFixture, PropertyCategoryDelete)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("getpropertycategories", schema));
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -19662,7 +19679,7 @@ TEST_F(SchemaSyncTestFixture, PropertyCategoryDelete)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
@@ -19696,7 +19713,7 @@ TEST_F(SchemaSyncTestFixture, LegalPropertyCategoryDeleteWithDoNotFailFlag)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("getpropertycategories", schema));
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -19723,7 +19740,7 @@ TEST_F(SchemaSyncTestFixture, LegalPropertyCategoryDeleteWithDoNotFailFlag)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema, SchemaManager::SchemaImportOptions::DoNotFailForDeletionsOrModifications));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -19765,7 +19782,7 @@ TEST_F(SchemaSyncTestFixture, IllegalPropertyCategoryDeleteWithDoNotFailFlag)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("getpropertycategories", schema));
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
             }
     );
 
@@ -19790,7 +19807,7 @@ TEST_F(SchemaSyncTestFixture, IllegalPropertyCategoryDeleteWithDoNotFailFlag)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -19812,7 +19829,7 @@ TEST_F(SchemaSyncTestFixture, IllegalPropertyCategoryDeleteWithDoNotFailFlag)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema, SchemaManager::SchemaImportOptions::DoNotFailForDeletionsOrModifications));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -19854,7 +19871,7 @@ TEST_F(SchemaSyncTestFixture, PropertyCategoryDeleteReferencedFails)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("getpropertycategories", schema));
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
             }
     );
 
@@ -19877,7 +19894,7 @@ TEST_F(SchemaSyncTestFixture, PropertyCategoryDeleteReferencedFails)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -19897,7 +19914,7 @@ TEST_F(SchemaSyncTestFixture, PropertyCategoryDeleteReferencedFails)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -19919,7 +19936,7 @@ TEST_F(SchemaSyncTestFixture, PropertyCategoryDeleteReferencedFails)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
@@ -19951,7 +19968,7 @@ TEST_F(SchemaSyncTestFixture, PropertyCategoryOverwriteDeleteReferencedFails)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("getpropertycategories", schema));
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
             }
     );
 
@@ -19974,7 +19991,7 @@ TEST_F(SchemaSyncTestFixture, PropertyCategoryOverwriteDeleteReferencedFails)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -20006,7 +20023,7 @@ TEST_F(SchemaSyncTestFixture, PropertyCategoryOverwriteDeleteReferencedFails)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*schemas.begin()));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -20014,14 +20031,10 @@ TEST_F(SchemaSyncTestFixture, PropertyCategoryOverwriteDeleteReferencedFails)
         "deleting category and removing referencing properties should succeed",
         [&]()
             {
-            const auto SCHEMA_HASH_ECDB_SCHEMA = "71e320e342b779ba69a2490d617197f34aa3928229bb55e24cb704a0a23ce512";
-            const auto SCHEMA_HASH_ECDB_MAP = "1b1ae0f5665cd383b79513c33a1ae6f0dab45115c58f7dc2d047015f91f80444";
-            const auto SCHEMA_HASH_SQLITE_SCHEMA = "ae9a7a553d09613c7f8cf5711dca7a996af71202254deca5cdddde9df2c229ce";
-
-            ASSERT_EQ(SchemaImportResult::OK, ImportSchemas(*m_briefcase, schemas, SchemaManager::SchemaImportOptions::None, m_schemaChannel->GetChannelUri()));
-            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
-            CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchemas(*m_briefcase, schemas, SchemaManager::SchemaImportOptions::None, m_schemaChannel->GetChannelUri()));
+            ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
@@ -20064,7 +20077,7 @@ TEST_F(SchemaSyncTestFixture, PropertyCategory)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupgrade_PropertyCategory", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -20098,7 +20111,7 @@ TEST_F(SchemaSyncTestFixture, PropertyCategory)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -20121,7 +20134,7 @@ TEST_F(SchemaSyncTestFixture, PropertyCategory)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -20160,7 +20173,7 @@ TEST_F(SchemaSyncTestFixture, PropertyCategory)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -20211,7 +20224,7 @@ TEST_F(SchemaSyncTestFixture, UnitSystems)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupgrade_unitsystems", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -20242,7 +20255,7 @@ TEST_F(SchemaSyncTestFixture, UnitSystems)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -20261,7 +20274,7 @@ TEST_F(SchemaSyncTestFixture, UnitSystems)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -20282,7 +20295,7 @@ TEST_F(SchemaSyncTestFixture, UnitSystems)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -20330,7 +20343,7 @@ TEST_F(SchemaSyncTestFixture, Phenomena)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupgrade_phenomena", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -20359,7 +20372,7 @@ TEST_F(SchemaSyncTestFixture, Phenomena)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -20377,7 +20390,7 @@ TEST_F(SchemaSyncTestFixture, Phenomena)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -20395,7 +20408,7 @@ TEST_F(SchemaSyncTestFixture, Phenomena)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -20415,7 +20428,7 @@ TEST_F(SchemaSyncTestFixture, Phenomena)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -20471,7 +20484,7 @@ TEST_F(SchemaSyncTestFixture, Units)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupgrade_units", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -20504,7 +20517,7 @@ TEST_F(SchemaSyncTestFixture, Units)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -20526,7 +20539,7 @@ TEST_F(SchemaSyncTestFixture, Units)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -20548,7 +20561,7 @@ TEST_F(SchemaSyncTestFixture, Units)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -20570,7 +20583,7 @@ TEST_F(SchemaSyncTestFixture, Units)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -20592,7 +20605,7 @@ TEST_F(SchemaSyncTestFixture, Units)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -20614,7 +20627,7 @@ TEST_F(SchemaSyncTestFixture, Units)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -20636,7 +20649,7 @@ TEST_F(SchemaSyncTestFixture, Units)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -20658,7 +20671,7 @@ TEST_F(SchemaSyncTestFixture, Units)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -20682,7 +20695,7 @@ TEST_F(SchemaSyncTestFixture, Units)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -20720,7 +20733,7 @@ TEST_F(SchemaSyncTestFixture, AllowedChangingUnitConversionProperties)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupgrade_unitsystems", schema));
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -20740,7 +20753,7 @@ TEST_F(SchemaSyncTestFixture, AllowedChangingUnitConversionProperties)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA); });
             }
     );
     }
@@ -20775,7 +20788,7 @@ TEST_F(SchemaSyncTestFixture, NotAllowedChangingUnitConversionProperties)
             {
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("testDB", schemaWithoutUnitProperties));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -20789,7 +20802,7 @@ TEST_F(SchemaSyncTestFixture, NotAllowedChangingUnitConversionProperties)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schemaWithUnitProperties)) << "ECSchema Upgrade failed. Changing properties of Unit 'TestSchema:TestUnit1' is not supported except for DisplayLabel and Description.";
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -20799,7 +20812,7 @@ TEST_F(SchemaSyncTestFixture, NotAllowedChangingUnitConversionProperties)
             {
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("testDB1", schemaWithUnitProperties));
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -20810,7 +20823,7 @@ TEST_F(SchemaSyncTestFixture, NotAllowedChangingUnitConversionProperties)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schemaWithoutUnitProperties)) << "ECSchema Upgrade failed. Changing properties of Unit 'TestSchema:TestUnit1' is not supported except for DisplayLabel and Description.";
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA); });
             }
     );
     }
@@ -20848,7 +20861,7 @@ TEST_F(SchemaSyncTestFixture, AllowedChangingConstantConversionProperties)
             {
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("testDB", schemaWithoutConstantProperties));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -20859,7 +20872,7 @@ TEST_F(SchemaSyncTestFixture, AllowedChangingConstantConversionProperties)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schemaWithConstantProperties));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA); });
             }
     );
     }
@@ -20897,7 +20910,7 @@ TEST_F(SchemaSyncTestFixture, NotAllowedChangingConstantConversionProperties)
             {
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("testDB", schemaWithoutConstantProperty));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -20908,7 +20921,7 @@ TEST_F(SchemaSyncTestFixture, NotAllowedChangingConstantConversionProperties)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schemaWithConstantProperty));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -20918,7 +20931,7 @@ TEST_F(SchemaSyncTestFixture, NotAllowedChangingConstantConversionProperties)
             {
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("testDB1", schemaWithConstantProperty));
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -20929,7 +20942,7 @@ TEST_F(SchemaSyncTestFixture, NotAllowedChangingConstantConversionProperties)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schemaWithoutConstantProperty));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA); });
             }
     );
     }
@@ -20995,7 +21008,7 @@ TEST_F(SchemaSyncTestFixture, Formats)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupgrade_formats", schema));
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -21036,7 +21049,7 @@ TEST_F(SchemaSyncTestFixture, Formats)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -21079,7 +21092,7 @@ TEST_F(SchemaSyncTestFixture, Formats)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -21111,7 +21124,7 @@ TEST_F(SchemaSyncTestFixture, Formats)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -21136,7 +21149,7 @@ TEST_F(SchemaSyncTestFixture, Formats)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupgrade_formats", schema));
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -21173,7 +21186,7 @@ TEST_F(SchemaSyncTestFixture, Formats)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -21208,7 +21221,7 @@ TEST_F(SchemaSyncTestFixture, Formats)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -21232,7 +21245,7 @@ TEST_F(SchemaSyncTestFixture, Formats)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -21258,7 +21271,7 @@ TEST_F(SchemaSyncTestFixture, Formats)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA); });
             }
     );
     }
@@ -21287,7 +21300,7 @@ TEST_F(SchemaSyncTestFixture, MultiSessionSchemaImport_TPC)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("multisession_si", schema));
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
             }
     );
 
@@ -21324,7 +21337,7 @@ TEST_F(SchemaSyncTestFixture, MultiSessionSchemaImport_TPC)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
             }
     );
 
@@ -21361,7 +21374,7 @@ TEST_F(SchemaSyncTestFixture, MultiSessionSchemaImport_TPC)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -21499,7 +21512,7 @@ TEST_F(SchemaSyncTestFixture, MultiSessionSchemaImport_TPC)
         [&]()
             {
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
@@ -21528,7 +21541,7 @@ TEST_F(SchemaSyncTestFixture, MultiSessionSchemaImport_TPH_Joined_OnDerivedClass
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("multisession_si", schema));
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
             }
     );
 
@@ -21571,7 +21584,7 @@ TEST_F(SchemaSyncTestFixture, MultiSessionSchemaImport_TPH_Joined_OnDerivedClass
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
             }
     );
 
@@ -21608,7 +21621,7 @@ TEST_F(SchemaSyncTestFixture, MultiSessionSchemaImport_TPH_Joined_OnDerivedClass
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -21746,7 +21759,7 @@ TEST_F(SchemaSyncTestFixture, MultiSessionSchemaImport_TPH_Joined_OnDerivedClass
         [&]()
             {
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
@@ -21775,7 +21788,7 @@ TEST_F(SchemaSyncTestFixture, MultiSessionSchemaImport_TPH_OnDerivedClass)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("multisession_si", schema));
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
             }
     );
 
@@ -21817,7 +21830,7 @@ TEST_F(SchemaSyncTestFixture, MultiSessionSchemaImport_TPH_OnDerivedClass)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
             }
     );
 
@@ -21854,7 +21867,7 @@ TEST_F(SchemaSyncTestFixture, MultiSessionSchemaImport_TPH_OnDerivedClass)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -21992,7 +22005,7 @@ TEST_F(SchemaSyncTestFixture, MultiSessionSchemaImport_TPH_OnDerivedClass)
         [&]()
             {
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
@@ -22038,7 +22051,7 @@ TEST_F(SchemaSyncTestFixture, UpdateClass_AddStructProperty)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -22094,7 +22107,7 @@ TEST_F(SchemaSyncTestFixture, UpdateClass_AddStructProperty)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -22156,7 +22169,7 @@ TEST_F(SchemaSyncTestFixture, DisallowMajorSchemaUpgrade)
             {
             const auto [schemaHash, mapHash, dbSchemaHash] = hashes;
             CheckHashes(*m_briefcase, schemaHash, mapHash, dbSchemaHash);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, schemaHash, mapHash); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, schemaHash, mapHash); });
             }
         return actualStat;
         };
@@ -23138,7 +23151,7 @@ TEST_F(SchemaSyncTestFixture, UpdateReferencesFromDifferentContext)
             ASSERT_EQ(SchemaImportResult::OK, m_briefcase->Schemas().ImportSchemas(ctx->GetCache().GetSchemas(), SchemaManager::SchemaImportOptions::None, nullptr, m_schemaChannel->GetChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
             }
     );
 
@@ -23176,7 +23189,7 @@ TEST_F(SchemaSyncTestFixture, UpdateReferencesFromDifferentContext)
             ASSERT_EQ(SchemaImportResult::OK, m_briefcase->Schemas().ImportSchemas(ctx->GetCache().GetSchemas(), SchemaManager::SchemaImportOptions::None, nullptr, m_schemaChannel->GetChannelUri())) << "This should fail";
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
             }
     );
     }
@@ -23246,7 +23259,7 @@ TEST_F(SchemaSyncTestFixture, UpdateRelationshipConstraintClassGeneralize)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("schemaupdate", schema));
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -23327,7 +23340,7 @@ TEST_F(SchemaSyncTestFixture, UpdateRelationshipConstraintClassGeneralize)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -23384,7 +23397,7 @@ TEST_F(SchemaSyncTestFixture, UpdateClass_AddPropertyDeeplyNestedStruct)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("addPropertyToDeeplyNestedStruct", schema));
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
             }
     );
 
@@ -23435,7 +23448,7 @@ TEST_F(SchemaSyncTestFixture, UpdateClass_AddPropertyDeeplyNestedStruct)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -23460,7 +23473,7 @@ TEST_F(SchemaSyncTestFixture, UpdateClass_AddPropertyDeeplyNestedStruct)
         [&]()
             {
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
@@ -23524,7 +23537,7 @@ TEST_F(SchemaSyncTestFixture, UpdateRelationshipConstraintWithMixin)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("UpdateRelationshipConstraintWithMixin", schema));
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -23581,7 +23594,7 @@ TEST_F(SchemaSyncTestFixture, UpdateRelationshipConstraintWithMixin)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
@@ -23645,7 +23658,7 @@ TEST_F(SchemaSyncTestFixture, UpgradeRelationshipConstraintWithBrokenMixin)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("UpgradeRelationshipConstraintWithBrokenMixin", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -23701,7 +23714,7 @@ TEST_F(SchemaSyncTestFixture, UpgradeRelationshipConstraintWithBrokenMixin)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
@@ -23765,7 +23778,7 @@ TEST_F(SchemaSyncTestFixture, UpdateMixinRelationshipConstraintNoPolymorphs)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("UpdateMixinRelationshipConstraintNoPolymorphs", schema));
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -23821,7 +23834,7 @@ TEST_F(SchemaSyncTestFixture, UpdateMixinRelationshipConstraintNoPolymorphs)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
@@ -23864,7 +23877,7 @@ TEST_F(SchemaSyncTestFixture, UpdateMixinRelationshipConstraintAcrossFiles)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("UpdateMixinRelationshipConstraintAcrossFiles", schema));
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
             }
     );
 
@@ -23908,7 +23921,7 @@ TEST_F(SchemaSyncTestFixture, UpdateMixinRelationshipConstraintAcrossFiles)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -23949,7 +23962,7 @@ TEST_F(SchemaSyncTestFixture, UpdateMixinRelationshipConstraintAcrossFiles)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
@@ -23992,7 +24005,7 @@ TEST_F(SchemaSyncTestFixture, FailedMixinRelationshipConstraintAcrossFiles)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("FailedMixinRelationshipConstraintAcrossFiles", schema));
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
             }
     );
 
@@ -24035,7 +24048,7 @@ TEST_F(SchemaSyncTestFixture, FailedMixinRelationshipConstraintAcrossFiles)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -24075,7 +24088,7 @@ TEST_F(SchemaSyncTestFixture, FailedMixinRelationshipConstraintAcrossFiles)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
@@ -24115,7 +24128,7 @@ TEST_F(SchemaSyncTestFixture, UpdateMixinRelationshipConstraintAcrossMultiFiles)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("UpdateMixinRelationshipConstraintAcrossMultiFiles", schema));
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
             }
     );
 
@@ -24139,7 +24152,7 @@ TEST_F(SchemaSyncTestFixture, UpdateMixinRelationshipConstraintAcrossMultiFiles)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
             }
     );
 
@@ -24176,7 +24189,7 @@ TEST_F(SchemaSyncTestFixture, UpdateMixinRelationshipConstraintAcrossMultiFiles)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -24212,7 +24225,7 @@ TEST_F(SchemaSyncTestFixture, UpdateMixinRelationshipConstraintAcrossMultiFiles)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
     }
@@ -24252,7 +24265,7 @@ TEST_F(SchemaSyncTestFixture, FailMixinRelationshipConstraintAcrossMultiFiles)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("FailMixinRelationshipConstraintMultiFileVersioning", schema));
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
             }
     );
 
@@ -24276,7 +24289,7 @@ TEST_F(SchemaSyncTestFixture, FailMixinRelationshipConstraintAcrossMultiFiles)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
             }
     );
 
@@ -24313,7 +24326,7 @@ TEST_F(SchemaSyncTestFixture, FailMixinRelationshipConstraintAcrossMultiFiles)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -24347,7 +24360,7 @@ TEST_F(SchemaSyncTestFixture, FailMixinRelationshipConstraintAcrossMultiFiles)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
     }
@@ -24391,7 +24404,7 @@ TEST_F(SchemaSyncTestFixture, FailMixinRelationshipConstraintMultiFileVersioning
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("FailMixinRelationshipConstraintMultiFileVersioning", schema));
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
             }
     );
 
@@ -24428,7 +24441,7 @@ TEST_F(SchemaSyncTestFixture, FailMixinRelationshipConstraintMultiFileVersioning
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -24486,7 +24499,7 @@ TEST_F(SchemaSyncTestFixture, FailMixinRelationshipConstraintMultiFileVersioning
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchemas(*m_briefcase, schemas, SchemaManager::SchemaImportOptions::None, m_schemaChannel->GetChannelUri()));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
     }
@@ -24530,7 +24543,7 @@ TEST_F(SchemaSyncTestFixture, OverflowedStructClass_NestedStruct)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("struct_prop", schema));
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
             }
     );
 
@@ -24627,7 +24640,7 @@ TEST_F(SchemaSyncTestFixture, OverflowedStructClass_NestedStruct)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -24724,7 +24737,7 @@ TEST_F(SchemaSyncTestFixture, OverflowedStructClass_NestedStruct)
         [&]()
             {
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
@@ -24765,7 +24778,7 @@ TEST_F(SchemaSyncTestFixture, OverflowedStructClass_Simple)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("struct_prop", schema));
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
             }
     );
 
@@ -24844,7 +24857,7 @@ TEST_F(SchemaSyncTestFixture, OverflowedStructClass_Simple)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -24921,7 +24934,7 @@ TEST_F(SchemaSyncTestFixture, OverflowedStructClass_Simple)
         [&]()
             {
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
@@ -24966,7 +24979,7 @@ TEST_F(SchemaSyncTestFixture, OverflowedStructClass_OverflowTableDoesNotExist_Ch
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("struct_prop", schema));
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
             }
     );
 
@@ -25089,7 +25102,7 @@ TEST_F(SchemaSyncTestFixture, OverflowedStructClass_OverflowTableDoesNotExist_Ch
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -25235,7 +25248,7 @@ TEST_F(SchemaSyncTestFixture, OverflowedStructClass_OverflowTableDoesNotExist_Ch
         [&]()
             {
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
@@ -25280,7 +25293,7 @@ TEST_F(SchemaSyncTestFixture, OverflowedStructClass_OverflowTableAlreadyExist_Ch
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("struct_prop", schema, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
             }
     );
 
@@ -25405,7 +25418,7 @@ TEST_F(SchemaSyncTestFixture, OverflowedStructClass_OverflowTableAlreadyExist_Ch
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -25552,7 +25565,7 @@ TEST_F(SchemaSyncTestFixture, OverflowedStructClass_OverflowTableAlreadyExist_Ch
         [&]()
             {
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
@@ -25613,7 +25626,7 @@ TEST_F(SchemaSyncTestFixture, OverflowedStructClass)
             );
             ASSERT_EQ(SchemaImportResult::OK, SetupECDb("struct_prop", schema));
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
             }
     );
 
@@ -25899,7 +25912,7 @@ TEST_F(SchemaSyncTestFixture, OverflowedStructClass)
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
 
@@ -26271,7 +26284,7 @@ TEST_F(SchemaSyncTestFixture, OverflowedStructClass)
         [&]()
             {
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             }
     );
     }
