@@ -453,6 +453,7 @@ export declare namespace IModelJsNative {
     public sharedChannelGetDefaultUri(): string;
     public sharedChannelInit(channelUri: string): void;
     public sharedChannelPull(channelUri?: string): void;
+    public sharedChannelEnabled(): boolean;
     public abandonChanges(): DbResult;
     public abandonCreateChangeset(): void;
     public addChildPropagatesChangesToParentRelationship(schemaName: string, relClassName: string): BentleyStatus;
@@ -648,6 +649,7 @@ export declare namespace IModelJsNative {
     public sharedChannelGetDefaultUri(): string;
     public sharedChannelInit(channelUri: string): void;
     public sharedChannelPull(channelUri: string | undefined): void;
+    public sharedChannelEnabled(): boolean;
     public getFilePath(): string;
     public importSchema(schemaPathName: string): DbResult;
     public isOpen(): boolean;
