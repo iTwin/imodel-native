@@ -3322,5 +3322,22 @@ TEST(LinearSweep, HasCurvedFaceOrEdge)
     ISolidPrimitivePtr solid;
     ReadDgnjsGeometry(geomList, 1, L"CurveVector", L"LoopClosure", L"pmconne");
     if (Check::True(1 == geomList.size(), "size") && Check::True(nullptr != (solid = geomList[0]->GetAsISolidPrimitive()), "solid"))
+        {
         Check::True(solid->HasCurvedFaceOrEdge(), "curved");
+        auto opts = IFacetOptions::Create();
+        opts->SetChordTolerance(0.1);
+        auto builder = IPolyfaceConstruction::Create(*opts);
+        Check::True(builder->AddSolidPrimitive(*solid), "add");
+        auto pf = builder->GetClientMeshPtr();
+        Check::True(pf.IsValid(), "valid mesh");
+        auto count1 = pf->Point().size();
+
+        opts->SetChordTolerance(0.01);
+        builder = IPolyfaceConstruction::Create(*opts);
+        builder->AddSolidPrimitive(*solid);
+        pf = builder->GetClientMeshPtr();
+        auto count2 = pf->Point().size();
+        // Fail - both produce 35657 points.
+        Check::True(count2 > count1, "smaller tolerance => more facets");
+        }
     }
