@@ -1,7 +1,7 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 nl{
-    Version{"2.1.49.82"}
     zoneStrings{
         "Africa:Abidjan"{
             ec{"Abidjan"}
@@ -552,6 +552,21 @@ nl{
         "America:St_Barthelemy"{
             ec{"Saint-Barthélemy"}
         }
+        "America:St_Johns"{
+            ec{"Saint John’s"}
+        }
+        "America:St_Kitts"{
+            ec{"Saint Kitts"}
+        }
+        "America:St_Lucia"{
+            ec{"Saint Lucia"}
+        }
+        "America:St_Thomas"{
+            ec{"Saint Thomas"}
+        }
+        "America:St_Vincent"{
+            ec{"Saint Vincent"}
+        }
         "America:Swift_Current"{
             ec{"Swift Current"}
         }
@@ -784,7 +799,7 @@ nl{
             ec{"Oral"}
         }
         "Asia:Phnom_Penh"{
-            ec{"Phnom-Penh"}
+            ec{"Phnom Penh"}
         }
         "Asia:Pontianak"{
             ec{"Pontianak"}
@@ -794,6 +809,9 @@ nl{
         }
         "Asia:Qatar"{
             ec{"Qatar"}
+        }
+        "Asia:Qostanay"{
+            ec{"Qostanay"}
         }
         "Asia:Qyzylorda"{
             ec{"Qyzylorda"}
@@ -937,7 +955,8 @@ nl{
             ec{"Sydney"}
         }
         "Etc:UTC"{
-            ls{"Gecoördineerde wereldtijd"}
+            ls{"gecoördineerde wereldtijd"}
+            ss{"UTC"}
         }
         "Etc:Unknown"{
             ec{"onbekende stad"}
@@ -1563,7 +1582,7 @@ nl{
             ss{"GMT"}
         }
         "meta:Galapagos"{
-            ls{"Galapagoseilandse standaardtijd"}
+            ls{"Galapagoseilandse tijd"}
         }
         "meta:Gambier"{
             ls{"Gambiereilandse tijd"}
@@ -1770,7 +1789,9 @@ nl{
             ls{"Niuese tijd"}
         }
         "meta:Norfolk"{
-            ls{"Norfolkeilandse tijd"}
+            ld{"Norfolkeilandse zomertijd"}
+            lg{"Norfolkeilandse tijd"}
+            ls{"Norfolkeilandse standaardtijd"}
         }
         "meta:Noronha"{
             ld{"Fernando de Noronha-zomertijd"}
@@ -1953,6 +1974,9 @@ nl{
             ld{"Jekaterinenburg-zomertijd"}
             lg{"Jekaterinenburg-tijd"}
             ls{"Jekaterinenburg-standaardtijd"}
+        }
+        "meta:Yukon"{
+            ls{"Yukon-tijd"}
         }
         fallbackFormat{"{1} ({0})"}
         gmtFormat{"GMT{0}"}

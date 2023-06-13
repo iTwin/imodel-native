@@ -255,7 +255,7 @@ CloudResult CloudContainer::Connect(CloudCache& cache) {
 
     cache.m_containers.push_back(this); // needed for authorization from attach.
     if (!cache.IsAttached(*this)) {
-        auto result = cache.CallSqliteFn([&](Utf8P* msg) { return sqlite3_bcvfs_attach(cache.m_vfs, m_storageType.c_str(), m_baseUri.c_str(), m_containerId.c_str(), m_alias.c_str(), SQLITE_BCV_ATTACH_IFNOT, msg); }, "attach");
+        auto result = cache.CallSqliteFn([&](Utf8P* msg) { return sqlite3_bcvfs_attach(cache.m_vfs, GetOpenParams().c_str(), m_baseUri.c_str(), m_containerId.c_str(), m_alias.c_str(), SQLITE_BCV_ATTACH_IFNOT, msg); }, "attach");
         if (!result.IsSuccess()) {
             cache.m_containers.pop_back(); // failed, remove from list
             return result;
@@ -402,7 +402,7 @@ CloudPrefetch::PrefetchStatus CloudPrefetch::Run(int nRequest, int timeout) {
  * @param httpTimeout if >0, the number of seconds to wait before considering an http request as timed out. Timed out requests will be tried. Default is 60 seconds.
  */
 CloudResult CloudUtil::Init(CloudContainer const& container, int logLevel, int nRequest, int httpTimeout) {
-    int stat = sqlite3_bcv_open(container.m_storageType.c_str(), container.m_baseUri.c_str(), container.m_accessToken.c_str(), container.m_containerId.c_str(), &m_handle);
+    int stat = sqlite3_bcv_open(container.GetOpenParams().c_str(), container.m_baseUri.c_str(), container.m_accessToken.c_str(), container.m_containerId.c_str(), &m_handle);
     if (SQLITE_OK != stat)
         return CloudResult(stat,  Utf8PrintfString("cannot open CloudContainer: %s", sqlite3_bcv_errmsg(m_handle)).c_str());
 

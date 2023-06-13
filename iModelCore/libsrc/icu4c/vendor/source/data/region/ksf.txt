@@ -1,5 +1,6 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 ksf{
     Countries{
         AD{"andɔrǝ"}
@@ -127,7 +128,6 @@ ksf{
         MD{"mɔldaví"}
         MG{"madagaska"}
         MH{"zǝ i marcál"}
-        MK{"másǝdwán"}
         ML{"mali"}
         MM{"myanmár"}
         MN{"mɔŋolí"}
@@ -227,5 +227,4 @@ ksf{
         ZM{"zambí"}
         ZW{"zimbabwɛ́"}
     }
-    Version{"2.1.47.82"}
 }

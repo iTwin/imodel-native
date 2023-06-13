@@ -91,7 +91,14 @@ export class NativeLibrary {
   public static get nativeLib() { return this.load(); }
   public static load() {
     if (!this._nativeLib) {
-      this._nativeLib = require(`./${NativeLibrary.archName}/${NativeLibrary.nodeAddonName}`) as typeof IModelJsNative; // eslint-disable-line @typescript-eslint/no-var-requires
+      try {
+        this._nativeLib = require(`./${NativeLibrary.archName}/${NativeLibrary.nodeAddonName}`) as typeof IModelJsNative; // eslint-disable-line @typescript-eslint/no-var-requires
+      } catch (err: any) {
+        err.message += "\nThis error may occur when trying to run an iTwin.js backend without"
+          + " having installed the prerequisites. See the following link for all prerequisites:"
+          + "\nhttps://www.itwinjs.org/learning/supportedplatforms/#backend-prerequisites";
+        throw err;
+      }
       if (this.isDevBuild)
         // eslint-disable-next-line no-console
         console.log("\x1b[36m", `using dev build from ${__dirname}\n`, "\x1b[0m");
@@ -943,6 +950,10 @@ export declare namespace IModelJsNative {
     public readonly cache?: CloudCache;
     /** Create a new instance of a CloudContainer. It must be connected to a CloudCache for most operations. */
     public constructor(props: NativeCloudSqlite.ContainerAccessProps);
+    /** the baseUri of this container */
+    public get baseUri(): string;
+    /** the storageType of this container */
+    public get storageType(): string;
     /** The ContainerId. */
     public get containerId(): string;
     /** The *alias* to identify this CloudContainer in a CloudCache. Usually just the ContainerId. */
@@ -971,7 +982,7 @@ export declare namespace IModelJsNative {
      * initialize a cloud blob-store container to be used as a new Sqlite CloudContainer. This creates the manifest, and should be
      * performed on an empty container. If an existing manifest is present, it is destroyed and a new one is created (essentially emptying the container.)
      */
-    public initializeContainer(opts?: { checksumBlockNames?: boolean, blockSize?: number }): void;
+    public initializeContainer(opts: { checksumBlockNames?: boolean, blockSize: number }): void;
 
     /**
      * Attempt to acquire the write lock for this CloudContainer. For this to succeed:

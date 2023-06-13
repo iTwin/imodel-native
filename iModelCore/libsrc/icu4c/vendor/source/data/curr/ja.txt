@@ -1,5 +1,6 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 ja{
     Currencies{
         ADP{
@@ -80,7 +81,7 @@ ja{
         }
         AWG{
             "AWG",
-            "アルバ ギルダー",
+            "アルバ フロリン",
         }
         AZM{
             "AZM",
@@ -980,7 +981,7 @@ ja{
         }
         TRY{
             "TRY",
-            "新トルコリラ",
+            "トルコリラ",
         }
         TTD{
             "TTD",
@@ -1115,7 +1116,7 @@ ja{
             "フランス フラン (UIC)",
         }
         XOF{
-            "CFA",
+            "F CFA",
             "西アフリカ CFA フラン",
         }
         XPD{
@@ -1237,6 +1238,7 @@ ja{
         DKK{"kr"}
         DOP{"$"}
         EGP{"E£"}
+        ESP{"₧"}
         EUR{"€"}
         FJD{"$"}
         FKP{"£"}
@@ -1259,6 +1261,7 @@ ja{
         KHR{"៛"}
         KMF{"CF"}
         KPW{"₩"}
+        KRW{"₩"}
         KYD{"$"}
         KZT{"₸"}
         LAK{"₭"}
@@ -1296,6 +1299,7 @@ ja{
         TOP{"T$"}
         TRY{"₺"}
         TTD{"$"}
+        TWD{"$"}
         UAH{"₴"}
         USD{"$"}
         UYU{"$"}
@@ -1306,7 +1310,6 @@ ja{
         ZMW{"ZK"}
     }
     Currencies%variant{
-        GEL{"₾"}
         TRY{"TL"}
     }
     CurrencyPlurals{
@@ -1368,7 +1371,7 @@ ja{
             other{"オーストラリア ドル"}
         }
         AWG{
-            other{"アルバ ギルダー"}
+            other{"アルバ フロリン"}
         }
         AZM{
             other{"アゼルバイジャン マナト (1993–2006)"}
@@ -2043,7 +2046,7 @@ ja{
             other{"トルコ リラ (1922–2005)"}
         }
         TRY{
-            other{"新トルコリラ"}
+            other{"トルコリラ"}
         }
         TTD{
             other{"トリニダード・トバゴ ドル"}
@@ -2220,5 +2223,4 @@ ja{
     CurrencyUnitPatterns{
         other{"{0}{1}"}
     }
-    Version{"2.1.49.82"}
 }

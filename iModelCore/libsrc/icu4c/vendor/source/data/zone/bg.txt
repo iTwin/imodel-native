@@ -1,7 +1,7 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 bg{
-    Version{"2.1.48.42"}
     zoneStrings{
         "Africa:Abidjan"{
             ec{"Абиджан"}
@@ -258,8 +258,11 @@ bg{
         "America:Chihuahua"{
             ec{"Чиуауа"}
         }
+        "America:Ciudad_Juarez"{
+            ec{"Сиудад Хуарес"}
+        }
         "America:Coral_Harbour"{
-            ec{"Корал Харбър"}
+            ec{"Атикокан"}
         }
         "America:Cordoba"{
             ec{"Кордоба"}
@@ -810,6 +813,9 @@ bg{
         "Asia:Qatar"{
             ec{"Катар"}
         }
+        "Asia:Qostanay"{
+            ec{"Костанай"}
+        }
         "Asia:Qyzylorda"{
             ec{"Къзълорда"}
         }
@@ -955,7 +961,7 @@ bg{
             ls{"Координирано универсално време"}
         }
         "Etc:Unknown"{
-            ec{"неизвестен"}
+            ec{"неизвестен град"}
         }
         "Europe:Amsterdam"{
             ec{"Амстердам"}
@@ -1219,6 +1225,9 @@ bg{
         }
         "Pacific:Johnston"{
             ec{"Джонстън"}
+        }
+        "Pacific:Kanton"{
+            ec{"Кантон"}
         }
         "Pacific:Kiritimati"{
             ec{"Киритимати"}
@@ -1717,7 +1726,9 @@ bg{
             ls{"Ниуе"}
         }
         "meta:Norfolk"{
-            ls{"Норфолкско време"}
+            ld{"Норфолкско лятно часово време"}
+            lg{"Норфолкско време"}
+            ls{"Норфолкско стандартно време"}
         }
         "meta:Noronha"{
             ld{"Фернандо де Нороня – лятно часово време"}
@@ -1893,12 +1904,15 @@ bg{
             lg{"Екатеринбургско време"}
             ls{"Екатеринбургско стандартно време"}
         }
+        "meta:Yukon"{
+            ls{"Юкон"}
+        }
         fallbackFormat{"{1} ({0})"}
         gmtFormat{"Гринуич{0}"}
         gmtZeroFormat{"Гринуич"}
         hourFormat{"+HH:mm;-HH:mm"}
         regionFormat{"{0}"}
-        regionFormatDaylight{"{0}, лятно часово време"}
+        regionFormatDaylight{"{0} – лятно часово време"}
         regionFormatStandard{"{0} – стандартно време"}
     }
 }

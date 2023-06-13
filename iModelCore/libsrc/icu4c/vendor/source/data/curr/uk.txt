@@ -1,5 +1,6 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 uk{
     Currencies{
         ADP{
@@ -896,7 +897,7 @@ uk{
         }
         TOP{
             "TOP",
-            "тонґанська паанга",
+            "тонганська паанга",
         }
         TPE{
             "TPE",
@@ -912,7 +913,7 @@ uk{
         }
         TTD{
             "TTD",
-            "долар Трінідаду і Тобаґо",
+            "долар Тринідаду і Тобаго",
         }
         TWD{
             "TWD",
@@ -1039,7 +1040,7 @@ uk{
             "французький франк UIC",
         }
         XOF{
-            "CFA",
+            "F CFA",
             "західноафриканський франк",
         }
         XPD{
@@ -1120,11 +1121,105 @@ uk{
         }
     }
     Currencies%narrow{
-        TWD{"NT$"}
+        AOA{"Kz"}
+        ARS{"$"}
+        AUD{"$"}
+        BAM{"KM"}
+        BBD{"$"}
+        BDT{"৳"}
+        BMD{"$"}
+        BND{"$"}
+        BOB{"Bs"}
+        BRL{"R$"}
+        BSD{"$"}
+        BWP{"P"}
+        BYN{"р."}
+        BZD{"$"}
+        CAD{"$"}
+        CLP{"$"}
+        CNY{"¥"}
+        COP{"$"}
+        CRC{"₡"}
+        CUC{"$"}
+        CUP{"$"}
+        CZK{"Kč"}
+        DKK{"kr"}
+        DOP{"$"}
+        EGP{"E£"}
+        EUR{"€"}
+        FJD{"$"}
+        FKP{"£"}
+        GBP{"£"}
+        GEL{"₾"}
+        GIP{"£"}
+        GNF{"FG"}
+        GTQ{"Q"}
+        GYD{"$"}
+        HKD{"$"}
+        HNL{"L"}
+        HRK{"kn"}
+        HUF{"Ft"}
+        IDR{"Rp"}
+        ILS{"₪"}
+        INR{"₹"}
+        ISK{"kr"}
+        JMD{"$"}
+        JPY{"¥"}
+        KHR{"៛"}
+        KMF{"CF"}
+        KPW{"₩"}
+        KRW{"₩"}
+        KYD{"$"}
+        KZT{"₸"}
+        LAK{"₭"}
+        LBP{"L£"}
+        LKR{"Rs"}
+        LRD{"$"}
+        MGA{"Ar"}
+        MMK{"K"}
+        MNT{"₮"}
+        MUR{"Rs"}
+        MXN{"$"}
+        MYR{"RM"}
+        NAD{"$"}
+        NGN{"₦"}
+        NIO{"C$"}
+        NOK{"kr"}
+        NPR{"Rs"}
+        NZD{"$"}
+        PHP{"₱"}
+        PKR{"Rs"}
+        PLN{"zł"}
+        PYG{"₲"}
+        RON{"lei"}
+        RUB{"₽"}
+        RUR{"р."}
+        RWF{"RF"}
+        SBD{"$"}
+        SEK{"kr"}
+        SGD{"$"}
+        SHP{"£"}
+        SRD{"$"}
+        SSP{"£"}
+        STN{"Db"}
+        SYP{"£"}
+        THB{"฿"}
+        TOP{"T$"}
+        TRY{"₺"}
+        TTD{"$"}
+        TWD{"$"}
+        UAH{"₴"}
+        USD{"$"}
+        UYU{"$"}
+        VEF{"Bs"}
+        VND{"₫"}
+        XCD{"$"}
+        ZAR{"R"}
+        ZMW{"ZK"}
     }
     Currencies%variant{
-        GEL{"₾"}
-        UAH{"грн."}
+        TRY{"TL"}
+        UAH{"грн"}
     }
     CurrencyPlurals{
         ADP{
@@ -1381,7 +1476,7 @@ uk{
         }
         CUP{
             few{"кубинські песо"}
-            many{"кубинськх песо"}
+            many{"кубинських песо"}
             one{"кубинський песо"}
             other{"кубинського песо"}
         }
@@ -1678,6 +1773,12 @@ uk{
             many{"ліберійських доларів"}
             one{"ліберійський долар"}
             other{"ліберійського долара"}
+        }
+        LSL{
+            few{"лесотські лоті"}
+            many{"лесотських лоті"}
+            one{"лесотський лоті"}
+            other{"лесотського лоті"}
         }
         LTL{
             few{"литовські літи"}
@@ -2046,10 +2147,10 @@ uk{
             other{"туніського динара"}
         }
         TOP{
-            few{"тонґанські паанги"}
-            many{"тонґанських паанг"}
-            one{"тонґанська паанга"}
-            other{"тонґанської паанги"}
+            few{"тонганські паанги"}
+            many{"тонганських паанг"}
+            one{"тонганська паанга"}
+            other{"тонганської паанги"}
         }
         TRL{
             few{"турецькі ліри (1922–2005)"}
@@ -2066,8 +2167,8 @@ uk{
         TTD{
             few{"долари Тринідаду і Тобаго"}
             many{"доларів Тринідаду і Тобаго"}
-            one{"долар Трінідаду і Тобаґо"}
-            other{"долара Трінідаду і Тобаґо"}
+            one{"долар Тринідаду і Тобаго"}
+            other{"долара Тринідаду і Тобаго"}
         }
         TWD{
             few{"нові тайванські долари"}
@@ -2082,10 +2183,10 @@ uk{
             other{"танзанійського шилінга"}
         }
         UAH{
-            few{"гривні"}
-            many{"гривень"}
-            one{"гривня"}
-            other{"гривні"}
+            few{"українські гривні"}
+            many{"українських гривень"}
+            one{"українська гривня"}
+            other{"української гривні"}
         }
         UAK{
             few{"українські карбованці"}
@@ -2220,5 +2321,4 @@ uk{
         one{"{0} {1}"}
         other{"{0} {1}"}
     }
-    Version{"2.1.49.82"}
 }

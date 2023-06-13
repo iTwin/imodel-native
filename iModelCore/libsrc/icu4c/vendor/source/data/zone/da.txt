@@ -1,7 +1,7 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 da{
-    Version{"2.1.49.82"}
     zoneStrings{
         "Africa:Abidjan"{
             ec{"Abidjan"}
@@ -810,6 +810,9 @@ da{
         "Asia:Qatar"{
             ec{"Qatar"}
         }
+        "Asia:Qostanay"{
+            ec{"Kostanay"}
+        }
         "Asia:Qyzylorda"{
             ec{"Kyzylorda"}
         }
@@ -1146,7 +1149,7 @@ da{
             ec{"Chagos"}
         }
         "Indian:Christmas"{
-            ec{"Juleøerne"}
+            ec{"Juleøen"}
         }
         "Indian:Cocos"{
             ec{"Cocos"}
@@ -1757,7 +1760,9 @@ da{
             ls{"Niue-tid"}
         }
         "meta:Norfolk"{
-            ls{"Norfolk Island-tid"}
+            ld{"Norfolk Island-sommertid"}
+            lg{"Norfolk Island-tid"}
+            ls{"Norfolk Island-normaltid"}
         }
         "meta:Noronha"{
             ld{"Fernando de Noronha-sommertid"}
@@ -1940,6 +1945,9 @@ da{
             ld{"Jekaterinburg-sommertid"}
             lg{"Jekaterinburg-tid"}
             ls{"Jekaterinburg-normaltid"}
+        }
+        "meta:Yukon"{
+            ls{"Yukon-tid"}
         }
         fallbackFormat{"{1} ({0})"}
         gmtFormat{"GMT{0}"}

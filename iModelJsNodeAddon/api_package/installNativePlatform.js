@@ -78,7 +78,7 @@ if (process.env.IMODELJS_NATIVE_OVERRIDE !== undefined) {
   // We have to run npm install in a temp directory. If we try to run it in the current directory,
   // it will fight over a (file?) lock that the parent npm install holds.
   // Note that we have to copy the current package.json to the temp directory, or else npm install will object.
-  const installDir = path.join(os.tmpdir(), "install-imodeljs-native");
+  const installDir = path.join(os.tmpdir(), `install-imodeljs-native@${version}`);
   try { fs.mkdirSync(installDir); } catch (err) { }
   fs.copyFileSync(path.join(__dirname, "package.json"), path.join(installDir, "package.json"));
 

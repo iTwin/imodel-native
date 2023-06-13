@@ -53,7 +53,7 @@ BuddhistCalendar& BuddhistCalendar::operator= ( const BuddhistCalendar& right)
     return *this;
 }
 
-Calendar* BuddhistCalendar::clone(void) const
+BuddhistCalendar* BuddhistCalendar::clone() const
 {
     return new BuddhistCalendar(*this);
 }
@@ -76,13 +76,6 @@ int32_t BuddhistCalendar::handleGetExtendedYear()
                 + kBuddhistEraStart;
     }
     return year;
-}
-
-int32_t BuddhistCalendar::handleComputeMonthStart(int32_t eyear, int32_t month,
-
-                                                  UBool useMonth) const
-{
-    return GregorianCalendar::handleComputeMonthStart(eyear, month, useMonth);
 }
 
 void BuddhistCalendar::handleComputeFields(int32_t julianDay, UErrorCode& status)
@@ -133,12 +126,12 @@ void BuddhistCalendar::timeToFields(UDate theTime, UBool quick, UErrorCode& stat
  */
 static UDate     gSystemDefaultCenturyStart       = DBL_MIN;
 static int32_t   gSystemDefaultCenturyStartYear   = -1;
-static icu::UInitOnce gBCInitOnce;
+static icu::UInitOnce gBCInitOnce {};
 
 
 UBool BuddhistCalendar::haveDefaultCentury() const
 {
-    return TRUE;
+    return true;
 }
 
 static void U_CALLCONV
