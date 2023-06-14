@@ -1430,9 +1430,9 @@ BentleyStatus TxnManager::PatchSlowDdlChanges(Utf8StringR patchedDDL, Utf8String
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult TxnManager::ApplyDdlChanges(DdlChangesCR ddlChanges) {
     BeAssert(!ddlChanges._IsEmpty() && "DbSchemaChangeSet is empty");
-    auto info = GetDgnDb().Schemas().GetSharedChannel().GetInfo();
+    auto info = GetDgnDb().Schemas().GetSchemaSync().GetInfo();
     if (!info.IsEmpty()) {
-        LOG.infov("Skipping DDL Changes as IModel has shared schema channel enabled. ChannelId {%s}.", info.GetChannelId().ToString().c_str());
+        LOG.infov("Skipping DDL Changes as IModel has schema sync enabled. Sync-Id {%s}.", info.GetSyncId().ToString().c_str());
         return BE_SQLITE_OK;
     }
 

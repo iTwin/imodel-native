@@ -33,23 +33,23 @@ FROM   [ec_index] [idx]
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
 struct JsonNames {
-	constexpr static char ChannelId[] = "id";
-	constexpr static char ChannelDataVer[] = "dataVer";
-	constexpr static char ChannelProjectId[] = "projectId";
-	constexpr static char ChannelFileId[] = "fileId";
-	constexpr static char ChannelLastModUtc[] = "lastModUtc";
-	constexpr static char ChannelChangeSetId[] = "parentChangesetId";
-	constexpr static char ChannelChangeSetIndex[] = "parentChangesetIndex";
+	constexpr static char SyncId[] = "id";
+	constexpr static char SyncDataVer[] = "dataVer";
+	constexpr static char SyncProjectId[] = "projectId";
+	constexpr static char SyncFileId[] = "fileId";
+	constexpr static char SyncLastModeUtc[] = "lastModUtc";
+	constexpr static char SyncChangeSetId[] = "parentChangesetId";
+	constexpr static char SyncChangeSetIndex[] = "parentChangesetIndex";
 	constexpr static char JNamespace[] = "ec_Db";
-    constexpr static char JSharedChannelInfo[] = "sharedChannelInfo";
-	constexpr static char JLocalChannelInfo[] = "localChannelInfo";
+    constexpr static char JSyncDbInfo[] = "syncDbInfo";
+	constexpr static char JLocalChannelInfo[] = "localDbInfo";
 };
 
-//SharedSchemaChannelHelper==============================================================
+//SchemaSyncHelper==============================================================
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-int SharedSchemaChannelHelper::ForeignKeyCheck(DbCR conn, std::vector<std::string>const& tables, Utf8CP dbAlias) {
+int SchemaSyncHelper::ForeignKeyCheck(DbCR conn, std::vector<std::string>const& tables, Utf8CP dbAlias) {
 	int fkViolations = 0;
 	for(auto& table : tables) {
 		Statement stmt;
@@ -71,7 +71,7 @@ int SharedSchemaChannelHelper::ForeignKeyCheck(DbCR conn, std::vector<std::strin
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult SharedSchemaChannelHelper::GetMetaTables(DbR conn, StringList& tables, Utf8CP dbAlias) {
+DbResult SchemaSyncHelper::GetMetaTables(DbR conn, StringList& tables, Utf8CP dbAlias) {
 	const auto queryECTableSql = Utf8String {
 		SqlPrintfString(R"z(
 			SELECT
@@ -96,7 +96,7 @@ DbResult SharedSchemaChannelHelper::GetMetaTables(DbR conn, StringList& tables, 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult SharedSchemaChannelHelper::DropDataTables(DbR conn) {
+DbResult SchemaSyncHelper::DropDataTables(DbR conn) {
 	if (!conn.TableExists("ec_Table")) {
 		return BE_SQLITE_OK;
 	}
@@ -123,7 +123,7 @@ DbResult SharedSchemaChannelHelper::DropDataTables(DbR conn) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult SharedSchemaChannelHelper::DropMetaTables(DbR conn) {
+DbResult SchemaSyncHelper::DropMetaTables(DbR conn) {
 	StringList tables;
 	auto rc = GetMetaTables(conn, tables, "main");
 	if (rc != BE_SQLITE_OK) {
@@ -142,7 +142,7 @@ DbResult SharedSchemaChannelHelper::DropMetaTables(DbR conn) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult SharedSchemaChannelHelper::CreateMetaTablesFrom(ECDbR fromDb, DbR syncDb) {
+DbResult SchemaSyncHelper::CreateMetaTablesFrom(ECDbR fromDb, DbR syncDb) {
 	const auto sql = Utf8String {R"z(
 		SELECT
 			[sql]
@@ -171,7 +171,7 @@ DbResult SharedSchemaChannelHelper::CreateMetaTablesFrom(ECDbR fromDb, DbR syncD
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult SharedSchemaChannelHelper::TryGetAttachDbs(AliasMap& aliasMap, ECDbR conn) {
+DbResult SchemaSyncHelper::TryGetAttachDbs(AliasMap& aliasMap, ECDbR conn) {
 	Statement stmt;
 	auto rc = stmt.Prepare(conn, "pragma main.database_list");
 	if (rc != BE_SQLITE_OK) {
@@ -189,26 +189,26 @@ DbResult SharedSchemaChannelHelper::TryGetAttachDbs(AliasMap& aliasMap, ECDbR co
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult SharedSchemaChannelHelper::VerifyAlias(ECDbR conn) {
+DbResult SchemaSyncHelper::VerifyAlias(ECDbR conn) {
 	AliasMap aliasMap;
 	auto rc = TryGetAttachDbs(aliasMap, conn);
 	if (rc != BE_SQLITE_OK) {
 		conn.GetImpl().Issues().Report(
-			IssueSeverity::Error, IssueCategory::SharedSchemaChannel, IssueType::ECDbIssue,
+			IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue,
 			"Unable to query attach db from primary connection");
 		return rc;
 	}
 	if (aliasMap.find(ALIAS_MAIN_DB) == aliasMap.end()) {
 		conn.GetImpl().Issues().ReportV(
-			IssueSeverity::Error, IssueCategory::SharedSchemaChannel, IssueType::ECDbIssue,
+			IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue,
 			"Expecting '%s' attach db on primary connection", ALIAS_MAIN_DB);
 		return rc;
 	}
 
-	if (aliasMap.find(ALIAS_SHARED_DB) != aliasMap.end()) {
+	if (aliasMap.find(ALIAS_SYNC_DB) != aliasMap.end()) {
 		conn.GetImpl().Issues().ReportV(
-			IssueSeverity::Error, IssueCategory::SharedSchemaChannel, IssueType::ECDbIssue,
-			"Db alias '%s' use by channel db is already in use", ALIAS_SHARED_DB);
+			IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue,
+			"Db alias '%s' use by schema sync db is already in use", ALIAS_SYNC_DB);
 		return rc;
 	}
 	return BE_SQLITE_OK;
@@ -217,7 +217,7 @@ DbResult SharedSchemaChannelHelper::VerifyAlias(ECDbR conn) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult SharedSchemaChannelHelper::GetColumnNames(DbCR db, Utf8CP dbAlias, Utf8CP tableName, StringList& columnNames) {
+DbResult SchemaSyncHelper::GetColumnNames(DbCR db, Utf8CP dbAlias, Utf8CP tableName, StringList& columnNames) {
 	Statement stmt;
 	const auto sql = Utf8String{SqlPrintfString("pragma %s.table_info(%s)", dbAlias, tableName).GetUtf8CP()};
 	auto rc = stmt.Prepare(db, sql.c_str());
@@ -233,7 +233,7 @@ DbResult SharedSchemaChannelHelper::GetColumnNames(DbCR db, Utf8CP dbAlias, Utf8
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8String SharedSchemaChannelHelper::Join(StringList const& list, Utf8String delimiter, Utf8String prefix, Utf8String postfix) {
+Utf8String SchemaSyncHelper::Join(StringList const& list, Utf8String delimiter, Utf8String prefix, Utf8String postfix) {
 	if (list.empty()) {
 		return prefix + postfix;
 	}
@@ -250,7 +250,7 @@ Utf8String SharedSchemaChannelHelper::Join(StringList const& list, Utf8String de
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8String SharedSchemaChannelHelper::ToLower(Utf8String const& val) {
+Utf8String SchemaSyncHelper::ToLower(Utf8String const& val) {
 	Utf8String out;
 	std::for_each(val.begin(), val.end(), [&](char const& ch) {
 		out.push_back(static_cast<char>(std::tolower(static_cast<unsigned char>(ch))));
@@ -261,7 +261,7 @@ Utf8String SharedSchemaChannelHelper::ToLower(Utf8String const& val) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult SharedSchemaChannelHelper::GetPrimaryKeyColumnNames(DbCR db, Utf8CP dbAlias, Utf8CP tableName, StringList& columnNames) {
+DbResult SchemaSyncHelper::GetPrimaryKeyColumnNames(DbCR db, Utf8CP dbAlias, Utf8CP tableName, StringList& columnNames) {
 	Statement stmt;
 	const auto sql = Utf8String{SqlPrintfString("pragma %s.table_info(%s)", dbAlias, tableName).GetUtf8CP()};
 	auto rc = stmt.Prepare(db, sql.c_str());
@@ -279,7 +279,7 @@ DbResult SharedSchemaChannelHelper::GetPrimaryKeyColumnNames(DbCR db, Utf8CP dbA
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult SharedSchemaChannelHelper::SyncData(ECDbR conn, StringList const& tables, Utf8CP sourceDbAlias, Utf8CP targetDbAlias) {
+DbResult SchemaSyncHelper::SyncData(ECDbR conn, StringList const& tables, Utf8CP sourceDbAlias, Utf8CP targetDbAlias) {
 	auto rc = conn.ExecuteSql("PRAGMA defer_foreign_keys=1");
 	if (rc != BE_SQLITE_OK) {
 		return rc;
@@ -296,7 +296,7 @@ DbResult SharedSchemaChannelHelper::SyncData(ECDbR conn, StringList const& table
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult SharedSchemaChannelHelper::SyncData(ECDbR conn, Utf8CP tableName, Utf8CP sourceDbAlias, Utf8CP targetDbAlias) {
+DbResult SchemaSyncHelper::SyncData(ECDbR conn, Utf8CP tableName, Utf8CP sourceDbAlias, Utf8CP targetDbAlias) {
 	DbResult rc;
 	auto sourceCols = StringList{};
 	rc = GetColumnNames(conn, sourceDbAlias, tableName, sourceCols);
@@ -401,109 +401,109 @@ DbResult SharedSchemaChannelHelper::SyncData(ECDbR conn, Utf8CP tableName, Utf8C
 	return BE_SQLITE_OK;
 }
 
-//SharedSchemaChannel===================================================================
+//SchemaSync===================================================================
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-SharedSchemaChannel::Status SharedSchemaChannel::SetDefaultChannelUri(ChannelUri channelUri) {
-    auto rc = VerifyChannel(channelUri, false);
-	if (rc != SharedSchemaChannel::Status::OK) {
+SchemaSync::Status SchemaSync::SetDefaultSyncDbUri(SyncDbUri syncDbUri) {
+    auto rc = VerifySyncDb(syncDbUri, false);
+	if (rc != SchemaSync::Status::OK) {
         return rc;
     }
-    m_defaultChannelUri = channelUri;
+    m_defaultSyncDbUri = syncDbUri;
     return Status::OK;
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-SharedSchemaChannel::Status SharedSchemaChannel::Init(ChannelUri const& channelURI, TableList additionTables) {
-    auto const info = channelURI.GetInfo();
+SchemaSync::Status SchemaSync::Init(SyncDbUri const& syncDbUri, TableList additionTables) {
+    auto const info = syncDbUri.GetInfo();
 	if (!info.IsEmpty()) {
         BeJsDocument doc;
         info.To(BeJsValue(doc));
         m_conn.GetImpl().Issues().ReportV(
-			IssueSeverity::Error, IssueCategory::SharedSchemaChannel, IssueType::ECDbIssue,
-			"Shared schema channel (%a) already initalized. %s", doc.Stringify().c_str());
-        return Status::ERROR_SHARED_CHANNEL_ALREADY_INITIALIZED;
+			IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue,
+			"Sync db (%a) already initalized. %s", doc.Stringify().c_str());
+        return Status::ERROR_SCHEMA_SYNC_DB_ALREADY_INITIALIZED;
     }
 
     Db sharedDb;
 	Db::OpenParams openParams(Db::OpenMode::ReadWrite, DefaultTxn::Yes);
-    ParseQueryParams(openParams, channelURI);
-    auto rc = sharedDb.OpenBeSQLiteDb(channelURI.GetUri().c_str(), openParams);
+    ParseQueryParams(openParams, syncDbUri);
+    auto rc = sharedDb.OpenBeSQLiteDb(syncDbUri.GetUri().c_str(), openParams);
 	if (rc != BE_SQLITE_OK) {
         m_conn.GetImpl().Issues().ReportV(
-			IssueSeverity::Error, IssueCategory::SharedSchemaChannel, IssueType::ECDbIssue,
-			"Fail to open shared db %s. %s", channelURI.GetUri().c_str(), BeSQLiteLib::GetErrorString(rc));
-        return Status::ERROR_SHARED_CHANNEL_ALREADY_INITIALIZED;
+			IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue,
+			"Fail to open schema sync db %s. %s", syncDbUri.GetUri().c_str(), BeSQLiteLib::GetErrorString(rc));
+        return Status::ERROR_SCHEMA_SYNC_DB_ALREADY_INITIALIZED;
 	}
 
 	sharedDb.GetStatementCache().Empty();
 
-    rc = SharedSchemaChannelHelper::DropDataTables(sharedDb);
+    rc = SchemaSyncHelper::DropDataTables(sharedDb);
 	if (rc != BE_SQLITE_OK) {
         m_conn.GetImpl().Issues().ReportV(
-			IssueSeverity::Error, IssueCategory::SharedSchemaChannel, IssueType::ECDbIssue,
-			"Fail to drop data table(s) from shared schema channel (%s). %s", channelURI.GetUri().c_str(), BeSQLiteLib::GetErrorString(rc));
-        return Status::ERROR_FAIL_TO_INIT_SHARED_DB;
+			IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue,
+			"Fail to drop data table(s) from schema sync db (%s). %s", syncDbUri.GetUri().c_str(), BeSQLiteLib::GetErrorString(rc));
+        return Status::ERROR_FAIL_TO_INIT_SCHEMA_SYNC_DB;
 	}
 
-    rc = SharedSchemaChannelHelper::DropMetaTables(sharedDb);
+    rc = SchemaSyncHelper::DropMetaTables(sharedDb);
 	if (rc != BE_SQLITE_OK) {
         m_conn.GetImpl().Issues().ReportV(
-			IssueSeverity::Error, IssueCategory::SharedSchemaChannel, IssueType::ECDbIssue,
-			"Fail to drop meta table(s) from shared schema channel (%s). %s", channelURI.GetUri().c_str(), BeSQLiteLib::GetErrorString(rc));
-        return Status::ERROR_FAIL_TO_INIT_SHARED_DB;
+			IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue,
+			"Fail to drop meta table(s) from schema sync db (%s). %s", syncDbUri.GetUri().c_str(), BeSQLiteLib::GetErrorString(rc));
+        return Status::ERROR_FAIL_TO_INIT_SCHEMA_SYNC_DB;
 	}
 
-    rc = SharedSchemaChannelHelper::CreateMetaTablesFrom(m_conn, sharedDb);
+    rc = SchemaSyncHelper::CreateMetaTablesFrom(m_conn, sharedDb);
 	if (rc != BE_SQLITE_OK) {
         m_conn.GetImpl().Issues().ReportV(
-			IssueSeverity::Error, IssueCategory::SharedSchemaChannel, IssueType::ECDbIssue,
-			"Fail to re-create meta table(s) in shared schema channel (%s). %s", channelURI.GetUri().c_str(), BeSQLiteLib::GetErrorString(rc));
-        return Status::ERROR_FAIL_TO_INIT_SHARED_DB;
+			IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue,
+			"Fail to re-create meta table(s) in schema sync db (%s). %s", syncDbUri.GetUri().c_str(), BeSQLiteLib::GetErrorString(rc));
+        return Status::ERROR_FAIL_TO_INIT_SCHEMA_SYNC_DB;
 	}
     rc = sharedDb.TryExecuteSql("create table if not exists " TABLE_SQLSCHEMA "(id integer primary key, Type text, Name text, TableName text, Sql text)");
 	if (rc != BE_SQLITE_OK) {
         m_conn.GetImpl().Issues().ReportV(
-			IssueSeverity::Error, IssueCategory::SharedSchemaChannel, IssueType::ECDbIssue,
-			"Fail to create sync table (" TABLE_SQLSCHEMA ") in shared schema channel (%s). %s", channelURI.GetUri().c_str(), BeSQLiteLib::GetErrorString(rc));
-        return Status::ERROR_FAIL_TO_INIT_SHARED_DB;
+			IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue,
+			"Fail to create sync table (" TABLE_SQLSCHEMA ") in schema sync db (%s). %s", syncDbUri.GetUri().c_str(), BeSQLiteLib::GetErrorString(rc));
+        return Status::ERROR_FAIL_TO_INIT_SCHEMA_SYNC_DB;
 	}
-    rc = UpdateOrCreateSharedChannelInfo(sharedDb);
+    rc = UpdateOrCreateSyncDbInfo(sharedDb);
     if (rc != BE_SQLITE_OK) {
         m_conn.GetImpl().Issues().ReportV(
-			IssueSeverity::Error, IssueCategory::SharedSchemaChannel, IssueType::ECDbIssue,
-			"Fail to save shared channel info in (%s). %s", channelURI.GetUri().c_str(), BeSQLiteLib::GetErrorString(rc));
-        return Status::ERROR_FAIL_TO_INIT_SHARED_DB;
+			IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue,
+			"Fail to save sync db info in (%s). %s", syncDbUri.GetUri().c_str(), BeSQLiteLib::GetErrorString(rc));
+        return Status::ERROR_FAIL_TO_INIT_SCHEMA_SYNC_DB;
 	}
 
-    const auto sharedInfo = SharedChannelInfo::From(sharedDb);
+    const auto sharedInfo = SyncDbInfo::From(sharedDb);
     rc = sharedDb.SaveChanges();
 	if (rc != BE_SQLITE_OK || sharedInfo.IsEmpty()) {
         m_conn.GetImpl().Issues().ReportV(
-			IssueSeverity::Error, IssueCategory::SharedSchemaChannel, IssueType::ECDbIssue,
-			"Fail to save changes to shared schema channel (%s). %s", channelURI.GetUri().c_str(), BeSQLiteLib::GetErrorString(rc));
-        return Status::ERROR_FAIL_TO_INIT_SHARED_DB;
+			IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue,
+			"Fail to save changes to schema sync db (%s). %s", syncDbUri.GetUri().c_str(), BeSQLiteLib::GetErrorString(rc));
+        return Status::ERROR_FAIL_TO_INIT_SCHEMA_SYNC_DB;
 	}
 
-    rc = UpdateOrCreateLocalChannelInfo(sharedInfo);
+    rc = UpdateOrCreateLocalDbInfo(sharedInfo);
     if (rc != BE_SQLITE_OK) {
         m_conn.GetImpl().Issues().ReportV(
-			IssueSeverity::Error, IssueCategory::SharedSchemaChannel, IssueType::ECDbIssue,
-			"Fail to save shared channel info to local db. %s", BeSQLiteLib::GetErrorString(rc));
+			IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue,
+			"Fail to save sync db info to local db. %s", BeSQLiteLib::GetErrorString(rc));
         return Status::ERROR;
 	}
 
     sharedDb.CloseDb();
-    return PushInternal(channelURI, additionTables);
+    return PushInternal(syncDbUri, additionTables);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void SharedSchemaChannel::ParseQueryParams(Db::OpenParams& params, ChannelUri const& uri){
+void SchemaSync::ParseQueryParams(Db::OpenParams& params, SyncDbUri const& uri){
     const auto n = uri.GetUri().find("?");
 	if (n == Utf8String::npos)
         return;
@@ -521,10 +521,10 @@ void SharedSchemaChannel::ParseQueryParams(Db::OpenParams& params, ChannelUri co
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-SharedSchemaChannel::Status SharedSchemaChannel::VerifyChannel(ChannelUri const& channelURI, bool isPull) const{
+SchemaSync::Status SchemaSync::VerifySyncDb(SyncDbUri const& syncDbUri, bool isPull) const{
 	if (m_conn.IsReadonly()) {
 		m_conn.GetImpl().Issues().Report(
-			IssueSeverity::Error, IssueCategory::SharedSchemaChannel, IssueType::ECDbIssue,
+			IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue,
 			"Primary connection is readonly. It must be in read/write mode.");
 		return Status::ERROR_READONLY;
 	}
@@ -533,69 +533,69 @@ SharedSchemaChannel::Status SharedSchemaChannel::VerifyChannel(ChannelUri const&
     DbResult rc = BE_SQLITE_OK;
     if (isPull) {
         Db::OpenParams openParams(Db::OpenMode::Readonly);
-        ParseQueryParams(openParams, channelURI);
-        rc = sharedDb.OpenBeSQLiteDb(channelURI.GetUri().c_str(), openParams);
+        ParseQueryParams(openParams, syncDbUri);
+        rc = sharedDb.OpenBeSQLiteDb(syncDbUri.GetUri().c_str(), openParams);
         if (rc != BE_SQLITE_OK) {
 				m_conn.GetImpl().Issues().ReportV(
-					IssueSeverity::Error, IssueCategory::SharedSchemaChannel, IssueType::ECDbIssue,
-					"Fail to to open shared schema channel db in readonly mode: (%s)", channelURI.GetUri().c_str());
-			return Status::ERROR_OPENING_SHARED_DB;
+					IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue,
+					"Fail to to open schema sync db db in readonly mode: (%s)", syncDbUri.GetUri().c_str());
+			return Status::ERROR_OPENING_SCHEMA_SYNC_DB;
 		}
 	} else {
 		Db::OpenParams openParams(Db::OpenMode::ReadWrite);
-        ParseQueryParams(openParams, channelURI);
-		rc = sharedDb.OpenBeSQLiteDb(channelURI.GetUri().c_str(), openParams);
+        ParseQueryParams(openParams, syncDbUri);
+		rc = sharedDb.OpenBeSQLiteDb(syncDbUri.GetUri().c_str(), openParams);
 		if (rc != BE_SQLITE_OK) {
 				m_conn.GetImpl().Issues().ReportV(
-					IssueSeverity::Error, IssueCategory::SharedSchemaChannel, IssueType::ECDbIssue,
-					"Fail to to open shared schema channel db in readonly mode: (%s)", channelURI.GetUri().c_str());
-			return Status::ERROR_OPENING_SHARED_DB;
+					IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue,
+					"Fail to to open schema sync db db in readonly mode: (%s)", syncDbUri.GetUri().c_str());
+			return Status::ERROR_OPENING_SCHEMA_SYNC_DB;
 		}
 
 	}
-    const auto sharedChannelInfo = SharedChannelInfo::From(sharedDb);
-	if (sharedChannelInfo.IsEmpty()) {
+    const auto syncDbInfo = SyncDbInfo::From(sharedDb);
+	if (syncDbInfo.IsEmpty()) {
 		m_conn.GetImpl().Issues().ReportV(
-			IssueSeverity::Error, IssueCategory::SharedSchemaChannel, IssueType::ECDbIssue,
-			"Invalid shared channel db (%s). Shared channel info not found.", channelURI.GetUri().c_str());
-		return Status::ERROR_INVALID_SHARED_DB;
+			IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue,
+			"Invalid schema sync db (%s). Schema sync info not found.", syncDbUri.GetUri().c_str());
+		return Status::ERROR_INVALID_SCHEMA_SYNC_DB;
 	}
 
-    const auto localChannelInfo = LocalChannelInfo::From(m_conn);
-	if (localChannelInfo.IsEmpty()) {
+    const auto localDbInfo = LocalDbInfo::From(m_conn);
+	if (localDbInfo.IsEmpty()) {
 		m_conn.GetImpl().Issues().ReportV(
-			IssueSeverity::Error, IssueCategory::SharedSchemaChannel, IssueType::ECDbIssue,
-			"Local db is not set to use shared schema channel (%s).", channelURI.GetUri().c_str());
-		return Status::ERROR_INVALID_LOCAL_DB;
+			IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue,
+			"Local db is not set to use schema sync db (%s).", syncDbUri.GetUri().c_str());
+		return Status::ERROR_INVALID_LOCAL_SYNC_DB;
 	}
 
-    if (sharedChannelInfo.GetChannelId() != localChannelInfo.GetChannelId()) {
+    if (syncDbInfo.GetSyncId() != localDbInfo.GetSyncId()) {
 		m_conn.GetImpl().Issues().ReportV(
-			IssueSeverity::Error, IssueCategory::SharedSchemaChannel, IssueType::ECDbIssue,
-			"channel id does not match (local) %s <> (shared) %s.",
-				localChannelInfo.GetChannelId().ToString().c_str(),
-				sharedChannelInfo.GetChannelId().ToString().c_str());
-		return Status::ERROR_INVALID_SHARED_CHANNEL;
+			IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue,
+			"Sync id does not match (local) %s <> (SyncDb) %s.",
+				localDbInfo.GetSyncId().ToString().c_str(),
+				syncDbInfo.GetSyncId().ToString().c_str());
+		return Status::ERROR_SCHEMA_SYNC_INFO_DONOT_MATCH;
 	}
 
     const auto projectGUID = m_conn.QueryProjectGuid();
-    if (sharedChannelInfo.GetProjectId() != projectGUID) {
+    if (syncDbInfo.GetProjectId() != projectGUID) {
 		m_conn.GetImpl().Issues().ReportV(
-			IssueSeverity::Error, IssueCategory::SharedSchemaChannel, IssueType::ECDbIssue,
-			"project id does not match (local) %s <> (shared) %s.",
+			IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue,
+			"project id does not match (local) %s <> (SyncDb) %s.",
 				projectGUID.ToString().c_str(),
-				sharedChannelInfo.GetProjectId().ToString().c_str());
-		return Status::ERROR_INVALID_SHARED_CHANNEL;
+				syncDbInfo.GetProjectId().ToString().c_str());
+		return Status::ERROR_SCHEMA_SYNC_INFO_DONOT_MATCH;
 	}
 
     const auto fileGUID = m_conn.GetDbGuid();
-    if (sharedChannelInfo.GetFileId() != fileGUID) {
+    if (syncDbInfo.GetFileId() != fileGUID) {
 		m_conn.GetImpl().Issues().ReportV(
-			IssueSeverity::Error, IssueCategory::SharedSchemaChannel, IssueType::ECDbIssue,
-			"project id does not match (local) %s <> (shared) %s.",
+			IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue,
+			"project id does not match (local) %s <> (SyncDb) %s.",
 				fileGUID.ToString().c_str(),
-				sharedChannelInfo.GetFileId().ToString().c_str());
-		return Status::ERROR_INVALID_SHARED_CHANNEL;
+				syncDbInfo.GetFileId().ToString().c_str());
+		return Status::ERROR_SCHEMA_SYNC_INFO_DONOT_MATCH;
 	}
 	sharedDb.CloseDb();
     return Status::OK;
@@ -604,34 +604,34 @@ SharedSchemaChannel::Status SharedSchemaChannel::VerifyChannel(ChannelUri const&
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-SharedSchemaChannel::Status SharedSchemaChannel::PullInternal(ChannelUri const& channelURI, TableList additionTables) {
-    const auto vrc = VerifyChannel(channelURI, true);
+SchemaSync::Status SchemaSync::PullInternal(SyncDbUri const& syncDbUri, TableList additionTables) {
+    const auto vrc = VerifySyncDb(syncDbUri, true);
 	if  (vrc != Status::OK) {
         return vrc;
     }
 
-    const auto sharedChannelInfo = channelURI.GetInfo();
-    const auto localChannelInfo = GetInfo();
-    if (sharedChannelInfo.GetDataVersion() == localChannelInfo.GetDataVersion()) {
+    const auto syncDbInfo = syncDbUri.GetInfo();
+    const auto localDbInfo = GetInfo();
+    if (syncDbInfo.GetDataVersion() == localDbInfo.GetDataVersion()) {
         return Status::OK;
     }
 
-    if (sharedChannelInfo.GetDataVersion() < localChannelInfo.GetDataVersion()) {
+    if (syncDbInfo.GetDataVersion() < localDbInfo.GetDataVersion()) {
 		// this should never happen.
         return Status::ERROR;
 	}
 
-	if (SharedSchemaChannelHelper::VerifyAlias(m_conn) != BE_SQLITE_OK) {
+	if (SchemaSyncHelper::VerifyAlias(m_conn) != BE_SQLITE_OK) {
         return Status::ERROR;
     }
 
-    auto rc = m_conn.AttachDb(channelURI.GetDbAttachUri().c_str(), SharedSchemaChannelHelper::ALIAS_SHARED_DB);
+    auto rc = m_conn.AttachDb(syncDbUri.GetDbAttachUri().c_str(), SchemaSyncHelper::ALIAS_SYNC_DB);
 	if (rc != BE_SQLITE_OK) {
 		m_conn.GetImpl().Issues().ReportV(
-			IssueSeverity::Error, IssueCategory::SharedSchemaChannel, IssueType::ECDbIssue,
+			IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue,
 			"Unable to attach sync db '%s' as '%s' to primary connection: %s",
-			channelURI.GetUri().c_str(),
-			SharedSchemaChannelHelper::ALIAS_SHARED_DB,
+			syncDbUri.GetUri().c_str(),
+			SchemaSyncHelper::ALIAS_SYNC_DB,
 			m_conn.GetLastError().c_str());
         return Status::ERROR_UNABLE_TO_ATTACH;
 	}
@@ -639,38 +639,38 @@ SharedSchemaChannel::Status SharedSchemaChannel::PullInternal(ChannelUri const& 
     rc = PullSqlSchema(m_conn);
 	if (rc != BE_SQLITE_OK) {
 		m_conn.AbandonChanges();
-		m_conn.DetachDb(SharedSchemaChannelHelper::ALIAS_SHARED_DB);
+		m_conn.DetachDb(SchemaSyncHelper::ALIAS_SYNC_DB);
         return Status::ERROR_SYNC_SQL_SCHEMA;
     }
 
     // pull changes ================================================
-    const auto fromAlias = SharedSchemaChannelHelper::ALIAS_SHARED_DB;
-	const auto toAlias = SharedSchemaChannelHelper::ALIAS_MAIN_DB;
+    const auto fromAlias = SchemaSyncHelper::ALIAS_SYNC_DB;
+	const auto toAlias = SchemaSyncHelper::ALIAS_MAIN_DB;
 
     TableList tables;
-    rc = SharedSchemaChannelHelper::GetMetaTables(m_conn, tables, fromAlias);
+    rc = SchemaSyncHelper::GetMetaTables(m_conn, tables, fromAlias);
     if (rc != BE_SQLITE_OK) {
 		m_conn.AbandonChanges();
-		m_conn.DetachDb(SharedSchemaChannelHelper::ALIAS_SHARED_DB);
+		m_conn.DetachDb(SchemaSyncHelper::ALIAS_SYNC_DB);
         return Status::ERROR;
     }
 
     tables.insert(tables.end(), additionTables.begin(), additionTables.end());
-    rc = SharedSchemaChannelHelper::SyncData(m_conn, tables, fromAlias, toAlias);
+    rc = SchemaSyncHelper::SyncData(m_conn, tables, fromAlias, toAlias);
     if (rc != BE_SQLITE_OK) {
 		m_conn.AbandonChanges();
-		m_conn.DetachDb(SharedSchemaChannelHelper::ALIAS_SHARED_DB);
+		m_conn.DetachDb(SchemaSyncHelper::ALIAS_SYNC_DB);
         return Status::ERROR;
     }
 
-    rc = UpdateOrCreateLocalChannelInfo(sharedChannelInfo);
+    rc = UpdateOrCreateLocalDbInfo(syncDbInfo);
     if (rc != BE_SQLITE_OK) {
 		m_conn.AbandonChanges();
-		m_conn.DetachDb(SharedSchemaChannelHelper::ALIAS_SHARED_DB);
+		m_conn.DetachDb(SchemaSyncHelper::ALIAS_SYNC_DB);
         return Status::ERROR;
     }
 
-	rc = m_conn.DetachDb(SharedSchemaChannelHelper::ALIAS_SHARED_DB);
+	rc = m_conn.DetachDb(SchemaSyncHelper::ALIAS_SYNC_DB);
     if (rc != BE_SQLITE_OK) {
 		return Status::ERROR;
 	}
@@ -681,12 +681,12 @@ SharedSchemaChannel::Status SharedSchemaChannel::PullInternal(ChannelUri const& 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult SharedSchemaChannel::PullSqlSchema(DbR conn) {
+DbResult SchemaSync::PullSqlSchema(DbR conn) {
 
     Utf8String facetsThatDoesNotExitsSql = SqlPrintfString(
 		"SELECT [s].[sql] FROM [%s].[" TABLE_SQLSCHEMA "] [s] WHERE NOT EXISTS (SELECT 1 FROM [%s].[sqlite_master] m WHERE [m].[type]=[s].[type] AND [m].[name]=[s].[name]) ORDER BY [s].[id]",
-		SharedSchemaChannelHelper::ALIAS_SHARED_DB,
-		SharedSchemaChannelHelper::ALIAS_MAIN_DB
+		SchemaSyncHelper::ALIAS_SYNC_DB,
+		SchemaSyncHelper::ALIAS_MAIN_DB
 	).GetUtf8CP();
 
     Statement stmt;
@@ -711,8 +711,8 @@ DbResult SharedSchemaChannel::PullSqlSchema(DbR conn) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult SharedSchemaChannel::PushSqlSchema(DbR conn) {
-    Utf8String truncatSql = SqlPrintfString("DELETE FROM [%s].[" TABLE_SQLSCHEMA "]", SharedSchemaChannelHelper::ALIAS_SHARED_DB).GetUtf8CP();
+DbResult SchemaSync::PushSqlSchema(DbR conn) {
+    Utf8String truncatSql = SqlPrintfString("DELETE FROM [%s].[" TABLE_SQLSCHEMA "]", SchemaSyncHelper::ALIAS_SYNC_DB).GetUtf8CP();
     auto rc = conn.TryExecuteSql(truncatSql.c_str());
     if (rc != BE_SQLITE_OK) {
 		LOG.errorv("PushSqlSchema() unable to prepare statement (%s): %s", truncatSql.c_str(), conn.GetLastError().c_str());
@@ -721,8 +721,8 @@ DbResult SharedSchemaChannel::PushSqlSchema(DbR conn) {
     Utf8String bulkInsertSql = SqlPrintfString(
 		"INSERT INTO [%s].[" TABLE_SQLSCHEMA "](Type,Name,TableName,Sql) "
 		"SELECT [type], [name], [tbl_name], [sql] FROM [%s].[sqlite_master] WHERE [name] NOT LIKE 'sqlite%%'",
-		SharedSchemaChannelHelper::ALIAS_SHARED_DB,
-		SharedSchemaChannelHelper::ALIAS_MAIN_DB).GetUtf8CP();
+		SchemaSyncHelper::ALIAS_SYNC_DB,
+		SchemaSyncHelper::ALIAS_MAIN_DB).GetUtf8CP();
 
     rc = conn.TryExecuteSql(bulkInsertSql.c_str());
     if (rc != BE_SQLITE_OK) {
@@ -734,77 +734,77 @@ DbResult SharedSchemaChannel::PushSqlSchema(DbR conn) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-SharedSchemaChannel::Status SharedSchemaChannel::PushInternal(ChannelUri const& channelURI, TableList additionTables) {
-    const auto vrc = VerifyChannel(channelURI, false);
+SchemaSync::Status SchemaSync::PushInternal(SyncDbUri const& syncDbUri, TableList additionTables) {
+    const auto vrc = VerifySyncDb(syncDbUri, false);
 	if  (vrc != Status::OK) {
         return vrc;
     }
 
-    const auto sharedChannelInfo = channelURI.GetInfo();
-    const auto localChannelInfo = GetInfo();
-    if (sharedChannelInfo.GetDataVersion() != localChannelInfo.GetDataVersion()) {
+    const auto syncDbInfo = syncDbUri.GetInfo();
+    const auto localDbInfo = GetInfo();
+    if (syncDbInfo.GetDataVersion() != localDbInfo.GetDataVersion()) {
         return Status::ERROR;
     }
 
-	if (SharedSchemaChannelHelper::VerifyAlias(m_conn) != BE_SQLITE_OK) {
+	if (SchemaSyncHelper::VerifyAlias(m_conn) != BE_SQLITE_OK) {
         return Status::ERROR;
     }
 
-    auto rc = m_conn.AttachDb(channelURI.GetDbAttachUri().c_str(), SharedSchemaChannelHelper::ALIAS_SHARED_DB);
+    auto rc = m_conn.AttachDb(syncDbUri.GetDbAttachUri().c_str(), SchemaSyncHelper::ALIAS_SYNC_DB);
 	if (rc != BE_SQLITE_OK) {
 		m_conn.GetImpl().Issues().ReportV(
-			IssueSeverity::Error, IssueCategory::SharedSchemaChannel, IssueType::ECDbIssue,
+			IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue,
 			"Unable to attach sync db '%s' as '%s' to primary connection: %s",
-			channelURI.GetUri().c_str(),
-			SharedSchemaChannelHelper::ALIAS_SHARED_DB,
+			syncDbUri.GetUri().c_str(),
+			SchemaSyncHelper::ALIAS_SYNC_DB,
 			m_conn.GetLastError().c_str());
         return Status::ERROR_UNABLE_TO_ATTACH;
 	}
 
 	// pull changes ================================================
-    const auto fromAlias = SharedSchemaChannelHelper::ALIAS_MAIN_DB;
-	const auto toAlias = SharedSchemaChannelHelper::ALIAS_SHARED_DB;
+    const auto fromAlias = SchemaSyncHelper::ALIAS_MAIN_DB;
+	const auto toAlias = SchemaSyncHelper::ALIAS_SYNC_DB;
 
     TableList tables;
-    rc = SharedSchemaChannelHelper::GetMetaTables(m_conn, tables, fromAlias);
+    rc = SchemaSyncHelper::GetMetaTables(m_conn, tables, fromAlias);
     if (rc != BE_SQLITE_OK) {
 		m_conn.AbandonChanges();
-		m_conn.DetachDb(SharedSchemaChannelHelper::ALIAS_SHARED_DB);
+		m_conn.DetachDb(SchemaSyncHelper::ALIAS_SYNC_DB);
         return Status::ERROR;
     }
 
     tables.insert(tables.end(), additionTables.begin(), additionTables.end());
-    rc = SharedSchemaChannelHelper::SyncData(m_conn, tables, fromAlias, toAlias);
+    rc = SchemaSyncHelper::SyncData(m_conn, tables, fromAlias, toAlias);
     if (rc != BE_SQLITE_OK) {
 		m_conn.AbandonChanges();
-		m_conn.DetachDb(SharedSchemaChannelHelper::ALIAS_SHARED_DB);
+		m_conn.DetachDb(SchemaSyncHelper::ALIAS_SYNC_DB);
         return Status::ERROR;
     }
 
     rc = PushSqlSchema(m_conn);
     if (rc != BE_SQLITE_OK) {
 		m_conn.AbandonChanges();
-		m_conn.DetachDb(SharedSchemaChannelHelper::ALIAS_SHARED_DB);
+		m_conn.DetachDb(SchemaSyncHelper::ALIAS_SYNC_DB);
         return Status::ERROR;
     }
 
 	rc = m_conn.SaveChanges();
     if (rc != BE_SQLITE_OK) {
-		m_conn.DetachDb(SharedSchemaChannelHelper::ALIAS_SHARED_DB);
+		m_conn.DetachDb(SchemaSyncHelper::ALIAS_SYNC_DB);
         return Status::ERROR;
     }
 
-	rc = m_conn.DetachDb(SharedSchemaChannelHelper::ALIAS_SHARED_DB);
+	rc = m_conn.DetachDb(SchemaSyncHelper::ALIAS_SYNC_DB);
     if (rc != BE_SQLITE_OK) {
         return Status::ERROR;
 	}
 
-    rc = UpdateOrCreateSharedChannelInfo(channelURI);
+    rc = UpdateOrCreateSyncDbInfo(syncDbUri);
     if (rc != BE_SQLITE_OK) {
         return Status::ERROR;
     }
 
-    rc = UpdateOrCreateLocalChannelInfo(channelURI.GetInfo());
+    rc = UpdateOrCreateLocalDbInfo(syncDbUri.GetInfo());
     if (rc != BE_SQLITE_OK) {
         return Status::ERROR;
     }
@@ -814,21 +814,21 @@ SharedSchemaChannel::Status SharedSchemaChannel::PushInternal(ChannelUri const& 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-SharedSchemaChannel::Status SharedSchemaChannel::Init(ChannelUri const& channelURI) {
-	ECDB_PERF_LOG_SCOPE("Initializing shared schema channel");
-    STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SharedSchemaChannel::Init");
+SchemaSync::Status SchemaSync::Init(SyncDbUri const& syncDbUri) {
+	ECDB_PERF_LOG_SCOPE("Initializing schema sync db");
+    STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SchemaSync::Init");
 	BeMutexHolder holder(m_conn.GetImpl().GetMutex());
-    const auto rc = Init(channelURI, { SharedSchemaChannelHelper::TABLE_BE_PROP });
-	STATEMENT_DIAGNOSTICS_LOGCOMMENT("End SharedSchemaChannel::Init");
+    const auto rc = Init(syncDbUri, { SchemaSyncHelper::TABLE_BE_PROP });
+	STATEMENT_DIAGNOSTICS_LOGCOMMENT("End SchemaSync::Init");
     return rc;
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-SharedSchemaChannel::Status SharedSchemaChannel::Pull(ChannelUri const& channelURI, SchemaImportToken const* schemaImportToken) {
-    ECDB_PERF_LOG_SCOPE("Pulling from shared schema channel");
-    STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SharedSchemaChannel::Pull");
+SchemaSync::Status SchemaSync::Pull(SyncDbUri const& syncDbUri, SchemaImportToken const* schemaImportToken) {
+    ECDB_PERF_LOG_SCOPE("Pulling from schema sync db");
+    STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SchemaSync::Pull");
 
 	BeMutexHolder holder(m_conn.GetImpl().GetMutex());
     auto& mainDisp = m_conn.Schemas().Main();
@@ -842,8 +842,8 @@ SharedSchemaChannel::Status SharedSchemaChannel::Pull(ChannelUri const& channelU
     SchemaImportContext ctx(m_conn, SchemaManager::SchemaImportOptions(), /* synchronizeSchemas = */true);
     m_conn.ClearECDbCache();
 
-    const auto effectiveChannelURI = channelURI.IsEmpty() ? GetDefaultChannelUri() : channelURI;
-    const auto rc = PullInternal(effectiveChannelURI, {});
+    const auto effectiveSyncDbUri = syncDbUri.IsEmpty() ? GetDefaultSyncDbUri() : syncDbUri;
+    const auto rc = PullInternal(effectiveSyncDbUri, {});
 	if (rc != Status::OK) {
         return rc;
     }
@@ -871,37 +871,37 @@ SharedSchemaChannel::Status SharedSchemaChannel::Pull(ChannelUri const& channelU
     m_conn.ClearECDbCache();
     mainDisp.OnAfterSchemaChanges().RaiseEvent(m_conn, SchemaChangeType::SchemaImport);
 
-	STATEMENT_DIAGNOSTICS_LOGCOMMENT("End SharedSchemaChannel::Pull");
+	STATEMENT_DIAGNOSTICS_LOGCOMMENT("End SchemaSync::Pull");
     return rc;
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-SharedSchemaChannel::Status SharedSchemaChannel::Push(ChannelUri const& channelURI) {
-    ECDB_PERF_LOG_SCOPE("Pushing tp shared schema channel");
-    STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SharedSchemaChannel::Push");
+SchemaSync::Status SchemaSync::Push(SyncDbUri const& syncDbUri) {
+    ECDB_PERF_LOG_SCOPE("Pushing tp schema sync db");
+    STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SchemaSync::Push");
     BeMutexHolder holder(m_conn.GetImpl().GetMutex());
-    const auto rc = PushInternal(channelURI, {});
+    const auto rc = PushInternal(syncDbUri, {});
 
-    STATEMENT_DIAGNOSTICS_LOGCOMMENT("End SharedSchemaChannel::Push");
+    STATEMENT_DIAGNOSTICS_LOGCOMMENT("End SchemaSync::Push");
     return rc;
 }
 
 //=======================================================================================
-// 	SharedSchemaChannel::LocalChannelInfo
+// 	SchemaSync::LocalDbInfo
 //+===============+===============+===============+===============+===============+======
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-SharedSchemaChannel::LocalChannelInfo SharedSchemaChannel::GetInfo() const {
-    return LocalChannelInfo::From(m_conn);
+SchemaSync::LocalDbInfo SchemaSync::GetInfo() const {
+    return LocalDbInfo::From(m_conn);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8String SharedSchemaChannel::GetParentRevisionId() const {
+Utf8String SchemaSync::GetParentRevisionId() const {
     const auto PARENT_CS_ID = "ParentChangeSetId";
 	Utf8String revisionId;
     DbResult result = m_conn.QueryBriefcaseLocalValue(revisionId, PARENT_CS_ID);
@@ -911,7 +911,7 @@ Utf8String SharedSchemaChannel::GetParentRevisionId() const {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void SharedSchemaChannel::GetParentRevision(int32_t& index, Utf8StringR id) const {
+void SchemaSync::GetParentRevision(int32_t& index, Utf8StringR id) const {
     const auto PARENT_CHANGESET = "parentChangeset";
     id = GetParentRevisionId();
     index = id.empty() ? 0 : -1;
@@ -928,10 +928,10 @@ void SharedSchemaChannel::GetParentRevision(int32_t& index, Utf8StringR id) cons
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult SharedSchemaChannel::UpdateOrCreateSharedChannelInfo(DbR channelDb) {
-    auto info = SharedChannelInfo::From(channelDb);
+DbResult SchemaSync::UpdateOrCreateSyncDbInfo(DbR syncDb) {
+    auto info = SyncDbInfo::From(syncDb);
 	if (info.IsEmpty()) {
-        info.m_channelId.Create();
+        info.m_syncId.Create();
         info.m_projectId = m_conn.QueryProjectGuid();
         info.m_fileId = m_conn.GetDbGuid();
     }
@@ -944,10 +944,10 @@ DbResult SharedSchemaChannel::UpdateOrCreateSharedChannelInfo(DbR channelDb) {
 	info.m_lastModUtc = DateTime::GetCurrentTimeUtc();
     info.m_dataVer += 1;
 
-    const auto propSpec = PropertySpec(JsonNames::JSharedChannelInfo, JsonNames::JNamespace);
+    const auto propSpec = PropertySpec(JsonNames::JSyncDbInfo, JsonNames::JNamespace);
 	BeJsDocument jsonDoc;
     info.To(BeJsValue(jsonDoc));
-    auto rc = channelDb.SavePropertyString(propSpec, jsonDoc.Stringify());
+    auto rc = syncDb.SavePropertyString(propSpec, jsonDoc.Stringify());
 	if (rc != BE_SQLITE_OK) {
         return rc;
 	}
@@ -957,16 +957,16 @@ DbResult SharedSchemaChannel::UpdateOrCreateSharedChannelInfo(DbR channelDb) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult SharedSchemaChannel::UpdateOrCreateSharedChannelInfo(ChannelUri channelUri) {
+DbResult SchemaSync::UpdateOrCreateSyncDbInfo(SyncDbUri syncDbUri) {
     Db conn;
 	Db::OpenParams openParams(Db::OpenMode::ReadWrite);
-    ParseQueryParams(openParams, channelUri);
-    auto rc = conn.OpenBeSQLiteDb(channelUri.GetUri().c_str(), openParams);
+    ParseQueryParams(openParams, syncDbUri);
+    auto rc = conn.OpenBeSQLiteDb(syncDbUri.GetUri().c_str(), openParams);
     if (rc != BE_SQLITE_OK) {
         return BE_SQLITE_ERROR;
     }
 
-    rc = UpdateOrCreateSharedChannelInfo(conn);
+    rc = UpdateOrCreateSyncDbInfo(conn);
     if (rc != BE_SQLITE_OK) {
         conn.AbandonChanges();
         return rc;
@@ -977,11 +977,11 @@ DbResult SharedSchemaChannel::UpdateOrCreateSharedChannelInfo(ChannelUri channel
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult SharedSchemaChannel::UpdateOrCreateLocalChannelInfo(SharedChannelInfo const& from) {
+DbResult SchemaSync::UpdateOrCreateLocalDbInfo(SyncDbInfo const& from) {
     auto info = GetInfo();
 	info.m_dataVer = from.m_dataVer;
 	info.m_lastModUtc = from.GetLastModUtc();
-	info.m_channelId = from.m_channelId;
+	info.m_syncId = from.m_syncId;
 
 	// Save property
     const auto propSpec = PropertySpec(JsonNames::JLocalChannelInfo, JsonNames::JNamespace);
@@ -994,27 +994,27 @@ DbResult SharedSchemaChannel::UpdateOrCreateLocalChannelInfo(SharedChannelInfo c
     return BE_SQLITE_OK;
 }
 //=======================================================================================
-// 	SharedSchemaChannel::SharedChannelInfo
+// 	SchemaSync::SyncDbInfo
 //+===============+===============+===============+===============+===============+======
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void SharedSchemaChannel::SharedChannelInfo::To(BeJsValue val) const {
+void SchemaSync::SyncDbInfo::To(BeJsValue val) const {
     val.SetEmptyObject();
-    val[JsonNames::ChannelDataVer] = BeInt64Id(m_dataVer).ToHexStr();
-    val[JsonNames::ChannelId] = m_channelId.ToString();
-	val[JsonNames::ChannelProjectId] = m_projectId.ToString();
-	val[JsonNames::ChannelFileId] = m_fileId.ToString();
-	val[JsonNames::ChannelLastModUtc] = m_lastModUtc.ToTimestampString();
-	val[JsonNames::ChannelChangeSetId] = m_changesetId;
-	val[JsonNames::ChannelChangeSetIndex] = m_changesetIndex;
+    val[JsonNames::SyncDataVer] = BeInt64Id(m_dataVer).ToHexStr();
+    val[JsonNames::SyncId] = m_syncId.ToString();
+	val[JsonNames::SyncProjectId] = m_projectId.ToString();
+	val[JsonNames::SyncFileId] = m_fileId.ToString();
+	val[JsonNames::SyncLastModeUtc] = m_lastModUtc.ToTimestampString();
+	val[JsonNames::SyncChangeSetId] = m_changesetId;
+	val[JsonNames::SyncChangeSetIndex] = m_changesetIndex;
 }
 
-//SharedSchemaChannelHelper::ChannelUri==================================================
+//SchemaSyncHelper::SyncDbUri==================================================
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8String SharedSchemaChannel::ChannelUri::GetDbAttachUri() const {
+Utf8String SchemaSync::SyncDbUri::GetDbAttachUri() const {
 	if (m_uri.StartsWith("file:") || m_uri.find("?") == Utf8String::npos)
 		return m_uri;
 
@@ -1026,129 +1026,129 @@ Utf8String SharedSchemaChannel::ChannelUri::GetDbAttachUri() const {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-SharedSchemaChannel::SharedChannelInfo SharedSchemaChannel::ChannelUri::GetInfo() const{
+SchemaSync::SyncDbInfo SchemaSync::SyncDbUri::GetInfo() const{
 	if (IsEmpty()) {
-        return SharedChannelInfo();
+        return SyncDbInfo();
     }
 
 	Db conn;
 	Db::OpenParams openParams(Db::OpenMode::Readonly);
     ParseQueryParams(openParams, *this);
 	if (conn.OpenBeSQLiteDb(m_uri.c_str(), openParams) != BE_SQLITE_OK) {
-		return SharedChannelInfo();
+		return SyncDbInfo();
 	}
-    return SharedChannelInfo::From(conn);
+    return SyncDbInfo::From(conn);
 }
 
-//SharedSchemaChannelHelper::SharedChannelInfo===========================================
+//SchemaSyncHelper::SyncDbInfo===========================================
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-SharedSchemaChannel::SharedChannelInfo SharedSchemaChannel::SharedChannelInfo::From(DbCR conn){
+SchemaSync::SyncDbInfo SchemaSync::SyncDbInfo::From(DbCR conn){
     Utf8String strData;
-    const auto propSpec = PropertySpec(JsonNames::JSharedChannelInfo, JsonNames::JNamespace);
+    const auto propSpec = PropertySpec(JsonNames::JSyncDbInfo, JsonNames::JNamespace);
 	auto rc = conn.QueryProperty(strData, propSpec);
 	if (rc != BE_SQLITE_ROW) {
-		return SharedChannelInfo();
+		return SyncDbInfo();
 	}
     BeJsDocument jsonDoc;
     jsonDoc.Parse(strData);
-    return SharedChannelInfo::From(BeJsConst(jsonDoc));
+    return SyncDbInfo::From(BeJsConst(jsonDoc));
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-SharedSchemaChannel::SharedChannelInfo SharedSchemaChannel::SharedChannelInfo::From(BeJsConst val){
-    static SharedChannelInfo s_empty;
+SchemaSync::SyncDbInfo SchemaSync::SyncDbInfo::From(BeJsConst val){
+    static SyncDbInfo s_empty;
     if (!val.isObject()){
 		return s_empty;
 	}
 
-    SharedChannelInfo info;
-    if (val.isStringMember(JsonNames::ChannelDataVer)
-		 && val.isStringMember(JsonNames::ChannelId)
-		 && val.isStringMember(JsonNames::ChannelProjectId)
-		 && val.isStringMember(JsonNames::ChannelFileId)
-		 && val.isStringMember(JsonNames::ChannelLastModUtc)
-		 && val.isStringMember(JsonNames::ChannelChangeSetId)
-		 && val.isNumericMember(JsonNames::ChannelChangeSetIndex)
+    SyncDbInfo info;
+    if (val.isStringMember(JsonNames::SyncDataVer)
+		 && val.isStringMember(JsonNames::SyncId)
+		 && val.isStringMember(JsonNames::SyncProjectId)
+		 && val.isStringMember(JsonNames::SyncFileId)
+		 && val.isStringMember(JsonNames::SyncLastModeUtc)
+		 && val.isStringMember(JsonNames::SyncChangeSetId)
+		 && val.isNumericMember(JsonNames::SyncChangeSetIndex)
 	) {
         BentleyStatus status;
-        info.m_dataVer = BeInt64Id::FromString(val[JsonNames::ChannelDataVer].asCString(), &status).GetValueUnchecked();
+        info.m_dataVer = BeInt64Id::FromString(val[JsonNames::SyncDataVer].asCString(), &status).GetValueUnchecked();
 		if (status == ERROR) {
             return s_empty;
         }
 
-        info.m_channelId.FromString(val[JsonNames::ChannelId].asCString());
-		if (!info.m_channelId.IsValid()) {
+        info.m_syncId.FromString(val[JsonNames::SyncId].asCString());
+		if (!info.m_syncId.IsValid()) {
 			return s_empty;
 		}
 
-		info.m_projectId.FromString(val[JsonNames::ChannelProjectId].asCString());
-		info.m_fileId.FromString(val[JsonNames::ChannelFileId].asCString());
-		info.m_lastModUtc = DateTime::FromString(val[JsonNames::ChannelLastModUtc].asCString());
-        info.m_changesetId = val[JsonNames::ChannelChangeSetId].asCString();
-        info.m_changesetIndex = (int32_t)val[JsonNames::ChannelChangeSetIndex].asInt();
+		info.m_projectId.FromString(val[JsonNames::SyncProjectId].asCString());
+		info.m_fileId.FromString(val[JsonNames::SyncFileId].asCString());
+		info.m_lastModUtc = DateTime::FromString(val[JsonNames::SyncLastModeUtc].asCString());
+        info.m_changesetId = val[JsonNames::SyncChangeSetId].asCString();
+        info.m_changesetIndex = (int32_t)val[JsonNames::SyncChangeSetIndex].asInt();
         return info;
     }
     return s_empty;
 }
 
 //=======================================================================================
-// 	SharedSchemaChannel::LocalChannelInfo
+// 	SchemaSync::LocalDbInfo
 //+===============+===============+===============+===============+===============+======
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void SharedSchemaChannel::LocalChannelInfo::To(BeJsValue val) const {
+void SchemaSync::LocalDbInfo::To(BeJsValue val) const {
     val.SetEmptyObject();
-    val[JsonNames::ChannelDataVer] = BeInt64Id(m_dataVer).ToHexStr();
-    val[JsonNames::ChannelId] = m_channelId.ToString();
-	val[JsonNames::ChannelLastModUtc] = m_lastModUtc.ToTimestampString();
+    val[JsonNames::SyncDataVer] = BeInt64Id(m_dataVer).ToHexStr();
+    val[JsonNames::SyncId] = m_syncId.ToString();
+	val[JsonNames::SyncLastModeUtc] = m_lastModUtc.ToTimestampString();
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-SharedSchemaChannel::LocalChannelInfo SharedSchemaChannel::LocalChannelInfo::From(DbCR conn){
+SchemaSync::LocalDbInfo SchemaSync::LocalDbInfo::From(DbCR conn){
     Utf8String strData;
     const auto propSpec = PropertySpec(JsonNames::JLocalChannelInfo, JsonNames::JNamespace);
 	auto rc = conn.QueryProperty(strData, propSpec);
 	if (rc != BE_SQLITE_ROW) {
-		return LocalChannelInfo();
+		return LocalDbInfo();
 	}
     BeJsDocument jsonDoc;
     jsonDoc.Parse(strData);
-    return LocalChannelInfo::From(BeJsConst(jsonDoc));
+    return LocalDbInfo::From(BeJsConst(jsonDoc));
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-SharedSchemaChannel::LocalChannelInfo SharedSchemaChannel::LocalChannelInfo::From(BeJsConst val){
-    static LocalChannelInfo s_empty;
+SchemaSync::LocalDbInfo SchemaSync::LocalDbInfo::From(BeJsConst val){
+    static LocalDbInfo s_empty;
     if (!val.isObject()){
 		return s_empty;
 	}
 
-    LocalChannelInfo info;
-    if (val.isStringMember(JsonNames::ChannelDataVer)
-		 && val.isStringMember(JsonNames::ChannelId)
-		 && val.isStringMember(JsonNames::ChannelLastModUtc)
+    LocalDbInfo info;
+    if (val.isStringMember(JsonNames::SyncDataVer)
+		 && val.isStringMember(JsonNames::SyncId)
+		 && val.isStringMember(JsonNames::SyncLastModeUtc)
 	) {
         BentleyStatus status;
-        info.m_dataVer = BeInt64Id::FromString(val[JsonNames::ChannelDataVer].asCString(), &status).GetValueUnchecked();
+        info.m_dataVer = BeInt64Id::FromString(val[JsonNames::SyncDataVer].asCString(), &status).GetValueUnchecked();
 		if (status == ERROR) {
             return s_empty;
         }
 
-        info.m_channelId.FromString(val[JsonNames::ChannelId].asCString());
-		if (!info.m_channelId.IsValid()) {
+        info.m_syncId.FromString(val[JsonNames::SyncId].asCString());
+		if (!info.m_syncId.IsValid()) {
 			return s_empty;
 		}
 
-		info.m_lastModUtc = DateTime::FromString(val[JsonNames::ChannelLastModUtc].asCString());
+		info.m_lastModUtc = DateTime::FromString(val[JsonNames::SyncLastModeUtc].asCString());
         return info;
     }
     return s_empty;

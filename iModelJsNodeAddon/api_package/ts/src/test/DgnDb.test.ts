@@ -31,7 +31,7 @@ describe("basic tests", () => {
     done();
   });
 
-  it("schema shared channel", () => {
+  it("schema synchronization", () => {
 
     const copyAndOverrideFile = (from: string, to: string) => {
       if (fs.existsSync(to)) {
@@ -68,12 +68,12 @@ describe("basic tests", () => {
     }
 
     // create empty channel db.
-    const channelUri = path.join(baseDir, "channel.ecdb");
-    const channelDb = new iModelJsNative.ECDb();
-    let rc: DbResult = channelDb.createDb(channelUri);
+    const syncDbUri = path.join(baseDir, "channel.ecdb");
+    const syncDb = new iModelJsNative.ECDb();
+    let rc: DbResult = syncDb.createDb(syncDbUri);
     assert.equal(DbResult.BE_SQLITE_OK, rc);
-    channelDb.saveChanges();
-    channelDb.closeDb();
+    syncDb.saveChanges();
+    syncDb.closeDb();
 
     // create seed file.
     const seedUri= path.join(baseDir, "seed.bim");
@@ -81,12 +81,12 @@ describe("basic tests", () => {
     iModelDb.createIModel(seedUri, { rootSubject: { name: "test file" } });
 
     // initialize shared channel.
-    iModelDb.sharedChannelInit(channelUri);
+    iModelDb.schemaSyncInit(syncDbUri);
     iModelDb.saveChanges();
     iModelDb.performCheckpoint();
 
-    const localInfo = iModelDb.sharedChannelGetLocalInfo();
-    const sharedInfo = iModelDb.sharedChannelGetSharedInfo(channelUri);
+    const localInfo = iModelDb.schemaSyncGetLocalDbInfo();
+    const sharedInfo = iModelDb.schemaSyncGetSyncDbInfo(syncDbUri);
     assert.equal(localInfo?.id, sharedInfo?.id);
     assert.equal(localInfo?.dataVer, sharedInfo?.dataVer);
     assert.equal(localInfo?.dataVer, "0x2");
@@ -119,7 +119,7 @@ describe("basic tests", () => {
             <ECProperty propertyName="p2" typeName="int" />
         </ECEntityClass>
     </ECSchema>`;
-    rc = b0.importXmlSchemas([schema1], { sharedSchemaChannelUri: channelUri });
+    rc = b0.importXmlSchemas([schema1], { sharedSchemaChannelUri: syncDbUri });
     assert.equal(DbResult.BE_SQLITE_OK, rc);
 
     const schema2 = `<?xml version="1.0" encoding="UTF-8"?>
@@ -133,15 +133,15 @@ describe("basic tests", () => {
           <ECProperty propertyName="p4" typeName="int" />
         </ECEntityClass>
     </ECSchema>`;
-    rc = b1.importXmlSchemas([schema2], { sharedSchemaChannelUri: channelUri });
+    rc = b1.importXmlSchemas([schema2], { sharedSchemaChannelUri: syncDbUri });
     assert.equal(DbResult.BE_SQLITE_OK, rc);
 
-    b0.sharedChannelPull(channelUri);
+    b0.schemaSyncPull(syncDbUri);
 
     // test default URI
-    b2.sharedChannelSetDefaultUri(channelUri);
-    assert.equal(b2.sharedChannelGetDefaultUri(), channelUri);
-    b2.sharedChannelPull();
+    b2.schemaSyncSetDefaultUri(syncDbUri);
+    assert.equal(b2.schemaSyncGetDefaultUri(), syncDbUri);
+    b2.schemaSyncPull();
 
     // b1 = b2 == b0
     const b0Hashes = getSchemaHashes(b0);

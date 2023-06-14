@@ -325,7 +325,7 @@ void DgnDomains::OnDbClose()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaStatus DgnDomain::ImportSchema(DgnDbR dgndb, SchemaManager::SchemaImportOptions options, SharedSchemaChannel::ChannelUri uri)
+SchemaStatus DgnDomain::ImportSchema(DgnDbR dgndb, SchemaManager::SchemaImportOptions options, SchemaSync::SyncDbUri uri)
     {
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext(false /*=acceptLegacyImperfectLatestCompatibleMatch*/, true /*=includeFilesWithNoVerExt*/);
     schemaContext->SetFinalSchemaLocater(dgndb.GetSchemaLocater());
@@ -353,7 +353,7 @@ SchemaStatus DgnDomain::ImportSchema(DgnDbR dgndb, SchemaManager::SchemaImportOp
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-SchemaStatus DgnDomains::ImportSchemas(SchemaManager::SchemaImportOptions options, SharedSchemaChannel::ChannelUri uri)
+SchemaStatus DgnDomains::ImportSchemas(SchemaManager::SchemaImportOptions options, SchemaSync::SyncDbUri uri)
     {
     bvector<ECSchemaPtr> schemasToImport;
     bvector<DgnDomainP> domainsToImport;
@@ -368,7 +368,7 @@ SchemaStatus DgnDomains::ImportSchemas(SchemaManager::SchemaImportOptions option
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-SchemaStatus DgnDomains::DoImportSchemas(bvector<ECSchemaPtr> const& schemasToImport, bvector<DgnDomainP> const& domainsToImport, SchemaManager::SchemaImportOptions importOptions, SharedSchemaChannel::ChannelUri uri)
+SchemaStatus DgnDomains::DoImportSchemas(bvector<ECSchemaPtr> const& schemasToImport, bvector<DgnDomainP> const& domainsToImport, SchemaManager::SchemaImportOptions importOptions, SchemaSync::SyncDbUri uri)
     {
     BeAssert(!schemasToImport.empty());
     bvector<ECSchemaCP> importSchemas;
@@ -390,7 +390,7 @@ SchemaStatus DgnDomains::DoImportSchemas(bvector<ECSchemaPtr> const& schemasToIm
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaStatus DgnDomains::UpgradeSchemas(bvector<ECSchemaPtr> const& schemasToImport, bvector<DgnDomainP> const& domainsToImport, SchemaManager::SchemaImportOptions importOptions, SharedSchemaChannel::ChannelUri uri)
+SchemaStatus DgnDomains::UpgradeSchemas(bvector<ECSchemaPtr> const& schemasToImport, bvector<DgnDomainP> const& domainsToImport, SchemaManager::SchemaImportOptions importOptions, SchemaSync::SyncDbUri uri)
     {
     BeAssert(m_schemaUpgradeOptions.AreDomainUpgradesAllowed() && !schemasToImport.empty());
 
@@ -706,7 +706,7 @@ BeSQLite::EC::DropSchemaResult DgnDomains::DoDropSchema(Utf8StringCR name, bool 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaStatus DgnDomains::DoImportSchemas(bvector<ECSchemaCP> const &importSchemas, SchemaManager::SchemaImportOptions importOptions, SharedSchemaChannel::ChannelUri uri) {
+SchemaStatus DgnDomains::DoImportSchemas(bvector<ECSchemaCP> const &importSchemas, SchemaManager::SchemaImportOptions importOptions, SchemaSync::SyncDbUri uri) {
     if (importSchemas.empty())
         return SchemaStatus::Success;
 

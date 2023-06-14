@@ -318,7 +318,7 @@ void SyncCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
 
     if (args[1].EqualsIAscii("init"))
         {
-        if (SharedSchemaChannel::Status::OK != session.GetFile().GetECDbHandle()->Schemas().GetSharedChannel().Init(SharedSchemaChannel::ChannelUri(args[2].c_str())))
+        if (SchemaSync::Status::OK != session.GetFile().GetECDbHandle()->Schemas().GetSchemaSync().Init(SchemaSync::SyncDbUri(args[2].c_str())))
             {
             IModelConsole::WriteErrorLine("Failed to init : %s",args[2].c_str());
             }
@@ -348,14 +348,14 @@ void SyncCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
             }
         }
 
-    auto uri = SharedSchemaChannel::ChannelUri(syncDbFileName.GetNameUtf8().c_str());
+    auto uri = SchemaSync::SyncDbUri(syncDbFileName.GetNameUtf8().c_str());
     if (session.GetFile().GetType() == SessionFile::Type::IModel)
         {
         Dgn::DgnDbCR iModelFile = session.GetFile().GetAs<IModelFile>().GetDgnDbHandle();
         auto rc =  isPull ?
-            iModelFile.Schemas().GetSharedChannel().Pull(uri):
-            iModelFile.Schemas().GetSharedChannel().Push(uri);
-        if (rc != SharedSchemaChannel::Status::OK)
+            iModelFile.Schemas().GetSchemaSync().Pull(uri):
+            iModelFile.Schemas().GetSchemaSync().Push(uri);
+        if (rc != SchemaSync::Status::OK)
             {
             session.GetFileR().GetHandleR().AbandonChanges();
             IModelConsole::WriteErrorLine("fail to %s changes %s %s", isPull ? "pull" : "push", isPull ? "from" : "to", syncDbFileName.GetNameUtf8().c_str());
@@ -368,9 +368,9 @@ void SyncCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
     else
         {
          auto rc =  isPull ?
-            session.GetFile().GetECDbHandle()->Schemas().GetSharedChannel().Pull(uri):
-            session.GetFile().GetECDbHandle()->Schemas().GetSharedChannel().Push(uri);
-        if ( rc != SharedSchemaChannel::Status::OK)
+            session.GetFile().GetECDbHandle()->Schemas().GetSchemaSync().Pull(uri):
+            session.GetFile().GetECDbHandle()->Schemas().GetSchemaSync().Push(uri);
+        if ( rc != SchemaSync::Status::OK)
             {
             session.GetFileR().GetHandleR().AbandonChanges();
             IModelConsole::WriteErrorLine("fail to %s changes %s %s", isPull ? "pull" : "push", isPull ? "from" : "to", syncDbFileName.GetNameUtf8().c_str());

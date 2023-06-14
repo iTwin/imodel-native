@@ -187,9 +187,9 @@ bool ECDb::Impl::s_isInitialized = false;
 //---------------+---------------+---------------+---------------+---------------+------
 DbResult ECDb::Impl::OnDbOpened(OpenParams const& params) const
     {
-    if (!params.m_sharedSchemaChannelUri.empty())
+    if (!params.m_schemaSyncDbUri.empty())
         {
-        Schemas().GetSharedChannel().SetDefaultChannelUri(params.m_sharedSchemaChannelUri.c_str());
+        Schemas().GetSchemaSync().SetDefaultSyncDbUri(params.m_schemaSyncDbUri.c_str());
         }
 
     return BE_SQLITE_OK;

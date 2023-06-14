@@ -4,7 +4,7 @@
 
 USING_NAMESPACE_BENTLEY_SQLITE_EC;
 //***************************************************************************************
-// SharedSchemaDb
+// SchemaSyncDb
 //***************************************************************************************
 // Default SHA  hashes
 const char* SchemaSyncTestFixture::DEFAULT_SHA3_256_ECDB_SCHEMA = "44c5d675cdab562b732a90b8c0128149daaa7a2beefbcbddb576f7bf059cec33";
@@ -22,7 +22,7 @@ void SchemaSyncTestFixture::Test(Utf8CP name, std::function<void()> test){
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaImportResult SchemaSyncTestFixture::ImportSchemas(ECDbR ecdb, std::vector<SchemaItem> items, SchemaManager::SchemaImportOptions opts, SharedSchemaChannel::ChannelUri uri) {
+SchemaImportResult SchemaSyncTestFixture::ImportSchemas(ECDbR ecdb, std::vector<SchemaItem> items, SchemaManager::SchemaImportOptions opts, SchemaSync::SyncDbUri uri) {
     auto schemaReadContext = ECSchemaReadContext::CreateContext();
     schemaReadContext->AddSchemaLocater(ecdb.GetSchemaLocater());
     bvector<ECSchemaCP> importSchemas;
@@ -59,7 +59,7 @@ SchemaImportResult SchemaSyncTestFixture::ImportSchemas(ECDbR ecdb, std::vector<
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaImportResult SchemaSyncTestFixture::ImportSchema(ECDbR ecdb, SchemaItem item, SchemaManager::SchemaImportOptions opts, SharedSchemaChannel::ChannelUri uri) {
+SchemaImportResult SchemaSyncTestFixture::ImportSchema(ECDbR ecdb, SchemaItem item, SchemaManager::SchemaImportOptions opts, SchemaSync::SyncDbUri uri) {
     return ImportSchemas(ecdb, std::vector<SchemaItem>{item}, opts, uri);
 }
 
@@ -68,7 +68,7 @@ SchemaImportResult SchemaSyncTestFixture::ImportSchema(ECDbR ecdb, SchemaItem it
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaImportResult SchemaSyncTestFixture::ImportSchema(SchemaItem item, SchemaManager::SchemaImportOptions opts)
     {
-    return ImportSchemas(*m_briefcase, std::vector<SchemaItem> {item}, opts, GetSharedChannelUri());
+    return ImportSchemas(*m_briefcase, std::vector<SchemaItem> {item}, opts, GetSyncDbUri());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -124,8 +124,8 @@ SchemaImportResult SchemaSyncTestFixture::SetupECDb(Utf8CP ecdbName)
     {
     m_hub = std::make_unique<ECDbHub>(ECDbHub());
     m_briefcase = m_hub->CreateBriefcase();
-    m_schemaChannel = std::make_unique<SharedSchemaDb>(SharedSchemaDb(ecdbName));
-    if (SharedSchemaChannel::Status::OK != m_briefcase->Schemas().GetSharedChannel().Init(GetSharedChannelUri()))
+    m_schemaChannel = std::make_unique<SchemaSyncDb>(SchemaSyncDb(ecdbName));
+    if (SchemaSync::Status::OK != m_briefcase->Schemas().GetSchemaSync().Init(GetSyncDbUri()))
         return SchemaImportResult::ERROR;
 
     EXPECT_EQ(BE_SQLITE_OK, m_briefcase->PullMergePush("init"));
@@ -144,8 +144,8 @@ SchemaImportResult SchemaSyncTestFixture::SetupECDb(Utf8CP ecdbName, SchemaItem 
     {
     m_hub = std::make_unique<ECDbHub>(ECDbHub());
     m_briefcase = m_hub->CreateBriefcase();
-    m_schemaChannel = std::make_unique<SharedSchemaDb>(SharedSchemaDb(ecdbName));
-    if (SharedSchemaChannel::Status::OK != m_briefcase->Schemas().GetSharedChannel().Init(GetSharedChannelUri()))
+    m_schemaChannel = std::make_unique<SchemaSyncDb>(SchemaSyncDb(ecdbName));
+    if (SchemaSync::Status::OK != m_briefcase->Schemas().GetSchemaSync().Init(GetSyncDbUri()))
         return SchemaImportResult::ERROR;
 
     EXPECT_EQ(BE_SQLITE_OK, m_briefcase->PullMergePush("init"));
@@ -154,7 +154,7 @@ SchemaImportResult SchemaSyncTestFixture::SetupECDb(Utf8CP ecdbName, SchemaItem 
     m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb); });
     CheckHashes(*m_briefcase);
 
-    if (SchemaImportResult::OK != SchemaSyncTestFixture::ImportSchema(*m_briefcase, schema, opts, GetSharedChannelUri()))
+    if (SchemaImportResult::OK != SchemaSyncTestFixture::ImportSchema(*m_briefcase, schema, opts, GetSyncDbUri()))
         {
         EXPECT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
         return SchemaImportResult::ERROR;
@@ -289,12 +289,12 @@ std::string SchemaSyncTestFixture::GetIndexDDL(ECDbCR ecdb, Utf8CP indexName) {
 };
 
 //***************************************************************************************
-// SharedSchemaDb
+// SchemaSyncDb
 //***************************************************************************************
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SharedSchemaDb::SharedSchemaDb(Utf8CP name){
+SchemaSyncDb::SchemaSyncDb(Utf8CP name){
     BeFileName outPath;
     BeTest::GetHost().GetOutputRoot(outPath);
     Utf8String fileName = name;
@@ -317,12 +317,12 @@ SharedSchemaDb::SharedSchemaDb(Utf8CP name){
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileName SharedSchemaDb::GetFileName() const { return m_fileName;  }
+BeFileName SchemaSyncDb::GetFileName() const { return m_fileName;  }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::unique_ptr<ECDb> SharedSchemaDb::OpenReadOnly(DefaultTxn mode) {
+std::unique_ptr<ECDb> SchemaSyncDb::OpenReadOnly(DefaultTxn mode) {
     auto ecdb = std::make_unique<ECDb>();
     if (ecdb->OpenBeSQLiteDb(m_fileName, Db::OpenParams(Db::OpenMode::Readonly, mode)) != BE_SQLITE_OK) {
         return nullptr;
@@ -333,7 +333,7 @@ std::unique_ptr<ECDb> SharedSchemaDb::OpenReadOnly(DefaultTxn mode) {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::unique_ptr<ECDb> SharedSchemaDb::OpenReadWrite(DefaultTxn mode) {
+std::unique_ptr<ECDb> SchemaSyncDb::OpenReadWrite(DefaultTxn mode) {
     auto ecdb = std::make_unique<ECDb>();
     if (ecdb->OpenBeSQLiteDb(m_fileName, Db::OpenParams(Db::OpenMode::ReadWrite, mode)) != BE_SQLITE_OK) {
         return nullptr;
@@ -344,7 +344,7 @@ std::unique_ptr<ECDb> SharedSchemaDb::OpenReadWrite(DefaultTxn mode) {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SharedSchemaDb::WithReadOnly(std::function<void(ECDbR)> cb, DefaultTxn mode) {
+void SchemaSyncDb::WithReadOnly(std::function<void(ECDbR)> cb, DefaultTxn mode) {
     auto ecdb = OpenReadOnly(mode);
     if (ecdb == nullptr) {
         throw std::runtime_error("unable to open file");
@@ -356,7 +356,7 @@ void SharedSchemaDb::WithReadOnly(std::function<void(ECDbR)> cb, DefaultTxn mode
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SharedSchemaDb::WithReadWrite(std::function<void(ECDbR)> cb, DefaultTxn mode) {
+void SchemaSyncDb::WithReadWrite(std::function<void(ECDbR)> cb, DefaultTxn mode) {
     auto ecdb = OpenReadWrite(mode);
     if (ecdb == nullptr) {
         throw std::runtime_error("unable to open file");
@@ -368,7 +368,7 @@ void SharedSchemaDb::WithReadWrite(std::function<void(ECDbR)> cb, DefaultTxn mod
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-// DbResult SharedSchemaDb::Push(ECDbR ecdb, std::function<void()> cb) {
+// DbResult SchemaSyncDb::Push(ECDbR ecdb, std::function<void()> cb) {
 //     auto rc = ecdb.Schemas().SyncSchemas(GetFileName().GetNameUtf8(), SchemaManager::SyncAction::Push);
 //     if (rc == BE_SQLITE_OK && cb != nullptr) {
 //         cb();
@@ -379,9 +379,9 @@ void SharedSchemaDb::WithReadWrite(std::function<void(ECDbR)> cb, DefaultTxn mod
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SharedSchemaChannel::Status SharedSchemaDb::Pull(ECDbR ecdb, std::function<void()> cb) {
-    auto rc = ecdb.Schemas().GetSharedChannel().Pull(GetChannelUri());
-    if (rc == SharedSchemaChannel::Status::OK && cb != nullptr) {
+SchemaSync::Status SchemaSyncDb::Pull(ECDbR ecdb, std::function<void()> cb) {
+    auto rc = ecdb.Schemas().GetSchemaSync().Pull(GetSyncDbUri());
+    if (rc == SchemaSync::Status::OK && cb != nullptr) {
         cb();
     }
     return rc;

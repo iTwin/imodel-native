@@ -28,18 +28,18 @@ SchemaManager::~SchemaManager()
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-SharedSchemaChannel& SchemaManager::GetSharedChannel() const
+SchemaSync& SchemaManager::GetSchemaSync() const
     {
-    return Main().GetSharedChannel();
+    return Main().GetSchemaSync();
 
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-SchemaImportResult SchemaManager::ImportSchemas(bvector<ECSchemaCP> const& schemas, SchemaImportOptions options, SchemaImportToken const* token, SharedSchemaChannel::ChannelUri sharedChannel) const
+SchemaImportResult SchemaManager::ImportSchemas(bvector<ECSchemaCP> const& schemas, SchemaImportOptions options, SchemaImportToken const* token, SchemaSync::SyncDbUri syncDbUri) const
     {
-    return Main().ImportSchemas(schemas, options, token, sharedChannel);
+    return Main().ImportSchemas(schemas, options, token, syncDbUri);
     }
 
 //---------------------------------------------------------------------------------------

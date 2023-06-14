@@ -7,10 +7,10 @@
 #include "ECDbInternalTypes.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-struct SharedSchemaChannelHelper final {
+struct SchemaSyncHelper final {
     using AliasMap = bmap<Utf8String, Utf8String, CompareIUtf8Ascii>;
     using StringList = bvector<Utf8String>;
-    static constexpr auto ALIAS_SHARED_DB = "channel_db";
+    static constexpr auto ALIAS_SYNC_DB = "schema_sync_db";
 	static constexpr auto ALIAS_MAIN_DB = "main";
     static constexpr auto TABLE_BE_PROP = "be_Prop";
 

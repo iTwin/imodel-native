@@ -99,9 +99,9 @@ TEST_F(SchemaSyncTestFixture, checksum_pragma)
 TEST_F(SchemaSyncTestFixture, FullSchemaSyncWorkflow)
     {
     ECDbHub hub;
-    SharedSchemaDb schemaChannel("sync-db");
+    SchemaSyncDb schemaSyncDb("sync-db");
     auto b1 = hub.CreateBriefcase();
-    ASSERT_EQ(SharedSchemaChannel::Status::OK, b1->Schemas().GetSharedChannel().Init(schemaChannel.GetChannelUri()));
+    ASSERT_EQ(SchemaSync::Status::OK, b1->Schemas().GetSchemaSync().Init(schemaSyncDb.GetSyncDbUri()));
 
     b1->PullMergePush("init");
     b1->SaveChanges();
@@ -123,7 +123,7 @@ TEST_F(SchemaSyncTestFixture, FullSchemaSyncWorkflow)
         "check syncDb, b1, b2 and b3 hashes",
         [&]()
             {
-            schemaChannel.WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb); });
+            schemaSyncDb.WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb); });
             CheckHashes(*b1);
             CheckHashes(*b2);
             CheckHashes(*b3);
@@ -137,7 +137,7 @@ TEST_F(SchemaSyncTestFixture, FullSchemaSyncWorkflow)
         "import schema into b1",
         [&]()
             {
-            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*b1, SchemaItem(schemaXMLBuilder()), SchemaManager::SchemaImportOptions::None, schemaChannel.GetChannelUri()));
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*b1, SchemaItem(schemaXMLBuilder()), SchemaManager::SchemaImportOptions::None, schemaSyncDb.GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
 
             ASSERT_TRUE(b1->TableExists("ts_Pipe1"));
@@ -150,7 +150,7 @@ TEST_F(SchemaSyncTestFixture, FullSchemaSyncWorkflow)
         "check if sync-db has changes but not tables and index",
         [&]()
             {
-            schemaChannel.WithReadOnly(
+            schemaSyncDb.WithReadOnly(
                 [&](ECDbR syncDb)
                     {
                     auto pipe1 = syncDb.Schemas().GetClass("TestSchema1", "Pipe1");
@@ -170,8 +170,8 @@ TEST_F(SchemaSyncTestFixture, FullSchemaSyncWorkflow)
         [&]()
             {
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
-                schemaChannel.Pull(
+                SchemaSync::Status::OK,
+                schemaSyncDb.Pull(
                     *b2,
                     [&]()
                         {
@@ -184,7 +184,7 @@ TEST_F(SchemaSyncTestFixture, FullSchemaSyncWorkflow)
                         ASSERT_TRUE(ForeignkeyCheck(*b2));
                         }
                 )
-            ) << "Pull changes from schemaChannel into b2";
+            ) << "Pull changes from schemaSyncDb into b2";
             }
     );
 
@@ -224,7 +224,7 @@ TEST_F(SchemaSyncTestFixture, FullSchemaSyncWorkflow)
                     </ECEntityClass>
                 </ECSchema>)xml"
             );
-            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*b2, schema2, SchemaManager::SchemaImportOptions::None, schemaChannel.GetChannelUri()));
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*b2, schema2, SchemaManager::SchemaImportOptions::None, schemaSyncDb.GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, b2->SaveChanges());
 
             ASSERT_TRUE(b2->TableExists("ts_Pipe1"));
@@ -237,7 +237,7 @@ TEST_F(SchemaSyncTestFixture, FullSchemaSyncWorkflow)
         "check if sync-db has changes but not tables and index",
         [&]()
             {
-            schemaChannel.WithReadOnly(
+            schemaSyncDb.WithReadOnly(
                 [&](ECDbR syncDb)
                     {
                     auto pipe1 = syncDb.Schemas().GetClass("TestSchema1", "Pipe1");
@@ -256,8 +256,8 @@ TEST_F(SchemaSyncTestFixture, FullSchemaSyncWorkflow)
         [&]()
             {
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
-                schemaChannel.Pull(
+                SchemaSync::Status::OK,
+                schemaSyncDb.Pull(
                     *b1,
                     [&]()
                         {
@@ -272,7 +272,7 @@ TEST_F(SchemaSyncTestFixture, FullSchemaSyncWorkflow)
                         ASSERT_TRUE(ForeignkeyCheck(*b1));
                         }
                 )
-            ) << "Pull changes from schemaChannel into b1";
+            ) << "Pull changes from schemaSyncDb into b1";
             }
     );
 
@@ -310,17 +310,17 @@ TEST_F(SchemaSyncTestFixture, FullSchemaSyncWorkflow)
 TEST_F(SchemaSyncTestFixture, PushSchemaWithoutInitializingSchemaChannel)
     {
     ECDbHub hub;
-    SharedSchemaDb schemaChannel("sync-db");
+    SchemaSyncDb schemaSyncDb("sync-db");
     auto b1 = hub.CreateBriefcase();
 
     Test(
-        "Create and import schema to schemaChannel without initializing schemaChannel",
+        "Create and import schema to schemaSyncDb without initializing schemaSyncDb",
         [&]()
             {
-            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*b1, SchemaItem(schemaXMLBuilder()), SchemaManager::SchemaImportOptions::None, schemaChannel.GetChannelUri()));
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*b1, SchemaItem(schemaXMLBuilder()), SchemaManager::SchemaImportOptions::None, schemaSyncDb.GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, b1->AbandonChanges());
             CheckHashes(*b1);
-            schemaChannel.WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb); });
+            schemaSyncDb.WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb); });
             }
     );
     }
@@ -334,7 +334,7 @@ TEST_F(SchemaSyncTestFixture, InvalidSchemaChannel)
     auto b1 = hub.CreateBriefcase();
 
     Test(
-        "Empty schemaChannel",
+        "Empty schemaSyncDb",
         [&]()
             {
             const auto SCHEMA_HASH_ECDB_SCHEMA = "57df4675ccbce3493d2bb882ad3bb28f3266425c2f22fd55e57e187808b3add3";
@@ -342,47 +342,47 @@ TEST_F(SchemaSyncTestFixture, InvalidSchemaChannel)
             const auto SCHEMA_HASH_SQLITE_SCHEMA = "8608aab5fa8a874b3f9140451ab8410c785483a878c8d915f48a26ef20e8241c";
 
             // Saves changes locally only
-            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*b1, SchemaItem(schemaXMLBuilder()), SchemaManager::SchemaImportOptions::None, (SharedSchemaChannel::ChannelUri) ""));
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*b1, SchemaItem(schemaXMLBuilder()), SchemaManager::SchemaImportOptions::None, (SchemaSync::SyncDbUri) ""));
             CheckHashes(*b1, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA);
             ASSERT_EQ(BE_SQLITE_OK, b1->AbandonChanges());
             }
     );
 
     Test(
-        "Semicolon schemaChannel",
+        "Semicolon schemaSyncDb",
         [&]()
             {
-            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*b1, SchemaItem(schemaXMLBuilder()), SchemaManager::SchemaImportOptions::None, (SharedSchemaChannel::ChannelUri) ";"));
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*b1, SchemaItem(schemaXMLBuilder()), SchemaManager::SchemaImportOptions::None, (SchemaSync::SyncDbUri) ";"));
             CheckHashes(*b1);
             ASSERT_EQ(BE_SQLITE_OK, b1->AbandonChanges());
             }
     );
 
     Test(
-        "Space schemaChannel",
+        "Space schemaSyncDb",
         [&]()
             {
-            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*b1, SchemaItem(schemaXMLBuilder()), SchemaManager::SchemaImportOptions::None, (SharedSchemaChannel::ChannelUri) " "));
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*b1, SchemaItem(schemaXMLBuilder()), SchemaManager::SchemaImportOptions::None, (SchemaSync::SyncDbUri) " "));
             ASSERT_EQ(BE_SQLITE_OK, b1->AbandonChanges());
             CheckHashes(*b1);
             }
     );
 
     Test(
-        "Not a correct file extention schemaChannel",
+        "Not a correct file extention schemaSyncDb",
         [&]()
             {
-            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*b1, SchemaItem(schemaXMLBuilder()), SchemaManager::SchemaImportOptions::None, (SharedSchemaChannel::ChannelUri) "Z:\\Test\\Location\\fake-file.exe"));
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*b1, SchemaItem(schemaXMLBuilder()), SchemaManager::SchemaImportOptions::None, (SchemaSync::SyncDbUri) "Z:\\Test\\Location\\fake-file.exe"));
             ASSERT_EQ(BE_SQLITE_OK, b1->AbandonChanges());
             CheckHashes(*b1);
             }
     );
 
     Test(
-        "Not a filename schemaChannel",
+        "Not a filename schemaSyncDb",
         [&]()
             {
-            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*b1, SchemaItem(schemaXMLBuilder()), SchemaManager::SchemaImportOptions::None, (SharedSchemaChannel::ChannelUri) "fkj3lakjflakf90asfbnasghaklg3akglk4j;glkja;lkgj4;3lkgkanbkj4rtjak5;lkgjak4j3lktjalksdjg;lkj;lfj2qkj2qoipoa4tnb;"));
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*b1, SchemaItem(schemaXMLBuilder()), SchemaManager::SchemaImportOptions::None, (SchemaSync::SyncDbUri) "fkj3lakjflakf90asfbnasghaklg3akglk4j;glkja;lkgj4;3lkgkanbkj4rtjak5;lkgjak4j3lktjalksdjg;lkj;lfj2qkj2qoipoa4tnb;"));
             ASSERT_EQ(BE_SQLITE_OK, b1->AbandonChanges());
             CheckHashes(*b1);
             }
@@ -392,7 +392,7 @@ TEST_F(SchemaSyncTestFixture, InvalidSchemaChannel)
         "All illegal file characters",
         [&]()
             {
-            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*b1, SchemaItem(schemaXMLBuilder()), SchemaManager::SchemaImportOptions::None, (SharedSchemaChannel::ChannelUri) "# % & { } \\ < > * \? / $ ! \' \" : @ + ` | ="));
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*b1, SchemaItem(schemaXMLBuilder()), SchemaManager::SchemaImportOptions::None, (SchemaSync::SyncDbUri) "# % & { } \\ < > * \? / $ ! \' \" : @ + ` | ="));
             ASSERT_EQ(BE_SQLITE_OK, b1->AbandonChanges());
             CheckHashes(*b1);
             }
@@ -402,65 +402,65 @@ TEST_F(SchemaSyncTestFixture, InvalidSchemaChannel)
 // ---------------------------------------------------------------------------------------
 // @bsitest
 // +---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaSyncTestFixture, InvalidSchemaChannelWithInitializedSharedChannel)
+TEST_F(SchemaSyncTestFixture, InvalidSyncDbWithInitializedSchemaSync)
     {
     ECDbHub hub;
     auto b1 = hub.CreateBriefcase();
-    SharedSchemaDb schemaChannel("sync-db");
+    SchemaSyncDb schemaSyncDb("sync-db");
 
-    ASSERT_EQ(SharedSchemaChannel::Status::OK, b1->Schemas().GetSharedChannel().Init(schemaChannel.GetChannelUri()));
+    ASSERT_EQ(SchemaSync::Status::OK, b1->Schemas().GetSchemaSync().Init(schemaSyncDb.GetSyncDbUri()));
     b1->PullMergePush("init");
     b1->SaveChanges();
 
     Test(
-        "Initialized schema and empty schemaChannel",
+        "Initialized schema and empty schemaSyncDb",
         [&]()
             {
-            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*b1, SchemaItem(schemaXMLBuilder()), SchemaManager::SchemaImportOptions::None, (SharedSchemaChannel::ChannelUri) ""));
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*b1, SchemaItem(schemaXMLBuilder()), SchemaManager::SchemaImportOptions::None, (SchemaSync::SyncDbUri) ""));
             ASSERT_EQ(BE_SQLITE_OK, b1->AbandonChanges());
             CheckHashes(*b1);
-            schemaChannel.WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb); });
+            schemaSyncDb.WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb); });
             }
     );
 
     Test(
-        "Initialized schema and semicolon schemaChannel",
+        "Initialized schema and semicolon schemaSyncDb",
         [&]()
             {
-            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*b1, SchemaItem(schemaXMLBuilder()), SchemaManager::SchemaImportOptions::None, (SharedSchemaChannel::ChannelUri) ";"));
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*b1, SchemaItem(schemaXMLBuilder()), SchemaManager::SchemaImportOptions::None, (SchemaSync::SyncDbUri) ";"));
             ASSERT_EQ(BE_SQLITE_OK, b1->AbandonChanges());
             CheckHashes(*b1);
-            schemaChannel.WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb); });
+            schemaSyncDb.WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb); });
             }
     );
 
     Test(
-        "Initialized schema and space schemaChannel",
+        "Initialized schema and space schemaSyncDb",
         [&]()
             {
-            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*b1, SchemaItem(schemaXMLBuilder()), SchemaManager::SchemaImportOptions::None, (SharedSchemaChannel::ChannelUri) " "));
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*b1, SchemaItem(schemaXMLBuilder()), SchemaManager::SchemaImportOptions::None, (SchemaSync::SyncDbUri) " "));
             ASSERT_EQ(BE_SQLITE_OK, b1->AbandonChanges());
             CheckHashes(*b1);
-            schemaChannel.WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb); });
+            schemaSyncDb.WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb); });
             }
     );
 
     Test(
-        "Initialized schema and not a correct file extention schemaChannel",
+        "Initialized schema and not a correct file extention schemaSyncDb",
         [&]()
             {
             ASSERT_EQ(
                 SchemaImportResult::ERROR,
-                ImportSchema(*b1, SchemaItem(schemaXMLBuilder()), SchemaManager::SchemaImportOptions::None, (SharedSchemaChannel::ChannelUri) "Z:\\Test\\Location\\fake-file.exe")
+                ImportSchema(*b1, SchemaItem(schemaXMLBuilder()), SchemaManager::SchemaImportOptions::None, (SchemaSync::SyncDbUri) "Z:\\Test\\Location\\fake-file.exe")
             );
             ASSERT_EQ(BE_SQLITE_OK, b1->AbandonChanges());
             CheckHashes(*b1);
-            schemaChannel.WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb); });
+            schemaSyncDb.WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb); });
             }
     );
 
     Test(
-        "Initialized schema and not a filename schemaChannel",
+        "Initialized schema and not a filename schemaSyncDb",
         [&]()
             {
             ASSERT_EQ(
@@ -469,12 +469,12 @@ TEST_F(SchemaSyncTestFixture, InvalidSchemaChannelWithInitializedSharedChannel)
                     *b1,
                     SchemaItem(schemaXMLBuilder()),
                     SchemaManager::SchemaImportOptions::None,
-                    (SharedSchemaChannel::ChannelUri) "fkj3lakjflakf90asfbnasghaklg3akglk4j;glkja;lkgj4;3lkgkanbkj4rtjak5;lkgjak4j3lktjalksdjg;lkj;lfj2qkj2qoipoa4tnb;"
+                    (SchemaSync::SyncDbUri) "fkj3lakjflakf90asfbnasghaklg3akglk4j;glkja;lkgj4;3lkgkanbkj4rtjak5;lkgjak4j3lktjalksdjg;lkj;lfj2qkj2qoipoa4tnb;"
                 )
             );
             ASSERT_EQ(BE_SQLITE_OK, b1->AbandonChanges());
             CheckHashes(*b1);
-            schemaChannel.WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb); });
+            schemaSyncDb.WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb); });
             }
     );
 
@@ -488,12 +488,12 @@ TEST_F(SchemaSyncTestFixture, InvalidSchemaChannelWithInitializedSharedChannel)
                     *b1,
                     SchemaItem(schemaXMLBuilder()),
                     SchemaManager::SchemaImportOptions::None,
-                    (SharedSchemaChannel::ChannelUri) "# % & { } \\ < > * \? / $ ! \' \" : @ + ` | ="
+                    (SchemaSync::SyncDbUri) "# % & { } \\ < > * \? / $ ! \' \" : @ + ` | ="
                 )
             );
             ASSERT_EQ(BE_SQLITE_OK, b1->AbandonChanges());
             CheckHashes(*b1);
-            schemaChannel.WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb); });
+            schemaSyncDb.WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb); });
             }
     );
     }
@@ -504,21 +504,21 @@ TEST_F(SchemaSyncTestFixture, InvalidSchemaChannelWithInitializedSharedChannel)
 TEST_F(SchemaSyncTestFixture, PushSchemaToNewSchemaChannelWhenExistingSchemaChannelIsInitialized)
     {
     ECDbHub hub;
-    SharedSchemaDb schemaChannel("sync-db");
-    SharedSchemaChannel::ChannelUri emptyUri;
+    SchemaSyncDb schemaSyncDb("sync-db");
+    SchemaSync::SyncDbUri emptyUri;
     auto b1 = hub.CreateBriefcase();
 
-    ASSERT_EQ(SharedSchemaChannel::Status::OK, b1->Schemas().GetSharedChannel().Init(schemaChannel.GetChannelUri()));
+    ASSERT_EQ(SchemaSync::Status::OK, b1->Schemas().GetSchemaSync().Init(schemaSyncDb.GetSyncDbUri()));
     b1->PullMergePush("init");
     b1->SaveChanges();
 
     Test(
-        "Create and import schema with no schemaChannel",
+        "Create and import schema with no schemaSyncDb",
         [&]()
             {
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*b1, SchemaItem(schemaXMLBuilder()), SchemaManager::SchemaImportOptions::None, emptyUri));
             CheckHashes(*b1);
-            schemaChannel.WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb); });
+            schemaSyncDb.WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb); });
             ASSERT_EQ(BE_SQLITE_OK, b1->AbandonChanges());
             }
     );
@@ -567,11 +567,11 @@ TEST_F(SchemaSyncTestFixture, BriefcasePushesInvalidEmptyECSchema)
 TEST_F(SchemaSyncTestFixture, SecondBriefcasePushesSchema)
     {
     ECDbHub hub;
-    SharedSchemaDb schemaChannel("sync-db");
+    SchemaSyncDb schemaSyncDb("sync-db");
     auto b1 = hub.CreateBriefcase();
     auto b2 = hub.CreateBriefcase();
 
-    ASSERT_EQ(SharedSchemaChannel::Status::OK, b1->Schemas().GetSharedChannel().Init(schemaChannel.GetChannelUri())) << "Initialize schemaChannel from b1";
+    ASSERT_EQ(SchemaSync::Status::OK, b1->Schemas().GetSchemaSync().Init(schemaSyncDb.GetSyncDbUri())) << "Initialize schemaSyncDb from b1";
     b1->PullMergePush("init");
     b1->SaveChanges();
 
@@ -580,11 +580,11 @@ TEST_F(SchemaSyncTestFixture, SecondBriefcasePushesSchema)
     const auto SCHEMA1_HASH_SQLITE_SCHEMA = "8608aab5fa8a874b3f9140451ab8410c785483a878c8d915f48a26ef20e8241c";
 
     Test(
-        "Import changes from b2 to schemaChannel",
+        "Import changes from b2 to schemaSyncDb",
         [&]()
             {
-            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*b2, SchemaItem(schemaXMLBuilder()), SchemaManager::SchemaImportOptions::None, schemaChannel.GetChannelUri()));
-            schemaChannel.WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb); });
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*b2, SchemaItem(schemaXMLBuilder()), SchemaManager::SchemaImportOptions::None, schemaSyncDb.GetSyncDbUri()));
+            schemaSyncDb.WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb); });
             CheckHashes(*b1);
             CheckHashes(*b2);
             ASSERT_EQ(BE_SQLITE_OK, b2->AbandonChanges());
@@ -599,8 +599,8 @@ TEST_F(SchemaSyncTestFixture, SecondBriefcasePushesSchema)
             b2->SaveChanges();
             CheckHashes(*b2);
 
-            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*b2, SchemaItem(schemaXMLBuilder()), SchemaManager::SchemaImportOptions::None, schemaChannel.GetChannelUri()));
-            schemaChannel.WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*b2, SchemaItem(schemaXMLBuilder()), SchemaManager::SchemaImportOptions::None, schemaSyncDb.GetSyncDbUri()));
+            schemaSyncDb.WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
             CheckHashes(*b1);
             CheckHashes(*b2, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             }
@@ -611,8 +611,8 @@ TEST_F(SchemaSyncTestFixture, SecondBriefcasePushesSchema)
         [&]()
             {
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
-                schemaChannel.Pull(
+                SchemaSync::Status::OK,
+                schemaSyncDb.Pull(
                     *b1,
                     [&]() { CheckHashes(*b1, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA); }
                 )
@@ -4357,7 +4357,7 @@ TEST_F(SchemaSyncTestFixture, ModifyECClassModifierFromAbstract)
             auto newBriefcase = m_hub->CreateBriefcase();
 
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -4368,7 +4368,7 @@ TEST_F(SchemaSyncTestFixture, ModifyECClassModifierFromAbstract)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
@@ -4391,7 +4391,7 @@ TEST_F(SchemaSyncTestFixture, ModifyECClassModifierFromAbstract)
             auto newBriefcase = m_hub->CreateBriefcase();
 
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -4402,7 +4402,7 @@ TEST_F(SchemaSyncTestFixture, ModifyECClassModifierFromAbstract)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
@@ -4414,7 +4414,7 @@ TEST_F(SchemaSyncTestFixture, ModifyECClassModifierFromAbstract)
         [&]()
             {
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *m_briefcase,
                     [&]()
@@ -4598,7 +4598,7 @@ TEST_F(SchemaSyncTestFixture, DeleteProperty_OwnTable)
             auto newBriefcase = m_hub->CreateBriefcase();
 
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -4609,7 +4609,7 @@ TEST_F(SchemaSyncTestFixture, DeleteProperty_OwnTable)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
@@ -5087,7 +5087,7 @@ TEST_F(SchemaSyncTestFixture, AddDeleteVirtualColumns)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -5098,7 +5098,7 @@ TEST_F(SchemaSyncTestFixture, AddDeleteVirtualColumns)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
@@ -5172,7 +5172,7 @@ TEST_F(SchemaSyncTestFixture, DeleteOverriddenProperties)
             auto newBriefcase = m_hub->CreateBriefcase();
 
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -5183,7 +5183,7 @@ TEST_F(SchemaSyncTestFixture, DeleteOverriddenProperties)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
@@ -5256,7 +5256,7 @@ TEST_F(SchemaSyncTestFixture, UpdateCAProperties)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -5267,7 +5267,7 @@ TEST_F(SchemaSyncTestFixture, UpdateCAProperties)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
@@ -5279,7 +5279,7 @@ TEST_F(SchemaSyncTestFixture, UpdateCAProperties)
         [&]()
             {
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *m_briefcase,
                     [&]()
@@ -5386,7 +5386,7 @@ TEST_F(SchemaSyncTestFixture, AddNewEntityClass)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -5397,7 +5397,7 @@ TEST_F(SchemaSyncTestFixture, AddNewEntityClass)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
@@ -5409,7 +5409,7 @@ TEST_F(SchemaSyncTestFixture, AddNewEntityClass)
         [&]()
             {
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *m_briefcase,
                     [&]()
@@ -5512,7 +5512,7 @@ TEST_F(SchemaSyncTestFixture, AddNewSubClassForBaseWithTPH)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -5523,7 +5523,7 @@ TEST_F(SchemaSyncTestFixture, AddNewSubClassForBaseWithTPH)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
@@ -5558,7 +5558,7 @@ TEST_F(SchemaSyncTestFixture, AddNewSubClassForBaseWithTPH)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -5569,7 +5569,7 @@ TEST_F(SchemaSyncTestFixture, AddNewSubClassForBaseWithTPH)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP, SCHEMA3_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP); });
@@ -5653,7 +5653,7 @@ TEST_F(SchemaSyncTestFixture, AddNewClass_NewProperty_TPH_ShareColumns)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -5664,7 +5664,7 @@ TEST_F(SchemaSyncTestFixture, AddNewClass_NewProperty_TPH_ShareColumns)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
@@ -5814,7 +5814,7 @@ TEST_F(SchemaSyncTestFixture, VerifyMappingOfPropertiesToOverflowOnJoinedTable)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -5826,7 +5826,7 @@ TEST_F(SchemaSyncTestFixture, VerifyMappingOfPropertiesToOverflowOnJoinedTable)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             ASSERT_ECDB_SCHEMA_HASH  (*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA);
             ASSERT_ECDB_MAP_HASH     (*newBriefcase, SCHEMA2_HASH_ECDB_MAP);
@@ -5904,7 +5904,7 @@ TEST_F(SchemaSyncTestFixture, VerifyMappingOfPropertiesToOverflowOnJoinedTable)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -5918,7 +5918,7 @@ TEST_F(SchemaSyncTestFixture, VerifyMappingOfPropertiesToOverflowOnJoinedTable)
                         }
                 )
             );
-            ASSERT_EQ                (SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade, GetSharedChannelUri()));
+            ASSERT_EQ                (SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade, GetSyncDbUri()));
             ASSERT_EQ                (BE_SQLITE_OK, newBriefcase->SaveChanges());
             ASSERT_ECDB_SCHEMA_HASH  (*newBriefcase, SCHEMA3_HASH_ECDB_SCHEMA);
             ASSERT_ECDB_MAP_HASH     (*newBriefcase, SCHEMA3_HASH_ECDB_MAP);
@@ -5935,7 +5935,7 @@ TEST_F(SchemaSyncTestFixture, VerifyMappingOfPropertiesToOverflowOnJoinedTable)
         [&]()
             {
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *m_briefcase,
                     [&]()
@@ -6052,7 +6052,7 @@ TEST_F(SchemaSyncTestFixture, AddNewClassModifyAllExistingAttributes)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -6063,7 +6063,7 @@ TEST_F(SchemaSyncTestFixture, AddNewClassModifyAllExistingAttributes)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
@@ -6075,7 +6075,7 @@ TEST_F(SchemaSyncTestFixture, AddNewClassModifyAllExistingAttributes)
         [&]()
             {
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *m_briefcase,
                     [&]()
@@ -6202,7 +6202,7 @@ TEST_F(SchemaSyncTestFixture, AddNewECDbMapCANotSupported)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -6213,7 +6213,7 @@ TEST_F(SchemaSyncTestFixture, AddNewECDbMapCANotSupported)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
@@ -6287,7 +6287,7 @@ TEST_F(SchemaSyncTestFixture, AppendNewCA)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -6298,7 +6298,7 @@ TEST_F(SchemaSyncTestFixture, AppendNewCA)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
@@ -6310,7 +6310,7 @@ TEST_F(SchemaSyncTestFixture, AppendNewCA)
         [&]()
             {
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *m_briefcase,
                     [&]()
@@ -6420,7 +6420,7 @@ TEST_F(SchemaSyncTestFixture, AddNewCA)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -6432,7 +6432,7 @@ TEST_F(SchemaSyncTestFixture, AddNewCA)
                 )
             );
 
-            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
@@ -6444,7 +6444,7 @@ TEST_F(SchemaSyncTestFixture, AddNewCA)
         [&]()
             {
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *m_briefcase,
                     [&]()
@@ -6549,7 +6549,7 @@ TEST_F(SchemaSyncTestFixture, AddNewECProperty)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -6560,7 +6560,7 @@ TEST_F(SchemaSyncTestFixture, AddNewECProperty)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
@@ -6572,7 +6572,7 @@ TEST_F(SchemaSyncTestFixture, AddNewECProperty)
         [&]()
             {
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *m_briefcase,
                     [&]()
@@ -6681,7 +6681,7 @@ TEST_F(SchemaSyncTestFixture, DeleteOverridePropertyOutOfOrderAndThenAddAnewProp
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -6692,7 +6692,7 @@ TEST_F(SchemaSyncTestFixture, DeleteOverridePropertyOutOfOrderAndThenAddAnewProp
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
@@ -6729,7 +6729,7 @@ TEST_F(SchemaSyncTestFixture, DeleteOverridePropertyOutOfOrderAndThenAddAnewProp
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -6741,7 +6741,7 @@ TEST_F(SchemaSyncTestFixture, DeleteOverridePropertyOutOfOrderAndThenAddAnewProp
                 )
             );
             //This cause unique index error in ec_Property(id, classId, ordinal) before fix
-            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP); });
@@ -8020,7 +8020,7 @@ TEST_F(SchemaSyncTestFixture, Add_Delete_ECProperty_ShareColumns)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -8031,7 +8031,7 @@ TEST_F(SchemaSyncTestFixture, Add_Delete_ECProperty_ShareColumns)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
@@ -8043,7 +8043,7 @@ TEST_F(SchemaSyncTestFixture, Add_Delete_ECProperty_ShareColumns)
         [&]()
             {
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *m_briefcase,
                     [&]()
@@ -8117,7 +8117,7 @@ TEST_F(SchemaSyncTestFixture, AddNewPropertyModifyAllExistingAttributes)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -8128,7 +8128,7 @@ TEST_F(SchemaSyncTestFixture, AddNewPropertyModifyAllExistingAttributes)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
@@ -8140,7 +8140,7 @@ TEST_F(SchemaSyncTestFixture, AddNewPropertyModifyAllExistingAttributes)
         [&]()
             {
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *m_briefcase,
                     [&]()
@@ -8268,7 +8268,7 @@ TEST_F(SchemaSyncTestFixture, AddNewCAOnProperty)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -8279,7 +8279,7 @@ TEST_F(SchemaSyncTestFixture, AddNewCAOnProperty)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
@@ -8291,7 +8291,7 @@ TEST_F(SchemaSyncTestFixture, AddNewCAOnProperty)
         [&]()
             {
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *m_briefcase,
                     [&]()
@@ -8426,7 +8426,7 @@ TEST_F(SchemaSyncTestFixture, UpdateECDbMapCA_AddMaxSharedColumnsBeforeOverflow)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -8437,7 +8437,7 @@ TEST_F(SchemaSyncTestFixture, UpdateECDbMapCA_AddMaxSharedColumnsBeforeOverflow)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
@@ -8523,7 +8523,7 @@ TEST_F(SchemaSyncTestFixture, MaxSharedColumnsBeforeOverflowForSubClasses_AddPro
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -8534,7 +8534,7 @@ TEST_F(SchemaSyncTestFixture, MaxSharedColumnsBeforeOverflowForSubClasses_AddPro
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
@@ -8546,7 +8546,7 @@ TEST_F(SchemaSyncTestFixture, MaxSharedColumnsBeforeOverflowForSubClasses_AddPro
         [&]()
             {
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *m_briefcase,
                     [&]()
@@ -8657,7 +8657,7 @@ TEST_F(SchemaSyncTestFixture, MaxSharedColumnsBeforeOverflowWithJoinedTable_AddP
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -8671,7 +8671,7 @@ TEST_F(SchemaSyncTestFixture, MaxSharedColumnsBeforeOverflowWithJoinedTable_AddP
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             // CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
             ASSERT_ECDB_SCHEMA_HASH  (*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA);
@@ -8690,7 +8690,7 @@ TEST_F(SchemaSyncTestFixture, MaxSharedColumnsBeforeOverflowWithJoinedTable_AddP
         [&]()
             {
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *m_briefcase,
                     [&]()
@@ -8783,7 +8783,7 @@ TEST_F(SchemaSyncTestFixture, ImportMultipleSchemaVersions_AddNewProperty)
                 </ECSchema>)xml"
             );
 
-            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*m_briefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*m_briefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
@@ -9061,7 +9061,7 @@ TEST_F(SchemaSyncTestFixture, Delete_ECDbMapCANotSupported)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -9072,7 +9072,7 @@ TEST_F(SchemaSyncTestFixture, Delete_ECDbMapCANotSupported)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
@@ -9084,7 +9084,7 @@ TEST_F(SchemaSyncTestFixture, Delete_ECDbMapCANotSupported)
         [&]()
             {
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *m_briefcase,
                     [&]()
@@ -10901,7 +10901,7 @@ TEST_F(SchemaSyncTestFixture, DeleteSubclassOfRelationshipConstraintConstraint)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -10912,7 +10912,7 @@ TEST_F(SchemaSyncTestFixture, DeleteSubclassOfRelationshipConstraintConstraint)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
@@ -10924,7 +10924,7 @@ TEST_F(SchemaSyncTestFixture, DeleteSubclassOfRelationshipConstraintConstraint)
         [&]()
             {
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *m_briefcase,
                     [&]()
@@ -11064,7 +11064,7 @@ TEST_F(SchemaSyncTestFixture, DeleteConcreteImplementationOfAbstractConstraintCl
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -11075,7 +11075,7 @@ TEST_F(SchemaSyncTestFixture, DeleteConcreteImplementationOfAbstractConstraintCl
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
@@ -11087,7 +11087,7 @@ TEST_F(SchemaSyncTestFixture, DeleteConcreteImplementationOfAbstractConstraintCl
         [&]()
             {
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *m_briefcase,
                     [&]()
@@ -11180,7 +11180,7 @@ TEST_F(SchemaSyncTestFixture, DeleteECRelationships)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -11191,7 +11191,7 @@ TEST_F(SchemaSyncTestFixture, DeleteECRelationships)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
@@ -11225,7 +11225,7 @@ TEST_F(SchemaSyncTestFixture, DeleteECRelationships)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -11237,7 +11237,7 @@ TEST_F(SchemaSyncTestFixture, DeleteECRelationships)
                 )
             );
             ScopedDisableFailOnAssertion disableFailOnAssertion;
-            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
@@ -11249,7 +11249,7 @@ TEST_F(SchemaSyncTestFixture, DeleteECRelationships)
         [&]()
             {
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *m_briefcase,
                     [&]()
@@ -11424,7 +11424,7 @@ TEST_F(SchemaSyncTestFixture, UpdateECDbMapCA_DbIndexChanges)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -11435,7 +11435,7 @@ TEST_F(SchemaSyncTestFixture, UpdateECDbMapCA_DbIndexChanges)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
@@ -11474,7 +11474,7 @@ TEST_F(SchemaSyncTestFixture, UpdateECDbMapCA_DbIndexChanges)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -11485,7 +11485,7 @@ TEST_F(SchemaSyncTestFixture, UpdateECDbMapCA_DbIndexChanges)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
@@ -11844,7 +11844,7 @@ TEST_F(SchemaSyncTestFixture, Add_Class_NavigationProperty_RelationshipClass)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -11855,7 +11855,7 @@ TEST_F(SchemaSyncTestFixture, Add_Class_NavigationProperty_RelationshipClass)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
@@ -11867,7 +11867,7 @@ TEST_F(SchemaSyncTestFixture, Add_Class_NavigationProperty_RelationshipClass)
         [&]()
             {
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *m_briefcase,
                     [&]()
@@ -13812,7 +13812,7 @@ TEST_F(SchemaSyncTestFixture, ModifyECProperties)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -13823,7 +13823,7 @@ TEST_F(SchemaSyncTestFixture, ModifyECProperties)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
@@ -13852,7 +13852,7 @@ TEST_F(SchemaSyncTestFixture, ModifyECProperties)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -13863,7 +13863,7 @@ TEST_F(SchemaSyncTestFixture, ModifyECProperties)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
@@ -13892,7 +13892,7 @@ TEST_F(SchemaSyncTestFixture, ModifyECProperties)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -13903,7 +13903,7 @@ TEST_F(SchemaSyncTestFixture, ModifyECProperties)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
@@ -13932,7 +13932,7 @@ TEST_F(SchemaSyncTestFixture, ModifyECProperties)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -13943,7 +13943,7 @@ TEST_F(SchemaSyncTestFixture, ModifyECProperties)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
@@ -13972,7 +13972,7 @@ TEST_F(SchemaSyncTestFixture, ModifyECProperties)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -13983,7 +13983,7 @@ TEST_F(SchemaSyncTestFixture, ModifyECProperties)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
@@ -14012,7 +14012,7 @@ TEST_F(SchemaSyncTestFixture, ModifyECProperties)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -14023,7 +14023,7 @@ TEST_F(SchemaSyncTestFixture, ModifyECProperties)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
@@ -14052,7 +14052,7 @@ TEST_F(SchemaSyncTestFixture, ModifyECProperties)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -14063,7 +14063,7 @@ TEST_F(SchemaSyncTestFixture, ModifyECProperties)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
@@ -14095,7 +14095,7 @@ TEST_F(SchemaSyncTestFixture, ModifyECProperties)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -14106,7 +14106,7 @@ TEST_F(SchemaSyncTestFixture, ModifyECProperties)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
@@ -14118,7 +14118,7 @@ TEST_F(SchemaSyncTestFixture, ModifyECProperties)
         [&]()
             {
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *m_briefcase,
                     [&]()
@@ -14735,7 +14735,7 @@ TEST_F(SchemaSyncTestFixture, ModifyCustomAttributePropertyValues)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -14746,7 +14746,7 @@ TEST_F(SchemaSyncTestFixture, ModifyCustomAttributePropertyValues)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
@@ -14758,7 +14758,7 @@ TEST_F(SchemaSyncTestFixture, ModifyCustomAttributePropertyValues)
         [&]()
             {
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *m_briefcase,
                     [&]()
@@ -15016,7 +15016,7 @@ TEST_F(SchemaSyncTestFixture, DeleteECCustomAttributeClass_Simple)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -15027,7 +15027,7 @@ TEST_F(SchemaSyncTestFixture, DeleteECCustomAttributeClass_Simple)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
@@ -15039,7 +15039,7 @@ TEST_F(SchemaSyncTestFixture, DeleteECCustomAttributeClass_Simple)
         [&]()
             {
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *m_briefcase,
                     [&]()
@@ -15406,7 +15406,7 @@ TEST_F(SchemaSyncTestFixture, DeleteCAInstanceWithoutProperty)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -15417,7 +15417,7 @@ TEST_F(SchemaSyncTestFixture, DeleteCAInstanceWithoutProperty)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
@@ -15430,7 +15430,7 @@ TEST_F(SchemaSyncTestFixture, DeleteCAInstanceWithoutProperty)
         [&]()
             {
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *m_briefcase,
                     [&]()
@@ -15509,7 +15509,7 @@ TEST_F(SchemaSyncTestFixture, AddKoQAndUpdatePropertiesWithKoQ)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -15520,7 +15520,7 @@ TEST_F(SchemaSyncTestFixture, AddKoQAndUpdatePropertiesWithKoQ)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
@@ -15532,7 +15532,7 @@ TEST_F(SchemaSyncTestFixture, AddKoQAndUpdatePropertiesWithKoQ)
         [&]()
             {
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *m_briefcase,
                     [&]()
@@ -15614,7 +15614,7 @@ TEST_F(SchemaSyncTestFixture, ModifyPropertyType_PrimitiveToNonStrictEnum)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -15625,7 +15625,7 @@ TEST_F(SchemaSyncTestFixture, ModifyPropertyType_PrimitiveToNonStrictEnum)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
@@ -15637,7 +15637,7 @@ TEST_F(SchemaSyncTestFixture, ModifyPropertyType_PrimitiveToNonStrictEnum)
         [&]()
             {
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *m_briefcase,
                     [&]()
@@ -15707,7 +15707,7 @@ TEST_F(SchemaSyncTestFixture, ModifyPropertyType_PrimitiveToStrictEnum)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -15718,7 +15718,7 @@ TEST_F(SchemaSyncTestFixture, ModifyPropertyType_PrimitiveToStrictEnum)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
@@ -15730,7 +15730,7 @@ TEST_F(SchemaSyncTestFixture, ModifyPropertyType_PrimitiveToStrictEnum)
         [&]()
             {
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *m_briefcase,
                     [&]()
@@ -15798,7 +15798,7 @@ TEST_F(SchemaSyncTestFixture, ReplaceKindOfQuantityWithSamePersistenceUnit)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -15809,7 +15809,7 @@ TEST_F(SchemaSyncTestFixture, ReplaceKindOfQuantityWithSamePersistenceUnit)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
@@ -15821,7 +15821,7 @@ TEST_F(SchemaSyncTestFixture, ReplaceKindOfQuantityWithSamePersistenceUnit)
         [&]()
             {
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *m_briefcase,
                     [&]()
@@ -15898,7 +15898,7 @@ TEST_F(SchemaSyncTestFixture, ReplaceKindOfQuantityWithDifferentPersistenceUnit)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -15909,7 +15909,7 @@ TEST_F(SchemaSyncTestFixture, ReplaceKindOfQuantityWithDifferentPersistenceUnit)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
@@ -15946,7 +15946,7 @@ TEST_F(SchemaSyncTestFixture, ReplaceKindOfQuantityWithDifferentPersistenceUnit)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -15957,7 +15957,7 @@ TEST_F(SchemaSyncTestFixture, ReplaceKindOfQuantityWithDifferentPersistenceUnit)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
@@ -15995,7 +15995,7 @@ TEST_F(SchemaSyncTestFixture, ReplaceKindOfQuantityWithDifferentPersistenceUnit)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -16006,7 +16006,7 @@ TEST_F(SchemaSyncTestFixture, ReplaceKindOfQuantityWithDifferentPersistenceUnit)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
@@ -16042,7 +16042,7 @@ TEST_F(SchemaSyncTestFixture, ReplaceKindOfQuantityWithDifferentPersistenceUnit)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -16053,7 +16053,7 @@ TEST_F(SchemaSyncTestFixture, ReplaceKindOfQuantityWithDifferentPersistenceUnit)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
@@ -16093,7 +16093,7 @@ TEST_F(SchemaSyncTestFixture, ReplaceKindOfQuantityWithDifferentPersistenceUnit)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -16104,7 +16104,7 @@ TEST_F(SchemaSyncTestFixture, ReplaceKindOfQuantityWithDifferentPersistenceUnit)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
@@ -16116,7 +16116,7 @@ TEST_F(SchemaSyncTestFixture, ReplaceKindOfQuantityWithDifferentPersistenceUnit)
         [&]()
             {
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *m_briefcase,
                     [&]()
@@ -16177,7 +16177,7 @@ TEST_F(SchemaSyncTestFixture, DeleteKindOfQuantityFromECSchema)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -16188,7 +16188,7 @@ TEST_F(SchemaSyncTestFixture, DeleteKindOfQuantityFromECSchema)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
@@ -16200,7 +16200,7 @@ TEST_F(SchemaSyncTestFixture, DeleteKindOfQuantityFromECSchema)
         [&]()
             {
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *m_briefcase,
                     [&]()
@@ -16275,7 +16275,7 @@ TEST_F(SchemaSyncTestFixture, ModifyECArrayProperty_KOQToKOQ)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -16286,7 +16286,7 @@ TEST_F(SchemaSyncTestFixture, ModifyECArrayProperty_KOQToKOQ)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
@@ -16298,7 +16298,7 @@ TEST_F(SchemaSyncTestFixture, ModifyECArrayProperty_KOQToKOQ)
         [&]()
             {
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *m_briefcase,
                     [&]()
@@ -16351,7 +16351,7 @@ TEST_F(SchemaSyncTestFixture, ModifyECArrayProperty_KOQToKOQ)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -16362,7 +16362,7 @@ TEST_F(SchemaSyncTestFixture, ModifyECArrayProperty_KOQToKOQ)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
@@ -16431,7 +16431,7 @@ TEST_F(SchemaSyncTestFixture, RemoveKindOfQuantityFromECArrayProperty)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -16442,7 +16442,7 @@ TEST_F(SchemaSyncTestFixture, RemoveKindOfQuantityFromECArrayProperty)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
@@ -16454,7 +16454,7 @@ TEST_F(SchemaSyncTestFixture, RemoveKindOfQuantityFromECArrayProperty)
         [&]()
             {
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *m_briefcase,
                     [&]()
@@ -16530,7 +16530,7 @@ TEST_F(SchemaSyncTestFixture, RemoveKindOfQuantityFromECProperty)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -16541,7 +16541,7 @@ TEST_F(SchemaSyncTestFixture, RemoveKindOfQuantityFromECProperty)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
@@ -16553,7 +16553,7 @@ TEST_F(SchemaSyncTestFixture, RemoveKindOfQuantityFromECProperty)
         [&]()
             {
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *m_briefcase,
                     [&]()
@@ -16639,7 +16639,7 @@ TEST_F(SchemaSyncTestFixture, RemoveKindOfQuantityFromECPropertyUsingCA)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -16650,7 +16650,7 @@ TEST_F(SchemaSyncTestFixture, RemoveKindOfQuantityFromECPropertyUsingCA)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
@@ -16682,7 +16682,7 @@ TEST_F(SchemaSyncTestFixture, RemoveKindOfQuantityFromECPropertyUsingCA)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -16693,7 +16693,7 @@ TEST_F(SchemaSyncTestFixture, RemoveKindOfQuantityFromECPropertyUsingCA)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
@@ -16727,7 +16727,7 @@ TEST_F(SchemaSyncTestFixture, RemoveKindOfQuantityFromECPropertyUsingCA)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -16738,7 +16738,7 @@ TEST_F(SchemaSyncTestFixture, RemoveKindOfQuantityFromECPropertyUsingCA)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
@@ -16774,7 +16774,7 @@ TEST_F(SchemaSyncTestFixture, RemoveKindOfQuantityFromECPropertyUsingCA)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -16785,7 +16785,7 @@ TEST_F(SchemaSyncTestFixture, RemoveKindOfQuantityFromECPropertyUsingCA)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
@@ -16797,7 +16797,7 @@ TEST_F(SchemaSyncTestFixture, RemoveKindOfQuantityFromECPropertyUsingCA)
         [&]()
             {
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *m_briefcase,
                     [&]()
@@ -17234,7 +17234,7 @@ TEST_F(SchemaSyncTestFixture, ModifyPropertyType_PrimitiveToPrimitive)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -17245,7 +17245,7 @@ TEST_F(SchemaSyncTestFixture, ModifyPropertyType_PrimitiveToPrimitive)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
@@ -17257,7 +17257,7 @@ TEST_F(SchemaSyncTestFixture, ModifyPropertyType_PrimitiveToPrimitive)
         [&]()
             {
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *m_briefcase,
                     [&]()
@@ -17322,7 +17322,7 @@ TEST_F(SchemaSyncTestFixture, ModifyPropertyType_EnumToPrimitive)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -17333,7 +17333,7 @@ TEST_F(SchemaSyncTestFixture, ModifyPropertyType_EnumToPrimitive)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
@@ -17345,7 +17345,7 @@ TEST_F(SchemaSyncTestFixture, ModifyPropertyType_EnumToPrimitive)
         [&]()
             {
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *m_briefcase,
                     [&]()
@@ -17433,7 +17433,7 @@ TEST_F(SchemaSyncTestFixture, ModifyPropertyType_EnumToEnum)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -17444,7 +17444,7 @@ TEST_F(SchemaSyncTestFixture, ModifyPropertyType_EnumToEnum)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
@@ -17456,7 +17456,7 @@ TEST_F(SchemaSyncTestFixture, ModifyPropertyType_EnumToEnum)
         [&]()
             {
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *m_briefcase,
                     [&]()
@@ -17539,7 +17539,7 @@ TEST_F(SchemaSyncTestFixture, ModifyPropertyTypeString_EnumToPrimitive)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -17550,7 +17550,7 @@ TEST_F(SchemaSyncTestFixture, ModifyPropertyTypeString_EnumToPrimitive)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
@@ -17562,7 +17562,7 @@ TEST_F(SchemaSyncTestFixture, ModifyPropertyTypeString_EnumToPrimitive)
         [&]()
             {
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *m_briefcase,
                     [&]()
@@ -17632,7 +17632,7 @@ TEST_F(SchemaSyncTestFixture, ModifyPropertyTypeString_PrimitiveToUnStrictEnum)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -17643,7 +17643,7 @@ TEST_F(SchemaSyncTestFixture, ModifyPropertyTypeString_PrimitiveToUnStrictEnum)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
@@ -17655,7 +17655,7 @@ TEST_F(SchemaSyncTestFixture, ModifyPropertyTypeString_PrimitiveToUnStrictEnum)
         [&]()
             {
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *m_briefcase,
                     [&]()
@@ -17727,7 +17727,7 @@ TEST_F(SchemaSyncTestFixture, ModifyEnumType_IntToString)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -17738,7 +17738,7 @@ TEST_F(SchemaSyncTestFixture, ModifyEnumType_IntToString)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
@@ -17750,7 +17750,7 @@ TEST_F(SchemaSyncTestFixture, ModifyEnumType_IntToString)
         [&]()
             {
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *m_briefcase,
                     [&]()
@@ -17810,7 +17810,7 @@ TEST_F(SchemaSyncTestFixture, RemoveExistingEnum)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -17821,7 +17821,7 @@ TEST_F(SchemaSyncTestFixture, RemoveExistingEnum)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
@@ -17833,7 +17833,7 @@ TEST_F(SchemaSyncTestFixture, RemoveExistingEnum)
         [&]()
             {
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *m_briefcase,
                     [&]()
@@ -17916,7 +17916,7 @@ TEST_F(SchemaSyncTestFixture, AddNewRelationship)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -17927,7 +17927,7 @@ TEST_F(SchemaSyncTestFixture, AddNewRelationship)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
@@ -17939,7 +17939,7 @@ TEST_F(SchemaSyncTestFixture, AddNewRelationship)
         [&]()
             {
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *m_briefcase,
                     [&]()
@@ -18005,7 +18005,7 @@ TEST_F(SchemaSyncTestFixture, AddNewRelationship)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -18016,7 +18016,7 @@ TEST_F(SchemaSyncTestFixture, AddNewRelationship)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP, SCHEMA3_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA3_HASH_ECDB_SCHEMA, SCHEMA3_HASH_ECDB_MAP); });
@@ -18028,7 +18028,7 @@ TEST_F(SchemaSyncTestFixture, AddNewRelationship)
         [&]()
             {
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *m_briefcase,
                     [&]()
@@ -18146,7 +18146,7 @@ TEST_F(SchemaSyncTestFixture, AddNewDerivedEndTableRelationship)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -18157,7 +18157,7 @@ TEST_F(SchemaSyncTestFixture, AddNewDerivedEndTableRelationship)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
@@ -18169,7 +18169,7 @@ TEST_F(SchemaSyncTestFixture, AddNewDerivedEndTableRelationship)
         [&]()
             {
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *m_briefcase,
                     [&]()
@@ -18457,7 +18457,7 @@ TEST_F(SchemaSyncTestFixture, AddNewDerivedLinkTableRelationship)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -18468,7 +18468,7 @@ TEST_F(SchemaSyncTestFixture, AddNewDerivedLinkTableRelationship)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
@@ -18480,7 +18480,7 @@ TEST_F(SchemaSyncTestFixture, AddNewDerivedLinkTableRelationship)
         [&]()
             {
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *m_briefcase,
                     [&]()
@@ -18681,7 +18681,7 @@ TEST_F(SchemaSyncTestFixture, AddMaxSharedColumnsBeforeOverflow)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -18692,7 +18692,7 @@ TEST_F(SchemaSyncTestFixture, AddMaxSharedColumnsBeforeOverflow)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
@@ -18704,7 +18704,7 @@ TEST_F(SchemaSyncTestFixture, AddMaxSharedColumnsBeforeOverflow)
         [&]()
             {
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *m_briefcase,
                     [&]()
@@ -18794,7 +18794,7 @@ TEST_F(SchemaSyncTestFixture, DeleteMaxSharedColumnsBeforeOverflow)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -18805,7 +18805,7 @@ TEST_F(SchemaSyncTestFixture, DeleteMaxSharedColumnsBeforeOverflow)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->AbandonChanges());
             CheckHashes(*newBriefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
@@ -18817,7 +18817,7 @@ TEST_F(SchemaSyncTestFixture, DeleteMaxSharedColumnsBeforeOverflow)
         [&]()
             {
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *m_briefcase,
                     [&]()
@@ -20031,7 +20031,7 @@ TEST_F(SchemaSyncTestFixture, PropertyCategoryOverwriteDeleteReferencedFails)
         "deleting category and removing referencing properties should succeed",
         [&]()
             {
-            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchemas(*m_briefcase, schemas, SchemaManager::SchemaImportOptions::None, m_schemaChannel->GetChannelUri()));
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchemas(*m_briefcase, schemas, SchemaManager::SchemaImportOptions::None, m_schemaChannel->GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
@@ -22093,7 +22093,7 @@ TEST_F(SchemaSyncTestFixture, UpdateClass_AddStructProperty)
 
             auto newBriefcase = m_hub->CreateBriefcase();
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *newBriefcase,
                     [&]()
@@ -22104,7 +22104,7 @@ TEST_F(SchemaSyncTestFixture, UpdateClass_AddStructProperty)
                         }
                 )
             );
-            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSharedChannelUri()));
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*newBriefcase, schema, SchemaManager::SchemaImportOptions::None, GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, newBriefcase->SaveChanges());
             CheckHashes(*newBriefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
@@ -22116,7 +22116,7 @@ TEST_F(SchemaSyncTestFixture, UpdateClass_AddStructProperty)
         [&]()
             {
             ASSERT_EQ(
-                SharedSchemaChannel::Status::OK,
+                SchemaSync::Status::OK,
                 m_schemaChannel->Pull(
                     *m_briefcase,
                     [&]()
@@ -23148,7 +23148,7 @@ TEST_F(SchemaSyncTestFixture, UpdateReferencesFromDifferentContext)
             const auto SCHEMA_HASH_ECDB_SCHEMA = "cc65bd9568f94ed2e0b246272e0ade4e1347aefd1cf4ea2f5448e2a95b7279ce";
             const auto SCHEMA_HASH_ECDB_MAP = "50e8780fda26200b3f97e18a48265eaf1e01c3850f783599dac578eefeacf1b9";
             const auto SCHEMA_HASH_SQLITE_SCHEMA = "cd4463b1058dc63446a6aab613ec85ed6364d441fb98e2526ffab5914a84d726";
-            ASSERT_EQ(SchemaImportResult::OK, m_briefcase->Schemas().ImportSchemas(ctx->GetCache().GetSchemas(), SchemaManager::SchemaImportOptions::None, nullptr, m_schemaChannel->GetChannelUri()));
+            ASSERT_EQ(SchemaImportResult::OK, m_briefcase->Schemas().ImportSchemas(ctx->GetCache().GetSchemas(), SchemaManager::SchemaImportOptions::None, nullptr, m_schemaChannel->GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
@@ -23186,7 +23186,7 @@ TEST_F(SchemaSyncTestFixture, UpdateReferencesFromDifferentContext)
             const auto SCHEMA_HASH_ECDB_SCHEMA = "3efbfdedc865b69a0f69deecc5d96edb811a98a2ff98773703d0eaf4cd4bc4da";
             const auto SCHEMA_HASH_ECDB_MAP = "16cf0552a8bdaec4c6d759dd89b4c40de262969f4d0b905248f81a1ef7aa87b4";
             const auto SCHEMA_HASH_SQLITE_SCHEMA = "ff0d88d2b854d847016398b4a1740f41963695c4403f5af75c679a6aba3b8060";
-            ASSERT_EQ(SchemaImportResult::OK, m_briefcase->Schemas().ImportSchemas(ctx->GetCache().GetSchemas(), SchemaManager::SchemaImportOptions::None, nullptr, m_schemaChannel->GetChannelUri())) << "This should fail";
+            ASSERT_EQ(SchemaImportResult::OK, m_briefcase->Schemas().ImportSchemas(ctx->GetCache().GetSchemas(), SchemaManager::SchemaImportOptions::None, nullptr, m_schemaChannel->GetSyncDbUri())) << "This should fail";
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
             CheckHashes(*m_briefcase, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP); });
@@ -24496,7 +24496,7 @@ TEST_F(SchemaSyncTestFixture, FailMixinRelationshipConstraintMultiFileVersioning
                     </ECSchema>)xml"
                 )
             };
-            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchemas(*m_briefcase, schemas, SchemaManager::SchemaImportOptions::None, m_schemaChannel->GetChannelUri()));
+            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchemas(*m_briefcase, schemas, SchemaManager::SchemaImportOptions::None, m_schemaChannel->GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
             CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
             m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });

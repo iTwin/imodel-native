@@ -269,8 +269,8 @@ DbResult DgnDb::InitializeSchemas(Db::OpenParams const& params)
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-DgnDb::PullResult DgnDb::PullSchemaChanges(ChannelUri uri) {
-    return Schemas().GetSharedChannel().Pull(uri, GetSchemaImportToken());
+DgnDb::PullResult DgnDb::PullSchemaChanges(SyncDbUri uri) {
+    return Schemas().GetSchemaSync().Pull(uri, GetSchemaImportToken());
 }
 
 //--------------------------------------------------------------------------------------

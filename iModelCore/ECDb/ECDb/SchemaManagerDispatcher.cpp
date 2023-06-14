@@ -890,7 +890,10 @@ DropSchemaResult MainSchemaManager::DropSchema(Utf8StringCR name, SchemaImportTo
         LOG.error("Failed to drop ECSchema: Caller has not provided a SchemaImportToken.");
         return DropSchemaResult(DropSchemaResult::Status::Error);
     }
-
+    // if (!GetSchemaSync().GetInfo().IsEmpty()) {
+    //     m_ecdb.GetImpl().Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to drop ECSchema. ECDb is configured to use Schema Sync which does not support drop schema.");
+    //     return DropSchemaResult(DropSchemaResult::Status::Error);
+    // }
     if (m_ecdb.IsReadonly()) {
         m_ecdb.GetImpl().Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to drop ECSchema. ECDb file is read-only.");
         return DropSchemaResult(DropSchemaResult::Status::Error);
@@ -944,13 +947,13 @@ DropSchemaResult MainSchemaManager::DropSchema(Utf8StringCR name, SchemaImportTo
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-SchemaImportResult MainSchemaManager::ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, SchemaManager::SchemaImportOptions options, SchemaImportToken const* token, SharedSchemaChannel::ChannelUri sharedChannel) const
+SchemaImportResult MainSchemaManager::ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, SchemaManager::SchemaImportOptions options, SchemaImportToken const* token, SchemaSync::SyncDbUri schemaSync) const
     {
     ECDB_PERF_LOG_SCOPE("Schema import");
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SchemaManager::ImportSchemas");
     OnBeforeSchemaChanges().RaiseEvent(m_ecdb, SchemaChangeType::SchemaImport);
     SchemaImportContext ctx(m_ecdb, options);
-    const SchemaImportResult stat = ImportSchemas(ctx, schemas, token, sharedChannel);
+    const SchemaImportResult stat = ImportSchemas(ctx, schemas, token, schemaSync);
     ResetIds(schemas);
     m_ecdb.ClearECDbCache();
     OnAfterSchemaChanges().RaiseEvent(m_ecdb, SchemaChangeType::SchemaImport);
@@ -1005,7 +1008,7 @@ void DumpSchemasToFile(BeFileName const& parentDirectory, bvector<ECSchemaCP> co
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bvector<ECSchemaCP> const& schemas, SchemaImportToken const* schemaImportToken, SharedSchemaChannel::ChannelUri channelUri) const
+SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bvector<ECSchemaCP> const& schemas, SchemaImportToken const* schemaImportToken, SchemaSync::SyncDbUri syncDbUri) const
     {
     #if defined(ALLOW_ECDB_SCHEMAIMPORT_DUMP)
     /*
@@ -1052,40 +1055,40 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
         return SchemaImportResult::ERROR;
         }
 
-    auto& sharedChannel = m_ecdb.Schemas().GetSharedChannel();
-    auto resolvedChannelUri = channelUri.IsEmpty() ? sharedChannel.GetDefaultChannelUri() : channelUri;
-    const auto localChannelInfo = sharedChannel.GetInfo();
-    
-    if (localChannelInfo.IsEmpty() && !resolvedChannelUri.IsEmpty())
+    auto& schemaSync = m_ecdb.Schemas().GetSchemaSync();
+    auto resolvedSyncDbUri = syncDbUri.IsEmpty() ? schemaSync.GetDefaultSyncDbUri() : syncDbUri;
+    const auto localDbInfo = schemaSync.GetInfo();
+
+    if (localDbInfo.IsEmpty() && !resolvedSyncDbUri.IsEmpty())
         {
         m_ecdb.GetImpl().Issues().ReportV(
-            IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue,
-            "Failed to import ECSchemas. Cannot import schemas into a file which is not setup to use shared schema channel but shared channel was provided. Channel-Id: {%s}, uri: {%s}.",
-            localChannelInfo.GetChannelId().ToString().c_str(),
-            resolvedChannelUri.GetUri().c_str()
+            IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue,
+            "Failed to import ECSchemas. Cannot import schemas into a file which is not setup to use schema sync but sync db uri was not provided. Sync-Id: {%s}, uri: {%s}.",
+            localDbInfo.GetSyncId().ToString().c_str(),
+            resolvedSyncDbUri.GetUri().c_str()
         );
         return SchemaImportResult::ERROR;
         }
 
-    if (!localChannelInfo.IsEmpty())
+    if (!localDbInfo.IsEmpty())
         {
-        if (resolvedChannelUri.IsEmpty())
+        if (resolvedSyncDbUri.IsEmpty())
             {
             m_ecdb.GetImpl().Issues().ReportV(
-                IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue,
-                "Failed to import ECSchemas. Cannot import schemas into a file which is setup to use shared schema channel but not shared channel was provided. Channel-Id: {%s}.",
-                localChannelInfo.GetChannelId().ToString().c_str()
+                IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue,
+                "Failed to import ECSchemas. Cannot import schemas into a file which is setup to use schema sync but sync db uir was not provided. Sync-Id: {%s}.",
+                localDbInfo.GetSyncId().ToString().c_str()
             );
             return SchemaImportResult::ERROR;
             }
 
-        if (sharedChannel.Pull(resolvedChannelUri, schemaImportToken) != SharedSchemaChannel::Status::OK)
+        if (schemaSync.Pull(resolvedSyncDbUri, schemaImportToken) != SchemaSync::Status::OK)
             {
             m_ecdb.GetImpl().Issues().ReportV(
-                IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue,
-                "Failed to import ECSchemas. Unable to pull changes from Channel-Id: {%s}, uri: {%s}.",
-                localChannelInfo.GetChannelId().ToString().c_str(),
-                resolvedChannelUri.GetUri().c_str()
+                IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue,
+                "Failed to import ECSchemas. Unable to pull changes from Sync-Id: {%s}, uri: {%s}.",
+                localDbInfo.GetSyncId().ToString().c_str(),
+                resolvedSyncDbUri.GetUri().c_str()
             );
             return SchemaImportResult::ERROR;
             }
@@ -1145,15 +1148,15 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
         return rc;
         }
 
-    if (!localChannelInfo.IsEmpty() && rc.IsOk())
+    if (!localDbInfo.IsEmpty() && rc.IsOk())
         {
-        if (sharedChannel.Push(resolvedChannelUri) != SharedSchemaChannel::Status::OK)
+        if (schemaSync.Push(resolvedSyncDbUri) != SchemaSync::Status::OK)
             {
             m_ecdb.GetImpl().Issues().ReportV(
                 IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue,
-                "Failed to import ECSchemas. Unable to push changes to Channel-Id: {%s}, uri: {%s}.",
-                localChannelInfo.GetChannelId().ToString().c_str(),
-                resolvedChannelUri.GetUri().c_str());
+                "Failed to import ECSchemas. Unable to push changes to Sync-Id: {%s}, uri: {%s}.",
+                localDbInfo.GetSyncId().ToString().c_str(),
+                resolvedSyncDbUri.GetUri().c_str());
             return SchemaImportResult::ERROR;
             }
         }

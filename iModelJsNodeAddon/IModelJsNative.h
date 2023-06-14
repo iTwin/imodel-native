@@ -385,7 +385,7 @@ struct JsInterop {
 
     struct SchemaImportOptions
         {
-        Utf8String m_sharedChannelUri;
+        Utf8String m_schemaSyncDbUri;
         bool m_schemaLockHeld = true;
         ECSchemaReadContextPtr m_customSchemaContext = nullptr;
         };

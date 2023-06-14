@@ -2525,7 +2525,7 @@ public:
         bool m_skipFileCheck = false;
 
         // Provide uri to shared schema channel use by default during schema upgrade or update.
-        Utf8String m_sharedSchemaChannelUri;
+        Utf8String m_schemaSyncDbUri;
 
         BusyRetry* m_busyRetry = nullptr;
         mutable bvector<Utf8String> m_queryParams;

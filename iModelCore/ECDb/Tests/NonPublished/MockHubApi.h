@@ -155,20 +155,20 @@ public:
 //=======================================================================================
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct SharedSchemaDb final {
+struct SchemaSyncDb final {
     private:
         BeFileName m_fileName;
 
     public:
-        explicit SharedSchemaDb(Utf8CP name);
+        explicit SchemaSyncDb(Utf8CP name);
         BeFileName GetFileName() const;
         std::unique_ptr<ECDb> OpenReadOnly(DefaultTxn mode = DefaultTxn::Yes);
         std::unique_ptr<ECDb> OpenReadWrite(DefaultTxn mode = DefaultTxn::Yes);
         void WithReadOnly(std::function<void(ECDbR)> cb, DefaultTxn mode = DefaultTxn::Yes);
         void WithReadWrite(std::function<void(ECDbR)> cb, DefaultTxn mode = DefaultTxn::Yes);
-        //SharedSchemaChannel::Status Push(ECDbR ecdb, std::function<void()> cb = nullptr);
-        SharedSchemaChannel::Status Pull(ECDbR ecdb, std::function<void()> cb = nullptr);
-        SharedSchemaChannel::ChannelUri GetChannelUri() const { return SharedSchemaChannel::ChannelUri(m_fileName.GetNameUtf8().c_str()); }
+        //SchemaSync::Status Push(ECDbR ecdb, std::function<void()> cb = nullptr);
+        SchemaSync::Status Pull(ECDbR ecdb, std::function<void()> cb = nullptr);
+        SchemaSync::SyncDbUri GetSyncDbUri() const { return SchemaSync::SyncDbUri(m_fileName.GetNameUtf8().c_str()); }
 };
 
 //=======================================================================================
@@ -182,10 +182,10 @@ struct SchemaSyncTestFixture : public ECDbTestFixture
     static const char* DEFAULT_SHA3_256_CHANNEL_SQLITE_SCHEMA;
     std::unique_ptr<ECDbHub> m_hub;
     std::unique_ptr<TrackedECDb> m_briefcase;
-    std::unique_ptr<SharedSchemaDb> m_schemaChannel;
+    std::unique_ptr<SchemaSyncDb> m_schemaChannel;
 
-    static SchemaImportResult ImportSchemas(ECDbR ecdb, std::vector<SchemaItem> items, SchemaManager::SchemaImportOptions opts = SchemaManager::SchemaImportOptions::None, SharedSchemaChannel::ChannelUri uri = SharedSchemaChannel::ChannelUri());
-    static SchemaImportResult ImportSchema(ECDbR ecdb, SchemaItem item, SchemaManager::SchemaImportOptions opts = SchemaManager::SchemaImportOptions::None, SharedSchemaChannel::ChannelUri uri = SharedSchemaChannel::ChannelUri());
+    static SchemaImportResult ImportSchemas(ECDbR ecdb, std::vector<SchemaItem> items, SchemaManager::SchemaImportOptions opts = SchemaManager::SchemaImportOptions::None, SchemaSync::SyncDbUri uri = SchemaSync::SyncDbUri());
+    static SchemaImportResult ImportSchema(ECDbR ecdb, SchemaItem item, SchemaManager::SchemaImportOptions opts = SchemaManager::SchemaImportOptions::None, SchemaSync::SyncDbUri uri = SchemaSync::SyncDbUri());
     static std::unique_ptr<TrackedECDb> OpenECDb(Utf8CP asFileName);
     DbResult ReopenECDb();
     void CloseECDb();
@@ -205,9 +205,9 @@ struct SchemaSyncTestFixture : public ECDbTestFixture
 
     static std::string GetIndexDDL(ECDbCR ecdb, Utf8CP indexName);
     static void Test(Utf8CP name, std::function<void()> test);
-    SharedSchemaChannel::ChannelUri GetSharedChannelUri()
+    SchemaSync::SyncDbUri GetSyncDbUri()
         {
-        return m_schemaChannel != nullptr ? m_schemaChannel->GetChannelUri() : SharedSchemaChannel::ChannelUri();
+        return m_schemaChannel != nullptr ? m_schemaChannel->GetSyncDbUri() : SchemaSync::SyncDbUri();
         }
     int GetColumnCount(Utf8CP dbTableName) const
         {

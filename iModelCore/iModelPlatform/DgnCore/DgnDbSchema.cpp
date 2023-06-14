@@ -630,7 +630,7 @@ DropSchemaResult DgnDb::DropSchema(Utf8StringCR name, bool logIssue) {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaStatus DgnDb::ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, bool schemaLockHeld, SharedSchemaChannel::ChannelUri uri)
+SchemaStatus DgnDb::ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, bool schemaLockHeld, SchemaSync::SyncDbUri uri)
     {
     bvector<ECN::ECSchemaCP> schemasToImport;
     SchemaStatus status = PickSchemasToImport(schemasToImport, schemas, false /*=isImportingFromV8*/);

@@ -10,7 +10,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 // IssueCategory
 IssueCategory IssueCategory::BusinessProperties = "BusinessProperties"; // should be used when an issue is related to ECFramework;
 
-IssueCategory IssueCategory::SharedSchemaChannel = "SharedSchemaChannel";
+IssueCategory IssueCategory::SchemaSync = "SchemaSync";
 
 // IssueType
 IssueType IssueType::ECClass = "ECClass";

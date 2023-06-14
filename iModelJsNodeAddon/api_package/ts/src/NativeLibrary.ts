@@ -445,13 +445,13 @@ export declare namespace IModelJsNative {
     readonly ecSchemaXmlContext?: ECSchemaXmlContext;
   }
 
-  interface LocalChannelInfo {
+  interface LocalDbInfo {
     readonly id: string;
     readonly dataVer: string;
     readonly lastModUtc: string;
   }
 
-  interface SharedChannelInfo extends LocalChannelInfo {
+  interface SyncDbInfo extends LocalDbInfo {
     readonly projectId: string;
     readonly parentChangesetId: string;
     readonly parentChangesetIndex?: string;
@@ -468,13 +468,13 @@ export declare namespace IModelJsNative {
   class DgnDb implements IConcurrentQueryManager, SQLiteOps {
     constructor();
     public readonly cloudContainer?: CloudContainer;
-    public sharedChannelSetDefaultUri(channelUri: string): void;
-    public sharedChannelGetDefaultUri(): string;
-    public sharedChannelInit(channelUri: string): void;
-    public sharedChannelPull(channelUri?: string): void;
-    public sharedChannelEnabled(): boolean;
-    public sharedChannelGetLocalInfo(): LocalChannelInfo | undefined;
-    public sharedChannelGetSharedInfo(channelUri: string): SharedChannelInfo | undefined;
+    public schemaSyncSetDefaultUri(syncDbUri: string): void;
+    public schemaSyncGetDefaultUri(): string;
+    public schemaSyncInit(syncDbUri: string): void;
+    public schemaSyncPull(syncDbUri?: string): void;
+    public schemaSyncEnabled(): boolean;
+    public schemaSyncGetLocalDbInfo(): LocalDbInfo | undefined;
+    public schemaSyncGetSyncDbInfo(syncDbUri: string): SyncDbInfo | undefined;
     public abandonChanges(): DbResult;
     public abandonCreateChangeset(): void;
     public addChildPropagatesChangesToParentRelationship(schemaName: string, relClassName: string): BentleyStatus;
@@ -666,13 +666,13 @@ export declare namespace IModelJsNative {
     public createDb(dbName: string): DbResult;
     public dispose(): void;
     public dropSchema(schemaName: string): void;
-    public sharedChannelSetDefaultUri(channelUri: string): void;
-    public sharedChannelGetDefaultUri(): string;
-    public sharedChannelInit(channelUri: string): void;
-    public sharedChannelPull(channelUri: string | undefined): void;
-    public sharedChannelEnabled(): boolean;
-    public sharedChannelGetLocalInfo(): LocalChannelInfo | undefined;
-    public sharedChannelGetSharedInfo(): SharedChannelInfo | undefined;
+    public schemaSyncSetDefaultUri(syncDbUri: string): void;
+    public schemaSyncGetDefaultUri(): string;
+    public schemaSyncInit(syncDbUri: string): void;
+    public schemaSyncPull(syncDbUri: string | undefined): void;
+    public schemaSyncEnabled(): boolean;
+    public schemaSyncGetLocalDbInfo(): LocalDbInfo | undefined;
+    public schemaSyncGetSyncDbInfo(): SyncDbInfo | undefined;
     public getFilePath(): string;
     public importSchema(schemaPathName: string): DbResult;
     public isOpen(): boolean;

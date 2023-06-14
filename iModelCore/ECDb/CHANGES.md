@@ -7,6 +7,11 @@ This document including important changes to syntax or file format.
 | Profile | `4.0.0.3` |
 | ECSQL   | `1.2.0.0` |
 
+## `6/14/2023`: Add support for Schema sync
+* Schema sync allow two or more briefcases to sync there schema without require schema lock.
+* Schema lock might still be required in cases where data transformation require due to schema change.
+* Schema sync is handled in import schema call.
+
 ## `5/22/2023`: Add PRAGMA checksum(ecdb_schema|ecdb_map|sqlite_schema)
 * ECSql version change to `1.0.4.1` as new syntax and runtime changes that does not break any existing syntax or runtime.
 * PRAGMA checksum(ecdb_schema|ecdb_map|sqlite_schema)
