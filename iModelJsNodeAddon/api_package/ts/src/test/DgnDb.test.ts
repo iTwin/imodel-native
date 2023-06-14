@@ -84,6 +84,12 @@ describe("basic tests", () => {
     iModelDb.sharedChannelInit(channelUri);
     iModelDb.saveChanges();
     iModelDb.performCheckpoint();
+
+    const localInfo = iModelDb.sharedChannelGetLocalInfo();
+    const sharedInfo = iModelDb.sharedChannelGetSharedInfo(channelUri);
+    assert.equal(localInfo?.id, sharedInfo?.id);
+    assert.equal(localInfo?.dataVer, sharedInfo?.dataVer);
+    assert.equal(localInfo?.dataVer, "0x2");
     iModelDb.closeIModel();
 
     // create first briefcase

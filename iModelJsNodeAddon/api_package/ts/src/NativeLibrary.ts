@@ -445,6 +445,18 @@ export declare namespace IModelJsNative {
     readonly ecSchemaXmlContext?: ECSchemaXmlContext;
   }
 
+  interface LocalChannelInfo {
+    readonly id: string;
+    readonly dataVer: string;
+    readonly lastModUtc: string;
+  }
+
+  interface SharedChannelInfo extends LocalChannelInfo {
+    readonly projectId: string;
+    readonly parentChangesetId: string;
+    readonly parentChangesetIndex?: string;
+  }
+
   // ###TODO import from core-common
   interface ModelExtentsResponseProps {
     id: Id64String;
@@ -461,6 +473,8 @@ export declare namespace IModelJsNative {
     public sharedChannelInit(channelUri: string): void;
     public sharedChannelPull(channelUri?: string): void;
     public sharedChannelEnabled(): boolean;
+    public sharedChannelGetLocalInfo(): LocalChannelInfo | undefined;
+    public sharedChannelGetSharedInfo(channelUri: string): SharedChannelInfo | undefined;
     public abandonChanges(): DbResult;
     public abandonCreateChangeset(): void;
     public addChildPropagatesChangesToParentRelationship(schemaName: string, relClassName: string): BentleyStatus;
@@ -657,6 +671,8 @@ export declare namespace IModelJsNative {
     public sharedChannelInit(channelUri: string): void;
     public sharedChannelPull(channelUri: string | undefined): void;
     public sharedChannelEnabled(): boolean;
+    public sharedChannelGetLocalInfo(): LocalChannelInfo | undefined;
+    public sharedChannelGetSharedInfo(): SharedChannelInfo | undefined;
     public getFilePath(): string;
     public importSchema(schemaPathName: string): DbResult;
     public isOpen(): boolean;

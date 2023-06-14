@@ -525,11 +525,37 @@ public:
             }
         }
     }
+
     Napi::Value SharedChannelEnabled(NapiInfoCR info) {
         RequireDbIsOpen(info);
         const auto isEnabled = !m_ecdb.Schemas().GetSharedChannel().GetInfo().IsEmpty();
         return Napi::Boolean::New(Env(), isEnabled);
     }
+
+    Napi::Value SharedChannelGetLocalInfo(NapiInfoCR info) {
+        RequireDbIsOpen(info);
+        auto localInfo = m_ecdb.Schemas().GetSharedChannel().GetInfo();
+        if (localInfo.IsEmpty()) {
+            return Env().Undefined();
+        }
+        BeJsNapiObject obj(Env());
+        localInfo.To(obj);
+        return obj;
+    }
+
+    Napi::Value SharedChannelGetSharedInfo(NapiInfoCR info) {
+        RequireDbIsOpen(info);
+        REQUIRE_ARGUMENT_STRING(0, channelUriStr);
+         auto channelUri = SharedSchemaChannel::ChannelUri(channelUriStr.c_str());
+         auto sharedInfo = channelUri.GetInfo();
+         if (sharedInfo.IsEmpty()) {
+            return Env().Undefined();
+        }
+        BeJsNapiObject obj(Env());
+        sharedInfo.To(obj);
+        return obj;
+    }
+
     void SharedChannelPull(NapiInfoCR info) {
         RequireDbIsOpen(info);
         OPTIONAL_ARGUMENT_STRING(0, channelUriStr);
@@ -550,6 +576,7 @@ public:
         DbResult r = BeSQLiteLib::EnableSharedCache(enabled);
         return Napi::Number::New(info.Env(), (int)r);
     }
+
     static void Init(Napi::Env env, Napi::Object exports) {
         Napi::HandleScope scope(env);
         Napi::Function t = DefineClass(env, "ECDb", {
@@ -571,6 +598,8 @@ public:
             InstanceMethod("sharedChannelPull", &NativeECDb::SharedChannelPull),
             InstanceMethod("sharedChannelInit", &NativeECDb::SharedChannelInit),
             InstanceMethod("sharedChannelEnabled", &NativeECDb::SharedChannelEnabled),
+            InstanceMethod("sharedChannelGetLocalInfo", &NativeECDb::SharedChannelGetLocalInfo),
+            InstanceMethod("sharedChannelGetSharedInfo", &NativeECDb::SharedChannelGetSharedInfo),
             InstanceMethod("openDb", &NativeECDb::OpenDb),
             InstanceMethod("saveChanges", &NativeECDb::SaveChanges),
             StaticMethod("enableSharedCache", &NativeECDb::EnableSharedCache),
@@ -1869,11 +1898,37 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
             }
         }
     }
+
     Napi::Value SharedChannelEnabled(NapiInfoCR info) {
         RequireDbIsOpen(info);
         const auto isEnabled = !GetDgnDb().Schemas().GetSharedChannel().GetInfo().IsEmpty();
         return Napi::Boolean::New(Env(), isEnabled);
     }
+
+    Napi::Value SharedChannelGetLocalInfo(NapiInfoCR info) {
+        RequireDbIsOpen(info);
+        auto localInfo = GetDgnDb().Schemas().GetSharedChannel().GetInfo();
+        if (localInfo.IsEmpty()) {
+            return Env().Undefined();
+        }
+        BeJsNapiObject obj(Env());
+        localInfo.To(obj);
+        return obj;
+    }
+
+    Napi::Value SharedChannelGetSharedInfo(NapiInfoCR info) {
+        RequireDbIsOpen(info);
+        REQUIRE_ARGUMENT_STRING(0, channelUriStr);
+         auto channelUri = SharedSchemaChannel::ChannelUri(channelUriStr.c_str());
+         auto sharedInfo = channelUri.GetInfo();
+         if (sharedInfo.IsEmpty()) {
+            return Env().Undefined();
+        }
+        BeJsNapiObject obj(Env());
+        sharedInfo.To(obj);
+        return obj;
+    }
+
     void SharedChannelPull(NapiInfoCR info) {
         RequireDbIsOpen(info);
         OPTIONAL_ARGUMENT_STRING(0, channelUriStr);
@@ -2551,6 +2606,8 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
             InstanceMethod("sharedChannelPull", &NativeDgnDb::SharedChannelPull),
             InstanceMethod("sharedChannelInit", &NativeDgnDb::SharedChannelInit),
             InstanceMethod("sharedChannelEnabled", &NativeDgnDb::SharedChannelEnabled),
+            InstanceMethod("sharedChannelGetLocalInfo", &NativeDgnDb::SharedChannelGetLocalInfo),
+            InstanceMethod("sharedChannelGetSharedInfo", &NativeDgnDb::SharedChannelGetSharedInfo),
             InstanceMethod("updateElement", &NativeDgnDb::UpdateElement),
             InstanceMethod("updateElementAspect", &NativeDgnDb::UpdateElementAspect),
             InstanceMethod("updateElementGeometryCache", &NativeDgnDb::UpdateElementGeometryCache),

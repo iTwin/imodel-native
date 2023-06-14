@@ -34,15 +34,15 @@ FROM   [ec_index] [idx]
 //+===============+===============+===============+===============+===============+======
 struct JsonNames {
 	constexpr static char ChannelId[] = "id";
-	constexpr static char ChannelDataVer[] = "data_ver";
-	constexpr static char ChannelProjectId[] = "project_id";
-	constexpr static char ChannelFileId[] = "file_id";
-	constexpr static char ChannelLastModUtc[] = "last_mod_utc";
-	constexpr static char ChannelChangeSetId[] = "parent_changeset_id";
-	constexpr static char ChannelChangeSetIndex[] = "parent_changeset_index";
+	constexpr static char ChannelDataVer[] = "dataVer";
+	constexpr static char ChannelProjectId[] = "projectId";
+	constexpr static char ChannelFileId[] = "fileId";
+	constexpr static char ChannelLastModUtc[] = "lastModUtc";
+	constexpr static char ChannelChangeSetId[] = "parentChangesetId";
+	constexpr static char ChannelChangeSetIndex[] = "parentChangesetIndex";
 	constexpr static char JNamespace[] = "ec_Db";
-    constexpr static char JSharedChannelInfo[] = "shared_channel_info";
-	constexpr static char JLocalChannelInfo[] = "local_channel_info";
+    constexpr static char JSharedChannelInfo[] = "sharedChannelInfo";
+	constexpr static char JLocalChannelInfo[] = "localChannelInfo";
 };
 
 //SharedSchemaChannelHelper==============================================================
