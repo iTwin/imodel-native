@@ -455,7 +455,7 @@ struct JsInterop {
     BE_JSON_NAME(row)
     BE_JSON_NAME(secure)
     BE_JSON_NAME(schemaLockHeld)
-    BE_JSON_NAME(sharedSchemaChannelUri)
+    BE_JSON_NAME(schemaSyncDbUri)
     BE_JSON_NAME(showOnlyFinished)
     BE_JSON_NAME(size)
     BE_JSON_NAME(skipFileCheck)

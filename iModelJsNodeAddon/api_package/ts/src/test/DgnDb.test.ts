@@ -119,7 +119,7 @@ describe("basic tests", () => {
             <ECProperty propertyName="p2" typeName="int" />
         </ECEntityClass>
     </ECSchema>`;
-    rc = b0.importXmlSchemas([schema1], { sharedSchemaChannelUri: syncDbUri });
+    rc = b0.importXmlSchemas([schema1], { schemaSyncDbUri: syncDbUri });
     assert.equal(DbResult.BE_SQLITE_OK, rc);
 
     const schema2 = `<?xml version="1.0" encoding="UTF-8"?>
@@ -133,7 +133,7 @@ describe("basic tests", () => {
           <ECProperty propertyName="p4" typeName="int" />
         </ECEntityClass>
     </ECSchema>`;
-    rc = b1.importXmlSchemas([schema2], { sharedSchemaChannelUri: syncDbUri });
+    rc = b1.importXmlSchemas([schema2], { schemaSyncDbUri: syncDbUri });
     assert.equal(DbResult.BE_SQLITE_OK, rc);
 
     b0.schemaSyncPull(syncDbUri);
