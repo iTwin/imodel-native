@@ -745,7 +745,10 @@ MD5 PresentationRuleSet::_ComputeHash() const
     return md5;
     }
 
-void PresentationRuleSet::CreateIndexes()
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void PresentationRuleSet::AssignRuleIndexes()
     {
     int index = 0;
     SET_RULES_INDEX(m_rootNodesRules, index)

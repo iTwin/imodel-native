@@ -245,7 +245,7 @@ struct PresentationRuleSet : public RefCountedBase, HashableBase
         //! Collection of default property category overrides
         DefaultPropertyCategoryOverridesList const& GetDefaultPropertyCategoryOverrides() const {return m_defaultPropertyCategoryOverrides;}
 
-        ECPRESENTATION_EXPORT void CreateIndexes();
+        ECPRESENTATION_EXPORT void AssignRuleIndexes();
     };
 
 template<> ECPRESENTATION_EXPORT RootNodeRuleList* PresentationRuleSet::GetRules<RootNodeRule>();

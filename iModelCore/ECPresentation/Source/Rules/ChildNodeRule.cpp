@@ -197,6 +197,9 @@ MD5 SubCondition::_ComputeHash() const
     return md5;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 void SubCondition::_SetIndex(int& index)
     {
     T_Super::_SetIndex(index);

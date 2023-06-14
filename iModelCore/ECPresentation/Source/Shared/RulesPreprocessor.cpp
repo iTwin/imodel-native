@@ -202,7 +202,7 @@ PresentationRuleSetPtr RulesPreprocessor::GetPresentationRuleSet(IRulesetLocater
     DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_INFO, Utf8PrintfString("Identified %" PRIu64 " supplemental rulesets.", (uint64_t)supplementalRuleSetsList.size()));
 
     PresentationRuleSetPtr supplementedRuleSet = supplementalRuleSets.empty() ? primary : CreateSupplementedRuleSet(*primary, supplementalRuleSetsList);
-    supplementedRuleSet->CreateIndexes();
+    supplementedRuleSet->AssignRuleIndexes();
     return supplementedRuleSet;
     }
 
