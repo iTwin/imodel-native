@@ -1519,6 +1519,8 @@ std::unique_ptr<DirectNodesIterator> CustomNodesProvider::_CreateDirectNodesIter
     extendedData.SetHideIfNoChildren(m_specification.GetHideIfNoChildren());
     extendedData.SetHideNodesInHierarchy(m_specification.GetHideNodesInHierarchy());
     extendedData.SetHideExpression(m_specification.GetHideExpression());
+    if (m_specification.ShouldSuppressSimilarAncestorsCheck())
+        extendedData.SetAllowedSimilarAncestors(MAX_ALLOWED_SIMILAR_ANCESTORS_WHEN_SUPPRESSED);
     if (ChildrenHint::Unknown != m_specification.GetHasChildren())
         extendedData.SetChildrenHint(m_specification.GetHasChildren());
     if (GetContext().GetVirtualParentNode().IsValid())

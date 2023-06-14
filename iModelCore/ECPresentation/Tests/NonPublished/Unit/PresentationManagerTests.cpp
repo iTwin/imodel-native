@@ -84,7 +84,7 @@ struct RulesDrivenECPresentationManagerTests : ECPresentationTest
 
         rapidjson::Document groupedValuesJson(rapidjson::kArrayType);
         for (ECValueCR value : groupedValues)
-            groupedValuesJson.PushBack(ValueHelpers::GetJsonFromECValue(value, &groupedValuesJson.GetAllocator()), groupedValuesJson.GetAllocator());
+            groupedValuesJson.PushBack(ValueHelpers::GetJsonFromECValue(value, "", &groupedValuesJson.GetAllocator()), groupedValuesJson.GetAllocator());
 
         NavNodePtr node = nodesFactory.CreateECPropertyGroupingNode(nullptr, ecClass, *ecProperty, label, "", groupedValuesJson, isRangeGrouping, (uint64_t)groupedKeys.size());
         node->SetNodeId(BeGuid(true));

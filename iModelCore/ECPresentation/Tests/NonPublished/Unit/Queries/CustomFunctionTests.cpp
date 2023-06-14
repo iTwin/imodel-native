@@ -60,7 +60,7 @@ struct CustomFunctionTests : ECPresentationTest
 
     ECDbR GetDb() {return s_project->GetECDb();}
     Utf8String GetDisplayLabelJson(Utf8CP value, Utf8CP displayValue = nullptr) { return LabelDefinition::Create(value, displayValue)->ToJsonString(); }
-    Utf8String GetDisplayLabelJson(ECValue value, Utf8CP displayValue = nullptr) { return LabelDefinition::Create(value, displayValue)->ToJsonString(); }
+    Utf8String GetDisplayLabelJson(ECValue value, Utf8CP extendedType = nullptr, Utf8CP displayValue = nullptr) { return LabelDefinition::Create(value, extendedType, displayValue)->ToJsonString(); }
 
     Utf8String GetJoinOptionallyQuery(Utf8CP separator, bvector<Utf8CP> parts)
         {
@@ -300,7 +300,7 @@ TEST_F(CustomFunctionTests, GetECPropertyDisplayLabel_Formats)
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(2, "BoolProperty", IECSqlBinder::MakeCopy::No));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindBoolean(3, false));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
-    ASSERT_STREQ(GetDisplayLabelJson(ECValue(false), "_False_").c_str(), stmt.GetValueText(0));
+    ASSERT_STREQ(GetDisplayLabelJson(ECValue(false), nullptr, "_False_").c_str(), stmt.GetValueText(0));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1340,7 +1340,7 @@ TEST_F(CustomFunctionTests, JoinOptionallyRequired_DoesNotAggregatedNonStringVal
     LabelDefinitionPtr stringPart = LabelDefinition::Create("a");
     DateTime dt;
     DateTime::FromString(dt, "2020-03-16T00:00:00Z");
-    LabelDefinitionPtr datePart = LabelDefinition::Create(ECValue(dt), "2020-03-16");
+    LabelDefinitionPtr datePart = LabelDefinition::Create(ECValue(dt), nullptr, "2020-03-16");
     std::unique_ptr<LabelDefinition::CompositeRawValue> compositeValue(new LabelDefinition::CompositeRawValue("*", { stringPart, datePart }));
     Utf8String expectedResult = LabelDefinition::Create("a*2020-03-16", std::move(compositeValue))->ToJsonString();
 
