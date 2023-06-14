@@ -45,359 +45,332 @@ struct JsonNames {
 	constexpr static char JLocalChannelInfo[] = "local_channel_info";
 };
 
-
-struct SharedSchemaChannelHelper final {
-    using AliasMap = bmap<Utf8String, Utf8String, CompareIUtf8Ascii>;
-    using StringList = bvector<Utf8String>;
-    static constexpr auto ALIAS_SHARED_DB = "channel_db";
-	static constexpr auto ALIAS_MAIN_DB = "main";
-    static constexpr auto TABLE_BE_PROP = "be_Prop";
-
-	//---------------------------------------------------------------------------------------
-	// @bsimethod
-	//+---------------+---------------+---------------+---------------+---------------+------
-	int ForeignKeyCheck(DbCR conn, std::vector<std::string>const& tables, Utf8CP dbAlias) {
-		int fkViolations = 0;
-		for(auto& table : tables) {
-			Statement stmt;
-			stmt.Prepare(conn, SqlPrintfString("PRAGMA [%s].foreign_key_check(%s)", dbAlias, table.c_str()));
-			while(BE_SQLITE_ROW == stmt.Step()) {
-				++fkViolations;
-				printf("%s\n",
-					SqlPrintfString("[table=%s], [rowid=%lld], [parent=%s], [fkid=%d]",
-									stmt.GetValueText(0),
-									stmt.GetValueInt64(1),
-									stmt.GetValueText(2),
-									stmt.GetValueInt(3))
-						.GetUtf8CP());
-			}
+//SharedSchemaChannelHelper==============================================================
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+int SharedSchemaChannelHelper::ForeignKeyCheck(DbCR conn, std::vector<std::string>const& tables, Utf8CP dbAlias) {
+	int fkViolations = 0;
+	for(auto& table : tables) {
+		Statement stmt;
+		stmt.Prepare(conn, SqlPrintfString("PRAGMA [%s].foreign_key_check(%s)", dbAlias, table.c_str()));
+		while(BE_SQLITE_ROW == stmt.Step()) {
+			++fkViolations;
+			printf("%s\n",
+				SqlPrintfString("[table=%s], [rowid=%lld], [parent=%s], [fkid=%d]",
+								stmt.GetValueText(0),
+								stmt.GetValueInt64(1),
+								stmt.GetValueText(2),
+								stmt.GetValueInt(3))
+					.GetUtf8CP());
 		}
-		return fkViolations;
 	}
+	return fkViolations;
+}
 
-    //---------------------------------------------------------------------------------------
-	// @bsimethod
-	//+---------------+---------------+---------------+---------------+---------------+------
-    static DbResult GetMetaTables(DbR conn, StringList& tables, Utf8CP dbAlias) {
-		const auto queryECTableSql = Utf8String {
-			SqlPrintfString(R"z(
-				SELECT
-					[name]
-				FROM   [%s].[sqlite_master]
-				WHERE  [tbl_name] LIKE 'ec\_%%' ESCAPE '\'
-						AND [type] = 'table'
-			)z", dbAlias).GetUtf8CP()
-		};
-
-		Statement iuStmt;
-		auto rc = iuStmt.Prepare(conn, queryECTableSql.c_str());
-		if (rc != BE_SQLITE_OK) {
-			return rc;
-		}
-		while((rc = iuStmt.Step()) == BE_SQLITE_ROW) {
-			tables.push_back(iuStmt.GetValueText(0));
-		}
-		return rc == BE_SQLITE_DONE ? BE_SQLITE_OK : rc;
-	}
-
-	//---------------------------------------------------------------------------------------
-	// @bsimethod
-	//+---------------+---------------+---------------+---------------+---------------+------
-	static DbResult DropDataTables(DbR conn) {
-		if (!conn.TableExists("ec_Table")) {
-            return BE_SQLITE_OK;
-        }
-        Statement stmt;
-        StringList tables;
-        auto rc = stmt.Prepare(conn, "SELECT [Name] FROM [ec_Table] WHERE [Type] IN (" SQLVAL_DbTable_Type_Primary "," SQLVAL_DbTable_Type_Joined "," SQLVAL_DbTable_Type_Overflow R"x() AND Name NOT LIKE 'ecdbf\_%' ESCAPE '\' ORDER BY [Type] DESC)x");
-		if (rc != BE_SQLITE_OK) {
-			return rc;
-		}
-		while(stmt.Step() == BE_SQLITE_ROW) {
-            tables.push_back(stmt.GetValueText(0));
-        }
-
-        stmt.Finalize();
-        for(auto& table : tables) {
-			rc = conn.ExecuteSql(SqlPrintfString("DROP TABLE IF EXISTS [main].[%s];", table.c_str()).GetUtf8CP());
-			if (rc != BE_SQLITE_OK) {
-				return rc;
-			}
-		}
-        return BE_SQLITE_OK;
-	}
-
-	//---------------------------------------------------------------------------------------
-	// @bsimethod
-	//+---------------+---------------+---------------+---------------+---------------+------
-	static DbResult DropMetaTables(DbR conn) {
-        StringList tables;
-        auto rc = GetMetaTables(conn, tables, "main");
-		if (rc != BE_SQLITE_OK) {
-            return rc;
-        }
-        std::reverse(tables.begin(), tables.end());
-        for(auto& table: tables) {
-			rc = conn.ExecuteSql(SqlPrintfString("DROP TABLE IF EXISTS [main].[%s];", table.c_str()).GetUtf8CP());
-			if (rc != BE_SQLITE_OK) {
-				return rc;
-			}
-		}
-        return BE_SQLITE_OK;
-	}
-
-	//---------------------------------------------------------------------------------------
-	// @bsimethod
-	//+---------------+---------------+---------------+---------------+---------------+------
-	static DbResult CreateMetaTablesFrom(ECDbR fromDb, DbR syncDb) {
-		const auto sql = Utf8String {R"z(
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult SharedSchemaChannelHelper::GetMetaTables(DbR conn, StringList& tables, Utf8CP dbAlias) {
+	const auto queryECTableSql = Utf8String {
+		SqlPrintfString(R"z(
 			SELECT
-				[sql]
-			FROM   [sqlite_master]
-			WHERE  [tbl_name] LIKE 'ec\_%' ESCAPE '\'
-					AND ([type] = 'table'
-					OR [type] = 'index')
-					AND [sql] IS NOT NULL
-			ORDER  BY [RootPage];
-		)z"};
-        Statement stmt;
-        auto rc = stmt.Prepare(fromDb, sql.c_str());
-		if (rc != BE_SQLITE_OK) {
-            return rc;
-        }
-		while ((rc = stmt.Step()) == BE_SQLITE_ROW) {
-            const auto ddl = stmt.GetValueText(0);
-            rc = syncDb.ExecuteSql(ddl);
-			if(rc != BE_SQLITE_OK) {
-                return rc;
-            }
-        }
-        return BE_SQLITE_OK;
+				[name]
+			FROM   [%s].[sqlite_master]
+			WHERE  [tbl_name] LIKE 'ec\_%%' ESCAPE '\'
+					AND [type] = 'table'
+		)z", dbAlias).GetUtf8CP()
+	};
+
+	Statement iuStmt;
+	auto rc = iuStmt.Prepare(conn, queryECTableSql.c_str());
+	if (rc != BE_SQLITE_OK) {
+		return rc;
 	}
-
-	//---------------------------------------------------------------------------------------
-	// @bsimethod
-	//+---------------+---------------+---------------+---------------+---------------+------
-	static DbResult TryGetAttachDbs(AliasMap& aliasMap, ECDbR conn) {
-		Statement stmt;
-		auto rc = stmt.Prepare(conn, "pragma main.database_list");
-		if (rc != BE_SQLITE_OK) {
-			return rc;
-		}
-
-		while((rc = stmt.Step()) == BE_SQLITE_ROW) {
-			const auto alias = stmt.GetValueText(1);
-			const auto file = stmt.GetValueText(2);
-			aliasMap.insert(make_bpair<Utf8String, Utf8String>(alias, file));
-		}
-		return rc == BE_SQLITE_DONE ? BE_SQLITE_OK : rc;
+	while((rc = iuStmt.Step()) == BE_SQLITE_ROW) {
+		tables.push_back(iuStmt.GetValueText(0));
 	}
+	return rc == BE_SQLITE_DONE ? BE_SQLITE_OK : rc;
+}
 
-	//---------------------------------------------------------------------------------------
-	// @bsimethod
-	//+---------------+---------------+---------------+---------------+---------------+------
-	static DbResult VerifyAlias(ECDbR conn) {
-		AliasMap aliasMap;
-		auto rc = TryGetAttachDbs(aliasMap, conn);
-		if (rc != BE_SQLITE_OK) {
-			conn.GetImpl().Issues().Report(
-				IssueSeverity::Error, IssueCategory::SharedSchemaChannel, IssueType::ECDbIssue,
-				"Unable to query attach db from primary connection");
-			return rc;
-		}
-		if (aliasMap.find(ALIAS_MAIN_DB) == aliasMap.end()) {
-			conn.GetImpl().Issues().ReportV(
-				IssueSeverity::Error, IssueCategory::SharedSchemaChannel, IssueType::ECDbIssue,
-				"Expecting '%s' attach db on primary connection", ALIAS_MAIN_DB);
-			return rc;
-		}
-
-		if (aliasMap.find(ALIAS_SHARED_DB) != aliasMap.end()) {
-			conn.GetImpl().Issues().ReportV(
-				IssueSeverity::Error, IssueCategory::SharedSchemaChannel, IssueType::ECDbIssue,
-				"Db alias '%s' use by channel db is already in use", ALIAS_SHARED_DB);
-			return rc;
-		}
-        return BE_SQLITE_OK;
-    }
-
-	//---------------------------------------------------------------------------------------
-	// @bsimethod
-	//+---------------+---------------+---------------+---------------+---------------+------
-	static DbResult GetColumnNames(DbCR db, Utf8CP dbAlias, Utf8CP tableName, StringList& columnNames) {
-		Statement stmt;
-		const auto sql = Utf8String{SqlPrintfString("pragma %s.table_info(%s)", dbAlias, tableName).GetUtf8CP()};
-		auto rc = stmt.Prepare(db, sql.c_str());
-		if (BE_SQLITE_OK != rc)
-			return rc;
-
-		while((rc = stmt.Step()) == BE_SQLITE_ROW) {
-			columnNames.push_back(stmt.GetValueText(1));
-		}
-		return rc == BE_SQLITE_DONE ? BE_SQLITE_OK : rc;
-	}
-
-	//---------------------------------------------------------------------------------------
-	// @bsimethod
-	//+---------------+---------------+---------------+---------------+---------------+------
-	static Utf8String Join(StringList const& list, Utf8String delimiter = ",", Utf8String prefix = "", Utf8String postfix = "") {
-		if (list.empty()) {
-            return prefix + postfix;
-        }
-		return prefix + std::accumulate(
-			std::next(list.begin()),
-			std::end(list),
-			Utf8String{list.front()},
-			[&](Utf8String const& acc, const Utf8String& piece) {
-				return acc + delimiter + piece;
-			}
-		) + postfix;
-	}
-
-	//---------------------------------------------------------------------------------------
-	// @bsimethod
-	//+---------------+---------------+---------------+---------------+---------------+------
-	static Utf8String ToLower(Utf8String const& val) {
-		Utf8String out;
-		std::for_each(val.begin(), val.end(), [&](char const& ch) {
-			out.push_back(static_cast<char>(std::tolower(static_cast<unsigned char>(ch))));
-		});
-		return out;
-	}
-
-	//---------------------------------------------------------------------------------------
-	// @bsimethod
-	//+---------------+---------------+---------------+---------------+---------------+------
-	static DbResult GetPrimaryKeyColumnNames(DbCR db, Utf8CP dbAlias, Utf8CP tableName, StringList& columnNames) {
-		Statement stmt;
-		const auto sql = Utf8String{SqlPrintfString("pragma %s.table_info(%s)", dbAlias, tableName).GetUtf8CP()};
-		auto rc = stmt.Prepare(db, sql.c_str());
-		if (BE_SQLITE_OK != rc)
-			return rc;
-
-		while((rc = stmt.Step()) == BE_SQLITE_ROW) {
-			if (stmt.GetValueInt(5) != 0) {
-				columnNames.push_back(stmt.GetValueText(1));
-			}
-		}
-		return rc == BE_SQLITE_DONE ? BE_SQLITE_OK : rc;
-	}
-
-	//---------------------------------------------------------------------------------------
-	// @bsimethod
-	//+---------------+---------------+---------------+---------------+---------------+------
-	static DbResult SyncData(ECDbR conn, StringList const& tables, Utf8CP sourceDbAlias, Utf8CP targetDbAlias) {
-		auto rc = conn.ExecuteSql("PRAGMA defer_foreign_keys=1");
-		if (rc != BE_SQLITE_OK) {
-			return rc;
-		}
-		for (auto& tbl : tables) {
-			rc = SyncData(conn, tbl.c_str(), sourceDbAlias, targetDbAlias);
-			if (rc != BE_SQLITE_OK) {
-				return rc;
-			}
-		}
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult SharedSchemaChannelHelper::DropDataTables(DbR conn) {
+	if (!conn.TableExists("ec_Table")) {
 		return BE_SQLITE_OK;
 	}
+	Statement stmt;
+	StringList tables;
+	auto rc = stmt.Prepare(conn, "SELECT [Name] FROM [ec_Table] WHERE [Type] IN (" SQLVAL_DbTable_Type_Primary "," SQLVAL_DbTable_Type_Joined "," SQLVAL_DbTable_Type_Overflow R"x() AND Name NOT LIKE 'ecdbf\_%' ESCAPE '\' ORDER BY [Type] DESC)x");
+	if (rc != BE_SQLITE_OK) {
+		return rc;
+	}
+	while(stmt.Step() == BE_SQLITE_ROW) {
+		tables.push_back(stmt.GetValueText(0));
+	}
 
-	//---------------------------------------------------------------------------------------
-	// @bsimethod
-	//+---------------+---------------+---------------+---------------+---------------+------
-	static DbResult SyncData(ECDbR conn, Utf8CP tableName, Utf8CP sourceDbAlias, Utf8CP targetDbAlias) {
-        DbResult rc;
-		auto sourceCols = StringList{};
-		rc = GetColumnNames(conn, sourceDbAlias, tableName, sourceCols);
-		if (BE_SQLITE_OK != rc)
+	stmt.Finalize();
+	for(auto& table : tables) {
+		rc = conn.ExecuteSql(SqlPrintfString("DROP TABLE IF EXISTS [main].[%s];", table.c_str()).GetUtf8CP());
+		if (rc != BE_SQLITE_OK) {
 			return rc;
+		}
+	}
+	return BE_SQLITE_OK;
+}
 
-		auto sourcePkCols = StringList{};
-		rc = GetPrimaryKeyColumnNames(conn, sourceDbAlias, tableName, sourcePkCols);
-		if (BE_SQLITE_OK != rc)
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult SharedSchemaChannelHelper::DropMetaTables(DbR conn) {
+	StringList tables;
+	auto rc = GetMetaTables(conn, tables, "main");
+	if (rc != BE_SQLITE_OK) {
+		return rc;
+	}
+	std::reverse(tables.begin(), tables.end());
+	for(auto& table: tables) {
+		rc = conn.ExecuteSql(SqlPrintfString("DROP TABLE IF EXISTS [main].[%s];", table.c_str()).GetUtf8CP());
+		if (rc != BE_SQLITE_OK) {
 			return rc;
+		}
+	}
+	return BE_SQLITE_OK;
+}
 
-		auto targetCols = StringList{};
-		rc = GetColumnNames(conn, targetDbAlias, tableName, targetCols);
-		if (BE_SQLITE_OK != rc)
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult SharedSchemaChannelHelper::CreateMetaTablesFrom(ECDbR fromDb, DbR syncDb) {
+	const auto sql = Utf8String {R"z(
+		SELECT
+			[sql]
+		FROM   [sqlite_master]
+		WHERE  [tbl_name] LIKE 'ec\_%' ESCAPE '\'
+				AND ([type] = 'table'
+				OR [type] = 'index')
+				AND [sql] IS NOT NULL
+		ORDER  BY [RootPage];
+	)z"};
+	Statement stmt;
+	auto rc = stmt.Prepare(fromDb, sql.c_str());
+	if (rc != BE_SQLITE_OK) {
+		return rc;
+	}
+	while ((rc = stmt.Step()) == BE_SQLITE_ROW) {
+		const auto ddl = stmt.GetValueText(0);
+		rc = syncDb.ExecuteSql(ddl);
+		if(rc != BE_SQLITE_OK) {
 			return rc;
+		}
+	}
+	return BE_SQLITE_OK;
+}
 
-		auto targetPkCols = StringList{};
-		rc = GetPrimaryKeyColumnNames(conn, targetDbAlias, tableName, targetPkCols);
-		if (BE_SQLITE_OK != rc)
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult SharedSchemaChannelHelper::TryGetAttachDbs(AliasMap& aliasMap, ECDbR conn) {
+	Statement stmt;
+	auto rc = stmt.Prepare(conn, "pragma main.database_list");
+	if (rc != BE_SQLITE_OK) {
+		return rc;
+	}
+
+	while((rc = stmt.Step()) == BE_SQLITE_ROW) {
+		const auto alias = stmt.GetValueText(1);
+		const auto file = stmt.GetValueText(2);
+		aliasMap.insert(make_bpair<Utf8String, Utf8String>(alias, file));
+	}
+	return rc == BE_SQLITE_DONE ? BE_SQLITE_OK : rc;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult SharedSchemaChannelHelper::VerifyAlias(ECDbR conn) {
+	AliasMap aliasMap;
+	auto rc = TryGetAttachDbs(aliasMap, conn);
+	if (rc != BE_SQLITE_OK) {
+		conn.GetImpl().Issues().Report(
+			IssueSeverity::Error, IssueCategory::SharedSchemaChannel, IssueType::ECDbIssue,
+			"Unable to query attach db from primary connection");
+		return rc;
+	}
+	if (aliasMap.find(ALIAS_MAIN_DB) == aliasMap.end()) {
+		conn.GetImpl().Issues().ReportV(
+			IssueSeverity::Error, IssueCategory::SharedSchemaChannel, IssueType::ECDbIssue,
+			"Expecting '%s' attach db on primary connection", ALIAS_MAIN_DB);
+		return rc;
+	}
+
+	if (aliasMap.find(ALIAS_SHARED_DB) != aliasMap.end()) {
+		conn.GetImpl().Issues().ReportV(
+			IssueSeverity::Error, IssueCategory::SharedSchemaChannel, IssueType::ECDbIssue,
+			"Db alias '%s' use by channel db is already in use", ALIAS_SHARED_DB);
+		return rc;
+	}
+	return BE_SQLITE_OK;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult SharedSchemaChannelHelper::GetColumnNames(DbCR db, Utf8CP dbAlias, Utf8CP tableName, StringList& columnNames) {
+	Statement stmt;
+	const auto sql = Utf8String{SqlPrintfString("pragma %s.table_info(%s)", dbAlias, tableName).GetUtf8CP()};
+	auto rc = stmt.Prepare(db, sql.c_str());
+	if (BE_SQLITE_OK != rc)
+		return rc;
+
+	while((rc = stmt.Step()) == BE_SQLITE_ROW) {
+		columnNames.push_back(stmt.GetValueText(1));
+	}
+	return rc == BE_SQLITE_DONE ? BE_SQLITE_OK : rc;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String SharedSchemaChannelHelper::Join(StringList const& list, Utf8String delimiter, Utf8String prefix, Utf8String postfix) {
+	if (list.empty()) {
+		return prefix + postfix;
+	}
+	return prefix + std::accumulate(
+		std::next(list.begin()),
+		std::end(list),
+		Utf8String{list.front()},
+		[&](Utf8String const& acc, const Utf8String& piece) {
+			return acc + delimiter + piece;
+		}
+	) + postfix;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String SharedSchemaChannelHelper::ToLower(Utf8String const& val) {
+	Utf8String out;
+	std::for_each(val.begin(), val.end(), [&](char const& ch) {
+		out.push_back(static_cast<char>(std::tolower(static_cast<unsigned char>(ch))));
+	});
+	return out;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult SharedSchemaChannelHelper::GetPrimaryKeyColumnNames(DbCR db, Utf8CP dbAlias, Utf8CP tableName, StringList& columnNames) {
+	Statement stmt;
+	const auto sql = Utf8String{SqlPrintfString("pragma %s.table_info(%s)", dbAlias, tableName).GetUtf8CP()};
+	auto rc = stmt.Prepare(db, sql.c_str());
+	if (BE_SQLITE_OK != rc)
+		return rc;
+
+	while((rc = stmt.Step()) == BE_SQLITE_ROW) {
+		if (stmt.GetValueInt(5) != 0) {
+			columnNames.push_back(stmt.GetValueText(1));
+		}
+	}
+	return rc == BE_SQLITE_DONE ? BE_SQLITE_OK : rc;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult SharedSchemaChannelHelper::SyncData(ECDbR conn, StringList const& tables, Utf8CP sourceDbAlias, Utf8CP targetDbAlias) {
+	auto rc = conn.ExecuteSql("PRAGMA defer_foreign_keys=1");
+	if (rc != BE_SQLITE_OK) {
+		return rc;
+	}
+	for (auto& tbl : tables) {
+		rc = SyncData(conn, tbl.c_str(), sourceDbAlias, targetDbAlias);
+		if (rc != BE_SQLITE_OK) {
 			return rc;
+		}
+	}
+	return BE_SQLITE_OK;
+}
 
-		std::sort(std::begin(sourceCols), std::end(sourceCols));
-		std::sort(std::begin(sourcePkCols), std::end(sourcePkCols));
-		std::sort(std::begin(targetCols), std::end(targetCols));
-		std::sort(std::begin(targetPkCols), std::end(targetPkCols));
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult SharedSchemaChannelHelper::SyncData(ECDbR conn, Utf8CP tableName, Utf8CP sourceDbAlias, Utf8CP targetDbAlias) {
+	DbResult rc;
+	auto sourceCols = StringList{};
+	rc = GetColumnNames(conn, sourceDbAlias, tableName, sourceCols);
+	if (BE_SQLITE_OK != rc)
+		return rc;
 
-		const auto sourceColCount = sourceCols.size();
-		const auto sourcePkColCount = sourcePkCols.size();
+	auto sourcePkCols = StringList{};
+	rc = GetPrimaryKeyColumnNames(conn, sourceDbAlias, tableName, sourcePkCols);
+	if (BE_SQLITE_OK != rc)
+		return rc;
 
-		if(sourceColCount != targetCols.size()) {
+	auto targetCols = StringList{};
+	rc = GetColumnNames(conn, targetDbAlias, tableName, targetCols);
+	if (BE_SQLITE_OK != rc)
+		return rc;
+
+	auto targetPkCols = StringList{};
+	rc = GetPrimaryKeyColumnNames(conn, targetDbAlias, tableName, targetPkCols);
+	if (BE_SQLITE_OK != rc)
+		return rc;
+
+	std::sort(std::begin(sourceCols), std::end(sourceCols));
+	std::sort(std::begin(sourcePkCols), std::end(sourcePkCols));
+	std::sort(std::begin(targetCols), std::end(targetCols));
+	std::sort(std::begin(targetPkCols), std::end(targetPkCols));
+
+	const auto sourceColCount = sourceCols.size();
+	const auto sourcePkColCount = sourcePkCols.size();
+
+	if(sourceColCount != targetCols.size()) {
+		return BE_SQLITE_SCHEMA;
+	}
+	if(sourcePkColCount != targetPkCols.size()) {
+		return BE_SQLITE_SCHEMA;
+	}
+	for (auto i = 0; i < sourceColCount; ++i) {
+		if (ToLower(sourceCols[i]) != ToLower(targetCols[i]))
 			return BE_SQLITE_SCHEMA;
-		}
-		if(sourcePkColCount != targetPkCols.size()) {
+	}
+	for (auto i = 0; i < sourcePkColCount; ++i) {
+		if (ToLower(sourcePkCols[i]) != ToLower(targetPkCols[i]))
 			return BE_SQLITE_SCHEMA;
-		}
-		for (auto i = 0; i < sourceColCount; ++i) {
-			if (ToLower(sourceCols[i]) != ToLower(targetCols[i]))
-				return BE_SQLITE_SCHEMA;
-		}
-		for (auto i = 0; i < sourcePkColCount; ++i) {
-			if (ToLower(sourcePkCols[i]) != ToLower(targetPkCols[i]))
-				return BE_SQLITE_SCHEMA;
-		}
+	}
 
-		const auto sourceTableSql = Utf8String {SqlPrintfString("[%s].[%s]", sourceDbAlias, tableName).GetUtf8CP()};
-		const auto targetTableSql = Utf8String {SqlPrintfString("[%s].[%s]", targetDbAlias, tableName).GetUtf8CP()};
-		const auto sourceColsSql = Join(sourceCols);
-		const auto targetColsSql = Join(targetCols);
+	const auto sourceTableSql = Utf8String {SqlPrintfString("[%s].[%s]", sourceDbAlias, tableName).GetUtf8CP()};
+	const auto targetTableSql = Utf8String {SqlPrintfString("[%s].[%s]", targetDbAlias, tableName).GetUtf8CP()};
+	const auto sourceColsSql = Join(sourceCols);
+	const auto targetColsSql = Join(targetCols);
 
-		StringList setClauseExprs;
-		StringList delClauseExprs;
-		for(auto& col : targetCols) {
-			setClauseExprs.push_back(SqlPrintfString("%s=excluded.%s", col.c_str(), col.c_str()).GetUtf8CP());
-		}
-		for(auto& col : sourcePkCols) {
-			delClauseExprs.push_back(SqlPrintfString("[T].%s=[S].%s", col.c_str(), col.c_str()).GetUtf8CP());
-		}
+	StringList setClauseExprs;
+	StringList delClauseExprs;
+	for(auto& col : targetCols) {
+		setClauseExprs.push_back(SqlPrintfString("%s=excluded.%s", col.c_str(), col.c_str()).GetUtf8CP());
+	}
+	for(auto& col : sourcePkCols) {
+		delClauseExprs.push_back(SqlPrintfString("[T].%s=[S].%s", col.c_str(), col.c_str()).GetUtf8CP());
+	}
 
-		const auto updateColsSql = Join(setClauseExprs);
-		const auto targetPkColsSql = Join(targetPkCols);
-		const auto deleteColsSql = Join(delClauseExprs, " AND ");
+	const auto updateColsSql = Join(setClauseExprs);
+	const auto targetPkColsSql = Join(targetPkCols);
+	const auto deleteColsSql = Join(delClauseExprs, " AND ");
 
-        const auto allowDelete = Utf8String(tableName).StartsWith("ec_");
-		if (allowDelete) {
-			const auto deleteTargetSql = Utf8String {
-				SqlPrintfString("DELETE FROM %s AS [T] WHERE NOT EXISTS (SELECT 1 FROM %s [S] WHERE %s)",
-					targetTableSql.c_str(),
-					sourceTableSql.c_str(),
-					deleteColsSql.c_str()
-					).GetUtf8CP()
-				};
-
-			Statement stmt;
-			rc = stmt.Prepare(conn, deleteTargetSql.c_str());
-			if (rc != BE_SQLITE_OK) {
-				return rc;
-			}
-			rc = stmt.Step();
-			if (rc != BE_SQLITE_DONE) {
-				return rc;
-			}
-		}
-
-		Utf8String sql = SqlPrintfString(
-			"insert into %s(%s) select %s from %s where 1 on conflict do update set %s",
-			targetTableSql.c_str(),
-			targetColsSql.c_str(),
-			sourceColsSql.c_str(),
-			sourceTableSql.c_str(),
-			updateColsSql.c_str()
-		).GetUtf8CP();
+	const auto allowDelete = Utf8String(tableName).StartsWith("ec_");
+	if (allowDelete) {
+		const auto deleteTargetSql = Utf8String {
+			SqlPrintfString("DELETE FROM %s AS [T] WHERE NOT EXISTS (SELECT 1 FROM %s [S] WHERE %s)",
+				targetTableSql.c_str(),
+				sourceTableSql.c_str(),
+				deleteColsSql.c_str()
+				).GetUtf8CP()
+			};
 
 		Statement stmt;
-		rc = stmt.Prepare(conn, sql.c_str());
+		rc = stmt.Prepare(conn, deleteTargetSql.c_str());
 		if (rc != BE_SQLITE_OK) {
 			return rc;
 		}
@@ -405,10 +378,30 @@ struct SharedSchemaChannelHelper final {
 		if (rc != BE_SQLITE_DONE) {
 			return rc;
 		}
-		return BE_SQLITE_OK;
 	}
-};
 
+	Utf8String sql = SqlPrintfString(
+		"insert into %s(%s) select %s from %s where 1 on conflict do update set %s",
+		targetTableSql.c_str(),
+		targetColsSql.c_str(),
+		sourceColsSql.c_str(),
+		sourceTableSql.c_str(),
+		updateColsSql.c_str()
+	).GetUtf8CP();
+
+	Statement stmt;
+	rc = stmt.Prepare(conn, sql.c_str());
+	if (rc != BE_SQLITE_OK) {
+		return rc;
+	}
+	rc = stmt.Step();
+	if (rc != BE_SQLITE_DONE) {
+		return rc;
+	}
+	return BE_SQLITE_OK;
+}
+
+//SharedSchemaChannel===================================================================
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1017,6 +1010,19 @@ void SharedSchemaChannel::SharedChannelInfo::To(BeJsValue val) const {
 	val[JsonNames::ChannelChangeSetIndex] = m_changesetIndex;
 }
 
+//SharedSchemaChannelHelper::ChannelUri==================================================
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String SharedSchemaChannel::ChannelUri::GetDbAttachUri() const {
+	if (m_uri.StartsWith("file:") || m_uri.find("?") == Utf8String::npos)
+		return m_uri;
+
+	Utf8String uri = "file:" + m_uri;
+	uri.ReplaceAll("\\", "/");
+	return uri;
+}
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1034,6 +1040,7 @@ SharedSchemaChannel::SharedChannelInfo SharedSchemaChannel::ChannelUri::GetInfo(
     return SharedChannelInfo::From(conn);
 }
 
+//SharedSchemaChannelHelper::SharedChannelInfo===========================================
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
