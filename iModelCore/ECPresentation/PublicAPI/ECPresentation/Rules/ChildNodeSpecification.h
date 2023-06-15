@@ -64,6 +64,7 @@ protected:
 
     //! Computes specification hash.
     ECPRESENTATION_EXPORT virtual MD5 _ComputeHash() const override;
+    ECPRESENTATION_EXPORT void _SetIndex(int& index) override;
 
 public:
     ECPRESENTATION_EXPORT static ChildNodeSpecificationP Create(BeJsConst);
