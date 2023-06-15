@@ -151,3 +151,81 @@ TEST(PolyfaceBuilder, PolygonEdgeStitch)
         Check::ClearGeometry ("PolyfaceBuilder.PolygonEdgeStitch");
 
         }
+
+TEST(PolyfaceBuilder, RegionRotationalSweep)
+    {
+    CurveVectorPtr solid = CurveVector::Create(CurveVector::BoundaryType::BOUNDARY_TYPE_Outer, ICurvePrimitive::CreateRectangle(1, 1, 6, 6, 0));
+    CurveVectorPtr hole0 = CurveVector::Create(CurveVector::BoundaryType::BOUNDARY_TYPE_Outer, ICurvePrimitive::CreateRectangle(2, 2, 3, 3, 0));
+    CurveVectorPtr hole1 = CurveVector::Create(CurveVector::BoundaryType::BOUNDARY_TYPE_Outer, ICurvePrimitive::CreateArc(DEllipse3d::FromCenterRadiusXY(DPoint3d::From(4.5, 4.5), 0.5)));
+    CurveVectorPtr unionRegion = CurveVector::AreaUnion(*hole0, *hole1);
+    CurveVectorPtr parityRegion = CurveVector::AreaDifference(*solid, *unionRegion);
+    Check::True(unionRegion.IsValid(), "unionRegion computed");
+    Check::True(parityRegion.IsValid(), "parityRegion computed");
+
+    IFacetOptionsPtr options = IFacetOptions::CreateForSurfaces();
+    options->SetAngleTolerance(0.1);
+
+    DRay3d axis = DRay3d::FromOriginAndVector(DPoint3d::FromZero(), DVec3d::From(1,0,0));
+    Check::SaveTransformed(DSegment3d::From(axis.origin, axis.FractionParameterToPoint(2.0)));
+
+    DPoint3d centroid, axisPoint;
+    ValidatedDouble meshVolume;
+    double sweptVolume = 0.0, area, centroidTravelDist, param;
+    double sweep = Angle::PiOver2();
+    bool capped = true;
+
+    if (true)
+        {
+        IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create(*options);
+        builder->AddRotationalSweep(unionRegion, axis.origin, axis.direction, sweep, capped);
+        Check::SaveTransformed(*unionRegion);
+        auto mesh = builder->GetClientMeshPtr();
+        Check::SaveTransformed(*mesh);
+        if (Check::True(unionRegion->CentroidAreaXY(centroid, area)) &&
+            Check::True(axis.ProjectPointUnbounded(axisPoint, param, centroid)))
+            {
+            centroidTravelDist = sweep * axisPoint.Distance(centroid);
+            sweptVolume = area * centroidTravelDist; // Pappus
+            meshVolume = mesh->ValidatedVolume();
+            if (Check::True(meshVolume.IsValid() && sweptVolume > 0.0, "swept union region mesh has valid volume"))
+                Check::True(fabs(sweptVolume - meshVolume.Value()) / sweptVolume < 0.01, "swept union region mesh volume within 1% of swept volume");
+            }
+        }
+
+    Check::Shift(10, 0);
+
+    if (true)
+        {
+        IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create(*options);
+        builder->AddRotationalSweep(parityRegion, axis.origin, axis.direction, sweep, capped);
+        Check::SaveTransformed(*parityRegion);
+        auto mesh = builder->GetClientMeshPtr();
+        Check::SaveTransformed(*mesh);
+        if (Check::True(parityRegion->CentroidAreaXY(centroid, area)) &&
+            Check::True(axis.ProjectPointUnbounded(axisPoint, param, centroid)))
+            {
+            centroidTravelDist = sweep * axisPoint.Distance(centroid);
+            sweptVolume = area * centroidTravelDist; // Pappus
+            meshVolume = mesh->ValidatedVolume();
+            if (Check::True(meshVolume.IsValid() && sweptVolume > 0.0, "swept parity region mesh has valid volume"))
+                Check::True(fabs(sweptVolume - meshVolume.Value()) / sweptVolume < 0.01, "swept parity region mesh volume within 1% of swept volume");
+            }
+        }
+
+    Check::Shift(10, 0);
+
+    if (true)
+        {
+        auto badParityRegion = parityRegion->Clone();
+        badParityRegion->SwapAt(0, 1);  // outer is not first
+        IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create(*options);
+        builder->AddRotationalSweep(badParityRegion, axis.origin, axis.direction, sweep, capped);
+        auto mesh = builder->GetClientMeshPtr();
+        Check::SaveTransformed(*mesh);
+        meshVolume = mesh->ValidatedVolume();   // compare to previously computed sweptVolume
+        if (Check::True(meshVolume.IsValid() && sweptVolume > 0.0, "swept fixed parity region mesh has valid volume"))
+            Check::True(fabs(sweptVolume - meshVolume.Value()) / sweptVolume < 0.01, "swept fixed parity region mesh volume within 1% of swept volume");
+        }
+
+    Check::ClearGeometry("PolyfaceBuilder.RegionRotationalSweep");
+    }

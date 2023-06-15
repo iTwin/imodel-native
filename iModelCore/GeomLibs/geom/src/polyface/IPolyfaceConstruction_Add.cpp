@@ -3909,27 +3909,27 @@ size_t &numLoop
     }
 
 
-// to be called for curves confirmed as outer or parity region (with correct outer/inner)
+// to be called for curves confirmed as outer, union, or parity region (with correct outer/inner)
 static void AddRotationalSweep_singleRegion (IPolyfaceConstructionR builder,
-CurveVectorPtr curve,
+CurveVectorCR curve,
 DPoint3dCR origin,
 DVec3dCR axis,
 double   totalSweepRadians,
 bool     capped
 )
     {
-    if(curve.IsValid ())
+    if (!curve.empty())
         {
         bvector<DPoint3dDoubleUVCurveArrays> loopData;
         bvector<double> curveLengths;
-        builder.StrokeWithDoubledPointsAtCorners (*curve, loopData, curveLengths);
+        builder.StrokeWithDoubledPointsAtCorners (curve, loopData, curveLengths);
         for (auto &loop : loopData)
             {
             if (loop.m_xyz.size () != loop.m_vectorU.size ()
                 || loop.m_xyz.size () != loop.m_curve.size ())
                     GEOMAPI_PRINTF ("loop sizes %d %d %d\n", (int)loop.m_xyz.size (),(int)loop.m_vectorU.size (),(int)loop.m_curve.size ());
             }
-        bool reverse = curve->IsAnyRegionType () ? ComputeRotationalSweepLoopSense(loopData[0].m_xyz, origin, axis, totalSweepRadians)
+        bool reverse = curve.IsAnyRegionType () ? ComputeRotationalSweepLoopSense(loopData[0].m_xyz, origin, axis, totalSweepRadians)
                 : false;
 
         bvector<DPoint3d> endCapPoints;
@@ -3949,7 +3949,6 @@ bool     capped
         builder.AddTriangulationPair(startCapPoints, reverse, endCapPoints, !reverse,
             capped,
             !Angle::IsFullCircle (totalSweepRadians), CurveTopologyId::Type::SweepProfile);
-
         }
     }
 /*--------------------------------------------------------------------------------**//**
@@ -3964,30 +3963,29 @@ double   totalSweepRadians,
 bool     capped
 )
     {
-    if (curve->IsUnionRegion () && curve->IsParityRegion ())    // We don't trust the loops on anything more than a single....
+    if (!curve.IsValid())
+        return;
+
+    CurveVectorCP pCurve = curve.get();
+    CurveVectorPtr fixup = nullptr;
+
+    if (curve->IsUnionRegion () || curve->IsParityRegion ())    // We don't trust the loops on anything more than a single....
         {
         LocalCoordinateSelect frameType = LOCAL_COORDINATE_SCALE_UnitAxesAtStart;
         Transform localToWorld, worldToLocal;
         DRange3d localRange;
-        CurveVectorPtr fixup = curve->CloneInLocalCoordinates (frameType, localToWorld, worldToLocal, localRange);
+        fixup = curve->CloneInLocalCoordinates (frameType, localToWorld, worldToLocal, localRange);
         // fixup as viewed in xy plane
         bool ok = fixup->FixupXYOuterInner (false);
         if (!ok)
             capped = false;
         // go back to world
         fixup->TransformInPlace (localToWorld);
-        if (fixup->IsUnionRegion ())
-            {
-            for (size_t i = 0; i < fixup->size (); i++)
-                AddRotationalSweep_singleRegion (*this, fixup->at(i)->GetChildCurveVectorP (), origin, axis, totalSweepRadians, capped);
-            }
-        else
-            {
-            AddRotationalSweep_singleRegion (*this, fixup->at(0)->GetChildCurveVectorP (), origin, axis, totalSweepRadians, capped);
-            }
+        pCurve = fixup.get();
         }
-    else
-        AddRotationalSweep_singleRegion (*this, curve, origin, axis, totalSweepRadians, capped);
+
+    if (pCurve)
+        AddRotationalSweep_singleRegion (*this, *pCurve, origin, axis, totalSweepRadians, capped);
     }
 
 /*--------------------------------------------------------------------------------**//**
