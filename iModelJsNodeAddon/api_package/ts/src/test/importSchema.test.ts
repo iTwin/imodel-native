@@ -6,10 +6,8 @@ import { assert, expect } from "chai";
 import * as fs from "fs";
 import * as path from "path";
 import { getOutputDir, iModelJsNative } from "./utils";
-import { Guid, Logger, OpenMode } from "@itwin/core-bentley";
+import { Guid, OpenMode } from "@itwin/core-bentley";
 import { Code, ElementProps } from "@itwin/core-common";
-import { NativeLoggerCategory } from "../NativeLibrary";
-import { LogLevel } from "@itwin/core-bentley/lib/cjs/Logger";
 import { clearRegistry, loadMetaData } from "./loadMetaData";
 
 const testSchemaXmlV10 = `<?xml version="1.0" encoding="UTF-8"?>
@@ -86,10 +84,6 @@ describe("ImportSchema", () => {
     db.saveChanges();
     db.closeIModel();
 
-    Logger.initializeToConsole();
-    Logger.setLevel(NativeLoggerCategory.DgnCore, LogLevel.Trace);
-    Logger.setLevel(NativeLoggerCategory.ECObjectsNative, LogLevel.Trace);
-    iModelJsNative.logger = Logger;
 
     db.openIModel(dbpath, OpenMode.ReadWrite);
 
