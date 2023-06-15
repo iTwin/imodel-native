@@ -11,3 +11,6 @@ $(BuildContext)VendorAPI/curl : $(SourceDir)include/curl
 
 $(BuildContext)Delivery/curl-license.txt : $(SourceDir)COPYING
     $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Delivery/c-ares-license.md : $(_MakeFilePath)ares/LICENSE.md
+    $(LinkFirstDepToFirstTarget)
