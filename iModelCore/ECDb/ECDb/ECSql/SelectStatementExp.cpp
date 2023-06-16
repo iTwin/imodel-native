@@ -844,6 +844,22 @@ Exp::FinalizeParseStatus SingleSelectStatementExp::_FinalizeParsing(ECSqlParseCo
         if (!IsRowConstructor())
             {
             m_rangeClassRefExpCache = GetFrom()->FindRangeClassRefExpressions();
+
+            if (FindParent(Exp::Type::SubqueryValue) != nullptr)
+                {
+                Exp const* parent = FindParent(Exp::Type::SingleSelect);
+                SingleSelectStatementExp const* cur = parent == nullptr ? nullptr : parent->GetAsCP<SingleSelectStatementExp>();
+
+                while (cur != nullptr)
+                    {
+                    parent = cur->FindParent(Exp::Type::SingleSelect);
+                    cur = parent == nullptr ? nullptr : parent->GetAsCP<SingleSelectStatementExp>();
+                    if (cur != nullptr)
+                        {
+                        cur->GetFrom()->FindRangeClassRefs(m_rangeClassRefExpCache, RangeClassInfo::Scope::Inherited);
+                        }
+                    }
+                }
             ctx.PushArg(std::make_unique<ECSqlParseContext::RangeClassArg>(m_rangeClassRefExpCache));
             }
 

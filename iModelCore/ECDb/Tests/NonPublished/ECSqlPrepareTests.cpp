@@ -214,6 +214,10 @@ TEST_F(ECSqlSelectPrepareTests, Alias)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT ECInstanceId FROM meta.ECClassDef this WHERE ECInstanceId = (SELECT Class.Id FROM meta.ECPropertyDef WHERE Class.Id = this.ECInstanceId)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT ECInstanceId, (SELECT Class.Id FROM meta.ECPropertyDef WHERE Class.Id = this.ECInstanceId) FROM meta.ECClassDef this"));
 
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT ECInstanceId, (SELECT 1 FROM meta.ECPropertyDef p WHERE p.Class.Id = c.ECInstanceId) FROM meta.ECClassDef c"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT ECInstanceId, (SELECT 1 FROM (SELECT 1 FROM meta.ECPropertyDef p WHERE p.Class.Id = c.ECInstanceId)) FROM meta.ECClassDef c"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT ECInstanceId, (SELECT 1 FROM (SELECT 1 FROM (SELECT 1 FROM meta.ECPropertyDef p WHERE p.Class.Id = c.ECInstanceId))) FROM meta.ECClassDef c"));
+
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT 1 FROM meta.ECSchemaDef WHERE meta.ECSchemaDef.Name=?"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT 1 FROM meta.ECSchemaDef WHERE ECSchemaDef.Name=?"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT 1 FROM meta.ECSchemaDef WHERE Name=?"));
