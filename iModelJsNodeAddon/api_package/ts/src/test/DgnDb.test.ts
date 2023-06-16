@@ -67,8 +67,8 @@ describe("basic tests", () => {
       fs.mkdirSync(baseDir, { recursive: true });
     }
 
-    // create empty channel db.
-    const syncDbUri = path.join(baseDir, "channel.ecdb");
+    // create empty sync db.
+    const syncDbUri = path.join(baseDir, "syncdb.ecdb");
     const syncDb = new iModelJsNative.ECDb();
     let rc: DbResult = syncDb.createDb(syncDbUri);
     assert.equal(DbResult.BE_SQLITE_OK, rc);
@@ -80,7 +80,7 @@ describe("basic tests", () => {
     const iModelDb = new iModelJsNative.DgnDb();
     iModelDb.createIModel(seedUri, { rootSubject: { name: "test file" } });
 
-    // initialize shared channel.
+    // initialize sync db.
     iModelDb.schemaSyncInit(syncDbUri);
     iModelDb.saveChanges();
     iModelDb.performCheckpoint();

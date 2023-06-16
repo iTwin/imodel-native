@@ -292,12 +292,12 @@ void SyncCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
         return;
         }
 
-    if (!session.IsFileLoaded() || session.GetFile().GetECDbHandle()->IsReadonly())
+    if (!session.IsFileLoaded())
         {
-        IModelConsole::WriteErrorLine("There is should a file already loaded.");
+        IModelConsole::WriteErrorLine("There is should a file already loaded .");
         return;
         }
-    if ( session.GetFile().GetECDbHandle()->IsReadonly())
+    if (session.GetFile().GetECDbHandle()->IsReadonly())
         {
         IModelConsole::WriteErrorLine("The loaded file should be open in read/write mode.");
         return;
