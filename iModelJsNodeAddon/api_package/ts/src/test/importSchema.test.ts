@@ -84,7 +84,6 @@ describe("ImportSchema", () => {
     db.saveChanges();
     db.closeIModel();
 
-
     db.openIModel(dbpath, OpenMode.ReadWrite);
 
     db.importXmlSchemas([testSchemaXmlV10], { schemaLockHeld: true });

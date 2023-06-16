@@ -22169,7 +22169,7 @@ TEST_F(SchemaSyncTestFixture, DisallowMajorSchemaUpgrade)
             {
             const auto [schemaHash, mapHash, dbSchemaHash] = hashes;
             CheckHashes(*m_briefcase, schemaHash, mapHash, dbSchemaHash);
-            m_schemaChannel->WithReadOnly([=](ECDbR syncDb) { CheckSyncHashes(syncDb, schemaHash, mapHash); });
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, std::get<0>(hashes), std::get<1>(hashes)); });
             }
         return actualStat;
         };
