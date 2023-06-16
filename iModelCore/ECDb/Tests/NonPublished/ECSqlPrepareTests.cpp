@@ -1144,6 +1144,14 @@ TEST_F(ECSqlSelectPrepareTests, OrderBy)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, S FROM ecsql.P ORDER BY MyPSA.RelECClassId"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("select I FROM ecsql.PSA ORDER BY NULLIF(I,123)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("select I FROM ecsql.PSA ORDER BY COALESCE(I,L)"));
+    //adding macro to test nulls first and last changes
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("select I FROM ecsql.PSA ORDER BY L NULL FIRST"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("select I FROM ecsql.PSA ORDER BY L NULL LAST"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("select I FROM ecsql.PSA ORDER BY L ASC NULL FIRST"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("select I FROM ecsql.PSA ORDER BY L DESC NULL FIRST"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("select I FROM ecsql.PSA ORDER BY L ASC NULL LAST"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("select I FROM ecsql.PSA ORDER BY L DESC NULL LAST"));
+
     }
 
 //---------------------------------------------------------------------------------------
