@@ -745,6 +745,16 @@ MD5 PresentationRuleSet::_ComputeHash() const
     return md5;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void PresentationRuleSet::AssignRuleIndexes()
+    {
+    int index = 0;
+    SET_RULES_INDEX(m_rootNodesRules, index)
+    SET_RULES_INDEX(m_childNodesRules, index)
+    }
+
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 template<> RootNodeRuleList* PresentationRuleSet::GetRules<RootNodeRule>() {return &m_rootNodesRules;}
 template<> ChildNodeRuleList* PresentationRuleSet::GetRules<ChildNodeRule>() {return &m_childNodesRules;}
