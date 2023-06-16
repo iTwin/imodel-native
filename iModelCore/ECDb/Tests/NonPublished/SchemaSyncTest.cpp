@@ -17,7 +17,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
  * it will require to call ImportSchemasViaSharedChannel()
 */
 
-auto schemaXMLBuilder = [&](Utf8CP newSchemaVersion = "01.00.00")
+auto schemaXMLBuilder = [](Utf8CP newSchemaVersion = "01.00.00")
     {
     Utf8CP schemaTemplate =
         R"xml(<?xml version="1.0" encoding="UTF-8"?>
@@ -22169,7 +22169,7 @@ TEST_F(SchemaSyncTestFixture, DisallowMajorSchemaUpgrade)
             {
             const auto [schemaHash, mapHash, dbSchemaHash] = hashes;
             CheckHashes(*m_briefcase, schemaHash, mapHash, dbSchemaHash);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, schemaHash, mapHash); });
+            m_schemaChannel->WithReadOnly([=](ECDbR syncDb) { CheckSyncHashes(syncDb, schemaHash, mapHash); });
             }
         return actualStat;
         };
