@@ -1063,7 +1063,8 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
         {
         m_ecdb.GetImpl().Issues().ReportV(
             IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue,
-            "Failed to import ECSchemas. Cannot import schemas into a file which is not setup to use schema sync but sync db uri was not provided. Sync-Id: {%s}, uri: {%s}.",
+            "Failed to import ECSchemas. Cannot import schemas into a file which is not setup to use schema sync but sync db uri was provided. Sync-Id: {%s}, uri: {%s}.",
+
             localDbInfo.GetSyncId().ToString().c_str(),
             resolvedSyncDbUri.GetUri().c_str()
         );
