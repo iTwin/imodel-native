@@ -518,8 +518,6 @@ $(o)bn_word$(oext) : $(vendorSrc)crypto/bn/bn_word.c ${MultiCompileDepends}
 
 $(o)bn_x931p$(oext) : $(vendorSrc)crypto/bn/bn_x931p.c ${MultiCompileDepends}
 
-$(o)rsa_sup_mul$(oext) : $(vendorSrc)crypto/bn/rsa_sup_mul.c ${MultiCompileDepends}
-
 $(o)buf_err$(oext) : $(vendorSrc)crypto/buffer/buf_err.c ${MultiCompileDepends}
 
 $(o)buffer$(oext) : $(vendorSrc)crypto/buffer/buffer.c ${MultiCompileDepends}
