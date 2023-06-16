@@ -200,6 +200,16 @@ MD5 SubCondition::_ComputeHash() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+void SubCondition::_SetIndex(int& index)
+    {
+    T_Super::_SetIndex(index);
+    SET_RULES_INDEX(m_subConditions, index);
+    SET_RULES_INDEX(m_specifications, index);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 ChildNodeRule::ChildNodeRule() : m_targetTree(TargetTree_MainTree), m_stopFurtherProcessing(false)
     {}
 
@@ -434,6 +444,16 @@ MD5 ChildNodeRule::_ComputeHash() const
     ADD_RULES_TO_HASH(md5, CHILD_NODE_RULE_JSON_ATTRIBUTE_SPECIFICATIONS, m_specifications);
     ADD_RULES_TO_HASH(md5, CHILD_NODE_RULE_JSON_ATTRIBUTE_CUSTOMIZATIONRULES, m_customizationRules);
     return md5;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void ChildNodeRule::_SetIndex(int& index)
+    {
+    T_Super::_SetIndex(index);
+    SET_RULES_INDEX(m_subConditions, index);
+    SET_RULES_INDEX(m_specifications, index);
     }
 
 /*---------------------------------------------------------------------------------**//**

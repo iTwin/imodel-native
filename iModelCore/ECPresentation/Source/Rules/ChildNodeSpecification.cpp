@@ -292,3 +292,12 @@ MD5 ChildNodeSpecification::_ComputeHash() const
     ADD_RULES_TO_HASH(md5, CHILD_NODE_SPECIFICATION_JSON_ATTRIBUTE_NESTEDRULES, m_nestedRules);
     return md5;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void ChildNodeSpecification::_SetIndex(int& index)
+    {
+    T_Super::_SetIndex(index);
+    SET_RULES_INDEX(m_nestedRules, index);
+    }

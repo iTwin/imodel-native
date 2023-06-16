@@ -7435,7 +7435,6 @@ EXPORTS
   BUF_reverse
   ossl_err_load_BUF_strings
   ossl_bsearch
-  ossl_bn_rsa_do_unblind
   BN_X931_derive_prime_ex
   BN_X931_generate_Xpq
   BN_X931_generate_prime_ex
