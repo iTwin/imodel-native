@@ -8,7 +8,7 @@ This document including important changes to syntax or file format.
 | ECSQL   | `1.2.0.0` |
 
 ## `6/14/2023`: Add support for Schema sync
-* Schema sync allow two or more briefcases to sync there schema without require schema lock.
+* Schema sync allows two or more briefcases to sync their schema without requiring schema lock.
 * Schema lock might still be required in cases where data transformation require due to schema change.
 * Schema sync is handled in import schema call.
 
