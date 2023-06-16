@@ -48,7 +48,7 @@ void IPolyfaceConstruction::AddEdgeChainZeroBased (CurveTopologyId::Type type, u
 bool IPolyfaceConstruction::AddTriangulation (bvector <DPoint3d> const &originalInPoints)
     {
     // work with a local duplicate free copy of the points, eliminating trailing disconnects ...
-    auto inpoints = originalInPoints;
+    bvector<DPoint3d> inpoints = originalInPoints;
     while (inpoints.size () > 0 && inpoints.back ().IsDisconnect ())
         inpoints.pop_back ();
 
@@ -61,13 +61,13 @@ bool IPolyfaceConstruction::AddTriangulation (bvector <DPoint3d> const &original
         if (!inpoints[i].AlmostEqual (points.back()))
             points.push_back (inpoints[i]);
     while (points.size () > 1 && points.back ().AlmostEqual (points[0]))
-        points.pop_back ();
-    
+        points.pop_back (); // remove wraparound points
+    if (points.size() < 3)
+        return false;
+
     SynchOptions ();
-    bvector <DPoint2d> params;
     Transform worldToLocal, localToWorld;    
-    bvector <DPoint3d> outPoints = points;   // Possibly augmented by intersections
-    if (!PolygonOps::CoordinateFrame (&outPoints[0], points.size (), localToWorld, worldToLocal, LOCAL_COORDINATE_SCALE_UnitAxesAtLowerLeft))
+    if (!PolygonOps::CoordinateFrame(points.data(), points.size (), localToWorld, worldToLocal, LOCAL_COORDINATE_SCALE_UnitAxesAtLowerLeft))
         return false;
 
     int     destMaxPerFace = GetFacetOptionsR ().GetMaxPerFace ();
@@ -84,12 +84,15 @@ bool IPolyfaceConstruction::AddTriangulation (bvector <DPoint3d> const &original
     if (destMaxPerFace >= numPoints  && DPoint3dOps::CountDisconnects (points) == 0)
         buildSimpleIndices = true;
         
-    if (buildSimpleIndices && convexRequired && !bsiGeom_testPolygonConvex (&points[0], (int)points.size ()))
+    if (buildSimpleIndices && convexRequired && !bsiGeom_testPolygonConvex(points.data(), (int)points.size ()))
         buildSimpleIndices = false;
 
     double maxEdgeLength = GetFacetOptionsR ().GetMaxEdgeLength ();
     if (maxEdgeLength > 0)
         buildSimpleIndices = false;
+
+    bvector<DPoint3d> outPoints;        // Possibly augmented by intersections
+    outPoints.reserve(numPoints + 1);   // preallocate enough for simple case 
 
     if (maxEdgeLength > 0)
         {
@@ -105,33 +108,24 @@ bool IPolyfaceConstruction::AddTriangulation (bvector <DPoint3d> const &original
         }            
     else if (buildSimpleIndices)
         {
-        outPoints.clear ();
-        size_t n = points.size ();
-        // strip off trailing points.
-        while (n > 1 && points[0].AlmostEqual (points[n-1]))
-            n--;
-        // build a single loop over all points (one-based indices with 0 terminator), ignoring repeats
+        // build a single loop over all points (one-based indices with 0 terminator)
         loopIndex.push_back (1);
         outPoints.push_back (points[0]);
-        for (size_t ii = 1; ii < n; ii++)
+        for (size_t ii = 1; ii < points.size(); ii++)
             {
-            if (!points[ii].AlmostEqual (outPoints.back ()))
-                {
-                outPoints.push_back (points[ii]);
-                loopIndex.push_back ((int)outPoints.size ());   // 1 based index !!!
-                }
-            }
-        if (outPoints.back ().AlmostEqual (outPoints.front ()))
-            {
-            outPoints.pop_back ();
-            loopIndex.pop_back ();
+            // adjacent/wraparound duplicates have already been removed from points 
+            outPoints.push_back (points[ii]);
+            loopIndex.push_back ((int)(ii + 1));
             }
         loopIndex.push_back (0);
         }
-    else if (SUCCESS != vu_triangulateProjectedPolygon (&loopIndex, NULL, &outPoints, &localToWorld, &worldToLocal,  &points[0], (int)points.size (), 0.0, true, maxPerFace))
+    else if (SUCCESS != vu_triangulateProjectedPolygon (&loopIndex, NULL, &outPoints, &localToWorld, &worldToLocal, points.data(), (int)points.size (), 0.0, true, maxPerFace))
         {
         return false;
         }
+
+    if (outPoints.size() < 3)
+        return false;
 
     // Remap indices into polyface ...
     DVec3d polygonNormal;
@@ -143,6 +137,7 @@ bool IPolyfaceConstruction::AddTriangulation (bvector <DPoint3d> const &original
     static int s_disconnectHandling = 0;    // 1==> include the disconnect directly (old behavior). 2==>skip (this may cause index errors), other==>insert a local 000
     if (NeedParams())
         {
+        bvector <DPoint2d> params;
         for (size_t i = 0, n = outPoints.size (); i < n; i++)
             {
             DPoint3d workPoint = outPoints[i];
@@ -294,7 +289,7 @@ bool IPolyfaceConstruction::AddTriangulation (bvector <DPoint3d> const &original
         }
     EndFace ();
     if (GetFacetOptionsR ().GetEdgeChainsRequired ())
-        AddEdgeChains (CurveTopologyId::Type::TriangulationBoundary , 0, inpoints, true);
+        AddEdgeChains (CurveTopologyId::Type::TriangulationBoundary , 0, points, true);
     return numFacet > 0;
     }
 
