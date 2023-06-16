@@ -15,7 +15,7 @@ const char* SchemaSyncTestFixture::DEFAULT_SHA3_256_CHANNEL_SQLITE_SCHEMA = "114
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SchemaSyncTestFixture::Test(Utf8CP name, std::function<void()> test){
-    std::cerr << "  " <<  "\xF8" << " " << name << std::endl;
+    std::cout << "  o " << " " << name << std::endl;
     test();
 }
 
