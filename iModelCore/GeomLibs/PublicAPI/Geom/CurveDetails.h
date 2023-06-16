@@ -522,7 +522,7 @@ bool m_allowSharpestCorners; // Whether to remove the internal turn angle upper 
                              // When `m_allowSharpestCorners` is true, this internal upper bound is removed, allowing sharp
                              // corners for turn angles up to `m_chamferAngle`. Thus, if you know your input turn angles
                              // are no greater than `m_chamferAngle`, you can create an offset with sharp corners at
-                             // each joint by setting `m_chamferAngle < m_arcAngle` and `m_allowSharpestCorners` to true.
+                             // each joint by setting `m_arcAngle > m_chamferAngle` and `m_allowSharpestCorners` to true.
 bool m_unusedBool[7];
 double m_unusedDouble[8];
 int    m_bCurvePointsPerKnot;   // When offsetting bspline, number of points requested per knot interval.

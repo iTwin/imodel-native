@@ -636,14 +636,14 @@ TEST(CloneOffset, ArcOffset0)
 
 TEST(CloneOffset, OpenCurve)
     {
-        CurveVectorPtr pathA = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
-        pathA->push_back(ICurvePrimitive::CreateArc(DEllipse3d::FromVectors(
-            DPoint3d::From(1, 1, 0),
-            DVec3d::From(-1, 0, 0),
-            DVec3d::From(0, -1, 0),
-            0.0, Angle::PiOver2())));
+    CurveVectorPtr pathA = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
+    pathA->push_back(ICurvePrimitive::CreateArc(DEllipse3d::FromVectors(
+        DPoint3d::From(1, 1, 0),
+        DVec3d::From(-1, 0, 0),
+        DVec3d::From(0, -1, 0),
+        0.0, Angle::PiOver2())));
 
-        for (double offset = 1.5; offset > -1.0; offset -= 1.0)
+    for (double offset = 1.5; offset > -1.0; offset -= 1.0)
         {
             Check::StartScope("Offset from arc", offset);
             CurveOffsetOptions options(offset);
@@ -713,7 +713,7 @@ TEST(CloneOffset, ArcOffset1)
             Check::Print (regionB, "ConsolidatedOffset");
         Check::EndScope ();
         }
-        Check::ClearGeometry("CloneOffset.ArcOffset1");
+    Check::ClearGeometry("CloneOffset.ArcOffset1");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4441,7 +4441,7 @@ TEST(CloneOffset, SharpestCornersOffset)
     Check::SaveTransformed(*pathA);
 
     for (double d : distances)
-    {
+        {
         CurveOffsetOptions options(d);
         options.SetChamferAngle(PI);
         options.SetArcAngle(PI);
@@ -4450,7 +4450,7 @@ TEST(CloneOffset, SharpestCornersOffset)
         Check::Print(pathB, "Offset");
         Check::Print(d, "Distance");
         Check::SaveTransformed(*pathB);
-    }
+        }
     Check::ClearGeometry("CloneOffset.SharpestCornersOffset");
     }
 
@@ -4470,7 +4470,7 @@ TEST(CloneOffset, Parallelogram)
     Check::SaveTransformed(*pathA);
 
     for (double distance = -3.0; distance <= 3.0; distance++)
-    {
+        {
         CurveOffsetOptions options(distance);
         options.SetChamferAngle(PI);
         options.SetArcAngle(PI);
@@ -4535,7 +4535,7 @@ TEST(CloneOffset, Parallelogram)
          */
         double expectedArea = (b + 2 * distance) * (a + 2 * sqrt(5) * distance);
         Check::Near(area, expectedArea);
-    }
+        }
     Check::ClearGeometry("CloneOffset.Parallelogram");
     }
 
