@@ -424,7 +424,7 @@ DbResult PragmaExperimentalFeatures::Write(PragmaManager::RowSet& rowSet, ECDbCR
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult PragmaIntegrityCheck::Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const& v) {
 	if (!ecdb.GetECSqlConfig().GetExperimentalFeaturesEnabled()) {
-		ecdb.GetImpl().Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "PRAGMA integrity_check is experimental feature. Use 'PRAGMA experimental_feature=true' to enable it.");
+		ecdb.GetImpl().Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "PRAGMA integrity_check is experimental feature. Use 'PRAGMA experimental_features_enabled=true' to enable it.");
 		return BE_SQLITE_ERROR;
 	}
 
