@@ -445,13 +445,13 @@ export declare namespace IModelJsNative {
     readonly ecSchemaXmlContext?: ECSchemaXmlContext;
   }
 
-  interface LocalDbInfo {
+  interface SchemaLocalDbInfo {
     readonly id: string;
     readonly dataVer: string;
     readonly lastModUtc: string;
   }
 
-  interface SyncDbInfo extends LocalDbInfo {
+  interface SchemaSyncDbInfo extends SchemaLocalDbInfo {
     readonly projectId: string;
     readonly parentChangesetId: string;
     readonly parentChangesetIndex?: string;
@@ -473,8 +473,8 @@ export declare namespace IModelJsNative {
     public schemaSyncInit(syncDbUri: string): void;
     public schemaSyncPull(syncDbUri?: string): void;
     public schemaSyncEnabled(): boolean;
-    public schemaSyncGetLocalDbInfo(): LocalDbInfo | undefined;
-    public schemaSyncGetSyncDbInfo(syncDbUri: string): SyncDbInfo | undefined;
+    public schemaSyncGetLocalDbInfo(): SchemaLocalDbInfo | undefined;
+    public schemaSyncGetSyncDbInfo(syncDbUri: string): SchemaSyncDbInfo | undefined;
     public abandonChanges(): DbResult;
     public abandonCreateChangeset(): void;
     public addChildPropagatesChangesToParentRelationship(schemaName: string, relClassName: string): BentleyStatus;
@@ -671,8 +671,8 @@ export declare namespace IModelJsNative {
     public schemaSyncInit(syncDbUri: string): void;
     public schemaSyncPull(syncDbUri: string | undefined): void;
     public schemaSyncEnabled(): boolean;
-    public schemaSyncGetLocalDbInfo(): LocalDbInfo | undefined;
-    public schemaSyncGetSyncDbInfo(): SyncDbInfo | undefined;
+    public schemaSyncGetLocalDbInfo(): SchemaLocalDbInfo | undefined;
+    public schemaSyncGetSyncDbInfo(): SchemaSyncDbInfo | undefined;
     public getFilePath(): string;
     public importSchema(schemaPathName: string): DbResult;
     public isOpen(): boolean;

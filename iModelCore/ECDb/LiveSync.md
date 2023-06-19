@@ -1,6 +1,6 @@
-# No lock schema synchronization across multiple briefcases
+# Schema synchronization
 
-No lock does not mean lock free. It just mean that briefcases can make changes to schema without requiring them to push there changes.
+Schema synchronization allows one or more briefcases to import the schema and synchronize it with other briefcases without requiring pushing the changes to the hub. Generally, no schema lock required when the briefcase has schema synchronization is enabled. But in the exceptional case where schema import requires to transform data a schema lock is required. Different briefcases can push the same changes though anyone who pulls and apply that redundant schema changeset will only apply it once or all duplicate entries in the schema changeset will be ignored.
 
 ## Workflow test
 
