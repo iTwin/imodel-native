@@ -29,9 +29,21 @@ BUILD_NO_STACK_CHECK = 1   # Don't want to modify third party code, but hopefull
 #----------------------------------------------------------
 %include mdl.mki
 
-appName = iTwinOpenSSL
 vendorSrc = $(_MakeFilePath)vendor/
-o = $(OutputRootDir)build/iTwinOpenSSL/
+
+%if !defined(iTwinNativeThirdParty)
+  appName = iTwinOpenSSL
+  o = $(OutputRootDir)build/iTwinOpenSSL/
+  %message *************
+  %message iTwinOpenSSL
+  %message *************
+%else
+  appName = BeOpenSSL
+  o = $(OutputRootDir)build/BeOpenSSL/
+  %message $$$$$$$$$$$$$
+  %message BeOpenSSL
+  %message $$$$$$$$$$$$$
+%endif
 
 always:
     !~@mkdir $(o)
@@ -517,6 +529,9 @@ $(o)bn_srp$(oext) : $(vendorSrc)crypto/bn/bn_srp.c ${MultiCompileDepends}
 $(o)bn_word$(oext) : $(vendorSrc)crypto/bn/bn_word.c ${MultiCompileDepends}
 
 $(o)bn_x931p$(oext) : $(vendorSrc)crypto/bn/bn_x931p.c ${MultiCompileDepends}
+
+# This file does not exist on src present at imodel-native but present at iTwinNativeThirdParty
+# $(o)rsa_sup_mul$(oext) : $(vendorSrc)crypto/bn/rsa_sup_mul.c ${MultiCompileDepends}
 
 $(o)buf_err$(oext) : $(vendorSrc)crypto/buffer/buf_err.c ${MultiCompileDepends}
 
@@ -2132,7 +2147,18 @@ objs =% $(MultiCompileObjectList)
 #----------------------------------------------------------------------------------------
 #   Create the library
 #----------------------------------------------------------------------------------------
-DLM_NAME                    = iTwinOpenSSL
+%if !defined(iTwinNativeThirdParty)
+  DLM_NAME                    = iTwinOpenSSL
+  %message ************
+  %message iTwinOpenSSL
+  %message ************
+%else
+  DLM_NAME                    = BeOpenSSL
+  %message $$$$$$$$$$$$
+  %message BeOpenSSL
+  %message $$$$$$$$$$$$
+%endif
+
 DLM_OBJECT_FILES            = $(objs)
 DLM_EXPORT_OBJS             = $(DLM_OBJECT_FILES)
 DLM_OBJECT_DEST             = $(o)
