@@ -1116,7 +1116,7 @@ struct FetchCtx {
   DaemonCtx *pCtx;
   CacheEntry *pEntry;             /* Cache entry to populate (if any) */
   Container *pCont;
-  BcvEncryptionKey *pKey;
+  BcvIntKey *pKey;
 };
 
 static void daemon_usage(char *argv0){
@@ -1538,7 +1538,7 @@ static DClient *bdFetchClient(FetchCtx *pDLCtx){
 
 static void bdBlockDownloadFree(FetchCtx *p){
   bdClientDecrRefcount(p->pClient);
-  bcvEncryptionKeyFree(p->pKey);
+  bcvIntEncryptionKeyFree(p->pKey);
   sqlite3_free(p);
 }
 
@@ -1551,7 +1551,7 @@ static void bcvCreateDir(int *pRc, BcvCommon *p, const char *zCont){
       "%s" BCV_PATH_SEPARATOR "%s", p->zDir, zCont
   );
   if( *pRc==SQLITE_OK && stat(zDir, &buf)<0 ){
-    if( osMkdir(zDir, 0770)<0 && stat(zDir, &buf)<0 ){
+    if( osMkdir(zDir, 0755)<0 && stat(zDir, &buf)<0 ){
       *pRc = SQLITE_CANTOPEN;
     }
   }
@@ -1616,7 +1616,7 @@ static void bdAttachCb(
 
   if( rc==SQLITE_OK && (pMsg->u.attach.flags & SQLITE_BCV_ATTACH_SECURE) ){
     sqlite3_randomness(BCV_LOCAL_KEYSIZE, pCont->aKey);
-    pCont->pKey = bcvEncryptionKeyNew(pCont->aKey);
+    pCont->pKey = bcvIntEncryptionKeyNew(pCont->aKey);
     if( pCont->pKey==0 ) fatal_oom_error();
     pCont->iEnc = ++pClient->pCtx->iNextId;
   }
@@ -1676,7 +1676,7 @@ static FetchCtx *bdFetchCtx(
   p->pCtx = pClient->pCtx;
   p->pCont = pClient->pCont;
   if( p->pCont && p->pCont->pKey ){
-    p->pKey = bcvEncryptionKeyRef(p->pCont->pKey);
+    p->pKey = bcvIntEncryptionKeyRef(p->pCont->pKey);
   }
   pClient->nRef++;
   return p;
@@ -1882,7 +1882,7 @@ static void bdWriteBlock(
 
 static int bdWriteFile(
   sqlite3_file *pFd, 
-  BcvEncryptionKey *pKey,
+  BcvIntKey *pKey,
   const u8 *aData, 
   int nData, 
   i64 iOff
@@ -1896,7 +1896,7 @@ static int bdWriteFile(
     const u8 *aWrite = &aData[i];
     if( pKey ){
       memcpy(aBuf, aWrite, sizeof(aBuf));
-      bcvEncrypt(pKey, iOff+i, 0, aBuf, sizeof(aBuf));
+      bcvIntEncrypt(pKey, iOff+i, 0, aBuf, sizeof(aBuf));
       aWrite = aBuf;
     }
     rc = pFd->pMethods->xWrite(pFd, aWrite, sizeof(aBuf), iOff+i);
