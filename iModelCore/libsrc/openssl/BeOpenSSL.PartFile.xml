@@ -25,6 +25,14 @@
         </Bindings>
     </Part>
 
+    <!-- <Part Name="__Library" BentleyBuildMakeFile="BeOpenSSL.mke" ApiNumber="B02"  BMakeOptions="+diTwinNativeThirdParty=true">
+        <Bindings>
+            <Libs IfNotPresent="Continue">Delivery/$(stlibprefix)BeOpenSSL$(stlibdebugext)</Libs>
+            <Libs>Delivery/$(libprefix)BeOpenSSL$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)BeOpenSSL$(ApiNumber)$(shlibext)</Assemblies>
+        </Bindings>
+    </Part> -->
+
     <Part Name="Library">
         <SubPart PartName="__PublicAPI" LibType="Static"/>
         <SubPart PartName="__Library"/>
