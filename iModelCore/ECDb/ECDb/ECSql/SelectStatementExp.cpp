@@ -683,12 +683,12 @@ Exp::FinalizeParseStatus SelectClauseExp::_FinalizeParsing(ECSqlParseContext& ct
     {
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
         {
-        if (!GetParent()->GetAs<SingleSelectStatementExp>().IsRowConstructor())
+        auto& sel = GetParent()->GetAs<SingleSelectStatementExp>();
+        if (!sel.IsRowConstructor())
             {
             BeAssert(ctx.CurrentArg() != nullptr && "SelectClauseExp::_FinalizeParsing: ECSqlParseContext::GetFinalizeParseArgs is expected to return a RangeClassRefList.");
             BeAssert(ctx.CurrentArg()->GetType() == ECSqlParseContext::ParseArg::Type::RangeClass && "Expecting range class");
-            ECSqlParseContext::RangeClassArg const* arg = static_cast<ECSqlParseContext::RangeClassArg const*>(ctx.CurrentArg());
-            if (SUCCESS != ReplaceAsteriskExpressions(ctx, arg->GetRangeClassInfos()))
+            if (SUCCESS != ReplaceAsteriskExpressions(ctx, sel.GetFrom()->FindRangeClassRefExpressions()))
                 {
                 ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Asterisk replacement in select clause failed unexpectedly.");
                 return FinalizeParseStatus::Error;
