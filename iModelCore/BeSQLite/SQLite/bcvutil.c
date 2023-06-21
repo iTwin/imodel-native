@@ -3899,7 +3899,7 @@ int bcvIntDecrypt(
   u64 aLocal[2] = {0, 0};
   if( aNonce ) memcpy(&aLocal, aNonce, 16);
   aLocal[1] ^= (u64)iNonce;
-  return bcvDecrypt(pKey->pKey, aLocal, aData, nData);
+  return bcvDecrypt(pKey->pKey, (const u8*)aLocal, aData, nData);
 }
 
 int bcvIntEncrypt(
@@ -3911,7 +3911,7 @@ int bcvIntEncrypt(
   u64 aLocal[2] = {0, 0};
   if( aNonce ) memcpy(&aLocal, aNonce, 16);
   aLocal[1] ^= (u64)iNonce;
-  return bcvEncrypt(pKey->pKey, aLocal, aData, nData);
+  return bcvEncrypt(pKey->pKey, (const u8*)aLocal, aData, nData);
 }
 
 

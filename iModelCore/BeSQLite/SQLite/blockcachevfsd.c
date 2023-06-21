@@ -1880,6 +1880,11 @@ static void bdWriteBlock(
   sqlite3_clear_bindings(pStmt);
 }
 
+/*
+** Write nData bytes of data from buffer aData[] to offset iOff of the
+** file opened by file descriptor pFd. If it is not NULL, encrypt the data 
+** using pKey before writing it to disk.
+*/
 static int bdWriteFile(
   sqlite3_file *pFd, 
   BcvIntKey *pKey,
@@ -1887,20 +1892,33 @@ static int bdWriteFile(
   int nData, 
   i64 iOff
 ){
-  u8 aBuf[512];
-  int rc = SQLITE_OK;
-  int i;
+  const int szChunk = 32768;      /* Any size acceptable to xWrite() */
+  const int szEncChunk = 512;     /* Must match size in bcvfsProxyDecrypt */
+  u8 *aBuf = 0;                   /* Interim buffer for encryption, if req. */
+  int rc = SQLITE_OK;             /* Return code */
+  int i;                          /* Offset within aData[] */
+
+  if( pKey ){
+    aBuf = (u8*)bdMalloc(szChunk);
+  }
 
   assert( (nData % sizeof(aBuf))==0 );
-  for(i=0; i<nData && rc==SQLITE_OK; i+=sizeof(aBuf)){
+  for(i=0; i<nData && rc==SQLITE_OK; i+=szChunk){
     const u8 *aWrite = &aData[i];
+    int nWrite = MIN(nData - i, szChunk);
+    assert( (nWrite % szEncChunk)==0 );
     if( pKey ){
-      memcpy(aBuf, aWrite, sizeof(aBuf));
-      bcvIntEncrypt(pKey, iOff+i, 0, aBuf, sizeof(aBuf));
+      int jj;
+      memcpy(aBuf, aWrite, nWrite);
+      for(jj=0; jj<nWrite; jj+=szEncChunk){
+        bcvIntEncrypt(pKey, iOff+i+jj, 0, &aBuf[jj], szEncChunk);
+      }
       aWrite = aBuf;
     }
-    rc = pFd->pMethods->xWrite(pFd, aWrite, sizeof(aBuf), iOff+i);
+    rc = pFd->pMethods->xWrite(pFd, aWrite, nWrite, iOff+i);
   }
+
+  sqlite3_free(aBuf);
   return rc;
 }
 
