@@ -29,6 +29,7 @@
 
 #include <assert.h>
 #include <string.h>
+#include <openssl/evp.h>
 
 typedef struct BcvEncryptionKey BcvEncryptionKey;
 typedef unsigned char u8;
@@ -542,20 +543,30 @@ static void bcvXorBuffers(u8 *out, u8 *a, u8 *b, int nByte){
 
 
 
-#define BCV_KEY_SCHED_SZ 44
+#define BCV_KEY_SCHED_SZ 44 // 44 because rijndael128 has 11 round keys each of which are 4 32 bit ints in size. 
 
 struct BcvEncryptionKey {
-  u32 aKeySchedule[BCV_KEY_SCHED_SZ];
+  u8 aKey[BCV_KEY_SIZE]; // u8 aKey[BCV_LOCAL_KEYSIZE];     /* Encryption key to use */
   u8 *aMask;                      /* Buffer to assemble mask in */
   int nMask;                      /* Size of buffer nMask in bytes */
 };
 
 BcvEncryptionKey *bcvEncryptionKeyNew(const unsigned char *aKey){
+  /* Now we can set key and IV */
+  // EVP_CipherInit_ex(ctx, NULL, NULL, key, iv, doEncrypt); // I'm GUESSING that here is where the 'keySchedule' gets generated internally..
+  // this might be a problem.. I could potentially do a workaround. Store the 16 byte key in the keyschedule, 
+  // change the size of the keySchedule to.. 4? 4 * 4(32 bit int) = 16 bytes.
+  // I don't really know how that works  
+  // Could I Change the type of bcvEncryptionKey/aKeySchedule? Probably. 
+  // What happens when I have multiple calls to decrypt/encrypt with diff keys / ivs? Probably not a big deal I think, as long as each
+  // one happens altogether.. which it most definitely does. 
+  // I need to figure out what the 'buffer' to assemble the mask in is even for. I passed taht to
+  // EVP_CipherUPdate when I did it, but who knows if thats riht. 
   BcvEncryptionKey *pNew;
   pNew = (BcvEncryptionKey*)sqlite3_malloc(sizeof(BcvEncryptionKey));
-  if( pNew ){
+  if( pNew ) {
     memset(pNew, 0, sizeof(BcvEncryptionKey));
-    bcvRijndaelKeySetupEnc128(pNew->aKeySchedule, aKey);
+    memcpy(pNew->aKey, aKey, BCV_KEY_SIZE); // Does this work..? I also saw a strlen(src) + 1 to I guess get the null terminator..?
   }
   return pNew;
 }
@@ -575,7 +586,6 @@ int bcvEncrypt(
   const u8 *aNonce,               /* 16 byte nonce value */
   unsigned char *aData, int nData /* Buffer to encrypt */
 ){
-  int ii;
   u8 *aMask;
 
   assert( (nData % 16)==0 );
@@ -590,12 +600,29 @@ int bcvEncrypt(
   }
   aMask = pKey->aMask;
 
-  bcvRijndaelEncrypt128(pKey->aKeySchedule, aNonce, aMask);
-  for(ii=16; ii<nData; ii+=16){
-    bcvRijndaelEncrypt128(pKey->aKeySchedule, &aMask[ii-16], &aMask[ii]);
-  }
+  int outlen = 0;
 
-  bcvXorBuffers(aData, aData, aMask, nData);
+  static EVP_CIPHER_CTX *ctx = NULL;
+  if (ctx == NULL) {
+    ctx = EVP_CIPHER_CTX_new();
+    EVP_CipherInit_ex(ctx, EVP_aes_128_ctr(), NULL, NULL, NULL, 1); // pass 1 to say we are encrypting (not decrypting)
+    OPENSSL_assert(EVP_CIPHER_CTX_key_length(ctx) == 16);
+    OPENSSL_assert(EVP_CIPHER_CTX_iv_length(ctx) == 16);
+  }
+  /* Now we can set key and IV */
+  EVP_CipherInit_ex(ctx, NULL, NULL, pKey->aKey, aNonce, 1); // pass 1 to say we are encrypting (not decrypting)
+  if (!EVP_CipherUpdate(ctx, pKey->aMask, &outlen, aData, nData))
+  {
+      /* Error */
+      EVP_CIPHER_CTX_free(ctx);
+      return 0;
+  }
+  if (!EVP_CipherFinal_ex(ctx, pKey->aMask, &outlen))
+  {
+      /* Error */
+      EVP_CIPHER_CTX_free(ctx);
+      return 0; // return SQLITE_ERROR?
+  }
   return SQLITE_OK;
 }
 
@@ -609,7 +636,35 @@ int bcvDecrypt(
   const u8 *aNonce,               /* 16 byte nonce value */
   unsigned char *aData, int nData /* Buffer to decrypt */
 ){
-  return bcvEncrypt(pKey, aNonce, aData, nData);
+  // how can we make this work? 
+  // All the same code I think. Can we use a global ctx?
+  // What happens if a client is decrypting while the daemon is encrypting? 
+
+  static EVP_CIPHER_CTX *ctx = NULL;
+  if (ctx == NULL) {
+    ctx = EVP_CIPHER_CTX_new();
+    EVP_CipherInit_ex(ctx, EVP_aes_128_ctr(), NULL, NULL, NULL, 0); // pass 0 to say we are decrypting (not encrypting)
+    OPENSSL_assert(EVP_CIPHER_CTX_key_length(ctx) == 16);
+    OPENSSL_assert(EVP_CIPHER_CTX_iv_length(ctx) == 16);
+  }
+
+  int outlen = 0;
+  /* Now we can set key and IV */
+  EVP_CipherInit_ex(ctx, NULL, NULL, pKey->aKey, aNonce, 0); // pass 0 to say we are decrypting (not encrypting)
+  if (!EVP_CipherUpdate(ctx, pKey->aMask, &outlen, aData, nData))
+  {
+      /* Error */
+      EVP_CIPHER_CTX_free(ctx);
+      return 0;
+  }
+  if (!EVP_CipherFinal_ex(ctx, pKey->aMask, &outlen))
+  {
+      /* Error */
+      EVP_CIPHER_CTX_free(ctx);
+      return 0; // return SQLITE_ERROR?
+  }
+  return SQLITE_OK;
+  // return bcvEncrypt(pKey, aNonce, aData, nData);
 }
 
 
