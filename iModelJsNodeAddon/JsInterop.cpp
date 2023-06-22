@@ -15,7 +15,6 @@
     #include <Visualization/Visualization.h>
 #endif
 #include <DgnPlatform/EntityIdsChangeGroup.h>
-#include <ECObjects/ECSchemaConverter.h>
 #include <chrono>
 #include <tuple>
 
@@ -970,26 +969,15 @@ BentleyStatus JsInterop::ConvertEC2XmlSchemas(bvector<Utf8String> const& ec2XmlS
     if (0 == schemaKeyPairs.size())
         return BentleyStatus::ERROR;
 
-    // Make a copy of the schemaKeyPairs bvector
-    bvector<ECSchemaCP> schemas;
-    // Use std::transform to extract the ECSchemaPtr
-    std::transform(schemaKeyPairs.begin(), schemaKeyPairs.end(), std::back_inserter(schemas),
-        [](const bpair<SchemaKey, ECSchemaPtr>& schemaPair) { return schemaPair.second.get(); });
-
-    ECSchema::SortSchemasInDependencyOrder(schemas);
-
-    for (ECSchemaCP schema : schemas)
+    ec3XmlStrings.resize(schemaKeyPairs.size());
+    for (int i = 0; i < schemaKeyPairs.size(); i++)
         {
-        if (schema != nullptr)
+        ECSchemaPtr schema = schemaKeyPairs[i].second;
+        SchemaWriteStatus writeStatus = schema->WriteToXmlString(ec3XmlStrings[i]);
+        if (SchemaWriteStatus::Success != writeStatus)
             {
-            bool conversionStatus = ECSchemaConverter::Convert(*const_cast<ECSchemaP> (schema), *schemaContext);
-            if (!conversionStatus)
-                return BentleyStatus::ERROR;
-            Utf8String schemaXml;
-            SchemaWriteStatus writeStatus = schema->WriteToXmlString(schemaXml);
-            if (SchemaWriteStatus::Success != writeStatus)
-                return BentleyStatus::ERROR;
-            ec3XmlStrings.push_back(schemaXml);
+            ec3XmlStrings.clear();
+            return BentleyStatus::ERROR;
             }
         }
 
