@@ -4610,7 +4610,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategoryOverride_Fi
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-DEFINE_SCHEMA(PropertyCategoryOverride_FieldsMerging_CreateWithClassCategory_GetDifferentFieldsWhenPropertyCategoriesAreEqual, R"*(
+DEFINE_SCHEMA(PropertyCategoryOverride_FieldsMerging_CreateWithClassCategory_GetDifferentFieldsWhenPropertyClassCategoriesAreDifferent, R"*(
     <ECEntityClass typeName="ClassA">
         <ECProperty propertyName="UserLabel" typeName="string" />
     </ECEntityClass>
@@ -4618,7 +4618,7 @@ DEFINE_SCHEMA(PropertyCategoryOverride_FieldsMerging_CreateWithClassCategory_Get
         <ECProperty propertyName="UserLabel" typeName="string" />
     </ECEntityClass>
 )*");
-TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategoryOverride_FieldsMerging_CreateWithClassCategory_GetDifferentFieldsWhenPropertyCategoriesAreEqual)
+TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategoryOverride_FieldsMerging_CreateWithClassCategory_GetDifferentFieldsWhenPropertyClassCategoriesAreDifferent)
     {
     ECClassCP classA = GetClass("ClassA");
     ECClassCP classB = GetClass("ClassB");
