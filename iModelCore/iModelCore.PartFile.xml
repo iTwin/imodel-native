@@ -153,4 +153,8 @@
         <SubProduct ProductName="iModelConsole" PartFile="iModelCore/iModelPlatform/iModelPlatform" />
     </Part>
 
+    <Part Name="iModelNativeImport">
+        <!-- This dummy part is so that iTwinNativeThirdParty can pull in the repo via parts, which is needed for the way NuGetProducts work -->
+    </Part>
+
 </BuildContext>
