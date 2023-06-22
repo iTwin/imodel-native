@@ -45,4 +45,5 @@
         <SubPart PartName="LibraryStatic"/>
     </NuGetProduct>
 
+
 </BuildContext>
