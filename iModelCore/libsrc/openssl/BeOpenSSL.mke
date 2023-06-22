@@ -34,15 +34,9 @@ vendorSrc = $(_MakeFilePath)vendor/
 %if !defined(iTwinNativeThirdParty)
   appName = iTwinOpenSSL
   o = $(OutputRootDir)build/iTwinOpenSSL/
-  %message *************
-  %message iTwinOpenSSL
-  %message *************
 %else
   appName = BeOpenSSL
   o = $(OutputRootDir)build/BeOpenSSL/
-  %message $$$$$$$$$$$$$
-  %message BeOpenSSL
-  %message $$$$$$$$$$$$$
 %endif
 
 always:
@@ -2146,14 +2140,8 @@ objs =% $(MultiCompileObjectList)
 #----------------------------------------------------------------------------------------
 %if !defined(iTwinNativeThirdParty)
   DLM_NAME                    = iTwinOpenSSL
-  %message ************
-  %message iTwinOpenSSL
-  %message ************
 %else
   DLM_NAME                    = BeOpenSSL
-  %message $$$$$$$$$$$$
-  %message BeOpenSSL
-  %message $$$$$$$$$$$$
 %endif
 
 DLM_OBJECT_FILES            = $(objs)
