@@ -50,7 +50,7 @@ public:
     ECPRESENTATION_EXPORT static std::unique_ptr<PropertyCategoryIdentifier> Create(BeJsConst);
     ECPRESENTATION_EXPORT static std::unique_ptr<PropertyCategoryIdentifier> CreateForRoot();
     ECPRESENTATION_EXPORT static std::unique_ptr<PropertyCategoryIdentifier> CreateForDefaultParent();
-    ECPRESENTATION_EXPORT static std::unique_ptr<PropertyCategoryIdentifier> CreateForId(Utf8String id);
+    ECPRESENTATION_EXPORT static std::unique_ptr<PropertyCategoryIdentifier> CreateForId(Utf8String id, bool createClassCategory = false);
 
     std::unique_ptr<PropertyCategoryIdentifier> Clone() const {return _Clone();}
 
@@ -69,6 +69,7 @@ struct IdPropertyCategoryIdentifier : PropertyCategoryIdentifier
 
 private:
     Utf8String m_categoryId;
+    bool m_createClassCategory;
 
 protected:
     ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationKeyCR) const override;
@@ -79,12 +80,13 @@ protected:
     IdPropertyCategoryIdentifier const* _AsIdIdentifier() const override {return this;}
 
 protected:
-    IdPropertyCategoryIdentifier(Utf8String id = "")
-        : PropertyCategoryIdentifier(PropertyCategoryIdentifierType::Id), m_categoryId(id)
+    IdPropertyCategoryIdentifier(Utf8String id = "", bool createClassCategory = false)
+        : PropertyCategoryIdentifier(PropertyCategoryIdentifierType::Id), m_categoryId(id), m_createClassCategory(createClassCategory)
         {}
 
 public:
     Utf8StringCR GetCategoryId() const {return m_categoryId;}
+    bool ShouldCreateClassCategory() const {return m_createClassCategory;}
 };
 
 /*---------------------------------------------------------------------------------**//**
