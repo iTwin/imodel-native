@@ -1177,6 +1177,13 @@ private:
         size_t count = 0;
         for (ContentModifierCP modifier : GetContext().GetRulesPreprocessor().GetContentModifiers())
             {
+            if (!modifier->HasClassSpecified())
+                {
+                DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("ECClass was not specified in %s.",
+                    DiagnosticsHelpers::CreateRuleIdentifier(*modifier).c_str()));
+                continue;
+                }
+
             ECClassCP modifierClass = GetContext().GetSchemaHelper().GetECClass(modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str());
             if (ecClass.Is(modifierClass) && (appender.IsDirectPropertiesAppender() || modifier->ShouldApplyOnNestedContent()))
                 {
