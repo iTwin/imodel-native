@@ -611,18 +611,19 @@ int bcvEncrypt(
   }
   /* Now we can set key and IV */
   EVP_CipherInit_ex(ctx, NULL, NULL, pKey->aKey, aNonce, 1); // pass 1 to say we are encrypting (not decrypting)
-  if (!EVP_CipherUpdate(ctx, pKey->aMask, &outlen, aData, nData))
+  if (!EVP_CipherUpdate(ctx, aData, &outlen, aData, nData))
   {
       /* Error */
       EVP_CIPHER_CTX_free(ctx);
       return 0;
-  }
-  if (!EVP_CipherFinal_ex(ctx, pKey->aMask, &outlen))
+  } // the buffer to encrypt is aData, but we're storing it in pKey->aMask.
+  if (!EVP_CipherFinal_ex(ctx, aData, &outlen))
   {
       /* Error */
       EVP_CIPHER_CTX_free(ctx);
       return 0; // return SQLITE_ERROR?
   }
+  // memcpy(aData, pKey->aMask, outlen); // Alternatively I can also potentially just skip aMask altogether and use aData as the outbbuffer in 620 and 614.
   return SQLITE_OK;
 }
 
@@ -651,18 +652,19 @@ int bcvDecrypt(
   int outlen = 0;
   /* Now we can set key and IV */
   EVP_CipherInit_ex(ctx, NULL, NULL, pKey->aKey, aNonce, 0); // pass 0 to say we are decrypting (not encrypting)
-  if (!EVP_CipherUpdate(ctx, pKey->aMask, &outlen, aData, nData))
+  if (!EVP_CipherUpdate(ctx, aData, &outlen, aData, nData))
   {
       /* Error */
       EVP_CIPHER_CTX_free(ctx);
       return 0;
   }
-  if (!EVP_CipherFinal_ex(ctx, pKey->aMask, &outlen))
+  if (!EVP_CipherFinal_ex(ctx, aData, &outlen))
   {
       /* Error */
       EVP_CIPHER_CTX_free(ctx);
       return 0; // return SQLITE_ERROR?
   }
+  // memcpy(aData, pKey->aMask, outlen); // Alternatively I can also potentially just skip aMask altogether and use aData as the outbbuffer in 620 and 614.
   return SQLITE_OK;
   // return bcvEncrypt(pKey, aNonce, aData, nData);
 }
