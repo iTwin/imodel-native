@@ -2625,6 +2625,34 @@ struct NativeSchemaUtility : BeObjectWrap<NativeSchemaUtility>
         NativeSchemaUtility(NapiInfoCR info) : BeObjectWrap<NativeSchemaUtility>(info) {}
         ~NativeSchemaUtility() {SetInDestructor();}
 
+    static Napi::Value ConvertCustomAttributes(NapiInfoCR info)
+        {
+        REQUIRE_ARGUMENT_STRING_ARRAY(0, inputXmlStrings);
+
+        ECSchemaReadContextPtr customContext = nullptr;
+        if (ARGUMENT_IS_PRESENT(1)) {
+            const auto& maybeEcSchemaContextVal = info[1].As<Napi::Object>();
+            if (!maybeEcSchemaContextVal.IsUndefined())
+                {
+                if (!NativeECSchemaXmlContext::HasInstance(maybeEcSchemaContextVal))
+                    THROW_JS_TYPE_EXCEPTION("if ecSchemaXmlContext is passed as an argument, it must be an object of type NativeECSchemaXmlContext")
+                customContext = NativeECSchemaXmlContext::Unwrap(maybeEcSchemaContextVal.As<Napi::Object>())->GetContext();
+                }
+        }
+
+        bvector<Utf8String> outputXmlStrings;
+        BentleyStatus result = JsInterop::ConvertCustomAttributes(inputXmlStrings, outputXmlStrings, customContext);
+        if (result != BentleyStatus::SUCCESS)
+            THROW_JS_EXCEPTION("Failed to convert custom attributes of given schemas");
+
+        uint32_t index = 0;
+        auto ret = Napi::Array::New(info.Env(), outputXmlStrings.size());
+        for (auto outputXmlString : outputXmlStrings)
+            ret.Set(index++, Napi::String::New(info.Env(), outputXmlString.c_str()));
+
+        return ret;
+        }
+
     static Napi::Value ConvertEC2XmlSchemas(NapiInfoCR info)
         {
         REQUIRE_ARGUMENT_STRING_ARRAY(0, ec2XmlStrings);
@@ -2657,6 +2685,7 @@ struct NativeSchemaUtility : BeObjectWrap<NativeSchemaUtility>
         {
         Napi::HandleScope scope(env);
         Napi::Function t = DefineClass(env, "SchemaUtility", {
+            StaticMethod("convertCustomAttributes", &NativeSchemaUtility::ConvertCustomAttributes),
             StaticMethod("convertEC2XmlSchemas", &NativeSchemaUtility::ConvertEC2XmlSchemas),
         });
 
