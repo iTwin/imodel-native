@@ -2627,6 +2627,16 @@ struct NativeSchemaUtility : BeObjectWrap<NativeSchemaUtility>
 
     static Napi::Value ConvertCustomAttributes(NapiInfoCR info)
         {
+        return ConvertSchemas(info, true);
+        }
+
+    static Napi::Value ConvertEC2XmlSchemas(NapiInfoCR info)
+        {
+        return ConvertSchemas(info, false);
+        }
+
+    static Napi::Value ConvertSchemas(NapiInfoCR info, bool convertCA)
+        {
         REQUIRE_ARGUMENT_STRING_ARRAY(0, inputXmlStrings);
 
         ECSchemaReadContextPtr customContext = nullptr;
@@ -2641,42 +2651,17 @@ struct NativeSchemaUtility : BeObjectWrap<NativeSchemaUtility>
         }
 
         bvector<Utf8String> outputXmlStrings;
-        BentleyStatus result = JsInterop::ConvertCustomAttributes(inputXmlStrings, outputXmlStrings, customContext);
+        BentleyStatus result = JsInterop::ConvertSchemas(inputXmlStrings, outputXmlStrings, customContext, convertCA);
         if (result != BentleyStatus::SUCCESS)
-            THROW_JS_EXCEPTION("Failed to convert custom attributes of given schemas");
+            {
+            Utf8String error = convertCA ? "Failed to convert custom attributes of given schemas" : "Failed to convert EC2 Xml schemas";
+            THROW_JS_EXCEPTION(error.c_str());
+            }
 
         uint32_t index = 0;
         auto ret = Napi::Array::New(info.Env(), outputXmlStrings.size());
-        for (auto outputXmlString : outputXmlStrings)
+        for (auto& outputXmlString : outputXmlStrings)
             ret.Set(index++, Napi::String::New(info.Env(), outputXmlString.c_str()));
-
-        return ret;
-        }
-
-    static Napi::Value ConvertEC2XmlSchemas(NapiInfoCR info)
-        {
-        REQUIRE_ARGUMENT_STRING_ARRAY(0, ec2XmlStrings);
-
-        ECSchemaReadContextPtr customContext = nullptr;
-        if (ARGUMENT_IS_PRESENT(1)) {
-            const auto& maybeEcSchemaContextVal = info[1].As<Napi::Object>();
-            if (!maybeEcSchemaContextVal.IsUndefined())
-                {
-                if (!NativeECSchemaXmlContext::HasInstance(maybeEcSchemaContextVal))
-                    THROW_JS_TYPE_EXCEPTION("if ecSchemaXmlContext is passed as an argument, it must be an object of type NativeECSchemaXmlContext")
-                customContext = NativeECSchemaXmlContext::Unwrap(maybeEcSchemaContextVal.As<Napi::Object>())->GetContext();
-                }
-        }
-
-        bvector<Utf8String> ec3XmlStrings;
-        BentleyStatus result = JsInterop::ConvertEC2XmlSchemas(ec2XmlStrings, ec3XmlStrings, customContext);
-        if (result != BentleyStatus::SUCCESS)
-            THROW_JS_EXCEPTION("Failed to convert ec2 xml schemas");
-
-        uint32_t index = 0;
-        auto ret = Napi::Array::New(info.Env(), ec3XmlStrings.size());
-        for (auto ec3XmlString : ec3XmlStrings)
-            ret.Set(index++, Napi::String::New(info.Env(), ec3XmlString.c_str()));
 
         return ret;
         }

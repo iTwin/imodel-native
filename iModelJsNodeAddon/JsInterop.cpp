@@ -933,123 +933,89 @@ DbResult JsInterop::ImportSchemas(DgnDbR dgndb, bvector<Utf8String> const& schem
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-BentleyStatus JsInterop::ConvertCustomAttributes(bvector<Utf8String> const& ec2XmlStrings, bvector<Utf8String>& ec3XmlStrings, ECSchemaReadContextPtr schemaContext)
-    {
-    if (0 == ec2XmlStrings.size())
-        return BentleyStatus::ERROR;
-
-    if (schemaContext.IsNull())
-        schemaContext = ECSchemaReadContext::CreateContext(false /*=acceptLegacyImperfectLatestCompatibleMatch*/, true /*=includeFilesWithNoVerExt*/);
-
-    bvector<bpair<SchemaKey, ECSchemaPtr>> schemaKeyPairs;
-    StringSchemaLocater locater;
-    for (Utf8String ec2XmlString : ec2XmlStrings)
-        {
-        SchemaKey key;
-        SchemaReadStatus status = ECSchema::ReadSchemaKey(ec2XmlString, key);
-        if (SchemaReadStatus::Success != status)
-            return BentleyStatus::ERROR;
-        locater.AddSchemaString(key, ec2XmlString);
-        schemaKeyPairs.push_back(std::make_pair(key, nullptr));
-        }
-    schemaContext->AddSchemaLocater(locater);
-    JsInterop::AddFallbackSchemaLocaters(schemaContext);
-
-    if (0 == schemaKeyPairs.size())
-        return BentleyStatus::ERROR;
-
-    for (int i = 0; i < schemaKeyPairs.size(); i++)
-        {
-        bpair<SchemaKey, ECSchemaPtr>& schemaKeyPair = schemaKeyPairs[i];
-        ECSchemaPtr schema = ECSchema::LocateSchema(schemaKeyPair.first, *schemaContext);
-        if (!schema.IsValid())
-            return BentleyStatus::ERROR;
-
-        schemaKeyPair.second = schema;
-        }
-
-    // Make a copy of the schemaKeyPairs bvector
-    bvector<ECSchemaCP> schemas;
-    // Use std::transform to extract the ECSchemaPtr
-    std::transform(schemaKeyPairs.begin(), schemaKeyPairs.end(), std::back_inserter(schemas),
-        [](const bpair<SchemaKey, ECSchemaPtr>& schemaPair) { return schemaPair.second.get(); });
-
-    ECSchema::SortSchemasInDependencyOrder(schemas);
-
-    for (ECSchemaCP schema : schemas)
-        {
-        bool conversionStatus = ECSchemaConverter::Convert(*const_cast<ECSchemaP> (schema), *schemaContext);
-        if (!conversionStatus)
-            return BentleyStatus::ERROR;
-        Utf8String schemaXml;
-        SchemaWriteStatus writeStatus = schema->WriteToXmlString(schemaXml);
-        if (SchemaWriteStatus::Success != writeStatus)
-            return BentleyStatus::ERROR;
-        ec3XmlStrings.push_back(schemaXml);
-        }
-
-    return BentleyStatus::SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-BentleyStatus JsInterop::ConvertEC2XmlSchemas(bvector<Utf8String> const& ec2XmlStrings, bvector<Utf8String>& ec3XmlStrings, ECSchemaReadContextPtr schemaContext)
-    {
-    if (0 == ec2XmlStrings.size())
-        return BentleyStatus::ERROR;
-
-    if (schemaContext.IsNull())
-        schemaContext = ECSchemaReadContext::CreateContext(false /*=acceptLegacyImperfectLatestCompatibleMatch*/, true /*=includeFilesWithNoVerExt*/);
-
-    bvector<bpair<SchemaKey, ECSchemaPtr>> schemaKeyPairs;
-    StringSchemaLocater locater;
-    for (Utf8String ec2XmlString : ec2XmlStrings)
-        {
-        SchemaKey key;
-        SchemaReadStatus status = ECSchema::ReadSchemaKey(ec2XmlString, key);
-        if (SchemaReadStatus::Success != status)
-            return BentleyStatus::ERROR;
-        locater.AddSchemaString(key, ec2XmlString);
-        schemaKeyPairs.push_back(std::make_pair(key, nullptr));
-        }
-    schemaContext->AddSchemaLocater(locater);
-    JsInterop::AddFallbackSchemaLocaters(schemaContext);
-
-    if (0 == schemaKeyPairs.size())
-        return BentleyStatus::ERROR;
-
-    for (int i = 0; i < schemaKeyPairs.size(); i++)
-        {
-        bpair<SchemaKey, ECSchemaPtr>& schemaKeyPair = schemaKeyPairs[i];
-        ECSchemaPtr schema = ECSchema::LocateSchema(schemaKeyPair.first, *schemaContext);
-        if (!schema.IsValid())
-            return BentleyStatus::ERROR;
-
-        schemaKeyPair.second = schema;
-        }
-
-    ec3XmlStrings.resize(schemaKeyPairs.size());
-    for (int i = 0; i < schemaKeyPairs.size(); i++)
-        {
-        ECSchemaPtr schema = schemaKeyPairs[i].second;
-        SchemaWriteStatus writeStatus = schema->WriteToXmlString(ec3XmlStrings[i]);
-        if (SchemaWriteStatus::Success != writeStatus)
-            {
-            ec3XmlStrings.clear();
-            return BentleyStatus::ERROR;
-            }
-        }
-
-    return BentleyStatus::SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
 DbResult JsInterop::ImportFunctionalSchema(DgnDbR db)
     {
     return SchemaStatus::Success == FunctionalDomain::GetDomain().ImportSchema(db) ? BE_SQLITE_OK : BE_SQLITE_ERROR;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+BentleyStatus JsInterop::ConvertSchemas(bvector<Utf8String> const& inputStrings, bvector<Utf8String>& outputStrings, ECSchemaReadContextPtr schemaContext, bool convertCA)
+    {
+    if (0 == inputStrings.size())
+        return BentleyStatus::ERROR;
+
+    if (schemaContext.IsNull())
+        schemaContext = ECSchemaReadContext::CreateContext(false /*=acceptLegacyImperfectLatestCompatibleMatch*/, true /*=includeFilesWithNoVerExt*/);
+
+    bvector<bpair<SchemaKey, ECSchemaPtr>> schemaKeyPairs;
+    StringSchemaLocater locater;
+    for (Utf8String inputString : inputStrings)
+        {
+        SchemaKey key;
+        SchemaReadStatus status = ECSchema::ReadSchemaKey(inputString, key);
+        if (SchemaReadStatus::Success != status)
+            return BentleyStatus::ERROR;
+        locater.AddSchemaString(key, inputString);
+        schemaKeyPairs.push_back(std::make_pair(key, nullptr));
+        }
+    schemaContext->AddSchemaLocater(locater);
+    JsInterop::AddFallbackSchemaLocaters(schemaContext);
+
+    if (0 == schemaKeyPairs.size())
+        return BentleyStatus::ERROR;
+
+    for (int i = 0; i < schemaKeyPairs.size(); i++)
+        {
+        bpair<SchemaKey, ECSchemaPtr>& schemaKeyPair = schemaKeyPairs[i];
+        ECSchemaPtr schema = ECSchema::LocateSchema(schemaKeyPair.first, *schemaContext);
+        if (!schema.IsValid())
+            return BentleyStatus::ERROR;
+
+        schemaKeyPair.second = schema;
+        }
+
+    if (convertCA)
+        {
+        // Make a copy of the schemaKeyPairs bvector
+        bvector<ECSchemaCP> schemas;
+        // Use std::transform to extract the ECSchemaPtr
+        std::transform(schemaKeyPairs.begin(), schemaKeyPairs.end(), std::back_inserter(schemas),
+            [](const bpair<SchemaKey, ECSchemaPtr>& schemaPair) { return schemaPair.second.get(); });
+
+        ECSchema::SortSchemasInDependencyOrder(schemas);
+
+        for (ECSchemaCP schema : schemas)
+            {
+            bool conversionStatus = ECSchemaConverter::Convert(*const_cast<ECSchemaP> (schema), *schemaContext);
+            if (!conversionStatus)
+                return BentleyStatus::ERROR;
+            Utf8String schemaXml;
+            SchemaWriteStatus writeStatus = schema->WriteToXmlString(schemaXml);
+            if (SchemaWriteStatus::Success != writeStatus)
+                {
+                outputStrings.clear();
+                return BentleyStatus::ERROR;
+                }
+            outputStrings.push_back(schemaXml);
+            }
+        }
+    else
+        {
+        outputStrings.resize(schemaKeyPairs.size());
+        for (int i = 0; i < schemaKeyPairs.size(); i++)
+            {
+            ECSchemaPtr schema = schemaKeyPairs[i].second;
+            SchemaWriteStatus writeStatus = schema->WriteToXmlString(outputStrings[i]);
+            if (SchemaWriteStatus::Success != writeStatus)
+                {
+                outputStrings.clear();
+                return BentleyStatus::ERROR;
+                }
+            }
+        }
+    return BentleyStatus::SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------

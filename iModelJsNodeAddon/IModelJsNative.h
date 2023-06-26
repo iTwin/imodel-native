@@ -518,9 +518,8 @@ public:
     static DbResult OpenECDb(ECDbR, BeFileNameCR pathname, BeSQLite::Db::OpenParams const&);
     static DbResult ImportSchema(ECDbR ecdb, BeFileNameCR pathname);
     static DbResult ImportSchemas(DgnDbR, bvector<Utf8String> const&, SchemaSourceType, const SchemaImportOptions&);
-    static BentleyStatus ConvertCustomAttributes(bvector<Utf8String> const&, bvector<Utf8String>&, ECSchemaReadContextPtr);
-    static BentleyStatus ConvertEC2XmlSchemas(bvector<Utf8String> const&, bvector<Utf8String>&, ECSchemaReadContextPtr);
     static DbResult ImportFunctionalSchema(DgnDbR);
+    static BentleyStatus ConvertSchemas(bvector<Utf8String> const& inputStrings, bvector<Utf8String>& outputStrings, ECSchemaReadContextPtr schemaContext, bool convertCA);
     static ChangesetPropsPtr GetChangesetProps(Utf8StringCR dbGuid, BeJsConst arg);
     static bvector<ChangesetPropsPtr> GetChangesetPropsVec(bool& containsSchemaChanges, Utf8StringCR dbGuid, BeJsConst changeSets);
     static ChangesetStatus ApplySchemaChangeSet(BeFileNameCR dbFileName, bvector<ChangesetPropsCP> const& revisions, RevisionProcessOption applyOption);
