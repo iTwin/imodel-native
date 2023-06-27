@@ -6,7 +6,7 @@
 
 $(BuildContext)PublicAPI/ECDb : $(_MakeFilePath)PublicAPI/ECDb
     $(LinkFirstDepToFirstTargetAsDirectory)
-    
+
 #----------------------------------------------------------------------
 # Deploy ECDb ECSchemas
 #----------------------------------------------------------------------
@@ -25,4 +25,7 @@ $(BuildContext)ECSchemas/ECDb/ECDbSchemaPolicies.01.00.01.ecschema.xml : $(_Make
 $(BuildContext)ECSchemas/ECDb/ECDbChange.01.00.01.ecschema.xml : $(_MakeFilePath)ECDb/ECSchemas/ECDbChange.01.00.01.ecschema.xml
     $(LinkFirstDepToFirstTarget)
 
-    
+$(BuildContext)ECSchemas/ECDb/ClassViews.01.00.00.ecschema.xml : $(_MakeFilePath)ECDb/ECSchemas/ClassViews.01.00.00.ecschema.xml
+    $(LinkFirstDepToFirstTarget)
+
+

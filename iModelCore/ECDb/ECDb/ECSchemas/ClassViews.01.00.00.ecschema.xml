@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ECSchema schemaName="ClassViews" alias="ecdbview" version="1.0.0"
+    xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+
+    <!-- View class base on ECSQL and only support primitive types -->
+    <ECCustomAttributeClass typeName="View" modifier="Sealed" appliesTo="EntityClass,RelationshipClass">
+        <ECProperty propertyName="Query" typeName="string" description="ECSql query with only primitive types are allowed"/>
+    </ECCustomAttributeClass>
+</ECSchema>

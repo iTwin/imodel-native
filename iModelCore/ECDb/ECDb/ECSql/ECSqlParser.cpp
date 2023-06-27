@@ -10,11 +10,52 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 using namespace connectivity;
 USING_NAMESPACE_BENTLEY_EC
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+-----g----------+---------------+--------
+Utf8String ECSqlParseContext::ClassViewPrepareStack::GetStackAsString() const {
+    Utf8String stack;
+    for (auto i = 0; i < m_ctx.m_viewPrepareStack.size(); ++i) {
+        if (i > 0) {
+            stack.append(" -> ");
+        }
+        stack.append(m_ctx.m_viewPrepareStack[i]->GetFullName());
+    }
+    return stack;
+}
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-std::unique_ptr<Exp> ECSqlParser::Parse(ECDbCR ecdb, Utf8CP ecsql, IssueDataSource const& issues) const {
-    ScopedContext scopedContext(*this, ecdb , issues);
+ECSqlParseContext::ClassViewPrepareStack::ClassViewPrepareStack(ECSqlParseContext& ctx, ECN::ECClassCR viewClass) : m_ctx(ctx) {
+    m_ctx.m_viewPrepareStack.push_back(&viewClass);
+}
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+bool ECSqlParseContext::ClassViewPrepareStack::IsOnStack(ECN::ECClassCR viewClass) const {
+    for (auto i = 0; i< m_ctx.m_viewPrepareStack.size() - 1; ++i) {
+        if (m_ctx.m_viewPrepareStack[i] == &viewClass)
+            return true;
+    }
+    return false;
+}
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+ECSqlParseContext::ClassViewPrepareStack::~ClassViewPrepareStack() { m_ctx.m_viewPrepareStack.pop_back(); }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+std::unique_ptr<Exp> ECSqlParser::Parse(ECDbCR ecdb, Utf8CP ecsql, IssueDataSource const& issues, const ECSqlParser* parentParser) const {
+    if (parentParser == this) {
+        BeAssert(false && "parent parser cannot be same as current");
+        return nullptr;
+    }
+    ScopedContext scopedContext(*this, ecdb , issues, parentParser);
     //Parse statement
     Utf8String error;
     OSQLParser parser;
@@ -1482,7 +1523,60 @@ BentleyStatus ECSqlParser::ParseTableRef(std::unique_ptr<ClassRefExp>& exp, OSQL
                 if (SUCCESS != ParseTableNodeWithOptMemberCall(classNameExp, *thirdNode, ecsqlType, polymorphicConst, disqualifyPrimaryJoin))
                     return ERROR;
 
-                rangeClassRef = std::move(classNameExp);
+                // check and parse view query
+                auto classCP = m_context->GetECDb().Schemas().GetClass(classNameExp->GetSchemaName(), classNameExp->GetClassName(), SchemaLookupMode::AutoDetect, classNameExp->GetTableSpace().c_str());
+                if (classCP != nullptr && ClassViews::IsViewClass(*classCP)) {
+                    Utf8String ecsql;
+                    if (!ClassViews::TryGetQuery(ecsql,*classCP)) {
+                        m_context->Issues().ReportV(
+                            IssueSeverity::Error,
+                            IssueCategory::BusinessProperties,
+                            IssueType::ECSQL, "Invalid View Class '%s'. There is not query supplied for view.", classCP->GetFullName());
+                        return ERROR;
+                    }
+
+                    if (polymorphicConst.IsOnly()) {
+                        m_context->Issues().ReportV(
+                            IssueSeverity::Error,
+                            IssueCategory::BusinessProperties,
+                            IssueType::ECSQL, "ONLY keyword is not supported for view classes (ViewClass: %s).", classCP->GetFullName());
+                        return ERROR;
+                    }
+
+                    ECSqlParseContext::ClassViewPrepareStack viewStack(*m_context, *classCP);
+                    ECSqlParser parser;
+                    if (viewStack.IsOnStack(*classCP)) {
+                        m_context->Issues().ReportV(
+                            IssueSeverity::Error,
+                            IssueCategory::BusinessProperties,
+                            IssueType::ECSQL, "Invalid View Class '%s'. View query references itself recusively (%s).", classCP->GetFullName(), viewStack.GetStackAsString().c_str());
+                        return ERROR;
+                    }
+
+                    auto parseTree = parser.Parse(m_context->GetECDb(), ecsql.c_str(), m_context->Issues(), this);
+                    if (parseTree == nullptr) {
+                        m_context->Issues().ReportV(
+                            IssueSeverity::Error,
+                            IssueCategory::BusinessProperties,
+                            IssueType::ECSQL, "Invalid View Class '%s'. View ECSQL failed to parse.", classCP->GetFullName());
+                        return ERROR;
+                    }
+
+                    if (parseTree->GetType() != Exp::Type::Select) {
+                        m_context->Issues().ReportV(
+                            IssueSeverity::Error,
+                            IssueCategory::BusinessProperties,
+                            IssueType::ECSQL, "Invalid View Class '%s'. View ECSQL is not a SELECT statement.", classCP->GetFullName());
+                        return ERROR;
+                    }
+
+                    std::unique_ptr<SelectStatementExp> selectExp;
+                    selectExp.reset(static_cast<SelectStatementExp*>(parseTree.get()));
+                    parseTree.release();
+                    rangeClassRef = std::make_unique<SubqueryRefExp>(std::make_unique<SubqueryExp>(std::move(selectExp)), classNameExp->GetAlias().c_str(), polymorphicConst);
+                } else {
+                    rangeClassRef = std::move(classNameExp);
+                }
             }
             OSQLParseNode const* table_primary_as_range_column = parseNode->getChild(3);
             if (table_primary_as_range_column->count() > 0)
