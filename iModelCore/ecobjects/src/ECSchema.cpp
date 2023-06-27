@@ -3216,32 +3216,24 @@ ECSchemaPtr SearchPathSchemaFileLocater::_LocateSchema(SchemaKeyR key, SchemaMat
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaPtr StringSchemaLocater::_LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext)
     {
-    bpair<SchemaKey, SchemaMatchType> lookup = make_bpair<SchemaKey, SchemaMatchType>(key, matchType);
-    bmap<bpair<SchemaKey, SchemaMatchType>, ECSchemaPtr>::iterator iter = m_knownSchemas.find(lookup);
-    if (iter != m_knownSchemas.end())
-        return iter->second;
-
     // Get cached version of the schema
     ECSchemaPtr schemaOut = schemaContext.GetFoundSchema(key, SchemaMatchType::Exact);;
     if (schemaOut.IsValid())
         {
-        m_knownSchemas.Insert(make_bpair<SchemaKey, SchemaMatchType>(key, SchemaMatchType::Exact), schemaOut);
         return schemaOut;
         }
 
-    // Check if we've schema string for the schema name
-    if (m_schemaStrings.find(key.GetName()) == m_schemaStrings.end())
+    // Check if we've schema string for the schema key
+    if (m_schemaStrings.find(key) == m_schemaStrings.end())
         return nullptr;
 
     // Read schema from Xml string if the cached schema is invalid
-    Utf8StringCR schemaXml = m_schemaStrings[key.GetName()];
+    Utf8StringCR schemaXml = m_schemaStrings[key];
     if (SchemaReadStatus::Success != ECSchema::ReadFromXmlString(schemaOut, schemaXml.c_str(), schemaContext))
         {
-        m_knownSchemas.Insert(lookup, nullptr);
         return nullptr;
         }
 
-    m_knownSchemas.Insert(lookup, schemaOut);
     return schemaOut;
     }
 

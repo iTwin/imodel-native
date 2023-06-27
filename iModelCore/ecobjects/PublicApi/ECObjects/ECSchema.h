@@ -2935,12 +2935,11 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE StringSchemaLocater : IECSchemaLocater, NonCopyableClass
 {
 private:
-    bmap<bpair<SchemaKey, SchemaMatchType>, ECSchemaPtr> m_knownSchemas;
-    bmap<Utf8String, Utf8String> m_schemaStrings;
+    bmap<SchemaKey, Utf8String> m_schemaStrings;
 protected:
     ECOBJECTS_EXPORT ECSchemaPtr _LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext) override;
 public:
-    ECOBJECTS_EXPORT void AddSchemaString(SchemaKeyCR schemaKey, Utf8StringCR schemaXml) {m_schemaStrings[schemaKey.GetName()] = schemaXml;}
+    ECOBJECTS_EXPORT void AddSchemaString(SchemaKeyCR schemaKey, Utf8StringCR schemaXml) {m_schemaStrings[schemaKey] = schemaXml;}
 };
 
 struct SupplementalSchemaInfo;
@@ -3120,7 +3119,6 @@ private:
 friend struct ECSchemaDownConverter;
 
 friend struct SearchPathSchemaFileLocater;
-friend struct StringSchemaLocater;
 friend struct SupplementedSchemaBuilder;
 friend struct SchemaXmlReader;
 friend struct SchemaXmlReaderImpl;
