@@ -213,7 +213,7 @@ TEST_F(RelationshipMappingTestFixture, MoveNavUpInHierarchyRemoveOriginal)
     ASSERT_EQ(BentleyStatus::ERROR, ImportSchema(schema2));
     auto lastIssue = issueListener.GetIssue();
     ASSERT_TRUE(lastIssue.has_value()) << "Should raise an issue.";
-    ASSERT_STREQ("ECSchema Upgrade failed. ECClass TestSchema.MaterialProfile: Deleting Navigation ECProperty 'Material' from an ECClass is not supported.", lastIssue.message.c_str());
+    ASSERT_STREQ("ECSchema Upgrade failed. ECClass TestSchema:MaterialProfile: Deleting Navigation ECProperty 'Material' from an ECClass is not supported.", lastIssue.message.c_str());
     }
 
 //---------------------------------------------------------------------------------------
