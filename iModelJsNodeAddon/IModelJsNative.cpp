@@ -394,10 +394,7 @@ public:
         Napi::HandleScope scope(val.Env());
         return val.As<Napi::Object>().InstanceOf(Constructor().Value());
     }
-    void RequireDbIsOpen(NapiInfoCR info) {
-        if (!m_ecdb.IsDbOpen())
-            BeNapi::ThrowJsException(info.Env(), "db is not open");
-    }
+
     Napi::Value CreateDb(NapiInfoCR info) {
         REQUIRE_ARGUMENT_STRING(0, dbName);
         DbResult status = JsInterop::CreateECDb(m_ecdb, BeFileName(dbName.c_str(), true));
@@ -428,14 +425,12 @@ public:
     }
 
     void ConcurrentQueryExecute(NapiInfoCR info) {
-        RequireDbIsOpen(info);
         REQUIRE_ARGUMENT_ANY_OBJ(0, requestObj);
         REQUIRE_ARGUMENT_FUNCTION(1, callback);
         JsInterop::ConcurrentQueryExecute(m_ecdb, requestObj, callback);
     }
 
     Napi::Value ConcurrentQueryResetConfig(NapiInfoCR info) {
-        RequireDbIsOpen(info);
         if (info.Length() > 0 && info[0].IsObject()) {
             Napi::Object inConf = info[0].As<Napi::Object>();
             return JsInterop::ConcurrentQueryResetConfig(Env(), m_ecdb, inConf);
@@ -464,26 +459,22 @@ public:
     }
 
     Napi::Value SaveChanges(NapiInfoCR info) {
-        RequireDbIsOpen(info);
         OPTIONAL_ARGUMENT_STRING(0, changeSetName);
         DbResult status = m_ecdb.SaveChanges(changeSetName.empty() ? nullptr : changeSetName.c_str());
         return Napi::Number::New(Env(), (int)status);
     }
 
     Napi::Value AbandonChanges(NapiInfoCR info) {
-        RequireDbIsOpen(info);
         DbResult status = m_ecdb.AbandonChanges();
         return Napi::Number::New(Env(), (int)status);
     }
 
     Napi::Value ImportSchema(NapiInfoCR info) {
-        RequireDbIsOpen(info);
         REQUIRE_ARGUMENT_STRING(0, schemaPathName);
         DbResult status = JsInterop::ImportSchema(m_ecdb, BeFileName(schemaPathName.c_str(), true));
         return Napi::Number::New(Env(), (int)status);
     }
     void DropSchema(NapiInfoCR info) {
-        RequireDbIsOpen(info);
         REQUIRE_ARGUMENT_STRING(0, schemaName);
         auto rc = m_ecdb.Schemas().DropSchema(schemaName);
         if (rc.GetStatus() != DropSchemaResult::Success) {
@@ -491,7 +482,6 @@ public:
         }
     }
     void SchemaSyncSetDefaultUri(NapiInfoCR info) {
-        RequireDbIsOpen(info);
         REQUIRE_ARGUMENT_STRING(0, schemaSyncDbUriStr);
         LastErrorListener lastError(m_ecdb);
         auto rc = m_ecdb.Schemas().GetSchemaSync().SetDefaultSyncDbUri(schemaSyncDbUriStr.c_str());
@@ -504,7 +494,6 @@ public:
         }
     }
     Napi::Value SchemaSyncGetDefaultUri(NapiInfoCR info) {
-        RequireDbIsOpen(info);
         auto& syncDbUri = m_ecdb.Schemas().GetSchemaSync().GetDefaultSyncDbUri();
         if (syncDbUri.IsEmpty())
             return Env().Undefined();
@@ -512,7 +501,6 @@ public:
         return Napi::String::New(Env(), syncDbUri.GetUri().c_str());
         }
     void SchemaSyncInit(NapiInfoCR info) {
-        RequireDbIsOpen(info);
         REQUIRE_ARGUMENT_STRING(0, schemaSyncDbUriStr);
         auto syncDbUri = SchemaSync::SyncDbUri(schemaSyncDbUriStr.c_str());
         LastErrorListener lastError(m_ecdb);
@@ -527,13 +515,11 @@ public:
     }
 
     Napi::Value SchemaSyncEnabled(NapiInfoCR info) {
-        RequireDbIsOpen(info);
         const auto isEnabled = !m_ecdb.Schemas().GetSchemaSync().GetInfo().IsEmpty();
         return Napi::Boolean::New(Env(), isEnabled);
     }
 
     Napi::Value SchemaSyncGetLocalDbInfo(NapiInfoCR info) {
-        RequireDbIsOpen(info);
         auto localDbInfo = m_ecdb.Schemas().GetSchemaSync().GetInfo();
         if (localDbInfo.IsEmpty()) {
             return Env().Undefined();
@@ -544,7 +530,6 @@ public:
     }
 
     Napi::Value SchemaSyncGetSyncDbInfo(NapiInfoCR info) {
-        RequireDbIsOpen(info);
         REQUIRE_ARGUMENT_STRING(0, schemaSyncDbUriStr);
          auto syncDbUri = SchemaSync::SyncDbUri(schemaSyncDbUriStr.c_str());
          auto syncDbInfo = syncDbUri.GetInfo();
@@ -557,7 +542,6 @@ public:
     }
 
     void SchemaSyncPull(NapiInfoCR info) {
-        RequireDbIsOpen(info);
         OPTIONAL_ARGUMENT_STRING(0, schemaSyncDbUriStr);
         auto syncDbUri = SchemaSync::SyncDbUri(schemaSyncDbUriStr.c_str());
         LastErrorListener lastError(m_ecdb);
