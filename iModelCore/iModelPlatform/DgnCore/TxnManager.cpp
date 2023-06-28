@@ -1640,7 +1640,10 @@ void TxnManager::ReplayExternalTxns(TxnId from) {
         ApplyTxnChanges(curr, TxnAction::Reinstate);
 
     m_curr = GetLastTxnId(); // this is where the other session ends
-    m_curr.Increment();
+    if (m_curr.GetValue() == 0)
+        m_curr = TxnId(SessionId(1),0);
+    else
+        m_curr.Increment();
 }
 
 /*---------------------------------------------------------------------------------**/ /**
