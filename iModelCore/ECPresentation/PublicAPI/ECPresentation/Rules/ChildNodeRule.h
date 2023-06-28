@@ -33,6 +33,7 @@ private:
 protected:
     ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationKeyCR other) const override;
     ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
+    ECPRESENTATION_EXPORT void _SetIndex(int& index) override;
 
     ECPRESENTATION_EXPORT Utf8CP _GetXmlElementName() const override;
     ECPRESENTATION_EXPORT bool _ReadXml(BeXmlNodeP xmlNode) override;
@@ -104,6 +105,7 @@ protected:
 
     //! Computes rule hash.
     ECPRESENTATION_EXPORT virtual MD5 _ComputeHash() const override;
+    ECPRESENTATION_EXPORT virtual void _SetIndex(int& index) override;
 
 public:
     //! Constructor. It is used to initialize the rule with default settings.

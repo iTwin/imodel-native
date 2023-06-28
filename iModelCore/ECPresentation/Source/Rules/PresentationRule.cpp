@@ -111,7 +111,8 @@ MD5 PresentationKey::_ComputeHash() const
     Utf8CP name = _GetJsonElementType();
     if (name)
         md5.Add(name, strlen(name));
-
+    if (m_index.IsValid())
+        ADD_PRIMITIVE_VALUE_TO_HASH(md5, "index", m_index.Value());
     return md5;
     }
 

@@ -166,7 +166,7 @@ protected:
         }
 public:
     ClassesLocaterPropertyAppender(ContentSpecificationsHandler::Context const& context, bvector<ContentModifierCP> const& contentModifiers, ContentSpecificationCR spec)
-        : m_propertyInfos(context.GetSchemaHelper(), contentModifiers, &spec), m_context(context)
+        : m_propertyInfos(context.GetSchemaHelper(), contentModifiers, &spec, nullptr), m_context(context)
         {}
 };
 

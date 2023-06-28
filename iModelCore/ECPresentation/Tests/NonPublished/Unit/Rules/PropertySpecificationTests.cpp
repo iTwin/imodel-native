@@ -29,7 +29,7 @@ TEST_F(PropertySpecificationTests, CopyConstructor)
     source->SetDoNotHideOtherPropertiesOnDisplayOverride(true);
     source->SetRendererOverride(new CustomRendererSpecification());
     source->SetEditorOverride(new PropertyEditorSpecification());
-    source->SetCategoryId(PropertyCategoryIdentifier::CreateForId("a"));
+    source->SetCategoryId(PropertyCategoryIdentifier::CreateForId("a", true));
     source->SetIsReadOnly(true);
     source->SetPriority(10);
     Utf8String sourceHash = source->GetHash();
@@ -58,7 +58,7 @@ TEST_F(PropertySpecificationTests, MoveConstructor)
     source->SetDoNotHideOtherPropertiesOnDisplayOverride(true);
     source->SetRendererOverride(new CustomRendererSpecification());
     source->SetEditorOverride(new PropertyEditorSpecification());
-    source->SetCategoryId(PropertyCategoryIdentifier::CreateForId("a"));
+    source->SetCategoryId(PropertyCategoryIdentifier::CreateForId("a", true));
     source->SetIsReadOnly(true);
     source->SetPriority(10);
     Utf8String sourceHash = source->GetHash();
@@ -178,7 +178,7 @@ TEST_F(PropertySpecificationTests, LoadFromJsonFailsIfPropertyNameNotSpecified)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(PropertySpecificationTests, WriteToJson)
     {
-    PropertySpecification spec("p1", 123, "custom label", PropertyCategoryIdentifier::CreateForId("category id"), true,
+    PropertySpecification spec("p1", 123, "custom label", PropertyCategoryIdentifier::CreateForId("category id", true), true,
         new CustomRendererSpecification("custom renderer"), new PropertyEditorSpecification("custom editor"), true, true, 10);
     BeJsDocument json = spec.WriteJson();
     BeJsDocument expected(R"({
@@ -195,7 +195,8 @@ TEST_F(PropertySpecificationTests, WriteToJson)
         },
         "categoryId": {
             "type": "Id",
-            "categoryId": "category id"
+            "categoryId": "category id",
+            "createClassCategory": true
         },
         "isReadOnly": true,
         "priority": 10
