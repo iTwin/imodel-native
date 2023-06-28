@@ -24,10 +24,10 @@ TEST_F(SchemaStringLocaterTests, StringSchemaLocater_LocateSchemaWithSameKey)
         </ECSchema>)xml";
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     StringSchemaLocater locater;
-    locater.AddSchemaString(SchemaKey("Test", 1, 1), schemaXml);
+    locater.AddSchemaString(SchemaKey("Test", 1, 0, 0), schemaXml);
     context->AddSchemaLocater(locater);
 
-    SchemaKey testKey("Test", 1, 1);
+    SchemaKey testKey("Test", 1, 0, 0);
     ECSchemaPtr schema = context->LocateSchema(testKey, SchemaMatchType::Latest);
     ASSERT_TRUE(schema.IsValid());
 
@@ -41,17 +41,17 @@ TEST_F(SchemaStringLocaterTests, StringSchemaLocater_LocateSchemaWithSameKey)
 TEST_F(SchemaStringLocaterTests, StringSchemaLocater_LocateSchemaWithDifferentKey)
     {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
-        <ECSchema schemaName="Test" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchema schemaName="Test" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECEntityClass typeName="Fruit" isDomainClass="True" description="A generic description">
                 <ECProperty propertyName="Color" typeName="int" />
             </ECEntityClass>
         </ECSchema>)xml";
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     StringSchemaLocater locater;
-    locater.AddSchemaString(SchemaKey("Test", 1, 1), schemaXml);
+    locater.AddSchemaString(SchemaKey("Test", 1, 0, 1), schemaXml);
     context->AddSchemaLocater(locater);
 
-    SchemaKey testKey("Test", 1, 0);
+    SchemaKey testKey("Test", 1, 0, 0);
     ECSchemaPtr schema = context->LocateSchema(testKey, SchemaMatchType::Latest);
     ASSERT_TRUE(schema.IsValid());
 
@@ -72,11 +72,11 @@ TEST_F(SchemaStringLocaterTests, LocatingSchemaContext_SchemaXmlIsDeleted)
         </ECSchema>)xml";
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     StringSchemaLocater locater;
-    locater.AddSchemaString(SchemaKey("Test", 1, 1), schemaXml.c_str());
+    locater.AddSchemaString(SchemaKey("Test", 1, 0, 0), schemaXml.c_str());
     context->AddSchemaLocater(locater);
     schemaXml.clear();
 
-    SchemaKey testKey("Test", 1, 1);
+    SchemaKey testKey("Test", 1, 0, 0);
     ECSchemaPtr schema = context->LocateSchema(testKey, SchemaMatchType::Latest);
     ASSERT_TRUE(schema.IsValid());
 
