@@ -10,6 +10,8 @@
 #include <set>
 #include <BeRapidJson/BeRapidJson.h>
 
+#define CLASS_ID(S,C) (int)m_ecdb.Schemas().GetClassId( #S, #C, SchemaLookupMode::AutoDetect).GetValueUnchecked()
+
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
@@ -646,68 +648,68 @@ TEST_F(ECSqlStatementTestFixture, SelectAsteriskAndViewGenerator)
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ts.AOwnsB"));
-    EXPECT_STRCASEEQ("SELECT [AOwnsB].[ECInstanceId],[AOwnsB].[ECClassId],[AOwnsB].[SourceECInstanceId],[AOwnsB].[SourceECClassId],[AOwnsB].[TargetECInstanceId],[AOwnsB].[TargetECClassId] FROM "
-        "(SELECT [ts_B].[Id] ECInstanceId,76 ECClassId,[ts_B].[AId] SourceECInstanceId,[ts_A].[ECClassId] SourceECClassId,[ts_B].[Id] TargetECInstanceId,[ts_B].[ECClassId] TargetECClassId FROM [main].[ts_B] "
-        "INNER JOIN [main].[ts_A] ON [ts_A].[Id]=[ts_B].[AId] WHERE [ts_B].[AId] IS NOT NULL) [AOwnsB]", stmt.GetNativeSql()) << stmt.GetECSql();
+    EXPECT_STRCASEEQ(SqlPrintfString("SELECT [AOwnsB].[ECInstanceId],[AOwnsB].[ECClassId],[AOwnsB].[SourceECInstanceId],[AOwnsB].[SourceECClassId],[AOwnsB].[TargetECInstanceId],[AOwnsB].[TargetECClassId] FROM "
+        "(SELECT [ts_B].[Id] ECInstanceId,%d ECClassId,[ts_B].[AId] SourceECInstanceId,[ts_A].[ECClassId] SourceECClassId,[ts_B].[Id] TargetECInstanceId,[ts_B].[ECClassId] TargetECClassId FROM [main].[ts_B] "
+        "INNER JOIN [main].[ts_A] ON [ts_A].[Id]=[ts_B].[AId] WHERE [ts_B].[AId] IS NOT NULL) [AOwnsB]", CLASS_ID(ts,AOwnsB)).GetUtf8CP(), stmt.GetNativeSql()) << stmt.GetECSql();
     stmt.Finalize();
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ts.AOwnsB WHERE SourceECClassId=?"));
-    EXPECT_STRCASEEQ("SELECT [AOwnsB].[ECInstanceId],[AOwnsB].[ECClassId],[AOwnsB].[SourceECInstanceId],[AOwnsB].[SourceECClassId],[AOwnsB].[TargetECInstanceId],[AOwnsB].[TargetECClassId] FROM "
-        "(SELECT [ts_B].[Id] ECInstanceId,76 ECClassId,[ts_B].[AId] SourceECInstanceId,[ts_A].[ECClassId] SourceECClassId,[ts_B].[Id] TargetECInstanceId,[ts_B].[ECClassId] TargetECClassId FROM [main].[ts_B] "
+    EXPECT_STRCASEEQ(SqlPrintfString("SELECT [AOwnsB].[ECInstanceId],[AOwnsB].[ECClassId],[AOwnsB].[SourceECInstanceId],[AOwnsB].[SourceECClassId],[AOwnsB].[TargetECInstanceId],[AOwnsB].[TargetECClassId] FROM "
+        "(SELECT [ts_B].[Id] ECInstanceId,%d ECClassId,[ts_B].[AId] SourceECInstanceId,[ts_A].[ECClassId] SourceECClassId,[ts_B].[Id] TargetECInstanceId,[ts_B].[ECClassId] TargetECClassId FROM [main].[ts_B] "
         "INNER JOIN [main].[ts_A] ON [ts_A].[Id]=[ts_B].[AId] WHERE [ts_B].[AId] IS NOT NULL) [AOwnsB] "
-        "WHERE [AOwnsB].[SourceECClassId]=:_ecdb_sqlparam_ix1_col1", stmt.GetNativeSql()) << stmt.GetECSql();
+        "WHERE [AOwnsB].[SourceECClassId]=:_ecdb_sqlparam_ix1_col1", CLASS_ID(ts,AOwnsB)).GetUtf8CP(), stmt.GetNativeSql()) << stmt.GetECSql();
     stmt.Finalize();
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT SourceECInstanceId,SourceECClassId FROM ts.AOwnsB"));
-    EXPECT_STRCASEEQ("SELECT [AOwnsB].[SourceECInstanceId],[AOwnsB].[SourceECClassId] FROM "
-                     "(SELECT [ts_B].[Id] ECInstanceId,76 ECClassId,[ts_B].[AId] SourceECInstanceId,[ts_A].[ECClassId] SourceECClassId,[ts_B].[Id] TargetECInstanceId,[ts_B].[ECClassId] TargetECClassId FROM [main].[ts_B] "
-                     "INNER JOIN [main].[ts_A] ON [ts_A].[Id]=[ts_B].[AId] WHERE [ts_B].[AId] IS NOT NULL) [AOwnsB]", stmt.GetNativeSql()) << stmt.GetECSql();
+    EXPECT_STRCASEEQ(SqlPrintfString("SELECT [AOwnsB].[SourceECInstanceId],[AOwnsB].[SourceECClassId] FROM "
+                     "(SELECT [ts_B].[Id] ECInstanceId,%d ECClassId,[ts_B].[AId] SourceECInstanceId,[ts_A].[ECClassId] SourceECClassId,[ts_B].[Id] TargetECInstanceId,[ts_B].[ECClassId] TargetECClassId FROM [main].[ts_B] "
+                     "INNER JOIN [main].[ts_A] ON [ts_A].[Id]=[ts_B].[AId] WHERE [ts_B].[AId] IS NOT NULL) [AOwnsB]", CLASS_ID(ts,AOwnsB)).GetUtf8CP(), stmt.GetNativeSql()) << stmt.GetECSql();
     stmt.Finalize();
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT TargetECInstanceId,TargetECClassId FROM ts.AOwnsB"));
-    EXPECT_STRCASEEQ("SELECT [AOwnsB].[TargetECInstanceId],[AOwnsB].[TargetECClassId] FROM "
-                     "(SELECT [ts_B].[Id] ECInstanceId,76 ECClassId,[ts_B].[AId] SourceECInstanceId,[ts_A].[ECClassId] SourceECClassId,[ts_B].[Id] TargetECInstanceId,[ts_B].[ECClassId] TargetECClassId FROM [main].[ts_B] "
-                     "INNER JOIN [main].[ts_A] ON [ts_A].[Id]=[ts_B].[AId] WHERE [ts_B].[AId] IS NOT NULL) [AOwnsB]", stmt.GetNativeSql()) << stmt.GetECSql();
+    EXPECT_STRCASEEQ(SqlPrintfString("SELECT [AOwnsB].[TargetECInstanceId],[AOwnsB].[TargetECClassId] FROM "
+                     "(SELECT [ts_B].[Id] ECInstanceId,%d ECClassId,[ts_B].[AId] SourceECInstanceId,[ts_A].[ECClassId] SourceECClassId,[ts_B].[Id] TargetECInstanceId,[ts_B].[ECClassId] TargetECClassId FROM [main].[ts_B] "
+                     "INNER JOIN [main].[ts_A] ON [ts_A].[Id]=[ts_B].[AId] WHERE [ts_B].[AId] IS NOT NULL) [AOwnsB]", CLASS_ID(ts,AOwnsB)).GetUtf8CP(), stmt.GetNativeSql()) << stmt.GetECSql();
     stmt.Finalize();
 
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ts.ALinksB"));
-    EXPECT_STRCASEEQ("SELECT [ALinksB].[ECInstanceId],[ALinksB].[ECClassId],[ALinksB].[SourceECInstanceId],[ALinksB].[SourceECClassId],[ALinksB].[TargetECInstanceId],[ALinksB].[TargetECClassId] FROM "
-        "(SELECT [ts_ALinksB].[Id] [ECInstanceId],74 [ECClassId],[ts_ALinksB].[SourceId] [SourceECInstanceId],[SourceECClassPrimaryTable].[ECClassId] SourceECClassId,[ts_ALinksB].[TargetId] [TargetECInstanceId],[TargetECClassPrimaryTable].[ECClassId] TargetECClassId FROM [main].[ts_ALinksB] "
+    EXPECT_STRCASEEQ(SqlPrintfString("SELECT [ALinksB].[ECInstanceId],[ALinksB].[ECClassId],[ALinksB].[SourceECInstanceId],[ALinksB].[SourceECClassId],[ALinksB].[TargetECInstanceId],[ALinksB].[TargetECClassId] FROM "
+        "(SELECT [ts_ALinksB].[Id] [ECInstanceId],%d [ECClassId],[ts_ALinksB].[SourceId] [SourceECInstanceId],[SourceECClassPrimaryTable].[ECClassId] SourceECClassId,[ts_ALinksB].[TargetId] [TargetECInstanceId],[TargetECClassPrimaryTable].[ECClassId] TargetECClassId FROM [main].[ts_ALinksB] "
         "INNER JOIN [main].[ts_A] [SourceECClassPrimaryTable] ON [SourceECClassPrimaryTable].[Id]=[ts_ALinksB].[SourceId] "
-        "INNER JOIN [main].[ts_B] [TargetECClassPrimaryTable] ON [TargetECClassPrimaryTable].[Id]=[ts_ALinksB].[TargetId]) [ALinksB]", stmt.GetNativeSql()) << stmt.GetECSql();
+        "INNER JOIN [main].[ts_B] [TargetECClassPrimaryTable] ON [TargetECClassPrimaryTable].[Id]=[ts_ALinksB].[TargetId]) [ALinksB]", CLASS_ID(ts,ALinksB)).GetUtf8CP(), stmt.GetNativeSql()) << stmt.GetECSql();
     stmt.Finalize();
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ts.ALinksB WHERE SourceECInstanceId=? AND SourceECClassId=?"));
-    EXPECT_STRCASEEQ("SELECT [ALinksB].[ECInstanceId],[ALinksB].[ECClassId],[ALinksB].[SourceECInstanceId],[ALinksB].[SourceECClassId],[ALinksB].[TargetECInstanceId],[ALinksB].[TargetECClassId] FROM "
-        "(SELECT [ts_ALinksB].[Id] [ECInstanceId],74 [ECClassId],[ts_ALinksB].[SourceId] [SourceECInstanceId],[SourceECClassPrimaryTable].[ECClassId] SourceECClassId,[ts_ALinksB].[TargetId] [TargetECInstanceId],[TargetECClassPrimaryTable].[ECClassId] TargetECClassId FROM [main].[ts_ALinksB] "
+    EXPECT_STRCASEEQ(SqlPrintfString("SELECT [ALinksB].[ECInstanceId],[ALinksB].[ECClassId],[ALinksB].[SourceECInstanceId],[ALinksB].[SourceECClassId],[ALinksB].[TargetECInstanceId],[ALinksB].[TargetECClassId] FROM "
+        "(SELECT [ts_ALinksB].[Id] [ECInstanceId],%d [ECClassId],[ts_ALinksB].[SourceId] [SourceECInstanceId],[SourceECClassPrimaryTable].[ECClassId] SourceECClassId,[ts_ALinksB].[TargetId] [TargetECInstanceId],[TargetECClassPrimaryTable].[ECClassId] TargetECClassId FROM [main].[ts_ALinksB] "
         "INNER JOIN [main].[ts_A] [SourceECClassPrimaryTable] ON [SourceECClassPrimaryTable].[Id]=[ts_ALinksB].[SourceId] "
         "INNER JOIN [main].[ts_B] [TargetECClassPrimaryTable] ON [TargetECClassPrimaryTable].[Id]=[ts_ALinksB].[TargetId]) [ALinksB] "
-        "WHERE [ALinksB].[SourceECInstanceId]=:_ecdb_sqlparam_ix1_col1 AND [ALinksB].[SourceECClassId]=:_ecdb_sqlparam_ix2_col1", stmt.GetNativeSql()) << stmt.GetECSql();
+        "WHERE [ALinksB].[SourceECInstanceId]=:_ecdb_sqlparam_ix1_col1 AND [ALinksB].[SourceECClassId]=:_ecdb_sqlparam_ix2_col1", CLASS_ID(ts,ALinksB)).GetUtf8CP(), stmt.GetNativeSql()) << stmt.GetECSql();
     stmt.Finalize();
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ts.ALinksB WHERE SourceECClassId=?"));
-    EXPECT_STRCASEEQ("SELECT [ALinksB].[ECInstanceId],[ALinksB].[ECClassId],[ALinksB].[SourceECInstanceId],[ALinksB].[SourceECClassId],[ALinksB].[TargetECInstanceId],[ALinksB].[TargetECClassId] FROM "
-                     "(SELECT [ts_ALinksB].[Id] [ECInstanceId],74 [ECClassId],[ts_ALinksB].[SourceId] [SourceECInstanceId],[SourceECClassPrimaryTable].[ECClassId] SourceECClassId,[ts_ALinksB].[TargetId] [TargetECInstanceId],[TargetECClassPrimaryTable].[ECClassId] TargetECClassId FROM [main].[ts_ALinksB] "
+    EXPECT_STRCASEEQ(SqlPrintfString("SELECT [ALinksB].[ECInstanceId],[ALinksB].[ECClassId],[ALinksB].[SourceECInstanceId],[ALinksB].[SourceECClassId],[ALinksB].[TargetECInstanceId],[ALinksB].[TargetECClassId] FROM "
+                     "(SELECT [ts_ALinksB].[Id] [ECInstanceId],%d [ECClassId],[ts_ALinksB].[SourceId] [SourceECInstanceId],[SourceECClassPrimaryTable].[ECClassId] SourceECClassId,[ts_ALinksB].[TargetId] [TargetECInstanceId],[TargetECClassPrimaryTable].[ECClassId] TargetECClassId FROM [main].[ts_ALinksB] "
                      "INNER JOIN [main].[ts_A] [SourceECClassPrimaryTable] ON [SourceECClassPrimaryTable].[Id]=[ts_ALinksB].[SourceId] "
                      "INNER JOIN [main].[ts_B] [TargetECClassPrimaryTable] ON [TargetECClassPrimaryTable].[Id]=[ts_ALinksB].[TargetId]) [ALinksB] "
-                     "WHERE [ALinksB].[SourceECClassId]=:_ecdb_sqlparam_ix1_col1", stmt.GetNativeSql()) << stmt.GetECSql();
+                     "WHERE [ALinksB].[SourceECClassId]=:_ecdb_sqlparam_ix1_col1", CLASS_ID(ts,ALinksB)).GetUtf8CP(), stmt.GetNativeSql()) << stmt.GetECSql();
     stmt.Finalize();
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ts.ALinksB WHERE TargetECInstanceId=? AND TargetECClassId=?"));
-    EXPECT_STRCASEEQ("SELECT [ALinksB].[ECInstanceId],[ALinksB].[ECClassId],[ALinksB].[SourceECInstanceId],[ALinksB].[SourceECClassId],[ALinksB].[TargetECInstanceId],[ALinksB].[TargetECClassId] FROM "
-                     "(SELECT [ts_ALinksB].[Id] [ECInstanceId],74 [ECClassId],[ts_ALinksB].[SourceId] [SourceECInstanceId],[SourceECClassPrimaryTable].[ECClassId] SourceECClassId,[ts_ALinksB].[TargetId] [TargetECInstanceId],[TargetECClassPrimaryTable].[ECClassId] TargetECClassId FROM [main].[ts_ALinksB] "
+    EXPECT_STRCASEEQ(SqlPrintfString("SELECT [ALinksB].[ECInstanceId],[ALinksB].[ECClassId],[ALinksB].[SourceECInstanceId],[ALinksB].[SourceECClassId],[ALinksB].[TargetECInstanceId],[ALinksB].[TargetECClassId] FROM "
+                     "(SELECT [ts_ALinksB].[Id] [ECInstanceId],%d [ECClassId],[ts_ALinksB].[SourceId] [SourceECInstanceId],[SourceECClassPrimaryTable].[ECClassId] SourceECClassId,[ts_ALinksB].[TargetId] [TargetECInstanceId],[TargetECClassPrimaryTable].[ECClassId] TargetECClassId FROM [main].[ts_ALinksB] "
                      "INNER JOIN [main].[ts_A] [SourceECClassPrimaryTable] ON [SourceECClassPrimaryTable].[Id]=[ts_ALinksB].[SourceId] "
                      "INNER JOIN [main].[ts_B] [TargetECClassPrimaryTable] ON [TargetECClassPrimaryTable].[Id]=[ts_ALinksB].[TargetId]) [ALinksB] "
-                     "WHERE [ALinksB].[TargetECInstanceId]=:_ecdb_sqlparam_ix1_col1 AND [ALinksB].[TargetECClassId]=:_ecdb_sqlparam_ix2_col1", stmt.GetNativeSql()) << stmt.GetECSql();
+                     "WHERE [ALinksB].[TargetECInstanceId]=:_ecdb_sqlparam_ix1_col1 AND [ALinksB].[TargetECClassId]=:_ecdb_sqlparam_ix2_col1", CLASS_ID(ts,ALinksB)).GetUtf8CP(), stmt.GetNativeSql()) << stmt.GetECSql();
     stmt.Finalize();
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ts.ALinksB WHERE TargetECClassId=?"));
-    EXPECT_STRCASEEQ("SELECT [ALinksB].[ECInstanceId],[ALinksB].[ECClassId],[ALinksB].[SourceECInstanceId],[ALinksB].[SourceECClassId],[ALinksB].[TargetECInstanceId],[ALinksB].[TargetECClassId] FROM "
-                     "(SELECT [ts_ALinksB].[Id] [ECInstanceId],74 [ECClassId],[ts_ALinksB].[SourceId] [SourceECInstanceId],[SourceECClassPrimaryTable].[ECClassId] SourceECClassId,[ts_ALinksB].[TargetId] [TargetECInstanceId],[TargetECClassPrimaryTable].[ECClassId] TargetECClassId FROM [main].[ts_ALinksB] "
+    EXPECT_STRCASEEQ(SqlPrintfString("SELECT [ALinksB].[ECInstanceId],[ALinksB].[ECClassId],[ALinksB].[SourceECInstanceId],[ALinksB].[SourceECClassId],[ALinksB].[TargetECInstanceId],[ALinksB].[TargetECClassId] FROM "
+                     "(SELECT [ts_ALinksB].[Id] [ECInstanceId],%d [ECClassId],[ts_ALinksB].[SourceId] [SourceECInstanceId],[SourceECClassPrimaryTable].[ECClassId] SourceECClassId,[ts_ALinksB].[TargetId] [TargetECInstanceId],[TargetECClassPrimaryTable].[ECClassId] TargetECClassId FROM [main].[ts_ALinksB] "
                      "INNER JOIN [main].[ts_A] [SourceECClassPrimaryTable] ON [SourceECClassPrimaryTable].[Id]=[ts_ALinksB].[SourceId] "
                      "INNER JOIN [main].[ts_B] [TargetECClassPrimaryTable] ON [TargetECClassPrimaryTable].[Id]=[ts_ALinksB].[TargetId]) [ALinksB] "
-                     "WHERE [ALinksB].[TargetECClassId]=:_ecdb_sqlparam_ix1_col1", stmt.GetNativeSql()) << stmt.GetECSql();
+                     "WHERE [ALinksB].[TargetECClassId]=:_ecdb_sqlparam_ix1_col1", CLASS_ID(ts,ALinksB)).GetUtf8CP(), stmt.GetNativeSql()) << stmt.GetECSql();
     stmt.Finalize();
     }
 
@@ -1939,7 +1941,7 @@ TEST_F(ECSqlStatementTestFixture, TopLevelAliasCheck)
             EXPECT_EQ(info.GetDataType().IsStruct(), true);
         });
         ASSERT_EQ(i, stmt.GetColumnCount() - 1);
-        EXPECT_STRCASEEQ(stmt.GetNativeSql(), "SELECT [K0],[K1],[K2],[K3],[K4],[K5],[K6],[K7_0],[K7_1],[K8_0],[K8_1],[K8_2],[K9],[K10],[K11],[K12],[K13],[K14],[K15],[K16],[K17_0],[K17_1],[K18_0],[K18_1],[K18_2],[K19],[K20_0],[K20_1],[K20_2],[K20_3],[K20_4],[K20_5],[K20_6],[K20_7],[K20_8],[K20_9],[K20_10],[K20_11],[K20_12] FROM (SELECT [foo].[Bl] [K0],[foo].[Bo] [K1],[foo].[D] [K2],[foo].[Dt] [K3],[foo].[G] [K4],[foo].[I] [K5],[foo].[L] [K6],[foo].[P2d_X] [K7_0],[foo].[P2d_Y] [K7_1],[foo].[P3d_X] [K8_0],[foo].[P3d_Y] [K8_1],[foo].[P3d_Z] [K8_2],[foo].[S] [K9],[foo].[Struct_Bl] [K10],[foo].[Struct_Bo] [K11],[foo].[Struct_D] [K12],[foo].[Struct_Dt] [K13],[foo].[Struct_G] [K14],[foo].[Struct_I] [K15],[foo].[Struct_L] [K16],[foo].[Struct_P2d_X] [K17_0],[foo].[Struct_P2d_Y] [K17_1],[foo].[Struct_P3d_X] [K18_0],[foo].[Struct_P3d_Y] [K18_1],[foo].[Struct_P3d_Z] [K18_2],[foo].[Struct_S] [K19],[foo].[Struct_Bl] [K20_0],[foo].[Struct_Bo] [K20_1],[foo].[Struct_D] [K20_2],[foo].[Struct_Dt] [K20_3],[foo].[Struct_G] [K20_4],[foo].[Struct_I] [K20_5],[foo].[Struct_L] [K20_6],[foo].[Struct_P2d_X] [K20_7],[foo].[Struct_P2d_Y] [K20_8],[foo].[Struct_P3d_X] [K20_9],[foo].[Struct_P3d_Y] [K20_10],[foo].[Struct_P3d_Z] [K20_11],[foo].[Struct_S] [K20_12] FROM (SELECT [Id] ECInstanceId,73 ECClassId,[Bl],[Bo],[D],[Dt],[G],[I],[L],[P2d_X],[P2d_Y],[P3d_X],[P3d_Y],[P3d_Z],[S],[Struct_Bl],[Struct_Bo],[Struct_D],[Struct_Dt],[Struct_G],[Struct_I],[Struct_L],[Struct_P2d_X],[Struct_P2d_Y],[Struct_P3d_X],[Struct_P3d_Y],[Struct_P3d_Z],[Struct_S] FROM [main].[test_Foo]) [foo]) 'e'");
+        EXPECT_STRCASEEQ(stmt.GetNativeSql(), SqlPrintfString("SELECT [K0],[K1],[K2],[K3],[K4],[K5],[K6],[K7_0],[K7_1],[K8_0],[K8_1],[K8_2],[K9],[K10],[K11],[K12],[K13],[K14],[K15],[K16],[K17_0],[K17_1],[K18_0],[K18_1],[K18_2],[K19],[K20_0],[K20_1],[K20_2],[K20_3],[K20_4],[K20_5],[K20_6],[K20_7],[K20_8],[K20_9],[K20_10],[K20_11],[K20_12] FROM (SELECT [foo].[Bl] [K0],[foo].[Bo] [K1],[foo].[D] [K2],[foo].[Dt] [K3],[foo].[G] [K4],[foo].[I] [K5],[foo].[L] [K6],[foo].[P2d_X] [K7_0],[foo].[P2d_Y] [K7_1],[foo].[P3d_X] [K8_0],[foo].[P3d_Y] [K8_1],[foo].[P3d_Z] [K8_2],[foo].[S] [K9],[foo].[Struct_Bl] [K10],[foo].[Struct_Bo] [K11],[foo].[Struct_D] [K12],[foo].[Struct_Dt] [K13],[foo].[Struct_G] [K14],[foo].[Struct_I] [K15],[foo].[Struct_L] [K16],[foo].[Struct_P2d_X] [K17_0],[foo].[Struct_P2d_Y] [K17_1],[foo].[Struct_P3d_X] [K18_0],[foo].[Struct_P3d_Y] [K18_1],[foo].[Struct_P3d_Z] [K18_2],[foo].[Struct_S] [K19],[foo].[Struct_Bl] [K20_0],[foo].[Struct_Bo] [K20_1],[foo].[Struct_D] [K20_2],[foo].[Struct_Dt] [K20_3],[foo].[Struct_G] [K20_4],[foo].[Struct_I] [K20_5],[foo].[Struct_L] [K20_6],[foo].[Struct_P2d_X] [K20_7],[foo].[Struct_P2d_Y] [K20_8],[foo].[Struct_P3d_X] [K20_9],[foo].[Struct_P3d_Y] [K20_10],[foo].[Struct_P3d_Z] [K20_11],[foo].[Struct_S] [K20_12] FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Bl],[Bo],[D],[Dt],[G],[I],[L],[P2d_X],[P2d_Y],[P3d_X],[P3d_Y],[P3d_Z],[S],[Struct_Bl],[Struct_Bo],[Struct_D],[Struct_Dt],[Struct_G],[Struct_I],[Struct_L],[Struct_P2d_X],[Struct_P2d_Y],[Struct_P3d_X],[Struct_P3d_Y],[Struct_P3d_Z],[Struct_S] FROM [main].[test_Foo]) [foo]) 'e'", CLASS_ID(test, Foo)).GetUtf8CP());
         });
 
     prepare("select bl t_bl, bo t_bo, d t_d, dt t_dt, g t_g, i t_i, l t_l, p2d t_p2d, p3d t_p3d, s t_s, struct.bl s_bl, struct.bo s_bo, struct.d s_d, struct.dt s_dt, struct.g s_g, struct.i s_i, struct.l s_l, struct.p2d s_p2d, struct.p3d s_p3d, struct.s s_s, struct s_st from test.foo" ,
@@ -2152,7 +2154,7 @@ TEST_F(ECSqlStatementTestFixture, TopLevelAliasCheck)
             EXPECT_EQ(info.GetDataType().IsStruct(), true);
         });
         ASSERT_EQ(i, stmt.GetColumnCount() - 1);
-        EXPECT_STRCASEEQ(stmt.GetNativeSql(), "SELECT [foo].[Bl] [t_bl],[foo].[Bo] [t_bo],[foo].[D] [t_d],[foo].[Dt] [t_dt],[foo].[G] [t_g],[foo].[I] [t_i],[foo].[L] [t_l],[foo].[P2d_X] [t_p2d_0],[foo].[P2d_Y] [t_p2d_1],[foo].[P3d_X] [t_p3d_0],[foo].[P3d_Y] [t_p3d_1],[foo].[P3d_Z] [t_p3d_2],[foo].[S] [t_s],[foo].[Struct_Bl] [s_bl],[foo].[Struct_Bo] [s_bo],[foo].[Struct_D] [s_d],[foo].[Struct_Dt] [s_dt],[foo].[Struct_G] [s_g],[foo].[Struct_I] [s_i],[foo].[Struct_L] [s_l],[foo].[Struct_P2d_X] [s_p2d_0],[foo].[Struct_P2d_Y] [s_p2d_1],[foo].[Struct_P3d_X] [s_p3d_0],[foo].[Struct_P3d_Y] [s_p3d_1],[foo].[Struct_P3d_Z] [s_p3d_2],[foo].[Struct_S] [s_s],[foo].[Struct_Bl] [s_st_0],[foo].[Struct_Bo] [s_st_1],[foo].[Struct_D] [s_st_2],[foo].[Struct_Dt] [s_st_3],[foo].[Struct_G] [s_st_4],[foo].[Struct_I] [s_st_5],[foo].[Struct_L] [s_st_6],[foo].[Struct_P2d_X] [s_st_7],[foo].[Struct_P2d_Y] [s_st_8],[foo].[Struct_P3d_X] [s_st_9],[foo].[Struct_P3d_Y] [s_st_10],[foo].[Struct_P3d_Z] [s_st_11],[foo].[Struct_S] [s_st_12] FROM (SELECT [Id] ECInstanceId,73 ECClassId,[Bl],[Bo],[D],[Dt],[G],[I],[L],[P2d_X],[P2d_Y],[P3d_X],[P3d_Y],[P3d_Z],[S],[Struct_Bl],[Struct_Bo],[Struct_D],[Struct_Dt],[Struct_G],[Struct_I],[Struct_L],[Struct_P2d_X],[Struct_P2d_Y],[Struct_P3d_X],[Struct_P3d_Y],[Struct_P3d_Z],[Struct_S] FROM [main].[test_Foo]) [foo]");
+        EXPECT_STRCASEEQ(stmt.GetNativeSql(), SqlPrintfString("SELECT [foo].[Bl] [t_bl],[foo].[Bo] [t_bo],[foo].[D] [t_d],[foo].[Dt] [t_dt],[foo].[G] [t_g],[foo].[I] [t_i],[foo].[L] [t_l],[foo].[P2d_X] [t_p2d_0],[foo].[P2d_Y] [t_p2d_1],[foo].[P3d_X] [t_p3d_0],[foo].[P3d_Y] [t_p3d_1],[foo].[P3d_Z] [t_p3d_2],[foo].[S] [t_s],[foo].[Struct_Bl] [s_bl],[foo].[Struct_Bo] [s_bo],[foo].[Struct_D] [s_d],[foo].[Struct_Dt] [s_dt],[foo].[Struct_G] [s_g],[foo].[Struct_I] [s_i],[foo].[Struct_L] [s_l],[foo].[Struct_P2d_X] [s_p2d_0],[foo].[Struct_P2d_Y] [s_p2d_1],[foo].[Struct_P3d_X] [s_p3d_0],[foo].[Struct_P3d_Y] [s_p3d_1],[foo].[Struct_P3d_Z] [s_p3d_2],[foo].[Struct_S] [s_s],[foo].[Struct_Bl] [s_st_0],[foo].[Struct_Bo] [s_st_1],[foo].[Struct_D] [s_st_2],[foo].[Struct_Dt] [s_st_3],[foo].[Struct_G] [s_st_4],[foo].[Struct_I] [s_st_5],[foo].[Struct_L] [s_st_6],[foo].[Struct_P2d_X] [s_st_7],[foo].[Struct_P2d_Y] [s_st_8],[foo].[Struct_P3d_X] [s_st_9],[foo].[Struct_P3d_Y] [s_st_10],[foo].[Struct_P3d_Z] [s_st_11],[foo].[Struct_S] [s_st_12] FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Bl],[Bo],[D],[Dt],[G],[I],[L],[P2d_X],[P2d_Y],[P3d_X],[P3d_Y],[P3d_Z],[S],[Struct_Bl],[Struct_Bo],[Struct_D],[Struct_Dt],[Struct_G],[Struct_I],[Struct_L],[Struct_P2d_X],[Struct_P2d_Y],[Struct_P3d_X],[Struct_P3d_Y],[Struct_P3d_Z],[Struct_S] FROM [main].[test_Foo]) [foo]", CLASS_ID(test, Foo)).GetUtf8CP());
         });
 
     prepare("select bl, bo, d, dt, g, i, l, p2d, p3d, s, struct.bl, struct.bo, struct.d, struct.dt, struct.g, struct.i, struct.l, struct.p2d, struct.p3d, struct.s, struct from test.foo", [&](ECSqlStatus rc, ECSqlStatement &stmt) {
@@ -2363,7 +2365,7 @@ TEST_F(ECSqlStatementTestFixture, TopLevelAliasCheck)
             EXPECT_EQ(info.GetDataType().IsStruct(), true);
         });
         ASSERT_EQ(i, stmt.GetColumnCount() - 1);
-        EXPECT_STRCASEEQ(stmt.GetNativeSql(), "SELECT [foo].[Bl],[foo].[Bo],[foo].[D],[foo].[Dt],[foo].[G],[foo].[I],[foo].[L],[foo].[P2d_X],[foo].[P2d_Y],[foo].[P3d_X],[foo].[P3d_Y],[foo].[P3d_Z],[foo].[S],[foo].[Struct_Bl],[foo].[Struct_Bo],[foo].[Struct_D],[foo].[Struct_Dt],[foo].[Struct_G],[foo].[Struct_I],[foo].[Struct_L],[foo].[Struct_P2d_X],[foo].[Struct_P2d_Y],[foo].[Struct_P3d_X],[foo].[Struct_P3d_Y],[foo].[Struct_P3d_Z],[foo].[Struct_S],[foo].[Struct_Bl],[foo].[Struct_Bo],[foo].[Struct_D],[foo].[Struct_Dt],[foo].[Struct_G],[foo].[Struct_I],[foo].[Struct_L],[foo].[Struct_P2d_X],[foo].[Struct_P2d_Y],[foo].[Struct_P3d_X],[foo].[Struct_P3d_Y],[foo].[Struct_P3d_Z],[foo].[Struct_S] FROM (SELECT [Id] ECInstanceId,73 ECClassId,[Bl],[Bo],[D],[Dt],[G],[I],[L],[P2d_X],[P2d_Y],[P3d_X],[P3d_Y],[P3d_Z],[S],[Struct_Bl],[Struct_Bo],[Struct_D],[Struct_Dt],[Struct_G],[Struct_I],[Struct_L],[Struct_P2d_X],[Struct_P2d_Y],[Struct_P3d_X],[Struct_P3d_Y],[Struct_P3d_Z],[Struct_S] FROM [main].[test_Foo]) [foo]");
+        EXPECT_STRCASEEQ(stmt.GetNativeSql(), SqlPrintfString("SELECT [foo].[Bl],[foo].[Bo],[foo].[D],[foo].[Dt],[foo].[G],[foo].[I],[foo].[L],[foo].[P2d_X],[foo].[P2d_Y],[foo].[P3d_X],[foo].[P3d_Y],[foo].[P3d_Z],[foo].[S],[foo].[Struct_Bl],[foo].[Struct_Bo],[foo].[Struct_D],[foo].[Struct_Dt],[foo].[Struct_G],[foo].[Struct_I],[foo].[Struct_L],[foo].[Struct_P2d_X],[foo].[Struct_P2d_Y],[foo].[Struct_P3d_X],[foo].[Struct_P3d_Y],[foo].[Struct_P3d_Z],[foo].[Struct_S],[foo].[Struct_Bl],[foo].[Struct_Bo],[foo].[Struct_D],[foo].[Struct_Dt],[foo].[Struct_G],[foo].[Struct_I],[foo].[Struct_L],[foo].[Struct_P2d_X],[foo].[Struct_P2d_Y],[foo].[Struct_P3d_X],[foo].[Struct_P3d_Y],[foo].[Struct_P3d_Z],[foo].[Struct_S] FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Bl],[Bo],[D],[Dt],[G],[I],[L],[P2d_X],[P2d_Y],[P3d_X],[P3d_Y],[P3d_Z],[S],[Struct_Bl],[Struct_Bo],[Struct_D],[Struct_Dt],[Struct_G],[Struct_I],[Struct_L],[Struct_P2d_X],[Struct_P2d_Y],[Struct_P3d_X],[Struct_P3d_Y],[Struct_P3d_Z],[Struct_S] FROM [main].[test_Foo]) [foo]", CLASS_ID(test, Foo)).GetUtf8CP());
     });
     }
 //-----------------------------------------------------------------------------------
@@ -10678,7 +10680,7 @@ TEST_F(ECSqlStatementTestFixture, ConfuseRealNumberWithClassName) {
     }
 
     }
-    
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------

@@ -9680,6 +9680,7 @@ TEST_F(DbMappingTestFixture, LoadECSchemas)
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("StartupCompany.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
 
     std::vector<Utf8CP> expectedSchemas;
+    expectedSchemas.push_back("ClassViews");
     expectedSchemas.push_back("CoreCustomAttributes");
     expectedSchemas.push_back("ECDbFileInfo");
     expectedSchemas.push_back("ECDbMap");

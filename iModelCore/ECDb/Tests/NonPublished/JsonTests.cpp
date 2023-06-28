@@ -4,6 +4,8 @@
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
 
+#define CLASS_ID(S,C) (int)m_ecdb.Schemas().GetClassId( #S, #C, SchemaLookupMode::AutoDetect).GetValueUnchecked()
+
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
@@ -13,10 +15,10 @@ struct JsonTests : public ECDbTestFixture {
 
 TEST_F(JsonTests, json_tree) {
     auto test_schema = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-    <ECSchema 
+    <ECSchema
             schemaName="test_schema"
             alias="ts"
-            version="1.0.0" 
+            version="1.0.0"
             xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <ECEntityClass typeName="json_docs" >
             <ECProperty propertyName="doc" typeName="string" />
@@ -33,17 +35,17 @@ TEST_F(JsonTests, json_tree) {
     })";
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("test.ecdb", test_schema));
     if(true){
-        ECSqlStatement stmt; 
+        ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "insert into ts.json_docs(doc) values (?)"));
         stmt.BindText(1, test_data, IECSqlBinder::MakeCopy::No);
         ECInstanceKey inserted_row_key;
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(inserted_row_key));
     }
   if("join") {
-        ECSqlStatement stmt; 
+        ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select s.* from ts.json_docs, json1.json_tree(doc) s where s.key='gravity'"));
         auto nativeSQL = stmt.GetNativeSql();
-        ASSERT_STREQ(nativeSQL,  "SELECT s.key,s.value,s.type,s.atom,s.parent,s.fullkey,s.path FROM (SELECT [Id] ECInstanceId,73 ECClassId,[doc] FROM [main].[ts_json_docs]) [json_docs],json_tree([json_docs].[doc]) s WHERE s.key='gravity'");
+        ASSERT_STREQ(nativeSQL,  SqlPrintfString("SELECT s.key,s.value,s.type,s.atom,s.parent,s.fullkey,s.path FROM (SELECT [Id] ECInstanceId,%d ECClassId,[doc] FROM [main].[ts_json_docs]) [json_docs],json_tree([json_docs].[doc]) s WHERE s.key='gravity'",CLASS_ID(ts,json_docs)).GetUtf8CP());
         stmt.BindText(1, test_data, IECSqlBinder::MakeCopy::No);
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
@@ -75,7 +77,7 @@ TEST_F(JsonTests, json_tree) {
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetRootClass().GetClass().GetFullName(), "json1:json_tree");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetProperty()->GetName().c_str(), "type");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetPropertyPath().ToString().c_str(), "type");
-        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);   
+        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);
 
         nCol = 3;
         ASSERT_TRUE(stmt.GetColumnInfo(nCol).IsValid());
@@ -85,7 +87,7 @@ TEST_F(JsonTests, json_tree) {
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetRootClass().GetClass().GetFullName(), "json1:json_tree");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetProperty()->GetName().c_str(), "atom");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetPropertyPath().ToString().c_str(), "atom");
-        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);          
+        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);
 
         nCol = 4;
         ASSERT_TRUE(stmt.GetColumnInfo(nCol).IsValid());
@@ -95,7 +97,7 @@ TEST_F(JsonTests, json_tree) {
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetRootClass().GetClass().GetFullName(), "json1:json_tree");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetProperty()->GetName().c_str(), "parent");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetPropertyPath().ToString().c_str(), "parent");
-        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_Integer);     
+        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_Integer);
 
         nCol = 5;
         ASSERT_TRUE(stmt.GetColumnInfo(nCol).IsValid());
@@ -105,7 +107,7 @@ TEST_F(JsonTests, json_tree) {
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetRootClass().GetClass().GetFullName(), "json1:json_tree");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetProperty()->GetName().c_str(), "fullkey");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetPropertyPath().ToString().c_str(), "fullkey");
-        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);       
+        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);
 
         nCol = 6;
         ASSERT_TRUE(stmt.GetColumnInfo(nCol).IsValid());
@@ -119,9 +121,9 @@ TEST_F(JsonTests, json_tree) {
 
         // test first row
         /*
-            key     value      type atom       id parent fullkey   path 
-            ------- ---------- ---- ---------- -- ------ --------- ---- 
-            gravity 3.721 m/s² text 3.721 m/s² 4  (null) $.gravity $    
+            key     value      type atom       id parent fullkey   path
+            ------- ---------- ---- ---------- -- ------ --------- ----
+            gravity 3.721 m/s² text 3.721 m/s² 4  (null) $.gravity $
         */
         ASSERT_STREQ(stmt.GetValueText(0),"gravity");
         ASSERT_STREQ(stmt.GetValueText(1),"3.721 m/s²");
@@ -132,7 +134,7 @@ TEST_F(JsonTests, json_tree) {
         ASSERT_STREQ(stmt.GetValueText(6),"$");
     }
     if("sub query") {
-        ECSqlStatement stmt; 
+        ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select * from (select * from json1.json_tree(?)) WHERE key='gravity'"));
         auto nativeSQL = stmt.GetNativeSql();
         ASSERT_STREQ(nativeSQL,  "SELECT [K0],[K1],[K2],[K3],[K4],[K5],[K6] FROM (SELECT key [K0],value [K1],type [K2],atom [K3],parent [K4],fullkey [K5],path [K6] FROM json_tree(:_ecdb_sqlparam_ix1_col1)) WHERE [K0]='gravity'");
@@ -167,7 +169,7 @@ TEST_F(JsonTests, json_tree) {
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetRootClass().GetClass().GetFullName(), "json1:json_tree");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetProperty()->GetName().c_str(), "type");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetPropertyPath().ToString().c_str(), "type");
-        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);   
+        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);
 
         nCol = 3;
         ASSERT_TRUE(stmt.GetColumnInfo(nCol).IsValid());
@@ -177,7 +179,7 @@ TEST_F(JsonTests, json_tree) {
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetRootClass().GetClass().GetFullName(), "json1:json_tree");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetProperty()->GetName().c_str(), "atom");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetPropertyPath().ToString().c_str(), "atom");
-        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);          
+        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);
 
         nCol = 4;
         ASSERT_TRUE(stmt.GetColumnInfo(nCol).IsValid());
@@ -187,7 +189,7 @@ TEST_F(JsonTests, json_tree) {
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetRootClass().GetClass().GetFullName(), "json1:json_tree");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetProperty()->GetName().c_str(), "parent");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetPropertyPath().ToString().c_str(), "parent");
-        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_Integer);     
+        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_Integer);
 
         nCol = 5;
         ASSERT_TRUE(stmt.GetColumnInfo(nCol).IsValid());
@@ -197,7 +199,7 @@ TEST_F(JsonTests, json_tree) {
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetRootClass().GetClass().GetFullName(), "json1:json_tree");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetProperty()->GetName().c_str(), "fullkey");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetPropertyPath().ToString().c_str(), "fullkey");
-        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);       
+        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);
 
         nCol = 6;
         ASSERT_TRUE(stmt.GetColumnInfo(nCol).IsValid());
@@ -211,9 +213,9 @@ TEST_F(JsonTests, json_tree) {
 
         // test first row
         /*
-            key     value      type atom       id parent fullkey   path 
-            ------- ---------- ---- ---------- -- ------ --------- ---- 
-            gravity 3.721 m/s² text 3.721 m/s² 4  (null) $.gravity $    
+            key     value      type atom       id parent fullkey   path
+            ------- ---------- ---- ---------- -- ------ --------- ----
+            gravity 3.721 m/s² text 3.721 m/s² 4  (null) $.gravity $
         */
        ASSERT_STREQ(stmt.GetValueText(0),"gravity");
        ASSERT_STREQ(stmt.GetValueText(1),"3.721 m/s²");
@@ -224,7 +226,7 @@ TEST_F(JsonTests, json_tree) {
        ASSERT_STREQ(stmt.GetValueText(6),"$");
     }
     if("wild card select + alias") {
-        ECSqlStatement stmt; 
+        ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select s.* from json1.json_tree(?) s where s.key='planet'"));
         auto nativeSQL = stmt.GetNativeSql();
         ASSERT_STREQ(nativeSQL, "SELECT s.key,s.value,s.type,s.atom,s.parent,s.fullkey,s.path FROM json_tree(:_ecdb_sqlparam_ix1_col1) s WHERE s.key='planet'");
@@ -259,7 +261,7 @@ TEST_F(JsonTests, json_tree) {
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetRootClass().GetClass().GetFullName(), "json1:json_tree");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetProperty()->GetName().c_str(), "type");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetPropertyPath().ToString().c_str(), "type");
-        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);   
+        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);
 
         nCol = 3;
         ASSERT_TRUE(stmt.GetColumnInfo(nCol).IsValid());
@@ -269,7 +271,7 @@ TEST_F(JsonTests, json_tree) {
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetRootClass().GetClass().GetFullName(), "json1:json_tree");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetProperty()->GetName().c_str(), "atom");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetPropertyPath().ToString().c_str(), "atom");
-        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);          
+        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);
 
         nCol = 4;
         ASSERT_TRUE(stmt.GetColumnInfo(nCol).IsValid());
@@ -279,7 +281,7 @@ TEST_F(JsonTests, json_tree) {
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetRootClass().GetClass().GetFullName(), "json1:json_tree");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetProperty()->GetName().c_str(), "parent");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetPropertyPath().ToString().c_str(), "parent");
-        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_Integer);     
+        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_Integer);
 
         nCol = 5;
         ASSERT_TRUE(stmt.GetColumnInfo(nCol).IsValid());
@@ -289,7 +291,7 @@ TEST_F(JsonTests, json_tree) {
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetRootClass().GetClass().GetFullName(), "json1:json_tree");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetProperty()->GetName().c_str(), "fullkey");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetPropertyPath().ToString().c_str(), "fullkey");
-        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);       
+        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);
 
         nCol = 6;
         ASSERT_TRUE(stmt.GetColumnInfo(nCol).IsValid());
@@ -303,9 +305,9 @@ TEST_F(JsonTests, json_tree) {
 
         // test first row
         /*
-            key    value type atom id parent fullkey  path 
-            ------ ----- ---- ---- -- ------ -------- ---- 
-            planet mars  text mars 2  0      $.planet $    
+            key    value type atom id parent fullkey  path
+            ------ ----- ---- ---- -- ------ -------- ----
+            planet mars  text mars 2  0      $.planet $
         */
         ASSERT_STREQ(stmt.GetValueText(0),"planet");
         ASSERT_STREQ(stmt.GetValueText(1),"mars");
@@ -317,7 +319,7 @@ TEST_F(JsonTests, json_tree) {
 
     }
     if("wild card select") {
-        ECSqlStatement stmt; 
+        ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select * from json1.json_tree(?) s where s.key='gravity'"));
         auto nativeSQL = stmt.GetNativeSql();
         ASSERT_STREQ(nativeSQL,  "SELECT s.key,s.value,s.type,s.atom,s.parent,s.fullkey,s.path FROM json_tree(:_ecdb_sqlparam_ix1_col1) s WHERE s.key='gravity'");
@@ -352,7 +354,7 @@ TEST_F(JsonTests, json_tree) {
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetRootClass().GetClass().GetFullName(), "json1:json_tree");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetProperty()->GetName().c_str(), "type");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetPropertyPath().ToString().c_str(), "type");
-        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);   
+        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);
 
         nCol = 3;
         ASSERT_TRUE(stmt.GetColumnInfo(nCol).IsValid());
@@ -362,7 +364,7 @@ TEST_F(JsonTests, json_tree) {
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetRootClass().GetClass().GetFullName(), "json1:json_tree");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetProperty()->GetName().c_str(), "atom");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetPropertyPath().ToString().c_str(), "atom");
-        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);          
+        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);
 
         nCol = 4;
         ASSERT_TRUE(stmt.GetColumnInfo(nCol).IsValid());
@@ -372,7 +374,7 @@ TEST_F(JsonTests, json_tree) {
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetRootClass().GetClass().GetFullName(), "json1:json_tree");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetProperty()->GetName().c_str(), "parent");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetPropertyPath().ToString().c_str(), "parent");
-        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_Integer);     
+        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_Integer);
 
         nCol = 5;
         ASSERT_TRUE(stmt.GetColumnInfo(nCol).IsValid());
@@ -382,7 +384,7 @@ TEST_F(JsonTests, json_tree) {
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetRootClass().GetClass().GetFullName(), "json1:json_tree");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetProperty()->GetName().c_str(), "fullkey");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetPropertyPath().ToString().c_str(), "fullkey");
-        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);       
+        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);
 
         nCol = 6;
         ASSERT_TRUE(stmt.GetColumnInfo(nCol).IsValid());
@@ -396,9 +398,9 @@ TEST_F(JsonTests, json_tree) {
 
         // test first row
         /*
-            key     value      type atom       id parent fullkey   path 
-            ------- ---------- ---- ---------- -- ------ --------- ---- 
-            gravity 3.721 m/s² text 3.721 m/s² 4  (null) $.gravity $    
+            key     value      type atom       id parent fullkey   path
+            ------- ---------- ---- ---------- -- ------ --------- ----
+            gravity 3.721 m/s² text 3.721 m/s² 4  (null) $.gravity $
         */
         ASSERT_STREQ(stmt.GetValueText(0),"gravity");
         ASSERT_STREQ(stmt.GetValueText(1),"3.721 m/s²");
@@ -411,10 +413,10 @@ TEST_F(JsonTests, json_tree) {
 }
 TEST_F(JsonTests, json_each) {
     auto test_schema = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-    <ECSchema 
+    <ECSchema
             schemaName="test_schema"
             alias="ts"
-            version="1.0.0" 
+            version="1.0.0"
             xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <ECEntityClass typeName="json_docs" >
             <ECProperty propertyName="doc" typeName="string" />
@@ -431,17 +433,17 @@ TEST_F(JsonTests, json_each) {
     })";
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("test.ecdb", test_schema));
     if(true){
-        ECSqlStatement stmt; 
+        ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "insert into ts.json_docs(doc) values (?)"));
         stmt.BindText(1, test_data, IECSqlBinder::MakeCopy::No);
         ECInstanceKey inserted_row_key;
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(inserted_row_key));
     }
   if("join") {
-        ECSqlStatement stmt; 
+        ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select s.* from ts.json_docs, json1.json_each(doc) s where s.key='gravity'"));
         auto nativeSQL = stmt.GetNativeSql();
-        ASSERT_STREQ(nativeSQL,  "SELECT s.key,s.value,s.type,s.atom,s.parent,s.fullkey,s.path FROM (SELECT [Id] ECInstanceId,73 ECClassId,[doc] FROM [main].[ts_json_docs]) [json_docs],json_each([json_docs].[doc]) s WHERE s.key='gravity'");
+        ASSERT_STREQ(nativeSQL,  SqlPrintfString("SELECT s.key,s.value,s.type,s.atom,s.parent,s.fullkey,s.path FROM (SELECT [Id] ECInstanceId,%d ECClassId,[doc] FROM [main].[ts_json_docs]) [json_docs],json_each([json_docs].[doc]) s WHERE s.key='gravity'",CLASS_ID(ts,json_docs)).GetUtf8CP());
         stmt.BindText(1, test_data, IECSqlBinder::MakeCopy::No);
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
@@ -473,7 +475,7 @@ TEST_F(JsonTests, json_each) {
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetRootClass().GetClass().GetFullName(), "json1:json_each");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetProperty()->GetName().c_str(), "type");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetPropertyPath().ToString().c_str(), "type");
-        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);   
+        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);
 
         nCol = 3;
         ASSERT_TRUE(stmt.GetColumnInfo(nCol).IsValid());
@@ -483,7 +485,7 @@ TEST_F(JsonTests, json_each) {
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetRootClass().GetClass().GetFullName(), "json1:json_each");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetProperty()->GetName().c_str(), "atom");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetPropertyPath().ToString().c_str(), "atom");
-        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);          
+        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);
 
         nCol = 4;
         ASSERT_TRUE(stmt.GetColumnInfo(nCol).IsValid());
@@ -493,7 +495,7 @@ TEST_F(JsonTests, json_each) {
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetRootClass().GetClass().GetFullName(), "json1:json_each");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetProperty()->GetName().c_str(), "parent");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetPropertyPath().ToString().c_str(), "parent");
-        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_Integer);     
+        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_Integer);
 
         nCol = 5;
         ASSERT_TRUE(stmt.GetColumnInfo(nCol).IsValid());
@@ -503,7 +505,7 @@ TEST_F(JsonTests, json_each) {
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetRootClass().GetClass().GetFullName(), "json1:json_each");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetProperty()->GetName().c_str(), "fullkey");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetPropertyPath().ToString().c_str(), "fullkey");
-        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);       
+        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);
 
         nCol = 6;
         ASSERT_TRUE(stmt.GetColumnInfo(nCol).IsValid());
@@ -517,9 +519,9 @@ TEST_F(JsonTests, json_each) {
 
         // test first row
         /*
-            key     value      type atom       id parent fullkey   path 
-            ------- ---------- ---- ---------- -- ------ --------- ---- 
-            gravity 3.721 m/s² text 3.721 m/s² 4  (null) $.gravity $    
+            key     value      type atom       id parent fullkey   path
+            ------- ---------- ---- ---------- -- ------ --------- ----
+            gravity 3.721 m/s² text 3.721 m/s² 4  (null) $.gravity $
         */
         ASSERT_STREQ(stmt.GetValueText(0),"gravity");
         ASSERT_STREQ(stmt.GetValueText(1),"3.721 m/s²");
@@ -530,7 +532,7 @@ TEST_F(JsonTests, json_each) {
         ASSERT_STREQ(stmt.GetValueText(6),"$");
     }
     if("sub query") {
-        ECSqlStatement stmt; 
+        ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select * from (select * from json1.json_each(?)) WHERE key='gravity'"));
         auto nativeSQL = stmt.GetNativeSql();
         ASSERT_STREQ(nativeSQL,  "SELECT [K0],[K1],[K2],[K3],[K4],[K5],[K6] FROM (SELECT key [K0],value [K1],type [K2],atom [K3],parent [K4],fullkey [K5],path [K6] FROM json_each(:_ecdb_sqlparam_ix1_col1)) WHERE [K0]='gravity'");
@@ -565,7 +567,7 @@ TEST_F(JsonTests, json_each) {
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetRootClass().GetClass().GetFullName(), "json1:json_each");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetProperty()->GetName().c_str(), "type");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetPropertyPath().ToString().c_str(), "type");
-        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);   
+        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);
 
         nCol = 3;
         ASSERT_TRUE(stmt.GetColumnInfo(nCol).IsValid());
@@ -575,7 +577,7 @@ TEST_F(JsonTests, json_each) {
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetRootClass().GetClass().GetFullName(), "json1:json_each");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetProperty()->GetName().c_str(), "atom");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetPropertyPath().ToString().c_str(), "atom");
-        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);          
+        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);
 
         nCol = 4;
         ASSERT_TRUE(stmt.GetColumnInfo(nCol).IsValid());
@@ -585,7 +587,7 @@ TEST_F(JsonTests, json_each) {
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetRootClass().GetClass().GetFullName(), "json1:json_each");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetProperty()->GetName().c_str(), "parent");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetPropertyPath().ToString().c_str(), "parent");
-        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_Integer);     
+        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_Integer);
 
         nCol = 5;
         ASSERT_TRUE(stmt.GetColumnInfo(nCol).IsValid());
@@ -595,7 +597,7 @@ TEST_F(JsonTests, json_each) {
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetRootClass().GetClass().GetFullName(), "json1:json_each");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetProperty()->GetName().c_str(), "fullkey");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetPropertyPath().ToString().c_str(), "fullkey");
-        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);       
+        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);
 
         nCol = 6;
         ASSERT_TRUE(stmt.GetColumnInfo(nCol).IsValid());
@@ -609,9 +611,9 @@ TEST_F(JsonTests, json_each) {
 
         // test first row
         /*
-            key     value      type atom       id parent fullkey   path 
-            ------- ---------- ---- ---------- -- ------ --------- ---- 
-            gravity 3.721 m/s² text 3.721 m/s² 4  (null) $.gravity $    
+            key     value      type atom       id parent fullkey   path
+            ------- ---------- ---- ---------- -- ------ --------- ----
+            gravity 3.721 m/s² text 3.721 m/s² 4  (null) $.gravity $
         */
        ASSERT_STREQ(stmt.GetValueText(0),"gravity");
        ASSERT_STREQ(stmt.GetValueText(1),"3.721 m/s²");
@@ -622,7 +624,7 @@ TEST_F(JsonTests, json_each) {
        ASSERT_STREQ(stmt.GetValueText(6),"$");
     }
     if("wild card select + alias") {
-        ECSqlStatement stmt; 
+        ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select s.* from json1.json_each(?) s where s.key='planet'"));
         auto nativeSQL = stmt.GetNativeSql();
         ASSERT_STREQ(nativeSQL, "SELECT s.key,s.value,s.type,s.atom,s.parent,s.fullkey,s.path FROM json_each(:_ecdb_sqlparam_ix1_col1) s WHERE s.key='planet'");
@@ -657,7 +659,7 @@ TEST_F(JsonTests, json_each) {
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetRootClass().GetClass().GetFullName(), "json1:json_each");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetProperty()->GetName().c_str(), "type");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetPropertyPath().ToString().c_str(), "type");
-        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);   
+        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);
 
         nCol = 3;
         ASSERT_TRUE(stmt.GetColumnInfo(nCol).IsValid());
@@ -667,7 +669,7 @@ TEST_F(JsonTests, json_each) {
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetRootClass().GetClass().GetFullName(), "json1:json_each");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetProperty()->GetName().c_str(), "atom");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetPropertyPath().ToString().c_str(), "atom");
-        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);          
+        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);
 
         nCol = 4;
         ASSERT_TRUE(stmt.GetColumnInfo(nCol).IsValid());
@@ -677,7 +679,7 @@ TEST_F(JsonTests, json_each) {
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetRootClass().GetClass().GetFullName(), "json1:json_each");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetProperty()->GetName().c_str(), "parent");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetPropertyPath().ToString().c_str(), "parent");
-        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_Integer);     
+        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_Integer);
 
         nCol = 5;
         ASSERT_TRUE(stmt.GetColumnInfo(nCol).IsValid());
@@ -687,7 +689,7 @@ TEST_F(JsonTests, json_each) {
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetRootClass().GetClass().GetFullName(), "json1:json_each");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetProperty()->GetName().c_str(), "fullkey");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetPropertyPath().ToString().c_str(), "fullkey");
-        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);       
+        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);
 
         nCol = 6;
         ASSERT_TRUE(stmt.GetColumnInfo(nCol).IsValid());
@@ -701,9 +703,9 @@ TEST_F(JsonTests, json_each) {
 
         // test first row
         /*
-            key    value type atom id parent fullkey  path 
-            ------ ----- ---- ---- -- ------ -------- ---- 
-            planet mars  text mars 2  0      $.planet $    
+            key    value type atom id parent fullkey  path
+            ------ ----- ---- ---- -- ------ -------- ----
+            planet mars  text mars 2  0      $.planet $
         */
         ASSERT_STREQ(stmt.GetValueText(0),"planet");
         ASSERT_STREQ(stmt.GetValueText(1),"mars");
@@ -715,7 +717,7 @@ TEST_F(JsonTests, json_each) {
 
     }
     if("wild card select") {
-        ECSqlStatement stmt; 
+        ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select * from json1.json_each(?) s where s.key='gravity'"));
         auto nativeSQL = stmt.GetNativeSql();
         ASSERT_STREQ(nativeSQL,  "SELECT s.key,s.value,s.type,s.atom,s.parent,s.fullkey,s.path FROM json_each(:_ecdb_sqlparam_ix1_col1) s WHERE s.key='gravity'");
@@ -750,7 +752,7 @@ TEST_F(JsonTests, json_each) {
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetRootClass().GetClass().GetFullName(), "json1:json_each");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetProperty()->GetName().c_str(), "type");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetPropertyPath().ToString().c_str(), "type");
-        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);   
+        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);
 
         nCol = 3;
         ASSERT_TRUE(stmt.GetColumnInfo(nCol).IsValid());
@@ -760,7 +762,7 @@ TEST_F(JsonTests, json_each) {
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetRootClass().GetClass().GetFullName(), "json1:json_each");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetProperty()->GetName().c_str(), "atom");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetPropertyPath().ToString().c_str(), "atom");
-        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);          
+        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);
 
         nCol = 4;
         ASSERT_TRUE(stmt.GetColumnInfo(nCol).IsValid());
@@ -770,7 +772,7 @@ TEST_F(JsonTests, json_each) {
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetRootClass().GetClass().GetFullName(), "json1:json_each");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetProperty()->GetName().c_str(), "parent");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetPropertyPath().ToString().c_str(), "parent");
-        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_Integer);     
+        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_Integer);
 
         nCol = 5;
         ASSERT_TRUE(stmt.GetColumnInfo(nCol).IsValid());
@@ -780,7 +782,7 @@ TEST_F(JsonTests, json_each) {
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetRootClass().GetClass().GetFullName(), "json1:json_each");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetProperty()->GetName().c_str(), "fullkey");
         ASSERT_STREQ(stmt.GetColumnInfo(nCol).GetPropertyPath().ToString().c_str(), "fullkey");
-        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);       
+        ASSERT_EQ(stmt.GetColumnInfo(nCol).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);
 
         nCol = 6;
         ASSERT_TRUE(stmt.GetColumnInfo(nCol).IsValid());
@@ -794,9 +796,9 @@ TEST_F(JsonTests, json_each) {
 
         // test first row
         /*
-            key     value      type atom       id parent fullkey   path 
-            ------- ---------- ---- ---------- -- ------ --------- ---- 
-            gravity 3.721 m/s² text 3.721 m/s² 4  (null) $.gravity $    
+            key     value      type atom       id parent fullkey   path
+            ------- ---------- ---- ---------- -- ------ --------- ----
+            gravity 3.721 m/s² text 3.721 m/s² 4  (null) $.gravity $
         */
         ASSERT_STREQ(stmt.GetValueText(0),"gravity");
         ASSERT_STREQ(stmt.GetValueText(1),"3.721 m/s²");
