@@ -17,26 +17,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //+---------------+---------------+---------------+---------------+---------------+------
 struct SchemaRemapTestFixture : public ECDbTestFixture
     {
-    std::vector<Utf8String> m_updatedDbs;
     protected:
-
-        //---------------------------------------------------------------------------------------
-        // @bsimethod
-        //+---------------+---------------+---------------+---------------+---------------+------
-        void CloseReOpenECDb()
-            {
-            Utf8CP dbFileName = m_ecdb.GetDbFileName();
-            BeFileName dbPath(dbFileName);
-            m_ecdb.CloseDb();
-            ASSERT_FALSE(m_ecdb.IsDbOpen());
-            ASSERT_EQ(BE_SQLITE_OK, m_ecdb.OpenBeSQLiteDb(dbPath, ECDb::OpenParams(ECDb::OpenMode::Readonly)));
-            ASSERT_TRUE(m_ecdb.IsDbOpen());
-            }
-
-        //---------------------------------------------------------------------------------------
-        // @bsimethod
-        //+---------------+---------------+---------------+---------------+---------------+------
-        DbResult OpenBesqliteDb(Utf8CP dbPath) { return m_ecdb.OpenBeSQLiteDb(dbPath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite)); }
         BentleyStatus ImportSchemasFromFolder(BeFileName const& schemaFolder);
         BentleyStatus ImportSchemaFromFile(BeFileName const& fileName);
     };
@@ -4153,7 +4134,10 @@ TEST_F(SchemaRemapTestFixture, IfcProblemJune21)
 BentleyStatus SchemaRemapTestFixture::ImportSchemaFromFile(BeFileName const& fileName)
     {
     ECSchemaReadContextPtr ctx = ECSchemaReadContext::CreateContext(false, true);
+    
     ctx->AddSchemaLocater(m_ecdb.GetSchemaLocater());
+    BeFileName directory = fileName.GetDirectoryName();
+    ctx->AddSchemaPath(directory);
 
     BeFileName ecdbSchemaSearchPath;
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(ecdbSchemaSearchPath);
@@ -4218,7 +4202,7 @@ BentleyStatus SchemaRemapTestFixture::ImportSchemasFromFolder(BeFileName const& 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-/*TEST_F(SchemaRemapTestFixture, ImportSchemasFromExternalFolders)
+TEST_F(SchemaRemapTestFixture, ImportSchemasFromExternalFolders)
     {
     //This and the next test are used to diagnose problems with a single or a set of schemas loaded from the local file system.
     //That is useful so the file can be modified and executed many times without the need to rebuild the test.
@@ -4232,24 +4216,23 @@ BentleyStatus SchemaRemapTestFixture::ImportSchemasFromFolder(BeFileName const& 
 
     BeFileName importFolder(L"F:\\data\\input2\\");
     ASSERT_EQ(SUCCESS, ImportSchemasFromFolder(importFolder));
-    }*/
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-/*TEST_F(SchemaRemapTestFixture, ImportSchemasFromFiles)
+TEST_F(SchemaRemapTestFixture, ImportSchemasFromFiles)
     {
-    NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::CONSOLE_LOGGING_PROVIDER);
-    NativeLogging::LoggingConfig::SetSeverity("ECDb", BentleyApi::NativeLogging::LOG_TRACE);
-    NativeLogging::LoggingConfig::SetSeverity("ECObjectsNative", BentleyApi::NativeLogging::LOG_TRACE);
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("ImportSchemasFromFiles.ecdb"));
-    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql("CREATE VIRTUAL TABLE dgn_SpatialIndex USING rtree(ElementId,MinX,MaxX,MinY,MaxY,MinZ,MaxZ)"));
-    BeFileName fileName1(L"F:\\defects\\plant_condensed\\ProcessFunctional.01.00.00.ecschema.xml");
-    ASSERT_EQ(SUCCESS, ImportSchemaFromFile(fileName1));
+    NativeLogging::Logging::SetLogger(&NativeLogging::ConsoleLogger::GetLogger());
+    NativeLogging::ConsoleLogger::GetLogger().SetSeverity("ECDb", BentleyApi::NativeLogging::LOG_TRACE);
+    NativeLogging::ConsoleLogger::GetLogger().SetSeverity("ECObjectsNative", BentleyApi::NativeLogging::LOG_TRACE);
 
-    BeFileName fileName2(L"F:\\defects\\plant_condensed\\ProcessFunctional.01.00.02.ecschema.xml");
-    ASSERT_EQ(SUCCESS, ImportSchemaFromFile(fileName2));
-    }*/
+    CloseECDb();
+    BeFileName fileName("E:\\data\\importschema\\testimodel.bim");
+    OpenECDb(fileName);
+    BeFileName fileName1(L"E:\\data\\importschema\\StructuralAnalysis.ecschema.xml");
+    ASSERT_EQ(SUCCESS, ImportSchemaFromFile(fileName1));
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
