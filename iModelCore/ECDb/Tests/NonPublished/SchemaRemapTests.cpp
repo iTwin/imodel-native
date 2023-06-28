@@ -4202,7 +4202,7 @@ BentleyStatus SchemaRemapTestFixture::ImportSchemasFromFolder(BeFileName const& 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, ImportSchemasFromExternalFolders)
+/*TEST_F(SchemaRemapTestFixture, ImportSchemasFromExternalFolders)
     {
     //This and the next test are used to diagnose problems with a single or a set of schemas loaded from the local file system.
     //That is useful so the file can be modified and executed many times without the need to rebuild the test.
@@ -4216,12 +4216,12 @@ TEST_F(SchemaRemapTestFixture, ImportSchemasFromExternalFolders)
 
     BeFileName importFolder(L"F:\\data\\input2\\");
     ASSERT_EQ(SUCCESS, ImportSchemasFromFolder(importFolder));
-    }
+    }*/
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, ImportSchemasFromFiles)
+/*TEST_F(SchemaRemapTestFixture, ImportSchemasFromFiles)
     {
     NativeLogging::Logging::SetLogger(&NativeLogging::ConsoleLogger::GetLogger());
     NativeLogging::ConsoleLogger::GetLogger().SetSeverity("ECDb", BentleyApi::NativeLogging::LOG_TRACE);
@@ -4232,7 +4232,7 @@ TEST_F(SchemaRemapTestFixture, ImportSchemasFromFiles)
     OpenECDb(fileName);
     BeFileName fileName1(L"E:\\data\\importschema\\StructuralAnalysis.ecschema.xml");
     ASSERT_EQ(SUCCESS, ImportSchemaFromFile(fileName1));
-    }
+    }*/
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
