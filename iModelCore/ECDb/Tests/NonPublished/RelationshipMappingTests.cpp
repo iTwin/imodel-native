@@ -221,7 +221,8 @@ TEST_F(RelationshipMappingTestFixture, MoveNavUpInHierarchyRemoveOriginal)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(RelationshipMappingTestFixture, MoveNavUpInHierarchyRemoveAndIgnore)
     {
-    //Same as above but setting the DoNotFailSchemaValidationForLegacyIssues flag on schema import to work around the previous error
+    //Same as above but setting the DoNotFailForDeletionsOrModifications flag on schema import.
+    //The flag currently does not affect nav props, the error is still the same, but it seems possible this could be adjusted in the future.
     Utf8String schemaXml1 = ConstructTestSchema(R"xml(
         <ECEntityClass typeName="Material">
             <BaseClass>Element</BaseClass>
@@ -294,7 +295,7 @@ TEST_F(RelationshipMappingTestFixture, MoveNavUpInHierarchyRemoveAndIgnore)
         )xml", "01.00.01");
     SchemaItem schema2(schemaXml2);
     ECIssueListener issueListener(m_ecdb);
-    ASSERT_EQ(BentleyStatus::ERROR, ImportSchema(schema2, SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues));
+    ASSERT_EQ(BentleyStatus::ERROR, ImportSchema(schema2, SchemaManager::SchemaImportOptions::DoNotFailForDeletionsOrModifications));
     auto lastIssue = issueListener.GetIssue();
     ASSERT_TRUE(lastIssue.has_value()) << "Should raise an issue.";
     ASSERT_STREQ("ECSchema Upgrade failed. ECClass TestSchema:MaterialProfile: Deleting Navigation ECProperty 'Material' from an ECClass is not supported.", lastIssue.message.c_str());
