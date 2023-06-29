@@ -26,9 +26,9 @@ std::unique_ptr<PropertyCategoryIdentifier> PropertyCategoryIdentifier::CreateFo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::unique_ptr<PropertyCategoryIdentifier> PropertyCategoryIdentifier::CreateForId(Utf8String id)
+std::unique_ptr<PropertyCategoryIdentifier> PropertyCategoryIdentifier::CreateForId(Utf8String id, bool createClassCategory)
     {
-    return std::unique_ptr<IdPropertyCategoryIdentifier>(new IdPropertyCategoryIdentifier(id));
+    return std::unique_ptr<IdPropertyCategoryIdentifier>(new IdPropertyCategoryIdentifier(id, createClassCategory));
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -124,7 +124,7 @@ bool IdPropertyCategoryIdentifier::_ShallowEqual(PresentationKeyCR other) const
         return false;
 
     auto otherRule = static_cast<IdPropertyCategoryIdentifier const&>(other);
-    return m_categoryId.Equals(otherRule.GetCategoryId());
+    return m_categoryId.Equals(otherRule.GetCategoryId()) && m_createClassCategory == otherRule.m_createClassCategory;
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -134,6 +134,8 @@ MD5 IdPropertyCategoryIdentifier::_ComputeHash() const
     MD5 md5 = T_Super::_ComputeHash();
     if (!m_categoryId.empty())
         ADD_STR_VALUE_TO_HASH(md5, PROPERTY_CATEGORY_IDENTIFIER_SPECIFICATION_JSON_ATTRIBUTE_CATEGORYID, m_categoryId);
+    if (m_createClassCategory)
+        ADD_PRIMITIVE_VALUE_TO_HASH(md5, PROPERTY_CATEGORY_IDENTIFIER_SPECIFICATION_JSON_ATTRIBUTE_CREATECLASSCATEGORY, m_createClassCategory);
     return md5;
     }
 /*---------------------------------------------------------------------------------**//**
@@ -160,6 +162,7 @@ bool IdPropertyCategoryIdentifier::_ReadJson(BeJsConst json)
     if (CommonToolsInternal::CheckRuleIssue(m_categoryId.empty(), _GetJsonElementType(), PROPERTY_CATEGORY_IDENTIFIER_SPECIFICATION_JSON_ATTRIBUTE_CATEGORYID, json[PROPERTY_CATEGORY_IDENTIFIER_SPECIFICATION_JSON_ATTRIBUTE_CATEGORYID], "non-empty string"))
         return false;
 
+    m_createClassCategory = json[PROPERTY_CATEGORY_IDENTIFIER_SPECIFICATION_JSON_ATTRIBUTE_CREATECLASSCATEGORY].asBool(false);
     return true;
     }
 /*---------------------------------------------------------------------------------**//**
@@ -169,6 +172,9 @@ void IdPropertyCategoryIdentifier::_WriteJson(BeJsValue json) const
     {
     PropertyCategoryIdentifier::_WriteJson(json);
     json[PROPERTY_CATEGORY_IDENTIFIER_SPECIFICATION_JSON_ATTRIBUTE_CATEGORYID] = m_categoryId;
+
+    if (m_createClassCategory)
+        json[PROPERTY_CATEGORY_IDENTIFIER_SPECIFICATION_JSON_ATTRIBUTE_CREATECLASSCATEGORY] = m_createClassCategory;
     }
 
 /*---------------------------------------------------------------------------------**//**
