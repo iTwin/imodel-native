@@ -18,11 +18,12 @@ resources:
     - repository: imodel-native-internal
       type: github
       name: iTwin/imodel-native-internal
+      ref: refs/heads/release/4.x
       endpoint: github.com_imodel-native
     - repository: itwinjs-core
       type: github
       name: iTwin/itwinjs-core
-      ref: imodel02
+      ref: ref/heads/release/4.0.x
       endpoint: iTwin
     - repository: imodeljs-build-pipeline-scripts
       type: git
