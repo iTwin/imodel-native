@@ -227,8 +227,11 @@ CloudResult CloudCache::CallSqliteFn(std::function<int(Utf8P*)> fn, Utf8CP funcN
 }
 
 CloudContainer* CloudCache::FindMatching(Utf8CP baseUri, Utf8CP containerName) {
+    auto isDaemon = this->IsDaemon();
     for (auto entry : m_containers) {
-        if (entry->m_containerId.Equals(containerName) && entry->m_baseUri.Equals(baseUri))
+        if (isDaemon && entry->m_containerId.Equals(containerName)) 
+            return entry;
+        else if (!isDaemon && entry->m_containerId.Equals(containerName) && entry->m_baseUri.Equals(baseUri)) 
             return entry;
     }
     return nullptr;
