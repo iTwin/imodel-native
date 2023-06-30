@@ -13,6 +13,7 @@
 #endif
 
 #include "sqlite3.h"
+#include "bcvencrypt.h"
 
 typedef sqlite3_int64 i64;
 typedef sqlite3_uint64 u64;
@@ -114,6 +115,7 @@ typedef struct BcvContainer BcvContainer;
 typedef struct BcvWrapper BcvWrapper;
 typedef struct BcvBuffer BcvBuffer;
 typedef struct BcvEncryptionKey BcvEncryptionKey;
+typedef struct BcvIntKey BcvIntKey;
 typedef struct BcvLog BcvLog;
 
 
@@ -247,7 +249,7 @@ struct Container {
   int eState;                     /* CONTAINER_STATE_* constant */
 
   u8 aKey[BCV_LOCAL_KEYSIZE];     /* Encryption key to use */
-  BcvEncryptionKey *pKey;         /* Compiled encryption key to use */
+  BcvIntKey *pKey;                /* Compiled encryption key to use */
   int iEnc;                       /* Encryption id (or 0 for no encryption) */
 };
 
@@ -671,12 +673,12 @@ int bcvSendMsg(BCV_SOCKET_TYPE fd, BcvMessage *pMsg);
 #define BCV_MESSAGE_PREFETCH       0x0E      /* c->d   BcvPrefetchMsg */
 #define BCV_MESSAGE_PREFETCH_REPLY 0x0F      /* d->c   BcvPrefetchReply */
 
-BcvEncryptionKey *bcvEncryptionKeyNew(const u8 *aKey);
-void bcvEncryptionKeyFree(BcvEncryptionKey*);
-BcvEncryptionKey *bcvEncryptionKeyRef(BcvEncryptionKey*);
+BcvIntKey *bcvIntEncryptionKeyRef(BcvIntKey*);
+BcvIntKey *bcvIntEncryptionKeyNew(const u8 *aKey);
+void bcvIntEncryptionKeyFree(BcvIntKey*);
+int bcvIntDecrypt(BcvIntKey*, sqlite3_int64, u8*, u8*, int);
+int bcvIntEncrypt(BcvIntKey*, sqlite3_int64, u8*, u8*, int);
 
-int bcvDecrypt(BcvEncryptionKey*, sqlite3_int64, u8*, u8*, int);
-int bcvEncrypt(BcvEncryptionKey*, sqlite3_int64, u8*, u8*, int);
 
 const char *bcvRequestHeader(const u8 *aHdrs, int nHdrs, const char *zHdr);
 

@@ -256,8 +256,11 @@ CloudResult CloudContainer::Connect(CloudCache& cache) {
         return CloudResult(1, "container with that name already attached");
 
     cache.m_containers.push_back(this); // needed for authorization from attach.
+    auto attachFlags = SQLITE_BCV_ATTACH_IFNOT;
+    if (m_secure) 
+        attachFlags |= SQLITE_BCV_ATTACH_SECURE;
     if (!cache.IsAttached(*this)) {
-        auto result = cache.CallSqliteFn([&](Utf8P* msg) { return sqlite3_bcvfs_attach(cache.m_vfs, GetOpenParams().c_str(), m_baseUri.c_str(), m_containerId.c_str(), m_alias.c_str(), SQLITE_BCV_ATTACH_IFNOT, msg); }, "attach");
+        auto result = cache.CallSqliteFn([&](Utf8P* msg) { return sqlite3_bcvfs_attach(cache.m_vfs, GetOpenParams().c_str(), m_baseUri.c_str(), m_containerId.c_str(), m_alias.c_str(), attachFlags, msg); }, "attach");
         if (!result.IsSuccess()) {
             cache.m_containers.pop_back(); // failed, remove from list
             return result;
