@@ -224,11 +224,17 @@ CloudResult CloudCache::CallSqliteFn(std::function<int(Utf8P*)> fn, Utf8CP funcN
     return CloudResult(stat, stat == 0 ? "" : Utf8PrintfString("%s error: %s", funcName, msg.m_msg ? msg.m_msg : Db::InterpretDbResult((DbResult)stat)).c_str());
 }
 
+<<<<<<< HEAD
+CloudContainer* CloudCache::FindMatching(Utf8CP accessName, Utf8CP containerName) {
+    for (auto entry : m_containers) {
+        if (entry->m_containerId.Equals(containerName) && entry->m_accessName.Equals(accessName))
+=======
 CloudContainer* CloudCache::FindMatching(Utf8CP baseUri, Utf8CP containerName) {
     auto isDaemon = this->IsDaemon();
     for (auto entry : m_containers) {
         // For the daemon we presume that all containers are from the same storage account for a single process. No need to check baseUri in this case.
         if (entry->m_containerId.Equals(containerName) && (isDaemon || entry->m_baseUri.Equals(baseUri)))
+>>>>>>> 369dc2d1 (Look for matching containers by containerId only when our CloudCache has a daemon running in it (#338))
             return entry;
     }
     return nullptr;
