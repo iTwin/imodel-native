@@ -606,6 +606,7 @@ int bcvEncrypt(
   if (ctx == NULL) {
     ctx = EVP_CIPHER_CTX_new();
     EVP_CipherInit_ex(ctx, EVP_aes_128_ctr(), NULL, NULL, NULL, 1); // pass 1 to say we are encrypting (not decrypting)
+    // EVP_CIPHER_CTX_set_padding(ctx, 0);
     OPENSSL_assert(EVP_CIPHER_CTX_key_length(ctx) == 16);
     OPENSSL_assert(EVP_CIPHER_CTX_iv_length(ctx) == 16);
   }
@@ -641,10 +642,12 @@ int bcvDecrypt(
   // All the same code I think. Can we use a global ctx?
   // What happens if a client is decrypting while the daemon is encrypting? 
 
+  // aNonce = "1234567887654321";
   static EVP_CIPHER_CTX *ctx = NULL;
   if (ctx == NULL) {
     ctx = EVP_CIPHER_CTX_new();
     EVP_CipherInit_ex(ctx, EVP_aes_128_ctr(), NULL, NULL, NULL, 0); // pass 0 to say we are decrypting (not encrypting)
+    // EVP_CIPHER_CTX_set_padding(ctx, 0);
     OPENSSL_assert(EVP_CIPHER_CTX_key_length(ctx) == 16);
     OPENSSL_assert(EVP_CIPHER_CTX_iv_length(ctx) == 16);
   }

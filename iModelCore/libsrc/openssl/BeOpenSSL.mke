@@ -92,9 +92,15 @@ nameToDefine = ENGINESDIR=\"\"
     nameToDefine = OPENSSL_CPUID_OBJ
     %include cdefapnd.mki
 
+    nameToDefine = AES_ASM
+    %include cdefapnd.mki
+
 %elif $(TARGET_PLATFORM) == "Linux"
 
     nameToDefine = OPENSSL_CPUID_OBJ
+    %include cdefapnd.mki
+
+    nameToDefine = AES_ASM
     %include cdefapnd.mki
 
 %elif $(TARGET_PLATFORM) == "WinRT"
@@ -123,6 +129,9 @@ nameToDefine = ENGINESDIR=\"\"
 
     %if $(TARGET_PROCESSOR_ARCHITECTURE) != "AndroidARM64"
         nameToDefine = OPENSSL_CPUID_OBJ
+        %include cdefapnd.mki
+
+        nameToDefine = AES_ASM
         %include cdefapnd.mki
     %endif
 
@@ -232,11 +241,11 @@ $(o)threads_win$(oext) : $(vendorSrc)crypto/threads_win.c ${MultiCompileDepends}
 
 $(o)trace$(oext) : $(vendorSrc)crypto/trace.c ${MultiCompileDepends}
 
-$(o)aes_cbc$(oext) : $(vendorSrc)crypto/aes/aes_cbc.c ${MultiCompileDepends}
+#$(o)aes_cbc$(oext) : $(vendorSrc)crypto/aes/aes_cbc.c ${MultiCompileDepends}
 
 $(o)aes_cfb$(oext) : $(vendorSrc)crypto/aes/aes_cfb.c ${MultiCompileDepends}
 
-$(o)aes_core$(oext) : $(vendorSrc)crypto/aes/aes_core.c ${MultiCompileDepends}
+#$(o)aes_core$(oext) : $(vendorSrc)crypto/aes/aes_core.c ${MultiCompileDepends}
 
 $(o)aes_ecb$(oext) : $(vendorSrc)crypto/aes/aes_ecb.c ${MultiCompileDepends}
 
@@ -2061,12 +2070,30 @@ objs =% $(MultiCompileObjectList)
 #perl ./crypto/modes/asm/aesni-gcm-x86_64.pl ./crypto/modes/asm/aesni-gcm-x86_64.s
 #perl ./crypto/modes/asm/ghash-x86_64.pl ./crypto/modes/asm/ghash-x86_64.s
 #perl ./crypto/ec/asm/x25519-x86_64.pl ./crypto/ec/asm/x25519-x86_64.s
+#perl ./crypto/aes/asm/aes-x86_64.pl ./crypto/aes/aes-x86_64.s
+#perl ./crypto/aes/asm/aesni-sha1-x86_64.pl ./crypto/aes/aesni-sha1-x86_64.s
+#perl ./crypto/sha/asm/sha1-x86_64.pl ./crypto/sha/sha1-x86_64.s
+#perl ./crypto/sha/asm/sha1-mb-x86_64.pl ./crypto/sha/sha1-mb-x86_64.s
+#perl ./crypto/aes/asm/aesni-mb-x86_64.pl ./crypto/aes/aesni-mb-x86_64.s
+#perl ./crypto/aes/asm/aesni-sha256-x86_64.pl ./crypto/aes/aesni-sha256-x86_64.s
+#perl ./crypto/sha/asm/sha512-x86_64.pl ./crypto/sha/sha256-x86_64.s (NOT A TYPO, sha512.pl script generates both 256 and 512 depending on output file name)
+#perl ./crypto/sha/asm/sha256-mb-x86_64.pl ./crypto/sha/sha256-mb-x86_64.s
+#perl ./crypto/modes/asm/aes-gcm-avx512.pl ./crypto/modes/aes-gcm-avx512.s 
 #WINDOWS ASSEMBLY GENERATION
 #perl ./crypto/x86_64cpuid.pl masm ./crypto/x86_64cpuid.asm
 #perl ./crypto/aes/asm/aesni-x86_64.pl masm ./crypto/aes/asm/aesni-x86_64.asm
 #perl ./crypto/modes/asm/aesni-gcm-x86_64.pl masm ./crypto/modes/asm/aesni-gcm-x86_64.asm
 #perl ./crypto/modes/asm/ghash-x86_64.pl masm ./crypto/modes/asm/ghash-x86_64.asm
 #perl ./crypto/ec/asm/x25519-x86_64.pl masm ./crypto/ec/asm/x25519-x86_64.asm
+#perl ./crypto/aes/asm/aes-x86_64.pl masm ./crypto/aes/aes-x86_64.asm
+#perl ./crypto/aes/asm/aesni-sha1-x86_64.pl masm ./crypto/aes/aesni-sha1-x86_64.asm
+#perl ./crypto/sha/asm/sha1-x86_64.pl masm ./crypto/sha/sha1-x86_64.asm
+#perl ./crypto/sha/asm/sha1-mb-x86_64.pl masm ./crypto/sha/sha1-mb-x86_64.asm
+#perl ./crypto/aes/asm/aesni-mb-x86_64.pl masm ./crypto/aes/aesni-mb-x86_64.asm
+#perl ./crypto/aes/asm/aesni-sha256-x86_64.pl masm ./crypto/aes/aesni-sha256-x86_64.asm
+#perl ./crypto/sha/asm/sha512-x86_64.pl masm ./crypto/sha/sha256-x86_64.asm (NOT A TYPO, sha512.pl script generates both 256 and 512 depending on output file name)
+#perl ./crypto/sha/asm/sha256-mb-x86_64.pl masm ./crypto/sha/sha256-mb-x86_64.asm
+#perl ./crypto/modes/asm/aes-gcm-avx512.pl masm ./crypto/modes/aes-gcm-avx512.asm   
 # -- ASM ------------------------------------------------------------------------------------------
 %if $(TARGET_PLATFORM) == "Linux"
     .s.o:
@@ -2081,8 +2108,26 @@ objs =% $(MultiCompileObjectList)
 
     $(o)ghash-x86_64$(oext) : $(vendorSrc)crypto/modes/asm/ghash-x86_64.s ${MultiCompileDepends}
 
+    $(o)aes-x86_64$(oext) : $(vendorSrc)crypto/aes/aes-x86_64.s ${MultiCompileDepends}
+
+    $(o)aesni-sha1-x86_64$(oext) : $(vendorSrc)crypto/aes/aesni-sha1-x86_64.s ${MultiCompileDepends}
+
+    $(o)sha1-x86_64$(oext) : $(vendorSrc)crypto/sha/sha1-x86_64.s ${MultiCompileDepends}
+
+    $(o)sha1-mb-x86_64$(oext) : $(vendorSrc)crypto/sha/sha1-mb-x86_64.s ${MultiCompileDepends}
+
+    $(o)aesni-mb-x86_64$(oext) : $(vendorSrc)crypto/aes/aesni-mb-x86_64.s ${MultiCompileDepends}
+
+    $(o)aesni-sha256-x86_64$(oext) : $(vendorSrc)crypto/aes/aesni-sha256-x86_64.s ${MultiCompileDepends}
+
+    $(o)sha256-x86_64$(oext) : $(vendorSrc)crypto/sha/sha256-x86_64.s ${MultiCompileDepends}
+
+    $(o)sha256-mb-x86_64$(oext) : $(vendorSrc)crypto/sha/sha256-mb-x86_64.s ${MultiCompileDepends}
+
+    $(o)aes-gcm-avx512$(oext) : $(vendorSrc)crypto/modes/aes-gcm-avx512.s ${MultiCompileDepends}
+
     always:
-      ~set objs $(objs) $(o)x86_64cpuid$(oext) $(o)aesni-x86_64$(oext) $(o)aesni-gcm-x86_64$(oext) $(o)ghash-x86_64$(oext)
+      ~set objs $(objs) $(o)x86_64cpuid$(oext) $(o)aesni-x86_64$(oext) $(o)aesni-gcm-x86_64$(oext) $(o)ghash-x86_64$(oext) $(o)aes-x86_64$(oext) $(o)aesni-sha1-x86_64$(oext) $(o)sha1-x86_64$(oext) $(o)sha1-mb-x86_64$(oext) $(o)aesni-mb-x86_64$(oext) $(o)aesni-sha256-x86_64$(oext) $(o)sha256-x86_64$(oext) $(o)sha256-mb-x86_64$(oext) $(o)aes-gcm-avx512$(oext)
 
 #TODO: AndroidARM requires different files than Android,
 #if we wish to support hw acceleration (or if there is a use case for it) on androidarm, work
@@ -2107,8 +2152,10 @@ objs =% $(MultiCompileObjectList)
 
     $(o)ghash-x86_64$(oext) : $(vendorSrc)crypto/modes/asm/ghash-x86_64.s ${MultiCompileDepends}
 
+    $(o)aes-x86_64(oext) : $(vendorSrc)crypto/aes/aes-x86_64.s ${MultiCompileDepends}
+
     always:
-      ~set objs $(objs) $(o)x86_64cpuid$(oext) $(o)aesni-x86_64$(oext) $(o)aesni-gcm-x86_64$(oext) $(o)ghash-x86_64$(oext)
+      ~set objs $(objs) $(o)x86_64cpuid$(oext) $(o)aesni-x86_64$(oext) $(o)aesni-gcm-x86_64$(oext) $(o)ghash-x86_64$(oext) $(o)aes-x86_64$(oext)
 
 %elif $(TARGET_PLATFORM) == "Windows"
     .asm.obj:
@@ -2123,8 +2170,26 @@ objs =% $(MultiCompileObjectList)
 
     $(o)ghash-x86_64$(oext) : $(vendorSrc)crypto/modes/asm/ghash-x86_64.asm ${MultiCompileDepends}
 
+    $(o)aes-x86_64$(oext) : $(vendorSrc)crypto/aes/aes-x86_64.asm ${MultiCompileDepends}
+
+    $(o)aesni-sha1-x86_64$(oext) : $(vendorSrc)crypto/aes/aesni-sha1-x86_64.asm ${MultiCompileDepends}
+
+    $(o)sha1-x86_64$(oext) : $(vendorSrc)crypto/sha/sha1-x86_64.asm ${MultiCompileDepends}
+
+    $(o)sha1-mb-x86_64$(oext) : $(vendorSrc)crypto/sha/sha1-mb-x86_64.asm ${MultiCompileDepends}
+
+    $(o)aesni-mb-x86_64$(oext) : $(vendorSrc)crypto/aes/aesni-mb-x86_64.asm ${MultiCompileDepends}
+
+    $(o)aesni-sha256-x86_64$(oext) : $(vendorSrc)crypto/aes/aesni-sha256-x86_64.asm ${MultiCompileDepends}
+
+    $(o)sha256-x86_64$(oext) : $(vendorSrc)crypto/sha/sha256-x86_64.asm ${MultiCompileDepends}
+
+    $(o)sha256-mb-x86_64$(oext) : $(vendorSrc)crypto/sha/sha256-mb-x86_64.asm ${MultiCompileDepends}
+
+    $(o)aes-gcm-avx512$(oext) : $(vendorSrc)crypto/modes/aes-gcm-avx512.asm ${MultiCompileDepends}
+
     always:
-      ~set objs $(objs) $(o)x86_64cpuid$(oext) $(o)aesni-x86_64$(oext) $(o)aesni-gcm-x86_64$(oext) $(o)ghash-x86_64$(oext)
+      ~set objs $(objs) $(o)x86_64cpuid$(oext) $(o)aesni-x86_64$(oext) $(o)aesni-gcm-x86_64$(oext) $(o)ghash-x86_64$(oext) $(o)aes-x86_64$(oext) $(o)aesni-sha1-x86_64$(oext) $(o)sha1-x86_64$(oext) $(o)sha1-mb-x86_64$(oext) $(o)aesni-mb-x86_64$(oext) $(o)aesni-sha256-x86_64$(oext) $(o)sha256-x86_64$(oext) $(o)sha256-mb-x86_64$(oext) $(o)aes-gcm-avx512$(oext)
 
 %endif
 
