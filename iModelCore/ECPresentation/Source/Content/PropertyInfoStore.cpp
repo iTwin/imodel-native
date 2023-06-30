@@ -382,8 +382,8 @@ ClassPropertyOverridesInfo const& PropertyInfoStore::GetOverrides(ECClassCR ecCl
 /*-----------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+-----------+------*/
-PropertyInfoStore::PropertyInfoStore(ECSchemaHelper const& helper, bvector<ContentModifierCP> const& contentModifiers, ContentSpecificationCP spec)
-    : m_schemaHelper(helper)
+PropertyInfoStore::PropertyInfoStore(ECSchemaHelper const& helper, bvector<ContentModifierCP> const& contentModifiers, ContentSpecificationCP spec, IPropertyCategorySupplierCP categorySupplier)
+    : m_schemaHelper(helper), m_categorySupplier(categorySupplier)
     {
     InitPropertyOverrides(spec, contentModifiers);
     }
@@ -491,9 +491,13 @@ Utf8String PropertyInfoStore::GetLabelOverride(ECPropertyCR prop, ECClassCR ecCl
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-CategoryOverrideInfo const* PropertyInfoStore::GetCategoryOverride(PropertyCategoryIdentifier const& id, PropertyCategorySpecificationsList const& categorySpecs) const
+CategoryOverrideInfo const* PropertyInfoStore::GetCategoryOverride(PropertyCategoryIdentifier const& id, ECClassCP ecClass, PropertyCategorySpecificationsList const& categorySpecs) const
     {
-    auto override = m_categoryOverridesCache.find(id);
+    // check if we need to use class-based category
+    bool shouldCreateWithClassCategory = ecClass != nullptr && id.AsIdIdentifier() != nullptr && id.AsIdIdentifier()->ShouldCreateClassCategory();
+    Utf8CP classNameForCategoriesCache = shouldCreateWithClassCategory ? ecClass->GetFullName() : "";
+
+    auto override = m_categoryOverridesCache.find(CategoryOverridesCacheKey(id, classNameForCategoriesCache));
     if (override != m_categoryOverridesCache.end())
         return &override->second;
 
@@ -501,7 +505,10 @@ CategoryOverrideInfo const* PropertyInfoStore::GetCategoryOverride(PropertyCateg
     bvector<std::shared_ptr<PropertyCategoryRef>> categories;
     if (SUCCESS == CreatePropertyCategoryFromSpec(categories, id, categorySpecs))
         {
-        auto insertedElement = m_categoryOverridesCache.insert({ id, categories });
+        if (shouldCreateWithClassCategory && m_categorySupplier != nullptr)
+            categories.push_back(std::make_unique<ConcretePropertyCategoryRef>(m_categorySupplier->CreateECClassCategory(*ecClass)));
+
+        auto insertedElement = m_categoryOverridesCache.insert({ CategoryOverridesCacheKey(id, classNameForCategoriesCache), categories });
         return &insertedElement.first->second;
         }
     return nullptr;
@@ -519,19 +526,19 @@ CategoryOverrideInfo const* PropertyInfoStore::GetCategoryOverride(ECPropertyCR 
     if (hasPropertySpecCategoryOverride)
         {
         if (categoryOverride.IsValid() && categoryOverride.Value().priority > customOverride->GetOverridesPriority())
-            return GetCategoryOverride(*categoryOverride.Value().value, classOverrides.GetAvailableCategories());
+            return GetCategoryOverride(*categoryOverride.Value().value, &ecClass, classOverrides.GetAvailableCategories());
 
         // try to get categories from local scope
-        auto overrideFromLocalScope = GetCategoryOverride(*customOverride->GetCategoryId(), *scopeCategorySpecs);
+        auto overrideFromLocalScope = GetCategoryOverride(*customOverride->GetCategoryId(), &ecClass, *scopeCategorySpecs);
         if (nullptr != overrideFromLocalScope)
             return overrideFromLocalScope;
 
         // if local scope is empty, get from global scope
-        return GetCategoryOverride(*customOverride->GetCategoryId(), classOverrides.GetAvailableCategories());
+        return GetCategoryOverride(*customOverride->GetCategoryId(), &ecClass, classOverrides.GetAvailableCategories());
         }
 
     if (categoryOverride.IsValid())
-        return GetCategoryOverride(*categoryOverride.Value().value, classOverrides.GetAvailableCategories());
+        return GetCategoryOverride(*categoryOverride.Value().value, &ecClass, classOverrides.GetAvailableCategories());
 
     return nullptr;
     }
@@ -547,13 +554,13 @@ CategoryOverrideInfo const* PropertyInfoStore::GetCategoryOverride(ECClassCP ecC
     if (ecClass != nullptr)
         {
         auto const& classOverrides = GetOverrides(*ecClass);
-        return GetCategoryOverride(*spec.GetCategoryId(), classOverrides.GetAvailableCategories());
+        return GetCategoryOverride(*spec.GetCategoryId(), ecClass, classOverrides.GetAvailableCategories());
         }
 
     auto const& classOverrides = m_perClassPropertyOverrides.find(ecClass);
     if (classOverrides != m_perClassPropertyOverrides.end())
-        return GetCategoryOverride(*spec.GetCategoryId(), classOverrides->second.GetAvailableCategories());
-        
+        return GetCategoryOverride(*spec.GetCategoryId(), ecClass, classOverrides->second.GetAvailableCategories());
+
     return nullptr;
     }
 
