@@ -230,9 +230,7 @@ CloudContainer* CloudCache::FindMatching(Utf8CP baseUri, Utf8CP containerName) {
     auto isDaemon = this->IsDaemon();
     for (auto entry : m_containers) {
         // For the daemon we presume that all containers are from the same storage account for a single process. No need to check baseUri in this case.
-        if (isDaemon && entry->m_containerId.Equals(containerName)) 
-            return entry;
-        if (!isDaemon && entry->m_containerId.Equals(containerName) && entry->m_baseUri.Equals(baseUri)) 
+        if (entry->m_containerId.Equals(containerName) && (isDaemon || entry->m_baseUri.Equals(baseUri)))
             return entry;
     }
     return nullptr;
