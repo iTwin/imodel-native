@@ -3216,25 +3216,14 @@ ECSchemaPtr SearchPathSchemaFileLocater::_LocateSchema(SchemaKeyR key, SchemaMat
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaPtr StringSchemaLocater::_LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext)
     {
-    // Get cached version of the schema
-    ECSchemaPtr schemaOut = schemaContext.GetFoundSchema(key, matchType);;
-    if (schemaOut.IsValid())
-        {
-        return schemaOut;
-        }
-
-    // Check if we've schema key and Xml string for the schema name
-    bmap<Utf8String, bpair<SchemaKey, Utf8String>>::iterator iter = m_schemaStrings.find(key.GetName());
+    // Check if locator has a schema key that matches the key and match type
+    auto iter = m_schemaStrings.find(key);
     if (iter == m_schemaStrings.end())
         return nullptr;
 
-    // Check if locator has a schema key that matches the key and match type
-    const bpair<SchemaKey, Utf8String>& keyXmlPair = iter->second;
-    if (!keyXmlPair.first.Matches(key, matchType))
-        return nullptr;
-
-    // Read schema from Xml string if the cached schema is invalid
-    if (SchemaReadStatus::Success != ECSchema::ReadFromXmlString(schemaOut, keyXmlPair.second.c_str(), schemaContext))
+    // Read schema from Xml string
+    ECSchemaPtr schemaOut;
+    if (SchemaReadStatus::Success != ECSchema::ReadFromXmlString(schemaOut, iter->second.c_str(), schemaContext))
         {
         return nullptr;
         }
