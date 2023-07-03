@@ -273,6 +273,13 @@ bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> FlattenedRelat
     bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> specs;
     for (ContentModifierCP modifier : modifiers)
         {
+        if (!modifier->HasClassSpecified())
+            {
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("ECClass was not specified in %s.",
+                    DiagnosticsHelpers::CreateRuleIdentifier(*modifier).c_str()));
+            continue;
+            }
+
         ECClassCP modifierClass = helper.GetECClass(modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str());
         if (modifierClass == nullptr)
             {
@@ -308,6 +315,13 @@ static bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> CreateF
             {
             if (nullptr == modifier || !modifier->ShouldApplyOnNestedContent())
                 continue;
+
+            if (!modifier->HasClassSpecified())
+                {
+                DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("ECClass was not specified in %s.",
+                    DiagnosticsHelpers::CreateRuleIdentifier(*modifier).c_str()));
+                continue;
+                }
 
             ECClassCP modifierClass = helper.GetECClass(modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str());
             if (nullptr == modifierClass)
@@ -934,6 +948,13 @@ bvector<RuleApplicationInfo> const& ContentSpecificationsHandler::GetCustomizati
         auto infos = new bvector<RuleApplicationInfo>();
         for (ContentModifierCP modifier : GetContext().GetRulesPreprocessor().GetContentModifiers())
             {
+            if (!modifier->HasClassSpecified())
+                {
+                DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("ECClass was not specified in %s.",
+                    DiagnosticsHelpers::CreateRuleIdentifier(*modifier).c_str()));
+                continue;
+                }
+
             ECClassCP ecClass = GetContext().GetSchemaHelper().GetECClass(modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str());
             if (nullptr == ecClass)
                 {

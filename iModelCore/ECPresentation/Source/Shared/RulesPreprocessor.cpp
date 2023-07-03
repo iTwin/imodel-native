@@ -48,102 +48,6 @@ template<typename T> static void PrioritySortedAdd(bvector<T>& list, T const& el
     list.insert(iter.base(), element);
     }
 
-template <typename RuleType> static void MergeNodeRuleContents(RuleType& target, RuleType const& source);
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void MergeNodeSpecifications(ChildNodeSpecificationR target, ChildNodeSpecificationCR source)
-    {
-    bvector<ChildNodeRuleP> const& targetNestedRules = target.GetNestedRules();
-    for (ChildNodeRuleP rule : source.GetNestedRules())
-        {
-        auto duplicateRule = std::find_if(targetNestedRules.begin(), targetNestedRules.end(), [rule](ChildNodeRuleP targetRule) {return targetRule->ShallowEqual(*rule);});
-        if (targetNestedRules.end() == duplicateRule)
-            target.AddNestedRule(*new ChildNodeRule(*rule));
-        else
-            MergeNodeRuleContents(**duplicateRule, *rule);
-        }
-
-    bvector<RelatedInstanceSpecificationP> const& targetRelatedSpecs = target.GetRelatedInstances();
-    for (RelatedInstanceSpecificationP spec : source.GetRelatedInstances())
-        {
-        auto duplicateSpec = std::find_if(targetRelatedSpecs.begin(), targetRelatedSpecs.end(), [spec](RelatedInstanceSpecificationP targetSpec) {return targetSpec->ShallowEqual(*spec); });
-        if (targetRelatedSpecs.end() == duplicateSpec)
-            target.AddRelatedInstance(*new RelatedInstanceSpecification(*spec));
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-template <typename RuleType> static void MergeNodeRuleContents(RuleType& target, RuleType const& source)
-    {
-    bvector<ChildNodeSpecificationP> const& targetSpecs = target.GetSpecifications();
-    for (ChildNodeSpecificationP spec : source.GetSpecifications())
-        {
-        auto duplicateSpec = std::find_if(targetSpecs.begin(), targetSpecs.end(), [spec](ChildNodeSpecificationP targetSpec) {return targetSpec->ShallowEqual(*spec);});
-        if (targetSpecs.end() == duplicateSpec)
-            target.AddSpecification(*spec->Clone());
-        else
-            MergeNodeSpecifications(**duplicateSpec, *spec);
-        }
-
-    bvector<SubConditionP> const& targetSubConditions = target.GetSubConditions();
-    for (SubConditionP condition : source.GetSubConditions())
-        {
-        auto duplicateCondition = std::find_if(targetSubConditions.begin(), targetSubConditions.end(), [condition](SubConditionP targetCondition) {return targetCondition->ShallowEqual(*condition); });
-        if (targetSubConditions.end() == duplicateCondition)
-            target.AddSubCondition(*new SubCondition(*condition));
-        else
-            MergeNodeRuleContents(**duplicateCondition, *condition);
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-template <typename RuleType> static bvector<RuleType*> MergeDuplicateNodeRules(bvector<RuleType*> const& rules)
-    {
-    bvector<RuleType*> uniqueRules;
-    bvector<RuleType*> duplicateRules;
-    for (RuleType* rule : rules)
-        {
-        auto duplicateRule = std::find_if(uniqueRules.begin(), uniqueRules.end(), [rule](RuleType* uniqueRule) {return uniqueRule->ShallowEqual(*rule);});
-        if (uniqueRules.end() == duplicateRule)
-            {
-            uniqueRules.push_back(rule);
-            }
-        else
-            {
-            MergeNodeRuleContents(**duplicateRule, *rule);
-            duplicateRules.push_back(rule);
-            }
-        }
-
-    return duplicateRules;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void MergeDuplicateNodeRules(PresentationRuleSetR ruleSet)
-    {
-    bvector<RootNodeRuleP> duplicateRootRules = MergeDuplicateNodeRules(ruleSet.GetRootNodesRules());
-    for (RootNodeRuleP rule : duplicateRootRules)
-        {
-        ruleSet.RemovePresentationRule(*rule);
-        delete rule;
-        }
-
-    bvector<ChildNodeRuleP> duplicateChildNodeRules = MergeDuplicateNodeRules(ruleSet.GetChildNodesRules());
-    for (ChildNodeRuleP rule : duplicateChildNodeRules)
-        {
-        ruleSet.RemovePresentationRule(*rule);
-        delete rule;
-        }
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -298,7 +202,7 @@ PresentationRuleSetPtr RulesPreprocessor::GetPresentationRuleSet(IRulesetLocater
     DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_INFO, Utf8PrintfString("Identified %" PRIu64 " supplemental rulesets.", (uint64_t)supplementalRuleSetsList.size()));
 
     PresentationRuleSetPtr supplementedRuleSet = supplementalRuleSets.empty() ? primary : CreateSupplementedRuleSet(*primary, supplementalRuleSetsList);
-    MergeDuplicateNodeRules(*supplementedRuleSet);
+    supplementedRuleSet->AssignRuleIndexes();
     return supplementedRuleSet;
     }
 

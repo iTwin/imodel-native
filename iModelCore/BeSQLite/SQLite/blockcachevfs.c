@@ -1,3 +1,5 @@
+
+
 #if !defined(__WIN32__) && (defined(WIN32) || defined(_WIN32))
 # define __WIN32__
 #endif
@@ -116,7 +118,7 @@ struct BcvProxyFile {
   BcvMRULink *aMRU;               /* Array of pMap->u.read_r.nBlk elements */
   int iMRU;                       /* Index of most recently used block */
   char *zAuth;
-  BcvEncryptionKey *pKey;         /* Encryption key, if any */
+  BcvIntKey *pKey;                /* Encryption key, if any */
 };
 
 struct BcvKVStore {
@@ -802,7 +804,7 @@ static int bcvfsClose(sqlite3_file *pFd){
   sqlite3_free(pFile->p.zAccount);
   sqlite3_free(pFile->p.zContainer);
   sqlite3_free(pFile->p.zAuth);
-  bcvEncryptionKeyFree(pFile->p.pKey);
+  bcvIntEncryptionKeyFree(pFile->p.pKey);
 
   pFile->lockMask = 0;
   bcvKVStoreFree(&pFile->kv);
@@ -1692,7 +1694,7 @@ static int bcvfsProxyOpenTransaction(BcvfsFile *pFile, int iBlk){
 
 static void bcvfsProxyDecrypt(
   int *pRc,                       /* IN/OUT: Error code */
-  BcvEncryptionKey *pKey,         /* Encryption key, or NULL */
+  BcvIntKey *pKey,                /* Encryption key, or NULL */
   u8 *aBuf,                       /* Buffer to decrypt */
   int nBuf,                       /* Size of buffer aBuf[] in bytes */
   i64 iCacheOff                   /* Offset within cache file */
@@ -1704,7 +1706,7 @@ static void bcvfsProxyDecrypt(
 
     assert( (nBuf%nChunk)==0 );
     for(ii=0; ii<nBuf && rc==SQLITE_OK; ii+=nChunk){
-      rc = bcvDecrypt(pKey, iCacheOff+ii, 0, &aBuf[ii], nChunk);
+      rc = bcvIntDecrypt(pKey, iCacheOff+ii, 0, &aBuf[ii], nChunk);
     }
     *pRc = rc;
   }
@@ -3188,7 +3190,7 @@ static int bcvfsOpenProxy(
         if( pReply2 ){
           rc = pReply2->u.pass_r.errCode;
           if( rc==SQLITE_OK ){
-            pFile->p.pKey = bcvEncryptionKeyNew(pReply2->u.pass_r.aKey);
+            pFile->p.pKey = bcvIntEncryptionKeyNew(pReply2->u.pass_r.aKey);
             if( pFile->p.pKey==0 ){
               rc = SQLITE_NOMEM;
             }
@@ -4017,7 +4019,7 @@ void bcvContainerFree(Container *pCont){
     }
     bcvManifestDeref(pCont->pMan);
     sqlite3_free(pCont->aBcv);
-    bcvEncryptionKeyFree(pCont->pKey);
+    bcvIntEncryptionKeyFree(pCont->pKey);
     sqlite3_free(pCont);
   }
 }
