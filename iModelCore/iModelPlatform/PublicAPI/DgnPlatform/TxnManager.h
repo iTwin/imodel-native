@@ -593,6 +593,9 @@ public:
     //! All TxnIds with a value lower than this are from a previous session.
     TxnId GetSessionStartId() const {return TxnId(m_curr.GetSession(), 0);}
 
+    DGNPLATFORM_EXPORT TxnId GetLastTxnId();
+    DGNPLATFORM_EXPORT void ReplayExternalTxns(TxnId start);
+
     //! Given a TxnId, query for TxnId of the immediately previous committed Txn, if any.
     //! @param[in] currentTxnId The current TxnId.
     //! @return The previous TxnId. Will be invalid if currentTxnId is the first one.

@@ -1116,7 +1116,7 @@ struct FetchCtx {
   DaemonCtx *pCtx;
   CacheEntry *pEntry;             /* Cache entry to populate (if any) */
   Container *pCont;
-  BcvEncryptionKey *pKey;
+  BcvIntKey *pKey;
 };
 
 static void daemon_usage(char *argv0){
@@ -1538,7 +1538,7 @@ static DClient *bdFetchClient(FetchCtx *pDLCtx){
 
 static void bdBlockDownloadFree(FetchCtx *p){
   bdClientDecrRefcount(p->pClient);
-  bcvEncryptionKeyFree(p->pKey);
+  bcvIntEncryptionKeyFree(p->pKey);
   sqlite3_free(p);
 }
 
@@ -1551,7 +1551,7 @@ static void bcvCreateDir(int *pRc, BcvCommon *p, const char *zCont){
       "%s" BCV_PATH_SEPARATOR "%s", p->zDir, zCont
   );
   if( *pRc==SQLITE_OK && stat(zDir, &buf)<0 ){
-    if( osMkdir(zDir, 0770)<0 && stat(zDir, &buf)<0 ){
+    if( osMkdir(zDir, 0770)<0 && stat(zDir, &buf)<0 ){ // NOTE: Bentley-specific change. 0755 -> 0770.
       *pRc = SQLITE_CANTOPEN;
     }
   }
@@ -1616,7 +1616,7 @@ static void bdAttachCb(
 
   if( rc==SQLITE_OK && (pMsg->u.attach.flags & SQLITE_BCV_ATTACH_SECURE) ){
     sqlite3_randomness(BCV_LOCAL_KEYSIZE, pCont->aKey);
-    pCont->pKey = bcvEncryptionKeyNew(pCont->aKey);
+    pCont->pKey = bcvIntEncryptionKeyNew(pCont->aKey);
     if( pCont->pKey==0 ) fatal_oom_error();
     pCont->iEnc = ++pClient->pCtx->iNextId;
   }
@@ -1676,7 +1676,7 @@ static FetchCtx *bdFetchCtx(
   p->pCtx = pClient->pCtx;
   p->pCont = pClient->pCont;
   if( p->pCont && p->pCont->pKey ){
-    p->pKey = bcvEncryptionKeyRef(p->pCont->pKey);
+    p->pKey = bcvIntEncryptionKeyRef(p->pCont->pKey);
   }
   pClient->nRef++;
   return p;
@@ -1880,27 +1880,45 @@ static void bdWriteBlock(
   sqlite3_clear_bindings(pStmt);
 }
 
+/*
+** Write nData bytes of data from buffer aData[] to offset iOff of the
+** file opened by file descriptor pFd. If it is not NULL, encrypt the data 
+** using pKey before writing it to disk.
+*/
 static int bdWriteFile(
   sqlite3_file *pFd, 
-  BcvEncryptionKey *pKey,
+  BcvIntKey *pKey,
   const u8 *aData, 
   int nData, 
   i64 iOff
 ){
-  u8 aBuf[512];
-  int rc = SQLITE_OK;
-  int i;
+  const int szChunk = 32768;      /* Any size acceptable to xWrite() */
+  const int szEncChunk = 512;     /* Must match size in bcvfsProxyDecrypt */
+  u8 *aBuf = 0;                   /* Interim buffer for encryption, if req. */
+  int rc = SQLITE_OK;             /* Return code */
+  int i;                          /* Offset within aData[] */
+
+  if( pKey ){
+    aBuf = (u8*)bdMalloc(szChunk);
+  }
 
   assert( (nData % sizeof(aBuf))==0 );
-  for(i=0; i<nData && rc==SQLITE_OK; i+=sizeof(aBuf)){
+  for(i=0; i<nData && rc==SQLITE_OK; i+=szChunk){
     const u8 *aWrite = &aData[i];
+    int nWrite = MIN(nData - i, szChunk);
+    assert( (nWrite % szEncChunk)==0 );
     if( pKey ){
-      memcpy(aBuf, aWrite, sizeof(aBuf));
-      bcvEncrypt(pKey, iOff+i, 0, aBuf, sizeof(aBuf));
+      int jj;
+      memcpy(aBuf, aWrite, nWrite);
+      for(jj=0; jj<nWrite; jj+=szEncChunk){
+        bcvIntEncrypt(pKey, iOff+i+jj, 0, &aBuf[jj], szEncChunk);
+      }
       aWrite = aBuf;
     }
-    rc = pFd->pMethods->xWrite(pFd, aWrite, sizeof(aBuf), iOff+i);
+    rc = pFd->pMethods->xWrite(pFd, aWrite, nWrite, iOff+i);
   }
+
+  sqlite3_free(aBuf);
   return rc;
 }
 

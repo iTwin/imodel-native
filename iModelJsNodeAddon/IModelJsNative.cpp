@@ -1088,6 +1088,15 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         OpenIModelDb(BeFileName(dbName), openParams);
     }
 
+    void RestartDefaultTxn(NapiInfoCR info) {
+        RequireDbIsOpen(info);
+        auto& db = GetDgnDb();
+        auto& txns = db.Txns();
+        auto last = txns.GetLastTxnId(); // save this before we restart
+        db.RestartDefaultTxn();
+        txns.ReplayExternalTxns(last); // if there were changes from other connections, replay their side effects for listeners
+    }
+
     void CreateIModel(NapiInfoCR info)  {
         REQUIRE_ARGUMENT_STRING(0, filename);
         REQUIRE_ARGUMENT_ANY_OBJ(1, props);

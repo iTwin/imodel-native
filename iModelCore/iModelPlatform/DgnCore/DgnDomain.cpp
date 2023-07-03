@@ -300,18 +300,17 @@ DgnDbStatus DgnDomain::RegisterHandler(Handler& handler, bool reregister)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnDomains::OnDbOpened()
-    {
-    if (m_dgndb.AreTxnsEnabled())
-        {
+void DgnDomains::OnDbOpened() {
+    if (m_dgndb.AreTxnsRequired()) {
         TxnManagerR txnManager = m_dgndb.Txns();
-        txnManager.EnableTracking(true);
+        if (!m_dgndb.IsReadonly())
+            txnManager.EnableTracking(true);
         txnManager.InitializeTableHandlers(); // Necessary to this after the domains are loaded so that the tables are already setup. The method calls SaveChanges().
-        }
+    }
 
     for (DgnDomainCP domain : m_domains)
         domain->_OnDgnDbOpened(m_dgndb);
-    }
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod

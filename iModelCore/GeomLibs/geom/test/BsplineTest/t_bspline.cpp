@@ -1125,3 +1125,35 @@ TEST(BsplineKnots, ValidateNans)
     origCurve->GetKnots(origUKnots);
     Check::True(std::equal(uKnots.data(), uKnots.data() + numKnotsU, origUKnots.data(), isEqual), "closed exterior knots corrected from interior knot NaN corruption");
     }
+
+TEST(BsplineKnots, ValidateOverClamped)
+    {
+    // create a valid B-spline open curve
+    int numPoles = 10;
+    int order = 4;
+    bvector<DPoint3d> poles;
+    for (int i = 0; i < numPoles; ++i)
+        poles.push_back(DPoint3d::From(i, sqrt(i), i * i));
+    MSBsplineCurvePtr curve = MSBsplineCurve::CreateFromPolesAndOrder(poles, nullptr, nullptr, order, false);
+    int numKnots = curve->GetIntNumKnots();
+    if (Check::True(BentleyStatus::BSISUCCESS == mdlBspline_validateCurveKnots(curve->knots, curve->poles, curve->weights, &curve->params)))
+        Check::Int(numKnots, curve->GetIntNumKnots(), "ValidateKnots did not change a valid open curve");
+
+    // oversaturate the start and end knots
+    DPoint3d startPole = curve->poles[0];
+    DPoint3d endPole = curve->poles[curve->GetIntNumPoles() - 1];
+    double startKnot, endKnot, knotTol;
+    int iStartKnot, iEndKnot;
+    curve->GetKnotRange(startKnot, endKnot, iStartKnot, iEndKnot, knotTol);
+    curve->SetKnot(iStartKnot + 1, startKnot);
+    curve->SetKnot(iEndKnot - 1, endKnot);
+    if (Check::True(BentleyStatus::BSISUCCESS == mdlBspline_validateCurveKnots(curve->knots, curve->poles, curve->weights, &curve->params)))
+        {
+        Check::Int(numKnots - 2, curve->GetIntNumKnots(), "ValidateKnots removed the expected number of oversaturated start/end knots");
+        if (Check::Int(numPoles - 2, curve->GetIntNumPoles(), "ValidateKnots removed the expected number of oversaturated start/end poles"))
+            {
+            Check::Exact(startPole, curve->poles[0], "ValidateKnots preserved the start pole when removing oversaturated start poles");
+            Check::Exact(endPole, curve->poles[curve->GetIntNumPoles() - 1], "ValidateKnots preserved the end pole when removing oversaturated end poles");
+            }
+        }
+    }
