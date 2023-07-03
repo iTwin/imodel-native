@@ -31,6 +31,149 @@ describe("basic tests", () => {
     done();
   });
 
+  it("schema synchronization", () => {
+
+    const copyAndOverrideFile = (from: string, to: string) => {
+      if (fs.existsSync(to)) {
+        fs.unlinkSync(to);
+      }
+      fs.copyFileSync(from, to);
+    };
+    const getCheckSum = (db: IModelJsNative.ECDb | IModelJsNative.DgnDb, type: "ecdb_schema" | "ecdb_map"| "sqlite_schema") => {
+      const stmt = new iModelJsNative.ECSqlStatement();
+      assert.equal(DbResult.BE_SQLITE_OK, stmt.prepare(db, `PRAGMA checksum(${type})`).status);
+      assert.equal(DbResult.BE_SQLITE_ROW,stmt.step());
+      const val = stmt.getValue(0).getString();
+      assert.isNotEmpty(val);
+      stmt.dispose();
+      return val;
+    };
+
+    const getSchemaHashes = (db: IModelJsNative.ECDb | IModelJsNative.DgnDb) => {
+      return {
+        eCDbSchema: getCheckSum(db, "ecdb_schema"),
+        eCDbMap: getCheckSum(db, "ecdb_map"),
+        sQLiteSchema: getCheckSum(db, "sqlite_schema"),
+      };
+    };
+
+    const baseDir = path.join(getOutputDir(), "shared-schema-channel");
+    if (fs.existsSync(baseDir)) {
+      fs.emptyDirSync(baseDir);
+      for (const file of fs.readdirSync(baseDir)) {
+        fs.unlinkSync(path.join(baseDir, file));
+      }
+    } else {
+      fs.mkdirSync(baseDir, { recursive: true });
+    }
+
+    // create empty sync db.
+    const syncDbUri = path.join(baseDir, "syncdb.ecdb");
+    const syncDb = new iModelJsNative.ECDb();
+    let rc: DbResult = syncDb.createDb(syncDbUri);
+    assert.equal(DbResult.BE_SQLITE_OK, rc);
+    syncDb.saveChanges();
+    syncDb.closeDb();
+
+    // create seed file.
+    const seedUri= path.join(baseDir, "seed.bim");
+    const iModelDb = new iModelJsNative.DgnDb();
+    iModelDb.createIModel(seedUri, { rootSubject: { name: "test file" } });
+
+    // initialize sync db.
+    iModelDb.schemaSyncInit(syncDbUri);
+    iModelDb.saveChanges();
+    iModelDb.performCheckpoint();
+
+    const localInfo = iModelDb.schemaSyncGetLocalDbInfo();
+    const sharedInfo = iModelDb.schemaSyncGetSyncDbInfo(syncDbUri);
+    assert.equal(localInfo?.id, sharedInfo?.id);
+    assert.equal(localInfo?.dataVer, sharedInfo?.dataVer);
+    assert.equal(localInfo?.dataVer, "0x2");
+    iModelDb.closeIModel();
+
+    // create first briefcase
+    const b0Uri = path.join(baseDir, "b0.bim");
+    copyAndOverrideFile(seedUri, b0Uri);
+    const b0 = new iModelJsNative.DgnDb();
+    b0.openIModel(b0Uri, OpenMode.ReadWrite);
+
+    // create second briefcase
+    const b1Uri = path.join(baseDir, "b1.bim");
+    copyAndOverrideFile(seedUri, b1Uri);
+    const b1 = new iModelJsNative.DgnDb();
+    b1.openIModel(b1Uri, OpenMode.ReadWrite);
+
+    // create second briefcase
+    const b2Uri = path.join(baseDir, "b2.bim");
+    copyAndOverrideFile(seedUri, b2Uri);
+    const b2 = new iModelJsNative.DgnDb();
+    b2.openIModel(b2Uri, OpenMode.ReadWrite);
+    // import schema in briefcase 1
+    const schema1 = `<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchema1" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+        <ECEntityClass typeName="Pipe1">
+            <BaseClass>bis:GeometricElement2d</BaseClass>
+            <ECProperty propertyName="p1" typeName="int" />
+            <ECProperty propertyName="p2" typeName="int" />
+        </ECEntityClass>
+    </ECSchema>`;
+    rc = b0.importXmlSchemas([schema1], { schemaSyncDbUri: syncDbUri });
+    assert.equal(DbResult.BE_SQLITE_OK, rc);
+
+    const schema2 = `<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchema1" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+        <ECEntityClass typeName="Pipe1">
+          <BaseClass>bis:GeometricElement2d</BaseClass>
+          <ECProperty propertyName="p1" typeName="int" />
+          <ECProperty propertyName="p2" typeName="int" />
+          <ECProperty propertyName="p3" typeName="int" />
+          <ECProperty propertyName="p4" typeName="int" />
+        </ECEntityClass>
+    </ECSchema>`;
+    rc = b1.importXmlSchemas([schema2], { schemaSyncDbUri: syncDbUri });
+    assert.equal(DbResult.BE_SQLITE_OK, rc);
+
+    b0.schemaSyncPull(syncDbUri);
+
+    // test default URI
+    b2.schemaSyncSetDefaultUri(syncDbUri);
+    assert.equal(b2.schemaSyncGetDefaultUri(), syncDbUri);
+    b2.schemaSyncPull();
+
+    // b1 = b2 == b0
+    const b0Hashes = getSchemaHashes(b0);
+    const b1Hashes = getSchemaHashes(b1);
+    const b2Hashes = getSchemaHashes(b2);
+    assert.deepEqual(b0Hashes, b1Hashes);
+    assert.deepEqual(b0Hashes, b2Hashes);
+
+    const schema3 = `<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchema1" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+        <ECEntityClass typeName="Pipe1">
+          <BaseClass>bis:GeometricElement2d</BaseClass>
+          <ECProperty propertyName="p1" typeName="int" />
+          <ECProperty propertyName="p2" typeName="int" />
+          <ECProperty propertyName="p3" typeName="int" />
+          <ECProperty propertyName="p4" typeName="int" />
+          <ECProperty propertyName="p5" typeName="int" />
+          <ECProperty propertyName="p6" typeName="int" />
+        </ECEntityClass>
+    </ECSchema>`;
+    rc = b2.importXmlSchemas([schema3]);
+    assert.equal(DbResult.BE_SQLITE_OK, rc);
+
+    b0.saveChanges();
+    b1.saveChanges();
+    b2.saveChanges();
+    b0.closeIModel();
+    b1.closeIModel();
+    b2.closeIModel();
+  });
+
   // verify that throwing javascript exceptions from C++ works
   it("testExceptions", () => {
     // first try a function

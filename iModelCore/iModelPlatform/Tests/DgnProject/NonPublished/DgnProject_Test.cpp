@@ -243,8 +243,7 @@ TEST_F(DgnDbTest, SetBriefcaseAsStandalone)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnDbTest, ImportSchemaWithLocalChanges)
 {
-    // TFS#906843 was resolved as WAD. This ensures that that's really WAD - i.e.,
-    // importing schema into a briefcase with local changes should NOT be possible.
+    // importing schema into a briefcase with local changes should be possible.
     DbResult result = BE_SQLITE_ERROR;
     CreateDgnDbParams params(TEST_NAME);
     DgnDbPtr dgndb = DgnDb::CreateIModel(&result, DgnDbTestDgnManager::GetOutputFilePath(L"ImportSchemaWithLocalChanges.ibim"), params);
@@ -262,11 +261,11 @@ TEST_F(DgnDbTest, ImportSchemaWithLocalChanges)
 
     dgndb->SaveChanges();
 
-    BeTest::SetFailOnAssert(false);
     SchemaStatus schemaStatus = DgnPlatformTestDomain::GetDomain().ImportSchema(*dgndb);
-    BeTest::SetFailOnAssert(true);
 
-    ASSERT_TRUE(schemaStatus != SchemaStatus::Success);
+    ASSERT_TRUE(schemaStatus == SchemaStatus::Success);
+
+    dgndb->SaveChanges();
 }
 
 /*---------------------------------------------------------------------------------**/ /**

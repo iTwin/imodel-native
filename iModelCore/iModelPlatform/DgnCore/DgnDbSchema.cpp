@@ -623,14 +623,14 @@ DbResult DgnDb::_UpgradeProfile(Db::OpenParams const& params)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::EC::DropSchemaResult DgnDb::DropSchema(Utf8StringCR name, bool logIssue) {
+DropSchemaResult DgnDb::DropSchema(Utf8StringCR name, bool logIssue) {
     return Domains().DoDropSchema(name, logIssue);
 }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaStatus DgnDb::ImportSchemas(bvector<ECSchemaCP> const& schemas, bool schemaLockHeld)
+SchemaStatus DgnDb::ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, bool schemaLockHeld, SchemaSync::SyncDbUri uri)
     {
     bvector<ECN::ECSchemaCP> schemasToImport;
     SchemaStatus status = PickSchemasToImport(schemasToImport, schemas, false /*=isImportingFromV8*/);
@@ -642,7 +642,7 @@ SchemaStatus DgnDb::ImportSchemas(bvector<ECSchemaCP> const& schemas, bool schem
 
     return Domains().DoImportSchemas(schemasToImport, schemaLockHeld ?
         SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade:
-        SchemaManager::SchemaImportOptions::None);
+        SchemaManager::SchemaImportOptions::None, uri);
     }
 
 /*---------------------------------------------------------------------------------**//**
