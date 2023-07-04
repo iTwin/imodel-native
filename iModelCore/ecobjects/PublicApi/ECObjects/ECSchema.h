@@ -2481,10 +2481,18 @@ struct SchemaKeyMatchPredicate
     SchemaKeyMatchPredicate(SchemaKeyCR key, SchemaMatchType matchType) :m_key(key), m_matchType(matchType) {}
 
     typedef bpair<SchemaKey, ECSchemaPtr> MapVal;
+    typedef bpair<SchemaKey, Utf8String> StringVal;
 
     //! Performs comparison against a MapVal
     //! @return true if this SchemaKeyMatchPredicate is equivalent to the specified MapVal
     bool operator () (MapVal const& rhs)
+        {
+        return rhs.first.Matches (m_key, m_matchType);
+        }
+
+    //! Performs comparison against a StringVal
+    //! @return true if this SchemaKeyMatchPredicate is equivalent to the specified StringVal
+    bool operator () (StringVal const& rhs)
         {
         return rhs.first.Matches (m_key, m_matchType);
         }
@@ -2935,7 +2943,7 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE StringSchemaLocater : IECSchemaLocater, NonCopyableClass
 {
 private:
-    bmap<SchemaKey, Utf8String, SchemaKeyLessThan<SchemaMatchType::Latest>> m_schemaStrings;
+    bmap<SchemaKey, Utf8String> m_schemaStrings;
 protected:
     ECOBJECTS_EXPORT ECSchemaPtr _LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext) override;
 public:
