@@ -3217,7 +3217,8 @@ ECSchemaPtr SearchPathSchemaFileLocater::_LocateSchema(SchemaKeyR key, SchemaMat
 ECSchemaPtr StringSchemaLocater::_LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext)
     {
     // Check if locator has a schema key that matches the key and match type
-    bmap<SchemaKey, Utf8String>::const_iterator iter = std::find_if(m_schemaStrings.begin(), m_schemaStrings.end(), SchemaKeyMatchPredicate(key, matchType));
+    auto matches = [&key, &matchType](const std::pair<SchemaKey, Utf8String>& pair) { return pair.first.Matches(key, matchType); };
+    bmap<SchemaKey, Utf8String>::const_iterator iter = std::find_if(m_schemaStrings.begin(), m_schemaStrings.end(), matches);
     if (iter == m_schemaStrings.end())
         return nullptr;
 
