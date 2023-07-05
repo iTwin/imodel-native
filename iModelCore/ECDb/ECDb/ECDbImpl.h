@@ -155,6 +155,7 @@ private:
     mutable std::unique_ptr<ClassNameFunc> m_classNameFunc;
     mutable std::unique_ptr<ClassIdFunc> m_classIdFunc;
     mutable std::unique_ptr<InstanceOfFunc> m_instanceOfFunc;
+    mutable std::unique_ptr<XmlCAToJson> m_xmlCAToJsonFunc;
     mutable std::unique_ptr<IdFactory> m_idFactory;
     mutable std::unique_ptr<ExtractInstFunc> m_extractInstFunc;
     mutable std::unique_ptr<ExtractPropFunc> m_extractPropFunc;
