@@ -43,7 +43,7 @@ USING_NAMESPACE_BENTLEY_EC
 #define ARGUMENT_IS_STRING(i) (ARGUMENT_IS_PRESENT(i) && info[i].IsString())
 #define ARGUMENT_IS_NUMBER(i) (ARGUMENT_IS_PRESENT(i) && info[i].IsNumber())
 #define ARGUMENT_IS_BOOL(i) (ARGUMENT_IS_PRESENT(i) && info[i].IsBoolean())
-
+#define ARGUMENT_IS_ANY_OBJ(i) (ARGUMENT_IS_PRESENT(i) && info[i].IsObject() && !info[i].IsFunction() && !info[i].IsArrayBuffer() && !info[i].IsArray() && !info[i].IsTypedArray() && !info[i].IsBuffer())
 #define ARGUMENT_IS_NOT_STRING(i) !ARGUMENT_IS_STRING(i)
 #define ARGUMENT_IS_NOT_BOOL(i) !ARGUMENT_IS_BOOL(i)
 #define ARGUMENT_IS_NOT_NUMBER(i) !ARGUMENT_IS_NUMBER(i)
@@ -204,6 +204,17 @@ USING_NAMESPACE_BENTLEY_EC
     } else {\
         var = (default);\
         THROW_JS_TYPE_EXCEPTION("Argument " #i " must be an boolean")\
+    }
+
+#define OPTIONAL_ARGUMENT_ANY_OBJ(i, var, default)\
+    Napi::Object var;\
+    if (ARGUMENT_IS_EMPTY(i)) {\
+        var = (default);\
+    } else if (ARGUMENT_IS_ANY_OBJ(i)) {\
+        var = info[i].As<Napi::Object>();\
+    } else {\
+        var = (default);\
+        THROW_JS_TYPE_EXCEPTION("Argument " #i " must be an object")\
     }
 
 #define OPTIONAL_ARGUMENT_BOOL_ASYNC(i, var, default, deferred)\
@@ -374,6 +385,7 @@ struct JsInterop {
 
     struct SchemaImportOptions
         {
+        Utf8String m_schemaSyncDbUri;
         bool m_schemaLockHeld = true;
         ECSchemaReadContextPtr m_customSchemaContext = nullptr;
         };
@@ -443,6 +455,7 @@ struct JsInterop {
     BE_JSON_NAME(row)
     BE_JSON_NAME(secure)
     BE_JSON_NAME(schemaLockHeld)
+    BE_JSON_NAME(schemaSyncDbUri)
     BE_JSON_NAME(showOnlyFinished)
     BE_JSON_NAME(size)
     BE_JSON_NAME(skipFileCheck)

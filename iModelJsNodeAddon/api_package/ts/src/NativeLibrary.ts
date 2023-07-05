@@ -441,7 +441,20 @@ export declare namespace IModelJsNative {
 
   interface SchemaImportOptions {
     readonly schemaLockHeld?: boolean;
+    readonly schemaSyncDbUri?: string;
     readonly ecSchemaXmlContext?: ECSchemaXmlContext;
+  }
+
+  interface SchemaLocalDbInfo {
+    readonly id: string;
+    readonly dataVer: string;
+    readonly lastModUtc: string;
+  }
+
+  interface SchemaSyncDbInfo extends SchemaLocalDbInfo {
+    readonly projectId: string;
+    readonly parentChangesetId: string;
+    readonly parentChangesetIndex?: string;
   }
 
   // ###TODO import from core-common
@@ -455,6 +468,13 @@ export declare namespace IModelJsNative {
   class DgnDb implements IConcurrentQueryManager, SQLiteOps {
     constructor();
     public readonly cloudContainer?: CloudContainer;
+    public schemaSyncSetDefaultUri(syncDbUri: string): void;
+    public schemaSyncGetDefaultUri(): string;
+    public schemaSyncInit(syncDbUri: string): void;
+    public schemaSyncPull(syncDbUri?: string): void;
+    public schemaSyncEnabled(): boolean;
+    public schemaSyncGetLocalDbInfo(): SchemaLocalDbInfo | undefined;
+    public schemaSyncGetSyncDbInfo(syncDbUri: string): SchemaSyncDbInfo | undefined;
     public abandonChanges(): DbResult;
     public abandonCreateChangeset(): void;
     public addChildPropagatesChangesToParentRelationship(schemaName: string, relClassName: string): BentleyStatus;
@@ -657,6 +677,13 @@ export declare namespace IModelJsNative {
     public createDb(dbName: string): DbResult;
     public dispose(): void;
     public dropSchema(schemaName: string): void;
+    public schemaSyncSetDefaultUri(syncDbUri: string): void;
+    public schemaSyncGetDefaultUri(): string;
+    public schemaSyncInit(syncDbUri: string): void;
+    public schemaSyncPull(syncDbUri: string | undefined): void;
+    public schemaSyncEnabled(): boolean;
+    public schemaSyncGetLocalDbInfo(): SchemaLocalDbInfo | undefined;
+    public schemaSyncGetSyncDbInfo(): SchemaSyncDbInfo | undefined;
     public getFilePath(): string;
     public importSchema(schemaPathName: string): DbResult;
     public isOpen(): boolean;

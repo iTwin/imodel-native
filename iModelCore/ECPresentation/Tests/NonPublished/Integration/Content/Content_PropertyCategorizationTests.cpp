@@ -171,6 +171,38 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategorization_Dire
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(PropertyCategorization_DirectProperty_NoCategory_WithCustomCategoryOverrideWithCreateClassCategory_GetsCorrectCategoryHierarchy, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="Prop" typeName="string" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategorization_DirectProperty_NoCategory_WithCustomCategoryOverrideWithCreateClassCategory_GetsCorrectCategoryHierarchy)
+    {
+    ECClassCP classA = GetClass("A");
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    contentRule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false));
+    rules->AddPresentationRule(*contentRule);
+
+    ContentModifierP modifier = new ContentModifier(classA->GetSchema().GetName(), classA->GetName());
+    modifier->AddPropertyCategory(*new PropertyCategorySpecification("custom", "Custom"));
+    modifier->AddPropertyOverride(*new PropertySpecification("Prop", 1000, "", PropertyCategoryIdentifier::CreateForId("custom", true)));
+    rules->AddPresentationRule(*modifier);
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
+    ValidateFieldCategoriesHierarchy(*descriptor->GetVisibleFields()[0], { classA->GetName(), "custom" });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
 DEFINE_SCHEMA(PropertyCategorization_DirectProperty_NoCategory_WithCustomCategoryOverrideWithParent_GetsCorrectCategoryHierarchy, R"*(
     <ECEntityClass typeName="A">
         <ECProperty propertyName="Prop" typeName="string" />
@@ -912,6 +944,56 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategorization_Same
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(PropertyCategorization_SameInstanceRelatedProperty_NoCategory_WithCustomCategoryOverrideWithCreateClassCategory_GetsCorrectCategoryHierarchy, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B">
+        <ECProperty propertyName="Prop" typeName="string" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="AB" strength="referencing" strengthDirection="forward" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="AB" polymorphic="True">
+            <Class class="A" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="BA" polymorphic="True">
+            <Class class="B" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategorization_SameInstanceRelatedProperty_NoCategory_WithCustomCategoryOverrideWithCreateClassCategory_GetsCorrectCategoryHierarchy)
+    {
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECRelationshipClassCP relAB = GetClass("AB")->GetRelationshipClassCP();
+
+    IECInstancePtr instanceA = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr instanceB = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relAB, *instanceA, *instanceB);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    contentRule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false));
+    rules->AddPresentationRule(*contentRule);
+
+    ContentModifierP modifier = new ContentModifier(classA->GetSchema().GetName(), classA->GetName());
+    modifier->AddPropertyCategory(*new PropertyCategorySpecification("custom", "Custom"));
+    modifier->AddRelatedProperty(*new RelatedPropertiesSpecification(*new RelationshipPathSpecification(
+        {
+        new RelationshipStepSpecification(relAB->GetFullName(), RequiredRelationDirection_Forward),
+        }), { new PropertySpecification("Prop", 1000, "", PropertyCategoryIdentifier::CreateForId("custom", true)) }, RelationshipMeaning::SameInstance));
+    rules->AddPresentationRule(*modifier);
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
+    ValidateFieldCategoriesHierarchy(*descriptor->GetVisibleFields()[0]->AsNestedContentField()->GetFields()[0], { classB->GetName(), "custom" });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
 DEFINE_SCHEMA(PropertyCategorization_SameInstanceRelatedProperty_NoCategory_WithCustomCategoryOverrideWithParent_GetsCorrectCategoryHierarchy, R"*(
     <ECEntityClass typeName="A" />
     <ECEntityClass typeName="B">
@@ -1222,6 +1304,59 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategorization_Same
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(PropertyCategorization_SameInstanceCalculatedProperty_WithCustomCategoryOverrideWithCreateClassCategory_GetsCorrectCategoryHierarchy, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B" />
+    <ECRelationshipClass typeName="AB" strength="referencing" strengthDirection="forward" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="AB" polymorphic="True">
+            <Class class="A" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="BA" polymorphic="True">
+            <Class class="B" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategorization_SameInstanceCalculatedProperty_WithCustomCategoryOverrideWithCreateClassCategory_GetsCorrectCategoryHierarchy)
+    {
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECRelationshipClassCP relAB = GetClass("AB")->GetRelationshipClassCP();
+
+    IECInstancePtr instanceA = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr instanceB = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relAB, *instanceA, *instanceB);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    contentRule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false));
+    rules->AddPresentationRule(*contentRule);
+
+    ContentModifierP modifierA = new ContentModifier(classA->GetSchema().GetName(), classA->GetName());
+    modifierA->AddRelatedProperty(*new RelatedPropertiesSpecification(*new RelationshipPathSpecification(
+        {
+        new RelationshipStepSpecification(relAB->GetFullName(), RequiredRelationDirection_Forward),
+        }), { new PropertySpecification("*") }, RelationshipMeaning::SameInstance));
+    rules->AddPresentationRule(*modifierA);
+
+    ContentModifierP modifierB = new ContentModifier(classB->GetSchema().GetName(), classB->GetName());
+    modifierB->AddPropertyCategory(*new PropertyCategorySpecification("custom", "Custom"));
+    modifierB->AddCalculatedProperty(*new CalculatedPropertiesSpecification("CalculatedProp", 1000, "", nullptr, nullptr, PropertyCategoryIdentifier::CreateForId("custom", true)));
+    modifierB->SetApplyOnNestedContent(true);
+    rules->AddPresentationRule(*modifierB);
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
+    ValidateFieldCategoriesHierarchy(*descriptor->GetVisibleFields()[0]->AsNestedContentField()->GetFields()[0], { classB->GetName(), "custom" });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
 DEFINE_SCHEMA(PropertyCategorization_SameInstanceCalculatedProperty_WithCustomCategoryOverrideWithParent_GetsCorrectCategoryHierarchy, R"*(
     <ECEntityClass typeName="A" />
     <ECEntityClass typeName="B" />
@@ -1521,6 +1656,56 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategorization_Rela
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
     ValidateFieldCategoriesHierarchy(*descriptor->GetVisibleFields()[0]->AsNestedContentField()->GetFields()[0], { "custom" });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(PropertyCategorization_RelatedInstanceRelatedProperty_NoCategory_WithCustomCategoryOverrideWithCreateClassCategory_GetsCorrectCategoryHierarchy, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B">
+        <ECProperty propertyName="Prop" typeName="string" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="AB" strength="referencing" strengthDirection="forward" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="AB" polymorphic="True">
+            <Class class="A" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="BA" polymorphic="True">
+            <Class class="B" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategorization_RelatedInstanceRelatedProperty_NoCategory_WithCustomCategoryOverrideWithCreateClassCategory_GetsCorrectCategoryHierarchy)
+    {
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECRelationshipClassCP relAB = GetClass("AB")->GetRelationshipClassCP();
+
+    IECInstancePtr instanceA = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr instanceB = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relAB, *instanceA, *instanceB);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    contentRule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false));
+    rules->AddPresentationRule(*contentRule);
+
+    ContentModifierP modifier = new ContentModifier(classA->GetSchema().GetName(), classA->GetName());
+    modifier->AddPropertyCategory(*new PropertyCategorySpecification("custom", "Custom"));
+    modifier->AddRelatedProperty(*new RelatedPropertiesSpecification(*new RelationshipPathSpecification(
+        {
+        new RelationshipStepSpecification(relAB->GetFullName(), RequiredRelationDirection_Forward),
+        }), { new PropertySpecification("Prop", 1000, "", PropertyCategoryIdentifier::CreateForId("custom", true)) }, RelationshipMeaning::RelatedInstance));
+    rules->AddPresentationRule(*modifier);
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
+    ValidateFieldCategoriesHierarchy(*descriptor->GetVisibleFields()[0]->AsNestedContentField()->GetFields()[0], { classB->GetName(), "custom" });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1831,6 +2016,59 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategorization_Rela
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
     ValidateFieldCategoriesHierarchy(*descriptor->GetVisibleFields()[0]->AsNestedContentField()->GetFields()[0], { "custom" });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(PropertyCategorization_RelatedInstanceCalculatedProperty_WithCustomCategoryOverrideWithCreateClassCategory_GetsCorrectCategoryHierarchy, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B" />
+    <ECRelationshipClass typeName="AB" strength="referencing" strengthDirection="forward" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="AB" polymorphic="True">
+            <Class class="A" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="BA" polymorphic="True">
+            <Class class="B" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategorization_RelatedInstanceCalculatedProperty_WithCustomCategoryOverrideWithCreateClassCategory_GetsCorrectCategoryHierarchy)
+    {
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECRelationshipClassCP relAB = GetClass("AB")->GetRelationshipClassCP();
+
+    IECInstancePtr instanceA = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr instanceB = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relAB, *instanceA, *instanceB);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    contentRule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false));
+    rules->AddPresentationRule(*contentRule);
+
+    ContentModifierP modifierA = new ContentModifier(classA->GetSchema().GetName(), classA->GetName());
+    modifierA->AddRelatedProperty(*new RelatedPropertiesSpecification(*new RelationshipPathSpecification(
+        {
+        new RelationshipStepSpecification(relAB->GetFullName(), RequiredRelationDirection_Forward),
+        }), { new PropertySpecification("*") }, RelationshipMeaning::RelatedInstance));
+    rules->AddPresentationRule(*modifierA);
+
+    ContentModifierP modifierB = new ContentModifier(classB->GetSchema().GetName(), classB->GetName());
+    modifierB->AddPropertyCategory(*new PropertyCategorySpecification("custom", "Custom"));
+    modifierB->AddCalculatedProperty(*new CalculatedPropertiesSpecification("CalculatedProp", 1000, "", nullptr, nullptr, PropertyCategoryIdentifier::CreateForId("custom", true)));
+    modifierB->SetApplyOnNestedContent(true);
+    rules->AddPresentationRule(*modifierB);
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
+    ValidateFieldCategoriesHierarchy(*descriptor->GetVisibleFields()[0]->AsNestedContentField()->GetFields()[0], { classB->GetName(), "custom" });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2227,6 +2465,80 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategorization_Same
     EXPECT_EQ(1, descriptor->GetVisibleFields()[0]->AsNestedContentField()->GetFields()[0]->AsNestedContentField()->GetFields().size());
     ValidateFieldCategoriesHierarchy(*descriptor->GetVisibleFields()[0]->AsNestedContentField()->GetFields()[0]->AsNestedContentField()->GetFields()[0],
         {
+        "custom"
+        });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(PropertyCategorization_SameInstanceAndSameInstanceNestedRelatedProperty_NoCategory_WithCustomCategoryOverrideWithCreateClassCategory_GetsCorrectCategoryHierarchy, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B" />
+    <ECEntityClass typeName="C">
+        <ECProperty propertyName="Prop" typeName="string" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="AB" strength="referencing" strengthDirection="forward" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="AB" polymorphic="True">
+            <Class class="A" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="BA" polymorphic="True">
+            <Class class="B" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="BC" strength="referencing" strengthDirection="forward" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="BC" polymorphic="True">
+            <Class class="B" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="CB" polymorphic="True">
+            <Class class="C" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategorization_SameInstanceAndSameInstanceNestedRelatedProperty_NoCategory_WithCustomCategoryOverrideWithCreateClassCategory_GetsCorrectCategoryHierarchy)
+    {
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECClassCP classC = GetClass("C");
+    ECRelationshipClassCP relAB = GetClass("AB")->GetRelationshipClassCP();
+    ECRelationshipClassCP relBC = GetClass("BC")->GetRelationshipClassCP();
+
+    IECInstancePtr instanceA = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr instanceB = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    IECInstancePtr instanceC = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relAB, *instanceA, *instanceB);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relBC, *instanceB, *instanceC);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    contentRule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false));
+    rules->AddPresentationRule(*contentRule);
+
+    ContentModifierP modifier = new ContentModifier(classA->GetSchema().GetName(), classA->GetName());
+    modifier->AddPropertyCategory(*new PropertyCategorySpecification("custom", "Custom"));
+    RelatedPropertiesSpecificationP relatedPropertiesSpec = new RelatedPropertiesSpecification(*new RelationshipPathSpecification(
+        {
+        new RelationshipStepSpecification(relAB->GetFullName(), RequiredRelationDirection_Forward),
+        }), {}, RelationshipMeaning::SameInstance);
+    relatedPropertiesSpec->AddNestedRelatedProperty(*new RelatedPropertiesSpecification(*new RelationshipPathSpecification(
+        {
+        new RelationshipStepSpecification(relBC->GetFullName(), RequiredRelationDirection_Forward),
+        }), { new PropertySpecification("Prop", 1000, "", PropertyCategoryIdentifier::CreateForId("custom", true)) }, RelationshipMeaning::SameInstance));
+    modifier->AddRelatedProperty(*relatedPropertiesSpec);
+    rules->AddPresentationRule(*modifier);
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
+    EXPECT_EQ(1, descriptor->GetVisibleFields()[0]->AsNestedContentField()->GetFields().size());
+    EXPECT_EQ(1, descriptor->GetVisibleFields()[0]->AsNestedContentField()->GetFields()[0]->AsNestedContentField()->GetFields().size());
+    ValidateFieldCategoriesHierarchy(*descriptor->GetVisibleFields()[0]->AsNestedContentField()->GetFields()[0]->AsNestedContentField()->GetFields()[0],
+        {
+        classC->GetName(),
         "custom"
         });
     }
@@ -2658,6 +2970,80 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategorization_Rela
     EXPECT_EQ(1, descriptor->GetVisibleFields()[0]->AsNestedContentField()->GetFields()[0]->AsNestedContentField()->GetFields().size());
     ValidateFieldCategoriesHierarchy(*descriptor->GetVisibleFields()[0]->AsNestedContentField()->GetFields()[0]->AsNestedContentField()->GetFields()[0],
         {
+        "custom"
+        });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(PropertyCategorization_RelatedInstanceAndSameInstanceNestedRelatedProperty_NoCategory_WithCustomCategoryOverrideWithCreateClassCategory_GetsCorrectCategoryHierarchy, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B" />
+    <ECEntityClass typeName="C">
+        <ECProperty propertyName="Prop" typeName="string" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="AB" strength="referencing" strengthDirection="forward" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="AB" polymorphic="True">
+            <Class class="A" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="BA" polymorphic="True">
+            <Class class="B" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="BC" strength="referencing" strengthDirection="forward" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="BC" polymorphic="True">
+            <Class class="B" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="CB" polymorphic="True">
+            <Class class="C" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategorization_RelatedInstanceAndSameInstanceNestedRelatedProperty_NoCategory_WithCustomCategoryOverrideWithCreateClassCategory_GetsCorrectCategoryHierarchy)
+    {
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECClassCP classC = GetClass("C");
+    ECRelationshipClassCP relAB = GetClass("AB")->GetRelationshipClassCP();
+    ECRelationshipClassCP relBC = GetClass("BC")->GetRelationshipClassCP();
+
+    IECInstancePtr instanceA = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr instanceB = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    IECInstancePtr instanceC = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relAB, *instanceA, *instanceB);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relBC, *instanceB, *instanceC);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    contentRule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false));
+    rules->AddPresentationRule(*contentRule);
+
+    ContentModifierP modifier = new ContentModifier(classA->GetSchema().GetName(), classA->GetName());
+    modifier->AddPropertyCategory(*new PropertyCategorySpecification("custom", "Custom"));
+    RelatedPropertiesSpecificationP relatedPropertiesSpec = new RelatedPropertiesSpecification(*new RelationshipPathSpecification(
+        {
+        new RelationshipStepSpecification(relAB->GetFullName(), RequiredRelationDirection_Forward),
+        }), {}, RelationshipMeaning::RelatedInstance);
+    relatedPropertiesSpec->AddNestedRelatedProperty(*new RelatedPropertiesSpecification(*new RelationshipPathSpecification(
+        {
+        new RelationshipStepSpecification(relBC->GetFullName(), RequiredRelationDirection_Forward),
+        }), { new PropertySpecification("Prop", 1000, "", PropertyCategoryIdentifier::CreateForId("custom", true)) }, RelationshipMeaning::SameInstance));
+    modifier->AddRelatedProperty(*relatedPropertiesSpec);
+    rules->AddPresentationRule(*modifier);
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
+    EXPECT_EQ(1, descriptor->GetVisibleFields()[0]->AsNestedContentField()->GetFields().size());
+    EXPECT_EQ(1, descriptor->GetVisibleFields()[0]->AsNestedContentField()->GetFields()[0]->AsNestedContentField()->GetFields().size());
+    ValidateFieldCategoriesHierarchy(*descriptor->GetVisibleFields()[0]->AsNestedContentField()->GetFields()[0]->AsNestedContentField()->GetFields()[0],
+        {
+        classC->GetName(),
         "custom"
         });
     }
@@ -3206,6 +3592,80 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategorization_Rela
     EXPECT_EQ(1, descriptor->GetVisibleFields()[0]->AsNestedContentField()->GetFields()[0]->AsNestedContentField()->GetFields().size());
     ValidateFieldCategoriesHierarchy(*descriptor->GetVisibleFields()[0]->AsNestedContentField()->GetFields()[0]->AsNestedContentField()->GetFields()[0],
         {
+        "custom"
+        });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(PropertyCategorization_RelatedInstanceNestedRelatedProperty_NoCategory_WithCustomCategoryOverrideWithCreateClassCategory_GetsCorrectCategoryHierarchy, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B" />
+    <ECEntityClass typeName="C">
+        <ECProperty propertyName="Prop" typeName="string" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="AB" strength="referencing" strengthDirection="forward" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="AB" polymorphic="True">
+            <Class class="A" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="BA" polymorphic="True">
+            <Class class="B" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="BC" strength="referencing" strengthDirection="forward" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="BC" polymorphic="True">
+            <Class class="B" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="CB" polymorphic="True">
+            <Class class="C" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategorization_RelatedInstanceNestedRelatedProperty_NoCategory_WithCustomCategoryOverrideWithCreateClassCategory_GetsCorrectCategoryHierarchy)
+    {
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECClassCP classC = GetClass("C");
+    ECRelationshipClassCP relAB = GetClass("AB")->GetRelationshipClassCP();
+    ECRelationshipClassCP relBC = GetClass("BC")->GetRelationshipClassCP();
+
+    IECInstancePtr instanceA = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr instanceB = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    IECInstancePtr instanceC = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relAB, *instanceA, *instanceB);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relBC, *instanceB, *instanceC);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    contentRule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false));
+    rules->AddPresentationRule(*contentRule);
+
+    ContentModifierP modifier = new ContentModifier(classA->GetSchema().GetName(), classA->GetName());
+    modifier->AddPropertyCategory(*new PropertyCategorySpecification("custom", "Custom"));
+    RelatedPropertiesSpecificationP relatedPropertiesSpec = new RelatedPropertiesSpecification(*new RelationshipPathSpecification(
+        {
+        new RelationshipStepSpecification(relAB->GetFullName(), RequiredRelationDirection_Forward),
+        }), {}, RelationshipMeaning::RelatedInstance);
+    relatedPropertiesSpec->AddNestedRelatedProperty(*new RelatedPropertiesSpecification(*new RelationshipPathSpecification(
+        {
+        new RelationshipStepSpecification(relBC->GetFullName(), RequiredRelationDirection_Forward),
+        }), { new PropertySpecification("Prop", 1000, "", PropertyCategoryIdentifier::CreateForId("custom", true)) }, RelationshipMeaning::RelatedInstance));
+    modifier->AddRelatedProperty(*relatedPropertiesSpec);
+    rules->AddPresentationRule(*modifier);
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
+    EXPECT_EQ(1, descriptor->GetVisibleFields()[0]->AsNestedContentField()->GetFields().size());
+    EXPECT_EQ(1, descriptor->GetVisibleFields()[0]->AsNestedContentField()->GetFields()[0]->AsNestedContentField()->GetFields().size());
+    ValidateFieldCategoriesHierarchy(*descriptor->GetVisibleFields()[0]->AsNestedContentField()->GetFields()[0]->AsNestedContentField()->GetFields()[0],
+        {
+        classC->GetName(),
         "custom"
         });
     }
@@ -4145,6 +4605,42 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategoryOverride_Fi
     EXPECT_STREQ(FIELD_NAME((bvector<ECClassCP>{classA, classB}), "UserLabel"), descriptor->GetVisibleFields()[0]->GetUniqueName().c_str());
     EXPECT_STREQ("my_category", descriptor->GetVisibleFields()[0]->GetCategory()->GetName().c_str());
     EXPECT_STREQ("My Category", descriptor->GetVisibleFields()[0]->GetCategory()->GetLabel().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(PropertyCategoryOverride_FieldsMerging_CreateWithClassCategory_GetDifferentFieldsWhenPropertyClassCategoriesAreDifferent, R"*(
+    <ECEntityClass typeName="ClassA">
+        <ECProperty propertyName="UserLabel" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="ClassB">
+        <ECProperty propertyName="UserLabel" typeName="string" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategoryOverride_FieldsMerging_CreateWithClassCategory_GetDifferentFieldsWhenPropertyClassCategoriesAreDifferent)
+    {
+    ECClassCP classA = GetClass("ClassA");
+    ECClassCP classB = GetClass("ClassB");
+
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    auto spec = new ContentInstancesOfSpecificClassesSpecification(1, "", RulesEngineTestHelpers::CreateClassNamesList({ classA, classB }), false, false);
+    spec->AddPropertyCategory(*new PropertyCategorySpecification("my_category", "My Category"));
+    spec->AddPropertyOverride(*new PropertySpecification("UserLabel", 1, "", PropertyCategoryIdentifier::CreateForId("my_category", true)));
+    contentRule->AddSpecification(*spec);
+    rules->AddPresentationRule(*contentRule);
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(2, descriptor->GetVisibleFields().size());
+    EXPECT_STREQ(FIELD_NAME(classA, "UserLabel"), descriptor->GetVisibleFields()[0]->GetUniqueName().c_str());
+    ValidateFieldCategoriesHierarchy(*descriptor->GetVisibleFields()[0], { classA->GetName(), "my_category" });
+    EXPECT_STREQ(FIELD_NAME(classB, "UserLabel"), descriptor->GetVisibleFields()[1]->GetUniqueName().c_str());
+    ValidateFieldCategoriesHierarchy(*descriptor->GetVisibleFields()[1], { classB->GetName(), "my_category" });
     }
 
 /*---------------------------------------------------------------------------------**//**

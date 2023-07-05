@@ -174,6 +174,7 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
         m_writeable = boolMember(obj, JSON_NAME(writeable), false);
         m_lockExpireSeconds = intMember(obj, JSON_NAME(lockExpireSeconds), 0);
         m_logId = stringMember(obj, JSON_NAME(logId), "");
+        m_secure = boolMember(obj, JSON_NAME(secure), false);
         m_isPublic = boolMember(obj, JSON_NAME(isPublic), false);
     }
 
