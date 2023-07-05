@@ -237,6 +237,7 @@ protected:
     ECDB_EXPORT void ApplyECDbSettings(bool requireECCrudWriteToken, bool requireECSchemaImportToken);
 
     ECDB_EXPORT DbResult _OnDbOpening() override;
+    ECDB_EXPORT DbResult _OnDbOpened(OpenParams const&) override;
     ECDB_EXPORT DbResult _OnDbCreated(CreateParams const&) override;
     ECDB_EXPORT void _OnAfterSetBriefcaseId() override;
     ECDB_EXPORT void _OnDbClose() override;
@@ -526,5 +527,18 @@ public:
 
 typedef ECDb& ECDbR;
 typedef ECDb const& ECDbCR;
+
+struct LastErrorListener final : NonCopyableClass {
+    private:
+        ECDbCR m_ecdb;
+        Utf8String m_lastError;
+        cancel_callback_type m_cancel;
+
+    public:
+        ECDB_EXPORT LastErrorListener(ECDbCR ecdb);
+        Utf8StringCR GetLastError() const { return m_lastError; }
+        bool HasError() const { return !m_lastError.empty(); }
+        ECDB_EXPORT ~LastErrorListener();
+};
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -209,6 +209,9 @@ struct TxnTable;
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
 {
+    using SchemaImportOptions = BeSQLite::EC::SchemaManager::SchemaImportOptions;
+    using SyncDbUri = BeSQLite::EC::SchemaSync::SyncDbUri;
+
     friend struct DgnDomains;
 
     //! The current version of the HandlerAPI
@@ -410,7 +413,7 @@ public:
     //! <li> Errors out if there are local changes (uncommitted or committed). These need to be flushed by committing
     //! the changes if necessary, and then creating a revision.
     //! </ul>
-    DGNPLATFORM_EXPORT SchemaStatus ImportSchema(DgnDbR dgndb, BeSQLite::EC::SchemaManager::SchemaImportOptions options = BeSQLite::EC::SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade);
+    DGNPLATFORM_EXPORT SchemaStatus ImportSchema(DgnDbR dgndb, SchemaImportOptions options = SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade, SyncDbUri uri = SyncDbUri());
 
     //! Returns true of the schema for this domain has been imported into the supplied DgnDb.
     //! @remarks Only checks if the schema has been imported, and does not do any validation of
@@ -443,6 +446,7 @@ struct DgnDomains : DgnDbTable
 {
     typedef bvector<DgnDomainCP> DomainList;
     typedef bmap<DgnClassId,DgnDomain::Handler*> Handlers;
+    using SyncDbUri = BeSQLite::EC::SchemaSync::SyncDbUri;
 
 private:
     friend struct DgnDb;
@@ -464,17 +468,18 @@ private:
     void SyncWithSchemas();
 
     // Imports schemas of all required domains into the DgnDb.
-    SchemaStatus ImportSchemas(BeSQLite::EC::SchemaManager::SchemaImportOptions options);
+    SchemaStatus ImportSchemas(BeSQLite::EC::SchemaManager::SchemaImportOptions options, SyncDbUri uri = SyncDbUri());
     // Validates (and upgrades if necessary) domain schemas - used when the DgnDb is first opened up.
     SchemaStatus InitializeSchemas(SchemaUpgradeOptions const& schemaUpgradeOptions, bvector<ECN::ECSchemaPtr>* schemasToImport, bvector<DgnDomainP>* domainsToImport);
     // Upgrades just the schemas and domains specified via the input parameters.  Use DoValidateSchemas to get all the schemas that should be Upgraded.
-    SchemaStatus UpgradeSchemas(bvector<ECN::ECSchemaPtr> const& schemasToImport, bvector<DgnDomainP> const& domainsToImport, BeSQLite::EC::SchemaManager::SchemaImportOptions importOptions);
+    SchemaStatus UpgradeSchemas(bvector<ECN::ECSchemaPtr> const& schemasToImport, bvector<DgnDomainP> const& domainsToImport, BeSQLite::EC::SchemaManager::SchemaImportOptions importOptions, SyncDbUri uri = SyncDbUri());
     SchemaStatus DoValidateSchemas(bvector<ECN::ECSchemaPtr>* schemasToImport, bvector<DgnDomainP>* domainsToImport);
     SchemaStatus ValidateSchemaReferences(SchemaStatus& status, bvector<ECN::ECSchemaPtr>* schemasToImport, ECN::ECSchemaReadContextR schemaContext, bset<ECN::ECSchemaP>& validatedSchemas);
     static SchemaStatus DoValidateSchema(ECN::ECSchemaCR appSchema, bool isSchemaReadonly, DgnDbCR db);
-    SchemaStatus DoImportSchemas(bvector<ECN::ECSchemaCP> const& schemasToImport, BeSQLite::EC::SchemaManager::SchemaImportOptions importOptions);
-    SchemaStatus DoImportSchemas(bvector<ECN::ECSchemaPtr> const& schemasToImport, bvector<DgnDomainP> const& domainsToImport, BeSQLite::EC::SchemaManager::SchemaImportOptions importOptions);
+    SchemaStatus DoImportSchemas(bvector<ECN::ECSchemaCP> const& schemasToImport, BeSQLite::EC::SchemaManager::SchemaImportOptions importOptions, SyncDbUri uri = SyncDbUri());
+    SchemaStatus DoImportSchemas(bvector<ECN::ECSchemaPtr> const& schemasToImport, bvector<DgnDomainP> const& domainsToImport, BeSQLite::EC::SchemaManager::SchemaImportOptions importOptions, SyncDbUri uri = SyncDbUri());
     BeSQLite::EC::DropSchemaResult DoDropSchema(Utf8StringCR name, bool logIssue = true);
+
     ECN::ECSchemaReadContextPtr PrepareSchemaReadContext() const;
 
     explicit DgnDomains(DgnDbR db) : DgnDbTable(db), m_allowSchemaImport(true) {}
