@@ -2103,15 +2103,19 @@ TEST_F(ECDbMetaSchemaECSqlTestFixture, PropertyCustomAttributes) {
     {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"stmt(
-            SELECT ca.Instance, pDef.Name
-             FROM meta.PropertyCustomAttribute ca 
-             JOIN meta.ECPropertyDef pDef USING meta.PropertyHasCustomAttribute
+            SELECT ca.ECInstanceId, pDef.Name
+             FROM meta.PropertyCustomAttribute ca
+                         JOIN meta.ECPropertyDef pDef USING meta.PropertyHasCustomAttribute
+                         JOIN meta.ECClassDef cDef USING meta.CustomAttributeClassHasInstanceOnProperty
+             WHERE cDef.Name='CAClass'
             )stmt"));
+            //             JOIN meta.ECPropertyDef pDef USING meta.PropertyHasCustomAttribute
             //             JOIN meta.ECClassDef cDef USING meta.CustomAttributeClassHasInstanceOnProperty
             // WHERE cDef.Name='CAClass'
         ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
-        printf("ca: %s\n", stmt.GetValueText(0));
-        printf("prop: %s\n", stmt.GetValueText(1));
+        printf("0: %s\n", stmt.GetValueText(0));
+        printf("1: %s\n", stmt.GetValueText(1));
+        printf("native SQL: %s\n", stmt.GetNativeSql());
     }
 }
 

@@ -562,9 +562,9 @@
             <View xmlns="ClassViews.01.00.00">
                 <Query>
                 SELECT
-                    [ca].[ECInstanceId] [ECInstanceId],
+                    [ca].[ECInstanceId],
                     [ca].[Class] [Class],
-                    [ca].[ContainerId] [Property],
+                    CAST([ca].[ContainerId] as LONG) [Property],
                     XmlCAToJson([ca].[Class].[Id], [ca].[Instance]) [Instance]
                 FROM [meta].[CustomAttribute] [ca]
                 WHERE [ca].[ContainerType] = 992 ORDER BY [ca].[Ordinal]

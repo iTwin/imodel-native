@@ -154,28 +154,41 @@ BentleyStatus ECRelationshipJoinExp::ResolveRelationshipEnds(ECSqlParseContext& 
 
     for (RangeClassInfo const& classRef : fromClassRefs)
         {
-        if (classRef.GetExp().GetType() != Exp::Type::ClassName)
-            continue;
-
-        if (&classRef.GetExp() == &GetToClassRef() || &classRef.GetExp() == &GetRelationshipClassNameExp())
-            continue;
-
-        ClassNameExp const& fromClassNameExpression = classRef.GetExp().GetAs<ClassNameExp>();
-        ECClassId fromClassId = fromClassNameExpression.GetInfo().GetMap().GetClass().GetId();
-
-        //Same ClassNameExp/ECClassId could exist in from SELECT * FROM FOO I, FOO B we need to skip same instance of these classes
-        if (fromClassExistsInSourceList.find(fromClassId) == fromClassExistsInSourceList.end())
+        auto& exp = classRef.GetExp();
+        auto expType = exp.GetType();
+        if (expType == Exp::Type::ClassName)
             {
-            auto itor = sourceList.find(fromClassId);
-            if (itor != sourceList.end())
-                fromClassExistsInSourceList[fromClassId] = &fromClassNameExpression;
+            if (&classRef.GetExp() == &GetToClassRef() || &classRef.GetExp() == &GetRelationshipClassNameExp())
+                continue;
+
+            ClassNameExp const& fromClassNameExpression = exp.GetAs<ClassNameExp>();
+            ECClassId fromClassId = fromClassNameExpression.GetInfo().GetMap().GetClass().GetId();
+
+            //Same ClassNameExp/ECClassId could exist in from SELECT * FROM FOO I, FOO B we need to skip same instance of these classes
+            if (fromClassExistsInSourceList.find(fromClassId) == fromClassExistsInSourceList.end())
+                {
+                auto itor = sourceList.find(fromClassId);
+                if (itor != sourceList.end())
+                    fromClassExistsInSourceList[fromClassId] = &fromClassNameExpression;
+                }
+
+            if (fromClassExistsInTargetList.find(fromClassId) == fromClassExistsInTargetList.end())
+                {
+                auto itor = targetList.find(fromClassId);
+                if (itor != targetList.end())
+                    fromClassExistsInTargetList[fromClassId] = &fromClassNameExpression;
+                }
             }
-
-        if (fromClassExistsInTargetList.find(fromClassId) == fromClassExistsInTargetList.end())
+        else if(expType ==  Exp::Type::SubqueryRef)
             {
-            auto itor = targetList.find(fromClassId);
-            if (itor != targetList.end())
-                fromClassExistsInTargetList[fromClassId] = &fromClassNameExpression;
+            SubqueryRefExp const& fromClassNameExpression = exp.GetAs<SubqueryRefExp>();
+            //TODO: SubqueryRefExp does not expose classId if it's a View.
+            auto* subQuery = fromClassNameExpression.GetSubquery();
+            auto type = subQuery->GetType();
+            if(type == Exp::Type::ClassName)
+                {
+                continue;
+                }
             }
         }
 
