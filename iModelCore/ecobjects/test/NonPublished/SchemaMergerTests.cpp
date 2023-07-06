@@ -1611,6 +1611,71 @@ TEST_F(SchemaMergerTests, BaseClassAndPropertyWithDifferentCase)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaMergerTests, EntityWithMultipleBaseClasses)
+    {
+    // Initialize two sets of schemas
+    bvector<Utf8CP> leftSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="MySchema" alias="mys" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="A">
+          </ECEntityClass>
+          <ECEntityClass typeName="B">
+            <BaseClass>A</BaseClass>
+          </ECEntityClass>
+          <ECEntityClass typeName="C">
+            <BaseClass>B</BaseClass>
+            <BaseClass>A</BaseClass>
+          </ECEntityClass>
+        </ECSchema>
+        )schema"
+    };
+    ECSchemaReadContextPtr leftContext = InitializeReadContextWithAllSchemas(leftSchemasXml);
+    bvector<ECN::ECSchemaCP> leftSchemas = leftContext->GetCache().GetSchemas();
+
+    bvector<Utf8CP> rightSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="MySchema" alias="mys" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="A">
+          </ECEntityClass>
+          <ECEntityClass typeName="B">
+            <BaseClass>A</BaseClass>
+          </ECEntityClass>
+          <ECEntityClass typeName="C">
+            <BaseClass>A</BaseClass>
+          </ECEntityClass>
+        </ECSchema>
+        )schema"
+    };
+    ECSchemaReadContextPtr rightContext = InitializeReadContextWithAllSchemas(rightSchemasXml);
+    bvector<ECN::ECSchemaCP> rightSchemas = rightContext->GetCache().GetSchemas();
+
+    // Merge the schemas
+    SchemaMergeResult result;
+    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+
+    // Compare result
+    bvector<Utf8CP> expectedSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="MySchema" alias="mys" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="A">
+          </ECEntityClass>
+          <ECEntityClass typeName="B">
+            <BaseClass>A</BaseClass>
+          </ECEntityClass>
+          <ECEntityClass typeName="C">
+            <BaseClass>B</BaseClass>
+            <BaseClass>A</BaseClass>
+          </ECEntityClass>
+        </ECSchema>
+        )schema"
+    };
+
+    CompareResults(expectedSchemasXml, result);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaMergerTests, DescriptionAndLabelDifferentCaseName)
     {
     // Initialize two sets of schemas
