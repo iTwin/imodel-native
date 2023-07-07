@@ -2393,7 +2393,53 @@ TEST_F(SchemaMergerTests, InjectBaseClassInHierarchy)
     CompareResults(expectedSchemasXml, result);
     }
 
-TEST_F(SchemaMergerTests, KindOfQuantityOnlyOnOneSide)
+TEST_F(SchemaMergerTests, NullReferencedItemPropertyCategory)
+    {
+    // Initialize two sets of schemas
+    bvector<Utf8CP> leftSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="MySchema" alias="mys" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECEntityClass typeName="MyEntity">
+                <ECProperty propertyName="A" typeName="int" category="Category">
+                </ECProperty>
+            </ECEntityClass>
+            <PropertyCategory typeName="Category" priority="99"/>
+        </ECSchema>)schema"
+    };
+    ECSchemaReadContextPtr leftContext = InitializeReadContextWithAllSchemas(leftSchemasXml);
+    bvector<ECN::ECSchemaCP> leftSchemas = leftContext->GetCache().GetSchemas();
+
+    bvector<Utf8CP> rightSchemasXml {
+      R"schema(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="MySchema" alias="mys" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECEntityClass typeName="MyEntity">
+                <ECProperty propertyName="A" typeName="int"/>
+            </ECEntityClass>
+        </ECSchema>)schema"
+    };
+    ECSchemaReadContextPtr rightContext = InitializeReadContextWithAllSchemas(rightSchemasXml);
+    bvector<ECN::ECSchemaCP> rightSchemas = rightContext->GetCache().GetSchemas();
+
+    // Merge the schemas
+    SchemaMergeResult result;
+    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+
+    // Compare result
+    bvector<Utf8CP> expectedSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="MySchema" alias="mys" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECEntityClass typeName="MyEntity">
+                <ECProperty propertyName="A" typeName="int" category="Category">
+                </ECProperty>
+            </ECEntityClass>
+            <PropertyCategory typeName="Category" priority="99"/>
+        </ECSchema>)schema"
+    };
+
+    CompareResults(expectedSchemasXml, result);
+    }
+
+TEST_F(SchemaMergerTests, NullReferencedItemKindOfQuantity)
     {
     // Initialize two sets of schemas
     bvector<Utf8CP> leftSchemasXml {
