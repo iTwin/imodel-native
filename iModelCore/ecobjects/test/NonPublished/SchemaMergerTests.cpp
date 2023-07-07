@@ -2393,6 +2393,60 @@ TEST_F(SchemaMergerTests, InjectBaseClassInHierarchy)
     CompareResults(expectedSchemasXml, result);
     }
 
+TEST_F(SchemaMergerTests, KindOfQuantityOnlyOnOneSide)
+    {
+    // Initialize two sets of schemas
+    bvector<Utf8CP> leftSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="MySchema" alias="mys" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <Phenomenon typeName="LENGTH" definition="LENGTH" displayLabel="Length" />
+            <UnitSystem typeName="SI" />
+            <Unit typeName="M" phenomenon="LENGTH" unitSystem="SI" definition="M" denominator="10.0" displayLabel="m" />
+            <Format typeName="DefaultRealU" type="decimal" precision="6" formatTraits="keepSingleZero|keepDecimalPoint|showUnitLabel"/>
+            <KindOfQuantity typeName="DISTANCE" persistenceUnit="M" relativeError="0.0001" presentationUnits="DefaultRealU[M]"/>
+            <ECEntityClass typeName="MyEntity">
+                <ECProperty propertyName="A" typeName="int" kindOfQuantity="DISTANCE">
+                </ECProperty>
+            </ECEntityClass>
+        </ECSchema>)schema"
+    };
+    ECSchemaReadContextPtr leftContext = InitializeReadContextWithAllSchemas(leftSchemasXml);
+    bvector<ECN::ECSchemaCP> leftSchemas = leftContext->GetCache().GetSchemas();
+
+    bvector<Utf8CP> rightSchemasXml {
+      R"schema(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="MySchema" alias="mys" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECEntityClass typeName="MyEntity">
+                <ECProperty propertyName="A" typeName="int"/>
+            </ECEntityClass>
+        </ECSchema>)schema"
+    };
+    ECSchemaReadContextPtr rightContext = InitializeReadContextWithAllSchemas(rightSchemasXml);
+    bvector<ECN::ECSchemaCP> rightSchemas = rightContext->GetCache().GetSchemas();
+
+    // Merge the schemas
+    SchemaMergeResult result;
+    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+
+    // Compare result
+    bvector<Utf8CP> expectedSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="MySchema" alias="mys" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <Phenomenon typeName="LENGTH" definition="LENGTH" displayLabel="Length" />
+            <UnitSystem typeName="SI" />
+            <Unit typeName="M" phenomenon="LENGTH" unitSystem="SI" definition="M" denominator="10.0" displayLabel="m" />
+            <Format typeName="DefaultRealU" type="decimal" precision="6" formatTraits="keepSingleZero|keepDecimalPoint|showUnitLabel"/>
+            <KindOfQuantity typeName="DISTANCE" persistenceUnit="M" relativeError="0.0001" presentationUnits="DefaultRealU[M]"/>
+            <ECEntityClass typeName="MyEntity">
+                <ECProperty propertyName="A" typeName="int" kindOfQuantity="DISTANCE">
+                </ECProperty>
+            </ECEntityClass>
+        </ECSchema>)schema"
+    };
+
+    CompareResults(expectedSchemasXml, result);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
