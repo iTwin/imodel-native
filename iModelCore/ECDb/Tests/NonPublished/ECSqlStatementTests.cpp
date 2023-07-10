@@ -9017,6 +9017,125 @@ TEST_F(ECSqlStatementTestFixture, OrderBy)
     ASSERT_EQ(0, strcmp(lastName, "Da Vinci"));
     }
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ECSqlStatementTestFixture, NullsOrdering)
+{
+    // Create StartupCompany
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("StartupCompany.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
+
+    auto insertPerson = [](ECDbCR ecdb, ECClassCR ecClass, Utf8CP firstName, Utf8CP lastName) {
+        IECInstancePtr ecInstance = ecClass.GetDefaultStandaloneEnabler()->CreateInstance(0);
+        ECValue val;
+        if (firstName) {
+            val.SetUtf8CP(firstName, false);
+            if (ECObjectsStatus::Success != ecInstance->SetValue("FirstName", val))
+                return BE_SQLITE_ERROR;
+        }
+        if (lastName) {
+            val.Clear();
+            val.SetUtf8CP(lastName, false);
+            if (ECObjectsStatus::Success != ecInstance->SetValue("LastName", val))
+                return BE_SQLITE_ERROR;
+        }
+
+        ECInstanceInserter inserter(ecdb, ecClass, nullptr);
+        if (!inserter.IsValid())
+            return BE_SQLITE_ERROR;
+
+        return inserter.Insert(*ecInstance);
+    };
+
+    // Add some employees
+    ECClassCP employeeClass = m_ecdb.Schemas().GetClass("StartupCompany", "Employee");
+    ASSERT_EQ(BE_SQLITE_OK, insertPerson(m_ecdb, *employeeClass, "Leonardo", "Da Vinci"));
+    ASSERT_EQ(BE_SQLITE_OK, insertPerson(m_ecdb, *employeeClass, nullptr, nullptr));
+    ASSERT_EQ(BE_SQLITE_OK, insertPerson(m_ecdb, *employeeClass, "Nikola", "Tesla"));
+    ASSERT_EQ(BE_SQLITE_OK, insertPerson(m_ecdb, *employeeClass, nullptr, nullptr));
+    ASSERT_EQ(BE_SQLITE_OK, insertPerson(m_ecdb, *employeeClass, "Albert", "Einstein"));
+    ASSERT_EQ(BE_SQLITE_OK, insertPerson(m_ecdb, *employeeClass, nullptr, nullptr));
+    m_ecdb.SaveChanges();
+
+    // Test ORDER BY NULLS FIRST
+    Utf8String ecsql("SELECT FirstName, LastName FROM ");
+    ecsql.append(employeeClass->GetECSqlName()).append(" ORDER BY LastName NULLS FIRST");
+    ECSqlStatement statement;
+    ECSqlStatus stat = statement.Prepare(m_ecdb, ecsql.c_str());
+    ASSERT_EQ(ECSqlStatus::Success, stat);
+
+    Utf8CP firstName, lastName;
+    int count = 0;
+    while (statement.Step() == BE_SQLITE_ROW && count < 5) {
+        firstName = statement.GetValueText(0);
+        lastName = statement.GetValueText(1);
+        LOG.debugv("%s, %s", lastName, firstName);
+
+        // Validate the first few entries
+        if (count == 0) {
+            ASSERT_STREQ(firstName, "nullptr");
+            ASSERT_STREQ(lastName, "nullptr");
+        }
+        else if (count == 1) {
+            ASSERT_STREQ(firstName, "nullptr");
+            ASSERT_STREQ(lastName, "nullptr");
+        }
+        else if (count == 2) {
+            ASSERT_STREQ(firstName, "Albert");
+            ASSERT_STREQ(lastName, "Einstein");
+        }
+        else if (count == 3) {
+            ASSERT_STREQ(firstName, "Leonardo");
+            ASSERT_STREQ(lastName, "Da Vinci");
+        }
+        else if (count == 4) {
+            ASSERT_STREQ(firstName, "Nikola");
+            ASSERT_STREQ(lastName, "Tesla");
+        }
+        count++;
+    }
+
+    // Test ORDER BY NULLS LAST
+    ecsql = "SELECT FirstName, LastName FROM ";
+    ecsql.append(employeeClass->GetECSqlName()).append(" ORDER BY LastName NULLS LAST");
+    stat = statement.Prepare(m_ecdb, ecsql.c_str());
+    ASSERT_EQ(ECSqlStatus::Success, stat);
+
+    count = 0;
+    while (statement.Step() == BE_SQLITE_ROW && count < 5) {
+        firstName = statement.GetValueText(0);
+        lastName = statement.GetValueText(1);
+        LOG.debugv("%s, %s", lastName, firstName);
+
+        // Validate the first few entries
+        if (count == 0) {
+            ASSERT_STREQ(firstName, "nullptr");
+            ASSERT_STREQ(lastName, "nullptr");
+        }
+        else if (count == 1) {
+            ASSERT_STREQ(firstName, "nullptr");
+            ASSERT_STREQ(lastName, "nullptr");
+        }
+        else if (count == 2) {
+            ASSERT_STREQ(firstName, "Albert");
+            ASSERT_STREQ(lastName, "Einstein");
+        }
+        else if (count == 3) {
+            ASSERT_STREQ(firstName, "Leonardo");
+            ASSERT_STREQ(lastName, "Da Vinci");
+        }
+        else if (count == 4) {
+            ASSERT_STREQ(firstName, "Nikola");
+            ASSERT_STREQ(lastName, "Tesla");
+        }
+        // Add further validation checks as needed
+
+        count++;
+    }
+}
+
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------

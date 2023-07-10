@@ -188,6 +188,7 @@ struct Exp
             Option,
             Options,
             OrderBy,
+            NullsOrdering,
             OrderBySpec,
             Pragma,
             Parameter,

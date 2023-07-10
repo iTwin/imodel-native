@@ -1148,11 +1148,30 @@ TEST_F(ECSqlSelectPrepareTests, OrderBy)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("select I FROM ecsql.PSA ORDER BY L NULLS FIRST"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("select I FROM ecsql.PSA ORDER BY L NULLS LAST"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("select I FROM ecsql.PSA ORDER BY L ASC NULLS FIRST"));
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("select I FROM ecsql.PSA ORDER BY L ASC NULLS FIRST"));
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("select I FROM ecsql.PSA ORDER BY L DESC NULLS LAST"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("select I FROM ecsql.PSA ORDER BY L ASC NULLS LAST"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("select I FROM ecsql.PSA ORDER BY L DESC NULLS FIRST"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("select I FROM ecsql.PSA ORDER BY L DESC NULLS LAST"));
 
     }
+
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+
+TEST_F(ECSqlSelectPrepareTests, NullsOrdering)
+{
+    //adding macro in NULLS ordering test to test various ORDER BY clauses with SELECT statements
+
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I FROM ecsql.PSA ORDER BY L NULLS FIRST"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I FROM ecsql.PSA ORDER BY L NULLS LAST"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I FROM ecsql.PSA ORDER BY L ASC NULLS FIRST"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("select I FROM ecsql.PSA ORDER BY L ASC NULLS LAST"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("select I FROM ecsql.PSA ORDER BY L DESC NULLS FIRST"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("select I FROM ecsql.PSA ORDER BY L DESC NULLS LAST"));
+
+
+}
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
