@@ -13,6 +13,7 @@
         <Bindings>
             <VendorAPI Domain="curl" />
             <VendorNotices>Delivery/curl-license.txt</VendorNotices>
+            <VendorNotices>Delivery/c-ares-license.md</VendorNotices>
         </Bindings>
     </Part>
 

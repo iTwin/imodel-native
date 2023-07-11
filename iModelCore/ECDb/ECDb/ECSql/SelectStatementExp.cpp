@@ -697,12 +697,12 @@ Exp::FinalizeParseStatus SelectClauseExp::_FinalizeParsing(ECSqlParseContext& ct
     {
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
         {
-        if (!GetParent()->GetAs<SingleSelectStatementExp>().IsRowConstructor())
+        auto& sel = GetParent()->GetAs<SingleSelectStatementExp>();
+        if (!sel.IsRowConstructor())
             {
             BeAssert(ctx.CurrentArg() != nullptr && "SelectClauseExp::_FinalizeParsing: ECSqlParseContext::GetFinalizeParseArgs is expected to return a RangeClassRefList.");
             BeAssert(ctx.CurrentArg()->GetType() == ECSqlParseContext::ParseArg::Type::RangeClass && "Expecting range class");
-            ECSqlParseContext::RangeClassArg const* arg = static_cast<ECSqlParseContext::RangeClassArg const*>(ctx.CurrentArg());
-            if (SUCCESS != ReplaceAsteriskExpressions(ctx, arg->GetRangeClassInfos()))
+            if (SUCCESS != ReplaceAsteriskExpressions(ctx, sel.GetFrom()->FindRangeClassRefExpressions()))
                 {
                 ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Asterisk replacement in select clause failed unexpectedly.");
                 return FinalizeParseStatus::Error;
@@ -858,6 +858,22 @@ Exp::FinalizeParseStatus SingleSelectStatementExp::_FinalizeParsing(ECSqlParseCo
         if (!IsRowConstructor())
             {
             m_rangeClassRefExpCache = GetFrom()->FindRangeClassRefExpressions();
+
+            if (FindParent(Exp::Type::SubqueryValue) != nullptr)
+                {
+                Exp const* parent = FindParent(Exp::Type::SingleSelect);
+                SingleSelectStatementExp const* cur = parent == nullptr ? nullptr : parent->GetAsCP<SingleSelectStatementExp>();
+
+                while (cur != nullptr)
+                    {
+                    parent = cur->FindParent(Exp::Type::SingleSelect);
+                    cur = parent == nullptr ? nullptr : parent->GetAsCP<SingleSelectStatementExp>();
+                    if (cur != nullptr)
+                        {
+                        cur->GetFrom()->FindRangeClassRefs(m_rangeClassRefExpCache, RangeClassInfo::Scope::Inherited);
+                        }
+                    }
+                }
             ctx.PushArg(std::make_unique<ECSqlParseContext::RangeClassArg>(m_rangeClassRefExpCache));
             }
 

@@ -77,6 +77,11 @@ public:
     (childR).SetParent(this); \
     container.push_back(&childR);
 
+#define SET_RULES_INDEX(rules, indexR) \
+    { \
+    for (auto rule : rules) \
+        rule->SetIndex(indexR); \
+    }
 
 //! This enumerator contains trees for which the rule can be applied.
 enum RuleTargetTree
@@ -95,10 +100,14 @@ Base class for all custom PresentationKeys. It represents any presentation confi
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct EXPORT_VTABLE_ATTRIBUTE PresentationKey : HashableBase
 {
+private:
+    Nullable<int> m_index;
+
 protected:
-    PresentationKey() {}
+    PresentationKey() : m_index(nullptr) {}
 
     ECPRESENTATION_EXPORT virtual MD5 _ComputeHash() const override;
+    virtual void _SetIndex(int& index) { m_index = index++; InvalidateHash(); }
     virtual bool _ShallowEqual(PresentationKeyCR other) const {return true;}
 
     virtual Utf8CP _GetXmlElementName () const = 0;
@@ -111,6 +120,8 @@ protected:
     virtual void _WriteJson(BeJsValue) const {}
 
 public:
+    void SetIndex(int& index) { _SetIndex(index); }
+
     //! Does shallow comparison between this PresentationKey and other PresentationKey
     bool ShallowEqual(PresentationKeyCR other) const {return _ShallowEqual(other);}
 

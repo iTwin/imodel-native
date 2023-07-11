@@ -15,8 +15,6 @@
 #include "NavNodesDataSource.h"
 #include "NavNodesCache.h"
 
-#define MAX_ALLOWED_SIMILAR_ANCESTORS_WHEN_SUPPRESSED 10
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/

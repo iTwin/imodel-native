@@ -6,8 +6,15 @@
 IS_THIRD_PARTY_LIBRARY = 1
 HAVE_PERMISSION_TO_COMPILE_AT_W3=1
 
-# Export/make visible all functions in libcurl
-GCC_DEFAULT_VISIBILITY  = default
+%ifdef __unix
+    # Node also uses cares which can conflict with the version of cares we use in curl if we do not set visibility to hidden.
+    # If symbol visibility is set to default then our symbols can get overriden by Node's cares symbols which can cause 
+    # a segmentation fault.
+
+    GCC_DEFAULT_VISIBILITY = hidden
+%else
+    GCC_DEFAULT_VISIBILITY = default
+%endif
 
 #----------------------------------------------------------
 # Set up all the standard stuff.
@@ -410,6 +417,8 @@ $(o)vquic$(oext) : $(BeCurlLibDir)vquic/vquic.c ${MultiCompileDepends}
     $(o)ares__parse_into_addrinfo$(oext) : $(AresLibDir)ares__parse_into_addrinfo.c ${MultiCompileDepends}
 
     $(o)ares__timeval$(oext) : $(AresLibDir)ares__timeval.c ${MultiCompileDepends}
+
+    $(o)ares_rand$(oext) : $(AresLibDir)ares_rand.c ${MultiCompileDepends}
 
     $(o)ares__read_line$(oext) : $(AresLibDir)ares__read_line.c ${MultiCompileDepends}
 

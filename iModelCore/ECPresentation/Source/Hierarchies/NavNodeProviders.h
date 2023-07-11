@@ -11,6 +11,8 @@
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
+#define MAX_ALLOWED_SIMILAR_ANCESTORS_WHEN_SUPPRESSED 10
+
 struct ECDbUsedClassesListenerWrapper;
 
 /*=================================================================================**//**

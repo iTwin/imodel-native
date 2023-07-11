@@ -158,8 +158,9 @@ struct PropertyInfoStore
     private:
         PropertyCategoryIdentifierType m_type;
         Utf8String m_categoryId;
+        Utf8String m_className;
     public:
-        CategoryOverridesCacheKey(PropertyCategoryIdentifier const& identifier) : m_type(identifier.GetType())
+        CategoryOverridesCacheKey(PropertyCategoryIdentifier const& identifier, Utf8String className) : m_type(identifier.GetType()), m_className(className)
             {
             if (identifier.GetType() == PropertyCategoryIdentifierType::Id)
                 m_categoryId = identifier.AsIdIdentifier()->GetCategoryId();
@@ -170,12 +171,14 @@ struct PropertyInfoStore
             {
             NUMERIC_LESS_COMPARE(m_type, other.m_type);
             STR_LESS_COMPARE(m_categoryId.c_str(), other.m_categoryId.c_str());
+            STR_LESS_COMPARE(m_className.c_str(), other.m_className.c_str());
             return false;
             }
     };
 
 private:
     ECSchemaHelper const& m_schemaHelper;
+    IPropertyCategorySupplierCP m_categorySupplier;
     bmap<ECClassCP, ClassPropertyOverridesInfo> m_perClassPropertyOverrides;
     mutable bmap<ECClassCP, ClassPropertyOverridesInfo> m_aggregatedOverrides; // property overrides, including base class properties
     mutable bmap<CategoryOverridesCacheKey, CategoryOverrideInfo> m_categoryOverridesCache;
@@ -185,10 +188,10 @@ private:
     void CollectCategories(ECClassCP ecClass, PropertyCategorySpecificationsList const& categorySpecifications);
     void InitPropertyOverrides(ContentSpecificationCP specification, bvector<ContentModifierCP> const& contentModifiers);
     ClassPropertyOverridesInfo const& GetOverrides(ECClassCR ecClass) const;
-    CategoryOverrideInfo const* GetCategoryOverride(PropertyCategoryIdentifier const&, PropertyCategorySpecificationsList const&) const;
+    CategoryOverrideInfo const* GetCategoryOverride(PropertyCategoryIdentifier const&, ECClassCP, PropertyCategorySpecificationsList const&) const;
 
 public:
-    PropertyInfoStore(ECSchemaHelper const& helper, bvector<ContentModifierCP> const& contentModifiers, ContentSpecificationCP spec);
+    PropertyInfoStore(ECSchemaHelper const& helper, bvector<ContentModifierCP> const& contentModifiers, ContentSpecificationCP spec, IPropertyCategorySupplierCP categorySupplier);
     bool ShouldDisplay(ECPropertyCR, ECClassCR, std::function<ExpressionContextPtr()> const& expressionContextFactory, PropertySpecificationsList const& = PropertySpecificationsList()) const;
     std::shared_ptr<ContentFieldRenderer const> GetPropertyRenderer(ECPropertyCR, ECClassCR, PropertySpecificationCP = nullptr) const;
     std::shared_ptr<ContentFieldEditor const> GetPropertyEditor(ECPropertyCR, ECClassCR, PropertySpecificationCP = nullptr) const;
