@@ -139,6 +139,7 @@ struct QualifiedJoinExp final : JoinExp
 //=======================================================================================
 //! @bsiclass
 //+===============+===============+===============+===============+===============+======
+struct SubqueryRefExp;
 struct ECRelationshipJoinExp final : JoinExp
     {
     public:
@@ -155,12 +156,19 @@ struct ECRelationshipJoinExp final : JoinExp
             friend ECRelationshipJoinExp;
             private:
                 ClassNameExp const*    m_classRef;
+                SubqueryRefExp const*    m_viewRef;
                 ClassLocation           m_location;
             protected:
-                ResolvedEndPoint() :m_classRef(nullptr), m_location(ClassLocation::NotResolved){}
+                ResolvedEndPoint() :m_classRef(nullptr), m_viewRef(nullptr), m_location(ClassLocation::NotResolved){}
                 void SetClassRef(ClassNameExp const* classRef)
                     {
                     m_classRef = classRef;
+                    m_viewRef = nullptr;
+                    }
+                void SetViewRef(SubqueryRefExp const* viewRef)
+                    {
+                    m_viewRef = viewRef;
+                    m_classRef = nullptr;
                     }
                 void SetLocation(ClassLocation location, bool append)
                     {
@@ -171,7 +179,9 @@ struct ECRelationshipJoinExp final : JoinExp
                     }
             public:
                 ClassNameExp const* GetClassNameRef() const { return m_classRef; }
+                SubqueryRefExp const* GetViewRef() const { return m_viewRef; }
                 ClassLocation       GetLocation() const { return m_location; }
+                bool                IsView() const { return m_viewRef != nullptr; }
             };
     private:
         JoinDirection           m_direction;

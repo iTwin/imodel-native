@@ -1160,6 +1160,40 @@ ECSqlStatus ECSqlExpPreparer::PrepareQueryExp(NativeSqlBuilder::List& nativeSqlS
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
+ECSqlStatus ECSqlExpPreparer::AppendRelationshipEPId(NativeSqlBuilder& sql, ECRelationshipJoinExp::ResolvedEndPoint const& ep)
+    {
+    if(ep.IsView())
+        {
+        auto viewRef = ep.GetViewRef();
+        Utf8PrintfString viewId("(%s.%s)", viewRef->GetId().c_str(), "ECInstanceId");
+        sql.Append(viewId);
+        return ECSqlStatus::Success;
+        }
+
+    
+    ECInstanceIdPropertyMap const* fromECInstanceIdPropMap = ep.GetClassNameRef()->GetInfo().GetMap().GetECInstanceIdPropertyMap();
+    if (fromECInstanceIdPropMap == nullptr)
+        {
+        BeAssert(false);
+        return ECSqlStatus::Error;
+        }
+
+    ToSqlPropertyMapVisitor fromECInstanceIdSqlVisitor(*fromECInstanceIdPropMap->GetTables().front(), ToSqlPropertyMapVisitor::ECSqlScope::Select, ep.GetClassNameRef()->GetId());
+    fromECInstanceIdPropMap->AcceptVisitor(fromECInstanceIdSqlVisitor);
+    if (fromECInstanceIdSqlVisitor.GetResultSet().size() != 1)
+        {
+        BeAssert(false);
+        return ECSqlStatus::Error;
+        }
+
+    sql.Append(fromECInstanceIdSqlVisitor.GetResultSet().front().GetSqlBuilder().GetSql());
+    return ECSqlStatus::Success;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
 ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ctx, ECRelationshipJoinExp const& exp)
     {
     // (from) INNER JOIN (to) ON (from.ECInstanceId = to.ECInstanceId)
@@ -1281,25 +1315,10 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
     sql.AppendEscaped(relationshipClassNameExp.GetId().c_str());
 
     sql.Append(" ON ");
-    {
-    ECInstanceIdPropertyMap const* fromECInstanceIdPropMap = fromEP.GetClassNameRef()->GetInfo().GetMap().GetECInstanceIdPropertyMap();
-    if (fromECInstanceIdPropMap == nullptr)
-        {
-        BeAssert(false);
-        return ECSqlStatus::Error;
-        }
 
-    ToSqlPropertyMapVisitor fromECInstanceIdSqlVisitor(*fromECInstanceIdPropMap->GetTables().front(), ToSqlPropertyMapVisitor::ECSqlScope::Select, fromEP.GetClassNameRef()->GetId());
-    fromECInstanceIdPropMap->AcceptVisitor(fromECInstanceIdSqlVisitor);
-    if (fromECInstanceIdSqlVisitor.GetResultSet().size() != 1)
-        {
-        BeAssert(false);
-        return ECSqlStatus::Error;
-        }
+    AppendRelationshipEPId(sql, fromEP);
 
-    sql.Append(fromECInstanceIdSqlVisitor.GetResultSet().front().GetSqlBuilder().GetSql());
     sql.Append(ExpHelper::ToSql(BooleanSqlOperator::EqualTo));
-    }
 
     {
     PropertyMap const* fromRelatedIdPropMap = relationshipClassNameExp.GetInfo().GetMap().GetPropertyMaps().Find(fromRelatedKey);
@@ -1329,25 +1348,9 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
     sql.Append(" ON ");
     }
 
-    {
-    ECInstanceIdPropertyMap const*  toECInstanceIdPropMap = toEP.GetClassNameRef()->GetInfo().GetMap().GetECInstanceIdPropertyMap();
-    if (toECInstanceIdPropMap == nullptr)
-        {
-        BeAssert(false);
-        return ECSqlStatus::Error;
-        }
+    AppendRelationshipEPId(sql, toEP);
 
-    ToSqlPropertyMapVisitor toECInstanceIdSqlVisitor(*toECInstanceIdPropMap->GetTables().front(), ToSqlPropertyMapVisitor::ECSqlScope::Select, toEP.GetClassNameRef()->GetId());
-    toECInstanceIdPropMap->AcceptVisitor(toECInstanceIdSqlVisitor);
-    if (toECInstanceIdSqlVisitor.GetResultSet().size() != 1)
-        {
-        BeAssert(false);
-        return ECSqlStatus::Error;
-        }
-
-    sql.Append(toECInstanceIdSqlVisitor.GetResultSet().front().GetSqlBuilder().GetSql());
     sql.Append(ExpHelper::ToSql(BooleanSqlOperator::EqualTo));
-    }
 
     {
     PropertyMap const* toRelatedIdPropMap = relationshipClassNameExp.GetInfo().GetMap().GetPropertyMaps().Find(toRelatedKey);

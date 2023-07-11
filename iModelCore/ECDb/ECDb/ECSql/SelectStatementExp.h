@@ -429,6 +429,7 @@ struct SubqueryRefExp final : RangeClassRefExp
     {
     friend struct ECSqlParser;
     private:
+        ECN::ECClassCP m_viewClass;
         Utf8StringCR _GetId() const override { return GetAlias(); }
 	    PropertyMatchResult _FindProperty(ECSqlParseContext& ctx, PropertyPath const &propertyPath, const PropertyMatchOptions &options) const override {
             PropertyMatchOptions overrideOptions = options;
@@ -440,8 +441,10 @@ struct SubqueryRefExp final : RangeClassRefExp
         Utf8String _ToString() const override;
 
     public:
-        SubqueryRefExp(std::unique_ptr<SubqueryExp>, Utf8CP alias, PolymorphicInfo polymorphic);
+        SubqueryRefExp(std::unique_ptr<SubqueryExp>, Utf8CP alias, PolymorphicInfo polymorphic, ECN::ECClassCP viewClass = nullptr);
         SubqueryExp const* GetSubquery() const { return GetChild<SubqueryExp>(0); }
+        //! Obtain the View class for this expression, if it represents a view. Otherwise this returns nullptr.
+        ECN::ECClassCP GetViewClass() const { return m_viewClass; }
     };
 
 //******************* Select related boolean exp *******************************

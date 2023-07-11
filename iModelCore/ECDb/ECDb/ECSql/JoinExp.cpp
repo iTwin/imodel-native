@@ -151,6 +151,8 @@ BentleyStatus ECRelationshipJoinExp::ResolveRelationshipEnds(ECSqlParseContext& 
 
     bmap<ECClassId, ClassNameExp const*> fromClassExistsInSourceList;
     bmap<ECClassId, ClassNameExp const*> fromClassExistsInTargetList;
+    bmap<ECClassId, SubqueryRefExp const*> fromViewExistsInSourceList;
+    bmap<ECClassId, SubqueryRefExp const*> fromViewExistsInTargetList;
 
     for (RangeClassInfo const& classRef : fromClassRefs)
         {
@@ -181,32 +183,46 @@ BentleyStatus ECRelationshipJoinExp::ResolveRelationshipEnds(ECSqlParseContext& 
             }
         else if(expType ==  Exp::Type::SubqueryRef)
             {
-            SubqueryRefExp const& fromClassNameExpression = exp.GetAs<SubqueryRefExp>();
-            //TODO: SubqueryRefExp does not expose classId if it's a View.
-            auto* subQuery = fromClassNameExpression.GetSubquery();
-            auto type = subQuery->GetType();
-            if(type == Exp::Type::ClassName)
-                {
+            SubqueryRefExp const& fromSubqueryExpression = exp.GetAs<SubqueryRefExp>();
+            auto viewClass = fromSubqueryExpression.GetViewClass();
+            if(viewClass == nullptr)
                 continue;
+            
+            BeAssert(viewClass->HasId());
+            auto fromClassId = viewClass->GetId();
+
+            //Same SubqueryRef/ECClassId could exist in from SELECT * FROM FOO I, FOO B we need to skip same instance of these views
+            if (fromViewExistsInSourceList.find(fromClassId) == fromViewExistsInSourceList.end())
+                {
+                auto itor = sourceList.find(fromClassId);
+                if (itor != sourceList.end())
+                    fromViewExistsInSourceList[fromClassId] = &fromSubqueryExpression;
+                }
+
+            if (fromViewExistsInTargetList.find(fromClassId) == fromViewExistsInTargetList.end())
+                {
+                auto itor = targetList.find(fromClassId);
+                if (itor != targetList.end())
+                    fromViewExistsInTargetList[fromClassId] = &fromSubqueryExpression;
                 }
             }
         }
 
     //ECSQL_TODO: If possible remove child class from 'from class list'. If parent is added do not add child to it. 
 
-    if (fromClassExistsInSourceList.empty() && fromClassExistsInTargetList.empty())
+    if (fromClassExistsInSourceList.empty() && fromClassExistsInTargetList.empty() && fromViewExistsInSourceList.empty() && fromViewExistsInTargetList.empty())
         {
         ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "No ECClass in the FROM and JOIN clauses matches the ends of the relationship '%s'.", relationshipClass->GetFullName());
         return ERROR;
         }
 
-    if (fromClassExistsInSourceList.size() > 1 || fromClassExistsInTargetList.size() > 1)
+    if ((fromClassExistsInSourceList.size() + fromViewExistsInSourceList.size()) > 1 || (fromClassExistsInTargetList.size() + fromViewExistsInTargetList.size()) > 1)
         {
         ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Multiple classes in the FROM and JOIN clauses match an end of the relationship '%s'.", relationshipClass->GetFullName());
         return ERROR;
         }
 
-    if (fromClassExistsInSourceList.size() == 1 && fromClassExistsInTargetList.size() == 1)
+    if ((fromClassExistsInSourceList.size() + fromViewExistsInSourceList.size()) == 1 && (fromClassExistsInTargetList.size() + fromViewExistsInTargetList.size()) == 1)
         {
         if (fromClassExistsInSourceList.begin()->first != fromClassExistsInTargetList.begin()->first)
             {
@@ -221,12 +237,23 @@ BentleyStatus ECRelationshipJoinExp::ResolveRelationshipEnds(ECSqlParseContext& 
         fromEP.SetLocation(ClassLocation::ExistInSource, true);
         }
 
+    if (!fromViewExistsInSourceList.empty())
+        {
+        fromEP.SetViewRef(fromViewExistsInSourceList.begin()->second);
+        fromEP.SetLocation(ClassLocation::ExistInSource, true);
+        }
+
     if (!fromClassExistsInTargetList.empty())
         {
         fromEP.SetClassRef(fromClassExistsInTargetList.begin()->second);
         fromEP.SetLocation(ClassLocation::ExistInTarget, true);
         }
 
+    if (!fromViewExistsInTargetList.empty())
+        {
+        fromEP.SetViewRef(fromViewExistsInTargetList.begin()->second);
+        fromEP.SetLocation(ClassLocation::ExistInTarget, true);
+        }
 
     bool isSelf = (fromEP.GetLocation() == ClassLocation::ExistInBoth && toEP.GetLocation() == ClassLocation::ExistInBoth);
     if (!isSelf)
@@ -257,13 +284,13 @@ BentleyStatus ECRelationshipJoinExp::ResolveRelationshipEnds(ECSqlParseContext& 
             }
         }
 
-    if (fromEP.GetLocation() == ClassLocation::NotResolved || fromEP.GetClassNameRef() == nullptr)
+    if (fromEP.GetLocation() == ClassLocation::NotResolved || (fromEP.GetClassNameRef() == nullptr && fromEP.GetViewRef() == nullptr))
         {
         ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Could not find class on one of the ends of relationship %s", relationshipClass->GetFullName());
         return ERROR;
         }
 
-    if (toEP.GetLocation() == ClassLocation::NotResolved || toEP.GetClassNameRef() == nullptr)
+    if (toEP.GetLocation() == ClassLocation::NotResolved || (toEP.GetClassNameRef() == nullptr && toEP.GetViewRef() == nullptr))
         {
         ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Could not find class on one of the ends of relationship %s", relationshipClass->GetFullName());
         return ERROR;
