@@ -126,21 +126,4 @@ public:
         }
 };
 
-struct StringSchemaLocater : IECSchemaLocater, NonCopyableClass
-    {
-private:
-    bmap<Utf8String, Utf8String> m_schemaXml;
-protected:
-    ECSchemaPtr _LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext) override
-        {
-        ECSchemaPtr schema;
-        auto schemaXml = m_schemaXml.find(key.m_schemaName);
-        if (schemaXml != m_schemaXml.end())
-            ECSchema::ReadFromXmlString(schema, schemaXml->second.c_str(), schemaContext);
-        return schema;
-        }
-public:
-    void AddSchemaString(Utf8String schemaName, Utf8String schemaXml) {m_schemaXml[schemaName] = schemaXml;}
-    };
-
 END_BENTLEY_ECN_TEST_NAMESPACE
