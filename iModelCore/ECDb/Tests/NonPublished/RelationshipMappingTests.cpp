@@ -17,6 +17,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //+---------------+---------------+---------------+---------------+---------------+------
 struct RelationshipMappingTestFixture : public ECDbTestFixture
     {
+    //! Helper for common schema pattern. It contains one base entity and an element class, so the tests do not have to repeat that part several times.
     Utf8String ConstructTestSchema(Utf8CP content, Utf8CP version = "01.00.00")
         {
         constexpr Utf8CP schemaTemplate = R"xml(<?xml version='1.0' encoding='utf-8' ?>
@@ -55,7 +56,9 @@ struct RelationshipMappingTestFixture : public ECDbTestFixture
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(RelationshipMappingTestFixture, MoveNavUpInHierarchy)
     {
-    //This should fail because changing the relationship on the nav prop is not allowed
+    // Introduces a new nav prop one level above the existing one (existing is on MaterialProfile, new is on MaterialProfileDefinition) using the same property name.
+    // Reflects a real scenario of what people attempted to do.
+    // Expected result: Failing because the two nav props with the same name use different relationships
     Utf8String schemaXml1 = ConstructTestSchema(R"xml(
         <ECEntityClass typeName="Material">
             <BaseClass>Element</BaseClass>
@@ -138,6 +141,8 @@ TEST_F(RelationshipMappingTestFixture, MoveNavUpInHierarchy)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(RelationshipMappingTestFixture, MoveNavUpInHierarchyRemoveOriginal)
     {
+    // Attempts to move a nav prop to one level above while removing the original nav property so it does not run into the error of the previous test.
+    // however, this scenario also does not work because deleting a nav property is under no circumstances permitted in today's code.
     Utf8String schemaXml1 = ConstructTestSchema(R"xml(
         <ECEntityClass typeName="Material">
             <BaseClass>Element</BaseClass>
@@ -306,8 +311,9 @@ TEST_F(RelationshipMappingTestFixture, MoveNavUpInHierarchyRemoveAndIgnore)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(RelationshipMappingTestFixture, MoveNavUpInHierarchyAdjustOriginal)
     {
-    //Adjust the existing nav prop to use the same relationship as the new base nav prop.
-    //This currently fails because changing the relationship class of an existing nav prop is not allowed.
+    //Introduce a new nav prop with the same name as an existing one, a level above in the hierarchy
+    //This time, adjust the existing nav prop to use the same relationship as the new base nav prop.
+    //This currently also fails because changing the relationship class of an existing nav prop is not allowed.
     Utf8String schemaXml1 = ConstructTestSchema(R"xml(
         <ECEntityClass typeName="Material">
             <BaseClass>Element</BaseClass>
@@ -392,11 +398,11 @@ TEST_F(RelationshipMappingTestFixture, MoveNavUpInHierarchyAdjustOriginal)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(RelationshipMappingTestFixture, SpatialAnalysisMapProblem)
     {
-    /*
-    Simulates attempted changes made to SpatialAnalysis where a RelClassIdColumn with the same name is supposed to be both
-    Physical (for the base relationship) and Virtual (for the derived one).
-    Bug was fixed so this should not produce an error.
-    */
+    // Simulates attempted changes made to SpatialAnalysis which found a bug.
+    // The RelClassIdColumn of the overwritten navigation property "Material" ends up being both
+    // Physical (for the base relationship) and Virtual (for the overwritten one).
+    // The same column cannot be both, so the bug threw an error.
+    // Bug was fixed so this should import fine.
     Utf8String schemaXml1 = ConstructTestSchema(R"xml(
         <ECEntityClass typeName="PhysicalMaterial" modifier="Abstract">
             <BaseClass>Element</BaseClass>
@@ -484,11 +490,10 @@ TEST_F(RelationshipMappingTestFixture, SpatialAnalysisMapProblem)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(RelationshipMappingTestFixture, SpatialAnalysisMapProblemWithoutSharedColumns)
     {
-    /*
-    Same as the above test, however without using shared columns.
-    This means there should be a MaterialRelClassIdAlt column instead of using a shared column in the final ecdb.
-    However, the foreign key column cannot be reused in this case, which causes this test to fail currently.
-    */
+    // Same as the above test, however without using shared columns.
+    // This produces a clash on the foreign-key column which cannot be reused for the overwritten property, but since this is not using
+    // shared columns where we could fall back to a new column, this schema gets rejected.
+
     Utf8String schemaXml1 = ConstructTestSchema(R"xml(
         <ECEntityClass typeName="BaseTPHNonShared" modifier="Abstract">
             <ECCustomAttributes>
@@ -591,9 +596,9 @@ TEST_F(RelationshipMappingTestFixture, SpatialAnalysisMapProblemWithoutSharedCol
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(RelationshipMappingTestFixture, ManyFKRelsWithSameName)
     {
-    /* This test simulates 4 different FK relationships going into the same table (BaseTPH) while using the same navigation property name.
-        2 of the nav props should use virtual relClassId columns (sealed relationship) and 2 should use real physical columns
-    */
+    // This test simulates 4 different FK relationships going into the same shared table (BaseTPH) while using the same navigation property name.
+    // 2 of the nav props should use virtual relClassId columns (sealed relationship) and 2 should use real physical columns
+    // The basic scenario is already covered in the tests above, but this here checks with more than 2 clashing properties in the same table
     Utf8String schemaXml1 = ConstructTestSchema(R"xml(
         <ECEntityClass typeName="Material" modifier="Sealed">
             <BaseClass>Element</BaseClass>
@@ -719,9 +724,11 @@ TEST_F(RelationshipMappingTestFixture, ManyFKRelsWithSameName)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(RelationshipMappingTestFixture, FKRelsWithDifferentNotNullConstraints)
     {
-    /* This test simulates 2 different FK relationships going into the same table (BaseTPH) while using the same navigation property name.
-        One of them uses a NotNull constraint while the other does not.
-    */
+    // This test attempts to produce a problem where 2 nav props of the same name go into the same table (BaseTPH)
+    // However, the nav props differ in their "not null" constraint on the RelClassId column. Which could in theory end up producing an inconsistent constraint.
+    // In reality, this schema cannot be imported because it refuses to re-use the existing ForeignKey column.
+    // If this test ever starts to fail, we probably started supporting the scenario and should pick up checking if the constraint works as expected.
+    // DbMappingManager.cpp Line 1269: call to SetNotNullConstraint()
     Utf8String schemaXml1 = ConstructTestSchema(R"xml(
         <ECEntityClass typeName="Material" modifier="Sealed">
             <BaseClass>Element</BaseClass>
