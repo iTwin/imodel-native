@@ -2166,34 +2166,78 @@ objs =% $(MultiCompileObjectList)
         |[== Building $@, ($=) ==]
         $(BENTLEY_WIN32_TOOLCHAIN_MLCmd) -c -Fo$@ $<
 
-    $(o)x86_64cpuid$(oext) : $(vendorSrc)crypto/x86_64cpuid.asm ${MultiCompileDepends}
+    $(o)aes-x86_64$(oext) : $(vendorSrc)\crypto\aes\aes-x86_64.asm ${MultiCompileDepends}
 
-    $(o)aesni-x86_64$(oext) : $(vendorSrc)crypto/aes/asm/aesni-x86_64.asm ${MultiCompileDepends}
+    $(o)aesni-mb-x86_64$(oext) : $(vendorSrc)\crypto\aes\aesni-mb-x86_64.asm ${MultiCompileDepends}
 
-    $(o)aesni-gcm-x86_64$(oext) : $(vendorSrc)crypto/modes/asm/aesni-gcm-x86_64.asm ${MultiCompileDepends}
+    $(o)aesni-sha1-x86_64$(oext) : $(vendorSrc)\crypto\aes\aesni-sha1-x86_64.asm ${MultiCompileDepends}
 
-    $(o)ghash-x86_64$(oext) : $(vendorSrc)crypto/modes/asm/ghash-x86_64.asm ${MultiCompileDepends}
+    $(o)aesni-sha256-x86_64$(oext) : $(vendorSrc)\crypto\aes\aesni-sha256-x86_64.asm ${MultiCompileDepends}
 
-    $(o)aes-x86_64$(oext) : $(vendorSrc)crypto/aes/aes-x86_64.asm ${MultiCompileDepends}
+    $(o)aesni-x86_64$(oext) : $(vendorSrc)\crypto\aes\aesni-x86_64.asm ${MultiCompileDepends}
 
-    $(o)aesni-sha1-x86_64$(oext) : $(vendorSrc)crypto/aes/aesni-sha1-x86_64.asm ${MultiCompileDepends}
+    $(o)bsaes-x86_64$(oext) : $(vendorSrc)\crypto\aes\bsaes-x86_64.asm ${MultiCompileDepends}
 
-    $(o)sha1-x86_64$(oext) : $(vendorSrc)crypto/sha/sha1-x86_64.asm ${MultiCompileDepends}
+    $(o)vpaes-x86_64$(oext) : $(vendorSrc)\crypto\aes\vpaes-x86_64.asm ${MultiCompileDepends}
 
-    $(o)sha1-mb-x86_64$(oext) : $(vendorSrc)crypto/sha/sha1-mb-x86_64.asm ${MultiCompileDepends}
+    $(o)rsaz-2k-avx512$(oext) : $(vendorSrc)\crypto\bn\rsaz-2k-avx512.asm ${MultiCompileDepends}
 
-    $(o)aesni-mb-x86_64$(oext) : $(vendorSrc)crypto/aes/aesni-mb-x86_64.asm ${MultiCompileDepends}
+    $(o)rsaz-3k-avx512$(oext) : $(vendorSrc)\crypto\bn\rsaz-3k-avx512.asm ${MultiCompileDepends}
 
-    $(o)aesni-sha256-x86_64$(oext) : $(vendorSrc)crypto/aes/aesni-sha256-x86_64.asm ${MultiCompileDepends}
+    $(o)rsaz-4k-avx512$(oext) : $(vendorSrc)\crypto\bn\rsaz-4k-avx512.asm ${MultiCompileDepends}
 
-    $(o)sha256-x86_64$(oext) : $(vendorSrc)crypto/sha/sha256-x86_64.asm ${MultiCompileDepends}
+    $(o)rsaz-avx2$(oext) : $(vendorSrc)\crypto\bn\rsaz-avx2.asm ${MultiCompileDepends}
 
-    $(o)sha256-mb-x86_64$(oext) : $(vendorSrc)crypto/sha/sha256-mb-x86_64.asm ${MultiCompileDepends}
+    $(o)rsaz-x86_64$(oext) : $(vendorSrc)\crypto\bn\rsaz-x86_64.asm ${MultiCompileDepends}
 
-    $(o)aes-gcm-avx512$(oext) : $(vendorSrc)crypto/modes/aes-gcm-avx512.asm ${MultiCompileDepends}
+    $(o)x86_64-gf2m$(oext) : $(vendorSrc)\crypto\bn\x86_64-gf2m.asm ${MultiCompileDepends}
+
+    $(o)x86_64-mont$(oext) : $(vendorSrc)\crypto\bn\x86_64-mont.asm ${MultiCompileDepends}
+
+    $(o)x86_64-mont5$(oext) : $(vendorSrc)\crypto\bn\x86_64-mont5.asm ${MultiCompileDepends}
+
+    $(o)cmll-x86_64$(oext) : $(vendorSrc)\crypto\camellia\cmll-x86_64.asm ${MultiCompileDepends}
+
+    $(o)chacha-x86_64$(oext) : $(vendorSrc)\crypto\chacha\chacha-x86_64.asm ${MultiCompileDepends}
+
+    $(o)ecp_nistz256-x86_64$(oext) : $(vendorSrc)\crypto\ec\ecp_nistz256-x86_64.asm ${MultiCompileDepends}
+
+    $(o)x25519-x86_64$(oext) : $(vendorSrc)\crypto\ec\x25519-x86_64.asm ${MultiCompileDepends}
+
+    $(o)md5-x86_64$(oext) : $(vendorSrc)\crypto\md5\md5-x86_64.asm ${MultiCompileDepends}
+
+    $(o)aes-gcm-avx512$(oext) : $(vendorSrc)\crypto\modes\aes-gcm-avx512.asm ${MultiCompileDepends}
+
+    $(o)aesni-gcm-x86_64$(oext) : $(vendorSrc)\crypto\modes\aesni-gcm-x86_64.asm ${MultiCompileDepends}
+
+    $(o)ghash-x86_64$(oext) : $(vendorSrc)\crypto\modes\ghash-x86_64.asm ${MultiCompileDepends}
+
+    $(o)poly1305-x86_64$(oext) : $(vendorSrc)\crypto\poly1305\poly1305-x86_64.asm ${MultiCompileDepends}
+
+    $(o)rc4-md5-x86_64$(oext) : $(vendorSrc)\crypto\rc4\rc4-md5-x86_64.asm ${MultiCompileDepends}
+
+    $(o)rc4-x86_64$(oext) : $(vendorSrc)\crypto\rc4\rc4-x86_64.asm ${MultiCompileDepends}
+
+    $(o)keccak1600-x86_64$(oext) : $(vendorSrc)\crypto\sha\keccak1600-x86_64.asm ${MultiCompileDepends}
+
+    $(o)sha1-mb-x86_64$(oext) : $(vendorSrc)\crypto\sha\sha1-mb-x86_64.asm ${MultiCompileDepends}
+
+    $(o)sha1-x86_64$(oext) : $(vendorSrc)\crypto\sha\sha1-x86_64.asm ${MultiCompileDepends}
+
+    $(o)sha256-mb-x86_64$(oext) : $(vendorSrc)\crypto\sha\sha256-mb-x86_64.asm ${MultiCompileDepends}
+
+    $(o)sha512-x86_64$(oext) : $(vendorSrc)\crypto\sha\sha512-x86_64.asm ${MultiCompileDepends}
+
+    $(o)sha256-x86_64$(oext) : $(vendorSrc)\crypto\sha\sha256-x86_64.asm ${MultiCompileDepends}
+
+    $(o)uplink-x86_64$(oext) : $(vendorSrc)\crypto\uplink-x86_64.asm ${MultiCompileDepends}
+
+    $(o)wp-x86_64$(oext) : $(vendorSrc)\crypto\whrlpool\wp-x86_64.asm ${MultiCompileDepends}
+
+    $(o)x86_64cpuid$(oext) : $(vendorSrc)\crypto\x86_64cpuid.asm ${MultiCompileDepends}
 
     always:
-      ~set objs $(objs) $(o)x86_64cpuid$(oext) $(o)aesni-x86_64$(oext) $(o)aesni-gcm-x86_64$(oext) $(o)ghash-x86_64$(oext) $(o)aes-x86_64$(oext) $(o)aesni-sha1-x86_64$(oext) $(o)sha1-x86_64$(oext) $(o)sha1-mb-x86_64$(oext) $(o)aesni-mb-x86_64$(oext) $(o)aesni-sha256-x86_64$(oext) $(o)sha256-x86_64$(oext) $(o)sha256-mb-x86_64$(oext) $(o)aes-gcm-avx512$(oext)
+        ~set objs $(objs) $(o)aes-x86_64$(oext) $(o)aesni-mb-x86_64$(oext) $(o)aesni-sha1-x86_64$(oext) $(o)aesni-sha256-x86_64$(oext) $(o)aesni-x86_64$(oext) $(o)bsaes-x86_64$(oext) $(o)vpaes-x86_64$(oext) $(o)rsaz-2k-avx512$(oext) $(o)rsaz-3k-avx512$(oext) $(o)rsaz-4k-avx512$(oext) $(o)rsaz-avx2$(oext) $(o)rsaz-x86_64$(oext) $(o)x86_64-gf2m$(oext) $(o)x86_64-mont$(oext) $(o)x86_64-mont5$(oext) $(o)cmll-x86_64$(oext) $(o)chacha-x86_64$(oext) $(o)ecp_nistz256-x86_64$(oext) $(o)x25519-x86_64$(oext) $(o)md5-x86_64$(oext) $(o)aes-gcm-avx512$(oext) $(o)aesni-gcm-x86_64$(oext) $(o)ghash-x86_64$(oext) $(o)poly1305-x86_64$(oext) $(o)rc4-md5-x86_64$(oext) $(o)rc4-x86_64$(oext) $(o)keccak1600-x86_64$(oext) $(o)sha1-mb-x86_64$(oext) $(o)sha1-x86_64$(oext) $(o)sha256-mb-x86_64$(oext) $(o)sha512-x86_64$(oext) $(o)sha256-x86_64$(oext) $(o)uplink-x86_64$(oext) $(o)wp-x86_64$(oext) $(o)x86_64cpuid$(oext)
 
 %endif
 
