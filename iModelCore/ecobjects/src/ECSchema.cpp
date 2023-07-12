@@ -3211,6 +3211,27 @@ ECSchemaPtr SearchPathSchemaFileLocater::_LocateSchema(SchemaKeyR key, SchemaMat
     return schemaOut;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaPtr StringSchemaLocater::_LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext)
+    {
+    // Check if locator has a schema key that matches the key and match type
+    auto matches = [&key, &matchType](const std::pair<SchemaKey, Utf8String>& pair) { return pair.first.Matches(key, matchType); };
+    bmap<SchemaKey, Utf8String>::const_iterator iter = std::find_if(m_schemaStrings.begin(), m_schemaStrings.end(), matches);
+    if (iter == m_schemaStrings.end())
+        return nullptr;
+
+    // Read the schema from Xml string
+    ECSchemaPtr schemaOut;
+    if (SchemaReadStatus::Success != ECSchema::ReadFromXmlString(schemaOut, iter->second.c_str(), schemaContext))
+        {
+        return nullptr;
+        }
+
+    return schemaOut;
+    }
+
 struct ChecksumHelper
 {
     static Utf8String ComputeCheckSumForString(Utf8CP string, size_t len)
@@ -3788,6 +3809,24 @@ void ECSchema::RemoveInvalidDisplayCharacters(ECSchemaR schema)
                 }
             }
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaReadStatus ECSchema::ReadSchemaKey(Utf8StringR schemaXml, SchemaKey& schemaKey)
+    {
+    pugi::xml_document xmlDoc;
+    pugi::xml_parse_result parseResult = xmlDoc.load_string(schemaXml.c_str());
+    if(!parseResult)
+        {
+        LOG.errorv("Error loading XML string: %s (error at char %d)", parseResult.description(), parseResult.offset);
+        return SchemaReadStatus::FailedToParseXml;
+        }
+
+    uint32_t ecXmlMajorVersion, ecXmlMinorVersion;
+    pugi::xml_node schemaNode;
+    return SchemaXmlReader::ReadSchemaStub(schemaKey, ecXmlMajorVersion, ecXmlMinorVersion, schemaNode, xmlDoc);
     }
 
 /////////////////////////////////////////////////////////////////////////////////////////
