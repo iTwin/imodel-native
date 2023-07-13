@@ -502,3 +502,10 @@ CreateBuildContext:
 $(BuildContext)Delivery/jpeg-turbo-license.txt : $(turboJpegSrcDir)LICENSE.md
     $(LinkFirstDepToFirstTarget)
 
+%if defined(iTwinNativeThirdParty)
+    # If Windows platform, need to add nasm notice.
+    %if $(TARGET_PROCESSOR_ARCHITECTURE)=="x86" || $(TARGET_PROCESSOR_ARCHITECTURE)=="x64"
+        $(BuildContext)Delivery/nasm-license.txt : $(nasmBaseDir)LICENSE
+            $(LinkFirstDepToFirstTarget)
+    %endif
+%endif
