@@ -191,7 +191,7 @@ DSpiral2dPlacementCP _GetSpiralPlacementCP() const override {return &m_placement
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-void _Process(ICurvePrimitiveProcessor &processor, DSegment1dCP interval) const override 
+void _Process(ICurvePrimitiveProcessor &processor, DSegment1dCP interval) const override
     {
     processor._ProcessSpiral (*this, m_placement, interval);
     }
@@ -346,7 +346,7 @@ bool _TransformInPlace (TransformCR transform) override
         m_placement.frame = Transform::From (matrixC, originC);
         m_placement.spiral->ScaleInPlace (scale);
         }
-    else        
+    else
         m_placement.frame.InitProduct (transform, m_placement.frame);
     return true;
     }
@@ -423,7 +423,7 @@ bool _IsValidGeometry(GeometryValidatorPtr &validator) const override
     return true;
     }
 
-ICurvePrimitivePtr _CloneAsSingleOffsetPrimitiveXY (CurveOffsetOptionsCR options) const override 
+ICurvePrimitivePtr _CloneAsSingleOffsetPrimitiveXY (CurveOffsetOptionsCR options) const override
     {
     // ASSUME m_stroke is a reasonable number of base points.
     bvector<DPoint3d> fitPoints;
@@ -511,7 +511,7 @@ bool _AddStrokes (bvector <DPoint3d> &points, IFacetOptionsCR options,
         for (size_t i = i0; i < m_strokes.m_xyz.size (); i++)
             points.push_back (m_strokes.m_xyz[i]);
         return true;
-        }    
+        }
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -654,11 +654,11 @@ bool _AddStrokes (bvector <PathLocationDetail> &points, IFacetOptionsCR options,
             }
         }
     return true;
-    }    
+    }
 // TODO??
 // _AnnounceKeyPoints?
 // _PointAtSignedDistanceFromFraction (RotMatrix
-// 
+//
 void  _AppendCurvePlaneIntersections (DPlane3dCR plane, bvector<CurveLocationDetailPair> &intersections, double tolerance) const override
     {
     size_t i0 = intersections.size ();
@@ -788,7 +788,7 @@ double endFraction          //!< [in] end fraction for active interval.
         // Create a circular arc ...
         double theta = lengthAB / radiusA;      // if radiusA is negative, all the vector and angle signs coordinate to move in positive x direction !!!
         DEllipse3d arc = DEllipse3d::FromStartTangentNormalRadiusSweep (
-                    startPoint, 
+                    startPoint,
                     DVec3d::From (cos (startRadians), sin (startRadians)),
                     DVec3d::From (0,0,1),
                     radiusA,
@@ -807,7 +807,7 @@ double endFraction          //!< [in] end fraction for active interval.
         return CreatePseudoSpiralCurvatureLengthCurvature_go (typeCode, startPoint, startRadians, signB * curvatureB, lengthAB, signA * curvatureA, true, startFraction, endFraction);
         }
     }
- 
+
 CurveVectorPtr CurveVector::ConstructSpiralArcSpiralTransitionXX
 (
 DPoint3dCR xyz0,
@@ -823,7 +823,7 @@ double spiralLength
     DEllipse3d arc;
     auto cv = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open);
     if (DSpiral2dBase::LineSpiralArcSpiralLineTransition (xyz0, xyz2, xyz1,
-                arcRadius, spiralLength, spiralLength, *spiralA, *spiralB, 
+                arcRadius, spiralLength, spiralLength, *spiralA, *spiralB,
                 xyzA, xyzB, xyzC, xyzD, arc
                 ))
         {

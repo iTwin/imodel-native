@@ -152,8 +152,18 @@ GEOMDLLIMPEXP void SetFractionFromComponentFraction (double componentFraction, s
 //! All other data (point, curve pointer, a) is left unchanged.
 GEOMDLLIMPEXP void SetComponentFractionFromFraction (double globalFraction, size_t numComponent);
 
-//! Sort to gather CurveLocationDetail's with same curve, and then by fraction within those curves.
+//! Sort to gather CurveLocationDetail's with same curve, and then sort by fraction within those curves.
+//! Use this method when you want to collate the details so that fractions on the same primitive are together (when
+//! the order of the primitives is irrelevant). If the order of the primitives is relevant use SortByIndexAndFraction.
+//! Sorting by CurvePrimitive memory address does not always yield the same order as sorting by CurvePrimitive index.
 GEOMDLLIMPEXP static void SortByCurveAndFraction (bvector<CurveLocationDetail> &detail);
+
+//! Sort to order CurveLocationDetails by primitive index and then by fraction within those curves.
+//! Use this method when the order of the primitives is relevant.
+//! Note that detail.a is used to populate the curve primitive indexes if curve is passed in.
+//! If you have already populated detail.a with your primary sort data, do not pass curve.
+GEOMDLLIMPEXP static void SortByIndexAndFraction(bvector<CurveLocationDetail> &details, CurveVectorCP curve = nullptr);
+
 //! Return a detail for the closest point, considering only those within searchRadius.
 GEOMDLLIMPEXP static ValidatedCurveLocationDetail ClosestPoint (bvector<CurveLocationDetail> &details, DPoint3dCR xyz, double searchRadius);
 //! Return a detail pair whose detailA or detailB is closest, considering only those within searchRadius.
