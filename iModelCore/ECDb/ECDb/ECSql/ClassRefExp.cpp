@@ -81,11 +81,23 @@ PropertyMatchResult TableValuedFunctionExp::_FindProperty(ECSqlParseContext& ctx
     }
     return PropertyMatchResult::NotFound();
 }
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void TableValuedFunctionExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: TableValuedFunctionExp
+    val.SetEmptyObject();
+    val["id"] = "TableValuedFunctionExp";
+    val["schema"] = GetSchemaName();
+    GetFunctionExp()->ToJson(val["func"], fmt);
+}
+
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TableValuedFunctionExp::_ToECSql(ECSqlRenderContext&) const{
-
+void TableValuedFunctionExp::_ToECSql(ECSqlRenderContext& ctx) const{
+    ctx.AppendToECSql(GetSchemaName()).AppendToECSql(".");
+    GetFunctionExp()->ToECSql(ctx);
 }
 /*---------------------------------------------------------------------------------------
 * @bsimethod
@@ -308,6 +320,30 @@ std::set<Utf8String, CompareIUtf8Ascii> ClassNameExp::GetInstancePropNames() con
     }
     return dynamicProps;
 }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void ClassNameExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: ClassNameExp
+    val.SetEmptyObject();
+    val["id"] = "ClassNameExp";
+    const auto polymorphicInfo = GetPolymorphicInfo().ToECSql();
+    if (!polymorphicInfo.empty())
+        GetPolymorphicInfo().ToJson(val["polymorphicInfo"]);
+
+    val["tableSpace"] = m_tableSpace;
+    val["schemaName"] = HasMetaInfo() ? GetInfo().GetMap().GetClass().GetSchema().GetName() : m_schemaAlias;
+    val["className"] = HasMetaInfo() ? GetInfo().GetMap().GetClass().GetName() : m_className;
+
+    if(!GetAlias().empty())
+        val["alias"] = GetAlias();
+
+    if(auto memb = GetMemberFunctionCallExp()) {
+        memb->ToJson(val["func"], fmt);
+    }
+}
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -318,6 +354,11 @@ void ClassNameExp::_ToECSql(ECSqlRenderContext& ctx) const
         ctx.AppendToECSql(polymorphicInfo).AppendToECSql(" ");
 
     ctx.AppendToECSql(GetFullName());
+    if(auto memb = GetMemberFunctionCallExp()) {
+        ctx.AppendToECSql(".");
+        memb->ToECSql(ctx);
+    }
+
     if (!GetAlias().empty())
         ctx.AppendToECSql(" ").AppendToECSql(GetAlias());
     }
@@ -338,6 +379,15 @@ bool PolymorphicInfo::TryParseToken(Type& type, Utf8StringCR str)
         return false;
     }
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void PolymorphicInfo::ToJson(BeJsValue v) const {
+        v.SetEmptyObject();
+        v["scope"] = m_type == Type::Only ? "ONLY" : "ALL";
+        if (m_disqualify)
+            v["m_disqualify"] = "+";
+}
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------

@@ -215,6 +215,17 @@ bool BinaryBooleanExp::ContainsStructArrayProperty(ECClassCR ecclass)
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void BinaryBooleanExp::_ToJson(BeJsValue val, JsonFormat const& fmt ) const {
+    //! ITWINJS_PARSE_TREE: BinaryBooleanExp
+    val["id"] = "BinaryBooleanExp";
+    val["op"] = ExpHelper::ToSql(m_op);
+    GetLeftOperand()->ToJson(val["lhs"], fmt);
+    GetRightOperand()->ToJson(val["rhs"], fmt);
+}
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
 void BinaryBooleanExp::_ToECSql(ECSqlRenderContext& ctx) const
     {
@@ -246,6 +257,22 @@ BooleanFactorExp::BooleanFactorExp(std::unique_ptr<BooleanExp> operand, bool not
     {
     m_operandExpIndex = AddChild(std::move(operand));
     }
+
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void BooleanFactorExp::_ToJson(BeJsValue val, JsonFormat const& fmt ) const {
+    //! ITWINJS_PARSE_TREE: BooleanFactorExp
+    if (m_notOperator) {
+        val.SetEmptyObject();
+        val["id"] = "BooleanFactorExp",
+        val["op"] = "NOT";
+         GetOperand()->ToJson(val["exp"], fmt);
+    } else {
+        GetOperand()->ToJson(val, fmt);
+    }
+}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
@@ -307,6 +334,13 @@ Exp::FinalizeParseStatus UnaryPredicateExp::_FinalizeParsing(ECSqlParseContext& 
     return FinalizeParseStatus::Completed;
     }
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void UnaryPredicateExp::_ToJson(BeJsValue val, JsonFormat const& fmt ) const {
+    //! ITWINJS_PARSE_TREE: UnaryPredicateExp
+    GetValueExp()->ToJson(val, fmt);
+}
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------

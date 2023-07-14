@@ -19,6 +19,7 @@ private:
     Utf8String m_val;
 
     void _ToECSql(ECSqlRenderContext&) const override;
+    void _ToJson(BeJsValue, JsonFormat const&) const override;
     Utf8String _ToString() const override { return "OptionExp"; }
 
 public:
@@ -42,6 +43,7 @@ private:
     bmap<Utf8CP, size_t, CompareIUtf8Ascii> m_optionsByName;
 
     void _ToECSql(ECSqlRenderContext&) const override;
+    void _ToJson(BeJsValue, JsonFormat const&) const override;
     Utf8String _ToString() const override { return "OptionsExp"; }
 
 public:

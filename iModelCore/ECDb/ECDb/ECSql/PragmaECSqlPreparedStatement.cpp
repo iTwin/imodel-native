@@ -572,7 +572,11 @@ ECSqlStatus PragmaECSqlPreparedStatement::_Reset() {
     if (m_resultSet == nullptr) {
         return ECSqlStatus(BE_SQLITE_MISMATCH);
     }
-    return ECSqlStatus(m_resultSet->Reset());
+    const auto rc = m_resultSet->Reset();
+    if (rc != BE_SQLITE_OK)
+        return ECSqlStatus(rc);
+
+    return ECSqlStatus::Success;
 }
 //---------------------------------------------------------------------------------------
 // @bsimethod

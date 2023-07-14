@@ -22,6 +22,17 @@ AllOrAnyExp::AllOrAnyExp(std::unique_ptr<ValueExp> operand, BooleanSqlOperator o
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+void AllOrAnyExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: AllOrAnyExp
+    val["id"] = "AllOrAnyExp";
+    val["op"] = Utf8String(ExpHelper::ToSql(m_type));
+    GetOperand()->ToJson(val["exp"], fmt);
+    GetSubquery()->ToJson(val["query"], fmt);
+}
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 void AllOrAnyExp::_ToECSql(ECSqlRenderContext& ctx) const
     {
     if (HasParentheses())
@@ -120,6 +131,18 @@ Utf8StringCR DerivedPropertyExp::GetColumnAlias() const
 
     return m_columnAlias;
     }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void DerivedPropertyExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: DerivedPropertyExp
+    val.SetEmptyObject();
+    val["id"] = "DerivedPropertyExp";
+    GetExpression()->ToJson(val["exp"], fmt);
+    if (!m_columnAlias.empty())
+        val["alias"] = m_columnAlias;
+}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
@@ -226,7 +249,7 @@ void FromExp::FindRangeClassRefs(std::vector<RangeClassInfo>& classRefs, ClassRe
                 FindRangeClassRefs(classRefs, join.GetFromClassRef(), scope);
                 FindRangeClassRefs(classRefs, join.GetToClassRef(), scope);
                 if (classRef.GetType() == Type::ECRelationshipJoin)
-                    FindRangeClassRefs(classRefs, join.GetAs<ECRelationshipJoinExp>().GetRelationshipClassNameExp(), scope);
+                    FindRangeClassRefs(classRefs, join.GetAs<UsingRelationshipJoinExp>().GetRelationshipClassNameExp(), scope);
 
                 break;
                 }
@@ -322,6 +345,16 @@ std::vector<RangeClassInfo> FromExp::FindRangeClassRefExpressions() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+void FromExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: FromExp
+    val.SetEmptyArray();
+    for (Exp const* classRefExp : GetChildren())
+        classRefExp->ToJson(val.appendValue(), fmt);
+}
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 void FromExp::_ToECSql(ECSqlRenderContext& ctx) const
     {
     ctx.AppendToECSql("FROM ");
@@ -378,6 +411,19 @@ LimitOffsetExp::LimitOffsetExp(std::unique_ptr<ValueExp> limitExp, std::unique_p
     if (offsetExp != nullptr)
         m_offsetExpIndex =(int) AddChild(std::move(offsetExp));
     }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void LimitOffsetExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: LimitOffsetExp
+    val.SetEmptyObject();
+    val["id"] = "LimitOffsetExp";
+    GetLimitExp()->ToJson(val["exp"], fmt);
+    if (HasOffset())
+        GetOffsetExp()->ToJson(val["offset"], fmt);
+}
+
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
@@ -460,6 +506,15 @@ ValueExp const* LimitOffsetExp::GetOffsetExp() const
     }
 
 //************************* OrderByExp *******************************************
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void OrderByExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: OrderByExp
+    val.SetEmptyArray();
+    for (Exp const* childExp : GetChildren())
+        childExp->ToJson(val.appendValue(), fmt);
+}
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -558,6 +613,22 @@ OrderBySpecExp::FinalizeParseStatus OrderBySpecExp::_FinalizeParsing(ECSqlParseC
 
     return FinalizeParseStatus::Completed;
     }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void OrderBySpecExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: OrderBySpecExp
+    val.SetEmptyObject();
+    GetSortExpression()->ToJson(val["exp"], fmt);
+    if (m_direction != SortDirection::NotSpecified) {
+        if (m_direction == SortDirection::Ascending) {
+            val["direction"] = "ASC";
+        } else {
+           val["direction"] = "DESC";
+        }
+    }
+}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
@@ -697,6 +768,16 @@ Exp::FinalizeParseStatus SelectClauseExp::_FinalizeParsing(ECSqlParseContext& ct
         }
     return FinalizeParseStatus::Completed;
     }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void SelectClauseExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: SelectClauseExp
+    val.SetEmptyArray();
+    for (Exp const* childExp : GetChildren())
+        childExp->ToJson(val.appendValue(), fmt);
+}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
@@ -889,6 +970,45 @@ Utf8String SingleSelectStatementExp::_ToString() const
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void SingleSelectStatementExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: SingleSelectStatementExp
+    val.SetEmptyObject();
+    if (IsRowConstructor()) {
+        val["id"] = "RowConstructor";
+        GetSelection()->ToJson(val["values"], fmt);
+    } else {
+        val["id"] = "SingleSelectStatementExp";
+        Utf8String selectionType = ExpHelper::ToSql(GetSelectionType());
+        if (!selectionType.empty())
+            val["selectionType"] = selectionType;
+
+        GetSelection()->ToJson(val["selection"], fmt);
+        if (GetFrom() != nullptr)
+            GetFrom()->ToJson(val["from"], fmt);
+
+        if (GetWhere() != nullptr)
+            GetWhere()->ToJson(val["where"], fmt);
+
+        if (GetGroupBy() != nullptr)
+            GetGroupBy()->ToJson(val["groupBy"], fmt);
+
+        if (GetOrderBy() != nullptr)
+            GetOrderBy()->ToJson(val["orderBy"], fmt);
+
+        if (GetHaving() != nullptr)
+            GetHaving()->ToJson(val["having"], fmt);
+
+        if (GetLimitOffset() != nullptr)
+            GetLimitOffset()->ToJson(val["limit"], fmt);
+
+        if (GetOptions() != nullptr)
+            GetOptions()->ToJson(val["options"], fmt);
+    }
+}
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
 void SingleSelectStatementExp::_ToECSql(ECSqlRenderContext& ctx) const
     {
@@ -957,6 +1077,14 @@ SelectStatementExp const* SubqueryExp::GetQuery() const { return GetChild<Select
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+void SubqueryExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: SubqueryExp
+    GetQuery()->ToJson(val, fmt);
+}
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 void SubqueryExp::_ToECSql(ECSqlRenderContext& ctx) const { ctx.AppendToECSql(*GetQuery()); }
 
 //****************************** SubqueryRefExp *****************************************
@@ -986,6 +1114,22 @@ void SubqueryRefExp::_ExpandSelectAsterisk(std::vector<std::unique_ptr<DerivedPr
         }
     }
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void SubqueryRefExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: SubqueryRefExp
+    val.SetEmptyObject();
+    val["id"] = "SubqueryRefExp";
+    auto polymorphicInfo = GetPolymorphicInfo().ToECSql();
+    if (!polymorphicInfo.empty())
+        GetPolymorphicInfo().ToJson(val["polymorphicInfo"]);
+
+    if (!GetAlias().empty())
+        val["alias"] = GetAlias();
+
+    GetSubquery()->ToJson(val["query"], fmt);
+}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
@@ -1022,6 +1166,17 @@ SubqueryTestExp::SubqueryTestExp(SubqueryTestOperator op, std::unique_ptr<Subque
     {
     AddChild(move(subquery));
     }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void SubqueryTestExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: SubqueryTestExp
+    val.SetEmptyObject();
+    val["id"] = "SubqueryTestExp";
+    val["op"] = ExpHelper::ToSql(m_op);
+    GetSubquery()->ToJson(val["query"], fmt);
+}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
@@ -1083,6 +1238,14 @@ Exp::FinalizeParseStatus SubqueryValueExp::_FinalizeParsing(ECSqlParseContext& c
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+void SubqueryValueExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: SubqueryValueExp
+    GetQuery()->ToJson(val, fmt);
+}
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 void SubqueryValueExp::_ToECSql(ECSqlRenderContext& ctx) const
     {
     if (HasParentheses())
@@ -1095,6 +1258,21 @@ void SubqueryValueExp::_ToECSql(ECSqlRenderContext& ctx) const
     }
 
 //****************************** SelectStatementExp *****************************************
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void SelectStatementExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: SelectStatementExp
+    val.SetEmptyObject();
+    val["id"] = "SelectStatementExp";
+    GetFirstStatement().ToJson(val["select"], fmt);
+    if (!IsCompound())
+        return;
+
+    val["combineOp"] = Utf8String(OperatorToString(m_operator)) + (m_isAll ? " ALL" : "");
+    GetRhsStatement()->ToJson(val["next"], fmt);
+}
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1179,5 +1357,36 @@ Exp::FinalizeParseStatus SelectStatementExp::_FinalizeParsing(ECSqlParseContext&
 
     return FinalizeParseStatus::Completed;
     }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void GroupByExp::_ToECSql(ECSqlRenderContext& ctx) const {
+    ctx.AppendToECSql("GROUP BY ").AppendToECSql(*GetGroupingValueListExp());
+}
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void GroupByExp::_ToJson(BeJsValue val, JsonFormat const& fmt ) const {
+    //! ITWINJS_PARSE_TREE: GroupByExp
+    GetGroupingValueListExp()->ToJson(val, fmt);
+}
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void HavingExp::_ToECSql(ECSqlRenderContext& ctx) const {
+    ctx.AppendToECSql("HAVING ").AppendToECSql(*GetSearchConditionExp());
+}
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void HavingExp::_ToJson(BeJsValue val, JsonFormat const& fmt) const {
+    //! ITWINJS_PARSE_TREE: HavingExp
+    GetSearchConditionExp()->ToJson(val, fmt);
+}
+
 END_BENTLEY_SQLITE_EC_NAMESPACE
 

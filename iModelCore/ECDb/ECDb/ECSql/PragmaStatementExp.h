@@ -68,6 +68,7 @@ private:
     FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode mode) override { return FinalizeParseStatus::Completed; }
     bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const override { return false; }
     void _ToECSql(ECSqlRenderContext& ctx) const override { }
+    void _ToJson(BeJsValue, JsonFormat const&) const override {}
     Utf8String _ToString() const override { return "Pragma"; }
 
     PragmaVal m_val;

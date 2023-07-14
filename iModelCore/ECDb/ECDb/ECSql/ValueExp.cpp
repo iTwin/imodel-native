@@ -33,6 +33,17 @@ Exp::FinalizeParseStatus TypeListExp::_FinalizeParsing(ECSqlParseContext& ctx, F
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+void TypeListExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: TypeListExp
+    val.SetEmptyArray();
+     for (auto classNameExp : ClassNames()) {
+        classNameExp->ToJson(val.appendValue(), fmt);
+     }
+}
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 void TypeListExp::_ToECSql(ECSqlRenderContext& ctx) const
     {
     if (HasParentheses())
@@ -123,6 +134,20 @@ Exp::FinalizeParseStatus IIFExp::_FinalizeParsing(ECSqlParseContext& ctx, Finali
     BeAssert(false);
     return FinalizeParseStatus::Error;
     }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void IIFExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: IIFExp
+    val.SetEmptyObject();
+    val["id"] = "IIFExp";
+
+    When()->ToJson(val["when"], fmt);
+    Then()->ToJson(val["then"], fmt);
+    Else()->ToJson(val["else"], fmt);
+}
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -242,6 +267,24 @@ Utf8String SearchCaseValueExp::_ToString() const
     Utf8String str("CASE-WHEN-THEN");
         return str;
     }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void SearchCaseValueExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: SearchCaseValueExp
+    val.SetEmptyObject();
+    val["id"] = "SearchCaseValueExp";
+    auto list = val["whenThenList"];
+    list.toArray();
+
+    for (auto& when : WhenList())
+        when->ToJson(list.appendValue(), fmt);
+
+    if (auto el = Else()) {
+        Else()->ToJson(val["elseExp"], fmt);
+    }
+}
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -320,6 +363,16 @@ Utf8String SearchedWhenClauseExp::_ToString() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+void SearchedWhenClauseExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: SearchedWhenClauseExp
+    val.SetEmptyObject();
+    When()->ToJson(val["when"], fmt);
+    Then()->ToJson(val["then"], fmt);
+}
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 void SearchedWhenClauseExp::_ToECSql(ECSqlRenderContext& ctx) const
     {
     if (HasParentheses())
@@ -370,6 +423,15 @@ Exp::FinalizeParseStatus BetweenRangeValueExp::_FinalizeParsing(ECSqlParseContex
     return FinalizeParseStatus::Error;
     }
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void BetweenRangeValueExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: BetweenRangeValueExp
+    val.SetEmptyObject();
+    GetLowerBoundOperand()->ToJson(val["lbound"], fmt);
+    GetUpperBoundOperand()->ToJson(val["ubound"], fmt);
+}
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -485,6 +547,17 @@ bool BinaryValueExp::_TryDetermineParameterExpType(ECSqlParseContext& ctx, Param
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+void BinaryValueExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: BinaryValueExp
+    val.SetEmptyObject();
+    val["id"] = "BinaryValueExp";
+    val["op"] = ExpHelper::ToSql(GetOperator());
+    GetLeftOperand()->ToJson(val["lhs"], fmt);
+    GetRightOperand()->ToJson(val["rhs"], fmt);
+}
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 void BinaryValueExp::_ToECSql(ECSqlRenderContext& ctx) const
     {
     if (HasParentheses())
@@ -593,7 +666,25 @@ Exp::FinalizeParseStatus CastExp::_FinalizeParsing(ECSqlParseContext& ctx, Final
 
     return FinalizeParseStatus::Completed;
     }
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void CastExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: CastExp
+    val.SetEmptyObject();
+    val["id"] = "CastExp";
+    GetCastOperand()->ToJson(val["exp"], fmt);
 
+    Utf8String asType;
+    if (!m_castTargetSchemaName.empty())
+        asType.append(m_castTargetSchemaName).append(".");
+
+    asType.append(m_castTargetTypeName);
+    if (m_castTargetIsArray)
+        asType.append("[]");
+
+    val["as"] = asType;
+}
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -703,6 +794,20 @@ Exp::FinalizeParseStatus MemberFunctionCallExp::_FinalizeParsing(ECSqlParseConte
     return FinalizeParseStatus::NotCompleted;
     }
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void MemberFunctionCallExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: MemberFunctionCallExp
+    val.SetEmptyObject();
+    val["id"] = "MemberFunctionCallExp";
+    val["name"] = m_functionName;
+
+    auto args = val["args"];
+    args.toArray();
+    for (Exp const* argExp : GetChildren())
+        argExp->ToJson(args.appendValue(), fmt);
+}
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -960,6 +1065,21 @@ Utf8String FunctionCallExp::_ToString() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+void FunctionCallExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: FunctionCallExp
+    val.SetEmptyObject();
+    val["id"] = "FunctionCallExp";
+    val["name"] = m_functionName;
+    if (m_setQuantifier != SqlSetQuantifier::NotSpecified)
+        val["quantifier"]=ExpHelper::ToSql(m_setQuantifier);
+    auto args = val["args"];
+    args.toArray();
+    for (Exp const* argExp : GetChildren())
+        argExp->ToJson(args.appendValue(), fmt);
+}
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 void FunctionCallExp::_ToECSql(ECSqlRenderContext& ctx) const
     {
     if (HasParentheses())
@@ -1103,6 +1223,18 @@ ValueExp const* LikeRhsValueExp::GetEscapeExp() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+void LikeRhsValueExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: LikeRhsValueExp
+    val.SetEmptyObject();
+    val["id"] = "LikeRhsValueExp";
+    GetRhsExp()->ToJson(val["pattren"], fmt);
+    if (HasEscapeExp())
+        GetEscapeExp()->ToJson(val["escape"], fmt);
+}
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 void LikeRhsValueExp::_ToECSql(ECSqlRenderContext& ctx) const
     {
     if (HasParentheses())
@@ -1125,6 +1257,14 @@ EnumValueExp::EnumValueExp(ECEnumeratorCR value, PropertyPath const& expPath) : 
     {
     SetTypeInfo(ECSqlTypeInfo::CreateEnum(value.GetEnumeration()));
     }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void EnumValueExp::_ToJson(BeJsValue val , JsonFormat const&) const  {
+    //! ITWINJS_PARSE_TREE: EnumValueExp
+    val = m_expPath.ToString(true, false);
+}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
@@ -1259,6 +1399,47 @@ BentleyStatus LiteralValueExp::TryParse(ECN::ECValue& val) const
         }
     }
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void LiteralValueExp::_ToJson(BeJsValue val , JsonFormat const&) const  {
+    //! ITWINJS_PARSE_TREE: LiteralValueExp
+    val.SetEmptyObject();
+    val["id"] = "LiteralValueExp";
+    ECSqlTypeInfo const& typeInfo = GetTypeInfo();
+    if (typeInfo.IsNull()) {
+        val["kind"] = "NULL";
+        return;
+    } else if (typeInfo.IsPrimitive()) {
+        const PrimitiveType primType = typeInfo.GetPrimitiveType();
+        if (primType == PRIMITIVETYPE_String) {
+            val["kind"] = "STRING";
+            Utf8String escapedLiteral(m_rawValue);
+            escapedLiteral.ReplaceAll("'", "''");
+            val["value"] = escapedLiteral;
+            return;
+        } else if (primType == PRIMITIVETYPE_DateTime) {
+            DateTime::Info const& dtInfo = typeInfo.GetDateTimeInfo();
+            DateTime::Component comp = dtInfo.IsValid() ? dtInfo.GetComponent() : DateTime::Component::DateAndTime;
+            switch (comp) {
+                case DateTime::Component::Date:
+                    val["kind"] = "DATE";
+                    break;
+                case DateTime::Component::TimeOfDay:
+                    val["kind"] = "TIME";
+                    break;
+                default:
+                case DateTime::Component::DateAndTime:
+                    val["kind"] = "TIMESTAMP";
+                    break;
+            }
+            val["value"] = m_rawValue;
+            return;
+        }
+    }
+    val["kind"] = "RAW";
+    val["value"] = m_rawValue;
+}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
@@ -1416,6 +1597,18 @@ void ParameterExp::SetTargetExpInfo(ECSqlTypeInfo const& targetTypeInfo)
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+void ParameterExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: ParameterExp
+    val.SetEmptyObject();
+    val["id"] = "ParameterExp";
+    if(IsNamedParameter())
+        val["name"] = m_parameterName;
+}
+
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 void ParameterExp::_ToECSql(ECSqlRenderContext& ctx) const
     {
     if (HasParentheses())
@@ -1544,7 +1737,19 @@ bool UnaryValueExp::_TryDetermineParameterExpType(ECSqlParseContext& ctx, Parame
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void UnaryValueExp::_ToECSql(ECSqlRenderContext& ctx) const
+void UnaryValueExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: UnaryValueExp
+    val.SetEmptyObject();
+    val["id"] = "UnaryValueExp";
+    val["op"] = ExpHelper::ToSql(m_op);
+    GetOperand()->ToJson(val["exp"], fmt);
+}
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void UnaryValueExp::_ToECSql(
+    ECSqlRenderContext& ctx) const
     {
     if (HasParentheses())
         ctx.AppendToECSql("(");

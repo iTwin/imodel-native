@@ -63,6 +63,7 @@ private:
     FinalizeParseStatus _FinalizeParsing (ECSqlParseContext&, FinalizeParseMode mode) override;
     bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const override;
     void _ToECSql(ECSqlRenderContext&) const override;
+    void _ToJson(BeJsValue, JsonFormat const&) const override;
     Utf8String _ToString() const override;
 
     FinalizeParseStatus CanCompareTypes(ECSqlParseContext&, ComputedExp const& lhs, ComputedExp const& rhs) const;
@@ -87,6 +88,7 @@ private:
     size_t m_operandExpIndex;
 
     void _ToECSql(ECSqlRenderContext&) const override;
+    void _ToJson(BeJsValue, JsonFormat const&) const override;
     Utf8String _ToString() const override;
 
 public:
@@ -106,6 +108,7 @@ private:
 
     FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode mode) override;
     void _ToECSql(ECSqlRenderContext& ctx) const override;
+    void _ToJson(BeJsValue, JsonFormat const&) const override;
     Utf8String _ToString() const override { return "UnaryPredicate"; }
 
 public:

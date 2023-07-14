@@ -7,18 +7,55 @@
 #include "PropertyNameExp.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+//****************************** ExtractPropertyValueExp *****************************************
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+void ExtractPropertyValueExp::_ToECSql(ECSqlRenderContext& ctx) const {
+        ctx.AppendToECSql(GetInstancePath().ToString().c_str());
+        ctx.AppendToECSql("->");
+        ctx.AppendToECSql(m_targetPath.ToString().c_str());
+    }
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+void ExtractPropertyValueExp::_ToJson(BeJsValue val, JsonFormat const&) const {
+    //! ITWINJS_PARSE_TREE: ExtractPropertyValueExp
+    val.SetEmptyObject();
+    val["id"] = "PropertyNameExp";
+    ECSqlRenderContext ctx;
+    _ToECSql(ctx);
+    val["path"] = ctx.GetECSql();
+}
+//****************************** ExtractInstanceValueExp *****************************************
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+void ExtractInstanceValueExp::_ToECSql(ECSqlRenderContext& ctx) const{
+    ctx.AppendToECSql(GetInstancePath().ToString().c_str());
+}
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+void ExtractInstanceValueExp::_ToJson(BeJsValue val, JsonFormat const&) const {
+    //! ITWINJS_PARSE_TREE: ExtractInstanceValueExp
+    val.SetEmptyObject();
+    val["id"] = "PropertyNameExp";
+    val["path"] = GetInstancePath().ToString();
+}
 //****************************** PropertyNameExp *****************************************
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-PropertyNameExp::PropertyNameExp(PropertyPath const& propPath) : ValueExp(Type::PropertyName), m_propertyPath(propPath), m_classRefExp(nullptr), m_sysPropInfo(&ECSqlSystemPropertyInfo::NoSystemProperty()), m_sourceType(SourceType::ECSql),m_property(nullptr)
+PropertyNameExp::PropertyNameExp(PropertyPath const& propPath) : ValueExp(Type::PropertyName),m_ecsqlPropertyPath(propPath), m_propertyPath(propPath), m_classRefExp(nullptr), m_sysPropInfo(&ECSqlSystemPropertyInfo::NoSystemProperty()), m_sourceType(SourceType::ECSql),m_property(nullptr)
     {}
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-PropertyNameExp::PropertyNameExp(PropertyPath const& propPath, RangeClassRefExp const& classRefExp, ECN::ECPropertyCR property) 
-    : ValueExp(Type::PropertyName), m_propertyPath(propPath), m_classRefExp(&classRefExp), m_sysPropInfo(&ECSqlSystemPropertyInfo::NoSystemProperty()), m_sourceType(SourceType::ECSql),m_property(&property){
+PropertyNameExp::PropertyNameExp(PropertyPath const& propPath, RangeClassRefExp const& classRefExp, ECN::ECPropertyCR property)
+    : ValueExp(Type::PropertyName), m_propertyPath(propPath),m_ecsqlPropertyPath(propPath), m_classRefExp(&classRefExp), m_sysPropInfo(&ECSqlSystemPropertyInfo::NoSystemProperty()), m_sourceType(SourceType::ECSql),m_property(&property){
 
     }
 
@@ -40,10 +77,10 @@ PropertyNameExp::PropertyNameExp(ECSqlParseContext const& ctx, RangeClassRefExp 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-ECN::ECPropertyCP PropertyNameExp::GetVirtualProperty() const { 
+ECN::ECPropertyCP PropertyNameExp::GetVirtualProperty() const {
     if (m_property)
         return m_property;
-    
+
     if (IsPropertyRef()) {
         return GetPropertyRef()->TryGetVirtualProperty();
     }
@@ -70,7 +107,7 @@ PropertyNameExp::PropertyNameExp(ECSqlParseContext const& ctx, Utf8StringCR prop
         BeAssert(false && "Must always resolve correctly");
         }
     }
-    
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
@@ -99,7 +136,7 @@ Exp::FinalizeParseStatus PropertyNameExp::_FinalizeParsing(ECSqlParseContext& ct
 
         if (SUCCESS != const_cast<DerivedPropertyExp&>(derivedProperty).FinalizeParsing(ctx))
             return FinalizeParseStatus::Error;
-        
+
         if (auto resolvedVirtualProp = GetPropertyRef()->TryGetVirtualProperty()) {
             SetTypeInfo(ECSqlTypeInfo(*resolvedVirtualProp));
         } else if (PropertyMap const *resolvedMap = GetPropertyRef()->TryGetPropertyMap()) {
@@ -202,7 +239,7 @@ BentleyStatus PropertyNameExp::ResolveLocalRef(ECSqlParseContext& ctx) {
         if (result.GetPropertyMap() != nullptr) {
                 m_propertyPath = result.ResolvedPath();
                 BeAssert(m_propertyPath.IsResolved() && "Programmer Error: Unable to resolve path");
-        } else if (result.IsDerivedProperty()) { 
+        } else if (result.IsDerivedProperty()) {
             SetPropertyRef(*result.GetDerivedProperty());
             auto effectivePath = result.ResolvedPath();
             if (!GetPropertyRef()->IsComputedExp()) {
@@ -229,7 +266,7 @@ BentleyStatus PropertyNameExp::ResolveColumnRef(ECSqlParseContext& ctx)
     // This mean the PropertyNameExp was created by expanding WILDCARD so it both has ClassRef and DerviedProperty.
     if (GetClassRefExp() != nullptr)
         return ResolveLocalRef(ctx);
-    
+
     if (!ctx.CurrentArg()) {
         return ERROR;
     }
@@ -244,7 +281,7 @@ BentleyStatus PropertyNameExp::ResolveColumnRef(ECSqlParseContext& ctx)
 
     ECSqlParseContext::RangeClassArg const& arg = static_cast<ECSqlParseContext::RangeClassArg const&>(*ctx.CurrentArg());
     BeAssert(!m_propertyPath.IsEmpty());
-    
+
     std::vector<PropertyMatchResult> matchProps;
     auto hasBetterSolution = [](std::vector<PropertyMatchResult> const &matchs, PropertyMatchResult const& newSolution) {
         for (auto const& match : matchs) {
@@ -323,7 +360,7 @@ BentleyStatus PropertyNameExp::ResolveColumnRef(ECSqlParseContext& ctx)
         m_propertyPath = match.ResolvedPath();
         BeAssert(m_propertyPath.IsResolved()); // this should be already resolved
 
-    } else if (match.IsDerivedProperty()) { 
+    } else if (match.IsDerivedProperty()) {
         SetPropertyRef(*match.GetDerivedProperty());
         // Property path is not resolved
         m_propertyPath = match.ResolvedPath();
@@ -333,11 +370,11 @@ BentleyStatus PropertyNameExp::ResolveColumnRef(ECSqlParseContext& ctx)
             }
         }
     } else {
-        // property def table view 
+        // property def table view
         m_propertyPath = match.ResolvedPath();
         SetVirtualProperty(*match.GetProperty());
     }
-  
+
     return SUCCESS;
     }
 
@@ -350,7 +387,7 @@ bool PropertyNameExp::HasUserDefinedAlias() const {
     if (this->GetParent() && this->GetParent()->GetType() == Exp::Type::DerivedProperty) {
         if (this->GetParent()->GetAs<DerivedPropertyExp>().HasAlias())
             return true;
-    } 
+    }
 
     if (!IsPropertyRef())
         return false;
@@ -359,7 +396,7 @@ bool PropertyNameExp::HasUserDefinedAlias() const {
     do {
         if (linkTo->HasAlias())
             return true;
-        
+
         if (linkTo->IsComputed())
             return true;
 
@@ -372,7 +409,7 @@ bool PropertyNameExp::HasUserDefinedAlias() const {
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-void PropertyNameExp::SetClassRefExp(RangeClassRefExp const& resolvedClassRef) { 
+void PropertyNameExp::SetClassRefExp(RangeClassRefExp const& resolvedClassRef) {
     m_classRefExp = &resolvedClassRef;
     m_className = resolvedClassRef.GetAlias();
 }
@@ -382,7 +419,7 @@ void PropertyNameExp::SetClassRefExp(RangeClassRefExp const& resolvedClassRef) {
 //+---------------+---------------+---------------+---------------+---------------+--------
 void PropertyNameExp::SetPropertyRef(DerivedPropertyExp const& derivedPropertyExpInSubqueryRefExp)
     {
-    m_propertyRef = std::unique_ptr<PropertyRef>(new PropertyRef(derivedPropertyExpInSubqueryRefExp, this)); 
+    m_propertyRef = std::unique_ptr<PropertyRef>(new PropertyRef(derivedPropertyExpInSubqueryRefExp, this));
     }
 
 //------------------------------------------------------------------------------------------
@@ -437,13 +474,29 @@ bool PropertyNameExp::IsLhsAssignmentOperandExpression() const
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void PropertyNameExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: PropertyNameExp
+    val.SetEmptyObject();
+    val["id"] = "PropertyNameExp";
+    Utf8String path;
+    path.append(m_ecsqlPropertyPath.ToString(false, false, true));
+    val["path"] = path;
+}
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
 void PropertyNameExp::_ToECSql(ECSqlRenderContext& ctx) const
     {
-    if (!m_className.empty())
-        ctx.AppendToECSql(m_className).AppendToECSql(".");
-
-    ctx.AppendToECSql(m_propertyPath.ToString(true, false));
+    if (!m_className.empty()) {
+        auto classRef = GetClassRefExp();
+        if (classRef != nullptr && classRef->GetType() == Exp::Type::ClassName && classRef->GetAs<ClassNameExp>().HasMetaInfo())
+            ctx.AppendToECSql(classRef->GetAs<ClassNameExp>().GetInfo().GetMap().GetClass().GetName()).AppendToECSql(".");
+        else
+            ctx.AppendToECSql(m_className).AppendToECSql(".");
+    }
+    ctx.AppendToECSql(m_propertyPath.ToString(true, false, true));
     }
 
 //-----------------------------------------------------------------------------------------
@@ -512,7 +565,7 @@ ECN::ECPropertyCP PropertyNameExp::PropertyRef::TryGetVirtualProperty() const {
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-PropertyMap const * PropertyNameExp::PropertyRef::TryGetPropertyMap(PropertyPath const& testPath) const 
+PropertyMap const * PropertyNameExp::PropertyRef::TryGetPropertyMap(PropertyPath const& testPath) const
     {
     if (m_cachedPropertyMap)
         return m_cachedPropertyMap;
@@ -536,7 +589,7 @@ PropertyMap const * PropertyNameExp::PropertyRef::TryGetPropertyMap(PropertyPath
         {
        // BeAssert(next.GetColumnAlias() == path.Take(1).ToString());
         }
-    
+
     if (propertyMap.GetAccessString().EqualsIAscii(accessStringPrefix.c_str())) {
         m_cachedPropertyMap = &propertyMap;
     } else {
@@ -556,7 +609,7 @@ PropertyMap const * PropertyNameExp::PropertyRef::TryGetPropertyMap(PropertyPath
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-PropertyMap const * PropertyNameExp::PropertyRef::TryGetPropertyMap() const 
+PropertyMap const * PropertyNameExp::PropertyRef::TryGetPropertyMap() const
     {
     return TryGetPropertyMap(m_owner->GetPropertyPath());
     }
@@ -638,7 +691,7 @@ BentleyStatus PropertyNameExp::PropertyRef::ToNativeSql(NativeSqlBuilder::List c
             }
         }
 
-    
+
     return m_wasToNativeSqlCalled? SUCCESS : ERROR;
     }
 //-----------------------------------------------------------------------------------------
@@ -661,7 +714,7 @@ InstanceValueExp::InstanceValueExp(Type type, PropertyPath instancePath): ValueE
     BeAssert(InstanceValueExp::IsValidSourcePath(instancePath) && "InstancePath is not valid");
     auto alias = InstanceValueExp::GetInstanceAlias(instancePath);
     bool hasAlias = !Utf8String::IsNullOrEmpty(alias);
-    PropertyPath classIdPath;       
+    PropertyPath classIdPath;
     if (hasAlias){
         classIdPath.Push(alias);
     }
@@ -692,5 +745,5 @@ bool InstanceValueExp::IsValidSourcePath(PropertyPath const& path) {
 Utf8CP InstanceValueExp::GetInstanceAlias(PropertyPath const& path) {
     BeAssert(InstanceValueExp::IsValidSourcePath(path) && "SourcePath is not valid");
     return path.Size() == 2 ? path.First().GetName().c_str() : nullptr;
-} 
+}
 END_BENTLEY_SQLITE_EC_NAMESPACE
