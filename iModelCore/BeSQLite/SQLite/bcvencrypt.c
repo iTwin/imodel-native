@@ -553,20 +553,11 @@ struct BcvEncryptionKey {
 
 BcvEncryptionKey *bcvEncryptionKeyNew(const unsigned char *aKey){
   /* Now we can set key and IV */
-  // EVP_CipherInit_ex(ctx, NULL, NULL, key, iv, doEncrypt); // I'm GUESSING that here is where the 'keySchedule' gets generated internally..
-  // this might be a problem.. I could potentially do a workaround. Store the 16 byte key in the keyschedule, 
-  // change the size of the keySchedule to.. 4? 4 * 4(32 bit int) = 16 bytes.
-  // I don't really know how that works  
-  // Could I Change the type of bcvEncryptionKey/aKeySchedule? Probably. 
-  // What happens when I have multiple calls to decrypt/encrypt with diff keys / ivs? Probably not a big deal I think, as long as each
-  // one happens altogether.. which it most definitely does. 
-  // I need to figure out what the 'buffer' to assemble the mask in is even for. I passed taht to
-  // EVP_CipherUPdate when I did it, but who knows if thats riht. 
   BcvEncryptionKey *pNew;
   pNew = (BcvEncryptionKey*)sqlite3_malloc(sizeof(BcvEncryptionKey));
   if( pNew ) {
     memset(pNew, 0, sizeof(BcvEncryptionKey));
-    memcpy(pNew->aKey, aKey, BCV_KEY_SIZE); // Does this work..? I also saw a strlen(src) + 1 to I guess get the null terminator..?
+    memcpy(pNew->aKey, aKey, BCV_KEY_SIZE);
   }
   return pNew;
 }
@@ -586,19 +577,8 @@ int bcvEncrypt(
   const u8 *aNonce,               /* 16 byte nonce value */
   unsigned char *aData, int nData /* Buffer to encrypt */
 ){
-  u8 *aMask;
-
   assert( (nData % 16)==0 );
   assert( ((aNonce - (u8*)0) % 4)==0 );
-
-  if( nData>pKey->nMask ){
-    sqlite3_free(pKey->aMask);
-    pKey->nMask = 0;
-    pKey->aMask = sqlite3_malloc(nData);
-    if( pKey->aMask==0 ) return SQLITE_NOMEM;
-    pKey->nMask = nData;
-  }
-  aMask = pKey->aMask;
 
   int outlen = 0;
 
@@ -606,7 +586,6 @@ int bcvEncrypt(
   if (ctx == NULL) {
     ctx = EVP_CIPHER_CTX_new();
     EVP_CipherInit_ex(ctx, EVP_aes_128_ctr(), NULL, NULL, NULL, 1); // pass 1 to say we are encrypting (not decrypting)
-    // EVP_CIPHER_CTX_set_padding(ctx, 0);
     OPENSSL_assert(EVP_CIPHER_CTX_key_length(ctx) == 16);
     OPENSSL_assert(EVP_CIPHER_CTX_iv_length(ctx) == 16);
   }
@@ -616,15 +595,14 @@ int bcvEncrypt(
   {
       /* Error */
       EVP_CIPHER_CTX_free(ctx);
-      return 0;
-  } // the buffer to encrypt is aData, but we're storing it in pKey->aMask.
+      return SQLITE_ERROR;
+  } 
   if (!EVP_CipherFinal_ex(ctx, aData, &outlen))
   {
       /* Error */
       EVP_CIPHER_CTX_free(ctx);
-      return 0; // return SQLITE_ERROR?
+      return SQLITE_ERROR;
   }
-  // memcpy(aData, pKey->aMask, outlen); // Alternatively I can also potentially just skip aMask altogether and use aData as the outbbuffer in 620 and 614.
   return SQLITE_OK;
 }
 
@@ -638,16 +616,10 @@ int bcvDecrypt(
   const u8 *aNonce,               /* 16 byte nonce value */
   unsigned char *aData, int nData /* Buffer to decrypt */
 ){
-  // how can we make this work? 
-  // All the same code I think. Can we use a global ctx?
-  // What happens if a client is decrypting while the daemon is encrypting? 
-
-  // aNonce = "1234567887654321";
   static EVP_CIPHER_CTX *ctx = NULL;
   if (ctx == NULL) {
     ctx = EVP_CIPHER_CTX_new();
     EVP_CipherInit_ex(ctx, EVP_aes_128_ctr(), NULL, NULL, NULL, 0); // pass 0 to say we are decrypting (not encrypting)
-    // EVP_CIPHER_CTX_set_padding(ctx, 0);
     OPENSSL_assert(EVP_CIPHER_CTX_key_length(ctx) == 16);
     OPENSSL_assert(EVP_CIPHER_CTX_iv_length(ctx) == 16);
   }
@@ -659,17 +631,16 @@ int bcvDecrypt(
   {
       /* Error */
       EVP_CIPHER_CTX_free(ctx);
-      return 0;
+      return SQLITE_ERROR;
   }
   if (!EVP_CipherFinal_ex(ctx, aData, &outlen))
   {
       /* Error */
       EVP_CIPHER_CTX_free(ctx);
-      return 0; // return SQLITE_ERROR?
+      return SQLITE_ERROR;
   }
   // memcpy(aData, pKey->aMask, outlen); // Alternatively I can also potentially just skip aMask altogether and use aData as the outbbuffer in 620 and 614.
   return SQLITE_OK;
-  // return bcvEncrypt(pKey, aNonce, aData, nData);
 }
 
 
