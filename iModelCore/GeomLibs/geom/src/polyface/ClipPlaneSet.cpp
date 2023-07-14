@@ -1929,6 +1929,9 @@ TransformR    worldToLocal
     return nullptr;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 static bool curveIsInsideClipper
 (
 CurveVectorCR curve,
@@ -1937,8 +1940,8 @@ ClipPlaneSetCR clipper
     {
     if (curve.empty())
         return false;
-    // either all of curve is inside or outside the clipper so we only
-    // need to test some point inside the curve, i.e., not an endpoint
+    // either all of curve is inside or outside the clipper so we only need to test some
+    // point inside the curve, i.e., not an endpoint. We pick the mid point (fraction = 0.5)
     DPoint3d midPoint;
     curve[0]->FractionToPoint(0.5, midPoint);
     return clipper.IsPointInside(midPoint);

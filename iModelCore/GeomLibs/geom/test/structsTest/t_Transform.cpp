@@ -182,7 +182,7 @@ void CheckTransformMultiply (TransformCR A, double bx, double by, double bz)
 
     DPoint2d C2;
     A.Multiply (C2, B2);
-    
+
     Check::Near (C2, DPoint2d::From (AB2xy.x, AB2xy.y));
     }
 
@@ -235,9 +235,9 @@ TEST (Transform, MixedProducts)
                 0.3, 0.23, 0.67,    9.3,
                 -0.3, 0.2, 0.98,    10.983798712,
                 0.4, 0.5, 0.29,     -2.01);
-            
+
     TestMixedProduct (TA, TB);
-                
+
     }
 
 
@@ -285,7 +285,7 @@ TEST (Transform, Init2)
     Check::Perpendicular (vectorA2, vector01, "Zperp(01)");
     Check::Perpendicular (vectorA2, vector02, "Zperp(02)");
     Check::Parallel (vector01, vectorA0, "Xpar(01)");
-    
+
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -392,7 +392,7 @@ void testTransformImplicitPlane (TransformCR transform)
         vec0.x += 3.0;
         vec0.y *= 1.0;
         vec0.z *= -0.3;
-        }    
+        }
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -562,7 +562,7 @@ static DPoint3d s_points[] =
     {1,1,1},
     {1,2,3},
     {-2,3,9},
-    }; 
+    };
 void TestScaleAroundPlane (DPoint3dCR origin, DVec3dCR normal)
     {
     Transform mirror, onPlane;
@@ -604,9 +604,9 @@ TEST (Transform, Mirror)
     {
     TestScaleAroundPlane (DPoint3d::From (0,0,0), DVec3d::From (1,0,0));
     TestScaleAroundPlane (DPoint3d::From (0.3,0.2,0.1), DVec3d::From (1.3,0.4,0.2));
-    
+
     }
-    
+
 
 void testSolve (TransformCR forward)
     {
@@ -621,7 +621,7 @@ void testSolve (TransformCR forward)
         Transform AB = Transform::FromProduct (forward, inverse);
         Check::True (AB.IsIdentity (), "Ainv*A=I");
         }
-    }    
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -653,7 +653,7 @@ TEST (Transform, Solve)
 bool IsPointInFrontOfPlaneAsViewed (DMap4dCR map, DPoint3dCR planeOrigin, DVec3dCR planeNormal, DPoint3dCR testPoint)
     {
     DPoint4d homogeneousPlane;
-    
+
     if (homogeneousPlane.PlaneFromOriginAndNormal (planeOrigin, planeNormal))
         {
         static double s_relTol = 1.0e-5;    // fluffy viewing tolerance?
@@ -664,9 +664,9 @@ bool IsPointInFrontOfPlaneAsViewed (DMap4dCR map, DPoint3dCR planeOrigin, DVec3d
         double tol = s_relTol * (1.0 + fabs (a0) + fabs (a1) + fabs (homogeneousPlane.w));
         return a0 * a1 >0 || fabs (a1) < tol;
         }
-    return false;    
+    return false;
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -679,7 +679,7 @@ TEST (DMatrix4d, IsPointInFrontAsViewed)
     DPoint3d rayOrigin = DPoint3d::FromSumOf (planeOrigin, planeX, 2, planeY, 3);  // somewhere else on the plane.
     DMap4d map;
     map.InitIdentity ();
-    // NOTE: Eyepoint is at +Zinfinity. 
+    // NOTE: Eyepoint is at +Zinfinity.
     DVec3d rayDirection = DVec3d::FromSumOf (planeX, 0.3, planeY, 0.1, planeZ, 3);    // clearly out of plane, but not perpendicular
     for (double f = -2.0; f < 3.0; f+= 0.993)   // stay away from 0.0
         {
@@ -687,7 +687,7 @@ TEST (DMatrix4d, IsPointInFrontAsViewed)
         double testPointAltitude = testPoint.DotDifference (planeOrigin, planeNormal);
         Check::Bool (testPointAltitude * planeNormal.z > 0.0 , IsPointInFrontOfPlaneAsViewed (map, planeOrigin, planeNormal, testPoint), "eye plane test");
         }
-        
+
     Check::Bool (true, IsPointInFrontOfPlaneAsViewed (map, planeOrigin, planeNormal, planeOrigin), "eye plane test -- plane origin itself");
     }
 
@@ -755,7 +755,7 @@ TEST(Transform, FactorTranslateRotateScale)
     RotMatrix rotation01 = RotMatrix::FromVectorAndRotationAngle (vector01, theta01);
     DVec3d scale01 = DVec3d::From (1,1,1);
     Transform frame1 = AssembleTranslateRotateScale (origin01, rotation01, scale01);
-    
+
     DPoint3d origin12 = DPoint3d::From (5,1,3);
     DVec3d vector12 = DVec3d::From (2,7,3);;
     DVec3d scale12 = DVec3d::From (1.1,3,2.3);
@@ -776,7 +776,7 @@ TEST(Transform, FactorTranslateRotateScale)
         Check::Near (rotation12, rotation12A, "rotation");
         Check::Near (scale12, scale12A, "scale");
         }
-                    
+
     }
 // Return a transform which (conceptually) applies roll around X, pitch around Y, yaw around Z, all with given point fixed.
 //
@@ -1354,7 +1354,7 @@ TEST(Transform, CheckTrans)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST(Transform, SetGetRowColumn) 
+TEST(Transform, SetGetRowColumn)
     {
     Transform tr;
     tr.InitIdentity();
@@ -1450,17 +1450,17 @@ TEST(Transform, RigidTransform)
                                    0, 0.866, 0.5, 1);
     Check::False(tr2.IsRigid());
     DPoint3d translate;
-    
+
     Transform tr3 = Transform::FromRowValues(1, 0, 0, 3,
                                              0, 1, 0, 3,
                                              0, 0, 1, 3);
-    
+
     Check::True(tr3.IsTranslate(translate));
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST(Transform, IsUniformScale) 
+TEST(Transform, IsUniformScale)
     {
     Transform tr = Transform::From(RotMatrix::FromAxisAndRotationAngle(0, Angle::FromDegrees(60).Radians()));
     DPoint3d tre;
@@ -1536,19 +1536,19 @@ TEST(Transform, MultiplyTranspose)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST(Transform, Transform2Dto3D) 
+TEST(Transform, Transform2Dto3D)
     {
     Transform tr = Transform::FromRowValues(1, 0, 0, 3,
                                   0, Angle::FromDegrees(180).Cos(), -Angle::FromDegrees(180).Sin(), 2,
                                   0, Angle::FromDegrees(180).Sin(), Angle::FromDegrees(180).Cos(), 4);
-    
+
     bvector<DPoint3d> outPoints;
     bvector<DPoint2d> inPoints = { DPoint2d::From(4, 5),
                                    DPoint2d::From(0.04, 1.05),
                                    DPoint2d::From(4, -5),
                                    DPoint2d::From(-9.4, 5.1) };
     tr.Multiply(outPoints, inPoints);
-    
+
     Check::Near(outPoints[0].x, 7); Check::Near(outPoints[0].y, -3); Check::Near(outPoints[0].z, 4);
     Check::Near(outPoints[1].x, 3.04); Check::Near(outPoints[1].y, 0.95); Check::Near(outPoints[1].z, 4);
     Check::Near(outPoints[2].x, 7); Check::Near(outPoints[2].y, 7); Check::Near(outPoints[2].z, 4);
@@ -1609,12 +1609,12 @@ TEST(Transform, UnfiformScaleAndRotate)
                                                                        false);
     uniformScaleAndRotateAboutLine(Transform::FromScaleFactors(0.3, 0.3, 0.3),
                                                                        false);
-   
+
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST(Transform, FixedPoint) 
+TEST(Transform, FixedPoint)
     {
     Transform tr = Transform::FromRowValues(1, 0, 0, 2,
                                             0, 1, 0, 3,
@@ -1625,7 +1625,7 @@ TEST(Transform, FixedPoint)
     tr = Transform::FromRowValues(1, 4, 0, 2,
                                   0, 1, 3, 3,
                                   0, 0, 1, 2);    //impure translation
-    
+
     Check::True(tr.GetAnyFixedPoint(fixedPoint));
     }
 
@@ -1655,14 +1655,14 @@ TEST(Transform, TransformRay)
     trans.Multiply(rayStart);
     Check::Near(rayStart, ray3d.origin);
     }
-    
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
 TEST(Transform, UnaffectedPoint)
     {
     Transform tr = Transform::FromIdentity();
-    
+
     DPoint3d pnt = DPoint3d::From(1.2, -3.4, 5.6);
     DPoint3d pnt2 = pnt;
     tr.Multiply(pnt);
@@ -1675,7 +1675,7 @@ TEST(Transform, UnaffectedPoint)
     Check::False(tr.GetAnyFixedPoint(fixedPoint));
     tr = Transform::From(RotMatrix::FromAxisAndRotationAngle(2, Angle::FromDegrees(60).Radians()));
     Check::True(tr.GetAnyFixedPoint(fixedPoint));
-   
+
     }
 
 //---------------------------------------------------------------------------------------
@@ -1710,11 +1710,11 @@ TEST(Transform, PlanarTransform)
                                DVec3d::From(1,0,0),
                                DVec3d::From(0,1,0),
                                DVec3d::From(0,0,1),
-                               
+
                                DVec3d::From(1,0,0),
                                DVec3d::From(0,1,0),
                                DVec3d::From(0,0,1),
-                               
+
                                DVec3d::From(0,0,1),
                                DVec3d::From(0,1,0),
                                DVec3d::From(1,0,0),
@@ -1747,7 +1747,7 @@ TEST(Transform, PlanarTransform)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST(Transform, TransformOnPointArray) 
+TEST(Transform, TransformOnPointArray)
     {
     bvector<DPoint3d> outPoints;
     bvector<DPoint3d> inPoints = { DPoint3d::From(4,4,4),
@@ -1760,12 +1760,12 @@ TEST(Transform, TransformOnPointArray)
     tr.SolveArray(outPoints, inPoints);
 
     DPoint3d testOut;
-    for (size_t i = 0; i < inPoints.size(); i++) 
+    for (size_t i = 0; i < inPoints.size(); i++)
         {
         tr.Solve(testOut, inPoints[i]);
         Check::Near(testOut, outPoints[i]);
         }
-    
+
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -1781,7 +1781,7 @@ TEST(Transform, WeightedTransform)
     bvector<double> weights = { 6, 9, 1.8, 4 };
     tr.MultiplyWeighted(outPoints, inPoints, &weights);
     DPoint3d testOut;
-    for (size_t i = 0; i < inPoints.size(); i++) 
+    for (size_t i = 0; i < inPoints.size(); i++)
         {
         testOut = inPoints[i];
         tr.MultiplyWeighted(testOut, weights[i]);
@@ -1864,7 +1864,7 @@ DSegment3d ToView3d (Coords coords, DSegment3dCR segment)
     return DSegment3d::From (point0, point1);
     }
 
-// "DisplayWorld" ... means 
+// "DisplayWorld" ... means
 //   map to view coordinates
 //   Check::SaveTransformed
 void DisplaySegment (Coords coords, DPoint3dCR pointA, DPoint3dCR pointB)
@@ -1872,7 +1872,7 @@ void DisplaySegment (Coords coords, DPoint3dCR pointA, DPoint3dCR pointB)
     Check::SaveTransformed (DSegment3d::From (ToView3d (coords, pointA), ToView3d (coords, pointB)));
     }
 
-// "DisplayWorld" ... means 
+// "DisplayWorld" ... means
 //   map to view coordinates
 //   Check::SaveTransformed
 void DisplayPlane (Coords coords, DPoint3dDVec3dDVec3dCR plane, int numX, int numY)
@@ -2018,7 +2018,7 @@ void MoveOnCuboidMidZPlane (DPoint3dCR targetPointView)
         DPoint3d::From (1.0, 0.5, 0.5),
         DPoint3d::From (0.5, 0.0, 0.5));
 
-    // construct world space rays from prior and current view points into the view . . 
+    // construct world space rays from prior and current view points into the view . .
     DRay3d startRay = ViewPointToWorldRay (startingPointView);
     DRay3d endRay   = ViewPointToWorldRay (targetPointView);
     // Find intersections of each ray with the plane . ..
@@ -2118,7 +2118,7 @@ TEST(View,MouseMove)
         auto worldPlane = tool.CuboidFractionsToPlaneByVectors (
                     DPoint3d::From (0.5,0.5, 0.5),  // CuboidFractions center
                 DPoint3d::From (1.0,0.5, 0.5),  // CuboidFractions right center
-                DPoint3d::From (0.5,1.0, 0.5) 
+                DPoint3d::From (0.5,1.0, 0.5)
                 );
         viewPort.DisplayPlane (Coords::WORLD, worldPlane, 3, 2);
         auto shiftSegment = tool.MoveOnPlane (worldRayA, worldRayB, worldPlane);
@@ -2143,7 +2143,7 @@ TEST(View,MouseMove)
     *             moving along its connecting segment, all other points rotating smoothly from the start orientation to end orientation:
     *
     *              SmoothTransformBetweenFrusta context;
-    *              if (context.InitFractionalFrustumTransform (corner0, corner1, fractionU, fractionV, fractionW)) .... 
+    *              if (context.InitFractionalFrustumTransform (corner0, corner1, fractionU, fractionV, fractionW)) ....
     *           (this only fails for flattened frustum -- should not happen)
     *   2) Get any intermediate 8 corners (at fraction) with
     */
@@ -2341,7 +2341,7 @@ TEST(View,MouseMove)
                     {
                     DPoint3d cornerF[8];
                     double g = 0.05;
-                    // tight spacing at start and end, bigger at middle 
+                    // tight spacing at start and end, bigger at middle
                     for (double f : {0.0, g, 2.0 * g,  0.25, 0.5, 0.75, 1.0 - 2.0 * g, 1.0 - g, 1.0})
                         {
                         context.FractionToWorldFrustum (f, cornerF);

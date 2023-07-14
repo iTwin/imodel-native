@@ -160,8 +160,9 @@ GEOMDLLIMPEXP static void SortByCurveAndFraction (bvector<CurveLocationDetail> &
 
 //! Sort to order CurveLocationDetails by primitive index and then by fraction within those curves.
 //! Use this method when the order of the primitives is relevant.
-//! Note that detail.a is used to populate the curve primitive indexes if curve is passed in.
-//! If you have already populated detail.a with your primary sort data, do not pass curve.
+//! @param curve CurveVector containing the primitives referenced by the details. When provided, this curve is used
+//! to populate each detail.a field with the primitive index. If you have already populated detail.a with your primary
+//! sort data, do not pass curve.
 GEOMDLLIMPEXP static void SortByIndexAndFraction(bvector<CurveLocationDetail> &details, CurveVectorCP curve = nullptr);
 
 //! Return a detail for the closest point, considering only those within searchRadius.

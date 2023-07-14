@@ -2437,17 +2437,17 @@ TEST(ClipPlaneSet,ClipNotOpenBoundary)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(ClipPlaneSet,ClipComplexOpenBoundary)
+TEST(ClipPlaneSet,ClipPlanarAndNonPlanarOpenBoundary)
     {
-    // curve
-    CurveVectorPtr curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
+    // planar curve
+    CurveVectorPtr planarCurve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
     DEllipse3d arc = DEllipse3d::FromPointsOnArc(
         DPoint3d::From(0, -5, 0),
         DPoint3d::From(8, 8, 0),
         DPoint3d::From(0, 5, 0)
         );
     ICurvePrimitivePtr arcPrim = ICurvePrimitive::CreateArc(arc);
-    curve->push_back(arcPrim);
+    planarCurve->push_back(arcPrim);
 
     bvector<DPoint3d> lineString1 = {
         DPoint3d::From(0, 5, 0),
@@ -2457,14 +2457,14 @@ TEST(ClipPlaneSet,ClipComplexOpenBoundary)
         DPoint3d::From(-4, 5, 0),
     };
     ICurvePrimitivePtr lineString1Prim = ICurvePrimitive::CreateLineString(lineString1);
-    curve->push_back(lineString1Prim);
+    planarCurve->push_back(lineString1Prim);
 
     DSegment3d seg1 = DSegment3d::From(DPoint3d::From(-4, 5, 0), DPoint3d::From(-10, 0, 0));
     ICurvePrimitivePtr seg1Prim = ICurvePrimitive::CreateLine(seg1);
-    curve->push_back(seg1Prim);
+    planarCurve->push_back(seg1Prim);
     DSegment3d seg2 = DSegment3d::From(DPoint3d::From(-10, 0, 0), DPoint3d::From(-4, -5, 0));
     ICurvePrimitivePtr seg2Prim = ICurvePrimitive::CreateLine(seg2);
-    curve->push_back(seg2Prim);
+    planarCurve->push_back(seg2Prim);
 
     bvector<DPoint3d> lineString2 = {
         DPoint3d::From(-4, -5, 0),
@@ -2474,80 +2474,74 @@ TEST(ClipPlaneSet,ClipComplexOpenBoundary)
         DPoint3d::From(0, -5, 0),
     };
     ICurvePrimitivePtr lineString2Prim = ICurvePrimitive::CreateLineString(lineString2);
-    curve->push_back(lineString2Prim);
-    Check::SaveTransformed(curve);
+    planarCurve->push_back(lineString2Prim);
+    Check::SaveTransformed(planarCurve);
 
-    // clipper
-    bvector<DPoint3d> poly2 {{-7,-7,0},{7,-7,0},{7,7,0},{-7,7,0},{-7,-7,0}};
-    Check::SaveTransformed(poly2);
-    ConvexClipPlaneSet convexClipPlaneSet;
-    convexClipPlaneSet.ReloadSweptConvexPolygon(poly2, DVec3d::From(0, 0, 1), 0);
-    ClipPlaneSet clipPlaneSet(convexClipPlaneSet);
-    // perform the clip
-    bvector<CurveVectorPtr> clippedRegion;
-    bool ret = clipPlaneSet.ClipCurveVector(*curve, clippedRegion);
-    Check::Shift(30,0,0);
-    Check::True(ret);
-    for (CurveVectorPtr clippedCurve : clippedRegion)
-        Check::SaveTransformed(*clippedCurve);
-    Check::ClearGeometry("ClipPlaneSet.ClipComplexOpenBoundary");
-    }
+    // non-planar curve
+    CurveVectorPtr nonPlanarCurve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
+    nonPlanarCurve->push_back(arcPrim);
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST(ClipPlaneSet,ClipNonPlanarOpenBoundary)
-    {
-    // curve
-    CurveVectorPtr curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
-    DEllipse3d arc = DEllipse3d::FromPointsOnArc(
-        DPoint3d::From(0, -5, 0),
-        DPoint3d::From(8, 8, 0),
-        DPoint3d::From(0, 5, 0)
-        );
-    ICurvePrimitivePtr arcPrim = ICurvePrimitive::CreateArc(arc);
-    curve->push_back(arcPrim);
-
-    bvector<DPoint3d> lineString1 = {
+    bvector<DPoint3d> lineString3 = {
         DPoint3d::From(0, 5, 0),
         DPoint3d::From(-1, 10, 1),
         DPoint3d::From(-2, 5, -1),
         DPoint3d::From(-3, 10, 2),
         DPoint3d::From(-4, 5, -2),
     };
-    ICurvePrimitivePtr lineString1Prim = ICurvePrimitive::CreateLineString(lineString1);
-    curve->push_back(lineString1Prim);
+    ICurvePrimitivePtr lineString3Prim = ICurvePrimitive::CreateLineString(lineString3);
+    nonPlanarCurve->push_back(lineString3Prim);
 
-    DSegment3d seg1 = DSegment3d::From(DPoint3d::From(-4, 5, -2), DPoint3d::From(-10, 0, -1));
-    ICurvePrimitivePtr seg1Prim = ICurvePrimitive::CreateLine(seg1);
-    curve->push_back(seg1Prim);
-    DSegment3d seg2 = DSegment3d::From(DPoint3d::From(-10, 0, -1), DPoint3d::From(-4, -5, 0));
-    ICurvePrimitivePtr seg2Prim = ICurvePrimitive::CreateLine(seg2);
-    curve->push_back(seg2Prim);
+    DSegment3d seg3 = DSegment3d::From(DPoint3d::From(-4, 5, -2), DPoint3d::From(-10, 0, -1));
+    ICurvePrimitivePtr seg3Prim = ICurvePrimitive::CreateLine(seg3);
+    nonPlanarCurve->push_back(seg3Prim);
+    DSegment3d seg4 = DSegment3d::From(DPoint3d::From(-10, 0, -1), DPoint3d::From(-4, -5, 0));
+    ICurvePrimitivePtr seg4Prim = ICurvePrimitive::CreateLine(seg4);
+    nonPlanarCurve->push_back(seg4Prim);
 
-    bvector<DPoint3d> lineString2 = {
+    bvector<DPoint3d> lineString4 = {
         DPoint3d::From(-4, -5, 0),
         DPoint3d::From(-3, -10, 1),
         DPoint3d::From(-2, -5, -1),
         DPoint3d::From(-1, -10, 2),
         DPoint3d::From(0, -5, 0),
     };
-    ICurvePrimitivePtr lineString2Prim = ICurvePrimitive::CreateLineString(lineString2);
-    curve->push_back(lineString2Prim);
-    Check::SaveTransformed(curve);
+    ICurvePrimitivePtr lineString4Prim = ICurvePrimitive::CreateLineString(lineString4);
+    nonPlanarCurve->push_back(lineString4Prim);
+    Check::Shift(0, 30, 0);
+    Check::SaveTransformed(nonPlanarCurve);
 
     // clipper
-    bvector<DPoint3d> poly2 {{-7,-7,0},{7,-7,0},{7,7,0},{-7,7,0},{-7,-7,0}};
-    Check::SaveTransformed(poly2);
+    bvector<DPoint3d> clipper {{-7,-7,0},{7,-7,0},{7,7,0},{-7,7,0},{-7,-7,0}};
+    Check::SaveTransformed(clipper);
+    Check::Shift(0, -30, 0);
+    Check::SaveTransformed(clipper);
     ConvexClipPlaneSet convexClipPlaneSet;
-    convexClipPlaneSet.ReloadSweptConvexPolygon(poly2, DVec3d::From(0, 0, 1), 0);
+    convexClipPlaneSet.ReloadSweptConvexPolygon(clipper, DVec3d::From(0, 0, 1), 0);
     ClipPlaneSet clipPlaneSet(convexClipPlaneSet);
-    // perform the clip
-    bvector<CurveVectorPtr> clippedRegion;
-    bool ret = clipPlaneSet.ClipCurveVector(*curve, clippedRegion);
-    Check::Shift(30,0,0);
-    Check::True(ret);
-    for (CurveVectorPtr clippedCurve : clippedRegion)
+
+    // perform the clip on planar curve
+    bvector<CurveVectorPtr> planarClippedRegion;
+    bool ret1 = clipPlaneSet.ClipCurveVector(*planarCurve, planarClippedRegion);
+    Check::Shift(30, 0, 0);
+    Check::True(ret1);
+    for (CurveVectorPtr clippedCurve : planarClippedRegion)
         Check::SaveTransformed(*clippedCurve);
-    Check::ClearGeometry("ClipPlaneSet.ClipNonPlanarOpenBoundary");
+
+    // perform the clip on non-planar curve
+    bvector<CurveVectorPtr> nonPlanarClippedRegion;
+    bool ret2 = clipPlaneSet.ClipCurveVector(*nonPlanarCurve, nonPlanarClippedRegion);
+    Check::Shift(0, 30, 0);
+    Check::True(ret2);
+    Transform flatten = Transform::FromRowValues (1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+    for (CurveVectorPtr clippedCurve : nonPlanarClippedRegion)
+        {
+        Check::SaveTransformed(*clippedCurve);
+        clippedCurve->TransformInPlace(flatten);
+        }
+
+    // compare planarClippedRegion and flatten nonPlanarClippedRegion
+    for (size_t i = 0; i < planarClippedRegion.size(); i++)
+        Check::True(planarClippedRegion[i]->IsSameStructureAndGeometry(*nonPlanarClippedRegion[i]));
+
+    Check::ClearGeometry("ClipPlaneSet.ClipPlanarAndNonPlanarOpenBoundary");
     }

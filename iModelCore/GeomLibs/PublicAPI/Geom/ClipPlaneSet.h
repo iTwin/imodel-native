@@ -18,7 +18,6 @@ enum    ClipPlaneContainment
     ClipPlaneContainment_StronglyOutside  =  3,
     };
 
-
 // An array of arrays of T, with the point arrays to be used like a stack.
 // When the stack is popped, the top array is swapped to a holding area instead of
 // going to destructor, and then reused on later push
@@ -171,8 +170,7 @@ struct  ConvexClipPlaneSet : T_ClipPlanes
 
     //! Create clip plane set for regions to one side of a polyline.
     //! If hiddenEdge is an empty array, all clips are marked as regular clippers.
-    //! The hiddenEdge array must contain a boolean (usual false) for each point of the points array. If (true),
-    //! clip output from that
+    //! The hiddenEdge array must contain a boolean (usual false) for each point of the points array. If (true), clip output from that.
     //! intersections with that edge may be made invisible by some later methods.
     GEOMDLLIMPEXP static ConvexClipPlaneSet  FromXYPolyLine
         (
@@ -183,20 +181,19 @@ struct  ConvexClipPlaneSet : T_ClipPlanes
 
     //! Add space "to the left of a polyline", with left determined by edges and an upvector.
     //!<ul>
-    //!<li>If teh polyline is closed, an orientation test is done and the point order is reversed if needed to be sure
+    //!<li>If the polyline is closed, an orientation test is done and the point order is reversed if needed to be sure
     //!     the planes are oriented to enclose the space.
     //!<li>For each edge of the polyline, the primary plane has its primary outward normal as edge vector cross up vector.
     //!<li>The normal is then rotated by the tilt angle towards the up vector.
     //!<li>to close around a polygon, repeat the first point at end.
-    //!<li>When closed, this corresponds to a CCW polygon with the upVector pointing at the eye, and the volume expands
-    //!<li>behind the polygon
+    //!<li>When closed, this corresponds to a CCW polygon with the upVector pointing at the eye, and the volume expands behind the polygon
     //!<li>
     //!</ul>
     GEOMDLLIMPEXP void AddSweptPolyline
         (
-        bvector<DPoint3d> const &points,  //!< [in] polyline points
-        DVec3d upVector,          //!< [in] upward vector (e.g. towards eye at infinity)
-        Angle  tiltAngle            //!< [in] angle for tilt of planes.
+        bvector<DPoint3d> const &points, //!< [in] polyline points
+        DVec3d upVector,                 //!< [in] upward vector (e.g. towards eye at infinity)
+        Angle  tiltAngle                 //!< [in] angle for tilt of planes.
         );
     //! Add the plane if it is valid.
     GEOMDLLIMPEXP bool Add (ValidatedClipPlane const &plane);
@@ -220,8 +217,8 @@ struct  ConvexClipPlaneSet : T_ClipPlanes
     GEOMDLLIMPEXP void ClipPointsOnOrInside
         (
         bvector<DPoint3d> const &points,   //!< [in] input points
-        bvector<DPoint3d> *inOrOn,      //!< [out] points that are in or outside.
-        bvector<DPoint3d> *out      //!< [out] points that are outside.
+        bvector<DPoint3d> *inOrOn,         //!< [out] points that are in or outside.
+        bvector<DPoint3d> *out             //!< [out] points that are outside.
         ) const;
 
     //!  Transform plane set.
@@ -242,8 +239,8 @@ struct  ConvexClipPlaneSet : T_ClipPlanes
     GEOMDLLIMPEXP int ReloadSweptConvexPolygon
         (
         bvector<DPoint3d> const &points, //!< [in] polygon points
-        DVec3dCR sweepDirection,  //!< [in] direction for sweep
-        int sideSelect  //!< [in] 0 to just clip at polygon sides.mPositive to keep only above the polygon plane, negative to keep only below.
+        DVec3dCR sweepDirection,         //!< [in] direction for sweep
+        int sideSelect                   //!< [in] 0 to just clip at polygon sides. Positive to keep only above the polygon plane, negative to keep only below.
         );
 
     //! Return the (polygon) of intersection
@@ -280,13 +277,13 @@ struct  ConvexClipPlaneSet : T_ClipPlanes
     //! Return the (0 or 1) intersection polygon and (0 or to numClipPlane) outside pieces.
     GEOMDLLIMPEXP void ConvexPolygonClipInsideOutside
     (
-    bvector<DPoint3d> const &input, //!< [in] points of a convex polygon
-    bvector<DPoint3d> &inside,      //!< [out] clipped polygon (inside the convex set)
-    BVectorCache<DPoint3d> &outside,      //!< [out] clipped polygons (outside the convex set)
-    bvector<DPoint3d> &work1,       //!< [in,out] work vector for efficient reuse over multiple calls
-    bvector<DPoint3d> &work2,       //!< [in,out] work vector for efficient reuse over multiple calls
-    bool clearOutside = true,       //!< [in] true to clear the outside data.
-    double distanceTolerance = 0.0  //!< [in] if nonzero, polygons within this distance of interior planes are classified as entirely "in"
+    bvector<DPoint3d> const &input,  //!< [in] points of a convex polygon
+    bvector<DPoint3d> &inside,       //!< [out] clipped polygon (inside the convex set)
+    BVectorCache<DPoint3d> &outside, //!< [out] clipped polygons (outside the convex set)
+    bvector<DPoint3d> &work1,        //!< [in,out] work vector for efficient reuse over multiple calls
+    bvector<DPoint3d> &work2,        //!< [in,out] work vector for efficient reuse over multiple calls
+    bool clearOutside = true,        //!< [in] true to clear the outside data.
+    double distanceTolerance = 0.0   //!< [in] if nonzero, polygons within this distance of interior planes are classified as entirely "in"
     ) const;
 
     //! Compute crossings of this set's planes with curve primitives within a CurveVector.
@@ -542,7 +539,7 @@ struct  ClipPlaneSet :  bvector <ConvexClipPlaneSet>
         );
 
     //! Clip a planar region to this ClipPlaneSet.
-    //! @param planarRegion [in] A CurveVector of type Loop or ParityRegion.
+    //! @param planarRegion [in] the CurveVector to be clipped. Must satisfy planarRegion.IsAnyRegionType() == true.
     //! @param localToWorld [out] transform from the plane of the planarRegion to world.
     //! @param worldToLocal [out] transform from world to the plane of the planarRegion.
     GEOMDLLIMPEXP CurveVectorPtr ClipPlanarRegion
@@ -553,9 +550,9 @@ struct  ClipPlaneSet :  bvector <ConvexClipPlaneSet>
         ) const;
 
     //! Clip a path to this ClipPlaneSet.
-    //! @param curve [in] The open CurveVector to be clipped.
+    //! @param curve [in] the CurveVector to be clipped. Must satisfy curve.IsOpenPath() == true.
     //! @param pClippedCurves [out] optional array of clipped curves.
-    //! @param pClippedDetails [out] optional array of clipped curves detailed data.
+    //! @param pClippedDetails [out] optional array of detail pairs, each describing the start and end points of the corresponding clipped curve.
     //! @return true if clipping succeeded and false if clipping failed.
     GEOMDLLIMPEXP bool ClipPath
         (
@@ -596,11 +593,11 @@ struct  ClipPlaneSet :  bvector <ConvexClipPlaneSet>
     //! Find the (fractional) intervals of a segment that are within the intersection of an array of ClipPlaneSet.
     GEOMDLLIMPEXP static void ClipLineToIntersectionOfClipPlaneSets
         (
-        bvector<ClipPlaneSet> &clippers,    //!< [in] array of clippers
-        DSegment3dCR segment,    //!< [in] segment to clip
+        bvector<ClipPlaneSet> &clippers,     //!< [in] array of clippers
+        DSegment3dCR segment,                //!< [in] segment to clip
         bvector<DRange1d> *insideIntervals,  //!< [out] array of clipped interval fractions
         bvector<DSegment3d> *insideSegments, //!< [out] array of clipped segments
-        BVectorCache<DRange1d> &rangeCache  //!< [out] cache for temporary arrays.
+        BVectorCache<DRange1d> &rangeCache   //!< [out] cache for temporary arrays.
         );
     //! Add ConvexClipPlaneSet's for clipping to the quads defined by corresponding segments in point arrays on opposite sides
     //!   of a path.
@@ -677,14 +674,14 @@ GEOMDLLIMPEXP void BooleanCombinationOfLineClips
     ClipPlaneSetsWithOpcodes &clippers, //!< [in] array of clippers with annotation for how they are to be applied.
     DSegment3dCR segment,               //!< [in] segment to clip
     bvector<DRange1d> *insideIntervals, //!< [out] segments that are outside
-    bvector<DSegment3d> *insideSegments    //! [out] segments that are inside
+    bvector<DSegment3d> *insideSegments //! [out] segments that are inside
     );
 //! Clip the linestring to the boolean combination.
 //! The (inside parts of) the clip are assembled into polylines.
 GEOMDLLIMPEXP void ClipPolylineToBooleanCombinationOfLineClips
     (
-    ClipPlaneSetsWithOpcodes &clippers, //!< [in] array of clippers with annotation for how they are to be applied.
-    bvector<DPoint3d> const &points,    //!< [in] polyline to clip
+    ClipPlaneSetsWithOpcodes &clippers,        //!< [in] array of clippers with annotation for how they are to be applied.
+    bvector<DPoint3d> const &points,           //!< [in] polyline to clip
     bvector<bvector<DPoint3d>> &clippedChains  //!< <out> array of clipped polylines
     );
 //! Clip the mesh to the boolean combination.
