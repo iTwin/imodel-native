@@ -320,8 +320,9 @@ void UsingRelationshipJoinExp::_ToJson(BeJsValue val , JsonFormat const& fmt) co
     //! ITWINJS_PARSE_TREE: UsingRelationshipJoinExp
     val.SetEmptyObject();
     val["id"] = "UsingRelationshipJoinExp";
-    GetToClassRef().ToJson(val["from"], fmt);
-    GetRelationshipClassNameExp().ToJson(val["to"], fmt);
+    GetFromClassRef().ToJson(val["from"], fmt);
+    GetToClassRef().ToJson(val["to"], fmt);
+    GetRelationshipClassNameExp().ToJson(val["using"], fmt);
     if (m_direction != JoinDirection::Implied)
         val["direction"] = ExpHelper::ToECSql(m_direction);
 }

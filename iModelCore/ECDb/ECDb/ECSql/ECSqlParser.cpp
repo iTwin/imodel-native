@@ -1683,6 +1683,11 @@ BentleyStatus ECSqlParser::ParseJoinType(ECSqlJoinType& joinType, OSQLParseNode 
     if (SQL_ISRULE(parseNode, outer_join_type))
         return ParseOuterJoinType(joinType, parseNode);
 
+    // outer_join_type SQL_TOKEN_OUTER
+    if (parseNode->count() == 2) {
+        if (SQL_ISRULE(parseNode->getChild(0), outer_join_type))
+            return ParseOuterJoinType(joinType, parseNode->getChild(0));
+    }
     BeAssert(false && "Invalid grammar. Expected JoinType");
     return ERROR;
     }
