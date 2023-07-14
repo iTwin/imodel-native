@@ -23,7 +23,13 @@ GCC_NOSTRICT = 1
 
 %include mdl.mki
 
-appName = iTwinLibxml2$(VC_Version)
+%if defined(iTwinNativeThirdParty)
+  dllPrefix = Be
+%else
+  dllPrefix = iTwin
+%endif
+
+appName = $(dllPrefix)Libxml2$(VC_Version)
 baseDir = $(_MakeFilePath)vendor/
 o = $(OutputRootDir)build/BeLibxml2/
 CCompPDBName = $(appName)
@@ -248,7 +254,7 @@ DLM_NO_BENTLEY_LIB = 1
     LINKER_LIBRARIES = ws2_32.lib
 %endif
 
-LINKER_LIBRARIES + $(BuildContext)SubParts/Libs/$(shlibprefix)iTwinIcu4c$(libext)
+LINKER_LIBRARIES + $(BuildContext)SubParts/Libs/$(shlibprefix)$(dllPrefix)Icu4c$(libext)
 
 DLM_CONTEXT_LOCATION = $(BuildContext)Delivery/
 DLM_LIB_CONTEXT_LOCATION = $(BuildContext)Delivery/

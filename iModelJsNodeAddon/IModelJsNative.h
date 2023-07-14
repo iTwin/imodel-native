@@ -481,6 +481,7 @@ private:
     static void RegisterOptionalDomains();
     static void InitializeSolidKernel();
     static void AddFallbackSchemaLocaters(ECDbR db, ECSchemaReadContextPtr schemaContext);
+    static void AddFallbackSchemaLocaters(ECSchemaReadContextPtr schemaContext);
 public:
     static void HandleAssertion(WCharCP msg, WCharCP file, unsigned line, BeAssertFunctions::AssertType type);
     static void GetECValuesCollectionAsJson(BeJsValue json, ECN::ECValuesCollectionCR);
@@ -531,6 +532,7 @@ public:
     static DbResult ImportSchema(ECDbR ecdb, BeFileNameCR pathname);
     static DbResult ImportSchemas(DgnDbR, bvector<Utf8String> const&, SchemaSourceType, const SchemaImportOptions&);
     static DbResult ImportFunctionalSchema(DgnDbR);
+    static BentleyStatus ConvertSchemas(bvector<Utf8String> const& inputStrings, bvector<Utf8String>& outputStrings, ECSchemaReadContextPtr schemaContext, bool convertCA);
     static ChangesetPropsPtr GetChangesetProps(Utf8StringCR dbGuid, BeJsConst arg);
     static bvector<ChangesetPropsPtr> GetChangesetPropsVec(bool& containsSchemaChanges, Utf8StringCR dbGuid, BeJsConst changeSets);
     static ChangesetStatus ApplySchemaChangeSet(BeFileNameCR dbFileName, bvector<ChangesetPropsCP> const& revisions, RevisionProcessOption applyOption);
