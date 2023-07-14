@@ -90,6 +90,8 @@ void TableValuedFunctionExp::_ToJson(BeJsValue val , JsonFormat const& fmt) cons
     val["id"] = "TableValuedFunctionExp";
     val["schema"] = GetSchemaName();
     GetFunctionExp()->ToJson(val["func"], fmt);
+    if (!GetAlias().empty())
+        val["alias"] = GetAlias();
 }
 
 /*---------------------------------------------------------------------------------------

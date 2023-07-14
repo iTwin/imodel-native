@@ -1079,7 +1079,9 @@ SelectStatementExp const* SubqueryExp::GetQuery() const { return GetChild<Select
 //+---------------+---------------+---------------+---------------+---------------+------
 void SubqueryExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
     //! ITWINJS_PARSE_TREE: SubqueryExp
-    GetQuery()->ToJson(val, fmt);
+    val.SetEmptyObject();
+    val["id"] = "SubqueryExp";
+    GetQuery()->ToJson(val["query"], fmt);
 }
 
 //-----------------------------------------------------------------------------------------
