@@ -62,7 +62,6 @@ protected:
 
     void _Accept(Visitor& visitor) const override {visitor._Visit(*this);}
     ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
-    ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationKeyCR other) const override;
     PropertyEditorParametersSpecification* _Clone() const override { return new PropertyEditorJsonParameters(*this); }
 
 public:
@@ -98,7 +97,6 @@ protected:
 
     void _Accept(Visitor& visitor) const override {visitor._Visit(*this);}
     ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
-    ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationKeyCR other) const override;
     PropertyEditorParametersSpecification* _Clone() const override {return new PropertyEditorMultilineParameters(*this);}
 
 public:
@@ -131,7 +129,6 @@ protected:
 
     void _Accept(Visitor& visitor) const override {visitor._Visit(*this);}
     ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
-    ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationKeyCR other) const override;
     PropertyEditorParametersSpecification* _Clone() const override {return new PropertyEditorRangeParameters(*this);}
 
 public:
@@ -168,7 +165,6 @@ protected:
 
     void _Accept(Visitor& visitor) const override {visitor._Visit(*this);}
     ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
-    ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationKeyCR other) const override;
     PropertyEditorParametersSpecification* _Clone() const override {return new PropertyEditorSliderParameters(*this);}
 
 public:
@@ -196,7 +192,6 @@ private:
     PropertyEditorParametersList m_parameters;
 
 protected:
-    ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationKeyCR other) const override;
     ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
 
     ECPRESENTATION_EXPORT Utf8CP _GetXmlElementName() const override;

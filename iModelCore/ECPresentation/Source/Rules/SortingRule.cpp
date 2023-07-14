@@ -197,23 +197,3 @@ MD5 SortingRule::_ComputeHash() const
         ADD_PRIMITIVE_VALUE_TO_HASH(md5, COMMON_JSON_ATTRIBUTE_ISPOLYMORPHIC, m_isPolymorphic);
     return md5;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool SortingRule::_ShallowEqual(PresentationKeyCR other) const
-    {
-    if (!ConditionalCustomizationRule::_ShallowEqual(other))
-        return false;
-
-    SortingRule const* otherRule = dynamic_cast<SortingRule const*>(&other);
-    if (nullptr == otherRule)
-        return false;
-
-    return m_schemaName == otherRule->m_schemaName
-        && m_className == otherRule->m_className
-        && m_propertyName == otherRule->m_propertyName
-        && m_sortAscending == otherRule->m_sortAscending
-        && m_doNotSort == otherRule->m_doNotSort
-        && m_isPolymorphic == otherRule->m_isPolymorphic;
-    }

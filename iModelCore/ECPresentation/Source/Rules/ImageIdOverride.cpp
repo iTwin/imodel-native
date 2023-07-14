@@ -109,18 +109,3 @@ MD5 ImageIdOverride::_ComputeHash() const
         ADD_STR_VALUE_TO_HASH(md5, IMAGE_ID_OVERRIDE_JSON_ATTRIBUTE_IMAGEID, m_imageIdExpression);
     return md5;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ImageIdOverride::_ShallowEqual(PresentationKeyCR other) const
-    {
-    if (!ConditionalCustomizationRule::_ShallowEqual(other))
-        return false;
-
-    ImageIdOverride const* otherRule = dynamic_cast<ImageIdOverride const*>(&other);
-    if (nullptr == otherRule)
-        return false;
-
-    return m_imageIdExpression == otherRule->m_imageIdExpression;
-    }

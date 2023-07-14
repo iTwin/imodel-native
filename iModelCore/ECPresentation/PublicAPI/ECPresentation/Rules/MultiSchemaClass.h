@@ -22,7 +22,6 @@ struct MultiSchemaClass : NoXmlSupport<PresentationKey>
         bvector<Utf8String> m_classNames;
 
     protected:
-        ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationKeyCR other) const override;
         ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
 
         Utf8CP _GetJsonElementTypeAttributeName() const override { return nullptr; }

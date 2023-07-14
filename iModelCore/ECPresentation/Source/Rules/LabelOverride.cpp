@@ -128,19 +128,3 @@ MD5 LabelOverride::_ComputeHash() const
         ADD_STR_VALUE_TO_HASH(md5, LABEL_OVERRIDE_JSON_ATTRIBUTE_DESCRIPTION, m_description);
     return md5;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool LabelOverride::_ShallowEqual(PresentationKeyCR other) const
-    {
-    if (!CustomizationRule::_ShallowEqual(other))
-        return false;
-
-    LabelOverride const* otherRule = dynamic_cast<LabelOverride const*>(&other);
-    if (nullptr == otherRule)
-        return false;
-
-    return m_label == otherRule->m_label
-        && m_description == otherRule->m_description;
-    }
