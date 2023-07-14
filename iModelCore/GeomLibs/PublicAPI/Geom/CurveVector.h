@@ -92,38 +92,38 @@ public:
 //! @param [in] angleTolerance angle tolerance for stroking.
 GEOMDLLIMPEXP static void SetMomentIntegrationParameters (int quadratureType, int numQuadraturePoints, double angleTol);
 
-// flex !! Boundary type and tree structure
-// flex
-// flex Each curve vector is marked with an enumerated value indicating how its contents are to be interpreted.
-// flex The enumerated type can be accessed via cv.GetBoundaryType ().
-// flex
-// flex || enum name    || represents   || expected children || IsOpenPath ()  || IsClosedPath () || IsAnyRegionType () ||
-// flex || BOUNDARY_TYPE_None   || Unstructured collection || any || false || false || false ||
-// flex || BOUNDARY_TYPE_Open   || Open chain of curves ||  true curve primitives || true || false || false ||
-// flex || BOUNDARY_TYPE_Outer   || Outer loop || true curve primitives || false || true || true ||
-// flex || BOUNDARY_TYPE_Inner  || Open chain of curves || true curve primitives|| false || true || true ||
-// flex || BOUNDARY_TYPE_ParityRegion   || region boundaries for "exclusive or" among loops || CurveVectors of type BOUNDARY_TYPE_Outer and BOUNDARY_TYPE_Inner || false || false || true ||
-// flex || BOUNDARY_TYPE_UnionRegion || region boundaries for "union" of children || CurveVectors of type BOUNDARY_TYPE_Outer, BOUNDARY_TYPE_ParityRegion, BOUNDARY_TYPE_UnionRegion || false || false || false ||
-// flex
-// flex
-// flex Many queries are simpler using these checks:
-// flex
-// flex || Query the boundary type  || boundaryType = cv.GetBoundaryType () ||
-// flex || Test for open path || bool cv.IsOpenPath ( ))    .... ||
-// flex || Test for closed path || bool cv.IsClosedPath ( ))    .... ||
-// flex || Test for parity region || bool cv.IsParityRegion ( ))    .... ||
-// flex || Test for union region || bool cv.IsUnionRegion ( ))    .... ||
-// flex || Test for parity, union, outer, or inner || bool cv.IsAnyRegionType ( ))    .... ||
-// flex
-// flex These calls are used during construction:
-// flex
-// flex || cv.SetBoundaryType (boundaryType) || set the boundary type.  Caller is responsible for correctness ||
-// flex || cv.SetChildBoundaryType (index, boundaryType) || Confirm that child at [index] is a CurveVector and set the child's boundary type ||
-// flex || bool cv.GetChildBoundaryType (index, boundaryType)) || query the boundary type of child at [index].  Returns false if the child is not a cv. ||
-// flex || outCurvePrim = cv.FindIndexedLeaf (index) || Deep search to dereference to an indexed leaf, with the index counting through leaves in all subtrees. ||
-// flex || bool cv.LeafToIndex (curve, index) || Deep search to find a leaf with same pointer as curve.  Return index if found. ||
-// flex || n = cv.CountPrimitivesBelow () || Deep search to count leaf primitives. ||
-// flex
+//flex !! Boundary type and tree structure
+//flex
+//flex Each curve vector is marked with an enumerated value indicating how its contents are to be interpreted.
+//flex The enumerated type can be accessed via cv.GetBoundaryType ().
+//flex
+//flex || enum name    || represents   || expected children || IsOpenPath ()  || IsClosedPath () || IsAnyRegionType () ||
+//flex || BOUNDARY_TYPE_None   || Unstructured collection || any || false || false || false ||
+//flex || BOUNDARY_TYPE_Open   || Open chain of curves ||  true curve primitives || true || false || false ||
+//flex || BOUNDARY_TYPE_Outer   || Outer loop || true curve primitives || false || true || true ||
+//flex || BOUNDARY_TYPE_Inner  || Open chain of curves || true curve primitives|| false || true || true ||
+//flex || BOUNDARY_TYPE_ParityRegion   || region boundaries for "exclusive or" among loops || CurveVectors of type BOUNDARY_TYPE_Outer and BOUNDARY_TYPE_Inner || false || false || true ||
+//flex || BOUNDARY_TYPE_UnionRegion || region boundaries for "union" of children || CurveVectors of type BOUNDARY_TYPE_Outer, BOUNDARY_TYPE_ParityRegion, BOUNDARY_TYPE_UnionRegion || false || false || false ||
+//flex
+//flex
+//flex Many queries are simpler using these checks:
+//flex
+//flex || Query the boundary type  || boundaryType = cv.GetBoundaryType () ||
+//flex || Test for open path || bool cv.IsOpenPath ( ))    .... ||
+//flex || Test for closed path || bool cv.IsClosedPath ( ))    .... ||
+//flex || Test for parity region || bool cv.IsParityRegion ( ))    .... ||
+//flex || Test for union region || bool cv.IsUnionRegion ( ))    .... ||
+//flex || Test for parity, union, outer, or inner || bool cv.IsAnyRegionType ( ))    .... ||
+//flex
+//flex These calls are used during construction:
+//flex
+//flex || cv.SetBoundaryType (boundaryType) || set the boundary type.  Caller is responsible for correctness ||
+//flex || cv.SetChildBoundaryType (index, boundaryType) || Confirm that child at [index] is a CurveVector and set the child's boundary type ||
+//flex || bool cv.GetChildBoundaryType (index, boundaryType)) || query the boundary type of child at [index].  Returns false if the child is not a cv. ||
+//flex || outCurvePrim = cv.FindIndexedLeaf (index) || Deep search to dereference to an indexed leaf, with the index counting through leaves in all subtrees. ||
+//flex || bool cv.LeafToIndex (curve, index) || Deep search to find a leaf with same pointer as curve.  Return index if found. ||
+//flex || n = cv.CountPrimitivesBelow () || Deep search to count leaf primitives. ||
+//flex
 
 //! Classification of expected structure within a CurveVector.
 enum BoundaryType
