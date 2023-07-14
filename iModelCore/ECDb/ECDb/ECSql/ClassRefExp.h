@@ -123,7 +123,7 @@ enum class Type
     {
     Only,
     All,
-    Default = All
+    NotSpecified
     };
 
 private:
@@ -131,7 +131,7 @@ private:
     Type m_type;
 
 public:
-    PolymorphicInfo(): m_disqualify(false), m_type(Type::Default) {}
+    PolymorphicInfo(): m_disqualify(false), m_type(Type::NotSpecified) {}
     PolymorphicInfo(Type type, bool disqualify): m_disqualify(disqualify), m_type(type) {}
     PolymorphicInfo(PolymorphicInfo&&) = default;
     PolymorphicInfo(PolymorphicInfo const&) = default;
@@ -147,6 +147,7 @@ public:
     static bool TryParseToken(Type& type, Utf8StringCR str);
     static PolymorphicInfo Only();
     static PolymorphicInfo All();
+    static PolymorphicInfo NotSpecified();
     Utf8String ToECSql() const;
     void ToJson(BeJsValue) const;
     };

@@ -1399,7 +1399,7 @@ BentleyStatus ECSqlParser::ParsePolymorphicConstraint(PolymorphicInfo& constrain
 
     if (parseNode->count() == 0)
         {
-        constraint = PolymorphicInfo::All();
+        constraint = PolymorphicInfo::NotSpecified();
         return SUCCESS;
         }
 
@@ -1412,8 +1412,8 @@ BentleyStatus ECSqlParser::ParsePolymorphicConstraint(PolymorphicInfo& constrain
     if (disqualifyNode->count() == 1)
         disqualify = true;
 
-    auto type = PolymorphicInfo::Type::Default;
-    if (!PolymorphicInfo::TryParseToken(type, constraintNode->getTokenValue()))
+    auto type = PolymorphicInfo::Type::All;
+    if (!PolymorphicInfo::TryParseToken(type , constraintNode->getTokenValue()))
         return ERROR;
 
     constraint = PolymorphicInfo(type, disqualify);
@@ -1568,7 +1568,7 @@ BentleyStatus ECSqlParser::ParseECRelationshipJoin(std::unique_ptr<UsingRelation
 
     //TODO: need to decide whether we support ONLY in USING clause.
     std::unique_ptr<ClassNameExp> table_node = nullptr;
-    if (SUCCESS != ParseTableNodeWithOptMemberCall(table_node, *parseNode->getChild(5/*table_node_with_opt_member_call*/), ECSqlType::Select, PolymorphicInfo::All(), false))
+    if (SUCCESS != ParseTableNodeWithOptMemberCall(table_node, *parseNode->getChild(5/*table_node_with_opt_member_call*/), ECSqlType::Select, PolymorphicInfo::NotSpecified(), false))
      return ERROR;
 
     OSQLParseNode const* op_relationship_direction = parseNode->getChild(6/*op_relationship_direction*/);
@@ -1901,7 +1901,7 @@ BentleyStatus ECSqlParser::ParseTableValuedFunction(std::unique_ptr<TableValuedF
             return ERROR;
         }
 
-    exp = std::make_unique<TableValuedFunctionExp>(schemaName.c_str(), std::move(memberFuncCall), PolymorphicInfo::All());
+    exp = std::make_unique<TableValuedFunctionExp>(schemaName.c_str(), std::move(memberFuncCall), PolymorphicInfo::NotSpecified());
     return SUCCESS;
 }
 //-----------------------------------------------------------------------------------------

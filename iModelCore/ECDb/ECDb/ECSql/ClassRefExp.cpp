@@ -338,12 +338,12 @@ void ClassNameExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
     val["schemaName"] = HasMetaInfo() ? GetInfo().GetMap().GetClass().GetSchema().GetName() : m_schemaAlias;
     val["className"] = HasMetaInfo() ? GetInfo().GetMap().GetClass().GetName() : m_className;
 
-    if(!GetAlias().empty())
-        val["alias"] = GetAlias();
-
     if(auto memb = GetMemberFunctionCallExp()) {
         memb->ToJson(val["func"], fmt);
     }
+
+    if(!GetAlias().empty())
+        val["alias"] = GetAlias();
 }
 
 //-----------------------------------------------------------------------------------------
@@ -386,15 +386,23 @@ bool PolymorphicInfo::TryParseToken(Type& type, Utf8StringCR str)
 //+---------------+---------------+---------------+---------------+---------------+------
 void PolymorphicInfo::ToJson(BeJsValue v) const {
         v.SetEmptyObject();
+        if (m_disqualify) {
+            v["disqualify"] = "+";
+            if (m_type== Type::NotSpecified) {
+                v["scope"] = "ALL";
+                return;
+            }
+        }
         v["scope"] = m_type == Type::Only ? "ONLY" : "ALL";
-        if (m_disqualify)
-            v["m_disqualify"] = "+";
 }
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 Utf8String PolymorphicInfo::ToECSql() const
     {
+    if (m_type == Type::NotSpecified){
+        return "";
+    }
     Utf8String ecsql;
     if (m_disqualify)
         {
@@ -404,7 +412,7 @@ Utf8String PolymorphicInfo::ToECSql() const
         {
         ecsql.append("ONLY");
         }
-    if (m_disqualify && m_type == Type::All)
+    if (m_type == Type::All)
         {
         ecsql.append("ALL");
         }
@@ -429,4 +437,12 @@ PolymorphicInfo PolymorphicInfo::All()
     return ct;
     }
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+PolymorphicInfo PolymorphicInfo::NotSpecified()
+    {
+    static PolymorphicInfo ct(Type::NotSpecified, false);
+    return ct;
+    }
 END_BENTLEY_SQLITE_EC_NAMESPACE
