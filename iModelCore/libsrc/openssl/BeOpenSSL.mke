@@ -1620,6 +1620,11 @@ $(o)v3err$(oext) : $(vendorSrc)crypto/x509/v3err.c ${MultiCompileDepends}
     $(o)camellia$(oext) : $(vendorSrc)crypto/camellia/camellia.c ${MultiCompileDepends}
 
     $(o)cmll_cbc$(oext) : $(vendorSrc)crypto/camellia/cmll_cbc.c ${MultiCompileDepends}
+
+    $(o)aes_cbc$(oext) : $(vendorSrc)crypto/aes/aes_cbc.c ${MultiCompileDepends}
+
+    $(o)aes_core$(oext) : $(vendorSrc)crypto/aes/aes_core.c ${MultiCompileDepends}
+
 %endif
 #----------------------------------------------------------------------------------------
 # SSL
