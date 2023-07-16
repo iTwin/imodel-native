@@ -1271,8 +1271,10 @@ void SelectStatementExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
     if (!IsCompound())
         return;
 
-    val["combineOp"] = Utf8String(OperatorToString(m_operator)) + (m_isAll ? " ALL" : "");
-    GetRhsStatement()->ToJson(val["next"], fmt);
+    auto nextBlock = val["nextBlock"];
+    nextBlock.SetEmptyObject();
+    nextBlock["combineOp"] = Utf8String(OperatorToString(m_operator)) + (m_isAll ? " ALL" : "");
+    GetRhsStatement()->ToJson(nextBlock["select"], fmt);
 }
 
 //-----------------------------------------------------------------------------------------

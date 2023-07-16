@@ -139,8 +139,8 @@ void AssignmentExp::_ToECSql(ECSqlRenderContext& ctx) const {
 void AssignmentExp::_ToJson(BeJsValue val, JsonFormat const& fmt) const {
     //! ITWINJS_PARSE_TREE: AssignmentExp
     val["id"] = "AssignmentExp";
-    GetPropertyNameExp()->ToJson(val["properties"], fmt);
-    GetValueExp()->ToJson(val["values"], fmt);
+    GetPropertyNameExp()->ToJson(val["propertyName"], fmt);
+    GetValueExp()->ToJson(val["value"], fmt);
 }
 
 //-----------------------------------------------------------------------------------------
