@@ -20,6 +20,7 @@ iModelPlatformInternalApiSrc = $(SrciModelPlatform)PrivateApi/DgnPlatformInterna
 
 always:
     ~linkdir "$(BuildContext)PrivateAPI/DgnPlatformInternal=$(iModelPlatformInternalApiSrc)"
+    echo $(OutputRootDir) > "Scripts/OutputDir.txt"
 
 $(BuildContext)ECSchemas/Dgn/ChangedElements.01.00.00.ecschema.xml : $(_MakeFilePath)ECSchemas/ChangedElements.01.00.00.ecschema.xml
    $(LinkFirstDepToFirstTarget)
