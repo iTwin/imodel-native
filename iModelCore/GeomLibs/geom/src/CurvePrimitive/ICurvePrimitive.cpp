@@ -139,7 +139,7 @@ void ICurvePrimitive::SetMarkerBit (ICurvePrimitive::CurvePrimitiveMarkerBit sel
         }
     }
 
-// base implemetation of partial clone applies shared clamp logic.
+// base implementation of partial clone applies shared clamp logic.
 // Derived classes can assume fractions are pre-clamped and not equal.
 ICurvePrimitivePtr ICurvePrimitive::CloneBetweenFractions (double fractionA, double fractionB, bool allowExtension) const
     {

@@ -2545,3 +2545,124 @@ TEST(ClipPlaneSet,ClipPlanarAndNonPlanarOpenBoundary)
 
     Check::ClearGeometry("ClipPlaneSet.ClipPlanarAndNonPlanarOpenBoundary");
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(ClipPlaneSet,ClipOpenBoundaryInsideClipper)
+    {
+    // curve
+    bvector<DPoint3d> poly1 {{0,5,0},{-5,0,0},{0,-5,0},{5,0,0},{0,5,0}};
+    Check::SaveTransformed(poly1);
+    CurveVector::BoundaryType boundaryType = CurveVector::BoundaryType::BOUNDARY_TYPE_Open;
+    CurveVectorPtr curve = CurveVector::CreateLinear(poly1, boundaryType);
+    // clipper
+    bvector<DPoint3d> poly2 {{-7,-7,0},{7,-7,0},{7,7,0},{-7,7,0},{-7,-7,0}};
+    Check::SaveTransformed(poly2);
+    ConvexClipPlaneSet convexClipPlaneSet;
+    convexClipPlaneSet.ReloadSweptConvexPolygon(poly2, DVec3d::From(0, 0, 1), 0);
+    ClipPlaneSet clipPlaneSet(convexClipPlaneSet);
+    // perform the clip
+    bvector<CurveVectorPtr> clippedRegion;
+    bool ret = clipPlaneSet.ClipCurveVector(*curve, clippedRegion);
+    Check::Shift(30,0,0);
+    Check::True(ret);
+    for (CurveVectorPtr clippedCurve : clippedRegion)
+        Check::SaveTransformed(*clippedCurve);
+    Check::ClearGeometry("ClipPlaneSet.ClipOpenBoundaryInsideClipper");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(ClipPlaneSet,ClipOpenBoundaryOutsideClipper)
+    {
+    // curve
+    bvector<DPoint3d> poly1 {{0,20,0},{-20,0,0},{0,-20,0},{20,0,0},{0,20,0}};
+    Check::SaveTransformed(poly1);
+    CurveVector::BoundaryType boundaryType = CurveVector::BoundaryType::BOUNDARY_TYPE_Open;
+    CurveVectorPtr curve = CurveVector::CreateLinear(poly1, boundaryType);
+    // clipper
+    bvector<DPoint3d> poly2 {{-7,-7,0},{7,-7,0},{7,7,0},{-7,7,0},{-7,-7,0}};
+    Check::SaveTransformed(poly2);
+    ConvexClipPlaneSet convexClipPlaneSet;
+    convexClipPlaneSet.ReloadSweptConvexPolygon(poly2, DVec3d::From(0, 0, 1), 0);
+    ClipPlaneSet clipPlaneSet(convexClipPlaneSet);
+    // perform the clip
+    bvector<CurveVectorPtr> clippedRegion;
+    bool ret = clipPlaneSet.ClipCurveVector(*curve, clippedRegion);
+    Check::Shift(30,0,0);
+    Check::True(ret);
+    for (CurveVectorPtr clippedCurve : clippedRegion)
+        Check::SaveTransformed(*clippedCurve);
+    Check::ClearGeometry("ClipPlaneSet.ClipOpenBoundaryOutsideClipper");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(ClipPlaneSet,CloneBetweenDirectedFractions)
+    {
+    // curve vector
+    CurveVectorPtr curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
+    DEllipse3d arc = DEllipse3d::FromPointsOnArc(
+        DPoint3d::From(0, -5, 0),
+        DPoint3d::From(8, 8, 0),
+        DPoint3d::From(0, 5, 0)
+        );
+    ICurvePrimitivePtr arcPrim = ICurvePrimitive::CreateArc(arc);
+    curve->push_back(arcPrim);
+
+    bvector<DPoint3d> lineString = {
+        DPoint3d::From(0, 5, 0),
+        DPoint3d::From(-1, 10, 0),
+        DPoint3d::From(-2, 5, 0),
+        DPoint3d::From(-3, 10, 0),
+        DPoint3d::From(-4, 5, 0),
+    };
+    ICurvePrimitivePtr lineStringPrim = ICurvePrimitive::CreateLineString(lineString);
+    curve->push_back(lineStringPrim);
+
+    DSegment3d seg = DSegment3d::From(DPoint3d::From(-4, 5, 0), DPoint3d::From(-10, 0, 0));
+    ICurvePrimitivePtr segPrim = ICurvePrimitive::CreateLine(seg);
+    curve->push_back(segPrim);
+    Check::SaveTransformed(curve);
+
+    CurveVectorPtr clonedCurve1;
+    int index0 = 0;
+    double fraction0 = -0.2;
+    int index1 = 2;
+    double fraction1 = 2.0;
+    bool allowExtrapolation = true;
+    bool usePartialCurves = false;
+    clonedCurve1 = curve->CloneBetweenDirectedFractions(index0, fraction0, index1, fraction1, allowExtrapolation, usePartialCurves);
+    Check::Shift(40, 0, 0);
+    Check::SaveTransformed(*clonedCurve1);
+
+    CurveVectorPtr clonedCurve2;
+    clonedCurve2 = curve->CloneBetweenDirectedFractions(index1, fraction1, index0, fraction0, allowExtrapolation, usePartialCurves);
+    Check::Shift(40, 0, 0);
+    Check::SaveTransformed(*clonedCurve2);
+
+    CurveVectorPtr clonedCurve3;
+    index0 = 1;
+    fraction0 = -0.5;
+    clonedCurve3 = curve->CloneBetweenDirectedFractions(index0, fraction0, index1, fraction1, allowExtrapolation, usePartialCurves);
+    Check::Shift(40, 0, 0);
+    Check::SaveTransformed(*clonedCurve3);
+
+    // primitive curve
+    CurveVectorPtr primitiveCurve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
+    primitiveCurve->push_back(lineStringPrim);
+
+    CurveVectorPtr clonedCurve4;
+    index0 = 1;
+    fraction0 = -1;
+    index1 = 1;
+    fraction1 = 2.0;
+    clonedCurve4 = curve->CloneBetweenDirectedFractions(index0, fraction0, index1, fraction1, allowExtrapolation, usePartialCurves);
+    Check::Shift(20, 0, 0);
+    Check::SaveTransformed(*clonedCurve4);
+
+    Check::ClearGeometry("ClipPlaneSet.CloneBetweenDirectedFractions");
+    }

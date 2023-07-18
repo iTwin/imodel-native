@@ -550,10 +550,11 @@ struct  ClipPlaneSet :  bvector <ConvexClipPlaneSet>
         ) const;
 
     //! Clip a path to this ClipPlaneSet.
+    //! Note that the returned bool has nothing to do with whether or not the curve has been clipped.
     //! @param curve [in] the CurveVector to be clipped. Must satisfy curve.IsOpenPath() == true.
     //! @param pClippedCurves [out] optional array of clipped curves.
     //! @param pClippedDetails [out] optional array of detail pairs, each describing the start and end points of the corresponding clipped curve.
-    //! @return true if clipping succeeded and false if clipping failed.
+    //! @return true if and only if curve is not empty and "curve.IsOpenPath() == true".
     GEOMDLLIMPEXP bool ClipPath
         (
         CurveVectorCR curve,
@@ -562,13 +563,14 @@ struct  ClipPlaneSet :  bvector <ConvexClipPlaneSet>
         ) const;
 
     //! Clip any curve to this ClipPlaneSet.
+    //! Note that the returned bool has nothing to do with whether or not the curve has been clipped.
     //! @param curve [in] The CurveVector to be clipped.
     //! @param clippedCurves [out] array of clipped curves.
-    //! @return true if clipping succeeded and false if clipping failed.
+    //! @return true if and only if curve is not empty and "curve.IsOpenPath() == true" or "curve.IsAnyRegionType() == true".
     GEOMDLLIMPEXP bool ClipCurveVector
         (
         CurveVectorCR curve,
-        bvector<CurveVectorPtr>& clippedCurves
+        bvector<CurveVectorPtr> &clippedCurves
         ) const;
 
     //! Clip a planar region to the (optional) outsideClip. Subtract the (optional) holeClip.
