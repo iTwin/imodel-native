@@ -92,7 +92,12 @@ export class NativeLibrary {
   public static load() {
     if (!this._nativeLib) {
       try {
-        this._nativeLib = require(`./${NativeLibrary.archName}/${NativeLibrary.nodeAddonName}`) as typeof IModelJsNative; // eslint-disable-line @typescript-eslint/no-var-requires
+        const platform = os.platform() as NodeJS.Platform | "ios"; // we add "ios"
+        if (platform === "ios" || platform === "android") {
+          this._nativeLib = (process as any)._linkedBinding("iModelJsNative") as typeof IModelJsNative;
+        } else {
+          this._nativeLib = require(`./${NativeLibrary.archName}/${NativeLibrary.nodeAddonName}`) as typeof IModelJsNative; // eslint-disable-line @typescript-eslint/no-var-requires
+        }
       } catch (err: any) {
         err.message += "\nThis error may occur when trying to run an iTwin.js backend without"
           + " having installed the prerequisites. See the following link for all prerequisites:"
