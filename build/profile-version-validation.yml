@@ -1,0 +1,42 @@
+name: open-source-$(Date:yyyy.MM.dd)$(Rev:.r)
+
+# trigger:
+#   branches:
+#     include:
+#       - main
+#       - release/*
+# pr:
+#   autoCancel: true
+#   drafts: false
+#   branches:
+#     include:
+#       - main
+#       - release/*
+
+resources:
+  repositories:
+    - repository: profileversion-tests
+      type: github
+      endpoint: imodel-native
+      name: iTwin/profileversion-tests
+
+    - repository: imodel-native-internal
+      type: github
+      endpoint: imodel-native
+      name: iTwin/imodel-native-internal
+
+    - repository: itwinjs-core
+      type: github
+      endpoint: imodel-native
+      ref: imodel02
+      name: iTwin/itwinjs-core
+
+    - repository: imodeljs-build-pipeline-scripts
+      type: git
+      name: iModelTechnologies/imodeljs-build-pipeline-scripts
+
+# extends:
+#   template: /build/templates/pipeline.yml@imodel-native-internal
+#   parameters:
+#     otherRepo: imodel-native-internal
+
