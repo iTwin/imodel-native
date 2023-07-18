@@ -18,6 +18,7 @@ resources:
     - repository: profileversion-tests
       type: github
       endpoint: imodel-native
+      ref:  io-version-fix
       name: iTwin/profileversion-tests
 
     - repository: imodel-native-internal
