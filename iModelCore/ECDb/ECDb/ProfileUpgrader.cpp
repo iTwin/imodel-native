@@ -10,6 +10,11 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //*************************************** ProfileUpgrader_XXX *********************************
+DbResult ProfileUpgrader_4004::_Upgrade(ECDbCR ecdb) const
+    {
+    return BE_SQLITE_OK;
+    }
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
@@ -546,7 +551,7 @@ DbResult ProfileSchemaUpgrader::ImportProfileSchemas(ECDbCR ecdb, SchemaManager:
     // This sql update fixes an issue that occurs when upgrading profile version to 4002.
     // The profile upgrade code modifies values in memory, but is leaving the ExtendedTypeName value inconsistent between memory and DB for the property ECInstanceID in the table ec_Property.
     // So, we run this sql update to make the DB value consistent with the one in memory.
-    if (ecdb.GetECDbProfileVersion() < ProfileVersion(4, 0, 0, 3) 
+    if (ecdb.GetECDbProfileVersion() != ProfileVersion(4, 0, 0, 3) 
         && BE_SQLITE_OK != ecdb.ExecuteSql("UPDATE main." TABLE_Property " SET ExtendedTypeName = '" EXTENDEDTYPENAME_Id "' WHERE Id = (select p.Id from main." TABLE_Property " p join main." TABLE_Class " c on c.id = p.ClassId join main." TABLE_Schema " s on s.id = c.SchemaId where s.Name = '" ECSCHEMA_ECDbSystem "' and c.Name = '" ECDBSYS_CLASS_ClassECSqlSystemProperties "' and p.Name = '" ECDBSYS_PROP_ECInstanceId "')"))
         {
         LOG.errorv("ECDb profile upgrade failed with error: Failed to update ExtendedTypeName value for property '" ECDBSYS_PROP_ECInstanceId "' in table " TABLE_Property ".");
@@ -605,7 +610,7 @@ BentleyStatus ProfileSchemaUpgrader::ReadSchemaFromDisk(ECSchemaReadContextR rea
 Utf8CP ProfileSchemaUpgrader::GetECDbSystemSchemaXml()
     {
     return "<?xml version='1.0' encoding='utf-8'?> "
-        "<ECSchema schemaName='" ECSCHEMA_ECDbSystem "' alias='" ECSCHEMA_ALIAS_ECDbSystem "' description='Helper ECSchema for ECDb internal purposes.' version='5.0.2' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+        "<ECSchema schemaName='" ECSCHEMA_ECDbSystem "' alias='" ECSCHEMA_ALIAS_ECDbSystem "' description='Helper ECSchema for ECDb internal purposes.' version='5.0.3' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00.01' alias='ecdbmap' /> "
         "    <ECEntityClass typeName='" ECDBSYS_CLASS_ClassECSqlSystemProperties "' modifier='Abstract' description='Defines the ECSQL system properties of an ECClass in an ECSQL statement.'>"
         "       <ECCustomAttributes>"
@@ -614,7 +619,7 @@ Utf8CP ProfileSchemaUpgrader::GetECDbSystemSchemaXml()
         "            </ClassMap>"
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='" ECDBSYS_PROP_ECInstanceId "' typeName='long' extendedTypeName='" EXTENDEDTYPENAME_Id "' description='Represents the Id system property in ECSQL.' />"
-        "        <ECProperty propertyName='" ECDBSYS_PROP_ECClassId "' typeName='long' extendedTypeName='" EXTENDEDTYPENAME_ClassId "' readOnly='True' description='Represents the ECClassId system property in ECSQL.' />"
+        "        <ECProperty propertyName='" ECDBSYS_PROP_ECClassId "' typeName='long' extendedTypeName='" EXTENDEDTYPENAME_Id "' readOnly='True' description='Represents the ECClassId system property in ECSQL.' />"
         "    </ECEntityClass> "
         "    <ECEntityClass typeName='" ECDBSYS_CLASS_RelationshipECSqlSystemProperties "' modifier='Abstract' description='Defines the ECSQL system properties of an ECRelationshipClass in an ECSQL statement.'>"
         "       <ECCustomAttributes>"
@@ -622,10 +627,10 @@ Utf8CP ProfileSchemaUpgrader::GetECDbSystemSchemaXml()
         "                <MapStrategy>NotMapped</MapStrategy>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
-        "        <ECProperty propertyName='" ECDBSYS_PROP_SourceECInstanceId "' typeName='long' extendedTypeName='" EXTENDEDTYPENAME_SourceId "' description='Represents the SourceId system property of an ECRelationship in ECSQL.' />"
-        "        <ECProperty propertyName='" ECDBSYS_PROP_SourceECClassId "' typeName='long' extendedTypeName='" EXTENDEDTYPENAME_SourceClassId "' description='Represents the SourceECClassId system property of an ECRelationship in ECSQL.' />"
-        "        <ECProperty propertyName='" ECDBSYS_PROP_TargetECInstanceId "' typeName='long' extendedTypeName='" EXTENDEDTYPENAME_TargetId "' description='Represents the TargetId system property of an ECRelationship in ECSQL.' />"
-        "        <ECProperty propertyName='" ECDBSYS_PROP_TargetECClassId "' typeName='long' extendedTypeName='" EXTENDEDTYPENAME_TargetClassId "' description='Represents the TargetECClassId system property of an ECRelationship in ECSQL.' />"
+        "        <ECProperty propertyName='" ECDBSYS_PROP_SourceECInstanceId "' typeName='long' extendedTypeName='" EXTENDEDTYPENAME_Id "' description='Represents the SourceId system property of an ECRelationship in ECSQL.' />"
+        "        <ECProperty propertyName='" ECDBSYS_PROP_SourceECClassId "' typeName='long' extendedTypeName='" EXTENDEDTYPENAME_Id "' description='Represents the SourceECClassId system property of an ECRelationship in ECSQL.' />"
+        "        <ECProperty propertyName='" ECDBSYS_PROP_TargetECInstanceId "' typeName='long' extendedTypeName='" EXTENDEDTYPENAME_Id "' description='Represents the TargetId system property of an ECRelationship in ECSQL.' />"
+        "        <ECProperty propertyName='" ECDBSYS_PROP_TargetECClassId "' typeName='long' extendedTypeName='" EXTENDEDTYPENAME_Id "' description='Represents the TargetECClassId system property of an ECRelationship in ECSQL.' />"
         "    </ECEntityClass> "
         "    <ECStructClass typeName='" ECDBSYS_CLASS_PointECSqlSystemProperties "' modifier='Abstract' description='Represents the ECSQL data type of a Point property in an ECSQL statement.'>"
         "        <ECProperty propertyName='" ECDBSYS_PROP_PointX "' typeName='double' description='Represents the X component of Point2d and Point3d in ECSQL' />"
@@ -633,8 +638,8 @@ Utf8CP ProfileSchemaUpgrader::GetECDbSystemSchemaXml()
         "        <ECProperty propertyName='" ECDBSYS_PROP_PointZ "' typeName='double' description='Represents the Z component of Point3d in ECSQL' />"
         "    </ECStructClass> "
         "    <ECStructClass typeName='" ECDBSYS_CLASS_NavigationECSqlSystemProperties "' modifier='Abstract' description='Represents the ECSQL data type of a navigation property in an ECSQL statement.'>"
-        "        <ECProperty propertyName='" ECDBSYS_PROP_NavPropId "' typeName='long' extendedTypeName='" EXTENDEDTYPENAME_NavId "' description='Represents the Id system property of an NavigationProperty in ECSQL.' />"
-        "        <ECProperty propertyName='" ECDBSYS_PROP_NavPropRelECClassId "' typeName='long' extendedTypeName='" EXTENDEDTYPENAME_NavRelClassId "' description='Represents the Relationship ClassId system property of an NavigationProperty in ECSQL.' />"
+        "        <ECProperty propertyName='" ECDBSYS_PROP_NavPropId "' typeName='long' extendedTypeName='" EXTENDEDTYPENAME_Id "' description='Represents the Id system property of an NavigationProperty in ECSQL.' />"
+        "        <ECProperty propertyName='" ECDBSYS_PROP_NavPropRelECClassId "' typeName='long' extendedTypeName='" EXTENDEDTYPENAME_Id "' description='Represents the Relationship ClassId system property of an NavigationProperty in ECSQL.' />"
         "    </ECStructClass> "
         "</ECSchema>";
     }

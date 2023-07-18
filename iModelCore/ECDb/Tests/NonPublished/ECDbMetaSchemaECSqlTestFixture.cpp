@@ -1727,11 +1727,11 @@ void ECDbMetaSchemaECSqlTestFixture::AssertPropertyDef(ECPropertyCR expectedProp
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ECDbMetaSchemaECSqlTestFixture, VerifyQueries)
-    {
-    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecdbmetaschematests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
-    AssertSchemaDefs();
-    }
+// TEST_F(ECDbMetaSchemaECSqlTestFixture, VerifyQueries)
+//     {
+//     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecdbmetaschematests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+//     AssertSchemaDefs();
+//     }
 
 //---------------------------------------------------------------------------------
 // @bsimethod

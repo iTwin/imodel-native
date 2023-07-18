@@ -83,6 +83,11 @@ public:
     DbResult Upgrade(ECDbCR ecdb) const { return _Upgrade(ecdb); }
     };
 
+class ProfileUpgrader_4004 final : public ProfileUpgrader
+    {
+    DbResult _Upgrade(ECDbCR) const override;
+    };
+
 //=======================================================================================
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
