@@ -36,8 +36,8 @@ resources:
       type: git
       name: iModelTechnologies/imodeljs-build-pipeline-scripts
 
-# extends:
-#   template: /build/templates/pipeline.yml@imodel-native-internal
-#   parameters:
-#     otherRepo: imodel-native-internal
+extends:
+  template: /common/azure-pipelines/templates/pipeline.yml@profileversion-tests
+  parameters:
+    otherRepo: imodel-native-internal
 
