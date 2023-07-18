@@ -1175,9 +1175,10 @@ TEST_F(ECSqlSelectPrepareTests, NullsOrdering)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("select I FROM ecsql.PSA ORDER BY L DESC NULLS FIRST"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("select I FROM ecsql.PSA ORDER BY L DESC NULLS LAST"));
 
+ 
 
 }
-
+ 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
