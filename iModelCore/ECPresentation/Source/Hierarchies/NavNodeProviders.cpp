@@ -460,10 +460,7 @@ static NavNodesProviderContextPtr CreateContextForChildHierarchyLevel(NavNodesPr
     else
         ctx->SetPhysicalParentNode(&parentNode);
     if (!NavNodeExtendedData(parentNode).HideNodesInHierarchy() && nullptr == parentNode.GetKey()->AsGroupingNodeKey())
-        {
         ctx->SetInstanceFilter(nullptr);
-        ctx->SetResultSetSizeLimit(nullptr);
-        }
     ctx->SetRemovalId(ancestorContext.GetRemovalId());
     return ctx;
     }
@@ -3474,6 +3471,7 @@ NavNodesProviderPtr SameLabelGroupingNodesPostProcessorDeprecated::_PostProcess(
     // attempt to find cached merged nodes provider - success means the whole hierarchy level is already post-processed and in cache.
     // it's more efficient to use the cached version compared to loading and merging everything again, so just return the cached provider.
     DataSourceIdentifier mergedDatasourceIdentifier(GetHierarchyLevelIdentifier(*context).GetId(), {}, context->GetInstanceFilterPtr());
+    mergedDatasourceIdentifier.SetResultSetSizeLimit(context->GetResultSetSizeLimit());
     DataSourceInfo mergedDatasourceInfo = context->GetNodesCache().FindDataSource(mergedDatasourceIdentifier, context->GetRulesetVariables());
     if (mergedDatasourceInfo.GetIdentifier().IsValid())
         {
