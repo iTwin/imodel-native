@@ -8,7 +8,7 @@
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
 #define fc_hugeVal 1e37
-                 
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -42,7 +42,7 @@ static bool testRayIntersections (double& tNear, DPoint3dCR origin, DVec3dCR dir
                     tNear = rayDistance;
                 }
             }
-        } 
+        }
     return tNear <= tFar;
     }
 
@@ -168,7 +168,7 @@ ValidatedDPoint3d ConvexClipPlaneSet::FindAnyVertex() const
 bool ConvexClipPlaneSet::IsSphereInside (DPoint3dCR point, double radius) const
     {
     // Note - The sphere logic differ from "PointOnOrInside" only in the handling of interior planes.
-    // For a sphere we don't negate the tolerance on interior planes - we have to look for true containment (TFS# 439212).  
+    // For a sphere we don't negate the tolerance on interior planes - we have to look for true containment (TFS# 439212).
     for (ClipPlaneCR plane: *this)
         if (!plane.IsPointOnOrInside (point, radius))
             return false;
@@ -210,12 +210,12 @@ bool    ClipPlaneSet::TestRayIntersect (DPoint3dCR point, DVec3dCR direction) co
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool    ClipPlaneSet::GetRayIntersection (double& nearest, DPoint3dCR point, DVec3dCR direction) const
     {
-    
+
     nearest = -fc_hugeVal;
 
     for (ConvexClipPlaneSetCR planeSet: *this)
         {
-        if (planeSet.IsPointInside (point))    
+        if (planeSet.IsPointInside (point))
             {
             nearest = 0.0;
             }
@@ -235,7 +235,7 @@ bool    ClipPlaneSet::GetRayIntersection (double& nearest, DPoint3dCR point, DVe
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/                                               
++---------------+---------------+---------------+---------------+---------------+------*/
 bool ClipPlaneSet::IsPointOnOrInside (DPoint3dCR point, double tolerance) const
     {
     for (ConvexClipPlaneSetCR convexSet: *this)
@@ -246,7 +246,7 @@ bool ClipPlaneSet::IsPointOnOrInside (DPoint3dCR point, double tolerance) const
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/                                               
++---------------+---------------+---------------+---------------+---------------+------*/
 bool ClipPlaneSet::IsSphereInside (DPoint3dCR point, double radius) const
     {
     for (ConvexClipPlaneSetCR convexSet: *this)
@@ -345,7 +345,7 @@ bool ClipPlaneSet::IsAnyPointInOrOn(MSBsplineCurveCR curve) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ConvexClipPlaneSet::TransformInPlace (TransformCR transform) 
+void ConvexClipPlaneSet::TransformInPlace (TransformCR transform)
     {
     for (ClipPlaneR plane: *this)
         plane.TransformInPlace (transform);
@@ -354,7 +354,7 @@ void ConvexClipPlaneSet::TransformInPlace (TransformCR transform)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ClipPlaneSet::TransformInPlace (TransformCR transform) 
+void ClipPlaneSet::TransformInPlace (TransformCR transform)
     {
     for (ConvexClipPlaneSetR convexSet: *this)
         convexSet.TransformInPlace (transform);
@@ -392,9 +392,9 @@ ClipPlaneCP planeToSkip) const
         {
         if (planeToSkip != nullptr && planeToSkip->IsEqual (plane))
             continue;
-        double hA = planeSign * plane.EvaluatePoint (pointA);
-        double hB = planeSign * plane.EvaluatePoint (pointB);
-        if (hB > hA)    // STRICLY
+        double hA = planeSign * plane.EvaluatePoint (pointA); // signed altitude of pointA wrt plane
+        double hB = planeSign * plane.EvaluatePoint (pointB); // signed altitude of pointB wrt plane
+        if (hB > hA) // Strictly
             {
             if (hA > 0.0)
                 return false;
@@ -407,7 +407,7 @@ ClipPlaneCP planeToSkip) const
                     fraction1 = fraction;
                 }
             }
-        else if (hA > hB)
+        else if (hA > hB) // Strictly
             {
             if (hB > 0.0)
                 return false;
@@ -422,7 +422,7 @@ ClipPlaneCP planeToSkip) const
             }
         else
             {
-            // Strictly equal evaluations  
+            // Strictly equal evaluations
             if (hA > 0.0)
                 return false;
             }
@@ -649,7 +649,7 @@ ClipPlaneContainment ConvexClipPlaneSet::ClassifyPointContainment (DPoint3dCP po
         if (nOutside == nPoints)
             return ClipPlaneContainment_StronglyOutside;
         }
-    
+
     return allInside ? ClipPlaneContainment_StronglyInside : ClipPlaneContainment_Ambiguous;
     }
 
@@ -830,7 +830,7 @@ static DPoint3d LexicalXYZSelectLow (DPoint3dCR point0, DPoint3dCR point1)
         return point1;
     return point0;
     }
-	
+
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
@@ -1176,7 +1176,7 @@ ClipPlaneSet::ClipPlaneSet (ClipPlaneCP planes, size_t nPlanes)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClipPlaneSet::ClipPlaneSet (ConvexClipPlaneSetCR convexSet) 
+ClipPlaneSet::ClipPlaneSet (ConvexClipPlaneSetCR convexSet)
     {
     push_back (convexSet);
     }
@@ -1187,7 +1187,7 @@ ClipPlaneSet::ClipPlaneSet (ConvexClipPlaneSetCR convexSet)
 ClipPlaneContainment ClipPlaneSet::ClassifyPointContainment (DPoint3dCP points, size_t nPoints, bool onIsOutside) const
     {
     for (ConvexClipPlaneSetCR convexSet: *this)
-        {           
+        {
         ClipPlaneContainment thisStatus;
 
         if (ClipPlaneContainment_StronglyOutside != (thisStatus = convexSet.ClassifyPointContainment (points, nPoints, onIsOutside)))
@@ -1321,7 +1321,7 @@ bool CurveLocationDetailPair::cb_compareCurveFraction (CurveLocationDetailPairCR
         return true;
     if (dataA.detailB.fraction > dataB.detailB.fraction)
         return false;
-    return false;        
+    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1551,7 +1551,7 @@ static void AddTrianglesToMesh(PolyfaceHeaderPtr *mesh,
     TransformCR worldToParameterSpace,  // transform for parameters.
     DVec3dCR normal,                    // normal (same for all)
     bool compressNormal                 // if true, make only one normal.  If false, make same number of normals as points and params
-    )        
+    )
     {
     if (mesh != nullptr)
         {
@@ -1909,7 +1909,7 @@ TransformR    worldToLocal
             }
         if (allFragments.size () == 0)
             return nullptr;
-        // The fragemnts are presumed quasi disjoint !!!!
+        // The fragments are presumed quasi disjoint !!!!
         // Use each one individually -- don't fuss with parity region
         CurveVectorPtr result = CurveVector::Create (CurveVector::BOUNDARY_TYPE_UnionRegion);
         for (auto &fragmentA : allFragments)
@@ -1923,10 +1923,120 @@ TransformR    worldToLocal
         if (result->size () > 0)
             {
             result->TransformInPlace (localToWorld);
-            return result;    
+            return result;
             }
         }
     return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool curveIsInsideClipper
+(
+CurveVectorCR curve,
+ClipPlaneSetCR clipper
+)
+    {
+    if (curve.empty())
+        return false;
+    // either all of curve is inside or outside the clipper so we only need to test some
+    // point inside the curve, i.e., not an endpoint. We pick the mid point (fraction = 0.5)
+    DPoint3d midPoint;
+    curve[0]->FractionToPoint(0.5, midPoint);
+    return clipper.IsPointInside(midPoint);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ClipPlaneSet::ClipPath
+(
+CurveVectorCR curve,
+bvector<CurveVectorPtr>* pClippedCurves,
+bvector<CurveLocationDetailPair>* pClippedDetailPairs
+) const
+    {
+    if (!curve.IsOpenPath() || curve.empty())
+        return false;
+    if (pClippedCurves)
+        pClippedCurves->clear();
+    if (pClippedDetailPairs)
+        pClippedDetailPairs->clear();
+
+    // find intersections of curve and clip plane set (as CurveLocationDetailPair vector)
+    // intersection can be a point or a curve (if part of the input curve is on one of the planes of the clip plane set)
+    bvector<CurveLocationDetailPair> clippedDetailPairsTemp;
+    bvector<CurveLocationDetail> clippedDetails;
+    this->AppendCrossings(curve, clippedDetailPairsTemp);
+
+    // flat the CurveLocationDetailPair vector to a CurveLocationDetail vector (now we only have intersection points)
+    for (CurveLocationDetailPair &detailPair : clippedDetailPairsTemp)
+        {
+        clippedDetails.push_back(detailPair.detailA);
+        if (!detailPair.SameCurveAndFraction())
+            clippedDetails.push_back(detailPair.detailB);
+        }
+
+    // sort the CurveLocationDetail vector by curve primitive index and fraction
+    CurveLocationDetail::SortByIndexAndFraction(clippedDetails, &curve);
+
+    // create first and last details (we need to check them; they might be inside the clipped area)
+    DPoint3d startPoint, endPoint;
+    curve.GetStartEnd(startPoint, endPoint);
+    CurveLocationDetail start(curve[0].get(), 0.0, startPoint);
+    CurveLocationDetail end(curve[curve.size()-1].get(), 1.0, endPoint);
+    CurveLocationDetail detailA, detailB;
+    CurveVectorPtr clippedCurve;
+    detailA = start; // used to check the first pair
+
+    // check pairs of details to specify the curve between the details in inside or outside the clipper
+    for (size_t i = 0; i < clippedDetails.size(); i++)
+        {
+        detailB = clippedDetails.at(i);
+        clippedCurve = curve.CloneBetweenDirectedFractions(detailA, detailB);
+        if (clippedCurve.IsValid() && curveIsInsideClipper(*clippedCurve, *this))
+            {
+            if (pClippedCurves)
+                pClippedCurves->push_back(clippedCurve);
+            if (pClippedDetailPairs)
+                pClippedDetailPairs->push_back(CurveLocationDetailPair(detailA, detailB));
+            }
+        detailA = detailB;
+        }
+
+    detailB = end; // used to check the last pair
+    clippedCurve = curve.CloneBetweenDirectedFractions(detailA, detailB);
+    if (clippedCurve.IsValid() && curveIsInsideClipper(*clippedCurve, *this))
+        {
+        if (pClippedCurves)
+            pClippedCurves->push_back(clippedCurve);
+        if (pClippedDetailPairs)
+            pClippedDetailPairs->push_back(CurveLocationDetailPair(detailA, detailB));
+        }
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ClipPlaneSet::ClipCurveVector
+(
+CurveVectorCR curve,
+bvector<CurveVectorPtr>& clippedCurves
+) const
+    {
+    if (curve.IsAnyRegionType())
+        {
+        Transform localToWorld;
+        Transform worldToLocal;
+        CurveVectorPtr clippedCurve = this->ClipPlanarRegion(curve, localToWorld, worldToLocal);
+        if (clippedCurve.IsValid())
+            clippedCurves.push_back(clippedCurve);
+        return true;
+        }
+    return ClipPath(curve, &clippedCurves);
     }
 
 /*---------------------------------------------------------------------------------**//**

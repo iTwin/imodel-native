@@ -21,7 +21,7 @@ FacetEdgeLocationDetailVectorPtr ICurvePrimitive::GetFacetEdgeLocationDetailVect
     {
     if (m_info.IsValid ())
         return dynamic_cast <FacetEdgeLocationDetailVector*> (m_info.get ());
-    return NULL;        
+    return NULL;
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -139,7 +139,7 @@ void ICurvePrimitive::SetMarkerBit (ICurvePrimitive::CurvePrimitiveMarkerBit sel
         }
     }
 
-// base implemetation of partial clone applies shared clamp logic.
+// base implementation of partial clone applies shared clamp logic.
 // Derived classes can assume fractions are pre-clamped and not equal.
 ICurvePrimitivePtr ICurvePrimitive::CloneBetweenFractions (double fractionA, double fractionB, bool allowExtension) const
     {
@@ -158,7 +158,7 @@ ICurvePrimitivePtr ICurvePrimitive::CloneBetweenFractions (double fractionA, dou
     if (DoubleOps::AlmostEqual (fractionA, fractionB))
         return NULL;
     bool isFullClone = DoubleOps::AlmostEqual (fractionA, 0.0) && DoubleOps::AlmostEqual (fractionB, 1.0);
-       
+
     ICurvePrimitivePtr result = isFullClone ? _Clone () : _CloneBetweenFractions (fractionA, fractionB, allowExtension);
     if (result.IsValid ())
     result->FinishClone (*this);
@@ -283,7 +283,7 @@ size_t ICurvePrimitive::NumComponent () const {return _NumComponent ();}
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-bool ICurvePrimitive::IsSameStructure (ICurvePrimitiveCR other) const 
+bool ICurvePrimitive::IsSameStructure (ICurvePrimitiveCR other) const
         {
         CurvePrimitiveType myType = GetCurvePrimitiveType ();
         if (myType != other.GetCurvePrimitiveType ())
@@ -317,7 +317,7 @@ bool CurveVector::IsSameStructure (CurveVectorCR other) const
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-bool ICurvePrimitive::IsSameStructureAndGeometry (ICurvePrimitiveCR other, double tolerance) const 
+bool ICurvePrimitive::IsSameStructureAndGeometry (ICurvePrimitiveCR other, double tolerance) const
         {
         // Enforce hard structure requirement directly.
         // Can the virtuals assume "other" matches? Maybe.
@@ -345,7 +345,7 @@ bool CurveVector::IsSameStructureAndGeometry (CurveVectorCR other, double tolera
         }
     return true;
     }
-    
+
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
@@ -389,7 +389,7 @@ CurveLocationDetailR location
                 startFraction = 1.0;
             }
         bool stat =
-                worldToLocal == nullptr 
+                worldToLocal == nullptr
                     ? _PointAtSignedDistanceFromFraction (startFraction, signedDistance, allowExtension, location)
                     : _PointAtSignedDistanceFromFraction (worldToLocal, startFraction, signedDistance, allowExtension, location);
 
@@ -707,21 +707,21 @@ bvector<PartialCurveDetail> &intersections
 void ICurvePrimitive::_AppendCurveRangeIntersections
 (
 LocalRangeCR range,                         //!< [in] transformed range.
-bvector<PartialCurveDetail> &intersections     //!< intersections. 
+bvector<PartialCurveDetail> &intersections  //!< intersections.
 ) const
     {
     // Default implementation ... make planes .....
     BoxFaces faces;
     faces.Load (range.m_localRange);
     faces.MultiplyCorners (range.m_localToWorld);
-    // ASSUME ... positie determinant !!!!
+    // ASSUME ... positive determinant !!!!
     bvector<CurveLocationDetailPair> planePairs;
     bvector<double> parameters;
     for (int i = 0; i < 6; i++)
         {
         auto plane = faces.GetFacePlane (i);
         if (plane.IsValid ())
-            { 
+            {
             AppendCurvePlaneIntersections (plane, planePairs);
             }
         }
@@ -761,7 +761,7 @@ bvector<PartialCurveDetail> &intersections     //!< intersections.
 void ICurvePrimitive::_AppendCurveBilinearPatchIntersections
 (
 DBilinearPatch3dCR patch,                         //!< [in] patch to intesect
-bvector<CurveAndSolidLocationDetail> &intersections     //!< [in,out] intersections. 
+bvector<CurveAndSolidLocationDetail> &intersections     //!< [in,out] intersections.
 ) const
     {
     // Triangle on near part of patch ...
@@ -791,7 +791,7 @@ void ICurvePrimitive::_AppendCurvePlaneIntersections
 (
 DPoint3dDVec3dDVec3dCR plane,                         //!< [in] patch to intesect
 UVBoundarySelect bounded,                    //!< [in] Unbounded, Triangle, Square
-bvector<CurveAndSolidLocationDetail> &intersections     //!< [in,out] intersections. 
+bvector<CurveAndSolidLocationDetail> &intersections     //!< [in,out] intersections.
 ) const
     {
     Transform localToWorld, worldToLocal;
@@ -812,7 +812,7 @@ bvector<CurveAndSolidLocationDetail> &intersections     //!< [in,out] intersecti
                 worldToLocal.Multiply (localPoint, curveDetail.point);
                 if (bounded.IsInOrOn (localPoint.x, localPoint.y))
                     {
-                    intersections.push_back (CurveAndSolidLocationDetail (                        
+                    intersections.push_back (CurveAndSolidLocationDetail (
                         curveDetail,
                         SolidLocationDetail (0, curveDetail.a, curveDetail.point, localPoint.x, localPoint.y, plane.vectorU, plane.vectorV)
                         ));
@@ -1007,7 +1007,7 @@ bool ICurvePrimitive::_FractionToFrenetFrame (double f, TransformR frame, double
         frame.FromIdentity ();
         return false;
         }
-    
+
     RotMatrix rMatrix1, rMatrix2;
     rMatrix1.InitFrom2Vectors (deriv1, deriv2);
     rMatrix2.SquareAndNormalizeColumns (rMatrix1, 0, 1);
@@ -1035,7 +1035,7 @@ bool ICurvePrimitive::_Length (double &length) const
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-bool ICurvePrimitive::_Length(RotMatrixCP worldToLocal, double &length) const 
+bool ICurvePrimitive::_Length(RotMatrixCP worldToLocal, double &length) const
     {
     length = 0.0;
     return false;
@@ -1071,7 +1071,7 @@ bool ICurvePrimitive::_SignedDistanceBetweenFractions (RotMatrixCP worldToLocal,
     signedDistance = 0.0;
     return false;
     }
-    
+
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
@@ -1118,7 +1118,7 @@ bool ICurvePrimitive::_PointAtSignedDistanceFromFraction (RotMatrixCP worldToLoc
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-bool ICurvePrimitive::_GetRange (DRange3dR range) const 
+bool ICurvePrimitive::_GetRange (DRange3dR range) const
     {
     range.Init ();
     return false;
@@ -1128,7 +1128,7 @@ bool ICurvePrimitive::_GetRange (DRange3dR range) const
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-bool ICurvePrimitive::_GetRange (DRange3dR range, TransformCR transform) const 
+bool ICurvePrimitive::_GetRange (DRange3dR range, TransformCR transform) const
     {
     range.Init ();
     return false;
@@ -1138,7 +1138,7 @@ bool ICurvePrimitive::_GetRange (DRange3dR range, TransformCR transform) const
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-double ICurvePrimitive::_FastMaxAbs () const 
+double ICurvePrimitive::_FastMaxAbs () const
     {
     DRange3d range;
     if (GetRange (range))
@@ -1149,18 +1149,18 @@ double ICurvePrimitive::_FastMaxAbs () const
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-DRange1d ICurvePrimitive::_ProjectedParameterRange (DRay3dCR ray) const 
+DRange1d ICurvePrimitive::_ProjectedParameterRange (DRay3dCR ray) const
     {
     MSBsplineCurveCP bcurve = GetProxyBsplineCurveCP ();
     if (NULL != bcurve)
         return bcurve->GetRangeOfProjectionOnRay (ray, 0.0, 1.0);
     return DRange1d::NullRange ();
     }
-     
+
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-DRange1d ICurvePrimitive::_ProjectedParameterRange (DRay3dCR ray, double fractionA, double fractionB) const 
+DRange1d ICurvePrimitive::_ProjectedParameterRange (DRay3dCR ray, double fractionA, double fractionB) const
     {
     MSBsplineCurveCP bcurve = GetProxyBsplineCurveCP ();
     if (NULL != bcurve)
@@ -1171,7 +1171,7 @@ DRange1d ICurvePrimitive::_ProjectedParameterRange (DRay3dCR ray, double fractio
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-bool ICurvePrimitive::_GetBreakFraction (size_t breakFractionIndex, double &fraction) const 
+bool ICurvePrimitive::_GetBreakFraction (size_t breakFractionIndex, double &fraction) const
     {
     return false;
     }
