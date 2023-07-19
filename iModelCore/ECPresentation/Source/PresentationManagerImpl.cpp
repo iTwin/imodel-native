@@ -1258,7 +1258,7 @@ bvector<NavNodeCPtr> RulesDrivenECPresentationManagerImpl::_GetFilteredNodes(Nod
         NavNodesDataSourceCPtr rootNodes = GetCachedDataSource(*rootNodesContext, nullptr);
         if (rootNodes.IsValid())
             {
-            for (NavNodeCPtr node : *rootNodes)
+            for (auto const& node : *rootNodes)
                 ;
             }
         }
@@ -1274,7 +1274,7 @@ bvector<NavNodeCPtr> RulesDrivenECPresentationManagerImpl::_GetFilteredNodes(Nod
     if (provider.IsNull())
         return result;
 
-    for (NavNodeCPtr node : *provider)
+    for (auto const& node : *provider)
         {
         NOT_NULL_PRECONDITION(node, "RulesDrivenECPresentationManagerImpl::_GetFilteredNodes");
         TraverseHierarchy(CreateHierarchyRequestParams(params, node.get()), nodesCache);
@@ -1287,12 +1287,21 @@ bvector<NavNodeCPtr> RulesDrivenECPresentationManagerImpl::_GetFilteredNodes(Nod
         DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, LOG_WARNING, "Failed to create filtered nodes context. Returning empty list.");
         return result;
         }
+
     NavNodesProviderPtr filteredProvider = nodesCache->GetFilteredNodesProvider(*filteredNodesContext, params.GetFilterText().c_str());
-    for (NavNodeCPtr node : *filteredProvider)
+    NodesFinalizer finalizer(*filteredNodesContext);
+    DisabledFullNodesLoadContext disableFinalize(*filteredProvider);
+    for (NavNodePtr node : *filteredProvider)
         {
         NOT_NULL_PRECONDITION(node, "RulesDrivenECPresentationManagerImpl::_GetFilteredNodes");
+
+        // we don't support hierarchy level filtering on top of filtered hierarchies - set the value before finalizing
+        node->SetSupportsFiltering(false);
+        finalizer.Finalize(*node);
+
         result.push_back(node);
         }
+
     return result;
     }
 

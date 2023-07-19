@@ -808,6 +808,8 @@ void NodesFinalizer::DetermineChildren(NavNodeR node) const
 void NodesFinalizer::DetermineFilteringSupport(NavNodeR node) const
     {
     auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Determine filtering support for %s", DiagnosticsHelpers::CreateNodeIdentifier(node).c_str()));
+    if (node.IsFilteringSupportDetermined())
+        return;
 
     NavNodesProviderContextPtr childrenContext = CreateContextForChildHierarchyLevel(*m_context, node);
     // we consider that this provider depends on a variable if we need the variable to determine
