@@ -29,7 +29,8 @@ resources:
     - repository: itwinjs-core
       type: github
       endpoint: imodel-native
-      ref: imodel02
+      ref: io-fix-template
+      # ref: imodel02
       name: iTwin/itwinjs-core
 
 extends:
