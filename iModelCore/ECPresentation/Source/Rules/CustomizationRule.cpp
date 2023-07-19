@@ -112,18 +112,3 @@ MD5 ConditionalCustomizationRule::_ComputeHash() const
         ADD_STR_VALUE_TO_HASH(md5, PRESENTATION_RULE_JSON_ATTRIBUTE_CONDITION, m_condition);
     return md5;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ConditionalCustomizationRule::_ShallowEqual(PresentationKeyCR other) const
-    {
-    if (!CustomizationRule::_ShallowEqual(other))
-        return false;
-
-    ConditionalCustomizationRule const* otherRule = dynamic_cast<ConditionalCustomizationRule const*>(&other);
-    if (nullptr == otherRule)
-        return false;
-
-    return m_condition == otherRule->m_condition;
-    }

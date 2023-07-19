@@ -100,7 +100,6 @@ private:
     Nullable<int> m_priority;
 
 protected:
-    ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationKeyCR other) const override;
     ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
 
     Utf8CP _GetJsonElementTypeAttributeName() const override {return nullptr;}

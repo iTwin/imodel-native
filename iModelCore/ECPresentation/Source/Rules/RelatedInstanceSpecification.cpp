@@ -149,17 +149,3 @@ MD5 RelatedInstanceSpecification::_ComputeHash() const
         ADD_PRIMITIVE_VALUE_TO_HASH(md5, RELATED_INSTANCE_SPECIFICATION_JSON_ATTRIBUTE_ISREQUIRED, m_isRequired);
     return md5;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool RelatedInstanceSpecification::_ShallowEqual(PresentationKeyCR other) const
-    {
-    RelatedInstanceSpecification const* otherRule = dynamic_cast<RelatedInstanceSpecification const*>(&other);
-    if (nullptr == otherRule)
-        return false;
-
-    return m_isRequired == otherRule->m_isRequired
-        && m_alias == otherRule->m_alias
-        && m_relationshipPath == otherRule->m_relationshipPath;
-    }

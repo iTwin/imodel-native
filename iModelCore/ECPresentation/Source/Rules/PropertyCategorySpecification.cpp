@@ -48,17 +48,6 @@ std::unique_ptr<PropertyCategoryIdentifier> PropertyCategoryIdentifier::Create(B
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool PropertyCategoryIdentifier::_ShallowEqual(PresentationKeyCR other) const
-    {
-    if (!PresentationKey::_ShallowEqual(other))
-        return false;
-
-    auto otherRule = static_cast<PropertyCategoryIdentifier const&>(other);
-    return m_type == otherRule.m_type;
-    }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 MD5 PropertyCategoryIdentifier::_ComputeHash() const
     {
     MD5 md5 = T_Super::_ComputeHash();
@@ -113,18 +102,6 @@ void PropertyCategoryIdentifier::_WriteJson(BeJsValue json) const
             json[PROPERTY_CATEGORY_IDENTIFIER_SPECIFICATION_JSON_ATTRIBUTE_TYPE] = PROPERTY_CATEGORY_IDENTIFIER_SPECIFICATION_TYPE_ID;
             break;
         }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool IdPropertyCategoryIdentifier::_ShallowEqual(PresentationKeyCR other) const
-    {
-    if (!PropertyCategoryIdentifier::_ShallowEqual(other))
-        return false;
-
-    auto otherRule = static_cast<IdPropertyCategoryIdentifier const&>(other);
-    return m_categoryId.Equals(otherRule.GetCategoryId()) && m_createClassCategory == otherRule.m_createClassCategory;
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -321,23 +298,4 @@ MD5 PropertyCategorySpecification::_ComputeHash() const
         ADD_PRIMITIVE_VALUE_TO_HASH(md5, PROPERTY_CATEGORY_SPECIFICATION_JSON_ATTRIBUTE_AUTOEXPAND, m_autoExpand);
 
     return md5;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool PropertyCategorySpecification::_ShallowEqual(PresentationKeyCR other) const
-    {
-    if (!T_Super::_ShallowEqual(other))
-        return false;
-
-    PropertyCategorySpecification const* otherRule = dynamic_cast<PropertyCategorySpecification const*>(&other);
-    if (nullptr == otherRule)
-        return false;
-
-    return m_id == otherRule->m_id
-        && m_parentId == otherRule->m_parentId
-        && m_label == otherRule->m_label
-        && m_description == otherRule->m_description
-        && m_autoExpand == otherRule->m_autoExpand;
     }
