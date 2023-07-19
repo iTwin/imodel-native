@@ -370,22 +370,6 @@ MD5 ContentModifier::_ComputeHash() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ContentModifier::_ShallowEqual(PresentationKeyCR other) const
-    {
-    if (!PrioritizedPresentationKey::_ShallowEqual(other))
-        return false;
-
-    ContentModifier const* otherRule = dynamic_cast<ContentModifier const*>(&other);
-    if (nullptr == otherRule)
-        return false;
-
-    return m_schemaName == otherRule->m_schemaName
-        && m_className == otherRule->m_className;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 void ContentModifier::ClearRequiredSchemaSpecifications()
     {
     CommonToolsInternal::FreePresentationRules(m_requiredSchemas);

@@ -152,6 +152,8 @@ public:
         }
     ExpressionContextPtr _GetContext() override
         {
+        auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Create ECInstance expression context for `{ ECClassId: %s, ECInstanceId: %s }`",
+            m_key.GetClassId().ToString(BeInt64Id::UseHex::Yes).c_str(), m_key.GetInstanceId().ToString(BeInt64Id::UseHex::Yes).c_str()));
         IECInstancePtr instance;
         InstanceExpressionContextPtr instanceContext = InstanceExpressionContext::Create(nullptr);
         if (m_key.IsValid())
@@ -205,6 +207,11 @@ public:
 
         // TODO: returning first instance key - what if node groups multiple instances???
         ECInstanceKey instanceKey(key->GetInstanceKeys().front().GetClass()->GetId(), key->GetInstanceKeys().front().GetId());
+
+        auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Create ECInstance expression context for `{ ECClassId: %s, ECInstanceId: %s }` represented by node %s",
+            instanceKey.GetClassId().ToString(BeInt64Id::UseHex::Yes).c_str(), instanceKey.GetInstanceId().ToString(BeInt64Id::UseHex::Yes).c_str(),
+            DiagnosticsHelpers::CreateNodeIdentifier(*m_node).c_str()));
+
         m_instanceContext = InstanceExpressionContext::Create(nullptr);
         IECInstancePtr instance;
         ECInstancesHelper::LoadInstance(instance, m_connection, instanceKey);
@@ -357,7 +364,7 @@ private:
                 classIds.insert(key.GetClass()->GetId());
             }
         else if (ctx.m_node->GetKey()->AsLabelGroupingNodeKey() && ctx.m_node->GetKey()->AsLabelGroupingNodeKey()->GetGroupedInstanceKeys() != nullptr)
-            { 
+            {
             for (auto const& key : *ctx.m_node->GetKey()->AsLabelGroupingNodeKey()->GetGroupedInstanceKeys())
                 classIds.insert(key.GetClassId());
             }
@@ -1018,7 +1025,7 @@ ExpressionContextPtr ECExpressionContextsProvider::GetCalculatedPropertyContext(
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECExpressionsHelper::EvaluateECExpression(ECValueR result, Utf8StringCR expression, ExpressionContextR context)
     {
-    auto scope = Diagnostics::Scope::Create("EvaluateECExpression");
+    auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Evaluate ECExpression: `%s`", expression.c_str()));
 
     NodePtr node = GetNodeFromExpression(expression.c_str());
     if (node.IsNull())
@@ -1040,6 +1047,7 @@ bool ECExpressionsHelper::EvaluateECExpression(ECValueR result, Utf8StringCR exp
         return false;
         }
 
+    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::ECExpressions, LOG_TRACE, Utf8PrintfString("Evaluation result: `%s`", result.ToString().c_str()));
     return true;
     }
 
@@ -1681,7 +1689,7 @@ private:
         ECExpressionToECSqlConverter converter(m_fieldTypes, m_expressionContext);
         QueryClauseAndBindings compareDateClause = converter.GetECSql(*Node::CreateArithmetic(ExpressionToken::TOKEN_Minus, *lhs, *rhs).get());
         Append(Utf8PrintfString("(%s)", compareDateClause.GetClause().c_str()), m_nodesStack.size() > 0 && !m_nodesStack.back().Equals("ABS"));
-        
+
         m_ignoreNextArguments = true;
         return true;
         }
