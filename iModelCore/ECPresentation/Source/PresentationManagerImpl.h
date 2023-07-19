@@ -235,7 +235,6 @@ private:
     SpecificationContentProviderPtr GetContentProvider(IConnectionCR, ICancelationTokenCP, ContentProviderKey const&, RulesetVariables const& variables) const;
     SpecificationContentProviderPtr GetContentProvider(ContentRequestImplParams const&) const;
     void FinalizeNode(RequestWithRulesetImplParams const&, NavNodeR) const;
-    NavNodePtr FinalizeNode(RequestWithRulesetImplParams const&, NavNodeCR) const;
 
 protected:
     // ECPresentationManager::Impl: General
