@@ -32,10 +32,6 @@ resources:
       ref: imodel02
       name: iTwin/itwinjs-core
 
-    - repository: imodeljs-build-pipeline-scripts
-      type: git
-      name: iModelTechnologies/imodeljs-build-pipeline-scripts
-
 extends:
   template: /common/azure-pipelines/templates/pipeline.yml@profileversion-tests
   parameters:
