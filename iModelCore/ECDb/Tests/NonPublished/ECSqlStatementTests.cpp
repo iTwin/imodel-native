@@ -9081,11 +9081,9 @@ TEST_F(ECSqlStatementTestFixture, NullsOrdering)
         }
         count++;
     }
-        //ASSERT_EQ(ECSqlStatus::Success, statement.Finalize());
         statement.Finalize();
 
-    }
-     
+    }     
     // Test ORDER BY NULLS LAST
     {
     Utf8String ecsql("SELECT FirstName, LastName FROM ");
@@ -9111,7 +9109,6 @@ TEST_F(ECSqlStatementTestFixture, NullsOrdering)
         }
         counter++;
     }   
-    //ASSERT_EQ(ECSqlStatus::Success, statement.Finalize());
     statement.Finalize();
 
     }
