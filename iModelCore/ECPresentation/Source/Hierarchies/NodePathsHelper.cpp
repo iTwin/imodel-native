@@ -25,6 +25,33 @@ static uint16_t CountFilterTextMatches(NavNodeCR node, Utf8CP lowerFilterText)
     return occurances;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static uint16_t CountBranchFilterOccurences(NodesPathElement& branch, Utf8StringCR lowerCaseText, ICancelationTokenCP cancelationToken)
+    {
+    ThrowIfCancelled(cancelationToken);
+
+    uint16_t currentNodeMatches = CountFilterTextMatches(*branch.GetNode(), lowerCaseText.c_str());
+    uint64_t totalChildrenMatches = 0;
+    for (NodesPathElement& childBranch : branch.GetChildren())
+        totalChildrenMatches += CountBranchFilterOccurences(childBranch, lowerCaseText, cancelationToken);
+
+    branch.GetFilteringData().SetOccurances(currentNodeMatches);
+    branch.GetFilteringData().SetChildrenOccurances(totalChildrenMatches);
+
+    return currentNodeMatches + totalChildrenMatches;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void NodePathsHelper::CountHierarchyFilterOccurences(bvector<NodesPathElement>& hierarchy, Utf8StringCR lowerCaseText, ICancelationTokenCP cancelationToken)
+    {
+    for (NodesPathElement& branch : hierarchy)
+        CountBranchFilterOccurences(branch, lowerCaseText, cancelationToken);
+    }
+
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
@@ -111,8 +138,9 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static BeGuid CreateHierarchy(NodesHierarchy& hierarchy, NavNodeCR node, int index, std::function<NavNodeCPtr(NavNodeCR)> const& parentGetter)
+static BeGuid CreateHierarchy(NodesHierarchy& hierarchy, NavNodeCR node, int index, std::function<NavNodeCPtr(NavNodeCR)> const& parentGetter, ICancelationTokenCP cancelationToken)
     {
+    ThrowIfCancelled(cancelationToken);
     auto parent = parentGetter(node);
     if (!parent.IsValid())
         {
@@ -121,7 +149,7 @@ static BeGuid CreateHierarchy(NodesHierarchy& hierarchy, NavNodeCR node, int ind
     else if (!hierarchy.NodeExits(parent->GetNodeId()))
         {
         // get the parent and put it into the hierarchy
-        CreateHierarchy(hierarchy, *parent, index, parentGetter);
+        CreateHierarchy(hierarchy, *parent, index, parentGetter, cancelationToken);
         }
     hierarchy.AddChildNode(parent.IsValid() ? parent->GetNodeId() : BeGuid(), node, index);
     return node.GetNodeId();
@@ -130,25 +158,15 @@ static BeGuid CreateHierarchy(NodesHierarchy& hierarchy, NavNodeCR node, int ind
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static NodesPathElement GetPath(NavNodeCR root, bmap<BeGuid, bvector<bpair<NavNodeCPtr, int>>> const& hierarchy, size_t index, Utf8CP lowerFilterText, uint64_t* totalTextMatches)
+static NodesPathElement CreateBranch(NavNodeCR root, bmap<BeGuid, bvector<bpair<NavNodeCPtr, int>>> const& hierarchy, size_t index, ICancelationTokenCP cancelationToken)
     {
-    uint16_t currentNodeMatches = CountFilterTextMatches(root, lowerFilterText);
-    uint64_t totalChildrenMatches = 0;
-
     NodesPathElement node(root, index);
     auto iter = hierarchy.find(root.GetNodeId());
     for (size_t i = 0; i < iter->second.size(); i++)
         {
-        uint64_t branchChildrenMatches = 0;
-        node.GetChildren().push_back(GetPath(*iter->second[i].first, hierarchy, i, lowerFilterText, &branchChildrenMatches));
-        totalChildrenMatches += branchChildrenMatches;
+        ThrowIfCancelled(cancelationToken);
+        node.GetChildren().push_back(CreateBranch(*iter->second[i].first, hierarchy, i, cancelationToken));
         }
-
-    node.GetFilteringData().SetOccurances(currentNodeMatches);
-    node.GetFilteringData().SetChildrenOccurances(totalChildrenMatches);
-
-    if (nullptr != totalTextMatches)
-        *totalTextMatches = currentNodeMatches + totalChildrenMatches;
     return node;
     }
 
@@ -203,17 +221,17 @@ static void MarkLeaves(NodesPathElement& path)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<NodesPathElement> NodePathsHelper::CreateHierarchy(bvector<NavNodeCPtr> const& nodes, std::function<NavNodeCPtr(NavNodeCR)> const& parentGetter, Utf8StringCR matchText)
+bvector<NodesPathElement> NodePathsHelper::CreateHierarchy(bvector<NavNodeCPtr> const& nodes, std::function<NavNodeCPtr(NavNodeCR)> const& parentGetter, ICancelationTokenCP cancelationToken)
     {
     int nodeIndex = 0;
     NodesHierarchy hierarchy;
-    for (NavNodeCPtr node : nodes)
-        ::CreateHierarchy(hierarchy, *node, nodeIndex++, parentGetter);
+    for (auto const& node : nodes)
+        ::CreateHierarchy(hierarchy, *node, nodeIndex++, parentGetter, cancelationToken);
 
     size_t index = 0;
     bvector<NodesPathElement> paths;
     for (auto const& root : hierarchy.GetRoots())
-        paths.push_back(GetPath(*root.first, hierarchy.GetChildren(), index++, matchText.c_str(), nullptr));
+        paths.push_back(CreateBranch(*root.first, hierarchy.GetChildren(), index++, cancelationToken));
 
     return paths;
     }
