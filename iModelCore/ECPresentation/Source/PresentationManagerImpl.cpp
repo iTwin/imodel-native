@@ -1198,7 +1198,9 @@ ContentDescriptorCPtr RulesDrivenECPresentationManagerImpl::_GetNodesDescriptor(
             ),
         *KeySet::Create(params.GetParentNodeKey() ? NavNodeKeyList{ params.GetParentNodeKey() } : NavNodeKeyList{})
         ), params);
-    return GetContentDescriptor(descriptorParams);
+    auto descriptor = GetContentDescriptor(descriptorParams);
+    (const_cast<ContentDescriptor*>(descriptor.get()))->SetHierarchyLevelRuleset(*ruleset);
+    return descriptor;
     }
 
 /*---------------------------------------------------------------------------------**//**

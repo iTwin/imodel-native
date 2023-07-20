@@ -1113,6 +1113,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
 
 private:
     PresentationRuleSetCPtr m_ruleset;
+    PresentationRuleSetPtr m_hierarchyLevelRuleset;
     RulesetVariables m_rulesetVariables;
     Utf8String m_preferredDisplayType;
     bvector<SelectClassInfo> m_classes;
@@ -1285,6 +1286,11 @@ public:
     //! Should only distinct values be returned
     bool OnlyDistinctValues() const {return HasContentFlag(ContentFlags::DistinctValues);}
 #endif
+
+    //! Set the ruleset used to create nodes descriptor
+    void SetHierarchyLevelRuleset(PresentationRuleSetR ruleset) { m_hierarchyLevelRuleset = &ruleset; }
+    //! Get the ruleset used to create nodes descriptor
+    PresentationRuleSetCPtr GetHierarchyLevelRuleset() const { return m_hierarchyLevelRuleset; }
 };
 
 //=======================================================================================
