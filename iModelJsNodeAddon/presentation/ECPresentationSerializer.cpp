@@ -605,9 +605,9 @@ rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ContextR ctx, Sele
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static rapidjson::Document ToRapidJson(BeJsConst json)
+static rapidjson::Document ToRapidJson(BeJsConst json, rapidjson::Document::AllocatorType* allocator = nullptr)
 {
-    rapidjson::Document doc;
+    rapidjson::Document doc(allocator);
     doc.Parse(json.Stringify().c_str());
     return doc;
 }
@@ -659,8 +659,8 @@ rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ContextR ctx, Cont
     // add this last to make sure all necessary classes are captured by classSerializer
     json.AddMember("classesMap", classSerializer.CreateAccumulatedClassesMap(&json.GetAllocator()), json.GetAllocator());
 
-    if (contentDescriptor.GetHierarchyLevelRuleset().IsValid())
-        json.AddMember("hierarchyLevelRuleset", ToRapidJson(contentDescriptor.GetHierarchyLevelRuleset()->WriteToJsonValue()), json.GetAllocator());
+    if (contentDescriptor.IsDifferentFromInputRuleset())
+        json.AddMember("ruleset", ToRapidJson(contentDescriptor.GetRuleset().WriteToJsonValue(), &json.GetAllocator()), json.GetAllocator());
 
     return json;
     }
