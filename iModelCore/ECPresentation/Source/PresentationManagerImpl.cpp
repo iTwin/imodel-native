@@ -1240,7 +1240,10 @@ bvector<NavNodeCPtr> RulesDrivenECPresentationManagerImpl::_GetFilteredNodes(Nod
         if (rootNodes.IsValid())
             {
             for (auto const& node : *rootNodes)
+                {
+                (void)node;
                 ThrowIfCancelled(params.GetCancellationToken());
+                }
             }
         }
 
