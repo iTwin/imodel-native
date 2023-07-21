@@ -30,7 +30,7 @@ bool ContentHelpers::AreDescriptorsEqual(ContentDescriptor const& lhs, ContentDe
         || lhs.GetConnectionId() != rhs.GetConnectionId()
         || lhs.GetInputNodeKeys().GetHash() != rhs.GetInputNodeKeys().GetHash()
         || lhs.GetRulesetVariables() != rhs.GetRulesetVariables()
-        || lhs.IsDifferentFromInputRuleset() != rhs.IsDifferentFromInputRuleset()
+        || lhs.UsesModifiedRuleset() != rhs.UsesModifiedRuleset()
         || !InstanceFiltersEqual(lhs.GetInstanceFilter().get(), rhs.GetInstanceFilter().get()))
         {
         return false;

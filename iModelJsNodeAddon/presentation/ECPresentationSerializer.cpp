@@ -659,7 +659,7 @@ rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ContextR ctx, Cont
     // add this last to make sure all necessary classes are captured by classSerializer
     json.AddMember("classesMap", classSerializer.CreateAccumulatedClassesMap(&json.GetAllocator()), json.GetAllocator());
 
-    if (contentDescriptor.IsDifferentFromInputRuleset())
+    if (contentDescriptor.UsesModifiedRuleset())
         json.AddMember("ruleset", ToRapidJson(contentDescriptor.GetRuleset().WriteToJsonValue(), &json.GetAllocator()), json.GetAllocator());
 
     return json;
