@@ -5,6 +5,7 @@
 #pragma once
 #include <UnitTests/ECPresentation/ECPresentationTest.h>
 #include "RulesDrivenECPresentationManagerImplBase.h"
+#include "../../../Source/Hierarchies/NodePathsHelper.h"
 
 BEGIN_ECPRESENTATIONTESTS_NAMESPACE
 
@@ -120,10 +121,13 @@ protected:
         {
         return nullptr;
         }
-    NavNodeCPtr _GetParent(NodeParentRequestImplParams const& params) override
+    bvector<NodesPathElement> _CreateNodesHierarchy(CreateNodesHierarchyRequestImplParams const& params) override
         {
-        auto iter = m_parentship.find(&params.GetNode());
-        return (m_parentship.end() != iter) ? iter->second : nullptr;
+        return NodePathsHelper::CreateHierarchy(params.GetNodes(), [&](NavNodeCR child)
+            {
+            auto iter = m_parentship.find(&child);
+            return iter != m_parentship.end() ? iter->second : nullptr;
+            }, params.GetCancellationToken());
         }
     bvector<NavNodeCPtr> _GetFilteredNodes(NodePathsFromFilterTextRequestImplParams const& params) override
         {
