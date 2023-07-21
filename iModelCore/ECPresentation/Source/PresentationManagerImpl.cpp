@@ -980,16 +980,6 @@ void RulesDrivenECPresentationManagerImpl::FinalizeNode(RequestWithRulesetImplPa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodePtr RulesDrivenECPresentationManagerImpl::FinalizeNode(RequestWithRulesetImplParams const& params, NavNodeCR node) const
-    {
-    NavNodePtr clone = node.Clone();
-    FinalizeNode(params, *clone);
-    return clone;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 std::unique_ptr<INodeInstanceKeysProvider> RulesDrivenECPresentationManagerImpl::_CreateNodeInstanceKeysProvider(NodeInstanceKeysRequestImplParams const& params) const
     {
     auto scope = Diagnostics::Scope::Create("Create nodes instance keys provider");
@@ -1218,10 +1208,13 @@ NavNodeCPtr RulesDrivenECPresentationManagerImpl::_GetParent(NodeParentRequestIm
     VALID_HIERARCHY_CACHE_PRECONDITION(cache, nullptr);
 
     auto node = cache->GetPhysicalParentNode(params.GetNode().GetNodeId(), params.GetRulesetVariables(), params.GetInstanceFilter().get());
-    if (node.IsValid())
-        FinalizeNode(RequestWithRulesetImplParams::Create(params), *node);
+    if (node.IsNull())
+        return nullptr;
 
-    return node;
+    NavNodePtr clone = node->Clone();
+    clone->SetHasChildren(true);
+    FinalizeNode(RequestWithRulesetImplParams::Create(params), *clone);
+    return clone;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1241,7 +1234,7 @@ void RulesDrivenECPresentationManagerImpl::TraverseHierarchy(HierarchyRequestImp
     NavNodesDataSourceCPtr nodes = GetCachedDataSource(*context, nullptr);
     if (nodes.IsValid())
         {
-        for (NavNodePtr node : *nodes)
+        for (auto const& node : *nodes)
             TraverseHierarchy(CreateHierarchyRequestParams(params, node.get()), cache);
         }
     }

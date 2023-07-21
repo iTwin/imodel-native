@@ -40,7 +40,6 @@ protected:
 
     //! Clones rule.
     CustomizationRule* _Clone() const override {return new CheckBoxRule(*this);}
-    ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationKeyCR other) const override;
 
 public:
     //! Constructor. It is used to initialize the rule with default settings.

@@ -460,10 +460,7 @@ static NavNodesProviderContextPtr CreateContextForChildHierarchyLevel(NavNodesPr
     else
         ctx->SetPhysicalParentNode(&parentNode);
     if (!NavNodeExtendedData(parentNode).HideNodesInHierarchy() && nullptr == parentNode.GetKey()->AsGroupingNodeKey())
-        {
         ctx->SetInstanceFilter(nullptr);
-        ctx->SetResultSetSizeLimit(nullptr);
-        }
     ctx->SetRemovalId(ancestorContext.GetRemovalId());
     return ctx;
     }
@@ -922,6 +919,7 @@ void NodesCreatingMultiNavNodesProvider::EvaluateChildrenArtifacts(NavNodeR pare
     ChildrenArtifactsCaptureContext captureChildrenArtifacts(*childrenContext, parentNode);
     NavNodesProviderPtr childrenProvider = GetContext().CreateHierarchyLevelProvider(*childrenContext, &parentNode);
     DisabledFullNodesLoadContext disableFullLoad(*childrenProvider);
+    DisabledPostProcessingContext disablePostProcessing(*childrenProvider);
     for (auto const node : *childrenProvider)
         ;
     }
@@ -3442,6 +3440,12 @@ NavNodesProviderPtr SameLabelGroupingNodesPostProcessorDeprecated::_PostProcess(
     {
     auto scope = Diagnostics::Scope::Create("Same label grouping nodes post-processor: Post-process");
 
+    if (processedProvider.GetContext().GetOptimizationFlags().IsPostProcessingDisabled())
+        {
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "Post-processing disabled");
+        return nullptr;
+        }
+
     // don't need to do anything if there are no classes to which the same label grouping applies
     if (m_groupedClasses.empty())
         {
@@ -3474,6 +3478,7 @@ NavNodesProviderPtr SameLabelGroupingNodesPostProcessorDeprecated::_PostProcess(
     // attempt to find cached merged nodes provider - success means the whole hierarchy level is already post-processed and in cache.
     // it's more efficient to use the cached version compared to loading and merging everything again, so just return the cached provider.
     DataSourceIdentifier mergedDatasourceIdentifier(GetHierarchyLevelIdentifier(*context).GetId(), {}, context->GetInstanceFilterPtr());
+    mergedDatasourceIdentifier.SetResultSetSizeLimit(context->GetResultSetSizeLimit());
     DataSourceInfo mergedDatasourceInfo = context->GetNodesCache().FindDataSource(mergedDatasourceIdentifier, context->GetRulesetVariables());
     if (mergedDatasourceInfo.GetIdentifier().IsValid())
         {

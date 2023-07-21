@@ -41,7 +41,6 @@ protected:
 
     //! Compute specification hash.
     ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
-    ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationKeyCR other) const override;
 
 public:
     ECPRESENTATION_EXPORT ContentInstancesOfSpecificClassesSpecification();

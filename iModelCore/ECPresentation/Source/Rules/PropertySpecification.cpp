@@ -234,22 +234,3 @@ MD5 PropertySpecification::_ComputeHash() const
 
     return md5;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool PropertySpecification::_ShallowEqual(PresentationKeyCR other) const
-    {
-    PropertySpecification const* otherRule = dynamic_cast<PropertySpecification const*>(&other);
-    if (nullptr == otherRule)
-        return false;
-
-    return m_propertyName == otherRule->m_propertyName
-        && m_overridesPriority == otherRule->m_overridesPriority
-        && m_labelOverride == otherRule->m_labelOverride
-        && m_isDisplayed == otherRule->m_isDisplayed
-        && m_doNotHideOtherPropertiesOnDisplayOverride == otherRule->m_doNotHideOtherPropertiesOnDisplayOverride
-        && m_categoryId == otherRule->m_categoryId
-        && m_isReadOnly == otherRule->m_isReadOnly
-        && m_priority == otherRule->m_priority;
-    }

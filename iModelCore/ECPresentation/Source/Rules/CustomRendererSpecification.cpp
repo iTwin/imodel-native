@@ -24,18 +24,6 @@ MD5 CustomRendererSpecification::_ComputeHash() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool CustomRendererSpecification::_ShallowEqual(PresentationKeyCR other) const
-    {
-    CustomRendererSpecification const* otherRule = dynamic_cast<CustomRendererSpecification const*>(&other);
-    if (nullptr == otherRule)
-        return false;
-
-    return m_rendererName == otherRule->m_rendererName;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 Utf8CP CustomRendererSpecification::_GetJsonElementType() const {return "CustomRendererSpecification";}
 
 /*---------------------------------------------------------------------------------**//**

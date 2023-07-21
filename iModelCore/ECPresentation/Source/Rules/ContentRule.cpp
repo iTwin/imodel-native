@@ -147,18 +147,3 @@ MD5 ContentRule::_ComputeHash() const
     ADD_RULES_TO_HASH(md5, CONTENT_RULE_JSON_ATTRIBUTE_SPECIFICATIONS, m_specifications);
     return md5;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ContentRule::_ShallowEqual(PresentationKeyCR other) const
-    {
-    if (!ConditionalPresentationRule::_ShallowEqual(other))
-        return false;
-
-    ContentRule const* otherRule = dynamic_cast<ContentRule const*>(&other);
-    if (nullptr == otherRule)
-        return false;
-
-    return m_customControl == otherRule->m_customControl;
-    }

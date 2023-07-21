@@ -119,18 +119,6 @@ MD5 PresentationKey::_ComputeHash() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool PrioritizedPresentationKey::_ShallowEqual(PresentationKeyCR other) const
-    {
-    PrioritizedPresentationKey const* otherRule = dynamic_cast<PrioritizedPresentationKey const*>(&other);
-    if (nullptr == otherRule)
-        return false;
-
-    return m_priority == otherRule->m_priority;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 bool PrioritizedPresentationKey::_ReadXml(BeXmlNodeP xmlNode)
     {
     if (BEXML_Success != xmlNode->GetAttributeInt32Value(m_priority, COMMON_XML_ATTRIBUTE_PRIORITY))
@@ -215,21 +203,6 @@ PresentationRule::PresentationRule(int priority, bool onlyIfNotHandled)
 PresentationRule::~PresentationRule()
     {
     CommonToolsInternal::FreePresentationRules(m_requiredSchemas);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool PresentationRule::_ShallowEqual(PresentationKeyCR other) const
-    {
-    if (!PrioritizedPresentationKey::_ShallowEqual(other))
-        return false;
-
-    PresentationRuleCP otherRule = dynamic_cast<PresentationRuleCP>(&other);
-    if (nullptr == otherRule)
-        return false;
-
-    return m_onlyIfNotHandled == otherRule->m_onlyIfNotHandled;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -322,21 +295,6 @@ MD5 PresentationRule::_ComputeHash() const
         ADD_PRIMITIVE_VALUE_TO_HASH(md5, COMMON_JSON_ATTRIBUTE_ONLYIFNOTHANDLED, m_onlyIfNotHandled);
     ADD_RULES_TO_HASH(md5, COMMON_JSON_ATTRIBUTE_REQUIREDSCHEMAS, m_requiredSchemas);
     return md5;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ConditionalPresentationRule::_ShallowEqual(PresentationKeyCR other) const
-    {
-    if (!PresentationRule::_ShallowEqual(other))
-        return false;
-
-    ConditionalPresentationRuleCP otherRule = dynamic_cast<ConditionalPresentationRuleCP>(&other);
-    if (nullptr == otherRule)
-        return false;
-
-    return m_condition == otherRule->m_condition;
     }
 
 /*---------------------------------------------------------------------------------**//**
