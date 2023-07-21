@@ -19,7 +19,7 @@ struct TestRulesDrivenECPresentationManagerImpl : RulesDrivenECPresentationManag
 {
     typedef std::function<NavNodesDataSourcePtr(WithPageOptions<HierarchyRequestImplParams> const&)> Handler_GetNodes;
     typedef std::function<size_t(HierarchyRequestImplParams const&)> Handler_GetNodesCount;
-    typedef std::function<NavNodeCPtr(NodeParentRequestImplParams const&)> Handler_GetParent;
+    typedef std::function<bvector<NodesPathElement>(CreateNodesHierarchyRequestImplParams const&)> Handler_CreateNodesHierarchy;
     typedef std::function<bvector<NavNodeCPtr>(NodePathsFromFilterTextRequestImplParams const&)> Handler_GetFilteredNodes;
     typedef std::function<HierarchyComparePositionPtr(HierarchyCompareRequestImplParams const&)> Handler_CompareHierarchies;
 
@@ -37,7 +37,7 @@ struct TestRulesDrivenECPresentationManagerImpl : RulesDrivenECPresentationManag
 private:
     Handler_GetNodes m_nodesHandler;
     Handler_GetNodesCount m_nodesCountHandler;
-    Handler_GetParent m_getParentHandler;
+    Handler_CreateNodesHierarchy m_createNodesHierarchyHandler;
     Handler_GetFilteredNodes m_filteredNodesHandler;
 
     Handler_GetContentClasses m_contentClassesHandler;
@@ -70,11 +70,11 @@ protected:
         {
         return nullptr;
         }
-    NavNodeCPtr _GetParent(NodeParentRequestImplParams const& params) override
+    bvector<NodesPathElement> _CreateNodesHierarchy(CreateNodesHierarchyRequestImplParams const& params) override
         {
-        if (m_getParentHandler)
-            return m_getParentHandler(params);
-        return nullptr;
+        if (m_createNodesHierarchyHandler)
+            return m_createNodesHierarchyHandler(params);
+        return {};
         }
     bvector<NavNodeCPtr> _GetFilteredNodes(NodePathsFromFilterTextRequestImplParams const& params) override
         {
@@ -133,7 +133,7 @@ public:
 
     void SetNodesHandler(Handler_GetNodes handler) {m_nodesHandler = handler;}
     void SetNodesCountHandler(Handler_GetNodesCount handler) {m_nodesCountHandler = handler;}
-    void SetGetParentHandler(Handler_GetParent handler) {m_getParentHandler = handler;}
+    void SetCreateNodesHierarchyHandler(Handler_CreateNodesHierarchy handler) {m_createNodesHierarchyHandler = handler;}
     void SetGetFilteredNodesHandler(Handler_GetFilteredNodes handler) {m_filteredNodesHandler = handler;}
 
     void SetContentClassesHandler(Handler_GetContentClasses handler) {m_contentClassesHandler = handler;}
