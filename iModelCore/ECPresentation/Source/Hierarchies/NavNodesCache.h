@@ -456,7 +456,7 @@ protected:
     SqliteCacheDirectNodeIteratorBase(NavNodesProviderContextCR context, Db& db, StatementCache& statements, BeMutex& cacheMutex)
         : m_context(&context), m_db(db), m_statements(statements), m_cacheMutex(cacheMutex), m_pageSize(0), m_currNodeIndex(0)
         {
-        m_pageSize = m_context->GetOptimizationFlags().GetMaxNodesToLoad();
+        m_pageSize = m_context->GetMergedOptimizationFlags().GetMaxNodesToLoad();
         if (m_pageSize == 0 && m_context->HasPageOptions() && m_context->GetPageOptions()->HasSize())
             m_pageSize = m_context->GetPageOptions()->GetSize();
         }
