@@ -1190,7 +1190,7 @@ public:
     void SetSelectionInfo(SelectionInfo const& selectionInfo) {m_selectionInfo = &selectionInfo;}
 
     //! Set the ruleset which this descriptor is created with
-    void SetRuleset(PresentationRuleSetCR ruleset) { m_ruleset = &ruleset; }
+    void SetRuleset(PresentationRuleSetCR ruleset) { m_ruleset = &ruleset; m_differentFromInputRuleset = true;}
     PresentationRuleSetCR GetRuleset() const {return *m_ruleset;}
     RulesetVariables const& GetRulesetVariables() const {return m_rulesetVariables;}
 
@@ -1288,9 +1288,6 @@ public:
     //! Should only distinct values be returned
     bool OnlyDistinctValues() const {return HasContentFlag(ContentFlags::DistinctValues);}
 #endif
-
-    //! Set if this descriptor is created using a different from the input ruleset
-    void SetDifferentFromInputRuleset(bool value) {m_differentFromInputRuleset = value;}
     //! Is the descriptor created using a different from the input ruleset
     bool IsDifferentFromInputRuleset() const {return m_differentFromInputRuleset;}
 };
