@@ -1606,7 +1606,7 @@ $(o)v3_utl$(oext) : $(vendorSrc)crypto/x509/v3_utl.c ${MultiCompileDepends}
 $(o)v3err$(oext) : $(vendorSrc)crypto/x509/v3err.c ${MultiCompileDepends}
 
 # Can't compile these files on these platforms, because they have symbols already defined in assembly files.
-%if ($(TARGET_PLATFORM) != "Linux" && $(TARGET_PLATFORM) != "ANDROID" && $(TARGET_PLATFORM) != "Windows") || $(TARGET_PROCESSOR_ARCHITECTURE) == "AndroidARM64"
+%if ($(TARGET_PLATFORM) != "Linux" && $(TARGET_PLATFORM) != "Android" && $(TARGET_PLATFORM) != "Windows") || $(TARGET_PROCESSOR_ARCHITECTURE) == "AndroidARM64"
     $(o)wp_block$(oext) : $(vendorSrc)crypto/whrlpool/wp_block.c ${MultiCompileDepends}
 
     $(o)keccak1600$(oext) : $(vendorSrc)crypto/sha/keccak1600.c ${MultiCompileDepends}
