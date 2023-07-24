@@ -1,4 +1,4 @@
-name: open-source-$(Date:yyyy.MM.dd)$(Rev:.r)
+name: profile-version-tests-$(Date:yyyy.MM.dd)$(Rev:.r)
 
 # trigger:
 #   branches:
