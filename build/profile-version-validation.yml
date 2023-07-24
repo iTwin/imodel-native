@@ -29,8 +29,8 @@ resources:
     - repository: itwinjs-core
       type: github
       endpoint: imodel-native
-      ref: io-upgrade-core-build
-      # ref: imodel02
+      ref: test-io-upgrade-core-build
+      # ref: io-upgrade-core-build
       name: iTwin/itwinjs-core
 
 extends:
