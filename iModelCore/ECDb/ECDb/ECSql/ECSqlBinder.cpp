@@ -69,7 +69,7 @@ std::unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateBinder(ECSqlPrepareContex
         {
         PropertyNameExp const& propNameExp = targetExp->GetAs<PropertyNameExp>();
         ECSqlSystemPropertyInfo const& sysPropInfo = propNameExp.GetSystemPropertyInfo();
-        if (sysPropInfo.IsId() || propNameExp.GetTypeInfo().IsId())
+        if (sysPropInfo.IsId() || propNameExp.GetTypeInfo().IsId() && propNameExp.GetClassRefExp()->GetType() != Exp::Type::CommonTableBlockName)
             return CreateIdBinder(ctx, propNameExp.GetPropertyMap(), sysPropInfo, paramNameGen);
         }
 

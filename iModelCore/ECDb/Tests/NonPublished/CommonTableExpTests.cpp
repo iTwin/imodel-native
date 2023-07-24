@@ -799,21 +799,21 @@ TEST_F(CommonTableExpTestFixture, SubQueryBlock) {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("SubQueryBlock.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
             <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-                <ECEntityClass typeName="Foo" />
+                <ECEntityClass typeName="Foo">
+                    <ECProperty propertyName="Code" typeName="int" />
+                </ECEntityClass>
             </ECSchema>)xml")));
 
     auto ecsql = R"(
-        WITH models(
-            ParentId
-        ) AS (
-            SELECT
-                foo.ECInstanceId AS ParentId
+        WITH models(i) AS (
+            SELECT 
+                foo.ECInstanceId
             FROM
                 ts.Foo foo
         )
-        SELECT *
-        FROM models this
-        WHERE this.ParentId IN (?)
+        SELECT i
+        FROM models
+        WHERE models.i IN (?)
     )";
 
     ECSqlStatement stmt;
