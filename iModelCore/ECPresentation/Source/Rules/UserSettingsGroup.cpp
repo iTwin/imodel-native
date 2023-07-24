@@ -164,18 +164,6 @@ MD5 UserSettingsGroup::_ComputeHash() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool UserSettingsGroup::_ShallowEqual(PresentationKeyCR other) const
-    {
-    UserSettingsGroup const* otherRule = dynamic_cast<UserSettingsGroup const*>(&other);
-    if (nullptr == otherRule)
-        return false;
-
-    return m_categoryLabel == otherRule->m_categoryLabel;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 UserSettingsItem::UserSettingsItem() {}
 
 /*---------------------------------------------------------------------------------**//**
@@ -312,19 +300,4 @@ MD5 UserSettingsItem::_ComputeHash() const
     if (!m_defaultValue.empty())
         md5.Add(m_defaultValue.c_str(), m_defaultValue.size());
     return md5;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool UserSettingsItem::_ShallowEqual(PresentationKeyCR other) const
-    {
-    UserSettingsItem const* otherRule = dynamic_cast<UserSettingsItem const*>(&other);
-    if (nullptr == otherRule)
-        return false;
-
-    return m_id == otherRule->m_id
-        && m_label == otherRule->m_label
-        && m_options == otherRule->m_options
-        && m_defaultValue == otherRule->m_defaultValue;
     }

@@ -227,8 +227,10 @@ CloudResult CloudCache::CallSqliteFn(std::function<int(Utf8P*)> fn, Utf8CP funcN
 }
 
 CloudContainer* CloudCache::FindMatching(Utf8CP baseUri, Utf8CP containerName) {
+    auto isDaemon = this->IsDaemon();
     for (auto entry : m_containers) {
-        if (entry->m_containerId.Equals(containerName) && entry->m_baseUri.Equals(baseUri))
+        // For the daemon we presume that all containers are from the same storage account for a single process. No need to check baseUri in this case.
+        if (entry->m_containerId.Equals(containerName) && (isDaemon || entry->m_baseUri.Equals(baseUri)))
             return entry;
     }
     return nullptr;
@@ -254,8 +256,11 @@ CloudResult CloudContainer::Connect(CloudCache& cache) {
         return CloudResult(1, "container with that name already attached");
 
     cache.m_containers.push_back(this); // needed for authorization from attach.
+    auto attachFlags = SQLITE_BCV_ATTACH_IFNOT;
+    if (m_secure) 
+        attachFlags |= SQLITE_BCV_ATTACH_SECURE;
     if (!cache.IsAttached(*this)) {
-        auto result = cache.CallSqliteFn([&](Utf8P* msg) { return sqlite3_bcvfs_attach(cache.m_vfs, GetOpenParams().c_str(), m_baseUri.c_str(), m_containerId.c_str(), m_alias.c_str(), SQLITE_BCV_ATTACH_IFNOT, msg); }, "attach");
+        auto result = cache.CallSqliteFn([&](Utf8P* msg) { return sqlite3_bcvfs_attach(cache.m_vfs, GetOpenParams().c_str(), m_baseUri.c_str(), m_containerId.c_str(), m_alias.c_str(), attachFlags, msg); }, "attach");
         if (!result.IsSuccess()) {
             cache.m_containers.pop_back(); // failed, remove from list
             return result;

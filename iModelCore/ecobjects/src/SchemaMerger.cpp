@@ -655,7 +655,8 @@ BentleyStatus SchemaMerger::MergeClass(SchemaMergeResult& result, ECClassP left,
                 return BentleyStatus::ERROR;
                 }
 
-            if(left->AddBaseClass(*newBaseClass) != ECObjectsStatus::Success)
+            ECObjectsStatus status = left->AddBaseClass(*newBaseClass);
+            if (status != ECObjectsStatus::Success && status != ECObjectsStatus::NamedItemAlreadyExists)
                 {
                 result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, "AddBaseClass for base class %s returned an error on %s.", newBaseClass->GetFullName(), left->GetFullName());
                 return BentleyStatus::ERROR;

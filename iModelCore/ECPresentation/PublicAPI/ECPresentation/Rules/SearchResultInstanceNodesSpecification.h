@@ -41,7 +41,6 @@ protected:
         : m_schemaName(schemaName), m_className(className)
         {}
 
-    ECPRESENTATION_EXPORT virtual bool _ShallowEqual(PresentationKeyCR other) const override;
     ECPRESENTATION_EXPORT virtual MD5 _ComputeHash() const override;
 
     ECPRESENTATION_EXPORT virtual bool _ReadXml(BeXmlNodeP xmlNode) override;
@@ -97,7 +96,6 @@ protected:
     ECPRESENTATION_EXPORT void _WriteJson(BeJsValue json) const override;
     QuerySpecification* _Clone() const override {return new StringQuerySpecification(*this);}
     ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
-    ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationKeyCR other) const override;
 
 public:
     //! Constructor
@@ -135,7 +133,6 @@ protected:
     ECPRESENTATION_EXPORT void _WriteJson(BeJsValue json) const override;
     QuerySpecification* _Clone() const override{return new ECPropertyValueQuerySpecification(*this);}
     ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
-    ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationKeyCR other) const override;
 
 public:
     //! Constructor
@@ -170,8 +167,6 @@ private:
 protected:
     //! Allows the visitor to visit this specification.
     ECPRESENTATION_EXPORT void _Accept(PresentationRuleSpecificationVisitor& visitor) const override;
-
-    ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationKeyCR other) const override;
 
     ECPRESENTATION_EXPORT Utf8CP _GetXmlElementName () const override;
     ECPRESENTATION_EXPORT bool _ReadXml (BeXmlNodeP xmlNode) override;

@@ -3,11 +3,14 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "PublicAPI/BackDoor/ECDb/ECDbTests.h"
-
+#include <numeric>
+#include <algorithm>
+#include <cctype>
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
+
 
 //************************************************************************************
 //ECIssueListener

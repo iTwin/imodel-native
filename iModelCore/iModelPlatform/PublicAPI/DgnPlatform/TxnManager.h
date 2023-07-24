@@ -454,7 +454,7 @@ private:
     BeSQLite::DbResult ReadDataChanges(BeSQLite::ChangeSet&, TxnId rowid, TxnAction);
 
     void ApplyTxnChanges(TxnId, TxnAction);
-    BeSQLite::DbResult ApplyChanges(BeSQLite::ChangeStreamCR, TxnAction txnAction, bool containsSchemaChanges, BeSQLite::Rebase* = nullptr, bool invert = false);
+    BeSQLite::DbResult ApplyChanges(BeSQLite::ChangeStreamCR, TxnAction txnAction, bool containsSchemaChanges, BeSQLite::Rebase* = nullptr, bool invert = false, bool ignoreNoop = false);
     BeSQLite::DbResult ApplyDdlChanges(BeSQLite::DdlChangesCR);
 
     void OnBeginApplyChanges();
@@ -592,6 +592,9 @@ public:
     //! Get the TxnId of the first Txn for this session (though it may not be committed yet.)
     //! All TxnIds with a value lower than this are from a previous session.
     TxnId GetSessionStartId() const {return TxnId(m_curr.GetSession(), 0);}
+
+    DGNPLATFORM_EXPORT TxnId GetLastTxnId();
+    DGNPLATFORM_EXPORT void ReplayExternalTxns(TxnId start);
 
     //! Given a TxnId, query for TxnId of the immediately previous committed Txn, if any.
     //! @param[in] currentTxnId The current TxnId.

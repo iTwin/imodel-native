@@ -29,9 +29,15 @@ BUILD_NO_STACK_CHECK = 1   # Don't want to modify third party code, but hopefull
 #----------------------------------------------------------
 %include mdl.mki
 
-appName = iTwinOpenSSL
 vendorSrc = $(_MakeFilePath)vendor/
-o = $(OutputRootDir)build/iTwinOpenSSL/
+
+%if defined(iTwinNativeThirdParty)
+  appName = BeOpenSSL
+%else
+  appName = iTwinOpenSSL
+%endif
+
+o = $(OutputRootDir)build/$(appName)/
 
 always:
     !~@mkdir $(o)
@@ -517,8 +523,6 @@ $(o)bn_srp$(oext) : $(vendorSrc)crypto/bn/bn_srp.c ${MultiCompileDepends}
 $(o)bn_word$(oext) : $(vendorSrc)crypto/bn/bn_word.c ${MultiCompileDepends}
 
 $(o)bn_x931p$(oext) : $(vendorSrc)crypto/bn/bn_x931p.c ${MultiCompileDepends}
-
-$(o)rsa_sup_mul$(oext) : $(vendorSrc)crypto/bn/rsa_sup_mul.c ${MultiCompileDepends}
 
 $(o)buf_err$(oext) : $(vendorSrc)crypto/buffer/buf_err.c ${MultiCompileDepends}
 
@@ -2134,7 +2138,7 @@ objs =% $(MultiCompileObjectList)
 #----------------------------------------------------------------------------------------
 #   Create the library
 #----------------------------------------------------------------------------------------
-DLM_NAME                    = iTwinOpenSSL
+DLM_NAME                    = $(appName)
 DLM_OBJECT_FILES            = $(objs)
 DLM_EXPORT_OBJS             = $(DLM_OBJECT_FILES)
 DLM_OBJECT_DEST             = $(o)

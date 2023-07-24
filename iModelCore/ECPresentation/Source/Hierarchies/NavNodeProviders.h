@@ -65,46 +65,38 @@ public:
 struct OptimizationFlagsContainer
 {
 private:
-    OptimizationFlagsContainer const* m_parentContainer;
     bool m_isFullLoadDisabled;
     bool m_isPostProcessingDisabled;
     Nullable<size_t> m_maxNodesToLoad;
 
 public:
-    OptimizationFlagsContainer()
-        : m_isFullLoadDisabled(false), m_isPostProcessingDisabled(false), m_maxNodesToLoad(nullptr), m_parentContainer(nullptr)
-        {}
-    OptimizationFlagsContainer(OptimizationFlagsContainer const&) = delete;
-    OptimizationFlagsContainer(OptimizationFlagsContainer&&) = delete;
+    OptimizationFlagsContainer() {Reset();}
 
-    void From(OptimizationFlagsContainer const& other)
+    void Reset()
         {
-        m_parentContainer = other.m_parentContainer;
-        m_isFullLoadDisabled = other.m_isFullLoadDisabled;
-        m_isPostProcessingDisabled = other.m_isPostProcessingDisabled;
-        m_maxNodesToLoad = other.m_maxNodesToLoad;
+        m_isFullLoadDisabled = false;
+        m_isPostProcessingDisabled = false;
+        m_maxNodesToLoad = nullptr;
         }
 
-    OptimizationFlagsContainer const* GetParentContainer() const {return m_parentContainer;}
-    void SetParentContainer(OptimizationFlagsContainer const* parentContainer)
+    void Merge(OptimizationFlagsContainer const& other)
         {
-        if (parentContainer == this)
-            DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Hierarchies, "Attempting to set parent optimizations flag container to 'this'");
-        m_parentContainer = parentContainer;
+        m_isFullLoadDisabled |= other.m_isFullLoadDisabled;
+        m_isPostProcessingDisabled |= other.m_isPostProcessingDisabled;
+        if (m_maxNodesToLoad.IsNull())
+            m_maxNodesToLoad = other.m_maxNodesToLoad;
         }
 
-    bool IsFullNodesLoadDisabled(bool checkParent = true) const {return m_isFullLoadDisabled || checkParent && m_parentContainer && m_parentContainer->IsFullNodesLoadDisabled();}
+    void From(OptimizationFlagsContainer const& other) {Reset(); Merge(other);}
+
+    bool IsFullNodesLoadDisabled() const {return m_isFullLoadDisabled;}
     void SetDisableFullLoad(bool value) {m_isFullLoadDisabled = value;}
 
-    bool IsPostProcessingDisabled(bool checkParent = true) const {return m_isPostProcessingDisabled || checkParent && m_parentContainer && m_parentContainer->IsPostProcessingDisabled();}
+    bool IsPostProcessingDisabled() const {return m_isPostProcessingDisabled;}
     void SetDisablePostProcessing(bool value) {m_isPostProcessingDisabled = value;}
 
-    size_t GetMaxNodesToLoad(bool checkParent = true) const
-        {
-        if (m_maxNodesToLoad.IsValid())
-            return m_maxNodesToLoad.Value();
-        return checkParent && m_parentContainer ? m_parentContainer->GetMaxNodesToLoad() : 0;
-        }
+    Nullable<size_t> const& GetNullableMaxNodesToLoad() const {return m_maxNodesToLoad;}
+    size_t GetMaxNodesToLoad() const {return m_maxNodesToLoad.IsValid() ? m_maxNodesToLoad.Value() : 0;}
     void SetMaxNodesToLoad(Nullable<size_t> value) {m_maxNodesToLoad = value;}
 };
 
@@ -130,6 +122,7 @@ struct NavNodesProviderContext : RulesDrivenProviderContext
 
 private:
     // common
+    NavNodesProviderContextCP m_ancestorContext;
     RuleTargetTree m_targetTree;
     std::shared_ptr<INavNodesCache> m_nodesCache;
     INodesProviderFactoryCR m_providerFactory;
@@ -182,6 +175,8 @@ public:
     ~NavNodesProviderContext();
 
     // common
+    void SetAncestorContext(NavNodesProviderContextCP context) {m_ancestorContext = context;}
+    NavNodesProviderContextCP GetAncestorContext() const {return m_ancestorContext;}
     RuleTargetTree GetTargetTree() const {return m_targetTree;}
     ECPRESENTATION_EXPORT INavNodesCacheR GetNodesCache() const;
     NavNodeCPtr GetPhysicalParentNode() const {return m_physicalParentNode;}
@@ -193,7 +188,7 @@ public:
     ECPRESENTATION_EXPORT bvector<RulesetVariableEntry> GetRelatedRulesetVariables() const;
     IProvidersIndexAllocator& GetProvidersIndexAllocator() const;
     void SetProvidersIndexAllocator(IProvidersIndexAllocator& allocator) {m_providersIndexAllocator = &allocator;}
-    bset<ArtifactsCapturer*> const& GetArtifactsCapturers() const {return m_artifactsCapturers;}
+    ECPRESENTATION_EXPORT bset<ArtifactsCapturer*> GetArtifactsCapturers(bool onlyDirect = false) const;
     void SetArtifactsCapturers(bset<ArtifactsCapturer*> capturers) {m_artifactsCapturers = capturers;}
     void AddArtifactsCapturer(ArtifactsCapturer* capturer) {m_artifactsCapturers.insert(capturer);}
     void RemoveArtifactsCapturer(ArtifactsCapturer* capturer) {m_artifactsCapturers.erase(capturer);}
@@ -214,7 +209,7 @@ public:
     std::shared_ptr<PageOptions> GetPageOptions() const {return m_pageOptions;}
 
     // optimization flags
-    OptimizationFlagsContainer const& GetOptimizationFlags() const {return m_optFlags;}
+    ECPRESENTATION_EXPORT OptimizationFlagsContainer GetMergedOptimizationFlags() const;
     OptimizationFlagsContainer& GetOptimizationFlags() {return m_optFlags;}
     bool MayHaveArtifacts() const {return m_mayHaveArtifacts;}
     void SetMayHaveArtifacts(bool value) {m_mayHaveArtifacts = value;}
@@ -473,14 +468,14 @@ public:
         name(NavNodesProviderCR provider, valueType value = defaultValue) \
             : m_provider(provider) \
             { \
-            m_initialValue = m_provider.GetContext().GetOptimizationFlags().getter(false); \
+            m_initialValue = m_provider.GetContextR().GetOptimizationFlags().getter(); \
             m_provider.GetContextR().GetOptimizationFlags().setter(value); \
             } \
         ~name() {m_provider.GetContextR().GetOptimizationFlags().setter(m_initialValue);} \
         };
 DEFINE_OPTIMIZATION_FLAG_CONTEXT(DisabledFullNodesLoadContext, IsFullNodesLoadDisabled, SetDisableFullLoad, bool, true);
 DEFINE_OPTIMIZATION_FLAG_CONTEXT(DisabledPostProcessingContext, IsPostProcessingDisabled, SetDisablePostProcessing, bool, true);
-DEFINE_OPTIMIZATION_FLAG_CONTEXT(MaxNodesToLoadContext, GetMaxNodesToLoad, SetMaxNodesToLoad, size_t, 0);
+DEFINE_OPTIMIZATION_FLAG_CONTEXT(MaxNodesToLoadContext, GetNullableMaxNodesToLoad, SetMaxNodesToLoad, Nullable<size_t>, nullptr);
 
 struct DataSourceRelatedVariablesTracker;
 /*=================================================================================**//**
@@ -574,15 +569,15 @@ public:
         m_providers = providers;
         for (NavNodesProviderPtr const& provider : m_providers)
             {
-            provider->GetContextR().GetOptimizationFlags().SetParentContainer(
-                (&provider->GetContext() != &GetContext()) ? &GetContext().GetOptimizationFlags() : nullptr);
+            if (&provider->GetContext() != &GetContext())
+                provider->GetContextR().SetAncestorContext(&GetContext());
             }
         }
     void AddProvider(NavNodesProviderR provider)
         {
-        provider.GetContextR().GetOptimizationFlags().SetParentContainer(
-            (&provider.GetContext() != &GetContext()) ? &GetContext().GetOptimizationFlags() : nullptr);
         m_providers.push_back(&provider);
+        if (&provider.GetContext() != &GetContext())
+            provider.GetContextR().SetAncestorContext(&GetContext());
         }
     void RemoveProvider(NavNodesProviderR provider) {m_providers.erase(std::find(m_providers.begin(), m_providers.end(), &provider));}
     void ClearProviders() {m_providers.clear();}
@@ -636,13 +631,14 @@ public:
 struct NodesCreatingMultiNavNodesProvider : MultiNavNodesProvider
 {
     DEFINE_T_SUPER(MultiNavNodesProvider)
+    struct CreateNodeProviderContext;
 
 private:
     ECPRESENTATION_EXPORT std::unique_ptr<DirectNodesIterator> GetDirectNodesIterator() const;
-    bool ShouldReturnChildNodes(NavNodeR node) const;
-    void EvaluateChildrenArtifacts(NavNodeR) const;
+    bool ShouldReturnChildNodes(CreateNodeProviderContext&) const;
+    void EvaluateChildrenArtifacts(CreateNodeProviderContext&) const;
     void EvaluateThisNodeArtifacts(NavNodeCR) const;
-    NavNodesProviderPtr CreateProvider(NavNodeR node) const;
+    NavNodesProviderPtr CreateProvider(CreateNodeProviderContext&) const;
 
 protected:
     NodesCreatingMultiNavNodesProvider(NavNodesProviderContextR context)

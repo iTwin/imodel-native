@@ -91,33 +91,6 @@ void RelatedInstanceNodesSpecification::SetRelationshipPaths(bvector<RepeatableR
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool RelatedInstanceNodesSpecification::_ShallowEqual(PresentationKeyCR other) const
-    {
-    if (!ChildNodeSpecification::_ShallowEqual(other))
-        return false;
-
-    RelatedInstanceNodesSpecificationCP otherRule = dynamic_cast<RelatedInstanceNodesSpecificationCP>(&other);
-    if (nullptr == otherRule)
-        return false;
-
-    return m_groupByClass == otherRule->m_groupByClass
-        && m_groupByLabel == otherRule->m_groupByLabel
-        && m_groupByRelationship == otherRule->m_groupByRelationship
-        && m_requiredDirection == otherRule->m_requiredDirection
-        && m_showEmptyGroups == otherRule->m_showEmptyGroups
-        && m_skipRelatedLevel == otherRule->m_skipRelatedLevel
-        && m_relatedClassNames == otherRule->m_relatedClassNames
-        && m_relationshipClassNames == otherRule->m_relationshipClassNames
-        && m_supportedSchemas == otherRule->m_supportedSchemas
-        && m_instanceFilter == otherRule->m_instanceFilter
-        && m_relationshipPaths.size() == otherRule->m_relationshipPaths.size()
-        && std::equal(m_relationshipPaths.begin(), m_relationshipPaths.end(), otherRule->m_relationshipPaths.begin(),
-            [](RepeatableRelationshipPathSpecification const* lhs, RepeatableRelationshipPathSpecification const* rhs){return *lhs == *rhs;});
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 void RelatedInstanceNodesSpecification::_Accept(PresentationRuleSpecificationVisitor& visitor) const {visitor._Visit(*this);}
 
 /*---------------------------------------------------------------------------------**//**

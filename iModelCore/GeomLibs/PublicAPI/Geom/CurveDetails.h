@@ -55,7 +55,7 @@ GEOMDLLIMPEXP void UpdateFraction1AndUserData (double f1, int64_t newData)
 
 //!
 //! Detail data for a point along a curve, allowing indexing into a subcomponent.
-//! 
+//!
 //!
 struct CurveLocationDetail
 {
@@ -152,8 +152,19 @@ GEOMDLLIMPEXP void SetFractionFromComponentFraction (double componentFraction, s
 //! All other data (point, curve pointer, a) is left unchanged.
 GEOMDLLIMPEXP void SetComponentFractionFromFraction (double globalFraction, size_t numComponent);
 
-//! Sort to gather CurveLocationDetail's with same curve, and then by fraction within those curves.
+//! Sort to gather CurveLocationDetail's with same curve, and then sort by fraction within those curves.
+//! Use this method when you want to collate the details so that fractions on the same primitive are together (when
+//! the order of the primitives is irrelevant). If the order of the primitives is relevant use SortByIndexAndFraction.
+//! Sorting by CurvePrimitive memory address does not always yield the same order as sorting by CurvePrimitive index.
 GEOMDLLIMPEXP static void SortByCurveAndFraction (bvector<CurveLocationDetail> &detail);
+
+//! Sort to order CurveLocationDetails by primitive index and then by fraction within those curves.
+//! Use this method when the order of the primitives is relevant.
+//! @param curve CurveVector containing the primitives referenced by the details. When provided, this curve is used
+//! to populate each detail.a field with the primitive index. If you have already populated detail.a with your primary
+//! sort data, do not pass curve.
+GEOMDLLIMPEXP static void SortByIndexAndFraction(bvector<CurveLocationDetail> &details, CurveVectorCP curve = nullptr);
+
 //! Return a detail for the closest point, considering only those within searchRadius.
 GEOMDLLIMPEXP static ValidatedCurveLocationDetail ClosestPoint (bvector<CurveLocationDetail> &details, DPoint3dCR xyz, double searchRadius);
 //! Return a detail pair whose detailA or detailB is closest, considering only those within searchRadius.
@@ -181,7 +192,7 @@ GEOMDLLIMPEXP CurveLocationDetailPair (ICurvePrimitiveCP curve, double fraction0
 //! Constructor for two distinct curve and "a" tags.
 GEOMDLLIMPEXP CurveLocationDetailPair
     (
-    ICurvePrimitiveCP curve0, double a0, 
+    ICurvePrimitiveCP curve0, double a0,
     ICurvePrimitiveCP curve1, double a1
     );
 
@@ -515,7 +526,15 @@ double m_arcAngle;  // (if this is positive) turns larger than this become arcs.
 double m_chamferAngle; // (if this is positive) "outer chamfers" are created with this max angle.
 double m_offsetDistance;
 bool   m_forceClosure;
-bool   m_unusedBool[8];
+bool m_allowSharpestCorners; // Whether to remove the internal turn angle upper bound for sharp corner construction.
+                             // By default, a sharp corner is not created at a joint when the turn angle is too large,
+                             // so as to avoid offsets whose ranges blow up. Internally, this is implemented by applying an
+                             // upper bound to `m_chamferAngle`.
+                             // When `m_allowSharpestCorners` is true, this internal upper bound is removed, allowing sharp
+                             // corners for turn angles up to `m_chamferAngle`. Thus, if you know your input turn angles
+                             // are no greater than `m_chamferAngle`, you can create an offset with sharp corners at
+                             // each joint by setting `m_arcAngle > m_chamferAngle` and `m_allowSharpestCorners` to true.
+bool m_unusedBool[7];
 double m_unusedDouble[8];
 int    m_bCurvePointsPerKnot;   // When offsetting bspline, number of points requested per knot interval.
 int    m_bCurveMethod;      // 0=default=MX spline fit.  1=greville absisae with current knots.
@@ -546,6 +565,8 @@ GEOMDLLIMPEXP bool  GetForceClosure () const;
 GEOMDLLIMPEXP int GetBCurvePointsPerKnot () const;
 GEOMDLLIMPEXP int GetBCurveMethod () const;
 GEOMDLLIMPEXP int GetOutputSelector() const;
+GEOMDLLIMPEXP void SetAllowSharpestCorners(bool value);
+GEOMDLLIMPEXP bool GetAllowSharpestCorners() const;
 };
 
 
@@ -565,10 +586,10 @@ int    m_unusedInt[10];
 bool   m_unusedBool[10];
 public:
 GEOMDLLIMPEXP CurveGapOptions ();   // default options (1e-7, 1e-4,1e-3)
-GEOMDLLIMPEXP CurveGapOptions (double m_equalPointTolerance, double maxDirectAdjust, double maxAdjustAlongCurve); 
+GEOMDLLIMPEXP CurveGapOptions (double m_equalPointTolerance, double maxDirectAdjust, double maxAdjustAlongCurve);
 
 //! Set gap size that does not need to be corrected.
-GEOMDLLIMPEXP void SetEqualPointTolerance (double value); 
+GEOMDLLIMPEXP void SetEqualPointTolerance (double value);
 //! Set max allowable motion of line and linestring endpoints.
 GEOMDLLIMPEXP void SetMaxDirectAdjustTolerance (double value);
 //! Set max motion along a curve.
@@ -577,9 +598,9 @@ GEOMDLLIMPEXP void SetMaxAdjustAlongCurve (double value);
 GEOMDLLIMPEXP void SetRemovePriorGapPrimitives (bool value);
 
 //! @return tolerance for gaps that do not have to be closed at all.
-GEOMDLLIMPEXP double GetEqualPointTolerance () const;    
+GEOMDLLIMPEXP double GetEqualPointTolerance () const;
 //! @return max allowable motion of line and linestring endpoints.
-GEOMDLLIMPEXP double GetMaxDirectAdjustTolerance () const; 
+GEOMDLLIMPEXP double GetMaxDirectAdjustTolerance () const;
 //! @return max allowable motion along a curve.
 GEOMDLLIMPEXP double GetMaxAdjustAlongCurve () const;
 //! @return flag to remove prior gap primitives
@@ -731,7 +752,7 @@ enum BoolSelect
     BoolSelect_Parity = 0,    // XOR of leaf-level bools
     BoolSelect_Union  = 2,    // UNION of leaf level bools
     BoolSelect_Summed_Parity   = 3,   // XOR of leaf level integers
-    BoolSelect_Summed_Positive = 4,   // Positive sum of leaf level integers 
+    BoolSelect_Summed_Positive = 4,   // Positive sum of leaf level integers
     BoolSelect_Summed_NonZero  = 5,   // Nonzero sum of leaf level integers
     BoolSelect_Summed_Negative = 6,    // Negative sum of leaf level integers.
     BoolSelect_FromStructure = 1000   // Dictated by structure of supplied data.
@@ -794,7 +815,7 @@ struct TaggedLocalRange : public LocalRange
 size_t m_indexA, m_indexB;
 double m_a;
 GEOMDLLIMPEXP TaggedLocalRange (size_t indexA, size_t indexB, double a = 0.0);
-// sort an array of TaggedLocalRanges by increasing "a" value.    
+// sort an array of TaggedLocalRanges by increasing "a" value.
 static GEOMDLLIMPEXP void SortByA (bvector<TaggedLocalRange> &data);
 // Compute and save distance from the range to space point.
 void GEOMDLLIMPEXP SetDistanceOutside (DPoint3dCR spacePoint);
@@ -854,7 +875,7 @@ GEOMDLLIMPEXP GEOMAPI_VIRTUAL void AnnouncePoint (CurveLocationDetailCR worldDet
 };
 
 //! Special case of CurveKeyPointCollector -- save only the closest point to the bias point.
-//! 
+//!
 struct CurveKeyPoint_ClosestPointCollector : CurveKeyPointCollector
 {
 private:
@@ -905,7 +926,7 @@ double startDistance;
 //! Distance to segment end
 double endDistance;
 //! line identifier. (origin is 0, first hatch line is 1, etc)
-double hatchLine;       
+double hatchLine;
 };
 #define DEFAULT_MAX_DASH 100000
 //! Array of (signed) dash lengths, with computed total of all lengths.

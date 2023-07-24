@@ -127,7 +127,8 @@ DropSchemaResult SchemaWriter::DropSchema(Utf8StringCR schemaName, SchemaImportC
     }
 
     // repopulate cache tables
-    if (SUCCESS != DbSchemaPersistenceManager::RepopulateClassHierarchyCacheTable(ctx.GetECDb())) {
+
+    if (SUCCESS != ctx.GetECDb().Schemas().RepopulateCacheTables()) {
         return DropSchemaResult(DropSchemaResult::Status::Error);
     }
     return DropSchemaResult(DropSchemaResult::Status::Success);
@@ -179,9 +180,9 @@ SchemaImportResult SchemaWriter::ImportSchemas(bvector<ECN::ECSchemaCP>& schemas
         return SchemaImportResult::ERROR;
         }
 
-    if (SUCCESS != DbSchemaPersistenceManager::RepopulateClassHierarchyCacheTable(ctx.GetECDb()))
+    if (SUCCESS != ctx.GetECDb().Schemas().RepopulateCacheTables())
         {
-        LOG.debug("SchemaWriter::ImportSchemas - Failed to RepopulateClassHierarchyCacheTable");
+        LOG.debug("SchemaWriter::ImportSchemas - Failed to RepopulateCacheTables");
         return SchemaImportResult::ERROR;
         }
 
