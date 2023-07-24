@@ -101,12 +101,24 @@ nameToDefine = ENGINESDIR=\"\"
     nameToDefine = AES_ASM
     %include cdefapnd.mki
 
+    nameToDefine = VPAES_ASM
+    %include cdefapnd.mki
+
+    nameToDefine = BSAES_ASM
+    %include cdefapnd.mki
+
 %elif $(TARGET_PLATFORM) == "Linux"
 
     nameToDefine = OPENSSL_CPUID_OBJ
     %include cdefapnd.mki
 
     nameToDefine = AES_ASM
+    %include cdefapnd.mki
+
+    nameToDefine = VPAES_ASM
+    %include cdefapnd.mki
+
+    nameToDefine = BSAES_ASM
     %include cdefapnd.mki
 
 %elif $(TARGET_PLATFORM) == "WinRT"
@@ -138,6 +150,12 @@ nameToDefine = ENGINESDIR=\"\"
         %include cdefapnd.mki
 
         nameToDefine = AES_ASM
+        %include cdefapnd.mki
+
+        nameToDefine = VPAES_ASM
+        %include cdefapnd.mki
+
+        nameToDefine = BSAES_ASM
         %include cdefapnd.mki
     %endif
 
