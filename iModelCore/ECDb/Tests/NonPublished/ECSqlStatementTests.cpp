@@ -9068,8 +9068,6 @@ TEST_F(ECSqlStatementTestFixture, NullsOrdering)
     while (statement.Step() == BE_SQLITE_ROW && count < 2) {
         firstName = statement.GetValueText(0);
         lastName = statement.GetValueText(1);
-        LOG.debugv("%s, %s", lastName, firstName);
-
         // Validate the first few entries
         if (count == 0) {
             ASSERT_STREQ(firstName, nullptr);

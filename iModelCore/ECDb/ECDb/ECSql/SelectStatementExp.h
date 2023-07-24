@@ -179,9 +179,9 @@ struct OrderBySpecExp final : Exp
     {
     public:
         enum class NullsOrder {
+            NotSpecified,
             First,
-            Last,
-            NotSpecified
+            Last
         };
         enum class SortDirection
             {
