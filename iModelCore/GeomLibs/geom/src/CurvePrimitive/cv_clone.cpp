@@ -17,27 +17,35 @@ bool PushIfNonNull(CurveVectorR dest, ICurvePrimitivePtr const &curve)
     return true;
     }
 
-bool CloneAndPush (CurveVectorR dest, ICurvePrimitivePtr const &parent, double fraction0, double fraction1, bool allowExtrapolation, bool usePartialCurves)
+bool CloneAndPush
+    (
+    CurveVectorR dest,
+    ICurvePrimitivePtr const &parent,
+    double fraction0,
+    double fraction1,
+    bool allowExtrapolation,
+    bool usePartialCurves
+    )
     {
-    if (DoubleOps::AlmostEqualFraction (fraction0, fraction1))
+    if (DoubleOps::AlmostEqualFraction(fraction0, fraction1))
         return false;
     ICurvePrimitivePtr curve;
     if (usePartialCurves &&
-        !(   DoubleOps::IsExact01 (fraction0, fraction1)
-          || DoubleOps::IsExact01 (fraction1, fraction0)
+        !(   DoubleOps::IsExact01(fraction0, fraction1)
+          || DoubleOps::IsExact01(fraction1, fraction0)
          )
       )
         {
-        auto cloneOfParent = parent->Clone ();
-        curve = ICurvePrimitive::CreatePartialCurve (cloneOfParent.get (), fraction0, fraction1);
+        auto cloneOfParent = parent->Clone();
+        curve = ICurvePrimitive::CreatePartialCurve(cloneOfParent.get(), fraction0, fraction1);
         }
-    else 
-        curve = parent->CloneBetweenFractions (fraction0, fraction1, false);
+    else
+        curve = parent->CloneBetweenFractions(fraction0, fraction1, allowExtrapolation);
     double a;
-    if (curve.IsNull () || !curve->Length (a) || a <= DoubleOps::SmallMetricDistance ())
+    if (curve.IsNull() || !curve->Length(a) || a <= DoubleOps::SmallMetricDistance())
         return false;
 
-    dest.push_back (curve);
+    dest.push_back(curve);
     return true;
     }
 
@@ -165,7 +173,7 @@ public:
     m_index = index;
     m_a = a;
     }
-    
+
  bool AlmostEqual (PlaceInCurveVector const &other) const
     {
     return m_index == other.m_index && fabs (m_a - other.m_a) <= s_fractionTolerance;
@@ -269,7 +277,7 @@ CurveVectorPtr CurveVector::GenerateAllParts (int indexA, double fractionA, int 
 
         placeA.ClampForIndexLimit (n);
         placeB.ClampForIndexLimit (n);
-        
+
         if (placeA.AlmostEqual (placeB))
             {
             AppendOpenFragment (*fragments, *this, placeA, PlaceInCurveVector::AtOpenEnd (n));
@@ -365,7 +373,7 @@ CurveVectorPtr CurveVector::CloneBetweenCyclicIndexedFractions (int index0, doub
 
 
 //! Return a new vector containing curves from index0,fraction0 to index1,fraction1 corresponding to the the CurveLocationDetails.
-CurveVectorPtr CurveVector::CloneBetweenDirectedFractions (CurveLocationDetailCR location0, CurveLocationDetailCR location1, bool allowExtrapolation, bool usePartialCurves) const
+CurveVectorPtr CurveVector::CloneBetweenDirectedFractions(CurveLocationDetailCR location0, CurveLocationDetailCR location1, bool allowExtrapolation, bool usePartialCurves) const
     {
     size_t index0, index1;
     if (LeafToIndex (location0.curve, index0)
@@ -378,44 +386,52 @@ CurveVectorPtr CurveVector::CloneBetweenDirectedFractions (CurveLocationDetailCR
                 allowExtrapolation, usePartialCurves
                 );
         }
-    return nullptr;        
+    return nullptr;
     }
 
 //! Return a new vector containing curves from index0,fraction0 to index1,fraction1.
 //! Indices are restricted to array bounds.
-CurveVectorPtr CurveVector::CloneBetweenDirectedFractions (int index0, double fraction0, int index1, double fraction1, bool allowExtrapolation, bool usePartialCurves) const
+CurveVectorPtr CurveVector::CloneBetweenDirectedFractions
+    (
+    int index0,
+    double fraction0,
+    int index1,
+    double fraction1,
+    bool allowExtrapolation,
+    bool usePartialCurves
+    ) const
     {
-    CurveVectorPtr dest = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open);
-    int n = (int) size ();
+    CurveVectorPtr dest = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
+    int n = (int) size();
     // indices are ints.  Assume every step can be out of bounds -- don't try to preadjust, just test and skip if bad.
     if (index0 == index1)
         {
         if (index0 >= 0 && index0 < n)
-            CloneAndPush (*dest, at(index1), fraction0, fraction1, allowExtrapolation, usePartialCurves);
+            CloneAndPush(*dest, at(index1), fraction0, fraction1, allowExtrapolation, usePartialCurves);
         }
     else if (index1 > index0)
         {
-        fraction0 = DoubleOps::Min (fraction0, 1.0);
-        fraction1 = DoubleOps::Max (fraction1, 0.0);
+        fraction0 = DoubleOps::Min(fraction0, 1.0);
+        fraction1 = DoubleOps::Max(fraction1, 0.0);
         if (index0 >= 0 && index0 < n)
-            CloneAndPush (*dest, at(index0), fraction0, 1.0, allowExtrapolation, usePartialCurves);
+            CloneAndPush(*dest, at(index0), fraction0, 1.0, allowExtrapolation, usePartialCurves);
         for (int i = index0 + 1; i < index1; i++)
             if (i >= 0 && i < n)
-                PushIfNonNull (*dest, at(i)->Clone ());
+                CloneAndPush(*dest, at(i), 0.0, 1.0, false, false);
         if (index1 >= 0 && index1 < n)
-            CloneAndPush (*dest, at(index1), 0.0, fraction1, allowExtrapolation, usePartialCurves);
+            CloneAndPush(*dest, at(index1), 0.0, fraction1, allowExtrapolation, usePartialCurves);
         }
     else // index0 > index1
         {
-        fraction0 = DoubleOps::Max (fraction0, 0.0);
-        fraction1 = DoubleOps::Min (fraction1, 1.0);
+        fraction0 = DoubleOps::Max(fraction0, 0.0);
+        fraction1 = DoubleOps::Min(fraction1, 1.0);
         if (index0 < n)
-            CloneAndPush (*dest, at(index0), fraction0, 0.0, allowExtrapolation, usePartialCurves);
+            CloneAndPush(*dest, at(index0), fraction0, 0.0, allowExtrapolation, usePartialCurves);
         for (int i = index0 - 1; i > index1; i--)
             if (i >= 0 && i < n)
-                CloneAndPush (*dest, at(CyclicIndex (i)), 1.0, 0.0, false, false);
+                CloneAndPush(*dest, at(CyclicIndex(i)), 1.0, 0.0, false, false);
         if (index1 >= 0 && index1 < n)
-            CloneAndPush (*dest, at(CyclicIndex (index1)), 1.0, fraction1, allowExtrapolation, usePartialCurves);
+            CloneAndPush(*dest, at(CyclicIndex(index1)), 1.0, fraction1, allowExtrapolation, usePartialCurves);
         }
     return dest;
     }
@@ -575,7 +591,7 @@ static CurveVectorPtr CloneChainWithGapsClosed (CurveVectorCR source, CurveGapOp
     if (source.IsClosedPath ())
         {
         i1 = 0;
-        i0 = n - 1; 
+        i0 = n - 1;
         }
     static double s_fractionTrigger = 0.49;
     // Pass 1 -- direct adjustments.
@@ -608,7 +624,7 @@ static CurveVectorPtr CloneChainWithGapsClosed (CurveVectorCR source, CurveGapOp
                 double distanceAlongA = tangentA.origin.Distance (pointA);
                 double distanceAlongB = tangentB.origin.Distance (pointB);
                 double distanceAB = pointA.Distance (pointB);
-                if (                
+                if (
                        fractionA > -s_fractionTrigger
                     && fractionB > -s_fractionTrigger
                     && distanceAlongA < maxAdjustAlongCurve
@@ -702,7 +718,7 @@ static CurveVectorPtr CloneChainWithGapsClosed (CurveVectorCR source, CurveGapOp
                             KeepAlive (originalDelta);
                             needGapSegment = false;
                             }
-                        } 
+                        }
                     }
                 }
              else if (gapSize < maxAdjust
@@ -727,7 +743,7 @@ static CurveVectorPtr CloneChainWithGapsClosed (CurveVectorCR source, CurveGapOp
                         {
                         result->at (i0)->TransformInPlace (transform);
                         }
-                    } 
+                    }
                 }
              }
 
@@ -806,9 +822,9 @@ double CurveVector::MaxGapWithinPath () const
     if (IsClosedPath ())
         {
         i1 = 0;
-        i0 = n - 1; 
+        i0 = n - 1;
         }
-        
+
     if (IsClosedPath () || IsOpenPath ())
         {
         DPoint3d start0, end0, start1, end1;
@@ -850,7 +866,7 @@ CurveVectorPtr CurveVector::CloneReversed () const
         else    // hmm.. does 1..0 work for "all" primitives?  would be better to have a dispatched clone reverse
             result->push_back (at(i)->CloneBetweenFractions (1.0, 0.0, false));
         }
-    return result;    
+    return result;
     }
 
 
@@ -870,7 +886,7 @@ ExtendedCurvePrimitive (ICurvePrimitiveCR curve, int numDerivative, bool useNati
         m_useNative (useNativeIfExtensible && curve.IsExtensibleFractionSpace ()),
         m_numDerivative (numDerivative)
     {}
-    
+
 void FractionToPointWithExtrapolation (double fraction, DPoint3dR xyz, DVec3dR dX, DVec3dR ddX) const
     {
     if (m_useNative || (fraction >= 0.0 && fraction <= 1.0))
@@ -932,7 +948,7 @@ void FractionToPointWithExtrapolation (double fraction, DPoint3dR xyz, DVec3dR d
         }
     };
  };
- 
+
  bool CurveCurve::ClosestApproachNewton (
     ICurvePrimitiveCR curveA,
     ICurvePrimitiveCR curveB,
@@ -957,6 +973,6 @@ void FractionToPointWithExtrapolation (double fraction, DPoint3dR xyz, DVec3dR d
     return false;
     }
 
-  
+
 #endif
 END_BENTLEY_GEOMETRY_NAMESPACE

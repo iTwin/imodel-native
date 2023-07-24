@@ -84,20 +84,3 @@ MD5 RequiredSchemaSpecification::_ComputeHash() const
         ADD_PRIMITIVE_VALUE_TO_HASH(md5, REQUIRED_SCHEMA_SPECIFICATION_JSON_ATTRIBUTE_MAXVERSION, m_maxVersion.Value());
     return md5;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool RequiredSchemaSpecification::_ShallowEqual(PresentationKeyCR other) const
-    {
-    if (!T_Super::_ShallowEqual(other))
-        return false;
-
-    RequiredSchemaSpecification const* otherRule = dynamic_cast<RequiredSchemaSpecification const*>(&other);
-    if (nullptr == otherRule)
-        return false;
-
-    return m_name == otherRule->m_name
-        && m_minVersion == otherRule->m_minVersion
-        && m_maxVersion == otherRule->m_maxVersion;
-    }

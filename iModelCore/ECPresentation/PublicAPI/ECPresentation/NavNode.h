@@ -139,6 +139,7 @@ public:
     //! Does the node support hierarchy level filtering.
     ECPRESENTATION_EXPORT bool SupportsFiltering() const;
     void SetSupportsFiltering(bool value) {m_supportsFiltering = value;}
+    bool IsFilteringSupportDetermined() const {return m_supportsFiltering.IsValid();}
 
     //! Get extended data injected into this node by API user
     ECPRESENTATION_EXPORT RapidJsonAccessor GetUsersExtendedData() const;

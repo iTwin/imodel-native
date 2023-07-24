@@ -6,7 +6,11 @@
 #----------------------------------------------------------------------------------------------------------------------------------------------------
 SourceDir = $(_MakeFilePath)vendor/source/
 
-baseAppName = iTwinIcu4c
+%if defined(iTwinNativeThirdParty)
+  baseAppName = BeIcu4c
+%else
+  baseAppName = iTwinIcu4c
+%endif
 
 # Tell MSVC to interpret files as UTF-8 by default (for Unicode character constants).
 %if (" " != $[@findstring VS, $(BUILD_TOOLSET)])
