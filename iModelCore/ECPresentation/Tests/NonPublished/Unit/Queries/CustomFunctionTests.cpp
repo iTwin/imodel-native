@@ -1374,6 +1374,30 @@ TEST_F(CustomFunctionTests, CompareDoubles_ComparesPropertyWithStaticValue)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CustomFunctionTests, CompareDoubles_ComparesPositiveValues)
+    {
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, m_ruleset->GetRuleSetId(), *m_rulesPreprocessor, m_rulesetVariables, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
+    ECSqlStatement stmt;
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT " FUNCTION_NAME_CompareDoubles "(1.0, 2.0)"));
+    ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
+    EXPECT_EQ(-1, stmt.GetValueInt(0));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CustomFunctionTests, CompareDoubles_ComparesNegativeValues)
+    {
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, m_ruleset->GetRuleSetId(), *m_rulesPreprocessor, m_rulesetVariables, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
+    ECSqlStatement stmt;
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT " FUNCTION_NAME_CompareDoubles "(-1.0, -2.0)"));
+    ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
+    EXPECT_EQ(1, stmt.GetValueInt(0));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CustomFunctionTests, CompareDoubles_ReturnsNon0WhenComparingNullPropertyAnd0)
     {
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, m_ruleset->GetRuleSetId(), *m_rulesPreprocessor, m_rulesetVariables, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
