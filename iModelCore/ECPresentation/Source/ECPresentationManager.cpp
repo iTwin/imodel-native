@@ -569,18 +569,18 @@ folly::Future<NodePathsResponse> ECPresentationManager::GetNodePaths(AsyncNodePa
         IConnectionCR taskConnection = GetConnection(connectionId.c_str());
         task.SetTaskConnection(taskConnection);
 
-        Utf8String escapedString(params.GetFilterText());
-        escapedString.ToLower();
+        Utf8String lowerCaseFilter(params.GetFilterText());
+        lowerCaseFilter.ToLower();
 
-        auto implParams = CreateImplRequestParams(params, taskConnection, *task.GetCancelationToken());
-        implParams.SetFilterText(escapedString);
+        auto filterParams = CreateImplRequestParams(params, taskConnection, *task.GetCancelationToken());
+        filterParams.SetFilterText(lowerCaseFilter);
+        bvector<NavNodeCPtr> filteredNodes = m_impl->GetFilteredNodes(filterParams);
 
-        bvector<NavNodeCPtr> nodes = m_impl->GetFilteredNodes(implParams);
-        auto parentGetter = [&](NavNodeCR child) -> NavNodeCPtr
-            {
-            return m_impl->GetParent(NodeParentRequestImplParams::Create(taskConnection, task.GetCancelationToken(), params.GetRulesetId(), params.GetRulesetVariables(), child));
-            };
-        return NodePathsHelper::CreateHierarchy(nodes, parentGetter, escapedString);
+        auto hierarchyParams = CreateImplRequestParams(CreateNodesHierarchyRequestParams(params, filteredNodes), taskConnection, *task.GetCancelationToken());
+        bvector<NodesPathElement> hierarchy = m_impl->CreateNodesHierarchy(hierarchyParams);
+        NodePathsHelper::CountHierarchyFilterOccurences(hierarchy, lowerCaseFilter, task.GetCancelationToken());
+
+        return hierarchy;
         }, taskParams);
     }
 

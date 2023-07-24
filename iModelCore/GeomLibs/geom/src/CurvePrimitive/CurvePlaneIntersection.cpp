@@ -89,7 +89,7 @@ void AppendTolerancedPlaneIntersections(DPlane3dCR plane, ICurvePrimitiveCP curv
         }
     else if (hC * hD < 0.0) // amplitude is nonzero, tol cases are eliminated
         {
-        double hBar = sqrt (dh0 * dh0 + dh90 * dh90);   // amplitide of cosine wave around thetaC
+        double hBar = sqrt (dh0 * dh0 + dh90 * dh90);   // amplitude of cosine wave around thetaC
         double lambda = -hCenter / hBar;
         if (fabs (lambda) <= 1.0)
             {
@@ -111,7 +111,7 @@ CurvePlaneIntersectionFunction (ICurvePrimitiveCP curve, DPlane3dCR plane)
     {
     }
 
-bool EvaluateRToRD (double fraction, double &f, double &df) override 
+bool EvaluateRToRD (double fraction, double &f, double &df) override
     {
     DPoint3d xyz;
     DVec3d tangent;
@@ -199,7 +199,7 @@ double &dfdu,
 double &dfdv,
 double &dgdu,
 double &dgdv
-) override 
+) override
     {
     DPoint3d xyzA, xyzB;
     DVec3d dxyzA, dxyzB;
@@ -260,7 +260,7 @@ PointToCurvePerpendicularProjectionFunction (ICurvePrimitiveCP curve, DPoint3dCR
     {
     }
 
-bool EvaluateRToRD (double fraction, double &f, double &df) override 
+bool EvaluateRToRD (double fraction, double &f, double &df) override
     {
     DPoint3d xyz;
     DVec3d tangent;
@@ -309,7 +309,7 @@ RotMatrix m_Q;
 // 0=> identity
 // 1=> cartesian
 // 2=> full homogeneous
-int m_transformComplexity; 
+int m_transformComplexity;
 PointToCurvePerpendicularProjectionFunctionXY (ICurvePrimitiveCP curve, DPoint3dCR spacePoint, DMatrix4dCP matrix)
     : m_curve (curve), m_spacePoint(spacePoint)
     {
@@ -335,7 +335,7 @@ PointToCurvePerpendicularProjectionFunctionXY (ICurvePrimitiveCP curve, DPoint3d
         }
     }
 
-bool EvaluateRToRD (double fraction, double &f, double &df) override 
+bool EvaluateRToRD (double fraction, double &f, double &df) override
     {
     DPoint3d xyz;
     DVec3d tangent;
@@ -422,7 +422,7 @@ void AppendTolerancedPlaneIntersections(DPlane3dCR plane, ICurvePrimitiveCP curv
     bcurve.AddPlaneIntersections (&points, &fractions, plane);
     for (size_t i = 0, n = fractions.size (); i < n; i++)
         {
-        intersections.push_back (CurveLocationDetailPair (curve, fractions[i], points[i]));        
+        intersections.push_back (CurveLocationDetailPair (curve, fractions[i], points[i]));
         }
     }
 
