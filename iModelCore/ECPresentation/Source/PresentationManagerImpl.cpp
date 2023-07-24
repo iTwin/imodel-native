@@ -19,6 +19,7 @@
 #include "Hierarchies/HierarchiesComparer.h"
 #include "Hierarchies/HierarchiesFiltering.h"
 #include "Hierarchies/NavNodesCacheWrapper.h"
+#include "Hierarchies/NodePathsHelper.h"
 #include "PresentationManagerImpl.h"
 #include "UpdateHandler.h"
 
@@ -1200,26 +1201,6 @@ ContentDescriptorCPtr RulesDrivenECPresentationManagerImpl::_GetNodesDescriptor(
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodeCPtr RulesDrivenECPresentationManagerImpl::_GetParent(NodeParentRequestImplParams const& params)
-    {
-    auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Get parent for node %s", DiagnosticsHelpers::CreateNodeIdentifier(params.GetNode()).c_str()));
-
-    std::shared_ptr<NodesCache> cache = m_nodesCachesManager->GetPersistentCache(params.GetConnection().GetId());
-    VALID_HIERARCHY_CACHE_PRECONDITION(cache, nullptr);
-
-    auto node = cache->GetPhysicalParentNode(params.GetNode().GetNodeId(), params.GetRulesetVariables(), params.GetInstanceFilter().get());
-    if (node.IsNull())
-        return nullptr;
-
-    NavNodePtr clone = node->Clone();
-    clone->SetHasChildren(true);
-    FinalizeNode(RequestWithRulesetImplParams::Create(params), *clone);
-    return clone;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 void RulesDrivenECPresentationManagerImpl::TraverseHierarchy(HierarchyRequestImplParams const& params, std::shared_ptr<INavNodesCache> cache) const
     {
     ThrowIfCancelled(params.GetCancellationToken());
@@ -1264,8 +1245,11 @@ bvector<NavNodeCPtr> RulesDrivenECPresentationManagerImpl::_GetFilteredNodes(Nod
         NavNodesDataSourceCPtr rootNodes = GetCachedDataSource(*rootNodesContext, nullptr);
         if (rootNodes.IsValid())
             {
-            for (NavNodeCPtr node : *rootNodes)
-                ;
+            for (auto const& node : *rootNodes)
+                {
+                (void)node;
+                ThrowIfCancelled(params.GetCancellationToken());
+                }
             }
         }
 
@@ -1280,7 +1264,7 @@ bvector<NavNodeCPtr> RulesDrivenECPresentationManagerImpl::_GetFilteredNodes(Nod
     if (provider.IsNull())
         return result;
 
-    for (NavNodeCPtr node : *provider)
+    for (auto const& node : *provider)
         {
         NOT_NULL_PRECONDITION(node, "RulesDrivenECPresentationManagerImpl::_GetFilteredNodes");
         TraverseHierarchy(CreateHierarchyRequestParams(params, node.get()), nodesCache);
@@ -1293,13 +1277,59 @@ bvector<NavNodeCPtr> RulesDrivenECPresentationManagerImpl::_GetFilteredNodes(Nod
         DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, LOG_WARNING, "Failed to create filtered nodes context. Returning empty list.");
         return result;
         }
+
     NavNodesProviderPtr filteredProvider = nodesCache->GetFilteredNodesProvider(*filteredNodesContext, params.GetFilterText().c_str());
-    for (NavNodeCPtr node : *filteredProvider)
+    NodesFinalizer finalizer(*filteredNodesContext);
+    DisabledFullNodesLoadContext disableFinalize(*filteredProvider);
+    for (NavNodePtr node : *filteredProvider)
         {
+        ThrowIfCancelled(params.GetCancellationToken());
         NOT_NULL_PRECONDITION(node, "RulesDrivenECPresentationManagerImpl::_GetFilteredNodes");
+
+        // we don't support hierarchy level filtering on top of filtered hierarchies - set the value before finalizing
+        node->SetSupportsFiltering(false);
+        finalizer.Finalize(*node);
+
         result.push_back(node);
         }
+
     return result;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<NodesPathElement> RulesDrivenECPresentationManagerImpl::_CreateNodesHierarchy(CreateNodesHierarchyRequestImplParams const& params)
+    {
+    auto scope = Diagnostics::Scope::Create("Create nodes hierarchy");
+
+    std::shared_ptr<NodesCache> cache = m_nodesCachesManager->GetPersistentCache(params.GetConnection().GetId());
+    VALID_HIERARCHY_CACHE_PRECONDITION(cache, nullptr);
+
+    NavNodesProviderContextPtr context = CreateNodesProviderContext(CreateHierarchyRequestParams(params), cache);
+    if (context.IsNull())
+        {
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, LOG_WARNING, "Failed to create nodes context. Returning empty list.");
+        return {};
+        }
+
+    NodesFinalizer finalizer(*context);
+
+    auto parentGetter = [&](NavNodeCR child) -> NavNodeCPtr
+        {
+        auto parentNode = cache->GetPhysicalParentNode(child.GetNodeId(), context->GetRulesetVariables(), nullptr);
+        if (parentNode.IsNull())
+            return nullptr;
+
+        // no need to determine children for it since we know it's a "parent"
+        NavNodePtr clone = parentNode->Clone();
+        clone->SetHasChildren(true);
+        clone->SetSupportsFiltering(false);
+        finalizer.Finalize(*clone);
+
+        return clone;
+        };
+    return NodePathsHelper::CreateHierarchy(params.GetNodes(), parentGetter, params.GetCancellationToken());
     }
 
 /*=================================================================================**//**
