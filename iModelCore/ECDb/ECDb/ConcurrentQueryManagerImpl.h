@@ -102,7 +102,7 @@ struct QueryAdaptorCache final {
     public:
         QueryAdaptorCache(CachedConnection& conn, uint32_t maxCacheEntries = kDefaultCacheSize):m_conn(conn), m_maxEntries(maxCacheEntries){}
         ~QueryAdaptorCache(){}
-        std::shared_ptr<CachedQueryAdaptor> TryGet(Utf8CP ecsql, bool usePrimaryConn, bool suppressLogError, ECSqlStatus& status, std::string& ecsql_error);
+        std::shared_ptr<CachedQueryAdaptor> TryGet(Utf8CP ecsql, bool usePrimaryConn, bool suppressLogError, ECSqlStatus& status, std::string& ecsql_error, const bool ignoreCache = false);
         void Reset() { m_cache.clear(); }
         void SetMaxCacheSize(uint32_t n) { if (n < QueryAdaptorCache::kDefaultCacheSize) return; m_maxEntries = n; }
         CachedConnection& GetConnection() {return m_conn;}
@@ -221,10 +221,11 @@ struct RunnableRequestBase {
         uint32_t m_executorId;
         uint32_t m_connId;
         virtual void _SetResponse(QueryResponse::Ptr response) = 0;
+        bool m_enableExperimentalFeatures;
     public:
         RunnableRequestBase(RunnableRequestQueue& queue, QueryRequest::Ptr request, QueryQuota quota, uint32_t id)
             :m_queue(queue), m_request(std::move(request)), m_id(id), m_isCompleted(false),m_dequeuedOn(0s),
-             m_quota(quota), m_submittedOn(std::chrono::steady_clock::now()), m_cancelled(false), m_executorId(0), m_connId(0){}
+             m_quota(quota), m_submittedOn(std::chrono::steady_clock::now()), m_cancelled(false), m_executorId(0), m_connId(0), m_enableExperimentalFeatures(m_request->AreExperimentalFeaturesEnabledForQuery()) {}
         virtual ~RunnableRequestBase(){}
         QueryRequest const& GetRequest() const {return *m_request;}
         uint32_t GetId() const {return m_id; }
@@ -249,7 +250,7 @@ struct RunnableRequestBase {
         QueryResponse::Ptr CreateBlobIOResponse(std::vector<uint8_t>& meta, bool done, uint32_t rawBlobSize) const;
         QueryResponse::Ptr CreateECSqlResponse(std::string& result, QueryProperty::List& meta, uint32_t rowcount, bool done) const;
         static QueryResponse::Ptr CreateQueueFullResponse() ;
-
+        bool AreExperimentalFeaturesEnabledForRequest() const { return m_enableExperimentalFeatures; }
 };
 
 //=======================================================================================

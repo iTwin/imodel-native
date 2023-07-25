@@ -57,11 +57,27 @@ int QueryRetryHandler::_OnBusy(int count) const {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-std::shared_ptr<CachedQueryAdaptor> QueryAdaptorCache::TryGet(Utf8CP ecsql, bool usePrimaryConn, bool suppressLogError, ECSqlStatus& status, std::string& ecsql_error) {
+std::shared_ptr<CachedQueryAdaptor> QueryAdaptorCache::TryGet(Utf8CP ecsql, bool usePrimaryConn, bool suppressLogError, ECSqlStatus& status, std::string& ecsql_error, const bool ignoreCache) {
     auto const hashCode = ECSqlStatement::GetHashCode(ecsql);
     auto iter = std::find_if(m_cache.begin(), m_cache.end(), [&ecsql,&hashCode,&usePrimaryConn] (std::shared_ptr<CachedQueryAdaptor>& entry) {
         return entry->GetUsePrimaryConn() == usePrimaryConn && entry->GetStatement().GetHashCode() == hashCode && strcmp(entry->GetStatement().GetECSql(), ecsql) == 0;
     });
+
+    auto prepareStatement = [this, &usePrimaryConn, &ecsql, &suppressLogError, &status, &ecsql_error] (CachedQueryAdaptor& adaptor) -> bool
+        {
+        ErrorListenerScope err_scope(const_cast<ECDb&>(m_conn.GetPrimaryDb()));
+        if (usePrimaryConn)
+            status = adaptor.GetStatement().Prepare(m_conn.GetPrimaryDb(), ecsql, !suppressLogError);
+        else
+            status = adaptor.GetStatement().Prepare(m_conn.GetPrimaryDb().Schemas(), m_conn.GetDb(), ecsql, !suppressLogError);
+
+        if (status != ECSqlStatus::Success)
+            {
+            ecsql_error = err_scope.GetLastError();
+            return false;
+            }
+        return true;
+        };
 
     if (iter != m_cache.end()) {
         std::shared_ptr<CachedQueryAdaptor> entry = (*iter);
@@ -71,22 +87,23 @@ std::shared_ptr<CachedQueryAdaptor> QueryAdaptorCache::TryGet(Utf8CP ecsql, bool
         }
         entry->GetStatement().Reset();
         entry->GetStatement().ClearBindings();
+
+        if (ignoreCache)
+            {
+            // Experimental Features are disabled, so finalize and re-prepare the statement to handle error
+            entry->GetStatement().Finalize();
+            if (!prepareStatement(*entry))
+                return nullptr;
+            }
         return entry;
     }
 
     auto newCachedAdaptor = CachedQueryAdaptor::Make();
     newCachedAdaptor->SetWorkerConn(m_conn.GetDb());
     newCachedAdaptor->SetUsePrimaryConn(usePrimaryConn);
-    ErrorListenerScope err_scope(const_cast<ECDb&>(m_conn.GetPrimaryDb()));
-    if (usePrimaryConn)
-        status = newCachedAdaptor->GetStatement().Prepare(m_conn.GetPrimaryDb(), ecsql, !suppressLogError);
-    else
-        status = newCachedAdaptor->GetStatement().Prepare(m_conn.GetPrimaryDb().Schemas(), m_conn.GetDb(), ecsql, !suppressLogError);
-
-    if (status != ECSqlStatus::Success) {
-        ecsql_error = err_scope.GetLastError();
+    if (!prepareStatement(*newCachedAdaptor))
         return nullptr;
-    }
+
     while (m_cache.size() > m_maxEntries)
         m_cache.pop_back();
 
@@ -1171,28 +1188,47 @@ void QueryHelper::Execute(QueryAdaptorCache& adaptorCache, RunnableRequestBase& 
         std::string sql = QueryHelper::FormatQuery(request.GetQuery().c_str());
         ECSqlStatus status;
         std::string err;
-        auto adaptor = adaptorCache.TryGet(sql.c_str(), request.UsePrimaryConnection(), request.GetSuppressLogErrors(), status, err);
+
+        // Cache experimental features status to be reset after concurrent query is done
+        const auto experimentalFeaturesStatusCached = adaptorCache.GetConnection().GetPrimaryDb().GetECSqlConfig().GetExperimentalFeaturesEnabled();
+        auto updateExperimentalFeatures = [&adaptorCache] (const bool experimentalFeaturesStatus) { adaptorCache.GetConnection().GetPrimaryDb().GetECSqlConfig().SetExperimentalFeaturesEnabled(experimentalFeaturesStatus); };
+
+        // Enable/Disable experimental features just for this query
+        const auto experimentalFeaturesInRequest = runnableRequest.AreExperimentalFeaturesEnabledForRequest();
+        updateExperimentalFeatures(experimentalFeaturesInRequest);
+ 
+        auto adaptor = adaptorCache.TryGet(sql.c_str(), request.UsePrimaryConnection(), request.GetSuppressLogErrors(), status, err, !experimentalFeaturesInRequest);
         if (adaptor == nullptr) {
             if (status.IsSQLiteError()) {
                 if (status.GetSQLiteError() == BE_SQLITE_INTERRUPT) {
                     if (runnableRequest.IsCancelled()) {
                         runnableRequest.SetResponse(runnableRequest.CreateCancelResponse());
+                        // Reset experimental features status after failure
+                        updateExperimentalFeatures(experimentalFeaturesStatusCached);
                         return;
                     } else if (runnableRequest.IsTimeExceeded()){
                         runnableRequest.SetResponse(runnableRequest.CreateTimeoutResponse());
+                        // Reset experimental features status after failure
+                        updateExperimentalFeatures(experimentalFeaturesStatusCached);
                         return;
                     }
                 }
             }
             setError(QueryResponse::Status::Error_ECSql_PreparedFailed, err);
+            // Reset experimental features status after failure
+            updateExperimentalFeatures(experimentalFeaturesStatusCached);
             return;
         }
         if (!request.GetArgs().TryBindTo(adaptor->GetStatement(), err)) {
             setError(QueryResponse::Status::Error_ECSql_BindingFailed, err);
+            // Reset experimental features status after failure
+            updateExperimentalFeatures(experimentalFeaturesStatusCached);
             return;
         }
         BindLimits(adaptor->GetStatement(), request.GetLimit());
         QueryHelper::Execute(*adaptor, runnableRequest);
+        // Reset experimental features status after query executes
+        updateExperimentalFeatures(experimentalFeaturesStatusCached);
     } else {
         setError(QueryResponse::Status::Error, "unsupported kind of request");
     }

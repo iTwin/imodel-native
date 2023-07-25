@@ -242,6 +242,209 @@ TEST_F(ConcurrentQueryFixture, InterruptCheck_Timeout) {
     auto r = mgr.Enqueue(std::move(req)).Get();
     ASSERT_EQ(r->GetStatus(), QueryResponse::Status::Timeout);
 }
+
+TEST_F(ConcurrentQueryFixture, ConcurrentInstanceQueries)
+    {
+    class IssueListener : public ECN::IIssueListener
+        {
+        mutable bvector<Utf8String> m_issues;
+        void _OnIssueReported(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, Utf8CP message) const override { m_issues.push_back(message); }
+        public:
+        Utf8StringCR GetLastError() const { return m_issues.back();}
+        void ClearMessages() { m_issues.clear(); }
+        };
+
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("ExperimentalFeaturesConcurrentQueries.ecdb"));
+    IssueListener listener;
+    m_ecdb.AddIssueListener(listener);
+
+    auto& concurrentQueryManager = ConcurrentQueryMgr::GetInstance(m_ecdb);
+
+    // Enable experimental features for non-concurrent ecsql queries with PRAGMA
+    ECSqlStatement enablePragmaStmt;
+    EXPECT_EQ(ECSqlStatus::Success, enablePragmaStmt.Prepare(m_ecdb, "PRAGMA experimental_features_enabled=true"));
+    EXPECT_EQ(enablePragmaStmt.Step(), BE_SQLITE_ROW);
+    enablePragmaStmt.Finalize();
+
+    // Non-concurrent instance query (experimental feature) should succeed since experimental features are enabled
+    ECSqlStatement experimentalStmt;
+    EXPECT_EQ(ECSqlStatus::Success, experimentalStmt.Prepare(m_ecdb, "SELECT $ -> name FROM meta.ECClassDef WHERE Description='Relates the property to its PropertyCategory.'"));
+    EXPECT_EQ(experimentalStmt.Step(), BE_SQLITE_ROW);
+    EXPECT_STREQ(experimentalStmt.GetValueText(0), "PropertyHasCategory");
+    experimentalStmt.Finalize();
+
+    // Execute all concurrent queries where experimental features are enabled/disabled individually per query
+    // Concurrent instance query should succeed since experimental features were enabled for the ECSqlRequest
+    const auto concurrentResponse1 = concurrentQueryManager.Enqueue(std::move(ECSqlRequest::MakeRequest("SELECT $ -> name FROM meta.ECClassDef WHERE Description='Relates the property to its PropertyCategory.'", true))).Get();
+    // Concurrent instance query should fail since experimental features argument was missing and was defaulted to false
+    const auto concurrentResponse2 = concurrentQueryManager.Enqueue(std::move(ECSqlRequest::MakeRequest("SELECT $ -> name FROM meta.ECClassDef WHERE Description='Reference to a schema including name and version'"))).Get();
+    // Concurrent instance query should succeed since experimental features were enabled for this query request
+    const auto concurrentResponse3 = concurrentQueryManager.Enqueue(std::move(ECSqlRequest::MakeRequest("SELECT $ -> name FROM meta.ECClassDef WHERE Description='Used to define a supplemental schema and its purpose'", true))).Get();
+    // Concurrent instance query should fail since experimental features were disabled for this query request
+    const auto concurrentResponse4 = concurrentQueryManager.Enqueue(std::move(ECSqlRequest::MakeRequest("SELECT $ -> name FROM meta.ECClassDef WHERE Description='Optional additional meta data for ECProperties of type DateTime.'", false))).Get();
+    // Concurrent instance query should succeed since experimental features were enabled for this query request
+    const auto concurrentResponse5 = concurrentQueryManager.Enqueue(std::move(ECSqlRequest::MakeRequest("SELECT $ -> name FROM meta.ECClassDef WHERE Description='KindOfQuantity'", true))).Get(); 
+
+    // Test concurrent query responses
+    EXPECT_EQ(concurrentResponse1->GetStatus(), QueryResponse::Status::Done);
+    EXPECT_STREQ(concurrentResponse1->GetAsConst<ECSqlResponse>().asJsonString().c_str(), "[[\"PropertyHasCategory\"]]");
+
+    EXPECT_EQ(concurrentResponse2->GetStatus(), QueryResponse::Status::Error_ECSql_PreparedFailed);
+    EXPECT_STREQ(concurrentResponse2->GetError().c_str(), "Instance property access '$ -> name' is experimental feature. Use 'PRAGMA experimental_features_enabled=true' to enable it.");
+    
+    EXPECT_EQ(concurrentResponse3->GetStatus(), QueryResponse::Status::Done);
+    EXPECT_STREQ(concurrentResponse3->GetAsConst<ECSqlResponse>().asJsonString().c_str(), "[[\"SchemaNameAndPurpose\"]]");
+    
+    EXPECT_EQ(concurrentResponse4->GetStatus(), QueryResponse::Status::Error_ECSql_PreparedFailed);
+    EXPECT_STREQ(concurrentResponse4->GetError().c_str(), "Instance property access '$ -> name' is experimental feature. Use 'PRAGMA experimental_features_enabled=true' to enable it.");
+
+    EXPECT_EQ(concurrentResponse5->GetStatus(), QueryResponse::Status::Done);
+    EXPECT_STREQ(concurrentResponse5->GetAsConst<ECSqlResponse>().asJsonString().c_str(), "[[\"KindOfQuantityDef\"]]");
+
+    // Non-concurrent instance query (experimental feature) should still succeed since experimental features are enabled
+    EXPECT_EQ(ECSqlStatus::Success, experimentalStmt.Prepare(m_ecdb, "SELECT $ -> name FROM meta.ECClassDef WHERE Description='Used to define a supplemental schema and its purpose'"));
+    EXPECT_EQ(experimentalStmt.Step(), BE_SQLITE_ROW);
+    EXPECT_STREQ(experimentalStmt.GetValueText(0), "SchemaNameAndPurpose");
+    experimentalStmt.Finalize();
+
+    // Disable experimental features for non-concurrent ecsql queries
+    ECSqlStatement disablePragmaStmt;
+    EXPECT_EQ(ECSqlStatus::Success, disablePragmaStmt.Prepare(m_ecdb, "PRAGMA experimental_features_enabled=false"));
+    EXPECT_EQ(disablePragmaStmt.Step(), BE_SQLITE_ROW);
+    disablePragmaStmt.Finalize();
+
+    // Non-concurrent instance query should now fail since experimental features were disabled with PRAGMA
+    listener.ClearMessages();
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, experimentalStmt.Prepare(m_ecdb, "SELECT $ -> name FROM meta.ECClassDef WHERE Description='Used to define a supplemental schema and its purpose'"));
+    experimentalStmt.Finalize();
+    }
+
+TEST_F(ConcurrentQueryFixture, IntegrityChecksWithConcurrentQueries)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("ExperimentalFeaturesWithConcurrentIntegrityChecks.ecdb"));
+
+    auto& concurrentQueryManager = ConcurrentQueryMgr::GetInstance(m_ecdb);
+
+    std::vector<QueryResponse::Ptr> queryResponses;
+    // Execute all concurrent queries where experimental features are enabled/disabled individually per query
+    // Test Case Set 1: Test integrity_check(check_nav_class_ids) with experimental features disabled and enabled
+    queryResponses.push_back(concurrentQueryManager.Enqueue(std::move(ECSqlRequest::MakeRequest("PRAGMA integrity_check(check_nav_class_ids)", false))).Get()); // Concurrent instance query should fail since experimental features argument was missing and was defaulted to false
+    queryResponses.push_back(concurrentQueryManager.Enqueue(std::move(ECSqlRequest::MakeRequest("PRAGMA integrity_check(check_nav_class_ids)", true))).Get()); // Concurrent instance query should succeed since experimental features were enabled for the ECSqlRequest
+    queryResponses.push_back(concurrentQueryManager.Enqueue(std::move(ECSqlRequest::MakeRequest("PRAGMA integrity_check(check_nav_class_ids)"))).Get()); // Concurrent instance query should fail since experimental features gets defaulted to false
+
+    // Test Case Set 2: Test integrity_check(check_nav_ids) with experimental features disabled and enabled
+    queryResponses.push_back(concurrentQueryManager.Enqueue(std::move(ECSqlRequest::MakeRequest("PRAGMA integrity_check(check_nav_ids)", false))).Get()); // Concurrent instance query should fail since experimental features argument was missing and was defaulted to false
+    queryResponses.push_back(concurrentQueryManager.Enqueue(std::move(ECSqlRequest::MakeRequest("PRAGMA integrity_check(check_nav_ids)", true))).Get()); // Concurrent instance query should succeed since experimental features were enabled for the ECSqlRequest
+    queryResponses.push_back(concurrentQueryManager.Enqueue(std::move(ECSqlRequest::MakeRequest("PRAGMA integrity_check(check_nav_ids)"))).Get()); // Concurrent instance query should fail since experimental features gets defaulted to false
+
+    // Test Case Set 3: Test integrity_check(check_linktable_fk_ids) with experimental features disabled and enabled
+    queryResponses.push_back(concurrentQueryManager.Enqueue(std::move(ECSqlRequest::MakeRequest("PRAGMA integrity_check(check_linktable_fk_ids)", false))).Get()); // Concurrent instance query should fail since experimental features argument was missing and was defaulted to false
+    queryResponses.push_back(concurrentQueryManager.Enqueue(std::move(ECSqlRequest::MakeRequest("PRAGMA integrity_check(check_linktable_fk_ids)", true))).Get()); // Concurrent instance query should succeed since experimental features were enabled for the ECSqlRequest
+    queryResponses.push_back(concurrentQueryManager.Enqueue(std::move(ECSqlRequest::MakeRequest("PRAGMA integrity_check(check_linktable_fk_ids)"))).Get()); // Concurrent instance query should fail since experimental features gets defaulted to false
+
+    // Test Case Set 4: Test integrity_check(check_linktable_fk_class_ids) with experimental features disabled and enabled
+    queryResponses.push_back(concurrentQueryManager.Enqueue(std::move(ECSqlRequest::MakeRequest("PRAGMA integrity_check(check_linktable_fk_class_ids)", false))).Get()); // Concurrent instance query should fail since experimental features argument was missing and was defaulted to false
+    queryResponses.push_back(concurrentQueryManager.Enqueue(std::move(ECSqlRequest::MakeRequest("PRAGMA integrity_check(check_linktable_fk_class_ids)", true))).Get()); // Concurrent instance query should succeed since experimental features were enabled for the ECSqlRequest
+    queryResponses.push_back(concurrentQueryManager.Enqueue(std::move(ECSqlRequest::MakeRequest("PRAGMA integrity_check(check_linktable_fk_class_ids)"))).Get()); // Concurrent instance query should fail since experimental features gets defaulted to false
+
+    // Test Case Set 5: Test integrity_check(check_class_ids) with experimental features disabled and enabled
+    queryResponses.push_back(concurrentQueryManager.Enqueue(std::move(ECSqlRequest::MakeRequest("PRAGMA integrity_check(check_class_ids)", false))).Get()); // Concurrent instance query should fail since experimental features argument was missing and was defaulted to false
+    queryResponses.push_back(concurrentQueryManager.Enqueue(std::move(ECSqlRequest::MakeRequest("PRAGMA integrity_check(check_class_ids)", true))).Get()); // Concurrent instance query should succeed since experimental features were enabled for the ECSqlRequest
+    queryResponses.push_back(concurrentQueryManager.Enqueue(std::move(ECSqlRequest::MakeRequest("PRAGMA integrity_check(check_class_ids)"))).Get()); // Concurrent instance query should fail since experimental features gets defaulted to false
+
+    // Test Case Set 6: Test integrity_check(check_data_columns) with experimental features disabled and enabled
+    queryResponses.push_back(concurrentQueryManager.Enqueue(std::move(ECSqlRequest::MakeRequest("PRAGMA integrity_check(check_data_columns)", false))).Get()); // Concurrent instance query should fail since experimental features argument was missing and was defaulted to false
+    queryResponses.push_back(concurrentQueryManager.Enqueue(std::move(ECSqlRequest::MakeRequest("PRAGMA integrity_check(check_data_columns)", true))).Get()); // Concurrent instance query should succeed since experimental features were enabled for the ECSqlRequest
+    queryResponses.push_back(concurrentQueryManager.Enqueue(std::move(ECSqlRequest::MakeRequest("PRAGMA integrity_check(check_data_columns)"))).Get()); // Concurrent instance query should fail since experimental features gets defaulted to false
+
+    // Test Case Set 7: Test integrity_check(check_data_schema) with experimental features disabled and enabled
+    queryResponses.push_back(concurrentQueryManager.Enqueue(std::move(ECSqlRequest::MakeRequest("PRAGMA integrity_check(check_data_schema)", false))).Get()); // Concurrent instance query should fail since experimental features argument was missing and was defaulted to false
+    queryResponses.push_back(concurrentQueryManager.Enqueue(std::move(ECSqlRequest::MakeRequest("PRAGMA integrity_check(check_data_schema)", true))).Get()); // Concurrent instance query should succeed since experimental features were enabled for the ECSqlRequest
+    queryResponses.push_back(concurrentQueryManager.Enqueue(std::move(ECSqlRequest::MakeRequest("PRAGMA integrity_check(check_data_schema)"))).Get()); // Concurrent instance query should fail since experimental features gets defaulted to false
+
+    // Test Case Set 8: Test integrity_check(check_ec_profile) with experimental features disabled and enabled
+    queryResponses.push_back(concurrentQueryManager.Enqueue(std::move(ECSqlRequest::MakeRequest("PRAGMA integrity_check(check_ec_profile)", false))).Get()); // Concurrent instance query should fail since experimental features argument was missing and was defaulted to false
+    queryResponses.push_back(concurrentQueryManager.Enqueue(std::move(ECSqlRequest::MakeRequest("PRAGMA integrity_check(check_ec_profile)", true))).Get()); // Concurrent instance query should succeed since experimental features were enabled for the ECSqlRequest
+    queryResponses.push_back(concurrentQueryManager.Enqueue(std::move(ECSqlRequest::MakeRequest("PRAGMA integrity_check(check_ec_profile)"))).Get()); // Concurrent instance query should fail since experimental features gets defaulted to false
+
+    // Test Case Set 9: Test integrity_check(check_schema_load) with experimental features disabled and enabled
+    queryResponses.push_back(concurrentQueryManager.Enqueue(std::move(ECSqlRequest::MakeRequest("PRAGMA integrity_check(check_schema_load)", false))).Get()); // Concurrent instance query should fail since experimental features argument was missing and was defaulted to false
+    queryResponses.push_back(concurrentQueryManager.Enqueue(std::move(ECSqlRequest::MakeRequest("PRAGMA integrity_check(check_schema_load)", true))).Get()); // Concurrent instance query should succeed since experimental features were enabled for the ECSqlRequest
+    queryResponses.push_back(concurrentQueryManager.Enqueue(std::move(ECSqlRequest::MakeRequest("PRAGMA integrity_check(check_schema_load)"))).Get()); // Concurrent instance query should fail since experimental features gets defaulted to false
+
+    // Test concurrent query responses
+    const auto errorMessage = "PRAGMA integrity_check is experimental feature. Use 'PRAGMA experimental_features_enabled=true' to enable it.";
+    for (const auto& [queryResponseIndex, responseStatus, outputProps] : std::vector<std::tuple<unsigned int, QueryResponse::Status, std::vector<std::pair<Utf8String, Utf8String>>>>
+    {
+        // Test Case Set 1 Responses
+        { 0U, QueryResponse::Status::Error_ECSql_PreparedFailed, {}},
+        { 1U, QueryResponse::Status::Done, { std::make_pair("sno", "int"), std::make_pair("id", "string"), std::make_pair("class", "string"), std::make_pair("property", "string"), std::make_pair("nav_id", "string"), std::make_pair("nav_classId", "string")}},
+        { 2U, QueryResponse::Status::Error_ECSql_PreparedFailed, {}},
+
+        // Test Case Set 2 Responses
+        { 3U, QueryResponse::Status::Error_ECSql_PreparedFailed, {}},
+        { 4U, QueryResponse::Status::Done, { std::make_pair("sno", "int"), std::make_pair("id", "string"), std::make_pair("class", "string"), std::make_pair("property", "string"), std::make_pair("nav_id", "string"), std::make_pair("primary_class", "string")}},
+        { 5U, QueryResponse::Status::Error_ECSql_PreparedFailed, {}},
+
+        // Test Case Set 3 Responses
+        { 6U, QueryResponse::Status::Error_ECSql_PreparedFailed, {}},
+        { 7U, QueryResponse::Status::Done, { std::make_pair("sno", "int"), std::make_pair("id", "string"), std::make_pair("relationship", "string"), std::make_pair("property", "string"), std::make_pair("key_id", "string"), std::make_pair("primary_class", "string")}},
+        { 8U, QueryResponse::Status::Error_ECSql_PreparedFailed, {}},
+
+        // Test Case Set 4 Responses
+        { 9U, QueryResponse::Status::Error_ECSql_PreparedFailed, {}},
+        { 10U, QueryResponse::Status::Done, { std::make_pair("sno", "int"), std::make_pair("id", "string"), std::make_pair("relationship", "string"), std::make_pair("property", "string"), std::make_pair("key_id", "string"), std::make_pair("key_classId", "string")}},
+        { 11U, QueryResponse::Status::Error_ECSql_PreparedFailed, {}},
+
+        // Test Case Set 5 Responses
+        { 12U, QueryResponse::Status::Error_ECSql_PreparedFailed, {}},
+        { 13U, QueryResponse::Status::Done, { std::make_pair("sno", "int"), std::make_pair("class", "string"), std::make_pair("id", "string"), std::make_pair("class_id", "string"), std::make_pair("type", "string")}},
+        { 14U, QueryResponse::Status::Error_ECSql_PreparedFailed, {}},
+
+        // Test Case Set 6 Responses
+        { 15U, QueryResponse::Status::Error_ECSql_PreparedFailed, {}},
+        { 16U, QueryResponse::Status::Done, { std::make_pair("sno", "int"), std::make_pair("table", "string"), std::make_pair("column", "string")}},
+        { 17U, QueryResponse::Status::Error_ECSql_PreparedFailed, {}},
+
+        // Test Case Set 7 Responses
+        { 18U, QueryResponse::Status::Error_ECSql_PreparedFailed, {}},
+        { 19U, QueryResponse::Status::Done, { std::make_pair("sno", "int"), std::make_pair("type", "string"), std::make_pair("name", "string")}},
+        { 20U, QueryResponse::Status::Error_ECSql_PreparedFailed, {}},
+
+        // Test Case Set 8 Responses
+        { 21U, QueryResponse::Status::Error_ECSql_PreparedFailed, {}},
+        { 22U, QueryResponse::Status::Done, { std::make_pair("sno", "int"), std::make_pair("type", "string"), std::make_pair("name", "string"), std::make_pair("issue", "string")}},
+        { 23U, QueryResponse::Status::Error_ECSql_PreparedFailed, {}},
+
+        // Test Case Set 9 Responses
+        { 24U, QueryResponse::Status::Error_ECSql_PreparedFailed, {}},
+        { 25U, QueryResponse::Status::Done, { std::make_pair("sno", "int"), std::make_pair("schema", "string")}},
+        { 26U, QueryResponse::Status::Error_ECSql_PreparedFailed, {}},
+    })
+        {
+        const auto queryResponse = queryResponses[queryResponseIndex];
+        const auto errorMsg = Utf8PrintfString("Test case number %d failed.\n", queryResponseIndex);
+        if (outputProps.empty())
+            {
+            // Experimental features enabled
+            EXPECT_EQ(queryResponse->GetStatus(), QueryResponse::Status::Error_ECSql_PreparedFailed) << errorMsg;
+            EXPECT_STREQ(queryResponse->GetError().c_str(), errorMessage) << errorMsg;
+            }
+        else
+            {
+            // Experimental features enabled
+            EXPECT_EQ(queryResponse->GetStatus(), QueryResponse::Status::Done) << errorMsg;
+            const auto properties = queryResponse->GetAsConst<ECSqlResponse>().GetProperties();
+            ASSERT_EQ(properties.size(), outputProps.size()) << errorMsg;
+            for (auto index = 0U; index < outputProps.size() - 1U; ++index)
+                {
+                EXPECT_STREQ(properties[index].GetName().c_str(), outputProps[index].first.c_str()) << errorMsg;
+                EXPECT_STREQ(properties[index].GetTypeName().c_str(), outputProps[index].second.c_str()) << errorMsg;
+                }
+            }
+        }
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------

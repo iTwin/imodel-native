@@ -76,9 +76,11 @@ struct QueryRequest {
         bool m_usePrimaryConn;
         std::string m_restartToken;
         std::chrono::milliseconds m_delay;
+        bool m_enableExperimentalFeatures;
 
     public:
-        QueryRequest(Kind kind):m_usePrimaryConn(false), m_priority(0), m_kind(kind), m_delay(0u) {}
+        QueryRequest(Kind kind):m_usePrimaryConn(false), m_priority(0), m_kind(kind), m_delay(0u), m_enableExperimentalFeatures(false) {}
+        QueryRequest(Kind kind, bool enableExperimentalFeatures):m_usePrimaryConn(false), m_priority(0), m_kind(kind), m_delay(0u), m_enableExperimentalFeatures(enableExperimentalFeatures) {}
         virtual ~QueryRequest(){}
         ECDB_EXPORT QueryRequest(QueryRequest&&) noexcept;
         ECDB_EXPORT QueryRequest(const QueryRequest&) noexcept;
@@ -110,6 +112,7 @@ struct QueryRequest {
         }
         ECDB_EXPORT virtual void FromJs(BeJsConst const& val);
         ECDB_EXPORT static Ptr Deserialize(BeJsValue const& val);
+        bool AreExperimentalFeaturesEnabledForQuery() const { return m_enableExperimentalFeatures; }
 };
 
 //=======================================================================================
@@ -280,8 +283,8 @@ struct ECSqlRequest : public QueryRequest{
         bool m_convertClassIdsToClassNames;
         ECSqlValueFormat m_valueFmt;
     public:
-        ECSqlRequest(std::string const& query, ECSqlParams&& args)
-            :QueryRequest(Kind::ECSql), m_query(query), m_args(std::move(args)),m_abbreviateBlobs(false), m_suppressLogErrors(false),m_includeMetaData(true), m_convertClassIdsToClassNames(false),m_valueFmt(ECSqlValueFormat::ECSqlNames){}
+        ECSqlRequest(std::string const& query, ECSqlParams&& args, bool enableExperimentalFeatures)
+            :QueryRequest(Kind::ECSql, enableExperimentalFeatures), m_query(query), m_args(std::move(args)),m_abbreviateBlobs(false), m_suppressLogErrors(false),m_includeMetaData(true), m_convertClassIdsToClassNames(false),m_valueFmt(ECSqlValueFormat::ECSqlNames){}
         virtual ~ECSqlRequest(){}
         std::string const& GetQuery() const { return m_query; }
         ECSqlParams const& GetArgs() const { return  m_args; }
@@ -300,14 +303,14 @@ struct ECSqlRequest : public QueryRequest{
         ECSqlRequest& SetConvertClassIdsToClassNames(bool convertClassIdsToClassNames) { m_convertClassIdsToClassNames = convertClassIdsToClassNames; return *this;}
         ECSqlRequest& SetArgs(Json::Value const& args) { m_args.FromJs(args); return *this;}
         ECSqlRequest& SetArgs(ECSqlParams const& args) { m_args = args; return *this;}
-        static Ptr MakeRequest(std::string const& query) {
-            return std::make_unique<ECSqlRequest>(query, ECSqlParams());
+        static Ptr MakeRequest(std::string const& query, bool enableExperimentalFeatures = false) {
+            return std::make_unique<ECSqlRequest>(query, ECSqlParams(), enableExperimentalFeatures);
         }
-        static Ptr MakeRequest(std::string const& query, ECSqlParams&& args) {
-            return std::make_unique<ECSqlRequest>(query, std::move(args));
+        static Ptr MakeRequest(std::string const& query, ECSqlParams&& args, bool enableExperimentalFeatures = false) {
+            return std::make_unique<ECSqlRequest>(query, std::move(args), enableExperimentalFeatures);
         }
-        static Ptr MakeRequest(std::string const& query, ECSqlParams& args) {
-            return std::make_unique<ECSqlRequest>(query, std::move(args));
+        static Ptr MakeRequest(std::string const& query, ECSqlParams& args, bool enableExperimentalFeatures = false) {
+            return std::make_unique<ECSqlRequest>(query, std::move(args), enableExperimentalFeatures);
         }
         ECDB_EXPORT virtual void FromJs(BeJsConst const& val) override;
 };
