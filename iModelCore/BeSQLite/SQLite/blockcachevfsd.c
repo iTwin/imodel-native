@@ -1094,7 +1094,6 @@ struct DClient {
   BcvMessage *pMsg;               /* Client message currently being processed */
 
   int pgsz;                       /* Page-size of connected database */
-  sqlite3_file *pCloseFd;
 };
 
 struct DaemonCtx {
@@ -1165,7 +1164,7 @@ static void daemon_vlog(DaemonCtx *p, int flags, const char *zFmt, va_list ap){
     char zTime[128];
     char *zMsg = sqlite3_vmprintf(zFmt, ap);
     daemon_log_timestamp(p, zTime);
-    fprintf(stdout, "INFO(%s%s%s%s%s%s%s%s)%s: %s\n",
+    fprintf(stdout, "INFO(%s%s%s%s%s%s%s)%s: %s\n",
         (flags & BCV_LOG_POLL ? "p" : ""),
         (flags & BCV_LOG_EVENT ? "e" : ""),
         (flags & BCV_LOG_MESSAGE ? "m" : ""),
@@ -1510,16 +1509,8 @@ static void bdDisconnectClient(
   sqlite3_free(pClient->zAuth);
   sqlite3_free(pClient->prefetch.zErrMsg);
 
-  if( pClient->pCloseFd ){
-    pClient->pCloseFd->pMethods->xShmUnmap(pClient->pCloseFd, 0);
-  }
-  bcvCloseLocal(pClient->pCloseFd);
-  pClient->pCloseFd = 0;
-
   sqlite3_free(pClient->zClientId);
   pClient->zClientId = 0;
-
-  /* Free the client structure itself */
   bdClientDecrRefcount(pClient);
 }
 
@@ -1811,16 +1802,6 @@ static void bdHandleHello(
     if( pDb==0 ){
       zErr = bcvMprintf("no such database: /%s/%s", zCont, zDb);
       pCont = 0;
-    }
-
-    if( pCont ){
-      int rc = bcvfsCreateLocalDb(&p->c, zCont, zDb, &pClient->pCloseFd);
-      if( rc!=SQLITE_OK ){
-        zErr = bcvMprintf(
-            "failed to create database files: /%s/%s", zCont, zDb
-        );
-        pCont = 0;
-      }
     }
   }
 

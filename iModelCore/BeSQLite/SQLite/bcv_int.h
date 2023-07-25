@@ -19,7 +19,6 @@ typedef sqlite3_int64 i64;
 typedef sqlite3_uint64 u64;
 typedef unsigned char u8;
 typedef unsigned int u32;
-typedef unsigned short u16;
 
 #ifdef __WIN32__
 # include <winsock2.h>
@@ -404,8 +403,6 @@ void bcvfsUnusedAdd(BcvCommon *p, CacheEntry *pEntry);
 void bcvfsLruAddIf(BcvCommon *p, CacheEntry *pEntry);
 int bcvfsNameToBlockid(Manifest *p, const char *zName, u8 *aBlk);
 u8 *bcvEmptyKV(int *pRc, int *pnData);
-
-int bcvfsCreateLocalDb(BcvCommon*, const char*, const char*, sqlite3_file**);
 
 /*
 ** Below here should be eventually moved back to blockcachevfsd. 
