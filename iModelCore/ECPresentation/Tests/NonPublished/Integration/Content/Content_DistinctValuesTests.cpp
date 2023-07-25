@@ -1523,3 +1523,79 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetsDistinctRelatedValueWhe
     EXPECT_EQ(1, values[0]->GetRawValues().size());
     EXPECT_TRUE(values[0]->GetRawValues()[0].IsNull());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(GetDistinctValues_DescriptorInstanceFilter, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="PropA" typeName="int"/>
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctValues_DescriptorInstanceFilter)
+    {
+    // set up data set
+    ECClassCP classA = GetClass("A");
+    IECInstancePtr a1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance) {instance.SetValue("PropA", ECValue(1)); });
+    IECInstancePtr a21 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance) {instance.SetValue("PropA", ECValue(2)); });
+    IECInstancePtr a22 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance) {instance.SetValue("PropA", ECValue(2)); });
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+    ContentRule* contentRule = new ContentRule();
+    contentRule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false));
+    rules->AddPresentationRule(*contentRule);
+
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(),
+        RulesetVariables(), "", 0, *KeySet::Create())));
+    ASSERT_TRUE(descriptor.IsValid());
+
+    // create the override
+    ContentDescriptorPtr ovr = ContentDescriptor::Create(*descriptor);
+    ovr->SetInstanceFilter(std::make_shared<InstanceFilterDefinition>("this.PropA = 2", *classA, bvector<RelatedClassPath>()));
+
+    PagedDataContainer<DisplayValueGroupCPtr> values = GetValidatedResponse(m_manager->GetDistinctValues(AsyncDistinctValuesRequestParams::Create(
+        s_project->GetECDb(), *ovr, std::make_unique<PropertiesContentFieldMatcher>(*classA->GetPropertyP("PropA"), RelatedClassPath()))));
+
+    ASSERT_EQ(1, values.GetSize());
+    EXPECT_STREQ("2", values[0]->GetDisplayValue().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(GetDistinctValues_DescriptorFieldsFilter, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="PropA" typeName="int"/>
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctValues_DescriptorFieldsFilter)
+    {
+    // set up data set
+    ECClassCP classA = GetClass("A");
+    IECInstancePtr a1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance) {instance.SetValue("PropA", ECValue(1)); });
+    IECInstancePtr a21 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance) {instance.SetValue("PropA", ECValue(2)); });
+    IECInstancePtr a22 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance) {instance.SetValue("PropA", ECValue(2)); });
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+    ContentRule* contentRule = new ContentRule();
+    contentRule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false));
+    rules->AddPresentationRule(*contentRule);
+
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(),
+        RulesetVariables(), "", 0, *KeySet::Create())));
+    ASSERT_TRUE(descriptor.IsValid());
+
+    // create the override
+    ContentDescriptorPtr ovr = ContentDescriptor::Create(*descriptor);
+    ovr->SetFieldsFilterExpression(Utf8PrintfString("%s = 2", FIELD_NAME(classA, "PropA")));
+
+    PagedDataContainer<DisplayValueGroupCPtr> values = GetValidatedResponse(m_manager->GetDistinctValues(AsyncDistinctValuesRequestParams::Create(
+        s_project->GetECDb(), *ovr, std::make_unique<PropertiesContentFieldMatcher>(*classA->GetPropertyP("PropA"), RelatedClassPath()))));
+
+    ASSERT_EQ(1, values.GetSize());
+    EXPECT_STREQ("2", values[0]->GetDisplayValue().c_str());
+    }
