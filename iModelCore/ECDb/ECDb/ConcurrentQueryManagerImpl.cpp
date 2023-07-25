@@ -1374,7 +1374,7 @@ void ConcurrentQueryMgr::SetMaxQuota(QueryQuota const& newQuota) {m_impl->SetMax
 //---------------------------------------------------------------------------------------
 
 ECSqlReader::ECSqlReader(ConcurrentQueryMgr& mgr, std::string ecsql,  ECSqlParams const& args)
-    :m_mgr(mgr), m_ecsql(ecsql), m_args(args),m_globalOffset(-1),m_done(false),m_it(0) {
+    :m_mgr(mgr), m_ecsql(ecsql), m_args(args),m_globalOffset(-1),m_done(false),m_it(0), m_enableExperimentalFeatures(false) {
 }
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -1399,7 +1399,7 @@ uint32_t ECSqlReader::Read() {
         return 0;
     }
     const auto readMeta  = m_columns.empty();
-    auto request = ECSqlRequest::MakeRequest(m_ecsql);
+    auto request = ECSqlRequest::MakeRequest(m_ecsql, m_enableExperimentalFeatures);
     request->SetArgs(m_args);
     request->SetIncludeMetaData(readMeta);
     request->SetConvertClassIdsToClassNames(true);
@@ -1675,7 +1675,7 @@ QueryRequest::Ptr QueryRequest::Deserialize(BeJsValue const& val) {
     if (kind == Kind::BlobIO) {
         ptr = BlobIORequest::MakeRequest("", "", 0);
     } else if (kind == Kind::ECSql) {
-        ptr = ECSqlRequest::MakeRequest("");
+        ptr = ECSqlRequest::MakeRequest("", val.isBoolMember(JExperimentalFeatures) ? val[JExperimentalFeatures].asBool() : false);
     } else {
         throw std::runtime_error("concurrent query: unsupported query request type");
     }

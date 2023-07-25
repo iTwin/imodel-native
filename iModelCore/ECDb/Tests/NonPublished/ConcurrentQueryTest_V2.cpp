@@ -243,20 +243,18 @@ TEST_F(ConcurrentQueryFixture, InterruptCheck_Timeout) {
     ASSERT_EQ(r->GetStatus(), QueryResponse::Status::Timeout);
 }
 
+class IssueListener : public ECN::IIssueListener
+    {
+    mutable bvector<Utf8String> m_issues;
+    void _OnIssueReported(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, Utf8CP message) const override { m_issues.push_back(message); }
+    public:
+    Utf8StringCR GetLastError() const { return m_issues.back();}
+    void ClearMessages() { m_issues.clear(); }
+    };
+
 TEST_F(ConcurrentQueryFixture, ConcurrentInstanceQueries)
     {
-    class IssueListener : public ECN::IIssueListener
-        {
-        mutable bvector<Utf8String> m_issues;
-        void _OnIssueReported(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, Utf8CP message) const override { m_issues.push_back(message); }
-        public:
-        Utf8StringCR GetLastError() const { return m_issues.back();}
-        void ClearMessages() { m_issues.clear(); }
-        };
-
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("ExperimentalFeaturesConcurrentQueries.ecdb"));
-    IssueListener listener;
-    m_ecdb.AddIssueListener(listener);
 
     auto& concurrentQueryManager = ConcurrentQueryMgr::GetInstance(m_ecdb);
 
@@ -285,18 +283,20 @@ TEST_F(ConcurrentQueryFixture, ConcurrentInstanceQueries)
     // Concurrent instance query should succeed since experimental features were enabled for this query request
     const auto concurrentResponse5 = concurrentQueryManager.Enqueue(std::move(ECSqlRequest::MakeRequest("SELECT $ -> name FROM meta.ECClassDef WHERE Description='KindOfQuantity'", true))).Get(); 
 
+    constexpr auto errorMsg = "Instance property access '$ -> name' is experimental feature. Use 'PRAGMA experimental_features_enabled=true' to enable it.";
+
     // Test concurrent query responses
     EXPECT_EQ(concurrentResponse1->GetStatus(), QueryResponse::Status::Done);
     EXPECT_STREQ(concurrentResponse1->GetAsConst<ECSqlResponse>().asJsonString().c_str(), "[[\"PropertyHasCategory\"]]");
 
     EXPECT_EQ(concurrentResponse2->GetStatus(), QueryResponse::Status::Error_ECSql_PreparedFailed);
-    EXPECT_STREQ(concurrentResponse2->GetError().c_str(), "Instance property access '$ -> name' is experimental feature. Use 'PRAGMA experimental_features_enabled=true' to enable it.");
+    EXPECT_STREQ(concurrentResponse2->GetError().c_str(), errorMsg);
     
     EXPECT_EQ(concurrentResponse3->GetStatus(), QueryResponse::Status::Done);
     EXPECT_STREQ(concurrentResponse3->GetAsConst<ECSqlResponse>().asJsonString().c_str(), "[[\"SchemaNameAndPurpose\"]]");
     
     EXPECT_EQ(concurrentResponse4->GetStatus(), QueryResponse::Status::Error_ECSql_PreparedFailed);
-    EXPECT_STREQ(concurrentResponse4->GetError().c_str(), "Instance property access '$ -> name' is experimental feature. Use 'PRAGMA experimental_features_enabled=true' to enable it.");
+    EXPECT_STREQ(concurrentResponse4->GetError().c_str(), errorMsg);
 
     EXPECT_EQ(concurrentResponse5->GetStatus(), QueryResponse::Status::Done);
     EXPECT_STREQ(concurrentResponse5->GetAsConst<ECSqlResponse>().asJsonString().c_str(), "[[\"KindOfQuantityDef\"]]");
@@ -314,8 +314,10 @@ TEST_F(ConcurrentQueryFixture, ConcurrentInstanceQueries)
     disablePragmaStmt.Finalize();
 
     // Non-concurrent instance query should now fail since experimental features were disabled with PRAGMA
-    listener.ClearMessages();
+    IssueListener listener;
+    m_ecdb.AddIssueListener(listener);
     EXPECT_EQ(ECSqlStatus::InvalidECSql, experimentalStmt.Prepare(m_ecdb, "SELECT $ -> name FROM meta.ECClassDef WHERE Description='Used to define a supplemental schema and its purpose'"));
+    EXPECT_STREQ(listener.GetLastError().c_str(), errorMsg);
     experimentalStmt.Finalize();
     }
 
@@ -373,7 +375,7 @@ TEST_F(ConcurrentQueryFixture, IntegrityChecksWithConcurrentQueries)
     queryResponses.push_back(concurrentQueryManager.Enqueue(std::move(ECSqlRequest::MakeRequest("PRAGMA integrity_check(check_schema_load)"))).Get()); // Concurrent instance query should fail since experimental features gets defaulted to false
 
     // Test concurrent query responses
-    const auto errorMessage = "PRAGMA integrity_check is experimental feature. Use 'PRAGMA experimental_features_enabled=true' to enable it.";
+    constexpr auto errorMessage = "PRAGMA integrity_check is experimental feature. Use 'PRAGMA experimental_features_enabled=true' to enable it.";
     for (const auto& [queryResponseIndex, responseStatus, outputProps] : std::vector<std::tuple<unsigned int, QueryResponse::Status, std::vector<std::pair<Utf8String, Utf8String>>>>
     {
         // Test Case Set 1 Responses
@@ -443,6 +445,65 @@ TEST_F(ConcurrentQueryFixture, IntegrityChecksWithConcurrentQueries)
                 }
             }
         }
+    }
+
+TEST_F(ConcurrentQueryFixture, InstanceQueryWithECSqlReader)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("InstanceQueryWithECSqlReader.ecdb"));
+    auto& concurrentQueryManager = ConcurrentQueryMgr::GetInstance(m_ecdb);
+
+    constexpr auto errorMsg = "Instance property access '$ -> name' is experimental feature. Use 'PRAGMA experimental_features_enabled=true' to enable it.";
+    
+    ECSqlReader readerExperimentalFeatures(concurrentQueryManager, "SELECT $ -> name FROM meta.ECClassDef WHERE Description='Relates the property to its PropertyCategory.'");
+    try { EXPECT_FALSE(readerExperimentalFeatures.Next()); }
+    catch(std::runtime_error error) { EXPECT_STREQ(error.what(), errorMsg); }
+
+    readerExperimentalFeatures.SetExperimentalFeatures(true);
+    try
+        {
+        EXPECT_TRUE(readerExperimentalFeatures.Next());
+        EXPECT_EQ(readerExperimentalFeatures.GetColumns().size(), 1U);
+        EXPECT_EQ(readerExperimentalFeatures.GetRow().Count(), 1U);
+        EXPECT_STREQ(readerExperimentalFeatures.GetRow()[0].ToString().c_str(), "\"PropertyHasCategory\"");
+        }
+    catch(std::runtime_error error) { EXPECT_STRNE(error.what(), errorMsg); }
+
+    readerExperimentalFeatures.SetExperimentalFeatures(false);
+    try { EXPECT_FALSE(readerExperimentalFeatures.Next()); }
+    catch(std::runtime_error error) { EXPECT_STREQ(error.what(), errorMsg); }
+    }
+
+TEST_F(ConcurrentQueryFixture, IntegrityCheckWithECSqlReader)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("IntegrityCheckWithECSqlReader.ecdb"));
+    auto& concurrentQueryManager = ConcurrentQueryMgr::GetInstance(m_ecdb);
+
+    constexpr auto errorMsg = "PRAGMA integrity_check is experimental feature. Use 'PRAGMA experimental_features_enabled=true' to enable it.";
+    
+    ECSqlReader readerExperimentalFeatures(concurrentQueryManager, "PRAGMA integrity_check(check_nav_class_ids)");
+    try { EXPECT_FALSE(readerExperimentalFeatures.Next()); }
+    catch(std::runtime_error error) { EXPECT_STREQ(error.what(), errorMsg); }
+
+    readerExperimentalFeatures.SetExperimentalFeatures(true);
+    try
+        {
+        std::vector<std::pair<Utf8String, Utf8String>> results = { std::make_pair("sno", "int"), std::make_pair("id", "string"), std::make_pair("class", "string"), std::make_pair("property", "string"), std::make_pair("nav_id", "string"), std::make_pair("nav_classId", "string")};
+        
+        readerExperimentalFeatures.Next();
+        ASSERT_EQ(results.size(), readerExperimentalFeatures.GetColumns().size());
+
+        const auto columns = readerExperimentalFeatures.GetColumns();
+        for (auto index = 0U; index < results.size(); ++index)
+            {
+            EXPECT_STREQ(columns[index].GetName().c_str(), results[index].first.c_str());
+            EXPECT_STREQ(columns[index].GetTypeName().c_str(), results[index].second.c_str());
+            }
+        }
+    catch(std::runtime_error error) { EXPECT_STRNE(error.what(), errorMsg); }
+
+    readerExperimentalFeatures.SetExperimentalFeatures(false);
+    try { EXPECT_FALSE(readerExperimentalFeatures.Next()); }
+    catch(std::runtime_error error) { EXPECT_STREQ(error.what(), errorMsg); }
     }
 
 //---------------------------------------------------------------------------------------

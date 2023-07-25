@@ -70,6 +70,7 @@ struct QueryRequest {
         static constexpr auto JUsePrimaryConn = "usePrimaryConn";
         static constexpr auto JRestartToken = "restartToken";
         static constexpr auto JDelay = "delay";
+        static constexpr auto JExperimentalFeatures = "enableExperimentalFeatures";
         QueryQuota m_quota;
         int32_t m_priority;
         Kind m_kind;
@@ -618,6 +619,7 @@ struct ECSqlReader {
         std::string m_ecsql;
         bool m_done;
         Json::Value::ArrayIndex m_it;
+        bool m_enableExperimentalFeatures;
     private:
         uint32_t Read();
     public:
@@ -626,6 +628,7 @@ struct ECSqlReader {
         QueryProperty::List const& GetColumns() const { return m_columns; }
         Row GetRow() const { return Row(m_rows[m_it],m_columns);}
         ECDB_EXPORT bool Next();
+        ECDB_EXPORT void SetExperimentalFeatures(const bool value) { m_enableExperimentalFeatures = value; };
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
