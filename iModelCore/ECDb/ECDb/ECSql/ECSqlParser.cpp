@@ -1567,9 +1567,9 @@ BentleyStatus ECSqlParser::ParseECRelationshipJoin(std::unique_ptr<ECRelationshi
         return ERROR;
 
     //TODO: need to decide whether we support ONLY in USING clause.
-    std::unique_ptr<ClassNameExp> table_node = nullptr;
-    if (SUCCESS != ParseTableNodeWithOptMemberCall(table_node, *parseNode->getChild(5/*table_node_with_opt_member_call*/), ECSqlType::Select, PolymorphicInfo::All(), false))
-     return ERROR;
+    std::unique_ptr<ClassRefExp> table_node_ref = nullptr;
+    if (SUCCESS != ParseTableNodeRef(table_node_ref, *parseNode->getChild(5/*table_node_ref*/), ECSqlType::Select))
+        return ERROR;
 
     OSQLParseNode const* op_relationship_direction = parseNode->getChild(6/*op_relationship_direction*/);
 
@@ -1585,7 +1585,7 @@ BentleyStatus ECSqlParser::ParseECRelationshipJoin(std::unique_ptr<ECRelationshi
     else if (op_relationship_direction->getTokenID() == SQL_TOKEN_BACKWARD)
         direction = JoinDirection::Backward;
 
-    exp = std::make_unique<ECRelationshipJoinExp>(std::move(from_table_ref), std::move(to_table_ref), std::move(table_node), direction);
+    exp = std::make_unique<ECRelationshipJoinExp>(std::move(from_table_ref), std::move(to_table_ref), std::move(table_node_ref), direction);
     return SUCCESS;
     }
 
@@ -1899,6 +1899,47 @@ BentleyStatus ECSqlParser::ParseTableValuedFunction(std::unique_ptr<TableValuedF
     exp = std::make_unique<TableValuedFunctionExp>(schemaName.c_str(), std::move(memberFuncCall), PolymorphicInfo::All());
     return SUCCESS;
 }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECSqlParser::ParseTableNodeRef(std::unique_ptr<ClassRefExp>& exp, OSQLParseNode const& tableNode, ECSqlType ecsqlType) const
+    {
+    if (!SQL_ISRULE(&tableNode, OSQLParseNode::Rule::table_node_ref))
+        {
+        BeAssert(false && "Wrong grammar. Expecting table_node_ref");
+        return ERROR;
+        }
+
+    std::unique_ptr<ClassNameExp> table_node = nullptr;
+    if (SUCCESS != ParseTableNodeWithOptMemberCall(table_node, *tableNode.getChild(0/*table_node_with_opt_member_call*/), ecsqlType, PolymorphicInfo::All(), false))
+        return ERROR;
+
+    std::unique_ptr<RangeClassRefExp> rangeClassRef;
+    rangeClassRef = std::move(table_node);
+
+    if (tableNode.count() == 2)
+        {
+        OSQLParseNode const* table_primary_as_range_column = tableNode.getChild(1/*table_primary_as_range_column*/);
+        if (table_primary_as_range_column->count() > 0)
+            {
+            OSQLParseNode* table_alias = table_primary_as_range_column->getChild(1);
+            OSQLParseNode* opt_column_commalist = table_primary_as_range_column->getChild(2);
+            if (opt_column_commalist->count() > 0)
+                {
+                BeAssert(false && "Range column not supported");
+                return ERROR;
+                }
+
+            if (!table_alias->getTokenValue().empty())
+                rangeClassRef->SetAlias(table_alias->getTokenValue());
+            }
+        }
+
+    exp = std::move(rangeClassRef);
+    return SUCCESS;
+    }
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------

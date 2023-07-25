@@ -10790,4 +10790,185 @@ TEST_F(ECSqlStatementTestFixture, verify_inf_and_nan_handling) {
         EXPECT_STREQ("{\"inf_pos\":null,\"inf_neg\":null}", json.c_str());
     }
 }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, JoinUsingRelationship)
+    {
+    // ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("JoinUsingRelationship.ecdb"));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("JoinUsingRelationship.ecdb", SchemaItem(
+        R"xml(<?xml version='1.0' encoding='utf-8'?>
+        <ECSchema schemaName='TestSchema' alias='bis' version='10.10.10' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+            <ECEntityClass typeName='Element' >
+                <ECProperty propertyName="Subject" typeName="string" description="" />
+                <ECNavigationProperty propertyName="Parent" description="" relationshipName="ElementOwnsChildElements" direction="backward">
+                    <ECCustomAttributes>
+                    <HiddenProperty xmlns="CoreCustomAttributes.01.00.03"/>
+                    <ForeignKeyConstraint xmlns="ECDbMap.02.00.00">
+                            <OnDeleteAction>NoAction</OnDeleteAction>
+                    </ForeignKeyConstraint>
+                    </ECCustomAttributes>
+                </ECNavigationProperty>
+            </ECEntityClass>
+            <ECRelationshipClass typeName="ElementOwnsChildElements" description="" modifier="None" strength="embedding">
+                <Source multiplicity="(0..1)" roleLabel="owns child" polymorphic="true">
+                    <Class class="Element"/>
+                </Source>
+                <Target multiplicity="(0..*)" roleLabel="is owned by parent" polymorphic="true">
+                    <Class class="Element"/>
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml")));
+
+    if("without alies")
+        {
+        ECSqlStatement stmt;
+        auto statementString = "SELECT 1 FROM bis.Element a JOIN bis.Element b USING bis.ElementOwnsChildElements";
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, statementString)) << "FORWARD or BACKWARD must be specified for joins where source and target cannot be identified unambiguously, e.g. joins between the same class.";
+        }
+
+    if("with alies")
+        {
+        ECSqlStatement stmt;
+        auto statementString = "SELECT 1 FROM bis.Element a JOIN bis.Element b USING bis.ElementOwnsChildElements c";
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, statementString)) << "FORWARD or BACKWARD must be specified for joins where source and target cannot be identified unambiguously, e.g. joins between the same class.";
+        }
+
+    if("without alies and FORWARD")
+        {
+        ECSqlStatement stmt;
+        auto statementString = "SELECT 1 FROM bis.Element a JOIN bis.Element b USING bis.ElementOwnsChildElements FORWARD";
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, statementString));
+        }
+
+    if("with alies and FORWARD")
+        {
+        ECSqlStatement stmt;
+        auto statementString = "SELECT 1 FROM bis.Element a JOIN bis.Element b USING bis.ElementOwnsChildElements c FORWARD";
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, statementString));
+        }
+
+    if("without alies and BACKWARD")
+        {
+        ECSqlStatement stmt;
+        auto statementString = "SELECT 1 FROM bis.Element a JOIN bis.Element b USING bis.ElementOwnsChildElements BACKWARD";
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, statementString));
+        }
+
+    if("with alies and BACKWARD")
+        {
+        ECSqlStatement stmt;
+        auto statementString = "SELECT 1 FROM bis.Element a JOIN bis.Element b USING bis.ElementOwnsChildElements c BACKWARD";
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, statementString));
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, JoinUsingRelationshipWithDifferentSourceAndTarget)
+    {
+    // ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("JoinUsingRelationship.ecdb"));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("JoinUsingRelationship.ecdb", SchemaItem(
+        R"xml(<?xml version='1.0' encoding='utf-8'?>
+        <ECSchema schemaName='Test' alias='bis' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+            <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />
+            <ECEntityClass typeName='Element' modifier='Abstract' >
+                <ECCustomAttributes>
+                <ClassMap xmlns='ECDbMap.02.00'>
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+                </ECCustomAttributes>
+                <ECProperty propertyName='Code' typeName='string' />
+                <ECNavigationProperty propertyName='Parent' relationshipName='ElementOwnsChildElements' direction='backward'>
+                    <ECCustomAttributes>
+                        <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>
+                    </ECCustomAttributes>
+                </ECNavigationProperty>
+            </ECEntityClass>
+            <ECEntityClass typeName='BoltElement'>
+                <BaseClass>Element</BaseClass>
+                <ECProperty propertyName='BoltType' typeName='string' />
+            </ECEntityClass>
+            <ECEntityClass typeName='ConnectionElement' modifier='Abstract' >
+                <BaseClass>Element</BaseClass>
+                <ECProperty propertyName='ConnectionType' typeName='string' />
+            </ECEntityClass>
+            <ECEntityClass typeName='SteelBeamConnectionElement'>
+                <BaseClass>ConnectionElement</BaseClass>
+            </ECEntityClass>
+            <ECEntityClass typeName='PipeFlangeConnectionElement'>
+                <BaseClass>ConnectionElement</BaseClass>
+            </ECEntityClass>
+            <ECRelationshipClass typeName='ElementOwnsChildElements' modifier='Abstract' strength='embedding'>
+                <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Element Owns Child Elements'>
+                    <Class class='Element' />
+                </Source>
+                <Target multiplicity='(0..1)' polymorphic='True' roleLabel='Element Owns Child Elements (Reversed)'>
+                    <Class class='Element' />
+                </Target>
+            </ECRelationshipClass>
+            <ECRelationshipClass typeName='SteelBeamConnectionHasBolts' strength='embedding' modifier='Sealed'>
+                <BaseClass>ElementOwnsChildElements</BaseClass>
+                <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Steel Beam Connection Has Bolts'>
+                    <Class class='SteelBeamConnectionElement' />
+                </Source>
+                <Target multiplicity='(0..1)' polymorphic='True' roleLabel='Steel Beam Connection Has Bolts (Reversed)'>
+                    <Class class='BoltElement' />
+                </Target>
+            </ECRelationshipClass>
+            <ECRelationshipClass typeName='PipeFlangeConnectionHasBolts' strength='embedding' modifier='Sealed'>
+                <BaseClass>ElementOwnsChildElements</BaseClass>
+                <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Pipe Flange Connection Has Bolts'>
+                    <Class class='PipeFlangeConnectionElement' />
+                </Source>
+                <Target multiplicity='(0..1)' polymorphic='True' roleLabel='Pipe Flange Connection Has Bolts (Reversed)'>
+                    <Class class='BoltElement' />
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml")));
+
+    if("without alies")
+        {
+        ECSqlStatement stmt;
+        auto statementString = "SELECT 1 FROM bis.SteelBeamConnectionElement a JOIN bis.BoltElement b USING bis.SteelBeamConnectionHasBolts";
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, statementString));
+        }
+
+    if("with alies")
+        {
+        ECSqlStatement stmt;
+        auto statementString = "SELECT 1 FROM bis.SteelBeamConnectionElement a JOIN bis.BoltElement b USING bis.SteelBeamConnectionHasBolts c";
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, statementString));
+        }
+
+    if("without alies and FORWARD")
+        {
+        ECSqlStatement stmt;
+        auto statementString = "SELECT 1 FROM bis.SteelBeamConnectionElement a JOIN bis.BoltElement b USING bis.SteelBeamConnectionHasBolts FORWARD";
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, statementString));
+        }
+
+    if("with alies and FORWARD")
+        {
+        ECSqlStatement stmt;
+        auto statementString = "SELECT 1 FROM bis.SteelBeamConnectionElement a JOIN bis.BoltElement b USING bis.SteelBeamConnectionHasBolts c FORWARD";
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, statementString));
+        }
+
+    if("without alies and BACKWARD")
+        {
+        ECSqlStatement stmt;
+        auto statementString = "SELECT 1 FROM bis.SteelBeamConnectionElement a JOIN bis.BoltElement b USING bis.SteelBeamConnectionHasBolts BACKWARD";
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, statementString)) << "Invalid join direction BACKWARD in RelationshipJoin [Direction: BACKWARD]. Either specify FORWARD or omit the direction as the direction can be unambiguously implied in this ECSQL.";
+        }
+
+    if("with alies and BACKWARD")
+        {
+        ECSqlStatement stmt;
+        auto statementString = "SELECT 1 FROM bis.SteelBeamConnectionElement a JOIN bis.BoltElement b USING bis.SteelBeamConnectionHasBolts c BACKWARD";
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, statementString)) << "Invalid join direction BACKWARD in RelationshipJoin [Direction: BACKWARD]. Either specify FORWARD or omit the direction as the direction can be unambiguously implied in this ECSQL.";
+        }
+    }
 END_ECDBUNITTESTS_NAMESPACE
