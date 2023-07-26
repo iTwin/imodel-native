@@ -39,7 +39,6 @@ protected:
 
     //! Computes rule hash.
     ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
-    ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationKeyCR other) const override;
 
     //! Clones rule.
     CustomizationRule* _Clone() const override {return new InstanceLabelOverride(*this);}
@@ -102,7 +101,6 @@ struct InstanceLabelOverrideValueSpecification : NoXmlSupport<PresentationKey>
 protected:
     virtual void _Accept(InstanceLabelOverrideValueSpecificationVisitor&) const = 0;
     virtual InstanceLabelOverrideValueSpecification* _Clone() const = 0;
-    virtual bool _ShallowEqual(PresentationKeyCR other) const override {return true;}
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementTypeAttributeName() const override;
 
 public:
@@ -132,7 +130,6 @@ struct InstanceLabelOverrideCompositeValueSpecification : InstanceLabelOverrideV
         Utf8CP _GetJsonElementType() const override {return nullptr;}
         ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
         ECPRESENTATION_EXPORT void _WriteJson(BeJsValue json) const override;
-        ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationKeyCR other) const override;
         ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
     public:
         Part() : m_specification(nullptr), m_isRequired(false) {}
@@ -151,7 +148,6 @@ protected:
     void _Accept(InstanceLabelOverrideValueSpecificationVisitor& visitor) const override { visitor._Visit(*this); }
     InstanceLabelOverrideValueSpecification* _Clone() const override { return new InstanceLabelOverrideCompositeValueSpecification(*this); }
     ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
-    ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationKeyCR other) const override;
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
     ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
     ECPRESENTATION_EXPORT void _WriteJson(BeJsValue json) const override;
@@ -179,7 +175,6 @@ protected:
     void _Accept(InstanceLabelOverrideValueSpecificationVisitor& visitor) const override { visitor._Visit(*this); }
     InstanceLabelOverrideValueSpecification* _Clone() const override { return new InstanceLabelOverridePropertyValueSpecification(*this); }
     ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
-    ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationKeyCR other) const override;
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
     ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
     ECPRESENTATION_EXPORT void _WriteJson(BeJsValue json) const override;
@@ -204,7 +199,6 @@ protected:
     void _Accept(InstanceLabelOverrideValueSpecificationVisitor& visitor) const override { visitor._Visit(*this); }
     InstanceLabelOverrideValueSpecification* _Clone() const override { return new InstanceLabelOverrideClassNameValueSpecification(*this); }
     ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
-    ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationKeyCR other) const override;
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
     ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
     ECPRESENTATION_EXPORT void _WriteJson(BeJsValue json) const override;
@@ -259,7 +253,6 @@ protected:
     void _Accept(InstanceLabelOverrideValueSpecificationVisitor& visitor) const override { visitor._Visit(*this); }
     InstanceLabelOverrideValueSpecification* _Clone() const override { return new InstanceLabelOverrideStringValueSpecification(*this); }
     ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
-    ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationKeyCR other) const override;
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
     ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
     ECPRESENTATION_EXPORT void _WriteJson(BeJsValue json) const override;
@@ -281,7 +274,6 @@ protected:
     void _Accept(InstanceLabelOverrideValueSpecificationVisitor& visitor) const override { visitor._Visit(*this); }
     InstanceLabelOverrideValueSpecification* _Clone() const override { return new InstanceLabelOverrideRelatedInstanceLabelSpecification(*this); }
     ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
-    ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationKeyCR other) const override;
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
     ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
     ECPRESENTATION_EXPORT void _WriteJson(BeJsValue json) const override;

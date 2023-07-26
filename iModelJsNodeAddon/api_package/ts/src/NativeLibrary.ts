@@ -660,6 +660,17 @@ export declare namespace IModelJsNative {
     public static recompressRevision(sourceFile: string, targetFile: string, lzmaPropsJson?: string): BentleyStatus;
   }
 
+  /**
+   * The native object for SchemaUtility
+   * @internal
+   */
+  class SchemaUtility {
+    constructor();
+    /** Converts given schemas and their reference schemas to EC3.2 schemas */
+    public static convertCustomAttributes(xmlSchemas: string[], schemaContext?: ECSchemaXmlContext): string[];
+    public static convertEC2XmlSchemas(ec2XmlSchemas: string[], schemaContext?: ECSchemaXmlContext): string[];
+  }
+
   class ECDb implements IDisposable, IConcurrentQueryManager {
     constructor();
     public abandonChanges(): DbResult;

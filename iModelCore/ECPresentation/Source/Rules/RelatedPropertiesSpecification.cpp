@@ -542,23 +542,3 @@ MD5 RelatedPropertiesSpecification::_ComputeHash() const
         ADD_PRIMITIVE_VALUE_TO_HASH(md5, RELATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_FORCECREATERELATIONSHIPCATEGORY, m_forceCreateRelationshipCategory);
     return md5;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool RelatedPropertiesSpecification::_ShallowEqual(PresentationKeyCR other) const
-    {
-    RelatedPropertiesSpecification const* otherRule = dynamic_cast<RelatedPropertiesSpecification const*>(&other);
-    if (nullptr == otherRule)
-        return false;
-
-    return m_requiredDirection == otherRule->m_requiredDirection
-        && m_relationshipClassNames == otherRule->m_relationshipClassNames
-        && m_relatedClassNames == otherRule->m_relatedClassNames
-        && m_relationshipMeaning == otherRule->m_relationshipMeaning
-        && m_instanceFilter == otherRule->m_instanceFilter
-        && m_polymorphic == otherRule->m_polymorphic
-        && m_autoExpand == otherRule->m_autoExpand
-        && m_shouldSkipIfDuplicate == otherRule->m_shouldSkipIfDuplicate
-        && m_forceCreateRelationshipCategory == otherRule->m_forceCreateRelationshipCategory;
-    }

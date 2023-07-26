@@ -165,29 +165,6 @@ public:
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-struct NodeParentRequestParams : RequestWithRulesetParams
-{
-private:
-    NavNodeCPtr m_node;
-    std::shared_ptr<InstanceFilterDefinition const> m_instanceFilter;
-public:
-    NodeParentRequestParams(RequestWithRulesetParams const& rulesetParams, NavNodeCR node)
-        : RequestWithRulesetParams(rulesetParams), m_node(&node)
-        {}
-    NodeParentRequestParams(RequestWithRulesetParams&& rulesetParams, NavNodeCR node)
-        : RequestWithRulesetParams(std::move(rulesetParams)), m_node(&node)
-        {}
-    NodeParentRequestParams(Utf8String rulesetId, RulesetVariables rulesetVariables, NavNodeCR node)
-        : RequestWithRulesetParams(rulesetId, rulesetVariables), m_node(&node)
-        {}
-    NavNodeCR GetNode() const {return *m_node;}
-    std::shared_ptr<InstanceFilterDefinition const> GetInstanceFilter() const {return m_instanceFilter;}
-    void SetInstanceFilter(std::shared_ptr<InstanceFilterDefinition const> value) {m_instanceFilter = value;}
-};
-
-//=======================================================================================
-// @bsiclass
-//=======================================================================================
 struct NodePathFromInstanceKeyPathRequestParams : HierarchyRequestParams
 {
 private:

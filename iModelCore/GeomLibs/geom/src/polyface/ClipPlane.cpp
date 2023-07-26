@@ -33,7 +33,7 @@ double      ClipPlane::GetDistance () const     { return m_distance; }
 DVec3dCR    ClipPlane::GetNormal () const       { return m_normal; }
 bool        ClipPlane::GetIsInterior () const   { return 0 != (m_flags & PlaneMask_Interior); }
 bool        ClipPlane::GetIsInvisible  () const { return 0 != (m_flags & PlaneMask_Invisible); }
-bool        ClipPlane::IsVisible () const       { return 0 == (m_flags & (PlaneMask_Interior | PlaneMask_Invisible)); }  
+bool        ClipPlane::IsVisible () const       { return 0 == (m_flags & (PlaneMask_Interior | PlaneMask_Invisible)); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -85,7 +85,7 @@ void ClipPlane::SetFlags (bool invisible, bool interior)
     {
     m_flags = (interior ? PlaneMask_Interior : 0) | (invisible ? PlaneMask_Invisible : 0);
     }
- 
+
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
@@ -178,7 +178,7 @@ void ClipPlane::SetDPlane4d (DPoint4dCR plane)
     {
     double a = sqrt (plane.x * plane.x + plane.y * plane.y + plane.z * plane.z);
     double r = a == 0.0 ? 1.0 : 1.0 / a;
-       
+
     m_normal.x = r * plane.x;
     m_normal.y = r * plane.y;
     m_normal.z = r * plane.z;
@@ -202,7 +202,7 @@ double ClipPlane::EvaluatePoint (DPoint3dCR point) const
 double ClipPlane::DotProduct (DVec3dCR vector) const
     {
     return vector.x * m_normal.x +  vector.y * m_normal.y +  vector.z * m_normal.z;
-    } 
+    }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod

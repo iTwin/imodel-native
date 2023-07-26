@@ -36,7 +36,6 @@ protected:
 
     //! Computes rule hash.
     ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
-    ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationKeyCR other) const override;
 
     //! Clones rule.
     virtual CustomizationRule* _Clone() const override {return new LabelOverride(*this);}

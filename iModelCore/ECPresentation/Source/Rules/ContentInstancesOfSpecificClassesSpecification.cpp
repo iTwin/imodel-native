@@ -221,21 +221,3 @@ MD5 ContentInstancesOfSpecificClassesSpecification::_ComputeHash() const
         ADD_PRIMITIVE_VALUE_TO_HASH(md5, CONTENT_INSTANCES_OF_SPECIFIC_CLASSES_SPECIFICATION_JSON_ATTRIBUTE_HANDLEPROPERTIESPOLYMORPHICALLY, m_handlePropertiesPolymorphically);
     return md5;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ContentInstancesOfSpecificClassesSpecification::_ShallowEqual(PresentationKeyCR other) const
-    {
-    if (!ContentSpecification::_ShallowEqual(other))
-        return false;
-
-    ContentInstancesOfSpecificClassesSpecification const* otherRule = dynamic_cast<ContentInstancesOfSpecificClassesSpecification const*>(&other);
-    if (nullptr == otherRule)
-        return false;
-
-    return m_instanceFilter == otherRule->m_instanceFilter
-        && m_classes == otherRule->m_classes
-        && m_excludedClasses == otherRule->m_excludedClasses
-        && m_handlePropertiesPolymorphically == otherRule->m_handlePropertiesPolymorphically;
-    }
