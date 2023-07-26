@@ -933,6 +933,16 @@ TEST_F(ECSqlStatementTestFixture, ClassAliases)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
 
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT (SELECT b.ECInstanceId FROM ts.A b)"));
+    EXPECT_STRCASEEQ("SELECT (SELECT [b].[ECInstanceId] FROM (SELECT [Id] ECInstanceId,73 ECClassId FROM [main].[ts_A]) [b])", stmt.GetNativeSql()) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    EXPECT_EQ(1, stmt.GetColumnCount()) << stmt.GetECSql();
+    ASSERT_EQ(1, stmt.GetValueId<ECInstanceId>(0).GetValue()) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
     }
 
 /*---------------------------------------------------------------------------------**//**
