@@ -423,21 +423,13 @@ public:
 
         return Napi::Number::New(Env(), (int)status);
     }
-    Napi::Value GetECSqlParseTree(NapiInfoCR info) {
+    Napi::Value ParseECSql(NapiInfoCR info) {
         REQUIRE_ARGUMENT_STRING(0, ecsql);
         auto out = BeJsNapiObject(Env());
         if (SUCCESS != ECSqlParseTreeFormatter::ECSqlToJson(out, m_ecdb, ecsql.c_str())) {
             BeNapi::ThrowJsException(Env(), "fail to prepare ecsql");
         }
         return out;
-    }
-    Napi::Value GetNormalizeECSql(NapiInfoCR info) {
-        REQUIRE_ARGUMENT_STRING(0, ecsql);
-        auto out = Utf8String();
-        if (SUCCESS != ECSqlParseTreeFormatter::NormalizeECSql(out, m_ecdb, ecsql.c_str())) {
-            BeNapi::ThrowJsException(Env(), "fail to prepare ecsql");
-        }
-        return Napi::String::New(Env(), out.c_str());
     }
     void ConcurrentQueryExecute(NapiInfoCR info) {
         REQUIRE_ARGUMENT_ANY_OBJ(0, requestObj);
@@ -601,8 +593,7 @@ public:
             InstanceMethod("schemaSyncGetSyncDbInfo", &NativeECDb::SchemaSyncGetSyncDbInfo),
             InstanceMethod("openDb", &NativeECDb::OpenDb),
             InstanceMethod("saveChanges", &NativeECDb::SaveChanges),
-            InstanceMethod("getECSqlParseTree", &NativeECDb::GetECSqlParseTree),
-            InstanceMethod("getNormalizeECSql", &NativeECDb::GetNormalizeECSql),
+            InstanceMethod("parseECSql", &NativeECDb::ParseECSql),
             StaticMethod("enableSharedCache", &NativeECDb::EnableSharedCache),
         });
 
@@ -2433,21 +2424,13 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         if (ChangesetStatus::Success != stat)
             BeNapi::ThrowJsException(Env(), "error applying changeset", (int)stat);
     }
-    Napi::Value GetECSqlParseTree(NapiInfoCR info) {
+    Napi::Value ParseECSql(NapiInfoCR info) {
         REQUIRE_ARGUMENT_STRING(0, ecsql);
         auto out = BeJsNapiObject(Env());
         if (SUCCESS != ECSqlParseTreeFormatter::ECSqlToJson(out, GetDgnDb(), ecsql.c_str())) {
             BeNapi::ThrowJsException(Env(), "fail to prepare ecsql");
         }
         return out;
-    }
-    Napi::Value GetNormalizeECSql(NapiInfoCR info) {
-        REQUIRE_ARGUMENT_STRING(0, ecsql);
-        auto out = Utf8String();
-        if (SUCCESS != ECSqlParseTreeFormatter::NormalizeECSql(out, GetDgnDb(), ecsql.c_str())) {
-            BeNapi::ThrowJsException(Env(), "fail to prepare ecsql");
-        }
-        return Napi::String::New(Env(), out.c_str());
     }
     void ConcurrentQueryExecute(NapiInfoCR info) {
         RequireDbIsOpen(info);;
@@ -2647,8 +2630,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
             InstanceMethod("enableWalMode", &NativeDgnDb::EnableWalMode),
             InstanceMethod("performCheckpoint", &NativeDgnDb::PerformCheckpoint),
             InstanceMethod("setAutoCheckpointThreshold", &NativeDgnDb::SetAutoCheckpointThreshold),
-            InstanceMethod("getECSqlParseTree", &NativeDgnDb::GetECSqlParseTree),
-            InstanceMethod("getNormalizeECSql", &NativeDgnDb::GetNormalizeECSql),
+            InstanceMethod("parseECSql", &NativeDgnDb::ParseECSql),
             StaticMethod("enableSharedCache", &NativeDgnDb::EnableSharedCache),
             StaticMethod("getAssetsDir", &NativeDgnDb::GetAssetDir),
         });
