@@ -1164,7 +1164,7 @@ static void daemon_vlog(DaemonCtx *p, int flags, const char *zFmt, va_list ap){
     char zTime[128];
     char *zMsg = sqlite3_vmprintf(zFmt, ap);
     daemon_log_timestamp(p, zTime);
-    fprintf(stdout, "INFO(%s%s%s%s%s%s%s)%s: %s\n",
+    fprintf(stdout, "INFO(%s%s%s%s%s%s%s%s)%s: %s\n",
         (flags & BCV_LOG_POLL ? "p" : ""),
         (flags & BCV_LOG_EVENT ? "e" : ""),
         (flags & BCV_LOG_MESSAGE ? "m" : ""),
