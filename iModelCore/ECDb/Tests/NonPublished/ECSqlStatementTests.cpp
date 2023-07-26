@@ -102,7 +102,7 @@ TEST_F(ECSqlStatementTestFixture, CTECrash) {
     for (int i = 0; i < 1; ++i) {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
-        ASSERT_STREQ( stmt.GetNativeSql(), "WITH F(A) AS (SELECT 1),S(A) AS (SELECT F.A FROM F UNION SELECT 1 FROM S WHERE S.A=1)\nSELECT S.A FROM S");
+        ASSERT_STREQ( stmt.GetNativeSql(), "WITH RECURSIVE F(A) AS (SELECT 1),S(A) AS (SELECT F.A FROM F UNION SELECT 1 FROM S WHERE S.A=1)\nSELECT S.A FROM S");
     }
 }
 /*---------------------------------------------------------------------------------**//**
@@ -10678,7 +10678,7 @@ TEST_F(ECSqlStatementTestFixture, ConfuseRealNumberWithClassName) {
     }
 
     }
-    
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
