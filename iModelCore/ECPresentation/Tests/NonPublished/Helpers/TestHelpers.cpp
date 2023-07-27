@@ -12,6 +12,18 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RulesEngineTestHelpers::InitSchemaRegistry(ECDbR ecdb, bvector<bpair<Utf8String, Utf8String>> const& schemaXmls)
     {
+    testing::UnitTest* gtestInstance = testing::UnitTest::GetInstance();
+    testing::TestSuite const* currentTestSuite = gtestInstance->current_test_suite();
+
+    // some tests define a single schema for the whole test suite, so include it's name
+    std::unordered_set<Utf8String> testNamesThatShouldRun({ currentTestSuite->name() });
+    for (int i = 0; i < currentTestSuite->total_test_count(); ++i)
+        {
+        auto testInfo = currentTestSuite->GetTestInfo(i);
+        if (testInfo->should_run())
+            testNamesThatShouldRun.insert(testInfo->name());
+        }
+
     bvector<ECSchemaPtr> schemas;
     ECSchemaReadContextPtr schemaReadContext = ECSchemaReadContext::CreateContext();
     schemaReadContext->AddSchemaLocater(ecdb.GetSchemaLocater());
@@ -24,6 +36,8 @@ void RulesEngineTestHelpers::InitSchemaRegistry(ECDbR ecdb, bvector<bpair<Utf8St
             BeAssert(false);
             continue;
             }
+        if (testNamesThatShouldRun.find(pair.first) == testNamesThatShouldRun.end())
+            continue;
         schemas.push_back(schema);
         }
 
