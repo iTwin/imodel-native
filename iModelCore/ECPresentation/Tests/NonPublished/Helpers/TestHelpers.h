@@ -28,19 +28,6 @@ BEGIN_ECPRESENTATIONTESTS_NAMESPACE
 
 //#define USE_HYBRID_CACHE
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-//static Utf8String CreateValidSchemaString(Utf8String name, Utf8String schema_xml)
-//    {
-//    return Utf8PrintfString("<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
-//    "<ECSchema schemaName=\"%s\" alias=\"alias_%s\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.1\">" \
-//        "<ECSchemaReference name=\"CoreCustomAttributes\" version=\"1.0\" alias=\"CoreCA\"/>" \
-//        "<ECSchemaReference name=\"ECDbMap\" version=\"2.0\" alias=\"ecdbmap\"/>" \
-//        "%s" \
-//    "</ECSchema>", name.c_str(), name.c_str(), schema_xml.c_str());
-//    }
-
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
