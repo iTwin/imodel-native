@@ -1697,7 +1697,7 @@ PagingDataSourcePtr<DisplayValueGroupCPtr> RulesDrivenECPresentationManagerImpl:
         return nullptr;
         }
 
-    SpecificationContentProviderCPtr contentProvider = GetContentProvider(ContentRequestImplParams::Create(params));
+    SpecificationContentProviderPtr contentProvider = GetContentProvider(ContentRequestImplParams::Create(params));
     if (contentProvider.IsNull())
         {
         DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Failed to get content provider");
@@ -1709,6 +1709,12 @@ PagingDataSourcePtr<DisplayValueGroupCPtr> RulesDrivenECPresentationManagerImpl:
         {
         DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Failed to get content descriptor");
         return nullptr;
+        }
+    if (providerDescriptor != &params.GetContentDescriptor())
+        {
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Received a modified descriptor, cloning provider.");
+        contentProvider = contentProvider->Clone();
+        contentProvider->SetContentDescriptor(params.GetContentDescriptor());
         }
 
     auto queryScope = Diagnostics::Scope::Create("Query distinct values");
