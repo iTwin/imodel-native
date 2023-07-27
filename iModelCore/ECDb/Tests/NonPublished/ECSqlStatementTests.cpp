@@ -10794,9 +10794,8 @@ TEST_F(ECSqlStatementTestFixture, verify_inf_and_nan_handling) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlStatementTestFixture, JoinUsingRelationship)
+TEST_F(ECSqlStatementTestFixture, JoinUsingRelationshipPrepareStatelemt)
     {
-    // ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("JoinUsingRelationship.ecdb"));
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("JoinUsingRelationship.ecdb", SchemaItem(
         R"xml(<?xml version='1.0' encoding='utf-8'?>
         <ECSchema schemaName='TestSchema' alias='bis' version='10.10.10' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
@@ -10867,108 +10866,42 @@ TEST_F(ECSqlStatementTestFixture, JoinUsingRelationship)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlStatementTestFixture, JoinUsingRelationshipWithDifferentSourceAndTarget)
+TEST_F(ECSqlStatementTestFixture, JoinUsingRelationshipSelect)
     {
-    // ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("JoinUsingRelationship.ecdb"));
-    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("JoinUsingRelationship.ecdb", SchemaItem(
-        R"xml(<?xml version='1.0' encoding='utf-8'?>
-        <ECSchema schemaName='Test' alias='bis' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
-            <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />
-            <ECEntityClass typeName='Element' modifier='Abstract' >
-                <ECCustomAttributes>
-                <ClassMap xmlns='ECDbMap.02.00'>
-                        <MapStrategy>TablePerHierarchy</MapStrategy>
-                </ClassMap>
-                </ECCustomAttributes>
-                <ECProperty propertyName='Code' typeName='string' />
-                <ECNavigationProperty propertyName='Parent' relationshipName='ElementOwnsChildElements' direction='backward'>
-                    <ECCustomAttributes>
-                        <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>
-                    </ECCustomAttributes>
-                </ECNavigationProperty>
-            </ECEntityClass>
-            <ECEntityClass typeName='BoltElement'>
-                <BaseClass>Element</BaseClass>
-                <ECProperty propertyName='BoltType' typeName='string' />
-            </ECEntityClass>
-            <ECEntityClass typeName='ConnectionElement' modifier='Abstract' >
-                <BaseClass>Element</BaseClass>
-                <ECProperty propertyName='ConnectionType' typeName='string' />
-            </ECEntityClass>
-            <ECEntityClass typeName='SteelBeamConnectionElement'>
-                <BaseClass>ConnectionElement</BaseClass>
-            </ECEntityClass>
-            <ECEntityClass typeName='PipeFlangeConnectionElement'>
-                <BaseClass>ConnectionElement</BaseClass>
-            </ECEntityClass>
-            <ECRelationshipClass typeName='ElementOwnsChildElements' modifier='Abstract' strength='embedding'>
-                <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Element Owns Child Elements'>
-                    <Class class='Element' />
-                </Source>
-                <Target multiplicity='(0..1)' polymorphic='True' roleLabel='Element Owns Child Elements (Reversed)'>
-                    <Class class='Element' />
-                </Target>
-            </ECRelationshipClass>
-            <ECRelationshipClass typeName='SteelBeamConnectionHasBolts' strength='embedding' modifier='Sealed'>
-                <BaseClass>ElementOwnsChildElements</BaseClass>
-                <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Steel Beam Connection Has Bolts'>
-                    <Class class='SteelBeamConnectionElement' />
-                </Source>
-                <Target multiplicity='(0..1)' polymorphic='True' roleLabel='Steel Beam Connection Has Bolts (Reversed)'>
-                    <Class class='BoltElement' />
-                </Target>
-            </ECRelationshipClass>
-            <ECRelationshipClass typeName='PipeFlangeConnectionHasBolts' strength='embedding' modifier='Sealed'>
-                <BaseClass>ElementOwnsChildElements</BaseClass>
-                <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Pipe Flange Connection Has Bolts'>
-                    <Class class='PipeFlangeConnectionElement' />
-                </Source>
-                <Target multiplicity='(0..1)' polymorphic='True' roleLabel='Pipe Flange Connection Has Bolts (Reversed)'>
-                    <Class class='BoltElement' />
-                </Target>
-            </ECRelationshipClass>
-        </ECSchema>)xml")));
 
-    if("without alies")
+    BeFileName testFilePath;
+    BeTest::GetHost().GetDocumentsRoot(testFilePath);
+    testFilePath.AppendToPath(L"ECDb");
+    testFilePath.AppendToPath(L"test.bim");
+    if (m_ecdb.IsDbOpen())
+        m_ecdb.CloseDb();
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.OpenBeSQLiteDb(testFilePath, Db::OpenParams(Db::OpenMode::Readonly)));
+
+    if("Select *")
         {
-        ECSqlStatement stmt;
-        auto statementString = "SELECT 1 FROM bis.SteelBeamConnectionElement a JOIN bis.BoltElement b USING bis.SteelBeamConnectionHasBolts";
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, statementString));
+        auto statementString = "SELECT * FROM bis.Element a JOIN bis.Element b USING bis.ElementRefersToElements c FORWARD LIMIT 1";
+        auto expected = JsonValue(R"json([{"CodeScope":{"id":"0x1b","relClassName":"BisCore.ElementScopesCode"},"CodeScope_1":{"id":"0x11","relClassName":"BisCore.ElementScopesCode"},"CodeSpec":{"id":"0x1d","relClassName":"BisCore.CodeSpecSpecifiesCode"},"CodeSpec_1":{"id":"0x10","relClassName":"BisCore.CodeSpecSpecifiesCode"},"CodeValue":"A","CodeValue_1":"d:\\dgn\\mf3.dgn","LastMod":"2017-07-25T20:44:59.726Z","LastMod_1":"2017-07-25T20:44:59.657Z","Model":{"id":"0x1","relClassName":"BisCore.ModelContainsElements"},"Model_1":{"id":"0x11","relClassName":"BisCore.ModelContainsElements"},"Parent":{"id":"0x1b","relClassName":"BisCore.SubjectOwnsPartitionElements"},"UserLabel_1":"d:\\dgn\\mf3.dgn","className":"BisCore.PhysicalPartition","className_1":"BisCore.RepositoryLink","className_2":"BisCore.PartitionOriginatesFromRepository","id":"0x1c","id_1":"0x12","id_2":"0x1","sourceClassName":"BisCore.PhysicalPartition","sourceId":"0x1c","targetClassName":"BisCore.RepositoryLink","targetId":"0x12"}])json");  
+        auto actual = GetHelper().ExecuteSelectECSql(statementString);
+
+        ASSERT_EQ(expected, actual);
         }
 
-    if("with alies")
+    if("Select with alias")
         {
-        ECSqlStatement stmt;
-        auto statementString = "SELECT 1 FROM bis.SteelBeamConnectionElement a JOIN bis.BoltElement b USING bis.SteelBeamConnectionHasBolts c";
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, statementString));
+        auto statementString = "SELECT c.* FROM bis.Element a JOIN bis.Element b USING bis.ElementRefersToElements c FORWARD LIMIT 1";
+        auto expected = JsonValue(R"json([{"className":"BisCore.PartitionOriginatesFromRepository","id":"0x1","sourceClassName":"BisCore.PhysicalPartition","sourceId":"0x1c","targetClassName":"BisCore.RepositoryLink","targetId":"0x12"}])json");
+        auto actual = GetHelper().ExecuteSelectECSql(statementString);
+
+        ASSERT_EQ(expected, actual);
         }
 
-    if("without alies and FORWARD")
+    if("Select with alias")
         {
-        ECSqlStatement stmt;
-        auto statementString = "SELECT 1 FROM bis.SteelBeamConnectionElement a JOIN bis.BoltElement b USING bis.SteelBeamConnectionHasBolts FORWARD";
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, statementString));
-        }
-
-    if("with alies and FORWARD")
-        {
-        ECSqlStatement stmt;
-        auto statementString = "SELECT 1 FROM bis.SteelBeamConnectionElement a JOIN bis.BoltElement b USING bis.SteelBeamConnectionHasBolts c FORWARD";
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, statementString));
-        }
-
-    if("without alies and BACKWARD")
-        {
-        ECSqlStatement stmt;
-        auto statementString = "SELECT 1 FROM bis.SteelBeamConnectionElement a JOIN bis.BoltElement b USING bis.SteelBeamConnectionHasBolts BACKWARD";
-        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, statementString)) << "Invalid join direction BACKWARD in RelationshipJoin [Direction: BACKWARD]. Either specify FORWARD or omit the direction as the direction can be unambiguously implied in this ECSQL.";
-        }
-
-    if("with alies and BACKWARD")
-        {
-        ECSqlStatement stmt;
-        auto statementString = "SELECT 1 FROM bis.SteelBeamConnectionElement a JOIN bis.BoltElement b USING bis.SteelBeamConnectionHasBolts c BACKWARD";
-        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, statementString)) << "Invalid join direction BACKWARD in RelationshipJoin [Direction: BACKWARD]. Either specify FORWARD or omit the direction as the direction can be unambiguously implied in this ECSQL.";
+        auto statementString = "SELECT c.ECInstanceId Id, c.ECClassId Class FROM bis.Element a JOIN bis.Element b USING bis.ElementRefersToElements c FORWARD LIMIT 10";
+        auto expected = JsonValue(R"json([{"Class":168,"Id":1},{"Class":168,"Id":2},{"Class":168,"Id":3},{"Class":168,"Id":4},{"Class":168,"Id":5},{"Class":104,"Id":11},{"Class":104,"Id":12},{"Class":104,"Id":13},{"Class":104,"Id":14}])json");
+        auto actual = GetHelper().ExecuteSelectECSql(statementString);
+        
+        ASSERT_EQ(expected, actual);
         }
     }
 END_ECDBUNITTESTS_NAMESPACE

@@ -1915,25 +1915,26 @@ BentleyStatus ECSqlParser::ParseTableNodeRef(std::unique_ptr<ClassRefExp>& exp, 
     if (SUCCESS != ParseTableNodeWithOptMemberCall(table_node, *tableNode.getChild(0/*table_node_with_opt_member_call*/), ecsqlType, PolymorphicInfo::All(), false))
         return ERROR;
 
-    std::unique_ptr<RangeClassRefExp> rangeClassRef;
-    rangeClassRef = std::move(table_node);
-
-    if (tableNode.count() == 2)
+    if (tableNode.count() == 1)
         {
-        OSQLParseNode const* table_primary_as_range_column = tableNode.getChild(1/*table_primary_as_range_column*/);
-        if (table_primary_as_range_column->count() > 0)
-            {
-            OSQLParseNode* table_alias = table_primary_as_range_column->getChild(1);
-            OSQLParseNode* opt_column_commalist = table_primary_as_range_column->getChild(2);
-            if (opt_column_commalist->count() > 0)
-                {
-                BeAssert(false && "Range column not supported");
-                return ERROR;
-                }
+        exp = std::move(table_node);
+        return SUCCESS;
+        }
 
-            if (!table_alias->getTokenValue().empty())
-                rangeClassRef->SetAlias(table_alias->getTokenValue());
+    std::unique_ptr<RangeClassRefExp> rangeClassRef = std::move(table_node);
+    OSQLParseNode const* table_primary_as_range_column = tableNode.getChild(1/*table_primary_as_range_column*/);
+    if (table_primary_as_range_column->count() > 0)
+        {
+        OSQLParseNode* table_alias = table_primary_as_range_column->getChild(1);
+        OSQLParseNode* opt_column_commalist = table_primary_as_range_column->getChild(2);
+        if (opt_column_commalist->count() > 0)
+            {
+            BeAssert(false && "Range column not supported");
+            return ERROR;
             }
+
+        if (!table_alias->getTokenValue().empty())
+            rangeClassRef->SetAlias(table_alias->getTokenValue());
         }
 
     exp = std::move(rangeClassRef);
