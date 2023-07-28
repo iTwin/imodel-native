@@ -62,8 +62,9 @@ struct CachedQueryAdaptor final: std::enable_shared_from_this<CachedQueryAdaptor
         rapidjson::Document m_cachedXmlDoc;
         Db const* m_conn;
         bool m_usePrimaryConn;
+        bool m_enableExperimentalFeatures;
     public:
-        CachedQueryAdaptor() :m_cachedXmlDoc(&m_allocator, 1024, &m_stackAllocator), m_usePrimaryConn(false) { m_cachedXmlDoc.SetArray(); }
+        CachedQueryAdaptor() :m_cachedXmlDoc(&m_allocator, 1024, &m_stackAllocator), m_usePrimaryConn(false), m_enableExperimentalFeatures(false) { m_cachedXmlDoc.SetArray(); }
         ECSqlStatement& GetStatement() { return m_stmt; }
         QueryJsonAdaptor& GetJsonAdaptor();
         rapidjson::Document& ClearAndGetCachedXmlDocument() { m_cachedXmlDoc.Clear();  return m_cachedXmlDoc; }
@@ -72,6 +73,10 @@ struct CachedQueryAdaptor final: std::enable_shared_from_this<CachedQueryAdaptor
         void SetUsePrimaryConn(bool val) { m_usePrimaryConn = val; }
         Db const* GetWorkerConn() const { return m_conn; }
         void SetWorkerConn(Db const& conn) { m_conn = &conn; }
+
+        bool AreExperimentalFeaturesEnabled() const { return m_enableExperimentalFeatures; }
+        void SetExperimentalFeatures(const bool val) { m_enableExperimentalFeatures = val; }
+
         std::shared_ptr<CachedQueryAdaptor> Shared() { return shared_from_this(); }
         static std::shared_ptr<CachedQueryAdaptor> Make() {
             return std::make_shared<CachedQueryAdaptor>();
@@ -102,7 +107,7 @@ struct QueryAdaptorCache final {
     public:
         QueryAdaptorCache(CachedConnection& conn, uint32_t maxCacheEntries = kDefaultCacheSize):m_conn(conn), m_maxEntries(maxCacheEntries){}
         ~QueryAdaptorCache(){}
-        std::shared_ptr<CachedQueryAdaptor> TryGet(Utf8CP ecsql, bool usePrimaryConn, bool suppressLogError, ECSqlStatus& status, std::string& ecsql_error, const bool ignoreCache = false);
+        std::shared_ptr<CachedQueryAdaptor> TryGet(Utf8CP ecsql, bool usePrimaryConn, bool suppressLogError, ECSqlStatus& status, std::string& ecsql_error, const bool areExperimentalFeaturesEnabled = false);
         void Reset() { m_cache.clear(); }
         void SetMaxCacheSize(uint32_t n) { if (n < QueryAdaptorCache::kDefaultCacheSize) return; m_maxEntries = n; }
         CachedConnection& GetConnection() {return m_conn;}

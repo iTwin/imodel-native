@@ -243,15 +243,6 @@ TEST_F(ConcurrentQueryFixture, InterruptCheck_Timeout) {
     ASSERT_EQ(r->GetStatus(), QueryResponse::Status::Timeout);
 }
 
-class IssueListener : public ECN::IIssueListener
-    {
-    mutable bvector<Utf8String> m_issues;
-    void _OnIssueReported(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, Utf8CP message) const override { m_issues.push_back(message); }
-    public:
-    Utf8StringCR GetLastError() const { return m_issues.back();}
-    void ClearMessages() { m_issues.clear(); }
-    };
-
 TEST_F(ConcurrentQueryFixture, ConcurrentInstanceQueries)
     {
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("ExperimentalFeaturesConcurrentQueries.ecdb"));
@@ -314,10 +305,11 @@ TEST_F(ConcurrentQueryFixture, ConcurrentInstanceQueries)
     disablePragmaStmt.Finalize();
 
     // Non-concurrent instance query should now fail since experimental features were disabled with PRAGMA
-    IssueListener listener;
-    m_ecdb.AddIssueListener(listener);
+    ECIssueListener listener(m_ecdb);
     EXPECT_EQ(ECSqlStatus::InvalidECSql, experimentalStmt.Prepare(m_ecdb, "SELECT $ -> name FROM meta.ECClassDef WHERE Description='Used to define a supplemental schema and its purpose'"));
-    EXPECT_STREQ(listener.GetLastError().c_str(), errorMsg);
+    const auto lastIssue = listener.GetIssue();
+    ASSERT_TRUE(lastIssue.has_value());
+    EXPECT_STREQ(lastIssue.message.c_str(), errorMsg);
     experimentalStmt.Finalize();
     }
 

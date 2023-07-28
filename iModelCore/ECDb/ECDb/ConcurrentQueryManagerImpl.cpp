@@ -57,7 +57,7 @@ int QueryRetryHandler::_OnBusy(int count) const {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-std::shared_ptr<CachedQueryAdaptor> QueryAdaptorCache::TryGet(Utf8CP ecsql, bool usePrimaryConn, bool suppressLogError, ECSqlStatus& status, std::string& ecsql_error, const bool ignoreCache) {
+std::shared_ptr<CachedQueryAdaptor> QueryAdaptorCache::TryGet(Utf8CP ecsql, bool usePrimaryConn, bool suppressLogError, ECSqlStatus& status, std::string& ecsql_error, const bool areExperimentalFeaturesEnabled) {
     auto const hashCode = ECSqlStatement::GetHashCode(ecsql);
     auto iter = std::find_if(m_cache.begin(), m_cache.end(), [&ecsql,&hashCode,&usePrimaryConn] (std::shared_ptr<CachedQueryAdaptor>& entry) {
         return entry->GetUsePrimaryConn() == usePrimaryConn && entry->GetStatement().GetHashCode() == hashCode && strcmp(entry->GetStatement().GetECSql(), ecsql) == 0;
@@ -88,12 +88,19 @@ std::shared_ptr<CachedQueryAdaptor> QueryAdaptorCache::TryGet(Utf8CP ecsql, bool
         entry->GetStatement().Reset();
         entry->GetStatement().ClearBindings();
 
-        if (ignoreCache)
+        // If a query with an experimental feature has been executed successfully, the prepared statement for that query will be available from the query adaptor cache.
+        // If the same query is called again, but this time with experimental features disabled, the adaptor will provide the prepared statement and the query will succeed, when in fact, we expected it to fail.
+        // To handle this scenario, we need to re-prepare the statement if experimental features are disabled, but were previously enabled for the same query.
+        // That way, the query will fail when it's prepared with the correct error.
+        // Tracking the status of the experimental features in the CachedQueryAdaptor will also allow us to avoid unnecessary re-prepares for non-experimental queries
+        if (entry->AreExperimentalFeaturesEnabled() && !areExperimentalFeaturesEnabled)
             {
-            // Experimental Features are disabled, so finalize and re-prepare the statement to handle error
             entry->GetStatement().Finalize();
             if (!prepareStatement(*entry))
                 return nullptr;
+            
+            // Update the new experimental features status in the adaptor, to avoid unnecessary re-prepares when same query is called again in the future.
+            entry->SetExperimentalFeatures(areExperimentalFeaturesEnabled);
             }
         return entry;
     }
@@ -103,6 +110,8 @@ std::shared_ptr<CachedQueryAdaptor> QueryAdaptorCache::TryGet(Utf8CP ecsql, bool
     newCachedAdaptor->SetUsePrimaryConn(usePrimaryConn);
     if (!prepareStatement(*newCachedAdaptor))
         return nullptr;
+
+    newCachedAdaptor->SetExperimentalFeatures(areExperimentalFeaturesEnabled); // Track the status of experimental features in the adaptor to avoid unnecessary re-prepares when same query is called again
 
     while (m_cache.size() > m_maxEntries)
         m_cache.pop_back();
@@ -1191,44 +1200,44 @@ void QueryHelper::Execute(QueryAdaptorCache& adaptorCache, RunnableRequestBase& 
 
         // Cache experimental features status to be reset after concurrent query is done
         const auto experimentalFeaturesStatusCached = adaptorCache.GetConnection().GetPrimaryDb().GetECSqlConfig().GetExperimentalFeaturesEnabled();
-        auto updateExperimentalFeatures = [&adaptorCache] (const bool experimentalFeaturesStatus) { adaptorCache.GetConnection().GetPrimaryDb().GetECSqlConfig().SetExperimentalFeaturesEnabled(experimentalFeaturesStatus); };
+        auto restorePreviousExperimentalFlag = [&adaptorCache, &experimentalFeaturesStatusCached] () { adaptorCache.GetConnection().GetPrimaryDb().GetECSqlConfig().SetExperimentalFeaturesEnabled(experimentalFeaturesStatusCached); };
 
         // Enable/Disable experimental features just for this query
-        const auto experimentalFeaturesInRequest = runnableRequest.AreExperimentalFeaturesEnabledForRequest();
-        updateExperimentalFeatures(experimentalFeaturesInRequest);
- 
-        auto adaptor = adaptorCache.TryGet(sql.c_str(), request.UsePrimaryConnection(), request.GetSuppressLogErrors(), status, err, !experimentalFeaturesInRequest);
+        const auto areExperimentalFeaturesEnabled = runnableRequest.AreExperimentalFeaturesEnabledForRequest();
+        adaptorCache.GetConnection().GetPrimaryDb().GetECSqlConfig().SetExperimentalFeaturesEnabled(areExperimentalFeaturesEnabled);
+
+        auto adaptor = adaptorCache.TryGet(sql.c_str(), request.UsePrimaryConnection(), request.GetSuppressLogErrors(), status, err, areExperimentalFeaturesEnabled);
         if (adaptor == nullptr) {
             if (status.IsSQLiteError()) {
                 if (status.GetSQLiteError() == BE_SQLITE_INTERRUPT) {
                     if (runnableRequest.IsCancelled()) {
                         runnableRequest.SetResponse(runnableRequest.CreateCancelResponse());
                         // Reset experimental features status after failure
-                        updateExperimentalFeatures(experimentalFeaturesStatusCached);
+                        restorePreviousExperimentalFlag();
                         return;
                     } else if (runnableRequest.IsTimeExceeded()){
                         runnableRequest.SetResponse(runnableRequest.CreateTimeoutResponse());
                         // Reset experimental features status after failure
-                        updateExperimentalFeatures(experimentalFeaturesStatusCached);
+                        restorePreviousExperimentalFlag();
                         return;
                     }
                 }
             }
             setError(QueryResponse::Status::Error_ECSql_PreparedFailed, err);
             // Reset experimental features status after failure
-            updateExperimentalFeatures(experimentalFeaturesStatusCached);
+            restorePreviousExperimentalFlag();
             return;
         }
         if (!request.GetArgs().TryBindTo(adaptor->GetStatement(), err)) {
             setError(QueryResponse::Status::Error_ECSql_BindingFailed, err);
             // Reset experimental features status after failure
-            updateExperimentalFeatures(experimentalFeaturesStatusCached);
+            restorePreviousExperimentalFlag();
             return;
         }
         BindLimits(adaptor->GetStatement(), request.GetLimit());
         QueryHelper::Execute(*adaptor, runnableRequest);
         // Reset experimental features status after query executes
-        updateExperimentalFeatures(experimentalFeaturesStatusCached);
+        restorePreviousExperimentalFlag();
     } else {
         setError(QueryResponse::Status::Error, "unsupported kind of request");
     }
