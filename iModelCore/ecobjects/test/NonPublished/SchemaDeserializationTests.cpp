@@ -1646,10 +1646,10 @@ TEST_F(SchemaDeserializationTest, AliasesForPruneSchemasAreResetForEachSchema)
             </ECSchema>)xml";
 
     StringSchemaLocater locater;
-    locater.AddSchemaString("Ref", refSchemaXml);
-    locater.AddSchemaString("OtherSchema", otherSchemaXml);
-    locater.AddSchemaString("BadRef", badSchemaXml);
-    locater.AddSchemaString("Test", schemaXml);
+    locater.AddSchemaString(SchemaKey("Ref", 1, 1), refSchemaXml);
+    locater.AddSchemaString(SchemaKey("OtherSchema", 1, 1), otherSchemaXml);
+    locater.AddSchemaString(SchemaKey("BadRef", 1, 1), badSchemaXml);
+    locater.AddSchemaString(SchemaKey("Test", 1, 1), schemaXml);
     context->AddSchemaLocater(locater);
 
     SchemaKey testKey ("Test", 1, 0);

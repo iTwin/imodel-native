@@ -90,20 +90,3 @@ MD5 LocalizationResourceKeyDefinition::_ComputeHash() const
         ADD_STR_VALUE_TO_HASH(md5, LOCALIZATION_DEFINITION_XML_ATTRIBUTE_DEFAULTVALUE, m_defaultValue);
     return md5;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool LocalizationResourceKeyDefinition::_ShallowEqual(PresentationKeyCR other) const
-    {
-    if (!PrioritizedPresentationKey::_ShallowEqual(other))
-        return false;
-
-    LocalizationResourceKeyDefinition const* otherRule = dynamic_cast<LocalizationResourceKeyDefinition const*>(&other);
-    if (nullptr == otherRule)
-        return false;
-
-    return m_id == otherRule->m_id
-        && m_key == otherRule->m_key
-        && m_defaultValue == otherRule->m_defaultValue;
-    }

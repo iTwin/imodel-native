@@ -72,7 +72,6 @@ protected:
 
     //! Compute rule hash.
     ECPRESENTATION_EXPORT virtual MD5 _ComputeHash() const override;
-    ECPRESENTATION_EXPORT virtual bool _ShallowEqual(PresentationKeyCR other) const override;
 
 public:
     ConditionalCustomizationRule() {}

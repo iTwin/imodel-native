@@ -481,6 +481,80 @@ public:
             THROW_JS_EXCEPTION(rc.GetStatusAsString());
         }
     }
+    void SchemaSyncSetDefaultUri(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_STRING(0, schemaSyncDbUriStr);
+        LastErrorListener lastError(m_ecdb);
+        auto rc = m_ecdb.Schemas().GetSchemaSync().SetDefaultSyncDbUri(schemaSyncDbUriStr.c_str());
+        if (rc != SchemaSync::Status::OK) {
+            if (lastError.HasError()) {
+                THROW_JS_EXCEPTION(lastError.GetLastError().c_str());
+            } else {
+                THROW_JS_EXCEPTION(Utf8PrintfString("fail to set default shared schema channel uri: %s", schemaSyncDbUriStr.c_str()).c_str());
+            }
+        }
+    }
+    Napi::Value SchemaSyncGetDefaultUri(NapiInfoCR info) {
+        auto& syncDbUri = m_ecdb.Schemas().GetSchemaSync().GetDefaultSyncDbUri();
+        if (syncDbUri.IsEmpty())
+            return Env().Undefined();
+
+        return Napi::String::New(Env(), syncDbUri.GetUri().c_str());
+        }
+    void SchemaSyncInit(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_STRING(0, schemaSyncDbUriStr);
+        auto syncDbUri = SchemaSync::SyncDbUri(schemaSyncDbUriStr.c_str());
+        LastErrorListener lastError(m_ecdb);
+        auto rc = m_ecdb.Schemas().GetSchemaSync().Init(syncDbUri);
+        if (rc != SchemaSync::Status::OK) {
+            if (lastError.HasError()) {
+                THROW_JS_EXCEPTION(lastError.GetLastError().c_str());
+            } else {
+                THROW_JS_EXCEPTION(Utf8PrintfString("fail to initialize shared schema channel: %s", schemaSyncDbUriStr.c_str()).c_str());
+            }
+        }
+    }
+
+    Napi::Value SchemaSyncEnabled(NapiInfoCR info) {
+        const auto isEnabled = !m_ecdb.Schemas().GetSchemaSync().GetInfo().IsEmpty();
+        return Napi::Boolean::New(Env(), isEnabled);
+    }
+
+    Napi::Value SchemaSyncGetLocalDbInfo(NapiInfoCR info) {
+        auto localDbInfo = m_ecdb.Schemas().GetSchemaSync().GetInfo();
+        if (localDbInfo.IsEmpty()) {
+            return Env().Undefined();
+        }
+        BeJsNapiObject obj(Env());
+        localDbInfo.To(obj);
+        return obj;
+    }
+
+    Napi::Value SchemaSyncGetSyncDbInfo(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_STRING(0, schemaSyncDbUriStr);
+         auto syncDbUri = SchemaSync::SyncDbUri(schemaSyncDbUriStr.c_str());
+         auto syncDbInfo = syncDbUri.GetInfo();
+         if (syncDbInfo.IsEmpty()) {
+            return Env().Undefined();
+        }
+        BeJsNapiObject obj(Env());
+        syncDbInfo.To(obj);
+        return obj;
+    }
+
+    void SchemaSyncPull(NapiInfoCR info) {
+        OPTIONAL_ARGUMENT_STRING(0, schemaSyncDbUriStr);
+        auto syncDbUri = SchemaSync::SyncDbUri(schemaSyncDbUriStr.c_str());
+        LastErrorListener lastError(m_ecdb);
+        auto rc = m_ecdb.Schemas().GetSchemaSync().Pull(syncDbUri);
+        if (rc != SchemaSync::Status::OK) {
+            if (lastError.HasError()) {
+                THROW_JS_EXCEPTION(lastError.GetLastError().c_str());
+            } else {
+                THROW_JS_EXCEPTION(Utf8PrintfString("fail to pull changes from channel: %s", schemaSyncDbUriStr.c_str()).c_str());
+            }
+        }
+    }
+
     static Napi::Value EnableSharedCache(NapiInfoCR info) {
         REQUIRE_ARGUMENT_BOOL(0, enabled);
         DbResult r = BeSQLiteLib::EnableSharedCache(enabled);
@@ -503,6 +577,13 @@ public:
             InstanceMethod("getLastInsertRowId", &NativeECDb::GetLastInsertRowId),
             InstanceMethod("importSchema", &NativeECDb::ImportSchema),
             InstanceMethod("isOpen", &NativeECDb::IsOpen),
+            InstanceMethod("schemaSyncSetDefaultUri", &NativeECDb::SchemaSyncSetDefaultUri),
+            InstanceMethod("schemaSyncGetDefaultUri", &NativeECDb::SchemaSyncGetDefaultUri),
+            InstanceMethod("schemaSyncPull", &NativeECDb::SchemaSyncPull),
+            InstanceMethod("schemaSyncInit", &NativeECDb::SchemaSyncInit),
+            InstanceMethod("schemaSyncEnabled", &NativeECDb::SchemaSyncEnabled),
+            InstanceMethod("schemaSyncGetLocalDbInfo", &NativeECDb::SchemaSyncGetLocalDbInfo),
+            InstanceMethod("schemaSyncGetSyncDbInfo", &NativeECDb::SchemaSyncGetSyncDbInfo),
             InstanceMethod("openDb", &NativeECDb::OpenDb),
             InstanceMethod("saveChanges", &NativeECDb::SaveChanges),
             StaticMethod("enableSharedCache", &NativeECDb::EnableSharedCache),
@@ -1775,16 +1856,99 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
             THROW_JS_EXCEPTION(rc.GetStatusAsString());
         }
     }
+    void SchemaSyncSetDefaultUri(NapiInfoCR info) {
+        RequireDbIsOpen(info);
+        REQUIRE_ARGUMENT_STRING(0, schemaSyncDbUriStr);
+        LastErrorListener lastError(GetDgnDb());
+        auto rc = GetDgnDb().Schemas().GetSchemaSync().SetDefaultSyncDbUri(schemaSyncDbUriStr.c_str());
+        if (rc != SchemaSync::Status::OK) {
+            if (lastError.HasError()) {
+                THROW_JS_EXCEPTION(lastError.GetLastError().c_str());
+            } else {
+                THROW_JS_EXCEPTION(Utf8PrintfString("fail to set default shared schema channel uri: %s", schemaSyncDbUriStr.c_str()).c_str());
+            }
+        }
+    }
+    Napi::Value SchemaSyncGetDefaultUri(NapiInfoCR info) {
+        RequireDbIsOpen(info);
+        auto& syncDbUri = GetDgnDb().Schemas().GetSchemaSync().GetDefaultSyncDbUri();
+        if (syncDbUri.IsEmpty())
+            return Env().Undefined();
+
+        return Napi::String::New(Env(), syncDbUri.GetUri().c_str());
+        }
+    void SchemaSyncInit(NapiInfoCR info) {
+        RequireDbIsOpen(info);
+        REQUIRE_ARGUMENT_STRING(0, schemaSyncDbUriStr);
+        auto syncDbUri = SchemaSync::SyncDbUri(schemaSyncDbUriStr.c_str());
+        LastErrorListener lastError(GetDgnDb());
+        auto rc = GetDgnDb().Schemas().GetSchemaSync().Init(syncDbUri);
+        if (rc != SchemaSync::Status::OK) {
+            if (lastError.HasError()) {
+                THROW_JS_EXCEPTION(lastError.GetLastError().c_str());
+            } else {
+                THROW_JS_EXCEPTION(Utf8PrintfString("fail to initialize shared schema channel: %s", schemaSyncDbUriStr.c_str()).c_str());
+            }
+        }
+    }
+
+    Napi::Value SchemaSyncEnabled(NapiInfoCR info) {
+        RequireDbIsOpen(info);
+        const auto isEnabled = !GetDgnDb().Schemas().GetSchemaSync().GetInfo().IsEmpty();
+        return Napi::Boolean::New(Env(), isEnabled);
+    }
+
+    Napi::Value SchemaSyncGetLocalDbInfo(NapiInfoCR info) {
+        RequireDbIsOpen(info);
+        auto localDbInfo = GetDgnDb().Schemas().GetSchemaSync().GetInfo();
+        if (localDbInfo.IsEmpty()) {
+            return Env().Undefined();
+        }
+        BeJsNapiObject obj(Env());
+        localDbInfo.To(obj);
+        return obj;
+    }
+
+    Napi::Value SchemaSyncGetSyncDbInfo(NapiInfoCR info) {
+        RequireDbIsOpen(info);
+        REQUIRE_ARGUMENT_STRING(0, schemaSyncDbUriStr);
+         auto syncDbUri = SchemaSync::SyncDbUri(schemaSyncDbUriStr.c_str());
+         auto syncDbInfo = syncDbUri.GetInfo();
+         if (syncDbInfo.IsEmpty()) {
+            return Env().Undefined();
+        }
+        BeJsNapiObject obj(Env());
+        syncDbInfo.To(obj);
+        return obj;
+    }
+
+    void SchemaSyncPull(NapiInfoCR info) {
+        RequireDbIsOpen(info);
+        OPTIONAL_ARGUMENT_STRING(0, schemaSyncDbUriStr);
+        auto syncDbUri = SchemaSync::SyncDbUri(schemaSyncDbUriStr.c_str());
+        LastErrorListener lastError(GetDgnDb());
+        auto rc = GetDgnDb().PullSchemaChanges(syncDbUri);
+        if (rc != SchemaSync::Status::OK) {
+            if (lastError.HasError()) {
+                THROW_JS_EXCEPTION(lastError.GetLastError().c_str());
+            } else {
+                THROW_JS_EXCEPTION(Utf8PrintfString("fail to pull changes from schema sync db: %s", schemaSyncDbUriStr.c_str()).c_str());
+            }
+        }
+    }
     Napi::Value ImportSchemas(NapiInfoCR info)
         {
         RequireDbIsOpen(info);
         REQUIRE_ARGUMENT_STRING_ARRAY(0, schemaFileNames);
-        REQUIRE_ARGUMENT_ANY_OBJ(1, jsOpts);
+        OPTIONAL_ARGUMENT_ANY_OBJ(1, jsOpts, Napi::Object::New(Env()));
         ECSchemaReadContextPtr customContext = nullptr;
 
         JsInterop::SchemaImportOptions options;
-        const auto& maybeEcSchemaContextVal = jsOpts.Get(JsInterop::json_ecSchemaXmlContext());
+        const auto maybeEcSchemaContextVal = jsOpts.Get(JsInterop::json_ecSchemaXmlContext());
         options.m_schemaLockHeld = jsOpts.Get(JsInterop::json_schemaLockHeld()).ToBoolean();
+        auto jsSyncDbUri = jsOpts.Get(JsInterop::json_schemaSyncDbUri());
+        if (jsSyncDbUri.IsString())
+            options.m_schemaSyncDbUri = jsSyncDbUri.ToString().Utf8Value();
         if (!maybeEcSchemaContextVal.IsUndefined())
             {
             if (!NativeECSchemaXmlContext::HasInstance(maybeEcSchemaContextVal))
@@ -1801,10 +1965,13 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         {
         RequireDbIsOpen(info);
         REQUIRE_ARGUMENT_STRING_ARRAY(0, schemaFileNames);
-        REQUIRE_ARGUMENT_ANY_OBJ(1, jsOpts);
-        JsInterop::SchemaImportOptions opts;
-        opts.m_schemaLockHeld = jsOpts.Get(JsInterop::json_schemaLockHeld()).ToBoolean();
-        DbResult result = JsInterop::ImportSchemas(GetDgnDb(), schemaFileNames, SchemaSourceType::XmlString, opts);
+        OPTIONAL_ARGUMENT_ANY_OBJ(1, jsOpts, Napi::Object::New(Env()));
+        JsInterop::SchemaImportOptions options;
+        options.m_schemaLockHeld = jsOpts.Get(JsInterop::json_schemaLockHeld()).ToBoolean();
+        auto jsSyncDbUri = jsOpts.Get(JsInterop::json_schemaSyncDbUri());
+        if (jsSyncDbUri.IsString())
+            options.m_schemaSyncDbUri = jsSyncDbUri.ToString().Utf8Value();
+        DbResult result = JsInterop::ImportSchemas(GetDgnDb(), schemaFileNames, SchemaSourceType::XmlString, options);
         return Napi::Number::New(Env(), (int)result);
         }
 
@@ -2427,6 +2594,13 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
             InstanceMethod("startCreateChangeset", &NativeDgnDb::StartCreateChangeset),
             InstanceMethod("startProfiler", &NativeDgnDb::StartProfiler),
             InstanceMethod("stopProfiler", &NativeDgnDb::StopProfiler),
+            InstanceMethod("schemaSyncSetDefaultUri", &NativeDgnDb::SchemaSyncSetDefaultUri),
+            InstanceMethod("schemaSyncGetDefaultUri", &NativeDgnDb::SchemaSyncGetDefaultUri),
+            InstanceMethod("schemaSyncPull", &NativeDgnDb::SchemaSyncPull),
+            InstanceMethod("schemaSyncInit", &NativeDgnDb::SchemaSyncInit),
+            InstanceMethod("schemaSyncEnabled", &NativeDgnDb::SchemaSyncEnabled),
+            InstanceMethod("schemaSyncGetLocalDbInfo", &NativeDgnDb::SchemaSyncGetLocalDbInfo),
+            InstanceMethod("schemaSyncGetSyncDbInfo", &NativeDgnDb::SchemaSyncGetSyncDbInfo),
             InstanceMethod("updateElement", &NativeDgnDb::UpdateElement),
             InstanceMethod("updateElementAspect", &NativeDgnDb::UpdateElementAspect),
             InstanceMethod("updateElementGeometryCache", &NativeDgnDb::UpdateElementGeometryCache),
@@ -2616,6 +2790,74 @@ struct NativeRevisionUtility : BeObjectWrap<NativeRevisionUtility>
         });
 
         exports.Set("RevisionUtility", t);
+
+        SET_CONSTRUCTOR(t)
+        }
+    };
+
+//=======================================================================================
+//  Projects the SchemaUtility class into JS.
+//! @bsiclass
+//=======================================================================================
+struct NativeSchemaUtility : BeObjectWrap<NativeSchemaUtility>
+    {
+    private:
+        DEFINE_CONSTRUCTOR
+
+    public:
+        NativeSchemaUtility(NapiInfoCR info) : BeObjectWrap<NativeSchemaUtility>(info) {}
+        ~NativeSchemaUtility() {SetInDestructor();}
+
+    static Napi::Value ConvertCustomAttributes(NapiInfoCR info)
+        {
+        return ConvertSchemas(info, true);
+        }
+
+    static Napi::Value ConvertEC2XmlSchemas(NapiInfoCR info)
+        {
+        return ConvertSchemas(info, false);
+        }
+
+    static Napi::Value ConvertSchemas(NapiInfoCR info, bool convertCA)
+        {
+        REQUIRE_ARGUMENT_STRING_ARRAY(0, inputXmlStrings);
+
+        ECSchemaReadContextPtr customContext = nullptr;
+        if (ARGUMENT_IS_PRESENT(1)) {
+            const auto& maybeEcSchemaContextVal = info[1].As<Napi::Object>();
+            if (!maybeEcSchemaContextVal.IsUndefined())
+                {
+                if (!NativeECSchemaXmlContext::HasInstance(maybeEcSchemaContextVal))
+                    THROW_JS_TYPE_EXCEPTION("if ecSchemaXmlContext is passed as an argument, it must be an object of type NativeECSchemaXmlContext")
+                customContext = NativeECSchemaXmlContext::Unwrap(maybeEcSchemaContextVal.As<Napi::Object>())->GetContext();
+                }
+        }
+
+        bvector<Utf8String> outputXmlStrings;
+        BentleyStatus result = JsInterop::ConvertSchemas(inputXmlStrings, outputXmlStrings, customContext, convertCA);
+        if (result != BentleyStatus::SUCCESS)
+            {
+            Utf8String error = convertCA ? "Failed to convert custom attributes of given schemas" : "Failed to convert EC2 Xml schemas";
+            THROW_JS_EXCEPTION(error.c_str());
+            }
+
+        uint32_t index = 0;
+        auto ret = Napi::Array::New(info.Env(), outputXmlStrings.size());
+        for (auto& outputXmlString : outputXmlStrings)
+            ret.Set(index++, Napi::String::New(info.Env(), outputXmlString.c_str()));
+
+        return ret;
+        }
+
+    static void Init(Napi::Env& env, Napi::Object exports)
+        {
+        Napi::HandleScope scope(env);
+        Napi::Function t = DefineClass(env, "SchemaUtility", {
+            StaticMethod("convertCustomAttributes", &NativeSchemaUtility::ConvertCustomAttributes),
+            StaticMethod("convertEC2XmlSchemas", &NativeSchemaUtility::ConvertEC2XmlSchemas),
+        });
+
+        exports.Set("SchemaUtility", t);
 
         SET_CONSTRUCTOR(t)
         }
@@ -5949,6 +6191,7 @@ static Napi::Object registerModule(Napi::Env env, Napi::Object exports) {
     NativeDgnDb::Init(env, exports);
     NativeGeoServices::Init(env, exports);
     NativeRevisionUtility::Init(env, exports);
+    NativeSchemaUtility::Init(env, exports);
     NativeECDb::Init(env, exports);
     NativeChangesetReader::Init(env, exports);
     NativeChangedElementsECDb::Init(env, exports);

@@ -92,7 +92,12 @@ export class NativeLibrary {
   public static load() {
     if (!this._nativeLib) {
       try {
-        this._nativeLib = require(`./${NativeLibrary.archName}/${NativeLibrary.nodeAddonName}`) as typeof IModelJsNative; // eslint-disable-line @typescript-eslint/no-var-requires
+        const platform = os.platform() as NodeJS.Platform | "ios"; // we add "ios"
+        if (platform === "ios" || platform === "android") {
+          this._nativeLib = (process as any)._linkedBinding("iModelJsNative") as typeof IModelJsNative;
+        } else {
+          this._nativeLib = require(`./${NativeLibrary.archName}/${NativeLibrary.nodeAddonName}`) as typeof IModelJsNative; // eslint-disable-line @typescript-eslint/no-var-requires
+        }
       } catch (err: any) {
         err.message += "\nThis error may occur when trying to run an iTwin.js backend without"
           + " having installed the prerequisites. See the following link for all prerequisites:"
@@ -441,7 +446,20 @@ export declare namespace IModelJsNative {
 
   interface SchemaImportOptions {
     readonly schemaLockHeld?: boolean;
+    readonly schemaSyncDbUri?: string;
     readonly ecSchemaXmlContext?: ECSchemaXmlContext;
+  }
+
+  interface SchemaLocalDbInfo {
+    readonly id: string;
+    readonly dataVer: string;
+    readonly lastModUtc: string;
+  }
+
+  interface SchemaSyncDbInfo extends SchemaLocalDbInfo {
+    readonly projectId: string;
+    readonly parentChangesetId: string;
+    readonly parentChangesetIndex?: string;
   }
 
   // ###TODO import from core-common
@@ -455,6 +473,13 @@ export declare namespace IModelJsNative {
   class DgnDb implements IConcurrentQueryManager, SQLiteOps {
     constructor();
     public readonly cloudContainer?: CloudContainer;
+    public schemaSyncSetDefaultUri(syncDbUri: string): void;
+    public schemaSyncGetDefaultUri(): string;
+    public schemaSyncInit(syncDbUri: string): void;
+    public schemaSyncPull(syncDbUri?: string): void;
+    public schemaSyncEnabled(): boolean;
+    public schemaSyncGetLocalDbInfo(): SchemaLocalDbInfo | undefined;
+    public schemaSyncGetSyncDbInfo(syncDbUri: string): SchemaSyncDbInfo | undefined;
     public abandonChanges(): DbResult;
     public abandonCreateChangeset(): void;
     public addChildPropagatesChangesToParentRelationship(schemaName: string, relClassName: string): BentleyStatus;
@@ -639,6 +664,17 @@ export declare namespace IModelJsNative {
     public static recompressRevision(sourceFile: string, targetFile: string, lzmaPropsJson?: string): BentleyStatus;
   }
 
+  /**
+   * The native object for SchemaUtility
+   * @internal
+   */
+  class SchemaUtility {
+    constructor();
+    /** Converts given schemas and their reference schemas to EC3.2 schemas */
+    public static convertCustomAttributes(xmlSchemas: string[], schemaContext?: ECSchemaXmlContext): string[];
+    public static convertEC2XmlSchemas(ec2XmlSchemas: string[], schemaContext?: ECSchemaXmlContext): string[];
+  }
+
   class ECDb implements IDisposable, IConcurrentQueryManager {
     constructor();
     public abandonChanges(): DbResult;
@@ -646,6 +682,13 @@ export declare namespace IModelJsNative {
     public createDb(dbName: string): DbResult;
     public dispose(): void;
     public dropSchema(schemaName: string): void;
+    public schemaSyncSetDefaultUri(syncDbUri: string): void;
+    public schemaSyncGetDefaultUri(): string;
+    public schemaSyncInit(syncDbUri: string): void;
+    public schemaSyncPull(syncDbUri: string | undefined): void;
+    public schemaSyncEnabled(): boolean;
+    public schemaSyncGetLocalDbInfo(): SchemaLocalDbInfo | undefined;
+    public schemaSyncGetSyncDbInfo(): SchemaSyncDbInfo | undefined;
     public getFilePath(): string;
     public importSchema(schemaPathName: string): DbResult;
     public isOpen(): boolean;
