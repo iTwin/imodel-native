@@ -14,7 +14,7 @@
             "program": "${env:OutRoot}Winx64/Product/iModelPlatform-Gtest/iModelPlatformTest.exe",
             "args": [
                 "--gtest_break_on_failure",
-                "--gtest_filter=VersionCompareTestFixture.*"
+                "--gtest_filter=DgnDbTest.ImportSchemaWithLocalChanges"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
@@ -53,7 +53,7 @@
             "program": "${env:OutRoot}Winx64/Product/ECDb-Gtest/ECDbTest.exe",
             "args": [
                 "--gtest_break_on_failure",
-                "--gtest_filter=InstanceReaderFixture.nested_struct"
+                "--gtest_filter=SchemaSyncTestFixture.Test"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

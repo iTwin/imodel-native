@@ -311,8 +311,9 @@ std::vector<RangeClassInfo> FromExp::FindRangeClassRefExpressions() const
         isTableSubQuery = isSubQuery(*old, cur);
         if (cur != nullptr && !isTableSubQuery)
             {
-            if (cur->GetFrom() != this)
-                cur->GetFrom()->FindRangeClassRefs(rangeClassRefs, RangeClassInfo::Scope::Inherited);
+            FromExp const* fromExp = cur->GetFrom();
+            if (fromExp != nullptr && fromExp != this)
+                fromExp->FindRangeClassRefs(rangeClassRefs, RangeClassInfo::Scope::Inherited);
             }
         }
 

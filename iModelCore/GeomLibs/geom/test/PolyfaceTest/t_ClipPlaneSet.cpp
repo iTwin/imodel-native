@@ -147,7 +147,7 @@ TEST(ClipPlaneSet,Undercut2)
     {
     printf (" enter undercut\n");
     auto dtm = PolyfaceWithSinusoidalGrid (20, 20,
-                    0.0, 0.1, 
+                    0.0, 0.1,
                     0.9, 0.15,
                     true);
     dtm->ConvertToVariableSizeSignedOneBasedIndexedFaceLoops ();
@@ -296,7 +296,7 @@ TEST(ClipPlaneSet,LineSelect)
                 cExpected = ClipPlaneContainment::ClipPlaneContainment_StronglyOutside;
             Check::Int ((int)cCrossing, (int)cExpected, "containment by sliver region");
 #ifdef noisyLineSelect
-            GEOMAPI_PRINTF (" (xy0 %g,%g) (xy1 %g,%g) (offset %g) (cCrossing %d)  \n", 
+            GEOMAPI_PRINTF (" (xy0 %g,%g) (xy1 %g,%g) (offset %g) (cCrossing %d)  \n",
                         point0.x, point0.y,
                         point1.x, point1.y,
                         offset, cCrossing);
@@ -333,7 +333,7 @@ TEST(ClipPlaneSet,ClassifySetDifference_ManyLines)
         DPoint3d::From (b,c),
         DPoint3d::From (b,b),
         };
-    
+
     ConvexClipPlaneSet convexOuterClip, convexInnerClip;
     convexOuterClip.AddSweptPolyline (outerBox, DVec3d::From (0,0,1), Angle::FromDegrees (0.0));
     convexInnerClip.AddSweptPolyline (innerBox, DVec3d::From (0,0,1), Angle::FromDegrees (0.0));
@@ -524,13 +524,13 @@ void TestClipper (bvector<DPoint3d> const &points, AlternatingConvexClipTreeNode
             (int)points.size (),
             (int)numTest,
             inSum.Count (), inSum.Mean (), inSum.Max (),
-            outSum.Count (), outSum.Mean (), inSum.Max ());    
+            outSum.Count (), outSum.Mean (), inSum.Max ());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(RecursveClipSets, Test1)
+TEST(RecursiveClipSets, Test1)
     {
     for (size_t numPoints : bvector<size_t>{5, 8, 12, 15, 23, 37, 67})
         {
@@ -928,7 +928,7 @@ TEST(ClipPlaneSet,ClipToSetDifference_MutlipleClips_NoMasks)
     auto convexClipB = ConvexClipPlaneSet::FromXYBox (5,0.1, 12,2.8);
     bvector<BoolTypeForVector> hidden;   // empty vector for arg
     auto convexClipC = ConvexClipPlaneSet::FromXYPolyLine (
-            bvector<DPoint3d> {DPoint3d::From (12, 6, 0), DPoint3d::From (15,0,0)}, 
+            bvector<DPoint3d> {DPoint3d::From (12, 6, 0), DPoint3d::From (15,0,0)},
             hidden, true);
     ClipPlaneSet clipPlaneSet;
     clipPlaneSet.push_back (convexClipA);
@@ -978,7 +978,7 @@ TEST(ClipPlaneSet,ClipToSetDifference_OneClip_MutlipleMasks)
                 DPoint3d::From (10,8,0),
                 DPoint3d::From (0,8,0),
                 DPoint3d::From (-2, -3, 0),
-                }, 
+                },
             hidden, true);
     clip.push_back (outer);
 
@@ -1030,7 +1030,7 @@ TEST(ClipPlaneSet,ClipToSetDifference_MultipleClips_MutlipleMasks)
                 DPoint3d::From (10,8,0),
                 DPoint3d::From (0,8,0),
                 DPoint3d::From (-2, -3, 0),
-                }, 
+                },
             hidden, true);
     auto outerB = ConvexClipPlaneSet::FromXYPolyLine (
             bvector<DPoint3d> {
@@ -1038,7 +1038,7 @@ TEST(ClipPlaneSet,ClipToSetDifference_MultipleClips_MutlipleMasks)
                 DPoint3d::From (19,-3,0),
                 DPoint3d::From (30,0,0),
                 DPoint3d::From (30,1,0),
-                }, 
+                },
             hidden, true);
     clip.push_back (outerA);
     clip.push_back (outerB);
@@ -1091,7 +1091,7 @@ TEST(ClipPlaneSet,ClipToSetDifference_MultipleClips_MutlipleMasks)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(ClipPlane,ClipPlaneToRange)
     {
-    // A range .. happens to contain the origin, but other than that avoids unit points . . 
+    // A range .. happens to contain the origin, but other than that avoids unit points . .
     DRange3d range = DRange3d::From (-3,-2,-4, 1.5, 2.2, 3.2);
     // A segment with non-principal direction . .
     auto segment = DSegment3d::From (-12,-3,4, 5,10, -3);
@@ -1162,7 +1162,7 @@ TEST(ClipPlaneSet,ClipRegion)
                 Check::SaveTransformed (holeL);
             }
         Check::SetTransform (baseTransform);
-    
+
         //Check::SaveTransformed (region);
         DSegment3d segment = DSegment3d::From (DPoint3d::From (5,-10, 0), DPoint3d::From (4,10,1));
         Check::SaveTransformed (segment);
@@ -1629,7 +1629,7 @@ TEST(ClipPlaneSet, ClipMeshToBoolean)
     double c = 0.2;
     for (double y : {-2.0, -0.5, 0.5, 1.5, 3.0, 4.0})
         {
-        bvector<DPoint3d> points = 
+        bvector<DPoint3d> points =
             {
             DPoint3d::From (x0, y, 0),
             DPoint3d::From (x1, y, 0),
@@ -1867,7 +1867,7 @@ static bvector<DPoint3d> s_upperAlignmentPoints{
     {284100.66018494312, -5274146.1525106728, 0.00000000000000000}
     };
 static bvector<DPoint3d> s_lowerAlignmentPoints {
-    
+
     {281653.41510980553, -5273927.0351621676, 0.00000000000000000},
     {281668.06767662102, -5273927.6990444325, 0.00000000000000000},
     {281682.81578242057, -5273928.0622240538, 0.00000000000000000},
@@ -2347,7 +2347,7 @@ TEST(ClipPlaneSet, AlignmentByMatchedArrays)
         printf (" (numY %4d)  (fullScanTime %10.2lf)  (IndexedScanTime %10.2lf) (t0 %10.2lf)\n",
                     (int)numY, tFull, tIndexed, t0);
         }
-// timing 11/20/20 
+// timing 11/20/20
 // numY = 200 => (tFull=73,tIndexed=43) (69,18)        ?? 1st pass difference in indexedClipSet repeatable over multiple runs
 // numY = 2000 => (706,173) (703,179)
 // numY = 20000 => (7014,1776) (7003,1751)
@@ -2360,4 +2360,309 @@ TEST(ClipPlaneSet, AlignmentByMatchedArrays)
 //   That's an experiment for another day ...
 #endif
     Check::ClearGeometry("ClipPlaneSet.AlignmentByMatchedArrays");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(ClipPlaneSet,ClipNoneBoundary)
+    {
+    // curve
+    bvector<DPoint3d> poly1 {{0,10,0},{-10,0,0},{0,-10,0},{10,0,0},{0,10,0}};
+    CurveVector::BoundaryType boundaryType = CurveVector::BoundaryType::BOUNDARY_TYPE_None;
+    CurveVectorPtr curve = CurveVector::CreateLinear(poly1, boundaryType);
+    // clipper
+    bvector<DPoint3d> poly2 {{-7,-7,0},{7,-7,0},{7,7,0},{-7,7,0},{-7,-7,0}};
+    ConvexClipPlaneSet convexClipPlaneSet;
+    convexClipPlaneSet.ReloadSweptConvexPolygon(poly2, DVec3d::From(0, 0, 1), 0);
+    ClipPlaneSet clipPlaneSet(convexClipPlaneSet);
+    // perform the clip
+    bvector<CurveVectorPtr> clippedRegion;
+    bool ret = clipPlaneSet.ClipCurveVector(*curve, clippedRegion);
+    Check::False(ret);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(ClipPlaneSet,ClipOpenBoundary)
+    {
+    // curve
+    bvector<DPoint3d> poly1 {{0,10,0},{-10,0,0},{0,-10,0},{10,0,0},{0,10,0}};
+    Check::SaveTransformed(poly1);
+    CurveVector::BoundaryType boundaryType = CurveVector::BoundaryType::BOUNDARY_TYPE_Open;
+    CurveVectorPtr curve = CurveVector::CreateLinear(poly1, boundaryType);
+    // clipper
+    bvector<DPoint3d> poly2 {{-7,-7,0},{7,-7,0},{7,7,0},{-7,7,0},{-7,-7,0}};
+    Check::SaveTransformed(poly2);
+    ConvexClipPlaneSet convexClipPlaneSet;
+    convexClipPlaneSet.ReloadSweptConvexPolygon(poly2, DVec3d::From(0, 0, 1), 0);
+    ClipPlaneSet clipPlaneSet(convexClipPlaneSet);
+    // perform the clip
+    bvector<CurveVectorPtr> clippedRegion;
+    bool ret = clipPlaneSet.ClipCurveVector(*curve, clippedRegion);
+    Check::Shift(30,0,0);
+    Check::True(ret);
+    for (CurveVectorPtr clippedCurve : clippedRegion)
+        Check::SaveTransformed(*clippedCurve);
+    Check::ClearGeometry("ClipPlaneSet.ClipOpenBoundary");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(ClipPlaneSet,ClipNotOpenBoundary)
+    {
+    // curve
+    bvector<DPoint3d> poly1 {{0,10,0},{-10,0,0},{0,-10,0},{10,0,0},{0,10,0}};
+    Check::SaveTransformed(poly1);
+    CurveVector::BoundaryType boundaryType = CurveVector::BoundaryType::BOUNDARY_TYPE_Outer;
+    CurveVectorPtr curve = CurveVector::CreateLinear(poly1, boundaryType);
+    // clipper
+    bvector<DPoint3d> poly2 {{-7,-7,0},{7,-7,0},{7,7,0},{-7,7,0},{-7,-7,0}};
+    Check::SaveTransformed(poly2);
+    ConvexClipPlaneSet convexClipPlaneSet;
+    convexClipPlaneSet.ReloadSweptConvexPolygon(poly2, DVec3d::From(0, 0, 1), 0);
+    ClipPlaneSet clipPlaneSet(convexClipPlaneSet);
+    // perform the clip
+    bvector<CurveVectorPtr> clippedRegion;
+    bool ret = clipPlaneSet.ClipCurveVector(*curve, clippedRegion);
+    Check::Shift(30,0,0);
+    Check::True(ret);
+    for (CurveVectorPtr clippedCurve : clippedRegion)
+        Check::SaveTransformed(*clippedCurve);
+    Check::ClearGeometry("ClipPlaneSet.ClipNotOpenBoundary");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(ClipPlaneSet,ClipPlanarAndNonPlanarOpenBoundary)
+    {
+    // planar curve
+    CurveVectorPtr planarCurve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
+    DEllipse3d arc = DEllipse3d::FromPointsOnArc(
+        DPoint3d::From(0, -5, 0),
+        DPoint3d::From(8, 8, 0),
+        DPoint3d::From(0, 5, 0)
+        );
+    ICurvePrimitivePtr arcPrim = ICurvePrimitive::CreateArc(arc);
+    planarCurve->push_back(arcPrim);
+
+    bvector<DPoint3d> lineString1 = {
+        DPoint3d::From(0, 5, 0),
+        DPoint3d::From(-1, 10, 0),
+        DPoint3d::From(-2, 5, 0),
+        DPoint3d::From(-3, 10, 0),
+        DPoint3d::From(-4, 5, 0),
+    };
+    ICurvePrimitivePtr lineString1Prim = ICurvePrimitive::CreateLineString(lineString1);
+    planarCurve->push_back(lineString1Prim);
+
+    DSegment3d seg1 = DSegment3d::From(DPoint3d::From(-4, 5, 0), DPoint3d::From(-10, 0, 0));
+    ICurvePrimitivePtr seg1Prim = ICurvePrimitive::CreateLine(seg1);
+    planarCurve->push_back(seg1Prim);
+    DSegment3d seg2 = DSegment3d::From(DPoint3d::From(-10, 0, 0), DPoint3d::From(-4, -5, 0));
+    ICurvePrimitivePtr seg2Prim = ICurvePrimitive::CreateLine(seg2);
+    planarCurve->push_back(seg2Prim);
+
+    bvector<DPoint3d> lineString2 = {
+        DPoint3d::From(-4, -5, 0),
+        DPoint3d::From(-3, -10, 0),
+        DPoint3d::From(-2, -5, 0),
+        DPoint3d::From(-1, -10, 0),
+        DPoint3d::From(0, -5, 0),
+    };
+    ICurvePrimitivePtr lineString2Prim = ICurvePrimitive::CreateLineString(lineString2);
+    planarCurve->push_back(lineString2Prim);
+    Check::SaveTransformed(planarCurve);
+
+    // non-planar curve
+    CurveVectorPtr nonPlanarCurve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
+    nonPlanarCurve->push_back(arcPrim);
+
+    bvector<DPoint3d> lineString3 = {
+        DPoint3d::From(0, 5, 0),
+        DPoint3d::From(-1, 10, 1),
+        DPoint3d::From(-2, 5, -1),
+        DPoint3d::From(-3, 10, 2),
+        DPoint3d::From(-4, 5, -2),
+    };
+    ICurvePrimitivePtr lineString3Prim = ICurvePrimitive::CreateLineString(lineString3);
+    nonPlanarCurve->push_back(lineString3Prim);
+
+    DSegment3d seg3 = DSegment3d::From(DPoint3d::From(-4, 5, -2), DPoint3d::From(-10, 0, -1));
+    ICurvePrimitivePtr seg3Prim = ICurvePrimitive::CreateLine(seg3);
+    nonPlanarCurve->push_back(seg3Prim);
+    DSegment3d seg4 = DSegment3d::From(DPoint3d::From(-10, 0, -1), DPoint3d::From(-4, -5, 0));
+    ICurvePrimitivePtr seg4Prim = ICurvePrimitive::CreateLine(seg4);
+    nonPlanarCurve->push_back(seg4Prim);
+
+    bvector<DPoint3d> lineString4 = {
+        DPoint3d::From(-4, -5, 0),
+        DPoint3d::From(-3, -10, 1),
+        DPoint3d::From(-2, -5, -1),
+        DPoint3d::From(-1, -10, 2),
+        DPoint3d::From(0, -5, 0),
+    };
+    ICurvePrimitivePtr lineString4Prim = ICurvePrimitive::CreateLineString(lineString4);
+    nonPlanarCurve->push_back(lineString4Prim);
+    Check::Shift(0, 30, 0);
+    Check::SaveTransformed(nonPlanarCurve);
+
+    // clipper
+    bvector<DPoint3d> clipper {{-7,-7,0},{7,-7,0},{7,7,0},{-7,7,0},{-7,-7,0}};
+    Check::SaveTransformed(clipper);
+    Check::Shift(0, -30, 0);
+    Check::SaveTransformed(clipper);
+    ConvexClipPlaneSet convexClipPlaneSet;
+    convexClipPlaneSet.ReloadSweptConvexPolygon(clipper, DVec3d::From(0, 0, 1), 0);
+    ClipPlaneSet clipPlaneSet(convexClipPlaneSet);
+
+    // perform the clip on planar curve
+    bvector<CurveVectorPtr> planarClippedRegion;
+    bool ret1 = clipPlaneSet.ClipCurveVector(*planarCurve, planarClippedRegion);
+    Check::Shift(30, 0, 0);
+    Check::True(ret1);
+    for (CurveVectorPtr clippedCurve : planarClippedRegion)
+        Check::SaveTransformed(*clippedCurve);
+
+    // perform the clip on non-planar curve
+    bvector<CurveVectorPtr> nonPlanarClippedRegion;
+    bool ret2 = clipPlaneSet.ClipCurveVector(*nonPlanarCurve, nonPlanarClippedRegion);
+    Check::Shift(0, 30, 0);
+    Check::True(ret2);
+    Transform flatten = Transform::FromRowValues (1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+    for (CurveVectorPtr clippedCurve : nonPlanarClippedRegion)
+        {
+        Check::SaveTransformed(*clippedCurve);
+        clippedCurve->TransformInPlace(flatten);
+        }
+
+    // compare planarClippedRegion and flatten nonPlanarClippedRegion
+    for (size_t i = 0; i < planarClippedRegion.size(); i++)
+        Check::True(planarClippedRegion[i]->IsSameStructureAndGeometry(*nonPlanarClippedRegion[i]));
+
+    Check::ClearGeometry("ClipPlaneSet.ClipPlanarAndNonPlanarOpenBoundary");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(ClipPlaneSet,ClipOpenBoundaryInsideClipper)
+    {
+    // curve
+    bvector<DPoint3d> poly1 {{0,5,0},{-5,0,0},{0,-5,0},{5,0,0},{0,5,0}};
+    Check::SaveTransformed(poly1);
+    CurveVector::BoundaryType boundaryType = CurveVector::BoundaryType::BOUNDARY_TYPE_Open;
+    CurveVectorPtr curve = CurveVector::CreateLinear(poly1, boundaryType);
+    // clipper
+    bvector<DPoint3d> poly2 {{-7,-7,0},{7,-7,0},{7,7,0},{-7,7,0},{-7,-7,0}};
+    Check::SaveTransformed(poly2);
+    ConvexClipPlaneSet convexClipPlaneSet;
+    convexClipPlaneSet.ReloadSweptConvexPolygon(poly2, DVec3d::From(0, 0, 1), 0);
+    ClipPlaneSet clipPlaneSet(convexClipPlaneSet);
+    // perform the clip
+    bvector<CurveVectorPtr> clippedRegion;
+    bool ret = clipPlaneSet.ClipCurveVector(*curve, clippedRegion);
+    Check::Shift(30,0,0);
+    Check::True(ret);
+    for (CurveVectorPtr clippedCurve : clippedRegion)
+        Check::SaveTransformed(*clippedCurve);
+    Check::ClearGeometry("ClipPlaneSet.ClipOpenBoundaryInsideClipper");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(ClipPlaneSet,ClipOpenBoundaryOutsideClipper)
+    {
+    // curve
+    bvector<DPoint3d> poly1 {{0,20,0},{-20,0,0},{0,-20,0},{20,0,0},{0,20,0}};
+    Check::SaveTransformed(poly1);
+    CurveVector::BoundaryType boundaryType = CurveVector::BoundaryType::BOUNDARY_TYPE_Open;
+    CurveVectorPtr curve = CurveVector::CreateLinear(poly1, boundaryType);
+    // clipper
+    bvector<DPoint3d> poly2 {{-7,-7,0},{7,-7,0},{7,7,0},{-7,7,0},{-7,-7,0}};
+    Check::SaveTransformed(poly2);
+    ConvexClipPlaneSet convexClipPlaneSet;
+    convexClipPlaneSet.ReloadSweptConvexPolygon(poly2, DVec3d::From(0, 0, 1), 0);
+    ClipPlaneSet clipPlaneSet(convexClipPlaneSet);
+    // perform the clip
+    bvector<CurveVectorPtr> clippedRegion;
+    bool ret = clipPlaneSet.ClipCurveVector(*curve, clippedRegion);
+    Check::Shift(30,0,0);
+    Check::True(ret);
+    for (CurveVectorPtr clippedCurve : clippedRegion)
+        Check::SaveTransformed(*clippedCurve);
+    Check::ClearGeometry("ClipPlaneSet.ClipOpenBoundaryOutsideClipper");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(ClipPlaneSet,CloneBetweenDirectedFractions)
+    {
+    // curve vector
+    CurveVectorPtr curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
+    DEllipse3d arc = DEllipse3d::FromPointsOnArc(
+        DPoint3d::From(0, -5, 0),
+        DPoint3d::From(8, 8, 0),
+        DPoint3d::From(0, 5, 0)
+        );
+    ICurvePrimitivePtr arcPrim = ICurvePrimitive::CreateArc(arc);
+    curve->push_back(arcPrim);
+
+    bvector<DPoint3d> lineString = {
+        DPoint3d::From(0, 5, 0),
+        DPoint3d::From(-1, 10, 0),
+        DPoint3d::From(-2, 5, 0),
+        DPoint3d::From(-3, 10, 0),
+        DPoint3d::From(-4, 5, 0),
+    };
+    ICurvePrimitivePtr lineStringPrim = ICurvePrimitive::CreateLineString(lineString);
+    curve->push_back(lineStringPrim);
+
+    DSegment3d seg = DSegment3d::From(DPoint3d::From(-4, 5, 0), DPoint3d::From(-10, 0, 0));
+    ICurvePrimitivePtr segPrim = ICurvePrimitive::CreateLine(seg);
+    curve->push_back(segPrim);
+    Check::SaveTransformed(curve);
+
+    CurveVectorPtr clonedCurve1;
+    int index0 = 0;
+    double fraction0 = -0.2;
+    int index1 = 2;
+    double fraction1 = 2.0;
+    bool allowExtrapolation = true;
+    bool usePartialCurves = false;
+    clonedCurve1 = curve->CloneBetweenDirectedFractions(index0, fraction0, index1, fraction1, allowExtrapolation, usePartialCurves);
+    Check::Shift(40, 0, 0);
+    Check::SaveTransformed(*clonedCurve1);
+
+    CurveVectorPtr clonedCurve2;
+    clonedCurve2 = curve->CloneBetweenDirectedFractions(index1, fraction1, index0, fraction0, allowExtrapolation, usePartialCurves);
+    Check::Shift(40, 0, 0);
+    Check::SaveTransformed(*clonedCurve2);
+
+    CurveVectorPtr clonedCurve3;
+    index0 = 1;
+    fraction0 = -0.5;
+    clonedCurve3 = curve->CloneBetweenDirectedFractions(index0, fraction0, index1, fraction1, allowExtrapolation, usePartialCurves);
+    Check::Shift(40, 0, 0);
+    Check::SaveTransformed(*clonedCurve3);
+
+    // primitive curve
+    CurveVectorPtr primitiveCurve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
+    primitiveCurve->push_back(lineStringPrim);
+
+    CurveVectorPtr clonedCurve4;
+    index0 = 1;
+    fraction0 = -1;
+    index1 = 1;
+    fraction1 = 2.0;
+    clonedCurve4 = curve->CloneBetweenDirectedFractions(index0, fraction0, index1, fraction1, allowExtrapolation, usePartialCurves);
+    Check::Shift(20, 0, 0);
+    Check::SaveTransformed(*clonedCurve4);
+
+    Check::ClearGeometry("ClipPlaneSet.CloneBetweenDirectedFractions");
     }

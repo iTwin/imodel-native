@@ -28,7 +28,7 @@ struct Command
         Command() {}
 
         static BentleyStatus TokenizeString(std::vector<Utf8String>& tokens, WStringCR inputString, WChar delimiter, WChar delimiterEscapeChar = L'\0');
-        
+
         std::vector<Utf8String> TokenizeArgs(Utf8StringCR argsUnparsed) const { std::vector<Utf8String> tokens; TokenizeString(tokens, WString(argsUnparsed.c_str(), BentleyCharEncoding::Utf8), L' ', L'"'); return tokens; }
 
         static bool GetArgAsBool(Utf8StringCR arg) { return arg.EqualsIAscii("true") || arg.EqualsIAscii("1") || arg.EqualsIAscii("yes"); }
@@ -126,10 +126,24 @@ struct CreateCommand final : public Command
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //---------------------------------------------------------------------------------------
+struct SyncCommand final : public Command
+    {
+    private:
+        Utf8String _GetName() const override { return ".sync"; }
+        Utf8String _GetUsage() const override;
+        void _Run(Session&, Utf8StringCR args) const override;
+
+    public:
+        SyncCommand() : Command() {}
+        ~SyncCommand() {}
+    };
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//---------------------------------------------------------------------------------------
 struct FileInfoCommand final : public Command
     {
     private:
-        
+
 
         Utf8String _GetName() const override { return ".fileinfo"; }
         Utf8String _GetUsage() const override { return " .fileinfo                      Displays information about the open file"; }
@@ -510,7 +524,7 @@ struct SchemaStatsCommand final : public Command
             explicit ClassColumnStats(ECN::ECClassCR ecClass) : m_class(&ecClass) {}
 
             void Add(Utf8CP tableName, uint32_t colCount)
-                { 
+                {
                 m_columnCountPerTable.push_back(std::make_pair(Utf8String(tableName), colCount));
                 m_totalColumnCount += colCount;
                 }
@@ -530,7 +544,7 @@ struct SchemaStatsCommand final : public Command
 
             void Add(ClassColumnStats const& stat) { m_stats.push_back(stat); }
 
-            void Sort() 
+            void Sort()
                 {
                 std::sort(m_stats.begin(), m_stats.end(),
                     [] (ClassColumnStats const& lhs, ClassColumnStats const& rhs) { return lhs.GetColCountPerTable() < rhs.GetColCountPerTable(); });
@@ -543,7 +557,7 @@ struct SchemaStatsCommand final : public Command
 
         Utf8String _GetName() const override { return ".schemastats"; }
         Utf8String _GetUsage() const override;
-        
+
         void _Run(Session&, Utf8StringCR args) const override;
         void ComputeClassHierarchyStats(Session&, std::vector<Utf8String> const& args) const;
 

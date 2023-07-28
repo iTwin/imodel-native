@@ -180,21 +180,3 @@ MD5 CheckBoxRule::_ComputeHash() const
         ADD_PRIMITIVE_VALUE_TO_HASH(md5, CHECKBOX_RULE_JSON_ATTRIBUTE_ISENABLED, m_isEnabled);
     return md5;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool CheckBoxRule::_ShallowEqual(PresentationKeyCR other) const
-    {
-    if (!ConditionalCustomizationRule::_ShallowEqual(other))
-        return false;
-
-    CheckBoxRule const* otherRule = dynamic_cast<CheckBoxRule const*>(&other);
-    if (nullptr == otherRule)
-        return false;
-
-    return m_propertyName == otherRule->m_propertyName
-        && m_useInversedPropertyValue == otherRule->m_useInversedPropertyValue
-        && m_defaultValue == otherRule->m_defaultValue
-        && m_isEnabled == otherRule->m_isEnabled;
-    }

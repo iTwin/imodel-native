@@ -29,7 +29,6 @@ protected:
     Utf8CP _GetJsonElementTypeAttributeName() const override {return nullptr;}
     Utf8CP _GetJsonElementType() const override {return "LocalizationResourceKeyDefinition";}
     ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
-    ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationKeyCR other) const override;
 
 public:
     //! Constructor. It is used to initialize the rule with default settings.

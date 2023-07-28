@@ -50,8 +50,6 @@ protected:
     //! Copy constructor.
     ECPRESENTATION_EXPORT ChildNodeSpecification(ChildNodeSpecificationCR);
 
-    ECPRESENTATION_EXPORT virtual bool _ShallowEqual(PresentationKeyCR other) const override;
-
     ECPRESENTATION_EXPORT virtual bool _ReadXml(BeXmlNodeP xmlNode) override;
     ECPRESENTATION_EXPORT virtual void _WriteXml(BeXmlNodeP xmlNode) const override;
 

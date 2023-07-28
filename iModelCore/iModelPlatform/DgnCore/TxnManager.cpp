@@ -287,17 +287,19 @@ bool TxnManager::HasPendingTxns() const {
     return stmt.Step() == BE_SQLITE_ROW;
 }
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TxnManager::Initialize() {
-    m_action = TxnAction::None;
+/** Get the highest used (not reversed) TxnId in the Txns table */
+TxnManager::TxnId TxnManager::GetLastTxnId() {
     Statement stmt(m_dgndb, "SELECT MAX(Id) FROM " DGN_TABLE_Txns " WHERE Deleted=0");
     DbResult result = stmt.Step();
     UNUSED_VARIABLE(result);
     BeAssert(result == BE_SQLITE_ROW);
 
-    TxnId last = stmt.GetValueInt64(0); // this is where we left off last session
+    return stmt.GetValueInt64(0);
+}
+
+void TxnManager::Initialize() {
+    m_action = TxnAction::None;
+    TxnId last = GetLastTxnId(); // this is where we left off last session
     m_curr = TxnId(SessionId(last.GetSession().GetValue()+1), 0); // increment the session id, reset to index to 0.
     m_reversedTxn.clear();
 }
@@ -322,12 +324,7 @@ TxnManager::TxnManager(DgnDbR dgndb) : m_dgndb(dgndb), m_stmts(20), m_rlt(*this)
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult TxnManager::InitializeTableHandlers() {
-    if (!m_isTracking) {
-        BeAssert(false && "Tracking must be enabled before initializing table handlers");
-        return BE_SQLITE_ERROR;
-    }
-
-    if (m_initTableHandlers || m_dgndb.IsReadonly())
+    if (m_initTableHandlers)
         return BE_SQLITE_OK;
 
     for (auto table : m_tables)
@@ -369,10 +366,7 @@ void TxnManager::BeginTrackingRelationship(ECN::ECClassCR relClass) {
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::AddTxnTable(DgnDomain::TableHandler* tableHandler) {
-    if (m_dgndb.IsReadonly())
-        return;
-
-    // we can get called multiple times with the same tablehandler. Ignore all but the first one.
+    // we can get called multiple times with the same tableHandler. Ignore all but the first one.
     TxnTablePtr table = tableHandler->_Create(*this);
     if (m_tablesByName.Insert(table->_GetTableName(), table).second)
         m_tables.push_back(table.get()); // order matters for the calling sequence, so we have to store it both sorted by name and insertion order
@@ -836,7 +830,8 @@ ChangesetStatus TxnManager::MergeDataChanges(ChangesetPropsCR revision, Changese
     bool mergeNeeded = HasPendingTxns() && m_initTableHandlers; // if tablehandlers are not present we can't merge - happens for schema upgrade
     Rebase rebase;
 
-    DbResult result = ApplyChanges(changeStream, TxnAction::Merge, containsSchemaChanges, mergeNeeded ? &rebase : nullptr);
+    auto const ignoreNoop = containsSchemaChanges;
+    DbResult result = ApplyChanges(changeStream, TxnAction::Merge, containsSchemaChanges, mergeNeeded ? &rebase : nullptr, false, ignoreNoop);
     if (result != BE_SQLITE_OK)
         m_dgndb.ThrowException("failed to apply changes", result);
 
@@ -1228,7 +1223,7 @@ struct DisableTracking {
 * Apply a changeset to the database. Notify all TxnTables about what was in the Changeset afterwards.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bool containsSchemaChanges, Rebase* rebase, bool invert) {
+DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bool containsSchemaChanges, Rebase* rebase, bool invert, bool ignoreNoop) {
     BeAssert(action != TxnAction::None);
     AutoRestore<TxnAction> saveAction(&m_action, action);
 
@@ -1248,9 +1243,9 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
     }
 
 
-    if (true) {
+    if (!m_dgndb.IsReadonly()) {
         DisableTracking _v(*this);
-        auto result = changeset.ApplyChanges(m_dgndb, rebase, invert); // this actually updates the database with the changes
+        auto result = changeset.ApplyChanges(m_dgndb, rebase, invert, ignoreNoop); // this actually updates the database with the changes
         if (result != BE_SQLITE_OK) {
             LOG.errorv("failed to apply changeset: %s", BeSQLiteLib::GetErrorName(result));
             BeAssert(false);
@@ -1429,8 +1424,13 @@ BentleyStatus TxnManager::PatchSlowDdlChanges(Utf8StringR patchedDDL, Utf8String
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult TxnManager::ApplyDdlChanges(DdlChangesCR ddlChanges) {
     BeAssert(!ddlChanges._IsEmpty() && "DbSchemaChangeSet is empty");
-    bool wasTracking = EnableTracking(false);
+    auto info = GetDgnDb().Schemas().GetSchemaSync().GetInfo();
+    if (!info.IsEmpty()) {
+        LOG.infov("Skipping DDL Changes as IModel has schema sync enabled. Sync-Id {%s}.", info.GetSyncId().ToString().c_str());
+        return BE_SQLITE_OK;
+    }
 
+    bool wasTracking = EnableTracking(false);
     Utf8String originalDDL = ddlChanges.ToString();
     Utf8String patchedDDL;
     DbResult result = BE_SQLITE_OK;
@@ -1494,7 +1494,7 @@ void TxnManager::ApplyTxnChanges(TxnId rowId, TxnAction action) {
     auto rc = ApplyChanges(changeset, action, false);
     BeAssert(!HasDataChanges());
 
-    if (BE_SQLITE_OK != rc)
+    if (BE_SQLITE_OK != rc || m_dgndb.IsReadonly())
         return;
 
     // Mark this row as deleted/undeleted depending on which way we just applied the changes.
@@ -1626,6 +1626,32 @@ DgnDbStatus TxnManager::ReverseAll() {
     return ReverseActions(TxnRange(startId, GetCurrentTxnId()));
 }
 
+/**
+ * For readonly connections, new Txns may be added from other writeable connections while this session is active.
+ * Since we always hold a SQLite transaction (the DefaultTxn) open, this session will not see any of
+ * those changes unless/until we explicitly close-and-restart the DefaultTxn.
+ *
+ * This method is called when the DefaultTxn is restarted and new Txns are discovered. It "replays" each new Txn in
+ * this session so that notifications for the changed elements/models can be sent for this connection as if the
+ * changes were just made. It calls `ApplyTxnChanges` but relies on the fact that the iModel is open for read and
+ * none of the changes are actually applied (they were applied in the connection where they were made.)
+ * This action is performed for "side effects" only. Of course since the connection is readonly, that's implied.
+ */
+void TxnManager::ReplayExternalTxns(TxnId from) {
+    if (!m_initTableHandlers || !m_dgndb.IsReadonly())
+        return; // this method can only be called on a readonly connection with the TxnManager active
+
+
+    for (TxnId curr = QueryNextTxnId(from); curr.IsValid(); curr = QueryNextTxnId(curr))
+        ApplyTxnChanges(curr, TxnAction::Reinstate);
+
+    m_curr = GetLastTxnId(); // this is where the other session ends
+    if (m_curr.GetValue() == 0)
+        m_curr = TxnId(SessionId(1),0);
+    else
+        m_curr.Increment();
+}
+
 /*---------------------------------------------------------------------------------**/ /**
 * Reinstate ("redo") a range of transactions.
 * @bsimethod
@@ -1690,6 +1716,8 @@ void TxnManager::DeleteAllTxns() {
     m_dgndb.ExecuteSql("DELETE FROM " DGN_TABLE_Txns);
     if (m_dgndb.TableExists(DGN_TABLE_Rebase))
         m_dgndb.ExecuteSql("DELETE FROM " DGN_TABLE_Rebase);
+
+    m_dgndb.SaveChanges();
     Initialize();
 }
 

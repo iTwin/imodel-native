@@ -200,20 +200,3 @@ MD5 SelectedNodeInstancesSpecification::_ComputeHash() const
         ADD_PRIMITIVE_VALUE_TO_HASH(md5, SELECTED_NODE_INSTANCES_SPECIFICATION_JSON_ATTRIBUTE_ACCEPTABLEPOLYMORPHICALLY, m_acceptablePolymorphically);
     return md5;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool SelectedNodeInstancesSpecification::_ShallowEqual(PresentationKeyCR other) const
-    {
-    if (!ContentSpecification::_ShallowEqual(other))
-        return false;
-
-    SelectedNodeInstancesSpecification const* otherRule = dynamic_cast<SelectedNodeInstancesSpecification const*>(&other);
-    if (nullptr == otherRule)
-        return false;
-
-    return m_acceptableSchemaName == otherRule->m_acceptableSchemaName
-        && m_acceptableClassNames == otherRule->m_acceptableClassNames
-        && m_acceptablePolymorphically == otherRule->m_acceptablePolymorphically;
-    }
