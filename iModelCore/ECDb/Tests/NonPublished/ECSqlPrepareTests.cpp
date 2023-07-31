@@ -225,6 +225,7 @@ TEST_F(ECSqlSelectPrepareTests, Alias)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT 1 FROM meta.ECSchemaDef s WHERE Name=?"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT 1 FROM meta.ECSchemaDef s WHERE meta.ECSchemaDef.Name=?"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT 1 FROM ECDbMeta.ECSchemaDef WHERE ECDbMeta.ECSchemaDef.Name=?"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT (SELECT s.ECInstanceId FROM meta.ECPropertyDef s)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT meta.ECSchemaDef.Name FROM meta.ECSchemaDef"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT meta.ECSchemaDef.Name FROM ECDbMeta.ECSchemaDef"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT ECDbMeta.ECSchemaDef.Name FROM ECDbMeta.ECSchemaDef"));
