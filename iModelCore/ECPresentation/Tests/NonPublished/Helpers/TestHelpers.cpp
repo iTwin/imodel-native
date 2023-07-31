@@ -29,6 +29,8 @@ void RulesEngineTestHelpers::InitSchemaRegistry(ECDbR ecdb, bvector<bpair<Utf8St
     schemaReadContext->AddSchemaLocater(ecdb.GetSchemaLocater());
     for (auto pair : schemaXmls)
         {
+        if (testNamesThatShouldRun.find(pair.first) == testNamesThatShouldRun.end())
+            continue;
         ECSchemaPtr schema;
         ECSchema::ReadFromXmlString(schema, pair.second.c_str(), *schemaReadContext);
         if (!schema.IsValid())
@@ -36,8 +38,6 @@ void RulesEngineTestHelpers::InitSchemaRegistry(ECDbR ecdb, bvector<bpair<Utf8St
             BeAssert(false);
             continue;
             }
-        if (testNamesThatShouldRun.find(pair.first) == testNamesThatShouldRun.end())
-            continue;
         schemas.push_back(schema);
         }
 
