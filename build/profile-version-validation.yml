@@ -5,13 +5,13 @@ name: profile-version-tests-$(Date:yyyy.MM.dd)$(Rev:.r)
 #     include:
 #       - main
 #       - release/*
-# pr:
-#   autoCancel: true
-#   drafts: false
-#   branches:
-#     include:
-#       - main
-#       - release/*
+pr:
+  autoCancel: true
+  drafts: true
+  # branches:
+  #   include:
+  #     - main
+  #     - release/*
 
 resources:
   repositories:
