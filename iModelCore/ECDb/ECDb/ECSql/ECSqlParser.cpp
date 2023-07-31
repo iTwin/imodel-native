@@ -1678,6 +1678,9 @@ BentleyStatus ECSqlParser::ParseJoinType(ECSqlJoinType& joinType, OSQLParseNode 
             joinType = ECSqlJoinType::InnerJoin;
             return SUCCESS;
             }
+
+        if (SQL_ISRULE(first, outer_join_type))
+            return ParseOuterJoinType(joinType, first);
         }
 
     if (SQL_ISRULE(parseNode, outer_join_type))
