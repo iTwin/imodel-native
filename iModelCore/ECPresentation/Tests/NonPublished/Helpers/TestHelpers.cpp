@@ -12,8 +12,8 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RulesEngineTestHelpers::InitSchemaRegistry(ECDbR ecdb, bvector<bpair<Utf8String, Utf8String>> const& schemaXmls)
     {
-    testing::UnitTest* gtestInstance = testing::UnitTest::GetInstance();
-    testing::TestSuite const* currentTestSuite = gtestInstance->current_test_suite();
+    ::testing::UnitTest* gtestInstance = ::testing::UnitTest::GetInstance();
+    ::testing::TestSuite const* currentTestSuite = gtestInstance->current_test_suite();
 
     // some tests define a single schema for the whole test suite, so include its name
     std::unordered_set<Utf8String> testNamesThatShouldRun({ currentTestSuite->name() });
