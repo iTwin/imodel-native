@@ -360,4 +360,149 @@ TEST_F(ECDbTestFixture, ImportSchemaByProfileVersion)
     CloseECDb();
     }
 
+    
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbTestFixture, TestImportRequiresVersionCustomAttribute)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDbForCurrentTest());
+
+    {
+    SchemaItem schema(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="Schema1" alias="s1" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="ECDbMap" version="02.00.02" alias="ecdbmap"/>
+        <ECCustomAttributes>
+            <ImportRequiresVersion xmlns="ECDbMap.02.00.02">
+                <ECDbRuntimeVersion>999.9.9.9</ECDbRuntimeVersion>
+            </ImportRequiresVersion>
+        </ECCustomAttributes>
+        <ECEntityClass typeName="Foo" >
+            <ECProperty propertyName="Length" typeName="double" />
+        </ECEntityClass>
+        </ECSchema>)xml");
+
+    ECIssueListener issueListener(m_ecdb);
+    ASSERT_EQ(BentleyStatus::ERROR, ImportSchema(schema));
+    auto lastIssue = issueListener.GetIssue();
+    ASSERT_TRUE(lastIssue.has_value()) << "Should raise an issue.";
+    ASSERT_STREQ("ECSchema Schema1.01.00.01 requires ECDb version 999.9.9.9, but the current runtime version is only 4.0.0.3.", lastIssue.message.c_str());
+    }
+
+    CloseECDb();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbTestFixture, TestInvalidImportRequiresVersionCustomAttribute)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDbForCurrentTest());
+
+    { //no version property
+    SchemaItem schema(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="Schema1" alias="s1" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="ECDbMap" version="02.00.02" alias="ecdbmap"/>
+        <ECCustomAttributes>
+            <ImportRequiresVersion xmlns="ECDbMap.02.00.02">
+            </ImportRequiresVersion>
+        </ECCustomAttributes>
+        <ECEntityClass typeName="Foo" >
+            <ECProperty propertyName="Length" typeName="double" />
+        </ECEntityClass>
+        </ECSchema>)xml");
+
+    ECIssueListener issueListener(m_ecdb);
+    ASSERT_EQ(BentleyStatus::ERROR, ImportSchema(schema));
+    auto lastIssue = issueListener.GetIssue();
+    ASSERT_TRUE(lastIssue.has_value()) << "Should raise an issue.";
+    ASSERT_STREQ("ECSchema Schema1.01.00.01 has a ImportRequiresVersion custom attribute with a missing or invalid ECDbRuntimeVersion property.", lastIssue.message.c_str());
+    }
+
+    { //invalid version property
+    SchemaItem schema(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="Schema1" alias="s1" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="ECDbMap" version="02.00.02" alias="ecdbmap"/>
+        <ECCustomAttributes>
+            <ImportRequiresVersion xmlns="ECDbMap.02.00.02">
+                <ECDbRuntimeVersion>POIFOPKSOFGJG</ECDbRuntimeVersion>
+            </ImportRequiresVersion>
+        </ECCustomAttributes>
+        <ECEntityClass typeName="Foo" >
+            <ECProperty propertyName="Length" typeName="double" />
+        </ECEntityClass>
+        </ECSchema>)xml");
+
+    ECIssueListener issueListener(m_ecdb);
+    ASSERT_EQ(BentleyStatus::ERROR, ImportSchema(schema));
+    auto lastIssue = issueListener.GetIssue();
+    ASSERT_TRUE(lastIssue.has_value()) << "Should raise an issue.";
+    ASSERT_STREQ("ECSchema Schema1.01.00.01 has a ImportRequiresVersion custom attribute with a missing or invalid ECDbRuntimeVersion property.", lastIssue.message.c_str());
+    }
+
+    CloseECDb();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbTestFixture, ApplyImportRequiresVersionToExistingSchema)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDbForCurrentTest());
+
+    {
+    SchemaItem schema(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="Schema1" alias="s1" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECEntityClass typeName="Foo" >
+            <ECProperty propertyName="Length" typeName="double" />
+        </ECEntityClass>
+        </ECSchema>)xml");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema));
+    }
+
+    { //apply valid ImportRequiresVersion ca to existing schema
+    SchemaItem schema(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="Schema1" alias="s1" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="ECDbMap" version="02.00.02" alias="ecdbmap"/>
+        <ECCustomAttributes>
+            <ImportRequiresVersion xmlns="ECDbMap.02.00.02">
+                <ECDbRuntimeVersion>4.0.0.1</ECDbRuntimeVersion>
+            </ImportRequiresVersion>
+        </ECCustomAttributes>
+        <ECEntityClass typeName="Foo" >
+            <ECProperty propertyName="Length" typeName="double" />
+        </ECEntityClass>
+        </ECSchema>)xml");
+
+    ECIssueListener issueListener(m_ecdb);
+    ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema));
+    auto lastIssue = issueListener.GetIssue();
+    ASSERT_FALSE(lastIssue.has_value());
+    }
+
+    {  //apply valid ImportRequiresVersion ca to existing schema which evaluates to false
+    SchemaItem schema(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="Schema1" alias="s1" version="1.0.3" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="ECDbMap" version="02.00.02" alias="ecdbmap"/>
+        <ECCustomAttributes>
+            <ImportRequiresVersion xmlns="ECDbMap.02.00.02">
+                <ECDbRuntimeVersion>999.9.9.9</ECDbRuntimeVersion>
+            </ImportRequiresVersion>
+        </ECCustomAttributes>
+        <ECEntityClass typeName="Foo" >
+            <ECProperty propertyName="Length" typeName="double" />
+        </ECEntityClass>
+        </ECSchema>)xml");
+
+    ECIssueListener issueListener(m_ecdb);
+    ASSERT_EQ(BentleyStatus::ERROR, ImportSchema(schema));
+    auto lastIssue = issueListener.GetIssue();
+    ASSERT_TRUE(lastIssue.has_value()) << "Should raise an issue.";
+    ASSERT_STREQ("ECSchema Schema1.01.00.03 requires ECDb version 999.9.9.9, but the current runtime version is only 4.0.0.3.", lastIssue.message.c_str());
+    }
+
+    CloseECDb();
+    }
+
 END_ECDBUNITTESTS_NAMESPACE

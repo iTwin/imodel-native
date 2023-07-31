@@ -5277,6 +5277,31 @@ BentleyStatus SchemaWriter::Context::PreprocessSchemas(bvector<ECN::ECSchemaCP>&
                 return ERROR;
                 }
             }
+
+        ImportRequiresVersionCustomAttribute requiresRuntimeCA;
+        if (ECDbMapCustomAttributeHelper::TryGetImportRequiresVersion(requiresRuntimeCA, *schema) && requiresRuntimeCA.IsValid())
+            {
+            Nullable<Utf8String> version;
+            if (requiresRuntimeCA.TryGetECDbRuntimeVersion(version) != BentleyStatus::SUCCESS)
+                {
+                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "ECSchema %s has an invalid ImportRequiresVersion custom attribute.", schema->GetFullSchemaName().c_str());
+                return ERROR;
+                }
+
+            auto profileVersion = ECDb::CurrentECDbProfileVersion();
+            ProfileVersion requiredProfileVersion(0, 0, 0, 0);
+            if (version.IsNull() || requiredProfileVersion.FromString(version.ValueR().c_str()) != BentleyStatus::SUCCESS)
+                {
+                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "ECSchema %s has a ImportRequiresVersion custom attribute with a missing or invalid ECDbRuntimeVersion property.", schema->GetFullSchemaName().c_str());
+                return ERROR;
+                }
+
+            if(requiredProfileVersion > profileVersion)
+                {
+                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "ECSchema %s requires ECDb version %s, but the current runtime version is only %s.", schema->GetFullSchemaName().c_str(), requiredProfileVersion.ToString().c_str(), profileVersion.ToString().c_str());
+                return ERROR;
+                }
+            }
         }
 
     bvector<ECSchemaCP> primarySchemas;

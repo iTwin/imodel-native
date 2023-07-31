@@ -16,6 +16,7 @@ struct DbIndexListCustomAttribute;
 struct PropertyMapCustomAttribute;
 struct LinkTableRelationshipMapCustomAttribute;
 struct ForeignKeyConstraintCustomAttribute;
+struct ImportRequiresVersionCustomAttribute;
 
 //=======================================================================================    
 //! ECDbMapCustomAttributeHelper is a convenience API for the custom attributes defined
@@ -75,6 +76,13 @@ struct ECDbMapCustomAttributeHelper final
         //! @param[in] navProp Navigation property to retrieve the custom attribute from.
         //! @return true if @p navProp has the custom attribute. false, if @p navProp doesn't have the custom attribute
         static bool TryGetForeignKeyConstraint(ForeignKeyConstraintCustomAttribute& foreignKeyConstraint, ECN::NavigationECPropertyCR navProp);
+
+        //! Tries to retrieve the ImportRequiresVersion custom attribute from the specified schema.
+        //! @param[out] ca Retrieved CA
+        //! @param[in] ecClass Class to retrieve the custom attribute from.
+        //! @return true if @p schema has the custom attribute.
+        static bool TryGetImportRequiresVersion(ImportRequiresVersionCustomAttribute& ca, ECN::ECSchemaCR schema);
+
     };
 
 //=======================================================================================    
@@ -375,7 +383,40 @@ struct LinkTableRelationshipMapCustomAttribute final
         //! @param[out] allowDuplicateRelationships AllowDuplicateRelationships flag. IsNull() is true, if the AllowDuplicateRelationships property wasn't set in the LinkTableRelationshipMap.
         //! @return SUCCESS if AllowDuplicateRelationships was set or unset in the LinkTableRelationshipMap, ERROR otherwise
         BentleyStatus TryGetAllowDuplicateRelationships(Nullable<bool>& allowDuplicateRelationships) const;
+    };
 
+enum class RequiredVersionKind
+    {
+    Unknown, //returned for unknown values. With the strict ECEnumeration impossible, but we may add more kinds in the future
+    ECDb,
+    DgnDb,
+    BeSQLite
+    };
+
+//=======================================================================================    
+//! ImportRequiresVersionCustomAttribute is put on schemas and limits ECDb versions into which the schema can be imported
+//! @bsiclass
+//=======================================================================================    
+struct ImportRequiresVersionCustomAttribute final
+    {
+    friend struct ECDbMapCustomAttributeHelper;
+
+    private:
+        ECN::ECSchemaCP m_schema = nullptr;
+        ECN::IECInstancePtr m_ca = nullptr;
+
+        ImportRequiresVersionCustomAttribute(ECN::ECSchemaCR schema, ECN::IECInstancePtr ca) : m_schema(&schema), m_ca(ca) {}
+
+    public:
+        ImportRequiresVersionCustomAttribute() {}
+
+        //! @return true if ImportRequiresVersion exists on the schema.
+        bool IsValid() const { return m_schema != nullptr && m_ca != nullptr; }
+
+        //! Tries to get the value of the Version property.
+        //! @param[out] version ECDbRuntimeVersion property. IsNull() is true, if the property wasn't set.
+        //! @return SUCCESS if Version was set or unset in the ImportRequiresVersion custom attribute, ERROR otherwise
+        BentleyStatus TryGetECDbRuntimeVersion(Nullable<Utf8String>& version) const;
     };
 
 //*****************************************************************

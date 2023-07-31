@@ -130,6 +130,9 @@ struct SchemaWriter final
                         .Append(ACCEPT, "Indexes.Properties", MODIFIED); // allow to modify Properties of existing Indexes
 
                 rules
+                    .Append(ACCEPT, "ECDbMap", "ImportRequiresVersion", ALL);
+
+                rules
                     .Append(ACCEPT, "CoreCustomAttributes", "IsMixin", MODIFIED)
                         .Append(ACCEPT, "AppliesToEntityClass", MODIFIED); // allow to modify AppliesToEntityClass
 

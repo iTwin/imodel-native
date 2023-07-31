@@ -121,6 +121,19 @@ bool ECDbMapCustomAttributeHelper::TryGetForeignKeyConstraint(ForeignKeyConstrai
     return true;
     }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+bool ECDbMapCustomAttributeHelper::TryGetImportRequiresVersion(ImportRequiresVersionCustomAttribute& ca, ECN::ECSchemaCR schema)
+    {
+    IECInstancePtr inst = CustomAttributeReader::Read(schema, ECDBMAP_SCHEMANAME, "ImportRequiresVersion");
+    if (inst == nullptr || !inst.IsValid())
+        return false;
+
+    ca = ImportRequiresVersionCustomAttribute(schema, inst);
+    return true;
+    }
 
 //*****************************************************************
 //SchemaMapCustomAttribute
@@ -478,6 +491,20 @@ BentleyStatus LinkTableRelationshipMapCustomAttribute::TryGetAllowDuplicateRelat
     return CustomAttributeReader::TryGetBooleanValue(allowDuplicateRelationshipsFlag, *m_ca, "AllowDuplicateRelationships");
     }
 
+
+//*****************************************************************
+//ImportRequiresVersionCustomAttribute
+//*****************************************************************
+//---------------------------------------------------------------------------------------
+//@bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ImportRequiresVersionCustomAttribute::TryGetECDbRuntimeVersion(Nullable<Utf8String>& version) const
+    {
+    if (m_ca == nullptr)
+        return ERROR;
+
+    return CustomAttributeReader::TryGetTrimmedValue(version, *m_ca, "ECDbRuntimeVersion");
+    }
 
 //*****************************************************************
 //CustomAttributeReader
