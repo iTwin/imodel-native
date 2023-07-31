@@ -15,7 +15,7 @@ void RulesEngineTestHelpers::InitSchemaRegistry(ECDbR ecdb, bvector<bpair<Utf8St
     testing::UnitTest* gtestInstance = testing::UnitTest::GetInstance();
     testing::TestSuite const* currentTestSuite = gtestInstance->current_test_suite();
 
-    // some tests define a single schema for the whole test suite, so include it's name
+    // some tests define a single schema for the whole test suite, so include its name
     std::unordered_set<Utf8String> testNamesThatShouldRun({ currentTestSuite->name() });
     for (int i = 0; i < currentTestSuite->total_test_count(); ++i)
         {

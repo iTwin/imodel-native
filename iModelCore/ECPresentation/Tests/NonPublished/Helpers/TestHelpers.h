@@ -35,9 +35,7 @@ template<typename TRegistry> struct RegisterSchemaHelper
     {
     RegisterSchemaHelper(Utf8String name, Utf8String schemaXml) {TRegistry::RegisterSchemaXml(name, schemaXml);}
     RegisterSchemaHelper(Utf8StringCR name, bvector<Utf8String> const& schemasXml) {TRegistry::RegisterMultipleSchemasXml(name, schemasXml);}
-
     static Utf8String CreateValidSchemaString(Utf8StringCR name, Utf8StringCR schema_xml)
-
         {
         return Utf8PrintfString("<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
         "<ECSchema schemaName=\"%s\" alias=\"alias_%s\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.1\">" \
@@ -64,11 +62,9 @@ template<typename TRegistry> struct RegisterSchemaHelper
         GetRegisteredSchemaXmls().push_back(bpair<Utf8String, Utf8String>(name, CreateValidSchemaString(name, schema_xml))); \
         } \
     void registry::RegisterMultipleSchemasXml(Utf8StringCR name, bvector<Utf8String> const& schemasXml) \
-
         { \
         int i = 1; \
         for (auto const& schema : schemasXml) \
-
             RegisterSchemaXml(name, CreateValidSchemaString(Utf8PrintfString("%s_%d", name.c_str(), i++).c_str(), schema)); \
         }
 
