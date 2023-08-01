@@ -218,7 +218,7 @@ ValidatedDRay3d CurveLocationDetail::PointAndUnitTangent () const
     ray.origin = point;
     ray.direction.Zero ();
     return ValidatedDRay3d (ray, false);
-    }    
+    }
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
@@ -287,6 +287,23 @@ void CurveLocationDetail::SortByCurveAndFraction (bvector<CurveLocationDetail> &
     std::sort (detail.begin (), detail.end (), cb_lessThan_curveAndFraction);
     }
 
+static bool cb_lessThan_A_And_Fraction (CurveLocationDetailCR dataA, CurveLocationDetailCR dataB)
+    {
+    if (dataA.a == dataB.a)
+        return dataA.fraction < dataB.fraction;
+    return dataA.a < dataB.a;
+    }
+
+void CurveLocationDetail::SortByIndexAndFraction (bvector<CurveLocationDetail> &details, CurveVectorCP curve)
+    {
+    if (curve)
+        {
+        for (CurveLocationDetail &detail : details)
+            detail.a = (double)curve->FindIndexOfPrimitive(detail.curve);
+        }
+    std::sort (details.begin (), details.end (), cb_lessThan_A_And_Fraction);
+    }
+
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
@@ -337,7 +354,7 @@ ValidatedCurveLocationDetailPair CurveLocationDetail::ClosestPoint (bvector<Curv
 +--------------------------------------------------------------------------------------*/
 bool CurveKeyPointCollector::NeedKeyPointType (CurveKeyPointCollector::KeyPointType t) const
     {
-    uint32_t it = (uint32_t)t; 
+    uint32_t it = (uint32_t)t;
     return it < KeyPointType::NumTypes && m_needKeyPointType [it];
     }
 
@@ -346,7 +363,7 @@ bool CurveKeyPointCollector::NeedKeyPointType (CurveKeyPointCollector::KeyPointT
 +--------------------------------------------------------------------------------------*/
 void CurveKeyPointCollector::EnableKeyPointType (CurveKeyPointCollector::KeyPointType t, bool value)
     {
-    uint32_t it = (uint32_t)t; 
+    uint32_t it = (uint32_t)t;
     if (it < KeyPointType::NumTypes)
         m_needKeyPointType [it] = value;
     }

@@ -283,20 +283,22 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Clas
 /*---------------------------------------------------------------------------------**//**
 // @betest
 +---------------+---------------+---------------+---------------+---------------+------*/
-DEFINE_SCHEMA(SelectedNodeInstances_SchemasAcceptablePolymorphically_BaseSchema, R"*(
+DEFINE_MULTIPLE_SCHEMAS(SelectedNodeInstances_SchemasAcceptablePolymorphically, bvector<Utf8String>({
+    R"*(
     <ECEntityClass typeName="A" />
-)*");
-DEFINE_SCHEMA(SelectedNodeInstances_SchemasAcceptablePolymorphically, R"*(
-    <ECSchemaReference name="SelectedNodeInstances_SchemasAcceptablePolymorphically_BaseSchema" version="01.00" alias="base" />
+    )*",
+    R"*(
+    <ECSchemaReference name="SelectedNodeInstances_SchemasAcceptablePolymorphically_1" version="01.00" alias="base" />
     <ECEntityClass typeName="B">
         <BaseClass>base:A</BaseClass>
     </ECEntityClass>
-)*");
+    )*"
+}));
 TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_SchemasAcceptablePolymorphically)
     {
     // set up the dataset
-    ECClassCP classA = GetClass(Utf8PrintfString("%s_BaseSchema", BeTest::GetNameOfCurrentTest()).c_str(), "A");
-    ECClassCP classB = GetClass("B");
+    ECClassCP classA = GetClass(Utf8PrintfString("%s_1", BeTest::GetNameOfCurrentTest()).c_str(), "A");
+    ECClassCP classB = GetClass(Utf8PrintfString("%s_2", BeTest::GetNameOfCurrentTest()).c_str(), "B");
 
     IECInstancePtr b = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
 
@@ -326,20 +328,22 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Schem
 /*---------------------------------------------------------------------------------**//**
 // @betest
 +---------------+---------------+---------------+---------------+---------------+------*/
-DEFINE_SCHEMA(SelectedNodeInstances_SchemasAndClassesAcceptablePolymorphically_BaseSchema, R"*(
+DEFINE_MULTIPLE_SCHEMAS(SelectedNodeInstances_SchemasAndClassesAcceptablePolymorphically, bvector<Utf8String>({
+    R"*(
     <ECEntityClass typeName="A" />
-)*");
-DEFINE_SCHEMA(SelectedNodeInstances_SchemasAndClassesAcceptablePolymorphically, R"*(
-    <ECSchemaReference name="SelectedNodeInstances_SchemasAndClassesAcceptablePolymorphically_BaseSchema" version="01.00" alias="base" />
+    )*",
+    R"*(
+    <ECSchemaReference name="SelectedNodeInstances_SchemasAndClassesAcceptablePolymorphically_1" version="01.00" alias="base" />
     <ECEntityClass typeName="B">
         <BaseClass>base:A</BaseClass>
     </ECEntityClass>
-)*");
+    )*"
+}));
 TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_SchemasAndClassesAcceptablePolymorphically)
     {
     // set up the dataset
-    ECClassCP classA = GetClass(Utf8PrintfString("%s_BaseSchema", BeTest::GetNameOfCurrentTest()).c_str(), "A");
-    ECClassCP classB = GetClass("B");
+    ECClassCP classA = GetClass(Utf8PrintfString("%s_1", BeTest::GetNameOfCurrentTest()).c_str(), "A");
+    ECClassCP classB = GetClass(Utf8PrintfString("%s_2", BeTest::GetNameOfCurrentTest()).c_str(), "B");
 
     IECInstancePtr b = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
 

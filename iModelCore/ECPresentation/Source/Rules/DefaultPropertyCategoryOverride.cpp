@@ -85,18 +85,3 @@ MD5 DefaultPropertyCategoryOverride::_ComputeHash() const
         }
     return md5;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool DefaultPropertyCategoryOverride::_ShallowEqual(PresentationKeyCR other) const
-    {
-    if (!PresentationRule::_ShallowEqual(other))
-        return false;
-
-    DefaultPropertyCategoryOverride const* otherRule = dynamic_cast<DefaultPropertyCategoryOverride const*>(&other);
-    if (nullptr == otherRule)
-        return false;
-
-    return true;
-    }

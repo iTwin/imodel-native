@@ -29,21 +29,6 @@ MultiSchemaClass::MultiSchemaClass(MultiSchemaClass&& other)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool MultiSchemaClass::_ShallowEqual(PresentationKeyCR other) const
-    {
-    MultiSchemaClass const* otherClass = dynamic_cast<MultiSchemaClass const*>(&other);
-
-    if (nullptr == otherClass)
-        return false;
-
-    return m_schemaName == otherClass->m_schemaName
-        && m_arePolymorphic == otherClass->m_arePolymorphic
-        && m_classNames == otherClass->m_classNames;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 MD5 MultiSchemaClass::_ComputeHash() const
     {
     MD5 md5 = T_Super::_ComputeHash();

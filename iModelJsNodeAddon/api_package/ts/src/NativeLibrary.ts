@@ -92,7 +92,12 @@ export class NativeLibrary {
   public static load() {
     if (!this._nativeLib) {
       try {
-        this._nativeLib = require(`./${NativeLibrary.archName}/${NativeLibrary.nodeAddonName}`) as typeof IModelJsNative; // eslint-disable-line @typescript-eslint/no-var-requires
+        const platform = os.platform() as NodeJS.Platform | "ios"; // we add "ios"
+        if (platform === "ios" || platform === "android") {
+          this._nativeLib = (process as any)._linkedBinding("iModelJsNative") as typeof IModelJsNative;
+        } else {
+          this._nativeLib = require(`./${NativeLibrary.archName}/${NativeLibrary.nodeAddonName}`) as typeof IModelJsNative; // eslint-disable-line @typescript-eslint/no-var-requires
+        }
       } catch (err: any) {
         err.message += "\nThis error may occur when trying to run an iTwin.js backend without"
           + " having installed the prerequisites. See the following link for all prerequisites:"
@@ -657,6 +662,17 @@ export declare namespace IModelJsNative {
     public static getUncompressSize(sourceFile: string): string;
     public static normalizeLzmaParams(lzmaPropsJson?: string): string;
     public static recompressRevision(sourceFile: string, targetFile: string, lzmaPropsJson?: string): BentleyStatus;
+  }
+
+  /**
+   * The native object for SchemaUtility
+   * @internal
+   */
+  class SchemaUtility {
+    constructor();
+    /** Converts given schemas and their reference schemas to EC3.2 schemas */
+    public static convertCustomAttributes(xmlSchemas: string[], schemaContext?: ECSchemaXmlContext): string[];
+    public static convertEC2XmlSchemas(ec2XmlSchemas: string[], schemaContext?: ECSchemaXmlContext): string[];
   }
 
   class ECDb implements IDisposable, IConcurrentQueryManager {

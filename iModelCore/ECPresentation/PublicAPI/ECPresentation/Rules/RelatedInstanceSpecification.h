@@ -22,7 +22,6 @@ private:
     bool m_isRequired;
 
 protected:
-    ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationKeyCR other) const override;
     ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
 
     ECPRESENTATION_EXPORT Utf8CP _GetXmlElementName() const override;

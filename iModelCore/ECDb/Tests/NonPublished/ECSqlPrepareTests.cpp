@@ -225,6 +225,7 @@ TEST_F(ECSqlSelectPrepareTests, Alias)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT 1 FROM meta.ECSchemaDef s WHERE Name=?"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT 1 FROM meta.ECSchemaDef s WHERE meta.ECSchemaDef.Name=?"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT 1 FROM ECDbMeta.ECSchemaDef WHERE ECDbMeta.ECSchemaDef.Name=?"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT (SELECT s.ECInstanceId FROM meta.ECPropertyDef s)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT meta.ECSchemaDef.Name FROM meta.ECSchemaDef"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT meta.ECSchemaDef.Name FROM ECDbMeta.ECSchemaDef"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT ECDbMeta.ECSchemaDef.Name FROM ECDbMeta.ECSchemaDef"));
@@ -973,10 +974,16 @@ TEST_F(ECSqlSelectPrepareTests, Join)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("select PHasP_1NPSA.*, PARENT.*, CHILD.* FROM ecsql.P PARENT JOIN ecsql.P CHILD USING ecsql.PHasP_1NPSA BACKWARD ORDER BY PHasP_1NPSA.ECInstanceId DESC"));
 
     //RIGHT JOIN
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("select * FROM ecsql.PSA RIGHT JOIN ecsql.PSAHasP ON PSA.ECInstanceId = PSAHasP.SourceECInstanceId")) << "RIGHT JOIN not supported (neither by SQLite nor by ECDb";
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("select * FROM ecsql.PSA RIGHT JOIN ecsql.PSAHasP ON PSA.ECInstanceId = PSAHasP.SourceECInstanceId"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("select * FROM ecsql.PSA RIGHT OUTER JOIN ecsql.PSAHasP ON PSA.ECInstanceId = PSAHasP.SourceECInstanceId"));
 
     //LEFT JOIN not a good example
     EXPECT_EQ(ECSqlStatus::Success, Prepare("select * FROM ecsql.PSA LEFT JOIN ecsql.PSAHasP ON PSA.ECInstanceId = PSAHasP.SourceECInstanceId"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("select * FROM ecsql.PSA LEFT OUTER JOIN ecsql.PSAHasP ON PSA.ECInstanceId = PSAHasP.SourceECInstanceId"));
+
+    //FULL JOIN
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("select * FROM ecsql.PSA FULL JOIN ecsql.PSAHasP ON PSA.ECInstanceId = PSAHasP.SourceECInstanceId"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("select * FROM ecsql.PSA FULL OUTER JOIN ecsql.PSAHasP ON PSA.ECInstanceId = PSAHasP.SourceECInstanceId"));
     }
 
 //---------------------------------------------------------------------------------------

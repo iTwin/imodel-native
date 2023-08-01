@@ -30,24 +30,6 @@ CustomNodeSpecification::CustomNodeSpecification (int priority, bool hideIfNoChi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool CustomNodeSpecification::_ShallowEqual(PresentationKeyCR other) const
-    {
-    if (!ChildNodeSpecification::_ShallowEqual(other))
-        return false;
-
-    CustomNodeSpecificationCP otherSpec = dynamic_cast<CustomNodeSpecificationCP>(&other);
-    if (nullptr == otherSpec)
-        return false;
-
-    return m_type == otherSpec->m_type
-        && m_label == otherSpec->m_label
-        && m_imageId == otherSpec->m_imageId
-        && m_description == otherSpec->m_description;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 void CustomNodeSpecification::_Accept(PresentationRuleSpecificationVisitor& visitor) const {visitor._Visit(*this);}
 
 /*---------------------------------------------------------------------------------**//**

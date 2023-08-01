@@ -1253,6 +1253,18 @@ DbColumn* DbMappingManager::FkRelationships::CreateRelECClassIdColumn(SchemaImpo
     DbColumn* relClassIdCol = fkTable.FindColumnP(fkColInfo.GetRelClassIdColumnName().c_str());
     if (relClassIdCol != nullptr)
         {
+        if (relClassIdCol->GetPersistenceType() != persType)
+            { //this happens when another nav property with the same name attempts to reuse this column, but the persistence type doesn't fit
+            //so we instead switch to a different column
+                fkColInfo.SwitchToAlternativeRelClassIdColumnName();
+                relClassIdCol = fkTable.FindColumnP(fkColInfo.GetRelClassIdColumnName().c_str());
+            }
+        }
+
+    if (relClassIdCol != nullptr)
+        {
+        //In theory this could be a problem. The column may be used by multiple foreign key relationships, so this could affect the unrelated relationship
+        //However, extensive testing showed that it does not seem possible to produce that scenario, other validations beforehand should prevent the problem.
         if (makeRelClassIdColNotNull && !relClassIdCol->DoNotAllowDbNull())
             relClassIdCol->GetConstraintsR().SetNotNullConstraint();
 
@@ -1624,6 +1636,10 @@ Utf8String FkRelationshipMappingInfo::ForeignKeyColumnInfo::DetermineRelClassIdC
     return relClassIdColName;
     }
 
+void FkRelationshipMappingInfo::ForeignKeyColumnInfo::SwitchToAlternativeRelClassIdColumnName() const
+    {
+    m_relClassIdColName.append("Alt");
+    }
 
 //*************************************************************************************
 //DbMappingManager::Tables

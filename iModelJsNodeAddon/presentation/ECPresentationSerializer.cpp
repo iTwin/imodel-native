@@ -601,6 +601,17 @@ rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ContextR ctx, Sele
     return json;
     }
 
+// TODO: This method should only be used while the transition from RapidJson/JsonValue to BeJsConst isn't finished. It should be deleted afterwards.
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static rapidjson::Document ToRapidJson(BeJsConst json, rapidjson::Document::AllocatorType* allocator = nullptr)
+{
+    rapidjson::Document doc(allocator);
+    doc.Parse(json.Stringify().c_str());
+    return doc;
+}
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -647,6 +658,9 @@ rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ContextR ctx, Cont
 
     // add this last to make sure all necessary classes are captured by classSerializer
     json.AddMember("classesMap", classSerializer.CreateAccumulatedClassesMap(&json.GetAllocator()), json.GetAllocator());
+
+    if (contentDescriptor.UsesModifiedRuleset())
+        json.AddMember("ruleset", ToRapidJson(contentDescriptor.GetRuleset().WriteToJsonValue(), &json.GetAllocator()), json.GetAllocator());
 
     return json;
     }
@@ -1401,17 +1415,6 @@ rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ContextR ctx, Pres
     json.AddMember("query", rapidjson::Value(presentationQuery.GetQueryString().c_str(), json.GetAllocator()), json.GetAllocator());
     json.AddMember("bindings", _AsJson(ctx, presentationQuery.GetBindings(), &json.GetAllocator()), json.GetAllocator());
     return json;
-    }
-
-// TODO: This method should only be used while the transition from RapidJson/JsonValue to BeJsConst isn't finished. It should be deleted afterwards.
-/*---------------------------------------------------------------------------------**//**
-// @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-static rapidjson::Document ToRapidJson(BeJsConst json)
-    {
-    rapidjson::Document doc;
-    doc.Parse(json.Stringify().c_str());
-    return doc;
     }
 
 /*---------------------------------------------------------------------------------**//**
