@@ -242,6 +242,7 @@ namespace connectivity
                 table_exp,
                 table_node_path_entry,
                 table_node_path,
+                table_node_ref,
                 table_node_with_opt_member_func_call,
                 table_node,
                 table_primary_as_range_column,

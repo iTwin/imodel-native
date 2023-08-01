@@ -218,6 +218,7 @@ namespace connectivity
                             {OSQLParseNode::table_exp, "table_exp"},
                             {OSQLParseNode::table_node_path_entry, "table_node_path_entry"},
                             {OSQLParseNode::table_node_path, "table_node_path"},
+                            {OSQLParseNode::table_node_ref, "table_node_ref"},
                             {OSQLParseNode::table_node_with_opt_member_func_call, "table_node_with_opt_member_func_call"},
                             {OSQLParseNode::table_node, "table_node"},
                             {OSQLParseNode::table_primary_as_range_column, "table_primary_as_range_column"},

@@ -61,5 +61,6 @@ public:
     };
 
 #define DEFINE_SCHEMA(name, schema_xml) DEFINE_REGISTRY_SCHEMA(QueryBuilderTest, name, schema_xml)
+#define DEFINE_MULTIPLE_SCHEMAS(name, multiple_schemas_xml) DEFINE_REGISTRY_MULTIPLE_SCHEMAS(QueryBuilderTest, name, multiple_schemas_xml)
 
 END_ECPRESENTATIONTESTS_NAMESPACE
