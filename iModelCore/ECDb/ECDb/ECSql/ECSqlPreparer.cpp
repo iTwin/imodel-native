@@ -1822,8 +1822,14 @@ ECSqlStatus ECSqlExpPreparer::PrepareExtractPropertyExp(NativeSqlBuilder::List& 
     NativeSqlBuilder builder;
     NativeSqlBuilder::List classIdSql;
     NativeSqlBuilder::List instanceIdSql;
-    if (!ctx.GetECDb().GetECSqlConfig().GetExperimentalFeaturesEnabled()) {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Instance property access '%s' is experimental feature. Use 'PRAGMA experimental_features_enabled=true' to enable it.", exp.ToECSql().c_str());
+
+    // Check if ECSQLOption ENABLE_EXPERIMENTAL_FEATURES has been added
+    auto experimentalFeaturesECSqlOption = false;
+    if (const auto options = ctx.GetCurrentScope().GetOptions(); options != nullptr)
+        experimentalFeaturesECSqlOption = options->HasOption(OptionsExp::ENABLE_EXPERIMENTAL_FEATURES);
+
+    if (!ctx.GetECDb().GetECSqlConfig().GetExperimentalFeaturesEnabled() && !experimentalFeaturesECSqlOption) {
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Instance property access '%s' is an experimental feature. Use 'PRAGMA experimental_features_enabled=true' query or add 'ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES' to the query to enable it.", exp.ToECSql().c_str());
         return ECSqlStatus::InvalidECSql;
     }
 
@@ -1857,8 +1863,14 @@ ECSqlStatus ECSqlExpPreparer::PrepareExtractInstanceExp(NativeSqlBuilder::List& 
     NativeSqlBuilder builder;
     NativeSqlBuilder::List classIdSql;
     NativeSqlBuilder::List instanceIdSql;
-    if (!ctx.GetECDb().GetECSqlConfig().GetExperimentalFeaturesEnabled()) {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Instance access '%s' is experimental feature. Use 'PRAGMA experimental_features_enabled=true' to enable it.", exp.ToECSql().c_str());
+    
+    // Check if ECSQLOption ENABLE_EXPERIMENTAL_FEATURES has been added
+    auto experimentalFeaturesECSqlOption = false;
+    if (const auto options = ctx.GetCurrentScope().GetOptions(); options != nullptr)
+        experimentalFeaturesECSqlOption = options->HasOption(OptionsExp::ENABLE_EXPERIMENTAL_FEATURES);
+
+    if (!ctx.GetECDb().GetECSqlConfig().GetExperimentalFeaturesEnabled() && !experimentalFeaturesECSqlOption) {
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Instance access '%s' is an experimental feature. Use 'PRAGMA experimental_features_enabled=true' query or add 'ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES' to the query to enable it.", exp.ToECSql().c_str());
         return ECSqlStatus::InvalidECSql;
     }
     auto rc = PrepareValueExp(classIdSql, ctx, exp.GetClassIdPropExp());
