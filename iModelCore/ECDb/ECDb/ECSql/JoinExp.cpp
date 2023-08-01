@@ -51,7 +51,7 @@ FromExp const* JoinExp::FindFromExpression() const
 //+---------------+---------------+---------------+---------------+---------------+------
 JoinConditionExp::JoinConditionExp(std::unique_ptr<BooleanExp> searchCondition) : JoinSpecExp(Type::JoinCondition)
     {
-    AddChild(move(searchCondition));
+    AddChild(std::move(searchCondition));
     }
 
 //-----------------------------------------------------------------------------------------
@@ -111,7 +111,7 @@ Utf8String NaturalJoinExp::_ToString() const
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
 QualifiedJoinExp::QualifiedJoinExp(std::unique_ptr<ClassRefExp> from, std::unique_ptr<ClassRefExp> to, ECSqlJoinType joinType, std::unique_ptr<JoinSpecExp> joinSpecExp)
-    : JoinExp(Type::QualifiedJoin, joinType, move(from), move(to))
+    : JoinExp(Type::QualifiedJoin, joinType, std::move(from), std::move(to))
     {
     m_nJoinSpecIndex = AddChild(std::move(joinSpecExp));
     }
