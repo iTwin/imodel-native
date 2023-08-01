@@ -9024,7 +9024,6 @@ TEST_F(ECSqlStatementTestFixture, OrderBy)
 
 TEST_F(ECSqlStatementTestFixture, NullsOrdering)
 {
-    // Create StartupCompany
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("StartupCompany.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
 
     auto insertPerson = [](ECDbCR ecdb, ECClassCR ecClass, Utf8CP firstName, Utf8CP lastName) {
