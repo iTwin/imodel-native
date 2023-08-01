@@ -818,6 +818,7 @@ TEST_F(CommonTableExpTestFixture, SubQueryBlock) {
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+    ASSERT_STREQ(stmt.GetNativeSql(), "WITH models(i) AS (SELECT [foo].[ECInstanceId] FROM (SELECT [Id] ECInstanceId,73 ECClassId FROM [main].[ts_Foo]) [foo])\nSELECT models.i FROM models WHERE models.i IN (:_ecdb_sqlparam_ix1_col1)");
     }
 
 END_ECDBUNITTESTS_NAMESPACE

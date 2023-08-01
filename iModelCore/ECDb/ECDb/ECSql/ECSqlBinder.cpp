@@ -163,9 +163,9 @@ std::unique_ptr<IdECSqlBinder> ECSqlBinderFactory::CreateIdBinder(ECSqlPrepareCo
 //---------------------------------------------------------------------------------------
 std::unique_ptr<IdECSqlBinder> ECSqlBinderFactory::CreateIdBinderForQuery(ECSqlPrepareContext& ctx, ECSqlTypeInfo const& typeInfo, ECSqlBinder::SqlParamNameGenerator& paramNameGen)
     {
-    const ECSqlType ecsqlType = ctx.GetCurrentScope().GetECSqlType();
-    // Only SELECT/DELETE or UPDATE for AssignmentList expressions should call this method
-    BeAssert(ecsqlType == ECSqlType::Select || ecsqlType == ECSqlType::Delete || (ecsqlType == ECSqlType::Update && ctx.GetCurrentScope().GetExp().GetType() != Exp::Type::AssignmentList));
+    // Query expressions like SELECT/DELETE or UPDATE for AssignmentList expressions should call this function
+    BeAssert(ctx.GetCurrentScope().GetECSqlType() == ECSqlType::Select || ctx.GetCurrentScope().GetECSqlType() == ECSqlType::Delete
+        || (ctx.GetCurrentScope().GetECSqlType() == ECSqlType::Update && ctx.GetCurrentScope().GetExp().GetType() != Exp::Type::AssignmentList) && "ECSqlType is not supported and should have been caught before");
     // SELECT/DELETE or UPDATE for AssignmentList expressions can use constant values for virtual columns and therefore don't need no-op binders
     const bool isNoopBinder = false;
     return std::unique_ptr<IdECSqlBinder>(new IdECSqlBinder(ctx, typeInfo, isNoopBinder, paramNameGen));
