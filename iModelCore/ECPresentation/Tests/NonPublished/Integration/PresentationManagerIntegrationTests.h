@@ -149,5 +149,6 @@ struct UpdateTests : PresentationManagerIntegrationTests
     };
 
 #define DEFINE_SCHEMA(name, schema_xml) DEFINE_REGISTRY_SCHEMA(PresentationManagerIntegrationTests, name, schema_xml)
+#define DEFINE_MULTIPLE_SCHEMAS(name, multiple_schemas_xml) DEFINE_REGISTRY_MULTIPLE_SCHEMAS(PresentationManagerIntegrationTests, name, multiple_schemas_xml)
 
 END_ECPRESENTATIONTESTS_NAMESPACE

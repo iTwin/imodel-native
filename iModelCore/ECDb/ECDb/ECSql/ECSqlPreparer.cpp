@@ -1079,10 +1079,6 @@ ECSqlStatus ECSqlExpPreparer::PrepareQualifiedJoinExp(ECSqlPrepareContext& ctx, 
     if (!r.IsSuccess())
         return r;
 
-    //ECSQL_LIMITATION:
-    //https://www.sqlite.org/omitted.html
-    //RIGHT and FULL OUTER JOIN  LEFT OUTER JOIN is implemented, but not RIGHT OUTER JOIN or FULL OUTER JOIN.
-    //
     switch (exp.GetJoinType())
         {
             case ECSqlJoinType::InnerJoin:
@@ -1097,15 +1093,13 @@ ECSqlStatus ECSqlExpPreparer::PrepareQualifiedJoinExp(ECSqlPrepareContext& ctx, 
             }
             case ECSqlJoinType::RightOuterJoin:
             {
-            ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "'RIGHT OUTER JOIN' is currently not supported");
-            return ECSqlStatus::InvalidECSql;
+            sqlBuilder.Append(" RIGHT OUTER JOIN ");
+            break;
             }
             case ECSqlJoinType::FullOuterJoin:
             {
-            //ECSQL_TODO: way around full outer join
-            //http://stackoverflow.com/questions/1923259/full-outer-join-with-sqlite
-            ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "'FULL OUTER JOIN' is currently not supported");
-            return ECSqlStatus::InvalidECSql;
+            sqlBuilder.Append(" FULL OUTER JOIN ");
+            break;
             }
         }
 
