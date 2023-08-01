@@ -18,6 +18,7 @@ Utf8CP const OptionsExp::NOECCLASSIDFILTER_OPTION = "NoECClassIdFilter";
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
 Utf8CP const OptionsExp::READONLYPROPERTIESAREUPDATABLE_OPTION = "ReadonlyPropertiesAreUpdatable";
+Utf8CP const OptionsExp::ENABLE_EXPERIMENTAL_FEATURES = "ENABLE_EXPERIMENTAL_FEATURES";
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod

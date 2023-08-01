@@ -975,9 +975,15 @@ TEST_F(ECSqlSelectPrepareTests, Join)
 
     //RIGHT JOIN
     EXPECT_EQ(ECSqlStatus::Success, Prepare("select * FROM ecsql.PSA RIGHT JOIN ecsql.PSAHasP ON PSA.ECInstanceId = PSAHasP.SourceECInstanceId"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("select * FROM ecsql.PSA RIGHT OUTER JOIN ecsql.PSAHasP ON PSA.ECInstanceId = PSAHasP.SourceECInstanceId"));
 
     //LEFT JOIN not a good example
     EXPECT_EQ(ECSqlStatus::Success, Prepare("select * FROM ecsql.PSA LEFT JOIN ecsql.PSAHasP ON PSA.ECInstanceId = PSAHasP.SourceECInstanceId"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("select * FROM ecsql.PSA LEFT OUTER JOIN ecsql.PSAHasP ON PSA.ECInstanceId = PSAHasP.SourceECInstanceId"));
+
+    //FULL JOIN
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("select * FROM ecsql.PSA FULL JOIN ecsql.PSAHasP ON PSA.ECInstanceId = PSAHasP.SourceECInstanceId"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("select * FROM ecsql.PSA FULL OUTER JOIN ecsql.PSAHasP ON PSA.ECInstanceId = PSAHasP.SourceECInstanceId"));
     }
 
 //---------------------------------------------------------------------------------------

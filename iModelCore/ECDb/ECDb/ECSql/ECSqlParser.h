@@ -222,6 +222,7 @@ private:
     BentleyStatus ParseSubquery(std::unique_ptr<SubqueryExp>&, connectivity::OSQLParseNode const*) const;
 
     BentleyStatus ParseTableNode(std::unique_ptr<ClassNameExp>&, connectivity::OSQLParseNode const& tableNode, ECSqlType, PolymorphicInfo) const;
+    BentleyStatus ParseTableNodeRef(std::unique_ptr<ClassRefExp>&, connectivity::OSQLParseNode const&, ECSqlType) const;
     BentleyStatus ParseTableNodeWithOptMemberCall(std::unique_ptr<ClassNameExp>&, connectivity::OSQLParseNode const&, ECSqlType, PolymorphicInfo polymorphic, bool disqualifyPrimaryJoin) const;
     BentleyStatus ParseTableRef(std::unique_ptr<ClassRefExp>&, connectivity::OSQLParseNode const*, ECSqlType ecsqlType) const;
     BentleyStatus ParseTerm(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
