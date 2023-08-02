@@ -247,20 +247,22 @@ TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_ReturnsQuery
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-DEFINE_SCHEMA(ContentInstancesOfSpecificClasses_ReturnsQueryBasedOnMultipleSchemaClasses1, R"*(
+DEFINE_MULTIPLE_SCHEMAS(ContentInstancesOfSpecificClasses_ReturnsQueryBasedOnMultipleSchemaClasses, bvector<Utf8String>({
+    R"*(
     <ECEntityClass typeName="A1">
         <ECProperty propertyName="PropA1" typeName="int" />
     </ECEntityClass>
-)*");
-DEFINE_SCHEMA(ContentInstancesOfSpecificClasses_ReturnsQueryBasedOnMultipleSchemaClasses2, R"*(
+    )*",
+    R"*(
     <ECEntityClass typeName="A2">
         <ECProperty propertyName="PropA2" typeName="int" />
     </ECEntityClass>
-)*");
+    )*"
+}));
 TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_ReturnsQueryBasedOnMultipleSchemaClasses)
     {
-    ECClassCP classA1 = GetECClass(Utf8String(BeTest::GetNameOfCurrentTest()).append("1").c_str(), "A1");
-    ECClassCP classA2 = GetECClass(Utf8String(BeTest::GetNameOfCurrentTest()).append("2").c_str(), "A2");
+    ECClassCP classA1 = GetECClass(Utf8String(BeTest::GetNameOfCurrentTest()).append("_1").c_str(), "A1");
+    ECClassCP classA2 = GetECClass(Utf8String(BeTest::GetNameOfCurrentTest()).append("_2").c_str(), "A2");
     ContentInstancesOfSpecificClassesSpecification spec(1, false, "",
         {
         CreateMultiSchemaClass({classA1}, false, classA1->GetSchema().GetName().c_str()),

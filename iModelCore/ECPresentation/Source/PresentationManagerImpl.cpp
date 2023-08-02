@@ -19,6 +19,7 @@
 #include "Hierarchies/HierarchiesComparer.h"
 #include "Hierarchies/HierarchiesFiltering.h"
 #include "Hierarchies/NavNodesCacheWrapper.h"
+#include "Hierarchies/NodePathsHelper.h"
 #include "PresentationManagerImpl.h"
 #include "UpdateHandler.h"
 
@@ -903,12 +904,18 @@ void RulesDrivenECPresentationManagerImpl::_OnConnectionEvent(ConnectionEvent co
 void RulesDrivenECPresentationManagerImpl::_OnECInstancesChanged(ECDbCR db, bvector<ECInstanceChangeEventSource::ChangedECInstance> changes)
     {
     auto scope = Diagnostics::Scope::Create(Utf8PrintfString("ECInstances changed with %" PRIu64 " changes", (uint64_t)changes.size()));
+
+    if (changes.empty())
+        return;
+
     IConnectionPtr connection = m_connections->GetConnection(db);
     if (connection.IsNull())
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Connections, "Failed to get a connection for current task");
 
-    if (!changes.empty())
-        m_updateHandler->NotifyECInstancesChanged(*connection, changes);
+    Savepoint txn(connection->GetDb(), "Impl::_OnECInstancesChanged");
+    DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Connections, txn.IsActive(), "Failed to start a transaction");
+
+    m_updateHandler->NotifyECInstancesChanged(*connection, changes);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -975,16 +982,6 @@ void RulesDrivenECPresentationManagerImpl::FinalizeNode(RequestWithRulesetImplPa
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Hierarchies, "Failed to create context for finalizing node.");
 
     NodesFinalizer(*context).Finalize(node);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-NavNodePtr RulesDrivenECPresentationManagerImpl::FinalizeNode(RequestWithRulesetImplParams const& params, NavNodeCR node) const
-    {
-    NavNodePtr clone = node.Clone();
-    FinalizeNode(params, *clone);
-    return clone;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1125,6 +1122,10 @@ static void ReportNodesResponse(WithPageOptions<HierarchyRequestParams> const& p
 NavNodesDataSourcePtr RulesDrivenECPresentationManagerImpl::_GetNodes(WithPageOptions<HierarchyRequestImplParams> const& params)
     {
     auto scope = CreateScopeForHierarchyRequest(params, "nodes");
+
+    Savepoint txn(params.GetConnection().GetDb(), "Impl::_GetNodes");
+    DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Connections, txn.IsActive(), "Failed to start a transaction");
+
     NavNodesDataSourcePtr source = GetCachedDataSource(params);
     ReportNodesResponse(params, source.get());
     return source;
@@ -1158,6 +1159,9 @@ size_t RulesDrivenECPresentationManagerImpl::_GetNodesCount(HierarchyRequestImpl
     {
     auto scope = CreateScopeForHierarchyRequest(params, "nodes count");
 
+    Savepoint txn(params.GetConnection().GetDb(), "Impl::_GetNodesCount");
+    DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Connections, txn.IsActive(), "Failed to start a transaction");
+
     NavNodesDataSourcePtr source = GetCachedDataSource(params);
     size_t size = source.IsValid() ? source->GetSize() : 0;
     ReportNodesCountResponse(params, size);
@@ -1182,6 +1186,9 @@ ContentDescriptorCPtr RulesDrivenECPresentationManagerImpl::_GetNodesDescriptor(
     {
     auto scope = CreateScopeForHierarchyRequest(params, "nodes descriptor");
 
+    Savepoint txn(params.GetConnection().GetDb(), "Impl::_GetNodesDescriptor");
+    DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Connections, txn.IsActive(), "Failed to start a transaction");
+
     auto context = CreateNodesProviderContext(HierarchyRequestImplParams::Create(HierarchyRequestParams(params, params.GetParentNodeKey()), params));
     auto ruleset = HierarchiesFilteringHelper::CreateHierarchyLevelDescriptorRuleset(
         context->GetVirtualParentNode().get(),
@@ -1198,24 +1205,13 @@ ContentDescriptorCPtr RulesDrivenECPresentationManagerImpl::_GetNodesDescriptor(
             ),
         *KeySet::Create(params.GetParentNodeKey() ? NavNodeKeyList{ params.GetParentNodeKey() } : NavNodeKeyList{})
         ), params);
-    return GetContentDescriptor(descriptorParams);
-    }
+    auto descriptor = GetContentDescriptor(descriptorParams);
+    if (descriptor.IsNull())
+        return nullptr;
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-NavNodeCPtr RulesDrivenECPresentationManagerImpl::_GetParent(NodeParentRequestImplParams const& params)
-    {
-    auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Get parent for node %s", DiagnosticsHelpers::CreateNodeIdentifier(params.GetNode()).c_str()));
-
-    std::shared_ptr<NodesCache> cache = m_nodesCachesManager->GetPersistentCache(params.GetConnection().GetId());
-    VALID_HIERARCHY_CACHE_PRECONDITION(cache, nullptr);
-
-    auto node = cache->GetPhysicalParentNode(params.GetNode().GetNodeId(), params.GetRulesetVariables(), params.GetInstanceFilter().get());
-    if (node.IsValid())
-        FinalizeNode(RequestWithRulesetImplParams::Create(params), *node);
-
-    return node;
+    auto result = ContentDescriptor::Create(*descriptor);
+    result->SetRuleset(*ruleset);
+    return result;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1235,7 +1231,7 @@ void RulesDrivenECPresentationManagerImpl::TraverseHierarchy(HierarchyRequestImp
     NavNodesDataSourceCPtr nodes = GetCachedDataSource(*context, nullptr);
     if (nodes.IsValid())
         {
-        for (NavNodePtr node : *nodes)
+        for (auto const& node : *nodes)
             TraverseHierarchy(CreateHierarchyRequestParams(params, node.get()), cache);
         }
     }
@@ -1246,6 +1242,10 @@ void RulesDrivenECPresentationManagerImpl::TraverseHierarchy(HierarchyRequestImp
 bvector<NavNodeCPtr> RulesDrivenECPresentationManagerImpl::_GetFilteredNodes(NodePathsFromFilterTextRequestImplParams const& params)
     {
     auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Get filtered nodes: '%s'", params.GetFilterText().c_str()));
+
+    Savepoint txn(params.GetConnection().GetDb(), "Impl::_GetFilteredNodes");
+    DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Connections, txn.IsActive(), "Failed to start a transaction");
+
     bvector<NavNodeCPtr> result;
 
     std::shared_ptr<NodesCache> nodesCache = m_nodesCachesManager->GetPersistentCache(params.GetConnection().GetId());
@@ -1265,8 +1265,11 @@ bvector<NavNodeCPtr> RulesDrivenECPresentationManagerImpl::_GetFilteredNodes(Nod
         NavNodesDataSourceCPtr rootNodes = GetCachedDataSource(*rootNodesContext, nullptr);
         if (rootNodes.IsValid())
             {
-            for (NavNodeCPtr node : *rootNodes)
-                ;
+            for (auto const& node : *rootNodes)
+                {
+                (void)node;
+                ThrowIfCancelled(params.GetCancellationToken());
+                }
             }
         }
 
@@ -1281,7 +1284,7 @@ bvector<NavNodeCPtr> RulesDrivenECPresentationManagerImpl::_GetFilteredNodes(Nod
     if (provider.IsNull())
         return result;
 
-    for (NavNodeCPtr node : *provider)
+    for (auto const& node : *provider)
         {
         NOT_NULL_PRECONDITION(node, "RulesDrivenECPresentationManagerImpl::_GetFilteredNodes");
         TraverseHierarchy(CreateHierarchyRequestParams(params, node.get()), nodesCache);
@@ -1294,13 +1297,62 @@ bvector<NavNodeCPtr> RulesDrivenECPresentationManagerImpl::_GetFilteredNodes(Nod
         DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, LOG_WARNING, "Failed to create filtered nodes context. Returning empty list.");
         return result;
         }
+
     NavNodesProviderPtr filteredProvider = nodesCache->GetFilteredNodesProvider(*filteredNodesContext, params.GetFilterText().c_str());
-    for (NavNodeCPtr node : *filteredProvider)
+    NodesFinalizer finalizer(*filteredNodesContext);
+    DisabledFullNodesLoadContext disableFinalize(*filteredProvider);
+    for (NavNodePtr node : *filteredProvider)
         {
+        ThrowIfCancelled(params.GetCancellationToken());
         NOT_NULL_PRECONDITION(node, "RulesDrivenECPresentationManagerImpl::_GetFilteredNodes");
+
+        // we don't support hierarchy level filtering on top of filtered hierarchies - set the value before finalizing
+        node->SetSupportsFiltering(false);
+        finalizer.Finalize(*node);
+
         result.push_back(node);
         }
+
     return result;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<NodesPathElement> RulesDrivenECPresentationManagerImpl::_CreateNodesHierarchy(CreateNodesHierarchyRequestImplParams const& params)
+    {
+    auto scope = Diagnostics::Scope::Create("Create nodes hierarchy");
+
+    Savepoint txn(params.GetConnection().GetDb(), "Impl::_CreateNodesHierarchy");
+    DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Connections, txn.IsActive(), "Failed to start a transaction");
+
+    std::shared_ptr<NodesCache> cache = m_nodesCachesManager->GetPersistentCache(params.GetConnection().GetId());
+    VALID_HIERARCHY_CACHE_PRECONDITION(cache, nullptr);
+
+    NavNodesProviderContextPtr context = CreateNodesProviderContext(CreateHierarchyRequestParams(params), cache);
+    if (context.IsNull())
+        {
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, LOG_WARNING, "Failed to create nodes context. Returning empty list.");
+        return {};
+        }
+
+    NodesFinalizer finalizer(*context);
+
+    auto parentGetter = [&](NavNodeCR child) -> NavNodeCPtr
+        {
+        auto parentNode = cache->GetPhysicalParentNode(child.GetNodeId(), context->GetRulesetVariables(), nullptr);
+        if (parentNode.IsNull())
+            return nullptr;
+
+        // no need to determine children for it since we know it's a "parent"
+        NavNodePtr clone = parentNode->Clone();
+        clone->SetHasChildren(true);
+        clone->SetSupportsFiltering(false);
+        finalizer.Finalize(*clone);
+
+        return clone;
+        };
+    return NodePathsHelper::CreateHierarchy(params.GetNodes(), parentGetter, params.GetCancellationToken());
     }
 
 /*=================================================================================**//**
@@ -1465,6 +1517,9 @@ bvector<SelectClassInfo> RulesDrivenECPresentationManagerImpl::_GetContentClasse
     {
     auto scope = Diagnostics::Scope::Create("Get content classes");
 
+    Savepoint txn(params.GetConnection().GetDb(), "Impl::_GetContentClasses");
+    DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Connections, txn.IsActive(), "Failed to start a transaction");
+
     // get the ruleset
     PresentationRuleSetPtr ruleset = FindRuleset(GetLocaters(), params.GetConnection(), params.GetRulesetId().c_str());
     if (!ruleset.IsValid())
@@ -1508,6 +1563,9 @@ ContentDescriptorCPtr RulesDrivenECPresentationManagerImpl::_GetContentDescripto
     {
     auto scope = Diagnostics::Scope::Create("Get content descriptor");
 
+    Savepoint txn(params.GetConnection().GetDb(), "Impl::_GetContentDescriptor");
+    DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Connections, txn.IsActive(), "Failed to start a transaction");
+
     Utf8CP preferredDisplayType = params.GetPreferredDisplayType().size() ? params.GetPreferredDisplayType().c_str() : ContentDisplayType::Undefined;
     INavNodeKeysContainerCPtr nodeKeys = params.GetInputKeys().GetAllNavNodeKeys();
     ContentProviderKey key(params.GetConnection().GetId(), params.GetRulesetId(), preferredDisplayType, params.GetContentFlags(), params.GetUnitSystem(), *nodeKeys, params.GetSelectionInfo());
@@ -1547,6 +1605,9 @@ ContentCPtr RulesDrivenECPresentationManagerImpl::_GetContent(WithPageOptions<Co
     {
     auto scope = Diagnostics::Scope::Create("Get content");
 
+    Savepoint txn(params.GetConnection().GetDb(), "Impl::_GetContent");
+    DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Connections, txn.IsActive(), "Failed to start a transaction");
+
     SpecificationContentProviderPtr provider = GetContentProvider(params);
     if (provider.IsNull())
         {
@@ -1585,6 +1646,9 @@ size_t RulesDrivenECPresentationManagerImpl::_GetContentSetSize(ContentRequestIm
     {
     auto scope = Diagnostics::Scope::Create("Get content set size");
 
+    Savepoint txn(params.GetConnection().GetDb(), "Impl::_GetContentSetSize");
+    DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Connections, txn.IsActive(), "Failed to start a transaction");
+
     SpecificationContentProviderPtr provider = GetContentProvider(params);
     if (provider.IsNull())
         {
@@ -1619,6 +1683,9 @@ size_t RulesDrivenECPresentationManagerImpl::_GetContentSetSize(ContentRequestIm
 LabelDefinitionCPtr RulesDrivenECPresentationManagerImpl::_GetDisplayLabel(KeySetDisplayLabelRequestImplParams const& params)
     {
     auto scope = Diagnostics::Scope::Create("Get display label");
+
+    Savepoint txn(params.GetConnection().GetDb(), "Impl::_GetDisplayLabel");
+    DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Connections, txn.IsActive(), "Failed to start a transaction");
 
     Utf8String rulesetId(params.GetRulesetId());
     RulesetVariables rulesetVariables(params.GetRulesetVariables());
@@ -1661,6 +1728,9 @@ PagingDataSourcePtr<DisplayValueGroupCPtr> RulesDrivenECPresentationManagerImpl:
     {
     auto scope = Diagnostics::Scope::Create("Get distinct values");
 
+    Savepoint txn(params.GetConnection().GetDb(), "Impl::_GetDistinctValues");
+    DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Connections, txn.IsActive(), "Failed to start a transaction");
+
     ContentDescriptor::Field const* field = params.GetContentDescriptor().FindField(params.GetDistinctFieldMatcher());
     if (field == nullptr)
         {
@@ -1668,7 +1738,7 @@ PagingDataSourcePtr<DisplayValueGroupCPtr> RulesDrivenECPresentationManagerImpl:
         return nullptr;
         }
 
-    SpecificationContentProviderCPtr contentProvider = GetContentProvider(ContentRequestImplParams::Create(params));
+    SpecificationContentProviderPtr contentProvider = GetContentProvider(ContentRequestImplParams::Create(params));
     if (contentProvider.IsNull())
         {
         DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Failed to get content provider");
@@ -1680,6 +1750,12 @@ PagingDataSourcePtr<DisplayValueGroupCPtr> RulesDrivenECPresentationManagerImpl:
         {
         DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Failed to get content descriptor");
         return nullptr;
+        }
+    if (providerDescriptor != &params.GetContentDescriptor())
+        {
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Received a modified descriptor, cloning provider.");
+        contentProvider = contentProvider->Clone();
+        contentProvider->SetContentDescriptor(params.GetContentDescriptor());
         }
 
     auto queryScope = Diagnostics::Scope::Create("Query distinct values");
@@ -1741,6 +1817,9 @@ public:
 HierarchyComparePositionPtr RulesDrivenECPresentationManagerImpl::_CompareHierarchies(HierarchyCompareRequestImplParams const& params)
     {
     auto scope = Diagnostics::Scope::Create("Compare hierarchies");
+
+    Savepoint txn(params.GetConnection().GetDb(), "Impl::_CompareHierarchies");
+    DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Connections, txn.IsActive(), "Failed to start a transaction");
 
     std::shared_ptr<INavNodesCache> nodesCache = m_nodesCachesManager->GetPersistentCache(params.GetConnection().GetId());
     if (nullptr == nodesCache)
