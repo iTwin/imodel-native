@@ -804,6 +804,7 @@ TEST_F(CommonTableExpTestFixture, SubQueryBlock) {
                 </ECEntityClass>
             </ECSchema>)xml")));
 
+    auto fooClassId = m_ecdb.Schemas().GetClassId("TestSchema", "Foo");
     if ("simple_select_query") {
         auto ecsql = R"(
             WITH models(i) AS (
@@ -812,7 +813,7 @@ TEST_F(CommonTableExpTestFixture, SubQueryBlock) {
         )";
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
-        ASSERT_STREQ(stmt.GetNativeSql(), "WITH models(i) AS (SELECT [foo].[ECInstanceId] FROM (SELECT [Id] ECInstanceId,73 ECClassId FROM [main].[ts_Foo]) [foo])\nSELECT models.i FROM models WHERE models.i=1");
+        ASSERT_STREQ(stmt.GetNativeSql(), SqlPrintfString("WITH models(i) AS (SELECT [foo].[ECInstanceId] FROM (SELECT [Id] ECInstanceId,%s ECClassId FROM [main].[ts_Foo]) [foo])\nSELECT models.i FROM models WHERE models.i=1", fooClassId.ToString().c_str()));
     }
     if ("select_property_in_cte_block") {
         auto ecsql = R"(
@@ -822,7 +823,7 @@ TEST_F(CommonTableExpTestFixture, SubQueryBlock) {
         )";
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
-        ASSERT_STREQ(stmt.GetNativeSql(), "WITH models(i) AS (SELECT [foo].[Code] FROM (SELECT [Id] ECInstanceId,73 ECClassId,[Code] FROM [main].[ts_Foo]) [foo])\nSELECT models.i FROM models WHERE models.i IN (:_ecdb_sqlparam_ix1_col1)");
+        ASSERT_STREQ(stmt.GetNativeSql(), SqlPrintfString("WITH models(i) AS (SELECT [foo].[Code] FROM (SELECT [Id] ECInstanceId,%s ECClassId,[Code] FROM [main].[ts_Foo]) [foo])\nSELECT models.i FROM models WHERE models.i IN (:_ecdb_sqlparam_ix1_col1)", fooClassId.ToString().c_str()));
     }
     if ("select_id_in_cte_block") {
         auto ecsql = R"(
@@ -832,7 +833,7 @@ TEST_F(CommonTableExpTestFixture, SubQueryBlock) {
         )";
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
-        ASSERT_STREQ(stmt.GetNativeSql(), "WITH models(i) AS (SELECT [foo].[ECInstanceId] FROM (SELECT [Id] ECInstanceId,73 ECClassId FROM [main].[ts_Foo]) [foo])\nSELECT models.i FROM models WHERE models.i IN (:_ecdb_sqlparam_ix1_col1)");
+        ASSERT_STREQ(stmt.GetNativeSql(), SqlPrintfString("WITH models(i) AS (SELECT [foo].[ECInstanceId] FROM (SELECT [Id] ECInstanceId,%s ECClassId FROM [main].[ts_Foo]) [foo])\nSELECT models.i FROM models WHERE models.i IN (:_ecdb_sqlparam_ix1_col1)", fooClassId.ToString().c_str()));
     }
     if ("nested_select_id_in_cte_block") {
         auto ecsql = R"(
@@ -842,7 +843,7 @@ TEST_F(CommonTableExpTestFixture, SubQueryBlock) {
         )";
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
-    ASSERT_STREQ(stmt.GetNativeSql(), "WITH models(i) AS (SELECT (SELECT [foo].[ECInstanceId] FROM (SELECT [Id] ECInstanceId,73 ECClassId FROM [main].[ts_Foo]) [foo]) [ecId])\nSELECT models.i FROM models WHERE models.i IN (:_ecdb_sqlparam_ix1_col1)");
+        ASSERT_STREQ(stmt.GetNativeSql(), SqlPrintfString("WITH models(i) AS (SELECT (SELECT [foo].[ECInstanceId] FROM (SELECT [Id] ECInstanceId,%s ECClassId FROM [main].[ts_Foo]) [foo]) [ecId])\nSELECT models.i FROM models WHERE models.i IN (:_ecdb_sqlparam_ix1_col1)", fooClassId.ToString().c_str()));
     }
 }
 
