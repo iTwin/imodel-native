@@ -577,26 +577,6 @@ SchemaSync::Status SchemaSync::VerifySyncDb(SyncDbUri const& syncDbUri, bool isP
 				syncDbInfo.GetSyncId().ToString().c_str());
 		return Status::ERROR_SCHEMA_SYNC_INFO_DONOT_MATCH;
 	}
-
-    const auto projectGUID = m_conn.QueryProjectGuid();
-    if (syncDbInfo.GetProjectId() != projectGUID) {
-		m_conn.GetImpl().Issues().ReportV(
-			IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue,
-			"project id does not match (local) %s <> (SyncDb) %s.",
-				projectGUID.ToString().c_str(),
-				syncDbInfo.GetProjectId().ToString().c_str());
-		return Status::ERROR_SCHEMA_SYNC_INFO_DONOT_MATCH;
-	}
-
-    const auto fileGUID = m_conn.GetDbGuid();
-    if (syncDbInfo.GetFileId() != fileGUID) {
-		m_conn.GetImpl().Issues().ReportV(
-			IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue,
-			"project id does not match (local) %s <> (SyncDb) %s.",
-				fileGUID.ToString().c_str(),
-				syncDbInfo.GetFileId().ToString().c_str());
-		return Status::ERROR_SCHEMA_SYNC_INFO_DONOT_MATCH;
-	}
 	sharedDb.CloseDb();
     return Status::OK;
 }

@@ -4643,12 +4643,20 @@ static void bcvfsUploadDeleteBlockIf(UploadCtx2 *pCtx, int iBlk){
 }
 
 
-static void bcvfsUploadOneBlock(UploadCtx2 *pCtx){
+/*
+** Dispatch another block upload for the upload-context passed as the only
+** argument. Or, if the next block to be uploaded is a duplicate of a block
+** already uploaded to cloud storage, set (*pbRetry) to non-zero and return 
+** without doing anything.
+*/
+static void bcvfsUploadOneBlockTry(UploadCtx2 *pCtx, int *pbRetry){
   sqlite3_bcvfs *pFs = pCtx->pFs;
   Manifest *pMan = pCtx->pMan;
   int nName = NAMEBYTES(pMan);
   ManifestDb *pDb = 0;
   int rc = pCtx->rc;
+
+  assert( *pbRetry==0 );
 
   /* Find the next block to upload */
   if( rc==SQLITE_OK ){
@@ -4698,7 +4706,7 @@ static void bcvfsUploadOneBlock(UploadCtx2 *pCtx){
         aAlt = bcvMHashQuery(pCtx->pMHash, aNew, MD5_DIGEST_LENGTH);
         if( aAlt ){
           memcpy(aNew, aAlt, nName);
-          bSkip = 1;
+          *pbRetry = bSkip = 1;
         }
       }
       bcvfsUploadRecordAdd(&rc, pCtx, aName, aNew, nName);
@@ -4725,6 +4733,19 @@ static void bcvfsUploadOneBlock(UploadCtx2 *pCtx){
   }
 
   pCtx->rc = rc;
+}
+
+/*
+** Dispatch another block upload for the upload-context passed as the only
+** argument. If there are no further blocks to upload, or if an error has
+** already occurred, this function is a no-op.
+*/
+static void bcvfsUploadOneBlock(UploadCtx2 *pCtx){
+  int bRetry = 1;
+  while( pCtx->rc==SQLITE_OK && bRetry ){
+    bRetry = 0;
+    bcvfsUploadOneBlockTry(pCtx, &bRetry);
+  }
 }
 
 /*
