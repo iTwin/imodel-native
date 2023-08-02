@@ -1893,7 +1893,7 @@ static int bdWriteFile(
   i64 iOff
 ){
   const int szChunk = 32768;      /* Any size acceptable to xWrite() */
-  const int szEncChunk = 4096;     /* Must match size in bcvfsProxyDecrypt */ //TODO: Assuming a page size of 4kb here I think..? If our page size is lower than 4kb we might hvae issues.
+  const int szEncChunk = 4096;     /* Must match size in bcvfsProxyDecrypt */ // Assuming a page size of 4kb here. If our page size is lower than 4kb we might have issues.
   u8 *aBuf = 0;                   /* Interim buffer for encryption, if req. */
   int rc = SQLITE_OK;             /* Return code */
   int i;                          /* Offset within aData[] */
