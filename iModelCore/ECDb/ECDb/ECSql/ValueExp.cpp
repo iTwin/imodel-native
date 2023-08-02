@@ -749,7 +749,7 @@ BentleyStatus MemberFunctionCallExp::AddArgument(std::unique_ptr<ValueExp> argum
     if (ValidateArgument(*argument, error) != SUCCESS)
         return ERROR;
 
-    AddChild(move(argument));
+    AddChild(std::move(argument));
     return SUCCESS;
     }
 
@@ -861,7 +861,7 @@ BentleyStatus FunctionCallExp::AddArgument(std::unique_ptr<ValueExp> argument)
         return ERROR;
         }
 
-    AddChild(move(argument));
+    AddChild(std::move(argument));
     return SUCCESS;
     }
 
