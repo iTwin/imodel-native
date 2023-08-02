@@ -91,6 +91,13 @@ Policy PolicyManager::DoGetPolicy(ClassIsValidInECSqlPolicyAssertion const& asse
 
     BeAssert(!ecClass.GetSchema().IsStandardSchema() || (!className.Equals("AnyClass") && !className.Equals("InstanceCount")) && "AnyClass or InstanceCount class should already be caught by IsNotMapped check.");
 
+    auto& ecdb = assertion.GetClassMap().GetECDb();
+    if (ecdb.Schemas().GetDispatcher().IsClassUnsupported(ecClass.GetId()))
+        {
+        Utf8PrintfString message("Cannot use ECClass '%s' because it is requires a newer code version of ECDb.", ecClass.GetFullName());
+        return Policy::CreateNotSupported(message);
+        }
+
     const ECSqlType ecsqlType = assertion.GetECSqlType();
     if (ecsqlType == ECSqlType::Select)
         return Policy::CreateSupported(); //no more policies for SELECT

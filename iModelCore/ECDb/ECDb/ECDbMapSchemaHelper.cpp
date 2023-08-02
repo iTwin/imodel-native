@@ -135,6 +135,20 @@ bool ECDbMapCustomAttributeHelper::TryGetImportRequiresVersion(ImportRequiresVer
     return true;
     }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+bool ECDbMapCustomAttributeHelper::TryGetUseRequiresVersion(UseRequiresVersionCustomAttribute& ca, ECN::ECClassCR ecClass)
+    {
+    IECInstancePtr inst = CustomAttributeReader::Read(ecClass, ECDBMAP_SCHEMANAME, "UseRequiresVersion");
+    if (inst == nullptr || !inst.IsValid())
+        return false;
+
+    ca = UseRequiresVersionCustomAttribute(ecClass, inst);
+    return true;
+    }
+
 //*****************************************************************
 //SchemaMapCustomAttribute
 //*****************************************************************
@@ -504,6 +518,104 @@ BentleyStatus ImportRequiresVersionCustomAttribute::TryGetECDbRuntimeVersion(Nul
         return ERROR;
 
     return CustomAttributeReader::TryGetTrimmedValue(version, *m_ca, "ECDbRuntimeVersion");
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ImportRequiresVersionCustomAttribute::Verify(IssueDataSource const& issues, Utf8CP fullSchemaName) const
+    {
+    Nullable<Utf8String> version;
+    if (TryGetECDbRuntimeVersion(version) != BentleyStatus::SUCCESS)
+        {
+        issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "ECSchema %s has an invalid ImportRequiresVersion custom attribute.", fullSchemaName);
+        return ERROR;
+        }
+
+    auto profileVersion = ECDb::CurrentECDbProfileVersion();
+    ProfileVersion requiredProfileVersion(0, 0, 0, 0);
+    if (version.IsNull() || requiredProfileVersion.FromString(version.ValueR().c_str()) != BentleyStatus::SUCCESS)
+        {
+        issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "ECSchema %s has a ImportRequiresVersion custom attribute with a missing or invalid ECDbRuntimeVersion property.", fullSchemaName);
+        return ERROR;
+        }
+
+    if(requiredProfileVersion > profileVersion)
+        {
+        issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "ECSchema %s requires ECDb version %s, but the current runtime version is only %s.", fullSchemaName, requiredProfileVersion.ToString().c_str(), profileVersion.ToString().c_str());
+        return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+//*****************************************************************
+//UseRequiresVersionCustomAttribute
+//*****************************************************************
+//---------------------------------------------------------------------------------------
+//@bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus UseRequiresVersionCustomAttribute::TryGetECDbRuntimeVersion(Nullable<Utf8String>& version) const
+    {
+    if (m_ca == nullptr)
+        return ERROR;
+
+    return CustomAttributeReader::TryGetTrimmedValue(version, *m_ca, "ECDbRuntimeVersion");
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus UseRequiresVersionCustomAttribute::TryGetECSqlVersion(Nullable<Utf8String>& version) const
+    {
+    if (m_ca == nullptr)
+        return ERROR;
+
+    return CustomAttributeReader::TryGetTrimmedValue(version, *m_ca, "ECSqlVersion");
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus UseRequiresVersionCustomAttribute::Verify(IssueDataSource const& issues, Utf8CP context) const
+    {
+    Nullable<Utf8String> version;
+    if (TryGetECDbRuntimeVersion(version) == BentleyStatus::SUCCESS && !version.IsNull())
+        {
+        auto profileVersion = ECDb::CurrentECDbProfileVersion();
+        ProfileVersion requiredProfileVersion(0, 0, 0, 0);
+        if (requiredProfileVersion.FromString(version.ValueR().c_str()) != BentleyStatus::SUCCESS)
+            {
+            issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "%s has a UseRequiresVersion custom attribute with an invalid ECDbRuntimeVersion property.", context);
+            return ERROR;
+            }
+
+        if(requiredProfileVersion > profileVersion)
+            {
+            issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "%s requires ECDb version %s, but the current runtime version is only %s.", context, requiredProfileVersion.ToString().c_str(), profileVersion.ToString().c_str());
+            return ERROR;
+            }
+        }
+
+    Nullable<Utf8String> sqlVersion;
+    if (TryGetECSqlVersion(sqlVersion) == BentleyStatus::SUCCESS && !sqlVersion.IsNull())
+        {
+        auto ecSqlVersion = ECDb::GetECSqlVersion();
+        BeVersion requiredECSqlVersion(0, 0, 0, 0);
+        if (requiredECSqlVersion.FromString(sqlVersion.ValueR().c_str()) != BentleyStatus::SUCCESS)
+            {
+            issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "%s has a UseRequiresVersion custom attribute with an invalid ECSqlVersion property.", context);
+            return ERROR;
+            }
+
+        if(requiredECSqlVersion > ecSqlVersion)
+            {
+            issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "%s requires ECSql version %s, but the current version is only %s.", context, requiredECSqlVersion.ToString().c_str(), ecSqlVersion.ToString().c_str());
+            return ERROR;
+            }
+        }
+
+    return SUCCESS;
     }
 
 //*****************************************************************
