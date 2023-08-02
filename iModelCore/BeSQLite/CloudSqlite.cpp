@@ -238,10 +238,10 @@ CloudContainer* CloudCache::FindMatching(Utf8CP baseUri, Utf8CP containerName) {
 
 /** callback to find the authorization token for one of the containers attached to this CloudCache */
 int CloudCache::FindToken(Utf8CP storage, Utf8CP baseUri, Utf8CP containerName, Utf8P* token) {
-    auto container = FindMatching(baseUri, containerName); // We could potentially call findmatching twice for backwards compatibility.
-    if (nullptr == container) {
+    auto container = FindMatching(baseUri, containerName);
+    if (nullptr == container)
         return SQLITE_AUTH;
-    }
+
     *token = sqlite3_mprintf("%s", container->m_accessToken.c_str());
     return SQLITE_OK;
 }
