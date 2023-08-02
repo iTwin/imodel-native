@@ -133,6 +133,9 @@ struct SchemaWriter final
                     .Append(ACCEPT, "ECDbMap", "ImportRequiresVersion", ALL);
 
                 rules
+                    .Append(ACCEPT, "ECDbMap", "UseRequiresVersion", ALL);
+
+                rules
                     .Append(ACCEPT, "CoreCustomAttributes", "IsMixin", MODIFIED)
                         .Append(ACCEPT, "AppliesToEntityClass", MODIFIED); // allow to modify AppliesToEntityClass
 

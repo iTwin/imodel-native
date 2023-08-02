@@ -94,7 +94,7 @@ Policy PolicyManager::DoGetPolicy(ClassIsValidInECSqlPolicyAssertion const& asse
     auto& ecdb = assertion.GetClassMap().GetECDb();
     if (ecdb.Schemas().GetDispatcher().IsClassUnsupported(ecClass.GetId()))
         {
-        Utf8PrintfString message("Cannot use ECClass '%s' because it is requires a newer code version of ECDb.", ecClass.GetFullName());
+        Utf8PrintfString message("Cannot use ECClass '%s' because it requires a newer version of ECDb.", ecClass.GetFullName());
         return Policy::CreateNotSupported(message);
         }
 
