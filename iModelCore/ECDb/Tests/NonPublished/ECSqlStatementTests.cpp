@@ -1459,6 +1459,54 @@ TEST_F(ECSqlStatementTestFixture, pragma_ecdb_version)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, view_generator_must_use_escaped_class_name_when_checking_disqualifed_check) {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("bug.ecdb", SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?> "
+        "<ECSchema schemaName='Generic' alias='g' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'> "
+        "  <ECEntityClass typeName='Base' modifier='None'>"
+        "    <ECCustomAttributes>"
+        "      <ClassMap xmlns='ECDbMap.02.00'>"
+        "        <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "      </ClassMap>"
+        "    </ECCustomAttributes>"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='Group' modifier='None'>"
+        "    <BaseClass>Base</BaseClass>"
+        "  </ECEntityClass>"
+        "</ECSchema>")));
+
+    auto groupClassId = m_ecdb.Schemas().GetClassId("Generic", "Group");
+    if ("unescaped GROUP keyword as class name should fail the statement") {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT 1 FROM Generic.Group"));
+    }
+
+    if ("unescaped GROUP keyword as class name should fail the pragma") {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "PRAGMA disqualify_type_index FOR Generic:Group"));
+    }
+
+    if ("escaped GROUP keyword as class name should prepare query fine") {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT 1 FROM Generic:[Group]"));
+        ASSERT_STREQ(SqlPrintfString("SELECT 1 FROM (SELECT [Id] ECInstanceId,[ECClassId] FROM [main].[g_Base] WHERE [g_Base].ECClassId=%s) [Group]", groupClassId.ToString().c_str()), stmt.GetNativeSql());
+    }
+
+    if ("escaped GROUP keyword as class name should set disqualify_type_index correctly") {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA disqualify_type_index=TRUE FOR Generic:[Group]"));
+    }
+
+    if ("escaped GROUP keyword as class name should prepare query fine and should be disqualified (+) at view generator") {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT 1 FROM Generic:[Group]"));
+        ASSERT_STREQ(SqlPrintfString("SELECT 1 FROM (SELECT [Id] ECInstanceId,[ECClassId] FROM [main].[g_Base] WHERE +[g_Base].ECClassId=%s) [Group]", groupClassId.ToString().c_str()), stmt.GetNativeSql());
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, IsNullForIncompletePoints)
     {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IsNullForIncompletePoints.ecdb", SchemaItem(
@@ -10969,7 +11017,7 @@ TEST_F(ECSqlStatementTestFixture, JoinUsingRelationshipSelect)
     if("Select *")
         {
         auto statementString = "SELECT * FROM bis.Element a JOIN bis.Element b USING bis.ElementRefersToElements c FORWARD LIMIT 1";
-        auto expected = JsonValue(R"json([{"CodeScope":{"id":"0x1b","relClassName":"BisCore.ElementScopesCode"},"CodeScope_1":{"id":"0x11","relClassName":"BisCore.ElementScopesCode"},"CodeSpec":{"id":"0x1d","relClassName":"BisCore.CodeSpecSpecifiesCode"},"CodeSpec_1":{"id":"0x10","relClassName":"BisCore.CodeSpecSpecifiesCode"},"CodeValue":"A","CodeValue_1":"d:\\dgn\\mf3.dgn","LastMod":"2017-07-25T20:44:59.726Z","LastMod_1":"2017-07-25T20:44:59.657Z","Model":{"id":"0x1","relClassName":"BisCore.ModelContainsElements"},"Model_1":{"id":"0x11","relClassName":"BisCore.ModelContainsElements"},"Parent":{"id":"0x1b","relClassName":"BisCore.SubjectOwnsPartitionElements"},"UserLabel_1":"d:\\dgn\\mf3.dgn","className":"BisCore.PhysicalPartition","className_1":"BisCore.RepositoryLink","className_2":"BisCore.PartitionOriginatesFromRepository","id":"0x1c","id_1":"0x12","id_2":"0x1","sourceClassName":"BisCore.PhysicalPartition","sourceId":"0x1c","targetClassName":"BisCore.RepositoryLink","targetId":"0x12"}])json");  
+        auto expected = JsonValue(R"json([{"CodeScope":{"id":"0x1b","relClassName":"BisCore.ElementScopesCode"},"CodeScope_1":{"id":"0x11","relClassName":"BisCore.ElementScopesCode"},"CodeSpec":{"id":"0x1d","relClassName":"BisCore.CodeSpecSpecifiesCode"},"CodeSpec_1":{"id":"0x10","relClassName":"BisCore.CodeSpecSpecifiesCode"},"CodeValue":"A","CodeValue_1":"d:\\dgn\\mf3.dgn","LastMod":"2017-07-25T20:44:59.726Z","LastMod_1":"2017-07-25T20:44:59.657Z","Model":{"id":"0x1","relClassName":"BisCore.ModelContainsElements"},"Model_1":{"id":"0x11","relClassName":"BisCore.ModelContainsElements"},"Parent":{"id":"0x1b","relClassName":"BisCore.SubjectOwnsPartitionElements"},"UserLabel_1":"d:\\dgn\\mf3.dgn","className":"BisCore.PhysicalPartition","className_1":"BisCore.RepositoryLink","className_2":"BisCore.PartitionOriginatesFromRepository","id":"0x1c","id_1":"0x12","id_2":"0x1","sourceClassName":"BisCore.PhysicalPartition","sourceId":"0x1c","targetClassName":"BisCore.RepositoryLink","targetId":"0x12"}])json");
         auto actual = GetHelper().ExecuteSelectECSql(statementString);
 
         ASSERT_EQ(expected, actual);
@@ -10989,7 +11037,7 @@ TEST_F(ECSqlStatementTestFixture, JoinUsingRelationshipSelect)
         auto statementString = "SELECT c.ECInstanceId Id, c.ECClassId Class FROM bis.Element a JOIN bis.Element b USING bis.ElementRefersToElements c FORWARD LIMIT 10";
         auto expected = JsonValue(R"json([{"Class":168,"Id":1},{"Class":168,"Id":2},{"Class":168,"Id":3},{"Class":168,"Id":4},{"Class":168,"Id":5},{"Class":104,"Id":11},{"Class":104,"Id":12},{"Class":104,"Id":13},{"Class":104,"Id":14}])json");
         auto actual = GetHelper().ExecuteSelectECSql(statementString);
-        
+
         ASSERT_EQ(expected, actual);
         }
     }
