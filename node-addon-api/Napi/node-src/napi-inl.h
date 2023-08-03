@@ -2688,21 +2688,22 @@ inline Buffer<T> Buffer<T>::New(napi_env env,
 }
 #endif  // NODE_API_NO_EXTERNAL_BUFFERS_ALLOWED
 
+// BENTLEY_CHANGE: don't use NODE_API_NO_EXTERNAL_BUFFERS_ALLOWED macro in `NewOrCopy` functions
+// to always try to create external buffer first and only then fall back to copying it. This way
+// we're avoiding a copy on platforms that support external buffers and only do it on platforms that
+// don't (e.g. Electron 21+).
+
 template <typename T>
 inline Buffer<T> Buffer<T>::NewOrCopy(napi_env env, T* data, size_t length) {
-#ifndef NODE_API_NO_EXTERNAL_BUFFERS_ALLOWED
   napi_value value;
   napi_status status = napi_create_external_buffer(
       env, length * sizeof(T), data, nullptr, nullptr, &value);
   if (status == details::napi_no_external_buffers_allowed) {
-#endif  // NODE_API_NO_EXTERNAL_BUFFERS_ALLOWED
     // If we can't create an external buffer, we'll just copy the data.
     return Buffer<T>::Copy(env, data, length);
-#ifndef NODE_API_NO_EXTERNAL_BUFFERS_ALLOWED
   }
   NAPI_THROW_IF_FAILED(env, status, Buffer<T>());
   return Buffer(env, value, length, data);
-#endif  // NODE_API_NO_EXTERNAL_BUFFERS_ALLOWED
 }
 
 template <typename T>
@@ -2714,7 +2715,6 @@ inline Buffer<T> Buffer<T>::NewOrCopy(napi_env env,
   details::FinalizeData<T, Finalizer>* finalizeData =
       new details::FinalizeData<T, Finalizer>(
           {std::move(finalizeCallback), nullptr});
-#ifndef NODE_API_NO_EXTERNAL_BUFFERS_ALLOWED
   napi_value value;
   napi_status status =
       napi_create_external_buffer(env,
@@ -2724,19 +2724,16 @@ inline Buffer<T> Buffer<T>::NewOrCopy(napi_env env,
                                   finalizeData,
                                   &value);
   if (status == details::napi_no_external_buffers_allowed) {
-#endif  // NODE_API_NO_EXTERNAL_BUFFERS_ALLOWED
     // If we can't create an external buffer, we'll just copy the data.
     Buffer<T> ret = Buffer<T>::Copy(env, data, length);
     details::FinalizeData<T, Finalizer>::Wrapper(env, data, finalizeData);
     return ret;
-#ifndef NODE_API_NO_EXTERNAL_BUFFERS_ALLOWED
   }
   if (status != napi_ok) {
     delete finalizeData;
     NAPI_THROW_IF_FAILED(env, status, Buffer());
   }
   return Buffer(env, value, length, data);
-#endif  // NODE_API_NO_EXTERNAL_BUFFERS_ALLOWED
 }
 
 template <typename T>
@@ -2749,7 +2746,6 @@ inline Buffer<T> Buffer<T>::NewOrCopy(napi_env env,
   details::FinalizeData<T, Finalizer, Hint>* finalizeData =
       new details::FinalizeData<T, Finalizer, Hint>(
           {std::move(finalizeCallback), finalizeHint});
-#ifndef NODE_API_NO_EXTERNAL_BUFFERS_ALLOWED
   napi_value value;
   napi_status status = napi_create_external_buffer(
       env,
@@ -2759,20 +2755,17 @@ inline Buffer<T> Buffer<T>::NewOrCopy(napi_env env,
       finalizeData,
       &value);
   if (status == details::napi_no_external_buffers_allowed) {
-#endif
     // If we can't create an external buffer, we'll just copy the data.
     Buffer<T> ret = Buffer<T>::Copy(env, data, length);
     details::FinalizeData<T, Finalizer, Hint>::WrapperWithHint(
         env, data, finalizeData);
     return ret;
-#ifndef NODE_API_NO_EXTERNAL_BUFFERS_ALLOWED
   }
   if (status != napi_ok) {
     delete finalizeData;
     NAPI_THROW_IF_FAILED(env, status, Buffer());
   }
   return Buffer(env, value, length, data);
-#endif
 }
 
 template <typename T>
