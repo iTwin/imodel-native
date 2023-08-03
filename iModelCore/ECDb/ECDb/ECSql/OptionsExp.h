@@ -37,6 +37,7 @@ struct OptionsExp final : Exp
 public:
     static Utf8CP const NOECCLASSIDFILTER_OPTION;
     static Utf8CP const READONLYPROPERTIESAREUPDATABLE_OPTION;
+    static Utf8CP const ENABLE_EXPERIMENTAL_FEATURES;
 
 private:
     bmap<Utf8CP, size_t, CompareIUtf8Ascii> m_optionsByName;

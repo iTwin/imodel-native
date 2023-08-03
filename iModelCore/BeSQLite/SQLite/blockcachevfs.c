@@ -1700,7 +1700,7 @@ static void bcvfsProxyDecrypt(
   i64 iCacheOff                   /* Offset within cache file */
 ){
   if( pKey && *pRc==SQLITE_OK ){
-    static const int nChunk = 512;
+    static const int nChunk = 4096;
     int rc = SQLITE_OK;
     int ii;
 

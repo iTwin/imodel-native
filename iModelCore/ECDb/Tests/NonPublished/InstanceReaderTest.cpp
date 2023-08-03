@@ -529,7 +529,7 @@ TEST_F(InstanceReaderFixture, check_instance_serialization) {
                     "Y":9.73592815626386,
                     "Z":9.735928156263855
                 },
-                "GeometryStream":"encoding=base64;yw=="
+                "GeometryStream":"{\"bytes\":203}"
             },
             {
                 "ECInstanceId":"0x39",
@@ -570,7 +570,7 @@ TEST_F(InstanceReaderFixture, check_instance_serialization) {
                     "Y":7.538875423282143,
                     "Z":7.538875423282142
                 },
-                "GeometryStream":"encoding=base64;yQ=="
+                "GeometryStream":"{\"bytes\":201}"
             },
             {
                 "ECInstanceId":"0x3a",
@@ -611,7 +611,7 @@ TEST_F(InstanceReaderFixture, check_instance_serialization) {
                     "Y":9.735928156263853,
                     "Z":9.735928156263855
                 },
-                "GeometryStream":"encoding=base64;zA=="
+                "GeometryStream":"{\"bytes\":204}"
             },
             {
                 "ECInstanceId":"0x3b",
@@ -652,7 +652,7 @@ TEST_F(InstanceReaderFixture, check_instance_serialization) {
                     "Y":7.538875423282143,
                     "Z":7.538875423282142
                 },
-                "GeometryStream":"encoding=base64;yQ=="
+                "GeometryStream":"{\"bytes\":201}"
             }
         ]
 
@@ -1437,8 +1437,8 @@ TEST_F(InstanceReaderFixture, nested_struct) {
         const bool b_array[] = {true, false, true};
         const std::vector<std::vector<uint8_t>> bi_array = {
             {0x48, 0x65, 0x6},
-            {0x48, 0x65, 0x6},
-            {0x48, 0x65, 0x6}
+            {0x48, 0x65, 0x6, 0x6c},
+            {0x48, 0x65, 0x6, 0x6c, 0x6f}
         };
         const std::vector<double> d_array = {123.3434, 345.223, -532.123};
         const std::vector<DateTime> dt_array = {
@@ -1615,7 +1615,7 @@ TEST_F(InstanceReaderFixture, nested_struct) {
         "ECInstanceId": "0x1",
         "ECClassId": "0x49",
         "b": true,
-        "bi": "encoding=base64;SA==",
+        "bi": "{\"bytes\":13}",
         "d": 3.141592653589793,
         "dt": "2017-01-17T00:00:00.000",
         "dtUtc": "2018-02-17T00:00:00.000Z",
@@ -1651,9 +1651,9 @@ TEST_F(InstanceReaderFixture, nested_struct) {
             true
         ],
         "bi_array": [
-            "encoding=base64;SA==",
-            "encoding=base64;SA==",
-            "encoding=base64;SA=="
+            "{\"bytes\":3}",
+            "{\"bytes\":4}",
+            "{\"bytes\":5}"
         ],
         "d_array": [
             123.3434,
@@ -1761,7 +1761,7 @@ TEST_F(InstanceReaderFixture, nested_struct) {
         ],
         "p": {
             "b": true,
-            "bi": "encoding=base64;SA==",
+            "bi": "{\"bytes\":13}",
             "d": 3.141592653589793,
             "dt": "2017-01-17T00:00:00.000",
             "dtUtc": "2018-02-17T00:00:00.000Z",
@@ -1799,9 +1799,9 @@ TEST_F(InstanceReaderFixture, nested_struct) {
                 true
             ],
             "bi_array": [
-                "encoding=base64;SA==",
-                "encoding=base64;SA==",
-                "encoding=base64;SA=="
+                "{\"bytes\":3}",
+                "{\"bytes\":4}",
+                "{\"bytes\":5}"
             ],
             "d_array": [
                 123.3434,
@@ -1911,7 +1911,7 @@ TEST_F(InstanceReaderFixture, nested_struct) {
         "array_of_p": [
             {
                 "b": true,
-                "bi": "encoding=base64;SA==",
+                "bi": "{\"bytes\":3}",
                 "d": 123.3434,
                 "dt": "2017-01-14T00:00:00.000",
                 "dtUtc": "2017-01-17T00:00:00.000Z",
@@ -1944,7 +1944,7 @@ TEST_F(InstanceReaderFixture, nested_struct) {
             },
             {
                 "b": false,
-                "bi": "encoding=base64;SA==",
+                "bi": "{\"bytes\":4}",
                 "d": 345.223,
                 "dt": "2018-01-13T00:00:00.000",
                 "dtUtc": "2018-01-11T00:00:00.000Z",
@@ -1984,9 +1984,9 @@ TEST_F(InstanceReaderFixture, nested_struct) {
                     true
                 ],
                 "bi_array": [
-                    "encoding=base64;SA==",
-                    "encoding=base64;SA==",
-                    "encoding=base64;SA=="
+                    "{\"bytes\":3}",
+                    "{\"bytes\":4}",
+                    "{\"bytes\":5}"
                 ],
                 "d_array": [
                     123.3434,
@@ -2100,9 +2100,9 @@ TEST_F(InstanceReaderFixture, nested_struct) {
                     true
                 ],
                 "bi_array": [
-                    "encoding=base64;SA==",
-                    "encoding=base64;SA==",
-                    "encoding=base64;SA=="
+                    "{\"bytes\":3}",
+                    "{\"bytes\":4}",
+                    "{\"bytes\":5}"
                 ],
                 "d_array": [
                     123.3434,
