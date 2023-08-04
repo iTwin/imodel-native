@@ -27,7 +27,7 @@ BentleyStatus ViewGenerator::GenerateSelectFromViewSql(NativeSqlBuilder& viewSql
         // Note: Following need to be cached statement
         ECSqlStatement stmt;
         if (ECSqlStatus::Success == stmt.Prepare(prepareContext.GetECDb(),
-            SqlPrintfString("PRAGMA disqualify_type_index FOR  %s", classMap.GetClass().GetFullName()))) {
+            SqlPrintfString("PRAGMA disqualify_type_index FOR  %s", classMap.GetClass().GetECSqlName().c_str()))) {
             if (stmt.Step() == BE_SQLITE_ROW) {
                 if (stmt.GetValueBoolean(0)){
                     LOG.debugv("ECSql Prepare: Applying 'disqualify_type_index' flag to %s", classMap.GetClass().GetFullName());
