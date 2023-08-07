@@ -5255,7 +5255,7 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
 
         Utf8StringP strP = new Utf8String();
         strP->swap(serializedResponse);
-        Napi::Value val = Napi::Buffer<Utf8Char>::New(env, strP->data(), strP->size(), [](Napi::Env, Utf8Char*, void* ptr)
+        Napi::Value val = Napi::Buffer<Utf8Char>::NewOrCopy(env, strP->data(), strP->size(), [](Napi::Env, Utf8Char*, void* ptr)
             {
             delete reinterpret_cast<Utf8StringP>(ptr);
             }, strP);

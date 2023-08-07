@@ -108,6 +108,7 @@ struct CommonTableBlockNameExp final : RangeClassRefExp {
             BeAssert(m_blockExp == nullptr);
             m_blockExp = &block;
         }
+        CommonTableBlockExp const *GetBlock() const { return m_blockExp; }
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
