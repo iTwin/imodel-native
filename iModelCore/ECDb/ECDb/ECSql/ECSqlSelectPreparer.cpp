@@ -57,6 +57,58 @@ ECSqlStatus ECSqlSelectPreparer::Prepare(ECSqlPrepareContext& ctx, CommonTableEx
     return Prepare(ctx, *exp.GetQuery(), nullptr);
 }
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static
+ECSqlStatus ECSqlSelectPreparer::PreparePartial(NativeSqlBuilder& nativeSqlSnippet, ECSqlPrepareContext& ctx, SelectStatementExp const& exp)
+    {
+    NativeSqlBuilder::ListOfLists selectClauseSqlSnippetList;
+    SingleSelectStatementExp const& firstStmt = exp.GetFirstStatement();
+    ctx.PushScope(firstStmt, firstStmt.GetOptions());
+    ECSqlStatus status;
+    if (firstStmt.IsRowConstructor())
+        {
+        nativeSqlSnippet.Append("SELECT").AppendSpace();
+        status = PrepareSelectClauseExp(selectClauseSqlSnippetList, ctx, *firstStmt.GetSelection(), nullptr);
+        if (!status.IsSuccess())
+            return status;
+
+        bool isFirstItem = true;
+        for (NativeSqlBuilder::List const& list : selectClauseSqlSnippetList)
+            {
+            if (!isFirstItem)
+                nativeSqlSnippet.AppendComma();
+
+            nativeSqlSnippet.Append(list);
+            isFirstItem = false;
+            }
+        }
+    else
+        {
+        nativeSqlSnippet.Append("SELECT").AppendSpace();
+
+        if (firstStmt.GetSelectionType() != SqlSetQuantifier::NotSpecified)
+            nativeSqlSnippet.Append(ExpHelper::ToSql(firstStmt.GetSelectionType())).AppendSpace();
+
+        // Append selection.
+        status = PrepareSelectClauseExp(selectClauseSqlSnippetList, ctx, *firstStmt.GetSelection(), nullptr);
+        if (!status.IsSuccess())
+            return status;
+
+        bool isFirstItem = true;
+        for (NativeSqlBuilder::List const& list : selectClauseSqlSnippetList)
+            {
+            if (!isFirstItem)
+                nativeSqlSnippet.AppendComma();
+
+            nativeSqlSnippet.Append(list);
+            isFirstItem = false;
+            }
+        }
+    ctx.PopScope();
+    return ECSqlStatus::Success;
+    }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
