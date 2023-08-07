@@ -559,7 +559,8 @@ void SimplifyGraphic::ProcessText(TextStringCR text)
                 CurveVectorPtr  curves = glyphs[iGlyph]->GetCurveVector ();
                 if (curves.IsNull())
                     continue;
-                curves->TransformInPlace (Transform::FromProduct (Transform::From(glyphOrigins[iGlyph]), rotationTransform));
+                auto origin = DPoint3d::FromSumOf(text.GetOrigin(), glyphOrigins[iGlyph]);
+                curves->TransformInPlace (Transform::FromProduct (Transform::From(origin), rotationTransform));
                 ProcessCurveVector(*curves, curves->IsAnyRegionType ());
                 }
             }
@@ -860,6 +861,7 @@ void SimplifyGraphic::_AddBody(IBRepEntityCR geom)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyGraphic::_AddTextString(TextStringCR text)
     {
+//*q*/printf("SimplifyGraphic::_AddTextString\n");
     m_processor._OnNewGeometry();
 
     ProcessText(text);
