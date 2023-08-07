@@ -426,7 +426,12 @@ BentleyStatus ECSqlParser::ParsePragmaStatement(std::unique_ptr<PragmaStatementE
     if (SUCCESS != parse_pragma(&parseNode)) {
         return ERROR;
     }
-    pragmaExp = std::make_unique<PragmaStatementExp>(outPragmaName, outPragmaVal, outReadValue, outPathTokens);
+
+    std::unique_ptr<OptionsExp> options;
+    if (SUCCESS != ParseOptECSqlOptionsClause(options, parseNode.getChild(4 /* opt_ecsql_options */))) {
+        return ERROR;
+    }
+    pragmaExp = std::make_unique<PragmaStatementExp>(outPragmaName, outPragmaVal, outReadValue, outPathTokens, std::move(options));
     return SUCCESS;
     }
 

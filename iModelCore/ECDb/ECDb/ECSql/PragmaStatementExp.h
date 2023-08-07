@@ -77,12 +77,17 @@ private:
     std::vector<Utf8String> m_pathTokens;
 
  public:
-     PragmaStatementExp(Utf8StringCR name, PragmaVal val, bool readVal, std::vector<Utf8String> pathTokens)
-        : Exp(Exp::Type::Pragma), m_name(name), m_val(val), m_readValue(readVal), m_pathTokens(pathTokens){}
+     PragmaStatementExp(Utf8StringCR name, PragmaVal val, bool readVal, std::vector<Utf8String> pathTokens, std::unique_ptr<OptionsExp> opts)
+        : Exp(Exp::Type::Pragma), m_name(name), m_val(val), m_readValue(readVal), m_pathTokens(pathTokens) {
+            if (opts != nullptr) {
+                AddChild(std::move(opts));
+            }
+        }
      Utf8StringCR GetName() const { return m_name; }
      bool IsReadValue() const { return m_readValue;}
      std::vector<Utf8String> const& GetPathTokens() const { return m_pathTokens; }
      PragmaVal const& GetValue() const { return m_val; }
+     OptionsExp const* GetOptions() const { return GetChildrenCount()>0 ? GetChild<OptionsExp>(0) : nullptr; }
 };
 
 

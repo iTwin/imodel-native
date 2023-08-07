@@ -245,7 +245,7 @@ void ECDb::Impl::RegisterECSqlPragmas() const
     GetPragmaManager().Register(PragmaChecksum::Create());
     GetPragmaManager().Register(PragmaIntegrityCheck::Create());
     GetPragmaManager().Register(PragmaExperimentalFeatures::Create());
-
+    GetPragmaManager().Register(PragmaParseTree::Create());
     }
 
 //--------------------------------------------------------------------------------------

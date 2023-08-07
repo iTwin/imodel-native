@@ -481,6 +481,9 @@ void PropertyNameExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
     val["id"] = "PropertyNameExp";
     Utf8String path;
     path.append(m_ecsqlPropertyPath.ToString(false, false, true));
+    if (path.empty()) {
+        path.append(m_propertyPath.ToString(false, false, true));
+    }
     val["path"] = path;
 }
 

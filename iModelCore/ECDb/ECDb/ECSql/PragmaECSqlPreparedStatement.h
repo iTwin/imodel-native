@@ -87,7 +87,7 @@ struct PragmaManager final {
         Write,
     };
     using RowSet = std::unique_ptr<PragmaResult>;
-
+    using OptionsMap = bmap<Utf8CP, size_t, CompareIUtf8Ascii>;
     struct Handler {
         enum class Type {
             Global,
@@ -101,6 +101,9 @@ struct PragmaManager final {
         Utf8String m_name;
         Utf8String m_description;
         Type m_type;
+    protected:
+        bool isExperimentalFeatureAllowed(ECDbCR, OptionsMap const&) const;
+
     public:
         Handler(Type type, Utf8CP name, Utf8CP descr) :m_type(type), m_name(name), m_description(descr) {}
         Utf8StringCR GetName() const { return m_name; }
@@ -111,32 +114,32 @@ struct PragmaManager final {
     };
     struct GlobalHandler : Handler{
         GlobalHandler(Utf8CP name, Utf8CP descr):Handler(Type::Global, name, descr){}
-        virtual DbResult Read(RowSet&, ECDbCR, PragmaVal const&) =0;
-        virtual DbResult Write(RowSet&, ECDbCR, PragmaVal const&) = 0;
+        virtual DbResult Read(RowSet&, ECDbCR, PragmaVal const&, OptionsMap const&) =0;
+        virtual DbResult Write(RowSet&, ECDbCR, PragmaVal const&, OptionsMap const&) = 0;
         virtual ~GlobalHandler(){}
     };
     struct SchemaHandler : Handler{
         SchemaHandler(Utf8CP name, Utf8CP descr):Handler(Type::Schema, name, descr){}
-        virtual DbResult Read(RowSet&, ECDbCR, PragmaVal const&, ECSchemaCR) =0;
-        virtual DbResult Write(RowSet&, ECDbCR, PragmaVal const&, ECSchemaCR) = 0;
+        virtual DbResult Read(RowSet&, ECDbCR, PragmaVal const&, ECSchemaCR, OptionsMap const&) =0;
+        virtual DbResult Write(RowSet&, ECDbCR, PragmaVal const&, ECSchemaCR, OptionsMap const&) = 0;
         virtual ~SchemaHandler(){}
     };
     struct ClassHandler : Handler{
         ClassHandler(Utf8CP name, Utf8CP descr):Handler(Type::Class, name, descr){}
-        virtual DbResult Read(RowSet&, ECDbCR, PragmaVal const&, ECClassCR) =0;
-        virtual DbResult Write(RowSet&, ECDbCR, PragmaVal const&, ECClassCR) = 0;
+        virtual DbResult Read(RowSet&, ECDbCR, PragmaVal const&, ECClassCR, OptionsMap const&) =0;
+        virtual DbResult Write(RowSet&, ECDbCR, PragmaVal const&, ECClassCR, OptionsMap const&) = 0;
         virtual ~ClassHandler(){}
     };
     struct PropertyHandler : Handler{
         PropertyHandler(Utf8CP name, Utf8CP descr):Handler(Type::Property, name, descr){}
-        virtual DbResult Read(RowSet&, ECDbCR, PragmaVal const&, ECPropertyCR) =0;
-        virtual DbResult Write(RowSet&, ECDbCR, PragmaVal const&, ECPropertyCR) =0;
+        virtual DbResult Read(RowSet&, ECDbCR, PragmaVal const&, ECPropertyCR, OptionsMap const&) =0;
+        virtual DbResult Write(RowSet&, ECDbCR, PragmaVal const&, ECPropertyCR, OptionsMap const&) =0;
         virtual ~PropertyHandler(){}
     };
     struct AnyHandler : Handler{
         AnyHandler(Utf8CP name, Utf8CP descr):Handler(Type::Any, name, descr){}
-        virtual DbResult Read(RowSet&, ECDbCR, PragmaVal const&, std::vector<Utf8String> const&) =0;
-        virtual DbResult Write(RowSet&, ECDbCR, PragmaVal const&, std::vector<Utf8String> const&) = 0;
+        virtual DbResult Read(RowSet&, ECDbCR, PragmaVal const&, std::vector<Utf8String> const&, OptionsMap const&) =0;
+        virtual DbResult Write(RowSet&, ECDbCR, PragmaVal const&, std::vector<Utf8String> const&, OptionsMap const&) = 0;
         virtual ~AnyHandler(){}
     };
    using HandlerMap = std::map<Utf8CP, std::unique_ptr<Handler>, CompareIUtf8Ascii>;
@@ -145,12 +148,12 @@ private:
 
     mutable std::map<Handler::Type, HandlerMap> m_handlers;
 
-    DbResult PrepareGlobal(RowSet&,Utf8StringCR, PragmaVal const&, Operation) const;
-    DbResult PrepareSchema(RowSet&,Utf8StringCR, PragmaVal const&, Operation, ECN::ECSchemaCR) const;
-    DbResult PrepareClass(RowSet&,Utf8StringCR, PragmaVal const&, Operation, ECN::ECClassCR) const;
-    DbResult PrepareProperty(RowSet&,Utf8StringCR, PragmaVal const&, Operation, ECN::ECPropertyCR) const;
-    DbResult PrepareAny(RowSet&,Utf8StringCR, PragmaVal const&, Operation, std::vector<Utf8String> const&) const;
-    DbResult Prepare(RowSet&,Utf8StringCR, PragmaVal const&, Operation, std::vector<Utf8String> const&) const;
+    DbResult PrepareGlobal(RowSet&,Utf8StringCR, PragmaVal const&, Operation, OptionsMap const&) const;
+    DbResult PrepareSchema(RowSet&,Utf8StringCR, PragmaVal const&, Operation, ECN::ECSchemaCR, OptionsMap const&) const;
+    DbResult PrepareClass(RowSet&,Utf8StringCR, PragmaVal const&, Operation, ECN::ECClassCR, OptionsMap const&) const;
+    DbResult PrepareProperty(RowSet&,Utf8StringCR, PragmaVal const&, Operation, ECN::ECPropertyCR, OptionsMap const&) const;
+    DbResult PrepareAny(RowSet&,Utf8StringCR, PragmaVal const&, Operation, std::vector<Utf8String> const&, OptionsMap const&) const;
+    DbResult Prepare(RowSet&,Utf8StringCR, PragmaVal const&, Operation, std::vector<Utf8String> const&, OptionsMap const&) const;
     DbResult DefaultGlobal(RowSet&,Utf8StringCR, PragmaVal const&, Operation) const;
     DbResult DefaultSchema(RowSet&,Utf8StringCR, PragmaVal const&, Operation, ECN::ECSchemaCR) const;
     DbResult DefaultClass(RowSet&,Utf8StringCR, PragmaVal const&, Operation, ECN::ECClassCR) const;
