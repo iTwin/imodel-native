@@ -337,9 +337,9 @@ void DefinitionElement::_ToJson(BeJsValue val, BeJsConst opts) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DefinitionElement::_FromJson(BeJsConst val)
+void DefinitionElement::_FromJson(BeJsConst val, DgnElement::FromJsonOpts opts)
     {
-    T_Super::_FromJson(val);
+    T_Super::_FromJson(val, opts);
     if (val.isMember(json_isPrivate()))
         m_isPrivate = val[json_isPrivate()].asBool();
     }
@@ -1323,14 +1323,14 @@ void DgnElement::_ToJson(BeJsValue val, BeJsConst opts) const {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement::_FromJson(BeJsConst props) {
+void DgnElement::_FromJson(BeJsConst props, DgnElement::FromJsonOpts opts) {
     auto model = props[json_model()];
     if (!model.isNull())
         m_modelId.FromJson(model);
 
     auto code = props[json_code()];
     if (!code.isNull())
-        m_code = DgnCode::FromJson(code, m_dgndb, true);
+        m_code = DgnCode::FromJson(code, m_dgndb, true, opts.preserveCode);
 
     // support partial update, only update m_federationGuid if props has member
     if (props.hasMember(json_federationGuid())) {
@@ -1588,10 +1588,9 @@ DgnElementPtr DgnElement::_CloneForImport(DgnDbStatus* inStat, DgnModelR destMod
 
     if (!params.IsValid())
         {
-        BeNapi::ThrowJsException(
-            m_dgndb.GetJsIModelDb()->Env(),
+        m_dgndb.ThrowException(
             params.m_classId.IsValid() ? "invalid create params" : "attempt to clone with unknown class",
-            (int) (params.m_classId.IsValid() ? DgnDbStatus::BadRequest : DgnDbStatus::WrongClass),
+            (int) (params.m_classId.IsValid() ? DgnDbStatus::BadRequest : DgnDbStatus::WrongClass)
         );
         return nullptr;
         }
@@ -1642,7 +1641,7 @@ void DgnElement::_CopyFrom(DgnElementCR other, CopyFromOptions const& opts)
         ElementAutoHandledPropertiesECInstanceAdapterPtr ecOther = ElementAutoHandledPropertiesECInstanceAdapter::Create(other, true);
         const auto ecOtherPtrIsValid = ecOther.IsValid();
         if (!ecOtherPtrIsValid)
-            m_dgnDb.ThrowException("failed to copy auto handled EC properties", (int)DgnDbStatus::BadArg);
+            m_dgndb.ThrowException("failed to copy auto handled EC properties", (int)DgnDbStatus::BadArg);
 
         const auto ecOtherInstanceIsValid = ecOther->IsValid();
         if (ecOtherInstanceIsValid)
@@ -1658,7 +1657,7 @@ void DgnElement::_CopyFrom(DgnElementCR other, CopyFromOptions const& opts)
             const auto ecThisPtrIsValid = ecThis.IsValid();
             if (!ecThisPtrIsValid)
                 // ElementAutoHandledPropertiesECInstanceAdapter::Create returns null if its class was invalid
-                m_dgnDb.ThrowException("failed to copy auto handled EC properties", (int)DgnDbStatus::WrongClass);
+                m_dgndb.ThrowException("failed to copy auto handled EC properties", (int)DgnDbStatus::WrongClass);
 
             const auto ecThisInstanceIsValid = ecThis->IsValid();
             if (ecThisInstanceIsValid) // this might not have auto-handled props if this and other are instances of different classes
@@ -3654,9 +3653,9 @@ void GeometricElement::_ToJson(BeJsValue val, BeJsConst opts) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricElement::_FromJson(BeJsConst props)
+void GeometricElement::_FromJson(BeJsConst props, DgnElement::FromJsonOpts opts)
     {
-    T_Super::_FromJson(props);
+    T_Super::_FromJson(props, opts);
     auto catJson = props[json_category()];
     if (!catJson.isNull())
         m_categoryId.FromJson(catJson);
@@ -3856,9 +3855,9 @@ void GeometricElement2d::_ToJson(BeJsValue val, BeJsConst opts) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricElement2d::_FromJson(BeJsConst props)
+void GeometricElement2d::_FromJson(BeJsConst props, DgnElement::FromJsonOpts opts)
     {
-    T_Super::_FromJson(props);
+    T_Super::_FromJson(props, opts);
 
     auto placementJson = props[json_placement()];
     if (!placementJson.isNull())
@@ -3929,9 +3928,9 @@ void GeometricElement3d::_ToJson(BeJsValue val, BeJsConst opts) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricElement3d::_FromJson(BeJsConst props)
+void GeometricElement3d::_FromJson(BeJsConst props, DgnElement::FromJsonOpts opts)
     {
-    T_Super::_FromJson(props);
+    T_Super::_FromJson(props, opts);
 
     auto placementJson = props[json_placement()];
     if (!placementJson.isNull())

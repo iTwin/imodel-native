@@ -36,7 +36,7 @@ private:
 
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
     DGNPLATFORM_EXPORT void _ToJson(BeJsValue out, BeJsConst opts) const override;
-    DGNPLATFORM_EXPORT void _FromJson(BeJsConst props) override;
+    DGNPLATFORM_EXPORT void _FromJson(BeJsConst props, DgnElement::FromJsonOpts opts) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT DgnDbStatus _InsertInDb() override;

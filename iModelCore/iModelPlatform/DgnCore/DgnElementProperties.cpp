@@ -1792,7 +1792,7 @@ DgnDbStatus ElementECPropertyAccessor::SetPropertyValue(ECN::ECValueCR value, Pr
 void DgnElement::RemapAutoHandledNavigationproperties(DgnImportContext& importer)
     {
     const auto elementClass = GetElementClass();
-    if (elementclass == nullptr)
+    if (elementClass == nullptr)
         return;
 
     for (auto prop : AutoHandledPropertiesCollection(*elementClass, GetDgnDb(), ECSqlClassParams::StatementType::All, false))

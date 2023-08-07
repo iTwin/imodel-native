@@ -386,9 +386,9 @@ void ViewDefinition::_ToJson(BeJsValue val, BeJsConst opts) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewDefinition::_FromJson(BeJsConst val)
+void ViewDefinition::_FromJson(BeJsConst val, DgnElement::FromJsonOpts opts)
     {
-    T_Super::_FromJson(val);
+    T_Super::_FromJson(val, opts);
     if (val.isMember(json_categorySelectorId()))
         m_categorySelectorId.FromJson(val[json_categorySelectorId()]);
 
@@ -484,9 +484,9 @@ void ViewDefinition2d::_ToJson(BeJsValue val, BeJsConst opts) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewDefinition2d::_FromJson(BeJsConst val)
+void ViewDefinition2d::_FromJson(BeJsConst val, DgnElement::FromJsonOpts opts)
     {
-    T_Super::_FromJson(val);
+    T_Super::_FromJson(val, opts);
     if (val.isMember(json_origin()))
         BeJsGeomUtils::DPoint2dFromJson(m_origin, val[json_origin()]);
 
@@ -680,9 +680,9 @@ void CategorySelector::_ToJson(BeJsValue out, BeJsConst opts) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CategorySelector::_FromJson(BeJsConst val)
+void CategorySelector::_FromJson(BeJsConst val, DgnElement::FromJsonOpts opts)
     {
-    T_Super::_FromJson(val);
+    T_Super::_FromJson(val, opts);
     m_categories.clear();
 
     auto const& categories = val[json_categories()];
@@ -939,8 +939,8 @@ void ModelSelector::_ToJson(BeJsValue out, BeJsConst opts) const {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ModelSelector::_FromJson(BeJsConst val) {
-    T_Super::_FromJson(val);
+void ModelSelector::_FromJson(BeJsConst val, DgnElement::FromJsonOpts opts) {
+    T_Super::_FromJson(val, opts);
     m_models.clear();
     auto models = val[json_models()];
     uint32_t size = models.size();
@@ -1061,9 +1061,9 @@ void ViewDefinition3d::_ToJson(BeJsValue val, BeJsConst opts) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewDefinition3d::_FromJson(BeJsConst val)
+void ViewDefinition3d::_FromJson(BeJsConst val, DgnElement::FromJsonOpts opts)
     {
-    T_Super::_FromJson(val);
+    T_Super::_FromJson(val, opts);
 
     if (val.isMember(json_cameraOn()))
         m_cameraOn = val[json_cameraOn()].asBool();
@@ -1261,9 +1261,9 @@ void SpatialViewDefinition::_ToJson(BeJsValue val, BeJsConst opts) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SpatialViewDefinition::_FromJson(BeJsConst val)
+void SpatialViewDefinition::_FromJson(BeJsConst val, DgnElement::FromJsonOpts opts)
     {
-    T_Super::_FromJson(val);
+    T_Super::_FromJson(val, opts);
     if (val.isMember(json_modelSelectorId()))
         m_modelSelectorId.FromJson(val[json_modelSelectorId()]);
     }
