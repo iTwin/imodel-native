@@ -289,7 +289,7 @@ BentleyStatus ECSqlParser::ParseSelection(std::unique_ptr<SelectClauseExp>& exp,
             selectClauseExp->AddProperty(std::move(derivedPropExp));
         }
 
-    exp = move(selectClauseExp);
+    exp = std::move(selectClauseExp);
     return SUCCESS;
     }
 
@@ -1385,7 +1385,7 @@ BentleyStatus ECSqlParser::ParseFromClause(std::unique_ptr<FromExp>& exp, OSQLPa
         if (stat != SUCCESS)
             return stat;
 
-        stat = from_clause->TryAddClassRef(*m_context, move(classRefExp));
+        stat = from_clause->TryAddClassRef(*m_context, std::move(classRefExp));
         if (stat != SUCCESS)
             return stat;
         }

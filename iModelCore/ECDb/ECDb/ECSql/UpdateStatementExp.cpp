@@ -122,8 +122,8 @@ void UpdateStatementExp::_ToECSql(ECSqlRenderContext& ctx) const
 AssignmentExp::AssignmentExp(std::unique_ptr<PropertyNameExp> propNameExp, std::unique_ptr<ValueExp> valueExp)
     : Exp(Type::Assignment)
     {
-    m_propNameExpIndex = AddChild(move(propNameExp));
-    m_valueExpIndex = AddChild(move(valueExp));
+    m_propNameExpIndex = AddChild(std::move(propNameExp));
+    m_valueExpIndex = AddChild(std::move(valueExp));
     }
 
 //-----------------------------------------------------------------------------------------

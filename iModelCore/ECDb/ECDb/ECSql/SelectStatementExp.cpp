@@ -292,7 +292,7 @@ BentleyStatus FromExp::TryAddClassRef(ECSqlParseContext& ctx, std::unique_ptr<Cl
             }
         }
 
-    AddChild(move(classRefExp));
+    AddChild(std::move(classRefExp));
     return SUCCESS;
     }
 
@@ -1167,7 +1167,7 @@ Utf8String SubqueryRefExp::_ToString() const
 SubqueryTestExp::SubqueryTestExp(SubqueryTestOperator op, std::unique_ptr<SubqueryExp> subquery)
     : BooleanExp(Type::SubqueryTest), m_op(op)
     {
-    AddChild(move(subquery));
+    AddChild(std::move(subquery));
     }
 
 //-----------------------------------------------------------------------------------------
@@ -1215,7 +1215,7 @@ SubqueryValueExp::SubqueryValueExp(std::unique_ptr<SubqueryExp> subquery)
     : ValueExp(Type::SubqueryValue)
     {
     SetHasParentheses(); //subquery value exp always wrapped in parentheses
-    AddChild(move(subquery));
+    AddChild(std::move(subquery));
     }
 
 //-----------------------------------------------------------------------------------------

@@ -66,7 +66,7 @@ ECSqlStatus ECSqlInsertPreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& in
         if (!stat.IsSuccess())
             return stat;
 
-        insertSqlSnippets.m_propertyNamesNativeSqlSnippets.push_back(move(nativeSqlSnippets));
+        insertSqlSnippets.m_propertyNamesNativeSqlSnippets.push_back(std::move(nativeSqlSnippets));
         }
 
     status = ECSqlExpPreparer::PrepareValueExpListExp(insertSqlSnippets.m_valuesNativeSqlSnippets, ctx, *exp.GetValuesExp(), insertSqlSnippets.m_propertyNamesNativeSqlSnippets);

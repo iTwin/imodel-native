@@ -1446,6 +1446,67 @@ TEST_F(ECSqlStatementTestFixture, IsNull)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, pragma_ecdb_version)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("pragma.ecdb"));
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA ecdb_ver"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_STREQ(stmt.GetValueText(0), m_ecdb.GetECDbProfileVersion().ToString().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, view_generator_must_use_escaped_class_name_when_checking_disqualifed_check) {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("bug.ecdb", SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?> "
+        "<ECSchema schemaName='Generic' alias='g' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'> "
+        "  <ECEntityClass typeName='Base' modifier='None'>"
+        "    <ECCustomAttributes>"
+        "      <ClassMap xmlns='ECDbMap.02.00'>"
+        "        <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "      </ClassMap>"
+        "    </ECCustomAttributes>"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='Group' modifier='None'>"
+        "    <BaseClass>Base</BaseClass>"
+        "  </ECEntityClass>"
+        "</ECSchema>")));
+
+    auto groupClassId = m_ecdb.Schemas().GetClassId("Generic", "Group");
+    if ("unescaped GROUP keyword as class name should fail the statement") {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT 1 FROM Generic.Group"));
+    }
+
+    if ("unescaped GROUP keyword as class name should fail the pragma") {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "PRAGMA disqualify_type_index FOR Generic:Group"));
+    }
+
+    if ("escaped GROUP keyword as class name should prepare query fine") {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT 1 FROM Generic:[Group]"));
+        ASSERT_STREQ(SqlPrintfString("SELECT 1 FROM (SELECT [Id] ECInstanceId,[ECClassId] FROM [main].[g_Base] WHERE [g_Base].ECClassId=%s) [Group]", groupClassId.ToString().c_str()), stmt.GetNativeSql());
+    }
+
+    if ("escaped GROUP keyword as class name should set disqualify_type_index correctly") {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA disqualify_type_index=TRUE FOR Generic:[Group]"));
+    }
+
+    if ("escaped GROUP keyword as class name should prepare query fine and should be disqualified (+) at view generator") {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT 1 FROM Generic:[Group]"));
+        ASSERT_STREQ(SqlPrintfString("SELECT 1 FROM (SELECT [Id] ECInstanceId,[ECClassId] FROM [main].[g_Base] WHERE +[g_Base].ECClassId=%s) [Group]", groupClassId.ToString().c_str()), stmt.GetNativeSql());
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, IsNullForIncompletePoints)
     {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IsNullForIncompletePoints.ecdb", SchemaItem(

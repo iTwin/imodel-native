@@ -222,7 +222,7 @@ struct OrderByExp final : Exp
         explicit OrderByExp(std::vector<std::unique_ptr<OrderBySpecExp>>& specs) : Exp(Type::OrderBy)
             {
             for (auto& spec : specs)
-                AddChild(move(spec));
+                AddChild(std::move(spec));
             }
     };
 
