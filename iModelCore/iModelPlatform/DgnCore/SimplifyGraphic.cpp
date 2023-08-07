@@ -861,7 +861,6 @@ void SimplifyGraphic::_AddBody(IBRepEntityCR geom)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyGraphic::_AddTextString(TextStringCR text)
     {
-//*q*/printf("SimplifyGraphic::_AddTextString\n");
     m_processor._OnNewGeometry();
 
     ProcessText(text);
