@@ -1,0 +1,37 @@
+name: profile-version-tests-$(Date:yyyy.MM.dd)$(Rev:.r)
+
+trigger:
+  branches:
+    include:
+      - main
+
+pr:
+  autoCancel: true
+  drafts: true
+  branches:
+    include:
+      - main
+
+resources:
+  repositories:
+    - repository: profileversion-tests
+      type: github
+      endpoint: imodel-native
+      ref:  io-version-fix
+      name: iTwin/profileversion-tests
+
+    - repository: imodel-native-internal
+      type: github
+      endpoint: imodel-native
+      name: iTwin/imodel-native-internal
+
+    - repository: itwinjs-core
+      type: github
+      endpoint: imodel-native
+      name: iTwin/itwinjs-core
+
+extends:
+  template: /common/azure-pipelines/templates/pipeline.yml@profileversion-tests
+  parameters:
+    otherRepo: imodel-native
+
