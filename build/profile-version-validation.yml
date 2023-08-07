@@ -1,16 +1,16 @@
 name: profile-version-tests-$(Date:yyyy.MM.dd)$(Rev:.r)
 
-trigger:
-  branches:
-    include:
-      - main
+# trigger:
+#   branches:
+#     include:
+#       - main
 
 pr:
   autoCancel: true
   drafts: true
-  branches:
-    include:
-      - main
+  # branches:
+  #   include:
+  #     - main
 
 resources:
   repositories:
