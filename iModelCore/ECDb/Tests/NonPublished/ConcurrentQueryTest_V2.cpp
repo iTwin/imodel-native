@@ -434,7 +434,7 @@ TEST_F(ConcurrentQueryFixture, ConcurrentInstancePropertyAccessQueries)
     // Concurrent instance query should succeed since experimental features were enabled for this query request
     const auto concurrentResponse5 = concurrentQueryManager.Enqueue(std::move(ECSqlRequest::MakeRequest("SELECT $ -> name FROM meta.ECClassDef WHERE Description='KindOfQuantity' ECSQLOPTIONS enable_experimental_features"))).Get();
 
-    constexpr auto errorMsg = "Instance property access '$ -> name' is an experimental feature. Use 'PRAGMA experimental_features_enabled=true' query or add 'ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES' to the query to enable it.";
+    constexpr auto errorMsg = "Instance property access '$->name' is experimental feature and disabled by default.";
 
     // Test concurrent query responses
     EXPECT_EQ(concurrentResponse1->GetStatus(), QueryResponse::Status::Done);
@@ -442,10 +442,10 @@ TEST_F(ConcurrentQueryFixture, ConcurrentInstancePropertyAccessQueries)
 
     EXPECT_EQ(concurrentResponse2->GetStatus(), QueryResponse::Status::Done);
     EXPECT_STREQ(concurrentResponse2->GetAsConst<ECSqlResponse>().asJsonString().c_str(), "[[\"SchemaReference\"]]");
-    
+
     EXPECT_EQ(concurrentResponse3->GetStatus(), QueryResponse::Status::Done);
     EXPECT_STREQ(concurrentResponse3->GetAsConst<ECSqlResponse>().asJsonString().c_str(), "[[\"SchemaNameAndPurpose\"]]");
-    
+
     EXPECT_EQ(concurrentResponse4->GetStatus(), QueryResponse::Status::Error_ECSql_PreparedFailed);
     EXPECT_STREQ(concurrentResponse4->GetError().c_str(), errorMsg);
 
@@ -502,8 +502,8 @@ TEST_F(ConcurrentQueryFixture, InstancePropertyQueryWithECSqlReader)
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("ExperimentalFeaturesConcurrentQueries.ecdb"));
     auto& concurrentQueryManager = ConcurrentQueryMgr::GetInstance(m_ecdb);
 
-    constexpr auto errorMsg = "Instance property access '$ -> name' is an experimental feature. Use 'PRAGMA experimental_features_enabled=true' query or add 'ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES' to the query to enable it.";
-    
+    constexpr auto errorMsg = "Instance property access '$->name' is experimental feature and disabled by default.";
+
     ECSqlReader readerExperimentalFeaturesDisabled(concurrentQueryManager, "SELECT $ -> name FROM meta.ECClassDef WHERE Description='Relates the property to its PropertyCategory.'");
     try { EXPECT_FALSE(readerExperimentalFeaturesDisabled.Next()); }
     catch(std::runtime_error error) { EXPECT_STREQ(error.what(), errorMsg); }
@@ -524,8 +524,8 @@ TEST_F(ConcurrentQueryFixture, InstanceAccessQueryWithECSqlReader)
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("ExperimentalFeaturesConcurrentQueries.ecdb"));
     auto& concurrentQueryManager = ConcurrentQueryMgr::GetInstance(m_ecdb);
 
-    constexpr auto errorMsg = "Instance access '$' is an experimental feature. Use 'PRAGMA experimental_features_enabled=true' query or add 'ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES' to the query to enable it.";
-    
+    constexpr auto errorMsg = "Instance access '$' is experimental feature and disabled by default.";
+
     ECSqlReader readerExperimentalFeaturesDisabled(concurrentQueryManager, "SELECT $ FROM meta.ECClassDef WHERE Description='Relates the property to its PropertyCategory.'");
     try { EXPECT_FALSE(readerExperimentalFeaturesDisabled.Next()); }
     catch(std::runtime_error error) { EXPECT_STREQ(error.what(), errorMsg); }

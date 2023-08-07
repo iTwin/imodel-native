@@ -19,6 +19,7 @@ private:
     Utf8String m_val;
 
     void _ToECSql(ECSqlRenderContext&) const override;
+    void _ToJson(BeJsValue, JsonFormat const&) const override;
     Utf8String _ToString() const override { return "OptionExp"; }
 
 public:
@@ -34,19 +35,23 @@ public:
 //+===============+===============+===============+===============+===============+======
 struct OptionsExp final : Exp
     {
+    using OptionMap = bmap<Utf8CP, size_t, CompareIUtf8Ascii>;
+
 public:
     static Utf8CP const NOECCLASSIDFILTER_OPTION;
     static Utf8CP const READONLYPROPERTIESAREUPDATABLE_OPTION;
     static Utf8CP const ENABLE_EXPERIMENTAL_FEATURES;
 
 private:
-    bmap<Utf8CP, size_t, CompareIUtf8Ascii> m_optionsByName;
+    OptionMap m_optionsByName;
 
     void _ToECSql(ECSqlRenderContext&) const override;
+    void _ToJson(BeJsValue, JsonFormat const&) const override;
     Utf8String _ToString() const override { return "OptionsExp"; }
 
 public:
     OptionsExp() :Exp(Type::Options) {}
+    OptionMap const& GetOptionMap() const { return m_optionsByName; }
     BentleyStatus AddOptionExp(std::unique_ptr<OptionExp> optionExp, IssueDataSource const&);
     //! Checks whether an option with the given name was defined.
     //! If it exists and if it has a value, the value is checked for truth.

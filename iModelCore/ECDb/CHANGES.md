@@ -7,6 +7,12 @@ This document including important changes to syntax or file format.
 | Profile | `4.0.0.3` |
 | ECSQL   | `1.2.0.0` |
 
+## `8/7/2023`: Add support to get parse tree for ecsql using a `PRAGMA parse_tree`
+* Change ECSQL version `1.2.0.0` -> `1.2.2.0`
+* Add `PRAGMA parse_tree(<ecsql>)`
+* Add `ECSQLOPTIONS` clause to `PRAGMA` statement.
+    * Allow to run commands like `PRAGMA parse_tree("SELECT 1") ECSQLOPTIONS enable_experimental_features`
+
 ## `6/14/2023`: Add support for Schema sync
 * Schema sync allows two or more briefcases to sync there schema without requiring schema lock.
 * Schema lock might still be required in cases where data transformation require due to schema change.

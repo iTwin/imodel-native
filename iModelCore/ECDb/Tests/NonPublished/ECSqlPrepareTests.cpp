@@ -80,7 +80,7 @@ TEST_F(ECSqlPrepareTestFixture, ReservedTokens)
                     <ECEntityClass typeName="delete" />
                   </ECSchema>)xml"));
 
-    
+
     for (SchemaItem const& schemaItem : schemas)
         {
         ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ReservedECSQLTokens.ecdb", schemaItem));
@@ -256,8 +256,8 @@ TEST_F(ECSqlSelectPrepareTests, AndOrPrecedence)
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod
-// This test ensure if a property was not renamed by using alias then the ECProperty backing 
-// it up is not generated but is the orignal property. This happen when property is returned 
+// This test ensure if a property was not renamed by using alias then the ECProperty backing
+// it up is not generated but is the orignal property. This happen when property is returned
 // from a nested query.
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlSelectPrepareTests, PureNestedProperty)
@@ -283,7 +283,7 @@ TEST_F(ECSqlSelectPrepareTests, PureNestedProperty)
                 ASSERT_TRUE(stmt.GetColumnInfo(i).IsSystemProperty()) << stmt.GetColumnInfo(i).GetPropertyPath().ToString().c_str() << "is not system";
             }
         }
-       
+
     if (true)
         {
         ECSqlStatement stmt;
@@ -301,7 +301,7 @@ TEST_F(ECSqlSelectPrepareTests, PureNestedProperty)
             {
                 ASSERT_FALSE(stmt.GetColumnInfo(i).IsGeneratedProperty()) << stmt.GetColumnInfo(i).GetPropertyPath().ToString().c_str() << "is generated";;
             }
-        }        
+        }
     if (true)
         {
         ECSqlStatement stmt;
@@ -310,7 +310,7 @@ TEST_F(ECSqlSelectPrepareTests, PureNestedProperty)
             {
                 ASSERT_FALSE(stmt.GetColumnInfo(i).IsGeneratedProperty()) << stmt.GetColumnInfo(i).GetPropertyPath().ToString().c_str() << "is generated";;
             }
-        }        
+        }
     if (true)
         {
         ECSqlStatement stmt;
@@ -319,7 +319,7 @@ TEST_F(ECSqlSelectPrepareTests, PureNestedProperty)
             {
                 ASSERT_FALSE(stmt.GetColumnInfo(i).IsGeneratedProperty()) << stmt.GetColumnInfo(i).GetPropertyPath().ToString().c_str() << "is generated";;
             }
-        }   
+        }
     if (true)
         {
         ECSqlStatement stmt;
@@ -461,7 +461,7 @@ TEST_F(ECSqlSelectPrepareTests, Cast)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT CAST (NULL AS DOUBLE) FROM ecsql.PSA"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT CAST (NULL AS DOUBLE[]) FROM ecsql.PSA"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT CAST (D_Array AS DOUBLE[]) FROM ecsql.PSA")) << "For arrays only CAST (NULL as Type[]) is supported";
-    
+
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT CAST (Bi AS INT) FROM ecsql.PSA"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT CAST (S AS INT) FROM ecsql.PSA"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT CAST (False AS INT) FROM ecsql.PSA"));
@@ -737,7 +737,7 @@ TEST_F(ECSqlSelectPrepareTests, From)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT ECInstanceId, SourceECInstanceId, TargetECInstanceId FROM ONLY ecsql.PSAHasP"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT ECInstanceId, SourceECInstanceId, TargetECInstanceId FROM ecsql.PSAHasP"));
 
-    //select from structs 
+    //select from structs
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT i, s FROM ecsql.PStruct")) << "Structs are invalid in FROM clause.";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT i, s FROM ONLY ecsql.PStruct")) << "Structs are invalid in FROM clause.";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT * FROM ecsql.PStruct")) << "Structs are invalid in FROM clause.";
@@ -1271,7 +1271,7 @@ TEST_F(ECSqlSelectPrepareTests, Primitives)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT 3.14 AS BlaBla FROM ecsql.PSA"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT b FROM ecsql.PSA")) << "Primitive Property with different case";
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT B, d FROM ecsql.PSA")) << "Primitive Property with different case";
-    
+
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, S FROM ecsql.PSA WHERE I = ?"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, S FROM ecsql.PSA WHERE I = :p"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, S FROM ecsql.PSA WHERE L = :p1 OR I = :p2"));
@@ -1621,7 +1621,7 @@ TEST_F(ECSqlSelectPrepareTests, NestedSubqueries)
             ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(key, ecsql.c_str()));
             }
         }
-    
+
     if (true)
         {
         ECSqlStatement stmt;
@@ -1634,7 +1634,7 @@ TEST_F(ECSqlSelectPrepareTests, NestedSubqueries)
 
         stmt.Finalize();
         }
-    
+
     if (true)
         {
         ECSqlStatement stmt;
@@ -1653,13 +1653,13 @@ TEST_F(ECSqlSelectPrepareTests, NestedSubqueries)
         {
         ECSqlStatement stmt;
         Utf8String ecsql = "SELECT * FROM (SELECT (SELECT [PropA] FROM [NestedSubqueries].[A] LIMIT ? OFFSET ?) AS PropA FROM [NestedSubqueries].[A]);";
-        
+
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql.c_str()));
         stmt.BindInt(1, 1);
         stmt.BindInt(2, 0);
         EXPECT_EQ(JsonValue(R"json([{"PropA":"1A"}, {"PropA":"1A"}, {"PropA":"1A"}, {"PropA":"1A"}, {"PropA":"1A"}])json"),
             GetHelper().ExecutePreparedECSql(stmt));
-        
+
         stmt.Reset();
         stmt.BindInt(1, 1);
         stmt.BindInt(2, 2);
@@ -1673,16 +1673,16 @@ TEST_F(ECSqlSelectPrepareTests, NestedSubqueries)
         {
         ECSqlStatement stmt;
         Utf8String ecsql = "SELECT * FROM (SELECT (SELECT [PropA] FROM [NestedSubqueries].[A] LIMIT :LimitParam OFFSET :OffsetParam) AS PropA FROM [NestedSubqueries].[A]);";
-        
+
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql.c_str()));
-        
+
         ASSERT_EQ(1, stmt.GetParameterIndex("LimitParam"));
         ASSERT_EQ(2, stmt.GetParameterIndex("OffsetParam"));
         stmt.BindInt(stmt.GetParameterIndex("LimitParam"), 1);
         stmt.BindInt(stmt.GetParameterIndex("OffsetParam"), 0);
         EXPECT_EQ(JsonValue(R"json([{"PropA":"1A"}, {"PropA":"1A"}, {"PropA":"1A"}, {"PropA":"1A"}, {"PropA":"1A"}])json"),
             GetHelper().ExecutePreparedECSql(stmt));
-        
+
         stmt.Reset();
         stmt.BindInt(stmt.GetParameterIndex("LimitParam"), 1);
         stmt.BindInt(stmt.GetParameterIndex("OffsetParam"), 2);
@@ -1696,7 +1696,7 @@ TEST_F(ECSqlSelectPrepareTests, NestedSubqueries)
         {
         ECSqlStatement stmt;
         Utf8String ecsql = "SELECT * FROM (SELECT (SELECT [PropA] FROM [NestedSubqueries].[A] LIMIT ? OFFSET ?) AS PropA FROM [NestedSubqueries].[A]) LIMIT ?;";
-        
+
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql.c_str()));
         stmt.BindInt(1, 1);
         stmt.BindInt(2, 3);
@@ -1710,7 +1710,7 @@ TEST_F(ECSqlSelectPrepareTests, NestedSubqueries)
         {
         ECSqlStatement stmt;
         Utf8String ecsql = "SELECT * FROM (SELECT (SELECT [PropA] FROM [NestedSubqueries].[A] LIMIT :LimitParam1 OFFSET :OffsetParam) AS PropA FROM [NestedSubqueries].[A]) LIMIT :LimitParam2;";
-        
+
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql.c_str()));
         ASSERT_EQ(1, stmt.GetParameterIndex("LimitParam1"));
         ASSERT_EQ(2, stmt.GetParameterIndex("OffsetParam"));
@@ -1722,7 +1722,7 @@ TEST_F(ECSqlSelectPrepareTests, NestedSubqueries)
             GetHelper().ExecutePreparedECSql(stmt));
         stmt.Finalize();
         }
-    
+
     if (true)
         {
         ECSqlStatement stmt;
@@ -1735,7 +1735,7 @@ TEST_F(ECSqlSelectPrepareTests, NestedSubqueries)
 
         stmt.Finalize();
         }
-    
+
     if (true)
         {
         ECSqlStatement stmt;
@@ -1863,7 +1863,7 @@ TEST_F(ECSqlInsertPrepareTests, Into)
 
     // Inserting into structs
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("INSERT INTO ecsql.PStruct (i, l, dt, b) VALUES (123, 1000000, DATE '2013-10-10', False)")) << "structs are not insertible";
-    
+
     // Inserting into CAs
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("INSERT INTO bsca.DateTimeInfo (DateTimeKind) VALUES ('Utc')"));
 
@@ -1901,19 +1901,19 @@ TEST_F(ECSqlInsertPrepareTests, Into)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlInsertPrepareTests, Misc)
     {
-    // Syntactically incorrect statements 
+    // Syntactically incorrect statements
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare(""));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("INSERT"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("INSERT ecsql.P (I) VALUES (123)"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("INSERT INTO ecsql.P (I)"));
 
-    // Insert expressions 
+    // Insert expressions
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.P (I) VALUES (1 + 1)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.P (I) VALUES (5 * 4)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.P (L) VALUES (1 + ECClassId)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.P (L) VALUES (ECClassId * 4)"));
 
-    // Insert ECInstanceId 
+    // Insert ECInstanceId
     //NULL for ECInstanceId means ECDb auto-generates the ECInstanceId.
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.P (ECInstanceId) VALUES (NULL)")) << "NULL for ECInstanceId means ECDb auto-generates the ECInstanceId.";
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.TH2 (ECInstanceId) VALUES (NULL)"));
@@ -1952,7 +1952,7 @@ TEST_F(ECSqlInsertPrepareTests, Misc)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.PSA (L, S, I) VALUES (100000000000, 'hello, \" world', -1)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.PSA (L, I) VALUES (CAST (100000 AS INT64), 12 + 99)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.PSA (L, S, DtUtc) VALUES (?, ?, ?)"));
-    
+
 
     // Insert without column clause
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.P VALUES (True, NULL, 3.1415, TIMESTAMP '2013-10-14T12:00:00', TIMESTAMP '2013-10-14T12:00:00Z', TIMESTAMP '2013-10-14T12:00:00', DATE '2013-10-14', 123, 1234567890, 'bla bla', NULL, NULL, NULL)"));
@@ -2193,7 +2193,7 @@ TEST_F(ECSqlUpdatePrepareTests, Functions)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlUpdatePrepareTests, Misc)
     {
-    // Syntactically incorrect statements 
+    // Syntactically incorrect statements
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare(""));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ecsql.PSA"));
@@ -2212,11 +2212,11 @@ TEST_F(ECSqlUpdatePrepareTests, Misc)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.PSA t SET t.I = 124, t.L = 100000000000, t.D = -1.2345678, t.S = 'hello, world' WHERE t.D > 0.0")) << "Class alias are not allowed in SQLite, but ECSQL allows them. So test that ECDb properly omits them during preparation";
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.PSA t SET t.Dt = ?, t.L = ?")) << "Class alias are not allowed in SQLite, but ECSQL allows them. So test that ECDb properly omits them during preparation";
 
-    // Update ECInstanceId 
+    // Update ECInstanceId
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ecsql.PSA SET ECInstanceId = -3, I = 123")) << "Updating ECInstanceId is not allowed";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ecsql.PSA SET [ECInstanceId] = -3, I = 123")) << "The bracketed property [ECInstanceId] refers to an ECProperty (and not to the system property ECInstanceId). Parsing [ECInstanceId] is not yet supported.";
 
-    // Update ECClassId 
+    // Update ECClassId
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ecsql.PSA SET ECClassId=?")) << "Updating ECClassId is not allowed";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.PSA SET ECClassId=?")) << "Updating ECClassId is not allowed";
 
@@ -2482,7 +2482,7 @@ TEST_F(ECSqlUpdatePrepareTests, AbstractClass)
                                                         </ECEntityClass>
                                                     </ECSchema>)xml")));
     ASSERT_EQ(SUCCESS, PopulateECDb(3));
-    
+
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ts.BaseAbstractNoSubclasses SET Code=1"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ts.BaseAbstractNoSubclasses SET Code=1"));
 
@@ -2744,7 +2744,7 @@ TEST_F(ECSqlDeletePrepareTests, Functions)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlDeletePrepareTests, Misc)
     {
-    // Syntactically incorrect statements 
+    // Syntactically incorrect statements
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare(""));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM"));

@@ -40,6 +40,7 @@ struct BetweenRangeValueExp final : ValueExp
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode mode) override;
 
         void _ToECSql(ECSqlRenderContext&) const override;
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override { return "BetweenRangeValue"; }
 
     public:
@@ -68,6 +69,7 @@ struct BinaryValueExp final : ValueExp
         bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const override;
 
         void _ToECSql(ECSqlRenderContext&) const override;
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override;
 
     public:
@@ -96,6 +98,8 @@ struct SearchedWhenClauseExp final : ValueExp
         bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const override;
 
         void _ToECSql(ECSqlRenderContext&) const override;
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
+
         Utf8String _ToString() const override;
 
     public:
@@ -125,6 +129,8 @@ struct IIFExp final : ValueExp
         bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const override;
 
         void _ToECSql(ECSqlRenderContext&) const override;
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
+
         Utf8String _ToString() const override;
 
     public:
@@ -150,6 +156,7 @@ struct TypeListExp final : ValueExp
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode mode) override;
         bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const override;
         void _ToECSql(ECSqlRenderContext&) const override;
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override;
 
     public:
@@ -180,6 +187,7 @@ struct SearchCaseValueExp final : ValueExp
         bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const override;
 
         void _ToECSql(ECSqlRenderContext&) const override;
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override;
 
     public:
@@ -222,6 +230,7 @@ struct CastExp final : ValueExp
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode mode) override;
 
         void _ToECSql(ECSqlRenderContext&) const override;
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override;
 
     public:
@@ -259,6 +268,8 @@ struct LiteralValueExp final : ValueExp
         BentleyStatus ResolveDataType(ECSqlParseContext&);
 
         void _ToECSql(ECSqlRenderContext&) const override;
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
+
         Utf8String _ToString() const override;
 
     public:
@@ -280,6 +291,7 @@ struct EnumValueExp final : ValueExp
         ECN::ECEnumeratorCR m_enumerator;
         PropertyPath m_expPath;
         void _ToECSql(ECSqlRenderContext&) const override;
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override;
 
     public:
@@ -306,6 +318,8 @@ struct FunctionCallExp final : ValueExp
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
         bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const override;
         void _ToECSql(ECSqlRenderContext&) const override;
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
+
         Utf8String _ToString() const override;
 
         void DetermineReturnType(ECDbCR);
@@ -344,6 +358,7 @@ struct MemberFunctionCallExp final : ValueExp
 
         void _ToECSql(ECSqlRenderContext&) const override;
         Utf8String _ToString() const override;
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
         BentleyStatus ValidateArgument(ValueExp const& arg, Utf8StringR msg);
 
     public:
@@ -471,6 +486,8 @@ struct LikeRhsValueExp final : ValueExp
         bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const override;
 
         void _ToECSql(ECSqlRenderContext&) const override;
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
+
         Utf8String _ToString() const override { return "LikeRhsValue"; }
 
     public:
@@ -499,6 +516,7 @@ struct ParameterExp final : ValueExp
 
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
         void _ToECSql(ECSqlRenderContext&) const override;
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override;
 
     public:
@@ -533,6 +551,8 @@ struct UnaryValueExp final : ValueExp
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
         bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const override;
         void _ToECSql(ECSqlRenderContext&) const override;
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
+
         Utf8String _ToString() const override;
 
     public:
