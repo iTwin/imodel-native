@@ -1586,6 +1586,16 @@ DgnElementPtr DgnElement::_CloneForImport(DgnDbStatus* inStat, DgnModelR destMod
     DgnElement::CreateParams params = GetCreateParamsForImport(destModel, importer);
     params.m_modelId = destModel.GetModelId();
 
+    if (!params.IsValid())
+        {
+        BeNapi::ThrowJsException(
+            m_dgndb.GetJsIModelDb()->Env(),
+            params.m_classId.IsValid() ? "invalid create params" : "attempt to clone with unknown class",
+            (int) (params.m_classId.IsValid() ? DgnDbStatus::BadRequest : DgnDbStatus::WrongClass),
+        );
+        return nullptr;
+        }
+
     DgnElementPtr cloneElem = GetElementHandler().Create(params);
 
     if (!cloneElem.IsValid())
@@ -1630,10 +1640,12 @@ void DgnElement::_CopyFrom(DgnElementCR other, CopyFromOptions const& opts)
         {
         // Copy the auto-handled EC properties
         ElementAutoHandledPropertiesECInstanceAdapterPtr ecOther = ElementAutoHandledPropertiesECInstanceAdapter::Create(other, true);
-        if (ecOther.IsNull())
-            return;
+        const auto ecOtherPtrIsValid = ecOther.IsValid();
+        if (!ecOtherPtrIsValid)
+            m_dgnDb.ThrowException("failed to copy auto handled EC properties", (int)DgnDbStatus::BadArg);
 
-        if (ecOther->IsValid())
+        const auto ecOtherInstanceIsValid = ecOther->IsValid();
+        if (ecOtherInstanceIsValid)
             {
             bool sameClass = (GetElementClassId() == other.GetElementClassId());
             // Note that we are NOT necessarily going to call _SetPropertyValue on each property.
@@ -1643,10 +1655,13 @@ void DgnElement::_CopyFrom(DgnElementCR other, CopyFromOptions const& opts)
             //          buffer for what I have now (if anything) and then have to realloc it to accommodate the other element's buffer.
             //          Instead, wait and let CopyFromBuffer tell me the *exact* size to allocate.
             ElementAutoHandledPropertiesECInstanceAdapterPtr ecThis = ElementAutoHandledPropertiesECInstanceAdapter::Create(*this, !sameClass, ecOther->CalculateBytesUsed());
-            if (ecThis.IsNull())
-                return;
+            const auto ecThisPtrIsValid = ecThis.IsValid();
+            if (!ecThisPtrIsValid)
+                // ElementAutoHandledPropertiesECInstanceAdapter::Create returns null if its class was invalid
+                m_dgnDb.ThrowException("failed to copy auto handled EC properties", (int)DgnDbStatus::WrongClass);
 
-            if (ecThis->IsValid()) // this might not have auto-handled props if this and other are instances of different classes
+            const auto ecThisInstanceIsValid = ecThis->IsValid();
+            if (ecThisInstanceIsValid) // this might not have auto-handled props if this and other are instances of different classes
                 {
                 if (!sameClass)
                     ecThis->CopyDataBuffer(*ecOther, true);

@@ -5773,8 +5773,11 @@ public:
         if (!targetModel.IsValid())
             THROW_JS_EXCEPTION("Invalid target model");
 
-        DgnElementPtr targetElement = sourceElement->CloneForImport(nullptr, *targetModel, *m_importContext);
-        if (!targetElement.IsValid())
+        DgnDbStatus cloneStatus;
+        DgnElementPtr targetElement = sourceElement->CloneForImport(&cloneStatus, *targetModel, *m_importContext);
+        if (cloneStatus == DgnDbStatus::WrongClass)
+            THROW_JS_EXCEPTION("Unable to clone an element because of an invalid class. Were schemas imported?");
+        if (cloneStatus != DgnDbStatus::Success || !targetElement.IsValid())
             THROW_JS_EXCEPTION("Unable to clone element");
 
         GeometryStreamCP geometryStream = nullptr;
