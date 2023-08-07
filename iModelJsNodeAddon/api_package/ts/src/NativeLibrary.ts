@@ -637,7 +637,6 @@ export declare namespace IModelJsNative {
     public enableWalMode(yesNo?: boolean): void;
     public performCheckpoint(mode?: WalCheckpointMode): void;
     public setAutoCheckpointThreshold(frames: number): void;
-    public parseECSql(ecsql: string): any;
     public static enableSharedCache(enable: boolean): DbResult;
     public static getAssetsDir(): string;
   }
@@ -700,7 +699,6 @@ export declare namespace IModelJsNative {
     public concurrentQueryExecute(request: DbRequest, onResponse: ConcurrentQuery.OnResponse): void;
     public concurrentQueryResetConfig(config?: QueryConfig): QueryConfig;
     public concurrentQueryShutdown(): void;
-    public parseECSql(ecsql: string): any;
   }
 
   class ChangedElementsECDb implements IDisposable {
