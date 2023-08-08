@@ -177,7 +177,6 @@ struct BeCGIModelJsonValueWriter
 
     void BsurfToJson (BeJsValue in, MSBsplineSurfaceCR bsurf)
         {
-
         auto value = in["bsurf"];
         bool rational = bsurf.rational != 0;
         bvector<double> knots;
@@ -206,12 +205,12 @@ struct BeCGIModelJsonValueWriter
                     toJson (row.appendValue(), bsurf.GetPole (i, j), this->m_packArrays);
                 }
             }
-        CurveVectorPtr boundaries = bsurf.GetUVBoundaryCurves(false, false);
+        CurveVectorPtr boundaries = bsurf.GetUVBoundaryCurves(false, true);     // preserve trim curves (don't stroke)
         if (boundaries.IsValid () && boundaries->size () > 0)
             {
             CurveVectorToJson(value["uvBoundaries"], *boundaries);
             if (!bsurf.IsOuterBoundaryActive())
-                value["outerBoundaryActive"] = false;
+                value["outerBoundaryActive"] = false;   // default/undefined is true (boundary forms a hole)
             }
         }
 #ifdef RawImjs
@@ -664,7 +663,8 @@ void CurvePrimitiveToJson(BeJsValue in, ICurvePrimitiveCR cp)
             }
         value["order"] = (int) bcurve->GetOrder();
         toJson (value["knots"], knots);
-        value["closed"] = bcurve->IsClosed();
+        if (bcurve->IsClosed())
+            value["closed"] = true;
         return;
         }
     auto spiralPlacement = cp.GetSpiralPlacementCP();

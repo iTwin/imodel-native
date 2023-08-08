@@ -1825,7 +1825,8 @@ void Check::TearDown()
     BeAssert (s_stack.empty ());    // scope setups were cleared in reverse order
     }
 
-bool Check::NearRoundtrip(IGeometryCR g, double tolerance, char const* pString)
+// verify geometry round trip through both JSON and FlatBuffer
+bool Check::NearRoundTrip(IGeometryCR g, double tolerance, char const* pString)
     {
     std::string myString;
     if (pString)

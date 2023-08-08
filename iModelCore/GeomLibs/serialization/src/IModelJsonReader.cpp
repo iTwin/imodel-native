@@ -243,7 +243,7 @@ private: bool tryValueToBVectorFaceData(BeJsConst value, bvector<FacetFaceData> 
     return false;
     }
          
- bool tryValueToBVectorDPoint3dAndWeght (BeJsConst value, bvector<DPoint3d> &data, bvector<double> &weights)
+ bool tryValueToBVectorDPoint3dAndWeight (BeJsConst value, bvector<DPoint3d> &data, bvector<double> &weights)
     {
     data.clear ();
     double xyzArray[4];
@@ -481,13 +481,14 @@ bool tryValueToBsplineCurve (BeJsConst value, ICurvePrimitivePtr &result)
         bvector<DPoint3d> poles;
         bvector<double> knots;
         bvector<double> weights;
-        if (tryValueToBVectorDPoint3dAndWeght (value["points"], poles, weights)
+        bool closed;
+        if (tryValueToBVectorDPoint3dAndWeight (value["points"], poles, weights)
             && value["order"].isNumeric ()
             && tryValueToBVectorDouble (value["knots"], knots)
             )
             {
             auto order = value["order"].asInt ();
-            bool closed  = value["closed"].isNull () ? false : value["closed"].asBool ();
+            derefBool(value, "closed", closed, false);
             auto bcurve = MSBsplineCurve::CreateFromPolesAndOrder (
                     poles, &weights, &knots,
                     (int)order, closed);
@@ -503,7 +504,7 @@ bool tryValueToBsplineCurve (BeJsConst value, ICurvePrimitivePtr &result)
             )
             {
             auto order = value["order"].asInt ();
-            bool closed  = value["closed"].isNull () ? false : value["closed"].asBool ();
+            derefBool(value, "closed", closed, false);
             auto bcurve = MSBsplineCurve::CreateFromPolesAndOrder (
                     poles, nullptr, &knots,
                     (int)order, closed);
@@ -1082,21 +1083,19 @@ MSBsplineSurfacePtr tryValueToMSBsplineSurface (BeJsConst parentValue)
         int orderV = value["orderV"].asInt ();
         auto bsurf = MSBsplineSurface::CreateFromPolesAndOrder (
                 poles, weights.size () == poles.size () ? &weights : nullptr,
-                &uKnots,(int)orderU, numU, closedU,
-                &vKnots,(int)orderV, numV, closedV,
+                &uKnots, orderU, numU, closedU,
+                &vKnots, orderV, numV, closedV,
                 true);
 
         if (bsurf.IsValid())
             {
             CurveVectorPtr uvBoundaries = tryValueToCurveVector(value["uvBoundaries"]);
             if (uvBoundaries.IsValid() && uvBoundaries->size() > 0)
-                bsurf->SetTrim(*uvBoundaries);
-            if (value["outerBoundaryActive"].isBool())
                 {
-                // The new surface implicitly has outerBoundaryActive true. Don't reset it unless explicitly false
-                bool active = value["outerBoundaryActive"].asBool();
-                if (!active)
-                    bsurf->SetOuterBoundaryActive(false);
+                bsurf->SetTrim(*uvBoundaries);
+                bool active;
+                derefBool(value, "outerBoundaryActive", active, true);  // default/undefined is true (boundary forms a hole)
+                bsurf->SetOuterBoundaryActive(active);
                 }
             return bsurf;
             }
