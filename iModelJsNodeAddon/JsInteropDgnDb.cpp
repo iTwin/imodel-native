@@ -369,9 +369,7 @@ Napi::String JsInterop::InsertElement(DgnDbR dgndb, Napi::Object obj, Napi::Valu
         if (!el.IsValid())
             throwBadArg();
 
-        // if the option "doNotTrimCodeValue" is set, preserve the code value exactly -- used by transformer
-        const auto doNotTrimCodeValue = inOptionsJson.isObject() && inOptionsJson.Get(json_doNotTrimCodeValue()).asBool();
-        el->FromJson(inJson, DgnElement::FromJsonOpts{doNotTrimCodeValue});
+        el->FromJson(inJson, DgnElement::FromJsonOpts{dgndb.m_codeValueBehavior});
 
         // if no federationGuid was supplied, create one for the element before we add it.
         if (!inJson.isStringMember(json_federationGuid()))

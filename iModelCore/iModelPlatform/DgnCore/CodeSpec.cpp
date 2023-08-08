@@ -429,8 +429,6 @@ bool DgnCodeValue::Equals(Utf8CP str) const {
     return 0 == str[size()];
 }
 
-static CodeValueBehavior s_codeValueBehavior = CodeValueBehavior::TrimUtf8WhiteSpace;
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/

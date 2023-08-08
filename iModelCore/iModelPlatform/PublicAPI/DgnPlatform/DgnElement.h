@@ -1187,10 +1187,7 @@ public:
     };
 
     struct FromJsonOpts {
-        FromJsonOpts(bool preserveCode): preserveCode(preserveCode) {}
-        FromJsonOpts(): preserveCode(false) {}
-        // clang bug seems to prevent default initializers for nested struct fields
-        bool preserveCode;
+        DgnDb::CodeValueBehavior codeValueBehavior;
     };
 
 private:
