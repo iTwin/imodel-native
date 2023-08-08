@@ -1186,6 +1186,13 @@ public:
         DGNPLATFORM_EXPORT void FromJson(DgnDbR, BeJsConst val);
     };
 
+    struct FromJsonOpts {
+        FromJsonOpts(bool preserveCode): preserveCode(preserveCode) {}
+        FromJsonOpts(): preserveCode(false) {}
+        // clang bug seems to prevent default initializers for nested struct fields
+        bool preserveCode;
+    };
+
 private:
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
 
@@ -1273,13 +1280,6 @@ protected:
     //! Convert this DgnElement to a BeJsValue.
     //! @note If you override this method, you @em must call T_Super::_ToJson()
     DGNPLATFORM_EXPORT virtual void _ToJson(BeJsValue out, BeJsConst opts) const;
-
-
-    struct FromJsonOpts {
-        // clang bug seems to prevent default initializers for nested struct fields
-        FromJsonOpts(): preserveCode(false) {}
-        bool preserveCode;
-    };
 
     //! Update this DgnElement from a BeJsValue.
     //! @note If you override this method, you @em must call T_Super::_FromJson()
