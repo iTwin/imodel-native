@@ -447,6 +447,7 @@ struct JsInterop {
     BE_JSON_NAME(pageSize)
     BE_JSON_NAME(parentId)
     BE_JSON_NAME(pathname)
+    BE_JSON_NAME(doNotTrimCodeValue)
     BE_JSON_NAME(projectExtents)
     BE_JSON_NAME(promise)
     BE_JSON_NAME(queryParam)

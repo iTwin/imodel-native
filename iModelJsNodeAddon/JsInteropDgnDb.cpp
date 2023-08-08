@@ -369,14 +369,17 @@ Napi::String JsInterop::InsertElement(DgnDbR dgndb, Napi::Object obj, Napi::Valu
         if (!el.IsValid())
             throwBadArg();
 
-        el->FromJson(inJson);
+        // if the option "doNotTrimCodeValue" is set, preserve the code value exactly -- used by transformer
+        const auto doNotTrimCodeValue = inOptionsJson.isObject() && inOptionsJson.Get(json_doNotTrimCodeValue()).asBool();
+        el->FromJson(inJson, DgnElement::FromJsonOpts{doNotTrimCodeValue});
 
         // if no federationGuid was supplied, create one for the element before we add it.
         if (!inJson.isStringMember(json_federationGuid()))
             el->SetFederationGuid(BeGuid(true));
 
         // if the option "forceUseId" is set, attempt to insert the element preserving that id - used by transformer.
-        if (inOptionsJson.isObject() && inOptionsJson.Get(json_forceUseId()).asBool()) {
+        const auto forceUseId = inOptionsJson.isObject() && inOptionsJson.Get(json_forceUseId()).asBool();
+        if (forceUseId) {
             if (!inJson.isStringMember(json_id())) {
                 BeNapi::ThrowJsException(Env(), "invalid argument, the id is required if forcing its usage", (int)DgnDbStatus::BadArg);
             }
