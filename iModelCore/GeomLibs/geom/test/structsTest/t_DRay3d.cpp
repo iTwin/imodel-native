@@ -529,10 +529,10 @@ TEST(DRay3d, IntersectTriangleAccuracyAndPerformance)
             stop = std::chrono::high_resolution_clock::now();
             timeByFastFunction = timeByFastFunction + std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start).count();
             // if ray hits the triangle via bsiDRay3d_intersectTriangle
-            if (slowRet && rayParameter > 0 
-                && barycentric.x >= 0 && barycentric.x <= 1 
-                && barycentric.y >= 0 && barycentric.y <= 1 
-                && barycentric.z >= 0 && barycentric.z <= 1)
+            if (slowRet && rayParameter > 0
+                && barycentric.x >= -Angle::TinyAngle() && barycentric.x <= 1 + Angle::TinyAngle() 
+                && barycentric.y >= -Angle::TinyAngle() && barycentric.y <= 1 + Angle::TinyAngle() 
+                && barycentric.z >= -Angle::TinyAngle() && barycentric.z <= 1 + Angle::TinyAngle())
                 {
                 if (fastRet) // if ray hits the triangle via bsiDRay3d_intersectTriangleFast
                     {
