@@ -299,9 +299,9 @@ void UrlLink::_ToJson(BeJsValue out, BeJsConst opts) const
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void UrlLink::_FromJson(BeJsConst val, DgnElement::FromJsonOpts opts)
+void UrlLink::_FromJson(BeJsConst val)
     {
-    T_Super::_FromJson(val, opts);
+    T_Super::_FromJson(val);
     if (val.isMember(json_url()))
         m_url = val[json_url()].asString();
 
@@ -466,9 +466,9 @@ void RepositoryLink::_ToJson(BeJsValue out, BeJsConst opts) const
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void RepositoryLink::_FromJson(BeJsConst val, DgnElement::FromJsonOpts opts)
+void RepositoryLink::_FromJson(BeJsConst val)
     {
-    T_Super::_FromJson(val, opts);
+    T_Super::_FromJson(val);
     if (val.hasMember(json_repositoryGuid())) // support partial update, only update m_repositoryGuid if props has member
         {
         auto repositoryGuid = val[json_repositoryGuid()];
@@ -560,9 +560,9 @@ void EmbeddedFileLink::_ToJson(BeJsValue out, BeJsConst opts) const
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void EmbeddedFileLink::_FromJson(BeJsConst val, DgnElement::FromJsonOpts opts)
+void EmbeddedFileLink::_FromJson(BeJsConst val)
     {
-    T_Super::_FromJson(val, opts);
+    T_Super::_FromJson(val);
     if (val.isMember(json_name()))
         m_name = val[json_name()].asString();
 

@@ -79,9 +79,9 @@ void DgnTexture::_ToJson(BeJsValue out, BeJsConst opts) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnTexture::_FromJson(BeJsConst props, DgnElement::FromJsonOpts opts)
+void DgnTexture::_FromJson(BeJsConst props)
     {
-    T_Super::_FromJson(props, opts);
+    T_Super::_FromJson(props);
 
     if (props.hasMember(json_description())) // support partial update, only update m_descr if member present
         {

@@ -304,7 +304,7 @@ protected:
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT Dgn::DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, Dgn::ECSqlClassParams const& selectParams) override;
     DGNPLATFORM_EXPORT void _ToJson(BeJsValue out, BeJsConst opts) const override;
-    DGNPLATFORM_EXPORT void _FromJson(BeJsConst props, DgnElement::FromJsonOpts opts) override;
+    DGNPLATFORM_EXPORT void _FromJson(BeJsConst props) override;
 
 public:
     //! Parameters used to construct a UrlLink
@@ -387,7 +387,7 @@ protected:
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT Dgn::DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, Dgn::ECSqlClassParams const& selectParams) override;
     DGNPLATFORM_EXPORT void _ToJson(BeJsValue out, BeJsConst opts) const override;
-    DGNPLATFORM_EXPORT void _FromJson(BeJsConst props, DgnElement::FromJsonOpts opts) override;
+    DGNPLATFORM_EXPORT void _FromJson(BeJsConst props) override;
 
     BE_JSON_PROP_NAMESPACE(DocumentProperties);
 
@@ -511,7 +511,7 @@ protected:
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT Dgn::DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, Dgn::ECSqlClassParams const& selectParams) override;
     DGNPLATFORM_EXPORT void _ToJson(BeJsValue out, BeJsConst opts) const override;
-    DGNPLATFORM_EXPORT void _FromJson(BeJsConst props, DgnElement::FromJsonOpts opts) override;
+    DGNPLATFORM_EXPORT void _FromJson(BeJsConst props) override;
 
 public:
     BE_JSON_NAME(name);

@@ -32,9 +32,9 @@ void DgnCategory::_ToJson(BeJsValue val, BeJsConst opts) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnCategory::_FromJson(BeJsConst props, DgnElement::FromJsonOpts opts)
+void DgnCategory::_FromJson(BeJsConst props)
     {
-    T_Super::_FromJson(props, opts);
+    T_Super::_FromJson(props);
 
     if (props.hasMember(json_description())) // support partial update, only update m_descr if member present
         {
@@ -229,9 +229,9 @@ void DgnSubCategory::_ToJson(BeJsValue val, BeJsConst opts) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnSubCategory::_FromJson(BeJsConst props, DgnElement::FromJsonOpts opts)
+void DgnSubCategory::_FromJson(BeJsConst props)
     {
-    T_Super::_FromJson(props, opts);
+    T_Super::_FromJson(props);
 
     if (props.hasMember(json_description())) // support partial update, only update description if member present
         {

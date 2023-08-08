@@ -1280,7 +1280,7 @@ protected:
 
     //! Update this DgnElement from a BeJsValue.
     //! @note If you override this method, you @em must call T_Super::_FromJson()
-    DGNPLATFORM_EXPORT virtual void _FromJson(BeJsConst props, FromJsonOpts opts = FromJsonOpts());
+    DGNPLATFORM_EXPORT virtual void _FromJson(BeJsConst props);
 
     //! Override this method if your element needs to load additional data from the database when it is loaded (for example,
     //! look up related data in another table).
@@ -2058,7 +2058,7 @@ public:
     //! @param[in] opts options for customizing the value. If opts["wantGeometry"] != true, geometry stream is not included.
     void ToJson(BeJsValue val, BeJsConst opts = BeJsDocument()) const { val.SetEmptyObject(); _ToJson(val, opts); }
 
-    void FromJson(BeJsConst props, FromJsonOpts opts = FromJsonOpts()) {_FromJson(props, opts);}
+    void FromJson(BeJsConst props) {_FromJson(props);}
     //! @}
 
     //! Make an iterator over all ElementAspects owned by this element
@@ -2218,7 +2218,7 @@ protected:
     virtual Utf8CP _GetGeometryColumnClassName() const = 0;
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
     DGNPLATFORM_EXPORT void _ToJson(BeJsValue out, BeJsConst opts) const override;
-    DGNPLATFORM_EXPORT void _FromJson(BeJsConst props, FromJsonOpts opts = DgnElement::FromJsonOpts()) override;
+    DGNPLATFORM_EXPORT void _FromJson(BeJsConst props) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT DgnDbStatus _InsertInDb() override;
     DGNPLATFORM_EXPORT DgnDbStatus _UpdateInDb() override;
@@ -2301,7 +2301,7 @@ protected:
     DGNPLATFORM_EXPORT DgnDbStatus _OnDelete() const override;
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
     DGNPLATFORM_EXPORT void _ToJson(BeJsValue out, BeJsConst opts) const override;
-    DGNPLATFORM_EXPORT void _FromJson(BeJsConst props, FromJsonOpts opts = DgnElement::FromJsonOpts()) override;
+    DGNPLATFORM_EXPORT void _FromJson(BeJsConst props) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
 
 public:
@@ -2383,7 +2383,7 @@ protected:
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
     DGNPLATFORM_EXPORT void _ToJson(BeJsValue out, BeJsConst opts) const override;
-    DGNPLATFORM_EXPORT void _FromJson(BeJsConst props, FromJsonOpts opts = DgnElement::FromJsonOpts()) override;
+    DGNPLATFORM_EXPORT void _FromJson(BeJsConst props) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
 
 public:
@@ -2962,7 +2962,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DefinitionElement : InformationContentElement
 
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
     DGNPLATFORM_EXPORT void _ToJson(BeJsValue out, BeJsConst opts) const override;
-    DGNPLATFORM_EXPORT void _FromJson(BeJsConst props, DgnElement::FromJsonOpts opts = DgnElement::FromJsonOpts()) override;
+    DGNPLATFORM_EXPORT void _FromJson(BeJsConst props) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR, CopyFromOptions const&) override;
 

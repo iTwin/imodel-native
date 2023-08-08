@@ -48,9 +48,9 @@ void DgnGeometryPart::_ToJson(BeJsValue out, BeJsConst opts) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnGeometryPart::_FromJson(BeJsConst val, DgnElement::FromJsonOpts opts)
+void DgnGeometryPart::_FromJson(BeJsConst val)
     {
-    T_Super::_FromJson(val, opts);
+    T_Super::_FromJson(val);
 
     auto elementGeometryBuilderParams = val[json_elementGeometryBuilderParams()];
     if (!elementGeometryBuilderParams.isNull()) {
