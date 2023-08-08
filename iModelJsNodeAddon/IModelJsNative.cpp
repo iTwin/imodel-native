@@ -2199,6 +2199,18 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         JsInterop::UpdateProjectExtents(GetDgnDb(), BeJsDocument(newExtentsJson));
         }
 
+    void SetCodeValueBehavior(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_STRING(0, codeValueBehaviorStr)
+        DgnCodeValue::Behavior newBehavior;
+        if (codeValueBehaviorStr == "exact")
+            newBehavior = DgnCodeValue::Behavior::Exact;
+        else if (codeValueBehaviorStr == "trim-utf8-whitespace")
+            newBehavior = DgnCodeValue::Behavior::TrimUtf8WhiteSpace;
+        else
+            THROW_JS_EXCEPTION("Unsupported argument, should be one of the strings 'exact' or 'trim-utf8-whitespace'");
+        GetDgnDb().m_codeValueBehavior = newBehavior;
+    }
+
     Napi::Value ComputeProjectExtents(NapiInfoCR info)
         {
         REQUIRE_ARGUMENT_BOOL(0, wantFullExtents);
@@ -2586,6 +2598,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
             InstanceMethod("saveFileProperty", &NativeDgnDb::SaveFileProperty),
             InstanceMethod("saveLocalValue", &NativeDgnDb::SaveLocalValue),
             InstanceMethod("schemaToXmlString", &NativeDgnDb::SchemaToXmlString),
+            InstanceMethod("setCodeValueBehavior", &NativeDgnDb::SetCodeValueBehavior),
             InstanceMethod("setGeometricModelTrackingEnabled", &NativeDgnDb::SetGeometricModelTrackingEnabled),
             InstanceMethod("setIModelDb", &NativeDgnDb::SetIModelDb),
             InstanceMethod("setIModelId", &NativeDgnDb::SetIModelId),
