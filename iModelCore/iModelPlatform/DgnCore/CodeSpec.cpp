@@ -429,6 +429,8 @@ bool DgnCodeValue::Equals(Utf8CP str) const {
     return 0 == str[size()];
 }
 
+static CodeValueBehavior s_codeValueBehavior = CodeValueBehavior::TrimUtf8WhiteSpace;
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -492,7 +494,9 @@ void DgnCode::ToJson(BeJsValue val) const {
  */
 DgnCode DgnCode::FromJson(BeJsConst value, DgnDbCR db, bool validateScope, bool useExactValue) {
     DgnCode val;
-    val.m_value = DgnCodeValue::CreateExact(value[json_value()].asString());
+    val.m_value = useExactValue
+        ? DgnCodeValue::CreateExact(value[json_value()].asString())
+        : DgnCodeValue(value[json_value()].asString());
     val.m_scope = value[json_scope()].asString();
 
     auto specJson = value[json_spec()];

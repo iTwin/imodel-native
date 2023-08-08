@@ -2061,7 +2061,7 @@ public:
     //! @param[in] opts options for customizing the value. If opts["wantGeometry"] != true, geometry stream is not included.
     void ToJson(BeJsValue val, BeJsConst opts = BeJsDocument()) const { val.SetEmptyObject(); _ToJson(val, opts); }
 
-    void FromJson(BeJsConst props, FromJsonOpts opts = FromJsonOpts()) {_FromJson(props);}
+    void FromJson(BeJsConst props, FromJsonOpts opts = FromJsonOpts()) {_FromJson(props, opts);}
     //! @}
 
     //! Make an iterator over all ElementAspects owned by this element
