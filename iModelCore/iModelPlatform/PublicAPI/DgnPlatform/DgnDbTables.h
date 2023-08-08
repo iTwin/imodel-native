@@ -199,6 +199,13 @@ struct ModelIterator;
 struct DgnCodeValue
 {
     enum class CompareResult { Less, Equal, Greater };
+    enum class Behavior {
+        TrimUtf8WhiteSpace = 0,
+        // Use when you are copying data between iModels in a way that code values should preserved
+        // This is mostly for compatibility with older iModels where the previous behavior was
+        // trimming ascii whitespace.
+        Exact = 1,
+    };
 
 private:
     Utf8String  m_value; //!< Note: can be "empty" (persisted as null)
@@ -214,6 +221,12 @@ public:
     DgnCodeValue(Utf8StringCR str) : m_value(str) { m_value.TrimUtf8(); }
     //! Create a code value from a pointer to a UTF-8 string
     DgnCodeValue(Utf8CP str) : m_value(str) { m_value.TrimUtf8(); }
+
+    //! Create a code value exactly from the input string (don't trim whitespace).
+    //! Only use this if you are copying content between iModels and need the codes to be
+    //! preserved exactly. This is only necessary because before 4.x iTwin.js relied on
+    //! the JavaScript API to trim non-ascii whitespace, which was occasionally circumvented
+    static DgnCodeValue CreateExact(Utf8StringCR str) { auto res = DgnCodeValue(); res.m_value = str; return res; }
 
     //! Get the value as a Utf8String
     Utf8StringCR GetUtf8() const { return m_value; }
@@ -311,11 +324,19 @@ public:
     //! Create an empty, non-unique code with no special meaning.
     DGNPLATFORM_EXPORT static DgnCode CreateEmpty();
 
+    //! @see DgnCodeValue::CreateExact
+    static DgnCode CreateExact(CodeSpecId specId, DgnElementId scopeElementId, Utf8StringCR value)
+        {
+        DgnCode result{specId, scopeElementId, ""};
+        result.m_value = DgnCodeValue::CreateExact(value);
+        return result;
+        }
+
     BE_JSON_NAME(spec)
     BE_JSON_NAME(scope)
     BE_JSON_NAME(value)
     DGNPLATFORM_EXPORT void ToJson(BeJsValue) const;
-    DGNPLATFORM_EXPORT static DgnCode FromJson(BeJsConst value, DgnDbCR, bool validateScope, bool useExactValue = false);
+    DGNPLATFORM_EXPORT static DgnCode FromJson(BeJsConst value, DgnDbCR, bool validateScope, DgnCodeValue::Behavior = DgnCodeValue::Behavior::TrimUtf8WhiteSpace);
 };
 
 typedef bset<DgnCode> DgnCodeSet;

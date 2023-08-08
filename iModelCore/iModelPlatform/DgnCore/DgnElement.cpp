@@ -1330,7 +1330,7 @@ void DgnElement::_FromJson(BeJsConst props) {
 
     auto code = props[json_code()];
     if (!code.isNull())
-        m_code = DgnCode::FromJson(code, m_dgndb, true);
+        m_code = DgnCode::FromJson(code, m_dgndb, true, m_dgndb.m_codeValueBehavior);
 
     // support partial update, only update m_federationGuid if props has member
     if (props.hasMember(json_federationGuid())) {
@@ -1591,7 +1591,7 @@ DgnElementPtr DgnElement::_CloneForImport(DgnDbStatus* inStat, DgnModelR destMod
         BeNapi::ThrowJsException(
             m_dgndb.GetJsIModelDb()->Env(),
             params.m_classId.IsValid() ? "invalid create params" : "attempt to clone with unknown class",
-            (int) (params.m_classId.IsValid() ? DgnDbStatus::BadRequest : DgnDbStatus::WrongClass),
+            (int) (params.m_classId.IsValid() ? DgnDbStatus::BadRequest : DgnDbStatus::WrongClass)
         );
         return nullptr;
         }
@@ -1642,7 +1642,7 @@ void DgnElement::_CopyFrom(DgnElementCR other, CopyFromOptions const& opts)
         ElementAutoHandledPropertiesECInstanceAdapterPtr ecOther = ElementAutoHandledPropertiesECInstanceAdapter::Create(other, true);
         const auto ecOtherPtrIsValid = ecOther.IsValid();
         if (!ecOtherPtrIsValid)
-            m_dgnDb.ThrowException("failed to copy auto handled EC properties", (int)DgnDbStatus::BadArg);
+            m_dgndb.ThrowException("failed to copy auto handled EC properties", (int)DgnDbStatus::BadArg);
 
         const auto ecOtherInstanceIsValid = ecOther->IsValid();
         if (ecOtherInstanceIsValid)
@@ -1658,7 +1658,7 @@ void DgnElement::_CopyFrom(DgnElementCR other, CopyFromOptions const& opts)
             const auto ecThisPtrIsValid = ecThis.IsValid();
             if (!ecThisPtrIsValid)
                 // ElementAutoHandledPropertiesECInstanceAdapter::Create returns null if its class was invalid
-                m_dgnDb.ThrowException("failed to copy auto handled EC properties", (int)DgnDbStatus::WrongClass);
+                m_dgndb.ThrowException("failed to copy auto handled EC properties", (int)DgnDbStatus::WrongClass);
 
             const auto ecThisInstanceIsValid = ecThis->IsValid();
             if (ecThisInstanceIsValid) // this might not have auto-handled props if this and other are instances of different classes

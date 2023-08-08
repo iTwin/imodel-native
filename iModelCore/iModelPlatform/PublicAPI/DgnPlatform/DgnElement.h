@@ -1186,10 +1186,6 @@ public:
         DGNPLATFORM_EXPORT void FromJson(DgnDbR, BeJsConst val);
     };
 
-    struct FromJsonOpts {
-        DgnDb::CodeValueBehavior codeValueBehavior;
-    };
-
 private:
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
 

@@ -207,14 +207,6 @@ struct DgnDb : RefCounted<BeSQLite::EC::ECDb>, BeSQLite::EC::ECDb::IECDbCacheCle
         virtual ~OpenParams() {}
     };
 
-    enum class CodeValueBehavior {
-        TrimUtf8WhiteSpace = 0,
-        // Use when you are copying data between iModels in a way that code values should preserved
-        // This is mostly for compatibility with older iModels where the previous behavior was
-        // trimming ascii whitespace.
-        Exact = 1,
-    };
-
 private:
     BeSQLite::BeBriefcaseBasedIdSequence m_elementIdSequence;
     int m_purgeOperation = 0;
@@ -282,7 +274,7 @@ public:
 
     // Can be changed to put this DgnDb in compatability mode for iModels that contain
     // codes created with the older behavior, that would now be altered during CRUD operations
-    CodeValueBehavior m_codeValueBehavior = CodeValueBehavior::TrimUtf8WhiteSpace;
+    DgnCodeValue::Behavior m_codeValueBehavior = DgnCodeValue::Behavior::TrimUtf8WhiteSpace;
 
     Napi::ObjectReference* GetJsIModelDb() { return (IsMainThread() && !m_private_iModelDbJs.IsEmpty()) ? &m_private_iModelDbJs : nullptr; }
     DGNPLATFORM_EXPORT Napi::Object GetJsTxns(); // get the "IModelDb.txns" JavaScript object of this DgnDb (or nullptr)
