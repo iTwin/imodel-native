@@ -97,7 +97,7 @@ using namespace connectivity;
 
 %token <pParseNode> SQL_TOKEN_CAST SQL_TOKEN_COMMIT SQL_TOKEN_COUNT SQL_TOKEN_CROSS
 
-%token <pParseNode> SQL_TOKEN_DEFAULT SQL_TOKEN_DELETE SQL_TOKEN_DESC
+%token <pParseNode> SQL_TOKEN_DELETE SQL_TOKEN_DESC
 %token <pParseNode> SQL_TOKEN_DISTINCT SQL_TOKEN_FORWARD SQL_TOKEN_BACKWARD
 
 %token <pParseNode> SQL_TOKEN_ESCAPE SQL_TOKEN_EXCEPT SQL_TOKEN_EXISTS SQL_TOKEN_FALSE SQL_TOKEN_FROM SQL_TOKEN_FULL
@@ -237,13 +237,14 @@ sql:
 /* PRAGMA NAME[[= val]|[(val)]] [FOR path]
  */
 pragma:
-    SQL_TOKEN_PRAGMA SQL_TOKEN_NAME opt_pragma_set opt_pragma_for
+    SQL_TOKEN_PRAGMA SQL_TOKEN_NAME opt_pragma_set opt_pragma_for opt_ecsqloptions_clause
     {
         $$ = SQL_NEW_RULE;
         $$->append($1);
         $$->append($2);
         $$->append($3);
         $$->append($4);
+        $$->append($5);
     }
     ;
 
@@ -1955,12 +1956,7 @@ class_name:
 ;
 
 table_node_ref:
-        table_node_with_opt_member_func_call
-            {
-            $$ = SQL_NEW_RULE;
-            $$->append($1);
-            }
-    |   table_node_with_opt_member_func_call table_primary_as_range_column
+        table_node_with_opt_member_func_call table_primary_as_range_column
             {
             $$ = SQL_NEW_RULE;
             $$->append($1);

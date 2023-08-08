@@ -123,7 +123,7 @@ enum class Type
     {
     Only,
     All,
-    Default = All
+    NotSpecified
     };
 
 private:
@@ -131,7 +131,7 @@ private:
     Type m_type;
 
 public:
-    PolymorphicInfo(): m_disqualify(false), m_type(Type::Default) {}
+    PolymorphicInfo(): m_disqualify(false), m_type(Type::NotSpecified) {}
     PolymorphicInfo(Type type, bool disqualify): m_disqualify(disqualify), m_type(type) {}
     PolymorphicInfo(PolymorphicInfo&&) = default;
     PolymorphicInfo(PolymorphicInfo const&) = default;
@@ -147,7 +147,9 @@ public:
     static bool TryParseToken(Type& type, Utf8StringCR str);
     static PolymorphicInfo Only();
     static PolymorphicInfo All();
+    static PolymorphicInfo NotSpecified();
     Utf8String ToECSql() const;
+    void ToJson(BeJsValue) const;
     };
 
 //=======================================================================================
@@ -211,6 +213,8 @@ private:
     Utf8StringCR _GetId() const override;
     void _ExpandSelectAsterisk(std::vector<std::unique_ptr<DerivedPropertyExp>>& expandedSelectClauseItemList, ECSqlParseContext const&) const override;
     void _ToECSql(ECSqlRenderContext&) const override;
+    void _ToJson(BeJsValue, JsonFormat const&) const override;
+
     PropertyMatchResult _FindProperty(ECSqlParseContext& ctx, PropertyPath const &propertyPath, const PropertyMatchOptions &options) const override;
     Utf8String _ToString () const override;
 
@@ -241,6 +245,7 @@ private:
     virtual void _ExpandSelectAsterisk(std::vector<std::unique_ptr<DerivedPropertyExp>>& expandedSelectClauseItemList, ECSqlParseContext const&) const override;
     virtual PropertyMatchResult _FindProperty(ECSqlParseContext& ctx, PropertyPath const& propertyPath, const PropertyMatchOptions& options) const override;
     void _ToECSql(ECSqlRenderContext&) const override;
+    void _ToJson(BeJsValue, JsonFormat const&) const override;
     Utf8String _ToString () const override;
 
 public:

@@ -628,7 +628,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassRefExp(NativeSqlBuilder::List& nativeS
             case Exp::Type::CrossJoin:
                 return PrepareCrossJoinExp(ctx, exp.GetAs<CrossJoinExp>());
             case Exp::Type::ECRelationshipJoin:
-                return PrepareRelationshipJoinExp(ctx, exp.GetAs<ECRelationshipJoinExp>());
+                return PrepareRelationshipJoinExp(ctx, exp.GetAs<UsingRelationshipJoinExp>());
             case Exp::Type::NaturalJoin:
                 return PrepareNaturalJoinExp(ctx, exp.GetAs<NaturalJoinExp>());
             case Exp::Type::QualifiedJoin:
@@ -1154,7 +1154,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareQueryExp(NativeSqlBuilder::List& nativeSqlS
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ctx, ECRelationshipJoinExp const& exp)
+ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ctx, UsingRelationshipJoinExp const& exp)
     {
     // (from) INNER JOIN (to) ON (from.ECInstanceId = to.ECInstanceId)
     // (from) INNER JOIN (view) ON view.SourceECInstanceId = from.ECInstanceId INNER JOIN to ON view.TargetECInstanceId=to.ECInstanceId
@@ -1164,8 +1164,8 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
     NativeSqlBuilder& sql = ctx.GetSqlBuilder();
 
     ///Resolve direction of the relationship
-    ECRelationshipJoinExp::ResolvedEndPoint const& fromEP = exp.GetResolvedFromEndPoint();
-    ECRelationshipJoinExp::ResolvedEndPoint const& toEP = exp.GetResolvedToEndPoint();
+    UsingRelationshipJoinExp::ResolvedEndPoint const& fromEP = exp.GetResolvedFromEndPoint();
+    UsingRelationshipJoinExp::ResolvedEndPoint const& toEP = exp.GetResolvedToEndPoint();
     JoinDirection direction = exp.GetDirection();
 
     enum class TriState
@@ -1177,7 +1177,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
 
     switch (fromEP.GetLocation())
         {
-            case ECRelationshipJoinExp::ClassLocation::ExistInBoth:
+            case UsingRelationshipJoinExp::ClassLocation::ExistInBoth:
             {
             switch (direction)
                 {
@@ -1195,7 +1195,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
                 };
             break;
             }
-            case ECRelationshipJoinExp::ClassLocation::ExistInSource:
+            case UsingRelationshipJoinExp::ClassLocation::ExistInSource:
             {
             if (direction != JoinDirection::Implied)
                 {
@@ -1209,7 +1209,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
             fromIsSource = TriState::True;
             }
             break;
-            case ECRelationshipJoinExp::ClassLocation::ExistInTarget:
+            case UsingRelationshipJoinExp::ClassLocation::ExistInTarget:
             {
             if (direction != JoinDirection::Implied)
                 {
@@ -1831,7 +1831,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareExtractPropertyExp(NativeSqlBuilder::List& 
     NativeSqlBuilder::List instanceIdSql;
 
     if (!AreExperimentalFeaturesEnabled(ctx)) {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Instance property access '%s' is an experimental feature. Use 'PRAGMA experimental_features_enabled=true' query or add 'ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES' to the query to enable it.", exp.ToECSql().c_str());
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Instance property access '%s' is experimental feature and disabled by default.", exp.ToECSql().c_str());
         return ECSqlStatus::InvalidECSql;
     }
 
@@ -1865,9 +1865,9 @@ ECSqlStatus ECSqlExpPreparer::PrepareExtractInstanceExp(NativeSqlBuilder::List& 
     NativeSqlBuilder builder;
     NativeSqlBuilder::List classIdSql;
     NativeSqlBuilder::List instanceIdSql;
-    
+
     if (!AreExperimentalFeaturesEnabled(ctx)) {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Instance access '%s' is an experimental feature. Use 'PRAGMA experimental_features_enabled=true' query or add 'ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES' to the query to enable it.", exp.ToECSql().c_str());
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Instance access '%s' is experimental feature and disabled by default.", exp.ToECSql().c_str());
         return ECSqlStatus::InvalidECSql;
     }
     auto rc = PrepareValueExp(classIdSql, ctx, exp.GetClassIdPropExp());

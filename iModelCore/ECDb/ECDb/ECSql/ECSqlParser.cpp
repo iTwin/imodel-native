@@ -143,7 +143,7 @@ BentleyStatus ECSqlParser::ParseCTE(std::unique_ptr<CommonTableExp>& exp, OSQLPa
     if (!SQL_ISRULE(parseNode, cte))
         return ERROR;
 
-    auto recursive = parseNode->getChild(1)->count() > 0;
+    auto recursive = parseNode->getChild(1)->getTokenID() == SQL_TOKEN_RECURSIVE;
     auto pCteBlockList = parseNode->getChild(2);
     auto pSelectStmt = parseNode->getChild(3);
 
@@ -426,7 +426,12 @@ BentleyStatus ECSqlParser::ParsePragmaStatement(std::unique_ptr<PragmaStatementE
     if (SUCCESS != parse_pragma(&parseNode)) {
         return ERROR;
     }
-    pragmaExp = std::make_unique<PragmaStatementExp>(outPragmaName, outPragmaVal, outReadValue, outPathTokens);
+
+    std::unique_ptr<OptionsExp> options;
+    if (SUCCESS != ParseOptECSqlOptionsClause(options, parseNode.getChild(4 /* opt_ecsql_options */))) {
+        return ERROR;
+    }
+    pragmaExp = std::make_unique<PragmaStatementExp>(outPragmaName, outPragmaVal, outReadValue, outPathTokens, std::move(options));
     return SUCCESS;
     }
 
@@ -1399,7 +1404,7 @@ BentleyStatus ECSqlParser::ParsePolymorphicConstraint(PolymorphicInfo& constrain
 
     if (parseNode->count() == 0)
         {
-        constraint = PolymorphicInfo::All();
+        constraint = PolymorphicInfo::NotSpecified();
         return SUCCESS;
         }
 
@@ -1412,8 +1417,8 @@ BentleyStatus ECSqlParser::ParsePolymorphicConstraint(PolymorphicInfo& constrain
     if (disqualifyNode->count() == 1)
         disqualify = true;
 
-    auto type = PolymorphicInfo::Type::Default;
-    if (!PolymorphicInfo::TryParseToken(type, constraintNode->getTokenValue()))
+    auto type = PolymorphicInfo::Type::All;
+    if (!PolymorphicInfo::TryParseToken(type , constraintNode->getTokenValue()))
         return ERROR;
 
     constraint = PolymorphicInfo(type, disqualify);
@@ -1528,7 +1533,7 @@ BentleyStatus ECSqlParser::ParseJoinedTable(std::unique_ptr<JoinExp>& exp, OSQLP
             }
             case OSQLParseNode::ecrelationship_join:
             {
-            std::unique_ptr<ECRelationshipJoinExp> joinExp = nullptr;
+            std::unique_ptr<UsingRelationshipJoinExp> joinExp = nullptr;
             if (SUCCESS != ParseECRelationshipJoin(joinExp, parseNode))
                 return ERROR;
 
@@ -1545,7 +1550,7 @@ BentleyStatus ECSqlParser::ParseJoinedTable(std::unique_ptr<JoinExp>& exp, OSQLP
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSqlParser::ParseECRelationshipJoin(std::unique_ptr<ECRelationshipJoinExp>& exp, OSQLParseNode const* parseNode) const
+BentleyStatus ECSqlParser::ParseECRelationshipJoin(std::unique_ptr<UsingRelationshipJoinExp>& exp, OSQLParseNode const* parseNode) const
     {
     if (!SQL_ISRULE(parseNode, ecrelationship_join))
         {
@@ -1585,7 +1590,7 @@ BentleyStatus ECSqlParser::ParseECRelationshipJoin(std::unique_ptr<ECRelationshi
     else if (op_relationship_direction->getTokenID() == SQL_TOKEN_BACKWARD)
         direction = JoinDirection::Backward;
 
-    exp = std::make_unique<ECRelationshipJoinExp>(std::move(from_table_ref), std::move(to_table_ref), std::move(table_node_ref), direction);
+    exp = std::make_unique<UsingRelationshipJoinExp>(std::move(from_table_ref), std::move(to_table_ref), std::move(table_node_ref), direction);
     return SUCCESS;
     }
 
@@ -1686,6 +1691,11 @@ BentleyStatus ECSqlParser::ParseJoinType(ECSqlJoinType& joinType, OSQLParseNode 
     if (SQL_ISRULE(parseNode, outer_join_type))
         return ParseOuterJoinType(joinType, parseNode);
 
+    // outer_join_type SQL_TOKEN_OUTER
+    if (parseNode->count() == 2) {
+        if (SQL_ISRULE(parseNode->getChild(0), outer_join_type))
+            return ParseOuterJoinType(joinType, parseNode->getChild(0));
+    }
     BeAssert(false && "Invalid grammar. Expected JoinType");
     return ERROR;
     }
@@ -1899,7 +1909,7 @@ BentleyStatus ECSqlParser::ParseTableValuedFunction(std::unique_ptr<TableValuedF
             return ERROR;
         }
 
-    exp = std::make_unique<TableValuedFunctionExp>(schemaName.c_str(), std::move(memberFuncCall), PolymorphicInfo::All());
+    exp = std::make_unique<TableValuedFunctionExp>(schemaName.c_str(), std::move(memberFuncCall), PolymorphicInfo::NotSpecified());
     return SUCCESS;
 }
 
@@ -1915,7 +1925,7 @@ BentleyStatus ECSqlParser::ParseTableNodeRef(std::unique_ptr<ClassRefExp>& exp, 
         }
 
     std::unique_ptr<ClassNameExp> table_node = nullptr;
-    if (SUCCESS != ParseTableNodeWithOptMemberCall(table_node, *tableNode.getChild(0/*table_node_with_opt_member_call*/), ecsqlType, PolymorphicInfo::All(), false))
+    if (SUCCESS != ParseTableNodeWithOptMemberCall(table_node, *tableNode.getChild(0/*table_node_with_opt_member_call*/), ecsqlType, PolymorphicInfo::NotSpecified(), false))
         return ERROR;
 
     if (tableNode.count() == 1)
