@@ -15,6 +15,13 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 
 struct ECSqlStatementTestFixture : ECDbTestFixture {};
 
+#define ASSERT_ECSQL(ECDB_OBJ, PREPARESTATUS, STEPSTATUS, ECSQL)   {\
+                                                                    ECSqlStatement stmt;\
+                                                                    ASSERT_EQ(PREPARESTATUS, stmt.Prepare(ECDB_OBJ, ECSQL));\
+                                                                    if (PREPARESTATUS == ECSqlStatus::Success)\
+                                                                        ASSERT_EQ(STEPSTATUS, stmt.Step());\
+                                                                   }
+
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -9025,33 +9032,10 @@ TEST_F(ECSqlStatementTestFixture, OrderBy)
 TEST_F(ECSqlStatementTestFixture, NullsOrdering)
 {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("StartupCompany.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
-
-    auto insertPerson = [](ECDbCR ecdb, ECClassCR ecClass, Utf8CP firstName, Utf8CP lastName) {
-        IECInstancePtr ecInstance = ecClass.GetDefaultStandaloneEnabler()->CreateInstance(0);
-        ECValue val;
-        if (firstName) {
-            val.SetUtf8CP(firstName, false);
-            if (ECObjectsStatus::Success != ecInstance->SetValue("FirstName", val))
-                return BE_SQLITE_ERROR;
-        }
-        if (lastName) {
-            val.Clear();
-            val.SetUtf8CP(lastName, false);
-            if (ECObjectsStatus::Success != ecInstance->SetValue("LastName", val))
-                return BE_SQLITE_ERROR;
-        }
-
-        ECInstanceInserter inserter(ecdb, ecClass, nullptr);
-        if (!inserter.IsValid())
-            return BE_SQLITE_ERROR;
-
-        return inserter.Insert(*ecInstance);
-    };
-
-    // Add some employees
+ 
     ECClassCP employeeClass = m_ecdb.Schemas().GetClass("StartupCompany", "Employee");
-    ASSERT_EQ(BE_SQLITE_OK, insertPerson(m_ecdb, *employeeClass, "Leonardo", "Da Vinci"));
-    ASSERT_EQ(BE_SQLITE_OK, insertPerson(m_ecdb, *employeeClass, nullptr, nullptr));
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO Employee (FirstName, LastName) VALUES ('Leonardo', 'Da Vinci')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO Employee (FirstName, LastName) VALUES (NULL, NULL)");
     m_ecdb.SaveChanges();
 
     // Test ORDER BY NULLS FIRST
