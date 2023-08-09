@@ -2235,16 +2235,16 @@ BentleyStatus ECSqlParser::ParseSearchCondition(std::unique_ptr<BooleanExp>& exp
 
             OSQLParseNode const* quantified_comparison_predicate_part_2 = parseNode->getChild(1/*quantified_comparison_predicate_part_2*/);
 
-            BooleanSqlOperator comparison = BooleanSqlOperator::EqualTo;
-            if (SUCCESS != ParseComparison(comparison, quantified_comparison_predicate_part_2->getChild(0/*sql_not*/)))
+            BooleanSqlOperator comparison;
+            if (SUCCESS != ParseComparison(comparison, quantified_comparison_predicate_part_2->getChild(0/*comparison*/)))
                 return ERROR;
 
-            SqlCompareListType any_all_some = SqlCompareListType::All;
+            SqlCompareListType any_all_some;
             if (SUCCESS != ParseAnyOrAllOrSomeToken(any_all_some, quantified_comparison_predicate_part_2->getChild(1/*any_all_some*/)))
                 return ERROR;
 
             std::unique_ptr<SubqueryExp> subquery = nullptr;
-            if (SUCCESS != ParseSubquery(subquery, quantified_comparison_predicate_part_2->getChild(4/*row_value_constructor*/)))
+            if (SUCCESS != ParseSubquery(subquery, quantified_comparison_predicate_part_2->getChild(2/*subquery*/)))
                 return ERROR;
 
             exp = std::make_unique<AllOrAnyExp>(std::move(op1), comparison, any_all_some, std::move(subquery));

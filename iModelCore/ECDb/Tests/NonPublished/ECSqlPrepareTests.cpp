@@ -1079,6 +1079,11 @@ TEST_F(ECSqlSelectPrepareTests, Misc)
 
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT _A_B_C,_ABC,_ABC_,A_B_C_,ABC_ FROM ecsql._UnderBar")) << "Select clause in which the class name and the properties name contain, start with or end with under bar";
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT [_A_B_C],[_ABC],[_ABC_],[A_B_C_],[ABC_] FROM ecsql.[_UnderBar]")) << "Select clause in which the class name and the properties name contain, start with or end with under bar";
+
+    // Any, Some, All
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT 1 FROM ecsql.PSA WHERE 10 = ANY (SELECT 10)"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT 1 FROM ecsql.PSA WHERE 10 = SOME (SELECT 10)"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT 1 FROM ecsql.PSA WHERE 10 = ALL (SELECT 10)"));
     }
 
 //---------------------------------------------------------------------------------------
