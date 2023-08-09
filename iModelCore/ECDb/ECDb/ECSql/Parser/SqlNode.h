@@ -262,6 +262,7 @@ namespace connectivity
                 values_or_query_spec,
                 where_clause,
                 opt_extract_value,
+                opt_null_order,
                 rule_count,
                 UNKNOWN_RULE            // ID indicating that a node is no rule with a matching Rule-enum value (see getKnownRuleID)
                 };
