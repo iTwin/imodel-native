@@ -7368,7 +7368,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, CreatesContentForSelectedIn
     // set up the data
     auto classA = GetClass("A")->GetEntityClassCP();
     auto classB = GetClass("B")->GetEntityClassCP();
-    auto classC = GetClass("C")->GetEntityClassCP();
     auto relAB = GetClass("AB")->GetRelationshipClassCP();
     auto relBC = GetClass("BC")->GetRelationshipClassCP();
     bvector<ECEntityClassCP> derivedClasses;
