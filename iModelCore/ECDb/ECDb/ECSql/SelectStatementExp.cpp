@@ -651,6 +651,20 @@ void OrderBySpecExp::_ToECSql(ECSqlRenderContext& ctx) const
             default:
                 break;
         }
+        switch (m_nullsOrder)
+        {
+            case NullsOrder::First:
+                ctx.AppendToECSql(" NULLS FIRST");
+                break;
+
+            case NullsOrder::Last:
+                ctx.AppendToECSql(" NULLS LAST");
+                break;
+
+            default:
+                break;
+        }
+
     }
 
 //-----------------------------------------------------------------------------------------

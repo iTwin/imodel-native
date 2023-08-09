@@ -2793,7 +2793,17 @@ BentleyStatus ECSqlParser::ParseOrderByClause(std::unique_ptr<OrderByExp>& exp, 
         if (SUCCESS != ParseAscOrDescToken(sortDirection, ordering_spec->getChild(1/*opt_asc_desc*/)))
             return ERROR;
 
-        orderBySpecs.push_back(std::make_unique<OrderBySpecExp>(sortValue, sortDirection));
+        auto nulls_order = ordering_spec->getChild(2 /*null order*/);
+        auto nullsOrder = OrderBySpecExp::NullsOrder::NotSpecified;
+        if ( nulls_order->count() == 2) {
+            auto firstOrLast = nulls_order->getChild(1 /*FIRST OR LAST*/)->getTokenID();
+            if (firstOrLast == SQL_TOKEN_FIRST) {
+                nullsOrder = OrderBySpecExp::NullsOrder::First;
+            } else {
+                nullsOrder = OrderBySpecExp::NullsOrder::Last;
+            }
+        }
+        orderBySpecs.push_back(std::make_unique<OrderBySpecExp>(sortValue, sortDirection, nullsOrder));
         }
 
     exp = std::make_unique<OrderByExp>(orderBySpecs);
