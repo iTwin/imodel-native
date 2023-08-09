@@ -228,8 +228,6 @@ public:
         : m_value(str)
         { if (behavior != Behavior::Exact) m_value.TrimUtf8(); }
 
-    static DgnCodeValue CreateExact(Utf8StringCR str) {auto res = DgnCodeValue(); res.m_value = str; return res; }
-
     //! Get the value as a Utf8String
     Utf8StringCR GetUtf8() const { return m_value; }
     //! Get the value as a pointer to a UTF-8 string, or nullptr if the string is empty
@@ -334,7 +332,7 @@ public:
     BE_JSON_NAME(scope)
     BE_JSON_NAME(value)
     DGNPLATFORM_EXPORT void ToJson(BeJsValue) const;
-    DGNPLATFORM_EXPORT static DgnCode FromJson(BeJsConst value, DgnDbCR, bool validateScope, DgnCodeValue::Behavior = DgnCodeValue::Behavior::TrimUtf8WhiteSpace);
+    DGNPLATFORM_EXPORT static DgnCode FromJson(BeJsConst value, DgnDbCR, bool validateScope, DgnCodeValue::Behavior);
 };
 
 typedef bset<DgnCode> DgnCodeSet;
