@@ -533,6 +533,7 @@ export declare namespace IModelJsNative {
     public getBriefcaseId(): number;
     public getChangesetSize(): number;
     public getChangeTrackingMemoryUsed(): number;
+    public getCodeValueBehavior(): "exact" | "trim-unicode-whitespace";
     public getCurrentChangeset(): ChangesetIndexAndId;
     public getCurrentTxnId(): TxnIdString;
     public getECClassMetaData(schema: string, className: string): ErrorStatusOrResult<IModelStatus, string>;
