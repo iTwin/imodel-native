@@ -2199,6 +2199,14 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         JsInterop::UpdateProjectExtents(GetDgnDb(), BeJsDocument(newExtentsJson));
         }
 
+    Napi::Value GetCodeValueBehavior(NapiInfoCR info) {
+        switch (GetDgnDb().m_codeValueBehavior) {
+            case DgnCodeValue::Behavior::Exact: return Napi::String::New(info.Env(), "exact");
+            case DgnCodeValue::Behavior::TrimUtf8WhiteSpace: return Napi::String::New(info.Env(), "trim-unicode-whitespace");
+            default: THROW_JS_EXCEPTION("Behavior was invalid. This is a bug.");
+        }
+    }
+
     void SetCodeValueBehavior(NapiInfoCR info) {
         REQUIRE_ARGUMENT_STRING(0, codeValueBehaviorStr)
         DgnCodeValue::Behavior newBehavior;
@@ -2518,6 +2526,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
             InstanceMethod("getBriefcaseId", &NativeDgnDb::GetBriefcaseId),
             InstanceMethod("getChangesetSize", &NativeDgnDb::GetChangesetSize),
             InstanceMethod("getChangeTrackingMemoryUsed", &NativeDgnDb::GetChangeTrackingMemoryUsed),
+            InstanceMethod("getCodeValueBehavior", &NativeDgnDb::GetCodeValueBehavior),
             InstanceMethod("getCurrentChangeset", &NativeDgnDb::GetCurrentChangeset),
             InstanceMethod("getCurrentTxnId", &NativeDgnDb::GetCurrentTxnId),
             InstanceMethod("getECClassMetaData", &NativeDgnDb::GetECClassMetaData),
