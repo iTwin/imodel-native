@@ -85,8 +85,114 @@ ECSqlStatus ECSqlPreparer::Prepare(Utf8StringR nativeSql, ECSqlPrepareContext& c
 //static
 ECSqlStatus ECSqlExpPreparer::PrepareAllOrAnyExp(ECSqlPrepareContext& ctx, AllOrAnyExp const& exp)
     {
-    ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "ALL or ANY expression not yet supported.");
-    return ECSqlStatus::InvalidECSql;
+    const BooleanSqlOperator op = exp.GetOperator();
+    if (op != BooleanSqlOperator::EqualTo &&
+       op != BooleanSqlOperator::GreaterThanOrEqualTo &&
+       op != BooleanSqlOperator::GreaterThan &&
+       op != BooleanSqlOperator::LessThanOrEqualTo &&
+       op != BooleanSqlOperator::LessThan &&
+       op != BooleanSqlOperator::NotEqualTo)
+        {
+        BeAssert(false && "Incorrect Boolean operator before ALL/ANY/SOME");
+        return ECSqlStatus::InvalidECSql;
+        }
+
+    SqlCompareListType type = exp.GetCompareType();
+    if (type == SqlCompareListType::All)
+        ctx.GetSqlBuilder().Append("NOT").AppendSpace();
+
+    ctx.GetSqlBuilder().Append("EXISTS").AppendParenLeft();
+
+    SelectStatementExp const* subquery = (exp.GetSubquery())->GetQuery();
+    ECSqlStatus stat = ECSqlSelectPreparer::Prepare(ctx, *subquery);
+    if (stat != ECSqlStatus::Success)
+        return stat;
+
+    // Subquery insertion
+    SingleSelectStatementExp const& subquerySelect = subquery->GetFirstStatement();
+    NativeSqlBuilder queryToReplace;
+    NativeSqlBuilder allOrAnyQuery;
+    bool trailingParen = false;
+    if (subquerySelect.GetWhere() == nullptr)
+        {
+        ECSqlSelectPreparer::PreparePartial(queryToReplace, ctx, *subquery);
+
+        if (FromExp const* fromExp = subquerySelect.GetFrom())
+            {
+            queryToReplace.AppendSpace().Append("FROM").AppendSpace();
+            bool isFirstItem = true;
+            for (Exp const* classRefExp : fromExp->GetChildren())
+                {
+                if (!isFirstItem)
+                    queryToReplace.AppendComma();
+                PrepareClassRefExp(queryToReplace, ctx, classRefExp->GetAs<ClassRefExp>());
+                isFirstItem = false;
+                }
+            }
+
+        allOrAnyQuery.Append(queryToReplace).AppendSpace().Append("WHERE").AppendSpace();
+        }
+    else
+        {
+        NativeSqlBuilder insert;
+        ECSqlExpPreparer::PrepareSearchConditionExp(insert, ctx, *subquerySelect.GetWhere()->GetSearchConditionExp());
+
+        queryToReplace.Append("WHERE").AppendSpace();
+        allOrAnyQuery.Append(queryToReplace).AppendParenLeft().Append(insert).AppendParenRight().AppendSpace().Append("AND").AppendSpace().AppendParenLeft();
+        queryToReplace.Append(insert);
+        trailingParen = true;
+        }
+
+    NativeSqlBuilder::List nativeSqlSnippets;
+    stat = PrepareValueExp(nativeSqlSnippets, ctx, *exp.GetOperand());
+    if (stat != ECSqlStatus::Success)
+        return stat;
+    
+    BeAssert(nativeSqlSnippets.size() == 1);
+    NativeSqlBuilder operand = nativeSqlSnippets.at(0);
+
+    bool isFirstItem = true;
+    switch (type)
+        {
+        case SqlCompareListType::All:
+            for (Exp const* childExp : subquerySelect.GetSelection()->GetChildren())
+                {
+                if (!isFirstItem)
+                    allOrAnyQuery.AppendSpace().Append("AND").AppendSpace();
+
+                allOrAnyQuery.Append(childExp->ToECSql()).AppendSpace();
+                if (op == BooleanSqlOperator::EqualTo)
+                    allOrAnyQuery.Append(ExpHelper::ToSql(BooleanSqlOperator::NotEqualTo));
+                else if (op == BooleanSqlOperator::NotEqualTo)
+                    allOrAnyQuery.Append(ExpHelper::ToSql(BooleanSqlOperator::EqualTo));
+                else
+                    allOrAnyQuery.Append(ExpHelper::ToSql(op));
+                allOrAnyQuery.AppendSpace().Append(operand);
+                isFirstItem = false;
+                }
+            if (trailingParen)
+                allOrAnyQuery.AppendParenRight();
+            break;
+        case SqlCompareListType::Any:
+        case SqlCompareListType::Some:
+            for (Exp const* childExp : subquerySelect.GetSelection()->GetChildren())
+                {
+                if (!isFirstItem)
+                    allOrAnyQuery.AppendSpace().Append("OR").AppendSpace();
+
+                allOrAnyQuery.Append(operand).AppendSpace().Append(ExpHelper::ToSql(op)).AppendSpace().Append(childExp->ToECSql());
+                isFirstItem = false;
+                }
+            if (trailingParen)
+                allOrAnyQuery.AppendParenRight();
+            break;
+        default:
+            BeAssert(false && "Unhandled SqlCompareListType case.");
+            return ECSqlStatus::Error;
+        }
+
+    ctx.GetSqlBuilder().Replace(queryToReplace.GetSql().c_str(), allOrAnyQuery.GetSql().c_str()).AppendParenRight();
+    return ECSqlStatus::Success;
     }
 
 //-----------------------------------------------------------------------------------------
