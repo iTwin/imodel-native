@@ -9087,66 +9087,56 @@ TEST_F(ECSqlStatementTestFixture, OrderBy)
 // @bsimethod
 //---------------------------------------------------------------------------------------
 
-TEST_F(ECSqlStatementTestFixture, NullsOrdering)
-{
+TEST_F(ECSqlStatementTestFixture, NullsOrdering) {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("StartupCompany.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
-    ECClassCP employeeClass = m_ecdb.Schemas().GetClass("StartupCompany", "Employee");
-    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO Employee (FirstName, LastName) VALUES ('Leonardo', 'Da Vinci')");
-    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO Employee (FirstName, LastName) VALUES (NULL, NULL)");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO StartupCompany.Employee (FirstName, LastName) VALUES ('Leonardo', 'Da Vinci')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO StartupCompany.Employee (FirstName, LastName) VALUES (NULL, NULL)");
     m_ecdb.SaveChanges();
     //// Test ORDER BY NULLS FIRST
-    {
-    Utf8String ecsql("SELECT FirstName, LastName FROM ");
-    ecsql.append(employeeClass->GetECSqlName()).append(" ORDER BY FirstName NULLS FIRST");
-    ECSqlStatement statement;
-    ECSqlStatus stat = statement.Prepare(m_ecdb, ecsql.c_str());
-    ASSERT_EQ(ECSqlStatus::Success, stat);
+    if ("ORDER BY FirstName NULLS FIRST") {
+        ECSqlStatement statement;
+        ECSqlStatus stat = statement.Prepare(m_ecdb, "SELECT FirstName, LastName FROM StartupCompany.Employee ORDER BY FirstName NULLS FIRST");
+        ASSERT_EQ(ECSqlStatus::Success, stat);
 
-    Utf8CP firstName, lastName;
-    int count = 0;
-    while (statement.Step() == BE_SQLITE_ROW && count < 2) {
-        firstName = statement.GetValueText(0);
-        lastName = statement.GetValueText(1);
-        // Validate the first few entries
-        if (count == 0) {
-            ASSERT_STREQ(firstName, nullptr);
-            ASSERT_STREQ(lastName, nullptr);
+        int count = 0;
+        while (statement.Step() == BE_SQLITE_ROW && count < 2) {
+            auto firstName = statement.GetValueText(0);
+            auto lastName = statement.GetValueText(1);
+            // Validate the first few entries
+            if (count == 0) {
+                ASSERT_STREQ(firstName, nullptr);
+                ASSERT_STREQ(lastName, nullptr);
+            }
+            else if (count == 1) {
+                ASSERT_STREQ(firstName, "Leonardo");
+                ASSERT_STREQ(lastName, "Da Vinci");
+            }
+            count++;
         }
-        else if (count == 1) {
-            ASSERT_STREQ(firstName, "Leonardo");
-            ASSERT_STREQ(lastName, "Da Vinci");
-        }
-        count++;
-    }
-        statement.Finalize();
-
+            statement.Finalize();
     }
     // Test ORDER BY NULLS LAST
-    {
-    Utf8String ecsql("SELECT FirstName, LastName FROM ");
-    ecsql.append(employeeClass->GetECSqlName()).append(" ORDER BY LastName NULLS LAST");
-    ECSqlStatement statement;
-    ECSqlStatus stat = statement.Prepare(m_ecdb, ecsql.c_str());
-    ASSERT_EQ(ECSqlStatus::Success, stat);
-    Utf8CP firstName, lastName;
-    int counter = 0;
-    while (statement.Step() == BE_SQLITE_ROW && counter < 2) {
-        firstName = statement.GetValueText(0);
-        lastName = statement.GetValueText(1);
-        LOG.debugv("%s, %s", lastName, firstName);
+    if ("ORDER BY LastName NULLS LAST") {
+        ECSqlStatement statement;
+        ECSqlStatus stat = statement.Prepare(m_ecdb, "SELECT FirstName, LastName FROM StartupCompany.Employee ORDER BY LastName NULLS LAST");
+        ASSERT_EQ(ECSqlStatus::Success, stat);
+        int counter = 0;
+        while (statement.Step() == BE_SQLITE_ROW && counter < 2) {
+            auto firstName = statement.GetValueText(0);
+            auto lastName = statement.GetValueText(1);
 
-        // Validate the first few entries
-        if (counter == 0) {
-            ASSERT_STREQ(firstName, "Leonardo");
-            ASSERT_STREQ(lastName, "Da Vinci");
+            // Validate the first few entries
+            if (counter == 0) {
+                ASSERT_STREQ(firstName, "Leonardo");
+                ASSERT_STREQ(lastName, "Da Vinci");
+            }
+            else if (counter == 1) {
+                ASSERT_STREQ(firstName, nullptr);
+                ASSERT_STREQ(lastName, nullptr);
+            }
+            counter++;
         }
-        else if (counter == 1) {
-            ASSERT_STREQ(firstName, nullptr);
-            ASSERT_STREQ(lastName, nullptr);
-        }
-        counter++;
-    }
-    statement.Finalize();
+        statement.Finalize();
     }
 }
 
