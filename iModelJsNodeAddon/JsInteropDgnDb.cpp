@@ -376,8 +376,7 @@ Napi::String JsInterop::InsertElement(DgnDbR dgndb, Napi::Object obj, Napi::Valu
             el->SetFederationGuid(BeGuid(true));
 
         // if the option "forceUseId" is set, attempt to insert the element preserving that id - used by transformer.
-        const auto forceUseId = inOptionsJson.isObject() && inOptionsJson.Get(json_forceUseId()).asBool();
-        if (forceUseId) {
+        if (inOptionsJson.isObject() && inOptionsJson.Get(json_forceUseId()).asBool()) {
             if (!inJson.isStringMember(json_id())) {
                 BeNapi::ThrowJsException(Env(), "invalid argument, the id is required if forcing its usage", (int)DgnDbStatus::BadArg);
             }
