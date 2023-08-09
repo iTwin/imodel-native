@@ -1330,7 +1330,7 @@ void DgnElement::_FromJson(BeJsConst props) {
 
     auto code = props[json_code()];
     if (!code.isNull())
-        m_code = DgnCode::FromJson(code, m_dgndb, true, m_dgndb.m_codeValueBehavior);
+        m_code = DgnCode::FromJson(code, m_dgndb, true);
 
     // support partial update, only update m_federationGuid if props has member
     if (props.hasMember(json_federationGuid())) {

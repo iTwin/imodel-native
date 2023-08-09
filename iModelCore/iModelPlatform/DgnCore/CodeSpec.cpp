@@ -495,9 +495,9 @@ void DgnCode::ToJson(BeJsValue val) const {
  * @note if `validateScope` is true, the scopeId value may either be an ElementId or FederationGuid of the scope element.
  * If it is not valid, or does not refer to an existing element, an exception is thrown. If `validateScope` is false, the scopeId value is saved verbatim.
  */
-DgnCode DgnCode::FromJson(BeJsConst value, DgnDbCR db, bool validateScope, DgnCodeValue::Behavior behavior) {
+DgnCode DgnCode::FromJson(BeJsConst value, DgnDbCR db, bool validateScope) {
     DgnCode val;
-    val.m_value = DgnCodeValue(value[json_value()].asString(), behavior);
+    val.m_value = DgnCodeValue(value[json_value()].asString(), db.m_codeValueBehavior);
     val.m_scope = value[json_scope()].asString();
 
     auto specJson = value[json_spec()];
