@@ -2204,10 +2204,10 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         DgnCodeValue::Behavior newBehavior;
         if (codeValueBehaviorStr == "exact")
             newBehavior = DgnCodeValue::Behavior::Exact;
-        else if (codeValueBehaviorStr == "trim-utf8-whitespace")
+        else if (codeValueBehaviorStr == "trim-unicode-whitespace")
             newBehavior = DgnCodeValue::Behavior::TrimUtf8WhiteSpace;
         else
-            THROW_JS_EXCEPTION("Unsupported argument, should be one of the strings 'exact' or 'trim-utf8-whitespace'");
+            THROW_JS_EXCEPTION("Unsupported argument, should be one of the strings 'exact' or 'trim-unicode-whitespace'");
         GetDgnDb().m_codeValueBehavior = newBehavior;
     }
 

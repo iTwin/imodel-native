@@ -619,7 +619,7 @@ export declare namespace IModelJsNative {
     public setIModelDb(iModelDb?: any/* IModelDb */): void;
     public setIModelId(guid: GuidString): DbResult;
     public setITwinId(guid: GuidString): DbResult;
-    public setCodeValueBehavior(newBehavior: "exact" | "trim-utf8-whitespace"): void;
+    public setCodeValueBehavior(newBehavior: "exact" | "trim-unicode-whitespace"): void;
     public simplifyElementGeometry(simplifyArgs: any): DbResult;
     public startCreateChangeset(): ChangesetFileProps;
     public startProfiler(scopeName?: string, scenarioName?: string, overrideFile?: boolean, computeExecutionPlan?: boolean): DbResult;
