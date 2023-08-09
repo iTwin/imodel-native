@@ -484,7 +484,7 @@ DgnElement::CreateParams DgnElement::InitCreateParamsFromECInstance(DgnDbR db, E
             return CreateParams(db, DgnModelId(), classId);
             }
 
-        code = DgnCode(codeSpecId, codeScopeElementId, v.GetUtf8CP());
+        code = DgnCode::CreateWithDbContext(db, codeSpecId, codeScopeElementId, v.GetUtf8CP());
         }
 
     DgnElement::CreateParams params(db, modelId, classId, code);

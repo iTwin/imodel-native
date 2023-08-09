@@ -217,16 +217,18 @@ private:
 public:
     //! Create an empty code value
     DgnCodeValue() { }
-    //! Create a code value from a Utf8String
-    DgnCodeValue(Utf8StringCR str) : m_value(str) { m_value.TrimUtf8(); }
-    //! Create a code value from a pointer to a UTF-8 string
-    DgnCodeValue(Utf8CP str) : m_value(str) { m_value.TrimUtf8(); }
 
-    //! Create a code value exactly from the input string (don't trim whitespace).
-    //! Only use this if you are copying content between iModels and need the codes to be
-    //! preserved exactly. This is only necessary because before 4.x iTwin.js relied on
-    //! the JavaScript API to trim non-ascii whitespace, which was occasionally circumvented
-    static DgnCodeValue CreateExact(Utf8StringCR str) { auto res = DgnCodeValue(); res.m_value = str; return res; }
+    //! Create a code value from a Utf8String
+    DgnCodeValue(Utf8StringCR str, Behavior behavior)
+        : m_value(str)
+        { if (behavior != Behavior::Exact) m_value.TrimUtf8(); }
+
+    //! Create a code value from a pointer to a UTF-8 string
+    DgnCodeValue(Utf8CP str, Behavior behavior)
+        : m_value(str)
+        { if (behavior != Behavior::Exact) m_value.TrimUtf8(); }
+
+    static DgnCodeValue CreateExact(Utf8StringCR str) {auto res = DgnCodeValue(); res.m_value = str; return res; }
 
     //! Get the value as a Utf8String
     Utf8StringCR GetUtf8() const { return m_value; }
@@ -283,7 +285,11 @@ public:
     DgnCode() {}
 
     //! Construct a DgnCode scoped to an existing element.
-    DgnCode(CodeSpecId specId, DgnElementId scopeElementId, Utf8StringCR value) : m_specId(specId), m_scope(scopeElementId.ToHexStr()), m_value(value) {}
+    DgnCode(CodeSpecId specId, DgnElementId scopeElementId, Utf8StringCR value, DgnCodeValue::Behavior behavior)
+        : m_specId(specId), m_scope(scopeElementId.ToHexStr()), m_value(value, behavior) {}
+
+    //! use a dgndb's m_codeValueBehavior as the behavior for creating this code's value
+    static DgnCode CreateWithDbContext(DgnDbCR db, CodeSpecId specId, DgnElementId scopeElementId, Utf8StringCR value);
 
     //! Invalidate this DgnCode
     void Invalidate() {
@@ -323,14 +329,6 @@ public:
 
     //! Create an empty, non-unique code with no special meaning.
     DGNPLATFORM_EXPORT static DgnCode CreateEmpty();
-
-    //! @see DgnCodeValue::CreateExact
-    static DgnCode CreateExact(CodeSpecId specId, DgnElementId scopeElementId, Utf8StringCR value)
-        {
-        DgnCode result{specId, scopeElementId, ""};
-        result.m_value = DgnCodeValue::CreateExact(value);
-        return result;
-        }
 
     BE_JSON_NAME(spec)
     BE_JSON_NAME(scope)

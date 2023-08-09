@@ -332,15 +332,15 @@ DbResult DgnDb::CreateCodeSpecs() {
 DgnCode CodeSpec::CreateRepositoryScopedCode(DgnDbR db, Utf8CP codeSpecName, Utf8StringCR value) {
     CodeSpecCPtr codeSpec = db.CodeSpecs().GetCodeSpec(codeSpecName);
     BeAssert(codeSpec.IsValid());
-    return codeSpec.IsValid() ? codeSpec->CreateRepositoryScopedCode(value) : DgnCode();
+    return codeSpec.IsValid() ? codeSpec->CreateRepositoryScopedCode(value, db.m_codeValueBehavior) : DgnCode();
 }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode CodeSpec::CreateRepositoryScopedCode(Utf8StringCR value) const {
+DgnCode CodeSpec::CreateRepositoryScopedCode(Utf8StringCR value, DgnCodeValue::Behavior behavior) const {
     BeAssert(IsRepositoryScope());
-    return IsRepositoryScope() ? DgnCode(GetCodeSpecId(), DgnElements::GetRootSubjectId(), value) : DgnCode();
+    return IsRepositoryScope() ? DgnCode(GetCodeSpecId(), DgnElements::GetRootSubjectId(), value, behavior) : DgnCode();
 }
 
 /*---------------------------------------------------------------------------------**/ /**
@@ -377,7 +377,7 @@ DgnCode CodeSpec::CreateCode(DgnElementCR scopeElement, Utf8StringCR value) cons
     if (value.empty() || !scopeElement.GetElementId().IsValid())
         return DgnCode();
 
-    return DgnCode(GetCodeSpecId(), scopeElement.GetElementId(), value);
+    return DgnCode::CreateWithDbContext(scopeElement.GetDgnDb(), GetCodeSpecId(), scopeElement.GetElementId(), value);
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -433,8 +433,13 @@ bool DgnCodeValue::Equals(Utf8CP str) const {
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode DgnCode::CreateEmpty() {
-    return DgnCode(CodeSpec::GetNullCodeSpecId(), DgnElementId((uint64_t)1LL), ""); // codeScope=RootSubject, codeValue=null
+    return DgnCode(CodeSpec::GetNullCodeSpecId(), DgnElementId((uint64_t)1LL), "", DgnCodeValue::Behavior::Exact); // codeScope=RootSubject, codeValue=null
 }
+
+DgnCode DgnCode::CreateWithDbContext(DgnDbCR db, CodeSpecId specId, DgnElementId scopeElementId, Utf8StringCR value)
+    {
+    return DgnCode{specId, scopeElementId, "", db.m_codeValueBehavior};
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -492,9 +497,7 @@ void DgnCode::ToJson(BeJsValue val) const {
  */
 DgnCode DgnCode::FromJson(BeJsConst value, DgnDbCR db, bool validateScope, DgnCodeValue::Behavior behavior) {
     DgnCode val;
-    val.m_value = behavior == DgnCodeValue::Behavior::Exact
-        ? DgnCodeValue::CreateExact(value[json_value()].asString())
-        : DgnCodeValue(value[json_value()].asString());
+    val.m_value = DgnCodeValue(value[json_value()].asString(), behavior);
     val.m_scope = value[json_scope()].asString();
 
     auto specJson = value[json_spec()];
