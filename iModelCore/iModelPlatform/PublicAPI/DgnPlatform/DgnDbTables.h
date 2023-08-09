@@ -200,7 +200,7 @@ struct DgnCodeValue
 {
     enum class CompareResult { Less, Equal, Greater };
     enum class Behavior {
-        TrimUtf8WhiteSpace = 0,
+        TrimUnicodeWhitespace = 0,
         // Use when you are copying data between iModels in a way that code values should preserved
         // This is mostly for compatibility with older iModels where the previous behavior was
         // trimming ascii whitespace.

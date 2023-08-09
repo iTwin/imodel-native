@@ -2202,7 +2202,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
     Napi::Value GetCodeValueBehavior(NapiInfoCR info) {
         switch (GetDgnDb().m_codeValueBehavior) {
             case DgnCodeValue::Behavior::Exact: return Napi::String::New(info.Env(), "exact");
-            case DgnCodeValue::Behavior::TrimUtf8WhiteSpace: return Napi::String::New(info.Env(), "trim-unicode-whitespace");
+            case DgnCodeValue::Behavior::TrimUnicodeWhitespace: return Napi::String::New(info.Env(), "trim-unicode-whitespace");
             default: THROW_JS_EXCEPTION("Behavior was invalid. This is a bug.");
         }
     }
@@ -2213,7 +2213,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         if (codeValueBehaviorStr == "exact")
             newBehavior = DgnCodeValue::Behavior::Exact;
         else if (codeValueBehaviorStr == "trim-unicode-whitespace")
-            newBehavior = DgnCodeValue::Behavior::TrimUtf8WhiteSpace;
+            newBehavior = DgnCodeValue::Behavior::TrimUnicodeWhitespace;
         else
             THROW_JS_EXCEPTION("Unsupported argument, should be one of the strings 'exact' or 'trim-unicode-whitespace'");
         GetDgnDb().m_codeValueBehavior = newBehavior;

@@ -274,7 +274,7 @@ public:
 
     // Can be changed to put this DgnDb in compatability mode for iModels that contain
     // codes created with the older behavior, that would now be altered during CRUD operations
-    DgnCodeValue::Behavior m_codeValueBehavior = DgnCodeValue::Behavior::TrimUtf8WhiteSpace;
+    DgnCodeValue::Behavior m_codeValueBehavior = DgnCodeValue::Behavior::TrimUnicodeWhitespace;
 
     Napi::ObjectReference* GetJsIModelDb() { return (IsMainThread() && !m_private_iModelDbJs.IsEmpty()) ? &m_private_iModelDbJs : nullptr; }
     DGNPLATFORM_EXPORT Napi::Object GetJsTxns(); // get the "IModelDb.txns" JavaScript object of this DgnDb (or nullptr)
