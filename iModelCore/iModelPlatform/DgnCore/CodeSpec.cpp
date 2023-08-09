@@ -438,7 +438,7 @@ DgnCode DgnCode::CreateEmpty() {
 
 DgnCode DgnCode::CreateWithDbContext(DgnDbCR db, CodeSpecId specId, DgnElementId scopeElementId, Utf8StringCR value)
     {
-    return DgnCode{specId, scopeElementId, "", db.m_codeValueBehavior};
+    return DgnCode{specId, scopeElementId, value, db.m_codeValueBehavior};
     }
 
 /*---------------------------------------------------------------------------------**//**
