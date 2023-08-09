@@ -7,7 +7,6 @@ trigger:
 
 pr:
   autoCancel: true
-  drafts: true
   branches:
     include:
       - main
