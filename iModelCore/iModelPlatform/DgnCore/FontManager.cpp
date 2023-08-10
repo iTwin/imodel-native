@@ -316,7 +316,7 @@ void FontDb::Load() const {
             FontFace face(row);
             if (!face.m_familyName.empty())
                 reader->m_faces.emplace_back(face);
-            return true; // keep going
+            return false; // keep going
         });
         AddDbReader(reader);
     }
