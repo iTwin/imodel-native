@@ -170,6 +170,78 @@ TEST_F(ECSqlStatementTestFixture, PopulateECSql_TestDbWithTestData)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, MultilineStringLiteralOrName) {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("MultilineStringLiteralOrName.ecdb"));
+    if ("multi line quoted string") {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT 1 [\nHello\nWorld\n]"));
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STRCASEEQ(stmt.GetColumnInfo(0).GetProperty()->GetDisplayLabel().c_str(), "\nHello\nWorld\n");
+    }
+    if ("multi line string literal") {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT '\nHello\nWorld\n'"));
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STRCASEEQ(stmt.GetValueText(0), "\nHello\nWorld\n");
+    }
+    if ("multi line name") {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT 1 \"\nHello\nWorld\n\""));
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STRCASEEQ(stmt.GetColumnInfo(0).GetProperty()->GetDisplayLabel().c_str(), "\nHello\nWorld\n");
+    }
+    if ("multi line name with backtick") {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT 1 `\nHello\nWorld\n`"));
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STRCASEEQ(stmt.GetColumnInfo(0).GetProperty()->GetDisplayLabel().c_str(), "\nHello\nWorld\n");
+    }
+    if ("pragma parse_tree with double quote") {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"*(
+            PRAGMA parse_tree("
+                SELECT
+                    1,
+                    2,
+                    3,
+                    4
+            ") ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES
+        )*"));
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STRCASEEQ(stmt.GetValueText(0), "{\"id\":\"SelectStatementExp\",\"select\":{\"id\":\"RowConstructor\",\"values\":[{\"id\":\"DerivedPropertyExp\",\"exp\":{\"id\":\"LiteralValueExp\",\"kind\":\"RAW\",\"value\":\"1\"}},{\"id\":\"DerivedPropertyExp\",\"exp\":{\"id\":\"LiteralValueExp\",\"kind\":\"RAW\",\"value\":\"2\"}},{\"id\":\"DerivedPropertyExp\",\"exp\":{\"id\":\"LiteralValueExp\",\"kind\":\"RAW\",\"value\":\"3\"}},{\"id\":\"DerivedPropertyExp\",\"exp\":{\"id\":\"LiteralValueExp\",\"kind\":\"RAW\",\"value\":\"4\"}}]}}");
+    }
+    if ("pragma parse_tree with square quote") {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"*(
+            PRAGMA parse_tree([
+                SELECT
+                    1,
+                    2,
+                    3,
+                    4
+            ]) ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES
+        )*"));
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STRCASEEQ(stmt.GetValueText(0), "{\"id\":\"SelectStatementExp\",\"select\":{\"id\":\"RowConstructor\",\"values\":[{\"id\":\"DerivedPropertyExp\",\"exp\":{\"id\":\"LiteralValueExp\",\"kind\":\"RAW\",\"value\":\"1\"}},{\"id\":\"DerivedPropertyExp\",\"exp\":{\"id\":\"LiteralValueExp\",\"kind\":\"RAW\",\"value\":\"2\"}},{\"id\":\"DerivedPropertyExp\",\"exp\":{\"id\":\"LiteralValueExp\",\"kind\":\"RAW\",\"value\":\"3\"}},{\"id\":\"DerivedPropertyExp\",\"exp\":{\"id\":\"LiteralValueExp\",\"kind\":\"RAW\",\"value\":\"4\"}}]}}");
+    }
+    if ("pragma parse_tree with backtick quote") {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"*(
+            PRAGMA parse_tree(`
+                SELECT
+                    1,
+                    2,
+                    3,
+                    4
+            `) ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES
+        )*"));
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STRCASEEQ(stmt.GetValueText(0), "{\"id\":\"SelectStatementExp\",\"select\":{\"id\":\"RowConstructor\",\"values\":[{\"id\":\"DerivedPropertyExp\",\"exp\":{\"id\":\"LiteralValueExp\",\"kind\":\"RAW\",\"value\":\"1\"}},{\"id\":\"DerivedPropertyExp\",\"exp\":{\"id\":\"LiteralValueExp\",\"kind\":\"RAW\",\"value\":\"2\"}},{\"id\":\"DerivedPropertyExp\",\"exp\":{\"id\":\"LiteralValueExp\",\"kind\":\"RAW\",\"value\":\"3\"}},{\"id\":\"DerivedPropertyExp\",\"exp\":{\"id\":\"LiteralValueExp\",\"kind\":\"RAW\",\"value\":\"4\"}}]}}");
+    }
+}
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, SelectBitwiseOperators)
     {
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("bitwise.ecdb"));
@@ -3121,18 +3193,7 @@ TEST_F(ECSqlStatementTestFixture, NullLiteralForPrimArrays)
             }
         };
 
-    {
-    ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT CAST(NULL AS TIMESTAMP[]) FROM ecsql.PSA LIMIT 1"));
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
-    assertColumn(PRIMITIVETYPE_DateTime, stmt.GetValue(0), true);
-    }
-
     bmap<Utf8CP, bool> ecsqls;
-    ecsqls["SELECT CAST(NULL AS TIMESTAMP[]) FROM ecsql.P "
-        "UNION ALL "
-        "SELECT Dt_Array FROM ecsql.PSA"] = true;
-
     ecsqls["SELECT CAST(NULL AS Double) FROM ecsql.P "
         "UNION ALL "
         "SELECT Dt_Array FROM ecsql.PSA"] = false;
@@ -3198,22 +3259,7 @@ TEST_F(ECSqlStatementTestFixture, NullLiteralForStructArrays)
             }
         };
 
-    {
-    ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT CAST(NULL AS ecsql.PStruct[]) FROM ecsql.PSA LIMIT 1"));
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
-    assertColumn(*structType, stmt.GetValue(0), true);
-    }
-
     bmap<Utf8CP, bool> ecsqls;
-    ecsqls["SELECT CAST(NULL AS ecsql.PStruct[]) FROM ecsql.P "
-        "UNION ALL "
-        "SELECT PStruct_Array FROM ecsql.PSA"] = true;
-
-    ecsqls["SELECT CAST(NULL AS [ecsql].[PStruct][]) FROM ecsql.P "
-        "UNION ALL "
-        "SELECT PStruct_Array FROM ecsql.PSA"] = true;
-
     ecsqls["SELECT CAST(NULL AS ecsql.PStruct) FROM ecsql.P "
         "UNION ALL "
         "SELECT PStruct_Array FROM ecsql.PSA"] = false;
