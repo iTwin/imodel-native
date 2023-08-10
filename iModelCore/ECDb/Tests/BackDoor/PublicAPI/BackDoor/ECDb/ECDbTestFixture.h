@@ -121,7 +121,6 @@ protected:
     DbResult SetupECDb(Utf8CP ecdbFileName);
     BentleyStatus SetupECDb(Utf8CP ecdbFileName, SchemaItem const&, ECDb::OpenParams const& openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
     BentleyStatus SetupECDb(Utf8CP ecdbFileName, void *fileData, uint32_t fileSize, ECDb::OpenParams const& openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
-    BentleyStatus SetupECDbFrom4003Seed(Utf8CP ecdbFileName, SchemaItem const&, ECDb::OpenParams const& openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
     DbResult OpenECDb(BeFileNameCR filePath, ECDb::OpenParams const& openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
     void CloseECDb();
     DbResult ReopenECDb();
