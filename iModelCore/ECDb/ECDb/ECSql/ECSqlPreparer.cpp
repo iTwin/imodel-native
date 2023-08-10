@@ -147,7 +147,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareAllOrAnyExp(ECSqlPrepareContext& ctx, AllOr
     stat = PrepareValueExp(nativeSqlSnippets, ctx, *exp.GetOperand());
     if (stat != ECSqlStatus::Success)
         return stat;
-    
+
     BeAssert(nativeSqlSnippets.size() == 1);
     NativeSqlBuilder operand = nativeSqlSnippets.at(0);
 
@@ -1123,6 +1123,18 @@ ECSqlStatus ECSqlExpPreparer::PrepareOrderByExp(ECSqlPrepareContext& ctx, OrderB
                     break;
                     }
                     case OrderBySpecExp::SortDirection::NotSpecified:
+                        break; //default direction is ASCENDING
+                }
+            switch (specification.GetNullsOrder())
+                {
+                    case OrderBySpecExp::NullsOrder::First:
+                        orderBySqlBuilder.Append(" NULLS FIRST");
+                        break;
+
+                    case OrderBySpecExp::NullsOrder::Last:
+                        orderBySqlBuilder.Append(" NULLS LAST");
+                        break;
+                    case OrderBySpecExp::NullsOrder::NotSpecified:
                         break; //default direction is ASCENDING
                 }
             isFirstSnippet = false;

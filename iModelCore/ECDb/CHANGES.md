@@ -5,13 +5,41 @@ This document including important changes to syntax or file format.
 | Module  | Version   |
 | ------- | --------- |
 | Profile | `4.0.0.3` |
-| ECSQL   | `1.2.0.0` |
+| ECSQL   | `1.2.3.0` |
+
+
+## `8/9/2023`: Add support for FIRST/LAST
+* Add support for ordering NULLs.
+    * Example: `SELECT * FROM Meta.ECClassDef ORDER BY Displaylabel NULLS FIRST`.
+* ECSql version updated to `1.2.2.0` -> `1.2.3.0`.
+
+## `8/9/2023`: Add support for RIGHT/FULL Join
+* Add support for RIGHT/FULL join.
+
+## `8/9/2023`: Add support for `ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES`
+* Add support for RIGHT/FULL join.
+    * Example: `SELECT $->name FROM meta.ECClassDef ECSQLOPTIONS enable_experimental_features`.
+
+## `8/9/2023`: Truncate BLob to {bytes:####} instead of a single byte via QueryJsonAdaptor.
+* This effect instance access and concurrent query.
 
 ## `8/7/2023`: Add support to get parse tree for ecsql using a `PRAGMA parse_tree`
 * Change ECSQL version `1.2.0.0` -> `1.2.2.0`
 * Add `PRAGMA parse_tree(<ecsql>)`
 * Add `ECSQLOPTIONS` clause to `PRAGMA` statement.
     * Allow to run commands like `PRAGMA parse_tree("SELECT 1") ECSQLOPTIONS enable_experimental_features`
+
+## `6/14/2023`: Add support for Schema sync
+* Schema sync allows two or more briefcases to sync there schema without requiring schema lock.
+* Schema lock might still be required in cases where data transformation require due to schema change.
+* Schema sync is handled in import schema call.
+
+## `5/22/2023`: Add `PRAGMA checksum(ecdb_schema|ecdb_map|sqlite_schema)`
+* ECSql version change to `1.0.4.1` as new syntax and runtime changes that does not break any existing syntax or runtime.
+* PRAGMA checksum(ecdb_schema|ecdb_map|sqlite_schema)
+    * `PRAGMA checksum(ecdb_schema)`: Compute SHA1 checksum for not null data in ec_* table that hold schemas.
+    * `PRAGMA checksum(ecdb_map)`: Compute SHA1 checksum for not null data in ec_* table that hold mapping.
+    * `PRAGMA checksum(sqlite_schema)`: Compute SHA1 checksum over ddl store in sqlite_master for all facets.
 
 ## `6/14/2023`: Add support for Schema sync
 * Schema sync allows two or more briefcases to sync there schema without requiring schema lock.
