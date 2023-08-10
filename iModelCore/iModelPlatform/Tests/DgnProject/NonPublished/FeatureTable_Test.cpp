@@ -29,9 +29,10 @@ void ExpectEqualFeatureTables(FeatureTableCR base, FeatureTableCR comp, bool exp
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(FeatureTableTests, PackAndUnpack)
+TEST(FeatureTableTests, PackAndUnpack_SingleModel)
     {
-#define MAKE_FEATURE(EID, SCID, CLS) Feature(DgnElementId(static_cast<uint64_t>(EID)), DgnSubCategoryId(static_cast<uint64_t>(SCID)), DgnGeometryClass:: CLS)
+      DgnModelId modelId(static_cast<uint64_t>(0x123));
+#define MAKE_FEATURE(EID, SCID, CLS) Feature(modelId, DgnElementId(static_cast<uint64_t>(EID)), DgnSubCategoryId(static_cast<uint64_t>(SCID)), DgnGeometryClass:: CLS)
 
     uint64_t largeIdBase = 0xABCDABCDABCDABCD;
     Feature features[] =
@@ -47,7 +48,7 @@ TEST(FeatureTableTests, PackAndUnpack)
         MAKE_FEATURE(1, 1, Construction),
         };
 
-    FeatureTable table(DgnModelId(static_cast<uint64_t>(1234)), 100);
+    FeatureTable table(modelId, 100);
     for (auto const& feature : features)
         table.GetIndex(feature);
 

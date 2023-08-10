@@ -3039,33 +3039,38 @@ public:
 //! FeatureTable associated with the primitive.
 // @bsistruct
 //=======================================================================================
-struct Feature
-{
+struct Feature {
 private:
-    DgnElementId        m_elementId;
-    DgnSubCategoryId    m_subCategoryId;
-    DgnGeometryClass    m_class = DgnGeometryClass::Primary;
+  DgnModelId          m_modelId;
+  DgnElementId        m_elementId;
+  DgnSubCategoryId    m_subCategoryId;
+  DgnGeometryClass    m_class = DgnGeometryClass::Primary;
 public:
-    Feature() : Feature(DgnElementId(), DgnSubCategoryId(), DgnGeometryClass::Primary) { }
-    Feature(DgnElementId elementId, DgnSubCategoryId subCatId, DgnGeometryClass geomClass) : m_elementId(elementId), m_subCategoryId(subCatId), m_class(geomClass) { }
+  Feature() : Feature(DgnModelId(), DgnElementId(), DgnSubCategoryId(), DgnGeometryClass::Primary) { }
+  Feature(DgnModelId modelId, DgnElementId elementId, DgnSubCategoryId subCatId, DgnGeometryClass geomClass)
+    : m_modelId(modelId), m_elementId(elementId), m_subCategoryId(subCatId), m_class(geomClass) { }
 
-    DgnElementId GetElementId() const { return m_elementId; }
-    DgnSubCategoryId GetSubCategoryId() const { return m_subCategoryId; }
-    DgnGeometryClass GetClass() const { return m_class; }
+  DgnModelId GetModelId() const { return m_modelId; }
+  DgnElementId GetElementId() const { return m_elementId; }
+  DgnSubCategoryId GetSubCategoryId() const { return m_subCategoryId; }
+  DgnGeometryClass GetClass() const { return m_class; }
 
-    bool operator!=(FeatureCR rhs) const { return !(*this == rhs); }
-    bool operator==(FeatureCR rhs) const
-        {
-        if (IsUndefined() && rhs.IsUndefined())
-            return true;
-        else
-            return GetElementId() == rhs.GetElementId() && GetSubCategoryId() == rhs.GetSubCategoryId() && GetClass() == rhs.GetClass();
-        }
+  bool operator!=(FeatureCR rhs) const { return !(*this == rhs); }
+  bool operator==(FeatureCR rhs) const {
+    if (IsUndefined() && rhs.IsUndefined())
+      return true;
+    else
+      return GetElementId() == rhs.GetElementId() && GetSubCategoryId() == rhs.GetSubCategoryId()
+        && GetClass() == rhs.GetClass() && GetModelId() == rhs.GetModelId();
+  }
 
-    DGNPLATFORM_EXPORT bool operator<(FeatureCR rhs) const;
+  DGNPLATFORM_EXPORT bool operator<(FeatureCR rhs) const;
 
-    bool IsDefined() const { return m_elementId.IsValid() || m_subCategoryId.IsValid() || DgnGeometryClass::Primary != m_class; }
-    bool IsUndefined() const { return !IsDefined(); }
+  bool IsDefined() const {
+    return m_modelId.IsValid() || m_elementId.IsValid() || m_subCategoryId.IsValid() || DgnGeometryClass::Primary != m_class;
+  }
+
+  bool IsUndefined() const { return !IsDefined(); }
 };
 
 //=======================================================================================
@@ -3235,7 +3240,7 @@ public:
     Feature GetFeature(uint32_t index) const
         {
         auto packed = GetPackedFeature(index);
-        return Feature(packed.GetElementId(), GetSubCategoryId(packed.GetSubCategoryIndex()), packed.GetClass());
+        return Feature(m_modelId, packed.GetElementId(), GetSubCategoryId(packed.GetSubCategoryIndex()), packed.GetClass());
         }
 
     DGNPLATFORM_EXPORT FeatureTable Unpack() const;

@@ -332,6 +332,8 @@ bool Feature::operator<(FeatureCR rhs) const
         return GetSubCategoryId() < rhs.GetSubCategoryId();
     else if (GetClass() != rhs.GetClass())
         return static_cast<uint8_t>(GetClass()) < static_cast<uint8_t>(rhs.GetClass());
+    else if (GetModelId() != rhs.GetModelId())
+        return GetModelId() < rhs.GetModelId();
     else
         return false;
     }
