@@ -283,20 +283,22 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Clas
 /*---------------------------------------------------------------------------------**//**
 // @betest
 +---------------+---------------+---------------+---------------+---------------+------*/
-DEFINE_SCHEMA(SelectedNodeInstances_SchemasAcceptablePolymorphically_BaseSchema, R"*(
+DEFINE_MULTIPLE_SCHEMAS(SelectedNodeInstances_SchemasAcceptablePolymorphically, bvector<Utf8String>({
+    R"*(
     <ECEntityClass typeName="A" />
-)*");
-DEFINE_SCHEMA(SelectedNodeInstances_SchemasAcceptablePolymorphically, R"*(
-    <ECSchemaReference name="SelectedNodeInstances_SchemasAcceptablePolymorphically_BaseSchema" version="01.00" alias="base" />
+    )*",
+    R"*(
+    <ECSchemaReference name="SelectedNodeInstances_SchemasAcceptablePolymorphically_1" version="01.00" alias="base" />
     <ECEntityClass typeName="B">
         <BaseClass>base:A</BaseClass>
     </ECEntityClass>
-)*");
+    )*"
+}));
 TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_SchemasAcceptablePolymorphically)
     {
     // set up the dataset
-    ECClassCP classA = GetClass(Utf8PrintfString("%s_BaseSchema", BeTest::GetNameOfCurrentTest()).c_str(), "A");
-    ECClassCP classB = GetClass("B");
+    ECClassCP classA = GetClass(Utf8PrintfString("%s_1", BeTest::GetNameOfCurrentTest()).c_str(), "A");
+    ECClassCP classB = GetClass(Utf8PrintfString("%s_2", BeTest::GetNameOfCurrentTest()).c_str(), "B");
 
     IECInstancePtr b = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
 
@@ -326,20 +328,22 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Schem
 /*---------------------------------------------------------------------------------**//**
 // @betest
 +---------------+---------------+---------------+---------------+---------------+------*/
-DEFINE_SCHEMA(SelectedNodeInstances_SchemasAndClassesAcceptablePolymorphically_BaseSchema, R"*(
+DEFINE_MULTIPLE_SCHEMAS(SelectedNodeInstances_SchemasAndClassesAcceptablePolymorphically, bvector<Utf8String>({
+    R"*(
     <ECEntityClass typeName="A" />
-)*");
-DEFINE_SCHEMA(SelectedNodeInstances_SchemasAndClassesAcceptablePolymorphically, R"*(
-    <ECSchemaReference name="SelectedNodeInstances_SchemasAndClassesAcceptablePolymorphically_BaseSchema" version="01.00" alias="base" />
+    )*",
+    R"*(
+    <ECSchemaReference name="SelectedNodeInstances_SchemasAndClassesAcceptablePolymorphically_1" version="01.00" alias="base" />
     <ECEntityClass typeName="B">
         <BaseClass>base:A</BaseClass>
     </ECEntityClass>
-)*");
+    )*"
+}));
 TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_SchemasAndClassesAcceptablePolymorphically)
     {
     // set up the dataset
-    ECClassCP classA = GetClass(Utf8PrintfString("%s_BaseSchema", BeTest::GetNameOfCurrentTest()).c_str(), "A");
-    ECClassCP classB = GetClass("B");
+    ECClassCP classA = GetClass(Utf8PrintfString("%s_1", BeTest::GetNameOfCurrentTest()).c_str(), "A");
+    ECClassCP classB = GetClass(Utf8PrintfString("%s_2", BeTest::GetNameOfCurrentTest()).c_str(), "B");
 
     IECInstancePtr b = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
 
@@ -5701,12 +5705,18 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
 
     ContentModifierP modifier = new ContentModifier(GetSchema()->GetName(), "B");
     rules->AddPresentationRule(*modifier);
-    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label2", 1200, "this.SharedProperty"));
+    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label2", 1200, "this.SharedProperty",
+        new CustomRendererSpecification("Test renderer"), new PropertyEditorSpecification("Test editor")));
 
     // validate descriptor
     ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(4, descriptor->GetVisibleFields().size());
+
+    EXPECT_NE(nullptr, descriptor->GetVisibleFields().back()->GetRenderer());
+    EXPECT_STREQ("Test renderer", descriptor->GetVisibleFields().back()->GetRenderer()->GetName().c_str());
+    EXPECT_NE(nullptr, descriptor->GetVisibleFields().back()->GetEditor());
+    EXPECT_STREQ("Test editor", descriptor->GetVisibleFields().back()->GetEditor()->GetName().c_str());
 
     // request for content
     ContentCPtr content = GetVerifiedContent(*descriptor);
@@ -5956,7 +5966,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     calculatedPropertiesModifierApplyOnNestedB->SetPriority(2);
 
     ContentModifierP calculatedPropertiesModifierApplyOnNestedC = new ContentModifier(GetSchema()->GetName(), classC->GetName());
-    calculatedPropertiesModifierApplyOnNestedC->AddCalculatedProperty(*new CalculatedPropertiesSpecification("labelC", 1000, "this.PropertyC"));
+    calculatedPropertiesModifierApplyOnNestedC->AddCalculatedProperty(*new CalculatedPropertiesSpecification("labelC", 1000, "this.PropertyC", new CustomRendererSpecification("Test renderer"), new PropertyEditorSpecification("Test editor")));
     calculatedPropertiesModifierApplyOnNestedC->SetApplyOnNestedContent(true);
     calculatedPropertiesModifierApplyOnNestedC->SetPriority(3);
 
@@ -5970,7 +5980,13 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     EXPECT_EQ(2, descriptor->GetVisibleFields().size());
     EXPECT_EQ(1, descriptor->GetVisibleFields()[0]->AsNestedContentField()->GetFields().size());
     EXPECT_EQ(2, descriptor->GetVisibleFields()[1]->AsNestedContentField()->GetFields().size());
-    EXPECT_STREQ("labelC", descriptor->GetVisibleFields()[1]->AsNestedContentField()->GetFields()[1]->GetLabel().c_str());
+
+    ContentDescriptor::Field* calculatedField = descriptor->GetVisibleFields()[1]->AsNestedContentField()->GetFields()[1];
+    EXPECT_STREQ("labelC", calculatedField->GetLabel().c_str());
+    EXPECT_NE(nullptr, calculatedField->GetRenderer());
+    EXPECT_STREQ("Test renderer", calculatedField->GetRenderer()->GetName().c_str());
+    EXPECT_NE(nullptr, calculatedField->GetEditor());
+    EXPECT_STREQ("Test editor", calculatedField->GetEditor()->GetName().c_str());
 
     // request for content
     ContentCPtr content = GetVerifiedContent(*descriptor);

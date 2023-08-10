@@ -3,11 +3,37 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-
+#include <BeSQLite/VirtualTab.h>
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+------
+LastErrorListener::LastErrorListener(ECDbCR ecdb):m_ecdb(ecdb) {
+    if (m_ecdb.IsDbOpen()) {
+        m_cancel = m_ecdb.GetImpl().Issues().OnIssueReported().AddListener(
+            [&](ECN::IssueSeverity severity, ECN::IssueCategory, ECN::IssueType, Utf8CP message) {
+                if (severity == ECN::IssueSeverity::Error || severity == ECN::IssueSeverity::Fatal) {
+                    m_lastError = message;
+                }
+            });
+    }
+}
+
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+------
+LastErrorListener::~LastErrorListener() {
+    if (m_ecdb.IsDbOpen() && m_cancel != nullptr) {
+        m_cancel();
+    }
+}
+
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+------
 PragmaManager& ECDb::Impl::GetPragmaManager() const
     {
     if (m_pragmaProcessor == nullptr)
@@ -17,6 +43,9 @@ PragmaManager& ECDb::Impl::GetPragmaManager() const
     return *m_pragmaProcessor;
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+------
 ECDb::Impl::Impl(ECDbR ecdb) : m_ecdb(ecdb), m_profileManager(ecdb), m_changeManager(ecdb), m_sqliteStatementCache(50, &m_mutex), m_idSequenceManager(ecdb, bvector<Utf8CP>(1, "ec_instanceidsequence"))
     {
     m_schemaManager = std::make_unique<SchemaManager>(ecdb, m_mutex);
@@ -156,11 +185,22 @@ bool ECDb::Impl::s_isInitialized = false;
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
+DbResult ECDb::Impl::OnDbOpened(OpenParams const& params) const
+    {
+    if (!params.m_schemaSyncDbUri.empty())
+        {
+        Schemas().GetSchemaSync().SetDefaultSyncDbUri(params.m_schemaSyncDbUri.c_str());
+        }
+
+    return BE_SQLITE_OK;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+------
 DbResult ECDb::Impl::OnDbCreated() const
     {
-    m_id.Create();
-    RegisterBuiltinFunctions();
-
+    OnInit();
     DbResult stat = m_idSequenceManager.InitializeSequences();
     if (BE_SQLITE_OK != stat)
         return stat;
@@ -179,9 +219,33 @@ DbResult ECDb::Impl::OnDbCreated() const
 //---------------+---------------+---------------+---------------+---------------+------
 DbResult ECDb::Impl::OnDbOpening() const
     {
+    OnInit();
+    return m_idSequenceManager.InitializeSequences();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+------
+void ECDb::Impl::OnInit() const
+    {
     m_id.Create();
     RegisterBuiltinFunctions();
-    return m_idSequenceManager.InitializeSequences();
+    RegisterECSqlPragmas();
+    }
+
+
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+------
+void ECDb::Impl::RegisterECSqlPragmas() const
+    {
+    GetPragmaManager().Register(PragmaExplainQuery::Create());
+    GetPragmaManager().Register(DisqualifyTypeIndex::Create());
+    GetPragmaManager().Register(PragmaECDbVersion::Create());
+    GetPragmaManager().Register(PragmaChecksum::Create());
+    GetPragmaManager().Register(PragmaIntegrityCheck::Create());
+    GetPragmaManager().Register(PragmaExperimentalFeatures::Create());
+
     }
 
 //--------------------------------------------------------------------------------------
@@ -478,7 +542,6 @@ void ECDb::Impl::RegisterBuiltinFunctions() const
     m_ecdb.AddFunction(StrToGuid::GetSingleton());
     m_ecdb.AddFunction(IdToHex::GetSingleton());
     m_ecdb.AddFunction(HexToId::GetSingleton());
-
     m_changeManager.RegisterSqlFunctions();
 
     m_classNameFunc = ClassNameFunc::Create(m_ecdb);
@@ -501,9 +564,7 @@ void ECDb::Impl::RegisterBuiltinFunctions() const
     if (m_extractPropFunc != nullptr)
         m_ecdb.AddFunction(*m_extractPropFunc);
 
-    m_propExistsFunc = PropExistsFunc::Create(m_ecdb);
-    if (m_propExistsFunc != nullptr)
-        m_ecdb.AddFunction(*m_propExistsFunc);
+    RegisterBuildInVTabs(m_ecdb);
    }
 
 //---------------------------------------------------------------------------------------
@@ -540,10 +601,6 @@ void ECDb::Impl::UnregisterBuiltinFunctions() const
     if (m_extractPropFunc != nullptr) {
         m_ecdb.RemoveFunction(*m_extractPropFunc);
         m_extractPropFunc = nullptr;
-    }
-    if (m_propExistsFunc != nullptr) {
-        m_ecdb.RemoveFunction(*m_propExistsFunc);
-        m_propExistsFunc = nullptr;
     }
     }
 

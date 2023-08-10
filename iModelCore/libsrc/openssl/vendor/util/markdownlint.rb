@@ -8,8 +8,6 @@ rule 'MD003', :style => :setext_with_atx
 # Code blocks may be fenced or indented, both are OK...
 # but they must be consistent throughout each file.
 rule 'MD046', :style => :consistent
-# Not possible to line-break tables.
-rule 'MD013', :tables => false
 
 # Bug in mdl, https://github.com/markdownlint/markdownlint/issues/313
 exclude_rule 'MD007'
@@ -24,4 +22,3 @@ exclude_rule 'MD025' # Multiple top level headers in the same document
 exclude_rule 'MD026' # Trailing punctuation in header
 exclude_rule 'MD029' # Ordered list item prefix
 exclude_rule 'MD030' # Spaces after list markers (default: 1!)
-exclude_rule 'MD033' # Allow inline HTML (complex tables are impossible without it)

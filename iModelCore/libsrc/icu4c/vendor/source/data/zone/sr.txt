@@ -1,7 +1,7 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 sr{
-    Version{"2.1.49.82"}
     zoneStrings{
         "Africa:Abidjan"{
             ec{"Абиџан"}
@@ -258,6 +258,9 @@ sr{
         "America:Chihuahua"{
             ec{"Чихуахуа"}
         }
+        "America:Ciudad_Juarez"{
+            ec{"Сиудад Хуарез"}
+        }
         "America:Coral_Harbour"{
             ec{"Корал Харбур"}
         }
@@ -274,7 +277,7 @@ sr{
             ec{"Куиаба"}
         }
         "America:Curacao"{
-            ec{"Кирасо"}
+            ec{"Курасао"}
         }
         "America:Danmarkshavn"{
             ec{"Данмарксхаген"}
@@ -811,7 +814,7 @@ sr{
             ec{"Катар"}
         }
         "Asia:Qostanay"{
-            ec{"Qostanay"}
+            ec{"Костанај"}
         }
         "Asia:Qyzylorda"{
             ec{"Кизилорда"}
@@ -1019,7 +1022,7 @@ sr{
             ec{"Истанбул"}
         }
         "Europe:Jersey"{
-            ec{"Џерси"}
+            ec{"Џерзи"}
         }
         "Europe:Kaliningrad"{
             ec{"Калињинград"}
@@ -1222,6 +1225,9 @@ sr{
         }
         "Pacific:Johnston"{
             ec{"Џонстон"}
+        }
+        "Pacific:Kanton"{
+            ec{"Кантон"}
         }
         "Pacific:Kiritimati"{
             ec{"Киритимати"}
@@ -1526,7 +1532,7 @@ sr{
             ss{"EET"}
         }
         "meta:Europe_Further_Eastern"{
-            ls{"Даљи исток Европе"}
+            ls{"Време даљег истока Европе"}
         }
         "meta:Europe_Western"{
             ld{"Западноевропско летње време"}
@@ -1761,7 +1767,9 @@ sr{
             ls{"Ниуе време"}
         }
         "meta:Norfolk"{
-            ls{"Норфолк Острво време"}
+            ld{"Норфолк Острво, летње време"}
+            lg{"Норфолк Острво време"}
+            ls{"Норфолк Острво, стандардно време"}
         }
         "meta:Noronha"{
             ld{"Фернандо де Нороња, летње време"}
@@ -1944,6 +1952,9 @@ sr{
             ld{"Јекатеринбург, летње време"}
             lg{"Јекатеринбург време"}
             ls{"Јекатеринбург, стандардно време"}
+        }
+        "meta:Yukon"{
+            ls{"Јукон"}
         }
         fallbackFormat{"{1} ({0})"}
         gmtFormat{"GMT{0}"}

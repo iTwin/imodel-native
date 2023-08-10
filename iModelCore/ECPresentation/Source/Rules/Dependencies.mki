@@ -41,7 +41,7 @@ PresentationRulesPublicHeaders    = $(PresentationRulesPublicApiDirectory)Presen
                                     $(PresentationRulesPublicApiDirectory)ContentRelatedInstancesSpecification.h \
                                     $(PresentationRulesPublicApiDirectory)PropertySpecification.h \
                                     $(PresentationRulesPublicApiDirectory)SelectedNodeInstancesSpecification.h \
-                                    $(PresentationRulesPublicApiDirectory)CalculatedPropertySpecification.h \
+                                    $(PresentationRulesPublicApiDirectory)CalculatedPropertiesSpecification.h \
                                     $(PresentationRulesPublicApiDirectory)RelatedInstanceSpecification.h \
                                     $(PresentationRulesPublicApiDirectory)CustomizationRules.h \
                                     $(PresentationRulesPublicApiDirectory)ContentModifier.h \

@@ -199,6 +199,8 @@ fi
 #AC_CHECK_PROG(AUTOCONF, autoconf, autoconf, true)
 #AC_CHECK_PROG(STRIP, strip, strip, true)
 
+m4_ifndef([AX_CHECK_COMPILE_FLAG], [AC_MSG_ERROR(['autoconf-archive' is missing])])
+
 # TODO(ICU-20301): Remove fallback to Python 2.
 AC_CHECK_PROGS(PYTHON, python3 "py -3" python "py")
 AC_SUBST(PYTHON)
@@ -481,7 +483,7 @@ if test "$enable" = "yes"; then
    fi
 fi
 
-# Check for miscellanous functions.
+# Check for miscellaneous functions.
 # So, use for putil / tools only.
 # Note that this will generate HAVE_GETTIMEOFDAY, not U_HAVE_GETTIMEOFDAY
 AC_CHECK_FUNCS([gettimeofday])
@@ -527,11 +529,6 @@ if [[ "$GXX" = yes ]]; then
         else
             CXXFLAGS="$OLD_CXXFLAGS"
         fi
-        case "${host}" in
-        *-*-solaris*)
-            CXXFLAGS="$OLD_CXXFLAGS"
-            ;;
-        esac
     fi
 fi
 
@@ -541,7 +538,7 @@ AC_LANG_POP([C++])
 OLD_LIBS=${LIBS}
 
 # For Compaq Tru64 (OSF1), we must look for pthread_attr_init
-# and must do this before seaching for pthread_mutex_destroy, or
+# and must do this before searching for pthread_mutex_destroy, or
 # we will pick up libpthreads.so not libpthread.so
 # If this fails, then we must test for HPUX specials, before
 # moving on to a more generic test
@@ -903,6 +900,14 @@ else
 fi
 AC_SUBST(U_HAVE_STRTOD_L)
 
+# Check if C++17 std::string_view is available.
+AC_LANG_PUSH([C++])
+AC_CHECK_TYPE(std::string_view, [], [], [[#include <string_view>]])
+if test "x$ac_cv_type_std__string_view" = xyes; then :
+  CONFIG_CPPFLAGS="${CONFIG_CPPFLAGS} -DU_HAVE_STRING_VIEW=1"
+fi
+AC_LANG_POP([C++])
+
 # Checks for typedefs
 AC_CHECK_TYPE(int8_t,signed char)
 AC_CHECK_TYPE(uint8_t,unsigned char)
@@ -1093,14 +1098,14 @@ ICU_CONDITIONAL(ICUIO, test "$icuio" = true)
 
 # Enable/disable layoutex
 AC_ARG_ENABLE(layoutex,
-	[  --enable-layoutex         build ICU's Paragraph Layout library [default=yes].
+	[  --enable-layoutex         build ICU's Paragraph Layout library [default=no].
             icu-le-hb must be installed via pkg-config. See http://harfbuzz.org],
 	[case "${enableval}" in
 		yes) layoutex=$have_icu_le_hb ;;
 		no)  layoutex=false ;;
 		*) AC_MSG_ERROR(bad value ${enableval} for --enable-layoutex) ;;
 		esac],
-	layoutex=$have_icu_le_hb)
+	layoutex=false)
 ICU_CONDITIONAL(LAYOUTEX, test "$layoutex" = true)
 
 # Enable/disable layout
@@ -1124,6 +1129,19 @@ AC_ARG_ENABLE(tools,
 	tools=true)
 ICU_CONDITIONAL(TOOLS, test "$tools" = true)
 
+# Enable/disable fuzzer target tests.
+AC_ARG_ENABLE(fuzzer,
+	[  --enable-fuzzer        build ICU's fuzzer test targets [default=no]],
+	[case "${enableval}" in
+		yes) fuzzer=true ;;
+		no)  fuzzer=false ;;
+		*) AC_MSG_ERROR(bad value ${enableval} for --enable-fuzzer) ;;
+		esac],
+	fuzzer=false)
+ICU_CONDITIONAL(FUZZER, test "$fuzzer" = true)
+
+ICU_CONDITIONAL(DATA, test "$tools" = true || test "$cross_compiling" = "yes")
+
 AC_ARG_WITH(data-packaging,
 	[  --with-data-packaging     specify how to package ICU data. Possible values:
         files    raw files (.res, etc)
@@ -1131,7 +1149,7 @@ AC_ARG_WITH(data-packaging,
         library  shared library (.dll/.so/etc.)
         static   static library (.a/.lib/etc.)
         auto     build shared if possible (default)
-           See http://userguide.icu-project.org/icudata for more info.],
+           See https://unicode-org.github.io/icu/userguide/icu_data for more info.],
 	[case "${withval}" in
                 files|archive|library) datapackaging=$withval ;;
 		auto) datapackaging=$withval ;;
@@ -1169,7 +1187,7 @@ fi
 
 datapackaging_dir=`eval echo $thedatadir`"/icu/${VERSION}"
 
-datapackaging_msg="(No explaination for mode $datapackaging.)"
+datapackaging_msg="(No explanation for mode $datapackaging.)"
 
 datapackaging_msg_path="ICU will look in $datapackaging_dir which is the installation location. Call u_setDataDirectory() or use the ICU_DATA environment variable to override."
 datapackaging_msg_set="ICU will use the linked data library. If linked with the stub library located in stubdata/, the application can use udata_setCommonData() or set a data path to override."
@@ -1296,6 +1314,16 @@ fi
 # Now that we're done using CPPFLAGS etc. for tests, we can change it
 # for build.
 
+AC_LANG_PUSH([C++])
+# Silence a Clang warning about ambiguous operators with C++20 rewritten
+# expressions that possibly or maybe even probably is a mistake (ICU-20973).
+AX_CHECK_COMPILE_FLAG(
+  [-Wambiguous-reversed-operator],
+  [CXXFLAGS+=" -Wno-ambiguous-reversed-operator"],
+  [],
+  [-Werror])
+AC_LANG_POP([C++])
+
 if test "${CC}" = "clang"; then
    CLANGCFLAGS="-Qunused-arguments -Wno-parentheses-equality"
 else
@@ -1304,6 +1332,7 @@ fi
 
 if test "${CXX}" = "clang++"; then
    CLANGCXXFLAGS="-Qunused-arguments -Wno-parentheses-equality"
+   LIBCXXFLAGS="$LIBCXXFLAGS -Wglobal-constructors"
 else
    CLANGCXXFLAGS=""
 fi
@@ -1357,6 +1386,7 @@ AC_CONFIG_FILES([icudefs.mk \
 		tools/icupkg/Makefile \
 		tools/icuswap/Makefile \
 		tools/pkgdata/Makefile \
+		tools/icuexportdata/Makefile \
 		tools/tzcode/Makefile \
 		tools/gencfu/Makefile \
 		tools/escapesrc/Makefile \
@@ -1377,6 +1407,7 @@ AC_CONFIG_FILES([icudefs.mk \
 		test/perf/ubrkperf/Makefile \
 		test/perf/charperf/Makefile \
 		test/perf/convperf/Makefile \
+		test/perf/localecanperf/Makefile \
 		test/perf/normperf/Makefile \
 		test/perf/DateFmtPerf/Makefile \
 		test/perf/howExpensiveIs/Makefile \
@@ -1387,6 +1418,7 @@ AC_CONFIG_FILES([icudefs.mk \
 		test/perf/utfperf/Makefile \
 		test/perf/utrie2perf/Makefile \
 		test/perf/leperf/Makefile \
+		test/fuzzer/Makefile \
 		samples/Makefile samples/date/Makefile \
 		samples/cal/Makefile samples/layout/Makefile])
 AC_OUTPUT
@@ -1399,7 +1431,8 @@ else
     if test -f "$srcdir/data/locales/root.txt";
     then
         echo "Spawning Python to generate data/rules.mk..."
-        PYTHONPATH="$srcdir/data" $PYTHON -m buildtool \
+        PYTHONPATH="$srcdir/python" \
+            $PYTHON -m icutools.databuilder \
             --mode gnumake \
             --seqmode parallel \
             --src_dir "$srcdir/data" \
@@ -1414,7 +1447,8 @@ else
       touch data/rules.mk
     fi
     echo "Spawning Python to generate test/testdata/rules.mk..."
-    PYTHONPATH="$srcdir/test/testdata:$srcdir/data" $PYTHON -m buildtool \
+    PYTHONPATH="$srcdir/python" \
+        $PYTHON -m icutools.databuilder \
         --mode gnumake \
         --seqmode parallel \
         --src_dir "$srcdir/test/testdata" \

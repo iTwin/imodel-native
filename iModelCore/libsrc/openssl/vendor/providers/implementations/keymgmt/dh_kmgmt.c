@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2022 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2019-2023 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -400,7 +400,7 @@ static int dh_validate_private(const DH *dh)
     DH_get0_key(dh, NULL, &priv_key);
     if (priv_key == NULL)
         return 0;
-    return ossl_dh_check_priv_key(dh, priv_key, &status);
+    return ossl_dh_check_priv_key(dh, priv_key, &status);;
 }
 
 static int dh_validate(const void *keydata, int selection, int checktype)

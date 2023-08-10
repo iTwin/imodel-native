@@ -54,7 +54,6 @@ private:
     ECPRESENTATION_EXPORT void ParsePropertiesFromPropertyJson(PropertySpecificationsList&, BeJsConst, Utf8CP);
 
 protected:
-    ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationKeyCR other) const override;
     ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
 
     ECPRESENTATION_EXPORT Utf8CP _GetXmlElementName() const override;

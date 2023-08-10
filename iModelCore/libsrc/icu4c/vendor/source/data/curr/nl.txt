@@ -1,5 +1,6 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 nl{
     Currencies{
         ADP{
@@ -220,7 +221,7 @@ nl{
         }
         BYN{
             "BYN",
-            "Wit-Russische roebel",
+            "Belarussische roebel",
         }
         BYR{
             "BYR",
@@ -264,7 +265,7 @@ nl{
         }
         CNH{
             "CNH",
-            "Chinese renminbi (offshore)",
+            "Chinese yuan (offshore)",
         }
         CNX{
             "CNX",
@@ -396,7 +397,7 @@ nl{
         }
         GBP{
             "£",
-            "Brits pond",
+            "Britse pond",
         }
         GEK{
             "GEK",
@@ -898,9 +899,13 @@ nl{
             "SKK",
             "Slowaakse koruna",
         }
+        SLE{
+            "SLE",
+            "Sierra Leoonse leone",
+        }
         SLL{
             "SLL",
-            "Sierraleoonse leone",
+            "Sierraleoonse leone (1964—2022)",
         }
         SOS{
             "SOS",
@@ -1046,6 +1051,10 @@ nl{
             "VEB",
             "Venezolaanse bolivar (1871–2008)",
         }
+        VED{
+            "VED",
+            "Bolívar Soberano",
+        }
         VEF{
             "VEF",
             "Venezolaanse bolivar (2008–2018)",
@@ -1119,7 +1128,7 @@ nl{
             "Franse UIC-franc",
         }
         XOF{
-            "CFA",
+            "F CFA",
             "CFA-franc BCEAO",
         }
         XPD{
@@ -1241,6 +1250,7 @@ nl{
         DKK{"kr"}
         DOP{"$"}
         EGP{"E£"}
+        ESP{"₧"}
         EUR{"€"}
         FJD{"$"}
         FKP{"£"}
@@ -1270,6 +1280,8 @@ nl{
         LBP{"L£"}
         LKR{"Rs"}
         LRD{"$"}
+        LTL{"Lt"}
+        LVL{"Ls"}
         MGA{"Ar"}
         MMK{"K"}
         MNT{"₮"}
@@ -1288,6 +1300,7 @@ nl{
         PYG{"₲"}
         RON{"lei"}
         RUB{"₽"}
+        RUR{"р."}
         RWF{"RF"}
         SBD{"$"}
         SEK{"kr"}
@@ -1533,8 +1546,8 @@ nl{
             other{"Wit-Russische nieuwe roebel (1994–1999)"}
         }
         BYN{
-            one{"Wit-Russische roebel"}
-            other{"Wit-Russische roebel"}
+            one{"Belarussische roebel"}
+            other{"Belarussische roebel"}
         }
         BYR{
             one{"Wit-Russische roebel (2000–2016)"}
@@ -1709,8 +1722,8 @@ nl{
             other{"Franse franc"}
         }
         GBP{
-            one{"Brits pond"}
-            other{"Brits pond"}
+            one{"Britse pond"}
+            other{"Britse pond"}
         }
         GEK{
             one{"Georgische kupon larit"}
@@ -2212,9 +2225,13 @@ nl{
             one{"Slowaakse koruna"}
             other{"Slowaakse koruna"}
         }
+        SLE{
+            one{"Sierra Leoonse leone"}
+            other{"Sierra Leoonse leone"}
+        }
         SLL{
-            one{"Sierraleoonse leone"}
-            other{"Sierraleoonse leone"}
+            one{"Sierraleoonse leone (1964—2022)"}
+            other{"Sierraleoonse leone (1964—2022)"}
         }
         SOS{
             one{"Somalische shilling"}
@@ -2359,6 +2376,10 @@ nl{
         VEB{
             one{"Venezolaanse bolivar (1871–2008)"}
             other{"Venezolaanse bolivar (1871–2008)"}
+        }
+        VED{
+            one{"Bolívar Soberano"}
+            other{"Bolívar Soberanos"}
         }
         VEF{
             one{"Venezolaanse bolivar (2008–2018)"}
@@ -2533,5 +2554,4 @@ nl{
         one{"{0} {1}"}
         other{"{0} {1}"}
     }
-    Version{"2.1.49.82"}
 }

@@ -1,7 +1,7 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 tk{
-    Version{"2.1.49.82"}
     zoneStrings{
         "Africa:Abidjan"{
             ec{"Abijan"}
@@ -14,9 +14,6 @@ tk{
         }
         "Africa:Algiers"{
             ec{"Alžir"}
-        }
-        "Africa:Asmera"{
-            ec{"Asmera"}
         }
         "Africa:Bamako"{
             ec{"Bamako"}
@@ -258,6 +255,9 @@ tk{
         "America:Chihuahua"{
             ec{"Çihuahua"}
         }
+        "America:Ciudad_Juarez"{
+            ec{"Sýudad-Huares"}
+        }
         "America:Coral_Harbour"{
             ec{"Atikokan"}
         }
@@ -311,9 +311,6 @@ tk{
         }
         "America:Glace_Bay"{
             ec{"Gleýs-Beý"}
-        }
-        "America:Godthab"{
-            ec{"Nuk"}
         }
         "America:Goose_Bay"{
             ec{"Gus-Beý"}
@@ -523,7 +520,7 @@ tk{
             ec{"Rejaýna"}
         }
         "America:Resolute"{
-            ec{"Rozulýut"}
+            ec{"Rezolýut"}
         }
         "America:Rio_Branco"{
             ec{"Riu-Branku"}
@@ -553,7 +550,7 @@ tk{
             ec{"Sen-Bartelemi"}
         }
         "America:St_Johns"{
-            ec{"Sent-Džons"}
+            ec{"Sent-Jons"}
         }
         "America:St_Kitts"{
             ec{"Sent-Kits"}
@@ -595,7 +592,7 @@ tk{
             ec{"Waýthors"}
         }
         "America:Winnipeg"{
-            ec{"Winipeg"}
+            ec{"Winnipeg"}
         }
         "America:Yakutat"{
             ec{"Ýakutat"}
@@ -787,7 +784,7 @@ tk{
             ec{"Nikosiýa"}
         }
         "Asia:Novokuznetsk"{
-            ec{"Nowokuznetsk"}
+            ec{"Nowokuznesk"}
         }
         "Asia:Novosibirsk"{
             ec{"Nowosibirsk"}
@@ -810,11 +807,14 @@ tk{
         "Asia:Qatar"{
             ec{"Katar"}
         }
+        "Asia:Qostanay"{
+            ec{"Kostanaý"}
+        }
         "Asia:Qyzylorda"{
             ec{"Gyzylorda"}
         }
         "Asia:Rangoon"{
-            ec{"Rangun"}
+            ec{"Ýangon"}
         }
         "Asia:Riyadh"{
             ec{"Er-Riýad"}
@@ -1185,7 +1185,7 @@ tk{
             ec{"Çatem"}
         }
         "Pacific:Easter"{
-            ec{"Pashi adasy"}
+            ec{"Pasha adasy"}
         }
         "Pacific:Efate"{
             ec{"Efate"}
@@ -1219,6 +1219,9 @@ tk{
         }
         "Pacific:Johnston"{
             ec{"Jonston"}
+        }
+        "Pacific:Kanton"{
+            ec{"Kanton"}
         }
         "Pacific:Kiritimati"{
             ec{"Kiritimati"}
@@ -1335,6 +1338,9 @@ tk{
             ld{"Demirgazyk Amerika Ýuwaş umman tomusky wagty"}
             lg{"Demirgazyk Amerika Ýuwaş umman wagty"}
             ls{"Demirgazyk Amerika Ýuwaş umman standart wagty"}
+        }
+        "meta:Anadyr"{
+            lg{"Anadyr wagty"}
         }
         "meta:Apia"{
             ld{"Apia tomusky wagty"}
@@ -1516,7 +1522,7 @@ tk{
             ls{"Fransuz Günorta we Antarktika ýerleri wagty"}
         }
         "meta:GMT"{
-            ls{"Grinwiç boýunça orta wagt"}
+            ls{"Grinwiç ortaça wagty"}
         }
         "meta:Galapagos"{
             ls{"Galapagos adalary wagty"}
@@ -1530,7 +1536,7 @@ tk{
             ls{"Gruziýa standart wagty"}
         }
         "meta:Gilbert_Islands"{
-            ls{"Gilberta adalary wagty"}
+            ls{"Gilbert adalary wagty"}
         }
         "meta:Greenland_Eastern"{
             ld{"Gündogar Grenlandiýa tomusky wagty"}
@@ -1600,6 +1606,9 @@ tk{
             ld{"Ýaponiýa tomusky wagty"}
             lg{"Ýaponiýa wagty"}
             ls{"Ýaponiýa standart wagty"}
+        }
+        "meta:Kamchatka"{
+            lg{"Petropavlowsk-Kamçatskiý wagty"}
         }
         "meta:Kazakhstan_Eastern"{
             ls{"Gündogar Gazagystan wagty"}
@@ -1707,7 +1716,9 @@ tk{
             ls{"Niue wagty"}
         }
         "meta:Norfolk"{
-            ls{"Norfolk adasy wagty"}
+            ld{"Norfolk adasy tomusky wagty"}
+            lg{"Norfolk adasy wagty"}
+            ls{"Norfolk adasy standart wagty"}
         }
         "meta:Noronha"{
             ld{"Fernandu-di-Noronýa tomusky wagty"}
@@ -1777,6 +1788,9 @@ tk{
             ld{"Sahalin tomusky wagty"}
             lg{"Sahalin wagty"}
             ls{"Sahalin standart wagty"}
+        }
+        "meta:Samara"{
+            lg{"Samara wagty"}
         }
         "meta:Samoa"{
             ld{"Samoa tomusky wagty"}
@@ -1877,6 +1891,9 @@ tk{
             ld{"Ýekaterinburg tomusky wagty"}
             lg{"Ýekaterinburg wagty"}
             ls{"Ýekaterinburg standart wagty"}
+        }
+        "meta:Yukon"{
+            ls{"Ýukon wagty"}
         }
         fallbackFormat{"{1} ({0})"}
         gmtFormat{"GMT{0}"}

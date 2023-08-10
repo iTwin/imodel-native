@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2022 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2019-2023 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -123,7 +123,7 @@ static int rsa_check_padding(const PROV_RSA_CTX *prsactx,
                              const char *mdname, const char *mgf1_mdname,
                              int mdnid)
 {
-    switch (prsactx->pad_mode) {
+    switch(prsactx->pad_mode) {
         case RSA_NO_PADDING:
             if (mdname != NULL || mdnid != NID_undef) {
                 ERR_raise(ERR_LIB_PROV, PROV_R_INVALID_PADDING_MODE);
@@ -182,6 +182,7 @@ static void *rsa_newctx(void *provctx, const char *propq)
         || (propq != NULL
             && (propq_copy = OPENSSL_strdup(propq)) == NULL)) {
         OPENSSL_free(prsactx);
+        ERR_raise(ERR_LIB_PROV, ERR_R_MALLOC_FAILURE);
         return NULL;
     }
 
@@ -243,11 +244,11 @@ static unsigned char *rsa_generate_signature_aid(PROV_RSA_CTX *ctx,
     int ret;
 
     if (!WPACKET_init_der(&pkt, aid_buf, buf_len)) {
-        ERR_raise(ERR_LIB_PROV, ERR_R_CRYPTO_LIB);
+        ERR_raise(ERR_LIB_PROV, ERR_R_MALLOC_FAILURE);
         return NULL;
     }
 
-    switch (ctx->pad_mode) {
+    switch(ctx->pad_mode) {
     case RSA_PKCS1_PADDING:
         ret = ossl_DER_w_algorithmIdentifier_MDWithRSAEncryption(&pkt, -1,
                                                                  ctx->mdnid);
@@ -497,8 +498,10 @@ static int setup_tbuf(PROV_RSA_CTX *ctx)
 {
     if (ctx->tbuf != NULL)
         return 1;
-    if ((ctx->tbuf = OPENSSL_malloc(RSA_size(ctx->rsa))) == NULL)
+    if ((ctx->tbuf = OPENSSL_malloc(RSA_size(ctx->rsa))) == NULL) {
+        ERR_raise(ERR_LIB_PROV, ERR_R_MALLOC_FAILURE);
         return 0;
+    }
     return 1;
 }
 
@@ -579,7 +582,7 @@ static int rsa_sign(void *vprsactx, unsigned char *sig, size_t *siglen,
                 return 0;
             }
             if (!setup_tbuf(prsactx)) {
-                ERR_raise(ERR_LIB_PROV, ERR_R_PROV_LIB);
+                ERR_raise(ERR_LIB_PROV, ERR_R_MALLOC_FAILURE);
                 return 0;
             }
             memcpy(prsactx->tbuf, tbs, tbslen);
@@ -834,14 +837,17 @@ static int rsa_verify(void *vprsactx, const unsigned char *sig, size_t siglen,
             return 0;
         }
     } else {
+        int ret;
+
         if (!setup_tbuf(prsactx))
             return 0;
-        rslen = RSA_public_decrypt(siglen, sig, prsactx->tbuf, prsactx->rsa,
-                                   prsactx->pad_mode);
-        if (rslen == 0) {
+        ret = RSA_public_decrypt(siglen, sig, prsactx->tbuf, prsactx->rsa,
+                                 prsactx->pad_mode);
+        if (ret <= 0) {
             ERR_raise(ERR_LIB_PROV, ERR_R_RSA_LIB);
             return 0;
         }
+        rslen = (size_t)ret;
     }
 
     if ((rslen != tbslen) || memcmp(tbs, prsactx->tbuf, rslen))
@@ -997,8 +1003,10 @@ static void *rsa_dupctx(void *vprsactx)
         return NULL;
 
     dstctx = OPENSSL_zalloc(sizeof(*srcctx));
-    if (dstctx == NULL)
+    if (dstctx == NULL) {
+        ERR_raise(ERR_LIB_PROV, ERR_R_MALLOC_FAILURE);
         return NULL;
+    }
 
     *dstctx = *srcctx;
     dstctx->rsa = NULL;

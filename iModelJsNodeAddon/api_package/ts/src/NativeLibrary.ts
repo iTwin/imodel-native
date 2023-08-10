@@ -91,7 +91,19 @@ export class NativeLibrary {
   public static get nativeLib() { return this.load(); }
   public static load() {
     if (!this._nativeLib) {
-      this._nativeLib = require(`./${NativeLibrary.archName}/${NativeLibrary.nodeAddonName}`) as typeof IModelJsNative; // eslint-disable-line @typescript-eslint/no-var-requires
+      try {
+        const platform = os.platform() as NodeJS.Platform | "ios"; // we add "ios"
+        if (platform === "ios" || platform === "android") {
+          this._nativeLib = (process as any)._linkedBinding("iModelJsNative") as typeof IModelJsNative;
+        } else {
+          this._nativeLib = require(`./${NativeLibrary.archName}/${NativeLibrary.nodeAddonName}`) as typeof IModelJsNative; // eslint-disable-line @typescript-eslint/no-var-requires
+        }
+      } catch (err: any) {
+        err.message += "\nThis error may occur when trying to run an iTwin.js backend without"
+          + " having installed the prerequisites. See the following link for all prerequisites:"
+          + "\nhttps://www.itwinjs.org/learning/supportedplatforms/#backend-prerequisites";
+        throw err;
+      }
       if (this.isDevBuild)
         // eslint-disable-next-line no-console
         console.log("\x1b[36m", `using dev build from ${__dirname}\n`, "\x1b[0m");
@@ -434,7 +446,20 @@ export declare namespace IModelJsNative {
 
   interface SchemaImportOptions {
     readonly schemaLockHeld?: boolean;
+    readonly schemaSyncDbUri?: string;
     readonly ecSchemaXmlContext?: ECSchemaXmlContext;
+  }
+
+  interface SchemaLocalDbInfo {
+    readonly id: string;
+    readonly dataVer: string;
+    readonly lastModUtc: string;
+  }
+
+  interface SchemaSyncDbInfo extends SchemaLocalDbInfo {
+    readonly projectId: string;
+    readonly parentChangesetId: string;
+    readonly parentChangesetIndex?: string;
   }
 
   // ###TODO import from core-common
@@ -448,6 +473,13 @@ export declare namespace IModelJsNative {
   class DgnDb implements IConcurrentQueryManager, SQLiteOps {
     constructor();
     public readonly cloudContainer?: CloudContainer;
+    public schemaSyncSetDefaultUri(syncDbUri: string): void;
+    public schemaSyncGetDefaultUri(): string;
+    public schemaSyncInit(syncDbUri: string): void;
+    public schemaSyncPull(syncDbUri?: string): void;
+    public schemaSyncEnabled(): boolean;
+    public schemaSyncGetLocalDbInfo(): SchemaLocalDbInfo | undefined;
+    public schemaSyncGetSyncDbInfo(syncDbUri: string): SchemaSyncDbInfo | undefined;
     public abandonChanges(): DbResult;
     public abandonCreateChangeset(): void;
     public addChildPropagatesChangesToParentRelationship(schemaName: string, relClassName: string): BentleyStatus;
@@ -632,6 +664,17 @@ export declare namespace IModelJsNative {
     public static recompressRevision(sourceFile: string, targetFile: string, lzmaPropsJson?: string): BentleyStatus;
   }
 
+  /**
+   * The native object for SchemaUtility
+   * @internal
+   */
+  class SchemaUtility {
+    constructor();
+    /** Converts given schemas and their reference schemas to EC3.2 schemas */
+    public static convertCustomAttributes(xmlSchemas: string[], schemaContext?: ECSchemaXmlContext): string[];
+    public static convertEC2XmlSchemas(ec2XmlSchemas: string[], schemaContext?: ECSchemaXmlContext): string[];
+  }
+
   class ECDb implements IDisposable, IConcurrentQueryManager {
     constructor();
     public abandonChanges(): DbResult;
@@ -639,6 +682,13 @@ export declare namespace IModelJsNative {
     public createDb(dbName: string): DbResult;
     public dispose(): void;
     public dropSchema(schemaName: string): void;
+    public schemaSyncSetDefaultUri(syncDbUri: string): void;
+    public schemaSyncGetDefaultUri(): string;
+    public schemaSyncInit(syncDbUri: string): void;
+    public schemaSyncPull(syncDbUri: string | undefined): void;
+    public schemaSyncEnabled(): boolean;
+    public schemaSyncGetLocalDbInfo(): SchemaLocalDbInfo | undefined;
+    public schemaSyncGetSyncDbInfo(): SchemaSyncDbInfo | undefined;
     public getFilePath(): string;
     public importSchema(schemaPathName: string): DbResult;
     public isOpen(): boolean;
@@ -713,6 +763,7 @@ export declare namespace IModelJsNative {
     public isEnum(): boolean;
     public isGeneratedProperty(): boolean;
     public isSystemProperty(): boolean;
+    public isDynamicProp(): boolean;
   }
 
   class ECSqlValue {
@@ -942,6 +993,10 @@ export declare namespace IModelJsNative {
     public readonly cache?: CloudCache;
     /** Create a new instance of a CloudContainer. It must be connected to a CloudCache for most operations. */
     public constructor(props: NativeCloudSqlite.ContainerAccessProps);
+    /** the baseUri of this container */
+    public get baseUri(): string;
+    /** the storageType of this container */
+    public get storageType(): string;
     /** The ContainerId. */
     public get containerId(): string;
     /** The *alias* to identify this CloudContainer in a CloudCache. Usually just the ContainerId. */
@@ -970,7 +1025,7 @@ export declare namespace IModelJsNative {
      * initialize a cloud blob-store container to be used as a new Sqlite CloudContainer. This creates the manifest, and should be
      * performed on an empty container. If an existing manifest is present, it is destroyed and a new one is created (essentially emptying the container.)
      */
-    public initializeContainer(opts?: { checksumBlockNames?: boolean, blockSize?: number }): void;
+    public initializeContainer(opts: { checksumBlockNames?: boolean, blockSize: number }): void;
 
     /**
      * Attempt to acquire the write lock for this CloudContainer. For this to succeed:
@@ -1200,7 +1255,7 @@ export declare namespace IModelJsNative {
     public addRuleset(serializedRuleset: string): ECPresentationManagerResponse<string>;
     public removeRuleset(rulesetId: string, hash: string): ECPresentationManagerResponse<boolean>;
     public clearRulesets(): ECPresentationManagerResponse<void>;
-    public handleRequest(db: DgnDb, options: string): { result: Promise<ECPresentationManagerResponse<string>>, cancel: () => void };
+    public handleRequest(db: DgnDb, options: string): { result: Promise<ECPresentationManagerResponse<Buffer>>, cancel: () => void };
     public getUpdateInfo(): ECPresentationManagerResponse<any>;
     public dispose(): void;
   }

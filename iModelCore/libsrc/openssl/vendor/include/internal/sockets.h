@@ -61,25 +61,7 @@ struct servent *PASCAL getservbyname(const char *, const char *);
 #   define accept(s,f,l)   ((int)accept(s,f,l))
 #  endif
 
-/* Windows have other names for shutdown() reasons */
-#  ifndef SHUT_RD
-#   define SHUT_RD SD_RECEIVE
-#  endif
-#  ifndef SHUT_WR
-#   define SHUT_WR SD_SEND
-#  endif
-#  ifndef SHUT_RDWR
-#   define SHUT_RDWR SD_BOTH
-#  endif
-
 # else
-#  if defined(__APPLE__)
-    /*
-     * This must be defined before including <netinet/in6.h> to get
-     * IPV6_RECVPKTINFO
-     */
-#   define __APPLE_USE_RFC_3542
-#  endif
 
 #  ifndef NO_SYS_PARAM_H
 #   include <sys/param.h>
@@ -111,11 +93,6 @@ struct servent *PASCAL getservbyname(const char *, const char *);
 
 #  ifdef OPENSSL_SYS_AIX
 #   include <sys/select.h>
-#  endif
-
-#  ifdef OPENSSL_SYS_UNIX
-#    include <sys/poll.h>
-#    include <errno.h>
 #  endif
 
 #  ifndef VMS
@@ -159,15 +136,12 @@ struct servent *PASCAL getservbyname(const char *, const char *);
 
 # define get_last_socket_error() errno
 # define clear_socket_error()    errno=0
-# define get_last_socket_error_is_eintr() (get_last_socket_error() == EINTR)
 
 # if defined(OPENSSL_SYS_WINDOWS)
 #  undef get_last_socket_error
 #  undef clear_socket_error
-#  undef get_last_socket_error_is_eintr
 #  define get_last_socket_error() WSAGetLastError()
 #  define clear_socket_error()    WSASetLastError(0)
-#  define get_last_socket_error_is_eintr() (get_last_socket_error() == WSAEINTR)
 #  define readsocket(s,b,n)       recv((s),(b),(n),0)
 #  define writesocket(s,b,n)      send((s),(b),(n),0)
 # elif defined(__DJGPP__)

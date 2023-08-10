@@ -219,26 +219,6 @@ MD5 ContentRelatedInstancesSpecification::_ComputeHash() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ContentRelatedInstancesSpecification::_ShallowEqual(PresentationKeyCR other) const
-    {
-    if (!ContentSpecification::_ShallowEqual(other))
-        return false;
-
-    ContentRelatedInstancesSpecification const* otherRule = dynamic_cast<ContentRelatedInstancesSpecification const*>(&other);
-    if (nullptr == otherRule)
-        return false;
-
-    return m_skipRelatedLevel == otherRule->m_skipRelatedLevel
-        && m_isRecursive == otherRule->m_isRecursive
-        && m_instanceFilter == otherRule->m_instanceFilter
-        && m_requiredDirection == otherRule->m_requiredDirection
-        && m_relationshipClassNames == otherRule->m_relationshipClassNames
-        && m_relatedClassNames == otherRule->m_relatedClassNames;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 void ContentRelatedInstancesSpecification::ClearRelationshipPaths()
     {
     InvalidateHash();

@@ -62,7 +62,6 @@ int (*X509_TRUST_set_default(int (*trust) (int, X509 *, int))) (int, X509 *,
     return oldtrust;
 }
 
-/* Returns X509_TRUST_TRUSTED, X509_TRUST_REJECTED, or X509_TRUST_UNTRUSTED */
 int X509_check_trust(X509 *x, int id, int flags)
 {
     X509_TRUST *pt;
@@ -136,8 +135,10 @@ int X509_TRUST_add(int id, int flags, int (*ck) (X509_TRUST *, X509 *, int),
     idx = X509_TRUST_get_by_id(id);
     /* Need a new entry */
     if (idx < 0) {
-        if ((trtmp = OPENSSL_malloc(sizeof(*trtmp))) == NULL)
+        if ((trtmp = OPENSSL_malloc(sizeof(*trtmp))) == NULL) {
+            ERR_raise(ERR_LIB_X509, ERR_R_MALLOC_FAILURE);
             return 0;
+        }
         trtmp->flags = X509_TRUST_DYNAMIC;
     } else
         trtmp = X509_TRUST_get0(idx);
@@ -146,8 +147,10 @@ int X509_TRUST_add(int id, int flags, int (*ck) (X509_TRUST *, X509 *, int),
     if (trtmp->flags & X509_TRUST_DYNAMIC_NAME)
         OPENSSL_free(trtmp->name);
     /* dup supplied name */
-    if ((trtmp->name = OPENSSL_strdup(name)) == NULL)
+    if ((trtmp->name = OPENSSL_strdup(name)) == NULL) {
+        ERR_raise(ERR_LIB_X509, ERR_R_MALLOC_FAILURE);
         goto err;
+    }
     /* Keep the dynamic flag of existing entry */
     trtmp->flags &= X509_TRUST_DYNAMIC;
     /* Set all other flags */
@@ -162,11 +165,11 @@ int X509_TRUST_add(int id, int flags, int (*ck) (X509_TRUST *, X509 *, int),
     if (idx < 0) {
         if (trtable == NULL
             && (trtable = sk_X509_TRUST_new(tr_cmp)) == NULL) {
-            ERR_raise(ERR_LIB_X509, ERR_R_CRYPTO_LIB);
-            goto err;
+            ERR_raise(ERR_LIB_X509, ERR_R_MALLOC_FAILURE);
+            goto err;;
         }
         if (!sk_X509_TRUST_push(trtable, trtmp)) {
-            ERR_raise(ERR_LIB_X509, ERR_R_CRYPTO_LIB);
+            ERR_raise(ERR_LIB_X509, ERR_R_MALLOC_FAILURE);
             goto err;
         }
     }
@@ -250,7 +253,7 @@ static int obj_trust(int id, X509 *x, int flags)
     X509_CERT_AUX *ax = x->aux;
     int i;
 
-    if (ax != NULL && ax->reject != NULL) {
+    if (ax && ax->reject) {
         for (i = 0; i < sk_ASN1_OBJECT_num(ax->reject); i++) {
             ASN1_OBJECT *obj = sk_ASN1_OBJECT_value(ax->reject, i);
             int nid = OBJ_obj2nid(obj);
@@ -261,7 +264,7 @@ static int obj_trust(int id, X509 *x, int flags)
         }
     }
 
-    if (ax != NULL && ax->trust != NULL) {
+    if (ax && ax->trust) {
         for (i = 0; i < sk_ASN1_OBJECT_num(ax->trust); i++) {
             ASN1_OBJECT *obj = sk_ASN1_OBJECT_value(ax->trust, i);
             int nid = OBJ_obj2nid(obj);

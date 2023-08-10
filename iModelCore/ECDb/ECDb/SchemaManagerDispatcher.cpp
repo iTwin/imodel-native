@@ -877,6 +877,9 @@ ClassMap* TableSpaceSchemaManager::AddClassMap(std::unique_ptr<ClassMap> classMa
 //*****************************************************************
 //MainSchemaManager
 //*****************************************************************
+/*---------------------------------------------------------------------------------------
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 DropSchemaResult MainSchemaManager::DropSchema(Utf8StringCR name, SchemaImportToken const* schemaImportToken, bool logIssue) const {
     ECDB_PERF_LOG_SCOPE("Drop schema");
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SchemaManager::DropSchema");
@@ -887,7 +890,10 @@ DropSchemaResult MainSchemaManager::DropSchema(Utf8StringCR name, SchemaImportTo
         LOG.error("Failed to drop ECSchema: Caller has not provided a SchemaImportToken.");
         return DropSchemaResult(DropSchemaResult::Status::Error);
     }
-
+    // if (!GetSchemaSync().GetInfo().IsEmpty()) {
+    //     m_ecdb.GetImpl().Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to drop ECSchema. ECDb is configured to use Schema Sync which does not support drop schema.");
+    //     return DropSchemaResult(DropSchemaResult::Status::Error);
+    // }
     if (m_ecdb.IsReadonly()) {
         m_ecdb.GetImpl().Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to drop ECSchema. ECDb file is read-only.");
         return DropSchemaResult(DropSchemaResult::Status::Error);
@@ -937,16 +943,17 @@ DropSchemaResult MainSchemaManager::DropSchema(Utf8StringCR name, SchemaImportTo
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("End SchemaManager::DropSchema");
     return rc;
 }
+
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-SchemaImportResult MainSchemaManager::ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, SchemaManager::SchemaImportOptions options, SchemaImportToken const* token) const
+SchemaImportResult MainSchemaManager::ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, SchemaManager::SchemaImportOptions options, SchemaImportToken const* token, SchemaSync::SyncDbUri schemaSync) const
     {
     ECDB_PERF_LOG_SCOPE("Schema import");
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SchemaManager::ImportSchemas");
     OnBeforeSchemaChanges().RaiseEvent(m_ecdb, SchemaChangeType::SchemaImport);
     SchemaImportContext ctx(m_ecdb, options);
-    const SchemaImportResult stat = ImportSchemas(ctx, schemas, token);
+    const SchemaImportResult stat = ImportSchemas(ctx, schemas, token, schemaSync);
     ResetIds(schemas);
     m_ecdb.ClearECDbCache();
     OnAfterSchemaChanges().RaiseEvent(m_ecdb, SchemaChangeType::SchemaImport);
@@ -1001,7 +1008,7 @@ void DumpSchemasToFile(BeFileName const& parentDirectory, bvector<ECSchemaCP> co
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bvector<ECSchemaCP> const& schemas, SchemaImportToken const* schemaImportToken) const
+SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bvector<ECSchemaCP> const& schemas, SchemaImportToken const* schemaImportToken, SchemaSync::SyncDbUri syncDbUri) const
     {
     #if defined(ALLOW_ECDB_SCHEMAIMPORT_DUMP)
     /*
@@ -1046,6 +1053,52 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
         {
         m_ecdb.GetImpl().Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to import ECSchemas. List of ECSchemas to import is empty.");
         return SchemaImportResult::ERROR;
+        }
+
+    auto& schemaSync = m_ecdb.Schemas().GetSchemaSync();
+    auto resolvedSyncDbUri = syncDbUri.IsEmpty() ? schemaSync.GetDefaultSyncDbUri() : syncDbUri;
+    const auto localDbInfo = schemaSync.GetInfo();
+
+    if (localDbInfo.IsEmpty() && !resolvedSyncDbUri.IsEmpty())
+        {
+        m_ecdb.GetImpl().Issues().ReportV(
+            IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue,
+            "Failed to import ECSchemas. Cannot import schemas into a file which is not setup to use schema sync but sync db uri was provided. Sync-Id: {%s}, uri: {%s}.",
+
+            localDbInfo.GetSyncId().ToString().c_str(),
+            resolvedSyncDbUri.GetUri().c_str()
+        );
+        return SchemaImportResult::ERROR;
+        }
+
+    if (!localDbInfo.IsEmpty())
+        {
+        if (resolvedSyncDbUri.IsEmpty())
+            {
+            m_ecdb.GetImpl().Issues().ReportV(
+                IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue,
+                "Failed to import ECSchemas. Cannot import schemas into a file which is setup to use schema sync but sync db uri was not provided. Sync-Id: {%s}.",
+
+                localDbInfo.GetSyncId().ToString().c_str()
+            );
+            return SchemaImportResult::ERROR;
+            }
+
+        if (schemaSync.Pull(resolvedSyncDbUri, schemaImportToken) != SchemaSync::Status::OK)
+            {
+            m_ecdb.GetImpl().Issues().ReportV(
+                IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue,
+                "Failed to import ECSchemas. Unable to pull changes from Sync-Id: {%s}, uri: {%s}.",
+                localDbInfo.GetSyncId().ToString().c_str(),
+                resolvedSyncDbUri.GetUri().c_str()
+            );
+            return SchemaImportResult::ERROR;
+            }
+        if (!GetECDb().GetImpl().GetIdFactory().Reset())
+            {
+            LOG.error("Failed to import ECSchemas: Failed to create id factory.");
+            return SchemaImportResult::ERROR;
+            }
         }
 
     for (auto schema: schemas) {
@@ -1096,6 +1149,20 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
         LOG.debug("MainSchemaManager::ImportSchemas - failed to MapSchemas");
         return rc;
         }
+
+    if (!localDbInfo.IsEmpty() && rc.IsOk())
+        {
+        if (schemaSync.Push(resolvedSyncDbUri) != SchemaSync::Status::OK)
+            {
+            m_ecdb.GetImpl().Issues().ReportV(
+                IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue,
+                "Failed to import ECSchemas. Unable to push changes to Sync-Id: {%s}, uri: {%s}.",
+                localDbInfo.GetSyncId().ToString().c_str(),
+                resolvedSyncDbUri.GetUri().c_str());
+            return SchemaImportResult::ERROR;
+            }
+        }
+
     return SchemaImportResult::OK;
     }
 
@@ -1667,9 +1734,12 @@ BentleyStatus MainSchemaManager::CreateOrUpdateIndexesInDb(SchemaImportContext& 
                 if (!sqliteIndexItor->second.EqualsIAscii(ddl))
                     {
                     LOG.debugv("Schema Import> Recreating index '%s'. The index definition has changed.", index.GetName().c_str());
-                    // Delete its entry from ec_index table
-                    if (BE_SQLITE_OK != m_ecdb.ExecuteSql(SqlPrintfString("DELETE FROM main." TABLE_Index " WHERE Name = '%s'", index.GetName().c_str())))
-                        return ERROR;
+                    if (!ctx.IsSynchronizeSchemas())
+                        {
+                        // Delete its entry from ec_index table
+                        if (BE_SQLITE_OK != m_ecdb.ExecuteSql(SqlPrintfString("DELETE FROM main." TABLE_Index " WHERE Name = '%s'", index.GetName().c_str())))
+                            return ERROR;
+                        }
 
                     // Drop the existing index as its defintion has modified and need to be recreated.
                     if (BE_SQLITE_OK != m_ecdb.ExecuteDdl(SqlPrintfString("DROP INDEX IF EXISTS [%s]", index.GetName().c_str())))
@@ -1678,8 +1748,11 @@ BentleyStatus MainSchemaManager::CreateOrUpdateIndexesInDb(SchemaImportContext& 
                     if (SUCCESS != DbSchemaPersistenceManager::CreateIndex(m_ecdb, index, ddl))
                         return ERROR;
 
-                    if (SUCCESS != m_dbSchema.PersistIndexDef(index))
-                        return ERROR;
+                    if (!ctx.IsSynchronizeSchemas())
+                        {
+                        if (SUCCESS != m_dbSchema.PersistIndexDef(index))
+                            return ERROR;
+                        }
                     }
                 else
                     {
@@ -1696,26 +1769,31 @@ BentleyStatus MainSchemaManager::CreateOrUpdateIndexesInDb(SchemaImportContext& 
                 if (SUCCESS != DbSchemaPersistenceManager::CreateIndex(m_ecdb, index, ddl))
                     return ERROR;
 
-                // Delete its entry from ec_index table
-                if (BE_SQLITE_OK != m_ecdb.ExecuteSql(SqlPrintfString("DELETE FROM main." TABLE_Index " WHERE Name = '%s'", index.GetName().c_str())))
-                    return ERROR;
+                if (!ctx.IsSynchronizeSchemas())
+                    {
+                    // Delete its entry from ec_index table
+                    if (BE_SQLITE_OK != m_ecdb.ExecuteSql(SqlPrintfString("DELETE FROM main." TABLE_Index " WHERE Name = '%s'", index.GetName().c_str())))
+                        return ERROR;
 
-                if (SUCCESS != m_dbSchema.PersistIndexDef(index))
-                    return ERROR;
-
+                    if (SUCCESS != m_dbSchema.PersistIndexDef(index))
+                        return ERROR;
+                    }
                 }
             }
         else
             {
-            //populates the ec_Index table (even for indexes on virtual tables, as they might be necessary
-            //if further schema imports introduce subclasses of abstract classes (which map to virtual tables))
-                              // Delete its entry from ec_index table
-            if (BE_SQLITE_OK != m_ecdb.ExecuteSql(SqlPrintfString("DELETE FROM main." TABLE_Index " WHERE Name = '%s'", index.GetName().c_str())))
-                return ERROR;
+            if (!ctx.IsSynchronizeSchemas())
+                {
+                //populates the ec_Index table (even for indexes on virtual tables, as they might be necessary
+                //if further schema imports introduce subclasses of abstract classes (which map to virtual tables))
+                                // Delete its entry from ec_index table
+                if (BE_SQLITE_OK != m_ecdb.ExecuteSql(SqlPrintfString("DELETE FROM main." TABLE_Index " WHERE Name = '%s'", index.GetName().c_str())))
+                    return ERROR;
 
-            LOG.debugv("Schema Import> Virtual index '%s'. NOP SQLite Index", index.GetName().c_str());
-            if (SUCCESS != m_dbSchema.PersistIndexDef(index))
-                return ERROR;
+                LOG.debugv("Schema Import> Virtual index '%s'. NOP SQLite Index", index.GetName().c_str());
+                if (SUCCESS != m_dbSchema.PersistIndexDef(index))
+                    return ERROR;
+                }
             }
         }
 
@@ -1826,9 +1904,11 @@ BentleyStatus MainSchemaManager::PurgeOrphanTables(SchemaImportContext& ctx) con
             tableNames.append(tableName);
             isFirstTable = false;
             }
-
-        m_ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to import schemas: it would change the database schema in a backwards incompatible way, so that older versions of the software could not work with the file anymore. ECDb would have to delete these tables: %s", tableNames.c_str());
-        return ERROR;
+        if (!Enum::Contains(ctx.GetOptions(), SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas))
+            {
+            m_ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to import schemas: it would change the database schema in a backwards incompatible way, so that older versions of the software could not work with the file anymore. ECDb would have to delete these tables: %s", tableNames.c_str());
+            return ERROR;
+            }
         }
 
     for (Utf8StringCR name : tablesToDrop)

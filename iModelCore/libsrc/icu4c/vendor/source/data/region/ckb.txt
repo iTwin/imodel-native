@@ -1,5 +1,6 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 ckb{
     Countries{
         001{"جیهان"}
@@ -110,7 +111,7 @@ ckb{
         EZ{"ناوچەی یۆرۆ"}
         FI{"فینلاند"}
         FJ{"فیجی"}
-        FK{"دوورگەکانی مالڤیناس"}
+        FK{"دوورگەکانی مالڤیناس (دوورگەکانی فاڵکلاند)"}
         FM{"مایکرۆنیزیا"}
         FO{"دوورگەکانی فارەو"}
         FR{"فەڕەنسا"}
@@ -155,7 +156,7 @@ ckb{
         JO{"ئوردن"}
         JP{"ژاپۆن"}
         KE{"کینیا"}
-        KG{"قرغیزستان"}
+        KG{"کرگیزستان"}
         KH{"کەمبۆدیا"}
         KI{"کیریباس"}
         KM{"دوورگەکانی کۆمۆر"}
@@ -183,7 +184,7 @@ ckb{
         MF{"سەن مارتین"}
         MG{"ماداگاسکار"}
         MH{"دوورگەکانی مارشاڵ"}
-        MK{"ماکەدۆنیا"}
+        MK{"مەکدۆنیای باکوور"}
         ML{"مالی"}
         MM{"میانمار"}
         MN{"مەنگۆلیا"}
@@ -296,15 +297,10 @@ ckb{
         ZZ{"ناوچەی نەناسراو"}
     }
     Countries%short{
-        GB{"شانشینی یەکگرتوو"}
-        HK{"هۆنگ کۆنگ"}
-        MO{"ماکائۆ"}
         PS{"فەلەستین"}
-        US{"ویلایەتە یەکگرتووەکان"}
     }
     Countries%variant{
-        CD{"کۆماری دیموکراتیکی کۆنگۆ"}
+        CD{"کۆماری دیموکراتیی کۆنگۆ"}
         CG{"کۆماری کۆنگۆ"}
     }
-    Version{"2.1.47.72"}
 }

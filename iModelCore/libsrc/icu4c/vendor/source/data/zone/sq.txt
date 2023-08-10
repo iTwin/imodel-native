@@ -1,7 +1,7 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 sq{
-    Version{"2.1.48.42"}
     zoneStrings{
         "Africa:Abidjan"{
             ec{"Abixhan"}
@@ -257,6 +257,9 @@ sq{
         }
         "America:Chihuahua"{
             ec{"Çihahua"}
+        }
+        "America:Ciudad_Juarez"{
+            ec{"Siudad-Huarez"}
         }
         "America:Coral_Harbour"{
             ec{"Atikokan"}
@@ -810,6 +813,9 @@ sq{
         "Asia:Qatar"{
             ec{"Katar"}
         }
+        "Asia:Qostanay"{
+            ec{"Kostanaj"}
+        }
         "Asia:Qyzylorda"{
             ec{"Kizilorda"}
         }
@@ -1219,6 +1225,9 @@ sq{
         }
         "Pacific:Johnston"{
             ec{"Xhonston"}
+        }
+        "Pacific:Kanton"{
+            ec{"Kanton"}
         }
         "Pacific:Kiritimati"{
             ec{"Kiritimat"}
@@ -1751,7 +1760,9 @@ sq{
             ls{"Ora e Niuesë"}
         }
         "meta:Norfolk"{
-            ls{"Ora e Ishullit Norfolk"}
+            ld{"Ora verore e Ishullit Norfolk"}
+            lg{"Ora e Ishullit Norfolk"}
+            ls{"Ora standarde e Ishullit Norfolk"}
         }
         "meta:Noronha"{
             ld{"Ora verore e Fernando-de-Noronjës"}
@@ -1934,6 +1945,9 @@ sq{
             ld{"Ora verore e Ekaterinburgut"}
             lg{"Ora e Ekaterinburgut"}
             ls{"Ora standarde e Ekaterinburgut"}
+        }
+        "meta:Yukon"{
+            ls{"Ora e Jukonit"}
         }
         fallbackFormat{"{1} ({0})"}
         gmtFormat{"GMT{0}"}

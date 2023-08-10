@@ -1113,6 +1113,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
 
 private:
     PresentationRuleSetCPtr m_ruleset;
+    bool m_usesModifiedRuleset;
     RulesetVariables m_rulesetVariables;
     Utf8String m_preferredDisplayType;
     bvector<SelectClassInfo> m_classes;
@@ -1188,6 +1189,8 @@ public:
     //! Set selection info which this descriptor is created with.
     void SetSelectionInfo(SelectionInfo const& selectionInfo) {m_selectionInfo = &selectionInfo;}
 
+    //! Set the ruleset which this descriptor is created with
+    void SetRuleset(PresentationRuleSetCR ruleset) { m_ruleset = &ruleset; m_usesModifiedRuleset = true;}
     PresentationRuleSetCR GetRuleset() const {return *m_ruleset;}
     RulesetVariables const& GetRulesetVariables() const {return m_rulesetVariables;}
 
@@ -1285,6 +1288,8 @@ public:
     //! Should only distinct values be returned
     bool OnlyDistinctValues() const {return HasContentFlag(ContentFlags::DistinctValues);}
 #endif
+    //! Is the descriptor created using a different from the input ruleset
+    bool UsesModifiedRuleset() const {return m_usesModifiedRuleset;}
 };
 
 //=======================================================================================
@@ -1760,6 +1765,7 @@ protected:
     ECPRESENTATION_EXPORT virtual BentleyStatus _ApplyPoint2dFormatting(Utf8StringR, DPoint2dCR) const;
     ECPRESENTATION_EXPORT virtual BentleyStatus _ApplyDoubleFormatting(Utf8StringR, double) const;
     ECPRESENTATION_EXPORT virtual BentleyStatus _ApplyDateTimeFormatting(Utf8StringR, DateTimeCR) const;
+    ECPRESENTATION_EXPORT virtual BentleyStatus _ApplyBinaryFormatting(Utf8StringR, ECPropertyCR, ECValueCR) const;
 protected:
     ECPRESENTATION_EXPORT virtual BentleyStatus _GetFormattedPropertyValue(Utf8StringR, ECPropertyCR, ECValueCR, UnitSystem) const override;
     ECPRESENTATION_EXPORT virtual BentleyStatus _GetFormattedPropertyLabel(Utf8StringR, ECPropertyCR, ECClassCR, RelatedClassPath const&, RelationshipMeaning) const override;

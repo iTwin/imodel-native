@@ -2,7 +2,7 @@
  * %W% %E%
  *
  * © 2016 and later: Unicode, Inc. and others.
- * License & terms of use: http://www.unicode.org/copyright.html#License
+ * License & terms of use: http://www.unicode.org/copyright.html
  *
  * (C) Copyright IBM Corp. 1998-2011 - All Rights Reserved
  *
@@ -71,7 +71,7 @@ public:
      *                  was returned cannot render all of the text.
      *
      * @return an <code>LEFontInstance</code> for the sub font which can render the characters, or
-     *         <code>NULL</code> if there is an error.
+     *         <code>nullptr</code> if there is an error.
      *
      * @see LEScripts.h
      */
@@ -79,7 +79,7 @@ public:
 
     /**
      * This method maps a single character to a glyph index, using the
-     * font's charcter to glyph map.
+     * font's character to glyph map.
      *
      * @param ch - the character
      *
@@ -133,7 +133,7 @@ private:
 
 inline const void *ScriptCompositeFontInstance::getFontTable(LETag /*tableTag*/) const
 {
-    return NULL;
+    return nullptr;
 }
 
 // Can't get units per EM without knowing which sub-font, so

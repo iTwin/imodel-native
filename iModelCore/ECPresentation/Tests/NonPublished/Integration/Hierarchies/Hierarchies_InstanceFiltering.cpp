@@ -2117,6 +2117,82 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(InstanceFiltering_FiltersPropertyGroupingNodes_WhenFilteringByGroupingProperty_GuidProperty, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="GuidProp" typeName="binary" extendedTypeName="BeGuid"/>
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_FiltersPropertyGroupingNodes_WhenFilteringByGroupingProperty_GuidProperty)
+    {
+    // dataset
+    ECClassCP classA = GetClass("A");
+    BeGuidCR guid1 = RulesEngineTestHelpers::CreateGuidFromString("814f3e14-63f2-4511-89a8-43ff3b527492");
+    BeGuidCR guid2 = RulesEngineTestHelpers::CreateGuidFromString("182238d2-e836-4640-9b40-38be6ca49623");
+    IECInstancePtr a1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [guid1](IECInstanceR instance)
+        {
+        instance.SetValue("GuidProp", ECValue((Byte const*)&guid1, sizeof(BeGuid)));
+        });
+    IECInstancePtr a2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [guid2](IECInstanceR instance)
+        {
+        instance.SetValue("GuidProp", ECValue((Byte const*)&guid2, sizeof(BeGuid)));
+        });
+
+    // ruleset
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    auto groupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "", "", "");
+    groupingRule->AddGroup(*new PropertyGroup("", "", true, "GuidProp"));
+    rules->AddPresentationRule(*groupingRule);
+
+    RootNodeRule* rootRule = new RootNodeRule();
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "",
+        {
+        new MultiSchemaClass(classA->GetSchema().GetName(), true, bvector<Utf8String>{ classA->GetName() })
+        }, {}));
+    rules->AddPresentationRule(*rootRule);
+
+    // verify without instance filter
+    auto params = AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables());
+    auto hierarchy = ValidateHierarchy(params,
+        ExpectedHierarchyListDef(true,
+            {
+            ExpectedHierarchyDef(CreatePropertyGroupingNodeValidator({ a1 }, ValueList{ ECValue((Byte const*)&guid1, sizeof(BeGuid)) }),
+                ExpectedHierarchyListDef(true,
+                    {
+                    CreateInstanceNodeValidator({ a1 }),
+                    })),
+            ExpectedHierarchyDef(CreatePropertyGroupingNodeValidator({ a2 }, ValueList{ ECValue((Byte const*)&guid2, sizeof(BeGuid)) }),
+                ExpectedHierarchyListDef(true,
+                    {
+                    CreateInstanceNodeValidator({ a2 }),
+                    })),
+            })
+        );
+
+    // validate hierarchy level filter descriptor (same for all hierarchy levels here)
+    auto expectedDescriptor = CreateDescriptorValidator(
+        {
+        CreatePropertiesFieldValidator(*classA->GetPropertyP("GuidProp")),
+        });
+    ValidateHierarchyLevelDescriptor(*m_manager, params, expectedDescriptor);
+    ValidateHierarchyLevelDescriptor(*m_manager, WithParentNode(params, hierarchy[0].node.get()), expectedDescriptor);
+    ValidateHierarchyLevelDescriptor(*m_manager, WithParentNode(params, hierarchy[1].node.get()), expectedDescriptor);
+
+    // verify with instance filter
+    params.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>("GuidToStr(this.GuidProp) = \"814f3e14-63f2-4511-89a8-43ff3b527492\""));
+    ValidateHierarchy(params,
+        {
+        ExpectedHierarchyDef(CreatePropertyGroupingNodeValidator({ a1 }, ValueList{ ECValue((Byte const*)&guid1, sizeof(BeGuid)) }),
+            {
+            CreateInstanceNodeValidator({ a1 })
+            }),
+        });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
 DEFINE_SCHEMA(InstanceFiltering_FiltersPropertyGroupingNodes_WhenFilteringByGroupingProperty, R"*(
     <ECEntityClass typeName="A">
         <ECProperty propertyName="Prop" typeName="int" />

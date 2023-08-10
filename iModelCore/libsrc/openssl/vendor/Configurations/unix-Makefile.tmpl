@@ -311,14 +311,6 @@ MODULESDIR=$(libdir)/ossl-modules
 # libraries and applications
 LIBRPATH=$(libdir)
 
-BINDIR={- our $bindir = $config{bindir};
-          unless ($bindir) {
-              $bindir = "bin$target{multibin}";
-          }
-          file_name_is_absolute($bindir) ? "" : $bindir -}
-bindir={- file_name_is_absolute($bindir)
-          ? $bindir : '$(INSTALLTOP)/$(BINDIR)' -}
-
 MANDIR=$(INSTALLTOP)/share/man
 DOCDIR=$(INSTALLTOP)/share/doc/$(BASENAME)
 HTMLDIR=$(DOCDIR)/html
@@ -879,18 +871,18 @@ install_runtime_libs: build_libs
 	@ : {- output_off() if windowsdll(); "" -}
 	@$(PERL) $(SRCDIR)/util/mkdir-p.pl $(DESTDIR)$(libdir)
 	@ : {- output_on() if windowsdll(); output_off() unless windowsdll(); "" -}
-	@$(PERL) $(SRCDIR)/util/mkdir-p.pl $(DESTDIR)$(bindir)/
+	@$(PERL) $(SRCDIR)/util/mkdir-p.pl $(DESTDIR)$(INSTALLTOP)/bin
 	@ : {- output_on() unless windowsdll(); "" -}
 	@$(ECHO) "*** Installing runtime libraries"
 	@set -e; for s in dummy $(INSTALL_SHLIBS); do \
 		if [ "$$s" = "dummy" ]; then continue; fi; \
 		fn=`basename $$s`; \
 		: {- output_off() unless windowsdll(); "" -}; \
-		$(ECHO) "install $$s -> $(DESTDIR)$(bindir)/$$fn"; \
-		cp $$s $(DESTDIR)$(bindir)/$$fn.new; \
-		chmod 755 $(DESTDIR)$(bindir)/$$fn.new; \
-		mv -f $(DESTDIR)$(bindir)/$$fn.new \
-		      $(DESTDIR)$(bindir)/$$fn; \
+		$(ECHO) "install $$s -> $(DESTDIR)$(INSTALLTOP)/bin/$$fn"; \
+		cp $$s $(DESTDIR)$(INSTALLTOP)/bin/$$fn.new; \
+		chmod 755 $(DESTDIR)$(INSTALLTOP)/bin/$$fn.new; \
+		mv -f $(DESTDIR)$(INSTALLTOP)/bin/$$fn.new \
+		      $(DESTDIR)$(INSTALLTOP)/bin/$$fn; \
 		: {- output_on() unless windowsdll(); "" -}{- output_off() if windowsdll(); "" -}; \
 		$(ECHO) "install $$s -> $(DESTDIR)$(libdir)/$$fn"; \
 		cp $$s $(DESTDIR)$(libdir)/$$fn.new; \
@@ -902,25 +894,25 @@ install_runtime_libs: build_libs
 
 install_programs: install_runtime_libs build_programs
 	@[ -n "$(INSTALLTOP)" ] || (echo INSTALLTOP should not be empty; exit 1)
-	@$(PERL) $(SRCDIR)/util/mkdir-p.pl $(DESTDIR)$(bindir)
+	@$(PERL) $(SRCDIR)/util/mkdir-p.pl $(DESTDIR)$(INSTALLTOP)/bin
 	@$(ECHO) "*** Installing runtime programs"
 	@set -e; for x in dummy $(INSTALL_PROGRAMS); do \
 		if [ "$$x" = "dummy" ]; then continue; fi; \
 		fn=`basename $$x`; \
-		$(ECHO) "install $$x -> $(DESTDIR)$(bindir)/$$fn"; \
-		cp $$x $(DESTDIR)$(bindir)/$$fn.new; \
-		chmod 755 $(DESTDIR)$(bindir)/$$fn.new; \
-		mv -f $(DESTDIR)$(bindir)/$$fn.new \
-		      $(DESTDIR)$(bindir)/$$fn; \
+		$(ECHO) "install $$x -> $(DESTDIR)$(INSTALLTOP)/bin/$$fn"; \
+		cp $$x $(DESTDIR)$(INSTALLTOP)/bin/$$fn.new; \
+		chmod 755 $(DESTDIR)$(INSTALLTOP)/bin/$$fn.new; \
+		mv -f $(DESTDIR)$(INSTALLTOP)/bin/$$fn.new \
+		      $(DESTDIR)$(INSTALLTOP)/bin/$$fn; \
 	done
 	@set -e; for x in dummy $(BIN_SCRIPTS); do \
 		if [ "$$x" = "dummy" ]; then continue; fi; \
 		fn=`basename $$x`; \
-		$(ECHO) "install $$x -> $(DESTDIR)$(bindir)/$$fn"; \
-		cp $$x $(DESTDIR)$(bindir)/$$fn.new; \
-		chmod 755 $(DESTDIR)$(bindir)/$$fn.new; \
-		mv -f $(DESTDIR)$(bindir)/$$fn.new \
-		      $(DESTDIR)$(bindir)/$$fn; \
+		$(ECHO) "install $$x -> $(DESTDIR)$(INSTALLTOP)/bin/$$fn"; \
+		cp $$x $(DESTDIR)$(INSTALLTOP)/bin/$$fn.new; \
+		chmod 755 $(DESTDIR)$(INSTALLTOP)/bin/$$fn.new; \
+		mv -f $(DESTDIR)$(INSTALLTOP)/bin/$$fn.new \
+		      $(DESTDIR)$(INSTALLTOP)/bin/$$fn; \
 	done
 
 uninstall_runtime: uninstall_programs uninstall_runtime_libs
@@ -931,17 +923,17 @@ uninstall_programs:
 	do  \
 		if [ "$$x" = "dummy" ]; then continue; fi; \
 		fn=`basename $$x`; \
-		$(ECHO) "$(RM) $(DESTDIR)$(bindir)/$$fn"; \
-		$(RM) $(DESTDIR)$(bindir)/$$fn; \
+		$(ECHO) "$(RM) $(DESTDIR)$(INSTALLTOP)/bin/$$fn"; \
+		$(RM) $(DESTDIR)$(INSTALLTOP)/bin/$$fn; \
 	done;
 	@set -e; for x in dummy $(BIN_SCRIPTS); \
 	do  \
 		if [ "$$x" = "dummy" ]; then continue; fi; \
 		fn=`basename $$x`; \
-		$(ECHO) "$(RM) $(DESTDIR)$(bindir)/$$fn"; \
-		$(RM) $(DESTDIR)$(bindir)/$$fn; \
+		$(ECHO) "$(RM) $(DESTDIR)$(INSTALLTOP)/bin/$$fn"; \
+		$(RM) $(DESTDIR)$(INSTALLTOP)/bin/$$fn; \
 	done
-	-$(RMDIR) $(DESTDIR)$(bindir)
+	-$(RMDIR) $(DESTDIR)$(INSTALLTOP)/bin
 
 uninstall_runtime_libs:
 	@$(ECHO) "*** Uninstalling runtime libraries"
@@ -949,8 +941,8 @@ uninstall_runtime_libs:
 	@set -e; for s in dummy $(INSTALL_SHLIBS); do \
 		if [ "$$s" = "dummy" ]; then continue; fi; \
 		fn=`basename $$s`; \
-		$(ECHO) "$(RM) $(DESTDIR)$(bindir)/$$fn"; \
-		$(RM) $(DESTDIR)$(bindir)/$$fn; \
+		$(ECHO) "$(RM) $(DESTDIR)$(INSTALLTOP)/bin/$$fn"; \
+		$(RM) $(DESTDIR)$(INSTALLTOP)/bin/$$fn; \
 	done
 	@ : {- output_on() unless windowsdll(); "" -}
 
@@ -1113,12 +1105,9 @@ uninstall_image_docs:
 # is sensitive to build.info changes.
 update: generate errors ordinals generate_buildinfo
 
-.PHONY: generate generate_apps generate_crypto_bn generate_crypto_objects \
-          generate_crypto_conf generate_crypto_asn1 generate_fuzz_oids
 generate: generate_apps generate_crypto_bn generate_crypto_objects \
           generate_crypto_conf generate_crypto_asn1 generate_fuzz_oids
 
-.PHONY: generate_buildinfo generate_doc_buildinfo
 generate_buildinfo: generate_doc_buildinfo
 
 .PHONY: doc-nits md-nits
@@ -1138,16 +1127,8 @@ md-nits:
 #coverage: $(PROGRAMS) $(TESTPROGRAMS)
 #	...
 
-.PHONY: lint
 lint:
-	@( cd $(SRCDIR); \
-           echo splint -DLINT -posixlib -preproc -D__gnuc_va_list=void \
-	   -I. -Iinclude -Iapps/include $(CRYPTOHEADERS) $(SSLHEADERS) $(SRCS) )
-
-.PHONY: check-format
-check-format:
-	( cd $(SRCDIR); $(PERL) util/check-format.pl \
-			$(SRCS) \$(CRYPTOHEADERS) $(SSLHEADERS) )
+	lint -DLINT $(INCLUDES) $(SRCS)
 
 generate_apps:
 	( cd $(SRCDIR); $(PERL) VMS/VMSify-conf.pl \
@@ -1246,7 +1227,8 @@ providers/fips.module.sources.new: configdata.pm
 		   crypto/ec/asm/*.pl \
 		   crypto/modes/asm/*.pl \
 		   crypto/sha/asm/*.pl \
-		   crypto/x86_64cpuid.pl; do \
+		   crypto/*cpuid.pl crypto/*cpuid.S \
+		   crypto/*cap.c; do \
 	    echo "$$x"; \
 	  done \
 	) | sort | uniq > providers/fips.module.sources.new
@@ -1276,7 +1258,6 @@ errors:
            include/openssl/tls1.h
            include/openssl/dtls1.h
            include/openssl/srtp.h
-           include/openssl/quic.h
            include/openssl/sslerr_legacy.h );
    my @cryptoheaders_tmpl =
        qw( include/internal/dso.h
@@ -1287,8 +1268,7 @@ errors:
            include/internal/asn1.h
            include/internal/sslconf.h );
    my @cryptoskipheaders = ( @sslheaders_tmpl,
-       qw( include/openssl/asn1_mac.h
-           include/openssl/conf_api.h
+       qw( include/openssl/conf_api.h
            include/openssl/ebcdic.h
            include/openssl/opensslconf.h
            include/openssl/symhacks.h ) );
@@ -1323,14 +1303,6 @@ errors:
    }
    "";
 -}
-SRCS={-
-sub uniq { my %seen; grep !$seen{$_}++, @_; }
-sub flat(@) { return map { ref eq 'ARRAY' ? @$_ : $_ } @_; }
-join(" \\\n" . ' ' x 5, fill_lines(" ", $COLUMNS - 5,
-     uniq(grep /\.(c|cc|cpp)$/,
-          flat (map { $unified_info{sources}->{$_} }
-                (sort keys %{$unified_info{sources}})))))
--}
 CRYPTOHEADERS={- join(" \\\n" . ' ' x 14,
                       fill_lines(" ", $COLUMNS - 14, sort keys %cryptoheaders)) -}
 SSLHEADERS={- join(" \\\n" . ' ' x 11,
@@ -1348,18 +1320,15 @@ renumber: build_generated
                 --renumber \
                 $(SSLHEADERS)
 
-$(SRCDIR)/util/libcrypto.num: $(CRYPTOHEADERS) $(SRCDIR)/include/openssl/symhacks.h
+ordinals: build_generated
 	$(PERL) $(SRCDIR)/util/mknum.pl --version $(VERSION_NUMBER) --no-warnings \
                 --ordinals $(SRCDIR)/util/libcrypto.num \
                 --symhacks $(SRCDIR)/include/openssl/symhacks.h \
                 $(CRYPTOHEADERS)
-$(SRCDIR)/util/libssl.num: $(SSLHEADERS) $(SRCDIR)/include/openssl/symhacks.h
 	$(PERL) $(SRCDIR)/util/mknum.pl --version $(VERSION_NUMBER) --no-warnings \
                 --ordinals $(SRCDIR)/util/libssl.num \
                 --symhacks $(SRCDIR)/include/openssl/symhacks.h \
                 $(SSLHEADERS)
-.PHONY: ordinals
-ordinals: build_generated $(SRCDIR)/util/libcrypto.num $(SRCDIR)/util/libssl.num
 
 test_ordinals:
 	$(MAKE) run_tests TESTS=test_ordinals

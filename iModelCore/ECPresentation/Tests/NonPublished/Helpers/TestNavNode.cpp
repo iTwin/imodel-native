@@ -18,7 +18,7 @@ static rapidjson::Document GetGroupingValuesListJson(bvector<ECValue> const& gro
     {
     rapidjson::Document groupingValuesJson(rapidjson::kArrayType);
     for (ECValueCR value : groupingValues)
-        groupingValuesJson.PushBack(ValueHelpers::GetJsonFromECValue(value, &groupingValuesJson.GetAllocator()), groupingValuesJson.GetAllocator());
+        groupingValuesJson.PushBack(ValueHelpers::GetJsonFromECValue(value, "", &groupingValuesJson.GetAllocator()), groupingValuesJson.GetAllocator());
     return groupingValuesJson;
     }
 

@@ -1,3 +1,5 @@
+
+
 #if !defined(__WIN32__) && (defined(WIN32) || defined(_WIN32))
 # define __WIN32__
 #endif
@@ -116,7 +118,7 @@ struct BcvProxyFile {
   BcvMRULink *aMRU;               /* Array of pMap->u.read_r.nBlk elements */
   int iMRU;                       /* Index of most recently used block */
   char *zAuth;
-  BcvEncryptionKey *pKey;         /* Encryption key, if any */
+  BcvIntKey *pKey;                /* Encryption key, if any */
 };
 
 struct BcvKVStore {
@@ -802,7 +804,7 @@ static int bcvfsClose(sqlite3_file *pFd){
   sqlite3_free(pFile->p.zAccount);
   sqlite3_free(pFile->p.zContainer);
   sqlite3_free(pFile->p.zAuth);
-  bcvEncryptionKeyFree(pFile->p.pKey);
+  bcvIntEncryptionKeyFree(pFile->p.pKey);
 
   pFile->lockMask = 0;
   bcvKVStoreFree(&pFile->kv);
@@ -1692,19 +1694,19 @@ static int bcvfsProxyOpenTransaction(BcvfsFile *pFile, int iBlk){
 
 static void bcvfsProxyDecrypt(
   int *pRc,                       /* IN/OUT: Error code */
-  BcvEncryptionKey *pKey,         /* Encryption key, or NULL */
+  BcvIntKey *pKey,                /* Encryption key, or NULL */
   u8 *aBuf,                       /* Buffer to decrypt */
   int nBuf,                       /* Size of buffer aBuf[] in bytes */
   i64 iCacheOff                   /* Offset within cache file */
 ){
   if( pKey && *pRc==SQLITE_OK ){
-    static const int nChunk = 512;
+    static const int nChunk = 4096;
     int rc = SQLITE_OK;
     int ii;
 
     assert( (nBuf%nChunk)==0 );
     for(ii=0; ii<nBuf && rc==SQLITE_OK; ii+=nChunk){
-      rc = bcvDecrypt(pKey, iCacheOff+ii, 0, &aBuf[ii], nChunk);
+      rc = bcvIntDecrypt(pKey, iCacheOff+ii, 0, &aBuf[ii], nChunk);
     }
     *pRc = rc;
   }
@@ -3188,7 +3190,7 @@ static int bcvfsOpenProxy(
         if( pReply2 ){
           rc = pReply2->u.pass_r.errCode;
           if( rc==SQLITE_OK ){
-            pFile->p.pKey = bcvEncryptionKeyNew(pReply2->u.pass_r.aKey);
+            pFile->p.pKey = bcvIntEncryptionKeyNew(pReply2->u.pass_r.aKey);
             if( pFile->p.pKey==0 ){
               rc = SQLITE_NOMEM;
             }
@@ -4017,7 +4019,7 @@ void bcvContainerFree(Container *pCont){
     }
     bcvManifestDeref(pCont->pMan);
     sqlite3_free(pCont->aBcv);
-    bcvEncryptionKeyFree(pCont->pKey);
+    bcvIntEncryptionKeyFree(pCont->pKey);
     sqlite3_free(pCont);
   }
 }
@@ -4641,12 +4643,20 @@ static void bcvfsUploadDeleteBlockIf(UploadCtx2 *pCtx, int iBlk){
 }
 
 
-static void bcvfsUploadOneBlock(UploadCtx2 *pCtx){
+/*
+** Dispatch another block upload for the upload-context passed as the only
+** argument. Or, if the next block to be uploaded is a duplicate of a block
+** already uploaded to cloud storage, set (*pbRetry) to non-zero and return 
+** without doing anything.
+*/
+static void bcvfsUploadOneBlockTry(UploadCtx2 *pCtx, int *pbRetry){
   sqlite3_bcvfs *pFs = pCtx->pFs;
   Manifest *pMan = pCtx->pMan;
   int nName = NAMEBYTES(pMan);
   ManifestDb *pDb = 0;
   int rc = pCtx->rc;
+
+  assert( *pbRetry==0 );
 
   /* Find the next block to upload */
   if( rc==SQLITE_OK ){
@@ -4696,7 +4706,7 @@ static void bcvfsUploadOneBlock(UploadCtx2 *pCtx){
         aAlt = bcvMHashQuery(pCtx->pMHash, aNew, MD5_DIGEST_LENGTH);
         if( aAlt ){
           memcpy(aNew, aAlt, nName);
-          bSkip = 1;
+          *pbRetry = bSkip = 1;
         }
       }
       bcvfsUploadRecordAdd(&rc, pCtx, aName, aNew, nName);
@@ -4723,6 +4733,19 @@ static void bcvfsUploadOneBlock(UploadCtx2 *pCtx){
   }
 
   pCtx->rc = rc;
+}
+
+/*
+** Dispatch another block upload for the upload-context passed as the only
+** argument. If there are no further blocks to upload, or if an error has
+** already occurred, this function is a no-op.
+*/
+static void bcvfsUploadOneBlock(UploadCtx2 *pCtx){
+  int bRetry = 1;
+  while( pCtx->rc==SQLITE_OK && bRetry ){
+    bRetry = 0;
+    bcvfsUploadOneBlockTry(pCtx, &bRetry);
+  }
 }
 
 /*

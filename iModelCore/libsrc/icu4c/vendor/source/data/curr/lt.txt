@@ -1,5 +1,6 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 lt{
     Currencies{
         ADP{
@@ -1308,8 +1309,8 @@ lt{
         ZMW{"ZK"}
     }
     Currencies%variant{
-        GEL{"₾"}
         RUB{"₽"}
+        TRY{"TL"}
     }
     CurrencyPlurals{
         ADP{
@@ -2203,7 +2204,7 @@ lt{
         LSL{
             few{"Lesoto lotis"}
             many{"Lesoto lotis"}
-            one{"Lesoto loti"}
+            one{"Lesoto lotis"}
             other{"Lesoto lotis"}
         }
         LTL{
@@ -3125,5 +3126,4 @@ lt{
         one{"{0} {1}"}
         other{"{0} {1}"}
     }
-    Version{"2.1.48.42"}
 }

@@ -19,7 +19,12 @@ BUILD_NO_STACK_CHECK = 1   # Don't want to modify third party code, but hopefull
 
 %include mdl.mki
 
-AppName         = iTwinFreetype2
+%if defined(iTwinNativeThirdParty)
+  appName = freetype2
+%else
+  appName = iTwinFreetype2
+%endif
+
 CCompPDBName    = $(appName)
 o               = $(OutBuildDir)$(appName)/
 
@@ -83,6 +88,8 @@ $(o)ftlzw$(oext) : $(BaseDir)vendor/src/lzw/ftlzw.c ${CommonDependencies}
 $(o)ftmm$(oext) : $(BaseDir)vendor/src/base/ftmm.c ${CommonDependencies}
 
 $(o)ftstroke$(oext) : $(BaseDir)vendor/src/base/ftstroke.c ${CommonDependencies}
+
+$(o)ftsvg$(oext) : $(BaseDir)vendor/src/svg/ftsvg.c ${CommonDependencies}
 
 $(o)ftsynth$(oext) : $(BaseDir)vendor/src/base/ftsynth.c ${CommonDependencies}
 

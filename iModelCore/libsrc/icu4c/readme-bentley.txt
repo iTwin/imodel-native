@@ -1,5 +1,32 @@
 -----------------------------------------------------------------------------------------------------------------------------------------------------
 ICU4C (International Components for Unicode for C)
+https://icu.unicode.org/
+
+Version 73.1  https://icu.unicode.org/download/73  Downloaded 2 May 2023
+
+Downloaded the src and data zips and expanded them. Copied them into the vendor directory, src first then data.
+
+Updated makefile BeIcu4cLibrary.Compiland.mki for source files added/removed.
+
+Remove iModelCore\libsrc\icu4c\vendor\source\data\in\icudt##l.dat because it needs to be built below.
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+The default downloadable data file was deemed too big. Jeff set it up so that we can build a smaller data file. This is the build command:
+
+	bb -f iModelCore\libsrc\icu4c\BeIcu4cData -p BeIcu4cData build --tmrbuild --noprompt
+
+1. Start by downloading the data zip file from the server and put it in imodel-native\iModelCore\libsrc\icu4c\vendor\source\data. 
+2. Change DataFileBaseName in BeIcu4cCommon.mki
+3. Run the build using the command above
+4. Once you create the data file, copy it into iModelCore\libsrc\icu4c, change ExistingDataDir at the top of BeIcu4cData.mke, and tmr the data again. 
+This way it will use the data file that was just created. It's a simple test, but it if doesn't work we expect there will be problems later.
+5. Finally add the data newly created data file to the repo
+
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+ICU4C (International Components for Unicode for C)
 http://site.icu-project.org/
 
 -----------------------------------------------------------------------------------------------------------------------------------------------------
@@ -45,3 +72,9 @@ To use their build system on/for MacOS 10.9.3 + XCode 5.1.1 (useful for seeing w
 > (Update flags and paths in the following command as desired)
   CFLAGS="-DU_USING_ICU_NAMESPACE=0 -DU_NO_DEFAULT_INCLUDE_UTF_HEADERS=1" CXXFLAGS="$CFLAGS --std=c++0x" ../source/runConfigureICU --enable-debug --disable-release MacOSX --enable-static --disable-shared --prefix=/Users/jeff/Graphite/graphite04-out/icu4c --enable-debug
 > gnumake VERBOSE=1
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+

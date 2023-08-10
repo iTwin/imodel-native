@@ -1,5 +1,5 @@
 /*
- * Copyright 2007-2022 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2007-2021 The OpenSSL Project Authors. All Rights Reserved.
  * Copyright Nokia 2007-2019
  * Copyright Siemens AG 2015-2019
  *
@@ -276,7 +276,8 @@ int ossl_cmp_hdr_set_transactionID(OSSL_CMP_CTX *ctx, OSSL_CMP_PKIHEADER *hdr)
         if (!set_random(&ctx->transactionID, ctx,
                         OSSL_CMP_TRANSACTIONID_LENGTH))
             return 0;
-        tid = i2s_ASN1_OCTET_STRING(NULL, ctx->transactionID);
+        tid = OPENSSL_buf2hexstr(ctx->transactionID->data,
+                                 ctx->transactionID->length);
         if (tid != NULL)
             ossl_cmp_log1(DEBUG, ctx,
                           "Starting new transaction with ID=%s", tid);
@@ -301,12 +302,11 @@ int ossl_cmp_hdr_init(OSSL_CMP_CTX *ctx, OSSL_CMP_PKIHEADER *hdr)
         return 0;
 
     /*
-     * If no protection cert nor oldCert nor CSR nor subject is given,
+     * If neither protection cert nor oldCert nor subject are given,
      * sender name is not known to the client and thus set to NULL-DN
      */
     sender = ctx->cert != NULL ? X509_get_subject_name(ctx->cert) :
         ctx->oldCert != NULL ? X509_get_subject_name(ctx->oldCert) :
-        ctx->p10CSR != NULL ? X509_REQ_get_subject_name(ctx->p10CSR) :
         ctx->subjectName;
     if (!ossl_cmp_hdr_set1_sender(hdr, sender))
         return 0;

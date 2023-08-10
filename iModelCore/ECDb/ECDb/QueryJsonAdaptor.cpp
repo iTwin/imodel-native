@@ -232,6 +232,7 @@ BentleyStatus QueryJsonAdaptor::RenderBinaryProperty(BeJsValue out, IECSqlValue 
         const auto prop = in.GetColumnInfo().GetProperty()->GetAsPrimitiveProperty();
         isGuid = !prop->GetExtendedTypeName().empty() && prop->GetExtendedTypeName().EqualsIAscii("BeGuid");
     }
+
     int size = 0;
     Byte const* data = (Byte const*)in.GetBlob(&size);
     if (isGuid && size == sizeof(BeGuid)) {
@@ -240,8 +241,14 @@ BentleyStatus QueryJsonAdaptor::RenderBinaryProperty(BeJsValue out, IECSqlValue 
         out = guid.ToString().c_str();
         return SUCCESS;
     }
-    if (m_abbreviateBlobs && size > 1)
-        size = 1;
+
+    // Abbreviate blobs as a json of their size; i.e., "{bytes:123}"
+    if (m_abbreviateBlobs) {
+        Utf8String outString;
+        outString.Sprintf("{\"bytes\":%" PRId32 "}", size);
+        out = outString.c_str();
+        return SUCCESS;
+    }
 
     out.SetBinary(data, (size_t)size);
     return SUCCESS;
@@ -341,6 +348,13 @@ void QueryJsonAdaptor::GetMetaData(QueryProperty::List& list, ECSqlStatement con
         std::string className = col.IsGeneratedProperty() || isSystem ? "" : prop->GetClass().GetFullName();
         std::string typeName = col.GetDataType().IsNavigation() ? "navigation" : prop->GetTypeFullName();
         std::string name = col.IsGeneratedProperty() ? prop->GetDisplayLabel() : prop->GetName();
+        
+        // Blobs are abbreviated as a Json string with info about the blob. See RenderBinaryProperty().
+        if (m_abbreviateBlobs && typeName == "binary") {
+            typeName = "string";
+            extendType = "Json";
+        }
+        
         if (col.IsGeneratedProperty()) {
             jsName.assign(prop->GetDisplayLabel());
             if (jsName.empty()) {

@@ -86,6 +86,7 @@
     <ClCompile Include="NonPublished\Unit\RulesPreprocessorTests.cpp" />
     <ClCompile Include="NonPublished\Unit\Rules\AllInstanceNodesSpecificationTests.cpp" />
     <ClCompile Include="NonPublished\Unit\Rules\AllRelatedInstanceNodesSpecificationTests.cpp" />
+    <ClCompile Include="NonPublished\Unit\Rules\CalculatedPropertiesSpecificationTests.cpp" />
     <ClCompile Include="NonPublished\Unit\Rules\CheckBoxPresRuleTests.cpp" />
     <ClCompile Include="NonPublished\Unit\Rules\ChildNodeRuleTests.cpp" />
     <ClCompile Include="NonPublished\Unit\Rules\ClassNamesParserTests.cpp" />

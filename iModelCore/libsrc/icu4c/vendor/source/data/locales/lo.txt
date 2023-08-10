@@ -1,5 +1,6 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 lo{
     AuxExemplarCharacters{"[\u200B ໐ ໑ ໒ ໓ ໔ ໕ ໖ ໗ ໘ ໙]"}
     Ellipsis{
@@ -19,10 +20,10 @@ lo{
         "[ກ ຂ ຄ ງ ຈ ສ ຊ ຍ ດ ຕ ຖ ທ ນ ບ ປ ຜ ຝ ພ ຟ ມ ຢ ຣ ລ ວ ຫ {ຫງ} {ຫຍ} {ຫນ} {ຫມ} {ຫລ} "
         "{ຫວ} ອ ຮ]"
     }
-    ExemplarCharactersNumbers{"[\\- , . % ‰ + 0 1 2 3 4 5 6 7 8 9]"}
+    ExemplarCharactersNumbers{"[\\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]"}
     ExemplarCharactersPunctuation{
-        "[\\- ‐ – — , ; \\: ! ? . … ' ‘ ’ \u0022 “ ” ( ) \\[ \\] § @ * / \\& # † ‡ ′ "
-        "″]"
+        "[\\- ‐ ‑ – — , ; \\: ! ? . … ' ‘ ’ \u0022 “ ” ( ) \\[ \\] § @ * / \\& # † ‡ "
+        "′ ″]"
     }
     MoreInformation{"?"}
     NumberElements{
@@ -118,6 +119,8 @@ lo{
             }
             patterns{
                 accountingFormat{"¤#,##0.00;¤-#,##0.00"}
+                accountingFormat%alphaNextToNumber{"¤ #,##0.00;¤ -#,##0.00"}
+                accountingFormat%noCurrency{"#,##0.00"}
                 currencyFormat{"¤#,##0.00;¤-#,##0.00"}
                 percentFormat{"#,##0%"}
                 scientificFormat{"#"}
@@ -201,6 +204,44 @@ lo{
                         other{"¤000 ລ້ານລ້ານ"}
                     }
                 }
+                currencyFormat%alphaNextToNumber{
+                    1000{
+                        other{"¤ 0 ພັນ"}
+                    }
+                    10000{
+                        other{"¤ 00 ພັນ"}
+                    }
+                    100000{
+                        other{"¤ 000 ພັນ"}
+                    }
+                    1000000{
+                        other{"¤ 0 ລ້ານ"}
+                    }
+                    10000000{
+                        other{"¤ 00 ລ້ານ"}
+                    }
+                    100000000{
+                        other{"¤ 000 ລ້ານ"}
+                    }
+                    1000000000{
+                        other{"¤ 0 ຕື້"}
+                    }
+                    10000000000{
+                        other{"¤ 00 ຕື້"}
+                    }
+                    100000000000{
+                        other{"¤ 000 ຕື້"}
+                    }
+                    1000000000000{
+                        other{"¤ 0 ລ້ານລ້ານ"}
+                    }
+                    10000000000000{
+                        other{"¤ 00 ລ້ານລ້ານ"}
+                    }
+                    100000000000000{
+                        other{"¤ 000 ລ້ານລ້ານ"}
+                    }
+                }
                 decimalFormat{
                     1000{
                         other{"0 ພັນ"}
@@ -249,12 +290,11 @@ lo{
                 nan{"ບໍ່​ແມ່ນ​ໂຕ​ເລກ"}
                 perMille{"‰"}
                 percentSign{"%"}
-                superscriptingExponent{"×"}
             }
         }
         minimalPairs{
             ordinal{
-                one{"ລ້ຽວຂວາທຳອິດ."}
+                one{"ລ້ຽວຂວາໂຕທີ {0}."}
                 other{"ລ້ຽວຂວາທີ {0}."}
             }
             plural{
@@ -263,8 +303,14 @@ lo{
         }
         native{"laoo"}
     }
-    Version{"2.1.48.17"}
     calendar{
+        buddhist{
+            eras{
+                abbreviated{
+                    "ພ.ສ.",
+                }
+            }
+        }
         chinese{
             DateTimePatterns{
                 "H ໂມງ m ນາທີ ss ວິນາທີ zzzz",
@@ -280,6 +326,16 @@ lo{
                 "{1} {0}",
                 "{1} {0}",
                 "{1} {0}",
+            }
+            DateTimeSkeletons{
+                "Hmsszzzz",
+                "Hmssz",
+                "Hmmss",
+                "Hmm",
+                "UMMMMEEEEdd",
+                "UMMMMd",
+                "UMMMd",
+                "yMd",
             }
             cyclicNameSets{
                 dayParts{
@@ -688,6 +744,22 @@ lo{
                 "{1}, {0}",
                 "{1}, {0}",
             }
+            DateTimePatterns%atTime{
+                "{1}, {0}",
+                "{1}, {0}",
+                "{1}, {0}",
+                "{1}, {0}",
+            }
+            DateTimeSkeletons{
+                "Hmsszzzz",
+                "Hmssz",
+                "Hmmss",
+                "Hmm",
+                "GyMMMMEEEEd",
+                "GyMMMMd",
+                "GyMMMd",
+                "GGGGGyMd",
+            }
             availableFormats{
                 Bh{"h B"}
                 Bhm{"h:mm B"}
@@ -704,6 +776,7 @@ lo{
                 GyMMM{"MMM y G"}
                 GyMMMEd{"E, MMM d, y G"}
                 GyMMMd{"G d MMM y"}
+                GyMd{"d/M/GGGGG y"}
                 H{"HH"}
                 Hm{"HH:mm"}
                 Hms{"HH:mm:ss"}
@@ -732,23 +805,26 @@ lo{
                 yyyyQQQQ{"G y QQQQ"}
             }
             intervalFormats{
-                Bh{
-                    B{"h B – h B"}
-                    h{"h–h B"}
-                }
-                Bhm{
-                    B{"h:mm B – h:mm B"}
-                    h{"h:mm–h:mm B"}
-                    m{"h:mm–h:mm B"}
-                }
-                Gy{
-                    G{"G y – G y"}
-                    y{"G y–y"}
-                }
                 GyM{
                     G{"GGGGG M/y – GGGGG M/y"}
                     M{"GGGGG M/y – M/y"}
                     y{"GGGGG M/y – M/y"}
+                }
+                GyMEd{
+                    G{"E, d/M GGGGG y – E, d/M GGGGG y"}
+                    M{"E, d/M GGGGG y – E, d/M GGGGG y"}
+                    d{"E, d/M GGGGG y – E, d/M GGGGG y"}
+                }
+                GyMMMEd{
+                    G{"E, d MMM G y – E, d MMM G y"}
+                    M{"E, d MMM – E, d MMM G y"}
+                    d{"E, d MMM – E, d MMM G y"}
+                    y{"E, d MMM G y – E, d MMM G y"}
+                }
+                GyMMMd{
+                    G{"d MMM G y– d MMM G y"}
+                    M{"d MMM – d MMM G y"}
+                    y{"d MMM G y– d MMM G y"}
                 }
                 GyMd{
                     G{"GGGGG d/M/y – GGGGG d/M/y"}
@@ -861,8 +937,8 @@ lo{
                 "ຫຼັງທ່ຽງ",
             }
             AmPmMarkersNarrow{
-                "ກທ",
-                "ຫຼທ",
+                "ກ່ອນທ່ຽງ",
+                "ຫຼັງທ່ຽງ",
             }
             DateTimePatterns{
                 "H ໂມງ m ນາທີ ss ວິນາທີ zzzz",
@@ -878,6 +954,22 @@ lo{
                 "{1}, {0}",
                 "{1}, {0}",
                 "{1}, {0}",
+            }
+            DateTimePatterns%atTime{
+                "{1}, {0}",
+                "{1}, {0}",
+                "{1}, {0}",
+                "{1}, {0}",
+            }
+            DateTimeSkeletons{
+                "Hmsszzzz",
+                "Hmssz",
+                "Hmmss",
+                "Hmm",
+                "GyMMMMEEEEd",
+                "yMMMMd",
+                "yMMMd",
+                "yMd",
             }
             appendItems{
                 Timezone{"{0} {1}"}
@@ -898,6 +990,7 @@ lo{
                 GyMMM{"MMM, G y"}
                 GyMMMEd{"E d MMMM, G y"}
                 GyMMMd{"d MMMM, G y"}
+                GyMd{"d/M/GGGGG y"}
                 H{"HH"}
                 Hm{"HH:mm"}
                 Hms{"HH:mm:ss"}
@@ -1025,10 +1118,10 @@ lo{
                     narrow{
                         afternoon1{"ຕອນທ່ຽງ"}
                         evening1{"ຕອນແລງ"}
-                        midnight{"ທຄ"}
+                        midnight{"ທ່ຽງຄືນ"}
                         morning1{"ຕອນເຊົ້າ"}
                         night1{"ກາງຄືນ"}
-                        noon{"ທ"}
+                        noon{"ຕອນທ່ຽງ"}
                     }
                     wide{
                         afternoon1{"ຕອນບ່າຍ"}
@@ -1052,13 +1145,13 @@ lo{
                     }
                     narrow{
                         afternoon1{"ສ"}
-                        am{"ກທ"}
-                        evening1{"ລ"}
-                        midnight{"ທຄ"}
-                        morning1{"ຊ"}
-                        night1{"ກຄ"}
+                        am{"ກ່ອນທ່ຽງ"}
+                        evening1{"ແລງ"}
+                        midnight{"ທ່ຽງ​ຄືນ"}
+                        morning1{"​ເຊົ້າ"}
+                        night1{"​ກາງ​ຄືນ"}
                         noon{"ຕອນທ່ຽງ"}
-                        pm{"ຫຼທ"}
+                        pm{"ຫຼັງທ່ຽງ"}
                     }
                     wide{
                         afternoon1{"ສວຍ"}
@@ -1091,15 +1184,6 @@ lo{
                 }
             }
             intervalFormats{
-                Bh{
-                    B{"h B – h B"}
-                    h{"h–h B"}
-                }
-                Bhm{
-                    B{"h:mm B – h:mm B"}
-                    h{"h:mm–h:mm B"}
-                    m{"h:mm–h:mm B"}
-                }
                 Gy{
                     G{"G y – G y"}
                     y{"G y–y"}
@@ -1554,6 +1638,16 @@ lo{
                 "{1}, {0}",
                 "{1}, {0}",
                 "{1}, {0}",
+            }
+            DateTimeSkeletons{
+                "Hmsszzzz",
+                "Hmssz",
+                "Hmmss",
+                "Hmm",
+                "yMMMMEEEEdd",
+                "yMMMMd",
+                "yMMMd",
+                "yMMdd",
             }
             availableFormats{
                 H{"H"}
@@ -2028,7 +2122,7 @@ lo{
         african_scripts{"ແບບຂຽນອາຟຣິກັນ"}
         american_scripts{"ແບບຂຽນອາເມຣິກັນ"}
         animal{"ສັດ"}
-        animals_nature{"ສັດ ແລະ ທຳມະຊາດ"}
+        animals_nature{"ສັດ ຫຼື ທຳມະຊາດ"}
         arrows{"ລູກສອນ"}
         body{"ຮ່າງກາຍ"}
         box_drawing{"ການແຕ້ມກ່ອງ"}
@@ -2081,7 +2175,7 @@ lo{
         nature{"ທຳມະຊາດ"}
         nonspacing{"ບໍ່ມີຍະຫວ່າງ"}
         numbers{"ຕົວເລກ"}
-        objects{"ອອບເຈັກ"}
+        objects{"ວັດຖຸ"}
         other{"ອື່ນໆ"}
         paired{"ຈັບຄູ່ແລ້ວ"}
         person{"ຄົນ"}
@@ -2100,8 +2194,8 @@ lo{
         spacing{"ຊ່ອງຫວ່າງ"}
         sport{"ກິລາ"}
         symbols{"ສັນຍາລັກ"}
-        technical_symbols{"ສັນຍາລັກທາງເທັກນິກ"}
-        tone_marks{"ັວັນນະຍຸດ"}
+        technical_symbols{"ສັນຍາລັກທາງເຕັກນິກ"}
+        tone_marks{"ວັນນະຍຸດ"}
         travel{"ທ່ອງທ່ຽວ"}
         travel_places{"ທ່ອງທ່ຽວ ແລະ ສະຖານທີ່ຕ່າງໆ"}
         upwards_arrows{"ລູກສອນຊີ້ຂຶ້ນເທິງ"}
@@ -2216,9 +2310,9 @@ lo{
         }
         fri-narrow{
             relative{
-                "-1"{"ສຸ. ແລ້ວ"}
-                "0"{"ສຸ. ນີ້"}
-                "1"{"ສຸ. ໜ້າ"}
+                "-1"{"ສຸກແລ້ວ"}
+                "0"{"ສຸກນີ້"}
+                "1"{"ສຸກໜ້າ"}
             }
             relativeTime{
                 future{
@@ -2287,7 +2381,7 @@ lo{
             }
             relativeTime{
                 future{
-                    other{"{0} ໃນອີກ 0 ນາທີ"}
+                    other{"ໃນອີກ {0} ນາທີ"}
                 }
                 past{
                     other{"{0} ນາທີກ່ອນ"}
@@ -2333,9 +2427,9 @@ lo{
         }
         mon-narrow{
             relative{
-                "-1"{"ຈ. ແລ້ວ"}
-                "0"{"ຈ. ນີ້"}
-                "1"{"ຈ. ໜ້າ"}
+                "-1"{"ຈັນແລ້ວ"}
+                "0"{"ຈັນນີ້"}
+                "1"{"ຈັນໜ້າ"}
             }
             relativeTime{
                 future{
@@ -2379,6 +2473,11 @@ lo{
         }
         month-narrow{
             dn{"ດ."}
+            relative{
+                "-1"{"ເດືອນແລ້ວ"}
+                "0"{"ເດືອນນີ້"}
+                "1"{"ເດືອນໜ້າ"}
+            }
             relativeTime{
                 future{
                     other{"ໃນອີກ {0} ດ."}
@@ -2390,6 +2489,11 @@ lo{
         }
         month-short{
             dn{"ດ."}
+            relative{
+                "-1"{"ເດືອນແລ້ວ"}
+                "0"{"ເດືອນນີ້"}
+                "1"{"ເດືອນໜ້າ"}
+            }
             relativeTime{
                 future{
                     other{"ໃນອີກ {0} ດ."}
@@ -2454,9 +2558,9 @@ lo{
         }
         sat-narrow{
             relative{
-                "-1"{"ສ. ແລ້ວ"}
-                "0"{"ສ. ນີ້"}
-                "1"{"ສ. ໜ້າ"}
+                "-1"{"ເສົາແລ້ວ"}
+                "0"{"ເສົານີ້"}
+                "1"{"ເສົາໜ້າ"}
             }
             relativeTime{
                 future{
@@ -2535,9 +2639,9 @@ lo{
         }
         sun-narrow{
             relative{
-                "-1"{"ອາ. ແລ້ວ"}
-                "0"{"ອາ. ນີ້"}
-                "1"{"ອາ. ໜ້າ"}
+                "-1"{"ວັນທິດແລ້ວ"}
+                "0"{"ວັນທິດນີ້"}
+                "1"{"ວັນທິດໜ້າ"}
             }
             relativeTime{
                 future{
@@ -2580,9 +2684,9 @@ lo{
         }
         thu-narrow{
             relative{
-                "-1"{"ພຫ. ແລ້ວ"}
-                "0"{"ພຫ. ນີ້"}
-                "1"{"ພຫ. ໜ້າ"}
+                "-1"{"ພະຫັດແລ້ວ"}
+                "0"{"ພະຫັດນີ້"}
+                "1"{"ພະຫັດໜ້າ"}
             }
             relativeTime{
                 future{
@@ -2670,9 +2774,9 @@ lo{
         }
         wed-narrow{
             relative{
-                "-1"{"ພຸ. ແລ້ວ"}
-                "0"{"ພຸ. ນີ້"}
-                "1"{"ພຸ. ໜ້າ"}
+                "-1"{"ພຸດແລ້ວ"}
+                "0"{"ພຸດນີ້"}
+                "1"{"ພຸດໜ້າ"}
             }
             relativeTime{
                 future{
@@ -2717,6 +2821,11 @@ lo{
         }
         week-narrow{
             dn{"ອ."}
+            relative{
+                "-1"{"ອາທິດແລ້ວ"}
+                "0"{"ອາທິດນີ້"}
+                "1"{"ອາທິດໜ້າ"}
+            }
             relativePeriod{"ອາທິດທີ {0}"}
             relativeTime{
                 future{
@@ -2729,6 +2838,11 @@ lo{
         }
         week-short{
             dn{"ອ."}
+            relative{
+                "-1"{"ອາທິດແລ້ວ"}
+                "0"{"ອາທິດນີ້"}
+                "1"{"ອາທິດໜ້າ"}
+            }
             relativePeriod{"ອາທິດທີ {0}"}
             relativeTime{
                 future{
@@ -2784,6 +2898,11 @@ lo{
         }
         year-narrow{
             dn{"ປີ"}
+            relative{
+                "-1"{"ປີກາຍ"}
+                "0"{"ປີນີ້"}
+                "1"{"ປີໜ້າ"}
+            }
             relativeTime{
                 future{
                     other{"ໃນອີກ {0} ປີ"}
@@ -2795,6 +2914,11 @@ lo{
         }
         year-short{
             dn{"ປີ"}
+            relative{
+                "-1"{"ປີກາຍ"}
+                "0"{"ປີນີ້"}
+                "1"{"ປີໜ້າ"}
+            }
             relativeTime{
                 future{
                     other{"ໃນອີກ {0} ປີ"}
@@ -2821,7 +2945,24 @@ lo{
             middle{"{0}, {1}"}
             start{"{0}, {1}"}
         }
+        or-narrow{
+            2{"{0} ຫຼື {1}"}
+            end{"{0} ຫຼື {1}"}
+            middle{"{0}, {1}"}
+            start{"{0}, {1}"}
+        }
+        or-short{
+            2{"{0} ຫຼື {1}"}
+            end{"{0} ຫຼື {1}"}
+            middle{"{0}, {1}"}
+            start{"{0}, {1}"}
+        }
         standard{
+            2{"{0} ແລະ {1}"}
+            end{"{0}, {1}"}
+            start{"{0}, {1}"}
+        }
+        standard-narrow{
             2{"{0} ແລະ {1}"}
             end{"{0}, {1}"}
             middle{"{0}, {1}"}
@@ -2829,7 +2970,7 @@ lo{
         }
         standard-short{
             2{"{0} ແລະ {1}"}
-            end{"{0}, {1}"}
+            end{"{0} ແລະ {1}"}
             middle{"{0}, {1}"}
             start{"{0}, {1}"}
         }
@@ -2853,8 +2994,68 @@ lo{
         }
     }
     measurementSystemNames{
-        UK{"ອັງກິດ"}
-        US{"ອາເມຣິກາ"}
+        UK{"ສະຫະລາດຊະອານາຈັກອັງກິດ"}
+        US{"ສະຫະລັດອາເມລິກາ"}
         metric{"ເມທຣິກ"}
+    }
+    personNames{
+        foreignSpaceReplacement{" "}
+        nameOrderLocales{
+            givenFirst{
+                "und",
+                "lo",
+            }
+            surnameFirst{
+                "ko",
+                "vi",
+                "yue",
+                "zh",
+            }
+        }
+        namePattern{
+            givenFirst-long-addressing-formal{"{title} {surname}"}
+            givenFirst-long-addressing-informal{"{given-informal}"}
+            givenFirst-long-monogram-informal{"{given-informal-monogram-allCaps}{surname-monogram-allCaps}"}
+            givenFirst-long-referring-formal{"{credentials} {title} {given} {given2} {surname} {generation}"}
+            givenFirst-long-referring-informal{"{given-informal} {surname}"}
+            givenFirst-medium-addressing-formal{"{title} {surname}"}
+            givenFirst-medium-addressing-informal{"{given-informal}"}
+            givenFirst-medium-monogram-formal{"{surname-monogram-allCaps}"}
+            givenFirst-medium-monogram-informal{"{given-informal-monogram-allCaps}"}
+            givenFirst-medium-referring-formal{"{credentials} {given} {given2} {surname}"}
+            givenFirst-medium-referring-informal{"{given-informal} {surname}"}
+            givenFirst-short-addressing-formal{"{title} {surname}"}
+            givenFirst-short-addressing-informal{"{given-informal}"}
+            givenFirst-short-monogram-formal{"{surname-monogram-allCaps}"}
+            givenFirst-short-monogram-informal{"{given-informal-monogram-allCaps}"}
+            givenFirst-short-referring-formal{"{given} {given2} {surname}"}
+            givenFirst-short-referring-informal{"{given-informal} {surname}"}
+            sorting-long-referring-formal{"{surname-core}, {given} {given2} {surname-prefix}"}
+            sorting-long-referring-informal{"{surname}, {given-informal}"}
+            sorting-medium-referring-formal{"{surname-core}, {given} {given2} {surname-prefix}"}
+            sorting-medium-referring-informal{"{surname}, {given-informal}"}
+            sorting-short-referring-formal{"{surname-core}, {given} {given2} {surname-prefix}"}
+            sorting-short-referring-informal{"{surname}, {given-informal}"}
+            surnameFirst-long-addressing-formal{"{title} {surname}"}
+            surnameFirst-long-addressing-informal{"{given-informal}"}
+            surnameFirst-long-monogram-informal{
+                "{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-a"
+                "llCaps}"
+            }
+            surnameFirst-long-referring-formal{"{credentials} {surname} {title} {given} {given2} {generation}"}
+            surnameFirst-long-referring-informal{"{surname} {given-informal}"}
+            surnameFirst-medium-addressing-formal{"{title} {surname}"}
+            surnameFirst-medium-addressing-informal{"{given-informal}"}
+            surnameFirst-medium-monogram-formal{"{surname-monogram-allCaps}"}
+            surnameFirst-medium-monogram-informal{"{given-informal-monogram-allCaps}"}
+            surnameFirst-medium-referring-formal{"{credentials} {surname} {given} {given2} {generation}"}
+            surnameFirst-medium-referring-informal{"{surname} {given-informal}"}
+            surnameFirst-short-addressing-formal{"{title} {surname}"}
+            surnameFirst-short-addressing-informal{"{given-informal}"}
+            surnameFirst-short-monogram-formal{"{surname-monogram-allCaps}"}
+            surnameFirst-short-monogram-informal{"{given-informal-monogram-allCaps}"}
+            surnameFirst-short-referring-formal{"{surname} {given} {given2}"}
+            surnameFirst-short-referring-informal{"{surname} {given}"}
+        }
     }
 }

@@ -39,6 +39,7 @@ public:
     explicit ProfileManager(ECDbR ecdb): m_ecdb(ecdb) {}
 
     ProfileState CheckProfileVersion() const;
+    BentleyStatus RefreshProfileVersion() const;
 
     //! Creates the ECDb profile in the specified ECDb file.
     //! @remarks In case of success the outermost transaction is committed.

@@ -1,7 +1,7 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 lt{
-    Version{"2.1.48.42"}
     zoneStrings{
         "Africa:Abidjan"{
             ec{"Abidžanas"}
@@ -257,6 +257,9 @@ lt{
         }
         "America:Chihuahua"{
             ec{"Čihuahua"}
+        }
+        "America:Ciudad_Juarez"{
+            ec{"Siudad Chuaresas"}
         }
         "America:Coral_Harbour"{
             ec{"Atikokanas"}
@@ -1754,7 +1757,9 @@ lt{
             ls{"Niujė laikas"}
         }
         "meta:Norfolk"{
-            ls{"Norfolko Salų laikas"}
+            ld{"Norfolko Salų vasaros laikas"}
+            lg{"Norfolko Salų laikas"}
+            ls{"Norfolko Salų žiemos laikas"}
         }
         "meta:Noronha"{
             ld{"Fernando de Noronjos vasaros laikas"}
@@ -1937,6 +1942,9 @@ lt{
             ld{"Jekaterinburgo vasaros laikas"}
             lg{"Jekaterinburgo laikas"}
             ls{"Jekaterinburgo žiemos laikas"}
+        }
+        "meta:Yukon"{
+            ls{"Jukono laikas"}
         }
         fallbackFormat{"{1} ({0})"}
         gmtFormat{"GMT{0}"}
