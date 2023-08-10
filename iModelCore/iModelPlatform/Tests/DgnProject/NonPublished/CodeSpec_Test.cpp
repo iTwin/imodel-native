@@ -121,20 +121,36 @@ TEST_F(DgnCodeSpecsTest, ImportCodeSpec)
 TEST_F (DgnCodeSpecsTest, WhitespaceHandling)
     {
     Utf8CP value = "Value";
-    ASSERT_STREQ(value, DgnCodeValue("Value").GetUtf8CP());
-    ASSERT_STREQ(value, DgnCodeValue(" Value").GetUtf8CP());
-    ASSERT_STREQ(value, DgnCodeValue("Value ").GetUtf8CP());
-    ASSERT_STREQ(value, DgnCodeValue(" Value ").GetUtf8CP());
-    ASSERT_STREQ(value, DgnCodeValue("\tValue").GetUtf8CP());
-    ASSERT_STREQ(value, DgnCodeValue("Value\t").GetUtf8CP());
-    ASSERT_STREQ(value, DgnCodeValue("\tValue\t ").GetUtf8CP());
-    ASSERT_STREQ(value, DgnCodeValue("\nValue").GetUtf8CP());
-    ASSERT_STREQ(value, DgnCodeValue("Value\n").GetUtf8CP());
-    ASSERT_STREQ(value, DgnCodeValue("\nValue\n").GetUtf8CP());
-    ASSERT_STREQ(value, DgnCodeValue("  \t\nValue \t \n  ").GetUtf8CP());
+    ASSERT_STREQ(value, DgnCodeValue("Value", DgnCodeValue::Behavior::TrimUnicodeWhitespace).GetUtf8CP());
+    ASSERT_STREQ(value, DgnCodeValue(" Value", DgnCodeValue::Behavior::TrimUnicodeWhitespace).GetUtf8CP());
+    ASSERT_STREQ(value, DgnCodeValue("Value ", DgnCodeValue::Behavior::TrimUnicodeWhitespace).GetUtf8CP());
+    ASSERT_STREQ(value, DgnCodeValue(" Value ", DgnCodeValue::Behavior::TrimUnicodeWhitespace).GetUtf8CP());
+    ASSERT_STREQ(value, DgnCodeValue("\tValue", DgnCodeValue::Behavior::TrimUnicodeWhitespace).GetUtf8CP());
+    ASSERT_STREQ(value, DgnCodeValue("Value\t", DgnCodeValue::Behavior::TrimUnicodeWhitespace).GetUtf8CP());
+    ASSERT_STREQ(value, DgnCodeValue("\tValue\t ", DgnCodeValue::Behavior::TrimUnicodeWhitespace).GetUtf8CP());
+    ASSERT_STREQ(value, DgnCodeValue("\nValue", DgnCodeValue::Behavior::TrimUnicodeWhitespace).GetUtf8CP());
+    ASSERT_STREQ(value, DgnCodeValue("Value\n", DgnCodeValue::Behavior::TrimUnicodeWhitespace).GetUtf8CP());
+    ASSERT_STREQ(value, DgnCodeValue("\nValue\n", DgnCodeValue::Behavior::TrimUnicodeWhitespace).GetUtf8CP());
+    ASSERT_STREQ(value, DgnCodeValue("  \t\nValue \t \n  ", DgnCodeValue::Behavior::TrimUnicodeWhitespace).GetUtf8CP());
     ASSERT_TRUE(DgnCodeValue().empty());
-    ASSERT_TRUE(DgnCodeValue(" ").empty());
-    ASSERT_TRUE(DgnCodeValue(" \t\n ").empty());
+    ASSERT_TRUE(DgnCodeValue(" ", DgnCodeValue::Behavior::TrimUnicodeWhitespace).empty());
+    ASSERT_TRUE(DgnCodeValue(" \t\n ", DgnCodeValue::Behavior::TrimUnicodeWhitespace).empty());
+
+    #define ASSERT_EXACT(v) ASSERT_STREQ((v), DgnCodeValue((v), DgnCodeValue::Behavior::Exact).GetUtf8CP())
+    ASSERT_EXACT(value);
+    ASSERT_EXACT(value);
+    ASSERT_EXACT(value);
+    ASSERT_EXACT(value);
+    ASSERT_EXACT(value);
+    ASSERT_EXACT(value);
+    ASSERT_EXACT(value);
+    ASSERT_EXACT(value);
+    ASSERT_EXACT(value);
+    ASSERT_EXACT(value);
+    ASSERT_EXACT(value);
+    ASSERT_TRUE(DgnCodeValue().empty());
+    ASSERT_EXACT(" ");
+    ASSERT_TRUE(" \t\n ");
     }
 
 //========================================================================================

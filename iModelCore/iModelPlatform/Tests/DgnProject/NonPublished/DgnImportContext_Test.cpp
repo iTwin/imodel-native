@@ -501,7 +501,7 @@ TEST_F(ImportTest, ImportElementsWithCodeSpecs)
 
     // Put an element with an Item into moddel1
     {
-        DgnCode code = codeSpec1->CreateRepositoryScopedCode("TestElement");
+        DgnCode code = codeSpec1->CreateRepositoryScopedCode("TestElement", m_db->m_codeValueBehavior);
         DgnCategoryId gcatid = DgnDbTestUtils::GetFirstSpatialCategoryId(*m_db);
         TestElementPtr tempEl = TestElement::Create(*m_db, model1->GetModelId(), gcatid, code);
         ASSERT_TRUE(m_db->Elements().Insert(*tempEl).IsValid());
