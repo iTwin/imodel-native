@@ -21,13 +21,13 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-BentleyStatus ViewGenerator::GenerateSelectFromViewSql(NativeSqlBuilder& viewSql, ECSqlPrepareContext const& prepareContext, ClassMap const& classMap, PolymorphicInfo polymorphicQuery, bool disqualifyPrimaryJoin, MemberFunctionCallExp const* memberFunctionCallExp)
+BentleyStatus ViewGenerator::GenerateSelectFromViewSql(NativeSqlBuilder& viewSql, ECSqlPrepareContext const& prepareContext, ClassMap const& classMap, PolymorphicInfo polymorphicQuery, bool disqualifyPrimaryJoin, MemberFunctionCallExp const* memberFunctionCallExp, std::set<Utf8String,CompareIUtf8Ascii> const* instanceProps)
     {
     if (!polymorphicQuery.IsDisqualified()) {
         // Note: Following need to be cached statement
         ECSqlStatement stmt;
         if (ECSqlStatus::Success == stmt.Prepare(prepareContext.GetECDb(),
-            SqlPrintfString("PRAGMA disqualify_type_index FOR  %s", classMap.GetClass().GetFullName()))) {
+            SqlPrintfString("PRAGMA disqualify_type_index FOR  %s", classMap.GetClass().GetECSqlName().c_str()))) {
             if (stmt.Step() == BE_SQLITE_ROW) {
                 if (stmt.GetValueBoolean(0)){
                     LOG.debugv("ECSql Prepare: Applying 'disqualify_type_index' flag to %s", classMap.GetClass().GetFullName());
@@ -52,7 +52,7 @@ BentleyStatus ViewGenerator::GenerateSelectFromViewSql(NativeSqlBuilder& viewSql
             }
         }
 
-    SelectFromViewContext ctx(prepareContext, classMap.GetSchemaManager(), polymorphicQuery, disqualifyPrimaryJoin, memberFunctionCallExp);
+    SelectFromViewContext ctx(prepareContext, classMap.GetSchemaManager(), polymorphicQuery, disqualifyPrimaryJoin, memberFunctionCallExp, instanceProps);
     if (memberFunctionCallExp == nullptr)
         return GenerateViewSql(viewSql, ctx, classMap);
 
@@ -656,6 +656,20 @@ BentleyStatus ViewGenerator::RenderEntityClassMap(NativeSqlBuilder& viewSql, Con
         viewSql.Append(" ON ").AppendIf(disqualifyPrimaryJoin, "+").AppendEscaped(contextTable.GetName()).AppendDot().AppendEscaped(primaryKey->GetName());
         viewSql.Append(ExpHelper::ToSql(BooleanSqlOperator::EqualTo)).AppendEscaped(to->GetName()).AppendDot().AppendEscaped(fkKey->GetName());
         }
+
+    if (ctx.GetViewType() == ViewType::SelectFromView) {
+        auto& selectCtx = ctx.GetAs<SelectFromViewContext>();
+        bool addPropFilter = true;
+        if (auto classIdPropMap = classMap.GetECClassIdPropertyMap()) {
+            if (!classIdPropMap->GetDataPropertyMaps().empty()) {
+                addPropFilter = !classIdPropMap->GetDataPropertyMaps().front()->GetColumn().IsVirtual();
+            }
+        }
+        if (selectCtx.HasInstanceProps() && addPropFilter) {
+            auto instancePropFilter = selectCtx.MakeInstancePropsJsonArrayString();
+            viewSql.AppendFormatted(" INNER JOIN %s('%s') __INST_PROP ON __INST_PROP.class_id = [%s].ECClassId ", ClassPropsModule::NAME, instancePropFilter.c_str(), contextTable.GetName().c_str());
+        }
+    }
 
     return SUCCESS;
     }
@@ -1517,8 +1531,8 @@ DbTable const* ConstraintECClassIdJoinInfo::RequiresJoinTo(ConstraintECClassIdPr
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ViewGenerator::SelectFromViewContext::SelectFromViewContext(ECSqlPrepareContext const& prepareCtx, TableSpaceSchemaManager const& manager, PolymorphicInfo polymorphicInfo,  bool disqualifyPrimaryJoin, MemberFunctionCallExp const* functionCallExp)
-    : Context(ViewType::SelectFromView, prepareCtx.GetECDb(), manager), m_prepareCtx(prepareCtx), m_polymorphicInfo(polymorphicInfo), m_memberFunctionCallExp(functionCallExp), m_disqualifyPrimaryJoin(disqualifyPrimaryJoin)
+ViewGenerator::SelectFromViewContext::SelectFromViewContext(ECSqlPrepareContext const& prepareCtx, TableSpaceSchemaManager const& manager, PolymorphicInfo polymorphicInfo,  bool disqualifyPrimaryJoin, MemberFunctionCallExp const* functionCallExp, std::set<Utf8String, CompareIUtf8Ascii> const* instanceProps)
+    : Context(ViewType::SelectFromView, prepareCtx.GetECDb(), manager), m_prepareCtx(prepareCtx), m_polymorphicInfo(polymorphicInfo), m_memberFunctionCallExp(functionCallExp), m_disqualifyPrimaryJoin(disqualifyPrimaryJoin), m_instanceProps(instanceProps)
     {}
 
 //---------------------------------------------------------------------------------------

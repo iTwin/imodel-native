@@ -741,7 +741,7 @@ TEST_F(ComplexQueryBuilderTests, ToString_OuterJoin_MultipleClauses_DoesntInclud
     m_schemaContext->AddSchemaLocater(*schemaLocater);
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlFile(schema, ecSchemaPath.c_str(), *m_schemaContext));
 
-    ECRelationshipClassCR ret_WidgetHasGadget = *schema->GetClassCP("WidgetHasGadget")->GetRelationshipClassCP();
+    ECRelationshipClassCR ret_WidgetHasGadget = *schema->GetClassCP("WidgetHasGadgets")->GetRelationshipClassCP();
     ECRelationshipClassCR ret_GadgetHasSprockets = *schema->GetClassCP("GadgetHasSprockets")->GetRelationshipClassCP();
     ECEntityClassCR ret_Widget = *schema->GetClassCP("Widget")->GetEntityClassCP();
     ECEntityClassCR ret_Gadget = *schema->GetClassCP("Gadget")->GetEntityClassCP();
@@ -761,16 +761,90 @@ TEST_F(ComplexQueryBuilderTests, ToString_OuterJoin_MultipleClauses_DoesntInclud
 
     Utf8String expected(
         " FROM ONLY [RET].[Widget] [this]"
-        " LEFT JOIN ("
-            "SELECT [relationship_alias1].* "
-            "FROM [RET].[WidgetHasGadget] [relationship_alias1] "
-            "INNER JOIN [RET].[Gadget] [target_alias1] ON [target_alias1].[ECInstanceId] = [relationship_alias1].[TargetECInstanceId]"
-        ") [relationship_alias1] ON [this].[ECInstanceId] = [relationship_alias1].[SourceECInstanceId]"
-        " LEFT JOIN [RET].[Gadget] [target_alias1] ON [target_alias1].[ECInstanceId] = [relationship_alias1].[TargetECInstanceId]"
-        " LEFT JOIN [RET].[Sprocket] [target_alias2] ON [target_alias2].[Gadget].[Id] = [relationship_alias1].[TargetECInstanceId]");
+        " LEFT JOIN [RET].[Gadget] [target_alias1] ON [target_alias1].[Widget].[Id] = [this].[ECInstanceId]"
+        " LEFT JOIN [RET].[Sprocket] [target_alias2] ON [target_alias2].[Gadget].[Id] = [target_alias1].[ECInstanceId]");
+
     Utf8String str = query->GetQuery()->GetQueryString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     m_schemaContext->RemoveSchemaLocater(*schemaLocater);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_NAVIGATION_QUERY_TEST_SCHEMA(ToString_OuterJoin_MultiClauses_WithRelationshipWithoutNavigationPropertiesAndWithMultiNavigationPropertiesInside, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B">
+        <ECNavigationProperty propertyName="C" relationshipName="B_Has_C" direction="Forward" />
+        <ECNavigationProperty propertyName="D" relationshipName="B_Has_D" direction="Forward" />
+    </ECEntityClass>
+    <ECEntityClass typeName="C" />
+    <ECEntityClass typeName="D" />
+    <ECRelationshipClass typeName="A_Has_B" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="ab" polymorphic="true">
+            <Class class="A"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="ba" polymorphic="true">
+            <Class class="B" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="B_Has_C" strength="referencing" strengthDirection="backward" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="references" polymorphic="True">
+            <Class class="B" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="is referenced by" polymorphic="True">
+            <Class class="C" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="B_Has_D" strength="referencing" strengthDirection="backward" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="references" polymorphic="True">
+            <Class class="B" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="is referenced by" polymorphic="True">
+            <Class class="D" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(ComplexQueryBuilderTests, ToString_OuterJoin_MultiClauses_WithRelationshipWithoutNavigationPropertiesAndWithMultiNavigationPropertiesInside)
+    {
+    ECSchemaCP schema = s_project->GetECDb().Schemas().GetSchema(BeTest::GetNameOfCurrentTest());
+    ECEntityClassCR classA = *schema->GetClassCP("A")->GetEntityClassCP();
+    ECEntityClassCR classB = *schema->GetClassCP("B")->GetEntityClassCP();
+    ECEntityClassCR classC = *schema->GetClassCP("C")->GetEntityClassCP();
+    ECEntityClassCR classD = *schema->GetClassCP("D")->GetEntityClassCP();
+    ECRelationshipClassCR relAB = *schema->GetClassCP("A_Has_B")->GetRelationshipClassCP();
+    ECRelationshipClassCR relBC = *schema->GetClassCP("B_Has_C")->GetRelationshipClassCP();
+    ECRelationshipClassCR relBD = *schema->GetClassCP("B_Has_D")->GetRelationshipClassCP();
+
+    ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
+    query->From(classA, false, "this");
+
+    RelatedClassPath joinPathAC{
+        RelatedClass(classA, SelectClass<ECRelationshipClass>(relAB, "rel_ab_alias"), true, SelectClass<ECClass>(classB, "b_alias")),
+        RelatedClass(classB, SelectClass<ECRelationshipClass>(relBC, "rel_bc_alias"), true, SelectClass<ECClass>(classC, "c_alias")),
+        };
+    query->Join(joinPathAC);
+
+    RelatedClassPath joinPathAD{
+        RelatedClass(classA, SelectClass<ECRelationshipClass>(relAB, "rel_ab_alias"), true, SelectClass<ECClass>(classB, "b_alias")),
+        RelatedClass(classB, SelectClass<ECRelationshipClass>(relBD, "rel_bd_alias"), true, SelectClass<ECClass>(classD, "d_alias")),
+        };
+    query->Join(joinPathAD);
+
+    Utf8String expected(
+        " FROM ONLY [alias_ToString_OuterJoin_MultiClauses_WithRelationshipWithoutNavigationPropertiesAndWithMultiNavigationPropertiesInside].[A] [this]"
+        " LEFT JOIN ("
+            "SELECT [rel_ab_alias].*"
+            " FROM [alias_ToString_OuterJoin_MultiClauses_WithRelationshipWithoutNavigationPropertiesAndWithMultiNavigationPropertiesInside].[A_Has_B] [rel_ab_alias]"
+            " INNER JOIN [alias_ToString_OuterJoin_MultiClauses_WithRelationshipWithoutNavigationPropertiesAndWithMultiNavigationPropertiesInside].[B] [b_alias] ON [b_alias].[ECInstanceId] = [rel_ab_alias].[TargetECInstanceId]"
+        ") [rel_ab_alias] ON [this].[ECInstanceId] = [rel_ab_alias].[SourceECInstanceId]"
+        " LEFT JOIN [alias_ToString_OuterJoin_MultiClauses_WithRelationshipWithoutNavigationPropertiesAndWithMultiNavigationPropertiesInside].[B] [b_alias] ON [b_alias].[ECInstanceId] = [rel_ab_alias].[TargetECInstanceId]"
+        " LEFT JOIN [alias_ToString_OuterJoin_MultiClauses_WithRelationshipWithoutNavigationPropertiesAndWithMultiNavigationPropertiesInside].[C] [c_alias] ON [c_alias].[ECInstanceId] = [b_alias].[C].[Id]"
+        " LEFT JOIN [alias_ToString_OuterJoin_MultiClauses_WithRelationshipWithoutNavigationPropertiesAndWithMultiNavigationPropertiesInside].[D] [d_alias] ON [d_alias].[ECInstanceId] = [b_alias].[D].[Id]"
+    );
+
+    Utf8String str = query->GetQuery()->GetQueryString();
+    ASSERT_STREQ(expected.c_str(), str.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**

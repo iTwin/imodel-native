@@ -1,5 +1,6 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 jv{
     Currencies{
         AED{
@@ -120,11 +121,11 @@ jv{
         }
         CNH{
             "CNH",
-            "Yuan Cina (Jaban Rangkah)",
+            "Yuan Tyongkok (Jaban Rangkah)",
         }
         CNY{
             "CN¥",
-            "Yuan Cina",
+            "Yuan Tyongkok",
         }
         COP{
             "COP",
@@ -330,6 +331,10 @@ jv{
             "LRD",
             "Dolar Liberia",
         }
+        LSL{
+            "LSL",
+            "Lesotho Loti",
+        }
         LYD{
             "LYD",
             "Dinar Libya",
@@ -435,7 +440,7 @@ jv{
             "Kina Papua Nugini",
         }
         PHP{
-            "PHP",
+            "₱",
             "Piso Filipina",
         }
         PKR{
@@ -611,7 +616,7 @@ jv{
             "Dolar Karibia Wetan",
         }
         XOF{
-            "CFA",
+            "F CFA",
             "CFA Franc Afrika Kulon",
         }
         XPF{
@@ -636,103 +641,8 @@ jv{
         }
     }
     Currencies%narrow{
-        AOA{"Kz"}
-        ARS{"$"}
-        AUD{"$"}
-        BAM{"KM"}
-        BBD{"$"}
-        BDT{"৳"}
-        BMD{"$"}
-        BND{"$"}
-        BOB{"Bs"}
-        BRL{"R$"}
-        BSD{"$"}
-        BWP{"P"}
-        BYN{"р."}
-        BZD{"$"}
-        CAD{"$"}
-        CLP{"$"}
-        CNY{"¥"}
-        COP{"$"}
-        CRC{"₡"}
-        CUC{"$"}
-        CUP{"$"}
-        CZK{"Kč"}
-        DKK{"kr"}
-        DOP{"$"}
-        EGP{"E£"}
-        EUR{"€"}
-        FJD{"$"}
-        FKP{"£"}
-        GBP{"£"}
-        GEL{"₾"}
-        GIP{"£"}
-        GNF{"FG"}
-        GTQ{"Q"}
-        GYD{"$"}
-        HKD{"$"}
-        HNL{"L"}
-        HRK{"kn"}
-        HUF{"Ft"}
-        IDR{"Rp"}
-        ILS{"₪"}
-        INR{"₹"}
-        ISK{"kr"}
-        JMD{"$"}
-        JPY{"¥"}
-        KHR{"៛"}
-        KMF{"CF"}
-        KPW{"₩"}
-        KRW{"₩"}
-        KYD{"$"}
-        KZT{"₸"}
-        LAK{"₭"}
-        LBP{"L£"}
-        LKR{"Rs"}
-        LRD{"$"}
-        MGA{"Ar"}
-        MMK{"K"}
-        MNT{"₮"}
-        MUR{"Rs"}
-        MXN{"$"}
-        MYR{"RM"}
-        NAD{"$"}
-        NGN{"₦"}
-        NIO{"C$"}
-        NOK{"kr"}
-        NPR{"Rs"}
-        NZD{"$"}
-        PHP{"₱"}
-        PKR{"Rs"}
-        PLN{"zł"}
-        PYG{"₲"}
-        RON{"lei"}
-        RUB{"₽"}
-        RWF{"RF"}
-        SBD{"$"}
-        SEK{"kr"}
-        SGD{"$"}
-        SHP{"£"}
-        SRD{"$"}
-        SSP{"£"}
-        STN{"Db"}
-        SYP{"£"}
-        THB{"฿"}
-        TOP{"T$"}
-        TRY{"₺"}
-        TTD{"$"}
-        TWD{"$"}
-        UAH{"₴"}
-        USD{"$"}
-        UYU{"$"}
+        BYN{"BYN"}
         VEF{"Bs"}
-        VND{"₫"}
-        XCD{"$"}
-        ZAR{"R"}
-        ZMW{"ZK"}
-    }
-    Currencies%variant{
-        TRY{"TL"}
     }
     CurrencyPlurals{
         AED{
@@ -823,10 +733,10 @@ jv{
             other{"Peso Chili"}
         }
         CNH{
-            other{"Yuan Cina (Jaban Rangkah)"}
+            other{"Yuan Tyongkok (Jaban Rangkah)"}
         }
         CNY{
-            other{"Yuan Cina"}
+            other{"Yuan Tyongkok"}
         }
         COP{
             other{"Peso Kolumbia"}
@@ -981,6 +891,9 @@ jv{
         LRD{
             other{"Dolar Liberia"}
         }
+        LSL{
+            other{"Lesotho lotis"}
+        }
         LYD{
             other{"Dinar Libya"}
         }
@@ -1003,7 +916,7 @@ jv{
             other{"Tugrik Mongol"}
         }
         MOP{
-            other{"MOP"}
+            other{"Pataca Macau"}
         }
         MRO{
             other{"Ouguiya Mauritania (1973 - 2017)"}
@@ -1213,5 +1126,4 @@ jv{
     CurrencyUnitPatterns{
         other{"{0} {1}"}
     }
-    Version{"2.1.48.44"}
 }

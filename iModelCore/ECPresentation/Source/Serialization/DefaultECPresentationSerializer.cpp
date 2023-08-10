@@ -43,25 +43,26 @@ std::unique_ptr<BoundQueryValue> DefaultBoundQueryValueSerializer::_FromJson(BeJ
     Utf8CP type = json["type"].asCString();
     if (0 == strcmp(BOUNDQUERYVALUETYPE_ECValue, type))
         {
-        rapidjson::Document doc;   
+        rapidjson::Document doc;
         doc.Parse(json["value"].Stringify().c_str());
-        ECValue value = ValueHelpers::GetECValueFromJson((PrimitiveType)json["value-type"].GetInt(), ValueHelpers::ToRapidJson(json["value"])); // TODO: change to BeJsConst after converting RapidJson usage to BeJsConst
+        Utf8CP extendedType = json["value-type-extended"].asCString();
+        ECValue value = ValueHelpers::GetECValueFromJson((PrimitiveType)json["value-type"].GetInt(), extendedType, ValueHelpers::ToRapidJson(json["value"])); // TODO: change to BeJsConst after converting RapidJson usage to BeJsConst
         return std::make_unique<BoundQueryECValue>(std::move(value));
         }
     if (0 == strcmp(BOUNDQUERYVALUETYPE_ValueSet, type))
         {
         bvector<ECValue> ecValues;
         if (json["value"].empty())
-            return std::make_unique<BoundECValueSet>(ecValues);
+            return std::make_unique<BoundECValueSet>(ecValues, "");
 
         int valueType = json["value-type"].GetInt();
         if (0 == valueType)
             {
             ecValues.push_back(ECValue());
-            return std::make_unique<BoundECValueSet>(ecValues);
+            return std::make_unique<BoundECValueSet>(ecValues, "");
             }
-        
-        return std::make_unique<BoundECValueSet>(ValueHelpers::GetECValueSetFromJson((PrimitiveType)valueType, ValueHelpers::ToRapidJson(json["value"]))); // TODO: change to BeJsConst after converting RapidJson usage to BeJsConst
+        Utf8CP extendedType = json["value-type-extended"].asCString();
+        return std::make_unique<BoundECValueSet>(ValueHelpers::GetECValueSetFromJson((PrimitiveType)valueType, extendedType, ValueHelpers::ToRapidJson(json["value"])), extendedType); // TODO: change to BeJsConst after converting RapidJson usage to BeJsConst
         }
     if (0 == strcmp(BOUNDQUERYVALUETYPE_Id, type))
         {
@@ -87,7 +88,10 @@ rapidjson::Document DefaultBoundQueryValueSerializer::_ToJson(BoundQueryECValue 
     json.SetObject();
     json.AddMember("type", BOUNDQUERYVALUETYPE_ECValue, json.GetAllocator());
     json.AddMember("value-type", (int)boundQueryECValue.GetValue().GetPrimitiveType(), json.GetAllocator());
-    json.AddMember("value", ValueHelpers::GetJsonFromECValue(boundQueryECValue.GetValue(), &json.GetAllocator()), json.GetAllocator());
+    Utf8StringCR extendedType = boundQueryECValue.GetExtendedType();
+    if (extendedType != "")
+        json.AddMember("value-type-extended", rapidjson::Value(extendedType.c_str(), json.GetAllocator()), json.GetAllocator());
+    json.AddMember("value", ValueHelpers::GetJsonFromECValue(boundQueryECValue.GetValue(), extendedType, &json.GetAllocator()), json.GetAllocator());
     return json;
     }
 
@@ -106,11 +110,15 @@ rapidjson::Document DefaultBoundQueryValueSerializer::_ToJson(BoundECValueSet co
     else
         json.AddMember("value-type", rapidjson::Value((int)*valueType), json.GetAllocator());
 
+    Utf8StringCR extendedType = boundECValueSet.GetExtendedType();
+    if (extendedType != "")
+        json.AddMember("value-type-extended", rapidjson::Value(extendedType.c_str(), json.GetAllocator()), json.GetAllocator());
+
     rapidjson::Value valuesJson;
     valuesJson.SetArray();
 
     boundECValueSet.ForEachValue([&](ECValue const& value) {
-        valuesJson.PushBack(ValueHelpers::GetJsonFromECValue(value, &json.GetAllocator()), json.GetAllocator());
+        valuesJson.PushBack(ValueHelpers::GetJsonFromECValue(value, extendedType, &json.GetAllocator()), json.GetAllocator());
         });
     json.AddMember("value", valuesJson, json.GetAllocator());
     return json;
@@ -754,7 +762,7 @@ rapidjson::Document DefaultECPresentationSerializer::_AsJson(ContextR ctx, ECIns
     if (SUCCESS == ecInstanceChangeResult.GetStatus() && !ecInstanceChangeResult.GetChangedValue().IsUninitialized())
         {
         json.AddMember("Status", 0, json.GetAllocator());
-        json.AddMember("Value", ValueHelpers::GetJsonFromECValue(ecInstanceChangeResult.GetChangedValue(), &json.GetAllocator()), json.GetAllocator());
+        json.AddMember("Value", ValueHelpers::GetJsonFromECValue(ecInstanceChangeResult.GetChangedValue(), "", &json.GetAllocator()), json.GetAllocator());
         }
     else if (SUCCESS == ecInstanceChangeResult.GetStatus())
         {

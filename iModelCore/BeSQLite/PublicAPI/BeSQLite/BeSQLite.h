@@ -409,7 +409,7 @@ public:
     bool operator>(BeVersionCR rhs) const { return CompareTo(rhs) > 0; }
     bool operator>=(BeVersionCR rhs) const { return CompareTo(rhs) >= 0; }
     BE_SQLITE_EXPORT Utf8String ToJson() const;
-    BE_SQLITE_EXPORT void FromJson(Utf8CP);
+    BE_SQLITE_EXPORT BentleyStatus FromJson(Utf8CP);
 };
 //=======================================================================================
 // @bsiclass
@@ -1165,6 +1165,7 @@ public:
     bool IsNull()  const {return DbValueType::NullVal == GetValueType();} //!< return true if this value is null
     SqlValueP GetSqlValueP() const {return m_val;}  //!< for direct use of sqlite3 api
 
+    BE_SQLITE_EXPORT bool        FromBinding() const;              //!< see sqlite3_value_frombind
     BE_SQLITE_EXPORT DbValueType GetValueType() const;      //!< see sqlite3_value_type
     BE_SQLITE_EXPORT DbValueType GetNumericType() const;    //!< see sqlite3_value_numeric_type
     BE_SQLITE_EXPORT int         GetValueBytes() const;     //!< see sqlite3_value_bytes
@@ -2523,6 +2524,9 @@ public:
         // Skip the check for SQLite file validity before opening. When using the CloudSqlite mode, the local file is not in SQLite normal format.
         bool m_skipFileCheck = false;
 
+        // Provide uri to shared schema channel use by default during schema upgrade or update.
+        Utf8String m_schemaSyncDbUri;
+
         BusyRetry* m_busyRetry = nullptr;
         mutable bvector<Utf8String> m_queryParams;
 
@@ -2577,8 +2581,7 @@ public:
 
         //! Sets a BusyRetry handler
         //! @param[in] retry A BusyRetry handler for the database connection. The BeSQLite::Db will hold a ref-counted-ptr to the retry object.
-        //!                  The default is to not attempt retries. Note, many BeSQLite applications (e.g. Bim) rely on a single non-shared connection
-        //!                  to the database and do not permit sharing.
+        //! The default is to not attempt retries.
         void SetBusyRetry(BusyRetry* retry) { m_busyRetry = retry; }
 
         //! Open the database as "immutable". This means that SQLite will not hold any locks on the file. Only use this if you're *sure* the

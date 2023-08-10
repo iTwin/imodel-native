@@ -1,5 +1,6 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 az{
     Countries{
         001{"Dünya"}
@@ -133,7 +134,7 @@ az{
         GU{"Quam"}
         GW{"Qvineya-Bisau"}
         GY{"Qayana"}
-        HK{"Honq Konq Xüsusi İnzibati Ərazi Çin"}
+        HK{"Honq Konq Xüsusi İnzibati Rayonu Çin"}
         HM{"Herd və Makdonald adaları"}
         HN{"Honduras"}
         HR{"Xorvatiya"}
@@ -187,7 +188,7 @@ az{
         ML{"Mali"}
         MM{"Myanma"}
         MN{"Monqolustan"}
-        MO{"Makao Xüsusi İnzibati Ərazi Çin"}
+        MO{"Makao XİR Çin"}
         MP{"Şimali Marian adaları"}
         MQ{"Martinik"}
         MR{"Mavritaniya"}
@@ -311,8 +312,7 @@ az{
         CI{"Fil Dişi Sahili"}
         CZ{"Çex Respublikası"}
         FK{"Folklend adaları (Malvin adaları)"}
+        NZ{"Aotearoa Yeni Zelandiya"}
         SZ{"Svazilend"}
-        TL{"Doğu Timor"}
     }
-    Version{"2.1.49.82"}
 }

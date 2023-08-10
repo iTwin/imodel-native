@@ -1,8 +1,8 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 zh_Hant{
     %%Parent{"root"}
-    Version{"2.1.49.82"}
     zoneStrings{
         "Africa:Abidjan"{
             ec{"阿比讓"}
@@ -258,6 +258,9 @@ zh_Hant{
         }
         "America:Chihuahua"{
             ec{"奇華華"}
+        }
+        "America:Ciudad_Juarez"{
+            ec{"華雷斯"}
         }
         "America:Coral_Harbour"{
             ec{"阿蒂科肯"}
@@ -957,7 +960,6 @@ zh_Hant{
         }
         "Etc:UTC"{
             ls{"世界標準時間"}
-            ss{"UTC"}
         }
         "Etc:Unknown"{
             ec{"未知城市"}
@@ -1224,6 +1226,9 @@ zh_Hant{
         }
         "Pacific:Johnston"{
             ec{"強斯頓"}
+        }
+        "Pacific:Kanton"{
+            ec{"坎頓島"}
         }
         "Pacific:Kiritimati"{
             ec{"基里地馬地島"}
@@ -1628,7 +1633,7 @@ zh_Hant{
             ls{"印度洋時間"}
         }
         "meta:Indochina"{
-            ls{"印度支那時間"}
+            ls{"中南半島時間"}
         }
         "meta:Indonesia_Central"{
             ls{"印尼中部時間"}
@@ -1778,7 +1783,9 @@ zh_Hant{
             ls{"紐埃島時間"}
         }
         "meta:Norfolk"{
-            ls{"諾福克島時間"}
+            ld{"諾福克島夏令時間"}
+            lg{"諾福克島時間"}
+            ls{"諾福克島標準時間"}
         }
         "meta:Noronha"{
             ld{"費爾南多 - 迪諾羅尼亞夏令時間"}
@@ -1961,6 +1968,9 @@ zh_Hant{
             ld{"葉卡捷琳堡夏令時間"}
             lg{"葉卡捷琳堡時間"}
             ls{"葉卡捷琳堡標準時間"}
+        }
+        "meta:Yukon"{
+            ls{"育空地區時間"}
         }
         fallbackFormat{"{1}（{0}）"}
         gmtFormat{"GMT{0}"}

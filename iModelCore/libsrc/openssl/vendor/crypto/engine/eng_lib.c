@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2022 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2001-2023 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -28,13 +28,11 @@ ENGINE *ENGINE_new(void)
 {
     ENGINE *ret;
 
-    if (!RUN_ONCE(&engine_lock_init, do_engine_lock_init)) {
-        /* Maybe this should be raised in do_engine_lock_init() */
-        ERR_raise(ERR_LIB_ENGINE, ERR_R_CRYPTO_LIB);
-        return 0;
-    }
-    if ((ret = OPENSSL_zalloc(sizeof(*ret))) == NULL)
+    if (!RUN_ONCE(&engine_lock_init, do_engine_lock_init)
+        || (ret = OPENSSL_zalloc(sizeof(*ret))) == NULL) {
+        ERR_raise(ERR_LIB_ENGINE, ERR_R_MALLOC_FAILURE);
         return NULL;
+    }
     ret->struct_ref = 1;
     ENGINE_REF_PRINT(ret, 0, 1);
     if (!CRYPTO_new_ex_data(CRYPTO_EX_INDEX_ENGINE, ret, &ret->ex_data)) {
@@ -127,8 +125,10 @@ static ENGINE_CLEANUP_ITEM *int_cleanup_item(ENGINE_CLEANUP_CB *cb)
 {
     ENGINE_CLEANUP_ITEM *item;
 
-    if ((item = OPENSSL_malloc(sizeof(*item))) == NULL)
+    if ((item = OPENSSL_malloc(sizeof(*item))) == NULL) {
+        ERR_raise(ERR_LIB_ENGINE, ERR_R_MALLOC_FAILURE);
         return NULL;
+    }
     item->cb = cb;
     return item;
 }
@@ -140,8 +140,9 @@ void engine_cleanup_add_first(ENGINE_CLEANUP_CB *cb)
     if (!int_cleanup_check(1))
         return;
     item = int_cleanup_item(cb);
-    if (item)
-        sk_ENGINE_CLEANUP_ITEM_insert(cleanup_stack, item, 0);
+    if (item != NULL)
+        if (sk_ENGINE_CLEANUP_ITEM_insert(cleanup_stack, item, 0) <= 0)
+            OPENSSL_free(item);
 }
 
 void engine_cleanup_add_last(ENGINE_CLEANUP_CB *cb)

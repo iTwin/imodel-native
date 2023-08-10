@@ -44,18 +44,6 @@ SubCondition::~SubCondition()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool SubCondition::_ShallowEqual(PresentationKeyCR other) const
-    {
-    SubCondition const* otherRule = dynamic_cast<SubCondition const*>(&other);
-    if (nullptr == otherRule)
-        return false;
-
-    return m_condition == otherRule->m_condition;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 Utf8CP SubCondition::_GetXmlElementName() const {return SUB_CONDITION_XML_NODE_NAME;}
 
 /*---------------------------------------------------------------------------------**//**
@@ -200,6 +188,16 @@ MD5 SubCondition::_ComputeHash() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+void SubCondition::_SetIndex(int& index)
+    {
+    T_Super::_SetIndex(index);
+    SET_RULES_INDEX(m_subConditions, index);
+    SET_RULES_INDEX(m_specifications, index);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 ChildNodeRule::ChildNodeRule() : m_targetTree(TargetTree_MainTree), m_stopFurtherProcessing(false)
     {}
 
@@ -229,26 +227,6 @@ ChildNodeRule::~ChildNodeRule()
     CommonToolsInternal::FreePresentationRules(m_subConditions);
     CommonToolsInternal::FreePresentationRules(m_specifications);
     CommonToolsInternal::FreePresentationRules(m_customizationRules);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ChildNodeRule::_ShallowEqual(PresentationKeyCR other) const
-    {
-    if (!ConditionalPresentationRule::_ShallowEqual(other))
-        return false;
-
-    ChildNodeRuleCP otherRule = dynamic_cast<ChildNodeRuleCP>(&other);
-    if (nullptr == otherRule)
-        return false;
-
-    // cannot decide if rules are similar without comparing customization rules
-    if (!m_customizationRules.empty() || !otherRule->m_customizationRules.empty())
-        return false;
-
-    return m_stopFurtherProcessing == otherRule->m_stopFurtherProcessing
-        && m_targetTree == otherRule->m_targetTree;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -439,6 +417,16 @@ MD5 ChildNodeRule::_ComputeHash() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+void ChildNodeRule::_SetIndex(int& index)
+    {
+    T_Super::_SetIndex(index);
+    SET_RULES_INDEX(m_subConditions, index);
+    SET_RULES_INDEX(m_specifications, index);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 RootNodeRule::RootNodeRule()
     : ChildNodeRule(), m_autoExpand(false)
     {}
@@ -449,21 +437,6 @@ RootNodeRule::RootNodeRule()
 RootNodeRule::RootNodeRule(Utf8StringCR condition, int priority, bool onlyIfNotHandled, RuleTargetTree targetTree, bool autoExpand)
     : ChildNodeRule(condition, priority, onlyIfNotHandled, targetTree), m_autoExpand(autoExpand)
     {}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool RootNodeRule::_ShallowEqual(PresentationKeyCR other) const
-    {
-    if (!ChildNodeRule::_ShallowEqual(other))
-        return false;
-
-    RootNodeRuleCP otherRule = dynamic_cast<RootNodeRuleCP>(&other);
-    if (nullptr == otherRule)
-        return false;
-
-    return m_autoExpand == otherRule->m_autoExpand;
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod

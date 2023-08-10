@@ -1,7 +1,7 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 hi{
-    Version{"2.1.49.82"}
     zoneStrings{
         "Africa:Abidjan"{
             ec{"अबिदजान"}
@@ -257,6 +257,9 @@ hi{
         }
         "America:Chihuahua"{
             ec{"चिहुआहुआ"}
+        }
+        "America:Ciudad_Juarez"{
+            ec{"स्युदाद ह्वारेज़"}
         }
         "America:Coral_Harbour"{
             ec{"अटिकोकान"}
@@ -769,7 +772,7 @@ hi{
             ec{"कुवैत"}
         }
         "Asia:Macau"{
-            ec{"मकाउ"}
+            ec{"मकाऊ"}
         }
         "Asia:Magadan"{
             ec{"मागादान"}
@@ -1219,9 +1222,15 @@ hi{
         }
         "Pacific:Honolulu"{
             ec{"होनोलुलु"}
+            sd{"HST"}
+            sg{"एचएसटी"}
+            ss{"एचएसटी"}
         }
         "Pacific:Johnston"{
             ec{"जॉनस्टन"}
+        }
+        "Pacific:Kanton"{
+            ec{"कैंटन"}
         }
         "Pacific:Kiritimati"{
             ec{"किरीतिमाति"}
@@ -1721,7 +1730,9 @@ hi{
             ls{"नीयू समय"}
         }
         "meta:Norfolk"{
-            ls{"नॉरफ़ॉक द्वीप समय"}
+            ld{"नॉरफ़ॉक द्वीप डेलाइट समय"}
+            lg{"नॉरफ़ॉक द्वीप समय"}
+            ls{"नॉरफ़ॉक द्वीप मानक समय"}
         }
         "meta:Noronha"{
             ld{"फ़र्नांर्डो डे नोरोन्हा ग्रीष्मकालीन समय"}
@@ -1896,6 +1907,9 @@ hi{
             ld{"येकातेरिनबर्ग ग्रीष्मकालीन समय"}
             lg{"येकातेरिनबर्ग समय"}
             ls{"येकातेरिनबर्ग मानक समय"}
+        }
+        "meta:Yukon"{
+            ls{"युकॉन समय"}
         }
         fallbackFormat{"{1} ({0})"}
         gmtFormat{"GMT{0}"}

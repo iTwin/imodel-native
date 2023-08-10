@@ -530,6 +530,9 @@ int PolygonOps::CoordinateFrameAndRank
     // if degenerate to edge, get an arbitrary normal to the edge.
     double area = bsiPolygon_polygonNormalAndArea (&normal, &origin, pXYZIn, (int)numBeforeDisconnect);
     auto distantIndex = DPoint3dOps::MostDistantIndex (pXYZIn, (int)numBeforeDisconnect, pXYZIn[0]);
+    if (distantIndex >= numBeforeDisconnect)
+        return 0;
+    
     auto lengthRefA = sqrt (area);
     auto lengthRef = s_smallLength + pXYZIn[0].Distance (pXYZIn[distantIndex]);
 
@@ -565,7 +568,7 @@ int PolygonOps::CoordinateFrameAndRank
         {
         DRange3d localRange;
         localRange.Init ();
-        localRange.Extend (worldToLocal, pXYZIn, (int)numXYZ);
+        localRange.Extend (worldToLocal, pXYZIn, (int)numXYZ);  // ignores disconnects! 
         Transform::CorrectCoordinateFrameXYRange (localToWorld, worldToLocal, localRange, selector);
         }
     return bOK ? rank : 0;

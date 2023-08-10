@@ -72,6 +72,7 @@ ECSqlStatus ECSqlPreparer::Prepare(Utf8StringR nativeSql, ECSqlPrepareContext& c
                 return ECSqlStatus::Error;
         }
 
+    context.GetAnchors().ExecutePendingReplacements(context.GetSqlBuilder());
     nativeSql.assign(context.GetSqlBuilder().GetSql());
     return ECSqlStatus::Success;
     }
@@ -547,9 +548,11 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
             case ECSqlType::Select:
             {
             if (ctx.GetECDb().GetECSqlConfig().GetOptimizationOption(OptimizationOptions::OptimizeJoinForNestedSelectQuery))
-                RemovePropertyRefs(ctx, exp, classMap);
+            RemovePropertyRefs(ctx, exp, classMap);
+
             NativeSqlBuilder classViewSql;
-            if (SUCCESS != ViewGenerator::GenerateSelectFromViewSql(classViewSql, ctx, classMap, exp.GetPolymorphicInfo(), exp.DisqualifyPrimaryJoin(), exp.GetMemberFunctionCallExp()))
+            auto instanceProps = exp.GetInstancePropNames();
+            if (SUCCESS != ViewGenerator::GenerateSelectFromViewSql(classViewSql, ctx, classMap, exp.GetPolymorphicInfo(), exp.DisqualifyPrimaryJoin(), exp.GetMemberFunctionCallExp(), &instanceProps))
                 return ECSqlStatus::InvalidECSql;
 
             classViewSql.AppendSpace().AppendEscaped(exp.GetId());
@@ -1076,10 +1079,6 @@ ECSqlStatus ECSqlExpPreparer::PrepareQualifiedJoinExp(ECSqlPrepareContext& ctx, 
     if (!r.IsSuccess())
         return r;
 
-    //ECSQL_LIMITATION:
-    //https://www.sqlite.org/omitted.html
-    //RIGHT and FULL OUTER JOIN  LEFT OUTER JOIN is implemented, but not RIGHT OUTER JOIN or FULL OUTER JOIN.
-    //
     switch (exp.GetJoinType())
         {
             case ECSqlJoinType::InnerJoin:
@@ -1094,15 +1093,13 @@ ECSqlStatus ECSqlExpPreparer::PrepareQualifiedJoinExp(ECSqlPrepareContext& ctx, 
             }
             case ECSqlJoinType::RightOuterJoin:
             {
-            ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "'RIGHT OUTER JOIN' is currently not supported");
-            return ECSqlStatus::InvalidECSql;
+            sqlBuilder.Append(" RIGHT OUTER JOIN ");
+            break;
             }
             case ECSqlJoinType::FullOuterJoin:
             {
-            //ECSQL_TODO: way around full outer join
-            //http://stackoverflow.com/questions/1923259/full-outer-join-with-sqlite
-            ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "'FULL OUTER JOIN' is currently not supported");
-            return ECSqlStatus::InvalidECSql;
+            sqlBuilder.Append(" FULL OUTER JOIN ");
+            break;
             }
         }
 
@@ -1811,6 +1808,19 @@ ECSqlStatus ECSqlExpPreparer::PrepareTypeListExp(NativeSqlBuilder::List& nativeS
     nativeSqlSnippets.push_back(nativeBuilder);
     return ECSqlStatus::Success;
     }
+
+namespace
+    {
+    bool AreExperimentalFeaturesEnabled(const ECSqlPrepareContext& ctx)
+        {
+        // Check if ECSQLOption ENABLE_EXPERIMENTAL_FEATURES has been added
+        auto experimentalFeaturesECSqlOption = false;
+        if (const auto options = ctx.GetCurrentScope().GetOptions(); options != nullptr)
+            experimentalFeaturesECSqlOption = options->HasOption(OptionsExp::ENABLE_EXPERIMENTAL_FEATURES);
+
+        return (ctx.GetECDb().GetECSqlConfig().GetExperimentalFeaturesEnabled() || experimentalFeaturesECSqlOption);
+        }
+    }
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1819,8 +1829,9 @@ ECSqlStatus ECSqlExpPreparer::PrepareExtractPropertyExp(NativeSqlBuilder::List& 
     NativeSqlBuilder builder;
     NativeSqlBuilder::List classIdSql;
     NativeSqlBuilder::List instanceIdSql;
-    if (!ctx.GetECDb().GetECSqlConfig().GetExperimentalFeaturesEnabled()) {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Instance property access '%s' is experimental feature. Use 'PRAGMA experimental_feature=true' to enable it.", exp.ToECSql().c_str());
+
+    if (!AreExperimentalFeaturesEnabled(ctx)) {
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Instance property access '%s' is an experimental feature. Use 'PRAGMA experimental_features_enabled=true' query or add 'ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES' to the query to enable it.", exp.ToECSql().c_str());
         return ECSqlStatus::InvalidECSql;
     }
 
@@ -1834,10 +1845,13 @@ ECSqlStatus ECSqlExpPreparer::PrepareExtractPropertyExp(NativeSqlBuilder::List& 
         return rc;
     }
 
-    builder.AppendFormatted("extract_prop(%s,%s,'%s')",
+    builder.AppendFormatted("extract_prop(%s,%s,'%s'%s)",
         classIdSql.front().GetSql().c_str(),
         instanceIdSql.front().GetSql().c_str(),
-        exp.GetTargetPath().ToString().c_str());
+        exp.GetTargetPath().ToString().c_str(),
+        exp.GetSqlAnchor([&](Utf8CP name) {
+            return ctx.GetAnchors().CreateAnchor(name);
+        }).c_str());
 
     nativeSqlSnippets.push_back(std::move(builder));
     return ECSqlStatus::Success;
@@ -1851,12 +1865,11 @@ ECSqlStatus ECSqlExpPreparer::PrepareExtractInstanceExp(NativeSqlBuilder::List& 
     NativeSqlBuilder builder;
     NativeSqlBuilder::List classIdSql;
     NativeSqlBuilder::List instanceIdSql;
-
-    if (!ctx.GetECDb().GetECSqlConfig().GetExperimentalFeaturesEnabled()) {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Instance access '%s' is experimental feature. Use 'PRAGMA experimental_feature=true' to enable it.", exp.ToECSql().c_str());
+    
+    if (!AreExperimentalFeaturesEnabled(ctx)) {
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Instance access '%s' is an experimental feature. Use 'PRAGMA experimental_features_enabled=true' query or add 'ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES' to the query to enable it.", exp.ToECSql().c_str());
         return ECSqlStatus::InvalidECSql;
     }
-
     auto rc = PrepareValueExp(classIdSql, ctx, exp.GetClassIdPropExp());
     if (rc != ECSqlStatus::Success) {
         return rc;
@@ -1936,7 +1949,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareValueExp(NativeSqlBuilder::List& nativeSqlS
             }
             default:
                 break;
-        }
+            }
 
     BeAssert(false && "ECSqlPreparer::PrepareValueExp> Unhandled ValueExp subclass.");
     return ECSqlStatus::Error;
@@ -2020,7 +2033,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareValueExpListExp(NativeSqlBuilder::ListOfLis
         if (!stat.IsSuccess())
             return stat;
 
-        nativeSqlSnippetLists.push_back(move(nativeSqlSnippets));
+        nativeSqlSnippetLists.push_back(std::move(nativeSqlSnippets));
         index++;
         }
 
@@ -2107,7 +2120,7 @@ BooleanSqlOperator ECSqlExpPreparer::DetermineCompoundLogicalOpForCompoundExpres
 
             default:
                 return BooleanSqlOperator::And;
-        }
+            }
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

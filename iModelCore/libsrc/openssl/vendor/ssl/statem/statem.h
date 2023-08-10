@@ -72,10 +72,20 @@ typedef enum {
 } WRITE_STATE;
 
 typedef enum {
-    CON_FUNC_ERROR = 0,
-    CON_FUNC_SUCCESS,
-    CON_FUNC_DONT_SEND
-} CON_FUNC_RETURN;
+    /* The enc_write_ctx can be used normally */
+    ENC_WRITE_STATE_VALID,
+    /* The enc_write_ctx cannot be used */
+    ENC_WRITE_STATE_INVALID,
+    /* Write alerts in plaintext, but otherwise use the enc_write_ctx */
+    ENC_WRITE_STATE_WRITE_PLAIN_ALERTS
+} ENC_WRITE_STATES;
+
+typedef enum {
+    /* The enc_read_ctx can be used normally */
+    ENC_READ_STATE_VALID,
+    /* We may receive encrypted or plaintext alerts */
+    ENC_READ_STATE_ALLOW_PLAIN_ALERTS
+} ENC_READ_STATES;
 
 /*****************************************************************************
  *                                                                           *
@@ -106,6 +116,8 @@ struct ossl_statem_st {
     /* Should we skip the CertificateVerify message? */
     unsigned int no_cert_verify;
     int use_timer;
+    ENC_WRITE_STATES enc_write_state;
+    ENC_READ_STATES enc_read_state;
 };
 typedef struct ossl_statem_st OSSL_STATEM;
 
@@ -118,12 +130,11 @@ typedef struct ossl_statem_st OSSL_STATEM;
 
 __owur int ossl_statem_accept(SSL *s);
 __owur int ossl_statem_connect(SSL *s);
-OSSL_HANDSHAKE_STATE ossl_statem_get_state(SSL_CONNECTION *s);
-void ossl_statem_clear(SSL_CONNECTION *s);
-void ossl_statem_set_renegotiate(SSL_CONNECTION *s);
-void ossl_statem_send_fatal(SSL_CONNECTION *s, int al);
-void ossl_statem_fatal(SSL_CONNECTION *s, int al, int reason,
-                       const char *fmt, ...);
+void ossl_statem_clear(SSL *s);
+void ossl_statem_set_renegotiate(SSL *s);
+void ossl_statem_send_fatal(SSL *s, int al);
+void ossl_statem_fatal(SSL *s, int al, int reason, const char *fmt, ...);
+# define SSL_AD_NO_ALERT    -1
 # define SSLfatal_alert(s, al) ossl_statem_send_fatal((s), (al))
 # define SSLfatal(s, al, r) SSLfatal_data((s), (al), (r), NULL)
 # define SSLfatal_data                                          \
@@ -131,16 +142,16 @@ void ossl_statem_fatal(SSL_CONNECTION *s, int al, int reason,
      ERR_set_debug(OPENSSL_FILE, OPENSSL_LINE, OPENSSL_FUNC),   \
      ossl_statem_fatal)
 
-int ossl_statem_in_error(const SSL_CONNECTION *s);
-void ossl_statem_set_in_init(SSL_CONNECTION *s, int init);
-int ossl_statem_get_in_handshake(SSL_CONNECTION *s);
-void ossl_statem_set_in_handshake(SSL_CONNECTION *s, int inhand);
-__owur int ossl_statem_skip_early_data(SSL_CONNECTION *s);
-void ossl_statem_check_finish_init(SSL_CONNECTION *s, int send);
-void ossl_statem_set_hello_verify_done(SSL_CONNECTION *s);
-__owur int ossl_statem_app_data_allowed(SSL_CONNECTION *s);
-__owur int ossl_statem_export_allowed(SSL_CONNECTION *s);
-__owur int ossl_statem_export_early_allowed(SSL_CONNECTION *s);
+int ossl_statem_in_error(const SSL *s);
+void ossl_statem_set_in_init(SSL *s, int init);
+int ossl_statem_get_in_handshake(SSL *s);
+void ossl_statem_set_in_handshake(SSL *s, int inhand);
+__owur int ossl_statem_skip_early_data(SSL *s);
+void ossl_statem_check_finish_init(SSL *s, int send);
+void ossl_statem_set_hello_verify_done(SSL *s);
+__owur int ossl_statem_app_data_allowed(SSL *s);
+__owur int ossl_statem_export_allowed(SSL *s);
+__owur int ossl_statem_export_early_allowed(SSL *s);
 
 /* Flush the write BIO */
-int statem_flush(SSL_CONNECTION *s);
+int statem_flush(SSL *s);

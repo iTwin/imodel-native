@@ -137,20 +137,3 @@ MD5 StyleOverride::_ComputeHash() const
         ADD_STR_VALUE_TO_HASH(md5, STYLE_OVERRIDE_JSON_ATTRIBUTE_FONTSTYLE, m_fontStyle);
     return md5;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool StyleOverride::_ShallowEqual(PresentationKeyCR other) const
-    {
-    if (!ConditionalCustomizationRule::_ShallowEqual(other))
-        return false;
-
-    StyleOverride const* otherRule = dynamic_cast<StyleOverride const*>(&other);
-    if (nullptr == otherRule)
-        return false;
-
-    return m_foreColor == otherRule->m_foreColor
-        && m_backColor == otherRule->m_backColor
-        && m_fontStyle == otherRule->m_fontStyle;
-    }

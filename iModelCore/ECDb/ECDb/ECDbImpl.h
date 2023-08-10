@@ -138,6 +138,7 @@ private:
     static bool s_isInitialized;
     mutable BeMutex m_mutex;
     ECDbR m_ecdb;
+
     mutable BeGuid m_id;
     ProfileManager m_profileManager;
     std::unique_ptr<SchemaManager> m_schemaManager;
@@ -158,7 +159,6 @@ private:
     mutable std::unique_ptr<IdFactory> m_idFactory;
     mutable std::unique_ptr<ExtractInstFunc> m_extractInstFunc;
     mutable std::unique_ptr<ExtractPropFunc> m_extractPropFunc;
-    mutable std::unique_ptr<PropExistsFunc> m_propExistsFunc;
     mutable EC::ECSqlConfig m_ecSqlConfig;
     mutable std::unique_ptr<PragmaManager> m_pragmaProcessor;
     //Mirrored ECDb methods are only called by ECDb (friend), therefore private
@@ -193,6 +193,9 @@ private:
     void ClearECDbCache() const;
     DbResult OnDbOpening() const;
     DbResult OnDbCreated() const;
+    DbResult OnDbOpened(OpenParams const& params) const;
+    void RegisterECSqlPragmas() const;
+    void OnInit() const;
     DbResult OnDbAttached(Utf8CP dbFileName, Utf8CP tableSpaceName) const;
     DbResult OnDbDetached(Utf8CP tableSpaceName) const;
 
@@ -226,14 +229,14 @@ public:
     //! E.g. Any existing ECSqlStatement would be invalid after ClearECDbCache and would return
     //! an error from any of its methods.
     ClearCacheCounter const& GetClearCacheCounter() const { return m_clearCacheCounter; }
-    InstanceReader& GetInstanceReader() const { 
+    InstanceReader& GetInstanceReader() const {
         if (m_instanceReader == nullptr) {
             BeMutexHolder holder(m_mutex);
             if (m_instanceReader == nullptr) {
                 m_instanceReader = std::make_unique<InstanceReader>(m_ecdb);
             }
         }
-        return *m_instanceReader; 
+        return *m_instanceReader;
     }
     IssueDataSource const& Issues() const { return m_issueReporter; }
 

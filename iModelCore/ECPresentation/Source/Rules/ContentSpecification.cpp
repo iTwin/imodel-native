@@ -159,19 +159,6 @@ void ContentSpecification::ClearRelatedInstances()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ContentSpecification::_ShallowEqual(PresentationKeyCR other) const
-    {
-    ContentSpecificationCP otherRule = dynamic_cast<ContentSpecificationCP>(&other);
-    if (nullptr == otherRule)
-        return false;
-
-    return m_showImages == otherRule->m_showImages
-        && m_onlyIfNotHandled == otherRule->m_onlyIfNotHandled;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 MD5 ContentSpecification::_ComputeHash() const
     {
     MD5 md5 = T_Super::_ComputeHash();

@@ -220,25 +220,6 @@ MD5 GroupingRule::_ComputeHash() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GroupingRule::_ShallowEqual(PresentationKeyCR other) const
-    {
-    if (!ConditionalCustomizationRule::_ShallowEqual(other))
-        return false;
-
-    GroupingRule const* otherRule = dynamic_cast<GroupingRule const*>(&other);
-    if (nullptr == otherRule)
-        return false;
-
-    return m_schemaName == otherRule->m_schemaName
-        && m_className == otherRule->m_className
-        && m_contextMenuCondition == otherRule->m_contextMenuCondition
-        && m_contextMenuLabel == otherRule->m_contextMenuLabel
-        && m_settingsId == otherRule->m_settingsId;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 GroupSpecification* GroupSpecification::Create(BeJsConst json)
     {
     Utf8CP type = json[COMMON_JSON_ATTRIBUTE_SPECTYPE].asCString("");
@@ -354,19 +335,6 @@ MD5 GroupSpecification::_ComputeHash() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GroupSpecification::_ShallowEqual(PresentationKeyCR other) const
-    {
-    GroupSpecification const* otherRule = dynamic_cast<GroupSpecification const*>(&other);
-    if (nullptr == otherRule)
-        return false;
-
-    return m_contextMenuLabel == otherRule->m_contextMenuLabel
-        && m_defaultLabel == otherRule->m_defaultLabel;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 static SameLabelInstanceGroupApplicationStage GetSameLabelInstanceGroupApplicationStageFromString(Utf8StringCR str)
     {
     if (str.Equals(SAME_LABEL_INSTANCE_GROUP_JSON_ATTRIBUTE_APPLICATIONSTAGE_VALUES_QUERY))
@@ -443,21 +411,6 @@ MD5 SameLabelInstanceGroup::_ComputeHash() const
     if (m_applicationStage != SameLabelInstanceGroupApplicationStage::Query)
         ADD_PRIMITIVE_VALUE_TO_HASH(md5, SAME_LABEL_INSTANCE_GROUP_JSON_ATTRIBUTE_APPLICATIONSTAGE, m_applicationStage);
     return md5;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool SameLabelInstanceGroup::_ShallowEqual(PresentationKeyCR other) const
-    {
-    if (!GroupSpecification::_ShallowEqual(other))
-        return false;
-
-    SameLabelInstanceGroup const* otherRule = dynamic_cast<SameLabelInstanceGroup const*>(&other);
-    if (nullptr == otherRule)
-        return false;
-
-    return m_applicationStage == otherRule->m_applicationStage;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -584,23 +537,6 @@ MD5 ClassGroup::_ComputeHash() const
     if (!m_baseClassName.empty())
         ADD_STR_VALUE_TO_HASH(md5, CLASS_GROUP_XML_ATTRIBUTE_BASECLASSNAME, m_baseClassName);
     return md5;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ClassGroup::_ShallowEqual(PresentationKeyCR other) const
-    {
-    if (!GroupSpecification::_ShallowEqual(other))
-        return false;
-
-    ClassGroup const* otherRule = dynamic_cast<ClassGroup const*>(&other);
-    if (nullptr == otherRule)
-        return false;
-
-    return m_createGroupForSingleItem == otherRule->m_createGroupForSingleItem
-        && m_schemaName == otherRule->m_schemaName
-        && m_baseClassName == otherRule->m_baseClassName;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -857,26 +793,6 @@ MD5 PropertyGroup::_ComputeHash() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool PropertyGroup::_ShallowEqual(PresentationKeyCR other) const
-    {
-    if (!GroupSpecification::_ShallowEqual(other))
-        return false;
-
-    PropertyGroup const* otherRule = dynamic_cast<PropertyGroup const*>(&other);
-    if (nullptr == otherRule)
-        return false;
-
-    return m_imageId == otherRule->m_imageId
-        && m_createGroupForSingleItem == otherRule->m_createGroupForSingleItem
-        && m_createGroupForUnspecifiedValues == otherRule->m_createGroupForUnspecifiedValues
-        && m_groupingValue == otherRule->m_groupingValue
-        && m_sortingValue == otherRule->m_sortingValue
-        && m_propertyName == otherRule->m_propertyName;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 PropertyRangeGroupSpecification::PropertyRangeGroupSpecification()
     {
     }
@@ -1012,19 +928,4 @@ MD5 PropertyRangeGroupSpecification::_ComputeHash() const
     if (!m_toValue.empty())
         ADD_STR_VALUE_TO_HASH(md5, PROPERTY_RANGE_GROUP_JSON_ATTRIBUTE_TOVALUE, m_toValue);
     return md5;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool PropertyRangeGroupSpecification::_ShallowEqual(PresentationKeyCR other) const
-    {
-    PropertyRangeGroupSpecification const* otherRule = dynamic_cast<PropertyRangeGroupSpecification const*>(&other);
-    if (nullptr == otherRule)
-        return false;
-
-    return m_label == otherRule->m_label
-        && m_imageId == otherRule->m_imageId
-        && m_fromValue == otherRule->m_fromValue
-        && m_toValue == otherRule->m_toValue;
     }

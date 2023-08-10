@@ -149,7 +149,10 @@ static ECRelationshipConstraintClassList const* GetClassFromRelationship(ECSchem
     {
     RelationshipPathSpecification const* pathSpec = spec.GetPropertiesSource();
     if (nullptr == pathSpec)
+        {
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_INFO, LOG_ERROR, Utf8PrintfString("Related properties specification does not contain relationship path specification."));
         return nullptr;
+        }
     RelationshipStepSpecification const* relationshipStep = pathSpec->GetSteps().back();
     auto direction = relationshipStep->GetRelationDirection();
     ECRelationshipClassCP relationshipClass = helper.GetECClass(relationshipStep->GetRelationshipClassName().c_str())->GetRelationshipClassCP();
@@ -160,6 +163,9 @@ static ECRelationshipConstraintClassList const* GetClassFromRelationship(ECSchem
         case RequiredRelationDirection_Forward:
             return &relationshipClass->GetTarget().GetConstraintClasses();
         }
+
+    DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_INFO, LOG_ERROR, Utf8PrintfString("Failed to get relationship constraints from relationship step specification: %s. Direction: %s.",
+        relationshipStep->GetRelationshipClassName().c_str(), CommonToolsInternal::FormatRequiredDirectionString(direction)));
     return nullptr;
     }
 
@@ -230,7 +236,7 @@ static ECSchemaHelper::RelationshipPathsResponse FindRelatedPropertyPaths(Conten
                         {
                         stepTargetInstanceFilters.push_back("");
                         stepTargetsPolymorphism.push_back(stackSpec->IsPolymorphic());
-                        }                        
+                        }
                     }
                 stepTargetInstanceFilters.push_back(stackSpec->GetInstanceFilter());
                 stepTargetsPolymorphism.push_back(stackSpec->IsPolymorphic());
@@ -267,6 +273,13 @@ bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> FlattenedRelat
     bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> specs;
     for (ContentModifierCP modifier : modifiers)
         {
+        if (!modifier->HasClassSpecified())
+            {
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("ECClass was not specified in %s.",
+                    DiagnosticsHelpers::CreateRuleIdentifier(*modifier).c_str()));
+            continue;
+            }
+
         ECClassCP modifierClass = helper.GetECClass(modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str());
         if (modifierClass == nullptr)
             {
@@ -300,11 +313,18 @@ static bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> CreateF
         handledModifiersInPrevIteration = 0;
         for (auto& modifier : modifiers)
             {
-            if (modifier == nullptr || !modifier->ShouldApplyOnNestedContent())
+            if (nullptr == modifier || !modifier->ShouldApplyOnNestedContent())
                 continue;
 
+            if (!modifier->HasClassSpecified())
+                {
+                DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("ECClass was not specified in %s.",
+                    DiagnosticsHelpers::CreateRuleIdentifier(*modifier).c_str()));
+                continue;
+                }
+
             ECClassCP modifierClass = helper.GetECClass(modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str());
-            if (modifierClass == nullptr)
+            if (nullptr == modifierClass)
                 {
                 DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_INFO, LOG_ERROR, Utf8PrintfString("Content modifier specifies non-existing class: %s.%s.",
                     modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str()));
@@ -312,6 +332,9 @@ static bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> CreateF
                 }
 
             ECRelationshipConstraintClassList const* classes = GetClassFromRelationship(helper, spec);
+            if (nullptr == classes)
+                continue;
+
             for (ECClassCP ecClass : *classes)
                 {
                 if (!ecClass->Is(modifierClass) && !modifierClass->Is(ecClass))
@@ -925,6 +948,13 @@ bvector<RuleApplicationInfo> const& ContentSpecificationsHandler::GetCustomizati
         auto infos = new bvector<RuleApplicationInfo>();
         for (ContentModifierCP modifier : GetContext().GetRulesPreprocessor().GetContentModifiers())
             {
+            if (!modifier->HasClassSpecified())
+                {
+                DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("ECClass was not specified in %s.",
+                    DiagnosticsHelpers::CreateRuleIdentifier(*modifier).c_str()));
+                continue;
+                }
+
             ECClassCP ecClass = GetContext().GetSchemaHelper().GetECClass(modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str());
             if (nullptr == ecClass)
                 {

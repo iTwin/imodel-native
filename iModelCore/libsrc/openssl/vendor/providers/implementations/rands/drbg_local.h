@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2021 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2023 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -224,7 +224,7 @@ OSSL_FUNC_rand_unlock_fn ossl_drbg_unlock;
 int ossl_drbg_get_ctx_params(PROV_DRBG *drbg, OSSL_PARAM params[]);
 int ossl_drbg_set_ctx_params(PROV_DRBG *drbg, const OSSL_PARAM params[]);
 
-#define OSSL_PARAM_DRBG_SETTABLE_CTX_COMMON                             \
+#define OSSL_PARAM_DRBG_SETTABLE_CTX_COMMON                                      \
     OSSL_PARAM_uint(OSSL_DRBG_PARAM_RESEED_REQUESTS, NULL),             \
     OSSL_PARAM_uint64(OSSL_DRBG_PARAM_RESEED_TIME_INTERVAL, NULL)
 
@@ -250,5 +250,8 @@ size_t ossl_crngt_get_entropy(PROV_DRBG *drbg,
                               int prediction_resistance);
 void ossl_crngt_cleanup_entropy(PROV_DRBG *drbg,
                                 unsigned char *out, size_t outlen);
+
+/* Confirm digest is allowed to be used with a DRBG */
+int ossl_drbg_verify_digest(ossl_unused OSSL_LIB_CTX *libctx, const EVP_MD *md);
 
 #endif

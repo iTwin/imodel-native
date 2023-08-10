@@ -26,9 +26,9 @@ std::unique_ptr<PropertyCategoryIdentifier> PropertyCategoryIdentifier::CreateFo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::unique_ptr<PropertyCategoryIdentifier> PropertyCategoryIdentifier::CreateForId(Utf8String id)
+std::unique_ptr<PropertyCategoryIdentifier> PropertyCategoryIdentifier::CreateForId(Utf8String id, bool createClassCategory)
     {
-    return std::unique_ptr<IdPropertyCategoryIdentifier>(new IdPropertyCategoryIdentifier(id));
+    return std::unique_ptr<IdPropertyCategoryIdentifier>(new IdPropertyCategoryIdentifier(id, createClassCategory));
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -44,17 +44,6 @@ std::unique_ptr<PropertyCategoryIdentifier> PropertyCategoryIdentifier::Create(B
     else
         identifier = std::unique_ptr<PropertyCategoryIdentifier>(new PropertyCategoryIdentifier(PropertyCategoryIdentifierType::Root));
     return identifier->ReadJson(json) ? std::move(identifier) : nullptr;
-    }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool PropertyCategoryIdentifier::_ShallowEqual(PresentationKeyCR other) const
-    {
-    if (!PresentationKey::_ShallowEqual(other))
-        return false;
-
-    auto otherRule = static_cast<PropertyCategoryIdentifier const&>(other);
-    return m_type == otherRule.m_type;
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -114,18 +103,6 @@ void PropertyCategoryIdentifier::_WriteJson(BeJsValue json) const
             break;
         }
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool IdPropertyCategoryIdentifier::_ShallowEqual(PresentationKeyCR other) const
-    {
-    if (!PropertyCategoryIdentifier::_ShallowEqual(other))
-        return false;
-
-    auto otherRule = static_cast<IdPropertyCategoryIdentifier const&>(other);
-    return m_categoryId.Equals(otherRule.GetCategoryId());
-    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -134,6 +111,8 @@ MD5 IdPropertyCategoryIdentifier::_ComputeHash() const
     MD5 md5 = T_Super::_ComputeHash();
     if (!m_categoryId.empty())
         ADD_STR_VALUE_TO_HASH(md5, PROPERTY_CATEGORY_IDENTIFIER_SPECIFICATION_JSON_ATTRIBUTE_CATEGORYID, m_categoryId);
+    if (m_createClassCategory)
+        ADD_PRIMITIVE_VALUE_TO_HASH(md5, PROPERTY_CATEGORY_IDENTIFIER_SPECIFICATION_JSON_ATTRIBUTE_CREATECLASSCATEGORY, m_createClassCategory);
     return md5;
     }
 /*---------------------------------------------------------------------------------**//**
@@ -160,6 +139,7 @@ bool IdPropertyCategoryIdentifier::_ReadJson(BeJsConst json)
     if (CommonToolsInternal::CheckRuleIssue(m_categoryId.empty(), _GetJsonElementType(), PROPERTY_CATEGORY_IDENTIFIER_SPECIFICATION_JSON_ATTRIBUTE_CATEGORYID, json[PROPERTY_CATEGORY_IDENTIFIER_SPECIFICATION_JSON_ATTRIBUTE_CATEGORYID], "non-empty string"))
         return false;
 
+    m_createClassCategory = json[PROPERTY_CATEGORY_IDENTIFIER_SPECIFICATION_JSON_ATTRIBUTE_CREATECLASSCATEGORY].asBool(false);
     return true;
     }
 /*---------------------------------------------------------------------------------**//**
@@ -169,6 +149,9 @@ void IdPropertyCategoryIdentifier::_WriteJson(BeJsValue json) const
     {
     PropertyCategoryIdentifier::_WriteJson(json);
     json[PROPERTY_CATEGORY_IDENTIFIER_SPECIFICATION_JSON_ATTRIBUTE_CATEGORYID] = m_categoryId;
+
+    if (m_createClassCategory)
+        json[PROPERTY_CATEGORY_IDENTIFIER_SPECIFICATION_JSON_ATTRIBUTE_CREATECLASSCATEGORY] = m_createClassCategory;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -315,23 +298,4 @@ MD5 PropertyCategorySpecification::_ComputeHash() const
         ADD_PRIMITIVE_VALUE_TO_HASH(md5, PROPERTY_CATEGORY_SPECIFICATION_JSON_ATTRIBUTE_AUTOEXPAND, m_autoExpand);
 
     return md5;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool PropertyCategorySpecification::_ShallowEqual(PresentationKeyCR other) const
-    {
-    if (!T_Super::_ShallowEqual(other))
-        return false;
-
-    PropertyCategorySpecification const* otherRule = dynamic_cast<PropertyCategorySpecification const*>(&other);
-    if (nullptr == otherRule)
-        return false;
-
-    return m_id == otherRule->m_id
-        && m_parentId == otherRule->m_parentId
-        && m_label == otherRule->m_label
-        && m_description == otherRule->m_description
-        && m_autoExpand == otherRule->m_autoExpand;
     }

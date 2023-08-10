@@ -83,21 +83,6 @@ MD5 NodeArtifactsRule::_ComputeHash() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool NodeArtifactsRule::_ShallowEqual(PresentationKeyCR other) const
-    {
-    if (!ConditionalCustomizationRule::_ShallowEqual(other))
-        return false;
-
-    NodeArtifactsRule const* otherRule = dynamic_cast<NodeArtifactsRule const*>(&other);
-    if (nullptr == otherRule)
-        return false;
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 void NodeArtifactsRule::SetItemsMap(bmap<Utf8String, Utf8String> map)
     {
     m_items = map;

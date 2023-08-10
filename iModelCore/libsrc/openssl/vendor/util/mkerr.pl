@@ -117,9 +117,8 @@ if ( $internal ) {
     die "Cannot mix -internal and -static\n" if $static;
     die "Extra parameters given.\n" if @ARGV;
     @source = ( glob('crypto/*.c'), glob('crypto/*/*.c'),
-                glob('ssl/*.c'), glob('ssl/*/*.c'), glob('ssl/*/*/*.c'),
-                glob('providers/*.c'), glob('providers/*/*.c'),
-                glob('providers/*/*/*.c') );
+                glob('ssl/*.c'), glob('ssl/*/*.c'), glob('providers/*.c'),
+                glob('providers/*/*.c'), glob('providers/*/*/*.c') );
 } else {
     die "-module isn't useful without -internal\n" if scalar keys %modules > 0;
     @source = @ARGV;
@@ -450,7 +449,6 @@ EOF
         } else {
             print OUT <<"EOF";
 # define ${lib}err(f, r) ERR_${lib}_error(0, (r), OPENSSL_FILE, OPENSSL_LINE)
-# define ERR_R_${lib}_LIB ERR_${lib}_lib()
 
 EOF
             if ( ! $static ) {
@@ -630,13 +628,6 @@ ${st}void ERR_${lib}_error(int function, int reason, const char *file, int line)
     ERR_raise(lib_code, reason);
     ERR_set_debug(file, line, NULL);
 }
-
-${st}int ERR_${lib}_lib(void)
-{
-    if (lib_code == 0)
-        lib_code = ERR_get_next_error_library();
-    return lib_code;
-}
 EOF
 
         }
@@ -690,7 +681,7 @@ EOF
         my $short = "$i:$rcodes{$i}:";
         my $t = exists $strings{$i} ? "$strings{$i}" : "";
         $t = "\\\n\t" . $t if length($short) + length($t) > 80;
-        print OUT "$short$t\n";
+        print OUT "$short$t\n" if !exists $rextra{$i};
     }
     close(OUT);
     if ( $skippedstate ) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2022 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2023 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -110,7 +110,7 @@ EVP_MD_CTX *evp_md_ctx_new_ex(EVP_PKEY *pkey, const ASN1_OCTET_STRING *id,
 
     if ((ctx = EVP_MD_CTX_new()) == NULL
         || (pctx = EVP_PKEY_CTX_new_from_pkey(libctx, pkey, propq)) == NULL) {
-        ERR_raise(ERR_LIB_ASN1, ERR_R_EVP_LIB);
+        ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
         goto err;
     }
 
@@ -236,6 +236,7 @@ static int evp_md_init_internal(EVP_MD_CTX *ctx, const EVP_MD *type,
         /* If we were using provided hash before, cleanup algctx */
         if (!evp_md_ctx_free_algctx(ctx))
             return 0;
+
         if (ctx->digest == ctx->fetched_digest)
             ctx->digest = NULL;
         EVP_MD_free(ctx->fetched_digest);
@@ -342,8 +343,10 @@ static int evp_md_init_internal(EVP_MD_CTX *ctx, const EVP_MD *type,
         if (!(ctx->flags & EVP_MD_CTX_FLAG_NO_INIT) && type->ctx_size) {
             ctx->update = type->update;
             ctx->md_data = OPENSSL_zalloc(type->ctx_size);
-            if (ctx->md_data == NULL)
+            if (ctx->md_data == NULL) {
+                ERR_raise(ERR_LIB_EVP, ERR_R_MALLOC_FAILURE);
                 return 0;
+            }
         }
     }
 #if !defined(OPENSSL_NO_ENGINE) && !defined(FIPS_MODULE)
@@ -457,7 +460,7 @@ int EVP_DigestFinal_ex(EVP_MD_CTX *ctx, unsigned char *md, unsigned int *isize)
 
     if (isize != NULL) {
         if (size <= UINT_MAX) {
-            *isize = (int)size;
+            *isize = (unsigned int)size;
         } else {
             ERR_raise(ERR_LIB_EVP, EVP_R_FINAL_ERROR);
             ret = 0;
@@ -638,8 +641,10 @@ int EVP_MD_CTX_copy_ex(EVP_MD_CTX *out, const EVP_MD_CTX *in)
             out->md_data = tmp_buf;
         else {
             out->md_data = OPENSSL_malloc(out->digest->ctx_size);
-            if (out->md_data == NULL)
+            if (out->md_data == NULL) {
+                ERR_raise(ERR_LIB_EVP, ERR_R_MALLOC_FAILURE);
                 return 0;
+            }
         }
         memcpy(out->md_data, in->md_data, out->digest->ctx_size);
     }
@@ -781,7 +786,7 @@ int EVP_MD_CTX_get_params(EVP_MD_CTX *ctx, OSSL_PARAM params[])
         return pctx->op.sig.signature->get_ctx_md_params(pctx->op.sig.algctx,
                                                          params);
 
-    if (ctx->digest != NULL && ctx->digest->get_params != NULL)
+    if (ctx->digest != NULL && ctx->digest->get_ctx_params != NULL)
         return ctx->digest->get_ctx_params(ctx->algctx, params);
 
     return 0;
@@ -960,7 +965,7 @@ static void *evp_md_from_algorithm(int name_id,
 
     /* EVP_MD_fetch() will set the legacy NID if available */
     if ((md = evp_md_new()) == NULL) {
-        ERR_raise(ERR_LIB_EVP, ERR_R_EVP_LIB);
+        ERR_raise(ERR_LIB_EVP, ERR_R_MALLOC_FAILURE);
         return NULL;
     }
 

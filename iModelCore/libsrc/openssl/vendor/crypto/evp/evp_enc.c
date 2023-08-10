@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2022 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2023 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -24,11 +24,8 @@
 #include "internal/cryptlib.h"
 #include "internal/provider.h"
 #include "internal/core.h"
-#include "internal/safe_math.h"
 #include "crypto/evp.h"
 #include "evp_local.h"
-
-OSSL_SAFE_MATH_SIGNED(int, int)
 
 int EVP_CIPHER_CTX_reset(EVP_CIPHER_CTX *ctx)
 {
@@ -206,8 +203,6 @@ static int evp_cipher_init_internal(EVP_CIPHER_CTX *ctx,
             return 0;
         }
         EVP_CIPHER_free(ctx->fetched_cipher);
-        /* Coverity false positive, the reference counting is confusing it */
-        /* coverity[use_after_free] */
         ctx->fetched_cipher = (EVP_CIPHER *)cipher;
     }
     ctx->cipher = cipher;
@@ -313,6 +308,7 @@ static int evp_cipher_init_internal(EVP_CIPHER_CTX *ctx,
             ctx->cipher_data = OPENSSL_zalloc(ctx->cipher->ctx_size);
             if (ctx->cipher_data == NULL) {
                 ctx->cipher = NULL;
+                ERR_raise(ERR_LIB_EVP, ERR_R_MALLOC_FAILURE);
                 return 0;
             }
         } else {
@@ -530,7 +526,7 @@ static int evp_EncryptDecryptUpdate(EVP_CIPHER_CTX *ctx,
     int i, j, bl, cmpl = inl;
 
     if (EVP_CIPHER_CTX_test_flags(ctx, EVP_CIPH_FLAG_LENGTH_BITS))
-        cmpl = safe_div_round_up_int(cmpl, 8, NULL);
+        cmpl = (cmpl + 7) / 8;
 
     bl = ctx->cipher->block_size;
 
@@ -816,7 +812,7 @@ int EVP_DecryptUpdate(EVP_CIPHER_CTX *ctx, unsigned char *out, int *outl,
     b = ctx->cipher->block_size;
 
     if (EVP_CIPHER_CTX_test_flags(ctx, EVP_CIPH_FLAG_LENGTH_BITS))
-        cmpl = safe_div_round_up_int(cmpl, 8, NULL);
+        cmpl = (cmpl + 7) / 8;
 
     if (ctx->cipher->flags & EVP_CIPH_FLAG_CUSTOM_CIPHER) {
         if (b == 1 && ossl_is_partially_overlapping(out, in, cmpl)) {
@@ -1082,6 +1078,11 @@ int EVP_CIPHER_CTX_ctrl(EVP_CIPHER_CTX *ctx, int type, int arg, void *ptr)
 
     switch (type) {
     case EVP_CTRL_SET_KEY_LENGTH:
+        if (arg < 0)
+            return 0;
+        if (ctx->key_len == arg)
+            /* Skip calling into provider if unchanged. */
+            return 1;
         params[0] = OSSL_PARAM_construct_size_t(OSSL_CIPHER_PARAM_KEYLEN, &sz);
         ctx->key_len = -1;
         break;
@@ -1107,6 +1108,9 @@ int EVP_CIPHER_CTX_ctrl(EVP_CIPHER_CTX *ctx, int type, int arg, void *ptr)
     case EVP_CTRL_AEAD_SET_IVLEN:
         if (arg < 0)
             return 0;
+        if (ctx->iv_len == arg)
+            /* Skip calling into provider if unchanged. */
+            return 1;
         params[0] = OSSL_PARAM_construct_size_t(OSSL_CIPHER_PARAM_IVLEN, &sz);
         ctx->iv_len = -1;
         break;
@@ -1457,6 +1461,7 @@ int EVP_CIPHER_CTX_copy(EVP_CIPHER_CTX *out, const EVP_CIPHER_CTX *in)
         out->cipher_data = OPENSSL_malloc(in->cipher->ctx_size);
         if (out->cipher_data == NULL) {
             out->cipher = NULL;
+            ERR_raise(ERR_LIB_EVP, ERR_R_MALLOC_FAILURE);
             return 0;
         }
         memcpy(out->cipher_data, in->cipher_data, in->cipher->ctx_size);
@@ -1526,7 +1531,7 @@ static void *evp_cipher_from_algorithm(const int name_id,
     int fnciphcnt = 0, fnctxcnt = 0;
 
     if ((cipher = evp_cipher_new()) == NULL) {
-        ERR_raise(ERR_LIB_EVP, ERR_R_EVP_LIB);
+        ERR_raise(ERR_LIB_EVP, ERR_R_MALLOC_FAILURE);
         return NULL;
     }
 

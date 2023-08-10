@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2021 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2023 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -34,7 +34,8 @@ int DSA_sign_setup(DSA *dsa, BN_CTX *ctx_in, BIGNUM **kinvp, BIGNUM **rp)
 DSA_SIG *DSA_SIG_new(void)
 {
     DSA_SIG *sig = OPENSSL_zalloc(sizeof(*sig));
-
+    if (sig == NULL)
+        ERR_raise(ERR_LIB_DSA, ERR_R_MALLOC_FAILURE);
     return sig;
 }
 
@@ -151,9 +152,7 @@ int DSA_SIG_set0(DSA_SIG *sig, BIGNUM *r, BIGNUM *s)
 }
 
 int ossl_dsa_sign_int(int type, const unsigned char *dgst, int dlen,
-                      unsigned char *sig, unsigned int *siglen, DSA *dsa,
-                      unsigned int nonce_type, const char *digestname,
-                      OSSL_LIB_CTX *libctx, const char *propq)
+                      unsigned char *sig, unsigned int *siglen, DSA *dsa)
 {
     DSA_SIG *s;
 
@@ -161,13 +160,12 @@ int ossl_dsa_sign_int(int type, const unsigned char *dgst, int dlen,
     if (dsa->libctx == NULL || dsa->meth != DSA_get_default_method())
         s = DSA_do_sign(dgst, dlen, dsa);
     else
-        s = ossl_dsa_do_sign_int(dgst, dlen, dsa,
-                                 nonce_type, digestname, libctx, propq);
+        s = ossl_dsa_do_sign_int(dgst, dlen, dsa);
     if (s == NULL) {
         *siglen = 0;
         return 0;
     }
-    *siglen = i2d_DSA_SIG(s, &sig);
+    *siglen = i2d_DSA_SIG(s, sig != NULL ? &sig : NULL);
     DSA_SIG_free(s);
     return 1;
 }
@@ -175,8 +173,7 @@ int ossl_dsa_sign_int(int type, const unsigned char *dgst, int dlen,
 int DSA_sign(int type, const unsigned char *dgst, int dlen,
              unsigned char *sig, unsigned int *siglen, DSA *dsa)
 {
-    return ossl_dsa_sign_int(type, dgst, dlen, sig, siglen, dsa,
-                             0, NULL, NULL, NULL);
+    return ossl_dsa_sign_int(type, dgst, dlen, sig, siglen, dsa);
 }
 
 /* data has already been hashed (probably with SHA or SHA-1). */

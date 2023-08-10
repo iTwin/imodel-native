@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2022 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2019-2023 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -36,9 +36,6 @@ struct ossl_lib_ctx_st {
     OSSL_METHOD_STORE *encoder_store;
     OSSL_METHOD_STORE *store_loader_store;
     void *self_test_cb;
-#endif
-#if defined(OPENSSL_THREADS)
-    void *threads;
 #endif
     void *rand_crngt;
 #ifdef FIPS_MODULE
@@ -174,12 +171,6 @@ static int context_init(OSSL_LIB_CTX *ctx)
         goto err;
 #endif
 
-#ifndef OPENSSL_NO_THREAD_POOL
-    ctx->threads = ossl_threads_ctx_new(ctx);
-    if (ctx->threads == NULL)
-        goto err;
-#endif
-
     /* Low priority. */
 #ifndef FIPS_MODULE
     ctx->child_provider = ossl_child_prov_ctx_new(ctx);
@@ -308,13 +299,6 @@ static void context_deinit_objs(OSSL_LIB_CTX *ctx)
     }
 #endif
 
-#ifndef OPENSSL_NO_THREAD_POOL
-    if (ctx->threads != NULL) {
-        ossl_threads_ctx_free(ctx->threads);
-        ctx->threads = NULL;
-    }
-#endif
-
     /* Low priority. */
 #ifndef FIPS_MODULE
     if (ctx->child_provider != NULL) {
@@ -348,17 +332,32 @@ static OSSL_LIB_CTX default_context_int;
 
 static CRYPTO_ONCE default_context_init = CRYPTO_ONCE_STATIC_INIT;
 static CRYPTO_THREAD_LOCAL default_context_thread_local;
+static int default_context_inited = 0;
 
 DEFINE_RUN_ONCE_STATIC(default_context_do_init)
 {
-    return CRYPTO_THREAD_init_local(&default_context_thread_local, NULL)
-        && context_init(&default_context_int);
+    if (!CRYPTO_THREAD_init_local(&default_context_thread_local, NULL))
+        goto err;
+
+    if (!context_init(&default_context_int))
+        goto deinit_thread;
+
+    default_context_inited = 1;
+    return 1;
+
+deinit_thread:
+    CRYPTO_THREAD_cleanup_local(&default_context_thread_local);
+err:
+    return 0;
 }
 
 void ossl_lib_ctx_default_deinit(void)
 {
+    if (!default_context_inited)
+        return;
     context_deinit(&default_context_int);
     CRYPTO_THREAD_cleanup_local(&default_context_thread_local);
+    default_context_inited = 0;
 }
 
 static OSSL_LIB_CTX *get_thread_default_context(void)
@@ -550,10 +549,6 @@ void *ossl_lib_ctx_get_data(OSSL_LIB_CTX *ctx, int index)
         return ctx->store_loader_store;
     case OSSL_LIB_CTX_SELF_TEST_CB_INDEX:
         return ctx->self_test_cb;
-#endif
-#ifndef OPENSSL_NO_THREAD_POOL
-    case OSSL_LIB_CTX_THREAD_INDEX:
-        return ctx->threads;
 #endif
 
     case OSSL_LIB_CTX_RAND_CRNGT_INDEX: {

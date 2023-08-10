@@ -1,3 +1,5 @@
 
 # Skip parts of original repo that we don't want in our repo
 vendor/source/test
+
+vendor/source/data/in/*.dat

@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2022 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2006-2023 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -128,8 +128,10 @@ EVP_PKEY_METHOD *EVP_PKEY_meth_new(int id, int flags)
     EVP_PKEY_METHOD *pmeth;
 
     pmeth = OPENSSL_zalloc(sizeof(*pmeth));
-    if (pmeth == NULL)
+    if (pmeth == NULL) {
+        ERR_raise(ERR_LIB_EVP, ERR_R_MALLOC_FAILURE);
         return NULL;
+    }
 
     pmeth->pkey_id = id;
     pmeth->flags = flags | EVP_PKEY_FLAG_DYNAMIC;
@@ -314,6 +316,8 @@ static EVP_PKEY_CTX *int_ctx_new(OSSL_LIB_CTX *libctx,
         ERR_raise(ERR_LIB_EVP, EVP_R_UNSUPPORTED_ALGORITHM);
     } else {
         ret = OPENSSL_zalloc(sizeof(*ret));
+        if (ret == NULL)
+            ERR_raise(ERR_LIB_EVP, ERR_R_MALLOC_FAILURE);
     }
 
 #if !defined(OPENSSL_NO_ENGINE) && !defined(FIPS_MODULE)
@@ -477,8 +481,10 @@ EVP_PKEY_CTX *EVP_PKEY_CTX_dup(const EVP_PKEY_CTX *pctx)
     }
 # endif
     rctx = OPENSSL_zalloc(sizeof(*rctx));
-    if (rctx == NULL)
+    if (rctx == NULL) {
+        ERR_raise(ERR_LIB_EVP, ERR_R_MALLOC_FAILURE);
         return NULL;
+    }
 
     if (pctx->pkey != NULL)
         EVP_PKEY_up_ref(pctx->pkey);
@@ -503,8 +509,11 @@ EVP_PKEY_CTX *EVP_PKEY_CTX_dup(const EVP_PKEY_CTX *pctx)
         if (pctx->op.kex.algctx != NULL) {
             if (!ossl_assert(pctx->op.kex.exchange != NULL))
                 goto err;
-            rctx->op.kex.algctx
-                = pctx->op.kex.exchange->dupctx(pctx->op.kex.algctx);
+
+            if (pctx->op.kex.exchange->dupctx != NULL)
+                rctx->op.kex.algctx
+                    = pctx->op.kex.exchange->dupctx(pctx->op.kex.algctx);
+
             if (rctx->op.kex.algctx == NULL) {
                 EVP_KEYEXCH_free(rctx->op.kex.exchange);
                 rctx->op.kex.exchange = NULL;
@@ -521,8 +530,11 @@ EVP_PKEY_CTX *EVP_PKEY_CTX_dup(const EVP_PKEY_CTX *pctx)
         if (pctx->op.sig.algctx != NULL) {
             if (!ossl_assert(pctx->op.sig.signature != NULL))
                 goto err;
-            rctx->op.sig.algctx
-                = pctx->op.sig.signature->dupctx(pctx->op.sig.algctx);
+
+            if (pctx->op.sig.signature->dupctx != NULL)
+                rctx->op.sig.algctx
+                    = pctx->op.sig.signature->dupctx(pctx->op.sig.algctx);
+
             if (rctx->op.sig.algctx == NULL) {
                 EVP_SIGNATURE_free(rctx->op.sig.signature);
                 rctx->op.sig.signature = NULL;
@@ -539,8 +551,11 @@ EVP_PKEY_CTX *EVP_PKEY_CTX_dup(const EVP_PKEY_CTX *pctx)
         if (pctx->op.ciph.algctx != NULL) {
             if (!ossl_assert(pctx->op.ciph.cipher != NULL))
                 goto err;
-            rctx->op.ciph.algctx
-                = pctx->op.ciph.cipher->dupctx(pctx->op.ciph.algctx);
+
+            if (pctx->op.ciph.cipher->dupctx != NULL)
+                rctx->op.ciph.algctx
+                    = pctx->op.ciph.cipher->dupctx(pctx->op.ciph.algctx);
+
             if (rctx->op.ciph.algctx == NULL) {
                 EVP_ASYM_CIPHER_free(rctx->op.ciph.cipher);
                 rctx->op.ciph.cipher = NULL;
@@ -557,8 +572,11 @@ EVP_PKEY_CTX *EVP_PKEY_CTX_dup(const EVP_PKEY_CTX *pctx)
         if (pctx->op.encap.algctx != NULL) {
             if (!ossl_assert(pctx->op.encap.kem != NULL))
                 goto err;
-            rctx->op.encap.algctx
-                = pctx->op.encap.kem->dupctx(pctx->op.encap.algctx);
+
+            if (pctx->op.encap.kem->dupctx != NULL)
+                rctx->op.encap.algctx
+                    = pctx->op.encap.kem->dupctx(pctx->op.encap.algctx);
+
             if (rctx->op.encap.algctx == NULL) {
                 EVP_KEM_free(rctx->op.encap.kem);
                 rctx->op.encap.kem = NULL;
@@ -608,13 +626,13 @@ int EVP_PKEY_meth_add0(const EVP_PKEY_METHOD *pmeth)
 {
     if (app_pkey_methods == NULL) {
         app_pkey_methods = sk_EVP_PKEY_METHOD_new(pmeth_cmp);
-        if (app_pkey_methods == NULL) {
-            ERR_raise(ERR_LIB_EVP, ERR_R_CRYPTO_LIB);
+        if (app_pkey_methods == NULL){
+            ERR_raise(ERR_LIB_EVP, ERR_R_MALLOC_FAILURE);
             return 0;
         }
     }
     if (!sk_EVP_PKEY_METHOD_push(app_pkey_methods, pmeth)) {
-        ERR_raise(ERR_LIB_EVP, ERR_R_CRYPTO_LIB);
+        ERR_raise(ERR_LIB_EVP, ERR_R_MALLOC_FAILURE);
         return 0;
     }
     sk_EVP_PKEY_METHOD_sort(app_pkey_methods);
@@ -860,7 +878,7 @@ int evp_pkey_ctx_set_params_strict(EVP_PKEY_CTX *ctx, OSSL_PARAM *params)
 
         for (p = params; p->key != NULL; p++) {
             /* Check the ctx actually understands this parameter */
-            if (OSSL_PARAM_locate_const(settable, p->key) == NULL)
+            if (OSSL_PARAM_locate_const(settable, p->key) == NULL )
                 return -2;
         }
     }
@@ -883,9 +901,9 @@ int evp_pkey_ctx_get_params_strict(EVP_PKEY_CTX *ctx, OSSL_PARAM *params)
         const OSSL_PARAM *gettable = EVP_PKEY_CTX_gettable_params(ctx);
         const OSSL_PARAM *p;
 
-        for (p = params; p->key != NULL; p++) {
+        for (p = params; p->key != NULL; p++ ) {
             /* Check the ctx actually understands this parameter */
-            if (OSSL_PARAM_locate_const(gettable, p->key) == NULL)
+            if (OSSL_PARAM_locate_const(gettable, p->key) == NULL )
                 return -2;
         }
     }
@@ -1479,13 +1497,17 @@ static int evp_pkey_ctx_store_cached_data(EVP_PKEY_CTX *ctx,
         evp_pkey_ctx_free_cached_data(ctx, cmd, name);
         if (name != NULL) {
             ctx->cached_parameters.dist_id_name = OPENSSL_strdup(name);
-            if (ctx->cached_parameters.dist_id_name == NULL)
+            if (ctx->cached_parameters.dist_id_name == NULL) {
+                ERR_raise(ERR_LIB_EVP, ERR_R_MALLOC_FAILURE);
                 return 0;
+            }
         }
         if (data_len > 0) {
             ctx->cached_parameters.dist_id = OPENSSL_memdup(data, data_len);
-            if (ctx->cached_parameters.dist_id == NULL)
+            if (ctx->cached_parameters.dist_id == NULL) {
+                ERR_raise(ERR_LIB_EVP, ERR_R_MALLOC_FAILURE);
                 return 0;
+            }
         }
         ctx->cached_parameters.dist_id_set = 1;
         ctx->cached_parameters.dist_id_len = data_len;

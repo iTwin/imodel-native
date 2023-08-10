@@ -269,6 +269,13 @@ DbResult DgnDb::InitializeSchemas(Db::OpenParams const& params)
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
+DgnDb::PullResult DgnDb::PullSchemaChanges(SyncDbUri uri) {
+    return Schemas().GetSchemaSync().Pull(uri, GetSchemaImportToken());
+}
+
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//--------------------------------------------------------------------------------------
 DbResult DgnDb::SchemaStatusToDbResult(SchemaStatus status, bool isUpgrade)
     {
     switch (status)
@@ -379,6 +386,15 @@ DbResult DgnDb::_AfterDataChangeSetApplied()
     DbResult result = T_Super::_AfterDataChangeSetApplied();
     if (result != BE_SQLITE_OK)
         return result;
+
+    m_profileVersion = DgnDbProfileVersion(0, 0, 0, 0); //reset to default
+    bool isOlder;
+    BentleyStatus profileVersionStatus = ReadProfileVersion(isOlder);
+    if (profileVersionStatus != SUCCESS)
+        {
+        LOG.error("Failed to read DgnDb profile version after applying changeset");
+        return DbResult::BE_SQLITE_ERROR_InvalidProfileVersion;
+        }
 
     result = ResetElementIdSequence(GetBriefcaseId());
     if (result != BE_SQLITE_OK)

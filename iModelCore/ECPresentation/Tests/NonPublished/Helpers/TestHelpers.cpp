@@ -12,11 +12,32 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RulesEngineTestHelpers::InitSchemaRegistry(ECDbR ecdb, bvector<bpair<Utf8String, Utf8String>> const& schemaXmls)
     {
+#if defined (USE_GTEST)
+#if !defined(BETEST_NO_INCLUDE_GTEST)
+
+    ::testing::TestSuite const* currentTestSuite = ::testing::UnitTest::GetInstance()->current_test_suite();
+    // some tests define a single schema for the whole test suite, so include its name
+    std::unordered_set<Utf8String> testNamesThatShouldRun({ currentTestSuite->name() });
+    for (int i = 0; i < currentTestSuite->total_test_count(); ++i)
+        {
+        auto testInfo = currentTestSuite->GetTestInfo(i);
+        if (testInfo->should_run())
+            testNamesThatShouldRun.insert(testInfo->name());
+        }
+
+#else
+    BeAssert(false);
+#endif
+#endif
     bvector<ECSchemaPtr> schemas;
     ECSchemaReadContextPtr schemaReadContext = ECSchemaReadContext::CreateContext();
     schemaReadContext->AddSchemaLocater(ecdb.GetSchemaLocater());
     for (auto pair : schemaXmls)
         {
+#if defined (USE_GTEST) && !defined(BETEST_NO_INCLUDE_GTEST)
+        if (testNamesThatShouldRun.find(pair.first) == testNamesThatShouldRun.end())
+            continue;
+#endif
         ECSchemaPtr schema;
         ECSchema::ReadFromXmlString(schema, pair.second.c_str(), *schemaReadContext);
         if (!schema.IsValid())
@@ -447,7 +468,7 @@ static ECValue GetECValueFromJson(RapidJsonValueCR json, ECPropertyCR ecProperty
         return value;
         }
 
-    return ValueHelpers::GetECValueFromJson(ecProperty.GetAsPrimitiveProperty()->GetType(), json);
+    return ValueHelpers::GetECValueFromJson(ecProperty.GetAsPrimitiveProperty()->GetType(), ecProperty.GetAsPrimitiveProperty()->GetExtendedTypeName(), json);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -796,7 +817,7 @@ void RulesEngineTestHelpers::ValidateNodeGroupedValues(NavNodeCR node, bvector<E
     ASSERT_TRUE(groupingValuesArray.IsArray());
     ASSERT_EQ(groupingValuesArray.Size(), groupedValues.size());
 
-    bvector<rapidjson::Document> expectedGroupedValues = ContainerHelpers::TransformContainer<bvector<rapidjson::Document>>(groupedValues, [](ECValueCR value)
+    bvector<rapidjson::Document> expectedGroupedValues = ContainerHelpers::TransformContainer<bvector<rapidjson::Document>>(groupedValues, [key](ECValueCR value)
         {
         if (value.IsNavigation())
             {
@@ -812,7 +833,9 @@ void RulesEngineTestHelpers::ValidateNodeGroupedValues(NavNodeCR node, bvector<E
                 json.SetDouble(julianDays);
             return json;
             }
-        return ValueHelpers::GetJsonFromECValue(value, nullptr);
+
+        Utf8CP extendedType = value.IsPrimitive() && value.IsBinary() ? key->GetECClass().GetPropertyP(key->GetPropertyName())->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str() : "";
+        return ValueHelpers::GetJsonFromECValue(value, extendedType, nullptr);
         });
 
     for (rapidjson::SizeType i = 0; i < groupingValuesArray.Size(); ++i)

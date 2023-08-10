@@ -1,5 +1,5 @@
 /*
- * Copyright 2011-2021 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2011-2023 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -113,7 +113,7 @@ static int hash_df(PROV_DRBG *drbg, unsigned char *out,
             memcpy(out, vtmp, outlen);
             OPENSSL_cleanse(vtmp, hash->blocklen);
             break;
-        } else if (!EVP_DigestFinal(ctx, out, NULL)) {
+        } else if(!EVP_DigestFinal(ctx, out, NULL)) {
             return 0;
         }
 
@@ -212,7 +212,7 @@ static int hash_gen(PROV_DRBG *drbg, unsigned char *out, size_t outlen)
     if (outlen == 0)
         return 1;
     memcpy(hash->vtmp, hash->V, drbg->seedlen);
-    for (;;) {
+    for(;;) {
         if (!EVP_DigestInit_ex(hash->ctx, ossl_prov_digest_md(&hash->digest),
                                NULL)
                 || !EVP_DigestUpdate(hash->ctx, hash->vtmp, drbg->seedlen))
@@ -390,8 +390,10 @@ static int drbg_hash_new(PROV_DRBG *ctx)
     PROV_DRBG_HASH *hash;
 
     hash = OPENSSL_secure_zalloc(sizeof(*hash));
-    if (hash == NULL)
+    if (hash == NULL) {
+        ERR_raise(ERR_LIB_PROV, ERR_R_MALLOC_FAILURE);
         return 0;
+    }
 
     ctx->data = hash;
     ctx->seedlen = HASH_PRNG_MAX_SEEDLEN;
@@ -466,10 +468,8 @@ static int drbg_hash_set_ctx_params(void *vctx, const OSSL_PARAM params[])
 
     md = ossl_prov_digest_md(&hash->digest);
     if (md != NULL) {
-        if ((EVP_MD_get_flags(md) & EVP_MD_FLAG_XOF) != 0) {
-            ERR_raise(ERR_LIB_PROV, PROV_R_XOF_DIGESTS_NOT_ALLOWED);
-            return 0;
-        }
+        if (!ossl_drbg_verify_digest(libctx, md))
+            return 0;   /* Error already raised for us */
 
         /* These are taken from SP 800-90 10.1 Table 2 */
         hash->blocklen = EVP_MD_get_size(md);

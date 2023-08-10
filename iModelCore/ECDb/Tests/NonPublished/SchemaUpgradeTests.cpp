@@ -16,6 +16,16 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 struct SchemaUpgradeTestFixture : public ECDbTestFixture
     {
     std::vector<Utf8String> m_updatedDbs;
+    class IssueListener: public ECN::IIssueListener
+    {
+    public:
+    mutable bvector<Utf8String> m_issues;
+    void _OnIssueReported(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, Utf8CP message) const override
+        {
+        m_issues.push_back(message);
+        }
+    void clear() { m_issues.clear(); }
+    };
     protected:
 
         //---------------------------------------------------------------------------------------
@@ -40,20 +50,32 @@ struct SchemaUpgradeTestFixture : public ECDbTestFixture
         //---------------------------------------------------------------------------------------
         // @bsimethod
         //+---------------+---------------+---------------+---------------+---------------+------
-        void AssertSchemaUpdate(Utf8CP schemaXml, BeFileName seedFilePath, std::pair<bool, bool> const& expectedToSucceedList, Utf8CP assertMessage)
+        void AssertSchemaUpdate(Utf8CP schemaXml, BeFileName seedFilePath, std::pair<bool, bool> const& expectedToSucceedList, Utf8CP assertMessage, Utf8CP errorMessage = nullptr)
             {
             //test 1: unrestricted ECDb
             ECDb ecdb;
             ASSERT_EQ(BE_SQLITE_OK, CloneECDb(ecdb, "schemaupgrade_unrestricted.ecdb", seedFilePath));
 
+            IssueListener issueListener;
+            ecdb.AddIssueListener(issueListener);
+            
             bool expectedToSucceed = expectedToSucceedList.first;
             Utf8String assertMessageFull("[Unrestricted schema import] ");
             assertMessageFull.append(assertMessage);
             SchemaItem schemaItem(schemaXml);
             if (expectedToSucceed)
+                {
                 ASSERT_EQ(SUCCESS, TestHelper(ecdb).ImportSchema(schemaItem, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade)) << assertMessageFull.c_str();
+                }
             else
+                {
                 ASSERT_EQ(ERROR, TestHelper(ecdb).ImportSchema(schemaItem)) << assertMessageFull.c_str();
+                if (!Utf8String::IsNullOrEmpty(errorMessage))
+                    {
+                    ASSERT_EQ(issueListener.m_issues.size(), 1U);
+                    EXPECT_STREQ(errorMessage, issueListener.m_issues[0].c_str());
+                    }
+                }
 
             if (expectedToSucceed)
                 m_updatedDbs.push_back((Utf8String) ecdb.GetDbFileName());
@@ -157,9 +179,6 @@ void AssertECProperties(ECDbCR ecdb, Utf8CP assertExpression, bool strict = true
         }
     }
 
-void ExecuteECSQL(ECDbCR ecdb, Utf8CP ecsql, DbResult stepStatus, ECSqlStatus prepareStatus)
-    {}
-
 #define ASSERT_PROPERTIES_STRICT(ECDB_OBJ, EXPRESSION)              AssertECProperties(ECDB_OBJ, EXPRESSION, true);
 #define ASSERT_PROPERTIES(ECDB_OBJ, EXPRESSION)                     AssertECProperties(ECDB_OBJ, EXPRESSION, false)
 #define ASSERT_ECSQL(ECDB_OBJ, PREPARESTATUS, STEPSTATUS, ECSQL)   {\
@@ -209,13 +228,6 @@ TEST_F(SchemaUpgradeTestFixture, ValidateMapCheck_CheckForOrphanCustomAttributeI
     auto testSchemaXml1 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema1" alias="ts1" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"/>)xml";
 
-    struct IssueListener: ECN::IIssueListener {
-        public:
-        mutable bvector<Utf8String> m_issues;
-        void _OnIssueReported(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, Utf8CP message) const override {
-            m_issues.push_back(message);
-        }
-    };
     IssueListener listener;
     m_ecdb.AddIssueListener(listener);
 
@@ -3139,6 +3151,45 @@ TEST_F(SchemaUpgradeTestFixture, DeleteProperties_TPH)
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Foo (L1, S1, D1, L2, D2) VALUES (2, 't2', 'd2',3, 'd3')");
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Goo (L1, S1, D1, L2, D2, L3, D3) VALUES (4, 't3', 'd4', 5, 'd5',6 ,'d6')");
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Boo (L1, S1, D1, L2, D2, L3, D3, L4, D4) VALUES (5, 't4', 'd7', 6, 'd8',7 ,'d9', 8,'d10')");
+    }
+
+TEST_F(SchemaUpgradeTestFixture, DeletePropertyNoSharedColumn)
+    {
+    constexpr Utf8CP schemaTemplate = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                   <ECEntityClass typeName="TestClass" modifier="None">
+                        <ECProperty propertyName="TestProperty" typeName="string" />
+                    </ECEntityClass>
+                </ECSchema>)xml";
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schemaupdate_deletenavprop.ecdb", SchemaItem(Utf8PrintfString(schemaTemplate, "1.0"))));
+
+    constexpr Utf8CP schemaUpdateTemplate = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="2.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                   <ECEntityClass typeName="TestClass" modifier="None"/>
+                </ECSchema>)xml";
+
+    IssueListener issueListener;
+    m_ecdb.AddIssueListener(issueListener);
+
+    ASSERT_EQ(ERROR, ImportSchema(SchemaItem(schemaUpdateTemplate)));
+    ASSERT_EQ(issueListener.m_issues.size(), 1U);
+    EXPECT_STREQ(issueListener.m_issues[0].c_str(), "ECSchema Upgrade failed. ECClass TestSchema:TestClass: Deleting ECProperty 'TestProperty' from an ECClass which is not mapped to a shared column is not supported.");
+
+    constexpr Utf8CP dynamicSchemaUpdateTemplate = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="2.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name = 'CoreCustomAttributes' version = '01.00.00' alias = 'CoreCA' />
+                                
+                    <ECCustomAttributes>
+                        <DynamicSchema xmlns = 'CoreCustomAttributes.01.00.00' />
+                    </ECCustomAttributes>
+                   <ECEntityClass typeName="TestClass" modifier="None"/>
+                </ECSchema>)xml";
+
+    issueListener.clear();
+    ASSERT_TRUE(issueListener.m_issues.empty());
+
+    ASSERT_EQ(ERROR, ImportSchema(SchemaItem(dynamicSchemaUpdateTemplate)));
+    ASSERT_EQ(issueListener.m_issues.size(), 1U);
+    EXPECT_STREQ(issueListener.m_issues[0].c_str(), "ECSchema Upgrade failed. ECClass TestSchema:TestClass: Deleting ECProperty 'TestProperty' from an ECClass which is not mapped to a shared column is not supported.");
+    m_ecdb.AbandonChanges();
     }
 
 //---------------------------------------------------------------------------------------
@@ -7504,7 +7555,32 @@ TEST_F(SchemaUpgradeTestFixture, DeleteECRelationships)
         "     </ECRelationshipClass>"
         "</ECSchema>";
 
-    AssertSchemaUpdate(relationshipWithForeignKeyMapping, filePath, {false, false}, "Deleting ECRelationship with ForeignKey Mapping");
+    AssertSchemaUpdate(relationshipWithForeignKeyMapping, filePath, {false, false}, "Deleting ECRelationship with ForeignKey Mapping", "ECSchema Upgrade failed. ECSchema TestSchema.01.00.00: Deleting ECClass 'EndTableRelationship' failed. Deleting ECRelationshipClass with ForeignKey mapping is not supported.");
+
+    constexpr Utf8CP relationshipWithForeignKeyMappingDynamicSchema =
+        R"xml(<?xml version='1.0' encoding='utf-8'?>"
+        <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+            <ECSchemaReference name = 'CoreCustomAttributes' version = '01.00.00' prefix='coreCA' />
+            <ECCustomAttributes>
+                <DynamicSchema xmlns = 'CoreCustomAttributes.01.00.00' />
+            </ECCustomAttributes>
+            <ECEntityClass typeName='Foo' modifier='None'>
+                <ECProperty propertyName='S1' typeName='string' />
+            </ECEntityClass>
+            <ECEntityClass typeName='Roo' modifier='None'>
+                <ECProperty propertyName='S3' typeName='string' />
+            </ECEntityClass>
+            <ECRelationshipClass typeName='LinkTableRelationship' modifier='Sealed' strength='referencing' strengthDirection='forward' >
+                <Source cardinality='(0,N)' polymorphic='True'>
+                    <Class class='Foo' />
+                </Source>
+                <Target cardinality='(0,N)' polymorphic='True'>
+                    <Class class='Roo' />
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml";
+
+    AssertSchemaUpdate(relationshipWithForeignKeyMappingDynamicSchema, filePath, {false, false}, "Deleting ECRelationship with ForeignKey Mapping", "ECSchema Upgrade failed. ECSchema TestSchema.01.00.00: Deleting ECClass 'EndTableRelationship' failed. Deleting ECRelationshipClass with ForeignKey mapping is not supported.");
 
     Utf8CP linkTableECRelationship =
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -7532,6 +7608,81 @@ TEST_F(SchemaUpgradeTestFixture, DeleteECRelationships)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, DeleteECRelationshipConstraintClassUnsupported)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schemaupdate.ecdb", SchemaItem(
+        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+          <ECEntityClass typeName="Element" modifier="Abstract">
+            <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+                    <ShareColumns xmlns="ECDbMap.02.00.00">
+                      <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                    </ShareColumns>
+            </ECCustomAttributes>
+            <ECProperty propertyName="Code" typeName="string" />
+          </ECEntityClass>
+          <ECEntityClass typeName="GeometrySource" modifier="Abstract" />
+          <ECEntityClass typeName="ElementGeometry">
+            <ECProperty propertyName="Geom" typeName="binary" />
+            <ECNavigationProperty propertyName="Source" relationshipName="GeometrySourceHasGeometry" direction="Backward" />                 
+          </ECEntityClass>
+          <ECEntityClass typeName="ExtendedElement">
+            <BaseClass>Element</BaseClass>
+            <ECProperty propertyName="Name" typeName="string" />
+          </ECEntityClass>
+          <ECRelationshipClass typeName="GeometrySourceHasGeometry" strength="embedding" modifier="Sealed">
+            <Source multiplicity="(0..1)" polymorphic="True" roleLabel="owns">
+              <Class class="GeometrySource" />
+            </Source>
+            <Target multiplicity="(0..1)" polymorphic="True" roleLabel="is owned by">
+              <Class class="ElementGeometry" />
+            </Target>
+          </ECRelationshipClass>
+        </ECSchema>)xml")));
+
+    IssueListener issueListener;
+    m_ecdb.AddIssueListener(issueListener);
+
+    ASSERT_EQ(ERROR, ImportSchema(SchemaItem(
+        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="2.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+          <ECSchemaReference name = 'CoreCustomAttributes' version = '01.00.00' alias='coreCA' />
+            <ECCustomAttributes>
+                <DynamicSchema xmlns = 'CoreCustomAttributes.01.00.00' />
+            </ECCustomAttributes>
+          <ECEntityClass typeName="Element" modifier="Abstract">
+            <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+                    <ShareColumns xmlns="ECDbMap.02.00.00">
+                      <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                    </ShareColumns>
+            </ECCustomAttributes>
+            <ECProperty propertyName="Code" typeName="string" />
+          </ECEntityClass>
+          <ECEntityClass typeName="GeometrySource" modifier="Abstract" />
+          <ECEntityClass typeName="ExtendedElement">
+            <BaseClass>Element</BaseClass>
+            <ECProperty propertyName="Name" typeName="string" />
+          </ECEntityClass>
+          <ECRelationshipClass typeName="GeometrySourceHasGeometry" strength="embedding" modifier="Sealed">
+            <Source multiplicity="(0..1)" polymorphic="True" roleLabel="owns">
+              <Class class="GeometrySource" />
+            </Source>
+            <Target multiplicity="(0..1)" polymorphic="True" roleLabel="is owned by">
+              <Class class="ExtendedElement" />
+            </Target>
+          </ECRelationshipClass>
+        </ECSchema>)xml"))) << "Deleting ECStructClass is expected to be not supported";
+
+    ASSERT_EQ(issueListener.m_issues.size(), 1U);
+    EXPECT_STREQ("ECSchema Upgrade failed. ECSchema TestSchema.01.00.00: Deleting ECClass 'ElementGeometry' failed. A class which is specified in a relationship constraint cannot be deleted", issueListener.m_issues[0].c_str());
+    }
+
 TEST_F(SchemaUpgradeTestFixture, DeleteECStructClassUnsupported)
     {
     SchemaItem schemaItem(
@@ -7544,10 +7695,20 @@ TEST_F(SchemaUpgradeTestFixture, DeleteECStructClassUnsupported)
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
 
+    IssueListener issueListener;
+    m_ecdb.AddIssueListener(issueListener);
+
     ASSERT_EQ(ERROR, ImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'CoreCustomAttributes' version = '01.00.00' prefix='coreCA' />"
+        "   <ECCustomAttributes>"
+        "       <DynamicSchema xmlns = 'CoreCustomAttributes.01.00.00' />"
+        "   </ECCustomAttributes>"
         "</ECSchema>"))) << "Deleting ECStructClass is expected to be not supported";
+
+    ASSERT_EQ(issueListener.m_issues.size(), 1U);
+    EXPECT_STREQ("ECSchema Upgrade failed. ECSchema TestSchema.01.00.00: Deleting ECClass 'ChangeInfoStruct' failed. ECStructClass cannot be deleted", issueListener.m_issues[0].c_str());
     }
 
 //---------------------------------------------------------------------------------------
@@ -7762,13 +7923,77 @@ TEST_F(SchemaUpgradeTestFixture, DeleteNavigationProperty)
     Utf8String schemaV2Xml;
     schemaV2Xml.Sprintf(schemaTemplate,"2.0", "");
 
+    IssueListener issueListener;
+    m_ecdb.AddIssueListener(issueListener);
+
     ASSERT_EQ(ERROR, ImportSchema(SchemaItem(schemaV2Xml))) << "Schema update should fail when a nav prop (w/o ForeignKeyConstraint) is deleted because it would change the mapping type logical FK to link table";
+    ASSERT_EQ(issueListener.m_issues.size(), 1U);
+    EXPECT_STREQ(issueListener.m_issues[0].c_str(), "ECSchema Upgrade failed. ECClass TestSchema:B: Deleting Navigation ECProperty 'A' from an ECClass is not supported.");
     m_ecdb.AbandonChanges();
 
     //now delete nav prop (physical FK)
     schemaV1Xml.Sprintf(schemaTemplate,"1.0", R"xml(<ECNavigationProperty propertyName="A" relationshipName="Rel" direction="Backward">
                             <ECCustomAttributes>
                                 <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+                            </ECCustomAttributes>
+                        </ECNavigationProperty>)xml");
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schemaupdate_deletenavprop.ecdb", SchemaItem(schemaV1Xml))) << "Schema import with " << schemaV1Xml.c_str();
+
+    ASSERT_EQ(ERROR, ImportSchema(SchemaItem(schemaV2Xml))) << "Schema update should fail when a nav prop (with ForeignKeyConstraint) is deleted because it would change the mapping type from physical FK to link table";
+    }
+
+TEST_F(SchemaUpgradeTestFixture, DeleteNavigationPropertyDynamicSchema)
+    {
+    Utf8CP schemaTemplate = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                    <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+                    %s
+                    <ECEntityClass typeName="A" modifier="None">
+                        <ECProperty propertyName="Prop1" typeName="string" />
+                    </ECEntityClass>
+                   <ECEntityClass typeName="B" modifier="None">
+                        <ECCustomAttributes>
+                            <ClassMap xmlns="ECDbMap.02.00.00">
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                            <ShareColumns xmlns="ECDbMap.02.00.00"/>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName="Prop2" typeName="string" />
+                        %s
+                    </ECEntityClass>
+                    <ECRelationshipClass typeName="Rel" modifier="None">
+                            <Source multiplicity="(0..1)" polymorphic="True" roleLabel="owns">
+                              <Class class="A"/>
+                            </Source>
+                            <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is owned by">
+                              <Class class="B"/>
+                            </Target>
+                     </ECRelationshipClass>
+                </ECSchema>)xml";
+
+    Utf8String schemaV1Xml;
+    schemaV1Xml.Sprintf(schemaTemplate,"1.0.0", "", R"xml(<ECNavigationProperty propertyName="A" relationshipName="Rel" direction="Backward"/>)xml");
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schemaupdate_deletenavprop.ecdb", SchemaItem(schemaV1Xml))) << "Schema import with " << schemaV1Xml.c_str();
+
+    constexpr Utf8CP dynamicSchema = R"xml(<ECSchemaReference name = 'CoreCustomAttributes' version = '01.00.00' alias = 'CoreCA' />
+                                    <ECCustomAttributes>
+                                        <DynamicSchema xmlns = 'CoreCustomAttributes.01.00.00' />
+                                    </ECCustomAttributes>)xml";
+    //now delete nav prop (logical FK)
+    Utf8String schemaV2Xml;
+    schemaV2Xml.Sprintf(schemaTemplate,"2.0.0", dynamicSchema, "");
+
+    IssueListener issueListener;
+    m_ecdb.AddIssueListener(issueListener);
+
+    ASSERT_EQ(ERROR, ImportSchema(SchemaItem(schemaV2Xml))) << "Schema update should fail when a nav prop (w/o ForeignKeyConstraint) is deleted because it would change the mapping type logical FK to link table";
+    ASSERT_EQ(issueListener.m_issues.size(), 1U);
+    EXPECT_STREQ(issueListener.m_issues[0].c_str(), "ECSchema Upgrade failed. ECClass TestSchema:B: Deleting Navigation ECProperty 'A' from an ECClass is not supported.");
+    m_ecdb.AbandonChanges();
+
+    //now delete nav prop (physical FK)
+    schemaV1Xml.Sprintf(schemaTemplate,"1.0.0", "", R"xml(<ECNavigationProperty propertyName="A" relationshipName="Rel" direction="Backward">
+                            <ECCustomAttributes>
+                                <ForeignKeyConstraint xmlns="ECDbMap.02.00.00"/>
                             </ECCustomAttributes>
                         </ECNavigationProperty>)xml");
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schemaupdate_deletenavprop.ecdb", SchemaItem(schemaV1Xml))) << "Schema import with " << schemaV1Xml.c_str();
@@ -13812,8 +14037,13 @@ TEST_F(SchemaUpgradeTestFixture, DisallowMajorSchemaUpgrade)
 
     EXPECT_EQ(ERROR, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::None)) << "Deleting a property on a shared column (must fail because it requires the major schema version to be incremented)";
     EXPECT_EQ(ERROR, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << "Deleting a property on a shared column (must fail because it requires the major schema version to be incremented)";
+    EXPECT_EQ(ERROR, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas)) << "Deleting a property on a shared column (must fail because it requires the major schema version to be incremented)";
+    EXPECT_EQ(ERROR, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas)) << "Deleting a property on a shared column (must fail because it requires the major schema version to be incremented)";
+
     EXPECT_EQ(SUCCESS, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::None)) << "Deleting a property on a shared column";
     EXPECT_EQ(ERROR, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << "Deleting a property on a shared column";
+    EXPECT_EQ(SUCCESS, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas)) << "Deleting a property on a shared column";
+    EXPECT_EQ(ERROR, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas)) << "Deleting a property on a shared column";
 
     //Deleting a class
     newSchema = R"xml(<?xml version="1.0" encoding="utf-8" ?>
@@ -13834,8 +14064,13 @@ TEST_F(SchemaUpgradeTestFixture, DisallowMajorSchemaUpgrade)
 
     EXPECT_EQ(ERROR, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::None)) << "Deleting a class (must fail because it requires the major schema version to be incremented)";
     EXPECT_EQ(ERROR, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << "Deleting a class (must fail because it requires the major schema version to be incremented)";
+    EXPECT_EQ(ERROR, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas)) << "Deleting a class (must fail because it requires the major schema version to be incremented)";
+    EXPECT_EQ(ERROR, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas)) << "Deleting a class (must fail because it requires the major schema version to be incremented)";
+
     EXPECT_EQ(SUCCESS, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::None)) << "Deleting a class";
     EXPECT_EQ(ERROR, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << "Deleting a class";
+    EXPECT_EQ(SUCCESS, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas)) << "Deleting a class";
+    EXPECT_EQ(ERROR, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas)) << "Deleting a class";
 
     //adding IsNullable constraint
     newSchema = R"xml(<?xml version="1.0" encoding="utf-8" ?>
@@ -16928,5 +17163,687 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass) {
         ASSERT_TRUE (vs->IsColumnNull(3))  << "Expect ps4 to be null";
     }
 }
+
+TEST_F(SchemaUpgradeTestFixture, MajorSchemaUpgradeDeletePropertyAndClass)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("schemaupgrade_MajorSchemaUpgradeDeletePropertyAndClass.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                            <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+                                <ECEntityClass typeName="TestClass" >
+                                    <ECCustomAttributes>
+                                       <ClassMap xmlns="ECDbMap.02.00.00">
+                                           <MapStrategy>TablePerHierarchy</MapStrategy>
+                                       </ClassMap>
+                                       <ShareColumns xmlns="ECDbMap.02.00.00"/>
+                                    </ECCustomAttributes>
+                                    <ECProperty propertyName="Name" typeName="string" />
+                                    <ECProperty propertyName="Code" typeName="int" />
+                                </ECEntityClass>
+                                <ECEntityClass typeName="SubClassToDelete" >
+                                    <BaseClass>TestClass</BaseClass>
+                                    <ECProperty propertyName="SubProp" typeName="int" />
+                                </ECEntityClass>
+
+                                <ECEntityClass typeName="TestClassToDelete" >
+                                    <ECProperty propertyName="Name" typeName="string" />
+                                </ECEntityClass>
+                            </ECSchema>)xml")));
+
+    // Major Schema update: Delete Property and Class in a dynamic schema
+    Utf8CP majorSchemaChange = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                            <ECSchema schemaName="TestSchema" alias="ts" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+                                <ECSchemaReference name = 'CoreCustomAttributes' version = '01.00.00' alias = 'CoreCA' />
+                                
+                                <ECCustomAttributes>
+                                    <DynamicSchema xmlns = 'CoreCustomAttributes.01.00.00' />
+                                </ECCustomAttributes>
+
+                                <ECEntityClass typeName="TestClass" >
+                                    <ECCustomAttributes>
+                                       <ClassMap xmlns="ECDbMap.02.00.00">
+                                           <MapStrategy>TablePerHierarchy</MapStrategy>
+                                       </ClassMap>
+                                       <ShareColumns xmlns="ECDbMap.02.00.00"/>
+                                    </ECCustomAttributes>
+                                    <ECProperty propertyName="Name" typeName="string" />
+                                </ECEntityClass>
+                            </ECSchema>)xml";
+
+    for (const auto& [lineNumber, newSchemaVersion, importOptions, expectedResult] : std::vector<std::tuple<const int, Utf8CP, const SchemaManager::SchemaImportOptions, const BentleyStatus>>
+        {
+            { __LINE__, "1.1.0", SchemaManager::SchemaImportOptions::None, ERROR },
+            { __LINE__, "1.1.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, ERROR },
+            { __LINE__, "1.1.0", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, ERROR },
+            { __LINE__, "1.1.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, ERROR },
+
+            { __LINE__, "2.0.0", SchemaManager::SchemaImportOptions::None, SUCCESS },
+            { __LINE__, "2.0.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, ERROR },
+            { __LINE__, "2.0.0", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS },
+            { __LINE__, "2.0.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS },
+        })
+        {
+        Utf8PrintfString errorMsg("Test case at line %d has failed.\n", lineNumber);
+
+        EXPECT_EQ(expectedResult, GetHelper().ImportSchema(SchemaItem(Utf8PrintfString(majorSchemaChange, newSchemaVersion)), importOptions)) << errorMsg;
+        if (expectedResult == SUCCESS)
+            {
+            // Check if property "Code" was deleted
+            auto testClass = m_ecdb.Schemas().GetClass("TestSchema", "TestClass");
+            ASSERT_NE(testClass, nullptr) << errorMsg;
+
+            EXPECT_NE(testClass->GetPropertyP("Name"), nullptr) << errorMsg;
+            EXPECT_EQ(testClass->GetPropertyP("Code"), nullptr) << errorMsg;
+
+            // Check if classes "TestClassToDelete" and "SubClassToDelete" were deleted
+            EXPECT_EQ(m_ecdb.Schemas().GetClass("TestSchema", "TestClassToDelete"), nullptr) << errorMsg;
+            EXPECT_EQ(m_ecdb.Schemas().GetClass("TestSchema", "SubClassToDelete"), nullptr) << errorMsg;
+            }
+        ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AbandonChanges()) << errorMsg;
+        ASSERT_EQ(BE_SQLITE_OK, ReopenECDb()) << errorMsg;
+        }
+    }
+
+TEST_F(SchemaUpgradeTestFixture, MajorSchemaUpgradePropertyTypeChangeFromPrim)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("schemaupgrade_MajorSchemaUpgradePropertyTypeChangeFromPrim.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+                                <ECEntityClass typeName="TestClass" >
+                                    <ECCustomAttributes>
+                                       <ClassMap xmlns="ECDbMap.02.00">
+                                           <MapStrategy>TablePerHierarchy</MapStrategy>
+                                       </ClassMap>
+                                       <ShareColumns xmlns="ECDbMap.02.00"/>
+                                    </ECCustomAttributes>
+                                    <ECProperty propertyName="Name" typeName="string" />
+                                </ECEntityClass>
+                            </ECSchema>)xml")));
+
+    // Major Schema updates
+    Utf8CP newSchema = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                            <ECSchema schemaName="TestSchema" alias="ts" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                <ECSchemaReference name = 'CoreCustomAttributes' version = '01.00' alias = 'CoreCA' />
+                                <ECCustomAttributes>
+                                    <DynamicSchema xmlns = 'CoreCustomAttributes.01.00' />
+                                </ECCustomAttributes>
+
+                                <ECEnumeration typeName='UnstrictEnum' backingTypeName='int' isStrict='False'>
+                                    <ECEnumerator value = '0' displayLabel = 'txt' />
+                                    <ECEnumerator value = '1' displayLabel = 'bat' />
+                                </ECEnumeration>
+                                <ECEnumeration typeName='StrictEnum' backingTypeName='int' isStrict='True'>
+                                    <ECEnumerator value = '10' displayLabel = 'txt' />
+                                    <ECEnumerator value = '11' displayLabel = 'bat' />
+                                </ECEnumeration>
+
+                                <ECEntityClass typeName="TestClass" >
+                                    <ECCustomAttributes>
+                                       <ClassMap xmlns="ECDbMap.02.00">
+                                           <MapStrategy>TablePerHierarchy</MapStrategy>
+                                       </ClassMap>
+                                       <ShareColumns xmlns="ECDbMap.02.00"/>
+                                    </ECCustomAttributes>
+                                    <ECProperty propertyName="Name" typeName="%s" />
+                                </ECEntityClass>
+                            </ECSchema>)xml";
+
+    constexpr Utf8CP errorMsgMajorVersionDisabled = "ECSchema Upgrade failed. ECSchema TestSchema.01.00.00: Major schema version changes are disabled.  New Schema TestSchema.02.00.00";
+    constexpr Utf8CP errorMsgPrimToPrim = "ECSchema Upgrade failed. ECProperty TestSchema:TestClass.Name: Changing the type of a Primitive ECProperty is not supported. Cannot convert from 'string' to 'int'";
+    constexpr Utf8CP errorMsgPrimToEnum = "ECSchema Upgrade failed. ECProperty TestSchema:TestClass.Name: Primitive type change to ECEnumeration which as different type then existing primitive property";
+    constexpr Utf8CP errorMsgPoint2d = "ECSchema Upgrade failed. ECProperty TestSchema:TestClass.Name: Changing the type of a Primitive ECProperty is not supported. Cannot convert from 'string' to 'point2d'";
+    constexpr Utf8CP errorMsgPoint3d = "ECSchema Upgrade failed. ECProperty TestSchema:TestClass.Name: Changing the type of a Primitive ECProperty is not supported. Cannot convert from 'string' to 'point3d'";
+
+    for (const auto& [lineNumber, newSchemaVersion, changedPropertyTypeName, importOption, expectedResult, expectedErrorMessage] 
+        : std::vector<std::tuple<const int, Utf8CP, const Utf8String, const SchemaManager::SchemaImportOptions, const BentleyStatus, Utf8CP>>
+        {
+            // Change type to Primitive without changing major version. All should fail
+            { __LINE__, "1.1", "int", SchemaManager::SchemaImportOptions::None, ERROR, errorMsgPrimToPrim },
+            { __LINE__, "1.1", "int", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, ERROR, errorMsgPrimToPrim },
+            { __LINE__, "1.1", "int", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, ERROR, errorMsgPrimToPrim },
+            { __LINE__, "1.1", "int", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, ERROR, errorMsgPrimToPrim },
+
+            // Change type to Primitive and changing major version. Should pass if import option AllowMajorSchemaUpgradeForDynamicSchemas is given
+            { __LINE__, "2.0", "int", SchemaManager::SchemaImportOptions::None, SUCCESS, nullptr },
+            { __LINE__, "2.0", "int", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, ERROR, errorMsgMajorVersionDisabled },
+            { __LINE__, "2.0", "int", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS, nullptr },
+            { __LINE__, "2.0", "int", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS, nullptr },
+
+            // Change type to Primitive and changing major version. Should pass if import option AllowMajorSchemaUpgradeForDynamicSchemas is given
+            { __LINE__, "2.0", "double", SchemaManager::SchemaImportOptions::None, SUCCESS, nullptr },
+            { __LINE__, "2.0", "double", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, ERROR, errorMsgMajorVersionDisabled },
+            { __LINE__, "2.0", "double", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS, nullptr },
+            { __LINE__, "2.0", "double", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS, nullptr },
+
+            { __LINE__, "2.0", "long", SchemaManager::SchemaImportOptions::None, SUCCESS, nullptr },
+            { __LINE__, "2.0", "long", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, ERROR, errorMsgMajorVersionDisabled },
+            { __LINE__, "2.0", "long", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS, nullptr },
+            { __LINE__, "2.0", "long", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS, nullptr },
+
+            { __LINE__, "2.0", "binary", SchemaManager::SchemaImportOptions::None, SUCCESS, nullptr },
+            { __LINE__, "2.0", "binary", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, ERROR, errorMsgMajorVersionDisabled },
+            { __LINE__, "2.0", "binary", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS, nullptr },
+            { __LINE__, "2.0", "binary", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS, nullptr },
+
+            { __LINE__, "2.0", "boolean", SchemaManager::SchemaImportOptions::None, SUCCESS, nullptr },
+            { __LINE__, "2.0", "boolean", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, ERROR, errorMsgMajorVersionDisabled },
+            { __LINE__, "2.0", "boolean", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS, nullptr },
+            { __LINE__, "2.0", "boolean", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS, nullptr },
+
+            { __LINE__, "2.0", "dateTime", SchemaManager::SchemaImportOptions::None, SUCCESS, nullptr },
+            { __LINE__, "2.0", "dateTime", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, ERROR, errorMsgMajorVersionDisabled },
+            { __LINE__, "2.0", "dateTime", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS, nullptr },
+            { __LINE__, "2.0", "dateTime", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS, nullptr },
+
+            { __LINE__, "2.0", "point2d", SchemaManager::SchemaImportOptions::None, ERROR, errorMsgPoint2d },
+            { __LINE__, "2.0", "point2d", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, ERROR, errorMsgMajorVersionDisabled },
+            { __LINE__, "2.0", "point2d", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, ERROR, errorMsgPoint2d },
+            { __LINE__, "2.0", "point2d", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, ERROR, errorMsgPoint2d },
+
+            { __LINE__, "2.0", "point3d", SchemaManager::SchemaImportOptions::None, ERROR, errorMsgPoint3d },
+            { __LINE__, "2.0", "point3d", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, ERROR, errorMsgMajorVersionDisabled },
+            { __LINE__, "2.0", "point3d", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, ERROR, errorMsgPoint3d },
+            { __LINE__, "2.0", "point3d", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, ERROR, errorMsgPoint3d },
+
+            // Change type to Unstrict Enum without changing major version. All should fail
+            { __LINE__, "1.1", "UnstrictEnum", SchemaManager::SchemaImportOptions::None, ERROR, errorMsgPrimToEnum },
+            { __LINE__, "1.1", "UnstrictEnum", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, ERROR, errorMsgPrimToEnum },
+            { __LINE__, "1.1", "UnstrictEnum", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, ERROR, errorMsgPrimToEnum },
+            { __LINE__, "1.1", "UnstrictEnum", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, ERROR, errorMsgPrimToEnum },
+
+            // Change type to Unstrict Enum and changing major version. Should pass if import option AllowMajorSchemaUpgradeForDynamicSchemas is given
+            { __LINE__, "2.0", "UnstrictEnum", SchemaManager::SchemaImportOptions::None, SUCCESS, nullptr },
+            { __LINE__, "2.0", "UnstrictEnum", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, ERROR, errorMsgMajorVersionDisabled },
+            { __LINE__, "2.0", "UnstrictEnum", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS, nullptr },
+            { __LINE__, "2.0", "UnstrictEnum", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS, nullptr },
+
+            // Change type to Strict Enum without changing major version. Change to Strict Enum is not supported. All should fail.
+            { __LINE__, "1.1", "StrictEnum", SchemaManager::SchemaImportOptions::None, ERROR, errorMsgPrimToEnum },
+            { __LINE__, "1.1", "StrictEnum", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, ERROR, errorMsgPrimToEnum },
+            { __LINE__, "1.1", "StrictEnum", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, ERROR, errorMsgPrimToEnum },
+            { __LINE__, "1.1", "StrictEnum", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, ERROR, errorMsgPrimToEnum },
+
+            { __LINE__, "2.0", "StrictEnum", SchemaManager::SchemaImportOptions::None, ERROR, errorMsgPrimToEnum },
+            { __LINE__, "2.0", "StrictEnum", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, ERROR, errorMsgMajorVersionDisabled },
+            { __LINE__, "2.0", "StrictEnum", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, ERROR, errorMsgPrimToEnum },
+            { __LINE__, "2.0", "StrictEnum", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, ERROR, errorMsgPrimToEnum },
+        })
+        {
+        Utf8PrintfString errorMsg("Test case at line %d has failed.\n", lineNumber);
+        IssueListener issueListener;
+        m_ecdb.AddIssueListener(issueListener);
+
+        EXPECT_EQ(expectedResult, GetHelper().ImportSchema(SchemaItem(Utf8PrintfString(newSchema, newSchemaVersion, changedPropertyTypeName.c_str())), importOption)) << errorMsg;
+        if (expectedResult == SUCCESS)
+            {
+            auto testClass = m_ecdb.Schemas().GetClass("TestSchema", "TestClass");
+            ASSERT_NE(testClass, nullptr) << errorMsg;
+
+            if (changedPropertyTypeName.EqualsI("UnstrictEnum") || changedPropertyTypeName.EqualsI("StrictEnum"))
+                {
+                auto enumeration = testClass->GetPropertyP("Name")->GetAsPrimitiveProperty()->GetEnumeration();
+                ASSERT_NE(enumeration, nullptr);
+
+                EXPECT_EQ(enumeration->GetFullName(), Utf8PrintfString("TestSchema:%s", changedPropertyTypeName.c_str()));
+                EXPECT_TRUE(enumeration->GetTypeName().EqualsI("int")) << errorMsg;
+                }
+            else
+                {
+                const auto property = testClass->GetPropertyP("Name");
+                EXPECT_TRUE(property->GetTypeFullName().EqualsI(changedPropertyTypeName)) << errorMsg;
+                
+                const auto propertyType = testClass->GetPropertyP("Name")->GetAsPrimitiveProperty()->GetType();
+                if (changedPropertyTypeName.EqualsI("int"))
+                    EXPECT_EQ(propertyType, PRIMITIVETYPE_Integer) << errorMsg;
+                else if (changedPropertyTypeName.EqualsI("long"))
+                    EXPECT_EQ(propertyType, PRIMITIVETYPE_Long) << errorMsg;
+                else if (changedPropertyTypeName.EqualsI("double"))
+                    EXPECT_EQ(propertyType, PRIMITIVETYPE_Double) << errorMsg;
+                else if (changedPropertyTypeName.EqualsI("binary"))
+                    EXPECT_EQ(propertyType, PRIMITIVETYPE_Binary) << errorMsg;
+                else if (changedPropertyTypeName.EqualsI("boolean"))
+                    EXPECT_EQ(propertyType, PRIMITIVETYPE_Boolean) << errorMsg;
+                else if (changedPropertyTypeName.EqualsI("dateTime"))
+                    EXPECT_EQ(propertyType, PRIMITIVETYPE_DateTime) << errorMsg;
+                else if (changedPropertyTypeName.EqualsI("point2d"))
+                    EXPECT_EQ(propertyType, PRIMITIVETYPE_Point2d) << errorMsg;
+                else if (changedPropertyTypeName.EqualsI("point3d"))
+                    EXPECT_EQ(propertyType, PRIMITIVETYPE_Point3d) << errorMsg;
+                }
+            }
+        else if (!Utf8String::IsNullOrEmpty(expectedErrorMessage))
+            {
+            ASSERT_EQ(issueListener.m_issues.size(), 1U) << errorMsg;
+            EXPECT_STREQ(issueListener.m_issues[0].c_str(), expectedErrorMessage) << errorMsg;
+            }
+
+        // Reset test setup for next case
+        ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AbandonChanges()) << errorMsg;
+        ASSERT_EQ(BE_SQLITE_OK, ReopenECDb()) << errorMsg;
+        m_ecdb.RemoveIssueListener();
+        }
+    }
+
+TEST_F(SchemaUpgradeTestFixture, MajorSchemaUpgradePropertyTypeChangeFromEnum)
+    {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("schemaupgrade_MajorSchemaUpgradePropertyTypeChangeFromEnum.ecdb"));
+
+    constexpr Utf8CP dynamicSchema = R"xml(<ECSchemaReference name = 'CoreCustomAttributes' version = '01.00' alias = 'CoreCA' />
+                                    <ECCustomAttributes>
+                                        <DynamicSchema xmlns = 'CoreCustomAttributes.01.00' />
+                                    </ECCustomAttributes>)xml";
+
+    Utf8CP testSchemaTemplate = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                            <ECSchema schemaName="TestSchema" alias="ts" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+                                %s
+
+                                <ECEnumeration typeName='UnstrictEnumInt' backingTypeName='int' isStrict='False'>
+                                    <ECEnumerator value = '0' displayLabel = 'txt' />
+                                    <ECEnumerator value = '1' displayLabel = 'bat' />
+                                </ECEnumeration>
+                                <ECEnumeration typeName='UnstrictEnumString' backingTypeName='string' isStrict='False'>
+                                    <ECEnumerator value = 'val0' displayLabel = 'txt' />
+                                    <ECEnumerator value = 'val1' displayLabel = 'bat' />
+                                </ECEnumeration>
+
+                                <ECEnumeration typeName='StrictEnumInt' backingTypeName='int' isStrict='True'>
+                                    <ECEnumerator value = '10' displayLabel = 'txt' />
+                                    <ECEnumerator value = '11' displayLabel = 'bat' />
+                                </ECEnumeration>
+                                <ECEnumeration typeName='StrictEnumString' backingTypeName='string' isStrict='True'>
+                                    <ECEnumerator value = 'val10' displayLabel = 'txt' />
+                                    <ECEnumerator value = 'val11' displayLabel = 'bat' />
+                                </ECEnumeration>
+
+                                <ECEntityClass typeName="TestClass" >
+                                    <ECCustomAttributes>
+                                       <ClassMap xmlns="ECDbMap.02.00">
+                                           <MapStrategy>TablePerHierarchy</MapStrategy>
+                                       </ClassMap>
+                                       <ShareColumns xmlns="ECDbMap.02.00"/>
+                                    </ECCustomAttributes>
+                                    <ECProperty propertyName="Name" typeName="%s" />
+                                </ECEntityClass>
+                            </ECSchema>)xml";
+
+    constexpr Utf8CP errorMsgMajorVersionDisabled = "ECSchema Upgrade failed. ECSchema TestSchema.01.00.00: Major schema version changes are disabled.  New Schema TestSchema.02.00.00";
+    constexpr Utf8CP errorMsgEnumToDifferentType = "ECSchema Upgrade failed. ECProperty TestSchema:TestClass.Name: ECEnumeration specified for property must have same primitive type as new primitive property type";
+    constexpr Utf8CP errorMsgEnumFromDifferentType = "ECSchema Upgrade failed. ECProperty TestSchema:TestClass.Name: Existing ECEnumeration has different primitive type from the new ECEnumeration specified";
+
+    for (const auto& [lineNumber, newSchemaVersion, basePropertyTypeName, changedPropertyTypeName, importOption, expectedResult, expectedErrorMessage] 
+        : std::vector<std::tuple<const int, Utf8CP, Utf8CP, const Utf8String, const SchemaManager::SchemaImportOptions, const BentleyStatus, Utf8CP>>
+        {
+            // Test Case set 1 : Base property is Unstrict enum
+            // Change type to Primitive without changing major version. All should pass.
+            { __LINE__, "1.1", "UnstrictEnumInt", "int", SchemaManager::SchemaImportOptions::None, SUCCESS, nullptr },
+            { __LINE__, "1.1", "UnstrictEnumInt", "int", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, SUCCESS, nullptr },
+            { __LINE__, "1.1", "UnstrictEnumInt", "int", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS, nullptr },
+            { __LINE__, "1.1", "UnstrictEnumInt", "int", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS, nullptr },
+
+            // Change type to same Primitive and changing major version. Should pass if import option None or AllowMajorSchemaUpgradeForDynamicSchemas is given.
+            { __LINE__, "2.0", "UnstrictEnumInt", "int", SchemaManager::SchemaImportOptions::None, SUCCESS, nullptr },
+            { __LINE__, "2.0", "UnstrictEnumInt", "int", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, ERROR, errorMsgMajorVersionDisabled },
+            { __LINE__, "2.0", "UnstrictEnumInt", "int", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS, nullptr },
+            { __LINE__, "2.0", "UnstrictEnumInt", "int", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS, nullptr },
+
+            // Change type to different Primitive without changing major version. All should fail
+            { __LINE__, "1.1", "UnstrictEnumInt", "string", SchemaManager::SchemaImportOptions::None, ERROR, errorMsgEnumToDifferentType },
+            { __LINE__, "1.1", "UnstrictEnumInt", "string", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, ERROR, errorMsgEnumToDifferentType },
+            { __LINE__, "1.1", "UnstrictEnumInt", "string", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, ERROR, errorMsgEnumToDifferentType },
+            { __LINE__, "1.1", "UnstrictEnumInt", "string", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, ERROR, errorMsgEnumToDifferentType },
+
+            // Change type to different Primitive and changing major version. Should pass if import option None or AllowMajorSchemaUpgradeForDynamicSchemas is given.
+            { __LINE__, "2.0", "UnstrictEnumInt", "string", SchemaManager::SchemaImportOptions::None, SUCCESS, nullptr },
+            { __LINE__, "2.0", "UnstrictEnumInt", "string", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, ERROR, errorMsgMajorVersionDisabled },
+            { __LINE__, "2.0", "UnstrictEnumInt", "string", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS, nullptr },
+            { __LINE__, "2.0", "UnstrictEnumInt", "string", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS, nullptr },
+
+            // Change type to different Unstrict Enum without changing major version. All should fail
+            { __LINE__, "1.1", "UnstrictEnumInt", "UnstrictEnumString", SchemaManager::SchemaImportOptions::None, ERROR, errorMsgEnumFromDifferentType },
+            { __LINE__, "1.1", "UnstrictEnumInt", "UnstrictEnumString", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, ERROR, errorMsgEnumFromDifferentType },
+            { __LINE__, "1.1", "UnstrictEnumInt", "UnstrictEnumString", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, ERROR, errorMsgEnumFromDifferentType },
+            { __LINE__, "1.1", "UnstrictEnumInt", "UnstrictEnumString", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, ERROR, errorMsgEnumFromDifferentType },
+
+            // Change type to different Unstrict Enum and changing major version. Should pass if import option None or AllowMajorSchemaUpgradeForDynamicSchemas is given.
+            { __LINE__, "2.0", "UnstrictEnumInt", "UnstrictEnumString", SchemaManager::SchemaImportOptions::None, SUCCESS, nullptr },
+            { __LINE__, "2.0", "UnstrictEnumInt", "UnstrictEnumString", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, ERROR, errorMsgMajorVersionDisabled },
+            { __LINE__, "2.0", "UnstrictEnumInt", "UnstrictEnumString", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS, nullptr },
+            { __LINE__, "2.0", "UnstrictEnumInt", "UnstrictEnumString", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS, nullptr },
+
+            // Change type to Strict Enum.
+            // **Special case: We allow the change to a strict enum for the scenario where we are NOT changing the primitive type of the enum.
+            // All other scenarios should fail.
+            { __LINE__, "1.1", "UnstrictEnumInt", "StrictEnumInt", SchemaManager::SchemaImportOptions::None, SUCCESS, nullptr },
+            { __LINE__, "1.1", "UnstrictEnumInt", "StrictEnumInt", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, SUCCESS, nullptr },
+            { __LINE__, "1.1", "UnstrictEnumInt", "StrictEnumInt", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS, nullptr },
+            { __LINE__, "1.1", "UnstrictEnumInt", "StrictEnumInt", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS, nullptr },
+
+            { __LINE__, "2.0", "UnstrictEnumInt", "StrictEnumInt", SchemaManager::SchemaImportOptions::None, SUCCESS, nullptr },
+            { __LINE__, "2.0", "UnstrictEnumInt", "StrictEnumInt", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, ERROR, errorMsgMajorVersionDisabled },
+            { __LINE__, "2.0", "UnstrictEnumInt", "StrictEnumInt", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS, nullptr },
+            { __LINE__, "2.0", "UnstrictEnumInt", "StrictEnumInt", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS, nullptr },
+
+            { __LINE__, "1.1", "UnstrictEnumInt", "StrictEnumString", SchemaManager::SchemaImportOptions::None, ERROR, errorMsgEnumFromDifferentType },
+            { __LINE__, "1.1", "UnstrictEnumInt", "StrictEnumString", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, ERROR, errorMsgEnumFromDifferentType },
+            { __LINE__, "1.1", "UnstrictEnumInt", "StrictEnumString", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, ERROR, errorMsgEnumFromDifferentType },
+            { __LINE__, "1.1", "UnstrictEnumInt", "StrictEnumString", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, ERROR, errorMsgEnumFromDifferentType },
+            
+            { __LINE__, "2.0", "UnstrictEnumInt", "StrictEnumString", SchemaManager::SchemaImportOptions::None, ERROR, errorMsgEnumFromDifferentType },
+            { __LINE__, "2.0", "UnstrictEnumInt", "StrictEnumString", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, ERROR, errorMsgMajorVersionDisabled },
+            { __LINE__, "2.0", "UnstrictEnumInt", "StrictEnumString", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, ERROR, errorMsgEnumFromDifferentType },
+            { __LINE__, "2.0", "UnstrictEnumInt", "StrictEnumString", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, ERROR, errorMsgEnumFromDifferentType },
+
+            // Test Case set 2 : Base property is Strict enum
+            // Change type to non-enum Primitive type without changing major version. All should pass.
+            { __LINE__, "1.1", "StrictEnumInt", "int", SchemaManager::SchemaImportOptions::None, SUCCESS, nullptr },
+            { __LINE__, "1.1", "StrictEnumInt", "int", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, SUCCESS, nullptr },
+            { __LINE__, "1.1", "StrictEnumInt", "int", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS, nullptr },
+            { __LINE__, "1.1", "StrictEnumInt", "int", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS, nullptr },
+
+            // Change type to same Primitive and changing major version. Should pass if import option None or AllowMajorSchemaUpgradeForDynamicSchemas is given.
+            { __LINE__, "2.0", "StrictEnumInt", "int", SchemaManager::SchemaImportOptions::None, SUCCESS, nullptr },
+            { __LINE__, "2.0", "StrictEnumInt", "int", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, ERROR, errorMsgMajorVersionDisabled },
+            { __LINE__, "2.0", "StrictEnumInt", "int", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS, nullptr },
+            { __LINE__, "2.0", "StrictEnumInt", "int", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS, nullptr },
+
+            // Change type to different Primitive without changing major version. All should fail
+            { __LINE__, "1.1", "StrictEnumInt", "string", SchemaManager::SchemaImportOptions::None, ERROR, errorMsgEnumToDifferentType },
+            { __LINE__, "1.1", "StrictEnumInt", "string", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, ERROR, errorMsgEnumToDifferentType },
+            { __LINE__, "1.1", "StrictEnumInt", "string", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, ERROR, errorMsgEnumToDifferentType },
+            { __LINE__, "1.1", "StrictEnumInt", "string", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, ERROR, errorMsgEnumToDifferentType },
+
+            // Change type to different Primitive and changing major version. Should pass if import option None or AllowMajorSchemaUpgradeForDynamicSchemas is given.
+            { __LINE__, "2.0", "StrictEnumInt", "string", SchemaManager::SchemaImportOptions::None, SUCCESS, nullptr },
+            { __LINE__, "2.0", "StrictEnumInt", "string", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, ERROR, errorMsgMajorVersionDisabled },
+            { __LINE__, "2.0", "StrictEnumInt", "string", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS, nullptr },
+            { __LINE__, "2.0", "StrictEnumInt", "string", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS, nullptr },
+
+            // Change type to different Unstrict Enum without changing major version. All should fail
+            { __LINE__, "1.1", "StrictEnumInt", "UnstrictEnumString", SchemaManager::SchemaImportOptions::None, ERROR, errorMsgEnumFromDifferentType },
+            { __LINE__, "1.1", "StrictEnumInt", "UnstrictEnumString", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, ERROR, errorMsgEnumFromDifferentType },
+            { __LINE__, "1.1", "StrictEnumInt", "UnstrictEnumString", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, ERROR, errorMsgEnumFromDifferentType },
+            { __LINE__, "1.1", "StrictEnumInt", "UnstrictEnumString", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, ERROR, errorMsgEnumFromDifferentType },
+
+            // Change type to different Unstrict Enum and changing major version. Should pass if import option None or AllowMajorSchemaUpgradeForDynamicSchemas is given.
+            { __LINE__, "2.0", "StrictEnumInt", "UnstrictEnumString", SchemaManager::SchemaImportOptions::None, SUCCESS, nullptr },
+            { __LINE__, "2.0", "StrictEnumInt", "UnstrictEnumString", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, ERROR, errorMsgMajorVersionDisabled },
+            { __LINE__, "2.0", "StrictEnumInt", "UnstrictEnumString", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS, nullptr },
+            { __LINE__, "2.0", "StrictEnumInt", "UnstrictEnumString", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS, nullptr },
+
+            // Change to Strict Enum is not supported. All should fail.
+            { __LINE__, "1.1", "StrictEnumInt", "StrictEnumString", SchemaManager::SchemaImportOptions::None, ERROR, errorMsgEnumFromDifferentType },
+            { __LINE__, "1.1", "StrictEnumInt", "StrictEnumString", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, ERROR, errorMsgEnumFromDifferentType },
+            { __LINE__, "1.1", "StrictEnumInt", "StrictEnumString", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, ERROR, errorMsgEnumFromDifferentType },
+            { __LINE__, "1.1", "StrictEnumInt", "StrictEnumString", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, ERROR, errorMsgEnumFromDifferentType },
+            { __LINE__, "2.0", "StrictEnumInt", "StrictEnumString", SchemaManager::SchemaImportOptions::None, ERROR, errorMsgEnumFromDifferentType },
+            { __LINE__, "2.0", "StrictEnumInt", "StrictEnumString", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, ERROR, errorMsgMajorVersionDisabled },
+            { __LINE__, "2.0", "StrictEnumInt", "StrictEnumString", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, ERROR, errorMsgEnumFromDifferentType },
+            { __LINE__, "2.0", "StrictEnumInt", "StrictEnumString", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, ERROR, errorMsgEnumFromDifferentType },
+        })
+        {
+        Utf8PrintfString errorMsg("Test case at line %d has failed.\n", lineNumber);
+        IssueListener issueListener;
+        m_ecdb.AddIssueListener(issueListener);
+
+        // Import base schema
+        ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(Utf8PrintfString(testSchemaTemplate, "1.0", "", basePropertyTypeName)), SchemaManager::SchemaImportOptions::None)) << errorMsg;
+
+        // Import major schema changes
+        EXPECT_EQ(expectedResult, GetHelper().ImportSchema(SchemaItem(Utf8PrintfString(testSchemaTemplate, newSchemaVersion, dynamicSchema, changedPropertyTypeName.c_str())), importOption)) << errorMsg;
+        if (expectedResult == SUCCESS)
+            {
+            auto testClass = m_ecdb.Schemas().GetClass("TestSchema", "TestClass");
+            ASSERT_NE(testClass, nullptr) << errorMsg;
+
+            if (changedPropertyTypeName.ContainsI("UnstrictEnum") || changedPropertyTypeName.ContainsI("StrictEnum"))
+                {
+                auto enumeration = testClass->GetPropertyP("Name")->GetAsPrimitiveProperty()->GetEnumeration();
+                ASSERT_NE(enumeration, nullptr);
+
+                EXPECT_EQ(enumeration->GetFullName(), Utf8PrintfString("TestSchema:%s", changedPropertyTypeName.c_str()));
+                EXPECT_TRUE(enumeration->GetTypeName().EqualsI(changedPropertyTypeName.ContainsI("String") ? "string" : "int")) << errorMsg;
+                }
+            else
+                {
+                const auto property = testClass->GetPropertyP("Name");
+                EXPECT_TRUE(property->GetTypeFullName().EqualsI(changedPropertyTypeName)) << errorMsg;
+                
+                const auto propertyType = testClass->GetPropertyP("Name")->GetAsPrimitiveProperty()->GetType();
+                if (changedPropertyTypeName.EqualsI("int"))
+                    EXPECT_EQ(propertyType, PRIMITIVETYPE_Integer) << errorMsg;
+                else if (changedPropertyTypeName.EqualsI("string"))
+                    EXPECT_EQ(propertyType, PRIMITIVETYPE_String) << errorMsg;
+                else if (changedPropertyTypeName.EqualsI("point2d"))
+                    EXPECT_EQ(propertyType, PRIMITIVETYPE_Point2d) << errorMsg;
+                else if (changedPropertyTypeName.EqualsI("point3d"))
+                    EXPECT_EQ(propertyType, PRIMITIVETYPE_Point3d) << errorMsg;
+                }
+            }
+        else if (!Utf8String::IsNullOrEmpty(expectedErrorMessage))
+            {
+            ASSERT_EQ(issueListener.m_issues.size(), 1U) << errorMsg;
+            EXPECT_STREQ(issueListener.m_issues[0].c_str(), expectedErrorMessage) << errorMsg;
+            }
+        
+        // Reset test setup for next case
+        ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AbandonChanges()) << errorMsg;
+        ASSERT_EQ(BE_SQLITE_OK, ReopenECDb()) << errorMsg;
+        m_ecdb.RemoveIssueListener();
+        }
+    }
+
+TEST_F(SchemaUpgradeTestFixture, MajorSchemaUpgradeVerifyDeletionOfPropertyAndClass)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("schemaupgrade_MajorSchemaUpgradeVerifyDeletionOfPropertyAndClass.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+                                <ECEntityClass typeName="TestClass" >
+                                    <ECCustomAttributes>
+                                       <ClassMap xmlns="ECDbMap.02.00.00">
+                                           <MapStrategy>TablePerHierarchy</MapStrategy>
+                                       </ClassMap>
+                                       <ShareColumns xmlns="ECDbMap.02.00.00"/>
+                                    </ECCustomAttributes>
+                                    <ECProperty propertyName="Name" typeName="string" />
+                                    <ECProperty propertyName="Code" typeName="int" />
+                                </ECEntityClass>
+                                <ECEntityClass typeName="SubClassToDelete" >
+                                    <BaseClass>TestClass</BaseClass>
+                                    <ECProperty propertyName="SubProp" typeName="int" />
+                                </ECEntityClass>
+
+                                <ECEntityClass typeName="TestClassToDelete" >
+                                    <ECProperty propertyName="NamePropToDelete" typeName="string" />
+                                </ECEntityClass>
+                            </ECSchema>)xml")));
+
+    // Populate with dummy property values
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.TestClass(Name,Code) VALUES ('ParentTestProp1', 10)");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.TestClass(Name,Code) VALUES ('ParentTestProp2', 20)");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.SubClassToDelete(Name,Code,SubProp) VALUES ('ChildTestProp3', 20, 50)");
+
+    auto testClassToDelete = m_ecdb.Schemas().GetClass("TestSchema", "TestClassToDelete");
+    ASSERT_NE(testClassToDelete, nullptr);
+
+    // Create an instance of the class that will be deleted
+    ECInstanceKey key;
+    ECInstanceInserter instanceInserter(m_ecdb, *testClassToDelete, nullptr);
+    ASSERT_TRUE(instanceInserter.IsValid());
+
+    auto instance = testClassToDelete->GetDefaultStandaloneEnabler()->CreateInstance();
+    ASSERT_EQ(ECObjectsStatus::Success, instance->SetValue("NamePropToDelete", ECValue("TestInstance")));
+    ASSERT_EQ(BE_SQLITE_OK, instanceInserter.Insert(key, *instance));
+
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+
+    // Check that the data and instances have been created    
+    EXPECT_EQ(JsonValue(R"json([{"Code":10,"Name":"ParentTestProp1"},{"Code":20,"Name":"ParentTestProp2"},{"Code":20,"Name":"ChildTestProp3"}])json"), GetHelper().ExecuteSelectECSql("SELECT Name, Code FROM ts.TestClass"));
+    EXPECT_EQ(JsonValue(R"json([{"Code":20,"Name":"ChildTestProp3","SubProp":50}])json"), GetHelper().ExecuteSelectECSql("SELECT Name, Code, SubProp FROM ts.SubClassToDelete"));
+    EXPECT_EQ(JsonValue(R"json([{"NamePropToDelete":"TestInstance"}])json"), GetHelper().ExecuteSelectECSql("SELECT NamePropToDelete FROM ts.TestClassToDelete"));
+
+    // Perform a major schema change where we delete property "Code" and the classes "SubClassToDelete" and "TestClassToDelete"
+    constexpr Utf8CP majorSchemaChange = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                            <ECSchema schemaName="TestSchema" alias="ts" version="2.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+                                <ECSchemaReference name = 'CoreCustomAttributes' version = '01.00.00' alias = 'CoreCA' />
+                                
+                                <ECCustomAttributes>
+                                    <DynamicSchema xmlns = 'CoreCustomAttributes.01.00.00' />
+                                </ECCustomAttributes>
+
+                                <ECEntityClass typeName="TestClass" >
+                                    <ECCustomAttributes>
+                                       <ClassMap xmlns="ECDbMap.02.00.00">
+                                           <MapStrategy>TablePerHierarchy</MapStrategy>
+                                       </ClassMap>
+                                       <ShareColumns xmlns="ECDbMap.02.00.00"/>
+                                    </ECCustomAttributes>
+                                    <ECProperty propertyName="Name" typeName="string" />
+                                </ECEntityClass>
+                            </ECSchema>)xml";
+
+        ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(majorSchemaChange), SchemaManager::SchemaImportOptions::None));
+        ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+
+        auto testClass = m_ecdb.Schemas().GetClass("TestSchema", "TestClass");
+        ASSERT_NE(testClass, nullptr);
+
+        // Check that property "Code" was deleted
+        EXPECT_NE(testClass->GetPropertyP("Name"), nullptr);
+        EXPECT_EQ(testClass->GetPropertyP("Code"), nullptr);
+
+        EXPECT_EQ(m_ecdb.Schemas().GetClass("TestSchema", "SubClassToDelete"), nullptr);
+        EXPECT_EQ(m_ecdb.Schemas().GetClass("TestSchema", "TestClassToDelete"), nullptr);
+
+        // Re-add the property and classes to verify that the data was set to NULL and the instances were deleted
+        constexpr Utf8CP newSchema = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                            <ECSchema schemaName="TestSchema" alias="ts" version="2.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+                                <ECSchemaReference name = 'CoreCustomAttributes' version = '01.00.00' alias = 'CoreCA' />
+                                
+                                <ECCustomAttributes>
+                                    <DynamicSchema xmlns = 'CoreCustomAttributes.01.00.00' />
+                                </ECCustomAttributes>
+
+                                <ECEntityClass typeName="TestClass" >
+                                    <ECCustomAttributes>
+                                       <ClassMap xmlns="ECDbMap.02.00.00">
+                                           <MapStrategy>TablePerHierarchy</MapStrategy>
+                                       </ClassMap>
+                                       <ShareColumns xmlns="ECDbMap.02.00.00"/>
+                                    </ECCustomAttributes>
+                                    <ECProperty propertyName="Name" typeName="string" />
+                                    <ECProperty propertyName="Code" typeName="int" />
+                                </ECEntityClass>
+                                <ECEntityClass typeName="SubClassToDelete" >
+                                    <BaseClass>TestClass</BaseClass>
+                                    <ECProperty propertyName="SubProp" typeName="int" />
+                                </ECEntityClass>
+
+                                <ECEntityClass typeName="TestClassToDelete" >
+                                    <ECProperty propertyName="NamePropToDelete" typeName="string" />
+                                </ECEntityClass>
+                            </ECSchema>)xml";
+
+        ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(newSchema), SchemaManager::SchemaImportOptions::None));
+        
+        testClass = m_ecdb.Schemas().GetClass("TestSchema", "TestClass");
+        ASSERT_NE(testClass, nullptr);
+
+        // Check that both properties are now present
+        EXPECT_NE(testClass->GetPropertyP("Name"), nullptr);
+        EXPECT_NE(testClass->GetPropertyP("Code"), nullptr);
+
+        // Check that data for "Code" property is null
+        EXPECT_EQ(JsonValue(R"json([{"Name":"ParentTestProp1"},{"Name":"ParentTestProp2"}])json"), GetHelper().ExecuteSelectECSql("SELECT Name, Code FROM ts.TestClass"));
+
+        // Check that instances for the re-added classes have been deleted
+        EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql("SELECT Name, Code, SubProp FROM ts.SubClassToDelete"));
+        EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql("SELECT NamePropToDelete FROM ts.TestClassToDelete"));
+        
+        ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    }
+
+TEST_F(SchemaUpgradeTestFixture, MajorSchemaUpgradeVerifyDataAfterTypeChange)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("schemaupgrade_MajorSchemaUpgradeVerifyDataAfterTypeChange.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+                                <ECEntityClass typeName="TestClass" >
+                                    <ECCustomAttributes>
+                                       <ClassMap xmlns="ECDbMap.02.00.00">
+                                           <MapStrategy>TablePerHierarchy</MapStrategy>
+                                       </ClassMap>
+                                       <ShareColumns xmlns="ECDbMap.02.00.00"/>
+                                    </ECCustomAttributes>
+
+                                    <ECProperty propertyName="intToLong" typeName="int" />
+                                    <ECProperty propertyName="intToDouble" typeName="int" />
+                                    <ECProperty propertyName="intToString" typeName="int" />
+                                    <ECProperty propertyName="intToBinary" typeName="int" />
+                                    <ECProperty propertyName="intToBoolean" typeName="int" />
+                                    <ECProperty propertyName="intToDatetime" typeName="int" />
+
+                                    <ECProperty propertyName="stringToLong" typeName="string" />
+                                    <ECProperty propertyName="stringToDouble" typeName="string" />
+                                    <ECProperty propertyName="stringToInt" typeName="string" />
+                                    <ECProperty propertyName="stringToBinary" typeName="string" />
+                                    <ECProperty propertyName="stringToBoolean" typeName="string" />
+                                    <ECProperty propertyName="stringToDatetime" typeName="string" />
+                                </ECEntityClass>
+                            </ECSchema>)xml")));
+
+    // Populate with dummy property values
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.TestClass(intToLong, intToDouble, intToString, intToBinary, intToBoolean, intToDatetime, stringToLong, stringToDouble, stringToInt, stringToBinary, stringToBoolean, stringToDatetime) VALUES (10, 10, 10, 10, 10, 10, '10', '10', '10', '10', '10', '10')");
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+      
+    // Check that the data has been created    
+    EXPECT_EQ(JsonValue(R"json([{"intToBinary":10,"intToBoolean":10,"intToDatetime":10,"intToDouble":10,"intToLong":10,"intToString":10,"stringToBinary":"10","stringToBoolean":"10","stringToDatetime":"10","stringToDouble":"10","stringToInt":"10","stringToLong":"10"}])json"),
+        GetHelper().ExecuteSelectECSql("SELECT intToLong, intToDouble, intToString, intToBinary, intToBoolean, intToDatetime, stringToLong, stringToDouble, stringToInt, stringToBinary, stringToBoolean, stringToDatetime FROM ts.TestClass"));
+
+    // Perform a major schema change where we delete property "Code" and the classes "SubClassToDelete" and "TestClassToDelete"
+    constexpr Utf8CP majorSchemaChange = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                            <ECSchema schemaName="TestSchema" alias="ts" version="2.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+                                <ECSchemaReference name = 'CoreCustomAttributes' version = '01.00.00' alias = 'CoreCA' />
+                                
+                                <ECCustomAttributes>
+                                    <DynamicSchema xmlns = 'CoreCustomAttributes.01.00.00' />
+                                </ECCustomAttributes>
+
+                                <ECEntityClass typeName="TestClass" >
+                                    <ECCustomAttributes>
+                                       <ClassMap xmlns="ECDbMap.02.00.00">
+                                           <MapStrategy>TablePerHierarchy</MapStrategy>
+                                       </ClassMap>
+                                       <ShareColumns xmlns="ECDbMap.02.00.00"/>
+                                    </ECCustomAttributes>
+                                    
+                                    <ECProperty propertyName="intToLong" typeName="long" />
+                                    <ECProperty propertyName="intToDouble" typeName="double" />
+                                    <ECProperty propertyName="intToString" typeName="string" />
+                                    <ECProperty propertyName="intToBinary" typeName="binary" />
+                                    <ECProperty propertyName="intToBoolean" typeName="boolean" />
+                                    <ECProperty propertyName="intToDatetime" typeName="datetime" />
+
+                                    <ECProperty propertyName="stringToLong" typeName="long" />
+                                    <ECProperty propertyName="stringToDouble" typeName="double" />
+                                    <ECProperty propertyName="stringToInt" typeName="int" />
+                                    <ECProperty propertyName="stringToBinary" typeName="binary" />
+                                    <ECProperty propertyName="stringToBoolean" typeName="boolean" />
+                                    <ECProperty propertyName="stringToDatetime" typeName="datetime" />
+                                </ECEntityClass>
+                            </ECSchema>)xml";
+
+        ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(majorSchemaChange), SchemaManager::SchemaImportOptions::None));
+
+        // Test the values for the properties after primitive type has been changed
+        EXPECT_EQ(JsonValue(R"json([{"intToBinary":"encoding=base64;MTA=","intToBoolean":true,"intToDatetime":"-4713-12-04T12:00:00.000","intToDouble":10.0,"intToLong":10,"intToString":"10","stringToBinary":"encoding=base64;MTA=",
+                "stringToBoolean":true,"stringToDatetime":"-4713-12-04T12:00:00.000","stringToDouble":10.0,"stringToInt":10,"stringToLong":10}])json"),
+        GetHelper().ExecuteSelectECSql("SELECT intToLong, intToDouble, intToString, intToBinary, intToBoolean, intToDatetime, stringToLong, stringToDouble, stringToInt, stringToBinary, stringToBoolean, stringToDatetime FROM ts.TestClass"));
+        
+        ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    }
 
 END_ECDBUNITTESTS_NAMESPACE

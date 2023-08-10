@@ -1,5 +1,6 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
+// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
 bg{
     Currencies{
         ADP{
@@ -228,7 +229,7 @@ bg{
         }
         CNH{
             "CNH",
-            "Китайски ренминби юан (offshore)",
+            "Китайски юан (офшорен)",
         }
         CNY{
             "CNY",
@@ -340,7 +341,7 @@ bg{
         }
         FKP{
             "FKP",
-            "Фолклендска лира",
+            "Фолкландска лира",
         }
         FRF{
             "FRF",
@@ -568,7 +569,7 @@ bg{
         }
         MDL{
             "MDL",
-            "Молдовско леу",
+            "Молдовска лея",
         }
         MGA{
             "MGA",
@@ -588,7 +589,7 @@ bg{
         }
         MMK{
             "MMK",
-            "Мианмарски кият",
+            "Мианмарски киат",
         }
         MNT{
             "MNT",
@@ -620,7 +621,7 @@ bg{
         }
         MWK{
             "MWK",
-            "Малавийска квача",
+            "Малавийска куача",
         }
         MXN{
             "MXN",
@@ -764,7 +765,7 @@ bg{
         }
         SAR{
             "SAR",
-            "Саудитскоарабски риал",
+            "саудитски риал",
         }
         SBD{
             "SBD",
@@ -900,7 +901,7 @@ bg{
         }
         UAH{
             "UAH",
-            "Украинска хривня",
+            "Украинска гривня",
         }
         UAK{
             "UAK",
@@ -917,6 +918,14 @@ bg{
         USD{
             "щ.д.",
             "Щатски долар",
+        }
+        USN{
+            "USN",
+            "USN",
+        }
+        USS{
+            "USS",
+            "USS",
         }
         UYI{
             "UYI",
@@ -1003,7 +1012,7 @@ bg{
             "Френски златен франк",
         }
         XOF{
-            "CFA",
+            "F CFA",
             "Западноафрикански франк",
         }
         XPD{
@@ -1012,7 +1021,7 @@ bg{
         }
         XPF{
             "CFPF",
-            "Френскополинезийски франк",
+            "CFP франк",
         }
         XPT{
             "XPT",
@@ -1080,58 +1089,106 @@ bg{
         }
     }
     Currencies%narrow{
+        AFN{"Af"}
+        AMD{"AMD"}
+        AOA{"Kz"}
         ARS{"ARS"}
         AUD{"AUD"}
+        AZN{"AZN"}
+        BAM{"KM"}
         BBD{"BBD"}
         BDT{"BDT"}
         BMD{"BMD"}
         BND{"BND"}
+        BOB{"Bs"}
         BRL{"BRL"}
         BSD{"BSD"}
-        BYN{"BYN"}
+        BWP{"P"}
         BZD{"BZD"}
         CAD{"CAD"}
         CLP{"CLP"}
         CNY{"CNY"}
         COP{"COP"}
         CRC{"CRC"}
+        CUC{"$"}
         CUP{"CUP"}
+        CZK{"Kč"}
+        DKK{"kr"}
         DOP{"DOP"}
+        EGP{"E£"}
+        EUR{"€"}
         FJD{"FJD"}
+        FKP{"FKP"}
+        GBP{"£"}
+        GEL{"₾"}
+        GHS{"GHS"}
         GIP{"GIP"}
+        GNF{"FG"}
+        GTQ{"Q"}
         GYD{"GYD"}
         HKD{"HKD"}
+        HNL{"L"}
+        HRK{"kn"}
+        HUF{"Ft"}
+        IDR{"Rp"}
         ILS{"ILS"}
         INR{"INR"}
+        ISK{"kr"}
         JMD{"JMD"}
+        JPY{"¥"}
         KHR{"KHR"}
+        KMF{"CF"}
+        KPW{"₩"}
         KRW{"KRW"}
         KYD{"KYD"}
         KZT{"KZT"}
         LAK{"LAK"}
+        LBP{"L£"}
+        LKR{"Rs"}
         LRD{"LRD"}
+        MGA{"Ar"}
+        MMK{"K"}
         MNT{"MNT"}
+        MUR{"Rs"}
         MXN{"MXN"}
+        MYR{"RM"}
         NAD{"NAD"}
         NGN{"NGN"}
+        NIO{"C$"}
+        NOK{"kr"}
+        NPR{"Rs"}
         NZD{"NZD"}
         PHP{"PHP"}
+        PKR{"Rs"}
+        PLN{"zł"}
         PYG{"PYG"}
         RON{"RON"}
+        RUB{"₽"}
+        RWF{"RF"}
         SBD{"SBD"}
+        SEK{"kr"}
         SGD{"SGD"}
+        SHP{"£"}
         SRD{"SRD"}
         SSP{"SSP"}
         STN{"Db"}
+        SYP{"£"}
+        THB{"฿"}
+        TOP{"T$"}
         TRY{"TRY"}
         TTD{"TTD"}
         TWD{"TWD"}
         UAH{"UAH"}
+        USD{"$"}
         UYU{"UYU"}
+        VEF{"Bs"}
         VND{"VND"}
+        XCD{"$"}
+        ZAR{"R"}
+        ZMW{"ZK"}
     }
     Currencies%variant{
-        GEL{"₾"}
+        TRY{"TL"}
     }
     CurrencyPlurals{
         ADP{
@@ -1327,8 +1384,8 @@ bg{
             other{"чилийски песо"}
         }
         CNH{
-            one{"китайски ренминби юан (offshore)"}
-            other{"китайски ренминби юан (offshore)"}
+            one{"китайски юан (офшорен)"}
+            other{"китайски юана (офшорни)"}
         }
         CNY{
             one{"китайски юан"}
@@ -1423,8 +1480,8 @@ bg{
             other{"фиджийски долара"}
         }
         FKP{
-            one{"фолклендска лира"}
-            other{"фолклендски лири"}
+            one{"фолкландска лира"}
+            other{"фолкландски лири"}
         }
         FRF{
             one{"френски франк"}
@@ -1627,8 +1684,8 @@ bg{
             other{"марокански франка"}
         }
         MDL{
-            one{"молдовско леу"}
-            other{"молдовски леу"}
+            one{"молдовска лея"}
+            other{"молдовски леи"}
         }
         MGA{
             one{"малгашко ариари"}
@@ -1643,8 +1700,8 @@ bg{
             other{"македонски денара"}
         }
         MMK{
-            one{"мианмарски кият"}
-            other{"мианмарски кията"}
+            one{"мианмарски киат"}
+            other{"мианмарски киата"}
         }
         MNT{
             one{"монголски тугрик"}
@@ -1675,8 +1732,8 @@ bg{
             other{"малдивски руфии"}
         }
         MWK{
-            one{"малавийска квача"}
-            other{"малавийски квачи"}
+            one{"малавийска куача"}
+            other{"малавийски куачи"}
         }
         MXN{
             one{"мексиканско песо"}
@@ -1807,8 +1864,8 @@ bg{
             other{"руандски франка"}
         }
         SAR{
-            one{"саудитскоарабски риал"}
-            other{"саудитскоарабски риала"}
+            one{"саудитски риал"}
+            other{"саудитски риала"}
         }
         SBD{
             one{"долар на Соломоновите острови"}
@@ -1943,8 +2000,8 @@ bg{
             other{"танзанийски шилинга"}
         }
         UAH{
-            one{"украинска хривня"}
-            other{"украински хривни"}
+            one{"украинска гривня"}
+            other{"украински гривни"}
         }
         UAK{
             one{"украински карбованец"}
@@ -2015,8 +2072,8 @@ bg{
             other{"западноафрикански франка"}
         }
         XPF{
-            one{"френскополинезийски франк"}
-            other{"френскополинезийски франка"}
+            one{"CFP франк"}
+            other{"CFP франка"}
         }
         XXX{
             one{"(непозната валута)"}
@@ -2075,5 +2132,4 @@ bg{
         one{"{0} {1}"}
         other{"{0} {1}"}
     }
-    Version{"2.1.48.42"}
 }

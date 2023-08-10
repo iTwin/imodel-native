@@ -300,18 +300,17 @@ DgnDbStatus DgnDomain::RegisterHandler(Handler& handler, bool reregister)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnDomains::OnDbOpened()
-    {
-    if (m_dgndb.AreTxnsEnabled())
-        {
+void DgnDomains::OnDbOpened() {
+    if (m_dgndb.AreTxnsRequired()) {
         TxnManagerR txnManager = m_dgndb.Txns();
-        txnManager.EnableTracking(true);
+        if (!m_dgndb.IsReadonly())
+            txnManager.EnableTracking(true);
         txnManager.InitializeTableHandlers(); // Necessary to this after the domains are loaded so that the tables are already setup. The method calls SaveChanges().
-        }
+    }
 
     for (DgnDomainCP domain : m_domains)
         domain->_OnDgnDbOpened(m_dgndb);
-    }
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -325,7 +324,7 @@ void DgnDomains::OnDbClose()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaStatus DgnDomain::ImportSchema(DgnDbR dgndb, SchemaManager::SchemaImportOptions options)
+SchemaStatus DgnDomain::ImportSchema(DgnDbR dgndb, SchemaManager::SchemaImportOptions options, SchemaSync::SyncDbUri uri)
     {
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext(false /*=acceptLegacyImperfectLatestCompatibleMatch*/, true /*=includeFilesWithNoVerExt*/);
     schemaContext->SetFinalSchemaLocater(dgndb.GetSchemaLocater());
@@ -347,13 +346,13 @@ SchemaStatus DgnDomain::ImportSchema(DgnDbR dgndb, SchemaManager::SchemaImportOp
     bvector<DgnDomainP> domainsToImport;
     domainsToImport.push_back(this);
 
-    return dgndb.Domains().DoImportSchemas(schemasToImport, domainsToImport, options);
+    return dgndb.Domains().DoImportSchemas(schemasToImport, domainsToImport, options, uri);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-SchemaStatus DgnDomains::ImportSchemas(SchemaManager::SchemaImportOptions options)
+SchemaStatus DgnDomains::ImportSchemas(SchemaManager::SchemaImportOptions options, SchemaSync::SyncDbUri uri)
     {
     bvector<ECSchemaPtr> schemasToImport;
     bvector<DgnDomainP> domainsToImport;
@@ -362,20 +361,20 @@ SchemaStatus DgnDomains::ImportSchemas(SchemaManager::SchemaImportOptions option
     if (status != SchemaStatus::SchemaUpgradeRequired && status != SchemaStatus::SchemaUpgradeRecommended)
         return status;
 
-    return DoImportSchemas(schemasToImport, domainsToImport, options);
+    return DoImportSchemas(schemasToImport, domainsToImport, options, uri);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-SchemaStatus DgnDomains::DoImportSchemas(bvector<ECSchemaPtr> const& schemasToImport, bvector<DgnDomainP> const& domainsToImport, SchemaManager::SchemaImportOptions importOptions)
+SchemaStatus DgnDomains::DoImportSchemas(bvector<ECSchemaPtr> const& schemasToImport, bvector<DgnDomainP> const& domainsToImport, SchemaManager::SchemaImportOptions importOptions, SchemaSync::SyncDbUri uri)
     {
     BeAssert(!schemasToImport.empty());
     bvector<ECSchemaCP> importSchemas;
     for (auto& schema : schemasToImport)
         importSchemas.push_back(schema.get());
 
-    SchemaStatus status = DoImportSchemas(importSchemas, importOptions);
+    SchemaStatus status = DoImportSchemas(importSchemas, importOptions, uri);
     if (SchemaStatus::Success != status)
         return status;
 
@@ -390,7 +389,7 @@ SchemaStatus DgnDomains::DoImportSchemas(bvector<ECSchemaPtr> const& schemasToIm
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaStatus DgnDomains::UpgradeSchemas(bvector<ECSchemaPtr> const& schemasToImport, bvector<DgnDomainP> const& domainsToImport, SchemaManager::SchemaImportOptions importOptions)
+SchemaStatus DgnDomains::UpgradeSchemas(bvector<ECSchemaPtr> const& schemasToImport, bvector<DgnDomainP> const& domainsToImport, SchemaManager::SchemaImportOptions importOptions, SchemaSync::SyncDbUri uri)
     {
     BeAssert(m_schemaUpgradeOptions.AreDomainUpgradesAllowed() && !schemasToImport.empty());
 
@@ -401,7 +400,7 @@ SchemaStatus DgnDomains::UpgradeSchemas(bvector<ECSchemaPtr> const& schemasToImp
     if (m_dgndb.AreTxnsRequired())
         m_dgndb.Txns().EnableTracking(true); // Ensure all schema changes are captured in the txn table for creating revisions
 
-    SchemaStatus status = DoImportSchemas(importSchemas, importOptions);
+    SchemaStatus status = DoImportSchemas(importSchemas, importOptions, uri);
     if (SchemaStatus::Success != status)
         return status;
 
@@ -613,11 +612,21 @@ SchemaStatus DgnDomains::DoValidateSchema(ECSchemaCR appSchema, bool isSchemaRea
         }
     SchemaKeyCR bimSchemaKey = bimSchema->GetSchemaKey();
 
-    if (appSchema.IsDynamicSchema() && 0 == bimSchemaKey.CompareByVersion(appSchemaKey) && canBeUpgradedWithoutVersionChange(appSchema))
+    if (appSchema.IsDynamicSchema())
         {
-        LOG.debugv("Schema found in the BIM %s has the same version as that in the application %s.  The schema is dynamic so its contents must be checked for updates.", bimSchemaKey.GetFullSchemaName().c_str(), appSchemaKey.GetFullSchemaName().c_str());
-        return SchemaStatus::SchemaIsDynamic;
+        if (0 == bimSchemaKey.CompareByVersion(appSchemaKey) && canBeUpgradedWithoutVersionChange(appSchema))
+            {
+            LOG.debugv("Schema found in the BIM %s has the same version as that in the application %s.  The schema is dynamic so its contents must be checked for updates.", bimSchemaKey.GetFullSchemaName().c_str(), appSchemaKey.GetFullSchemaName().c_str());
+            return SchemaStatus::SchemaIsDynamic;
+            }
+
+        if (appSchema.IsDynamicSchema() && appSchemaKey.GetVersionRead() > bimSchemaKey.GetVersionRead())   // Major version change done for a dynamic schema
+            {
+            LOG.infov("Major version change detected. Schema in BIM %s. Schema in application %s", bimSchemaKey.GetFullSchemaName().c_str(), appSchemaKey.GetFullSchemaName().c_str());
+            return SchemaStatus::SchemaIsDynamic;
+            }
         }
+
 
     if (appSchemaKey.GetVersionRead() == bimSchemaKey.GetVersionRead() && appSchemaKey.GetVersionWrite() == bimSchemaKey.GetVersionWrite() && appSchemaKey.GetVersionMinor() <= bimSchemaKey.GetVersionMinor())
         return SchemaStatus::Success; // Most common case
@@ -696,12 +705,12 @@ BeSQLite::EC::DropSchemaResult DgnDomains::DoDropSchema(Utf8StringCR name, bool 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaStatus DgnDomains::DoImportSchemas(bvector<ECSchemaCP> const &importSchemas, SchemaManager::SchemaImportOptions importOptions) {
+SchemaStatus DgnDomains::DoImportSchemas(bvector<ECSchemaCP> const &importSchemas, SchemaManager::SchemaImportOptions importOptions, SchemaSync::SyncDbUri uri) {
     if (importSchemas.empty())
         return SchemaStatus::Success;
 
     // always disallow major schema upgrades for domain schema imports. Major schema upgrades are only allowed across software generations
-    importOptions |= SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade;
+    importOptions = importOptions | SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas;
 
     DgnDbR dgndb = GetDgnDb();
     if (dgndb.IsReadonly()) {
@@ -714,25 +723,18 @@ SchemaStatus DgnDomains::DoImportSchemas(bvector<ECSchemaCP> const &importSchema
         return SchemaStatus::SchemaImportFailed;
     }
 
-    if (dgndb.IsBriefcase()) {
-        if (dgndb.Txns().HasLocalChanges()) {
-            // The dgnv8converter generates changes to the be_EmbedFile table just prior to importing a generated schema. Don't reject the schema just for that.
-            if ((importOptions & SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues) != SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues) {
-                BeAssert(false && "Cannot upgrade schemas when there are local changes. Commit any outstanding changes");
-                return SchemaStatus::DbHasLocalChanges;
-            }
-        }
-    }
-
     if (LOG.isSeverityEnabled(SEVERITY::LOG_DEBUG)) {
         LOG.debug("Schemas to be imported:");
         for (ECSchemaCP schema : importSchemas)
             LOG.debugv("\t%s", schema->GetFullSchemaName().c_str());
+
+        if (dgndb.IsBriefcase() && dgndb.Txns().HasLocalChanges())
+            LOG.debug("ImportSchemas called while there are local changes and/or txns in the briefcase.");
     }
 
     dgndb.Txns().SetHasEcSchemaChanges(true);
 
-    auto const rc =  dgndb.Schemas().ImportSchemas(importSchemas, importOptions, dgndb.GetSchemaImportToken());
+    auto const rc =  dgndb.Schemas().ImportSchemas(importSchemas, importOptions, dgndb.GetSchemaImportToken(), uri);
     if (!rc.IsOk()) {
         if ((importOptions & SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues) == SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues) {
             LOG.errorv("Failed to import legacy V8 schemas");

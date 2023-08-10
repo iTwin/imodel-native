@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2021 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1998-2023 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -13,18 +13,34 @@
 
 #define BN_BLINDING_COUNTER     32
 
+struct bn_blinding_st {
+    BIGNUM *A;
+    BIGNUM *Ai;
+    BIGNUM *e;
+    BIGNUM *mod;                /* just a reference */
+    CRYPTO_THREAD_ID tid;
+    int counter;
+    unsigned long flags;
+    BN_MONT_CTX *m_ctx;
+    int (*bn_mod_exp) (BIGNUM *r, const BIGNUM *a, const BIGNUM *p,
+                       const BIGNUM *m, BN_CTX *ctx, BN_MONT_CTX *m_ctx);
+    CRYPTO_RWLOCK *lock;
+};
+
 BN_BLINDING *BN_BLINDING_new(const BIGNUM *A, const BIGNUM *Ai, BIGNUM *mod)
 {
     BN_BLINDING *ret = NULL;
 
     bn_check_top(mod);
 
-    if ((ret = OPENSSL_zalloc(sizeof(*ret))) == NULL)
+    if ((ret = OPENSSL_zalloc(sizeof(*ret))) == NULL) {
+        ERR_raise(ERR_LIB_BN, ERR_R_MALLOC_FAILURE);
         return NULL;
+    }
 
     ret->lock = CRYPTO_THREAD_lock_new();
     if (ret->lock == NULL) {
-        ERR_raise(ERR_LIB_BN, ERR_R_CRYPTO_LIB);
+        ERR_raise(ERR_LIB_BN, ERR_R_MALLOC_FAILURE);
         OPENSSL_free(ret);
         return NULL;
     }
@@ -175,7 +191,8 @@ int BN_BLINDING_invert_ex(BIGNUM *n, const BIGNUM *r, BN_BLINDING *b,
             n->top = (int)(rtop & ~mask) | (ntop & mask);
             n->flags |= (BN_FLG_FIXED_TOP & ~mask);
         }
-        ret = BN_mod_mul_montgomery(n, n, r, b->m_ctx, ctx);
+        ret = bn_mul_mont_fixed_top(n, n, r, b->m_ctx, ctx);
+        bn_correct_top_consttime(n);
     } else {
         ret = BN_mod_mul(n, n, r, b->mod, ctx);
     }

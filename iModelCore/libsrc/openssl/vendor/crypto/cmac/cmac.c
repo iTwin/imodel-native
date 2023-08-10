@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2021 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2010-2022 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -53,8 +53,10 @@ CMAC_CTX *CMAC_CTX_new(void)
 {
     CMAC_CTX *ctx;
 
-    if ((ctx = OPENSSL_malloc(sizeof(*ctx))) == NULL)
+    if ((ctx = OPENSSL_malloc(sizeof(*ctx))) == NULL) {
+        ERR_raise(ERR_LIB_CRYPTO, ERR_R_MALLOC_FAILURE);
         return NULL;
+    }
     ctx->cctx = EVP_CIPHER_CTX_new();
     if (ctx->cctx == NULL) {
         OPENSSL_free(ctx);

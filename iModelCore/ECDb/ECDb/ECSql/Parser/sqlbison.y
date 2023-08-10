@@ -205,7 +205,7 @@ using namespace connectivity;
 %type <pParseNode> select_statement
 %type <pParseNode> function_name function_args_commalist function_arg
 %type <pParseNode> table_node tablespace_qualified_class_name qualified_class_name class_name table_primary_as_range_column opt_as
-%type <pParseNode> table_node_with_opt_member_func_call table_node_path table_node_path_entry opt_member_function_args
+%type <pParseNode> table_node_ref table_node_with_opt_member_func_call table_node_path table_node_path_entry opt_member_function_args
 %type <pParseNode> case_expression else_clause result_expression result case_specification searched_when_clause simple_when_clause searched_case simple_case
 %type <pParseNode> when_operand_list when_operand case_operand opt_extract_value
 %type <pParseNode> searched_when_clause_list simple_when_clause_list opt_disqualify_primary_join opt_disqualify_polymorphic_constraint
@@ -1535,7 +1535,7 @@ qualified_join:
 
 /*ECSQL extension*/
 ecrelationship_join:
-        table_ref join_type SQL_TOKEN_JOIN table_ref SQL_TOKEN_USING table_node_with_opt_member_func_call op_relationship_direction
+        table_ref join_type SQL_TOKEN_JOIN table_ref SQL_TOKEN_USING table_node_ref op_relationship_direction
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
@@ -1953,6 +1953,20 @@ class_name:
             $$->append($1);
         }
 ;
+
+table_node_ref:
+        table_node_with_opt_member_func_call
+            {
+            $$ = SQL_NEW_RULE;
+            $$->append($1);
+            }
+    |   table_node_with_opt_member_func_call table_primary_as_range_column
+            {
+            $$ = SQL_NEW_RULE;
+            $$->append($1);
+            $$->append($2);
+            }
+    ;
 
 table_node_with_opt_member_func_call:
         table_node_path

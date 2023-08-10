@@ -56,22 +56,6 @@ SearchResultInstanceNodesSpecification::~SearchResultInstanceNodesSpecification(
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool SearchResultInstanceNodesSpecification::_ShallowEqual(PresentationKeyCR other) const
-    {
-    if (!ChildNodeSpecification::_ShallowEqual(other))
-        return false;
-
-    SearchResultInstanceNodesSpecificationCP otherRule = dynamic_cast<SearchResultInstanceNodesSpecificationCP>(&other);
-    if (nullptr == otherRule)
-        return false;
-
-    return m_groupByClass == otherRule->m_groupByClass
-        && m_groupByLabel == otherRule->m_groupByLabel;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 void SearchResultInstanceNodesSpecification::_Accept(PresentationRuleSpecificationVisitor& visitor) const {visitor._Visit(*this);}
 
 /*---------------------------------------------------------------------------------**//**
@@ -300,19 +284,6 @@ MD5 QuerySpecification::_ComputeHash() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool QuerySpecification::_ShallowEqual(PresentationKeyCR other) const
-    {
-    QuerySpecification const* otherRule = dynamic_cast<QuerySpecification const*>(&other);
-    if (nullptr == otherRule)
-        return false;
-
-    return m_schemaName == otherRule->m_schemaName
-        && m_className == otherRule->m_className;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 Utf8CP StringQuerySpecification::_GetXmlElementName() const {return STRING_QUERY_SPECIFICATION_XML_NODE_NAME;}
 
 /*---------------------------------------------------------------------------------**//**
@@ -384,21 +355,6 @@ MD5 StringQuerySpecification::_ComputeHash() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool StringQuerySpecification::_ShallowEqual(PresentationKeyCR other) const
-    {
-    if (!QuerySpecification::_ShallowEqual(other))
-        return false;
-
-    StringQuerySpecification const* otherRule = dynamic_cast<StringQuerySpecification const*>(&other);
-    if (nullptr == otherRule)
-        return false;
-
-    return m_query == otherRule->m_query;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 Utf8CP ECPropertyValueQuerySpecification::_GetXmlElementName() const {return ECPROPERTY_VALUE_QUERY_SPECIFICATION_XML_NODE_NAME;}
 
 /*---------------------------------------------------------------------------------**//**
@@ -465,19 +421,4 @@ MD5 ECPropertyValueQuerySpecification::_ComputeHash() const
     if (!m_parentPropertyName.empty())
         ADD_STR_VALUE_TO_HASH(md5, ECPROPERTY_VALUE_QUERY_SPECIFICATION_JSON_ATTRIBUTE_PARENT_PROPERTY_NAME, m_parentPropertyName);
     return md5;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ECPropertyValueQuerySpecification::_ShallowEqual(PresentationKeyCR other) const
-    {
-    if (!QuerySpecification::_ShallowEqual(other))
-        return false;
-
-    ECPropertyValueQuerySpecification const* otherRule = dynamic_cast<ECPropertyValueQuerySpecification const*>(&other);
-    if (nullptr == otherRule)
-        return false;
-
-    return m_parentPropertyName == otherRule->m_parentPropertyName;
     }

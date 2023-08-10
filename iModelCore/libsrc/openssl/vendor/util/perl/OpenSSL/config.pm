@@ -1,5 +1,5 @@
 #! /usr/bin/env perl
-# Copyright 1998-2022 The OpenSSL Project Authors. All Rights Reserved.
+# Copyright 1998-2023 The OpenSSL Project Authors. All Rights Reserved.
 #
 # Licensed under the Apache License 2.0 (the "License").  You may not use
 # this file except in compliance with the License.  You can obtain a copy
@@ -354,8 +354,12 @@ sub determine_compiler_settings {
         if ( $SYSTEM eq 'OpenVMS' ) {
             my $v = `CC/VERSION NLA0:`;
             if ($? == 0) {
+                # The normal releases have a version number prefixed with a V.
+                # However, other letters have been seen as well (for example X),
+                # and it's documented that HP (now VSI) reserve the letter W, X,
+                # Y and Z for their own uses.
                 my ($vendor, $version) =
-                    ( $v =~ m/^([A-Z]+) C V([0-9\.-]+) on / );
+                    ( $v =~ m/^([A-Z]+) C [VWXYZ]([0-9\.-]+)(:? +\(.*?\))? on / );
                 my ($major, $minor, $patch) =
                     ( $version =~ m/^([0-9]+)\.([0-9]+)-0*?(0|[1-9][0-9]*)$/ );
                 $CC = 'CC';
@@ -501,7 +505,7 @@ EOF
             if ( $ISA64 == 1 && $KERNEL_BITS eq '' ) {
                 print <<EOF;
 WARNING! To build 64-bit package, do this:
-         KERNEL_BITS=64 $WHERE/Configure [options...]
+         KERNEL_BITS=64 $WHERE/Configure \[\[ options \]\]
 EOF
                 maybe_abort();
             }
@@ -525,7 +529,7 @@ EOF
 
             print <<EOF;
 WARNING! To build 32-bit package, do this:
-         KERNEL_BITS=32 $WHERE/Configure [options...]
+         KERNEL_BITS=32 $WHERE/Configure \[\[ options \]\]
 EOF
             maybe_abort();
             return { target => "darwin64-x86_64" };
@@ -780,10 +784,8 @@ EOF
       [ 'powerpc64le-.*-.*bsd.*', { target => "BSD-ppc64le" } ],
       [ 'riscv64-.*-.*bsd.*',     { target => "BSD-riscv64" } ],
       [ 'sparc64-.*-.*bsd.*',     { target => "BSD-sparc64" } ],
-      [ 'ia64-.*-openbsd.*',      { target => "BSD-nodef-ia64" } ],
       [ 'ia64-.*-.*bsd.*',        { target => "BSD-ia64" } ],
       [ 'x86_64-.*-dragonfly.*',  { target => "BSD-x86_64" } ],
-      [ 'amd64-.*-openbsd.*',     { target => "BSD-nodef-x86_64" } ],
       [ 'amd64-.*-.*bsd.*',       { target => "BSD-x86_64" } ],
       [ 'arm64-.*-.*bsd.*',       { target => "BSD-aarch64" } ],
       [ 'armv6-.*-.*bsd.*',       { target => "BSD-armv4" } ],
@@ -805,7 +807,6 @@ EOF
                      disable => [ 'sse2' ] };
         }
       ],
-      [ '.*-.*-openbsd.*',        { target => "BSD-nodef-generic32" } ],
       [ '.*-.*-.*bsd.*',          { target => "BSD-generic32" } ],
       [ 'x86_64-.*-haiku',        { target => "haiku-x86_64" } ],
       [ '.*-.*-haiku',            { target => "haiku-x86" } ],

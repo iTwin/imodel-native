@@ -481,6 +481,80 @@ public:
             THROW_JS_EXCEPTION(rc.GetStatusAsString());
         }
     }
+    void SchemaSyncSetDefaultUri(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_STRING(0, schemaSyncDbUriStr);
+        LastErrorListener lastError(m_ecdb);
+        auto rc = m_ecdb.Schemas().GetSchemaSync().SetDefaultSyncDbUri(schemaSyncDbUriStr.c_str());
+        if (rc != SchemaSync::Status::OK) {
+            if (lastError.HasError()) {
+                THROW_JS_EXCEPTION(lastError.GetLastError().c_str());
+            } else {
+                THROW_JS_EXCEPTION(Utf8PrintfString("fail to set default shared schema channel uri: %s", schemaSyncDbUriStr.c_str()).c_str());
+            }
+        }
+    }
+    Napi::Value SchemaSyncGetDefaultUri(NapiInfoCR info) {
+        auto& syncDbUri = m_ecdb.Schemas().GetSchemaSync().GetDefaultSyncDbUri();
+        if (syncDbUri.IsEmpty())
+            return Env().Undefined();
+
+        return Napi::String::New(Env(), syncDbUri.GetUri().c_str());
+        }
+    void SchemaSyncInit(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_STRING(0, schemaSyncDbUriStr);
+        auto syncDbUri = SchemaSync::SyncDbUri(schemaSyncDbUriStr.c_str());
+        LastErrorListener lastError(m_ecdb);
+        auto rc = m_ecdb.Schemas().GetSchemaSync().Init(syncDbUri);
+        if (rc != SchemaSync::Status::OK) {
+            if (lastError.HasError()) {
+                THROW_JS_EXCEPTION(lastError.GetLastError().c_str());
+            } else {
+                THROW_JS_EXCEPTION(Utf8PrintfString("fail to initialize shared schema channel: %s", schemaSyncDbUriStr.c_str()).c_str());
+            }
+        }
+    }
+
+    Napi::Value SchemaSyncEnabled(NapiInfoCR info) {
+        const auto isEnabled = !m_ecdb.Schemas().GetSchemaSync().GetInfo().IsEmpty();
+        return Napi::Boolean::New(Env(), isEnabled);
+    }
+
+    Napi::Value SchemaSyncGetLocalDbInfo(NapiInfoCR info) {
+        auto localDbInfo = m_ecdb.Schemas().GetSchemaSync().GetInfo();
+        if (localDbInfo.IsEmpty()) {
+            return Env().Undefined();
+        }
+        BeJsNapiObject obj(Env());
+        localDbInfo.To(obj);
+        return obj;
+    }
+
+    Napi::Value SchemaSyncGetSyncDbInfo(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_STRING(0, schemaSyncDbUriStr);
+         auto syncDbUri = SchemaSync::SyncDbUri(schemaSyncDbUriStr.c_str());
+         auto syncDbInfo = syncDbUri.GetInfo();
+         if (syncDbInfo.IsEmpty()) {
+            return Env().Undefined();
+        }
+        BeJsNapiObject obj(Env());
+        syncDbInfo.To(obj);
+        return obj;
+    }
+
+    void SchemaSyncPull(NapiInfoCR info) {
+        OPTIONAL_ARGUMENT_STRING(0, schemaSyncDbUriStr);
+        auto syncDbUri = SchemaSync::SyncDbUri(schemaSyncDbUriStr.c_str());
+        LastErrorListener lastError(m_ecdb);
+        auto rc = m_ecdb.Schemas().GetSchemaSync().Pull(syncDbUri);
+        if (rc != SchemaSync::Status::OK) {
+            if (lastError.HasError()) {
+                THROW_JS_EXCEPTION(lastError.GetLastError().c_str());
+            } else {
+                THROW_JS_EXCEPTION(Utf8PrintfString("fail to pull changes from channel: %s", schemaSyncDbUriStr.c_str()).c_str());
+            }
+        }
+    }
+
     static Napi::Value EnableSharedCache(NapiInfoCR info) {
         REQUIRE_ARGUMENT_BOOL(0, enabled);
         DbResult r = BeSQLiteLib::EnableSharedCache(enabled);
@@ -503,6 +577,13 @@ public:
             InstanceMethod("getLastInsertRowId", &NativeECDb::GetLastInsertRowId),
             InstanceMethod("importSchema", &NativeECDb::ImportSchema),
             InstanceMethod("isOpen", &NativeECDb::IsOpen),
+            InstanceMethod("schemaSyncSetDefaultUri", &NativeECDb::SchemaSyncSetDefaultUri),
+            InstanceMethod("schemaSyncGetDefaultUri", &NativeECDb::SchemaSyncGetDefaultUri),
+            InstanceMethod("schemaSyncPull", &NativeECDb::SchemaSyncPull),
+            InstanceMethod("schemaSyncInit", &NativeECDb::SchemaSyncInit),
+            InstanceMethod("schemaSyncEnabled", &NativeECDb::SchemaSyncEnabled),
+            InstanceMethod("schemaSyncGetLocalDbInfo", &NativeECDb::SchemaSyncGetLocalDbInfo),
+            InstanceMethod("schemaSyncGetSyncDbInfo", &NativeECDb::SchemaSyncGetSyncDbInfo),
             InstanceMethod("openDb", &NativeECDb::OpenDb),
             InstanceMethod("saveChanges", &NativeECDb::SaveChanges),
             StaticMethod("enableSharedCache", &NativeECDb::EnableSharedCache),
@@ -1005,6 +1086,15 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
 
         addContainerParams(Value(), dbName, openParams, info[4]);
         OpenIModelDb(BeFileName(dbName), openParams);
+    }
+
+    void RestartDefaultTxn(NapiInfoCR info) {
+        RequireDbIsOpen(info);
+        auto& db = GetDgnDb();
+        auto& txns = db.Txns();
+        auto last = txns.GetLastTxnId(); // save this before we restart
+        db.RestartDefaultTxn();
+        txns.ReplayExternalTxns(last); // if there were changes from other connections, replay their side effects for listeners
     }
 
     void CreateIModel(NapiInfoCR info)  {
@@ -1766,16 +1856,99 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
             THROW_JS_EXCEPTION(rc.GetStatusAsString());
         }
     }
+    void SchemaSyncSetDefaultUri(NapiInfoCR info) {
+        RequireDbIsOpen(info);
+        REQUIRE_ARGUMENT_STRING(0, schemaSyncDbUriStr);
+        LastErrorListener lastError(GetDgnDb());
+        auto rc = GetDgnDb().Schemas().GetSchemaSync().SetDefaultSyncDbUri(schemaSyncDbUriStr.c_str());
+        if (rc != SchemaSync::Status::OK) {
+            if (lastError.HasError()) {
+                THROW_JS_EXCEPTION(lastError.GetLastError().c_str());
+            } else {
+                THROW_JS_EXCEPTION(Utf8PrintfString("fail to set default shared schema channel uri: %s", schemaSyncDbUriStr.c_str()).c_str());
+            }
+        }
+    }
+    Napi::Value SchemaSyncGetDefaultUri(NapiInfoCR info) {
+        RequireDbIsOpen(info);
+        auto& syncDbUri = GetDgnDb().Schemas().GetSchemaSync().GetDefaultSyncDbUri();
+        if (syncDbUri.IsEmpty())
+            return Env().Undefined();
+
+        return Napi::String::New(Env(), syncDbUri.GetUri().c_str());
+        }
+    void SchemaSyncInit(NapiInfoCR info) {
+        RequireDbIsOpen(info);
+        REQUIRE_ARGUMENT_STRING(0, schemaSyncDbUriStr);
+        auto syncDbUri = SchemaSync::SyncDbUri(schemaSyncDbUriStr.c_str());
+        LastErrorListener lastError(GetDgnDb());
+        auto rc = GetDgnDb().Schemas().GetSchemaSync().Init(syncDbUri);
+        if (rc != SchemaSync::Status::OK) {
+            if (lastError.HasError()) {
+                THROW_JS_EXCEPTION(lastError.GetLastError().c_str());
+            } else {
+                THROW_JS_EXCEPTION(Utf8PrintfString("fail to initialize shared schema channel: %s", schemaSyncDbUriStr.c_str()).c_str());
+            }
+        }
+    }
+
+    Napi::Value SchemaSyncEnabled(NapiInfoCR info) {
+        RequireDbIsOpen(info);
+        const auto isEnabled = !GetDgnDb().Schemas().GetSchemaSync().GetInfo().IsEmpty();
+        return Napi::Boolean::New(Env(), isEnabled);
+    }
+
+    Napi::Value SchemaSyncGetLocalDbInfo(NapiInfoCR info) {
+        RequireDbIsOpen(info);
+        auto localDbInfo = GetDgnDb().Schemas().GetSchemaSync().GetInfo();
+        if (localDbInfo.IsEmpty()) {
+            return Env().Undefined();
+        }
+        BeJsNapiObject obj(Env());
+        localDbInfo.To(obj);
+        return obj;
+    }
+
+    Napi::Value SchemaSyncGetSyncDbInfo(NapiInfoCR info) {
+        RequireDbIsOpen(info);
+        REQUIRE_ARGUMENT_STRING(0, schemaSyncDbUriStr);
+         auto syncDbUri = SchemaSync::SyncDbUri(schemaSyncDbUriStr.c_str());
+         auto syncDbInfo = syncDbUri.GetInfo();
+         if (syncDbInfo.IsEmpty()) {
+            return Env().Undefined();
+        }
+        BeJsNapiObject obj(Env());
+        syncDbInfo.To(obj);
+        return obj;
+    }
+
+    void SchemaSyncPull(NapiInfoCR info) {
+        RequireDbIsOpen(info);
+        OPTIONAL_ARGUMENT_STRING(0, schemaSyncDbUriStr);
+        auto syncDbUri = SchemaSync::SyncDbUri(schemaSyncDbUriStr.c_str());
+        LastErrorListener lastError(GetDgnDb());
+        auto rc = GetDgnDb().PullSchemaChanges(syncDbUri);
+        if (rc != SchemaSync::Status::OK) {
+            if (lastError.HasError()) {
+                THROW_JS_EXCEPTION(lastError.GetLastError().c_str());
+            } else {
+                THROW_JS_EXCEPTION(Utf8PrintfString("fail to pull changes from schema sync db: %s", schemaSyncDbUriStr.c_str()).c_str());
+            }
+        }
+    }
     Napi::Value ImportSchemas(NapiInfoCR info)
         {
         RequireDbIsOpen(info);
         REQUIRE_ARGUMENT_STRING_ARRAY(0, schemaFileNames);
-        REQUIRE_ARGUMENT_ANY_OBJ(1, jsOpts);
+        OPTIONAL_ARGUMENT_ANY_OBJ(1, jsOpts, Napi::Object::New(Env()));
         ECSchemaReadContextPtr customContext = nullptr;
 
         JsInterop::SchemaImportOptions options;
-        const auto& maybeEcSchemaContextVal = jsOpts.Get(JsInterop::json_ecSchemaXmlContext());
+        const auto maybeEcSchemaContextVal = jsOpts.Get(JsInterop::json_ecSchemaXmlContext());
         options.m_schemaLockHeld = jsOpts.Get(JsInterop::json_schemaLockHeld()).ToBoolean();
+        auto jsSyncDbUri = jsOpts.Get(JsInterop::json_schemaSyncDbUri());
+        if (jsSyncDbUri.IsString())
+            options.m_schemaSyncDbUri = jsSyncDbUri.ToString().Utf8Value();
         if (!maybeEcSchemaContextVal.IsUndefined())
             {
             if (!NativeECSchemaXmlContext::HasInstance(maybeEcSchemaContextVal))
@@ -1792,10 +1965,13 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         {
         RequireDbIsOpen(info);
         REQUIRE_ARGUMENT_STRING_ARRAY(0, schemaFileNames);
-        REQUIRE_ARGUMENT_ANY_OBJ(1, jsOpts);
-        JsInterop::SchemaImportOptions opts;
-        opts.m_schemaLockHeld = jsOpts.Get(JsInterop::json_schemaLockHeld()).ToBoolean();
-        DbResult result = JsInterop::ImportSchemas(GetDgnDb(), schemaFileNames, SchemaSourceType::XmlString, opts);
+        OPTIONAL_ARGUMENT_ANY_OBJ(1, jsOpts, Napi::Object::New(Env()));
+        JsInterop::SchemaImportOptions options;
+        options.m_schemaLockHeld = jsOpts.Get(JsInterop::json_schemaLockHeld()).ToBoolean();
+        auto jsSyncDbUri = jsOpts.Get(JsInterop::json_schemaSyncDbUri());
+        if (jsSyncDbUri.IsString())
+            options.m_schemaSyncDbUri = jsSyncDbUri.ToString().Utf8Value();
+        DbResult result = JsInterop::ImportSchemas(GetDgnDb(), schemaFileNames, SchemaSourceType::XmlString, options);
         return Napi::Number::New(Env(), (int)result);
         }
 
@@ -2418,6 +2594,13 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
             InstanceMethod("startCreateChangeset", &NativeDgnDb::StartCreateChangeset),
             InstanceMethod("startProfiler", &NativeDgnDb::StartProfiler),
             InstanceMethod("stopProfiler", &NativeDgnDb::StopProfiler),
+            InstanceMethod("schemaSyncSetDefaultUri", &NativeDgnDb::SchemaSyncSetDefaultUri),
+            InstanceMethod("schemaSyncGetDefaultUri", &NativeDgnDb::SchemaSyncGetDefaultUri),
+            InstanceMethod("schemaSyncPull", &NativeDgnDb::SchemaSyncPull),
+            InstanceMethod("schemaSyncInit", &NativeDgnDb::SchemaSyncInit),
+            InstanceMethod("schemaSyncEnabled", &NativeDgnDb::SchemaSyncEnabled),
+            InstanceMethod("schemaSyncGetLocalDbInfo", &NativeDgnDb::SchemaSyncGetLocalDbInfo),
+            InstanceMethod("schemaSyncGetSyncDbInfo", &NativeDgnDb::SchemaSyncGetSyncDbInfo),
             InstanceMethod("updateElement", &NativeDgnDb::UpdateElement),
             InstanceMethod("updateElementAspect", &NativeDgnDb::UpdateElementAspect),
             InstanceMethod("updateElementGeometryCache", &NativeDgnDb::UpdateElementGeometryCache),
@@ -2607,6 +2790,74 @@ struct NativeRevisionUtility : BeObjectWrap<NativeRevisionUtility>
         });
 
         exports.Set("RevisionUtility", t);
+
+        SET_CONSTRUCTOR(t)
+        }
+    };
+
+//=======================================================================================
+//  Projects the SchemaUtility class into JS.
+//! @bsiclass
+//=======================================================================================
+struct NativeSchemaUtility : BeObjectWrap<NativeSchemaUtility>
+    {
+    private:
+        DEFINE_CONSTRUCTOR
+
+    public:
+        NativeSchemaUtility(NapiInfoCR info) : BeObjectWrap<NativeSchemaUtility>(info) {}
+        ~NativeSchemaUtility() {SetInDestructor();}
+
+    static Napi::Value ConvertCustomAttributes(NapiInfoCR info)
+        {
+        return ConvertSchemas(info, true);
+        }
+
+    static Napi::Value ConvertEC2XmlSchemas(NapiInfoCR info)
+        {
+        return ConvertSchemas(info, false);
+        }
+
+    static Napi::Value ConvertSchemas(NapiInfoCR info, bool convertCA)
+        {
+        REQUIRE_ARGUMENT_STRING_ARRAY(0, inputXmlStrings);
+
+        ECSchemaReadContextPtr customContext = nullptr;
+        if (ARGUMENT_IS_PRESENT(1)) {
+            const auto& maybeEcSchemaContextVal = info[1].As<Napi::Object>();
+            if (!maybeEcSchemaContextVal.IsUndefined())
+                {
+                if (!NativeECSchemaXmlContext::HasInstance(maybeEcSchemaContextVal))
+                    THROW_JS_TYPE_EXCEPTION("if ecSchemaXmlContext is passed as an argument, it must be an object of type NativeECSchemaXmlContext")
+                customContext = NativeECSchemaXmlContext::Unwrap(maybeEcSchemaContextVal.As<Napi::Object>())->GetContext();
+                }
+        }
+
+        bvector<Utf8String> outputXmlStrings;
+        BentleyStatus result = JsInterop::ConvertSchemas(inputXmlStrings, outputXmlStrings, customContext, convertCA);
+        if (result != BentleyStatus::SUCCESS)
+            {
+            Utf8String error = convertCA ? "Failed to convert custom attributes of given schemas" : "Failed to convert EC2 Xml schemas";
+            THROW_JS_EXCEPTION(error.c_str());
+            }
+
+        uint32_t index = 0;
+        auto ret = Napi::Array::New(info.Env(), outputXmlStrings.size());
+        for (auto& outputXmlString : outputXmlStrings)
+            ret.Set(index++, Napi::String::New(info.Env(), outputXmlString.c_str()));
+
+        return ret;
+        }
+
+    static void Init(Napi::Env& env, Napi::Object exports)
+        {
+        Napi::HandleScope scope(env);
+        Napi::Function t = DefineClass(env, "SchemaUtility", {
+            StaticMethod("convertCustomAttributes", &NativeSchemaUtility::ConvertCustomAttributes),
+            StaticMethod("convertEC2XmlSchemas", &NativeSchemaUtility::ConvertEC2XmlSchemas),
+        });
+
+        exports.Set("SchemaUtility", t);
 
         SET_CONSTRUCTOR(t)
         }
@@ -3210,16 +3461,18 @@ struct NativeECSqlColumnInfo : BeObjectWrap<NativeECSqlColumnInfo>
             {
             Napi::HandleScope scope(env);
             Napi::Function t = DefineClass(env, "ECSqlColumnInfo", {
-            InstanceMethod("getType", &NativeECSqlColumnInfo::GetType),
-            InstanceMethod("getPropertyName", &NativeECSqlColumnInfo::GetPropertyName),
-            InstanceMethod("getOriginPropertyName", &NativeECSqlColumnInfo::GetOriginPropertyName),
-            InstanceMethod("getAccessString", &NativeECSqlColumnInfo::GetAccessString),
-            InstanceMethod("isSystemProperty", &NativeECSqlColumnInfo::IsSystemProperty),
-            InstanceMethod("isGeneratedProperty", &NativeECSqlColumnInfo::IsGeneratedProperty),
-            InstanceMethod("isEnum", &NativeECSqlColumnInfo::IsEnum),
-            InstanceMethod("getRootClassTableSpace", &NativeECSqlColumnInfo::GetRootClassTableSpace),
-            InstanceMethod("getRootClassName", &NativeECSqlColumnInfo::GetRootClassName),
-            InstanceMethod("getRootClassAlias", &NativeECSqlColumnInfo::GetRootClassAlias)});
+                InstanceMethod("getType", &NativeECSqlColumnInfo::GetType),
+                InstanceMethod("getPropertyName", &NativeECSqlColumnInfo::GetPropertyName),
+                InstanceMethod("getOriginPropertyName", &NativeECSqlColumnInfo::GetOriginPropertyName),
+                InstanceMethod("getAccessString", &NativeECSqlColumnInfo::GetAccessString),
+                InstanceMethod("isSystemProperty", &NativeECSqlColumnInfo::IsSystemProperty),
+                InstanceMethod("isGeneratedProperty", &NativeECSqlColumnInfo::IsGeneratedProperty),
+                InstanceMethod("isEnum", &NativeECSqlColumnInfo::IsEnum),
+                InstanceMethod("getRootClassTableSpace", &NativeECSqlColumnInfo::GetRootClassTableSpace),
+                InstanceMethod("getRootClassName", &NativeECSqlColumnInfo::GetRootClassName),
+                InstanceMethod("getRootClassAlias", &NativeECSqlColumnInfo::GetRootClassAlias),
+                InstanceMethod("isDynamicProp", &NativeECSqlColumnInfo::IsDynamicProp),
+            });
 
             exports.Set("ECSqlColumnInfo", t);
 
@@ -3334,7 +3587,13 @@ struct NativeECSqlColumnInfo : BeObjectWrap<NativeECSqlColumnInfo>
 
             return toJsString(Env(), prop->GetName());
             }
+        Napi::Value IsDynamicProp(NapiInfoCR info)
+            {
+            if (m_colInfo == nullptr)
+                THROW_JS_EXCEPTION("ECSqlColumnInfo is not initialized.");
 
+            return Napi::Boolean::New(Env(), m_colInfo->IsDynamic());
+            }
         Napi::Value GetOriginPropertyName(NapiInfoCR info)
             {
             if (m_colInfo == nullptr)
@@ -4967,7 +5226,30 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         SET_CONSTRUCTOR(t);
         }
 
-    static Napi::Value CreateReturnValue(Napi::Env env, ECPresentationResult const& result, bool serializeResponse = false)
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    static void SetSerializedResponse(Napi::Env env, BeJsNapiObject obj, Utf8CP memberName, Utf8StringR serializedResponse)
+        {
+        if (serializedResponse.empty())
+            {
+            obj[memberName] = "null";
+            return;
+            }
+
+        Utf8StringP strP = new Utf8String();
+        strP->swap(serializedResponse);
+        Napi::Value val = Napi::Buffer<Utf8Char>::NewOrCopy(env, strP->data(), strP->size(), [](Napi::Env, Utf8Char*, void* ptr)
+            {
+            delete reinterpret_cast<Utf8StringP>(ptr);
+            }, strP);
+        obj.AsNapiValueRef()->m_napiVal.As<Napi::Object>().Set(memberName, val);
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    static Napi::Value CreateReturnValue(Napi::Env env, ECPresentationResult& result, bool serializeResponse = false)
         {
         BeJsNapiObject retVal(env);
         if (result.IsError())
@@ -4977,11 +5259,10 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
             }
         else
             {
-            // rapidjson response
-            if (serializeResponse) {
-                auto str = result.GetSerializedSuccessResponse();
-                retVal["result"] = str.empty() ? "null" : str; // see note about null values for BeJsValue::Stringify
-            } else
+            // success
+            if (serializeResponse)
+                SetSerializedResponse(env, retVal, "result", result.GetSerializedSuccessResponse());
+            else
                 retVal["result"].From(result.GetSuccessResponse());
             }
 
@@ -5032,7 +5313,7 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         BeAssert(m_presentationManager == nullptr);
         }
 
-    Napi::Value CreateReturnValue(ECPresentationResult const& result, bool serializeResponse = false)
+    Napi::Value CreateReturnValue(ECPresentationResult&& result, bool serializeResponse = false)
         {
         return CreateReturnValue(Env(), result, serializeResponse);
         }
@@ -5040,11 +5321,11 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
     void ResolvePromise(Napi::Promise::Deferred const& deferred, ECPresentationResult&& result)
         {
         std::shared_ptr<ECPresentationResult> resultPtr = std::make_shared<ECPresentationResult>(std::move(result));
-        m_threadSafeFunc.BlockingCall([this, resultPtr, deferred = std::move(deferred)](Napi::Env, Napi::Function)
+        m_threadSafeFunc.BlockingCall([resultPtr, deferred = std::move(deferred)](Napi::Env env, Napi::Function)
             {
             // flush all our logs that accumulated while handling the request
             s_jsLogger.FlushDeferred();
-            deferred.Resolve(CreateReturnValue(*resultPtr, true));
+            deferred.Resolve(CreateReturnValue(env, *resultPtr, true));
             });
         }
 
@@ -5177,28 +5458,28 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         {
         REQUIRE_ARGUMENT_STRING_ARRAY(0, directories);
         ECPresentationResult result = ECPresentationUtils::SetupRulesetDirectories(*m_presentationManager, directories);
-        return CreateReturnValue(result);
+        return CreateReturnValue(std::move(result));
         }
 
     Napi::Value SetupSupplementalRulesetDirectories(NapiInfoCR info)
         {
         REQUIRE_ARGUMENT_STRING_ARRAY(0, directories);
         ECPresentationResult result = ECPresentationUtils::SetupSupplementalRulesetDirectories(*m_presentationManager, directories);
-        return CreateReturnValue(result);
+        return CreateReturnValue(std::move(result));
         }
 
     Napi::Value GetRulesets(NapiInfoCR info)
         {
         REQUIRE_ARGUMENT_STRING(0, rulesetId);
         ECPresentationResult result = ECPresentationUtils::GetRulesets(*m_ruleSetLocater, rulesetId);
-        return CreateReturnValue(result, true);
+        return CreateReturnValue(std::move(result), true);
         }
 
     Napi::Value AddRuleset(NapiInfoCR info)
         {
         REQUIRE_ARGUMENT_STRING(0, rulesetJsonString);
         ECPresentationResult result = ECPresentationUtils::AddRuleset(*m_ruleSetLocater, rulesetJsonString);
-        return CreateReturnValue(result);
+        return CreateReturnValue(std::move(result));
         }
 
     Napi::Value RemoveRuleset(NapiInfoCR info)
@@ -5206,13 +5487,13 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         REQUIRE_ARGUMENT_STRING(0, rulesetId);
         REQUIRE_ARGUMENT_STRING(1, hash);
         ECPresentationResult result = ECPresentationUtils::RemoveRuleset(*m_ruleSetLocater, rulesetId, hash);
-        return CreateReturnValue(result);
+        return CreateReturnValue(std::move(result));
         }
 
     Napi::Value ClearRulesets(NapiInfoCR info)
         {
         ECPresentationResult result = ECPresentationUtils::ClearRulesets(*m_ruleSetLocater);
-        return CreateReturnValue(result);
+        return CreateReturnValue(std::move(result));
         }
 
     Napi::Value GetRulesetVariableValue(NapiInfoCR info)
@@ -5221,7 +5502,7 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         REQUIRE_ARGUMENT_STRING(1, variableId);
         REQUIRE_ARGUMENT_STRING(2, type);
         ECPresentationResult result = ECPresentationUtils::GetRulesetVariableValue(*m_presentationManager, rulesetId, variableId, type);
-        return CreateReturnValue(result);
+        return CreateReturnValue(std::move(result));
         }
 
     Napi::Value SetRulesetVariableValue(NapiInfoCR info)
@@ -5231,7 +5512,7 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         REQUIRE_ARGUMENT_STRING(2, variableType);
         REQUIRE_ARGUMENT_ANY_OBJ(3, value);
         ECPresentationResult result = ECPresentationUtils::SetRulesetVariableValue(*m_presentationManager, ruleSetId, variableId, variableType, value);
-        return CreateReturnValue(result);
+        return CreateReturnValue(std::move(result));
         }
 
     Napi::Value UnsetRulesetVariableValue(NapiInfoCR info)
@@ -5239,7 +5520,7 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         REQUIRE_ARGUMENT_STRING(0, ruleSetId);
         REQUIRE_ARGUMENT_STRING(1, variableId);
         ECPresentationResult result = ECPresentationUtils::UnsetRulesetVariableValue(*m_presentationManager, ruleSetId, variableId);
-        return CreateReturnValue(result);
+        return CreateReturnValue(std::move(result));
         }
 
     Napi::Value GetUpdateInfo(NapiInfoCR info)
@@ -5910,6 +6191,7 @@ static Napi::Object registerModule(Napi::Env env, Napi::Object exports) {
     NativeDgnDb::Init(env, exports);
     NativeGeoServices::Init(env, exports);
     NativeRevisionUtility::Init(env, exports);
+    NativeSchemaUtility::Init(env, exports);
     NativeECDb::Init(env, exports);
     NativeChangesetReader::Init(env, exports);
     NativeChangedElementsECDb::Init(env, exports);

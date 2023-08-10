@@ -97,18 +97,3 @@ void ExtendedDataRule::AddItem(Utf8String key, Utf8String value)
     m_items.Insert(key, value);
     InvalidateHash();
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ExtendedDataRule::_ShallowEqual(PresentationKeyCR other) const
-    {
-    if (!ConditionalCustomizationRule::_ShallowEqual(other))
-        return false;
-
-    ExtendedDataRule const* otherRule = dynamic_cast<ExtendedDataRule const*>(&other);
-    if (nullptr == otherRule)
-        return false;
-
-    return true;
-    }

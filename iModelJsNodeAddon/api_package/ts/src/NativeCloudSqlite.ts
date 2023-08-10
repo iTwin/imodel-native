@@ -28,8 +28,8 @@ export namespace NativeCloudSqlite {
 
   /** Properties of a CloudContainer. */
   export interface ContainerProps {
-    /** blob storage module */
-    storageType: "azure" | "google" | "aws";
+    /** blob storage provider */
+    storageType: "azure" | "google" | "s3";
     /** base URI for container. */
     baseUri: string;
     /** the name of the container. */
