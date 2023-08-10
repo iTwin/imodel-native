@@ -17,6 +17,7 @@ resources:
     - repository: profileversion-tests
       type: github
       endpoint: imodel-native
+      ref:  io-save-resources-conditions
       name: iTwin/profileversion-tests
 
     - repository: imodel-native-internal
