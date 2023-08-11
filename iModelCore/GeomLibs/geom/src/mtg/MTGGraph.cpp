@@ -455,43 +455,70 @@ void MTGGraph::CollectVertexLoops (bvector <MTGNodeId> &faceNodes)
     DropMask (visitMask);
     }
 
-static void TestMarkAndPush (MTGGraph &graph, bvector<MTGNodeId> &stack, MTGNodeId nodeId, MTGMask visitMask)
+// @returns true iff pushed
+static bool TestMarkAndPush (MTGGraph &graph, bvector<MTGNodeId> &stack, MTGNodeId nodeId, MTGMask visitMask)
     {
-    if (!graph.TestAndSetMaskAt (nodeId, visitMask))
-        stack.push_back (nodeId);
+    if (graph.TestAndSetMaskAt (nodeId, visitMask))
+        return false;
+    stack.push_back (nodeId);
+    return true;
     }
+
 // Depth first search through connected component of a graph.
 // @param [out] component vector of all nodes in component.
 // @param [in,out] stack scratch array for use in search.
 // @param [in] seed seed node in component.  Assumed NOT marked with visit mask.
 // @param [in] visitMask mask to apply to visited nodes.  Assumed cleared throughout component.
-static void ExploreComponent (MTGGraph &graph, bvector <MTGNodeId> &component, bvector<MTGNodeId> &stack, MTGNodeId seed, MTGMask visitMask)
+// @param [in] maxFaceCount if positive, output components with no more than this number of faces.
+// @returns node at which to start next component if maximum face count exceeded, or MTG_NULL_NODEID
+static MTGNodeId ExploreComponent (MTGGraph &graph, bvector <MTGNodeId> &component, bvector<MTGNodeId> &stack, MTGNodeId seed, MTGMask visitMask, size_t maxFaceCount)
     {
+    MTGNodeId startNextComponentAt = MTG_NULL_NODEID;
+    if (maxFaceCount <= 0)
+        maxFaceCount = SIZE_MAX;
+    size_t numFaces = 0;
     stack.clear ();
-    TestMarkAndPush (graph, stack, seed, visitMask);
+    if (TestMarkAndPush (graph, stack, seed, visitMask))
+        ++numFaces;
     while (stack.size () != 0)
         {
         MTGNodeId node = stack.back ();
         component.push_back (node);
         stack.pop_back ();
         TestMarkAndPush (graph, stack, graph.FSucc (node), visitMask);
-        TestMarkAndPush (graph, stack, graph.VSucc (node), visitMask);
+
+        MTGNodeId newFaceCandidate = graph.VSucc(node);
+        if (numFaces < maxFaceCount)
+            {
+            if (TestMarkAndPush (graph, stack, newFaceCandidate, visitMask))
+                ++numFaces;
+            }
+        else if (MTG_NULL_NODEID == startNextComponentAt)
+            {
+            startNextComponentAt = newFaceCandidate;
+            }
         }
+    return startNextComponentAt;
     }
 
-void MTGGraph::CollectConnectedComponents (bvector <bvector <MTGNodeId> > &components)
+void MTGGraph::CollectConnectedComponents (bvector <bvector <MTGNodeId> > &components, size_t maxFaceCount)
     {
+    if (maxFaceCount <= 0)
+        maxFaceCount = SIZE_MAX;
     components.clear ();
     MTGMask visitMask = GrabMask ();
     ClearMask (visitMask);
     bvector<MTGNodeId> stack;
     MTGARRAY_SET_LOOP (seed, this)
         {
-        if (!GetMaskAt (seed, visitMask))
+        MTGNodeId startNewComponentAt = seed;
+        do
             {
+            if (GetMaskAt (startNewComponentAt, visitMask))
+                break;
             components.push_back (bvector<MTGNodeId> ());
-            ExploreComponent (*this, components.back (), stack, seed, visitMask);
-            }
+            startNewComponentAt = ExploreComponent (*this, components.back (), stack, startNewComponentAt, visitMask, maxFaceCount);
+            } while (startNewComponentAt != MTG_NULL_NODEID);
         }
     MTGARRAY_END_SET_LOOP (seed, this)
     DropMask (visitMask);
@@ -502,7 +529,7 @@ void MTGGraph::CollectConnectedComponents (bvector <bvector <MTGNodeId> > &compo
 // @param [in,out] stack scratch array for use in search.
 // @param [in] seed seed node in component.  Assumed NOT marked with visit mask.
 // @param [in] visitMask mask to apply to visited nodes.  Assumed cleared throughout component.
-// @param [in] collectMask mask to apply to nodes whose scope (face, vetrtex etc has been collected.
+// @param [in] collectMask mask to apply to nodes whose scope (face, vertex etc has been collected.
 static void ExploreComponent (MTGGraph &graph, bvector <MTGNodeId> &component, bvector<MTGNodeId> &stack, MTGNodeId seed, MTGMask visitMask, MTGMask collectMask, MTGMarkScope scope)
     {
     BeAssert (visitMask != collectMask);

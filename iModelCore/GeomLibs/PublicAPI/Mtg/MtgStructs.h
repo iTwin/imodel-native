@@ -473,7 +473,7 @@ GEOMDLLIMPEXP void CollectVertexLoops (bvector <MTGNodeId> &vertexNodes);
 // Collect array of all nodes
 GEOMDLLIMPEXP void CollectAllNodes(bvector <MTGNodeId> &allNodes);
 
-// Collect nodeId's by component.
+// Collect nodeIds by component.
 // @param components array with one vector of nodes per component.
 // @param scope one of:
 //<pre>
@@ -482,14 +482,13 @@ GEOMDLLIMPEXP void CollectAllNodes(bvector <MTGNodeId> &allNodes);
 //<li>MTG_ScopeEdge collect one node per edge
 //<li>MTG_ScopeVertex collect one node per vertex
 //<li>MTG_ScopeFace collect one node per face
-//<li>MTG_ScopeComponetn collect one node per component
+//<li>MTG_ScopeComponent collect one node per component
 //</pre>
 GEOMDLLIMPEXP void CollectConnectedComponents (bvector <bvector <MTGNodeId> > &components, MTGMarkScope scope);
 
-// Collect nodeId's by component.
-GEOMDLLIMPEXP void CollectConnectedComponents (bvector <bvector <MTGNodeId> > &components);
-
-
+// Collect nodeIds by component.
+// @param [in] maxFaceCount if positive, output components with no more than this number of faces.
+GEOMDLLIMPEXP void CollectConnectedComponents (bvector <bvector <MTGNodeId> > &components, size_t maxFaceCount = 0);
 
 // Pack the bvector to remove nodes that have the mask.
 GEOMDLLIMPEXP void DropMasked (bvector <MTGNodeId> &nodes, MTGMask mask) const;
