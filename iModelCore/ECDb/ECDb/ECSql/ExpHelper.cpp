@@ -67,7 +67,7 @@ Utf8CP ExpHelper::ToString (ECN::PrimitiveType type)
             return "Point3d";
         case PRIMITIVETYPE_String:
             return "String";
-        
+
         default:
             BeAssert(false && "Unhandled case");
             return nullptr;
@@ -189,7 +189,7 @@ Utf8CP ExpHelper::ToSql(BooleanSqlOperator op)
         case BooleanSqlOperator::IsNot:        return "IS NOT";
         //Pattern
         case BooleanSqlOperator::Like:          return "LIKE";
-        case BooleanSqlOperator::NotLike:      return "NOT LIKE";      
+        case BooleanSqlOperator::NotLike:      return "NOT LIKE";
 
         case BooleanSqlOperator::Match:         return "MATCH";
         case BooleanSqlOperator::NotMatch:     return "NOT MATCH";

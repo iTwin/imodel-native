@@ -2138,7 +2138,9 @@ void ParseCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
         Default,
         Exp,
         Token,
-        Sql
+        Sql,
+        Json,
+        Normalize
         };
 
     ParseMode parseMode = ParseMode::Default;
@@ -2148,7 +2150,10 @@ void ParseCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
         parseMode = ParseMode::Token;
     else if (commandSwitch.EqualsIAscii("sql"))
         parseMode = ParseMode::Sql;
-
+    else if (commandSwitch.EqualsIAscii("json"))
+        parseMode = ParseMode::Json;
+    else if (commandSwitch.EqualsIAscii("normalize"))
+        parseMode = ParseMode::Normalize;
     Utf8String ecsql;
     if (parseMode == ParseMode::Default)
         ecsql.assign(argsUnparsed);
@@ -2166,6 +2171,36 @@ void ParseCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
 
     switch (parseMode)
         {
+            case ParseMode::Json:
+            {
+            BeJsDocument doc;
+            if (SUCCESS != ECSqlParseTreeFormatter::ECSqlToJson(doc , *session.GetFile().GetECDbHandle(), ecsql.c_str()))
+                {
+                if (session.GetIssues().HasIssue())
+                    IModelConsole::WriteErrorLine("Failed to parse ECSQL: %s", session.GetIssues().GetIssue());
+                else
+                    IModelConsole::WriteErrorLine("Failed to parse ECSQL.");
+
+                return;
+                }
+            IModelConsole::WriteLine(doc.Stringify(StringifyFormat::Indented).c_str());
+            break;
+            }
+            case ParseMode::Normalize:
+            {
+            Utf8String toECSql;
+            if (SUCCESS != ECSqlParseTreeFormatter::NormalizeECSql(toECSql , *session.GetFile().GetECDbHandle(), ecsql.c_str()))
+                {
+                if (session.GetIssues().HasIssue())
+                    IModelConsole::WriteErrorLine("Failed to parse ECSQL: %s", session.GetIssues().GetIssue());
+                else
+                    IModelConsole::WriteErrorLine("Failed to parse ECSQL.");
+
+                return;
+                }
+            IModelConsole::WriteLine(toECSql.c_str());
+            break;
+            }
             case ParseMode::Exp:
             {
             Utf8String ecsqlFromExpTree;

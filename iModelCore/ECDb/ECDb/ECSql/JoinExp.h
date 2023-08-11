@@ -26,12 +26,12 @@ enum class ECSqlJoinType
 //=======================================================================================
 //! For a JOIN USING clause the values of this enum specify which end of the relationship
 //! the joined class refers to.
-//! The metaphor of a direction is used to express this. The forward direction means that 
+//! The metaphor of a direction is used to express this. The forward direction means that
 //! the JOIN expression in the ECSQL statement goes from the ECRelationship's source constraint
 //! to the target constraint, whereas the backward direction goes from target to source constraint.
-//! 
-//! @remarks In most cases the direction can be implied from the ECSQL 
-//! statement directly. But there are case where this is ambiguous, e.g. for joins between 
+//!
+//! @remarks In most cases the direction can be implied from the ECSQL
+//! statement directly. But there are case where this is ambiguous, e.g. for joins between
 //! the same class.
 //! @see ECN::ECRelationshipClass::GetSource, ECN::ECRelationshipClass::GetTarget
 //! @ingroup ECDbGroup
@@ -94,7 +94,8 @@ struct JoinSpecExp : Exp
 struct CrossJoinExp final : JoinExp
     {
     private:
-        void _ToECSql(ECSqlRenderContext& ctx) const override { ctx.AppendToECSql(GetFromClassRef()).AppendToECSql(" CROSS JOIN ").AppendToECSql(GetToClassRef()); }
+        void _ToECSql(ECSqlRenderContext& ctx) const override;
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override { return "CrossJoin"; }
     public:
         CrossJoinExp(std::unique_ptr<ClassRefExp> from, std::unique_ptr<ClassRefExp> to)
@@ -111,6 +112,7 @@ struct NaturalJoinExp final : JoinExp
         ECSqlJoinType m_appliedJoinType;
 
         void _ToECSql(ECSqlRenderContext& ctx) const override;
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override;
 
     public:
@@ -127,6 +129,7 @@ struct QualifiedJoinExp final : JoinExp
     private:
         size_t m_nJoinSpecIndex;
         void _ToECSql(ECSqlRenderContext& ctx) const override;
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override { return "QualifiedJoin"; }
 
     public:
@@ -139,7 +142,7 @@ struct QualifiedJoinExp final : JoinExp
 //=======================================================================================
 //! @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct ECRelationshipJoinExp final : JoinExp
+struct UsingRelationshipJoinExp final : JoinExp
     {
     public:
         enum class ClassLocation
@@ -152,7 +155,7 @@ struct ECRelationshipJoinExp final : JoinExp
 
         struct ResolvedEndPoint
             {
-            friend ECRelationshipJoinExp;
+            friend UsingRelationshipJoinExp;
             private:
                 ClassNameExp const*    m_classRef;
                 ClassLocation           m_location;
@@ -180,12 +183,13 @@ struct ECRelationshipJoinExp final : JoinExp
         ResolvedEndPoint        m_resolvedTo;
 
         void _ToECSql(ECSqlRenderContext& ctx) const override;
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override;
         BentleyStatus ResolveRelationshipEnds(ECSqlParseContext&);
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode mode) override;
 
     public:
-        ECRelationshipJoinExp(std::unique_ptr<ClassRefExp> from, std::unique_ptr<ClassRefExp> to, std::unique_ptr<ClassRefExp> relationship, JoinDirection direction)
+        UsingRelationshipJoinExp(std::unique_ptr<ClassRefExp> from, std::unique_ptr<ClassRefExp> to, std::unique_ptr<ClassRefExp> relationship, JoinDirection direction)
             : JoinExp(Type::ECRelationshipJoin, ECSqlJoinType::JoinUsingRelationship, std::move(from), std::move(to)), m_direction(direction)
             {
             m_relationshipClassNameExpIndex = AddChild(std::move(relationship));
@@ -209,38 +213,9 @@ struct NamedPropertiesJoinExp final : JoinSpecExp
     private:
         std::vector<Utf8String> m_properties;
 
-        void _ToECSql(ECSqlRenderContext& ctx) const override
-            {
-            ctx.AppendToECSql("USING (");
-            bool isFirstProp = true;
-            for (Utf8StringCR property : m_properties)
-                {
-                if (!isFirstProp)
-                    ctx.AppendToECSql(", ");
-
-                ctx.AppendToECSql(property);
-                isFirstProp = false;
-                }
-
-            ctx.AppendToECSql(")");
-            }
-
-        Utf8String _ToString() const override
-            {
-            Utf8String str("NamedPropertiesJoin [Properties: ");
-            bool isFirstItem = true;
-            for (auto const& propertyName : m_properties)
-                {
-                if (!isFirstItem)
-                    str.append(", ");
-
-                str.append(propertyName.c_str());
-                isFirstItem = false;
-                }
-
-            str.append("]");
-            return str;
-            }
+        void _ToECSql(ECSqlRenderContext& ctx) const override;
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
+        Utf8String _ToString() const override;
 
     public:
         NamedPropertiesJoinExp() : JoinSpecExp(Type::NamedPropertiesJoin) {}
@@ -256,6 +231,7 @@ struct JoinConditionExp final : JoinSpecExp
     {
     private:
         void _ToECSql(ECSqlRenderContext& ctx) const override;
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override { return "JoinCondition"; }
 
     public:

@@ -862,12 +862,23 @@ DbResult ECDbHub::CreateSeedFile() {
             throw std::runtime_error("unable to delete file");
         }
     }
+/* Use this instead of the block below to create a new DB. Currently this will change the Checksums used in all tests...
     auto ecdb = std::make_unique<TrackedECDb>();
     if (BE_SQLITE_OK != ecdb->CreateNewDb(m_seedFile)) {
         return BE_SQLITE_ERROR;
     }
     ecdb->SaveChanges();
-    ecdb->CloseDb();
+    ecdb->CloseDb();*/
+
+    BeFileName seed4003FileName;
+    BeTest::GetHost().GetDocumentsRoot(seed4003FileName);
+    seed4003FileName.AppendToPath(L"ECDb").AppendToPath(L"profileseeds").AppendToPath(L"4003-sync-seed.ecdb");
+    ECDb ecdb;
+    if (ECDbTestFixture::CloneECDb(ecdb, m_seedFile, seed4003FileName) != DbResult::BE_SQLITE_OK)
+        return BE_SQLITE_ERROR;
+
+    ecdb.SaveChanges();
+    ecdb.CloseDb();
     return BE_SQLITE_OK;
 }
 

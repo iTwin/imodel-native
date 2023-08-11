@@ -95,9 +95,11 @@ using namespace connectivity;
 
 %token <pParseNode> SQL_TOKEN_BETWEEN SQL_TOKEN_BY
 
+%token <pParseNode> SQL_TOKEN_NULLS SQL_TOKEN_FIRST SQL_TOKEN_LAST
+
 %token <pParseNode> SQL_TOKEN_CAST SQL_TOKEN_COMMIT SQL_TOKEN_COUNT SQL_TOKEN_CROSS
 
-%token <pParseNode> SQL_TOKEN_DEFAULT SQL_TOKEN_DELETE SQL_TOKEN_DESC
+%token <pParseNode> SQL_TOKEN_DELETE SQL_TOKEN_DESC
 %token <pParseNode> SQL_TOKEN_DISTINCT SQL_TOKEN_FORWARD SQL_TOKEN_BACKWARD
 
 %token <pParseNode> SQL_TOKEN_ESCAPE SQL_TOKEN_EXCEPT SQL_TOKEN_EXISTS SQL_TOKEN_FALSE SQL_TOKEN_FROM SQL_TOKEN_FULL
@@ -174,7 +176,7 @@ using namespace connectivity;
 %type <pParseNode> column_commalist opt_column_array_idx property_path_entry property_path
 %type <pParseNode> opt_column_commalist column_ref_commalist opt_column_ref_commalist
 %type <pParseNode> opt_order_by_clause ordering_spec_commalist
-%type <pParseNode> ordering_spec opt_asc_desc manipulative_statement commit_statement
+%type <pParseNode> ordering_spec opt_asc_desc manipulative_statement commit_statement opt_null_order first_last_desc
 %type <pParseNode> delete_statement_searched
 %type <pParseNode> type_predicate type_list type_list_item
 %type <pParseNode> insert_statement values_or_query_spec
@@ -237,13 +239,14 @@ sql:
 /* PRAGMA NAME[[= val]|[(val)]] [FOR path]
  */
 pragma:
-    SQL_TOKEN_PRAGMA SQL_TOKEN_NAME opt_pragma_set opt_pragma_for
+    SQL_TOKEN_PRAGMA SQL_TOKEN_NAME opt_pragma_set opt_pragma_for opt_ecsqloptions_clause
     {
         $$ = SQL_NEW_RULE;
         $$->append($1);
         $$->append($2);
         $$->append($3);
         $$->append($4);
+        $$->append($5);
     }
     ;
 
@@ -448,19 +451,22 @@ ordering_spec_commalist:
     ;
 
 ordering_spec:
-    predicate opt_asc_desc
+    predicate opt_asc_desc opt_null_order
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
             $$->append($2);
+            $$->append($3);
         }
 
     |
-    row_value_constructor_elem opt_asc_desc
+    row_value_constructor_elem opt_asc_desc opt_null_order
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
             $$->append($2);
+            $$->append($3);
+
         }
     ;
 
@@ -468,6 +474,20 @@ opt_asc_desc:
         {$$ = SQL_NEW_RULE;}
     |    SQL_TOKEN_ASC
     |    SQL_TOKEN_DESC
+    ;
+
+opt_null_order:
+        {$$ = SQL_NEW_RULE;}
+    |    SQL_TOKEN_NULLS  first_last_desc
+         {
+            $$ = SQL_NEW_RULE;
+            $$->append($1);
+            $$->append($2);
+         }
+    ;
+
+first_last_desc:
+        SQL_TOKEN_FIRST |  SQL_TOKEN_LAST
     ;
 
 sql_not:
@@ -1955,12 +1975,7 @@ class_name:
 ;
 
 table_node_ref:
-        table_node_with_opt_member_func_call
-            {
-            $$ = SQL_NEW_RULE;
-            $$->append($1);
-            }
-    |   table_node_with_opt_member_func_call table_primary_as_range_column
+        table_node_with_opt_member_func_call table_primary_as_range_column
             {
             $$ = SQL_NEW_RULE;
             $$->append($1);

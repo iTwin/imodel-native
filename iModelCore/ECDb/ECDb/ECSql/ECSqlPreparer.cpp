@@ -85,8 +85,114 @@ ECSqlStatus ECSqlPreparer::Prepare(Utf8StringR nativeSql, ECSqlPrepareContext& c
 //static
 ECSqlStatus ECSqlExpPreparer::PrepareAllOrAnyExp(ECSqlPrepareContext& ctx, AllOrAnyExp const& exp)
     {
-    ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "ALL or ANY expression not yet supported.");
-    return ECSqlStatus::InvalidECSql;
+    const BooleanSqlOperator op = exp.GetOperator();
+    if (op != BooleanSqlOperator::EqualTo &&
+       op != BooleanSqlOperator::GreaterThanOrEqualTo &&
+       op != BooleanSqlOperator::GreaterThan &&
+       op != BooleanSqlOperator::LessThanOrEqualTo &&
+       op != BooleanSqlOperator::LessThan &&
+       op != BooleanSqlOperator::NotEqualTo)
+        {
+        BeAssert(false && "Incorrect Boolean operator before ALL/ANY/SOME");
+        return ECSqlStatus::InvalidECSql;
+        }
+
+    SqlCompareListType type = exp.GetCompareType();
+    if (type == SqlCompareListType::All)
+        ctx.GetSqlBuilder().Append("NOT").AppendSpace();
+
+    ctx.GetSqlBuilder().Append("EXISTS").AppendParenLeft();
+
+    SelectStatementExp const* subquery = (exp.GetSubquery())->GetQuery();
+    ECSqlStatus stat = ECSqlSelectPreparer::Prepare(ctx, *subquery);
+    if (stat != ECSqlStatus::Success)
+        return stat;
+
+    // Subquery insertion
+    SingleSelectStatementExp const& subquerySelect = subquery->GetFirstStatement();
+    NativeSqlBuilder queryToReplace;
+    NativeSqlBuilder allOrAnyQuery;
+    bool trailingParen = false;
+    if (subquerySelect.GetWhere() == nullptr)
+        {
+        ECSqlSelectPreparer::PreparePartial(queryToReplace, ctx, *subquery);
+
+        if (FromExp const* fromExp = subquerySelect.GetFrom())
+            {
+            queryToReplace.AppendSpace().Append("FROM").AppendSpace();
+            bool isFirstItem = true;
+            for (Exp const* classRefExp : fromExp->GetChildren())
+                {
+                if (!isFirstItem)
+                    queryToReplace.AppendComma();
+                PrepareClassRefExp(queryToReplace, ctx, classRefExp->GetAs<ClassRefExp>());
+                isFirstItem = false;
+                }
+            }
+
+        allOrAnyQuery.Append(queryToReplace).AppendSpace().Append("WHERE").AppendSpace();
+        }
+    else
+        {
+        NativeSqlBuilder insert;
+        ECSqlExpPreparer::PrepareSearchConditionExp(insert, ctx, *subquerySelect.GetWhere()->GetSearchConditionExp());
+
+        queryToReplace.Append("WHERE").AppendSpace();
+        allOrAnyQuery.Append(queryToReplace).AppendParenLeft().Append(insert).AppendParenRight().AppendSpace().Append("AND").AppendSpace().AppendParenLeft();
+        queryToReplace.Append(insert);
+        trailingParen = true;
+        }
+
+    NativeSqlBuilder::List nativeSqlSnippets;
+    stat = PrepareValueExp(nativeSqlSnippets, ctx, *exp.GetOperand());
+    if (stat != ECSqlStatus::Success)
+        return stat;
+
+    BeAssert(nativeSqlSnippets.size() == 1);
+    NativeSqlBuilder operand = nativeSqlSnippets.at(0);
+
+    bool isFirstItem = true;
+    switch (type)
+        {
+        case SqlCompareListType::All:
+            for (Exp const* childExp : subquerySelect.GetSelection()->GetChildren())
+                {
+                if (!isFirstItem)
+                    allOrAnyQuery.AppendSpace().Append("AND").AppendSpace();
+
+                allOrAnyQuery.Append(childExp->ToECSql()).AppendSpace();
+                if (op == BooleanSqlOperator::EqualTo)
+                    allOrAnyQuery.Append(ExpHelper::ToSql(BooleanSqlOperator::NotEqualTo));
+                else if (op == BooleanSqlOperator::NotEqualTo)
+                    allOrAnyQuery.Append(ExpHelper::ToSql(BooleanSqlOperator::EqualTo));
+                else
+                    allOrAnyQuery.Append(ExpHelper::ToSql(op));
+                allOrAnyQuery.AppendSpace().Append(operand);
+                isFirstItem = false;
+                }
+            if (trailingParen)
+                allOrAnyQuery.AppendParenRight();
+            break;
+        case SqlCompareListType::Any:
+        case SqlCompareListType::Some:
+            for (Exp const* childExp : subquerySelect.GetSelection()->GetChildren())
+                {
+                if (!isFirstItem)
+                    allOrAnyQuery.AppendSpace().Append("OR").AppendSpace();
+
+                allOrAnyQuery.Append(operand).AppendSpace().Append(ExpHelper::ToSql(op)).AppendSpace().Append(childExp->ToECSql());
+                isFirstItem = false;
+                }
+            if (trailingParen)
+                allOrAnyQuery.AppendParenRight();
+            break;
+        default:
+            BeAssert(false && "Unhandled SqlCompareListType case.");
+            return ECSqlStatus::Error;
+        }
+
+    ctx.GetSqlBuilder().Replace(queryToReplace.GetSql().c_str(), allOrAnyQuery.GetSql().c_str()).AppendParenRight();
+    return ECSqlStatus::Success;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -628,7 +734,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassRefExp(NativeSqlBuilder::List& nativeS
             case Exp::Type::CrossJoin:
                 return PrepareCrossJoinExp(ctx, exp.GetAs<CrossJoinExp>());
             case Exp::Type::ECRelationshipJoin:
-                return PrepareRelationshipJoinExp(ctx, exp.GetAs<ECRelationshipJoinExp>());
+                return PrepareRelationshipJoinExp(ctx, exp.GetAs<UsingRelationshipJoinExp>());
             case Exp::Type::NaturalJoin:
                 return PrepareNaturalJoinExp(ctx, exp.GetAs<NaturalJoinExp>());
             case Exp::Type::QualifiedJoin:
@@ -1019,6 +1125,18 @@ ECSqlStatus ECSqlExpPreparer::PrepareOrderByExp(ECSqlPrepareContext& ctx, OrderB
                     case OrderBySpecExp::SortDirection::NotSpecified:
                         break; //default direction is ASCENDING
                 }
+            switch (specification.GetNullsOrder())
+                {
+                    case OrderBySpecExp::NullsOrder::First:
+                        orderBySqlBuilder.Append(" NULLS FIRST");
+                        break;
+
+                    case OrderBySpecExp::NullsOrder::Last:
+                        orderBySqlBuilder.Append(" NULLS LAST");
+                        break;
+                    case OrderBySpecExp::NullsOrder::NotSpecified:
+                        break; //default direction is ASCENDING
+                }
             isFirstSnippet = false;
             isFirstSpec = false; //needs to be inside the inner loop so that empty sqlSnippets are handled correctly
             }
@@ -1154,7 +1272,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareQueryExp(NativeSqlBuilder::List& nativeSqlS
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ctx, ECRelationshipJoinExp const& exp)
+ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ctx, UsingRelationshipJoinExp const& exp)
     {
     // (from) INNER JOIN (to) ON (from.ECInstanceId = to.ECInstanceId)
     // (from) INNER JOIN (view) ON view.SourceECInstanceId = from.ECInstanceId INNER JOIN to ON view.TargetECInstanceId=to.ECInstanceId
@@ -1164,8 +1282,8 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
     NativeSqlBuilder& sql = ctx.GetSqlBuilder();
 
     ///Resolve direction of the relationship
-    ECRelationshipJoinExp::ResolvedEndPoint const& fromEP = exp.GetResolvedFromEndPoint();
-    ECRelationshipJoinExp::ResolvedEndPoint const& toEP = exp.GetResolvedToEndPoint();
+    UsingRelationshipJoinExp::ResolvedEndPoint const& fromEP = exp.GetResolvedFromEndPoint();
+    UsingRelationshipJoinExp::ResolvedEndPoint const& toEP = exp.GetResolvedToEndPoint();
     JoinDirection direction = exp.GetDirection();
 
     enum class TriState
@@ -1177,7 +1295,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
 
     switch (fromEP.GetLocation())
         {
-            case ECRelationshipJoinExp::ClassLocation::ExistInBoth:
+            case UsingRelationshipJoinExp::ClassLocation::ExistInBoth:
             {
             switch (direction)
                 {
@@ -1195,7 +1313,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
                 };
             break;
             }
-            case ECRelationshipJoinExp::ClassLocation::ExistInSource:
+            case UsingRelationshipJoinExp::ClassLocation::ExistInSource:
             {
             if (direction != JoinDirection::Implied)
                 {
@@ -1209,7 +1327,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
             fromIsSource = TriState::True;
             }
             break;
-            case ECRelationshipJoinExp::ClassLocation::ExistInTarget:
+            case UsingRelationshipJoinExp::ClassLocation::ExistInTarget:
             {
             if (direction != JoinDirection::Implied)
                 {
@@ -1831,7 +1949,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareExtractPropertyExp(NativeSqlBuilder::List& 
     NativeSqlBuilder::List instanceIdSql;
 
     if (!AreExperimentalFeaturesEnabled(ctx)) {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Instance property access '%s' is an experimental feature. Use 'PRAGMA experimental_features_enabled=true' query or add 'ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES' to the query to enable it.", exp.ToECSql().c_str());
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Instance property access '%s' is experimental feature and disabled by default.", exp.ToECSql().c_str());
         return ECSqlStatus::InvalidECSql;
     }
 
@@ -1865,9 +1983,9 @@ ECSqlStatus ECSqlExpPreparer::PrepareExtractInstanceExp(NativeSqlBuilder::List& 
     NativeSqlBuilder builder;
     NativeSqlBuilder::List classIdSql;
     NativeSqlBuilder::List instanceIdSql;
-    
+
     if (!AreExperimentalFeaturesEnabled(ctx)) {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Instance access '%s' is an experimental feature. Use 'PRAGMA experimental_features_enabled=true' query or add 'ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES' to the query to enable it.", exp.ToECSql().c_str());
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Instance access '%s' is experimental feature and disabled by default.", exp.ToECSql().c_str());
         return ECSqlStatus::InvalidECSql;
     }
     auto rc = PrepareValueExp(classIdSql, ctx, exp.GetClassIdPropExp());
