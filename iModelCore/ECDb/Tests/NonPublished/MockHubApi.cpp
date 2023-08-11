@@ -7,8 +7,8 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC;
 // SchemaSyncDb
 //***************************************************************************************
 // Default SHA  hashes
-const char* SchemaSyncTestFixture::DEFAULT_SHA3_256_ECDB_SCHEMA = "74865ac4eeed46821b13f3662e8c34e51d1d2bda85defe2c069fcc8ae7091612";
-const char* SchemaSyncTestFixture::DEFAULT_SHA3_256_ECDB_MAP = "17adf1cdba0c3c9970ec26d61bf5d8fa91808c3a98ce02f78ba0359e4eda11ee";
+const char* SchemaSyncTestFixture::DEFAULT_SHA3_256_ECDB_SCHEMA = "44c5d675cdab562b732a90b8c0128149daaa7a2beefbcbddb576f7bf059cec33";
+const char* SchemaSyncTestFixture::DEFAULT_SHA3_256_ECDB_MAP = "9c7834d13177336f0fa57105b9c1175b912b2e12e62ca2224482c0ffd9dfd337";
 const char* SchemaSyncTestFixture::DEFAULT_SHA3_256_SQLITE_SCHEMA = "c4ca1cdd07de041e71f3e8d4b1942d29da89653c85276025d786688b6f576443";
 const char* SchemaSyncTestFixture::DEFAULT_SHA3_256_CHANNEL_SQLITE_SCHEMA = "114aebfc89d430c79bfd1bbbb5796837a91d02d8cb409dcdd83ba5d1dc074eb4";
 /*---------------------------------------------------------------------------------**//**
