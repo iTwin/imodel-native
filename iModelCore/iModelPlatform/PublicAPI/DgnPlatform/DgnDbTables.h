@@ -287,7 +287,7 @@ public:
         : m_specId(specId), m_scope(scopeElementId.ToHexStr()), m_value(value, behavior) {}
 
     //! use a dgndb's m_codeValueBehavior as the behavior for creating this code's value
-    static DgnCode CreateWithDbContext(DgnDbCR db, CodeSpecId specId, DgnElementId scopeElementId, Utf8StringCR value);
+    DGNPLATFORM_EXPORT static DgnCode CreateWithDbContext(DgnDbCR db, CodeSpecId specId, DgnElementId scopeElementId, Utf8StringCR value);
 
     //! Invalidate this DgnCode
     void Invalidate() {
