@@ -130,8 +130,8 @@ TEST_F(SchemaSyncTestFixture, FullSchemaSyncWorkflow)
             }
     );
 
-    const auto SCHEMA1_HASH_ECDB_SCHEMA = "c3a119e3c1526e3801592829b15c983ded4899ff30161d04f96d97d82ac5b678";
-    const auto SCHEMA1_HASH_ECDB_MAP = "42568b969be1e65fc879baf9f4e6c11b397b92e9d4cae90195b0b56591070f25";
+    const auto SCHEMA1_HASH_ECDB_SCHEMA = "57df4675ccbce3493d2bb882ad3bb28f3266425c2f22fd55e57e187808b3add3";
+    const auto SCHEMA1_HASH_ECDB_MAP = "8b1c6d8fa5b29e085bf94fae710527f56fa1c1792bd7404ff5775ed07f86f21f";
     const auto SCHEMA1_HASH_SQLITE_SCHEMA = "8608aab5fa8a874b3f9140451ab8410c785483a878c8d915f48a26ef20e8241c";
     Test(
         "import schema into b1",
