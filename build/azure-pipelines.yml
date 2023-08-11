@@ -23,7 +23,7 @@ resources:
     - repository: itwinjs-core
       type: github
       name: iTwin/itwinjs-core
-      ref: refs/heads/release/4.0.x
+      ref: refs/heads/release/4.1.x
       endpoint: iTwin
     - repository: imodeljs-build-pipeline-scripts
       type: git
