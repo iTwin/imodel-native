@@ -81,11 +81,25 @@ PropertyMatchResult TableValuedFunctionExp::_FindProperty(ECSqlParseContext& ctx
     }
     return PropertyMatchResult::NotFound();
 }
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void TableValuedFunctionExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: TableValuedFunctionExp
+    val.SetEmptyObject();
+    val["id"] = "TableValuedFunctionExp";
+    val["schema"] = GetSchemaName();
+    GetFunctionExp()->ToJson(val["func"], fmt);
+    if (!GetAlias().empty())
+        val["alias"] = GetAlias();
+}
+
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TableValuedFunctionExp::_ToECSql(ECSqlRenderContext&) const{
-
+void TableValuedFunctionExp::_ToECSql(ECSqlRenderContext& ctx) const{
+    ctx.AppendToECSql(GetSchemaName()).AppendToECSql(".");
+    GetFunctionExp()->ToECSql(ctx);
 }
 /*---------------------------------------------------------------------------------------
 * @bsimethod
@@ -308,6 +322,30 @@ std::set<Utf8String, CompareIUtf8Ascii> ClassNameExp::GetInstancePropNames() con
     }
     return dynamicProps;
 }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void ClassNameExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: ClassNameExp
+    val.SetEmptyObject();
+    val["id"] = "ClassNameExp";
+    const auto polymorphicInfo = GetPolymorphicInfo().ToECSql();
+    if (!polymorphicInfo.empty())
+        GetPolymorphicInfo().ToJson(val["polymorphicInfo"]);
+
+    val["tableSpace"] = m_tableSpace;
+    val["schemaName"] = HasMetaInfo() ? GetInfo().GetMap().GetClass().GetSchema().GetName() : m_schemaAlias;
+    val["className"] = HasMetaInfo() ? GetInfo().GetMap().GetClass().GetName() : m_className;
+
+    if(auto memb = GetMemberFunctionCallExp()) {
+        memb->ToJson(val["func"], fmt);
+    }
+
+    if(!GetAlias().empty())
+        val["alias"] = GetAlias();
+}
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -318,6 +356,11 @@ void ClassNameExp::_ToECSql(ECSqlRenderContext& ctx) const
         ctx.AppendToECSql(polymorphicInfo).AppendToECSql(" ");
 
     ctx.AppendToECSql(GetFullName());
+    if(auto memb = GetMemberFunctionCallExp()) {
+        ctx.AppendToECSql(".");
+        memb->ToECSql(ctx);
+    }
+
     if (!GetAlias().empty())
         ctx.AppendToECSql(" ").AppendToECSql(GetAlias());
     }
@@ -341,8 +384,25 @@ bool PolymorphicInfo::TryParseToken(Type& type, Utf8StringCR str)
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+void PolymorphicInfo::ToJson(BeJsValue v) const {
+        v.SetEmptyObject();
+        if (m_disqualify) {
+            v["disqualify"] = "+";
+            if (m_type== Type::NotSpecified) {
+                v["scope"] = "ALL";
+                return;
+            }
+        }
+        v["scope"] = m_type == Type::Only ? "ONLY" : "ALL";
+}
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 Utf8String PolymorphicInfo::ToECSql() const
     {
+    if (m_type == Type::NotSpecified){
+        return "";
+    }
     Utf8String ecsql;
     if (m_disqualify)
         {
@@ -352,7 +412,7 @@ Utf8String PolymorphicInfo::ToECSql() const
         {
         ecsql.append("ONLY");
         }
-    if (m_disqualify && m_type == Type::All)
+    if (m_type == Type::All)
         {
         ecsql.append("ALL");
         }
@@ -377,4 +437,12 @@ PolymorphicInfo PolymorphicInfo::All()
     return ct;
     }
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+PolymorphicInfo PolymorphicInfo::NotSpecified()
+    {
+    static PolymorphicInfo ct(Type::NotSpecified, false);
+    return ct;
+    }
 END_BENTLEY_SQLITE_EC_NAMESPACE

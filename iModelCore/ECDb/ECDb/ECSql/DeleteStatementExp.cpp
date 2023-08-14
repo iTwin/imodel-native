@@ -84,6 +84,22 @@ OptionsExp const* DeleteStatementExp::GetOptionsClauseExp() const
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void DeleteStatementExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: DeleteStatementExp
+    val.SetEmptyObject();
+    val["id"] = "DeleteStatementExp";
+
+    GetClassNameExp()->ToJson(val["class"], fmt);
+    if (GetWhereClauseExp() != nullptr)
+        GetWhereClauseExp()->ToJson(val["where"], fmt);
+
+    if (GetOptionsClauseExp() != nullptr)
+        GetOptionsClauseExp()->ToJson(val["options"], fmt);
+}
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
 void DeleteStatementExp::_ToECSql(ECSqlRenderContext& ctx) const
     {

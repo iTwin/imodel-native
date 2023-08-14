@@ -717,7 +717,7 @@ TEST_F(CommonTableExpTestFixture, alias_to_cte) {
         )";
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query));
-        ASSERT_STREQ(stmt.GetNativeSql(), "WITH cte0(a,b) AS (SELECT 100,200)\nSELECT [K2],[K3] FROM (SELECT cte0.a [K2],cte0.b [K3] FROM cte0 WHERE cte0.a=100 AND cte0.b=200)");
+        ASSERT_STREQ(stmt.GetNativeSql(), "WITH RECURSIVE cte0(a,b) AS (SELECT 100,200)\nSELECT [K2],[K3] FROM (SELECT cte0.a [K2],cte0.b [K3] FROM cte0 WHERE cte0.a=100 AND cte0.b=200)");
     }
     if ("simple_nested") {
         auto query = R"(
@@ -727,7 +727,7 @@ TEST_F(CommonTableExpTestFixture, alias_to_cte) {
         )";
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query));
-        ASSERT_STREQ(stmt.GetNativeSql(), "WITH cte0(a,b) AS (SELECT 100,200)\nSELECT [K2],[K3] FROM (SELECT c0.a [K2],c0.b [K3] FROM cte0 c0 WHERE c0.a=100 AND c0.b=200)");
+        ASSERT_STREQ(stmt.GetNativeSql(), "WITH RECURSIVE cte0(a,b) AS (SELECT 100,200)\nSELECT [K2],[K3] FROM (SELECT c0.a [K2],c0.b [K3] FROM cte0 c0 WHERE c0.a=100 AND c0.b=200)");
     }
     if ("simple_wild_nested") {
         auto query = R"(
@@ -737,7 +737,7 @@ TEST_F(CommonTableExpTestFixture, alias_to_cte) {
         )";
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query));
-        ASSERT_STREQ(stmt.GetNativeSql(), "WITH cte0(a,b) AS (SELECT 100,200)\nSELECT [K2],[K3] FROM (SELECT c0.a K2,c0.b K3 FROM cte0 c0 WHERE c0.a=100 AND c0.b=200)");
+        ASSERT_STREQ(stmt.GetNativeSql(), "WITH RECURSIVE cte0(a,b) AS (SELECT 100,200)\nSELECT [K2],[K3] FROM (SELECT c0.a K2,c0.b K3 FROM cte0 c0 WHERE c0.a=100 AND c0.b=200)");
     }
 
     if ("simple_wild") {
@@ -748,7 +748,7 @@ TEST_F(CommonTableExpTestFixture, alias_to_cte) {
         )";
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query));
-        ASSERT_STREQ(stmt.GetNativeSql(), "WITH cte0(a,b) AS (SELECT 100,200)\nSELECT c0.a,c0.b FROM cte0 c0 WHERE c0.a=100 AND c0.b=200");
+        ASSERT_STREQ(stmt.GetNativeSql(), "WITH RECURSIVE cte0(a,b) AS (SELECT 100,200)\nSELECT c0.a,c0.b FROM cte0 c0 WHERE c0.a=100 AND c0.b=200");
     }
     if ("simple_wild_no_alias") {
         auto query = R"(
@@ -758,7 +758,7 @@ TEST_F(CommonTableExpTestFixture, alias_to_cte) {
         )";
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query));
-        ASSERT_STREQ(stmt.GetNativeSql(), "WITH cte0(a,b) AS (SELECT 100,200)\nSELECT cte0.a,cte0.b FROM cte0 WHERE cte0.a=100 AND cte0.b=200");
+        ASSERT_STREQ(stmt.GetNativeSql(), "WITH RECURSIVE cte0(a,b) AS (SELECT 100,200)\nSELECT cte0.a,cte0.b FROM cte0 WHERE cte0.a=100 AND cte0.b=200");
     }
     if ("simple_alias") {
         auto query = R"(
@@ -768,7 +768,7 @@ TEST_F(CommonTableExpTestFixture, alias_to_cte) {
         )";
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query));
-        ASSERT_STREQ(stmt.GetNativeSql(), "WITH cte0(a,b) AS (SELECT 100,200)\nSELECT c0.a,c0.b FROM cte0 c0 WHERE c0.a=100 AND c0.b=200");
+        ASSERT_STREQ(stmt.GetNativeSql(), "WITH RECURSIVE cte0(a,b) AS (SELECT 100,200)\nSELECT c0.a,c0.b FROM cte0 c0 WHERE c0.a=100 AND c0.b=200");
     }
     if ("ambiguous_col") {
         auto query = R"(
@@ -779,7 +779,7 @@ TEST_F(CommonTableExpTestFixture, alias_to_cte) {
         )";
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query));
-        ASSERT_STREQ(stmt.GetNativeSql(), "WITH cte0(a,b) AS (SELECT 100,200),cte1(c,d) AS (SELECT 100,200)\nSELECT c0.a,c0.b,c1.c,c1.d FROM cte0 c0,cte1 c1 WHERE c0.a=100 AND c0.b=200 AND c1.c=100 AND c1.d=200");
+        ASSERT_STREQ(stmt.GetNativeSql(), "WITH RECURSIVE cte0(a,b) AS (SELECT 100,200),cte1(c,d) AS (SELECT 100,200)\nSELECT c0.a,c0.b,c1.c,c1.d FROM cte0 c0,cte1 c1 WHERE c0.a=100 AND c0.b=200 AND c1.c=100 AND c1.d=200");
     }
     if ("ambiguous_col_2") {
         auto query = R"(
@@ -790,7 +790,105 @@ TEST_F(CommonTableExpTestFixture, alias_to_cte) {
         )";
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query));
-        ASSERT_STREQ(stmt.GetNativeSql(), "WITH cte0(a,b) AS (SELECT 100,200),cte1(a,b) AS (SELECT 100,200)\nSELECT c0.a,c0.b,c1.a,c1.b FROM cte0 c0,cte1 c1 WHERE c0.a=100 AND c0.b=200 AND c1.a=100 AND c1.b=200");
+        ASSERT_STREQ(stmt.GetNativeSql(), "WITH RECURSIVE cte0(a,b) AS (SELECT 100,200),cte1(a,b) AS (SELECT 100,200)\nSELECT c0.a,c0.b,c1.a,c1.b FROM cte0 c0,cte1 c1 WHERE c0.a=100 AND c0.b=200 AND c1.a=100 AND c1.b=200");
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, SubQueryBlock) {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("SubQueryBlock.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                <ECEntityClass typeName="Parent">
+                    <ECProperty propertyName="Name" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="Child">
+                    <ECProperty propertyName="Name" typeName="string" />
+                </ECEntityClass>
+                <ECRelationshipClass typeName="Rel" modifier="None">
+                    <Source multiplicity="(0..*)" polymorphic="True" roleLabel="is parent of">
+                        <Class class="Parent" />
+                    </Source>
+                    <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is child of">
+                        <Class class="Child"/>
+                    </Target>
+                </ECRelationshipClass>
+                <ECEntityClass typeName="Foo">
+                    <ECProperty propertyName="Code" typeName="int" />
+                </ECEntityClass>
+            </ECSchema>)xml")));
+
+    ECClassId fooClassId = m_ecdb.Schemas().GetClassId("TestSchema", "Foo");
+    ASSERT_TRUE(fooClassId.IsValid());
+    ECClassId parentClassId = m_ecdb.Schemas().GetClassId("TestSchema", "Parent");
+    ASSERT_TRUE(parentClassId.IsValid());
+    ECClassId childClassId = m_ecdb.Schemas().GetClassId("TestSchema", "Child");
+    ASSERT_TRUE(childClassId.IsValid());
+    if ("simple_select_query") {
+        auto ecsql = R"(
+            WITH models(i) AS (
+                SELECT foo.ECInstanceId FROM ts.Foo foo)
+            SELECT i FROM models WHERE models.i = 1
+        )";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_STREQ(SqlPrintfString("WITH models(i) AS (SELECT [foo].[ECInstanceId] FROM (SELECT [Id] ECInstanceId,%s ECClassId FROM [main].[ts_Foo]) [foo])\nSELECT models.i FROM models WHERE models.i=1", fooClassId.ToString().c_str()), stmt.GetNativeSql());
+    }
+    if ("select_property_in_cte_block") {
+        auto ecsql = R"(
+            WITH models(i) AS (
+                SELECT foo.Code FROM ts.Foo foo)
+            SELECT i FROM models WHERE models.i IN (?)
+        )";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_STREQ(SqlPrintfString("WITH models(i) AS (SELECT [foo].[Code] FROM (SELECT [Id] ECInstanceId,%s ECClassId,[Code] FROM [main].[ts_Foo]) [foo])\nSELECT models.i FROM models WHERE models.i IN (:_ecdb_sqlparam_ix1_col1)", fooClassId.ToString().c_str()), stmt.GetNativeSql());
+    }
+    if ("select_id_in_cte_block") {
+        auto ecsql = R"(
+            WITH models(i) AS (
+                SELECT foo.ECInstanceId FROM ts.Foo foo)
+            SELECT i FROM models WHERE models.i IN (?)
+        )";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_STREQ(SqlPrintfString("WITH models(i) AS (SELECT [foo].[ECInstanceId] FROM (SELECT [Id] ECInstanceId,%s ECClassId FROM [main].[ts_Foo]) [foo])\nSELECT models.i FROM models WHERE models.i IN (:_ecdb_sqlparam_ix1_col1)", fooClassId.ToString().c_str()), stmt.GetNativeSql());
+    }
+    if ("nested_select_id_in_cte_block") {
+        auto ecsql = R"(
+            WITH models(i) AS (
+                SELECT (SELECT foo.ECInstanceId FROM ts.Foo foo) AS ecId)
+            SELECT i FROM models WHERE models.i IN (?)
+        )";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_STREQ(SqlPrintfString("WITH models(i) AS (SELECT (SELECT [foo].[ECInstanceId] FROM (SELECT [Id] ECInstanceId,%s ECClassId FROM [main].[ts_Foo]) [foo]) [ecId])\nSELECT models.i FROM models WHERE models.i IN (:_ecdb_sqlparam_ix1_col1)", fooClassId.ToString().c_str()), stmt.GetNativeSql());
+    }
+    if ("select_link_table_in_cte_block") {
+        auto ecsql = R"(
+            WITH models(i, c, si, sc, ti, tc) AS (
+                SELECT
+                    r.ECInstanceId,
+                    r.ECClassId,
+                    r.SourceECInstanceId,
+                    r.SourceECClassId,
+                    r.TargetECInstanceId,
+                    r.TargetECClassId
+                FROM ts.Rel r)
+            SELECT
+                *
+            FROM
+                models m
+            WHERE
+                m.i = ? AND m.c = ? AND m.si = ? AND m.sc = ? AND m.ti = ? AND m.tc = ?
+                AND m.i IN (?) AND m.c IN (?) AND m.si IN (?) AND m.sc IN (?) AND m.ti IN (?) AND m.tc IN (?)
+        )";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_STREQ(SqlPrintfString("WITH models(i,c,si,sc,ti,tc) AS (SELECT [r].[ECInstanceId],[r].[ECClassId],[r].[SourceECInstanceId],[r].[SourceECClassId],[r].[TargetECInstanceId],[r].[TargetECClassId] FROM (SELECT [ts_Rel].[Id] [ECInstanceId],[ts_Rel].[ECClassId],[ts_Rel].[SourceId] [SourceECInstanceId],%s [SourceECClassId],[ts_Rel].[TargetId] [TargetECInstanceId],%s [TargetECClassId] FROM [main].[ts_Rel]) [r])\nSELECT m.i,m.c,m.si,m.sc,m.ti,m.tc FROM models m WHERE m.i=:_ecdb_sqlparam_ix1_col1 AND m.c=:_ecdb_sqlparam_ix2_col1 AND m.si=:_ecdb_sqlparam_ix3_col1 AND m.sc=:_ecdb_sqlparam_ix4_col1 AND m.ti=:_ecdb_sqlparam_ix5_col1 AND m.tc=:_ecdb_sqlparam_ix6_col1 AND m.i IN (:_ecdb_sqlparam_ix7_col1) AND m.c IN (:_ecdb_sqlparam_ix8_col1) AND m.si IN (:_ecdb_sqlparam_ix9_col1) AND m.sc IN (:_ecdb_sqlparam_ix10_col1) AND m.ti IN (:_ecdb_sqlparam_ix11_col1) AND m.tc IN (:_ecdb_sqlparam_ix12_col1)",
+                    parentClassId.ToString().c_str(), childClassId.ToString().c_str()), stmt.GetNativeSql());
     }
 }
 

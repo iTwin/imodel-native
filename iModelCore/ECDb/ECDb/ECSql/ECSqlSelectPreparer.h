@@ -28,6 +28,7 @@ private:
 public:
     static ECSqlStatus Prepare(ECSqlPrepareContext&, SelectStatementExp const&);
     static ECSqlStatus Prepare(ECSqlPrepareContext&, CommonTableExp const&);
+    static ECSqlStatus PreparePartial(NativeSqlBuilder&, ECSqlPrepareContext&, SelectStatementExp const&);
     };
 
 

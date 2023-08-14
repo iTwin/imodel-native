@@ -99,7 +99,7 @@ struct PropertyPath final
                 int GetArrayIndex() const { return m_arrayIndex; }
 
                 bool IsResolved() const { return m_property != nullptr; }
-                Utf8String ToString(bool includeArrayIndexes) const;
+                Utf8String ToString(bool includeArrayIndexes, bool useSchemaDeclaredPropertyName = false) const;
             };
 
     private:
@@ -141,7 +141,7 @@ struct PropertyPath final
             BeAssert(m_classMap == nullptr);
             m_classMap = &classMap;
         }
-        Utf8String ToString(bool escape = false, bool includeArrayIndexes = true) const;
+        Utf8String ToString(bool escape = false, bool includeArrayIndexes = true, bool useSchemaDeclaredPropertyName = false) const;
     };
 
 
@@ -188,6 +188,7 @@ struct Exp
             Option,
             Options,
             OrderBy,
+            NullsOrdering,
             OrderBySpec,
             Pragma,
             Parameter,
@@ -390,7 +391,7 @@ struct Exp
                 Utf8StringCR GetECSql() const { return m_ecsqlBuilder; }
                 void ResetECSqlBuilder() { m_ecsqlBuilder.clear(); }
             };
-
+        struct JsonFormat {};
     protected:
         enum class FinalizeParseMode { BeforeFinalizingChildren, AfterFinalizingChildren };
 
@@ -413,6 +414,7 @@ struct Exp
         virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) { return FinalizeParseStatus::Completed; }
         virtual bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const { return false; }
         virtual void _ToECSql(ECSqlRenderContext&) const = 0;
+        virtual void _ToJson(BeJsValue, JsonFormat const&) const = 0;
         virtual Utf8String _ToString() const = 0;
 
         void Find(std::vector<Exp const*>& expList, Type candidateType, bool recursive) const;
@@ -464,7 +466,7 @@ struct Exp
         //! @return ECSQL snippet representing this expression graph
         Utf8String ToECSql() const { ECSqlRenderContext ctx; ToECSql(ctx); return ctx.GetECSql(); }
         void ToECSql(ECSqlRenderContext& ctx) const { _ToECSql(ctx); }
-
+        void ToJson(BeJsValue v, JsonFormat const& fmt) const { _ToJson(v, fmt); }
         //! Returns a string description of this expression without recursion into its child expressions.
         //! @return string description of this expression
         Utf8String ToString() const { return _ToString(); }

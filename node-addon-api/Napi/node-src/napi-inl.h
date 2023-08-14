@@ -12,29 +12,35 @@
 
 #include <algorithm>
 #include <cstring>
-
-#if !defined (NO_NAPI_MUTEX) // BENTLEY CHANGE
-  #include <mutex>
-#endif
-
+#if NAPI_HAS_THREADS && !defined (NO_NAPI_MUTEX) // BENTLEY CHANGE
+#include <mutex>
+#endif  // NAPI_HAS_THREADS
 #include <type_traits>
 #include <utility>
 
 namespace Napi {
 
-// Helpers to handle functions exposed from C++.
+#ifdef NAPI_CPP_CUSTOM_NAMESPACE
+namespace NAPI_CPP_CUSTOM_NAMESPACE {
+#endif
+
+// Helpers to handle functions exposed from C++ and internal constants.
 namespace details {
+
+// New napi_status constants not yet available in all supported versions of
+// Node.js releases. Only necessary when they are used in napi.h and napi-inl.h.
+constexpr int napi_no_external_buffers_allowed = 22;
 
 // Attach a data item to an object and delete it when the object gets
 // garbage-collected.
 // TODO: Replace this code with `napi_add_finalizer()` whenever it becomes
 // available on all supported versions of Node.js.
 template <typename FreeType>
-static inline napi_status AttachData(napi_env env,
-                                     napi_value obj,
-                                     FreeType* data,
-                                     napi_finalize finalizer = nullptr,
-                                     void* hint = nullptr) {
+inline napi_status AttachData(napi_env env,
+                              napi_value obj,
+                              FreeType* data,
+                              napi_finalize finalizer = nullptr,
+                              void* hint = nullptr) {
   napi_status status;
   if (finalizer == nullptr) {
     finalizer = [](napi_env /*env*/, void* data, void* /*hint*/) {
@@ -45,22 +51,16 @@ static inline napi_status AttachData(napi_env env,
   napi_value symbol, external;
   status = napi_create_symbol(env, nullptr, &symbol);
   if (status == napi_ok) {
-    status = napi_create_external(env,
-                              data,
-                              finalizer,
-                              hint,
-                              &external);
+    status = napi_create_external(env, data, finalizer, hint, &external);
     if (status == napi_ok) {
-      napi_property_descriptor desc = {
-        nullptr,
-        symbol,
-        nullptr,
-        nullptr,
-        nullptr,
-        external,
-        napi_default,
-        nullptr
-      };
+      napi_property_descriptor desc = {nullptr,
+                                       symbol,
+                                       nullptr,
+                                       nullptr,
+                                       nullptr,
+                                       external,
+                                       napi_default,
+                                       nullptr};
       status = napi_define_properties(env, obj, 1, &desc);
     }
   }
@@ -81,16 +81,16 @@ inline napi_value WrapCallback(Callable callback) {
     e.ThrowAsJavaScriptException();
     return nullptr;
   }
-#else // NAPI_CPP_EXCEPTIONS
+#else   // NAPI_CPP_EXCEPTIONS
   // When C++ exceptions are disabled, errors are immediately thrown as JS
   // exceptions, so there is no need to catch and rethrow them here.
   return callback();
-#endif // NAPI_CPP_EXCEPTIONS
+#endif  // NAPI_CPP_EXCEPTIONS
 }
 
 // For use in JS to C++ void callback wrappers to catch any Napi::Error
-// exceptions and rethrow them as JavaScript exceptions before returning from the
-// callback.
+// exceptions and rethrow them as JavaScript exceptions before returning from
+// the callback.
 template <typename Callable>
 inline void WrapVoidCallback(Callable callback) {
 #ifdef NAPI_CPP_EXCEPTIONS
@@ -99,21 +99,20 @@ inline void WrapVoidCallback(Callable callback) {
   } catch (const Error& e) {
     e.ThrowAsJavaScriptException();
   }
-#else // NAPI_CPP_EXCEPTIONS
+#else   // NAPI_CPP_EXCEPTIONS
   // When C++ exceptions are disabled, errors are immediately thrown as JS
   // exceptions, so there is no need to catch and rethrow them here.
   callback();
-#endif // NAPI_CPP_EXCEPTIONS
+#endif  // NAPI_CPP_EXCEPTIONS
 }
 
 template <typename Callable, typename Return>
 struct CallbackData {
-  static inline
-  napi_value Wrapper(napi_env env, napi_callback_info info) {
+  static inline napi_value Wrapper(napi_env env, napi_callback_info info) {
     return details::WrapCallback([&] {
       CallbackInfo callbackInfo(env, info);
       CallbackData* callbackData =
-        static_cast<CallbackData*>(callbackInfo.Data());
+          static_cast<CallbackData*>(callbackInfo.Data());
       callbackInfo.SetData(callbackData->data);
       return callbackData->callback(callbackInfo);
     });
@@ -125,12 +124,11 @@ struct CallbackData {
 
 template <typename Callable>
 struct CallbackData<Callable, void> {
-  static inline
-  napi_value Wrapper(napi_env env, napi_callback_info info) {
+  static inline napi_value Wrapper(napi_env env, napi_callback_info info) {
     return details::WrapCallback([&] {
       CallbackInfo callbackInfo(env, info);
       CallbackData* callbackData =
-        static_cast<CallbackData*>(callbackInfo.Data());
+          static_cast<CallbackData*>(callbackInfo.Data());
       callbackInfo.SetData(callbackData->data);
       callbackData->callback(callbackInfo);
       return nullptr;
@@ -142,8 +140,8 @@ struct CallbackData<Callable, void> {
 };
 
 template <void (*Callback)(const CallbackInfo& info)>
-static napi_value
-TemplatedVoidCallback(napi_env env, napi_callback_info info) NAPI_NOEXCEPT {
+napi_value TemplatedVoidCallback(napi_env env,
+                                 napi_callback_info info) NAPI_NOEXCEPT {
   return details::WrapCallback([&] {
     CallbackInfo cbInfo(env, info);
     Callback(cbInfo);
@@ -152,8 +150,8 @@ TemplatedVoidCallback(napi_env env, napi_callback_info info) NAPI_NOEXCEPT {
 }
 
 template <Napi::Value (*Callback)(const CallbackInfo& info)>
-static napi_value
-TemplatedCallback(napi_env env, napi_callback_info info) NAPI_NOEXCEPT {
+napi_value TemplatedCallback(napi_env env,
+                             napi_callback_info info) NAPI_NOEXCEPT {
   return details::WrapCallback([&] {
     CallbackInfo cbInfo(env, info);
     return Callback(cbInfo);
@@ -162,23 +160,22 @@ TemplatedCallback(napi_env env, napi_callback_info info) NAPI_NOEXCEPT {
 
 template <typename T,
           Napi::Value (T::*UnwrapCallback)(const CallbackInfo& info)>
-static napi_value
-TemplatedInstanceCallback(napi_env env, napi_callback_info info) NAPI_NOEXCEPT {
+napi_value TemplatedInstanceCallback(napi_env env,
+                                     napi_callback_info info) NAPI_NOEXCEPT {
   return details::WrapCallback([&] {
     CallbackInfo cbInfo(env, info);
     T* instance = T::Unwrap(cbInfo.This().As<Object>());
-    return (instance->*UnwrapCallback)(cbInfo);
+    return instance ? (instance->*UnwrapCallback)(cbInfo) : Napi::Value();
   });
 }
 
 template <typename T, void (T::*UnwrapCallback)(const CallbackInfo& info)>
-static napi_value
-TemplatedInstanceVoidCallback(napi_env env,
-                              napi_callback_info info) NAPI_NOEXCEPT {
+napi_value TemplatedInstanceVoidCallback(napi_env env, napi_callback_info info)
+    NAPI_NOEXCEPT {
   return details::WrapCallback([&] {
     CallbackInfo cbInfo(env, info);
     T* instance = T::Unwrap(cbInfo.This().As<Object>());
-    (instance->*UnwrapCallback)(cbInfo);
+    if (instance) (instance->*UnwrapCallback)(cbInfo);
     return nullptr;
   });
 }
@@ -200,7 +197,8 @@ struct FinalizeData {
                                      void* finalizeHint) NAPI_NOEXCEPT {
     WrapVoidCallback([&] {
       FinalizeData* finalizeData = static_cast<FinalizeData*>(finalizeHint);
-      finalizeData->callback(Env(env), static_cast<T*>(data), finalizeData->hint);
+      finalizeData->callback(
+          Env(env), static_cast<T*>(data), finalizeData->hint);
       delete finalizeData;
     });
   }
@@ -209,15 +207,15 @@ struct FinalizeData {
   Hint* hint;
 };
 
-#if (NAPI_VERSION > 3 && !defined(__wasm32__))
-template <typename ContextType=void,
-          typename Finalizer=std::function<void(Env, void*, ContextType*)>,
-          typename FinalizerDataType=void>
+#if (NAPI_VERSION > 3 && NAPI_HAS_THREADS)
+template <typename ContextType = void,
+          typename Finalizer = std::function<void(Env, void*, ContextType*)>,
+          typename FinalizerDataType = void>
 struct ThreadSafeFinalize {
-  static inline
-  void Wrapper(napi_env env, void* rawFinalizeData, void* /* rawContext */) {
-    if (rawFinalizeData == nullptr)
-      return;
+  static inline void Wrapper(napi_env env,
+                             void* rawFinalizeData,
+                             void* /* rawContext */) {
+    if (rawFinalizeData == nullptr) return;
 
     ThreadSafeFinalize* finalizeData =
         static_cast<ThreadSafeFinalize*>(rawFinalizeData);
@@ -225,12 +223,10 @@ struct ThreadSafeFinalize {
     delete finalizeData;
   }
 
-  static inline
-  void FinalizeWrapperWithData(napi_env env,
-                               void* rawFinalizeData,
-                               void* /* rawContext */) {
-    if (rawFinalizeData == nullptr)
-      return;
+  static inline void FinalizeWrapperWithData(napi_env env,
+                                             void* rawFinalizeData,
+                                             void* /* rawContext */) {
+    if (rawFinalizeData == nullptr) return;
 
     ThreadSafeFinalize* finalizeData =
         static_cast<ThreadSafeFinalize*>(rawFinalizeData);
@@ -238,12 +234,10 @@ struct ThreadSafeFinalize {
     delete finalizeData;
   }
 
-  static inline
-  void FinalizeWrapperWithContext(napi_env env,
-                                  void* rawFinalizeData,
-                                  void* rawContext) {
-    if (rawFinalizeData == nullptr)
-      return;
+  static inline void FinalizeWrapperWithContext(napi_env env,
+                                                void* rawFinalizeData,
+                                                void* rawContext) {
+    if (rawFinalizeData == nullptr) return;
 
     ThreadSafeFinalize* finalizeData =
         static_cast<ThreadSafeFinalize*>(rawFinalizeData);
@@ -251,17 +245,14 @@ struct ThreadSafeFinalize {
     delete finalizeData;
   }
 
-  static inline
-  void FinalizeFinalizeWrapperWithDataAndContext(napi_env env,
-                                         void* rawFinalizeData,
-                                         void* rawContext) {
-    if (rawFinalizeData == nullptr)
-      return;
+  static inline void FinalizeFinalizeWrapperWithDataAndContext(
+      napi_env env, void* rawFinalizeData, void* rawContext) {
+    if (rawFinalizeData == nullptr) return;
 
     ThreadSafeFinalize* finalizeData =
         static_cast<ThreadSafeFinalize*>(rawFinalizeData);
-    finalizeData->callback(Env(env), finalizeData->data,
-        static_cast<ContextType*>(rawContext));
+    finalizeData->callback(
+        Env(env), finalizeData->data, static_cast<ContextType*>(rawContext));
     delete finalizeData;
   }
 
@@ -270,8 +261,8 @@ struct ThreadSafeFinalize {
 };
 
 template <typename ContextType, typename DataType, typename CallJs, CallJs call>
-typename std::enable_if<call != nullptr>::type static inline CallJsWrapper(
-    napi_env env, napi_value jsCallback, void* context, void* data) {
+inline typename std::enable_if<call != static_cast<CallJs>(nullptr)>::type
+CallJsWrapper(napi_env env, napi_value jsCallback, void* context, void* data) {
   call(env,
        Function(env, jsCallback),
        static_cast<ContextType*>(context),
@@ -279,8 +270,11 @@ typename std::enable_if<call != nullptr>::type static inline CallJsWrapper(
 }
 
 template <typename ContextType, typename DataType, typename CallJs, CallJs call>
-typename std::enable_if<call == nullptr>::type static inline CallJsWrapper(
-    napi_env env, napi_value jsCallback, void* /*context*/, void* /*data*/) {
+inline typename std::enable_if<call == static_cast<CallJs>(nullptr)>::type
+CallJsWrapper(napi_env env,
+              napi_value jsCallback,
+              void* /*context*/,
+              void* /*data*/) {
   if (jsCallback != nullptr) {
     Function(env, jsCallback).Call(0, nullptr);
   }
@@ -307,27 +301,27 @@ napi_value DefaultCallbackWrapper(napi_env env, Napi::Function cb) {
   return cb;
 }
 #endif  // NAPI_VERSION > 4
-#endif  // NAPI_VERSION > 3 && !defined(__wasm32__)
+#endif  // NAPI_VERSION > 3 && NAPI_HAS_THREADS
 
 template <typename Getter, typename Setter>
 struct AccessorCallbackData {
-  static inline
-  napi_value GetterWrapper(napi_env env, napi_callback_info info) {
+  static inline napi_value GetterWrapper(napi_env env,
+                                         napi_callback_info info) {
     return details::WrapCallback([&] {
       CallbackInfo callbackInfo(env, info);
       AccessorCallbackData* callbackData =
-        static_cast<AccessorCallbackData*>(callbackInfo.Data());
+          static_cast<AccessorCallbackData*>(callbackInfo.Data());
       callbackInfo.SetData(callbackData->data);
       return callbackData->getterCallback(callbackInfo);
     });
   }
 
-  static inline
-  napi_value SetterWrapper(napi_env env, napi_callback_info info) {
+  static inline napi_value SetterWrapper(napi_env env,
+                                         napi_callback_info info) {
     return details::WrapCallback([&] {
       CallbackInfo callbackInfo(env, info);
       AccessorCallbackData* callbackData =
-        static_cast<AccessorCallbackData*>(callbackInfo.Data());
+          static_cast<AccessorCallbackData*>(callbackInfo.Data());
       callbackInfo.SetData(callbackData->data);
       callbackData->setterCallback(callbackInfo);
       return nullptr;
@@ -342,8 +336,8 @@ struct AccessorCallbackData {
 }  // namespace details
 
 #ifndef NODE_ADDON_API_DISABLE_DEPRECATED
-# include "napi-inl.deprecated.h"
-#endif // !NODE_ADDON_API_DISABLE_DEPRECATED
+#include "napi-inl.deprecated.h"
+#endif  // !NODE_ADDON_API_DISABLE_DEPRECATED
 
 ////////////////////////////////////////////////////////////////////////////////
 // Module registration
@@ -358,16 +352,15 @@ struct AccessorCallbackData {
 
 // Register an add-on based on a subclass of `Addon<T>` with a custom Node.js
 // module name.
-#define NODE_API_NAMED_ADDON(modname, classname)                 \
-  static napi_value __napi_ ## classname(napi_env env,           \
-                                         napi_value exports) {   \
-    return Napi::RegisterModule(env, exports, &classname::Init); \
-  }                                                              \
-  NAPI_MODULE(modname, __napi_ ## classname)
+#define NODE_API_NAMED_ADDON(modname, classname)                               \
+  static napi_value __napi_##classname(napi_env env, napi_value exports) {     \
+    return Napi::RegisterModule(env, exports, &classname::Init);               \
+  }                                                                            \
+  NAPI_MODULE(modname, __napi_##classname)
 
 // Register an add-on based on a subclass of `Addon<T>` with the Node.js module
 // name given by node-gyp from the `target_name` in binding.gyp.
-#define NODE_API_ADDON(classname) \
+#define NODE_API_ADDON(classname)                                              \
   NODE_API_NAMED_ADDON(NODE_GYP_MODULE_NAME, classname)
 
 // Adapt the NAPI_MODULE registration function:
@@ -377,8 +370,8 @@ inline napi_value RegisterModule(napi_env env,
                                  napi_value exports,
                                  ModuleRegisterCallback registerCallback) {
   return details::WrapCallback([&] {
-    return napi_value(registerCallback(Napi::Env(env),
-                                       Napi::Object(env, exports)));
+    return napi_value(
+        registerCallback(Napi::Env(env), Napi::Object(env, exports)));
   });
 }
 
@@ -452,8 +445,7 @@ inline Maybe<T> Just(const T& t) {
 // Env class
 ////////////////////////////////////////////////////////////////////////////////
 
-inline Env::Env(napi_env env) : _env(env) {
-}
+inline Env::Env(napi_env env) : _env(env) {}
 
 inline Env::operator napi_env() const {
   return _env;
@@ -483,11 +475,12 @@ inline Value Env::Null() const {
 inline bool Env::IsExceptionPending() const {
   bool result;
   napi_status status = napi_is_exception_pending(_env, &result);
-  if (status != napi_ok) result = false; // Checking for a pending exception shouldn't throw.
+  if (status != napi_ok)
+    result = false;  // Checking for a pending exception shouldn't throw.
   return result;
 }
 
-inline Error Env::GetAndClearPendingException() {
+inline Error Env::GetAndClearPendingException() const {
   napi_value value;
   napi_status status = napi_get_and_clear_last_exception(_env, &value);
   if (status != napi_ok) {
@@ -497,16 +490,16 @@ inline Error Env::GetAndClearPendingException() {
   return Error(_env, value);
 }
 
-inline MaybeOrValue<Value> Env::RunScript(const char* utf8script) {
+inline MaybeOrValue<Value> Env::RunScript(const char* utf8script) const {
   String script = String::New(_env, utf8script);
   return RunScript(script);
 }
 
-inline MaybeOrValue<Value> Env::RunScript(const std::string& utf8script) {
+inline MaybeOrValue<Value> Env::RunScript(const std::string& utf8script) const {
   return RunScript(utf8script.c_str());
 }
 
-inline MaybeOrValue<Value> Env::RunScript(String script) {
+inline MaybeOrValue<Value> Env::RunScript(String script) const {
   napi_value result;
   napi_status status = napi_run_script(_env, script, &result);
   NAPI_RETURN_OR_THROW_IF_FAILED(
@@ -535,28 +528,31 @@ void Env::CleanupHook<Hook, Arg>::WrapperWithArg(void* data) NAPI_NOEXCEPT {
 
 #if NAPI_VERSION > 5
 template <typename T, Env::Finalizer<T> fini>
-inline void Env::SetInstanceData(T* data) {
-  napi_status status =
-    napi_set_instance_data(_env, data, [](napi_env env, void* data, void*) {
-      fini(env, static_cast<T*>(data));
-    }, nullptr);
+inline void Env::SetInstanceData(T* data) const {
+  napi_status status = napi_set_instance_data(
+      _env,
+      data,
+      [](napi_env env, void* data, void*) { fini(env, static_cast<T*>(data)); },
+      nullptr);
   NAPI_THROW_IF_FAILED_VOID(_env, status);
 }
 
 template <typename DataType,
           typename HintType,
           Napi::Env::FinalizerWithHint<DataType, HintType> fini>
-inline void Env::SetInstanceData(DataType* data, HintType* hint) {
-  napi_status status =
-    napi_set_instance_data(_env, data,
+inline void Env::SetInstanceData(DataType* data, HintType* hint) const {
+  napi_status status = napi_set_instance_data(
+      _env,
+      data,
       [](napi_env env, void* data, void* hint) {
         fini(env, static_cast<DataType*>(data), static_cast<HintType*>(hint));
-      }, hint);
+      },
+      hint);
   NAPI_THROW_IF_FAILED_VOID(_env, status);
 }
 
 template <typename T>
-inline T* Env::GetInstanceData() {
+inline T* Env::GetInstanceData() const {
   void* data = nullptr;
 
   napi_status status = napi_get_instance_data(_env, &data);
@@ -565,7 +561,8 @@ inline T* Env::GetInstanceData() {
   return static_cast<T*>(data);
 }
 
-template <typename T> void Env::DefaultFini(Env, T* data) {
+template <typename T>
+void Env::DefaultFini(Env, T* data) {
   delete data;
 }
 
@@ -579,22 +576,21 @@ void Env::DefaultFiniWithHint(Env, DataType* data, HintType*) {
 // Value class
 ////////////////////////////////////////////////////////////////////////////////
 
-inline Value::Value() : _env(nullptr), _value(nullptr) {
-}
+inline Value::Value() : _env(nullptr), _value(nullptr) {}
 
-inline Value::Value(napi_env env, napi_value value) : _env(env), _value(value) {
-}
+inline Value::Value(napi_env env, napi_value value)
+    : _env(env), _value(value) {}
 
 inline Value::operator napi_value() const {
   return _value;
 }
 
-inline bool Value::operator ==(const Value& other) const {
+inline bool Value::operator==(const Value& other) const {
   return StrictEquals(other);
 }
 
-inline bool Value::operator !=(const Value& other) const {
-  return !this->operator ==(other);
+inline bool Value::operator!=(const Value& other) const {
+  return !this->operator==(other);
 }
 
 inline bool Value::StrictEquals(const Value& other) const {
@@ -746,6 +742,9 @@ inline bool Value::IsExternal() const {
 
 template <typename T>
 inline T Value::As() const {
+#ifdef NODE_ADDON_API_ENABLE_TYPE_CHECK_ON_AS
+  T::CheckCast(_env, _value);
+#endif
   return T(_env, _value);
 }
 
@@ -788,11 +787,20 @@ inline Boolean Boolean::New(napi_env env, bool val) {
   return Boolean(env, value);
 }
 
-inline Boolean::Boolean() : Napi::Value() {
+inline void Boolean::CheckCast(napi_env env, napi_value value) {
+  NAPI_CHECK(value != nullptr, "Boolean::CheckCast", "empty value");
+
+  napi_valuetype type;
+  napi_status status = napi_typeof(env, value, &type);
+  NAPI_CHECK(status == napi_ok, "Boolean::CheckCast", "napi_typeof failed");
+  NAPI_CHECK(
+      type == napi_boolean, "Boolean::CheckCast", "value is not napi_boolean");
 }
 
-inline Boolean::Boolean(napi_env env, napi_value value) : Napi::Value(env, value) {
-}
+inline Boolean::Boolean() : Napi::Value() {}
+
+inline Boolean::Boolean(napi_env env, napi_value value)
+    : Napi::Value(env, value) {}
 
 inline Boolean::operator bool() const {
   return Value();
@@ -816,11 +824,19 @@ inline Number Number::New(napi_env env, double val) {
   return Number(env, value);
 }
 
-inline Number::Number() : Value() {
+inline void Number::CheckCast(napi_env env, napi_value value) {
+  NAPI_CHECK(value != nullptr, "Number::CheckCast", "empty value");
+
+  napi_valuetype type;
+  napi_status status = napi_typeof(env, value, &type);
+  NAPI_CHECK(status == napi_ok, "Number::CheckCast", "napi_typeof failed");
+  NAPI_CHECK(
+      type == napi_number, "Number::CheckCast", "value is not napi_number");
 }
 
-inline Number::Number(napi_env env, napi_value value) : Value(env, value) {
-}
+inline Number::Number() : Value() {}
+
+inline Number::Number(napi_env env, napi_value value) : Value(env, value) {}
 
 inline Number::operator int32_t() const {
   return Int32Value();
@@ -893,46 +909,60 @@ inline BigInt BigInt::New(napi_env env, uint64_t val) {
   return BigInt(env, value);
 }
 
-inline BigInt BigInt::New(napi_env env, int sign_bit, size_t word_count, const uint64_t* words) {
+inline BigInt BigInt::New(napi_env env,
+                          int sign_bit,
+                          size_t word_count,
+                          const uint64_t* words) {
   napi_value value;
-  napi_status status = napi_create_bigint_words(env, sign_bit, word_count, words, &value);
+  napi_status status =
+      napi_create_bigint_words(env, sign_bit, word_count, words, &value);
   NAPI_THROW_IF_FAILED(env, status, BigInt());
   return BigInt(env, value);
 }
 
-inline BigInt::BigInt() : Value() {
+inline void BigInt::CheckCast(napi_env env, napi_value value) {
+  NAPI_CHECK(value != nullptr, "BigInt::CheckCast", "empty value");
+
+  napi_valuetype type;
+  napi_status status = napi_typeof(env, value, &type);
+  NAPI_CHECK(status == napi_ok, "BigInt::CheckCast", "napi_typeof failed");
+  NAPI_CHECK(
+      type == napi_bigint, "BigInt::CheckCast", "value is not napi_bigint");
 }
 
-inline BigInt::BigInt(napi_env env, napi_value value) : Value(env, value) {
-}
+inline BigInt::BigInt() : Value() {}
+
+inline BigInt::BigInt(napi_env env, napi_value value) : Value(env, value) {}
 
 inline int64_t BigInt::Int64Value(bool* lossless) const {
   int64_t result;
-  napi_status status = napi_get_value_bigint_int64(
-      _env, _value, &result, lossless);
+  napi_status status =
+      napi_get_value_bigint_int64(_env, _value, &result, lossless);
   NAPI_THROW_IF_FAILED(_env, status, 0);
   return result;
 }
 
 inline uint64_t BigInt::Uint64Value(bool* lossless) const {
   uint64_t result;
-  napi_status status = napi_get_value_bigint_uint64(
-      _env, _value, &result, lossless);
+  napi_status status =
+      napi_get_value_bigint_uint64(_env, _value, &result, lossless);
   NAPI_THROW_IF_FAILED(_env, status, 0);
   return result;
 }
 
 inline size_t BigInt::WordCount() const {
   size_t word_count;
-  napi_status status = napi_get_value_bigint_words(
-      _env, _value, nullptr, &word_count, nullptr);
+  napi_status status =
+      napi_get_value_bigint_words(_env, _value, nullptr, &word_count, nullptr);
   NAPI_THROW_IF_FAILED(_env, status, 0);
   return word_count;
 }
 
-inline void BigInt::ToWords(int* sign_bit, size_t* word_count, uint64_t* words) {
-  napi_status status = napi_get_value_bigint_words(
-      _env, _value, sign_bit, word_count, words);
+inline void BigInt::ToWords(int* sign_bit,
+                            size_t* word_count,
+                            uint64_t* words) {
+  napi_status status =
+      napi_get_value_bigint_words(_env, _value, sign_bit, word_count, words);
   NAPI_THROW_IF_FAILED_VOID(_env, status);
 }
 #endif  // NAPI_VERSION > 5
@@ -949,11 +979,18 @@ inline Date Date::New(napi_env env, double val) {
   return Date(env, value);
 }
 
-inline Date::Date() : Value() {
+inline void Date::CheckCast(napi_env env, napi_value value) {
+  NAPI_CHECK(value != nullptr, "Date::CheckCast", "empty value");
+
+  bool result;
+  napi_status status = napi_is_date(env, value, &result);
+  NAPI_CHECK(status == napi_ok, "Date::CheckCast", "napi_is_date failed");
+  NAPI_CHECK(result, "Date::CheckCast", "value is not date");
 }
 
-inline Date::Date(napi_env env, napi_value value) : Value(env, value) {
-}
+inline Date::Date() : Value() {}
+
+inline Date::Date(napi_env env, napi_value value) : Value(env, value) {}
 
 inline Date::operator double() const {
   return ValueOf();
@@ -961,8 +998,7 @@ inline Date::operator double() const {
 
 inline double Date::ValueOf() const {
   double result;
-  napi_status status = napi_get_date_value(
-      _env, _value, &result);
+  napi_status status = napi_get_date_value(_env, _value, &result);
   NAPI_THROW_IF_FAILED(_env, status, 0);
   return result;
 }
@@ -971,12 +1007,20 @@ inline double Date::ValueOf() const {
 ////////////////////////////////////////////////////////////////////////////////
 // Name class
 ////////////////////////////////////////////////////////////////////////////////
+inline void Name::CheckCast(napi_env env, napi_value value) {
+  NAPI_CHECK(value != nullptr, "Name::CheckCast", "empty value");
 
-inline Name::Name() : Value() {
+  napi_valuetype type;
+  napi_status status = napi_typeof(env, value, &type);
+  NAPI_CHECK(status == napi_ok, "Name::CheckCast", "napi_typeof failed");
+  NAPI_CHECK(type == napi_string || type == napi_symbol,
+             "Name::CheckCast",
+             "value is not napi_string or napi_symbol");
 }
 
-inline Name::Name(napi_env env, napi_value value) : Value(env, value) {
-}
+inline Name::Name() : Value() {}
+
+inline Name::Name(napi_env env, napi_value value) : Value(env, value) {}
 
 ////////////////////////////////////////////////////////////////////////////////
 // String class
@@ -999,7 +1043,8 @@ inline String String::New(napi_env env, const char* val) {
     //NAPI_THROW_IF_FAILED(env, napi_invalid_arg, String());
   }
   napi_value value;
-  napi_status status = napi_create_string_utf8(env, val, std::strlen(val), &value);
+  napi_status status =
+      napi_create_string_utf8(env, val, std::strlen(val), &value);
   NAPI_THROW_IF_FAILED(env, status, String());
   return String(env, value);
 }
@@ -1013,7 +1058,8 @@ inline String String::New(napi_env env, const char16_t* val) {
     throw Napi::Error::New(env); // BENTLEY_CHANGE
     // NAPI_THROW_IF_FAILED(env, napi_invalid_arg, String());
   }
-  napi_status status = napi_create_string_utf16(env, val, std::u16string(val).size(), &value);
+  napi_status status =
+      napi_create_string_utf16(env, val, std::u16string(val).size(), &value);
   NAPI_THROW_IF_FAILED(env, status, String());
   return String(env, value);
 }
@@ -1032,11 +1078,19 @@ inline String String::New(napi_env env, const char16_t* val, size_t length) {
   return String(env, value);
 }
 
-inline String::String() : Name() {
+inline void String::CheckCast(napi_env env, napi_value value) {
+  NAPI_CHECK(value != nullptr, "String::CheckCast", "empty value");
+
+  napi_valuetype type;
+  napi_status status = napi_typeof(env, value, &type);
+  NAPI_CHECK(status == napi_ok, "String::CheckCast", "napi_typeof failed");
+  NAPI_CHECK(
+      type == napi_string, "String::CheckCast", "value is not napi_string");
 }
 
-inline String::String(napi_env env, napi_value value) : Name(env, value) {
-}
+inline String::String() : Name() {}
+
+inline String::String(napi_env env, napi_value value) : Name(env, value) {}
 
 inline String::operator std::string() const {
   return Utf8Value();
@@ -1048,26 +1102,30 @@ inline String::operator std::u16string() const {
 
 inline std::string String::Utf8Value() const {
   size_t length;
-  napi_status status = napi_get_value_string_utf8(_env, _value, nullptr, 0, &length);
+  napi_status status =
+      napi_get_value_string_utf8(_env, _value, nullptr, 0, &length);
   NAPI_THROW_IF_FAILED(_env, status, "");
 
   std::string value;
   value.reserve(length + 1);
   value.resize(length);
-  status = napi_get_value_string_utf8(_env, _value, &value[0], value.capacity(), nullptr);
+  status = napi_get_value_string_utf8(
+      _env, _value, &value[0], value.capacity(), nullptr);
   NAPI_THROW_IF_FAILED(_env, status, "");
   return value;
 }
 
 inline std::u16string String::Utf16Value() const {
   size_t length;
-  napi_status status = napi_get_value_string_utf16(_env, _value, nullptr, 0, &length);
+  napi_status status =
+      napi_get_value_string_utf16(_env, _value, nullptr, 0, &length);
   NAPI_THROW_IF_FAILED(_env, status, NAPI_WIDE_TEXT(""));
 
   std::u16string value;
   value.reserve(length + 1);
   value.resize(length);
-  status = napi_get_value_string_utf16(_env, _value, &value[0], value.capacity(), nullptr);
+  status = napi_get_value_string_utf16(
+      _env, _value, &value[0], value.capacity(), nullptr);
   NAPI_THROW_IF_FAILED(_env, status, NAPI_WIDE_TEXT(""));
   return value;
 }
@@ -1077,8 +1135,9 @@ inline std::u16string String::Utf16Value() const {
 ////////////////////////////////////////////////////////////////////////////////
 
 inline Symbol Symbol::New(napi_env env, const char* description) {
-  napi_value descriptionValue = description != nullptr ?
-    String::New(env, description) : static_cast<napi_value>(nullptr);
+  napi_value descriptionValue = description != nullptr
+                                    ? String::New(env, description)
+                                    : static_cast<napi_value>(nullptr);
   return Symbol::New(env, descriptionValue);
 }
 
@@ -1110,7 +1169,12 @@ inline MaybeOrValue<Symbol> Symbol::WellKnown(napi_env env,
   }
   return Nothing<Symbol>();
 #else
-  return Napi::Env(env).Global().Get("Symbol").As<Object>().Get(name).As<Symbol>();
+  return Napi::Env(env)
+      .Global()
+      .Get("Symbol")
+      .As<Object>()
+      .Get(name)
+      .As<Symbol>();
 #endif
 }
 
@@ -1151,11 +1215,19 @@ inline MaybeOrValue<Symbol> Symbol::For(napi_env env, napi_value description) {
 #endif
 }
 
-inline Symbol::Symbol() : Name() {
+inline void Symbol::CheckCast(napi_env env, napi_value value) {
+  NAPI_CHECK(value != nullptr, "Symbol::CheckCast", "empty value");
+
+  napi_valuetype type;
+  napi_status status = napi_typeof(env, value, &type);
+  NAPI_CHECK(status == napi_ok, "Symbol::CheckCast", "napi_typeof failed");
+  NAPI_CHECK(
+      type == napi_symbol, "Symbol::CheckCast", "value is not napi_symbol");
 }
 
-inline Symbol::Symbol(napi_env env, napi_value value) : Name(env, value) {
-}
+inline Symbol::Symbol() : Name() {}
+
+inline Symbol::Symbol(napi_env env, napi_value value) : Name(env, value) {}
 
 ////////////////////////////////////////////////////////////////////////////////
 // Automagic value creation
@@ -1169,7 +1241,7 @@ struct vf_number {
   }
 };
 
-template<>
+template <>
 struct vf_number<bool> {
   static Boolean From(napi_env env, bool value) {
     return Boolean::New(env, value);
@@ -1201,36 +1273,33 @@ struct vf_utf16_string {
 
 template <typename T>
 struct vf_fallback {
-  static Value From(napi_env env, const T& value) {
-    return Value(env, value);
-  }
+  static Value From(napi_env env, const T& value) { return Value(env, value); }
 };
 
-template <typename...> struct disjunction : std::false_type {};
-template <typename B> struct disjunction<B> : B {};
+template <typename...>
+struct disjunction : std::false_type {};
+template <typename B>
+struct disjunction<B> : B {};
 template <typename B, typename... Bs>
 struct disjunction<B, Bs...>
     : std::conditional<bool(B::value), B, disjunction<Bs...>>::type {};
 
 template <typename T>
 struct can_make_string
-    : disjunction<typename std::is_convertible<T, const char *>::type,
-                  typename std::is_convertible<T, const char16_t *>::type,
+    : disjunction<typename std::is_convertible<T, const char*>::type,
+                  typename std::is_convertible<T, const char16_t*>::type,
                   typename std::is_convertible<T, std::string>::type,
                   typename std::is_convertible<T, std::u16string>::type> {};
-}
+}  // namespace details
 
 template <typename T>
 Value Value::From(napi_env env, const T& value) {
   using Helper = typename std::conditional<
-    std::is_integral<T>::value || std::is_floating_point<T>::value,
-    details::vf_number<T>,
-    typename std::conditional<
-      details::can_make_string<T>::value,
-      String,
-      details::vf_fallback<T>
-    >::type
-  >::type;
+      std::is_integral<T>::value || std::is_floating_point<T>::value,
+      details::vf_number<T>,
+      typename std::conditional<details::can_make_string<T>::value,
+                                String,
+                                details::vf_fallback<T>>::type>::type;
   return Helper::From(env, value);
 }
 
@@ -1238,24 +1307,46 @@ template <typename T>
 String String::From(napi_env env, const T& value) {
   struct Dummy {};
   using Helper = typename std::conditional<
-    std::is_convertible<T, const char*>::value,
-    details::vf_utf8_charp,
-    typename std::conditional<
-      std::is_convertible<T, const char16_t*>::value,
-      details::vf_utf16_charp,
+      std::is_convertible<T, const char*>::value,
+      details::vf_utf8_charp,
       typename std::conditional<
-        std::is_convertible<T, std::string>::value,
-        details::vf_utf8_string,
-        typename std::conditional<
-          std::is_convertible<T, std::u16string>::value,
-          details::vf_utf16_string,
-          Dummy
-        >::type
-      >::type
-    >::type
-  >::type;
+          std::is_convertible<T, const char16_t*>::value,
+          details::vf_utf16_charp,
+          typename std::conditional<
+              std::is_convertible<T, std::string>::value,
+              details::vf_utf8_string,
+              typename std::conditional<
+                  std::is_convertible<T, std::u16string>::value,
+                  details::vf_utf16_string,
+                  Dummy>::type>::type>::type>::type;
   return Helper::From(env, value);
 }
+
+////////////////////////////////////////////////////////////////////////////////
+// TypeTaggable class
+////////////////////////////////////////////////////////////////////////////////
+
+inline TypeTaggable::TypeTaggable() : Value() {}
+
+inline TypeTaggable::TypeTaggable(napi_env _env, napi_value _value)
+    : Value(_env, _value) {}
+
+#if NAPI_VERSION >= 8
+
+inline void TypeTaggable::TypeTag(const napi_type_tag* type_tag) const {
+  napi_status status = napi_type_tag_object(_env, _value, type_tag);
+  NAPI_THROW_IF_FAILED_VOID(_env, status);
+}
+
+inline bool TypeTaggable::CheckTypeTag(const napi_type_tag* type_tag) const {
+  bool result;
+  napi_status status =
+      napi_check_object_type_tag(_env, _value, type_tag, &result);
+  NAPI_THROW_IF_FAILED(_env, status, false);
+  return result;
+}
+
+#endif  // NAPI_VERSION >= 8
 
 ////////////////////////////////////////////////////////////////////////////////
 // Object class
@@ -1271,8 +1362,10 @@ inline Object::PropertyLValue<Key>::operator Value() const {
 #endif
 }
 
-template <typename Key> template <typename ValueType>
-inline Object::PropertyLValue<Key>& Object::PropertyLValue<Key>::operator =(ValueType value) {
+template <typename Key>
+template <typename ValueType>
+inline Object::PropertyLValue<Key>& Object::PropertyLValue<Key>::operator=(
+    ValueType value) {
 #ifdef NODE_ADDON_API_ENABLE_MAYBE
   MaybeOrValue<bool> result =
 #endif
@@ -1285,7 +1378,7 @@ inline Object::PropertyLValue<Key>& Object::PropertyLValue<Key>::operator =(Valu
 
 template <typename Key>
 inline Object::PropertyLValue<Key>::PropertyLValue(Object object, Key key)
-  : _env(object.Env()), _object(object), _key(key) {}
+    : _env(object.Env()), _object(object), _key(key) {}
 
 inline Object Object::New(napi_env env) {
   napi_value value;
@@ -1294,22 +1387,37 @@ inline Object Object::New(napi_env env) {
   return Object(env, value);
 }
 
-inline Object::Object() : Value() {
+inline void Object::CheckCast(napi_env env, napi_value value) {
+  NAPI_CHECK(value != nullptr, "Object::CheckCast", "empty value");
+
+  napi_valuetype type;
+  napi_status status = napi_typeof(env, value, &type);
+  NAPI_CHECK(status == napi_ok, "Object::CheckCast", "napi_typeof failed");
+  NAPI_CHECK(
+      type == napi_object, "Object::CheckCast", "value is not napi_object");
 }
 
-inline Object::Object(napi_env env, napi_value value) : Value(env, value) {
-}
+inline Object::Object() : TypeTaggable() {}
 
-inline Object::PropertyLValue<std::string> Object::operator [](const char* utf8name) {
+inline Object::Object(napi_env env, napi_value value)
+    : TypeTaggable(env, value) {}
+
+inline Object::PropertyLValue<std::string> Object::operator[](
+    const char* utf8name) {
   return PropertyLValue<std::string>(*this, utf8name);
 }
 
-inline Object::PropertyLValue<std::string> Object::operator [](const std::string& utf8name) {
+inline Object::PropertyLValue<std::string> Object::operator[](
+    const std::string& utf8name) {
   return PropertyLValue<std::string>(*this, utf8name);
 }
 
-inline Object::PropertyLValue<uint32_t> Object::operator [](uint32_t index) {
+inline Object::PropertyLValue<uint32_t> Object::operator[](uint32_t index) {
   return PropertyLValue<uint32_t>(*this, index);
+}
+
+inline Object::PropertyLValue<Value> Object::operator[](Value index) const {
+  return PropertyLValue<Value>(*this, index);
 }
 
 inline MaybeOrValue<Value> Object::operator[](const char* utf8name) const {
@@ -1361,7 +1469,8 @@ inline MaybeOrValue<bool> Object::HasOwnProperty(Value key) const {
 
 inline MaybeOrValue<bool> Object::HasOwnProperty(const char* utf8name) const {
   napi_value key;
-  napi_status status = napi_create_string_utf8(_env, utf8name, std::strlen(utf8name), &key);
+  napi_status status =
+      napi_create_string_utf8(_env, utf8name, std::strlen(utf8name), &key);
   NAPI_MAYBE_THROW_IF_FAILED(_env, status, bool);
   return HasOwnProperty(key);
 }
@@ -1394,14 +1503,15 @@ inline MaybeOrValue<Value> Object::Get(const std::string& utf8name) const {
 }
 
 template <typename ValueType>
-inline MaybeOrValue<bool> Object::Set(napi_value key, const ValueType& value) {
+inline MaybeOrValue<bool> Object::Set(napi_value key,
+                                      const ValueType& value) const {
   napi_status status =
       napi_set_property(_env, _value, key, Value::From(_env, value));
   NAPI_RETURN_OR_THROW_IF_FAILED(_env, status, status == napi_ok, bool);
 }
 
 template <typename ValueType>
-inline MaybeOrValue<bool> Object::Set(Value key, const ValueType& value) {
+inline MaybeOrValue<bool> Object::Set(Value key, const ValueType& value) const {
   napi_status status =
       napi_set_property(_env, _value, key, Value::From(_env, value));
   NAPI_RETURN_OR_THROW_IF_FAILED(_env, status, status == napi_ok, bool);
@@ -1409,7 +1519,7 @@ inline MaybeOrValue<bool> Object::Set(Value key, const ValueType& value) {
 
 template <typename ValueType>
 inline MaybeOrValue<bool> Object::Set(const char* utf8name,
-                                      const ValueType& value) {
+                                      const ValueType& value) const {
   napi_status status =
       napi_set_named_property(_env, _value, utf8name, Value::From(_env, value));
   NAPI_RETURN_OR_THROW_IF_FAILED(_env, status, status == napi_ok, bool);
@@ -1417,27 +1527,27 @@ inline MaybeOrValue<bool> Object::Set(const char* utf8name,
 
 template <typename ValueType>
 inline MaybeOrValue<bool> Object::Set(const std::string& utf8name,
-                                      const ValueType& value) {
+                                      const ValueType& value) const {
   return Set(utf8name.c_str(), value);
 }
 
-inline MaybeOrValue<bool> Object::Delete(napi_value key) {
+inline MaybeOrValue<bool> Object::Delete(napi_value key) const {
   bool result;
   napi_status status = napi_delete_property(_env, _value, key, &result);
   NAPI_RETURN_OR_THROW_IF_FAILED(_env, status, result, bool);
 }
 
-inline MaybeOrValue<bool> Object::Delete(Value key) {
+inline MaybeOrValue<bool> Object::Delete(Value key) const {
   bool result;
   napi_status status = napi_delete_property(_env, _value, key, &result);
   NAPI_RETURN_OR_THROW_IF_FAILED(_env, status, result, bool);
 }
 
-inline MaybeOrValue<bool> Object::Delete(const char* utf8name) {
+inline MaybeOrValue<bool> Object::Delete(const char* utf8name) const {
   return Delete(String::New(_env, utf8name));
 }
 
-inline MaybeOrValue<bool> Object::Delete(const std::string& utf8name) {
+inline MaybeOrValue<bool> Object::Delete(const std::string& utf8name) const {
   return Delete(String::New(_env, utf8name));
 }
 
@@ -1454,13 +1564,14 @@ inline MaybeOrValue<Value> Object::Get(uint32_t index) const {
 }
 
 template <typename ValueType>
-inline MaybeOrValue<bool> Object::Set(uint32_t index, const ValueType& value) {
+inline MaybeOrValue<bool> Object::Set(uint32_t index,
+                                      const ValueType& value) const {
   napi_status status =
       napi_set_element(_env, _value, index, Value::From(_env, value));
   NAPI_RETURN_OR_THROW_IF_FAILED(_env, status, status == napi_ok, bool);
 }
 
-inline MaybeOrValue<bool> Object::Delete(uint32_t index) {
+inline MaybeOrValue<bool> Object::Delete(uint32_t index) const {
   bool result;
   napi_status status = napi_delete_element(_env, _value, index, &result);
   NAPI_RETURN_OR_THROW_IF_FAILED(_env, status, result, bool);
@@ -1473,23 +1584,32 @@ inline MaybeOrValue<Array> Object::GetPropertyNames() const {
 }
 
 inline MaybeOrValue<bool> Object::DefineProperty(
-    const PropertyDescriptor& property) {
-  napi_status status = napi_define_properties(_env, _value, 1,
-    reinterpret_cast<const napi_property_descriptor*>(&property));
+    const PropertyDescriptor& property) const {
+  napi_status status = napi_define_properties(
+      _env,
+      _value,
+      1,
+      reinterpret_cast<const napi_property_descriptor*>(&property));
   NAPI_RETURN_OR_THROW_IF_FAILED(_env, status, status == napi_ok, bool);
 }
 
 inline MaybeOrValue<bool> Object::DefineProperties(
-    const std::initializer_list<PropertyDescriptor>& properties) {
-  napi_status status = napi_define_properties(_env, _value, properties.size(),
-    reinterpret_cast<const napi_property_descriptor*>(properties.begin()));
+    const std::initializer_list<PropertyDescriptor>& properties) const {
+  napi_status status = napi_define_properties(
+      _env,
+      _value,
+      properties.size(),
+      reinterpret_cast<const napi_property_descriptor*>(properties.begin()));
   NAPI_RETURN_OR_THROW_IF_FAILED(_env, status, status == napi_ok, bool);
 }
 
 inline MaybeOrValue<bool> Object::DefineProperties(
-    const std::vector<PropertyDescriptor>& properties) {
-  napi_status status = napi_define_properties(_env, _value, properties.size(),
-    reinterpret_cast<const napi_property_descriptor*>(properties.data()));
+    const std::vector<PropertyDescriptor>& properties) const {
+  napi_status status = napi_define_properties(
+      _env,
+      _value,
+      properties.size(),
+      reinterpret_cast<const napi_property_descriptor*>(properties.data()));
   NAPI_RETURN_OR_THROW_IF_FAILED(_env, status, status == napi_ok, bool);
 }
 
@@ -1501,7 +1621,7 @@ inline MaybeOrValue<bool> Object::InstanceOf(
 }
 
 template <typename Finalizer, typename T>
-inline void Object::AddFinalizer(Finalizer finalizeCallback, T* data) {
+inline void Object::AddFinalizer(Finalizer finalizeCallback, T* data) const {
   details::FinalizeData<T, Finalizer>* finalizeData =
       new details::FinalizeData<T, Finalizer>(
           {std::move(finalizeCallback), nullptr});
@@ -1520,29 +1640,106 @@ inline void Object::AddFinalizer(Finalizer finalizeCallback, T* data) {
 template <typename Finalizer, typename T, typename Hint>
 inline void Object::AddFinalizer(Finalizer finalizeCallback,
                                  T* data,
-                                 Hint* finalizeHint) {
+                                 Hint* finalizeHint) const {
   details::FinalizeData<T, Finalizer, Hint>* finalizeData =
       new details::FinalizeData<T, Finalizer, Hint>(
           {std::move(finalizeCallback), finalizeHint});
-  napi_status status =
-      details::AttachData(_env,
-                          *this,
-                          data,
-                          details::FinalizeData<T, Finalizer, Hint>::WrapperWithHint,
-                          finalizeData);
+  napi_status status = details::AttachData(
+      _env,
+      *this,
+      data,
+      details::FinalizeData<T, Finalizer, Hint>::WrapperWithHint,
+      finalizeData);
   if (status != napi_ok) {
     delete finalizeData;
     NAPI_THROW_IF_FAILED_VOID(_env, status);
   }
 }
 
+#ifdef NAPI_CPP_EXCEPTIONS
+inline Object::const_iterator::const_iterator(const Object* object,
+                                              const Type type) {
+  _object = object;
+  _keys = object->GetPropertyNames();
+  _index = type == Type::BEGIN ? 0 : _keys.Length();
+}
+
+inline Object::const_iterator Napi::Object::begin() const {
+  const_iterator it(this, Object::const_iterator::Type::BEGIN);
+  return it;
+}
+
+inline Object::const_iterator Napi::Object::end() const {
+  const_iterator it(this, Object::const_iterator::Type::END);
+  return it;
+}
+
+inline Object::const_iterator& Object::const_iterator::operator++() {
+  ++_index;
+  return *this;
+}
+
+inline bool Object::const_iterator::operator==(
+    const const_iterator& other) const {
+  return _index == other._index;
+}
+
+inline bool Object::const_iterator::operator!=(
+    const const_iterator& other) const {
+  return _index != other._index;
+}
+
+inline const std::pair<Value, Object::PropertyLValue<Value>>
+Object::const_iterator::operator*() const {
+  const Value key = _keys[_index];
+  const PropertyLValue<Value> value = (*_object)[key];
+  return {key, value};
+}
+
+inline Object::iterator::iterator(Object* object, const Type type) {
+  _object = object;
+  _keys = object->GetPropertyNames();
+  _index = type == Type::BEGIN ? 0 : _keys.Length();
+}
+
+inline Object::iterator Napi::Object::begin() {
+  iterator it(this, Object::iterator::Type::BEGIN);
+  return it;
+}
+
+inline Object::iterator Napi::Object::end() {
+  iterator it(this, Object::iterator::Type::END);
+  return it;
+}
+
+inline Object::iterator& Object::iterator::operator++() {
+  ++_index;
+  return *this;
+}
+
+inline bool Object::iterator::operator==(const iterator& other) const {
+  return _index == other._index;
+}
+
+inline bool Object::iterator::operator!=(const iterator& other) const {
+  return _index != other._index;
+}
+
+inline std::pair<Value, Object::PropertyLValue<Value>>
+Object::iterator::operator*() {
+  Value key = _keys[_index];
+  PropertyLValue<Value> value = (*_object)[key];
+  return {key, value};
+}
+#endif  // NAPI_CPP_EXCEPTIONS
+
 #if NAPI_VERSION >= 8
-inline MaybeOrValue<bool> Object::Freeze() {
+inline MaybeOrValue<bool> Object::Freeze() const {
   napi_status status = napi_object_freeze(_env, _value);
   NAPI_RETURN_OR_THROW_IF_FAILED(_env, status, status == napi_ok, bool);
 }
 
-inline MaybeOrValue<bool> Object::Seal() {
+inline MaybeOrValue<bool> Object::Seal() const {
   napi_status status = napi_object_seal(_env, _value);
   NAPI_RETURN_OR_THROW_IF_FAILED(_env, status, status == napi_ok, bool);
 }
@@ -1555,7 +1752,8 @@ inline MaybeOrValue<bool> Object::Seal() {
 template <typename T>
 inline External<T> External<T>::New(napi_env env, T* data) {
   napi_value value;
-  napi_status status = napi_create_external(env, data, nullptr, nullptr, &value);
+  napi_status status =
+      napi_create_external(env, data, nullptr, nullptr, &value);
   NAPI_THROW_IF_FAILED(env, status, External());
   return External(env, value);
 }
@@ -1569,12 +1767,12 @@ inline External<T> External<T>::New(napi_env env,
   details::FinalizeData<T, Finalizer>* finalizeData =
       new details::FinalizeData<T, Finalizer>(
           {std::move(finalizeCallback), nullptr});
-  napi_status status = napi_create_external(
-    env,
-    data,
-    details::FinalizeData<T, Finalizer>::Wrapper,
-    finalizeData,
-    &value);
+  napi_status status =
+      napi_create_external(env,
+                           data,
+                           details::FinalizeData<T, Finalizer>::Wrapper,
+                           finalizeData,
+                           &value);
   if (status != napi_ok) {
     delete finalizeData;
     NAPI_THROW_IF_FAILED(env, status, External());
@@ -1593,11 +1791,11 @@ inline External<T> External<T>::New(napi_env env,
       new details::FinalizeData<T, Finalizer, Hint>(
           {std::move(finalizeCallback), finalizeHint});
   napi_status status = napi_create_external(
-    env,
-    data,
-    details::FinalizeData<T, Finalizer, Hint>::WrapperWithHint,
-    finalizeData,
-    &value);
+      env,
+      data,
+      details::FinalizeData<T, Finalizer, Hint>::WrapperWithHint,
+      finalizeData,
+      &value);
   if (status != napi_ok) {
     delete finalizeData;
     NAPI_THROW_IF_FAILED(env, status, External());
@@ -1606,12 +1804,23 @@ inline External<T> External<T>::New(napi_env env,
 }
 
 template <typename T>
-inline External<T>::External() : Value() {
+inline void External<T>::CheckCast(napi_env env, napi_value value) {
+  NAPI_CHECK(value != nullptr, "External::CheckCast", "empty value");
+
+  napi_valuetype type;
+  napi_status status = napi_typeof(env, value, &type);
+  NAPI_CHECK(status == napi_ok, "External::CheckCast", "napi_typeof failed");
+  NAPI_CHECK(type == napi_external,
+             "External::CheckCast",
+             "value is not napi_external");
 }
 
 template <typename T>
-inline External<T>::External(napi_env env, napi_value value) : Value(env, value) {
-}
+inline External<T>::External() : TypeTaggable() {}
+
+template <typename T>
+inline External<T>::External(napi_env env, napi_value value)
+    : TypeTaggable(env, value) {}
 
 template <typename T>
 inline T* External<T>::Data() const {
@@ -1639,11 +1848,18 @@ inline Array Array::New(napi_env env, size_t length) {
   return Array(env, value);
 }
 
-inline Array::Array() : Object() {
+inline void Array::CheckCast(napi_env env, napi_value value) {
+  NAPI_CHECK(value != nullptr, "Array::CheckCast", "empty value");
+
+  bool result;
+  napi_status status = napi_is_array(env, value, &result);
+  NAPI_CHECK(status == napi_ok, "Array::CheckCast", "napi_is_array failed");
+  NAPI_CHECK(result, "Array::CheckCast", "value is not array");
 }
 
-inline Array::Array(napi_env env, napi_value value) : Object(env, value) {
-}
+inline Array::Array() : Object() {}
+
+inline Array::Array(napi_env env, napi_value value) : Object(env, value) {}
 
 inline uint32_t Array::Length() const {
   uint32_t result;
@@ -1665,12 +1881,13 @@ inline ArrayBuffer ArrayBuffer::New(napi_env env, size_t byteLength) {
   return ArrayBuffer(env, value);
 }
 
+#ifndef NODE_API_NO_EXTERNAL_BUFFERS_ALLOWED
 inline ArrayBuffer ArrayBuffer::New(napi_env env,
                                     void* externalData,
                                     size_t byteLength) {
   napi_value value;
   napi_status status = napi_create_external_arraybuffer(
-    env, externalData, byteLength, nullptr, nullptr, &value);
+      env, externalData, byteLength, nullptr, nullptr, &value);
   NAPI_THROW_IF_FAILED(env, status, ArrayBuffer());
 
   return ArrayBuffer(env, value);
@@ -1686,12 +1903,12 @@ inline ArrayBuffer ArrayBuffer::New(napi_env env,
       new details::FinalizeData<void, Finalizer>(
           {std::move(finalizeCallback), nullptr});
   napi_status status = napi_create_external_arraybuffer(
-    env,
-    externalData,
-    byteLength,
-    details::FinalizeData<void, Finalizer>::Wrapper,
-    finalizeData,
-    &value);
+      env,
+      externalData,
+      byteLength,
+      details::FinalizeData<void, Finalizer>::Wrapper,
+      finalizeData,
+      &value);
   if (status != napi_ok) {
     delete finalizeData;
     NAPI_THROW_IF_FAILED(env, status, ArrayBuffer());
@@ -1711,12 +1928,12 @@ inline ArrayBuffer ArrayBuffer::New(napi_env env,
       new details::FinalizeData<void, Finalizer, Hint>(
           {std::move(finalizeCallback), finalizeHint});
   napi_status status = napi_create_external_arraybuffer(
-    env,
-    externalData,
-    byteLength,
-    details::FinalizeData<void, Finalizer, Hint>::WrapperWithHint,
-    finalizeData,
-    &value);
+      env,
+      externalData,
+      byteLength,
+      details::FinalizeData<void, Finalizer, Hint>::WrapperWithHint,
+      finalizeData,
+      &value);
   if (status != napi_ok) {
     delete finalizeData;
     NAPI_THROW_IF_FAILED(env, status, ArrayBuffer());
@@ -1724,13 +1941,23 @@ inline ArrayBuffer ArrayBuffer::New(napi_env env,
 
   return ArrayBuffer(env, value);
 }
+#endif  // NODE_API_NO_EXTERNAL_BUFFERS_ALLOWED
 
-inline ArrayBuffer::ArrayBuffer() : Object() {
+inline void ArrayBuffer::CheckCast(napi_env env, napi_value value) {
+  NAPI_CHECK(value != nullptr, "ArrayBuffer::CheckCast", "empty value");
+
+  bool result;
+  napi_status status = napi_is_arraybuffer(env, value, &result);
+  NAPI_CHECK(status == napi_ok,
+             "ArrayBuffer::CheckCast",
+             "napi_is_arraybuffer failed");
+  NAPI_CHECK(result, "ArrayBuffer::CheckCast", "value is not arraybuffer");
 }
+
+inline ArrayBuffer::ArrayBuffer() : Object() {}
 
 inline ArrayBuffer::ArrayBuffer(napi_env env, napi_value value)
-  : Object(env, value) {
-}
+    : Object(env, value) {}
 
 inline void* ArrayBuffer::Data() {
   void* data;
@@ -1741,7 +1968,8 @@ inline void* ArrayBuffer::Data() {
 
 inline size_t ArrayBuffer::ByteLength() {
   size_t length;
-  napi_status status = napi_get_arraybuffer_info(_env, _value, nullptr, &length);
+  napi_status status =
+      napi_get_arraybuffer_info(_env, _value, nullptr, &length);
   NAPI_THROW_IF_FAILED(_env, status, 0);
   return length;
 }
@@ -1763,8 +1991,7 @@ inline void ArrayBuffer::Detach() {
 ////////////////////////////////////////////////////////////////////////////////
 // DataView class
 ////////////////////////////////////////////////////////////////////////////////
-inline DataView DataView::New(napi_env env,
-                              Napi::ArrayBuffer arrayBuffer) {
+inline DataView DataView::New(napi_env env, Napi::ArrayBuffer arrayBuffer) {
   return New(env, arrayBuffer, 0, arrayBuffer.ByteLength());
 }
 
@@ -1772,12 +1999,12 @@ inline DataView DataView::New(napi_env env,
                               Napi::ArrayBuffer arrayBuffer,
                               size_t byteOffset) {
   if (byteOffset > arrayBuffer.ByteLength()) {
-    NAPI_THROW(RangeError::New(env,
-        "Start offset is outside the bounds of the buffer"),
-        DataView());
+    NAPI_THROW(RangeError::New(
+                   env, "Start offset is outside the bounds of the buffer"),
+               DataView());
   }
-  return New(env, arrayBuffer, byteOffset,
-      arrayBuffer.ByteLength() - byteOffset);
+  return New(
+      env, arrayBuffer, byteOffset, arrayBuffer.ByteLength() - byteOffset);
 }
 
 inline DataView DataView::New(napi_env env,
@@ -1785,52 +2012,57 @@ inline DataView DataView::New(napi_env env,
                               size_t byteOffset,
                               size_t byteLength) {
   if (byteOffset + byteLength > arrayBuffer.ByteLength()) {
-    NAPI_THROW(RangeError::New(env, "Invalid DataView length"),
-               DataView());
+    NAPI_THROW(RangeError::New(env, "Invalid DataView length"), DataView());
   }
   napi_value value;
-  napi_status status = napi_create_dataview(
-    env, byteLength, arrayBuffer, byteOffset, &value);
+  napi_status status =
+      napi_create_dataview(env, byteLength, arrayBuffer, byteOffset, &value);
   NAPI_THROW_IF_FAILED(env, status, DataView());
   return DataView(env, value);
 }
 
-inline DataView::DataView() : Object() {
+inline void DataView::CheckCast(napi_env env, napi_value value) {
+  NAPI_CHECK(value != nullptr, "DataView::CheckCast", "empty value");
+
+  bool result;
+  napi_status status = napi_is_dataview(env, value, &result);
+  NAPI_CHECK(
+      status == napi_ok, "DataView::CheckCast", "napi_is_dataview failed");
+  NAPI_CHECK(result, "DataView::CheckCast", "value is not dataview");
 }
 
+inline DataView::DataView() : Object() {}
+
 inline DataView::DataView(napi_env env, napi_value value) : Object(env, value) {
-  napi_status status = napi_get_dataview_info(
-    _env,
-    _value   /* dataView */,
-    &_length /* byteLength */,
-    &_data   /* data */,
-    nullptr  /* arrayBuffer */,
-    nullptr  /* byteOffset */);
+  napi_status status = napi_get_dataview_info(_env,
+                                              _value /* dataView */,
+                                              &_length /* byteLength */,
+                                              &_data /* data */,
+                                              nullptr /* arrayBuffer */,
+                                              nullptr /* byteOffset */);
   NAPI_THROW_IF_FAILED_VOID(_env, status);
 }
 
 inline Napi::ArrayBuffer DataView::ArrayBuffer() const {
   napi_value arrayBuffer;
-  napi_status status = napi_get_dataview_info(
-    _env,
-    _value       /* dataView */,
-    nullptr      /* byteLength */,
-    nullptr      /* data */,
-    &arrayBuffer /* arrayBuffer */,
-    nullptr      /* byteOffset */);
+  napi_status status = napi_get_dataview_info(_env,
+                                              _value /* dataView */,
+                                              nullptr /* byteLength */,
+                                              nullptr /* data */,
+                                              &arrayBuffer /* arrayBuffer */,
+                                              nullptr /* byteOffset */);
   NAPI_THROW_IF_FAILED(_env, status, Napi::ArrayBuffer());
   return Napi::ArrayBuffer(_env, arrayBuffer);
 }
 
 inline size_t DataView::ByteOffset() const {
   size_t byteOffset;
-  napi_status status = napi_get_dataview_info(
-    _env,
-    _value      /* dataView */,
-    nullptr     /* byteLength */,
-    nullptr     /* data */,
-    nullptr     /* arrayBuffer */,
-    &byteOffset /* byteOffset */);
+  napi_status status = napi_get_dataview_info(_env,
+                                              _value /* dataView */,
+                                              nullptr /* byteLength */,
+                                              nullptr /* data */,
+                                              nullptr /* arrayBuffer */,
+                                              &byteOffset /* byteOffset */);
   NAPI_THROW_IF_FAILED(_env, status, 0);
   return byteOffset;
 }
@@ -1911,8 +2143,9 @@ template <typename T>
 inline T DataView::ReadData(size_t byteOffset) const {
   if (byteOffset + sizeof(T) > _length ||
       byteOffset + sizeof(T) < byteOffset) {  // overflow
-    NAPI_THROW(RangeError::New(_env,
-        "Offset is outside the bounds of the DataView"), 0);
+    NAPI_THROW(
+        RangeError::New(_env, "Offset is outside the bounds of the DataView"),
+        0);
   }
 
   return *reinterpret_cast<T*>(static_cast<uint8_t*>(_data) + byteOffset);
@@ -1922,8 +2155,8 @@ template <typename T>
 inline void DataView::WriteData(size_t byteOffset, T value) const {
   if (byteOffset + sizeof(T) > _length ||
       byteOffset + sizeof(T) < byteOffset) {  // overflow
-    NAPI_THROW_VOID(RangeError::New(_env,
-        "Offset is outside the bounds of the DataView"));
+    NAPI_THROW_VOID(
+        RangeError::New(_env, "Offset is outside the bounds of the DataView"));
   }
 
   *reinterpret_cast<T*>(static_cast<uint8_t*>(_data) + byteOffset) = value;
@@ -1932,35 +2165,48 @@ inline void DataView::WriteData(size_t byteOffset, T value) const {
 ////////////////////////////////////////////////////////////////////////////////
 // TypedArray class
 ////////////////////////////////////////////////////////////////////////////////
+inline void TypedArray::CheckCast(napi_env env, napi_value value) {
+  NAPI_CHECK(value != nullptr, "TypedArray::CheckCast", "empty value");
 
-inline TypedArray::TypedArray()
-  : Object(), _type(TypedArray::unknown_array_type), _length(0) {
+  bool result;
+  napi_status status = napi_is_typedarray(env, value, &result);
+  NAPI_CHECK(
+      status == napi_ok, "TypedArray::CheckCast", "napi_is_typedarray failed");
+  NAPI_CHECK(result, "TypedArray::CheckCast", "value is not typedarray");
 }
 
+inline TypedArray::TypedArray()
+    : Object(), _type(napi_typedarray_type::napi_int8_array), _length(0) {}
+
 inline TypedArray::TypedArray(napi_env env, napi_value value)
-  : Object(env, value), _type(TypedArray::unknown_array_type), _length(0) {
+    : Object(env, value),
+      _type(napi_typedarray_type::napi_int8_array),
+      _length(0) {
+  if (value != nullptr) {
+    napi_status status =
+        napi_get_typedarray_info(_env,
+                                 _value,
+                                 &const_cast<TypedArray*>(this)->_type,
+                                 &const_cast<TypedArray*>(this)->_length,
+                                 nullptr,
+                                 nullptr,
+                                 nullptr);
+    NAPI_THROW_IF_FAILED_VOID(_env, status);
+  }
 }
 
 inline TypedArray::TypedArray(napi_env env,
                               napi_value value,
                               napi_typedarray_type type,
                               size_t length)
-  : Object(env, value), _type(type), _length(length) {
-}
+    : Object(env, value), _type(type), _length(length) {}
 
 inline napi_typedarray_type TypedArray::TypedArrayType() const {
-  if (_type == TypedArray::unknown_array_type) {
-    napi_status status = napi_get_typedarray_info(_env, _value,
-      &const_cast<TypedArray*>(this)->_type, &const_cast<TypedArray*>(this)->_length,
-      nullptr, nullptr, nullptr);
-    NAPI_THROW_IF_FAILED(_env, status, napi_int8_array);
-  }
-
   return _type;
 }
 
 inline uint8_t TypedArray::ElementSize() const {
-  switch (TypedArrayType()) {
+  switch (_type) {
     case napi_int8_array:
     case napi_uint8_array:
     case napi_uint8_clamped_array:
@@ -1984,20 +2230,13 @@ inline uint8_t TypedArray::ElementSize() const {
 }
 
 inline size_t TypedArray::ElementLength() const {
-  if (_type == TypedArray::unknown_array_type) {
-    napi_status status = napi_get_typedarray_info(_env, _value,
-      &const_cast<TypedArray*>(this)->_type, &const_cast<TypedArray*>(this)->_length,
-      nullptr, nullptr, nullptr);
-    NAPI_THROW_IF_FAILED(_env, status, 0);
-  }
-
   return _length;
 }
 
 inline size_t TypedArray::ByteOffset() const {
   size_t byteOffset;
   napi_status status = napi_get_typedarray_info(
-    _env, _value, nullptr, nullptr, nullptr, nullptr, &byteOffset);
+      _env, _value, nullptr, nullptr, nullptr, nullptr, &byteOffset);
   NAPI_THROW_IF_FAILED(_env, status, 0);
   return byteOffset;
 }
@@ -2009,7 +2248,7 @@ inline size_t TypedArray::ByteLength() const {
 inline Napi::ArrayBuffer TypedArray::ArrayBuffer() const {
   napi_value arrayBuffer;
   napi_status status = napi_get_typedarray_info(
-    _env, _value, nullptr, nullptr, nullptr, &arrayBuffer, nullptr);
+      _env, _value, nullptr, nullptr, nullptr, &arrayBuffer, nullptr);
   NAPI_THROW_IF_FAILED(_env, status, Napi::ArrayBuffer());
   return Napi::ArrayBuffer(_env, arrayBuffer);
 }
@@ -2017,12 +2256,30 @@ inline Napi::ArrayBuffer TypedArray::ArrayBuffer() const {
 ////////////////////////////////////////////////////////////////////////////////
 // TypedArrayOf<T> class
 ////////////////////////////////////////////////////////////////////////////////
+template <typename T>
+inline void TypedArrayOf<T>::CheckCast(napi_env env, napi_value value) {
+  TypedArray::CheckCast(env, value);
+  napi_typedarray_type type;
+  napi_status status = napi_get_typedarray_info(
+      env, value, &type, nullptr, nullptr, nullptr, nullptr);
+  NAPI_CHECK(status == napi_ok,
+             "TypedArrayOf::CheckCast",
+             "napi_is_typedarray failed");
+
+  NAPI_CHECK(
+      (type == TypedArrayTypeForPrimitiveType<T>() ||
+       (type == napi_uint8_clamped_array && std::is_same<T, uint8_t>::value)),
+      "TypedArrayOf::CheckCast",
+      "Array type must match the template parameter. (Uint8 arrays may "
+      "optionally have the \"clamped\" array type.)");
+}
 
 template <typename T>
 inline TypedArrayOf<T> TypedArrayOf<T>::New(napi_env env,
                                             size_t elementLength,
                                             napi_typedarray_type type) {
-  Napi::ArrayBuffer arrayBuffer = Napi::ArrayBuffer::New(env, elementLength * sizeof (T));
+  Napi::ArrayBuffer arrayBuffer =
+      Napi::ArrayBuffer::New(env, elementLength * sizeof(T));
   return New(env, elementLength, arrayBuffer, 0, type);
 }
 
@@ -2034,21 +2291,24 @@ inline TypedArrayOf<T> TypedArrayOf<T>::New(napi_env env,
                                             napi_typedarray_type type) {
   napi_value value;
   napi_status status = napi_create_typedarray(
-    env, type, elementLength, arrayBuffer, bufferOffset, &value);
+      env, type, elementLength, arrayBuffer, bufferOffset, &value);
   NAPI_THROW_IF_FAILED(env, status, TypedArrayOf<T>());
 
   return TypedArrayOf<T>(
-    env, value, type, elementLength,
-    reinterpret_cast<T*>(reinterpret_cast<uint8_t*>(arrayBuffer.Data()) + bufferOffset));
+      env,
+      value,
+      type,
+      elementLength,
+      reinterpret_cast<T*>(reinterpret_cast<uint8_t*>(arrayBuffer.Data()) +
+                           bufferOffset));
 }
 
 template <typename T>
-inline TypedArrayOf<T>::TypedArrayOf() : TypedArray(), _data(nullptr) {
-}
+inline TypedArrayOf<T>::TypedArrayOf() : TypedArray(), _data(nullptr) {}
 
 template <typename T>
 inline TypedArrayOf<T>::TypedArrayOf(napi_env env, napi_value value)
-  : TypedArray(env, value), _data(nullptr) {
+    : TypedArray(env, value), _data(nullptr) {
   napi_status status = napi_ok;
   if (value != nullptr) {
     void* data = nullptr;
@@ -2068,21 +2328,24 @@ inline TypedArrayOf<T>::TypedArrayOf(napi_env env,
                                      napi_typedarray_type type,
                                      size_t length,
                                      T* data)
-  : TypedArray(env, value, type, length), _data(data) {
+    : TypedArray(env, value, type, length), _data(data) {
   if (!(type == TypedArrayTypeForPrimitiveType<T>() ||
-      (type == napi_uint8_clamped_array && std::is_same<T, uint8_t>::value))) {
-    NAPI_THROW_VOID(TypeError::New(env, "Array type must match the template parameter. "
-      "(Uint8 arrays may optionally have the \"clamped\" array type.)"));
+        (type == napi_uint8_clamped_array &&
+         std::is_same<T, uint8_t>::value))) {
+    NAPI_THROW_VOID(TypeError::New(
+        env,
+        "Array type must match the template parameter. "
+        "(Uint8 arrays may optionally have the \"clamped\" array type.)"));
   }
 }
 
 template <typename T>
-inline T& TypedArrayOf<T>::operator [](size_t index) {
+inline T& TypedArrayOf<T>::operator[](size_t index) {
   return _data[index];
 }
 
 template <typename T>
-inline const T& TypedArrayOf<T>::operator [](size_t index) const {
+inline const T& TypedArrayOf<T>::operator[](size_t index) const {
   return _data[index];
 }
 
@@ -2101,12 +2364,11 @@ inline const T* TypedArrayOf<T>::Data() const {
 ////////////////////////////////////////////////////////////////////////////////
 
 template <typename CbData>
-static inline napi_status
-CreateFunction(napi_env env,
-               const char* utf8name,
-               napi_callback cb,
-               CbData* data,
-               napi_value* result) {
+inline napi_status CreateFunction(napi_env env,
+                                  const char* utf8name,
+                                  napi_callback cb,
+                                  CbData* data,
+                                  napi_value* result) {
   napi_status status =
       napi_create_function(env, utf8name, NAPI_AUTO_LENGTH, cb, data, result);
   if (status == napi_ok) {
@@ -2166,11 +2428,8 @@ inline Function Function::New(napi_env env,
   auto callbackData = new CbData{std::move(cb), data};
 
   napi_value value;
-  napi_status status = CreateFunction(env,
-                                      utf8name,
-                                      CbData::Wrapper,
-                                      callbackData,
-                                      &value);
+  napi_status status =
+      CreateFunction(env, utf8name, CbData::Wrapper, callbackData, &value);
   if (status != napi_ok) {
     delete callbackData;
     NAPI_THROW_IF_FAILED(env, status, Function());
@@ -2187,11 +2446,21 @@ inline Function Function::New(napi_env env,
   return New(env, cb, utf8name.c_str(), data);
 }
 
-inline Function::Function() : Object() {
+inline void Function::CheckCast(napi_env env, napi_value value) {
+  NAPI_CHECK(value != nullptr, "Function::CheckCast", "empty value");
+
+  napi_valuetype type;
+  napi_status status = napi_typeof(env, value, &type);
+  NAPI_CHECK(status == napi_ok, "Function::CheckCast", "napi_typeof failed");
+  NAPI_CHECK(type == napi_function,
+             "Function::CheckCast",
+             "value is not napi_function");
 }
 
-inline Function::Function(napi_env env, napi_value value) : Object(env, value) {
-}
+inline Function::Function() : Object() {}
+
+inline Function::Function(napi_env env, napi_value value)
+    : Object(env, value) {}
 
 inline MaybeOrValue<Value> Function::operator()(
     const std::initializer_list<napi_value>& args) const {
@@ -2205,6 +2474,11 @@ inline MaybeOrValue<Value> Function::Call(
 
 inline MaybeOrValue<Value> Function::Call(
     const std::vector<napi_value>& args) const {
+  return Call(Env().Undefined(), args);
+}
+
+inline MaybeOrValue<Value> Function::Call(
+    const std::vector<Value>& args) const {
   return Call(Env().Undefined(), args);
 }
 
@@ -2223,12 +2497,33 @@ inline MaybeOrValue<Value> Function::Call(
   return Call(recv, args.size(), args.data());
 }
 
+inline MaybeOrValue<Value> Function::Call(
+    napi_value recv, const std::vector<Value>& args) const {
+  const size_t argc = args.size();
+  const size_t stackArgsCount = 6;
+  napi_value stackArgs[stackArgsCount];
+  std::vector<napi_value> heapArgs;
+  napi_value* argv;
+  if (argc <= stackArgsCount) {
+    argv = stackArgs;
+  } else {
+    heapArgs.resize(argc);
+    argv = heapArgs.data();
+  }
+
+  for (size_t index = 0; index < argc; index++) {
+    argv[index] = static_cast<napi_value>(args[index]);
+  }
+
+  return Call(recv, argc, argv);
+}
+
 inline MaybeOrValue<Value> Function::Call(napi_value recv,
                                           size_t argc,
                                           const napi_value* args) const {
   napi_value result;
-  napi_status status = napi_call_function(
-    _env, recv, _value, argc, args, &result);
+  napi_status status =
+      napi_call_function(_env, recv, _value, argc, args, &result);
   NAPI_RETURN_OR_THROW_IF_FAILED(
       _env, status, Napi::Value(_env, result), Napi::Value);
 }
@@ -2253,8 +2548,8 @@ inline MaybeOrValue<Value> Function::MakeCallback(
     const napi_value* args,
     napi_async_context context) const {
   napi_value result;
-  napi_status status = napi_make_callback(
-    _env, context, recv, _value, argc, args, &result);
+  napi_status status =
+      napi_make_callback(_env, context, recv, _value, argc, args, &result);
   NAPI_RETURN_OR_THROW_IF_FAILED(
       _env, status, Napi::Value(_env, result), Napi::Value);
 }
@@ -2272,8 +2567,7 @@ inline MaybeOrValue<Object> Function::New(
 inline MaybeOrValue<Object> Function::New(size_t argc,
                                           const napi_value* args) const {
   napi_value result;
-  napi_status status = napi_new_instance(
-    _env, _value, argc, args, &result);
+  napi_status status = napi_new_instance(_env, _value, argc, args, &result);
   NAPI_RETURN_OR_THROW_IF_FAILED(
       _env, status, Napi::Object(_env, result), Napi::Object);
 }
@@ -2309,8 +2603,16 @@ inline void Promise::Deferred::Reject(napi_value value) const {
   NAPI_THROW_IF_FAILED_VOID(_env, status);
 }
 
-inline Promise::Promise(napi_env env, napi_value value) : Object(env, value) {
+inline void Promise::CheckCast(napi_env env, napi_value value) {
+  NAPI_CHECK(value != nullptr, "Promise::CheckCast", "empty value");
+
+  bool result;
+  napi_status status = napi_is_promise(env, value, &result);
+  NAPI_CHECK(status == napi_ok, "Promise::CheckCast", "napi_is_promise failed");
+  NAPI_CHECK(result, "Promise::CheckCast", "value is not promise");
 }
+
+inline Promise::Promise(napi_env env, napi_value value) : Object(env, value) {}
 
 ////////////////////////////////////////////////////////////////////////////////
 // Buffer<T> class
@@ -2320,16 +2622,18 @@ template <typename T>
 inline Buffer<T> Buffer<T>::New(napi_env env, size_t length) {
   napi_value value;
   void* data;
-  napi_status status = napi_create_buffer(env, length * sizeof (T), &data, &value);
+  napi_status status =
+      napi_create_buffer(env, length * sizeof(T), &data, &value);
   NAPI_THROW_IF_FAILED(env, status, Buffer<T>());
   return Buffer(env, value, length, static_cast<T*>(data));
 }
 
+#ifndef NODE_API_NO_EXTERNAL_BUFFERS_ALLOWED
 template <typename T>
 inline Buffer<T> Buffer<T>::New(napi_env env, T* data, size_t length) {
   napi_value value;
   napi_status status = napi_create_external_buffer(
-    env, length * sizeof (T), data, nullptr, nullptr, &value);
+      env, length * sizeof(T), data, nullptr, nullptr, &value);
   NAPI_THROW_IF_FAILED(env, status, Buffer<T>());
   return Buffer(env, value, length, data);
 }
@@ -2344,13 +2648,13 @@ inline Buffer<T> Buffer<T>::New(napi_env env,
   details::FinalizeData<T, Finalizer>* finalizeData =
       new details::FinalizeData<T, Finalizer>(
           {std::move(finalizeCallback), nullptr});
-  napi_status status = napi_create_external_buffer(
-    env,
-    length * sizeof (T),
-    data,
-    details::FinalizeData<T, Finalizer>::Wrapper,
-    finalizeData,
-    &value);
+  napi_status status =
+      napi_create_external_buffer(env,
+                                  length * sizeof(T),
+                                  data,
+                                  details::FinalizeData<T, Finalizer>::Wrapper,
+                                  finalizeData,
+                                  &value);
   if (status != napi_ok) {
     delete finalizeData;
     NAPI_THROW_IF_FAILED(env, status, Buffer());
@@ -2370,12 +2674,93 @@ inline Buffer<T> Buffer<T>::New(napi_env env,
       new details::FinalizeData<T, Finalizer, Hint>(
           {std::move(finalizeCallback), finalizeHint});
   napi_status status = napi_create_external_buffer(
-    env,
-    length * sizeof (T),
-    data,
-    details::FinalizeData<T, Finalizer, Hint>::WrapperWithHint,
-    finalizeData,
-    &value);
+      env,
+      length * sizeof(T),
+      data,
+      details::FinalizeData<T, Finalizer, Hint>::WrapperWithHint,
+      finalizeData,
+      &value);
+  if (status != napi_ok) {
+    delete finalizeData;
+    NAPI_THROW_IF_FAILED(env, status, Buffer());
+  }
+  return Buffer(env, value, length, data);
+}
+#endif  // NODE_API_NO_EXTERNAL_BUFFERS_ALLOWED
+
+// BENTLEY_CHANGE: don't use NODE_API_NO_EXTERNAL_BUFFERS_ALLOWED macro in `NewOrCopy` functions
+// to always try to create external buffer first and only then fall back to copying it. This way
+// we're avoiding a copy on platforms that support external buffers and only do it on platforms that
+// don't (e.g. Electron 21+).
+
+template <typename T>
+inline Buffer<T> Buffer<T>::NewOrCopy(napi_env env, T* data, size_t length) {
+  napi_value value;
+  napi_status status = napi_create_external_buffer(
+      env, length * sizeof(T), data, nullptr, nullptr, &value);
+  if (status == details::napi_no_external_buffers_allowed) {
+    // If we can't create an external buffer, we'll just copy the data.
+    return Buffer<T>::Copy(env, data, length);
+  }
+  NAPI_THROW_IF_FAILED(env, status, Buffer<T>());
+  return Buffer(env, value, length, data);
+}
+
+template <typename T>
+template <typename Finalizer>
+inline Buffer<T> Buffer<T>::NewOrCopy(napi_env env,
+                                      T* data,
+                                      size_t length,
+                                      Finalizer finalizeCallback) {
+  details::FinalizeData<T, Finalizer>* finalizeData =
+      new details::FinalizeData<T, Finalizer>(
+          {std::move(finalizeCallback), nullptr});
+  napi_value value;
+  napi_status status =
+      napi_create_external_buffer(env,
+                                  length * sizeof(T),
+                                  data,
+                                  details::FinalizeData<T, Finalizer>::Wrapper,
+                                  finalizeData,
+                                  &value);
+  if (status == details::napi_no_external_buffers_allowed) {
+    // If we can't create an external buffer, we'll just copy the data.
+    Buffer<T> ret = Buffer<T>::Copy(env, data, length);
+    details::FinalizeData<T, Finalizer>::Wrapper(env, data, finalizeData);
+    return ret;
+  }
+  if (status != napi_ok) {
+    delete finalizeData;
+    NAPI_THROW_IF_FAILED(env, status, Buffer());
+  }
+  return Buffer(env, value, length, data);
+}
+
+template <typename T>
+template <typename Finalizer, typename Hint>
+inline Buffer<T> Buffer<T>::NewOrCopy(napi_env env,
+                                      T* data,
+                                      size_t length,
+                                      Finalizer finalizeCallback,
+                                      Hint* finalizeHint) {
+  details::FinalizeData<T, Finalizer, Hint>* finalizeData =
+      new details::FinalizeData<T, Finalizer, Hint>(
+          {std::move(finalizeCallback), finalizeHint});
+  napi_value value;
+  napi_status status = napi_create_external_buffer(
+      env,
+      length * sizeof(T),
+      data,
+      details::FinalizeData<T, Finalizer, Hint>::WrapperWithHint,
+      finalizeData,
+      &value);
+  if (status == details::napi_no_external_buffers_allowed) {
+    // If we can't create an external buffer, we'll just copy the data.
+    Buffer<T> ret = Buffer<T>::Copy(env, data, length);
+    details::FinalizeData<T, Finalizer, Hint>::WrapperWithHint(
+        env, data, finalizeData);
+    return ret;
+  }
   if (status != napi_ok) {
     delete finalizeData;
     NAPI_THROW_IF_FAILED(env, status, Buffer());
@@ -2386,25 +2771,32 @@ inline Buffer<T> Buffer<T>::New(napi_env env,
 template <typename T>
 inline Buffer<T> Buffer<T>::Copy(napi_env env, const T* data, size_t length) {
   napi_value value;
-  napi_status status = napi_create_buffer_copy(
-    env, length * sizeof (T), data, nullptr, &value);
+  napi_status status =
+      napi_create_buffer_copy(env, length * sizeof(T), data, nullptr, &value);
   NAPI_THROW_IF_FAILED(env, status, Buffer<T>());
   return Buffer<T>(env, value);
 }
 
 template <typename T>
-inline Buffer<T>::Buffer() : Uint8Array(), _length(0), _data(nullptr) {
+inline void Buffer<T>::CheckCast(napi_env env, napi_value value) {
+  NAPI_CHECK(value != nullptr, "Buffer::CheckCast", "empty value");
+
+  bool result;
+  napi_status status = napi_is_buffer(env, value, &result);
+  NAPI_CHECK(status == napi_ok, "Buffer::CheckCast", "napi_is_buffer failed");
+  NAPI_CHECK(result, "Buffer::CheckCast", "value is not buffer");
 }
+
+template <typename T>
+inline Buffer<T>::Buffer() : Uint8Array(), _length(0), _data(nullptr) {}
 
 template <typename T>
 inline Buffer<T>::Buffer(napi_env env, napi_value value)
-  : Uint8Array(env, value), _length(0), _data(nullptr) {
-}
+    : Uint8Array(env, value), _length(0), _data(nullptr) {}
 
 template <typename T>
 inline Buffer<T>::Buffer(napi_env env, napi_value value, size_t length, T* data)
-  : Uint8Array(env, value), _length(length), _data(data) {
-}
+    : Uint8Array(env, value), _length(length), _data(data) {}
 
 template <typename T>
 inline size_t Buffer<T>::Length() const {
@@ -2426,9 +2818,10 @@ inline void Buffer<T>::EnsureInfo() const {
   if (_data == nullptr) {
     size_t byteLength;
     void* voidData;
-    napi_status status = napi_get_buffer_info(_env, _value, &voidData, &byteLength);
+    napi_status status =
+        napi_get_buffer_info(_env, _value, &voidData, &byteLength);
     NAPI_THROW_IF_FAILED_VOID(_env, status);
-    _length = byteLength / sizeof (T);
+    _length = byteLength / sizeof(T);
     _data = static_cast<T*>(voidData);
   }
 }
@@ -2441,12 +2834,23 @@ inline Error Error::New(napi_env env) {
   napi_status status;
   napi_value error = nullptr;
   bool is_exception_pending;
-  const napi_extended_error_info* info;
+  napi_extended_error_info last_error_info_copy;
 
-  // We must retrieve the last error info before doing anything else, because
-  // doing anything else will replace the last error info.
-  status = napi_get_last_error_info(env, &info);
-  NAPI_FATAL_IF_FAILED(status, "Error::New", "napi_get_last_error_info");
+  {
+    // We must retrieve the last error info before doing anything else because
+    // doing anything else will replace the last error info.
+    const napi_extended_error_info* last_error_info;
+    status = napi_get_last_error_info(env, &last_error_info);
+    NAPI_FATAL_IF_FAILED(status, "Error::New", "napi_get_last_error_info");
+
+    // All fields of the `napi_extended_error_info` structure gets reset in
+    // subsequent Node-API function calls on the same `env`. This includes a
+    // call to `napi_is_exception_pending()`. So here it is necessary to make a
+    // copy of the information as the `error_code` field is used later on.
+    memcpy(&last_error_info_copy,
+           last_error_info,
+           sizeof(napi_extended_error_info));
+  }
 
   status = napi_is_exception_pending(env, &is_exception_pending);
   NAPI_FATAL_IF_FAILED(status, "Error::New", "napi_is_exception_pending");
@@ -2454,30 +2858,28 @@ inline Error Error::New(napi_env env) {
   // A pending exception takes precedence over any internal error status.
   if (is_exception_pending) {
     status = napi_get_and_clear_last_exception(env, &error);
-    NAPI_FATAL_IF_FAILED(status, "Error::New", "napi_get_and_clear_last_exception");
-  }
-  else {
-    const char* error_message = info->error_message != nullptr ?
-      info->error_message : "Error in native callback";
+    NAPI_FATAL_IF_FAILED(
+        status, "Error::New", "napi_get_and_clear_last_exception");
+  } else {
+    const char* error_message = last_error_info_copy.error_message != nullptr
+                                    ? last_error_info_copy.error_message
+                                    : "Error in native callback";
 
     napi_value message;
     status = napi_create_string_utf8(
-      env,
-      error_message,
-      std::strlen(error_message),
-      &message);
+        env, error_message, std::strlen(error_message), &message);
     NAPI_FATAL_IF_FAILED(status, "Error::New", "napi_create_string_utf8");
 
-    switch (info->error_code) {
-    case napi_object_expected:
-    case napi_string_expected:
-    case napi_boolean_expected:
-    case napi_number_expected:
-      status = napi_create_type_error(env, nullptr, message, &error);
-      break;
-    default:
-      status = napi_create_error(env, nullptr,  message, &error);
-      break;
+    switch (last_error_info_copy.error_code) {
+      case napi_object_expected:
+      case napi_string_expected:
+      case napi_boolean_expected:
+      case napi_number_expected:
+        status = napi_create_type_error(env, nullptr, message, &error);
+        break;
+      default:
+        status = napi_create_error(env, nullptr, message, &error);
+        break;
     }
     NAPI_FATAL_IF_FAILED(status, "Error::New", "napi_create_error");
   }
@@ -2486,42 +2888,127 @@ inline Error Error::New(napi_env env) {
 }
 
 inline Error Error::New(napi_env env, const char* message) {
-  return Error::New<Error>(env, message, std::strlen(message), napi_create_error);
+  return Error::New<Error>(
+      env, message, std::strlen(message), napi_create_error);
 }
 
 inline Error Error::New(napi_env env, const std::string& message) {
-  return Error::New<Error>(env, message.c_str(), message.size(), napi_create_error);
+  return Error::New<Error>(
+      env, message.c_str(), message.size(), napi_create_error);
 }
 
-inline NAPI_NO_RETURN void Error::Fatal(const char* location, const char* message) {
+inline NAPI_NO_RETURN void Error::Fatal(const char* location,
+                                        const char* message) {
   napi_fatal_error(location, NAPI_AUTO_LENGTH, message, NAPI_AUTO_LENGTH);
 }
 
-inline Error::Error() : ObjectReference() {
-}
+inline Error::Error() : ObjectReference() {}
 
-inline Error::Error(napi_env env, napi_value value) : ObjectReference(env, nullptr) {
+inline Error::Error(napi_env env, napi_value value)
+    : ObjectReference(env, nullptr) {
   if (value != nullptr) {
+    // Attempting to create a reference on the error object.
+    // If it's not a Object/Function/Symbol, this call will return an error
+    // status.
     napi_status status = napi_create_reference(env, value, 1, &_ref);
 
+    if (status != napi_ok) {
+      napi_value wrappedErrorObj;
+
+      // Create an error object
+      status = napi_create_object(env, &wrappedErrorObj);
+      NAPI_FATAL_IF_FAILED(status, "Error::Error", "napi_create_object");
+
+      // property flag that we attach to show the error object is wrapped
+      napi_property_descriptor wrapObjFlag = {
+          ERROR_WRAP_VALUE(),  // Unique GUID identifier since Symbol isn't a
+                               // viable option
+          nullptr,
+          nullptr,
+          nullptr,
+          nullptr,
+          Value::From(env, value),
+          napi_enumerable,
+          nullptr};
+
+      status = napi_define_properties(env, wrappedErrorObj, 1, &wrapObjFlag);
+#ifdef NODE_API_SWALLOW_UNTHROWABLE_EXCEPTIONS
+      if (status == napi_pending_exception) {
+        // Test if the pending exception was reported because the environment is
+        // shutting down. We assume that a status of napi_pending_exception
+        // coupled with the absence of an actual pending exception means that
+        // the environment is shutting down. If so, we replace the
+        // napi_pending_exception status with napi_ok.
+        bool is_exception_pending = false;
+        status = napi_is_exception_pending(env, &is_exception_pending);
+        if (status == napi_ok && !is_exception_pending) {
+          status = napi_ok;
+        } else {
+          status = napi_pending_exception;
+        }
+      }
+#endif  // NODE_API_SWALLOW_UNTHROWABLE_EXCEPTIONS
+      NAPI_FATAL_IF_FAILED(status, "Error::Error", "napi_define_properties");
+
+      // Create a reference on the newly wrapped object
+      status = napi_create_reference(env, wrappedErrorObj, 1, &_ref);
+    }
+
     // Avoid infinite recursion in the failure case.
-    // Don't try to construct & throw another Error instance.
     NAPI_FATAL_IF_FAILED(status, "Error::Error", "napi_create_reference");
   }
 }
 
-inline Error::Error(Error&& other) : ObjectReference(std::move(other)) {
+inline Object Error::Value() const {
+  if (_ref == nullptr) {
+    return Object(_env, nullptr);
+  }
+
+  napi_value refValue;
+  napi_status status = napi_get_reference_value(_env, _ref, &refValue);
+  NAPI_THROW_IF_FAILED(_env, status, Object());
+
+  napi_valuetype type;
+  status = napi_typeof(_env, refValue, &type);
+  NAPI_THROW_IF_FAILED(_env, status, Object());
+
+  // If refValue isn't a symbol, then we proceed to whether the refValue has the
+  // wrapped error flag
+  if (type != napi_symbol) {
+    // We are checking if the object is wrapped
+    bool isWrappedObject = false;
+
+    status = napi_has_property(_env,
+                               refValue,
+                               String::From(_env, ERROR_WRAP_VALUE()),
+                               &isWrappedObject);
+
+    // Don't care about status
+    if (isWrappedObject) {
+      napi_value unwrappedValue;
+      status = napi_get_property(_env,
+                                 refValue,
+                                 String::From(_env, ERROR_WRAP_VALUE()),
+                                 &unwrappedValue);
+      NAPI_THROW_IF_FAILED(_env, status, Object());
+
+      return Object(_env, unwrappedValue);
+    }
+  }
+
+  return Object(_env, refValue);
 }
 
-inline Error& Error::operator =(Error&& other) {
+inline Error::Error(Error&& other) : ObjectReference(std::move(other)) {}
+
+inline Error& Error::operator=(Error&& other) {
   static_cast<Reference<Object>*>(this)->operator=(std::move(other));
   return *this;
 }
 
-inline Error::Error(const Error& other) : ObjectReference(other) {
-}
+inline Error::Error(const Error& other) : ObjectReference(other) {}
 
-inline Error& Error::operator =(const Error& other) {
+inline Error& Error::operator=(const Error& other) {
   Reset();
 
   _env = other.Env();
@@ -2541,12 +3028,11 @@ inline const std::string& Error::Message() const NAPI_NOEXCEPT {
 #ifdef NAPI_CPP_EXCEPTIONS
     try {
       _message = Get("message").As<String>();
-    }
-    catch (...) {
+    } catch (...) {
       // Catch all errors here, to include e.g. a std::bad_alloc from
       // the std::string::operator=, because this method may not throw.
     }
-#else // NAPI_CPP_EXCEPTIONS
+#else  // NAPI_CPP_EXCEPTIONS
 #if defined(NODE_ADDON_API_ENABLE_MAYBE)
     Napi::Value message_val;
     if (Get("message").UnwrapTo(&message_val)) {
@@ -2555,11 +3041,12 @@ inline const std::string& Error::Message() const NAPI_NOEXCEPT {
 #else
     _message = Get("message").As<String>();
 #endif
-#endif // NAPI_CPP_EXCEPTIONS
+#endif  // NAPI_CPP_EXCEPTIONS
   }
   return _message;
 }
 
+// we created an object on the &_ref
 inline void Error::ThrowAsJavaScriptException() const {
   HandleScope scope(_env);
   if (!IsEmpty()) {
@@ -2600,9 +3087,10 @@ inline void Error::ThrowAsJavaScriptException() const {
     if (status != napi_ok) {
       throw Error::New(_env);
     }
-#else // NAPI_CPP_EXCEPTIONS
-    NAPI_FATAL_IF_FAILED(status, "Error::ThrowAsJavaScriptException", "napi_throw");
-#endif // NAPI_CPP_EXCEPTIONS
+#else   // NAPI_CPP_EXCEPTIONS
+    NAPI_FATAL_IF_FAILED(
+        status, "Error::ThrowAsJavaScriptException", "napi_throw");
+#endif  // NAPI_CPP_EXCEPTIONS
   }
 }
 
@@ -2612,7 +3100,11 @@ inline const char* Error::what() const NAPI_NOEXCEPT {
   return Message().c_str();
 }
 
-#endif // NAPI_CPP_EXCEPTIONS
+#endif  // NAPI_CPP_EXCEPTIONS
+
+inline const char* Error::ERROR_WRAP_VALUE() NAPI_NOEXCEPT {
+  return "4bda9e7e-4913-4dbc-95de-891cbf66598e-errorVal";
+}
 
 template <typename TError>
 inline TError Error::New(napi_env env,
@@ -2631,39 +3123,42 @@ inline TError Error::New(napi_env env,
 }
 
 inline TypeError TypeError::New(napi_env env, const char* message) {
-  return Error::New<TypeError>(env, message, std::strlen(message), napi_create_type_error);
+  return Error::New<TypeError>(
+      env, message, std::strlen(message), napi_create_type_error);
 }
 
 inline TypeError TypeError::New(napi_env env, const std::string& message) {
-  return Error::New<TypeError>(env, message.c_str(), message.size(), napi_create_type_error);
+  return Error::New<TypeError>(
+      env, message.c_str(), message.size(), napi_create_type_error);
 }
 
-inline TypeError::TypeError() : Error() {
-}
+inline TypeError::TypeError() : Error() {}
 
-inline TypeError::TypeError(napi_env env, napi_value value) : Error(env, value) {
-}
+inline TypeError::TypeError(napi_env env, napi_value value)
+    : Error(env, value) {}
 
 inline RangeError RangeError::New(napi_env env, const char* message) {
-  return Error::New<RangeError>(env, message, std::strlen(message), napi_create_range_error);
+  return Error::New<RangeError>(
+      env, message, std::strlen(message), napi_create_range_error);
 }
 
 inline RangeError RangeError::New(napi_env env, const std::string& message) {
-  return Error::New<RangeError>(env, message.c_str(), message.size(), napi_create_range_error);
+  return Error::New<RangeError>(
+      env, message.c_str(), message.size(), napi_create_range_error);
 }
 
-inline RangeError::RangeError() : Error() {
-}
+inline RangeError::RangeError() : Error() {}
 
-inline RangeError::RangeError(napi_env env, napi_value value) : Error(env, value) {
-}
+inline RangeError::RangeError(napi_env env, napi_value value)
+    : Error(env, value) {}
 
 ////////////////////////////////////////////////////////////////////////////////
 // Reference<T> class
 ////////////////////////////////////////////////////////////////////////////////
 
 template <typename T>
-inline Reference<T> Reference<T>::New(const T& value, uint32_t initialRefcount) {
+inline Reference<T> Reference<T>::New(const T& value,
+                                      uint32_t initialRefcount) {
   napi_env env = value.Env();
   napi_value val = value;
 
@@ -2678,15 +3173,13 @@ inline Reference<T> Reference<T>::New(const T& value, uint32_t initialRefcount) 
   return Reference<T>(env, ref);
 }
 
-
 template <typename T>
-inline Reference<T>::Reference() : _env(nullptr), _ref(nullptr), _suppressDestruct(false) {
-}
+inline Reference<T>::Reference()
+    : _env(nullptr), _ref(nullptr), _suppressDestruct(false) {}
 
 template <typename T>
 inline Reference<T>::Reference(napi_env env, napi_ref ref)
-  : _env(env), _ref(ref), _suppressDestruct(false) {
-}
+    : _env(env), _ref(ref), _suppressDestruct(false) {}
 
 template <typename T>
 inline Reference<T>::~Reference() {
@@ -2701,14 +3194,16 @@ inline Reference<T>::~Reference() {
 
 template <typename T>
 inline Reference<T>::Reference(Reference<T>&& other)
-  : _env(other._env), _ref(other._ref), _suppressDestruct(other._suppressDestruct) {
+    : _env(other._env),
+      _ref(other._ref),
+      _suppressDestruct(other._suppressDestruct) {
   other._env = nullptr;
   other._ref = nullptr;
   other._suppressDestruct = false;
 }
 
 template <typename T>
-inline Reference<T>& Reference<T>::operator =(Reference<T>&& other) {
+inline Reference<T>& Reference<T>::operator=(Reference<T>&& other) {
   Reset();
   _env = other._env;
   _ref = other._ref;
@@ -2721,15 +3216,17 @@ inline Reference<T>& Reference<T>::operator =(Reference<T>&& other) {
 
 template <typename T>
 inline Reference<T>::Reference(const Reference<T>& other)
-  : _env(other._env), _ref(nullptr), _suppressDestruct(false) {
+    : _env(other._env), _ref(nullptr), _suppressDestruct(false) {
   HandleScope scope(_env);
 
   napi_value value = other.Value();
   if (value != nullptr) {
-    // Copying is a limited scenario (currently only used for Error object) and always creates a
-    // strong reference to the given value even if the incoming reference is weak.
+    // Copying is a limited scenario (currently only used for Error object) and
+    // always creates a strong reference to the given value even if the incoming
+    // reference is weak.
     napi_status status = napi_create_reference(_env, value, 1, &_ref);
-    NAPI_FATAL_IF_FAILED(status, "Reference<T>::Reference", "napi_create_reference");
+    NAPI_FATAL_IF_FAILED(
+        status, "Reference<T>::Reference", "napi_create_reference");
   }
 }
 
@@ -2739,14 +3236,14 @@ inline Reference<T>::operator napi_ref() const {
 }
 
 template <typename T>
-inline bool Reference<T>::operator ==(const Reference<T> &other) const {
+inline bool Reference<T>::operator==(const Reference<T>& other) const {
   HandleScope scope(_env);
   return this->Value().StrictEquals(other.Value());
 }
 
 template <typename T>
-inline bool Reference<T>::operator !=(const Reference<T> &other) const {
-  return !this->operator ==(other);
+inline bool Reference<T>::operator!=(const Reference<T>& other) const {
+  return !this->operator==(other);
 }
 
 template <typename T>
@@ -2772,7 +3269,7 @@ inline T Reference<T>::Value() const {
 }
 
 template <typename T>
-inline uint32_t Reference<T>::Ref() {
+inline uint32_t Reference<T>::Ref() const {
   uint32_t result;
   napi_status status = napi_reference_ref(_env, _ref, &result);
   NAPI_THROW_IF_FAILED(_env, status, 0);
@@ -2780,7 +3277,7 @@ inline uint32_t Reference<T>::Ref() {
 }
 
 template <typename T>
-inline uint32_t Reference<T>::Unref() {
+inline uint32_t Reference<T>::Unref() const {
   uint32_t result;
   napi_status status = napi_reference_unref(_env, _ref, &result);
   NAPI_THROW_IF_FAILED(_env, status, 0);
@@ -2843,33 +3340,29 @@ inline FunctionReference Persistent(Function value) {
 // ObjectReference class
 ////////////////////////////////////////////////////////////////////////////////
 
-inline ObjectReference::ObjectReference(): Reference<Object>() {
-}
+inline ObjectReference::ObjectReference() : Reference<Object>() {}
 
-inline ObjectReference::ObjectReference(napi_env env, napi_ref ref): Reference<Object>(env, ref) {
-}
+inline ObjectReference::ObjectReference(napi_env env, napi_ref ref)
+    : Reference<Object>(env, ref) {}
 
 inline ObjectReference::ObjectReference(Reference<Object>&& other)
-  : Reference<Object>(std::move(other)) {
-}
+    : Reference<Object>(std::move(other)) {}
 
-inline ObjectReference& ObjectReference::operator =(Reference<Object>&& other) {
+inline ObjectReference& ObjectReference::operator=(Reference<Object>&& other) {
   static_cast<Reference<Object>*>(this)->operator=(std::move(other));
   return *this;
 }
 
 inline ObjectReference::ObjectReference(ObjectReference&& other)
-  : Reference<Object>(std::move(other)) {
-}
+    : Reference<Object>(std::move(other)) {}
 
-inline ObjectReference& ObjectReference::operator =(ObjectReference&& other) {
+inline ObjectReference& ObjectReference::operator=(ObjectReference&& other) {
   static_cast<Reference<Object>*>(this)->operator=(std::move(other));
   return *this;
 }
 
 inline ObjectReference::ObjectReference(const ObjectReference& other)
-  : Reference<Object>(other) {
-}
+    : Reference<Object>(other) {}
 
 inline MaybeOrValue<Napi::Value> ObjectReference::Get(
     const char* utf8name) const {
@@ -2906,61 +3399,61 @@ inline MaybeOrValue<Napi::Value> ObjectReference::Get(
 }
 
 inline MaybeOrValue<bool> ObjectReference::Set(const char* utf8name,
-                                               napi_value value) {
+                                               napi_value value) const {
   HandleScope scope(_env);
   return Value().Set(utf8name, value);
 }
 
 inline MaybeOrValue<bool> ObjectReference::Set(const char* utf8name,
-                                               Napi::Value value) {
+                                               Napi::Value value) const {
   HandleScope scope(_env);
   return Value().Set(utf8name, value);
 }
 
 inline MaybeOrValue<bool> ObjectReference::Set(const char* utf8name,
-                                               const char* utf8value) {
+                                               const char* utf8value) const {
   HandleScope scope(_env);
   return Value().Set(utf8name, utf8value);
 }
 
 inline MaybeOrValue<bool> ObjectReference::Set(const char* utf8name,
-                                               bool boolValue) {
+                                               bool boolValue) const {
   HandleScope scope(_env);
   return Value().Set(utf8name, boolValue);
 }
 
 inline MaybeOrValue<bool> ObjectReference::Set(const char* utf8name,
-                                               double numberValue) {
+                                               double numberValue) const {
   HandleScope scope(_env);
   return Value().Set(utf8name, numberValue);
 }
 
 inline MaybeOrValue<bool> ObjectReference::Set(const std::string& utf8name,
-                                               napi_value value) {
+                                               napi_value value) const {
   HandleScope scope(_env);
   return Value().Set(utf8name, value);
 }
 
 inline MaybeOrValue<bool> ObjectReference::Set(const std::string& utf8name,
-                                               Napi::Value value) {
+                                               Napi::Value value) const {
   HandleScope scope(_env);
   return Value().Set(utf8name, value);
 }
 
 inline MaybeOrValue<bool> ObjectReference::Set(const std::string& utf8name,
-                                               std::string& utf8value) {
+                                               std::string& utf8value) const {
   HandleScope scope(_env);
   return Value().Set(utf8name, utf8value);
 }
 
 inline MaybeOrValue<bool> ObjectReference::Set(const std::string& utf8name,
-                                               bool boolValue) {
+                                               bool boolValue) const {
   HandleScope scope(_env);
   return Value().Set(utf8name, boolValue);
 }
 
 inline MaybeOrValue<bool> ObjectReference::Set(const std::string& utf8name,
-                                               double numberValue) {
+                                               double numberValue) const {
   HandleScope scope(_env);
   return Value().Set(utf8name, numberValue);
 }
@@ -2982,36 +3475,37 @@ inline MaybeOrValue<Napi::Value> ObjectReference::Get(uint32_t index) const {
 }
 
 inline MaybeOrValue<bool> ObjectReference::Set(uint32_t index,
-                                               napi_value value) {
+                                               napi_value value) const {
   HandleScope scope(_env);
   return Value().Set(index, value);
 }
 
 inline MaybeOrValue<bool> ObjectReference::Set(uint32_t index,
-                                               Napi::Value value) {
+                                               Napi::Value value) const {
   HandleScope scope(_env);
   return Value().Set(index, value);
 }
 
 inline MaybeOrValue<bool> ObjectReference::Set(uint32_t index,
-                                               const char* utf8value) {
+                                               const char* utf8value) const {
+  HandleScope scope(_env);
+  return Value().Set(index, utf8value);
+}
+
+inline MaybeOrValue<bool> ObjectReference::Set(
+    uint32_t index, const std::string& utf8value) const {
   HandleScope scope(_env);
   return Value().Set(index, utf8value);
 }
 
 inline MaybeOrValue<bool> ObjectReference::Set(uint32_t index,
-                                               const std::string& utf8value) {
-  HandleScope scope(_env);
-  return Value().Set(index, utf8value);
-}
-
-inline MaybeOrValue<bool> ObjectReference::Set(uint32_t index, bool boolValue) {
+                                               bool boolValue) const {
   HandleScope scope(_env);
   return Value().Set(index, boolValue);
 }
 
 inline MaybeOrValue<bool> ObjectReference::Set(uint32_t index,
-                                               double numberValue) {
+                                               double numberValue) const {
   HandleScope scope(_env);
   return Value().Set(index, numberValue);
 }
@@ -3020,27 +3514,25 @@ inline MaybeOrValue<bool> ObjectReference::Set(uint32_t index,
 // FunctionReference class
 ////////////////////////////////////////////////////////////////////////////////
 
-inline FunctionReference::FunctionReference(): Reference<Function>() {
-}
+inline FunctionReference::FunctionReference() : Reference<Function>() {}
 
 inline FunctionReference::FunctionReference(napi_env env, napi_ref ref)
-  : Reference<Function>(env, ref) {
-}
+    : Reference<Function>(env, ref) {}
 
 inline FunctionReference::FunctionReference(Reference<Function>&& other)
-  : Reference<Function>(std::move(other)) {
-}
+    : Reference<Function>(std::move(other)) {}
 
-inline FunctionReference& FunctionReference::operator =(Reference<Function>&& other) {
+inline FunctionReference& FunctionReference::operator=(
+    Reference<Function>&& other) {
   static_cast<Reference<Function>*>(this)->operator=(std::move(other));
   return *this;
 }
 
 inline FunctionReference::FunctionReference(FunctionReference&& other)
-  : Reference<Function>(std::move(other)) {
-}
+    : Reference<Function>(std::move(other)) {}
 
-inline FunctionReference& FunctionReference::operator =(FunctionReference&& other) {
+inline FunctionReference& FunctionReference::operator=(
+    FunctionReference&& other) {
   static_cast<Reference<Function>*>(this)->operator=(std::move(other));
   return *this;
 }
@@ -3246,10 +3738,15 @@ inline MaybeOrValue<Object> FunctionReference::New(
 ////////////////////////////////////////////////////////////////////////////////
 
 inline CallbackInfo::CallbackInfo(napi_env env, napi_callback_info info)
-    : _env(env), _info(info), _this(nullptr), _dynamicArgs(nullptr), _data(nullptr) {
+    : _env(env),
+      _info(info),
+      _this(nullptr),
+      _dynamicArgs(nullptr),
+      _data(nullptr) {
   _argc = _staticArgCount;
   _argv = _staticArgs;
-  napi_status status = napi_get_cb_info(env, info, &_argc, _argv, &_this, &_data);
+  napi_status status =
+      napi_get_cb_info(env, info, &_argc, _argv, &_this, &_data);
   NAPI_THROW_IF_FAILED_VOID(_env, status);
 
   if (_argc > _staticArgCount) {
@@ -3267,6 +3764,10 @@ inline CallbackInfo::~CallbackInfo() {
   if (_dynamicArgs != nullptr) {
     delete[] _dynamicArgs;
   }
+}
+
+inline CallbackInfo::operator napi_callback_info() const {
+  return _info;
 }
 
 inline Value CallbackInfo::NewTarget() const {
@@ -3288,7 +3789,7 @@ inline size_t CallbackInfo::Length() const {
   return _argc;
 }
 
-inline const Value CallbackInfo::operator [](size_t index) const {
+inline const Value CallbackInfo::operator[](size_t index) const {
   return index < _argc ? Value(_env, _argv[index]) : Env().Undefined();
 }
 
@@ -3312,10 +3813,8 @@ inline void CallbackInfo::SetData(void* data) {
 ////////////////////////////////////////////////////////////////////////////////
 
 template <typename PropertyDescriptor::GetterCallback Getter>
-PropertyDescriptor
-PropertyDescriptor::Accessor(const char* utf8name,
-                             napi_property_attributes attributes,
-                             void* data) {
+PropertyDescriptor PropertyDescriptor::Accessor(
+    const char* utf8name, napi_property_attributes attributes, void* data) {
   napi_property_descriptor desc = napi_property_descriptor();
 
   desc.utf8name = utf8name;
@@ -3327,18 +3826,16 @@ PropertyDescriptor::Accessor(const char* utf8name,
 }
 
 template <typename PropertyDescriptor::GetterCallback Getter>
-PropertyDescriptor
-PropertyDescriptor::Accessor(const std::string& utf8name,
-                             napi_property_attributes attributes,
-                             void* data) {
+PropertyDescriptor PropertyDescriptor::Accessor(
+    const std::string& utf8name,
+    napi_property_attributes attributes,
+    void* data) {
   return Accessor<Getter>(utf8name.c_str(), attributes, data);
 }
 
 template <typename PropertyDescriptor::GetterCallback Getter>
-PropertyDescriptor
-PropertyDescriptor::Accessor(Name name,
-                             napi_property_attributes attributes,
-                             void* data) {
+PropertyDescriptor PropertyDescriptor::Accessor(
+    Name name, napi_property_attributes attributes, void* data) {
   napi_property_descriptor desc = napi_property_descriptor();
 
   desc.name = name;
@@ -3349,14 +3846,10 @@ PropertyDescriptor::Accessor(Name name,
   return desc;
 }
 
-template <
-typename PropertyDescriptor::GetterCallback Getter,
-typename PropertyDescriptor::SetterCallback Setter>
-PropertyDescriptor
-PropertyDescriptor::Accessor(const char* utf8name,
-                             napi_property_attributes attributes,
-                             void* data) {
-
+template <typename PropertyDescriptor::GetterCallback Getter,
+          typename PropertyDescriptor::SetterCallback Setter>
+PropertyDescriptor PropertyDescriptor::Accessor(
+    const char* utf8name, napi_property_attributes attributes, void* data) {
   napi_property_descriptor desc = napi_property_descriptor();
 
   desc.utf8name = utf8name;
@@ -3368,23 +3861,19 @@ PropertyDescriptor::Accessor(const char* utf8name,
   return desc;
 }
 
-template <
-typename PropertyDescriptor::GetterCallback Getter,
-typename PropertyDescriptor::SetterCallback Setter>
-PropertyDescriptor
-PropertyDescriptor::Accessor(const std::string& utf8name,
-                             napi_property_attributes attributes,
-                             void* data) {
+template <typename PropertyDescriptor::GetterCallback Getter,
+          typename PropertyDescriptor::SetterCallback Setter>
+PropertyDescriptor PropertyDescriptor::Accessor(
+    const std::string& utf8name,
+    napi_property_attributes attributes,
+    void* data) {
   return Accessor<Getter, Setter>(utf8name.c_str(), attributes, data);
 }
 
-template <
-typename PropertyDescriptor::GetterCallback Getter,
-typename PropertyDescriptor::SetterCallback Setter>
-PropertyDescriptor
-PropertyDescriptor::Accessor(Name name,
-                             napi_property_attributes attributes,
-                             void* data) {
+template <typename PropertyDescriptor::GetterCallback Getter,
+          typename PropertyDescriptor::SetterCallback Setter>
+PropertyDescriptor PropertyDescriptor::Accessor(
+    Name name, napi_property_attributes attributes, void* data) {
   napi_property_descriptor desc = napi_property_descriptor();
 
   desc.name = name;
@@ -3397,15 +3886,15 @@ PropertyDescriptor::Accessor(Name name,
 }
 
 template <typename Getter>
-inline PropertyDescriptor
-PropertyDescriptor::Accessor(Napi::Env env,
-                             Napi::Object object,
-                             const char* utf8name,
-                             Getter getter,
-                             napi_property_attributes attributes,
-                             void* data) {
+inline PropertyDescriptor PropertyDescriptor::Accessor(
+    Napi::Env env,
+    Napi::Object object,
+    const char* utf8name,
+    Getter getter,
+    napi_property_attributes attributes,
+    void* data) {
   using CbData = details::CallbackData<Getter, Napi::Value>;
-  auto callbackData = new CbData({ getter, data });
+  auto callbackData = new CbData({getter, data});
 
   napi_status status = AttachData(env, object, callbackData);
   if (status != napi_ok) {
@@ -3413,37 +3902,37 @@ PropertyDescriptor::Accessor(Napi::Env env,
     NAPI_THROW_IF_FAILED(env, status, napi_property_descriptor());
   }
 
-  return PropertyDescriptor({
-    utf8name,
-    nullptr,
-    nullptr,
-    CbData::Wrapper,
-    nullptr,
-    nullptr,
-    attributes,
-    callbackData
-  });
+  return PropertyDescriptor({utf8name,
+                             nullptr,
+                             nullptr,
+                             CbData::Wrapper,
+                             nullptr,
+                             nullptr,
+                             attributes,
+                             callbackData});
 }
 
 template <typename Getter>
-inline PropertyDescriptor PropertyDescriptor::Accessor(Napi::Env env,
-                                                       Napi::Object object,
-                                                       const std::string& utf8name,
-                                                       Getter getter,
-                                                       napi_property_attributes attributes,
-                                                       void* data) {
+inline PropertyDescriptor PropertyDescriptor::Accessor(
+    Napi::Env env,
+    Napi::Object object,
+    const std::string& utf8name,
+    Getter getter,
+    napi_property_attributes attributes,
+    void* data) {
   return Accessor(env, object, utf8name.c_str(), getter, attributes, data);
 }
 
 template <typename Getter>
-inline PropertyDescriptor PropertyDescriptor::Accessor(Napi::Env env,
-                                                       Napi::Object object,
-                                                       Name name,
-                                                       Getter getter,
-                                                       napi_property_attributes attributes,
-                                                       void* data) {
+inline PropertyDescriptor PropertyDescriptor::Accessor(
+    Napi::Env env,
+    Napi::Object object,
+    Name name,
+    Getter getter,
+    napi_property_attributes attributes,
+    void* data) {
   using CbData = details::CallbackData<Getter, Napi::Value>;
-  auto callbackData = new CbData({ getter, data });
+  auto callbackData = new CbData({getter, data});
 
   napi_status status = AttachData(env, object, callbackData);
   if (status != napi_ok) {
@@ -3451,28 +3940,27 @@ inline PropertyDescriptor PropertyDescriptor::Accessor(Napi::Env env,
     NAPI_THROW_IF_FAILED(env, status, napi_property_descriptor());
   }
 
-  return PropertyDescriptor({
-    nullptr,
-    name,
-    nullptr,
-    CbData::Wrapper,
-    nullptr,
-    nullptr,
-    attributes,
-    callbackData
-  });
+  return PropertyDescriptor({nullptr,
+                             name,
+                             nullptr,
+                             CbData::Wrapper,
+                             nullptr,
+                             nullptr,
+                             attributes,
+                             callbackData});
 }
 
 template <typename Getter, typename Setter>
-inline PropertyDescriptor PropertyDescriptor::Accessor(Napi::Env env,
-                                                       Napi::Object object,
-                                                       const char* utf8name,
-                                                       Getter getter,
-                                                       Setter setter,
-                                                       napi_property_attributes attributes,
-                                                       void* data) {
+inline PropertyDescriptor PropertyDescriptor::Accessor(
+    Napi::Env env,
+    Napi::Object object,
+    const char* utf8name,
+    Getter getter,
+    Setter setter,
+    napi_property_attributes attributes,
+    void* data) {
   using CbData = details::AccessorCallbackData<Getter, Setter>;
-  auto callbackData = new CbData({ getter, setter, data });
+  auto callbackData = new CbData({getter, setter, data});
 
   napi_status status = AttachData(env, object, callbackData);
   if (status != napi_ok) {
@@ -3480,39 +3968,40 @@ inline PropertyDescriptor PropertyDescriptor::Accessor(Napi::Env env,
     NAPI_THROW_IF_FAILED(env, status, napi_property_descriptor());
   }
 
-  return PropertyDescriptor({
-    utf8name,
-    nullptr,
-    nullptr,
-    CbData::GetterWrapper,
-    CbData::SetterWrapper,
-    nullptr,
-    attributes,
-    callbackData
-  });
+  return PropertyDescriptor({utf8name,
+                             nullptr,
+                             nullptr,
+                             CbData::GetterWrapper,
+                             CbData::SetterWrapper,
+                             nullptr,
+                             attributes,
+                             callbackData});
 }
 
 template <typename Getter, typename Setter>
-inline PropertyDescriptor PropertyDescriptor::Accessor(Napi::Env env,
-                                                       Napi::Object object,
-                                                       const std::string& utf8name,
-                                                       Getter getter,
-                                                       Setter setter,
-                                                       napi_property_attributes attributes,
-                                                       void* data) {
-  return Accessor(env, object, utf8name.c_str(), getter, setter, attributes, data);
+inline PropertyDescriptor PropertyDescriptor::Accessor(
+    Napi::Env env,
+    Napi::Object object,
+    const std::string& utf8name,
+    Getter getter,
+    Setter setter,
+    napi_property_attributes attributes,
+    void* data) {
+  return Accessor(
+      env, object, utf8name.c_str(), getter, setter, attributes, data);
 }
 
 template <typename Getter, typename Setter>
-inline PropertyDescriptor PropertyDescriptor::Accessor(Napi::Env env,
-                                                       Napi::Object object,
-                                                       Name name,
-                                                       Getter getter,
-                                                       Setter setter,
-                                                       napi_property_attributes attributes,
-                                                       void* data) {
+inline PropertyDescriptor PropertyDescriptor::Accessor(
+    Napi::Env env,
+    Napi::Object object,
+    Name name,
+    Getter getter,
+    Setter setter,
+    napi_property_attributes attributes,
+    void* data) {
   using CbData = details::AccessorCallbackData<Getter, Setter>;
-  auto callbackData = new CbData({ getter, setter, data });
+  auto callbackData = new CbData({getter, setter, data});
 
   napi_status status = AttachData(env, object, callbackData);
   if (status != napi_ok) {
@@ -3520,99 +4009,99 @@ inline PropertyDescriptor PropertyDescriptor::Accessor(Napi::Env env,
     NAPI_THROW_IF_FAILED(env, status, napi_property_descriptor());
   }
 
-  return PropertyDescriptor({
-    nullptr,
-    name,
-    nullptr,
-    CbData::GetterWrapper,
-    CbData::SetterWrapper,
-    nullptr,
-    attributes,
-    callbackData
-  });
+  return PropertyDescriptor({nullptr,
+                             name,
+                             nullptr,
+                             CbData::GetterWrapper,
+                             CbData::SetterWrapper,
+                             nullptr,
+                             attributes,
+                             callbackData});
 }
 
 template <typename Callable>
-inline PropertyDescriptor PropertyDescriptor::Function(Napi::Env env,
-                                                       Napi::Object /*object*/,
-                                                       const char* utf8name,
-                                                       Callable cb,
-                                                       napi_property_attributes attributes,
-                                                       void* data) {
-  return PropertyDescriptor({
-    utf8name,
-    nullptr,
-    nullptr,
-    nullptr,
-    nullptr,
-    Napi::Function::New(env, cb, utf8name, data),
-    attributes,
-    nullptr
-  });
+inline PropertyDescriptor PropertyDescriptor::Function(
+    Napi::Env env,
+    Napi::Object /*object*/,
+    const char* utf8name,
+    Callable cb,
+    napi_property_attributes attributes,
+    void* data) {
+  return PropertyDescriptor({utf8name,
+                             nullptr,
+                             nullptr,
+                             nullptr,
+                             nullptr,
+                             Napi::Function::New(env, cb, utf8name, data),
+                             attributes,
+                             nullptr});
 }
 
 template <typename Callable>
-inline PropertyDescriptor PropertyDescriptor::Function(Napi::Env env,
-                                                       Napi::Object object,
-                                                       const std::string& utf8name,
-                                                       Callable cb,
-                                                       napi_property_attributes attributes,
-                                                       void* data) {
+inline PropertyDescriptor PropertyDescriptor::Function(
+    Napi::Env env,
+    Napi::Object object,
+    const std::string& utf8name,
+    Callable cb,
+    napi_property_attributes attributes,
+    void* data) {
   return Function(env, object, utf8name.c_str(), cb, attributes, data);
 }
 
 template <typename Callable>
-inline PropertyDescriptor PropertyDescriptor::Function(Napi::Env env,
-                                                       Napi::Object /*object*/,
-                                                       Name name,
-                                                       Callable cb,
-                                                       napi_property_attributes attributes,
-                                                       void* data) {
-  return PropertyDescriptor({
-    nullptr,
-    name,
-    nullptr,
-    nullptr,
-    nullptr,
-    Napi::Function::New(env, cb, nullptr, data),
-    attributes,
-    nullptr
-  });
+inline PropertyDescriptor PropertyDescriptor::Function(
+    Napi::Env env,
+    Napi::Object /*object*/,
+    Name name,
+    Callable cb,
+    napi_property_attributes attributes,
+    void* data) {
+  return PropertyDescriptor({nullptr,
+                             name,
+                             nullptr,
+                             nullptr,
+                             nullptr,
+                             Napi::Function::New(env, cb, nullptr, data),
+                             attributes,
+                             nullptr});
 }
 
-inline PropertyDescriptor PropertyDescriptor::Value(const char* utf8name,
-                                                    napi_value value,
-                                                    napi_property_attributes attributes) {
-  return PropertyDescriptor({
-    utf8name, nullptr, nullptr, nullptr, nullptr, value, attributes, nullptr
-  });
+inline PropertyDescriptor PropertyDescriptor::Value(
+    const char* utf8name,
+    napi_value value,
+    napi_property_attributes attributes) {
+  return PropertyDescriptor({utf8name,
+                             nullptr,
+                             nullptr,
+                             nullptr,
+                             nullptr,
+                             value,
+                             attributes,
+                             nullptr});
 }
 
-inline PropertyDescriptor PropertyDescriptor::Value(const std::string& utf8name,
-                                                    napi_value value,
-                                                    napi_property_attributes attributes) {
+inline PropertyDescriptor PropertyDescriptor::Value(
+    const std::string& utf8name,
+    napi_value value,
+    napi_property_attributes attributes) {
   return Value(utf8name.c_str(), value, attributes);
 }
 
-inline PropertyDescriptor PropertyDescriptor::Value(napi_value name,
-                                                    napi_value value,
-                                                    napi_property_attributes attributes) {
-  return PropertyDescriptor({
-    nullptr, name, nullptr, nullptr, nullptr, value, attributes, nullptr
-  });
+inline PropertyDescriptor PropertyDescriptor::Value(
+    napi_value name, napi_value value, napi_property_attributes attributes) {
+  return PropertyDescriptor(
+      {nullptr, name, nullptr, nullptr, nullptr, value, attributes, nullptr});
 }
 
-inline PropertyDescriptor PropertyDescriptor::Value(Name name,
-                                                    Napi::Value value,
-                                                    napi_property_attributes attributes) {
+inline PropertyDescriptor PropertyDescriptor::Value(
+    Name name, Napi::Value value, napi_property_attributes attributes) {
   napi_value nameValue = name;
   napi_value valueValue = value;
   return PropertyDescriptor::Value(nameValue, valueValue, attributes);
 }
 
 inline PropertyDescriptor::PropertyDescriptor(napi_property_descriptor desc)
-  : _desc(desc) {
-}
+    : _desc(desc) {}
 
 inline PropertyDescriptor::operator napi_property_descriptor&() {
   return _desc;
@@ -3627,26 +4116,22 @@ inline PropertyDescriptor::operator const napi_property_descriptor&() const {
 ////////////////////////////////////////////////////////////////////////////////
 
 template <typename T>
-inline void InstanceWrap<T>::AttachPropData(napi_env env,
-                                       napi_value value,
-                                       const napi_property_descriptor* prop) {
+inline void InstanceWrap<T>::AttachPropData(
+    napi_env env, napi_value value, const napi_property_descriptor* prop) {
   napi_status status;
   if (!(prop->attributes & napi_static)) {
     if (prop->method == T::InstanceVoidMethodCallbackWrapper) {
-      status = Napi::details::AttachData(env,
-                    value,
-                    static_cast<InstanceVoidMethodCallbackData*>(prop->data));
+      status = Napi::details::AttachData(
+          env, value, static_cast<InstanceVoidMethodCallbackData*>(prop->data));
       NAPI_THROW_IF_FAILED_VOID(env, status);
     } else if (prop->method == T::InstanceMethodCallbackWrapper) {
-      status = Napi::details::AttachData(env,
-                        value,
-                        static_cast<InstanceMethodCallbackData*>(prop->data));
+      status = Napi::details::AttachData(
+          env, value, static_cast<InstanceMethodCallbackData*>(prop->data));
       NAPI_THROW_IF_FAILED_VOID(env, status);
     } else if (prop->getter == T::InstanceGetterCallbackWrapper ||
-        prop->setter == T::InstanceSetterCallbackWrapper) {
-      status = Napi::details::AttachData(env,
-                          value,
-                          static_cast<InstanceAccessorCallbackData*>(prop->data));
+               prop->setter == T::InstanceSetterCallbackWrapper) {
+      status = Napi::details::AttachData(
+          env, value, static_cast<InstanceAccessorCallbackData*>(prop->data));
       NAPI_THROW_IF_FAILED_VOID(env, status);
     }
   }
@@ -3659,7 +4144,7 @@ inline ClassPropertyDescriptor<T> InstanceWrap<T>::InstanceMethod(
     napi_property_attributes attributes,
     void* data) {
   InstanceVoidMethodCallbackData* callbackData =
-    new InstanceVoidMethodCallbackData({ method, data});
+      new InstanceVoidMethodCallbackData({method, data});
 
   napi_property_descriptor desc = napi_property_descriptor();
   desc.utf8name = utf8name;
@@ -3675,7 +4160,8 @@ inline ClassPropertyDescriptor<T> InstanceWrap<T>::InstanceMethod(
     InstanceMethodCallback method,
     napi_property_attributes attributes,
     void* data) {
-  InstanceMethodCallbackData* callbackData = new InstanceMethodCallbackData({ method, data });
+  InstanceMethodCallbackData* callbackData =
+      new InstanceMethodCallbackData({method, data});
 
   napi_property_descriptor desc = napi_property_descriptor();
   desc.utf8name = utf8name;
@@ -3692,7 +4178,7 @@ inline ClassPropertyDescriptor<T> InstanceWrap<T>::InstanceMethod(
     napi_property_attributes attributes,
     void* data) {
   InstanceVoidMethodCallbackData* callbackData =
-    new InstanceVoidMethodCallbackData({ method, data});
+      new InstanceVoidMethodCallbackData({method, data});
 
   napi_property_descriptor desc = napi_property_descriptor();
   desc.name = name;
@@ -3708,7 +4194,8 @@ inline ClassPropertyDescriptor<T> InstanceWrap<T>::InstanceMethod(
     InstanceMethodCallback method,
     napi_property_attributes attributes,
     void* data) {
-  InstanceMethodCallbackData* callbackData = new InstanceMethodCallbackData({ method, data });
+  InstanceMethodCallbackData* callbackData =
+      new InstanceMethodCallbackData({method, data});
 
   napi_property_descriptor desc = napi_property_descriptor();
   desc.name = name;
@@ -3721,9 +4208,7 @@ inline ClassPropertyDescriptor<T> InstanceWrap<T>::InstanceMethod(
 template <typename T>
 template <typename InstanceWrap<T>::InstanceVoidMethodCallback method>
 inline ClassPropertyDescriptor<T> InstanceWrap<T>::InstanceMethod(
-    const char* utf8name,
-    napi_property_attributes attributes,
-    void* data) {
+    const char* utf8name, napi_property_attributes attributes, void* data) {
   napi_property_descriptor desc = napi_property_descriptor();
   desc.utf8name = utf8name;
   desc.method = details::TemplatedInstanceVoidCallback<T, method>;
@@ -3735,9 +4220,7 @@ inline ClassPropertyDescriptor<T> InstanceWrap<T>::InstanceMethod(
 template <typename T>
 template <typename InstanceWrap<T>::InstanceMethodCallback method>
 inline ClassPropertyDescriptor<T> InstanceWrap<T>::InstanceMethod(
-    const char* utf8name,
-    napi_property_attributes attributes,
-    void* data) {
+    const char* utf8name, napi_property_attributes attributes, void* data) {
   napi_property_descriptor desc = napi_property_descriptor();
   desc.utf8name = utf8name;
   desc.method = details::TemplatedInstanceCallback<T, method>;
@@ -3749,9 +4232,7 @@ inline ClassPropertyDescriptor<T> InstanceWrap<T>::InstanceMethod(
 template <typename T>
 template <typename InstanceWrap<T>::InstanceVoidMethodCallback method>
 inline ClassPropertyDescriptor<T> InstanceWrap<T>::InstanceMethod(
-    Symbol name,
-    napi_property_attributes attributes,
-    void* data) {
+    Symbol name, napi_property_attributes attributes, void* data) {
   napi_property_descriptor desc = napi_property_descriptor();
   desc.name = name;
   desc.method = details::TemplatedInstanceVoidCallback<T, method>;
@@ -3763,9 +4244,7 @@ inline ClassPropertyDescriptor<T> InstanceWrap<T>::InstanceMethod(
 template <typename T>
 template <typename InstanceWrap<T>::InstanceMethodCallback method>
 inline ClassPropertyDescriptor<T> InstanceWrap<T>::InstanceMethod(
-    Symbol name,
-    napi_property_attributes attributes,
-    void* data) {
+    Symbol name, napi_property_attributes attributes, void* data) {
   napi_property_descriptor desc = napi_property_descriptor();
   desc.name = name;
   desc.method = details::TemplatedInstanceCallback<T, method>;
@@ -3782,7 +4261,7 @@ inline ClassPropertyDescriptor<T> InstanceWrap<T>::InstanceAccessor(
     napi_property_attributes attributes,
     void* data) {
   InstanceAccessorCallbackData* callbackData =
-    new InstanceAccessorCallbackData({ getter, setter, data });
+      new InstanceAccessorCallbackData({getter, setter, data});
 
   napi_property_descriptor desc = napi_property_descriptor();
   desc.utf8name = utf8name;
@@ -3801,7 +4280,7 @@ inline ClassPropertyDescriptor<T> InstanceWrap<T>::InstanceAccessor(
     napi_property_attributes attributes,
     void* data) {
   InstanceAccessorCallbackData* callbackData =
-    new InstanceAccessorCallbackData({ getter, setter, data });
+      new InstanceAccessorCallbackData({getter, setter, data});
 
   napi_property_descriptor desc = napi_property_descriptor();
   desc.name = name;
@@ -3816,9 +4295,7 @@ template <typename T>
 template <typename InstanceWrap<T>::InstanceGetterCallback getter,
           typename InstanceWrap<T>::InstanceSetterCallback setter>
 inline ClassPropertyDescriptor<T> InstanceWrap<T>::InstanceAccessor(
-    const char* utf8name,
-    napi_property_attributes attributes,
-    void* data) {
+    const char* utf8name, napi_property_attributes attributes, void* data) {
   napi_property_descriptor desc = napi_property_descriptor();
   desc.utf8name = utf8name;
   desc.getter = details::TemplatedInstanceCallback<T, getter>;
@@ -3832,9 +4309,7 @@ template <typename T>
 template <typename InstanceWrap<T>::InstanceGetterCallback getter,
           typename InstanceWrap<T>::InstanceSetterCallback setter>
 inline ClassPropertyDescriptor<T> InstanceWrap<T>::InstanceAccessor(
-    Symbol name,
-    napi_property_attributes attributes,
-    void* data) {
+    Symbol name, napi_property_attributes attributes, void* data) {
   napi_property_descriptor desc = napi_property_descriptor();
   desc.name = name;
   desc.getter = details::TemplatedInstanceCallback<T, getter>;
@@ -3858,9 +4333,7 @@ inline ClassPropertyDescriptor<T> InstanceWrap<T>::InstanceValue(
 
 template <typename T>
 inline ClassPropertyDescriptor<T> InstanceWrap<T>::InstanceValue(
-    Symbol name,
-    Napi::Value value,
-    napi_property_attributes attributes) {
+    Symbol name, Napi::Value value, napi_property_attributes attributes) {
   napi_property_descriptor desc = napi_property_descriptor();
   desc.name = name;
   desc.value = value;
@@ -3870,62 +4343,58 @@ inline ClassPropertyDescriptor<T> InstanceWrap<T>::InstanceValue(
 
 template <typename T>
 inline napi_value InstanceWrap<T>::InstanceVoidMethodCallbackWrapper(
-    napi_env env,
-    napi_callback_info info) {
+    napi_env env, napi_callback_info info) {
   return details::WrapCallback([&] {
     CallbackInfo callbackInfo(env, info);
     InstanceVoidMethodCallbackData* callbackData =
-      reinterpret_cast<InstanceVoidMethodCallbackData*>(callbackInfo.Data());
+        reinterpret_cast<InstanceVoidMethodCallbackData*>(callbackInfo.Data());
     callbackInfo.SetData(callbackData->data);
     T* instance = T::Unwrap(callbackInfo.This().As<Object>());
     auto cb = callbackData->callback;
-    (instance->*cb)(callbackInfo);
+    if (instance) (instance->*cb)(callbackInfo);
     return nullptr;
   });
 }
 
 template <typename T>
 inline napi_value InstanceWrap<T>::InstanceMethodCallbackWrapper(
-    napi_env env,
-    napi_callback_info info) {
+    napi_env env, napi_callback_info info) {
   return details::WrapCallback([&] {
     CallbackInfo callbackInfo(env, info);
     InstanceMethodCallbackData* callbackData =
-      reinterpret_cast<InstanceMethodCallbackData*>(callbackInfo.Data());
+        reinterpret_cast<InstanceMethodCallbackData*>(callbackInfo.Data());
     callbackInfo.SetData(callbackData->data);
     T* instance = T::Unwrap(callbackInfo.This().As<Object>());
     auto cb = callbackData->callback;
-    return (instance->*cb)(callbackInfo);
+    return instance ? (instance->*cb)(callbackInfo) : Napi::Value();
   });
 }
 
 template <typename T>
 inline napi_value InstanceWrap<T>::InstanceGetterCallbackWrapper(
-    napi_env env,
-    napi_callback_info info) {
+    napi_env env, napi_callback_info info) {
   return details::WrapCallback([&] {
     CallbackInfo callbackInfo(env, info);
     InstanceAccessorCallbackData* callbackData =
-      reinterpret_cast<InstanceAccessorCallbackData*>(callbackInfo.Data());
+        reinterpret_cast<InstanceAccessorCallbackData*>(callbackInfo.Data());
     callbackInfo.SetData(callbackData->data);
     T* instance = T::Unwrap(callbackInfo.This().As<Object>());
     auto cb = callbackData->getterCallback;
-    return (instance->*cb)(callbackInfo);
+    return instance ? (instance->*cb)(callbackInfo) : Napi::Value();
   });
 }
 
 template <typename T>
 inline napi_value InstanceWrap<T>::InstanceSetterCallbackWrapper(
-    napi_env env,
-    napi_callback_info info) {
+    napi_env env, napi_callback_info info) {
   return details::WrapCallback([&] {
     CallbackInfo callbackInfo(env, info);
     InstanceAccessorCallbackData* callbackData =
-      reinterpret_cast<InstanceAccessorCallbackData*>(callbackInfo.Data());
+        reinterpret_cast<InstanceAccessorCallbackData*>(callbackInfo.Data());
     callbackInfo.SetData(callbackData->data);
     T* instance = T::Unwrap(callbackInfo.This().As<Object>());
     auto cb = callbackData->setterCallback;
-    (instance->*cb)(callbackInfo, callbackInfo[0]);
+    if (instance) (instance->*cb)(callbackInfo, callbackInfo[0]);
     return nullptr;
   });
 }
@@ -3937,7 +4406,7 @@ inline napi_value InstanceWrap<T>::WrappedMethod(
   return details::WrapCallback([&] {
     const CallbackInfo cbInfo(env, info);
     T* instance = T::Unwrap(cbInfo.This().As<Object>());
-    (instance->*method)(cbInfo, cbInfo[0]);
+    if (instance) (instance->*method)(cbInfo, cbInfo[0]);
     return nullptr;
   });
 }
@@ -3974,7 +4443,7 @@ inline ObjectWrap<T>::~ObjectWrap() {
   }
 }
 
-template<typename T>
+template <typename T>
 inline T* ObjectWrap<T>::Unwrap(Object wrapper) {
   void* unwrapped;
   napi_status status = napi_unwrap(wrapper.Env(), wrapper, &unwrapped);
@@ -3983,12 +4452,12 @@ inline T* ObjectWrap<T>::Unwrap(Object wrapper) {
 }
 
 template <typename T>
-inline Function
-ObjectWrap<T>::DefineClass(Napi::Env env,
-                           const char* utf8name,
-                           const size_t props_count,
-                           const napi_property_descriptor* descriptors,
-                           void* data) {
+inline Function ObjectWrap<T>::DefineClass(
+    Napi::Env env,
+    const char* utf8name,
+    const size_t props_count,
+    const napi_property_descriptor* descriptors,
+    void* data) {
   napi_status status;
   std::vector<napi_property_descriptor> props(props_count);
 
@@ -4004,16 +4473,18 @@ ObjectWrap<T>::DefineClass(Napi::Env env,
     props[index] = descriptors[index];
     napi_property_descriptor* prop = &props[index];
     if (prop->method == T::StaticMethodCallbackWrapper) {
-      status = CreateFunction(env,
-                             utf8name,
-                             prop->method,
-                             static_cast<StaticMethodCallbackData*>(prop->data),
-               &(prop->value));
+      status =
+          CreateFunction(env,
+                         utf8name,
+                         prop->method,
+                         static_cast<StaticMethodCallbackData*>(prop->data),
+                         &(prop->value));
       NAPI_THROW_IF_FAILED(env, status, Function());
       prop->method = nullptr;
       prop->data = nullptr;
     } else if (prop->method == T::StaticVoidMethodCallbackWrapper) {
-      status = CreateFunction(env,
+      status =
+          CreateFunction(env,
                          utf8name,
                          prop->method,
                          static_cast<StaticVoidMethodCallbackData*>(prop->data),
@@ -4043,9 +4514,8 @@ ObjectWrap<T>::DefineClass(Napi::Env env,
 
     if (prop->getter == T::StaticGetterCallbackWrapper ||
         prop->setter == T::StaticSetterCallbackWrapper) {
-      status = Napi::details::AttachData(env,
-                          value,
-                          static_cast<StaticAccessorCallbackData*>(prop->data));
+      status = Napi::details::AttachData(
+          env, value, static_cast<StaticAccessorCallbackData*>(prop->data));
       NAPI_THROW_IF_FAILED(env, status, Function());
     } else {
       // InstanceWrap<T>::AttachPropData is responsible for attaching the data
@@ -4063,11 +4533,12 @@ inline Function ObjectWrap<T>::DefineClass(
     const char* utf8name,
     const std::initializer_list<ClassPropertyDescriptor<T>>& properties,
     void* data) {
-  return DefineClass(env,
-          utf8name,
-          properties.size(),
-          reinterpret_cast<const napi_property_descriptor*>(properties.begin()),
-          data);
+  return DefineClass(
+      env,
+      utf8name,
+      properties.size(),
+      reinterpret_cast<const napi_property_descriptor*>(properties.begin()),
+      data);
 }
 
 template <typename T>
@@ -4076,11 +4547,12 @@ inline Function ObjectWrap<T>::DefineClass(
     const char* utf8name,
     const std::vector<ClassPropertyDescriptor<T>>& properties,
     void* data) {
-  return DefineClass(env,
-           utf8name,
-           properties.size(),
-           reinterpret_cast<const napi_property_descriptor*>(properties.data()),
-           data);
+  return DefineClass(
+      env,
+      utf8name,
+      properties.size(),
+      reinterpret_cast<const napi_property_descriptor*>(properties.data()),
+      data);
 }
 
 template <typename T>
@@ -4089,13 +4561,15 @@ inline ClassPropertyDescriptor<T> ObjectWrap<T>::StaticMethod(
     StaticVoidMethodCallback method,
     napi_property_attributes attributes,
     void* data) {
-  StaticVoidMethodCallbackData* callbackData = new StaticVoidMethodCallbackData({ method, data });
+  StaticVoidMethodCallbackData* callbackData =
+      new StaticVoidMethodCallbackData({method, data});
 
   napi_property_descriptor desc = napi_property_descriptor();
   desc.utf8name = utf8name;
   desc.method = T::StaticVoidMethodCallbackWrapper;
   desc.data = callbackData;
-  desc.attributes = static_cast<napi_property_attributes>(attributes | napi_static);
+  desc.attributes =
+      static_cast<napi_property_attributes>(attributes | napi_static);
   return desc;
 }
 
@@ -4105,13 +4579,15 @@ inline ClassPropertyDescriptor<T> ObjectWrap<T>::StaticMethod(
     StaticMethodCallback method,
     napi_property_attributes attributes,
     void* data) {
-  StaticMethodCallbackData* callbackData = new StaticMethodCallbackData({ method, data });
+  StaticMethodCallbackData* callbackData =
+      new StaticMethodCallbackData({method, data});
 
   napi_property_descriptor desc = napi_property_descriptor();
   desc.utf8name = utf8name;
   desc.method = T::StaticMethodCallbackWrapper;
   desc.data = callbackData;
-  desc.attributes = static_cast<napi_property_attributes>(attributes | napi_static);
+  desc.attributes =
+      static_cast<napi_property_attributes>(attributes | napi_static);
   return desc;
 }
 
@@ -4121,13 +4597,15 @@ inline ClassPropertyDescriptor<T> ObjectWrap<T>::StaticMethod(
     StaticVoidMethodCallback method,
     napi_property_attributes attributes,
     void* data) {
-  StaticVoidMethodCallbackData* callbackData = new StaticVoidMethodCallbackData({ method, data });
+  StaticVoidMethodCallbackData* callbackData =
+      new StaticVoidMethodCallbackData({method, data});
 
   napi_property_descriptor desc = napi_property_descriptor();
   desc.name = name;
   desc.method = T::StaticVoidMethodCallbackWrapper;
   desc.data = callbackData;
-  desc.attributes = static_cast<napi_property_attributes>(attributes | napi_static);
+  desc.attributes =
+      static_cast<napi_property_attributes>(attributes | napi_static);
   return desc;
 }
 
@@ -4137,69 +4615,67 @@ inline ClassPropertyDescriptor<T> ObjectWrap<T>::StaticMethod(
     StaticMethodCallback method,
     napi_property_attributes attributes,
     void* data) {
-  StaticMethodCallbackData* callbackData = new StaticMethodCallbackData({ method, data });
+  StaticMethodCallbackData* callbackData =
+      new StaticMethodCallbackData({method, data});
 
   napi_property_descriptor desc = napi_property_descriptor();
   desc.name = name;
   desc.method = T::StaticMethodCallbackWrapper;
   desc.data = callbackData;
-  desc.attributes = static_cast<napi_property_attributes>(attributes | napi_static);
+  desc.attributes =
+      static_cast<napi_property_attributes>(attributes | napi_static);
   return desc;
 }
 
 template <typename T>
 template <typename ObjectWrap<T>::StaticVoidMethodCallback method>
 inline ClassPropertyDescriptor<T> ObjectWrap<T>::StaticMethod(
-    const char* utf8name,
-    napi_property_attributes attributes,
-    void* data) {
+    const char* utf8name, napi_property_attributes attributes, void* data) {
   napi_property_descriptor desc = napi_property_descriptor();
   desc.utf8name = utf8name;
   desc.method = details::TemplatedVoidCallback<method>;
   desc.data = data;
-  desc.attributes = static_cast<napi_property_attributes>(attributes | napi_static);
+  desc.attributes =
+      static_cast<napi_property_attributes>(attributes | napi_static);
   return desc;
 }
 
 template <typename T>
 template <typename ObjectWrap<T>::StaticVoidMethodCallback method>
 inline ClassPropertyDescriptor<T> ObjectWrap<T>::StaticMethod(
-    Symbol name,
-    napi_property_attributes attributes,
-    void* data) {
+    Symbol name, napi_property_attributes attributes, void* data) {
   napi_property_descriptor desc = napi_property_descriptor();
   desc.name = name;
   desc.method = details::TemplatedVoidCallback<method>;
   desc.data = data;
-  desc.attributes = static_cast<napi_property_attributes>(attributes | napi_static);
+  desc.attributes =
+      static_cast<napi_property_attributes>(attributes | napi_static);
   return desc;
 }
 
 template <typename T>
 template <typename ObjectWrap<T>::StaticMethodCallback method>
 inline ClassPropertyDescriptor<T> ObjectWrap<T>::StaticMethod(
-    const char* utf8name,
-    napi_property_attributes attributes,
-    void* data) {
+    const char* utf8name, napi_property_attributes attributes, void* data) {
   napi_property_descriptor desc = napi_property_descriptor();
   desc.utf8name = utf8name;
   desc.method = details::TemplatedCallback<method>;
   desc.data = data;
-  desc.attributes = static_cast<napi_property_attributes>(attributes | napi_static);
+  desc.attributes =
+      static_cast<napi_property_attributes>(attributes | napi_static);
   return desc;
 }
 
 template <typename T>
 template <typename ObjectWrap<T>::StaticMethodCallback method>
 inline ClassPropertyDescriptor<T> ObjectWrap<T>::StaticMethod(
-    Symbol name,
-    napi_property_attributes attributes,
-    void* data) {
+    Symbol name, napi_property_attributes attributes, void* data) {
   napi_property_descriptor desc = napi_property_descriptor();
   desc.name = name;
   desc.method = details::TemplatedCallback<method>;
   desc.data = data;
-  desc.attributes = static_cast<napi_property_attributes>(attributes | napi_static);
+  desc.attributes =
+      static_cast<napi_property_attributes>(attributes | napi_static);
   return desc;
 }
 
@@ -4211,14 +4687,15 @@ inline ClassPropertyDescriptor<T> ObjectWrap<T>::StaticAccessor(
     napi_property_attributes attributes,
     void* data) {
   StaticAccessorCallbackData* callbackData =
-    new StaticAccessorCallbackData({ getter, setter, data });
+      new StaticAccessorCallbackData({getter, setter, data});
 
   napi_property_descriptor desc = napi_property_descriptor();
   desc.utf8name = utf8name;
   desc.getter = getter != nullptr ? T::StaticGetterCallbackWrapper : nullptr;
   desc.setter = setter != nullptr ? T::StaticSetterCallbackWrapper : nullptr;
   desc.data = callbackData;
-  desc.attributes = static_cast<napi_property_attributes>(attributes | napi_static);
+  desc.attributes =
+      static_cast<napi_property_attributes>(attributes | napi_static);
   return desc;
 }
 
@@ -4230,14 +4707,15 @@ inline ClassPropertyDescriptor<T> ObjectWrap<T>::StaticAccessor(
     napi_property_attributes attributes,
     void* data) {
   StaticAccessorCallbackData* callbackData =
-    new StaticAccessorCallbackData({ getter, setter, data });
+      new StaticAccessorCallbackData({getter, setter, data});
 
   napi_property_descriptor desc = napi_property_descriptor();
   desc.name = name;
   desc.getter = getter != nullptr ? T::StaticGetterCallbackWrapper : nullptr;
   desc.setter = setter != nullptr ? T::StaticSetterCallbackWrapper : nullptr;
   desc.data = callbackData;
-  desc.attributes = static_cast<napi_property_attributes>(attributes | napi_static);
+  desc.attributes =
+      static_cast<napi_property_attributes>(attributes | napi_static);
   return desc;
 }
 
@@ -4245,52 +4723,63 @@ template <typename T>
 template <typename ObjectWrap<T>::StaticGetterCallback getter,
           typename ObjectWrap<T>::StaticSetterCallback setter>
 inline ClassPropertyDescriptor<T> ObjectWrap<T>::StaticAccessor(
+    const char* utf8name, napi_property_attributes attributes, void* data) {
+  napi_property_descriptor desc = napi_property_descriptor();
+  desc.utf8name = utf8name;
+  desc.getter = details::TemplatedCallback<getter>;
+  desc.setter = This::WrapStaticSetter(This::StaticSetterTag<setter>());
+  desc.data = data;
+  desc.attributes =
+      static_cast<napi_property_attributes>(attributes | napi_static);
+  return desc;
+}
+
+template <typename T>
+template <typename ObjectWrap<T>::StaticGetterCallback getter,
+          typename ObjectWrap<T>::StaticSetterCallback setter>
+inline ClassPropertyDescriptor<T> ObjectWrap<T>::StaticAccessor(
+    Symbol name, napi_property_attributes attributes, void* data) {
+  napi_property_descriptor desc = napi_property_descriptor();
+  desc.name = name;
+  desc.getter = details::TemplatedCallback<getter>;
+  desc.setter = This::WrapStaticSetter(This::StaticSetterTag<setter>());
+  desc.data = data;
+  desc.attributes =
+      static_cast<napi_property_attributes>(attributes | napi_static);
+  return desc;
+}
+
+template <typename T>
+inline ClassPropertyDescriptor<T> ObjectWrap<T>::StaticValue(
     const char* utf8name,
-    napi_property_attributes attributes,
-    void* data) {
-  napi_property_descriptor desc = napi_property_descriptor();
-  desc.utf8name = utf8name;
-  desc.getter = details::TemplatedCallback<getter>;
-  desc.setter = This::WrapStaticSetter(This::StaticSetterTag<setter>());
-  desc.data = data;
-  desc.attributes = static_cast<napi_property_attributes>(attributes | napi_static);
-  return desc;
-}
-
-template <typename T>
-template <typename ObjectWrap<T>::StaticGetterCallback getter,
-          typename ObjectWrap<T>::StaticSetterCallback setter>
-inline ClassPropertyDescriptor<T> ObjectWrap<T>::StaticAccessor(
-    Symbol name,
-    napi_property_attributes attributes,
-    void* data) {
-  napi_property_descriptor desc = napi_property_descriptor();
-  desc.name = name;
-  desc.getter = details::TemplatedCallback<getter>;
-  desc.setter = This::WrapStaticSetter(This::StaticSetterTag<setter>());
-  desc.data = data;
-  desc.attributes = static_cast<napi_property_attributes>(attributes | napi_static);
-  return desc;
-}
-
-template <typename T>
-inline ClassPropertyDescriptor<T> ObjectWrap<T>::StaticValue(const char* utf8name,
-    Napi::Value value, napi_property_attributes attributes) {
+    Napi::Value value,
+    napi_property_attributes attributes) {
   napi_property_descriptor desc = napi_property_descriptor();
   desc.utf8name = utf8name;
   desc.value = value;
-  desc.attributes = static_cast<napi_property_attributes>(attributes | napi_static);
+  desc.attributes =
+      static_cast<napi_property_attributes>(attributes | napi_static);
   return desc;
 }
 
 template <typename T>
-inline ClassPropertyDescriptor<T> ObjectWrap<T>::StaticValue(Symbol name,
-    Napi::Value value, napi_property_attributes attributes) {
+inline ClassPropertyDescriptor<T> ObjectWrap<T>::StaticValue(
+    Symbol name, Napi::Value value, napi_property_attributes attributes) {
   napi_property_descriptor desc = napi_property_descriptor();
   desc.name = name;
   desc.value = value;
-  desc.attributes = static_cast<napi_property_attributes>(attributes | napi_static);
+  desc.attributes =
+      static_cast<napi_property_attributes>(attributes | napi_static);
   return desc;
+}
+
+template <typename T>
+inline Value ObjectWrap<T>::OnCalledAsFunction(
+    const Napi::CallbackInfo& callbackInfo) {
+  NAPI_THROW(
+      TypeError::New(callbackInfo.Env(),
+                     "Class constructors cannot be invoked without 'new'"),
+      Napi::Value());
 }
 
 template <typename T>
@@ -4298,16 +4787,15 @@ inline void ObjectWrap<T>::Finalize(Napi::Env /*env*/) {}
 
 template <typename T>
 inline napi_value ObjectWrap<T>::ConstructorCallbackWrapper(
-    napi_env env,
-    napi_callback_info info) {
+    napi_env env, napi_callback_info info) {
   napi_value new_target;
   napi_status status = napi_get_new_target(env, info, &new_target);
   if (status != napi_ok) return nullptr;
 
   bool isConstructCall = (new_target != nullptr);
   if (!isConstructCall) {
-    napi_throw_type_error(env, nullptr, "Class constructors cannot be invoked without 'new'");
-    return nullptr;
+    return details::WrapCallback(
+        [&] { return T::OnCalledAsFunction(CallbackInfo(env, info)); });
   }
 
   napi_value wrapper = details::WrapCallback([&] {
@@ -4324,7 +4812,7 @@ inline napi_value ObjectWrap<T>::ConstructorCallbackWrapper(
     } else {
       instance->_construction_failed = false;
     }
-# endif  // NAPI_CPP_EXCEPTIONS
+#endif  // NAPI_CPP_EXCEPTIONS
     return callbackInfo.This();
   });
 
@@ -4333,12 +4821,11 @@ inline napi_value ObjectWrap<T>::ConstructorCallbackWrapper(
 
 template <typename T>
 inline napi_value ObjectWrap<T>::StaticVoidMethodCallbackWrapper(
-    napi_env env,
-    napi_callback_info info) {
+    napi_env env, napi_callback_info info) {
   return details::WrapCallback([&] {
     CallbackInfo callbackInfo(env, info);
     StaticVoidMethodCallbackData* callbackData =
-      reinterpret_cast<StaticVoidMethodCallbackData*>(callbackInfo.Data());
+        reinterpret_cast<StaticVoidMethodCallbackData*>(callbackInfo.Data());
     callbackInfo.SetData(callbackData->data);
     callbackData->callback(callbackInfo);
     return nullptr;
@@ -4347,12 +4834,11 @@ inline napi_value ObjectWrap<T>::StaticVoidMethodCallbackWrapper(
 
 template <typename T>
 inline napi_value ObjectWrap<T>::StaticMethodCallbackWrapper(
-    napi_env env,
-    napi_callback_info info) {
+    napi_env env, napi_callback_info info) {
   return details::WrapCallback([&] {
     CallbackInfo callbackInfo(env, info);
     StaticMethodCallbackData* callbackData =
-      reinterpret_cast<StaticMethodCallbackData*>(callbackInfo.Data());
+        reinterpret_cast<StaticMethodCallbackData*>(callbackInfo.Data());
     callbackInfo.SetData(callbackData->data);
     return callbackData->callback(callbackInfo);
   });
@@ -4360,12 +4846,11 @@ inline napi_value ObjectWrap<T>::StaticMethodCallbackWrapper(
 
 template <typename T>
 inline napi_value ObjectWrap<T>::StaticGetterCallbackWrapper(
-    napi_env env,
-    napi_callback_info info) {
+    napi_env env, napi_callback_info info) {
   return details::WrapCallback([&] {
     CallbackInfo callbackInfo(env, info);
     StaticAccessorCallbackData* callbackData =
-      reinterpret_cast<StaticAccessorCallbackData*>(callbackInfo.Data());
+        reinterpret_cast<StaticAccessorCallbackData*>(callbackInfo.Data());
     callbackInfo.SetData(callbackData->data);
     return callbackData->getterCallback(callbackInfo);
   });
@@ -4373,12 +4858,11 @@ inline napi_value ObjectWrap<T>::StaticGetterCallbackWrapper(
 
 template <typename T>
 inline napi_value ObjectWrap<T>::StaticSetterCallbackWrapper(
-    napi_env env,
-    napi_callback_info info) {
+    napi_env env, napi_callback_info info) {
   return details::WrapCallback([&] {
     CallbackInfo callbackInfo(env, info);
     StaticAccessorCallbackData* callbackData =
-      reinterpret_cast<StaticAccessorCallbackData*>(callbackInfo.Data());
+        reinterpret_cast<StaticAccessorCallbackData*>(callbackInfo.Data());
     callbackInfo.SetData(callbackData->data);
     callbackData->setterCallback(callbackInfo, callbackInfo[0]);
     return nullptr;
@@ -4386,7 +4870,9 @@ inline napi_value ObjectWrap<T>::StaticSetterCallbackWrapper(
 }
 
 template <typename T>
-inline void ObjectWrap<T>::FinalizeCallback(napi_env env, void* data, void* /*hint*/) {
+inline void ObjectWrap<T>::FinalizeCallback(napi_env env,
+                                            void* data,
+                                            void* /*hint*/) {
   HandleScope scope(env);
   T* instance = static_cast<T*>(data);
   instance->Finalize(Napi::Env(env));
@@ -4409,8 +4895,7 @@ inline napi_value ObjectWrap<T>::WrappedMethod(
 ////////////////////////////////////////////////////////////////////////////////
 
 inline HandleScope::HandleScope(napi_env env, napi_handle_scope scope)
-    : _env(env), _scope(scope) {
-}
+    : _env(env), _scope(scope) {}
 
 inline HandleScope::HandleScope(Napi::Env env) : _env(env) {
   napi_status status = napi_open_handle_scope(_env, &_scope);
@@ -4419,9 +4904,8 @@ inline HandleScope::HandleScope(Napi::Env env) : _env(env) {
 
 inline HandleScope::~HandleScope() {
   napi_status status = napi_close_handle_scope(_env, _scope);
-  NAPI_FATAL_IF_FAILED(status,
-                       "HandleScope::~HandleScope",
-                       "napi_close_handle_scope");
+  NAPI_FATAL_IF_FAILED(
+      status, "HandleScope::~HandleScope", "napi_close_handle_scope");
 }
 
 inline HandleScope::operator napi_handle_scope() const {
@@ -4437,8 +4921,8 @@ inline Napi::Env HandleScope::Env() const {
 ////////////////////////////////////////////////////////////////////////////////
 
 inline EscapableHandleScope::EscapableHandleScope(
-  napi_env env, napi_escapable_handle_scope scope) : _env(env), _scope(scope) {
-}
+    napi_env env, napi_escapable_handle_scope scope)
+    : _env(env), _scope(scope) {}
 
 inline EscapableHandleScope::EscapableHandleScope(Napi::Env env) : _env(env) {
   napi_status status = napi_open_escapable_handle_scope(_env, &_scope);
@@ -4467,28 +4951,25 @@ inline Value EscapableHandleScope::Escape(napi_value escapee) {
   return Value(_env, result);
 }
 
-
 #if (NAPI_VERSION > 2)
 ////////////////////////////////////////////////////////////////////////////////
 // CallbackScope class
 ////////////////////////////////////////////////////////////////////////////////
 
-inline CallbackScope::CallbackScope(
-  napi_env env, napi_callback_scope scope) : _env(env), _scope(scope) {
-}
+inline CallbackScope::CallbackScope(napi_env env, napi_callback_scope scope)
+    : _env(env), _scope(scope) {}
 
 inline CallbackScope::CallbackScope(napi_env env, napi_async_context context)
     : _env(env) {
-  napi_status status = napi_open_callback_scope(
-      _env, Object::New(env), context, &_scope);
+  napi_status status =
+      napi_open_callback_scope(_env, Object::New(env), context, &_scope);
   NAPI_THROW_IF_FAILED_VOID(_env, status);
 }
 
 inline CallbackScope::~CallbackScope() {
   napi_status status = napi_close_callback_scope(_env, _scope);
-  NAPI_FATAL_IF_FAILED(status,
-                       "CallbackScope::~CallbackScope",
-                       "napi_close_callback_scope");
+  NAPI_FATAL_IF_FAILED(
+      status, "CallbackScope::~CallbackScope", "napi_close_callback_scope");
 }
 
 inline CallbackScope::operator napi_callback_scope() const {
@@ -4505,8 +4986,7 @@ inline Napi::Env CallbackScope::Env() const {
 ////////////////////////////////////////////////////////////////////////////////
 
 inline AsyncContext::AsyncContext(napi_env env, const char* resource_name)
-  : AsyncContext(env, resource_name, Object::New(env)) {
-}
+    : AsyncContext(env, resource_name, Object::New(env)) {}
 
 inline AsyncContext::AsyncContext(napi_env env,
                                   const char* resource_name,
@@ -4535,7 +5015,7 @@ inline AsyncContext::AsyncContext(AsyncContext&& other) {
   other._context = nullptr;
 }
 
-inline AsyncContext& AsyncContext::operator =(AsyncContext&& other) {
+inline AsyncContext& AsyncContext::operator=(AsyncContext&& other) {
   _env = other._env;
   other._env = nullptr;
   _context = other._context;
@@ -4555,79 +5035,75 @@ inline Napi::Env AsyncContext::Env() const {
 // AsyncWorker class
 ////////////////////////////////////////////////////////////////////////////////
 
+#if NAPI_HAS_THREADS
+
 inline AsyncWorker::AsyncWorker(const Function& callback)
-  : AsyncWorker(callback, "generic") {
-}
+    : AsyncWorker(callback, "generic") {}
 
 inline AsyncWorker::AsyncWorker(const Function& callback,
                                 const char* resource_name)
-  : AsyncWorker(callback, resource_name, Object::New(callback.Env())) {
-}
+    : AsyncWorker(callback, resource_name, Object::New(callback.Env())) {}
 
 inline AsyncWorker::AsyncWorker(const Function& callback,
                                 const char* resource_name,
                                 const Object& resource)
-  : AsyncWorker(Object::New(callback.Env()),
-                callback,
-                resource_name,
-                resource) {
-}
+    : AsyncWorker(
+          Object::New(callback.Env()), callback, resource_name, resource) {}
 
 inline AsyncWorker::AsyncWorker(const Object& receiver,
                                 const Function& callback)
-  : AsyncWorker(receiver, callback, "generic") {
-}
+    : AsyncWorker(receiver, callback, "generic") {}
 
 inline AsyncWorker::AsyncWorker(const Object& receiver,
                                 const Function& callback,
                                 const char* resource_name)
-  : AsyncWorker(receiver,
-                callback,
-                resource_name,
-                Object::New(callback.Env())) {
-}
+    : AsyncWorker(
+          receiver, callback, resource_name, Object::New(callback.Env())) {}
 
 inline AsyncWorker::AsyncWorker(const Object& receiver,
                                 const Function& callback,
                                 const char* resource_name,
                                 const Object& resource)
-  : _env(callback.Env()),
-    _receiver(Napi::Persistent(receiver)),
-    _callback(Napi::Persistent(callback)),
-    _suppress_destruct(false) {
+    : _env(callback.Env()),
+      _receiver(Napi::Persistent(receiver)),
+      _callback(Napi::Persistent(callback)),
+      _suppress_destruct(false) {
   napi_value resource_id;
   napi_status status = napi_create_string_latin1(
       _env, resource_name, NAPI_AUTO_LENGTH, &resource_id);
   NAPI_THROW_IF_FAILED_VOID(_env, status);
 
-  status = napi_create_async_work(_env, resource, resource_id, OnAsyncWorkExecute,
-                                  OnAsyncWorkComplete, this, &_work);
+  status = napi_create_async_work(_env,
+                                  resource,
+                                  resource_id,
+                                  OnAsyncWorkExecute,
+                                  OnAsyncWorkComplete,
+                                  this,
+                                  &_work);
   NAPI_THROW_IF_FAILED_VOID(_env, status);
 }
 
-inline AsyncWorker::AsyncWorker(Napi::Env env)
-  : AsyncWorker(env, "generic") {
-}
+inline AsyncWorker::AsyncWorker(Napi::Env env) : AsyncWorker(env, "generic") {}
 
-inline AsyncWorker::AsyncWorker(Napi::Env env,
-                                const char* resource_name)
-  : AsyncWorker(env, resource_name, Object::New(env)) {
-}
+inline AsyncWorker::AsyncWorker(Napi::Env env, const char* resource_name)
+    : AsyncWorker(env, resource_name, Object::New(env)) {}
 
 inline AsyncWorker::AsyncWorker(Napi::Env env,
                                 const char* resource_name,
                                 const Object& resource)
-  : _env(env),
-    _receiver(),
-    _callback(),
-    _suppress_destruct(false) {
+    : _env(env), _receiver(), _callback(), _suppress_destruct(false) {
   napi_value resource_id;
   napi_status status = napi_create_string_latin1(
       _env, resource_name, NAPI_AUTO_LENGTH, &resource_id);
   NAPI_THROW_IF_FAILED_VOID(_env, status);
 
-  status = napi_create_async_work(_env, resource, resource_id, OnAsyncWorkExecute,
-                                  OnAsyncWorkComplete, this, &_work);
+  status = napi_create_async_work(_env,
+                                  resource,
+                                  resource_id,
+                                  OnAsyncWorkExecute,
+                                  OnAsyncWorkComplete,
+                                  this,
+                                  &_work);
   NAPI_THROW_IF_FAILED_VOID(_env, status);
 }
 
@@ -4640,29 +5116,6 @@ inline AsyncWorker::~AsyncWorker() {
 
 inline void AsyncWorker::Destroy() {
   delete this;
-}
-
-inline AsyncWorker::AsyncWorker(AsyncWorker&& other) {
-  _env = other._env;
-  other._env = nullptr;
-  _work = other._work;
-  other._work = nullptr;
-  _receiver = std::move(other._receiver);
-  _callback = std::move(other._callback);
-  _error = std::move(other._error);
-  _suppress_destruct = other._suppress_destruct;
-}
-
-inline AsyncWorker& AsyncWorker::operator =(AsyncWorker&& other) {
-  _env = other._env;
-  other._env = nullptr;
-  _work = other._work;
-  other._work = nullptr;
-  _receiver = std::move(other._receiver);
-  _callback = std::move(other._callback);
-  _error = std::move(other._error);
-  _suppress_destruct = other._suppress_destruct;
-  return *this;
 }
 
 inline AsyncWorker::operator napi_async_work() const {
@@ -4703,7 +5156,8 @@ inline void AsyncWorker::OnOK() {
 
 inline void AsyncWorker::OnError(const Error& e) {
   if (!_callback.IsEmpty()) {
-    _callback.Call(_receiver.Value(), std::initializer_list<napi_value>{ e.Value() });
+    _callback.Call(_receiver.Value(),
+                   std::initializer_list<napi_value>{e.Value()});
   }
 }
 
@@ -4733,9 +5187,9 @@ inline void AsyncWorker::OnExecute(Napi::Env /*DO_NOT_USE*/) {
   } catch (const std::exception& e) {
     SetError(e.what());
   }
-#else // NAPI_CPP_EXCEPTIONS
+#else   // NAPI_CPP_EXCEPTIONS
   Execute();
-#endif // NAPI_CPP_EXCEPTIONS
+#endif  // NAPI_CPP_EXCEPTIONS
 }
 
 inline void AsyncWorker::OnAsyncWorkComplete(napi_env env,
@@ -4750,8 +5204,7 @@ inline void AsyncWorker::OnWorkComplete(Napi::Env /*env*/, napi_status status) {
     details::WrapCallback([&] {
       if (_error.size() == 0) {
         OnOK();
-      }
-      else {
+      } else {
         OnError(Error::New(_env, _error));
       }
       return nullptr;
@@ -4762,7 +5215,9 @@ inline void AsyncWorker::OnWorkComplete(Napi::Env /*env*/, napi_status status) {
   }
 }
 
-#if (NAPI_VERSION > 3 && !defined(__wasm32__))
+#endif  // NAPI_HAS_THREADS
+
+#if (NAPI_VERSION > 3 && NAPI_HAS_THREADS)
 ////////////////////////////////////////////////////////////////////////////////
 // TypedThreadSafeFunction<ContextType,DataType,CallJs> class
 ////////////////////////////////////////////////////////////////////////////////
@@ -5165,7 +5620,7 @@ template <typename ContextType,
           typename DataType,
           void (*CallJs)(Napi::Env, Napi::Function, ContextType*, DataType*)>
 inline napi_status
-TypedThreadSafeFunction<ContextType, DataType, CallJs>::Release() {
+TypedThreadSafeFunction<ContextType, DataType, CallJs>::Release() const {
   return napi_release_threadsafe_function(_tsfn, napi_tsfn_release);
 }
 
@@ -5173,7 +5628,7 @@ template <typename ContextType,
           typename DataType,
           void (*CallJs)(Napi::Env, Napi::Function, ContextType*, DataType*)>
 inline napi_status
-TypedThreadSafeFunction<ContextType, DataType, CallJs>::Abort() {
+TypedThreadSafeFunction<ContextType, DataType, CallJs>::Abort() const {
   return napi_release_threadsafe_function(_tsfn, napi_tsfn_abort);
 }
 
@@ -5254,68 +5709,93 @@ TypedThreadSafeFunction<ContextType, DataType, CallJs>::FunctionOrEmpty(
 // static
 template <typename ResourceString>
 inline ThreadSafeFunction ThreadSafeFunction::New(napi_env env,
-                                  const Function& callback,
-                                  ResourceString resourceName,
-                                  size_t maxQueueSize,
-                                  size_t initialThreadCount) {
-  return New(env, callback, Object(), resourceName, maxQueueSize,
-             initialThreadCount);
+                                                  const Function& callback,
+                                                  ResourceString resourceName,
+                                                  size_t maxQueueSize,
+                                                  size_t initialThreadCount) {
+  return New(
+      env, callback, Object(), resourceName, maxQueueSize, initialThreadCount);
 }
 
 // static
 template <typename ResourceString, typename ContextType>
 inline ThreadSafeFunction ThreadSafeFunction::New(napi_env env,
-                                  const Function& callback,
-                                  ResourceString resourceName,
-                                  size_t maxQueueSize,
-                                  size_t initialThreadCount,
-                                  ContextType* context) {
-  return New(env, callback, Object(), resourceName, maxQueueSize,
-             initialThreadCount, context);
+                                                  const Function& callback,
+                                                  ResourceString resourceName,
+                                                  size_t maxQueueSize,
+                                                  size_t initialThreadCount,
+                                                  ContextType* context) {
+  return New(env,
+             callback,
+             Object(),
+             resourceName,
+             maxQueueSize,
+             initialThreadCount,
+             context);
 }
 
 // static
 template <typename ResourceString, typename Finalizer>
 inline ThreadSafeFunction ThreadSafeFunction::New(napi_env env,
-                                  const Function& callback,
-                                  ResourceString resourceName,
-                                  size_t maxQueueSize,
-                                  size_t initialThreadCount,
-                                  Finalizer finalizeCallback) {
-  return New(env, callback, Object(), resourceName, maxQueueSize,
-             initialThreadCount, finalizeCallback);
+                                                  const Function& callback,
+                                                  ResourceString resourceName,
+                                                  size_t maxQueueSize,
+                                                  size_t initialThreadCount,
+                                                  Finalizer finalizeCallback) {
+  return New(env,
+             callback,
+             Object(),
+             resourceName,
+             maxQueueSize,
+             initialThreadCount,
+             finalizeCallback);
 }
 
 // static
-template <typename ResourceString, typename Finalizer,
+template <typename ResourceString,
+          typename Finalizer,
           typename FinalizerDataType>
 inline ThreadSafeFunction ThreadSafeFunction::New(napi_env env,
-                                  const Function& callback,
-                                  ResourceString resourceName,
-                                  size_t maxQueueSize,
-                                  size_t initialThreadCount,
-                                  Finalizer finalizeCallback,
-                                  FinalizerDataType* data) {
-  return New(env, callback, Object(), resourceName, maxQueueSize,
-             initialThreadCount, finalizeCallback, data);
+                                                  const Function& callback,
+                                                  ResourceString resourceName,
+                                                  size_t maxQueueSize,
+                                                  size_t initialThreadCount,
+                                                  Finalizer finalizeCallback,
+                                                  FinalizerDataType* data) {
+  return New(env,
+             callback,
+             Object(),
+             resourceName,
+             maxQueueSize,
+             initialThreadCount,
+             finalizeCallback,
+             data);
 }
 
 // static
 template <typename ResourceString, typename ContextType, typename Finalizer>
 inline ThreadSafeFunction ThreadSafeFunction::New(napi_env env,
-                                  const Function& callback,
-                                  ResourceString resourceName,
-                                  size_t maxQueueSize,
-                                  size_t initialThreadCount,
-                                  ContextType* context,
-                                  Finalizer finalizeCallback) {
-  return New(env, callback, Object(), resourceName, maxQueueSize,
-             initialThreadCount, context, finalizeCallback);
+                                                  const Function& callback,
+                                                  ResourceString resourceName,
+                                                  size_t maxQueueSize,
+                                                  size_t initialThreadCount,
+                                                  ContextType* context,
+                                                  Finalizer finalizeCallback) {
+  return New(env,
+             callback,
+             Object(),
+             resourceName,
+             maxQueueSize,
+             initialThreadCount,
+             context,
+             finalizeCallback);
 }
 
 // static
-template <typename ResourceString, typename ContextType,
-          typename Finalizer, typename FinalizerDataType>
+template <typename ResourceString,
+          typename ContextType,
+          typename Finalizer,
+          typename FinalizerDataType>
 inline ThreadSafeFunction ThreadSafeFunction::New(napi_env env,
                                                   const Function& callback,
                                                   ResourceString resourceName,
@@ -5324,89 +5804,128 @@ inline ThreadSafeFunction ThreadSafeFunction::New(napi_env env,
                                                   ContextType* context,
                                                   Finalizer finalizeCallback,
                                                   FinalizerDataType* data) {
-  return New(env, callback, Object(), resourceName, maxQueueSize,
-             initialThreadCount, context, finalizeCallback, data);
+  return New(env,
+             callback,
+             Object(),
+             resourceName,
+             maxQueueSize,
+             initialThreadCount,
+             context,
+             finalizeCallback,
+             data);
 }
 
 // static
 template <typename ResourceString>
 inline ThreadSafeFunction ThreadSafeFunction::New(napi_env env,
-                                  const Function& callback,
-                                  const Object& resource,
-                                  ResourceString resourceName,
-                                  size_t maxQueueSize,
-                                  size_t initialThreadCount) {
-  return New(env, callback, resource, resourceName, maxQueueSize,
-             initialThreadCount, static_cast<void*>(nullptr) /* context */);
+                                                  const Function& callback,
+                                                  const Object& resource,
+                                                  ResourceString resourceName,
+                                                  size_t maxQueueSize,
+                                                  size_t initialThreadCount) {
+  return New(env,
+             callback,
+             resource,
+             resourceName,
+             maxQueueSize,
+             initialThreadCount,
+             static_cast<void*>(nullptr) /* context */);
 }
 
 // static
 template <typename ResourceString, typename ContextType>
 inline ThreadSafeFunction ThreadSafeFunction::New(napi_env env,
-                                  const Function& callback,
-                                  const Object& resource,
-                                  ResourceString resourceName,
-                                  size_t maxQueueSize,
-                                  size_t initialThreadCount,
-                                  ContextType* context) {
-  return New(env, callback, resource, resourceName, maxQueueSize,
-             initialThreadCount, context,
+                                                  const Function& callback,
+                                                  const Object& resource,
+                                                  ResourceString resourceName,
+                                                  size_t maxQueueSize,
+                                                  size_t initialThreadCount,
+                                                  ContextType* context) {
+  return New(env,
+             callback,
+             resource,
+             resourceName,
+             maxQueueSize,
+             initialThreadCount,
+             context,
              [](Env, ContextType*) {} /* empty finalizer */);
 }
 
 // static
 template <typename ResourceString, typename Finalizer>
 inline ThreadSafeFunction ThreadSafeFunction::New(napi_env env,
-                                  const Function& callback,
-                                  const Object& resource,
-                                  ResourceString resourceName,
-                                  size_t maxQueueSize,
-                                  size_t initialThreadCount,
-                                  Finalizer finalizeCallback) {
-  return New(env, callback, resource, resourceName, maxQueueSize,
-             initialThreadCount, static_cast<void*>(nullptr) /* context */,
-             finalizeCallback, static_cast<void*>(nullptr) /* data */,
+                                                  const Function& callback,
+                                                  const Object& resource,
+                                                  ResourceString resourceName,
+                                                  size_t maxQueueSize,
+                                                  size_t initialThreadCount,
+                                                  Finalizer finalizeCallback) {
+  return New(env,
+             callback,
+             resource,
+             resourceName,
+             maxQueueSize,
+             initialThreadCount,
+             static_cast<void*>(nullptr) /* context */,
+             finalizeCallback,
+             static_cast<void*>(nullptr) /* data */,
              details::ThreadSafeFinalize<void, Finalizer>::Wrapper);
 }
 
 // static
-template <typename ResourceString, typename Finalizer,
+template <typename ResourceString,
+          typename Finalizer,
           typename FinalizerDataType>
 inline ThreadSafeFunction ThreadSafeFunction::New(napi_env env,
-                                  const Function& callback,
-                                  const Object& resource,
-                                  ResourceString resourceName,
-                                  size_t maxQueueSize,
-                                  size_t initialThreadCount,
-                                  Finalizer finalizeCallback,
-                                  FinalizerDataType* data) {
-  return New(env, callback, resource, resourceName, maxQueueSize,
-             initialThreadCount, static_cast<void*>(nullptr) /* context */,
-             finalizeCallback, data,
-             details::ThreadSafeFinalize<
-                 void, Finalizer, FinalizerDataType>::FinalizeWrapperWithData);
+                                                  const Function& callback,
+                                                  const Object& resource,
+                                                  ResourceString resourceName,
+                                                  size_t maxQueueSize,
+                                                  size_t initialThreadCount,
+                                                  Finalizer finalizeCallback,
+                                                  FinalizerDataType* data) {
+  return New(env,
+             callback,
+             resource,
+             resourceName,
+             maxQueueSize,
+             initialThreadCount,
+             static_cast<void*>(nullptr) /* context */,
+             finalizeCallback,
+             data,
+             details::ThreadSafeFinalize<void, Finalizer, FinalizerDataType>::
+                 FinalizeWrapperWithData);
 }
 
 // static
 template <typename ResourceString, typename ContextType, typename Finalizer>
 inline ThreadSafeFunction ThreadSafeFunction::New(napi_env env,
-                                  const Function& callback,
-                                  const Object& resource,
-                                  ResourceString resourceName,
-                                  size_t maxQueueSize,
-                                  size_t initialThreadCount,
-                                  ContextType* context,
-                                  Finalizer finalizeCallback) {
-  return New(env, callback, resource, resourceName, maxQueueSize,
-             initialThreadCount, context, finalizeCallback,
-             static_cast<void*>(nullptr) /* data */,
-             details::ThreadSafeFinalize<
-                 ContextType, Finalizer>::FinalizeWrapperWithContext);
+                                                  const Function& callback,
+                                                  const Object& resource,
+                                                  ResourceString resourceName,
+                                                  size_t maxQueueSize,
+                                                  size_t initialThreadCount,
+                                                  ContextType* context,
+                                                  Finalizer finalizeCallback) {
+  return New(
+      env,
+      callback,
+      resource,
+      resourceName,
+      maxQueueSize,
+      initialThreadCount,
+      context,
+      finalizeCallback,
+      static_cast<void*>(nullptr) /* data */,
+      details::ThreadSafeFinalize<ContextType,
+                                  Finalizer>::FinalizeWrapperWithContext);
 }
 
 // static
-template <typename ResourceString, typename ContextType,
-          typename Finalizer, typename FinalizerDataType>
+template <typename ResourceString,
+          typename ContextType,
+          typename Finalizer,
+          typename FinalizerDataType>
 inline ThreadSafeFunction ThreadSafeFunction::New(napi_env env,
                                                   const Function& callback,
                                                   const Object& resource,
@@ -5416,20 +5935,24 @@ inline ThreadSafeFunction ThreadSafeFunction::New(napi_env env,
                                                   ContextType* context,
                                                   Finalizer finalizeCallback,
                                                   FinalizerDataType* data) {
-  return New(env, callback, resource, resourceName, maxQueueSize,
-             initialThreadCount, context, finalizeCallback, data,
-             details::ThreadSafeFinalize<ContextType, Finalizer,
-                 FinalizerDataType>::FinalizeFinalizeWrapperWithDataAndContext);
+  return New(
+      env,
+      callback,
+      resource,
+      resourceName,
+      maxQueueSize,
+      initialThreadCount,
+      context,
+      finalizeCallback,
+      data,
+      details::ThreadSafeFinalize<ContextType, Finalizer, FinalizerDataType>::
+          FinalizeFinalizeWrapperWithDataAndContext);
 }
 
-inline ThreadSafeFunction::ThreadSafeFunction()
-  : _tsfn() {
-}
+inline ThreadSafeFunction::ThreadSafeFunction() : _tsfn() {}
 
-inline ThreadSafeFunction::ThreadSafeFunction(
-    napi_threadsafe_function tsfn)
-  : _tsfn(tsfn) {
-}
+inline ThreadSafeFunction::ThreadSafeFunction(napi_threadsafe_function tsfn)
+    : _tsfn(tsfn) {}
 
 inline ThreadSafeFunction::operator napi_threadsafe_function() const {
   return _tsfn;
@@ -5440,20 +5963,18 @@ inline napi_status ThreadSafeFunction::BlockingCall() const {
 }
 
 template <>
-inline napi_status ThreadSafeFunction::BlockingCall(
-    void* data) const {
+inline napi_status ThreadSafeFunction::BlockingCall(void* data) const {
   return napi_call_threadsafe_function(_tsfn, data, napi_tsfn_blocking);
 }
 
 template <typename Callback>
-inline napi_status ThreadSafeFunction::BlockingCall(
-    Callback callback) const {
+inline napi_status ThreadSafeFunction::BlockingCall(Callback callback) const {
   return CallInternal(new CallbackWrapper(callback), napi_tsfn_blocking);
 }
 
 template <typename DataType, typename Callback>
-inline napi_status ThreadSafeFunction::BlockingCall(
-    DataType* data, Callback callback) const {
+inline napi_status ThreadSafeFunction::BlockingCall(DataType* data,
+                                                    Callback callback) const {
   auto wrapper = [data, callback](Env env, Function jsCallback) {
     callback(env, jsCallback, data);
   };
@@ -5465,8 +5986,7 @@ inline napi_status ThreadSafeFunction::NonBlockingCall() const {
 }
 
 template <>
-inline napi_status ThreadSafeFunction::NonBlockingCall(
-    void* data) const {
+inline napi_status ThreadSafeFunction::NonBlockingCall(void* data) const {
   return napi_call_threadsafe_function(_tsfn, data, napi_tsfn_nonblocking);
 }
 
@@ -5503,25 +6023,29 @@ inline napi_status ThreadSafeFunction::Acquire() const {
   return napi_acquire_threadsafe_function(_tsfn);
 }
 
-inline napi_status ThreadSafeFunction::Release() {
+inline napi_status ThreadSafeFunction::Release() const {
   return napi_release_threadsafe_function(_tsfn, napi_tsfn_release);
 }
 
-inline napi_status ThreadSafeFunction::Abort() {
+inline napi_status ThreadSafeFunction::Abort() const {
   return napi_release_threadsafe_function(_tsfn, napi_tsfn_abort);
 }
 
-inline ThreadSafeFunction::ConvertibleContext
-ThreadSafeFunction::GetContext() const {
+inline ThreadSafeFunction::ConvertibleContext ThreadSafeFunction::GetContext()
+    const {
   void* context;
   napi_status status = napi_get_threadsafe_function_context(_tsfn, &context);
-  NAPI_FATAL_IF_FAILED(status, "ThreadSafeFunction::GetContext", "napi_get_threadsafe_function_context");
-  return ConvertibleContext({ context });
+  NAPI_FATAL_IF_FAILED(status,
+                       "ThreadSafeFunction::GetContext",
+                       "napi_get_threadsafe_function_context");
+  return ConvertibleContext({context});
 }
 
 // static
-template <typename ResourceString, typename ContextType,
-          typename Finalizer, typename FinalizerDataType>
+template <typename ResourceString,
+          typename ContextType,
+          typename Finalizer,
+          typename FinalizerDataType>
 inline ThreadSafeFunction ThreadSafeFunction::New(napi_env env,
                                                   const Function& callback,
                                                   const Object& resource,
@@ -5532,16 +6056,26 @@ inline ThreadSafeFunction ThreadSafeFunction::New(napi_env env,
                                                   Finalizer finalizeCallback,
                                                   FinalizerDataType* data,
                                                   napi_finalize wrapper) {
-  static_assert(details::can_make_string<ResourceString>::value
-      || std::is_convertible<ResourceString, napi_value>::value,
-      "Resource name should be convertible to the string type");
+  static_assert(details::can_make_string<ResourceString>::value ||
+                    std::is_convertible<ResourceString, napi_value>::value,
+                "Resource name should be convertible to the string type");
 
   ThreadSafeFunction tsfn;
-  auto* finalizeData = new details::ThreadSafeFinalize<ContextType, Finalizer,
-      FinalizerDataType>({ data, finalizeCallback });
-  napi_status status = napi_create_threadsafe_function(env, callback, resource,
-      Value::From(env, resourceName), maxQueueSize, initialThreadCount,
-      finalizeData, wrapper, context, CallJS, &tsfn._tsfn);
+  auto* finalizeData = new details::
+      ThreadSafeFinalize<ContextType, Finalizer, FinalizerDataType>(
+          {data, finalizeCallback});
+  napi_status status =
+      napi_create_threadsafe_function(env,
+                                      callback,
+                                      resource,
+                                      Value::From(env, resourceName),
+                                      maxQueueSize,
+                                      initialThreadCount,
+                                      finalizeData,
+                                      wrapper,
+                                      context,
+                                      CallJS,
+                                      &tsfn._tsfn);
   if (status != napi_ok) {
     delete finalizeData;
     NAPI_THROW_IF_FAILED(env, status, ThreadSafeFunction());
@@ -5553,8 +6087,8 @@ inline ThreadSafeFunction ThreadSafeFunction::New(napi_env env,
 inline napi_status ThreadSafeFunction::CallInternal(
     CallbackWrapper* callbackWrapper,
     napi_threadsafe_function_call_mode mode) const {
-  napi_status status = napi_call_threadsafe_function(
-      _tsfn, callbackWrapper, mode);
+  napi_status status =
+      napi_call_threadsafe_function(_tsfn, callbackWrapper, mode);
   if (status != napi_ok && callbackWrapper != nullptr) {
     delete callbackWrapper;
   }
@@ -5584,13 +6118,15 @@ inline void ThreadSafeFunction::CallJS(napi_env env,
 // Async Progress Worker Base class
 ////////////////////////////////////////////////////////////////////////////////
 template <typename DataType>
-inline AsyncProgressWorkerBase<DataType>::AsyncProgressWorkerBase(const Object& receiver,
-                                                                  const Function& callback,
-                                                                  const char* resource_name,
-                                                                  const Object& resource,
-                                                                  size_t queue_size)
-  : AsyncWorker(receiver, callback, resource_name, resource) {
-  // Fill all possible arguments to work around ambiguous ThreadSafeFunction::New signatures.
+inline AsyncProgressWorkerBase<DataType>::AsyncProgressWorkerBase(
+    const Object& receiver,
+    const Function& callback,
+    const char* resource_name,
+    const Object& resource,
+    size_t queue_size)
+    : AsyncWorker(receiver, callback, resource_name, resource) {
+  // Fill all possible arguments to work around ambiguous
+  // ThreadSafeFunction::New signatures.
   _tsfn = ThreadSafeFunction::New(callback.Env(),
                                   callback,
                                   resource,
@@ -5604,15 +6140,18 @@ inline AsyncProgressWorkerBase<DataType>::AsyncProgressWorkerBase(const Object& 
 
 #if NAPI_VERSION > 4
 template <typename DataType>
-inline AsyncProgressWorkerBase<DataType>::AsyncProgressWorkerBase(Napi::Env env,
-                                                                  const char* resource_name,
-                                                                  const Object& resource,
-                                                                  size_t queue_size)
-  : AsyncWorker(env, resource_name, resource) {
+inline AsyncProgressWorkerBase<DataType>::AsyncProgressWorkerBase(
+    Napi::Env env,
+    const char* resource_name,
+    const Object& resource,
+    size_t queue_size)
+    : AsyncWorker(env, resource_name, resource) {
   // TODO: Once the changes to make the callback optional for threadsafe
-  // functions are available on all versions we can remove the dummy Function here.
+  // functions are available on all versions we can remove the dummy Function
+  // here.
   Function callback;
-  // Fill all possible arguments to work around ambiguous ThreadSafeFunction::New signatures.
+  // Fill all possible arguments to work around ambiguous
+  // ThreadSafeFunction::New signatures.
   _tsfn = ThreadSafeFunction::New(env,
                                   callback,
                                   resource,
@@ -5625,38 +6164,45 @@ inline AsyncProgressWorkerBase<DataType>::AsyncProgressWorkerBase(Napi::Env env,
 }
 #endif
 
-template<typename DataType>
+template <typename DataType>
 inline AsyncProgressWorkerBase<DataType>::~AsyncProgressWorkerBase() {
   // Abort pending tsfn call.
   // Don't send progress events after we've already completed.
-  // It's ok to call ThreadSafeFunction::Abort and ThreadSafeFunction::Release duplicated.
+  // It's ok to call ThreadSafeFunction::Abort and ThreadSafeFunction::Release
+  // duplicated.
   _tsfn.Abort();
 }
 
 template <typename DataType>
-inline void AsyncProgressWorkerBase<DataType>::OnAsyncWorkProgress(Napi::Env /* env */,
-                                Napi::Function /* jsCallback */,
-                                void* data) {
+inline void AsyncProgressWorkerBase<DataType>::OnAsyncWorkProgress(
+    Napi::Env /* env */, Napi::Function /* jsCallback */, void* data) {
   ThreadSafeData* tsd = static_cast<ThreadSafeData*>(data);
   tsd->asyncprogressworker()->OnWorkProgress(tsd->data());
   delete tsd;
 }
 
 template <typename DataType>
-inline napi_status AsyncProgressWorkerBase<DataType>::NonBlockingCall(DataType* data) {
+inline napi_status AsyncProgressWorkerBase<DataType>::NonBlockingCall(
+    DataType* data) {
   auto tsd = new AsyncProgressWorkerBase::ThreadSafeData(this, data);
-  return _tsfn.NonBlockingCall(tsd, OnAsyncWorkProgress);
+  auto ret = _tsfn.NonBlockingCall(tsd, OnAsyncWorkProgress);
+  if (ret != napi_ok) {
+    delete tsd;
+  }
+  return ret;
 }
 
 template <typename DataType>
-inline void AsyncProgressWorkerBase<DataType>::OnWorkComplete(Napi::Env /* env */, napi_status status) {
+inline void AsyncProgressWorkerBase<DataType>::OnWorkComplete(
+    Napi::Env /* env */, napi_status status) {
   _work_completed = true;
   _complete_status = status;
   _tsfn.Release();
 }
 
 template <typename DataType>
-inline void AsyncProgressWorkerBase<DataType>::OnThreadSafeFunctionFinalize(Napi::Env env, void* /* data */, AsyncProgressWorkerBase* context) {
+inline void AsyncProgressWorkerBase<DataType>::OnThreadSafeFunctionFinalize(
+    Napi::Env env, void* /* data */, AsyncProgressWorkerBase* context) {
   if (context->_work_completed) {
     context->AsyncWorker::OnWorkComplete(env, context->_complete_status);
   }
@@ -5665,76 +6211,65 @@ inline void AsyncProgressWorkerBase<DataType>::OnThreadSafeFunctionFinalize(Napi
 ////////////////////////////////////////////////////////////////////////////////
 // Async Progress Worker class
 ////////////////////////////////////////////////////////////////////////////////
-template<class T>
+template <class T>
 inline AsyncProgressWorker<T>::AsyncProgressWorker(const Function& callback)
-  : AsyncProgressWorker(callback, "generic") {
-}
+    : AsyncProgressWorker(callback, "generic") {}
 
-template<class T>
+template <class T>
 inline AsyncProgressWorker<T>::AsyncProgressWorker(const Function& callback,
-                                const char* resource_name)
-  : AsyncProgressWorker(callback, resource_name, Object::New(callback.Env())) {
-}
+                                                   const char* resource_name)
+    : AsyncProgressWorker(
+          callback, resource_name, Object::New(callback.Env())) {}
 
-template<class T>
+template <class T>
 inline AsyncProgressWorker<T>::AsyncProgressWorker(const Function& callback,
-                                const char* resource_name,
-                                const Object& resource)
-  : AsyncProgressWorker(Object::New(callback.Env()),
-                callback,
-                resource_name,
-                resource) {
-}
+                                                   const char* resource_name,
+                                                   const Object& resource)
+    : AsyncProgressWorker(
+          Object::New(callback.Env()), callback, resource_name, resource) {}
 
-template<class T>
+template <class T>
 inline AsyncProgressWorker<T>::AsyncProgressWorker(const Object& receiver,
                                                    const Function& callback)
-  : AsyncProgressWorker(receiver, callback, "generic") {
-}
+    : AsyncProgressWorker(receiver, callback, "generic") {}
 
-template<class T>
+template <class T>
 inline AsyncProgressWorker<T>::AsyncProgressWorker(const Object& receiver,
                                                    const Function& callback,
                                                    const char* resource_name)
-  : AsyncProgressWorker(receiver,
-                callback,
-                resource_name,
-                Object::New(callback.Env())) {
-}
+    : AsyncProgressWorker(
+          receiver, callback, resource_name, Object::New(callback.Env())) {}
 
-template<class T>
+template <class T>
 inline AsyncProgressWorker<T>::AsyncProgressWorker(const Object& receiver,
                                                    const Function& callback,
                                                    const char* resource_name,
                                                    const Object& resource)
-  : AsyncProgressWorkerBase(receiver, callback, resource_name, resource),
-    _asyncdata(nullptr),
-    _asyncsize(0) {
-}
+    : AsyncProgressWorkerBase(receiver, callback, resource_name, resource),
+      _asyncdata(nullptr),
+      _asyncsize(0),
+      _signaled(false) {}
 
 #if NAPI_VERSION > 4
-template<class T>
+template <class T>
 inline AsyncProgressWorker<T>::AsyncProgressWorker(Napi::Env env)
-  : AsyncProgressWorker(env, "generic") {
-}
+    : AsyncProgressWorker(env, "generic") {}
 
-template<class T>
+template <class T>
 inline AsyncProgressWorker<T>::AsyncProgressWorker(Napi::Env env,
                                                    const char* resource_name)
-  : AsyncProgressWorker(env, resource_name, Object::New(env)) {
-}
+    : AsyncProgressWorker(env, resource_name, Object::New(env)) {}
 
-template<class T>
+template <class T>
 inline AsyncProgressWorker<T>::AsyncProgressWorker(Napi::Env env,
                                                    const char* resource_name,
                                                    const Object& resource)
-  : AsyncProgressWorkerBase(env, resource_name, resource),
-    _asyncdata(nullptr),
-    _asyncsize(0) {
-}
+    : AsyncProgressWorkerBase(env, resource_name, resource),
+      _asyncdata(nullptr),
+      _asyncsize(0) {}
 #endif
 
-template<class T>
+template <class T>
 inline AsyncProgressWorker<T>::~AsyncProgressWorker() {
   {
 #if !defined (NO_NAPI_MUTEX) // BENTLEY CHANGE
@@ -5745,24 +6280,27 @@ inline AsyncProgressWorker<T>::~AsyncProgressWorker() {
   }
 }
 
-template<class T>
+template <class T>
 inline void AsyncProgressWorker<T>::Execute() {
   ExecutionProgress progress(this);
   Execute(progress);
 }
 
-template<class T>
+template <class T>
 inline void AsyncProgressWorker<T>::OnWorkProgress(void*) {
   T* data;
   size_t size;
+  bool signaled;
   {
 #if !defined (NO_NAPI_MUTEX) // BENTLEY CHANGE
     std::lock_guard<std::mutex> lock(this->_mutex);
 #endif
     data = this->_asyncdata;
     size = this->_asyncsize;
+    signaled = this->_signaled;
     this->_asyncdata = nullptr;
     this->_asyncsize = 0;
+    this->_signaled = false;
   }
 
   /**
@@ -5772,7 +6310,7 @@ inline void AsyncProgressWorker<T>::OnWorkProgress(void*) {
    * the deferring the signal of uv_async_t is been sent again, i.e. potential
    * not coalesced two calls of the TSFN callback.
    */
-  if (data == nullptr) {
+  if (data == nullptr && !signaled) {
     return;
   }
 
@@ -5780,121 +6318,121 @@ inline void AsyncProgressWorker<T>::OnWorkProgress(void*) {
   delete[] data;
 }
 
-template<class T>
+template <class T>
 inline void AsyncProgressWorker<T>::SendProgress_(const T* data, size_t count) {
-    T* new_data = new T[count];
-    std::copy(data, data + count, new_data);
+  T* new_data = new T[count];
+  std::copy(data, data + count, new_data);
 
-    T* old_data;
-    {
+  T* old_data;
+  {
 #if !defined (NO_NAPI_MUTEX) // BENTLEY CHANGE
-      std::lock_guard<std::mutex> lock(this->_mutex);
+    std::lock_guard<std::mutex> lock(this->_mutex);
 #endif
-      old_data = _asyncdata;
-      _asyncdata = new_data;
-      _asyncsize = count;
-    }
-    this->NonBlockingCall(nullptr);
+    old_data = _asyncdata;
+    _asyncdata = new_data;
+    _asyncsize = count;
+    _signaled = false;
+  }
+  this->NonBlockingCall(nullptr);
 
-    delete[] old_data;
+  delete[] old_data;
 }
 
-template<class T>
-inline void AsyncProgressWorker<T>::Signal() const {
+template <class T>
+inline void AsyncProgressWorker<T>::Signal() {
+  {
+    std::lock_guard<std::mutex> lock(this->_mutex);
+    _signaled = true;
+  }
   this->NonBlockingCall(static_cast<T*>(nullptr));
 }
 
-template<class T>
+template <class T>
 inline void AsyncProgressWorker<T>::ExecutionProgress::Signal() const {
-  _worker->Signal();
+  this->_worker->Signal();
 }
 
-template<class T>
-inline void AsyncProgressWorker<T>::ExecutionProgress::Send(const T* data, size_t count) const {
+template <class T>
+inline void AsyncProgressWorker<T>::ExecutionProgress::Send(
+    const T* data, size_t count) const {
   _worker->SendProgress_(data, count);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Async Progress Queue Worker class
 ////////////////////////////////////////////////////////////////////////////////
-template<class T>
-inline AsyncProgressQueueWorker<T>::AsyncProgressQueueWorker(const Function& callback)
-  : AsyncProgressQueueWorker(callback, "generic") {
-}
+template <class T>
+inline AsyncProgressQueueWorker<T>::AsyncProgressQueueWorker(
+    const Function& callback)
+    : AsyncProgressQueueWorker(callback, "generic") {}
 
-template<class T>
-inline AsyncProgressQueueWorker<T>::AsyncProgressQueueWorker(const Function& callback,
-                                                             const char* resource_name)
-  : AsyncProgressQueueWorker(callback, resource_name, Object::New(callback.Env())) {
-}
+template <class T>
+inline AsyncProgressQueueWorker<T>::AsyncProgressQueueWorker(
+    const Function& callback, const char* resource_name)
+    : AsyncProgressQueueWorker(
+          callback, resource_name, Object::New(callback.Env())) {}
 
-template<class T>
-inline AsyncProgressQueueWorker<T>::AsyncProgressQueueWorker(const Function& callback,
-                                                             const char* resource_name,
-                                                             const Object& resource)
-  : AsyncProgressQueueWorker(Object::New(callback.Env()),
-                             callback,
-                             resource_name,
-                             resource) {
-}
+template <class T>
+inline AsyncProgressQueueWorker<T>::AsyncProgressQueueWorker(
+    const Function& callback, const char* resource_name, const Object& resource)
+    : AsyncProgressQueueWorker(
+          Object::New(callback.Env()), callback, resource_name, resource) {}
 
-template<class T>
-inline AsyncProgressQueueWorker<T>::AsyncProgressQueueWorker(const Object& receiver,
-                                                             const Function& callback)
-  : AsyncProgressQueueWorker(receiver, callback, "generic") {
-}
+template <class T>
+inline AsyncProgressQueueWorker<T>::AsyncProgressQueueWorker(
+    const Object& receiver, const Function& callback)
+    : AsyncProgressQueueWorker(receiver, callback, "generic") {}
 
-template<class T>
-inline AsyncProgressQueueWorker<T>::AsyncProgressQueueWorker(const Object& receiver,
-                                                             const Function& callback,
-                                                             const char* resource_name)
-  : AsyncProgressQueueWorker(receiver,
-                             callback,
-                             resource_name,
-                             Object::New(callback.Env())) {
-}
+template <class T>
+inline AsyncProgressQueueWorker<T>::AsyncProgressQueueWorker(
+    const Object& receiver, const Function& callback, const char* resource_name)
+    : AsyncProgressQueueWorker(
+          receiver, callback, resource_name, Object::New(callback.Env())) {}
 
-template<class T>
-inline AsyncProgressQueueWorker<T>::AsyncProgressQueueWorker(const Object& receiver,
-                                                             const Function& callback,
-                                                             const char* resource_name,
-                                                             const Object& resource)
-  : AsyncProgressWorkerBase<std::pair<T*, size_t>>(receiver, callback, resource_name, resource, /** unlimited queue size */0) {
-}
+template <class T>
+inline AsyncProgressQueueWorker<T>::AsyncProgressQueueWorker(
+    const Object& receiver,
+    const Function& callback,
+    const char* resource_name,
+    const Object& resource)
+    : AsyncProgressWorkerBase<std::pair<T*, size_t>>(
+          receiver,
+          callback,
+          resource_name,
+          resource,
+          /** unlimited queue size */ 0) {}
 
 #if NAPI_VERSION > 4
-template<class T>
+template <class T>
 inline AsyncProgressQueueWorker<T>::AsyncProgressQueueWorker(Napi::Env env)
-  : AsyncProgressQueueWorker(env, "generic") {
-}
+    : AsyncProgressQueueWorker(env, "generic") {}
 
-template<class T>
-inline AsyncProgressQueueWorker<T>::AsyncProgressQueueWorker(Napi::Env env,
-                                const char* resource_name)
-  : AsyncProgressQueueWorker(env, resource_name, Object::New(env)) {
-}
+template <class T>
+inline AsyncProgressQueueWorker<T>::AsyncProgressQueueWorker(
+    Napi::Env env, const char* resource_name)
+    : AsyncProgressQueueWorker(env, resource_name, Object::New(env)) {}
 
-template<class T>
-inline AsyncProgressQueueWorker<T>::AsyncProgressQueueWorker(Napi::Env env,
-                                                             const char* resource_name,
-                                                             const Object& resource)
-  : AsyncProgressWorkerBase<std::pair<T*, size_t>>(env, resource_name, resource, /** unlimited queue size */0) {
-}
+template <class T>
+inline AsyncProgressQueueWorker<T>::AsyncProgressQueueWorker(
+    Napi::Env env, const char* resource_name, const Object& resource)
+    : AsyncProgressWorkerBase<std::pair<T*, size_t>>(
+          env, resource_name, resource, /** unlimited queue size */ 0) {}
 #endif
 
-template<class T>
+template <class T>
 inline void AsyncProgressQueueWorker<T>::Execute() {
   ExecutionProgress progress(this);
   Execute(progress);
 }
 
-template<class T>
-inline void AsyncProgressQueueWorker<T>::OnWorkProgress(std::pair<T*, size_t>* datapair) {
+template <class T>
+inline void AsyncProgressQueueWorker<T>::OnWorkProgress(
+    std::pair<T*, size_t>* datapair) {
   if (datapair == nullptr) {
     return;
   }
 
-  T *data = datapair->first;
+  T* data = datapair->first;
   size_t size = datapair->second;
 
   this->OnProgress(data, size);
@@ -5902,44 +6440,49 @@ inline void AsyncProgressQueueWorker<T>::OnWorkProgress(std::pair<T*, size_t>* d
   delete[] data;
 }
 
-template<class T>
-inline void AsyncProgressQueueWorker<T>::SendProgress_(const T* data, size_t count) {
-    T* new_data = new T[count];
-    std::copy(data, data + count, new_data);
+template <class T>
+inline void AsyncProgressQueueWorker<T>::SendProgress_(const T* data,
+                                                       size_t count) {
+  T* new_data = new T[count];
+  std::copy(data, data + count, new_data);
 
-    auto pair = new std::pair<T*, size_t>(new_data, count);
-    this->NonBlockingCall(pair);
+  auto pair = new std::pair<T*, size_t>(new_data, count);
+  this->NonBlockingCall(pair);
 }
 
-template<class T>
+template <class T>
 inline void AsyncProgressQueueWorker<T>::Signal() const {
-  this->NonBlockingCall(nullptr);
+  this->SendProgress_(static_cast<T*>(nullptr), 0);
 }
 
-template<class T>
-inline void AsyncProgressQueueWorker<T>::OnWorkComplete(Napi::Env env, napi_status status) {
+template <class T>
+inline void AsyncProgressQueueWorker<T>::OnWorkComplete(Napi::Env env,
+                                                        napi_status status) {
   // Draining queued items in TSFN.
   AsyncProgressWorkerBase<std::pair<T*, size_t>>::OnWorkComplete(env, status);
 }
 
-template<class T>
+template <class T>
 inline void AsyncProgressQueueWorker<T>::ExecutionProgress::Signal() const {
-  _worker->Signal();
+  _worker->SendProgress_(static_cast<T*>(nullptr), 0);
 }
 
-template<class T>
-inline void AsyncProgressQueueWorker<T>::ExecutionProgress::Send(const T* data, size_t count) const {
+template <class T>
+inline void AsyncProgressQueueWorker<T>::ExecutionProgress::Send(
+    const T* data, size_t count) const {
   _worker->SendProgress_(data, count);
 }
-#endif  // NAPI_VERSION > 3 && !defined(__wasm32__)
+#endif  // NAPI_VERSION > 3 && NAPI_HAS_THREADS
 
 ////////////////////////////////////////////////////////////////////////////////
 // Memory Management class
 ////////////////////////////////////////////////////////////////////////////////
 
-inline int64_t MemoryManagement::AdjustExternalMemory(Env env, int64_t change_in_bytes) {
+inline int64_t MemoryManagement::AdjustExternalMemory(Env env,
+                                                      int64_t change_in_bytes) {
   int64_t result;
-  napi_status status = napi_adjust_external_memory(env, change_in_bytes, &result);
+  napi_status status =
+      napi_adjust_external_memory(env, change_in_bytes, &result);
   NAPI_THROW_IF_FAILED(env, status, 0);
   return result;
 }
@@ -5980,24 +6523,20 @@ inline T* Addon<T>::Unwrap(Object wrapper) {
 }
 
 template <typename T>
-inline void
-Addon<T>::DefineAddon(Object exports,
-                      const std::initializer_list<AddonProp>& props) {
+inline void Addon<T>::DefineAddon(
+    Object exports, const std::initializer_list<AddonProp>& props) {
   DefineProperties(exports, props);
   entry_point_ = exports;
 }
 
 template <typename T>
-inline Napi::Object
-Addon<T>::DefineProperties(Object object,
-                           const std::initializer_list<AddonProp>& props) {
+inline Napi::Object Addon<T>::DefineProperties(
+    Object object, const std::initializer_list<AddonProp>& props) {
   const napi_property_descriptor* properties =
-    reinterpret_cast<const napi_property_descriptor*>(props.begin());
+      reinterpret_cast<const napi_property_descriptor*>(props.begin());
   size_t size = props.size();
-  napi_status status = napi_define_properties(object.Env(),
-                                              object,
-                                              size,
-                                              properties);
+  napi_status status =
+      napi_define_properties(object.Env(), object, size, properties);
   NAPI_THROW_IF_FAILED(object.Env(), status, object);
   for (size_t idx = 0; idx < size; idx++)
     T::AttachPropData(object.Env(), object, &properties[idx]);
@@ -6014,6 +6553,11 @@ Env::CleanupHook<Hook, Arg> Env::AddCleanupHook(Hook hook, Arg* arg) {
 template <typename Hook>
 Env::CleanupHook<Hook> Env::AddCleanupHook(Hook hook) {
   return CleanupHook<Hook>(*this, hook);
+}
+
+template <typename Hook, typename Arg>
+Env::CleanupHook<Hook, Arg>::CleanupHook() {
+  data = nullptr;
 }
 
 template <typename Hook, typename Arg>
@@ -6052,6 +6596,10 @@ bool Env::CleanupHook<Hook, Arg>::IsEmpty() const {
 }
 #endif  // NAPI_VERSION > 2
 
-} // namespace Napi
+#ifdef NAPI_CPP_CUSTOM_NAMESPACE
+}  // namespace NAPI_CPP_CUSTOM_NAMESPACE
+#endif
 
-#endif // SRC_NAPI_INL_H_
+}  // namespace Napi
+
+#endif  // SRC_NAPI_INL_H_

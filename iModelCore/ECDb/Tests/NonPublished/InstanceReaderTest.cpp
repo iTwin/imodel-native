@@ -532,7 +532,7 @@ TEST_F(InstanceReaderFixture, check_instance_serialization) {
                     "Y":9.73592815626386,
                     "Z":9.735928156263855
                 },
-                "GeometryStream":"encoding=base64;yw=="
+                "GeometryStream":"{\"bytes\":203}"
             },
             {
                 "ECInstanceId":"0x39",
@@ -573,7 +573,7 @@ TEST_F(InstanceReaderFixture, check_instance_serialization) {
                     "Y":7.538875423282143,
                     "Z":7.538875423282142
                 },
-                "GeometryStream":"encoding=base64;yQ=="
+                "GeometryStream":"{\"bytes\":201}"
             },
             {
                 "ECInstanceId":"0x3a",
@@ -614,7 +614,7 @@ TEST_F(InstanceReaderFixture, check_instance_serialization) {
                     "Y":9.735928156263853,
                     "Z":9.735928156263855
                 },
-                "GeometryStream":"encoding=base64;zA=="
+                "GeometryStream":"{\"bytes\":204}"
             },
             {
                 "ECInstanceId":"0x3b",
@@ -655,7 +655,7 @@ TEST_F(InstanceReaderFixture, check_instance_serialization) {
                     "Y":7.538875423282143,
                     "Z":7.538875423282142
                 },
-                "GeometryStream":"encoding=base64;yQ=="
+                "GeometryStream":"{\"bytes\":201}"
             }
         ]
 
@@ -938,113 +938,113 @@ TEST_F(InstanceReaderFixture, dynamic_meta_data) {
             auto ecInstanceId = stmt.GetValueInt(0);
             if (ecInstanceId == 10) { // t100, a
                 assertDynamic(stmt, 1 , "a", "a", "info-a", "T100", PrimitiveType::PRIMITIVETYPE_Integer);
-                assertDefault(stmt, 2 , "$ -> b", "__x0024____x0020____x002D____x003E____x0020__b");
-                assertDefault(stmt, 3 , "$ -> c", "__x0024____x0020____x002D____x003E____x0020__c");
-                assertDefault(stmt, 4 , "$ -> d", "__x0024____x0020____x002D____x003E____x0020__d");
-                assertDefault(stmt, 5 , "$ -> e", "__x0024____x0020____x002D____x003E____x0020__e");
-                assertDefault(stmt, 6 , "$ -> f", "__x0024____x0020____x002D____x003E____x0020__f");
-                assertDefault(stmt, 7 , "$ -> g", "__x0024____x0020____x002D____x003E____x0020__g");
-                assertDefault(stmt, 8 , "$ -> h", "__x0024____x0020____x002D____x003E____x0020__h");
-                assertDefault(stmt, 9 , "$ -> i", "__x0024____x0020____x002D____x003E____x0020__i");
-                assertDefault(stmt, 10, "$ -> j", "__x0024____x0020____x002D____x003E____x0020__j");
+                assertDefault(stmt, 2 , "$->b", "__x0024____x002D____x003E__b");
+                assertDefault(stmt, 3 , "$->c", "__x0024____x002D____x003E__c");
+                assertDefault(stmt, 4 , "$->d", "__x0024____x002D____x003E__d");
+                assertDefault(stmt, 5 , "$->e", "__x0024____x002D____x003E__e");
+                assertDefault(stmt, 6 , "$->f", "__x0024____x002D____x003E__f");
+                assertDefault(stmt, 7 , "$->g", "__x0024____x002D____x003E__g");
+                assertDefault(stmt, 8 , "$->h", "__x0024____x002D____x003E__h");
+                assertDefault(stmt, 9 , "$->i", "__x0024____x002D____x003E__i");
+                assertDefault(stmt, 10, "$->j", "__x0024____x002D____x003E__j");
             } else if (ecInstanceId == 11) { // t200, b
-                assertDefault(stmt, 1 , "$ -> a", "__x0024____x0020____x002D____x003E____x0020__a");
+                assertDefault(stmt, 1 , "$->a", "__x0024____x002D____x003E__a");
                 assertDynamic(stmt, 2 , "b", "b", "info-b", "T200", PrimitiveType::PRIMITIVETYPE_Integer);
-                assertDefault(stmt, 3 , "$ -> c", "__x0024____x0020____x002D____x003E____x0020__c");
-                assertDefault(stmt, 4 , "$ -> d", "__x0024____x0020____x002D____x003E____x0020__d");
-                assertDefault(stmt, 5 , "$ -> e", "__x0024____x0020____x002D____x003E____x0020__e");
-                assertDefault(stmt, 6 , "$ -> f", "__x0024____x0020____x002D____x003E____x0020__f");
-                assertDefault(stmt, 7 , "$ -> g", "__x0024____x0020____x002D____x003E____x0020__g");
-                assertDefault(stmt, 8 , "$ -> h", "__x0024____x0020____x002D____x003E____x0020__h");
-                assertDefault(stmt, 9 , "$ -> i", "__x0024____x0020____x002D____x003E____x0020__i");
-                assertDefault(stmt, 10, "$ -> j", "__x0024____x0020____x002D____x003E____x0020__j");
+                assertDefault(stmt, 3 , "$->c", "__x0024____x002D____x003E__c");
+                assertDefault(stmt, 4 , "$->d", "__x0024____x002D____x003E__d");
+                assertDefault(stmt, 5 , "$->e", "__x0024____x002D____x003E__e");
+                assertDefault(stmt, 6 , "$->f", "__x0024____x002D____x003E__f");
+                assertDefault(stmt, 7 , "$->g", "__x0024____x002D____x003E__g");
+                assertDefault(stmt, 8 , "$->h", "__x0024____x002D____x003E__h");
+                assertDefault(stmt, 9 , "$->i", "__x0024____x002D____x003E__i");
+                assertDefault(stmt, 10, "$->j", "__x0024____x002D____x003E__j");
             } else if (ecInstanceId == 12) { // t110, a, c
                 assertDynamic(stmt, 1 , "a", "a", "info-a", "T100", PrimitiveType::PRIMITIVETYPE_Integer);
-                assertDefault(stmt, 2 , "$ -> b", "__x0024____x0020____x002D____x003E____x0020__b");
+                assertDefault(stmt, 2 , "$->b", "__x0024____x002D____x003E__b");
                 assertDynamic(stmt, 3 , "c", "c", "info-c", "T110", PrimitiveType::PRIMITIVETYPE_Integer);
-                assertDefault(stmt, 4 , "$ -> d", "__x0024____x0020____x002D____x003E____x0020__d");
-                assertDefault(stmt, 5 , "$ -> e", "__x0024____x0020____x002D____x003E____x0020__e");
-                assertDefault(stmt, 6 , "$ -> f", "__x0024____x0020____x002D____x003E____x0020__f");
-                assertDefault(stmt, 7 , "$ -> g", "__x0024____x0020____x002D____x003E____x0020__g");
-                assertDefault(stmt, 8 , "$ -> h", "__x0024____x0020____x002D____x003E____x0020__h");
-                assertDefault(stmt, 9 , "$ -> i", "__x0024____x0020____x002D____x003E____x0020__i");
-                assertDefault(stmt, 10, "$ -> j", "__x0024____x0020____x002D____x003E____x0020__j");
+                assertDefault(stmt, 4 , "$->d", "__x0024____x002D____x003E__d");
+                assertDefault(stmt, 5 , "$->e", "__x0024____x002D____x003E__e");
+                assertDefault(stmt, 6 , "$->f", "__x0024____x002D____x003E__f");
+                assertDefault(stmt, 7 , "$->g", "__x0024____x002D____x003E__g");
+                assertDefault(stmt, 8 , "$->h", "__x0024____x002D____x003E__h");
+                assertDefault(stmt, 9 , "$->i", "__x0024____x002D____x003E__i");
+                assertDefault(stmt, 10, "$->j", "__x0024____x002D____x003E__j");
             } else if (ecInstanceId == 13) { // t120, a, d
                 assertDynamic(stmt, 1 , "a", "a", "info-a", "T100", PrimitiveType::PRIMITIVETYPE_Integer);
-                assertDefault(stmt, 2 , "$ -> b", "__x0024____x0020____x002D____x003E____x0020__b");
-                assertDefault(stmt, 3 , "$ -> c", "__x0024____x0020____x002D____x003E____x0020__c");
+                assertDefault(stmt, 2 , "$->b", "__x0024____x002D____x003E__b");
+                assertDefault(stmt, 3 , "$->c", "__x0024____x002D____x003E__c");
                 assertDynamic(stmt, 4 , "d", "d", "info-d", "T120", PrimitiveType::PRIMITIVETYPE_Integer);
-                assertDefault(stmt, 5 , "$ -> e", "__x0024____x0020____x002D____x003E____x0020__e");
-                assertDefault(stmt, 6 , "$ -> f", "__x0024____x0020____x002D____x003E____x0020__f");
-                assertDefault(stmt, 7 , "$ -> g", "__x0024____x0020____x002D____x003E____x0020__g");
-                assertDefault(stmt, 8 , "$ -> h", "__x0024____x0020____x002D____x003E____x0020__h");
-                assertDefault(stmt, 9 , "$ -> i", "__x0024____x0020____x002D____x003E____x0020__i");
-                assertDefault(stmt, 10, "$ -> j", "__x0024____x0020____x002D____x003E____x0020__j");
+                assertDefault(stmt, 5 , "$->e", "__x0024____x002D____x003E__e");
+                assertDefault(stmt, 6 , "$->f", "__x0024____x002D____x003E__f");
+                assertDefault(stmt, 7 , "$->g", "__x0024____x002D____x003E__g");
+                assertDefault(stmt, 8 , "$->h", "__x0024____x002D____x003E__h");
+                assertDefault(stmt, 9 , "$->i", "__x0024____x002D____x003E__i");
+                assertDefault(stmt, 10, "$->j", "__x0024____x002D____x003E__j");
             } else if (ecInstanceId == 14) { // t211, b, e
-                assertDefault(stmt, 1 , "$ -> a", "__x0024____x0020____x002D____x003E____x0020__a");
+                assertDefault(stmt, 1 , "$->a", "__x0024____x002D____x003E__a");
                 assertDynamic(stmt, 2 , "b", "b", "info-b", "T200", PrimitiveType::PRIMITIVETYPE_Integer);
-                assertDefault(stmt, 3 , "$ -> c", "__x0024____x0020____x002D____x003E____x0020__c");
-                assertDefault(stmt, 4 , "$ -> d", "__x0024____x0020____x002D____x003E____x0020__d");
+                assertDefault(stmt, 3 , "$->c", "__x0024____x002D____x003E__c");
+                assertDefault(stmt, 4 , "$->d", "__x0024____x002D____x003E__d");
                 assertDynamic(stmt, 5 , "e", "e", "info-e", "T211", PrimitiveType::PRIMITIVETYPE_Integer);
-                assertDefault(stmt, 6 , "$ -> f", "__x0024____x0020____x002D____x003E____x0020__f");
-                assertDefault(stmt, 7 , "$ -> g", "__x0024____x0020____x002D____x003E____x0020__g");
-                assertDefault(stmt, 8 , "$ -> h", "__x0024____x0020____x002D____x003E____x0020__h");
-                assertDefault(stmt, 9 , "$ -> i", "__x0024____x0020____x002D____x003E____x0020__i");
-                assertDefault(stmt, 10, "$ -> j", "__x0024____x0020____x002D____x003E____x0020__j");
+                assertDefault(stmt, 6 , "$->f", "__x0024____x002D____x003E__f");
+                assertDefault(stmt, 7 , "$->g", "__x0024____x002D____x003E__g");
+                assertDefault(stmt, 8 , "$->h", "__x0024____x002D____x003E__h");
+                assertDefault(stmt, 9 , "$->i", "__x0024____x002D____x003E__i");
+                assertDefault(stmt, 10, "$->j", "__x0024____x002D____x003E__j");
             } else if (ecInstanceId == 15) { // t212, b, f
-                assertDefault(stmt, 1 , "$ -> a", "__x0024____x0020____x002D____x003E____x0020__a");
+                assertDefault(stmt, 1 , "$->a", "__x0024____x002D____x003E__a");
                 assertDynamic(stmt, 2 , "b", "b", "info-b", "T200", PrimitiveType::PRIMITIVETYPE_Integer);
-                assertDefault(stmt, 3 , "$ -> c", "__x0024____x0020____x002D____x003E____x0020__c");
-                assertDefault(stmt, 4 , "$ -> d", "__x0024____x0020____x002D____x003E____x0020__d");
-                assertDefault(stmt, 5 , "$ -> e", "__x0024____x0020____x002D____x003E____x0020__e");
+                assertDefault(stmt, 3 , "$->c", "__x0024____x002D____x003E__c");
+                assertDefault(stmt, 4 , "$->d", "__x0024____x002D____x003E__d");
+                assertDefault(stmt, 5 , "$->e", "__x0024____x002D____x003E__e");
                 assertDynamic(stmt, 6 , "f", "f", "info-f", "T212", PrimitiveType::PRIMITIVETYPE_Integer);
-                assertDefault(stmt, 7 , "$ -> g", "__x0024____x0020____x002D____x003E____x0020__g");
-                assertDefault(stmt, 8 , "$ -> h", "__x0024____x0020____x002D____x003E____x0020__h");
-                assertDefault(stmt, 9 , "$ -> i", "__x0024____x0020____x002D____x003E____x0020__i");
-                assertDefault(stmt, 10, "$ -> j", "__x0024____x0020____x002D____x003E____x0020__j");
+                assertDefault(stmt, 7 , "$->g", "__x0024____x002D____x003E__g");
+                assertDefault(stmt, 8 , "$->h", "__x0024____x002D____x003E__h");
+                assertDefault(stmt, 9 , "$->i", "__x0024____x002D____x003E__i");
+                assertDefault(stmt, 10, "$->j", "__x0024____x002D____x003E__j");
             } else if (ecInstanceId == 16) { // t111, a, c, g
                 assertDynamic(stmt, 1 , "a", "a", "info-a", "T100", PrimitiveType::PRIMITIVETYPE_Integer);
-                assertDefault(stmt, 2 , "$ -> b", "__x0024____x0020____x002D____x003E____x0020__b");
+                assertDefault(stmt, 2 , "$->b", "__x0024____x002D____x003E__b");
                 assertDynamic(stmt, 3 , "c", "c", "info-c", "T110", PrimitiveType::PRIMITIVETYPE_Integer);
-                assertDefault(stmt, 4 , "$ -> d", "__x0024____x0020____x002D____x003E____x0020__d");
-                assertDefault(stmt, 5 , "$ -> e", "__x0024____x0020____x002D____x003E____x0020__e");
-                assertDefault(stmt, 6 , "$ -> f", "__x0024____x0020____x002D____x003E____x0020__f");
+                assertDefault(stmt, 4 , "$->d", "__x0024____x002D____x003E__d");
+                assertDefault(stmt, 5 , "$->e", "__x0024____x002D____x003E__e");
+                assertDefault(stmt, 6 , "$->f", "__x0024____x002D____x003E__f");
                 assertDynamic(stmt, 7 , "g", "g", "info-g", "T111", PrimitiveType::PRIMITIVETYPE_Integer);
-                assertDefault(stmt, 8 , "$ -> h", "__x0024____x0020____x002D____x003E____x0020__h");
-                assertDefault(stmt, 9 , "$ -> i", "__x0024____x0020____x002D____x003E____x0020__i");
-                assertDefault(stmt, 10, "$ -> j", "__x0024____x0020____x002D____x003E____x0020__j");
+                assertDefault(stmt, 8 , "$->h", "__x0024____x002D____x003E__h");
+                assertDefault(stmt, 9 , "$->i", "__x0024____x002D____x003E__i");
+                assertDefault(stmt, 10, "$->j", "__x0024____x002D____x003E__j");
             } else if (ecInstanceId == 17) { // t112, a, c, h
                 assertDynamic(stmt, 1 , "a", "a", "info-a", "T100", PrimitiveType::PRIMITIVETYPE_Integer);
-                assertDefault(stmt, 2 , "$ -> b", "__x0024____x0020____x002D____x003E____x0020__b");
+                assertDefault(stmt, 2 , "$->b", "__x0024____x002D____x003E__b");
                 assertDynamic(stmt, 3 , "c", "c", "info-c", "T110", PrimitiveType::PRIMITIVETYPE_Integer);
-                assertDefault(stmt, 4 , "$ -> d", "__x0024____x0020____x002D____x003E____x0020__d");
-                assertDefault(stmt, 5 , "$ -> e", "__x0024____x0020____x002D____x003E____x0020__e");
-                assertDefault(stmt, 6 , "$ -> f", "__x0024____x0020____x002D____x003E____x0020__f");
-                assertDefault(stmt, 7 , "$ -> g", "__x0024____x0020____x002D____x003E____x0020__g");
+                assertDefault(stmt, 4 , "$->d", "__x0024____x002D____x003E__d");
+                assertDefault(stmt, 5 , "$->e", "__x0024____x002D____x003E__e");
+                assertDefault(stmt, 6 , "$->f", "__x0024____x002D____x003E__f");
+                assertDefault(stmt, 7 , "$->g", "__x0024____x002D____x003E__g");
                 assertDynamic(stmt, 8 , "h", "h", "info-h", "T112", PrimitiveType::PRIMITIVETYPE_Integer);
-                assertDefault(stmt, 9 , "$ -> i", "__x0024____x0020____x002D____x003E____x0020__i");
-                assertDefault(stmt, 10, "$ -> j", "__x0024____x0020____x002D____x003E____x0020__j");
+                assertDefault(stmt, 9 , "$->i", "__x0024____x002D____x003E__i");
+                assertDefault(stmt, 10, "$->j", "__x0024____x002D____x003E__j");
             } else if (ecInstanceId == 18) { // t121, a, d, i
                 assertDynamic(stmt, 1 , "a", "a", "info-a", "T100", PrimitiveType::PRIMITIVETYPE_Integer);
-                assertDefault(stmt, 2 , "$ -> b", "__x0024____x0020____x002D____x003E____x0020__b");
-                assertDefault(stmt, 3 , "$ -> c", "__x0024____x0020____x002D____x003E____x0020__c");
+                assertDefault(stmt, 2 , "$->b", "__x0024____x002D____x003E__b");
+                assertDefault(stmt, 3 , "$->c", "__x0024____x002D____x003E__c");
                 assertDynamic(stmt, 4 , "d", "d", "info-d", "T120", PrimitiveType::PRIMITIVETYPE_Integer);
-                assertDefault(stmt, 5 , "$ -> e", "__x0024____x0020____x002D____x003E____x0020__e");
-                assertDefault(stmt, 6 , "$ -> f", "__x0024____x0020____x002D____x003E____x0020__f");
-                assertDefault(stmt, 7 , "$ -> g", "__x0024____x0020____x002D____x003E____x0020__g");
-                assertDefault(stmt, 8 , "$ -> h", "__x0024____x0020____x002D____x003E____x0020__h");
+                assertDefault(stmt, 5 , "$->e", "__x0024____x002D____x003E__e");
+                assertDefault(stmt, 6 , "$->f", "__x0024____x002D____x003E__f");
+                assertDefault(stmt, 7 , "$->g", "__x0024____x002D____x003E__g");
+                assertDefault(stmt, 8 , "$->h", "__x0024____x002D____x003E__h");
                 assertDynamic(stmt, 9 , "i", "i", "info-i", "T121", PrimitiveType::PRIMITIVETYPE_Integer);
-                assertDefault(stmt, 10, "$ -> j", "__x0024____x0020____x002D____x003E____x0020__j");
+                assertDefault(stmt, 10, "$->j", "__x0024____x002D____x003E__j");
             } else if (ecInstanceId == 19) { // t122, a, d, j
                 assertDynamic(stmt, 1 , "a", "a", "info-a", "T100", PrimitiveType::PRIMITIVETYPE_Integer);
-                assertDefault(stmt, 2 , "$ -> b", "__x0024____x0020____x002D____x003E____x0020__b");
-                assertDefault(stmt, 3 , "$ -> c", "__x0024____x0020____x002D____x003E____x0020__c");
+                assertDefault(stmt, 2 , "$->b", "__x0024____x002D____x003E__b");
+                assertDefault(stmt, 3 , "$->c", "__x0024____x002D____x003E__c");
                 assertDynamic(stmt, 4 , "d", "d", "info-d", "T120", PrimitiveType::PRIMITIVETYPE_Integer);
-                assertDefault(stmt, 5 , "$ -> e", "__x0024____x0020____x002D____x003E____x0020__e");
-                assertDefault(stmt, 6 , "$ -> f", "__x0024____x0020____x002D____x003E____x0020__f");
-                assertDefault(stmt, 7 , "$ -> g", "__x0024____x0020____x002D____x003E____x0020__g");
-                assertDefault(stmt, 8 , "$ -> h", "__x0024____x0020____x002D____x003E____x0020__h");
-                assertDefault(stmt, 9 , "$ -> i", "__x0024____x0020____x002D____x003E____x0020__i");
+                assertDefault(stmt, 5 , "$->e", "__x0024____x002D____x003E__e");
+                assertDefault(stmt, 6 , "$->f", "__x0024____x002D____x003E__f");
+                assertDefault(stmt, 7 , "$->g", "__x0024____x002D____x003E__g");
+                assertDefault(stmt, 8 , "$->h", "__x0024____x002D____x003E__h");
+                assertDefault(stmt, 9 , "$->i", "__x0024____x002D____x003E__i");
                 assertDynamic(stmt, 10, "j", "j", "info-j", "T122", PrimitiveType::PRIMITIVETYPE_Integer);
             }
         }
@@ -1074,113 +1074,113 @@ TEST_F(InstanceReaderFixture, dynamic_meta_data) {
             auto ecInstanceId = stmt.GetValueInt(0);
             if (ecInstanceId == 10) { // t100, a
                 assertDynamic(stmt, 1 , "a", "a", "info-a", "T100", PrimitiveType::PRIMITIVETYPE_Integer);
-                assertDefault(stmt, 2 , "$ -> b", "__x0024____x0020____x002D____x003E____x0020__b");
-                assertDefault(stmt, 3 , "$ -> c", "__x0024____x0020____x002D____x003E____x0020__c");
-                assertDefault(stmt, 4 , "$ -> d", "__x0024____x0020____x002D____x003E____x0020__d");
-                assertDefault(stmt, 5 , "$ -> e", "__x0024____x0020____x002D____x003E____x0020__e");
-                assertDefault(stmt, 6 , "$ -> f", "__x0024____x0020____x002D____x003E____x0020__f");
-                assertDefault(stmt, 7 , "$ -> g", "__x0024____x0020____x002D____x003E____x0020__g");
-                assertDefault(stmt, 8 , "$ -> h", "__x0024____x0020____x002D____x003E____x0020__h");
-                assertDefault(stmt, 9 , "$ -> i", "__x0024____x0020____x002D____x003E____x0020__i");
-                assertDefault(stmt, 10, "$ -> j", "__x0024____x0020____x002D____x003E____x0020__j");
+                assertDefault(stmt, 2 , "$->b", "__x0024____x002D____x003E__b");
+                assertDefault(stmt, 3 , "$->c", "__x0024____x002D____x003E__c");
+                assertDefault(stmt, 4 , "$->d", "__x0024____x002D____x003E__d");
+                assertDefault(stmt, 5 , "$->e", "__x0024____x002D____x003E__e");
+                assertDefault(stmt, 6 , "$->f", "__x0024____x002D____x003E__f");
+                assertDefault(stmt, 7 , "$->g", "__x0024____x002D____x003E__g");
+                assertDefault(stmt, 8 , "$->h", "__x0024____x002D____x003E__h");
+                assertDefault(stmt, 9 , "$->i", "__x0024____x002D____x003E__i");
+                assertDefault(stmt, 10, "$->j", "__x0024____x002D____x003E__j");
             } else if (ecInstanceId == 11) { // t200, b
-                assertDefault(stmt, 1 , "$ -> a", "__x0024____x0020____x002D____x003E____x0020__a");
+                assertDefault(stmt, 1 , "$->a", "__x0024____x002D____x003E__a");
                 assertDynamic(stmt, 2 , "b", "b", "info-b", "T200", PrimitiveType::PRIMITIVETYPE_Integer);
-                assertDefault(stmt, 3 , "$ -> c", "__x0024____x0020____x002D____x003E____x0020__c");
-                assertDefault(stmt, 4 , "$ -> d", "__x0024____x0020____x002D____x003E____x0020__d");
-                assertDefault(stmt, 5 , "$ -> e", "__x0024____x0020____x002D____x003E____x0020__e");
-                assertDefault(stmt, 6 , "$ -> f", "__x0024____x0020____x002D____x003E____x0020__f");
-                assertDefault(stmt, 7 , "$ -> g", "__x0024____x0020____x002D____x003E____x0020__g");
-                assertDefault(stmt, 8 , "$ -> h", "__x0024____x0020____x002D____x003E____x0020__h");
-                assertDefault(stmt, 9 , "$ -> i", "__x0024____x0020____x002D____x003E____x0020__i");
-                assertDefault(stmt, 10, "$ -> j", "__x0024____x0020____x002D____x003E____x0020__j");
+                assertDefault(stmt, 3 , "$->c", "__x0024____x002D____x003E__c");
+                assertDefault(stmt, 4 , "$->d", "__x0024____x002D____x003E__d");
+                assertDefault(stmt, 5 , "$->e", "__x0024____x002D____x003E__e");
+                assertDefault(stmt, 6 , "$->f", "__x0024____x002D____x003E__f");
+                assertDefault(stmt, 7 , "$->g", "__x0024____x002D____x003E__g");
+                assertDefault(stmt, 8 , "$->h", "__x0024____x002D____x003E__h");
+                assertDefault(stmt, 9 , "$->i", "__x0024____x002D____x003E__i");
+                assertDefault(stmt, 10, "$->j", "__x0024____x002D____x003E__j");
             } else if (ecInstanceId == 12) { // t110, a, c
                 assertDynamic(stmt, 1 , "a", "a", "info-a", "T100", PrimitiveType::PRIMITIVETYPE_Integer);
-                assertDefault(stmt, 2 , "$ -> b", "__x0024____x0020____x002D____x003E____x0020__b");
+                assertDefault(stmt, 2 , "$->b", "__x0024____x002D____x003E__b");
                 assertDynamic(stmt, 3 , "c", "c", "info-c", "T110", PrimitiveType::PRIMITIVETYPE_Integer);
-                assertDefault(stmt, 4 , "$ -> d", "__x0024____x0020____x002D____x003E____x0020__d");
-                assertDefault(stmt, 5 , "$ -> e", "__x0024____x0020____x002D____x003E____x0020__e");
-                assertDefault(stmt, 6 , "$ -> f", "__x0024____x0020____x002D____x003E____x0020__f");
-                assertDefault(stmt, 7 , "$ -> g", "__x0024____x0020____x002D____x003E____x0020__g");
-                assertDefault(stmt, 8 , "$ -> h", "__x0024____x0020____x002D____x003E____x0020__h");
-                assertDefault(stmt, 9 , "$ -> i", "__x0024____x0020____x002D____x003E____x0020__i");
-                assertDefault(stmt, 10, "$ -> j", "__x0024____x0020____x002D____x003E____x0020__j");
+                assertDefault(stmt, 4 , "$->d", "__x0024____x002D____x003E__d");
+                assertDefault(stmt, 5 , "$->e", "__x0024____x002D____x003E__e");
+                assertDefault(stmt, 6 , "$->f", "__x0024____x002D____x003E__f");
+                assertDefault(stmt, 7 , "$->g", "__x0024____x002D____x003E__g");
+                assertDefault(stmt, 8 , "$->h", "__x0024____x002D____x003E__h");
+                assertDefault(stmt, 9 , "$->i", "__x0024____x002D____x003E__i");
+                assertDefault(stmt, 10, "$->j", "__x0024____x002D____x003E__j");
             } else if (ecInstanceId == 13) { // t120, a, d
                 assertDynamic(stmt, 1 , "a", "a", "info-a", "T100", PrimitiveType::PRIMITIVETYPE_Integer);
-                assertDefault(stmt, 2 , "$ -> b", "__x0024____x0020____x002D____x003E____x0020__b");
-                assertDefault(stmt, 3 , "$ -> c", "__x0024____x0020____x002D____x003E____x0020__c");
+                assertDefault(stmt, 2 , "$->b", "__x0024____x002D____x003E__b");
+                assertDefault(stmt, 3 , "$->c", "__x0024____x002D____x003E__c");
                 assertDynamic(stmt, 4 , "d", "d", "info-d", "T120", PrimitiveType::PRIMITIVETYPE_Integer);
-                assertDefault(stmt, 5 , "$ -> e", "__x0024____x0020____x002D____x003E____x0020__e");
-                assertDefault(stmt, 6 , "$ -> f", "__x0024____x0020____x002D____x003E____x0020__f");
-                assertDefault(stmt, 7 , "$ -> g", "__x0024____x0020____x002D____x003E____x0020__g");
-                assertDefault(stmt, 8 , "$ -> h", "__x0024____x0020____x002D____x003E____x0020__h");
-                assertDefault(stmt, 9 , "$ -> i", "__x0024____x0020____x002D____x003E____x0020__i");
-                assertDefault(stmt, 10, "$ -> j", "__x0024____x0020____x002D____x003E____x0020__j");
+                assertDefault(stmt, 5 , "$->e", "__x0024____x002D____x003E__e");
+                assertDefault(stmt, 6 , "$->f", "__x0024____x002D____x003E__f");
+                assertDefault(stmt, 7 , "$->g", "__x0024____x002D____x003E__g");
+                assertDefault(stmt, 8 , "$->h", "__x0024____x002D____x003E__h");
+                assertDefault(stmt, 9 , "$->i", "__x0024____x002D____x003E__i");
+                assertDefault(stmt, 10, "$->j", "__x0024____x002D____x003E__j");
             } else if (ecInstanceId == 14) { // t211, b, e
-                assertDefault(stmt, 1 , "$ -> a", "__x0024____x0020____x002D____x003E____x0020__a");
+                assertDefault(stmt, 1 , "$->a", "__x0024____x002D____x003E__a");
                 assertDynamic(stmt, 2 , "b", "b", "info-b", "T200", PrimitiveType::PRIMITIVETYPE_Integer);
-                assertDefault(stmt, 3 , "$ -> c", "__x0024____x0020____x002D____x003E____x0020__c");
-                assertDefault(stmt, 4 , "$ -> d", "__x0024____x0020____x002D____x003E____x0020__d");
+                assertDefault(stmt, 3 , "$->c", "__x0024____x002D____x003E__c");
+                assertDefault(stmt, 4 , "$->d", "__x0024____x002D____x003E__d");
                 assertDynamic(stmt, 5 , "e", "e", "info-e", "T211", PrimitiveType::PRIMITIVETYPE_Integer);
-                assertDefault(stmt, 6 , "$ -> f", "__x0024____x0020____x002D____x003E____x0020__f");
-                assertDefault(stmt, 7 , "$ -> g", "__x0024____x0020____x002D____x003E____x0020__g");
-                assertDefault(stmt, 8 , "$ -> h", "__x0024____x0020____x002D____x003E____x0020__h");
-                assertDefault(stmt, 9 , "$ -> i", "__x0024____x0020____x002D____x003E____x0020__i");
-                assertDefault(stmt, 10, "$ -> j", "__x0024____x0020____x002D____x003E____x0020__j");
+                assertDefault(stmt, 6 , "$->f", "__x0024____x002D____x003E__f");
+                assertDefault(stmt, 7 , "$->g", "__x0024____x002D____x003E__g");
+                assertDefault(stmt, 8 , "$->h", "__x0024____x002D____x003E__h");
+                assertDefault(stmt, 9 , "$->i", "__x0024____x002D____x003E__i");
+                assertDefault(stmt, 10, "$->j", "__x0024____x002D____x003E__j");
             } else if (ecInstanceId == 15) { // t212, b, f
-                assertDefault(stmt, 1 , "$ -> a", "__x0024____x0020____x002D____x003E____x0020__a");
+                assertDefault(stmt, 1 , "$->a", "__x0024____x002D____x003E__a");
                 assertDynamic(stmt, 2 , "b", "b", "info-b", "T200", PrimitiveType::PRIMITIVETYPE_Integer);
-                assertDefault(stmt, 3 , "$ -> c", "__x0024____x0020____x002D____x003E____x0020__c");
-                assertDefault(stmt, 4 , "$ -> d", "__x0024____x0020____x002D____x003E____x0020__d");
-                assertDefault(stmt, 5 , "$ -> e", "__x0024____x0020____x002D____x003E____x0020__e");
+                assertDefault(stmt, 3 , "$->c", "__x0024____x002D____x003E__c");
+                assertDefault(stmt, 4 , "$->d", "__x0024____x002D____x003E__d");
+                assertDefault(stmt, 5 , "$->e", "__x0024____x002D____x003E__e");
                 assertDynamic(stmt, 6 , "f", "f", "info-f", "T212", PrimitiveType::PRIMITIVETYPE_Integer);
-                assertDefault(stmt, 7 , "$ -> g", "__x0024____x0020____x002D____x003E____x0020__g");
-                assertDefault(stmt, 8 , "$ -> h", "__x0024____x0020____x002D____x003E____x0020__h");
-                assertDefault(stmt, 9 , "$ -> i", "__x0024____x0020____x002D____x003E____x0020__i");
-                assertDefault(stmt, 10, "$ -> j", "__x0024____x0020____x002D____x003E____x0020__j");
+                assertDefault(stmt, 7 , "$->g", "__x0024____x002D____x003E__g");
+                assertDefault(stmt, 8 , "$->h", "__x0024____x002D____x003E__h");
+                assertDefault(stmt, 9 , "$->i", "__x0024____x002D____x003E__i");
+                assertDefault(stmt, 10, "$->j", "__x0024____x002D____x003E__j");
             } else if (ecInstanceId == 16) { // t111, a, c, g
                 assertDynamic(stmt, 1 , "a", "a", "info-a", "T100", PrimitiveType::PRIMITIVETYPE_Integer);
-                assertDefault(stmt, 2 , "$ -> b", "__x0024____x0020____x002D____x003E____x0020__b");
+                assertDefault(stmt, 2 , "$->b", "__x0024____x002D____x003E__b");
                 assertDynamic(stmt, 3 , "c", "c", "info-c", "T110", PrimitiveType::PRIMITIVETYPE_Integer);
-                assertDefault(stmt, 4 , "$ -> d", "__x0024____x0020____x002D____x003E____x0020__d");
-                assertDefault(stmt, 5 , "$ -> e", "__x0024____x0020____x002D____x003E____x0020__e");
-                assertDefault(stmt, 6 , "$ -> f", "__x0024____x0020____x002D____x003E____x0020__f");
+                assertDefault(stmt, 4 , "$->d", "__x0024____x002D____x003E__d");
+                assertDefault(stmt, 5 , "$->e", "__x0024____x002D____x003E__e");
+                assertDefault(stmt, 6 , "$->f", "__x0024____x002D____x003E__f");
                 assertDynamic(stmt, 7 , "g", "g", "info-g", "T111", PrimitiveType::PRIMITIVETYPE_Integer);
-                assertDefault(stmt, 8 , "$ -> h", "__x0024____x0020____x002D____x003E____x0020__h");
-                assertDefault(stmt, 9 , "$ -> i", "__x0024____x0020____x002D____x003E____x0020__i");
-                assertDefault(stmt, 10, "$ -> j", "__x0024____x0020____x002D____x003E____x0020__j");
+                assertDefault(stmt, 8 , "$->h", "__x0024____x002D____x003E__h");
+                assertDefault(stmt, 9 , "$->i", "__x0024____x002D____x003E__i");
+                assertDefault(stmt, 10, "$->j", "__x0024____x002D____x003E__j");
             } else if (ecInstanceId == 17) { // t112, a, c, h
                 assertDynamic(stmt, 1 , "a", "a", "info-a", "T100", PrimitiveType::PRIMITIVETYPE_Integer);
-                assertDefault(stmt, 2 , "$ -> b", "__x0024____x0020____x002D____x003E____x0020__b");
+                assertDefault(stmt, 2 , "$->b", "__x0024____x002D____x003E__b");
                 assertDynamic(stmt, 3 , "c", "c", "info-c", "T110", PrimitiveType::PRIMITIVETYPE_Integer);
-                assertDefault(stmt, 4 , "$ -> d", "__x0024____x0020____x002D____x003E____x0020__d");
-                assertDefault(stmt, 5 , "$ -> e", "__x0024____x0020____x002D____x003E____x0020__e");
-                assertDefault(stmt, 6 , "$ -> f", "__x0024____x0020____x002D____x003E____x0020__f");
-                assertDefault(stmt, 7 , "$ -> g", "__x0024____x0020____x002D____x003E____x0020__g");
+                assertDefault(stmt, 4 , "$->d", "__x0024____x002D____x003E__d");
+                assertDefault(stmt, 5 , "$->e", "__x0024____x002D____x003E__e");
+                assertDefault(stmt, 6 , "$->f", "__x0024____x002D____x003E__f");
+                assertDefault(stmt, 7 , "$->g", "__x0024____x002D____x003E__g");
                 assertDynamic(stmt, 8 , "h", "h", "info-h", "T112", PrimitiveType::PRIMITIVETYPE_Integer);
-                assertDefault(stmt, 9 , "$ -> i", "__x0024____x0020____x002D____x003E____x0020__i");
-                assertDefault(stmt, 10, "$ -> j", "__x0024____x0020____x002D____x003E____x0020__j");
+                assertDefault(stmt, 9 , "$->i", "__x0024____x002D____x003E__i");
+                assertDefault(stmt, 10, "$->j", "__x0024____x002D____x003E__j");
             } else if (ecInstanceId == 18) { // t121, a, d, i
                 assertDynamic(stmt, 1 , "a", "a", "info-a", "T100", PrimitiveType::PRIMITIVETYPE_Integer);
-                assertDefault(stmt, 2 , "$ -> b", "__x0024____x0020____x002D____x003E____x0020__b");
-                assertDefault(stmt, 3 , "$ -> c", "__x0024____x0020____x002D____x003E____x0020__c");
+                assertDefault(stmt, 2 , "$->b", "__x0024____x002D____x003E__b");
+                assertDefault(stmt, 3 , "$->c", "__x0024____x002D____x003E__c");
                 assertDynamic(stmt, 4 , "d", "d", "info-d", "T120", PrimitiveType::PRIMITIVETYPE_Integer);
-                assertDefault(stmt, 5 , "$ -> e", "__x0024____x0020____x002D____x003E____x0020__e");
-                assertDefault(stmt, 6 , "$ -> f", "__x0024____x0020____x002D____x003E____x0020__f");
-                assertDefault(stmt, 7 , "$ -> g", "__x0024____x0020____x002D____x003E____x0020__g");
-                assertDefault(stmt, 8 , "$ -> h", "__x0024____x0020____x002D____x003E____x0020__h");
+                assertDefault(stmt, 5 , "$->e", "__x0024____x002D____x003E__e");
+                assertDefault(stmt, 6 , "$->f", "__x0024____x002D____x003E__f");
+                assertDefault(stmt, 7 , "$->g", "__x0024____x002D____x003E__g");
+                assertDefault(stmt, 8 , "$->h", "__x0024____x002D____x003E__h");
                 assertDynamic(stmt, 9 , "i", "i", "info-i", "T121", PrimitiveType::PRIMITIVETYPE_Integer);
-                assertDefault(stmt, 10, "$ -> j", "__x0024____x0020____x002D____x003E____x0020__j");
+                assertDefault(stmt, 10, "$->j", "__x0024____x002D____x003E__j");
             } else if (ecInstanceId == 19) { // t122, a, d, j
                 assertDynamic(stmt, 1 , "a", "a", "info-a", "T100", PrimitiveType::PRIMITIVETYPE_Integer);
-                assertDefault(stmt, 2 , "$ -> b", "__x0024____x0020____x002D____x003E____x0020__b");
-                assertDefault(stmt, 3 , "$ -> c", "__x0024____x0020____x002D____x003E____x0020__c");
+                assertDefault(stmt, 2 , "$->b", "__x0024____x002D____x003E__b");
+                assertDefault(stmt, 3 , "$->c", "__x0024____x002D____x003E__c");
                 assertDynamic(stmt, 4 , "d", "d", "info-d", "T120", PrimitiveType::PRIMITIVETYPE_Integer);
-                assertDefault(stmt, 5 , "$ -> e", "__x0024____x0020____x002D____x003E____x0020__e");
-                assertDefault(stmt, 6 , "$ -> f", "__x0024____x0020____x002D____x003E____x0020__f");
-                assertDefault(stmt, 7 , "$ -> g", "__x0024____x0020____x002D____x003E____x0020__g");
-                assertDefault(stmt, 8 , "$ -> h", "__x0024____x0020____x002D____x003E____x0020__h");
-                assertDefault(stmt, 9 , "$ -> i", "__x0024____x0020____x002D____x003E____x0020__i");
+                assertDefault(stmt, 5 , "$->e", "__x0024____x002D____x003E__e");
+                assertDefault(stmt, 6 , "$->f", "__x0024____x002D____x003E__f");
+                assertDefault(stmt, 7 , "$->g", "__x0024____x002D____x003E__g");
+                assertDefault(stmt, 8 , "$->h", "__x0024____x002D____x003E__h");
+                assertDefault(stmt, 9 , "$->i", "__x0024____x002D____x003E__i");
                 assertDynamic(stmt, 10, "j", "j", "info-j", "T122", PrimitiveType::PRIMITIVETYPE_Integer);
             }
         }
@@ -1441,8 +1441,8 @@ TEST_F(InstanceReaderFixture, nested_struct) {
         const bool b_array[] = {true, false, true};
         const std::vector<std::vector<uint8_t>> bi_array = {
             {0x48, 0x65, 0x6},
-            {0x48, 0x65, 0x6},
-            {0x48, 0x65, 0x6}
+            {0x48, 0x65, 0x6, 0x6c},
+            {0x48, 0x65, 0x6, 0x6c, 0x6f}
         };
         const std::vector<double> d_array = {123.3434, 345.223, -532.123};
         const std::vector<DateTime> dt_array = {
@@ -1619,7 +1619,7 @@ TEST_F(InstanceReaderFixture, nested_struct) {
         "ECInstanceId": "0x1",
         "ECClassId": "0x4a",
         "b": true,
-        "bi": "encoding=base64;SA==",
+        "bi": "{\"bytes\":13}",
         "d": 3.141592653589793,
         "dt": "2017-01-17T00:00:00.000",
         "dtUtc": "2018-02-17T00:00:00.000Z",
@@ -1655,9 +1655,9 @@ TEST_F(InstanceReaderFixture, nested_struct) {
             true
         ],
         "bi_array": [
-            "encoding=base64;SA==",
-            "encoding=base64;SA==",
-            "encoding=base64;SA=="
+            "{\"bytes\":3}",
+            "{\"bytes\":4}",
+            "{\"bytes\":5}"
         ],
         "d_array": [
             123.3434,
@@ -1765,7 +1765,7 @@ TEST_F(InstanceReaderFixture, nested_struct) {
         ],
         "p": {
             "b": true,
-            "bi": "encoding=base64;SA==",
+            "bi": "{\"bytes\":13}",
             "d": 3.141592653589793,
             "dt": "2017-01-17T00:00:00.000",
             "dtUtc": "2018-02-17T00:00:00.000Z",
@@ -1803,9 +1803,9 @@ TEST_F(InstanceReaderFixture, nested_struct) {
                 true
             ],
             "bi_array": [
-                "encoding=base64;SA==",
-                "encoding=base64;SA==",
-                "encoding=base64;SA=="
+                "{\"bytes\":3}",
+                "{\"bytes\":4}",
+                "{\"bytes\":5}"
             ],
             "d_array": [
                 123.3434,
@@ -1915,7 +1915,7 @@ TEST_F(InstanceReaderFixture, nested_struct) {
         "array_of_p": [
             {
                 "b": true,
-                "bi": "encoding=base64;SA==",
+                "bi": "{\"bytes\":3}",
                 "d": 123.3434,
                 "dt": "2017-01-14T00:00:00.000",
                 "dtUtc": "2017-01-17T00:00:00.000Z",
@@ -1948,7 +1948,7 @@ TEST_F(InstanceReaderFixture, nested_struct) {
             },
             {
                 "b": false,
-                "bi": "encoding=base64;SA==",
+                "bi": "{\"bytes\":4}",
                 "d": 345.223,
                 "dt": "2018-01-13T00:00:00.000",
                 "dtUtc": "2018-01-11T00:00:00.000Z",
@@ -1988,9 +1988,9 @@ TEST_F(InstanceReaderFixture, nested_struct) {
                     true
                 ],
                 "bi_array": [
-                    "encoding=base64;SA==",
-                    "encoding=base64;SA==",
-                    "encoding=base64;SA=="
+                    "{\"bytes\":3}",
+                    "{\"bytes\":4}",
+                    "{\"bytes\":5}"
                 ],
                 "d_array": [
                     123.3434,
@@ -2104,9 +2104,9 @@ TEST_F(InstanceReaderFixture, nested_struct) {
                     true
                 ],
                 "bi_array": [
-                    "encoding=base64;SA==",
-                    "encoding=base64;SA==",
-                    "encoding=base64;SA=="
+                    "{\"bytes\":3}",
+                    "{\"bytes\":4}",
+                    "{\"bytes\":5}"
                 ],
                 "d_array": [
                     123.3434,
