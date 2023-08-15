@@ -1641,15 +1641,24 @@ void TxnManager::ReplayExternalTxns(TxnId from) {
     if (!m_initTableHandlers || !m_dgndb.IsReadonly())
         return; // this method can only be called on a readonly connection with the TxnManager active
 
-
-    for (TxnId curr = QueryNextTxnId(from); curr.IsValid(); curr = QueryNextTxnId(curr))
-        ApplyTxnChanges(curr, TxnAction::Reinstate);
+    TxnId curr = QueryNextTxnId(from);
+    bool haveTxns = curr.IsValid();
+    if (haveTxns) {
+        CallJsTxnManager("_onReplayExternalTxns");
+        while (curr.IsValid()) {
+            ApplyTxnChanges(curr, TxnAction::Reinstate);
+            curr = QueryNextTxnId(curr);
+        }
+    }
 
     m_curr = GetLastTxnId(); // this is where the other session ends
     if (m_curr.GetValue() == 0)
         m_curr = TxnId(SessionId(1),0);
     else
         m_curr.Increment();
+
+    if (haveTxns)
+        CallJsTxnManager("_onReplayedExternalTxns");
 }
 
 /*---------------------------------------------------------------------------------**/ /**
