@@ -2657,67 +2657,66 @@ void GeometryStreamIO::Iterator::ToNext()
 
 struct SqlTableRemapper {
 private:
-    DgnDbCR m_db;
-    EC::ECSqlSelectPreparedStatement m_elemQuery;
-    EC::ECSqlSelectPreparedStatement m_fontQuery;
-
+    DgnDbCR m_dgnDb;
+    CachedStatementPtr m_elemStmt, m_fontStmt;
 
 public:
     SqlTableRemapper(
+        DgnDbCR dgnDb,
         Utf8CP elemRemapTableName,
         Utf8CP fontRemapTableName
-    ) {
-        const auto fontSql = Utf8PrintfString::Utf8PrintfString(
+    ) : m_dgnDb(dgnDb) {
+        const auto fontSql = Utf8PrintfString(
             "SELECT TargetId FROM %s WHERE SourceId=?",
             fontRemapTableName
         );
-        m_fontStmt = m_db.GetPreparedSqliteStatement(fontSql.c_str());
+        this->m_fontStmt = m_dgnDb.GetCachedStatement(fontSql.c_str());
 
-        const auto elemSql = Utf8PrintfString::Utf8PrintfString(
+        const auto elemSql = Utf8PrintfString(
             "SELECT TargetId FROM %s WHERE SourceId=?",
             elemRemapTableName
         );
-        m_elemStmt = m_db.GetPreparedSqliteStatement(elemSql.c_str());
+        this->m_elemStmt = m_dgnDb.GetCachedStatement(elemSql.c_str());
     }
 
     BeInt64Id RemapElemId(BeInt64Id sourceId) {
-        m_elemStmt.Reset();
-        m_elemStmt.BindId(1, sourceId);
+        m_elemStmt->Reset();
+        m_elemStmt->BindId(1, sourceId);
         if (BE_SQLITE_ROW == m_elemStmt->Step())
-            return m_elemStmt->GetValueId(0);
+            return m_elemStmt->GetValueId<BeInt64Id>(0);
         else
-            m_db.ThrowException(Utf8PrintfString("remap not found for element %xd", sourceId));
+            m_dgnDb.ThrowException(Utf8PrintfString("remap not found for element %xd", sourceId.GetValueUnchecked()).c_str(), (int)DgnDbStatus::MissingId);
     }
 
     FontId RemapFontId(FontId sourceId) {
-        m_fontStmt.Reset();
-        m_fontStmt.BindId(1, sourceId);
+        m_fontStmt->Reset();
+        m_fontStmt->BindId(1, sourceId);
         if (BE_SQLITE_ROW == m_fontStmt->Step())
-            return m_fontStmt->GetValueId(0);
+            return m_fontStmt->GetValueId<FontId>(0);
         else
-            m_db.ThrowException(Utf8PrintfString("remap not found for font %xd", sourceId));
+            m_dgnDb.ThrowException(Utf8PrintfString("remap not found for font %xd", sourceId.GetValueUnchecked()).c_str(), (int)DgnDbStatus::MissingId);
     }
 
-    CodeSpecId RemapCodeSpecId(CodeSpecId sourceId) {return RemapElemId(sourceId);}
-    DgnGeometryPartId RemapGeometryPartId(DgnGeometryPartId sourceId) {return RemapElemId(sourceId);}
-    DgnCategoryId RemapCategory(DgnCategoryId sourceId) {return RemapElemId(sourceId);}
-    DgnSubCategoryId RemapSubCategory(DgnSubCategoryId sourceId) {return RemapElemId(sourceId);}
-    DgnClassId RemapClassId(DgnClassId sourceId) {return RemapElemId(sourceId);}
-    RenderMaterialId RemapRenderMaterialId(RenderMaterialId sourceId) {return RemapElemId(sourceId);}
-    DgnTextureId RemapTextureId(DgnTextureId sourceId) {return RemapElemId(sourceId);}
-    DgnStyleId RemapLineStyleId(DgnStyleId sourceId) {return RemapElemId(sourceId);}
-    DgnElementId RemapAnnotationStyleId(DgnElementId sourceId) {return RemapElemId(sourceId);}
+    CodeSpecId RemapCodeSpecId(CodeSpecId sourceId)                   {return CodeSpecId       (RemapElemId(sourceId).GetValueUnchecked());}
+    DgnGeometryPartId RemapGeometryPartId(DgnGeometryPartId sourceId) {return DgnGeometryPartId(RemapElemId(sourceId).GetValueUnchecked());}
+    DgnCategoryId RemapCategory(DgnCategoryId sourceId)               {return DgnCategoryId    (RemapElemId(sourceId).GetValueUnchecked());}
+    DgnSubCategoryId RemapSubCategory(DgnSubCategoryId sourceId)      {return DgnSubCategoryId (RemapElemId(sourceId).GetValueUnchecked());}
+    RenderMaterialId RemapRenderMaterialId(RenderMaterialId sourceId) {return RenderMaterialId (RemapElemId(sourceId).GetValueUnchecked());}
+    DgnTextureId RemapTextureId(DgnTextureId sourceId)                {return DgnTextureId     (RemapElemId(sourceId).GetValueUnchecked());}
+    DgnStyleId RemapLineStyleId(DgnStyleId sourceId)                  {return DgnStyleId       (RemapElemId(sourceId).GetValueUnchecked());}
+    DgnElementId RemapAnnotationStyleId(DgnElementId sourceId)        {return DgnElementId     (RemapElemId(sourceId).GetValueUnchecked());}
 };
 
 struct ImportContextRemapper
     {
     DgnImportContext& m_importContext;
 
+    ImportContextRemapper(DgnImportContext& importContext): m_importContext(importContext) {}
+
     CodeSpecId RemapCodeSpecId(CodeSpecId sourceId) {return m_importContext.RemapCodeSpecId(sourceId);}
     DgnGeometryPartId RemapGeometryPartId(DgnGeometryPartId sourceId) {return m_importContext.RemapGeometryPartId(sourceId);}
     DgnCategoryId RemapCategory(DgnCategoryId sourceId) {return m_importContext.RemapCategory(sourceId);}
     DgnSubCategoryId RemapSubCategory(DgnSubCategoryId sourceId) {return m_importContext.FindSubCategory(sourceId);}
-    DgnClassId RemapClassId(DgnClassId sourceId) {return m_importContext.RemapClassId(sourceId);}
     RenderMaterialId RemapRenderMaterialId(RenderMaterialId sourceId) {return m_importContext.RemapRenderMaterialId(sourceId);}
     DgnTextureId RemapTextureId(DgnTextureId sourceId) {return m_importContext.RemapTextureId(sourceId);}
     DgnStyleId RemapLineStyleId(DgnStyleId sourceId) {return m_importContext.RemapLineStyleId(sourceId);}
@@ -2727,7 +2726,7 @@ struct ImportContextRemapper
 
 struct RemapOptions
     {
-    bvector<DgnCategoryId> filteredSubCategories;
+    const DgnElementIdSet& filteredSubCategories;
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -2735,19 +2734,22 @@ struct RemapOptions
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename Remapper>
 static DgnDbStatus RemapGeometryIds(
-    DgnDbCR sourceDb,
-    DgnDbCR targetDb,
+    DgnDbR sourceDb,
+    DgnDbR targetDb,
     GeometryStreamCR source,
     GeometryStreamR target,
     Remapper remapper,
     RemapOptions options
 )   {
+    using OpCode = GeometryStreamIO::OpCode;
+    using Operation = GeometryStreamIO::Operation;
+
     if (!source.HasGeometry())
         return DgnDbStatus::Success; // otherwise we end up writing a header for an otherwise empty stream...
 
-    Collection collection(source.GetData(), source.GetSize());
-    Writer writer(targetDb);
-    // FIXME: would be very nice if we could in-place edit but flatbuffers doesn't explicitly support it
+    GeometryStreamIO::Collection collection(source.GetData(), source.GetSize());
+    // FIXME: in-place edit, flat buffers doesn't seem to like that idea though (for int64 shouldn't require changes...)
+    GeometryStreamIO::Writer writer(targetDb);
     writer.Reset(collection.GetHeader().m_flags);
 
     bool isFilteringBySubCategory = false;
@@ -2757,7 +2759,7 @@ static DgnDbStatus RemapGeometryIds(
         if ((GeometryStreamIO::OpCode::BasicSymbology == egOp.m_opCode) && !options.filteredSubCategories.empty())
             {
             DgnSubCategoryId subCategoryId((uint64_t)flatbuffers::GetRoot<FB::BasicSymbology>(egOp.m_data)->subCategoryId());
-            isFilteringBySubCategory = subCategoryId.IsValid() && options.filteredSubCategories.contains(subCategoryId); // !IsValid indicates the default SubCategory which is never filtered
+            isFilteringBySubCategory = subCategoryId.IsValid() && options.filteredSubCategories.Contains(subCategoryId); // !IsValid indicates the default SubCategory which is never filtered
             }
 
         if (isFilteringBySubCategory)
@@ -2772,11 +2774,11 @@ static DgnDbStatus RemapGeometryIds(
                 auto ppfb = flatbuffers::GetRoot<FB::BasicSymbology>(egOp.m_data);
 
                 DgnSubCategoryId subCategoryId((uint64_t)ppfb->subCategoryId());
-                DgnSubCategoryId remappedSubCategoryId = subCategoryId.IsValid() ? remapper.Remap(subCategoryId) : DgnSubCategoryId();
+                DgnSubCategoryId remappedSubCategoryId = subCategoryId.IsValid() ? remapper.RemapSubCategory(subCategoryId) : DgnSubCategoryId();
                 BeAssert((subCategoryId.IsValid() == remappedSubCategoryId.IsValid()) && "Category and all subcategories should have been remapped by the element that owns this geometry");
 
                 DgnStyleId lineStyleId((uint64_t)ppfb->lineStyleId());
-                DgnStyleId remappedLineStyleId = lineStyleId.IsValid() ? remapper.Remap(lineStyleId) : DgnStyleId();
+                DgnStyleId remappedLineStyleId = lineStyleId.IsValid() ? remapper.RemapLineStyleId(lineStyleId) : DgnStyleId();
                 //BeAssert((lineStyleId.IsValid() == remappedLineStyleId.IsValid()));
 
                 FlatBufferBuilder remappedfbb;
@@ -2806,7 +2808,7 @@ static DgnDbStatus RemapGeometryIds(
                 break;
                 }
 
-            case OpCode::Pattern:
+            case GeometryStreamIO::OpCode::Pattern:
                 {
                 auto ppfb = flatbuffers::GetRoot<FB::AreaPattern>(egOp.m_data);
 
@@ -2894,7 +2896,7 @@ static DgnDbStatus RemapGeometryIds(
                     break;
 
                 FontId srcFontId = text->GetStyle().GetFont();
-                FontId dstFontId = remapper.RemapFont(srcFontId);
+                FontId dstFontId = remapper.RemapFontId(srcFontId);
                 text->ChangeDgnDb(&targetDb);
                 text->GetStyleR().SetFont(dstFontId);
 
@@ -2938,7 +2940,7 @@ static DgnDbStatus RemapGeometryIds(
             }
         }
 
-    dest.SaveData(&writer.m_buffer.front(), (uint32_t) writer.m_buffer.size());
+    target.SaveData(&writer.m_buffer.front(), (uint32_t) writer.m_buffer.size());
 
     return DgnDbStatus::Success;
     }
@@ -2961,6 +2963,7 @@ DgnDbStatus GeometryStreamIO::Import(GeometryStreamR dest, GeometryStreamCR sour
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+/*
 DgnDbStatus GeometryStreamIO::ExposeSqlFunction(DgnDb& db) {
     const auto impl = []() {
         auto status = RemapGeometryIds(
@@ -2977,6 +2980,7 @@ DgnDbStatus GeometryStreamIO::ExposeSqlFunction(DgnDb& db) {
     // cannot used cached statements?
     BeSQLite::DbFunction("RemapGeom", impl);
 }
+*/
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod

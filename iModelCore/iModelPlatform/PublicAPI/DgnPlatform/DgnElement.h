@@ -237,6 +237,8 @@ public:
     bool IsSubCategoryFiltered(DgnSubCategoryId subCategoryId) const {return m_filteredSubCategoryIds.Contains(subCategoryId);}
     //! Add a SubCategory to be filtered out
     void FilterSubCategoryId(DgnSubCategoryId subCategoryId) {m_filteredSubCategoryIds.insert(subCategoryId);}
+    //! Get a const reference to the entire set of subcategories to that are designated for filtering
+    const DgnElementIdSet& GetFilteredSubCategories() {return m_filteredSubCategoryIds;}
     //! @}
 
     //! @name GCS coordinate system shift
