@@ -2199,6 +2199,26 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         JsInterop::UpdateProjectExtents(GetDgnDb(), BeJsDocument(newExtentsJson));
         }
 
+    Napi::Value GetCodeValueBehavior(NapiInfoCR info) {
+        switch (GetDgnDb().m_codeValueBehavior) {
+            case DgnCodeValue::Behavior::Exact: return Napi::String::New(info.Env(), "exact");
+            case DgnCodeValue::Behavior::TrimUnicodeWhitespace: return Napi::String::New(info.Env(), "trim-unicode-whitespace");
+            default: THROW_JS_EXCEPTION("Behavior was invalid. This is a bug.");
+        }
+    }
+
+    void SetCodeValueBehavior(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_STRING(0, codeValueBehaviorStr)
+        DgnCodeValue::Behavior newBehavior;
+        if (codeValueBehaviorStr == "exact")
+            newBehavior = DgnCodeValue::Behavior::Exact;
+        else if (codeValueBehaviorStr == "trim-unicode-whitespace")
+            newBehavior = DgnCodeValue::Behavior::TrimUnicodeWhitespace;
+        else
+            THROW_JS_EXCEPTION("Unsupported argument, should be one of the strings 'exact' or 'trim-unicode-whitespace'");
+        GetDgnDb().m_codeValueBehavior = newBehavior;
+    }
+
     Napi::Value ComputeProjectExtents(NapiInfoCR info)
         {
         REQUIRE_ARGUMENT_BOOL(0, wantFullExtents);
@@ -2506,6 +2526,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
             InstanceMethod("getBriefcaseId", &NativeDgnDb::GetBriefcaseId),
             InstanceMethod("getChangesetSize", &NativeDgnDb::GetChangesetSize),
             InstanceMethod("getChangeTrackingMemoryUsed", &NativeDgnDb::GetChangeTrackingMemoryUsed),
+            InstanceMethod("getCodeValueBehavior", &NativeDgnDb::GetCodeValueBehavior),
             InstanceMethod("getCurrentChangeset", &NativeDgnDb::GetCurrentChangeset),
             InstanceMethod("getCurrentTxnId", &NativeDgnDb::GetCurrentTxnId),
             InstanceMethod("getECClassMetaData", &NativeDgnDb::GetECClassMetaData),
@@ -2586,6 +2607,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
             InstanceMethod("saveFileProperty", &NativeDgnDb::SaveFileProperty),
             InstanceMethod("saveLocalValue", &NativeDgnDb::SaveLocalValue),
             InstanceMethod("schemaToXmlString", &NativeDgnDb::SchemaToXmlString),
+            InstanceMethod("setCodeValueBehavior", &NativeDgnDb::SetCodeValueBehavior),
             InstanceMethod("setGeometricModelTrackingEnabled", &NativeDgnDb::SetGeometricModelTrackingEnabled),
             InstanceMethod("setIModelDb", &NativeDgnDb::SetIModelDb),
             InstanceMethod("setIModelId", &NativeDgnDb::SetIModelId),
@@ -5773,8 +5795,11 @@ public:
         if (!targetModel.IsValid())
             THROW_JS_EXCEPTION("Invalid target model");
 
-        DgnElementPtr targetElement = sourceElement->CloneForImport(nullptr, *targetModel, *m_importContext);
-        if (!targetElement.IsValid())
+        DgnDbStatus cloneStatus;
+        DgnElementPtr targetElement = sourceElement->CloneForImport(&cloneStatus, *targetModel, *m_importContext);
+        if (cloneStatus == DgnDbStatus::WrongClass)
+            THROW_JS_EXCEPTION("Unable to clone an element because of an invalid class. Were schemas imported?");
+        if (cloneStatus != DgnDbStatus::Success || !targetElement.IsValid())
             THROW_JS_EXCEPTION("Unable to clone element");
 
         GeometryStreamCP geometryStream = nullptr;

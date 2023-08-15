@@ -533,6 +533,7 @@ export declare namespace IModelJsNative {
     public getBriefcaseId(): number;
     public getChangesetSize(): number;
     public getChangeTrackingMemoryUsed(): number;
+    public getCodeValueBehavior(): "exact" | "trim-unicode-whitespace";
     public getCurrentChangeset(): ChangesetIndexAndId;
     public getCurrentTxnId(): TxnIdString;
     public getECClassMetaData(schema: string, className: string): ErrorStatusOrResult<IModelStatus, string>;
@@ -619,6 +620,7 @@ export declare namespace IModelJsNative {
     public setIModelDb(iModelDb?: any/* IModelDb */): void;
     public setIModelId(guid: GuidString): DbResult;
     public setITwinId(guid: GuidString): DbResult;
+    public setCodeValueBehavior(newBehavior: "exact" | "trim-unicode-whitespace"): void;
     public simplifyElementGeometry(simplifyArgs: any): DbResult;
     public startCreateChangeset(): ChangesetFileProps;
     public startProfiler(scopeName?: string, scenarioName?: string, overrideFile?: boolean, computeExecutionPlan?: boolean): DbResult;
