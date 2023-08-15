@@ -200,6 +200,7 @@ struct DgnCodeValue
 {
     enum class CompareResult { Less, Equal, Greater };
     enum class Behavior {
+        // This is the default
         TrimUnicodeWhitespace = 0,
         // Use when you are copying data between iModels in a way that code values should preserved
         // This is mostly for compatibility with older iModels where the previous behavior was
@@ -224,6 +225,8 @@ public:
         { if (behavior != Behavior::Exact) m_value.TrimUtf8(); }
 
     //! Create a code value from a pointer to a UTF-8 string
+    //! @param[in] behavior - How to trim the code. Should default to Behavior::TrimUnicodeWhitespace, should come from the db using this code.
+    //! @see DgnCode::CreateWithDbContext
     DgnCodeValue(Utf8CP str, Behavior behavior)
         : m_value(str)
         { if (behavior != Behavior::Exact) m_value.TrimUtf8(); }
@@ -283,6 +286,8 @@ public:
     DgnCode() {}
 
     //! Construct a DgnCode scoped to an existing element.
+    //! @param[in] behavior - How to trim the code. Should default to Behavior::TrimUnicodeWhitespace, should come from the element/db using this code.
+    //! @see DgnCode::CreateWithDbContext
     DgnCode(CodeSpecId specId, DgnElementId scopeElementId, Utf8StringCR value, DgnCodeValue::Behavior behavior)
         : m_specId(specId), m_scope(scopeElementId.ToHexStr()), m_value(value, behavior) {}
 
