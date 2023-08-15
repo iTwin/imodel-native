@@ -2655,21 +2655,74 @@ void GeometryStreamIO::Iterator::ToNext()
     }
 
 
-struct SqlTableRemapper
-    {
+struct SqlTableRemapper {
+private:
     DgnDbCR m_db;
-    Utf8CP m_tableName;
-    BeInt64Id Remap(BeInt64Id sourceId)
-        {
-        const auto stmt = Utf8PrintfString::Utf8PrintfString("SELECT TargetId FROM %s WHERE SourceId=?", m_tableName);
-        //auto stmt = m_db.GetPreparedECSqlStatement(stmt.c_str(), false)
-        auto stmt = m_db.GetPreparedSqliteStatement(stmt.c_str(), false);
-        stmt.BindId(1, sourceId);
-        if (BE_SQLITE_ROW == stmt->Step())
-            return stmt->GetValueId(0);
+    EC::ECSqlSelectPreparedStatement m_elemQuery;
+    EC::ECSqlSelectPreparedStatement m_fontQuery;
+
+
+public:
+    SqlTableRemapper(
+        Utf8CP elemRemapTableName,
+        Utf8CP fontRemapTableName
+    ) {
+        const auto fontSql = Utf8PrintfString::Utf8PrintfString(
+            "SELECT TargetId FROM %s WHERE SourceId=?",
+            fontRemapTableName
+        );
+        m_fontStmt = m_db.GetPreparedSqliteStatement(fontSql.c_str());
+
+        const auto elemSql = Utf8PrintfString::Utf8PrintfString(
+            "SELECT TargetId FROM %s WHERE SourceId=?",
+            elemRemapTableName
+        );
+        m_elemStmt = m_db.GetPreparedSqliteStatement(elemSql.c_str());
+    }
+
+    BeInt64Id RemapElemId(BeInt64Id sourceId) {
+        m_elemStmt.Reset();
+        m_elemStmt.BindId(1, sourceId);
+        if (BE_SQLITE_ROW == m_elemStmt->Step())
+            return m_elemStmt->GetValueId(0);
         else
-            m_db.ThrowException("remap not found");
-        }
+            m_db.ThrowException(Utf8PrintfString("remap not found for element %xd", sourceId));
+    }
+
+    FontId RemapFontId(FontId sourceId) {
+        m_fontStmt.Reset();
+        m_fontStmt.BindId(1, sourceId);
+        if (BE_SQLITE_ROW == m_fontStmt->Step())
+            return m_fontStmt->GetValueId(0);
+        else
+            m_db.ThrowException(Utf8PrintfString("remap not found for font %xd", sourceId));
+    }
+
+    CodeSpecId RemapCodeSpecId(CodeSpecId sourceId) {return RemapElemId(sourceId);}
+    DgnGeometryPartId RemapGeometryPartId(DgnGeometryPartId sourceId) {return RemapElemId(sourceId);}
+    DgnCategoryId RemapCategory(DgnCategoryId sourceId) {return RemapElemId(sourceId);}
+    DgnSubCategoryId RemapSubCategory(DgnSubCategoryId sourceId) {return RemapElemId(sourceId);}
+    DgnClassId RemapClassId(DgnClassId sourceId) {return RemapElemId(sourceId);}
+    RenderMaterialId RemapRenderMaterialId(RenderMaterialId sourceId) {return RemapElemId(sourceId);}
+    DgnTextureId RemapTextureId(DgnTextureId sourceId) {return RemapElemId(sourceId);}
+    DgnStyleId RemapLineStyleId(DgnStyleId sourceId) {return RemapElemId(sourceId);}
+    DgnElementId RemapAnnotationStyleId(DgnElementId sourceId) {return RemapElemId(sourceId);}
+};
+
+struct ImportContextRemapper
+    {
+    DgnImportContext& m_importContext;
+
+    CodeSpecId RemapCodeSpecId(CodeSpecId sourceId) {return m_importContext.RemapCodeSpecId(sourceId);}
+    DgnGeometryPartId RemapGeometryPartId(DgnGeometryPartId sourceId) {return m_importContext.RemapGeometryPartId(sourceId);}
+    DgnCategoryId RemapCategory(DgnCategoryId sourceId) {return m_importContext.RemapCategory(sourceId);}
+    DgnSubCategoryId RemapSubCategory(DgnSubCategoryId sourceId) {return m_importContext.FindSubCategory(sourceId);}
+    DgnClassId RemapClassId(DgnClassId sourceId) {return m_importContext.RemapClassId(sourceId);}
+    RenderMaterialId RemapRenderMaterialId(RenderMaterialId sourceId) {return m_importContext.RemapRenderMaterialId(sourceId);}
+    DgnTextureId RemapTextureId(DgnTextureId sourceId) {return m_importContext.RemapTextureId(sourceId);}
+    DgnStyleId RemapLineStyleId(DgnStyleId sourceId) {return m_importContext.RemapLineStyleId(sourceId);}
+    DgnElementId RemapAnnotationStyleId(DgnElementId sourceId) {return m_importContext.RemapAnnotationStyleId(sourceId);}
+    FontId RemapFontId(FontId sourceId) {return m_importContext.RemapFont(sourceId);}
     };
 
 struct RemapOptions
@@ -2681,19 +2734,20 @@ struct RemapOptions
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename Remapper>
-DgnDbStatus GeometryStreamIO::CreateSqliteRemapper(
-    DgnDbCR db,
+static DgnDbStatus RemapGeometryIds(
+    DgnDbCR sourceDb,
+    DgnDbCR targetDb,
     GeometryStreamCR source,
     GeometryStreamR target,
     Remapper remapper,
     RemapOptions options
-)
-    {
+)   {
     if (!source.HasGeometry())
         return DgnDbStatus::Success; // otherwise we end up writing a header for an otherwise empty stream...
 
     Collection collection(source.GetData(), source.GetSize());
-    Writer writer(db);
+    Writer writer(targetDb);
+    // FIXME: would be very nice if we could in-place edit but flatbuffers doesn't explicitly support it
     writer.Reset(collection.GetHeader().m_flags);
 
     bool isFilteringBySubCategory = false;
@@ -2740,7 +2794,7 @@ DgnDbStatus GeometryStreamIO::CreateSqliteRemapper(
                 {
                 auto ppfb = flatbuffers::GetRoot<FB::GeometryPart>(egOp.m_data);
 
-                DgnGeometryPartId remappedGeometryPartId = importer.RemapGeometryPartId(DgnGeometryPartId((uint64_t) ppfb->geomPartId())); // Trigger deep-copy if necessary
+                DgnGeometryPartId remappedGeometryPartId = remapper.RemapGeometryPartId(DgnGeometryPartId((uint64_t) ppfb->geomPartId())); // Trigger deep-copy if necessary
                 BeAssert(remappedGeometryPartId.IsValid() && "Unable to deep-copy geompart!");
 
                 FlatBufferBuilder remappedfbb;
@@ -2762,7 +2816,7 @@ DgnDbStatus GeometryStreamIO::CreateSqliteRemapper(
                     break;
                     }
 
-                DgnGeometryPartId remappedGeometryPartId = importer.RemapGeometryPartId(DgnGeometryPartId((uint64_t) ppfb->symbolId())); // Trigger deep-copy if necessary
+                DgnGeometryPartId remappedGeometryPartId = remapper.RemapGeometryPartId(DgnGeometryPartId((uint64_t) ppfb->symbolId())); // Trigger deep-copy if necessary
                 BeAssert(remappedGeometryPartId.IsValid() && "Unable to deep-copy geompart!");
 
                 FlatBufferBuilder remappedfbb;
@@ -2779,7 +2833,7 @@ DgnDbStatus GeometryStreamIO::CreateSqliteRemapper(
                 {
                 auto fbSymb = flatbuffers::GetRoot<FB::Material>(egOp.m_data);
                 RenderMaterialId materialId((uint64_t)fbSymb->materialId());
-                RenderMaterialId remappedMaterialId = (materialId.IsValid() ? importer.RemapRenderMaterialId(materialId) : RenderMaterialId());
+                RenderMaterialId remappedMaterialId = (materialId.IsValid() ? remapper.RemapRenderMaterialId(materialId) : RenderMaterialId());
                 BeAssert((materialId.IsValid() == remappedMaterialId.IsValid()) && "Unable to deep-copy material");
 
                 FlatBufferBuilder remappedfbb;
@@ -2808,7 +2862,7 @@ DgnDbStatus GeometryStreamIO::CreateSqliteRemapper(
                     if (fbSymb->useMaterial())
                         {
                         RenderMaterialId materialId((uint64_t)fbSymb->materialId());
-                        RenderMaterialId remappedMaterialId = (materialId.IsValid() ? importer.RemapRenderMaterialId(materialId) : RenderMaterialId());
+                        RenderMaterialId remappedMaterialId = (materialId.IsValid() ? remapper.RemapRenderMaterialId(materialId) : RenderMaterialId());
                         BeAssert((materialId.IsValid() == remappedMaterialId.IsValid()) && "Unable to deep-copy material");
 
                         FB::FaceSymbology  remappedfbSymb(fbSymb->useColor(), fbSymb->useMaterial(),
@@ -2835,13 +2889,13 @@ DgnDbStatus GeometryStreamIO::CreateSqliteRemapper(
 
             case GeometryStreamIO::OpCode::TextString:
                 {
-                TextStringPtr text = TextString::Create(importer.GetSourceDb());
+                TextStringPtr text = TextString::Create(sourceDb);
                 if (SUCCESS != TextStringPersistence::DecodeFromFlatBuf(*text, egOp.m_data, egOp.m_dataSize))
                     break;
 
                 FontId srcFontId = text->GetStyle().GetFont();
-                FontId dstFontId = importer.RemapFont(srcFontId);
-                text->ChangeDgnDb(&importer.GetDestinationDb());
+                FontId dstFontId = remapper.RemapFont(srcFontId);
+                text->ChangeDgnDb(&targetDb);
                 text->GetStyleR().SetFont(dstFontId);
 
                 writer.Append(*text);
@@ -2858,7 +2912,7 @@ DgnDbStatus GeometryStreamIO::CreateSqliteRemapper(
                     }
 
                 DgnTextureId srcTextureId(static_cast<uint64_t>(fbImg->textureId()));
-                DgnTextureId dstTextureId = srcTextureId.IsValid() ? importer.RemapTextureId(srcTextureId) : DgnTextureId();
+                DgnTextureId dstTextureId = srcTextureId.IsValid() ? remapper.RemapTextureId(srcTextureId) : DgnTextureId();
                 BeAssert(srcTextureId.IsValid() == dstTextureId.IsValid() && "Unable to deep-copy texture for ImageGraphic");
 
                 FlatBufferBuilder fbb;
@@ -2894,205 +2948,35 @@ DgnDbStatus GeometryStreamIO::CreateSqliteRemapper(
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus GeometryStreamIO::Import(GeometryStreamR dest, GeometryStreamCR source, DgnImportContext& importer)
     {
-    if (!source.HasGeometry())
-        return DgnDbStatus::Success; // otherwise we end up writing a header for an otherwise empty stream...
-
-    Writer writer(importer.GetDestinationDb());
-    Collection collection(source.GetData(), source.GetSize());
-    writer.Reset(collection.GetHeader().m_flags);
-
-    bool isFilteringBySubCategory = false;
-
-    for (auto const& egOp : collection)
-        {
-        if ((GeometryStreamIO::OpCode::BasicSymbology == egOp.m_opCode) && importer.HasSubCategoryFilter())
-            {
-            DgnSubCategoryId subCategoryId((uint64_t)flatbuffers::GetRoot<FB::BasicSymbology>(egOp.m_data)->subCategoryId());
-            isFilteringBySubCategory = subCategoryId.IsValid() && importer.IsSubCategoryFiltered(subCategoryId); // !IsValid indicates the default SubCategory which is never filtered
-            }
-
-        if (isFilteringBySubCategory)
-            continue; // A filtered SubCategory is still active, so skip the current entry. Note this may leave the bounding box bigger than needed but decided it wasn't worth the trouble to update.
-
-        switch (egOp.m_opCode)
-            {
-            case GeometryStreamIO::OpCode::Header:
-                continue; // Appended by Reset() above.
-            case GeometryStreamIO::OpCode::BasicSymbology:
-                {
-                auto ppfb = flatbuffers::GetRoot<FB::BasicSymbology>(egOp.m_data);
-
-                DgnSubCategoryId subCategoryId((uint64_t)ppfb->subCategoryId());
-                DgnSubCategoryId remappedSubCategoryId = (subCategoryId.IsValid() ? importer.FindSubCategory(subCategoryId) : DgnSubCategoryId());
-                BeAssert((subCategoryId.IsValid() == remappedSubCategoryId.IsValid()) && "Category and all subcategories should have been remapped by the element that owns this geometry");
-
-                DgnStyleId lineStyleId((uint64_t)ppfb->lineStyleId());
-                DgnStyleId remappedLineStyleId = (lineStyleId.IsValid() ? importer.RemapLineStyleId(lineStyleId) : DgnStyleId());
-                //BeAssert((lineStyleId.IsValid() == remappedLineStyleId.IsValid()));
-
-                FlatBufferBuilder remappedfbb;
-
-                auto mloc = FB::CreateBasicSymbology(remappedfbb, remappedSubCategoryId.GetValueUnchecked(),
-                                                     ppfb->color(), ppfb->weight(), remappedLineStyleId.GetValueUnchecked(),
-                                                     ppfb->transparency(), ppfb->displayPriority(), ppfb->geomClass(),
-                                                     ppfb->useColor(), ppfb->useWeight(), ppfb->useStyle());
-                remappedfbb.Finish(mloc);
-                writer.Append(Operation(OpCode::BasicSymbology, (uint32_t) remappedfbb.GetSize(), remappedfbb.GetBufferPointer()));
-                break;
-                }
-
-            case GeometryStreamIO::OpCode::GeometryPartInstance:
-                {
-                auto ppfb = flatbuffers::GetRoot<FB::GeometryPart>(egOp.m_data);
-
-                DgnGeometryPartId remappedGeometryPartId = importer.RemapGeometryPartId(DgnGeometryPartId((uint64_t) ppfb->geomPartId())); // Trigger deep-copy if necessary
-                BeAssert(remappedGeometryPartId.IsValid() && "Unable to deep-copy geompart!");
-
-                FlatBufferBuilder remappedfbb;
-
-                auto mloc = FB::CreateGeometryPart(remappedfbb, remappedGeometryPartId.GetValueUnchecked(), ppfb->origin(), ppfb->yaw(), ppfb->pitch(), ppfb->roll(), ppfb->scale());
-
-                remappedfbb.Finish(mloc);
-                writer.Append(Operation(OpCode::GeometryPartInstance, (uint32_t) remappedfbb.GetSize(), remappedfbb.GetBufferPointer()));
-                break;
-                }
-
-            case OpCode::Pattern:
-                {
-                auto ppfb = flatbuffers::GetRoot<FB::AreaPattern>(egOp.m_data);
-
-                if (!ppfb->has_symbolId())
-                    {
-                    writer.Append(egOp);
-                    break;
-                    }
-
-                DgnGeometryPartId remappedGeometryPartId = importer.RemapGeometryPartId(DgnGeometryPartId((uint64_t) ppfb->symbolId())); // Trigger deep-copy if necessary
-                BeAssert(remappedGeometryPartId.IsValid() && "Unable to deep-copy geompart!");
-
-                FlatBufferBuilder remappedfbb;
-
-                auto mloc = FB::CreateAreaPattern(remappedfbb, ppfb->origin(), ppfb->rotation(), ppfb->space1(), ppfb->space2(), ppfb->angle1(), ppfb->angle2(), ppfb->scale(),
-                                                  ppfb->color(), ppfb->weight(), ppfb->useColor(), ppfb->useWeight(), ppfb->invisibleBoundary(), ppfb->snappable(),
-                                                  remappedGeometryPartId.GetValueUnchecked());
-                remappedfbb.Finish(mloc);
-                writer.Append(Operation(OpCode::Pattern, (uint32_t) remappedfbb.GetSize(), remappedfbb.GetBufferPointer()));
-                break;
-                }
-
-            case GeometryStreamIO::OpCode::Material:
-                {
-                auto fbSymb = flatbuffers::GetRoot<FB::Material>(egOp.m_data);
-                RenderMaterialId materialId((uint64_t)fbSymb->materialId());
-                RenderMaterialId remappedMaterialId = (materialId.IsValid() ? importer.RemapRenderMaterialId(materialId) : RenderMaterialId());
-                BeAssert((materialId.IsValid() == remappedMaterialId.IsValid()) && "Unable to deep-copy material");
-
-                FlatBufferBuilder remappedfbb;
-                auto mloc = FB::CreateMaterial(remappedfbb, fbSymb->useMaterial(), remappedMaterialId.GetValueUnchecked(), fbSymb->origin(), fbSymb->size(), fbSymb->yaw(), fbSymb->pitch(), fbSymb->roll(), fbSymb->trans2x3());
-                remappedfbb.Finish(mloc);
-                writer.Append(Operation(OpCode::Material, (uint32_t) remappedfbb.GetSize(), remappedfbb.GetBufferPointer()));
-                break;
-                }
-
-            case GeometryStreamIO::OpCode::ParasolidBRep:
-                {
-                auto ppfb = flatbuffers::GetRoot<FB::BRepData>(egOp.m_data);
-
-                if (!ppfb->has_symbology())
-                    {
-                    writer.Append(egOp);
-                    break;
-                    }
-
-                bvector<FB::FaceSymbology> remappedFaceSymbVec;
-
-                for (size_t iSymb=0; iSymb < ppfb->symbology()->Length(); iSymb++)
-                    {
-                    FB::FaceSymbology const* fbSymb = ((FB::FaceSymbology const*) ppfb->symbology()->Data())+iSymb;
-
-                    if (fbSymb->useMaterial())
-                        {
-                        RenderMaterialId materialId((uint64_t)fbSymb->materialId());
-                        RenderMaterialId remappedMaterialId = (materialId.IsValid() ? importer.RemapRenderMaterialId(materialId) : RenderMaterialId());
-                        BeAssert((materialId.IsValid() == remappedMaterialId.IsValid()) && "Unable to deep-copy material");
-
-                        FB::FaceSymbology  remappedfbSymb(fbSymb->useColor(), fbSymb->useMaterial(),
-                                                          fbSymb->color(), remappedMaterialId.GetValueUnchecked(),
-                                                          fbSymb->transparency(), fbSymb->uv());
-
-                        remappedFaceSymbVec.push_back(remappedfbSymb);
-                        }
-                    else
-                        {
-                        remappedFaceSymbVec.push_back(*fbSymb);
-                        }
-                    }
-
-                FlatBufferBuilder remappedfbb;
-                auto remappedEntityData = remappedfbb.CreateVector(ppfb->entityData()->Data(), ppfb->entityData()->Length());
-                auto remappedFaceSymb = remappedfbb.CreateVectorOfStructs(&remappedFaceSymbVec.front(), remappedFaceSymbVec.size());
-                auto remappedFaceSymbIndex = ppfb->has_symbologyIndex() ? remappedfbb.CreateVectorOfStructs((FB::FaceSymbologyIndex const*) ppfb->symbologyIndex()->Data(), ppfb->symbologyIndex()->Length()) : 0;
-                auto mloc = FB::CreateBRepData(remappedfbb, ppfb->entityTransform(), ppfb->brepType(), remappedEntityData, remappedFaceSymb, remappedFaceSymbIndex);
-                remappedfbb.Finish(mloc);
-                writer.Append(Operation(OpCode::ParasolidBRep, (uint32_t) remappedfbb.GetSize(), remappedfbb.GetBufferPointer()));
-                break;
-                }
-
-            case GeometryStreamIO::OpCode::TextString:
-                {
-                TextStringPtr text = TextString::Create(importer.GetSourceDb());
-                if (SUCCESS != TextStringPersistence::DecodeFromFlatBuf(*text, egOp.m_data, egOp.m_dataSize))
-                    break;
-
-                FontId srcFontId = text->GetStyle().GetFont();
-                FontId dstFontId = importer.RemapFont(srcFontId);
-                text->ChangeDgnDb(&importer.GetDestinationDb());
-                text->GetStyleR().SetFont(dstFontId);
-
-                writer.Append(*text);
-                break;
-                }
-
-            case GeometryStreamIO::OpCode::Image:
-                {
-                auto fbImg = flatbuffers::GetRoot<FB::Image>(egOp.m_data);
-                if (!fbImg->has_textureId())
-                    {
-                    writer.Append(egOp);
-                    break;
-                    }
-
-                DgnTextureId srcTextureId(static_cast<uint64_t>(fbImg->textureId()));
-                DgnTextureId dstTextureId = srcTextureId.IsValid() ? importer.RemapTextureId(srcTextureId) : DgnTextureId();
-                BeAssert(srcTextureId.IsValid() == dstTextureId.IsValid() && "Unable to deep-copy texture for ImageGraphic");
-
-                FlatBufferBuilder fbb;
-                auto mloc = FB::CreateImage(
-                    fbb,
-                    fbImg->drawBorder() ? 1 : 0,
-                    0, // use fill tint
-                    fbImg->tileCorner0(), fbImg->tileCorner1(), fbImg->tileCorner2(), fbImg->tileCorner3(),
-                    0, 0, 0, // width, height, format
-                    0, // image bytes
-                    static_cast<int64_t>(dstTextureId.GetValueUnchecked()));
-
-                fbb.Finish(mloc);
-                writer.Append(Operation(OpCode::Image, static_cast<uint32_t>(fbb.GetSize()), fbb.GetBufferPointer()));
-                break;
-                }
-
-            default:
-                {
-                writer.Append(egOp);
-                break;
-                }
-            }
-        }
-
-    dest.SaveData(&writer.m_buffer.front(), (uint32_t) writer.m_buffer.size());
-
-    return DgnDbStatus::Success;
+    return RemapGeometryIds(
+        importer.GetSourceDb(),
+        importer.GetDestinationDb(),
+        source,
+        dest,
+        ImportContextRemapper(importer),
+        { .filteredSubCategories = importer.GetFilteredSubCategories() }
+    );
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus GeometryStreamIO::ExposeSqlFunction(DgnDb& db) {
+    const auto impl = []() {
+        auto status = RemapGeometryIds(
+            // can I get a font out of an attached db?
+            importer.GetSourceDb(),
+            importer.GetDestinationDb(),
+            source,
+            dest,
+            ImportContextRemapper(importer),
+            { .filteredSubCategories = {} }
+        );
+    };
+
+    // cannot used cached statements?
+    BeSQLite::DbFunction("RemapGeom", impl);
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
