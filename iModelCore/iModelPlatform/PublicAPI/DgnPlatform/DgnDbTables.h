@@ -200,7 +200,8 @@ struct DgnCodeValue
 {
     enum class CompareResult { Less, Equal, Greater };
     enum class Behavior {
-        // This is the default
+        // This is the default, always use it unless you have a specific reason, such as compatibility with iModels
+        // created by older connectors
         TrimUnicodeWhitespace = 0,
         // Use when you are copying data between iModels in a way that code values should preserved
         // This is mostly for compatibility with older iModels where the previous behavior was
