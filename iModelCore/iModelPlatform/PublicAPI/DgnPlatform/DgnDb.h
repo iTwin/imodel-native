@@ -182,6 +182,7 @@ struct DgnDb : RefCounted<BeSQLite::EC::ECDb>, BeSQLite::EC::ECDb::IECDbCacheCle
     using SyncDbUri = BeSQLite::EC::SchemaSync::SyncDbUri;
     using PullResult = BeSQLite::EC::SchemaSync::Status;
     friend struct BisCoreDomain;
+    friend struct SqlTableRemapper; // needs access to the underlying ecdb
     DEFINE_T_SUPER(BeSQLite::EC::ECDb)
 
     //=======================================================================================
