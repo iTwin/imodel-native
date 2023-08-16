@@ -4,6 +4,9 @@
 *--------------------------------------------------------------------------------------------*/
 #include "testHarness.h"
 #include <stdio.h>
+#include <algorithm>
+#include <numeric>
+#include <random>
 
 static bool s_printHullSteps = false;
 static int s_noisy = false;
@@ -4302,4 +4305,94 @@ TEST (PolyfaceConstruction, DegenerateFacet)
     mesh->PointIndex().insert(mesh->PointIndex().end(), { 1,2,3,0 });   ++numDegenerateFacets;  // degen facet with 3 vertices
     mesh->BuildPerFaceNormals();
     Check::Size(mesh->Normal().size(), numDegenerateFacets, "installed default normals for degenerate facets");
+    }
+
+// ignores aux data!
+PolyfaceHeaderPtr clonePolyfaceRandomOrder(PolyfaceHeaderCR mesh)
+    {
+    size_t numFacets = mesh.GetNumFacet();
+    std::vector<size_t> facetIndices(numFacets);
+    std::iota(facetIndices.begin(), facetIndices.end(), 0);
+    std::random_device rd;
+    std::mt19937 generator(rd());
+    std::shuffle(facetIndices.begin(), facetIndices.end(), generator);
+
+    auto cloneShuffled = mesh.Clone();
+    cloneShuffled->PointIndex().clear();
+
+    auto visitor = PolyfaceVisitor::Attach(mesh, false);
+    for (auto const& iFacet : facetIndices)
+        {
+        visitor->Reset();
+        for (size_t i = 0; visitor->AdvanceToNextFace() && i < iFacet; ++i);    // yuck, linear search
+        cloneShuffled->PointIndex().AddAndTerminate(mesh.GetPointIndexCP() + visitor->GetReadIndex(), visitor->NumEdgesThisFace());
+        }
+
+    return cloneShuffled;
+    }
+
+PolyfaceHeaderPtr clonePolyfaceWithoutDegenerateFaces(PolyfaceHeaderCR mesh)
+    {
+    auto cloneFiltered = mesh.Clone();
+    cloneFiltered->PointIndex().clear();
+
+    for (auto visitor = PolyfaceVisitor::Attach(mesh, false); visitor->AdvanceToNextFace(); )
+        {
+        if (visitor->NumEdgesThisFace() < 3)
+            continue;
+        auto pFaceIndices = visitor->GetClientPointIndexCP();   // zero based
+        auto i0 = pFaceIndices[0];
+        auto i1 = pFaceIndices[1];
+        auto i2 = pFaceIndices[2];
+        if (visitor->NumEdgesThisFace() == 3)
+            {
+            if (i0 == i1 || i0 == i2 || i1 == i2)
+                continue;
+            }
+        else if (visitor->NumEdgesThisFace() == 4)
+            {
+            auto i3 = pFaceIndices[3];
+            if (i0 == i3 && i1 == i2)
+                continue;
+            if (i0 == i1 && i2 == i3)
+                continue;
+            }
+        cloneFiltered->PointIndex().AddAndTerminate(mesh.GetPointIndexCP() + visitor->GetReadIndex(), visitor->NumEdgesThisFace());
+        }
+
+    return cloneFiltered;
+    }
+
+TEST(Polyface, ConnectedComponentsMaxFaces)
+    {
+    auto sphere = DgnSphereDetail(DPoint3d::FromZero(), 10);
+    auto options = IFacetOptions::CreateForSurfaces(0.0, 0.15);
+    auto builder = PolyfaceConstruction::Create(*options);
+    if (Check::True(builder->Add(sphere), "mesh builder successfully added sphere"))
+        {
+        auto originalMesh = builder->GetClientMeshPtr();
+        auto numFacets = originalMesh->GetNumFacet();
+        auto filteredMesh = clonePolyfaceWithoutDegenerateFaces(*originalMesh); // shouldn't be necessary...
+        numFacets = filteredMesh->GetNumFacet();
+        auto mesh = clonePolyfaceRandomOrder(*filteredMesh);
+        if (Check::True(mesh.IsValid() && mesh->GetNumFacet() == numFacets, "randomized mesh has same number of facets"))
+            {
+            auto pFacets = jmdlMTGFacets_new();
+            if (Check::True(PolyfaceToMTG(pFacets, nullptr, nullptr, *mesh, true, 0, 0, 1), "mesh to MTG successful") &&
+                Check::Size(pFacets->GetGraphP()->CountFaceLoops(), numFacets, "mesh and MTG have same number of facets"))
+                {
+                bvector<bvector<MTGNodeId>> components;
+                size_t maxFacets = numFacets / 3;
+                pFacets->GetGraphP()->CollectConnectedComponents(components, maxFacets);
+                for (auto const& component : components)
+                    {
+                    auto subMesh = MTGFacetsSubsetToIndexedPolyface(pFacets, MTG_EXTERIOR_MASK, MTG_DIRECTED_EDGE_MASK, component);
+                    Check::True(subMesh.IsValid() && subMesh->GetNumFacet() <= maxFacets, "subMesh facet count less than maxFacets");
+                    Check::SaveTransformed(subMesh);
+                    }
+                }
+            pFacets = jmdlMTGFacets_free(pFacets);
+            Check::ClearGeometry("Polyface.ConnectedComponentsMaxFaces");
+            }
+        }
     }

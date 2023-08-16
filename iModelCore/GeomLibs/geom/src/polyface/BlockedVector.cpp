@@ -481,7 +481,7 @@ size_t BlockedVectorInt::CountZeros
 +--------------------------------------------------------------------------------------*/
 bool BlockedVectorInt::AddAndTerminate
 (
-int *pData,
+int const * pData,
 size_t n
 )
     {

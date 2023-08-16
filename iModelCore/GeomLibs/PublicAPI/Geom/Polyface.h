@@ -342,7 +342,7 @@ GEOMDLLIMPEXP void AddSteppedBlock
 //!
 GEOMDLLIMPEXP bool AddAndTerminate
 (
-int *pValues,
+int const* pValues,
 size_t numValues
 );
 //!
