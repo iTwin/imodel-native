@@ -595,8 +595,7 @@ public:
 
     DGNPLATFORM_EXPORT TxnId GetLastTxnId();
 
-    /**
-     * For readonly connections, new Txns may be added from other writeable connections while this session is active.
+    /** For readonly connections, new Txns may be added from other writeable connections while this session is active.
      * Since we always hold a SQLite transaction (the DefaultTxn) open, this session will not see any of
      * those changes unless/until we explicitly close-and-restart the DefaultTxn.
      *
