@@ -594,6 +594,23 @@ public:
     TxnId GetSessionStartId() const {return TxnId(m_curr.GetSession(), 0);}
 
     DGNPLATFORM_EXPORT TxnId GetLastTxnId();
+
+    /**
+     * For readonly connections, new Txns may be added from other writeable connections while this session is active.
+     * Since we always hold a SQLite transaction (the DefaultTxn) open, this session will not see any of
+     * those changes unless/until we explicitly close-and-restart the DefaultTxn.
+     *
+     * This method is called when the DefaultTxn is restarted and new Txns are discovered. It "replays" each new Txn in
+     * this session so that notifications for the changed elements/models can be sent for this connection as if the
+     * changes were just made. It calls `ApplyTxnChanges` but relies on the fact that the iModel is open for read and
+     * none of the changes are actually applied (they were applied in the connection where they were made.)
+     * This action is performed for "side effects" only. Of course since the connection is readonly, that's implied.
+     *
+     * The events emitted to TypeScript by this operation (like "onElementsChanged" and "onModelGeometryChanged") are preceded
+     * by an "onReplayExternalTxns" event and followed by an "onReplayedExternalTxns" event.
+     *
+     * Note: this doesn't handle undo/redo. It is not expected that the process modifying the briefcase will use them.
+     */
     DGNPLATFORM_EXPORT void ReplayExternalTxns(TxnId start);
 
     //! Given a TxnId, query for TxnId of the immediately previous committed Txn, if any.

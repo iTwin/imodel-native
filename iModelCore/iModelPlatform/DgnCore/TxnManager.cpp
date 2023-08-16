@@ -1626,17 +1626,6 @@ DgnDbStatus TxnManager::ReverseAll() {
     return ReverseActions(TxnRange(startId, GetCurrentTxnId()));
 }
 
-/**
- * For readonly connections, new Txns may be added from other writeable connections while this session is active.
- * Since we always hold a SQLite transaction (the DefaultTxn) open, this session will not see any of
- * those changes unless/until we explicitly close-and-restart the DefaultTxn.
- *
- * This method is called when the DefaultTxn is restarted and new Txns are discovered. It "replays" each new Txn in
- * this session so that notifications for the changed elements/models can be sent for this connection as if the
- * changes were just made. It calls `ApplyTxnChanges` but relies on the fact that the iModel is open for read and
- * none of the changes are actually applied (they were applied in the connection where they were made.)
- * This action is performed for "side effects" only. Of course since the connection is readonly, that's implied.
- */
 void TxnManager::ReplayExternalTxns(TxnId from) {
     if (!m_initTableHandlers || !m_dgndb.IsReadonly())
         return; // this method can only be called on a readonly connection with the TxnManager active
