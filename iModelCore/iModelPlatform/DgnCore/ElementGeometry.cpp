@@ -2960,27 +2960,102 @@ DgnDbStatus GeometryStreamIO::Import(GeometryStreamR dest, GeometryStreamCR sour
     );
     }
 
+namespace GeomRemapFuncs {
+    thread_local Db remapsDb;
+    thread_local Utf8String fontTableName;
+    thread_local Utf8String elemTableName;
+
+    // tries to open a database which will be the context for future calls to RemapGeom
+    struct Open final : ScalarFunction {
+        Open() : ScalarFunction("OpenRemapGeomContext", 3);
+
+        void _ComputeScalar(Context ctx&, int nArgs, EC::BeSQLite::DbValue *args) override {
+            if (nArgs != 2) {
+                ctx.SetResultError("OpenRemapGeomContext requires exactly two arguments");
+                return;
+            }
+            if (args[0].GetValueType() != DbValueType::TextVal) {
+                ctx.SetResultError("First argument to OpenRemapGeomContext was not text");
+                return;
+            }
+            if (args[1].GetValueType() != DbValueType::TextVal) {
+                ctx.SetResultError("Second argument to OpenRemapGeomContext was not text");
+                return;
+            }
+            if (args[2].GetValueType() != DbValueType::TextVal) {
+                ctx.SetResultError("Third argument to OpenRemapGeomContext was not text");
+                return;
+            }
+
+            const auto openResult = remapsDb.OpenBeSQLiteDb(args[0].GetValueText(), Db::OpenParams(Db::OpenMode::Readonly, DefaultTxn::No));
+            if (openResult != DbResult::BE_SQLITE_OK) {
+                ctx.SetResultError_code((int)result);
+                return;
+            }
+
+            for (const auto& tableName : {args[1].GetValueText(), args[2].GetValueText()}) {
+                if (!GeomRemapContext.ColumnExists(tableName, "SourceId")) {
+                    ctx.SetResultError("No column 'SourceId' in a specified table");
+                    return;
+                }
+                if (!GeomRemapContext.ColumnExists(tableName, "TargetId")) {
+                    ctx.SetResultError("No column 'TargetId' in a specified table");
+                    return;
+                }
+            }
+
+            elemTableName = args[1].GetValueText();
+            fontTableName = args[2].GetValueText();
+        }
+    };
+
+    struct Close final : ScalarFunction {
+        Close() : ScalarFunction("CloseRemapGeomContext", 0);
+        void _ComputeScalar(Context ctx&, int nArgs, EC::BeSQLite::DbValue *args) override {
+            remapsDb.CloseDb();
+        }
+    };
+
+    struct RemapGeom final : ScalarFunction {
+        RemapGeom() : ScalarFunction("RemapGeom", 1, DbValueType::BlobVal);
+
+        void _ComputeScalar(Context ctx&, int nArgs, EC::BeSQLite::DbValue *args) override {
+            if (nArgs != 1) {
+                ctx.SetResultError("RemapGeom requires exactly one arguments");
+                return;
+            }
+            if (args[0].GetValueType() != DbValueType::BlobVal) {
+                ctx.SetResultError("First argument to RemapGeom was not a blob");
+                return;
+            }
+
+            auto& dgndb = something();
+            auto Source = GeometryStream();
+            auto Target = GeometryStream();
+            const auto status = RemapGeometryIds(
+                // can I get a font out of an attached db?
+                dgndb, // FIXME: do I really need the dgndb?
+                dgndb,
+                source,
+                dest,
+                SqlTableRemapper(dgndb, elemTableName, fontTableName),
+                // can add this to the context eventually
+                { .filteredSubCategories = {} }
+            );
+
+            // really copying things like 30 times here
+            ctx.SetResultBlob(dest.Pointer(), dest.Length());
+        }
+    };
+}
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-/*
 DgnDbStatus GeometryStreamIO::ExposeSqlFunction(DgnDb& db) {
-    const auto impl = []() {
-        auto status = RemapGeometryIds(
-            // can I get a font out of an attached db?
-            importer.GetSourceDb(),
-            importer.GetDestinationDb(),
-            source,
-            dest,
-            ImportContextRemapper(importer),
-            { .filteredSubCategories = {} }
-        );
-    };
-
-    // cannot used cached statements?
-    BeSQLite::DbFunction("RemapGeom", impl);
+    RemapGeomByTable("RemapGeomByTable", 2, DbValueType::BlobVal);
+    db.AddFunction(GeomRemapFuncs::RemapGeom::GetSingleton());
 }
-*/
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
