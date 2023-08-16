@@ -2658,25 +2658,28 @@ void GeometryStreamIO::Iterator::ToNext()
 struct SqlTableRemapper {
 private:
     DgnDbCR m_dgnDb;
+    DbCR m_remapDb;
+    // NOTE: can't use cached statements on the m_dgnDb since this is used in a sqlite func
     CachedStatementPtr m_elemStmt, m_fontStmt;
 
 public:
     SqlTableRemapper(
         DgnDbCR dgnDb,
+        DbCR remapDb,
         Utf8CP elemRemapTableName,
         Utf8CP fontRemapTableName
-    ) : m_dgnDb(dgnDb) {
+    ) : m_dgnDb(dgnDb), m_remapDb(remapDb) {
         const auto fontSql = Utf8PrintfString(
             "SELECT TargetId FROM %s WHERE SourceId=?",
             fontRemapTableName
         );
-        this->m_fontStmt = m_dgnDb.GetCachedStatement(fontSql.c_str());
+        this->m_fontStmt = m_remapDb.GetCachedStatement(fontSql.c_str());
 
         const auto elemSql = Utf8PrintfString(
             "SELECT TargetId FROM %s WHERE SourceId=?",
             elemRemapTableName
         );
-        this->m_elemStmt = m_dgnDb.GetCachedStatement(elemSql.c_str());
+        this->m_elemStmt = m_remapDb.GetCachedStatement(elemSql.c_str());
     }
 
     BeInt64Id RemapElemId(BeInt64Id sourceId) {
@@ -2960,16 +2963,21 @@ DgnDbStatus GeometryStreamIO::Import(GeometryStreamR dest, GeometryStreamCR sour
     );
     }
 
+// FIXME: this is obviously horrible
+DgnDb* Dgn::GeomRemapDb = nullptr;
+// TODO: make in memory
+BeSQLite::Db* Dgn::RemapDb = nullptr;
+
 namespace GeomRemapFuncs {
-    thread_local Db remapsDb;
     thread_local Utf8String fontTableName;
     thread_local Utf8String elemTableName;
 
     // tries to open a database which will be the context for future calls to RemapGeom
+    /*
     struct Open final : ScalarFunction {
-        Open() : ScalarFunction("OpenRemapGeomContext", 3);
+        Open() : ScalarFunction("OpenRemapGeomContext", 3) {}
 
-        void _ComputeScalar(Context ctx&, int nArgs, EC::BeSQLite::DbValue *args) override {
+        virtual void _ComputeScalar(Context ctx&, int nArgs, EC::BeSQLite::DbValue *args) override {
             if (nArgs != 2) {
                 ctx.SetResultError("OpenRemapGeomContext requires exactly two arguments");
                 return;
@@ -2987,7 +2995,7 @@ namespace GeomRemapFuncs {
                 return;
             }
 
-            const auto openResult = remapsDb.OpenBeSQLiteDb(args[0].GetValueText(), Db::OpenParams(Db::OpenMode::Readonly, DefaultTxn::No));
+            const auto openResult = RemapDb.OpenBeSQLiteDb(args[0].GetValueText(), Db::OpenParams(Db::OpenMode::Readonly, DefaultTxn::No));
             if (openResult != DbResult::BE_SQLITE_OK) {
                 ctx.SetResultError_code((int)result);
                 return;
@@ -3008,18 +3016,21 @@ namespace GeomRemapFuncs {
             fontTableName = args[2].GetValueText();
         }
     };
+    */
 
+    /*
     struct Close final : ScalarFunction {
-        Close() : ScalarFunction("CloseRemapGeomContext", 0);
-        void _ComputeScalar(Context ctx&, int nArgs, EC::BeSQLite::DbValue *args) override {
-            remapsDb.CloseDb();
+        Close() : ScalarFunction("CloseRemapGeomContext", 0) {}
+        virtual void _ComputeScalar(Context ctx&, int nArgs, EC::BeSQLite::DbValue *args) override {
+            RemapsDb.CloseDb();
         }
     };
+    */
 
-    struct RemapGeom final : ScalarFunction {
-        RemapGeom() : ScalarFunction("RemapGeom", 1, DbValueType::BlobVal);
+    struct RemapGeom final : public ScalarFunction {
+        RemapGeom() : ScalarFunction("RemapGeom", 1, DbValueType::BlobVal) {}
 
-        void _ComputeScalar(Context ctx&, int nArgs, EC::BeSQLite::DbValue *args) override {
+        virtual void _ComputeScalar(Context& ctx, int nArgs, DbValue *args) override {
             if (nArgs != 1) {
                 ctx.SetResultError("RemapGeom requires exactly one arguments");
                 return;
@@ -3029,32 +3040,41 @@ namespace GeomRemapFuncs {
                 return;
             }
 
-            auto& dgndb = something();
-            auto Source = GeometryStream();
-            auto Target = GeometryStream();
+            auto source = GeometryStream();
+            const auto& snappy = Dgn::GeomRemapDb.Elements().GetSnappyFrom();
+            const auto readGeomStreamStat = source.ReadGeometryStream(snappy, Dgn::GeomRemapDb, args[0].GetValueBlob(), args[0].GetValueBytes());
+            if (readGeomStreamStat != DgnDbStatus::Success) {
+                ctx.SetResultError("Failed to read geom stream", (int)readGeomStreamStat);
+                return;
+            }
+            auto target = GeometryStream();
+
             const auto status = RemapGeometryIds(
                 // can I get a font out of an attached db?
-                dgndb, // FIXME: do I really need the dgndb?
-                dgndb,
+                Dgn::GeomRemapDb,
+                Dgn::GeomRemapDb,
                 source,
-                dest,
-                SqlTableRemapper(dgndb, elemTableName, fontTableName),
+                target,
+                SqlTableRemapper(Dgn::GeomRemapDb, Dgn::RemapDb, elemTableName, fontTableName),
                 // can add this to the context eventually
                 { .filteredSubCategories = {} }
             );
 
             // really copying things like 30 times here
-            ctx.SetResultBlob(dest.Pointer(), dest.Length());
+            ctx.SetResultBlob(source.GetData(), target.GetSize());
         }
+
+        static RemapGeom Singleton;
     };
 }
+
+GeomRemapFuncs::RemapGeom GeomRemapFuncs::RemapGeom::Singleton{};
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeometryStreamIO::ExposeSqlFunction(DgnDb& db) {
-    RemapGeomByTable("RemapGeomByTable", 2, DbValueType::BlobVal);
-    db.AddFunction(GeomRemapFuncs::RemapGeom::GetSingleton());
+DgnDbStatus GeometryStreamIO::ExposeSqlFunctions(DgnDb& db) {
+    db.AddFunction(GeomRemapFuncs::RemapGeom::Singleton);
 }
 
 /*---------------------------------------------------------------------------------**//**

@@ -376,11 +376,11 @@ struct SQLiteOps {
 //! @bsiclass
 //=======================================================================================
 struct NativeECDb : BeObjectWrap<NativeECDb>, SQLiteOps {
-private:
+
+public:
     DEFINE_CONSTRUCTOR
     ECDb m_ecdb;
 
-public:
     NativeECDb(NapiInfoCR info) : BeObjectWrap<NativeECDb>(info) {}
     ~NativeECDb() { SetInDestructor(); CloseDbIfOpen(); }
     ECDbR GetECDb() { return m_ecdb; }
@@ -1200,6 +1200,27 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
 
         return CreateBentleyReturnSuccessObject(Napi::Boolean::New(Env(), modelChanges.IsTrackingGeometry()));
         }
+
+    Napi::Value SetGeomRemapContextDb(NapiInfoCR info)
+        {
+        RequireDbIsOpen(info);
+        REQUIRE_ARGUMENT_STRING(0, dbPath);
+        GeomRemapDb = &*m_dgndb;
+        if (RemapDb != nullptr && RemapDb->IsDbOpen()) {
+            RemapDb->CloseDb();
+            delete RemapDb;
+        }
+        RemapDb = new ECDb();
+        RemapDb->OpenBeSQLiteDb(dbPath.c_str(), Db::CreateParams());
+
+        // NOTE: this will is a use-after-free if the ecdb is gc'ed
+        auto jsRemapDbVal = NativeECDb::Constructor().New({});
+        auto jsRemapDb = NativeECDb::Unwrap(jsRemapDbVal);
+        RemapDb = &jsRemapDb->m_ecdb;
+        jsRemapDbVal.AddFinalizer([](Napi::Env env, void*) -> void { RemapDb = nullptr; }, nullptr);
+        return jsRemapDbVal;
+        }
+
 
     Napi::Value IsGeometricModelTrackingSupported(NapiInfoCR info)
 
@@ -2640,6 +2661,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
             InstanceMethod("schemaToXmlString", &NativeDgnDb::SchemaToXmlString),
             InstanceMethod("setCodeValueBehavior", &NativeDgnDb::SetCodeValueBehavior),
             InstanceMethod("setGeometricModelTrackingEnabled", &NativeDgnDb::SetGeometricModelTrackingEnabled),
+            InstanceMethod("setGeomRemapContextDb", &NativeDgnDb::SetGeomRemapContextDb),
             InstanceMethod("setIModelDb", &NativeDgnDb::SetIModelDb),
             InstanceMethod("setIModelId", &NativeDgnDb::SetIModelId),
             InstanceMethod("setITwinId", &NativeDgnDb::SetITwinId),

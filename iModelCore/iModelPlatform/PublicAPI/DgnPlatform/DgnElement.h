@@ -4074,4 +4074,9 @@ struct DgnElementTransformer
        }
 };
 
+// FIXME: this is obviously horrible
+extern DgnDb* GeomRemapDb;
+// TODO: try to prevent having to copy to a separate db... not sure it's possible atm due to the stmt cache
+extern BeSQLite::Db* RemapDb;
+
 END_BENTLEY_DGN_NAMESPACE
