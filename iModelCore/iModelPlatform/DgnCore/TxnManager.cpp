@@ -1641,21 +1641,17 @@ void TxnManager::ReplayExternalTxns(TxnId from) {
     if (!m_initTableHandlers || !m_dgndb.IsReadonly())
         return; // this method can only be called on a readonly connection with the TxnManager active
 
-    TxnId lastSessionEnd = GetLastTxnId();
-    auto isUndo = lastSessionEnd < from;
-    TxnId curr = isUndo ? QueryPreviousTxnId(from) : QueryNextTxnId(from);
+    TxnId curr = QueryNextTxnId(from);
     bool haveTxns = curr.IsValid();
     if (haveTxns) {
-      CallJsTxnManager("_onReplayExternalTxns");
-      while (curr.IsValid()) {
-        ApplyTxnChanges(curr, isUndo ? TxnAction::Reverse : TxnAction::Reinstate);
-        curr = isUndo ? QueryPreviousTxnId(curr) : QueryNextTxnId(curr);
-        if (isUndo && curr <= lastSessionEnd)
-          break;
-      }
+        CallJsTxnManager("_onReplayExternalTxns");
+        while (curr.IsValid()) {
+            ApplyTxnChanges(curr, TxnAction::Reinstate);
+            curr = QueryNextTxnId(curr);
+        }
     }
 
-    m_curr = lastSessionEnd;
+    m_curr = GetLastTxnId(); // this is where the other session ends
     if (m_curr.GetValue() == 0)
         m_curr = TxnId(SessionId(1),0);
     else
