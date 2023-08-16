@@ -627,7 +627,7 @@ export declare namespace IModelJsNative {
     public saveLocalValue(name: string, value: string | undefined): void;
     public schemaToXmlString(schemaName: string, version?: ECVersion): string | undefined;
     public setGeometricModelTrackingEnabled(enabled: boolean): ErrorStatusOrResult<IModelStatus, boolean>;
-    public setGeomRemapContextDb(): void;
+    public setGeomRemapContextDb(dbName: string, fontTable: string, elemTable: string): void;
     public setIModelDb(iModelDb?: any/* IModelDb */): void;
     public setIModelId(guid: GuidString): DbResult;
     public setITwinId(guid: GuidString): DbResult;

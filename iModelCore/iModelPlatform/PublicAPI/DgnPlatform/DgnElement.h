@@ -4078,5 +4078,7 @@ struct DgnElementTransformer
 extern DgnDb* GeomRemapDb;
 // TODO: try to prevent having to copy to a separate db... not sure it's possible atm due to the stmt cache
 extern BeSQLite::Db* RemapDb;
+extern Utf8String fontTableName;
+extern Utf8String elemTableName;
 
 END_BENTLEY_DGN_NAMESPACE

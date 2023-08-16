@@ -2894,6 +2894,7 @@ static DgnDbStatus RemapGeometryIds(
 
             case GeometryStreamIO::OpCode::TextString:
                 {
+                // FIXME: does it really _need_ to be the sourceDb? why?
                 TextStringPtr text = TextString::Create(sourceDb);
                 if (SUCCESS != TextStringPersistence::DecodeFromFlatBuf(*text, egOp.m_data, egOp.m_dataSize))
                     break;
@@ -2963,14 +2964,16 @@ DgnDbStatus GeometryStreamIO::Import(GeometryStreamR dest, GeometryStreamCR sour
     );
     }
 
-// FIXME: this is obviously horrible
+// FIXME: this is obviously all horrible
+Utf8String Dgn::fontTableName = "";
+Utf8String Dgn::elemTableName = "";
 DgnDb* Dgn::GeomRemapDb = nullptr;
 // TODO: make in memory
 BeSQLite::Db* Dgn::RemapDb = nullptr;
 
 namespace GeomRemapFuncs {
-    thread_local Utf8String fontTableName;
-    thread_local Utf8String elemTableName;
+    //thread_local Utf8String fontTableName;
+    //thread_local Utf8String elemTableName;
 
     // tries to open a database which will be the context for future calls to RemapGeom
     /*
@@ -3040,25 +3043,39 @@ namespace GeomRemapFuncs {
                 return;
             }
 
+            if (Dgn::GeomRemapDb == nullptr) {
+                ctx.SetResultError("GeomRemapDb was null, be sure to set context first");
+                return;
+            }
+            if (Dgn::RemapDb == nullptr) {
+                ctx.SetResultError("RemapDb was null, be sure to set context first");
+                return;
+            }
+
             auto source = GeometryStream();
-            const auto& snappy = Dgn::GeomRemapDb.Elements().GetSnappyFrom();
-            const auto readGeomStreamStat = source.ReadGeometryStream(snappy, Dgn::GeomRemapDb, args[0].GetValueBlob(), args[0].GetValueBytes());
+            auto& snappy = Dgn::GeomRemapDb->Elements().GetSnappyFrom();
+            const auto readGeomStreamStat = source.ReadGeometryStream(snappy, *Dgn::GeomRemapDb, args[0].GetValueBlob(), args[0].GetValueBytes());
             if (readGeomStreamStat != DgnDbStatus::Success) {
-                ctx.SetResultError("Failed to read geom stream", (int)readGeomStreamStat);
+                ctx.SetResultError("Failed to read geom stream");
                 return;
             }
             auto target = GeometryStream();
 
             const auto status = RemapGeometryIds(
                 // can I get a font out of an attached db?
-                Dgn::GeomRemapDb,
-                Dgn::GeomRemapDb,
+                *Dgn::GeomRemapDb,
+                *Dgn::GeomRemapDb,
                 source,
                 target,
-                SqlTableRemapper(Dgn::GeomRemapDb, Dgn::RemapDb, elemTableName, fontTableName),
+                SqlTableRemapper(*Dgn::GeomRemapDb, *Dgn::RemapDb, Dgn::elemTableName.c_str(), Dgn::fontTableName.c_str()),
                 // can add this to the context eventually
                 { .filteredSubCategories = {} }
             );
+
+            if (status != DgnDbStatus::Success) {
+                ctx.SetResultError("RemapGeometryIds failed");
+                return;
+            }
 
             // really copying things like 30 times here
             ctx.SetResultBlob(source.GetData(), target.GetSize());
@@ -3073,8 +3090,8 @@ GeomRemapFuncs::RemapGeom GeomRemapFuncs::RemapGeom::Singleton{};
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeometryStreamIO::ExposeSqlFunctions(DgnDb& db) {
-    db.AddFunction(GeomRemapFuncs::RemapGeom::Singleton);
+int GeometryStreamIO::ExposeSqlFunctions(DgnDb& db) {
+    return db.AddFunction(GeomRemapFuncs::RemapGeom::Singleton);
 }
 
 /*---------------------------------------------------------------------------------**//**
