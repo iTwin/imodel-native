@@ -1219,7 +1219,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         RemapDb = new ECDb();
         RemapDb->OpenBeSQLiteDb(dbPath.c_str(), Db::CreateParams());
 
-        GeometryStreamIO::ExposeSqlFunctions(m_dgndb);
+        GeometryStreamIO::ExposeSqlFunctions(*m_dgndb);
 
         // NOTE: this will is a use-after-free if the ecdb is gc'ed
         auto jsRemapDbVal = NativeECDb::Constructor().New({});

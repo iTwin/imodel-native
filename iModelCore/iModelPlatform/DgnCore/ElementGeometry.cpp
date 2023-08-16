@@ -2657,18 +2657,16 @@ void GeometryStreamIO::Iterator::ToNext()
 
 struct SqlTableRemapper {
 private:
-    DgnDbCR m_dgnDb;
     DbCR m_remapDb;
-    // NOTE: can't use cached statements on the m_dgnDb since this is used in a sqlite func
+    // NOTE: can't use cached statements on an m_dgnDb since this is used in a sqlite func
     CachedStatementPtr m_elemStmt, m_fontStmt;
 
 public:
     SqlTableRemapper(
-        DgnDbCR dgnDb,
         DbCR remapDb,
         Utf8CP elemRemapTableName,
         Utf8CP fontRemapTableName
-    ) : m_dgnDb(dgnDb), m_remapDb(remapDb) {
+    ) : m_remapDb(remapDb) {
         const auto fontSql = Utf8PrintfString(
             "SELECT TargetId FROM %s WHERE SourceId=?",
             fontRemapTableName
@@ -2688,7 +2686,7 @@ public:
         if (BE_SQLITE_ROW == m_elemStmt->Step())
             return m_elemStmt->GetValueId<BeInt64Id>(0);
         else
-            m_dgnDb.ThrowException(Utf8PrintfString("remap not found for element %xd", sourceId.GetValueUnchecked()).c_str(), (int)DgnDbStatus::MissingId);
+            return BeInt64Id(0); // return invalid id on failure to remap
     }
 
     FontId RemapFontId(FontId sourceId) {
