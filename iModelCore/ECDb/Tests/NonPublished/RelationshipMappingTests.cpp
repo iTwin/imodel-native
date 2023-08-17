@@ -780,4 +780,85 @@ TEST_F(RelationshipMappingTestFixture, FKRelsWithDifferentNotNullConstraints)
     ASSERT_STREQ("Failed to map ECRelationshipClass 'TestSchema:SealedEntity2RefersToMaterial'. ForeignKey column name 'NavPropId' is already used by another column in the table 'ts_BaseTPH'.", lastIssue.message.c_str());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(RelationshipMappingTestFixture, AddNavAndChangeRelationship)
+    {
+    //Introduce a new nav prop with the same name as an existing one in the base class
+    //This time, make polymorphic equals true and change Source/Target class to base blass
+    Utf8String schemaXml1 = ConstructTestSchema(R"xml(
+        <ECEntityClass typeName="MaterialProfileType" modifier="Sealed" >
+            <BaseClass>Element</BaseClass>
+            <ECNavigationProperty propertyName="MaterialProfile" relationshipName="MaterialProfileTypeHasMaterialProfile" direction="Forward" />
+        </ECEntityClass>
+
+        <ECRelationshipClass typeName="MaterialProfileTypeHasMaterialProfile" strength="referencing" modifier="Sealed">
+            <Source multiplicity="(0..*)" roleLabel="has" polymorphic="true">
+                <Class class="MaterialProfileType" />
+            </Source>
+            <Target multiplicity="(1..1)" roleLabel="is referenced by" polymorphic="false">
+                <Class class="MaterialProfile" />
+            </Target>
+        </ECRelationshipClass>
+
+        <ECEntityClass typeName="MaterialProfileDefinition" modifier="Abstract">
+            <BaseClass>Element</BaseClass>
+        </ECEntityClass>
+
+        <ECEntityClass typeName="MaterialProfile" modifier="Sealed">
+            <BaseClass>MaterialProfileDefinition</BaseClass>
+            <ECNavigationProperty propertyName="Material" relationshipName="MaterialProfileRefersToMaterial" direction="Forward" />
+        </ECEntityClass>
+
+        <ECRelationshipClass typeName="MaterialProfileRefersToMaterial" strength="referencing" modifier="Sealed">
+            <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="false">
+                <Class class="MaterialProfile" />
+            </Source>
+            <Target multiplicity="(1..1)" roleLabel="is referenced by" polymorphic="true">
+                <Class class="Element"/>
+            </Target>
+        </ECRelationshipClass>
+        )xml");
+    SchemaItem schema1(schemaXml1);
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDbForCurrentTest(schema1));
+
+    Utf8String schemaXml2 = ConstructTestSchema(R"xml(
+        <ECEntityClass typeName="MaterialProfileType" modifier="Sealed" >
+            <BaseClass>Element</BaseClass>
+            <ECNavigationProperty propertyName="MaterialProfile" relationshipName="MaterialProfileTypeHasMaterialProfile" direction="Forward" />
+        </ECEntityClass>
+
+        <ECRelationshipClass typeName="MaterialProfileTypeHasMaterialProfile" strength="referencing" modifier="Sealed">
+            <Source multiplicity="(0..*)" roleLabel="has" polymorphic="true">
+                <Class class="MaterialProfileType" />
+            </Source>
+            <Target multiplicity="(1..1)" roleLabel="is referenced by" polymorphic="true">
+                <Class class="MaterialProfileDefinition" />
+            </Target>
+        </ECRelationshipClass>
+
+        <ECEntityClass typeName="MaterialProfileDefinition" modifier="Abstract">
+            <BaseClass>Element</BaseClass>
+            <ECNavigationProperty propertyName="Material" relationshipName="MaterialProfileRefersToMaterial" direction="Forward" />
+        </ECEntityClass>
+
+        <ECEntityClass typeName="MaterialProfile" modifier="Sealed">
+            <BaseClass>MaterialProfileDefinition</BaseClass>
+            <ECNavigationProperty propertyName="Material" relationshipName="MaterialProfileRefersToMaterial" direction="Forward" />
+        </ECEntityClass>
+
+        <ECRelationshipClass typeName="MaterialProfileRefersToMaterial" strength="referencing" modifier="Sealed">
+            <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="true">
+                <Class class="MaterialProfileDefinition" />
+            </Source>
+            <Target multiplicity="(1..1)" roleLabel="is referenced by" polymorphic="true">
+                <Class class="Element"/>
+            </Target>
+        </ECRelationshipClass>
+        )xml", "01.00.01");
+    SchemaItem schema2(schemaXml2);
+    ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema2, SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues));
+    }
+
 END_ECDBUNITTESTS_NAMESPACE
