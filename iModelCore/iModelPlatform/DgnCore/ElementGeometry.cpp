@@ -2695,7 +2695,8 @@ public:
         if (BE_SQLITE_ROW == m_fontStmt->Step())
             return m_fontStmt->GetValueId<FontId>(0);
         else
-            m_dgnDb.ThrowException(Utf8PrintfString("remap not found for font %xd", sourceId.GetValueUnchecked()).c_str(), (int)DgnDbStatus::MissingId);
+            // FIXME: error out instead
+            return FontId((uint64_t)0ULL); // return invalid id on failure to remap
     }
 
     CodeSpecId RemapCodeSpecId(CodeSpecId sourceId)                   {return CodeSpecId       (RemapElemId(sourceId).GetValueUnchecked());}
@@ -3065,7 +3066,7 @@ namespace GeomRemapFuncs {
                 *Dgn::GeomRemapDb,
                 source,
                 target,
-                SqlTableRemapper(*Dgn::GeomRemapDb, *Dgn::RemapDb, Dgn::elemTableName.c_str(), Dgn::fontTableName.c_str()),
+                SqlTableRemapper(*Dgn::RemapDb, Dgn::elemTableName.c_str(), Dgn::fontTableName.c_str()),
                 // can add this to the context eventually
                 { .filteredSubCategories = {} }
             );
