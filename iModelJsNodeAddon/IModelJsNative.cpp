@@ -1209,23 +1209,20 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         REQUIRE_ARGUMENT_STRING(2, in_elemTableName);
 
         fontTableName = in_fontTableName;
-        elemTableName = in_fontTableName;
+        elemTableName = in_elemTableName;
 
         GeomRemapDb = &*m_dgndb;
-        if (RemapDb != nullptr && RemapDb->IsDbOpen()) {
-            RemapDb->CloseDb();
-            delete RemapDb;
-        }
-        RemapDb = new ECDb();
-        RemapDb->OpenBeSQLiteDb(dbPath.c_str(), Db::CreateParams());
 
         GeometryStreamIO::ExposeSqlFunctions(*m_dgndb);
 
-        // NOTE: this will is a use-after-free if the ecdb is gc'ed
         auto jsRemapDbVal = NativeECDb::Constructor().New({});
         auto jsRemapDb = NativeECDb::Unwrap(jsRemapDbVal);
         RemapDb = &jsRemapDb->m_ecdb;
-        // FIXME: workaround leak
+        auto createParams = Db::CreateParams();
+        createParams.m_skipFileCheck = true;
+        createParams.m_rawSQLite = true; // FIXME: should return a non-ecsql db
+        RemapDb->OpenBeSQLiteDb(dbPath.c_str(), createParams);
+        // FIXME: workaround required delete data, also check if this leaks the db
         auto* finalizeData = new int;
         jsRemapDbVal.AddFinalizer([](Napi::Env env, int*) -> void { Dgn::RemapDb = nullptr; }, finalizeData);
         return jsRemapDbVal;
