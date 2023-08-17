@@ -1084,13 +1084,12 @@ void TxnManager::ModelChanges::InsertGeometryChange(DgnModelId modelId, DgnEleme
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::ModelChanges::AddGeometricElementChange(DgnModelId modelId, DgnElementId elementId, TxnTable::ChangeType type, bool fromCommit) {
-    if (IsDisabled())
-        return;
-
-    m_geometricModels.Insert(modelId, fromCommit);
-    if (IsTrackingGeometry()) {
-        InsertGeometryChange(modelId, elementId, type);
-        return;
+    if (!IsDisabled()) {
+        m_geometricModels.Insert(modelId, fromCommit);
+        if (IsTrackingGeometry()) {
+            InsertGeometryChange(modelId, elementId, type);
+            return;
+        }
     }
 
     auto model = m_mgr.GetDgnDb().Models().Get<GeometricModel>(modelId);

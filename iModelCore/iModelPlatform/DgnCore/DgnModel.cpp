@@ -821,7 +821,8 @@ BeGuid GeometricModel::QueryGeometryGuid() const {
     stmt.BindId(1, m_modelId);
     stmt.Step();
 
-    return stmt.GetValueGuid(0);
+    auto guid = stmt.GetValueGuid(0);
+    return guid;
 }
 
 /*---------------------------------------------------------------------------------**/ /**
