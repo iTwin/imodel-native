@@ -13,6 +13,7 @@ local.properties
 # clangd
 .cache
 compile_commands.json
+compile_commands.events.json
 compile_commands.sqlite3
 compile_commands.sqlite3-journal
 
