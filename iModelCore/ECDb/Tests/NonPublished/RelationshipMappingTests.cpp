@@ -783,25 +783,11 @@ TEST_F(RelationshipMappingTestFixture, FKRelsWithDifferentNotNullConstraints)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(RelationshipMappingTestFixture, AddNavAndChangeRelationship)
+TEST_F(RelationshipMappingTestFixture, AddNavUpInHierarchyAndChangeRelationship)
     {
     //Introduce a new nav prop with the same name as an existing one in the base class
-    //This time, make polymorphic equals true and change Source/Target class to base blass
+    //Also change relationship class Source/Target class to base class
     Utf8String schemaXml1 = ConstructTestSchema(R"xml(
-        <ECEntityClass typeName="MaterialProfileType" modifier="Sealed" >
-            <BaseClass>Element</BaseClass>
-            <ECNavigationProperty propertyName="MaterialProfile" relationshipName="MaterialProfileTypeHasMaterialProfile" direction="Forward" />
-        </ECEntityClass>
-
-        <ECRelationshipClass typeName="MaterialProfileTypeHasMaterialProfile" strength="referencing" modifier="Sealed">
-            <Source multiplicity="(0..*)" roleLabel="has" polymorphic="true">
-                <Class class="MaterialProfileType" />
-            </Source>
-            <Target multiplicity="(1..1)" roleLabel="is referenced by" polymorphic="false">
-                <Class class="MaterialProfile" />
-            </Target>
-        </ECRelationshipClass>
-
         <ECEntityClass typeName="MaterialProfileDefinition" modifier="Abstract">
             <BaseClass>Element</BaseClass>
         </ECEntityClass>
@@ -824,20 +810,6 @@ TEST_F(RelationshipMappingTestFixture, AddNavAndChangeRelationship)
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDbForCurrentTest(schema1));
 
     Utf8String schemaXml2 = ConstructTestSchema(R"xml(
-        <ECEntityClass typeName="MaterialProfileType" modifier="Sealed" >
-            <BaseClass>Element</BaseClass>
-            <ECNavigationProperty propertyName="MaterialProfile" relationshipName="MaterialProfileTypeHasMaterialProfile" direction="Forward" />
-        </ECEntityClass>
-
-        <ECRelationshipClass typeName="MaterialProfileTypeHasMaterialProfile" strength="referencing" modifier="Sealed">
-            <Source multiplicity="(0..*)" roleLabel="has" polymorphic="true">
-                <Class class="MaterialProfileType" />
-            </Source>
-            <Target multiplicity="(1..1)" roleLabel="is referenced by" polymorphic="true">
-                <Class class="MaterialProfileDefinition" />
-            </Target>
-        </ECRelationshipClass>
-
         <ECEntityClass typeName="MaterialProfileDefinition" modifier="Abstract">
             <BaseClass>Element</BaseClass>
             <ECNavigationProperty propertyName="Material" relationshipName="MaterialProfileRefersToMaterial" direction="Forward" />
