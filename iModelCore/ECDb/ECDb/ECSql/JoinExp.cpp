@@ -18,7 +18,7 @@ void CrossJoinExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
     //! ITWINJS_PARSE_TREE: CrossJoinExp
     val.SetEmptyObject();
     val["id"] = "CrossJoinExp";
-    val["type"] = Utf8String("CROSS JOIN");
+    val["type"] = ExpHelper::ToSql(ECSqlJoinType::CrossJoin);
     GetFromClassRef().ToJson(val["from"], fmt);
     GetToClassRef().ToJson(val["to"], fmt);
 }
