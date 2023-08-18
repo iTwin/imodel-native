@@ -342,7 +342,7 @@ public:
     struct ModelChanges
     {
         // The mode in which we're operating. For writable iModels, this is determined lazily upon first request. We cannot determine it
-        // immediately upon iModel open because schemas may subsequently be updated to a version that supports Full mode.
+        // immediately upon iModel open because schemas may subsequently be updated to a version that supports Full mode
         enum class Mode : uint8_t {
           // The iModel is read-only. It can apply changes from other sources, but cannot make direct changes.
           // When changes are applied, in-memory state like the range index will be updated and events will be generated.
