@@ -1,4 +1,4 @@
-#line 2 "D:\\bsw\\git-native-master\\src\\imodel-native\\iModelCore\\ECDb\\Scripts\\\\..\\ECDb\\ECSql\\parser\\SQLflex.l"
+#line 2 "D:\\bsw\\git-native-4\\src\\imodel-native\\iModelCore\\ECDb\\Scripts\\\\..\\ECDb\\ECSql\\parser\\SQLflex.l"
 //------------------------------------------------------------
 //
 // Licensed to the Apache Software Foundation (ASF) under one
@@ -2197,7 +2197,7 @@ using namespace connectivity;
 
 static Utf8String aEmptyString;
 
-static sal_Int32    gatherString(yyscan_t yyscanner, sal_Char delim, sal_Int32 nTyp, bool checkForArrayIndex = false);
+static sal_Int32    gatherString(yyscan_t yyscanner, sal_Char delim, sal_Int32 nTyp);
 static sal_Int32    gatherName(yyscan_t yyscanner, const sal_Char*);
 static sal_Int32    gatherNamePre(yyscan_t yyscanner, const sal_Char* );
 static sal_Int32    parseString(yyscan_t yyscanner);
@@ -3196,15 +3196,15 @@ YY_RULE_SETUP
 	YY_BREAK
 case 138:
 YY_RULE_SETUP
-{ return parseString(yyscanner); }
+{ return gatherString(yyscanner, '\'',1); }
 	YY_BREAK
 case 139:
 YY_RULE_SETUP
-{ return gatherString(yyscanner,']' , 0, true);}
+{ return gatherString(yyscanner, ']' ,0);}
 	YY_BREAK
 case 140:
 YY_RULE_SETUP
-{ return gatherString(yyscanner,'#' ,2); }
+{ return gatherString(yyscanner, '#' ,2);}
 	YY_BREAK
 case 141:
 /* rule 141 can match eol */
@@ -3219,12 +3219,12 @@ YY_RULE_SETUP
 	YY_BREAK
 case 144:
 YY_RULE_SETUP
-{ return gatherString(yyscanner,']' ,0, true); }
+{ return gatherString(yyscanner, ']', 0); }
 	YY_BREAK
 case 145:
 /* rule 145 can match eol */
 YY_RULE_SETUP
-{ return gatherNamePre(yyscanner,yytext); }
+{ return gatherNamePre(yyscanner, yytext); }
 	YY_BREAK
 case 146:
 /* rule 146 can match eol */
@@ -4644,19 +4644,20 @@ sal_Int32 parseString (yyscan_t yyscanner)
 /*
  * Read SQL string literal
  * Valid strings:
- *    ''    'a string'    'quote '' within string'
- *    ""    "a string"    "quote "" within string"
- * nTyp == 0 -> SQL_NODE_NAME | SQL_NODE_ARRAY_INDEX
+ *  ''  'a string'  'quote '' within string'
+ *  ""  "a string"  "quote "" within string"
+ * nTyp == 0 -> SQL_NODE_NAME
  * nTyp == 1 -> SQL_NODE_STRING
  * nTyp == 2 -> SQL_NODE_ACCESS_DATE
  */
-//------------------------------------------------------------------------------
-sal_Int32 gatherString(yyscan_t yyscanner, sal_Char delim, sal_Int32 nTyp, bool checkForArrayIndex)
+sal_Int32 gatherString(yyscan_t yyscanner, sal_Char delim, sal_Int32 nTyp)
 {
     sal_Char ch;
     Utf8String sBuffer;
     sBuffer.reserve(256);
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
+    assert(nTyp == 0 || nTyp == 1 || nTyp == 2);
+
     while (!checkeof(ch = yyinput(yyscanner)))
     {
         if (ch == delim)
@@ -4668,53 +4669,15 @@ sal_Int32 gatherString(yyscan_t yyscanner, sal_Char delim, sal_Int32 nTyp, bool 
 
                 switch(nTyp)
                 {
-                    case 0:
-                        {
-                        bool isNumeric = checkForArrayIndex;
-                        if (checkForArrayIndex)
-                            {
-                            for (size_t i = 0; i < sBuffer.size(); i++)
-                                {
-                                if (sBuffer[i] == '-' || sBuffer[i] == '+')
-                                    continue;
-                                isNumeric = (isNumeric & (isdigit (sBuffer[i]) != 0));
-                                }
-                            }
-
-                        bool checkForSign = true;
-                        if(isNumeric)
-                            {
-                            for (size_t i = 0; i < sBuffer.size(); i++)
-                                {
-                                if (sBuffer[i] == '-' || sBuffer[i] == '+')
-                                    {
-                                    if (checkForSign)
-                                        {
-                                        if (sBuffer[i] == '-')
-                                            {
-                                            YY_FATAL_ERROR("Invalid array index. Only positive integer is expected.");
-                                            return SQL_TOKEN_INVALIDSYMBOL;
-                                            }
-                                        checkForSign = false;
-                                        }
-                                    else
-                                        {
-                                        YY_FATAL_ERROR("Invalid array index. Only positive integer is expected.");
-                                        return SQL_TOKEN_INVALIDSYMBOL;
-                                        }
-                                    }
-                                }
-                            }
-
-                        SQL_NEW_NODE(sBuffer, isNumeric ? SQL_NODE_ARRAY_INDEX : SQL_NODE_NAME);
-                        return isNumeric ? SQL_TOKEN_ARRAY_INDEX : SQL_TOKEN_NAME;
-                        }
-                    case 1:
-                        SQL_NEW_NODE(sBuffer, SQL_NODE_STRING);
-                        return SQL_TOKEN_STRING;
-                    case 2:
-                        SQL_NEW_NODE(sBuffer, SQL_NODE_ACCESS_DATE);
-                        return SQL_TOKEN_ACCESS_DATE;
+                case 0:
+                    SQL_NEW_NODE(sBuffer, SQL_NODE_NAME);
+                    return SQL_TOKEN_NAME;
+                case 1:
+                    SQL_NEW_NODE(sBuffer, SQL_NODE_STRING);
+                    return SQL_TOKEN_STRING;
+                case 2:
+                    SQL_NEW_NODE(sBuffer, SQL_NODE_ACCESS_DATE);
+                    return SQL_TOKEN_ACCESS_DATE;
                 }
             }
             else
@@ -4723,7 +4686,7 @@ sal_Int32 gatherString(yyscan_t yyscanner, sal_Char delim, sal_Int32 nTyp, bool 
             }
 
         }
-        else if (nTyp != 1 && (ch == '\r' || ch == '\n') )
+        else if (nTyp == 2 && (ch == '\r' || ch == '\n') )
             break;
         else
         {
