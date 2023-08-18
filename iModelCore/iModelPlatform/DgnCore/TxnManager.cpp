@@ -1021,36 +1021,41 @@ TxnManager::ModelChanges::ModelChanges(TxnManager& mgr) : m_mgr(mgr)
     // If the file's opened in read-only mode though, there can be no changes to track.
     if (mgr.GetDgnDb().IsReadonly())
         {
-        m_determinedStatus = true;
-        m_status = Status::Readonly;
+        m_determinedMode = true;
+        m_mode = Mode::Readonly;
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-TxnManager::ModelChanges::Status TxnManager::ModelChanges::DetermineStatus()
+TxnManager::ModelChanges::Mode TxnManager::ModelChanges::DetermineMode()
     {
-    if (!m_determinedStatus)
+    if (!m_determinedMode)
         {
-        m_determinedStatus = true;
+        m_determinedMode = true;
         if (m_mgr.GetDgnDb().GetGeometricModelUpdateStatement().IsValid())
-            m_status = Status::Success;
+            {
+            m_mode = Mode::Full;
+            }
         else
-            Disable();
+            {
+            m_mode = Mode::Legacy;
+            ClearAll();
+            }
         }
 
-    return m_status;
+    return m_mode;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-TxnManager::ModelChanges::Status TxnManager::ModelChanges::SetTrackingGeometry(bool track)
+TxnManager::ModelChanges::Mode TxnManager::ModelChanges::SetTrackingGeometry(bool track)
     {
-    DetermineStatus();
-    if (IsDisabled() || track == m_trackGeometry)
-        return m_status;
+    auto mode = DetermineMode();
+    if (Mode::Full != mode || track == m_trackGeometry)
+        return m_mode;
 
     m_trackGeometry = track;
 
@@ -1065,7 +1070,7 @@ TxnManager::ModelChanges::Status TxnManager::ModelChanges::SetTrackingGeometry(b
             }
         });
 
-    return m_status;
+    return m_mode;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1084,12 +1089,11 @@ void TxnManager::ModelChanges::InsertGeometryChange(DgnModelId modelId, DgnEleme
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::ModelChanges::AddGeometricElementChange(DgnModelId modelId, DgnElementId elementId, TxnTable::ChangeType type, bool fromCommit) {
-    if (!IsDisabled()) {
-        m_geometricModels.Insert(modelId, fromCommit);
-        if (IsTrackingGeometry()) {
-            InsertGeometryChange(modelId, elementId, type);
-            return;
-        }
+    m_geometricModels.Insert(modelId, fromCommit);
+
+    if (IsTrackingGeometry()) {
+        InsertGeometryChange(modelId, elementId, type);
+        return;
     }
 
     auto model = m_mgr.GetDgnDb().Models().Get<GeometricModel>(modelId);
@@ -1136,9 +1140,7 @@ void TxnManager::ClearModelChanges() {
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::ModelChanges::Process()
     {
-    DetermineStatus();
-    if (IsDisabled())
-        return;
+    auto mode = DetermineMode();
 
     // When we get a Change that deletes a geometric element, we don't have access to its model Id at that time - look it up now.
     for (auto const& deleted : m_deletedGeometricElements)
@@ -1153,6 +1155,12 @@ void TxnManager::ModelChanges::Process()
 
     if (m_models.empty() && m_geometricModels.empty())
         return;
+
+    if (Mode::Full != mode)
+        {
+        Clear(true);
+        return;
+        }
 
     SetandRestoreIndirectChanges _v(m_mgr);
 

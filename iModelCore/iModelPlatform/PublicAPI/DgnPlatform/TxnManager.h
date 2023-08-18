@@ -341,11 +341,17 @@ public:
     //=======================================================================================
     struct ModelChanges
     {
-        enum class Status : uint8_t
-        {
-            Success, //!< Operation successful; tracking is supported.
-            Readonly, //!< Tracking unsupported because iModel was opened in read-only mode.
-            VersionTooOld, //!< Tracking unsupported because iModel's version of BisCore pre-dates version 1.0.11
+        // The mode in which we're operating. For writable iModels, this is determined lazily upon first request. We cannot determine it
+        // immediately upon iModel open because schemas may subsequently be updated to a version that supports Full mode.
+        enum class Mode : uint8_t {
+          // The iModel is read-only. It can apply changes from other sources, but cannot make direct changes.
+          // When changes are applied, in-memory state like the range index will be updated and events will be generated.
+          Readonly,
+          // The iModel is writable, but the version of its BisCore schema lacks the GeometricModel.GeometryGuid property.
+          // SetTrackingGeometry will fail and we will not attempt to update the GeometryGuid property when model geometry changes.
+          Legacy,
+          // The iModel is writable. When the geometry of a model changes, we will update the model's GeometryGuid property.
+          Full,
         };
     private:
         ChangedIds<DgnModelId> m_models;    // the set of models that have changes for the current transaction
@@ -354,17 +360,11 @@ public:
         bmap<DgnElementId, DgnModelId> m_modelsForDeletedElements; // maps Id of a deleted element to its model Id
         ChangedIds<DgnElementId> m_deletedGeometricElements; // Ids of deleted geometric elements
         TxnManager& m_mgr;
-        bool m_determinedStatus = false;
-        Status m_status;
+        Mode m_mode = Mode::Legacy;
+        bool m_determinedMode = false;
         bool m_trackGeometry = false; // true if we are currently tracking changes to geometric elements
 
-        bool IsDisabled() const { return m_determinedStatus && Status::Success != m_status; }
-        void Disable()
-            {
-            m_determinedStatus = true;
-            m_status = Status::VersionTooOld;
-            ClearAll();
-            }
+        bool IsReadonly() const { return m_determinedMode && m_mode == Mode::Readonly; }
 
         void Clear(bool preserveGeometryChanges)
             {
@@ -381,10 +381,10 @@ public:
     public:
         explicit ModelChanges(TxnManager& mgr);
 
-        void AddModel(DgnModelId modelId, bool fromCommit) { if (!IsDisabled()) m_models.Insert(modelId, fromCommit); }
+        void AddModel(DgnModelId modelId, bool fromCommit) { m_models.Insert(modelId, fromCommit); }
         void AddGeometricElementChange(DgnModelId modelId, DgnElementId elementId, TxnTable::ChangeType type, bool fromCommit);
-        void AddDeletedElement(DgnElementId elemId, DgnModelId modelId) { if (!IsDisabled()) m_modelsForDeletedElements.Insert(elemId, modelId); }
-        void AddDeletedGeometricElement(DgnElementId elemId, bool fromCommit) { if (!IsDisabled()) m_deletedGeometricElements.Insert(elemId, fromCommit); }
+        void AddDeletedElement(DgnElementId elemId, DgnModelId modelId) { m_modelsForDeletedElements.Insert(elemId, modelId); }
+        void AddDeletedGeometricElement(DgnElementId elemId, bool fromCommit) { m_deletedGeometricElements.Insert(elemId, fromCommit); }
 
         void Process();
         void Notify();
@@ -401,11 +401,11 @@ public:
 
         // Set whether geometry changes should be tracked. They cannot be tracked if the db is read-only or
         // BisCore version < 1.0.11 because the GeometryGuid property was introduced in that version of the schema.
-        DGNPLATFORM_EXPORT Status SetTrackingGeometry(bool track);
+        DGNPLATFORM_EXPORT Mode SetTrackingGeometry(bool track);
 
         // Return whether model changes can be tracked for the DgnDb, or why they can't.
         // Don't call this if you intend to upgrade the schemas contained in the DgnDb, until after you do so.
-        DGNPLATFORM_EXPORT Status DetermineStatus();
+        DGNPLATFORM_EXPORT Mode DetermineMode();
     };
 
     // Set and restore indirect changes mode

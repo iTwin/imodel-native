@@ -1172,14 +1172,14 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         auto& modelChanges = GetDgnDb().Txns().m_modelChanges;
         if (enable != modelChanges.IsTrackingGeometry())
             {
-            auto status = modelChanges.SetTrackingGeometry(enable);
+            auto mode = modelChanges.SetTrackingGeometry(enable);
             auto readonly = false;
-            switch (status)
+            switch (mode)
                 {
-                case TxnManager::ModelChanges::Status::Readonly:
+                case TxnManager::ModelChanges::Mode::Readonly:
                     readonly = true;
                     // fall-through intentional.
-                case TxnManager::ModelChanges::Status::VersionTooOld:
+                case TxnManager::ModelChanges::Mode::Legacy:
                     return CreateBentleyReturnErrorObject(readonly ? DgnDbStatus::ReadOnly : DgnDbStatus::VersionTooOld);
                 }
             }
@@ -1191,7 +1191,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
 
         {
         RequireDbIsOpen(info);
-        return Napi::Boolean::New(Env(), TxnManager::ModelChanges::Status::Success == GetDgnDb().Txns().m_modelChanges.DetermineStatus());
+        return Napi::Boolean::New(Env(), TxnManager::ModelChanges::Mode::Full == GetDgnDb().Txns().m_modelChanges.DetermineMode());
         }
 
     Napi::Value QueryModelExtents(NapiInfoCR info)
