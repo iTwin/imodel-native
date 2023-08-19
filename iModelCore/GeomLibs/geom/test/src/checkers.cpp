@@ -1693,7 +1693,6 @@ void Check::ClearKeyins (char const *name)
     }
 void Check::ClearGeometry (char const *name)
     {
-
     if (s_save == 1)
         {
         // save to the run/output directory, which we expect to under the working directory.

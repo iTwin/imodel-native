@@ -43,7 +43,8 @@ struct BeCGIModelJsonValueWriter
             {
             result.appendValue() = point.x;
             result.appendValue() = point.y;
-            result.appendValue() = point.z;
+            if (point.z)
+                result.appendValue() = point.z;     // skip z if zero
             return;
             }
         result["x"] = point.x;

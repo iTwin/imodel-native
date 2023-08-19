@@ -308,12 +308,12 @@ GEOMDLLIMPEXP size_t CountPrimitivesOfType (ICurvePrimitive::CurvePrimitiveType 
 
 //! Return a curve vector that is a clone, but with all primitives split at intersections with any splitter curve.
 //! Optionally omit tree structure and only copy primitives.
-GEOMDLLIMPEXP CurveVectorPtr CloneWithSplits (CurveVectorCR splitterCurves, bool primitivesOnly = false);
+GEOMDLLIMPEXP CurveVectorPtr CloneWithSplits (CurveVectorCR splitterCurves, bool primitivesOnly = false) const;
 
 //! Return curves (not regions) that are inside, outside, or on a region.
-GEOMDLLIMPEXP void AppendSplitCurvesByRegion (CurveVectorCR region, CurveVectorP insideCollector, CurveVectorP outsideCollector, CurveVectorP onCollector);
+GEOMDLLIMPEXP void AppendSplitCurvesByRegion (CurveVectorCR region, CurveVectorP insideCollector, CurveVectorP outsideCollector, CurveVectorP onCollector) const;
 //! Return curves (not regions) that are below, above, and on a plane
-GEOMDLLIMPEXP void AppendSplitCurvesByPlane (DPlane3dCR plane, CurveVectorP belowCollector, CurveVectorP aboveCollector, CurveVectorP onCollector);
+GEOMDLLIMPEXP void AppendSplitCurvesByPlane (DPlane3dCR plane, CurveVectorP belowCollector, CurveVectorP aboveCollector, CurveVectorP onCollector) const;
 
 
 //! Return a curve vector that is a clone, but with all polylines split into individual line segments.

@@ -707,7 +707,9 @@ bool    MSBsplineSurface::IsPlane () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool    MSBsplineSurface::IsSameStructure (MSBsplineSurfaceCR other) const
     {
-    // Not compared: type is no longer relevant; display and params.numRules are transient
+    // These fields are not compared:
+    //  * type - no longer relevant
+    //  * display, numRules - transient visualization settings
 
     if (GetNumUPoles () != other.GetNumUPoles ())
         return false;
