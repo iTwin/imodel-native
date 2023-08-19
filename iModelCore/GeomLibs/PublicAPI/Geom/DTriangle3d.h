@@ -167,18 +167,6 @@ ValidatedTransform LocalToWorldTransform () const;
 ValidatedTransform WorldToLocalTransform () const;
 };
 
-/*----------------------------------------------------------------------------+
-| BARYCENTRIC COORDINATE FUNCTIONS:
-|
-| For a given triangle T with vertices v0, v1, v2, every point q in the plane
-| of T is uniquely represented by its barycentric coordinates (b0, b1, b2)
-| relative to T:
-|
-| q = b0 * v0 + b1 * v1 + b2 * v2,
-| 1 = b0 + b1 + b2.
-|
-+----------------------------------------------------------------------------*/
-
 /*-----------------------------------------------------------------*//**
 * @description Sets this instance to the barycentric coordinates of pPoint
 * relative to the triangle (pVertex0, pVertex1, pVertex2) in the xy-plane.
@@ -191,7 +179,6 @@ ValidatedTransform WorldToLocalTransform () const;
 * @return true if and only if the area of T is sufficiently large.
 +---------------+---------------+---------------+---------------+------*/
 Public  GEOMDLLIMPEXP bool    bsiDPoint3d_barycentricFromDPoint2dTriangle
-
 (
 DPoint3dP pInstance,
 DPoint2dCP pPoint,
@@ -207,7 +194,7 @@ DPoint2dCP pVertex2
 * @param uvw   [out] barycentric coordinates of pPoint relative to T
 * @param dUVWdX   [out] derivatives wrt point.x
 * @param dUVWdY   [out] derivatives wrt point.y
-* @param area  [out] triangle area
+* @param area  [out] signed triangle area
 * @param point         [in] point in plane
 * @param vertex0       [in] vertex 0 of triangle T
 * @param vertex1       [in] vertex 1 of triangle T
@@ -227,29 +214,6 @@ DPoint2dCR vertex2
 );
 
 /*-----------------------------------------------------------------*//**
-* Given a space point spacePontP, finds the closest point on the plane
-* containing the 3 points in pPlanePoint.  Stores the closest point
-* coordinates in pClosePoint, and the s and t coordinates (as defined
-* in bsiGeom_evaluateSkewedPlane) in sP and tP.
-*
-* @param pClosePoint [out] point on plane.  May be null pointer
-* @param sP [out] parametric coordinate on s axis
-* @param tP [out] parametric coordinate on t axis
-* @param pPlanePoint [in] origin, s=1, and t=1 points
-* @param pSpacePoint [in] point to be projected
-* @return true unless the plane points are collinear
-+---------------+---------------+---------------+---------------+------*/
-Public  GEOMDLLIMPEXP bool     bsiGeom_closestPointOnSkewedPlane
-
-(
-DPoint3dP pClosePoint,
-double          *sP,
-double          *tP,
-DPoint3dCP pPlanePoint,
-DPoint3dCP pSpacePoint
-);
-
-/*-----------------------------------------------------------------*//**
 * @description Compute the minimum distance from a point to a triangle.
 * @param pSpacePoint   [out] point in space
 * @param pVertex0       [in] vertex of T
@@ -261,7 +225,6 @@ DPoint3dCP pSpacePoint
 * @return minimum distance
 +---------------+---------------+---------------+---------------+------*/
 Public  GEOMDLLIMPEXP double bsiDPoint3d_minDistToTriangle
-
 (
 DPoint3dCP pSpacePoint,
 DPoint3dCP pVertex0,
@@ -271,7 +234,6 @@ DPoint3dP pClosePoint,
 DPoint3dP pBoundedUVW,
 DPoint3dP pUnboundedUVW
 );
-
 
 /*-----------------------------------------------------------------*//**
 * @description Sets this instance to the barycentric coordinates of pPoint
@@ -286,7 +248,6 @@ DPoint3dP pUnboundedUVW
 * @return true if and only if the area of T is sufficiently large.
 +---------------+---------------+---------------+---------------+------*/
 Public  GEOMDLLIMPEXP bool    bsiDPoint3d_barycentricFromDPoint2dTriangleVectors
-
 (
 DPoint3dP pInstance,
 DPoint2dCP pPoint,
@@ -310,7 +271,6 @@ DPoint2dCP pVector2
 * @return true if and only if the area of T is sufficiently large.
 +---------------+---------------+---------------+---------------+------*/
 Public  GEOMDLLIMPEXP bool    bsiDPoint3d_barycentricFromDPoint3dTriangle
-
 (
 DPoint3dP pInstance,
 DPoint3dCP pPoint,
@@ -318,6 +278,7 @@ DPoint3dCP pVertex0,
 DPoint3dCP pVertex1,
 DPoint3dCP pVertex2
 );
+
 /*-----------------------------------------------------------------*//**
 * @description Sets this instance to the point in the plane with the given barycentric
 * coordinates relative to triangle T (pVertex0, pVertex1, pVertex2).
@@ -329,7 +290,6 @@ DPoint3dCP pVertex2
 * @param pVertex2       [in] vertex 2 of triangle T
 +---------------+---------------+---------------+---------------+------*/
 Public  GEOMDLLIMPEXP void bsiDPoint2d_fromBarycentricAndDPoint2dTriangle
-
 (
 DPoint2dP pInstance,
 DPoint3dCP pBaryCoords,
