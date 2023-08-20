@@ -812,16 +812,16 @@ DPoint3dCP pSpacePoint
     double          s,t;
     double          dotUU, dotUV, dotVV, dotUQ, dotVQ;
     bool            result = true;
-    DPoint3d        vectorQ;
+    DVec3d          vectorQ;
 
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&vectorQ, pSpacePoint, pOrigin);
+    vectorQ.DifferenceOf(*pSpacePoint, *pOrigin);
 
-    dotUU = bsiDPoint3d_dotProduct (pVectorU, pVectorU);
-    dotVV = bsiDPoint3d_dotProduct (pVectorV, pVectorV);
-    dotUV = bsiDPoint3d_dotProduct (pVectorU, pVectorV);
+    dotUU = pVectorU->DotProduct(*pVectorU);
+    dotVV = pVectorV->DotProduct(*pVectorV);
+    dotUV = pVectorU->DotProduct(*pVectorV);
 
-    dotUQ = bsiDPoint3d_dotProduct (pVectorU, &vectorQ);
-    dotVQ = bsiDPoint3d_dotProduct (pVectorV, &vectorQ);
+    dotUQ = pVectorU->DotProduct(vectorQ);
+    dotVQ = pVectorV->DotProduct(vectorQ);
 
     if (!bsiSVD_solve2x2 (&s, &t,
                             dotUU, dotUV, dotUV, dotVV,
@@ -829,9 +829,7 @@ DPoint3dCP pSpacePoint
         {
         result = false;
         }
-
     else
-
         {
         if (sP)
             *sP = s;
@@ -839,13 +837,10 @@ DPoint3dCP pSpacePoint
             *tP = t;
 
         if (pClosePoint)
-            bsiDPoint3d_add2ScaledDPoint3d (pClosePoint, pOrigin,
-                                                pVectorU, s,
-                                                pVectorV, t
-                                        );
+            pClosePoint->SumOf(*pOrigin, *pVectorU, s, *pVectorV, t);
         }
 
-    return  result;
+    return result;
     }
 
 /*-----------------------------------------------------------------*//**
