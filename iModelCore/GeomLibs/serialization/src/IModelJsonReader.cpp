@@ -313,12 +313,11 @@ bool tryValueGridToBVectorDPoint3d (BeJsConst value, bvector<DPoint3d> &data, bv
                 rowCounts.push_back (value[i].size ());
                 for (uint32_t j = 0, nRow = row.size(); j < nRow; j++)
                     {
-                    if (row[j].size () == 3)
+                    if (row[j].size() == 2 || row[j].size() == 3)
                         {
                         if (!derefNumericArray (row[j], 2, 3, xyzArray))
                             return false;
                         data.push_back (DPoint3d::FromArray (xyzArray));
-                        // weight.push_back (1.0);
                         }
                     else if (row[j].size () == 4)
                         {
