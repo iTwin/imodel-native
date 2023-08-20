@@ -43,8 +43,9 @@ struct BeCGIModelJsonValueWriter
             {
             result.appendValue() = point.x;
             result.appendValue() = point.y;
-            if (point.z)
-                result.appendValue() = point.z;     // skip z if zero
+            // we could compress even more by skipping zero z, but this would break older readers that expect
+            // all three coords (e.g. BeCGIModelJsonValueReader::tryValueGridToBVectorDPoint3d, now fixed)
+            result.appendValue() = point.z;
             return;
             }
         result["x"] = point.x;
