@@ -362,3 +362,42 @@ TEST_F(ContentDescriptorTests, ExclusivelyIncludeFields_DeeplyNestedField_WithSi
         });
     EXPECT_STREQ("ABC(AB(b), c), d", CreateFieldsStructureStr(*descriptor).c_str());
     }
+
+//---------------------------------------------------------------------------------------
+// @betest
+//---------------------------------------------------------------------------------------
+TEST_F(ContentDescriptorTests, FieldClonesAreValid)
+    {
+    ECClassCP testClass1 = m_connection->GetECDb().Schemas().GetClass("ECDbMeta", "ECPropertyDef");
+    ECClassCP testClass2 = m_connection->GetECDb().Schemas().GetClass("ECDbMeta", "ECClassDef");
+    ECRelationshipClassCP testRelationship = m_connection->GetECDb().Schemas().GetClass("ECDbMeta", "ClassOwnsLocalProperties")->GetRelationshipClassCP();
+
+    auto category = std::make_shared<ContentDescriptor::Category>("test", "Test", "", 0);
+
+    auto nestedField = CreateCalculatedField("a");
+    nestedField->SetRenderer(new ContentFieldRenderer("a"));
+    nestedField->SetEditor(new ContentFieldEditor("a"));
+
+    auto parentField = new ContentDescriptor::RelatedContentField(category, "AB",
+        { RelatedClass(*testClass1, SelectClass<ECRelationshipClass>(*testRelationship, ""), false, SelectClass<ECClass>(*testClass2, "")) },
+        { nestedField });
+    parentField->SetRenderer(new ContentFieldRenderer("b"));
+    parentField->SetEditor(new ContentFieldEditor("b"));
+
+    auto clonedParent = parentField->Clone();
+    DELETE_AND_CLEAR(parentField);
+
+    // ensure we can convert clone to json
+    clonedParent->AsJson();
+
+    // ensure pointers are valid
+    EXPECT_STREQ("b", clonedParent->GetRenderer()->GetName().c_str());
+    EXPECT_STREQ("b", clonedParent->GetEditor()->GetName().c_str());
+
+    auto clonedChild = clonedParent->AsNestedContentField()->GetFields().at(0);
+    EXPECT_EQ(clonedParent, clonedChild->GetParent());
+    EXPECT_STREQ("a", clonedChild->GetRenderer()->GetName().c_str());
+    EXPECT_STREQ("a", clonedChild->GetEditor()->GetName().c_str());
+
+    DELETE_AND_CLEAR(clonedParent);
+    }

@@ -386,7 +386,7 @@ void CompatibilityTests::ModifyElementCode(DgnDbR db, DgnElementId elementId)
     ASSERT_TRUE(element.IsValid());
     ASSERT_FALSE(element->GetUserProperties(json_inserted()).isNull());
     DgnCode oldCode = element->GetCode();
-    DgnCode newCode(oldCode.GetCodeSpecId(), oldCode.GetScopeElementId(db), oldCode.GetValueUtf8() + "Updated");
+    DgnCode newCode = DgnCode::CreateWithDbContext(db, oldCode.GetCodeSpecId(), oldCode.GetScopeElementId(db), oldCode.GetValueUtf8() + "Updated");
     element->SetCode(newCode);
     element->GetUserPropertiesR(json_updated()) = DateTime::GetCurrentTime().ToString();
     ASSERT_EQ(DgnDbStatus::Success, element->Update());
@@ -1192,7 +1192,7 @@ struct ECInstancesCompatibility : public DgnDbTestFixture
                     (className == "SheetIndexReference") ||
                     (className == "SheetIndexFolder"))
                     {                     
-                    DgnCode partitionCode(partitionCodeSpecId, m_db->Elements().GetRootSubjectId(), "TestSheetIndexModel");
+                    DgnCode partitionCode = DgnCode::CreateWithDbContext(*m_db, partitionCodeSpecId, m_db->Elements().GetRootSubjectId(), "TestSheetIndexModel");
                     DgnElementId partitionId = m_db->Elements().QueryElementIdByCode(partitionCode);
                     if (partitionId.IsValid())
                         modelPtr = m_db->Models().GetModel(DgnModelId(partitionId.GetValue()));
@@ -1201,7 +1201,7 @@ struct ECInstancesCompatibility : public DgnDbTestFixture
                     }
                 else
                     {
-                    DgnCode partitionCode(partitionCodeSpecId, m_db->Elements().GetRootSubjectId(), "TestLinkModel");
+                    DgnCode partitionCode = DgnCode::CreateWithDbContext(*m_db, partitionCodeSpecId, m_db->Elements().GetRootSubjectId(), "TestLinkModel");
                     DgnElementId partitionId = m_db->Elements().QueryElementIdByCode(partitionCode);
                     if (partitionId.IsValid())
                         modelPtr = m_db->Models().GetModel(DgnModelId(partitionId.GetValue()));
