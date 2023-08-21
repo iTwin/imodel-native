@@ -1693,7 +1693,6 @@ void Check::ClearKeyins (char const *name)
     }
 void Check::ClearGeometry (char const *name)
     {
-
     if (s_save == 1)
         {
         // save to the run/output directory, which we expect to under the working directory.
@@ -1825,7 +1824,8 @@ void Check::TearDown()
     BeAssert (s_stack.empty ());    // scope setups were cleared in reverse order
     }
 
-bool Check::NearRoundtrip(IGeometryCR g, double tolerance, char const* pString)
+// verify geometry round trip through both JSON and FlatBuffer
+bool Check::NearRoundTrip(IGeometryCR g, double tolerance, char const* pString)
     {
     std::string myString;
     if (pString)

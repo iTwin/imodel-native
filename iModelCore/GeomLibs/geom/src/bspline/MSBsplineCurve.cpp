@@ -588,7 +588,25 @@ bool MSBsplineCurve::AreSameKnots (double wA, double wB)
     return bsiBezier_isNullKnotInterval (wA, wB);
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool MSBsplineCurve::AreSameKnotVectorsNormalized(double const* knotsA, DSegment1dCR knotRangeA, double const* knotsB, DSegment1dCR knotRangeB, size_t numKnots)
+    {
+    bool trivialA = !knotsA || AreSameKnots(knotRangeA.GetStart(), knotRangeA.GetEnd());
+    bool trivialB = !knotsB || AreSameKnots(knotRangeB.GetStart(), knotRangeB.GetEnd());
+    if (trivialA != trivialB)
+        return false;
+    if (!trivialA && !trivialB)
+        {
+        double factorA = 1.0 / knotRangeA.Length();
+        double factorB = 1.0 / knotRangeB.Length();
+        for (size_t i = 0; i < numKnots; ++i)
+            if (!AreSameKnots((knotsA[i] - knotRangeA.GetStart()) * factorA, (knotsB[i] - knotRangeB.GetStart()) * factorB))
+                return false;
+        }
+    return true;    // also get here if both knot ranges are trivial
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
