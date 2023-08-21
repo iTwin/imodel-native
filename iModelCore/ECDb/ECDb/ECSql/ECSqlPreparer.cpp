@@ -1929,14 +1929,25 @@ ECSqlStatus ECSqlExpPreparer::PrepareTypeListExp(NativeSqlBuilder::List& nativeS
 
 namespace
     {
-    bool AreExperimentalFeaturesEnabled(const ECSqlPrepareContext& ctx)
+    bool AreExperimentalFeaturesEnabled(const ECSqlPrepareContext& ctx, const InstanceValueExp& exp)
         {
-        // Check if ECSQLOption ENABLE_EXPERIMENTAL_FEATURES has been added
-        auto experimentalFeaturesECSqlOption = false;
-        if (const auto options = ctx.GetCurrentScope().GetOptions(); options != nullptr)
-            experimentalFeaturesECSqlOption = options->HasOption(OptionsExp::ENABLE_EXPERIMENTAL_FEATURES);
+        // Check if experimental features are enabled globally with pragma
+        if (ctx.GetECDb().GetECSqlConfig().GetExperimentalFeaturesEnabled())
+            return true;
 
-        return (ctx.GetECDb().GetECSqlConfig().GetExperimentalFeaturesEnabled() || experimentalFeaturesECSqlOption);
+        // Check if ECSQLOption ENABLE_EXPERIMENTAL_FEATURES has been added in the current scope
+        if (const auto options = ctx.GetCurrentScope().GetOptions(); options && options->HasOption(OptionsExp::ENABLE_EXPERIMENTAL_FEATURES))
+            return true;
+
+        // Check if ECSQLOption ENABLE_EXPERIMENTAL_FEATURES has been added to any parent
+        auto parentExp = exp.FindParent(Exp::Type::SingleSelect);
+        while (parentExp)
+            {
+            if (const auto options = parentExp->GetAsCP<SingleSelectStatementExp>()->GetOptions(); options && options->HasOption(OptionsExp::ENABLE_EXPERIMENTAL_FEATURES))
+                return true;
+            parentExp = parentExp->FindParent(Exp::Type::SingleSelect);
+            }
+        return false;
         }
     }
 //-----------------------------------------------------------------------------------------
@@ -1948,7 +1959,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareExtractPropertyExp(NativeSqlBuilder::List& 
     NativeSqlBuilder::List classIdSql;
     NativeSqlBuilder::List instanceIdSql;
 
-    if (!AreExperimentalFeaturesEnabled(ctx)) {
+    if (!AreExperimentalFeaturesEnabled(ctx, exp)) {
         ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Instance property access '%s' is experimental feature and disabled by default.", exp.ToECSql().c_str());
         return ECSqlStatus::InvalidECSql;
     }
@@ -1984,7 +1995,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareExtractInstanceExp(NativeSqlBuilder::List& 
     NativeSqlBuilder::List classIdSql;
     NativeSqlBuilder::List instanceIdSql;
 
-    if (!AreExperimentalFeaturesEnabled(ctx)) {
+    if (!AreExperimentalFeaturesEnabled(ctx, exp)) {
         ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Instance access '%s' is experimental feature and disabled by default.", exp.ToECSql().c_str());
         return ECSqlStatus::InvalidECSql;
     }
