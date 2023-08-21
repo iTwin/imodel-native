@@ -1267,6 +1267,10 @@ bool            naturalTangents     /* => T/F: compute natural/bessel endTangent
     {
     int         status;
 
+    if (!curve)
+        return ERROR;
+    curve->Zero();
+
     /* Make a local copy */
     std::vector<DPoint3d> points;
     std::vector<double>   paramsBuffer;

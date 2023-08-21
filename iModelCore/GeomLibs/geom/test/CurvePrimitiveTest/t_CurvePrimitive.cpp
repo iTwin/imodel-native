@@ -2868,3 +2868,145 @@ TEST(CurveVector, Centroid)
         }
     Check::ClearGeometry ("CurveVector.Centroid");
     }
+
+TEST(CurveVector, TunnelProfileShadowIntersectionsXY)
+    {
+    BeFileName dataFullPathName;
+    BeTest::GetHost().GetDocumentsRoot(dataFullPathName);
+    dataFullPathName.AppendToPath(L"GeomLibsTestData").AppendToPath(L"CurveVector").AppendToPath(L"profiles.imjs");
+    bvector<IGeometryPtr> geometry;
+    CurveVectorPtr curves[2];
+    if (Check::True(GTestFileOps::JsonFileToGeometry(dataFullPathName, geometry), "File read") &&
+        Check::True(geometry.size() >= 2, "Extracted at least two geometries from file") &&
+        Check::True((curves[0] = geometry[0]->GetAsCurveVector()).IsValid(), "Extracted first curve") &&
+        Check::True((curves[1] = geometry[1]->GetAsCurveVector()).IsValid(), "Extracted second curve"))
+        {
+        Check::SaveTransformed(*curves[0]);
+        Check::SaveTransformed(*curves[1]);
+        auto computeFootprint = [](CurveVectorCR curve) -> DSegment3d
+            {
+            DMatrix4d products;
+            curve.ComputeSecondMomentWireProducts(products);
+            double length;
+            DVec3d centroid;
+            RotMatrix axes;
+            DVec3d moment;
+            products.ConvertInertiaProductsToPrincipalMoments(length, centroid, axes, moment);
+            // Compute a local range aligned to the principal axes
+            auto localToWorld = Transform::From(axes, centroid);
+            auto worldToLocal = localToWorld.ValidatedInverse();
+            DRange3d localRange;
+            curve.GetRange(localRange, worldToLocal);
+            DSegment3d footprint = DSegment3d::From(localRange.low, localRange.low);
+            // ASSUME longest range extent is the footprint
+            int iMax = localRange.IndexOfMaximalAxis();
+            footprint.point[1].SetComponent(localRange.high.GetComponent(iMax), iMax);
+            localToWorld.Multiply(footprint);
+            Check::SaveTransformed(footprint);
+            return footprint;
+            };
+        auto footprint0 = computeFootprint(*curves[0]);
+        auto footprint1 = computeFootprint(*curves[1]);
+        CurveVectorPtr ints0 = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None);
+        CurveVectorPtr ints1 = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None);
+        CurveCurve::IntersectionsXY(*ints0, *ints1, *CurveVector::CreateLinear(footprint0.point, 2), *CurveVector::CreateLinear(footprint1.point, 2), nullptr);
+        Check::True(ints0->empty() && ints1->empty(), "Expect no intersections");
+        }
+    Check::ClearGeometry("CurveVector.TunnelProfileShadowIntersectionsXY");
+    }
+
+TEST(CurveVector, TunnelProfileInOutOnXY)
+    {
+    BeFileName dataFullPathName;
+    BeTest::GetHost().GetDocumentsRoot(dataFullPathName);
+    dataFullPathName.AppendToPath(L"GeomLibsTestData").AppendToPath(L"CurveVector").AppendToPath(L"profiles2.imjs");
+    bvector<IGeometryPtr> geometry;
+    CurveVectorPtr curves[2];
+    if (Check::True(GTestFileOps::JsonFileToGeometry(dataFullPathName, geometry), "File read") &&
+        Check::True(geometry.size() >= 2, "Extracted at least two geometries from file") &&
+        Check::True((curves[0] = geometry[0]->GetAsCurveVector()).IsValid(), "Extracted first curve") &&
+        Check::True((curves[1] = geometry[1]->GetAsCurveVector()).IsValid(), "Extracted second curve"))
+        {
+        CurveVectorCR smaller = *curves[0]; // half-washer loop: linestring, arc, linestring, segment, arc, segment
+        CurveVectorCR larger = *curves[1];  // half-stadium: linestring, arc. Contains smaller.
+        Check::SaveTransformed(smaller);
+        Check::SaveTransformed(larger);
+
+        double x, y, z, xTotal, yTotal, zTotal;
+
+        // pieces of smaller split by larger region
+        x = xTotal = 0;
+        z = zTotal = -2;
+        Check::Shift(DVec3d::From(x, 0, z));   // draw pieces below
+        CurveVectorPtr inside = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None);
+        CurveVectorPtr outside = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None);
+        CurveVectorPtr on = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None);
+        smaller.AppendSplitCurvesByRegion(larger, inside.get(), outside.get(), on.get());
+        Check::Size(inside->size(), 3, "inside pieces");
+        Check::SaveTransformed(inside);
+        x = 15; z = 0;
+        if (!Check::Size(outside->size(), 0, "nothing outside"))
+            {
+            xTotal += x; zTotal += z;
+            Check::Shift(DVec3d::From(x, 0, z));
+            Check::SaveTransformed(outside);
+            }
+        Check::Size(on->size(), 5, "coincident pieces");
+        xTotal += x; zTotal += z;
+        Check::Shift(DVec3d::From(x, 0, z));
+        Check::SaveTransformed(on);
+
+        x = -xTotal; xTotal = 0;
+        z = -zTotal; zTotal = 0;
+
+        // pieces of larger split by smaller region
+        z += 2; zTotal = 2;
+        Check::Shift(DVec3d::From(x, 0, z));    // draw pieces above
+        inside->clear();
+        outside->clear();
+        on->clear();
+        larger.AppendSplitCurvesByRegion(smaller, inside.get(), outside.get(), on.get());
+        if (!Check::Size(inside->size(), 0, "nothing inside"))
+            Check::SaveTransformed(inside);
+        Check::Size(outside->size(), 1, "outside pieces");
+        x = 15; xTotal += x; z = 0;
+        Check::Shift(DVec3d::From(x, 0, z));
+        Check::SaveTransformed(outside);
+        Check::Size(on->size(), 5, "coincident pieces");
+        xTotal += x; zTotal += z;
+        Check::Shift(DVec3d::From(x, 0, z));
+        Check::SaveTransformed(on);
+
+        x = -xTotal; xTotal = 0;
+        z = -zTotal; zTotal = 0;
+
+        // try area boolean technique
+        y = yTotal = 15;    // draw regions across
+        Check::Shift(DVec3d::From(x, y, z));
+        DPoint3d centroid;
+        DVec3d normal;
+        double area, compareArea = 0.0, refArea;
+        Check::True(larger.CentroidNormalArea(centroid, normal, refArea));
+        auto differenceRegion = CurveVector::AreaDifference(smaller, larger);
+        if (differenceRegion.IsValid())     // null region return is valid too
+            {
+            if (Check::True(differenceRegion->CentroidNormalArea(centroid, normal, area)))
+                {
+                if (!Check::Near(area, compareArea, "smaller minus larger yields zero area", refArea))
+                    {
+                    Check::SaveTransformed(differenceRegion);
+                    Check::Shift(DVec3d::From(0, y, 0));
+                    }
+                }
+            }
+        Check::True(smaller.CentroidNormalArea(centroid, normal, compareArea));
+        auto intersectionRegion = CurveVector::AreaIntersection(smaller, larger);
+        if (Check::True(intersectionRegion.IsValid(), "smaller intersect larger yields a valid region"))
+            {
+            if (Check::True(intersectionRegion->CentroidNormalArea(centroid, normal, area)))
+                Check::Near(area, compareArea, "smaller intersect larger yields smaller area", refArea);
+            Check::SaveTransformed(intersectionRegion);
+            }
+        }
+    Check::ClearGeometry("CurveVector.TunnelProfileInOutOnXY");
+    }

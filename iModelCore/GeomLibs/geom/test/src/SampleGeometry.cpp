@@ -5,12 +5,10 @@
 //
 //
 #include "Geom/GeomApi.h"
-#include <Bentley/BeFileName.h>
+#include "FileOps.h"
 #include <Bentley/BeTest.h>
 
 USING_NAMESPACE_BENTLEY_GEOMETRY_INTERNAL
-
-bool DGNJSFileToGeometry(BeFileName &filename, bvector<IGeometryPtr> &geometry);
 
 MSBsplineSurfacePtr SurfaceWithSinusoidalControlPolygon (int uOrder, int vOrder, size_t numI, size_t numJ, double q0I, double aI, double q0J, double aJ, double weight = 0.0)
     {
@@ -201,7 +199,29 @@ PolyfaceHeaderPtr DodecahedronMesh()
     dataFullPathName.AppendToPath(L"GeomLibsTestData").AppendToPath(L"Polyface").AppendToPath(L"validation").AppendToPath(L"Dodecahedron.imjs");
 
     bvector<IGeometryPtr> geometry;
-    if (!DGNJSFileToGeometry(dataFullPathName, geometry))
+    if (!GTestFileOps::JsonFileToGeometry(dataFullPathName, geometry))
+        return nullptr;
+        
+    auto mesh = geometry.front()->GetAsPolyfaceHeader();
+    if (mesh.IsValid())
+        {
+        // ensure we have computable data installed
+        mesh->BuildApproximateNormals();
+        mesh->BuildPerFaceParameters(LocalCoordinateSelect::LOCAL_COORDINATE_SCALE_01RangeBothAxes);
+        mesh->BuildPerFaceFaceData();     
+        }
+    return mesh;
+    }
+
+PolyfaceHeaderPtr RhombicosidodecahedronMesh()
+    {
+    // a mesh with triangular, quad, and pentagonal faces and int colors
+    BeFileName dataFullPathName;
+    BeTest::GetHost().GetDocumentsRoot(dataFullPathName);
+    dataFullPathName.AppendToPath(L"GeomLibsTestData").AppendToPath(L"Polyface").AppendToPath(L"validation").AppendToPath(L"rhombicosidodecahedron.imjs");
+
+    bvector<IGeometryPtr> geometry;
+    if (!GTestFileOps::JsonFileToGeometry(dataFullPathName, geometry))
         return nullptr;
         
     auto mesh = geometry.front()->GetAsPolyfaceHeader();

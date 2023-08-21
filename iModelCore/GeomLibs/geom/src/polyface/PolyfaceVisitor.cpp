@@ -822,8 +822,6 @@ bool PolyfaceVisitor::AddCoordinatesFromVisitor(PolyfaceVisitorCR fromVisitor, s
         m_param.push_back(fromVisitor.m_param[fromIndex]);
     if (fromIndex < fromVisitor.m_intColor.size())
         m_intColor.push_back(fromVisitor.m_intColor[fromIndex]);
-    if (fromIndex < fromVisitor.m_colorIndex.size())
-        m_colorIndex.push_back(fromVisitor.m_colorIndex[fromIndex]);
     this->m_visible.push_back(true);
     m_numEdgesThisFace++;
     return true;
