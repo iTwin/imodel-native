@@ -167,6 +167,17 @@ ValidatedTransform LocalToWorldTransform () const;
 ValidatedTransform WorldToLocalTransform () const;
 };
 
+/*----------------------------------------------------------------------------+
+| BARYCENTRIC COORDINATE FUNCTIONS:
+|
+| For a given triangle T with vertices v0, v1, v2, every point q in the plane
+| of T is uniquely represented by its barycentric coordinates (b0, b1, b2)
+| relative to T:
+|
+| q = b0 * v0 + b1 * v1 + b2 * v2,
+| 1 = b0 + b1 + b2.
+|
++----------------------------------------------------------------------------*/
 /*-----------------------------------------------------------------*//**
 * @description Sets this instance to the barycentric coordinates of pPoint
 * relative to the triangle (pVertex0, pVertex1, pVertex2) in the xy-plane.
@@ -194,7 +205,7 @@ DPoint2dCP pVertex2
 * @param uvw   [out] barycentric coordinates of pPoint relative to T
 * @param dUVWdX   [out] derivatives wrt point.x
 * @param dUVWdY   [out] derivatives wrt point.y
-* @param area  [out] signed triangle area
+* @param area  [out] signed triangle area, negative if the points are ordered clockwise.
 * @param point         [in] point in plane
 * @param vertex0       [in] vertex 0 of triangle T
 * @param vertex1       [in] vertex 1 of triangle T

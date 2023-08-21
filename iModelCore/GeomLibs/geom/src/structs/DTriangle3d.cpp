@@ -500,17 +500,9 @@ bool UVBoundarySelect::IsInOrOn (double u, double v) const
 
 bool UVBoundarySelect::IsInOrOn (DPoint2dCR uv) const {return IsInOrOn (uv.x, uv.y);}
 
-/*----------------------------------------------------------------------------+
-| BARYCENTRIC COORDINATE FUNCTIONS:
-|
-| For a given triangle T with vertices v0, v1, v2, every point q in the plane
-| of T is uniquely represented by its barycentric coordinates (b0, b1, b2)
-| relative to T:
-|
-| q = b0 * v0 + b1 * v1 + b2 * v2,
-| 1 = b0 + b1 + b2.
-|
-+----------------------------------------------------------------------------*/
+/*-----------------------------------------------------------------*//**
+* @bsimethod
++---------------+---------------+---------------+---------------+------*/
 static bool    barycentricFromDPoint2dTriangleVectors
 (
 DPoint3dP pInstance,
@@ -877,7 +869,6 @@ DPoint3dCP pVertex2
 * in the xy-plane.
 *
 * @instance pInstance   <= barycentric coordinates of pPoint relative to T
-* @param pArea          <= area of triangle.
 * @param pPoint         => point in plane
 * @param pOrigin        => vertex of triangle T (may be null for origin)
 * @param pVector1       => side vector of T (emanating from pOrigin)
