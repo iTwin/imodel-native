@@ -4,7 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 #include "testHarness.h"
 #include "SampleGeometry.h"
-#include <GeomSerialization\GeomSerializationApi.h>
+#include <GeomSerialization/GeomSerializationApi.h>
 #include <cmath>    // std::nan
 USING_NAMESPACE_BENTLEY_GEOMETRY_INTERNAL
 
