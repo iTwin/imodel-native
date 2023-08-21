@@ -2333,33 +2333,39 @@ TEST_F(InstanceReaderFixture, NestedSelectShouldInheritExperimentalFeatures) {
     ASSERT_EQ(BE_SQLITE_OK, OpenECDbTestDataFile("test.bim"));
     ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
 
-    for (const auto& [lineNumber, sqlStatement, sqlStatus] : std::vector<std::tuple<unsigned int, Utf8CP, ECSqlStatus>>
+    for (const auto& [lineNumber, sqlStatement, sqlStatus, isResultAnInstance] : std::vector<std::tuple<unsigned int, Utf8CP, ECSqlStatus, bool>>
     {
         // Test Case Set 1:
         // ECSQLOPTIONS enable_experimental_features present either in instance query/prop's current scope or in any parent scope
         // Subset 1: Select with nested instance query
-        { __LINE__, "select * from (select $ from meta.ECClassDef LIMIT 1 ECSQLOPTIONS enable_experimental_features)", ECSqlStatus::Success },
-        { __LINE__, "select * from (select $ from meta.ECClassDef LIMIT 1) ECSQLOPTIONS enable_experimental_features", ECSqlStatus::Success },
-        { __LINE__, "select $ from (select * from meta.ECClassDef LIMIT 1) ECSQLOPTIONS enable_experimental_features", ECSqlStatus::Success },
+        { __LINE__, "select * from (select $ from meta.ECClassDef LIMIT 1 ECSQLOPTIONS enable_experimental_features)", ECSqlStatus::Success, true },
+        { __LINE__, "select * from (select $ from meta.ECClassDef LIMIT 1) ECSQLOPTIONS enable_experimental_features", ECSqlStatus::Success, true },
+        { __LINE__, "select $ from (select * from meta.ECClassDef LIMIT 1) ECSQLOPTIONS enable_experimental_features", ECSqlStatus::Success, true },
 
         // Subset 2: Select with nested instance query and instance prop in where clause
-        { __LINE__, "select * from (select $ from meta.ECClassDef where $->ECInstanceId < 3 LIMIT 1 ECSQLOPTIONS enable_experimental_features)", ECSqlStatus::Success },
-        { __LINE__, "select * from (select $ from meta.ECClassDef where $->ECInstanceId < 3 LIMIT 1) ECSQLOPTIONS enable_experimental_features", ECSqlStatus::Success },
+        { __LINE__, "select * from (select $ from meta.ECClassDef where $->ECInstanceId < 3 LIMIT 1 ECSQLOPTIONS enable_experimental_features)", ECSqlStatus::Success, true },
+        { __LINE__, "select * from (select $ from meta.ECClassDef where $->ECInstanceId < 3 LIMIT 1) ECSQLOPTIONS enable_experimental_features", ECSqlStatus::Success, true },
         
         // Subset 3: Select with nested instance query and instance prop in where and order by clauses
-        { __LINE__, "select * from (select $ from meta.ECClassDef where $->ECInstanceId < 3 order by $->ECClassId LIMIT 1 ECSQLOPTIONS enable_experimental_features)", ECSqlStatus::Success },
-        { __LINE__, "select * from (select $ from meta.ECClassDef where $->ECInstanceId < 3 order by $->ECClassId LIMIT 1) ECSQLOPTIONS enable_experimental_features", ECSqlStatus::Success },
-        { __LINE__, "SELECT $ FROM Meta.ECClassDef WHERE $->Name LIKE 'Class%' ORDER BY $->ECInstanceId DESC ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES", ECSqlStatus::Success },
+        { __LINE__, "select * from (select $ from meta.ECClassDef where $->ECInstanceId < 3 order by $->ECClassId LIMIT 1 ECSQLOPTIONS enable_experimental_features)", ECSqlStatus::Success, true },
+        { __LINE__, "select * from (select $ from meta.ECClassDef where $->ECInstanceId < 3 order by $->ECClassId LIMIT 1) ECSQLOPTIONS enable_experimental_features", ECSqlStatus::Success, true },
+        { __LINE__, "SELECT $ FROM Meta.ECClassDef WHERE $->Name LIKE 'Class%' ORDER BY $->ECInstanceId DESC ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES", ECSqlStatus::Success, true },
 
-        // Subset 4: Select with multiple nested queries including instance query and instance prop with where and order by clauses
-        { __LINE__, "select * from (select $ from meta.ECClassDef where $->Schema.Id in (select Schema.Id from meta.ECClassDef where Schema.Id < 3) order by $->ECClassId) LIMIT 1 ECSQLOPTIONS enable_experimental_features", ECSqlStatus::Success },
-        { __LINE__, "select * from (select $ from meta.ECClassDef where $->Schema.Id in (select Schema.Id from meta.ECClassDef where Schema.Id < 3) order by $->ECClassId ECSQLOPTIONS enable_experimental_features) LIMIT 1", ECSqlStatus::Success },
+        // Subset 4: Select with nested instance props for where clause
+        { __LINE__, "select $ from meta.ECClassDef where Name in (select $->Name from meta.ECClassDef where $->ECInstanceId = 1) ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES", ECSqlStatus::Success, true },
+        { __LINE__, "select ECInstanceId, Name from meta.ECClassDef where Name in (select $->Name from meta.ECClassDef where $->ECInstanceId = 1) ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES", ECSqlStatus::Success, false },
+        { __LINE__, "select ECInstanceId, Name from meta.ECClassDef where Name in (select $->Name from meta.ECClassDef where $->ECInstanceId = 1 ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES)", ECSqlStatus::Success, false },
+
+        // Subset 5: Select with multiple nested queries including instance query and instance prop with where and order by clauses
+        { __LINE__, "select * from (select $ from meta.ECClassDef where $->Schema.Id in (select Schema.Id from meta.ECClassDef where Schema.Id < 3) order by $->ECClassId) LIMIT 1 ECSQLOPTIONS enable_experimental_features", ECSqlStatus::Success, true },
+        { __LINE__, "select * from (select $ from meta.ECClassDef where $->Schema.Id in (select Schema.Id from meta.ECClassDef where Schema.Id < 3) order by $->ECClassId ECSQLOPTIONS enable_experimental_features) LIMIT 1", ECSqlStatus::Success, true },
 
         // Test Case Set 2: Negative tests
         // ECSQLOPTIONS enable_experimental_features present neither in instance query/prop's current scope, nor in any parent scope
-        { __LINE__, "select * from (select $ from meta.ECClassDef where $->Schema.Id in (select Schema.Id from meta.ECClassDef where Schema.Id < 3 ECSQLOPTIONS enable_experimental_features) order by $->ECClassId) LIMIT 1", ECSqlStatus::InvalidECSql },
-        { __LINE__, "select $ from (select * from meta.ECClassDef LIMIT 1 ECSQLOPTIONS enable_experimental_features)", ECSqlStatus::InvalidECSql },
-        { __LINE__, "SELECT $ FROM Meta.ECClassDef WHERE $->Name LIKE 'Class%' ORDER BY $->ECInstanceId DESC", ECSqlStatus::InvalidECSql },
+        { __LINE__, "select * from (select $ from meta.ECClassDef where $->Schema.Id in (select Schema.Id from meta.ECClassDef where Schema.Id < 3 ECSQLOPTIONS enable_experimental_features) order by $->ECClassId) LIMIT 1", ECSqlStatus::InvalidECSql, true },
+        { __LINE__, "select $ from (select * from meta.ECClassDef LIMIT 1 ECSQLOPTIONS enable_experimental_features)", ECSqlStatus::InvalidECSql, true },
+        { __LINE__, "SELECT $ FROM Meta.ECClassDef WHERE $->Name LIKE 'Class%' ORDER BY $->ECInstanceId DESC", ECSqlStatus::InvalidECSql, true },
+        { __LINE__, "select $ from meta.ECClassDef where Name in (select $->Name from meta.ECClassDef where $->ECInstanceId = 1 ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES)", ECSqlStatus::InvalidECSql, false },
     })
         {
         ECSqlStatement statement;
@@ -2368,10 +2374,18 @@ TEST_F(InstanceReaderFixture, NestedSelectShouldInheritExperimentalFeatures) {
             {
             while (statement.Step() == BE_SQLITE_ROW)
                 {
-                BeJsDocument doc;
-                doc.Parse(statement.GetValueText(0));
-                EXPECT_TRUE(doc.hasMember("ECInstanceId")) << "Test case at " << lineNumber << " must have ECInstanceId Property";
-                EXPECT_TRUE(doc.hasMember("ECClassId")) << "Test case at " << lineNumber << " must have ECClassId Property";
+                if (isResultAnInstance)
+                    {
+                    BeJsDocument doc;
+                    doc.Parse(statement.GetValueText(0));
+                    EXPECT_TRUE(doc.hasMember("ECInstanceId")) << "Test case at " << lineNumber << " must have ECInstanceId Property";
+                    EXPECT_TRUE(doc.hasMember("ECClassId")) << "Test case at " << lineNumber << " must have ECClassId Property";
+                    }
+                else
+                    {
+                    EXPECT_STREQ(statement.GetValueText(0), "1") << "Test case at 0 " << statement.GetValueText(0) << " does not have the correct value";
+                    EXPECT_STREQ(statement.GetValueText(1), "ClassMap") << "Test case at 1 " << statement.GetValueText(1) << " does not have the correct value";
+                    }
                 }
             }
         statement.Finalize();
