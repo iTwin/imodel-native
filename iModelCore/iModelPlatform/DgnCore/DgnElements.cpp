@@ -286,7 +286,7 @@ DgnElementCPtr DgnElements::LoadElement(DgnElementId elementId,  bool makePersis
     if (BE_SQLITE_ROW != result)
         return nullptr;
 
-    DgnCode code(stmt->GetValueId<CodeSpecId>(Column::CodeSpec), stmt->GetValueId<DgnElementId>(Column::CodeScope), stmt->GetValueText(Column::CodeValue));
+    DgnCode code = DgnCode::CreateWithDbContext(m_dgndb, stmt->GetValueId<CodeSpecId>(Column::CodeSpec), stmt->GetValueId<DgnElementId>(Column::CodeScope), stmt->GetValueText(Column::CodeValue));
 
     DgnElement::CreateParams createParams(m_dgndb, stmt->GetValueId<DgnModelId>(Column::ModelId),
                     stmt->GetValueId<DgnClassId>(Column::ClassId),
@@ -392,7 +392,15 @@ ElementIterator DgnElements::MakeIterator(Utf8CP className, Utf8CP whereClause, 
 DgnElementId ElementIteratorEntry::GetElementId() const {return m_statement->GetValueId<DgnElementId>(0);}
 DgnClassId ElementIteratorEntry::GetClassId() const {return m_statement->GetValueId<DgnClassId>(1);}
 BeGuid ElementIteratorEntry::GetFederationGuid() const {return m_statement->GetValueGuid(2);}
-DgnCode ElementIteratorEntry::GetCode() const {return DgnCode(m_statement->GetValueId<CodeSpecId>(3), m_statement->GetValueId<DgnElementId>(4), m_statement->GetValueText(5));}
+DgnCode ElementIteratorEntry::GetCode() const {
+    // dynamic_cast should be cheap on most compilers when casting to the correct type, which
+    // we should be here
+    const auto* dgndb = dynamic_cast<const DgnDb*>(m_statement->GetECDb());
+    BeAssert(dgndb != nullptr);
+    if (dgndb == nullptr) [[unlikely]]
+        return DgnCode();
+    return DgnCode::CreateWithDbContext(*dgndb, m_statement->GetValueId<CodeSpecId>(3), m_statement->GetValueId<DgnElementId>(4), m_statement->GetValueText(5));
+}
 Utf8CP ElementIteratorEntry::GetCodeValue() const {return m_statement->GetValueText(5);}
 DgnModelId ElementIteratorEntry::GetModelId() const {return m_statement->GetValueId<DgnModelId>(6);}
 DgnElementId ElementIteratorEntry::GetParentId() const {return m_statement->GetValueId<DgnElementId>(7);}

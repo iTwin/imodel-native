@@ -165,7 +165,7 @@ public:
     DGNPLATFORM_EXPORT DgnCode CreateCode(DgnModelCR scopeModel, Utf8StringCR value) const;
 
     DGNPLATFORM_EXPORT static DgnCode CreateRepositoryScopedCode(DgnDbR db, Utf8CP codeSpecName, Utf8StringCR value);
-    DGNPLATFORM_EXPORT DgnCode CreateRepositoryScopedCode(Utf8StringCR value) const;
+    DGNPLATFORM_EXPORT DgnCode CreateRepositoryScopedCode(Utf8StringCR value, DgnCodeValue::Behavior) const;
 
     DgnDbStatus CloneCodeForImport(DgnCodeR newCode, DgnElementCR srcElem, DgnModelR destModel, DgnImportContext& importer) const;
     DGNPLATFORM_EXPORT static CodeSpecPtr Import(DgnDbStatus* status, CodeSpecCR sourceCodeSpec, DgnImportContext& importer);

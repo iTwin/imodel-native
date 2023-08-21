@@ -895,13 +895,21 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
             : Field(other), m_priority(other.m_priority), m_autoExpand(other.m_autoExpand)
             {
             for (Field const* field : other.m_fields)
-                m_fields.push_back(field->Clone());
+                {
+                auto clone = field->Clone();
+                clone->SetParent(this);
+                m_fields.push_back(clone);
+                }
             }
 
         //! Move constructor.
         NestedContentField(NestedContentField&& other)
-            : Field(std::move(other)), m_fields(std::move(other.m_fields)), m_priority(other.m_priority), m_autoExpand(other.m_autoExpand)
-            {}
+            : Field(std::move(other)), m_priority(other.m_priority), m_autoExpand(other.m_autoExpand)
+            {
+            m_fields.swap(other.m_fields);
+            for (Field* field : m_fields)
+                field->SetParent(this);
+            }
 
     public:
         //! Destructor
