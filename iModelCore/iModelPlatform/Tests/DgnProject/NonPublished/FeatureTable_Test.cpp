@@ -58,3 +58,38 @@ TEST(FeatureTableTests, PackAndUnpack_SingleModel)
 
 #undef MAKE_FEATURE
     }
+
+// If the feature is not already present, its model Id must be >= any model Ids already inserted.
+// We can query features with any model Id in any order as long as those features were already inserted in order by model Id.
+TEST(FeatureTableTests, ThrowsIfInsertingModelsOutOfOrder) {
+  FeatureTable ft(123456);
+
+  auto expectException = [&ft](uint64_t modelId) {
+    Feature feature(DgnModelId(modelId), DgnElementId(uint64_t(1)), DgnSubCategoryId(), DgnGeometryClass::Primary);
+    auto size = ft.size();
+    try {
+      ft.GetIndex(feature);
+    } catch (std::runtime_error const& err) {
+      EXPECT_EQ(err.what(), std::string("Features must be inserted in ascending order by model Id"));
+    } catch (...) {
+      FAIL() << "Expected std::runtime_error";
+    }
+
+    EXPECT_EQ(ft.size(), size);
+  };
+
+  auto expectIndex = [&ft](uint64_t modelId, uint32_t expectedIndex) {
+    Feature feature(DgnModelId(modelId), DgnElementId(uint64_t(1)), DgnSubCategoryId(), DgnGeometryClass::Primary);
+    EXPECT_EQ(ft.GetIndex(feature), expectedIndex);
+  };
+
+  expectIndex(0x5, 0);
+  expectIndex(0x5, 0);
+
+  expectException(0x3);
+  expectIndex(0x8, 1);
+  expectException(0x7);
+  expectException(0x5);
+  expectIndex(0xabc, 2);
+}
+

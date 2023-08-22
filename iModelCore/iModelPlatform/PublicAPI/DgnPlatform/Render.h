@@ -3111,6 +3111,11 @@ public:
 //! use per-vertex indices to specify the distribution of Features within the primitive.
 //! A FeatureTable can be shared amongst multiple primitives within a single Graphic, and
 //! amongst multiple sub-Graphics of a Graphic.
+//!
+//! IMPORTANT: To avoid potentially expensive and error-prone remapping of indices after
+//! the table is populated, Features must be inserted in order such that each new feature's model Id
+//! is equal to or greater than any previously-inserted feature's model Id. No ordering
+//! is imposed at insertion time based on element Id, subcategory Id, or geometry class.
 // @bsistruct
 //=======================================================================================
 struct FeatureTable
@@ -3120,6 +3125,9 @@ private:
     Map         m_map;
     DgnModelId  m_modelId;
     uint32_t    m_maxFeatures;
+
+    friend struct PackedFeatureTable;
+    bpair<Map::iterator, uint32_t> Insert(Feature feature, uint32_t index) { return m_map.Insert(feature, index); }
 public:
     explicit FeatureTable(uint32_t maxFeatures) : FeatureTable(DgnModelId(), maxFeatures) { }
     FeatureTable(DgnModelId modelId, uint32_t maxFeatures) : m_modelId(modelId), m_maxFeatures(maxFeatures) { }
@@ -3131,10 +3139,12 @@ public:
     //! This method potentially allocates a new index, if the specified Feature does not yet exist in the lookup table.
     uint32_t GetIndex(FeatureCR feature)
         {
-        BeAssert(!IsFull());
         uint32_t index = 0;
         if (!FindIndex(index, feature) && !IsFull())
             {
+            if (!m_map.empty() && feature.GetModelId() < m_map.rbegin()->first.GetModelId())
+                throw std::runtime_error("Features must be inserted in ascending order by model Id");
+
             index = GetNumIndices();
             m_map[feature] = index;
             }
@@ -3181,11 +3191,6 @@ public:
     size_t size() const { return m_map.size(); }
     bool empty() const { return m_map.empty(); }
     void clear() { m_map.clear(); }
-
-    // Used by tile reader...
-    void SetMaxFeatures(uint32_t maxFeatures) { m_maxFeatures = maxFeatures; }
-    bpair<Map::iterator, uint32_t> Insert(Feature feature, uint32_t index) { return m_map.Insert(feature, index); }
-    void SetModelId(DgnModelId modelId) { m_modelId = modelId; }
 
     DGNPLATFORM_EXPORT PackedFeatureTable Pack() const;
 };
