@@ -484,7 +484,7 @@ DgnElement::CreateParams DgnElement::InitCreateParamsFromECInstance(DgnDbR db, E
             return CreateParams(db, DgnModelId(), classId);
             }
 
-        code = DgnCode(codeSpecId, codeScopeElementId, v.GetUtf8CP());
+        code = DgnCode::CreateWithDbContext(db, codeSpecId, codeScopeElementId, v.GetUtf8CP());
         }
 
     DgnElement::CreateParams params(db, modelId, classId, code);
@@ -558,7 +558,7 @@ ElementAutoHandledPropertiesECInstanceAdapterPtr ElementAutoHandledPropertiesECI
     {
     if (nullptr == el.GetElementClass())
         {
-        BeAssert(false); // not sure how this ever happens, but the crash reports suggest that it does
+        BeAssert(false);
         return nullptr;
         }
     return new ElementAutoHandledPropertiesECInstanceAdapter(el, loadProperties, initialAllocation);
@@ -1791,7 +1791,11 @@ DgnDbStatus ElementECPropertyAccessor::SetPropertyValue(ECN::ECValueCR value, Pr
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElement::RemapAutoHandledNavigationproperties(DgnImportContext& importer)
     {
-    for (auto prop : AutoHandledPropertiesCollection(*GetElementClass(), GetDgnDb(), ECSqlClassParams::StatementType::All, false))
+    const auto elementClass = GetElementClass();
+    if (elementClass == nullptr)
+        return;
+
+    for (auto prop : AutoHandledPropertiesCollection(*elementClass, GetDgnDb(), ECSqlClassParams::StatementType::All, false))
         {
         if (!prop->GetIsNavigation())
             continue;
