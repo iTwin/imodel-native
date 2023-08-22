@@ -48,7 +48,7 @@ TEST(FeatureTableTests, PackAndUnpack_SingleModel)
         MAKE_FEATURE(1, 1, Construction),
         };
 
-    FeatureTable table(modelId);
+    FeatureTable table(FeatureTable::Type::SingleModel, modelId);
     for (auto const& feature : features)
         table.GetIndex(feature);
 
@@ -62,19 +62,22 @@ TEST(FeatureTableTests, PackAndUnpack_SingleModel)
 // If the feature is not already present, its model Id must be >= any model Ids already inserted.
 // We can query features with any model Id in any order as long as those features were already inserted in order by model Id.
 TEST(FeatureTableTests, ThrowsIfInsertingModelsOutOfOrder) {
-  FeatureTable ft;
+  FeatureTable ft(FeatureTable::Type::MultiModel);
 
-  auto expectException = [&ft](uint64_t modelId) {
-    Feature feature(DgnModelId(modelId), DgnElementId(uint64_t(1)), DgnSubCategoryId(), DgnGeometryClass::Primary);
+  auto expectException = [&ft](uint64_t modelId, uint64_t elemId=1) {
+    Feature feature(DgnModelId(modelId), DgnElementId(uint64_t(elemId)), DgnSubCategoryId(), DgnGeometryClass::Primary);
     auto size = ft.size();
+    bool threw = false;
     try {
       ft.GetIndex(feature);
     } catch (std::runtime_error const& err) {
       EXPECT_EQ(err.what(), std::string("Features must be inserted in ascending order by model Id"));
+      threw = true;
     } catch (...) {
       FAIL() << "Expected std::runtime_error";
     }
 
+    EXPECT_TRUE(threw);
     EXPECT_EQ(ft.size(), size);
   };
 
@@ -89,7 +92,7 @@ TEST(FeatureTableTests, ThrowsIfInsertingModelsOutOfOrder) {
   expectException(0x3);
   expectIndex(0x8, 1);
   expectException(0x7);
-  expectException(0x5);
+  expectException(0x5, 2);
   expectIndex(0xabc, 2);
 }
 
@@ -97,8 +100,29 @@ Feature makeFeature(uint64_t model=0, uint64_t elem=0, uint64_t subcat=0, DgnGeo
   return Feature(DgnModelId(model), DgnElementId(elem), DgnSubCategoryId(subcat), cls);
 }
 
+TEST(FeatureTableTests, ThrowsIfInsertingMultipleModelsIntoSingleModelTable) {
+  FeatureTable ft(FeatureTable::Type::SingleModel);
+  EXPECT_EQ(ft.GetIndex(makeFeature(1, 1)), 0);
+  EXPECT_EQ(ft.GetIndex(makeFeature(1, 2)), 1);
+  EXPECT_EQ(ft.GetIndex(makeFeature(1, 1)), 0);
+
+  EXPECT_EQ(ft.size(), 2);
+  bool threw = false;
+  try {
+    ft.GetIndex(makeFeature(2, 3));
+  } catch (std::runtime_error const& err) {
+    EXPECT_EQ(err.what(), std::string("Attempting to insert a second model into a single-model feature table"));
+    threw = true;
+  } catch (...) {
+    FAIL() << "Expected std::runtime_error";
+  }
+
+  EXPECT_TRUE(threw);
+  EXPECT_EQ(ft.size(), 2);
+}
+
 TEST(FeatureTableTests, TracksLastFeatureInEachModel) {
-  FeatureTable ft;
+  FeatureTable ft(FeatureTable::Type::MultiModel);
 
   auto expect = [&ft](std::vector<uint32_t>&& expected) {
     auto const& actual = ft.LastFeatureIndexPerModel();

@@ -3111,31 +3111,40 @@ public:
 //! use per-vertex indices to specify the distribution of Features within the primitive.
 //! A FeatureTable can be shared amongst multiple primitives within a single Graphic, and
 //! amongst multiple sub-Graphics of a Graphic.
-//!
-//! IMPORTANT: To avoid potentially expensive and error-prone remapping of indices after
-//! the table is populated, Features must be inserted in order such that each new feature's model Id
-//! is equal to or greater than any previously-inserted feature's model Id. No ordering
-//! is imposed at insertion time based on element Id, subcategory Id, or geometry class.
 // @bsistruct
 //=======================================================================================
 struct FeatureTable
 {
+    enum struct Type : uint8_t {
+        // All features in the table must belong to the same model. Attempting to add features from multiple models will throw std::runtime_error
+        SingleModel,
+        // The table may contain features belonging to more than one model. The features must
+        // To avoid potentially expensive and error-prone remapping of indices after
+        // the table is populated, features must be inserted in order such that each new feature's model Id
+        // is equal to or greater than any previously-inserted feature's model Id. No ordering
+        // is imposed at insertion time based on element Id, subcategory Id, or geometry class.
+        // If this constraint is violated, std::runtime_error is thrown.
+        MultiModel,
+    };
+
     typedef bmap<Feature, uint32_t> Map;
 private:
     Map         m_map;
     DgnModelId  m_modelId;
     bvector<uint32_t> m_lastFeatureIndexPerModel;
     uint32_t    m_maxFeatures;
+    Type        m_type;
 
     friend struct PackedFeatureTable;
     bpair<Map::iterator, uint32_t> Insert(Feature feature, uint32_t index) { return m_map.Insert(feature, index); }
 public:
-    explicit FeatureTable(uint32_t maxFeatures = 0xffffff) : FeatureTable(DgnModelId(), maxFeatures) { }
-    FeatureTable(DgnModelId modelId, uint32_t maxFeatures = 0xffffff) : m_modelId(modelId), m_maxFeatures(maxFeatures) { }
-    FeatureTable(FeatureTable&& src) : m_map(std::move(src.m_map)), m_modelId(src.m_modelId), m_maxFeatures(src.m_maxFeatures) { }
-    FeatureTable(FeatureTableCR src) : m_map(src.m_map), m_modelId(src.m_modelId), m_maxFeatures(src.m_maxFeatures) { }
-    FeatureTable& operator=(FeatureTable&& src) { m_map = std::move(src.m_map); m_modelId = src.m_modelId; m_maxFeatures = src.m_maxFeatures; return *this; }
-    FeatureTable& operator=(FeatureTableCR src) { *this = FeatureTable(src); return *this; }
+    explicit FeatureTable(Type type, uint32_t maxFeatures = 0xffffff) : FeatureTable(type, DgnModelId(), maxFeatures) { }
+    FeatureTable(Type type, DgnModelId modelId, uint32_t maxFeatures = 0xffffff) : m_type(type), m_modelId(modelId), m_maxFeatures(maxFeatures) { }
+
+    FeatureTable(FeatureTable&& src) = default;
+    FeatureTable(FeatureTableCR src) = default;
+    FeatureTable& operator=(FeatureTable&& src) = default;
+    FeatureTable& operator=(FeatureTableCR src) = default;
 
     //! This method potentially allocates a new index, if the specified Feature does not yet exist in the lookup table.
     DGNPLATFORM_EXPORT uint32_t GetIndex(FeatureCR feature);
@@ -3165,6 +3174,7 @@ public:
         return false;
         }
 
+    Type GetType() const { return m_type; }
     DgnModelId GetModelId() const { return m_modelId; }
     uint32_t GetMaxFeatures() const { return m_maxFeatures; }
     bool IsUniform() const { return 1 == size(); }

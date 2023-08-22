@@ -562,6 +562,9 @@ uint32_t FeatureTable::GetIndex(FeatureCR feature) {
   uint32_t index = 0;
   if (!FindIndex(index, feature) && !IsFull()) {
     auto curModelId = m_map.empty() ? DgnModelId() : m_map.rbegin()->first.GetModelId();
+    if (!m_map.empty() && curModelId != feature.GetModelId() && Type::SingleModel == m_type)
+      throw std::runtime_error("Attempting to insert a second model into a single-model feature table");
+
     if (feature.GetModelId() < curModelId)
       throw std::runtime_error("Features must be inserted in ascending order by model Id");
 
@@ -581,7 +584,7 @@ uint32_t FeatureTable::GetIndex(FeatureCR feature) {
 +---------------+---------------+---------------+---------------+---------------+------*/
 FeatureTable PackedFeatureTable::Unpack() const
     {
-    FeatureTable table(GetModelId(), GetMaxFeatures());
+    FeatureTable table(FeatureTable::Type::SingleModel, GetModelId(), GetMaxFeatures());
     for (uint32_t i = 0; i < GetNumFeatures(); i++)
         table.Insert(GetFeature(i), i);
 
