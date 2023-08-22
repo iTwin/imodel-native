@@ -391,14 +391,6 @@ struct LinkTableRelationshipMapCustomAttribute final
         BentleyStatus TryGetAllowDuplicateRelationships(Nullable<bool>& allowDuplicateRelationships) const;
     };
 
-enum class RequiredVersionKind
-    {
-    Unknown, //returned for unknown values. With the strict ECEnumeration impossible, but we may add more kinds in the future
-    ECDb,
-    DgnDb,
-    BeSQLite
-    };
-
 //=======================================================================================    
 //! ImportRequiresVersionCustomAttribute is put on schemas and limits ECDb versions into which the schema can be imported
 //! @bsiclass
