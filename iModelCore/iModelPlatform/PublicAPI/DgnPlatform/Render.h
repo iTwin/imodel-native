@@ -3064,7 +3064,18 @@ public:
         && GetClass() == rhs.GetClass() && GetModelId() == rhs.GetModelId();
   }
 
-  DGNPLATFORM_EXPORT bool operator<(FeatureCR rhs) const;
+  bool operator<(FeatureCR rhs) const {
+    // IMPORTANT: Features must sort by model Id first for FeatureTable
+    if (m_modelId != rhs.m_modelId)
+      return m_modelId < rhs.m_modelId;
+    else if (m_elementId != rhs.m_elementId)
+      return m_elementId < rhs.m_elementId;
+    else if (m_subCategoryId != rhs.m_subCategoryId)
+      return m_subCategoryId < rhs.m_subCategoryId;
+    else
+      return m_class < rhs.m_class;
+  }
+
 
   bool IsDefined() const {
     return m_modelId.IsValid() || m_elementId.IsValid() || m_subCategoryId.IsValid() || DgnGeometryClass::Primary != m_class;

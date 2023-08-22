@@ -324,23 +324,6 @@ Render::AmbientOcclusionParams Render::AmbientOcclusionParams::FromJson(BeJsCons
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Feature::operator<(FeatureCR rhs) const
-    {
-    if (GetElementId() != rhs.GetElementId())
-        return GetElementId() < rhs.GetElementId();
-    else if (GetSubCategoryId() != rhs.GetSubCategoryId())
-        return GetSubCategoryId() < rhs.GetSubCategoryId();
-    else if (GetClass() != rhs.GetClass())
-        return static_cast<uint8_t>(GetClass()) < static_cast<uint8_t>(rhs.GetClass());
-    else if (GetModelId() != rhs.GetModelId())
-        return GetModelId() < rhs.GetModelId();
-    else
-        return false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 bool MeshEdge::operator<(MeshEdge const& rhs) const
     {
     return m_indices[0] == rhs.m_indices[0] ? (m_indices[1] < rhs.m_indices[1]) :  (m_indices[0] < rhs.m_indices[0]);
