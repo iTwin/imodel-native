@@ -3124,33 +3124,21 @@ struct FeatureTable
 private:
     Map         m_map;
     DgnModelId  m_modelId;
+    bvector<uint32_t> m_lastFeatureIndexPerModel;
     uint32_t    m_maxFeatures;
 
     friend struct PackedFeatureTable;
     bpair<Map::iterator, uint32_t> Insert(Feature feature, uint32_t index) { return m_map.Insert(feature, index); }
 public:
-    explicit FeatureTable(uint32_t maxFeatures) : FeatureTable(DgnModelId(), maxFeatures) { }
-    FeatureTable(DgnModelId modelId, uint32_t maxFeatures) : m_modelId(modelId), m_maxFeatures(maxFeatures) { }
+    explicit FeatureTable(uint32_t maxFeatures = 0xffffff) : FeatureTable(DgnModelId(), maxFeatures) { }
+    FeatureTable(DgnModelId modelId, uint32_t maxFeatures = 0xffffff) : m_modelId(modelId), m_maxFeatures(maxFeatures) { }
     FeatureTable(FeatureTable&& src) : m_map(std::move(src.m_map)), m_modelId(src.m_modelId), m_maxFeatures(src.m_maxFeatures) { }
     FeatureTable(FeatureTableCR src) : m_map(src.m_map), m_modelId(src.m_modelId), m_maxFeatures(src.m_maxFeatures) { }
     FeatureTable& operator=(FeatureTable&& src) { m_map = std::move(src.m_map); m_modelId = src.m_modelId; m_maxFeatures = src.m_maxFeatures; return *this; }
     FeatureTable& operator=(FeatureTableCR src) { *this = FeatureTable(src); return *this; }
 
     //! This method potentially allocates a new index, if the specified Feature does not yet exist in the lookup table.
-    uint32_t GetIndex(FeatureCR feature)
-        {
-        uint32_t index = 0;
-        if (!FindIndex(index, feature) && !IsFull())
-            {
-            if (!m_map.empty() && feature.GetModelId() < m_map.rbegin()->first.GetModelId())
-                throw std::runtime_error("Features must be inserted in ascending order by model Id");
-
-            index = GetNumIndices();
-            m_map[feature] = index;
-            }
-
-        return index;
-        }
+    DGNPLATFORM_EXPORT uint32_t GetIndex(FeatureCR feature);
 
     //! Looks up the index of an existing Feature. Returns false if the Feature does not exist in the lookup table.
     bool FindIndex(uint32_t& index, FeatureCR feature) const
@@ -3182,6 +3170,7 @@ public:
     bool IsUniform() const { return 1 == size(); }
     bool IsFull() const { BeAssert(size() <= GetMaxFeatures()); return size() >= GetMaxFeatures(); }
     uint32_t GetNumIndices() const { return static_cast<uint32_t>(size()); }
+    uint32_t GetNumModels() const { return static_cast<uint32_t>(m_lastFeatureIndexPerModel.size()); }
     bool AnyDefined() const { return size() > 1 || (IsUniform() && begin()->first.IsDefined()); }
 
     typedef Map::const_iterator const_iterator;
@@ -3190,7 +3179,10 @@ public:
     const_iterator end() const { return m_map.end(); }
     size_t size() const { return m_map.size(); }
     bool empty() const { return m_map.empty(); }
-    void clear() { m_map.clear(); }
+    void clear() { m_map.clear(); m_lastFeatureIndexPerModel.clear(); }
+
+    // For tests
+    bvector<uint32_t> const& LastFeatureIndexPerModel() const { return m_lastFeatureIndexPerModel; }
 
     DGNPLATFORM_EXPORT PackedFeatureTable Pack() const;
 };

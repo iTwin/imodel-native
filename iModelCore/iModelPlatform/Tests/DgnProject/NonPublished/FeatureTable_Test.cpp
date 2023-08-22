@@ -48,7 +48,7 @@ TEST(FeatureTableTests, PackAndUnpack_SingleModel)
         MAKE_FEATURE(1, 1, Construction),
         };
 
-    FeatureTable table(modelId, 100);
+    FeatureTable table(modelId);
     for (auto const& feature : features)
         table.GetIndex(feature);
 
@@ -62,7 +62,7 @@ TEST(FeatureTableTests, PackAndUnpack_SingleModel)
 // If the feature is not already present, its model Id must be >= any model Ids already inserted.
 // We can query features with any model Id in any order as long as those features were already inserted in order by model Id.
 TEST(FeatureTableTests, ThrowsIfInsertingModelsOutOfOrder) {
-  FeatureTable ft(123456);
+  FeatureTable ft;
 
   auto expectException = [&ft](uint64_t modelId) {
     Feature feature(DgnModelId(modelId), DgnElementId(uint64_t(1)), DgnSubCategoryId(), DgnGeometryClass::Primary);
@@ -93,3 +93,42 @@ TEST(FeatureTableTests, ThrowsIfInsertingModelsOutOfOrder) {
   expectIndex(0xabc, 2);
 }
 
+Feature makeFeature(uint64_t model=0, uint64_t elem=0, uint64_t subcat=0, DgnGeometryClass cls=DgnGeometryClass::Primary) {
+  return Feature(DgnModelId(model), DgnElementId(elem), DgnSubCategoryId(subcat), cls);
+}
+
+TEST(FeatureTableTests, TracksLastFeatureInEachModel) {
+  FeatureTable ft;
+
+  auto expect = [&ft](std::vector<uint32_t>&& expected) {
+    auto const& actual = ft.LastFeatureIndexPerModel();
+    EXPECT_EQ(actual.size(), expected.size());
+    for (size_t i = 0; i < actual.size(); i++)
+      EXPECT_EQ(actual[i], expected[i]);
+  };
+
+  expect({ });
+
+  ft.GetIndex(makeFeature(1, 11));
+  expect({0});
+  ft.GetIndex(makeFeature(1, 12));
+  expect({1});
+  ft.GetIndex(makeFeature(1, 10));
+  expect({2});
+
+  ft.GetIndex(makeFeature(2, 22));
+  expect({2, 3});
+
+  ft.GetIndex(makeFeature(3, 33));
+  expect({2, 3, 4});
+  ft.GetIndex(makeFeature(3, 32));
+  expect({2, 3, 5});
+
+  ft.GetIndex(makeFeature(7, 1));
+  expect({2, 3, 5, 6});
+  ft.GetIndex(makeFeature(7, 999));
+  expect({2, 3, 5, 7});
+
+  ft.clear();
+  expect({ });
+}

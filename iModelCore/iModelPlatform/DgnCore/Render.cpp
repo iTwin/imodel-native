@@ -558,6 +558,24 @@ PackedFeatureTable FeatureTable::Pack() const
     return PackedFeatureTable(std::move(bytes), GetNumIndices(), GetModelId(), GetMaxFeatures());
     }
 
+uint32_t FeatureTable::GetIndex(FeatureCR feature) {
+  uint32_t index = 0;
+  if (!FindIndex(index, feature) && !IsFull()) {
+    auto curModelId = m_map.empty() ? DgnModelId() : m_map.rbegin()->first.GetModelId();
+    if (feature.GetModelId() < curModelId)
+      throw std::runtime_error("Features must be inserted in ascending order by model Id");
+
+    if (m_map.empty() || feature.GetModelId() > curModelId)
+      m_lastFeatureIndexPerModel.push_back(0);
+
+    index = GetNumIndices();
+    m_map[feature] = index;
+    m_lastFeatureIndexPerModel.back() = std::max(m_lastFeatureIndexPerModel.back(), index);
+  }
+
+  return index;
+}
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
