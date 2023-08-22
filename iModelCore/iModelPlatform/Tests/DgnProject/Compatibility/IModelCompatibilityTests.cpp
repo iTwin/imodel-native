@@ -649,7 +649,7 @@ TEST_F(IModelCompatibilityTestFixture, EC32Enums)
                 continue;
                 }
 
-            // file was upgraded to 4.0.0.3
+            // file was upgraded to 4.0.0.4
             EXPECT_FALSE(testDb.GetDb().GetECDbProfileVersion().IsEmpty()) << "Profile version is expected to be set in the ECDb handle during open";
             EXPECT_TRUE(testDb.GetTestFile().IsUpgraded() || testDb.IsUpgraded() || testDb.GetDb().GetECDbProfileVersion().CompareTo(ProfileVersion(4, 0, 0, 4)) == 0) << testDb.GetDescription();
             testDb.AssertEnum("CoreCustomAttributes", "DateTimeKind", nullptr, nullptr, PRIMITIVETYPE_String, true,
