@@ -77,7 +77,7 @@ TEST(FeatureTableTests, PackAndUnpack_MultiModel) {
   };
 
   test({
-    Feature(m0, e0, s0, primary)
+    Feature(m1, e2, sBig, primary)
   });
 
   test({

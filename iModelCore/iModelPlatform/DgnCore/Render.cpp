@@ -552,7 +552,7 @@ PackedFeatureTable FeatureTable::Pack() const {
 
   if (Type::MultiModel == m_type) {
     size_t modelsOffset = subCategoriesOffset + nSubCategoryBytes;
-    uint32_t* p = reinterpret_cast<uint32_t*>(bytes.data() + modelsOffset);
+    auto p = bytes.data() + modelsOffset;
     for (uint32_t const& lastFeatureIndex : m_lastFeatureIndexPerModel) {
       auto feature = GetFeature(lastFeatureIndex);
       memcpy(p, &lastFeatureIndex, sizeof(lastFeatureIndex));
@@ -592,7 +592,7 @@ uint32_t FeatureTable::GetIndex(FeatureCR feature) {
 FeatureTable PackedFeatureTable::Unpack(DgnModelId singleModelId) const {
   size_t baseSize = PackedFeature::PackedSize() * m_numFeatures + sizeof(uint64_t) * m_numSubCategories;
   BeAssert(baseSize <= m_bytes.size());
-  bool isMultiModel = baseSize > m_bytes.size();
+  bool isMultiModel = baseSize < m_bytes.size();
   uint32_t const* modelEntry = isMultiModel ? reinterpret_cast<uint32_t const*>(m_bytes.data() + baseSize) : nullptr;
 
   auto modelIdFromEntry = [](uint32_t const* entry) {
@@ -603,6 +603,14 @@ FeatureTable PackedFeatureTable::Unpack(DgnModelId singleModelId) const {
 
   DgnModelId modelId = isMultiModel ? modelIdFromEntry(modelEntry) : singleModelId;
   FeatureTable table(isMultiModel ? FeatureTable::Type::MultiModel : FeatureTable::Type::SingleModel, m_maxFeatures);
+
+  if (nullptr != modelEntry) {
+    size_t nModelEntries = (m_bytes.size() - baseSize) / (3 * sizeof(uint32_t));
+    table.m_lastFeatureIndexPerModel.reserve(nModelEntries);
+    for (size_t i = 0; i < nModelEntries; i++)
+      table.m_lastFeatureIndexPerModel.push_back(modelEntry[i * 3]);
+  }
+
   for (uint32_t i = 0; i < GetNumFeatures(); i++) {
     if (nullptr != modelEntry && i > modelEntry[0]) {
       modelEntry += 3;
