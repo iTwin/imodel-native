@@ -3352,7 +3352,7 @@ struct System
     virtual GraphicPtr _CreateBranch(GraphicBranch&& branch, DgnDbR dgndb, TransformCR transform, ClipVectorCP clips) const = 0;
 
     //! Return the maximum number of Features allowed within a Batch.
-    virtual uint32_t _GetMaxFeaturesPerBatch() const = 0;
+    virtual uint32_t _GetMaxFeaturesPerBatch() const { return 0xffffff; }
 
     //! Create a Graphic consisting of batched Features.
     virtual GraphicPtr _CreateBatch(GraphicR graphic, FeatureTable&& features, DRange3dCR range) const = 0;
