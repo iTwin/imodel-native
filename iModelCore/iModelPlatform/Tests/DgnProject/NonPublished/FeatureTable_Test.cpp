@@ -16,6 +16,7 @@ void ExpectEqualFeatureTables(FeatureTableCR base, FeatureTableCR comp, bool exp
     EXPECT_EQ(base.size(), comp.size());
     EXPECT_EQ(base.GetMaxFeatures(), comp.GetMaxFeatures());
     EXPECT_EQ(base.IsUniform(), comp.IsUniform());
+    EXPECT_EQ(base.GetType(), comp.GetType());
 
     for (auto kvp : base)
         {
@@ -29,35 +30,83 @@ void ExpectEqualFeatureTables(FeatureTableCR base, FeatureTableCR comp, bool exp
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(FeatureTableTests, PackAndUnpack_SingleModel)
-    {
-      DgnModelId modelId(static_cast<uint64_t>(0x123));
+TEST(FeatureTableTests, PackAndUnpack_SingleModel) {
+  DgnModelId modelId(static_cast<uint64_t>(0x123));
 #define MAKE_FEATURE(EID, SCID, CLS) Feature(modelId, DgnElementId(static_cast<uint64_t>(EID)), DgnSubCategoryId(static_cast<uint64_t>(SCID)), DgnGeometryClass:: CLS)
 
-    uint64_t largeIdBase = 0xABCDABCDABCDABCD;
-    Feature features[] =
-        {
-        MAKE_FEATURE(1, 1, Primary),
-        MAKE_FEATURE(2, 1, Primary),
-        MAKE_FEATURE(3, 1, Construction),
-        MAKE_FEATURE(4, largeIdBase, Primary),
-        MAKE_FEATURE(largeIdBase+1, 99, Construction),
-        MAKE_FEATURE(largeIdBase-1, 200, Primary),
-        MAKE_FEATURE(largeIdBase-5, largeIdBase+5, Construction),
-        MAKE_FEATURE(2, largeIdBase, Primary),
-        MAKE_FEATURE(1, 1, Construction),
-        };
+  uint64_t largeIdBase = 0xABCDABCDABCDABCD;
+  Feature features[] = {
+    MAKE_FEATURE(1, 1, Primary),
+    MAKE_FEATURE(2, 1, Primary),
+    MAKE_FEATURE(3, 1, Construction),
+    MAKE_FEATURE(4, largeIdBase, Primary),
+    MAKE_FEATURE(largeIdBase+1, 99, Construction),
+    MAKE_FEATURE(largeIdBase-1, 200, Primary),
+    MAKE_FEATURE(largeIdBase-5, largeIdBase+5, Construction),
+    MAKE_FEATURE(2, largeIdBase, Primary),
+    MAKE_FEATURE(1, 1, Construction),
+  };
 
+  for (size_t numFeatures = 0; numFeatures <= std::size(features); numFeatures++) {
     FeatureTable table(FeatureTable::Type::SingleModel);
-    for (auto const& feature : features)
-        table.GetIndex(feature);
+    for (size_t i = 0; i < numFeatures; i++)
+      table.GetIndex(features[i]);
 
-    EXPECT_EQ(_countof(features), table.GetNumIndices());
+    EXPECT_EQ(numFeatures, table.GetNumIndices());
     PackedFeatureTable packed = table.Pack();
     ExpectEqualFeatureTables(table, packed.Unpack(modelId), true);
+  }
 
 #undef MAKE_FEATURE
-    }
+}
+
+TEST(FeatureTableTests, PackAndUnpack_MultiModel) {
+  DgnModelId m0, m1(uint64_t(0x1)), m2(uint64_t(0x2)), mBig(uint64_t(0xABCDABCDABCDABCD));
+  DgnElementId e0, e1(uint64_t(0x1)), e2(uint64_t(0x2)), eBig(uint64_t(0x0FEEDDCC00112233));
+  DgnSubCategoryId s0, s1(uint64_t(0x1)), s2(uint64_t(0x2)), sBig(uint64_t(0x01234567890ABCDE));
+  auto primary = DgnGeometryClass::Primary;
+  auto construction = DgnGeometryClass::Construction;
+
+  auto test = [](std::vector<Feature>&& features) {
+    FeatureTable table(FeatureTable::Type::MultiModel);
+    for (auto const& feature : features)
+      table.GetIndex(feature);
+
+    auto packed = table.Pack();
+    ExpectEqualFeatureTables(table, packed.Unpack(DgnModelId()), true);
+  };
+
+  test({
+    Feature(m0, e0, s0, primary)
+  });
+
+  test({
+    Feature(m0, e0, s0, primary),
+    Feature(m0, e0, s2, construction),
+    Feature(m0, e2, s1, construction),
+    Feature(m0, e1, sBig, construction)
+  });
+
+  test({
+    Feature(m0, e1, s2, construction),
+    Feature(m1, e0, s2, primary),
+    Feature(m2, eBig, s1, construction),
+    Feature(mBig, eBig, sBig, primary)
+  });
+
+  test({
+    Feature(m0, e2, s1, primary),
+    Feature(m0, e0, s2, primary),
+    Feature(m0, e1, s0, construction),
+    Feature(m0, eBig, s0, primary),
+    Feature(m1, eBig, s2, construction),
+    Feature(m2, e1, sBig, primary),
+    Feature(m2, eBig, s1, construction),
+    Feature(mBig, e1, sBig, construction),
+    Feature(mBig, e2, s2, construction),
+    Feature(mBig, eBig, sBig, primary)
+  });
+}
 
 // If the feature is not already present, its model Id must be >= any model Ids already inserted.
 // We can query features with any model Id in any order as long as those features were already inserted in order by model Id.
