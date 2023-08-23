@@ -48,13 +48,13 @@ TEST(FeatureTableTests, PackAndUnpack_SingleModel)
         MAKE_FEATURE(1, 1, Construction),
         };
 
-    FeatureTable table(FeatureTable::Type::SingleModel, modelId);
+    FeatureTable table(FeatureTable::Type::SingleModel);
     for (auto const& feature : features)
         table.GetIndex(feature);
 
     EXPECT_EQ(_countof(features), table.GetNumIndices());
     PackedFeatureTable packed = table.Pack();
-    ExpectEqualFeatureTables(table, packed.Unpack(), true);
+    ExpectEqualFeatureTables(table, packed.Unpack(modelId), true);
 
 #undef MAKE_FEATURE
     }

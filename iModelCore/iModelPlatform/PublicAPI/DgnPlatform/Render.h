@@ -3130,7 +3130,6 @@ struct FeatureTable
     typedef bmap<Feature, uint32_t> Map;
 private:
     Map         m_map;
-    DgnModelId  m_modelId;
     bvector<uint32_t> m_lastFeatureIndexPerModel;
     uint32_t    m_maxFeatures;
     Type        m_type;
@@ -3138,8 +3137,7 @@ private:
     friend struct PackedFeatureTable;
     bpair<Map::iterator, uint32_t> Insert(Feature feature, uint32_t index) { return m_map.Insert(feature, index); }
 public:
-    explicit FeatureTable(Type type, uint32_t maxFeatures = 0xffffff) : FeatureTable(type, DgnModelId(), maxFeatures) { }
-    FeatureTable(Type type, DgnModelId modelId, uint32_t maxFeatures = 0xffffff) : m_type(type), m_modelId(modelId), m_maxFeatures(maxFeatures) { }
+    explicit FeatureTable(Type type, uint32_t maxFeatures = 0xffffff) : m_maxFeatures(maxFeatures), m_type(type) { }
 
     FeatureTable(FeatureTable&& src) = default;
     FeatureTable(FeatureTableCR src) = default;
@@ -3174,8 +3172,16 @@ public:
         return false;
         }
 
+    Feature GetFeature(uint32_t index) const {
+      Feature feature;
+      auto found = FindFeature(feature, index);
+      if (!found)
+        throw std::runtime_error("Feature not found");
+
+      return feature;
+    }
+
     Type GetType() const { return m_type; }
-    DgnModelId GetModelId() const { return m_modelId; }
     uint32_t GetMaxFeatures() const { return m_maxFeatures; }
     bool IsUniform() const { return 1 == size(); }
     bool IsFull() const { BeAssert(size() <= GetMaxFeatures()); return size() >= GetMaxFeatures(); }
@@ -3205,13 +3211,13 @@ struct PackedFeatureTable
 {
     friend struct FeatureTable;
 private:
-    DgnModelId m_modelId;
     ByteStream m_bytes;
     uint32_t m_maxFeatures;
     uint32_t m_numFeatures;
+    uint32_t m_numSubCategories;
 
-    PackedFeatureTable(ByteStream&& bytes, uint32_t numFeatures, DgnModelId modelId, uint32_t maxFeatures) : m_modelId(modelId),
-        m_bytes(std::move(bytes)), m_maxFeatures(maxFeatures), m_numFeatures(numFeatures) { }
+    PackedFeatureTable(ByteStream&& bytes, uint32_t numFeatures, uint32_t maxFeatures, uint32_t numSubCategories)
+        : m_bytes(std::move(bytes)), m_maxFeatures(maxFeatures), m_numFeatures(numFeatures), m_numSubCategories(numSubCategories) { }
 
     uint64_t ReadUInt64(size_t byteOffset) const
         {
@@ -3240,14 +3246,6 @@ private:
         size_t byteOffset = index * PackedFeature::PackedSize() + sizeof(uint64_t);
         return *reinterpret_cast<uint32_t const*>(m_bytes.data() + byteOffset);
         }
-public:
-    PackedFeatureTable(PackedFeatureTable&& src) : m_modelId(src.m_modelId), m_bytes(std::move(src.m_bytes)), m_maxFeatures(src.m_maxFeatures), m_numFeatures(src.m_numFeatures) { }
-    PackedFeatureTable(PackedFeatureTableCR) = delete;
-
-    uint32_t GetNumFeatures() const { return m_numFeatures; }
-    uint32_t GetMaxFeatures() const { return m_maxFeatures; }
-    DgnModelId GetModelId() const { return m_modelId; }
-    ByteStreamCR GetBytes() const { return m_bytes; }
 
     PackedFeature GetPackedFeature(uint32_t index) const
         {
@@ -3255,13 +3253,22 @@ public:
         return PackedFeature(GetElementId(index).GetValueUnchecked(), GetSubCategoryIndexAndClass(index));
         }
 
-    Feature GetFeature(uint32_t index) const
+    Feature GetFeature(uint32_t index, DgnModelId modelId) const
         {
         auto packed = GetPackedFeature(index);
-        return Feature(m_modelId, packed.GetElementId(), GetSubCategoryId(packed.GetSubCategoryIndex()), packed.GetClass());
+        return Feature(modelId, packed.GetElementId(), GetSubCategoryId(packed.GetSubCategoryIndex()), packed.GetClass());
         }
+public:
+    PackedFeatureTable(PackedFeatureTable&& src) = default;
+    PackedFeatureTable(PackedFeatureTableCR) = delete;
 
-    DGNPLATFORM_EXPORT FeatureTable Unpack() const;
+    uint32_t GetNumFeatures() const { return m_numFeatures; }
+    uint32_t GetMaxFeatures() const { return m_maxFeatures; }
+    uint32_t GetNumSubCategories() const { return m_numSubCategories; }
+    ByteStreamCR GetBytes() const { return m_bytes; }
+
+    // This is only used for tests.
+    DGNPLATFORM_EXPORT FeatureTable Unpack(DgnModelId singleModelId) const;
 };
 
 //=======================================================================================
