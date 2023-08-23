@@ -944,7 +944,7 @@ CurveVectorPtr CCSplitProcessor::CloneWithSplits (CurveVectorCR source)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-CurveVectorPtr CurveVector::CloneWithSplits (CurveVectorCR splittersA, bool primitivesOnly)
+CurveVectorPtr CurveVector::CloneWithSplits (CurveVectorCR splittersA, bool primitivesOnly) const
     {
     double tol = 0.0;
     CCSplitProcessor processor (splittersA, tol, primitivesOnly);
@@ -954,7 +954,7 @@ CurveVectorPtr CurveVector::CloneWithSplits (CurveVectorCR splittersA, bool prim
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-void CurveVector::AppendSplitCurvesByRegion (CurveVectorCR region, CurveVectorP insideCollector, CurveVectorP outsideCollector, CurveVectorP onCollector)
+void CurveVector::AppendSplitCurvesByRegion (CurveVectorCR region, CurveVectorP insideCollector, CurveVectorP outsideCollector, CurveVectorP onCollector) const
     {
     CurveVectorPtr splitCurves = CloneWithSplits (region, true);
     if (!splitCurves.IsValid ())
@@ -1107,7 +1107,7 @@ void SplitCurvesByPlaneCollector::Process (CurveVectorCR candidates)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-void CurveVector::AppendSplitCurvesByPlane (DPlane3dCR plane, CurveVectorP belowCollector, CurveVectorP aboveCollector, CurveVectorP onCollector)
+void CurveVector::AppendSplitCurvesByPlane (DPlane3dCR plane, CurveVectorP belowCollector, CurveVectorP aboveCollector, CurveVectorP onCollector) const
     {
     SplitCurvesByPlaneCollector collector (plane, belowCollector, aboveCollector, onCollector,
             ResolveTolerance (0.0));
