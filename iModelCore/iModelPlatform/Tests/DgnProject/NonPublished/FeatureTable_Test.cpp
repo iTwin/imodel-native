@@ -68,12 +68,14 @@ TEST(FeatureTableTests, PackAndUnpack_MultiModel) {
   auto construction = DgnGeometryClass::Construction;
 
   auto test = [](std::vector<Feature>&& features) {
-    FeatureTable table(FeatureTable::Type::MultiModel);
-    for (auto const& feature : features)
-      table.GetIndex(feature);
+    for (size_t numFeatures = 1; numFeatures <= features.size(); numFeatures++) {
+      FeatureTable table(FeatureTable::Type::MultiModel);
+      for (size_t i = 0; i < numFeatures; i++)
+        table.GetIndex(features[i]);
 
-    auto packed = table.Pack();
-    ExpectEqualFeatureTables(table, packed.Unpack(DgnModelId()), true);
+      auto packed = table.Pack();
+      ExpectEqualFeatureTables(table, packed.Unpack(DgnModelId()), true);
+    }
   };
 
   test({
