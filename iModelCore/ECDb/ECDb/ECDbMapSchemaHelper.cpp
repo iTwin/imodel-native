@@ -21,7 +21,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 bool ECDbMapCustomAttributeHelper::TryGetSchemaMap(SchemaMapCustomAttribute& schemaMap, ECSchemaCR schema)
     {
     IECInstancePtr ca = CustomAttributeReader::Read(schema, ECDBMAP_SCHEMANAME, "SchemaMap");
-    if (ca == nullptr || !ca.IsValid())
+    if (!ca.IsValid())
         return false;
 
     schemaMap = SchemaMapCustomAttribute(schema, ca);
@@ -35,7 +35,7 @@ bool ECDbMapCustomAttributeHelper::TryGetSchemaMap(SchemaMapCustomAttribute& sch
 bool ECDbMapCustomAttributeHelper::TryGetClassMap(ClassMapCustomAttribute& classMap, ECClassCR ecClass)
     {
     IECInstancePtr ca = CustomAttributeReader::Read(ecClass, ECDBMAP_SCHEMANAME, "ClassMap");
-    if (ca == nullptr || !ca.IsValid())
+    if (!ca.IsValid())
         return false;
 
     classMap = ClassMapCustomAttribute(ecClass, ca);
@@ -49,7 +49,7 @@ bool ECDbMapCustomAttributeHelper::TryGetClassMap(ClassMapCustomAttribute& class
 bool ECDbMapCustomAttributeHelper::TryGetShareColumns(ShareColumnsCustomAttribute& shareColumns, ECClassCR ecClass)
     {
     IECInstancePtr ca = CustomAttributeReader::Read(ecClass, ECDBMAP_SCHEMANAME, "ShareColumns");
-    if (ca == nullptr || !ca.IsValid())
+    if (!ca.IsValid())
         return false;
 
     shareColumns = ShareColumnsCustomAttribute(ecClass, ca);
@@ -72,7 +72,7 @@ bool ECDbMapCustomAttributeHelper::HasJoinedTablePerDirectSubclass(ECEntityClass
 bool ECDbMapCustomAttributeHelper::TryGetDbIndexList(DbIndexListCustomAttribute& dbIndexList, ECClassCR ecClass)
     {
     IECInstancePtr ca = CustomAttributeReader::Read(ecClass, ECDBMAP_SCHEMANAME, "DbIndexList");
-    if (ca == nullptr || !ca.IsValid())
+    if (!ca.IsValid())
         return false;
 
     dbIndexList = DbIndexListCustomAttribute(ecClass, ca);
@@ -86,7 +86,7 @@ bool ECDbMapCustomAttributeHelper::TryGetDbIndexList(DbIndexListCustomAttribute&
 bool ECDbMapCustomAttributeHelper::TryGetPropertyMap(PropertyMapCustomAttribute& propertyMap, PrimitiveECPropertyCR ecProperty)
     {
     IECInstancePtr ca = CustomAttributeReader::Read(ecProperty, ECDBMAP_SCHEMANAME, "PropertyMap");
-    if (ca == nullptr || !ca.IsValid())
+    if (!ca.IsValid())
         return false;
 
     propertyMap = PropertyMapCustomAttribute(ecProperty, ca);
@@ -100,7 +100,7 @@ bool ECDbMapCustomAttributeHelper::TryGetPropertyMap(PropertyMapCustomAttribute&
 bool ECDbMapCustomAttributeHelper::TryGetLinkTableRelationshipMap(LinkTableRelationshipMapCustomAttribute& linkTableRelationshipMap, ECRelationshipClassCR ecRelationship)
     {
     IECInstancePtr ca = CustomAttributeReader::Read(ecRelationship, ECDBMAP_SCHEMANAME, "LinkTableRelationshipMap");
-    if (ca == nullptr || !ca.IsValid())
+    if (!ca.IsValid())
         return false;
 
     linkTableRelationshipMap = LinkTableRelationshipMapCustomAttribute(ecRelationship, ca);
@@ -114,7 +114,7 @@ bool ECDbMapCustomAttributeHelper::TryGetLinkTableRelationshipMap(LinkTableRelat
 bool ECDbMapCustomAttributeHelper::TryGetForeignKeyConstraint(ForeignKeyConstraintCustomAttribute& foreignKeyTableRelationshipMap, NavigationECPropertyCR navProp)
     {
     IECInstancePtr ca = CustomAttributeReader::Read(navProp, ECDBMAP_SCHEMANAME, "ForeignKeyConstraint");
-    if (ca == nullptr || !ca.IsValid())
+    if (!ca.IsValid())
         return false;
 
     foreignKeyTableRelationshipMap = ForeignKeyConstraintCustomAttribute(navProp, ca);
@@ -128,7 +128,7 @@ bool ECDbMapCustomAttributeHelper::TryGetForeignKeyConstraint(ForeignKeyConstrai
 bool ECDbMapCustomAttributeHelper::TryGetImportRequiresVersion(ImportRequiresVersionCustomAttribute& ca, ECN::ECSchemaCR schema)
     {
     IECInstancePtr inst = CustomAttributeReader::Read(schema, ECDBMAP_SCHEMANAME, "ImportRequiresVersion");
-    if (inst == nullptr || !inst.IsValid())
+    if (!inst.IsValid())
         return false;
 
     ca = ImportRequiresVersionCustomAttribute(schema, inst);
@@ -142,7 +142,7 @@ bool ECDbMapCustomAttributeHelper::TryGetImportRequiresVersion(ImportRequiresVer
 bool ECDbMapCustomAttributeHelper::TryGetUseRequiresVersion(UseRequiresVersionCustomAttribute& ca, ECN::ECClassCR ecClass)
     {
     IECInstancePtr inst = CustomAttributeReader::Read(ecClass, ECDBMAP_SCHEMANAME, "UseRequiresVersion");
-    if (inst == nullptr || !inst.IsValid())
+    if (!inst.IsValid())
         return false;
 
     ca = UseRequiresVersionCustomAttribute(ecClass, inst);
