@@ -255,6 +255,8 @@ struct ECSqlSelectPreparedStatement final : public SingleECSqlPreparedStatement
 
         void BindThisPtr();
         virtual ECSqlStatus _ClearBindings() final;
+        bool m_useJSNames = false;
+        bool m_truncateBlobs = true;
 
     protected:
         ECSqlStatus _Prepare(ECSqlPrepareContext& ctx, Exp const& exp) override;
@@ -269,6 +271,10 @@ struct ECSqlSelectPreparedStatement final : public SingleECSqlPreparedStatement
         ECSqlField* GetField(int columnIndex);
         void AddField(std::unique_ptr<ECSqlField>);
         DynamicSelectClauseECClass& GetDynamicSelectClauseECClassR() { return m_dynamicSelectClauseECClass; }
+        void SetUseJSNames(const bool option) { m_useJSNames = option; }
+        bool UseJsNames() const { return m_useJSNames; }
+        void SetTruncateBlobs(const bool option) { m_truncateBlobs = option; }
+        bool TruncateBlobs() const { return m_truncateBlobs; }
     };
 
 //=======================================================================================

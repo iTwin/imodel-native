@@ -35,6 +35,7 @@ void ExtractPropFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
     if (accessStringVal.IsNull() || accessStringVal.GetValueType() != DbValueType::TextVal )
         return;
 
+    InstanceReader::JsonParams opts;
     // The 4th arg P is pointer to ECSqlStatement while 5th is columnIndex.
     ECSqlField* field = nullptr;
     ECSqlSelectPreparedStatement* stmt = nullptr;
@@ -52,8 +53,19 @@ void ExtractPropFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
                     field = stmt->GetField(columnInfoIndex);
                 }
             }
+            opts.SetUseJsName(stmt->UseJsNames());
+            opts.SetAbbreviateBlobs(stmt->TruncateBlobs());
         }
     }
+    else if (nArgs > 3)
+        {
+        DbValue const& testVal = args[3];
+        if (const auto preparedStatement = static_cast<ECSqlSelectPreparedStatement*>(testVal.GetValuePointer(ECSqlSelectPreparedStatement::SELECT_PTR_NAME)); preparedStatement)
+            {
+            opts.SetUseJsName(preparedStatement->UseJsNames());
+            opts.SetAbbreviateBlobs(preparedStatement->TruncateBlobs());
+            }
+        }
 
     ECInstanceId instanceId(instanceIdVal.GetValueUInt64());
     ECN::ECClassId classId(classIdVal.GetValueUInt64());
@@ -102,7 +114,7 @@ void ExtractPropFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
                 return;
             }
         }
-        const auto json = row.GetJson().Stringify();
+        const auto json = row.GetJson(opts).Stringify();
         ctx.SetResultText(json.c_str(), static_cast<int>(json.length()), Context::CopyData::Yes);
     });
 }
@@ -120,7 +132,7 @@ std::unique_ptr<ExtractInstFunc> ExtractInstFunc::Create(ECDbCR ecdb) {
 //+---------------+---------------+---------------+---------------+---------------+------
 void ExtractInstFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
     if (nArgs < 2 || nArgs > 3) {
-        ctx.SetResultError("extract_inst(I,I]) expect two args");
+        ctx.SetResultError("extract_inst(I,I]) expects minimum two and not more than three args");
         return;
     }
 
@@ -136,13 +148,15 @@ void ExtractInstFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
     InstanceReader::JsonParams opts;
     if (nArgs == 3) {
         DbValue const& optsVal = args[2];
-        if (optsVal.IsNull() || optsVal.GetValueType() != DbValueType::TextVal){
-            return;
-        }
+        if (const auto preparedStatement = static_cast<ECSqlSelectPreparedStatement*>(optsVal.GetValuePointer(ECSqlSelectPreparedStatement::SELECT_PTR_NAME)); preparedStatement)
+            {
+            opts.SetUseJsName(preparedStatement->UseJsNames());
+            opts.SetAbbreviateBlobs(preparedStatement->TruncateBlobs());
+            }
     }
 
     auto setResult = [&](InstanceReader::IRowContext const& row){
-        const auto json = row.GetJson().Stringify();
+        const auto json = row.GetJson(opts).Stringify();
         ctx.SetResultText(json.c_str(), static_cast<int>(json.length()), Context::CopyData::Yes);
     };
 

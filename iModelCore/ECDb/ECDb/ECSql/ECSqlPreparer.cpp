@@ -1938,6 +1938,44 @@ namespace
 
         return (ctx.GetECDb().GetECSqlConfig().GetExperimentalFeaturesEnabled() || experimentalFeaturesECSqlOption);
         }
+
+    bool IsEcSqlOptionEnabled(Utf8CP option, const ECSqlPrepareContext& ctx, const InstanceValueExp& exp)
+        {
+        if (option == OptionsExp::ENABLE_EXPERIMENTAL_FEATURES && ctx.GetECDb().GetECSqlConfig().GetExperimentalFeaturesEnabled()) // Check if experimental features are enabled globally with pragma
+            return true;
+
+        // Check if specified ECSQLOption has been added in the current scope
+        if (const auto options = ctx.GetCurrentScope().GetOptions(); options && options->HasOption(option))
+            return true;
+
+        // Check if ECSQLOption has been added to any parent
+        auto parentExp = exp.FindParent(Exp::Type::SingleSelect);
+        while (parentExp)
+            {
+            if (const auto options = parentExp->GetAsCP<SingleSelectStatementExp>()->GetOptions(); options && options->HasOption(option))
+                return true;
+            parentExp = parentExp->FindParent(Exp::Type::SingleSelect);
+            }
+        return false;
+        }
+
+    bool AreECSQLOptionsAdded(const ECSqlPrepareContext& ctx, const InstanceValueExp& exp)
+        {
+        Utf8String ecsqloptionAdded = "";
+        if (auto ecsqlPreparedStatement = static_cast<ECSqlSelectPreparedStatement*>(&ctx.GetPreparedStatement()); ecsqlPreparedStatement)
+            {
+            // Check if USE_JS_NAMES ECSQLOPTION has been added
+            const auto useJsNames = IsEcSqlOptionEnabled("USE_JS_NAMES", ctx, exp);
+            ecsqlPreparedStatement->SetUseJSNames(useJsNames);
+
+            // Check if DONOT_TRUNCATE_BLOB ECSQLOPTION has been added
+            const auto doNotTruncateBlobs = IsEcSqlOptionEnabled("DONOT_TRUNCATE_BLOB", ctx, exp);
+            ecsqlPreparedStatement->SetTruncateBlobs(!doNotTruncateBlobs);
+            
+            return (useJsNames || doNotTruncateBlobs);
+            }
+        return false;
+        }
     }
 //-----------------------------------------------------------------------------------------
 // @bsimethod
@@ -1963,13 +2001,15 @@ ECSqlStatus ECSqlExpPreparer::PrepareExtractPropertyExp(NativeSqlBuilder::List& 
         return rc;
     }
 
-    builder.AppendFormatted("extract_prop(%s,%s,'%s'%s)",
+    // If either USE_JS_NAMES or DONOT_TRUNCATE_BLOB ECSQLOPTION has been added, we pass an additional parameter :ecdb_this_ptr
+    builder.AppendFormatted("extract_prop(%s,%s,'%s'%s%s)",
         classIdSql.front().GetSql().c_str(),
         instanceIdSql.front().GetSql().c_str(),
         exp.GetTargetPath().ToString().c_str(),
         exp.GetSqlAnchor([&](Utf8CP name) {
             return ctx.GetAnchors().CreateAnchor(name);
-        }).c_str());
+        }).c_str(),
+        AreECSQLOptionsAdded(ctx, exp) ? Utf8PrintfString(", %s", ctx.GetThisStmtPtrParamDecl()).c_str() : "");
 
     nativeSqlSnippets.push_back(std::move(builder));
     return ECSqlStatus::Success;
@@ -1998,7 +2038,8 @@ ECSqlStatus ECSqlExpPreparer::PrepareExtractInstanceExp(NativeSqlBuilder::List& 
         return rc;
     }
 
-    builder.AppendFormatted("extract_inst(%s,%s)", classIdSql.front().GetSql().c_str(),instanceIdSql.front().GetSql().c_str());
+    // If either USE_JS_NAMES or DONOT_TRUNCATE_BLOB ECSQLOPTION has been added, we pass an additional parameter :ecdb_this_ptr
+    builder.AppendFormatted("extract_inst(%s,%s%s)", classIdSql.front().GetSql().c_str(),instanceIdSql.front().GetSql().c_str(), AreECSQLOptionsAdded(ctx, exp) ? Utf8PrintfString(", %s", ctx.GetThisStmtPtrParamDecl()).c_str() : "");
     nativeSqlSnippets.push_back(std::move(builder));
     return ECSqlStatus::Success;
 }

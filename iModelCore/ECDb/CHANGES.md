@@ -7,6 +7,10 @@ This document including important changes to syntax or file format.
 | Profile | `4.0.0.3` |
 | ECSQL   | `1.2.3.0` |
 
+## `8/23/2023`: Added new ECSQLOPTIONS USE_JS_NAMES and DONOT_TRUNCATE_BLOB
+* Added new ECSQLOPTIONS USE_JS_NAMES and DONOT_TRUNCATE_BLOB. 
+    * Example: `SELECT $ from meta.ECClassDef ECSQLOPTIONS USE_JS_NAMES DONOT_TRUNCATE_BLOB
+* ECSql version updated to `1.2.2.0` -> `1.2.3.0`.
 
 ## `8/9/2023`: Add support for FIRST/LAST
 * Add support for ordering NULLs.

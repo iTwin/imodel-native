@@ -2329,4 +2329,84 @@ TEST_F(InstanceReaderFixture, nested_struct) {
     }
 }
 
+TEST_F(InstanceReaderFixture, use_js_names_truncate_blobs_ecsqloption)
+    {
+    ASSERT_EQ(BE_SQLITE_OK, OpenECDbTestDataFile("test.bim"));
+    ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
+
+    const auto expectedJsonWithJsNames = R"json({"eCInstanceId":"0x38","eCClassId":"Generic.PhysicalObject",
+    "model":{"id":"0x1f","relClassName":"BisCore.ModelContainsElements"},
+    "lastMod":"2017-07-25T20:44:59.926Z",
+    "codeSpec":{"id":"0x1","relClassName":"BisCore.CodeSpecSpecifiesCode"},
+    "codeScope":{"id":"0x1","relClassName":"BisCore.ElementScopesCode"},
+    "category":{"id":"0x17","relClassName":"BisCore.GeometricElement3dIsInCategory"},
+    "inSpatialIndex":true,
+    "origin":{"x":6.494445575423782,"y":19.89784647571006,"z":8.020100502512559},
+    "yaw":25.949359512071446,
+    "pitch":4.770832022195274e-15,"roll":114.7782627769506,
+    "bBoxLow":{"x":-9.735928156263862,"y":-9.735928156263864,"z":-9.735928156263858},
+    "bBoxHigh":{"x":9.735928156263858,"y":9.73592815626386,"z":9.735928156263855},
+    %s})json";
+
+    const auto expectedJsonWithoutJsNames = R"json({"ECInstanceId":"0x38","ECClassId":"0xe7",
+    "Model":{"Id":"0x1f","RelECClassId":"0x40"},
+    "LastMod":"2017-07-25T20:44:59.926Z",
+    "CodeSpec":{"Id":"0x1","RelECClassId":"0x47"},
+    "CodeScope":{"Id":"0x1","RelECClassId":"0x49"},
+    "Category":{"Id":"0x17","RelECClassId":"0x8c"},
+    "InSpatialIndex":true,
+    "Origin":{"X":6.494445575423782,"Y":19.89784647571006,"Z":8.020100502512559},
+    "Yaw":25.949359512071446,
+    "Pitch":4.770832022195274e-15,
+    "Roll":114.7782627769506,
+    "BBoxLow":{"X":-9.735928156263862,"Y":-9.735928156263864,"Z":-9.735928156263858},
+    "BBoxHigh":{"X":9.735928156263858,"Y":9.73592815626386,"Z":9.735928156263855},
+    %s})json";
+
+    const auto truncatedBlob = R"json("geometryStream":"{\"bytes\":203}")json";
+    const auto fullBlob = R"json("GeometryStream":"encoding=base64;ywCAAjAABgAA+AAAAAEAAAAIDQgBAUAEAAAAMAAAABwAAAAYABQADAUeEQEIBgAHBRgBAQwBAQDwASQJAUALAAAAqAAAAGJnMDAwMWZiEAUXEAoADgAHBUIACgUQCAAHDAUIyAYAfAAEAAYAAAC8t0aTy3gjQNTy0dk2l6Q8BOGMD2d0zbxZPdLR+8bSvLS6W8O77KW8vQ0oBT8IANg8CQgg0LyQPKeSAhKeERAEPLoyKAAk4LwYLURU+yH5vwkIJAlAAQAAAAAAAAA=")json";
+
+    for (const auto& [lineNumber, sql, expectedJSON, blobValue] : std::vector<std::tuple<unsigned int, Utf8CP, Utf8CP, Utf8CP>>
+    {
+        // Extract Instance
+        { __LINE__, "select $ from bis.GeometricElement3d where $->ECInstanceId=0x38 ECSQLOPTIONS USE_JS_NAMES", expectedJsonWithJsNames, truncatedBlob },
+        { __LINE__, "select $ from bis.GeometricElement3d where $->ECInstanceId=0x38 ECSQLOPTIONS DONOT_TRUNCATE_BLOB", expectedJsonWithoutJsNames, fullBlob },
+        { __LINE__, "select $ from bis.GeometricElement3d where $->ECInstanceId=0x38 ECSQLOPTIONS USE_JS_NAMES DONOT_TRUNCATE_BLOB", expectedJsonWithJsNames, fullBlob },
+        { __LINE__, "select $ from bis.GeometricElement3d where $->ECInstanceId=0x38", expectedJsonWithoutJsNames, truncatedBlob },
+
+        // Extract instance props
+        { __LINE__, "select $->CodeSpec from bis.GeometricElement3d ECSQLOPTIONS USE_JS_NAMES", R"json({"id":"0x1","relClassName":"BisCore.CodeSpecSpecifiesCode"})json", "" },
+        { __LINE__, "select $->CodeSpec from bis.GeometricElement3d where $->ECInstanceId=0x38 ECSQLOPTIONS DONOT_TRUNCATE_BLOB", R"json({"id":"0x1","RelECClassId":"0x47"})json", "" },
+        { __LINE__, "select $->CodeSpec from bis.GeometricElement3d where $->ECInstanceId=0x38 ECSQLOPTIONS USE_JS_NAMES DONOT_TRUNCATE_BLOB", R"json({"id":"0x1","relClassName":"BisCore.CodeSpecSpecifiesCode"})json", "" },
+        { __LINE__, "select $->CodeSpec from bis.GeometricElement3d where $->ECInstanceId=0x38", R"json({"Id":"0x1","RelECClassId":"0x47"})json", "" },
+
+        // ECSQLOPTIONS is in parent's scope
+        { __LINE__, "select * from (select $ from bis.GeometricElement3d where $->ECInstanceId=0x38 ECSQLOPTIONS USE_JS_NAMES)", expectedJsonWithJsNames, truncatedBlob },
+        { __LINE__, "select * from (select $ from bis.GeometricElement3d where $->ECInstanceId=0x38 ECSQLOPTIONS DONOT_TRUNCATE_BLOB)", expectedJsonWithoutJsNames, fullBlob },
+        { __LINE__, "select * from (select $ from bis.GeometricElement3d where $->ECInstanceId=0x38 ECSQLOPTIONS USE_JS_NAMES DONOT_TRUNCATE_BLOB)", expectedJsonWithJsNames, fullBlob },
+        { __LINE__, "select * from (select $ from bis.GeometricElement3d where $->ECInstanceId=0x38)", expectedJsonWithoutJsNames, truncatedBlob },
+
+        { __LINE__, "select * from (select $ from bis.GeometricElement3d where $->ECInstanceId=0x38) ECSQLOPTIONS USE_JS_NAMES", expectedJsonWithJsNames, truncatedBlob },
+        { __LINE__, "select * from (select $ from bis.GeometricElement3d where $->ECInstanceId=0x38) ECSQLOPTIONS DONOT_TRUNCATE_BLOB", expectedJsonWithoutJsNames, fullBlob },
+        { __LINE__, "select * from (select $ from bis.GeometricElement3d where $->ECInstanceId=0x38) ECSQLOPTIONS USE_JS_NAMES DONOT_TRUNCATE_BLOB", expectedJsonWithJsNames, fullBlob },
+        { __LINE__, "select * from (select $ from bis.GeometricElement3d where $->ECInstanceId=0x38)", expectedJsonWithoutJsNames, truncatedBlob }
+    })
+        {
+        ECSqlStatement statement;
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, sql)) << "Test case at " << lineNumber << " failed.";
+        while(statement.Step() == BE_SQLITE_ROW)
+            {
+            ASSERT_FALSE(statement.IsValueNull(0)) << "$ cannot be NULL";
+            BeJsDocument expectedDoc;
+            BeJsDocument actualDoc;
+            expectedDoc.Parse(Utf8PrintfString(expectedJSON, blobValue));
+            actualDoc.Parse(statement.GetValueText(0));
+
+            EXPECT_STRCASEEQ(expectedDoc.Stringify(StringifyFormat::Indented).c_str(), actualDoc.Stringify(StringifyFormat::Indented).c_str()) << "Test case at " << lineNumber << " failed.\n";
+            }
+        statement.Finalize();
+        }
+    }
+
 END_ECDBUNITTESTS_NAMESPACE

@@ -41,6 +41,8 @@ public:
     static Utf8CP const NOECCLASSIDFILTER_OPTION;
     static Utf8CP const READONLYPROPERTIESAREUPDATABLE_OPTION;
     static Utf8CP const ENABLE_EXPERIMENTAL_FEATURES;
+    static Utf8CP const USE_JS_NAMES;
+    static Utf8CP const DONOT_TRUNCATE_BLOB;
 
 private:
     OptionMap m_optionsByName;
