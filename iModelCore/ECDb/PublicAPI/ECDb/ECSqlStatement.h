@@ -679,6 +679,11 @@ struct ECSqlParseTreeFormatter final
         ~ECSqlParseTreeFormatter();
 
     public:
+        // Returns ECSQL parse tree. Good enough to convert again into ECSQL.
+        ECDB_EXPORT static BentleyStatus ECSqlToJson(BeJsValue, ECDbCR, Utf8CP ecsql);
+        // Returns ECSQL after parsing ECSQL and then rendering parse tree back into ECSQL.
+        ECDB_EXPORT static BentleyStatus NormalizeECSql(Utf8StringR, ECDbCR, Utf8CP ecsql);
+
         ECDB_EXPORT static BentleyStatus ParseAndFormatECSqlParseNodeTree(Utf8StringR parseNodeTree, ECDbCR, Utf8CP ecsql);
         //!@param[out] expTree Expression tree as JSON value of this format:
         //!                    {"Exp":"<exp as string>",

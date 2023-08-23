@@ -18,6 +18,7 @@ Utf8CP const OptionsExp::NOECCLASSIDFILTER_OPTION = "NoECClassIdFilter";
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
 Utf8CP const OptionsExp::READONLYPROPERTIESAREUPDATABLE_OPTION = "ReadonlyPropertiesAreUpdatable";
+Utf8CP const OptionsExp::ENABLE_EXPERIMENTAL_FEATURES = "ENABLE_EXPERIMENTAL_FEATURES";
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
@@ -76,6 +77,19 @@ bool OptionsExp::TryGetOption(OptionExp const*& exp, Utf8CP optionName) const
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+void OptionsExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: OptionsExp
+    val.SetEmptyObject();
+    val["id"] = "OptionsExp";
+    auto options = val["options"];
+    options.toArray();
+    for (Exp const* child : GetChildren())
+        child->ToJson(options.appendArray(), fmt);
+}
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 void OptionsExp::_ToECSql(ECSqlRenderContext& ctx) const
     {
     BeAssert(GetChildrenCount() != 0);
@@ -89,6 +103,17 @@ void OptionsExp::_ToECSql(ECSqlRenderContext& ctx) const
 
 
 //****************************** OptionExp *****************************************
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void OptionExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: OptionExp
+    val.SetEmptyObject();
+    val["name"] = m_name;
+    if (IsNameValuePair())
+        val["value"] = m_val;
+}
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------

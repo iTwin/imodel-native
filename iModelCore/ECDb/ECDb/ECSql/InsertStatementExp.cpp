@@ -179,6 +179,18 @@ ValueExpListExp const* InsertStatementExp::GetValuesExp() const { return GetChil
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void InsertStatementExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: InsertStatementExp
+    val.SetEmptyObject();
+    val["id"] = "InsertStatementExp";
+    GetClassNameExp()->ToJson(val["class"], fmt);
+    if (!IsOriginalPropertyNameListUnset())
+        GetPropertyNameListExp()->ToJson(val["properties"], fmt);
+    GetValuesExp()->ToJson(val["values"], fmt);
+}
+//-----------------------------------------------------------------------------------------
+// @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
 void InsertStatementExp::_ToECSql(ECSqlRenderContext& ctx) const
     {

@@ -85,6 +85,22 @@ OptionsExp const* UpdateStatementExp::GetOptionsClauseExp() const
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void UpdateStatementExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: UpdateStatementExp
+    val.SetEmptyObject();
+    val["id"] = "UpdateStatementExp";
+    GetClassNameExp()->ToJson(val["className"], fmt);
+    GetAssignmentListExp()->ToJson(val["assignment"], fmt);
+    if (GetWhereClauseExp()) {
+        GetWhereClauseExp()->ToJson(val["where"], fmt);
+    }
+    if (GetOptionsClauseExp() != nullptr)
+        GetOptionsClauseExp()->ToJson(val["options"], fmt);
+}
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
 void UpdateStatementExp::_ToECSql(ECSqlRenderContext& ctx) const
     {
@@ -106,10 +122,26 @@ void UpdateStatementExp::_ToECSql(ECSqlRenderContext& ctx) const
 AssignmentExp::AssignmentExp(std::unique_ptr<PropertyNameExp> propNameExp, std::unique_ptr<ValueExp> valueExp)
     : Exp(Type::Assignment)
     {
-    m_propNameExpIndex = AddChild(move(propNameExp));
-    m_valueExpIndex = AddChild(move(valueExp));
+    m_propNameExpIndex = AddChild(std::move(propNameExp));
+    m_valueExpIndex = AddChild(std::move(valueExp));
     }
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+void AssignmentExp::_ToECSql(ECSqlRenderContext& ctx) const {
+    ctx.AppendToECSql(*GetPropertyNameExp()).AppendToECSql(" = ").AppendToECSql(*GetValueExp());
+}
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+void AssignmentExp::_ToJson(BeJsValue val, JsonFormat const& fmt) const {
+    //! ITWINJS_PARSE_TREE: AssignmentExp
+    val["id"] = "AssignmentExp";
+    GetPropertyNameExp()->ToJson(val["propertyName"], fmt);
+    GetValueExp()->ToJson(val["value"], fmt);
+}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod

@@ -62,3 +62,4 @@ bool splitUpperEdge
 void SaveEdgeChains (PolyfaceHeaderR facets, bool showNoChainX);
 
 PolyfaceHeaderPtr DodecahedronMesh();
+PolyfaceHeaderPtr RhombicosidodecahedronMesh();

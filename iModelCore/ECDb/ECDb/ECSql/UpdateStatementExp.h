@@ -25,6 +25,7 @@ struct UpdateStatementExp final : Exp
 
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode mode) override;
         void _ToECSql(ECSqlRenderContext&) const override;
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override { return "Update"; }
 
     public:
@@ -49,7 +50,8 @@ struct AssignmentExp final : Exp
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
         bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const override;
 
-        void _ToECSql(ECSqlRenderContext& ctx) const override { ctx.AppendToECSql(*GetPropertyNameExp()).AppendToECSql(" = ").AppendToECSql(*GetValueExp()); }
+        void _ToECSql(ECSqlRenderContext& ctx) const override;
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override { return "Assignment"; }
 
     public:
