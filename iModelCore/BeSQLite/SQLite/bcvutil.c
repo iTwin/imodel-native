@@ -3618,9 +3618,11 @@ int bcvSendMsg(BCV_SOCKET_TYPE fd, BcvMessage *pMsg){
       bcvBufferMsgString(&rc, &buf, pMsg->u.vtab.zContainer);
       bcvBufferMsgString(&rc, &buf, pMsg->u.vtab.zDatabase);
       bcvBufferAppendU32(&rc, &buf, pMsg->u.vtab.colUsed);
+      bcvBufferAppendU32(&rc, &buf, pMsg->u.vtab.iVersion);
       break;
     case BCV_MESSAGE_VTAB_REPLY:
       bcvBufferMsgBlob(&rc, &buf, pMsg->u.vtab_r.aData, pMsg->u.vtab_r.nData);
+      bcvBufferAppendU32(&rc, &buf, pMsg->u.vtab_r.iVersion);
       break;
     case BCV_MESSAGE_DETACH:
       bcvBufferMsgString(&rc, &buf, pMsg->u.detach.zName);
@@ -3628,6 +3630,7 @@ int bcvSendMsg(BCV_SOCKET_TYPE fd, BcvMessage *pMsg){
     case BCV_MESSAGE_HELLO:
       bcvBufferMsgString(&rc, &buf, pMsg->u.hello.zContainer);
       bcvBufferMsgString(&rc, &buf, pMsg->u.hello.zDatabase);
+      bcvBufferAppendU32(&rc, &buf, pMsg->u.hello.bPrefetch);
       break;
     case BCV_MESSAGE_HELLO_REPLY:
       bcvBufferAppendU32(&rc, &buf, pMsg->u.hello_r.errCode);
@@ -3766,10 +3769,16 @@ int bcvRecvMsg(
             pMsg->u.vtab.zContainer = bcvMsgGetString(&aBody);
             pMsg->u.vtab.zDatabase = bcvMsgGetString(&aBody);
             pMsg->u.vtab.colUsed = bcvMsgGetU32(&aBody);
+            if( (aBody - (u8*)&pMsg[1])<nByte ){
+              pMsg->u.vtab.iVersion = bcvMsgGetU32(&aBody);
+            }
             break;
           }
           case BCV_MESSAGE_VTAB_REPLY: {
             pMsg->u.vtab_r.aData = bcvMsgGetBlob(&aBody, &pMsg->u.vtab_r.nData);
+            if( (aBody - (u8*)&pMsg[1])<nByte ){
+              pMsg->u.vtab_r.iVersion = bcvMsgGetU32(&aBody);
+            }
             break;
           }
           case BCV_MESSAGE_DETACH: {
@@ -3779,6 +3788,9 @@ int bcvRecvMsg(
           case BCV_MESSAGE_HELLO: {
             pMsg->u.hello.zContainer = bcvMsgGetString(&aBody);
             pMsg->u.hello.zDatabase = bcvMsgGetString(&aBody);
+            if( (aBody - (u8*)&pMsg[1])<nByte ){
+              pMsg->u.hello.bPrefetch = bcvMsgGetU32(&aBody);
+            }
             break;
           }
 
