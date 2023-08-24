@@ -5,8 +5,12 @@ This document including important changes to syntax or file format.
 | Module  | Version   |
 | ------- | --------- |
 | Profile | `4.0.0.3` |
-| ECSQL   | `1.2.3.0` |
+| ECSQL   | `1.2.4.0` |
 
+## `8/18/2023`: Add support for CROSS Join
+* Add support for CROSS Join.
+    * Example: `SELECT 1 FROM meta.ECClassDef CROSS JOIN meta.ECPropertyDef`.
+* ECSql version updated to `1.2.3.0` -> `1.2.4.0`.
 
 ## `8/9/2023`: Add support for FIRST/LAST
 * Add support for ordering NULLs.

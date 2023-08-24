@@ -940,7 +940,17 @@ ECSqlStatus ECSqlExpPreparer::PrepareNullExp(NativeSqlBuilder::List& nativeSqlSn
 //static
 ECSqlStatus ECSqlExpPreparer::PrepareCrossJoinExp(ECSqlPrepareContext& ctx, CrossJoinExp const& exp)
     {
-    ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Cross join expression not yet supported.");
+    NativeSqlBuilder& sqlBuilder = ctx.GetSqlBuilder();
+    ECSqlStatus r = PrepareClassRefExp(sqlBuilder, ctx, exp.GetFromClassRef());
+    if (!r.IsSuccess())
+        return r;
+
+    sqlBuilder.Append(" CROSS JOIN ");
+ 
+    r = PrepareClassRefExp(sqlBuilder, ctx, exp.GetToClassRef());
+    if (!r.IsSuccess())
+        return r;
+    
     return ECSqlStatus::Success;
     }
 

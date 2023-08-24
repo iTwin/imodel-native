@@ -24,6 +24,7 @@
 */
 #include "GeomTestFixture.h"
 #include "checkers.h"
+#include "FileOps.h"
 #include <Geom/GeomApi.h>
 #include <Geom/XYZRangeTree.h>
 #include "SampleGeometryCreator.h"
