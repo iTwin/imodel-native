@@ -778,7 +778,7 @@ TEST_F (TransactionManagerTests, ForEachLocalChange) {
     if ("model changes in all pending txn for only RepositoryModel") {
         auto changeList = getChanges({"Bis.RepositoryModel"}, /* includeInMemoryChanges = */ false);
         EXPECT_EQ(changeList.size(), 1);
-        EXPECT_EQ(changeList[0].instanceKey.GetInstanceId(), ECInstanceId(1ull));
+        EXPECT_EQ(changeList[0].instanceKey.GetInstanceId(), ECInstanceId((uint64_t)1));
         EXPECT_EQ(changeList[0].instanceKey.GetClassId(), m_db->Schemas().FindClass("Bis.RepositoryModel")->GetId());
         EXPECT_EQ(changeList[0].changeType, DbOpcode::Update);
     }
@@ -786,7 +786,7 @@ TEST_F (TransactionManagerTests, ForEachLocalChange) {
     if ("model changes in all pending txn") {
         auto changeList = getChanges({"Bis.Model"}, /* includeInMemoryChanges = */ false);
         EXPECT_EQ(changeList.size(), 2);
-        EXPECT_EQ(changeList[0].instanceKey.GetInstanceId(), ECInstanceId(1ull));
+        EXPECT_EQ(changeList[0].instanceKey.GetInstanceId(), ECInstanceId((uint64_t)1));
         EXPECT_EQ(changeList[0].instanceKey.GetClassId(), m_db->Schemas().FindClass("Bis.RepositoryModel")->GetId());
         EXPECT_EQ(changeList[0].changeType, DbOpcode::Update);
 
@@ -871,6 +871,11 @@ TEST_F (TransactionManagerTests, ForEachLocalChange) {
     DgnElementCPtr e2 = m_db->Elements().GetElement(e2id);
     EXPECT_TRUE(e2 != nullptr);
     EXPECT_NE(nullptr, m_db->Elements().FindLoadedElement(e2id));
+
+    if ("enum all changes") {
+        auto changeList = getChanges({}, /* includeInMemoryChanges = */ true);
+        EXPECT_EQ(changeList.size(), 5);
+    }
 
     //Both the elements and the model shouldn't be in the database.
     txns.ReverseAll();
