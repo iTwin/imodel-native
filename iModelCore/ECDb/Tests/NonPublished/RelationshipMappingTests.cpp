@@ -23,6 +23,7 @@ struct RelationshipMappingTestFixture : public ECDbTestFixture
         constexpr Utf8CP schemaTemplate = R"xml(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
           <ECEntityClass typeName="BaseTPH" modifier="Abstract">
             <ECCustomAttributes>
               <ClassMap xmlns="ECDbMap.02.00.00">
@@ -38,6 +39,14 @@ struct RelationshipMappingTestFixture : public ECDbTestFixture
             <BaseClass>BaseTPH</BaseClass>
             <ECProperty propertyName="PropElement" typeName="string"/>
           </ECEntityClass>
+          <ECEntityClass typeName="BaseMixin" modifier="Abstract">
+            <ECCustomAttributes>
+                <IsMixin xmlns="CoreCustomAttributes.01.00.00">
+                    <!-- Only subclasses of ts:Element can implement the BaseMixin interface -->
+                    <AppliesToEntityClass>Element</AppliesToEntityClass>
+                </IsMixin>
+            </ECCustomAttributes>
+        </ECEntityClass>
           %s
         </ECSchema>)xml";
         return Utf8PrintfString(schemaTemplate, version, content);
@@ -821,7 +830,6 @@ TEST_F(RelationshipMappingTestFixture, AddNavUpInHierarchyAndChangeRelationship)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(materialKey));
     }
 
-
     ECClassId relClassId = m_ecdb.Schemas().GetClassId("TestSchema", "MaterialProfileRefersToMaterial");
     ECInstanceKey materialProfileKey;
     {
@@ -861,14 +869,104 @@ TEST_F(RelationshipMappingTestFixture, AddNavUpInHierarchyAndChangeRelationship)
 
     {
     auto result = GetHelper().ExecuteSelectECSql("SELECT m.PropMaterial, mp.PropMaterialProfile FROM ts.MaterialProfile mp JOIN ts.Material m USING ts.MaterialProfileRefersToMaterial");
-    ASSERT_EQ(JsonValue(R"json([{"PropMaterial":"MyMaterial", "PropMaterialProfile":"MyMaterialProfile"}])json"),result) << "Verify instances";
+    ASSERT_EQ(JsonValue(R"json([{"PropMaterial":"MyMaterial", "PropMaterialProfile":"MyMaterialProfile"}])json"), result) << "Verify instances";
     }
 
     {
     auto result = GetHelper().ExecuteSelectECSql("SELECT m.PropMaterial, mp.PropMaterialProfile FROM ts.MaterialProfile mp JOIN ts.Material m ON mp.Material.Id = m.ECInstanceId");
-    ASSERT_EQ(JsonValue(R"json([{"PropMaterial":"MyMaterial", "PropMaterialProfile":"MyMaterialProfile"}])json"),result) << "Verify instances";
+    ASSERT_EQ(JsonValue(R"json([{"PropMaterial":"MyMaterial", "PropMaterialProfile":"MyMaterialProfile"}])json"), result) << "Verify instances";
     }
-    
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(RelationshipMappingTestFixture, AddNavUpInHierarchyAndRelationshipHasMixin)
+    {
+    //Introduce a new nav prop with the same name as an existing one in the base class
+    //Also change relationship class Source/Target class to base class
+    Utf8String schemaXml1 = ConstructTestSchema(R"xml(
+        <ECEntityClass typeName="MaterialProfileDefinition" modifier="Abstract">
+            <BaseClass>Element</BaseClass>
+        </ECEntityClass>
+        <ECEntityClass typeName="Material" modifier="Sealed">
+            <BaseClass>Element</BaseClass>
+            <BaseClass>BaseMixin</BaseClass>
+            <ECProperty propertyName="PropMaterial" typeName="string"/>
+        </ECEntityClass>
+
+        <ECEntityClass typeName="MaterialProfile" modifier="Sealed">
+            <BaseClass>MaterialProfileDefinition</BaseClass>
+            <ECProperty propertyName="PropMaterialProfile" typeName="string" />
+            <ECNavigationProperty propertyName="Material" relationshipName="MaterialProfileRefersToMaterial" direction="Forward" />
+        </ECEntityClass>
+
+        <ECRelationshipClass typeName="MaterialProfileRefersToMaterial" strength="referencing" modifier="Sealed">
+            <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="false">
+                <Class class="MaterialProfile" />
+            </Source>
+            <Target multiplicity="(1..1)" roleLabel="is referenced by" polymorphic="true">
+                <Class class="BaseMixin"/>
+            </Target>
+        </ECRelationshipClass>
+        )xml");
+    SchemaItem schema1(schemaXml1);
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDbForCurrentTest(schema1));
+
+    ECInstanceKey materialKey;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Material(PropMaterial) VALUES('MyMaterial')"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(materialKey));
+    }
+
+    ECClassId relClassId = m_ecdb.Schemas().GetClassId("TestSchema", "MaterialProfileRefersToMaterial");
+    ECInstanceKey materialProfileKey;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.MaterialProfile(PropMaterialProfile,Material) VALUES('MyMaterialProfile',?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(1, materialKey.GetInstanceId(), relClassId));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(materialProfileKey));
+    }
+
+    Utf8String schemaXml2 = ConstructTestSchema(R"xml(
+        <ECEntityClass typeName="MaterialProfileDefinition" modifier="Abstract">
+            <BaseClass>Element</BaseClass>
+            <ECNavigationProperty propertyName="Material" relationshipName="MaterialProfileRefersToMaterial" direction="Forward" />
+        </ECEntityClass>
+        <ECEntityClass typeName="Material" modifier="Sealed">
+            <BaseClass>Element</BaseClass>
+            <BaseClass>BaseMixin</BaseClass>
+            <ECProperty propertyName="PropMaterial" typeName="string"/>
+        </ECEntityClass>
+
+        <ECEntityClass typeName="MaterialProfile" modifier="Sealed">
+            <BaseClass>MaterialProfileDefinition</BaseClass>
+            <ECProperty propertyName="PropMaterialProfile" typeName="string" />
+            <ECNavigationProperty propertyName="Material" relationshipName="MaterialProfileRefersToMaterial" direction="Forward" />
+        </ECEntityClass>
+
+        <ECRelationshipClass typeName="MaterialProfileRefersToMaterial" strength="referencing" modifier="Sealed">
+            <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="true">
+                <Class class="MaterialProfileDefinition" />
+            </Source>
+            <Target multiplicity="(1..1)" roleLabel="is referenced by" polymorphic="true">
+                <Class class="BaseMixin"/>
+            </Target>
+        </ECRelationshipClass>
+        )xml", "01.00.01");
+    SchemaItem schema2(schemaXml2);
+    ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema2));
+
+    {
+    auto result = GetHelper().ExecuteSelectECSql("SELECT m.PropMaterial, mp.PropMaterialProfile FROM ts.MaterialProfile mp JOIN ts.Material m USING ts.MaterialProfileRefersToMaterial");
+    ASSERT_EQ(JsonValue(R"json([{"PropMaterial":"MyMaterial", "PropMaterialProfile":"MyMaterialProfile"}])json"), result) << "Verify instances";
+    }
+
+    {
+    auto result = GetHelper().ExecuteSelectECSql("SELECT m.PropMaterial, mp.PropMaterialProfile FROM ts.MaterialProfile mp JOIN ts.Material m ON mp.Material.Id = m.ECInstanceId");
+    ASSERT_EQ(JsonValue(R"json([{"PropMaterial":"MyMaterial", "PropMaterialProfile":"MyMaterialProfile"}])json"), result) << "Verify instances";
+    }
     }
 
 END_ECDBUNITTESTS_NAMESPACE
