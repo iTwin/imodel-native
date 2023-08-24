@@ -283,17 +283,17 @@ describe("elementDependency", () => {
       {
         id: "0x3e",
         classFullName: "BisCore:Subject",
-        changeType: "Insert",
+        changeType: "inserted",
       },
       {
         id: "0x3d",
         classFullName: "BisCore:Subject",
-        changeType: "Insert",
+        changeType: "inserted",
       },
       {
         id: "0x3c",
         classFullName: "BisCore:Subject",
-        changeType: "Insert",
+        changeType: "inserted",
       },
     ] as IModelJsNative.ChangeInstanceKey[];
     assert.deepEqual(c1, expected);
@@ -312,7 +312,7 @@ describe("elementDependency", () => {
     expected.unshift({
       id: "0x3f",
       classFullName: "BisCore:Subject",
-      changeType: "Insert",
+      changeType: "inserted",
     });
 
     // enumerating pending txn + in memory

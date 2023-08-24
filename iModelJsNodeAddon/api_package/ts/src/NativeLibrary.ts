@@ -274,18 +274,13 @@ export declare namespace IModelJsNative {
    */
   export type ElementGraphicsResult = ElementGraphicsContent | ElementGraphicsError;
 
-  /** ChangeType return DgnDb.getLocalChanges()
-   * @internal
-   */
-  export type ChangeType = "Insert" | "Update" | "Delete";
-
   /** Instance key for a change
    * @internal
    */
   export interface ChangeInstanceKey {
     id: Id64String;
     classFullName: string;
-    changeType: ChangeType;
+    changeType: "inserted" | "updated" | "deleted";
   }
 
   /** Information returned by DgnDb.queryDefinitionElementUsage. */

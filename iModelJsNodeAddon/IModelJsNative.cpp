@@ -1459,7 +1459,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
                 auto result = Napi::Object::New(Env());
                 result["id"] = Napi::String::New(Env(), key.GetInstanceId().ToHexStr());
                 result["classFullName"] = Napi::String::New(Env(), GetDgnDb().Schemas().GetClass(key.GetClassId())->GetFullName());
-                result["changeType"] = Napi::String::New(Env(), (changeType == DbOpcode::Delete ? "Delete" : (changeType == DbOpcode::Insert ? "Insert" : "Update")));
+                result["changeType"] = Napi::String::New(Env(), (changeType == DbOpcode::Delete ? "deleted" : (changeType == DbOpcode::Insert ? "inserted" : "updated")));
                 results[i++] = result;
             }, rootClassFilter, includeInMemChanges);
         return results;
