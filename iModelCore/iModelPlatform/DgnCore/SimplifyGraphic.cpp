@@ -551,7 +551,8 @@ void SimplifyGraphic::ProcessText(TextStringCR text)
         if (text.GetGlyphSymbology(sGraphic->m_currGeometryParams))
             m_context.CookGeometryParams(sGraphic->m_currGeometryParams, *graphic);
 
-        Transform       rotationTransform = Transform::From (RotMatrix::From2Vectors(xVector, yVector));
+        Transform rotationTransform = Transform::From (RotMatrix::From2Vectors(xVector, yVector));
+        Transform textTransform = text.ComputeTransform();
         for (size_t iGlyph = 0; iGlyph < numGlyphs; ++iGlyph)
             {
             if (nullptr != glyphs[iGlyph])
@@ -559,8 +560,9 @@ void SimplifyGraphic::ProcessText(TextStringCR text)
                 CurveVectorPtr  curves = glyphs[iGlyph]->GetCurveVector ();
                 if (curves.IsNull())
                     continue;
-                auto origin = DPoint3d::FromSumOf(text.GetOrigin(), glyphOrigins[iGlyph]);
-                curves->TransformInPlace (Transform::FromProduct (Transform::From(origin), rotationTransform));
+                Transform glyphTransform = Transform::FromProduct(Transform::From(glyphOrigins[iGlyph]), rotationTransform);
+                glyphTransform = Transform::FromProduct(textTransform, glyphTransform);
+                curves->TransformInPlace (glyphTransform);
                 ProcessCurveVector(*curves, curves->IsAnyRegionType ());
                 }
             }

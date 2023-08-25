@@ -272,6 +272,10 @@ protected:
 public:
     Napi::ObjectReference m_private_iModelDbJs; // only public so it can be set from IModelJsNative::NativeDgnDb::SetIModelDb
 
+    // Can be changed to put this DgnDb in compatability mode for iModels that contain
+    // codes created with the older behavior, that would now be altered during CRUD operations
+    DgnCodeValue::Behavior m_codeValueBehavior = DgnCodeValue::Behavior::TrimUnicodeWhitespace;
+
     Napi::ObjectReference* GetJsIModelDb() { return (IsMainThread() && !m_private_iModelDbJs.IsEmpty()) ? &m_private_iModelDbJs : nullptr; }
     DGNPLATFORM_EXPORT Napi::Object GetJsTxns(); // get the "IModelDb.txns" JavaScript object of this DgnDb (or nullptr)
     Napi::String ToJsString(Utf8CP val, size_t len) { return Napi::String::New(m_private_iModelDbJs.Env(), val, len); }
