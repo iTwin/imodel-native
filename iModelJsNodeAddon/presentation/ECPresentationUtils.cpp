@@ -1443,6 +1443,23 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
+    std::shared_ptr<RelatedClassPathsList> GetExclusiveIncludePaths() const
+        {
+        RelatedClassPathsList paths;
+        if (m_fieldsSelector.first == FieldSelectorType::Include)
+            {
+            for (auto const& matcher : m_fieldsSelector.second)
+                {
+                auto extractedPaths = matcher->ExtractPaths();
+                paths.insert(paths.end(), extractedPaths.begin(), extractedPaths.end());
+                }
+            }
+        return paths.empty() ?  nullptr : std::make_shared<RelatedClassPathsList>(paths);
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+------*/
     void Apply(ContentDescriptorCPtr& descriptor) const
         {
         bool didModifyDescriptor = false;
@@ -1566,7 +1583,7 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetContent(ECPresentati
 
     ContentDescriptorRequestParams descriptorParams(
         ContentMetadataRequestParams(rulesetParams.GetValue(), descriptorOverrides.GetValue().GetDisplayType(), descriptorOverrides.GetValue().GetContentFlags()),
-        *keys.GetValue());
+        *keys.GetValue(), descriptorOverrides.GetValue().GetExclusiveIncludePaths());
     return manager.GetContentDescriptor(CreateAsyncParams(descriptorParams, db, paramsJson))
         .then([&manager, &db, descriptorOverrides = descriptorOverrides.GetValue(), pageOptions = pageOptions.GetValue(), formatter = &manager.GetFormatter(), diagnostics, omitFormattedValues](ContentDescriptorResponse descriptorResponse) -> folly::Future<ECPresentationResult>
             {
@@ -1616,7 +1633,7 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetContentSetSize(ECPre
 
     ContentDescriptorRequestParams descriptorParams(
         ContentMetadataRequestParams(rulesetParams.GetValue(), descriptorOverrides.GetValue().GetDisplayType(), descriptorOverrides.GetValue().GetContentFlags()),
-        *keys.GetValue());
+        *keys.GetValue(), descriptorOverrides.GetValue().GetExclusiveIncludePaths());
     return manager.GetContentDescriptor(CreateAsyncParams(descriptorParams, db, paramsJson))
         .then([&manager, &db, descriptorOverrides = descriptorOverrides.GetValue(), diagnostics](ContentDescriptorResponse descriptorResponse) -> folly::Future<ECPresentationResult>
         {
@@ -1670,7 +1687,7 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetPagedDistinctValues(
 
     ContentDescriptorRequestParams descriptorParams(
         ContentMetadataRequestParams(rulesetParams.GetValue(), descriptorOverrides.GetValue().GetDisplayType(), descriptorOverrides.GetValue().GetContentFlags()),
-        *keys.GetValue());
+        *keys.GetValue(), std::make_shared<RelatedClassPathsList>(RelatedClassPathsList({ fieldMatcher->ExtractPaths() })));
     return manager.GetContentDescriptor(CreateAsyncParams(descriptorParams, db, paramsJson))
         .then([&manager, &db, descriptorOverrides = descriptorOverrides.GetValue(), fieldMatcher, pageOptions = pageOptions.GetValue(), diagnostics](ContentDescriptorResponse descriptorResponse) -> folly::Future<ECPresentationResult>
             {

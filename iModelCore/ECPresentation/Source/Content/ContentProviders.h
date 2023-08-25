@@ -22,6 +22,7 @@ private:
     std::shared_ptr<INavNodeLocater> m_nodesLocater;
     IPropertyCategorySupplierCR m_categorySupplier;
     INavNodeKeysContainerCPtr m_inputNodeKeys;
+    std::shared_ptr<RelatedClassPathsList> m_exclusiveIncludePaths;
 
     // Selection info context
     bool m_isSelectionContext;
@@ -30,16 +31,16 @@ private:
 private:
     void Init();
     ECPRESENTATION_EXPORT ContentProviderContext(PresentationRuleSetCR, Utf8String, int, INavNodeKeysContainerCR, std::shared_ptr<INavNodeLocater>, IPropertyCategorySupplierCR, std::unique_ptr<RulesetVariables>,
-        ECExpressionsCache&, RelatedPathsCache&, NavNodesFactory const&, IJsonLocalState const*);
+        ECExpressionsCache&, RelatedPathsCache&, NavNodesFactory const&, IJsonLocalState const*, std::shared_ptr<RelatedClassPathsList>);
     ECPRESENTATION_EXPORT ContentProviderContext(ContentProviderContextCR other);
 
 public:
     static ContentProviderContextPtr Create(PresentationRuleSetCR ruleset, Utf8String preferredDisplayType, int contentFlags, INavNodeKeysContainerCR inputKeys,
         std::shared_ptr<INavNodeLocater> nodesLocater, IPropertyCategorySupplierCR categorySupplier, std::unique_ptr<RulesetVariables> rulesetVariables, ECExpressionsCache& ecexpressionsCache,
-        RelatedPathsCache& relatedPathsCache, NavNodesFactory const& nodesFactory, IJsonLocalState const* localState)
+        RelatedPathsCache& relatedPathsCache, NavNodesFactory const& nodesFactory, IJsonLocalState const* localState, std::shared_ptr<RelatedClassPathsList> exclusiveIncludePaths)
         {
         return new ContentProviderContext(ruleset, preferredDisplayType, contentFlags, inputKeys, nodesLocater,
-            categorySupplier, std::move(rulesetVariables), ecexpressionsCache, relatedPathsCache, nodesFactory, localState);
+            categorySupplier, std::move(rulesetVariables), ecexpressionsCache, relatedPathsCache, nodesFactory, localState, exclusiveIncludePaths);
         }
     static ContentProviderContextPtr Create(ContentProviderContextCR other) {return new ContentProviderContext(other);}
     ~ContentProviderContext();
@@ -52,6 +53,7 @@ public:
     INavNodeKeysContainerCR GetInputKeys() const {return *m_inputNodeKeys;}
     void SetInputKeys(INavNodeKeysContainerCR inputNodeKeys) {m_inputNodeKeys = &inputNodeKeys;}
     ECPRESENTATION_EXPORT bvector<RulesetVariableEntry> GetRelatedRulesetVariables() const;
+    std::shared_ptr<RelatedClassPathsList> GetExclusiveIncludePaths() const {return m_exclusiveIncludePaths;}
 
     // Selection info context
     ECPRESENTATION_EXPORT void SetSelectionInfo(SelectionInfoCR selectionInfo);

@@ -19,7 +19,7 @@ void ContentQueryBuilderTests::SetUp()
         m_rulesetVariables, nullptr, GetSchemaHelper().GetECExpressionsCache());
     m_context = std::make_unique<ContentDescriptorBuilder::Context>(GetSchemaHelper(), GetConnections(), GetConnection(), &GetCancellationToken(),
         *m_rulesPreprocessor, *m_ruleset, ContentDisplayType::Undefined, s_emptyVariables, m_categorySupplier, nullptr, ECPresentation::UnitSystem::Undefined,
-        *NavNodeKeyListContainer::Create(), nullptr, nullptr);
+        *NavNodeKeyListContainer::Create(), nullptr, nullptr, nullptr);
     m_context->SetContentFlagsCalculator([](int defaultFlags){return defaultFlags | (int)ContentFlags::SkipInstancesCheck;});
     m_descriptorBuilder = std::make_unique<ContentDescriptorBuilder>(*m_context);
     m_queryBuilder = std::make_unique<ContentQueryBuilder>(ContentQueryBuilderParameters(GetSchemaHelper(), GetConnections(),

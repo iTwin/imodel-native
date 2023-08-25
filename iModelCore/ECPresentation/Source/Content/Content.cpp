@@ -117,7 +117,7 @@ ContentDescriptor::ContentDescriptor(ContentDescriptorCR other)
     m_fieldsFilterExpression(other.m_fieldsFilterExpression), m_instanceFilter(other.m_instanceFilter), m_contentFlags(other.m_contentFlags),
     m_sortingFieldIndex(other.m_sortingFieldIndex), m_sortDirection(other.m_sortDirection), m_connectionId(other.m_connectionId), m_inputKeys(other.m_inputKeys),
     m_selectionInfo(other.m_selectionInfo), m_categories(other.m_categories), m_totalFieldsCount(other.m_totalFieldsCount), m_unitSystem(other.m_unitSystem),
-    m_ruleset(other.m_ruleset), m_rulesetVariables(other.m_rulesetVariables), m_usesModifiedRuleset(other.m_usesModifiedRuleset)
+    m_ruleset(other.m_ruleset), m_rulesetVariables(other.m_rulesetVariables), m_usesModifiedRuleset(other.m_usesModifiedRuleset), m_exclusiveIncludePaths(other.m_exclusiveIncludePaths)
     {
     for (Field const* field : other.m_fields)
         AddRootField(*field->Clone());

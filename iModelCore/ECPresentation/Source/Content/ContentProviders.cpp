@@ -16,9 +16,10 @@
 ContentProviderContext::ContentProviderContext(PresentationRuleSetCR ruleset, Utf8String preferredDisplayType, int contentFlags,
     INavNodeKeysContainerCR inputKeys, std::shared_ptr<INavNodeLocater> nodesLocater, IPropertyCategorySupplierCR categorySupplier,
     std::unique_ptr<RulesetVariables> rulesetVariables, ECExpressionsCache& ecexpressionsCache, RelatedPathsCache& relatedPathsCache,
-    NavNodesFactory const& nodesFactory, IJsonLocalState const* localState)
+    NavNodesFactory const& nodesFactory, IJsonLocalState const* localState, std::shared_ptr<RelatedClassPathsList> exclusiveIncludePaths)
     : RulesDrivenProviderContext(ruleset, std::move(rulesetVariables), ecexpressionsCache, relatedPathsCache, nodesFactory, localState),
-    m_preferredDisplayType(preferredDisplayType), m_contentFlags(contentFlags), m_nodesLocater(nodesLocater), m_categorySupplier(categorySupplier), m_inputNodeKeys(&inputKeys)
+    m_preferredDisplayType(preferredDisplayType), m_contentFlags(contentFlags), m_nodesLocater(nodesLocater), m_categorySupplier(categorySupplier), m_inputNodeKeys(&inputKeys),
+    m_exclusiveIncludePaths(exclusiveIncludePaths)
     {
     Init();
     }
@@ -682,7 +683,7 @@ public:
 
         m_context = std::make_unique<ContentDescriptorBuilder::Context>(context.GetSchemaHelper(), context.GetConnections(), context.GetConnection(), &context.GetCancelationToken(),
             context.GetRulesPreprocessor(), context.GetRuleset(), context.GetPreferredDisplayType().c_str(), context.GetRulesetVariables(), context.GetCategorySupplier(), formatter, unitSystem,
-            context.GetInputKeys(), context.GetSelectionInfo(), &context.GetUsedVariablesListener());
+            context.GetInputKeys(), context.GetSelectionInfo(), &context.GetUsedVariablesListener(), context.GetExclusiveIncludePaths());
         m_context->SetContentFlagsCalculator([flags = context.GetContentFlags()](int defaultFlags){return flags | defaultFlags;});
         m_descriptorBuilder = std::make_unique<ContentDescriptorBuilder>(*m_context);
         m_functionsContext = std::make_unique<CustomFunctionsContext>(context.GetSchemaHelper(), context.GetConnections(), context.GetConnection(),
