@@ -351,6 +351,7 @@ struct SQLiteOps {
         if (status != BE_SQLITE_OK)
             JsInterop::throwSqlResult("error setting autoCheckpoint threshold", db.GetDbFileName(), status);
     }
+
     void PerformCheckpoint(Napi::CallbackInfo const& info) {
         Db& db = GetOpenedDb(info);
         OPTIONAL_ARGUMENT_INTEGER(0, mode, 3);
@@ -2453,6 +2454,11 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         return JsInterop::ConcurrentQueryResetConfig(Env(), GetDgnDb());
     }
 
+    void CreateAnnotationTextStyle(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_ANY_OBJ(0, annotationTextStyle);
+        JsInterop::CreateAnnotationTextStyle(GetDgnDb(), annotationTextStyle);
+    }
+
     void ConcurrentQueryShutdown(NapiInfoCR info) {
         RequireDbIsOpen(info);;
         ConcurrentQueryMgr::Shutdown(GetDgnDb());
@@ -2637,6 +2643,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
             InstanceMethod("enableWalMode", &NativeDgnDb::EnableWalMode),
             InstanceMethod("performCheckpoint", &NativeDgnDb::PerformCheckpoint),
             InstanceMethod("setAutoCheckpointThreshold", &NativeDgnDb::SetAutoCheckpointThreshold),
+            InstanceMethod("createAnnotationTextStyle", &NativeDgnDb::CreateAnnotationTextStyle),
             StaticMethod("enableSharedCache", &NativeDgnDb::EnableSharedCache),
             StaticMethod("getAssetsDir", &NativeDgnDb::GetAssetDir),
         });

@@ -1386,3 +1386,51 @@ void JsInterop::WriteAffectedElementDependencyGraphToFile(DgnDbR db, Utf8StringC
     ElementDependency::Graph graph(db.Txns());
     graph.WriteAffectedGraphToFile(BeFileName(dotFileName.c_str(), true), changedIds, {});
     }
+
+void JsInterop::CreateAnnotationTextStyle(DgnDbR db, Napi::Object obj)
+    {
+        BeJsConst textStyle(obj);
+        auto name = textStyle[json_name()].asCString();
+        auto colorTypeId = textStyle[json_colorType()].asUInt();
+        auto colorValue = textStyle[json_colorValue()].asUInt();
+        auto fontId = textStyle[json_fontId()].asUInt64();
+        auto height = textStyle[json_height()].asDouble();
+        auto lineSpacingFactor = textStyle[json_lineSpacingFactor()].asDouble();
+        auto isBold = textStyle[json_isBold()].asBool();
+        auto isItalic = textStyle[json_isItalic()].asBool();
+        auto isUnderlined = textStyle[json_isUnderlined()].asBool();
+        auto widthFactor = textStyle[json_widthFactor()].asDouble();
+        auto description = textStyle[json_description()].asCString();
+
+        auto ats = AnnotationTextStyle::Create(db.GetDictionaryModel());
+
+        ats->SetName(name);
+        AnnotationColorType colorType;
+        switch (colorTypeId)
+        {
+        case 0:
+            colorType = AnnotationColorType::ByCategory;
+            break;
+        case 1:
+            colorType = AnnotationColorType::RGBA;
+            break;
+        case 2:
+            colorType = AnnotationColorType::ViewBackground;
+            break;
+        default:
+            throw std::invalid_argument("invalid color type");
+            break;
+        }
+        ats->SetColorType(colorType);
+        ats->SetColorValue(ColorDef(colorValue));
+        ats->SetFontId(FontId(fontId));
+        ats->SetHeight(height);
+        ats->SetLineSpacingFactor(lineSpacingFactor);
+        ats->SetIsBold(isBold);
+        ats->SetIsItalic(isItalic);
+        ats->SetIsUnderlined(isUnderlined);
+        ats->SetWidthFactor(widthFactor);
+        ats->SetDescription(description);
+
+        ats->Insert();
+    }

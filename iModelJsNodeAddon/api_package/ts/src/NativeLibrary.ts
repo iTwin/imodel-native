@@ -25,6 +25,7 @@ import type {
   ModelProps, QueryQuota, RelationshipProps, SnapshotOpenOptions, TextureData, TextureLoadProps, TileVersionInfo, UpgradeOptions,
 } from "@itwin/core-common";
 import type { Range3dProps } from "@itwin/core-geometry";
+import type { AnnotationTextStyle } from "@itwin/core-backend";
 
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable no-restricted-syntax */
@@ -639,6 +640,7 @@ export declare namespace IModelJsNative {
     public enableWalMode(yesNo?: boolean): void;
     public performCheckpoint(mode?: WalCheckpointMode): void;
     public setAutoCheckpointThreshold(frames: number): void;
+    public createAnnotationTextStyle(ats: AnnotationTextStyle): void;
     public static enableSharedCache(enable: boolean): DbResult;
     public static getAssetsDir(): string;
   }

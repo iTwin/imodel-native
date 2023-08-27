@@ -473,6 +473,15 @@ struct JsInterop {
     BE_JSON_NAME(value)
     BE_JSON_NAME(writeable)
     BE_JSON_NAME(yesNo)
+    BE_JSON_NAME(colorType)
+    BE_JSON_NAME(colorValue)
+    BE_JSON_NAME(fontId)
+    BE_JSON_NAME(height)
+    BE_JSON_NAME(lineSpacingFactor)
+    BE_JSON_NAME(isBold)
+    BE_JSON_NAME(isItalic)
+    BE_JSON_NAME(isUnderlined)
+    BE_JSON_NAME(widthFactor)
 
 #define JSON_NAME(__val__) JsInterop::json_##__val__()
 
@@ -598,6 +607,7 @@ public:
 
     static void WriteFullElementDependencyGraphToFile(DgnDbR db, Utf8StringCR dotFileName);
     static void WriteAffectedElementDependencyGraphToFile(DgnDbR db, Utf8StringCR dotFileName, bvector<Utf8String> const& id64Array);
+    static void CreateAnnotationTextStyle(DgnDbR dgndb, Napi::Object obj);
 };
 //=======================================================================================
 // @bsiclass
