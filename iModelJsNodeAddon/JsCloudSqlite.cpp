@@ -438,7 +438,8 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
     Napi::Value GetWriteLockExpiryTime(NapiInfoCR) {
         RequireConnected();
         BeJsDocument lockedBy;
-        ReadWriteLock(lockedBy); // What if write lock is empty? 
+        ReadWriteLock(lockedBy); 
+        // Returns empty string if writeLock is empty.
         return Napi::String::New(Env(), lockedBy[JSON_NAME(expires)].asString());
     }
 
