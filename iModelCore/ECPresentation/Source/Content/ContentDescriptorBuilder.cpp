@@ -1373,6 +1373,7 @@ public:
         m_categoriesSupplierContext = std::make_unique<CategoriesSupplierContext>(context, *m_propertyInfos);
 
         m_descriptor = ContentDescriptor::Create(GetContext().GetConnection(), context.GetRuleset(), context.GetRulesetVariables(), GetContext().GetInputKeys());
+        m_descriptor->SetExclusiveIncludePaths(context.GetExclusiveIncludePaths());
         m_descriptor->SetUnitSystem(context.GetUnitSystem());
         m_descriptor->SetPreferredDisplayType(GetContext().GetPreferredDisplayType());
         m_descriptor->SetContentFlags(specification ? _GetContentFlags(*specification) : GetContext().GetContentFlagsCalculator() ? context.GetContentFlagsCalculator()(0) : 0);
