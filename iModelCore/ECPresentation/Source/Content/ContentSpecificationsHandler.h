@@ -216,7 +216,7 @@ struct ContentSpecificationsHandler
         void SetContentFlagsCalculator(std::function<int(int)> func) {m_contentFlagsCalculator = func;}
         Utf8String CreateRelatedClassAlias(ECClassCR);
         Utf8String CreateNavigationClassAlias(ECClassCR);
-        std::shared_ptr<RelatedClassPathsList> GetExclusiveIncludePaths() const { return m_exclusiveIncludePaths;}
+        std::shared_ptr<RelatedClassPathsList> GetExclusiveIncludePaths() const {return m_exclusiveIncludePaths;}
     };
 
     /*=================================================================================**//**

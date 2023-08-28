@@ -1311,7 +1311,7 @@ public:
     virtual ~IContentFieldMatcher() {}
     bool Matches(ContentDescriptor::Field const& field) const {return _Matches(field);}
     std::unique_ptr<IContentFieldMatcher> Clone() const {return _Clone();}
-    RelatedClassPathsList ExtractPaths() const& {return _ExtractPaths();}
+    RelatedClassPathsList ExtractPaths() const {return _ExtractPaths();}
 };
 
 //=======================================================================================

@@ -1454,7 +1454,7 @@ public:
                 paths.insert(paths.end(), extractedPaths.begin(), extractedPaths.end());
                 }
             }
-        return paths.empty() ?  nullptr : std::make_shared<RelatedClassPathsList>(paths);
+        return paths.empty() ? nullptr : std::make_shared<RelatedClassPathsList>(paths);
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -1687,7 +1687,7 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetPagedDistinctValues(
 
     ContentDescriptorRequestParams descriptorParams(
         ContentMetadataRequestParams(rulesetParams.GetValue(), descriptorOverrides.GetValue().GetDisplayType(), descriptorOverrides.GetValue().GetContentFlags()),
-        *keys.GetValue(), std::make_shared<RelatedClassPathsList>(RelatedClassPathsList({ fieldMatcher->ExtractPaths() })));
+        *keys.GetValue(), std::make_shared<RelatedClassPathsList>(fieldMatcher->ExtractPaths()));
     return manager.GetContentDescriptor(CreateAsyncParams(descriptorParams, db, paramsJson))
         .then([&manager, &db, descriptorOverrides = descriptorOverrides.GetValue(), fieldMatcher, pageOptions = pageOptions.GetValue(), diagnostics](ContentDescriptorResponse descriptorResponse) -> folly::Future<ECPresentationResult>
             {
