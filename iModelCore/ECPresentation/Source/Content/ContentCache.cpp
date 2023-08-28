@@ -134,14 +134,8 @@ bool ContentProviderKey::operator<(ContentProviderKey const& other) const
     if (*other.m_selectionInfo < *m_selectionInfo)
         return false;
 
-    if (m_exclusiveIncludePaths == nullptr && other.m_exclusiveIncludePaths == nullptr)
-        return false;
-    if (m_exclusiveIncludePaths == nullptr && other.m_exclusiveIncludePaths != nullptr)
-        return true;
-    if (m_exclusiveIncludePaths != nullptr && other.m_exclusiveIncludePaths == nullptr)
-        return false;
-
-    return *m_exclusiveIncludePaths < *other.m_exclusiveIncludePaths;
+    PTR_VALUE_LESS_COMPARE(m_exclusiveIncludePaths, other.m_exclusiveIncludePaths);
+    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**

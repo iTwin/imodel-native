@@ -375,7 +375,6 @@ static bool HasSamePath(RelatedClassPath const& relatedClassPath, bvector<Relati
     if (relatedClassPath.size() != specsPath.size())
         return false;
 
-    bool allStepsMatch = true;
     for (size_t i = 0; i < specsPath.size(); ++i)
         {
         auto const& createdStepSpec = specsPath[i];
@@ -385,18 +384,15 @@ static bool HasSamePath(RelatedClassPath const& relatedClassPath, bvector<Relati
         bool hasSameRelationshipClass = includeStep.GetRelationship().GetClass().Is(specStepsRelationshipClass);
         bool hasSameDirection = includeStep.IsForwardRelationship() == (createdStepSpec->GetRelationDirection() == RequiredRelationDirection_Forward);
         if (!hasSameRelationshipClass || !hasSameDirection)
-            {
-            allStepsMatch = false;
-            break;
-            }
+            return false;
         }
-    return allStepsMatch;
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> FilterFlatSpecsByExclusiveIncludePaths(bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>>& flatSpecs,
+static void FilterFlatSpecsByExclusiveIncludePaths(bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>>& flatSpecs,
     std::shared_ptr<RelatedClassPathsList> const& exclusiveIncludePaths, ECSchemaHelper const& helper)
     {
     bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> filteredFlatSpecs;
@@ -413,7 +409,7 @@ static bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> FilterF
                 }
             }
         }
-    return filteredFlatSpecs;
+    flatSpecs = std::move(filteredFlatSpecs);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -431,7 +427,7 @@ bvector<std::unique_ptr<RelatedPropertySpecificationPaths>> ContentSpecification
 
     std::shared_ptr<RelatedClassPathsList> exclusiveIncludePaths = GetContext().GetExclusiveIncludePaths();
     if (exclusiveIncludePaths != nullptr)
-        flatSpecs = std::move(FilterFlatSpecsByExclusiveIncludePaths(flatSpecs, exclusiveIncludePaths, GetContext().GetSchemaHelper()));
+        FilterFlatSpecsByExclusiveIncludePaths(flatSpecs, exclusiveIncludePaths, GetContext().GetSchemaHelper());
 
     DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Got %" PRIu64 " flattened related property specs.", (uint64_t)flatSpecs.size()));
 
