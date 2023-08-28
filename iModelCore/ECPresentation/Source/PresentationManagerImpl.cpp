@@ -1456,7 +1456,7 @@ ContentProviderContextPtr RulesDrivenECPresentationManagerImpl::CreateContentPro
 
     // set up the provider context
     ContentProviderContextPtr context = ContentProviderContext::Create(*ruleset, key.GetPreferredDisplayType(), key.GetContentFlags(), key.GetInputNodeKeys(), nodesCache,
-        GetCategorySupplier(), std::move(variables), ecexpressionsCache, relatedPathsCache, *m_nodesFactory, GetLocalState());
+        GetCategorySupplier(), std::move(variables), ecexpressionsCache, relatedPathsCache, *m_nodesFactory, GetLocalState(), key.GetExclusiveIncludePaths());
     context->SetQueryContext(*m_connections, connection);
     context->SetPropertyFormattingContext(GetECPropertyFormatter(), key.GetUnitSystem());
     context->SetCancelationToken(cancelationToken);
@@ -1568,7 +1568,8 @@ ContentDescriptorCPtr RulesDrivenECPresentationManagerImpl::_GetContentDescripto
 
     Utf8CP preferredDisplayType = params.GetPreferredDisplayType().size() ? params.GetPreferredDisplayType().c_str() : ContentDisplayType::Undefined;
     INavNodeKeysContainerCPtr nodeKeys = params.GetInputKeys().GetAllNavNodeKeys();
-    ContentProviderKey key(params.GetConnection().GetId(), params.GetRulesetId(), preferredDisplayType, params.GetContentFlags(), params.GetUnitSystem(), *nodeKeys, params.GetSelectionInfo());
+    ContentProviderKey key(params.GetConnection().GetId(), params.GetRulesetId(), preferredDisplayType, params.GetContentFlags(), params.GetUnitSystem(), *nodeKeys,
+        params.GetSelectionInfo(), params.GetExclusiveIncludePaths());
     ContentProviderCPtr provider = GetContentProvider(params.GetConnection(), params.GetCancellationToken(), key, params.GetRulesetVariables());
     if (provider.IsNull())
         {
@@ -1594,7 +1595,7 @@ SpecificationContentProviderPtr RulesDrivenECPresentationManagerImpl::GetContent
     {
     ContentDescriptorCR descriptor = params.GetContentDescriptor();
     ContentProviderKey key(params.GetConnection().GetId(), descriptor.GetRuleset().GetRuleSetId(), descriptor.GetPreferredDisplayType(), descriptor.GetContentFlags(),
-        descriptor.GetUnitSystem(), descriptor.GetInputNodeKeys(), descriptor.GetSelectionInfo());
+        descriptor.GetUnitSystem(), descriptor.GetInputNodeKeys(), descriptor.GetSelectionInfo(), descriptor.GetExclusiveIncludePaths());
     return GetContentProvider(params.GetConnection(), params.GetCancellationToken(), key, descriptor.GetRulesetVariables());
     }
 

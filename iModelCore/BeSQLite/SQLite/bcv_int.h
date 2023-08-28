@@ -241,7 +241,7 @@ struct Container {
   const char *zLocalDir;          /* Local directory used by container */
 
   Manifest *pMan;                 /* Current container manifest */
-  int nClient;                    /* Current number of clients */
+  int nClient;                    /* Number of clients (incl. prefetch) */
   Container *pNext;               /* Next container on same VFS */
 
   int nBcv;
@@ -396,7 +396,9 @@ void bcvfsBlockidToText(const u8 *pBlk, int nBlk, char *aBuf);
 ManifestDb *bcvManifestDbidToDb(Manifest *p, i64 iDbId);
 void bcvfsLruAdd(BcvCommon *p, CacheEntry *pEntry);
 u8 *bcvDatabaseVtabData(
-    int*, BcvCommon*, const char*, const char*, const char*, u32, int*
+    int*, BcvCommon*, const char*, const char*, const char*, 
+    void(*xClientCount)(BcvCommon*,Container*,int,int*,int*),
+    u32, int*, int*
 );
 int bcvManifestUpdate(BcvCommon*, Container*, Manifest*, char**);
 void bcvExecPrintf(int *pRc, sqlite3 *db, const char *zFmt, ...);
@@ -532,6 +534,7 @@ typedef struct BcvPrefetchReply BcvPrefetchReply;
 struct BcvHelloMsg {
   const char *zContainer;
   const char *zDatabase;
+  int bPrefetch;
 };
 
 struct BcvHelloReply {
@@ -576,11 +579,13 @@ struct BcvVtabMsg {
   const char *zContainer;
   const char *zDatabase;
   u32 colUsed;
+  int iVersion;                   /* Vtab schema version requested */
 };
 
 struct BcvVtabReply {
   int nData;
   const u8 *aData;
+  int iVersion;                   /* Vtab schema version supplied */
 };
 
 struct BcvDetachMsg {
@@ -662,7 +667,7 @@ int bcvSendMsg(BCV_SOCKET_TYPE fd, BcvMessage *pMsg);
 #define BCV_MESSAGE_REPLY          0x03      /* d->c   BcvReply */
 #define BCV_MESSAGE_ATTACH         0x04      /* d->c   BcvAttachMsg */
 #define BCV_MESSAGE_VTAB           0x05      /* c->d   BcvVtabMsg */
-#define BCV_MESSAGE_VTAB_REPLY     0x06      /* d->c   BcvVtabMsg */
+#define BCV_MESSAGE_VTAB_REPLY     0x06      /* d->c   BcvVtabReply */
 #define BCV_MESSAGE_DETACH         0x07      /* c->d   BcvDetachMsg */
 #define BCV_MESSAGE_READ           0x08      /* c->d   BcvReadMsg */
 #define BCV_MESSAGE_READ_REPLY     0x09      /* d->c   BcvReadReply */

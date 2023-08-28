@@ -3039,33 +3039,49 @@ public:
 //! FeatureTable associated with the primitive.
 // @bsistruct
 //=======================================================================================
-struct Feature
-{
+struct Feature {
 private:
-    DgnElementId        m_elementId;
-    DgnSubCategoryId    m_subCategoryId;
-    DgnGeometryClass    m_class = DgnGeometryClass::Primary;
+  DgnModelId          m_modelId;
+  DgnElementId        m_elementId;
+  DgnSubCategoryId    m_subCategoryId;
+  DgnGeometryClass    m_class = DgnGeometryClass::Primary;
 public:
-    Feature() : Feature(DgnElementId(), DgnSubCategoryId(), DgnGeometryClass::Primary) { }
-    Feature(DgnElementId elementId, DgnSubCategoryId subCatId, DgnGeometryClass geomClass) : m_elementId(elementId), m_subCategoryId(subCatId), m_class(geomClass) { }
+  Feature() : Feature(DgnModelId(), DgnElementId(), DgnSubCategoryId(), DgnGeometryClass::Primary) { }
+  Feature(DgnModelId modelId, DgnElementId elementId, DgnSubCategoryId subCatId, DgnGeometryClass geomClass)
+    : m_modelId(modelId), m_elementId(elementId), m_subCategoryId(subCatId), m_class(geomClass) { }
 
-    DgnElementId GetElementId() const { return m_elementId; }
-    DgnSubCategoryId GetSubCategoryId() const { return m_subCategoryId; }
-    DgnGeometryClass GetClass() const { return m_class; }
+  DgnModelId GetModelId() const { return m_modelId; }
+  DgnElementId GetElementId() const { return m_elementId; }
+  DgnSubCategoryId GetSubCategoryId() const { return m_subCategoryId; }
+  DgnGeometryClass GetClass() const { return m_class; }
 
-    bool operator!=(FeatureCR rhs) const { return !(*this == rhs); }
-    bool operator==(FeatureCR rhs) const
-        {
-        if (IsUndefined() && rhs.IsUndefined())
-            return true;
-        else
-            return GetElementId() == rhs.GetElementId() && GetSubCategoryId() == rhs.GetSubCategoryId() && GetClass() == rhs.GetClass();
-        }
+  bool operator!=(FeatureCR rhs) const { return !(*this == rhs); }
+  bool operator==(FeatureCR rhs) const {
+    if (IsUndefined() && rhs.IsUndefined())
+      return true;
+    else
+      return GetElementId() == rhs.GetElementId() && GetSubCategoryId() == rhs.GetSubCategoryId()
+        && GetClass() == rhs.GetClass() && GetModelId() == rhs.GetModelId();
+  }
 
-    DGNPLATFORM_EXPORT bool operator<(FeatureCR rhs) const;
+  bool operator<(FeatureCR rhs) const {
+    // IMPORTANT: Features must sort by model Id first for FeatureTable
+    if (m_modelId != rhs.m_modelId)
+      return m_modelId < rhs.m_modelId;
+    else if (m_elementId != rhs.m_elementId)
+      return m_elementId < rhs.m_elementId;
+    else if (m_subCategoryId != rhs.m_subCategoryId)
+      return m_subCategoryId < rhs.m_subCategoryId;
+    else
+      return m_class < rhs.m_class;
+  }
 
-    bool IsDefined() const { return m_elementId.IsValid() || m_subCategoryId.IsValid() || DgnGeometryClass::Primary != m_class; }
-    bool IsUndefined() const { return !IsDefined(); }
+
+  bool IsDefined() const {
+    return m_modelId.IsValid() || m_elementId.IsValid() || m_subCategoryId.IsValid() || DgnGeometryClass::Primary != m_class;
+  }
+
+  bool IsUndefined() const { return !IsDefined(); }
 };
 
 //=======================================================================================
@@ -3099,32 +3115,37 @@ public:
 //=======================================================================================
 struct FeatureTable
 {
+    enum struct Type : uint8_t {
+        // All features in the table must belong to the same model. Attempting to add features from multiple models will throw std::runtime_error
+        SingleModel,
+        // The table may contain features belonging to more than one model. The features must
+        // To avoid potentially expensive and error-prone remapping of indices after
+        // the table is populated, features must be inserted in order such that each new feature's model Id
+        // is equal to or greater than any previously-inserted feature's model Id. No ordering
+        // is imposed at insertion time based on element Id, subcategory Id, or geometry class.
+        // If this constraint is violated, std::runtime_error is thrown.
+        MultiModel,
+    };
+
     typedef bmap<Feature, uint32_t> Map;
 private:
     Map         m_map;
-    DgnModelId  m_modelId;
+    bvector<uint32_t> m_lastFeatureIndexPerModel;
     uint32_t    m_maxFeatures;
+    Type        m_type;
+
+    friend struct PackedFeatureTable;
+    bpair<Map::iterator, uint32_t> Insert(Feature feature, uint32_t index) { return m_map.Insert(feature, index); }
 public:
-    explicit FeatureTable(uint32_t maxFeatures) : FeatureTable(DgnModelId(), maxFeatures) { }
-    FeatureTable(DgnModelId modelId, uint32_t maxFeatures) : m_modelId(modelId), m_maxFeatures(maxFeatures) { }
-    FeatureTable(FeatureTable&& src) : m_map(std::move(src.m_map)), m_modelId(src.m_modelId), m_maxFeatures(src.m_maxFeatures) { }
-    FeatureTable(FeatureTableCR src) : m_map(src.m_map), m_modelId(src.m_modelId), m_maxFeatures(src.m_maxFeatures) { }
-    FeatureTable& operator=(FeatureTable&& src) { m_map = std::move(src.m_map); m_modelId = src.m_modelId; m_maxFeatures = src.m_maxFeatures; return *this; }
-    FeatureTable& operator=(FeatureTableCR src) { *this = FeatureTable(src); return *this; }
+    explicit FeatureTable(Type type, uint32_t maxFeatures = 0xffffff) : m_maxFeatures(maxFeatures), m_type(type) { }
+
+    FeatureTable(FeatureTable&& src) = default;
+    FeatureTable(FeatureTableCR src) = default;
+    FeatureTable& operator=(FeatureTable&& src) = default;
+    FeatureTable& operator=(FeatureTableCR src) = default;
 
     //! This method potentially allocates a new index, if the specified Feature does not yet exist in the lookup table.
-    uint32_t GetIndex(FeatureCR feature)
-        {
-        BeAssert(!IsFull());
-        uint32_t index = 0;
-        if (!FindIndex(index, feature) && !IsFull())
-            {
-            index = GetNumIndices();
-            m_map[feature] = index;
-            }
-
-        return index;
-        }
+    DGNPLATFORM_EXPORT uint32_t GetIndex(FeatureCR feature);
 
     //! Looks up the index of an existing Feature. Returns false if the Feature does not exist in the lookup table.
     bool FindIndex(uint32_t& index, FeatureCR feature) const
@@ -3151,11 +3172,21 @@ public:
         return false;
         }
 
-    DgnModelId GetModelId() const { return m_modelId; }
+    Feature GetFeature(uint32_t index) const {
+      Feature feature;
+      auto found = FindFeature(feature, index);
+      if (!found)
+        throw std::runtime_error("Feature not found");
+
+      return feature;
+    }
+
+    Type GetType() const { return m_type; }
     uint32_t GetMaxFeatures() const { return m_maxFeatures; }
     bool IsUniform() const { return 1 == size(); }
     bool IsFull() const { BeAssert(size() <= GetMaxFeatures()); return size() >= GetMaxFeatures(); }
     uint32_t GetNumIndices() const { return static_cast<uint32_t>(size()); }
+    uint32_t GetNumModels() const { return static_cast<uint32_t>(m_lastFeatureIndexPerModel.size()); }
     bool AnyDefined() const { return size() > 1 || (IsUniform() && begin()->first.IsDefined()); }
 
     typedef Map::const_iterator const_iterator;
@@ -3164,12 +3195,10 @@ public:
     const_iterator end() const { return m_map.end(); }
     size_t size() const { return m_map.size(); }
     bool empty() const { return m_map.empty(); }
-    void clear() { m_map.clear(); }
+    void clear() { m_map.clear(); m_lastFeatureIndexPerModel.clear(); }
 
-    // Used by tile reader...
-    void SetMaxFeatures(uint32_t maxFeatures) { m_maxFeatures = maxFeatures; }
-    bpair<Map::iterator, uint32_t> Insert(Feature feature, uint32_t index) { return m_map.Insert(feature, index); }
-    void SetModelId(DgnModelId modelId) { m_modelId = modelId; }
+    // For tests
+    bvector<uint32_t> const& LastFeatureIndexPerModel() const { return m_lastFeatureIndexPerModel; }
 
     DGNPLATFORM_EXPORT PackedFeatureTable Pack() const;
 };
@@ -3182,13 +3211,13 @@ struct PackedFeatureTable
 {
     friend struct FeatureTable;
 private:
-    DgnModelId m_modelId;
     ByteStream m_bytes;
     uint32_t m_maxFeatures;
     uint32_t m_numFeatures;
+    uint32_t m_numSubCategories;
 
-    PackedFeatureTable(ByteStream&& bytes, uint32_t numFeatures, DgnModelId modelId, uint32_t maxFeatures) : m_modelId(modelId),
-        m_bytes(std::move(bytes)), m_maxFeatures(maxFeatures), m_numFeatures(numFeatures) { }
+    PackedFeatureTable(ByteStream&& bytes, uint32_t numFeatures, uint32_t maxFeatures, uint32_t numSubCategories)
+        : m_bytes(std::move(bytes)), m_maxFeatures(maxFeatures), m_numFeatures(numFeatures), m_numSubCategories(numSubCategories) { }
 
     uint64_t ReadUInt64(size_t byteOffset) const
         {
@@ -3217,14 +3246,6 @@ private:
         size_t byteOffset = index * PackedFeature::PackedSize() + sizeof(uint64_t);
         return *reinterpret_cast<uint32_t const*>(m_bytes.data() + byteOffset);
         }
-public:
-    PackedFeatureTable(PackedFeatureTable&& src) : m_modelId(src.m_modelId), m_bytes(std::move(src.m_bytes)), m_maxFeatures(src.m_maxFeatures), m_numFeatures(src.m_numFeatures) { }
-    PackedFeatureTable(PackedFeatureTableCR) = delete;
-
-    uint32_t GetNumFeatures() const { return m_numFeatures; }
-    uint32_t GetMaxFeatures() const { return m_maxFeatures; }
-    DgnModelId GetModelId() const { return m_modelId; }
-    ByteStreamCR GetBytes() const { return m_bytes; }
 
     PackedFeature GetPackedFeature(uint32_t index) const
         {
@@ -3232,13 +3253,22 @@ public:
         return PackedFeature(GetElementId(index).GetValueUnchecked(), GetSubCategoryIndexAndClass(index));
         }
 
-    Feature GetFeature(uint32_t index) const
+    Feature GetFeature(uint32_t index, DgnModelId modelId) const
         {
         auto packed = GetPackedFeature(index);
-        return Feature(packed.GetElementId(), GetSubCategoryId(packed.GetSubCategoryIndex()), packed.GetClass());
+        return Feature(modelId, packed.GetElementId(), GetSubCategoryId(packed.GetSubCategoryIndex()), packed.GetClass());
         }
+public:
+    PackedFeatureTable(PackedFeatureTable&& src) = default;
+    PackedFeatureTable(PackedFeatureTableCR) = delete;
 
-    DGNPLATFORM_EXPORT FeatureTable Unpack() const;
+    uint32_t GetNumFeatures() const { return m_numFeatures; }
+    uint32_t GetMaxFeatures() const { return m_maxFeatures; }
+    uint32_t GetNumSubCategories() const { return m_numSubCategories; }
+    ByteStreamCR GetBytes() const { return m_bytes; }
+
+    // This is only used for tests.
+    DGNPLATFORM_EXPORT FeatureTable Unpack(DgnModelId singleModelId) const;
 };
 
 //=======================================================================================
@@ -3322,7 +3352,7 @@ struct System
     virtual GraphicPtr _CreateBranch(GraphicBranch&& branch, DgnDbR dgndb, TransformCR transform, ClipVectorCP clips) const = 0;
 
     //! Return the maximum number of Features allowed within a Batch.
-    virtual uint32_t _GetMaxFeaturesPerBatch() const = 0;
+    virtual uint32_t _GetMaxFeaturesPerBatch() const { return 0xffffff; }
 
     //! Create a Graphic consisting of batched Features.
     virtual GraphicPtr _CreateBatch(GraphicR graphic, FeatureTable&& features, DRange3dCR range) const = 0;

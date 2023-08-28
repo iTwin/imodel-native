@@ -60,6 +60,10 @@ export namespace NativeCloudSqlite {
     readonly transactions: boolean;
     /** the state of this database. Indicates whether the database is new or deleted since last upload */
     readonly state: "" | "copied" | "deleted";
+    /** current number of clients that have this database open. */
+    readonly nClient: number;
+    /** current number of ongoing prefetches on this database. */
+    readonly nPrefetch: number;
   }
 
   /** Returned from 'CloudContainer.queryHttpLog' describing a row in the bcv_http_log table. */
