@@ -78,6 +78,7 @@ private:
     ContentProviderContextPtr m_context;
     PageOptions m_pageOptions;
     std::unique_ptr<bvector<ContentSetItemPtr>> m_records;
+    mutable ContentDescriptorCPtr m_descriptor;
     mutable std::unique_ptr<size_t> m_fullContentSetSize;
     mutable bmap<ContentDescriptor::NestedContentField const*, NestedContentProviderPtr> m_nestedContentProviders;
     mutable BeMutex m_mutex;
@@ -96,7 +97,7 @@ protected:
     void InvalidateRecords();
     void InvalidateFullContentSetSize();
     void InvalidateNestedContentProviders();
-    virtual ContentDescriptorCP _GetContentDescriptor() const = 0;
+    virtual ContentDescriptorCPtr _CreateContentDescriptor() const = 0;
     virtual QuerySet const& _GetContentQuerySet() const = 0;
     virtual QuerySet _GetCountQuerySet() const = 0;
     virtual ContentProviderPtr _Clone() const = 0;
@@ -111,7 +112,7 @@ public:
     ContentProviderContextR GetContextR() const {return *m_context;}
     ContentProviderContextCR GetContext() const {return GetContextR();}
 
-    ContentDescriptorCP GetContentDescriptor() const {return _GetContentDescriptor();}
+    ECPRESENTATION_EXPORT ContentDescriptorCP GetContentDescriptor() const;
 
     PageOptionsCR GetPageOptions() const {return m_pageOptions;}
     ECPRESENTATION_EXPORT void SetPageOptions(PageOptions options);
@@ -119,7 +120,9 @@ public:
     ECPRESENTATION_EXPORT bool GetContentSetItem(ContentSetItemPtr& item, size_t index) const;
     ECPRESENTATION_EXPORT size_t GetContentSetSize() const;
     ECPRESENTATION_EXPORT size_t GetFullContentSetSize() const;
-
+    
+    ECPRESENTATION_EXPORT void SetContentDescriptor(ContentDescriptorCR descriptor);
+    void InvalidateDescriptor() {m_descriptor = nullptr;}
     void InvalidateContent() {_OnDescriptorChanged();}
 };
 
@@ -131,7 +134,6 @@ struct SpecificationContentProvider : ContentProvider
 {
 private:
     ContentRuleInstanceKeysContainer m_rules;
-    mutable ContentDescriptorCPtr m_descriptor;
     mutable std::unique_ptr<QuerySet> m_queries;
     mutable bmap<ContentRuleCP, IParsedInput const*> m_inputCache;
     mutable bmap<Utf8String, bvector<DisplayValueGroupCPtr>> m_distinctValuesCache;
@@ -140,7 +142,7 @@ private:
     ECPRESENTATION_EXPORT SpecificationContentProvider(SpecificationContentProviderCR);
     bvector<DisplayValueGroupCPtr> CreateDistinctValues(ContentDescriptor::Field const&) const;
 protected:
-    ContentDescriptorCP _GetContentDescriptor() const override;
+    ContentDescriptorCPtr _CreateContentDescriptor() const override;
     QuerySet const& _GetContentQuerySet() const override;
     QuerySet _GetCountQuerySet() const override;
     ContentProviderPtr _Clone() const override {return new SpecificationContentProvider(*this);}
@@ -155,9 +157,6 @@ public:
         }
     ~SpecificationContentProvider();
     SpecificationContentProviderPtr Clone() const {BeMutexHolder lock(GetMutex()); return new SpecificationContentProvider(*this);}
-    ECPRESENTATION_EXPORT void SetContentDescriptor(ContentDescriptorCR descriptor);
-    void InvalidateDescriptor() {m_descriptor = nullptr;}
-
     ECPRESENTATION_EXPORT IDataSourceCPtr<DisplayValueGroupCPtr> GetDistinctValues(ContentDescriptor::Field const&) const;
 };
 
@@ -177,7 +176,7 @@ private:
     ECPRESENTATION_EXPORT NestedContentProvider(ContentProviderContextR, ContentDescriptor::NestedContentField const&);
     ECPRESENTATION_EXPORT NestedContentProvider(NestedContentProviderCR);
 protected:
-    ContentDescriptorCP _GetContentDescriptor() const override;
+    ContentDescriptorCPtr _CreateContentDescriptor() const override;
     QuerySet const& _GetContentQuerySet() const override;
     QuerySet _GetCountQuerySet() const override;
     ContentProviderPtr _Clone() const override {return new NestedContentProvider(*this);}

@@ -648,6 +648,23 @@ bool MultiContentQueryBuilder::Accept(ContentInstancesOfSpecificClassesSpecifica
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+bool MultiContentQueryBuilder::Accept(ContentDescriptor::NestedContentField const& field)
+    {
+    auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Create queries for field %s", field.GetUniqueName().c_str()));
+
+    QuerySet querySet = m_builder->CreateQuerySet(field);
+    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Created %" PRIu64 " queries.", (uint64_t)querySet.GetQueries().size()));
+
+    if (querySet.GetQueries().empty())
+        return false;
+
+    for (auto const& query : querySet.GetQueries())
+        QueryBuilderHelpers::AddToUnionSet(m_unions, *query);
+    return true;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 QuerySet const& MultiContentQueryBuilder::GetQuerySet()
     {
     if (!m_adjustmentsApplied)

@@ -439,7 +439,6 @@ void AnalyzeSegment (DPoint3dCR xyz0, DPoint3dCR xyz1)
     m_xyz0.y = DoubleOps::Clamp(xyz0.y, vKnotRange.low, vKnotRange.high);
     m_xyz1.x = DoubleOps::Clamp(xyz1.x, uKnotRange.low, uKnotRange.high);
     m_xyz1.y = DoubleOps::Clamp(xyz1.y, vKnotRange.low, vKnotRange.high);
-    m_xyz0.z = m_xyz1.z = 0.0;  // these are 2D curves, poles in the uv-knot domain
 
     m_segmentFractions.clear ();
     m_segmentFractions.push_back (0.0);

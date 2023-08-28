@@ -1260,15 +1260,16 @@ PolyfaceHeaderPtr &healedPolyface,
 bool simplifySlivers = false
 );
 
+//! Create a convex clip set from a convex mesh.
 //!<ul>
 //!<li> Create a plane for each facet.
 //!<li> Assemble the planes as a single clip plane set.
-//!<li> If the facets are closed by edge pairing, use the volume to control plane orientation.
+//!<li> If the facets are closed by edge pairing, use the sign of the computed volume to point the plane normals inward.
 //!<li> If the facets are not closed, the facet orientation determines plane orientation.
-//!<li> The implication of this is that if the facets are a convex volume the clip plane set is convex.
+//!<li> The implication of this is that if the facets are a convex volume, the returned clip plane set is convex.
 //!</ul>
 //! @return the computed volume (if closed), 0 if not closed.
-GEOMDLLIMPEXP double BuildConvexClipPlaneSet (ConvexClipPlaneSetR planes);
+GEOMDLLIMPEXP double BuildConvexClipPlaneSet (ConvexClipPlaneSetR planes) const;
 
 //! @description Compute (many) integrals of volume properties, using directional
 //!    formulas that will give correct results (and confidence indicators) when "some" facets are missing
@@ -3162,9 +3163,10 @@ GEOMDLLIMPEXP bool LoadCyclicVertexData(FacetLocationDetailR detail, size_t inde
 //! add coordinate data from a vertex described by a facet location detail.
 GEOMDLLIMPEXP bool AddCoordinatesFromFacetLocationDetail(FacetLocationDetailCR detail);
 
-//! add coordinate data from a vertex at an index in another visitor.
-//! Only point, param, normal, colorTable, and color data are copied if available
-//! (visible and indices are not copied)
+//! Add coordinate data from a vertex at an index in another visitor.
+//! Only point, param, normal, and color data are copied if available.
+//! Visible array is appended with true.
+//! Indices are not copied.
 //! Return false if index is out of range for the source visitor.  Array sizes may be irregular.
 GEOMDLLIMPEXP bool AddCoordinatesFromVisitor(PolyfaceVisitorCR source, size_t sourceIndex);
 //! Find a uv location within the facet.  Compute all available data there.

@@ -3,11 +3,12 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "FileOps.h"
+#include <GeomSerialization/GeomSerializationApi.h>
 #include <Bentley/BeTest.h>
+#include <Bentley/BeFile.h>
 
 bool GTestFileOps::ReadAsString (BeFileName &filename, Utf8String &string)
     {
-
     string.clear ();
     BeFile file;
     if (BeFileStatus::Success == file.Open (filename, BeFileAccess::Read))
@@ -21,6 +22,28 @@ bool GTestFileOps::ReadAsString (BeFileName &filename, Utf8String &string)
             }
         }
     return false;
+    }
+
+bool GTestFileOps::ReadAsString (char const *filenameChar, Utf8String &string)
+    {
+    Utf8String filename (filenameChar);
+    BeFileName beFilename (filename);
+    return ReadAsString(beFilename, string);
+    }
+
+bool GTestFileOps::JsonFileToGeometry (BeFileName &filename, bvector<IGeometryPtr> &geometry)
+    {
+    geometry.clear ();
+    Utf8String string;
+    return ReadAsString (filename, string)
+        && BentleyGeometryJson::TryJsonStringToGeometry (string, geometry);
+    }
+
+bool GTestFileOps::JsonFileToGeometry (char const *filenameChar, bvector<IGeometryPtr> &geometry)
+    {
+    Utf8String filename (filenameChar);
+    BeFileName beFilename (filename);
+    return JsonFileToGeometry(beFilename, geometry);
     }
 
 bool GTestFileOps::WriteToFile(Utf8String &string, WCharCP directoryName, WCharCP nameB, WCharCP nameC, WCharCP extension)

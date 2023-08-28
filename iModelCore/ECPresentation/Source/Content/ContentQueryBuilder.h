@@ -155,6 +155,7 @@ public:
     ECPRESENTATION_EXPORT bool Accept(SelectedNodeInstancesSpecificationCR, IParsedInput const&);
     ECPRESENTATION_EXPORT bool Accept(ContentRelatedInstancesSpecificationCR, IParsedInput const&);
     ECPRESENTATION_EXPORT bool Accept(ContentInstancesOfSpecificClassesSpecificationCR);
+    ECPRESENTATION_EXPORT bool Accept(ContentDescriptor::NestedContentField const&);
     ECPRESENTATION_EXPORT QuerySet const& GetQuerySet();
 };
 

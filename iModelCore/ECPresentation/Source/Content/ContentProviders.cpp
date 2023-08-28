@@ -99,7 +99,6 @@ SpecificationContentProvider::SpecificationContentProvider(ContentProviderContex
 SpecificationContentProvider::SpecificationContentProvider(SpecificationContentProviderCR other)
     : ContentProvider(other), m_rules(other.m_rules)
     {
-    m_descriptor = other.m_descriptor;
     if (other.m_queries)
         m_queries = std::make_unique<QuerySet>(*other.m_queries);
     }
@@ -605,6 +604,20 @@ void ContentProvider::LoadNestedContent(ContentSetItemR item) const
     LoadNestedContent(item, descriptor->GetAllFields());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ContentDescriptorCP ContentProvider::GetContentDescriptor() const
+    {
+    BeMutexHolder lock(GetMutex());
+    if (m_descriptor.IsNull())
+        {
+        auto scope = Diagnostics::Scope::Create("Create content descriptor");
+        m_descriptor = _CreateContentDescriptor();
+        }
+    return m_descriptor.get();
+    }
+
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
@@ -694,6 +707,16 @@ public:
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+--*/
+    void Visit(ContentDescriptor::NestedContentField const& field)
+        {
+        ContentDescriptorPtr fieldDescriptor = m_descriptorBuilder->CreateDescriptor(field);
+        if (fieldDescriptor.IsValid())
+            QueryBuilderHelpers::Aggregate(m_descriptor, *fieldDescriptor);
+        }
+
+    /*-----------------------------------------------------------------------------**//**
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+--*/
     ContentDescriptorCPtr GetDescriptor() {return m_descriptor;}
 };
 
@@ -706,21 +729,27 @@ private:
     std::unique_ptr<MultiContentQueryBuilder> m_queryBuilder;
 
 private:
-    static void CollectMatchingNavigationPropertyClassAliases(bset<Utf8String>& aliases, bvector<RelatedClass> const& allClasses, bvector<ContentDescriptor::Property> const& properties)
+    static void CollectNavigationPropertyClassAliases(bset<Utf8String>& aliases, bvector<ContentDescriptor::Property> const& properties)
         {
-        for (RelatedClassCR rc : allClasses)
+        for (auto const& prop : properties)
             {
-            if (ContainerHelpers::Contains(properties, [&rc](auto const& prop){return prop.GetProperty().GetIsNavigation() && prop.GetPropertyClass().Is(&rc.GetTargetClass().GetClass());}))
-                aliases.insert(rc.GetTargetClass().GetAlias());
+            if (prop.GetProperty().GetIsNavigation())
+                aliases.insert(prop.GetPrefix());
             }
         }
     static void CollectRelatedContentFieldClassAliases(bset<Utf8String>& aliases, ContentDescriptor::RelatedContentField const& field)
         {
         QueryBuilderHelpers::CollectRelatedClassPathAliases(aliases, field.GetPathFromSelectToContentClass());
-        for (auto const& nestedField : field.GetFields())
+        CollectFieldAliases(aliases, field.GetFields());
+        }
+    static void CollectFieldAliases(bset<Utf8String>& aliases, bvector<ContentDescriptor::Field*> const& fields)
+        {
+        for (auto const& field : fields)
             {
-            if (nestedField->IsNestedContentField() && nestedField->AsNestedContentField()->AsRelatedContentField())
-                CollectRelatedContentFieldClassAliases(aliases, *nestedField->AsNestedContentField()->AsRelatedContentField());
+            if (field->IsPropertiesField())
+                CollectNavigationPropertyClassAliases(aliases, field->AsPropertiesField()->GetProperties());
+            else if (field->IsNestedContentField() && field->AsNestedContentField()->AsRelatedContentField())
+                CollectRelatedContentFieldClassAliases(aliases, *field->AsNestedContentField()->AsRelatedContentField());
             }
         }
     static bool AnySelectClassExceedsRelatedClassesThreshold(bvector<SelectClassInfo> const& selectClasses, bvector<ContentDescriptor::Field*> const& fields)
@@ -730,15 +759,7 @@ private:
             bset<Utf8String> uniqueAliases;
             QueryBuilderHelpers::CollectRelatedClassPathAliases(uniqueAliases, selectClass.GetPathFromInputToSelectClass());
             QueryBuilderHelpers::CollectRelatedClassPathAliases(uniqueAliases, selectClass.GetRelatedInstancePaths());
-
-            for (auto const& field : fields)
-                {
-                if (field->IsPropertiesField())
-                    CollectMatchingNavigationPropertyClassAliases(uniqueAliases, selectClass.GetNavigationPropertyClasses(), field->AsPropertiesField()->GetProperties());
-                else if (field->IsNestedContentField() && field->AsNestedContentField()->AsRelatedContentField())
-                    CollectRelatedContentFieldClassAliases(uniqueAliases, *field->AsNestedContentField()->AsRelatedContentField());
-                }
-
+            CollectFieldAliases(uniqueAliases, fields);
             if (uniqueAliases.size() > RELATED_CLASS_PATH_ALIASES_THRESHOLD)
                 return true;
             }
@@ -780,16 +801,29 @@ public:
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+--*/
-    QueryBuilder(ContentProviderContextCR context, ContentDescriptorCR descriptor, bool forceDirectReadOfAllProperties = false, bool isCountQuery = false)
-        : ContentSpecificationsVisitor()
+    QueryBuilder(
+        ContentProviderContextCR context,
+        ContentDescriptorCR descriptor,
+        bool forceDirectReadOfAllProperties = false,
+        bool isCountQuery = false,
+        bool isCompositePropertyValueQuery = false
+    ) : ContentSpecificationsVisitor()
         {
         IECPropertyFormatter const* formatter = context.IsPropertyFormattingContext() ? &context.GetECPropertyFormatter() : nullptr;
         bool exceedsFieldsOrRelatedClassesLimit = descriptor.GetTotalFieldsCount() > 1000 || AnySelectClassExceedsRelatedClassesThreshold(descriptor.GetSelectClasses(), descriptor.GetAllFields());
         bool canDirectlyReadXToManyRelatedContent = (forceDirectReadOfAllProperties || !exceedsFieldsOrRelatedClassesLimit) && !isCountQuery;
         ContentQueryBuilderParameters params(context.GetSchemaHelper(), context.GetConnections(), context.GetNodesLocater(), context.GetConnection(), &context.GetCancelationToken(),
             context.GetRulesPreprocessor(), context.GetRuleset(), context.GetRulesetVariables(), context.GetECExpressionsCache(), &context.GetUsedVariablesListener(),
-            context.GetCategorySupplier(), true, !canDirectlyReadXToManyRelatedContent, formatter, context.GetLocalState());
+            context.GetCategorySupplier(), !isCompositePropertyValueQuery, !canDirectlyReadXToManyRelatedContent, formatter, context.GetLocalState());
         m_queryBuilder = std::make_unique<MultiContentQueryBuilder>(params, descriptor);
+        }
+
+    /*-----------------------------------------------------------------------------**//**
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+--*/
+    void Visit(ContentDescriptor::NestedContentField const& field)
+        {
+        m_queryBuilder->Accept(field);
         }
 
     /*-----------------------------------------------------------------------------**//**
@@ -812,6 +846,7 @@ ContentProvider::ContentProvider(ContentProviderCR other)
     : m_pageOptions(other.m_pageOptions)
     {
     m_context = ContentProviderContext::Create(*other.m_context);
+    m_descriptor = other.m_descriptor;
     if (other.m_fullContentSetSize)
         m_fullContentSetSize = std::make_unique<size_t>(*other.m_fullContentSetSize);
     }
@@ -895,17 +930,11 @@ static void VisitRuleSpecifications(ContentSpecificationsVisitor& visitor, bmap<
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentDescriptorCP SpecificationContentProvider::_GetContentDescriptor() const
+ContentDescriptorCPtr SpecificationContentProvider::_CreateContentDescriptor() const
     {
-    BeMutexHolder lock(GetMutex());
-    if (m_descriptor.IsNull())
-        {
-        auto scope = Diagnostics::Scope::Create("Create content descriptor");
-        DescriptorBuilder builder(GetContext());
-        VisitRuleSpecifications(builder, m_inputCache, GetContext(), m_rules);
-        m_descriptor = builder.GetDescriptor();
-        }
-    return m_descriptor.get();
+    DescriptorBuilder builder(GetContext());
+    VisitRuleSpecifications(builder, m_inputCache, GetContext(), m_rules);
+    return builder.GetDescriptor();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -973,7 +1002,7 @@ QuerySet SpecificationContentProvider::_GetCountQuerySet() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SpecificationContentProvider::SetContentDescriptor(ContentDescriptorCR descriptor)
+void ContentProvider::SetContentDescriptor(ContentDescriptorCR descriptor)
     {
     BeMutexHolder lock(GetMutex());
     auto scope = Diagnostics::Scope::Create("Set content descriptor");
@@ -1324,11 +1353,11 @@ void NestedContentProvider::_OnDescriptorChanged()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentDescriptorCP NestedContentProvider::_GetContentDescriptor() const
+ContentDescriptorCPtr NestedContentProvider::_CreateContentDescriptor() const
     {
-    auto const& querySet = _GetContentQuerySet();
-    auto const& contract = ContentQueryContractsFilter(querySet).GetContract();
-    return contract ? &contract->GetDescriptor() : nullptr;
+    DescriptorBuilder builder(GetContext());
+    builder.Visit(m_field);
+    return builder.GetDescriptor();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1340,12 +1369,9 @@ QuerySet const& NestedContentProvider::_GetContentQuerySet() const
     auto scope = Diagnostics::Scope::Create("Create content queries");
     if (m_unfilteredQueries == nullptr)
         {
-        IECPropertyFormatter const* formatter = GetContext().IsPropertyFormattingContext() ? &GetContext().GetECPropertyFormatter() : nullptr;
-        ContentQueryBuilderParameters params(GetContext().GetSchemaHelper(), GetContext().GetConnections(), GetContext().GetNodesLocater(), GetContext().GetConnection(), &GetContext().GetCancelationToken(),
-            GetContext().GetRulesPreprocessor(), GetContext().GetRuleset(), GetContext().GetRulesetVariables(), GetContext().GetECExpressionsCache(), &GetContext().GetUsedVariablesListener(),
-            GetContext().GetCategorySupplier(), false, false, formatter, GetContext().GetLocalState());
-        ContentQueryBuilder queryBuilder(params);
-        m_unfilteredQueries = std::make_unique<QuerySet>(queryBuilder.CreateQuerySet(m_field));
+        QueryBuilder queryBuilder(GetContext(), *GetContentDescriptor(), false, false, m_field.AsCompositeContentField());
+        queryBuilder.Visit(m_field);
+        m_unfilteredQueries = std::make_unique<QuerySet>(queryBuilder.GetQuerySet());
         DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Created %" PRIu64 " unfiltered queries", (uint64_t)m_unfilteredQueries->GetQueries().size()));
         }
     if (m_queries == nullptr)
