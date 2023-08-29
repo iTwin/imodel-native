@@ -610,13 +610,15 @@ void MTGGraph::CollectConnectedComponents (bvector <bvector <MTGNodeId> > &compo
     DropMask (visitMask);
     }
 
-size_t MTGGraph::CountFaceLoops ()
+size_t MTGGraph::CountFaceLoops(MTGMask ignoreMask)
     {
     MTGMask visitMask = GrabMask ();
     ClearMask (visitMask);
     size_t n = 0;
     MTGARRAY_SET_LOOP (currNodeId, this)
         {
+        if (ignoreMask && GetMaskAt(currNodeId, ignoreMask))
+            continue;
         if (!GetMaskAt (currNodeId, visitMask))
             {
             n++;
