@@ -8,7 +8,7 @@ This document including important changes to syntax or file format.
 | ECSQL   | `1.2.4.0` |
 
 ## `8/28/2023`: Add support for ImportRequiresVersion and UseRequiresVersion custom attributes
-* 2 custom attributes were added to the ECDbMap schema, schema version incremented to 02.00.02
+* Two custom attributes were added to the ECDbMap schema, the schema version is incremented to `02.00.02`
     * They indicate whether the import process of a schema with the CA or anything using a CA requires a minimum ECDb version
 * ECDb profile version updated to `4.0.0.3` -> `4.0.0.4`.
 
