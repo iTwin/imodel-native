@@ -724,3 +724,165 @@ TEST_F (TransactionManagerTests, MultiTxnOperation)
     EXPECT_TRUE (m_db->Models().GetModel(model2->GetModelId()).IsValid());
     EXPECT_TRUE (m_db->Models().GetModel(model3->GetModelId()).IsValid());
     }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (TransactionManagerTests, ForEachLocalChange) {
+    SetupSeedProject(BeSQLite::Db::OpenMode::ReadWrite, true /*=needBriefcase*/);
+    auto& txns = m_db->Txns();
+    struct Change {
+        ECInstanceKey instanceKey;
+        DbOpcode changeType;
+        Utf8String className;
+    };
+
+    auto getChanges = [&](bvector<Utf8String> const& rootClassFilter, bool includeInMemoryChanges) {
+        bvector<Change> changes;
+        txns.ForEachLocalChange(
+            [&](ECInstanceKey const& key, DbOpcode changeType) {
+                Change change;
+                change.instanceKey = key;
+                change.changeType = changeType;
+                change.className = m_db->Schemas().GetClass(key.GetClassId())->GetFullName();
+                changes.push_back(change);
+            }, rootClassFilter, includeInMemoryChanges);
+        return changes;
+    };
+
+    PhysicalModelPtr model1 = DgnDbTestUtils::InsertPhysicalModel(*m_db, "model1");
+    if ("no pending txn and not from memory") {
+        auto changeList = getChanges({"Bis.Model"}, /* includeInMemoryChanges = */ false);
+        EXPECT_EQ(changeList.size(), 0);
+    }
+
+    if ("model changes including one in memory") {
+        auto changeList = getChanges({"Bis.Model"}, /* includeInMemoryChanges = */ true);
+        EXPECT_EQ(changeList.size(), 1);
+        EXPECT_EQ(changeList[0].instanceKey.GetInstanceId(), model1->GetModelId());
+        EXPECT_EQ(changeList[0].instanceKey.GetClassId(), model1->GetClassId());
+        EXPECT_EQ(changeList[0].changeType, DbOpcode::Insert);
+    }
+
+    m_db->SaveChanges("changeSet1");
+
+    if ("model changes in all pending txn for only PhysicalModel") {
+        auto changeList = getChanges({"Bis.PhysicalModel"}, /* includeInMemoryChanges = */ false);
+        EXPECT_EQ(changeList.size(), 1);
+        EXPECT_EQ(changeList[0].instanceKey.GetInstanceId(), model1->GetModelId());
+        EXPECT_EQ(changeList[0].instanceKey.GetClassId(), model1->GetClassId());
+        EXPECT_EQ(changeList[0].changeType, DbOpcode::Insert);
+    }
+
+    if ("model changes in all pending txn for only RepositoryModel") {
+        auto changeList = getChanges({"Bis.RepositoryModel"}, /* includeInMemoryChanges = */ false);
+        EXPECT_EQ(changeList.size(), 1);
+        EXPECT_EQ(changeList[0].instanceKey.GetInstanceId(), ECInstanceId((uint64_t)1));
+        EXPECT_EQ(changeList[0].instanceKey.GetClassId(), m_db->Schemas().FindClass("Bis.RepositoryModel")->GetId());
+        EXPECT_EQ(changeList[0].changeType, DbOpcode::Update);
+    }
+
+    if ("model changes in all pending txn") {
+        auto changeList = getChanges({"Bis.Model"}, /* includeInMemoryChanges = */ false);
+        EXPECT_EQ(changeList.size(), 2);
+        EXPECT_EQ(changeList[0].instanceKey.GetInstanceId(), ECInstanceId((uint64_t)1));
+        EXPECT_EQ(changeList[0].instanceKey.GetClassId(), m_db->Schemas().FindClass("Bis.RepositoryModel")->GetId());
+        EXPECT_EQ(changeList[0].changeType, DbOpcode::Update);
+
+        EXPECT_EQ(changeList[1].instanceKey.GetInstanceId(), model1->GetModelId());
+        EXPECT_EQ(changeList[1].instanceKey.GetClassId(), model1->GetClassId());
+        EXPECT_EQ(changeList[1].changeType, DbOpcode::Insert);
+    }
+
+    DgnModelId m1id = model1->GetModelId();
+    EXPECT_TRUE(m1id.IsValid());
+
+    auto keyE1 = InsertElement("E1", m1id);
+    auto keyE2 = InsertElement("E2", m1id);
+
+    if ("element changes in memory") {
+        auto changeList = getChanges({"DgnPlatformTest:TestElement"}, /* includeInMemoryChanges = */ true);
+        EXPECT_EQ(changeList.size(), 2);
+
+        EXPECT_EQ(changeList[0].instanceKey.GetInstanceId(), keyE2->GetElementId());
+        EXPECT_EQ(changeList[0].instanceKey.GetClassId(), keyE2->GetElementClassId());
+        EXPECT_EQ(changeList[0].changeType, DbOpcode::Insert);
+
+        EXPECT_EQ(changeList[1].instanceKey.GetInstanceId(), keyE1->GetElementId());
+        EXPECT_EQ(changeList[1].instanceKey.GetClassId(), keyE1->GetElementClassId());
+        EXPECT_EQ(changeList[1].changeType, DbOpcode::Insert);
+    }
+    m_db->SaveChanges("changeSet2");
+
+    if ("element changes in pending txns") {
+        auto changeList = getChanges({"DgnPlatformTest:TestElement"}, /* includeInMemoryChanges = */ false);
+        EXPECT_EQ(changeList.size(), 2);
+
+        EXPECT_EQ(changeList[0].instanceKey.GetInstanceId(), keyE2->GetElementId());
+        EXPECT_EQ(changeList[0].instanceKey.GetClassId(), keyE2->GetElementClassId());
+        EXPECT_EQ(changeList[0].changeType, DbOpcode::Insert);
+
+        EXPECT_EQ(changeList[1].instanceKey.GetInstanceId(), keyE1->GetElementId());
+        EXPECT_EQ(changeList[1].instanceKey.GetClassId(), keyE1->GetElementClassId());
+        EXPECT_EQ(changeList[1].changeType, DbOpcode::Insert);
+    }
+
+    DgnElementId e1id = keyE1->GetElementId();
+    DgnElementId e2id = keyE2->GetElementId();
+    EXPECT_TRUE(e1id.IsValid());
+    EXPECT_TRUE(e2id.IsValid());
+
+
+    //Reverse Transaction.Elements shouldn't be in the model now.
+    auto stat = txns.ReverseTxns(1);
+    EXPECT_EQ(DgnDbStatus::Success, stat);
+
+    EXPECT_EQ(nullptr, m_db->Elements().FindLoadedElement(e1id));
+    EXPECT_EQ(nullptr, m_db->Elements().FindLoadedElement(e2id));
+
+    if ("element changes in pending txns after reverse last txn") {
+        auto changeList = getChanges({"DgnPlatformTest:TestElement"}, /* includeInMemoryChanges = */ true);
+        EXPECT_EQ(changeList.size(), 0);
+    }
+
+    //Reinstate transcation.The elements should be back in the model.
+    stat = txns.ReinstateTxn();
+    EXPECT_EQ (DgnDbStatus::Success, stat);
+    m_db->SaveChanges("changeSet3");
+
+    if ("element changes in pending txns") {
+        auto changeList = getChanges({"DgnPlatformTest:TestElement"}, /* includeInMemoryChanges = */ false);
+        EXPECT_EQ(changeList.size(), 2);
+
+        EXPECT_EQ(changeList[0].instanceKey.GetInstanceId(), keyE2->GetElementId());
+        EXPECT_EQ(changeList[0].instanceKey.GetClassId(), keyE2->GetElementClassId());
+        EXPECT_EQ(changeList[0].changeType, DbOpcode::Insert);
+
+        EXPECT_EQ(changeList[1].instanceKey.GetInstanceId(), keyE1->GetElementId());
+        EXPECT_EQ(changeList[1].instanceKey.GetClassId(), keyE1->GetElementClassId());
+        EXPECT_EQ(changeList[1].changeType, DbOpcode::Insert);
+    }
+
+    DgnElementCPtr e1 = m_db->Elements().GetElement(e1id);
+    EXPECT_TRUE(e1 != nullptr);
+    EXPECT_NE(nullptr, m_db->Elements().FindLoadedElement(e1id));
+
+    DgnElementCPtr e2 = m_db->Elements().GetElement(e2id);
+    EXPECT_TRUE(e2 != nullptr);
+    EXPECT_NE(nullptr, m_db->Elements().FindLoadedElement(e2id));
+
+    if ("enum all changes") {
+        auto changeList = getChanges({}, /* includeInMemoryChanges = */ true);
+        EXPECT_EQ(changeList.size(), 5);
+    }
+
+    //Both the elements and the model shouldn't be in the database.
+    txns.ReverseAll();
+    EXPECT_FALSE(m_db->Models().GetModel(m1id).IsValid());
+
+    if ("element changes in pending txns") {
+        auto changeList = getChanges({}, /* includeInMemoryChanges = */ true);
+        EXPECT_EQ(changeList.size(), 0);
+    }
+}
