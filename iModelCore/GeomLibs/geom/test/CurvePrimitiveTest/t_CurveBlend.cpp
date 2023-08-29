@@ -1879,59 +1879,6 @@ TEST(CurveCurve,TaperFilletTaperOnCurveVectorWithDistanceIndex)
         }
     }
 
- bool ReadAsString (char const *filenameChar, Utf8String &string)
-    {
-
-    string.clear ();
-    BeFile file;
-    Utf8String filename (filenameChar);
-    if (BeFileStatus::Success == file.Open (filename, BeFileAccess::Read))
-        {
-        bvector<Byte> bytes;
-        if (BeFileStatus::Success == file.ReadEntireFile (bytes))
-            {
-            for (auto b : bytes)
-                string.push_back (b);
-            return true;
-            }
-        }
-    return false;
-    }
-
-bool DGNJSFileToGeometry (char const *filename, bvector<IGeometryPtr> &geometry)
-    {
-    geometry.clear ();
-    Utf8String string;
-    return ReadAsString (filename, string)
-        && BentleyGeometryJson::TryJsonStringToGeometry (string, geometry);
-    }
-
-bool ReadAsString (BeFileName &filename, Utf8String &string)
-    {
-
-    string.clear ();
-    BeFile file;
-    if (BeFileStatus::Success == file.Open (filename, BeFileAccess::Read))
-        {
-        bvector<Byte> bytes;
-        if (BeFileStatus::Success == file.ReadEntireFile (bytes))
-            {
-            for (auto b : bytes)
-                string.push_back (b);
-            return true;
-            }
-        }
-    return false;
-    }
-
-bool DGNJSFileToGeometry (BeFileName &filename, bvector<IGeometryPtr> &geometry)
-    {
-    geometry.clear ();
-    Utf8String string;
-    return ReadAsString (filename, string)
-        && BentleyGeometryJson::TryJsonStringToGeometry (string, geometry);
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1940,7 +1887,7 @@ TEST(CurveVector,BuildDistanceIndexFromFile)
     {
     Utf8String string;
     if (s_readFile
-        && ReadAsString ("d:/tmp/spline1.js", string))
+        && GTestFileOps::ReadAsString ("d:/tmp/spline1.js", string))
         {
         bvector<IGeometryPtr> allGeometry;
         auto strokeOptions = IFacetOptions::CreateForCurves ();
@@ -1980,8 +1927,8 @@ TEST(CurveVector,CCI)
     {
     Utf8String string1, string2;
     if (s_readFile
-        && ReadAsString ("d:/tmp/sandy/spline.js", string1)
-        && ReadAsString ("d:/tmp/sandy/secondary.js", string2))
+        && GTestFileOps::ReadAsString ("d:/tmp/sandy/spline.js", string1)
+        && GTestFileOps::ReadAsString ("d:/tmp/sandy/secondary.js", string2))
         {
         bvector<IGeometryPtr> allGeometry1, allGeometry2;
         auto strokeOptions = IFacetOptions::CreateForCurves ();
@@ -2023,7 +1970,7 @@ TEST(CurveVector,SpiralCuts)
     {
     Utf8String string1, string2;
     if (s_readFile
-        && ReadAsString ("d:/dgndb0601dev/src/geomlibs/geom/test/data/CurveVector/03CPartialSpiral/partialSpiral.js", string1)
+        && GTestFileOps::ReadAsString ("d:/dgndb0601dev/src/geomlibs/geom/test/data/CurveVector/03CPartialSpiral/partialSpiral.js", string1)
         )
         {
         bvector<IGeometryPtr> allGeometry1;
@@ -2137,7 +2084,7 @@ TEST(CurveVector,StrokeAlignment)
     curveOptions->SetAngleTolerance(angleTol);
     if (s_readFile1)
         {
-        if (ReadAsString ("d:/dgndb06devA/src/GeomLibs/geom/test/data/CurveVector/SpiralStroke/spiralButConvertedToBspline.js", string1))
+        if (GTestFileOps::ReadAsString ("d:/dgndb06devA/src/GeomLibs/geom/test/data/CurveVector/SpiralStroke/spiralButConvertedToBspline.js", string1))
             {
             bvector<IGeometryPtr> allGeometry;
             if (BentleyGeometryJson::TryJsonStringToGeometry (string1, allGeometry))
@@ -2615,7 +2562,7 @@ TEST(CurveVector,OffsetLineArcJaggies)
     {
     Utf8String string;
     if (s_readFile
-        && ReadAsString ("d:/bim0200dev/src/geomlibs/geom/test/data/CurveVector/1701CurveOffsetZigZagInput/Centerline.dgnjs", string))
+        && GTestFileOps::ReadAsString ("d:/bim0200dev/src/geomlibs/geom/test/data/CurveVector/1701CurveOffsetZigZagInput/Centerline.dgnjs", string))
         {
         double offsetDistanceA = -5.7;
         double offsetDistanceB = -0.5;
@@ -4185,7 +4132,7 @@ TEST(CurveVector, DenseChainsB)
         })
         {
         printf(" FILE: %s\n", path);
-        if (DGNJSFileToGeometry(path, allGeometry))
+        if (GTestFileOps::JsonFileToGeometry(path, allGeometry))
             {
             for (auto &g : allGeometry) {
                 CurveVectorPtr cv = g->GetAsCurveVector();

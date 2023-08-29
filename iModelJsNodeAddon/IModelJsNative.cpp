@@ -1172,14 +1172,14 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         auto& modelChanges = GetDgnDb().Txns().m_modelChanges;
         if (enable != modelChanges.IsTrackingGeometry())
             {
-            auto status = modelChanges.SetTrackingGeometry(enable);
+            auto mode = modelChanges.SetTrackingGeometry(enable);
             auto readonly = false;
-            switch (status)
+            switch (mode)
                 {
-                case TxnManager::ModelChanges::Status::Readonly:
+                case TxnManager::ModelChanges::Mode::Readonly:
                     readonly = true;
                     // fall-through intentional.
-                case TxnManager::ModelChanges::Status::VersionTooOld:
+                case TxnManager::ModelChanges::Mode::Legacy:
                     return CreateBentleyReturnErrorObject(readonly ? DgnDbStatus::ReadOnly : DgnDbStatus::VersionTooOld);
                 }
             }
@@ -1191,7 +1191,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
 
         {
         RequireDbIsOpen(info);
-        return Napi::Boolean::New(Env(), TxnManager::ModelChanges::Status::Success == GetDgnDb().Txns().m_modelChanges.DetermineStatus());
+        return Napi::Boolean::New(Env(), TxnManager::ModelChanges::Mode::Full == GetDgnDb().Txns().m_modelChanges.DetermineMode());
         }
 
     Napi::Value QueryModelExtents(NapiInfoCR info)
@@ -1446,6 +1446,23 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         REQUIRE_ARGUMENT_ANY_OBJ(0, request);
         DgnDbWorkerPtr worker = new FenceAsyncWorker(*m_dgndb, request); // freed in caller of OnOK and OnError see AsyncWorker::OnWorkComplete
         return worker->Queue();  // Containment check happens in another thread
+    }
+
+    Napi::Value GetLocalChanges(NapiInfoCR info)        {
+        REQUIRE_ARGUMENT_STRING_ARRAY(0, rootClassFilter);
+        REQUIRE_ARGUMENT_BOOL(1, includeInMemChanges);
+        auto results = Napi::Array::New(Env());
+        int i = 0;
+
+        GetDgnDb().Txns().ForEachLocalChange(
+            [&](ECInstanceKey const& key, DbOpcode changeType) {
+                auto result = Napi::Object::New(Env());
+                result["id"] = Napi::String::New(Env(), key.GetInstanceId().ToHexStr());
+                result["classFullName"] = Napi::String::New(Env(), GetDgnDb().Schemas().GetClass(key.GetClassId())->GetFullName());
+                result["changeType"] = Napi::String::New(Env(), (changeType == DbOpcode::Delete ? "deleted" : (changeType == DbOpcode::Insert ? "inserted" : "updated")));
+                results[i++] = result;
+            }, rootClassFilter, includeInMemChanges);
+        return results;
     }
 
     Napi::Value GetIModelCoordsFromGeoCoords(NapiInfoCR info) {
@@ -2637,6 +2654,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
             InstanceMethod("enableWalMode", &NativeDgnDb::EnableWalMode),
             InstanceMethod("performCheckpoint", &NativeDgnDb::PerformCheckpoint),
             InstanceMethod("setAutoCheckpointThreshold", &NativeDgnDb::SetAutoCheckpointThreshold),
+            InstanceMethod("getLocalChanges", &NativeDgnDb::GetLocalChanges),
             StaticMethod("enableSharedCache", &NativeDgnDb::EnableSharedCache),
             StaticMethod("getAssetsDir", &NativeDgnDb::GetAssetDir),
         });

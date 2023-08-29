@@ -258,6 +258,69 @@ describe("elementDependency", () => {
 
     // db.writeAffectedElementDependencyGraphToFile(writeDbFileName + ".dot", [material]);
   });
+  it("test getLocalChanges()", () => {
+    const writeDbFileName = copyFile("get-local-changes.bim", dbFileName);
+    db = openDgnDb(writeDbFileName);
+    assert.isTrue(db !== undefined);
+
+    const mockTxn = new MockTxn();
+    const mockJsDb = { txns: mockTxn };
+    db.setIModelDb(mockJsDb);
+
+    db.enableTxnTesting();
+
+    db.insertElement(makeSubject("e1"));
+    db.insertElement(makeSubject("e2"));
+    db.insertElement(makeSubject("e3"));
+
+    // enumerating pending txn
+    const c0 = db.getLocalChanges(["Bis.Element"], false);
+    assert.deepEqual(c0, []);
+
+    // enumerating in-memory changes
+    const c1 = db.getLocalChanges(["Bis.Element"], true);
+    const expected = [
+      {
+        id: "0x3e",
+        classFullName: "BisCore:Subject",
+        changeType: "inserted",
+      },
+      {
+        id: "0x3d",
+        classFullName: "BisCore:Subject",
+        changeType: "inserted",
+      },
+      {
+        id: "0x3c",
+        classFullName: "BisCore:Subject",
+        changeType: "inserted",
+      },
+    ] as IModelJsNative.ChangeInstanceKey[];
+    assert.deepEqual(c1, expected);
+    db.saveChanges("changeset 1");
+
+    // enumerate pending txn
+    const c2 = db.getLocalChanges(["Bis.Element"], false);
+    assert.deepEqual(c2, expected);
+
+    // enumerating pending txn + in memory
+    const c3 = db.getLocalChanges(["Bis.Element"], true);
+    assert.deepEqual(c3, expected);
+
+    // add new subject without saving it.
+    db.insertElement(makeSubject("e4"));
+    expected.unshift({
+      id: "0x3f",
+      classFullName: "BisCore:Subject",
+      changeType: "inserted",
+    });
+
+    // enumerating pending txn + in memory
+    const c4 = db.getLocalChanges(["Bis.Element"], true);
+    assert.deepEqual(c4, expected);
+
+    db.saveChanges();
+  });
 
   it("should invokeCallbacks 1-2-3", () => {
     const writeDbFileName = copyFile("elementDependency123.bim", dbFileName);

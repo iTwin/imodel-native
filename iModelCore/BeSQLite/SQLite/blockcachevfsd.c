@@ -1061,6 +1061,7 @@ typedef struct FetchCtx FetchCtx;
 typedef struct DPrefetch DPrefetch;
 
 struct DPrefetch {
+  int bPrefetch;                  /* True if this is a prefetch connection */
   int nOutstanding;
   int iNext;
   int bReply;
@@ -1761,6 +1762,45 @@ static void bdHandleDetach(
 }
 
 /*
+** GCC does not define the offsetof() macro so we'll have to do it
+** ourselves.
+*/
+#ifndef offsetof
+#define offsetof(STRUCTURE,FIELD) ((int)((char*)&((STRUCTURE*)0)->FIELD))
+#endif
+
+
+/*
+** Version of xClientCount for proxy VFS
+*/
+static void bcvProxyClientCount(
+  BcvCommon *pCommon, 
+  Container *pCont, 
+  int iDbId, 
+  int *pnClient,
+  int *pnPrefetch
+){
+  DClient *pClient = 0;
+  DaemonCtx *p = 0;
+  int nClient = 0;
+  int nPrefetch = 0;
+
+  p = (DaemonCtx*)&((u8*)pCommon)[-offsetof(DaemonCtx, c)];
+  for(pClient=p->pClientList; pClient; pClient=pClient->pNext){
+    if( pClient->pCont==pCont && pClient->iDbId==iDbId ){
+      if( pClient->prefetch.bPrefetch ){
+        nPrefetch++;
+      }else{
+        nClient++;
+      }
+    }
+  }
+
+  *pnClient = nClient;
+  *pnPrefetch = nPrefetch;
+}
+
+/*
 ** Handle a message of type BCV_MESSAGE_VTAB from client pClient.
 */
 static void bdHandleVtab(
@@ -1777,13 +1817,17 @@ static void bdHandleVtab(
   BcvMessage reply;
   u8 *aData = 0;
   int nData = 0;
+  int iVersion = pMsg->u.vtab.iVersion;
 
   memset(&reply, 0, sizeof(reply));
   reply.eType = BCV_MESSAGE_VTAB_REPLY;
 
-  aData = bcvDatabaseVtabData(&rc, &p->c, zTab, zCont, zDb, colUsed, &nData);
+  aData = bcvDatabaseVtabData(&rc, &p->c, 
+      zTab, zCont, zDb, bcvProxyClientCount, colUsed, &nData, &iVersion
+  );
   reply.u.vtab_r.aData = aData;
   reply.u.vtab_r.nData = nData;
+  reply.u.vtab_r.iVersion = iVersion;
   bdSendMsg(p, pClient, &reply);
 
   sqlite3_free(aData);
@@ -1805,6 +1849,7 @@ static void bdHandleHello(
   BcvMessage reply;
   char *zErr = 0;
 
+  pClient->prefetch.bPrefetch = pMsg->u.hello.bPrefetch;
   pCont = bcvfsFindContAlias(&p->c, zCont, &zErr);
   if( pCont && zDb ){
     pDb = bcvfsFindDatabase(pCont->pMan, zDb, -1);
@@ -2432,6 +2477,7 @@ static void bdHandlePrefetch(
   int rc = SQLITE_OK;
 
   pClient->prefetch.bReply = 1;
+  pClient->prefetch.bPrefetch = 1;
 
   pBcv = bdUpdateBCV(pClient, pMsg->u.pass.zAuth);
   if( pClient->pManDb==0 ){

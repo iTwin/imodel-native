@@ -274,6 +274,15 @@ export declare namespace IModelJsNative {
    */
   export type ElementGraphicsResult = ElementGraphicsContent | ElementGraphicsError;
 
+  /** Instance key for a change
+   * @internal
+   */
+  export interface ChangeInstanceKey {
+    id: Id64String;
+    classFullName: string;
+    changeType: "inserted" | "updated" | "deleted";
+  }
+
   /** Information returned by DgnDb.queryDefinitionElementUsage. */
   interface DefinitionElementUsageInfo {
     /** The subset of input Ids that are SpatialCategory definitions. */
@@ -547,6 +556,7 @@ export declare namespace IModelJsNative {
     public getITwinId(): GuidString;
     public getLastError(): string;
     public getLastInsertRowId(): number;
+    public getLocalChanges(rootClassFilter: string[], includeInMemoryChanges: boolean): ChangeInstanceKey[]
     public getMassProperties(props: object): Promise<MassPropertiesResponseProps>;
     public getModel(opts: ModelLoadProps): ModelProps;
     public getMultiTxnOperationDepth(): number;

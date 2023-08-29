@@ -365,7 +365,7 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
         RequireConnected();
         REQUIRE_ARGUMENT_STRING(0, dbName);
         Statement stmt;
-        auto rc =  stmt.Prepare(m_containerDb, "SELECT nblock,ncache,ndirty,walfile,state FROM bcv_database WHERE container=? AND database=?");
+        auto rc =  stmt.Prepare(m_containerDb, "SELECT nblock,ncache,ndirty,walfile,state,nclient,nprefetch FROM bcv_database WHERE container=? AND database=?");
         BeAssert (rc == BE_SQLITE_OK);
         UNUSED_VARIABLE(rc);
         stmt.BindText(1, m_alias.c_str(), Statement::MakeCopy::No);
@@ -378,6 +378,8 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
         value["dirtyBlocks"] = stmt.GetValueInt(2);
         value["transactions"] = stmt.GetValueBoolean(3);
         value["state"] = stmt.GetValueText(4);
+        value["nClient"] = stmt.GetValueInt(5);
+        value["nPrefetch"] = stmt.GetValueInt(6);
 
         return value;
     }

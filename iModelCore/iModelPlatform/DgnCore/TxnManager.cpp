@@ -1021,36 +1021,41 @@ TxnManager::ModelChanges::ModelChanges(TxnManager& mgr) : m_mgr(mgr)
     // If the file's opened in read-only mode though, there can be no changes to track.
     if (mgr.GetDgnDb().IsReadonly())
         {
-        m_determinedStatus = true;
-        m_status = Status::Readonly;
+        m_determinedMode = true;
+        m_mode = Mode::Readonly;
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-TxnManager::ModelChanges::Status TxnManager::ModelChanges::DetermineStatus()
+TxnManager::ModelChanges::Mode TxnManager::ModelChanges::DetermineMode()
     {
-    if (!m_determinedStatus)
+    if (!m_determinedMode)
         {
-        m_determinedStatus = true;
+        m_determinedMode = true;
         if (m_mgr.GetDgnDb().GetGeometricModelUpdateStatement().IsValid())
-            m_status = Status::Success;
+            {
+            m_mode = Mode::Full;
+            }
         else
-            Disable();
+            {
+            m_mode = Mode::Legacy;
+            ClearAll();
+            }
         }
 
-    return m_status;
+    return m_mode;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-TxnManager::ModelChanges::Status TxnManager::ModelChanges::SetTrackingGeometry(bool track)
+TxnManager::ModelChanges::Mode TxnManager::ModelChanges::SetTrackingGeometry(bool track)
     {
-    DetermineStatus();
-    if (IsDisabled() || track == m_trackGeometry)
-        return m_status;
+    auto mode = DetermineMode();
+    if (Mode::Full != mode || track == m_trackGeometry)
+        return m_mode;
 
     m_trackGeometry = track;
 
@@ -1065,7 +1070,7 @@ TxnManager::ModelChanges::Status TxnManager::ModelChanges::SetTrackingGeometry(b
             }
         });
 
-    return m_status;
+    return m_mode;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1084,10 +1089,8 @@ void TxnManager::ModelChanges::InsertGeometryChange(DgnModelId modelId, DgnEleme
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::ModelChanges::AddGeometricElementChange(DgnModelId modelId, DgnElementId elementId, TxnTable::ChangeType type, bool fromCommit) {
-    if (IsDisabled())
-        return;
-
     m_geometricModels.Insert(modelId, fromCommit);
+
     if (IsTrackingGeometry()) {
         InsertGeometryChange(modelId, elementId, type);
         return;
@@ -1137,9 +1140,7 @@ void TxnManager::ClearModelChanges() {
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::ModelChanges::Process()
     {
-    DetermineStatus();
-    if (IsDisabled())
-        return;
+    auto mode = DetermineMode();
 
     // When we get a Change that deletes a geometric element, we don't have access to its model Id at that time - look it up now.
     for (auto const& deleted : m_deletedGeometricElements)
@@ -1154,6 +1155,12 @@ void TxnManager::ModelChanges::Process()
 
     if (m_models.empty() && m_geometricModels.empty())
         return;
+
+    if (Mode::Full != mode)
+        {
+        Clear(true);
+        return;
+        }
 
     SetandRestoreIndirectChanges _v(m_mgr);
 
@@ -1626,30 +1633,28 @@ DgnDbStatus TxnManager::ReverseAll() {
     return ReverseActions(TxnRange(startId, GetCurrentTxnId()));
 }
 
-/**
- * For readonly connections, new Txns may be added from other writeable connections while this session is active.
- * Since we always hold a SQLite transaction (the DefaultTxn) open, this session will not see any of
- * those changes unless/until we explicitly close-and-restart the DefaultTxn.
- *
- * This method is called when the DefaultTxn is restarted and new Txns are discovered. It "replays" each new Txn in
- * this session so that notifications for the changed elements/models can be sent for this connection as if the
- * changes were just made. It calls `ApplyTxnChanges` but relies on the fact that the iModel is open for read and
- * none of the changes are actually applied (they were applied in the connection where they were made.)
- * This action is performed for "side effects" only. Of course since the connection is readonly, that's implied.
- */
 void TxnManager::ReplayExternalTxns(TxnId from) {
     if (!m_initTableHandlers || !m_dgndb.IsReadonly())
         return; // this method can only be called on a readonly connection with the TxnManager active
 
-
-    for (TxnId curr = QueryNextTxnId(from); curr.IsValid(); curr = QueryNextTxnId(curr))
-        ApplyTxnChanges(curr, TxnAction::Reinstate);
+    TxnId curr = QueryNextTxnId(from);
+    bool haveTxns = curr.IsValid();
+    if (haveTxns) {
+        CallJsTxnManager("_onReplayExternalTxns");
+        while (curr.IsValid()) {
+            ApplyTxnChanges(curr, TxnAction::Reinstate);
+            curr = QueryNextTxnId(curr);
+        }
+    }
 
     m_curr = GetLastTxnId(); // this is where the other session ends
     if (m_curr.GetValue() == 0)
         m_curr = TxnId(SessionId(1),0);
     else
         m_curr.Increment();
+
+    if (haveTxns)
+        CallJsTxnManager("_onReplayedExternalTxns");
 }
 
 /*---------------------------------------------------------------------------------**/ /**

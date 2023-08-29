@@ -4096,6 +4096,46 @@ TEST(Polyface, TryGetAtReadIndex)
         }
     }
 
+void testConvertMeshToClipper(PolyfaceQueryCR mesh)
+    {
+    ConvexClipPlaneSet clipper;
+    if (mesh.BuildConvexClipPlaneSet(clipper) > 0.0)
+        {
+        Check::Size(mesh.GetNumFacet(), clipper.size(), "# facets === # planes");
+
+        double tol = mesh.GetTightTolerance();
+        DPoint3dCP points = mesh.GetPointCP();
+        for (size_t i = 0; i < mesh.GetPointCount(); ++i)
+            {
+            DPoint3d xyz = points[i];
+            Check::True(clipper.IsPointOnOrInside(xyz, tol), "mesh vertex is not outside clipper");
+            bool isVertexOnClipper = false;
+            for (auto const& plane : clipper)
+                {
+                if (plane.IsPointOn(xyz, tol))
+                    {
+                    isVertexOnClipper = true;
+                    break;
+                    }
+                }
+            Check::True(isVertexOnClipper, "mesh vertex is *on* clipper");
+            }
+        }
+    }
+
+TEST(Polyface, BuildConvexClipPlaneSet)
+    {
+    auto mesh = RhombicosidodecahedronMesh();
+    if (mesh.IsValid())
+        {
+        testConvertMeshToClipper(*mesh);
+        // verify that the reversed closed mesh produces same clipper with inward plane normals
+        mesh->ReverseIndicesAllFaces();
+        mesh->ReverseNormals();
+        testConvertMeshToClipper(*mesh);
+        }
+    }
+
 void testVisitorNumWrap(PolyfaceHeaderCR mesh, uint32_t maxNumWrap)
     {
     double gap = 5.0;
