@@ -969,4 +969,101 @@ TEST_F(RelationshipMappingTestFixture, AddNavUpInHierarchyAndRelationshipHasMixi
     }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(RelationshipMappingTestFixture, MoveNavUpInHierarchyAndRemapSharedColumns)
+    {
+    //Move existing nav property up in the base class which derives multiple classes and uses SharedColumn mapping strategy
+    //Also change relationship class Source/Target class to be the base class
+    Utf8String schemaXml1 = ConstructTestSchema(R"xml(
+        <ECEntityClass typeName="MaterialProfileDefinition" modifier="Abstract">
+            <BaseClass>Element</BaseClass>
+        </ECEntityClass>
+
+        <ECEntityClass typeName="MaterialProfile1">
+            <BaseClass>MaterialProfileDefinition</BaseClass>
+            <ECProperty propertyName="PropMaterialProfile1" typeName="string" />
+            <ECNavigationProperty propertyName="MovingNavProperty" relationshipName="MaterialProfileRefersToMaterial" direction="Forward" />
+        </ECEntityClass>
+        <ECEntityClass typeName="MaterialProfile2">
+            <BaseClass>MaterialProfileDefinition</BaseClass>
+            <ECProperty propertyName="PropMaterialProfile2" typeName="string" />
+        </ECEntityClass>
+
+        <ECEntityClass typeName="A">
+            <ECProperty propertyName="PropA1" typeName="string"/>
+        </ECEntityClass>
+
+        <ECRelationshipClass typeName="MaterialProfileRefersToMaterial" strength="referencing" modifier="Sealed">
+            <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="true">
+                <Class class="MaterialProfile1" />
+            </Source>
+            <Target multiplicity="(1..1)" roleLabel="is referenced by" polymorphic="false">
+                <Class class="A"/>
+            </Target>
+        </ECRelationshipClass>
+        )xml");
+    SchemaItem schema1(schemaXml1);
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDbForCurrentTest(schema1));
+
+    ECInstanceKey aKey;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.A(PropA1) VALUES('PropertyA')"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(aKey));
+    }
+
+    ECClassId relClassId = m_ecdb.Schemas().GetClassId("TestSchema", "MaterialProfileRefersToMaterial");
+    ECInstanceKey materialProfileKey;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.MaterialProfile1(PropMaterialProfile1,MovingNavProperty) VALUES('MyMaterialProfile',?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(1, aKey.GetInstanceId(), relClassId));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(materialProfileKey));
+    }
+
+    Utf8String schemaXml2 = ConstructTestSchema(R"xml(
+        <ECEntityClass typeName="MaterialProfileDefinition" modifier="Abstract">
+            <BaseClass>Element</BaseClass>
+            <ECNavigationProperty propertyName="MovingNavProperty" relationshipName="MaterialProfileRefersToMaterial" direction="Forward" />
+        </ECEntityClass>
+
+        <ECEntityClass typeName="MaterialProfile1">
+            <BaseClass>MaterialProfileDefinition</BaseClass>
+            <ECProperty propertyName="PropMaterialProfile1" typeName="string" />
+            <ECNavigationProperty propertyName="MovingNavProperty" relationshipName="MaterialProfileRefersToMaterial" direction="Forward" />
+        </ECEntityClass>
+        <ECEntityClass typeName="MaterialProfile2">
+            <BaseClass>MaterialProfileDefinition</BaseClass>
+            <ECProperty propertyName="PropMaterialProfile2" typeName="string" />
+        </ECEntityClass>
+
+        <ECEntityClass typeName="A">
+            <ECProperty propertyName="PropA1" typeName="string"/>
+        </ECEntityClass>
+
+        <ECRelationshipClass typeName="MaterialProfileRefersToMaterial" strength="referencing" modifier="Sealed">
+            <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="true">
+                <Class class="MaterialProfileDefinition" />
+            </Source>
+            <Target multiplicity="(1..1)" roleLabel="is referenced by" polymorphic="false">
+                <Class class="A"/>
+            </Target>
+        </ECRelationshipClass>
+        )xml", "01.00.01");
+    SchemaItem schema2(schemaXml2);
+    ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema2, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+
+    {
+    auto result = GetHelper().ExecuteSelectECSql("SELECT a.PropA1, mp.PropMaterialProfile1 FROM ts.MaterialProfile1 mp JOIN ts.A a USING ts.MaterialProfileRefersToMaterial");
+    ASSERT_EQ(JsonValue(R"json([{"PropA1":"PropertyA", "PropMaterialProfile1":"MyMaterialProfile"}])json"), result) << "Verify instances";
+    }
+
+    {
+    auto result = GetHelper().ExecuteSelectECSql("SELECT a.PropA1, mp.PropMaterialProfile1 FROM ts.MaterialProfile1 mp JOIN ts.A a ON mp.MovingNavProperty.Id = a.ECInstanceId");
+    ASSERT_EQ(JsonValue(R"json([{"PropA1":"PropertyA", "PropMaterialProfile1":"MyMaterialProfile"}])json"), result) << "Verify instances";
+    }
+    }
+
 END_ECDBUNITTESTS_NAMESPACE
