@@ -30,9 +30,22 @@ DgnDbFonts::DgnDbFonts(DgnDbR db) : m_fontDb(db, false) {
  +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDb::DgnDb() : m_profileVersion(0, 0, 0, 0), m_fonts(std::make_unique<DgnDbFonts>(*this)), m_domains(*this), m_lineStyles(new DgnLineStyles(*this)),
                  m_geoLocation(*this), m_models(*this), m_elements(*this),
-                 m_codeSpecs(*this), m_ecsqlCache(50, "DgnDb"), m_searchableText(*this), m_elementIdSequence(*this, "bis_elementidsequence") {
+                 m_codeSpecs(*this), m_ecsqlCache(50, "DgnDb"), m_searchableText(*this), m_elementIdSequence(*this, "bis_elementidsequence"),
+                 m_dbFuncs() {
     ApplyECDbSettings(true /* requireECCrudWriteToken */, true /* requireECSchemaImportToken */);
     AddECDbCacheClearListener(*this);
+
+    auto geomDbFuncs = GeometryStreamIO::ExposeSqlFunctions(*this);
+    m_dbFuncs.reserve(geomDbFuncs.size());
+
+    for (auto& geomDbFunc : geomDbFuncs) {
+        auto addStatus = (DbResult) AddFunction(*geomDbFunc);
+        if (addStatus != BE_SQLITE_OK) {
+            LOG.errorv("Sqlite error '%s' while adding function to db", Db::InterpretDbResult(addStatus));
+            continue;
+        }
+        m_dbFuncs.push_back(std::unique_ptr<DbFunction>(geomDbFunc));
+    }
 }
 
 /*---------------------------------------------------------------------------------**/ /**
@@ -141,6 +154,15 @@ SchemaImportToken const* DgnDb::GetSchemaImportToken() const { return GetECDbSet
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnDb::Destroy() {
+    for (auto& dbFunc : m_dbFuncs) {
+        auto removeStatus = (DbResult) RemoveFunction(*dbFunc);
+        if (removeStatus != BE_SQLITE_OK) {
+            LOG.errorv("Sqlite error '%s' while removing function from db", Db::InterpretDbResult(removeStatus));
+            continue;
+        }
+        dbFunc = nullptr;
+    }
+
     m_models.Empty();
     m_txnManager = nullptr;
     m_lineStyles = nullptr;
