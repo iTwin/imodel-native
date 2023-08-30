@@ -43,7 +43,7 @@ void ContentProviderTests::SetUp()
     m_nodesLocater = std::shared_ptr<TestNodeLocater>();
     m_context = ContentProviderContext::Create(*m_ruleset, ContentDisplayType::Undefined, 0,
         *NavNodeKeyListContainer::Create(), m_nodesLocater, m_categorySupplier,
-        std::make_unique<RulesetVariables>(), m_expressionsCache, m_relatedPathsCache, m_nodesFactory, nullptr);
+        std::make_unique<RulesetVariables>(), m_expressionsCache, m_relatedPathsCache, m_nodesFactory, nullptr, nullptr);
     m_context->SetQueryContext(m_connections, *m_connection);
     }
 

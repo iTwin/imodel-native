@@ -8,6 +8,8 @@
 #include "DgnDb.h"
 #include <BeSQLite/BeLzma.h>
 #include <BeSQLite/ChangesetFile.h>
+#include <ECDb/ECInstanceId.h>
+#include <functional>
 
 DGNPLATFORM_TYPEDEFS(TxnMonitor)
 
@@ -495,6 +497,8 @@ public:
     DGNPLATFORM_EXPORT void StopCreateChangeset(bool keepFile);
     DGNPLATFORM_EXPORT ChangesetStatus MergeChangeset(ChangesetPropsCR revision);
     DGNPLATFORM_EXPORT void ReverseChangeset(ChangesetPropsCR revision);
+
+    DGNPLATFORM_EXPORT void ForEachLocalChange(std::function<void(BeSQLite::EC::ECInstanceKey const&, BeSQLite::DbOpcode)>, bvector<Utf8String> const&, bool includeInMemoryChanges = false);
     void SaveParentChangeset(Utf8StringCR revisionId, int32_t changesetIndex);
     ChangesetPropsPtr CreateChangesetProps(BeFileNameCR pathName);
 
