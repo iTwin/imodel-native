@@ -1213,8 +1213,6 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
 
         GeomRemapDb = &*m_dgndb;
 
-        GeometryStreamIO::ExposeSqlFunctions(*m_dgndb);
-
         auto jsRemapDbVal = NativeECDb::Constructor().New({});
         auto jsRemapDb = NativeECDb::Unwrap(jsRemapDbVal);
         RemapDb = &jsRemapDb->m_ecdb;

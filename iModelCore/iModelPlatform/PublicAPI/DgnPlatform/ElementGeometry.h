@@ -397,7 +397,7 @@ struct GeometryStreamIO
     //! @param remapper  The ID remapper
     DGNPLATFORM_EXPORT static DgnDbStatus Import(GeometryStreamR dest, GeometryStreamCR source, DgnImportContext& remapper);
 
-    DGNPLATFORM_EXPORT static int ExposeSqlFunctions(DgnDbR);
+    DGNPLATFORM_EXPORT static std::vector<BeSQLite::DbFunction*> ExposeSqlFunctions(DgnDbR);
 
     //! @private
     DGNPLATFORM_EXPORT static DgnDbStatus ConvertBRepsToPolyfacesOrCurves(DgnDbR db, GeometryStreamR output, GeometryStreamCR input, bool& changed);

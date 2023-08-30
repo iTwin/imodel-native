@@ -211,6 +211,7 @@ struct DgnDb : RefCounted<BeSQLite::EC::ECDb>, BeSQLite::EC::ECDb::IECDbCacheCle
 private:
     BeSQLite::BeBriefcaseBasedIdSequence m_elementIdSequence;
     int m_purgeOperation = 0;
+    std::vector<std::unique_ptr<BeSQLite::DbFunction>> m_dbFuncs;
 
     void Destroy();
     SchemaStatus PickSchemasToImport(bvector<ECN::ECSchemaCP>& importSchemas, bvector<ECN::ECSchemaCP> const& schemas, bool isImportingFromV8) const;

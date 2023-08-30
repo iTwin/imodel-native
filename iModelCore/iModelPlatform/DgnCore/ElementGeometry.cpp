@@ -2657,46 +2657,32 @@ void GeometryStreamIO::Iterator::ToNext()
 
 struct SqlTableRemapper {
 private:
-    DbCR m_remapDb;
-    // NOTE: can't use cached statements on an m_dgnDb since this is used in a sqlite func
-    CachedStatementPtr m_elemStmt, m_fontStmt;
+    Statement& m_fontStmt;
+    Statement& m_elemStmt;
 
 public:
-    SqlTableRemapper(
-        DbCR remapDb,
-        Utf8CP elemRemapTableName,
-        Utf8CP fontRemapTableName
-    ) : m_remapDb(remapDb) {
-        const auto fontSql = Utf8PrintfString(
-            "SELECT TargetId FROM %s WHERE SourceId=?",
-            fontRemapTableName
-        );
-        this->m_fontStmt = m_remapDb.GetCachedStatement(fontSql.c_str());
-
-        const auto elemSql = Utf8PrintfString(
-            "SELECT TargetId FROM %s WHERE SourceId=?",
-            elemRemapTableName
-        );
-        this->m_elemStmt = m_remapDb.GetCachedStatement(elemSql.c_str());
-    }
+    SqlTableRemapper(Statement& fontStmt, Statement& elemStmt)
+    : m_fontStmt(fontStmt)
+    , m_elemStmt(elemStmt)
+    {}
 
     BeInt64Id RemapElemId(BeInt64Id sourceId) {
-        m_elemStmt->Reset();
-        m_elemStmt->BindId(1, sourceId);
-        if (BE_SQLITE_ROW == m_elemStmt->Step())
-            return m_elemStmt->GetValueId<BeInt64Id>(0);
+        m_elemStmt.Reset();
+        m_elemStmt.BindId(1, sourceId);
+        if (BE_SQLITE_ROW == m_elemStmt.Step())
+            return m_elemStmt.GetValueId<BeInt64Id>(0);
         else
             return BeInt64Id(0); // return invalid id on failure to remap
     }
 
     FontId RemapFontId(FontId sourceId) {
-        m_fontStmt->Reset();
-        m_fontStmt->BindId(1, sourceId);
-        if (BE_SQLITE_ROW == m_fontStmt->Step())
-            return m_fontStmt->GetValueId<FontId>(0);
+        m_fontStmt.Reset();
+        m_fontStmt.BindId(1, sourceId);
+        if (BE_SQLITE_ROW == m_fontStmt.Step())
+            return m_fontStmt.GetValueId<FontId>(0);
         else
             // FIXME: error out instead
-            return FontId((uint64_t)0ULL); // return invalid id on failure to remap
+            return FontId((uint64_t)0); // return invalid id on failure to remap
     }
 
     CodeSpecId RemapCodeSpecId(CodeSpecId sourceId)                   {return CodeSpecId       (RemapElemId(sourceId).GetValueUnchecked());}
@@ -2971,88 +2957,54 @@ DgnDb* Dgn::GeomRemapDb = nullptr;
 BeSQLite::Db* Dgn::RemapDb = nullptr;
 
 namespace GeomRemapFuncs {
-    //thread_local Utf8String fontTableName;
-    //thread_local Utf8String elemTableName;
-
-    // tries to open a database which will be the context for future calls to RemapGeom
-    /*
-    struct Open final : ScalarFunction {
-        Open() : ScalarFunction("OpenRemapGeomContext", 3) {}
-
-        virtual void _ComputeScalar(Context ctx&, int nArgs, EC::BeSQLite::DbValue *args) override {
-            if (nArgs != 2) {
-                ctx.SetResultError("OpenRemapGeomContext requires exactly two arguments");
-                return;
-            }
-            if (args[0].GetValueType() != DbValueType::TextVal) {
-                ctx.SetResultError("First argument to OpenRemapGeomContext was not text");
-                return;
-            }
-            if (args[1].GetValueType() != DbValueType::TextVal) {
-                ctx.SetResultError("Second argument to OpenRemapGeomContext was not text");
-                return;
-            }
-            if (args[2].GetValueType() != DbValueType::TextVal) {
-                ctx.SetResultError("Third argument to OpenRemapGeomContext was not text");
-                return;
-            }
-
-            const auto openResult = RemapDb.OpenBeSQLiteDb(args[0].GetValueText(), Db::OpenParams(Db::OpenMode::Readonly, DefaultTxn::No));
-            if (openResult != DbResult::BE_SQLITE_OK) {
-                ctx.SetResultError_code((int)result);
-                return;
-            }
-
-            for (const auto& tableName : {args[1].GetValueText(), args[2].GetValueText()}) {
-                if (!GeomRemapContext.ColumnExists(tableName, "SourceId")) {
-                    ctx.SetResultError("No column 'SourceId' in a specified table");
-                    return;
-                }
-                if (!GeomRemapContext.ColumnExists(tableName, "TargetId")) {
-                    ctx.SetResultError("No column 'TargetId' in a specified table");
-                    return;
-                }
-            }
-
-            elemTableName = args[1].GetValueText();
-            fontTableName = args[2].GetValueText();
-        }
-    };
-    */
-
-    /*
-    struct Close final : ScalarFunction {
-        Close() : ScalarFunction("CloseRemapGeomContext", 0) {}
-        virtual void _ComputeScalar(Context ctx&, int nArgs, EC::BeSQLite::DbValue *args) override {
-            RemapsDb.CloseDb();
-        }
-    };
-    */
-
     struct RemapGeom final : public ScalarFunction {
-        RemapGeom() : ScalarFunction("RemapGeom", 1, DbValueType::BlobVal) {}
+        DgnDbR m_dgnDb;
+        std::unique_ptr<Statement> m_fontStmt, m_elemStmt;
+        RemapGeom(DgnDbR dgnDb)
+            : ScalarFunction("RemapGeom", 1, DbValueType::BlobVal), m_dgnDb(dgnDb)
+        {
+            // FIXME: these are expensive to prepare... need to cache them in the function
+            SqlPrintfString fontSql(R"sql(
+                SELECT TargetId FROM [%s] WHERE SourceId=?
+            )sql", args[1].GetValueText());
 
+            m_fontStmt = std::make_unique<Statement>();
+            m_fontStmt->Prepare(reinterpret_cast<Db&>(m_dgnDb), fontSql);
+
+            SqlPrintfString elemSql(R"sql(
+                SELECT TargetId FROM [%s] WHERE SourceId=?
+            )sql", args[2].GetValueText());
+
+            m_elemStmt = std::make_unique<Statement>();
+            m_elemStmt->Prepare(reinterpret_cast<Db&>(m_dgnDb), elemSql);
+        }
+        
         virtual void _ComputeScalar(Context& ctx, int nArgs, DbValue *args) override {
-            if (nArgs != 1) {
-                ctx.SetResultError("RemapGeom requires exactly one arguments");
+            // can we prepare a statement in here without contending the mutex? Or should I do it in the constructor?
+            if (nArgs != 2) {
+                ctx.SetResultError("RemapGeom requires exactly three arguments");
                 return;
             }
+
             if (args[0].GetValueType() != DbValueType::BlobVal) {
                 ctx.SetResultError("First argument to RemapGeom was not a blob");
                 return;
             }
 
-            if (Dgn::GeomRemapDb == nullptr) {
-                ctx.SetResultError("GeomRemapDb was null, be sure to set context first");
+            if (args[1].GetValueType() != DbValueType::TextVal) {
+                ctx.SetResultError("Second argument to RemapGeom was not a string");
                 return;
             }
-            if (Dgn::RemapDb == nullptr) {
-                ctx.SetResultError("RemapDb was null, be sure to set context first");
+
+            if (args[2].GetValueType() != DbValueType::TextVal) {
+                ctx.SetResultError("Third argument to RemapGeom was not a string");
                 return;
             }
 
             auto source = GeometryStream();
-            auto& snappy = Dgn::GeomRemapDb->Elements().GetSnappyFrom();
+            // NOTE: says not be used during loading of geometry... I assume that means concurrently?
+            auto& snappy = m_dgnDb.Elements().GetSnappyFrom();
+
             const auto readGeomStreamStat = source.ReadGeometryStream(snappy, *Dgn::GeomRemapDb, args[0].GetValueBlob(), args[0].GetValueBytes());
             if (readGeomStreamStat != DgnDbStatus::Success) {
                 ctx.SetResultError("Failed to read geom stream");
@@ -3062,35 +3014,32 @@ namespace GeomRemapFuncs {
 
             const auto status = RemapGeometryIds(
                 // can I get a font out of an attached db?
-                *Dgn::GeomRemapDb,
-                *Dgn::GeomRemapDb,
+                m_dgnDb,
+                m_dgnDb,
                 source,
                 target,
-                SqlTableRemapper(*Dgn::RemapDb, Dgn::elemTableName.c_str(), Dgn::fontTableName.c_str()),
+                SqlTableRemapper(*m_fontStmt, *m_elemStmt),
                 // can add this to the context eventually
                 { .filteredSubCategories = {} }
             );
 
             if (status != DgnDbStatus::Success) {
+                ctx.SetResultError_code((int)status);
                 ctx.SetResultError("RemapGeometryIds failed");
                 return;
             }
 
-            // really copying things like 30 times here
+            // really copying huge things like 10 times here
             ctx.SetResultBlob(source.GetData(), target.GetSize());
         }
-
-        static RemapGeom Singleton;
     };
 }
-
-GeomRemapFuncs::RemapGeom GeomRemapFuncs::RemapGeom::Singleton{};
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-int GeometryStreamIO::ExposeSqlFunctions(DgnDb& db) {
-    return db.AddFunction(GeomRemapFuncs::RemapGeom::Singleton);
+std::vector<DbFunction*> GeometryStreamIO::ExposeSqlFunctions(DgnDbR dgnDb) {
+    return std::vector<DbFunction*>{new GeomRemapFuncs::RemapGeom(dgnDb)};
 }
 
 /*---------------------------------------------------------------------------------**//**
