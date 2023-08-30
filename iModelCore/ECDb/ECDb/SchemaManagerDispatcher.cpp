@@ -727,9 +727,7 @@ bool SchemaManager::Dispatcher::IsClassUnsupported(ECClassId classId) const
         std::function<void(ECClassId,bool)> collectEntitiesThatHaveCA;
         collectEntitiesThatHaveCA = [&baseUnsupportedEntityClasses, &collectEntitiesThatHaveCA, this](ECClassId caClassId,bool indirect) -> void {
             Statement stmt;
-if (stmt.Prepare(m_ecdb, SqlPrintfString("SELECT ContainerId FROM main." TABLE_CustomAttribute " WHERE ContainerType = %d AND ClassId = ?", (int)SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Class)) != DbResult::BE_SQLITE_OK)
-                return;
-
+            if (stmt.Prepare(m_ecdb, SqlPrintfString("SELECT ContainerId FROM main." TABLE_CustomAttribute " WHERE ContainerType = %d AND ClassId = ?", (int)SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Class)) != DbResult::BE_SQLITE_OK)
                 return;
 
             if (stmt.BindId(1, caClassId) != DbResult::BE_SQLITE_OK)
