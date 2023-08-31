@@ -213,6 +213,8 @@ private:
     int m_purgeOperation = 0;
     std::vector<std::unique_ptr<BeSQLite::DbFunction>> m_dbFuncs;
 
+    BeSQLite::DbResult  InstallNonDomainIModelSqlFunctions();
+    void UninstallNonDomainIModelSqlFunctions();
     void Destroy();
     SchemaStatus PickSchemasToImport(bvector<ECN::ECSchemaCP>& importSchemas, bvector<ECN::ECSchemaCP> const& schemas, bool isImportingFromV8) const;
     void OnBisCoreSchemaImported(CreateDgnDbParams const& params);

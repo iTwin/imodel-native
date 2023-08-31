@@ -34,18 +34,6 @@ DgnDb::DgnDb() : m_profileVersion(0, 0, 0, 0), m_fonts(std::make_unique<DgnDbFon
                  m_dbFuncs() {
     ApplyECDbSettings(true /* requireECCrudWriteToken */, true /* requireECSchemaImportToken */);
     AddECDbCacheClearListener(*this);
-
-    auto geomDbFuncs = GeometryStreamIO::ExposeSqlFunctions(*this);
-    m_dbFuncs.reserve(geomDbFuncs.size());
-
-    for (auto& geomDbFunc : geomDbFuncs) {
-        auto addStatus = (DbResult) AddFunction(*geomDbFunc);
-        if (addStatus != BE_SQLITE_OK) {
-            LOG.errorv("Sqlite error '%s' while adding function to db", Db::InterpretDbResult(addStatus));
-            continue;
-        }
-        m_dbFuncs.push_back(std::unique_ptr<DbFunction>(geomDbFunc));
-    }
 }
 
 /*---------------------------------------------------------------------------------**/ /**
@@ -150,10 +138,10 @@ ECCrudWriteToken const* DgnDb::GetECCrudWriteToken() const {return GetECDbSettin
 //---------------+---------------+---------------+---------------+---------------+------
 SchemaImportToken const* DgnDb::GetSchemaImportToken() const { return GetECDbSettingsManager().GetSchemaImportToken(); }
 
-/*---------------------------------------------------------------------------------**/ /**
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnDb::Destroy() {
+DgnDb::UninstallNonDomainIModelSqlFunctions() {
     for (auto& dbFunc : m_dbFuncs) {
         auto removeStatus = (DbResult) RemoveFunction(*dbFunc);
         if (removeStatus != BE_SQLITE_OK) {
@@ -162,7 +150,12 @@ void DgnDb::Destroy() {
         }
         dbFunc = nullptr;
     }
+}
 
+/*---------------------------------------------------------------------------------**/ /**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnDb::Destroy() {
     m_models.Empty();
     m_txnManager = nullptr;
     m_lineStyles = nullptr;
@@ -186,7 +179,29 @@ void DgnDb::_OnDbClose()
     Domains().OnDbClose();
     Destroy();
     T_Super::_OnDbClose();
+    UninstallNonDomainIModelSqlFunctions();
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult DgnDb::InstallNonDomainIModelSqlFunctions() {
+    DbResult result;
+
+    auto geomDbFuncs = GeometryStreamIO::ExposeSqlFunctions(*this);
+    m_dbFuncs.reserve(geomDbFuncs.size());
+
+    for (auto& geomDbFunc : geomDbFuncs) {
+        result = (DbResult) this->AddFunction(*geomDbFunc);
+        if (result != BE_SQLITE_OK) {
+            LOG.errorv("Sqlite error '%s' while adding function to db", Db::InterpretDbResult(result));
+            break;
+        }
+        m_dbFuncs.push_back(std::unique_ptr<DbFunction>(geomDbFunc));
+    }
+
+    return result;
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -206,8 +221,10 @@ DbResult DgnDb::_OnDbOpened(Db::OpenParams const& params)
 
     m_geoLocation.Load();
 
-
     if (DisqualifyTypeIndexForBisCoreExternalSourceAspect() != BE_SQLITE_OK)
+        return BE_SQLITE_ERROR;
+
+    if (InstallNonDomainIModelSqlFunctions() != BE_SQLITE_OK);
         return BE_SQLITE_ERROR;
 
     return BE_SQLITE_OK;
