@@ -641,6 +641,7 @@ export declare namespace IModelJsNative {
     public performCheckpoint(mode?: WalCheckpointMode): void;
     public setAutoCheckpointThreshold(frames: number): void;
     public createAnnotationTextStyle(ats: AnnotationTextStyle): void;
+    public queryAnnotationTextStyleCount(): number;
     public static enableSharedCache(enable: boolean): DbResult;
     public static getAssetsDir(): string;
   }

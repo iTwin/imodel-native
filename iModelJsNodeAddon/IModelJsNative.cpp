@@ -2459,6 +2459,12 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         JsInterop::CreateAnnotationTextStyle(GetDgnDb(), annotationTextStyle);
     }
 
+    Napi::Value QueryAnnotationTextStyleCount(NapiInfoCR info) {
+        auto count = AnnotationTextStyle::QueryCount(GetDgnDb());
+
+        return Napi::Number::New(Env(), count);
+    }
+
     void ConcurrentQueryShutdown(NapiInfoCR info) {
         RequireDbIsOpen(info);;
         ConcurrentQueryMgr::Shutdown(GetDgnDb());
@@ -2644,6 +2650,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
             InstanceMethod("performCheckpoint", &NativeDgnDb::PerformCheckpoint),
             InstanceMethod("setAutoCheckpointThreshold", &NativeDgnDb::SetAutoCheckpointThreshold),
             InstanceMethod("createAnnotationTextStyle", &NativeDgnDb::CreateAnnotationTextStyle),
+            InstanceMethod("queryAnnotationTextStyleCount", &NativeDgnDb::QueryAnnotationTextStyleCount),
             StaticMethod("enableSharedCache", &NativeDgnDb::EnableSharedCache),
             StaticMethod("getAssetsDir", &NativeDgnDb::GetAssetDir),
         });
