@@ -2655,31 +2655,38 @@ void GeometryStreamIO::Iterator::ToNext()
     }
 
 
+struct RemapGeomStatements {
+    Statement& fontStmt;
+    Statement& elemStmt;
+};
+
+// FIXME: use a c++20 concept
+template<typename GetRemapGeomStatementsFunc>
 struct SqlTableRemapper {
 private:
-    Statement& m_fontStmt;
-    Statement& m_elemStmt;
+    GetRemapGeomStatementsFunc m_getRemapGeomStatements;
 
 public:
-    SqlTableRemapper(Statement& fontStmt, Statement& elemStmt)
-    : m_fontStmt(fontStmt)
-    , m_elemStmt(elemStmt)
+    SqlTableRemapper(GetRemapGeomStatementsFunc getRemapGeomStatements)
+    : m_getRemapGeomStatements(getRemapGeomStatements)
     {}
 
     BeInt64Id RemapElemId(BeInt64Id sourceId) {
-        m_elemStmt.Reset();
-        m_elemStmt.BindId(1, sourceId);
-        if (BE_SQLITE_ROW == m_elemStmt.Step())
-            return m_elemStmt.GetValueId<BeInt64Id>(0);
+        auto& elemStmt = this->m_getRemapGeomStatements().elemStmt;
+        elemStmt.Reset();
+        elemStmt.BindId(1, sourceId);
+        if (BE_SQLITE_ROW == elemStmt.Step())
+            return elemStmt.template GetValueId<BeInt64Id>(0);
         else
             return BeInt64Id(0); // return invalid id on failure to remap
     }
 
     FontId RemapFontId(FontId sourceId) {
-        m_fontStmt.Reset();
-        m_fontStmt.BindId(1, sourceId);
-        if (BE_SQLITE_ROW == m_fontStmt.Step())
-            return m_fontStmt.GetValueId<FontId>(0);
+        auto& fontStmt = this->m_getRemapGeomStatements().fontStmt;
+        fontStmt.Reset();
+        fontStmt.BindId(1, sourceId);
+        if (BE_SQLITE_ROW == fontStmt.Step())
+            return fontStmt.template GetValueId<FontId>(0);
         else
             // FIXME: error out instead
             return FontId((uint64_t)0); // return invalid id on failure to remap
@@ -2956,27 +2963,32 @@ DgnDb* Dgn::GeomRemapDb = nullptr;
 // TODO: make in memory
 BeSQLite::Db* Dgn::RemapDb = nullptr;
 
-namespace GeomRemapFuncs {
+namespace SqlFuncs {
     struct RemapGeom final : public ScalarFunction {
         DgnDbR m_dgnDb;
-        std::unique_ptr<Statement> m_fontStmt, m_elemStmt;
+        // FIXME: should be thread local
+        Statement m_fontStmt, m_elemStmt;
         RemapGeom(DgnDbR dgnDb)
-            : ScalarFunction("RemapGeom", 1, DbValueType::BlobVal), m_dgnDb(dgnDb)
+            : ScalarFunction("RemapGeom", 1, DbValueType::BlobVal)
+            , m_dgnDb(dgnDb) {}
+
+        // lazy because the remap tables don't have to exist at DgnDb init/open time
+        RemapGeomStatements LazyGetStatements(Utf8CP fontSql, Utf8CP elemSql)
         {
-            // FIXME: these are expensive to prepare... need to cache them in the function
-            SqlPrintfString fontSql(R"sql(
-                SELECT TargetId FROM [%s] WHERE SourceId=?
-            )sql", args[1].GetValueText());
+            if (m_fontStmt.IsPrepared()) {
+                BeAssert(m_elemStmt.IsPrepared());
+                return { m_fontStmt, m_elemStmt };
+            }
 
-            m_fontStmt = std::make_unique<Statement>();
-            m_fontStmt->Prepare(reinterpret_cast<Db&>(m_dgnDb), fontSql);
+            BeAssert(!m_elemStmt.IsPrepared());
 
-            SqlPrintfString elemSql(R"sql(
-                SELECT TargetId FROM [%s] WHERE SourceId=?
-            )sql", args[2].GetValueText());
+            // FIXME: make thread local
+            // do not use the normal statement cache, its mutex can deadlock
+            // FIXME: just make this inheritance public or use a friend class
+            m_fontStmt.Prepare(reinterpret_cast<Db&>(m_dgnDb), fontSql);
+            m_elemStmt.Prepare(reinterpret_cast<Db&>(m_dgnDb), elemSql);
 
-            m_elemStmt = std::make_unique<Statement>();
-            m_elemStmt->Prepare(reinterpret_cast<Db&>(m_dgnDb), elemSql);
+            return { m_fontStmt, m_elemStmt };
         }
         
         virtual void _ComputeScalar(Context& ctx, int nArgs, DbValue *args) override {
@@ -3001,6 +3013,18 @@ namespace GeomRemapFuncs {
                 return;
             }
 
+            SqlPrintfString fontSql(R"sql(
+                SELECT TargetId FROM [%s] WHERE SourceId=?
+            )sql", args[1].GetValueText());
+
+            SqlPrintfString elemSql(R"sql(
+                SELECT TargetId FROM [%s] WHERE SourceId=?
+            )sql", args[2].GetValueText());
+
+            const auto getStatements = [this, fontSql, elemSql]() {
+                return this->LazyGetStatements(fontSql, elemSql);
+            };
+
             auto source = GeometryStream();
             // NOTE: says not be used during loading of geometry... I assume that means concurrently?
             auto& snappy = m_dgnDb.Elements().GetSnappyFrom();
@@ -3011,14 +3035,14 @@ namespace GeomRemapFuncs {
                 return;
             }
             auto target = GeometryStream();
-
+            
             const auto status = RemapGeometryIds(
                 // can I get a font out of an attached db?
                 m_dgnDb,
                 m_dgnDb,
                 source,
                 target,
-                SqlTableRemapper(*m_fontStmt, *m_elemStmt),
+                SqlTableRemapper(getStatements),
                 // can add this to the context eventually
                 { .filteredSubCategories = {} }
             );
@@ -3039,7 +3063,7 @@ namespace GeomRemapFuncs {
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::vector<DbFunction*> GeometryStreamIO::ExposeSqlFunctions(DgnDbR dgnDb) {
-    return std::vector<DbFunction*>{new GeomRemapFuncs::RemapGeom(dgnDb)};
+    return std::vector<DbFunction*>{new SqlFuncs::RemapGeom(dgnDb)};
 }
 
 /*---------------------------------------------------------------------------------**//**
