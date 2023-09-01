@@ -2677,8 +2677,10 @@ public:
         elemStmt.BindId(1, sourceId);
         if (BE_SQLITE_ROW == elemStmt.Step())
             return elemStmt.template GetValueId<BeInt64Id>(0);
-        else
+        else {
+            throw std::runtime_error("Failed to step on element statement");
             return BeInt64Id(0); // return invalid id on failure to remap
+        }
     }
 
     FontId RemapFontId(FontId sourceId) {
@@ -2687,9 +2689,10 @@ public:
         fontStmt.BindId(1, sourceId);
         if (BE_SQLITE_ROW == fontStmt.Step())
             return fontStmt.template GetValueId<FontId>(0);
-        else
-            // FIXME: error out instead
+        else {
+            throw std::runtime_error("Failed to step on font statement");
             return FontId((uint64_t)0); // return invalid id on failure to remap
+        }
     }
 
     CodeSpecId RemapCodeSpecId(CodeSpecId sourceId)                   {return CodeSpecId       (RemapElemId(sourceId).GetValueUnchecked());}
@@ -2743,7 +2746,6 @@ static DgnDbStatus RemapGeometryIds(
         return DgnDbStatus::Success; // otherwise we end up writing a header for an otherwise empty stream...
 
     GeometryStreamIO::Collection collection(source.GetData(), source.GetSize());
-    // FIXME: in-place edit, flat buffers doesn't seem to like that idea though (for int64 shouldn't require changes...)
     GeometryStreamIO::Writer writer(targetDb);
     writer.Reset(collection.GetHeader().m_flags);
 
@@ -3037,16 +3039,22 @@ namespace SqlFuncs {
             }
             auto target = GeometryStream();
             
-            const auto status = RemapGeometryIds(
-                // can I get a font out of an attached db?
-                m_dgnDb,
-                m_dgnDb,
-                source,
-                target,
-                SqlTableRemapper(getStatements),
-                // can add this to the context eventually
-                { .filteredSubCategories = {} }
-            );
+            DgnDbStatus status;
+            try {
+                status = RemapGeometryIds(
+                    // can I get a font out of an attached db?
+                    m_dgnDb,
+                    m_dgnDb,
+                    source,
+                    target,
+                    SqlTableRemapper(getStatements),
+                    // can add this to the context eventually
+                    { .filteredSubCategories = {} }
+                );
+            } catch (const std::runtime_error& err) {
+                ctx.SetResultError(err.what());
+                return;
+            }
 
             if (status != DgnDbStatus::Success) {
                 ctx.SetResultError_code((int)status);
