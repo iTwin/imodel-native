@@ -384,6 +384,53 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
         return value;
     }
 
+    Napi::Value QueryBcvStats(NapiInfoCR info) {
+        RequireConnected();
+        bool addClientInformation = false;
+        if (info[0].IsObject()) {
+            auto filterOpts = BeJsConst(info[0]);
+            addClientInformation = filterOpts[JSON_NAME(addClientInformation)].asBool();
+        }
+
+        Statement stmt;
+        Utf8CP statNames [3] = { "nlock", "ncache", "cachesize" };
+        Utf8CP jsNames [3] = { "lockedCacheslots", "populatedCacheslots", "totalCacheslots" };
+        auto rc = stmt.Prepare(m_containerDb, "SELECT value FROM bcv_stat where name = ?");
+        BeAssert (rc == BE_SQLITE_OK);
+        UNUSED_VARIABLE(rc);
+        BeJsNapiObject value(Env());
+        for (int i = 0; i < sizeof(statNames) / sizeof(statNames[0]); i++) {
+            stmt.BindText(1, statNames[i], Statement::MakeCopy::No);
+            auto result = stmt.Step();
+            if (result != BE_SQLITE_ROW) {
+                value[jsNames[i]] = -1; 
+            } else {
+                value[jsNames[i]] = stmt.GetValueInt(0); 
+            }
+            stmt.Reset();
+            stmt.ClearBindings();
+        }
+        stmt.Finalize();
+        // TODO: Would a where clause speed up the performance of this query?
+        if (addClientInformation) {
+            rc = stmt.Prepare(m_containerDb, "SELECT SUM(nclient), SUM(nprefetch), SUM(ntrans) from bcv_database");
+
+            BeAssert(rc == BE_SQLITE_OK);
+            if ((stmt.Step()) == BE_SQLITE_ROW) {
+                value["totalClients"] = stmt.GetValueInt(0);
+                value["ongoingPrefetches"] = stmt.GetValueInt(1);
+                value["activeClients"] = stmt.GetValueInt(2);
+            }
+            stmt.Finalize();
+            rc = stmt.Prepare(m_containerDb, "SELECT COUNT(*) from bcv_container");
+            BeAssert(rc == BE_SQLITE_OK);
+            if ((stmt.Step()) == BE_SQLITE_ROW) {
+                value["attachedContainers"] = stmt.GetValueInt(0);
+            }
+        }
+        return value;
+    }
+
     bool HasLocalChanges() {
         RequireConnected();
         Statement stmt;
@@ -677,6 +724,7 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
             InstanceMethod<&JsCloudContainer::QueryDatabaseHash>("queryDatabaseHash"),
             InstanceMethod<&JsCloudContainer::QueryDatabases>("queryDatabases"),
             InstanceMethod<&JsCloudContainer::QueryHttpLog>("queryHttpLog"),
+            InstanceMethod<&JsCloudContainer::QueryBcvStats>("queryBcvStats"),
             InstanceMethod<&JsCloudContainer::ReleaseWriteLock>("releaseWriteLock"),
             InstanceMethod<&JsCloudContainer::UploadChanges>("uploadChanges"),
         });
