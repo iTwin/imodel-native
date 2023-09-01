@@ -411,7 +411,6 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
             stmt.ClearBindings();
         }
         stmt.Finalize();
-        // TODO: Would a where clause speed up the performance of this query?
         if (addClientInformation) {
             rc = stmt.Prepare(m_containerDb, "SELECT SUM(nclient), SUM(nprefetch), SUM(ntrans) from bcv_database");
 
