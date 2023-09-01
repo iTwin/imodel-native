@@ -141,7 +141,7 @@ SchemaImportToken const* DgnDb::GetSchemaImportToken() const { return GetECDbSet
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDb::UninstallNonDomainIModelSqlFunctions() {
+void DgnDb::UninstallNonDomainIModelSqlFunctions() {
     for (auto& dbFunc : m_dbFuncs) {
         auto removeStatus = (DbResult) RemoveFunction(*dbFunc);
         if (removeStatus != BE_SQLITE_OK) {
@@ -224,7 +224,7 @@ DbResult DgnDb::_OnDbOpened(Db::OpenParams const& params)
     if (DisqualifyTypeIndexForBisCoreExternalSourceAspect() != BE_SQLITE_OK)
         return BE_SQLITE_ERROR;
 
-    if (InstallNonDomainIModelSqlFunctions() != BE_SQLITE_OK);
+    if (InstallNonDomainIModelSqlFunctions() != BE_SQLITE_OK)
         return BE_SQLITE_ERROR;
 
     return BE_SQLITE_OK;

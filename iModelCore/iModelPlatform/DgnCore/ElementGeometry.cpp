@@ -2969,7 +2969,7 @@ namespace SqlFuncs {
         // FIXME: should be thread local
         Statement m_fontStmt, m_elemStmt;
         RemapGeom(DgnDbR dgnDb)
-            : ScalarFunction("RemapGeom", 1, DbValueType::BlobVal)
+            : ScalarFunction("RemapGeom", 3, DbValueType::BlobVal)
             , m_dgnDb(dgnDb) {}
 
         // lazy because the remap tables don't have to exist at DgnDb init/open time
@@ -2993,7 +2993,7 @@ namespace SqlFuncs {
         
         virtual void _ComputeScalar(Context& ctx, int nArgs, DbValue *args) override {
             // can we prepare a statement in here without contending the mutex? Or should I do it in the constructor?
-            if (nArgs != 2) {
+            if (nArgs != 3) {
                 ctx.SetResultError("RemapGeom requires exactly three arguments");
                 return;
             }
@@ -3013,16 +3013,17 @@ namespace SqlFuncs {
                 return;
             }
 
-            SqlPrintfString fontSql(R"sql(
+            auto fontSql = std::make_shared<SqlPrintfString>(R"sql(
                 SELECT TargetId FROM [%s] WHERE SourceId=?
             )sql", args[1].GetValueText());
 
-            SqlPrintfString elemSql(R"sql(
+            auto elemSql = std::make_shared<SqlPrintfString>(R"sql(
                 SELECT TargetId FROM [%s] WHERE SourceId=?
             )sql", args[2].GetValueText());
 
-            const auto getStatements = [this, fontSql, elemSql]() {
-                return this->LazyGetStatements(fontSql, elemSql);
+            const auto getStatements = [this, fontSql = std::move(fontSql), elemSql = std::move(elemSql)]()
+            {
+                return this->LazyGetStatements(*fontSql, *elemSql);
             };
 
             auto source = GeometryStream();
