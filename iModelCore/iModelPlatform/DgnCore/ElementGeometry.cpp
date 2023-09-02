@@ -2,6 +2,7 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
+#include <concepts>
 #include <DgnPlatformInternal.h>
 #include <GeomSerialization/GeomLibsFlatBufferApi.h>
 #include <GeomSerialization/GeomLibsJsonSerialization.h>
@@ -2673,16 +2674,21 @@ struct SqlTableRemapperException : public std::exception {
     }
 };
 
-// FIXME: use a c++20 concept
-template<typename GetRemapGeomStatementsFunc>
+template<typename T>
+concept GetRemapGeomStatementsFunc = requires(T a)
+{
+  { a() } -> std::same_as<RemapGeomStatements>;
+};
+
+template<GetRemapGeomStatementsFunc T>
 struct SqlTableRemapper {
     using Exception = SqlTableRemapperException;
 
 private:
-    GetRemapGeomStatementsFunc m_getRemapGeomStatements;
+    T m_getRemapGeomStatements;
 
 public:
-    SqlTableRemapper(GetRemapGeomStatementsFunc getRemapGeomStatements)
+    SqlTableRemapper(T getRemapGeomStatements)
     : m_getRemapGeomStatements(getRemapGeomStatements)
     {}
 
