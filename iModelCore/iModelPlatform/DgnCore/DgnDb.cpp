@@ -146,8 +146,9 @@ void DgnDb::UninstallNonDomainIModelSqlFunctions() {
         auto removeStatus = (DbResult) RemoveFunction(*dbFunc);
         if (removeStatus != BE_SQLITE_OK) {
             LOG.errorv("Sqlite error '%s' while removing function from db", Db::InterpretDbResult(removeStatus));
-            continue;
         }
+        // regardless of error, delete the function... some functions hold e.g. prepared statements
+        // that can lock the database if not deleted
         dbFunc = nullptr;
     }
 }
@@ -177,9 +178,9 @@ DgnDb::~DgnDb() {
 void DgnDb::_OnDbClose()
     {
     Domains().OnDbClose();
+    UninstallNonDomainIModelSqlFunctions();
     Destroy();
     T_Super::_OnDbClose();
-    UninstallNonDomainIModelSqlFunctions();
     }
 
 /*---------------------------------------------------------------------------------**//**
