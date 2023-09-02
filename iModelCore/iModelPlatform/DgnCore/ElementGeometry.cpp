@@ -2677,7 +2677,7 @@ struct SqlTableRemapperException : public std::exception {
 template<typename T>
 concept GetRemapGeomStatementsFunc = requires(T a)
 {
-  { a() } -> std::same_as<RemapGeomStatements>;
+    { a() } -> std::same_as<RemapGeomStatements>;
 };
 
 template<GetRemapGeomStatementsFunc T>
@@ -2780,10 +2780,24 @@ struct RemapOptions
     const DgnElementIdSet& filteredSubCategories;
     };
 
+template<typename T>
+concept GeometryRemapper = requires(T a)
+{
+    { a.RemapCodeSpecId(CodeSpecId())             } -> std::same_as<CodeSpecId>;
+    { a.RemapGeometryPartId(DgnGeometryPartId())  } -> std::same_as<DgnGeometryPartId>;
+    { a.RemapCategory(DgnCategoryId())            } -> std::same_as<DgnCategoryId>;
+    { a.RemapSubCategory(DgnSubCategoryId())      } -> std::same_as<DgnSubCategoryId>;
+    { a.RemapRenderMaterialId(RenderMaterialId()) } -> std::same_as<RenderMaterialId>;
+    { a.RemapTextureId(DgnTextureId())            } -> std::same_as<DgnTextureId>;
+    { a.RemapLineStyleId(DgnStyleId())            } -> std::same_as<DgnStyleId>;
+    { a.RemapAnnotationStyleId(DgnElementId())    } -> std::same_as<DgnElementId>;
+    { a.RemapFontId(FontId())                     } -> std::same_as<FontId>;
+};
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename Remapper>
+template<GeometryRemapper Remapper>
 static DgnDbStatus RemapGeometryIds(
     DgnDbR sourceDb,
     DgnDbR targetDb,
