@@ -2658,11 +2658,26 @@ void GeometryStreamIO::Iterator::ToNext()
 struct RemapGeomStatements {
     Statement& fontStmt;
     Statement& elemStmt;
+    DbResult status;
+};
+
+struct SqlTableRemapperException : public std::exception {
+    Utf8String m_message;
+
+    SqlTableRemapperException(const Utf8String& message)
+        : m_message(message)
+    {}
+
+    const char* what() const noexcept override {
+        return m_message.c_str();
+    }
 };
 
 // FIXME: use a c++20 concept
 template<typename GetRemapGeomStatementsFunc>
 struct SqlTableRemapper {
+    using Exception = SqlTableRemapperException;
+
 private:
     GetRemapGeomStatementsFunc m_getRemapGeomStatements;
 
@@ -2672,26 +2687,58 @@ public:
     {}
 
     BeInt64Id RemapElemId(BeInt64Id sourceId) {
-        auto& elemStmt = this->m_getRemapGeomStatements().elemStmt;
+        auto stmts = this->m_getRemapGeomStatements();
+        DbResult status = stmts.status;
+
+        if (status != BE_SQLITE_OK) {
+            throw Exception(BeSQLiteLib::GetLogError(status));
+        }
+
+        auto& elemStmt = stmts.elemStmt;
         elemStmt.Reset();
-        elemStmt.BindId(1, sourceId);
-        if (BE_SQLITE_ROW == elemStmt.Step())
+
+        status = elemStmt.BindId(1, sourceId);
+
+        if (status != BE_SQLITE_OK) {
+            LOG.errorv("%s", BeSQLiteLib::GetLogError(status).c_str());
+            BeAssert(false);
+            throw Exception(BeSQLiteLib::GetLogError(status));
+        }
+
+        status = elemStmt.Step();
+
+        if (status == BE_SQLITE_ROW) {
             return elemStmt.template GetValueId<BeInt64Id>(0);
-        else {
-            throw std::runtime_error("Failed to step on element statement");
-            return BeInt64Id(0); // return invalid id on failure to remap
+        } else {
+            Utf8PrintfString message("No remap found for 0x%x: '%s'", sourceId.GetValueUnchecked(), BeSQLiteLib::GetLogError(status).c_str());
+            throw Exception(message);
         }
     }
 
     FontId RemapFontId(FontId sourceId) {
-        auto& fontStmt = this->m_getRemapGeomStatements().fontStmt;
+        auto stmts = this->m_getRemapGeomStatements();
+        DbResult status = stmts.status;
+
+        if (status != BE_SQLITE_OK) {
+            throw Exception(BeSQLiteLib::GetLogError(status));
+        }
+
+        auto& fontStmt = stmts.fontStmt;
         fontStmt.Reset();
-        fontStmt.BindId(1, sourceId);
-        if (BE_SQLITE_ROW == fontStmt.Step())
+
+        status = fontStmt.BindId(1, sourceId);
+
+        if (status != BE_SQLITE_OK) {
+            throw Exception(BeSQLiteLib::GetLogError(status));
+        }
+
+        status = fontStmt.Step();
+
+        if (status == BE_SQLITE_ROW) {
             return fontStmt.template GetValueId<FontId>(0);
-        else {
-            throw std::runtime_error("Failed to step on font statement");
-            return FontId((uint64_t)0); // return invalid id on failure to remap
+        } else {
+            Utf8PrintfString message("No remap found for 0x%x: '%s'", sourceId.GetValueUnchecked(), BeSQLiteLib::GetLogError(status).c_str());
+            throw Exception(message);
         }
     }
 
@@ -2974,7 +3021,7 @@ namespace SqlFuncs {
             : ScalarFunction("RemapGeom", 3, DbValueType::BlobVal)
             , m_dgnDb(dgnDb) {}
 
-        // lazy because the remap tables don't have to exist at DgnDb init/open time
+        // lazy so the remap tables don't have to exist at DgnDb init/open time
         RemapGeomStatements LazyGetStatements(Utf8CP fontSql, Utf8CP elemSql)
         {
             if (m_fontStmt.IsPrepared()) {
@@ -2984,13 +3031,16 @@ namespace SqlFuncs {
 
             BeAssert(!m_elemStmt.IsPrepared());
 
+            DbResult status;
+
             // FIXME: make thread local
             // do not use the normal statement cache, its mutex can deadlock
-            // FIXME: just make this inheritance public or use a friend class
-            m_fontStmt.Prepare(reinterpret_cast<Db&>(m_dgnDb), fontSql);
-            m_elemStmt.Prepare(reinterpret_cast<Db&>(m_dgnDb), elemSql);
+            (void)(
+               BE_SQLITE_OK == (status = m_fontStmt.Prepare(static_cast<Db&>(m_dgnDb), fontSql))
+            && BE_SQLITE_OK == (status = m_elemStmt.Prepare(static_cast<Db&>(m_dgnDb), elemSql))
+            );
 
-            return { m_fontStmt, m_elemStmt };
+            return { m_fontStmt, m_elemStmt, status };
         }
         
         virtual void _ComputeScalar(Context& ctx, int nArgs, DbValue *args) override {
@@ -3051,7 +3101,7 @@ namespace SqlFuncs {
                     // can add this to the context eventually
                     { .filteredSubCategories = {} }
                 );
-            } catch (const std::runtime_error& err) {
+            } catch (const SqlTableRemapperException& err) {
                 ctx.SetResultError(err.what());
                 return;
             }
