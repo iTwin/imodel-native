@@ -2710,7 +2710,7 @@ public:
         if (status == BE_SQLITE_ROW) {
             return elemStmt.template GetValueId<BeInt64Id>(0);
         } else {
-            Utf8PrintfString message("No remap found for 0x%x: '%s'", sourceId.GetValueUnchecked(), BeSQLiteLib::GetLogError(status).c_str());
+            Utf8PrintfString message("No element remap found for 0x%x: '%s'", sourceId.GetValueUnchecked(), BeSQLiteLib::GetLogError(status).c_str());
             throw Exception(message);
         }
     }
@@ -2737,7 +2737,7 @@ public:
         if (status == BE_SQLITE_ROW) {
             return fontStmt.template GetValueId<FontId>(0);
         } else {
-            Utf8PrintfString message("No remap found for 0x%x: '%s'", sourceId.GetValueUnchecked(), BeSQLiteLib::GetLogError(status).c_str());
+            Utf8PrintfString message("No font remap found for 0x%x: '%s'", sourceId.GetValueUnchecked(), BeSQLiteLib::GetLogError(status).c_str());
             throw Exception(message);
         }
     }
