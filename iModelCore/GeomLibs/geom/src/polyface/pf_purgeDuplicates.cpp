@@ -201,5 +201,4 @@ PolyfaceHeaderPtr PolyfaceHeader::CloneWithFacetsInRandomOrder() const
     return shuffledMesh;
     }
 
-
 END_BENTLEY_GEOMETRY_NAMESPACE
