@@ -774,6 +774,7 @@ BentleyStatus ECSqlParser::ParseColumnRef(std::unique_ptr<ValueExp>& exp, OSQLPa
     }
 
     const auto isExtractProp  = (opt_extract_value->count() != 0);
+    const auto isOptionalProp = (opt_extract_value->count() == 2 && opt_extract_value->getLast()->count() == 1);
     if (isExtractProp) {
         if (lhsExp->GetType() != Exp::Type::PropertyName) {
             Issues().Report(
@@ -813,9 +814,19 @@ BentleyStatus ECSqlParser::ParseColumnRef(std::unique_ptr<ValueExp>& exp, OSQLPa
                         "Invalid grammar. instance property exp must be follow syntax '[<alias>.]$ -> <access-string>'");
                     return ERROR;
                 }
+
                 auto rhsPropExp = rhsExp->GetAsCP<PropertyNameExp>();
-                exp = std::make_unique<ExtractPropertyValueExp>(lhsPropExp->GetPropertyPath(), rhsPropExp->GetPropertyPath());
+                exp = std::make_unique<ExtractPropertyValueExp>(lhsPropExp->GetPropertyPath(), rhsPropExp->GetPropertyPath(), isOptionalProp);
                 return SUCCESS;
+            }
+        } else {
+            if (lhsPropExp->GetPropertyPath().Last().GetName().EndsWith("?")) {
+                Issues().Report(
+                    IssueSeverity::Error,
+                    IssueCategory::BusinessProperties,
+                    IssueType::ECSQL,
+                    "Invalid grammar. Property access string cannot end with '?'.");
+                return ERROR;
             }
         }
     }

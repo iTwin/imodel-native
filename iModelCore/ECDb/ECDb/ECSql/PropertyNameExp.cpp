@@ -15,6 +15,9 @@ void ExtractPropertyValueExp::_ToECSql(ECSqlRenderContext& ctx) const {
         ctx.AppendToECSql(GetInstancePath().ToString().c_str());
         ctx.AppendToECSql("->");
         ctx.AppendToECSql(m_targetPath.ToString().c_str());
+        if (m_isOptionalProp) {
+            ctx.AppendToECSql("?");
+        }
     }
 
 //-----------------------------------------------------------------------------------------
@@ -27,6 +30,9 @@ void ExtractPropertyValueExp::_ToJson(BeJsValue val, JsonFormat const&) const {
     ECSqlRenderContext ctx;
     _ToECSql(ctx);
     val["path"] = ctx.GetECSql();
+    if (m_isOptionalProp){
+        val["isOptional"] = m_isOptionalProp;
+    }
 }
 //****************************** ExtractInstanceValueExp *****************************************
 //-----------------------------------------------------------------------------------------

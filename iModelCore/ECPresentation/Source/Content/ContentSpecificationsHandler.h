@@ -72,6 +72,9 @@ public:
     FlattenedRelatedPropertiesSpecification(std::shared_ptr<RelatedPropertiesSpecification> specification, RelatedPropertiesSpecificationScopeInfo scope)
         : m_flatSpecification(std::move(specification)), m_scope(scope)
         {}
+    FlattenedRelatedPropertiesSpecification(FlattenedRelatedPropertiesSpecification&& other)
+        : m_flatSpecification(std::move(other.m_flatSpecification)), m_specificationsStack(std::move(other.m_specificationsStack)), m_scope(std::move(other.m_scope))
+        {}
     RelatedPropertiesSpecification& GetFlattened() const {return *m_flatSpecification;}
     bvector<RelatedPropertiesSpecification const*> const& GetSource() const {return m_specificationsStack;}
     RelatedPropertiesSpecificationScopeInfo const& GetScope() const {return m_scope;}
@@ -182,15 +185,16 @@ struct ContentSpecificationsHandler
         mutable ECClassUseCounter m_relationshipUseCounts;
         bmap<ECClassCP, bvector<RelatedClass>> m_handledNavigationPropertiesPaths;
         std::function<int(int)> m_contentFlagsCalculator;
+        std::shared_ptr<RelatedClassPathsList> m_exclusiveIncludePaths;
     private:
         size_t GetClassCount(ECClassCR ecClass) {return m_classCounter[&ecClass]++;}
     public:
         Context(ECSchemaHelper const& helper, IConnectionManagerCR connections, IConnectionCR connection, ICancelationTokenCP cancellationToken,
-            IRulesPreprocessorR rulesPreprocessor, PresentationRuleSetCR ruleset,
-            RulesetVariables const& variables, Utf8CP preferredDisplayType, INavNodeKeysContainerCR inputKeys, IUsedRulesetVariablesListener* usedVariablesListener)
+            IRulesPreprocessorR rulesPreprocessor, PresentationRuleSetCR ruleset, RulesetVariables const& variables,
+            Utf8CP preferredDisplayType, INavNodeKeysContainerCR inputKeys, IUsedRulesetVariablesListener* usedVariablesListener, std::shared_ptr<RelatedClassPathsList> exclusiveIncludePaths)
             : m_helper(helper), m_connections(connections), m_connection(connection), m_cancellationToken(cancellationToken),
-            m_rulesPreprocessor(rulesPreprocessor), m_ruleset(ruleset), m_rulesetVariables(variables),
-            m_preferredDisplayType(preferredDisplayType), m_inputKeys(&inputKeys), m_usedVariablesListener(usedVariablesListener)
+            m_rulesPreprocessor(rulesPreprocessor), m_ruleset(ruleset), m_rulesetVariables(variables), m_preferredDisplayType(preferredDisplayType),
+            m_inputKeys(&inputKeys), m_usedVariablesListener(usedVariablesListener), m_exclusiveIncludePaths(exclusiveIncludePaths)
             {}
         IConnectionManagerCR GetConnections() const {return m_connections;}
         IConnectionCR GetConnection() const {return m_connection;}
@@ -212,6 +216,7 @@ struct ContentSpecificationsHandler
         void SetContentFlagsCalculator(std::function<int(int)> func) {m_contentFlagsCalculator = func;}
         Utf8String CreateRelatedClassAlias(ECClassCR);
         Utf8String CreateNavigationClassAlias(ECClassCR);
+        std::shared_ptr<RelatedClassPathsList> GetExclusiveIncludePaths() const {return m_exclusiveIncludePaths;}
     };
 
     /*=================================================================================**//**
