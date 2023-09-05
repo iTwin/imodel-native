@@ -235,6 +235,14 @@ PolyfaceHeaderPtr RhombicosidodecahedronMesh()
     return mesh;
     }
 
+PolyfaceHeaderPtr SphereMesh(DPoint3dCR origin, double radius, double radianAngle)
+    {
+    auto sphere = DgnSphereDetail(origin, radius);
+    auto options = IFacetOptions::CreateForSurfaces(0.0, radianAngle);
+    auto builder = PolyfaceConstruction::Create(*options);
+    return builder->Add(sphere) ? builder->GetClientMeshPtr() : nullptr;    // NOTE: the mesh has degenerate facets!
+    }
+
 bvector<DPoint3d> CreateL
 (
 double x0,  // x coordinate at point 0,5,6

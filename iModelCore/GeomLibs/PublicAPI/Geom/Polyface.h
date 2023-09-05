@@ -2395,9 +2395,17 @@ FacetTranslationMode mode   //!< [in] selector for deforming or adding facets
 
 GEOMDLLIMPEXP PolyfaceHeaderPtr CloneWithTranslatedFacets (bvector<size_t> &activeReadIndex, DVec3dCR vector, PolyfaceHeader::FacetTranslationMode mode);
 
-//! Search the mesh for facets that identical sets of point indices.
+//! Search the mesh for facets with identical sets of point indices.
 //! Return a clone with only one copy of each.
 GEOMDLLIMPEXP PolyfaceHeaderPtr CloneWithIndexedDuplicatesRemoved () const;
+
+//! Clone the mesh with degenerate facets removed.
+//! Currently only topologically degenerate triangular and quadrilateral facets are filtered.
+GEOMDLLIMPEXP PolyfaceHeaderPtr CloneWithDegenerateFacetsRemoved() const;
+
+//! Clone the mesh with facets in random order.
+GEOMDLLIMPEXP PolyfaceHeaderPtr CloneWithFacetsInRandomOrder() const;
+
 //! Search for adjacent, coplanar facets.
 //! Merge to get maximual planar facets.
 //! Optionally remove vertices that have only two incident and colinear edges.
@@ -3238,8 +3246,10 @@ GEOMDLLIMPEXP uint32_t  NumEdgesThisFace() const;
 GEOMDLLIMPEXP uint32_t  GetNumWrap () const;
 //! Set the number of wraparound vertices to be added to faces when they are read.
 GEOMDLLIMPEXP void      SetNumWrap (uint32_t numWrap);
-//! return the (reference to) the array of per-edge visibility flags.
+//! return the (reference to) the array of per-edge visibility flags for the current face.
 GEOMDLLIMPEXP bvector<BoolTypeForVector> &Visible ();
+//! return a const pointer to the array of per-edge visibility flags for the current face.
+GEOMDLLIMPEXP BoolTypeForVector const* GetVisibleCP() const;
 //!  return the (reference to) the array indicating where vertex indices were read from the attached mesh.
 GEOMDLLIMPEXP bvector<size_t>& IndexPosition ();
 //!  Save data for traversing the given parentMesh
@@ -3318,7 +3328,6 @@ GEOMDLLIMPEXP void ClearFacet ();
 GEOMDLLIMPEXP bool TryAddVertexByReadIndex (size_t readIndex);
 //! Recompute the (coordinate) normal data based on the point coordinates.
 GEOMDLLIMPEXP bool TryRecomputeNormals ();
-
 };
 
 /*=================================================================================**//**
