@@ -4387,7 +4387,7 @@ TEST(Polyface, ConnectedComponentsMaxFaces)
             Check::True(clone.IsValid(), "successfully removed degenerate facets");
             auto newNumFacets = clone->GetNumFacet();
             if (Check::True(newNumFacets <= numFacets, "filtering degenerates did not add more facets to mesh"))
-                Check::Print(numFacets - newNumFacets, "degenFacets");
+                Check::Print((uint64_t) (numFacets - newNumFacets), "degenFacets");
             numFacets = newNumFacets;
             mesh = clone;
             }
@@ -4410,7 +4410,7 @@ TEST(Polyface, ConnectedComponentsMaxFaces)
                 Check::Size(pFacets->GetGraphP()->CountFaceLoops(MTG_EXTERIOR_MASK), numFacets, "mesh and MTG have same number of facets");
                 bvector<bvector<MTGNodeId>> components;
                 pFacets->GetGraphP()->CollectConnectedComponents(components, MTG_EXTERIOR_MASK, maxFacets);
-                Check::Print(components.size(), "components");
+                Check::Print((uint64_t) components.size(), "components");
                 size_t numMeshFacets = 0;
                 for (auto const& component : components)
                     {
@@ -4419,7 +4419,7 @@ TEST(Polyface, ConnectedComponentsMaxFaces)
                         {
                         size_t numFacetsThisSubMesh = subMesh->GetNumFacet();
                         numMeshFacets += numFacetsThisSubMesh;
-                        Check::Print(numFacetsThisSubMesh, "facets");
+                        Check::Print((uint64_t) numFacetsThisSubMesh, "facets");
                         if (maxFacets > 0)
                             Check::True(numFacetsThisSubMesh <= maxFacets, "subMesh facet count less than maxFacets");
                         Check::SetTransform(Transform::From(DPoint3d::From(x, y)));
