@@ -1014,6 +1014,10 @@ export declare namespace IModelJsNative {
     public get alias(): string;
     /** The logId. */
     public get logId(): string;
+    /** The time that the write lock expires. Of the form 'YYYY-MM-DDTHH:MM:SS.000Z' in UTC.
+     *  Returns empty string if write lock is not held.
+     */
+    public get writeLockExpires(): string;
     /** true if this CloudContainer is currently connected to a CloudCache via the `connect` method. */
     public get isConnected(): boolean;
     /** true if this CloudContainer was created with the `writeable` flag (and its `accessToken` supplies write access). */
