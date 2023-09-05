@@ -4354,8 +4354,8 @@ TEST(Polyface, ConnectedComponentsMaxFaces)
     if (Check::True(sphereMesh.IsValid(), "successfully created sphere mesh"))
         data.push_back(sphereMesh);
 
-    // load DTM test cases
-    bvector<BeFileName> filenames{ BeFileName(L"mesh7K.imjs"), BeFileName(L"mesh10K-2components.imjs"), /* BeFileName(L"mesh12M.imjs") */ };
+    // load DTM test cases (skip mesh12M.imjs, a DTM with 12 million triangles, which takes several hours!)
+    bvector<BeFileName> filenames{ BeFileName(L"mesh7K.imjs"), BeFileName(L"mesh10K-2components.imjs") };
     for (auto const& filename : filenames)
         {
         BeFileName fullPathName;
@@ -4401,33 +4401,35 @@ TEST(Polyface, ConnectedComponentsMaxFaces)
             mesh = clone;
             }
 
-        auto pFacets = jmdlMTGFacets_new();
-        if (Check::True(PolyfaceToMTG(pFacets, nullptr, nullptr, *mesh, true, absTol, relTol, 1), "mesh to MTG successful"))
+        y = 0;
+        for (size_t maxFacets : {1000, 0} )
             {
-            Check::Size(pFacets->GetGraphP()->CountFaceLoops(MTG_EXTERIOR_MASK), numFacets, "mesh and MTG have same number of facets");
-            size_t maxFacets = numFacets < 500000 ? 1000 : 500000;
-            bvector<bvector<MTGNodeId>> components;
-            pFacets->GetGraphP()->CollectConnectedComponents(components, MTG_EXTERIOR_MASK, maxFacets);
-            Check::Print(components.size(), "components");
-            y = 0;
-            size_t numMeshFacets = 0;
-            for (auto const& component : components)
+            auto pFacets = jmdlMTGFacets_new();
+            if (Check::True(PolyfaceToMTG(pFacets, nullptr, nullptr, *mesh, true, absTol, relTol, 1), "mesh to MTG successful"))
                 {
-                auto subMesh = MTGFacetsSubsetToIndexedPolyface(pFacets, MTG_EXTERIOR_MASK, MTG_NULL_MASK, component);
-                if (Check::True(subMesh.IsValid(), "component successfully converted to polyface"))
+                Check::Size(pFacets->GetGraphP()->CountFaceLoops(MTG_EXTERIOR_MASK), numFacets, "mesh and MTG have same number of facets");
+                bvector<bvector<MTGNodeId>> components;
+                pFacets->GetGraphP()->CollectConnectedComponents(components, MTG_EXTERIOR_MASK, maxFacets);
+                Check::Print(components.size(), "components");
+                size_t numMeshFacets = 0;
+                for (auto const& component : components)
                     {
-                    size_t numFacetsThisSubMesh = subMesh->GetNumFacet();
-                    numMeshFacets += numFacetsThisSubMesh;
-                    Check::Print(numFacetsThisSubMesh, "facets");
-                    Check::True(numFacetsThisSubMesh <= maxFacets, "subMesh facet count less than maxFacets");
-                    Check::SetTransform(Transform::From(DPoint3d::From(x, y)));
-                    Check::SaveTransformed(subMesh);
+                    auto subMesh = MTGFacetsSubsetToIndexedPolyface(pFacets, MTG_EXTERIOR_MASK, MTG_NULL_MASK, component);
+                    if (Check::True(subMesh.IsValid(), "component successfully converted to polyface"))
+                        {
+                        size_t numFacetsThisSubMesh = subMesh->GetNumFacet();
+                        numMeshFacets += numFacetsThisSubMesh;
+                        Check::Print(numFacetsThisSubMesh, "facets");
+                        Check::True(numFacetsThisSubMesh <= maxFacets, "subMesh facet count less than maxFacets");
+                        Check::SetTransform(Transform::From(DPoint3d::From(x, y)));
+                        Check::SaveTransformed(subMesh);
+                        }
                     }
+                Check::Size(numMeshFacets, numFacets, "total subMesh facet count equals input mesh facet count");
                 }
-            Check::Size(numMeshFacets, numFacets, "total subMesh facet count equals input mesh facet count");
+            pFacets = jmdlMTGFacets_free(pFacets);
             y += 10 * range.YLength();
             }
-        pFacets = jmdlMTGFacets_free(pFacets);
         x += 10 * range.XLength();
         }
     Check::ClearGeometry("Polyface.ConnectedComponentsMaxFaces");

@@ -457,12 +457,12 @@ void MTGGraph::CollectVertexLoops (bvector <MTGNodeId> &faceNodes)
     }
 
 // Breadth-first search through connected component of a graph.
-// @param [out] component vector of all nodes in component.
-// @param [in,out] candidates scratch array for use in search.
+// @param [out] component vector of nodes, one per face.
+// @param [in,out] candidates scratch queue for use in search.
 // @param [in] seed seed node in component.
 // @param [in] visitMask mask to apply to visited nodes. Assumed cleared throughout component.
-// @param [in] ignoreMask optional mask on faces to ignore, e.g MTG_EXTERIOR_MASK.
-// @param [in] maxFaceCount if positive, output components with no more than this number of faces.
+// @param [in] ignoreMask optional mask on faces to ignore, e.g., MTG_EXTERIOR_MASK.
+// @param [in] maxFaceCount if positive, limit size of component to this number of faces.
 // @returns node at which to start next component if maximum face count exceeded, or MTG_NULL_NODEID
 static MTGNodeId ExploreComponent(MTGGraph& graph, bvector<MTGNodeId>& component, std::queue<MTGNodeId>& candidates, MTGNodeId seed, MTGMask visitMask, MTGMask ignoreMask, size_t maxFaceCount)
     {
@@ -479,22 +479,15 @@ static MTGNodeId ExploreComponent(MTGGraph& graph, bvector<MTGNodeId>& component
         if (graph.HasMaskAt(node, boundaryMask))
             continue;
 
-        // flood reached a new face to add to the component
+        component.push_back(node);
         ++numFaces;
-        MTGARRAY_FACE_LOOP(myNode, &graph, node)
-            {
-            assert (!graph.HasMaskAt(myNode, visitMask));
-            graph.SetMaskAt(myNode, visitMask);
-            component.push_back(myNode);
-            }
-        MTGARRAY_END_FACE_LOOP(myNode, &graph, node)
 
-        // enqueue the neighboring faces
         MTGARRAY_FACE_LOOP(myNode, &graph, node)
             {
+            graph.SetMaskAt(myNode, visitMask);
             MTGNodeId neighbor = graph.VSucc(myNode);
             if (!graph.HasMaskAt(neighbor, boundaryMask))
-                candidates.push(neighbor);
+                candidates.push(neighbor);  // enqueue neighboring face
             }
         MTGARRAY_END_FACE_LOOP(myNode, &graph, node)
         }
