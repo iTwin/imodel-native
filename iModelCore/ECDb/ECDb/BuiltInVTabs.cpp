@@ -56,30 +56,32 @@ DbResult ClassPropsModule::ClassPropsVirtualTable::ClassPropsCursor::Filter(int 
         m_it = m_classIds.begin();
         BeJsDocument json;
         json.Parse(m_props);
+        int propCount = 0;
         if (json.isArray()) {
             Utf8String propList;
             json.ForEachArrayMemberValue([&](int idx, BeJsValue val) {
                 if (!val.isString()) {
                     propList.clear();
-                    return false;
+                    return true;
                 }
                 if (idx > 0)
                     propList.append(",");
                 propList.append("'").append(val.asCString()).append("'");
-                return true;
+                ++propCount;
+                return false;
             });
             if (propList.empty())  {
                 GetTable().SetError("ContainsProps vtab: expect json array of strings contain property names");
                 return BE_SQLITE_ERROR;
             }
             Utf8String sql = SqlPrintfString(R"x(
-                SELECT DISTINCT [pm].[ClassId]
+                SELECT [pm].[ClassId]
                 FROM   [ec_propertyMap] [pm]
                     JOIN [ec_classmap] [cm] ON [cm].[ClassId] = [pm].[ClassId]
                             AND [cm].[MapStrategy] NOT IN (0, 10, 11)
                     JOIN [ec_PropertyPath] [pp] ON [pp].[Id] = [pm].[PropertyPathId]
                     JOIN [ec_Property] [pt] ON [pt].[Id] = [pp].[RootPropertyId]
-                WHERE  [pt].[Name] IN (%s))x", propList.c_str()).GetUtf8CP();
+                WHERE  [pt].[Name] IN (%s) GROUP BY [pm].[ClassId] HAVING COUNT(DISTINCT [pt].[Name]) = %d)x", propList.c_str(), propCount).GetUtf8CP();
             BeSQLite::Statement stmt;
             if(BE_SQLITE_OK != stmt.Prepare(GetTable().GetModule().GetDb(), sql.c_str())) {
                 GetTable().SetError("ContainsProps vtab: unable to prepare sql stmt");
