@@ -1432,5 +1432,10 @@ void JsInterop::CreateAnnotationTextStyle(DgnDbR db, Napi::Object obj)
         ats->SetWidthFactor(widthFactor);
         ats->SetDescription(description);
 
-        ats->Insert();
+        ats->SetCode(DgnCode::CreateEmpty());
+
+        DgnDbStatus status;
+        auto saved = ats->Insert(&status);
+        if (!saved.IsValid())
+            throwDgnDbStatus(status);
     }

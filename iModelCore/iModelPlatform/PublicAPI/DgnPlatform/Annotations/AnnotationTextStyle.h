@@ -182,6 +182,7 @@ public:
     static AnnotationTextStylePtr GetForEdit(DgnDbR db, DgnElementId id) { return db.Elements().GetForEdit<AnnotationTextStyle>(id); }
     static AnnotationTextStylePtr GetForEdit(DefinitionModelCR model, Utf8CP name) { return GetForEdit(model.GetDgnDb(), QueryId(model, name)); }
     AnnotationTextStyleCPtr Insert() { return GetDgnDb().Elements().Insert<AnnotationTextStyle>(*this); }
+    AnnotationTextStyleCPtr Insert(DgnDbStatus* status) { return GetDgnDb().Elements().Insert<AnnotationTextStyle>(*this, status); }
 
     //=======================================================================================
     //! @ingroup GROUP_Annotation

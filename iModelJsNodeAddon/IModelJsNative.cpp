@@ -2455,6 +2455,8 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
     }
 
     void CreateAnnotationTextStyle(NapiInfoCR info) {
+        RequireDbIsOpen(info);
+
         REQUIRE_ARGUMENT_ANY_OBJ(0, annotationTextStyle);
         JsInterop::CreateAnnotationTextStyle(GetDgnDb(), annotationTextStyle);
     }
