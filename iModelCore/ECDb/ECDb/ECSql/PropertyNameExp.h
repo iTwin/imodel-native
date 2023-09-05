@@ -127,11 +127,13 @@ struct ExtractPropertyValueExp final : InstanceValueExp {
         void _ToJson(BeJsValue val, JsonFormat const&) const override;
         Utf8String _ToString() const override { return ""; }
         mutable Utf8String m_anchor;
+        bool m_isOptionalProp;
 
     public:
         ExtractPropertyValueExp(
             PropertyPath instancePath,
-            PropertyPath targetPath) : InstanceValueExp(Type::ExtractProperty, instancePath), m_targetPath(targetPath) {
+            PropertyPath targetPath,
+            bool isOptionalProp) : InstanceValueExp(Type::ExtractProperty, instancePath), m_targetPath(targetPath), m_isOptionalProp(isOptionalProp) {
         SetTypeInfo(ECSqlTypeInfo::CreatePrimitive(ECN::PRIMITIVETYPE_String));
         }
         Utf8StringCR GetSqlAnchor(std::function<Utf8String(Utf8CP name)> gen = nullptr) const {
@@ -140,6 +142,7 @@ struct ExtractPropertyValueExp final : InstanceValueExp {
             return m_anchor;
         }
         PropertyPath const& GetTargetPath() const { return m_targetPath; }
+        bool IsOptional() const { return m_isOptionalProp; }
         virtual ~ExtractPropertyValueExp(){}
 };
 

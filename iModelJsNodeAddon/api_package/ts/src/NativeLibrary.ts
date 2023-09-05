@@ -274,6 +274,15 @@ export declare namespace IModelJsNative {
    */
   export type ElementGraphicsResult = ElementGraphicsContent | ElementGraphicsError;
 
+  /** Instance key for a change
+   * @internal
+   */
+  export interface ChangeInstanceKey {
+    id: Id64String;
+    classFullName: string;
+    changeType: "inserted" | "updated" | "deleted";
+  }
+
   /** Information returned by DgnDb.queryDefinitionElementUsage. */
   interface DefinitionElementUsageInfo {
     /** The subset of input Ids that are SpatialCategory definitions. */
@@ -547,6 +556,7 @@ export declare namespace IModelJsNative {
     public getITwinId(): GuidString;
     public getLastError(): string;
     public getLastInsertRowId(): number;
+    public getLocalChanges(rootClassFilter: string[], includeInMemoryChanges: boolean): ChangeInstanceKey[]
     public getMassProperties(props: object): Promise<MassPropertiesResponseProps>;
     public getModel(opts: ModelLoadProps): ModelProps;
     public getMultiTxnOperationDepth(): number;
@@ -1004,6 +1014,10 @@ export declare namespace IModelJsNative {
     public get alias(): string;
     /** The logId. */
     public get logId(): string;
+    /** The time that the write lock expires. Of the form 'YYYY-MM-DDTHH:MM:SS.000Z' in UTC.
+     *  Returns empty string if write lock is not held.
+     */
+    public get writeLockExpires(): string;
     /** true if this CloudContainer is currently connected to a CloudCache via the `connect` method. */
     public get isConnected(): boolean;
     /** true if this CloudContainer was created with the `writeable` flag (and its `accessToken` supplies write access). */

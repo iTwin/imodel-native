@@ -10,10 +10,10 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentProviderKey::ContentProviderKey(Utf8String connectionId, Utf8String rulesetId, Utf8String displayType, int contentFlags,
-    ECPresentation::UnitSystem unitSystem, INavNodeKeysContainerCR inputNodeKeys, SelectionInfo const* selectionInfo)
-    : m_connectionId(connectionId), m_rulesetId(rulesetId), m_preferredDisplayType(displayType),
-    m_inputNodeKeys(&inputNodeKeys), m_selectionInfo(selectionInfo), m_contentFlags(contentFlags), m_unitSystem(unitSystem)
+ContentProviderKey::ContentProviderKey(Utf8String connectionId, Utf8String rulesetId, Utf8String displayType, int contentFlags, ECPresentation::UnitSystem unitSystem,
+    INavNodeKeysContainerCR inputNodeKeys, SelectionInfo const* selectionInfo, std::shared_ptr<RelatedClassPathsList> exclusiveIncludePaths)
+    : m_connectionId(connectionId), m_rulesetId(rulesetId), m_preferredDisplayType(displayType), m_inputNodeKeys(&inputNodeKeys),
+    m_selectionInfo(selectionInfo), m_contentFlags(contentFlags), m_unitSystem(unitSystem), m_exclusiveIncludePaths(exclusiveIncludePaths)
     {}
 
 /*---------------------------------------------------------------------------------**//**
@@ -22,7 +22,7 @@ ContentProviderKey::ContentProviderKey(Utf8String connectionId, Utf8String rules
 ContentProviderKey::ContentProviderKey(ContentProviderKey const& other)
     : m_connectionId(other.m_connectionId), m_rulesetId(other.m_rulesetId), m_preferredDisplayType(other.m_preferredDisplayType),
     m_inputNodeKeys(other.m_inputNodeKeys), m_selectionInfo(other.m_selectionInfo), m_contentFlags(other.m_contentFlags),
-    m_unitSystem(other.m_unitSystem)
+    m_unitSystem(other.m_unitSystem), m_exclusiveIncludePaths(other.m_exclusiveIncludePaths)
     {}
 
 /*---------------------------------------------------------------------------------**//**
@@ -31,7 +31,7 @@ ContentProviderKey::ContentProviderKey(ContentProviderKey const& other)
 ContentProviderKey::ContentProviderKey(ContentProviderKey&& other)
     : m_connectionId(std::move(other.m_connectionId)), m_rulesetId(std::move(other.m_rulesetId)), m_preferredDisplayType(std::move(other.m_preferredDisplayType)),
     m_inputNodeKeys(std::move(other.m_inputNodeKeys)), m_selectionInfo(std::move(other.m_selectionInfo)), m_contentFlags(other.m_contentFlags),
-    m_unitSystem(other.m_unitSystem)
+    m_unitSystem(other.m_unitSystem), m_exclusiveIncludePaths(std::move(other.m_exclusiveIncludePaths))
     {}
 
 /*---------------------------------------------------------------------------------**//**
@@ -46,6 +46,7 @@ ContentProviderKey& ContentProviderKey::operator=(ContentProviderKey const& othe
     m_unitSystem = other.m_unitSystem;
     m_inputNodeKeys = other.m_inputNodeKeys;
     m_selectionInfo = other.m_selectionInfo;
+    m_exclusiveIncludePaths = other.m_exclusiveIncludePaths;
     return *this;
     }
 
@@ -61,6 +62,7 @@ ContentProviderKey& ContentProviderKey::operator=(ContentProviderKey&& other)
     m_unitSystem = other.m_unitSystem;
     m_inputNodeKeys = std::move(other.m_inputNodeKeys);
     m_selectionInfo = std::move(other.m_selectionInfo);
+    m_exclusiveIncludePaths = std::move(other.m_exclusiveIncludePaths);
     return *this;
     }
 
@@ -76,7 +78,9 @@ bool ContentProviderKey::operator==(ContentProviderKey const& other) const
         && m_unitSystem == other.m_unitSystem
         && m_inputNodeKeys->GetHash() == other.m_inputNodeKeys->GetHash()
         && ((m_selectionInfo.IsNull() && other.m_selectionInfo.IsNull())
-            || (m_selectionInfo.IsValid() && other.m_selectionInfo.IsValid() && m_selectionInfo == other.m_selectionInfo));
+            || (m_selectionInfo.IsValid() && other.m_selectionInfo.IsValid() && m_selectionInfo == other.m_selectionInfo))
+        && ((m_exclusiveIncludePaths == nullptr && other.m_exclusiveIncludePaths == nullptr)
+            || (m_exclusiveIncludePaths != nullptr && other.m_exclusiveIncludePaths != nullptr && *m_exclusiveIncludePaths == *other.m_exclusiveIncludePaths));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -124,7 +128,14 @@ bool ContentProviderKey::operator<(ContentProviderKey const& other) const
         return true;
     if (m_selectionInfo.IsValid() && other.m_selectionInfo.IsNull())
         return false;
-    return *m_selectionInfo < *other.m_selectionInfo;
+
+    if (*m_selectionInfo < *other.m_selectionInfo)
+        return true;
+    if (*other.m_selectionInfo < *m_selectionInfo)
+        return false;
+
+    PTR_VALUE_LESS_COMPARE(m_exclusiveIncludePaths, other.m_exclusiveIncludePaths);
+    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**

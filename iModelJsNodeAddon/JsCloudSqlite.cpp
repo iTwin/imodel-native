@@ -435,6 +435,14 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
         });
     }
 
+    Napi::Value GetWriteLockExpiryTime(NapiInfoCR) {
+        RequireConnected();
+        BeJsDocument lockedBy;
+        ReadWriteLock(lockedBy); 
+        // Returns empty string if writeLock is empty.
+        return Napi::String::New(Env(), lockedBy[JSON_NAME(expires)].asString());
+    }
+
     void ReadWriteLock(BeJsDocument& out) {
         Statement stmt;
         auto rc = stmt.Prepare(m_containerDb, "SELECT value FROM bcv_kv WHERE name=?");
@@ -654,6 +662,7 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
             InstanceAccessor<&JsCloudContainer::IsWriteable>("isWriteable"),
             InstanceAccessor<&JsCloudContainer::IsPublic>("isPublic"),
             InstanceAccessor<&JsCloudContainer::GetBlockSize>("blockSize"),
+            InstanceAccessor<&JsCloudContainer::GetWriteLockExpiryTime>("writeLockExpires"),
             InstanceMethod<&JsCloudContainer::AbandonChanges>("abandonChanges"),
             InstanceMethod<&JsCloudContainer::AcquireWriteLockJs>("acquireWriteLock"),
             InstanceMethod<&JsCloudContainer::CleanDeletedBlocks>("cleanDeletedBlocks"),
