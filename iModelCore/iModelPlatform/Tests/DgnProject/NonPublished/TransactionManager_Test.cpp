@@ -750,8 +750,38 @@ TEST_F (TransactionManagerTests, ForEachLocalChange) {
             }, rootClassFilter, includeInMemoryChanges);
         return changes;
     };
+    auto toJson = [&](bvector<Change> const changes) {
+        BeJsDocument doc;
+        doc.toArray();
+        for (auto& change : changes) {
+            auto obj = doc.appendObject();
+            obj["id"] = change.instanceKey.GetInstanceId().ToHexStr();
+            obj["classId"] = change.instanceKey.GetClassId().ToHexStr();
+            obj["className"] = change.className;
+            obj["changeType"] = change.changeType == DbOpcode::Delete ? "delete" : (change.changeType == DbOpcode::Insert ? "insert" : "update");
+        }
+        return doc.Stringify(StringifyFormat::Indented);
+    };
 
-    PhysicalModelPtr model1 = DgnDbTestUtils::InsertPhysicalModel(*m_db, "model1");
+    if ("non EC changes is ignored") {
+        // make non EC data table change.
+        EXPECT_EQ (BE_SQLITE_OK, m_db->SavePropertyString(PropertySpec("test", "test"), "test"));
+
+        Utf8String str;
+        EXPECT_EQ(BE_SQLITE_ROW, m_db->QueryProperty(str, PropertySpec("test", "test")));
+        EXPECT_STREQ(str.c_str(), "test");
+
+        auto changeList = getChanges({}, /* includeInMemoryChanges = */ true);
+        EXPECT_EQ(changeList.size(), 0);
+    }
+
+    m_db->SaveChanges("changeSet0");
+    if ("non EC changes") {
+        auto changeList = getChanges({}, /* includeInMemoryChanges = */ false);
+        EXPECT_EQ(changeList.size(), 0);
+    }
+
+    PhysicalModelPtr physicalModel1 = DgnDbTestUtils::InsertPhysicalModel(*m_db, "physicalModel1");
     if ("no pending txn and not from memory") {
         auto changeList = getChanges({"Bis.Model"}, /* includeInMemoryChanges = */ false);
         EXPECT_EQ(changeList.size(), 0);
@@ -760,8 +790,8 @@ TEST_F (TransactionManagerTests, ForEachLocalChange) {
     if ("model changes including one in memory") {
         auto changeList = getChanges({"Bis.Model"}, /* includeInMemoryChanges = */ true);
         EXPECT_EQ(changeList.size(), 1);
-        EXPECT_EQ(changeList[0].instanceKey.GetInstanceId(), model1->GetModelId());
-        EXPECT_EQ(changeList[0].instanceKey.GetClassId(), model1->GetClassId());
+        EXPECT_EQ(changeList[0].instanceKey.GetInstanceId(), physicalModel1->GetModelId());
+        EXPECT_EQ(changeList[0].instanceKey.GetClassId(), physicalModel1->GetClassId());
         EXPECT_EQ(changeList[0].changeType, DbOpcode::Insert);
     }
 
@@ -770,8 +800,8 @@ TEST_F (TransactionManagerTests, ForEachLocalChange) {
     if ("model changes in all pending txn for only PhysicalModel") {
         auto changeList = getChanges({"Bis.PhysicalModel"}, /* includeInMemoryChanges = */ false);
         EXPECT_EQ(changeList.size(), 1);
-        EXPECT_EQ(changeList[0].instanceKey.GetInstanceId(), model1->GetModelId());
-        EXPECT_EQ(changeList[0].instanceKey.GetClassId(), model1->GetClassId());
+        EXPECT_EQ(changeList[0].instanceKey.GetInstanceId(), physicalModel1->GetModelId());
+        EXPECT_EQ(changeList[0].instanceKey.GetClassId(), physicalModel1->GetClassId());
         EXPECT_EQ(changeList[0].changeType, DbOpcode::Insert);
     }
 
@@ -790,12 +820,12 @@ TEST_F (TransactionManagerTests, ForEachLocalChange) {
         EXPECT_EQ(changeList[0].instanceKey.GetClassId(), m_db->Schemas().FindClass("Bis.RepositoryModel")->GetId());
         EXPECT_EQ(changeList[0].changeType, DbOpcode::Update);
 
-        EXPECT_EQ(changeList[1].instanceKey.GetInstanceId(), model1->GetModelId());
-        EXPECT_EQ(changeList[1].instanceKey.GetClassId(), model1->GetClassId());
+        EXPECT_EQ(changeList[1].instanceKey.GetInstanceId(), physicalModel1->GetModelId());
+        EXPECT_EQ(changeList[1].instanceKey.GetClassId(), physicalModel1->GetClassId());
         EXPECT_EQ(changeList[1].changeType, DbOpcode::Insert);
     }
 
-    DgnModelId m1id = model1->GetModelId();
+    DgnModelId m1id = physicalModel1->GetModelId();
     EXPECT_TRUE(m1id.IsValid());
 
     auto keyE1 = InsertElement("E1", m1id);
@@ -876,6 +906,103 @@ TEST_F (TransactionManagerTests, ForEachLocalChange) {
         auto changeList = getChanges({}, /* includeInMemoryChanges = */ true);
         EXPECT_EQ(changeList.size(), 5);
     }
+
+    if ("check model selector case with no ECClassId in table") {
+        /*
+        ERROR BeSQLite Error "no such column: ECClassId (BE_SQLITE_ERROR)" preparing SQL: SELECT [ECClassId] FROM [bis_ModelSelectorRefersToModels] WHERE ROWID=?
+        */
+        PhysicalModelPtr physicalModel2 = DgnDbTestUtils::InsertPhysicalModel(*m_db, "TestPhysical2");
+        DefinitionModelPtr definitionModel = DgnDbTestUtils::InsertDefinitionModel(*m_db, "TestDefinitions");
+        DgnElementId modelSelectorId;
+        ModelSelector modelSelector(*definitionModel, "TestModelSelector");
+        modelSelector.AddModel(physicalModel1->GetModelId());
+        modelSelector.AddModel(physicalModel2->GetModelId());
+        ASSERT_TRUE(modelSelector.Insert().IsValid());
+        modelSelectorId = modelSelector.GetElementId();
+        ASSERT_TRUE(modelSelectorId.IsValid());
+
+        auto expected = R"x([
+            {
+                "id": "0x19",
+                "classId": "0xcf",
+                "className": "BisCore:ModelSelector",
+                "changeType": "insert"
+            },
+            {
+                "id": "0x18",
+                "classId": "0x89",
+                "className": "BisCore:DefinitionPartition",
+                "changeType": "insert"
+            },
+            {
+                "id": "0x16",
+                "classId": "0x13f",
+                "className": "DgnPlatformTest:TestElement",
+                "changeType": "insert"
+            },
+            {
+                "id": "0x17",
+                "classId": "0xe1",
+                "className": "BisCore:PhysicalPartition",
+                "changeType": "insert"
+            },
+            {
+                "id": "0x14",
+                "classId": "0xe1",
+                "className": "BisCore:PhysicalPartition",
+                "changeType": "insert"
+            },
+            {
+                "id": "0x15",
+                "classId": "0x13f",
+                "className": "DgnPlatformTest:TestElement",
+                "changeType": "insert"
+            },
+            {
+                "id": "0x1",
+                "classId": "0xed",
+                "className": "BisCore:RepositoryModel",
+                "changeType": "update"
+            },
+            {
+                "id": "0x18",
+                "classId": "0x87",
+                "className": "BisCore:DefinitionModel",
+                "changeType": "insert"
+            },
+            {
+                "id": "0x17",
+                "classId": "0xdd",
+                "className": "BisCore:PhysicalModel",
+                "changeType": "insert"
+            },
+            {
+                "id": "0x14",
+                "classId": "0xdd",
+                "className": "BisCore:PhysicalModel",
+                "changeType": "insert"
+            },
+            {
+                "id": "0x21",
+                "classId": "0xd0",
+                "className": "BisCore:ModelSelectorRefersToModels",
+                "changeType": "insert"
+            },
+            {
+                "id": "0x22",
+                "classId": "0xd0",
+                "className": "BisCore:ModelSelectorRefersToModels",
+                "changeType": "insert"
+            }
+        ])x";
+
+        BeJsDocument doc;
+        doc.Parse(expected);
+        auto changeList = getChanges({}, /* includeInMemoryChanges = */ true);
+        EXPECT_STRCASEEQ(doc.Stringify(StringifyFormat::Indented).c_str(), toJson(changeList).c_str());
+        EXPECT_EQ(changeList.size(), 12);
+    }
+    m_db->SaveChanges();
 
     //Both the elements and the model shouldn't be in the database.
     txns.ReverseAll();
