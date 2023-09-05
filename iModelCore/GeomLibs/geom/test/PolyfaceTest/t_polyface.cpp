@@ -4420,7 +4420,8 @@ TEST(Polyface, ConnectedComponentsMaxFaces)
                         size_t numFacetsThisSubMesh = subMesh->GetNumFacet();
                         numMeshFacets += numFacetsThisSubMesh;
                         Check::Print(numFacetsThisSubMesh, "facets");
-                        Check::True(numFacetsThisSubMesh <= maxFacets, "subMesh facet count less than maxFacets");
+                        if (maxFacets > 0)
+                            Check::True(numFacetsThisSubMesh <= maxFacets, "subMesh facet count less than maxFacets");
                         Check::SetTransform(Transform::From(DPoint3d::From(x, y)));
                         Check::SaveTransformed(subMesh);
                         }
