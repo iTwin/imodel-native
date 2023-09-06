@@ -971,6 +971,11 @@ export declare namespace IModelJsNative {
     showOnlyFinished?: boolean;
   }
 
+  interface BcvStatsFilterOptions {
+    /** if true, adds activeClients, totalClients, ongoingPrefetches, and attachedContainers to the result. */
+    addClientInformation?: boolean;
+  }
+
   /**
    * A cache for storing data from CloudSqlite databases. This object refers to a directory on a local filesystem
    * and is used to **connect** CloudContainers so they may be accessed. The contents of the cache directory are entirely
@@ -1153,6 +1158,12 @@ export declare namespace IModelJsNative {
      * @note Entries are automatically removed from the table on a FIFO basis. By default entries which are 1 hr old will be removed.
      */
     public queryHttpLog(filterOptions?: BcvHttpLogFilterOptions): NativeCloudSqlite.BcvHttpLog[];
+
+    /**
+     * query the bcv_stat table.
+     * @internal
+     */
+    public queryBcvStats(filterOptions?: BcvStatsFilterOptions): NativeCloudSqlite.BcvStats;
 
     /**
      * Get the SHA1 hash of the content of a database.
