@@ -12,6 +12,9 @@ pr:
     include:
       - main
       - release/*
+  paths:
+    exclude:
+      - iModelJsNodeAddon/package_version.txt
 
 resources:
   repositories:
