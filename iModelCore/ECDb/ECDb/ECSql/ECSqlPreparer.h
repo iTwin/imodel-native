@@ -37,6 +37,8 @@ struct ECSqlExpPreparer final
         static BentleyStatus PrepareCastExpForPrimitive(Utf8StringR, ECN::PrimitiveType, Utf8StringCR castOperandSnippet);
         static ECSqlStatus PrepareSearchConditionExp(NativeSqlBuilder&, ECSqlPrepareContext&, BooleanExp const& searchConditionExp);
         static void RemovePropertyRefs(ECSqlPrepareContext&, ClassRefExp const&, ClassMap const&);
+        // query options
+        static bool QueryOptionExperimentalFeaturesEnabled(ECDbCR db, ExpCR exp);
 
     public:
         static ECSqlStatus PrepareAllOrAnyExp(ECSqlPrepareContext&, AllOrAnyExp const&);

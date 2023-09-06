@@ -5,6 +5,7 @@
 #pragma once
 
 #include "Exp.h"
+#include "ECSqlTypeInfo.h"
 #include "../IssueReporter.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -17,17 +18,19 @@ struct OptionExp final : Exp
 private:
     Utf8String m_name;
     Utf8String m_val;
-
+    ECSqlTypeInfo m_valType;
     void _ToECSql(ECSqlRenderContext&) const override;
     void _ToJson(BeJsValue, JsonFormat const&) const override;
     Utf8String _ToString() const override { return "OptionExp"; }
 
 public:
-    OptionExp(Utf8CP name, Utf8CP val) : Exp(Type::Option), m_name(name), m_val(val) {}
+    OptionExp(Utf8CP name, Utf8CP val, ECSqlTypeInfo valType) : Exp(Type::Option), m_name(name), m_val(val), m_valType(valType) {}
 
     Utf8CP GetName() const { return m_name.c_str(); }
     bool IsNameValuePair() const { return !m_val.empty(); }
     Utf8CP GetValue() const { return m_val.c_str(); }
+    ECSqlTypeInfo const& GetValType() const { return m_valType;  }
+    bool asBool() const;
     };
 
 //=======================================================================================
@@ -67,6 +70,16 @@ public:
 
     //! Options are case-insensitive
     bool TryGetOption(OptionExp const*&, Utf8CP optionName) const;
+
+    //! Find option
+    static OptionExp const* FindLocalOrInheritedOption(Utf8CP optionName, ExpCR exp);
+    template<typename T>
+    static T FindLocalOrInheritedOption(ExpCR exp, Utf8CP optionName, std::function<T(OptionExp const&)> foundCallback,  std::function<T()> notFoundCallback)
+        {
+        if (auto opt = FindLocalOrInheritedOption(optionName, exp))
+            return foundCallback(*opt);
+        return notFoundCallback();
+        }
     };
 
 
