@@ -500,6 +500,18 @@ void TxnManager::ForEachLocalChange(std::function<void(ECInstanceKey const&, DbO
         }
     }
 
+    // cache TableName/ExclusiveRootClassId map
+    bmap<Utf8String, ECClassId> dataTables;
+    auto tblStmt = m_dgndb.GetCachedStatement(R"x(
+        SELECT [t].[Name],
+               COALESCE ([t].[ExclusiveRootClassId], [p].[ExclusiveRootClassId]) [ExclusiveRootClassId]
+        FROM   [ec_Table] [t]
+            LEFT JOIN [ec_Table] [p] ON [t].[ParentTableId] = [p].[Id]
+        WHERE  [t].[Type] IN (0, 1, 3) AND [t].[Name] NOT LIKE 'ecdbf_%')x");
+
+    while(tblStmt->Step() == BE_SQLITE_ROW) {
+        dataTables[tblStmt->GetValueText(0)] = tblStmt->GetValueId<ECClassId>(1);
+    }
     // Group all local txn
     auto endTxnId = GetCurrentTxnId();
     auto startTxnId = QueryNextTxnId(TxnId(0));
@@ -538,6 +550,7 @@ void TxnManager::ForEachLocalChange(std::function<void(ECInstanceKey const&, DbO
         Utf8String zTab;
         int iPk = -1;
         int iClassId = -1;
+        bool isECDataTable = false;
         ECClassId rootClassId;
         Statement classIdStmt;
     } current;
@@ -559,37 +572,49 @@ void TxnManager::ForEachLocalChange(std::function<void(ECInstanceKey const&, DbO
         // if new table then we need to figure out pk and classid column including root classid for table
         if (0 != strcmp(current.zTab.c_str(), zTab)) {
             current.zTab = zTab;
-            auto stmt = m_dgndb.GetCachedStatement(R"x(
-                SELECT
-                    (SELECT [cid] FROM PRAGMA_TABLE_INFO (?1) WHERE [pk] = 1),
-                    (SELECT [cid] FROM PRAGMA_TABLE_INFO (?1) WHERE [name] = 'ECClassId'),
-                    (SELECT [ExclusiveRootClassId] FROM [ec_Table] WHERE [Name] = 'bis_Element')
-            )x");
-
-            stmt->BindText(1, zTab, Statement::MakeCopy::No);
-            rc = stmt->Step();
-            if (BE_SQLITE_ROW != rc)
-                m_dgndb.ThrowException("failed to read changeset", (int) rc);
-
-            // Column index of ECInstanceId column in table.
-            current.iPk = stmt->IsColumnNull(0) ? -1 : stmt->GetValueInt(0);
-
-            // Column index of ECClassId column in table if it has one.
-            current.iClassId = stmt->IsColumnNull(1) ? -1 : stmt->GetValueInt(1);
-
-            // ExclusiveRootClassId for table which is used when ECClassId column does not exist in table
-            current.rootClassId = stmt->IsColumnNull(2) ? ECClassId() : stmt->GetValueId<ECClassId>(2);
-
+            auto it = dataTables.find(current.zTab);
+            current.isECDataTable = it != dataTables.end();
             if (current.classIdStmt.IsPrepared()) {
                 current.classIdStmt.Finalize();
             }
-            rc = current.classIdStmt.Prepare(m_dgndb, SqlPrintfString("SELECT [ECClassId] FROM [%s] WHERE ROWID=?", zTab).GetUtf8CP());
-            if (BE_SQLITE_OK != rc)
-                m_dgndb.ThrowException("failed to read changeset", (int) rc);
-        }
+            if (current.isECDataTable) {
+                auto stmt = m_dgndb.GetCachedStatement(R"x(
+                    SELECT
+                        (SELECT [cid] FROM PRAGMA_TABLE_INFO (?1) WHERE [pk] = 1),
+                        (SELECT [cid] FROM PRAGMA_TABLE_INFO (?1) WHERE [name] = 'ECClassId')
+                )x");
 
+                stmt->BindText(1, zTab, Statement::MakeCopy::No);
+                rc = stmt->Step();
+                if (BE_SQLITE_ROW != rc)
+                    m_dgndb.ThrowException("failed to read changeset", (int) rc);
+
+                // Column index of ECInstanceId column in table.
+                current.iPk = stmt->IsColumnNull(0) ? -1 : stmt->GetValueInt(0);
+
+                // Column index of ECClassId column in table if it has one.
+                current.iClassId = stmt->IsColumnNull(1) ? -1 : stmt->GetValueInt(1);
+
+                // ExclusiveRootClassId for table which is used when ECClassId column does not exist in table
+                current.rootClassId = it->second;
+
+                // if iClassId is not pointing to a column id then do not attempt to prepare classid.
+                if (current.iClassId != -1) {
+                    rc = current.classIdStmt.Prepare(m_dgndb, SqlPrintfString("SELECT [ECClassId] FROM [%s] WHERE ROWID=?", zTab).GetUtf8CP());
+                    if (BE_SQLITE_OK != rc)
+                        m_dgndb.ThrowException("failed to read changeset", (int) rc);
+                }
+            } else {
+                current.iPk = -1;
+                current.iClassId = -1;
+                current.rootClassId = ECClassId();
+            }
+        }
+        if (!current.isECDataTable) {
+            continue;
+        }
         if (current.iPk < 0) {
-            m_dgndb.ThrowException("failed to read local changes", (int) BE_SQLITE_ERROR);
+            m_dgndb.ThrowException(SqlPrintfString("no integer primary key in '%s'", current.zTab.c_str()).GetUtf8CP(), (int) BE_SQLITE_ERROR);
         }
 
         ECInstanceId id;
@@ -615,7 +640,8 @@ void TxnManager::ForEachLocalChange(std::function<void(ECInstanceKey const&, DbO
                         classId = current.classIdStmt.GetValueId<ECClassId>(0);
                     }
                 } else {
-                    m_dgndb.ThrowException("failed to read local changes", (int) BE_SQLITE_ERROR);
+                    m_dgndb.ThrowException(SqlPrintfString("failed to read classid form table '%s' for row '%s'",
+                        current.zTab.c_str(), id.ToHexStr().c_str()).GetUtf8CP(), (int) BE_SQLITE_ERROR);
                 }
             }
         }
