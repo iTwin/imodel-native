@@ -458,19 +458,18 @@ void MTGGraph::CollectVertexLoops (bvector <MTGNodeId> &faceNodes)
 
 // Breadth-first search through connected component of a graph.
 // @param [out] component vector of nodes, one per face.
-// @param [in,out] candidates scratch queue for use in search.
 // @param [in] seed seed node in component.
 // @param [in] visitMask mask to apply to visited nodes. Assumed cleared throughout component.
 // @param [in] ignoreMask optional mask on faces to ignore, e.g., MTG_EXTERIOR_MASK.
 // @param [in] maxFaceCount if positive, limit size of component to this number of faces.
 // @returns node at which to start next component if maximum face count exceeded, or MTG_NULL_NODEID
-static MTGNodeId ExploreComponent(MTGGraph& graph, bvector<MTGNodeId>& component, std::queue<MTGNodeId>& candidates, MTGNodeId seed, MTGMask visitMask, MTGMask ignoreMask, size_t maxFaceCount)
+static MTGNodeId ExploreComponent(MTGGraph& graph, bvector<MTGNodeId>& component, MTGNodeId seed, MTGMask visitMask, MTGMask ignoreMask, size_t maxFaceCount)
     {
     if (maxFaceCount <= 0)
         maxFaceCount = SIZE_MAX;
     MTGMask boundaryMask = visitMask | ignoreMask;
     size_t numFaces = 0;
-    candidates = {}; // equivalent of nonexistent clear()
+    std::queue<MTGNodeId> candidates;
     candidates.push(seed);
     while (!candidates.empty() && numFaces < maxFaceCount)
         {
@@ -524,7 +523,6 @@ void MTGGraph::CollectConnectedComponents(bvector<bvector<MTGNodeId>>& component
         return candidate;
         };
 
-    std::queue<MTGNodeId> candidates;
     for (MTGNodeId i = 0; i < (MTGNodeId) GetNodeIdCount(); ++i)
         {
         if (!IsValidNodeId(i) || HasMaskAt(i, boundaryMask))
@@ -533,7 +531,7 @@ void MTGGraph::CollectConnectedComponents(bvector<bvector<MTGNodeId>>& component
         do
             { // flood this component
             bvector<MTGNodeId> component;
-            i0 = ExploreComponent(*this, component, candidates, i0, visitMask, ignoreMask, maxFaceCount);
+            i0 = ExploreComponent(*this, component, i0, visitMask, ignoreMask, maxFaceCount);
             if (!component.empty())
                 components.push_back(component);
             } while (i0 != MTG_NULL_NODEID);
