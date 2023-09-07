@@ -496,6 +496,226 @@ TEST_F(InstanceReaderFixture, OptionsInheritance) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceReaderFixture, check_option_USE_JS_PROP_NAMES) {
+    ASSERT_EQ(BE_SQLITE_OK, OpenECDbTestDataFile("test.bim"));
+    ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
+
+    if ("system property name should be ts compilable id/className/sourceId/sourceClassName/targetId/targetClassName") {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT JSON_GROUP_ARRAY($) FROM Bis.CategorySelectorRefersToCategories OPTIONS USE_JS_PROP_NAMES"));
+        ASSERT_STREQ(stmt.GetNativeSql(), "SELECT JSON_GROUP_ARRAY(json(extract_inst([CategorySelectorRefersToCategories].[ECClassId],[CategorySelectorRefersToCategories].[ECInstanceId], 0x1))) FROM (SELECT [bis_ElementRefersToElements].[Id] [ECInstanceId],[bis_ElementRefersToElements].[ECClassId],[bis_ElementRefersToElements].[SourceId] [SourceECInstanceId],[bis_ElementRefersToElements].[TargetId] [TargetECInstanceId] FROM [main].[bis_ElementRefersToElements] WHERE [bis_ElementRefersToElements].ECClassId=104) [CategorySelectorRefersToCategories]");
+        BeJsDocument expectedDoc;
+        expectedDoc.Parse(R"x([
+            {
+                "id": "0xb",
+                "className": "BisCore.CategorySelectorRefersToCategories",
+                "sourceId": "0x37",
+                "sourceClassName": "BisCore.CategorySelector",
+                "targetId": "0x17",
+                "targetClassName": "BisCore.SpatialCategory"
+            },
+            {
+                "id": "0xc",
+                "className": "BisCore.CategorySelectorRefersToCategories",
+                "sourceId": "0x37",
+                "sourceClassName": "BisCore.CategorySelector",
+                "targetId": "0x2d",
+                "targetClassName": "BisCore.SpatialCategory"
+            },
+            {
+                "id": "0xd",
+                "className": "BisCore.CategorySelectorRefersToCategories",
+                "sourceId": "0x37",
+                "sourceClassName": "BisCore.CategorySelector",
+                "targetId": "0x2f",
+                "targetClassName": "BisCore.SpatialCategory"
+            },
+            {
+                "id": "0xe",
+                "className": "BisCore.CategorySelectorRefersToCategories",
+                "sourceId": "0x37",
+                "sourceClassName": "BisCore.CategorySelector",
+                "targetId": "0x31",
+                "targetClassName": "BisCore.SpatialCategory"
+            }
+        ])x");
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        BeJsDocument actualDoc;
+        actualDoc.Parse(stmt.GetValueText(0));
+        ASSERT_STRCASEEQ(expectedDoc.Stringify(StringifyFormat::Indented).c_str(), actualDoc.Stringify(StringifyFormat::Indented).c_str());
+        stmt.Finalize();
+    }
+    if ("nav system properties id/relClassName") {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT $ FROM Bis.GeometricElement3d OPTIONS USE_JS_PROP_NAMES"));
+        ASSERT_STREQ(stmt.GetNativeSql(), "SELECT json(extract_inst([GeometricElement3d].[ECClassId],[GeometricElement3d].[ECInstanceId], 0x1)) FROM (SELECT [bis_GeometricElement3d].[ElementId] ECInstanceId,[bis_GeometricElement3d].[ECClassId] FROM [main].[bis_GeometricElement3d]) [GeometricElement3d]");
+        BeJsDocument expectedDoc;
+        expectedDoc.Parse(R"x({
+            "id": "0x38",
+            "className": "Generic.PhysicalObject",
+            "model": {
+                "id": "0x1f",
+                "relClassName": "BisCore.ModelContainsElements"
+            },
+            "lastMod": "2017-07-25T20:44:59.926Z",
+            "codeSpec": {
+                "id": "0x1",
+                "relClassName": "BisCore.CodeSpecSpecifiesCode"
+            },
+            "codeScope": {
+                "id": "0x1",
+                "relClassName": "BisCore.ElementScopesCode"
+            },
+            "category": {
+                "id": "0x17",
+                "relClassName": "BisCore.GeometricElement3dIsInCategory"
+            },
+            "inSpatialIndex": true,
+            "origin": {
+                "x": 6.494445575423782,
+                "y": 19.89784647571006,
+                "z": 8.020100502512559
+            },
+            "yaw": 25.94935951207145,
+            "pitch": 4.7708320221952736e-15,
+            "roll": 114.7782627769506,
+            "bBoxLow": {
+                "x": -9.735928156263862,
+                "y": -9.735928156263864,
+                "z": -9.735928156263858
+            },
+            "bBoxHigh": {
+                "x": 9.735928156263858,
+                "y": 9.73592815626386,
+                "z": 9.735928156263856
+            },
+            "geometryStream": "{\"bytes\":203}"
+        })x");
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        BeJsDocument actualDoc;
+        actualDoc.Parse(stmt.GetValueText(0));
+        ASSERT_STRCASEEQ(expectedDoc.Stringify(StringifyFormat::Indented).c_str(), actualDoc.Stringify(StringifyFormat::Indented).c_str());
+        stmt.Finalize();
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceReaderFixture, check_option_DO_NOT_TRUNCATE_BLOB) {
+    ASSERT_EQ(BE_SQLITE_OK, OpenECDbTestDataFile("test.bim"));
+    ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
+
+    if ("geometryStream/BLOB is truncated by default") {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT $ FROM Bis.GeometricElement3d OPTIONS USE_JS_PROP_NAMES"));
+        ASSERT_STREQ(stmt.GetNativeSql(), "SELECT json(extract_inst([GeometricElement3d].[ECClassId],[GeometricElement3d].[ECInstanceId], 0x1)) FROM (SELECT [bis_GeometricElement3d].[ElementId] ECInstanceId,[bis_GeometricElement3d].[ECClassId] FROM [main].[bis_GeometricElement3d]) [GeometricElement3d]");
+        BeJsDocument expectedDoc;
+        expectedDoc.Parse(R"x({
+            "id": "0x38",
+            "className": "Generic.PhysicalObject",
+            "model": {
+                "id": "0x1f",
+                "relClassName": "BisCore.ModelContainsElements"
+            },
+            "lastMod": "2017-07-25T20:44:59.926Z",
+            "codeSpec": {
+                "id": "0x1",
+                "relClassName": "BisCore.CodeSpecSpecifiesCode"
+            },
+            "codeScope": {
+                "id": "0x1",
+                "relClassName": "BisCore.ElementScopesCode"
+            },
+            "category": {
+                "id": "0x17",
+                "relClassName": "BisCore.GeometricElement3dIsInCategory"
+            },
+            "inSpatialIndex": true,
+            "origin": {
+                "x": 6.494445575423782,
+                "y": 19.89784647571006,
+                "z": 8.020100502512559
+            },
+            "yaw": 25.94935951207145,
+            "pitch": 4.7708320221952736e-15,
+            "roll": 114.7782627769506,
+            "bBoxLow": {
+                "x": -9.735928156263862,
+                "y": -9.735928156263864,
+                "z": -9.735928156263858
+            },
+            "bBoxHigh": {
+                "x": 9.735928156263858,
+                "y": 9.73592815626386,
+                "z": 9.735928156263856
+            },
+            "geometryStream": "{\"bytes\":203}"
+        })x");
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        BeJsDocument actualDoc;
+        actualDoc.Parse(stmt.GetValueText(0));
+        ASSERT_STRCASEEQ(expectedDoc.Stringify(StringifyFormat::Indented).c_str(), actualDoc.Stringify(StringifyFormat::Indented).c_str());
+        stmt.Finalize();
+    }
+    if ("do not truncate geometryStream/BLOB") {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT $ FROM Bis.GeometricElement3d OPTIONS USE_JS_PROP_NAMES DO_NOT_TRUNCATE_BLOB"));
+        ASSERT_STREQ(stmt.GetNativeSql(), "SELECT json(extract_inst([GeometricElement3d].[ECClassId],[GeometricElement3d].[ECInstanceId], 0x5)) FROM (SELECT [bis_GeometricElement3d].[ElementId] ECInstanceId,[bis_GeometricElement3d].[ECClassId] FROM [main].[bis_GeometricElement3d]) [GeometricElement3d]");
+        BeJsDocument expectedDoc;
+        expectedDoc.Parse(R"x({
+            "id": "0x38",
+            "className": "Generic.PhysicalObject",
+            "model": {
+                "id": "0x1f",
+                "relClassName": "BisCore.ModelContainsElements"
+            },
+            "lastMod": "2017-07-25T20:44:59.926Z",
+            "codeSpec": {
+                "id": "0x1",
+                "relClassName": "BisCore.CodeSpecSpecifiesCode"
+            },
+            "codeScope": {
+                "id": "0x1",
+                "relClassName": "BisCore.ElementScopesCode"
+            },
+            "category": {
+                "id": "0x17",
+                "relClassName": "BisCore.GeometricElement3dIsInCategory"
+            },
+            "inSpatialIndex": true,
+            "origin": {
+                "x": 6.494445575423782,
+                "y": 19.89784647571006,
+                "z": 8.020100502512559
+            },
+            "yaw": 25.94935951207145,
+            "pitch": 4.7708320221952736e-15,
+            "roll": 114.7782627769506,
+            "bBoxLow": {
+                "x": -9.735928156263862,
+                "y": -9.735928156263864,
+                "z": -9.735928156263858
+            },
+            "bBoxHigh": {
+                "x": 9.735928156263858,
+                "y": 9.73592815626386,
+                "z": 9.735928156263856
+            },
+            "geometryStream": "encoding=base64;ywCAAjAABgAA+AAAAAEAAAAIDQgBAUAEAAAAMAAAABwAAAAYABQADAUeEQEIBgAHBRgBAQwBAQDwASQJAUALAAAAqAAAAGJnMDAwMWZiEAUXEAoADgAHBUIACgUQCAAHDAUIyAYAfAAEAAYAAAC8t0aTy3gjQNTy0dk2l6Q8BOGMD2d0zbxZPdLR+8bSvLS6W8O77KW8vQ0oBT8IANg8CQgg0LyQPKeSAhKeERAEPLoyKAAk4LwYLURU+yH5vwkIJAlAAQAAAAAAAAA="
+        })x");
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        BeJsDocument actualDoc;
+        actualDoc.Parse(stmt.GetValueText(0));
+        ASSERT_STRCASEEQ(expectedDoc.Stringify(StringifyFormat::Indented).c_str(), actualDoc.Stringify(StringifyFormat::Indented).c_str());
+        stmt.Finalize();
+    }
+}
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(InstanceReaderFixture, check_link_table_serialization) {
     ASSERT_EQ(BE_SQLITE_OK, OpenECDbTestDataFile("test.bim"));
     ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
@@ -515,7 +735,6 @@ TEST_F(InstanceReaderFixture, check_link_table_serialization) {
         ASSERT_TRUE(doc.hasMember("TargetECClassId"))    << "Must have TargetECClassId Property";
     }
     stmt.Finalize();
-
 }
 
 //---------------------------------------------------------------------------------------

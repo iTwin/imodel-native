@@ -5,7 +5,27 @@ This document including important changes to syntax or file format.
 | Module  | Version   |
 | ------- | --------- |
 | Profile | `4.0.0.3` |
-| ECSQL   | `1.2.6.0` |
+| ECSQL   | `1.2.7.0` |
+
+## `9/7/2023`: Add option to customize ECSQL Instance
+
+1. ECSql version updated to `1.2.6.0` -> `1.2.7.0`.
+2. Added following `ECSQLOPTIONS` or `OPTIONS`
+   * `USE_JS_PROP_NAMES` returns json compilable with iTwin.js typescript.
+   * `DO_NOT_TRUNCATE_BLOB` return full blob instead of truncating it.
+3. Instance access now add `json()` around `extract_inst()` function.
+
+Following return iTwin.js compilable json
+
+```sql
+  SELECT $ FROM Bis.Element OPTIONS USE_JS_PROP_NAMES
+```
+
+Following return complete blob as base64
+
+```sql
+  SELECT $ FROM  Bis.GeometricElement3d OPTIONS DO_NOT_TRUNCATE_BLOB
+```
 
 ## `9/6/2023`: Changes to ECSQLOPTIONS
 

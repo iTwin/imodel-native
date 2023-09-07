@@ -19,7 +19,7 @@ std::unique_ptr<ExtractPropFunc> ExtractPropFunc::Create(ECDbCR ecdb) {
 //+---------------+---------------+---------------+---------------+---------------+------
 void ExtractPropFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
     if (nArgs < 3) {
-        ctx.SetResultError("extract_prop(I,I,S,P,I]) expect atleast three args");
+        ctx.SetResultError("extract_prop(I,I,I,S,P,I) expect atleast three args");
         return;
     }
 
@@ -35,15 +35,23 @@ void ExtractPropFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
     if (accessStringVal.IsNull() || accessStringVal.GetValueType() != DbValueType::TextVal )
         return;
 
+    unsigned int jsonFlags = 0;
+    if (nArgs > 3) {
+        DbValue const& jsonFlagsVal = args[3];
+        if (jsonFlagsVal.GetValueType() == DbValueType::IntegerVal ) {
+            jsonFlags = static_cast<unsigned int>(jsonFlagsVal.GetValueInt());
+        }
+    }
+
     // The 4th arg P is pointer to ECSqlStatement while 5th is columnIndex.
     ECSqlField* field = nullptr;
     ECSqlSelectPreparedStatement* stmt = nullptr;
     int columnInfoIndex = -1;
-    if (nArgs == 5) {
-        auto& ptrArg = args[3];
+    if (nArgs == 6) {
+        auto& ptrArg = args[4];
         if (ptrArg.FromBinding()) {
             stmt = (ECSqlSelectPreparedStatement*)ptrArg.GetValuePointer(ECSqlSelectPreparedStatement::SELECT_PTR_NAME);
-            auto& colIdxArg = args[4];
+            auto& colIdxArg = args[5];
             if (colIdxArg.GetNumericType() == DbValueType::IntegerVal) {
                 columnInfoIndex = colIdxArg.GetValueInt();
                 if (columnInfoIndex < 0 && columnInfoIndex >= stmt->GetColumnCount() && !stmt->GetValue(columnInfoIndex).GetColumnInfo().IsDynamic()) {
@@ -102,7 +110,12 @@ void ExtractPropFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
                 return;
             }
         }
-        const auto json = row.GetJson().Stringify();
+
+        InstanceReader::JsonParams params;
+        params.SetUseJsName(jsonFlags & InstanceReader::FLAGS_UseJsPropertyNames);
+        params.SetAbbreviateBlobs(!(jsonFlags & InstanceReader::FLAGS_DoNotTruncateBlobs));
+
+        const auto json = row.GetJson(params).Stringify();
         ctx.SetResultText(json.c_str(), static_cast<int>(json.length()), Context::CopyData::Yes);
     });
 }
@@ -120,7 +133,7 @@ std::unique_ptr<ExtractInstFunc> ExtractInstFunc::Create(ECDbCR ecdb) {
 //+---------------+---------------+---------------+---------------+---------------+------
 void ExtractInstFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
     if (nArgs < 2 || nArgs > 3) {
-        ctx.SetResultError("extract_inst(I,I]) expect two args");
+        ctx.SetResultError("extract_inst(I,I,I]) expect two args");
         return;
     }
 
@@ -133,16 +146,21 @@ void ExtractInstFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
     if (instanceIdVal.IsNull() || instanceIdVal.GetValueType() != DbValueType::IntegerVal )
         return;
 
-    InstanceReader::JsonParams opts;
-    if (nArgs == 3) {
-        DbValue const& optsVal = args[2];
-        if (optsVal.IsNull() || optsVal.GetValueType() != DbValueType::TextVal){
-            return;
+
+    unsigned int jsonFlags = 0;
+    if (nArgs > 2) {
+        DbValue const& jsonFlagsVal = args[2];
+        if (jsonFlagsVal.GetValueType() == DbValueType::IntegerVal ) {
+            jsonFlags = static_cast<unsigned int>(jsonFlagsVal.GetValueInt());
         }
     }
 
+    InstanceReader::JsonParams params;
+    params.SetUseJsName(jsonFlags & InstanceReader::FLAGS_UseJsPropertyNames);
+    params.SetAbbreviateBlobs(!(jsonFlags & InstanceReader::FLAGS_DoNotTruncateBlobs));
+
     auto setResult = [&](InstanceReader::IRowContext const& row){
-        const auto json = row.GetJson().Stringify();
+        const auto json = row.GetJson(params).Stringify();
         ctx.SetResultText(json.c_str(), static_cast<int>(json.length()), Context::CopyData::Yes);
     };
 
@@ -159,7 +177,6 @@ void ExtractInstFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
         m_ecdb.GetInstanceReader().Seek(
             InstanceReader::Position(instanceId, classIdVal.GetValueText(), nullptr),
             setResult);
-
     }
 }
 
