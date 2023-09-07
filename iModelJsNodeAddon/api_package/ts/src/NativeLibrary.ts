@@ -275,6 +275,15 @@ export declare namespace IModelJsNative {
    */
   export type ElementGraphicsResult = ElementGraphicsContent | ElementGraphicsError;
 
+  /** Instance key for a change
+   * @internal
+   */
+  export interface ChangeInstanceKey {
+    id: Id64String;
+    classFullName: string;
+    changeType: "inserted" | "updated" | "deleted";
+  }
+
   /** Information returned by DgnDb.queryDefinitionElementUsage. */
   interface DefinitionElementUsageInfo {
     /** The subset of input Ids that are SpatialCategory definitions. */
@@ -548,6 +557,7 @@ export declare namespace IModelJsNative {
     public getITwinId(): GuidString;
     public getLastError(): string;
     public getLastInsertRowId(): number;
+    public getLocalChanges(rootClassFilter: string[], includeInMemoryChanges: boolean): ChangeInstanceKey[]
     public getMassProperties(props: object): Promise<MassPropertiesResponseProps>;
     public getModel(opts: ModelLoadProps): ModelProps;
     public getMultiTxnOperationDepth(): number;
@@ -964,6 +974,11 @@ export declare namespace IModelJsNative {
     showOnlyFinished?: boolean;
   }
 
+  interface BcvStatsFilterOptions {
+    /** if true, adds activeClients, totalClients, ongoingPrefetches, and attachedContainers to the result. */
+    addClientInformation?: boolean;
+  }
+
   /**
    * A cache for storing data from CloudSqlite databases. This object refers to a directory on a local filesystem
    * and is used to **connect** CloudContainers so they may be accessed. The contents of the cache directory are entirely
@@ -1007,6 +1022,10 @@ export declare namespace IModelJsNative {
     public get alias(): string;
     /** The logId. */
     public get logId(): string;
+    /** The time that the write lock expires. Of the form 'YYYY-MM-DDTHH:MM:SS.000Z' in UTC.
+     *  Returns empty string if write lock is not held.
+     */
+    public get writeLockExpires(): string;
     /** true if this CloudContainer is currently connected to a CloudCache via the `connect` method. */
     public get isConnected(): boolean;
     /** true if this CloudContainer was created with the `writeable` flag (and its `accessToken` supplies write access). */
@@ -1142,6 +1161,12 @@ export declare namespace IModelJsNative {
      * @note Entries are automatically removed from the table on a FIFO basis. By default entries which are 1 hr old will be removed.
      */
     public queryHttpLog(filterOptions?: BcvHttpLogFilterOptions): NativeCloudSqlite.BcvHttpLog[];
+
+    /**
+     * query the bcv_stat table.
+     * @internal
+     */
+    public queryBcvStats(filterOptions?: BcvStatsFilterOptions): NativeCloudSqlite.BcvStats;
 
     /**
      * Get the SHA1 hash of the content of a database.
