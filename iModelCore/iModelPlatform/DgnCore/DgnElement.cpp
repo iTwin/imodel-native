@@ -1593,7 +1593,6 @@ DgnElementPtr DgnElement::_CloneForImport(DgnDbStatus* inStat, DgnModelR destMod
             params.m_classId.IsValid() ? "invalid create params" : "attempt to clone with unknown class",
             (int) (params.m_classId.IsValid() ? DgnDbStatus::BadRequest : DgnDbStatus::WrongClass)
         );
-        return nullptr;
         }
 
     DgnElementPtr cloneElem = GetElementHandler().Create(params);
