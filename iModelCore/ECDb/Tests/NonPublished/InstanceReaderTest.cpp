@@ -663,7 +663,7 @@ TEST_F(InstanceReaderFixture, check_option_DO_NOT_TRUNCATE_BLOB) {
     if ("do not truncate geometryStream/BLOB") {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT $ FROM Bis.GeometricElement3d OPTIONS USE_JS_PROP_NAMES DO_NOT_TRUNCATE_BLOB"));
-        ASSERT_STREQ(stmt.GetNativeSql(), "SELECT json(extract_inst([GeometricElement3d].[ECClassId],[GeometricElement3d].[ECInstanceId], 0x5)) FROM (SELECT [bis_GeometricElement3d].[ElementId] ECInstanceId,[bis_GeometricElement3d].[ECClassId] FROM [main].[bis_GeometricElement3d]) [GeometricElement3d]");
+        ASSERT_STREQ(stmt.GetNativeSql(), "SELECT json(extract_inst([GeometricElement3d].[ECClassId],[GeometricElement3d].[ECInstanceId], 0x3)) FROM (SELECT [bis_GeometricElement3d].[ElementId] ECInstanceId,[bis_GeometricElement3d].[ECClassId] FROM [main].[bis_GeometricElement3d]) [GeometricElement3d]");
         BeJsDocument expectedDoc;
         expectedDoc.Parse(R"x({
             "id": "0x38",
@@ -754,7 +754,7 @@ TEST_F(InstanceReaderFixture, optional_and_non_optional_properties) {
 
         Utf8String nativeSql = stmt.GetNativeSql();
         ASSERT_TRUE(nativeSql.Contains(R"x(INNER JOIN class_props('["Url"]'))x"));
-        ASSERT_TRUE(nativeSql.Contains(R"x(WHERE extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'Url')='file:///d|/dgn/rf2.dgn')x"));
+        ASSERT_TRUE(nativeSql.Contains(R"x(WHERE extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'Url',0x0)='file:///d|/dgn/rf2.dgn')x"));
     }
 
     if ("optional property must not be part of class_props filter") {
@@ -766,7 +766,7 @@ TEST_F(InstanceReaderFixture, optional_and_non_optional_properties) {
 
         Utf8String nativeSql = stmt.GetNativeSql();
         ASSERT_FALSE(nativeSql.Contains(R"x(INNER JOIN class_props('["Url"]'))x"));
-        ASSERT_TRUE(nativeSql.Contains(R"x(WHERE extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'Url')='file:///d|/dgn/rf2.dgn')x"));
+        ASSERT_TRUE(nativeSql.Contains(R"x(WHERE extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'Url',0x0)='file:///d|/dgn/rf2.dgn')x"));
     }
 
     if ("multiple required properties") {
@@ -782,8 +782,8 @@ TEST_F(InstanceReaderFixture, optional_and_non_optional_properties) {
 
         Utf8String nativeSql = stmt.GetNativeSql();
         ASSERT_TRUE(nativeSql.Contains(R"x(INNER JOIN class_props('["Roll","Yaw"]'))x"));
-        ASSERT_TRUE(nativeSql.Contains(R"x(FLOOR(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'Yaw'))=65)x"));
-        ASSERT_TRUE(nativeSql.Contains(R"x(FLOOR(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'Roll'))=63)x"));
+        ASSERT_TRUE(nativeSql.Contains(R"x(FLOOR(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'Yaw',0x0))=65)x"));
+        ASSERT_TRUE(nativeSql.Contains(R"x(FLOOR(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'Roll',0x0))=63)x"));
     }
 
     if ("one required and one optional properties") {
@@ -799,8 +799,8 @@ TEST_F(InstanceReaderFixture, optional_and_non_optional_properties) {
 
         Utf8String nativeSql = stmt.GetNativeSql();
         ASSERT_TRUE(nativeSql.Contains(R"x(INNER JOIN class_props('["Yaw"]'))x"));
-        ASSERT_TRUE(nativeSql.Contains(R"x(FLOOR(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'Yaw'))=65)x"));
-        ASSERT_TRUE(nativeSql.Contains(R"x(FLOOR(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'Roll'))=63)x"));
+        ASSERT_TRUE(nativeSql.Contains(R"x(FLOOR(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'Yaw',0x0))=65)x"));
+        ASSERT_TRUE(nativeSql.Contains(R"x(FLOOR(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'Roll',0x0))=63)x"));
     }
 
     if ("non existing non optional property ORed") {
@@ -810,9 +810,9 @@ TEST_F(InstanceReaderFixture, optional_and_non_optional_properties) {
 
         Utf8String nativeSql = stmt.GetNativeSql();
         ASSERT_TRUE(nativeSql.Contains(R"x(INNER JOIN class_props('["NonExistingRequiredProp"]'))x"));
-        ASSERT_TRUE(nativeSql.Contains(R"x(FLOOR(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'Yaw'))=65)x"));
-        ASSERT_TRUE(nativeSql.Contains(R"x(FLOOR(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'Roll'))=63)x"));
-        ASSERT_TRUE(nativeSql.Contains(R"x(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'NonExistingRequiredProp')=65)x"));
+        ASSERT_TRUE(nativeSql.Contains(R"x(FLOOR(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'Yaw',0x0))=65)x"));
+        ASSERT_TRUE(nativeSql.Contains(R"x(FLOOR(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'Roll',0x0))=63)x"));
+        ASSERT_TRUE(nativeSql.Contains(R"x(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'NonExistingRequiredProp',0x0)=65)x"));
     }
 
     if ("non existing non optional property ANDed") {
@@ -822,9 +822,9 @@ TEST_F(InstanceReaderFixture, optional_and_non_optional_properties) {
 
         Utf8String nativeSql = stmt.GetNativeSql();
         ASSERT_TRUE(nativeSql.Contains(R"x(INNER JOIN class_props('["NonExistingRequiredProp"]'))x"));
-        ASSERT_TRUE(nativeSql.Contains(R"x(FLOOR(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'Yaw'))=65)x"));
-        ASSERT_TRUE(nativeSql.Contains(R"x(FLOOR(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'Roll'))=63)x"));
-        ASSERT_TRUE(nativeSql.Contains(R"x(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'NonExistingRequiredProp')=65)x"));
+        ASSERT_TRUE(nativeSql.Contains(R"x(FLOOR(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'Yaw',0x0))=65)x"));
+        ASSERT_TRUE(nativeSql.Contains(R"x(FLOOR(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'Roll',0x0))=63)x"));
+        ASSERT_TRUE(nativeSql.Contains(R"x(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'NonExistingRequiredProp',0x0)=65)x"));
     }
 
     if ("non existing optional property ANDed") {
@@ -834,9 +834,9 @@ TEST_F(InstanceReaderFixture, optional_and_non_optional_properties) {
 
         Utf8String nativeSql = stmt.GetNativeSql();
         ASSERT_FALSE(nativeSql.Contains(R"x(INNER JOIN class_props)x"));
-        ASSERT_TRUE(nativeSql.Contains(R"x(FLOOR(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'Yaw'))=65)x"));
-        ASSERT_TRUE(nativeSql.Contains(R"x(FLOOR(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'Roll'))=63)x"));
-        ASSERT_TRUE(nativeSql.Contains(R"x(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'NonExistingRequiredProp')=65)x"));
+        ASSERT_TRUE(nativeSql.Contains(R"x(FLOOR(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'Yaw',0x0))=65)x"));
+        ASSERT_TRUE(nativeSql.Contains(R"x(FLOOR(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'Roll',0x0))=63)x"));
+        ASSERT_TRUE(nativeSql.Contains(R"x(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'NonExistingRequiredProp',0x0)=65)x"));
     }
 
     if ("non existing optional property ORed") {
@@ -852,9 +852,9 @@ TEST_F(InstanceReaderFixture, optional_and_non_optional_properties) {
 
         Utf8String nativeSql = stmt.GetNativeSql();
         ASSERT_FALSE(nativeSql.Contains(R"x(INNER JOIN class_props)x"));
-        ASSERT_TRUE(nativeSql.Contains(R"x(FLOOR(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'Yaw'))=65)x"));
-        ASSERT_TRUE(nativeSql.Contains(R"x(FLOOR(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'Roll'))=63)x"));
-        ASSERT_TRUE(nativeSql.Contains(R"x(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'NonExistingOptionalProp')=65)x"));
+        ASSERT_TRUE(nativeSql.Contains(R"x(FLOOR(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'Yaw',0x0))=65)x"));
+        ASSERT_TRUE(nativeSql.Contains(R"x(FLOOR(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'Roll',0x0))=63)x"));
+        ASSERT_TRUE(nativeSql.Contains(R"x(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'NonExistingOptionalProp',0x0)=65)x"));
     }
 }
 
@@ -1072,7 +1072,7 @@ TEST_F(InstanceReaderFixture, ecsql_read_instance) {
 
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
-    ASSERT_STREQ(stmt.GetNativeSql(), "SELECT extract_inst([ECClassDef].[ECClassId],[ECClassDef].[ECInstanceId]) FROM (SELECT [Id] ECInstanceId,32 ECClassId,[Description] FROM [main].[ec_Class]) [ECClassDef] WHERE [ECClassDef].[Description]='Relates the property to its PropertyCategory.'");
+    ASSERT_STREQ(stmt.GetNativeSql(), "SELECT json(extract_inst([ECClassDef].[ECClassId],[ECClassDef].[ECInstanceId], 0x0)) FROM (SELECT [Id] ECInstanceId,32 ECClassId,[Description] FROM [main].[ec_Class]) [ECClassDef] WHERE [ECClassDef].[Description]='Relates the property to its PropertyCategory.'");
     ASSERT_STREQ(stmt.GetValueText(0), R"json({"ECInstanceId":"0x2e","ECClassId":"0x20","Schema":{"Id":"0x4","RelECClassId":"0x21"},"Name":"PropertyHasCategory","Description":"Relates the property to its PropertyCategory.","Type":1,"Modifier":2,"RelationshipStrength":0,"RelationshipStrengthDirection":1})json");
 }
 
@@ -1090,7 +1090,7 @@ TEST_F(InstanceReaderFixture, ecsql_read_property) {
     )sql"));
 
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    ASSERT_STREQ(stmt.GetNativeSql(), "SELECT extract_prop([ECClassDef].[ECClassId],[ECClassDef].[ECInstanceId],'name',:ecdb_this_ptr,0) FROM (SELECT [Id] ECInstanceId,32 ECClassId,[Description] FROM [main].[ec_Class]) [ECClassDef] WHERE [ECClassDef].[Description]='Relates the property to its PropertyCategory.'");
+    ASSERT_STREQ(stmt.GetNativeSql(), "SELECT extract_prop([ECClassDef].[ECClassId],[ECClassDef].[ECInstanceId],'name',0x0,:ecdb_this_ptr,0) FROM (SELECT [Id] ECInstanceId,32 ECClassId,[Description] FROM [main].[ec_Class]) [ECClassDef] WHERE [ECClassDef].[Description]='Relates the property to its PropertyCategory.'");
     ASSERT_STREQ(stmt.GetValueText(0), "PropertyHasCategory");
 }
 
@@ -1167,7 +1167,7 @@ TEST_F(InstanceReaderFixture, instance_reader) {
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"sql(
-        SELECT ECClassId, ECInstanceId, EXTRACT_INST('meta.ecClassDef',ECInstanceId) FROM meta.ECClassDef WHERE Description='Relates the property to its PropertyCategory.'
+        SELECT ECClassId, ECInstanceId, EXTRACT_INST('meta.ecClassDef',ECInstanceId,0x0) FROM meta.ECClassDef WHERE Description='Relates the property to its PropertyCategory.'
     )sql"));
 
     BeJsDocument doc;
@@ -1196,7 +1196,7 @@ TEST_F(InstanceReaderFixture, instance_reader) {
     if ("use syntax to get full instance") {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECClassId, ECInstanceId, $ FROM meta.ECClassDef WHERE Description='Relates the property to its PropertyCategory.'"));
-        const auto expectedSQL = "SELECT [ECClassDef].[ECClassId],[ECClassDef].[ECInstanceId],extract_inst([ECClassDef].[ECClassId],[ECClassDef].[ECInstanceId]) FROM (SELECT [Id] ECInstanceId,32 ECClassId,[Description] FROM [main].[ec_Class]) [ECClassDef] WHERE [ECClassDef].[Description]='Relates the property to its PropertyCategory.'";
+        const auto expectedSQL = "SELECT [ECClassDef].[ECClassId],[ECClassDef].[ECInstanceId],json(extract_inst([ECClassDef].[ECClassId],[ECClassDef].[ECInstanceId], 0x0)) FROM (SELECT [Id] ECInstanceId,32 ECClassId,[Description] FROM [main].[ec_Class]) [ECClassDef] WHERE [ECClassDef].[Description]='Relates the property to its PropertyCategory.'";
         EXPECT_STRCASEEQ(expectedSQL, stmt.GetNativeSql());
         if(stmt.Step() == BE_SQLITE_ROW) {
             BeJsDocument inst;
@@ -1208,7 +1208,7 @@ TEST_F(InstanceReaderFixture, instance_reader) {
     if ("use syntax to get full instance using alias") {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT m.ECClassId, m.ECInstanceId, m.$ FROM meta.ECClassDef m WHERE m.Description='Relates the property to its PropertyCategory.'"));
-        const auto expectedSQL = "SELECT [m].[ECClassId],[m].[ECInstanceId],extract_inst([m].[ECClassId],[m].[ECInstanceId]) FROM (SELECT [Id] ECInstanceId,32 ECClassId,[Description] FROM [main].[ec_Class]) [m] WHERE [m].[Description]='Relates the property to its PropertyCategory.'";
+        const auto expectedSQL = "SELECT [m].[ECClassId],[m].[ECInstanceId],json(extract_inst([m].[ECClassId],[m].[ECInstanceId], 0x0)) FROM (SELECT [Id] ECInstanceId,32 ECClassId,[Description] FROM [main].[ec_Class]) [m] WHERE [m].[Description]='Relates the property to its PropertyCategory.'";
         EXPECT_STRCASEEQ(expectedSQL, stmt.GetNativeSql());
         if(stmt.Step() == BE_SQLITE_ROW) {
             BeJsDocument inst;
@@ -1632,16 +1632,16 @@ TEST_F(InstanceReaderFixture, extract_prop) {
 
     const auto sql =
         "SELECT                                        "
-        "   EXTRACT_INST(ecClassId, ecInstanceId),"
-        "   EXTRACT_PROP(ecClassId, ecInstanceId, 's'  ),"
-        "   EXTRACT_PROP(ecClassId, ecInstanceId, 'i'  ),"
-        "   EXTRACT_PROP(ecClassId, ecInstanceId, 'd'  ),"
-        "   EXTRACT_PROP(ecClassId, ecInstanceId, 'p2d'),"
-        "   EXTRACT_PROP(ecClassId, ecInstanceId, 'p3d'),"
-        "   EXTRACT_PROP(ecClassId, ecInstanceId, 'bi' ),"
-        "   EXTRACT_PROP(ecClassId, ecInstanceId, 'l'  ),"
-        "   EXTRACT_PROP(ecClassId, ecInstanceId, 'dt' ),"
-        "   EXTRACT_PROP(ecClassId, ecInstanceId, 'b'  ) "
+        "   EXTRACT_INST(ecClassId, ecInstanceId, 0),"
+        "   EXTRACT_PROP(ecClassId, ecInstanceId, 's'  , 0),"
+        "   EXTRACT_PROP(ecClassId, ecInstanceId, 'i'  , 0),"
+        "   EXTRACT_PROP(ecClassId, ecInstanceId, 'd'  , 0),"
+        "   EXTRACT_PROP(ecClassId, ecInstanceId, 'p2d', 0),"
+        "   EXTRACT_PROP(ecClassId, ecInstanceId, 'p3d', 0),"
+        "   EXTRACT_PROP(ecClassId, ecInstanceId, 'bi' , 0),"
+        "   EXTRACT_PROP(ecClassId, ecInstanceId, 'l'  , 0),"
+        "   EXTRACT_PROP(ecClassId, ecInstanceId, 'dt' , 0),"
+        "   EXTRACT_PROP(ecClassId, ecInstanceId, 'b'  , 0) "
         "FROM ts.P                                     ";
 
     ECSqlStatement stmt;
@@ -1662,7 +1662,7 @@ TEST_F(InstanceReaderFixture, extract_prop) {
     if ("use syntax to extract property") {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT $->s, $->i, $->d, $->p2d, $->p3d, $->bi, $->l, $->dt, $->b FROM ts.P"));
-        const auto expectedSQL = "SELECT extract_prop([P].[ECClassId],[P].[ECInstanceId],'s',:ecdb_this_ptr,0),extract_prop([P].[ECClassId],[P].[ECInstanceId],'i',:ecdb_this_ptr,1),extract_prop([P].[ECClassId],[P].[ECInstanceId],'d',:ecdb_this_ptr,2),extract_prop([P].[ECClassId],[P].[ECInstanceId],'p2d',:ecdb_this_ptr,3),extract_prop([P].[ECClassId],[P].[ECInstanceId],'p3d',:ecdb_this_ptr,4),extract_prop([P].[ECClassId],[P].[ECInstanceId],'bi',:ecdb_this_ptr,5),extract_prop([P].[ECClassId],[P].[ECInstanceId],'l',:ecdb_this_ptr,6),extract_prop([P].[ECClassId],[P].[ECInstanceId],'dt',:ecdb_this_ptr,7),extract_prop([P].[ECClassId],[P].[ECInstanceId],'b',:ecdb_this_ptr,8) FROM (SELECT [Id] ECInstanceId,73 ECClassId FROM [main].[ts_P]) [P]";
+        const auto expectedSQL = "SELECT extract_prop([P].[ECClassId],[P].[ECInstanceId],'s',0x0,:ecdb_this_ptr,0),extract_prop([P].[ECClassId],[P].[ECInstanceId],'i',0x0,:ecdb_this_ptr,1),extract_prop([P].[ECClassId],[P].[ECInstanceId],'d',0x0,:ecdb_this_ptr,2),extract_prop([P].[ECClassId],[P].[ECInstanceId],'p2d',0x0,:ecdb_this_ptr,3),extract_prop([P].[ECClassId],[P].[ECInstanceId],'p3d',0x0,:ecdb_this_ptr,4),extract_prop([P].[ECClassId],[P].[ECInstanceId],'bi',0x0,:ecdb_this_ptr,5),extract_prop([P].[ECClassId],[P].[ECInstanceId],'l',0x0,:ecdb_this_ptr,6),extract_prop([P].[ECClassId],[P].[ECInstanceId],'dt',0x0,:ecdb_this_ptr,7),extract_prop([P].[ECClassId],[P].[ECInstanceId],'b',0x0,:ecdb_this_ptr,8) FROM (SELECT [Id] ECInstanceId,73 ECClassId FROM [main].[ts_P]) [P]";
         EXPECT_STRCASEEQ(expectedSQL, stmt.GetNativeSql());
         if(stmt.Step() == BE_SQLITE_ROW) {
             int i = 0;
