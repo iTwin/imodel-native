@@ -314,6 +314,9 @@ std::set<Utf8String, CompareIUtf8Ascii> ClassNameExp::GetInstancePropNames() con
         auto props = selectExp->Find(Exp::Type::ExtractProperty, true);
         for(auto& prop: props) {
             auto& extractProp = prop->GetAs<ExtractPropertyValueExp>();
+            if (extractProp.IsOptional())
+                continue;
+
             auto classIdClassRef = extractProp.GetClassIdPropExp().GetClassRefExp();
             if (classIdClassRef == this) {
                 dynamicProps.insert(extractProp.GetTargetPath().ToString().c_str());

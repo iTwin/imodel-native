@@ -9,6 +9,15 @@
 #include <filesystem>
 USING_NAMESPACE_BENTLEY_EC
 #include <ECDb/ConcurrentQueryManager.h>
+
+#define ASSERT_ECSQL(X, Y)                     \
+    {                                          \
+        ECSqlStatement stmt;                   \
+        ASSERT_EQ(Y, stmt.Prepare(m_ecdb, X)); \
+    }
+#define ASSERT_ECSQL_SUCCESS(X) ASSERT_ECSQL(X, ECSqlStatus::Success)
+#define ASSERT_ECSQL_INVALID(X) ASSERT_ECSQL(X, ECSqlStatus::InvalidECSql)
+
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
 struct InstanceReaderFixture : ECDbTestFixture {
@@ -448,6 +457,45 @@ TEST_F(InstanceReaderFixture, experimental_check) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceReaderFixture, OptionsInheritance) {
+    ASSERT_EQ(BE_SQLITE_OK, OpenECDbTestDataFile("test.bim"));
+    ASSERT_ECSQL_INVALID("SELECT $ FROM bis.Element");
+    ASSERT_ECSQL_SUCCESS("SELECT $ FROM bis.Element ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES");
+    ASSERT_ECSQL_SUCCESS("SELECT $ FROM bis.Element ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES = 1");
+    ASSERT_ECSQL_SUCCESS("SELECT $ FROM bis.Element ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES = TRUE");
+    ASSERT_ECSQL_SUCCESS("SELECT $ FROM bis.Element OPTIONS ENABLE_EXPERIMENTAL_FEATURES");
+    ASSERT_ECSQL_SUCCESS("SELECT $ FROM bis.Element OPTIONS ENABLE_EXPERIMENTAL_FEATURES = 1");
+    ASSERT_ECSQL_SUCCESS("SELECT $ FROM bis.Element OPTIONS ENABLE_EXPERIMENTAL_FEATURES = TRUE");
+    ASSERT_ECSQL_INVALID("SELECT $ FROM bis.Element ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES =0");
+    ASSERT_ECSQL_INVALID("SELECT $ FROM bis.Element ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES = FALSE");
+    ASSERT_ECSQL_INVALID("SELECT $ FROM bis.Element OPTIONS ENABLE_EXPERIMENTAL_FEATURES = 0");
+    ASSERT_ECSQL_INVALID("SELECT $ FROM bis.Element OPTIONS ENABLE_EXPERIMENTAL_FEATURES = FALSE");
+    ASSERT_ECSQL_INVALID("SELECT T FROM (SELECT $ T FROM bis.Element)");
+    ASSERT_ECSQL_SUCCESS("SELECT T FROM (SELECT $ T FROM bis.Element  ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES)");
+    ASSERT_ECSQL_SUCCESS("SELECT T FROM (SELECT $ T FROM bis.Element) ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES");
+    ASSERT_ECSQL_SUCCESS("SELECT T FROM (SELECT $ T FROM bis.Element  OPTIONS      ENABLE_EXPERIMENTAL_FEATURES)");
+    ASSERT_ECSQL_SUCCESS("SELECT T FROM (SELECT $ T FROM bis.Element) OPTIONS      ENABLE_EXPERIMENTAL_FEATURES");
+    ASSERT_ECSQL_INVALID("SELECT T FROM (SELECT $ T FROM bis.Element  ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES = 0)");
+    ASSERT_ECSQL_INVALID("SELECT T FROM (SELECT $ T FROM bis.Element) ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES = 0");
+    ASSERT_ECSQL_INVALID("SELECT T FROM (SELECT $ T FROM bis.Element  ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES = false)");
+    ASSERT_ECSQL_INVALID("SELECT T FROM (SELECT $ T FROM bis.Element) ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES = false");
+    ASSERT_ECSQL_INVALID("SELECT T FROM (SELECT $ T FROM bis.Element  OPTIONS ENABLE_EXPERIMENTAL_FEATURES = 0)");
+    ASSERT_ECSQL_INVALID("SELECT T FROM (SELECT $ T FROM bis.Element) OPTIONS ENABLE_EXPERIMENTAL_FEATURES = 0");
+    ASSERT_ECSQL_INVALID("SELECT T FROM (SELECT $ T FROM bis.Element  OPTIONS ENABLE_EXPERIMENTAL_FEATURES = false)");
+    ASSERT_ECSQL_INVALID("SELECT T FROM (SELECT $ T FROM bis.Element) OPTIONS ENABLE_EXPERIMENTAL_FEATURES = false");
+    ASSERT_ECSQL_SUCCESS("SELECT T FROM (SELECT $ T FROM bis.Element OPTIONS      ENABLE_EXPERIMENTAL_FEATURES = 1) OPTIONS      ENABLE_EXPERIMENTAL_FEATURES = 0");
+    ASSERT_ECSQL_SUCCESS("SELECT T FROM (SELECT $ T FROM bis.Element OPTIONS      ENABLE_EXPERIMENTAL_FEATURES = 1) OPTIONS      ENABLE_EXPERIMENTAL_FEATURES = 1");
+    ASSERT_ECSQL_SUCCESS("SELECT T FROM (SELECT $ T FROM bis.Element ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES = 1) ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES = 0");
+    ASSERT_ECSQL_SUCCESS("SELECT T FROM (SELECT $ T FROM bis.Element ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES = 1) ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES = 1");
+    ASSERT_ECSQL_INVALID("SELECT T FROM (SELECT $ T FROM bis.Element OPTIONS      ENABLE_EXPERIMENTAL_FEATURES = false) OPTIONS      ENABLE_EXPERIMENTAL_FEATURES");
+    ASSERT_ECSQL_INVALID("SELECT T FROM (SELECT $ T FROM bis.Element OPTIONS      ENABLE_EXPERIMENTAL_FEATURES = 0    ) OPTIONS      ENABLE_EXPERIMENTAL_FEATURES");
+    ASSERT_ECSQL_INVALID("SELECT T FROM (SELECT $ T FROM bis.Element ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES = false) ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES");
+    ASSERT_ECSQL_INVALID("SELECT T FROM (SELECT $ T FROM bis.Element ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES = 0    ) ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES");
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(InstanceReaderFixture, check_link_table_serialization) {
     ASSERT_EQ(BE_SQLITE_OK, OpenECDbTestDataFile("test.bim"));
     ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
@@ -468,6 +516,127 @@ TEST_F(InstanceReaderFixture, check_link_table_serialization) {
     }
     stmt.Finalize();
 
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceReaderFixture, optional_and_non_optional_properties) {
+    ASSERT_EQ(BE_SQLITE_OK, OpenECDbTestDataFile("test.bim"));
+    ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
+
+    if ("non-optional property must be part of class_props filter") {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId FROM bis.Element WHERE $->Url = 'file:///d|/dgn/rf2.dgn'"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(0x21, stmt.GetValueId<ECInstanceId>(0).GetValue());
+        ASSERT_EQ(0xa9, stmt.GetValueId<ECClassId>(1).GetValue());
+
+        Utf8String nativeSql = stmt.GetNativeSql();
+        ASSERT_TRUE(nativeSql.Contains(R"x(INNER JOIN class_props('["Url"]'))x"));
+        ASSERT_TRUE(nativeSql.Contains(R"x(WHERE extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'Url')='file:///d|/dgn/rf2.dgn')x"));
+    }
+
+    if ("optional property must not be part of class_props filter") {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId FROM bis.Element WHERE $->Url? = 'file:///d|/dgn/rf2.dgn'"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(0x21, stmt.GetValueId<ECInstanceId>(0).GetValue());
+        ASSERT_EQ(0xa9, stmt.GetValueId<ECClassId>(1).GetValue());
+
+        Utf8String nativeSql = stmt.GetNativeSql();
+        ASSERT_FALSE(nativeSql.Contains(R"x(INNER JOIN class_props('["Url"]'))x"));
+        ASSERT_TRUE(nativeSql.Contains(R"x(WHERE extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'Url')='file:///d|/dgn/rf2.dgn')x"));
+    }
+
+    if ("multiple required properties") {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId FROM bis.Element WHERE FLOOR($->Yaw) = 65 AND FLOOR($->Roll) = 63"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(0x39, stmt.GetValueId<ECInstanceId>(0).GetValue());
+        ASSERT_EQ(0xe7, stmt.GetValueId<ECClassId>(1).GetValue());
+
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(0x3b, stmt.GetValueId<ECInstanceId>(0).GetValue());
+        ASSERT_EQ(0xe7, stmt.GetValueId<ECClassId>(1).GetValue());
+
+        Utf8String nativeSql = stmt.GetNativeSql();
+        ASSERT_TRUE(nativeSql.Contains(R"x(INNER JOIN class_props('["Roll","Yaw"]'))x"));
+        ASSERT_TRUE(nativeSql.Contains(R"x(FLOOR(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'Yaw'))=65)x"));
+        ASSERT_TRUE(nativeSql.Contains(R"x(FLOOR(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'Roll'))=63)x"));
+    }
+
+    if ("one required and one optional properties") {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId FROM bis.Element WHERE FLOOR($->Yaw) = 65 AND FLOOR($->Roll?) = 63"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(0x39, stmt.GetValueId<ECInstanceId>(0).GetValue());
+        ASSERT_EQ(0xe7, stmt.GetValueId<ECClassId>(1).GetValue());
+
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(0x3b, stmt.GetValueId<ECInstanceId>(0).GetValue());
+        ASSERT_EQ(0xe7, stmt.GetValueId<ECClassId>(1).GetValue());
+
+        Utf8String nativeSql = stmt.GetNativeSql();
+        ASSERT_TRUE(nativeSql.Contains(R"x(INNER JOIN class_props('["Yaw"]'))x"));
+        ASSERT_TRUE(nativeSql.Contains(R"x(FLOOR(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'Yaw'))=65)x"));
+        ASSERT_TRUE(nativeSql.Contains(R"x(FLOOR(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'Roll'))=63)x"));
+    }
+
+    if ("non existing non optional property ORed") {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId FROM bis.Element WHERE FLOOR($->Yaw?) = 65 AND FLOOR($->Roll?) = 63 OR $->NonExistingRequiredProp = 65"));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+
+        Utf8String nativeSql = stmt.GetNativeSql();
+        ASSERT_TRUE(nativeSql.Contains(R"x(INNER JOIN class_props('["NonExistingRequiredProp"]'))x"));
+        ASSERT_TRUE(nativeSql.Contains(R"x(FLOOR(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'Yaw'))=65)x"));
+        ASSERT_TRUE(nativeSql.Contains(R"x(FLOOR(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'Roll'))=63)x"));
+        ASSERT_TRUE(nativeSql.Contains(R"x(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'NonExistingRequiredProp')=65)x"));
+    }
+
+    if ("non existing non optional property ANDed") {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId FROM bis.Element WHERE FLOOR($->Yaw?) = 65 AND FLOOR($->Roll?) = 63 AND $->NonExistingRequiredProp = 65"));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+
+        Utf8String nativeSql = stmt.GetNativeSql();
+        ASSERT_TRUE(nativeSql.Contains(R"x(INNER JOIN class_props('["NonExistingRequiredProp"]'))x"));
+        ASSERT_TRUE(nativeSql.Contains(R"x(FLOOR(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'Yaw'))=65)x"));
+        ASSERT_TRUE(nativeSql.Contains(R"x(FLOOR(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'Roll'))=63)x"));
+        ASSERT_TRUE(nativeSql.Contains(R"x(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'NonExistingRequiredProp')=65)x"));
+    }
+
+    if ("non existing optional property ANDed") {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId FROM bis.Element WHERE FLOOR($->Yaw?) = 65 AND FLOOR($->Roll?) = 63 AND $->NonExistingRequiredProp? = 65"));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+
+        Utf8String nativeSql = stmt.GetNativeSql();
+        ASSERT_FALSE(nativeSql.Contains(R"x(INNER JOIN class_props)x"));
+        ASSERT_TRUE(nativeSql.Contains(R"x(FLOOR(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'Yaw'))=65)x"));
+        ASSERT_TRUE(nativeSql.Contains(R"x(FLOOR(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'Roll'))=63)x"));
+        ASSERT_TRUE(nativeSql.Contains(R"x(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'NonExistingRequiredProp')=65)x"));
+    }
+
+    if ("non existing optional property ORed") {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId FROM bis.Element WHERE FLOOR($->Yaw?) = 65 AND FLOOR($->Roll?) = 63 OR $->NonExistingOptionalProp? = 65"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(0x39, stmt.GetValueId<ECInstanceId>(0).GetValue());
+        ASSERT_EQ(0xe7, stmt.GetValueId<ECClassId>(1).GetValue());
+
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(0x3b, stmt.GetValueId<ECInstanceId>(0).GetValue());
+        ASSERT_EQ(0xe7, stmt.GetValueId<ECClassId>(1).GetValue());
+
+        Utf8String nativeSql = stmt.GetNativeSql();
+        ASSERT_FALSE(nativeSql.Contains(R"x(INNER JOIN class_props)x"));
+        ASSERT_TRUE(nativeSql.Contains(R"x(FLOOR(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'Yaw'))=65)x"));
+        ASSERT_TRUE(nativeSql.Contains(R"x(FLOOR(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'Roll'))=63)x"));
+        ASSERT_TRUE(nativeSql.Contains(R"x(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'NonExistingOptionalProp')=65)x"));
+    }
 }
 
 //---------------------------------------------------------------------------------------
