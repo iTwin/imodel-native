@@ -834,7 +834,21 @@ ECSqlStatus ECSqlExpPreparer::PrepareNullExp(NativeSqlBuilder::List& nativeSqlSn
 //static
 ECSqlStatus ECSqlExpPreparer::PrepareCrossJoinExp(ECSqlPrepareContext& ctx, CrossJoinExp const& exp)
     {
+<<<<<<< HEAD
     ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Cross join expression not yet supported.");
+=======
+    NativeSqlBuilder& sqlBuilder = ctx.GetSqlBuilder();
+    ECSqlStatus r = PrepareClassRefExp(sqlBuilder, ctx, exp.GetFromClassRef());
+    if (!r.IsSuccess())
+        return r;
+
+    sqlBuilder.Append(" CROSS JOIN ");
+
+    r = PrepareClassRefExp(sqlBuilder, ctx, exp.GetToClassRef());
+    if (!r.IsSuccess())
+        return r;
+
+>>>>>>> a1e9c471 (All ECSQL options to inherit in subquery (#445))
     return ECSqlStatus::Success;
     }
 
@@ -1809,18 +1823,18 @@ ECSqlStatus ECSqlExpPreparer::PrepareTypeListExp(NativeSqlBuilder::List& nativeS
     return ECSqlStatus::Success;
     }
 
-namespace
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+bool ECSqlExpPreparer::QueryOptionExperimentalFeaturesEnabled(ECDbCR db, ExpCR exp)
     {
-    bool AreExperimentalFeaturesEnabled(const ECSqlPrepareContext& ctx)
-        {
-        // Check if ECSQLOption ENABLE_EXPERIMENTAL_FEATURES has been added
-        auto experimentalFeaturesECSqlOption = false;
-        if (const auto options = ctx.GetCurrentScope().GetOptions(); options != nullptr)
-            experimentalFeaturesECSqlOption = options->HasOption(OptionsExp::ENABLE_EXPERIMENTAL_FEATURES);
-
-        return (ctx.GetECDb().GetECSqlConfig().GetExperimentalFeaturesEnabled() || experimentalFeaturesECSqlOption);
-        }
+    return OptionsExp::FindLocalOrInheritedOption<bool>(
+        exp,
+        OptionsExp::ENABLE_EXPERIMENTAL_FEATURES,
+        [](OptionExp const& opt) { return opt.asBool(); },
+        [&db]() { return db.GetECSqlConfig().GetExperimentalFeaturesEnabled(); });
     }
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1830,8 +1844,13 @@ ECSqlStatus ECSqlExpPreparer::PrepareExtractPropertyExp(NativeSqlBuilder::List& 
     NativeSqlBuilder::List classIdSql;
     NativeSqlBuilder::List instanceIdSql;
 
+<<<<<<< HEAD
     if (!AreExperimentalFeaturesEnabled(ctx)) {
         ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Instance property access '%s' is an experimental feature. Use 'PRAGMA experimental_features_enabled=true' query or add 'ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES' to the query to enable it.", exp.ToECSql().c_str());
+=======
+    if (!QueryOptionExperimentalFeaturesEnabled(ctx.GetECDb(), exp)) {
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Instance property access '%s' is experimental feature and disabled by default.", exp.ToECSql().c_str());
+>>>>>>> a1e9c471 (All ECSQL options to inherit in subquery (#445))
         return ECSqlStatus::InvalidECSql;
     }
 
@@ -1865,9 +1884,15 @@ ECSqlStatus ECSqlExpPreparer::PrepareExtractInstanceExp(NativeSqlBuilder::List& 
     NativeSqlBuilder builder;
     NativeSqlBuilder::List classIdSql;
     NativeSqlBuilder::List instanceIdSql;
+<<<<<<< HEAD
     
     if (!AreExperimentalFeaturesEnabled(ctx)) {
         ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Instance access '%s' is an experimental feature. Use 'PRAGMA experimental_features_enabled=true' query or add 'ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES' to the query to enable it.", exp.ToECSql().c_str());
+=======
+
+    if (!QueryOptionExperimentalFeaturesEnabled(ctx.GetECDb(), exp)) {
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Instance access '%s' is experimental feature and disabled by default.", exp.ToECSql().c_str());
+>>>>>>> a1e9c471 (All ECSQL options to inherit in subquery (#445))
         return ECSqlStatus::InvalidECSql;
     }
     auto rc = PrepareValueExp(classIdSql, ctx, exp.GetClassIdPropExp());
