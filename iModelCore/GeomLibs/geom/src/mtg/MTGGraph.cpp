@@ -692,6 +692,11 @@ size_t MTGGraph::CountFaceLoops(MTGMask ignoreMask)
     return n;
     }
 
+size_t MTGGraph::CountFaceLoops ()
+    {
+    return CountFaceLoops(MTG_NULL_MASK); 
+    }
+
 size_t MTGGraph::CountVertexLoops ()
     {
     MTGMask visitMask = GrabMask ();
