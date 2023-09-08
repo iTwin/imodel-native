@@ -52,6 +52,10 @@ protected:
             {
             IConnectionPtr taskConnection = connections.GetConnection(connectionId.c_str());
             task.SetTaskConnection(*taskConnection);
+
+            Savepoint txn(taskConnection->GetDb(), "_OnECInstancesChanged");
+            DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Connections, txn.IsActive(), "Failed to start a transaction");
+
             NotifyECInstancesChanged(taskConnection->GetECDb(), changes);
             }, taskParams);
         }
@@ -487,6 +491,9 @@ folly::Future<NodesResponse> ECPresentationManager::GetNodes(WithPageOptions<Asy
         IConnectionCR taskConnection = GetConnection(connectionId.c_str());
         task.SetTaskConnection(taskConnection);
 
+        Savepoint txn(taskConnection.GetDb(), "GetNodes");
+        DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Connections, txn.IsActive(), "Failed to start a transaction");
+
         auto source = m_impl->GetNodes(CreateImplRequestParams(params, taskConnection, *task.GetCancelationToken()));
         if (!source.IsValid())
             return NavNodesContainer();
@@ -514,6 +521,9 @@ folly::Future<NodesCountResponse> ECPresentationManager::GetNodesCount(AsyncHier
         IConnectionCR taskConnection = GetConnection(connectionId.c_str());
         task.SetTaskConnection(taskConnection);
 
+        Savepoint txn(taskConnection.GetDb(), "GetNodesCount");
+        DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Connections, txn.IsActive(), "Failed to start a transaction");
+
         return m_impl->GetNodesCount(CreateImplRequestParams(params, taskConnection, *task.GetCancelationToken()));
         }, CreateNodesTaskParams(*m_impl, connection, params));
     }
@@ -536,6 +546,9 @@ folly::Future<NodesDescriptorResponse> ECPresentationManager::GetNodesDescriptor
 
         IConnectionCR taskConnection = GetConnection(connectionId.c_str());
         task.SetTaskConnection(taskConnection);
+
+        Savepoint txn(taskConnection.GetDb(), "GetNodesDescriptor");
+        DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Connections, txn.IsActive(), "Failed to start a transaction");
 
         return m_impl->GetNodesDescriptor(CreateImplRequestParams(params, taskConnection, *task.GetCancelationToken()));
         }, taskParams);
@@ -569,18 +582,21 @@ folly::Future<NodePathsResponse> ECPresentationManager::GetNodePaths(AsyncNodePa
         IConnectionCR taskConnection = GetConnection(connectionId.c_str());
         task.SetTaskConnection(taskConnection);
 
-        Utf8String escapedString(params.GetFilterText());
-        escapedString.ToLower();
+        Savepoint txn(taskConnection.GetDb(), "GetNodePaths");
+        DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Connections, txn.IsActive(), "Failed to start a transaction");
 
-        auto implParams = CreateImplRequestParams(params, taskConnection, *task.GetCancelationToken());
-        implParams.SetFilterText(escapedString);
+        Utf8String lowerCaseFilter(params.GetFilterText());
+        lowerCaseFilter.ToLower();
 
-        bvector<NavNodeCPtr> nodes = m_impl->GetFilteredNodes(implParams);
-        auto parentGetter = [&](NavNodeCR child) -> NavNodeCPtr
-            {
-            return m_impl->GetParent(NodeParentRequestImplParams::Create(taskConnection, task.GetCancelationToken(), params.GetRulesetId(), params.GetRulesetVariables(), child));
-            };
-        return NodePathsHelper::CreateHierarchy(nodes, parentGetter, escapedString);
+        auto filterParams = CreateImplRequestParams(params, taskConnection, *task.GetCancelationToken());
+        filterParams.SetFilterText(lowerCaseFilter);
+        bvector<NavNodeCPtr> filteredNodes = m_impl->GetFilteredNodes(filterParams);
+
+        auto hierarchyParams = CreateImplRequestParams(CreateNodesHierarchyRequestParams(params, filteredNodes), taskConnection, *task.GetCancelationToken());
+        bvector<NodesPathElement> hierarchy = m_impl->CreateNodesHierarchy(hierarchyParams);
+        NodePathsHelper::CountHierarchyFilterOccurences(hierarchy, lowerCaseFilter, task.GetCancelationToken());
+
+        return hierarchy;
         }, taskParams);
     }
 
@@ -610,6 +626,9 @@ folly::Future<NodePathsResponse> ECPresentationManager::GetNodePaths(AsyncNodePa
 
         IConnectionCR taskConnection = GetConnection(connectionId.c_str());
         task.SetTaskConnection(taskConnection);
+
+        Savepoint txn(taskConnection.GetDb(), "GetNodePaths");
+        DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Connections, txn.IsActive(), "Failed to start a transaction");
 
         auto pathParamsBase = NodePathFromInstanceKeyPathRequestImplParams::Create(taskConnection, task.GetCancelationToken(), HierarchyRequestParams(params), bvector<ECInstanceKey>());
         auto paths = ContainerHelpers::TransformContainer<bvector<NodesPathElement>>(params.GetInstanceKeyPaths(), [&](auto const& keyPath)
@@ -644,6 +663,9 @@ folly::Future<ContentClassesResponse> ECPresentationManager::GetContentClasses(A
 
         IConnectionCR taskConnection = GetConnection(connectionId.c_str());
         task.SetTaskConnection(taskConnection);
+
+        Savepoint txn(taskConnection.GetDb(), "GetContentClasses");
+        DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Connections, txn.IsActive(), "Failed to start a transaction");
 
         return m_impl->GetContentClasses(CreateImplRequestParams(params, taskConnection, *task.GetCancelationToken()));
         }, taskParams);
@@ -700,6 +722,9 @@ folly::Future<ContentDescriptorResponse> ECPresentationManager::GetContentDescri
         IConnectionCR taskConnection = GetConnection(connectionId.c_str());
         task.SetTaskConnection(taskConnection);
 
+        Savepoint txn(taskConnection.GetDb(), "GetContentDescriptor");
+        DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Connections, txn.IsActive(), "Failed to start a transaction");
+
         return m_impl->GetContentDescriptor(CreateImplRequestParams(params, taskConnection, *task.GetCancelationToken()));
         }, taskParams);
     }
@@ -737,6 +762,9 @@ folly::Future<ContentResponse> ECPresentationManager::GetContent(WithPageOptions
 
         IConnectionCR taskConnection = GetConnection(params.GetContentDescriptor().GetConnectionId().c_str());
         task.SetTaskConnection(taskConnection);
+
+        Savepoint txn(taskConnection.GetDb(), "GetContent");
+        DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Connections, txn.IsActive(), "Failed to start a transaction");
 
         ContentCPtr content = m_impl->GetContent(CreateImplRequestParams(params, taskConnection, *task.GetCancelationToken()));
         if (content.IsValid())
@@ -778,6 +806,9 @@ folly::Future<ContentSetSizeResponse> ECPresentationManager::GetContentSetSize(A
 
         IConnectionCR taskConnection = GetConnection(params.GetContentDescriptor().GetConnectionId().c_str());
         task.SetTaskConnection(taskConnection);
+
+        Savepoint txn(taskConnection.GetDb(), "GetContentSetSize");
+        DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Connections, txn.IsActive(), "Failed to start a transaction");
 
         return m_impl->GetContentSetSize(CreateImplRequestParams(params, taskConnection, *task.GetCancelationToken()));
         }, taskParams);
@@ -821,6 +852,9 @@ folly::Future<DisplayLabelResponse> ECPresentationManager::GetDisplayLabel(Async
         IConnectionCR taskConnection = GetConnection(connectionId.c_str());
         task.SetTaskConnection(taskConnection);
 
+        Savepoint txn(taskConnection.GetDb(), "GetDisplayLabel");
+        DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Connections, txn.IsActive(), "Failed to start a transaction");
+
         return m_impl->GetDisplayLabel(CreateImplRequestParams(params, taskConnection, *task.GetCancelationToken()));
         }, taskParams);
     }
@@ -851,6 +885,9 @@ folly::Future<DistinctValuesResponse> ECPresentationManager::GetDistinctValues(W
 
         IConnectionCR taskConnection = GetConnection(params.GetContentDescriptor().GetConnectionId().c_str());
         task.SetTaskConnection(taskConnection);
+
+        Savepoint txn(taskConnection.GetDb(), "GetDistinctValues");
+        DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Connections, txn.IsActive(), "Failed to start a transaction");
 
         PagingDataSourceCPtr<DisplayValueGroupCPtr> source = m_impl->GetDistinctValues(CreateImplRequestParams(params, taskConnection, *task.GetCancelationToken()));
         if (source.IsValid())
@@ -892,6 +929,9 @@ folly::Future<HierarchiesCompareResponse> ECPresentationManager::CompareHierarch
 
         IConnectionCR taskConnection = GetConnection(connectionId.c_str());
         task.SetTaskConnection(taskConnection);
+
+        Savepoint txn(taskConnection.GetDb(), "CompareHierarchies");
+        DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Connections, txn.IsActive(), "Failed to start a transaction");
 
         return m_impl->CompareHierarchies(CreateImplRequestParams(params, taskConnection, *task.GetCancelationToken()));
         }, taskParams);

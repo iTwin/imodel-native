@@ -895,13 +895,21 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
             : Field(other), m_priority(other.m_priority), m_autoExpand(other.m_autoExpand)
             {
             for (Field const* field : other.m_fields)
-                m_fields.push_back(field->Clone());
+                {
+                auto clone = field->Clone();
+                clone->SetParent(this);
+                m_fields.push_back(clone);
+                }
             }
 
         //! Move constructor.
         NestedContentField(NestedContentField&& other)
-            : Field(std::move(other)), m_fields(std::move(other.m_fields)), m_priority(other.m_priority), m_autoExpand(other.m_autoExpand)
-            {}
+            : Field(std::move(other)), m_priority(other.m_priority), m_autoExpand(other.m_autoExpand)
+            {
+            m_fields.swap(other.m_fields);
+            for (Field* field : m_fields)
+                field->SetParent(this);
+            }
 
     public:
         //! Destructor
@@ -1113,6 +1121,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
 
 private:
     PresentationRuleSetCPtr m_ruleset;
+    bool m_usesModifiedRuleset;
     RulesetVariables m_rulesetVariables;
     Utf8String m_preferredDisplayType;
     bvector<SelectClassInfo> m_classes;
@@ -1130,6 +1139,7 @@ private:
     INavNodeKeysContainerCPtr m_inputKeys;
     SelectionInfoCPtr m_selectionInfo;
     UnitSystem m_unitSystem;
+    std::shared_ptr<RelatedClassPathsList> m_exclusiveIncludePaths;
 
 private:
     ECPRESENTATION_EXPORT ContentDescriptor(IConnectionCR, PresentationRuleSetCR, RulesetVariables, INavNodeKeysContainerCR);
@@ -1181,6 +1191,10 @@ public:
 
     //! Get node keys which this descriptor is created for.
     INavNodeKeysContainerCR GetInputNodeKeys() const {return *m_inputKeys;}
+
+    std::shared_ptr<RelatedClassPathsList> GetExclusiveIncludePaths() const {return m_exclusiveIncludePaths;}
+    void SetExclusiveIncludePaths(std::shared_ptr<RelatedClassPathsList> exclusiveIncludePaths) {m_exclusiveIncludePaths = exclusiveIncludePaths;}
+
     //! Get connection ID which this descriptor is created for.
     Utf8StringCR GetConnectionId() const {return m_connectionId;}
     //! Get selection info which this descriptor is created with. (returns nullptr if no selection info was provided)
@@ -1188,6 +1202,8 @@ public:
     //! Set selection info which this descriptor is created with.
     void SetSelectionInfo(SelectionInfo const& selectionInfo) {m_selectionInfo = &selectionInfo;}
 
+    //! Set the ruleset which this descriptor is created with
+    void SetRuleset(PresentationRuleSetCR ruleset) { m_ruleset = &ruleset; m_usesModifiedRuleset = true;}
     PresentationRuleSetCR GetRuleset() const {return *m_ruleset;}
     RulesetVariables const& GetRulesetVariables() const {return m_rulesetVariables;}
 
@@ -1285,6 +1301,8 @@ public:
     //! Should only distinct values be returned
     bool OnlyDistinctValues() const {return HasContentFlag(ContentFlags::DistinctValues);}
 #endif
+    //! Is the descriptor created using a different from the input ruleset
+    bool UsesModifiedRuleset() const {return m_usesModifiedRuleset;}
 };
 
 //=======================================================================================
@@ -1296,23 +1314,12 @@ struct IContentFieldMatcher
 protected:
     virtual bool _Matches(ContentDescriptor::Field const& field) const = 0;
     virtual std::unique_ptr<IContentFieldMatcher> _Clone() const = 0;
+    virtual RelatedClassPathsList _ExtractPaths() const { return RelatedClassPathsList(); }
 public:
     virtual ~IContentFieldMatcher() {}
     bool Matches(ContentDescriptor::Field const& field) const {return _Matches(field);}
     std::unique_ptr<IContentFieldMatcher> Clone() const {return _Clone();}
-};
-
-//=======================================================================================
-//! @ingroup GROUP_Presentation_Content
-// @bsiclass
-//=======================================================================================
-struct NeverMatchingContentFieldMatcher : IContentFieldMatcher
-{
-protected:
-    bool _Matches(ContentDescriptor::Field const& field) const override {return false;}
-    std::unique_ptr<IContentFieldMatcher> _Clone() const override {return std::make_unique<NeverMatchingContentFieldMatcher>();}
-public:
-    NeverMatchingContentFieldMatcher() {}
+    RelatedClassPathsList ExtractPaths() const {return _ExtractPaths();}
 };
 
 //=======================================================================================
@@ -1345,6 +1352,17 @@ protected:
         bvector<std::unique_ptr<IContentFieldMatcher>> matchers;
         std::transform(m_matchers.begin(), m_matchers.end(), std::back_inserter(matchers), [](auto const& matcher){return matcher->Clone();});
         return std::make_unique<CombinedContentFieldMatcher>(std::move(matchers));
+        }
+
+    RelatedClassPathsList _ExtractPaths() const override
+        {
+        RelatedClassPathsList paths;
+        for (auto const& matcher : m_matchers)
+            {
+            auto extractedPaths = matcher->ExtractPaths();
+            paths.insert(paths.end(), extractedPaths.begin(), extractedPaths.end());
+            }
+        return paths;
         }
 public:
     CombinedContentFieldMatcher(bvector<std::unique_ptr<IContentFieldMatcher>>&& matchers) : m_matchers(std::move(matchers)) {}
@@ -1384,6 +1402,7 @@ protected:
             && SelectToPropertyPathsMatch(m_pathFromSelectToPropertyClass, field);
         }
     std::unique_ptr<IContentFieldMatcher> _Clone() const override {return std::make_unique<PropertiesContentFieldMatcher>(m_property, m_pathFromSelectToPropertyClass);}
+    RelatedClassPathsList _ExtractPaths() const override { return RelatedClassPathsList({ m_pathFromSelectToPropertyClass }); }
 public:
     PropertiesContentFieldMatcher(ECPropertyCR prop, RelatedClassPathCR pathFromSelectToPropertyClass)
         : m_property(prop), m_pathFromSelectToPropertyClass(pathFromSelectToPropertyClass)

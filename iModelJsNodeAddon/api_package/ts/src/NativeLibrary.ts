@@ -92,7 +92,12 @@ export class NativeLibrary {
   public static load() {
     if (!this._nativeLib) {
       try {
-        this._nativeLib = require(`./${NativeLibrary.archName}/${NativeLibrary.nodeAddonName}`) as typeof IModelJsNative; // eslint-disable-line @typescript-eslint/no-var-requires
+        const platform = os.platform() as NodeJS.Platform | "ios"; // we add "ios"
+        if (platform === "ios" || platform === "android") {
+          this._nativeLib = (process as any)._linkedBinding("iModelJsNative") as typeof IModelJsNative;
+        } else {
+          this._nativeLib = require(`./${NativeLibrary.archName}/${NativeLibrary.nodeAddonName}`) as typeof IModelJsNative; // eslint-disable-line @typescript-eslint/no-var-requires
+        }
       } catch (err: any) {
         err.message += "\nThis error may occur when trying to run an iTwin.js backend without"
           + " having installed the prerequisites. See the following link for all prerequisites:"
@@ -269,6 +274,15 @@ export declare namespace IModelJsNative {
    */
   export type ElementGraphicsResult = ElementGraphicsContent | ElementGraphicsError;
 
+  /** Instance key for a change
+   * @internal
+   */
+  export interface ChangeInstanceKey {
+    id: Id64String;
+    classFullName: string;
+    changeType: "inserted" | "updated" | "deleted";
+  }
+
   /** Information returned by DgnDb.queryDefinitionElementUsage. */
   interface DefinitionElementUsageInfo {
     /** The subset of input Ids that are SpatialCategory definitions. */
@@ -441,7 +455,20 @@ export declare namespace IModelJsNative {
 
   interface SchemaImportOptions {
     readonly schemaLockHeld?: boolean;
+    readonly schemaSyncDbUri?: string;
     readonly ecSchemaXmlContext?: ECSchemaXmlContext;
+  }
+
+  interface SchemaLocalDbInfo {
+    readonly id: string;
+    readonly dataVer: string;
+    readonly lastModUtc: string;
+  }
+
+  interface SchemaSyncDbInfo extends SchemaLocalDbInfo {
+    readonly projectId: string;
+    readonly parentChangesetId: string;
+    readonly parentChangesetIndex?: string;
   }
 
   // ###TODO import from core-common
@@ -455,6 +482,13 @@ export declare namespace IModelJsNative {
   class DgnDb implements IConcurrentQueryManager, SQLiteOps {
     constructor();
     public readonly cloudContainer?: CloudContainer;
+    public schemaSyncSetDefaultUri(syncDbUri: string): void;
+    public schemaSyncGetDefaultUri(): string;
+    public schemaSyncInit(syncDbUri: string): void;
+    public schemaSyncPull(syncDbUri?: string): void;
+    public schemaSyncEnabled(): boolean;
+    public schemaSyncGetLocalDbInfo(): SchemaLocalDbInfo | undefined;
+    public schemaSyncGetSyncDbInfo(syncDbUri: string): SchemaSyncDbInfo | undefined;
     public abandonChanges(): DbResult;
     public abandonCreateChangeset(): void;
     public addChildPropagatesChangesToParentRelationship(schemaName: string, relClassName: string): BentleyStatus;
@@ -508,6 +542,7 @@ export declare namespace IModelJsNative {
     public getBriefcaseId(): number;
     public getChangesetSize(): number;
     public getChangeTrackingMemoryUsed(): number;
+    public getCodeValueBehavior(): "exact" | "trim-unicode-whitespace";
     public getCurrentChangeset(): ChangesetIndexAndId;
     public getCurrentTxnId(): TxnIdString;
     public getECClassMetaData(schema: string, className: string): ErrorStatusOrResult<IModelStatus, string>;
@@ -521,6 +556,7 @@ export declare namespace IModelJsNative {
     public getITwinId(): GuidString;
     public getLastError(): string;
     public getLastInsertRowId(): number;
+    public getLocalChanges(rootClassFilter: string[], includeInMemoryChanges: boolean): ChangeInstanceKey[]
     public getMassProperties(props: object): Promise<MassPropertiesResponseProps>;
     public getModel(opts: ModelLoadProps): ModelProps;
     public getMultiTxnOperationDepth(): number;
@@ -594,6 +630,7 @@ export declare namespace IModelJsNative {
     public setIModelDb(iModelDb?: any/* IModelDb */): void;
     public setIModelId(guid: GuidString): DbResult;
     public setITwinId(guid: GuidString): DbResult;
+    public setCodeValueBehavior(newBehavior: "exact" | "trim-unicode-whitespace"): void;
     public simplifyElementGeometry(simplifyArgs: any): DbResult;
     public startCreateChangeset(): ChangesetFileProps;
     public startProfiler(scopeName?: string, scenarioName?: string, overrideFile?: boolean, computeExecutionPlan?: boolean): DbResult;
@@ -612,7 +649,6 @@ export declare namespace IModelJsNative {
     public enableWalMode(yesNo?: boolean): void;
     public performCheckpoint(mode?: WalCheckpointMode): void;
     public setAutoCheckpointThreshold(frames: number): void;
-
     public static enableSharedCache(enable: boolean): DbResult;
     public static getAssetsDir(): string;
   }
@@ -639,6 +675,17 @@ export declare namespace IModelJsNative {
     public static recompressRevision(sourceFile: string, targetFile: string, lzmaPropsJson?: string): BentleyStatus;
   }
 
+  /**
+   * The native object for SchemaUtility
+   * @internal
+   */
+  class SchemaUtility {
+    constructor();
+    /** Converts given schemas and their reference schemas to EC3.2 schemas */
+    public static convertCustomAttributes(xmlSchemas: string[], schemaContext?: ECSchemaXmlContext): string[];
+    public static convertEC2XmlSchemas(ec2XmlSchemas: string[], schemaContext?: ECSchemaXmlContext): string[];
+  }
+
   class ECDb implements IDisposable, IConcurrentQueryManager {
     constructor();
     public abandonChanges(): DbResult;
@@ -646,6 +693,13 @@ export declare namespace IModelJsNative {
     public createDb(dbName: string): DbResult;
     public dispose(): void;
     public dropSchema(schemaName: string): void;
+    public schemaSyncSetDefaultUri(syncDbUri: string): void;
+    public schemaSyncGetDefaultUri(): string;
+    public schemaSyncInit(syncDbUri: string): void;
+    public schemaSyncPull(syncDbUri: string | undefined): void;
+    public schemaSyncEnabled(): boolean;
+    public schemaSyncGetLocalDbInfo(): SchemaLocalDbInfo | undefined;
+    public schemaSyncGetSyncDbInfo(): SchemaSyncDbInfo | undefined;
     public getFilePath(): string;
     public importSchema(schemaPathName: string): DbResult;
     public isOpen(): boolean;
@@ -917,6 +971,11 @@ export declare namespace IModelJsNative {
     showOnlyFinished?: boolean;
   }
 
+  interface BcvStatsFilterOptions {
+    /** if true, adds activeClients, totalClients, ongoingPrefetches, and attachedContainers to the result. */
+    addClientInformation?: boolean;
+  }
+
   /**
    * A cache for storing data from CloudSqlite databases. This object refers to a directory on a local filesystem
    * and is used to **connect** CloudContainers so they may be accessed. The contents of the cache directory are entirely
@@ -960,6 +1019,10 @@ export declare namespace IModelJsNative {
     public get alias(): string;
     /** The logId. */
     public get logId(): string;
+    /** The time that the write lock expires. Of the form 'YYYY-MM-DDTHH:MM:SS.000Z' in UTC.
+     *  Returns empty string if write lock is not held.
+     */
+    public get writeLockExpires(): string;
     /** true if this CloudContainer is currently connected to a CloudCache via the `connect` method. */
     public get isConnected(): boolean;
     /** true if this CloudContainer was created with the `writeable` flag (and its `accessToken` supplies write access). */
@@ -1095,6 +1158,12 @@ export declare namespace IModelJsNative {
      * @note Entries are automatically removed from the table on a FIFO basis. By default entries which are 1 hr old will be removed.
      */
     public queryHttpLog(filterOptions?: BcvHttpLogFilterOptions): NativeCloudSqlite.BcvHttpLog[];
+
+    /**
+     * query the bcv_stat table.
+     * @internal
+     */
+    public queryBcvStats(filterOptions?: BcvStatsFilterOptions): NativeCloudSqlite.BcvStats;
 
     /**
      * Get the SHA1 hash of the content of a database.

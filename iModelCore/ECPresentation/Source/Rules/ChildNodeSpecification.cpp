@@ -80,26 +80,6 @@ ChildNodeSpecification::~ChildNodeSpecification ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ChildNodeSpecification::_ShallowEqual(PresentationKeyCR other) const
-    {
-    if (!PresentationRuleSpecification::_ShallowEqual(other))
-        return false;
-
-    ChildNodeSpecificationCP otherRule = dynamic_cast<ChildNodeSpecificationCP>(&other);
-    if (nullptr == otherRule)
-        return false;
-
-    return m_doNotSort == otherRule->m_doNotSort
-        && m_hasChildren == otherRule->m_hasChildren
-        && m_hideExpression == otherRule->m_hideExpression
-        && m_hideIfNoChildren == otherRule->m_hideIfNoChildren
-        && m_hideNodesInHierarchy == otherRule->m_hideNodesInHierarchy
-        && m_suppressSimilarAncestorsCheck == otherRule->m_suppressSimilarAncestorsCheck;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 static ChildrenHint ParseChildrenHint(Utf8CP str, Utf8CP attributeIdentifier)
     {
     if (0 == strcmp("Always", str))

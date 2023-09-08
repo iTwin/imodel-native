@@ -217,7 +217,7 @@ BsplineParam*   pParams         // <=> potentially modified only if poles given
             if (pKnots[i] - *pStart >= tol)
                 break;
 
-        for (i = numKnots - degree, nExcess1 = 0; i >= 0; i--, nExcess1++)
+        for (i = numKnots - pParams->order - 1, nExcess1 = 0; i >= 0; i--, nExcess1++)
             if (*pEnd - pKnots[i] >= tol)
                 break;
 

@@ -183,18 +183,6 @@ MD5 PropertyEditorSpecification::_ComputeHash() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool PropertyEditorSpecification::_ShallowEqual(PresentationKeyCR other) const
-    {
-    PropertyEditorSpecification const* otherRule = dynamic_cast<PropertyEditorSpecification const*>(&other);
-    if (nullptr == otherRule)
-        return false;
-
-    return m_name == otherRule->m_name;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 Utf8CP PropertyEditorParametersSpecification::_GetJsonElementTypeAttributeName() const {return COMMON_JSON_ATTRIBUTE_PARAMSTYPE;}
 
 /*---------------------------------------------------------------------------------**//**
@@ -265,18 +253,6 @@ MD5 PropertyEditorJsonParameters::_ComputeHash() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool PropertyEditorJsonParameters::_ShallowEqual(PresentationKeyCR other) const
-    {
-    PropertyEditorJsonParameters const* otherRule = dynamic_cast<PropertyEditorJsonParameters const*>(&other);
-    if (nullptr == otherRule)
-        return false;
-
-    return m_json == otherRule->m_json;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 Utf8CP PropertyEditorMultilineParameters::_GetXmlElementName() const {return PROPERTY_EDITOR_MULTILINE_PARAMETERS_XML_NODE_NAME;}
 
 /*---------------------------------------------------------------------------------**//**
@@ -331,18 +307,6 @@ MD5 PropertyEditorMultilineParameters::_ComputeHash() const
     if (m_height != 1)
         ADD_PRIMITIVE_VALUE_TO_HASH(md5, PROPERTY_EDITOR_MULTILINE_PARAMETERS_JSON_ATTRIBUTE_HEIGHT, m_height);
     return md5;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool PropertyEditorMultilineParameters::_ShallowEqual(PresentationKeyCR other) const
-    {
-    PropertyEditorMultilineParameters const* otherRule = dynamic_cast<PropertyEditorMultilineParameters const*>(&other);
-    if (nullptr == otherRule)
-        return false;
-
-    return m_height == otherRule->m_height;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -420,19 +384,6 @@ MD5 PropertyEditorRangeParameters::_ComputeHash() const
     if (!m_max.IsNull())
         ADD_PRIMITIVE_VALUE_TO_HASH(md5, PROPERTY_EDITOR_RANGE_PARAMETERS_JSON_ATTRIBUTE_MAXIMUM, m_max);
     return md5;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool PropertyEditorRangeParameters::_ShallowEqual(PresentationKeyCR other) const
-    {
-    PropertyEditorRangeParameters const* otherRule = dynamic_cast<PropertyEditorRangeParameters const*>(&other);
-    if (nullptr == otherRule)
-        return false;
-
-    return m_min == otherRule->m_min
-        && m_max == otherRule->m_max;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -536,20 +487,4 @@ MD5 PropertyEditorSliderParameters::_ComputeHash() const
     if (m_isVertical)
         ADD_PRIMITIVE_VALUE_TO_HASH(md5, PROPERTY_EDITOR_SLIDER_PARAMETERS_JSON_ATTRIBUTE_VERTICAL, m_isVertical);
     return md5;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool PropertyEditorSliderParameters::_ShallowEqual(PresentationKeyCR other) const
-    {
-    PropertyEditorSliderParameters const* otherRule = dynamic_cast<PropertyEditorSliderParameters const*>(&other);
-    if (nullptr == otherRule)
-        return false;
-
-    return m_min == otherRule->m_min
-        && m_max == otherRule->m_max
-        && m_intervalsCount == otherRule->m_intervalsCount
-        && m_valueFactor == otherRule->m_valueFactor
-        && m_isVertical == otherRule->m_isVertical;
     }

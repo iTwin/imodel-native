@@ -34,11 +34,13 @@ BEGIN_ECPRESENTATIONTESTS_NAMESPACE
 template<typename TRegistry> struct RegisterSchemaHelper
     {
     RegisterSchemaHelper(Utf8String name, Utf8String schemaXml) {TRegistry::RegisterSchemaXml(name, schemaXml);}
+    RegisterSchemaHelper(Utf8StringCR name, bvector<Utf8String> const& schemasXml) {TRegistry::RegisterMultipleSchemasXml(name, schemasXml);}
     };
 // add this to class declaration
 #define DECLARE_SCHEMA_REGISTRY(registry) \
     static bvector<bpair<Utf8String, Utf8String>>& GetRegisteredSchemaXmls(); \
-    static void RegisterSchemaXml(Utf8String name, Utf8String schemaXml);
+    static void RegisterSchemaXml(Utf8String name, Utf8String schemaXml); \
+    static void RegisterMultipleSchemasXml(Utf8StringCR name, bvector<Utf8String> const& schemasXml);
 // add this to source file (registry = test class name)
 #define DEFINE_SCHEMA_REGISTRY(registry) \
     bvector<bpair<Utf8String, Utf8String>>& registry::GetRegisteredSchemaXmls() \
@@ -46,19 +48,38 @@ template<typename TRegistry> struct RegisterSchemaHelper
         static bvector<bpair<Utf8String, Utf8String>> s_registeredSchemaXmls; \
         return s_registeredSchemaXmls; \
         } \
-    void registry::RegisterSchemaXml(Utf8String name, Utf8String schemaXml) {GetRegisteredSchemaXmls().push_back(bpair<Utf8String, Utf8String>(name, schemaXml));}
+    static Utf8String CreateValidSchemaString(Utf8StringCR name, Utf8StringCR schema_xml) \
+        { \
+        return Utf8PrintfString("<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
+        "<ECSchema schemaName=\"%s\" alias=\"alias_%s\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.1\">" \
+            "<ECSchemaReference name=\"CoreCustomAttributes\" version=\"1.0\" alias=\"CoreCA\"/>" \
+            "<ECSchemaReference name=\"ECDbMap\" version=\"2.0\" alias=\"ecdbmap\"/>" \
+            "%s" \
+        "</ECSchema>", name.c_str(), name.c_str(), schema_xml.c_str()); \
+        } \
+    void registry::RegisterSchemaXml(Utf8String name, Utf8String schemaXml) \
+        { \
+        GetRegisteredSchemaXmls().push_back(bpair<Utf8String, Utf8String>(name, CreateValidSchemaString(name, schemaXml))); \
+        } \
+    void registry::RegisterMultipleSchemasXml(Utf8StringCR name, bvector<Utf8String> const& schemasXml) \
+        { \
+        int i = 1; \
+        for (auto const& schema : schemasXml) \
+            { \
+            Utf8PrintfString indexedSchemaName("%s_%d", name.c_str(), i++); \
+            GetRegisteredSchemaXmls().push_back(bpair<Utf8String, Utf8String>(name, CreateValidSchemaString(indexedSchemaName, schema))); \
+            } \
+        }
+
 // add this to test setup
 #define INIT_SCHEMA_REGISTRY(ecdb) \
     RulesEngineTestHelpers::InitSchemaRegistry(ecdb, GetRegisteredSchemaXmls());
 // use this to create and register a schema
 #define DEFINE_REGISTRY_SCHEMA(registry, name, schema_xml) \
-    static RegisterSchemaHelper<registry> _register_schema_##name(#name, \
-        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
-        "<ECSchema schemaName=\"" #name "\" alias=\"alias_" #name "\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.1\">" \
-            "<ECSchemaReference name=\"CoreCustomAttributes\" version=\"1.0\" alias=\"CoreCA\"/>" \
-            "<ECSchemaReference name=\"ECDbMap\" version=\"2.0\" alias=\"ecdbmap\"/>" \
-            schema_xml \
-        "</ECSchema>")
+    static RegisterSchemaHelper<registry> _register_schema_##name(#name, schema_xml)
+// use this to create and register multiple schemas
+#define DEFINE_REGISTRY_MULTIPLE_SCHEMAS(registry, name, schemas_xml) \
+    static RegisterSchemaHelper<registry> _register_schema_##name(#name, schemas_xml)
 
 /*=================================================================================**//**
 * @bsiclass

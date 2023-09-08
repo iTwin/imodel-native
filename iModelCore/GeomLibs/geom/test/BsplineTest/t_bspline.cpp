@@ -4,6 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 #include "testHarness.h"
 #include "SampleGeometry.h"
+#include <GeomSerialization/GeomSerializationApi.h>
 #include <cmath>    // std::nan
 USING_NAMESPACE_BENTLEY_GEOMETRY_INTERNAL
 
@@ -987,6 +988,12 @@ TEST(Bspline,KnotByDistance)
         }
     }
 
+bool verifyRoundTripSurface(MSBsplineSurfaceCR surf)
+    {
+    IGeometryPtr geom = IGeometry::Create(surf.Clone());
+    return Check::NearRoundTrip(*geom, 0.0, "B-spline surface: ");
+    }
+
 void doConeProjectionTest
 (
 double uorScale,     // apply to surface.
@@ -1032,8 +1039,8 @@ bool noisy
             auto ruledSurface = MSBsplineSurface::CreateRuled(*baseArc0, *baseArc1);
             if (Check::True(ruledSurface.IsValid(), "B-spline surface valid"))
                 {
-                //Utf8String json;
-                //IModelJson::TryGeometryToIModelJsonString(json, *IGeometry::Create(ruledSurface));
+                verifyRoundTripSurface(*ruledSurface);
+
                 SaveAndRestoreCheckTransform shifter(10, 0, 0);
                 Check::SaveTransformed(*ruledSurface);
                 for (uint32_t i = 0; i < numParamTest && i < params.size (); i++)
@@ -1067,6 +1074,40 @@ TEST(BsplineSurface, ConeProjectionRoundTrip)
     doConeProjectionTest(uorScale, 11, 0.0, s_noisyProjection);
     doConeProjectionTest(uorScale, 11, 1.0, s_noisyProjection);
     Check::ClearGeometry ("BsplineSurface.ConeProjectionRoundTrip");
+    }
+
+TEST(BsplineSurface, BoundaryRoundTrip)
+    {
+    double u0 = 0.3, u1 = 0.7;
+    double v0 = 0.1, v1 = 0.9;
+    bvector<DPoint3d> uvBox{DPoint3d::From(u0, v0), DPoint3d::From(u0, v1), DPoint3d::From(u1, v1), DPoint3d::From(u1, v0), DPoint3d::From(u0, v0)};
+    MSBsplineSurfacePtr surface = HyperbolicGridSurface(4, 7, 10, 11, 1, 2, 3, 0.9, 0.7);
+    if (Check::True(surface.IsValid()))
+        {
+        for (bool isOuterActive : {true, false})
+            {
+            SaveAndRestoreCheckTransform shifter(-5, 5, 0);
+            if (true)
+                {
+                SaveAndRestoreCheckTransform shifter(5, 0, 0);
+                Check::True(surface->AddTrimBoundary(uvBox));
+                surface->SetOuterBoundaryActive(isOuterActive);
+                Check::SaveTransformed(surface);
+                verifyRoundTripSurface(*surface);
+                }
+
+            MSInterpolationCurvePtr fitCurve = MSInterpolationCurve::CreatePtr();
+            fitCurve->InitFromPointsAndEndTangents(uvBox, false, 0.0, nullptr, true, false, false, false);
+            CurveVectorPtr trimCurve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, ICurvePrimitive::CreateInterpolationCurveSwapFromSource(*fitCurve));
+            surface->SetTrim(*trimCurve);   // replace polygon trim with cubic fit
+            surface->SetOuterBoundaryActive(isOuterActive);
+            Check::SaveTransformed(surface);
+            verifyRoundTripSurface(*surface);
+
+            surface->DeleteBoundaries();
+            }
+        }
+    Check::ClearGeometry ("BsplineSurface.BoundaryRoundTrip");
     }
 
 TEST(BsplineKnots, ValidateNans)
@@ -1124,4 +1165,36 @@ TEST(BsplineKnots, ValidateNans)
     curve->GetKnots(uKnots);
     origCurve->GetKnots(origUKnots);
     Check::True(std::equal(uKnots.data(), uKnots.data() + numKnotsU, origUKnots.data(), isEqual), "closed exterior knots corrected from interior knot NaN corruption");
+    }
+
+TEST(BsplineKnots, ValidateOverClamped)
+    {
+    // create a valid B-spline open curve
+    int numPoles = 10;
+    int order = 4;
+    bvector<DPoint3d> poles;
+    for (int i = 0; i < numPoles; ++i)
+        poles.push_back(DPoint3d::From(i, sqrt(i), i * i));
+    MSBsplineCurvePtr curve = MSBsplineCurve::CreateFromPolesAndOrder(poles, nullptr, nullptr, order, false);
+    int numKnots = curve->GetIntNumKnots();
+    if (Check::True(BentleyStatus::BSISUCCESS == mdlBspline_validateCurveKnots(curve->knots, curve->poles, curve->weights, &curve->params)))
+        Check::Int(numKnots, curve->GetIntNumKnots(), "ValidateKnots did not change a valid open curve");
+
+    // oversaturate the start and end knots
+    DPoint3d startPole = curve->poles[0];
+    DPoint3d endPole = curve->poles[curve->GetIntNumPoles() - 1];
+    double startKnot, endKnot, knotTol;
+    int iStartKnot, iEndKnot;
+    curve->GetKnotRange(startKnot, endKnot, iStartKnot, iEndKnot, knotTol);
+    curve->SetKnot(iStartKnot + 1, startKnot);
+    curve->SetKnot(iEndKnot - 1, endKnot);
+    if (Check::True(BentleyStatus::BSISUCCESS == mdlBspline_validateCurveKnots(curve->knots, curve->poles, curve->weights, &curve->params)))
+        {
+        Check::Int(numKnots - 2, curve->GetIntNumKnots(), "ValidateKnots removed the expected number of oversaturated start/end knots");
+        if (Check::Int(numPoles - 2, curve->GetIntNumPoles(), "ValidateKnots removed the expected number of oversaturated start/end poles"))
+            {
+            Check::Exact(startPole, curve->poles[0], "ValidateKnots preserved the start pole when removing oversaturated start poles");
+            Check::Exact(endPole, curve->poles[curve->GetIntNumPoles() - 1], "ValidateKnots preserved the end pole when removing oversaturated end poles");
+            }
+        }
     }

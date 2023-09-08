@@ -541,7 +541,7 @@ QuerySet ContentQueryBuilder::CreateQuerySet(ContentDescriptor::NestedContentFie
 
     ContentDescriptorBuilder::Context descriptorContext(m_params.GetSchemaHelper(), m_params.GetConnections(), m_params.GetConnection(), m_params.GetCancellationToken(), m_params.GetRulesPreprocessor(), m_params.GetRuleset(),
         ContentDisplayType::Undefined, m_params.GetRulesetVariables(), m_params.GetCategorySupplier(), m_params.GetPropertyFormatter(), ECPresentation::UnitSystem::Undefined,
-        *NavNodeKeyListContainer::Create(), nullptr, m_params.GetUsedVariablesListener());
+        *NavNodeKeyListContainer::Create(), nullptr, m_params.GetUsedVariablesListener(), nullptr);
     ContentDescriptorPtr descriptor = ContentDescriptorBuilder(descriptorContext).CreateDescriptor(contentField);
     if (!descriptor.IsValid())
         {
@@ -636,6 +636,23 @@ bool MultiContentQueryBuilder::Accept(ContentInstancesOfSpecificClassesSpecifica
     auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Create queries for %s", DiagnosticsHelpers::CreateRuleIdentifier(specification).c_str()));
 
     QuerySet querySet = m_builder->CreateQuerySet(specification, *m_descriptor);
+    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Created %" PRIu64 " queries.", (uint64_t)querySet.GetQueries().size()));
+
+    if (querySet.GetQueries().empty())
+        return false;
+
+    for (auto const& query : querySet.GetQueries())
+        QueryBuilderHelpers::AddToUnionSet(m_unions, *query);
+    return true;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool MultiContentQueryBuilder::Accept(ContentDescriptor::NestedContentField const& field)
+    {
+    auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Create queries for field %s", field.GetUniqueName().c_str()));
+
+    QuerySet querySet = m_builder->CreateQuerySet(field);
     DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Created %" PRIu64 " queries.", (uint64_t)querySet.GetQueries().size()));
 
     if (querySet.GetQueries().empty())

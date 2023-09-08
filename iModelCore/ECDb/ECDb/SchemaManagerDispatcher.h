@@ -185,7 +185,8 @@ private:
     ECDbSystemSchemaHelper m_systemSchemaHelper;
     mutable SchemaChangeEvent m_onBeforeSchemaChanged;
     mutable SchemaChangeEvent m_onAfterSchemaCHanged;
-    SchemaImportResult ImportSchemas(SchemaImportContext&, bvector<ECN::ECSchemaCP> const& schemas, SchemaImportToken const*) const;
+    mutable SchemaSync m_schemaSync;
+    SchemaImportResult ImportSchemas(SchemaImportContext&, bvector<ECN::ECSchemaCP> const& schemas, SchemaImportToken const*, SchemaSync::SyncDbUri) const;
 
     SchemaImportResult MapSchemas(SchemaImportContext&, bvector<ECN::ECSchemaCP> const&) const;
     BentleyStatus DoMapSchemas(SchemaImportContext&, bvector<ECN::ECSchemaCP> const&) const;
@@ -193,9 +194,6 @@ private:
     ClassMappingStatus MapDerivedClasses(SchemaImportContext&, ECN::ECClassCR baseClass) const;
     BentleyStatus SaveDbSchema(SchemaImportContext&) const;
     BentleyStatus CanCreateOrUpdateRequiredTables() const;
-    BentleyStatus CreateOrUpdateRequiredTables() const;
-    BentleyStatus CreateOrUpdateIndexesInDb(SchemaImportContext&) const;
-    BentleyStatus PurgeOrphanTables(SchemaImportContext&) const;
     BentleyStatus FindIndexes(std::vector<DbIndex const*>& indexes) const;
     BentleyStatus LoadIndexesSQL(std::map<Utf8String, Utf8String, CompareIUtf8Ascii>& sqliteIndexes) const;
 
@@ -207,10 +205,17 @@ private:
     static DbResult UpgradeExistingECInstancesWithNewPropertiesMapToOverflowTable(ECDbCR ecdb, SchemaImportContext* ctx = nullptr);
     void ResetIds(bvector<ECN::ECSchemaCP> const& schemas) const;
 public:
-    explicit MainSchemaManager(ECDbCR ecdb, BeMutex& mutex) : TableSpaceSchemaManager(ecdb, DbTableSpace::Main()), m_mutex(mutex), m_systemSchemaHelper(ecdb), m_vsm(ecdb) {}
+    explicit MainSchemaManager(ECDbCR ecdb, BeMutex& mutex) : TableSpaceSchemaManager(ecdb, DbTableSpace::Main()), m_mutex(mutex), m_systemSchemaHelper(ecdb), m_vsm(ecdb), m_schemaSync(const_cast<ECDbR>(ecdb)) {}
     ~MainSchemaManager() {}
+    /* ====================== */
+    BentleyStatus CreateOrUpdateRequiredTables() const;
+    BentleyStatus CreateOrUpdateIndexesInDb(SchemaImportContext&) const;
+    BentleyStatus PurgeOrphanTables(SchemaImportContext&) const;
+    /* ====================== */
+
+    SchemaSync& GetSchemaSync() const { return m_schemaSync;  }
     VirtualSchemaManager const& GetVirtualSchemaManager() const;
-    SchemaImportResult ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, SchemaManager::SchemaImportOptions, SchemaImportToken const*) const;
+    SchemaImportResult ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, SchemaManager::SchemaImportOptions, SchemaImportToken const*, SchemaSync::SyncDbUri) const;
     ClassMappingStatus MapClass(SchemaImportContext&, ECN::ECClassCR) const;
     std::set<DbTable const*> GetRelationshipConstraintPrimaryTables(SchemaImportContext&, ECN::ECRelationshipConstraintCR) const;
     size_t GetRelationshipConstraintTableCount(SchemaImportContext&, ECN::ECRelationshipConstraintCR) const;

@@ -15,6 +15,7 @@ struct WhereExp final : Exp
     {
 private:
     void _ToECSql(ECSqlRenderContext& ctx) const override { ctx.AppendToECSql("WHERE ").AppendToECSql(*GetSearchConditionExp()); }
+    void _ToJson(BeJsValue val, JsonFormat const& fmt) const override { GetSearchConditionExp()->ToJson(val, fmt); }
     Utf8String _ToString() const override { return "Where"; }
 
 public:

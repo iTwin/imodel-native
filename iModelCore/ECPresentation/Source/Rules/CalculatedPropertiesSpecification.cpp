@@ -176,22 +176,3 @@ MD5 CalculatedPropertiesSpecification::_ComputeHash() const
         ADD_STR_VALUE_TO_HASH(md5, CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_CATEGORYID, m_categoryId->GetHash());
     return md5;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool CalculatedPropertiesSpecification::_ShallowEqual(PresentationKeyCR other) const
-    {
-    if (!PrioritizedPresentationKey::_ShallowEqual(other))
-        return false;
-
-    CalculatedPropertiesSpecification const* otherRule = dynamic_cast<CalculatedPropertiesSpecification const*>(&other);
-    if (nullptr == otherRule)
-        return false;
-
-    return m_label == otherRule->m_label
-        && m_value == otherRule->m_value
-        && m_categoryId == otherRule->m_categoryId
-        && m_renderer == otherRule->m_renderer
-        && m_editor == otherRule->m_editor;
-    }

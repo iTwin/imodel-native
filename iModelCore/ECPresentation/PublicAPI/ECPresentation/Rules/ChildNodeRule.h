@@ -31,7 +31,6 @@ private:
     ChildNodeSpecificationList m_specifications;
 
 protected:
-    ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationKeyCR other) const override;
     ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
     ECPRESENTATION_EXPORT void _SetIndex(int& index) override;
 
@@ -93,8 +92,6 @@ private:
     ChildNodeCustomizationRuleList m_customizationRules;
 
 protected:
-    ECPRESENTATION_EXPORT virtual bool _ShallowEqual(PresentationKeyCR other) const override;
-
     ECPRESENTATION_EXPORT virtual Utf8CP _GetXmlElementName() const override;
     ECPRESENTATION_EXPORT virtual bool _ReadXml(BeXmlNodeP xmlNode) override;
     ECPRESENTATION_EXPORT virtual void _WriteXml(BeXmlNodeP xmlNode) const override;
@@ -163,8 +160,6 @@ private:
     bool m_autoExpand;
 
 protected:
-    ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationKeyCR other) const override;
-
     ECPRESENTATION_EXPORT Utf8CP _GetXmlElementName () const override;
     ECPRESENTATION_EXPORT bool _ReadXml (BeXmlNodeP xmlNode) override;
     ECPRESENTATION_EXPORT void _WriteXml (BeXmlNodeP xmlNode) const override;

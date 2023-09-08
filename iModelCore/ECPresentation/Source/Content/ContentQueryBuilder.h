@@ -43,8 +43,8 @@ struct ContentDescriptorBuilder
         Context(ECSchemaHelper const& helper, IConnectionManagerCR connections, IConnectionCR connection, ICancelationTokenCP cancellationToken,
             IRulesPreprocessorR rulesPreprocessor, PresentationRuleSetCR ruleset, Utf8CP preferredDisplayType,
             RulesetVariables const& rulesetVariables, IPropertyCategorySupplierCR categorySupplier, IECPropertyFormatter const* propertyFormatter, ECPresentation::UnitSystem unitSystem,
-            INavNodeKeysContainerCR input, SelectionInfo const* selection, IUsedRulesetVariablesListener* usedVariablesListener)
-            : ContentSpecificationsHandler::Context(helper, connections, connection, cancellationToken, rulesPreprocessor, ruleset, rulesetVariables, preferredDisplayType, input, usedVariablesListener),
+            INavNodeKeysContainerCR input, SelectionInfo const* selection, IUsedRulesetVariablesListener* usedVariablesListener, std::shared_ptr<RelatedClassPathsList> exclusiveIncludePaths)
+            : ContentSpecificationsHandler::Context(helper, connections, connection, cancellationToken, rulesPreprocessor, ruleset, rulesetVariables, preferredDisplayType, input, usedVariablesListener, exclusiveIncludePaths),
             m_categorySupplier(categorySupplier), m_propertyFormatter(propertyFormatter), m_unitSystem(unitSystem), m_selectionInfo(selection)
             {}
         IPropertyCategorySupplierCR GetCategorySupplier() const {return m_categorySupplier;}
@@ -155,6 +155,7 @@ public:
     ECPRESENTATION_EXPORT bool Accept(SelectedNodeInstancesSpecificationCR, IParsedInput const&);
     ECPRESENTATION_EXPORT bool Accept(ContentRelatedInstancesSpecificationCR, IParsedInput const&);
     ECPRESENTATION_EXPORT bool Accept(ContentInstancesOfSpecificClassesSpecificationCR);
+    ECPRESENTATION_EXPORT bool Accept(ContentDescriptor::NestedContentField const&);
     ECPRESENTATION_EXPORT QuerySet const& GetQuerySet();
 };
 
