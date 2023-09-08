@@ -5,7 +5,21 @@ This document including important changes to syntax or file format.
 | Module  | Version   |
 | ------- | --------- |
 | Profile | `4.0.0.3` |
-| ECSQL   | `1.2.5.0` |
+| ECSQL   | `1.2.6.0` |
+
+## `9/6/2023`: Changes to ECSQLOPTIONS
+
+1. ECSql version updated to `1.2.5.0` -> `1.2.6.0`.
+2. `ECSQLOPTIONS` is now just called `OPTIONS`. `ECSQLOPTIONS` will continue be supported but is deprecated.
+3. Options specified will be inherited by sub queries. Local query option take priority over inherited.
+
+Following should work now
+
+```sql
+SELECT 1 FROM (
+  SELECT $ FROM Bis.Element
+) LIMIT 1 OPTIONS ENABLE_EXPERIMENTAL_FEATURES
+```
 
 ## `8/31/2023`: Update behavior of instance properties
 
