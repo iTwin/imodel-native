@@ -1,4 +1,4 @@
-// Copyright 2017 The Crashpad Authors. All rights reserved.
+// Copyright 2017 The Crashpad Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -93,23 +93,20 @@ PtraceScope GetPtraceScope() {
 }
 
 bool HaveCapSysPtrace() {
-  struct __user_cap_header_struct cap_header = {};
-  struct __user_cap_data_struct cap_data = {};
-
+  __user_cap_header_struct cap_header;
   cap_header.pid = getpid();
+  cap_header.version = _LINUX_CAPABILITY_VERSION_3;
 
+  __user_cap_data_struct cap_data[_LINUX_CAPABILITY_U32S_3];
   if (syscall(SYS_capget, &cap_header, &cap_data) != 0) {
     PLOG(ERROR) << "capget";
+    LOG_IF(ERROR, errno == EINVAL) << "cap_header.version " << std::hex
+                                   << cap_header.version;
     return false;
   }
 
-  if (cap_header.version != _LINUX_CAPABILITY_VERSION_3) {
-    LOG(ERROR) << "Unexpected capability version " << std::hex
-               << cap_header.version;
-    return false;
-  }
-
-  return (cap_data.effective & (1 << CAP_SYS_PTRACE)) != 0;
+  return (cap_data[CAP_TO_INDEX(CAP_SYS_PTRACE)].effective &
+          CAP_TO_MASK(CAP_SYS_PTRACE)) != 0;
 }
 
 bool SendMessageToClient(
@@ -201,7 +198,7 @@ class PtraceStrategyDeciderImpl : public PtraceStrategyDecider {
         if (HaveCapSysPtrace()) {
           return Strategy::kDirectPtrace;
         }
-        FALLTHROUGH;
+        [[fallthrough]];
       case PtraceScope::kNoAttach:
         LOG(WARNING) << "no ptrace";
         return Strategy::kNoPtrace;
@@ -448,6 +445,7 @@ bool ExceptionHandlerServer::HandleCrashDumpRequest(
     bool multiple_clients) {
   pid_t client_process_id = creds.pid;
   pid_t requesting_thread_id = -1;
+  uid_t client_uid = creds.uid;
 
   switch (
       strategy_decider_->ChooseStrategy(client_sock, multiple_clients, creds)) {
@@ -469,6 +467,7 @@ bool ExceptionHandlerServer::HandleCrashDumpRequest(
 
     case PtraceStrategyDecider::Strategy::kDirectPtrace: {
       delegate_->HandleException(client_process_id,
+                                 client_uid,
                                  client_info,
                                  requesting_thread_stack_address,
                                  &requesting_thread_id);
@@ -482,7 +481,7 @@ bool ExceptionHandlerServer::HandleCrashDumpRequest(
     case PtraceStrategyDecider::Strategy::kUseBroker:
       DCHECK(!multiple_clients);
       delegate_->HandleExceptionWithBroker(
-          client_process_id, client_info, client_sock);
+          client_process_id, client_uid, client_info, client_sock);
       break;
   }
 

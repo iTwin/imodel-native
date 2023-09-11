@@ -1,4 +1,4 @@
-# Copyright 2015 The Crashpad Authors. All rights reserved.
+# Copyright 2015 The Crashpad Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,22 +19,40 @@ if (crashpad_is_in_chromium) {
   import("//build/config/sanitizers/sanitizers.gni")
 }
 
-if (crashpad_is_mac) {
+if (crashpad_is_mac || crashpad_is_ios) {
   if (crashpad_is_in_chromium || crashpad_is_in_fuchsia) {
     import("//build/config/sysroot.gni")
   } else {
-    import("//third_party/mini_chromium/mini_chromium/build/sysroot.gni")
+    import("$mini_chromium_import_root/build/sysroot.gni")
   }
 
   action_foreach("mig") {
     script = "mach/mig.py"
-
-    sources = [
-      "$sysroot/usr/include/mach/exc.defs",
-      "$sysroot/usr/include/mach/mach_exc.defs",
-      "$sysroot/usr/include/mach/notify.defs",
-      "mach/child_port.defs",
+    inputs = [
+      "mach/mig_fix.py",
+      "mach/mig_gen.py",
     ]
+
+    if (crashpad_is_in_fuchsia) {
+      # TODO(https://fxbug.dev/68780): Remove suppression when fixed.
+      hermetic_deps = false
+      all_outputs_fresh = false
+    }
+
+    if (crashpad_is_mac) {
+      sources = [
+        "$sysroot/usr/include/mach/exc.defs",
+        "$sysroot/usr/include/mach/mach_exc.defs",
+        "$sysroot/usr/include/mach/notify.defs",
+        "mach/child_port.defs",
+      ]
+    } else if (crashpad_is_ios) {
+      sources = [
+        # The iOS SDK doesn’t have any .defs files. Get them directly from xnu.
+        "../third_party/xnu/osfmk/mach/exc.defs",
+        "../third_party/xnu/osfmk/mach/mach_exc.defs",
+      ]
+    }
 
     outputs = [
       "$target_gen_dir/mach/{{source_name_part}}User.c",
@@ -49,7 +67,8 @@ if (crashpad_is_mac) {
       if (!use_system_xcode) {
         import("//build/config/clang/clang.gni")
         import("//build/config/mac/mac_sdk.gni")
-        clang_path = rebase_path("$clang_base_path/bin/", root_build_dir) + "clang"
+        clang_path =
+            rebase_path("$clang_base_path/bin/", root_build_dir) + "clang"
         mig_path = "$mac_bin_path" + "mig"
         migcom_path = "$mac_bin_path" + "../libexec/migcom"
 
@@ -62,25 +81,104 @@ if (crashpad_is_mac) {
           migcom_path,
         ]
       }
+      if (crashpad_is_mac) {
+        deps = [ "//build/config/mac:sdk_inputs" ]
+      }
     }
     if (sysroot != "") {
-      args += [
-        "--sdk",
-        sysroot,
-      ]
+      if (crashpad_is_in_chromium) {
+        # Chromium often brings along its own SDK and wants to keep paths
+        # relative…
+        args += [
+          "--sdk",
+          rebase_path(sysroot, root_build_dir),
+        ]
+      } else {
+        # …but that’s not an option in the standalone Crashpad build, where the
+        # SDK is installed on the system and is absolute. (But use rebase_path
+        # just to be sure.)
+        args += [
+          "--sdk",
+          rebase_path(sysroot, ""),
+        ]
+      }
     }
     args += [
       "--include",
+      rebase_path("..", root_build_dir),
+      "--include",
       rebase_path("../compat/mac", root_build_dir),
     ]
+    if (crashpad_is_ios) {
+      args += [
+        "--include",
+        rebase_path("../compat/ios", root_build_dir),
+      ]
+    }
+    if (current_cpu == "x86") {
+      args += [
+        "--arch",
+        "i386",
+      ]
+    } else if (current_cpu == "x64") {
+      args += [
+        "--arch",
+        "x86_64",
+      ]
+    } else if (current_cpu == "arm") {
+      args += [
+        "--arch",
+        "armv7",
+      ]
+    } else if (current_cpu == "arm64") {
+      args += [
+        "--arch",
+        "arm64",
+      ]
+    } else if (crashpad_is_mac && current_cpu == "mac_universal") {
+      args += [
+        "--arch",
+        "x86_64",
+        "--arch",
+        "arm64",
+      ]
+    } else {
+      assert(false, "Unsupported architecture")
+    }
+  }
+
+  static_library("mig_output") {
+    deps = [ ":mig" ]
+    sources = get_target_outputs(":mig")
+    if (crashpad_is_in_chromium) {
+      # mig output contains unreachable code, which irks -Wunreachable-code.
+      configs -= [ "//build/config/compiler:chromium_code" ]
+      configs += [ "//build/config/compiler:no_chromium_code" ]
+    }
+    public_configs = [ "..:crashpad_config" ]
   }
 }
 
-static_library("util") {
+# Used by crashpad_wer_handler to avoid linking all of :util.
+if (crashpad_is_win) {
+  source_set("util_registration_protocol") {
+    sources = [
+      "misc/address_types.h",
+      "win/address_types.h",
+      "win/registration_protocol_win_structs.h",
+    ]
+    public_deps = [ "../third_party/mini_chromium:build" ]
+    public_configs = [ "..:crashpad_config" ]
+  }
+}
+
+crashpad_static_library("util") {
   sources = [
     "file/delimited_file_reader.cc",
     "file/delimited_file_reader.h",
     "file/directory_reader.h",
+    "file/file_helper.cc",
+    "file/file_helper.h",
     "file/file_io.cc",
     "file/file_io.h",
     "file/file_reader.cc",
@@ -90,6 +188,8 @@ static_library("util") {
     "file/file_writer.cc",
     "file/file_writer.h",
     "file/filesystem.h",
+    "file/output_stream_file_writer.cc",
+    "file/output_stream_file_writer.h",
     "file/scoped_remove_file.cc",
     "file/scoped_remove_file.h",
     "file/string_file.cc",
@@ -130,17 +230,6 @@ static_library("util") {
     "misc/uuid.h",
     "misc/zlib.cc",
     "misc/zlib.h",
-    "net/http_body.cc",
-    "net/http_body.h",
-    "net/http_body_gzip.cc",
-    "net/http_body_gzip.h",
-    "net/http_headers.h",
-    "net/http_multipart_builder.cc",
-    "net/http_multipart_builder.h",
-    "net/http_transport.cc",
-    "net/http_transport.h",
-    "net/url.cc",
-    "net/url.h",
     "numeric/checked_address_range.cc",
     "numeric/checked_address_range.h",
     "numeric/checked_range.h",
@@ -165,8 +254,20 @@ static_library("util") {
     "stdlib/strnlen.cc",
     "stdlib/strnlen.h",
     "stdlib/thread_safe_vector.h",
+    "stream/base94_output_stream.cc",
+    "stream/base94_output_stream.h",
+    "stream/file_encoder.cc",
+    "stream/file_encoder.h",
+    "stream/file_output_stream.cc",
+    "stream/file_output_stream.h",
+    "stream/log_output_stream.cc",
+    "stream/log_output_stream.h",
+    "stream/output_stream_interface.h",
+    "stream/zlib_output_stream.cc",
+    "stream/zlib_output_stream.h",
     "string/split_string.cc",
     "string/split_string.h",
+    "synchronization/scoped_spin_guard.h",
     "synchronization/semaphore.h",
     "thread/stoppable.h",
     "thread/thread.cc",
@@ -176,6 +277,8 @@ static_library("util") {
     "thread/worker_thread.cc",
     "thread/worker_thread.h",
   ]
+
+  defines = [ "ZLIB_CONST" ]
 
   if (crashpad_is_posix || crashpad_is_fuchsia) {
     sources += [
@@ -199,11 +302,11 @@ static_library("util") {
       sources += [
         "posix/close_multiple.cc",
         "posix/close_multiple.h",
-        "posix/double_fork_and_exec.cc",
-        "posix/double_fork_and_exec.h",
         "posix/drop_privileges.cc",
         "posix/drop_privileges.h",
         "posix/process_info.h",
+        "posix/spawn_subprocess.cc",
+        "posix/spawn_subprocess.h",
 
         # These map signals to and from strings. While Fuchsia defines some of
         # the common SIGx defines, signals are never raised on Fuchsia, so
@@ -214,22 +317,10 @@ static_library("util") {
     }
   }
 
-  if (crashpad_is_mac) {
+  if (crashpad_is_mac || crashpad_is_ios) {
     sources += [
-      "mac/checked_mach_address_range.h",
-      "mac/launchd.h",
-      "mac/launchd.mm",
-      "mac/mac_util.cc",
-      "mac/mac_util.h",
-      "mac/service_management.cc",
-      "mac/service_management.h",
       "mac/xattr.cc",
       "mac/xattr.h",
-      "mach/child_port_handshake.cc",
-      "mach/child_port_handshake.h",
-      "mach/child_port_server.cc",
-      "mach/child_port_server.h",
-      "mach/child_port_types.h",
       "mach/composite_mach_message_server.cc",
       "mach/composite_mach_message_server.h",
       "mach/exc_client_variants.cc",
@@ -240,54 +331,93 @@ static_library("util") {
       "mach/exception_behaviors.h",
       "mach/exception_ports.cc",
       "mach/exception_ports.h",
-      "mach/exception_types.cc",
-      "mach/exception_types.h",
       "mach/mach_extensions.cc",
       "mach/mach_extensions.h",
       "mach/mach_message.cc",
       "mach/mach_message.h",
       "mach/mach_message_server.cc",
       "mach/mach_message_server.h",
+      "mach/symbolic_constants_mach.cc",
+      "mach/symbolic_constants_mach.h",
+      "misc/capture_context_mac.S",
+      "misc/clock_mac.cc",
+      "misc/paths_mac.cc",
+      "synchronization/semaphore_mac.cc",
+    ]
+  }
+
+  if (crashpad_is_mac && !crashpad_is_in_fuchsia) {
+    sources += [
+      "mac/checked_mach_address_range.h",
+      "mac/launchd.h",
+      "mac/launchd.mm",
+      "mac/mac_util.cc",
+      "mac/mac_util.h",
+      "mac/service_management.cc",
+      "mac/service_management.h",
+      "mac/sysctl.cc",
+      "mac/sysctl.h",
+      "mach/bootstrap.cc",
+      "mach/bootstrap.h",
+      "mach/child_port_handshake.cc",
+      "mach/child_port_handshake.h",
+      "mach/child_port_server.cc",
+      "mach/child_port_server.h",
+      "mach/child_port_types.h",
+      "mach/exception_types.cc",
+      "mach/exception_types.h",
       "mach/notify_server.cc",
       "mach/notify_server.h",
       "mach/scoped_task_suspend.cc",
       "mach/scoped_task_suspend.h",
-      "mach/symbolic_constants_mach.cc",
-      "mach/symbolic_constants_mach.h",
       "mach/task_for_pid.cc",
       "mach/task_for_pid.h",
-      "misc/capture_context_mac.S",
-      "misc/clock_mac.cc",
-      "misc/paths_mac.cc",
-      "net/http_transport_mac.mm",
       "posix/process_info_mac.cc",
       "process/process_memory_mac.cc",
       "process/process_memory_mac.h",
-      "synchronization/semaphore_mac.cc",
     ]
-    sources += get_target_outputs(":mig")
+  }
+
+  if (crashpad_is_ios) {
+    sources += [
+      "ios/ios_intermediate_dump_data.cc",
+      "ios/ios_intermediate_dump_data.h",
+      "ios/ios_intermediate_dump_format.h",
+      "ios/ios_intermediate_dump_interface.cc",
+      "ios/ios_intermediate_dump_interface.h",
+      "ios/ios_intermediate_dump_list.cc",
+      "ios/ios_intermediate_dump_list.h",
+      "ios/ios_intermediate_dump_map.cc",
+      "ios/ios_intermediate_dump_map.h",
+      "ios/ios_intermediate_dump_object.cc",
+      "ios/ios_intermediate_dump_object.h",
+      "ios/ios_intermediate_dump_reader.cc",
+      "ios/ios_intermediate_dump_reader.h",
+      "ios/ios_intermediate_dump_writer.cc",
+      "ios/ios_intermediate_dump_writer.h",
+      "ios/ios_system_data_collector.h",
+      "ios/ios_system_data_collector.mm",
+      "ios/raw_logging.cc",
+      "ios/raw_logging.h",
+      "ios/scoped_background_task.h",
+      "ios/scoped_background_task.mm",
+      "ios/scoped_vm_read.cc",
+      "ios/scoped_vm_read.h",
+      "ios/scoped_vm_map.cc",
+      "ios/scoped_vm_map.h",
+    ]
   }
 
   deps = []
 
-  if (crashpad_is_linux || crashpad_is_fuchsia || crashpad_is_android) {
-    sources += [ "net/http_transport_socket.cc" ]
-    if (crashpad_use_boringssl_for_http_transport_socket) {
-      defines = [ "CRASHPAD_USE_BORINGSSL" ]
-
-      if (crashpad_is_in_fuchsia) {
-        deps += [ "//third_party/boringssl" ]
-      } else {
-        libs = [
-          "crypto",
-          "ssl",
-        ]
-      }
-    }
+  if (crashpad_is_android) {
+    sources += [
+      "linux/initial_signal_dispositions.cc",
+      "linux/initial_signal_dispositions.h",
+    ]
   }
 
   if (crashpad_is_linux || crashpad_is_android) {
-    set_sources_assignment_filter([])
     sources += [
       "linux/address_types.h",
       "linux/auxiliary_vector.cc",
@@ -302,6 +432,8 @@ static_library("util") {
       "linux/exception_information.h",
       "linux/memory_map.cc",
       "linux/memory_map.h",
+      "linux/pac_helper.cc",
+      "linux/pac_helper.h",
       "linux/proc_stat_reader.cc",
       "linux/proc_stat_reader.h",
       "linux/proc_task_reader.cc",
@@ -326,6 +458,7 @@ static_library("util") {
       "linux/traits.h",
       "misc/capture_context_linux.S",
       "misc/paths_linux.cc",
+      "misc/time_linux.cc",
       "posix/process_info_linux.cc",
       "process/process_memory_linux.cc",
       "process/process_memory_linux.h",
@@ -342,7 +475,6 @@ static_library("util") {
       "misc/clock_win.cc",
       "misc/paths_win.cc",
       "misc/time_win.cc",
-      "net/http_transport_win.cc",
       "process/process_memory_win.cc",
       "process/process_memory_win.h",
       "synchronization/semaphore_win.cc",
@@ -354,6 +486,7 @@ static_library("util") {
       "win/context_wrappers.h",
       "win/critical_section_with_debug_info.cc",
       "win/critical_section_with_debug_info.h",
+      "win/exception_codes.h",
       "win/exception_handler_server.cc",
       "win/exception_handler_server.h",
       "win/get_function.cc",
@@ -364,6 +497,8 @@ static_library("util") {
       "win/handle.h",
       "win/initial_client_data.cc",
       "win/initial_client_data.h",
+      "win/loader_lock.cc",
+      "win/loader_lock.h",
       "win/module_version.cc",
       "win/module_version.h",
       "win/nt_internals.cc",
@@ -375,6 +510,7 @@ static_library("util") {
       "win/process_structs.h",
       "win/registration_protocol_win.cc",
       "win/registration_protocol_win.h",
+      "win/registration_protocol_win_structs.h",
       "win/safe_terminate_process.h",
       "win/scoped_handle.cc",
       "win/scoped_handle.h",
@@ -382,48 +518,33 @@ static_library("util") {
       "win/scoped_local_alloc.h",
       "win/scoped_process_suspend.cc",
       "win/scoped_process_suspend.h",
+      "win/scoped_registry_key.h",
       "win/scoped_set_event.cc",
       "win/scoped_set_event.h",
       "win/session_end_watcher.cc",
       "win/session_end_watcher.h",
       "win/termination_codes.h",
+      "win/traits.h",
       "win/xp_compat.h",
     ]
 
-    # There's no ml.exe yet in cross builds, so provide broken-but-not-asm
-    # versions of the functions defined in .asm files.
-    #
-    # CaptureContext() in capture_context_broken.cc just calls CHECK(false).
-    # SafeTerminateProcess() in safe_terminate_process.cc just calls regular
-    # TerminateProcess() without the protection against broken third-party
-    # patching of TerminateProcess().
-    #
-    # TODO(thakis): Use the .asm file in cross builds somehow,
-    # https://crbug.com/762167.
-    if (host_os == "win") {
-      if (current_cpu != "arm64") {
-        sources += [
-          "misc/capture_context_win.asm",
-          "win/safe_terminate_process.asm",
-        ]
-      } else {
-        # Most Crashpad builds use Microsoft's armasm64.exe macro assembler for
-        # .asm source files. When building in Chromium, clang-cl is used as the
-        # assembler instead. Since the two assemblers recognize different
-        # assembly dialects, the same .asm file can't be used for each. As a
-        # workaround, use a prebuilt .obj file when the Microsoft-dialect
-        # assembler isn't available.
-        if (crashpad_is_in_chromium) {
-          sources += [ "misc/capture_context_win_arm64.obj" ]
-        } else {
-          sources += [ "misc/capture_context_win_arm64.asm" ]
-        }
-      }
-    } else {
+    if (current_cpu != "arm64") {
       sources += [
-        "misc/capture_context_broken.cc",
-        "win/safe_terminate_process_broken.cc",
+        "misc/capture_context_win.asm",
+        "win/safe_terminate_process.asm",
       ]
+    } else {
+      # Most Crashpad builds use Microsoft's armasm64.exe macro assembler for
+      # .asm source files. When building in Chromium, clang-cl is used as the
+      # assembler instead. Since the two assemblers recognize different
+      # assembly dialects, the same .asm file can't be used for each. As a
+      # workaround, use a prebuilt .obj file when the Microsoft-dialect
+      # assembler isn't available.
+      if (crashpad_is_in_chromium) {
+        sources += [ "misc/capture_context_win_arm64.obj" ]
+      } else {
+        sources += [ "misc/capture_context_win_arm64.asm" ]
+      }
     }
   }
 
@@ -433,6 +554,7 @@ static_library("util") {
       "fuchsia/koid_utilities.h",
       "fuchsia/scoped_task_suspend.cc",
       "fuchsia/scoped_task_suspend.h",
+      "fuchsia/traits.h",
       "misc/capture_context_fuchsia.S",
       "misc/paths_fuchsia.cc",
       "process/process_memory_fuchsia.cc",
@@ -444,32 +566,41 @@ static_library("util") {
 
   # Include generated files starting with "util".
   if (crashpad_is_in_fuchsia) {
-    include_dirs = [ "$root_gen_dir/third_party/crashpad" ]
+    include_dirs =
+        [ "$root_gen_dir/" + rebase_path(fuchsia_crashpad_root, "//") ]
   } else {
     include_dirs = [ "$root_gen_dir/third_party/crashpad/crashpad" ]
   }
 
   public_deps = [
+    ":no_cfi_icall",
     "../compat",
-  ]
-
-  deps += [
-    "../third_party/mini_chromium:base",
     "../third_party/zlib",
   ]
 
-  if (crashpad_is_mac) {
-    libs = [
-      "bsm",
+  deps += [
+    "$mini_chromium_source_parent:base",
+    "$mini_chromium_source_parent:chromeos_buildflags",
+  ]
+
+  configs = [ "../build:flock_always_supported_defines" ]
+
+  if (crashpad_is_mac || crashpad_is_ios) {
+    include_dirs += [ "$root_gen_dir" ]
+    deps += [ ":mig_output" ]
+  }
+
+  if (crashpad_is_ios) {
+    deps += [ "../build:ios_enable_arc" ]
+  }
+
+  if (crashpad_is_mac && !crashpad_is_in_fuchsia) {
+    libs = [ "bsm" ]
+    frameworks = [
       "CoreFoundation.framework",
       "Foundation.framework",
       "IOKit.framework",
     ]
-    deps += [
-      ":mig",
-      "../third_party/apple_cf:apple_cf",
-    ]
-    include_dirs += [ "$root_build_dir/gen" ]
   }
 
   if (crashpad_is_win) {
@@ -499,34 +630,78 @@ static_library("util") {
   }
 }
 
-if (crashpad_use_boringssl_for_http_transport_socket) {
-  action("generate_test_server_key") {
-    script = "net/generate_test_server_key.py"
-    outputs = [
-      "$root_out_dir/crashpad_util_test_cert.pem",
-      "$root_out_dir/crashpad_util_test_key.pem",
-    ]
-    data = outputs
+# net is split into a separate target from util so that client code does
+# not have to depend on it.
+crashpad_static_library("net") {
+  sources = [
+    "net/http_body.cc",
+    "net/http_body.h",
+    "net/http_body_gzip.cc",
+    "net/http_body_gzip.h",
+    "net/http_headers.h",
+    "net/http_multipart_builder.cc",
+    "net/http_multipart_builder.h",
+    "net/http_transport.cc",
+    "net/http_transport.h",
+    "net/url.cc",
+    "net/url.h",
+  ]
+
+  deps = [
+    ":util",
+    "$mini_chromium_source_parent:base",
+  ]
+
+  if (crashpad_is_mac && !crashpad_is_in_fuchsia) {
+    sources += [ "net/http_transport_mac.mm" ]
+  }
+
+  if (crashpad_is_ios) {
+    sources += [ "net/http_transport_mac.mm" ]
+  }
+
+  if (crashpad_is_win) {
+    sources += [ "net/http_transport_win.cc" ]
+  }
+
+  if (crashpad_http_transport_impl == "socket") {
+    sources += [ "net/http_transport_socket.cc" ]
+    if (crashpad_use_boringssl_for_http_transport_socket) {
+      defines = [ "CRASHPAD_USE_BORINGSSL" ]
+
+      if (crashpad_is_in_chromium || crashpad_is_in_fuchsia) {
+        deps += [ "//third_party/boringssl" ]
+      } else {
+        libs = [
+          "crypto",
+          "ssl",
+        ]
+      }
+    }
+  } else if (crashpad_http_transport_impl == "libcurl") {
+    sources += [ "net/http_transport_libcurl.cc" ]
   }
 }
 
-if (!crashpad_is_android) {
+if (!crashpad_is_android && !crashpad_is_ios) {
   crashpad_executable("http_transport_test_server") {
     testonly = true
-    sources = [
-      "net/http_transport_test_server.cc",
-    ]
+    sources = [ "net/http_transport_test_server.cc" ]
 
     deps = [
+      ":net",
       ":util",
+      "$mini_chromium_source_parent:base",
       "../third_party/cpp-httplib",
-      "../third_party/mini_chromium:base",
       "../third_party/zlib",
       "../tools:tool_support",
     ]
 
+    # TODO(b/189353575): make these relocatable using $mini_chromium_ variables
     if (crashpad_is_standalone) {
-      remove_configs = [ "//third_party/mini_chromium/mini_chromium/build:Wexit_time_destructors" ]
+      remove_configs = [ "//third_party/mini_chromium/mini_chromium/build/config:Wexit_time_destructors" ]
+    } else if (crashpad_is_external) {
+      remove_configs = [ "//../../mini_chromium/mini_chromium/build/config:Wexit_time_destructors" ]
     }
 
     if (crashpad_is_win) {
@@ -534,12 +709,9 @@ if (!crashpad_is_android) {
     }
 
     if (crashpad_use_boringssl_for_http_transport_socket) {
-      data_deps = [
-        ":generate_test_server_key",
-      ]
       defines = [ "CRASHPAD_USE_BORINGSSL" ]
 
-      if (crashpad_is_in_fuchsia) {
+      if (crashpad_is_in_chromium || crashpad_is_in_fuchsia) {
         deps += [ "//third_party/boringssl" ]
       } else {
         libs = [
@@ -549,6 +721,14 @@ if (!crashpad_is_android) {
       }
     }
   }
+}
+
+# This exists as a separate target from util so that compat may depend on it
+# without cycles.
+source_set("no_cfi_icall") {
+  sources = [ "misc/no_cfi_icall.h" ]
+  public_configs = [ "..:crashpad_config" ]
+  public_deps = [ "$mini_chromium_source_parent:build" ]
 }
 
 source_set("util_test") {
@@ -568,6 +748,7 @@ source_set("util_test") {
     "misc/from_pointer_cast_test.cc",
     "misc/initialization_state_dcheck_test.cc",
     "misc/initialization_state_test.cc",
+    "misc/no_cfi_icall_test.cc",
     "misc/paths_test.cc",
     "misc/random_string_test.cc",
     "misc/range_set_test.cc",
@@ -593,20 +774,27 @@ source_set("util_test") {
     "stdlib/strlcpy_test.cc",
     "stdlib/strnlen_test.cc",
     "stdlib/thread_safe_vector_test.cc",
+    "stream/base94_output_stream_test.cc",
+    "stream/file_encoder_test.cc",
+    "stream/log_output_stream_test.cc",
+    "stream/test_output_stream.cc",
+    "stream/test_output_stream.h",
+    "stream/zlib_output_stream_test.cc",
     "string/split_string_test.cc",
+    "synchronization/scoped_spin_guard_test.cc",
     "synchronization/semaphore_test.cc",
     "thread/thread_log_messages_test.cc",
     "thread/thread_test.cc",
     "thread/worker_thread_test.cc",
   ]
 
-  if (!crashpad_is_android) {
+  if (!crashpad_is_android && !crashpad_is_ios) {
     # Android requires an HTTPTransport implementation.
     sources += [ "net/http_transport_test.cc" ]
   }
 
   if (crashpad_is_posix || crashpad_is_fuchsia) {
-    if (!crashpad_is_fuchsia) {
+    if (!crashpad_is_fuchsia && !crashpad_is_ios) {
       sources += [
         "posix/process_info_test.cc",
         "posix/signals_test.cc",
@@ -616,33 +804,53 @@ source_set("util_test") {
     sources += [ "posix/scoped_mmap_test.cc" ]
   }
 
+  if (crashpad_is_mac || crashpad_is_ios) {
+    sources += [
+      "mac/xattr_test.cc",
+      "mach/composite_mach_message_server_test.cc",
+      "mach/exc_server_variants_test.cc",
+      "mach/exception_behaviors_test.cc",
+      "mach/mach_extensions_test.cc",
+      "mach/mach_message_test.cc",
+      "mach/symbolic_constants_mach_test.cc",
+      "misc/capture_context_test_util_mac.cc",
+    ]
+  }
+
   if (crashpad_is_mac) {
     sources += [
       "mac/launchd_test.mm",
       "mac/mac_util_test.mm",
       "mac/service_management_test.mm",
-      "mac/xattr_test.cc",
+      "mac/sysctl_test.cc",
+      "mach/bootstrap_test.cc",
       "mach/child_port_handshake_test.cc",
       "mach/child_port_server_test.cc",
-      "mach/composite_mach_message_server_test.cc",
       "mach/exc_client_variants_test.cc",
-      "mach/exc_server_variants_test.cc",
-      "mach/exception_behaviors_test.cc",
       "mach/exception_ports_test.cc",
       "mach/exception_types_test.cc",
-      "mach/mach_extensions_test.cc",
       "mach/mach_message_server_test.cc",
-      "mach/mach_message_test.cc",
       "mach/notify_server_test.cc",
       "mach/scoped_task_suspend_test.cc",
-      "mach/symbolic_constants_mach_test.cc",
-      "misc/capture_context_test_util_mac.cc",
       "process/process_memory_mac_test.cc",
     ]
   }
 
+  if (crashpad_is_ios) {
+    sources += [
+      "ios/ios_intermediate_dump_reader_test.cc",
+      "ios/ios_intermediate_dump_writer_test.cc",
+      "ios/scoped_vm_read_test.cc",
+      "ios/scoped_vm_map_test.cc",
+    ]
+
+    sources -= [
+      "process/process_memory_range_test.cc",
+      "process/process_memory_test.cc",
+    ]
+  }
+
   if (crashpad_is_linux || crashpad_is_android) {
-    set_sources_assignment_filter([])
     sources += [
       "linux/auxiliary_vector_test.cc",
       "linux/memory_map_test.cc",
@@ -670,6 +878,7 @@ source_set("util_test") {
       "win/get_function_test.cc",
       "win/handle_test.cc",
       "win/initial_client_data_test.cc",
+      "win/loader_lock_test.cc",
       "win/process_info_test.cc",
       "win/registration_protocol_win_test.cc",
       "win/safe_terminate_process_test.cc",
@@ -684,28 +893,26 @@ source_set("util_test") {
   }
 
   data = [
-    "net/testdata/",
+    "net/testdata/ascii_http_body.txt",
+    "net/testdata/binary_http_body.dat",
+    "net/testdata/crashpad_util_test_cert.pem",
+    "net/testdata/crashpad_util_test_key.pem",
   ]
 
   deps = [
+    ":net",
     ":util",
+    "$mini_chromium_source_parent:base",
     "../client",
     "../compat",
     "../test",
-    "../third_party/gtest:gmock",
-    "../third_party/gtest:gtest",
-    "../third_party/mini_chromium:base",
+    "../third_party/googletest:googlemock",
+    "../third_party/googletest:googletest",
     "../third_party/zlib",
   ]
 
-  if (crashpad_is_android || crashpad_is_linux) {
-    deps += [ "../third_party/lss" ]
-  }
-
-  if (!crashpad_is_android) {
-    data_deps = [
-      ":http_transport_test_server",
-    ]
+  if (!crashpad_is_android && !crashpad_is_ios) {
+    data_deps = [ ":http_transport_test_server" ]
 
     if (crashpad_use_boringssl_for_http_transport_socket) {
       defines = [ "CRASHPAD_USE_BORINGSSL" ]
@@ -713,7 +920,15 @@ source_set("util_test") {
   }
 
   if (crashpad_is_mac) {
-    libs = [ "Foundation.framework" ]
+    frameworks = [ "Foundation.framework" ]
+  }
+
+  if (crashpad_is_ios) {
+    deps += [ ":util_test_bundle_data" ]
+  }
+
+  if (crashpad_is_android || crashpad_is_linux) {
+    deps += [ "../third_party/lss" ]
   }
 
   if (crashpad_is_win) {
@@ -722,24 +937,41 @@ source_set("util_test") {
       "dbghelp.lib",
     ]
     data_deps += [
+      ":crashpad_util_test_loader_lock_test",
       ":crashpad_util_test_process_info_test_child",
       ":crashpad_util_test_safe_terminate_process_test_child",
     ]
   }
 }
 
+if (crashpad_is_ios) {
+  bundle_data("util_test_bundle_data") {
+    testonly = true
+
+    sources = [
+      "net/testdata/ascii_http_body.txt",
+      "net/testdata/binary_http_body.dat",
+    ]
+
+    outputs = [ "{{bundle_resources_dir}}/crashpad_test_data/" +
+                "{{source_root_relative_dir}}/{{source_file_part}}" ]
+  }
+}
+
 if (crashpad_is_win) {
   crashpad_executable("crashpad_util_test_process_info_test_child") {
     testonly = true
-    sources = [
-      "win/process_info_test_child.cc",
-    ]
+    sources = [ "win/process_info_test_child.cc" ]
   }
 
   crashpad_executable("crashpad_util_test_safe_terminate_process_test_child") {
     testonly = true
-    sources = [
-      "win/safe_terminate_process_test_child.cc",
-    ]
+    sources = [ "win/safe_terminate_process_test_child.cc" ]
+  }
+
+  crashpad_loadable_module("crashpad_util_test_loader_lock_test") {
+    testonly = true
+    sources = [ "win/loader_lock_test_dll.cc" ]
+    deps = [ ":util" ]
   }
 }

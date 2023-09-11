@@ -12,10 +12,45 @@
 #include <sstream>
 #include <string>
 
-#include "base/macros.h"
+#include "base/check.h"
+#include "base/check_op.h"
+#include "base/notreached.h"
 #include "build/build_config.h"
 
 namespace logging {
+
+// A bitmask of potential logging destinations.
+using LoggingDestination = uint32_t;
+
+// Specifies where logs will be written. Multiple destinations can be specified
+// with bitwise OR.
+// Unless destination is LOG_NONE, all logs with severity ERROR and above will
+// be written to stderr in addition to the specified destination.
+enum : LoggingDestination {
+  LOG_NONE = 0,
+  LOG_TO_FILE = 1 << 0,
+  LOG_TO_SYSTEM_DEBUG_LOG = 1 << 1,
+  LOG_TO_STDERR = 1 << 2,
+
+  LOG_TO_ALL = LOG_TO_FILE | LOG_TO_SYSTEM_DEBUG_LOG | LOG_TO_STDERR,
+
+#if BUILDFLAG(IS_WIN)
+  LOG_DEFAULT = LOG_TO_FILE,
+#elif BUILDFLAG(IS_FUCHSIA)
+  LOG_DEFAULT = LOG_TO_SYSTEM_DEBUG_LOG,
+#elif BUILDFLAG(IS_POSIX)
+  LOG_DEFAULT = LOG_TO_SYSTEM_DEBUG_LOG | LOG_TO_STDERR,
+#endif
+};
+
+struct LoggingSettings {
+  LoggingDestination logging_dest = LOG_DEFAULT;
+};
+
+// Sets the logging destination.
+//
+// TODO(jperaza): LOG_TO_FILE is not yet supported.
+bool InitLogging(const LoggingSettings& settings);
 
 typedef int LogSeverity;
 const LogSeverity LOG_VERBOSE = -1;
@@ -49,52 +84,16 @@ static inline int GetVlogLevel(const char*) {
   return std::numeric_limits<int>::max();
 }
 
-#if defined(OS_WIN)
+#if BUILDFLAG(IS_WIN)
 // This is just ::GetLastError, but out-of-line to avoid including windows.h in
 // such a widely used place.
 unsigned long GetLastSystemErrorCode();
 std::string SystemErrorCodeToString(unsigned long error_code);
-#elif defined(OS_POSIX)
+#elif BUILDFLAG(IS_POSIX)
 static inline int GetLastSystemErrorCode() {
   return errno;
 }
 #endif
-
-template<typename t1, typename t2>
-std::string* MakeCheckOpString(const t1& v1, const t2& v2, const char* names) {
-  std::ostringstream ss;
-  ss << names << " (" << v1 << " vs. " << v2 << ")";
-  std::string* msg = new std::string(ss.str());
-  return msg;
-}
-
-#define DEFINE_CHECK_OP_IMPL(name, op) \
-    template <typename t1, typename t2> \
-    inline std::string* Check ## name ## Impl(const t1& v1, const t2& v2, \
-                                              const char* names) { \
-      if (v1 op v2) { \
-        return NULL; \
-      } else { \
-        return MakeCheckOpString(v1, v2, names); \
-      } \
-    } \
-    inline std::string* Check ## name ## Impl(int v1, int v2, \
-                                              const char* names) { \
-      if (v1 op v2) { \
-        return NULL; \
-      } else { \
-        return MakeCheckOpString(v1, v2, names); \
-      } \
-    }
-
-DEFINE_CHECK_OP_IMPL(EQ, ==)
-DEFINE_CHECK_OP_IMPL(NE, !=)
-DEFINE_CHECK_OP_IMPL(LE, <=)
-DEFINE_CHECK_OP_IMPL(LT, <)
-DEFINE_CHECK_OP_IMPL(GE, >=)
-DEFINE_CHECK_OP_IMPL(GT, >)
-
-#undef DEFINE_CHECK_OP_IMPL
 
 class LogMessage {
  public:
@@ -106,6 +105,10 @@ class LogMessage {
              const char* file_path,
              int line,
              std::string* result);
+
+  LogMessage(const LogMessage&) = delete;
+  LogMessage& operator=(const LogMessage&) = delete;
+
   ~LogMessage();
 
   std::ostream& stream() { return stream_; }
@@ -118,8 +121,6 @@ class LogMessage {
   size_t message_start_;
   const int line_;
   LogSeverity severity_;
-
-  DISALLOW_COPY_AND_ASSIGN(LogMessage);
 };
 
 class LogMessageVoidify {
@@ -129,7 +130,7 @@ class LogMessageVoidify {
   void operator&(const std::ostream&) const {}
 };
 
-#if defined(OS_WIN)
+#if BUILDFLAG(IS_WIN)
 class Win32ErrorLogMessage : public LogMessage {
  public:
   Win32ErrorLogMessage(const char* function,
@@ -137,14 +138,16 @@ class Win32ErrorLogMessage : public LogMessage {
                        int line,
                        LogSeverity severity,
                        unsigned long err);
+
+  Win32ErrorLogMessage(const Win32ErrorLogMessage&) = delete;
+  Win32ErrorLogMessage& operator=(const Win32ErrorLogMessage&) = delete;
+
   ~Win32ErrorLogMessage();
 
  private:
   unsigned long err_;
-
-  DISALLOW_COPY_AND_ASSIGN(Win32ErrorLogMessage);
 };
-#elif defined(OS_POSIX)
+#elif BUILDFLAG(IS_POSIX)
 class ErrnoLogMessage : public LogMessage {
  public:
   ErrnoLogMessage(const char* function,
@@ -152,12 +155,14 @@ class ErrnoLogMessage : public LogMessage {
                   int line,
                   LogSeverity severity,
                   int err);
+
+  ErrnoLogMessage(const ErrnoLogMessage&) = delete;
+  ErrnoLogMessage& operator=(const ErrnoLogMessage&) = delete;
+
   ~ErrnoLogMessage();
 
  private:
   int err_;
-
-  DISALLOW_COPY_AND_ASSIGN(ErrnoLogMessage);
 };
 #endif
 
@@ -201,7 +206,7 @@ class ErrnoLogMessage : public LogMessage {
 #define COMPACT_GOOGLE_LOG_DFATAL \
     COMPACT_GOOGLE_LOG_EX_DFATAL(LogMessage)
 
-#if defined(OS_WIN)
+#if BUILDFLAG(IS_WIN)
 
 // wingdi.h defines ERROR 0. We don't want to include windows.h here, and we
 // want to allow "LOG(ERROR)", which will expand to LOG_0.
@@ -217,7 +222,7 @@ namespace logging {
 const LogSeverity LOG_0 = LOG_ERROR;
 }  // namespace logging
 
-#endif  // OS_WIN
+#endif  // BUILDFLAG(IS_WIN)
 
 #define LAZY_STREAM(stream, condition) \
     !(condition) ? (void) 0 : ::logging::LogMessageVoidify() & (stream)
@@ -232,14 +237,14 @@ const LogSeverity LOG_0 = LOG_ERROR;
     logging::LogMessage(FUNCTION_SIGNATURE, __FILE__, __LINE__, \
                         -verbose_level).stream()
 
-#if defined(OS_WIN)
+#if BUILDFLAG(IS_WIN)
 #define PLOG_STREAM(severity) COMPACT_GOOGLE_LOG_EX_ ## severity( \
     Win32ErrorLogMessage, ::logging::GetLastSystemErrorCode()).stream()
 #define VPLOG_STREAM(verbose_level)                                       \
     logging::Win32ErrorLogMessage(FUNCTION_SIGNATURE, __FILE__, __LINE__, \
                                   -verbose_level,                         \
                                   ::logging::GetLastSystemErrorCode()).stream()
-#elif defined(OS_POSIX)
+#elif BUILDFLAG(IS_POSIX)
 #define PLOG_STREAM(severity) COMPACT_GOOGLE_LOG_EX_ ## severity( \
     ErrnoLogMessage, ::logging::GetLastSystemErrorCode()).stream()
 #define VPLOG_STREAM(verbose_level) \
@@ -269,27 +274,6 @@ const LogSeverity LOG_0 = LOG_ERROR;
 #define VPLOG_IF(verbose_level, condition) \
     LAZY_STREAM(VPLOG_STREAM(verbose_level), \
                 VLOG_IS_ON(verbose_level) && (condition))
-
-#define CHECK(condition) \
-    LAZY_STREAM(LOG_STREAM(FATAL), !(condition)) \
-    << "Check failed: " # condition << ". "
-#define PCHECK(condition) \
-    LAZY_STREAM(PLOG_STREAM(FATAL), !(condition)) \
-    << "Check failed: " # condition << ". "
-
-#define CHECK_OP(name, op, val1, val2) \
-    if (std::string* _result = \
-          logging::Check ## name ## Impl((val1), (val2), \
-                                         # val1 " " # op " " # val2)) \
-      logging::LogMessage(FUNCTION_SIGNATURE, __FILE__, __LINE__, \
-                          _result).stream()
-
-#define CHECK_EQ(val1, val2) CHECK_OP(EQ, ==, val1, val2)
-#define CHECK_NE(val1, val2) CHECK_OP(NE, !=, val1, val2)
-#define CHECK_LE(val1, val2) CHECK_OP(LE, <=, val1, val2)
-#define CHECK_LT(val1, val2) CHECK_OP(LT, <, val1, val2)
-#define CHECK_GE(val1, val2) CHECK_OP(GE, >=, val1, val2)
-#define CHECK_GT(val1, val2) CHECK_OP(GT, >, val1, val2)
 
 #if defined(NDEBUG)
 #define DLOG_IS_ON(severity) 0
@@ -323,31 +307,11 @@ const LogSeverity LOG_0 = LOG_ERROR;
     LAZY_STREAM(VPLOG_STREAM(verbose_level), \
                 DVLOG_IS_ON(verbose_level) && (condition))
 
-#define DCHECK(condition) \
-    LAZY_STREAM(LOG_STREAM(FATAL), DCHECK_IS_ON() ? !(condition) : false) \
-    << "Check failed: " # condition << ". "
-#define DPCHECK(condition) \
-    LAZY_STREAM(PLOG_STREAM(FATAL), DCHECK_IS_ON() ? !(condition) : false) \
-    << "Check failed: " # condition << ". "
-
-#define DCHECK_OP(name, op, val1, val2) \
-    if (DCHECK_IS_ON()) \
-      if (std::string* _result = \
-          logging::Check ## name ## Impl((val1), (val2), \
-                                         # val1 " " # op " " # val2)) \
-        logging::LogMessage(FUNCTION_SIGNATURE, __FILE__, __LINE__, \
-                            _result).stream()
-
-#define DCHECK_EQ(val1, val2) DCHECK_OP(EQ, ==, val1, val2)
-#define DCHECK_NE(val1, val2) DCHECK_OP(NE, !=, val1, val2)
-#define DCHECK_LE(val1, val2) DCHECK_OP(LE, <=, val1, val2)
-#define DCHECK_LT(val1, val2) DCHECK_OP(LT, <, val1, val2)
-#define DCHECK_GE(val1, val2) DCHECK_OP(GE, >=, val1, val2)
-#define DCHECK_GT(val1, val2) DCHECK_OP(GT, >, val1, val2)
-
-#define NOTREACHED() DCHECK(false)
-
 #undef assert
 #define assert(condition) DLOG_ASSERT(condition)
+
+namespace std {
+ostream& operator<<(ostream& out, const u16string& str);
+}  // namespace std
 
 #endif  // MINI_CHROMIUM_BASE_LOGGING_H_

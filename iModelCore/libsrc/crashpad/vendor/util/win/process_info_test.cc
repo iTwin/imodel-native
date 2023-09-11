@@ -1,4 +1,4 @@
-// Copyright 2015 The Crashpad Authors. All rights reserved.
+// Copyright 2015 The Crashpad Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,12 +21,12 @@
 #include <memory>
 
 #include "base/files/file_path.h"
+#include "base/logging.h"
 #include "base/strings/stringprintf.h"
 #include "base/strings/utf_string_conversions.h"
 #include "build/build_config.h"
 #include "gtest/gtest.h"
 #include "test/errors.h"
-#include "test/gtest_disabled.h"
 #include "test/scoped_temp_dir.h"
 #include "test/test_paths.h"
 #include "test/win/child_launcher.h"
@@ -142,7 +142,7 @@ void TestOtherProcess(TestPaths::Architecture architecture) {
   done_uuid.InitializeWithNew();
 
   ScopedKernelHANDLE done(
-      CreateEvent(nullptr, true, false, done_uuid.ToString16().c_str()));
+      CreateEvent(nullptr, true, false, done_uuid.ToWString().c_str()));
   ASSERT_TRUE(done.get()) << ErrorMessage("CreateEvent");
 
   base::FilePath child_test_executable =
@@ -151,7 +151,7 @@ void TestOtherProcess(TestPaths::Architecture architecture) {
                                TestPaths::FileType::kExecutable,
                                architecture);
   std::wstring args;
-  AppendCommandLineArgument(done_uuid.ToString16(), &args);
+  AppendCommandLineArgument(done_uuid.ToWString(), &args);
 
   ChildLauncher child(child_test_executable, args);
   ASSERT_NO_FATAL_FAILURE(child.Start());
@@ -203,7 +203,7 @@ TEST(ProcessInfo, OtherProcess) {
 #if defined(ARCH_CPU_64_BITS)
 TEST(ProcessInfo, OtherProcessWOW64) {
   if (!TestPaths::Has32BitBuildArtifacts()) {
-    DISABLED_TEST();
+    GTEST_SKIP();
   }
 
   TestOtherProcess(TestPaths::Architecture::k32Bit);
@@ -559,9 +559,9 @@ TEST(ProcessInfo, Handles) {
   ASSERT_TRUE(scoped_key.is_valid());
 
   std::wstring mapping_name =
-      base::UTF8ToUTF16(base::StringPrintf("Local\\test_mapping_%lu_%s",
-                                           GetCurrentProcessId(),
-                                           RandomString().c_str()));
+      base::UTF8ToWide(base::StringPrintf("Local\\test_mapping_%lu_%s",
+                                          GetCurrentProcessId(),
+                                          RandomString().c_str()));
   ScopedKernelHANDLE mapping(CreateFileMapping(INVALID_HANDLE_VALUE,
                                                nullptr,
                                                PAGE_READWRITE,
