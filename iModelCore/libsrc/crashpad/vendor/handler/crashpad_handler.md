@@ -1,5 +1,5 @@
 <!--
-Copyright 2014 The Crashpad Authors. All rights reserved.
+Copyright 2014 The Crashpad Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -83,7 +83,7 @@ closed.
 It is not normally appropriate to invoke this program directly. Usually, it will
 be invoked by a Crashpad client using the Crashpad client library, or started by
 another system service. On macOS, arbitrary programs may be run with a Crashpad
-handler by using [run_with_crashpad(1)](../tools/mac/run_with_crashpad.md) to
+handler by using [run_with_crashpad(1)](../tools/run_with_crashpad.md) to
 establish the Crashpad client environment before running a program.
 
 ## Options
@@ -233,6 +233,12 @@ establish the Crashpad client environment before running a program.
    for use with collection servers that don’t accept uploads compressed in this
    way.
 
+ * **--no-write-minidump-to-database**
+
+   Do not write the minidump to database. Normally, the minidump is written to
+   database for upload. Use this option with **--write-minidump-to-log** to
+   only write the minidump to log. This option is only available to Android.
+
  * **--pipe-name**=_PIPE_
 
    Listen on the given pipe name for connections from clients. _PIPE_ must be of
@@ -279,6 +285,19 @@ establish the Crashpad client environment before running a program.
    library, typically in response to a user requesting this behavior. If this
    option is not specified, this program will behave as if uploads are disabled.
 
+ * **--use-cros-crash-reporter**
+
+   Causes crash reports to be passed via an in-memory file to
+   `/sbin/crash_reporter` instead of storing them in the database. The database
+   is still used for Crashpad settings. This option is only valid on Chromium
+   OS.
+
+* **--write-minidump-to-log**
+
+  Write the minidump to log. By default the minidump is only written to
+  database. Use this option with **--no-write-minidump-to-database** to only
+  write the minidump to log. This option is only available to Android.
+
  * **--help**
 
    Display help and exit.
@@ -302,7 +321,7 @@ establish the Crashpad client environment before running a program.
 [catch_exception_tool(1)](../tools/mac/catch_exception_tool.md),
 [crashpad_database_util(1)](../tools/crashpad_database_util.md),
 [generate_dump(1)](../tools/generate_dump.md),
-[run_with_crashpad(1)](../tools/mac/run_with_crashpad.md)
+[run_with_crashpad(1)](../tools/run_with_crashpad.md)
 
 ## Resources
 
@@ -313,7 +332,7 @@ Report bugs at https://crashpad.chromium.org/bug/new.
 ## Copyright
 
 Copyright 2014 [The Crashpad
-Authors](https://chromium.googlesource.com/crashpad/crashpad/+/master/AUTHORS).
+Authors](https://chromium.googlesource.com/crashpad/crashpad/+/main/AUTHORS).
 
 ## License
 

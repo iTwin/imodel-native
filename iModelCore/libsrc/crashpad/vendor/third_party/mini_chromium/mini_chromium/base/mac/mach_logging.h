@@ -8,7 +8,7 @@
 #include <mach/mach.h>
 
 #include "base/logging.h"
-#include "base/macros.h"
+#include "build/build_config.h"
 
 // Use the MACH_LOG family of macros along with a mach_error_t (kern_return_t)
 // containing a Mach error. The error value will be decoded so that logged
@@ -38,12 +38,14 @@ class MachLogMessage : public logging::LogMessage {
                  int line,
                  LogSeverity severity,
                  mach_error_t mach_err);
+
+  MachLogMessage(const MachLogMessage&) = delete;
+  MachLogMessage& operator=(const MachLogMessage&) = delete;
+
   ~MachLogMessage();
 
  private:
   mach_error_t mach_err_;
-
-  DISALLOW_COPY_AND_ASSIGN(MachLogMessage);
 };
 
 }  // namespace logging
@@ -89,6 +91,8 @@ class MachLogMessage : public logging::LogMessage {
                 DCHECK_IS_ON && !(condition)) \
     << "Check failed: " # condition << ". "
 
+#if !BUILDFLAG(IS_IOS)
+
 namespace logging {
 
 class BootstrapLogMessage : public logging::LogMessage {
@@ -98,12 +102,14 @@ class BootstrapLogMessage : public logging::LogMessage {
                       int line,
                       LogSeverity severity,
                       kern_return_t bootstrap_err);
+
+  BootstrapLogMessage(const BootstrapLogMessage&) = delete;
+  BootstrapLogMessage& operator=(const BootstrapLogMessage&) = delete;
+
   ~BootstrapLogMessage();
 
  private:
   kern_return_t bootstrap_err_;
-
-  DISALLOW_COPY_AND_ASSIGN(BootstrapLogMessage);
 };
 
 }  // namespace logging
@@ -151,5 +157,7 @@ class BootstrapLogMessage : public logging::LogMessage {
     LAZY_STREAM(BOOTSTRAP_LOG_STREAM(FATAL, bootstrap_err), \
                 DCHECK_IS_ON && !(condition)) \
     << "Check failed: " # condition << ". "
+
+#endif  // !BUILDFLAG(IS_IOS)
 
 #endif  // MINI_CHROMIUM_BASE_MAC_MACH_LOGGING_H_
