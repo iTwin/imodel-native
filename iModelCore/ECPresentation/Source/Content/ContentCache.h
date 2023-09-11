@@ -28,11 +28,12 @@ private:
     ECPresentation::UnitSystem m_unitSystem;
     INavNodeKeysContainerCPtr m_inputNodeKeys;
     SelectionInfoCPtr m_selectionInfo;
+    std::shared_ptr<RelatedClassPathsList> m_exclusiveIncludePaths;
 public:
     ContentProviderKey() {}
     ECPRESENTATION_EXPORT ContentProviderKey(Utf8String connectionId, Utf8String rulesetId, Utf8String displayType,
         int contentFlags, ECPresentation::UnitSystem, INavNodeKeysContainerCR inputNodeKeys,
-        SelectionInfo const* selectionInfo);
+        SelectionInfo const* selectionInfo, std::shared_ptr<RelatedClassPathsList>);
     ECPRESENTATION_EXPORT ContentProviderKey(ContentProviderKey const& other);
     ECPRESENTATION_EXPORT ContentProviderKey(ContentProviderKey&& other);
     ECPRESENTATION_EXPORT ContentProviderKey& operator=(ContentProviderKey const& other);
@@ -48,6 +49,7 @@ public:
     ECPresentation::UnitSystem GetUnitSystem() const {return m_unitSystem;}
     INavNodeKeysContainerCR GetInputNodeKeys() const {return *m_inputNodeKeys;}
     SelectionInfo const* GetSelectionInfo() const {return m_selectionInfo.get();}
+    std::shared_ptr<RelatedClassPathsList> GetExclusiveIncludePaths() const {return m_exclusiveIncludePaths;}
 };
 
 /*=================================================================================**//**

@@ -174,7 +174,7 @@ SELECT [rootSchema].[Name], [rootClass].[Name], [rootClass].[Id], [s].[Name], [c
     JOIN [ec_Class] [rootClass] on [rootClass].[Id] = [ecp].[ClassId]
     JOIN [ec_Schema] [s] on [s].[Id] = [c].[SchemaId]
     JOIN [ec_Schema] [rootSchema] on [rootSchema].[Id] = [rootClass].[SchemaId]
-WHERE [ecp].[Name] = ? AND [col].[ColumnKind] = 4 AND [pm].[ClassId] IN (SELECT [ClassId] FROM [ec_Cache_ClassHierarchy] WHERE [BaseClassId] = ?)
+WHERE [ecp].[Name] = ? AND ([col].[ColumnKind] = 4 OR ([col].[ColumnKind] = 0 AND [col].[IsVirtual] = 1)) AND [pm].[ClassId] IN (SELECT [ClassId] FROM [ec_Cache_ClassHierarchy] WHERE [BaseClassId] = ?)
     )sqlstatement";
 
     Utf8CP getInfoIncludeClassInCleanupSql = R"sqlstatement(
@@ -188,7 +188,7 @@ SELECT [rootSchema].[Name], [rootClass].[Name], [rootClass].[Id], [s].[Name], [c
     JOIN [ec_Class] [rootClass] on [rootClass].[Id] = [ecp].[ClassId]
     JOIN [ec_Schema] [s] on [s].[Id] = [c].[SchemaId]
     JOIN [ec_Schema] [rootSchema] on [rootSchema].[Id] = [rootClass].[SchemaId]
-WHERE [ecp].[Name] = ?1 AND [col].[ColumnKind] = 4 AND [pm].[ClassId] IN (SELECT ?2 as [ClassId] UNION ALL SELECT [ClassId] FROM [ec_Cache_ClassHierarchy] WHERE [BaseClassId] = ?2)
+WHERE [ecp].[Name] = ?1 AND ([col].[ColumnKind] = 4 OR ([col].[ColumnKind] = 0 AND [col].[IsVirtual] = 1)) AND [pm].[ClassId] IN (SELECT ?2 as [ClassId] UNION ALL SELECT [ClassId] FROM [ec_Cache_ClassHierarchy] WHERE [BaseClassId] = ?2)
     )sqlstatement";
 
     CachedStatementPtr getInfoStmt = m_ecdb.GetCachedStatement(includeClassInCleanup ? getInfoIncludeClassInCleanupSql : getInfoSql);
@@ -206,7 +206,7 @@ SELECT [pm].[Id]
     JOIN [ec_PropertyPath] [pp] on [pp].[Id] = [pm].[PropertyPathId]
     JOIN [ec_Column] [col] on [col].[Id] = [pm].[ColumnId]
     JOIN [ec_Table] [tab] on [col].[TableId] = [tab].[Id]
-WHERE [ecp].[Name] = ? AND [col].[ColumnKind] = 4 AND [pm].[ClassId] IN (SELECT [ClassId] FROM [ec_Cache_ClassHierarchy] WHERE [BaseClassId] = ?))
+WHERE [ecp].[Name] = ? AND ([col].[ColumnKind] = 4 OR ([col].[ColumnKind] = 0 AND [col].[IsVirtual] = 1)) AND [pm].[ClassId] IN (SELECT [ClassId] FROM [ec_Cache_ClassHierarchy] WHERE [BaseClassId] = ?))
     )sqlstatement";
     Utf8CP deleteIncludeClassSql = R"sqlstatement(
 DELETE FROM [ec_PropertyMap] WHERE [Id] IN(
@@ -216,7 +216,7 @@ SELECT [pm].[Id]
     JOIN [ec_PropertyPath] [pp] on [pp].[Id] = [pm].[PropertyPathId]
     JOIN [ec_Column] [col] on [col].[Id] = [pm].[ColumnId]
     JOIN [ec_Table] [tab] on [col].[TableId] = [tab].[Id]
-WHERE [ecp].[Name] = ? AND [col].[ColumnKind] = 4 AND [pm].[ClassId] IN (SELECT ?2 as [ClassId] UNION ALL SELECT [ClassId] FROM [ec_Cache_ClassHierarchy] WHERE [BaseClassId] = ?2))
+WHERE [ecp].[Name] = ? AND ([col].[ColumnKind] = 4 OR ([col].[ColumnKind] = 0 AND [col].[IsVirtual] = 1)) AND [pm].[ClassId] IN (SELECT ?2 as [ClassId] UNION ALL SELECT [ClassId] FROM [ec_Cache_ClassHierarchy] WHERE [BaseClassId] = ?2))
     )sqlstatement";
     CachedStatementPtr deleteStmt = m_ecdb.GetCachedStatement(includeClassInCleanup ? deleteIncludeClassSql : deleteSql);
     if (deleteStmt == nullptr)

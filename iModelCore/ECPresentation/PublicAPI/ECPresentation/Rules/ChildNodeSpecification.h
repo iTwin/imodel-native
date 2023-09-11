@@ -50,8 +50,6 @@ protected:
     //! Copy constructor.
     ECPRESENTATION_EXPORT ChildNodeSpecification(ChildNodeSpecificationCR);
 
-    ECPRESENTATION_EXPORT virtual bool _ShallowEqual(PresentationKeyCR other) const override;
-
     ECPRESENTATION_EXPORT virtual bool _ReadXml(BeXmlNodeP xmlNode) override;
     ECPRESENTATION_EXPORT virtual void _WriteXml(BeXmlNodeP xmlNode) const override;
 
@@ -64,6 +62,7 @@ protected:
 
     //! Computes specification hash.
     ECPRESENTATION_EXPORT virtual MD5 _ComputeHash() const override;
+    ECPRESENTATION_EXPORT void _SetIndex(int& index) override;
 
 public:
     ECPRESENTATION_EXPORT static ChildNodeSpecificationP Create(BeJsConst);

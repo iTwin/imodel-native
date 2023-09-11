@@ -983,7 +983,7 @@ struct NodesCache::Savepoint : IHierarchyCache::Savepoint
     private:
         size_t GetNodesCount() const
             {
-            static Utf8CP query = "SELECT COUNT(*) FROM [" NODESCACHE_TABLENAME_Nodes "]";
+            static Utf8CP query = "SELECT COUNT(*) FROM [" NODESCACHE_TABLENAME_Nodes "] LIMIT 1000";
             CachedStatementPtr stmt;
             if (BE_SQLITE_OK != m_cache.m_statements.GetPreparedStatement(stmt, *m_cache.m_db.GetDbFile(), query))
                 DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::HierarchiesCache, "Failed to prepare nodes count query");
@@ -1002,13 +1002,13 @@ struct NodesCache::Savepoint : IHierarchyCache::Savepoint
             if (m_isCancelled || !m_optimize)
                 return;
             size_t nodesCountAfter = GetNodesCount();
-            m_sqliteSavepoint.Commit();
-            if (nodesCountAfter > 1000)
+            if (nodesCountAfter >= 1000)
                 {
                 // call optimize only when there are more than 1000 nodes in cache - we've seen that
                 // causing more damage than good when there's little data to optimize
                 m_cache.Optimize();
                 }
+            m_sqliteSavepoint.Commit();
             }
         void _Cancel() override
             {

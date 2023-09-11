@@ -248,15 +248,18 @@ struct SchemaImportContext final
         SchemaPolicies m_schemaPolicies;
         TransformData m_transformData;
         RemapManager m_remapManager;
+        bool m_synchronizeSchemas;
 
     public:
-        SchemaImportContext(ECDbCR ecdb, SchemaManager::SchemaImportOptions options)
+        SchemaImportContext(ECDbCR ecdb, SchemaManager::SchemaImportOptions options, bool synchronizeSchemas = false)
             : m_ecdb(ecdb),
+                m_synchronizeSchemas(synchronizeSchemas),
                 m_options(options),
                 m_builtinSchemaNames(ProfileManager::GetECDbSchemaNames()),
 				m_remapManager(ecdb){}
         bool AllowDataTransform();
         bool ClassMapNeedsSaving(ECN::ECClassId classId) const { return m_classMapsToSave.find(classId) != m_classMapsToSave.end(); }
+        bool IsSynchronizeSchemas() const { return m_synchronizeSchemas; }
         bset<Utf8CP, CompareIUtf8Ascii> const& GetBuiltinSchemaNames() const { return m_builtinSchemaNames; }
         ClassMapLoadContext& GetClassMapLoadContext() { return m_loadContext; }
         ECDbCR GetECDb() const { return m_ecdb; }

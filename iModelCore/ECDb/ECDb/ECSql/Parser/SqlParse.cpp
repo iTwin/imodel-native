@@ -195,6 +195,7 @@ namespace connectivity
                             {OSQLParseNode::predicate_check, "predicate_check"},
                             {OSQLParseNode::property_path_entry, "property_path_entry"},
                             {OSQLParseNode::property_path, "property_path"},
+                            {OSQLParseNode::opt_optional_prop, "opt_optional_prop"},
                             {OSQLParseNode::qualified_class_name, "qualified_class_name"},
                             {OSQLParseNode::qualified_join, "qualified_join"},
                             {OSQLParseNode::query_term, "query_term"},
@@ -218,6 +219,7 @@ namespace connectivity
                             {OSQLParseNode::table_exp, "table_exp"},
                             {OSQLParseNode::table_node_path_entry, "table_node_path_entry"},
                             {OSQLParseNode::table_node_path, "table_node_path"},
+                            {OSQLParseNode::table_node_ref, "table_node_ref"},
                             {OSQLParseNode::table_node_with_opt_member_func_call, "table_node_with_opt_member_func_call"},
                             {OSQLParseNode::table_node, "table_node"},
                             {OSQLParseNode::table_primary_as_range_column, "table_primary_as_range_column"},
@@ -236,6 +238,7 @@ namespace connectivity
                             {OSQLParseNode::value_exp, "value_exp"},
                             {OSQLParseNode::values_or_query_spec, "values_or_query_spec"},
                             {OSQLParseNode::where_clause, "where_clause"},
+                            {OSQLParseNode::opt_null_order, "opt_null_order"},
                     };
                 size_t nRuleMapCount = sizeof(aRuleDescriptions) / sizeof(aRuleDescriptions[0]);
                 OSL_ENSURE(nRuleMapCount == size_t(OSQLParseNode::rule_count), "OSQLParser::OSQLParser: added a new rule? Adjust this map!");

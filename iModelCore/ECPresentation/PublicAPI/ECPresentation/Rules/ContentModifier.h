@@ -84,7 +84,6 @@ protected:
     ECPRESENTATION_EXPORT void _WriteJson(BeJsValue json) const override;
 
     ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
-    ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationKeyCR) const override;
 
 public:
     ContentModifier() : m_applyOnNestedContent(false) {}
@@ -95,6 +94,7 @@ public:
 
     Utf8StringCR GetSchemaName() const {return m_schemaName;}
     Utf8StringCR GetClassName() const {return m_className;}
+    bool HasClassSpecified() const {return !m_schemaName.empty() || !m_className.empty();}
 
     RequiredSchemaSpecificationsList const& GetRequiredSchemaSpecifications() const {return m_requiredSchemas;}
     ECPRESENTATION_EXPORT void ClearRequiredSchemaSpecifications();

@@ -1600,7 +1600,12 @@ struct CompareDoublesScalar : ECPresentation::ScalarFunction
             return 1;
 
         // Find the difference in ULPs.
-        int64_t sub = uLhs.i - uRhs.i;
+        int64_t sub;
+        if (uLhs.Negative() && uRhs.Negative())
+            sub = uRhs.i - uLhs.i;
+        else
+            sub = uLhs.i - uRhs.i;
+
         if (llabs(sub) <= maxUlpsDiff)
             return 0;
 

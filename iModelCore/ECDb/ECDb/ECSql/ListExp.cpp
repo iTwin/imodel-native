@@ -42,6 +42,16 @@ AssignmentExp const* AssignmentListExp::GetAssignmentExp(size_t index) const { r
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void AssignmentListExp::_ToJson(BeJsValue val, JsonFormat const& fmt ) const {
+    //! ITWINJS_PARSE_TREE: AssignmentListExp
+    val.SetEmptyArray();
+    for (Exp const* childExp : GetChildren())
+        childExp->ToJson(val.appendValue(), fmt);
+}
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
 void AssignmentListExp::_ToECSql(ECSqlRenderContext& ctx) const
 {
@@ -75,6 +85,16 @@ Exp::FinalizeParseStatus PropertyNameListExp::_FinalizeParsing(ECSqlParseContext
 
     return FinalizeParseStatus::Completed;
     }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void PropertyNameListExp::_ToJson(BeJsValue val, JsonFormat const& fmt ) const {
+    //! ITWINJS_PARSE_TREE: PropertyNameListExp
+    val.SetEmptyArray();
+    for (Exp const* childExp : GetChildren())
+        childExp->ToJson(val.appendValue(), fmt);
+}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
@@ -122,6 +142,15 @@ Exp::FinalizeParseStatus ValueExpListExp::_FinalizeParsing(ECSqlParseContext& ct
     return FinalizeParseStatus::Completed;
     }
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void ValueExpListExp::_ToJson(BeJsValue val, JsonFormat const& fmt ) const {
+    //! ITWINJS_PARSE_TREE: ValueExpListExp
+    val.SetEmptyArray();
+    for (Exp const* childExp : GetChildren())
+        childExp->ToJson(val.appendValue(), fmt);
+}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod

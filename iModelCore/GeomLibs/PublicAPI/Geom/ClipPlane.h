@@ -11,7 +11,7 @@ BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 //! Space point x,y,z is in the outer half space, plane, or inner half space the plane according to the sign of
 //!    {x * normal.x + y * normal.y + z * normal.z - distance}
 //! (i.e. the normal is INWARD)
-//! (In customary use where the normal vector is unit length, the distance is true spatial distance from the 
+//! (In customary use where the normal vector is unit length, the distance is true spatial distance from the
 //! origin to the closest point on the plane.
 //!
 struct ClipPlane
@@ -21,21 +21,21 @@ public:
 #else
 private:
 #endif
-    
+
     //! outward normal to plane
     DVec3d          m_normal;
     //! distance from origin to (closest) point on plane.
     double          m_distance;
 private:
     uint32_t        m_flags;
-    
-    enum 
+
+    enum
         {
         PlaneMask_Interior      = 0x0001 << 0,
         PlaneMask_Invisible     = 0x0001 << 1,
         };
 
-    
+
 public:
     //! Default constructor -- z vector, everything else zero.
     GEOMDLLIMPEXP ClipPlane ();
@@ -101,7 +101,7 @@ public:
 
     // test for bitwise equality
     GEOMDLLIMPEXP bool IsEqual (ClipPlaneCR other) const;
-    //! Evaluate the plane equation at {point}.
+    //! Evaluate the plane equation at {point} (the signed distance to the plane or the point's altitude).
     GEOMDLLIMPEXP double EvaluatePoint (DPoint3dCR point) const;
 
     //! Evaluate Dot Product with plane normal.
@@ -118,7 +118,7 @@ public:
 
     //! Return if the point is on plane within tolerance
     GEOMDLLIMPEXP bool IsPointOn (DPoint3dCR point, double tolerance) const;
-    
+
     //! Return the plane as origin and normal.
     GEOMDLLIMPEXP DPlane3d GetDPlane3d () const;
 

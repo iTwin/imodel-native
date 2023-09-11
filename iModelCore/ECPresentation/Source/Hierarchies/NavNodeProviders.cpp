@@ -234,6 +234,7 @@ NavNodesProviderContext::~NavNodesProviderContext()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void NavNodesProviderContext::Init()
     {
+    m_ancestorContext = nullptr;
     m_isRootNodeContext = false;
     m_rootNodeRule = nullptr;
     m_isChildNodeContext = false;
@@ -270,6 +271,30 @@ bvector<RulesetVariableEntry> NavNodesProviderContext::GetRelatedRulesetVariable
     for (Utf8StringCR id : ids)
         idsWithValues.push_back(RulesetVariableEntry(id, GetRulesetVariables().GetJsonValue(id.c_str())));
     return idsWithValues;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bset<ArtifactsCapturer*> NavNodesProviderContext::GetArtifactsCapturers(bool onlyDirect) const
+    {
+    bset<ArtifactsCapturer*> result;
+    ContainerHelpers::Push(result, m_artifactsCapturers);
+    if (m_ancestorContext && !onlyDirect)
+        ContainerHelpers::MovePush(result, m_ancestorContext->GetArtifactsCapturers(false));
+    return result;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+OptimizationFlagsContainer NavNodesProviderContext::GetMergedOptimizationFlags() const
+    {
+    OptimizationFlagsContainer merged;
+    merged.Merge(m_optFlags);
+    if (m_ancestorContext)
+        merged.Merge(m_ancestorContext->GetMergedOptimizationFlags());
+    return merged;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -452,18 +477,14 @@ void NavNodesProvider::InitializeNodes()
 static NavNodesProviderContextPtr CreateContextForChildHierarchyLevel(NavNodesProviderContextCR ancestorContext, NavNodeCR parentNode)
     {
     NavNodesProviderContextPtr ctx = NavNodesProviderContext::Create(ancestorContext);
-    ctx->SetArtifactsCapturers(ancestorContext.GetArtifactsCapturers());
-    ctx->GetOptimizationFlags().SetParentContainer(&ancestorContext.GetOptimizationFlags());
+    ctx->SetAncestorContext(&ancestorContext);
     ctx->SetChildNodeContext(nullptr, parentNode);
     if (NodeVisibility::Virtual == ancestorContext.GetNodesCache().GetNodeVisibility(parentNode.GetNodeId(), ctx->GetRulesetVariables(), ctx->GetInstanceFilter()))
         ctx->SetPhysicalParentNode(ancestorContext.GetNodesCache().GetPhysicalParentNode(parentNode.GetNodeId(), ctx->GetRulesetVariables(), ctx->GetInstanceFilter()).get());
     else
         ctx->SetPhysicalParentNode(&parentNode);
     if (!NavNodeExtendedData(parentNode).HideNodesInHierarchy() && nullptr == parentNode.GetKey()->AsGroupingNodeKey())
-        {
         ctx->SetInstanceFilter(nullptr);
-        ctx->SetResultSetSizeLimit(nullptr);
-        }
     ctx->SetRemovalId(ancestorContext.GetRemovalId());
     return ctx;
     }
@@ -474,10 +495,9 @@ static NavNodesProviderContextPtr CreateContextForChildHierarchyLevel(NavNodesPr
 static NavNodesProviderContextPtr CreateContextForSameHierarchyLevel(NavNodesProviderContextCR baseContext, bset<Utf8String> const& usedVariableIds, bool copyNodesContext)
     {
     NavNodesProviderContextPtr ctx = NavNodesProviderContext::Create(baseContext);
+    ctx->SetAncestorContext(&baseContext);
     ctx->SetProvidersIndexAllocator(baseContext.GetProvidersIndexAllocator());
     ctx->SetMayHaveArtifacts(baseContext.MayHaveArtifacts());
-    ctx->SetArtifactsCapturers(baseContext.GetArtifactsCapturers());
-    ctx->GetOptimizationFlags().SetParentContainer(&baseContext.GetOptimizationFlags());
     ctx->InitUsedVariablesListener(usedVariableIds, &baseContext.GetUsedVariablesListener());
     ctx->SetRemovalId(baseContext.GetRemovalId());
 
@@ -638,7 +658,7 @@ CountInfo NavNodesProvider::GetTotalNodesCount() const
             m_cachedNodesCount = (size_t)cachedTotalNodesCount.Value();
             DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, Utf8PrintfString("Nodes count found in persistent cache: %" PRIu64, m_cachedNodesCount.Value()));
             }
-        else if (GetContext().GetOptimizationFlags().GetMaxNodesToLoad() == 1)
+        else if (GetContext().GetMergedOptimizationFlags().GetMaxNodesToLoad() == 1)
             {
             // max nodes to load set to 1 means we're just checking whether provider returns any nodes - no need to
             // count anything...
@@ -811,6 +831,8 @@ void NodesFinalizer::DetermineChildren(NavNodeR node) const
 void NodesFinalizer::DetermineFilteringSupport(NavNodeR node) const
     {
     auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Determine filtering support for %s", DiagnosticsHelpers::CreateNodeIdentifier(node).c_str()));
+    if (node.IsFilteringSupportDetermined())
+        return;
 
     NavNodesProviderContextPtr childrenContext = CreateContextForChildHierarchyLevel(*m_context, node);
     // we consider that this provider depends on a variable if we need the variable to determine
@@ -903,14 +925,45 @@ bool NodesFinalizer::HasSimilarNodeInHierarchy(NavNodeCR node) const
     return HasSimilarNodeInHierarchy(node, -1);
     }
 
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct NodesCreatingMultiNavNodesProvider::CreateNodeProviderContext
+{
+private:
+    NavNodeR m_node;
+    NavNodesProviderContextCR m_nodeContext;
+    NavNodesProviderPtr m_childrenProvider;
+public:
+    CreateNodeProviderContext(NavNodeR node, NavNodesProviderContextCR ctx) : m_node(node), m_nodeContext(ctx) {}
+    NavNodeR GetNode() {return m_node;}
+    NavNodesProviderContextCR GetNodeContext() const {return m_nodeContext;}
+    NavNodesProviderPtr GetChildrenProvider() const {return m_childrenProvider;}
+    void SetChildrenProvider(NavNodesProviderPtr provider) {m_childrenProvider = provider;}
+};
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void NodesCreatingMultiNavNodesProvider::EvaluateChildrenArtifacts(NavNodeR parentNode) const
+static NavNodesProviderPtr GetOrCreateChildrenProvider(NodesCreatingMultiNavNodesProvider::CreateNodeProviderContext& ctx)
     {
-    auto scope = Diagnostics::Scope::Create(Utf8PrintfString("%s: Evaluate children artifacts for %s", GetName(), DiagnosticsHelpers::CreateNodeIdentifier(parentNode).c_str()));
+    if (ctx.GetChildrenProvider().IsNull())
+        {
+        NavNodesProviderContextPtr childrenContext = CreateContextForChildHierarchyLevel(ctx.GetNodeContext(), ctx.GetNode());
+        NavNodesProviderPtr childrenProvider = ctx.GetNodeContext().CreateHierarchyLevelProvider(*childrenContext, &ctx.GetNode());
+        ctx.SetChildrenProvider(childrenProvider);
+        }
+    return ctx.GetChildrenProvider();
+    }
 
-    NavNodeExtendedData ext(parentNode);
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void NodesCreatingMultiNavNodesProvider::EvaluateChildrenArtifacts(CreateNodeProviderContext& nodeProviderContext) const
+    {
+    auto scope = Diagnostics::Scope::Create(Utf8PrintfString("%s: Evaluate children artifacts for %s", GetName(), DiagnosticsHelpers::CreateNodeIdentifier(nodeProviderContext.GetNode()).c_str()));
+
+    NavNodeExtendedData ext(nodeProviderContext.GetNode());
 
     if (!NeedsChildrenArtifactsDetermined(ext))
         return;
@@ -918,10 +971,10 @@ void NodesCreatingMultiNavNodesProvider::EvaluateChildrenArtifacts(NavNodeR pare
     if (ext.GetJson().HasMember(NAVNODE_EXTENDEDDATA_ChildrenArtifacts))
         return;
 
-    NavNodesProviderContextPtr childrenContext = CreateContextForChildHierarchyLevel(GetContext(), parentNode);
-    ChildrenArtifactsCaptureContext captureChildrenArtifacts(*childrenContext, parentNode);
-    NavNodesProviderPtr childrenProvider = GetContext().CreateHierarchyLevelProvider(*childrenContext, &parentNode);
+    auto childrenProvider = GetOrCreateChildrenProvider(nodeProviderContext);
+    ChildrenArtifactsCaptureContext captureChildrenArtifacts(childrenProvider->GetContextR(), nodeProviderContext.GetNode());
     DisabledFullNodesLoadContext disableFullLoad(*childrenProvider);
+    DisabledPostProcessingContext disablePostProcessing(*childrenProvider);
     for (auto const node : *childrenProvider)
         ;
     }
@@ -936,13 +989,14 @@ void NodesCreatingMultiNavNodesProvider::EvaluateThisNodeArtifacts(NavNodeCR nod
     if (!GetContext().MayHaveArtifacts())
         return;
 
-    if (GetContext().GetArtifactsCapturers().empty())
+    auto capturers = GetContext().GetArtifactsCapturers();
+    if (capturers.empty())
         return;
 
     NodeArtifacts artifacts = CustomizationHelper::EvaluateArtifacts(GetContext(), node);
     if (!artifacts.empty())
         {
-        for (ArtifactsCapturer* capturer : GetContext().GetArtifactsCapturers())
+        for (ArtifactsCapturer* capturer : capturers)
             capturer->AddArtifact(artifacts);
         }
     }
@@ -1000,8 +1054,9 @@ static bool ContainsOnlyNullOrEmptyStringValues(RapidJsonValueCR jsonArr)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool NodesCreatingMultiNavNodesProvider::ShouldReturnChildNodes(NavNodeR node) const
+bool NodesCreatingMultiNavNodesProvider::ShouldReturnChildNodes(CreateNodeProviderContext& nodeProviderContext) const
     {
+    NavNodeR node = nodeProviderContext.GetNode();
     auto scope = Diagnostics::Scope::Create(Utf8PrintfString("%s: Should return %s child nodes?", GetName(), DiagnosticsHelpers::CreateNodeIdentifier(node).c_str()));
 
     NavNodeExtendedData extendedData(node);
@@ -1043,7 +1098,7 @@ bool NodesCreatingMultiNavNodesProvider::ShouldReturnChildNodes(NavNodeR node) c
     // if the node has only one child and also has "hide if only one child" flag, we want to display that child
     if (extendedData.HideIfOnlyOneChild())
         {
-        NavNodesProviderPtr childrenProvider = GetContext().CreateHierarchyLevelProvider(*CreateContextForChildHierarchyLevel(GetContext(), node), &node);
+        NavNodesProviderPtr childrenProvider = GetOrCreateChildrenProvider(nodeProviderContext);
         MaxNodesToLoadContext maxNodesToLoad(*childrenProvider, 2);
         size_t childrenCount = childrenProvider->GetNodesCount();
         hasChildren = (childrenCount > 0) ? HASCHILDREN_True : HASCHILDREN_False;
@@ -1315,12 +1370,12 @@ void CachingNavNodesProviderBase<TProvider>::UpdateInitializedNodesState(DataSou
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodesProviderPtr NodesCreatingMultiNavNodesProvider::CreateProvider(NavNodeR node) const
+NavNodesProviderPtr NodesCreatingMultiNavNodesProvider::CreateProvider(CreateNodeProviderContext& nodeProviderContext) const
     {
+    NavNodeR node = nodeProviderContext.GetNode();
     auto scope = Diagnostics::Scope::Create(Utf8PrintfString("%s: Create provider for %s", GetName(), DiagnosticsHelpers::CreateNodeIdentifier(node).c_str()));
 
     auto nodeContext = CreateContextForSameHierarchyLevel(GetContext(), GetContext().GetRelatedVariablesIds(), true);
-    auto childrenProviderContext = CreateContextForChildHierarchyLevel(GetContext(), node);
 
     NavNodeExtendedData extendedData(node);
     if (extendedData.IsNodeInitialized())
@@ -1328,7 +1383,7 @@ NavNodesProviderPtr NodesCreatingMultiNavNodesProvider::CreateProvider(NavNodeR 
         if (NodeVisibility::Virtual == GetContext().GetNodesCache().GetNodeVisibility(node.GetNodeId(), GetContext().GetRulesetVariables(), GetContext().GetInstanceFilter()))
             {
             DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "Node is already initialized and is virtual - returning children data provider for it.");
-            return GetContext().CreateHierarchyLevelProvider(*childrenProviderContext, &node);
+            return GetOrCreateChildrenProvider(nodeProviderContext);
             }
 
         DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "Node is already initialized and is not virtual - returning single node data provider for it.");
@@ -1340,10 +1395,11 @@ NavNodesProviderPtr NodesCreatingMultiNavNodesProvider::CreateProvider(NavNodeR 
     extendedData.SetNodeInitialized(true);
 
     // the specification may want to return node's children instead of the node itself
-    if (ShouldReturnChildNodes(node))
+    if (ShouldReturnChildNodes(nodeProviderContext))
         {
         DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "Should return node's children - marking virtual and returning children data provider.");
         GetContext().GetNodesCache().MakeVirtual(node.GetNodeId(), GetContext().GetRulesetVariables(), GetContext().GetInstanceFilter(), GetContext().GetResultSetSizeLimit());
+        auto childrenProviderContext = CreateContextForChildHierarchyLevel(GetContext(), node);
         childrenProviderContext->SetPhysicalParentNode(GetContext().GetNodesCache().GetPhysicalParentNode(node.GetNodeId(), GetContext().GetRulesetVariables(), GetContext().GetInstanceFilter()).get());
         return GetContext().CreateHierarchyLevelProvider(*childrenProviderContext, &node);
         }
@@ -2481,10 +2537,12 @@ NodesInitializationState NodesCreatingMultiNavNodesProvider::_InitializeNodes()
             }
 
         ++handledNodesCount;
+
+        CreateNodeProviderContext nodeProviderContext(*node, GetContext());
         if (!NavNodeExtendedData(*node).IsNodeInitialized())
             {
             GetContext().GetHierarchyLevelLocker().Lock();
-            EvaluateChildrenArtifacts(*node);
+            EvaluateChildrenArtifacts(nodeProviderContext);
             EvaluateThisNodeArtifacts(*node);
             }
 
@@ -2494,19 +2552,20 @@ NodesInitializationState NodesCreatingMultiNavNodesProvider::_InitializeNodes()
             provider = GetNodeProviders().at(providerIndex);
         if (provider.IsNull())
             {
-            provider = CreateProvider(*node);
+            provider = CreateProvider(nodeProviderContext);
             GetNodeProvidersR().push_back(provider);
             }
         pageOptionsSetter.Accept(*provider);
 
         providerIndex++;
 
-        if (!RequiresFullLoad() && GetContext().GetOptimizationFlags().GetMaxNodesToLoad() != 0)
+        auto optimizations = GetContext().GetMergedOptimizationFlags();
+        if (!RequiresFullLoad() && optimizations.GetMaxNodesToLoad() != 0)
             {
             // count nodes if optimization flags has max nodes count set
-            MaxNodesToLoadContext maxNodesToLoad(*provider, GetContext().GetOptimizationFlags().GetMaxNodesToLoad());
+            MaxNodesToLoadContext maxNodesToLoad(*provider, optimizations.GetMaxNodesToLoad());
             loadedNodesCount += provider->GetNodesCount();
-            if (GetContext().GetOptimizationFlags().GetMaxNodesToLoad() <= loadedNodesCount)
+            if (optimizations.GetMaxNodesToLoad() <= loadedNodesCount)
                 {
                 // found what we're looking for - no need to handle other nodes
                 DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, Utf8PrintfString("Found provider with nodes while looking for children. Break at %" PRIu64 " after handling %" PRIu64 " / %" PRIu64 " nodes.",
@@ -2645,7 +2704,8 @@ CountInfo MultiNavNodesProvider::_GetTotalNodesCount() const
         isAccurate &= nestedCount.IsAccurate();
         count += nestedCount.GetCount();
 
-        if (!requiresFullLoad && GetContext().GetOptimizationFlags().GetMaxNodesToLoad() != 0 && GetContext().GetOptimizationFlags().GetMaxNodesToLoad() <= count)
+        auto optimizations = GetContext().GetMergedOptimizationFlags();
+        if (!requiresFullLoad && optimizations.GetMaxNodesToLoad() != 0 && optimizations.GetMaxNodesToLoad() <= count)
             return CountInfo(count, isAccurate && i == (m_providers.size() - 1));
         }
     return CountInfo(count, isAccurate);
@@ -2926,8 +2986,7 @@ NavNodesProviderPtr DisplayLabelGroupingNodesPostProcessor::_PostProcessProvider
 
     // return children of the grouping node
     auto childrenContext = CreateContextForChildHierarchyLevel(context, *node);
-    childrenContext->GetOptimizationFlags().From(OptimizationFlagsContainer());
-    childrenContext->GetOptimizationFlags().SetParentContainer(context.GetOptimizationFlags().GetParentContainer());
+    childrenContext->SetAncestorContext(context.GetAncestorContext());
     return context.CreateHierarchyLevelProvider(*childrenContext, (*iter).get());
     }
 
@@ -2985,7 +3044,7 @@ protected:
 
     Iterator _CreateFrontIterator() const override
         {
-        if (GetContext().GetOptimizationFlags().IsPostProcessingDisabled())
+        if (GetContext().GetMergedOptimizationFlags().IsPostProcessingDisabled())
             return T_Super::_CreateFrontIterator();
 
         InitSortedNodes();
@@ -2994,7 +3053,7 @@ protected:
 
     Iterator _CreateBackIterator() const override
         {
-        if (GetContext().GetOptimizationFlags().IsPostProcessingDisabled())
+        if (GetContext().GetMergedOptimizationFlags().IsPostProcessingDisabled())
             return T_Super::_CreateBackIterator();
 
         InitSortedNodes();
@@ -3118,7 +3177,7 @@ NavNodesProviderPtr DisplayLabelSortingPostProcessor::_PostProcessProvider(NavNo
     auto scope = Diagnostics::Scope::Create("Display label sorting post-processor: Post-process");
 
     NavNodesProviderContextCR context = processedProvider.GetContext();
-    if (context.GetOptimizationFlags().IsPostProcessingDisabled())
+    if (context.GetMergedOptimizationFlags().IsPostProcessingDisabled())
         {
         DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "Post-processing disabled");
         return nullptr;
@@ -3193,7 +3252,6 @@ NavNodesProviderPtr DisplayLabelSortingPostProcessor::_PostProcessProvider(NavNo
         }
 
     auto mergedProviderContext = CreateContextForSameHierarchyLevel(context, true);
-    mergedProviderContext->GetOptimizationFlags().SetParentContainer(nullptr);
     bvector<std::pair<NavNodesProviderPtr, bvector<uint64_t>>> mergedProviders;
     for (auto const& entry : providers)
         {
@@ -3258,7 +3316,7 @@ NavNodePtr NodesFinalizingProvider::NodesFinalizingIteratorImpl::_GetCurrent() c
 +---------------+---------------+---------------+---------------+---------------+------*/
 NavNodePtr NodesFinalizingProvider::FinalizeNode(NavNodeR node) const
     {
-    if (GetContext().GetOptimizationFlags().IsFullNodesLoadDisabled())
+    if (GetContext().GetMergedOptimizationFlags().IsFullNodesLoadDisabled())
         {
         DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "Full load disabled - return.");
         return &node;
@@ -3442,6 +3500,12 @@ NavNodesProviderPtr SameLabelGroupingNodesPostProcessorDeprecated::_PostProcess(
     {
     auto scope = Diagnostics::Scope::Create("Same label grouping nodes post-processor: Post-process");
 
+    if (processedProvider.GetContext().GetMergedOptimizationFlags().IsPostProcessingDisabled())
+        {
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "Post-processing disabled");
+        return nullptr;
+        }
+
     // don't need to do anything if there are no classes to which the same label grouping applies
     if (m_groupedClasses.empty())
         {
@@ -3474,6 +3538,7 @@ NavNodesProviderPtr SameLabelGroupingNodesPostProcessorDeprecated::_PostProcess(
     // attempt to find cached merged nodes provider - success means the whole hierarchy level is already post-processed and in cache.
     // it's more efficient to use the cached version compared to loading and merging everything again, so just return the cached provider.
     DataSourceIdentifier mergedDatasourceIdentifier(GetHierarchyLevelIdentifier(*context).GetId(), {}, context->GetInstanceFilterPtr());
+    mergedDatasourceIdentifier.SetResultSetSizeLimit(context->GetResultSetSizeLimit());
     DataSourceInfo mergedDatasourceInfo = context->GetNodesCache().FindDataSource(mergedDatasourceIdentifier, context->GetRulesetVariables());
     if (mergedDatasourceInfo.GetIdentifier().IsValid())
         {
@@ -3501,7 +3566,7 @@ NavNodesProviderPtr SameLabelGroupingNodesPostProcessorDeprecated::_PostProcess(
     DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "Cached merged provider");
     mergedDatasourceIdentifier = mergedDatasourceInfo.GetIdentifier();
 
-    MaxNodesToLoadContext disableMaxNodesToLoad(processedProvider, 0);
+    MaxNodesToLoadContext disableMaxNodesToLoad(processedProvider, (size_t)0);
     DisabledFullNodesLoadContext disableFullNodesLoad(processedProvider);
 
     size_t mergedNodesCount = 0;
@@ -3572,10 +3637,17 @@ NavNodesProviderPtr SameLabelGroupingNodesPostProcessorDeprecated::_PostProcess(
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static NavNodesProviderContextPtr CreatePostProcessingProviderContext(NavNodesProviderContextCR baseContext)
+static NavNodesProviderContextPtr CreatePostProcessingProviderContext(NavNodesProviderContextR baseContext)
     {
     NavNodesProviderContextPtr context = CreateContextForSameHierarchyLevel(baseContext, baseContext.GetRelatedVariablesIds(), true);
     context->SetVirtualParentNode(baseContext.GetVirtualParentNode().get());
+
+    context->SetAncestorContext(baseContext.GetAncestorContext());
+    baseContext.SetAncestorContext(context.get());
+
+    context->GetOptimizationFlags().From(baseContext.GetOptimizationFlags());
+    baseContext.GetOptimizationFlags().Reset();
+
     return context;
     }
 
@@ -3583,11 +3655,8 @@ static NavNodesProviderContextPtr CreatePostProcessingProviderContext(NavNodesPr
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 PostProcessingNodesProviderDeprecated::PostProcessingNodesProviderDeprecated(NavNodesProviderR wrappedProvider)
-    : MultiNavNodesProvider(*CreatePostProcessingProviderContext(wrappedProvider.GetContext())), m_wrappedProvider(&wrappedProvider), m_isPostProcessed(false)
+    : MultiNavNodesProvider(*CreatePostProcessingProviderContext(wrappedProvider.GetContextR())), m_wrappedProvider(&wrappedProvider), m_isPostProcessed(false)
     {
-    GetContextR().GetOptimizationFlags().From(wrappedProvider.GetContext().GetOptimizationFlags());
-    wrappedProvider.GetContextR().GetOptimizationFlags().From(OptimizationFlagsContainer());
-    wrappedProvider.GetContextR().GetOptimizationFlags().SetParentContainer(&GetContext().GetOptimizationFlags());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3873,7 +3942,7 @@ bool SQLiteCacheNodesProvider::_HasNodes() const
 
     // attempting to get nodes count from here may get us into infinite recursion if
     // this optimization flag is not reset
-    MaxNodesToLoadContext getValidCountContext(*this, 0);
+    MaxNodesToLoadContext getValidCountContext(*this, (size_t)0);
     return GetNodesCount() > 0;
     }
 

@@ -23,7 +23,6 @@ private:
     Utf8String m_targetClassName;
 
 protected:
-    ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationKeyCR other) const override;
     ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
 
     Utf8CP _GetJsonElementTypeAttributeName() const override {return nullptr;}
@@ -81,7 +80,6 @@ private:
     bvector<RelationshipStepSpecification*> m_steps;
 
 protected:
-    ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationKeyCR other) const override;
     ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
 
     Utf8CP _GetJsonElementTypeAttributeName() const override {return nullptr;}
@@ -118,7 +116,6 @@ private:
     int m_count;
 
 protected:
-    ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationKeyCR other) const override;
     ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
 
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
@@ -168,7 +165,6 @@ private:
     bvector<RepeatableRelationshipStepSpecification*> m_steps;
 
 protected:
-    ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationKeyCR other) const override;
     ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
 
     Utf8CP _GetJsonElementTypeAttributeName() const override {return nullptr;}

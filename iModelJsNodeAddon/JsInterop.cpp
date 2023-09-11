@@ -372,7 +372,6 @@ struct JsRenderSystem : Render::System
         return ResourceCache::Get(db).GetGradient(grad);
         }
 
-    uint32_t _GetMaxFeaturesPerBatch() const override { return 2048*1024; }
     Render::GraphicPtr _CreateTriMesh(Render::TriMeshArgsCR args, Dgn::DgnDbR db) const override RETURN_GRAPHIC
     Render::GraphicPtr _CreateIndexedPolylines(Render::IndexedPolylineArgsCR args, Dgn::DgnDbR db) const override RETURN_GRAPHIC
     Render::GraphicPtr _CreateGraphicList(bvector<Render::GraphicPtr>&& graphics, Dgn::DgnDbR db) const override RETURN_GRAPHIC
@@ -857,7 +856,15 @@ void JsInterop::AddFallbackSchemaLocaters(ECDbR db, ECSchemaReadContextPtr schem
     {
     // Add the db then the standard schema paths as fallback locations to load referenced schemas.
     schemaContext->SetFinalSchemaLocater(db.GetSchemaLocater());
+    AddFallbackSchemaLocaters(schemaContext);
+    }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void JsInterop::AddFallbackSchemaLocaters(ECSchemaReadContextPtr schemaContext)
+    {
+    // Add the standard schema paths as fallback locations to load referenced schemas.
     BeFileName rootDir = PlatformLib::GetHost().GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
     rootDir.AppendToPath(L"ECSchemas");
     BeFileName dgnPath = rootDir;
@@ -915,7 +922,7 @@ DbResult JsInterop::ImportSchemas(DgnDbR dgndb, bvector<Utf8String> const& schem
     if (0 == schemas.size())
         return BE_SQLITE_ERROR;
 
-    SchemaStatus status = dgndb.ImportSchemas(schemas, opts.m_schemaLockHeld); // NOTE: this calls DgnDb::ImportSchemas which has additional processing over SchemaManager::ImportSchemas
+    SchemaStatus status = dgndb.ImportSchemas(schemas, opts.m_schemaLockHeld, DgnDb::SyncDbUri(opts.m_schemaSyncDbUri.c_str())); // NOTE: this calls DgnDb::ImportSchemas which has additional processing over SchemaManager::ImportSchemas
     if (status != SchemaStatus::Success)
         return DgnDb::SchemaStatusToDbResult(status, true);
 
@@ -928,6 +935,86 @@ DbResult JsInterop::ImportSchemas(DgnDbR dgndb, bvector<Utf8String> const& schem
 DbResult JsInterop::ImportFunctionalSchema(DgnDbR db)
     {
     return SchemaStatus::Success == FunctionalDomain::GetDomain().ImportSchema(db) ? BE_SQLITE_OK : BE_SQLITE_ERROR;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+BentleyStatus JsInterop::ConvertSchemas(bvector<Utf8String> const& inputStrings, bvector<Utf8String>& outputStrings, ECSchemaReadContextPtr schemaContext, bool convertCA)
+    {
+    if (0 == inputStrings.size())
+        return BentleyStatus::ERROR;
+
+    if (schemaContext.IsNull())
+        schemaContext = ECSchemaReadContext::CreateContext(false /*=acceptLegacyImperfectLatestCompatibleMatch*/, true /*=includeFilesWithNoVerExt*/);
+
+    bvector<bpair<SchemaKey, ECSchemaPtr>> schemaKeyPairs;
+    StringSchemaLocater locater;
+    for (Utf8String inputString : inputStrings)
+        {
+        SchemaKey key;
+        SchemaReadStatus status = ECSchema::ReadSchemaKey(inputString, key);
+        if (SchemaReadStatus::Success != status)
+            return BentleyStatus::ERROR;
+        locater.AddSchemaString(key, inputString);
+        schemaKeyPairs.push_back(std::make_pair(key, nullptr));
+        }
+    schemaContext->AddSchemaLocater(locater);
+    JsInterop::AddFallbackSchemaLocaters(schemaContext);
+
+    if (0 == schemaKeyPairs.size())
+        return BentleyStatus::ERROR;
+
+    for (int i = 0; i < schemaKeyPairs.size(); i++)
+        {
+        bpair<SchemaKey, ECSchemaPtr>& schemaKeyPair = schemaKeyPairs[i];
+        ECSchemaPtr schema = ECSchema::LocateSchema(schemaKeyPair.first, *schemaContext);
+        if (!schema.IsValid())
+            return BentleyStatus::ERROR;
+
+        schemaKeyPair.second = schema;
+        }
+
+    if (convertCA)
+        {
+        // Make a copy of the schemaKeyPairs bvector
+        bvector<ECSchemaCP> schemas;
+        // Use std::transform to extract the ECSchemaPtr
+        std::transform(schemaKeyPairs.begin(), schemaKeyPairs.end(), std::back_inserter(schemas),
+            [](const bpair<SchemaKey, ECSchemaPtr>& schemaPair) { return schemaPair.second.get(); });
+
+        ECSchema::SortSchemasInDependencyOrder(schemas);
+
+        for (ECSchemaCP schema : schemas)
+            {
+            bool conversionStatus = ECSchemaConverter::Convert(*const_cast<ECSchemaP> (schema), *schemaContext);
+            if (!conversionStatus)
+                return BentleyStatus::ERROR;
+            Utf8String schemaXml;
+            SchemaWriteStatus writeStatus = schema->WriteToXmlString(schemaXml);
+            if (SchemaWriteStatus::Success != writeStatus)
+                {
+                outputStrings.clear();
+                return BentleyStatus::ERROR;
+                }
+            outputStrings.push_back(schemaXml);
+            }
+        }
+    else
+        {
+        outputStrings.resize(schemaKeyPairs.size());
+        for (int i = 0; i < schemaKeyPairs.size(); i++)
+            {
+            ECSchemaPtr schema = schemaKeyPairs[i].second;
+            SchemaWriteStatus writeStatus = schema->WriteToXmlString(outputStrings[i]);
+            if (SchemaWriteStatus::Success != writeStatus)
+                {
+                outputStrings.clear();
+                return BentleyStatus::ERROR;
+                }
+            }
+        }
+    return BentleyStatus::SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------

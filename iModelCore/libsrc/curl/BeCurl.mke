@@ -6,8 +6,15 @@
 IS_THIRD_PARTY_LIBRARY = 1
 HAVE_PERMISSION_TO_COMPILE_AT_W3=1
 
-# Export/make visible all functions in libcurl
-GCC_DEFAULT_VISIBILITY  = default
+%ifdef __unix
+    # Node also uses cares which can conflict with the version of cares we use in curl if we do not set visibility to hidden.
+    # If symbol visibility is set to default then our symbols can get overriden by Node's cares symbols which can cause 
+    # a segmentation fault.
+
+    GCC_DEFAULT_VISIBILITY = hidden
+%else
+    GCC_DEFAULT_VISIBILITY = default
+%endif
 
 #----------------------------------------------------------
 # Set up all the standard stuff.
@@ -30,8 +37,14 @@ AresLibDir = $(AresDir)src/lib/
 BeCurlLibDir        = $(SourceDir)lib/
 BeCurlDepends       = $(_MakeFileSpec) $(_MakeFilePath)BeCurlConfig.h
 MultiCompileDepends = $(_MakeFileSpec) $(BeCurlDepends)
-appName             = iTwinCurl
-o                   = $(OutBuildDir)iTwinCurl/
+
+%if defined(iTwinNativeThirdParty)
+  appName = BeCurl
+%else
+  appName = iTwinCurl
+%endif
+
+o = $(OutBuildDir)$(appName)/
 
 always:
     !~@mkdir $(o)
@@ -411,6 +424,8 @@ $(o)vquic$(oext) : $(BeCurlLibDir)vquic/vquic.c ${MultiCompileDepends}
 
     $(o)ares__timeval$(oext) : $(AresLibDir)ares__timeval.c ${MultiCompileDepends}
 
+    $(o)ares_rand$(oext) : $(AresLibDir)ares_rand.c ${MultiCompileDepends}
+
     $(o)ares__read_line$(oext) : $(AresLibDir)ares__read_line.c ${MultiCompileDepends}
 
     $(o)ares_strsplit$(oext) : $(AresLibDir)ares_strsplit.c ${MultiCompileDepends}
@@ -451,7 +466,7 @@ objs =% $(MultiCompileObjectList)
 #---------------------------------------------------------------------------------------+
 #   Create the library
 #---------------------------------------------------------------------------------------+
-DLM_NAME                    = iTwinCurl
+DLM_NAME                    = $(appName)
 DLM_OBJECT_FILES            = $(objs)
 DLM_EXPORT_OBJS             = $(DLM_OBJECT_FILES)
 DLM_OBJECT_DEST             = $(o)
@@ -463,8 +478,13 @@ DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
 DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
 DLM_CREATE_LIB_CONTEXT_LINK = 1
 
-LINKER_LIBRARIES            = $(BuildContext)SubParts/Libs/$(libprefix)iTwinOpenSSL$(libext) \
-                              $(ContextSubPartsStaticLibs)$(libprefix)BeZlib$(libext) 
+%if defined(iTwinNativeThirdParty)
+  LINKER_LIBRARIES            = $(BuildContext)SubParts/Libs/$(libprefix)BeOpenSSL$(libext) \
+                                $(ContextSubPartsStaticLibs)$(libprefix)BeZlib$(libext) 
+%else
+  LINKER_LIBRARIES            = $(BuildContext)SubParts/Libs/$(libprefix)iTwinOpenSSL$(libext) \
+                                $(ContextSubPartsStaticLibs)$(libprefix)BeZlib$(libext) 
+%endif
 
 %if $(TARGET_PLATFORM) == "Windows"
     LINKER_LIBRARIES	    + ws2_32.lib

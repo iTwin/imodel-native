@@ -2524,6 +2524,9 @@ public:
         // Skip the check for SQLite file validity before opening. When using the CloudSqlite mode, the local file is not in SQLite normal format.
         bool m_skipFileCheck = false;
 
+        // Provide uri to shared schema channel use by default during schema upgrade or update.
+        Utf8String m_schemaSyncDbUri;
+
         BusyRetry* m_busyRetry = nullptr;
         mutable bvector<Utf8String> m_queryParams;
 
@@ -2578,8 +2581,7 @@ public:
 
         //! Sets a BusyRetry handler
         //! @param[in] retry A BusyRetry handler for the database connection. The BeSQLite::Db will hold a ref-counted-ptr to the retry object.
-        //!                  The default is to not attempt retries. Note, many BeSQLite applications (e.g. Bim) rely on a single non-shared connection
-        //!                  to the database and do not permit sharing.
+        //! The default is to not attempt retries.
         void SetBusyRetry(BusyRetry* retry) { m_busyRetry = retry; }
 
         //! Open the database as "immutable". This means that SQLite will not hold any locks on the file. Only use this if you're *sure* the
