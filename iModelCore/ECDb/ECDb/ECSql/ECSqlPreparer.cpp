@@ -1948,6 +1948,18 @@ bool ECSqlExpPreparer::QueryOptionExperimentalFeaturesEnabled(ECDbCR db, ExpCR e
         [](OptionExp const& opt) { return opt.asBool(); },
         [&db]() { return db.GetECSqlConfig().GetExperimentalFeaturesEnabled(); });
     }
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+unsigned int ECSqlExpPreparer::QueryOptionsInstanceFlags(ExpCR exp)
+    {
+    const auto useJsPropName = OptionsExp::FindLocalOrInheritedOption<bool>(exp, OptionsExp::USE_JS_PROP_NAMES, [](OptionExp const& opt) { return opt.asBool(); }, []() { return false; });
+    const auto doNotTruncateBlob = OptionsExp::FindLocalOrInheritedOption<bool>(exp, OptionsExp::DO_NOT_TRUNCATE_BLOB, [](OptionExp const& opt) { return opt.asBool(); }, []() { return false; });
+    unsigned int flags = 0;
+    if (useJsPropName) flags |= InstanceReader::FLAGS_UseJsPropertyNames;
+    if (doNotTruncateBlob) flags |= InstanceReader::FLAGS_DoNotTruncateBlobs;
+    return flags;
+    }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
@@ -1973,10 +1985,12 @@ ECSqlStatus ECSqlExpPreparer::PrepareExtractPropertyExp(NativeSqlBuilder::List& 
         return rc;
     }
 
-    builder.AppendFormatted("extract_prop(%s,%s,'%s'%s)",
+    const auto flags = QueryOptionsInstanceFlags(exp);
+    builder.AppendFormatted("extract_prop(%s,%s,'%s',0x%x%s)",
         classIdSql.front().GetSql().c_str(),
         instanceIdSql.front().GetSql().c_str(),
         exp.GetTargetPath().ToString().c_str(),
+        flags,
         exp.GetSqlAnchor([&](Utf8CP name) {
             return ctx.GetAnchors().CreateAnchor(name);
         }).c_str());
@@ -2008,7 +2022,8 @@ ECSqlStatus ECSqlExpPreparer::PrepareExtractInstanceExp(NativeSqlBuilder::List& 
         return rc;
     }
 
-    builder.AppendFormatted("extract_inst(%s,%s)", classIdSql.front().GetSql().c_str(),instanceIdSql.front().GetSql().c_str());
+    const auto flags = QueryOptionsInstanceFlags(exp);
+    builder.AppendFormatted("json(extract_inst(%s,%s, 0x%x))", classIdSql.front().GetSql().c_str(),instanceIdSql.front().GetSql().c_str(), flags);
     nativeSqlSnippets.push_back(std::move(builder));
     return ECSqlStatus::Success;
 }

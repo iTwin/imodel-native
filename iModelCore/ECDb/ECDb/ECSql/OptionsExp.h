@@ -41,9 +41,11 @@ struct OptionsExp final : Exp
     using OptionMap = bmap<Utf8CP, size_t, CompareIUtf8Ascii>;
 
 public:
-    static Utf8CP const NOECCLASSIDFILTER_OPTION;
-    static Utf8CP const READONLYPROPERTIESAREUPDATABLE_OPTION;
-    static Utf8CP const ENABLE_EXPERIMENTAL_FEATURES;
+    static Utf8CP constexpr NOECCLASSIDFILTER_OPTION="NoECClassIdFilter";
+    static Utf8CP constexpr READONLYPROPERTIESAREUPDATABLE_OPTION="ReadonlyPropertiesAreUpdatable";
+    static Utf8CP constexpr ENABLE_EXPERIMENTAL_FEATURES = "ENABLE_EXPERIMENTAL_FEATURES";
+    static Utf8CP constexpr USE_JS_PROP_NAMES = "USE_JS_PROP_NAMES";
+    static Utf8CP constexpr DO_NOT_TRUNCATE_BLOB = "DO_NOT_TRUNCATE_BLOB";
 
 private:
     OptionMap m_optionsByName;
