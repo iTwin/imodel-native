@@ -838,7 +838,7 @@ void CrashpadClient::DumpWithoutCrash(const CONTEXT& context) {
 // BEGIN BENTLEY CHANGES
 // static
 void CrashpadClient::DumpWithoutCrash(EXCEPTION_POINTERS* exception_pointers) {
-  if (g_signal_non_crash_dump == INVALID_HANDLE_VALUE || g_non_crash_dump_done == INVALID_HANDLE_VALUE) {
+  if (g_wer_registration.dump_without_crashing == INVALID_HANDLE_VALUE || g_wer_registration.dump_completed == INVALID_HANDLE_VALUE) {
     LOG(ERROR) << "not connected";
     return;
   }
@@ -852,10 +852,10 @@ void CrashpadClient::DumpWithoutCrash(EXCEPTION_POINTERS* exception_pointers) {
   g_non_crash_exception_information.thread_id = GetCurrentThreadId();
   g_non_crash_exception_information.exception_pointers = FromPointerCast<WinVMAddress>(exception_pointers);
 
-  bool set_event_result = !!SetEvent(g_signal_non_crash_dump);
+  bool set_event_result = !!SetEvent(g_wer_registration.dump_without_crashing);
   PLOG_IF(ERROR, !set_event_result) << "SetEvent";
 
-  DWORD wfso_result = WaitForSingleObject(g_non_crash_dump_done, INFINITE);
+  DWORD wfso_result = WaitForSingleObject(g_wer_registration.dump_completed, INFINITE);
   PLOG_IF(ERROR, wfso_result != WAIT_OBJECT_0) << "WaitForSingleObject";
 }
 // END BENTLEY CHANGES

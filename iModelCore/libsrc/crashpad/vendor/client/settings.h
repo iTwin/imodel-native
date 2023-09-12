@@ -66,7 +66,12 @@ constexpr double kUploadReportTimeoutSeconds = 60;
 //! should be retrieved via CrashReportDatabase::GetSettings().
 class Settings {
  public:
+ // Bentley Change - make this a wchar so it will combined with other wstrings.
+#if BUILDFLAG(IS_POSIX)
   static inline constexpr char kLockfileExtension[] = ".__lock__";
+#elif BUILDFLAG(IS_WIN)
+  static inline constexpr wchar_t kLockfileExtension[] = L".__lock__";
+#endif
 
   Settings();
 

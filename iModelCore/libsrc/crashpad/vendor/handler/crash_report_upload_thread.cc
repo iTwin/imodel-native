@@ -331,7 +331,6 @@ CrashReportUploadThread::UploadResult CrashReportUploadThread::UploadReport(
   if (!http_transport) {
     return UploadResult::kPermanentFailure;
   }
-  // BENTLEY_CHANGE
   // At least the sentry.io service requires the Host HTTP header (https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Host).
   // The spec suggests this is optional for HTTP/1.0, which Google is specifying here, but empirically the remote service requires it.
   // It should also be noted Google does NOT append User-Agent either, though we have not found that to be a requirement yet.
