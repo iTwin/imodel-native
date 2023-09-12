@@ -5,6 +5,7 @@
 #include <bsibasegeomPCH.h>
 #include "mtgintrn.h"
 #include <Mtg/MTGShortestPaths.h>
+#include <queue>
 
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 /* @dllName mtg */
@@ -455,6 +456,93 @@ void MTGGraph::CollectVertexLoops (bvector <MTGNodeId> &faceNodes)
     DropMask (visitMask);
     }
 
+// Breadth-first search through connected component of a graph.
+// @param [out] component vector of nodes, one per face.
+// @param [in] seed seed node in component.
+// @param [in] visitMask mask to apply to visited nodes. Assumed cleared throughout component.
+// @param [in] ignoreMask optional mask on faces to ignore, e.g., MTG_EXTERIOR_MASK.
+// @param [in] maxFaceCount if positive, limit size of component to this number of faces.
+// @returns node at which to start next component if maximum face count exceeded, or MTG_NULL_NODEID
+static MTGNodeId ExploreComponent(MTGGraph& graph, bvector<MTGNodeId>& component, MTGNodeId seed, MTGMask visitMask, MTGMask ignoreMask, size_t maxFaceCount)
+    {
+    if (maxFaceCount <= 0)
+        maxFaceCount = SIZE_MAX;
+    MTGMask boundaryMask = visitMask | ignoreMask;
+    size_t numFaces = 0;
+    std::queue<MTGNodeId> candidates;
+    candidates.push(seed);
+    while (!candidates.empty() && numFaces < maxFaceCount)
+        {
+        MTGNodeId node = candidates.front();
+        candidates.pop();
+        if (graph.HasMaskAt(node, boundaryMask))
+            continue;
+
+        component.push_back(node);
+        ++numFaces;
+
+        MTGARRAY_FACE_LOOP(myNode, &graph, node)
+            {
+            graph.SetMaskAt(myNode, visitMask);
+            MTGNodeId neighbor = graph.VSucc(myNode);
+            if (!graph.HasMaskAt(neighbor, boundaryMask))
+                candidates.push(neighbor);  // enqueue neighboring face
+            }
+        MTGARRAY_END_FACE_LOOP(myNode, &graph, node)
+        }
+    return candidates.empty() ? MTG_NULL_NODEID : candidates.front();
+    }
+
+// Breadth-first flood...
+void MTGGraph::CollectConnectedComponents(bvector<bvector<MTGNodeId>>& components, MTGMask ignoreMask, size_t maxFaceCount)
+    {
+    if (ignoreMask && CountMask(ignoreMask) == 0)
+        ignoreMask = MTG_NULL_MASK;
+    bool hasMaxFaceCount = maxFaceCount > 0;
+    if (!maxFaceCount)
+        maxFaceCount = SIZE_MAX;
+    components.clear();
+    MTGMask visitMask = GrabMask();
+    ClearMask(visitMask);
+    MTGMask boundaryMask = visitMask | ignoreMask;
+
+    // Starting with the input node, look ahead for a boundary face. Failing that, return the input node.
+    // Starting all floods at the boundary reduces the chance of ending up with a ring-shaped component at the boundary.
+    auto findNextFloodSeed = [&](MTGNodeId candidate)
+        {
+        if (!hasMaxFaceCount)
+            return candidate;
+        for (MTGNodeId i = candidate; i < (MTGNodeId) GetNodeIdCount(); ++i)
+            {
+            if (IsValidNodeId(i) && !HasMaskAt(i, boundaryMask) && HasMaskAt(EdgeMate(i), boundaryMask))
+                {
+                candidate = i;
+                break;
+                }
+            }
+        return candidate;
+        };
+
+    for (MTGNodeId i = 0; i < (MTGNodeId) GetNodeIdCount(); ++i)
+        {
+        if (!IsValidNodeId(i) || HasMaskAt(i, boundaryMask))
+            continue;
+        MTGNodeId i0 = findNextFloodSeed(i);
+        do
+            { // flood this component
+            bvector<MTGNodeId> component;
+            i0 = ExploreComponent(*this, component, i0, visitMask, ignoreMask, maxFaceCount);
+            if (!component.empty())
+                components.push_back(component);
+            } while (i0 != MTG_NULL_NODEID);
+
+        if (!HasMaskAt(i, visitMask))
+            --i; // reprocess this node
+        }
+
+    DropMask (visitMask);
+    }
+
 static void TestMarkAndPush (MTGGraph &graph, bvector<MTGNodeId> &stack, MTGNodeId nodeId, MTGMask visitMask)
     {
     if (!graph.TestAndSetMaskAt (nodeId, visitMask))
@@ -479,6 +567,7 @@ static void ExploreComponent (MTGGraph &graph, bvector <MTGNodeId> &component, b
         }
     }
 
+// Depth-first flood...
 void MTGGraph::CollectConnectedComponents (bvector <bvector <MTGNodeId> > &components)
     {
     components.clear ();
@@ -502,7 +591,7 @@ void MTGGraph::CollectConnectedComponents (bvector <bvector <MTGNodeId> > &compo
 // @param [in,out] stack scratch array for use in search.
 // @param [in] seed seed node in component.  Assumed NOT marked with visit mask.
 // @param [in] visitMask mask to apply to visited nodes.  Assumed cleared throughout component.
-// @param [in] collectMask mask to apply to nodes whose scope (face, vetrtex etc has been collected.
+// @param [in] collectMask mask to apply to nodes whose scope (face, vertex etc has been collected.
 static void ExploreComponent (MTGGraph &graph, bvector <MTGNodeId> &component, bvector<MTGNodeId> &stack, MTGNodeId seed, MTGMask visitMask, MTGMask collectMask, MTGMarkScope scope)
     {
     BeAssert (visitMask != collectMask);
@@ -559,7 +648,7 @@ static void ExploreComponent (MTGGraph &graph, bvector <MTGNodeId> &component, b
     }
 
 
-
+// Depth-first flood...
 void MTGGraph::CollectConnectedComponents (bvector <bvector <MTGNodeId> > &components, MTGMarkScope scope)
     {
     components.clear ();
@@ -583,13 +672,15 @@ void MTGGraph::CollectConnectedComponents (bvector <bvector <MTGNodeId> > &compo
     DropMask (visitMask);
     }
 
-size_t MTGGraph::CountFaceLoops ()
+size_t MTGGraph::CountFaceLoops(MTGMask ignoreMask)
     {
     MTGMask visitMask = GrabMask ();
     ClearMask (visitMask);
     size_t n = 0;
     MTGARRAY_SET_LOOP (currNodeId, this)
         {
+        if (ignoreMask && GetMaskAt(currNodeId, ignoreMask))
+            continue;
         if (!GetMaskAt (currNodeId, visitMask))
             {
             n++;
@@ -599,6 +690,11 @@ size_t MTGGraph::CountFaceLoops ()
     MTGARRAY_END_SET_LOOP (currNodeId, this)
     DropMask (visitMask);
     return n;
+    }
+
+size_t MTGGraph::CountFaceLoops ()
+    {
+    return CountFaceLoops(MTG_NULL_MASK); 
     }
 
 size_t MTGGraph::CountVertexLoops ()
