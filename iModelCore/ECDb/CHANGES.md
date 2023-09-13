@@ -5,7 +5,7 @@ This document including important changes to syntax or file format.
 | Module  | Version   |
 | ------- | --------- |
 | Profile | `4.0.0.3` |
-| ECSQL   | `1.2.7.0` |
+| ECSQL   | `1.2.8.0` |
 
 ## `9/13/2023`: Runtime instance and property accessor no longer experimental
 
