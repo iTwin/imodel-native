@@ -7,6 +7,19 @@ This document including important changes to syntax or file format.
 | Profile | `4.0.0.3` |
 | ECSQL   | `1.2.7.0` |
 
+## `9/13/2023`: Runtime instance and property accessor no longer experimental
+
+1. ECSql version updated `1.2.7.0` -> `1.2.8.0`.
+2. Instance property access is no longer experimental and does not require the experimental features to be enabled for it's use.
+3. The use of `$` and `$->prop` in ECSQL now requires neither enabling experimental features globally with PRAGMA nor specifying `OPTIONS ENABLE_EXPERIMENTAL_FEATURES`.
+
+Following will work:
+
+```sql
+  SELECT $ FROM meta.ECClassDef
+  SELECT $->name FROM meta.ECClassDef
+```
+
 ## `9/7/2023`: Add option to customize ECSQL Instance
 
 1. ECSql version updated to `1.2.6.0` -> `1.2.7.0`.
