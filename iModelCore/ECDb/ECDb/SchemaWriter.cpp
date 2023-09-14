@@ -3436,20 +3436,40 @@ BentleyStatus SchemaWriter::DeleteProperty(Context& ctx, PropertyChange& propert
 
     // fail if major version changes are not allowed or major version has not been incremented, but continue if newBaseProperty is available, meaning we are merely removing an overridden property
     // Allow Major schema upgrade for dynamic schemas if AllowMajorSchemaUpgradeForDynamicSchemas import option is set irrespective of the DisallowMajorSchemaUpgrade import option
-    if ((!ctx.IsMajorSchemaVersionChange(deletedProperty.GetClass().GetSchema().GetId()) || (!ctx.AreMajorSchemaVersionChangesAllowed() && (!ctx.IsMajorSchemaVersionChangeAllowedForDynamicSchemas() || !isDynamicSchema))) && !isOverriddenProperty)
+    if (!isOverriddenProperty)
         {
-        if (ctx.IgnoreIllegalDeletionsAndModifications())
+        // Property is not overriden, hence major schema change rules will be applied
+        Utf8String errorMessage = "";
+        if (!ctx.IsMajorSchemaVersionChange(deletedProperty.GetClass().GetSchema().GetId())) // Check if the schema "Read" version has been updated to allow the major change
+            errorMessage = "The 'Read' version number of the ECSchema was not incremented.";
+
+        else if (!ctx.AreMajorSchemaVersionChangesAllowed()) // Check if the major version changes are disabled for all schemas with SchemaImportOptions::DisallowMajorSchemaUpgrade (default behavior)
+            {
+            // Major version changes are disabled. Check if schema is dynamic to decide if major version changes can still be done.
+            if (isDynamicSchema)
                 {
-                LOG.infov("Ignoring update error: ECSchema Upgrade failed. ECSchema %s: Cannot delete ECProperty '%s.%s'. This is a major ECSchema change. Either major schema version changes are disabled "
-                                "or the 'Read' version number of the ECSchema was not incremented.",
-                                ecClass.GetSchema().GetFullSchemaName().c_str(), ecClass.GetName().c_str(), deletedProperty.GetName().c_str());
+                if (!ctx.IsMajorSchemaVersionChangeAllowedForDynamicSchemas()) // Schema is dynamic, check if major schema changed enabled for dynamic schemas with SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas
+                    errorMessage = "Major schema version changes have not been enabled for dynamic schemas.";
+                }
+            else
+                {
+                errorMessage = "Major schema version changes are disabled for all schemas.";
+                }
+            }
+
+        if (!Utf8String::IsNullOrEmpty(errorMessage.c_str()))
+            {
+            if (ctx.IgnoreIllegalDeletionsAndModifications())
+                {
+                LOG.infov("Ignoring update error: ECSchema Upgrade failed. ECSchema %s: Cannot delete ECProperty '%s.%s'. %s",
+                                ecClass.GetSchema().GetFullSchemaName().c_str(), ecClass.GetName().c_str(), deletedProperty.GetName().c_str(), errorMessage.c_str());
                 return SUCCESS;
                 }
 
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "ECSchema Upgrade failed. ECSchema %s: Cannot delete ECProperty '%s.%s'. This is a major ECSchema change. Either major schema version changes are disabled "
-                       "or the 'Read' version number of the ECSchema was not incremented.",
-                        ecClass.GetSchema().GetFullSchemaName().c_str(), ecClass.GetName().c_str(), deletedProperty.GetName().c_str());
-        return ERROR;
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "ECSchema Upgrade failed. ECSchema %s: Cannot delete ECProperty '%s.%s'. %s",
+                        ecClass.GetSchema().GetFullSchemaName().c_str(), ecClass.GetName().c_str(), deletedProperty.GetName().c_str(), errorMessage.c_str());
+            return ERROR;
+            }
         }
 
     if (deletedProperty.GetIsNavigation())
