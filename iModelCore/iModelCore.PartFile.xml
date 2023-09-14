@@ -64,6 +64,7 @@
         <ProductDirectory Name="VendorApi"              LibType="Static"    RelativeTo="Root" Path="include"/>
         <ProductDirectory Name="VendorNotices"                              RelativeTo="Root" Path="notices"/>
         <ProductDirectory Name="VendorNotices"          LibType="Static"    RelativeTo="Root" Path="notices"/>
+        <ProductDirectory Name="BeStaticLibDir"         LibType="Static"    RelativeTo="Root" Path="lib/static"/>
 
     </ProductDirectoryList>
 
