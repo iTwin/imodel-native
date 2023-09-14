@@ -3436,7 +3436,7 @@ BentleyStatus SchemaWriter::DeleteProperty(Context& ctx, PropertyChange& propert
 
     // fail if major version changes are not allowed or major version has not been incremented, but continue if newBaseProperty is available, meaning we are merely removing an overridden property
     // Allow Major schema upgrade for dynamic schemas if AllowMajorSchemaUpgradeForDynamicSchemas import option is set irrespective of the DisallowMajorSchemaUpgrade import option
-    if (!ctx.IsMajorSchemaVersionChange(deletedProperty.GetClass().GetSchema().GetId()) && !isOverriddenProperty || (!ctx.AreMajorSchemaVersionChangesAllowed() && (!ctx.IsMajorSchemaVersionChangeAllowedForDynamicSchemas() || !isDynamicSchema)))
+    if ((!ctx.IsMajorSchemaVersionChange(deletedProperty.GetClass().GetSchema().GetId()) || (!ctx.AreMajorSchemaVersionChangesAllowed() && (!ctx.IsMajorSchemaVersionChangeAllowedForDynamicSchemas() || !isDynamicSchema))) && !isOverriddenProperty)
         {
         if (ctx.IgnoreIllegalDeletionsAndModifications())
                 {
