@@ -461,8 +461,10 @@ GEOMDLLIMPEXP MTGNodeId FPred (MTGNodeId nodeId) const;
 /// Navigate to the edge mate of nodeId (at opposite end and opposite side of same edge.)
 GEOMDLLIMPEXP MTGNodeId EdgeMate (MTGNodeId nodeId) const;
 
+// Count the number of face loops whose nodes lack the given face mask
+GEOMDLLIMPEXP size_t CountFaceLoops(MTGMask ignoreMask);
 // Count the number of face loops
-GEOMDLLIMPEXP size_t CountFaceLoops (MTGMask ignoreMask = MTG_NULL_MASK);
+GEOMDLLIMPEXP size_t CountFaceLoops ();
 // Count the number of vertex loops.
 GEOMDLLIMPEXP size_t CountVertexLoops ();
 
