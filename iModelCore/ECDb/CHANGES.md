@@ -5,9 +5,6 @@ This document including important changes to syntax or file format.
 | Module  | Version   |
 | ------- | --------- |
 | Profile | `4.0.0.3` |
-<<<<<<< HEAD
-| ECSQL   | `1.2.0.0` |
-=======
 | ECSQL   | `1.2.6.0` |
 
 ## `9/6/2023`: Changes to ECSQLOPTIONS

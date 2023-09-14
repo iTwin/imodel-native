@@ -538,11 +538,7 @@ TEST_F(ECDbTestFixture, GetAndChangeGUIDForDb)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbTestFixture, CurrentECSqlVersion)
     {
-<<<<<<< HEAD
-    BeVersion expectedVersion (1, 2, 0, 0);
-=======
     BeVersion expectedVersion (1, 2, 6, 0);
->>>>>>> a1e9c471 (All ECSQL options to inherit in subquery (#445))
     ASSERT_EQ(ECDb::GetECSqlVersion(), expectedVersion);
     }
 

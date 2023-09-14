@@ -303,11 +303,7 @@ public:
     //         e.g. Remove a sql function or change required argument or format of its return value.
     //  Sub1:  Backward compatible change to 'Syntax'. For example adding new syntax/functions but not breaking any existing.
     //  Sub2:  Backward compatible change to 'Runtime'. For example adding a new sql function.
-<<<<<<< HEAD
-    static BeVersion GetECSqlVersion() { return BeVersion(1, 2, 0, 0); }
-=======
     static BeVersion GetECSqlVersion() { return BeVersion(1, 2, 6, 0); }
->>>>>>> a1e9c471 (All ECSQL options to inherit in subquery (#445))
 
     //! Gets the current version of the ECDb profile
     static ProfileVersion CurrentECDbProfileVersion() { return ProfileVersion(4, 0, 0, 3); }
