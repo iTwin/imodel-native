@@ -884,6 +884,10 @@ describe("basic tests", () => {
 
       const ec3Schemas: string[] = iModelJsNative.SchemaUtility.convertEC2XmlSchemas([schemaXML, schemaXMLRef]);
       const schemasWithUpdatedCA: string[] = iModelJsNative.SchemaUtility.convertCustomAttributes(ec3Schemas);
+      assert.equal(schemasWithUpdatedCA.length, 2);
+      // converted EC3 schemas are in the same order as of input schemas
+      const ec3SchemaXml = schemasWithUpdatedCA[0];
+      const ec3RefSchema = schemasWithUpdatedCA[1];
 
       const writeDbFileName = copyFile("SchemaConvertEnum.bim", dbFileName);
       // Without ProfileOptions.Upgrade, we get: Error | ECDb | Failed to import schema 'RefSchema.01.00.00'. Current ECDb profile version (4.0.0.1) only support schemas with EC version < 3.2. ECDb profile version upgrade is required to import schemas with EC Version >= 3.2.
@@ -891,7 +895,7 @@ describe("basic tests", () => {
       assert.isTrue(db !== undefined);
       assert.isTrue(db.isOpen());
 
-      const rc = db.importXmlSchemas(schemasWithUpdatedCA, { schemaLockHeld: true });
+      const rc = db.importXmlSchemas([ec3RefSchema, ec3SchemaXml], { schemaLockHeld: true });
       assert.equal(rc, DbResult.BE_SQLITE_OK);
       db.saveChanges();
 

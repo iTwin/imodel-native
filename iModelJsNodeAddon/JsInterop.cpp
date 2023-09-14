@@ -953,6 +953,7 @@ BentleyStatus JsInterop::ConvertSchemas(bvector<Utf8String> const& inputStrings,
 
     if (0 == schemaKeyPairs.size())
         return BentleyStatus::ERROR;
+    BeAssert(inputStrings.size() == schemaKeyPairs.size());
 
     for (int i = 0; i < schemaKeyPairs.size(); i++)
         {
@@ -964,6 +965,7 @@ BentleyStatus JsInterop::ConvertSchemas(bvector<Utf8String> const& inputStrings,
         schemaKeyPair.second = schema;
         }
 
+    outputStrings.resize(schemaKeyPairs.size());
     if (convertCA)
         {
         // Make a copy of the schemaKeyPairs bvector
@@ -979,14 +981,19 @@ BentleyStatus JsInterop::ConvertSchemas(bvector<Utf8String> const& inputStrings,
             bool conversionStatus = ECSchemaConverter::Convert(*const_cast<ECSchemaP> (schema), *schemaContext);
             if (!conversionStatus)
                 return BentleyStatus::ERROR;
-            Utf8String schemaXml;
-            SchemaWriteStatus writeStatus = schema->WriteToXmlString(schemaXml);
-            if (SchemaWriteStatus::Success != writeStatus)
+            for (int i = 0; i < schemaKeyPairs.size(); i++)
                 {
-                outputStrings.clear();
-                return BentleyStatus::ERROR;
+                if (schemaKeyPairs[i].first.Matches(schema->GetSchemaKey(), SchemaMatchType::Exact))
+                    {
+                    SchemaWriteStatus writeStatus = schema->WriteToXmlString(outputStrings[i]);
+                    if (SchemaWriteStatus::Success != writeStatus)
+                        {
+                        outputStrings.clear();
+                        return BentleyStatus::ERROR;
+                        }
+                    break;
+                    }
                 }
-            outputStrings.push_back(schemaXml);
             }
         }
     else
