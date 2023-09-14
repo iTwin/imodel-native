@@ -286,6 +286,28 @@ BentleyStatus PropertyNameExp::ResolveColumnRef(ECSqlParseContext& ctx)
         }
 
     ECSqlParseContext::RangeClassArg const& arg = static_cast<ECSqlParseContext::RangeClassArg const&>(*ctx.CurrentArg());
+
+    auto rangeClasses = [&]() {
+        std::vector<RangeClassInfo> rangeClasses(arg.GetRangeClassInfos());
+        auto parent = FindParent(Exp::Type::SingleSelect);
+        while(parent != nullptr) {
+            auto singleSelect = parent->GetAsCP<SingleSelectStatementExp>();
+            if (singleSelect->IsRowConstructor()) {
+                parent = nullptr;
+                continue;
+            }
+
+            auto cursorRangeClasses = singleSelect->GetFrom()->FindRangeClassRefExpressions();
+            for (auto const& rangeClass : cursorRangeClasses) {
+                if (std::find_if(std::begin(rangeClasses), std::end(rangeClasses), [&rangeClass](RangeClassInfo& v) { return &v.GetExp() == &rangeClass.GetExp(); }) != std::end(rangeClasses))
+                    continue;
+                rangeClasses.push_back(RangeClassInfo(rangeClass, RangeClassInfo::Scope::Inherited));
+            }
+            parent = singleSelect->FindParent(Exp::Type::SingleSelect);
+        }
+        return rangeClasses;
+    }();
+
     BeAssert(!m_propertyPath.IsEmpty());
 
     std::vector<PropertyMatchResult> matchProps;
@@ -326,11 +348,22 @@ BentleyStatus PropertyNameExp::ResolveColumnRef(ECSqlParseContext& ctx)
         }
     };
 
-    for (RangeClassInfo const &rangeClassInfo : arg.GetRangeClassInfos()) {
+    for (RangeClassInfo const &rangeClassInfo : rangeClasses) {
         PropertyMatchOptions options;
         options.SetRangeInfo(rangeClassInfo);
         PropertyMatchResult rc = rangeClassInfo.GetExp().FindProperty(ctx, m_propertyPath, options);
         if (rc.isValid()) {
+            if (rc.IsDerivedProperty()) {
+                // make sure non-cyclic
+                auto exp = rc.GetDerivedProperty()->GetExpression();
+                if (exp->GetType() == Exp::Type::PropertyName) {
+                    auto& propName = exp->GetAs<PropertyNameExp>();
+                    if (!propName.IsPropertyRef()) {
+                        if (&propName == this)
+                            continue;
+                    }
+                }
+            }
             // see if current resolution is the shortest resolved path (prefer alias of property path)
             eraseLongerResolvedPathIfAny(matchProps, rc);
             eraseLowerConfidenceIfAny(matchProps, rc);
@@ -376,7 +409,7 @@ BentleyStatus PropertyNameExp::ResolveColumnRef(ECSqlParseContext& ctx)
             }
         }
     } else {
-        // property def table view
+        // property def table viewow
         m_propertyPath = match.ResolvedPath();
         SetVirtualProperty(*match.GetProperty());
     }
@@ -454,7 +487,10 @@ PropertyMap const& PropertyNameExp::GetPropertyMap() const
             }
             break;
             }
-
+        case Exp::Type::CommonTableBlockName :
+            {
+            return *propertyMap;
+            }
         default:
                 BeAssert(false && "Unhandled ClassRefExp subtype. This code needs to be adjusted.");
                 break;

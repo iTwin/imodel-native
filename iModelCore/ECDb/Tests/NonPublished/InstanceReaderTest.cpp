@@ -20,24 +20,7 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
-struct InstanceReaderFixture : ECDbTestFixture {
-
-    DbResult OpenECDbTestDataFile(Utf8CP name) {
-        auto getDataPath = []() {
-            BeFileName docRoot;
-            BeTest::GetHost().GetDocumentsRoot(docRoot);
-            docRoot.AppendToPath(L"ECDb");
-            return docRoot;
-        };
-
-        const auto bimPath = getDataPath().AppendToPath(WString(name, true).c_str());
-        if (m_ecdb.IsDbOpen()) {
-            m_ecdb.CloseDb();
-        }
-        return m_ecdb.OpenBeSQLiteDb(bimPath, Db::OpenParams(Db::OpenMode::Readonly));
-    }
-
-};
+struct InstanceReaderFixture : ECDbTestFixture {};
 #if 0
 // Instance perf test
 struct InstancePropPerfTest {
