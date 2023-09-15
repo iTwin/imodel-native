@@ -628,7 +628,7 @@ void ECSqlExpPreparer::RemovePropertyRefs(ECSqlPrepareContext& ctx, ClassRefExp 
 
         const RangeClassRefExp* classRefExp = propertyNameExp->GetClassRefExp();
         if (&exp == classRefExp)
-            ctx.GetSelectionOptionsR().AddProperty(propertyNameExp->GetPropertyMap());
+            ctx.GetSelectionOptionsR().AddProperty(*propertyNameExp->GetPropertyMap());
         }
     }
 
