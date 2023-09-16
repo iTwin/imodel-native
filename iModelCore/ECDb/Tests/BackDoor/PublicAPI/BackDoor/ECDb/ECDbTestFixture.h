@@ -126,7 +126,7 @@ protected:
     DbResult ReopenECDb();
     DbResult ReopenECDb(ECDb::OpenParams const&);
     DbResult CloneECDb(Utf8CP cloneFileName, BeFileNameCR seedFilePath, ECDb::OpenParams const& openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite)) { return CloneECDb(m_ecdb, cloneFileName, seedFilePath, openParams); }
-    
+
     BentleyStatus PopulateECDb(ECN::ECSchemaCR, int instanceCountPerClass);
     BentleyStatus PopulateECDb(int instanceCountPerClass);
 
@@ -137,6 +137,7 @@ protected:
     BentleyStatus GetInstances(bvector<ECN::IECInstancePtr>& instances, Utf8CP schemaName, Utf8CP className);
     ECSqlStatus PrepareECSql(Utf8CP ecsql) { ECSqlStatement stmt; return stmt.Prepare(m_ecdb, ecsql); }
     TestHelper const& GetHelper() const { return m_ecdb.GetTestHelper(); }
+    DbResult OpenECDbTestDataFile(Utf8CP name);
 
 private:
     static ECN::ECSchemaPtr s_unitsSchema;
