@@ -327,17 +327,20 @@ struct ContentDescriptorRequestParams : ContentMetadataRequestParams
 {
 private:
     KeySetCPtr m_inputKeys;
+    std::shared_ptr<RelatedClassPathsList> m_exclusiveIncludePaths;
 public:
-    ContentDescriptorRequestParams(ContentMetadataRequestParams const& metadataParams, KeySetCR inputKeys)
-        : ContentMetadataRequestParams(metadataParams), m_inputKeys(&inputKeys)
+    ContentDescriptorRequestParams(ContentMetadataRequestParams const& metadataParams, KeySetCR inputKeys, std::shared_ptr<RelatedClassPathsList> exclusiveIncludePaths = nullptr)
+        : ContentMetadataRequestParams(metadataParams), m_inputKeys(&inputKeys), m_exclusiveIncludePaths(exclusiveIncludePaths)
         {}
-    ContentDescriptorRequestParams(ContentMetadataRequestParams&& metadataParams, KeySetCR inputKeys)
-        : ContentMetadataRequestParams(std::move(metadataParams)), m_inputKeys(&inputKeys)
+    ContentDescriptorRequestParams(ContentMetadataRequestParams&& metadataParams, KeySetCR inputKeys, std::shared_ptr<RelatedClassPathsList> exclusiveIncludePaths = nullptr)
+        : ContentMetadataRequestParams(std::move(metadataParams)), m_inputKeys(&inputKeys), m_exclusiveIncludePaths(exclusiveIncludePaths)
         {}
-    ContentDescriptorRequestParams(Utf8String rulesetId, RulesetVariables rulesetVariables, Utf8String preferredDisplayType, int contentFlags, KeySetCR inputKeys, SelectionInfo const* selectionInfo = nullptr)
-        : ContentMetadataRequestParams(rulesetId, rulesetVariables, preferredDisplayType, contentFlags, selectionInfo), m_inputKeys(&inputKeys)
+    ContentDescriptorRequestParams(Utf8String rulesetId, RulesetVariables rulesetVariables, Utf8String preferredDisplayType, int contentFlags, KeySetCR inputKeys, SelectionInfo const* selectionInfo = nullptr,
+        std::shared_ptr<RelatedClassPathsList> exclusiveIncludePaths = nullptr)
+        : ContentMetadataRequestParams(rulesetId, rulesetVariables, preferredDisplayType, contentFlags, selectionInfo), m_inputKeys(&inputKeys), m_exclusiveIncludePaths(exclusiveIncludePaths)
         {}
     KeySetCR GetInputKeys() const {return *m_inputKeys;}
+    std::shared_ptr<RelatedClassPathsList> GetExclusiveIncludePaths() const {return m_exclusiveIncludePaths;}
 };
 
 //=======================================================================================

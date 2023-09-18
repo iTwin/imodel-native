@@ -193,7 +193,7 @@ static DbResult insertIntoDgnModel(DgnDbR db, DgnClassId classId, DgnElementId m
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult DgnDb::CreatePartitionElement(Utf8CP className, DgnElementId partitionId, Utf8CP partitionName)
     {
-    DgnCode partitionCode(CodeSpecs().QueryCodeSpecId(BIS_CODESPEC_InformationPartitionElement), Elements().GetRootSubjectId(), partitionName);
+    DgnCode partitionCode(CodeSpecs().QueryCodeSpecId(BIS_CODESPEC_InformationPartitionElement), Elements().GetRootSubjectId(), partitionName, m_codeValueBehavior);
 
     // element handlers are not initialized yet, so insert DefinitionPartition directly
     Utf8PrintfString sql("INSERT INTO %s (ECInstanceId,Model.Id,Parent.Id,Parent.RelECClassId,CodeSpec.Id,CodeScope.Id,CodeValue) VALUES(?,?,?,?,?,?,?)", className);
@@ -267,7 +267,7 @@ DbResult DgnDb::CreateRootSubject(CreateDgnDbParams const& params)
     DgnElementId elementId = Elements().GetRootSubjectId();
     DgnModelId modelId = DgnModel::RepositoryModelId();
     CodeSpecId codeSpecId = CodeSpecs().QueryCodeSpecId(BIS_CODESPEC_Subject);
-    DgnCode elementCode = DgnCode(codeSpecId, elementId, params.m_rootSubjectName);
+    DgnCode elementCode = DgnCode(codeSpecId, elementId, params.m_rootSubjectName, m_codeValueBehavior);
 
     // element handlers are not initialized yet, so insert root Subject directly
     ECSqlStatement statement;

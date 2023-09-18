@@ -398,6 +398,7 @@ public:
 };
 typedef RelatedClassPath& RelatedClassPathR;
 typedef RelatedClassPath const& RelatedClassPathCR;
+typedef bvector<RelatedClassPath> RelatedClassPathsList;
 
 /*=================================================================================**//**
 * @bsiclass

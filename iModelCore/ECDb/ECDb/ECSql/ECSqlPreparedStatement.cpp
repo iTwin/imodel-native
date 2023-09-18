@@ -561,7 +561,7 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
         if (propNameExp->IsPropertyRef())
             continue;
 
-        PropertyMap const* propertyMap = &propNameExp->GetPropertyMap();
+        PropertyMap const* propertyMap = propNameExp->GetPropertyMap();
         BeAssert(propertyMap != nullptr);
         DbTable const* table = nullptr;
         if (propertyMap->IsData()) // sys props are treated separately
@@ -989,14 +989,14 @@ ECSqlStatus ECSqlUpdatePreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
         {
         AssignmentExp const& assignmentExp = childExp->GetAs<AssignmentExp>();
         PropertyNameExp const* lhsExp = assignmentExp.GetPropertyNameExp();
-        PropertyMap const& lhsPropMap = lhsExp->GetPropertyMap();
-        if (!lhsPropMap.IsData())
+        PropertyMap const* lhsPropMap = lhsExp->GetPropertyMap();
+        if (!lhsPropMap->IsData())
             {
-            BeAssert(lhsPropMap.IsData());
+            BeAssert(lhsPropMap->IsData());
             return ECSqlStatus::Error;
             }
 
-        DbTable const& table = lhsPropMap.GetAs<DataPropertyMap>().GetTable();
+        DbTable const& table = lhsPropMap->GetAs<DataPropertyMap>().GetTable();
         prepareInfo.AddAssignmentExp(assignmentExp, table);
 
         ValueExp const* rhsExp = assignmentExp.GetValueExp();
@@ -1009,7 +1009,7 @@ ECSqlStatus ECSqlUpdatePreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
                 continue;
 
             GetTablesPropertyMapVisitor getTablesVisitor;
-            if (SUCCESS != propNameExp.GetPropertyMap().AcceptVisitor(getTablesVisitor))
+            if (SUCCESS != propNameExp.GetPropertyMap()->AcceptVisitor(getTablesVisitor))
                 {
                 BeAssert(false);
                 return ECSqlStatus::Error;
@@ -1106,8 +1106,8 @@ bool ECSqlUpdatePreparedStatement::IsWhereClauseSelectorStatementNeeded(PrepareI
         if (propNameExp.IsPropertyRef())
             continue;
 
-        PropertyMap const& propMap = propNameExp.GetPropertyMap();
-        if (propMap.GetType() == PropertyMap::Type::ECInstanceId || propMap.GetType() == PropertyMap::Type::ECClassId)
+        PropertyMap const* propMap = propNameExp.GetPropertyMap();
+        if (propMap->GetType() == PropertyMap::Type::ECInstanceId || propMap->GetType() == PropertyMap::Type::ECClassId)
             continue;//ECInstanceId and ECClassId exist in all tables, so they don't require a where clause selector
 
         //if more than one table is involved and the where clause has a prop name exp other than ECInstanceId or ECClassId
@@ -1118,7 +1118,7 @@ bool ECSqlUpdatePreparedStatement::IsWhereClauseSelectorStatementNeeded(PrepareI
         //A single table is involved in assignment. We can skip the extra SELECT if the where clause does not involve
         //other tables
         GetTablesPropertyMapVisitor getTablesVisitor;
-        if (SUCCESS != propMap.AcceptVisitor(getTablesVisitor))
+        if (SUCCESS != propMap->AcceptVisitor(getTablesVisitor))
             {
             BeAssert(false);
             return false;
@@ -1319,7 +1319,7 @@ ECSqlStatus ECSqlUpdatePreparedStatement::CheckForReadonlyProperties(PrepareInfo
         PropertyNameExp const* lhsOperandOfAssignmentExp = expr->GetAs<AssignmentExp>().GetPropertyNameExp();
         if (!lhsOperandOfAssignmentExp->IsPropertyRef())
             {
-            ECPropertyCR prop = lhsOperandOfAssignmentExp->GetPropertyMap().GetProperty();
+            ECPropertyCR prop = lhsOperandOfAssignmentExp->GetPropertyMap()->GetProperty();
 
             if (prop.IsReadOnlyFlagSet() && prop.GetIsReadOnly() && !prop.IsCalculated())
                 {

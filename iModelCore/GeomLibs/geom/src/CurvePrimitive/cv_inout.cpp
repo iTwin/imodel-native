@@ -205,7 +205,7 @@ void CheckArc(DEllipse3dCR ellipse)
             {
             // Don't try to sort out scanline intersections with endpoints 
             }
-        else if (AnalyticRoots::LinearTrigFormRoots (uC, u0, u90, angles, numCrossing, thetaMax, thetaMin, amplitude))
+        else if (AnalyticRoots::LinearTrigFormRoots (uC, u0, u90, angles, numCrossing, thetaMax, thetaMin, amplitude, tol))
             {
             if (numCrossing == 2)
                 {
