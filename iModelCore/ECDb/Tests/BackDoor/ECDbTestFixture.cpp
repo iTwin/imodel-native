@@ -638,4 +638,22 @@ void DeleteInstance(ECDbCR ecdb, ECInstanceKey ik) {
     EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, sql.c_str())) << "ECSQL:" << sql.c_str();
     EXPECT_EQ(stmt.Step(), BE_SQLITE_DONE) << "ECSQL:" << sql.c_str();
 };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult ECDbTestFixture::OpenECDbTestDataFile(Utf8CP name) {
+    auto getDataPath = []() {
+        BeFileName docRoot;
+        BeTest::GetHost().GetDocumentsRoot(docRoot);
+        docRoot.AppendToPath(L"ECDb");
+        return docRoot;
+    };
+
+    const auto bimPath = getDataPath().AppendToPath(WString(name, true).c_str());
+    if (m_ecdb.IsDbOpen()) {
+        m_ecdb.CloseDb();
+    }
+    return m_ecdb.OpenBeSQLiteDb(bimPath, Db::OpenParams(Db::OpenMode::Readonly));
+}
 END_ECDBUNITTESTS_NAMESPACE

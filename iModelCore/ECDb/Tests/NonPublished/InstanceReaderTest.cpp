@@ -20,24 +20,7 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
-struct InstanceReaderFixture : ECDbTestFixture {
-
-    DbResult OpenECDbTestDataFile(Utf8CP name) {
-        auto getDataPath = []() {
-            BeFileName docRoot;
-            BeTest::GetHost().GetDocumentsRoot(docRoot);
-            docRoot.AppendToPath(L"ECDb");
-            return docRoot;
-        };
-
-        const auto bimPath = getDataPath().AppendToPath(WString(name, true).c_str());
-        if (m_ecdb.IsDbOpen()) {
-            m_ecdb.CloseDb();
-        }
-        return m_ecdb.OpenBeSQLiteDb(bimPath, Db::OpenParams(Db::OpenMode::Readonly));
-    }
-
-};
+struct InstanceReaderFixture : ECDbTestFixture {};
 #if 0
 // Instance perf test
 struct InstancePropPerfTest {
@@ -443,63 +426,60 @@ TEST_F(InstanceReaderFixture, performance_test) {
 }
 #endif
 
-TEST_F(InstanceReaderFixture, experimental_check) {
+TEST_F(InstanceReaderFixture, InstanceAccess) {
     ASSERT_EQ(BE_SQLITE_OK, OpenECDbTestDataFile("test.bim"));
     ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
 
     ECSqlStatement stmt0;
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt0.Prepare(m_ecdb, "SELECT $ FROM bis.CategorySelectorRefersToCategories"));
+    EXPECT_EQ(ECSqlStatus::Success, stmt0.Prepare(m_ecdb, "SELECT $ FROM bis.CategorySelectorRefersToCategories"));
 
     ECSqlStatement stmt1;
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt1.Prepare(m_ecdb, "SELECT $->ECInstanceId FROM bis.CategorySelectorRefersToCategories"));
+    EXPECT_EQ(ECSqlStatus::Success, stmt1.Prepare(m_ecdb, "SELECT $->ECInstanceId FROM bis.CategorySelectorRefersToCategories"));
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(InstanceReaderFixture, OptionsInheritance) {
+TEST_F(InstanceReaderFixture, OptionsInheritance)
+    {
     ASSERT_EQ(BE_SQLITE_OK, OpenECDbTestDataFile("test.bim"));
-    ASSERT_ECSQL_INVALID("SELECT $ FROM bis.Element");
-    ASSERT_ECSQL_SUCCESS("SELECT $ FROM bis.Element ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES");
-    ASSERT_ECSQL_SUCCESS("SELECT $ FROM bis.Element ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES = 1");
-    ASSERT_ECSQL_SUCCESS("SELECT $ FROM bis.Element ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES = TRUE");
-    ASSERT_ECSQL_SUCCESS("SELECT $ FROM bis.Element OPTIONS ENABLE_EXPERIMENTAL_FEATURES");
-    ASSERT_ECSQL_SUCCESS("SELECT $ FROM bis.Element OPTIONS ENABLE_EXPERIMENTAL_FEATURES = 1");
-    ASSERT_ECSQL_SUCCESS("SELECT $ FROM bis.Element OPTIONS ENABLE_EXPERIMENTAL_FEATURES = TRUE");
-    ASSERT_ECSQL_INVALID("SELECT $ FROM bis.Element ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES =0");
-    ASSERT_ECSQL_INVALID("SELECT $ FROM bis.Element ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES = FALSE");
-    ASSERT_ECSQL_INVALID("SELECT $ FROM bis.Element OPTIONS ENABLE_EXPERIMENTAL_FEATURES = 0");
-    ASSERT_ECSQL_INVALID("SELECT $ FROM bis.Element OPTIONS ENABLE_EXPERIMENTAL_FEATURES = FALSE");
-    ASSERT_ECSQL_INVALID("SELECT T FROM (SELECT $ T FROM bis.Element)");
-    ASSERT_ECSQL_SUCCESS("SELECT T FROM (SELECT $ T FROM bis.Element  ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES)");
-    ASSERT_ECSQL_SUCCESS("SELECT T FROM (SELECT $ T FROM bis.Element) ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES");
-    ASSERT_ECSQL_SUCCESS("SELECT T FROM (SELECT $ T FROM bis.Element  OPTIONS      ENABLE_EXPERIMENTAL_FEATURES)");
-    ASSERT_ECSQL_SUCCESS("SELECT T FROM (SELECT $ T FROM bis.Element) OPTIONS      ENABLE_EXPERIMENTAL_FEATURES");
-    ASSERT_ECSQL_INVALID("SELECT T FROM (SELECT $ T FROM bis.Element  ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES = 0)");
-    ASSERT_ECSQL_INVALID("SELECT T FROM (SELECT $ T FROM bis.Element) ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES = 0");
-    ASSERT_ECSQL_INVALID("SELECT T FROM (SELECT $ T FROM bis.Element  ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES = false)");
-    ASSERT_ECSQL_INVALID("SELECT T FROM (SELECT $ T FROM bis.Element) ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES = false");
-    ASSERT_ECSQL_INVALID("SELECT T FROM (SELECT $ T FROM bis.Element  OPTIONS ENABLE_EXPERIMENTAL_FEATURES = 0)");
-    ASSERT_ECSQL_INVALID("SELECT T FROM (SELECT $ T FROM bis.Element) OPTIONS ENABLE_EXPERIMENTAL_FEATURES = 0");
-    ASSERT_ECSQL_INVALID("SELECT T FROM (SELECT $ T FROM bis.Element  OPTIONS ENABLE_EXPERIMENTAL_FEATURES = false)");
-    ASSERT_ECSQL_INVALID("SELECT T FROM (SELECT $ T FROM bis.Element) OPTIONS ENABLE_EXPERIMENTAL_FEATURES = false");
-    ASSERT_ECSQL_SUCCESS("SELECT T FROM (SELECT $ T FROM bis.Element OPTIONS      ENABLE_EXPERIMENTAL_FEATURES = 1) OPTIONS      ENABLE_EXPERIMENTAL_FEATURES = 0");
-    ASSERT_ECSQL_SUCCESS("SELECT T FROM (SELECT $ T FROM bis.Element OPTIONS      ENABLE_EXPERIMENTAL_FEATURES = 1) OPTIONS      ENABLE_EXPERIMENTAL_FEATURES = 1");
-    ASSERT_ECSQL_SUCCESS("SELECT T FROM (SELECT $ T FROM bis.Element ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES = 1) ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES = 0");
-    ASSERT_ECSQL_SUCCESS("SELECT T FROM (SELECT $ T FROM bis.Element ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES = 1) ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES = 1");
-    ASSERT_ECSQL_INVALID("SELECT T FROM (SELECT $ T FROM bis.Element OPTIONS      ENABLE_EXPERIMENTAL_FEATURES = false) OPTIONS      ENABLE_EXPERIMENTAL_FEATURES");
-    ASSERT_ECSQL_INVALID("SELECT T FROM (SELECT $ T FROM bis.Element OPTIONS      ENABLE_EXPERIMENTAL_FEATURES = 0    ) OPTIONS      ENABLE_EXPERIMENTAL_FEATURES");
-    ASSERT_ECSQL_INVALID("SELECT T FROM (SELECT $ T FROM bis.Element ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES = false) ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES");
-    ASSERT_ECSQL_INVALID("SELECT T FROM (SELECT $ T FROM bis.Element ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES = 0    ) ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES");
-}
+
+    constexpr Utf8CP withoutJsNames = R"json({"ECInstanceId":"0x1d","ECClassId":"0xf","Schema":{"Id":"0x3","RelECClassId":"0x10"},"Name":"PropertyHasCategory","Description":"Relates the property to its PropertyCategory.","Type":1,"Modifier":2,"RelationshipStrength":0,"RelationshipStrengthDirection":1})json";
+    constexpr Utf8CP withJsNames = R"json({"id":"0x1d","className":"ECDbMeta.ECClassDef","schema":{"id":"0x3","relClassName":"ECDbMeta.SchemaOwnsClasses"},"name":"PropertyHasCategory","description":"Relates the property to its PropertyCategory.","type":1,"modifier":2,"relationshipStrength":0,"relationshipStrengthDirection":1})json";
+
+    for (const auto& [lineNumber, ecsql, expectedOutput] : std::vector<std::tuple<unsigned int, Utf8CP, Utf8CP>>
+        {
+            { __LINE__, "SELECT $ FROM meta.ECClassDef WHERE Description='Relates the property to its PropertyCategory.'", withoutJsNames},
+            { __LINE__, "SELECT $ FROM meta.ECClassDef WHERE Description='Relates the property to its PropertyCategory.' OPTIONS USE_JS_PROP_NAMES", withJsNames},
+            { __LINE__, "SELECT $ FROM meta.ECClassDef WHERE Description='Relates the property to its PropertyCategory.' OPTIONS USE_JS_PROP_NAMES = 1", withJsNames},
+            { __LINE__, "SELECT $ FROM meta.ECClassDef WHERE Description='Relates the property to its PropertyCategory.' OPTIONS USE_JS_PROP_NAMES = TRUE", withJsNames},
+            { __LINE__, "SELECT $ FROM meta.ECClassDef WHERE Description='Relates the property to its PropertyCategory.' OPTIONS USE_JS_PROP_NAMES = 0", withoutJsNames},
+            { __LINE__, "SELECT $ FROM meta.ECClassDef WHERE Description='Relates the property to its PropertyCategory.' OPTIONS USE_JS_PROP_NAMES = FALSE", withoutJsNames},
+
+            { __LINE__, "SELECT T FROM (SELECT $ T FROM meta.ECClassDef WHERE Description='Relates the property to its PropertyCategory.')", withoutJsNames},
+            { __LINE__, "SELECT T FROM (SELECT $ T FROM meta.ECClassDef WHERE Description='Relates the property to its PropertyCategory.' OPTIONS USE_JS_PROP_NAMES)", withJsNames},
+            { __LINE__, "SELECT T FROM (SELECT $ T FROM meta.ECClassDef WHERE Description='Relates the property to its PropertyCategory.') OPTIONS USE_JS_PROP_NAMES", withJsNames},
+
+            // Innermost option will take precedence
+            { __LINE__, "SELECT T FROM (SELECT $ T FROM meta.ECClassDef WHERE Description='Relates the property to its PropertyCategory.' OPTIONS USE_JS_PROP_NAMES = 0) OPTIONS USE_JS_PROP_NAMES = 0", withoutJsNames },
+            { __LINE__, "SELECT T FROM (SELECT $ T FROM meta.ECClassDef WHERE Description='Relates the property to its PropertyCategory.' OPTIONS USE_JS_PROP_NAMES = 0) OPTIONS USE_JS_PROP_NAMES = 1", withoutJsNames },
+            { __LINE__, "SELECT T FROM (SELECT $ T FROM meta.ECClassDef WHERE Description='Relates the property to its PropertyCategory.' OPTIONS USE_JS_PROP_NAMES = 1) OPTIONS USE_JS_PROP_NAMES = 0", withJsNames },
+            { __LINE__, "SELECT T FROM (SELECT $ T FROM meta.ECClassDef WHERE Description='Relates the property to its PropertyCategory.' OPTIONS USE_JS_PROP_NAMES = 1) OPTIONS USE_JS_PROP_NAMES = 1", withJsNames },
+        })
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        EXPECT_STREQ(stmt.GetValueText(0), expectedOutput);
+        stmt.Finalize();
+        }
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(InstanceReaderFixture, check_option_USE_JS_PROP_NAMES) {
     ASSERT_EQ(BE_SQLITE_OK, OpenECDbTestDataFile("test.bim"));
-    ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
-    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
 
     if ("system property name should be ts compilable id/className/sourceId/sourceClassName/targetId/targetClassName") {
         ECSqlStatement stmt;
@@ -605,8 +585,6 @@ TEST_F(InstanceReaderFixture, check_option_USE_JS_PROP_NAMES) {
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(InstanceReaderFixture, check_option_DO_NOT_TRUNCATE_BLOB) {
     ASSERT_EQ(BE_SQLITE_OK, OpenECDbTestDataFile("test.bim"));
-    ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
-    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
 
     if ("geometryStream/BLOB is truncated by default") {
         ECSqlStatement stmt;
@@ -718,8 +696,6 @@ TEST_F(InstanceReaderFixture, check_option_DO_NOT_TRUNCATE_BLOB) {
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(InstanceReaderFixture, check_link_table_serialization) {
     ASSERT_EQ(BE_SQLITE_OK, OpenECDbTestDataFile("test.bim"));
-    ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
-    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT $ FROM bis.CategorySelectorRefersToCategories"));
@@ -742,8 +718,6 @@ TEST_F(InstanceReaderFixture, check_link_table_serialization) {
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(InstanceReaderFixture, optional_and_non_optional_properties) {
     ASSERT_EQ(BE_SQLITE_OK, OpenECDbTestDataFile("test.bim"));
-    ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
-    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
 
     if ("non-optional property must be part of class_props filter") {
         ECSqlStatement stmt;
@@ -863,8 +837,6 @@ TEST_F(InstanceReaderFixture, optional_and_non_optional_properties) {
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(InstanceReaderFixture, check_instance_serialization) {
     ASSERT_EQ(BE_SQLITE_OK, OpenECDbTestDataFile("test.bim"));
-    ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
-    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT $ FROM bis.Element"));
@@ -1062,8 +1034,6 @@ TEST_F(InstanceReaderFixture, check_instance_serialization) {
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(InstanceReaderFixture, ecsql_read_instance) {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("instanceReader.ecdb"));
-    ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
-    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"sql(
@@ -1081,8 +1051,6 @@ TEST_F(InstanceReaderFixture, ecsql_read_instance) {
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(InstanceReaderFixture, ecsql_read_property) {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("instanceReader.ecdb"));
-    ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
-    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"sql(
@@ -1162,8 +1130,6 @@ TEST_F(InstanceReaderFixture, rapid_json_patch_to_render_inf_and_nan_as_null_ins
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(InstanceReaderFixture, instance_reader) {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("instanceReader.ecdb"));
-    ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
-    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"sql(
@@ -1250,7 +1216,6 @@ TEST_F(InstanceReaderFixture, dynamic_meta_data) {
             <ECEntityClass typeName="T122"><BaseClass>T120</BaseClass><ECProperty propertyName="j" typeName="int" description="info-j"/></ECEntityClass>
         </ECSchema>)xml")));
 
-    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
     auto exec = [&](Utf8CP ecsql) {
         ECSqlStatement stmt;
         EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
@@ -1598,8 +1563,6 @@ TEST_F(InstanceReaderFixture, extract_prop) {
                     </ECEntityClass>
                </ECSchema>)xml")));
     m_ecdb.SaveChanges();
-    ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
-    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
     // sample primitive type
     const bool kB = true;
     const DateTime kDt = DateTime::GetCurrentTimeUtc();
@@ -1795,8 +1758,6 @@ TEST_F(InstanceReaderFixture, nested_struct) {
             </ECSchema>)xml")));
     m_ecdb.Schemas().CreateClassViewsInDb();
     m_ecdb.SaveChanges();
-    ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
-    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
 
     ECInstanceKey instKey;
     if ("insert data") {

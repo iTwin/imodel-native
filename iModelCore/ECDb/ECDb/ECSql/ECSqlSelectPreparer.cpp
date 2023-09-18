@@ -312,7 +312,7 @@ ECSqlStatus ECSqlSelectPreparer::PrepareDerivedPropertyExp(NativeSqlBuilder::Lis
 
     size_t snippetCountBefore = nativeSqlSnippets.size();
     if (!innerExp->IsParameterExp() && innerExp->GetTypeInfo().IsNull())
-        { 
+        {
         ECSqlStatus status = ECSqlExpPreparer::PrepareNullExp(nativeSqlSnippets, ctx, *innerExp, referenceSqliteSnippetCount);
         if (!status.IsSuccess())
             return status;
@@ -418,8 +418,8 @@ void ECSqlSelectPreparer::ExtractPropertyRefs(ECSqlPrepareContext& ctx, Exp cons
         PropertyNameExp const* propertyName = static_cast<PropertyNameExp const*>(exp);
         if (propertyName->IsVirtualProperty())
             return;
-        
-        ctx.GetSelectionOptionsR().AddProperty(propertyName->GetPropertyMap());
+
+        ctx.GetSelectionOptionsR().AddProperty(*propertyName->GetPropertyMap());
         }
 
     for (Exp const* child : exp->GetChildren())

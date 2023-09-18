@@ -628,7 +628,7 @@ void ECSqlExpPreparer::RemovePropertyRefs(ECSqlPrepareContext& ctx, ClassRefExp 
 
         const RangeClassRefExp* classRefExp = propertyNameExp->GetClassRefExp();
         if (&exp == classRefExp)
-            ctx.GetSelectionOptionsR().AddProperty(propertyNameExp->GetPropertyMap());
+            ctx.GetSelectionOptionsR().AddProperty(*propertyNameExp->GetPropertyMap());
         }
     }
 
@@ -1970,11 +1970,6 @@ ECSqlStatus ECSqlExpPreparer::PrepareExtractPropertyExp(NativeSqlBuilder::List& 
     NativeSqlBuilder::List classIdSql;
     NativeSqlBuilder::List instanceIdSql;
 
-    if (!QueryOptionExperimentalFeaturesEnabled(ctx.GetECDb(), exp)) {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Instance property access '%s' is experimental feature and disabled by default.", exp.ToECSql().c_str());
-        return ECSqlStatus::InvalidECSql;
-    }
-
     auto rc = PrepareValueExp(classIdSql, ctx, exp.GetClassIdPropExp());
     if (rc != ECSqlStatus::Success) {
         return rc;
@@ -2007,11 +2002,6 @@ ECSqlStatus ECSqlExpPreparer::PrepareExtractInstanceExp(NativeSqlBuilder::List& 
     NativeSqlBuilder builder;
     NativeSqlBuilder::List classIdSql;
     NativeSqlBuilder::List instanceIdSql;
-
-    if (!QueryOptionExperimentalFeaturesEnabled(ctx.GetECDb(), exp)) {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Instance access '%s' is experimental feature and disabled by default.", exp.ToECSql().c_str());
-        return ECSqlStatus::InvalidECSql;
-    }
     auto rc = PrepareValueExp(classIdSql, ctx, exp.GetClassIdPropExp());
     if (rc != ECSqlStatus::Success) {
         return rc;

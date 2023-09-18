@@ -28,7 +28,7 @@ Exp::FinalizeParseStatus AssignmentListExp::_FinalizeParsing(ECSqlParseContext& 
     for (size_t i = 0; i < childrenCount; i++)
         {
         AssignmentExp const* assignmentExp = GetAssignmentExp(i);
-        ECN::ECPropertyCR prop = assignmentExp->GetPropertyNameExp()->GetPropertyMap().GetProperty();
+        ECN::ECPropertyCR prop = assignmentExp->GetPropertyNameExp()->GetPropertyMap()->GetProperty();
         m_specialTokenExpIndexMap.AddIfSystemProperty(ctx.GetECDb().Schemas(), prop, i);
         }
 

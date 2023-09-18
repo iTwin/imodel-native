@@ -885,7 +885,7 @@ PropertyMatchResult SingleSelectStatementExp::_FindProperty(ECSqlParseContext& c
                     }
                     return PropertyMatchResult(options, propertyPath, effectivePath, derivedPropertyExp, isMatchIndirect ? -1 : 0);
                 } else if (propertyNameExp != nullptr && propertyNameExp->GetClassRefExp() != nullptr) {
-                    if (CompoundDataPropertyMap const *compoundProp = dynamic_cast<CompoundDataPropertyMap const*>(&propertyNameExp->GetPropertyMap())) {
+                    if (CompoundDataPropertyMap const *compoundProp = dynamic_cast<CompoundDataPropertyMap const*>(propertyNameExp->GetPropertyMap())) {
                         PropertyPath restOfAccessString = effectivePath.Skip(1);
                         auto endMap = compoundProp->Find(restOfAccessString.ToString().c_str());
                         if (endMap != nullptr) {
@@ -898,11 +898,13 @@ PropertyMatchResult SingleSelectStatementExp::_FindProperty(ECSqlParseContext& c
                 if (propertyNameExp->GetPropertyPath().First().GetName().EqualsIAscii(effectivePath.First().GetName())) {
                     if (effectivePath.Size() == 1) {
                         return PropertyMatchResult(options, propertyPath, effectivePath, derivedPropertyExp, 0);
-                    } else if (CompoundDataPropertyMap const *compoundProp = dynamic_cast<CompoundDataPropertyMap const*>(&propertyNameExp->GetPropertyMap())) {
-                        PropertyPath restOfAccessString = effectivePath.Skip(1);
-                        auto endMap = compoundProp->Find(restOfAccessString.ToString().c_str());
-                        if (endMap != nullptr) {
-                            return PropertyMatchResult(options, propertyPath, effectivePath, derivedPropertyExp, 0);
+                    } else if (!propertyNameExp->IsPropertyFromCommonTableBlock() && propertyNameExp->GetPropertyMap() != nullptr) {
+                        if (CompoundDataPropertyMap const *compoundProp = dynamic_cast<CompoundDataPropertyMap const*>(propertyNameExp->GetPropertyMap())) {
+                            PropertyPath restOfAccessString = effectivePath.Skip(1);
+                            auto endMap = compoundProp->Find(restOfAccessString.ToString().c_str());
+                            if (endMap != nullptr) {
+                                return PropertyMatchResult(options, propertyPath, effectivePath, derivedPropertyExp, 0);
+                            }
                         }
                     }
                     if (propertyNameExp->GetPropertyPath().ToString().EqualsIAscii(effectivePath.ToString().c_str())) {

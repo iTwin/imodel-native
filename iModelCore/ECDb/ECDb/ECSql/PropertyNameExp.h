@@ -79,13 +79,20 @@ struct PropertyNameExp final : ValueExp
         bool IsVirtualProperty(bool recursively = true) const { return recursively ? GetVirtualProperty() != nullptr: m_property != nullptr ; }
         PropertyPath const& GetECSqlPropertyPath() const { return m_ecsqlPropertyPath; }
         PropertyPath const& GetPropertyPath() const { return m_propertyPath; }
-        PropertyMap const& GetPropertyMap() const;
+        PropertyMap const* GetPropertyMap() const;
         SourceType const GetSourceType() const { return m_sourceType; }
         Utf8CP GetClassName() const { return m_className.c_str(); }
         RangeClassRefExp const* GetClassRefExp() const { return m_classRefExp; }
         PropertyRef const* GetPropertyRef() const { return m_propertyRef.get(); }
         PropertyRef* GetPropertyRefP() { return m_propertyRef.get(); }
         bool IsPropertyRef() const { return m_propertyRef != nullptr; }
+        bool IsPropertyFromCommonTableBlock() const {
+            BeAssert(m_classRefExp != nullptr);
+            if (m_classRefExp == nullptr) {
+                return false;
+            }
+            return GetClassRefExp()->GetType() == Exp::Type::CommonTableBlockName;
+        }
         ECSqlSystemPropertyInfo const& GetSystemPropertyInfo() const { BeAssert(m_sysPropInfo != nullptr); return *m_sysPropInfo; }
         bool IsLhsAssignmentOperandExpression() const;
         bool OriginateInASubQuery() const { return nullptr != this->FindParent(Exp::Type::Subquery); }
