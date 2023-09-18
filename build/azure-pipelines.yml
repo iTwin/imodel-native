@@ -35,4 +35,3 @@ extends:
   template: /build/templates/pipeline.yml@imodel-native-internal
   parameters:
     otherRepo: imodel-native-internal
-
