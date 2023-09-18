@@ -1937,6 +1937,72 @@ ECSqlStatus ECSqlExpPreparer::PrepareTypeListExp(NativeSqlBuilder::List& nativeS
     return ECSqlStatus::Success;
     }
 
+ECSqlStatus ECSqlExpPreparer::PrepareWindowFunctionExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, WindowFunctionExp const& exp)
+    {
+    ECSqlStatus status;
+
+    status = PrepareFunctionCallExp(nativeSqlSnippets, ctx, exp.GetWindowFunctionType()->GetAs<FunctionCallExp>());
+    if (!status.IsSuccess())
+        return status;
+ 
+    // also filter clause
+
+    nativeSqlSnippets.back().Append(" OVER");
+    status = PrepareWindowSpecification(nativeSqlSnippets.back(), ctx, *exp.GetWindowSpecification());
+    if (!status.IsSuccess())
+        return status;
+    
+    return ECSqlStatus::Success;
+    }
+
+ECSqlStatus ECSqlExpPreparer::PrepareWindowPartitionColumnReference(NativeSqlBuilder& nativeSqlBuilder, WindowPartitionColumnReferenceExp const& exp)
+    {
+    nativeSqlBuilder.AppendSpace();
+    return ECSqlStatus::Success;
+    }
+
+ECSqlStatus ECSqlExpPreparer::PrepareWindowPartitionColumnReferenceList(NativeSqlBuilder& nativeSqlBuilder, WindowPartitionColumnReferenceListExp const& exp)
+    {
+    nativeSqlBuilder.Append(" PARTITION BY");
+    ECSqlStatus status;
+    bool isFirstItem = true;
+    for (size_t nPos = 0; nPos < exp.GetChildrenCount(); nPos++)
+        {
+        if (!isFirstItem)
+           nativeSqlBuilder.AppendComma();
+
+        status = PrepareWindowPartitionColumnReference(nativeSqlBuilder, exp.GetChildren()[nPos]->GetAs<WindowPartitionColumnReferenceExp>());
+        if (!status.IsSuccess())
+            return status;
+        
+        isFirstItem = false;
+        }
+    return ECSqlStatus::Success;
+    }
+
+ECSqlStatus ECSqlExpPreparer::PrepareWindowSpecification(NativeSqlBuilder& nativeSqlBuilder, ECSqlPrepareContext& ctx, WindowSpecification const& exp)
+    {;
+    nativeSqlBuilder.AppendParenLeft();
+    ECSqlStatus status;
+    if (OrderByExp const * e = exp.GetOrderBy())
+        {
+        nativeSqlBuilder.AppendSpace();
+        status = ECSqlExpPreparer::PrepareOrderByExp(ctx, *e);
+        if (!status.IsSuccess())
+            return status;
+        }
+    if (WindowPartitionColumnReferenceListExp const * e = exp.GetPartitionBy())
+        {
+        nativeSqlBuilder.AppendSpace();
+        status = PrepareWindowPartitionColumnReferenceList(nativeSqlBuilder, *e);
+        if (!status.IsSuccess())
+            return status; 
+        }
+        
+    nativeSqlBuilder.AppendParenRight();
+    return ECSqlStatus::Success;
+    }
+
 namespace
     {
     bool AreExperimentalFeaturesEnabled(const ECSqlPrepareContext& ctx)
@@ -2075,6 +2141,8 @@ ECSqlStatus ECSqlExpPreparer::PrepareValueExp(NativeSqlBuilder::List& nativeSqlS
                 nativeSqlSnippets.push_back(builder);
                 return ECSqlStatus::Success;
             }
+            case Exp::Type::WindowFunction:
+                return PrepareWindowFunctionExp(nativeSqlSnippets, ctx, exp.GetAs<WindowFunctionExp>());
             default:
                 break;
             }

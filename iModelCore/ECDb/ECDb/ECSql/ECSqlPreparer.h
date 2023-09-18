@@ -6,6 +6,7 @@
 
 #include "ECSqlParser.h"
 #include "ECSqlPrepareContext.h"
+#include "WindowFunctionExp.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
@@ -81,6 +82,10 @@ struct ECSqlExpPreparer final
         static ECSqlStatus PrepareIIFExp(NativeSqlBuilder::List &nativeSqlSnippets, ECSqlPrepareContext &ctx, IIFExp const &iiFexp);
         static ECSqlStatus GenerateECClassIdFilter(Utf8StringR filterSqlExpression, ClassNameExp const&);
         static ECSqlStatus PrepareTypeListExp(NativeSqlBuilder::List &nativeSqlSnippets, ECSqlPrepareContext &ctx, TypeListExp const &exp);
+        static ECSqlStatus PrepareWindowPartitionColumnReference(NativeSqlBuilder& nativeSqlBuilder, WindowPartitionColumnReferenceExp const& exp);
+        static ECSqlStatus PrepareWindowPartitionColumnReferenceList(NativeSqlBuilder& nativeSqlBuilder, WindowPartitionColumnReferenceListExp const& exp);
+        static ECSqlStatus PrepareWindowFunctionExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, WindowFunctionExp const& exp);
+        static ECSqlStatus PrepareWindowSpecification(NativeSqlBuilder& nativeSqlBuilder, ECSqlPrepareContext& ctx, WindowSpecification const& exp);
         static ECSqlStatus PrepareTableValuedFunctionExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, TableValuedFunctionExp const& exp);
         static ECSqlStatus PrepareExtractPropertyExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ExtractPropertyValueExp const& exp);
         static ECSqlStatus PrepareExtractInstanceExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ExtractInstanceValueExp const& exp);

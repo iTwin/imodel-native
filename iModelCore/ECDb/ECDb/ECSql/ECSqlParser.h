@@ -10,6 +10,7 @@
 #include "DeleteStatementExp.h"
 #include "PragmaStatementExp.h"
 #include "CommonTableExp.h"
+#include "WindowFunctionExp.h"
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
@@ -236,10 +237,17 @@ private:
     BentleyStatus ParseValueExpCommalist(std::unique_ptr<ValueExpListExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseValueExpPrimary(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseValuesOrQuerySpec(std::vector<std::unique_ptr<ValueExp>>&, connectivity::OSQLParseNode const&) const;
-    BentleyStatus ParseWhereClause(std::unique_ptr<WhereExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseWindowFunction(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseWhereClause(std::unique_ptr<WhereExp> &, connectivity::OSQLParseNode const *) const;
     BentleyStatus ParseTableValuedFunction(std::unique_ptr<TableValuedFunctionExp>&, connectivity::OSQLParseNode const&) const;
     BentleyStatus ParseIIFExp(std::unique_ptr<ValueExp> &valueExp, connectivity::OSQLParseNode const *parseNode) const;
     BentleyStatus ParseTypePredicate(std::unique_ptr<ValueExp> &valueExp, connectivity::OSQLParseNode const *parseNode) const;
+    BentleyStatus ParseWindowFunctionType(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseWindowSpecification(std::unique_ptr<WindowSpecification>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseWindowPartitionClause(std::unique_ptr<WindowPartitionColumnReferenceListExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseWindowPartitionColumnRef(std::unique_ptr<WindowPartitionColumnReferenceExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseCollateClause(WindowPartitionColumnReferenceExp::CollateClauseFunction&, connectivity::OSQLParseNode const*) const;
+
     static BentleyStatus ParsePolymorphicConstraint(PolymorphicInfo& constraint, connectivity::OSQLParseNode const* parseNode);
     IssueDataSource const& Issues() const { BeAssert(m_context != nullptr); return m_context->Issues(); }
     static bool IsPredicate(connectivity::OSQLParseNode const&);

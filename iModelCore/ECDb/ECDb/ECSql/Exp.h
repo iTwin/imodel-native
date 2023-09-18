@@ -221,6 +221,12 @@ struct Exp
             TableValuedFunction,
             ExtractProperty,
             ExtractInstance,
+            WindowFunction,
+            WindowSpecification,
+            WindowFunctionType,
+            WindowPartitionColumnReference,
+            WindowPartitionColumnReferenceList,
+            CollateClause,
             };
 
         struct Collection final
