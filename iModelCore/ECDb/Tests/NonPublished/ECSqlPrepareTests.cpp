@@ -1087,6 +1087,9 @@ TEST_F(ECSqlSelectPrepareTests, Misc)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT 1 FROM ecsql.PSA WHERE 10 = ANY (SELECT 10)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT 1 FROM ecsql.PSA WHERE 10 = SOME (SELECT 10)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT 1 FROM ecsql.PSA WHERE 10 = ALL (SELECT 10)"));
+
+    // Row constructor list
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT * FROM (VALUES(1,2), VALUES(2,3))"));
     }
 
 //---------------------------------------------------------------------------------------
@@ -1507,6 +1510,7 @@ TEST_F(ECSqlSelectPrepareTests, Union)
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT B FROM ecsql.P UNION SELECT B_Array FROM ecsql.PSA"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT * FROM ecsql.P UNION ALL SELECT * FROM ecsql.PA"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT * FROM ecsql.P UNION ALL SELECT * FROM ecsql.A")) << "'A' is not a valid class name.";
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT * FROM (VALUES(1, 2) UNION VALUES(2, 3))"));
     }
 
 //---------------------------------------------------------------------------------------
