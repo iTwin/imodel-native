@@ -236,6 +236,7 @@ namespace connectivity
                             {OSQLParseNode::value_exp_commalist, "value_exp_commalist"},
                             {OSQLParseNode::value_exp_primary, "value_exp_primary"},
                             {OSQLParseNode::value_exp, "value_exp"},
+                            {OSQLParseNode::values_commalist, "values_commalist"},
                             {OSQLParseNode::values_or_query_spec, "values_or_query_spec"},
                             {OSQLParseNode::where_clause, "where_clause"},
                             {OSQLParseNode::opt_null_order, "opt_null_order"},

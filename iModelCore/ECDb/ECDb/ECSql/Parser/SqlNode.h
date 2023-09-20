@@ -260,6 +260,7 @@ namespace connectivity
                 value_exp_commalist,
                 value_exp_primary,
                 value_exp,
+                values_commalist,
                 values_or_query_spec,
                 where_clause,
                 opt_extract_value,

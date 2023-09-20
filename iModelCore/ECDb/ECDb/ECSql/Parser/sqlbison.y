@@ -179,7 +179,7 @@ using namespace connectivity;
 %type <pParseNode> ordering_spec opt_asc_desc manipulative_statement commit_statement opt_null_order first_last_desc
 %type <pParseNode> delete_statement_searched
 %type <pParseNode> type_predicate type_list type_list_item
-%type <pParseNode> insert_statement values_or_query_spec
+%type <pParseNode> insert_statement values_or_query_spec values_commalist
 %type <pParseNode> rollback_statement select_statement_into opt_all_distinct
 %type <pParseNode> assignment_commalist assignment
 %type <pParseNode> update_statement_searched target_commalist target opt_where_clause
@@ -557,6 +557,20 @@ insert_statement:
             $$->append($4);
             $$->append($5);}
     ;
+
+values_commalist:
+        values_commalist ',' values_or_query_spec
+        {
+            $1->append($3);
+            $$ = $1;
+        }
+    |   values_or_query_spec
+        {
+            $$ = SQL_NEW_COMMALISTRULE;
+            $$->append($1);
+        }
+    ;
+
 values_or_query_spec:
         SQL_TOKEN_VALUES '(' row_value_constructor_commalist ')'
         {$$ = SQL_NEW_RULE;
@@ -677,6 +691,17 @@ single_select_statement:
             $$->append($4);
         }
         | values_or_query_spec
+        | SQL_TOKEN_SELECT opt_all_distinct selection SQL_TOKEN_FROM '(' values_commalist ')'
+        {
+            $$ = SQL_NEW_RULE;
+            $$->append($1);
+            $$->append($2);
+            $$->append($3);
+            $$->append($4);
+            $$->append($5 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
+            $$->append($6);
+            $$->append($7 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
+        }
     ;
 
 selection:
