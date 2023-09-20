@@ -70,20 +70,6 @@ MD5 RelationshipStepSpecification::_ComputeHash() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool RelationshipStepSpecification::_ShallowEqual(PresentationKeyCR other) const
-    {
-    RelationshipStepSpecification const* otherRule = dynamic_cast<RelationshipStepSpecification const*>(&other);
-    if (nullptr == otherRule)
-        return false;
-
-    return m_relationshipClassName == otherRule->m_relationshipClassName
-        && m_direction == otherRule->m_direction
-        && m_targetClassName == otherRule->m_targetClassName;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 Utf8CP RepeatableRelationshipStepSpecification::_GetJsonElementType() const { return "RepeatableRelationshipStepSpecification"; }
 
 /*---------------------------------------------------------------------------------**//**
@@ -125,21 +111,6 @@ MD5 RepeatableRelationshipStepSpecification::_ComputeHash() const
     if (m_count != 1)
         ADD_PRIMITIVE_VALUE_TO_HASH(md5, RELATIONSHIP_STEP_SPECIFICATION_JSON_ATTRIBUTE_COUNT, m_count);
     return md5;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool RepeatableRelationshipStepSpecification::_ShallowEqual(PresentationKeyCR other) const
-    {
-    if (!RelationshipStepSpecification::_ShallowEqual(other))
-        return false;
-
-    RepeatableRelationshipStepSpecification const* otherRule = dynamic_cast<RepeatableRelationshipStepSpecification const*>(&other);
-    if (nullptr == otherRule)
-        return false;
-
-    return m_count == otherRule->m_count;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -254,18 +225,6 @@ MD5 RelationshipPathSpecification::_ComputeHash() const
     MD5 md5 = T_Super::_ComputeHash();
     ADD_RULES_TO_HASH(md5, "Steps", m_steps);
     return md5;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool RelationshipPathSpecification::_ShallowEqual(PresentationKeyCR other) const
-    {
-    RelationshipPathSpecification const* otherRule = dynamic_cast<RelationshipPathSpecification const*>(&other);
-    if (nullptr == otherRule)
-        return false;
-
-    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -389,16 +348,4 @@ MD5 RepeatableRelationshipPathSpecification::_ComputeHash() const
     MD5 md5 = T_Super::_ComputeHash();
     ADD_RULES_TO_HASH(md5, "Steps", m_steps);
     return md5;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool RepeatableRelationshipPathSpecification::_ShallowEqual(PresentationKeyCR other) const
-    {
-    RepeatableRelationshipPathSpecification const* otherRule = dynamic_cast<RepeatableRelationshipPathSpecification const*>(&other);
-    if (nullptr == otherRule)
-        return false;
-
-    return true;
     }

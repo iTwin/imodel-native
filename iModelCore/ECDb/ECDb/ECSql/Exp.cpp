@@ -278,7 +278,7 @@ void PropertyPath::Clear()
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8String PropertyPath::ToString(bool escape, bool includeArrayIndexes /*= true*/) const
+Utf8String PropertyPath::ToString(bool escape, bool includeArrayIndexes /*= true*/, bool useSchemaDeclaredPropertyName) const
     {
     Utf8String str;
     bool isFirstLoc = true;
@@ -325,13 +325,16 @@ void PropertyPath::Location::SetProperty(ECPropertyCR property)
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8String PropertyPath::Location::ToString(bool includeArrayIndexes) const
+Utf8String PropertyPath::Location::ToString(bool includeArrayIndexes, bool useSchemaDeclaredPropertyName) const
     {
     if (GetArrayIndex() < 0 || !includeArrayIndexes)
-        return m_name;
+        return useSchemaDeclaredPropertyName && m_property != nullptr ? m_property->GetName() : m_name;
 
     Utf8String tmp;
-    tmp.Sprintf("%s[%d]", m_name.c_str(), GetArrayIndex());
+    if (useSchemaDeclaredPropertyName && m_property != nullptr)
+        tmp.Sprintf("%s[%d]", m_property->GetName().c_str(), GetArrayIndex());
+    else
+        tmp.Sprintf("%s[%d]", m_name.c_str(), GetArrayIndex());
     return tmp;
     }
 

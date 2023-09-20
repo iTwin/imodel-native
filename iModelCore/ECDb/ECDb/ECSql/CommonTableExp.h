@@ -20,8 +20,11 @@ struct CommonTablePropertyNameExp final : ValueExp
         mutable CommonTableBlockNameExp const* m_blockName;
         std::function<ECSqlTypeInfo(Utf8StringCR)> m_typeInfoCallBack;
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext &, FinalizeParseMode mode) override;
-        void _ToECSql(ECSqlRenderContext &ctx) const override { ctx.AppendToECSql(m_name); }
-        Utf8String _ToString() const override { return ""; }
+        void _ToECSql(ECSqlRenderContext &ctx) const override {
+            ctx.AppendToECSql(m_name);
+        }
+        void _ToJson(BeJsValue val, JsonFormat const&) const override;
+        Utf8String _ToString() const override;
 
     public:
         explicit CommonTablePropertyNameExp(Utf8CP name, DerivedPropertyExp const &target, std::function<ECSqlTypeInfo(Utf8String)> typeInfoCb, CommonTableBlockNameExp const* blockName = nullptr)
@@ -38,11 +41,12 @@ struct CommonTableBlockExp: RangeClassRefExp {
         Utf8String m_name;
         std::vector<Utf8String> m_columnList;
         mutable bool m_deferredExpand;
-        // Exp 
+        // Exp
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode mode) override;
         void _ToECSql(ECSqlRenderContext&) const override;
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override;
-        
+
         // RangeClass
         Utf8StringCR _GetId() const override;
         void _ExpandSelectAsterisk(std::vector<std::unique_ptr<DerivedPropertyExp>>& expandedSelectClauseItemList, ECSqlParseContext const&) const override;
@@ -68,6 +72,7 @@ struct CommonTableExp: Exp {
         // Exp
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode mode) override;
         void _ToECSql(ECSqlRenderContext&) const override;
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override;
 
     public:
@@ -84,10 +89,11 @@ struct CommonTableBlockNameExp final : RangeClassRefExp {
     private:
         Utf8String m_name;
         mutable CommonTableBlockExp const* m_blockExp;
-        
+
         // Exp
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
         void _ToECSql(ECSqlRenderContext&) const override;
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString () const override;
 
         // RangeClass
@@ -102,6 +108,7 @@ struct CommonTableBlockNameExp final : RangeClassRefExp {
             BeAssert(m_blockExp == nullptr);
             m_blockExp = &block;
         }
+        CommonTableBlockExp const *GetBlock() const { return m_blockExp; }
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

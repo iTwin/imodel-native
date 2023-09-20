@@ -15,6 +15,7 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 +===============+===============+===============+===============+===============+======*/
 struct ContentCacheTests : ECPresentationTest
     {
+    static std::unique_ptr<ECDbTestProject> s_project;
     std::shared_ptr<TestNodeLocater> m_nodesLocater;
     TestCategorySupplier m_categorySupplier;
     ECExpressionsCache m_ecexpressionsCache;
@@ -25,7 +26,7 @@ struct ContentCacheTests : ECPresentationTest
     ContentCache m_cache;
 
     ContentCacheTests()
-        : m_connection(new TestEmptyConnection()), m_nodesFactory(*m_connection, "spec-id", "test"), m_categorySupplier(ContentDescriptor::Category("a", "b", "c", 0))
+        : m_connection(nullptr), m_nodesFactory(*m_connection, "spec-id", "test"), m_categorySupplier(ContentDescriptor::Category("a", "b", "c", 0))
         {
         m_nodesLocater = std::make_shared<TestNodeLocater>();
         }
@@ -35,7 +36,7 @@ struct ContentCacheTests : ECPresentationTest
         PresentationRuleSetPtr ruleset = PresentationRuleSet::CreateInstance("test");
         ContentProviderContextPtr context = ContentProviderContext::Create(*ruleset, "", 0, *NavNodeKeyListContainer::Create(),
             m_nodesLocater, m_categorySupplier, std::make_unique<RulesetVariables>(variables), m_ecexpressionsCache, m_relatedPathsCache,
-            m_nodesFactory, nullptr);
+            m_nodesFactory, nullptr, nullptr);
         context->GetUsedVariablesListener().OnVariableUsed(TEST_RELATED_SETTING);
         return SpecificationContentProvider::Create(*context, ContentRuleInstanceKeysContainer());
         }
@@ -67,14 +68,29 @@ struct ContentCacheTests : ECPresentationTest
         for (int i = 0; i < count; ++i)
             {
             Utf8PrintfString rulesetId("ruleset_%d", i);
-            ContentProviderKey key("connection id", rulesetId, "display type", 0, ECPresentation::UnitSystem::Undefined, *NavNodeKeyListContainer::Create(), nullptr);
+            ContentProviderKey key("connection id", rulesetId, "display type", 0, ECPresentation::UnitSystem::Undefined, *NavNodeKeyListContainer::Create(), nullptr, nullptr);
             SpecificationContentProviderPtr provider = CreateProvider();
             m_cache.CacheProvider(key, *provider);
             providers.push_back(bpair<ContentProviderKey, SpecificationContentProviderP>(key, provider.get()));
             }
         return providers;
         }
+    static void SetUpTestCase()
+        {
+        s_project = std::make_unique<ECDbTestProject>();
+        s_project->Create("ContentCacheTests");
+        }
+    static void TearDownTestCase()
+        {
+        s_project = nullptr;
+        }
+
+    void SetUp() override
+        {
+        m_connection = new TestConnection(s_project->GetECDb());
+        }
     };
+std::unique_ptr<ECDbTestProject> ContentCacheTests::s_project(nullptr);
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
@@ -82,7 +98,7 @@ struct ContentCacheTests : ECPresentationTest
 TEST_F(ContentCacheTests, CachesProvider)
     {
     SelectionInfoPtr selectionInfo = SelectionInfo::Create("selection source name", false);
-    ContentProviderKey key("connection id", "ruleset id", "display type", 0, ECPresentation::UnitSystem::Undefined, *NavNodeKeyListContainer::Create(), selectionInfo.get());
+    ContentProviderKey key("connection id", "ruleset id", "display type", 0, ECPresentation::UnitSystem::Undefined, *NavNodeKeyListContainer::Create(), selectionInfo.get(), nullptr);
     SpecificationContentProviderP provider = CacheProvider(key);
     EXPECT_EQ(provider, m_cache.GetProvider(key, RulesetVariables(provider->GetContext().GetRelatedRulesetVariables())).get());
     }
@@ -92,8 +108,8 @@ TEST_F(ContentCacheTests, CachesProvider)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ContentCacheTests, CachesMultipleProvidersWithDifferentKeys)
     {
-    ContentProviderKey key1("connection id 1", "ruleset id 1", "display type 1", 0, ECPresentation::UnitSystem::Metric, *NavNodeKeyListContainer::Create(), nullptr);
-    ContentProviderKey key2("connection id 2", "ruleset id 2", "display type 2", 1, ECPresentation::UnitSystem::BritishImperial, *NavNodeKeyListContainer::Create(), nullptr);
+    ContentProviderKey key1("connection id 1", "ruleset id 1", "display type 1", 0, ECPresentation::UnitSystem::Metric, *NavNodeKeyListContainer::Create(), nullptr, nullptr);
+    ContentProviderKey key2("connection id 2", "ruleset id 2", "display type 2", 1, ECPresentation::UnitSystem::BritishImperial, *NavNodeKeyListContainer::Create(), nullptr, nullptr);
     SpecificationContentProviderP provider1 = CacheProvider(key1);
     SpecificationContentProviderP provider2 = CacheProvider(key2);
     EXPECT_EQ(provider1, m_cache.GetProvider(key1, RulesetVariables(provider1->GetContext().GetRelatedRulesetVariables())).get());
@@ -105,8 +121,8 @@ TEST_F(ContentCacheTests, CachesMultipleProvidersWithDifferentKeys)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ContentCacheTests, CachesMultipleProvidersWhenUnitSystemsAreDifferent)
     {
-    ContentProviderKey key1("connection id", "ruleset id", "display type", 0, ECPresentation::UnitSystem::Metric, *NavNodeKeyListContainer::Create(), nullptr);
-    ContentProviderKey key2("connection id", "ruleset id", "display type", 0, ECPresentation::UnitSystem::UsCustomary, *NavNodeKeyListContainer::Create(), nullptr);
+    ContentProviderKey key1("connection id", "ruleset id", "display type", 0, ECPresentation::UnitSystem::Metric, *NavNodeKeyListContainer::Create(), nullptr, nullptr);
+    ContentProviderKey key2("connection id", "ruleset id", "display type", 0, ECPresentation::UnitSystem::UsCustomary, *NavNodeKeyListContainer::Create(), nullptr, nullptr);
     SpecificationContentProviderP provider1 = CacheProvider(key1);
     SpecificationContentProviderP provider2 = CacheProvider(key2);
     EXPECT_EQ(provider1, m_cache.GetProvider(key1, RulesetVariables(provider1->GetContext().GetRelatedRulesetVariables())).get());
@@ -119,7 +135,7 @@ TEST_F(ContentCacheTests, CachesMultipleProvidersWhenUnitSystemsAreDifferent)
 TEST_F(ContentCacheTests, OverwritesProviderWhenKeysEqual)
     {
     SelectionInfoPtr selectionInfo = SelectionInfo::Create("selection source name", false);
-    ContentProviderKey key("connection id", "ruleset id", "display type", 0, ECPresentation::UnitSystem::Undefined, *NavNodeKeyListContainer::Create(), selectionInfo.get());
+    ContentProviderKey key("connection id", "ruleset id", "display type", 0, ECPresentation::UnitSystem::Undefined, *NavNodeKeyListContainer::Create(), selectionInfo.get(), nullptr);
     CacheProvider(key);
     SpecificationContentProviderP provider2 = CacheProvider(key);
     EXPECT_EQ(provider2, m_cache.GetProvider(key, RulesetVariables(provider2->GetContext().GetRelatedRulesetVariables())).get());
@@ -132,8 +148,8 @@ TEST_F(ContentCacheTests, ClearsAllCache)
     {
     ECDb db;
     IConnectionPtr connection = new TestConnection(db);
-    m_cache.CacheProvider(ContentProviderKey(connection->GetId(), "ruleset id 1", "display type 1", 0, ECPresentation::UnitSystem::UsCustomary, *NavNodeKeyListContainer::Create(), nullptr), *CreateProvider());
-    m_cache.CacheProvider(ContentProviderKey(connection->GetId(), "ruleset id 2", "display type 2", 0, ECPresentation::UnitSystem::UsSurvey, *NavNodeKeyListContainer::Create(), nullptr), *CreateProvider());
+    m_cache.CacheProvider(ContentProviderKey(connection->GetId(), "ruleset id 1", "display type 1", 0, ECPresentation::UnitSystem::UsCustomary, *NavNodeKeyListContainer::Create(), nullptr, nullptr), *CreateProvider());
+    m_cache.CacheProvider(ContentProviderKey(connection->GetId(), "ruleset id 2", "display type 2", 0, ECPresentation::UnitSystem::UsSurvey, *NavNodeKeyListContainer::Create(), nullptr, nullptr), *CreateProvider());
     EXPECT_EQ(2, m_cache.GetProviders(*connection).size());
     m_cache.ClearCache();
     EXPECT_EQ(0, m_cache.GetProviders(*connection).size());
@@ -146,11 +162,11 @@ TEST_F(ContentCacheTests, ClearsCacheByConnection)
     {
     ECDb db1;
     IConnectionPtr connection1 = new TestConnection(db1);
-    m_cache.CacheProvider(ContentProviderKey(connection1->GetId(), "ruleset id", "display type", 0, ECPresentation::UnitSystem::Undefined, *NavNodeKeyListContainer::Create(), nullptr), *CreateProvider());
+    m_cache.CacheProvider(ContentProviderKey(connection1->GetId(), "ruleset id", "display type", 0, ECPresentation::UnitSystem::Undefined, *NavNodeKeyListContainer::Create(), nullptr, nullptr), *CreateProvider());
 
     ECDb db2;
     IConnectionPtr connection2 = new TestConnection(db2);
-    m_cache.CacheProvider(ContentProviderKey(connection2->GetId(), "ruleset id", "display type", 0, ECPresentation::UnitSystem::Undefined, *NavNodeKeyListContainer::Create(), nullptr), *CreateProvider());
+    m_cache.CacheProvider(ContentProviderKey(connection2->GetId(), "ruleset id", "display type", 0, ECPresentation::UnitSystem::Undefined, *NavNodeKeyListContainer::Create(), nullptr, nullptr), *CreateProvider());
 
     EXPECT_EQ(1, m_cache.GetProviders(*connection1).size());
     EXPECT_EQ(1, m_cache.GetProviders(*connection2).size());
@@ -166,8 +182,8 @@ TEST_F(ContentCacheTests, ClearsCacheByConnection)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ContentCacheTests, ClearsCacheByRulesetId)
     {
-    m_cache.CacheProvider(ContentProviderKey("connection id", "ruleset id 1", "display type", 0, ECPresentation::UnitSystem::Undefined, *NavNodeKeyListContainer::Create(), nullptr), *CreateProvider());
-    m_cache.CacheProvider(ContentProviderKey("connection id", "ruleset id 2", "display type", 0, ECPresentation::UnitSystem::Undefined, *NavNodeKeyListContainer::Create(), nullptr), *CreateProvider());
+    m_cache.CacheProvider(ContentProviderKey("connection id", "ruleset id 1", "display type", 0, ECPresentation::UnitSystem::Undefined, *NavNodeKeyListContainer::Create(), nullptr, nullptr), *CreateProvider());
+    m_cache.CacheProvider(ContentProviderKey("connection id", "ruleset id 2", "display type", 0, ECPresentation::UnitSystem::Undefined, *NavNodeKeyListContainer::Create(), nullptr, nullptr), *CreateProvider());
 
     EXPECT_EQ(1, m_cache.GetProviders("ruleset id 1", TEST_RELATED_SETTING).size());
     EXPECT_EQ(1, m_cache.GetProviders("ruleset id 2", TEST_RELATED_SETTING).size());
@@ -184,14 +200,14 @@ TEST_F(ContentCacheTests, ClearsCacheByRulesetId)
 TEST_F(ContentCacheTests, CachesProvidersDifferingJustBySelectionInfo)
     {
     // cache provider with no selection info
-    ContentProviderKey keyNoSelectionInfo1("connection id", "ruleset id", "display type", 0, ECPresentation::UnitSystem::Undefined, *NavNodeKeyListContainer::Create(), nullptr);
+    ContentProviderKey keyNoSelectionInfo1("connection id", "ruleset id", "display type", 0, ECPresentation::UnitSystem::Undefined, *NavNodeKeyListContainer::Create(), nullptr, nullptr);
     SpecificationContentProviderP provider1 = CacheProvider(keyNoSelectionInfo1);
     EXPECT_EQ(provider1, m_cache.GetProvider(keyNoSelectionInfo1, RulesetVariables(provider1->GetContext().GetRelatedRulesetVariables())).get());
 
     // cache provider with selection info
     // the one with no selection info should still exist in the cache
     SelectionInfoPtr selectionInfo1 = SelectionInfo::Create("name1", true, 1);
-    ContentProviderKey keyWithSelectionInfo("connection id", "ruleset id", "display type", 0, ECPresentation::UnitSystem::Undefined, *NavNodeKeyListContainer::Create(), selectionInfo1.get());
+    ContentProviderKey keyWithSelectionInfo("connection id", "ruleset id", "display type", 0, ECPresentation::UnitSystem::Undefined, *NavNodeKeyListContainer::Create(), selectionInfo1.get(), nullptr);
     SpecificationContentProviderP provider2 = CacheProvider(keyWithSelectionInfo);
     EXPECT_EQ(provider1, m_cache.GetProvider(keyNoSelectionInfo1, RulesetVariables(provider1->GetContext().GetRelatedRulesetVariables())).get());
     EXPECT_EQ(provider2, m_cache.GetProvider(keyWithSelectionInfo, RulesetVariables(provider2->GetContext().GetRelatedRulesetVariables())).get());
@@ -199,7 +215,7 @@ TEST_F(ContentCacheTests, CachesProvidersDifferingJustBySelectionInfo)
     // cache provider with selection info differing just by selection source name
     // it should replace the previous provider
     SelectionInfoPtr selectionInfo2 = SelectionInfo::Create("name2", true, 1);
-    ContentProviderKey keyWithSelectionInfoWithDifferentName("connection id", "ruleset id", "display type", 0, ECPresentation::UnitSystem::Undefined, *NavNodeKeyListContainer::Create(), selectionInfo2.get());
+    ContentProviderKey keyWithSelectionInfoWithDifferentName("connection id", "ruleset id", "display type", 0, ECPresentation::UnitSystem::Undefined, *NavNodeKeyListContainer::Create(), selectionInfo2.get(), nullptr);
     SpecificationContentProviderP provider3 = CacheProvider(keyWithSelectionInfoWithDifferentName);
     EXPECT_EQ(provider1, m_cache.GetProvider(keyNoSelectionInfo1, RulesetVariables(provider1->GetContext().GetRelatedRulesetVariables())).get());
     EXPECT_EQ(provider2, m_cache.GetProvider(keyWithSelectionInfo, RulesetVariables(provider2->GetContext().GetRelatedRulesetVariables())).get());
@@ -208,7 +224,7 @@ TEST_F(ContentCacheTests, CachesProvidersDifferingJustBySelectionInfo)
     // cache provider with selection info differing just by selection level
     // it should replace the previous provider
     SelectionInfoPtr selectionInfo3 = SelectionInfo::Create("name2", false, 1);
-    ContentProviderKey keyWithSelectionInfoWithDifferentLevel("connection id", "ruleset id", "display type", 0, ECPresentation::UnitSystem::Undefined, *NavNodeKeyListContainer::Create(), selectionInfo3.get());
+    ContentProviderKey keyWithSelectionInfoWithDifferentLevel("connection id", "ruleset id", "display type", 0, ECPresentation::UnitSystem::Undefined, *NavNodeKeyListContainer::Create(), selectionInfo3.get(), nullptr);
     SpecificationContentProviderP provider4 = CacheProvider(keyWithSelectionInfoWithDifferentLevel);
     EXPECT_EQ(provider1, m_cache.GetProvider(keyNoSelectionInfo1, RulesetVariables(provider1->GetContext().GetRelatedRulesetVariables())).get());
     EXPECT_EQ(provider2, m_cache.GetProvider(keyWithSelectionInfo, RulesetVariables(provider2->GetContext().GetRelatedRulesetVariables())).get());
@@ -218,7 +234,7 @@ TEST_F(ContentCacheTests, CachesProvidersDifferingJustBySelectionInfo)
     // cache provider with selection info differing just by timestamp
     // it should replace the previous provider
     SelectionInfoPtr selectionInfo4 = SelectionInfo::Create("name2", false, 2);
-    ContentProviderKey keyWithSelectionInfoWithDifferentTimestamp("connection id", "ruleset id", "display type", 0, ECPresentation::UnitSystem::Undefined, *NavNodeKeyListContainer::Create(), selectionInfo4.get());
+    ContentProviderKey keyWithSelectionInfoWithDifferentTimestamp("connection id", "ruleset id", "display type", 0, ECPresentation::UnitSystem::Undefined, *NavNodeKeyListContainer::Create(), selectionInfo4.get(), nullptr);
     SpecificationContentProviderP provider5 = CacheProvider(keyWithSelectionInfoWithDifferentTimestamp);
     EXPECT_EQ(provider1, m_cache.GetProvider(keyNoSelectionInfo1, RulesetVariables(provider1->GetContext().GetRelatedRulesetVariables())).get());
     EXPECT_EQ(provider2, m_cache.GetProvider(keyWithSelectionInfo, RulesetVariables(provider2->GetContext().GetRelatedRulesetVariables())).get());
@@ -229,7 +245,7 @@ TEST_F(ContentCacheTests, CachesProvidersDifferingJustBySelectionInfo)
     // cache another provider with no selection info
     // it should add this new provider in addition to keeping all cached ones
     INavNodeKeysContainerCPtr keys = NavNodeKeyListContainer::Create({NavNodeKey::Create("a", "", { "some_id" })});
-    ContentProviderKey keyNoSelectionInfo2("connection id", "ruleset id", "display type", 0, ECPresentation::UnitSystem::Undefined, *keys, nullptr);
+    ContentProviderKey keyNoSelectionInfo2("connection id", "ruleset id", "display type", 0, ECPresentation::UnitSystem::Undefined, *keys, nullptr, nullptr);
     SpecificationContentProviderP provider6 = CacheProvider(keyNoSelectionInfo2);
     EXPECT_EQ(provider1, m_cache.GetProvider(keyNoSelectionInfo1, RulesetVariables(provider1->GetContext().GetRelatedRulesetVariables())).get());
     EXPECT_EQ(provider2, m_cache.GetProvider(keyWithSelectionInfo, RulesetVariables(provider2->GetContext().GetRelatedRulesetVariables())).get());
@@ -242,9 +258,60 @@ TEST_F(ContentCacheTests, CachesProvidersDifferingJustBySelectionInfo)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ContentCacheTests, CachesProvidersDifferingJustByExclusiveIncludePaths)
+    {
+    ECRelationshipClassCP relationshipClass1 = m_connection->GetECDb().Schemas().GetClass("ECDbMeta", "ClassOwnsLocalProperties")->GetRelationshipClassCP();
+    ECRelationshipClassCP relationshipClass2 = m_connection->GetECDb().Schemas().GetClass("ECDbMeta", "SchemaOwnsEnumerations")->GetRelationshipClassCP();
+    ECClassCP testClass = m_connection->GetECDb().Schemas().GetClass("ECDbMeta", "ECClassDef");
+
+    // cache provider with no exclusive include paths
+    ContentProviderKey keyWithNoPaths("connection id", "ruleset id", "display type", 0, ECPresentation::UnitSystem::Undefined, *NavNodeKeyListContainer::Create(), nullptr, nullptr);
+    SpecificationContentProviderP provider1 = CacheProvider(keyWithNoPaths);
+    EXPECT_EQ(provider1, m_cache.GetProvider(keyWithNoPaths, RulesetVariables(provider1->GetContext().GetRelatedRulesetVariables())).get());
+
+    // cache provider with exclusive include paths
+    // the one with no paths should still exist in the cache
+    RelatedClassPathsList pathsList(
+        { RelatedClassPath({ RelatedClass(*testClass, SelectClass<ECRelationshipClass>(*relationshipClass1, "ClassOwnsLocalProperties"), true, SelectClassWithExcludes<ECClass>(*testClass, "ECClassDef")) })}
+    );
+    ContentProviderKey keyWithPaths("connection id", "ruleset id", "display type", 0, ECPresentation::UnitSystem::Undefined, *NavNodeKeyListContainer::Create(), nullptr,
+        std::make_unique<RelatedClassPathsList>(pathsList));
+    SpecificationContentProviderP provider2 = CacheProvider(keyWithPaths);
+    EXPECT_EQ(provider1, m_cache.GetProvider(keyWithNoPaths, RulesetVariables(provider1->GetContext().GetRelatedRulesetVariables())).get());
+    EXPECT_EQ(provider2, m_cache.GetProvider(keyWithPaths, RulesetVariables(provider2->GetContext().GetRelatedRulesetVariables())).get());
+
+    // cache provider with exclusive include paths differing just by relationship direction
+    // it should replace the previous provider
+    RelatedClassPathsList pathsListWithDifferentDirection(
+        { RelatedClassPath({ RelatedClass(*testClass, SelectClass<ECRelationshipClass>(*relationshipClass1, "ClassOwnsLocalProperties"), false, SelectClassWithExcludes<ECClass>(*testClass, "ECClassDef")) }) }
+    );
+    ContentProviderKey keyWithPathsWithDifferentDirection("connection id", "ruleset id", "display type", 0, ECPresentation::UnitSystem::Undefined, *NavNodeKeyListContainer::Create(), nullptr,
+        std::make_unique<RelatedClassPathsList>(pathsListWithDifferentDirection));
+    SpecificationContentProviderP provider3 = CacheProvider(keyWithPathsWithDifferentDirection);
+    EXPECT_EQ(provider1, m_cache.GetProvider(keyWithNoPaths, RulesetVariables(provider1->GetContext().GetRelatedRulesetVariables())).get());
+    EXPECT_EQ(provider2, m_cache.GetProvider(keyWithPaths, RulesetVariables(provider2->GetContext().GetRelatedRulesetVariables())).get());
+    EXPECT_EQ(provider3, m_cache.GetProvider(keyWithPathsWithDifferentDirection, RulesetVariables(provider3->GetContext().GetRelatedRulesetVariables())).get());
+
+    // cache provider with exclusive include paths differing just by relationship class
+    // it should replace the previous provider
+    RelatedClassPathsList pathsListWithDifferentRelationshipClass(
+        { RelatedClassPath({ RelatedClass(*testClass, SelectClass<ECRelationshipClass>(*relationshipClass2, "SchemaOwnsEnumerations"), true, SelectClassWithExcludes<ECClass>(*testClass, "ECClassDef")) }) }
+    );
+    ContentProviderKey keyWithPathsWithDifferentRelationshipClass("connection id", "ruleset id", "display type", 0, ECPresentation::UnitSystem::Undefined, *NavNodeKeyListContainer::Create(), nullptr,
+        std::make_unique<RelatedClassPathsList>(pathsListWithDifferentRelationshipClass));
+    SpecificationContentProviderP provider4 = CacheProvider(keyWithPathsWithDifferentRelationshipClass);
+    EXPECT_EQ(provider1, m_cache.GetProvider(keyWithNoPaths, RulesetVariables(provider1->GetContext().GetRelatedRulesetVariables())).get());
+    EXPECT_EQ(provider2, m_cache.GetProvider(keyWithPaths, RulesetVariables(provider2->GetContext().GetRelatedRulesetVariables())).get());
+    EXPECT_EQ(provider3, m_cache.GetProvider(keyWithPathsWithDifferentDirection, RulesetVariables(provider3->GetContext().GetRelatedRulesetVariables())).get());
+    EXPECT_EQ(provider4, m_cache.GetProvider(keyWithPathsWithDifferentRelationshipClass, RulesetVariables(provider4->GetContext().GetRelatedRulesetVariables())).get());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ContentCacheTests, LimitsProviderVariationsCount)
     {
-    ContentProviderKey key("connection id", "ruleset id", "display type", 0, ECPresentation::UnitSystem::Undefined, *NavNodeKeyListContainer::Create(), nullptr);
+    ContentProviderKey key("connection id", "ruleset id", "display type", 0, ECPresentation::UnitSystem::Undefined, *NavNodeKeyListContainer::Create(), nullptr, nullptr);
     bvector<SpecificationContentProviderP> providers = CacheProviderVariations(key, CONTENTCACHE_Provider_Variations_Limit);
     RulesetVariables oldestProviderVariables(providers[0]->GetContext().GetRelatedRulesetVariables());
 
@@ -269,7 +336,7 @@ TEST_F(ContentCacheTests, RemovesOldestProviderWhenLimitIsExceeded)
     RulesetVariables oldestProviderVariables(providers[0].second->GetContext().GetRelatedRulesetVariables());
 
     // cache one more provider
-    ContentProviderKey key("connection id", "different ruleset", "display type", 0, ECPresentation::UnitSystem::Undefined, *NavNodeKeyListContainer::Create(), nullptr);
+    ContentProviderKey key("connection id", "different ruleset", "display type", 0, ECPresentation::UnitSystem::Undefined, *NavNodeKeyListContainer::Create(), nullptr, nullptr);
     SpecificationContentProviderP newProvider = CacheProvider(key);
 
     // check if new provider is in the cache
@@ -294,7 +361,7 @@ TEST_F(ContentCacheTests, UpdatesLastUsedTimeWhenProviderIsAccessed)
     EXPECT_EQ(providers[0].second, m_cache.GetProvider(oldestProviderKey, oldestProviderVariables).get());
 
     // cache one more provider
-    ContentProviderKey key("connection id", "different ruleset", "display type", 0, ECPresentation::UnitSystem::Undefined, *NavNodeKeyListContainer::Create(), nullptr);
+    ContentProviderKey key("connection id", "different ruleset", "display type", 0, ECPresentation::UnitSystem::Undefined, *NavNodeKeyListContainer::Create(), nullptr, nullptr);
     SpecificationContentProviderP newProvider = CacheProvider(key);
 
     // check if new provider is in the cache

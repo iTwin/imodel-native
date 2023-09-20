@@ -77,6 +77,11 @@ public:
     (childR).SetParent(this); \
     container.push_back(&childR);
 
+#define SET_RULES_INDEX(rules, indexR) \
+    { \
+    for (auto rule : rules) \
+        rule->SetIndex(indexR); \
+    }
 
 //! This enumerator contains trees for which the rule can be applied.
 enum RuleTargetTree
@@ -95,11 +100,14 @@ Base class for all custom PresentationKeys. It represents any presentation confi
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct EXPORT_VTABLE_ATTRIBUTE PresentationKey : HashableBase
 {
+private:
+    Nullable<int> m_index;
+
 protected:
-    PresentationKey() {}
+    PresentationKey() : m_index(nullptr) {}
 
     ECPRESENTATION_EXPORT virtual MD5 _ComputeHash() const override;
-    virtual bool _ShallowEqual(PresentationKeyCR other) const {return true;}
+    virtual void _SetIndex(int& index) { m_index = index++; InvalidateHash(); }
 
     virtual Utf8CP _GetXmlElementName () const = 0;
     virtual bool _ReadXml(BeXmlNodeP xmlNode) {return true;}
@@ -111,8 +119,7 @@ protected:
     virtual void _WriteJson(BeJsValue) const {}
 
 public:
-    //! Does shallow comparison between this PresentationKey and other PresentationKey
-    bool ShallowEqual(PresentationKeyCR other) const {return _ShallowEqual(other);}
+    void SetIndex(int& index) { _SetIndex(index); }
 
     //! Reads PresentationRule from xml node.
     ECPRESENTATION_EXPORT bool ReadXml(BeXmlNodeP xmlNode);
@@ -158,7 +165,6 @@ protected:
     PrioritizedPresentationKey() : m_priority(1000) {}
     PrioritizedPresentationKey(int priority) : m_priority(priority) {}
 
-    ECPRESENTATION_EXPORT virtual bool _ShallowEqual(PresentationKeyCR other) const override;
     ECPRESENTATION_EXPORT virtual MD5 _ComputeHash() const override;
 
     ECPRESENTATION_EXPORT virtual bool _ReadXml (BeXmlNodeP xmlNode) override;
@@ -190,7 +196,6 @@ protected:
     ECPRESENTATION_EXPORT PresentationRule(PresentationRule const&);
     ECPRESENTATION_EXPORT PresentationRule(PresentationRule&&);
 
-    ECPRESENTATION_EXPORT virtual bool _ShallowEqual(PresentationKeyCR other) const override;
     ECPRESENTATION_EXPORT virtual MD5 _ComputeHash() const override;
 
     ECPRESENTATION_EXPORT virtual bool _ReadXml (BeXmlNodeP xmlNode) override;
@@ -230,8 +235,6 @@ protected:
     ConditionalPresentationRule(Utf8String condition, int priority, bool onlyIfNotHandled)
         : PresentationRule(priority, onlyIfNotHandled), m_condition(condition)
         {}
-
-    ECPRESENTATION_EXPORT virtual bool _ShallowEqual(PresentationKeyCR other) const override;
 
     ECPRESENTATION_EXPORT virtual bool _ReadXml (BeXmlNodeP xmlNode) override;
     ECPRESENTATION_EXPORT virtual void _WriteXml (BeXmlNodeP xmlNode) const override;

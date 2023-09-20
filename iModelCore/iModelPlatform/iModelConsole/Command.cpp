@@ -269,6 +269,118 @@ void CloseCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
         IModelConsole::WriteLine("Closed '%s'.", path.c_str());
         }
     }
+//******************************* SyncCommand ******************
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+Utf8String SyncCommand::_GetUsage() const
+    {
+    return  " .sync [schema] [pull|push|init] <file path>\r\n"
+        COMMAND_USAGE_IDENT "Sync schema by pushing or pulling changes to and from sync-db.\r\n";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void SyncCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
+    {
+    std::vector<Utf8String> args = TokenizeArgs(argsUnparsed);
+
+    if (args.empty())
+        {
+        IModelConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
+        return;
+        }
+
+    if (!session.IsFileLoaded())
+        {
+        IModelConsole::WriteErrorLine("There is should a file already loaded .");
+        return;
+        }
+    if (session.GetFile().GetECDbHandle()->IsReadonly())
+        {
+        IModelConsole::WriteErrorLine("The loaded file should be open in read/write mode.");
+        return;
+        }
+
+    if (!args[0].EqualsIAscii("schema"))
+        {
+        IModelConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
+        return;
+        }
+
+
+    if (args.size() < 2 ||  (!args[1].EqualsIAscii("pull") && !args[1].EqualsIAscii("push") && !args[1].EqualsIAscii("init")))
+        {
+        IModelConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
+        return;
+        }
+
+    if (args[1].EqualsIAscii("init"))
+        {
+        if (SchemaSync::Status::OK != session.GetFile().GetECDbHandle()->Schemas().GetSchemaSync().Init(SchemaSync::SyncDbUri(args[2].c_str())))
+            {
+            IModelConsole::WriteErrorLine("Failed to init : %s",args[2].c_str());
+            }
+        return;
+        }
+
+        bool isPull = args[1].EqualsIAscii("pull") ? true : false;
+        if (args.size() < 3) {
+        IModelConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
+        return;
+        }
+
+    BeFileName syncDbFileName;
+    syncDbFileName.AssignUtf8(args[2].c_str());
+    if(!syncDbFileName.DoesPathExist())
+        {
+        ECDb temp;
+        if (BE_SQLITE_OK == temp.CreateNewDb(syncDbFileName))
+            {
+            temp.SaveChanges();
+            temp.CloseDb();
+            }
+        else
+            {
+            IModelConsole::WriteErrorLine("unable to create or open sync db: %s", syncDbFileName.GetNameUtf8().c_str());
+            return;
+            }
+        }
+
+    auto uri = SchemaSync::SyncDbUri(syncDbFileName.GetNameUtf8().c_str());
+    if (session.GetFile().GetType() == SessionFile::Type::IModel)
+        {
+        Dgn::DgnDbCR iModelFile = session.GetFile().GetAs<IModelFile>().GetDgnDbHandle();
+        auto rc =  isPull ?
+            iModelFile.Schemas().GetSchemaSync().Pull(uri):
+            iModelFile.Schemas().GetSchemaSync().Push(uri);
+        if (rc != SchemaSync::Status::OK)
+            {
+            session.GetFileR().GetHandleR().AbandonChanges();
+            IModelConsole::WriteErrorLine("fail to %s changes %s %s", isPull ? "pull" : "push", isPull ? "from" : "to", syncDbFileName.GetNameUtf8().c_str());
+            }
+        else
+            {
+            IModelConsole::WriteLine("successfully %s changes %s %s.", isPull ? "pull" : "push", isPull ? "from" : "to", syncDbFileName.GetNameUtf8().c_str());
+            }
+        }
+    else
+        {
+         auto rc =  isPull ?
+            session.GetFile().GetECDbHandle()->Schemas().GetSchemaSync().Pull(uri):
+            session.GetFile().GetECDbHandle()->Schemas().GetSchemaSync().Push(uri);
+        if ( rc != SchemaSync::Status::OK)
+            {
+            session.GetFileR().GetHandleR().AbandonChanges();
+            IModelConsole::WriteErrorLine("fail to %s changes %s %s", isPull ? "pull" : "push", isPull ? "from" : "to", syncDbFileName.GetNameUtf8().c_str());
+            }
+        else
+            {
+            IModelConsole::WriteLine("successfully %s changes %s %s.", isPull ? "pull" : "push", isPull ? "from" : "to", syncDbFileName.GetNameUtf8().c_str());
+            }
+        }
+    }
 
 //******************************* CreateCommand ******************
 //---------------------------------------------------------------------------------------
@@ -2026,7 +2138,9 @@ void ParseCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
         Default,
         Exp,
         Token,
-        Sql
+        Sql,
+        Json,
+        Normalize
         };
 
     ParseMode parseMode = ParseMode::Default;
@@ -2036,7 +2150,10 @@ void ParseCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
         parseMode = ParseMode::Token;
     else if (commandSwitch.EqualsIAscii("sql"))
         parseMode = ParseMode::Sql;
-
+    else if (commandSwitch.EqualsIAscii("json"))
+        parseMode = ParseMode::Json;
+    else if (commandSwitch.EqualsIAscii("normalize"))
+        parseMode = ParseMode::Normalize;
     Utf8String ecsql;
     if (parseMode == ParseMode::Default)
         ecsql.assign(argsUnparsed);
@@ -2054,6 +2171,36 @@ void ParseCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
 
     switch (parseMode)
         {
+            case ParseMode::Json:
+            {
+            BeJsDocument doc;
+            if (SUCCESS != ECSqlParseTreeFormatter::ECSqlToJson(doc , *session.GetFile().GetECDbHandle(), ecsql.c_str()))
+                {
+                if (session.GetIssues().HasIssue())
+                    IModelConsole::WriteErrorLine("Failed to parse ECSQL: %s", session.GetIssues().GetIssue());
+                else
+                    IModelConsole::WriteErrorLine("Failed to parse ECSQL.");
+
+                return;
+                }
+            IModelConsole::WriteLine(doc.Stringify(StringifyFormat::Indented).c_str());
+            break;
+            }
+            case ParseMode::Normalize:
+            {
+            Utf8String toECSql;
+            if (SUCCESS != ECSqlParseTreeFormatter::NormalizeECSql(toECSql , *session.GetFile().GetECDbHandle(), ecsql.c_str()))
+                {
+                if (session.GetIssues().HasIssue())
+                    IModelConsole::WriteErrorLine("Failed to parse ECSQL: %s", session.GetIssues().GetIssue());
+                else
+                    IModelConsole::WriteErrorLine("Failed to parse ECSQL.");
+
+                return;
+                }
+            IModelConsole::WriteLine(toECSql.c_str());
+            break;
+            }
             case ParseMode::Exp:
             {
             Utf8String ecsqlFromExpTree;

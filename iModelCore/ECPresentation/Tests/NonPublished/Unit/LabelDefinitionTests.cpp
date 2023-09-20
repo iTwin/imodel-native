@@ -80,7 +80,7 @@ TEST_F(NavNodeLabelDefinitionTests, SetsIntECValue)
 TEST_F(NavNodeLabelDefinitionTests, SetsIntECValueWithDifferentDisplayValue)
     {
     LabelDefinitionPtr labelDefinition = LabelDefinition::Create();
-    rapidjson::Document actual = labelDefinition->SetECValue(ECValue(10), "Custom value").ToInternalJson();
+    rapidjson::Document actual = labelDefinition->SetECValue(ECValue(10), nullptr, "Custom value").ToInternalJson();
 
     rapidjson::Document expected;
     expected.Parse(R"({
@@ -100,7 +100,7 @@ TEST_F(NavNodeLabelDefinitionTests, SetsIntECValueWithDifferentDisplayValue)
 TEST_F(NavNodeLabelDefinitionTests, SetsPoint3dECValue)
     {
     LabelDefinitionPtr labelDefinition = LabelDefinition::Create();
-    rapidjson::Document actual = labelDefinition->SetECValue(ECValue(DPoint3d::From(1, 1, 1)), "Point value").ToInternalJson();
+    rapidjson::Document actual = labelDefinition->SetECValue(ECValue(DPoint3d::From(1, 1, 1)), nullptr, "Point value").ToInternalJson();
 
     rapidjson::Document expected;
     expected.Parse(R"({
@@ -124,7 +124,7 @@ TEST_F(NavNodeLabelDefinitionTests, SetsPoint3dECValue)
 TEST_F(NavNodeLabelDefinitionTests, SetsDateECValue)
     {
     LabelDefinitionPtr labelDefinition = LabelDefinition::Create();
-    rapidjson::Document actual = labelDefinition->SetECValue(ECValue(DateTime(2019, 01, 01)), "Date value").ToInternalJson();
+    rapidjson::Document actual = labelDefinition->SetECValue(ECValue(DateTime(2019, 01, 01)), nullptr, "Date value").ToInternalJson();
 
     rapidjson::Document expected;
     expected.Parse(R"({
@@ -144,13 +144,34 @@ TEST_F(NavNodeLabelDefinitionTests, SetsDateECValue)
 TEST_F(NavNodeLabelDefinitionTests, SetsUtcDateTimeECValue)
     {
     LabelDefinitionPtr labelDefinition = LabelDefinition::Create();
-    rapidjson::Document actual = labelDefinition->SetECValue(ECValue(DateTime(DateTime::Kind::Utc, 2019, 01, 01, 0, 0)), "DateTime value").ToInternalJson();
+    rapidjson::Document actual = labelDefinition->SetECValue(ECValue(DateTime(DateTime::Kind::Utc, 2019, 01, 01, 0, 0)), nullptr, "DateTime value").ToInternalJson();
 
     rapidjson::Document expected;
     expected.Parse(R"({
         "DisplayValue": "DateTime value",
         "RawValue": "2019-01-01T00:00:00.000Z",
         "TypeName": "dateTime"
+        })");
+
+    EXPECT_EQ(expected, actual)
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expected) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actual);
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest
+//---------------------------------------------------------------------------------------
+TEST_F(NavNodeLabelDefinitionTests, SetsGuidECValue)
+    {
+    LabelDefinitionPtr labelDefinition = LabelDefinition::Create();
+    BeGuid instanceGuid = RulesEngineTestHelpers::CreateGuidFromString("182238d2-e836-4640-9b40-38be6ca49623");
+    rapidjson::Document actual = labelDefinition->SetECValue(ECValue((Byte const*)&instanceGuid, sizeof(BeGuid)), EXTENDED_TYPENAME_BeGuid, "Guid value").ToInternalJson();
+
+    rapidjson::Document expected;
+    expected.Parse(R"({
+        "DisplayValue": "Guid value",
+        "RawValue": "182238d2-e836-4640-9b40-38be6ca49623",
+        "TypeName": "binary"
         })");
 
     EXPECT_EQ(expected, actual)
@@ -189,7 +210,7 @@ TEST_F(NavNodeLabelDefinitionTests, SetsCompositeValue)
     {
     std::unique_ptr<LabelDefinition::CompositeRawValue> compositeValue = std::make_unique<LabelDefinition::CompositeRawValue>(" * ");
     compositeValue->AddValue(*LabelDefinition::Create("stringValue"));
-    compositeValue->AddValue(*LabelDefinition::Create(ECValue(DateTime(DateTime::Kind::Utc, 2019, 01, 01, 0, 0)), "DateTime value"));
+    compositeValue->AddValue(*LabelDefinition::Create(ECValue(DateTime(DateTime::Kind::Utc, 2019, 01, 01, 0, 0)), nullptr, "DateTime value"));
 
     LabelDefinitionPtr labelDefinition = LabelDefinition::Create();
     rapidjson::Document actual = labelDefinition->SetCompositeValue("CompositeValue", std::move(compositeValue)).ToInternalJson();
@@ -240,6 +261,11 @@ TEST_F(NavNodeLabelDefinitionTests, ParsesJsonWithCompositeValue)
                 "DisplayValue": "DateTime value",
                 "RawValue": "2019-01-01T00:00:00.000Z",
                 "TypeName": "dateTime"
+                },
+                {
+                "DisplayValue": "Guid value",
+                "RawValue": "182238d2-e836-4640-9b40-38be6ca49623",
+                "TypeName": "binary"
                 }
             ]
         },
@@ -247,10 +273,12 @@ TEST_F(NavNodeLabelDefinitionTests, ParsesJsonWithCompositeValue)
         })");
 
     LabelDefinitionPtr actual = LabelDefinition::FromInternalJson(definitionJson);
+    BeGuid instanceGuid = RulesEngineTestHelpers::CreateGuidFromString("182238d2-e836-4640-9b40-38be6ca49623");
 
     std::unique_ptr<LabelDefinition::CompositeRawValue> compositeValue = std::make_unique<LabelDefinition::CompositeRawValue>(" * ");
     compositeValue->AddValue(*LabelDefinition::Create("stringValue"));
-    compositeValue->AddValue(*LabelDefinition::Create(ECValue(DateTime(DateTime::Kind::Utc, 2019, 01, 01, 0, 0)), "DateTime value"));
+    compositeValue->AddValue(*LabelDefinition::Create(ECValue(DateTime(DateTime::Kind::Utc, 2019, 01, 01, 0, 0)), nullptr, "DateTime value"));
+    compositeValue->AddValue(*LabelDefinition::Create(ECValue((Byte const*)&instanceGuid, sizeof(BeGuid)), EXTENDED_TYPENAME_BeGuid, "Guid value"));
 
     LabelDefinitionPtr expected = LabelDefinition::Create("CompositeValue", std::move(compositeValue));
 

@@ -251,9 +251,9 @@ VuP             node1P
 )
     {
     VuP             vertSucc0P = VU_VSUCC (node0P);     /* vertex successor of node0P */
-    VuP             faceSucc0P = VU_EDGE_MATE (vertSucc0P);     /* face predecessor of node0P */
+    VuP             facePred0P = VU_EDGE_MATE (vertSucc0P);     /* face predecessor of node0P */
     VuP             vertSucc1P = VU_VSUCC (node1P);     /* vertex successor of node1P */
-    VuP             faceSucc1P = VU_EDGE_MATE (vertSucc1P);     /* face predecessor of node1P */
+    VuP             facePred1P = VU_EDGE_MATE (vertSucc1P);     /* face predecessor of node1P */
 #ifdef VERIFY_PROPERTIES
     if (FEDGE (node0P) != node0P
         || VEDGE (node0P) != node0P
@@ -267,8 +267,8 @@ VuP             node1P
     VU_VSUCC (node0P) = vertSucc1P;
     VU_VSUCC (node1P) = vertSucc0P;
     /* Swap PREDECESSORS in face loops. */
-    VU_FSUCC (faceSucc0P) = node1P;
-    VU_FSUCC (faceSucc1P) = node0P;
+    VU_FSUCC (facePred0P) = node1P;
+    VU_FSUCC (facePred1P) = node0P;
     VU_THROW_MESSAGE (VU_MESSAGE_ANNOUNCE_POST_VTWIST, graphP, node0P, node1P, NULL, SUCCESS);
     }
 

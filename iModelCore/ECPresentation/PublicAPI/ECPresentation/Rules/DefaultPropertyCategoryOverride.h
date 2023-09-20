@@ -30,7 +30,6 @@ protected:
     ECPRESENTATION_EXPORT void _WriteJson(BeJsValue json) const override;
 
     ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
-    ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationKeyCR other) const override;
 
 public:
     DefaultPropertyCategoryOverride() : PresentationRule(), m_specification(nullptr) {}

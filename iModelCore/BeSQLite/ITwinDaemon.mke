@@ -44,6 +44,8 @@ $(o)blockcachevfs$(oext): $(SQLiteDir)blockcachevfs.c ${MultiCompileDepends} ${b
 
 $(o)bcvmodule$(oext) : $(SQLiteDir)bcvmodule.c ${MultiCompileDepends} ${bcvheaders} ${bcvheaders}
 
+$(o)bcvencrypt$(oext) : $(SQLiteDir)bcvencrypt.c ${MultiCompileDepends} ${bcvheaders}
+
 %include MultiCppCompileGo.mki
 
 EXE_DEST            = $(o)

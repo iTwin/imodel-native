@@ -25,13 +25,21 @@ SchemaManager::~SchemaManager()
         }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+SchemaSync& SchemaManager::GetSchemaSync() const
+    {
+    return Main().GetSchemaSync();
+
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-SchemaImportResult SchemaManager::ImportSchemas(bvector<ECSchemaCP> const& schemas, SchemaImportOptions options, SchemaImportToken const* token) const
+SchemaImportResult SchemaManager::ImportSchemas(bvector<ECSchemaCP> const& schemas, SchemaImportOptions options, SchemaImportToken const* token, SchemaSync::SyncDbUri syncDbUri) const
     {
-    return Main().ImportSchemas(schemas, options, token);
+    return Main().ImportSchemas(schemas, options, token, syncDbUri);
     }
 
 //---------------------------------------------------------------------------------------
@@ -299,7 +307,7 @@ void InstanceFinder::SearchResults::ToJson(BeJsValue v, ECInstanceKey const& key
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void InstanceFinder::SearchResults::ToJson(BeJsValue v, ForignKeyRelation const& key, JsonFormatOptions const* options) {
+void InstanceFinder::SearchResults::ToJson(BeJsValue v, ForeignKeyRelation const& key, JsonFormatOptions const* options) {
     v.toObject();
     ToJson(v["thisEnd"], key.GetThisEndKey(), options);
     ToJson(v["otherEnd"], key.GetOtherEndKey(), options);
@@ -561,7 +569,7 @@ InstanceFinder::SearchResults InstanceFinder::FindInstances(ECDbCR ecdb, BeIdSet
     std::shared_ptr<IdSet<BeInt64Id>> classIdSet = std::make_shared<IdSet<BeInt64Id>>(std::move(classIds));
     std::map<ECClassId, std::vector<ECInstanceKey>> entityKeyMap;
     std::map<ECClassId, std::vector<LinkTableRelation>> linkTableKeyMap;
-    std::map<ECClassId, std::vector<ForignKeyRelation>> foreignKeyMap;
+    std::map<ECClassId, std::vector<ForeignKeyRelation>> foreignKeyMap;
     bset<ECInstanceKey> recordedEntities;
     //1. record entity first
     //2. link table relationship with classes in source or target
@@ -618,7 +626,7 @@ InstanceFinder::SearchResults InstanceFinder::FindInstances(ECDbCR ecdb, BeIdSet
 
             recordedEntities.insert(thisEnd);
             auto otherEnd = ECInstanceKey(navPropStmt->GetValueId<ECClassId>(2), navPropStmt->GetValueId<ECInstanceId>(3));
-            relationKeys.emplace_back(ForignKeyRelation(std::move(thisEnd), std::move(otherEnd)));
+            relationKeys.emplace_back(ForeignKeyRelation(std::move(thisEnd), std::move(otherEnd)));
         }
         if (relationKeys.empty()) {
             foreignKeyMap.erase(rel->GetId());

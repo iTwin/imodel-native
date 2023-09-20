@@ -269,7 +269,7 @@ size_t MapZeroBasedPointIndex(size_t oldIndex, bvector<size_t> &oldToNew, bvecto
 
     size_t newIndex = newXYZ.size ();
     newXYZ.push_back (oldXYZ[oldIndex]);
-    return newIndex;
+    return oldToNew[oldIndex] = newIndex;
     }
 /*-----------------------------------------------------------------*//**
 * @description Create a polyface containing a subset of faces in an MTGFacets.

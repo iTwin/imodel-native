@@ -179,6 +179,8 @@ public:
 //=======================================================================================
 struct DgnDb : RefCounted<BeSQLite::EC::ECDb>, BeSQLite::EC::ECDb::IECDbCacheClearListener
 {
+    using SyncDbUri = BeSQLite::EC::SchemaSync::SyncDbUri;
+    using PullResult = BeSQLite::EC::SchemaSync::Status;
     friend struct BisCoreDomain;
     DEFINE_T_SUPER(BeSQLite::EC::ECDb)
 
@@ -217,6 +219,7 @@ private:
 
     BeSQLite::DbResult InitializeSchemas(BeSQLite::Db::OpenParams const& params);
     BeSQLite::DbResult ProcessRevisions(BeSQLite::Db::OpenParams const& params);
+    BentleyStatus ReadProfileVersion(bool& isOlderVersion) const;
 
 protected:
     friend struct Txns;
@@ -268,6 +271,10 @@ protected:
 
 public:
     Napi::ObjectReference m_private_iModelDbJs; // only public so it can be set from IModelJsNative::NativeDgnDb::SetIModelDb
+
+    // Can be changed to put this DgnDb in compatability mode for iModels that contain
+    // codes created with the older behavior, that would now be altered during CRUD operations
+    DgnCodeValue::Behavior m_codeValueBehavior = DgnCodeValue::Behavior::TrimUnicodeWhitespace;
 
     Napi::ObjectReference* GetJsIModelDb() { return (IsMainThread() && !m_private_iModelDbJs.IsEmpty()) ? &m_private_iModelDbJs : nullptr; }
     DGNPLATFORM_EXPORT Napi::Object GetJsTxns(); // get the "IModelDb.txns" JavaScript object of this DgnDb (or nullptr)
@@ -372,7 +379,8 @@ public:
     //! <li> If the schemas already exist in the Database, they are upgraded if the schemas passed in have a newer, but
     //! compatible version number.
     //! </ul>
-    DGNPLATFORM_EXPORT SchemaStatus ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, bool schemaLockHeld = false);
+    DGNPLATFORM_EXPORT SchemaStatus ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, bool schemaLockHeld = false, SyncDbUri uri = SyncDbUri());
+    DGNPLATFORM_EXPORT PullResult PullSchemaChanges(SyncDbUri uri);
 
     //! Drop a unreferenced schema with no instances
     //! @param[in] name schema that need to be dropped.

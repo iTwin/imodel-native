@@ -193,7 +193,7 @@ static DbResult insertIntoDgnModel(DgnDbR db, DgnClassId classId, DgnElementId m
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult DgnDb::CreatePartitionElement(Utf8CP className, DgnElementId partitionId, Utf8CP partitionName)
     {
-    DgnCode partitionCode(CodeSpecs().QueryCodeSpecId(BIS_CODESPEC_InformationPartitionElement), Elements().GetRootSubjectId(), partitionName);
+    DgnCode partitionCode(CodeSpecs().QueryCodeSpecId(BIS_CODESPEC_InformationPartitionElement), Elements().GetRootSubjectId(), partitionName, m_codeValueBehavior);
     BeGuid federationGuid(true);
 
     // element handlers are not initialized yet, so insert DefinitionPartition directly
@@ -269,7 +269,7 @@ DbResult DgnDb::CreateRootSubject(CreateDgnDbParams const& params)
     DgnElementId elementId = Elements().GetRootSubjectId();
     DgnModelId modelId = DgnModel::RepositoryModelId();
     CodeSpecId codeSpecId = CodeSpecs().QueryCodeSpecId(BIS_CODESPEC_Subject);
-    DgnCode elementCode = DgnCode(codeSpecId, elementId, params.m_rootSubjectName);
+    DgnCode elementCode = DgnCode(codeSpecId, elementId, params.m_rootSubjectName, m_codeValueBehavior);
     BeGuid federationGuid(true);
 
     // element handlers are not initialized yet, so insert root Subject directly
@@ -532,19 +532,34 @@ ProfileState DgnDb::_CheckProfileVersion() const
     {
     ProfileState ecdbProfileState = T_Super::_CheckProfileVersion();
 
-    Utf8String versionString;
-    DbResult stat = QueryProperty(versionString, DgnProjectProperty::ProfileVersion());
-    if (BE_SQLITE_ROW != stat)
+    bool isOlderVersion = false;
+    BentleyStatus readStatus = ReadProfileVersion(isOlderVersion);
+    if (readStatus != BentleyStatus::SUCCESS)
         {
-        if (BE_SQLITE_ROW == QueryProperty(versionString, DgnDbProfileVersion::LegacyDbProfileVersionProperty()))
+        if (isOlderVersion)
             return ProfileState::Older(ProfileState::CanOpen::No, false); // report Graphite05 and DgnDb0601 as too old rather than invalid
 
         return ProfileState::Error();
         }
 
-    m_profileVersion.FromJson(versionString.c_str());
     ProfileState dgndbProfileState = CheckProfileVersion(DgnDbProfileVersion::GetCurrent(), m_profileVersion, DgnDbProfileVersion(DGNDB_SUPPORTED_VERSION_Major, DGNDB_SUPPORTED_VERSION_Minor, 0, 0), "DgnDb");
     return ecdbProfileState.Merge(dgndbProfileState);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus DgnDb::ReadProfileVersion(bool& isOlderVersion) const
+    {
+    Utf8String versionString;
+    DbResult stat = QueryProperty(versionString, DgnProjectProperty::ProfileVersion());
+    if (BE_SQLITE_ROW != stat)
+        {
+        isOlderVersion = (BE_SQLITE_ROW == QueryProperty(versionString, DgnDbProfileVersion::LegacyDbProfileVersionProperty()));
+        return BentleyStatus::ERROR;
+        }
+
+    return m_profileVersion.FromJson(versionString.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -612,14 +627,14 @@ DbResult DgnDb::_UpgradeProfile(Db::OpenParams const& params)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::EC::DropSchemaResult DgnDb::DropSchema(Utf8StringCR name, bool logIssue) {
+DropSchemaResult DgnDb::DropSchema(Utf8StringCR name, bool logIssue) {
     return Domains().DoDropSchema(name, logIssue);
 }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaStatus DgnDb::ImportSchemas(bvector<ECSchemaCP> const& schemas, bool schemaLockHeld)
+SchemaStatus DgnDb::ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, bool schemaLockHeld, SchemaSync::SyncDbUri uri)
     {
     bvector<ECN::ECSchemaCP> schemasToImport;
     SchemaStatus status = PickSchemasToImport(schemasToImport, schemas, false /*=isImportingFromV8*/);
@@ -631,7 +646,7 @@ SchemaStatus DgnDb::ImportSchemas(bvector<ECSchemaCP> const& schemas, bool schem
 
     return Domains().DoImportSchemas(schemasToImport, schemaLockHeld ?
         SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade:
-        SchemaManager::SchemaImportOptions::None);
+        SchemaManager::SchemaImportOptions::None, uri);
     }
 
 /*---------------------------------------------------------------------------------**//**

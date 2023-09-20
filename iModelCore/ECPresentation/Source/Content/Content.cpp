@@ -105,7 +105,7 @@ Utf8String ContentDescriptor::Field::ArrayTypeDescription::CreateTypeName(TypeDe
 ContentDescriptor::ContentDescriptor(IConnectionCR connection, PresentationRuleSetCR ruleset, RulesetVariables rulesetVariables, INavNodeKeysContainerCR inputKeys)
     : m_connectionId(connection.GetId()), m_ruleset(&ruleset), m_rulesetVariables(rulesetVariables), m_inputKeys(&inputKeys),
     m_preferredDisplayType(ContentDisplayType::Undefined), m_contentFlags(0), m_unitSystem(UnitSystem::Undefined),
-    m_sortingFieldIndex(-1), m_sortDirection(SortDirection::Ascending)
+    m_sortingFieldIndex(-1), m_sortDirection(SortDirection::Ascending), m_usesModifiedRuleset(false)
     {
     }
 
@@ -117,7 +117,7 @@ ContentDescriptor::ContentDescriptor(ContentDescriptorCR other)
     m_fieldsFilterExpression(other.m_fieldsFilterExpression), m_instanceFilter(other.m_instanceFilter), m_contentFlags(other.m_contentFlags),
     m_sortingFieldIndex(other.m_sortingFieldIndex), m_sortDirection(other.m_sortDirection), m_connectionId(other.m_connectionId), m_inputKeys(other.m_inputKeys),
     m_selectionInfo(other.m_selectionInfo), m_categories(other.m_categories), m_totalFieldsCount(other.m_totalFieldsCount), m_unitSystem(other.m_unitSystem),
-    m_ruleset(other.m_ruleset), m_rulesetVariables(other.m_rulesetVariables)
+    m_ruleset(other.m_ruleset), m_rulesetVariables(other.m_rulesetVariables), m_usesModifiedRuleset(other.m_usesModifiedRuleset), m_exclusiveIncludePaths(other.m_exclusiveIncludePaths)
     {
     for (Field const* field : other.m_fields)
         AddRootField(*field->Clone());
@@ -1452,7 +1452,7 @@ bvector<ECClassInstanceKey> const& ContentSetItem::GetPropertyValueKeys(FieldPro
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ContentSetItem::AddUsersExtendedData(Utf8CP key, ECValueCR value)
     {
-    m_extendedData.AddMember(rapidjson::Value(key, m_extendedData.GetAllocator()), ValueHelpers::GetJsonFromECValue(value, &m_extendedData.GetAllocator()), m_extendedData.GetAllocator());
+    m_extendedData.AddMember(rapidjson::Value(key, m_extendedData.GetAllocator()), ValueHelpers::GetJsonFromECValue(value, "", &m_extendedData.GetAllocator()), m_extendedData.GetAllocator());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1704,6 +1704,20 @@ BentleyStatus DefaultPropertyFormatter::_ApplyDateTimeFormatting(Utf8StringR for
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus DefaultPropertyFormatter::_ApplyBinaryFormatting(Utf8StringR formattedValue, ECPropertyCR ecProperty, ECValueCR ecValue) const
+    {
+    if (!ecProperty.GetIsPrimitive() || ecProperty.GetAsPrimitiveProperty()->GetExtendedTypeName() != EXTENDED_TYPENAME_BeGuid)
+        return ERROR;
+
+    size_t guidSize = sizeof(BeGuid);
+    BeGuid const* guid = (BeGuid const*)ecValue.GetBinary(guidSize);
+    formattedValue = guid->ToString();
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DefaultPropertyFormatter::_GetFormattedPropertyValue(Utf8StringR formattedValue, ECPropertyCR ecProperty, ECValueCR ecValue, ECPresentation::UnitSystem unitSystem) const
     {
     if (ecValue.IsNull())
@@ -1728,6 +1742,9 @@ BentleyStatus DefaultPropertyFormatter::_GetFormattedPropertyValue(Utf8StringR f
         return SUCCESS;
 
     if (ecValue.IsDateTime() && SUCCESS == _ApplyDateTimeFormatting(formattedValue, ecValue.GetDateTime()))
+        return SUCCESS;
+
+    if (ecValue.IsBinary() && SUCCESS == _ApplyBinaryFormatting(formattedValue, ecProperty, ecValue))
         return SUCCESS;
 
     return ERROR;

@@ -39,6 +39,8 @@ USING_NAMESPACE_BENTLEY_SQLITE
 extern "C" int checkNoActiveStatements(SqlDbP db);
 #endif
 
+extern "C" int sqlite3_shathree_init(sqlite3 *, char **, const sqlite3_api_routines *);
+
 BEGIN_BENTLEY_SQLITE_NAMESPACE
 
 // NB: "repository" here really means "briefcase", but we don't want to break existing DgnDbs.
@@ -785,9 +787,9 @@ DbResult Db::FreeMemory() const { return (DbResult)sqlite3_db_release_memory(m_d
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ProfileVersion::FromJson(Utf8CP val)
+BentleyStatus ProfileVersion::FromJson(Utf8CP val)
     {
-    FromString(val, "{\"major\":%d,\"minor\":%d,\"sub1\":%d,\"sub2\":%d}");
+    return FromString(val, "{\"major\":%d,\"minor\":%d,\"sub1\":%d,\"sub2\":%d}");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5427,11 +5429,14 @@ static void initLanguageSupportOnDb(sqlite3* db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static int besqlite_db_init(sqlite3* db, char** pzErrMsg, struct sqlite3_api_routines const* pApi)
     {
+
     // and the "InVirtualSet" SQL function. It requires at least two arguments: the address of the VirtualSet and the value(s) to test
-    const auto rc = sqlite3_create_function_v2(db, "InVirtualSet", -1, SQLITE_UTF8, nullptr, &isInVirtualSet, nullptr, nullptr, nullptr);
+    auto rc = sqlite3_create_function_v2(db, "InVirtualSet", -1, SQLITE_UTF8, nullptr, &isInVirtualSet, nullptr, nullptr, nullptr);
     UNUSED_VARIABLE(rc);
     BeAssert(BE_SQLITE_OK == rc);
 
+    rc = sqlite3_shathree_init(db, nullptr, nullptr);
+    BeAssert(BE_SQLITE_OK == rc);
     // Register language-aware callbacks if necessary.
     initLanguageSupportOnDb(db);
 

@@ -2188,7 +2188,7 @@ Nullable<uint64_t> ECSchemaHelper::QueryTargetsCount(RelatedClassPathCR path, In
         targetCountsQuery->Join(relatedInstancePath);
 
     if (!targetClass.IsSelectPolymorphic())
-        targetCountsQuery->Where(Utf8PrintfString("[%s].[ECClassId] IS (ONLY %s)", targetClass.GetAlias().c_str(), targetClass.GetClass().GetFullName()).c_str(), BoundQueryValuesList());
+        targetCountsQuery->Where(Utf8PrintfString("[%s].[ECClassId] IS (ONLY %s)", targetClass.GetAlias().c_str(), targetClass.GetClass().GetECSqlName().c_str()).c_str(), BoundQueryValuesList());
 
     if (sourceInstanceFilter)
         QueryBuilderHelpers::ApplyInstanceFilter(*targetCountsQuery, *sourceInstanceFilter);
@@ -2515,12 +2515,14 @@ void SupportedClassesParser::Parse(ECSchemaHelper const& helper, Utf8StringCR st
         }
     }
 
-static BeMutex s_getIntanceMutex;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult ECInstancesHelper::LoadInstance(IECInstancePtr& instance, IConnectionCR connection, ECInstanceKeyCR key)
     {
+    auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Load ECInstance `{ ECClassId: %s, ECInstanceId: %s }`", 
+        key.GetClassId().ToString(BeInt64Id::UseHex::Yes).c_str(), key.GetInstanceId().ToString(BeInt64Id::UseHex::Yes).c_str()));
+
     ECClassCP selectClass = connection.GetECDb().Schemas().GetClass(key.GetClassId());
     if (nullptr == selectClass || !selectClass->IsEntityClass())
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("ECClass not found: %" PRIu64, key.GetClassId().GetValue()));
@@ -2537,12 +2539,13 @@ DbResult ECInstancesHelper::LoadInstance(IECInstancePtr& instance, IConnectionCR
     if (ECSqlStatus::Success != stmt->BindId(1, key.GetInstanceId()))
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Failed to bind ECInstance ID: %" PRIu64, key.GetInstanceId().GetValue()));
 
-    ECInstanceECSqlSelectAdapter adapter(*stmt);
     DbResult result = QueryExecutorHelper::Step(*stmt);
     if (BE_SQLITE_ROW == result)
         {
-        BeMutexHolder lock(s_getIntanceMutex);
-        instance = adapter.GetInstance();
+        auto parseECInstanceScope = Diagnostics::Scope::Create("Parse ECInstance from ECSql row");
+        static BeMutex s_getInstanceMutex;
+        BeMutexHolder lock(s_getInstanceMutex);
+        instance = ECInstanceECSqlSelectAdapter(*stmt).GetInstance();
         }
     return result;
     }

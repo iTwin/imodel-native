@@ -273,6 +273,13 @@ bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> FlattenedRelat
     bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> specs;
     for (ContentModifierCP modifier : modifiers)
         {
+        if (!modifier->HasClassSpecified())
+            {
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("ECClass was not specified in %s.",
+                    DiagnosticsHelpers::CreateRuleIdentifier(*modifier).c_str()));
+            continue;
+            }
+
         ECClassCP modifierClass = helper.GetECClass(modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str());
         if (modifierClass == nullptr)
             {
@@ -308,6 +315,13 @@ static bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> CreateF
             {
             if (nullptr == modifier || !modifier->ShouldApplyOnNestedContent())
                 continue;
+
+            if (!modifier->HasClassSpecified())
+                {
+                DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("ECClass was not specified in %s.",
+                    DiagnosticsHelpers::CreateRuleIdentifier(*modifier).c_str()));
+                continue;
+                }
 
             ECClassCP modifierClass = helper.GetECClass(modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str());
             if (nullptr == modifierClass)
@@ -356,6 +370,51 @@ bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> FlattenedRelat
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+static bool HasSamePath(RelatedClassPath const& relatedClassPath, bvector<RelationshipStepSpecification*> const& specsPath, ECSchemaHelper const& helper)
+    {
+    if (relatedClassPath.size() != specsPath.size())
+        return false;
+
+    for (size_t i = 0; i < specsPath.size(); ++i)
+        {
+        auto const& createdStepSpec = specsPath[i];
+        auto const& includeStep = relatedClassPath[i];
+
+        ECClassCP specStepsRelationshipClass = helper.GetECClass(createdStepSpec->GetRelationshipClassName().c_str());
+        bool hasSameRelationshipClass = includeStep.GetRelationship().GetClass().Is(specStepsRelationshipClass);
+        bool hasSameDirection = includeStep.IsForwardRelationship() == (createdStepSpec->GetRelationDirection() == RequiredRelationDirection_Forward);
+        if (!hasSameRelationshipClass || !hasSameDirection)
+            return false;
+        }
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static void FilterFlatSpecsByExclusiveIncludePaths(bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>>& flatSpecs,
+    std::shared_ptr<RelatedClassPathsList> const& exclusiveIncludePaths, ECSchemaHelper const& helper)
+    {
+    bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> filteredFlatSpecs;
+    for (auto& spec : flatSpecs)
+        {
+        for (auto const& relatedClassPath : *exclusiveIncludePaths)
+            {
+            if (HasSamePath(relatedClassPath, spec->GetFlattened().GetPropertiesSource()->GetSteps(), helper))
+                {
+                std::unique_ptr<FlattenedRelatedPropertiesSpecification> dummy;
+                std::swap(spec, dummy);
+                filteredFlatSpecs.push_back(std::move(dummy));
+                break;
+                }
+            }
+        }
+    flatSpecs = std::move(filteredFlatSpecs);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 bvector<std::unique_ptr<RelatedPropertySpecificationPaths>> ContentSpecificationsHandler::_GetRelatedPropertyPaths(RelatedPropertyPathsParams const& params) const
     {
     // first build a flat list of all related properties specifications
@@ -365,6 +424,10 @@ bvector<std::unique_ptr<RelatedPropertySpecificationPaths>> ContentSpecification
     auto const& selectClass = params.GetSourceClassInfo().GetSelectClass();
     ContainerHelpers::MovePush(flatSpecs, FlattenedRelatedPropertiesSpecification::CreateForSelectClassFromModifiers(selectClass, contentModifiers, schemaHelper));
     ContainerHelpers::MovePush(flatSpecs, FlattenedRelatedPropertiesSpecification::CreateForNestedPropertiesFromModifiers(flatSpecs, contentModifiers, schemaHelper));
+
+    std::shared_ptr<RelatedClassPathsList> exclusiveIncludePaths = GetContext().GetExclusiveIncludePaths();
+    if (exclusiveIncludePaths != nullptr)
+        FilterFlatSpecsByExclusiveIncludePaths(flatSpecs, exclusiveIncludePaths, GetContext().GetSchemaHelper());
 
     DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Got %" PRIu64 " flattened related property specs.", (uint64_t)flatSpecs.size()));
 
@@ -934,6 +997,13 @@ bvector<RuleApplicationInfo> const& ContentSpecificationsHandler::GetCustomizati
         auto infos = new bvector<RuleApplicationInfo>();
         for (ContentModifierCP modifier : GetContext().GetRulesPreprocessor().GetContentModifiers())
             {
+            if (!modifier->HasClassSpecified())
+                {
+                DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("ECClass was not specified in %s.",
+                    DiagnosticsHelpers::CreateRuleIdentifier(*modifier).c_str()));
+                continue;
+                }
+
             ECClassCP ecClass = GetContext().GetSchemaHelper().GetECClass(modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str());
             if (nullptr == ecClass)
                 {

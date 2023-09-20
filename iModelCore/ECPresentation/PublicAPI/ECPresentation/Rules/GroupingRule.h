@@ -64,7 +64,6 @@ protected:
 
     //! Computes rule hash.
     ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
-    ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationKeyCR other) const override;
 
     //! Clones rule.
     CustomizationRule* _Clone() const override {return new GroupingRule(*this);}
@@ -146,7 +145,6 @@ protected:
 
     //! Computes specification hash.
     ECPRESENTATION_EXPORT virtual MD5 _ComputeHash() const override;
-    ECPRESENTATION_EXPORT virtual bool _ShallowEqual(PresentationKeyCR other) const override;
 
 public:
     //! Virtual destructor.
@@ -203,7 +201,6 @@ protected:
 
     //! Computes specification hash.
     ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
-    ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationKeyCR other) const override;
 
 public:
     SameLabelInstanceGroup(SameLabelInstanceGroupApplicationStage applicationStage = SameLabelInstanceGroupApplicationStage::Query)
@@ -246,7 +243,6 @@ protected:
 
     //! Computes specification hash.
     ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
-    ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationKeyCR other) const override;
 
 public:
     //! Constructor. It is used to initialize the rule with default settings.
@@ -310,7 +306,6 @@ protected:
 
     //! Computes specification hash.
     ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
-    ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationKeyCR other) const override;
 
 public:
     //! Constructor. It is used to initialize the rule with default settings.
@@ -374,7 +369,6 @@ private:
     Utf8String  m_toValue;
 
 protected:
-    ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationKeyCR other) const override;
     ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
 
     ECPRESENTATION_EXPORT Utf8CP _GetXmlElementName() const override;

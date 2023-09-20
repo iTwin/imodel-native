@@ -57,6 +57,58 @@ ECSqlStatus ECSqlSelectPreparer::Prepare(ECSqlPrepareContext& ctx, CommonTableEx
     return Prepare(ctx, *exp.GetQuery(), nullptr);
 }
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static
+ECSqlStatus ECSqlSelectPreparer::PreparePartial(NativeSqlBuilder& nativeSqlSnippet, ECSqlPrepareContext& ctx, SelectStatementExp const& exp)
+    {
+    NativeSqlBuilder::ListOfLists selectClauseSqlSnippetList;
+    SingleSelectStatementExp const& firstStmt = exp.GetFirstStatement();
+    ctx.PushScope(firstStmt, firstStmt.GetOptions());
+    ECSqlStatus status;
+    if (firstStmt.IsRowConstructor())
+        {
+        nativeSqlSnippet.Append("SELECT").AppendSpace();
+        status = PrepareSelectClauseExp(selectClauseSqlSnippetList, ctx, *firstStmt.GetSelection(), nullptr);
+        if (!status.IsSuccess())
+            return status;
+
+        bool isFirstItem = true;
+        for (NativeSqlBuilder::List const& list : selectClauseSqlSnippetList)
+            {
+            if (!isFirstItem)
+                nativeSqlSnippet.AppendComma();
+
+            nativeSqlSnippet.Append(list);
+            isFirstItem = false;
+            }
+        }
+    else
+        {
+        nativeSqlSnippet.Append("SELECT").AppendSpace();
+
+        if (firstStmt.GetSelectionType() != SqlSetQuantifier::NotSpecified)
+            nativeSqlSnippet.Append(ExpHelper::ToSql(firstStmt.GetSelectionType())).AppendSpace();
+
+        // Append selection.
+        status = PrepareSelectClauseExp(selectClauseSqlSnippetList, ctx, *firstStmt.GetSelection(), nullptr);
+        if (!status.IsSuccess())
+            return status;
+
+        bool isFirstItem = true;
+        for (NativeSqlBuilder::List const& list : selectClauseSqlSnippetList)
+            {
+            if (!isFirstItem)
+                nativeSqlSnippet.AppendComma();
+
+            nativeSqlSnippet.Append(list);
+            isFirstItem = false;
+            }
+        }
+    ctx.PopScope();
+    return ECSqlStatus::Success;
+    }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
@@ -260,7 +312,7 @@ ECSqlStatus ECSqlSelectPreparer::PrepareDerivedPropertyExp(NativeSqlBuilder::Lis
 
     size_t snippetCountBefore = nativeSqlSnippets.size();
     if (!innerExp->IsParameterExp() && innerExp->GetTypeInfo().IsNull())
-        { 
+        {
         ECSqlStatus status = ECSqlExpPreparer::PrepareNullExp(nativeSqlSnippets, ctx, *innerExp, referenceSqliteSnippetCount);
         if (!status.IsSuccess())
             return status;
@@ -366,8 +418,8 @@ void ECSqlSelectPreparer::ExtractPropertyRefs(ECSqlPrepareContext& ctx, Exp cons
         PropertyNameExp const* propertyName = static_cast<PropertyNameExp const*>(exp);
         if (propertyName->IsVirtualProperty())
             return;
-        
-        ctx.GetSelectionOptionsR().AddProperty(propertyName->GetPropertyMap());
+
+        ctx.GetSelectionOptionsR().AddProperty(*propertyName->GetPropertyMap());
         }
 
     for (Exp const* child : exp->GetChildren())

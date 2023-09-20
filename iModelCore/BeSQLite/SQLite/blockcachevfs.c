@@ -1,3 +1,5 @@
+
+
 #if !defined(__WIN32__) && (defined(WIN32) || defined(_WIN32))
 # define __WIN32__
 #endif
@@ -116,7 +118,7 @@ struct BcvProxyFile {
   BcvMRULink *aMRU;               /* Array of pMap->u.read_r.nBlk elements */
   int iMRU;                       /* Index of most recently used block */
   char *zAuth;
-  BcvEncryptionKey *pKey;         /* Encryption key, if any */
+  BcvIntKey *pKey;                /* Encryption key, if any */
 };
 
 struct BcvKVStore {
@@ -238,6 +240,9 @@ struct sqlite3_bcvfs {
   void *pAuthCtx;
   int(*xAuth)(void*, const char*, const char*, const char*, char**);
 
+  /* Active prefetches */
+  sqlite3_prefetch *pPrefetch;
+
   BcvCommon c;                    /* Hash tables etc. */
   Mutex mutex;                    /* Mutex/condition variable object */
 };
@@ -285,6 +290,11 @@ struct BcvDbPath {
 **   bcvfsMutexCondWait()
 **   bcvfsMutexCondSignal()
 */
+
+static int bcvfsCantopenError(){
+  return SQLITE_CANTOPEN;
+}
+#define BCVFS_CANTOPEN bcvfsCantopenError()
 
 /*
 ** Initialize a new Mutex object.
@@ -802,7 +812,7 @@ static int bcvfsClose(sqlite3_file *pFd){
   sqlite3_free(pFile->p.zAccount);
   sqlite3_free(pFile->p.zContainer);
   sqlite3_free(pFile->p.zAuth);
-  bcvEncryptionKeyFree(pFile->p.pKey);
+  bcvIntEncryptionKeyFree(pFile->p.pKey);
 
   pFile->lockMask = 0;
   bcvKVStoreFree(&pFile->kv);
@@ -1692,19 +1702,19 @@ static int bcvfsProxyOpenTransaction(BcvfsFile *pFile, int iBlk){
 
 static void bcvfsProxyDecrypt(
   int *pRc,                       /* IN/OUT: Error code */
-  BcvEncryptionKey *pKey,         /* Encryption key, or NULL */
+  BcvIntKey *pKey,                /* Encryption key, or NULL */
   u8 *aBuf,                       /* Buffer to decrypt */
   int nBuf,                       /* Size of buffer aBuf[] in bytes */
   i64 iCacheOff                   /* Offset within cache file */
 ){
   if( pKey && *pRc==SQLITE_OK ){
-    static const int nChunk = 512;
+    static const int nChunk = 4096; // BENTLEY SPECIFIC CHANGE.
     int rc = SQLITE_OK;
     int ii;
 
     assert( (nBuf%nChunk)==0 );
     for(ii=0; ii<nBuf && rc==SQLITE_OK; ii+=nChunk){
-      rc = bcvDecrypt(pKey, iCacheOff+ii, 0, &aBuf[ii], nChunk);
+      rc = bcvIntDecrypt(pKey, iCacheOff+ii, 0, &aBuf[ii], nChunk);
     }
     *pRc = rc;
   }
@@ -3038,7 +3048,7 @@ static void bcvfsCreateDir(
   zDir = (const char*)b.aData;
   if( *pRc==SQLITE_OK && stat(zDir, &buf)<0 ){
     if( osMkdir(zDir, 0755)<0 && stat(zDir, &buf)<0 ){
-      *pRc = SQLITE_CANTOPEN;
+      *pRc = BCVFS_CANTOPEN;
       *pzErr = sqlite3_mprintf("failed to create directory: %s", pCont->zName);
     }
   }
@@ -3078,7 +3088,7 @@ static int bcvParseAddr(const char *zAddr, struct sockaddr_in *pAddr){
 
  parse_error:
   sqlite3_log(SQLITE_CANTOPEN, "failed to parse address: %s", zAddr);
-  return SQLITE_CANTOPEN;
+  return BCVFS_CANTOPEN;
 }
 
 
@@ -3104,11 +3114,11 @@ static BCV_SOCKET_TYPE bcvConnectSocket(
   if( rc==SQLITE_OK ){
     s = socket(AF_INET, SOCK_STREAM, 0);
     if( bcv_socket_is_valid(s)==0 ){
-      rc = SQLITE_CANTOPEN;
+      rc = BCVFS_CANTOPEN;
     }else{
       assert( addr.sin_addr.s_addr!=INADDR_NONE );
       if( connect(s, (struct sockaddr*)&addr, sizeof(addr))<0 ){
-        rc = SQLITE_CANTOPEN;
+        rc = BCVFS_CANTOPEN;
         bcv_close_socket(s);
       }
     }
@@ -3130,6 +3140,7 @@ static int bcvfsProxyConnect(
   sqlite3_bcvfs *pFs,             /* Proxy VFS */
   const char *zCont,              /* Container to open */
   const char *zDb,                /* Name of db to open, or NULL */
+  int bPrefetch,                  /* True for prefetch connection */
   BCV_SOCKET_TYPE *pS,            /* OUT: Open socket */
   BcvMessage **ppReply            /* OUT: HELLO_REPLY message */
 ){
@@ -3144,6 +3155,7 @@ static int bcvfsProxyConnect(
     hello.eType = BCV_MESSAGE_HELLO;
     hello.u.hello.zContainer = zCont;
     hello.u.hello.zDatabase = zDb;
+    hello.u.hello.bPrefetch = bPrefetch;
     pReply = bcvExchangeMessage(&rc, s, &hello);
   }
   if( rc!=SQLITE_OK ){
@@ -3165,7 +3177,7 @@ static int bcvfsOpenProxy(
   int rc = SQLITE_OK;
   BcvMessage *pReply = 0;
   rc = bcvfsProxyConnect(
-      pFs, pPath->zContainer, pPath->zDatabase, &pFile->p.fdProxy, &pReply
+      pFs, pPath->zContainer, pPath->zDatabase, 0, &pFile->p.fdProxy, &pReply
   );
   if( pReply ){
     if( rc==SQLITE_OK ){
@@ -3188,7 +3200,7 @@ static int bcvfsOpenProxy(
         if( pReply2 ){
           rc = pReply2->u.pass_r.errCode;
           if( rc==SQLITE_OK ){
-            pFile->p.pKey = bcvEncryptionKeyNew(pReply2->u.pass_r.aKey);
+            pFile->p.pKey = bcvIntEncryptionKeyNew(pReply2->u.pass_r.aKey);
             if( pFile->p.pKey==0 ){
               rc = SQLITE_NOMEM;
             }
@@ -3280,7 +3292,7 @@ static int bcvfsOpen(
         ENTER_VFS_MUTEX; {
           Container *pCont = bcvfsFindContAlias(&pFs->c, pPath->zContainer, 0);
           if( pCont==0 ){
-            rc = SQLITE_CANTOPEN;
+            rc = BCVFS_CANTOPEN;
           }else{
             if( pPath->zDatabase ){
               int nDb = strlen(pPath->zDatabase);
@@ -3288,7 +3300,7 @@ static int bcvfsOpen(
               if( !bIsMain ) nDb -= 4;
               pDb = bcvfsFindDatabase(pCont->pMan, pPath->zDatabase, nDb);
               if( pDb==0 || pDb->nBlkLocal==0 ){
-                rc = SQLITE_CANTOPEN;
+                rc = BCVFS_CANTOPEN;
               }else{
                 pRet->iFileDbId = pDb->iDbId;
               }
@@ -3399,7 +3411,7 @@ static int bcvfsFullPathname(
 ){
   int nCopy = bcvStrlen(zPath);
   if( nCopy>(nOut-1) ){ 
-    return SQLITE_CANTOPEN;
+    return BCVFS_CANTOPEN;
   }
   memcpy(zOut, zPath, nCopy);
   zOut[nCopy] = '\0';
@@ -4017,7 +4029,7 @@ void bcvContainerFree(Container *pCont){
     }
     bcvManifestDeref(pCont->pMan);
     sqlite3_free(pCont->aBcv);
-    bcvEncryptionKeyFree(pCont->pKey);
+    bcvIntEncryptionKeyFree(pCont->pKey);
     sqlite3_free(pCont);
   }
 }
@@ -4483,7 +4495,7 @@ static int proxyCmd(
   BcvMessage *pReply = 0;                   /* HELLO_REPLY message */
 
   assert( pzErr );
-  rc = bcvfsProxyConnect(pFs, zCont, zDb, &s, &pReply);
+  rc = bcvfsProxyConnect(pFs, zCont, zDb, 0, &s, &pReply);
   if( pReply ){
     rc = pReply->u.hello_r.errCode;
     if( rc && pzErr ){
@@ -4641,12 +4653,20 @@ static void bcvfsUploadDeleteBlockIf(UploadCtx2 *pCtx, int iBlk){
 }
 
 
-static void bcvfsUploadOneBlock(UploadCtx2 *pCtx){
+/*
+** Dispatch another block upload for the upload-context passed as the only
+** argument. Or, if the next block to be uploaded is a duplicate of a block
+** already uploaded to cloud storage, set (*pbRetry) to non-zero and return 
+** without doing anything.
+*/
+static void bcvfsUploadOneBlockTry(UploadCtx2 *pCtx, int *pbRetry){
   sqlite3_bcvfs *pFs = pCtx->pFs;
   Manifest *pMan = pCtx->pMan;
   int nName = NAMEBYTES(pMan);
   ManifestDb *pDb = 0;
   int rc = pCtx->rc;
+
+  assert( *pbRetry==0 );
 
   /* Find the next block to upload */
   if( rc==SQLITE_OK ){
@@ -4696,7 +4716,7 @@ static void bcvfsUploadOneBlock(UploadCtx2 *pCtx){
         aAlt = bcvMHashQuery(pCtx->pMHash, aNew, MD5_DIGEST_LENGTH);
         if( aAlt ){
           memcpy(aNew, aAlt, nName);
-          bSkip = 1;
+          *pbRetry = bSkip = 1;
         }
       }
       bcvfsUploadRecordAdd(&rc, pCtx, aName, aNew, nName);
@@ -4723,6 +4743,19 @@ static void bcvfsUploadOneBlock(UploadCtx2 *pCtx){
   }
 
   pCtx->rc = rc;
+}
+
+/*
+** Dispatch another block upload for the upload-context passed as the only
+** argument. If there are no further blocks to upload, or if an error has
+** already occurred, this function is a no-op.
+*/
+static void bcvfsUploadOneBlock(UploadCtx2 *pCtx){
+  int bRetry = 1;
+  while( pCtx->rc==SQLITE_OK && bRetry ){
+    bRetry = 0;
+    bcvfsUploadOneBlockTry(pCtx, &bRetry);
+  }
 }
 
 /*
@@ -5344,6 +5377,7 @@ void bcvfsReleaseBcv(
 
 struct sqlite3_prefetch {
   sqlite3_bcvfs *pFs;
+  sqlite3_prefetch *pNext;
 
   Container *pCont;
   Manifest *pMan;
@@ -5389,12 +5423,14 @@ int sqlite3_bcvfs_prefetch_new(
     pNew->pFs = pFs;
     ENTER_VFS_MUTEX; {
       pFs->nRef++;
+      pNew->pNext = pFs->pPrefetch;
+      pFs->pPrefetch = pNew;
     }; LEAVE_VFS_MUTEX;
 
     if( pFs->zPortnumber ){
       BcvMessage *pReply = 0;     /* HELLO_REPLY message */
       pNew->rc = bcvfsProxyConnect(
-          pFs, zCont, zDb, &pNew->fdProxy, &pReply
+          pFs, zCont, zDb, 1, &pNew->fdProxy, &pReply
       );
       if( pReply ){
         assert( pNew->rc==SQLITE_OK );
@@ -5675,7 +5711,14 @@ void sqlite3_bcvfs_prefetch_destroy(sqlite3_prefetch *p){
   if( p ){
     sqlite3_bcvfs *pFs = p->pFs;
     ENTER_VFS_MUTEX; {
+      sqlite3_prefetch **pp;
       pFs->nRef--;
+      for(pp=&pFs->pPrefetch; *pp; pp=&(*pp)->pNext){
+        if( *pp==p ){
+          *pp = p->pNext;
+          break;
+        }
+      }
     }; LEAVE_VFS_MUTEX;
     bcvManifestDeref(p->pMan);
     if( p->pCont ){
@@ -5871,7 +5914,10 @@ int sqlite3_bcvfs_revert(sqlite3_bcvfs *pFs, const char *zCont, char **pzErr){
 "  ncache INTEGER,"               \
 "  ndirty INTEGER,"               \
 "  walfile BOOLEAN,"              \
-"  state TEXT "                   \
+"  state TEXT, "                  \
+"  nclient INTEGER, "             \
+"  nprefetch INTEGER,"            \
+"  ntrans INTEGER"                \
 ")"
 
 #define BCV_CONTAINER_VTAB_SCHEMA \
@@ -5900,10 +5946,23 @@ int sqlite3_bcvfs_revert(sqlite3_bcvfs *pFs, const char *zCont, char **pzErr){
 ")"
 
 #define BCV_FILEMETA_VTAB_SCHEMA  \
-"CREATE TABLE bcv_kv("            \
+"CREATE TABLE bcv_kv_meta("       \
 "  name      TEXT,"               \
 "  value     TEXT "               \
 ")"
+
+#define BCV_STAT_VTAB_SCHEMA      \
+"CREATE TABLE bcv_stat("          \
+"  name      TEXT,"               \
+"  value     TEXT "               \
+")"
+
+/* Current version is 2.
+**
+** 1: Add the "nclient" and "nprefetch" fields to the bcv_database table.
+** 2: Add the "ntrans" field to the bcv_database table.
+*/
+#define BCV_VTAB_VERSION 2
 
 /*
 ** Bits used in the idxNum value
@@ -5916,8 +5975,8 @@ int sqlite3_bcvfs_revert(sqlite3_bcvfs *pFs, const char *zCont, char **pzErr){
 #define BCV_DATABASE_WALFILE  (1 << 5)
 
 /*
-** Used as the vtab object for both bcv_database, bcv_container and
-** bcv_block eponymous tables.
+** Used as the vtab object for both bcv_database, bcv_container, bcv_block
+** and bcv_stat eponymous tables.
 */
 typedef struct bcv_database_vtab bcv_database_vtab;
 struct bcv_database_vtab {
@@ -5927,12 +5986,13 @@ struct bcv_database_vtab {
 };
 
 /*
-** Cursor types for the bcv_database, bcv_container and bcv_block tables,
-** respectively.
+** Cursor types for the bcv_database, bcv_container, bcv_block and 
+** bcv_stat tables, respectively.
 */
 typedef struct bcv_database_cursor bcv_database_cursor;
 typedef struct bcv_container_cursor bcv_container_cursor;
 typedef struct bcv_block_cursor bcv_block_cursor;
+typedef struct bcv_stat_cursor bcv_stat_cursor;
 
 typedef struct VtabBlob VtabBlob;
 struct VtabBlob {
@@ -5968,6 +6028,7 @@ struct bcv_database_cursor {
 
   VtabBlob data;
   void *pFreeData;
+  int iVersion;                   /* Version from VtabReply message */
 
   /* Values for current row */
   i64 iRow;                       /* Rowid */
@@ -5979,6 +6040,9 @@ struct bcv_database_cursor {
   int bWalfile;
   int nPin;
   char *zState;
+  int nClient;
+  int nPrefetch;
+  int nReader;
 };
 
 /*
@@ -6044,6 +6108,25 @@ struct bcv_block_cursor {
   int bCache;                     /* Value for "cache" column */
 };
 
+/*
+** Buffer VtabBlob contains all records that will be returned by the
+** current scan, tightly packed. Each record consists of:
+**
+**   1) STRING:  Value of "name" column
+**   2) INTEGER: Value of "value" column
+*/
+struct bcv_stat_cursor {
+  sqlite3_vtab_cursor base;       /* Base class */
+
+  VtabBlob data;
+  void *pFreeData;
+
+  /* Values for current row */
+  i64 iRow;
+  char *zName;
+  i64 iValue;
+};
+
 
 static int bcvDatabaseVtabConnect(
   sqlite3 *db,
@@ -6070,8 +6153,8 @@ static int bcvDatabaseVtabConnect(
 }
 
 /*
-** Implementation of xOpen() method for the three read-only virtual 
-** tables - bcv_container, bcv_database and bcv_block.
+** Implementation of xOpen() method for the four read-only virtual 
+** tables - bcv_container, bcv_database, bcv_stat and bcv_block.
 */
 static int bcvReadonlyVtabOpen(sqlite3_vtab_cursor **ppCur, int nByte){
   int rc = SQLITE_OK;
@@ -6086,6 +6169,9 @@ static int bcvContainerVtabOpen(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCur){
 }
 static int bcvBlockVtabOpen(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCur){
   return bcvReadonlyVtabOpen(ppCur, sizeof(bcv_block_cursor));
+}
+static int bcvStatVtabOpen(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCur){
+  return bcvReadonlyVtabOpen(ppCur, sizeof(bcv_stat_cursor));
 }
 
 static int bcvDatabaseVtabDisconnect(sqlite3_vtab *pVtab){
@@ -6112,6 +6198,12 @@ static int bcvContainerVtabClose(sqlite3_vtab_cursor *cur){
 }
 static int bcvBlockVtabClose(sqlite3_vtab_cursor *cur){
   bcv_block_cursor *pCur = (bcv_block_cursor*)cur;
+  sqlite3_free(pCur->pFreeData);
+  sqlite3_free(pCur);
+  return SQLITE_OK;
+}
+static int bcvStatVtabClose(sqlite3_vtab_cursor *cur){
+  bcv_stat_cursor *pCur = (bcv_stat_cursor*)cur;
   sqlite3_free(pCur->pFreeData);
   sqlite3_free(pCur);
   return SQLITE_OK;
@@ -6155,11 +6247,14 @@ u8 *bcvDatabaseVtabData(
   const char *zName,              /* "bcv_database" or "bcv_container" */
   const char *zContFilter,        /* Container to query, or NULL */
   const char *zDbFilter,          /* Database to query, or NULL */
+  void(*xClientCount)(BcvCommon*,Container*,int,int*,int*,int*),
   u32 colUsed,                    /* Columns used mask */
-  int *pnData                     /* OUT: Size of returned buffer */
+  int *pnData,                    /* OUT: Size of returned buffer */
+  int *piVersion                  /* IN/OUT: Vtab schema version used */
 ){
   int rc = SQLITE_OK;
   BcvBuffer buf = {0,0,0};
+  int iVersion = MAX(*piVersion, BCV_VTAB_VERSION);
 
   if( bcvStrcmp(zName, "bcv_database")==0 ){
     Container *pCont;
@@ -6194,6 +6289,17 @@ u8 *bcvDatabaseVtabData(
           zState = "copied";
         }
         bcvBufferMsgString(&rc, &buf, zState);
+        if( iVersion>=1 ){
+          int nClient = 0;
+          int nPrefetch = 0;
+          int nReader = 0;
+          xClientCount(pCommon, pCont, pDb->iDbId,&nClient,&nPrefetch,&nReader);
+          bcvBufferAppendU32(&rc, &buf, nClient);
+          bcvBufferAppendU32(&rc, &buf, nPrefetch);
+          if( iVersion>=2 ){
+            bcvBufferAppendU32(&rc, &buf, nReader);
+          }
+        }
       }
     }
   }else if( bcvStrcmp(zName, "bcv_container")==0 ){
@@ -6236,6 +6342,20 @@ u8 *bcvDatabaseVtabData(
     }
   }else if( bcvStrcmp(zName, "bcv_http_log")==0 ){
     rc = bcvLogGetData(pCommon->pLog, &buf);
+  }else if( bcvStrcmp(zName, "bcv_stat")==0 ){
+    int nLock = 0;
+    bcvBufferMsgString(&rc, &buf, "nlock");
+    if( pCommon->bDaemon ){
+      CacheEntry *p;
+      for(p=pCommon->pLruFirst; p; p=p->pLruNext){
+        nLock += (p->nRef>0);
+      }
+    }
+    bcvBufferAppendU64(&rc, &buf, (u64)nLock);
+    bcvBufferMsgString(&rc, &buf, "ncache");
+    bcvBufferAppendU64(&rc, &buf, (u64)pCommon->nBlk);
+    bcvBufferMsgString(&rc, &buf, "cachesize");
+    bcvBufferAppendU64(&rc, &buf, (u64)(pCommon->nMaxCache / pCommon->szBlk));
   }
 
   if( rc!=SQLITE_OK ){
@@ -6303,6 +6423,13 @@ static int bcvDatabaseVtabNext(sqlite3_vtab_cursor *cur){
   pCur->nDirty = (int)bcvVtabExtractU32(&pCur->data);
   pCur->bWalfile = (int)bcvVtabExtractU32(&pCur->data);
   pCur->zState = (char*)bcvVtabExtractString(&pCur->data);
+  if( pCur->iVersion>=1 ){
+    pCur->nClient = (int)bcvVtabExtractU32(&pCur->data);
+    pCur->nPrefetch = (int)bcvVtabExtractU32(&pCur->data);
+  }
+  if( pCur->iVersion>=2 ){
+    pCur->nReader = (int)bcvVtabExtractU32(&pCur->data);
+  }
 
   pCur->iRow++;
   return SQLITE_OK;
@@ -6330,6 +6457,16 @@ static int bcvBlockVtabNext(sqlite3_vtab_cursor *cur){
   pCur->aBlockId = (u8*)bcvVtabExtractBlob(&pCur->data, &pCur->nBlockId);
   pCur->bDirty = bcvVtabExtractU32(&pCur->data);
   pCur->bCache = bcvVtabExtractU32(&pCur->data);
+
+  pCur->iRow++;
+  return SQLITE_OK;
+}
+
+static int bcvStatVtabNext(sqlite3_vtab_cursor *cur){
+  bcv_stat_cursor *pCur = (bcv_stat_cursor*)cur;
+
+  pCur->zName = (char*)bcvVtabExtractString(&pCur->data);
+  pCur->iValue = (i64)bcvVtabExtractU64(&pCur->data);
 
   pCur->iRow++;
   return SQLITE_OK;
@@ -6366,6 +6503,15 @@ static int bcvDatabaseVtabColumn(
       break;
     case 6: /* state */
       sqlite3_result_text(ctx, pCur->zState, -1, SQLITE_TRANSIENT);
+      break;
+    case 7: /* nclient */
+      if( pCur->iVersion>=1 ) sqlite3_result_int(ctx, pCur->nClient);
+      break;
+    case 8: /* nprefetch */
+      if( pCur->iVersion>=1 ) sqlite3_result_int(ctx, pCur->nPrefetch);
+      break;
+    case 9: /* ntrans */
+      if( pCur->iVersion>=2 ) sqlite3_result_int(ctx, pCur->nReader);
       break;
   }
   return SQLITE_OK;
@@ -6430,6 +6576,23 @@ static int bcvBlockVtabColumn(
   return SQLITE_OK;
 }
 
+static int bcvStatVtabColumn(
+  sqlite3_vtab_cursor *cur,   /* The cursor */
+  sqlite3_context *ctx,       /* First argument to sqlite3_result_...() */
+  int i                       /* Which column to return */
+){
+  bcv_stat_cursor *pCur = (bcv_stat_cursor*)cur;
+  switch( i ){
+    case 0: /* name */
+      sqlite3_result_text(ctx, pCur->zName, -1, SQLITE_TRANSIENT);
+      break;
+    case 1: /* value */
+      sqlite3_result_int64(ctx, pCur->iValue);
+      break;
+  }
+  return SQLITE_OK;
+}
+
 /*
 ** Return the rowid for the current row.  In this implementation, the
 ** rowid is the same as the output value.
@@ -6452,6 +6615,12 @@ static int bcvBlockVtabRowid(sqlite3_vtab_cursor *cur, sqlite_int64 *pRow){
   return SQLITE_OK;
 }
 
+static int bcvStatVtabRowid(sqlite3_vtab_cursor *cur, sqlite_int64 *pRow){
+  bcv_stat_cursor *pCur = (bcv_stat_cursor*)cur;
+  *pRow = pCur->iRow;
+  return SQLITE_OK;
+}
+
 /*
 ** Return TRUE if the cursor has been moved off of the last
 ** row of output.
@@ -6469,6 +6638,11 @@ static int bcvContainerVtabEof(sqlite3_vtab_cursor *cur){
 static int bcvBlockVtabEof(sqlite3_vtab_cursor *cur){
   bcv_block_cursor *pCur = (bcv_block_cursor*)cur;
   return (pCur->zContainer==0);
+}
+
+static int bcvStatVtabEof(sqlite3_vtab_cursor *cur){
+  bcv_stat_cursor *pCur = (bcv_stat_cursor*)cur;
+  return (pCur->zName==0);
 }
 
 /*
@@ -6493,6 +6667,7 @@ static BcvMessage *bcvVtabFetchData(
   msg.u.vtab.zContainer = zCont;
   msg.u.vtab.zDatabase = zDb;
   msg.u.vtab.colUsed = colUsed;
+  msg.u.vtab.iVersion = BCV_VTAB_VERSION;
 
   pReply = bcvExchangeMessage(pRc, pFile->p.fdProxy, &msg);
   assert( (pReply==0)==(*pRc!=SQLITE_OK) );
@@ -6500,6 +6675,52 @@ static BcvMessage *bcvVtabFetchData(
   return pReply;
 }
 
+/*
+** GCC does not define the offsetof() macro so we'll have to do it
+** ourselves.
+*/
+#ifndef offsetof
+#define offsetof(STRUCTURE,FIELD) ((int)((char*)&((STRUCTURE*)0)->FIELD))
+#endif
+
+/*
+** Version of xClientCount for local VFS
+*/
+static void bcvLocalClientCount(
+  BcvCommon *pCommon, 
+  Container *pCont, 
+  int iDbId, 
+  int *pnClient,
+  int *pnPrefetch,
+  int *pnReader
+){
+  BcvfsFile *pFile = 0;
+  sqlite3_prefetch *pPrefetch = 0;
+  sqlite3_bcvfs *pFs = 0;
+  int nClient = 0;
+  int nPrefetch = 0;
+  int nReader = 0;
+  pFs = (sqlite3_bcvfs*)&((u8*)pCommon)[-offsetof(sqlite3_bcvfs, c)];
+
+  assert( pCommon->bDaemon==0 );
+
+  for(pFile=pFs->pFileList; pFile; pFile=pFile->pNextFile){
+    if( pFile->pCont==pCont && pFile->iFileDbId==iDbId ){
+      nClient++;
+      if( pFile->lockMask>0 ) nReader++;
+    }
+  }
+
+  for(pPrefetch=pFs->pPrefetch; pPrefetch; pPrefetch=pPrefetch->pNext){
+    if( pPrefetch->pCont==pCont && pPrefetch->pManDb->iDbId==iDbId ){
+      nPrefetch++;
+    }
+  }
+
+  *pnClient = nClient;
+  *pnPrefetch = nPrefetch;
+  *pnReader = nReader;
+}
 
 /*
 ** xFilter implentations for bcv_database and bcv_block.
@@ -6534,17 +6755,22 @@ static int bcvReadonlyVtabFilter(
   sqlite3_file_control(pTab->db, "main", BCV_FCNTL_FD, (void*)&pFile);
   if( pFile ){
     if( pFile->pFs->zPortnumber ){
-      BcvMessage *pMsg = bcvVtabFetchData(
+      BcvMessage *pMsg = 0;
+      pMsg = bcvVtabFetchData(
           &rc, pFile, pTab->zMod, zCont, zDb, colUsed
       );
       if( pMsg ){
         pCur->data.aData = pMsg->u.vtab_r.aData;
         pCur->data.nData = pMsg->u.vtab_r.nData;
         pCur->pFreeData = (void*)pMsg;
+        pCur->iVersion = pMsg->u.vtab_r.iVersion;
       }
     }else{
+      pCur->iVersion = BCV_VTAB_VERSION;
       pCur->data.aData = bcvDatabaseVtabData(&rc, &pFile->pFs->c, 
-          pTab->zMod, zCont, zDb, colUsed, &pCur->data.nData
+          pTab->zMod, zCont, zDb, 
+          bcvLocalClientCount,
+          colUsed, &pCur->data.nData, &pCur->iVersion
       );
       pCur->pFreeData = (void*)pCur->data.aData;
     }
@@ -6589,8 +6815,9 @@ static int bcvContainerVtabFilter(
         pCur->pFreeData = (void*)pMsg;
       }
     }else{
+      int iVersion = BCV_VTAB_VERSION;
       pCur->data.aData = bcvDatabaseVtabData(&rc, &pFile->pFs->c, 
-          "bcv_container", zCont, 0, colUsed, &pCur->data.nData
+          "bcv_container", zCont, 0, 0, colUsed, &pCur->data.nData, &iVersion
       );
       pCur->pFreeData = (void*)pCur->data.aData;
     }
@@ -7485,6 +7712,32 @@ int sqlite3_bcvfs_register_vtab(sqlite3 *db){
     /* xRollbackTo */ 0,
     /* xShadowName */ 0
   };
+  static sqlite3_module bcv_stat = {
+    /* iVersion    */ 2,
+    /* xCreate     */ 0,
+    /* xConnect    */ bcvDatabaseVtabConnect,
+    /* xBestIndex  */ bcvFileVtabBestIndex,
+    /* xDisconnect */ bcvDatabaseVtabDisconnect,
+    /* xDestroy    */ 0,
+    /* xOpen       */ bcvStatVtabOpen,
+    /* xClose      */ bcvStatVtabClose,
+    /* xFilter     */ bcvReadonlyVtabFilter,
+    /* xNext       */ bcvStatVtabNext,
+    /* xEof        */ bcvStatVtabEof,
+    /* xColumn     */ bcvStatVtabColumn,
+    /* xRowid      */ bcvStatVtabRowid,
+    /* xUpdate     */ 0,
+    /* xBegin      */ 0,
+    /* xSync       */ 0,
+    /* xCommit     */ 0,
+    /* xRollback   */ 0,
+    /* xFindMethod */ 0,
+    /* xRename     */ 0,
+    /* xSavepoint  */ 0,
+    /* xRelease    */ 0,
+    /* xRollbackTo */ 0,
+    /* xShadowName */ 0
+  };
 
   static sqlite3_module bcv_kv = {
     /* iVersion    */ 2,
@@ -7568,6 +7821,11 @@ int sqlite3_bcvfs_register_vtab(sqlite3 *db){
   if( rc==SQLITE_OK ){
     rc = sqlite3_create_module(
         db, "bcv_http_log", &bcv_http_log, (void*)BCV_HTTPLOG_VTAB_SCHEMA
+    );
+  }
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_module(
+        db, "bcv_stat", &bcv_stat, (void*)BCV_STAT_VTAB_SCHEMA
     );
   }
   return rc;

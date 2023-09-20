@@ -4,6 +4,10 @@
 *--------------------------------------------------------------------------------------------*/
 #pragma once
 
+// Electron doesn't allow creating external buffers - define this macro to remove relevant APIs.
+// See https://github.com/electron/electron/issues/35801 and https://github.com/microsoft/vscode/issues/177338
+#define NODE_API_NO_EXTERNAL_BUFFERS_ALLOWED 1
+
 #include "node_api-config.h"
 #include "node-src/napi.h"
 #include <Bentley/ByteStream.h>

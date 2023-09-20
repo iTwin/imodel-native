@@ -35,16 +35,18 @@
         <SubPart PartName="RunUnitCppTest" PartFile="iModelCore/iModelCoreTesting" />
     </Part>
 
-    <NuGetProduct Name="iModelCoreNuget" Description="iModel Core SDK" OnlyPlatforms="x64,macos*,ios*,android*">
+    <NuGetProduct Name="iModelNativeNuget" Description="iModel Native SDK" OnlyPlatforms="x64,macos*,ios*,android*">
         <Directories DirectoryListName="iModelCoreNugetDirs"/>
         <SubPart PartName="iModelCore"/>
         <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
+        <SubPart PartName="PSBRepGeometry" PartFile="iModelCore/PSBRepGeometry/PSBRepGeometry" Repository="imodel-native-internal"/>
     </NuGetProduct>
 
-    <UPackProduct Name="iModelCoreUPack" Description="iModel Core SDK" OnlyPlatforms="linux*,x64">
+    <UPackProduct Name="iModelNativeUPack" Description="iModel Native SDK" OnlyPlatforms="linux*,x64">
         <Directories DirectoryListName="iModelCoreNugetDirs"/>
         <SubPart PartName="iModelCore"/>
         <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
+        <SubPart PartName="PSBRepGeometry" PartFile="iModelCore/PSBRepGeometry/PSBRepGeometry" Repository="imodel-native-internal"/>
     </UPackProduct>
 
     <ProductDirectoryList ListName="iModelCoreNugetDirs">
@@ -62,6 +64,7 @@
         <ProductDirectory Name="VendorApi"              LibType="Static"    RelativeTo="Root" Path="include"/>
         <ProductDirectory Name="VendorNotices"                              RelativeTo="Root" Path="notices"/>
         <ProductDirectory Name="VendorNotices"          LibType="Static"    RelativeTo="Root" Path="notices"/>
+        <ProductDirectory Name="BeStaticLibDir"         LibType="Static"    RelativeTo="Root" Path="lib/static"/>
 
     </ProductDirectoryList>
 
@@ -110,16 +113,16 @@
         <SubPart PartName="__iModelCoreOpen-Dynamic"/>
         <SubPart PartName="RunUnitTests" LibType="Dynamic"/>
         <SubPart PartName="GTestSubParts" LibType="Dynamic"/>
-        <SubNuGetProduct NuGetProductName="iModelCoreNuget"/>
-        <SubUPackProduct UPackProductName="iModelCoreUPack"/>
+        <SubNuGetProduct NuGetProductName="iModelNativeNuget"/>
+        <SubUPackProduct UPackProductName="iModelNativeUPack"/>
     </Part>
 
     <Part Name="__iModelCorePRG-Static" OnlyPlatforms="android*,ios*,macos*,linux*">
         <SubPart PartName="__iModelCoreOpen-Static"/>
         <SubPart PartName="RunUnitTests" LibType="Static"/>
         <SubPart PartName="GTestSubParts" LibType="Static"/>
-        <SubNuGetProduct NuGetProductName="iModelCoreNuget" LibType="Static"/>
-        <SubUPackProduct UPackProductName="iModelCoreUPack" LibType="Static"/>
+        <SubNuGetProduct NuGetProductName="iModelNativeNuget" LibType="Static"/>
+        <SubUPackProduct UPackProductName="iModelNativeUPack" LibType="Static"/>
     </Part>
 
     <Part Name="GTestSubParts">
@@ -151,6 +154,10 @@
 
     <Part Name="IModelNativeConsole" OnlyPlatforms="x64">
         <SubProduct ProductName="iModelConsole" PartFile="iModelCore/iModelPlatform/iModelPlatform" />
+    </Part>
+
+    <Part Name="iModelNativeImport">
+        <!-- This dummy part is so that iTwinNativeThirdParty can pull in the repo via parts, which is needed for the way NuGetProducts work -->
     </Part>
 
 </BuildContext>

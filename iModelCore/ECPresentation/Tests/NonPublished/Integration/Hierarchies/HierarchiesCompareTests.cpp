@@ -1178,6 +1178,18 @@ TEST_F(HierarchiesCompareTests, GetsHierarchyUpdatesInMultipleRequests_AddedNode
 
     ASSERT_EQ(1, m_changeRecordsHandler->GetRecords().size());
 
+    EXPECT_EQ(ChangeType::Update, m_changeRecordsHandler->GetRecords()[0].GetChangeType());
+    EXPECT_STREQ("T_CHILD_1", m_changeRecordsHandler->GetRecords()[0].GetNode()->GetType().c_str());
+
+    m_changeRecordsHandler->Clear();
+    result = GetValidatedResponse(m_manager->CompareHierarchies(AsyncHierarchyCompareRequestParams::Create(s_project->GetECDb(), m_changeRecordsHandler,
+        lhs->GetRuleSetId(), RulesetVariables(),
+        rhs->GetRuleSetId(), RulesetVariables(),
+        bvector<NavNodeKeyCPtr>{ rootNodes[0]->GetKey() }, result, 1)));
+    ASSERT_TRUE(nullptr != result);
+
+    ASSERT_EQ(1, m_changeRecordsHandler->GetRecords().size());
+
     EXPECT_EQ(ChangeType::Insert, m_changeRecordsHandler->GetRecords()[0].GetChangeType());
     EXPECT_STREQ("T_CHILD_4", m_changeRecordsHandler->GetRecords()[0].GetNode()->GetType().c_str());
     EXPECT_EQ(2, m_changeRecordsHandler->GetRecords()[0].GetPosition());
@@ -1188,5 +1200,8 @@ TEST_F(HierarchiesCompareTests, GetsHierarchyUpdatesInMultipleRequests_AddedNode
         rhs->GetRuleSetId(), RulesetVariables(),
         bvector<NavNodeKeyCPtr>{ rootNodes[0]->GetKey() }, result, 1)));
     ASSERT_TRUE(nullptr == result);
-    EXPECT_TRUE(m_changeRecordsHandler->GetRecords().empty());
+    ASSERT_EQ(1, m_changeRecordsHandler->GetRecords().size());
+
+    EXPECT_EQ(ChangeType::Update, m_changeRecordsHandler->GetRecords()[0].GetChangeType());
+    EXPECT_STREQ("T_CHILD_2", m_changeRecordsHandler->GetRecords()[0].GetNode()->GetType().c_str());
     }
