@@ -333,8 +333,8 @@ private:
     ECSchemaReadContextR    m_schemaReadContext;
     ECSchemaPtr*            m_foundSchema;
 public:
-    ECSchemaReadContextBackedInstanceReadContext(ECSchemaReadContextR schemaReadContext, ECSchemaCR fallBackSchema, ECSchemaPtr* foundSchema)
-        :m_schemaReadContext(schemaReadContext), m_foundSchema (foundSchema), ECInstanceReadContext(schemaReadContext.GetStandaloneEnablerLocater(), fallBackSchema, nullptr)
+    ECSchemaReadContextBackedInstanceReadContext(ECSchemaReadContextR schemaReadContext, ECSchemaCR fallBackSchema, ECSchemaPtr* foundSchema, ECSchemaCP containerSchema = nullptr)
+        :m_schemaReadContext(schemaReadContext), m_foundSchema (foundSchema), ECInstanceReadContext(schemaReadContext.GetStandaloneEnablerLocater(), fallBackSchema, nullptr, containerSchema)
         { }
 
     /*---------------------------------------------------------------------------------**//**
@@ -343,6 +343,32 @@ public:
     virtual ECSchemaCP _FindSchemaCP(SchemaKeyCR keyIn, SchemaMatchType matchType) const
         {
         SchemaKey key(keyIn);
+
+        ECSchemaCP containerSchema = GetContainerSchema();
+        if(containerSchema != nullptr)
+            { //instead of going through the context, if we have a container schema, use that one instead
+            if (containerSchema->GetName().EqualsI(key.GetName()))
+                {
+                //use the container schema, but fail if it is incompatible
+                if (!containerSchema->GetSchemaKey().Matches(keyIn, matchType))
+                    {
+                    LOG.errorv("ECInstanceReadContext - Name of container schema (%s) matches requested key, but versions are incompatible.", containerSchema->GetName().c_str());
+                    return nullptr;
+                    }
+
+                return containerSchema;
+                }
+
+            auto& references = containerSchema->GetReferencedSchemas();
+            auto it = references.Find(key, matchType);
+            if (it != references.end())
+                return it->second.get();
+            else
+                {
+                LOG.errorv("ECInstanceReadContext - No matching referenced schema found for key %s in schema %s.", key.GetFullSchemaName().c_str(), containerSchema->GetFullSchemaName().c_str());
+                return nullptr;
+                }
+            }
         ECSchemaPtr schema = m_schemaReadContext.LocateSchema (key, matchType);
         if (schema.IsNull())
             return nullptr;
@@ -357,9 +383,9 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECInstanceReadContextPtr ECInstanceReadContext::CreateContext(ECSchemaReadContextR context, ECSchemaCR fallBackSchema, ECSchemaPtr* foundSchema)
+ECInstanceReadContextPtr ECInstanceReadContext::CreateContext(ECSchemaReadContextR context, ECSchemaCR fallBackSchema, ECSchemaPtr* foundSchema, ECSchemaCP containerSchema)
     {
-    return new ECSchemaReadContextBackedInstanceReadContext (context, fallBackSchema, foundSchema);
+    return new ECSchemaReadContextBackedInstanceReadContext (context, fallBackSchema, foundSchema, containerSchema);
     }
 
 /*---------------------------------------------------------------------------------**//**

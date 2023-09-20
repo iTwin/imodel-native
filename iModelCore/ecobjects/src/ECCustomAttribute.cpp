@@ -430,7 +430,7 @@ CustomAttributeReadStatus IECCustomAttributeContainer::ReadCustomAttributes (pug
             {
             if(customAttributeClassNode.type() != pugi::xml_node_type::node_element)
                 continue;
-            ECInstanceReadContextPtr context = ECInstanceReadContext::CreateContext (schemaContext, fallBackSchema, NULL);
+            ECInstanceReadContextPtr context = ECInstanceReadContext::CreateContext (schemaContext, fallBackSchema, NULL, &fallBackSchema);
 
             IECInstancePtr  customAttributeInstance;
             InstanceReadStatus thisStatus = InstanceReadStatus::Success;
