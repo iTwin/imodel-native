@@ -247,6 +247,7 @@ private:
     BentleyStatus ParseWindowPartitionClause(std::unique_ptr<WindowPartitionColumnReferenceListExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseWindowPartitionColumnRef(std::unique_ptr<WindowPartitionColumnReferenceExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseCollateClause(WindowPartitionColumnReferenceExp::CollateClauseFunction&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseFilterClause(std::unique_ptr<FilterClauseExp>&, connectivity::OSQLParseNode const*) const;
 
     static BentleyStatus ParsePolymorphicConstraint(PolymorphicInfo& constraint, connectivity::OSQLParseNode const* parseNode);
     IssueDataSource const& Issues() const { BeAssert(m_context != nullptr); return m_context->Issues(); }

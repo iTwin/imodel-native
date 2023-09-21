@@ -227,6 +227,7 @@ struct Exp
             WindowPartitionColumnReference,
             WindowPartitionColumnReferenceList,
             CollateClause,
+            FIlterClause,
             };
 
         struct Collection final

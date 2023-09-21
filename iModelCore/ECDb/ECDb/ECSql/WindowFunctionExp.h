@@ -12,6 +12,20 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //! @bsiclass
 //+===============+===============+===============+===============+===============+======
 
+struct FilterClauseExp final : Exp
+    {
+    private:
+        void _ToECSql(ECSqlRenderContext& ctx) const override;
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
+        Utf8String _ToString() const override { return "WindowPartitionColumnReferenceList"; }
+        FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
+
+    public:
+        FilterClauseExp(std::unique_ptr<WhereExp> whereExp) : Exp(Type::FIlterClause)
+        { AddChild(std::move(whereExp)); }
+
+        WhereExp const* GetWhereExp() const { return GetChild<WhereExp>(0); }
+    };
 struct WindowPartitionColumnReferenceExp final : Exp
     {
     public:
@@ -19,7 +33,7 @@ struct WindowPartitionColumnReferenceExp final : Exp
             {
             NotSpecified,
             Binary,
-            Nocase,
+            NoCase,
             Rtrim,
             };
 
@@ -34,9 +48,7 @@ struct WindowPartitionColumnReferenceExp final : Exp
         WindowPartitionColumnReferenceExp(std::unique_ptr<ValueExp> valueExp, CollateClauseFunction collateClauseFunction) :
             Exp(Type::WindowPartitionColumnReference),
             m_collateClauseFunction(collateClauseFunction)
-            {
-            AddChild(std::move(valueExp));
-            }
+            { AddChild(std::move(valueExp)); }
 
         CollateClauseFunction GetCollateClauseFunction() const { return m_collateClauseFunction; }
         ValueExp const* GetColumnRef() const { return GetChild<ValueExp>(0); }
@@ -108,35 +120,35 @@ struct WindowFunctionExp final : ValueExp
         void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override;
 
-        Utf8CP m_windowName = "";
+        Utf8CP m_windowName = nullptr;
         size_t m_windowFunctionTypeIndex = UNSET_CHILDINDEX;
+        size_t m_filterClauseIndex = UNSET_CHILDINDEX;
         size_t m_WindowSpecificationIndex = UNSET_CHILDINDEX;
 
-        WindowFunctionExp(std::unique_ptr<ValueExp>WindowFunctionType) : ValueExp(Type::WindowFunction)
+        WindowFunctionExp(std::unique_ptr<ValueExp> windowFunctionType, std::unique_ptr<FilterClauseExp> filterClauseExp) : ValueExp(Type::WindowFunction)
             {
-            m_windowFunctionTypeIndex = AddChild(std::move(WindowFunctionType));
+            m_windowFunctionTypeIndex = AddChild(std::move(windowFunctionType));
+            m_filterClauseIndex = AddChild(std::move(filterClauseExp));
             }
 
     public:
-        WindowFunctionExp(std::unique_ptr<ValueExp>windowFunctionType, std::unique_ptr<Exp>WindowSpecification) :
-            WindowFunctionExp(std::move(windowFunctionType))
-            {
-            m_WindowSpecificationIndex = AddChild(std::move(WindowSpecification));
-            }
+        WindowFunctionExp(std::unique_ptr<ValueExp>windowFunctionType, std::unique_ptr<FilterClauseExp> filterClauseExp, std::unique_ptr<Exp>WindowSpecification) :
+            WindowFunctionExp(std::move(windowFunctionType), std::move(filterClauseExp))
+            { m_WindowSpecificationIndex = AddChild(std::move(WindowSpecification)); }
 
-        WindowFunctionExp(std::unique_ptr<ValueExp> windowFunctionType, Utf8CP windowName) :
-            WindowFunctionExp(std::move(windowFunctionType))
-            {
-            m_windowName = windowName;
-            }
+        WindowFunctionExp(std::unique_ptr<ValueExp> windowFunctionType, std::unique_ptr<FilterClauseExp> filterClauseExp, Utf8CP windowName) :
+            WindowFunctionExp(std::move(windowFunctionType), std::move(filterClauseExp))
+            { m_windowName = windowName; }
         
         ValueExp const* GetWindowFunctionType() const { return GetChild<ValueExp>(m_windowFunctionTypeIndex); }
+        FilterClauseExp const* GetFilterClauseExp() const { return GetChild<FilterClauseExp>(m_filterClauseIndex); }
         WindowSpecification const* GetWindowSpecification() const 
             {
             if (m_WindowSpecificationIndex == UNSET_CHILDINDEX)
                 return nullptr; 
             return GetChild<WindowSpecification>(m_WindowSpecificationIndex);
             }
+        Utf8CP const GetWindowName() const { return m_windowName; }
 
     };
 
@@ -154,14 +166,5 @@ struct WindowFunctionType final : ValueExp
             {
             AddChild(std::move(functionCallExp));
             }
-    };
-
-struct WindowPartitionExp final : Exp
-    {
-    private:
-        void _ToECSql(ECSqlRenderContext& ctx) const override;
-        void _ToJson(BeJsValue, JsonFormat const&) const override;
-        Utf8String _ToString() const override { return "PartitionBy"; }
-        FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
     };
 END_BENTLEY_SQLITE_EC_NAMESPACE

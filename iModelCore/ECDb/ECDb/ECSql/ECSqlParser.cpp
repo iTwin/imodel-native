@@ -3277,20 +3277,24 @@ BentleyStatus ECSqlParser::ParseWindowFunction(std::unique_ptr<ValueExp>& valueE
         Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Unsupported window function type");
         return ERROR;
         }
-    
+
+    std::unique_ptr<FilterClauseExp> filterClauseExp = nullptr;
+    if (SUCCESS != ParseFilterClause(filterClauseExp, parseNode->getChild(1)))
+        return ERROR;
+
     if (SQL_ISRULE(parseNode->getChild(3), window_specification))
         {
         std::unique_ptr<WindowSpecification> windowSpecificationExp = nullptr;
         if (SUCCESS != ParseWindowSpecification(windowSpecificationExp, parseNode->getChild(3)))
             return ERROR;
 
-        valueExp = std::make_unique<WindowFunctionExp>(std::move(windowFunctionTypeExp), std::move(windowSpecificationExp));
+        valueExp = std::make_unique<WindowFunctionExp>(std::move(windowFunctionTypeExp), std::move(filterClauseExp), std::move(windowSpecificationExp));
         return SUCCESS;
         }
     else if (parseNode->getChild(3)->getTokenID() == SQL_TOKEN_NAME)
         {
         Utf8CP windowName = parseNode->getChild(3)->getTokenValue().c_str();
-        valueExp = std::make_unique<WindowFunctionExp>(std::move(windowFunctionTypeExp), windowName);
+        valueExp = std::make_unique<WindowFunctionExp>(std::move(windowFunctionTypeExp), std::move(filterClauseExp), windowName);
         }
 
     BeAssert(false && "Invalid grammar. Expecting window_name or window_specification");
@@ -3354,14 +3358,12 @@ BentleyStatus ECSqlParser::ParseWindowSpecification(std::unique_ptr<WindowSpecif
     // ( opt_window_name opt_window_partition_clause opt_order_by_clause opt_window_frame_clause )
 
     std::unique_ptr<WindowPartitionColumnReferenceListExp> windowPartitionExp = nullptr;
-    if (SUCCESS != ParseWindowPartitionClause(windowPartitionExp, parseNode->getChild(1)))
+    if (SUCCESS != ParseWindowPartitionClause(windowPartitionExp, parseNode->getChild(2)))
         return ERROR;
     
     std::unique_ptr<OrderByExp> orderByExp = nullptr;
-    if (SUCCESS != ParseOrderByClause(orderByExp, parseNode->getChild(2)))
+    if (SUCCESS != ParseOrderByClause(orderByExp, parseNode->getChild(3)))
         return ERROR;
-
-    // also don't forget to parse window frame clause
 
     exp = std::make_unique<WindowSpecification>(std::move(windowPartitionExp), std::move(orderByExp));
 
@@ -3383,9 +3385,10 @@ BentleyStatus ECSqlParser::ParseWindowPartitionClause(std::unique_ptr<WindowPart
     std::vector<std::unique_ptr<WindowPartitionColumnReferenceExp>> windowPartitionColumnRefs;
     for (size_t nPos = 0; nPos < window_partition_column_reference_list->count(); nPos++)
         {
-        std::unique_ptr<WindowPartitionColumnReferenceExp> valueExp = nullptr;
+        std::unique_ptr<WindowPartitionColumnReferenceExp> windowPartitionColumnReferenceExp = nullptr;
         const OSQLParseNode* windowPartitionColumnRef = window_partition_column_reference_list->getChild(nPos);
-        ParseWindowPartitionColumnRef(valueExp, windowPartitionColumnRef);
+        ParseWindowPartitionColumnRef(windowPartitionColumnReferenceExp, windowPartitionColumnRef);
+        windowPartitionColumnRefs.push_back(std::move(windowPartitionColumnReferenceExp));
         }
 
     exp = std::make_unique<WindowPartitionColumnReferenceListExp>(windowPartitionColumnRefs);
@@ -3404,7 +3407,7 @@ BentleyStatus ECSqlParser::ParseWindowPartitionColumnRef(std::unique_ptr<WindowP
     if (SUCCESS != ParseColumnRef(columnRefExp, parseNode->getChild(0), false))
         return ERROR;
     
-    WindowPartitionColumnReferenceExp::CollateClauseFunction collateClauseFunction;
+    WindowPartitionColumnReferenceExp::CollateClauseFunction collateClauseFunction = WindowPartitionColumnReferenceExp::CollateClauseFunction::NotSpecified;
     if (SUCCESS != ParseCollateClause(collateClauseFunction, parseNode->getChild(1)))
             return ERROR;
     
@@ -3414,11 +3417,15 @@ BentleyStatus ECSqlParser::ParseWindowPartitionColumnRef(std::unique_ptr<WindowP
 
 BentleyStatus ECSqlParser::ParseCollateClause(WindowPartitionColumnReferenceExp::CollateClauseFunction& collateClauseFunction, connectivity::OSQLParseNode const* parseNode) const
     {
-    if (!SQL_ISRULE(parseNode, collate_clause))
+    if (!SQL_ISRULE(parseNode, opt_collate_clause))
         {
-        BeAssert(false && "Invalid grammar. Expecting collate_clause");
+        BeAssert(false && "Invalid grammar. Expecting opt_collate_clause");
         return ERROR;
         }
+
+    if (parseNode->count() == 0)
+        return SUCCESS;
+
     switch (parseNode->getChild(1)->getTokenID())
         {
         case SQL_TOKEN_BINARY:
@@ -3428,7 +3435,7 @@ BentleyStatus ECSqlParser::ParseCollateClause(WindowPartitionColumnReferenceExp:
             }
         case SQL_TOKEN_NOCASE:
             {
-            collateClauseFunction = WindowPartitionColumnReferenceExp::CollateClauseFunction::Nocase;
+            collateClauseFunction = WindowPartitionColumnReferenceExp::CollateClauseFunction::NoCase;
             return SUCCESS;
             }
         case SQL_TOKEN_RTRIM:
@@ -3443,6 +3450,26 @@ BentleyStatus ECSqlParser::ParseCollateClause(WindowPartitionColumnReferenceExp:
             return ERROR;  
             }
         }
+    }
+
+BentleyStatus ECSqlParser::ParseFilterClause(std::unique_ptr<FilterClauseExp>& exp, connectivity::OSQLParseNode const* parseNode) const
+    {
+    if (!SQL_ISRULE(parseNode, opt_filter_clause))
+        {
+        BeAssert(false && "Invalid grammar. Expecting opt_filter_clause");
+        return ERROR;
+        }
+    
+    if (parseNode->count() == 0)
+        return SUCCESS;
+
+    std::unique_ptr<WhereExp> whereExp = nullptr;
+    
+    if (SUCCESS != ParseWhereClause(whereExp, parseNode->getChild(2)))
+        return ERROR;
+    
+    exp = std::make_unique<FilterClauseExp>(std::move(whereExp));
+    return SUCCESS;
     }
 
 //-----------------------------------------------------------------------------------------

@@ -187,21 +187,22 @@ extern int SQLyydebug;
     SQL_TOKEN_NOCASE = 388,        /* SQL_TOKEN_NOCASE  */
     SQL_TOKEN_RTRIM = 389,         /* SQL_TOKEN_RTRIM  */
     SQL_TOKEN_FILTER = 390,        /* SQL_TOKEN_FILTER  */
-    SQL_TOKEN_OR = 391,            /* SQL_TOKEN_OR  */
-    SQL_TOKEN_AND = 392,           /* SQL_TOKEN_AND  */
-    SQL_ARROW = 393,               /* SQL_ARROW  */
-    SQL_BITWISE_OR = 394,          /* SQL_BITWISE_OR  */
-    SQL_BITWISE_AND = 395,         /* SQL_BITWISE_AND  */
-    SQL_BITWISE_SHIFT_LEFT = 396,  /* SQL_BITWISE_SHIFT_LEFT  */
-    SQL_BITWISE_SHIFT_RIGHT = 397, /* SQL_BITWISE_SHIFT_RIGHT  */
-    SQL_LESSEQ = 398,              /* SQL_LESSEQ  */
-    SQL_GREATEQ = 399,             /* SQL_GREATEQ  */
-    SQL_NOTEQUAL = 400,            /* SQL_NOTEQUAL  */
-    SQL_LESS = 401,                /* SQL_LESS  */
-    SQL_GREAT = 402,               /* SQL_GREAT  */
-    SQL_EQUAL = 403,               /* SQL_EQUAL  */
-    SQL_CONCAT = 404,              /* SQL_CONCAT  */
-    SQL_TOKEN_INVALIDSYMBOL = 405  /* SQL_TOKEN_INVALIDSYMBOL  */
+    SQL_TOKEN_GROUPS = 391,        /* SQL_TOKEN_GROUPS  */
+    SQL_TOKEN_OR = 392,            /* SQL_TOKEN_OR  */
+    SQL_TOKEN_AND = 393,           /* SQL_TOKEN_AND  */
+    SQL_ARROW = 394,               /* SQL_ARROW  */
+    SQL_BITWISE_OR = 395,          /* SQL_BITWISE_OR  */
+    SQL_BITWISE_AND = 396,         /* SQL_BITWISE_AND  */
+    SQL_BITWISE_SHIFT_LEFT = 397,  /* SQL_BITWISE_SHIFT_LEFT  */
+    SQL_BITWISE_SHIFT_RIGHT = 398, /* SQL_BITWISE_SHIFT_RIGHT  */
+    SQL_LESSEQ = 399,              /* SQL_LESSEQ  */
+    SQL_GREATEQ = 400,             /* SQL_GREATEQ  */
+    SQL_NOTEQUAL = 401,            /* SQL_NOTEQUAL  */
+    SQL_LESS = 402,                /* SQL_LESS  */
+    SQL_GREAT = 403,               /* SQL_GREAT  */
+    SQL_EQUAL = 404,               /* SQL_EQUAL  */
+    SQL_CONCAT = 405,              /* SQL_CONCAT  */
+    SQL_TOKEN_INVALIDSYMBOL = 406  /* SQL_TOKEN_INVALIDSYMBOL  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif

@@ -149,7 +149,7 @@ using namespace connectivity;
 %token <pParseNode> SQL_TOKEN_FIRST_VALUE SQL_TOKEN_LAST_VALUE SQL_TOKEN_NTH_VALUE 
 %token <pParseNode> SQL_TOKEN_EXCLUDE SQL_TOKEN_OTHERS SQL_TOKEN_TIES SQL_TOKEN_FOLLOWING SQL_TOKEN_UNBOUNDED SQL_TOKEN_PRECEDING SQL_TOKEN_RANGE SQL_TOKEN_ROWS
 %token <pParseNode> SQL_TOKEN_PARTITION SQL_TOKEN_WINDOW SQL_TOKEN_NO SQL_TOKEN_CURRENT SQL_TOKEN_ROW SQL_TOKEN_RANK SQL_TOKEN_DENSE_RANK SQL_TOKEN_PERCENT_RANK SQL_TOKEN_CUME_DIST
-%token <pParseNode> SQL_TOKEN_COLLATE SQL_TOKEN_NOCASE SQL_TOKEN_RTRIM SQL_TOKEN_FILTER
+%token <pParseNode> SQL_TOKEN_COLLATE SQL_TOKEN_NOCASE SQL_TOKEN_RTRIM SQL_TOKEN_FILTER SQL_TOKEN_GROUPS
 
 /* operators */
 %left SQL_TOKEN_NAME
@@ -225,7 +225,7 @@ using namespace connectivity;
 %type <pParseNode> new_window_name  window_partition_column_reference_list window_partition_column_reference
 %type <pParseNode> window_frame_units window_frame_extent window_frame_start window_frame_preceding window_frame_between window_frame_bound_1 window_frame_bound_2 window_frame_bound window_frame_following
 %type <pParseNode> opt_window_frame_clause opt_window_partition_clause window_specification opt_window_frame_exclusion opt_window_clause collating_function
-%type <pParseNode> opt_collate_clause opt_filter_clause
+%type <pParseNode> opt_collate_clause opt_filter_clause opt_existing_window_name existing_window_name
 /* LIMIT and OFFSET */
 %type <pParseNode> opt_limit_offset_clause limit_offset_clause opt_offset opt_only union_op
 /* non-standard */
@@ -1783,6 +1783,7 @@ new_window_name:
 
 window_specification:
 	'('
+        opt_existing_window_name
 		opt_window_partition_clause
 		opt_order_by_clause
 		opt_window_frame_clause
@@ -1795,6 +1796,15 @@ window_specification:
 		$$->append($4);;
 		$$->append($5 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
 	}
+	;
+
+opt_existing_window_name:
+		/* empty */      {$$ = SQL_NEW_RULE;}
+	|	existing_window_name
+	;
+
+existing_window_name:
+	window_name
 	;
 
 opt_window_partition_clause:
@@ -1874,6 +1884,7 @@ opt_window_frame_exclusion:
 window_frame_units:
 		SQL_TOKEN_ROWS
 	|	SQL_TOKEN_RANGE
+    |   SQL_TOKEN_GROUPS
 	;
 
 window_frame_extent:
@@ -1898,7 +1909,7 @@ window_frame_start:
 	;
 
 window_frame_preceding:
-	unsigned_value_spec SQL_TOKEN_PRECEDING
+	value_exp SQL_TOKEN_PRECEDING
 	{
 		$$ = SQL_NEW_RULE;
 		$$->append($1);

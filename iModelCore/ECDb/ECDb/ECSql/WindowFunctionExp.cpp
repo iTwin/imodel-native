@@ -3,6 +3,7 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
+#include "WindowFunctionExp.h"
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -23,7 +24,7 @@ bool WindowFunctionExp::_TryDetermineParameterExpType(ECSqlParseContext& ctx, Pa
 void WindowFunctionExp::_ToECSql(ECSqlRenderContext& ctx) const
     {
     ctx.AppendToECSql(*GetWindowFunctionType());
-    ctx.AppendToECSql(" OVER ");
+    ctx.AppendToECSql(" OVER");
     ctx.AppendToECSql(*GetWindowSpecification());
     }
 
@@ -67,7 +68,23 @@ bool WindowSpecification::_TryDetermineParameterExpType(ECSqlParseContext& ctx, 
 
 void WindowSpecification::_ToECSql(ECSqlRenderContext& ctx) const
     {
-        ctx.AppendToECSql("(ORDER BY ECInstanceId) ");
+    ctx.AppendToECSql("(");
+    bool isFirstWindowSpecificationClause = true;
+    if (WindowPartitionColumnReferenceListExp const* e = GetPartitionBy())
+        {
+        ctx.AppendToECSql(*e);
+        isFirstWindowSpecificationClause = false;
+        }
+    if (OrderByExp const * e = GetOrderBy())
+        {
+        if (!isFirstWindowSpecificationClause)
+            ctx.AppendToECSql(" ");
+
+        ctx.AppendToECSql(*e);
+        isFirstWindowSpecificationClause = false;
+        }
+
+    ctx.AppendToECSql(")");
     }
 
 void WindowSpecification::_ToJson(BeJsValue, JsonFormat const &) const
@@ -84,21 +101,20 @@ Exp::FinalizeParseStatus WindowSpecification::_FinalizeParsing(ECSqlParseContext
     return FinalizeParseStatus::Completed;
     }
 
-void WindowPartitionExp::_ToECSql(ECSqlRenderContext &ctx) const
-    {
-    }
-
-void WindowPartitionExp::_ToJson(BeJsValue, JsonFormat const &) const
-    {
-    }
-
-Exp::FinalizeParseStatus WindowPartitionExp::_FinalizeParsing(ECSqlParseContext &, FinalizeParseMode)
-    {
-    return FinalizeParseStatus::Completed;
-    }
-
 void WindowPartitionColumnReferenceListExp::_ToECSql(ECSqlRenderContext & ctx) const
     {
+    ctx.AppendToECSql("PARTITION BY");
+    bool isFirstItem = true;
+     for (size_t nPos = 0; nPos < GetChildrenCount(); nPos++)
+        {
+        if (!isFirstItem)
+            ctx.AppendToECSql(",");
+
+        ctx.AppendToECSql(" ");
+        ctx.AppendToECSql(GetChildren()[nPos]->GetAs<WindowPartitionColumnReferenceExp>());
+        
+        isFirstItem = false;
+        }
     }
 
 void WindowPartitionColumnReferenceListExp::_ToJson(BeJsValue, JsonFormat const &) const
@@ -113,6 +129,23 @@ Exp::FinalizeParseStatus WindowPartitionColumnReferenceListExp::_FinalizeParsing
 
 void WindowPartitionColumnReferenceExp::_ToECSql(ECSqlRenderContext &ctx) const
     {
+    ctx.AppendToECSql(*GetColumnRef());
+    if (GetCollateClauseFunction() != WindowPartitionColumnReferenceExp::CollateClauseFunction::NotSpecified)
+        {
+        ctx.AppendToECSql(" COLLATE ");
+        switch(GetCollateClauseFunction())
+            {
+            case WindowPartitionColumnReferenceExp::CollateClauseFunction::Binary:
+                ctx.AppendToECSql("BINARY");
+                break;
+            case WindowPartitionColumnReferenceExp::CollateClauseFunction::NoCase:
+                ctx.AppendToECSql("NOCASE");
+                break;
+            case WindowPartitionColumnReferenceExp::CollateClauseFunction::Rtrim:
+                ctx.AppendToECSql("RTRIM");
+                break;
+            }
+        }
     }
 
 void WindowPartitionColumnReferenceExp::_ToJson(BeJsValue, JsonFormat const &) const
@@ -123,5 +156,19 @@ Exp::FinalizeParseStatus WindowPartitionColumnReferenceExp::_FinalizeParsing(ECS
     {
     return FinalizeParseStatus::Completed;
     }
+
+void FilterClauseExp::_ToECSql(ECSqlRenderContext &ctx) const
+    {
+    }
+
+void FilterClauseExp::_ToJson(BeJsValue, JsonFormat const &) const
+    {
+    }
+
+Exp::FinalizeParseStatus FilterClauseExp::_FinalizeParsing(ECSqlParseContext &, FinalizeParseMode)
+    {
+    return FinalizeParseStatus::Completed;
+    }
+
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

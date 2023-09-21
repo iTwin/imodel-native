@@ -11441,13 +11441,19 @@ TEST_F(ECSqlStatementTestFixture, SelectWithWindowFunctions)
 
     if ("row_number")
         {
-        Utf8CP ecsql = "SELECT ROW_NUMBER() over (order by ECInstanceId) FROM ts.SomeEntity";
+        Utf8CP ecsql = "SELECT ECInstanceId FROM ts.SomeEntity";
         auto expected = JsonValue(R"json([
-                {"Name":"fas","Primary":-150.09999999999999,"Random":-1,"Secondary":-150.09999999999999,"className":"TestSchema.SomeEntity","id":"0x4"},
-                {"Name":"fas956","Primary":-20000.50,"Random":-10,"Secondary":-150.09999999999999,"className":"TestSchema.SomeEntity","id":"0x5"}
+                {"ROW_NUMBER() OVER (ORDER BY ECInstanceId) ":1.0},
+                {"ROW_NUMBER() OVER (ORDER BY ECInstanceId) ":1.0},
+                {"ROW_NUMBER() OVER (ORDER BY ECInstanceId) ":1.0},
+                {"ROW_NUMBER() OVER (ORDER BY ECInstanceId) ":1.0},
+                {"ROW_NUMBER() OVER (ORDER BY ECInstanceId) ":1.0}
             ])json");
         
-        ASSERT_EQ(expected, GetHelper().ExecuteSelectECSql(ecsql));
+        auto mySql = GetHelper().ExecuteSelectECSql(ecsql);
+        Utf8String smth = mySql.ToString();
+        if (smth == "") {}
+        ASSERT_EQ(expected, mySql);
         }
     }
 END_ECDBUNITTESTS_NAMESPACE

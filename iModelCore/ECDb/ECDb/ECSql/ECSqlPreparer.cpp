@@ -1094,10 +1094,24 @@ ECSqlStatus ECSqlExpPreparer::PrepareOrderByExp(ECSqlPrepareContext& ctx, OrderB
     ctx.PushScope(exp);
 
     NativeSqlBuilder orderBySqlBuilder;
+    ECSqlStatus status = PrepareOrderByExp(orderBySqlBuilder, ctx, exp);
+    if (!status.IsSuccess())
+        return status;
+
+    if (!orderBySqlBuilder.IsEmpty())
+        ctx.GetSqlBuilder().Append(orderBySqlBuilder);
+
+    ctx.PopScope();
+    return ECSqlStatus::Success;
+    }
+
+ECSqlStatus ECSqlExpPreparer::PrepareOrderByExp(NativeSqlBuilder& nativeSqlBuilder, ECSqlPrepareContext& ctx, OrderByExp const& exp)
+    {
+    NativeSqlBuilder orderBySqlBuilder;
     bool isFirstSpec = true;
     for (Exp const* child : exp.GetChildren())
         {
-        OrderBySpecExp const& specification =child->GetAs<OrderBySpecExp>();
+        OrderBySpecExp const& specification = child->GetAs<OrderBySpecExp>();
 
         ComputedExp const* sortExp = specification.GetSortExpression();
         NativeSqlBuilder::List sqlSnippets;
@@ -1151,11 +1165,10 @@ ECSqlStatus ECSqlExpPreparer::PrepareOrderByExp(ECSqlPrepareContext& ctx, OrderB
             isFirstSpec = false; //needs to be inside the inner loop so that empty sqlSnippets are handled correctly
             }
         }
-
+    
     if (!orderBySqlBuilder.IsEmpty())
-        ctx.GetSqlBuilder().Append("ORDER BY ").Append(orderBySqlBuilder);
+        nativeSqlBuilder.Append("ORDER BY ").Append(orderBySqlBuilder);
 
-    ctx.PopScope();
     return ECSqlStatus::Success;
     }
 
@@ -1940,38 +1953,98 @@ ECSqlStatus ECSqlExpPreparer::PrepareTypeListExp(NativeSqlBuilder::List& nativeS
 ECSqlStatus ECSqlExpPreparer::PrepareWindowFunctionExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, WindowFunctionExp const& exp)
     {
     ECSqlStatus status;
+    NativeSqlBuilder nativeSqlBuilder;
+    if (exp.GetWindowName() != nullptr)
+        nativeSqlBuilder.Append(exp.GetWindowName());
+    else
+        {
+        NativeSqlBuilder::List nativeSqlFunctionSnippets;
+        status = PrepareFunctionCallExp(nativeSqlFunctionSnippets, ctx, exp.GetWindowFunctionType()->GetAs<FunctionCallExp>());
+        if (!status.IsSuccess())
+            return status;
+        
+        for (auto snippet : nativeSqlFunctionSnippets)
+            nativeSqlBuilder.Append(snippet);
+        }
 
-    status = PrepareFunctionCallExp(nativeSqlSnippets, ctx, exp.GetWindowFunctionType()->GetAs<FunctionCallExp>());
+    status = PrepareFilterClauseExp(nativeSqlBuilder, ctx, *exp.GetFilterClauseExp());
     if (!status.IsSuccess())
         return status;
- 
-    // also filter clause
 
-    nativeSqlSnippets.back().Append(" OVER");
-    status = PrepareWindowSpecification(nativeSqlSnippets.back(), ctx, *exp.GetWindowSpecification());
+    nativeSqlBuilder.Append(" OVER");
+    status = PrepareWindowSpecification(nativeSqlBuilder, ctx, *exp.GetWindowSpecification());
     if (!status.IsSuccess())
         return status;
     
+    nativeSqlSnippets.push_back(nativeSqlBuilder);
     return ECSqlStatus::Success;
     }
 
-ECSqlStatus ECSqlExpPreparer::PrepareWindowPartitionColumnReference(NativeSqlBuilder& nativeSqlBuilder, WindowPartitionColumnReferenceExp const& exp)
+ECSqlStatus ECSqlExpPreparer::PrepareWindowPartitionColumnReference(NativeSqlBuilder& nativeSqlBuilder, ECSqlPrepareContext& ctx, WindowPartitionColumnReferenceExp const& exp)
     {
-    nativeSqlBuilder.AppendSpace();
+    NativeSqlBuilder::List nativeSqlSnippets;
+    ECSqlStatus status;
+    switch (exp.GetColumnRef()->GetType())
+        {
+        case Exp::Type::PropertyName:
+            status = ECSqlPropertyNameExpPreparer::Prepare(nativeSqlSnippets, ctx, exp.GetColumnRef()->GetAs<PropertyNameExp>());
+            if (!status.IsSuccess())
+                return status;
+            break;
+        case Exp::Type::EnumValue:
+            status =  PrepareEnumValueExp(nativeSqlSnippets, ctx, exp.GetColumnRef()->GetAs<EnumValueExp>());
+            if (!status.IsSuccess())
+                return status;
+            break;
+        case Exp::Type::ExtractProperty:
+            status =  PrepareExtractPropertyExp(nativeSqlSnippets, ctx, exp.GetColumnRef()->GetAs<ExtractPropertyValueExp>());
+            if (!status.IsSuccess())
+                return status;
+            break;
+        case Exp::Type::ExtractInstance:
+            status = PrepareExtractInstanceExp(nativeSqlSnippets, ctx, exp.GetColumnRef()->GetAs<ExtractInstanceValueExp>());
+            if (!status.IsSuccess())
+                return status;
+            break;
+        }
+
+    for (auto sqlBuilder : nativeSqlSnippets)
+        nativeSqlBuilder.Append(sqlBuilder);
+
+    if (exp.GetCollateClauseFunction() == WindowPartitionColumnReferenceExp::CollateClauseFunction::NotSpecified)
+        return ECSqlStatus::Success;
+
+    nativeSqlBuilder.Append(" COLLATE");
+    switch (exp.GetCollateClauseFunction())
+        {
+        case WindowPartitionColumnReferenceExp::CollateClauseFunction::Binary:
+            nativeSqlBuilder.Append(" BINARY");
+            break;
+        case WindowPartitionColumnReferenceExp::CollateClauseFunction::NoCase:
+            nativeSqlBuilder.Append(" NOCASE");
+            break;
+        case WindowPartitionColumnReferenceExp::CollateClauseFunction::Rtrim:
+            nativeSqlBuilder.Append(" RTRIM");
+            break;
+        default:
+            return ECSqlStatus::InvalidECSql;
+        }
+
     return ECSqlStatus::Success;
     }
 
-ECSqlStatus ECSqlExpPreparer::PrepareWindowPartitionColumnReferenceList(NativeSqlBuilder& nativeSqlBuilder, WindowPartitionColumnReferenceListExp const& exp)
+ECSqlStatus ECSqlExpPreparer::PrepareWindowPartitionColumnReferenceList(NativeSqlBuilder& nativeSqlBuilder, ECSqlPrepareContext& ctx, WindowPartitionColumnReferenceListExp const& exp)
     {
-    nativeSqlBuilder.Append(" PARTITION BY");
+    nativeSqlBuilder.Append("PARTITION BY");
     ECSqlStatus status;
     bool isFirstItem = true;
     for (size_t nPos = 0; nPos < exp.GetChildrenCount(); nPos++)
         {
         if (!isFirstItem)
-           nativeSqlBuilder.AppendComma();
+            nativeSqlBuilder.AppendComma();
 
-        status = PrepareWindowPartitionColumnReference(nativeSqlBuilder, exp.GetChildren()[nPos]->GetAs<WindowPartitionColumnReferenceExp>());
+        nativeSqlBuilder.AppendSpace();
+        status = PrepareWindowPartitionColumnReference(nativeSqlBuilder, ctx, exp.GetChildren()[nPos]->GetAs<WindowPartitionColumnReferenceExp>());
         if (!status.IsSuccess())
             return status;
         
@@ -1981,25 +2054,43 @@ ECSqlStatus ECSqlExpPreparer::PrepareWindowPartitionColumnReferenceList(NativeSq
     }
 
 ECSqlStatus ECSqlExpPreparer::PrepareWindowSpecification(NativeSqlBuilder& nativeSqlBuilder, ECSqlPrepareContext& ctx, WindowSpecification const& exp)
-    {;
+    {
     nativeSqlBuilder.AppendParenLeft();
     ECSqlStatus status;
-    if (OrderByExp const * e = exp.GetOrderBy())
-        {
-        nativeSqlBuilder.AppendSpace();
-        status = ECSqlExpPreparer::PrepareOrderByExp(ctx, *e);
-        if (!status.IsSuccess())
-            return status;
-        }
+    bool isFirstWindowSpecificationClause = true;
     if (WindowPartitionColumnReferenceListExp const * e = exp.GetPartitionBy())
         {
-        nativeSqlBuilder.AppendSpace();
-        status = PrepareWindowPartitionColumnReferenceList(nativeSqlBuilder, *e);
+        status = PrepareWindowPartitionColumnReferenceList(nativeSqlBuilder, ctx, *e);
         if (!status.IsSuccess())
             return status; 
+
+        isFirstWindowSpecificationClause = false;
+        }
+
+    if (OrderByExp const * e = exp.GetOrderBy())
+        {
+        if (!isFirstWindowSpecificationClause)
+            nativeSqlBuilder.AppendSpace();
+
+        status = ECSqlExpPreparer::PrepareOrderByExp(nativeSqlBuilder, ctx, *e);
+        if (!status.IsSuccess())
+            return status;
+
+        isFirstWindowSpecificationClause = false;
         }
         
     nativeSqlBuilder.AppendParenRight();
+    return ECSqlStatus::Success;
+    }
+
+ECSqlStatus ECSqlExpPreparer::PrepareFilterClauseExp(NativeSqlBuilder& nativeSqlBuilder, ECSqlPrepareContext& ctx, FilterClauseExp const& exp)
+    {
+    nativeSqlBuilder.Append(" FILTER (");
+    ECSqlStatus status = PrepareWhereExp(nativeSqlBuilder, ctx, *exp.GetWhereExp());
+    if (!status.IsSuccess())
+        return status;
+
+    nativeSqlBuilder.Append(")");
     return ECSqlStatus::Success;
     }
 
