@@ -188,8 +188,10 @@ public:
     Range<const value_type*>,
     Range<Iter>>::type const_range_type;
 
+#if defined (BENTLEY_CHANGE)
   typedef std::char_traits<typename std::remove_const<value_type>::type>
     traits_type;
+#endif
 
   static const size_type npos;
 
@@ -420,6 +422,7 @@ public:
     return const_range_type(*this);
   }
 
+#if defined (BENTLEY_CHANGE)
   // Works only for Range<const char*> and Range<char*>
   int compare(const const_range_type& o) const {
     const size_type tsize = this->size();
@@ -435,6 +438,7 @@ public:
     }
     return r;
   }
+#endif
 
   value_type& operator[](size_t i) {
     DCHECK_GT(size(), i);
