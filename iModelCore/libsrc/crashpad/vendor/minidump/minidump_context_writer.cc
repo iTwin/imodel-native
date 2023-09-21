@@ -359,7 +359,8 @@ size_t MinidumpContextAMD64Writer::ContextSize() const {
 
 bool MinidumpXSaveAMD64CetU::InitializeFromSnapshot(
     const CPUContextX86_64* context_snapshot) {
-  DCHECK_EQ(context_snapshot->xstate.cet_u.cetmsr, 1ull);
+  // BENTLEY_CHANGE -- this check fails and crashes the handler in practice when iModelBridgeFwk.exe crashes, and I have seen no other side effects
+  // DCHECK_EQ(context_snapshot->xstate.cet_u.cetmsr, 1ull);
   cet_u_.cetmsr = context_snapshot->xstate.cet_u.cetmsr;
   cet_u_.ssp = context_snapshot->xstate.cet_u.ssp;
   return true;
