@@ -621,8 +621,8 @@ struct TextureMapping
     struct Trans2x3
     {
         double m_val[2][3];
-        Trans2x3() {}
-        Trans2x3(double t00, double t01, double t02, double t10, double t11, double t12)
+        DGNPLATFORM_EXPORT Trans2x3() {}
+        DGNPLATFORM_EXPORT Trans2x3(double t00, double t01, double t02, double t10, double t11, double t12)
             {
             m_val[0][0] = t00;
             m_val[0][1] = t01;
@@ -644,8 +644,8 @@ struct TextureMapping
 
         Transform GetTransform() const;
 
-        void ToJson(BeJsValue) const;
-        static Trans2x3 FromJson(BeJsConst);
+        DGNPLATFORM_EXPORT void ToJson(BeJsValue) const;
+        DGNPLATFORM_EXPORT static Trans2x3 FromJson(BeJsConst);
         static Trans2x3 FromTransform(TransformCR);
     };
 
