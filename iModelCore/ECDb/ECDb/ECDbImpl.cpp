@@ -14,7 +14,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 LastErrorListener::LastErrorListener(ECDbCR ecdb):m_ecdb(ecdb) {
     if (m_ecdb.IsDbOpen()) {
         m_cancel = m_ecdb.GetImpl().Issues().OnIssueReported().AddListener(
-            [&](ECN::IssueSeverity severity, ECN::IssueCategory, ECN::IssueType, Utf8CP message) {
+            [&](ECN::IssueSeverity severity, ECN::IssueCategory, ECN::IssueType, ECN::IssueId, Utf8CP message) {
                 if (severity == ECN::IssueSeverity::Error || severity == ECN::IssueSeverity::Fatal) {
                     m_lastError = message;
                 }
