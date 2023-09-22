@@ -39,7 +39,7 @@ Exp::FinalizeParseStatus DeleteStatementExp::_FinalizeParsing(ECSqlParseContext&
 
         if (classNameExp->GetMemberFunctionCallExp() != nullptr)
             {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "May not call function on class in FROM clause in a DELETE statement: %s", ToECSql().c_str());
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0462, "May not call function on class in FROM clause in a DELETE statement: %s", ToECSql().c_str());
             return FinalizeParseStatus::Error;
             }
 

@@ -717,7 +717,8 @@ BentleyStatus SchemaPersistenceHelper::SerializeKoqPresentationFormats(Utf8Strin
             {
             if (format.IsProblem())
                 {
-                ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to import KindOfQuantity '%s'. One of its presentation formats is invalid: %s.", koq.GetFullName().c_str(), format.GetProblemDescription().c_str());
+                ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0291,
+                    "Failed to import KindOfQuantity '%s'. One of its presentation formats is invalid: %s.", koq.GetFullName().c_str(), format.GetProblemDescription().c_str());
                 return ERROR;
                 }
 

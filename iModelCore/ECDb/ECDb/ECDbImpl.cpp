@@ -650,7 +650,8 @@ BentleyStatus ECDb::Impl::PurgeFileInfos() const
         ECClassCP ownerClass = Schemas().GetClass(ownerClassId);
         if (ownerClass == nullptr)
             {
-            m_issueReporter.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "FileInfo owner ECClass not found for " ECDBSYS_PROP_ECClassId " %s.", ownerClassId.ToString().c_str());
+            m_issueReporter.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0231,
+                "FileInfo owner ECClass not found for " ECDBSYS_PROP_ECClassId " %s.", ownerClassId.ToString().c_str());
             return ERROR;
             }
 
@@ -703,7 +704,7 @@ BentleyStatus ECDb::Impl::OpenBlobIO(BlobIO& blobIO, Utf8CP tableSpaceName, ECN:
     Policy policy = PolicyManager::GetPolicy(ECCrudPermissionPolicyAssertion(m_ecdb, writable, writeToken));
     if (!policy.IsSupported())
         {
-        m_issueReporter.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, policy.GetNotSupportedMessage().c_str());
+        m_issueReporter.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0232, policy.GetNotSupportedMessage().c_str());
         return ERROR;
         }
 
@@ -713,23 +714,24 @@ BentleyStatus ECDb::Impl::OpenBlobIO(BlobIO& blobIO, Utf8CP tableSpaceName, ECN:
     ClassMap const* classMap = m_ecdb.Schemas().GetDispatcher().GetClassMap(ecClass, tableSpaceName);
     if (classMap == nullptr || classMap->GetType() == ClassMap::Type::NotMapped)
         {
-        m_issueReporter.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Cannot open BlobIO for ECProperty '%s.%s' (Table space: %s). Cannot find class map for the ECClass.",
-                   ecClass.GetFullName(), propertyAccessString, Utf8String::IsNullOrEmpty(tableSpaceName) ? "any" : tableSpaceName);
+        m_issueReporter.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0233,
+            "Cannot open BlobIO for ECProperty '%s.%s' (Table space: %s). Cannot find class map for the ECClass.",
+            ecClass.GetFullName(), propertyAccessString, Utf8String::IsNullOrEmpty(tableSpaceName) ? "any" : tableSpaceName);
         return ERROR;
         }
 
     PropertyMap const* propMap = classMap->GetPropertyMaps().Find(propertyAccessString);
     if (propMap == nullptr)
         {
-        m_issueReporter.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Cannot open BlobIO for ECProperty '%s.%s'. The ECProperty doesn't exist in the ECClass.",
-                   ecClass.GetFullName(), propertyAccessString);
+        m_issueReporter.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0234,
+            "Cannot open BlobIO for ECProperty '%s.%s'. The ECProperty doesn't exist in the ECClass.", ecClass.GetFullName(), propertyAccessString);
         return ERROR;
         }
 
     if (PropertyMap::Type::Primitive != propMap->GetType())
         {
-        m_issueReporter.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Cannot open BlobIO for ECProperty '%s.%s'. The ECProperty must be primitive and of type Binary.",
-                   ecClass.GetFullName(), propertyAccessString);
+        m_issueReporter.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0235,
+            "Cannot open BlobIO for ECProperty '%s.%s'. The ECProperty must be primitive and of type Binary.", ecClass.GetFullName(), propertyAccessString);
         return ERROR;
         }
 
@@ -737,8 +739,8 @@ BentleyStatus ECDb::Impl::OpenBlobIO(BlobIO& blobIO, Utf8CP tableSpaceName, ECN:
     const PrimitiveType primType = propMap->GetProperty().GetAsPrimitiveProperty()->GetType();
     if (primType != PRIMITIVETYPE_Binary && primType != PRIMITIVETYPE_IGeometry)
         {
-        m_issueReporter.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Cannot open BlobIO for ECProperty '%s.%s'. It must be either of type Binary or IGeometry.",
-                   ecClass.GetFullName(), propertyAccessString);
+        m_issueReporter.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0236,
+            "Cannot open BlobIO for ECProperty '%s.%s'. It must be either of type Binary or IGeometry.", ecClass.GetFullName(), propertyAccessString);
         return ERROR;
         }
 
@@ -746,8 +748,8 @@ BentleyStatus ECDb::Impl::OpenBlobIO(BlobIO& blobIO, Utf8CP tableSpaceName, ECN:
 
     if (col.GetPersistenceType() == PersistenceType::Virtual)
         {
-        m_issueReporter.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Cannot open BlobIO for ECProperty '%s.%s' as it is not mapped to a column.",
-                   ecClass.GetFullName(), propertyAccessString);
+        m_issueReporter.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0237,
+            "Cannot open BlobIO for ECProperty '%s.%s' as it is not mapped to a column.", ecClass.GetFullName(), propertyAccessString);
         return ERROR;
         }
 

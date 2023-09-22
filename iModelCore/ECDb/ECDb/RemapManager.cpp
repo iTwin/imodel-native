@@ -142,8 +142,8 @@ WHERE [ec_PropertyPath].[RootPropertyId] = ? AND NOT EXISTS (SELECT 1 FROM [ec_P
 
         if (BE_SQLITE_DONE != cleanPropertyPathStmt->Step())
             {
-            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to clean property path orphans: %s",
-                m_ecdb.GetLastError().c_str());
+            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0246,
+                "Failed to clean property path orphans: %s", m_ecdb.GetLastError().c_str());
             return ERROR;
             }
 
@@ -279,15 +279,16 @@ WHERE [ecp].[Name] = ? AND ([col].[ColumnKind] = 4 OR ([col].[ColumnKind] = 0 AN
 
     if (BE_SQLITE_DONE != deleteStmt->Step())
         {
-        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to clean mappings. Could not delete mapping for ECClass %s Property %s: %s",
-            classId.ToString().c_str(), propertyName.c_str(), m_ecdb.GetLastError().c_str());
+        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0247,
+            "Failed to clean mappings. Could not delete mapping for ECClass %s Property %s: %s", classId.ToString().c_str(), propertyName.c_str(), m_ecdb.GetLastError().c_str());
         return ERROR;
         }
 
     int affectedRows = m_ecdb.GetModifiedRowCount();
     if(affectedRows != results)
         {
-        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Cleaning up deleted %" PRIi32 " mapping(s) but expected to clean %" PRIi32 " for property %s.", affectedRows, results, propertyName.c_str());
+        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0248,
+            "Cleaning up deleted %" PRIi32 " mapping(s) but expected to clean %" PRIi32 " for property %s.", affectedRows, results, propertyName.c_str());
         return ERROR;
         }
 
@@ -526,15 +527,26 @@ SELECT distinct [mc].[RootPropertyId], [prop].[Name], [cl].[Name] FROM [migratin
 
         if (BE_SQLITE_DONE != cleanMappingsStmt->Step())
             {
-            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to clean mappings for new base class property. Could not delete mapping for ECClass %s.%s: %s",
-                remapInfo.m_schemaName.c_str(), remapInfo.m_className.c_str(), m_ecdb.GetLastError().c_str());
+            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0249,
+                "Failed to clean mappings for new base class property. Could not delete mapping for ECClass %s.%s: %s", remapInfo.m_schemaName.c_str(), remapInfo.m_className.c_str(), m_ecdb.GetLastError().c_str());
             return ERROR;
             }
 
         int affectedRows = m_ecdb.GetModifiedRowCount();
         if(affectedRows != results)
             {
-            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Cleaning up deleted %" PRIi32 " mapping(s) but expected to clean %" PRIi32 " for property %d on class %s:%s.", affectedRows, results, rootPropertyId.GetValue(), remapInfo.m_schemaName.c_str(), remapInfo.m_className.c_str());
+            Issues().ReportV(
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
+                IssueType::ECDbIssue,
+                ECDbIssueId::ECDb_0250,
+                "Cleaning up deleted %" PRIi32 " mapping(s) but expected to clean %" PRIi32 " for property %d on class %s:%s.",
+                affectedRows,
+                results,
+                rootPropertyId.GetValue(),
+                remapInfo.m_schemaName.c_str(),
+                remapInfo.m_className.c_str()
+            );
             return ERROR;
             }
         }
@@ -635,7 +647,8 @@ BentleyStatus RemapManager::RestoreAndProcessCleanedPropertyMaps(SchemaImportCon
         if(ecClass == nullptr)
             {
             BeAssert(false && "Failed to find class");
-            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to find class %s for ensuring persisted property maps.", pair.second[0].m_className.c_str());
+            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0251,
+                "Failed to find class %s for ensuring persisted property maps.", pair.second[0].m_className.c_str());
             return ERROR;
             }
 
@@ -643,7 +656,8 @@ BentleyStatus RemapManager::RestoreAndProcessCleanedPropertyMaps(SchemaImportCon
         if(classMap == nullptr)
             {
             BeAssert(false && "Failed to find class map");
-            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to find class map for class %s for ensuring persisted property maps.", ecClass->GetFullName());
+            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0252,
+                "Failed to find class map for class %s for ensuring persisted property maps.", ecClass->GetFullName());
             return ERROR;
             }
         saveCtx.BeginSaving(*classMap);
@@ -657,21 +671,24 @@ BentleyStatus RemapManager::RestoreAndProcessCleanedPropertyMaps(SchemaImportCon
             if(map == nullptr)
                 {
                 BeAssert(false && "Failed to find property map");
-                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to find property map for access string %s on class %s for ensuring persisted property maps.", cleaned.m_accessString.c_str(), ecClass->GetFullName());
+                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0253,
+                    "Failed to find property map for access string %s on class %s for ensuring persisted property maps.", cleaned.m_accessString.c_str(), ecClass->GetFullName());
                 return ERROR;
                 }
 
             if(map->AcceptVisitor(saveVisitor) != SUCCESS)
                 {
                 BeAssert(false && "Failed to find property map");
-                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to make sure property map for access string %s on class %s is persisted.", cleaned.m_accessString.c_str(), ecClass->GetFullName());
+                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0254,
+                    "Failed to make sure property map for access string %s on class %s is persisted.", cleaned.m_accessString.c_str(), ecClass->GetFullName());
                 return ERROR;
                 }
             PropertyMap::Type propMapType = map->GetType();
             if(!Enum::Contains(PropertyMap::Type::SingleColumnData, propMapType))
                 { // we always expect this to be single column because the access string is fully qualified
                 BeAssert(false && "Failed to cast property map");
-                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed check if property map for access string %s on class %s is a single data property map.", cleaned.m_accessString.c_str(), ecClass->GetFullName());
+                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0255,
+                    "Failed check if property map for access string %s on class %s is a single data property map.", cleaned.m_accessString.c_str(), ecClass->GetFullName());
                 return ERROR;
                 }
             auto& singleColumnMap = map->GetAs<SingleColumnDataPropertyMap>();
@@ -755,7 +772,8 @@ BentleyStatus RemapManager::SortRemapInfos(std::vector<RemappedColumnInfo*>& sor
 
     if (!remainingInfos.empty())
         {
-        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "SortRemapInfos> There remaining column updates which could not be arranged into a valid order. Aborting. Remaining items: %" PRIuPTR, remainingInfos.size());
+        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0256,
+            "SortRemapInfos> There remaining column updates which could not be arranged into a valid order. Aborting. Remaining items: %" PRIuPTR, remainingInfos.size());
         return ERROR;
         }
 
@@ -817,7 +835,8 @@ void RemapManager::SortCircularRemappedColumnInfos(std::vector<std::vector<Remap
 
             if(nextPtr == remainingItemsToSort.end())
                 { //failed to find the next element of the circle
-                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Could not finish resolving circular property remapping. Failed to find the next node after %s. Property: %s", nextId.c_str(), firstItem->ToString().c_str());
+                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0257,
+                    "Could not finish resolving circular property remapping. Failed to find the next node after %s. Property: %s", nextId.c_str(), firstItem->ToString().c_str());
                 for(auto& v : circularUpdate)
                     { //re-add the items we have taken so far
                     remainingItemsToSort[v->m_cleanedMapping.m_fullOldColumnIdentifier] = v;
@@ -879,8 +898,8 @@ BentleyStatus RemapManager::UpdateRemappedData(std::vector<RemappedColumnInfo*>&
             Utf8String newInstanceIdColumn = GetInstanceIdColumnName(remapInfo->m_newTableName);
             if(oldInstanceIdColumn.empty() || newInstanceIdColumn.empty())
                 {
-                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to find instance id column for table %s or %s.", remapInfo->m_newTableName.c_str(),
-                    remapInfo->m_cleanedMapping.m_tableName.c_str());
+                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0260,
+                    "Failed to find instance id column for table %s or %s.", remapInfo->m_newTableName.c_str(), remapInfo->m_cleanedMapping.m_tableName.c_str());
                 return ERROR;
                 }
 
@@ -932,7 +951,8 @@ BentleyStatus RemapManager::UpdateRemappedCircularData(std::vector<std::vector<R
 
     if(!CheckIfAllUpdatesAreWithinSameTable(infos))
         {
-        Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Cannot perform update on instance data for remapped properties. This update requires moving data between columns in a circular way across tables, which is not supported.");
+        Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0263,
+            "Cannot perform update on instance data for remapped properties. This update requires moving data between columns in a circular way across tables, which is not supported.");
         // Swapping Columns between multiple tables in sqlite has to be done in a different way. Probably use a temporary table/column or in-memory to preserve data of one column
         // move the rest, and then put the temporary data where it belongs. This is covered in test: SchemaRemapTestFixture, SwapColumnsWithOverflow
         return ERROR;
