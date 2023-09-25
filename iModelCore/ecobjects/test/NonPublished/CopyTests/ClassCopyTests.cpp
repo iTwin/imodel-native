@@ -590,6 +590,53 @@ TEST_F(ClassCopyTest, CopyCustomAttributesWithReferencedSourceSchema)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+TEST_F(ClassCopyTest, CopyCustomAttributesWithReferencedSourceSchemaSameSchemaName)
+    {
+    //Alternate version of the previous test, but the new schema has the same name as the original
+    //which is illegal, so the copy process will fail.
+    Utf8CP schemaString = R"(
+        <ECSchema schemaName="testSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECCustomAttributeClass typeName="CustomClass" appliesTo="Any"/>
+            <ECEntityClass typeName="EntityClass">
+                <ECCustomAttributes>
+                    <CustomClass xmlns="testSchema.01.00.00"/>
+                </ECCustomAttributes>
+            </ECEntityClass>
+        </ECSchema>
+        )";
+
+    ECSchemaPtr schemaCopyFrom;
+    auto const schemaContext = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schemaCopyFrom, schemaString, *schemaContext));
+
+    ASSERT_NE(nullptr, schemaCopyFrom->GetClassCP("EntityClass"));
+    ASSERT_NE(nullptr, schemaCopyFrom->GetClassCP("CustomClass"));
+    ASSERT_TRUE(schemaCopyFrom->GetClassCP("EntityClass")->GetCustomAttribute("testSchema", "CustomClass").IsValid());
+    ASSERT_EQ(schemaCopyFrom->GetClassCP("CustomClass"), &schemaCopyFrom->GetClassCP("EntityClass")->GetCustomAttribute("testSchema", "CustomClass")->GetClass());
+
+    {
+    ECSchemaPtr schemaCopyTo;
+    ECSchema::CreateSchema(schemaCopyTo, "testSchema", "ts", 2, 0, 0);
+    ECClassP ecClass;
+    EXPECT_EQ(ECObjectsStatus::SchemaHasReferenceCycle, schemaCopyTo->CopyClass(ecClass, *schemaCopyFrom->GetClassCP("EntityClass"), false));
+    EXPECT_NE(nullptr, schemaCopyTo->GetClassCP("EntityClass")); //EntityClass may have been removed after failure, but we do not remove it if the error is just in custom attributes
+    }
+
+    { //Same call but with copyReferences=true
+    ECSchemaPtr schemaCopyTo;
+    ECSchema::CreateSchema(schemaCopyTo, "testSchema", "ts", 2, 0, 0);
+    ECClassP ecClass;
+    EC_EXPECT_SUCCESS(schemaCopyTo->CopyClass(ecClass, *schemaCopyFrom->GetClassCP("EntityClass"), true));
+    EXPECT_NE(nullptr, schemaCopyTo->GetClassCP("EntityClass"));
+    EXPECT_NE(schemaCopyFrom->GetClassCP("EntityClass"), schemaCopyTo->GetClassCP("EntityClass"));
+    EXPECT_TRUE(schemaCopyTo->GetClassCP("EntityClass")->GetCustomAttribute("testSchema", "CustomClass").IsValid());
+    EXPECT_FALSE(ECSchema::IsSchemaReferenced(*schemaCopyTo, *schemaCopyFrom));
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 TEST_F(ClassCopyTest, CopyNavigationPropertyIncludingReferences)
     {
     Utf8CP schemaString = R"**(

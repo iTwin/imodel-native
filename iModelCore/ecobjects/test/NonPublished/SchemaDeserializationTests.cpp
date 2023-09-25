@@ -2561,4 +2561,42 @@ TEST_F(SchemaDeserializationTest, MultipleVersionsOfSchemaInSameContext)
     }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaDeserializationTest, MissingBSCAReference)
+    {
+    // For standard schemas, our custom attribute deserializer automatically adds missing references. It writes a warning to the logs but schema is expected
+    // to load successfully
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+
+    Utf8CP const schemaXml =
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECStructClass typeName = 'AdHocHolder'>"
+        "       <ECCustomAttributes>"
+        "           <AdhocPropertyContainerDefinition xmlns='Bentley_Standard_CustomAttributes.01.10'>"
+        "               <NameProperty>Name</NameProperty>"
+        "               <DisplayLabelProperty>Label</DisplayLabelProperty>"
+        "               <ValueProperty>Value</ValueProperty>"
+        "               <TypeProperty>Type</TypeProperty>"
+        "               <UnitProperty>Unit</UnitProperty>"
+        "               <ExtendTypeProperty>ExtendType</ExtendTypeProperty>"
+        "               <IsReadOnlyProperty>IsReadOnly</IsReadOnlyProperty>"
+        "           </AdhocPropertyContainerDefinition>"
+        "       </ECCustomAttributes>"
+        "       <ECProperty propertyName='Name' typeName='string' />"
+        "       <ECProperty propertyName='Label' typeName='string' />"
+        "       <ECProperty propertyName='Value' typeName='string' />"
+        "       <ECProperty propertyName='Type' typeName='int' />"
+        "       <ECProperty propertyName='Unit' typeName='string' />"
+        "       <ECProperty propertyName='ExtendType' typeName='string' />"
+        "       <ECProperty propertyName='IsReadOnly' typeName='boolean' />"
+        "   </ECStructClass>"
+        "</ECSchema>";
+            
+    EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    }
+
 END_BENTLEY_ECN_TEST_NAMESPACE
