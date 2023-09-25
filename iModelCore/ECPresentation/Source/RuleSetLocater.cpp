@@ -601,7 +601,7 @@ NonSupplementalRuleSetLocater::~NonSupplementalRuleSetLocater()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<PresentationRuleSetPtr> NonSupplementalRuleSetLocater::_LocateRuleSets(Utf8CP rulesetId) const
     {
-    bvector<PresentationRuleSetPtr> rulesets = m_locater->LocateRuleSets(nullptr);
+    bvector<PresentationRuleSetPtr> rulesets = m_locater->LocateRuleSets(rulesetId);
     auto iter = std::remove_if(rulesets.begin(), rulesets.end(), [](PresentationRuleSetPtr r){return r->GetIsSupplemental();});
     if (rulesets.end() != iter)
         rulesets.erase(iter, rulesets.end());
