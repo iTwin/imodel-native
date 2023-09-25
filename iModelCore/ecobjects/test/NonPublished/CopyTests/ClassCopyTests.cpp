@@ -569,7 +569,7 @@ TEST_F(ClassCopyTest, CopyCustomAttributesWithReferencedSourceSchema)
     ASSERT_EQ(schemaCopyFrom->GetClassCP("CustomClass"), &schemaCopyFrom->GetClassCP("EntityClass")->GetCustomAttribute("testSchema", "CustomClass")->GetClass());
 
     ECSchemaPtr schemaCopyTo;
-    ECSchema::CreateSchema(schemaCopyTo, "testSchema", "ts", 2, 0, 0);
+    ECSchema::CreateSchema(schemaCopyTo, "testSchema2", "ts2", 2, 0, 0);
 
     ASSERT_EQ(nullptr, schemaCopyTo->GetClassCP("EntityClass"));
     ASSERT_EQ(nullptr, schemaCopyTo->GetClassCP("CustomClass"));

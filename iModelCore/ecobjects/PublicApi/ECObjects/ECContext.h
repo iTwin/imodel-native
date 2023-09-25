@@ -223,15 +223,14 @@ struct ECInstanceReadContext : RefCountedBase
 private:
     IStandaloneEnablerLocaterP      m_standaloneEnablerLocater;
     ECSchemaCR                      m_fallBackSchema;
-    ECSchemaCP                      m_containerSchema;
     IPrimitiveTypeResolver const*   m_typeResolver;
     IUnitResolver const*            m_unitResolver;
     IECSchemaRemapperCP             m_schemaRemapper;
     IssueReporter                   m_issueReporter;
 
 protected:
-    ECInstanceReadContext(IStandaloneEnablerLocaterP standaloneEnablerLocater, ECSchemaCR fallBackSchema, IPrimitiveTypeResolver const* typeResolver, ECSchemaCP containerSchema = nullptr) 
-        : m_standaloneEnablerLocater (standaloneEnablerLocater), m_fallBackSchema (fallBackSchema), m_typeResolver (typeResolver), m_schemaRemapper (nullptr), m_unitResolver(nullptr), m_containerSchema(containerSchema)
+    ECInstanceReadContext(IStandaloneEnablerLocaterP standaloneEnablerLocater, ECSchemaCR fallBackSchema, IPrimitiveTypeResolver const* typeResolver) 
+        : m_standaloneEnablerLocater (standaloneEnablerLocater), m_fallBackSchema (fallBackSchema), m_typeResolver (typeResolver), m_schemaRemapper (nullptr), m_unitResolver(nullptr)
         {
         }
 
@@ -259,15 +258,16 @@ public:
 
     ECSchemaCR GetFallBackSchema() {return m_fallBackSchema;}
 
-    ECSchemaCP GetContainerSchema() const {return m_containerSchema;}
-
     IssueReporter& Issues() { return m_issueReporter; }
 public:
     //! - For use when the caller knows the schema of the instance he is deserializing.
     ECOBJECTS_EXPORT static ECInstanceReadContextPtr CreateContext(ECSchemaCR, IStandaloneEnablerLocaterP = nullptr, IPrimitiveTypeResolver const* typeResolver = nullptr);
 
     //! - For use when the caller does not know the schema of the instance he is deserializing.
-    ECOBJECTS_EXPORT static ECInstanceReadContextPtr CreateContext(ECSchemaReadContextR, ECSchemaCR fallBackSchema, ECSchemaPtr* foundSchema, ECSchemaCP containerSchema = nullptr);
+    ECOBJECTS_EXPORT static ECInstanceReadContextPtr CreateContext(ECSchemaReadContextR, ECSchemaCR fallBackSchema, ECSchemaPtr* foundSchema);
+
+    //! - For use when the caller is deserializing custom attributes and has the container schema for the current instance
+    ECOBJECTS_EXPORT static ECInstanceReadContextPtr CreateContextForCA(ECSchemaCR containerSchema, ECSchemaReadContextR schemaContext);
 };
 /** @endGroup */
 END_BENTLEY_ECOBJECT_NAMESPACE
