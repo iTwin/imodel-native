@@ -2670,9 +2670,9 @@ TEST(ClipPlaneSet,CloneBetweenDirectedFractions)
 TEST(ClipPlaneSet, ClipParityRegionSweep)   // verifies the fix for Bug #1279805
     {
     bvector<ClipPlane> planes;
-    planes.push_back(ClipPlane::ClipPlane(DVec3d::From(0, 0, -1), DPoint3d::From(0, 0, 8)));
-    planes.push_back(ClipPlane::ClipPlane(DVec3d::From(0, 0, 1), DPoint3d::From(0, 0, 0.4)));
-    auto clipper = ClipPlaneSet::ClipPlaneSet(planes.data(), planes.size());
+    planes.push_back(ClipPlane(DVec3d::From(0, 0, -1), DPoint3d::From(0, 0, 8)));
+    planes.push_back(ClipPlane(DVec3d::From(0, 0, 1), DPoint3d::From(0, 0, 0.4)));
+    auto clipper = ClipPlaneSet(planes.data(), planes.size());
 
     BeFileName filename = BeFileName(L"parityRegionSweep.imjs");
     BeFileName fullPathName;
