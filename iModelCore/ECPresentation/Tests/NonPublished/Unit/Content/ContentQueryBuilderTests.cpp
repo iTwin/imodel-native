@@ -384,8 +384,8 @@ TEST_F (ContentQueryBuilderTests, FieldNamesContainNamesOfAllRelatedClassesWhenS
 
     // set up selection
     TestParsedInput info({
-        bpair<ECClassCP, ECInstanceId>(classA, {(ECInstanceId)ECInstanceId::FromString(a->GetInstanceId().c_str())}),
-        bpair<ECClassCP, ECInstanceId>(classC, {(ECInstanceId)ECInstanceId::FromString(c->GetInstanceId().c_str())}),
+        make_bpair<ECClassCP, ECInstanceId>(classA, (ECInstanceId)ECInstanceId::FromString(a->GetInstanceId().c_str())),
+        make_bpair<ECClassCP, ECInstanceId>(classC, (ECInstanceId)ECInstanceId::FromString(c->GetInstanceId().c_str())),
         });
 
     // create the spec
@@ -405,13 +405,11 @@ TEST_F (ContentQueryBuilderTests, FieldNamesContainNamesOfAllRelatedClassesWhenS
     ValidateQueries(querySet, [&]()
         {
         RelatedClassPath aTob({RelatedClass(*classA, SelectClass<ECRelationshipClass>(*relAB, RULES_ENGINE_RELATED_CLASS_ALIAS(*relAB, 0)), true, SelectClass<ECClass>(*classB, RULES_ENGINE_RELATED_CLASS_ALIAS(*classB, 0), true))});
-        RelatedClassPath cTob({RelatedClass(*classC, SelectClass<ECRelationshipClass>(*relBC, RULES_ENGINE_RELATED_CLASS_ALIAS(*relBC, 0)), false, SelectClass<ECClass>(*classB,RULES_ENGINE_RELATED_CLASS_ALIAS(*classB, 0), true))});
+        RelatedClassPath cTob({RelatedClass(*classC, SelectClass<ECRelationshipClass>(*relBC, RULES_ENGINE_RELATED_CLASS_ALIAS(*relBC, 0)), false, SelectClass<ECClass>(*classB, RULES_ENGINE_RELATED_CLASS_ALIAS(*classB, 1), true))});
 
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
-        descriptor->AddSelectClass(SelectClassInfo(*classA, "this", false)
-            .SetRelatedPropertyPaths({aTob}), "");
-        descriptor->AddSelectClass(SelectClassInfo(*classC, "this", false)
-            .SetRelatedPropertyPaths({cTob}), "");
+        descriptor->AddSelectClass(SelectClassInfo(*classA, "this", false).SetRelatedPropertyPaths({ aTob }), "");
+        descriptor->AddSelectClass(SelectClassInfo(*classC, "this", false).SetRelatedPropertyPaths({ cTob }), "");
 
         AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::FIELD_DISPLAYLABEL, 0));
         AddField(*descriptor, *CreateRelatedField(CreateCategory(*classB), NESTED_CONTENT_FIELD_NAME(classA, classB), *classB, { aTob },
@@ -420,7 +418,7 @@ TEST_F (ContentQueryBuilderTests, FieldNamesContainNamesOfAllRelatedClassesWhenS
             }));
         AddField(*descriptor, *CreateRelatedField(CreateCategory(*classB), NESTED_CONTENT_FIELD_NAME(classC, classB), *classB, { cTob },
             {
-            CreatePropertiesField(CreateCategory(*classB), CreateProperty(RULES_ENGINE_RELATED_CLASS_ALIAS(*classB, 0), *classB, *classB->GetPropertyP("Prop")), FIELD_NAME_C(classB, "Prop", 2)),
+            CreatePropertiesField(CreateCategory(*classB), CreateProperty(RULES_ENGINE_RELATED_CLASS_ALIAS(*classB, 1), *classB, *classB->GetPropertyP("Prop")), FIELD_NAME_C(classB, "Prop", 2)),
             }));
 
         ComplexQueryBuilderPtr q1 = ComplexQueryBuilder::Create();
@@ -441,7 +439,7 @@ TEST_F (ContentQueryBuilderTests, FieldNamesContainNamesOfAllRelatedClassesWhenS
 #endif
 
         return query;
-    });
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
