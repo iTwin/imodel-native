@@ -21,8 +21,25 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-BentleyStatus ViewGenerator::GenerateSelectFromViewSql(NativeSqlBuilder& viewSql, ECSqlPrepareContext const& prepareContext, ClassMap const& classMap, PolymorphicInfo polymorphicQuery, bool disqualifyPrimaryJoin, MemberFunctionCallExp const* memberFunctionCallExp, std::set<Utf8String,CompareIUtf8Ascii> const* instanceProps)
+BentleyStatus ViewGenerator::GenerateSelectFromViewSql(
+    NativeSqlBuilder& viewSql,
+    ECSqlPrepareContext const& prepareContext,
+    ClassMap const& classMap,
+    PolymorphicInfo polymorphicQuery,
+    bool disqualifyPrimaryJoin,
+    MemberFunctionCallExp const* memberFunctionCallExp,
+    std::set<Utf8String,CompareIUtf8Ascii> const* instanceProps,
+    ClassNameExp const* originalClassNameExp)
     {
+    auto getClassNameExpCount = [] (Exp const* e) -> size_t{
+        if (e == nullptr)
+            return 0;
+
+        while(e->GetParent() != nullptr)
+            e = e->GetParent();
+
+        return e->Find(Exp::Type::ClassName, true).size();
+    };
     if (!polymorphicQuery.IsDisqualified()) {
         // Note: Following need to be cached statement
         ECSqlStatement stmt;
@@ -31,7 +48,8 @@ BentleyStatus ViewGenerator::GenerateSelectFromViewSql(NativeSqlBuilder& viewSql
             if (stmt.Step() == BE_SQLITE_ROW) {
                 if (stmt.GetValueBoolean(0)){
                     LOG.debugv("ECSql Prepare: Applying 'disqualify_type_index' flag to %s", classMap.GetClass().GetFullName());
-                    polymorphicQuery.SetDisqualified(true);
+                    if (getClassNameExpCount(originalClassNameExp) > 1)
+                        polymorphicQuery.SetDisqualified(true);
                 }
             }
         }

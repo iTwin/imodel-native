@@ -666,7 +666,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
 
             NativeSqlBuilder classViewSql;
             auto instanceProps = exp.GetInstancePropNames();
-            if (SUCCESS != ViewGenerator::GenerateSelectFromViewSql(classViewSql, ctx, classMap, exp.GetPolymorphicInfo(), exp.DisqualifyPrimaryJoin(), exp.GetMemberFunctionCallExp(), &instanceProps))
+            if (SUCCESS != ViewGenerator::GenerateSelectFromViewSql(classViewSql, ctx, classMap, exp.GetPolymorphicInfo(), exp.DisqualifyPrimaryJoin(), exp.GetMemberFunctionCallExp(), &instanceProps, &exp))
                 return ECSqlStatus::InvalidECSql;
 
             classViewSql.AppendSpace().AppendEscaped(exp.GetId());
@@ -1419,7 +1419,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
 
     //Generate view for relationship
     NativeSqlBuilder relationshipView;
-    if (SUCCESS != ViewGenerator::GenerateSelectFromViewSql(relationshipView, ctx, relationshipClassNameExp.GetInfo().GetMap(), relationshipClassNameExp.GetPolymorphicInfo(), relationshipClassNameExp.DisqualifyPrimaryJoin()))
+    if (SUCCESS != ViewGenerator::GenerateSelectFromViewSql(relationshipView, ctx, relationshipClassNameExp.GetInfo().GetMap(), relationshipClassNameExp.GetPolymorphicInfo(), relationshipClassNameExp.DisqualifyPrimaryJoin(), nullptr, nullptr, &relationshipClassNameExp))
         {
         BeAssert(false && "Generating class view during preparation of relationship class name expression failed.");
         return ECSqlStatus::Error;

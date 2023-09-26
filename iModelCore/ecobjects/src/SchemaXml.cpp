@@ -427,7 +427,7 @@ CustomAttributeReadStatus SchemaXmlReaderImpl::ReadChildrenCustomAttributes(ECSc
 template<typename T>
 CustomAttributeReadStatus SchemaXmlReaderImpl::ReadContainerCustomAttributes(ECSchemaR parentSchema, pugi::xml_node xmlNode, T& container)
     {
-    return container.ReadCustomAttributes(xmlNode, m_schemaContext, parentSchema);
+    return container.ReadCustomAttributes(xmlNode, m_schemaContext);
     }
 
 //---------------------------------------------------------------------------------------
@@ -436,7 +436,7 @@ CustomAttributeReadStatus SchemaXmlReaderImpl::ReadContainerCustomAttributes(ECS
 template<>
 CustomAttributeReadStatus SchemaXmlReaderImpl::ReadContainerCustomAttributes(ECSchemaR parentSchema, pugi::xml_node xmlNode, ECClassR container)
     {
-    if (CustomAttributeReadStatus::InvalidCustomAttributes == container.ReadCustomAttributes(xmlNode, m_schemaContext, parentSchema))
+    if (CustomAttributeReadStatus::InvalidCustomAttributes == container.ReadCustomAttributes(xmlNode, m_schemaContext))
         return CustomAttributeReadStatus::InvalidCustomAttributes;
 
     if (container.IsRelationshipClass())
@@ -1031,7 +1031,7 @@ SchemaReadStatus SchemaXmlReader::ReadSchemaContents(SchemaXmlReaderImpl* reader
         }
 
     // Schema-level Custom Attributes
-    if (CustomAttributeReadStatus::InvalidCustomAttributes == schemaOut->ReadCustomAttributes(schemaNode, m_schemaContext, *schemaOut))
+    if (CustomAttributeReadStatus::InvalidCustomAttributes == schemaOut->ReadCustomAttributes(schemaNode, m_schemaContext))
         {
         LOG.errorv("Failed to read schema '%s' because one or more invalid custom attributes were applied to it.", schemaOut->GetName().c_str());
         return SchemaReadStatus::InvalidECSchemaXml;

@@ -538,7 +538,7 @@ TEST_F(ECDbTestFixture, GetAndChangeGUIDForDb)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbTestFixture, CurrentECSqlVersion)
     {
-    BeVersion expectedVersion (1, 2, 8, 0);
+    BeVersion expectedVersion (1, 2, 8, 1);
     ASSERT_EQ(ECDb::GetECSqlVersion(), expectedVersion);
     }
 

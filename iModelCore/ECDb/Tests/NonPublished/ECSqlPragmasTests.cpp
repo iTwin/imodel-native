@@ -215,7 +215,7 @@ TEST_F(ECSqlPragmasTestFixture, parse_tree){
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlPragmasTestFixture, view_generator_must_use_escaped_class_name_when_checking_disqualifed_check) {
-    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("bug.ecdb", SchemaItem(
+   ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("bug.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?> "
         "<ECSchema schemaName='Generic' alias='g' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'> "
         "  <ECEntityClass typeName='Base' modifier='None'>"
@@ -228,9 +228,13 @@ TEST_F(ECSqlPragmasTestFixture, view_generator_must_use_escaped_class_name_when_
         "  <ECEntityClass typeName='Group' modifier='None'>"
         "    <BaseClass>Base</BaseClass>"
         "  </ECEntityClass>"
+        "  <ECEntityClass typeName='Other' modifier='None'>"
+        "    <BaseClass>Base</BaseClass>"
+        "  </ECEntityClass>"
         "</ECSchema>")));
 
     auto groupClassId = m_ecdb.Schemas().GetClassId("Generic", "Group");
+    auto otherClassId = m_ecdb.Schemas().GetClassId("Generic", "Other");
     if ("unescaped GROUP keyword as class name should fail the statement") {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT 1 FROM Generic.Group"));
@@ -252,10 +256,16 @@ TEST_F(ECSqlPragmasTestFixture, view_generator_must_use_escaped_class_name_when_
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA disqualify_type_index=TRUE FOR Generic:[Group]"));
     }
 
-    if ("escaped GROUP keyword as class name should prepare query fine and should be disqualified (+) at view generator") {
+    if ("escaped GROUP keyword as class name should prepare query fine and should not disqualified (+) at view generator as there is no other class accessed in query") {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT 1 FROM Generic:[Group]"));
-        ASSERT_STREQ(SqlPrintfString("SELECT 1 FROM (SELECT [Id] ECInstanceId,[ECClassId] FROM [main].[g_Base] WHERE +[g_Base].ECClassId=%s) [Group]", groupClassId.ToString().c_str()), stmt.GetNativeSql());
+        ASSERT_STREQ(SqlPrintfString("SELECT 1 FROM (SELECT [Id] ECInstanceId,[ECClassId] FROM [main].[g_Base] WHERE [g_Base].ECClassId=%s) [Group]", groupClassId.ToString().c_str()), stmt.GetNativeSql());
+    }
+
+    if ("escaped GROUP keyword as class name should prepare query fine and should not disqualified (+) at view generator as there are more then on classes in query") {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT 1 FROM Generic:[Group] a, Generic:[Other] b WHERE a.ECInstanceid = b.ECInstanceId"));
+        ASSERT_STREQ(SqlPrintfString("SELECT 1 FROM (SELECT [Id] ECInstanceId,[ECClassId] FROM [main].[g_Base] WHERE +[g_Base].ECClassId=%s) [a],(SELECT [Id] ECInstanceId,[ECClassId] FROM [main].[g_Base] WHERE [g_Base].ECClassId=%s) [b] WHERE [a].[ECInstanceId]=[b].[ECInstanceId]", groupClassId.ToString().c_str(), otherClassId.ToString().c_str()), stmt.GetNativeSql());
     }
 }
 END_ECDBUNITTESTS_NAMESPACE
