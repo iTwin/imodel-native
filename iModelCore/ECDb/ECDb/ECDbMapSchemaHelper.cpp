@@ -592,7 +592,7 @@ BentleyStatus UseRequiresVersionCustomAttribute::Verify(IssueDataSource const& i
 
         if(requiredProfileVersion > profileVersion)
             {
-            issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "%s requires ECDb version %s, but the current runtime version is only %s.", context, requiredProfileVersion.ToString().c_str(), profileVersion.ToString().c_str());
+            issues.ReportV(IssueSeverity::Warning, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "%s requires ECDb version %s, but the current runtime version is only %s.", context, requiredProfileVersion.ToString().c_str(), profileVersion.ToString().c_str());
             return ERROR;
             }
         }
@@ -610,7 +610,7 @@ BentleyStatus UseRequiresVersionCustomAttribute::Verify(IssueDataSource const& i
 
         if(requiredECSqlVersion > ecSqlVersion)
             {
-            issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "%s requires ECSql version %s, but the current version is only %s.", context, requiredECSqlVersion.ToString().c_str(), ecSqlVersion.ToString().c_str());
+            issues.ReportV(IssueSeverity::Warning, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "%s requires ECSql version %s, but the current version is only %s.", context, requiredECSqlVersion.ToString().c_str(), ecSqlVersion.ToString().c_str());
             return ERROR;
             }
         }
