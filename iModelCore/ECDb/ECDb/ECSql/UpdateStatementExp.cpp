@@ -42,7 +42,14 @@ Exp::FinalizeParseStatus UpdateStatementExp::_FinalizeParsing(ECSqlParseContext&
 
         if (classNameExp->GetMemberFunctionCallExp() != nullptr)
             {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "May not call function on class in a UPDATE statement: %s", ToECSql().c_str());
+            ctx.Issues().ReportV(
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
+                IssueType::ECSQL,
+                ECDbIssueId::ECDb_0577,
+                "May not call function on class in a UPDATE statement: %s",
+                ToECSql().c_str()
+            );
             return FinalizeParseStatus::Error;
             }
 
@@ -159,7 +166,14 @@ Exp::FinalizeParseStatus AssignmentExp::_FinalizeParsing(ECSqlParseContext& ctx,
             ValueExp const* valueExp = GetValueExp();
             if (!valueExp->IsParameterExp() && !GetPropertyNameExp()->GetTypeInfo().CanCompare(valueExp->GetTypeInfo(), &errorMessage))
                 {
-                ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Type mismatch in SET clause of UPDATE statement: %s", errorMessage.c_str());
+                ctx.Issues().ReportV(
+                    IssueSeverity::Error,
+                    IssueCategory::BusinessProperties,
+                    IssueType::ECSQL,
+                    ECDbIssueId::ECDb_0578,
+                    "Type mismatch in SET clause of UPDATE statement: %s",
+                    errorMessage.c_str()
+                );
                 return FinalizeParseStatus::Error;
                 }
 

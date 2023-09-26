@@ -40,7 +40,8 @@ Exp::FinalizeParseStatus InsertStatementExp::_FinalizeParsing(ECSqlParseContext&
 
             if (classNameExp->GetMemberFunctionCallExp() != nullptr)
                 {
-                ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "May not call function on class in a INSERT statement: %s", ToECSql().c_str());
+                ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0537,
+                    "May not call function on class in a INSERT statement: %s", ToECSql().c_str());
                 return FinalizeParseStatus::Error;
                 }
 
@@ -124,7 +125,8 @@ Exp::FinalizeParseStatus InsertStatementExp::Validate(ECSqlParseContext& ctx) co
     ValueExpListExp const* valuesExp = GetValuesExp();
     if (valuesExp->GetChildrenCount() != expectedValueCount)
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Mismatching number of items in VALUES clause. For %d properties there are %d values.", expectedValueCount, valuesExp->GetChildrenCount());
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0538,
+            "Mismatching number of items in VALUES clause. For %d properties there are %d values.", expectedValueCount, valuesExp->GetChildrenCount());
         return FinalizeParseStatus::Error;
         }
 
@@ -134,7 +136,8 @@ Exp::FinalizeParseStatus InsertStatementExp::Validate(ECSqlParseContext& ctx) co
         switch (valueExp->GetType())
             {
                 case Exp::Type::PropertyName:
-                    ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Expression '%s' is not allowed in the VALUES clause of the INSERT statement.", valueExp->ToECSql().c_str());
+                    ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0539,
+                        "Expression '%s' is not allowed in the VALUES clause of the INSERT statement.", valueExp->ToECSql().c_str());
                     return FinalizeParseStatus::Error;
 
                 case Exp::Type::Parameter:
@@ -148,7 +151,8 @@ Exp::FinalizeParseStatus InsertStatementExp::Validate(ECSqlParseContext& ctx) co
         Utf8String errorMessage;
         if (!propertyNameExp->GetTypeInfo().CanCompare(valueExp->GetTypeInfo(), &errorMessage))
             {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Type mismatch in INSERT statement: %s", errorMessage.c_str());
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0540,
+                "Type mismatch in INSERT statement: %s", errorMessage.c_str());
             return FinalizeParseStatus::Error;
             }
 
