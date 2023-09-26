@@ -2667,7 +2667,7 @@ TEST(ClipPlaneSet,CloneBetweenDirectedFractions)
     Check::ClearGeometry("ClipPlaneSet.CloneBetweenDirectedFractions");
     }
 
-TEST(ClipPlaneSet, ClipParityRegionSweep)   // verifies the fix for Bug #1279805
+TEST(ClipPlaneSet, ClipParityRegionSweep)
     {
     bvector<ClipPlane> planes;
     planes.push_back(ClipPlane(DVec3d::From(0, 0, -1), DPoint3d::From(0, 0, 8)));

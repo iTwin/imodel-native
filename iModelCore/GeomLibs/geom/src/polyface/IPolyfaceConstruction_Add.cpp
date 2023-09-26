@@ -2573,7 +2573,8 @@ bool IPolyfaceConstruction::AddRuledBetweenCorrespondingCurves
                 }
             if (capped)
                 context.EmitCaps (reversedPrimary);
-            // Bug #1279805: disconnects used to separate loops get copied into mesh xyz and prevent future clipping
+
+            // disconnects that are used to separate loops get copied into mesh xyz and prevent future clipping
             NeutralizeDisconnects(context.m_builder.GetClientMeshPtr()->Point());
             }
         }
