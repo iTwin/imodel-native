@@ -467,6 +467,205 @@ void TxnManager::WriteChangesToFile(BeFileNameCR pathname, DdlChangesCR ddlChang
 }
 
 /**
+ * Iterate over local txn and notify changed instance keys and change type.
+ * rootClassFilter is optional but if provided iterator will only iterate over
+ * changes if it to one of root class or any of its derived class.
+ *
+ * Note: For large set of changes this function may consume a lot of none contigious memory.
+ */
+void TxnManager::ForEachLocalChange(std::function<void(ECInstanceKey const&, DbOpcode)> cb, bvector<Utf8String> const& rootClassFilter, bool includeInMemoryChanges) {
+    DbResult rc;
+
+    includeInMemoryChanges = includeInMemoryChanges && HasDataChanges();
+    if (!HasPendingTxns() && !includeInMemoryChanges) {
+        return;
+    }
+
+    // Expand root class filter into all possible derived classes including root class
+    bset<ECClassId> allowedClasses;
+    if (!rootClassFilter.empty()) {
+        bvector<Utf8String> classIdFilter;
+        for(auto& qualifiedName : rootClassFilter) {
+            if (auto classP = m_dgndb.Schemas().FindClass(qualifiedName)) {
+                classIdFilter.push_back(classP->GetId().ToHexStr());
+            } else {
+                m_dgndb.ThrowException(SqlPrintfString("unknown class '%s' provided as filter", qualifiedName.c_str()).GetUtf8CP(), (int) BE_SQLITE_ERROR);
+            }
+        }
+        if (!classIdFilter.empty()) {
+            auto filterStmt = m_dgndb.GetCachedStatement(SqlPrintfString("SELECT [ClassId] FROM [ec_cache_ClassHierarchy] WHERE [BaseClassId] IN (%s) GROUP BY [ClassId]", BeStringUtilities::Join(classIdFilter, ",").c_str()).GetUtf8CP());
+            while(filterStmt->Step() == BE_SQLITE_ROW) {
+                allowedClasses.insert(filterStmt->GetValueId<ECClassId>(0));
+            }
+        }
+    }
+
+    // cache TableName/ExclusiveRootClassId map
+    bmap<Utf8String, ECClassId> dataTables;
+    auto tblStmt = m_dgndb.GetCachedStatement(R"x(
+        SELECT [t].[Name],
+               COALESCE ([t].[ExclusiveRootClassId], [p].[ExclusiveRootClassId]) [ExclusiveRootClassId]
+        FROM   [ec_Table] [t]
+            LEFT JOIN [ec_Table] [p] ON [t].[ParentTableId] = [p].[Id]
+        WHERE  [t].[Type] IN (0, 1, 3) AND [t].[Name] NOT LIKE 'ecdbf_%')x");
+
+    while(tblStmt->Step() == BE_SQLITE_ROW) {
+        dataTables[tblStmt->GetValueText(0)] = tblStmt->GetValueId<ECClassId>(1);
+    }
+    // Group all local txn
+    auto endTxnId = GetCurrentTxnId();
+    auto startTxnId = QueryNextTxnId(TxnId(0));
+    DdlChanges ddlChanges;
+    ChangeGroup dataChangeGroup;
+    for (auto currTxnId = startTxnId; currTxnId < endTxnId; currTxnId = QueryNextTxnId(currTxnId)) {
+        ChangeSet sqlChangeSet;
+        if (BE_SQLITE_OK != ReadDataChanges(sqlChangeSet, currTxnId, TxnAction::None))
+            m_dgndb.ThrowException("unable to read data changes", (int) ChangesetStatus::CorruptedTxn);
+
+        rc = sqlChangeSet.AddToChangeGroup(dataChangeGroup);
+        if (BE_SQLITE_OK != rc)
+            m_dgndb.ThrowException("add to changes failed", (int) rc);
+    }
+
+    // Include change that has not been persisted using Db::SaveChanges()
+    if (includeInMemoryChanges && HasDataChanges()) {
+        ChangeSet inMemChangeSet;
+        rc = inMemChangeSet.FromChangeTrack(*this);
+        if (BE_SQLITE_OK != rc)
+            m_dgndb.ThrowException("fail to add in memory changes", (int) rc);
+
+        inMemChangeSet.AddToChangeGroup(dataChangeGroup);
+        if (BE_SQLITE_OK != rc)
+            m_dgndb.ThrowException("add to changes failed", (int) rc);
+    }
+
+    // Create changeset from change group
+    ChangeSet cs;
+    rc = cs.FromChangeGroup(dataChangeGroup);
+    if (BE_SQLITE_OK != rc)
+        m_dgndb.ThrowException("fail to create changeset form change group", (int) rc);
+
+    // Optimization based on fact that in changeset change to same table is contigious
+    struct {
+        Utf8String zTab;
+        int iPk = -1;
+        int iClassId = -1;
+        bool isECDataTable = false;
+        ECClassId rootClassId;
+        Statement classIdStmt;
+    } current;
+
+    // Set of key we already notified va callback
+    bset<ECInstanceKey> instanceKeysAlreadyNotified;
+
+    // Iterate over changeset and notify each change if it meet filter criteria
+    for(auto& change : cs.GetChanges()) {
+        Utf8CP zTab;
+        int nCol;
+        DbOpcode op;
+
+        rc = change.GetOperation(&zTab, &nCol, &op, nullptr);
+        if (BE_SQLITE_OK != rc) {
+            m_dgndb.ThrowException("failed to read changeset", (int) rc);
+        }
+
+        // if new table then we need to figure out pk and classid column including root classid for table
+        if (0 != strcmp(current.zTab.c_str(), zTab)) {
+            current.zTab = zTab;
+            auto it = dataTables.find(current.zTab);
+            current.isECDataTable = it != dataTables.end();
+            if (current.classIdStmt.IsPrepared()) {
+                current.classIdStmt.Finalize();
+            }
+            if (current.isECDataTable) {
+                auto stmt = m_dgndb.GetCachedStatement(R"x(
+                    SELECT
+                        (SELECT [cid] FROM PRAGMA_TABLE_INFO (?1) WHERE [pk] = 1),
+                        (SELECT [cid] FROM PRAGMA_TABLE_INFO (?1) WHERE [name] = 'ECClassId')
+                )x");
+
+                stmt->BindText(1, zTab, Statement::MakeCopy::No);
+                rc = stmt->Step();
+                if (BE_SQLITE_ROW != rc)
+                    m_dgndb.ThrowException("failed to read changeset", (int) rc);
+
+                // Column index of ECInstanceId column in table.
+                current.iPk = stmt->IsColumnNull(0) ? -1 : stmt->GetValueInt(0);
+
+                // Column index of ECClassId column in table if it has one.
+                current.iClassId = stmt->IsColumnNull(1) ? -1 : stmt->GetValueInt(1);
+
+                // ExclusiveRootClassId for table which is used when ECClassId column does not exist in table
+                current.rootClassId = it->second;
+
+                // if iClassId is not pointing to a column id then do not attempt to prepare classid.
+                if (current.iClassId != -1) {
+                    rc = current.classIdStmt.Prepare(m_dgndb, SqlPrintfString("SELECT [ECClassId] FROM [%s] WHERE ROWID=?", zTab).GetUtf8CP());
+                    if (BE_SQLITE_OK != rc)
+                        m_dgndb.ThrowException("failed to read changeset", (int) rc);
+                }
+            } else {
+                current.iPk = -1;
+                current.iClassId = -1;
+                current.rootClassId = ECClassId();
+            }
+        }
+        if (!current.isECDataTable) {
+            continue;
+        }
+        if (current.iPk < 0) {
+            m_dgndb.ThrowException(SqlPrintfString("no integer primary key in '%s'", current.zTab.c_str()).GetUtf8CP(), (int) BE_SQLITE_ERROR);
+        }
+
+        ECInstanceId id;
+        ECClassId classId = current.rootClassId;
+
+        // read primary key or ECInstanceId
+        DbValue valId = op == DbOpcode::Insert ? change.GetNewValue(current.iPk) : change.GetOldValue(current.iPk);
+        if (!valId.IsValid())
+            m_dgndb.ThrowException("failed to read local changes", (int) BE_SQLITE_ERROR);
+        id = ECInstanceId(valId.GetValueUInt64());
+
+        // It is possible ECClassId column may not exist in a table and in case we fall back to ExclusiveRootClassId for that table.
+        if (current.iClassId != -1) {
+            DbValue valClassId = op == DbOpcode::Insert ? change.GetNewValue(current.iClassId) : change.GetOldValue(current.iClassId);
+            if (valClassId.IsValid()) {
+                classId = ECClassId(valClassId.GetValueUInt64());
+            } else {
+                if (op == DbOpcode::Update) {
+                    current.classIdStmt.Reset();
+                    current.classIdStmt.ClearBindings();
+                    current.classIdStmt.BindId(1, id);
+                    if (current.classIdStmt.Step() == BE_SQLITE_ROW) {
+                        classId = current.classIdStmt.GetValueId<ECClassId>(0);
+                    }
+                } else {
+                    m_dgndb.ThrowException(SqlPrintfString("failed to read classid form table '%s' for row '%s'",
+                        current.zTab.c_str(), id.ToHexStr().c_str()).GetUtf8CP(), (int) BE_SQLITE_ERROR);
+                }
+            }
+        }
+
+        // If root class filter was provided make sure current classid is part of
+        // filter class or one of its derived class else skip to next change
+        if (!allowedClasses.empty()) {
+            if (allowedClasses.find(classId) == allowedClasses.end()) {
+                continue;
+            }
+        }
+
+        auto key = ECInstanceKey(classId, id);
+
+        // Skip if we already seen this instance key e.g. first as bis_Element and later in bis_GeometricElement3d
+        if (instanceKeysAlreadyNotified.find(key) != instanceKeysAlreadyNotified.end())
+            continue;
+
+        cb(key, op);
+        instanceKeysAlreadyNotified.insert(key);
+    }
+}
+
+/**
  * Create a new changeset file from all of the Txns in this briefcase. After this function returns, the
  * changeset is "in-progress" and its file must be uploaded to iModelHub. After that succeeds, the Txns included
  * in the changeset are deleted in the call to `FinishCreateChangeset`.

@@ -208,6 +208,7 @@ namespace connectivity
                 opt_pragma_set_val,
                 opt_pragma_set,
                 opt_where_clause,
+                opt_optional_prop,
                 ordering_spec_commalist,
                 ordering_spec,
                 other_like_predicate_part_2,

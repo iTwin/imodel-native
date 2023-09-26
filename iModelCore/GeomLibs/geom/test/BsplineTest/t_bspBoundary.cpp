@@ -1383,7 +1383,7 @@ TEST(bsptrim, MikeSurface)
 TEST(bsptrim, EugeneSurface)
     {
     if (!Check::GetEnableLongTests())
-        return; 
+        return;
 
     BeFileName dataPath;
     BeTest::GetHost().GetDocumentsRoot(dataPath);

@@ -290,6 +290,7 @@ TEST_F(SchemaValidatorTests, TestSchemaStandardReferences)
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECSchemaReference name='BisCore' version='01.00.00' alias='bis'/>"
         "    <ECSchemaReference name='ECv3ConversionAttributes' version='01.00.00' alias='ts'/>"
+        "    <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' alias='CoreCA'/>"
         "    <ECCustomAttributes>"
         "        <DynamicSchema xmlns='CoreCustomAttributes.01.00.00'/>"
         "    </ECCustomAttributes>"
@@ -324,6 +325,7 @@ TEST_F(SchemaValidatorTests, TestSchemasWithNameContainingDynamicApplyDynamicSch
     {
     Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
         "<ECSchema schemaName='DynamicFunkMachine' alias='fnk' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "    <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' alias='CoreCA'/>"
         "    <ECCustomAttributes>"
         "        <DynamicSchema xmlns='CoreCustomAttributes.01.00.00'/>"
         "    </ECCustomAttributes>"
@@ -3222,6 +3224,7 @@ TEST_F(SchemaValidatorTests, SchemaUseDeprecatedSchema)
     schemaXml = R"xml(
         <ECSchema schemaName="testSchema2" alias="deprecatedTs" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="deprecatedSchema" version="01.00.00" alias="deprecated"/>
+            <ECSchemaReference name='CoreCustomAttributes' version='01.00.02' alias='CoreCA'/>
             <ECCustomAttributes>
                 <Deprecated xmlns="CoreCustomAttributes.01.00.02"/>
             </ECCustomAttributes>
@@ -3241,6 +3244,7 @@ TEST_F(SchemaValidatorTests, SchemaClassDerivedFromDeprecatedClass)
     Utf8CP schemaXml = R"xml(
         <ECSchema schemaName="testSchema1" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+            <ECSchemaReference name='CoreCustomAttributes' version='01.00.02' alias='CoreCA'/>
             <ECEntityClass typeName="DeprecatedEntityClass" description="description here for silencing validator warning">
                 <ECCustomAttributes>
                     <Deprecated xmlns="CoreCustomAttributes.01.00.02"/>

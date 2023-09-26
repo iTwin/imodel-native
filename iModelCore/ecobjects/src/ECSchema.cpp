@@ -2422,8 +2422,11 @@ ECObjectsStatus ECSchema::AddReferencedSchema(ECSchemaR refSchema, Utf8StringCR 
 
     SchemaKeyCR refSchemaKey = refSchema.GetSchemaKey();
 
-    if (GetSchemaKey() == refSchemaKey)
+    if (GetSchemaKey().GetName().EqualsI(refSchemaKey.GetName())) //Make sure we are not referencing ourselves, in any version
+        {
+        LOG.warningv("%s is trying to add itself (%s) as a referenced schema.", this->GetFullSchemaName().c_str(), refSchema.GetFullSchemaName().c_str());
         return ECObjectsStatus::SchemaHasReferenceCycle;
+        }
 
     if (m_refSchemaList.end () != m_refSchemaList.find (refSchemaKey))
         return ECObjectsStatus::NamedItemAlreadyExists;

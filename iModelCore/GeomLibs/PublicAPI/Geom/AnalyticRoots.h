@@ -52,7 +52,7 @@ static int SolveBezierCubic
         double y2,
         double y3,
         double e,
-        double uvals[2],
+        double uvals[3],
         bool bRestrictSolutionsTo01
         );
 

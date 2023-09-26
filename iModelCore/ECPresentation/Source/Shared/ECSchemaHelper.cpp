@@ -2244,12 +2244,10 @@ static void AssignClassAliases(RelatedClassPath::iterator begin, RelatedClassPat
 * An optimal solution would use a tree structure to store relationship paths.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void AssignClassAliases(bvector<RelatedClassPath*> const& paths)
+static void AssignClassAliases(bvector<RelatedClassPath*> const& paths, ECClassUseCounter& counter)
     {
     if (paths.empty())
         return;
-
-    ECClassUseCounter counter;
 
     // assign aliases for the first path
     AssignClassAliases(paths.front()->begin(), paths.front()->end(), counter, false);
@@ -2416,7 +2414,7 @@ ECSchemaHelper::RelationshipPathsResponse ECSchemaHelper::GetRelationshipPaths(R
         for (auto& pathResult : paths.GetPaths(i))
             allPaths.push_back(&pathResult.m_path);
         }
-    AssignClassAliases(allPaths);
+    AssignClassAliases(allPaths, params.m_relationshipsUseCounter);
 
     if (params.m_countTargets)
         {
@@ -2520,7 +2518,7 @@ void SupportedClassesParser::Parse(ECSchemaHelper const& helper, Utf8StringCR st
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult ECInstancesHelper::LoadInstance(IECInstancePtr& instance, IConnectionCR connection, ECInstanceKeyCR key)
     {
-    auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Load ECInstance `{ ECClassId: %s, ECInstanceId: %s }`", 
+    auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Load ECInstance `{ ECClassId: %s, ECInstanceId: %s }`",
         key.GetClassId().ToString(BeInt64Id::UseHex::Yes).c_str(), key.GetInstanceId().ToString(BeInt64Id::UseHex::Yes).c_str()));
 
     ECClassCP selectClass = connection.GetECDb().Schemas().GetClass(key.GetClassId());
