@@ -78,6 +78,7 @@ BentleyStatus DbMapValidator::ValidateCustomAttributeTable() const {
                 IssueSeverity::Error,
                 IssueCategory::BusinessProperties,
                 IssueType::ECDbIssue,
+                ECDbIssueId::ECDb_0110,
                 "Detected orphan custom attribute rows. CustomAttribute with id=%" PRId64 " applied to container of type '%s' with container id=%" PRId64 ".",
                 caStmt.GetValueInt64(0),  // ca_id
                 caStmt.GetValueText(1),   // container_type
@@ -87,7 +88,7 @@ BentleyStatus DbMapValidator::ValidateCustomAttributeTable() const {
         ++nOrphanRows;
     }
     if (nOrphanRows > 0) {
-        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Detected %d orphan rows in ec_CustomAttributes.", nOrphanRows);
+        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0111, "Detected %d orphan rows in ec_CustomAttributes.", nOrphanRows);
         return ERROR;
     }
     return SUCCESS;
@@ -125,14 +126,14 @@ BentleyStatus DbMapValidator::Initialize() const
         ECClassCP ecClass = GetECDb().Schemas().GetClass(relClassId);
         if (ecClass == nullptr)
             {
-            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Could not load RelationshipECClass for ECClassId %s from the file.", relClassId.ToString().c_str());
+            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0112, "Could not load RelationshipECClass for ECClassId %s from the file.", relClassId.ToString().c_str());
             return ERROR;
             }
 
         ClassMap const* classMap = GetSchemaManager().GetClassMap(*ecClass);
         if (classMap == nullptr)
             {
-            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Could not load class map for RelationshipECClass %s from the file.", ecClass->GetFullName());
+            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0113, "Could not load class map for RelationshipECClass %s from the file.", ecClass->GetFullName());
             return ERROR;
             }
         }
@@ -156,7 +157,7 @@ BentleyStatus DbMapValidator::CheckDuplicateDataPropertyMap() const {
             GROUP BY [pp].[ClassId], [pp].[PropertyPathId] HAVING COUNT (*) > 1;)");
 
     if (rc != BE_SQLITE_OK) {
-        Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to run duplicate data property check");
+        Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0114, "Failed to run duplicate data property check");
         return ERROR;
     }
 
@@ -167,10 +168,11 @@ BentleyStatus DbMapValidator::CheckDuplicateDataPropertyMap() const {
         const Utf8String duplicateCols = stmt.GetValueText(2);
         ECClassCP ecClass = GetECDb().Schemas().GetClass(classId);
         if (ecClass == nullptr) {
-            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Could not load ECClass for ECClassId %s from the file.", classId.ToString().c_str());
+            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0115, "Could not load ECClass for ECClassId %s from the file.", classId.ToString().c_str());
             return ERROR;
         }
-        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Detected duplicate mapping for ECClass: %s. AccessString '%s' is mapped to '%s'.", ecClass->GetFullName(), accessString.c_str(), duplicateCols.c_str());
+        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0116,
+            "Detected duplicate mapping for ECClass: %s. AccessString '%s' is mapped to '%s'.", ecClass->GetFullName(), accessString.c_str(), duplicateCols.c_str());
         ++errors;
     }
 
@@ -228,7 +230,7 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
         if (!table.GetColumns().empty() || table.GetType() != DbTable::Type::Virtual)
             {
             BeAssert(false && "Programmer error: Null table " DBSCHEMA_NULLTABLENAME " should never have columns and must be virtual");
-            Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "DbTable ' " DBSCHEMA_NULLTABLENAME "' should have no column and must be virtual.");
+            Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0117, "DbTable ' " DBSCHEMA_NULLTABLENAME "' should have no column and must be virtual.");
             return ERROR;
             }
 
@@ -237,7 +239,7 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
 
     if (table.GetColumns().size() == 0)
         {
-        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "DbTable '%s' has no columns.", table.GetName().c_str());
+        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0118, "DbTable '%s' has no columns.", table.GetName().c_str());
         return ERROR;
         }
 
@@ -256,13 +258,13 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
 
     if (table.FindFirst(DbColumn::Kind::ECInstanceId) == nullptr)
         {
-        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "DbTable '%s' does not have a column of kind 'ECInstanceId'", table.GetName().c_str());
+        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0119, "DbTable '%s' does not have a column of kind 'ECInstanceId'", table.GetName().c_str());
         return ERROR;
         }
 
     if (table.FindFirst(DbColumn::Kind::ECClassId) == nullptr)
         {
-        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "DbTable '%s' does not have a column of kind 'ECClassId'", table.GetName().c_str());
+        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0120, "DbTable '%s' does not have a column of kind 'ECClassId'", table.GetName().c_str());
         return ERROR;
         }
 
@@ -272,13 +274,15 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
             {
             if (!DbUtilities::TableExists(GetECDb(), table.GetName().c_str(), TABLESPACE_Main))
                 {
-                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "DbTable '%s' is of type 'Existing' and therefore must exist in the file.", table.GetName().c_str());
+                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0121,
+                    "DbTable '%s' is of type 'Existing' and therefore must exist in the file.", table.GetName().c_str());
                 return ERROR;
                 }
 
             if (table.GetLinkNode().GetParent() != nullptr)
                 {
-                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "DbTable '%s' is of type 'Existing' and therefore it must not have parent table.", table.GetName().c_str());
+                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0122,
+                    "DbTable '%s' is of type 'Existing' and therefore it must not have parent table.", table.GetName().c_str());
                 return ERROR;
                 }
 
@@ -289,26 +293,29 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
             {
             if (!DbUtilities::TableExists(GetECDb(), table.GetName().c_str(), TABLESPACE_Main))
                 {
-                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "DbTable '%s' is if type 'Joined' and therefore must exist in the file.", table.GetName().c_str());
+                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0123,
+                    "DbTable '%s' is if type 'Joined' and therefore must exist in the file.", table.GetName().c_str());
                 return ERROR;
                 }
 
             if (table.GetLinkNode().GetParent() == nullptr)
                 {
-                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "DbTable '%s' is of type 'Joined' and therefore it must have parent table.", table.GetName().c_str());
+                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0124,
+                    "DbTable '%s' is of type 'Joined' and therefore it must have parent table.", table.GetName().c_str());
                 return ERROR;
                 }
 
             if (table.GetLinkNode().GetChildren().size() > 1)
                 {
-                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "DbTable '%s' is of type 'Joined' and therefore it must not have more than one child table.", table.GetName().c_str());
+                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0125,
+                    "DbTable '%s' is of type 'Joined' and therefore it must not have more than one child table.", table.GetName().c_str());
                 return ERROR;
                 }
 
             if (nonVirtualColumnCount != (int) physicalColumns.size())
                 {
-                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "DbTable '%s' has %d non-virtual columns, but the physical table has %d columns.", table.GetName().c_str(),
-                                nonVirtualColumnCount, (int) physicalColumns.size());
+                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0126,
+                    "DbTable '%s' has %d non-virtual columns, but the physical table has %d columns.", table.GetName().c_str(), nonVirtualColumnCount, (int) physicalColumns.size());
                 return ERROR;
                 }
 
@@ -319,27 +326,30 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
             {
             if (!DbUtilities::TableExists(GetECDb(), table.GetName().c_str(), TABLESPACE_Main))
                 {
-                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "DbTable '%s' is if type 'Overflow' and therefore must exist in the file.", table.GetName().c_str());
+                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0127, 
+                    "DbTable '%s' is if type 'Overflow' and therefore must exist in the file.", table.GetName().c_str());
                 return ERROR;
                 }
 
 
             if (table.GetLinkNode().GetParent() == nullptr)
                 {
-                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "DbTable '%s' is of type 'Overflow' and therefore must have a parent table.", table.GetName().c_str());
+                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0128,
+                    "DbTable '%s' is of type 'Overflow' and therefore must have a parent table.", table.GetName().c_str());
                 return ERROR;
                 }
 
             if (!table.GetLinkNode().GetChildren().empty())
                 {
-                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "DbTable '%s' is of type 'Overflow' and therefore must not have any child tables.", table.GetName().c_str());
+                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0129,
+                    "DbTable '%s' is of type 'Overflow' and therefore must not have any child tables.", table.GetName().c_str());
                 return ERROR;
                 }
 
             if (nonVirtualColumnCount != (int) physicalColumns.size())
                 {
-                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "DbTable '%s' has %d non-virtual columns, but the physical table has %d columns.", table.GetName().c_str(),
-                                nonVirtualColumnCount, (int) physicalColumns.size());
+                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0130,
+                    "DbTable '%s' has %d non-virtual columns, but the physical table has %d columns.", table.GetName().c_str(), nonVirtualColumnCount, (int) physicalColumns.size());
                 return ERROR;
                 }
 
@@ -350,20 +360,22 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
             {
             if (!DbUtilities::TableExists(GetECDb(), table.GetName().c_str(), TABLESPACE_Main))
                 {
-                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "DbTable '%s' is if type 'Primary' and therefore must exist in the file.", table.GetName().c_str());
+                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0131,
+                    "DbTable '%s' is if type 'Primary' and therefore must exist in the file.", table.GetName().c_str());
                 return ERROR;
                 }
 
             if (table.GetLinkNode().GetParent() != nullptr)
                 {
-                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "DbTable '%s' is of type 'Primary' and therefore must not have parent table.", table.GetName().c_str());
+                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0132,
+                    "DbTable '%s' is of type 'Primary' and therefore must not have parent table.", table.GetName().c_str());
                 return ERROR;
                 }
 
             if (nonVirtualColumnCount != (int) physicalColumns.size())
                 {
-                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "DbTable '%s' has %d non-virtual columns, but the physical table has %d columns.", table.GetName().c_str(),
-                                nonVirtualColumnCount, (int) physicalColumns.size());
+                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0133,
+                    "DbTable '%s' has %d non-virtual columns, but the physical table has %d columns.", table.GetName().c_str(), nonVirtualColumnCount, (int) physicalColumns.size());
                 return ERROR;
                 }
 
@@ -374,13 +386,15 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
             {
             if (nonVirtualColumnCount != 0)
                 {
-                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "DbTable '%s' is of type 'Virtual' and therefore all its DbColumns must be virtual as well.", table.GetName().c_str());
+                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0134,
+                    "DbTable '%s' is of type 'Virtual' and therefore all its DbColumns must be virtual as well.", table.GetName().c_str());
                 return ERROR;
                 }
 
             if (table.GetLinkNode().GetParent() != nullptr && !table.GetLinkNode().GetChildren().empty())
                 {
-                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "DbTable '%s' is of type 'Virtual' and therefore must neither have a parent table nor a child table.", table.GetName().c_str());
+                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0135,
+                    "DbTable '%s' is of type 'Virtual' and therefore must neither have a parent table nor a child table.", table.GetName().c_str());
                 return ERROR;
                 }
 
@@ -389,7 +403,8 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
 
             default:
             {
-            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "DbTable '%s' has unsupported DbTable::Type: %d.", table.GetName().c_str(), Enum::ToInt(table.GetType()));
+            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0136,
+                "DbTable '%s' has unsupported DbTable::Type: %d.", table.GetName().c_str(), Enum::ToInt(table.GetType()));
             return ERROR;
             }
         }
@@ -425,7 +440,8 @@ BentleyStatus DbMapValidator::ValidateDbColumn(DbColumn const& column, bset<Utf8
         {
         if (physicalColumns.find(column.GetName()) == physicalColumns.end())
             {
-            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Non-virtual DbTable '%s' has non-virtual column '%s' which does not exist in the file.", column.GetTable().GetName().c_str(), column.GetName().c_str());
+            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0137,
+                "Non-virtual DbTable '%s' has non-virtual column '%s' which does not exist in the file.", column.GetTable().GetName().c_str(), column.GetName().c_str());
             return ERROR;
             }
         }
@@ -434,19 +450,22 @@ BentleyStatus DbMapValidator::ValidateDbColumn(DbColumn const& column, bset<Utf8
         {
         if (tableType == DbTable::Type::Existing || tableType == DbTable::Type::Virtual)
             {
-            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The table '%s' is of type 'Existing' or 'Virtual', but its column '%s' is a shared column. This is invalid.", column.GetTable().GetName().c_str(), column.GetName().c_str());
+            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0138,
+                "The table '%s' is of type 'Existing' or 'Virtual', but its column '%s' is a shared column. This is invalid.", column.GetTable().GetName().c_str(), column.GetName().c_str());
             return ERROR;
             }
 
         if (column.GetConstraints().HasNotNullConstraint())
             {
-            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Column '%s.%s' is a shared column and has the 'NOT NULL' constraint. This is not valid for shared columns.", column.GetTable().GetName().c_str(), column.GetName().c_str());
+            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0139,
+                "Column '%s.%s' is a shared column and has the 'NOT NULL' constraint. This is not valid for shared columns.", column.GetTable().GetName().c_str(), column.GetName().c_str());
             return ERROR;
             }
 
         if (column.GetConstraints().HasUniqueConstraint())
             {
-            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Column '%s.%s' is a shared column and has the 'UNIQUE' constraint. This is not valid for shared columns.", column.GetTable().GetName().c_str(), column.GetName().c_str());
+            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0140,
+                "Column '%s.%s' is a shared column and has the 'UNIQUE' constraint. This is not valid for shared columns.", column.GetTable().GetName().c_str(), column.GetName().c_str());
             return ERROR;
             }
         }
@@ -459,8 +478,8 @@ BentleyStatus DbMapValidator::ValidateDbColumn(DbColumn const& column, bset<Utf8
         column.GetType() != DbColumn::Type::Text &&
         column.GetType() != DbColumn::Type::TimeStamp)
         {
-        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "DbColumn '%s.%s' has unsupported DbColumn::Type %d.", column.GetTable().GetName().c_str(), column.GetName().c_str(),
-                        Enum::ToInt(column.GetType()));
+        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0141,
+            "DbColumn '%s.%s' has unsupported DbColumn::Type %d.", column.GetTable().GetName().c_str(), column.GetName().c_str(), Enum::ToInt(column.GetType()));
         return ERROR;
         }
 
@@ -469,8 +488,8 @@ BentleyStatus DbMapValidator::ValidateDbColumn(DbColumn const& column, bset<Utf8
         column.GetConstraints().GetCollation() != DbColumn::Constraints::Collation::RTrim &&
         column.GetConstraints().GetCollation() != DbColumn::Constraints::Collation::Unset)
         {
-        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "DbColumn '%s.%s' has unsupported DbColumn::Constraints::Collation %d.", column.GetTable().GetName().c_str(), column.GetName().c_str(),
-                        Enum::ToInt(column.GetConstraints().GetCollation()));
+        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0142,
+            "DbColumn '%s.%s' has unsupported DbColumn::Constraints::Collation %d.", column.GetTable().GetName().c_str(), column.GetName().c_str(), Enum::ToInt(column.GetConstraints().GetCollation()));
         return ERROR;
         }
 
@@ -479,7 +498,8 @@ BentleyStatus DbMapValidator::ValidateDbColumn(DbColumn const& column, bset<Utf8
     if (actualKind != DbColumn::Kind::Default && actualKind != DbColumn::Kind::ECClassId &&
         actualKind != DbColumn::Kind::ECInstanceId && actualKind != DbColumn::Kind::SharedData)
         {
-        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "DbColumn '%s.%s' has an invalid DbColumn::Kind: %d", column.GetTable().GetName().c_str(), column.GetName().c_str(), Enum::ToInt(actualKind));
+        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0143,
+            "DbColumn '%s.%s' has an invalid DbColumn::Kind: %d", column.GetTable().GetName().c_str(), column.GetName().c_str(), Enum::ToInt(actualKind));
         return ERROR;
         }
 
@@ -500,7 +520,8 @@ BentleyStatus DbMapValidator::ValidateDbConstraint(DbConstraint const& constrain
                 return ValidatePrimaryKeyDbConstraint(static_cast<PrimaryKeyDbConstraint const&> (constraint));
 
             default:
-                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "DbTable '%s' has unsupported DbColumn::Constraint %d.", constraint.GetTable().GetName().c_str(), Enum::ToInt(constraint.GetType()));
+                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0144,
+                    "DbTable '%s' has unsupported DbColumn::Constraint %d.", constraint.GetTable().GetName().c_str(), Enum::ToInt(constraint.GetType()));
                 return ERROR;
         }
     }
@@ -513,14 +534,23 @@ BentleyStatus DbMapValidator::ValidateForeignKeyDbConstraint(ForeignKeyDbConstra
     {
     if (constraint.GetFkColumns().empty())
         {
-        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "DbTable '%s' has a foreign key constraint without any columns.", constraint.GetTable().GetName().c_str());
+        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0145,
+            "DbTable '%s' has a foreign key constraint without any columns.", constraint.GetTable().GetName().c_str());
         return ERROR;
         }
 
     if (constraint.GetFkColumns().size() != constraint.GetReferencedTableColumns().size())
         {
-        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "DbTable '%s' has a foreign key constraint with %d foreign key columns, but %d referenced columns in the referenced table.", constraint.GetTable().GetName().c_str(),
-            (int) constraint.GetFkColumns().size(), (int) constraint.GetReferencedTableColumns().size());
+        Issues().ReportV(
+            IssueSeverity::Error,
+            IssueCategory::BusinessProperties,
+            IssueType::ECDbIssue,
+            ECDbIssueId::ECDb_0146,
+            "DbTable '%s' has a foreign key constraint with %d foreign key columns, but %d referenced columns in the referenced table.",
+            constraint.GetTable().GetName().c_str(),
+            (int) constraint.GetFkColumns().size(),
+            (int) constraint.GetReferencedTableColumns().size()
+        );
         return ERROR;
         }
 
@@ -534,25 +564,29 @@ BentleyStatus DbMapValidator::ValidatePrimaryKeyDbConstraint(PrimaryKeyDbConstra
     {
     if (constraint.GetColumns().empty())
         {
-        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "DbTable '%s' has a primary key constraint without any columns.", constraint.GetTable().GetName().c_str());
+        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0147,
+            "DbTable '%s' has a primary key constraint without any columns.", constraint.GetTable().GetName().c_str());
         return ERROR;
         }
 
     if (constraint.GetColumns().size() != 1)
         {
-        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "DbTable '%s' has a primary key constraint with more than one column. This is not yet supported by ECDb.", constraint.GetTable().GetName().c_str());
+        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0148,
+            "DbTable '%s' has a primary key constraint with more than one column. This is not yet supported by ECDb.", constraint.GetTable().GetName().c_str());
         return ERROR;
         }
 
     if (constraint.GetColumns().front()->GetType() != DbColumn::Type::Integer)
         {
-        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "DbTable '%s' has a primary key which is not of type Integer. This is not yet supported by ECDb.", constraint.GetTable().GetName().c_str());
+        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0149,
+            "DbTable '%s' has a primary key which is not of type Integer. This is not yet supported by ECDb.", constraint.GetTable().GetName().c_str());
         return ERROR;
         }
 
     if (constraint.GetColumns().front() != constraint.GetTable().FindFirst(DbColumn::Kind::ECInstanceId))
         {
-        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "DbTable '%s' has a primary key which is not of kind 'ECInstanceId'.", constraint.GetTable().GetName().c_str());
+        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0150,
+            "DbTable '%s' has a primary key which is not of kind 'ECInstanceId'.", constraint.GetTable().GetName().c_str());
         return ERROR;
         }
 
@@ -566,7 +600,7 @@ BentleyStatus DbMapValidator::ValidateDbIndex(DbIndex const& index) const
     {
     if (index.GetColumns().empty())
         {
-        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Index '%s' must at least specify one column.", index.GetName().c_str());
+        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0151, "Index '%s' must at least specify one column.", index.GetName().c_str());
         return ERROR;
         }
 
@@ -578,14 +612,16 @@ BentleyStatus DbMapValidator::ValidateDbIndex(DbIndex const& index) const
         {
         if (col->GetPersistenceType() == PersistenceType::Virtual)
             {
-            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Index '%s' is defined on a virtual column (which does not exist): %s.%s.", index.GetName().c_str(), col->GetTable().GetName().c_str(), col->GetName().c_str());
+            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0152,
+                "Index '%s' is defined on a virtual column (which does not exist): %s.%s.", index.GetName().c_str(), col->GetTable().GetName().c_str(), col->GetName().c_str());
             return ERROR;
             }
 
         tables.insert(&col->GetTable());
         if (tables.size() > 1)
             {
-            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Index '%s' is defined on columns from different tables.", index.GetName().c_str());
+            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0153,
+                "Index '%s' is defined on columns from different tables.", index.GetName().c_str());
             return ERROR;
             }
         }
@@ -608,20 +644,29 @@ BentleyStatus DbMapValidator::ValidateDbIndex(DbIndex const& index) const
 
         if (ecClass->IsEntityClass() && ecClass->GetEntityClassCP()->IsMixin())
             {
-            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Used-defined index '%s' is defined on a mixin class ('%s'). This is not supported.", index.GetName().c_str(), ecClass->GetFullName());
+            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0154,
+                "Used-defined index '%s' is defined on a mixin class ('%s'). This is not supported.", index.GetName().c_str(), ecClass->GetFullName());
             return ERROR;
             }
 
         if (classMap->GetType() == ClassMap::Type::RelationshipEndTable)
             {
-            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Used-defined index '%s' is defined on a foreign key type relationship class ('%s'). This is not supported.", index.GetName().c_str(), ecClass->GetFullName());
+            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0155,
+                "Used-defined index '%s' is defined on a foreign key type relationship class ('%s'). This is not supported.", index.GetName().c_str(), ecClass->GetFullName());
             return ERROR;
             }
 
         if (!classMap->GetMapStrategy().IsTablePerHierarchy() && ecClass->GetClassModifier() != ECClassModifier::Sealed)
             {
-            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Used-defined index '%s' is defined on class '%s' which is not sealed or which is not mapped with strategy 'TablePerHierarchy'. Indexes can only be defined on sealed classes or on classes mapped as 'TablePerHierarchy'",
-                            index.GetName().c_str(), ecClass->GetFullName());
+            Issues().ReportV(
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
+                IssueType::ECDbIssue,
+                ECDbIssueId::ECDb_0156,
+                "Used-defined index '%s' is defined on class '%s' which is not sealed or which is not mapped with strategy 'TablePerHierarchy'. Indexes can only be defined on sealed classes or on classes mapped as 'TablePerHierarchy'",
+                index.GetName().c_str(),
+                ecClass->GetFullName()
+            );
             return ERROR;
             }
         }
@@ -662,8 +707,8 @@ BentleyStatus DbMapValidator::ValidateDbMap() const
 
     if (classCount != classMapCount)
         {
-        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The system tables " TABLE_Class " and " TABLE_ClassMap " must have the same number of rows, but they don't: "
-                        TABLE_Class ": %d rows, " TABLE_ClassMap ": %d rows.", classCount, classMapCount);
+        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0157,
+            "The system tables " TABLE_Class " and " TABLE_ClassMap " must have the same number of rows, but they don't: " TABLE_Class ": %d rows, " TABLE_ClassMap ": %d rows.", classCount, classMapCount);
         return ERROR;
         }
 
@@ -696,7 +741,8 @@ BentleyStatus DbMapValidator::ValidateClassMap(ClassMap const& classMap) const
         {
         if (classMap.GetPropertyMaps().Size() != 0)
             {
-            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Class '%s' is not mapped and therefore must not have property maps.", classMap.GetClass().GetFullName());
+            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0158,
+                "Class '%s' is not mapped and therefore must not have property maps.", classMap.GetClass().GetFullName());
             return ERROR;
             }
 
@@ -727,16 +773,16 @@ BentleyStatus DbMapValidator::ValidateClassMap(ClassMap const& classMap) const
             const int expectedSystemPropertyMapCount = 2;
             if (expectedSystemPropertyMapCount != systemPropertyMapCount)
                 {
-                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The class map for '%s' must have %d system properties, but has %d.", classMap.GetClass().GetFullName(),
-                                expectedSystemPropertyMapCount, systemPropertyMapCount);
+                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0159,
+                    "The class map for '%s' must have %d system properties, but has %d.", classMap.GetClass().GetFullName(), expectedSystemPropertyMapCount, systemPropertyMapCount);
                 return ERROR;
                 }
 
             const int propCount = (int) classMap.GetClass().GetPropertyCount(true);
             if (dataPropertyMapCount != propCount)
                 {
-                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The number of property maps for ECClass '%s' does not match the number of properties. Property maps: %d, properties: %d.", classMap.GetClass().GetFullName(),
-                                dataPropertyMapCount, propCount);
+                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0160,
+                    "The number of property maps for ECClass '%s' does not match the number of properties. Property maps: %d, properties: %d.", classMap.GetClass().GetFullName(), dataPropertyMapCount, propCount);
                 return ERROR;
                 }
 
@@ -745,21 +791,23 @@ BentleyStatus DbMapValidator::ValidateClassMap(ClassMap const& classMap) const
                 {
                 if (mappedDataPropertyNames.find(prop->GetName()) == mappedDataPropertyNames.end())
                     {
-                    Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Mismatch of mapped properties for ECClass '%s'. The count of mapped properties is correct, but property %s is not mapped.", classMap.GetClass().GetFullName(),
-                                prop->GetName().c_str());
+                    Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0161,
+                        "Mismatch of mapped properties for ECClass '%s'. The count of mapped properties is correct, but property %s is not mapped.", classMap.GetClass().GetFullName(), prop->GetName().c_str());
                     return ERROR;
                     }
                 }
 
             if (classMap.GetECInstanceIdPropertyMap() == nullptr)
                 {
-                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The class map of '%s' does not have an " ECDBSYS_PROP_ECInstanceId " property map.", classMap.GetClass().GetFullName());
+                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0162,
+                    "The class map of '%s' does not have an " ECDBSYS_PROP_ECInstanceId " property map.", classMap.GetClass().GetFullName());
                 return ERROR;
                 }
 
             if (classMap.GetECClassIdPropertyMap() == nullptr)
                 {
-                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The class map of '%s' does not have an " ECDBSYS_PROP_ECClassId " property map.", classMap.GetClass().GetFullName());
+                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0163,
+                    "The class map of '%s' does not have an " ECDBSYS_PROP_ECClassId " property map.", classMap.GetClass().GetFullName());
                 return ERROR;
                 }
             break;
@@ -770,15 +818,15 @@ BentleyStatus DbMapValidator::ValidateClassMap(ClassMap const& classMap) const
 
             if (expectedSystemPropertyMapCount != systemPropertyMapCount)
                 {
-                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The class map for the ECRelationshipClass '%s' must have %d system property maps, but has %d.", classMap.GetClass().GetFullName(),
-                                expectedSystemPropertyMapCount, systemPropertyMapCount);
+                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0164,
+                    "The class map for the ECRelationshipClass '%s' must have %d system property maps, but has %d.", classMap.GetClass().GetFullName(), expectedSystemPropertyMapCount, systemPropertyMapCount);
                 return ERROR;
                 }
 
             if (dataPropertyMapCount != 0)
                 {
-                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The class map for the foreign key type ECRelationshipClass '%s' must not have data property maps, but has %d.", classMap.GetClass().GetFullName(),
-                                dataPropertyMapCount);
+                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0165,
+                    "The class map for the foreign key type ECRelationshipClass '%s' must not have data property maps, but has %d.", classMap.GetClass().GetFullName(), dataPropertyMapCount);
                 return ERROR;
                 }
 
@@ -793,14 +841,15 @@ BentleyStatus DbMapValidator::ValidateClassMap(ClassMap const& classMap) const
 
             if (expectedSystemPropertyMapCount != systemPropertyMapCount)
                 {
-                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The class map for the ECRelationshipClass '%s' must have %d system property maps, but has %d.", classMap.GetClass().GetFullName(),
-                                expectedSystemPropertyMapCount, systemPropertyMapCount);
+                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0166,
+                    "The class map for the ECRelationshipClass '%s' must have %d system property maps, but has %d.", classMap.GetClass().GetFullName(), expectedSystemPropertyMapCount, systemPropertyMapCount);
                 return ERROR;
                 }
 
             if (dataPropertyMapCount != classMap.GetClass().GetPropertyCount(true))
                 {
-                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "ECClass '%s' has at least one property for which no property map exists.", classMap.GetClass().GetFullName());
+                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0167,
+                    "ECClass '%s' has at least one property for which no property map exists.", classMap.GetClass().GetFullName());
                 return ERROR;
                 }
 
@@ -811,7 +860,8 @@ BentleyStatus DbMapValidator::ValidateClassMap(ClassMap const& classMap) const
             }
 
             default:
-                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The class map of '%s' has the unknown ClassMap::Type::%d.", classMap.GetClass().GetFullName(), Enum::ToInt(classMap.GetType()));
+                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0168,
+                    "The class map of '%s' has the unknown ClassMap::Type::%d.", classMap.GetClass().GetFullName(), Enum::ToInt(classMap.GetType()));
                 return ERROR;
         }
 
@@ -874,25 +924,29 @@ BentleyStatus DbMapValidator::ValidateOverflowPropertyMaps(ClassMap const& class
     const bool hasAnyOverflowProperty = hasECInstanceIdInOverflowTable || hasECClassIdInOverflowTable || nDataPropertyInOverflowTable > 0;
     if (hasOveflowTable && !hasAnyOverflowProperty)
         {
-        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The class '%s' point to overflow table but has no property that is persisted in overflow table.", classMap.GetClass().GetFullName());
+        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0169,
+            "The class '%s' point to overflow table but has no property that is persisted in overflow table.", classMap.GetClass().GetFullName());
         return ERROR;
         }
 
     if (!hasOveflowTable && hasAnyOverflowProperty)
         {
-        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The class '%s has property map that point to overflow table but the classmap tables list does not.", classMap.GetClass().GetFullName());
+        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0170,
+            "The class '%s has property map that point to overflow table but the classmap tables list does not.", classMap.GetClass().GetFullName());
         return ERROR;
         }
 
     if (hasECInstanceIdInOverflowTable && !hasECClassIdInOverflowTable)
         {
-        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The class '%s' has ECInstanceId property map that is mapped to overflow table but ECClassId property map is not map to overflow table.", classMap.GetClass().GetFullName());
+        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0171,
+            "The class '%s' has ECInstanceId property map that is mapped to overflow table but ECClassId property map is not map to overflow table.", classMap.GetClass().GetFullName());
         return ERROR;
         }
 
     if (!hasECInstanceIdInOverflowTable && hasECClassIdInOverflowTable)
         {
-        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The class '%s' has ECClassId property map that is mapped to overflow table but ECInstanceId property map is not map to overflow table.", classMap.GetClass().GetFullName());
+        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0172,
+            "The class '%s' has ECClassId property map that is mapped to overflow table but ECInstanceId property map is not map to overflow table.", classMap.GetClass().GetFullName());
         return ERROR;
         }
 
@@ -901,13 +955,15 @@ BentleyStatus DbMapValidator::ValidateOverflowPropertyMaps(ClassMap const& class
         const bool hasSystemPropertyMap = hasECInstanceIdInOverflowTable || hasECClassIdInOverflowTable;
         if (hasSystemPropertyMap && nDataPropertyInOverflowTable == 0)
             {
-            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The class '%s' ECInstanceId and ECClassId property map point to overflow table but there is no data property that is stored in overflow table.", classMap.GetClass().GetFullName());
+            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0173,
+                "The class '%s' ECInstanceId and ECClassId property map point to overflow table but there is no data property that is stored in overflow table.", classMap.GetClass().GetFullName());
             return ERROR;
             }
 
         if (!hasSystemPropertyMap && nDataPropertyInOverflowTable > 0)
             {
-            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The class '%s' has data properties that map to overflow table but ECInstanceId/ECClassId properties are not mapped to overflow table.", classMap.GetClass().GetFullName());
+            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0174,
+                "The class '%s' has data properties that map to overflow table but ECInstanceId/ECClassId properties are not mapped to overflow table.", classMap.GetClass().GetFullName());
             return ERROR;
             }
         }
@@ -926,7 +982,8 @@ BentleyStatus DbMapValidator::ValidateMapStrategy(ClassMap const& classMap) cons
             {
             if (classMap.GetClass().GetClassModifier() != ECClassModifier::Sealed)
                 {
-                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The class '%s' has the map strategy 'ExistingTable' but is not sealed. Only sealed classes can be mapped with 'ExistingTable'.", classMap.GetClass().GetFullName());
+                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0175,
+                    "The class '%s' has the map strategy 'ExistingTable' but is not sealed. Only sealed classes can be mapped with 'ExistingTable'.", classMap.GetClass().GetFullName());
                 return ERROR;
                 }
 
@@ -938,8 +995,15 @@ BentleyStatus DbMapValidator::ValidateMapStrategy(ClassMap const& classMap) cons
 
                 if (baseClassMap->GetMapStrategy().IsTablePerHierarchy())
                     {
-                    Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The class '%s' has the map strategy 'ExistingTable' but its base class is mapped with strategy '%s'. A class can only be mapped with 'ExistingTable' if its base class is mapped with strategy 'OwnTable'.", classMap.GetClass().GetFullName(),
-                                    MapStrategyExtendedInfo::ToString(baseClassMap->GetMapStrategy().GetStrategy()));
+                    Issues().ReportV(
+                        IssueSeverity::Error,
+                        IssueCategory::BusinessProperties,
+                        IssueType::ECDbIssue,
+                        ECDbIssueId::ECDb_0176,
+                        "The class '%s' has the map strategy 'ExistingTable' but its base class is mapped with strategy '%s'. A class can only be mapped with 'ExistingTable' if its base class is mapped with strategy 'OwnTable'.",
+                        classMap.GetClass().GetFullName(),
+                        MapStrategyExtendedInfo::ToString(baseClassMap->GetMapStrategy().GetStrategy())
+                    );
                     return ERROR;
                     }
                 }
@@ -952,13 +1016,15 @@ BentleyStatus DbMapValidator::ValidateMapStrategy(ClassMap const& classMap) cons
             if (classMap.GetType() == ClassMap::Type::RelationshipEndTable)
                 {
                 BeAssert(false && "DbMap validation caught a programmer error");
-                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The relationship class '%s' has the map strategy 'OwnTable'. This is not valid for relationship classes mapped as foreign key.", classMap.GetClass().GetFullName());
+                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0177,
+                    "The relationship class '%s' has the map strategy 'OwnTable'. This is not valid for relationship classes mapped as foreign key.", classMap.GetClass().GetFullName());
                 return ERROR;
                 }
 
             if (classMap.GetType() == ClassMap::Type::RelationshipLinkTable && classMap.GetClass().GetClassModifier() != ECClassModifier::Sealed)
                 {
-                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The link table relationship class '%s' has the map strategy 'OwnTable'. This is only valid for sealed link table relationship classes.", classMap.GetClass().GetFullName());
+                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0178,
+                    "The link table relationship class '%s' has the map strategy 'OwnTable'. This is only valid for sealed link table relationship classes.", classMap.GetClass().GetFullName());
                 return ERROR;
                 }
 
@@ -983,8 +1049,13 @@ BentleyStatus DbMapValidator::ValidateMapStrategy(ClassMap const& classMap) cons
 
                 if (BE_SQLITE_DONE != stmt->Step())
                     {
-                    Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The class '%s' has the map strategy 'NotMapped' but is used as constraint class in a ECRelationshipClass with a different MapStrategy. If a constraint class is not mapped, the relationship must also have the strategy 'NotMapped'.",
-                                    classMap.GetClass().GetFullName());
+                    Issues().ReportV(
+                        IssueSeverity::Error,
+                        IssueCategory::BusinessProperties,
+                        IssueType::ECDbIssue,
+                        ECDbIssueId::ECDb_0179,
+                        "The class '%s' has the map strategy 'NotMapped' but is used as constraint class in a ECRelationshipClass with a different MapStrategy. If a constraint class is not mapped, the relationship must also have the strategy 'NotMapped'.",
+                        classMap.GetClass().GetFullName());
                     return ERROR;
                     }
                 }
@@ -1004,52 +1075,66 @@ BentleyStatus DbMapValidator::ValidateRelationshipClassEndTableMap(RelationshipC
     {
     if (relMap.GetECInstanceIdPropertyMap() == nullptr)
         {
-        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The class map of '%s' does not have an " ECDBSYS_PROP_ECInstanceId " property map.", relMap.GetClass().GetFullName());
+        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0180,
+            "The class map of '%s' does not have an " ECDBSYS_PROP_ECInstanceId " property map.", relMap.GetClass().GetFullName());
         return ERROR;
         }
 
     if (relMap.GetECClassIdPropertyMap() == nullptr)
         {
-        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The class map of '%s' does not have an " ECDBSYS_PROP_ECClassId " property map.", relMap.GetClass().GetFullName());
+        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0181,
+            "The class map of '%s' does not have an " ECDBSYS_PROP_ECClassId " property map.", relMap.GetClass().GetFullName());
         return ERROR;
         }
 
 
     if (relMap.GetPropertyMaps().Find(ECDBSYS_PROP_SourceECInstanceId) == nullptr)
         {
-        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The class map of the ECRelationshipClass '%s' does not have a " ECDBSYS_PROP_SourceECInstanceId " property map.", relMap.GetClass().GetFullName());
+        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0182,
+            "The class map of the ECRelationshipClass '%s' does not have a " ECDBSYS_PROP_SourceECInstanceId " property map.", relMap.GetClass().GetFullName());
         return ERROR;
         }
 
     if (relMap.GetPropertyMaps().Find(ECDBSYS_PROP_SourceECClassId) == nullptr)
         {
-        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The class map of ECRelationshipClass '%s' does not have a " ECDBSYS_PROP_SourceECClassId " property map.", relMap.GetClass().GetFullName());
+        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0183,
+            "The class map of ECRelationshipClass '%s' does not have a " ECDBSYS_PROP_SourceECClassId " property map.", relMap.GetClass().GetFullName());
         return ERROR;
         }
 
     if (relMap.GetPropertyMaps().Find(ECDBSYS_PROP_TargetECInstanceId) == nullptr)
         {
-        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The class map of ECRelationshipClass '%s' does not have a " ECDBSYS_PROP_TargetECInstanceId " property map.", relMap.GetClass().GetFullName());
+        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0184,
+            "The class map of ECRelationshipClass '%s' does not have a " ECDBSYS_PROP_TargetECInstanceId " property map.", relMap.GetClass().GetFullName());
         return ERROR;
         }
 
     if (relMap.GetPropertyMaps().Find(ECDBSYS_PROP_TargetECClassId) == nullptr)
         {
-        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The class map of ECRelationshipClass '%s' does not have a " ECDBSYS_PROP_TargetECClassId " property map.", relMap.GetClass().GetFullName());
+        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0185,
+            "The class map of ECRelationshipClass '%s' does not have a " ECDBSYS_PROP_TargetECClassId " property map.", relMap.GetClass().GetFullName());
         return ERROR;
         }
 
     DbTable const* otherEndTable = nullptr;
     if (SUCCESS != ForeignKeyPartitionView::TryGetOtherEndTable(otherEndTable, GetSchemaManager(), relMap.GetRelationshipClass(), relMap.GetMapStrategy().GetStrategy()))
         {
-        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The class map for the foreign key type ECRelationshipClass '%s' maps to more than one table on the %s constraint.",
-                        relMap.GetClass().GetFullName(), relMap.GetReferencedEnd() == ECRelationshipEnd_Source ? "source" : "target");
+        Issues().ReportV(
+            IssueSeverity::Error,
+            IssueCategory::BusinessProperties,
+            IssueType::ECDbIssue,
+            ECDbIssueId::ECDb_0186,
+            "The class map for the foreign key type ECRelationshipClass '%s' maps to more than one table on the %s constraint.",
+            relMap.GetClass().GetFullName(),
+            relMap.GetReferencedEnd() == ECRelationshipEnd_Source ? "source" : "target"
+        );
         return ERROR;
         }
 
     if (relMap.GetTables().size() != 1 || relMap.GetTables().front()->GetType() != DbTable::Type::Virtual)
         {
-        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The foreign key type ECRelationshipClass '%s' does not map to a single virtual table: %s.", relMap.GetClass().GetFullName());
+        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0187,
+            "The foreign key type ECRelationshipClass '%s' does not map to a single virtual table: %s.", relMap.GetClass().GetFullName());
         return ERROR;
         }
 
@@ -1063,38 +1148,44 @@ BentleyStatus DbMapValidator::ValidateRelationshipClassLinkTableMap(Relationship
     {
     if (relMap.GetECInstanceIdPropertyMap() == nullptr)
         {
-        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The class map of '%s' does not have an " ECDBSYS_PROP_ECInstanceId " property map.", relMap.GetClass().GetFullName());
+        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0188,
+            "The class map of '%s' does not have an " ECDBSYS_PROP_ECInstanceId " property map.", relMap.GetClass().GetFullName());
         return ERROR;
         }
 
     if (relMap.GetECClassIdPropertyMap() == nullptr)
         {
-        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The class map of '%s' does not have an " ECDBSYS_PROP_ECClassId " property map.", relMap.GetClass().GetFullName());
+        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0189,
+            "The class map of '%s' does not have an " ECDBSYS_PROP_ECClassId " property map.", relMap.GetClass().GetFullName());
         return ERROR;
         }
 
 
     if (relMap.GetPropertyMaps().Find(ECDBSYS_PROP_SourceECInstanceId) == nullptr)
         {
-        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The class map of the ECRelationshipClass '%s' does not have a " ECDBSYS_PROP_SourceECInstanceId " property map.", relMap.GetClass().GetFullName());
+        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0190,
+            "The class map of the ECRelationshipClass '%s' does not have a " ECDBSYS_PROP_SourceECInstanceId " property map.", relMap.GetClass().GetFullName());
         return ERROR;
         }
 
     if (relMap.GetPropertyMaps().Find(ECDBSYS_PROP_SourceECClassId) == nullptr)
         {
-        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The class map of ECRelationshipClass '%s' does not have a " ECDBSYS_PROP_SourceECClassId " property map.", relMap.GetClass().GetFullName());
+        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0191,
+            "The class map of ECRelationshipClass '%s' does not have a " ECDBSYS_PROP_SourceECClassId " property map.", relMap.GetClass().GetFullName());
         return ERROR;
         }
 
     if (relMap.GetPropertyMaps().Find(ECDBSYS_PROP_TargetECInstanceId) == nullptr)
         {
-        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The class map of ECRelationshipClass '%s' does not have a " ECDBSYS_PROP_TargetECInstanceId " property map.", relMap.GetClass().GetFullName());
+        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0192,
+            "The class map of ECRelationshipClass '%s' does not have a " ECDBSYS_PROP_TargetECInstanceId " property map.", relMap.GetClass().GetFullName());
         return ERROR;
         }
 
     if (relMap.GetPropertyMaps().Find(ECDBSYS_PROP_TargetECClassId) == nullptr)
         {
-        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The class map of ECRelationshipClass '%s' does not have a " ECDBSYS_PROP_TargetECClassId " property map.", relMap.GetClass().GetFullName());
+        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0193,
+            "The class map of ECRelationshipClass '%s' does not have a " ECDBSYS_PROP_TargetECClassId " property map.", relMap.GetClass().GetFullName());
         return ERROR;
         }
 
@@ -1113,8 +1204,8 @@ BentleyStatus DbMapValidator::ValidateRelationshipClassLinkTableMap(Relationship
             isFirstTable = false;
             }
 
-        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The class map for the link table ECRelationshipClass '%s' maps to more than one table on the source constraint: %s.",
-                        relMap.GetClass().GetFullName(), tableStr.c_str());
+        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0194,
+            "The class map for the link table ECRelationshipClass '%s' maps to more than one table on the source constraint: %s.", relMap.GetClass().GetFullName(), tableStr.c_str());
         return ERROR;
         }
 
@@ -1132,8 +1223,8 @@ BentleyStatus DbMapValidator::ValidateRelationshipClassLinkTableMap(Relationship
             isFirstTable = false;
             }
 
-        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The class map for the link table ECRelationshipClass '%s' maps to more than one table on the target constraint: %s.",
-                        relMap.GetClass().GetFullName(), tableStr.c_str());
+        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0195,
+            "The class map for the link table ECRelationshipClass '%s' maps to more than one table on the target constraint: %s.", relMap.GetClass().GetFullName(), tableStr.c_str());
         return ERROR;
         }
 
@@ -1149,8 +1240,8 @@ BentleyStatus DbMapValidator::ValidatePropertyMap(PropertyMap const& propertyMap
         {
         if (propertyMap.GetAs<SystemPropertyMap>().GetDataPropertyMaps().empty())
             {
-            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Invalid system property map '%s.%s'. It is not mapped to any column.",
-                            propertyMap.GetClassMap().GetClass().GetFullName(), propertyMap.GetAccessString().c_str());
+            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0196,
+                "Invalid system property map '%s.%s'. It is not mapped to any column.", propertyMap.GetClassMap().GetClass().GetFullName(), propertyMap.GetAccessString().c_str());
             return ERROR;
             }
         }
@@ -1173,8 +1264,17 @@ BentleyStatus DbMapValidator::ValidatePropertyMap(PropertyMap const& propertyMap
                 {
                 if (perTablePropMap->GetColumn().GetKind() != DbColumn::Kind::ECInstanceId)
                     {
-                    Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The ECInstanceId property map '%s.%s' must map to columns of Kind 'DbColumn::Kind::ECInstanceId'. Violating column: %s.%s ", propertyMap.GetClassMap().GetClass().GetFullName(),
-                                    propertyMap.GetAccessString().c_str(), perTablePropMap->GetColumn().GetTable().GetName().c_str(), perTablePropMap->GetColumn().GetName().c_str());
+                    Issues().ReportV(
+                        IssueSeverity::Error,
+                        IssueCategory::BusinessProperties,
+                        IssueType::ECDbIssue,
+                        ECDbIssueId::ECDb_0197,
+                        "The ECInstanceId property map '%s.%s' must map to columns of Kind 'DbColumn::Kind::ECInstanceId'. Violating column: %s.%s ",
+                        propertyMap.GetClassMap().GetClass().GetFullName(),
+                        propertyMap.GetAccessString().c_str(),
+                        perTablePropMap->GetColumn().GetTable().GetName().c_str(),
+                        perTablePropMap->GetColumn().GetName().c_str()
+                    );
                     return ERROR;
                     }
 
@@ -1193,8 +1293,17 @@ BentleyStatus DbMapValidator::ValidatePropertyMap(PropertyMap const& propertyMap
                 {
                 if (perTablePropMap->GetColumn().GetKind() != DbColumn::Kind::ECClassId)
                     {
-                    Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The ECClassId property map '%s.%s' must map to columns of Kind 'DbColumn::Kind::ECClassId'. Violating column: %s.%s ", propertyMap.GetClassMap().GetClass().GetFullName(),
-                                    propertyMap.GetAccessString().c_str(), perTablePropMap->GetColumn().GetTable().GetName().c_str(), perTablePropMap->GetColumn().GetName().c_str());
+                    Issues().ReportV(
+                        IssueSeverity::Error,
+                        IssueCategory::BusinessProperties,
+                        IssueType::ECDbIssue,
+                        ECDbIssueId::ECDb_0198,
+                        "The ECClassId property map '%s.%s' must map to columns of Kind 'DbColumn::Kind::ECClassId'. Violating column: %s.%s ",
+                        propertyMap.GetClassMap().GetClass().GetFullName(),
+                        propertyMap.GetAccessString().c_str(),
+                        perTablePropMap->GetColumn().GetTable().GetName().c_str(),
+                        perTablePropMap->GetColumn().GetName().c_str()
+                    );
                     return ERROR;
                     }
 
@@ -1218,7 +1327,8 @@ BentleyStatus DbMapValidator::ValidatePropertyMap(PropertyMap const& propertyMap
             Point2dPropertyMap const& propMap = propertyMap.GetAs<Point2dPropertyMap>();
             if (propMap.Find(ECDBSYS_PROP_PointX) == nullptr || propMap.Find(ECDBSYS_PROP_PointY) == nullptr)
                 {
-                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The Point2d property map '%s.%s' does not have 'X' and 'Y' member property maps.", propertyMap.GetClassMap().GetClass().GetFullName(), propertyMap.GetAccessString().c_str());
+                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0199,
+                    "The Point2d property map '%s.%s' does not have 'X' and 'Y' member property maps.", propertyMap.GetClassMap().GetClass().GetFullName(), propertyMap.GetAccessString().c_str());
                 return ERROR;
                 }
 
@@ -1230,7 +1340,8 @@ BentleyStatus DbMapValidator::ValidatePropertyMap(PropertyMap const& propertyMap
             Point3dPropertyMap const& propMap = propertyMap.GetAs<Point3dPropertyMap>();
             if (propMap.Find(ECDBSYS_PROP_PointX) == nullptr || propMap.Find(ECDBSYS_PROP_PointY) == nullptr || propMap.Find(ECDBSYS_PROP_PointY) == nullptr)
                 {
-                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The Point3d property map '%s.%s' does not have'X', 'Y' and 'Z' member property maps.", propertyMap.GetClassMap().GetClass().GetFullName(), propertyMap.GetAccessString().c_str());
+                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0200,
+                    "The Point3d property map '%s.%s' does not have'X', 'Y' and 'Z' member property maps.", propertyMap.GetClassMap().GetClass().GetFullName(), propertyMap.GetAccessString().c_str());
                 return ERROR;
                 }
 
@@ -1243,9 +1354,17 @@ BentleyStatus DbMapValidator::ValidatePropertyMap(PropertyMap const& propertyMap
             const size_t expectedPropertyCount = propMap.GetProperty().GetAsStructProperty()->GetType().GetPropertyCount(true);
             if (propMap.Size() != expectedPropertyCount)
                 {
-                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The struct property map '%s.%s' has %d member property maps, although the corresponding struct has %d properties.",
-                                propertyMap.GetClassMap().GetClass().GetFullName(), propertyMap.GetAccessString().c_str(),
-                                (int) propMap.Size(), (int) expectedPropertyCount);
+                Issues().ReportV(
+                    IssueSeverity::Error,
+                    IssueCategory::BusinessProperties,
+                    IssueType::ECDbIssue,
+                    ECDbIssueId::ECDb_0201,
+                    "The struct property map '%s.%s' has %d member property maps, although the corresponding struct has %d properties.",
+                    propertyMap.GetClassMap().GetClass().GetFullName(),
+                    propertyMap.GetAccessString().c_str(),
+                    (int) propMap.Size(),
+                    (int) expectedPropertyCount
+                );
                 return ERROR;
                 }
 
@@ -1258,25 +1377,42 @@ BentleyStatus DbMapValidator::ValidatePropertyMap(PropertyMap const& propertyMap
             DbColumn const& col = propertyMap.GetAs<SystemPropertyMap::PerTableIdPropertyMap>().GetColumn();
             if (col.IsShared())
                 {
-                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The system property map '%s.%s' maps to the shared column '%s.%s' which is invalid.",
-                                propertyMap.GetClassMap().GetClass().GetFullName(), propertyMap.GetAccessString().c_str(),
-                                col.GetTable().GetName().c_str(), col.GetName().c_str());
+                Issues().ReportV(
+                    IssueSeverity::Error,
+                    IssueCategory::BusinessProperties,
+                    IssueType::ECDbIssue,
+                    ECDbIssueId::ECDb_0202,
+                    "The system property map '%s.%s' maps to the shared column '%s.%s' which is invalid.",
+                    propertyMap.GetClassMap().GetClass().GetFullName(),
+                    propertyMap.GetAccessString().c_str(),
+                    col.GetTable().GetName().c_str(),
+                    col.GetName().c_str()
+                );
                 return ERROR;
                 }
 
             //for existing tables, the DbColumn type cannot always be determined
             if (col.GetTable().GetType() != DbTable::Type::Existing && col.GetType() != DbColumn::Type::Integer)
                 {
-                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The system property map '%s.%s' maps to a column which is not of type 'Integer'. Violating column '%s.%s'.",
-                                propertyMap.GetClassMap().GetClass().GetFullName(), propertyMap.GetAccessString().c_str(),
-                                col.GetTable().GetName().c_str(), col.GetName().c_str());
+                Issues().ReportV(
+                    IssueSeverity::Error,
+                    IssueCategory::BusinessProperties,
+                    IssueType::ECDbIssue,
+                    ECDbIssueId::ECDb_0203,
+                    "The system property map '%s.%s' maps to a column which is not of type 'Integer'. Violating column '%s.%s'.",
+                    propertyMap.GetClassMap().GetClass().GetFullName(),
+                    propertyMap.GetAccessString().c_str(),
+                    col.GetTable().GetName().c_str(),
+                    col.GetName().c_str()
+                );
                 return ERROR;
                 }
             break;
             }
 
             default:
-                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The PropertyMap '%s.%s' has the unknown PropertyMap::Type::%d.", propertyMap.GetClassMap().GetClass().GetFullName(), propertyMap.GetAccessString().c_str(), Enum::ToInt(propertyMap.GetType()));
+                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0204,
+                    "The PropertyMap '%s.%s' has the unknown PropertyMap::Type::%d.", propertyMap.GetClassMap().GetClass().GetFullName(), propertyMap.GetAccessString().c_str(), Enum::ToInt(propertyMap.GetType()));
                 return ERROR;
         }
 
@@ -1291,10 +1427,19 @@ BentleyStatus DbMapValidator::ValidatePropertyMap(PropertyMap const& propertyMap
         else
             {
             PropertyMap const* duplicatePropMap = it->second;
-            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The column '%s.%s' is used by multiple properties. Conflict between '%s.%s' and '%s.%s'.",
-                            column.GetTable().GetName().c_str(), column.GetName().c_str(),
-                            propertyMap.GetClassMap().GetClass().GetFullName(), propertyMap.GetAccessString().c_str(),
-                            duplicatePropMap->GetClassMap().GetClass().GetFullName(), duplicatePropMap->GetAccessString().c_str());
+            Issues().ReportV(
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
+                IssueType::ECDbIssue,
+                ECDbIssueId::ECDb_0205,
+                "The column '%s.%s' is used by multiple properties. Conflict between '%s.%s' and '%s.%s'.",
+                column.GetTable().GetName().c_str(),
+                column.GetName().c_str(),
+                propertyMap.GetClassMap().GetClass().GetFullName(),
+                propertyMap.GetAccessString().c_str(),
+                duplicatePropMap->GetClassMap().GetClass().GetFullName(),
+                duplicatePropMap->GetAccessString().c_str()
+            );
             return ERROR;
             }
         }
@@ -1317,7 +1462,8 @@ BentleyStatus DbMapValidator::ValidateNavigationPropertyMap(NavigationPropertyMa
     {
     if (propMap.Find(ECDBSYS_PROP_NavPropId) == nullptr || propMap.Find(ECDBSYS_PROP_NavPropRelECClassId) == nullptr)
         {
-        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The navigation property map '%s.%s' does not have 'Id' and 'RelECClassId' member property maps.", propMap.GetClassMap().GetClass().GetFullName(), propMap.GetAccessString().c_str());
+        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0206,
+            "The navigation property map '%s.%s' does not have 'Id' and 'RelECClassId' member property maps.", propMap.GetClassMap().GetClass().GetFullName(), propMap.GetAccessString().c_str());
         return ERROR;
         }
 
@@ -1326,7 +1472,15 @@ BentleyStatus DbMapValidator::ValidateNavigationPropertyMap(NavigationPropertyMa
         {
         if (propMap.HasForeignKeyConstraint())
             {
-            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The navigation property map '%s.%s' has the ForeignKeyConstraint custom attribute which is not allowed for classes with MapStrategy 'ExistingTable'.", propMap.GetClassMap().GetClass().GetFullName(), propMap.GetAccessString().c_str());
+            Issues().ReportV(
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
+                IssueType::ECDbIssue,
+                ECDbIssueId::ECDb_0207,
+                "The navigation property map '%s.%s' has the ForeignKeyConstraint custom attribute which is not allowed for classes with MapStrategy 'ExistingTable'.",
+                propMap.GetClassMap().GetClass().GetFullName(),
+                propMap.GetAccessString().c_str()
+            );
             return ERROR;
             }
 
@@ -1358,11 +1512,28 @@ BentleyStatus DbMapValidator::ValidateNavigationPropertyMap(NavigationPropertyMa
     if (expectedRelMapStrategy != actualRelMapStrategy)
         {
         if (actualRelMapStrategy == MapStrategy::NotMapped)
-            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The navigation property '%s.%s' is defined for the ECRelationshipClass '%s' which has the map strategy 'NotMapped'. If the navigation property's relationship has this strategy, the navigation property's class must also have it.", navProp.GetClass().GetFullName(), navProp.GetName().c_str());
+            Issues().ReportV(
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
+                IssueType::ECDbIssue,
+                ECDbIssueId::ECDb_0208,
+                "The navigation property '%s.%s' is defined for the ECRelationshipClass '%s' which has the map strategy 'NotMapped'. If the navigation property's relationship has this strategy, the navigation property's class must also have it.",
+                navProp.GetClass().GetFullName(),
+                navProp.GetName().c_str()
+            );
         else
             {
-            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The navigation property '%s.%s' is defined for the ECRelationshipClass '%s' which has the map strategy '%s'. The expected map strategy however is '%s'",
-                            navProp.GetClass().GetFullName(), navProp.GetName().c_str(), MapStrategyExtendedInfo::ToString(actualRelMapStrategy), MapStrategyExtendedInfo::ToString(expectedRelMapStrategy));
+            Issues().ReportV(
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
+                IssueType::ECDbIssue,
+                ECDbIssueId::ECDb_0209,
+                "The navigation property '%s.%s' is defined for the ECRelationshipClass '%s' which has the map strategy '%s'. The expected map strategy however is '%s'",
+                navProp.GetClass().GetFullName(),
+                navProp.GetName().c_str(),
+                MapStrategyExtendedInfo::ToString(actualRelMapStrategy),
+                MapStrategyExtendedInfo::ToString(expectedRelMapStrategy)
+            );
             BeAssert(false && "Programmer error. Navigation property's relationship class has unexpected map strategy.");
             }
 
@@ -1380,8 +1551,17 @@ BentleyStatus DbMapValidator::ValidateNavigationPropertyMap(NavigationPropertyMa
         {
         if (relClassIdCol.GetPersistenceType() == PersistenceType::Physical)
             {
-            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The navigation property '%s.%s' has the RelECClassId column '%s.%s' which should not exist because the navigation property's relationship is sealed.",
-                            propMap.GetClassMap().GetClass().GetFullName(), propMap.GetAccessString().c_str(), relClassIdCol.GetTable().GetName().c_str(), relClassIdCol.GetName().c_str());
+            Issues().ReportV(
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
+                IssueType::ECDbIssue,
+                ECDbIssueId::ECDb_0210,
+                "The navigation property '%s.%s' has the RelECClassId column '%s.%s' which should not exist because the navigation property's relationship is sealed.",
+                propMap.GetClassMap().GetClass().GetFullName(),
+                propMap.GetAccessString().c_str(),
+                relClassIdCol.GetTable().GetName().c_str(),
+                relClassIdCol.GetName().c_str()
+            );
             return ERROR;
             }
         }
@@ -1390,8 +1570,17 @@ BentleyStatus DbMapValidator::ValidateNavigationPropertyMap(NavigationPropertyMa
         //if the table per se is virtual (because it is a mixin or abstract class), then we must not do the check
         if (relClassIdCol.GetTable().GetType() != DbTable::Type::Virtual && relClassIdCol.GetPersistenceType() == PersistenceType::Virtual)
             {
-            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The navigation property '%s.%s' has the RelECClassId column '%s.%s' which is virtual, but should exist in the table because the navigation property's relationship is not sealed.",
-                            propMap.GetClassMap().GetClass().GetFullName(), propMap.GetAccessString().c_str(), relClassIdCol.GetTable().GetName().c_str(), relClassIdCol.GetName().c_str());
+            Issues().ReportV(
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
+                IssueType::ECDbIssue,
+                ECDbIssueId::ECDb_0211,
+                "The navigation property '%s.%s' has the RelECClassId column '%s.%s' which is virtual, but should exist in the table because the navigation property's relationship is not sealed.",
+                propMap.GetClassMap().GetClass().GetFullName(),
+                propMap.GetAccessString().c_str(),
+                relClassIdCol.GetTable().GetName().c_str(),
+                relClassIdCol.GetName().c_str()
+            );
             return ERROR;
             }
         }
@@ -1400,9 +1589,19 @@ BentleyStatus DbMapValidator::ValidateNavigationPropertyMap(NavigationPropertyMa
         {
         if (idCol.IsShared() || relClassIdCol.IsShared())
             {
-            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The navigation property '%s.%s' maps to a physical foreign key. But its foreign key column '%s.%s' or its RelECClassId column '%s.%s' is a shared column which is invalid.",
-                            propMap.GetClassMap().GetClass().GetFullName(), propMap.GetAccessString().c_str(),
-                            idCol.GetTable().GetName().c_str(), idCol.GetName().c_str(), relClassIdCol.GetTable().GetName().c_str(), relClassIdCol.GetName().c_str());
+            Issues().ReportV(
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
+                IssueType::ECDbIssue,
+                ECDbIssueId::ECDb_0212,
+                "The navigation property '%s.%s' maps to a physical foreign key. But its foreign key column '%s.%s' or its RelECClassId column '%s.%s' is a shared column which is invalid.",
+                propMap.GetClassMap().GetClass().GetFullName(),
+                propMap.GetAccessString().c_str(),
+                idCol.GetTable().GetName().c_str(),
+                idCol.GetName().c_str(),
+                relClassIdCol.GetTable().GetName().c_str(),
+                relClassIdCol.GetName().c_str()
+            );
             return ERROR;
             }
         }
@@ -1422,9 +1621,17 @@ BentleyStatus DbMapValidator::ValidateNavigationPropertyMapNotNull(NavigationPro
         {
         if (idCol.DoNotAllowDbNull())
             {
-            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The navigation property '%s.%s' maps to a logical foreign key. But its foreign column '%s.%s' has a NOT NULL constraint which is invalid for logical foreign keys.",
-                            propMap.GetClassMap().GetClass().GetFullName(), propMap.GetAccessString().c_str(),
-                            idCol.GetTable().GetName().c_str(), idCol.GetName().c_str());
+            Issues().ReportV(
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
+                IssueType::ECDbIssue,
+                ECDbIssueId::ECDb_0213,
+                "The navigation property '%s.%s' maps to a logical foreign key. But its foreign column '%s.%s' has a NOT NULL constraint which is invalid for logical foreign keys.",
+                propMap.GetClassMap().GetClass().GetFullName(),
+                propMap.GetAccessString().c_str(),
+                idCol.GetTable().GetName().c_str(),
+                idCol.GetName().c_str()
+            );
             return ERROR;
             }
 
@@ -1445,17 +1652,33 @@ BentleyStatus DbMapValidator::ValidateNavigationPropertyMapNotNull(NavigationPro
         {
         if (!idCol.DoNotAllowDbNull())
             {
-            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The navigation property '%s.%s' implies a NOT NULL constraint on the foreign key column '%s.%s'. But the column doesn't have one.",
-                            propMap.GetClassMap().GetClass().GetFullName(), propMap.GetAccessString().c_str(),
-                            idCol.GetTable().GetName().c_str(), idCol.GetName().c_str());
+            Issues().ReportV(
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
+                IssueType::ECDbIssue,
+                ECDbIssueId::ECDb_0214,
+                "The navigation property '%s.%s' implies a NOT NULL constraint on the foreign key column '%s.%s'. But the column doesn't have one.",
+                propMap.GetClassMap().GetClass().GetFullName(),
+                propMap.GetAccessString().c_str(),
+                idCol.GetTable().GetName().c_str(),
+                idCol.GetName().c_str()
+            );
             return ERROR;
             }
 
         if (!relClassIdCol.DoNotAllowDbNull())
             {
-            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The navigation property '%s.%s' implies a NOT NULL constraint on the RelECClassId column '%s.%s'. But the column doesn't have one.",
-                            propMap.GetClassMap().GetClass().GetFullName(), propMap.GetAccessString().c_str(),
-                            relClassIdCol.GetTable().GetName().c_str(), relClassIdCol.GetName().c_str());
+            Issues().ReportV(
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
+                IssueType::ECDbIssue,
+                ECDbIssueId::ECDb_0215,
+                "The navigation property '%s.%s' implies a NOT NULL constraint on the RelECClassId column '%s.%s'. But the column doesn't have one.",
+                propMap.GetClassMap().GetClass().GetFullName(),
+                propMap.GetAccessString().c_str(),
+                relClassIdCol.GetTable().GetName().c_str(),
+                relClassIdCol.GetName().c_str()
+            );
             return ERROR;
             }
 
@@ -1465,17 +1688,33 @@ BentleyStatus DbMapValidator::ValidateNavigationPropertyMapNotNull(NavigationPro
     //FK expected to be nullable
     if (idCol.DoNotAllowDbNull())
         {
-        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The navigation property '%s.%s' implies that the foreign key column is nullable. But the column has a NOT NULL constraint.",
-                        propMap.GetClassMap().GetClass().GetFullName(), propMap.GetAccessString().c_str(),
-                        idCol.GetTable().GetName().c_str(), idCol.GetName().c_str());
+        Issues().ReportV(
+            IssueSeverity::Error,
+            IssueCategory::BusinessProperties,
+            IssueType::ECDbIssue,
+            ECDbIssueId::ECDb_0216,
+            "The navigation property '%s.%s' implies that the foreign key column is nullable. But the column has a NOT NULL constraint.",
+            propMap.GetClassMap().GetClass().GetFullName(),
+            propMap.GetAccessString().c_str(),
+            idCol.GetTable().GetName().c_str(),
+            idCol.GetName().c_str()
+        );
         return ERROR;
         }
 
     if (relClassIdCol.DoNotAllowDbNull())
         {
-        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The navigation property '%s.%s' implies that the RelECClassId column is nullable. But the column has a NOT NULL constraint.",
-                        propMap.GetClassMap().GetClass().GetFullName(), propMap.GetAccessString().c_str(),
-                        relClassIdCol.GetTable().GetName().c_str(), relClassIdCol.GetName().c_str());
+        Issues().ReportV(
+            IssueSeverity::Error,
+            IssueCategory::BusinessProperties,
+            IssueType::ECDbIssue,
+            ECDbIssueId::ECDb_0217,
+            "The navigation property '%s.%s' implies that the RelECClassId column is nullable. But the column has a NOT NULL constraint.",
+            propMap.GetClassMap().GetClass().GetFullName(),
+            propMap.GetAccessString().c_str(),
+            relClassIdCol.GetTable().GetName().c_str(),
+            relClassIdCol.GetName().c_str()
+        );
         return ERROR;
         }
 
@@ -1491,9 +1730,19 @@ BentleyStatus DbMapValidator::ValidateNavigationPropertyMapUniqueness(Navigation
 
     if (idCol.IsUnique() || relClassIdCol.IsUnique())
         {
-        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The navigation property '%s.%s' maps to the foreign key column '%s.%s' and the RelECClassId column '%s.%s'. At least one of them has a UNIQUE constraint. This should never be the case as uniqueness is enforced via a unique index where necessary.",
-                        propMap.GetClassMap().GetClass().GetFullName(), propMap.GetAccessString().c_str(),
-                        table.GetName().c_str(), idCol.GetName().c_str(), table.GetName().c_str(), relClassIdCol.GetName().c_str());
+        Issues().ReportV(
+            IssueSeverity::Error,
+            IssueCategory::BusinessProperties,
+            IssueType::ECDbIssue,
+            ECDbIssueId::ECDb_0218,
+            "The navigation property '%s.%s' maps to the foreign key column '%s.%s' and the RelECClassId column '%s.%s'. At least one of them has a UNIQUE constraint. This should never be the case as uniqueness is enforced via a unique index where necessary.",
+            propMap.GetClassMap().GetClass().GetFullName(),
+            propMap.GetAccessString().c_str(),
+            table.GetName().c_str(),
+            idCol.GetName().c_str(),
+            table.GetName().c_str(),
+            relClassIdCol.GetName().c_str()
+        );
         return ERROR;
         }
 
@@ -1513,9 +1762,18 @@ BentleyStatus DbMapValidator::ValidateNavigationPropertyMapUniqueness(Navigation
 
             if (!uniqueIndexExpected && index->GetIsUnique())
                 {
-                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The navigation property '%s.%s' implies that the foreign key column '%s.%s' must not be unique. But there is the unique index '%s' on the column.",
-                                propMap.GetClassMap().GetClass().GetFullName(), propMap.GetAccessString().c_str(),
-                                table.GetName().c_str(), idCol.GetName().c_str(), index->GetName().c_str());
+                Issues().ReportV(
+                    IssueSeverity::Error,
+                    IssueCategory::BusinessProperties,
+                    IssueType::ECDbIssue,
+                    ECDbIssueId::ECDb_0219,
+                    "The navigation property '%s.%s' implies that the foreign key column '%s.%s' must not be unique. But there is the unique index '%s' on the column.",
+                    propMap.GetClassMap().GetClass().GetFullName(),
+                    propMap.GetAccessString().c_str(),
+                    table.GetName().c_str(),
+                    idCol.GetName().c_str(),
+                    index->GetName().c_str()
+                );
                 return ERROR;
                 }
 
@@ -1526,9 +1784,17 @@ BentleyStatus DbMapValidator::ValidateNavigationPropertyMapUniqueness(Navigation
 
     if (uniqueIndexExpected && systemIndexCount == 0)
         {
-        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The navigation property '%s.%s' implies that the foreign key column '%s.%s' is unique. But there is no unique index to enforce it.",
-                        propMap.GetClassMap().GetClass().GetFullName(), propMap.GetAccessString().c_str(),
-                        table.GetName().c_str(), idCol.GetName().c_str());
+        Issues().ReportV(
+            IssueSeverity::Error,
+            IssueCategory::BusinessProperties,
+            IssueType::ECDbIssue,
+            ECDbIssueId::ECDb_0220,
+            "The navigation property '%s.%s' implies that the foreign key column '%s.%s' is unique. But there is no unique index to enforce it.",
+            propMap.GetClassMap().GetClass().GetFullName(),
+            propMap.GetAccessString().c_str(),
+            table.GetName().c_str(),
+            idCol.GetName().c_str()
+        );
         return ERROR;
         }
 

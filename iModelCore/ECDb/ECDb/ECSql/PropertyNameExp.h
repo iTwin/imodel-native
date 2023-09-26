@@ -87,7 +87,6 @@ struct PropertyNameExp final : ValueExp
         PropertyRef* GetPropertyRefP() { return m_propertyRef.get(); }
         bool IsPropertyRef() const { return m_propertyRef != nullptr; }
         bool IsPropertyFromCommonTableBlock() const {
-            BeAssert(m_classRefExp != nullptr);
             if (m_classRefExp == nullptr) {
                 return false;
             }

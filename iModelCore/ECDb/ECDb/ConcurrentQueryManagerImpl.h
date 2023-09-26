@@ -42,7 +42,7 @@ struct ErrorListenerScope final: ECN::IIssueListener {
         mutable std::string m_lastError;
         ECDb& m_ecdb;
         BeMutexHolder m_lock;
-        void _OnIssueReported(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, Utf8CP message) const override;
+        void _OnIssueReported(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, ECN::IssueId id, Utf8CP message) const override;
     public:
         explicit ErrorListenerScope (ECDb& ecdb);
         ~ErrorListenerScope();
