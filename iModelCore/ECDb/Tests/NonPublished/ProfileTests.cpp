@@ -577,7 +577,7 @@ TEST_F(ProfileTestFixture, TestUseRequiresVersionOnEntityPasses)
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * from s1.Foo"));
 
     auto lastIssue = issueListener.GetIssue();
-    ASSERT_FALSE(lastIssue.has_value()) << "Should raise an issue.";
+    ASSERT_FALSE(lastIssue.has_value()) << "Should not raise an issue.";
     }
 
     CloseECDb();
@@ -719,7 +719,7 @@ TEST_F(ProfileTestFixture, UseRequiresVersionOnCAIndirectInherited)
     {
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDbForCurrentTest());
 
-    { //use a custom attribute that uses a custom attribute on an entity's base class
+    { //use a entity which uses a struct class that has been flagged as 
     SchemaItem schema(R"xml(<?xml version="1.0" encoding="utf-8" ?>
         <ECSchema schemaName="Schema1" alias="s1" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <ECSchemaReference name="ECDbMap" version="02.00.02" alias="ecdbmap"/>
@@ -848,6 +848,144 @@ TEST_F(ProfileTestFixture, ApplyUseRequiresVersionOnExistingCA)
     ASSERT_STREQ("Invalid ECClass in ECSQL: Cannot use ECClass 'Schema1:MySubclass' because it requires a newer version of ECDb.", lastIssue.message.c_str());
     }
 
+    CloseECDb();
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ProfileTestFixture, TestUseRequiresVersionOnStruct)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDbForCurrentTest());
+
+    { //Apply an unsupported CA to a struct and struct property and then try to select (currently the CA on structs has no effect)
+    SchemaItem schema(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="Schema1" alias="s1" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="ECDbMap" version="02.00.02" alias="ecdbmap"/>
+        <ECCustomAttributeClass typeName="Foo" modifier="Sealed" appliesTo="Any">
+            <ECCustomAttributes>
+                <UseRequiresVersion xmlns="ECDbMap.02.00.02">
+                    <ECDbRuntimeVersion>999.9.9.9</ECDbRuntimeVersion>
+                </UseRequiresVersion>
+            </ECCustomAttributes>
+        </ECCustomAttributeClass>
+        <ECStructClass typeName="MyStruct">
+            <ECCustomAttributes>
+                <Foo xmlns="Schema1.01.00.01" />
+            </ECCustomAttributes>
+            <ECProperty propertyName='Prop1' typeName='string' />
+        </ECStructClass>
+        <ECEntityClass typeName="MyEntity" >
+            <ECStructProperty propertyName="StructProp" typeName="MyStruct">
+            <ECCustomAttributes>
+                <Foo xmlns="Schema1.01.00.01" />
+            </ECCustomAttributes>
+            </ECStructProperty>
+        </ECEntityClass>
+        </ECSchema>)xml");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema));
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * from s1.MyEntity"));
+    }
+
+    CloseECDb();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ProfileTestFixture, TestUseRequiresVersionOnRelationship)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDbForCurrentTest());
+
+    { //Apply an unsupported CA to a struct and struct property and then try to select (currently the CA on structs has no effect)
+    SchemaItem schema(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="Schema1" alias="s1" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="ECDbMap" version="02.00.02" alias="ecdbmap"/>
+        <ECCustomAttributeClass typeName="Foo" modifier="Sealed" appliesTo="Any">
+            <ECCustomAttributes>
+                <UseRequiresVersion xmlns="ECDbMap.02.00.02">
+                    <ECDbRuntimeVersion>999.9.9.9</ECDbRuntimeVersion>
+                </UseRequiresVersion>
+            </ECCustomAttributes>
+        </ECCustomAttributeClass>
+        <ECEntityClass typeName="MyEntity" >
+        </ECEntityClass>
+
+        <ECRelationshipClass typeName="MyEntityRefersToMyEntity" strength="referencing" modifier="None">
+            <ECCustomAttributes>
+                <Foo xmlns="Schema1.01.00.01" />
+            </ECCustomAttributes>
+            <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="true">
+                <Class class="MyEntity"/>
+            </Source>
+            <Target multiplicity="(0..*)" roleLabel="is referenced by" polymorphic="true">
+                <Class class="MyEntity"/>
+            </Target>
+        </ECRelationshipClass>
+        </ECSchema>)xml");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema));
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * from s1.MyEntityRefersToMyEntity"));
+    }
+    }
+
+    CloseECDb();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ProfileTestFixture, TestUseRequiresVersionOnRelationshipConstraint)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDbForCurrentTest());
+
+    { //Apply an unsupported CA to a struct and struct property and then try to select (currently the CA on structs has no effect)
+    SchemaItem schema(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="Schema1" alias="s1" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="ECDbMap" version="02.00.02" alias="ecdbmap"/>
+        <ECCustomAttributeClass typeName="Foo" modifier="Sealed" appliesTo="Any">
+            <ECCustomAttributes>
+                <UseRequiresVersion xmlns="ECDbMap.02.00.02">
+                    <ECDbRuntimeVersion>999.9.9.9</ECDbRuntimeVersion>
+                </UseRequiresVersion>
+            </ECCustomAttributes>
+        </ECCustomAttributeClass>
+        <ECEntityClass typeName="MyEntity" >
+            <ECCustomAttributes>
+                <Foo xmlns="Schema1.01.00.01" />
+            </ECCustomAttributes>
+        </ECEntityClass>
+
+        <ECRelationshipClass typeName="MyEntityRefersToMyEntity" strength="referencing" modifier="None">
+            <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="true">
+                <Class class="MyEntity"/>
+            </Source>
+            <Target multiplicity="(0..*)" roleLabel="is referenced by" polymorphic="true">
+                <Class class="MyEntity"/>
+            </Target>
+        </ECRelationshipClass>
+        </ECSchema>)xml");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema));
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * from s1.MyEntityRefersToMyEntity"));
+    }
+
+    
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT * from s1.MyEntity"));
+    }
+    }
     CloseECDb();
     }
 
