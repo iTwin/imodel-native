@@ -538,7 +538,11 @@ TEST_F(ECDbTestFixture, GetAndChangeGUIDForDb)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbTestFixture, CurrentECSqlVersion)
     {
+<<<<<<< HEAD
     BeVersion expectedVersion (1, 2, 0, 0);
+=======
+    BeVersion expectedVersion (1, 2, 8, 1);
+>>>>>>> 74eef92c (ECSQL ignore disqualify_type_index if there is only one class in query (#465))
     ASSERT_EQ(ECDb::GetECSqlVersion(), expectedVersion);
     }
 
