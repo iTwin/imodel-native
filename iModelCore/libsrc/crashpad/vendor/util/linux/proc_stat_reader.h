@@ -1,4 +1,4 @@
-// Copyright 2017 The Crashpad Authors. All rights reserved.
+// Copyright 2017 The Crashpad Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@
 
 #include <string>
 
-#include "base/macros.h"
 #include "util/linux/ptrace_connection.h"
 #include "util/misc/initialization_state_dcheck.h"
 
@@ -31,6 +30,10 @@ namespace crashpad {
 class ProcStatReader {
  public:
   ProcStatReader();
+
+  ProcStatReader(const ProcStatReader&) = delete;
+  ProcStatReader& operator=(const ProcStatReader&) = delete;
+
   ~ProcStatReader();
 
   //! \brief Initializes the reader.
@@ -60,11 +63,12 @@ class ProcStatReader {
 
   //! \brief Determines the target thread’s start time.
   //!
+  //! \param[in] boot_time The kernel boot time.
   //! \param[out] start_time The time that the thread started.
   //!
   //! \return `true` on success, with \a start_time set. Otherwise, `false` with
   //!     a message logged.
-  bool StartTime(timeval* start_time) const;
+  bool StartTime(const timeval& boot_time, timeval* start_time) const;
 
  private:
   bool FindColumn(int index, const char** column) const;
@@ -73,8 +77,6 @@ class ProcStatReader {
   std::string contents_;
   size_t third_column_position_;
   InitializationStateDcheck initialized_;
-
-  DISALLOW_COPY_AND_ASSIGN(ProcStatReader);
 };
 
 }  // namespace crashpad
