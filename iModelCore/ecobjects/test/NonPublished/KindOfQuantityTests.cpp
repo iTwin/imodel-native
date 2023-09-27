@@ -2193,8 +2193,11 @@ TEST_F(KindOfQuantityRoundTripTest, Fail_ec31_roundTrip)
 
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     ECSchemaPtr schema;
-    RoundTripSchema(schema, schemaItem, ECVersion::V3_1, SchemaReadStatus::InvalidECSchemaXml, SchemaWriteStatus::FailedToSaveXml, "Should fail to round trip a 3.1 schema with KoQ using EC3.2 unit defined in schema as persistence unit");
-    ASSERT_FALSE(schema.IsValid());
+
+    // Originally, we expected this round trip to fail when serializing the ECXml 3.1 version of the schema as it contains a KoQ which is using EC3.2 unit defined as persistence unit.
+    // When serialization of ECXml 3.1 fails with SchemaWriteStatus::FailedToSaveXml, we now expect the serialization to be re-attempted as ECXml 3.2 and succeed.
+    RoundTripSchema(schema, schemaItem, ECVersion::V3_1, SchemaReadStatus::Success, SchemaWriteStatus::Success, "Should fail to round trip a 3.1 schema with KoQ using EC3.2 unit defined in schema as persistence unit");
+    ASSERT_TRUE(schema.IsValid());
     }
 
 //--------------------------------------------------------------------------------------
