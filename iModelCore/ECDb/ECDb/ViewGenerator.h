@@ -187,7 +187,16 @@ struct ViewGenerator final
         static BentleyStatus RenderMixinClassMap(bmap<Utf8String, bpair<DbTable const*, bvector<ECN::ECClassId>>, CompareIUtf8Ascii>& selectClauses, Context& ctx, ClassMap const& mixInClassMap, ClassMap const& derivedClassMap);
         static BentleyStatus GenerateECClassIdFilter(Utf8StringR filterSqlExpression, ClassMap const&, DbTable const&, DbColumn const& classIdColumn, PolymorphicInfo const& polymorphic);
     public:
-        static BentleyStatus GenerateSelectFromViewSql(NativeSqlBuilder& viewSql, ECSqlPrepareContext const& prepareContext, ClassMap const& classMap, PolymorphicInfo polymorphicQuery, bool disqualifyPrimaryJoin, MemberFunctionCallExp const* memberFunctionCallExp = nullptr, std::set<Utf8String,CompareIUtf8Ascii> const* instanceProps = nullptr);
+        static BentleyStatus GenerateSelectFromViewSql(
+            NativeSqlBuilder& viewSql,
+            ECSqlPrepareContext const& prepareContext,
+            ClassMap const& classMap,
+            PolymorphicInfo polymorphicQuery,
+            bool disqualifyPrimaryJoin,
+            MemberFunctionCallExp const* memberFunctionCallExp = nullptr,
+            std::set<Utf8String, CompareIUtf8Ascii> const* instanceProps = nullptr,
+            ClassNameExp const* originalClassNameExp = nullptr);
+
         static BentleyStatus CreateECClassViews(ECDbCR, bvector<ECN::ECClassId> const&);
         static BentleyStatus CreateECClassViews(ECDbCR);
         static BentleyStatus DropECClassViews(ECDbCR);

@@ -10,7 +10,7 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_DGN
 
 
-void Session::ECIssueListener::_OnIssueReported(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, Utf8CP message) const
+void Session::ECIssueListener::_OnIssueReported(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, ECN::IssueId id, Utf8CP message) const
     {
     IModelConsole::WriteErrorLine("ISSUE: %s", message);
     m_issue = message;

@@ -385,8 +385,15 @@ ECTypeDescriptor ECSqlFieldFactory::DetermineDataType(DateTime::Info& dateTimeIn
             {
             if (ECObjectsStatus::Success != CoreCustomAttributeHelper::GetDateTimeInfo(dateTimeInfo, ecProperty))
                 {
-                issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Could not read DateTimeInfo custom attribute from the primitive ECProperty %s:%s.",
-                           ecProperty.GetClass().GetFullName(), ecProperty.GetName().c_str());
+                issues.ReportV(
+                    IssueSeverity::Error,
+                    IssueCategory::BusinessProperties,
+                    IssueType::ECSQL,
+                    ECDbIssueId::ECDb_0469,
+                    "Could not read DateTimeInfo custom attribute from the primitive ECProperty %s:%s.",
+                    ecProperty.GetClass().GetFullName(),
+                    ecProperty.GetName().c_str()
+                );
                 }
             }
 
@@ -406,8 +413,15 @@ ECTypeDescriptor ECSqlFieldFactory::DetermineDataType(DateTime::Info& dateTimeIn
             {
             if (ECObjectsStatus::Success != CoreCustomAttributeHelper::GetDateTimeInfo(dateTimeInfo, ecProperty))
                 {
-                issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Could not read DateTimeInfo custom attribute from the primitive array ECProperty %s:%s.",
-                           ecProperty.GetClass().GetFullName(), ecProperty.GetName().c_str());
+                issues.ReportV(
+                    IssueSeverity::Error,
+                    IssueCategory::BusinessProperties,
+                    IssueType::ECSQL,
+                    ECDbIssueId::ECDb_0470,
+                    "Could not read DateTimeInfo custom attribute from the primitive array ECProperty %s:%s.",
+                    ecProperty.GetClass().GetFullName(),
+                    ecProperty.GetName().c_str()
+                );
                 }
             }
 

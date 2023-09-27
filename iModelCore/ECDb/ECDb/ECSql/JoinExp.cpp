@@ -197,7 +197,8 @@ BentleyStatus UsingRelationshipJoinExp::ResolveRelationshipEnds(ECSqlParseContex
 
     if (toEP.GetLocation() == ClassLocation::NotResolved)
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "'%s' class is not related to by the relationship '%s'", toECClass.GetFullName(), relationshipClass->GetFullName());
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0541,
+            "'%s' class is not related to by the relationship '%s'", toECClass.GetFullName(), relationshipClass->GetFullName());
         return ERROR;
         }
 
@@ -235,13 +236,15 @@ BentleyStatus UsingRelationshipJoinExp::ResolveRelationshipEnds(ECSqlParseContex
 
     if (fromClassExistsInSourceList.empty() && fromClassExistsInTargetList.empty())
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "No ECClass in the FROM and JOIN clauses matches the ends of the relationship '%s'.", relationshipClass->GetFullName());
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0542,
+            "No ECClass in the FROM and JOIN clauses matches the ends of the relationship '%s'.", relationshipClass->GetFullName());
         return ERROR;
         }
 
     if (fromClassExistsInSourceList.size() > 1 || fromClassExistsInTargetList.size() > 1)
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Multiple classes in the FROM and JOIN clauses match an end of the relationship '%s'.", relationshipClass->GetFullName());
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0543,
+            "Multiple classes in the FROM and JOIN clauses match an end of the relationship '%s'.", relationshipClass->GetFullName());
         return ERROR;
         }
 
@@ -249,7 +252,8 @@ BentleyStatus UsingRelationshipJoinExp::ResolveRelationshipEnds(ECSqlParseContex
         {
         if (fromClassExistsInSourceList.begin()->first != fromClassExistsInTargetList.begin()->first)
             {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Multiple classes in the FROM and JOIN clauses match an end of the relationship '%s'.", relationshipClass->GetFullName());
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0543,
+                "Multiple classes in the FROM and JOIN clauses match an end of the relationship '%s'.", relationshipClass->GetFullName());
             return ERROR;
             }
         }
@@ -291,20 +295,23 @@ BentleyStatus UsingRelationshipJoinExp::ResolveRelationshipEnds(ECSqlParseContex
         //Rule: In self-join direction must be provided
         if (GetDirection() == JoinDirection::Implied)
             {
-            ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "FORWARD or BACKWARD must be specified for joins where source and target cannot be identified unambiguously, e.g. joins between the same class.");
+            ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0545,
+                "FORWARD or BACKWARD must be specified for joins where source and target cannot be identified unambiguously, e.g. joins between the same class.");
             return ERROR;
             }
         }
 
     if (fromEP.GetLocation() == ClassLocation::NotResolved || fromEP.GetClassNameRef() == nullptr)
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Could not find class on one of the ends of relationship %s", relationshipClass->GetFullName());
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0546,
+            "Could not find class on one of the ends of relationship %s", relationshipClass->GetFullName());
         return ERROR;
         }
 
     if (toEP.GetLocation() == ClassLocation::NotResolved || toEP.GetClassNameRef() == nullptr)
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Could not find class on one of the ends of relationship %s", relationshipClass->GetFullName());
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0546,
+            "Could not find class on one of the ends of relationship %s", relationshipClass->GetFullName());
         return ERROR;
         }
 

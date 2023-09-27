@@ -167,7 +167,7 @@ SchemaReadStatus SchemaXmlReaderImpl::_ReadSchemaReferencesFromXml(ECSchemaPtr& 
             }
         else
             {
-            m_schemaContext.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema,
+            m_schemaContext.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0012,
                 "Unable to locate referenced schema %s while deserializing %s", key.GetFullSchemaName().c_str(), schemaOut->GetFullSchemaName().c_str());
             return SchemaReadStatus::ReferencedSchemaNotFound;
             }
