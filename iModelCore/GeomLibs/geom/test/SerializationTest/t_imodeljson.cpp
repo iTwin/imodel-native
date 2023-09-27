@@ -7,7 +7,6 @@
 
 #include "SampleGeometry.h"
 #include <BeJsonCpp/BeJsonUtilities.h>
-#include "FileOps.h"
 #include <GeomSerialization/GeomSerializationApi.h>
 
 
