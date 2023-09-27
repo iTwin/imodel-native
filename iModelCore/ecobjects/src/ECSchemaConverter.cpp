@@ -549,7 +549,7 @@ ECObjectsStatus ECDbClassMapConverter::Convert(ECSchemaR schema, IECCustomAttrib
     if (ECObjectsStatus::Success != instance.GetValue(strategy, STRATEGY) || !convertStrategyName(strategy, instance, convertedStrategyName))
         {
         context->Issues().ReportV(
-            IssueSeverity::Warning, IssueCategory::BusinessProperties, IssueType::ECClass,
+            IssueSeverity::Warning, IssueCategory::BusinessProperties, IssueType::ECClass, ECIssueId::EC_0010,
             "Failed to convert ECDbMap:ClassMap on %s because the MapStrategy is not 'SharedTable with AppliesToSubclasses == true' or 'NotMapped'.  Removing and skipping.", container.GetContainerName().c_str()
         );
         return ECObjectsStatus::Success;
@@ -558,7 +558,8 @@ ECObjectsStatus ECDbClassMapConverter::Convert(ECSchemaR schema, IECCustomAttrib
     if (nullptr == context)
         {
         BeAssert(true);
-        context->Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, "Missing ECSchemaReadContext, it is necessary to perform conversion on a ECDbMap:ClassMap custom attribute.");
+        context->Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0011,
+            "Missing ECSchemaReadContext, it is necessary to perform conversion on a ECDbMap:ClassMap custom attribute.");
         return ECObjectsStatus::Error;
         }
 
