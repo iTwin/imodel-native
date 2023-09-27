@@ -901,7 +901,47 @@ TEST_F(ProfileTestFixture, TestUseRequiresVersionOnRelationship)
     {
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDbForCurrentTest());
 
-    { //Apply an unsupported CA to a struct and struct property and then try to select (currently the CA on structs has no effect)
+    { //Apply an unsupported CA to a struct and struct property and then try to select
+    SchemaItem schema(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="Schema1" alias="s1" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="ECDbMap" version="02.00.02" alias="ecdbmap"/>
+        <ECEntityClass typeName="MyEntity" >
+        </ECEntityClass>
+
+        <ECRelationshipClass typeName="MyEntityRefersToMyEntity" strength="referencing" modifier="None">
+            <ECCustomAttributes>
+                <UseRequiresVersion xmlns="ECDbMap.02.00.02">
+                    <ECDbRuntimeVersion>999.9.9.9</ECDbRuntimeVersion>
+                </UseRequiresVersion>
+            </ECCustomAttributes>
+            <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="true">
+                <Class class="MyEntity"/>
+            </Source>
+            <Target multiplicity="(0..*)" roleLabel="is referenced by" polymorphic="true">
+                <Class class="MyEntity"/>
+            </Target>
+        </ECRelationshipClass>
+        </ECSchema>)xml");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema));
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT * from s1.MyEntityRefersToMyEntity"));
+    }
+    }
+
+    CloseECDb();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ProfileTestFixture, TestUseRequiresVersionOnRelationshipIndirect)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDbForCurrentTest());
+
+    { //Apply an unsupported CA to a struct and struct property and then try to select
     SchemaItem schema(R"xml(<?xml version="1.0" encoding="utf-8" ?>
         <ECSchema schemaName="Schema1" alias="s1" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <ECSchemaReference name="ECDbMap" version="02.00.02" alias="ecdbmap"/>
@@ -932,7 +972,7 @@ TEST_F(ProfileTestFixture, TestUseRequiresVersionOnRelationship)
 
     {
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * from s1.MyEntityRefersToMyEntity"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT * from s1.MyEntityRefersToMyEntity"));
     }
     }
 

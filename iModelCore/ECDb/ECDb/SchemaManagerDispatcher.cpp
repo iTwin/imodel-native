@@ -720,12 +720,12 @@ bool SchemaManager::Dispatcher::IsClassUnsupported(ECClassId classId) const
         if(!useRequiresVersionClassId.IsValid())
             return false; //can drop out here, the CA class wasn't found so the set will be empty
 
-        IdSet<ECClassId> baseUnsupportedEntityClasses;
-        //Class refers to the ca class to collect entities for
-        //boolean parameter specifies whether we are using the UseRequiresVersion CA indirectly (entity which has a ca which has the ca), if this is set true, we can assume
+        IdSet<ECClassId> baseUnsupportedClasses;
+        //ClassId refers to the ca class to collect entities for
+        //boolean parameter specifies whether we are using the UseRequiresVersion CA indirectly (class which has a ca which has the ca), if this is set true, we can assume
         //everything we find is unsupported
         std::function<void(ECClassId,bool)> collectEntitiesThatHaveCA;
-        collectEntitiesThatHaveCA = [&baseUnsupportedEntityClasses, &collectEntitiesThatHaveCA, this](ECClassId caClassId,bool indirect) -> void {
+        collectEntitiesThatHaveCA = [&baseUnsupportedClasses, &collectEntitiesThatHaveCA, this](ECClassId caClassId,bool indirect) -> void {
             Statement stmt;
             if (stmt.Prepare(m_ecdb, SqlPrintfString("SELECT ContainerId FROM main." TABLE_CustomAttribute " WHERE ContainerType = %d AND ClassId = ?", (int)SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Class)) != DbResult::BE_SQLITE_OK)
                 return;
@@ -740,27 +740,24 @@ bool SchemaManager::Dispatcher::IsClassUnsupported(ECClassId classId) const
                 if (classWithCA == nullptr)
                     continue;
 
-                //we only need to check this CA at the top level. Any further(indirect) level automatically fails verification because
-                //we would have stepped out earlier if it passed
                 if(!indirect)
                     {
                     UseRequiresVersionCustomAttribute ca;
                     if (!ECDbMapCustomAttributeHelper::TryGetUseRequiresVersion(ca, *classWithCA) || !ca.IsValid())
                         continue;
 
-                    Utf8PrintfString context("ECClass %s", classWithCA->GetFullName());
-                    if (ca.Verify(m_ecdb.GetImpl().Issues(), context.c_str()) == BentleyStatus::SUCCESS)
+                    Utf8PrintfString classCaption("ECClass %s", classWithCA->GetFullName());
+                    if (ca.Verify(m_ecdb.GetImpl().Issues(), classCaption.c_str()) == BentleyStatus::SUCCESS)
                         continue; //step out, our current code passes the CA requirements
                     }
                 
-                if (classWithCA->IsEntityClass())
+                if (classWithCA->IsEntityClass() || classWithCA->IsRelationshipClass()) //ignoring structs here for now, the CA has no effect on those
                     {
-                    baseUnsupportedEntityClasses.insert(classId);
+                    baseUnsupportedClasses.insert(classId);
                     continue;
                     }
-
-                if (classWithCA->IsCustomAttributeClass())
-                    {
+                else if (classWithCA->IsCustomAttributeClass())
+                    { //recurse into this function with the new custom attribute as classId
                     collectEntitiesThatHaveCA(classId, true);
                     }
                 }
@@ -768,13 +765,13 @@ bool SchemaManager::Dispatcher::IsClassUnsupported(ECClassId classId) const
 
         collectEntitiesThatHaveCA(useRequiresVersionClassId, false);
         //we first filled a list with all unsupported entities. Now we need to fill them, and their derived classes into m_unsupportedClassIdCache.
-        if(!baseUnsupportedEntityClasses.empty())
+        if(!baseUnsupportedClasses.empty())
             {
             Statement expandClassIdsStmt;
             if (expandClassIdsStmt.Prepare(m_ecdb, "SELECT DISTINCT ClassId FROM main." TABLE_ClassHierarchyCache " WHERE InVirtualSet(?, BaseClassId)") != DbResult::BE_SQLITE_OK)
                 return false;
 
-            if (expandClassIdsStmt.BindVirtualSet(1, baseUnsupportedEntityClasses) != DbResult::BE_SQLITE_OK)
+            if (expandClassIdsStmt.BindVirtualSet(1, baseUnsupportedClasses) != DbResult::BE_SQLITE_OK)
                 return false;
 
             while (expandClassIdsStmt.Step() == BE_SQLITE_ROW)

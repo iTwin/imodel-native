@@ -55,7 +55,7 @@
         <ECProperty propertyName="ECDbRuntimeVersion" typeName="string" description="Required. ECDb profile version number e.g. 4.0.0.3. Refers to the runtime version, not the file version." />
     </ECCustomAttributeClass>
 
-    <ECCustomAttributeClass typeName="UseRequiresVersion" modifier="Sealed" appliesTo="EntityClass, CustomAttributeClass" description="Causes ECDb to refuse to query a class which has this CA or a CA that has this CA if conditions are not met.">
+    <ECCustomAttributeClass typeName="UseRequiresVersion" modifier="Sealed" appliesTo="AnyClass" description="Causes ECDb to refuse to query a class which has this CA or a CA that has this CA if conditions are not met.">
         <ECProperty propertyName="ECDbRuntimeVersion" typeName="string" description="Optional. ECDb profile version number e.g. 4.0.0.3. Refers to the runtime version, not the file version." />
         <ECProperty propertyName="ECSqlVersion" typeName="string" description="Optional. EC SQL profile version number e.g. 1.2.0.0." />
     </ECCustomAttributeClass>
