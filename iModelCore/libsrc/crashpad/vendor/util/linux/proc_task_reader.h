@@ -1,4 +1,4 @@
-// Copyright 2019 The Crashpad Authors. All rights reserved.
+// Copyright 2019 The Crashpad Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,7 +21,8 @@
 
 namespace crashpad {
 
-//! \brief Enumerates the thread IDs of a process by reading /proc/<pid>/task.
+//! \brief Enumerates the thread IDs of a process by reading
+//!     <code>/proc/<i>pid</i>/task</code>.
 //!
 //! \param[in] pid The process ID for which to read thread IDs.
 //! \param[out] tids The read thread IDs.

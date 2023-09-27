@@ -1,4 +1,4 @@
-// Copyright 2017 The Crashpad Authors. All rights reserved.
+// Copyright 2017 The Crashpad Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -73,7 +73,8 @@ bool MoveFileOrDirectory(const base::FilePath& source,
 //!     failure.
 //!
 //! On POSIX, this function returns `true` if \a path refers to a file that is
-//! not a symbolic link, directory, or other kind of special file.
+//! not a symbolic link, directory, or other kind of special file. If this
+//! function fails because \a path does not exist, then no message is logged.
 //!
 //! On Windows, this function returns `true` if \a path refers to a file that
 //! is not a symbolic link or directory.
@@ -84,6 +85,9 @@ bool IsRegularFile(const base::FilePath& path);
 
 //! \brief Determines if a path refers to a directory, logging a message on
 //!     failure.
+//!
+//! On POSIX, if this function fails because \a path does not exist, then no
+//! message is logged.
 //!
 //! \param[in] path The path to check.
 //! \param[in] allow_symlinks Whether to allow the final component in the path
@@ -106,6 +110,22 @@ bool LoggingRemoveFile(const base::FilePath& path);
 //! \param[in] path The to the directory to remove.
 //! \return `true` if the directory was removed. Otherwise, `false`.
 bool LoggingRemoveDirectory(const base::FilePath& path);
+
+//! \brief Returns the size of the file at |filepath|.
+//!    The function will ignore symlinks (not follow them, not add them to
+//!    the returned size).
+//!
+//! \return The size of the file pointed by |filepath|.
+uint64_t GetFileSize(const base::FilePath& filepath);
+
+//! \brief Returns the recursive sum of the size of the files in |dirPath|.
+//!    The function will ignore symlinks (not follow them, not add them to
+//!    the returned size).
+//!
+//! \param[in] dirPath The path to the directory
+//!
+//! \return The sum of the size of the files in |dirPath|.
+uint64_t GetDirectorySize(const base::FilePath& dirPath);
 
 }  // namespace crashpad
 
