@@ -103,7 +103,7 @@ protected:
    GEOMAPI_VIRTUAL void _SetDoSpatialLaplaceSmoothing (bool smoothBsurfTrianglesRequired) = 0;
 
    GEOMAPI_VIRTUAL double _GetCurvatureWeightFactor () const = 0;
-   GEOMAPI_VIRTUAL void _SetCurvatureWeightFactor (double fration = 0.5) = 0;
+   GEOMAPI_VIRTUAL void _SetCurvatureWeightFactor (double fraction = 0.5) = 0;
 
    GEOMAPI_VIRTUAL bool _GetIgnoreFaceMaterialAttachments () const = 0;
    GEOMAPI_VIRTUAL void _SetIgnoreFaceMaterialAttachments (bool ignoreFaceAttachments) = 0;
@@ -128,10 +128,11 @@ protected:
 
    GEOMAPI_VIRTUAL IFacetOptionsPtr  _Clone() const = 0;
 
-// Protected signatures of public/protected methods
-
    GEOMAPI_VIRTUAL void _SetDefaults () = 0;
    GEOMAPI_VIRTUAL void _SetCurveDefaults () = 0;
+
+   GEOMAPI_VIRTUAL size_t _GetMaxPerFullEllipse() const { return 600; }
+   GEOMAPI_VIRTUAL void _SetMaxPerFullEllipse(size_t maxPerFullEllipse) {}
 
 public:
 
@@ -282,9 +283,9 @@ GEOMDLLIMPEXP void SetIgnoreFaceMaterialAttachments (bool ignoreFaceAttachments)
 GEOMDLLIMPEXP bool GetIgnoreFaceMaterialAttachments () const;
 
 
-//! Set whether smooth edges between facets are marked as hidden when normals are genereted for a polyface without normals.
+//! Set whether smooth edges between facets are marked as hidden when normals are generated for a polyface without normals.
 GEOMDLLIMPEXP void SetHideSmoothEdgesWhenGeneratingNormals (bool hideSmoothEdgesWhenGeneratingNormals);
-//! Get whether mooth edges between facets are marked as hidden when normals are genereted for a polyface without normals.
+//! Get whether smooth edges between facets are marked as hidden when normals are generated for a polyface without normals.
 GEOMDLLIMPEXP bool GetHideSmoothEdgesWhenGeneratingNormals () const;
 
 //! Set whether to ignore hidden entities (edges and faces from unification) in BRep entities (optimization for tile generation).
@@ -317,7 +318,7 @@ GEOMDLLIMPEXP void SetCurveDefaults ();
 //! Create a copy.
 GEOMDLLIMPEXP IFacetOptionsPtr  Clone() const;
 
-//! Return a (smart pointer) implementation of the interface.  Depreated -- use Create() or CreateForCurves ()
+//! Return a (smart pointer) implementation of the interface.  Deprecated -- use Create() or CreateForCurves ()
 static GEOMDLLIMPEXP IFacetOptionsPtr New ();
 
 //! Return a (smart pointer) implementation of the interface, with tolerances set for typical surfaces.
@@ -365,11 +366,14 @@ double maxEdgeLength
 GEOMDLLIMPEXP size_t FullEllipseStrokeCount (DEllipse3dCR ellipse) const;
 //! Compute the number of strokes needed for a partial ellipse.
 GEOMDLLIMPEXP size_t EllipseStrokeCount (DEllipse3dCR ellipse) const;
-//! Comptue the number of strokes needed for a bspline curve.
+//! Compute the number of strokes needed for a bspline curve.
 GEOMDLLIMPEXP size_t BsplineCurveStrokeCount (MSBsplineCurveCR curve) const;
-//! Comptue the number of strokes needed for a linestring.  This is the sum of counts on individual segments.
+//! Compute the number of strokes needed for a linestring.  This is the sum of counts on individual segments.
 GEOMDLLIMPEXP size_t LineStringStrokeCount (bvector<DPoint3d> const &points) const;
-
+//! Set the maximum number of strokes on a full ellipse.
+GEOMDLLIMPEXP void SetMaxPerFullEllipse(size_t maxPerFullEllipse);
+//! Get the maximum number of strokes on a full ellipse.
+GEOMDLLIMPEXP size_t GetMaxPerFullEllipse() const;
 }; // IFacetOptions
 
 
