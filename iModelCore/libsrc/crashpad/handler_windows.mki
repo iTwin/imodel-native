@@ -1,7 +1,13 @@
+
 #---------------------------------------------------------------------------------------------
 #  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 #  See LICENSE.md in the repository root for full copyright notice.
 #---------------------------------------------------------------------------------------------
+
+# 0x0A00 corresponds to Windows 10. Crashpad uses some methods only available there.
+# Note that this is not a good idea to hide down here because it really changes the minimum version for the entire application that delivers crashpad.
+%error Need to uncomment this line to make it compile
+_WIN32_WINNT    = 0x0A00
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------
 dirToSearch = $(VendorDir)
@@ -25,9 +31,6 @@ dirToSearch = $(VendorDir)compat/non_mac/
 dirToSearch = $(VendorDir)compat/win/
 %include cincapnd.mki
 
-dirToSearch = $(VendorDir)compat/non_elf/
-%include cincapnd.mki
-
 dirToSearch = $(BuildContext)VendorAPI/zlib/
 %include cincapnd.mki
 
@@ -49,8 +52,14 @@ nameToDefine = _HAS_EXCEPTIONS=0
 nameToDefine = _UNICODE
 %include cdefapnd.mki
 
+nameToDefine = _WINDOWS
+%include cdefapnd.mki
+
 nameToDefine = CRASHPAD_ZLIB_SOURCE_EXTERNAL
 %include cdefapnd.mki
+
+# To match up with ninja build
+CCompOpts + -utf-8 -Ob1
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------
 %include MultiCppCompileRule.mki
@@ -165,6 +174,8 @@ $(o)minidump_thread_id_map$(oext) : $(VendorDir)minidump/minidump_thread_id_map.
 
 $(o)minidump_thread_writer$(oext) : $(VendorDir)minidump/minidump_thread_writer.cc ${MultiCompileDepends}
 
+$(o)minidump_thread_name_list_writer$(oext) : $(VendorDir)minidump/minidump_thread_name_list_writer.cc ${MultiCompileDepends}
+
 $(o)minidump_unloaded_module_writer$(oext) : $(VendorDir)minidump/minidump_unloaded_module_writer.cc ${MultiCompileDepends}
 
 $(o)minidump_user_extension_stream_data_source$(oext) : $(VendorDir)minidump/minidump_user_extension_stream_data_source.cc ${MultiCompileDepends}
@@ -178,6 +189,12 @@ $(o)minidump_writer_util$(oext) : $(VendorDir)minidump/minidump_writer_util.cc $
 # -- misc -----------------------------------------------------------------------------------------
 
 $(o)tool_support$(oext) : $(VendorDir)tools/tool_support.cc ${MultiCompileDepends}
+
+$(o)loader_lock$(oext) : $(VendorDir)util/win/loader_lock.cc ${MultiCompileDepends}
+
+$(o)page_size_win$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/base/memory/page_size_win.cc ${MultiCompileDepends}
+
+$(o)scoped_clear_last_error_win$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/base/scoped_clear_last_error_win.cc ${MultiCompileDepends}
 
 # -- libhandler -----------------------------------------------------------------------------------
 
