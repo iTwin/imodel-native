@@ -9,7 +9,7 @@ static DPoint3d s_defaultSilhouetteOrigin = DPoint3d::FromXYZ (-1,0,0);
 static DVec3d   s_defaultSilhouetteViewVector = DVec3d::From (0,0,0);
 static double   s_defaultAngleTolerance = 0.523598775598298873; // 30 degrees
 static double   s_defaultAngleToleranceForCurves = 0.174532925199432957; // 10 degrees
-static size_t   s_maxPerFullEllipse = 600;
+static int      s_maxPerFullEllipse = 600;
 
 static FacetParamMode s_defaultParamMode = FACET_PARAM_01BothAxes;
 
@@ -216,7 +216,7 @@ ImplementGetSetPair(bool,IFacetOptions, SmoothTriangleFlowRequired)
 ImplementGetSetPair(bool,IFacetOptions, BSurfSmoothTriangleFlowRequired)
 ImplementGetSetPair(bool,IFacetOptions, DoSpatialLaplaceSmoothing)
 ImplementGetSetPair(bool,IFacetOptions, HideSmoothEdgesWhenGeneratingNormals)
-ImplementGetSetPair(size_t, IFacetOptions, MaxPerFullEllipse)
+ImplementGetSetPair(int, IFacetOptions, MaxPerFullEllipse)
 
 
 ImplementGetSetPair(FacetParamMode,IFacetOptions, ParamMode)
@@ -259,12 +259,11 @@ void UpdateToleranceCount (size_t &count, double numerator, double denominator, 
 size_t IFacetOptions::FullEllipseStrokeCount (DEllipse3dCR ellipse) const
     {
     DEllipse3d fullEllipse = ellipse;
-    size_t maxCount = GetMaxPerFullEllipse();
-    int intMaxCount = maxCount > std::numeric_limits<int>::max() ? std::numeric_limits<int>::max() : static_cast<int>(maxCount);
+    int maxCount = abs(GetMaxPerFullEllipse());
     static int   s_minCount = 4;
 
     fullEllipse.sweep = msGeomConst_2pi;
-    size_t numChord = (size_t)ellipse.GetStrokeCount (s_minCount, intMaxCount, GetChordTolerance (), GetAngleTolerance ());
+    size_t numChord = (size_t)ellipse.GetStrokeCount (s_minCount, maxCount, GetChordTolerance (), GetAngleTolerance ());
     double a;
     if (0.0 < (a = GetMaxEdgeLength ()))
         UpdateToleranceCount (numChord, fullEllipse.ArcLength (), a, maxCount);
@@ -486,7 +485,7 @@ struct FacetOptions : public IFacetOptions
 
     double m_ignoredBRepFeatureSize = 0.0;
 
-    size_t m_maxPerFullEllipse;
+    int m_maxPerFullEllipse;
 
     // Get/Set pair for ChordTolerance.  Simple access to m_chordTolerance
    double _GetChordTolerance () const override
@@ -722,8 +721,8 @@ void _SetCurveDefaults () override
     m_normalAngleTolerance = s_defaultAngleToleranceForCurves;
     }
 
-size_t _GetMaxPerFullEllipse() const override { return m_maxPerFullEllipse; }
-void _SetMaxPerFullEllipse(size_t maxPerFullEllipse) override { m_maxPerFullEllipse = maxPerFullEllipse; }
+int _GetMaxPerFullEllipse() const override { return m_maxPerFullEllipse; }
+void _SetMaxPerFullEllipse(int maxPerFullEllipse) override { m_maxPerFullEllipse = maxPerFullEllipse; }
 
 FacetOptions ()
     {

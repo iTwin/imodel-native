@@ -131,8 +131,8 @@ protected:
    GEOMAPI_VIRTUAL void _SetDefaults () = 0;
    GEOMAPI_VIRTUAL void _SetCurveDefaults () = 0;
 
-   GEOMAPI_VIRTUAL size_t _GetMaxPerFullEllipse() const { return 600; }
-   GEOMAPI_VIRTUAL void _SetMaxPerFullEllipse(size_t maxPerFullEllipse) {}
+   GEOMAPI_VIRTUAL int _GetMaxPerFullEllipse() const { return 600; }
+   GEOMAPI_VIRTUAL void _SetMaxPerFullEllipse(int maxPerFullEllipse) {}
 
 public:
 
@@ -371,9 +371,9 @@ GEOMDLLIMPEXP size_t BsplineCurveStrokeCount (MSBsplineCurveCR curve) const;
 //! Compute the number of strokes needed for a linestring.  This is the sum of counts on individual segments.
 GEOMDLLIMPEXP size_t LineStringStrokeCount (bvector<DPoint3d> const &points) const;
 //! Set the maximum number of strokes on a full ellipse.
-GEOMDLLIMPEXP void SetMaxPerFullEllipse(size_t maxPerFullEllipse);
+GEOMDLLIMPEXP void SetMaxPerFullEllipse(int maxPerFullEllipse);
 //! Get the maximum number of strokes on a full ellipse.
-GEOMDLLIMPEXP size_t GetMaxPerFullEllipse() const;
+GEOMDLLIMPEXP int GetMaxPerFullEllipse() const;
 }; // IFacetOptions
 
 
