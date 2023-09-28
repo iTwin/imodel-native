@@ -9,7 +9,7 @@
 +---------------+---------------+---------------+---------------+---------------+------*/
 static double getMaxStyleOffset(LineStyleSymbCR symb, LsComponentCR topComponent)
     {
-    // NOTE: Because "maxWidth" is twice the maximum offset it gets divided by two.
+    // NOTE: Because "maxWidth" is twice the maximum offset, it gets divided by two.
     double styleWidth = 0.0;
 
     switch (topComponent.GetComponentType())
