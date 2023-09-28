@@ -144,11 +144,8 @@ void DgnDb::Destroy() {
     m_models.Empty();
     m_txnManager = nullptr; // RefCountedPtr, deletes TxnManager
     m_lineStyles = nullptr;
-<<<<<<< HEAD
     m_revisionManager.reset(nullptr);
-=======
     m_fonts = nullptr;
->>>>>>> 63eec317 (Fix error db fail to close due to open blobio handle (#473))
     m_cacheECInstanceInserter.clear();
     ClearECSqlCache();
 }
