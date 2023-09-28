@@ -25,9 +25,6 @@ dirToSearch = $(VendorDir)compat/non_mac/
 dirToSearch = $(VendorDir)compat/win/
 %include cincapnd.mki
 
-dirToSearch = $(VendorDir)compat/non_elf/
-%include cincapnd.mki
-
 dirToSearch = $(BuildContext)VendorAPI/zlib/
 %include cincapnd.mki
 
@@ -67,9 +64,9 @@ $(o)logging$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/base/lo
 
 $(o)memory$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/base/process/memory.cc ${MultiCompileDepends}
 
-$(o)rand_util$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/base/rand_util.cc ${MultiCompileDepends}
+$(o)page_size_win$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/base/memory/page_size_win.cc ${MultiCompileDepends}
 
-$(o)string16$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/base/strings/string16.cc ${MultiCompileDepends}
+$(o)rand_util$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/base/rand_util.cc ${MultiCompileDepends}
 
 $(o)string_number_conversions$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/base/strings/string_number_conversions.cc ${MultiCompileDepends}
 
@@ -85,13 +82,13 @@ $(o)icu_utf$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/base/th
 
 $(o)thread_local_storage$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/base/threading/thread_local_storage.cc ${MultiCompileDepends}
 
-$(o)process_metrics_win$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/base/process/process_metrics_win.cc ${MultiCompileDepends}
-
 $(o)string_util_win$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/base/strings/string_util_win.cc ${MultiCompileDepends}
 
 $(o)lock_impl_win$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/base/synchronization/lock_impl_win.cc ${MultiCompileDepends}
 
 $(o)thread_local_storage_win$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/base/threading/thread_local_storage_win.cc ${MultiCompileDepends}
+
+$(o)scoped_clear_last_error_win$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/base/scoped_clear_last_error_win.cc ${MultiCompileDepends}
 
 # -- getopt ---------------------------------------------------------------------------------------
 
@@ -108,6 +105,8 @@ $(o)strings$(oext) : $(VendorDir)compat/win/strings.cc ${MultiCompileDepends}
 # -- util -----------------------------------------------------------------------------------------
 
 $(o)delimited_file_reader$(oext) : $(VendorDir)util/file/delimited_file_reader.cc ${MultiCompileDepends}
+
+$(o)file_helper$(oext) : $(VendorDir)util/file/file_helper.cc ${MultiCompileDepends}
 
 $(o)file_io$(oext) : $(VendorDir)util/file/file_io.cc ${MultiCompileDepends}
 
@@ -208,6 +207,8 @@ $(o)get_module_information$(oext) : $(VendorDir)util/win/get_module_information.
 $(o)handle$(oext) : $(VendorDir)util/win/handle.cc ${MultiCompileDepends}
 
 $(o)initial_client_data$(oext) : $(VendorDir)util/win/initial_client_data.cc ${MultiCompileDepends}
+
+$(o)loader_lock$(oext) : $(VendorDir)util/win/loader_lock.cc ${MultiCompileDepends}
 
 $(o)module_version$(oext) : $(VendorDir)util/win/module_version.cc ${MultiCompileDepends}
 

@@ -53,11 +53,9 @@ $(o)safe_strerror$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/b
 
 $(o)memory$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/base/process/memory.cc ${MultiCompileDepends}
 
-$(o)process_metrics_posix$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/base/process/process_metrics_posix.cc ${MultiCompileDepends}
+$(o)page_size_posix$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/base/memory/page_size_posix.cc ${MultiCompileDepends}
 
 $(o)rand_util$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/base/rand_util.cc ${MultiCompileDepends}
-
-$(o)string16$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/base/strings/string16.cc ${MultiCompileDepends}
 
 $(o)string_number_conversions$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/base/strings/string_number_conversions.cc ${MultiCompileDepends}
 
@@ -85,6 +83,8 @@ $(o)delimited_file_reader$(oext) : $(VendorDir)util/file/delimited_file_reader.c
 
 $(o)directory_reader_posix$(oext) : $(VendorDir)util/file/directory_reader_posix.cc ${MultiCompileDepends}
 
+$(o)file_helper$(oext) : $(VendorDir)util/file/file_helper.cc ${MultiCompileDepends}
+
 $(o)file_io$(oext) : $(VendorDir)util/file/file_io.cc ${MultiCompileDepends}
 
 $(o)file_io_posix$(oext) : $(VendorDir)util/file/file_io_posix.cc ${MultiCompileDepends}
@@ -101,6 +101,8 @@ $(o)scoped_remove_file$(oext) : $(VendorDir)util/file/scoped_remove_file.cc ${Mu
 
 $(o)string_file$(oext) : $(VendorDir)util/file/string_file.cc ${MultiCompileDepends}
 
+# $(o)initial_signal_dispositions$(oext) : $(VendorDir)util/linux/initial_signal_dispositions.cc ${MultiCompileDepends}
+
 $(o)auxiliary_vector$(oext) : $(VendorDir)util/linux/auxiliary_vector.cc ${MultiCompileDepends}
 
 $(o)direct_ptrace_connection$(oext) : $(VendorDir)util/linux/direct_ptrace_connection.cc ${MultiCompileDepends}
@@ -110,6 +112,8 @@ $(o)exception_handler_client$(oext) : $(VendorDir)util/linux/exception_handler_c
 $(o)exception_handler_protocol$(oext) : $(VendorDir)util/linux/exception_handler_protocol.cc ${MultiCompileDepends}
 
 $(o)memory_map$(oext) : $(VendorDir)util/linux/memory_map.cc ${MultiCompileDepends}
+
+$(o)pac_helper$(oext) : $(VendorDir)util/linux/pac_helper.cc ${MultiCompileDepends}
 
 $(o)proc_stat_reader$(oext) : $(VendorDir)util/linux/proc_stat_reader.cc ${MultiCompileDepends}
 
@@ -175,8 +179,6 @@ $(o)close_multiple$(oext) : $(VendorDir)util/posix/close_multiple.cc ${MultiComp
 
 $(o)close_stdio$(oext) : $(VendorDir)util/posix/close_stdio.cc ${MultiCompileDepends}
 
-$(o)double_fork_and_exec$(oext) : $(VendorDir)util/posix/double_fork_and_exec.cc ${MultiCompileDepends}
-
 $(o)drop_privileges$(oext) : $(VendorDir)util/posix/drop_privileges.cc ${MultiCompileDepends}
 
 $(o)process_info_linux$(oext) : $(VendorDir)util/posix/process_info_linux.cc ${MultiCompileDepends}
@@ -186,6 +188,8 @@ $(o)scoped_dir$(oext) : $(VendorDir)util/posix/scoped_dir.cc ${MultiCompileDepen
 $(o)scoped_mmap$(oext) : $(VendorDir)util/posix/scoped_mmap.cc ${MultiCompileDepends}
 
 $(o)signals$(oext) : $(VendorDir)util/posix/signals.cc ${MultiCompileDepends}
+
+$(o)spawn_subprocess$(oext) : $(VendorDir)util/posix/spawn_subprocess.cc ${MultiCompileDepends}
 
 $(o)symbolic_constants_posix$(oext) : $(VendorDir)util/posix/symbolic_constants_posix.cc ${MultiCompileDepends}
 
@@ -234,6 +238,8 @@ $(o)crashpad_client_linux$(oext) : $(VendorDir)client/crashpad_client_linux.cc $
 $(o)crashpad_info$(oext) : $(VendorDir)client/crashpad_info.cc ${MultiCompileDepends}
 
 $(o)prune_crash_reports$(oext) : $(VendorDir)client/prune_crash_reports.cc ${MultiCompileDepends}
+
+$(o)pthread_create_linux$(oext) : $(VendorDir)client/pthread_create_linux.cc ${MultiCompileDepends}
 
 $(o)settings$(oext) : $(VendorDir)client/settings.cc ${MultiCompileDepends}
 
