@@ -7,6 +7,62 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+static double getMaxStyleOffset(LineStyleSymbCR symb, LsComponentCR topComponent)
+    {
+    // NOTE: Because "maxWidth" is twice the maximum offset, it gets divided by two.
+    double styleWidth = 0.0;
+
+    switch (topComponent.GetComponentType())
+        {
+        case LsComponentType::LinePoint:
+            {
+            LsPointComponentCR pointComponent = (LsPointComponentCR)topComponent;
+
+            // Only symbols affect width, stroke component is strictly for positioning symbols...
+            for (size_t iSymb = 0; iSymb < pointComponent.GetNumberSymbols(); iSymb++)
+                {
+                LsSymbolReferenceCP symbolRef = pointComponent.GetSymbolCP(iSymb);
+                if (nullptr == symbolRef)
+                    continue;
+
+                // Never affected by width, sometimes not affected by scale...
+                double scale = (symbolRef->GetSymbolComponentCP()->IsNoScale() ? 1.0 : symb.GetScale());
+                styleWidth = DoubleOps::Max(styleWidth, (symbolRef->_GetMaxWidth() * scale) / 2.0);
+                }
+            break;
+            }
+
+        case LsComponentType::Compound:
+            {
+            LsCompoundComponentCR compoundComponent = (LsCompoundComponentCR)topComponent;
+
+            for (size_t iComp = 0; iComp < compoundComponent.GetNumComponents(); iComp++)
+                {
+                LsComponentCP component = compoundComponent.GetComponentCP(iComp);
+
+                if (nullptr != component)
+                    styleWidth = DoubleOps::Max(styleWidth, getMaxStyleOffset(symb, *component));
+                }
+            break;
+            }
+
+        default:
+            {
+            // A width modifier overrides the definition even if it's 0.0...
+            if (topComponent._IsAffectedByWidth(false) && symb.HasTrueWidth())
+                styleWidth = symb.GetMaxWidth() / 2.0;
+            else
+                styleWidth = ((topComponent._GetMaxWidth() * symb.GetScale()) / 2.0);
+            break;
+            }
+        }
+
+    return styleWidth;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 double LsPointComponent::_GetLength () const
     {
     return NULL == GetStrokeComponentCP() ? 0 : GetStrokeComponentCP()->_GetLength();
@@ -546,14 +602,8 @@ void LineStyleSymb::Init(DgnStyleId styleId, LineStyleParamsCR styleParams, DgnD
     if (!topComponent->_HasRasterImageComponent())
         SetUseStroker(true);
 
-    double maxWidth = nameRec->_GetMaxWidth() * unitDef; // Unit scale not accounted for in component width...
-    
-    // Get the width of this linestyle for "discernable" checks and to pad range..."maxWidth" is actually twice the maximum offset, so divide it by two.
-    m_styleWidth = ((maxWidth * GetScale()) / 2.0);
-
-    // Account for start/end width modifiers if they would affect the linestyle...
-    if (topComponent->_IsAffectedByWidth(false))
-        m_styleWidth = DoubleOps::Max(m_styleWidth, GetMaxWidth() / 2.0);
+    // Set the maximum offset for "discernable" checks and to pad element ranges as the poorly named m_styleWidth.
+    m_styleWidth = getMaxStyleOffset(*this, *topComponent);
     }
 
 /*---------------------------------------------------------------------------------**//**
