@@ -2075,6 +2075,21 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         return Napi::String::New(info.Env(), xml.c_str());
         }
 
+    Napi::Value SetSchemaECVersion(NapiInfoCR info)
+        {
+        REQUIRE_ARGUMENT_STRING(0, schemaName);
+        REQUIRE_ARGUMENT_UINTEGER(1, ecVersion);
+
+        auto schema = const_cast<ECN::ECSchemaP>(GetDgnDb().Schemas().GetSchema(schemaName));
+        if (!schema)
+            return Napi::Boolean::New(Env(), false);
+
+        uint32_t majorVersion, minorVersion;
+        schema->ParseECVersion(majorVersion, minorVersion, static_cast<ECVersion>(ecVersion));
+
+        return  Napi::Boolean::New(Env(), schema->SetOriginalECXmlVersion(majorVersion, minorVersion) == ECObjectsStatus::Success);
+        }
+
     void CloseIModel(NapiInfoCR info) { CloseDgnDb(false); }
 
     Napi::Value CreateClassViewsInDb(NapiInfoCR info) {
@@ -2624,6 +2639,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
             InstanceMethod("saveFileProperty", &NativeDgnDb::SaveFileProperty),
             InstanceMethod("saveLocalValue", &NativeDgnDb::SaveLocalValue),
             InstanceMethod("schemaToXmlString", &NativeDgnDb::SchemaToXmlString),
+            InstanceMethod("setSchemaECVersion", &NativeDgnDb::SetSchemaECVersion),
             InstanceMethod("setCodeValueBehavior", &NativeDgnDb::SetCodeValueBehavior),
             InstanceMethod("setGeometricModelTrackingEnabled", &NativeDgnDb::SetGeometricModelTrackingEnabled),
             InstanceMethod("setIModelDb", &NativeDgnDb::SetIModelDb),

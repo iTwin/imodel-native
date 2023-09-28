@@ -983,34 +983,56 @@ describe("basic tests", () => {
     // Since the 3.1 version only checks the legacy unit mappings, the export as a ECXml 3.1 schema fails.
     // In this scenario, when the export fails, we will try to export the schema as an ECXml 3.2 schema instead.
 
-    // Open bim file containing offending schema
-    const testIModel = new iModelJsNative.DgnDb();
-    testIModel.openIModel(path.join(getAssetsDir(), "export-schema-test.bim"), OpenMode.ReadWrite);
+    if (fs.existsSync("testSchemaExport.bim"))
+      fs.unlinkSync("testSchemaExport.bim");
 
-    const exportedFilePath = path.join(getOutputDir(), `ExportedTestSchema.ecschema.xml`);
+    const testDb = openDgnDb(copyFile("testSchemaExport.bim", dbFileName), { profile: ProfileOptions.Upgrade, schemaLockHeld: true });
+    assert.isTrue(testDb !== undefined);
 
-    if (fs.existsSync(exportedFilePath))
-      fs.unlinkSync(exportedFilePath);
+    // Import the schema as ECXML 3.2 which has ECXml 3.2 unit LUMEN_PER_W
+    assert.equal(DbResult.BE_SQLITE_OK, testDb.importXmlSchemas([`<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" displayLabel="TestSchema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+      <ECSchemaReference name="Units" version="01.00.07" alias="u" />
+      <ECSchemaReference name="Formats" version="01.00.00" alias="f" />
+
+      <KindOfQuantity typeName="TestKoq" displayLabel="TestKoq" persistenceUnit="u:LUMEN_PER_W" relativeError="10.763910416709722" presentationUnits="f:DefaultRealU[u:LUMEN_PER_W]" />
+    </ECSchema>`]));
+
+    // Change the ECXml version of the schema to 3.1
+    assert.isTrue(testDb.setSchemaECVersion("TestSchema", IModelJsNative.ECVersion.V3_1));
+
+    testDb.saveChanges();
 
     // Export ECXml 3.1 schema to xml file
-    const status = testIModel.exportSchema(`TestSchema`, getOutputDir(), `ExportedTestSchema.ecschema.xml`);
+    const status = testDb.exportSchema(`TestSchema`, getOutputDir(), `ExportedTestSchema.ecschema.xml`);
     assert.equal(status, SchemaWriteStatus.Success, `Exporting the ECXml 3.1 schema is expected to fail due to incorrect KoQ. Schema should retry serialization as an ECXml 3.2 schema and succeed`);
-    assert.isTrue(fs.existsSync(exportedFilePath));
+    assert.isTrue(fs.existsSync(path.join(getOutputDir(), `ExportedTestSchema.ecschema.xml`)));
+
+    const xmlVersionStr = `xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2"`;
+    const koqStr = `<KindOfQuantity typeName="TestKoq" displayLabel="TestKoq" persistenceUnit="u:LUMEN_PER_W" relativeError="10.763910416709722" presentationUnits="f:DefaultRealU[u:LUMEN_PER_W]"/>`;
 
     // Read the exported file to check if schema was serialized as ECXml 3.2
-    const exportedFileStr = fs.readFileSync(exportedFilePath, { encoding: "utf8"});
+    const exportedFileStr = fs.readFileSync(path.join(getOutputDir(), `ExportedTestSchema.ecschema.xml`), { encoding: "utf8"});
     assert.notEqual(exportedFileStr, undefined);
-    assert.isTrue(exportedFileStr.includes(`xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2"`));
-    assert.isTrue(exportedFileStr.includes(`<KindOfQuantity typeName="ELECTRICAL_EFFICACY" displayLabel="Efficacy" persistenceUnit="u:LUMEN_PER_W" relativeError="10.763910416709722" presentationUnits="f:DefaultRealU(4)[u:LUMEN_PER_W]"/>`));
+    expect(exportedFileStr.includes(xmlVersionStr)).to.be.true;
+    expect(exportedFileStr.includes(koqStr)).to.be.true;
 
-    // Export ECXml 3.1 schema to a xml string
-    const xmlString = testIModel.schemaToXmlString("TestSchema");
-    assert.notEqual(xmlString, undefined);
+    // Export ECXml 3.1 schema to a xml string as ECXml 3.1
+    let schemaXmlStr = testDb.schemaToXmlString("TestSchema", IModelJsNative.ECVersion.V3_1);
+    assert.notEqual(schemaXmlStr, undefined);
 
     // Check if schema was serialized as ECXml 3.2
-    assert.isTrue(xmlString!.includes(`xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2"`));
-    assert.isTrue(xmlString!.includes(`<KindOfQuantity typeName="ELECTRICAL_EFFICACY" displayLabel="Efficacy" persistenceUnit="u:LUMEN_PER_W" relativeError="10.763910416709722" presentationUnits="f:DefaultRealU(4)[u:LUMEN_PER_W]"/>`));
+    expect(schemaXmlStr!.includes(xmlVersionStr)).to.be.true;
+    expect(schemaXmlStr!.includes(koqStr)).to.be.true;
 
-    testIModel.closeIModel();
+    // Export ECXml 3.1 schema to a xml string as latest ECXml
+    schemaXmlStr = testDb.schemaToXmlString("TestSchema");
+    assert.notEqual(schemaXmlStr, undefined);
+
+    // Check if schema was serialized as ECXml 3.2
+    expect(schemaXmlStr!.includes(xmlVersionStr)).to.be.true;
+    expect(schemaXmlStr!.includes(koqStr)).to.be.true;
+
+    testDb.closeIModel();
   });
 });

@@ -649,6 +649,7 @@ export declare namespace IModelJsNative {
     public enableWalMode(yesNo?: boolean): void;
     public performCheckpoint(mode?: WalCheckpointMode): void;
     public setAutoCheckpointThreshold(frames: number): void;
+    public setSchemaECVersion(schemaName: string, ecVersion: ECVersion): boolean
     public static enableSharedCache(enable: boolean): DbResult;
     public static getAssetsDir(): string;
   }
