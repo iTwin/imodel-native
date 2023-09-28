@@ -1,4 +1,6 @@
-# Copyright 2018 The Crashpad Authors. All rights reserved.
+#!/usr/bin/env python
+
+# Copyright 2018 The Crashpad Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,4 +16,5 @@
 
 import os
 import sys
+
 os.execv(sys.argv[1], sys.argv[1:])

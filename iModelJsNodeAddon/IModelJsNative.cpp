@@ -469,6 +469,19 @@ public:
         return Napi::Number::New(Env(), (int)status);
     }
 
+
+    Napi::Value GetSchemaProps(NapiInfoCR info)  {
+        REQUIRE_ARGUMENT_STRING(0, schemaName);
+        auto schema = m_ecdb.Schemas().GetSchema(schemaName, true);
+        if (nullptr == schema)
+            BeNapi::ThrowJsException(info.Env(), "schema not found");
+
+        BeJsNapiObject props(info.Env());
+        if (!schema->WriteToJsonValue(props))
+            BeNapi::ThrowJsException(info.Env(), "unable to serialize schema");
+        return props;
+    }
+
     Napi::Value ImportSchema(NapiInfoCR info) {
         REQUIRE_ARGUMENT_STRING(0, schemaPathName);
         DbResult status = JsInterop::ImportSchema(m_ecdb, BeFileName(schemaPathName.c_str(), true));
@@ -575,6 +588,7 @@ public:
             InstanceMethod("getFilePath", &NativeECDb::GetFilePath),
             InstanceMethod("getLastError", &NativeECDb::GetLastError),
             InstanceMethod("getLastInsertRowId", &NativeECDb::GetLastInsertRowId),
+            InstanceMethod("getSchemaProps", &NativeECDb::GetSchemaProps),
             InstanceMethod("importSchema", &NativeECDb::ImportSchema),
             InstanceMethod("isOpen", &NativeECDb::IsOpen),
             InstanceMethod("schemaSyncSetDefaultUri", &NativeECDb::SchemaSyncSetDefaultUri),

@@ -1,4 +1,4 @@
-// Copyright 2015 The Crashpad Authors. All rights reserved.
+// Copyright 2015 The Crashpad Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@
 
 #include <memory>
 
-#include "base/macros.h"
 #include "client/crash_report_database.h"
 
 namespace crashpad {
@@ -37,8 +36,10 @@ class PruneCondition;
 //! \param[in] database The database from which crash reports will be deleted.
 //! \param[in] condition The condition against which all reports in the database
 //!     will be evaluated.
-void PruneCrashReportDatabase(CrashReportDatabase* database,
-                              PruneCondition* condition);
+//!
+//! \return The number of deleted crash reports.
+size_t PruneCrashReportDatabase(CrashReportDatabase* database,
+                                PruneCondition* condition);
 
 std::unique_ptr<PruneCondition> GetDefaultDatabasePruneCondition();
 
@@ -79,14 +80,16 @@ class AgePruneCondition final : public PruneCondition {
   //! \param[in] max_age_in_days Reports created more than this many days ago
   //!     will be deleted.
   explicit AgePruneCondition(int max_age_in_days);
+
+  AgePruneCondition(const AgePruneCondition&) = delete;
+  AgePruneCondition& operator=(const AgePruneCondition&) = delete;
+
   ~AgePruneCondition();
 
   bool ShouldPruneReport(const CrashReportDatabase::Report& report) override;
 
  private:
   const time_t oldest_report_time_;
-
-  DISALLOW_COPY_AND_ASSIGN(AgePruneCondition);
 };
 
 //! \brief A PruneCondition that deletes older reports to keep the total
@@ -100,6 +103,11 @@ class DatabaseSizePruneCondition final : public PruneCondition {
   //! \param[in] max_size_in_kb The maximum number of kilobytes that all crash
   //!     reports should consume.
   explicit DatabaseSizePruneCondition(size_t max_size_in_kb);
+
+  DatabaseSizePruneCondition(const DatabaseSizePruneCondition&) = delete;
+  DatabaseSizePruneCondition& operator=(const DatabaseSizePruneCondition&) =
+      delete;
+
   ~DatabaseSizePruneCondition();
 
   bool ShouldPruneReport(const CrashReportDatabase::Report& report) override;
@@ -107,8 +115,6 @@ class DatabaseSizePruneCondition final : public PruneCondition {
  private:
   const size_t max_size_in_kb_;
   size_t measured_size_in_kb_;
-
-  DISALLOW_COPY_AND_ASSIGN(DatabaseSizePruneCondition);
 };
 
 //! \brief A PruneCondition that conjoins two other PruneConditions.
@@ -131,6 +137,10 @@ class BinaryPruneCondition final : public PruneCondition {
   //! \param[in] lhs The left-hand side of \a op. This class takes ownership.
   //! \param[in] rhs The right-hand side of \a op. This class takes ownership.
   BinaryPruneCondition(Operator op, PruneCondition* lhs, PruneCondition* rhs);
+
+  BinaryPruneCondition(const BinaryPruneCondition&) = delete;
+  BinaryPruneCondition& operator=(const BinaryPruneCondition&) = delete;
+
   ~BinaryPruneCondition();
 
   bool ShouldPruneReport(const CrashReportDatabase::Report& report) override;
@@ -139,8 +149,6 @@ class BinaryPruneCondition final : public PruneCondition {
   const Operator op_;
   std::unique_ptr<PruneCondition> lhs_;
   std::unique_ptr<PruneCondition> rhs_;
-
-  DISALLOW_COPY_AND_ASSIGN(BinaryPruneCondition);
 };
 
 }  // namespace crashpad

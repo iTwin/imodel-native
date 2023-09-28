@@ -1232,9 +1232,10 @@ private:
     int GetUnits() const {return m_attributes & LSATTR_UNITMASK;}
     StatusInt GetGeometryTexture(TextureDescr& textureDescr, ViewContextR viewContext, Render::LineStyleSymbR lineStyleSymb, Render::GeometryParamsCR params);
     StatusInt GenerateTexture(TextureDescr& textureDescr, ViewContextR viewContext, Render::LineStyleSymbR lineStyleSymb, Render::GeometryParamsCR params);
-    LsDefinition (Utf8CP name, DgnDbR project, Json::Value& lsDefinition, DgnStyleId styleId);
 
 public:
+    LsDefinition(Utf8CP name, DgnDbR project, Json::Value& lsDefinition, DgnStyleId styleId);
+
     DGNPLATFORM_EXPORT static double GetUnitDef (Json::Value& lsDefinition);
     DGNPLATFORM_EXPORT static uint32_t GetAttributes (Json::Value& lsDefinition);
     DGNPLATFORM_EXPORT static LsComponentId GetComponentId (Json::Value& lsDefinition);
@@ -1541,6 +1542,7 @@ private:
 
 protected:
     DGNPLATFORM_EXPORT DgnDbStatus _OnDelete() const override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     DgnCode _GenerateDefaultCode() const override { return DgnCode(); }
     bool _SupportsCodeSpec(CodeSpecCR codeSpec) const override { return !codeSpec.IsNullCodeSpec(); }
 

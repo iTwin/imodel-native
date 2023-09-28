@@ -1,4 +1,4 @@
-// Copyright 2015 The Crashpad Authors. All rights reserved.
+// Copyright 2015 The Crashpad Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -30,7 +30,6 @@
 #include "snapshot/annotation_snapshot.h"
 #include "snapshot/win/pe_image_reader.h"
 #include "snapshot/win/process_reader_win.h"
-#include "test/gtest_disabled.h"
 #include "test/test_paths.h"
 #include "test/win/child_launcher.h"
 #include "util/file/file_io.h"
@@ -152,7 +151,7 @@ TEST(ModuleSnapshotWinTest, CrashDebugBreak) {
 #if defined(ARCH_CPU_64_BITS)
 TEST(ModuleSnapshotWinTest, DontCrashWOW64) {
   if (!TestPaths::Has32BitBuildArtifacts()) {
-    DISABLED_TEST();
+    GTEST_SKIP();
   }
 
   TestAnnotationsOnCrash(kDontCrash, TestPaths::Architecture::k32Bit);
@@ -160,7 +159,7 @@ TEST(ModuleSnapshotWinTest, DontCrashWOW64) {
 
 TEST(ModuleSnapshotWinTest, CrashDebugBreakWOW64) {
   if (!TestPaths::Has32BitBuildArtifacts()) {
-    DISABLED_TEST();
+    GTEST_SKIP();
   }
 
   TestAnnotationsOnCrash(kCrashDebugBreak, TestPaths::Architecture::k32Bit);
