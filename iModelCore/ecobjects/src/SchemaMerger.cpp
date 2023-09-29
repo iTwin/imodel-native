@@ -571,7 +571,7 @@ BentleyStatus SchemaMerger::MergeClass(SchemaMergeResult& result, ECClassP left,
         case ECClassType::Relationship:
             {
             auto mergedRelationshipClass = left->GetRelationshipClassP();
-            if (MergePrimitive(classChange->Strength(), mergedRelationshipClass, &ECRelationshipClass::SetStrength, left->GetFullName(), result, options, false) != BentleyStatus::SUCCESS)
+            if ((MergePrimitive(classChange->Strength(), mergedRelationshipClass, &ECRelationshipClass::SetStrength, left->GetFullName(), result, options, false) != BentleyStatus::SUCCESS) && !options.IgnoreStrengthChangeProblems())
                 return BentleyStatus::ERROR;
             if (MergePrimitive(classChange->StrengthDirection(), mergedRelationshipClass, &ECRelationshipClass::SetStrengthDirection, left->GetFullName(), result, options, false) != BentleyStatus::SUCCESS)
                 return BentleyStatus::ERROR;
