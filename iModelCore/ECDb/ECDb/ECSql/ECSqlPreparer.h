@@ -84,10 +84,18 @@ struct ECSqlExpPreparer final
         static ECSqlStatus GenerateECClassIdFilter(Utf8StringR filterSqlExpression, ClassNameExp const&);
         static ECSqlStatus PrepareTypeListExp(NativeSqlBuilder::List &nativeSqlSnippets, ECSqlPrepareContext &ctx, TypeListExp const &exp);
         static ECSqlStatus PrepareWindowPartitionColumnReference(NativeSqlBuilder& nativeSqlBuilder, ECSqlPrepareContext& ctx, WindowPartitionColumnReferenceExp const& exp);
+        static ECSqlStatus PrepareWindowPartitionColumnCollateFunction(NativeSqlBuilder& nativeSqlBuilder, ECSqlPrepareContext& ctx, WindowPartitionColumnReferenceExp::CollateClauseFunction collateFunction);
         static ECSqlStatus PrepareWindowPartitionColumnReferenceList(NativeSqlBuilder& nativeSqlBuilder, ECSqlPrepareContext& ctx, WindowPartitionColumnReferenceListExp const& exp);
         static ECSqlStatus PrepareWindowFunctionExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, WindowFunctionExp const& exp);
         static ECSqlStatus PrepareWindowSpecification(NativeSqlBuilder& nativeSqlBuilder, ECSqlPrepareContext& ctx, WindowSpecification const& exp);
         static ECSqlStatus PrepareFilterClauseExp(NativeSqlBuilder& nativeSqlBuilder, ECSqlPrepareContext& ctx, FilterClauseExp const& exp);
+        static ECSqlStatus PrepareWindowFrameClauseExp(NativeSqlBuilder& nativeSqlBuilder, ECSqlPrepareContext& ctx, WindowFrameClauseExp const& exp);
+        static ECSqlStatus PrepareWindowFrameUnits(NativeSqlBuilder& nativeSqlBuilder, ECSqlPrepareContext& ctx, WindowFrameClauseExp::WindowFrameUnit unit);
+        static ECSqlStatus PrepareWindowFrameExclusion(NativeSqlBuilder& nativeSqlBuilder, ECSqlPrepareContext& ctx, WindowFrameClauseExp::WindowFrameExclusionType exclusionType);
+        static ECSqlStatus PrepareWindowFrameStartExp(NativeSqlBuilder& nativeSqlBuilder, ECSqlPrepareContext& ctx, WindowFrameStartExp const& exp);
+        static ECSqlStatus PrepareWindowFrameBetweenExp(NativeSqlBuilder& nativeSqlBuilder, ECSqlPrepareContext& ctx, WindowFrameBetweenExp const& exp);
+        static ECSqlStatus PrepareFirstWindowFrameBound(NativeSqlBuilder& nativeSqlBuilder, ECSqlPrepareContext& ctx, FirstWindowFrameBoundExp const& exp);
+        static ECSqlStatus PrepareSecondWindowFrameBound(NativeSqlBuilder& nativeSqlBuilder, ECSqlPrepareContext& ctx, SecondWindowFrameBoundExp const& exp);
         static ECSqlStatus PrepareTableValuedFunctionExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, TableValuedFunctionExp const& exp);
         static ECSqlStatus PrepareExtractPropertyExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ExtractPropertyValueExp const& exp);
         static ECSqlStatus PrepareExtractInstanceExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ExtractInstanceValueExp const& exp);

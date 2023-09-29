@@ -170,5 +170,120 @@ Exp::FinalizeParseStatus FilterClauseExp::_FinalizeParsing(ECSqlParseContext &, 
     return FinalizeParseStatus::Completed;
     }
 
+Exp::FinalizeParseStatus WindowFrameClauseExp::_FinalizeParsing(ECSqlParseContext &, FinalizeParseMode)
+    {
+    return FinalizeParseStatus::Completed;
+    }
+
+bool WindowFrameClauseExp::_TryDetermineParameterExpType(ECSqlParseContext &, ParameterExp &) const
+    {
+    return false;
+    }
+
+void WindowFrameClauseExp::_ToECSql(ECSqlRenderContext &) const
+    {
+    }
+
+void WindowFrameClauseExp::_ToJson(BeJsValue, JsonFormat const &) const
+    {
+    }
+
+Utf8String WindowFrameClauseExp::_ToString() const
+    {
+    return "";
+    }
+
+Exp::FinalizeParseStatus WindowFrameStartExp::_FinalizeParsing(ECSqlParseContext &, FinalizeParseMode)
+    {
+    return FinalizeParseStatus::Completed;
+    }
+
+bool WindowFrameStartExp::_TryDetermineParameterExpType(ECSqlParseContext &, ParameterExp &) const
+    {
+    return false;
+    }
+
+void WindowFrameStartExp::_ToECSql(ECSqlRenderContext &) const
+    {
+    }
+
+void WindowFrameStartExp::_ToJson(BeJsValue, JsonFormat const &) const
+    {
+    }
+
+Utf8String WindowFrameStartExp::_ToString() const
+    {
+    return "";
+    }
+
+Exp::FinalizeParseStatus WindowFrameBetweenExp::_FinalizeParsing(ECSqlParseContext &, FinalizeParseMode)
+    {
+    return FinalizeParseStatus::Completed;
+    }
+
+bool WindowFrameBetweenExp::_TryDetermineParameterExpType(ECSqlParseContext &, ParameterExp &) const
+    {
+    return false;
+    }
+
+void WindowFrameBetweenExp::_ToECSql(ECSqlRenderContext &) const
+    {
+    }
+
+void WindowFrameBetweenExp::_ToJson(BeJsValue, JsonFormat const &) const
+    {
+    }
+
+Utf8String WindowFrameBetweenExp::_ToString() const
+    {
+    return "";
+    }
+
+Exp::FinalizeParseStatus FirstWindowFrameBoundExp::_FinalizeParsing(ECSqlParseContext &, FinalizeParseMode)
+    {
+    return FinalizeParseStatus::Completed;
+    }
+
+bool FirstWindowFrameBoundExp::_TryDetermineParameterExpType(ECSqlParseContext &, ParameterExp &) const
+    {
+    return false;
+    }
+
+void FirstWindowFrameBoundExp::_ToECSql(ECSqlRenderContext &) const
+    {
+    }
+
+void FirstWindowFrameBoundExp::_ToJson(BeJsValue, JsonFormat const &) const
+    {
+    }
+
+Utf8String FirstWindowFrameBoundExp::_ToString() const
+    {
+    return "";
+    }
+
+Exp::FinalizeParseStatus SecondWindowFrameBoundExp::_FinalizeParsing(ECSqlParseContext &, FinalizeParseMode)
+    {
+    return FinalizeParseStatus::Completed;
+    }
+
+bool SecondWindowFrameBoundExp::_TryDetermineParameterExpType(ECSqlParseContext &, ParameterExp &) const
+    {
+    return false;
+    }
+
+void SecondWindowFrameBoundExp::_ToECSql(ECSqlRenderContext &) const
+    {
+    }
+
+void SecondWindowFrameBoundExp::_ToJson(BeJsValue, JsonFormat const &) const
+    {
+    }
+
+Utf8String SecondWindowFrameBoundExp::_ToString() const
+    {
+    return "";
+    }
+
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

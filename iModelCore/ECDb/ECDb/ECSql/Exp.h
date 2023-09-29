@@ -228,6 +228,13 @@ struct Exp
             WindowPartitionColumnReferenceList,
             CollateClause,
             FIlterClause,
+            WindowFrameClause,
+            WindowFrameStart,
+            WindowFrameExclusion,
+            WindowFrameBetween,
+            FirstWindowFrameBound,
+            SecondWindowFrameBound,
+            WindowFrameBound,
             };
 
         struct Collection final

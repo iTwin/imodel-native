@@ -11441,7 +11441,7 @@ TEST_F(ECSqlStatementTestFixture, SelectWithWindowFunctions)
 
     if ("row_number")
         {
-        Utf8CP ecsql = "SELECT ECInstanceId FROM ts.SomeEntity";
+        Utf8CP ecsql = "SELECT rank() over(range unbounded preceding exclude no others) FROM ts.SomeEntity";
         auto expected = JsonValue(R"json([
                 {"ROW_NUMBER() OVER (ORDER BY ECInstanceId) ":1.0},
                 {"ROW_NUMBER() OVER (ORDER BY ECInstanceId) ":1.0},

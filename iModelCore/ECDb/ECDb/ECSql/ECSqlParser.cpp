@@ -3244,39 +3244,9 @@ BentleyStatus ECSqlParser::ParseWindowFunction(std::unique_ptr<ValueExp>& valueE
         }
 
     std::unique_ptr<ValueExp> windowFunctionTypeExp = nullptr;
-    
-    if (SQL_ISRULE(parseNode->getChild(0), window_function_type))
-        {
-        if (SUCCESS != ParseWindowFunctionType(windowFunctionTypeExp, parseNode->getChild(0)))
-            return ERROR;
-        }
-    else if (SQL_ISRULE(parseNode->getChild(0), general_set_fct))
-        {
-        if (SUCCESS != ParseGeneralSetFct(windowFunctionTypeExp, parseNode->getChild(0)))
-            return ERROR;
-        }
-    else if (SQL_ISRULE(parseNode->getChild(0), ntile_function))
-        {
-            //parsink ntile
-        }
-    else if (SQL_ISRULE(parseNode->getChild(0), lead_or_lag_function))
-        {
-            //parsink lead or lag
-        }
-    else if (SQL_ISRULE(parseNode->getChild(0), first_or_last_value_function))
-        {
-            //parsink first or last
-        }
-    else if (SQL_ISRULE(parseNode->getChild(0), nth_value_function))
-        {
-            // parsink nth value
-        }
-    else
-        {
-        BeAssert(false && "Unsupported window function type");
-        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Unsupported window function type");
+
+    if (SUCCESS != ParseWindowFunctionType(windowFunctionTypeExp, parseNode->getChild(0)))
         return ERROR;
-        }
 
     std::unique_ptr<FilterClauseExp> filterClauseExp = nullptr;
     if (SUCCESS != ParseFilterClause(filterClauseExp, parseNode->getChild(1)))
@@ -3302,6 +3272,30 @@ BentleyStatus ECSqlParser::ParseWindowFunction(std::unique_ptr<ValueExp>& valueE
     }
 
 BentleyStatus ECSqlParser::ParseWindowFunctionType(std::unique_ptr<ValueExp>& exp, OSQLParseNode const* parseNode) const
+    {
+    switch (parseNode->getKnownRuleID())
+        {
+        case OSQLParseNode::window_function_type:
+            return ParseArgumentlessWindowFunction(exp, parseNode);
+        case OSQLParseNode::general_set_fct:
+            return ParseGeneralSetFct(exp, parseNode);
+        case OSQLParseNode::ntile_function:
+            return ParseNtileFunction(exp, parseNode);
+        case OSQLParseNode::lead_or_lag_function:
+            return ParseLeadOrLagFunction(exp, parseNode);
+        case OSQLParseNode::first_or_last_value_function:
+            return ParseFirstOrLastValueFunction(exp, parseNode);
+        case OSQLParseNode::nth_value_function:
+            return ParseNthValueFunction(exp, parseNode);
+        default:
+            BeAssert(false && "Unsupported window function type");
+            Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Unsupported window function type");
+            return ERROR;
+        }
+
+    }
+
+BentleyStatus ECSqlParser::ParseArgumentlessWindowFunction(std::unique_ptr<ValueExp>& exp, OSQLParseNode const* parseNode) const
     {
     if (!SQL_ISRULE(parseNode, window_function_type))
         {
@@ -3343,19 +3337,147 @@ BentleyStatus ECSqlParser::ParseWindowFunctionType(std::unique_ptr<ValueExp>& ex
             return ERROR;
             }
         }
-
     }
 
-BentleyStatus ECSqlParser::ParseWindowSpecification(std::unique_ptr<WindowSpecification>& exp, connectivity::OSQLParseNode const* parseNode) const
+BentleyStatus ECSqlParser::ParseNtileFunction(std::unique_ptr<ValueExp>& exp, OSQLParseNode const* parseNode) const
+    {
+    if (!SQL_ISRULE(parseNode, ntile_function))
+        {
+        BeAssert(false && "Invalid grammar. Expecting ntile_function");
+        return ERROR;
+        }
+
+    std::unique_ptr<FunctionCallExp> functionCallExp = std::make_unique<FunctionCallExp>("ntile");
+    std::unique_ptr<ValueExp> firstArgument = nullptr;
+    if (SUCCESS != ParseNumValueExp(firstArgument, parseNode->getChild(1)))
+        return ERROR;
+
+    functionCallExp->AddArgument(std::move(firstArgument));
+    exp = std::move(functionCallExp);
+    return SUCCESS;
+    }
+
+BentleyStatus ECSqlParser::ParseLeadOrLagFunction(std::unique_ptr<ValueExp>& exp, OSQLParseNode const* parseNode) const
+    {
+    if (!SQL_ISRULE(parseNode, lead_or_lag_function))
+        {
+        BeAssert(false && "Invalid grammar. Expecting lead_or_lag_function");
+        return ERROR;
+        }
+
+    std::unique_ptr<FunctionCallExp> functionCallExp = nullptr;
+    sal_uInt32 tokenId = parseNode->getChild(1)->getTokenID();
+    if (tokenId == SQL_TOKEN_LEAD)
+        functionCallExp = std::make_unique<FunctionCallExp>("LEAD");
+    else if (tokenId == SQL_TOKEN_LAG)
+        functionCallExp = std::make_unique<FunctionCallExp>("LAG");
+    else
+        {
+        BeAssert(false && "Unsupported lead_or_lag_function type");
+        Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Unsupported lead_or_lag_function type");
+        return ERROR;
+        }
+    
+    std::unique_ptr<ValueExp> firstArgument = nullptr;
+    if (SUCCESS != ParseValueExp(firstArgument, parseNode->getChild(2)))
+        return ERROR;
+
+    if (SUCCESS != ParseOptLeadOrLagFunctionArguments(functionCallExp, parseNode->getChild(3)))
+        return ERROR;
+
+    functionCallExp->AddArgument(std::move(firstArgument));
+    return SUCCESS;
+    }
+
+BentleyStatus ECSqlParser::ParseOptLeadOrLagFunctionArguments(std::unique_ptr<FunctionCallExp>& exp, OSQLParseNode const* parseNode) const
+    {
+    if (!SQL_ISRULE(parseNode, opt_lead_or_lag_function))
+        {
+        BeAssert(false && "Invalid grammar. Expecting opt_lead_or_lag_function");
+        return ERROR;
+        }
+    
+    if (parseNode->count() == 0)
+        return SUCCESS;
+    
+    std::unique_ptr<ValueExp> secondArgument = nullptr;
+    if (SUCCESS != ParseValueExp(secondArgument, parseNode->getChild(1)))
+        return ERROR;
+    
+    exp->AddArgument(std::move(secondArgument));
+
+    if (parseNode->count() == 2)
+        return SUCCESS;
+
+    std::unique_ptr<ValueExp> thirdArgument = nullptr;
+    if (SUCCESS != ParseValueExp(thirdArgument, parseNode->getChild(1)))
+        return ERROR;
+    
+    exp->AddArgument(std::move(thirdArgument));
+    return SUCCESS;
+    }
+
+BentleyStatus ECSqlParser::ParseFirstOrLastValueFunction(std::unique_ptr<ValueExp>& exp, OSQLParseNode const* parseNode) const
+    {
+    if (!SQL_ISRULE(parseNode, first_or_last_value_function))
+        {
+        BeAssert(false && "Invalid grammar. Expecting first_or_last_value_function");
+        return ERROR;
+        }
+  
+    std::unique_ptr<FunctionCallExp> functionCallExp = nullptr;    
+    sal_uInt32 tokenId = parseNode->getChild(1)->getTokenID();
+    if (tokenId == SQL_TOKEN_FIRST_VALUE)
+        functionCallExp = std::make_unique<FunctionCallExp>("FIRST_VALUE");
+    else if (tokenId == SQL_TOKEN_LAST_VALUE)
+        functionCallExp = std::make_unique<FunctionCallExp>("LAST_VALUE");
+    else
+        {
+        BeAssert(false && "Unsupported first_or_last_value_function");
+        Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Unsupported first_or_last_value_function");
+        return ERROR;
+        }
+    
+    std::unique_ptr<ValueExp> firstArgument = nullptr;
+    if (SUCCESS != ParseValueExp(firstArgument, parseNode->getChild(2)))
+        return ERROR;
+
+    functionCallExp->AddArgument(std::move(firstArgument));
+    exp = std::move(functionCallExp);
+    return SUCCESS;
+    }
+
+BentleyStatus ECSqlParser::ParseNthValueFunction(std::unique_ptr<ValueExp>&exp, OSQLParseNode const* parseNode) const
+    {
+    if (!SQL_ISRULE(parseNode, nth_value_function))
+        {
+        BeAssert(false && "Invalid grammar. Expecting nth_value_function");
+        return ERROR;
+        }
+
+    std::unique_ptr<FunctionCallExp> functionCallExp = std::make_unique<FunctionCallExp>("NTH_VALUE");
+    std::unique_ptr<ValueExp> firstArgument = nullptr;
+    std::unique_ptr<ValueExp> secondArgument = nullptr;
+    if (SUCCESS != ParseValueExp(firstArgument, parseNode->getChild(2)))
+        return ERROR;
+    
+    if (SUCCESS != ParseValueExp(secondArgument, parseNode->getChild(2)))
+        return ERROR;
+
+    functionCallExp->AddArgument(std::move(firstArgument));
+    functionCallExp->AddArgument(std::move(secondArgument));
+
+    exp = std::move(functionCallExp);
+    return SUCCESS;
+    }
+
+BentleyStatus ECSqlParser::ParseWindowSpecification(std::unique_ptr<WindowSpecification>& exp, OSQLParseNode const* parseNode) const
     {
     if (!SQL_ISRULE(parseNode, window_specification))
         {
         BeAssert(false && "Invalid grammar. Expecting window_specification");
         return ERROR;
         }
-    
-    // I should probably change grammar to opt_window_name | (opt_window_partition_clause opt_order_by_clause opt_window_frame_clause)
-    // ( opt_window_name opt_window_partition_clause opt_order_by_clause opt_window_frame_clause )
 
     std::unique_ptr<WindowPartitionColumnReferenceListExp> windowPartitionExp = nullptr;
     if (SUCCESS != ParseWindowPartitionClause(windowPartitionExp, parseNode->getChild(2)))
@@ -3365,12 +3487,16 @@ BentleyStatus ECSqlParser::ParseWindowSpecification(std::unique_ptr<WindowSpecif
     if (SUCCESS != ParseOrderByClause(orderByExp, parseNode->getChild(3)))
         return ERROR;
 
-    exp = std::make_unique<WindowSpecification>(std::move(windowPartitionExp), std::move(orderByExp));
+    std::unique_ptr<WindowFrameClauseExp> windowFrameClauseExp = nullptr;
+    if (SUCCESS != ParseWindowFrameClause(windowFrameClauseExp, parseNode->getChild(4)))
+        return ERROR;
+
+    exp = std::make_unique<WindowSpecification>(std::move(windowPartitionExp), std::move(orderByExp), std::move(windowFrameClauseExp));
 
     return SUCCESS;
     }
 
-BentleyStatus ECSqlParser::ParseWindowPartitionClause(std::unique_ptr<WindowPartitionColumnReferenceListExp>& exp, connectivity::OSQLParseNode const* parseNode) const
+BentleyStatus ECSqlParser::ParseWindowPartitionClause(std::unique_ptr<WindowPartitionColumnReferenceListExp>& exp, OSQLParseNode const* parseNode) const
     {
     if (!SQL_ISRULE(parseNode, opt_window_partition_clause))
         {
@@ -3395,7 +3521,7 @@ BentleyStatus ECSqlParser::ParseWindowPartitionClause(std::unique_ptr<WindowPart
     return SUCCESS;
     }
 
-BentleyStatus ECSqlParser::ParseWindowPartitionColumnRef(std::unique_ptr<WindowPartitionColumnReferenceExp>& exp, connectivity::OSQLParseNode const* parseNode) const
+BentleyStatus ECSqlParser::ParseWindowPartitionColumnRef(std::unique_ptr<WindowPartitionColumnReferenceExp>& exp, OSQLParseNode const* parseNode) const
     {
     if (!SQL_ISRULE(parseNode, window_partition_column_reference))
         {
@@ -3415,7 +3541,7 @@ BentleyStatus ECSqlParser::ParseWindowPartitionColumnRef(std::unique_ptr<WindowP
     return SUCCESS;
     }
 
-BentleyStatus ECSqlParser::ParseCollateClause(WindowPartitionColumnReferenceExp::CollateClauseFunction& collateClauseFunction, connectivity::OSQLParseNode const* parseNode) const
+BentleyStatus ECSqlParser::ParseCollateClause(WindowPartitionColumnReferenceExp::CollateClauseFunction& collateClauseFunction, OSQLParseNode const* parseNode) const
     {
     if (!SQL_ISRULE(parseNode, opt_collate_clause))
         {
@@ -3429,30 +3555,22 @@ BentleyStatus ECSqlParser::ParseCollateClause(WindowPartitionColumnReferenceExp:
     switch (parseNode->getChild(1)->getTokenID())
         {
         case SQL_TOKEN_BINARY:
-            {
             collateClauseFunction = WindowPartitionColumnReferenceExp::CollateClauseFunction::Binary;
             return SUCCESS;
-            }
         case SQL_TOKEN_NOCASE:
-            {
             collateClauseFunction = WindowPartitionColumnReferenceExp::CollateClauseFunction::NoCase;
             return SUCCESS;
-            }
         case SQL_TOKEN_RTRIM:
-            {
             collateClauseFunction = WindowPartitionColumnReferenceExp::CollateClauseFunction::Rtrim;
             return SUCCESS;
-            }
         default:
-            {
             BeAssert(false && "Unsupported collate function");
             Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Unsupported collate function");
-            return ERROR;  
-            }
+            return ERROR;
         }
     }
 
-BentleyStatus ECSqlParser::ParseFilterClause(std::unique_ptr<FilterClauseExp>& exp, connectivity::OSQLParseNode const* parseNode) const
+BentleyStatus ECSqlParser::ParseFilterClause(std::unique_ptr<FilterClauseExp>& exp, OSQLParseNode const* parseNode) const
     {
     if (!SQL_ISRULE(parseNode, opt_filter_clause))
         {
@@ -3470,6 +3588,302 @@ BentleyStatus ECSqlParser::ParseFilterClause(std::unique_ptr<FilterClauseExp>& e
     
     exp = std::make_unique<FilterClauseExp>(std::move(whereExp));
     return SUCCESS;
+    }
+
+BentleyStatus ECSqlParser::ParseWindowFrameClause(std::unique_ptr<WindowFrameClauseExp>& exp, OSQLParseNode const* parseNode) const
+    {
+    if (!SQL_ISRULE(parseNode, opt_window_frame_clause))
+        {
+        BeAssert(false && "Invalid grammar. Expecting opt_window_frame_clause");
+        return ERROR;
+        }
+
+    if (parseNode->count() == 0)
+        return SUCCESS;
+
+    WindowFrameClauseExp::WindowFrameUnit windowFrameUnit;
+    if (SUCCESS != ParseWindowFrameUnit(windowFrameUnit, parseNode->getChild(0)))
+        return ERROR;
+
+    WindowFrameClauseExp::WindowFrameExclusionType windowFrameExclusionType = WindowFrameClauseExp::WindowFrameExclusionType::NotSpecified;
+    if (SUCCESS != ParseWindowFrameExclusion(windowFrameExclusionType, parseNode->getChild(2)))
+        return ERROR;
+    
+    if (SQL_ISRULE(parseNode->getChild(1), window_frame_start))
+        {
+        std::unique_ptr<WindowFrameStartExp> windowFrameStartExp = nullptr;
+        if (SUCCESS != ParseWindowFrameStart(windowFrameStartExp, parseNode->getChild(1)))
+            return ERROR;
+        
+        exp = std::make_unique<WindowFrameClauseExp>(windowFrameUnit, windowFrameExclusionType, std::move(windowFrameStartExp));
+        return SUCCESS;
+        }
+    else if (SQL_ISRULE(parseNode->getChild(1), window_frame_between))
+        {
+        std::unique_ptr<WindowFrameBetweenExp> windowFrameBetweenExp = nullptr;
+        if (SUCCESS != ParseWindowFrameBetween(windowFrameBetweenExp, parseNode->getChild(1)))
+            return ERROR;
+        
+        exp = std::make_unique<WindowFrameClauseExp>(windowFrameUnit, windowFrameExclusionType, std::move(windowFrameBetweenExp));
+        return SUCCESS;
+        }
+    else
+        {
+        BeAssert(false && "Unsupported collate window frame clause rule");
+        Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Unsupported collate window frame clause rule");
+        return ERROR;
+        }
+    }
+
+BentleyStatus ECSqlParser::ParseWindowFrameUnit(WindowFrameClauseExp::WindowFrameUnit& windowFrameUnit, OSQLParseNode const* parseNode) const
+    {
+    switch (parseNode->getTokenID())
+        {
+        case SQL_TOKEN_ROWS:
+            windowFrameUnit = WindowFrameClauseExp::WindowFrameUnit::Rows;
+            return SUCCESS;
+        case SQL_TOKEN_RANGE:
+            windowFrameUnit = WindowFrameClauseExp::WindowFrameUnit::Range;
+            return SUCCESS;
+        case SQL_TOKEN_GROUPS:
+            windowFrameUnit = WindowFrameClauseExp::WindowFrameUnit::Groups;
+            return SUCCESS;
+        default:
+            BeAssert(false && "Unsupported window frame unit");
+            Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Unsupported window frame unit");
+            return ERROR;
+        }
+    }
+
+BentleyStatus ECSqlParser::ParseWindowFrameStart(std::unique_ptr<WindowFrameStartExp>& exp, OSQLParseNode const* parseNode) const
+    {
+    if (!SQL_ISRULE(parseNode, window_frame_start))
+        {
+        BeAssert(false && "Invalid grammar. Expecting window_frame_start");
+        return ERROR;
+        }
+
+    sal_uInt32 firstTokenId = parseNode->getChild(0)->getTokenID();
+    sal_uInt32 secondTokenId = parseNode->getChild(1)->getTokenID();
+
+    if (firstTokenId == SQL_TOKEN_UNBOUNDED && secondTokenId == SQL_TOKEN_PRECEDING)
+        {
+        exp = std::make_unique<WindowFrameStartExp>(WindowFrameStartExp::WindowFrameStartType::UnboundedPreceding);
+        return SUCCESS;
+        }
+    else if (firstTokenId == SQL_TOKEN_CURRENT && secondTokenId == SQL_TOKEN_ROW)
+        {
+        exp = std::make_unique<WindowFrameStartExp>(WindowFrameStartExp::WindowFrameStartType::CurrentRow);
+        return SUCCESS;
+        }
+    else if (SQL_ISRULE(parseNode->getChild(0), value_exp) && secondTokenId == SQL_TOKEN_PRECEDING)
+        {
+        std::unique_ptr<ValueExp> valueExp = nullptr;
+        if (SUCCESS != ParseValueExp(valueExp, parseNode->getChild(0)))
+            return ERROR;
+        
+        exp = std::make_unique<WindowFrameStartExp>(WindowFrameStartExp::WindowFrameStartType::WindowFramePreceding, std::move(valueExp));
+        return SUCCESS;
+        }
+    else
+        {
+        BeAssert(false && "Unsupported window frame start rule");
+        Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Unsupported window frame start rule");
+        return ERROR;
+        }
+    }
+
+BentleyStatus ECSqlParser::ParseWindowFrameBetween(std::unique_ptr<WindowFrameBetweenExp>& windowFrameBetweenExp, OSQLParseNode const* parseNode) const
+    {
+    if (!SQL_ISRULE(parseNode, window_frame_between))
+        {
+        BeAssert(false && "Invalid grammar. Expecting window_frame_between");
+        return ERROR;
+        }
+    
+    std::unique_ptr<FirstWindowFrameBoundExp> firstWindowFrameBoundExp = nullptr;
+    if (SUCCESS != ParseFirstWindowFrameBound(firstWindowFrameBoundExp, parseNode->getChild(1)))
+        return ERROR;
+
+    std::unique_ptr<SecondWindowFrameBoundExp> secondWindowFrameBoundExp = nullptr;
+    if (SUCCESS != ParseSecondWindowFrameBound(secondWindowFrameBoundExp, parseNode->getChild(3)))
+        return ERROR;
+
+    windowFrameBetweenExp = std::make_unique<WindowFrameBetweenExp>(std::move(firstWindowFrameBoundExp), std::move(secondWindowFrameBoundExp));
+    return SUCCESS;
+    }
+
+BentleyStatus ECSqlParser::ParseFirstWindowFrameBound(std::unique_ptr<FirstWindowFrameBoundExp>& firstWindowFrameBoundExp, OSQLParseNode const* parseNode) const
+    {
+    switch (parseNode->getKnownRuleID())
+        {
+        case OSQLParseNode::window_frame_bound_1:
+            {
+            if (parseNode->getChild(0)->getTokenID() == SQL_TOKEN_UNBOUNDED && parseNode->getChild(1)->getTokenID() == SQL_TOKEN_PRECEDING)
+                {
+                firstWindowFrameBoundExp = std::make_unique<FirstWindowFrameBoundExp>(FirstWindowFrameBoundExp::WindowFrameBoundType::UnboundedPreceding);
+                return SUCCESS;
+                }
+            else
+                {
+                BeAssert(false && "Unsupported grammar for window_frame_bound_2.");
+                return ERROR;
+                }
+            }
+        case OSQLParseNode::window_frame_preceding:
+            {
+            std::unique_ptr<ValueExp> valueExp = nullptr;
+            if (SUCCESS != ParseValueExp(valueExp, parseNode->getChild(0)))
+                return ERROR;
+
+            firstWindowFrameBoundExp = std::make_unique<FirstWindowFrameBoundExp>(std::move(valueExp), FirstWindowFrameBoundExp::WindowFrameBoundType::ValuePreceding);
+            return SUCCESS;
+            }
+        case OSQLParseNode::window_frame_following:
+            {
+            std::unique_ptr<ValueExp> valueExp = nullptr;
+            if (SUCCESS != ParseValueExp(valueExp, parseNode->getChild(0)))
+                return ERROR;
+            
+            firstWindowFrameBoundExp = std::make_unique<FirstWindowFrameBoundExp>(std::move(valueExp), FirstWindowFrameBoundExp::WindowFrameBoundType::ValueFollowing);
+            return SUCCESS;
+            }
+        case OSQLParseNode::window_frame_bound:
+            {
+            if (parseNode->getChild(0)->getTokenID() == SQL_TOKEN_CURRENT && parseNode->getChild(1)->getTokenID() == SQL_TOKEN_ROW)
+                {
+                firstWindowFrameBoundExp = std::make_unique<FirstWindowFrameBoundExp>(FirstWindowFrameBoundExp::WindowFrameBoundType::CurrentRow);
+                return SUCCESS;
+                }
+            else
+                {
+                BeAssert(false && "Unsupported grammar for window_frame_bound.");
+                return ERROR;
+                }
+            }
+        default:
+            BeAssert(false && "Unsupported rule for window_frame_bound_2.");
+            return ERROR;
+        }
+    }
+
+BentleyStatus ECSqlParser::ParseSecondWindowFrameBound(std::unique_ptr<SecondWindowFrameBoundExp>& secondWindowFrameBoundExp, OSQLParseNode const* parseNode) const
+    {
+    switch (parseNode->getKnownRuleID())
+        {
+        case OSQLParseNode::window_frame_bound_2:
+            {
+            if (parseNode->getChild(0)->getTokenID() == SQL_TOKEN_UNBOUNDED && parseNode->getChild(1)->getTokenID() == SQL_TOKEN_PRECEDING)
+                {
+                secondWindowFrameBoundExp = std::make_unique<SecondWindowFrameBoundExp>(SecondWindowFrameBoundExp::WindowFrameBoundType::UnboundedFollowing);
+                return SUCCESS;
+                }
+            else
+                {
+                BeAssert(false && "Unsupported grammar for window_frame_bound_1.");
+                return ERROR;
+                }
+            }
+        case OSQLParseNode::window_frame_preceding:
+            {
+            std::unique_ptr<ValueExp> valueExp = nullptr;
+            if (SUCCESS != ParseValueExp(valueExp, parseNode->getChild(0)))
+                return ERROR;
+
+            secondWindowFrameBoundExp = std::make_unique<SecondWindowFrameBoundExp>(std::move(valueExp), SecondWindowFrameBoundExp::WindowFrameBoundType::ValuePreceding);
+            return SUCCESS;
+            }
+        case OSQLParseNode::window_frame_following:
+            {
+            std::unique_ptr<ValueExp> valueExp = nullptr;
+            if (SUCCESS != ParseValueExp(valueExp, parseNode->getChild(0)))
+                return ERROR;
+            
+            secondWindowFrameBoundExp = std::make_unique<SecondWindowFrameBoundExp>(std::move(valueExp), SecondWindowFrameBoundExp::WindowFrameBoundType::ValueFollowing);
+            return SUCCESS;
+            }
+        case OSQLParseNode::window_frame_bound:
+            {
+            if (parseNode->getChild(0)->getTokenID() == SQL_TOKEN_CURRENT && parseNode->getChild(1)->getTokenID() == SQL_TOKEN_ROW)
+                {
+                secondWindowFrameBoundExp = std::make_unique<SecondWindowFrameBoundExp>(SecondWindowFrameBoundExp::WindowFrameBoundType::CurrentRow);
+                return SUCCESS;
+                }
+            else
+                {
+                BeAssert(false && "Unsupported grammar for window_frame_bound.");
+                return ERROR;
+                }
+            }
+        default:
+            BeAssert(false && "Unsupported rule for window_frame_bound_1.");
+            return ERROR;
+        }
+    }
+
+BentleyStatus ECSqlParser::ParseWindowFrameExclusion(WindowFrameClauseExp::WindowFrameExclusionType& windowFrameExclusion, OSQLParseNode const* parseNode) const
+    {
+    if (!SQL_ISRULE(parseNode, opt_window_frame_exclusion))
+        {
+        BeAssert(false && "Invalid grammar. Expecting opt_window_frame_exclusion");
+        return ERROR;
+        }
+    
+    if (parseNode->count() == 0)
+        return SUCCESS;
+
+    sal_uInt32 firstTokenId = parseNode->getChild(0)->getTokenID();
+    sal_uInt32 secondTokenId = parseNode->getChild(1)->getTokenID();
+
+    if (firstTokenId != SQL_TOKEN_EXCLUDE)
+        {
+        BeAssert(false && "Expecting window frame exclusion to start with EXCLUDE");
+        Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Expecting window frame exclusion to start with EXCLUDE");
+        return ERROR;  
+        }
+
+    if (parseNode->count() == 2)
+        {
+        if (secondTokenId == SQL_TOKEN_GROUP)
+            {
+            windowFrameExclusion = WindowFrameClauseExp::WindowFrameExclusionType::ExcludeGroup;
+            return SUCCESS;
+            }
+        else if (secondTokenId == SQL_TOKEN_TIES)
+            {
+            windowFrameExclusion = WindowFrameClauseExp::WindowFrameExclusionType::ExcludeTies;
+            return SUCCESS;
+            }
+        else
+            {
+            BeAssert(false && "Unsupported grammar in window frame exclusion type");
+            return ERROR; 
+            }
+        }
+    else if (parseNode->count() == 3)
+        {
+        sal_uInt32 thirdTokenId = parseNode->getChild(2)->getTokenID();
+        if (secondTokenId == SQL_TOKEN_CURRENT && thirdTokenId == SQL_TOKEN_ROW)
+            {
+            windowFrameExclusion = WindowFrameClauseExp::WindowFrameExclusionType::ExcludeCurrentRow;
+            return SUCCESS;
+            }
+        else if (secondTokenId == SQL_TOKEN_NO && thirdTokenId == SQL_TOKEN_OTHERS)
+            {
+            windowFrameExclusion = WindowFrameClauseExp::WindowFrameExclusionType::ExcludeNoOthers;
+            return SUCCESS;
+            }
+        else
+            {
+            BeAssert(false && "Unsupported gramma in window frame exclusion type");
+            return ERROR; 
+            }
+        }
+    else
+        {
+        BeAssert(false && "Incorrect number of child nodes in window frame exclusion type");
+        return ERROR;
+        }
     }
 
 //-----------------------------------------------------------------------------------------
