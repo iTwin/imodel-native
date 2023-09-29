@@ -66,7 +66,7 @@ TEST_F(ECSqlStatementFunctionTestFixture, SearchCaseExp_Type)
         {"SELECT CASE WHEN 1 THEN NULL ELSE S END FROM ecsql.P LIMIT 1", ECSqlStatus::Success, ECN::PRIMITIVETYPE_String},
         {"SELECT CASE WHEN 1 THEN NULL ELSE I END FROM ecsql.P LIMIT 1", ECSqlStatus::Success, ECN::PRIMITIVETYPE_Integer},
         {"SELECT CASE WHEN 1 THEN NULL WHEN 1 THEN I  ELSE S END FROM ecsql.P LIMIT 1", ECSqlStatus::Success, ECN::PRIMITIVETYPE_Integer},
-        {"SELECT CASE WHEN 1 THEN NULL WHEN 1 THEN Dt ELSE I END FROM ecsql.P LIMIT 1", ECSqlStatus::Success, ECN::PRIMITIVETYPE_DateTime},        
+        {"SELECT CASE WHEN 1 THEN NULL WHEN 1 THEN Dt ELSE I END FROM ecsql.P LIMIT 1", ECSqlStatus::Success, ECN::PRIMITIVETYPE_DateTime},
         {"SELECT CASE WHEN 1 THEN P2D    END FROM ecsql.P LIMIT 1", ECSqlStatus::InvalidECSql},
         {"SELECT CASE WHEN 1 THEN P3D    END FROM ecsql.P LIMIT 1", ECSqlStatus::InvalidECSql},
         {"SELECT CASE WHEN 1 THEN MyPSA  END FROM ecsql.P LIMIT 1", ECSqlStatus::InvalidECSql},
@@ -203,7 +203,7 @@ TEST_F(ECSqlStatementFunctionTestFixture, TypeFilter)
         EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql.c_str())) << ecsql.c_str();
         EXPECT_EQ(BE_SQLITE_ROW, stmt.Step()) << ecsql.c_str();
         EXPECT_EQ(expectedResult, stmt.GetValueInt(0)) << ecsql.c_str() << "sql" << stmt.GetNativeSql();
-        }    
+        }
     }
 //---------------------------------------------------------------------------------------
 // @bsiclass
@@ -338,15 +338,15 @@ TEST_F(ECSqlStatementFunctionTestFixture, ClassIdFunc)
         {"VALUES(ec_classid('ECSqlTest.TH5'     ))", th5ClassId },
         {"VALUES(ec_classid('ecsql.TH5'         ))", th5ClassId },
         {"VALUES(ec_classid('ECSqlTest:TH5'     ))", th5ClassId },
-        {"VALUES(ec_classid('ecsql:TH5'         ))", th5ClassId },        
+        {"VALUES(ec_classid('ecsql:TH5'         ))", th5ClassId },
         {"VALUES(ec_classid('ecsql'    , 'TH5'  ))", th5ClassId },
         {"VALUES(ec_classid('ECSqlTest', 'TH5'  ))", th5ClassId },
         {"VALUES(ec_classid('ECSqlTest.TH5-'    ))", noClassId  },
         {"VALUES(ec_classid('ecsqlw.TH5'        ))", noClassId  },
         {"VALUES(ec_classid('ecsql1'    , 'TH5' ))", noClassId  },
         {"VALUES(ec_classid('ECSqlTest2', 'TH5' ))", noClassId  },
-        {"VALUES(ec_classid(NULL, 'TH5'         ))", noClassId  },            
-        {"VALUES(ec_classid(NULL, NULL          ))", noClassId  },            
+        {"VALUES(ec_classid(NULL, 'TH5'         ))", noClassId  },
+        {"VALUES(ec_classid(NULL, NULL          ))", noClassId  },
     };
     for (std::pair<Utf8CP, ECN::ECClassId> const& kvPair : testDataset)
         {
@@ -356,6 +356,32 @@ TEST_F(ECSqlStatementFunctionTestFixture, ClassIdFunc)
         EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql)) << ecsql;
         EXPECT_EQ(BE_SQLITE_ROW, stmt.Step()) << ecsql;
         EXPECT_EQ(expectedResult, stmt.GetValueId<ECN::ECClassId>(0)) << ecsql;
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementFunctionTestFixture, Base36Func)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("base36.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
+    std::vector<std::pair<Utf8CP, Utf8CP>> testDataset {
+        {"VALUES(base36(NULL))",    nullptr },
+        {"VALUES(base36(0))",       "0"     },
+        {"VALUES(base36(123))",     "3F"    },
+        {"VALUES(base36(123456))",  "2N9C"  },
+    };
+    for (auto const& kvPair : testDataset)
+        {
+        Utf8CP ecsql = kvPair.first;
+        Utf8CP expectedResult = kvPair.second;
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql)) << ecsql;
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step()) << ecsql;
+        if (expectedResult == nullptr)
+            EXPECT_TRUE(stmt.IsValueNull(0)) << ecsql;
+        else
+            EXPECT_STREQ(expectedResult, stmt.GetValueText(0)) << ecsql;
         }
     }
 
@@ -447,7 +473,7 @@ TEST_F(ECSqlStatementFunctionTestFixture, BuiltinFunctions)
             {"SELECT ZEROBLOB(5) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_Binary)},
             //BeSQLite built-in functions
             {"SELECT 10 FROM ecsql.P WHERE NOT InVirtualSet(?,123)", ExpectedResult(ECN::PRIMITIVETYPE_Long)},
-            //ECDb built-in functions 
+            //ECDb built-in functions
             {"SELECT ChangedValue(1,'S','AfterInsert',S) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_Binary)}, //only for ECDb internal use
             {"SELECT ChangedValueStateToOpCode('BeforeUpdate') FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_Long)}, //only for ECDb internal use
             {"SELECT ChangedValueStateToOpCode(2) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_Long)}, //only for ECDb internal use
@@ -685,7 +711,7 @@ TEST_F(ECSqlStatementFunctionTestFixture, InVirtualSetFunction)
 
     statement.Reset();
     statement.ClearBindings();
-    
+
     ASSERT_EQ(ECSqlStatus::Success, statement.BindInt(1, 0));
     ASSERT_EQ(ECSqlStatus::Success, statement.BindVirtualSet(2, idSet));
 
