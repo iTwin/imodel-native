@@ -538,7 +538,7 @@ TEST_F(ECDbTestFixture, GetAndChangeGUIDForDb)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbTestFixture, CurrentECSqlVersion)
     {
-    BeVersion expectedVersion (1, 2, 6, 0);
+    BeVersion expectedVersion (1, 2, 8, 1);
     ASSERT_EQ(ECDb::GetECSqlVersion(), expectedVersion);
     }
 
@@ -564,7 +564,7 @@ TEST_F(ECDbTestFixture, NewFileECDbProfileVersion)
 class IssueListener : public ECN::IIssueListener
     {
     mutable bvector<Utf8String> m_issues;
-    void _OnIssueReported(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, Utf8CP message) const override
+    void _OnIssueReported(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, ECN::IssueId id, Utf8CP message) const override
         {
         m_issues.push_back(message);
         }

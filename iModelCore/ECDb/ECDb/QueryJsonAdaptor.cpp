@@ -39,10 +39,30 @@ BentleyStatus QueryJsonAdaptor::RenderRow(BeJsValue rowJson, IECSqlRow const& st
                 continue;
             }
 
-            auto memberProp = ecsqlValue.GetColumnInfo().GetProperty();
+            const auto memberProp = ecsqlValue.GetColumnInfo().GetProperty();
             if (m_useJsName) {
+                const auto prim = memberProp->GetAsPrimitiveProperty();
                 Utf8String memberName = memberProp->GetName();
-                ECN::ECJsonUtilities::LowerFirstChar(memberName);
+                if (prim && !prim->GetExtendedTypeName().empty()) {
+                    const auto extendTypeId = ExtendedTypeHelper::GetExtendedType(prim->GetExtendedTypeName());
+                    if (extendTypeId == ExtendedTypeHelper::ExtendedType::Id)
+                        memberName = ECN::ECJsonSystemNames::Id();
+                    else if(extendTypeId == ExtendedTypeHelper::ExtendedType::ClassId)
+                        memberName = ECN::ECJsonSystemNames::ClassName();
+                    else if(extendTypeId == ExtendedTypeHelper::ExtendedType::SourceId)
+                        memberName = ECN::ECJsonSystemNames::SourceId();
+                    else if(extendTypeId == ExtendedTypeHelper::ExtendedType::SourceClassId)
+                        memberName = ECN::ECJsonSystemNames::SourceClassName();
+                    else if(extendTypeId == ExtendedTypeHelper::ExtendedType::TargetId)
+                        memberName = ECN::ECJsonSystemNames::TargetId();
+                    else if(extendTypeId == ExtendedTypeHelper::ExtendedType::TargetClassId)
+                        memberName = ECN::ECJsonSystemNames::TargetClassName();
+                    else
+                        ECN::ECJsonUtilities::LowerFirstChar(memberName);
+                } else {
+                    ECN::ECJsonUtilities::LowerFirstChar(memberName);
+                }
+
                 if (SUCCESS != RenderRootProperty(rowJson[memberName], ecsqlValue))
                     return ERROR;
             } else {
@@ -348,13 +368,13 @@ void QueryJsonAdaptor::GetMetaData(QueryProperty::List& list, ECSqlStatement con
         std::string className = col.IsGeneratedProperty() || isSystem ? "" : prop->GetClass().GetFullName();
         std::string typeName = col.GetDataType().IsNavigation() ? "navigation" : prop->GetTypeFullName();
         std::string name = col.IsGeneratedProperty() ? prop->GetDisplayLabel() : prop->GetName();
-        
+
         // Blobs are abbreviated as a Json string with info about the blob. See RenderBinaryProperty().
         if (m_abbreviateBlobs && typeName == "binary") {
             typeName = "string";
             extendType = "Json";
         }
-        
+
         if (col.IsGeneratedProperty()) {
             jsName.assign(prop->GetDisplayLabel());
             if (jsName.empty()) {

@@ -1886,7 +1886,7 @@ SchemaReadStatus ECClass::_ReadBaseClassFromXml (pugi::xml_node childNode, ECSch
 
     if (context.IsAliasToPrune(GetSchema().GetName(), alias))
         {
-        context.Issues().ReportV(IssueSeverity::Info, IssueCategory::BusinessProperties, IssueType::ECClass,
+        context.Issues().ReportV(IssueSeverity::Info, IssueCategory::BusinessProperties, IssueType::ECClass, ECIssueId::EC_0001,
             "Dropping base class '%s' from '%s' because the base class is defined in a schema set to be pruned in the schema read context.", qualifiedClassName.c_str(), GetFullName());
         return SchemaReadStatus::Success;
         }
