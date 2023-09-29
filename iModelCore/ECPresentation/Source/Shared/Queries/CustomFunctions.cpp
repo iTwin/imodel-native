@@ -1393,70 +1393,6 @@ struct GuidToStrScalar : ECPresentation::ScalarFunction
 
 /*=================================================================================**//**
 * Parameters:
-* - NavNodeLabelDefinition json string
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-struct ToBase36Scalar : ECPresentation::ScalarFunction
-    {
-    ToBase36Scalar(CustomFunctionsManager const& manager)
-        : ScalarFunction(FUNCTION_NAME_ToBase36, 1, DbValueType::TextVal, manager)
-        {}
-    void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
-        {
-        ARGUMENTS_COUNT_PRECONDITION(1);
-
-        LabelDefinitionPtr labelDefinition = LabelDefinition::FromString(args[0].GetValueText());
-        uint64_t rawValue = labelDefinition->GetRawValue()->AsSimpleValue()->GetValue().GetUint64();
-        Utf8String base36 = CommonTools::ToBase36String(rawValue);
-        Utf8String newDefinition = labelDefinition->SetStringValue(base36.c_str()).ToJsonString();
-        ctx.SetResultText(newDefinition.c_str(), newDefinition.size(), DbFunction::Context::CopyData::Yes);
-        }
-    };
-
-/*=================================================================================**//**
-* WIP temporary until SQL supports bitwise operators
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-struct ParseBriefcaseIdScalar : ECPresentation::ScalarFunction
-    {
-    ParseBriefcaseIdScalar(CustomFunctionsManager const& manager)
-        : ScalarFunction(FUNCTION_NAME_ParseBriefcaseId, 1, DbValueType::TextVal, manager)
-        {}
-    void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
-        {
-        ARGUMENTS_COUNT_PRECONDITION(1);
-
-        uint64_t id = args[0].GetValueUInt64();
-        uint64_t briefcaseId = id >> 40;
-        rapidjson::Value value(briefcaseId);
-        Utf8String valueJson = LabelDefinition::Create(value, "uint64", std::to_string(briefcaseId).c_str())->ToJsonString();
-        ctx.SetResultText(valueJson.c_str(), valueJson.size(), DbFunction::Context::CopyData::Yes);
-        }
-    };
-
-/*=================================================================================**//**
-* WIP temporary until SQL supports bitwise operators
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-struct ParseLocalIdScalar : ECPresentation::ScalarFunction
-    {
-    ParseLocalIdScalar(CustomFunctionsManager const& manager)
-        : ScalarFunction(FUNCTION_NAME_ParseLocalId, 1, DbValueType::TextVal, manager)
-        {}
-    void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
-        {
-        ARGUMENTS_COUNT_PRECONDITION(1);
-
-        uint64_t id = args[0].GetValueUInt64();
-        uint64_t localId = id & (((uint64_t)1 << 40) - 1);
-        rapidjson::Value value(localId);
-        Utf8String valueJson = LabelDefinition::Create(value, "uint64", std::to_string(localId).c_str())->ToJsonString();
-        ctx.SetResultText(valueJson.c_str(), valueJson.size(), DbFunction::Context::CopyData::Yes);
-        }
-    };
-
-/*=================================================================================**//**
-* Parameters:
 * - number
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
@@ -2062,9 +1998,6 @@ void CustomFunctionsInjector::CreateFunctions()
     m_functions.push_back(std::make_shared<GetNavigationPropertyValueScalar>(CustomFunctionsManager::GetManager()));
     m_functions.push_back(std::make_shared<GetRelatedDisplayLabelScalar>(CustomFunctionsManager::GetManager(), FUNCTION_NAME_GetNavigationPropertyLabel));
     m_functions.push_back(std::make_shared<GetRelatedDisplayLabelScalar>(CustomFunctionsManager::GetManager(), FUNCTION_NAME_GetRelatedDisplayLabel));
-    m_functions.push_back(std::make_shared<ToBase36Scalar>(CustomFunctionsManager::GetManager()));
-    m_functions.push_back(std::make_shared<ParseBriefcaseIdScalar>(CustomFunctionsManager::GetManager()));
-    m_functions.push_back(std::make_shared<ParseLocalIdScalar>(CustomFunctionsManager::GetManager()));
     m_functions.push_back(std::make_shared<JoinOptionallyRequiredScalar>(CustomFunctionsManager::GetManager()));
     m_functions.push_back(std::make_shared<CompareDoublesScalar>(CustomFunctionsManager::GetManager()));
     m_functions.push_back(std::make_shared<GetECPropertyValueDisplayLabelScalar>(CustomFunctionsManager::GetManager()));
