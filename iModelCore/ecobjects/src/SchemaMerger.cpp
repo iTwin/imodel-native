@@ -571,8 +571,14 @@ BentleyStatus SchemaMerger::MergeClass(SchemaMergeResult& result, ECClassP left,
         case ECClassType::Relationship:
             {
             auto mergedRelationshipClass = left->GetRelationshipClassP();
-            if (MergePrimitive(classChange->Strength(), mergedRelationshipClass, &ECRelationshipClass::SetStrength, left->GetFullName(), result, options, false) != BentleyStatus::SUCCESS)
-                return BentleyStatus::ERROR;
+            if ((MergePrimitive(classChange->Strength(), mergedRelationshipClass, &ECRelationshipClass::SetStrength, left->GetFullName(), result, options, false) != BentleyStatus::SUCCESS))
+                {
+                if(!options.IgnoreStrengthChangeProblems())
+                    return BentleyStatus::ERROR;
+                else
+                    result.Issues().ReportV(IssueSeverity::Warning, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0057,
+                        "Ignoring invalid relationship strength change on %s, because IgnoreStrengthChangeProblems is set.", left->GetFullName());
+                }
             if (MergePrimitive(classChange->StrengthDirection(), mergedRelationshipClass, &ECRelationshipClass::SetStrengthDirection, left->GetFullName(), result, options, false) != BentleyStatus::SUCCESS)
                 return BentleyStatus::ERROR;
 
@@ -787,12 +793,20 @@ BentleyStatus SchemaMerger::MergeProperty(SchemaMergeResult& result, ECPropertyP
         return BentleyStatus::ERROR;
         }
     
-    if(propertyChange->TypeName().IsChanged() && !options.GetIgnoreIncompatiblePropertyTypeChanges())
+    if(propertyChange->TypeName().IsChanged())
         {
         //TODO: ExtendedTypeName, Enumeration
-        result.Issues().ReportV(IssueSeverity::Fatal, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0043,
-            "Property %s has its type changed.", key.c_str());
-        return BentleyStatus::ERROR;
+        if(!options.GetIgnoreIncompatiblePropertyTypeChanges())
+            {
+            result.Issues().ReportV(IssueSeverity::Fatal, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0043,
+                "Property %s has its type changed.", key.c_str());
+            return BentleyStatus::ERROR;
+            }
+        else
+            {
+            result.Issues().ReportV(IssueSeverity::Fatal, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0058,
+                "Ignoring invalid property type change on %s because IgnoreIncompatiblePropertyTypeChanges has been set.", key.c_str());
+            }
         }
 
     Utf8PrintfString scopeDescription("Property %s", key.c_str());
