@@ -17,7 +17,6 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 #define SQLFUNC_ClassName "ec_classname"
 #define SQLFUNC_ClassId "ec_classid"
 #define SQLFUNC_InstanceOf "ec_instanceof"
-#define SQLFUNC_Base36 "base36"
 
 #define SQLFUNC_ExtractInst "extract_inst"
 #define SQLFUNC_ExtractProp "extract_prop"
@@ -80,20 +79,6 @@ struct InstanceOfFunc final : ScalarFunction
         InstanceOfFunc(DbCR db) : ScalarFunction(SQLFUNC_InstanceOf, -1, DbValueType::IntegerVal), m_db(&db) {}
         ~InstanceOfFunc() {}
         static std::unique_ptr<InstanceOfFunc> Create(DbCR db);
-    };
-
-//=======================================================================================
-//! S Base36(I)
-// @bsiclass
-//=======================================================================================
-struct Base36Func final : ScalarFunction
-    {
-    private:
-        Base36Func() : ScalarFunction(SQLFUNC_Base36, 1, DbValueType::TextVal) {}
-        void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override;
-    public:
-        ~Base36Func() {}
-        static Base36Func& GetSingleton();
     };
 
 //=======================================================================================

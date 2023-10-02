@@ -428,49 +428,6 @@ void InstanceOfFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
 std::unique_ptr<InstanceOfFunc> InstanceOfFunc::Create(DbCR db) { return std::unique_ptr<InstanceOfFunc>(new InstanceOfFunc(db));}
 
 //************************************************************************************
-// Base36
-//************************************************************************************
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-Base36Func& Base36Func::GetSingleton()
-    {
-    static Base36Func s_singleton;
-    return s_singleton;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-static Utf8String ToBase36String(uint64_t i)
-    {
-    static Utf8CP chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    Utf8String encoded;
-    while (i != 0)
-        {
-        encoded.push_back(chars[i % 36]);
-        i /= 36;
-        }
-    std::reverse(encoded.begin(), encoded.end());
-    return !encoded.empty() ? encoded : "0";
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-void Base36Func::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
-    {
-    DbValue const& v = args[0];
-    if (v.IsNull() || v.GetValueType() != DbValueType::IntegerVal)
-        {
-        ctx.SetResultNull();
-        return;
-        }
-    Utf8String base36 = ToBase36String(v.GetValueUInt64());
-    ctx.SetResultText(base36.c_str(), static_cast<int>(base36.size()), DbFunction::Context::CopyData::Yes);
-    }
-
-//************************************************************************************
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
