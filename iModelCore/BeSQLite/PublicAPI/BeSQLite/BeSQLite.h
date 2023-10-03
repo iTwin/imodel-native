@@ -2423,7 +2423,7 @@ protected:
     BeBriefcaseId m_briefcaseId;
     StatementCache m_statements;
     DbTxns m_txns;
-    std::unique_ptr<ScalarFunction> m_regexFunc, m_regexExtractFunc;
+    std::unique_ptr<ScalarFunction> m_regexFunc, m_regexExtractFunc, m_base36Func;
     explicit DbFile(SqlDbP sqlDb, BusyRetry* retry, BeSQLiteTxnMode defaultTxnMode);
     ~DbFile();
     DbResult StartSavepoint(Savepoint&, BeSQLiteTxnMode);
@@ -3540,4 +3540,3 @@ struct LzmaUtility
 };
 
 END_BENTLEY_SQLITE_NAMESPACE
-
