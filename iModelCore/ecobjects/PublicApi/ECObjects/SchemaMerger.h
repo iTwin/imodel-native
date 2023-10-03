@@ -20,8 +20,10 @@
 #define SCHEMAMERGER_DUMPLOCATION                    "#dumpLocation"
 
 #define SCHEMAMERGER_RENAMESCHEMAITEMONCONFLICT               "#renameSchemaItemOnConflict"
-#define SCHEMAMERGER_RENAMEPROPERTYONCONFLICT               "#renamePropertyOnConflict"
-#define SCHEMAMERGER_PREFERRIGHTSIDEDISPLAYLABEL               "#preferRightSideDisplayLabel"
+#define SCHEMAMERGER_RENAMEPROPERTYONCONFLICT                 "#renamePropertyOnConflict"
+#define SCHEMAMERGER_PREFERRIGHTSIDEDISPLAYLABEL              "#preferRightSideDisplayLabel"
+#define SCHEMAMERGER_IGNORESTRENGTHCHANGEPROBLEMS             "#ignoreStrengthChangeProblems"
+
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -92,6 +94,11 @@ public:
     //! Defaults to false
     void SetPreferRightSideDisplayLabel(bool flag) { m_json[SCHEMAMERGER_PREFERRIGHTSIDEDISPLAYLABEL] = flag; }
     bool PreferRightSideDisplayLabel() const { return m_json[SCHEMAMERGER_PREFERRIGHTSIDEDISPLAYLABEL].asBool(false); }
+
+    //! Setting this flag makes the merger ignore problems when setting strength on a relationship.
+    //! Defaults to false
+    void SetIgnoreStrengthChangeProblems(bool flag) { m_json[SCHEMAMERGER_IGNORESTRENGTHCHANGEPROBLEMS] = flag; }
+    bool IgnoreStrengthChangeProblems() const { return m_json[SCHEMAMERGER_IGNORESTRENGTHCHANGEPROBLEMS].asBool(false); }
 
     Utf8String GetJson() const { return m_json.ToUtf8CP(); }
     void ReadFromJson(Utf8CP json) { return m_json.Parse(json); }
