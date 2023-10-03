@@ -10829,8 +10829,6 @@ TEST_F(ECSqlStatementTestFixture, RightLeftFullJoinTest)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-<<<<<<< HEAD
-=======
 TEST_F(ECSqlStatementTestFixture, CrossJoinTest)
     {
         ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("CrossJoinTest.ecdb", SchemaItem(
@@ -10878,7 +10876,6 @@ TEST_F(ECSqlStatementTestFixture, CrossJoinTest)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
->>>>>>> 74eef92c (ECSQL ignore disqualify_type_index if there is only one class in query (#465))
 TEST_F(ECSqlStatementTestFixture, verify_inf_and_nan_handling) {
     auto v1 = R"(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                     <ECEntityClass typeName="Element">
