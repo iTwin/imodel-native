@@ -193,6 +193,25 @@ QueryClauseAndBindings PresentationQueryContractSimpleField::_GetSelectClause(Ut
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+static QueryClauseAndBindings CreateFieldClause(PresentationQueryContractField const& field, Utf8CP fieldPrefix, std::function<bool(Utf8CP)> const& useFieldName)
+    {
+    Utf8String clause;
+    bool useFieldNameForParam = (useFieldName && useFieldName(field.GetName()));
+    QueryClauseAndBindings paramClause = useFieldNameForParam ? QueryClauseAndBindings(field.GetName()) : field.GetSelectClause(fieldPrefix, useFieldName);
+    if (!useFieldNameForParam && field.IsPresentationQueryContractFunctionField())
+        clause.append(paramClause.GetClause());
+    else if (QueryHelpers::IsLiteral(paramClause.GetClause()) || QueryHelpers::IsFunction(paramClause.GetClause()))
+        clause.append(paramClause.GetClause());
+    else if (!useFieldNameForParam || Utf8String::IsNullOrEmpty(fieldPrefix))
+        clause.append("(").append(QueryHelpers::Wrap(paramClause.GetClause())).append(")");
+    else
+        clause.append(QueryHelpers::Wrap(fieldPrefix)).append(".").append(QueryHelpers::Wrap(paramClause.GetClause()));
+    return QueryClauseAndBindings(clause, paramClause.GetBindings());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 QueryClauseAndBindings PresentationQueryContractFunctionField::_GetSelectClause(Utf8CP prefix, std::function<bool(Utf8CP)> const& useFieldName) const
     {
     bool first = true;
@@ -206,21 +225,32 @@ QueryClauseAndBindings PresentationQueryContractFunctionField::_GetSelectClause(
         if (!first)
             clause.append(", ");
 
-        bool useFieldNameForParam = (useFieldName && useFieldName(parameter->GetName()));
-        QueryClauseAndBindings paramClause = useFieldNameForParam ? QueryClauseAndBindings(parameter->GetName()) : parameter->GetSelectClause(prefix, useFieldName);
-        if (!useFieldNameForParam && parameter->IsPresentationQueryContractFunctionField())
-            clause.append(paramClause.GetClause());
-        else if (QueryHelpers::IsLiteral(paramClause.GetClause()) || QueryHelpers::IsFunction(paramClause.GetClause()))
-            clause.append(paramClause.GetClause());
-        else if (!useFieldNameForParam || !AllowsPrefix() || Utf8String::IsNullOrEmpty(prefix))
-            clause.append("(").append(QueryHelpers::Wrap(paramClause.GetClause())).append(")");
-        else
-            clause.append(QueryHelpers::Wrap(prefix)).append(".").append(QueryHelpers::Wrap(paramClause.GetClause()));
+        auto paramClause = CreateFieldClause(*parameter, AllowsPrefix() ? prefix : nullptr, useFieldName);
+        clause.append(paramClause.GetClause());
         ContainerHelpers::Push(bindings, paramClause.GetBindings());
+
         first = false;
         }
     clause.append(")");
     return QueryClauseAndBindings(clause, bindings);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+QueryClauseAndBindings PresentationQueryContractBinaryOpField::_GetSelectClause(Utf8CP prefix, std::function<bool(Utf8CP)> const& useFieldName) const
+    {
+    auto lhsClause = CreateFieldClause(*m_lhs, AllowsPrefix() ? prefix : nullptr, useFieldName);
+    auto rhsClause = CreateFieldClause(*m_rhs, AllowsPrefix() ? prefix : nullptr, useFieldName);
+
+    BoundQueryValuesList bindings;
+    ContainerHelpers::Push(bindings, lhsClause.GetBindings());
+    ContainerHelpers::Push(bindings, rhsClause.GetBindings());
+
+    return QueryClauseAndBindings(
+        Utf8String(lhsClause.GetClause()).append(" ").append(m_operator).append(" ").append(rhsClause.GetClause()),
+        bindings
+        );
     }
 
 #ifdef wip_skipped_instance_keys_performance_issue
