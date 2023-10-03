@@ -5,9 +5,6 @@ This document including important changes to syntax or file format.
 | Module  | Version   |
 | ------- | --------- |
 | Profile | `4.0.0.3` |
-<<<<<<< HEAD
-| ECSQL   | `1.2.0.0` |
-=======
 | ECSQL   | `1.2.8.1` |
 
 ## `9/13/2023`: Prgma disqualify_type_filter only take effect if there was more then one class name in query
@@ -135,7 +132,6 @@ On the other hand, the following query makes `Foo` optional by adding `?` at the
 * Add `PRAGMA parse_tree(<ecsql>)`
 * Add `ECSQLOPTIONS` clause to `PRAGMA` statement.
   * Allow to run commands like `PRAGMA parse_tree("SELECT 1") ECSQLOPTIONS enable_experimental_features`
->>>>>>> 74eef92c (ECSQL ignore disqualify_type_index if there is only one class in query (#465))
 
 ## `6/14/2023`: Add support for Schema sync
 * Schema sync allows two or more briefcases to sync there schema without requiring schema lock.
