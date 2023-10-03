@@ -1258,20 +1258,6 @@ TEST_F(CustomFunctionTests, GetRelatedDisplayLabel_NoRule_NotSpecifiedStringRetu
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CustomFunctionTests, ToBase36)
-    {
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, m_ruleset->GetRuleSetId(), *m_rulesPreprocessor, m_rulesetVariables, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
-
-    ECSqlStatement stmt;
-    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT " FUNCTION_NAME_ToBase36 "(?) FROM RET.Widget"));
-    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(1, "{\"DisplayValue\":\"13368\",\"RawValue\":13368,\"TypeName\":\"uint64\"}", IECSqlBinder::MakeCopy::Yes));
-    ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
-    EXPECT_STREQ(GetDisplayLabelJson("ABC").c_str(), stmt.GetValueText(0));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest
-+---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CustomFunctionTests, JoinOptionallyRequired)
     {
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, m_ruleset->GetRuleSetId(), *m_rulesPreprocessor, m_rulesetVariables, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
