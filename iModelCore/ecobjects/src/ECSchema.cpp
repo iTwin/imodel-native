@@ -3562,13 +3562,7 @@ SchemaWriteStatus ECSchema::WriteToXmlString(WStringR ecSchemaXml, ECVersion ecX
     const auto status = schemaWriter.Serialize();
     if (status == SchemaWriteStatus::FailedToSaveXml && ecXmlVersion == ECVersion::V3_1)
         {
-        /* Exporting a ECXml 3.1 schema has failed due to one of the following possible reasons:
-            1. Schema has a KoQ that doesn't have a persistence unit.
-            2. Schema has a KoQ that has an incorrect presentation format.
-            3. Schema has a KoQ that is using a unit introduced in ECXml 3.2 and not available in the legacy unit mappings in ECXml 3.1
-                
-        The schema will attempt serialization as ECXml 3.2. This way, the non-legacy units available from referenced Units schema will be available. */
-        LOG.errorv("The ECXml 3.1 schema failed to serialize due to an incorrect KoQ. The schema will be serialized as ECXml 3.2 instead.");
+        LOG.errorv("The ECXml 3.1 schema failed to serialize. The schema will be serialized as ECXml 3.2 instead.");
         return WriteToXmlString(ecSchemaXml, ECVersion::V3_2);
         }
 
@@ -3595,13 +3589,7 @@ SchemaWriteStatus ECSchema::WriteToXmlString(Utf8StringR ecSchemaXml, ECVersion 
     const auto status = schemaWriter.Serialize();
     if (status == SchemaWriteStatus::FailedToSaveXml && ecXmlVersion == ECVersion::V3_1)
         {
-        /* Exporting a ECXml 3.1 schema has failed due to one of the following possible reasons:
-            1. Schema has a KoQ that doesn't have a persistence unit.
-            2. Schema has a KoQ that has an incorrect presentation format.
-            3. Schema has a KoQ that is using a unit introduced in ECXml 3.2 and not available in the legacy unit mappings in ECXml 3.1
-                
-        The schema will attempt serialization as ECXml 3.2. This way, the non-legacy units available from referenced Units schema will be available. */
-        LOG.errorv("The ECXml 3.1 schema failed to serialize due to an incorrect KoQ. The schema will be serialized as ECXml 3.2 instead.");
+        LOG.errorv("The ECXml 3.1 schema failed to serialize. The schema will be serialized as ECXml 3.2 instead.");
         return WriteToXmlString(ecSchemaXml, ECVersion::V3_2);
         }
 
@@ -3648,13 +3636,7 @@ SchemaWriteStatus ECSchema::WriteToXmlFile(WCharCP ecSchemaXmlFile, ECVersion ec
     const auto status = serializeToFile(*this, ecXmlVersion);
     if (status == SchemaWriteStatus::FailedToSaveXml && ecXmlVersion == ECVersion::V3_1)
         {
-        /* Exporting a ECXml 3.1 schema has failed due to one of the following possible reasons:
-            1. Schema has a KoQ that doesn't have a persistence unit.
-            2. Schema has a KoQ that has an incorrect presentation format.
-            3. Schema has a KoQ that is using a unit introduced in ECXml 3.2 and not available in the legacy unit mappings in ECXml 3.1
-                
-        The schema will attempt serialization as ECXml 3.2. This way, the non-legacy units available from referenced Units schema will be available. */
-        LOG.errorv("The ECXml 3.1 schema failed to serialize due to an incorrect KoQ. The schema will be serialized as ECXml 3.2 instead.");
+        LOG.errorv("The ECXml 3.1 schema failed to serialize. The schema will be serialized as ECXml 3.2 instead.");
         return serializeToFile(*this, ECVersion::V3_2);
         }
     return status;

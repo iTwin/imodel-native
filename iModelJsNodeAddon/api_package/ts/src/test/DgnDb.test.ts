@@ -992,10 +992,19 @@ describe("basic tests", () => {
     // Import the schema as ECXML 3.2 which has ECXml 3.2 unit LUMEN_PER_W
     assert.equal(DbResult.BE_SQLITE_OK, testDb.importXmlSchemas([`<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" displayLabel="TestSchema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-      <ECSchemaReference name="Units" version="01.00.07" alias="u" />
-      <ECSchemaReference name="Formats" version="01.00.00" alias="f" />
-
-      <KindOfQuantity typeName="TestKoq" displayLabel="TestKoq" persistenceUnit="u:LUMEN_PER_W" relativeError="10.763910416709722" presentationUnits="f:DefaultRealU[u:LUMEN_PER_W]" />
+        <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+        <ECSchemaReference name="Formats" version="01.00.00" alias="f"/>
+        <ECSchemaReference name="Units" version="01.00.07" alias="u"/>
+        <ECEnumeration typeName="TestEnum" backingTypeName="int" isStrict="true">
+            <ECEnumerator name="Test_ENUM0" value="0" displayLabel="Test_ENUM0"/>
+            <ECEnumerator name="Test_ENUM1" value="1" displayLabel="Test_ENUM1"/>
+        </ECEnumeration>
+        <ECEntityClass typeName="TestClass" displayLabel="TestClass">
+            <BaseClass>bis:PhysicalElement</BaseClass>
+            <ECProperty propertyName="TestProp" typeName="double" displayLabel="TestProp" readOnly="true" category="TestCategory" kindOfQuantity="TestKoq"/>
+        </ECEntityClass>
+        <KindOfQuantity typeName="TestKoq" displayLabel="TestKoq" persistenceUnit="u:LUMEN_PER_W" relativeError="10.763910416709722" presentationUnits="f:DefaultRealU[u:LUMEN_PER_W]"/>
+        <PropertyCategory typeName="TestCategory" displayLabel="TestCategory" priority="200000"/>
     </ECSchema>`]));
 
     // Change the ECXml version of the schema to 3.1
@@ -1008,30 +1017,41 @@ describe("basic tests", () => {
     assert.equal(status, SchemaWriteStatus.Success, `Exporting the ECXml 3.1 schema is expected to fail due to incorrect KoQ. Schema should retry serialization as an ECXml 3.2 schema and succeed`);
     assert.isTrue(fs.existsSync(path.join(getOutputDir(), `ExportedTestSchema.ecschema.xml`)));
 
-    const xmlVersionStr = `xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2"`;
+    const xmlVersionStr = `xmlns="http://www.bentley.com/schemas/Bentley.`;
     const koqStr = `<KindOfQuantity typeName="TestKoq" displayLabel="TestKoq" persistenceUnit="u:LUMEN_PER_W" relativeError="10.763910416709722" presentationUnits="f:DefaultRealU[u:LUMEN_PER_W]"/>`;
+    const propStr = `<ECProperty propertyName="TestProp" typeName="double" displayLabel="TestProp" readOnly="true" category="TestCategory" kindOfQuantity="TestKoq"/>`;
+    const propCatStr = `<PropertyCategory typeName="TestCategory" displayLabel="TestCategory" priority="200000"/>`;
 
     // Read the exported file to check if schema was serialized as ECXml 3.2
     const exportedFileStr = fs.readFileSync(path.join(getOutputDir(), `ExportedTestSchema.ecschema.xml`), { encoding: "utf8"});
     assert.notEqual(exportedFileStr, undefined);
-    expect(exportedFileStr.includes(xmlVersionStr)).to.be.true;
+    expect(exportedFileStr.includes(`${xmlVersionStr}ECXML.3.2"`)).to.be.true;
+    expect(exportedFileStr.includes(`${xmlVersionStr}ECXML.3.1"`)).to.be.false;
     expect(exportedFileStr.includes(koqStr)).to.be.true;
+    expect(exportedFileStr.includes(propStr)).to.be.true;
+    expect(exportedFileStr.includes(propCatStr)).to.be.true;
 
     // Export ECXml 3.1 schema to a xml string as ECXml 3.1
     let schemaXmlStr = testDb.schemaToXmlString("TestSchema", IModelJsNative.ECVersion.V3_1);
     assert.notEqual(schemaXmlStr, undefined);
 
     // Check if schema was serialized as ECXml 3.2
-    expect(schemaXmlStr!.includes(xmlVersionStr)).to.be.true;
+    expect(schemaXmlStr!.includes(`${xmlVersionStr}ECXML.3.2"`)).to.be.true;
+    expect(schemaXmlStr!.includes(`${xmlVersionStr}ECXML.3.1"`)).to.be.false;
     expect(schemaXmlStr!.includes(koqStr)).to.be.true;
+    expect(schemaXmlStr!.includes(propStr)).to.be.true;
+    expect(schemaXmlStr!.includes(propCatStr)).to.be.true;
 
     // Export ECXml 3.1 schema to a xml string as latest ECXml
     schemaXmlStr = testDb.schemaToXmlString("TestSchema");
     assert.notEqual(schemaXmlStr, undefined);
 
     // Check if schema was serialized as ECXml 3.2
-    expect(schemaXmlStr!.includes(xmlVersionStr)).to.be.true;
+    expect(schemaXmlStr!.includes(`${xmlVersionStr}ECXML.3.2"`)).to.be.true;
+    expect(schemaXmlStr!.includes(`${xmlVersionStr}ECXML.3.1"`)).to.be.false;
     expect(schemaXmlStr!.includes(koqStr)).to.be.true;
+    expect(schemaXmlStr!.includes(propStr)).to.be.true;
+    expect(schemaXmlStr!.includes(propCatStr)).to.be.true;
 
     testDb.closeIModel();
   });
