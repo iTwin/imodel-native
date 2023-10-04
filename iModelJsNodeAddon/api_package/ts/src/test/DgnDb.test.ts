@@ -12,7 +12,6 @@ import * as path from "path";
 import { openDgnDb } from ".";
 import { IModelJsNative, SchemaWriteStatus } from "../NativeLibrary";
 import { copyFile, dbFileName, getAssetsDir, getOutputDir, iModelJsNative } from "./utils";
-import Database = require("better-sqlite3");
 
 // Crash reporting on linux is gated by the presence of this env variable.
 if (os.platform() === "linux")
@@ -1009,15 +1008,13 @@ describe("basic tests", () => {
     </ECSchema>`]));
 
     testDb.saveChanges();
-    testDb.closeIModel();
 
     // Modify the ECXml version of the schema to 3.1 directly in the db
-    const db = new Database(path.join(getOutputDir(), "testSchemaExport.bim"));
-    db.prepare(`update ec_Schema set OriginalECXmlVersionMajor=3, OriginalECXmlVersionMinor=1 where Name='TestSchema'`).run();
-    db.close();
+    const statement = new iModelJsNative.SqliteStatement();
+    statement.prepare(testDb, `update ec_Schema set OriginalECXmlVersionMajor=3, OriginalECXmlVersionMinor=1 where Name='TestSchema'`);
+    expect(statement.step()).to.be.eql(DbResult.BE_SQLITE_DONE);
+    statement.dispose();
 
-    // Reopen imodel to test export schema
-    testDb.openIModel(path.join(getOutputDir(), "testSchemaExport.bim"), OpenMode.Readonly);
     // Export ECXml 3.1 schema to xml file
     const status = testDb.exportSchema(`TestSchema`, getOutputDir(), `ExportedTestSchema.ecschema.xml`);
     assert.equal(status, SchemaWriteStatus.Success, `Exporting the ECXml 3.1 schema is expected to fail due to incorrect KoQ. Schema should retry serialization as an ECXml 3.2 schema and succeed`);
