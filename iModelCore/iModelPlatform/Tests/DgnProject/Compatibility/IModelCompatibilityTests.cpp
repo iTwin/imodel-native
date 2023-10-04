@@ -157,7 +157,7 @@ void Assert_BuiltinSchemaVersions_2_0_0_1(TestIModel& testDb)
     EXPECT_EQ(JsonValue(R"js({"classcount":4, "enumcount": 1})js"), testDb.GetSchemaItemCounts("ECDbFileInfo")) << testDb.GetDescription();
 
     EXPECT_LE(SchemaVersion(2, 0, 0), testDb.GetSchemaVersion("ECDbMap")) << testDb.GetDescription();
-    EXPECT_EQ((testDb.GetSchemaVersion("ECDbMap") == SchemaVersion(2, 0, 1)) ? BeVersion(3, 2) : BeVersion(3, 1), testDb.GetOriginalECXmlVersion("ECDbMap")) << testDb.GetDescription();
+    EXPECT_EQ((testDb.GetSchemaVersion("ECDbMap") >= SchemaVersion(2, 0, 1)) ? BeVersion(3, 2) : BeVersion(3, 1), testDb.GetOriginalECXmlVersion("ECDbMap")) << testDb.GetDescription();
     EXPECT_LE(9, testDb.GetSchemaItemCounts("ECDbMap").Value()["classcount"].asInt()) << testDb.GetDescription();
 
     EXPECT_EQ(SchemaVersion(4, 0, 1), testDb.GetSchemaVersion("ECDbMeta")) << testDb.GetDescription();
@@ -208,7 +208,7 @@ void Assert_BuiltinSchemaVersions_2_0_0_4(TestIModel& testDb)
     EXPECT_EQ(JsonValue(R"js({"classcount":4, "enumcount": 1})js"), testDb.GetSchemaItemCounts("ECDbFileInfo")) << testDb.GetDescription();
     
     EXPECT_LE(SchemaVersion(2, 0, 0), testDb.GetSchemaVersion("ECDbMap")) << testDb.GetDescription();
-    EXPECT_EQ((testDb.GetSchemaVersion("ECDbMap") == SchemaVersion(2, 0, 1)) ? BeVersion(3, 2) : BeVersion(3, 1), testDb.GetOriginalECXmlVersion("ECDbMap")) << testDb.GetDescription();
+    EXPECT_EQ((testDb.GetSchemaVersion("ECDbMap") >= SchemaVersion(2, 0, 1)) ? BeVersion(3, 2) : BeVersion(3, 1), testDb.GetOriginalECXmlVersion("ECDbMap")) << testDb.GetDescription();
     EXPECT_LE(9, testDb.GetSchemaItemCounts("ECDbMap").Value()["classcount"].asInt()) << testDb.GetDescription();
     
     EXPECT_EQ(SchemaVersion(4, 0, 1), testDb.GetSchemaVersion("ECDbMeta")) << testDb.GetDescription();
@@ -340,8 +340,8 @@ void Assert_BuiltinSchemaVersions_2_X_X_X(TestIModel& testDb)
     EXPECT_LE(SchemaVersion(2, 0, 1), testDb.GetSchemaVersion("ECDbFileInfo")) << testDb.GetDescription();
     EXPECT_LE(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbFileInfo")) << testDb.GetDescription();
 
-    EXPECT_LE(SchemaVersion(2, 0, 0), testDb.GetSchemaVersion("ECDbMap")) << testDb.GetDescription();
-    EXPECT_LE(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("ECDbMap")) << testDb.GetDescription();
+    EXPECT_LE(SchemaVersion(2, 0, 2), testDb.GetSchemaVersion("ECDbMap")) << testDb.GetDescription();
+    EXPECT_LE(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbMap")) << testDb.GetDescription();
 
     EXPECT_LE(SchemaVersion(4, 0, 1), testDb.GetSchemaVersion("ECDbMeta")) << testDb.GetDescription();
     EXPECT_LE(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbMeta")) << testDb.GetDescription();
