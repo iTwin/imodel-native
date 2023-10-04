@@ -2173,7 +2173,7 @@ TEST_F(KindOfQuantityRoundTripTest, KindOfQuantityCreatedFromAPI)
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-TEST_F(KindOfQuantityRoundTripTest, Fail_ec31_roundTrip)
+TEST_F(KindOfQuantityRoundTripTest, ec31_roundTrip_WithEC32_Unit)
     {
     SchemaItem schemaItem = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
         <ECSchema schemaName="Schema2" alias="s2" version="1.00.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
