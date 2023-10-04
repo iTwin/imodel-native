@@ -5,7 +5,133 @@ This document including important changes to syntax or file format.
 | Module  | Version   |
 | ------- | --------- |
 | Profile | `4.0.0.3` |
-| ECSQL   | `1.2.0.0` |
+| ECSQL   | `1.2.8.1` |
+
+## `9/13/2023`: Prgma disqualify_type_filter only take effect if there was more then one class name in query
+
+ECSql version updated `1.2.8.0` -> `1.2.8.1`
+
+If following is set
+```sql
+    PRAGMA disqualify_type_filter=TRUE
+        FOR BisCore.ExternalSourceAspect;
+```
+
+Then if we only select the `BisCore.ExternalSourceAspect` then the `disqualify_type_filter` will not take effect.
+
+```sql
+SELECT * FROM BisCore.ExternalSourceAspect
+```
+
+But if we join the `ExternalSourceAspect` with something else then the `disqualify_type_filter` will take effect and ECClassId expression will be disqualified.
+
+## `9/13/2023`: Runtime instance and property accessor no longer experimental
+
+1. ECSql version updated `1.2.7.0` -> `1.2.8.0`.
+2. Instance property access is no longer experimental and does not require the experimental features to be enabled for it's use.
+3. The use of `$` and `$->prop` in ECSQL now requires neither enabling experimental features globally with PRAGMA nor specifying `OPTIONS ENABLE_EXPERIMENTAL_FEATURES`.
+
+Following will work:
+
+```sql
+  SELECT $ FROM meta.ECClassDef
+  SELECT $->name FROM meta.ECClassDef
+```
+
+## `9/7/2023`: Add option to customize ECSQL Instance
+
+1. ECSql version updated to `1.2.6.0` -> `1.2.7.0`.
+2. Added following `ECSQLOPTIONS` or `OPTIONS`
+   * `USE_JS_PROP_NAMES` returns json compilable with iTwin.js typescript.
+   * `DO_NOT_TRUNCATE_BLOB` return full blob instead of truncating it.
+3. Instance access now add `json()` around `extract_inst()` function.
+
+Following return iTwin.js compilable json
+
+```sql
+  SELECT $ FROM Bis.Element OPTIONS USE_JS_PROP_NAMES
+```
+
+Following return complete blob as base64
+
+```sql
+  SELECT $ FROM  Bis.GeometricElement3d OPTIONS DO_NOT_TRUNCATE_BLOB
+```
+
+## `9/6/2023`: Changes to ECSQLOPTIONS
+
+1. ECSql version updated to `1.2.5.0` -> `1.2.6.0`.
+2. `ECSQLOPTIONS` is now just called `OPTIONS`. `ECSQLOPTIONS` will continue be supported but is deprecated.
+3. Options specified will be inherited by sub queries. Local query option take priority over inherited.
+
+Following should work now
+
+```sql
+SELECT 1 FROM (
+  SELECT $ FROM Bis.Element
+) LIMIT 1 OPTIONS ENABLE_EXPERIMENTAL_FEATURES
+```
+
+## `8/31/2023`: Update behavior of instance properties
+
+1. ECSql version updated to `1.2.3.0` -> `1.2.5.0`.
+2. By default, all properties accessed via instance accessor i.e. `$->prop` must exist in the class identifying the row for that row to qualify for output.
+3. If the user uses `?` after a property accessor e.g. `$->prop?`  then it will be considered optional, and the row class will not be checked to see if the `prop` exists or not.
+4. Fixed issue where multiple required properties was not taken into account instead only alphabetically the first property was use to filter class-ids.
+
+The following query will return no row if there is no subclass of `Bis.Element` that has both properties `CodeValue` and `Foo` in it.
+
+```sql
+  SELECT ECClassId, ECInstanceId
+  FROM Bis.Element
+      WHERE $->CodeValue = 'Profiling' OR $->Foo = 'Hello'
+  LIMIT 1
+  ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES
+```
+
+On the other hand, the following query makes `Foo` optional by adding `?` at the end like `$->Foo?`. This will exclude this property from the list of instance properties that must exist in the class of a row for it to qualify for output.
+
+```sql
+  SELECT ECClassId, ECInstanceId
+  FROM Bis.Element
+      WHERE $->CodeValue = 'Profiling' OR $->Foo? = 'Hello'
+  LIMIT 1
+  ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES
+```
+
+> Note: Optional property may slow down performance while non-optional properties will improve the performance of instance query.
+
+## `8/18/2023`: Add support for CROSS Join
+
+* Add support for CROSS Join.
+  * Example: `SELECT 1 FROM meta.ECClassDef CROSS JOIN meta.ECPropertyDef`.
+* ECSql version updated to `1.2.3.0` -> `1.2.4.0`.
+
+## `8/9/2023`: Add support for FIRST/LAST
+
+* Add support for ordering NULLs.
+  * Example: `SELECT * FROM Meta.ECClassDef ORDER BY Displaylabel NULLS FIRST`.
+* ECSql version updated to `1.2.2.0` -> `1.2.3.0`.
+
+## `8/9/2023`: Add support for RIGHT/FULL Join
+
+* Add support for RIGHT/FULL join.
+
+## `8/9/2023`: Add support for `ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES`
+
+* Add support for RIGHT/FULL join.
+  * Example: `SELECT $->name FROM meta.ECClassDef ECSQLOPTIONS enable_experimental_features`.
+
+## `8/9/2023`: Truncate BLob to {bytes:####} instead of a single byte via QueryJsonAdaptor
+
+* This effect instance access and concurrent query.
+
+## `8/7/2023`: Add support to get parse tree for ecsql using a `PRAGMA parse_tree`
+
+* Change ECSQL version `1.2.0.0` -> `1.2.2.0`
+* Add `PRAGMA parse_tree(<ecsql>)`
+* Add `ECSQLOPTIONS` clause to `PRAGMA` statement.
+  * Allow to run commands like `PRAGMA parse_tree("SELECT 1") ECSQLOPTIONS enable_experimental_features`
 
 ## `6/14/2023`: Add support for Schema sync
 * Schema sync allows two or more briefcases to sync there schema without requiring schema lock.
