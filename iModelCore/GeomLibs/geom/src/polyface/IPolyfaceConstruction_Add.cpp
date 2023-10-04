@@ -2581,11 +2581,11 @@ bool IPolyfaceConstruction::AddRuledBetweenCorrespondingCurves
     else if (boundaryType == CurveVector::BOUNDARY_TYPE_UnionRegion)
         {
         bvector<CurveVectorPtr> oneContourSet;
-        // Process children at each index ...
+        stat = true;
         for (size_t ich = 0; ich < numChildren; ich++)
             {
             GatherChildrenAtIndex (contours, ich, oneContourSet);
-            AddRuledBetweenCorrespondingCurves (oneContourSet, capped);
+            stat &= AddRuledBetweenCorrespondingCurves (oneContourSet, capped);
             }
         }
     return stat;
