@@ -511,6 +511,12 @@ DgnElementCPtr DgnElements::InsertElement(DgnElementR element, DgnDbStatus* outS
 
     DgnDbStatus ALLOW_NULL_OUTPUT(stat,outStat);
 
+    if ( !element.m_federationGuid.IsValid())
+        {
+          stat = DgnDbStatus::InvalidId;
+          return nullptr;
+        }
+
     // don't allow elements that already have an id unless the "preassignedId" flag is set
     if (element.m_elementId.IsValid() && !element.m_flags.m_preassignedId)
         {
