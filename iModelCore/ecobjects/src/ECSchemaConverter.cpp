@@ -873,6 +873,10 @@ ECObjectsStatus StandardValuesConverter::ConvertToEnum(ECClassP rootClass, ECCla
         prop->RemoveCustomAttribute(BECA_SCHEMANAME, STANDARDVALUES_CUSTOMATTRIBUTE);
         }
 
+    // Adds a direct reference to the grandparent schema, if missing
+    if (ECObjectsStatus::Success == status)
+        currentClass->GetSchemaR().AddReferencedSchema(rootClass->GetSchemaR());
+
     return status;
     }
 

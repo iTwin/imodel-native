@@ -2197,8 +2197,8 @@ TEST_F(StandardValueToEnumConversionTest, TestRootClassInGrandparentSchema)
  
     ASSERT_EQ(0, schema->GetEnumerationCount()) << "The number of enumerations created is not as expected.";
     ASSERT_EQ(1, baseSchema->GetEnumerationCount()) << "The number of enumerations created is not as expected.";
- 
-    CheckTypeName("base:TestClass_testProp", *schema, "testProp", {"TestClass"});
+
+    CheckTypeName("ts:TestClass_testProp", *schema, "testProp", {"TestClass"});
     CheckTypeName("TestClass_testProp", *baseSchema, "testProp", {"TestClass"});
     }
 
