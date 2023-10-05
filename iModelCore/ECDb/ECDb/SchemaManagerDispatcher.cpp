@@ -895,19 +895,26 @@ DropSchemaResult MainSchemaManager::DropSchema(Utf8StringCR name, SchemaImportTo
     //     return DropSchemaResult(DropSchemaResult::Status::Error);
     // }
     if (m_ecdb.IsReadonly()) {
-        m_ecdb.GetImpl().Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to drop ECSchema. ECDb file is read-only.");
+        m_ecdb.GetImpl().Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0278, "Failed to drop ECSchema. ECDb file is read-only.");
         return DropSchemaResult(DropSchemaResult::Status::Error);
     }
 
     if (m_ecdb.Schemas().GetSchema(name) == nullptr) {
-        m_ecdb.GetImpl().Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to drop ECSchema. Schema provided does not exist");
+        m_ecdb.GetImpl().Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0279, "Failed to drop ECSchema. Schema provided does not exist");
         return DropSchemaResult(DropSchemaResult::Status::ErrorSchemaNotFound);
     }
 
     const int majorMinorSub1Comp = m_ecdb.GetECDbProfileVersion().CompareTo(ECDb::CurrentECDbProfileVersion(), ProfileVersion::VERSION_MajorMinorSub1);
     if (majorMinorSub1Comp > 0) {
-        m_ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to drop ECSchema. Cannot drop schema from a file which was created with a higher version of this softwares. The file's version, however, is %s.",
-                                          ECDb::CurrentECDbProfileVersion().ToString().c_str(), m_ecdb.GetECDbProfileVersion().ToString().c_str());
+        m_ecdb.GetImpl().Issues().ReportV(
+            IssueSeverity::Error,
+            IssueCategory::BusinessProperties,
+            IssueType::ECDbIssue,
+            ECDbIssueId::ECDb_0280,
+            "Failed to drop ECSchema. Cannot drop schema from a file which was created with a higher version of this softwares. The file's version, however, is %s.",
+            ECDb::CurrentECDbProfileVersion().ToString().c_str(),
+            m_ecdb.GetECDbProfileVersion().ToString().c_str()
+        );
         return DropSchemaResult(DropSchemaResult::Status::Error);
     }
 
@@ -1045,13 +1052,13 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
 
     if (m_ecdb.IsReadonly())
         {
-        m_ecdb.GetImpl().Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to import ECSchemas. ECDb file is read-only.");
+        m_ecdb.GetImpl().Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0281, "Failed to import ECSchemas. ECDb file is read-only.");
         return SchemaImportResult::ERROR;
         }
 
     if (schemas.empty())
         {
-        m_ecdb.GetImpl().Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to import ECSchemas. List of ECSchemas to import is empty.");
+        m_ecdb.GetImpl().Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0282, "Failed to import ECSchemas. List of ECSchemas to import is empty.");
         return SchemaImportResult::ERROR;
         }
 
@@ -1062,7 +1069,7 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
     if (localDbInfo.IsEmpty() && !resolvedSyncDbUri.IsEmpty())
         {
         m_ecdb.GetImpl().Issues().ReportV(
-            IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue,
+            IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0585,
             "Failed to import ECSchemas. Cannot import schemas into a file which is not setup to use schema sync but sync db uri was provided. Sync-Id: {%s}, uri: {%s}.",
 
             localDbInfo.GetSyncId().ToString().c_str(),
@@ -1076,7 +1083,7 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
         if (resolvedSyncDbUri.IsEmpty())
             {
             m_ecdb.GetImpl().Issues().ReportV(
-                IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue,
+                IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0586,
                 "Failed to import ECSchemas. Cannot import schemas into a file which is setup to use schema sync but sync db uri was not provided. Sync-Id: {%s}.",
 
                 localDbInfo.GetSyncId().ToString().c_str()
@@ -1087,7 +1094,7 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
         if (schemaSync.Pull(resolvedSyncDbUri, schemaImportToken) != SchemaSync::Status::OK)
             {
             m_ecdb.GetImpl().Issues().ReportV(
-                IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue,
+                IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0587,
                 "Failed to import ECSchemas. Unable to pull changes from Sync-Id: {%s}, uri: {%s}.",
                 localDbInfo.GetSyncId().ToString().c_str(),
                 resolvedSyncDbUri.GetUri().c_str()
@@ -1103,7 +1110,7 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
 
     for (auto schema: schemas) {
         if (ECSchemaOwnershipClaimAppData::HasOwnershipClaim(*schema) && !ECSchemaOwnershipClaimAppData::IsOwnedBy(GetECDb(), *schema)) {
-            m_ecdb.GetImpl().Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to import ECSchemas. Cannot import schema owned by another ECDb connection");
+            m_ecdb.GetImpl().Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0283, "Failed to import ECSchemas. Cannot import schema owned by another ECDb connection");
             return SchemaImportResult::ERROR;
         }
     }
@@ -1112,8 +1119,15 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
     const int majorMinorSub1Comp = m_ecdb.GetECDbProfileVersion().CompareTo(ECDb::CurrentECDbProfileVersion(), ProfileVersion::VERSION_MajorMinorSub1);
     if (majorMinorSub1Comp > 0)
         {
-        m_ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to import ECSchemas. Cannot import schemas into a file which was created with a higher version of this softwares. The file's version, however, is %s.",
-                                          ECDb::CurrentECDbProfileVersion().ToString().c_str(), m_ecdb.GetECDbProfileVersion().ToString().c_str());
+        m_ecdb.GetImpl().Issues().ReportV(
+            IssueSeverity::Error,
+            IssueCategory::BusinessProperties,
+            IssueType::ECDbIssue,
+            ECDbIssueId::ECDb_0284,
+            "Failed to import ECSchemas. Cannot import schemas into a file which was created with a higher version of this softwares. The file's version, however, is %s.",
+            ECDb::CurrentECDbProfileVersion().ToString().c_str(),
+            m_ecdb.GetECDbProfileVersion().ToString().c_str()
+        );
         return SchemaImportResult::ERROR;
         }
 
@@ -1155,7 +1169,7 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
         if (schemaSync.Push(resolvedSyncDbUri) != SchemaSync::Status::OK)
             {
             m_ecdb.GetImpl().Issues().ReportV(
-                IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue,
+                IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0587,
                 "Failed to import ECSchemas. Unable to push changes to Sync-Id: {%s}, uri: {%s}.",
                 localDbInfo.GetSyncId().ToString().c_str(),
                 resolvedSyncDbUri.GetUri().c_str());
@@ -1235,6 +1249,7 @@ SchemaImportResult MainSchemaManager::MapSchemas(SchemaImportContext& ctx, bvect
             IssueSeverity::Error,
             IssueCategory::BusinessProperties,
             IssueType::ECDbIssue,
+            ECDbIssueId::ECDb_0588,
             "Detected data changes during schema mapping which should be deferred and recorded by sql transform api.");
 
         for(auto& sql : dataChangeListener.GetDataChangeSqlList()) {
@@ -1242,6 +1257,7 @@ SchemaImportResult MainSchemaManager::MapSchemas(SchemaImportContext& ctx, bvect
                 IssueSeverity::Error,
                 IssueCategory::BusinessProperties,
                 IssueType::ECDbIssue,
+                ECDbIssueId::ECDb_0589,
                 "Data change sql executed is '%s'. ", sql.c_str());
         }
         return failedToMap();
@@ -1254,9 +1270,9 @@ SchemaImportResult MainSchemaManager::MapSchemas(SchemaImportContext& ctx, bvect
         }
 
         if (!ctx.AllowDataTransform()) {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Import ECSchema failed. Data transform is required which is rejected by default unless explicitly allowed.");
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0590, "Import ECSchema failed. Data transform is required which is rejected by default unless explicitly allowed.");
             ctx.GetDataTransform().ForEach([&](TransformData::Task const& task) {
-                ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Transform SQL (%s): %s", task.GetDescription().c_str(), task.GetSql().c_str());
+                ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0591, "Transform SQL (%s): %s", task.GetDescription().c_str(), task.GetSql().c_str());
                 return true;
             });
 
@@ -1379,7 +1395,7 @@ BentleyStatus MainSchemaManager::DoMapSchemas(SchemaImportContext& ctx, bvector<
 
     if (GetDbSchemaR().SynchronizeExistingTables() != SUCCESS)
         {
-        m_ecdb.GetImpl().Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Synchronizing existing table to which classes are mapped failed.");
+        m_ecdb.GetImpl().Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0285, "Synchronizing existing table to which classes are mapped failed.");
         return ERROR;
         }
 
@@ -1532,7 +1548,7 @@ BentleyStatus MainSchemaManager::CanCreateOrUpdateRequiredTables() const
     stmt.Prepare(m_ecdb, ecsql.c_str());
     if (stmt.Step() == BE_SQLITE_ROW)
         {
-        m_ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue,
+        m_ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0286,
             "Schema Import> Error importing %s:%s class. Could not create or update %s table as there are %d persisted columns, but a maximum of %d columns is allowed for a table.",
             stmt.GetValueText(0), stmt.GetValueText(1), stmt.GetValueText(2), stmt.GetValueInt64(3), maxColumns);
         return ERROR;
@@ -1661,15 +1677,23 @@ BentleyStatus MainSchemaManager::CreateOrUpdateIndexesInDb(SchemaImportContext& 
             StorageDescription const& storageDesc = classMap->GetStorageDescription();
             if (storageDesc.HasMultipleNonVirtualHorizontalPartitions())
                 {
-                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to map ECClass '%s'. The index '%s' defined on it spans multiple tables which is not supported. Consider applying the 'TablePerHierarchy' strategy to the ECClass.",
-                                ecClass->GetFullName(), index.GetName().c_str());
+                Issues().ReportV(
+                    IssueSeverity::Error,
+                    IssueCategory::BusinessProperties,
+                    IssueType::ECDbIssue,
+                    ECDbIssueId::ECDb_0287,
+                    "Failed to map ECClass '%s'. The index '%s' defined on it spans multiple tables which is not supported. Consider applying the 'TablePerHierarchy' strategy to the ECClass.",
+                    ecClass->GetFullName(),
+                    index.GetName().c_str()
+                );
                 return ERROR;
                 }
             }
 
         if (usedIndexNames.find(index.GetName().c_str()) != usedIndexNames.end())
             {
-            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to create index %s on table %s. An index with the same name already exists.", index.GetName().c_str(), index.GetTable().GetName().c_str());
+            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0288,
+                "Failed to create index %s on table %s. An index with the same name already exists.", index.GetName().c_str(), index.GetTable().GetName().c_str());
             return ERROR;
             }
         else
@@ -1906,7 +1930,14 @@ BentleyStatus MainSchemaManager::PurgeOrphanTables(SchemaImportContext& ctx) con
             }
         if (!Enum::Contains(ctx.GetOptions(), SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas))
             {
-            m_ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to import schemas: it would change the database schema in a backwards incompatible way, so that older versions of the software could not work with the file anymore. ECDb would have to delete these tables: %s", tableNames.c_str());
+            m_ecdb.GetImpl().Issues().ReportV(
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
+                IssueType::ECDbIssue,
+                ECDbIssueId::ECDb_0289,
+                "Failed to import schemas: it would change the database schema in a backwards incompatible way, so that older versions of the software could not work with the file anymore. ECDb would have to delete these tables: %s",
+                tableNames.c_str()
+            );
             return ERROR;
             }
         }
@@ -2121,7 +2152,8 @@ BentleyStatus MainSchemaManager::SaveDbSchema(SchemaImportContext& ctx) const
 
         if (SUCCESS != classMap.Save(ctx, saveCtx))
             {
-            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to save mapping for ECClass %s: %s", classMap.GetClass().GetFullName(), m_ecdb.GetLastError().c_str());
+            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0290,
+                "Failed to save mapping for ECClass %s: %s", classMap.GetClass().GetFullName(), m_ecdb.GetLastError().c_str());
             return ERROR;
             }
         }

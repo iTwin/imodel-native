@@ -1,4 +1,4 @@
-// Copyright 2016 The Crashpad Authors. All rights reserved.
+// Copyright 2016 The Crashpad Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -123,7 +123,8 @@ void MinidumpUnloadedModuleListWriter::InitializeFromSnapshot(
   DCHECK_EQ(state(), kStateMutable);
   DCHECK(unloaded_modules_.empty());
 
-  for (auto unloaded_module_snapshot : unloaded_module_snapshots) {
+  for (const UnloadedModuleSnapshot& unloaded_module_snapshot :
+       unloaded_module_snapshots) {
     auto unloaded_module = std::make_unique<MinidumpUnloadedModuleWriter>();
     unloaded_module->InitializeFromSnapshot(unloaded_module_snapshot);
     AddUnloadedModule(std::move(unloaded_module));

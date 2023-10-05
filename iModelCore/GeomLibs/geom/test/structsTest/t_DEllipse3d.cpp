@@ -431,6 +431,30 @@ TEST (DEllipse3d, GetLocalFrame)
     Check::Near (2.0, coff90);
     }
 
+static bool verifyChordTolAtMidPoints(DEllipse3dCR arc, size_t numChords, double chordTol)
+    {
+    if (numChords > 0)
+        {
+        RotMatrix axes;
+        DPoint3d center, xyz0, xyz1, midPt, proj;
+        double param, dist2, r0, r1, start, sweep;
+        arc.GetScaledRotMatrix(center, axes, r0, r1, start, sweep);
+        double tol = chordTol + DoubleOps::SmallCoordinateRelTol() * std::max(r0, r1);
+        double df = 1.0 / (double) numChords;
+        for (size_t i = 0; i < numChords; ++i)
+            {
+            arc.FractionParameterToPoint(xyz0, i * df);
+            arc.FractionParameterToPoint(xyz1, (i + 1) * df);
+            midPt.Interpolate(xyz0, 0.5, xyz1);
+            if (!arc.ClosestPointBounded(param, dist2, proj, midPt))
+                return false;
+            if (sqrt(dist2) > tol)
+                return false;
+            }
+        }
+    return true;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -449,6 +473,20 @@ TEST (DEllipse3d, GetStrokeCount)
     Check::Near (4, n1);
     Check::Near (8, n2);
     Check::Near (4, n3);
+
+    // user test case (meters = UORs)
+    auto startRadians = AngleInDegrees::FromDegrees(116.49387644670652).Radians();
+    auto endRadians = AngleInDegrees::FromDegrees(100.64850192426670).Radians();
+    double sweepRadians = endRadians - startRadians;
+    DEllipse3d ellipse1 = DEllipse3d::From(3513067.3160981890, 5404062.7111331793, 7.450580596928285e-13, 4000.0000000003042, 0.0, 0.0, 0.0, 4000.0000000003042, 0.0, startRadians, sweepRadians);
+    double chordTol = 1.0e-7;
+    auto options = IFacetOptions::CreateForCurves();
+    options->SetChordTolerance(chordTol);
+    auto defaultStrokeCount = options->EllipseStrokeCount(ellipse1);    // 27
+    Check::False(verifyChordTolAtMidPoints(ellipse1, defaultStrokeCount, chordTol), "default stroke count doesn't satisfy chord tol");
+    options->SetMaxPerFullEllipse(1000000);
+    auto strokeCount = options->EllipseStrokeCount(ellipse1);           // 19556
+    Check::True(verifyChordTolAtMidPoints(ellipse1, strokeCount, chordTol), "uncapped stroke count satisfies chord tol");
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -596,6 +596,33 @@ TEST_F(BeSQliteTestFixture, regexp_boundary_cond) {
     ASSERT_EQ(BE_SQLITE_ERROR, stmt->Step());
     ASSERT_STREQ("regex:missing ): (w (BE_SQLITE_ERROR)", db->GetLastError().c_str());
 }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(BeSQliteTestFixture, base36) {
+    auto db = Create("base36.db");
+    db->SaveChanges();
+
+    auto evaluate = [&](Utf8CP exp) {
+        auto stmt = db->GetCachedStatement(SqlPrintfString("select %s", exp));
+        auto rc = stmt->Step();
+        return (rc == BE_SQLITE_ROW) ? stmt : nullptr;
+    };
+
+    auto s = evaluate("base36(NULL)");
+    ASSERT_TRUE(s->IsColumnNull(0));
+
+    s = evaluate("base36(0)");
+    ASSERT_STREQ("0", s->GetValueText(0));
+
+    s = evaluate("base36(123)");
+    ASSERT_STREQ("3F", s->GetValueText(0));
+
+    s = evaluate("base36(123456)");
+    ASSERT_STREQ("2N9C", s->GetValueText(0));
+}
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------

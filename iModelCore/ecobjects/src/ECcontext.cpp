@@ -365,6 +365,62 @@ ECInstanceReadContextPtr ECInstanceReadContext::CreateContext(ECSchemaReadContex
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+struct CustomAttributeInstanceReadContext: public ECInstanceReadContext
+{
+private:
+    ECSchemaCR            m_containerSchema;
+    //The schema context is only used for a rare scenario where custom attributes use a schema not listed in referenced schemas
+    //this was supported before so we have to keep supporting the case, so schema context is just a fallback mechanism here
+    ECSchemaReadContextR  m_schemaContext;
+public:
+    CustomAttributeInstanceReadContext(ECSchemaCR containerSchema, ECSchemaReadContextR schemaContext)
+        :m_containerSchema(containerSchema), m_schemaContext(schemaContext), ECInstanceReadContext(schemaContext.GetStandaloneEnablerLocater(), containerSchema, nullptr)
+        { }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    virtual ECSchemaCP _FindSchemaCP(SchemaKeyCR key, SchemaMatchType matchType) const
+        {
+        if (m_containerSchema.GetName().EqualsI(key.GetName()))
+            {
+            //use the container schema, but fail if it is incompatible
+            if (!m_containerSchema.GetSchemaKey().Matches(key, matchType))
+                {
+                LOG.errorv("CustomAttributeInstanceReadContext - Name of container schema (%s) matches requested key, but versions are incompatible.", m_containerSchema.GetName().c_str());
+                return nullptr;
+                }
+
+            return &m_containerSchema;
+            }
+
+        auto& references = m_containerSchema.GetReferencedSchemas();
+        auto it = references.Find(key, matchType);
+        if (it != references.end())
+            return it->second.get();
+
+        LOG.errorv("CustomAttributeInstanceReadContext - Custom attribute schema %s not found in referenced schemas of %s. Trying fallback mechanism.", key.GetFullSchemaName().c_str(), m_containerSchema.GetFullSchemaName().c_str());
+
+        SchemaKey nonConstKey(key);
+        ECSchemaPtr schemaFromContext = m_schemaContext.LocateSchema (nonConstKey, matchType);
+        if(schemaFromContext.IsValid())
+            return schemaFromContext.get();
+
+        return nullptr;
+        }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECInstanceReadContextPtr ECInstanceReadContext::CreateContextForCA(ECSchemaCR containerSchema, ECSchemaReadContextR schemaContext)
+    {
+    return new CustomAttributeInstanceReadContext (containerSchema, schemaContext);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 IECInstancePtr ECInstanceReadContext::_CreateStandaloneInstance(ECClassCR ecClass)
     {
     if (nullptr != ecClass.GetRelationshipClassCP())

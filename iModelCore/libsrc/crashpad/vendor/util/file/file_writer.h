@@ -1,4 +1,4 @@
-// Copyright 2014 The Crashpad Authors. All rights reserved.
+// Copyright 2014 The Crashpad Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@
 #include <vector>
 
 #include "base/files/file_path.h"
-#include "base/macros.h"
+#include "build/build_config.h"
 #include "util/file/file_io.h"
 #include "util/file/file_seeker.h"
 
@@ -82,6 +82,10 @@ class FileWriterInterface : public virtual FileSeekerInterface {
 class WeakFileHandleFileWriter : public FileWriterInterface {
  public:
   explicit WeakFileHandleFileWriter(FileHandle file_handle);
+
+  WeakFileHandleFileWriter(const WeakFileHandleFileWriter&) = delete;
+  WeakFileHandleFileWriter& operator=(const WeakFileHandleFileWriter&) = delete;
+
   ~WeakFileHandleFileWriter() override;
 
   // FileWriterInterface:
@@ -107,8 +111,6 @@ class WeakFileHandleFileWriter : public FileWriterInterface {
   // construction because no file descriptor will be available until
   // FileWriter::Open() is called.
   friend class FileWriter;
-
-  DISALLOW_COPY_AND_ASSIGN(WeakFileHandleFileWriter);
 };
 
 //! \brief A file writer implementation that wraps traditional system file
@@ -116,6 +118,10 @@ class WeakFileHandleFileWriter : public FileWriterInterface {
 class FileWriter : public FileWriterInterface {
  public:
   FileWriter();
+
+  FileWriter(const FileWriter&) = delete;
+  FileWriter& operator=(const FileWriter&) = delete;
+
   ~FileWriter() override;
 
   // FileWriterInterface:
@@ -130,6 +136,22 @@ class FileWriter : public FileWriterInterface {
   bool Open(const base::FilePath& path,
             FileWriteMode write_mode,
             FilePermissions permissions);
+
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+  //! \brief Wraps LoggingOpenMemoryFileForWrite().
+  //!
+  //! \return `true` if the operation succeeded, `false` if it failed, with an
+  //!     error message logged.
+  //!
+  //! \note After a successful call, this method or Open() cannot be called
+  //      again until after Close().
+  bool OpenMemfd(const base::FilePath& path);
+
+  //! \brief Returns the underlying file descriptor.
+  //!
+  //! \note This is used when this writes to a Memfd.
+  int fd();
+#endif
 
   //! \brief Wraps CheckedCloseHandle().
   //!
@@ -163,8 +185,6 @@ class FileWriter : public FileWriterInterface {
  private:
   ScopedFileHandle file_;
   WeakFileHandleFileWriter weak_file_handle_file_writer_;
-
-  DISALLOW_COPY_AND_ASSIGN(FileWriter);
 };
 
 }  // namespace crashpad

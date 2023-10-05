@@ -469,6 +469,19 @@ public:
         return Napi::Number::New(Env(), (int)status);
     }
 
+
+    Napi::Value GetSchemaProps(NapiInfoCR info)  {
+        REQUIRE_ARGUMENT_STRING(0, schemaName);
+        auto schema = m_ecdb.Schemas().GetSchema(schemaName, true);
+        if (nullptr == schema)
+            BeNapi::ThrowJsException(info.Env(), "schema not found");
+
+        BeJsNapiObject props(info.Env());
+        if (!schema->WriteToJsonValue(props))
+            BeNapi::ThrowJsException(info.Env(), "unable to serialize schema");
+        return props;
+    }
+
     Napi::Value ImportSchema(NapiInfoCR info) {
         REQUIRE_ARGUMENT_STRING(0, schemaPathName);
         DbResult status = JsInterop::ImportSchema(m_ecdb, BeFileName(schemaPathName.c_str(), true));
@@ -575,6 +588,7 @@ public:
             InstanceMethod("getFilePath", &NativeECDb::GetFilePath),
             InstanceMethod("getLastError", &NativeECDb::GetLastError),
             InstanceMethod("getLastInsertRowId", &NativeECDb::GetLastInsertRowId),
+            InstanceMethod("getSchemaProps", &NativeECDb::GetSchemaProps),
             InstanceMethod("importSchema", &NativeECDb::ImportSchema),
             InstanceMethod("isOpen", &NativeECDb::IsOpen),
             InstanceMethod("schemaSyncSetDefaultUri", &NativeECDb::SchemaSyncSetDefaultUri),
@@ -4232,7 +4246,7 @@ private:
         ECDbR m_db;
         bool m_active;
 
-        void _OnIssueReported(BentleyApi::ECN::IssueSeverity severity, BentleyApi::ECN::IssueCategory category, BentleyApi::ECN::IssueType type, Utf8CP message) const override { m_lastIssue = message; }
+        void _OnIssueReported(BentleyApi::ECN::IssueSeverity severity, BentleyApi::ECN::IssueCategory category, BentleyApi::ECN::IssueType type, BentleyApi::ECN::IssueId id, Utf8CP message) const override { m_lastIssue = message; }
 
         explicit IssueListener(ECDbR db) : m_active(SUCCESS == db.AddIssueListener(*this)), m_db(db) {}
         ~IssueListener() {
@@ -5228,7 +5242,8 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
     DEFINE_CONSTRUCTOR;
 
     std::unique_ptr<ECPresentationManager> m_presentationManager;
-    RefCountedPtr<SimpleRuleSetLocater> m_ruleSetLocater;
+    RefCountedPtr<SimpleRuleSetLocater> m_supplementalRulesets;
+    RefCountedPtr<SimpleRuleSetLocater> m_primaryRulesets;
     ECPresentation::JsonLocalState m_localState;
     std::shared_ptr<IModelJsECPresentationUpdateRecordsHandler> m_updateRecords;
     Napi::ThreadSafeFunction m_threadSafeFunc;
@@ -5252,6 +5267,7 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
             InstanceMethod("setRulesetVariableValue", &NativeECPresentationManager::SetRulesetVariableValue),
             InstanceMethod("unsetRulesetVariableValue", &NativeECPresentationManager::UnsetRulesetVariableValue),
             InstanceMethod("getRulesetVariableValue", &NativeECPresentationManager::GetRulesetVariableValue),
+            InstanceMethod("registerSupplementalRuleset", &NativeECPresentationManager::RegisterSupplementalRuleset),
             InstanceMethod("getRulesets", &NativeECPresentationManager::GetRulesets),
             InstanceMethod("addRuleset", &NativeECPresentationManager::AddRuleset),
             InstanceMethod("removeRuleset", &NativeECPresentationManager::RemoveRuleset),
@@ -5332,8 +5348,10 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
             m_updateRecords = std::make_shared<IModelJsECPresentationUpdateRecordsHandler>();
             m_presentationManager = std::unique_ptr<ECPresentationManager>(ECPresentationUtils::CreatePresentationManager(T_HOST.GetIKnownLocationsAdmin(),
                 m_localState, m_updateRecords, props));
-            m_ruleSetLocater = SimpleRuleSetLocater::Create();
-            m_presentationManager->GetLocaters().RegisterLocater(*m_ruleSetLocater);
+            m_supplementalRulesets = SimpleRuleSetLocater::Create();
+            m_presentationManager->GetLocaters().RegisterLocater(*SupplementalRuleSetLocater::Create(*m_supplementalRulesets));
+            m_primaryRulesets = SimpleRuleSetLocater::Create();
+            m_presentationManager->GetLocaters().RegisterLocater(*NonSupplementalRuleSetLocater::Create(*m_primaryRulesets));
             m_threadSafeFunc = Napi::ThreadSafeFunction::New(Env(), Napi::Function::New(Env(), [](NapiInfoCR info) {}), "NativeECPresentationManager", 0, 1);
             }
         catch (std::exception const& e)
@@ -5508,17 +5526,24 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         return CreateReturnValue(std::move(result));
         }
 
+    Napi::Value RegisterSupplementalRuleset(NapiInfoCR info)
+        {
+        REQUIRE_ARGUMENT_STRING(0, rulesetJsonString);
+        ECPresentationResult result = ECPresentationUtils::AddRuleset(*m_supplementalRulesets, rulesetJsonString);
+        return CreateReturnValue(std::move(result));
+        }
+
     Napi::Value GetRulesets(NapiInfoCR info)
         {
         REQUIRE_ARGUMENT_STRING(0, rulesetId);
-        ECPresentationResult result = ECPresentationUtils::GetRulesets(*m_ruleSetLocater, rulesetId);
+        ECPresentationResult result = ECPresentationUtils::GetRulesets(*m_primaryRulesets, rulesetId);
         return CreateReturnValue(std::move(result), true);
         }
 
     Napi::Value AddRuleset(NapiInfoCR info)
         {
         REQUIRE_ARGUMENT_STRING(0, rulesetJsonString);
-        ECPresentationResult result = ECPresentationUtils::AddRuleset(*m_ruleSetLocater, rulesetJsonString);
+        ECPresentationResult result = ECPresentationUtils::AddRuleset(*m_primaryRulesets, rulesetJsonString);
         return CreateReturnValue(std::move(result));
         }
 
@@ -5526,13 +5551,13 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         {
         REQUIRE_ARGUMENT_STRING(0, rulesetId);
         REQUIRE_ARGUMENT_STRING(1, hash);
-        ECPresentationResult result = ECPresentationUtils::RemoveRuleset(*m_ruleSetLocater, rulesetId, hash);
+        ECPresentationResult result = ECPresentationUtils::RemoveRuleset(*m_primaryRulesets, rulesetId, hash);
         return CreateReturnValue(std::move(result));
         }
 
     Napi::Value ClearRulesets(NapiInfoCR info)
         {
-        ECPresentationResult result = ECPresentationUtils::ClearRulesets(*m_ruleSetLocater);
+        ECPresentationResult result = ECPresentationUtils::ClearRulesets(*m_primaryRulesets);
         return CreateReturnValue(std::move(result));
         }
 

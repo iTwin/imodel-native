@@ -32,6 +32,64 @@ void testDefaultFont(FontType fontType) {
     testFont(font);
 }
 
+TEST_F(FontTests, DisposeFontMangerOnCloseDb) {
+    SetupSeedProject();
+    struct ErrorLogger : NativeLogging::Logger {
+        std::vector<Utf8String> m_messages;
+        void LogMessage(Utf8CP category, NativeLogging::SEVERITY sev, Utf8CP msg) override {
+            if (sev == NativeLogging::SEVERITY::LOG_ERROR)
+                m_messages.push_back(msg);
+        }
+        bool IsSeverityEnabled(Utf8CP category, NativeLogging::SEVERITY sev) override{
+            return sev == NativeLogging::SEVERITY::LOG_ERROR ;
+        }
+    };
+
+    auto dbFileName = m_db->GetFileName();
+
+    BeFileName ttfFontPath;
+    ASSERT_TRUE(SUCCESS == DgnDbTestDgnManager::FindTestData(ttfFontPath, L"Fonts\\Karla-Regular.ttf", __FILE__));
+    // Since we testing for BlobIO that is only called for uncompress fonts.
+    TrueTypeFile ttFile(ttfFontPath.GetNameUtf8().c_str(), false);
+    ASSERT_FALSE(ttFile.m_compress) << "Expecting uncompress";
+    ASSERT_TRUE(ttFile.Embed(m_db->Fonts().m_fontDb));
+    EXPECT_TRUE(DbResult::BE_SQLITE_OK == m_db->SaveChanges("Font embedded"));
+    m_db = nullptr;
+
+    OpenDb(m_db, dbFileName, Db::OpenMode::ReadWrite);
+    auto id = m_db->Fonts().GetId(FontType::TrueType, "Karla");
+    ASSERT_TRUE(id.IsValid());
+    auto& font = static_cast<TrueTypeFont&>(m_db->Fonts().FindFont(id));
+
+    // Following is called to trigger GetReader() which open BlobIO handle which
+    // is left open when m_db->CloseDb() is called without the patch in this PR.
+    ASSERT_FALSE(font.ComputeGlyphIndices("Hello, World", false, false).empty()) << "This trigger FindReader()";
+
+    ErrorLogger logger;
+    NativeLogging::Logging::SetLogger(&logger);
+    BeTest::SetFailOnAssert(false);
+    // We do not get any return result from following so we have
+    // depend on LOG.errorv() messages to see if sqlite3_close() has failed in ~DbFile()
+    m_db->CloseDb();
+    BeTest::SetFailOnAssert(true);
+    NativeLogging::Logging::SetLogger(nullptr);
+
+    ASSERT_EQ(logger.m_messages.size(), 0) << "No error should be logged with patch";
+
+    // Without the patch we expect following as first error message
+    // due to open blobio handle as FontManager is not destroyed in
+    // CloseDb() rather destroyed in ~DgnDb() which happen later.
+    if (logger.m_messages.size()>0) {
+        // blobio are just statement with no SQL but has hardcoded program
+        ASSERT_TRUE(logger.m_messages[0].Equals("Statement not closed: ''"));
+    }
+
+    if (logger.m_messages.size()>1) {
+        // This is second message we get once db fail to close.
+        ASSERT_TRUE(logger.m_messages[1].StartsWith("Cannot close database"));
+    }
+}
+
 /**
  * Test embedding of truetype files
  */

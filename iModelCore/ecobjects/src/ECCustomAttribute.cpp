@@ -419,9 +419,18 @@ ECClassCR classDefinition
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-CustomAttributeReadStatus IECCustomAttributeContainer::ReadCustomAttributes (pugi::xml_node containerNode, ECSchemaReadContextR schemaContext, ECSchemaCR fallBackSchema)
+CustomAttributeReadStatus IECCustomAttributeContainer::ReadCustomAttributes (pugi::xml_node containerNode, ECSchemaReadContextR schemaContext)
     {
     CustomAttributeReadStatus status = CustomAttributeReadStatus::Success;
+    ECSchemaP containerSchemaP = GetContainerSchema();
+    if (containerSchemaP == nullptr)
+        {
+        BeAssert (false);
+        LOG.error("Container schema for custom attribute is null.");
+        return CustomAttributeReadStatus::SkippedCustomAttributes;
+        }
+
+    ECSchemaR containerSchema = *containerSchemaP;
 
     // allow for multiple <ECCustomAttributes> nodes, even though we only ever write one.
     for (pugi::xml_node customAttributeNode : containerNode.children(ECXML_CUSTOM_ATTRIBUTES_ELEMENT))
@@ -430,7 +439,7 @@ CustomAttributeReadStatus IECCustomAttributeContainer::ReadCustomAttributes (pug
             {
             if(customAttributeClassNode.type() != pugi::xml_node_type::node_element)
                 continue;
-            ECInstanceReadContextPtr context = ECInstanceReadContext::CreateContext (schemaContext, fallBackSchema, NULL);
+            ECInstanceReadContextPtr context = ECInstanceReadContext::CreateContextForCA (containerSchema, schemaContext);
 
             IECInstancePtr  customAttributeInstance;
             InstanceReadStatus thisStatus = InstanceReadStatus::Success;
@@ -448,22 +457,25 @@ CustomAttributeReadStatus IECCustomAttributeContainer::ReadCustomAttributes (pug
             if (InstanceReadStatus::Success != thisStatus && InstanceReadStatus::CommentOnly != thisStatus)
                 {
                 // In EC3 we will fail to load the schema if any invalid custom attributes are found, for EC2 schemas we will skip the invalid attributes and continue to load the schema
-                if (fallBackSchema.OriginalECXmlVersionAtLeast(ECVersion::V3_0))
+                if (containerSchema.OriginalECXmlVersionAtLeast(ECVersion::V3_0))
                     status = CustomAttributeReadStatus::InvalidCustomAttributes;
                 else if (CustomAttributeReadStatus::Success == status)
                     status = CustomAttributeReadStatus::SkippedCustomAttributes;
                 }
             if (customAttributeInstance.IsValid())
                 {
-                ECSchemaP containerSchema = const_cast<ECSchemaP>(_GetContainerSchema());
                 ECClassP customAttribClass = const_cast<ECClassP>(&customAttributeInstance->GetClass());
-                if ((_GetContainerSchema() != &(customAttributeInstance->GetClass().GetSchema()) && !ECSchema::IsSchemaReferenced(*containerSchema, customAttribClass->GetSchemaR())))
-                    containerSchema->AddReferencedSchema(customAttribClass->GetSchemaR());
+                if ((containerSchemaP != &(customAttributeInstance->GetClass().GetSchema()) && !ECSchema::IsSchemaReferenced(containerSchema, customAttribClass->GetSchemaR())))
+                    {
+                    LOG.warningv("Custom attribute '%s' on schema '%s' requires reference to '%s' which is not on the schema. Adding reference during deserialization...",
+                        customAttributeClassNode.name(), ns.c_str(), containerSchema.GetFullSchemaName().c_str());
+                    containerSchema.AddReferencedSchema(customAttribClass->GetSchemaR());
+                    }
                 ECObjectsStatus caSetStatus = SetCustomAttribute(*customAttributeInstance);
                 if (ECObjectsStatus::Success != caSetStatus)
                     {
                     // In EC3 we will fail to load the schema if any invalid custom attributes are found, for EC2 schemas we will skip the invalid attributes and continue to load the schema
-                    if (fallBackSchema.OriginalECXmlVersionAtLeast(ECVersion::V3_0))
+                    if (containerSchema.OriginalECXmlVersionAtLeast(ECVersion::V3_0))
                         status = CustomAttributeReadStatus::InvalidCustomAttributes;
                     else if (CustomAttributeReadStatus::Success == status)
                         status = CustomAttributeReadStatus::SkippedCustomAttributes;

@@ -28,14 +28,14 @@ RgbFactor RenderingAsset::GetColor(Utf8CP name) const
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-static DPoint2d getDPoint2dValue(BeJsConst rootValue, Utf8CP key)
+static DPoint2d getDPoint2dValue(BeJsConst rootValue, Utf8CP key, bool required = true)
     {
     auto value = rootValue[key];
     DPoint2d point = { 0.0, 0.0 };
 
     if (value.size() < 2)
         {
-        BeAssert(false);
+        BeAssert(!required && "Expected material JSON to contain a 2d point");
         return point;
         }
 
@@ -128,7 +128,7 @@ Render::TextureMapping::ConstantLodParams RenderingAsset::TextureMap::GetConstan
     {
     return Render::TextureMapping::ConstantLodParams(
         m_value[RENDER_MATERIAL_PatternConstantLodRepetitions].asDouble(1.0),
-        getDPoint2dValue(m_value, RENDER_MATERIAL_PatternConstantLodOffset),
+        getDPoint2dValue(m_value, RENDER_MATERIAL_PatternConstantLodOffset, false),
         m_value[RENDER_MATERIAL_PatternConstantLodMinDistanceClamp].asDouble(1.0),
         m_value[RENDER_MATERIAL_PatternConstantLodMaxDistanceClamp].asDouble(4096.0 * 1024.0 * 1024.0) );
     }

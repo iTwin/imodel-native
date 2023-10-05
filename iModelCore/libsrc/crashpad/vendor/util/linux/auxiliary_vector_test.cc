@@ -1,4 +1,4 @@
-// Copyright 2017 The Crashpad Authors. All rights reserved.
+// Copyright 2017 The Crashpad Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@
 #include <limits>
 
 #include "base/bit_cast.h"
-#include "base/macros.h"
 #include "build/build_config.h"
 #include "gtest/gtest.h"
 #include "test/errors.h"
@@ -34,7 +33,7 @@
 #include "util/numeric/int128.h"
 #include "util/process/process_memory_linux.h"
 
-#if !defined(OS_ANDROID)
+#if !BUILDFLAG(IS_ANDROID)
 // TODO(jperaza): This symbol isn't defined when building in chromium for
 // Android. There may be another symbol to use.
 extern "C" {
@@ -73,7 +72,7 @@ void TestAgainstCloneOrSelf(pid_t pid) {
   ASSERT_TRUE(aux.GetValue(AT_BASE, &interp_base));
   EXPECT_TRUE(mappings.FindMapping(interp_base));
 
-#if !defined(OS_ANDROID)
+#if !BUILDFLAG(IS_ANDROID)
   LinuxVMAddress entry_addr;
   ASSERT_TRUE(aux.GetValue(AT_ENTRY, &entry_addr));
   EXPECT_EQ(entry_addr, FromPointerCast<LinuxVMAddress>(START_SYMBOL));
@@ -95,8 +94,7 @@ void TestAgainstCloneOrSelf(pid_t pid) {
   ASSERT_TRUE(aux.GetValue(AT_EGID, &egid));
   EXPECT_EQ(egid, getegid());
 
-  ProcessMemoryLinux memory;
-  ASSERT_TRUE(memory.Initialize(pid));
+  ProcessMemoryLinux memory(&connection);
 
   LinuxVMAddress platform_addr;
   ASSERT_TRUE(aux.GetValue(AT_PLATFORM, &platform_addr));
@@ -120,8 +118,9 @@ void TestAgainstCloneOrSelf(pid_t pid) {
 
 #if defined(AT_SYSINFO_EHDR)
   LinuxVMAddress vdso_addr;
-  ASSERT_TRUE(aux.GetValue(AT_SYSINFO_EHDR, &vdso_addr));
-  EXPECT_TRUE(mappings.FindMapping(vdso_addr));
+  if (aux.GetValue(AT_SYSINFO_EHDR, &vdso_addr)) {
+    EXPECT_TRUE(mappings.FindMapping(vdso_addr));
+  }
 #endif  // AT_SYSINFO_EHDR
 
 #if defined(AT_EXECFN)
@@ -151,14 +150,16 @@ TEST(AuxiliaryVector, ReadSelf) {
 class ReadChildTest : public Multiprocess {
  public:
   ReadChildTest() : Multiprocess() {}
+
+  ReadChildTest(const ReadChildTest&) = delete;
+  ReadChildTest& operator=(const ReadChildTest&) = delete;
+
   ~ReadChildTest() {}
 
  private:
   void MultiprocessParent() override { TestAgainstCloneOrSelf(ChildPID()); }
 
   void MultiprocessChild() override { CheckedReadFileAtEOF(ReadPipeHandle()); }
-
-  DISALLOW_COPY_AND_ASSIGN(ReadChildTest);
 };
 
 TEST(AuxiliaryVector, ReadChild) {

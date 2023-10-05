@@ -16,13 +16,13 @@ dirToSearch = $(BuildContext)VendorAPI/zlib/
 nameToDefine = _FILE_OFFSET_BITS=64
 %include cdefapnd.mki
 
+dirToSearch = $(VendorDir)compat/non_win/
+%include cincapnd.mki
+
 dirToSearch = $(VendorDir)compat/non_mac/
 %include cincapnd.mki
 
 dirToSearch = $(VendorDir)compat/linux/
-%include cincapnd.mki
-
-dirToSearch = $(VendorDir)compat/non_win/
 %include cincapnd.mki
 
 nameToDefine = CRASHPAD_LSS_SOURCE_EMBEDDED
@@ -42,6 +42,8 @@ nameToDefine = CRASHPAD_USE_BORINGSSL
 $(o)annotation_snapshot$(oext) : $(VendorDir)snapshot/annotation_snapshot.cc ${MultiCompileDepends}
 
 $(o)capture_memory$(oext) : $(VendorDir)snapshot/capture_memory.cc ${MultiCompileDepends}
+
+$(o)capture_memory_delegate_linux$(oext) : $(VendorDir)snapshot/linux/capture_memory_delegate_linux.cc ${MultiCompileDepends}
 
 $(o)cpu_context$(oext) : $(VendorDir)snapshot/cpu_context.cc ${MultiCompileDepends}
 
@@ -157,6 +159,8 @@ $(o)minidump_thread_id_map$(oext) : $(VendorDir)minidump/minidump_thread_id_map.
 
 $(o)minidump_thread_writer$(oext) : $(VendorDir)minidump/minidump_thread_writer.cc ${MultiCompileDepends}
 
+$(o)minidump_thread_name_list_writer$(oext) : $(VendorDir)minidump/minidump_thread_name_list_writer.cc ${MultiCompileDepends}
+
 $(o)minidump_unloaded_module_writer$(oext) : $(VendorDir)minidump/minidump_unloaded_module_writer.cc ${MultiCompileDepends}
 
 $(o)minidump_user_extension_stream_data_source$(oext) : $(VendorDir)minidump/minidump_user_extension_stream_data_source.cc ${MultiCompileDepends}
@@ -171,11 +175,27 @@ $(o)minidump_writer_util$(oext) : $(VendorDir)minidump/minidump_writer_util.cc $
 
 $(o)tool_support$(oext) : $(VendorDir)tools/tool_support.cc ${MultiCompileDepends}
 
+$(o)time_linux$(oext) : $(VendorDir)util/misc/time_linux.cc ${MultiCompileDepends}
+
+$(o)spawn_subprocess$(oext) : $(VendorDir)util/posix/spawn_subprocess.cc ${MultiCompileDepends}
+
+$(o)base94_output_stream$(oext) : $(VendorDir)util/stream/base94_output_stream.cc ${MultiCompileDepends}
+
+$(o)log_output_stream$(oext) : $(VendorDir)util/stream/log_output_stream.cc ${MultiCompileDepends}
+
+$(o)zlib_output_stream$(oext) : $(VendorDir)util/stream/zlib_output_stream.cc ${MultiCompileDepends}
+
+$(o)output_stream_file_writer$(oext) : $(VendorDir)util/file/output_stream_file_writer.cc ${MultiCompileDepends}
+
+$(o)page_size_posix$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/base/memory/page_size_posix.cc ${MultiCompileDepends}
+
 # -- libhandler -----------------------------------------------------------------------------------
 
 $(o)crash_report_upload_thread$(oext) : $(VendorDir)handler/crash_report_upload_thread.cc ${MultiCompileDepends}
 
 $(o)handler_main$(oext) : $(VendorDir)handler/handler_main.cc ${MultiCompileDepends}
+
+$(o)capture_snapshot$(oext) : $(VendorDir)handler/linux/capture_snapshot.cc ${MultiCompileDepends}
 
 $(o)crash_report_exception_handler$(oext) : $(VendorDir)handler/linux/crash_report_exception_handler.cc ${MultiCompileDepends}
 
