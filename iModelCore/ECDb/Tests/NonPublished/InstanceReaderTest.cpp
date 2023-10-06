@@ -746,7 +746,7 @@ TEST_F(InstanceReaderFixture, InstanceQueriesAfterUpdate)
     ECSqlStatement instanceQueryStatement;
     ASSERT_EQ(ECSqlStatus::Success, instanceQueryStatement.Prepare(m_ecdb, "select $ from ts.TestClass"));
     ASSERT_EQ(BE_SQLITE_ROW, instanceQueryStatement.Step());
-    EXPECT_STREQ(instanceQueryStatement.GetValueText(0), "{\"ECInstanceId\":\"0x1\",\"ECClassId\":\"0x4a\",\"StructProp\":{\"DoubleProp\":15.25,\"StringProp\":\"InitialValue\"},\"PrimitiveProp\":15.65}");
+    EXPECT_STREQ(instanceQueryStatement.GetValueText(0), "{\"ECInstanceId\":\"0x1\",\"ECClassId\":\"0x4c\",\"StructProp\":{\"DoubleProp\":15.25,\"StringProp\":\"InitialValue\"},\"PrimitiveProp\":15.65}");
     instanceQueryStatement.Finalize();
 
     // Update data in TestClass
@@ -759,7 +759,7 @@ TEST_F(InstanceReaderFixture, InstanceQueriesAfterUpdate)
     // Instance queries should return updated values
     ASSERT_EQ(ECSqlStatus::Success, instanceQueryStatement.Prepare(m_ecdb, "select $ from ts.TestClass"));
     ASSERT_EQ(BE_SQLITE_ROW, instanceQueryStatement.Step());
-    EXPECT_STREQ(instanceQueryStatement.GetValueText(0), "{\"ECInstanceId\":\"0x1\",\"ECClassId\":\"0x4a\",\"StructProp\":{\"DoubleProp\":25.15,\"StringProp\":\"UpdatedValue\"},\"PrimitiveProp\":65.15}");
+    EXPECT_STREQ(instanceQueryStatement.GetValueText(0), "{\"ECInstanceId\":\"0x1\",\"ECClassId\":\"0x4c\",\"StructProp\":{\"DoubleProp\":25.15,\"StringProp\":\"UpdatedValue\"},\"PrimitiveProp\":65.15}");
     instanceQueryStatement.Finalize();
     }
 
