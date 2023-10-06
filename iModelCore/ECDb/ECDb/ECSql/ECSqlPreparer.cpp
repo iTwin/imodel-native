@@ -2050,6 +2050,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareExtractInstanceExp(NativeSqlBuilder::List& 
     const auto flags = QueryOptionsInstanceFlags(exp);
     builder.AppendFormatted("json(extract_inst(%s,%s, 0x%x))", classIdSql.front().GetSql().c_str(),instanceIdSql.front().GetSql().c_str(), flags);
     nativeSqlSnippets.push_back(std::move(builder));
+    ctx.SetIsInstanceQuery(true);
     return ECSqlStatus::Success;
 }
 //-----------------------------------------------------------------------------------------

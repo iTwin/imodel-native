@@ -713,6 +713,56 @@ TEST_F(InstanceReaderFixture, check_link_table_serialization) {
     stmt.Finalize();
 }
 
+TEST_F(InstanceReaderFixture, InstanceQueriesAfterUpdate) 
+    {
+    // Setup test db
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("Test9876.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+
+            <ECStructClass typeName="StructProp" modifier="Sealed">
+                <ECProperty propertyName="DoubleProp" typeName="double" />
+                <ECProperty propertyName="StringProp" typeName="string" />
+            </ECStructClass>
+
+            <ECEntityClass typeName="TestClass" modifier="Sealed">
+                <ECStructProperty propertyName="StructProp" typeName="StructProp" />
+                <ECProperty propertyName="PrimitiveProp" typeName="double" />
+            </ECEntityClass>
+        </ECSchema>)xml")));
+
+    // Insert initial values in test db
+    ECSqlStatement insertStatement;
+    insertStatement.Prepare(m_ecdb, "insert into ts.TestClass (StructProp, PrimitiveProp) values (?, 15.65)");
+    auto& structProp = insertStatement.GetBinder(1);
+    structProp["DoubleProp"].BindDouble(15.25);
+    structProp["StringProp"].BindText("InitialValue", IECSqlBinder::MakeCopy::No);
+
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, insertStatement.Step(key));
+
+    m_ecdb.SaveChanges();
+
+    // Instance queries should return initial values
+    ECSqlStatement instanceQueryStatement;
+    ASSERT_EQ(ECSqlStatus::Success, instanceQueryStatement.Prepare(m_ecdb, "select $ from ts.TestClass"));
+    ASSERT_EQ(BE_SQLITE_ROW, instanceQueryStatement.Step());
+    EXPECT_STREQ(instanceQueryStatement.GetValueText(0), "{\"ECInstanceId\":\"0x1\",\"ECClassId\":\"0x4a\",\"StructProp\":{\"DoubleProp\":15.25,\"StringProp\":\"InitialValue\"},\"PrimitiveProp\":15.65}");
+    instanceQueryStatement.Finalize();
+
+    // Update data in TestClass
+    ECSqlStatement updateStatement;
+    ASSERT_EQ(ECSqlStatus::Success, updateStatement.Prepare(m_ecdb, "update ts.TestClass set StructProp.DoubleProp=25.15, StructProp.StringProp='UpdatedValue', PrimitiveProp=65.15"));
+    ASSERT_EQ(BE_SQLITE_DONE, updateStatement.Step());
+    updateStatement.Finalize();
+    m_ecdb.SaveChanges();
+    
+    // Instance queries should return updated values
+    ASSERT_EQ(ECSqlStatus::Success, instanceQueryStatement.Prepare(m_ecdb, "select $ from ts.TestClass"));
+    ASSERT_EQ(BE_SQLITE_ROW, instanceQueryStatement.Step());
+    EXPECT_STREQ(instanceQueryStatement.GetValueText(0), "{\"ECInstanceId\":\"0x1\",\"ECClassId\":\"0x4a\",\"StructProp\":{\"DoubleProp\":25.15,\"StringProp\":\"UpdatedValue\"},\"PrimitiveProp\":65.15}");
+    instanceQueryStatement.Finalize();
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
