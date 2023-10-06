@@ -12,6 +12,9 @@ pr:
     include:
       - main
       - release/*
+  paths:
+    exclude:
+      - iModelJsNodeAddon/package_version.txt
 
 resources:
   repositories:
@@ -22,7 +25,7 @@ resources:
     - repository: itwinjs-core
       type: github
       name: iTwin/itwinjs-core
-      ref: imodel02
+      ref: master
       endpoint: iTwin
     - repository: imodeljs-build-pipeline-scripts
       type: git
@@ -32,4 +35,3 @@ extends:
   template: /build/templates/pipeline.yml@imodel-native-internal
   parameters:
     otherRepo: imodel-native-internal
-
