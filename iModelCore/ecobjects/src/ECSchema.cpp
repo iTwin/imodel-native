@@ -3457,39 +3457,18 @@ bool ECSchema::IsSchemaReferenced(ECSchemaCR thisSchema, ECSchemaCR potentiallyR
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECSchema::IsSchemaReferenced(ECSchemaCR thisSchema, ECSchemaCR potentiallyReferencedSchema, ECN::SchemaMatchType matchType)
-    {
-    ECSchemaReferenceListCR referencedSchemas = thisSchema.GetReferencedSchemas();
-    return referencedSchemas.end() != referencedSchemas.Find(potentiallyReferencedSchema.GetSchemaKey(), matchType);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ECSchema::IsSchemaIndirectlyReferenced(ECSchemaCR thisSchema, ECSchemaCR potentiallyReferencedSchema, ECN::SchemaMatchType matchType)
+bool ECSchema::IsSchemaReferenced(ECSchemaCR thisSchema, ECSchemaCR potentiallyReferencedSchema, ECN::SchemaMatchType matchType, bool checkIndirectReferences)
     {
     ECSchemaReferenceListCR referencedSchemas = thisSchema.GetReferencedSchemas();
     if (referencedSchemas.end() != referencedSchemas.Find(potentiallyReferencedSchema.GetSchemaKey(), matchType))
         return true;
-    for (ECSchemaReferenceList::const_iterator it = referencedSchemas.begin(); it != referencedSchemas.end(); ++it)
+    if (checkIndirectReferences)
         {
-        if (ECSchema::IsSchemaIndirectlyReferenced(*it->second, potentiallyReferencedSchema, matchType))
-            return true;
-        }
-    return false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* Returns true if thisSchema directly references possiblyReferencedSchema
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool DirectlyReferences(ECSchemaCP thisSchema, ECSchemaCP possiblyReferencedSchema)
-    {
-    ECSchemaReferenceListCR referencedSchemas = thisSchema->GetReferencedSchemas();
-    for (ECSchemaReferenceList::const_iterator it = referencedSchemas.begin(); it != referencedSchemas.end(); ++it)
-        {
-        if (it->second.get() == possiblyReferencedSchema)
-            return true;
+        for (ECSchemaReferenceList::const_iterator it = referencedSchemas.begin(); it != referencedSchemas.end(); ++it)
+            {
+            if (ECSchema::IsSchemaReferenced(*it->second, potentiallyReferencedSchema, matchType, true /*=checkIndirectReferences*/))
+                return true;
+            }
         }
     return false;
     }
@@ -3499,7 +3478,7 @@ static bool DirectlyReferences(ECSchemaCP thisSchema, ECSchemaCP possiblyReferen
 //---------------------------------------------------------------------------------------
 static bool DependsOn(ECSchemaCP thisSchema, ECSchemaCP possibleDependency)
     {
-    if (DirectlyReferences(thisSchema, possibleDependency))
+    if (ECSchema::IsSchemaReferenced(*thisSchema, *possibleDependency))
         return true;
 
     SupplementalSchemaMetaDataPtr metaData;
