@@ -34,7 +34,6 @@ enum class PresentationQueryFieldType
 
 struct PresentationQueryContractSimpleField;
 struct PresentationQueryContractFunctionField;
-struct PresentationQueryContractDynamicField;
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
@@ -137,6 +136,31 @@ public:
     bvector<RefCountedPtr<PresentationQueryContractField const>> const& GetFunctionParameters() const {return m_parameters;}
 
     void SetDistinctArguments(bool value) {m_distinctArguments = value;}
+};
+
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct EXPORT_VTABLE_ATTRIBUTE PresentationQueryContractBinaryOpField : PresentationQueryContractField
+{
+private:
+    Utf8String m_operator;
+    RefCountedPtr<PresentationQueryContractField const> m_lhs;
+    RefCountedPtr<PresentationQueryContractField const> m_rhs;
+
+protected:
+    PresentationQueryContractBinaryOpField(Utf8CP name, Utf8String op, RefCountedPtr<PresentationQueryContractField const> lhs, RefCountedPtr<PresentationQueryContractField const> rhs,
+        bool allowsPrefix, bool isAggregateField, FieldVisibility fieldVisibility)
+        : PresentationQueryContractField(name, allowsPrefix, isAggregateField, fieldVisibility), m_operator(op), m_lhs(lhs), m_rhs(rhs)
+        {}
+    virtual ECPRESENTATION_EXPORT QueryClauseAndBindings _GetSelectClause(Utf8CP prefix, std::function<bool(Utf8CP)> const&) const override;
+
+public:
+    static RefCountedPtr<PresentationQueryContractBinaryOpField> Create(Utf8CP name, Utf8String op, RefCountedPtr<PresentationQueryContractField const> lhs, RefCountedPtr<PresentationQueryContractField const> rhs,
+        bool allowsPrefix = true, bool isAggregateField = false, FieldVisibility fieldVisibility = FieldVisibility::Both)
+        {
+        return new PresentationQueryContractBinaryOpField(name, op, lhs, rhs, allowsPrefix, isAggregateField, fieldVisibility);
+        }
 };
 
 /*=================================================================================**//**

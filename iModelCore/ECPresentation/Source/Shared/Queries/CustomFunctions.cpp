@@ -20,7 +20,6 @@
 
 #define HANDLE_CUSTOM_FUNCTION_FAILURE_RETURN_CSTR(msg) \
     { \
-    ctx.SetResultError(msg, BE_SQLITE_ERROR); \
     DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, msg); \
     }
 
@@ -89,6 +88,21 @@ protected:
         : BeSQLite::ScalarFunction(name, argsCount, returnType), m_manager(manager)
         {}
     CustomFunctionsContext& GetContext() const {return m_manager.GetCurrentContext();}
+    virtual void _ComputeValue(BeSQLite::DbFunction::Context&, int nArgs, BeSQLite::DbValue* args) = 0;
+    void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) final
+        {
+        try {
+            _ComputeValue(ctx, nArgs, args);
+            }
+        catch (std::runtime_error const& e)
+            {
+            ctx.SetResultError(e.what());
+            }
+        catch (...)
+            {
+            ctx.SetResultError(Utf8PrintfString("Error computing value in function `%s`", GetName()).c_str());
+            }
+        }
 };
 
 /*=================================================================================**//**
@@ -134,6 +148,36 @@ protected:
         : BeSQLite::AggregateFunction(name, argsCount, returnType), m_manager(manager)
         {}
     CustomFunctionsContext& GetContext() const {return m_manager.GetCurrentContext();}
+    virtual void _Step(Context&, int nArgs, DbValue* args) = 0;
+    virtual void _Finish(Context&) = 0;                        
+    void _StepAggregate(Context& ctx, int nArgs, DbValue* args) final
+        {
+        try {
+            _Step(ctx, nArgs, args);
+            }
+        catch (std::runtime_error const& e)
+            {
+            ctx.SetResultError(e.what());
+            }
+        catch (...)
+            {
+            ctx.SetResultError(Utf8PrintfString("Error in aggregate function's `%s` step phase", GetName()).c_str());
+            }
+        }
+    void _FinishAggregate(Context& ctx) final
+        {
+        try {
+            _Finish(ctx);
+            }
+        catch (std::runtime_error const& e)
+            {
+            ctx.SetResultError(e.what());
+            }
+        catch (...)
+            {
+            ctx.SetResultError(Utf8PrintfString("Error in aggregate function's `%s` finish phase", GetName()).c_str());
+            }
+        }
 };
 
 /*=================================================================================**//**
@@ -162,7 +206,7 @@ public:
     GetECInstanceDisplayLabelScalar(CustomFunctionsManager const& manager)
         : CachingScalarFunction(FUNCTION_NAME_GetECInstanceDisplayLabel, 4, DbValueType::TextVal, manager)
         {}
-    void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
+    void _ComputeValue(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
         {
         ARGUMENTS_COUNT_PRECONDITION(4);
 
@@ -216,7 +260,7 @@ public:
     GetRelatedDisplayLabelScalar(CustomFunctionsManager const& manager, Utf8CP name)
         : CachingScalarFunction(name, -1, DbValueType::TextVal, manager)
         {}
-    void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
+    void _ComputeValue(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
         {
         ARGUMENTS_COUNT_PRECONDITION_CUSTOM(nArgs == 2 || nArgs == 3, "2 or 3");
 
@@ -268,7 +312,7 @@ struct GetECClassDisplayLabelScalar : CachingScalarFunction<bmap<ECClassId, std:
     GetECClassDisplayLabelScalar(CustomFunctionsManager const& manager)
         : CachingScalarFunction(FUNCTION_NAME_GetECClassDisplayLabel, 2, DbValueType::TextVal, manager)
         {}
-    void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
+    void _ComputeValue(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
         {
         ARGUMENTS_COUNT_PRECONDITION(2);
 
@@ -321,7 +365,7 @@ public:
     GetNavigationPropertyValueScalar(CustomFunctionsManager const& manager)
         : CachingScalarFunction(FUNCTION_NAME_GetNavigationPropertyValue, 2, DbValueType::TextVal, manager)
         {}
-    void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
+    void _ComputeValue(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
         {
         ARGUMENTS_COUNT_PRECONDITION(2);
 
@@ -385,7 +429,7 @@ struct EvaluateECExpressionScalar : CachingScalarFunction<bmap<ECExpressionScala
     EvaluateECExpressionScalar(CustomFunctionsManager const& manager)
         : CachingScalarFunction(FUNCTION_NAME_EvaluateECExpression, 3, DbValueType::TextVal, manager)
         {}
-    void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
+    void _ComputeValue(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
         {
         ARGUMENTS_COUNT_PRECONDITION(3);
 
@@ -475,7 +519,7 @@ struct GetECPropertyDisplayLabelScalar : CachingScalarFunction<bmap<ECPropertyDi
     GetECPropertyDisplayLabelScalar(CustomFunctionsManager const& manager)
         : CachingScalarFunction(FUNCTION_NAME_GetECPropertyDisplayLabel, 5, DbValueType::TextVal, manager)
         {}
-    void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
+    void _ComputeValue(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
         {
         ARGUMENTS_COUNT_PRECONDITION(5);
 
@@ -563,7 +607,7 @@ struct GetPointAsJsonStringScalar : ECPresentation::ScalarFunction
     GetPointAsJsonStringScalar(CustomFunctionsManager const& manager)
         : ScalarFunction(FUNCTION_NAME_GetPointAsJsonString, -1, DbValueType::TextVal, manager)
         {}
-    void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
+    void _ComputeValue(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
         {
         ARGUMENTS_COUNT_PRECONDITION_CUSTOM(nArgs == 2 || nArgs == 3, "2 or 3");
 
@@ -597,7 +641,7 @@ struct GetPropertyDisplayValueScalar : ECPresentation::ScalarFunction
     GetPropertyDisplayValueScalar(CustomFunctionsManager const& manager)
         : ScalarFunction(FUNCTION_NAME_GetPropertyDisplayValue, 4, DbValueType::IntegerVal, manager)
         {}
-    void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
+    void _ComputeValue(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
         {
         ARGUMENTS_COUNT_PRECONDITION(4);
 
@@ -622,7 +666,7 @@ struct ArePointsEqualByValueScalar : ECPresentation::ScalarFunction
     ArePointsEqualByValueScalar(CustomFunctionsManager const& manager)
         : ScalarFunction(FUNCTION_NAME_ArePointsEqualByValue, -1, DbValueType::IntegerVal, manager)
         {}
-    void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
+    void _ComputeValue(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
         {
         ARGUMENTS_COUNT_PRECONDITION_CUSTOM(nArgs == 3 || nArgs == 4, "3 or 4");
 
@@ -655,7 +699,7 @@ struct AreDoublesEqualByValueScalar : ECPresentation::ScalarFunction
     AreDoublesEqualByValueScalar(CustomFunctionsManager const& manager)
         : ScalarFunction(FUNCTION_NAME_AreDoublesEqualByValue, 2, DbValueType::IntegerVal, manager)
         {}
-    void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
+    void _ComputeValue(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
         {
         ARGUMENTS_COUNT_PRECONDITION(2);
         ctx.SetResultInt((int)0 == BeNumerical::Compare(args[0].GetValueDouble(), args[1].GetValueDouble()));
@@ -673,7 +717,7 @@ public:
     GetSortingValueScalar(CustomFunctionsManager const& manager)
         : CachingScalarFunction(FUNCTION_NAME_GetSortingValue, 1, DbValueType::TextVal, manager)
         {}
-    void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
+    void _ComputeValue(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
         {
         ARGUMENTS_COUNT_PRECONDITION(1);
 
@@ -704,7 +748,7 @@ struct GetRangeIndexScalar : CachingScalarFunction<bmap<double, int>>
     GetRangeIndexScalar(CustomFunctionsManager const& manager)
         : CachingScalarFunction(FUNCTION_NAME_GetRangeIndex, 1, DbValueType::IntegerVal, manager)
         {}
-    void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
+    void _ComputeValue(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
         {
         ARGUMENTS_COUNT_PRECONDITION(1);
 
@@ -737,7 +781,7 @@ struct GetRangeImageIdScalar : CachingScalarFunction<bmap<double, std::shared_pt
     GetRangeImageIdScalar(CustomFunctionsManager const& manager)
         : CachingScalarFunction(FUNCTION_NAME_GetRangeImageId, 1, DbValueType::TextVal, manager)
         {}
-    void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
+    void _ComputeValue(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
         {
         ARGUMENTS_COUNT_PRECONDITION(1);
 
@@ -778,7 +822,7 @@ struct IsOfClassScalar : ECPresentation::ScalarFunction
     IsOfClassScalar(CustomFunctionsManager const& manager)
         : ECPresentation::ScalarFunction(FUNCTION_NAME_IsOfClass, -1, DbValueType::IntegerVal, manager)
         {}
-    void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
+    void _ComputeValue(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
         {
         ARGUMENTS_COUNT_PRECONDITION_CUSTOM(nArgs == 2 || nArgs == 3, "2 or 3");
 
@@ -813,7 +857,7 @@ struct GetECClassIdScalar : ECPresentation::ScalarFunction
     GetECClassIdScalar(CustomFunctionsManager const& manager)
         : ECPresentation::ScalarFunction(FUNCTION_NAME_GetECClassId, 2, DbValueType::IntegerVal, manager)
         {}
-    void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
+    void _ComputeValue(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
         {
         ARGUMENTS_COUNT_PRECONDITION(2);
 
@@ -835,7 +879,7 @@ struct GetECClassNameScalar : ECPresentation::ScalarFunction
     GetECClassNameScalar(CustomFunctionsManager const& manager)
         : ECPresentation::ScalarFunction(FUNCTION_NAME_GetECClassName, 2, DbValueType::TextVal, manager)
         {}
-    void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
+    void _ComputeValue(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
         {
         ARGUMENTS_COUNT_PRECONDITION(2);
 
@@ -862,7 +906,7 @@ struct GetECClassLabelScalar : ECPresentation::ScalarFunction
     GetECClassLabelScalar(CustomFunctionsManager const& manager)
         : ECPresentation::ScalarFunction(FUNCTION_NAME_GetECClassLabel, 1, DbValueType::TextVal, manager)
         {}
-    void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
+    void _ComputeValue(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
         {
         ARGUMENTS_COUNT_PRECONDITION(1);
 
@@ -887,7 +931,7 @@ struct GetPropertyValueJsonScalar : ECPresentation::ScalarFunction
     GetPropertyValueJsonScalar(CustomFunctionsManager const& manager)
         : ECPresentation::ScalarFunction(FUNCTION_NAME_GetPropertyValueJson, 2, DbValueType::TextVal, manager)
         {}
-    void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
+    void _ComputeValue(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
         {
         ARGUMENTS_COUNT_PRECONDITION(2);
 
@@ -942,7 +986,7 @@ private:
         }
 protected:
     virtual Utf8String _GetValueToAppend(DbValue const& arg) const = 0;
-    void _StepAggregate(Context& ctx, int nArgs, DbValue* args) override
+    void _Step(Context& ctx, int nArgs, DbValue* args) override
         {
         ARGUMENTS_COUNT_PRECONDITION(1);
         Utf8StringR agg = GetSerializedAggregateJsonArray(ctx);
@@ -951,7 +995,7 @@ protected:
             agg.append(",");
         agg.append(_GetValueToAppend(args[0])).append("]");
         }
-    void _FinishAggregate(Context& ctx) override
+    void _Finish(Context& ctx) override
         {
         Utf8StringCR agg = GetSerializedAggregateJsonArray(ctx);
         ctx.SetResultText(agg.c_str(), (int)agg.size(), DbFunction::Context::CopyData::Yes);
@@ -1015,7 +1059,7 @@ struct GetInstanceKeyScalar : ECPresentation::ScalarFunction
     GetInstanceKeyScalar(CustomFunctionsManager const& manager)
         : ScalarFunction(FUNCTION_NAME_GetInstanceKey, 2, DbValueType::TextVal, manager)
         {}
-    void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
+    void _ComputeValue(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
         {
         ARGUMENTS_COUNT_PRECONDITION(2);
 
@@ -1057,7 +1101,7 @@ protected:
             setP = new bset<ECInstanceKey>();
         return *setP;
         }
-    virtual void _StepAggregate(Context& ctx, int nArgs, DbValue* args) override
+    virtual void _Step(Context& ctx, int nArgs, DbValue* args) override
         {
         ARGUMENTS_COUNT_PRECONDITION_CUSTOM(nArgs == 1 || nArgs == 2, "1 or 2");
         bset<ECInstanceKey>& keys = GetKeys(ctx);
@@ -1075,7 +1119,7 @@ protected:
                 keys.insert(ECInstanceKey(classId, instanceId));
             }
         }
-    void _FinishAggregate(Context& ctx) override
+    void _Finish(Context& ctx) override
         {
         bset<ECInstanceKey> const& keys = GetKeys(ctx);
         Utf8String serialized = ValueHelpers::GetECInstanceKeysAsJsonString(keys);
@@ -1102,7 +1146,7 @@ public:
 struct GetLimitedInstanceKeysAggregate : GetInstanceKeysAggregate
 {
 protected:
-    void _StepAggregate(Context& ctx, int nArgs, DbValue* args) override
+    void _Step(Context& ctx, int nArgs, DbValue* args) override
         {
         ARGUMENTS_COUNT_PRECONDITION_CUSTOM(nArgs == 2 || nArgs == 3, "2 or 3");
         uint64_t maxKeys = args[0].GetValueUInt64();
@@ -1139,7 +1183,7 @@ struct GetStringVariableValueScalar : ECPresentation::ScalarFunction
     GetStringVariableValueScalar(CustomFunctionsManager const& manager)
         : ScalarFunction(FUNCTION_NAME_GetVariableStringValue, 1, DbValueType::TextVal, manager)
         {}
-    void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
+    void _ComputeValue(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
         {
         ARGUMENTS_COUNT_PRECONDITION(1);
 
@@ -1162,7 +1206,7 @@ struct GetIntVariableValueScalar : ECPresentation::ScalarFunction
     GetIntVariableValueScalar(CustomFunctionsManager const& manager)
         : ScalarFunction(FUNCTION_NAME_GetVariableIntValue, 1, DbValueType::IntegerVal, manager)
         {}
-    void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
+    void _ComputeValue(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
         {
         ARGUMENTS_COUNT_PRECONDITION(1);
 
@@ -1184,7 +1228,7 @@ struct GetBoolVariableValueScalar : ECPresentation::ScalarFunction
     GetBoolVariableValueScalar(CustomFunctionsManager const& manager)
         : ScalarFunction(FUNCTION_NAME_GetVariableBoolValue, 1, DbValueType::IntegerVal, manager)
         {}
-    void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
+    void _ComputeValue(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
         {
         ARGUMENTS_COUNT_PRECONDITION(1);
 
@@ -1208,7 +1252,7 @@ struct InIntVariableValuesScalar : CachingScalarFunction<bmap<Utf8String, bvecto
         : CachingScalarFunction(FUNCTION_NAME_InVariableIntValues, 2, DbValueType::IntegerVal, manager)
         {}
     void _OnUserSettingChanged(Utf8CP settingId) override {GetCache().erase(settingId);}
-    void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
+    void _ComputeValue(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
         {
         ARGUMENTS_COUNT_PRECONDITION(2);
 
@@ -1246,7 +1290,7 @@ struct HasVariableScalar : ECPresentation::ScalarFunction
     HasVariableScalar(CustomFunctionsManager const& manager)
         : ScalarFunction(FUNCTION_NAME_HasVariable, 1, DbValueType::IntegerVal, manager)
         {}
-    void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
+    void _ComputeValue(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
         {
         ARGUMENTS_COUNT_PRECONDITION(1);
 
@@ -1266,7 +1310,7 @@ struct GetECEnumerationValueScalar : ECPresentation::ScalarFunction
     GetECEnumerationValueScalar(CustomFunctionsManager const& manager)
         : ScalarFunction(FUNCTION_NAME_GetECEnumerationValue, 3, DbValueType::TextVal, manager)
         {}
-    void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
+    void _ComputeValue(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
         {
         ARGUMENTS_COUNT_PRECONDITION(3);
 
@@ -1296,7 +1340,7 @@ struct GetECEnumerationValueScalar : ECPresentation::ScalarFunction
 struct ECInstanceKeysArrayScalar : ECPresentation::ScalarFunction
 {
 protected:
-    void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
+    void _ComputeValue(Context& ctx, int nArgs, DbValue* args) override
         {
         ARGUMENTS_COUNT_PRECONDITION_CUSTOM(nArgs % 2 == 0, "equal number of");
 
@@ -1341,7 +1385,7 @@ private:
         return *strP;
         }
 protected:
-    void _StepAggregate(Context& ctx, int nArgs, DbValue* args) override
+    void _Step(Context& ctx, int nArgs, DbValue* args) override
         {
         ARGUMENTS_COUNT_PRECONDITION(1);
 
@@ -1360,7 +1404,7 @@ protected:
             aggregate.append(args[0].GetValueText() + 1);
             }
         }
-    void _FinishAggregate(Context& ctx) override
+    void _Finish(Context& ctx) override
         {
         Utf8StringCR str = GetAggregatedJsonString(ctx);
         ctx.SetResultText(str.c_str(), (int)str.size(), DbFunction::Context::CopyData::Yes);
@@ -1383,75 +1427,11 @@ struct GuidToStrScalar : ECPresentation::ScalarFunction
     GuidToStrScalar(CustomFunctionsManager const& manager)
         : ScalarFunction(FUNCTION_NAME_GuidToStr, 1, DbValueType::TextVal, manager)
         {}
-    void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
+    void _ComputeValue(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
         {
         ARGUMENTS_COUNT_PRECONDITION(1);
         Utf8String guidStr = args[0].GetValueGuid().ToString();
         ctx.SetResultText(guidStr.c_str(), guidStr.size(), DbFunction::Context::CopyData::Yes);
-        }
-    };
-
-/*=================================================================================**//**
-* Parameters:
-* - NavNodeLabelDefinition json string
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-struct ToBase36Scalar : ECPresentation::ScalarFunction
-    {
-    ToBase36Scalar(CustomFunctionsManager const& manager)
-        : ScalarFunction(FUNCTION_NAME_ToBase36, 1, DbValueType::TextVal, manager)
-        {}
-    void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
-        {
-        ARGUMENTS_COUNT_PRECONDITION(1);
-
-        LabelDefinitionPtr labelDefinition = LabelDefinition::FromString(args[0].GetValueText());
-        uint64_t rawValue = labelDefinition->GetRawValue()->AsSimpleValue()->GetValue().GetUint64();
-        Utf8String base36 = CommonTools::ToBase36String(rawValue);
-        Utf8String newDefinition = labelDefinition->SetStringValue(base36.c_str()).ToJsonString();
-        ctx.SetResultText(newDefinition.c_str(), newDefinition.size(), DbFunction::Context::CopyData::Yes);
-        }
-    };
-
-/*=================================================================================**//**
-* WIP temporary until SQL supports bitwise operators
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-struct ParseBriefcaseIdScalar : ECPresentation::ScalarFunction
-    {
-    ParseBriefcaseIdScalar(CustomFunctionsManager const& manager)
-        : ScalarFunction(FUNCTION_NAME_ParseBriefcaseId, 1, DbValueType::TextVal, manager)
-        {}
-    void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
-        {
-        ARGUMENTS_COUNT_PRECONDITION(1);
-
-        uint64_t id = args[0].GetValueUInt64();
-        uint64_t briefcaseId = id >> 40;
-        rapidjson::Value value(briefcaseId);
-        Utf8String valueJson = LabelDefinition::Create(value, "uint64", std::to_string(briefcaseId).c_str())->ToJsonString();
-        ctx.SetResultText(valueJson.c_str(), valueJson.size(), DbFunction::Context::CopyData::Yes);
-        }
-    };
-
-/*=================================================================================**//**
-* WIP temporary until SQL supports bitwise operators
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-struct ParseLocalIdScalar : ECPresentation::ScalarFunction
-    {
-    ParseLocalIdScalar(CustomFunctionsManager const& manager)
-        : ScalarFunction(FUNCTION_NAME_ParseLocalId, 1, DbValueType::TextVal, manager)
-        {}
-    void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
-        {
-        ARGUMENTS_COUNT_PRECONDITION(1);
-
-        uint64_t id = args[0].GetValueUInt64();
-        uint64_t localId = id & (((uint64_t)1 << 40) - 1);
-        rapidjson::Value value(localId);
-        Utf8String valueJson = LabelDefinition::Create(value, "uint64", std::to_string(localId).c_str())->ToJsonString();
-        ctx.SetResultText(valueJson.c_str(), valueJson.size(), DbFunction::Context::CopyData::Yes);
         }
     };
 
@@ -1492,7 +1472,7 @@ struct JoinOptionallyRequiredScalar : ECPresentation::ScalarFunction
     JoinOptionallyRequiredScalar(CustomFunctionsManager const& manager)
         : ScalarFunction(FUNCTION_NAME_JoinOptionallyRequired, -1, DbValueType::TextVal, manager)
         {}
-    void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
+    void _ComputeValue(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
         {
         ARGUMENTS_COUNT_PRECONDITION_CUSTOM(1 == (nArgs % 2), "odd number of");
 
@@ -1611,7 +1591,7 @@ struct CompareDoublesScalar : ECPresentation::ScalarFunction
 
         return (sub < 0) ? -1 : 1;
         }
-    void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
+    void _ComputeValue(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
         {
         ARGUMENTS_COUNT_PRECONDITION(2);
 
@@ -1700,7 +1680,7 @@ struct GetECPropertyValueDisplayLabelScalar : ECPropertyValueScalarBase
     GetECPropertyValueDisplayLabelScalar(CustomFunctionsManager const& manager)
         : ECPropertyValueScalarBase(FUNCTION_NAME_GetECPropertyValueLabel, 3, DbValueType::TextVal, manager)
         {}
-    void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
+    void _ComputeValue(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
         {
         ARGUMENTS_COUNT_PRECONDITION(3);
 
@@ -1754,7 +1734,7 @@ struct GetLabelDefinitionDisplayValueScalar : CachingScalarFunction<bmap<Utf8Str
         : CachingScalarFunction(FUNCTION_NAME_GetLabelDefinitionDisplayValue, 1, DbValueType::TextVal, manager)
         {}
 
-    void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
+    void _ComputeValue(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
         {
         ARGUMENTS_COUNT_PRECONDITION(1);
 
@@ -1801,7 +1781,7 @@ public:
         : ECPropertyValueScalarBase(FUNCTION_NAME_GetFormattedValue, -1, DbValueType::TextVal, manager)
         {}
 
-    void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
+    void _ComputeValue(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
         {
         ARGUMENTS_COUNT_PRECONDITION_CUSTOM(3 == nArgs || 4 == nArgs, "3 or 4");
 
@@ -2062,9 +2042,6 @@ void CustomFunctionsInjector::CreateFunctions()
     m_functions.push_back(std::make_shared<GetNavigationPropertyValueScalar>(CustomFunctionsManager::GetManager()));
     m_functions.push_back(std::make_shared<GetRelatedDisplayLabelScalar>(CustomFunctionsManager::GetManager(), FUNCTION_NAME_GetNavigationPropertyLabel));
     m_functions.push_back(std::make_shared<GetRelatedDisplayLabelScalar>(CustomFunctionsManager::GetManager(), FUNCTION_NAME_GetRelatedDisplayLabel));
-    m_functions.push_back(std::make_shared<ToBase36Scalar>(CustomFunctionsManager::GetManager()));
-    m_functions.push_back(std::make_shared<ParseBriefcaseIdScalar>(CustomFunctionsManager::GetManager()));
-    m_functions.push_back(std::make_shared<ParseLocalIdScalar>(CustomFunctionsManager::GetManager()));
     m_functions.push_back(std::make_shared<JoinOptionallyRequiredScalar>(CustomFunctionsManager::GetManager()));
     m_functions.push_back(std::make_shared<CompareDoublesScalar>(CustomFunctionsManager::GetManager()));
     m_functions.push_back(std::make_shared<GetECPropertyValueDisplayLabelScalar>(CustomFunctionsManager::GetManager()));
