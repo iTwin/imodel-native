@@ -381,14 +381,16 @@ BentleyStatus PropertyNameExp::ResolveColumnRef(ECSqlParseContext& ctx)
      }
 
     if (matchProps.empty()) {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "No property or enumeration found for expression '%s'.", m_propertyPath.ToString().c_str());
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0565,
+            "No property or enumeration found for expression '%s'.", m_propertyPath.ToString().c_str());
         return ERROR;
     }
 
     const auto local = countLocalRefs(matchProps);
     const auto inherited = matchProps.size() - local;
     if (!(local == 1 || inherited == 1)) {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Expression '%s' in ECSQL statement is ambiguous.", m_propertyPath.ToString().c_str());
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0566,
+            "Expression '%s' in ECSQL statement is ambiguous.", m_propertyPath.ToString().c_str());
         return ERROR;
     }
 

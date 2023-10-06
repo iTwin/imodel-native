@@ -469,6 +469,19 @@ public:
         return Napi::Number::New(Env(), (int)status);
     }
 
+
+    Napi::Value GetSchemaProps(NapiInfoCR info)  {
+        REQUIRE_ARGUMENT_STRING(0, schemaName);
+        auto schema = m_ecdb.Schemas().GetSchema(schemaName, true);
+        if (nullptr == schema)
+            BeNapi::ThrowJsException(info.Env(), "schema not found");
+
+        BeJsNapiObject props(info.Env());
+        if (!schema->WriteToJsonValue(props))
+            BeNapi::ThrowJsException(info.Env(), "unable to serialize schema");
+        return props;
+    }
+
     Napi::Value ImportSchema(NapiInfoCR info) {
         REQUIRE_ARGUMENT_STRING(0, schemaPathName);
         DbResult status = JsInterop::ImportSchema(m_ecdb, BeFileName(schemaPathName.c_str(), true));
@@ -575,6 +588,7 @@ public:
             InstanceMethod("getFilePath", &NativeECDb::GetFilePath),
             InstanceMethod("getLastError", &NativeECDb::GetLastError),
             InstanceMethod("getLastInsertRowId", &NativeECDb::GetLastInsertRowId),
+            InstanceMethod("getSchemaProps", &NativeECDb::GetSchemaProps),
             InstanceMethod("importSchema", &NativeECDb::ImportSchema),
             InstanceMethod("isOpen", &NativeECDb::IsOpen),
             InstanceMethod("schemaSyncSetDefaultUri", &NativeECDb::SchemaSyncSetDefaultUri),
@@ -4232,7 +4246,7 @@ private:
         ECDbR m_db;
         bool m_active;
 
-        void _OnIssueReported(BentleyApi::ECN::IssueSeverity severity, BentleyApi::ECN::IssueCategory category, BentleyApi::ECN::IssueType type, Utf8CP message) const override { m_lastIssue = message; }
+        void _OnIssueReported(BentleyApi::ECN::IssueSeverity severity, BentleyApi::ECN::IssueCategory category, BentleyApi::ECN::IssueType type, BentleyApi::ECN::IssueId id, Utf8CP message) const override { m_lastIssue = message; }
 
         explicit IssueListener(ECDbR db) : m_active(SUCCESS == db.AddIssueListener(*this)), m_db(db) {}
         ~IssueListener() {

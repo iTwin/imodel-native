@@ -1,4 +1,4 @@
-// Copyright 2015 The Crashpad Authors. All rights reserved.
+// Copyright 2015 The Crashpad Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,16 +15,18 @@
 #include "client/prune_crash_reports.h"
 
 #include <sys/stat.h>
+#include <stdint.h>
 
 #include <algorithm>
 #include <vector>
 
 #include "base/logging.h"
+#include "base/notreached.h"
 #include "build/build_config.h"
 
 namespace crashpad {
 
-void PruneCrashReportDatabase(CrashReportDatabase* database,
+size_t PruneCrashReportDatabase(CrashReportDatabase* database,
                               PruneCondition* condition) {
   std::vector<CrashReportDatabase::Report> all_reports;
   CrashReportDatabase::OperationStatus status;
@@ -32,14 +34,14 @@ void PruneCrashReportDatabase(CrashReportDatabase* database,
   status = database->GetPendingReports(&all_reports);
   if (status != CrashReportDatabase::kNoError) {
     LOG(ERROR) << "PruneCrashReportDatabase: Failed to get pending reports";
-    return;
+    return 0;
   }
 
   std::vector<CrashReportDatabase::Report> completed_reports;
   status = database->GetCompletedReports(&completed_reports);
   if (status != CrashReportDatabase::kNoError) {
     LOG(ERROR) << "PruneCrashReportDatabase: Failed to get completed reports";
-    return;
+    return 0;
   }
   all_reports.insert(all_reports.end(), completed_reports.begin(),
                      completed_reports.end());
@@ -50,15 +52,20 @@ void PruneCrashReportDatabase(CrashReportDatabase* database,
         return lhs.creation_time > rhs.creation_time;
       });
 
+  size_t num_pruned = 0;
   for (const auto& report : all_reports) {
     if (condition->ShouldPruneReport(report)) {
       status = database->DeleteReport(report.uuid);
       if (status != CrashReportDatabase::kNoError) {
         LOG(ERROR) << "Database Pruning: Failed to remove report "
                    << report.uuid.ToString();
+      } else {
+        num_pruned++;
       }
     }
   }
+
+  return num_pruned;
 
   // TODO(rsesek): For databases that do not use a directory structure, it is
   // possible for the metadata sidecar to become corrupted and thus leave

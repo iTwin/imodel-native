@@ -8,10 +8,11 @@
 
 #include <vector>
 
+#include "base/cxx17_backports.h"
 #include "base/logging.h"
-#include "base/scoped_clear_errno.h"
-#include "base/stl_util.h"
+#include "base/scoped_clear_last_error.h"
 #include "base/strings/string_util.h"
+#include "build/build_config.h"
 
 namespace base {
 
@@ -33,9 +34,7 @@ static void StringAppendVT(StringType* dst,
   va_list ap_copy;
   va_copy(ap_copy, ap);
 
-#if !defined(OS_WIN)
-  ScopedClearErrno clear_errno;
-#endif
+  ScopedClearLastError clear_errno;
   int result = vsnprintfT(stack_buf, size(stack_buf), format, ap_copy);
   va_end(ap_copy);
 
@@ -48,7 +47,7 @@ static void StringAppendVT(StringType* dst,
   size_t mem_length = size(stack_buf);
   while (true) {
     if (result < 0) {
-#if !defined(OS_WIN)
+#if !BUILDFLAG(IS_WIN)
       // On Windows, vsnprintfT always returns the number of characters in a
       // fully-formatted string, so if we reach this point, something else is
       // wrong and no amount of buffer-doubling is going to fix it.
@@ -58,7 +57,7 @@ static void StringAppendVT(StringType* dst,
         DLOG(WARNING) << "Unable to printf the requested string due to error.";
         return;
       }
-#if !defined(OS_WIN)
+#if !BUILDFLAG(IS_WIN)
       // Try doubling the buffer size.
       mem_length *= 2;
 #endif

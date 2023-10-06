@@ -1,4 +1,4 @@
-// Copyright 2018 The Crashpad Authors. All rights reserved.
+// Copyright 2018 The Crashpad Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 #include <stdint.h>
 
 #include "snapshot/cpu_context.h"
+#include "util/linux/pac_helper.h"
 #include "util/numeric/safe_assignment.h"
 
 namespace crashpad {
@@ -61,7 +62,8 @@ class StackReferencesAddressRange : public MemorySnapshot::Delegate {
                                             aligned_sp_offset);
     size_t word_count = (size - aligned_sp_offset) / sizeof(Pointer);
     for (size_t index = 0; index < word_count; ++index) {
-      if (words[index] >= low_ && words[index] < high_) {
+      auto word = StripPACBits(words[index]);
+      if (word >= low_ && word < high_) {
         return true;
       }
     }
@@ -84,13 +86,14 @@ ProcessSnapshotSanitized::~ProcessSnapshotSanitized() = default;
 
 bool ProcessSnapshotSanitized::Initialize(
     const ProcessSnapshot* snapshot,
-    const std::vector<std::string>* annotations_whitelist,
-    const std::vector<std::pair<VMAddress, VMAddress>>* memory_range_whitelist,
+    std::unique_ptr<const std::vector<std::string>> allowed_annotations,
+    std::unique_ptr<const std::vector<std::pair<VMAddress, VMAddress>>>
+        allowed_memory_ranges,
     VMAddress target_module_address,
     bool sanitize_stacks) {
   INITIALIZATION_STATE_SET_INITIALIZING(initialized_);
   snapshot_ = snapshot;
-  annotations_whitelist_ = annotations_whitelist;
+  allowed_annotations_ = std::move(allowed_annotations);
   sanitize_stacks_ = sanitize_stacks;
 
   if (target_module_address) {
@@ -138,10 +141,10 @@ bool ProcessSnapshotSanitized::Initialize(
     }
   }
 
-  if (annotations_whitelist_) {
+  if (allowed_annotations_) {
     for (const auto module : snapshot_->Modules()) {
       modules_.emplace_back(std::make_unique<internal::ModuleSnapshotSanitized>(
-          module, annotations_whitelist_));
+          module, allowed_annotations_.get()));
     }
   }
 
@@ -158,7 +161,7 @@ bool ProcessSnapshotSanitized::Initialize(
     }
   }
 
-  process_memory_.Initialize(snapshot_->Memory(), memory_range_whitelist);
+  process_memory_.Initialize(snapshot_->Memory(), allowed_memory_ranges.get());
 
   INITIALIZATION_STATE_SET_VALID(initialized_);
   return true;
@@ -226,7 +229,7 @@ std::vector<const ThreadSnapshot*> ProcessSnapshotSanitized::Threads() const {
 
 std::vector<const ModuleSnapshot*> ProcessSnapshotSanitized::Modules() const {
   INITIALIZATION_STATE_DCHECK_VALID(initialized_);
-  if (!annotations_whitelist_) {
+  if (!allowed_annotations_) {
     return snapshot_->Modules();
   }
 

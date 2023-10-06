@@ -3369,9 +3369,11 @@ SchemaReadStatus ECSchema::ReadFromXmlString(ECSchemaPtr& schemaOut, Utf8CP ecSc
         BeStringUtilities::Strncpy(first200Bytes, ecSchemaXml, 200);
         first200Bytes[200] = '\0';
         if (SchemaReadStatus::DuplicateSchema == status)
-            schemaContext.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::InvalidInputData, "Failed to read XML from string(1st 200 characters approx.): %s.  \nSchema already loaded.  Use ECSchemaReadContext::LocateSchema to load schema", first200Bytes);
+            schemaContext.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::InvalidInputData, ECIssueId::EC_0008,
+                "Failed to read XML from string(1st 200 characters approx.): %s.  \nSchema already loaded.  Use ECSchemaReadContext::LocateSchema to load schema", first200Bytes);
         else
-            schemaContext.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::InvalidInputData, "Failed to read XML from string (1st 200 characters approx.): %s", first200Bytes);
+            schemaContext.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::InvalidInputData, ECIssueId::EC_0009,
+                "Failed to read XML from string (1st 200 characters approx.): %s", first200Bytes);
 
         schemaContext.RemoveSchema(*schemaOut);
         schemaOut = nullptr;
@@ -3555,9 +3557,16 @@ SchemaWriteStatus ECSchema::WriteToXmlString(WStringR ecSchemaXml, ECVersion ecX
 
     BeXmlWriterPtr xmlWriter = BeXmlWriter::Create();
 
-    SchemaWriteStatus status;
     SchemaXmlWriter schemaWriter(*xmlWriter.get(), *this, ecXmlVersion);
-    if (SchemaWriteStatus::Success != (status = schemaWriter.Serialize()))
+
+    const auto status = schemaWriter.Serialize();
+    if (status == SchemaWriteStatus::FailedToSaveXml && ecXmlVersion == ECVersion::V3_1)
+        {
+        LOG.errorv("The ECXml 3.1 schema failed to serialize. The schema will be serialized as ECXml 3.2 instead.");
+        return WriteToXmlString(ecSchemaXml, ECVersion::V3_2);
+        }
+
+    if (SchemaWriteStatus::Success != status)
         return status;
 
     xmlWriter->ToString (ecSchemaXml);
@@ -3575,9 +3584,16 @@ SchemaWriteStatus ECSchema::WriteToXmlString(Utf8StringR ecSchemaXml, ECVersion 
     BeXmlWriterPtr xmlWriter = BeXmlWriter::Create();
     xmlWriter->SetIndentation(4);
 
-    SchemaWriteStatus status;
     SchemaXmlWriter schemaWriter(*xmlWriter.get(), *this, ecXmlVersion);
-    if (SchemaWriteStatus::Success != (status = schemaWriter.Serialize()))
+    
+    const auto status = schemaWriter.Serialize();
+    if (status == SchemaWriteStatus::FailedToSaveXml && ecXmlVersion == ECVersion::V3_1)
+        {
+        LOG.errorv("The ECXml 3.1 schema failed to serialize. The schema will be serialized as ECXml 3.2 instead.");
+        return WriteToXmlString(ecSchemaXml, ECVersion::V3_2);
+        }
+
+    if (SchemaWriteStatus::Success != status)
         return status;
 
     xmlWriter->ToString (ecSchemaXml);
@@ -3605,19 +3621,25 @@ SchemaWriteStatus ECSchema::WriteToEC2XmlString(Utf8StringR ec2SchemaXml, ECSche
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaWriteStatus ECSchema::WriteToXmlFile(WCharCP ecSchemaXmlFile, ECVersion ecXmlVersion, bool utf16) const
     {
-    BeXmlWriterPtr xmlWriter = BeXmlWriter::CreateFileWriter(ecSchemaXmlFile);
+    auto serializeToFile = [&ecSchemaXmlFile, &utf16] (ECSchemaCR schema, ECVersion ecXmlVersion) {
+        BeXmlWriterPtr xmlWriter = BeXmlWriter::CreateFileWriter(ecSchemaXmlFile);
 
-    if (xmlWriter.IsNull())
-        return SchemaWriteStatus::FailedToCreateXml;
+        if (xmlWriter.IsNull())
+            return SchemaWriteStatus::FailedToCreateXml;
 
-    xmlWriter->SetIndentation(4);
+        xmlWriter->SetIndentation(4);
 
-    SchemaWriteStatus status;
-    SchemaXmlWriter schemaWriter(*xmlWriter.get(), *this, ecXmlVersion);
-    if (SchemaWriteStatus::Success != (status = schemaWriter.Serialize(utf16)))
-        return status;
+        SchemaXmlWriter schemaWriter(*xmlWriter.get(), schema, ecXmlVersion);
+        return schemaWriter.Serialize(utf16);
+    };
 
-    return SchemaWriteStatus::Success;
+    const auto status = serializeToFile(*this, ecXmlVersion);
+    if (status == SchemaWriteStatus::FailedToSaveXml && ecXmlVersion == ECVersion::V3_1)
+        {
+        LOG.errorv("The ECXml 3.1 schema failed to serialize. The schema will be serialized as ECXml 3.2 instead.");
+        return serializeToFile(*this, ECVersion::V3_2);
+        }
+    return status;
     }
 
 //---------------------------------------------------------------------------------------

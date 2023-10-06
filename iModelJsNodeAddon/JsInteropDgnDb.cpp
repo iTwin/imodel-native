@@ -392,6 +392,17 @@ Napi::String JsInterop::InsertElement(DgnDbR dgndb, Napi::Object obj, Napi::Valu
         return Napi::String::New(Env(), newEl->GetElementId().ToHexStr());
     } catch (std::logic_error const& err) {
         BeNapi::ThrowJsException(Env(), err.what(), (int)DgnDbStatus::BadArg);
+#if defined (__APPLE__)
+    // Apple builds don't include runtime type information (RTTI), which means that exception
+    // handling doesn't support subclasses. So even though std::invalid_argument is a subclass of
+    // std::logic_error, the above catch does not work.
+    } catch (std::invalid_argument const& err) {
+        BeNapi::ThrowJsException(Env(), err.what(), (int)DgnDbStatus::BadArg);
+    } catch (Napi::Error const& err) {
+        throw err;
+    } catch (...) {
+        BeNapi::ThrowJsException(Env(), "Unknown exception", (int)DgnDbStatus::BadArg);
+#endif
     }
 }
 
@@ -419,6 +430,17 @@ void JsInterop::UpdateElement(DgnDbR dgndb, Napi::Object obj) {
             BeNapi::ThrowJsException(Env(), "error updating", (int)status);
     } catch (std::logic_error const& err) {
         BeNapi::ThrowJsException(Env(), err.what(), (int)DgnDbStatus::BadArg);
+#if defined (__APPLE__)
+    // Apple builds don't include runtime type information (RTTI), which means that exception
+    // handling doesn't support subclasses. So even though std::invalid_argument is a subclass of
+    // std::logic_error, the above catch does not work.
+    } catch (std::invalid_argument const& err) {
+        BeNapi::ThrowJsException(Env(), err.what(), (int)DgnDbStatus::BadArg);
+    } catch (Napi::Error const& err) {
+        throw err;
+    } catch (...) {
+        BeNapi::ThrowJsException(Env(), "Unknown exception", (int)DgnDbStatus::BadArg);
+#endif
     }
 }
 
@@ -477,6 +499,20 @@ DgnDbStatus JsInterop::SimplifyElementGeometry(DgnDbR db, Napi::Object simplifyA
         GetNativeLogger().errorv("While simplifying element %s's geometry an error occurred: '%s'", simplifyArgs.Get("id").As<Napi::String>().Utf8Value().c_str(), err.what());
         return DgnDbStatus::BadElement;
         }
+#if defined (__APPLE__)
+    // Apple builds don't include runtime type information (RTTI), which means that exception
+    // handling doesn't support subclasses. That means that any subclasses of std::runtime_error
+    // that get thrown won't be caught above.
+    catch (Napi::Error const& err)
+        {
+        throw err;
+        }
+    catch (...)
+        {
+        GetNativeLogger().errorv("While simplifying element %s's geometry an error occurred: 'Unknown error'", simplifyArgs.Get("id").As<Napi::String>().Utf8Value().c_str());
+        return DgnDbStatus::BadElement;
+        }
+#endif
 
     if (!changed)
        return DgnDbStatus::Success;
