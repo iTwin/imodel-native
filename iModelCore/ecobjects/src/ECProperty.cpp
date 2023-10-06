@@ -1399,7 +1399,7 @@ ECObjectsStatus PrimitiveECProperty::SetType (ECEnumerationCR enumerationType)
     {
     if (&(enumerationType.GetSchema()) != &(this->GetClass().GetSchema()))
         {
-        if (!ECSchema::IsSchemaReferenced(this->GetClass().GetSchema(), enumerationType.GetSchema()))
+        if (!ECSchema::IsSchemaIndirectlyReferenced(this->GetClass().GetSchema(), enumerationType.GetSchema()))
             return ECObjectsStatus::SchemaNotFound;
         }
 

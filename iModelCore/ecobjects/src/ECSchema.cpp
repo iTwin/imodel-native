@@ -3447,28 +3447,11 @@ POP_DISABLE_DEPRECATION_WARNINGS
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Returns true if thisSchema indirectly references potentiallyReferencedSchema
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool IndirectlyReferences(ECSchemaCR thisSchema, ECSchemaCR potentiallyReferencedSchema, ECN::SchemaMatchType matchType)
-    {
-    ECSchemaReferenceListCR referencedSchemas = thisSchema.GetReferencedSchemas();
-    if (referencedSchemas.end() != referencedSchemas.Find(potentiallyReferencedSchema.GetSchemaKey(), matchType))
-        return true;
-    for (ECSchemaReferenceList::const_iterator it = referencedSchemas.begin(); it != referencedSchemas.end(); ++it)
-        {
-        if (IndirectlyReferences(*it->second, potentiallyReferencedSchema, matchType))
-            return true;
-        }
-    return false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECSchema::IsSchemaReferenced(ECSchemaCR thisSchema, ECSchemaCR potentiallyReferencedSchema)
     {
-    return IndirectlyReferences(thisSchema, potentiallyReferencedSchema, ECN::SchemaMatchType::Exact);
+    return ECSchema::IsSchemaReferenced(thisSchema, potentiallyReferencedSchema, ECN::SchemaMatchType::Exact);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3478,6 +3461,22 @@ bool ECSchema::IsSchemaReferenced(ECSchemaCR thisSchema, ECSchemaCR potentiallyR
     {
     ECSchemaReferenceListCR referencedSchemas = thisSchema.GetReferencedSchemas();
     return referencedSchemas.end() != referencedSchemas.Find(potentiallyReferencedSchema.GetSchemaKey(), matchType);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECSchema::IsSchemaIndirectlyReferenced(ECSchemaCR thisSchema, ECSchemaCR potentiallyReferencedSchema, ECN::SchemaMatchType matchType)
+    {
+    ECSchemaReferenceListCR referencedSchemas = thisSchema.GetReferencedSchemas();
+    if (referencedSchemas.end() != referencedSchemas.Find(potentiallyReferencedSchema.GetSchemaKey(), matchType))
+        return true;
+    for (ECSchemaReferenceList::const_iterator it = referencedSchemas.begin(); it != referencedSchemas.end(); ++it)
+        {
+        if (ECSchema::IsSchemaIndirectlyReferenced(*it->second, potentiallyReferencedSchema, matchType))
+            return true;
+        }
+    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**
