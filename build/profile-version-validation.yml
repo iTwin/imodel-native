@@ -25,7 +25,6 @@ resources:
   repositories:
     - repository: profileversion-tests
       type: github
-      ref: io-fix-profile-validation
       endpoint: imodel-native
       name: iTwin/profileversion-tests
 
@@ -47,4 +46,3 @@ extends:
     otherRepo: imodel-native
     defaultNativeBranch: ${{ parameters.defaultNativeBranch }}
     defaultCoreBranch: ${{ parameters.defaultCoreBranch }}
-
