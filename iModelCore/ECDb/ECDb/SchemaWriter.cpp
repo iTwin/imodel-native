@@ -2721,7 +2721,7 @@ BentleyStatus SchemaWriter::UpdateCustomAttributes(Context& ctx, SchemaPersisten
                 // Not sure why the SchemaComparer found the new CA but it isn't here now; however, we can't fail the import because of this.
                 if (ctx.IgnoreIllegalDeletionsAndModifications())
                     {
-                    ctx.Issues().ReportV(IssueSeverity::Info, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0635, "Found a new custom attribute added that is null. Error suppressed as DoNotFailForDeletionsOrModifications flag is set.");
+                    ctx.Issues().ReportV(IssueSeverity::Info, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0635, "Ignoring upgrade error: Found a new custom attribute added that is null. Error suppressed as DoNotFailForDeletionsOrModifications flag is set.");
                     continue;
                     }
                 return ERROR;
@@ -2745,7 +2745,7 @@ BentleyStatus SchemaWriter::UpdateCustomAttributes(Context& ctx, SchemaPersisten
                 {
                 if (ctx.IgnoreIllegalDeletionsAndModifications())
                     {
-                    ctx.Issues().ReportV(IssueSeverity::Info, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0636, "Found a deleted custom attribute that is null. Error suppressed as DoNotFailForDeletionsOrModifications flag is set.");
+                    ctx.Issues().ReportV(IssueSeverity::Info, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0636, "Ignoring upgrade error: Found a deleted custom attribute that is null. Error suppressed as DoNotFailForDeletionsOrModifications flag is set.");
                     continue;
                     }
 
