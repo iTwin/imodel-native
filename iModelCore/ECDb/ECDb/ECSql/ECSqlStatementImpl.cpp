@@ -97,6 +97,7 @@ ECSqlStatus ECSqlStatement::Impl::Prepare(ECDbCR ecdb, Db const* dataSourceECDb,
     if (!stat.IsSuccess())
         Finalize();
 
+    preparedStatement.SetIsInstanceQuery(ctx.IsInstanceQuery());
     return stat;
     }
 
