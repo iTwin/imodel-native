@@ -171,7 +171,7 @@ RowRender::Document& RowRender::ClearAndGetCachedXmlDocument() const {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BeJsValue RowRender::GetInstanceJsonObject(ECInstanceKeyCR instanceKey, IECSqlRow const& ecsqlRow, InstanceReader::JsonParams const& param ) const  {
-    if (instanceKey == m_instanceKey && param == m_jsonParam && m_accessString.empty()) {
+    if (instanceKey == m_instanceKey && param == m_jsonParam && m_accessString.empty() && !(m_conn.IsDbOpen() && m_conn.IsWriteable())) {
         return BeJsValue(m_cachedXmlDoc);
     }
     auto& rowsDoc = ClearAndGetCachedXmlDocument();
@@ -1118,6 +1118,10 @@ InstanceReader::InstanceReader(ECDbCR ecdb): m_pImpl(new Impl(*this, ecdb)) {}
 //+---------------+---------------+---------------+---------------+---------------+------
 bool InstanceReader::Seek(Position const& pos, RowCallback callback ) const {
     return m_pImpl->Seek(pos, callback);
+}
+
+void InstanceReader::Reset() {
+    return m_pImpl->Reset();
 }
 
 //////////////////////////////////////////////////////////////////////////

@@ -264,5 +264,6 @@ struct InstanceReader::Impl final {
         bool Seek(Position const& position, RowCallback callback) const {
             return m_reader.Seek(position, callback);
         }
+        void Reset() { m_reader.Clear(); }
 };
 END_BENTLEY_SQLITE_EC_NAMESPACE

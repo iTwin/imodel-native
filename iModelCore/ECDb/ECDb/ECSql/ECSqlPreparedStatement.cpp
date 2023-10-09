@@ -425,6 +425,9 @@ DbResult ECSqlSelectPreparedStatement::Step()
     if (SUCCESS != AssertIsValid())
         return BE_SQLITE_ERROR;
 
+    if (IsInstanceQuery())
+        m_ecdb.GetInstanceReader().Reset();
+
     const DbResult stat = DoStep();
     if (BE_SQLITE_ROW == stat)
         {
