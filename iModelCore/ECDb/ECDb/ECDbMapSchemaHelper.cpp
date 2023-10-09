@@ -528,7 +528,7 @@ BentleyStatus ImportRequiresVersionCustomAttribute::Verify(IssueDataSource const
     Nullable<Utf8String> version;
     if (TryGetECDbRuntimeVersion(version) != BentleyStatus::SUCCESS)
         {
-        issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0585, "ECSchema %s has an invalid ImportRequiresVersion custom attribute.", fullSchemaName);
+        issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0654, "ECSchema %s has an invalid ImportRequiresVersion custom attribute.", fullSchemaName);
         return ERROR;
         }
 
@@ -536,13 +536,13 @@ BentleyStatus ImportRequiresVersionCustomAttribute::Verify(IssueDataSource const
     ProfileVersion requiredProfileVersion(0, 0, 0, 0);
     if (version.IsNull() || requiredProfileVersion.FromString(version.ValueR().c_str()) != BentleyStatus::SUCCESS)
         {
-        issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0586, "ECSchema %s has a ImportRequiresVersion custom attribute with a missing or invalid ECDbRuntimeVersion property.", fullSchemaName);
+        issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0655, "ECSchema %s has a ImportRequiresVersion custom attribute with a missing or invalid ECDbRuntimeVersion property.", fullSchemaName);
         return ERROR;
         }
 
     if(requiredProfileVersion > profileVersion)
         {
-        issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0587, "ECSchema %s requires ECDb version %s, but the current runtime version is only %s.", fullSchemaName, requiredProfileVersion.ToString().c_str(), profileVersion.ToString().c_str());
+        issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0656, "ECSchema %s requires ECDb version %s, but the current runtime version is only %s.", fullSchemaName, requiredProfileVersion.ToString().c_str(), profileVersion.ToString().c_str());
         return ERROR;
         }
 
@@ -586,13 +586,13 @@ BentleyStatus UseRequiresVersionCustomAttribute::Verify(IssueDataSource const& i
         ProfileVersion requiredProfileVersion(0, 0, 0, 0);
         if (requiredProfileVersion.FromString(version.ValueR().c_str()) != BentleyStatus::SUCCESS)
             {
-            issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue,ECDbIssueId::ECDb_0588,  "%s has a UseRequiresVersion custom attribute with an invalid ECDbRuntimeVersion property.", context);
+            issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue,ECDbIssueId::ECDb_0657,  "%s has a UseRequiresVersion custom attribute with an invalid ECDbRuntimeVersion property.", context);
             return ERROR;
             }
 
         if(requiredProfileVersion > profileVersion)
             {
-            issues.ReportV(IssueSeverity::Warning, IssueCategory::BusinessProperties, IssueType::ECDbIssue,ECDbIssueId::ECDb_0589,  "%s requires ECDb version %s, but the current runtime version is only %s.", context, requiredProfileVersion.ToString().c_str(), profileVersion.ToString().c_str());
+            issues.ReportV(IssueSeverity::Warning, IssueCategory::BusinessProperties, IssueType::ECDbIssue,ECDbIssueId::ECDb_0658,  "%s requires ECDb version %s, but the current runtime version is only %s.", context, requiredProfileVersion.ToString().c_str(), profileVersion.ToString().c_str());
             return ERROR;
             }
         }
@@ -604,13 +604,13 @@ BentleyStatus UseRequiresVersionCustomAttribute::Verify(IssueDataSource const& i
         BeVersion requiredECSqlVersion(0, 0, 0, 0);
         if (requiredECSqlVersion.FromString(sqlVersion.ValueR().c_str()) != BentleyStatus::SUCCESS)
             {
-            issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue,ECDbIssueId::ECDb_0590,  "%s has a UseRequiresVersion custom attribute with an invalid ECSqlVersion property.", context);
+            issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue,ECDbIssueId::ECDb_0659,  "%s has a UseRequiresVersion custom attribute with an invalid ECSqlVersion property.", context);
             return ERROR;
             }
 
         if(requiredECSqlVersion > ecSqlVersion)
             {
-            issues.ReportV(IssueSeverity::Warning, IssueCategory::BusinessProperties, IssueType::ECDbIssue,ECDbIssueId::ECDb_0591,  "%s requires ECSql version %s, but the current version is only %s.", context, requiredECSqlVersion.ToString().c_str(), ecSqlVersion.ToString().c_str());
+            issues.ReportV(IssueSeverity::Warning, IssueCategory::BusinessProperties, IssueType::ECDbIssue,ECDbIssueId::ECDb_0660,  "%s requires ECSql version %s, but the current version is only %s.", context, requiredECSqlVersion.ToString().c_str(), ecSqlVersion.ToString().c_str());
             return ERROR;
             }
         }
