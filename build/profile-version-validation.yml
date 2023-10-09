@@ -11,20 +11,33 @@ pr:
     include:
       - main
 
+parameters:
+- name: defaultNativeBranch
+  displayName: Default Native Branch Used for PR Validation
+  type: string
+  default: 'main' # Change to appropriate branch name when creating new release branch
+- name: defaultCoreBranch
+  displayName: Default itwinjs-core Branch Used for PR Validation
+  type: string
+  default: 'imodel02' # Change to appropriate branch name when creating new release branch
+
 resources:
   repositories:
     - repository: profileversion-tests
       type: github
+      ref: io-fix-profile-validation
       endpoint: imodel-native
       name: iTwin/profileversion-tests
 
     - repository: imodel-native-internal
       type: github
+      ref: ${{ parameters.defaultNativeBranch }}
       endpoint: imodel-native
       name: iTwin/imodel-native-internal
 
     - repository: itwinjs-core
       type: github
+      ref: ${{ parameters.defaultCoreBranch }}
       endpoint: imodel-native
       name: iTwin/itwinjs-core
 
@@ -32,4 +45,6 @@ extends:
   template: /common/azure-pipelines/templates/pipeline.yml@profileversion-tests
   parameters:
     otherRepo: imodel-native
+    defaultNativeBranch: ${{ parameters.defaultNativeBranch }}
+    defaultCoreBranch: ${{ parameters.defaultCoreBranch }}
 
