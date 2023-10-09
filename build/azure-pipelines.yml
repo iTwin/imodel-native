@@ -13,16 +13,28 @@ pr:
       - main
       - release/*
 
+parameters:
+- name: defaultNativeBranch
+  displayName: Default Native Branch Used for PR Validation
+  type: string
+  default: 'main' # Change to appropriate branch name when creating new release branch
+- name: defaultCoreBranch
+  displayName: Default itwinjs-core Branch Used for PR Validation
+  type: string
+  default: 'imodel02' # Change to appropriate branch name when creating new release branch
+
+
 resources:
   repositories:
     - repository: imodel-native-internal
       type: github
       name: iTwin/imodel-native-internal
+      ref: ${{ parameters.defaultNativeBranch }}
       endpoint: github.com_imodel-native
     - repository: itwinjs-core
       type: github
       name: iTwin/itwinjs-core
-      ref: imodel02
+      ref: ${{ parameters.defaultCoreBranch }}
       endpoint: iTwin
     - repository: imodeljs-build-pipeline-scripts
       type: git
@@ -32,4 +44,6 @@ extends:
   template: /build/templates/pipeline.yml@imodel-native-internal
   parameters:
     otherRepo: imodel-native-internal
+    defaultNativeBranch: ${{ parameters.defaultNativeBranch }}
+    defaultCoreBranch: ${{ parameters.defaultCoreBranch }}
 
