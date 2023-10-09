@@ -57,6 +57,9 @@ struct ECSqlExpPreparer final
         static ECSqlStatus PrepareFunctionArgList(NativeSqlBuilder::List&, ECSqlPrepareContext&, ValueExp const& functionExp);
         static ECSqlStatus PrepareGroupByExp(ECSqlPrepareContext&, GroupByExp const&);
         static ECSqlStatus PrepareHavingExp(ECSqlPrepareContext&, HavingExp const&);
+        static ECSqlStatus PrepareWindowFunctionClauseExp(ECSqlPrepareContext&, WindowFunctionClauseExp const&);
+        static ECSqlStatus PrepareWindowDefinitionListExp(NativeSqlBuilder::List&, ECSqlPrepareContext&, WindowDefinitionListExp const&);
+        static ECSqlStatus PrepareWindowDefinitionExp(NativeSqlBuilder&, ECSqlPrepareContext&, WindowDefinitionExp const&);
         static ECSqlStatus PrepareLikeRhsValueExp(NativeSqlBuilder::List&, ECSqlPrepareContext&, LikeRhsValueExp const&);
         static ECSqlStatus PrepareLimitOffsetExp(ECSqlPrepareContext&, LimitOffsetExp const&);
         static ECSqlStatus PrepareLiteralValueExp(NativeSqlBuilder::List&, ECSqlPrepareContext&, LiteralValueExp const&);

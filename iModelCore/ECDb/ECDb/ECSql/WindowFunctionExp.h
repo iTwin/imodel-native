@@ -8,17 +8,16 @@
 #include "SelectStatementExp.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+
 //=======================================================================================
 //! @bsiclass
 //+===============+===============+===============+===============+===============+======
-
 struct FilterClauseExp final : Exp
     {
     private:
         void _ToECSql(ECSqlRenderContext& ctx) const override;
         void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override { return "WindowPartitionColumnReferenceList"; }
-        FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
 
     public:
         FilterClauseExp(std::unique_ptr<WhereExp> whereExp) : Exp(Type::FIlterClause)
@@ -26,6 +25,10 @@ struct FilterClauseExp final : Exp
 
         WhereExp const* GetWhereExp() const { return GetChild<WhereExp>(0); }
     };
+
+//=======================================================================================
+//! @bsiclass
+//+===============+===============+===============+===============+===============+======
 struct WindowPartitionColumnReferenceExp final : Exp
     {
     public:
@@ -41,7 +44,6 @@ struct WindowPartitionColumnReferenceExp final : Exp
         void _ToECSql(ECSqlRenderContext& ctx) const override;
         void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override { return "WindowPartitionColumnReferenceList"; }
-        FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
         CollateClauseFunction m_collateClauseFunction;
 
     public:
@@ -54,14 +56,15 @@ struct WindowPartitionColumnReferenceExp final : Exp
         ValueExp const* GetColumnRef() const { return GetChild<ValueExp>(0); }
     };
 
-
+//=======================================================================================
+//! @bsiclass
+//+===============+===============+===============+===============+===============+======
 struct WindowPartitionColumnReferenceListExp final : Exp
     {
     private:
         void _ToECSql(ECSqlRenderContext& ctx) const override;
         void _ToJson(BeJsValue, JsonFormat const&) const override;
-        Utf8String _ToString() const override { return "WindowPartitionColumnReferenceList"; }
-        FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
+        Utf8String _ToString() const override { return "WindowPartitionColumnReferenceList"; };
     
     public:
         WindowPartitionColumnReferenceListExp(std::vector<std::unique_ptr<WindowPartitionColumnReferenceExp>>& columnRefs) : Exp(Type::WindowPartitionColumnReferenceList)
@@ -74,6 +77,9 @@ struct WindowPartitionColumnReferenceListExp final : Exp
 
     };
 
+//=======================================================================================
+//! @bsiclass
+//+===============+===============+===============+===============+===============+======
 struct FirstWindowFrameBoundExp final : Exp
     {
     public:
@@ -86,8 +92,6 @@ struct FirstWindowFrameBoundExp final : Exp
             };
 
     private:
-        FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
-        bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const override;
         void _ToECSql(ECSqlRenderContext&) const override;
         void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override;
@@ -112,6 +116,9 @@ struct FirstWindowFrameBoundExp final : Exp
             }
     };
 
+//=======================================================================================
+//! @bsiclass
+//+===============+===============+===============+===============+===============+======
 struct SecondWindowFrameBoundExp final : Exp
     {
     public:
@@ -124,8 +131,6 @@ struct SecondWindowFrameBoundExp final : Exp
             };
 
     private:
-        FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
-        bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const override;
         void _ToECSql(ECSqlRenderContext&) const override;
         void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override;
@@ -150,11 +155,12 @@ struct SecondWindowFrameBoundExp final : Exp
             }
     };
 
+//=======================================================================================
+//! @bsiclass
+//+===============+===============+===============+===============+===============+======
 struct WindowFrameBetweenExp final : Exp
     {
     private:
-        FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
-        bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const override;
         void _ToECSql(ECSqlRenderContext&) const override;
         void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override;
@@ -174,6 +180,9 @@ struct WindowFrameBetweenExp final : Exp
         SecondWindowFrameBoundExp const* GetSecondWindowFrameBoundExp() const { return GetChild<SecondWindowFrameBoundExp>(m_secondWindowFrameBoundIndex); }
     };
 
+//=======================================================================================
+//! @bsiclass
+//+===============+===============+===============+===============+===============+======
 struct WindowFrameStartExp final : Exp
     {
     public:
@@ -181,12 +190,10 @@ struct WindowFrameStartExp final : Exp
             {
             UnboundedPreceding,
             CurrentRow,
-            WindowFramePreceding,
+            ValuePreceding,
             };
 
     private:
-        FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
-        bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const override;
         void _ToECSql(ECSqlRenderContext&) const override;
         void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override;
@@ -204,12 +211,15 @@ struct WindowFrameStartExp final : Exp
         WindowFrameStartType GetWindowFrameStartType() const { return m_windowFrameStartType; }
         ValueExp const* GetValueExp() const
             {
-            if (m_windowFrameStartType != WindowFrameStartType::WindowFramePreceding)
+            if (m_windowFrameStartType != WindowFrameStartType::ValuePreceding)
                 return nullptr;
             return GetChild<ValueExp>(0);
             }
     };
 
+//=======================================================================================
+//! @bsiclass
+//+===============+===============+===============+===============+===============+======
 struct WindowFrameClauseExp final : Exp
     {
     public:
@@ -230,8 +240,6 @@ struct WindowFrameClauseExp final : Exp
             };
 
     private:
-        FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
-        bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const override;
         void _ToECSql(ECSqlRenderContext&) const override;
         void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override;
@@ -273,23 +281,26 @@ struct WindowFrameClauseExp final : Exp
             }
     };
 
+//=======================================================================================
+//! @bsiclass
+//+===============+===============+===============+===============+===============+======
 struct WindowSpecification final : Exp
     {
     private:
-        bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const override;
         void _ToECSql(ECSqlRenderContext& ctx) const override;
         void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override;
-        FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
 
         size_t m_partitionByClauseIndex = UNSET_CHILDINDEX;
         size_t m_orderByClauseIndex = UNSET_CHILDINDEX;
         size_t m_windowFrameClauseIndex = UNSET_CHILDINDEX;
+
+        Utf8String m_windowName;
     
     public:
 
-        WindowSpecification(std::unique_ptr<WindowPartitionColumnReferenceListExp> partitionByClauseExp, std::unique_ptr<OrderByExp> orderByExp, std::unique_ptr<WindowFrameClauseExp> windowFrameClauseExp) :
-            Exp(Type::WindowSpecification)
+        WindowSpecification(Utf8String windowName, std::unique_ptr<WindowPartitionColumnReferenceListExp> partitionByClauseExp, std::unique_ptr<OrderByExp> orderByExp, std::unique_ptr<WindowFrameClauseExp> windowFrameClauseExp)
+            : m_windowName(windowName), Exp(Type::WindowSpecification)
             {
             if (partitionByClauseExp != nullptr)
                 m_partitionByClauseIndex = AddChild(std::move(partitionByClauseExp));
@@ -321,18 +332,43 @@ struct WindowSpecification final : Exp
                 return nullptr;
             return GetChild<WindowFrameClauseExp>(m_windowFrameClauseIndex);
             }
+
+        const Utf8String& GetWindowName() const { return m_windowName; }
+
+        
     };
 
-struct WindowFunctionExp final : ValueExp
+//=======================================================================================
+//! @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct WindowFunctionType final : ValueExp
     {
     private:
-        FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
-        bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const override;
         void _ToECSql(ECSqlRenderContext&) const override;
         void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override;
 
-        Utf8CP m_windowName = nullptr;
+    public:
+        WindowFunctionType(std::unique_ptr<ValueExp> functionCallExp) : ValueExp(Type::WindowFunctionType)
+            { AddChild(std::move(functionCallExp)); }
+
+        ValueExp const* GetFunctionCallExp() const
+            { return GetChild<ValueExp>(0); }
+    };
+
+//=======================================================================================
+//! @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct OrderByExp;
+struct WindowFunctionExp final : ValueExp
+    {
+    private:
+        FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
+        void _ToECSql(ECSqlRenderContext&) const override;
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
+        Utf8String _ToString() const override;
+
+        Utf8String m_windowName = nullptr;
         size_t m_windowFunctionTypeIndex = UNSET_CHILDINDEX;
         size_t m_filterClauseIndex = UNSET_CHILDINDEX;
         size_t m_WindowSpecificationIndex = UNSET_CHILDINDEX;
@@ -340,7 +376,9 @@ struct WindowFunctionExp final : ValueExp
         WindowFunctionExp(std::unique_ptr<ValueExp> windowFunctionType, std::unique_ptr<FilterClauseExp> filterClauseExp) : ValueExp(Type::WindowFunction)
             {
             m_windowFunctionTypeIndex = AddChild(std::move(windowFunctionType));
-            m_filterClauseIndex = AddChild(std::move(filterClauseExp));
+    
+            if (filterClauseExp != nullptr)
+                m_filterClauseIndex = AddChild(std::move(filterClauseExp));
             }
 
     public:
@@ -348,36 +386,84 @@ struct WindowFunctionExp final : ValueExp
             WindowFunctionExp(std::move(windowFunctionType), std::move(filterClauseExp))
             { m_WindowSpecificationIndex = AddChild(std::move(WindowSpecification)); }
 
-        WindowFunctionExp(std::unique_ptr<ValueExp> windowFunctionType, std::unique_ptr<FilterClauseExp> filterClauseExp, Utf8CP windowName) :
+        WindowFunctionExp(std::unique_ptr<ValueExp> windowFunctionType, std::unique_ptr<FilterClauseExp> filterClauseExp, Utf8String windowName) :
             WindowFunctionExp(std::move(windowFunctionType), std::move(filterClauseExp))
             { m_windowName = windowName; }
         
         ValueExp const* GetWindowFunctionType() const { return GetChild<ValueExp>(m_windowFunctionTypeIndex); }
-        FilterClauseExp const* GetFilterClauseExp() const { return GetChild<FilterClauseExp>(m_filterClauseIndex); }
+        FilterClauseExp const* GetFilterClauseExp() const
+            {
+            if (m_filterClauseIndex == UNSET_CHILDINDEX)
+                return nullptr;
+
+            return GetChild<FilterClauseExp>(m_filterClauseIndex);
+            }
         WindowSpecification const* GetWindowSpecification() const 
             {
             if (m_WindowSpecificationIndex == UNSET_CHILDINDEX)
                 return nullptr; 
             return GetChild<WindowSpecification>(m_WindowSpecificationIndex);
             }
-        Utf8CP const GetWindowName() const { return m_windowName; }
+        const Utf8String& GetWindowName() const { return m_windowName; }
 
     };
 
-struct WindowFunctionType final : ValueExp
+//=======================================================================================
+//! @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct WindowDefinitionExp final : Exp
     {
     private:
-        FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
-        bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const override;
+        void _ToECSql(ECSqlRenderContext&) const override;
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
+        Utf8String _ToString() const override;
+
+        Utf8String m_windowName;
+
+    public:
+        WindowDefinitionExp(Utf8String windowName, std::unique_ptr<WindowSpecification> windowSpecification) :
+           m_windowName(windowName), Exp(Type::WindowDefinitionExp) 
+           { AddChild(std::move(windowSpecification)); }
+
+        Utf8String GetWindowName() const { return m_windowName; }
+        WindowSpecification const* GetWindowSpecification() const { return GetChild<WindowSpecification>(0); }
+    };
+
+//=======================================================================================
+//! @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct WindowDefinitionListExp final : Exp
+    {
+    private:
         void _ToECSql(ECSqlRenderContext&) const override;
         void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override;
 
     public:
-        WindowFunctionType(std::unique_ptr<ValueExp> functionCallExp) : ValueExp(Type::WindowFunctionType)
+        WindowDefinitionListExp(std::vector<std::unique_ptr<WindowDefinitionExp>>& windowDefinitionExpList) : Exp(Type::WindowDefinitionListExpExp)
             {
-            AddChild(std::move(functionCallExp));
+            for (auto& windowDefinition : windowDefinitionExpList)
+                {
+                AddChild(std::move(windowDefinition)); 
+                }
             }
+    };
+
+//=======================================================================================
+//! @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct WindowFunctionClauseExp final : Exp
+    {
+    private:
+        void _ToECSql(ECSqlRenderContext&) const override;
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
+        Utf8String _ToString() const override;
+
+    public:
+        WindowFunctionClauseExp(std::unique_ptr<WindowDefinitionListExp> windowDefinitionListExp) : Exp(Type::WindowFunctionClauseExp)
+            { AddChild(std::move(windowDefinitionListExp)); }
+
+        WindowDefinitionListExp const* GetWindowDefinitionListExp() const { return GetChild<WindowDefinitionListExp>(0); }
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

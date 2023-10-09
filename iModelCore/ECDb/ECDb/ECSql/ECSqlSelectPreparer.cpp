@@ -243,6 +243,14 @@ ECSqlStatus ECSqlSelectPreparer::Prepare(ECSqlPrepareContext& ctx, NativeSqlBuil
                 return status;
             }
 
+        if (WindowFunctionClauseExp const* e = exp.GetWindowFunctionClause())
+            {
+            sqlGenerator.AppendSpace();
+            status = ECSqlExpPreparer::PrepareWindowFunctionClauseExp(ctx, *e);
+            if (!status.IsSuccess())
+                return status;
+            }
+
         // Append ORDER BY
         if (OrderByExp const* e = exp.GetOrderBy())
             {

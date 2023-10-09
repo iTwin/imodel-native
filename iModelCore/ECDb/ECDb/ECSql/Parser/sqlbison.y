@@ -107,7 +107,7 @@ using namespace connectivity;
 %token <pParseNode> SQL_TOKEN_GROUP SQL_TOKEN_HAVING SQL_TOKEN_IN SQL_TOKEN_INNER SQL_TOKEN_INSERT SQL_TOKEN_INTO SQL_TOKEN_IS SQL_TOKEN_INTERSECT
 
 %token <pParseNode> SQL_TOKEN_JOIN SQL_TOKEN_LIKE SQL_TOKEN_LEFT SQL_TOKEN_RIGHT
-%token <pParseNode> SQL_TOKEN_MAX SQL_TOKEN_MIN SQL_TOKEN_NATURAL SQL_TOKEN_NULL
+%token <pParseNode> SQL_TOKEN_MAX SQL_TOKEN_MIN SQL_TOKEN_NATURAL SQL_TOKEN_NULL SQL_TOKEN_TOTAL SQL_TOKEN_GROUP_CONCAT
 
 %token <pParseNode> SQL_TOKEN_ON SQL_TOKEN_ORDER SQL_TOKEN_OUTER
 
@@ -1479,6 +1479,35 @@ general_set_fct:
             $$->append($4);
             $$->append($5 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
+    |   SQL_TOKEN_TOTAL '(' opt_all_distinct function_arg ')'
+        {
+            $$ = SQL_NEW_RULE;
+            $$->append($1);
+            $$->append($2 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
+            $$->append($3);
+            $$->append($4);
+            $$->append($5 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
+        }
+    |   SQL_TOKEN_GROUP_CONCAT '(' opt_all_distinct function_arg ')'
+        {
+            $$ = SQL_NEW_RULE;
+            $$->append($1);
+            $$->append($2 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
+            $$->append($3);
+            $$->append($4);
+            $$->append($5 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
+        }
+    |   SQL_TOKEN_GROUP_CONCAT '(' opt_all_distinct function_arg ',' function_arg ')'
+        {
+            $$ = SQL_NEW_RULE;
+            $$->append($1);
+            $$->append($2 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
+            $$->append($3);
+            $$->append($4);
+            $$->append($5 = CREATE_NODE(",", SQL_NODE_PUNCTUATION));
+            $$->append($6);
+            $$->append($7 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
+        }
     ;
 
 set_fct_type:
@@ -1602,7 +1631,7 @@ window_function_type:
     ;
 
 ntile_function :
-	SQL_TOKEN_NTILE '(' num_value_exp ')'
+	SQL_TOKEN_NTILE '(' function_arg ')'
 	{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
@@ -1614,13 +1643,13 @@ ntile_function :
 
 opt_lead_or_lag_function:
 	/* empty */      {$$ = SQL_NEW_RULE;}
-	| ',' value_exp
+	| ',' function_arg
 		{
 			$$ = SQL_NEW_RULE;
 			$$->append($1 = CREATE_NODE(",", SQL_NODE_PUNCTUATION));
 			$$->append($2);
 		}
-	| ',' value_exp ',' value_exp
+	| ',' function_arg ',' function_arg
 		{
 			$$ = SQL_NEW_RULE;
 			$$->append($1 = CREATE_NODE(",", SQL_NODE_PUNCTUATION));
@@ -1648,12 +1677,12 @@ lead_or_lag:
 	;
 
 lead_or_lag_extent:
-	value_exp
+	function_arg
 	;
 
 
 first_or_last_value_function:
-	first_or_last_value '(' value_exp ')'
+	first_or_last_value '(' function_arg ')'
 	{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
@@ -1669,7 +1698,7 @@ first_or_last_value :
 	;
 
 nth_value_function:
-	SQL_TOKEN_NTH_VALUE '(' value_exp ',' value_exp ')'
+	SQL_TOKEN_NTH_VALUE '(' function_arg ',' function_arg ')'
 	{
 			$$ = SQL_NEW_RULE;
 			$$->append($1);
@@ -1859,7 +1888,13 @@ window_frame_start:
 			$$->append($1);
 			$$->append($2);
 		}
-	|	window_frame_preceding
+	|	value_exp SQL_TOKEN_PRECEDING
+	    {
+            $$ = SQL_NEW_RULE;
+            $$->append($1);
+            $$->append($2);
+	    }
+	;
 	|	SQL_TOKEN_CURRENT SQL_TOKEN_ROW
 		{
 			$$ = SQL_NEW_RULE;

@@ -814,7 +814,7 @@ void SelectClauseExp::_ToECSql(ECSqlRenderContext& ctx) const
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-SingleSelectStatementExp::SingleSelectStatementExp(SqlSetQuantifier selectionType, std::unique_ptr<SelectClauseExp> selection, std::unique_ptr<FromExp> from, std::unique_ptr<WhereExp> where, std::unique_ptr<OrderByExp> orderby, std::unique_ptr<GroupByExp> groupby, std::unique_ptr<HavingExp> having, std::unique_ptr<LimitOffsetExp> limitOffsetExp, std::unique_ptr<OptionsExp> optionsExp)
+SingleSelectStatementExp::SingleSelectStatementExp(SqlSetQuantifier selectionType, std::unique_ptr<SelectClauseExp> selection, std::unique_ptr<FromExp> from, std::unique_ptr<WhereExp> where, std::unique_ptr<OrderByExp> orderby, std::unique_ptr<WindowFunctionClauseExp> windowExp, std::unique_ptr<GroupByExp> groupby, std::unique_ptr<HavingExp> having, std::unique_ptr<LimitOffsetExp> limitOffsetExp, std::unique_ptr<OptionsExp> optionsExp)
     : QueryExp(Type::SingleSelect), m_selectionType(selectionType)
     {
     //WARNING: Do not change the order of following
@@ -828,6 +828,9 @@ SingleSelectStatementExp::SingleSelectStatementExp(SqlSetQuantifier selectionTyp
 
     if (orderby != nullptr)
         m_orderByClauseIndex = (int) AddChild(std::move(orderby));
+
+    if (windowExp != nullptr)
+        m_WindowFunctionClauseExpExpIndex = (int) AddChild(std::move(windowExp));
 
     if (groupby != nullptr)
         m_groupByClauseIndex = (int) AddChild(std::move(groupby));
@@ -1052,6 +1055,9 @@ void SingleSelectStatementExp::_ToECSql(ECSqlRenderContext& ctx) const
 
     if (GetOrderBy() != nullptr)
         ctx.AppendToECSql(" ").AppendToECSql(*GetOrderBy());
+
+    if (GetWindowFunctionClause() != nullptr)
+        ctx.AppendToECSql(" ").AppendToECSql(*GetWindowFunctionClause());
 
     if (GetHaving() != nullptr)
         ctx.AppendToECSql(" ").AppendToECSql(*GetHaving());
