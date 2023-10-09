@@ -3457,20 +3457,10 @@ bool ECSchema::IsSchemaReferenced(ECSchemaCR thisSchema, ECSchemaCR potentiallyR
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECSchema::IsSchemaReferenced(ECSchemaCR thisSchema, ECSchemaCR potentiallyReferencedSchema, ECN::SchemaMatchType matchType, bool checkIndirectReferences)
+bool ECSchema::IsSchemaReferenced(ECSchemaCR thisSchema, ECSchemaCR potentiallyReferencedSchema, ECN::SchemaMatchType matchType)
     {
     ECSchemaReferenceListCR referencedSchemas = thisSchema.GetReferencedSchemas();
-    if (referencedSchemas.end() != referencedSchemas.Find(potentiallyReferencedSchema.GetSchemaKey(), matchType))
-        return true;
-    if (checkIndirectReferences)
-        {
-        for (ECSchemaReferenceList::const_iterator it = referencedSchemas.begin(); it != referencedSchemas.end(); ++it)
-            {
-            if (ECSchema::IsSchemaReferenced(*it->second, potentiallyReferencedSchema, matchType, true /*=checkIndirectReferences*/))
-                return true;
-            }
-        }
-    return false;
+    return referencedSchemas.end() != referencedSchemas.Find(potentiallyReferencedSchema.GetSchemaKey(), matchType);
     }
 
 //---------------------------------------------------------------------------------------

@@ -3987,13 +3987,7 @@ public:
     //! @param[in]    thisSchema                   The base schema to check the references of
     //! @param[in]    potentiallyReferencedSchema  The schema to search for
     //! @return True if thatSchema is referenced by thisSchema, false otherwise
-    ECOBJECTS_EXPORT static bool IsSchemaReferenced (ECSchemaCR thisSchema, ECSchemaCR potentiallyReferencedSchema, ECN::SchemaMatchType matchType, bool checkIndirectReferences = false);
-
-    //! Given two schemas, will check to see if the second schema is referenced by the first schema either directly or indirectly
-    //! @param[in]    thisSchema            The base schema to check the references of
-    //! @param[in]    potentiallyReferencedSchema  The schema to search for
-    //! @return True if thatSchema is referenced by thisSchema, false otherwise
-    static bool IsSchemaIndirectlyReferenced (ECSchemaCR thisSchema, ECSchemaCR potentiallyReferencedSchema, ECN::SchemaMatchType matchType = ECN::SchemaMatchType::Exact);
+    ECOBJECTS_EXPORT static bool IsSchemaReferenced (ECSchemaCR thisSchema, ECSchemaCR potentiallyReferencedSchema, ECN::SchemaMatchType matchType);
 
     //! Given a major and minor version number, this will parse them into an ECVersion
     //! @param[out]  ecVersion       The ECVersion to create
