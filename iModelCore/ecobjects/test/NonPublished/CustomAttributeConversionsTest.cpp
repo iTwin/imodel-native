@@ -2290,6 +2290,7 @@ TEST_F(StandardValueToEnumConversionTest, TestRootClassOnlyInGrandparentSchema)
             <ECSchemaReference name='EditorCustomAttributes' version='01.00' prefix='beca' />
             <ECSchemaReference name='baseTest' version='01.00' prefix='base'/>
             <ECClass typeName='TestClass' isDomainClass='True'>
+                <BaseClass>base:TestClass</BaseClass>
             </ECClass>
         </ECSchema>)xml";
 
@@ -2335,13 +2336,14 @@ TEST_F(StandardValueToEnumConversionTest, TestRootClassOnlyInGrandparentSchema)
  
     EXPECT_TRUE(ECSchemaConverter::Convert(*schema.get(), *context.get())) << "Schema conversion failed";
  
-    ASSERT_EQ(1, schema->GetEnumerationCount()) << "The number of enumerations created is not as expected.";
+    ASSERT_EQ(0, schema->GetEnumerationCount()) << "The number of enumerations created is not as expected.";
     ASSERT_EQ(0, middleSchema->GetEnumerationCount()) << "The number of enumerations created is not as expected.";
-    ASSERT_EQ(0, baseSchema->GetEnumerationCount()) << "The number of enumerations created is not as expected.";
+    ASSERT_EQ(1, baseSchema->GetEnumerationCount()) << "The number of enumerations created is not as expected.";
 
-    EXPECT_EQ(nullptr, middleSchema->GetClassP("TestClass")->GetPropertyP("testProp"));
-    CheckTypeName("TestClass_testProp", *schema, "testProp", {"TestClass"});
-    CheckTypeName("int", *baseSchema, "testProp", {"TestClass"});
+    ASSERT_EQ(nullptr, middleSchema->GetClassP("TestClass")->GetPropertyP("testProp", false /*=includeBaseClasses*/));
+    ASSERT_NE(nullptr, middleSchema->GetClassP("TestClass")->GetPropertyP("testProp", true /*=includeBaseClasses*/));
+    CheckTypeName("ts:TestClass_testProp", *schema, "testProp", {"TestClass"});
+    CheckTypeName("TestClass_testProp", *baseSchema, "testProp", {"TestClass"});
     }
 
 //---------------------------------------------------------------------------------------
