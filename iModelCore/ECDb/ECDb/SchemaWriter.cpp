@@ -5277,6 +5277,13 @@ BentleyStatus SchemaWriter::Context::PreprocessSchemas(bvector<ECN::ECSchemaCP>&
                 return ERROR;
                 }
             }
+
+        ImportRequiresVersionCustomAttribute requiresRuntimeCA;
+        if (ECDbMapCustomAttributeHelper::TryGetImportRequiresVersion(requiresRuntimeCA, *schema) && requiresRuntimeCA.IsValid())
+            {
+            if(requiresRuntimeCA.Verify(Issues(), schema->GetFullSchemaName().c_str()) != BentleyStatus::SUCCESS)
+                return BentleyStatus::ERROR;
+            }
         }
 
     bvector<ECSchemaCP> primarySchemas;
