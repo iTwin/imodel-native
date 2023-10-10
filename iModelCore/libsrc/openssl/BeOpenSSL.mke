@@ -33,6 +33,8 @@ vendorSrc = $(_MakeFilePath)vendor/
 
 %if defined(iTwinNativeThirdParty)
   appName = BeOpenSSL
+  always:
+    $(BBPYTHONCMD) $(bsiScripts)RegexReplaceInFile.py iTwinOpenSSL BeOpenSSLB02 $(_MakeFilePath)BeOpenSSL.def
 %else
   appName = iTwinOpenSSL
 %endif
