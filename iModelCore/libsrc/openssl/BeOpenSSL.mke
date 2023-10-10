@@ -33,8 +33,6 @@ vendorSrc = $(_MakeFilePath)vendor/
 
 %if defined(iTwinNativeThirdParty)
   appName = BeOpenSSL
-  always:
-    $(BBPYTHONCMD) $(bsiScripts)RegexReplaceInFile.py iTwinOpenSSL BeOpenSSLB02 $(_MakeFilePath)BeOpenSSL.def
 %else
   appName = iTwinOpenSSL
 %endif
@@ -2359,8 +2357,15 @@ DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
 DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
 DLM_CREATE_LIB_CONTEXT_LINK = 1
 
-$(DLM_OBJECT_DEST)$(DLM_NAME).def : $(_MakeFilePath)BeOpenSSL.def
-    $(LinkFirstDepToFirstTarget)
+%if defined(iTwinNativeThirdParty)
+  XC_OPT=\/Y
+  always:
+    xcopy $(_MakeFilePath)BeOpenSSL.def $(DLM_OBJECT_DEST) $(XC_OPT)
+    $(BBPYTHONCMD) $(bsiScripts)RegexReplaceInFile.py iTwinOpenSSL BeOpenSSLB02 $(DLM_OBJECT_DEST)BeOpenSSL.def
+%else
+  $(DLM_OBJECT_DEST)$(DLM_NAME).def : $(_MakeFilePath)BeOpenSSL.def
+      $(LinkFirstDepToFirstTarget)
+%endif
 
 DLM_MODULE_DEF              = $(DLM_OBJECT_DEST)$(DLM_NAME).def
 
