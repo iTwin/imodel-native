@@ -3,7 +3,7 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the repository root for full copyright notice.
 ========================================================================================== -->
-<ECSchema schemaName="ECDbMap" alias="ecdbmap" version="02.00.01" description="Custom attributes that customize ECDb's ECSchema to database mapping." displayLabel="ECDb DB Mapping" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+<ECSchema schemaName="ECDbMap" alias="ecdbmap" version="02.00.02" description="Custom attributes that customize ECDb's ECSchema to database mapping." displayLabel="ECDb DB Mapping" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
     <ECCustomAttributeClass typeName="SchemaMap" modifier="Sealed" appliesTo="Schema">
         <ECProperty propertyName="TablePrefix" typeName="string" description="Specifies a prefix for generated tables. If not specified, the alias of the ECSchema is used"/>
     </ECCustomAttributeClass>
@@ -51,4 +51,12 @@
         <ECProperty propertyName="AllowDuplicateRelationships" typeName="boolean" description="Default: false. If set to true duplicate relationships are allowed."/>
     </ECCustomAttributeClass>
 
+    <ECCustomAttributeClass typeName="ImportRequiresVersion" modifier="Sealed" appliesTo="Schema" description="Causes a schema to only be imported by a specific ECDb version or higher.">
+        <ECProperty propertyName="ECDbRuntimeVersion" typeName="string" description="Required. ECDb profile version number e.g. 4.0.0.3. Refers to the runtime version, not the file version." />
+    </ECCustomAttributeClass>
+
+    <ECCustomAttributeClass typeName="UseRequiresVersion" modifier="Sealed" appliesTo="AnyClass" description="Causes ECDb to refuse to query a class which has this CA or a CA that has this CA if conditions are not met.">
+        <ECProperty propertyName="ECDbRuntimeVersion" typeName="string" description="Optional. ECDb profile version number e.g. 4.0.0.3. Refers to the runtime version, not the file version." />
+        <ECProperty propertyName="ECSqlVersion" typeName="string" description="Optional. EC SQL profile version number e.g. 1.2.0.0." />
+    </ECCustomAttributeClass>
 </ECSchema>

@@ -158,6 +158,36 @@ void Assert_BuiltinSchemaVersions_4_0_0_3 (TestECDb& testDb)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+void Assert_BuiltinSchemaVersions_4_0_0_4 (TestECDb& testDb)
+    {
+    EXPECT_EQ(5, testDb.GetSchemaCount()) << testDb.GetDescription();
+    //ECDb built-in schema versions
+    EXPECT_EQ(SchemaVersion(2, 0, 1), testDb.GetSchemaVersion("ECDbFileInfo")) << testDb.GetDescription();
+    EXPECT_EQ(BeVersion (3, 2), testDb.GetOriginalECXmlVersion("ECDbFileInfo")) << testDb.GetDescription();
+    EXPECT_EQ(JsonValue(R"js({"classcount":4, "enumcount": 1})js"), testDb.GetSchemaItemCounts("ECDbFileInfo")) << testDb.GetDescription();
+
+    EXPECT_EQ(SchemaVersion(2, 0, 2), testDb.GetSchemaVersion("ECDbMap")) << testDb.GetDescription();
+    EXPECT_EQ(BeVersion (3, 2), testDb.GetOriginalECXmlVersion("ECDbMap")) << testDb.GetDescription();
+    EXPECT_EQ(JsonValue(R"js({"classcount":11})js"), testDb.GetSchemaItemCounts("ECDbMap")) << testDb.GetDescription();
+
+    EXPECT_EQ(SchemaVersion(4, 0, 1), testDb.GetSchemaVersion("ECDbMeta")) << testDb.GetDescription();
+    EXPECT_EQ(BeVersion (3, 2), testDb.GetOriginalECXmlVersion("ECDbMeta")) << testDb.GetDescription();
+    EXPECT_EQ(JsonValue(R"js({"classcount":38, "enumcount": 8})js"), testDb.GetSchemaItemCounts("ECDbMeta")) << testDb.GetDescription();
+
+    EXPECT_EQ(SchemaVersion(5, 0, 2), testDb.GetSchemaVersion("ECDbSystem")) << testDb.GetDescription();
+    EXPECT_EQ(BeVersion (3, 2), testDb.GetOriginalECXmlVersion("ECDbSystem")) << testDb.GetDescription();
+    EXPECT_EQ(JsonValue(R"js({"classcount":4})js"), testDb.GetSchemaItemCounts("ECDbSystem")) << testDb.GetDescription();
+
+    //Standard schema versions
+    EXPECT_LE(SchemaVersion(1, 0, 1), testDb.GetSchemaVersion("CoreCustomAttributes")) << testDb.GetDescription();
+    EXPECT_LE(BeVersion (3, 1), testDb.GetOriginalECXmlVersion("CoreCustomAttributes")) << testDb.GetDescription();
+    EXPECT_LE(15, testDb.GetSchemaItemCounts("CoreCustomAttributes").m_value["classcount"].asInt());
+    EXPECT_LE(2, testDb.GetSchemaItemCounts("CoreCustomAttributes").m_value["enumcount"].asInt());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 void Assert_BuiltinSchemaVersions_4_X_X_X(TestECDb& testDb)
     {
     EXPECT_LE(5, testDb.GetSchemaCount()) << testDb.GetDescription();
@@ -166,7 +196,7 @@ void Assert_BuiltinSchemaVersions_4_X_X_X(TestECDb& testDb)
     EXPECT_LE(SchemaVersion(2, 0, 1), testDb.GetSchemaVersion("ECDbFileInfo")) << testDb.GetDescription();
     EXPECT_LE(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbFileInfo")) << testDb.GetDescription();
     
-    EXPECT_LE(SchemaVersion(2, 0, 1), testDb.GetSchemaVersion("ECDbMap")) << testDb.GetDescription();
+    EXPECT_LE(SchemaVersion(2, 0, 2), testDb.GetSchemaVersion("ECDbMap")) << testDb.GetDescription();
     EXPECT_LE(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbMap")) << testDb.GetDescription();
     
     EXPECT_LE(SchemaVersion(4, 0, 1), testDb.GetSchemaVersion("ECDbMeta")) << testDb.GetDescription();
@@ -202,14 +232,16 @@ TEST_F(ECDbCompatibilityTestFixture, BuiltinSchemaVersions)
                         Assert_BuiltinSchemaVersions_4_0_0_1(testDb);
                     else if (testDb.GetECDbProfileVersion() == ProfileVersion(4, 0, 0, 2))
                         Assert_BuiltinSchemaVersions_4_0_0_2(testDb);
+                    else if (testDb.GetECDbProfileVersion() == ProfileVersion(4, 0, 0, 3))
+                        Assert_BuiltinSchemaVersions_4_0_0_3(testDb);
                     else
                         FAIL() << "*ERROR* case not handled | " << testDb.GetDescription();
                     break;
                     }
                 case ProfileState::Age::UpToDate:
                     {
-                    if (testDb.GetECDbProfileVersion() == ProfileVersion(4, 0, 0, 3))
-                        Assert_BuiltinSchemaVersions_4_0_0_3(testDb);
+                    if (testDb.GetECDbProfileVersion() == ProfileVersion(4, 0, 0, 4))
+                        Assert_BuiltinSchemaVersions_4_0_0_4(testDb);
                     else 
                         FAIL() << "*ERROR* case not handled | " << testDb.GetDescription();
                     break;
@@ -1206,11 +1238,20 @@ TEST_F(ECDbCompatibilityTestFixture, EC31SchemaImportWithReadContextVariations)
                     EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbMeta")) << scenario << " | " << testDb.GetDescription();
                     EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbSystem")) << scenario << " | " << testDb.GetDescription();
                     }
+                else if (testDb.GetECDbProfileVersion() == ProfileVersion(4, 0, 0, 3))
+                    {
+                    ASSERT_EQ(SUCCESS, schemaImportStat) << scenario << " | " << testDb.GetDescription();
+                    EXPECT_EQ(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("TestSchema")) << scenario << " | " << testDb.GetDescription();
+                    EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbFileInfo")) << scenario << " | " << testDb.GetDescription();
+                    EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbMap")) << scenario << " | " << testDb.GetDescription();
+                    EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbMeta")) << scenario << " | " << testDb.GetDescription();
+                    EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbSystem")) << scenario << " | " << testDb.GetDescription();
+                    }
                 else
                     FAIL() << "*ERROR* case not handled | " << testDb.GetDescription();
                 break;
             case ProfileState::Age::UpToDate:
-                if (testDb.GetECDbProfileVersion() == ProfileVersion(4, 0, 0, 3))
+                if (testDb.GetECDbProfileVersion() == ProfileVersion(4, 0, 0, 4))
                     {
                     ASSERT_EQ(SUCCESS, schemaImportStat) << scenario << " | " << testDb.GetDescription();
                     EXPECT_EQ(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("TestSchema")) << scenario << " | " << testDb.GetDescription();

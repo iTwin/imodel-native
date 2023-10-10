@@ -10,6 +10,1066 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
 struct InstanceReaderFixture : ECDbTestFixture {};
+<<<<<<< HEAD
+=======
+#if 0
+// Instance perf test
+struct InstancePropPerfTest {
+    enum class PropFilter {
+        None,
+        AnyPropExists,
+        AllPropExists,
+        AnyPropIsNotNull,
+        AllPropAreNotNull
+    };
+    constexpr static auto JInTestName = "testName";
+    constexpr static auto JInRootClassName = "rootClassName";
+    constexpr static auto JInMaxRows = "maxRows";
+    constexpr static auto JInMaxProps = "maxProps";
+    constexpr static auto JInIncludeDeriveProps = "includeDeriveProps";
+    constexpr static auto JInShuffleProps = "shuffleProps";
+    constexpr static auto JInFilter = "addPropExistsFilter";
+    constexpr static auto JOutRowCount = "rowCount";
+    constexpr static auto JOutElapsedTime = "elapsedSeconds";
+    constexpr static auto JOutQuery = "query";
+    constexpr static auto JOutRootSubject = "rootSubject";
+    constexpr static auto JOutFileSize = "fileSizeBytes";
+    constexpr static auto JOutIModelId = "iModelId";
+
+    constexpr static auto JInFilterAnyPropertyExists = "filter-any-prop-exists";
+    constexpr static auto JInFilterAllPropertiesExists = "filter-all-prop-exists";
+    constexpr static auto JInFilterAnyPropertyIsNotNull = "filter-any-prop-is-not-null";
+    constexpr static auto JInFilterAllPropertiesAreNotNull = "filter-all-prop-are-not-null";
+    constexpr static auto JInFilterNone = "filter-none";
+
+    constexpr static auto JTestQueryInstanceWithNoFilter = "test-query-instance-with-no-filter";
+    constexpr static auto JTestQueryInstanceProperties = "test-query-instance-properties";
+    using TestFunc = std::function<void(BeJsValue, std::function<void(BeJsValue)>, std::function<void(BeJsValue)>)>;
+    struct CompareIUtf8Ascii {
+        bool operator()(Utf8StringCR s1, Utf8StringCR s2) const { return BeStringUtilities::StricmpAscii(s1.c_str(), s2.c_str()) < 0; } };
+    private:
+        ECDb m_conn;
+        std::default_random_engine m_randEngine;
+        std::map<Utf8String, TestFunc, CompareIUtf8Ascii> m_testFuncs;
+        BentleyStatus GetClassId(Utf8StringCR className, std::vector<ECN::ECClassId>& ids) const {
+            ECSqlStatement stmt;
+            if (stmt.Prepare(m_conn,
+                SqlPrintfString("SELECT ECClassId, COUNT(*) FROM %s GROUP BY ECClassId", className.c_str())) != ECSqlStatus::Success){
+                return ERROR;
+            }
+            while(stmt.Step() == BE_SQLITE_ROW) {
+                ids.push_back(stmt.GetValueId<ECClassId>(0));
+            }
+            return SUCCESS;
+        }
+        static PropFilter FromPropFilter(Utf8StringCR str) {
+            if (str.EqualsIAscii(JInFilterAnyPropertyExists))
+                return PropFilter::AnyPropExists;
+            if (str.EqualsIAscii(JInFilterAllPropertiesExists))
+                return PropFilter::AllPropExists;
+            if (str.EqualsIAscii(JInFilterAnyPropertyIsNotNull))
+                return PropFilter::AnyPropIsNotNull;
+            if (str.EqualsIAscii(JInFilterAllPropertiesAreNotNull))
+                return PropFilter::AllPropAreNotNull;
+            return PropFilter::None;
+        }
+        BentleyStatus GetProps(ECClassId classId, std::vector<std::string>& props ) const {
+            Statement stmt;
+            if (BE_SQLITE_OK != stmt.Prepare(m_conn, R"x(
+                SELECT DISTINCT
+                    IIF (
+                        INSTR ([pp].[AccessString], '.') == 0,
+                        [pp].[AccessString],
+                        SUBSTR ([pp].[AccessString], 0,
+                                INSTR ([pp].[AccessString], '.'))) [AccessString]
+                    FROM   [ec_propertyMap] [pm]
+                        JOIN [ec_PropertyPath] [pp] ON [pp].[Id] = [pm].[PropertyPathId]
+                        JOIN [ec_ClassMap] [cm] ON [cm].[ClassId] = [pm].[ClassId]
+                    WHERE  [cm].[MapStrategy] != 0 AND cm.ClassId = ?
+                    ORDER  BY
+                            [pm].[PropertyPathId],
+                            [pm].[classid];
+                )x")) {
+                return ERROR;
+                }
+            stmt.BindId(1, classId);
+            while(stmt.Step() == BE_SQLITE_ROW) {
+                props.push_back(stmt.GetValueText(0));
+            }
+            return SUCCESS;
+        }
+        BentleyStatus GetDerivedProps(ECClassId classId, std::vector<std::string>& props ) const {
+            Statement stmt;
+            if (BE_SQLITE_OK != stmt.Prepare(m_conn, R"x(
+                SELECT DISTINCT
+                IIF (
+                    INSTR ([pp].[AccessString], '.') == 0,
+                    [pp].[AccessString],
+                    SUBSTR ([pp].[AccessString], 0,
+                            INSTR ([pp].[AccessString], '.'))) [AccessString]
+                FROM   [ec_propertyMap] [pm]
+                    JOIN [ec_PropertyPath] [pp] ON [pp].[Id] = [pm].[PropertyPathId]
+                    JOIN [ec_ClassMap] [cm] ON [cm].[ClassId] = [pm].[ClassId]
+                    JOIN ec_cache_ClassHierarchy ch on ch.ClassId = pm.ClassId
+                WHERE  [cm].[MapStrategy] != 0 AND ch.BaseClassId=?
+                )x")) {
+                return ERROR;
+            }
+            stmt.BindId(1, classId);
+            while(stmt.Step() == BE_SQLITE_ROW) {
+                props.push_back(stmt.GetValueText(0));
+            }
+            return SUCCESS;
+        }
+        BentleyStatus ReadInstances (BeJsValue param, std::function<void(BeJsValue)> onStart, std::function<void(BeJsValue)> onFinish) {
+            if (!param[JInTestName].asString().EqualsIAscii(JTestQueryInstanceWithNoFilter)) {
+                return ERROR;
+            }
+            Utf8String className = param[JInRootClassName].asString();
+            int64_t maxRows = param[JInMaxRows].asInt64();
+            Utf8String ecsql = SqlPrintfString("SELECT $ FROM %s", className.c_str()).GetUtf8CP();
+            ECSqlStatement stmt;
+            if (stmt.Prepare(m_conn, ecsql.c_str()) != ECSqlStatus::Success) {
+                return ERROR;
+            }
+            if (maxRows <= 0) {
+                maxRows = std::numeric_limits<int64_t>::max();
+            }
+
+            if (onStart != nullptr) onStart(param);
+            int64_t rowCount = 0;
+            param[JOutElapsedTime] = StopWatch::Measure([&]() {
+            //-> test start ----------------------------------------------------
+                while(stmt.Step() == BE_SQLITE_ROW) {
+                    stmt.GetValueText(0);
+                    ++rowCount;
+                    if (rowCount >= maxRows) {
+                        break;
+                    }
+                }
+            //-> test stop  ----------------------------------------------------
+            }).ToSeconds();
+            param[JOutRowCount] = rowCount;
+            param[JOutQuery] = ecsql;
+            if (onFinish != nullptr) onFinish(param);
+            return SUCCESS;
+        }
+        enum class FilterType {
+            PropExists_NonOptional,
+            PropExists_Optional,
+            ExtractProp_NonOptional,
+            ExtractProp_Optional
+        };
+        BentleyStatus ReadProps (BeJsValue param, std::function<void(BeJsValue)> onStart, std::function<void(BeJsValue)> onFinish) {
+            if (!param[JInTestName].asString().EqualsIAscii(JTestQueryInstanceProperties)) {
+                return ERROR;
+            }
+            auto className = param[JInRootClassName].asString();
+            auto maxRows = param[JInMaxRows].asInt64();
+            auto maxProps  = param[JInMaxProps].asInt();
+            auto includeDeriveProps = param[JInIncludeDeriveProps].asBool();
+            auto shuffleProps= param[JInShuffleProps].asBool();
+            auto propFilter = FromPropFilter(param[JInFilter].asString());
+
+            ECSqlStatement stmt;
+            Utf8String str;
+            std::vector<std::string> props;
+            auto classCP = m_conn.Schemas().FindClass(className);
+            if (classCP == nullptr) {
+                return ERROR;
+            }
+            if (includeDeriveProps) {
+                if (GetDerivedProps(classCP->GetId(), props) != SUCCESS) {
+                    return ERROR;
+                }
+            } else {
+                if (GetProps(classCP->GetId(), props) != SUCCESS) {
+                    return ERROR;
+                }
+            }
+            if(shuffleProps) {
+                std::shuffle(std::begin(props), std::end(props), m_randEngine);
+            }
+            if (maxProps <= 0) {
+                maxProps = std::numeric_limits<int>::max();
+            }
+            while(props.size() > maxProps) {
+                props.pop_back();
+            }
+            Utf8String ecsql = "SELECT ";
+            Utf8String filter = " WHERE ";
+            bool first = true;
+            for(auto& prop : props){
+                if (first) {
+                    first = false;
+                } else {
+                    ecsql.append(", ");
+                    if (propFilter == PropFilter::AllPropAreNotNull || propFilter == PropFilter::AllPropExists)
+                        filter.append(" AND ");
+                    else
+                        filter.append(" OR ");
+                }
+                ecsql.append("$->").append(prop);
+
+                if (propFilter == PropFilter::AllPropAreNotNull || propFilter == PropFilter::AnyPropIsNotNull) {
+                    filter.append(SqlPrintfString("PROP_EXISTS(ECClassId,'%s')", prop.c_str()));
+                } else {
+                    filter.append(SqlPrintfString("$->%s IS NOT NULL", prop.c_str()));
+                }
+            }
+            ecsql.append(" FROM ").append(className);
+            if (propFilter != PropFilter::None) {
+                ecsql.append(filter);
+            }
+            if (maxRows <= 0) {
+                maxRows = std::numeric_limits<int64_t>::max();
+            }
+            if (stmt.Prepare(m_conn, ecsql.c_str()) != ECSqlStatus::Success) {
+                return ERROR;
+            }
+
+            if (onStart != nullptr) onStart(param);
+            int64_t rowCount = 0;
+            param[JOutElapsedTime] = StopWatch::Measure([&]() {
+            //-> test start ----------------------------------------------------
+                while(stmt.Step() == BE_SQLITE_ROW) {
+                    ++rowCount;
+                    if (rowCount >= maxRows) {
+                        break;
+                    }
+                }
+            //-> test stop  ----------------------------------------------------
+            }).ToSeconds();
+            param[JOutRowCount] = rowCount;
+            param[JOutQuery] = ecsql;
+            if (onFinish != nullptr) onFinish(param);
+            return SUCCESS;
+        }
+        Utf8String GetRootSubject() {
+            ECSqlStatement stmt;
+            if (stmt.Prepare(m_conn, "SELECT CodeValue FROM bis.subject WHERE ECInstanceId = 1") != ECSqlStatus::Success) {
+                return "";
+            }
+            if (stmt.Step() != BE_SQLITE_ROW){
+                return "";
+            }
+            return stmt.GetValueText(0);
+        }
+
+        Utf8String GetNativeSQL(Utf8CP ecsql) const{
+            ECSqlStatement stmt;
+            EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_conn, ecsql));
+            return stmt.GetNativeSql();
+        }
+        void SetCommonResultProps(BeJsValue val) {
+            val[JOutRootSubject] = GetRootSubject();
+            val[JOutIModelId] = m_conn.QueryProjectGuid().ToString();
+            val[JOutFileSize] = (int64_t)std::filesystem::file_size(std::filesystem::path{m_conn.GetDbFileName()});
+        }
+    public:
+
+        InstancePropPerfTest(){
+            m_testFuncs.insert_or_assign(JTestQueryInstanceWithNoFilter, [&](BeJsValue param, std::function<void(BeJsValue)> onStart, std::function<void(BeJsValue)> onFinish) { ReadInstances(param, onStart, onFinish); });
+            m_testFuncs.insert_or_assign(JTestQueryInstanceProperties, [&](BeJsValue param, std::function<void(BeJsValue)> onStart, std::function<void(BeJsValue)> onFinish) { ReadProps(param, onStart, onFinish); });
+        }
+        ~InstancePropPerfTest(){}
+
+        BentleyStatus Execute(std::filesystem::path fileName, BeJsValue param, std::function<void(BeJsValue)> onStart = nullptr, std::function<void(BeJsValue)> onFinish =nullptr) {
+            m_randEngine.seed();
+            if (m_conn.IsDbOpen()) {
+                m_conn.CloseDb();
+            }
+
+            auto entry = std::filesystem::directory_entry(fileName);
+            if (!entry.is_regular_file() && !entry.exists()) {
+                return ERROR;
+            }
+
+            if (BE_SQLITE_OK != m_conn.OpenBeSQLiteDb(BeFileName(fileName.c_str()), Db::OpenParams(Db::OpenMode::Readonly))){
+                return ERROR;
+            }
+
+            ECSqlStatement stmt;
+            if (stmt.Prepare(m_conn, "PRAGMA experimental_features_enabled=true") != ECSqlStatus::Success) {
+                return ERROR;
+            }
+            stmt.Step();
+            const auto testName = param[JInTestName].asString();
+            SetCommonResultProps(param);
+            auto it = m_testFuncs.find(testName);
+            if (it == m_testFuncs.end()) {
+                return ERROR;
+            }
+            it->second(param, onStart, onFinish);
+            return SUCCESS;
+        }
+};
+
+
+
+
+TEST_F(InstanceReaderFixture, performance_test) {
+    InstancePropPerfTest gen;
+    auto basePath = std::filesystem::path{"D:\\temp\\test-files"};
+    auto reportOutDir = std::filesystem::path(basePath.c_str()).append("perf_data.db");
+    Db resultDb;
+
+    if (std::filesystem::exists(reportOutDir)) {
+        ASSERT_EQ(BE_SQLITE_OK, resultDb.OpenBeSQLiteDb(BeFileName(reportOutDir.c_str()), Db::OpenParams(Db::OpenMode::ReadWrite)));
+    } else {
+        ASSERT_EQ(BE_SQLITE_OK, resultDb.CreateNewDb(BeFileName(reportOutDir.c_str())));
+    }
+    if (!resultDb.TableExists("perf_results")) {
+        ASSERT_EQ(BE_SQLITE_OK, resultDb.ExecuteSql(R"x(
+            CREATE TABLE [perf_results](
+                [id] INTEGER PRIMARY KEY,
+                [created_on] DATEITME DEFAULT (datetime ()),
+                [release_build] INTEGER,
+                [session] TEXT NOT NULL,
+                [test_name] TEXT NOT NULL,
+                [subject] TEXT NOT NULL,
+                [root_class] TEXT,
+                [row_count] INTEGER,
+                [elapsed_sec] REAL,
+                [result] TEXT);
+            )x"));
+    }
+    ASSERT_EQ(BE_SQLITE_OK, resultDb.SaveChanges());
+    auto saveResults = [](DbR db, BeJsValue val) {
+        static BeGuid session(true);
+        Statement stmt;
+        stmt.Prepare(db, "INSERT INTO perf_results(release_build, session, test_name, subject, root_class, row_count, elapsed_sec, result) VALUES (?,?,?,?,?,?,?,?)");
+        #ifdef NDEBUG
+            stmt.BindInt(1, 1);
+        #else
+            stmt.BindInt(1, 0);
+        #endif
+        stmt.BindText(2, session.ToString().c_str(), Statement::MakeCopy::Yes);
+        stmt.BindText(3, val[InstancePropPerfTest::JInTestName].asCString(), Statement::MakeCopy::Yes);
+        stmt.BindText(4, val[InstancePropPerfTest::JOutRootSubject].asCString(), Statement::MakeCopy::Yes);
+        stmt.BindText(5, val[InstancePropPerfTest::JInRootClassName].asCString(), Statement::MakeCopy::Yes);
+        stmt.BindInt64(6, val[InstancePropPerfTest::JOutRowCount].asInt64());
+        stmt.BindDouble(7, val[InstancePropPerfTest::JOutElapsedTime].asDouble());
+        stmt.BindText(8, val.Stringify().c_str(), Statement::MakeCopy::Yes);
+        EXPECT_EQ(BE_SQLITE_DONE, stmt.Step());
+        db.SaveChanges();
+        printf("%s\n", val.Stringify(StringifyFormat::Indented).c_str());
+    };
+
+    auto testReadInstances = [&](std::filesystem::path pathName, Utf8String className, int64_t maxRows = 0) {
+        BeJsDocument param;
+        param[InstancePropPerfTest::JInTestName] = InstancePropPerfTest::JTestQueryInstanceWithNoFilter;
+        param[InstancePropPerfTest::JInRootClassName] = className;
+        param[InstancePropPerfTest::JInMaxRows] = maxRows;
+        EXPECT_EQ(SUCCESS, gen.Execute(pathName, param));
+        saveResults(resultDb, param);
+    };
+
+    auto testReadProps = [&](
+        std::filesystem::path pathName,
+        Utf8String className,
+        int64_t maxRows = 0,
+        int maxProps = 10,
+        Utf8String filterType = InstancePropPerfTest::JInFilterNone,
+        bool includeDeriveProps = true,
+        bool shuffleProps = true ) {
+
+        BeJsDocument param;
+        param[InstancePropPerfTest::JInTestName] = InstancePropPerfTest::JTestQueryInstanceProperties;
+        param[InstancePropPerfTest::JInRootClassName] = className;
+        param[InstancePropPerfTest::JInMaxRows] = maxRows;
+        param[InstancePropPerfTest::JInFilter] = filterType;
+        param[InstancePropPerfTest::JInShuffleProps] = shuffleProps;
+        param[InstancePropPerfTest::JInIncludeDeriveProps] = includeDeriveProps;
+        param[InstancePropPerfTest::JInMaxProps] = maxProps;
+        EXPECT_EQ(SUCCESS, gen.Execute(pathName, param));
+        saveResults(resultDb, param);
+    };
+
+    int maxRows = 1000000;
+
+    for(auto pathname: std::filesystem::directory_iterator(basePath)) {
+        if (!pathname.is_regular_file())
+            continue;
+
+        if (!Utf8String(pathname.path().c_str()).EndsWithI(".bim"))
+            continue;
+
+        if (!Utf8String(pathname.path().c_str()).EndsWithI("BT4_Bergen-D12_CM.bim"))
+            continue;
+
+        // testReadInstances(pathname.path(), "BisCore.Element", maxRows);
+        testReadInstances(pathname.path(), "BisCore.ElementAspect", maxRows);
+
+        for (auto propCount : std::vector{1, 5, 10, 20}) {
+            testReadProps(pathname.path(), "BisCore.Element", maxRows, propCount, InstancePropPerfTest::JInFilterNone, true, true);
+            // testReadProps(pathname.path(), "BisCore.Element", maxRows, propCount, InstancePropPerfTest::JInFilterAnyPropertyIsNotNull, true, true);
+            // testReadProps(pathname.path(), "BisCore.Element", maxRows, propCount, InstancePropPerfTest::JInFilterAllPropertiesAreNotNull, true, true);
+            // testReadProps(pathname.path(), "BisCore.Element", maxRows, propCount, InstancePropPerfTest::JInFilterAllPropertiesExists, true, true);
+
+            testReadProps(pathname.path(), "BisCore.ElementAspect", maxRows, propCount, InstancePropPerfTest::JInFilterNone, true, true);
+            // testReadProps(pathname.path(), "BisCore.ElementAspect", maxRows, propCount, InstancePropPerfTest::JInFilterAnyPropertyIsNotNull, true, true);
+            // testReadProps(pathname.path(), "BisCore.ElementAspect", maxRows, propCount, InstancePropPerfTest::JInFilterAllPropertiesAreNotNull, true, true);
+            // testReadProps(pathname.path(), "BisCore.ElementAspect", maxRows, propCount, InstancePropPerfTest::JInFilterAllPropertiesExists, true, true);
+        }
+    }
+
+}
+#endif
+
+TEST_F(InstanceReaderFixture, InstanceAccess) {
+    ASSERT_EQ(BE_SQLITE_OK, OpenECDbTestDataFile("test.bim"));
+    ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+
+    ECSqlStatement stmt0;
+    EXPECT_EQ(ECSqlStatus::Success, stmt0.Prepare(m_ecdb, "SELECT $ FROM bis.CategorySelectorRefersToCategories"));
+
+    ECSqlStatement stmt1;
+    EXPECT_EQ(ECSqlStatus::Success, stmt1.Prepare(m_ecdb, "SELECT $->ECInstanceId FROM bis.CategorySelectorRefersToCategories"));
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceReaderFixture, OptionsInheritance)
+    {
+    ASSERT_EQ(BE_SQLITE_OK, OpenECDbTestDataFile("test.bim"));
+
+    constexpr Utf8CP withoutJsNames = R"json({"ECInstanceId":"0x1d","ECClassId":"0xf","Schema":{"Id":"0x3","RelECClassId":"0x10"},"Name":"PropertyHasCategory","Description":"Relates the property to its PropertyCategory.","Type":1,"Modifier":2,"RelationshipStrength":0,"RelationshipStrengthDirection":1})json";
+    constexpr Utf8CP withJsNames = R"json({"id":"0x1d","className":"ECDbMeta.ECClassDef","schema":{"id":"0x3","relClassName":"ECDbMeta.SchemaOwnsClasses"},"name":"PropertyHasCategory","description":"Relates the property to its PropertyCategory.","type":1,"modifier":2,"relationshipStrength":0,"relationshipStrengthDirection":1})json";
+
+    for (const auto& [lineNumber, ecsql, expectedOutput] : std::vector<std::tuple<unsigned int, Utf8CP, Utf8CP>>
+        {
+            { __LINE__, "SELECT $ FROM meta.ECClassDef WHERE Description='Relates the property to its PropertyCategory.'", withoutJsNames},
+            { __LINE__, "SELECT $ FROM meta.ECClassDef WHERE Description='Relates the property to its PropertyCategory.' OPTIONS USE_JS_PROP_NAMES", withJsNames},
+            { __LINE__, "SELECT $ FROM meta.ECClassDef WHERE Description='Relates the property to its PropertyCategory.' OPTIONS USE_JS_PROP_NAMES = 1", withJsNames},
+            { __LINE__, "SELECT $ FROM meta.ECClassDef WHERE Description='Relates the property to its PropertyCategory.' OPTIONS USE_JS_PROP_NAMES = TRUE", withJsNames},
+            { __LINE__, "SELECT $ FROM meta.ECClassDef WHERE Description='Relates the property to its PropertyCategory.' OPTIONS USE_JS_PROP_NAMES = 0", withoutJsNames},
+            { __LINE__, "SELECT $ FROM meta.ECClassDef WHERE Description='Relates the property to its PropertyCategory.' OPTIONS USE_JS_PROP_NAMES = FALSE", withoutJsNames},
+
+            { __LINE__, "SELECT T FROM (SELECT $ T FROM meta.ECClassDef WHERE Description='Relates the property to its PropertyCategory.')", withoutJsNames},
+            { __LINE__, "SELECT T FROM (SELECT $ T FROM meta.ECClassDef WHERE Description='Relates the property to its PropertyCategory.' OPTIONS USE_JS_PROP_NAMES)", withJsNames},
+            { __LINE__, "SELECT T FROM (SELECT $ T FROM meta.ECClassDef WHERE Description='Relates the property to its PropertyCategory.') OPTIONS USE_JS_PROP_NAMES", withJsNames},
+
+            // Innermost option will take precedence
+            { __LINE__, "SELECT T FROM (SELECT $ T FROM meta.ECClassDef WHERE Description='Relates the property to its PropertyCategory.' OPTIONS USE_JS_PROP_NAMES = 0) OPTIONS USE_JS_PROP_NAMES = 0", withoutJsNames },
+            { __LINE__, "SELECT T FROM (SELECT $ T FROM meta.ECClassDef WHERE Description='Relates the property to its PropertyCategory.' OPTIONS USE_JS_PROP_NAMES = 0) OPTIONS USE_JS_PROP_NAMES = 1", withoutJsNames },
+            { __LINE__, "SELECT T FROM (SELECT $ T FROM meta.ECClassDef WHERE Description='Relates the property to its PropertyCategory.' OPTIONS USE_JS_PROP_NAMES = 1) OPTIONS USE_JS_PROP_NAMES = 0", withJsNames },
+            { __LINE__, "SELECT T FROM (SELECT $ T FROM meta.ECClassDef WHERE Description='Relates the property to its PropertyCategory.' OPTIONS USE_JS_PROP_NAMES = 1) OPTIONS USE_JS_PROP_NAMES = 1", withJsNames },
+        })
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        EXPECT_STREQ(stmt.GetValueText(0), expectedOutput);
+        stmt.Finalize();
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceReaderFixture, check_option_USE_JS_PROP_NAMES) {
+    ASSERT_EQ(BE_SQLITE_OK, OpenECDbTestDataFile("test.bim"));
+
+    if ("system property name should be ts compilable id/className/sourceId/sourceClassName/targetId/targetClassName") {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT JSON_GROUP_ARRAY($) FROM Bis.CategorySelectorRefersToCategories OPTIONS USE_JS_PROP_NAMES"));
+        ASSERT_STREQ(stmt.GetNativeSql(), "SELECT JSON_GROUP_ARRAY(json(extract_inst([CategorySelectorRefersToCategories].[ECClassId],[CategorySelectorRefersToCategories].[ECInstanceId], 0x1))) FROM (SELECT [bis_ElementRefersToElements].[Id] [ECInstanceId],[bis_ElementRefersToElements].[ECClassId],[bis_ElementRefersToElements].[SourceId] [SourceECInstanceId],[bis_ElementRefersToElements].[TargetId] [TargetECInstanceId] FROM [main].[bis_ElementRefersToElements] WHERE [bis_ElementRefersToElements].ECClassId=104) [CategorySelectorRefersToCategories]");
+        BeJsDocument expectedDoc;
+        expectedDoc.Parse(R"x([
+            {
+                "id": "0xb",
+                "className": "BisCore.CategorySelectorRefersToCategories",
+                "sourceId": "0x37",
+                "sourceClassName": "BisCore.CategorySelector",
+                "targetId": "0x17",
+                "targetClassName": "BisCore.SpatialCategory"
+            },
+            {
+                "id": "0xc",
+                "className": "BisCore.CategorySelectorRefersToCategories",
+                "sourceId": "0x37",
+                "sourceClassName": "BisCore.CategorySelector",
+                "targetId": "0x2d",
+                "targetClassName": "BisCore.SpatialCategory"
+            },
+            {
+                "id": "0xd",
+                "className": "BisCore.CategorySelectorRefersToCategories",
+                "sourceId": "0x37",
+                "sourceClassName": "BisCore.CategorySelector",
+                "targetId": "0x2f",
+                "targetClassName": "BisCore.SpatialCategory"
+            },
+            {
+                "id": "0xe",
+                "className": "BisCore.CategorySelectorRefersToCategories",
+                "sourceId": "0x37",
+                "sourceClassName": "BisCore.CategorySelector",
+                "targetId": "0x31",
+                "targetClassName": "BisCore.SpatialCategory"
+            }
+        ])x");
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        BeJsDocument actualDoc;
+        actualDoc.Parse(stmt.GetValueText(0));
+        ASSERT_STRCASEEQ(expectedDoc.Stringify(StringifyFormat::Indented).c_str(), actualDoc.Stringify(StringifyFormat::Indented).c_str());
+        stmt.Finalize();
+    }
+    if ("nav system properties id/relClassName") {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT $ FROM Bis.GeometricElement3d OPTIONS USE_JS_PROP_NAMES"));
+        ASSERT_STREQ(stmt.GetNativeSql(), "SELECT json(extract_inst([GeometricElement3d].[ECClassId],[GeometricElement3d].[ECInstanceId], 0x1)) FROM (SELECT [bis_GeometricElement3d].[ElementId] ECInstanceId,[bis_GeometricElement3d].[ECClassId] FROM [main].[bis_GeometricElement3d]) [GeometricElement3d]");
+        BeJsDocument expectedDoc;
+        expectedDoc.Parse(R"x({
+            "id": "0x38",
+            "className": "Generic.PhysicalObject",
+            "model": {
+                "id": "0x1f",
+                "relClassName": "BisCore.ModelContainsElements"
+            },
+            "lastMod": "2017-07-25T20:44:59.926Z",
+            "codeSpec": {
+                "id": "0x1",
+                "relClassName": "BisCore.CodeSpecSpecifiesCode"
+            },
+            "codeScope": {
+                "id": "0x1",
+                "relClassName": "BisCore.ElementScopesCode"
+            },
+            "category": {
+                "id": "0x17",
+                "relClassName": "BisCore.GeometricElement3dIsInCategory"
+            },
+            "inSpatialIndex": true,
+            "origin": {
+                "x": 6.494445575423782,
+                "y": 19.89784647571006,
+                "z": 8.020100502512559
+            },
+            "yaw": 25.94935951207145,
+            "pitch": 4.7708320221952736e-15,
+            "roll": 114.7782627769506,
+            "bBoxLow": {
+                "x": -9.735928156263862,
+                "y": -9.735928156263864,
+                "z": -9.735928156263858
+            },
+            "bBoxHigh": {
+                "x": 9.735928156263858,
+                "y": 9.73592815626386,
+                "z": 9.735928156263856
+            },
+            "geometryStream": "{\"bytes\":203}"
+        })x");
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        BeJsDocument actualDoc;
+        actualDoc.Parse(stmt.GetValueText(0));
+        ASSERT_STRCASEEQ(expectedDoc.Stringify(StringifyFormat::Indented).c_str(), actualDoc.Stringify(StringifyFormat::Indented).c_str());
+        stmt.Finalize();
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceReaderFixture, check_option_DO_NOT_TRUNCATE_BLOB) {
+    ASSERT_EQ(BE_SQLITE_OK, OpenECDbTestDataFile("test.bim"));
+
+    if ("geometryStream/BLOB is truncated by default") {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT $ FROM Bis.GeometricElement3d OPTIONS USE_JS_PROP_NAMES"));
+        ASSERT_STREQ(stmt.GetNativeSql(), "SELECT json(extract_inst([GeometricElement3d].[ECClassId],[GeometricElement3d].[ECInstanceId], 0x1)) FROM (SELECT [bis_GeometricElement3d].[ElementId] ECInstanceId,[bis_GeometricElement3d].[ECClassId] FROM [main].[bis_GeometricElement3d]) [GeometricElement3d]");
+        BeJsDocument expectedDoc;
+        expectedDoc.Parse(R"x({
+            "id": "0x38",
+            "className": "Generic.PhysicalObject",
+            "model": {
+                "id": "0x1f",
+                "relClassName": "BisCore.ModelContainsElements"
+            },
+            "lastMod": "2017-07-25T20:44:59.926Z",
+            "codeSpec": {
+                "id": "0x1",
+                "relClassName": "BisCore.CodeSpecSpecifiesCode"
+            },
+            "codeScope": {
+                "id": "0x1",
+                "relClassName": "BisCore.ElementScopesCode"
+            },
+            "category": {
+                "id": "0x17",
+                "relClassName": "BisCore.GeometricElement3dIsInCategory"
+            },
+            "inSpatialIndex": true,
+            "origin": {
+                "x": 6.494445575423782,
+                "y": 19.89784647571006,
+                "z": 8.020100502512559
+            },
+            "yaw": 25.94935951207145,
+            "pitch": 4.7708320221952736e-15,
+            "roll": 114.7782627769506,
+            "bBoxLow": {
+                "x": -9.735928156263862,
+                "y": -9.735928156263864,
+                "z": -9.735928156263858
+            },
+            "bBoxHigh": {
+                "x": 9.735928156263858,
+                "y": 9.73592815626386,
+                "z": 9.735928156263856
+            },
+            "geometryStream": "{\"bytes\":203}"
+        })x");
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        BeJsDocument actualDoc;
+        actualDoc.Parse(stmt.GetValueText(0));
+        ASSERT_STRCASEEQ(expectedDoc.Stringify(StringifyFormat::Indented).c_str(), actualDoc.Stringify(StringifyFormat::Indented).c_str());
+        stmt.Finalize();
+    }
+    if ("do not truncate geometryStream/BLOB") {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT $ FROM Bis.GeometricElement3d OPTIONS USE_JS_PROP_NAMES DO_NOT_TRUNCATE_BLOB"));
+        ASSERT_STREQ(stmt.GetNativeSql(), "SELECT json(extract_inst([GeometricElement3d].[ECClassId],[GeometricElement3d].[ECInstanceId], 0x3)) FROM (SELECT [bis_GeometricElement3d].[ElementId] ECInstanceId,[bis_GeometricElement3d].[ECClassId] FROM [main].[bis_GeometricElement3d]) [GeometricElement3d]");
+        BeJsDocument expectedDoc;
+        expectedDoc.Parse(R"x({
+            "id": "0x38",
+            "className": "Generic.PhysicalObject",
+            "model": {
+                "id": "0x1f",
+                "relClassName": "BisCore.ModelContainsElements"
+            },
+            "lastMod": "2017-07-25T20:44:59.926Z",
+            "codeSpec": {
+                "id": "0x1",
+                "relClassName": "BisCore.CodeSpecSpecifiesCode"
+            },
+            "codeScope": {
+                "id": "0x1",
+                "relClassName": "BisCore.ElementScopesCode"
+            },
+            "category": {
+                "id": "0x17",
+                "relClassName": "BisCore.GeometricElement3dIsInCategory"
+            },
+            "inSpatialIndex": true,
+            "origin": {
+                "x": 6.494445575423782,
+                "y": 19.89784647571006,
+                "z": 8.020100502512559
+            },
+            "yaw": 25.94935951207145,
+            "pitch": 4.7708320221952736e-15,
+            "roll": 114.7782627769506,
+            "bBoxLow": {
+                "x": -9.735928156263862,
+                "y": -9.735928156263864,
+                "z": -9.735928156263858
+            },
+            "bBoxHigh": {
+                "x": 9.735928156263858,
+                "y": 9.73592815626386,
+                "z": 9.735928156263856
+            },
+            "geometryStream": "encoding=base64;ywCAAjAABgAA+AAAAAEAAAAIDQgBAUAEAAAAMAAAABwAAAAYABQADAUeEQEIBgAHBRgBAQwBAQDwASQJAUALAAAAqAAAAGJnMDAwMWZiEAUXEAoADgAHBUIACgUQCAAHDAUIyAYAfAAEAAYAAAC8t0aTy3gjQNTy0dk2l6Q8BOGMD2d0zbxZPdLR+8bSvLS6W8O77KW8vQ0oBT8IANg8CQgg0LyQPKeSAhKeERAEPLoyKAAk4LwYLURU+yH5vwkIJAlAAQAAAAAAAAA="
+        })x");
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        BeJsDocument actualDoc;
+        actualDoc.Parse(stmt.GetValueText(0));
+        ASSERT_STRCASEEQ(expectedDoc.Stringify(StringifyFormat::Indented).c_str(), actualDoc.Stringify(StringifyFormat::Indented).c_str());
+        stmt.Finalize();
+    }
+}
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceReaderFixture, check_link_table_serialization) {
+    ASSERT_EQ(BE_SQLITE_OK, OpenECDbTestDataFile("test.bim"));
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT $ FROM bis.CategorySelectorRefersToCategories"));
+    while(stmt.Step() == BE_SQLITE_ROW) {
+        BeJsDocument doc;
+        ASSERT_FALSE(stmt.IsValueNull(0)) << "$ cannot be NULL";
+        doc.Parse(stmt.GetValueText(0));
+        ASSERT_TRUE(doc.hasMember("ECInstanceId"))       << "Must have ECInstanceId Property";
+        ASSERT_TRUE(doc.hasMember("ECClassId"))          << "Must have ECClassId Property";
+        ASSERT_TRUE(doc.hasMember("SourceECInstanceId")) << "Must have SourceECInstanceId Property";
+        ASSERT_TRUE(doc.hasMember("SourceECClassId"))    << "Must have SourceECClassId Property";
+        ASSERT_TRUE(doc.hasMember("TargetECInstanceId")) << "Must have TargetECInstanceId Property";
+        ASSERT_TRUE(doc.hasMember("TargetECClassId"))    << "Must have TargetECClassId Property";
+    }
+    stmt.Finalize();
+}
+
+TEST_F(InstanceReaderFixture, InstanceQueriesAfterUpdate) 
+    {
+    // Setup test db
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("Test9876.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+
+            <ECStructClass typeName="StructProp" modifier="Sealed">
+                <ECProperty propertyName="DoubleProp" typeName="double" />
+                <ECProperty propertyName="StringProp" typeName="string" />
+            </ECStructClass>
+
+            <ECEntityClass typeName="TestClass" modifier="Sealed">
+                <ECStructProperty propertyName="StructProp" typeName="StructProp" />
+                <ECProperty propertyName="PrimitiveProp" typeName="double" />
+            </ECEntityClass>
+        </ECSchema>)xml")));
+
+    // Insert initial values in test db
+    ECSqlStatement insertStatement;
+    insertStatement.Prepare(m_ecdb, "insert into ts.TestClass (StructProp, PrimitiveProp) values (?, 15.65)");
+    auto& structProp = insertStatement.GetBinder(1);
+    structProp["DoubleProp"].BindDouble(15.25);
+    structProp["StringProp"].BindText("InitialValue", IECSqlBinder::MakeCopy::No);
+
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, insertStatement.Step(key));
+
+    m_ecdb.SaveChanges();
+
+    // Instance queries should return initial values
+    ECSqlStatement instanceQueryStatement;
+    ASSERT_EQ(ECSqlStatus::Success, instanceQueryStatement.Prepare(m_ecdb, "select $ from ts.TestClass"));
+    ASSERT_EQ(BE_SQLITE_ROW, instanceQueryStatement.Step());
+    EXPECT_STREQ(instanceQueryStatement.GetValueText(0), "{\"ECInstanceId\":\"0x1\",\"ECClassId\":\"0x4c\",\"StructProp\":{\"DoubleProp\":15.25,\"StringProp\":\"InitialValue\"},\"PrimitiveProp\":15.65}");
+    instanceQueryStatement.Finalize();
+
+    // Update data in TestClass
+    ECSqlStatement updateStatement;
+    ASSERT_EQ(ECSqlStatus::Success, updateStatement.Prepare(m_ecdb, "update ts.TestClass set StructProp.DoubleProp=25.15, StructProp.StringProp='UpdatedValue', PrimitiveProp=65.15"));
+    ASSERT_EQ(BE_SQLITE_DONE, updateStatement.Step());
+    updateStatement.Finalize();
+    m_ecdb.SaveChanges();
+    
+    // Instance queries should return updated values
+    ASSERT_EQ(ECSqlStatus::Success, instanceQueryStatement.Prepare(m_ecdb, "select $ from ts.TestClass"));
+    ASSERT_EQ(BE_SQLITE_ROW, instanceQueryStatement.Step());
+    EXPECT_STREQ(instanceQueryStatement.GetValueText(0), "{\"ECInstanceId\":\"0x1\",\"ECClassId\":\"0x4c\",\"StructProp\":{\"DoubleProp\":25.15,\"StringProp\":\"UpdatedValue\"},\"PrimitiveProp\":65.15}");
+    instanceQueryStatement.Finalize();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceReaderFixture, optional_and_non_optional_properties) {
+    ASSERT_EQ(BE_SQLITE_OK, OpenECDbTestDataFile("test.bim"));
+
+    if ("non-optional property must be part of class_props filter") {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId FROM bis.Element WHERE $->Url = 'file:///d|/dgn/rf2.dgn'"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(0x21, stmt.GetValueId<ECInstanceId>(0).GetValue());
+        ASSERT_EQ(0xa9, stmt.GetValueId<ECClassId>(1).GetValue());
+
+        Utf8String nativeSql = stmt.GetNativeSql();
+        ASSERT_TRUE(nativeSql.Contains(R"x(INNER JOIN class_props('["Url"]'))x"));
+        ASSERT_TRUE(nativeSql.Contains(R"x(WHERE extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'Url',0x0)='file:///d|/dgn/rf2.dgn')x"));
+    }
+
+    if ("optional property must not be part of class_props filter") {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId FROM bis.Element WHERE $->Url? = 'file:///d|/dgn/rf2.dgn'"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(0x21, stmt.GetValueId<ECInstanceId>(0).GetValue());
+        ASSERT_EQ(0xa9, stmt.GetValueId<ECClassId>(1).GetValue());
+
+        Utf8String nativeSql = stmt.GetNativeSql();
+        ASSERT_FALSE(nativeSql.Contains(R"x(INNER JOIN class_props('["Url"]'))x"));
+        ASSERT_TRUE(nativeSql.Contains(R"x(WHERE extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'Url',0x0)='file:///d|/dgn/rf2.dgn')x"));
+    }
+
+    if ("multiple required properties") {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId FROM bis.Element WHERE FLOOR($->Yaw) = 65 AND FLOOR($->Roll) = 63"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(0x39, stmt.GetValueId<ECInstanceId>(0).GetValue());
+        ASSERT_EQ(0xe7, stmt.GetValueId<ECClassId>(1).GetValue());
+
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(0x3b, stmt.GetValueId<ECInstanceId>(0).GetValue());
+        ASSERT_EQ(0xe7, stmt.GetValueId<ECClassId>(1).GetValue());
+
+        Utf8String nativeSql = stmt.GetNativeSql();
+        ASSERT_TRUE(nativeSql.Contains(R"x(INNER JOIN class_props('["Roll","Yaw"]'))x"));
+        ASSERT_TRUE(nativeSql.Contains(R"x(FLOOR(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'Yaw',0x0))=65)x"));
+        ASSERT_TRUE(nativeSql.Contains(R"x(FLOOR(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'Roll',0x0))=63)x"));
+    }
+
+    if ("one required and one optional properties") {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId FROM bis.Element WHERE FLOOR($->Yaw) = 65 AND FLOOR($->Roll?) = 63"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(0x39, stmt.GetValueId<ECInstanceId>(0).GetValue());
+        ASSERT_EQ(0xe7, stmt.GetValueId<ECClassId>(1).GetValue());
+
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(0x3b, stmt.GetValueId<ECInstanceId>(0).GetValue());
+        ASSERT_EQ(0xe7, stmt.GetValueId<ECClassId>(1).GetValue());
+
+        Utf8String nativeSql = stmt.GetNativeSql();
+        ASSERT_TRUE(nativeSql.Contains(R"x(INNER JOIN class_props('["Yaw"]'))x"));
+        ASSERT_TRUE(nativeSql.Contains(R"x(FLOOR(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'Yaw',0x0))=65)x"));
+        ASSERT_TRUE(nativeSql.Contains(R"x(FLOOR(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'Roll',0x0))=63)x"));
+    }
+
+    if ("non existing non optional property ORed") {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId FROM bis.Element WHERE FLOOR($->Yaw?) = 65 AND FLOOR($->Roll?) = 63 OR $->NonExistingRequiredProp = 65"));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+
+        Utf8String nativeSql = stmt.GetNativeSql();
+        ASSERT_TRUE(nativeSql.Contains(R"x(INNER JOIN class_props('["NonExistingRequiredProp"]'))x"));
+        ASSERT_TRUE(nativeSql.Contains(R"x(FLOOR(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'Yaw',0x0))=65)x"));
+        ASSERT_TRUE(nativeSql.Contains(R"x(FLOOR(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'Roll',0x0))=63)x"));
+        ASSERT_TRUE(nativeSql.Contains(R"x(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'NonExistingRequiredProp',0x0)=65)x"));
+    }
+
+    if ("non existing non optional property ANDed") {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId FROM bis.Element WHERE FLOOR($->Yaw?) = 65 AND FLOOR($->Roll?) = 63 AND $->NonExistingRequiredProp = 65"));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+
+        Utf8String nativeSql = stmt.GetNativeSql();
+        ASSERT_TRUE(nativeSql.Contains(R"x(INNER JOIN class_props('["NonExistingRequiredProp"]'))x"));
+        ASSERT_TRUE(nativeSql.Contains(R"x(FLOOR(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'Yaw',0x0))=65)x"));
+        ASSERT_TRUE(nativeSql.Contains(R"x(FLOOR(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'Roll',0x0))=63)x"));
+        ASSERT_TRUE(nativeSql.Contains(R"x(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'NonExistingRequiredProp',0x0)=65)x"));
+    }
+
+    if ("non existing optional property ANDed") {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId FROM bis.Element WHERE FLOOR($->Yaw?) = 65 AND FLOOR($->Roll?) = 63 AND $->NonExistingRequiredProp? = 65"));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+
+        Utf8String nativeSql = stmt.GetNativeSql();
+        ASSERT_FALSE(nativeSql.Contains(R"x(INNER JOIN class_props)x"));
+        ASSERT_TRUE(nativeSql.Contains(R"x(FLOOR(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'Yaw',0x0))=65)x"));
+        ASSERT_TRUE(nativeSql.Contains(R"x(FLOOR(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'Roll',0x0))=63)x"));
+        ASSERT_TRUE(nativeSql.Contains(R"x(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'NonExistingRequiredProp',0x0)=65)x"));
+    }
+
+    if ("non existing optional property ORed") {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId FROM bis.Element WHERE FLOOR($->Yaw?) = 65 AND FLOOR($->Roll?) = 63 OR $->NonExistingOptionalProp? = 65"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(0x39, stmt.GetValueId<ECInstanceId>(0).GetValue());
+        ASSERT_EQ(0xe7, stmt.GetValueId<ECClassId>(1).GetValue());
+
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(0x3b, stmt.GetValueId<ECInstanceId>(0).GetValue());
+        ASSERT_EQ(0xe7, stmt.GetValueId<ECClassId>(1).GetValue());
+
+        Utf8String nativeSql = stmt.GetNativeSql();
+        ASSERT_FALSE(nativeSql.Contains(R"x(INNER JOIN class_props)x"));
+        ASSERT_TRUE(nativeSql.Contains(R"x(FLOOR(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'Yaw',0x0))=65)x"));
+        ASSERT_TRUE(nativeSql.Contains(R"x(FLOOR(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'Roll',0x0))=63)x"));
+        ASSERT_TRUE(nativeSql.Contains(R"x(extract_prop([Element].[ECClassId],[Element].[ECInstanceId],'NonExistingOptionalProp',0x0)=65)x"));
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceReaderFixture, check_instance_serialization) {
+    ASSERT_EQ(BE_SQLITE_OK, OpenECDbTestDataFile("test.bim"));
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT $ FROM bis.Element"));
+    while(stmt.Step() == BE_SQLITE_ROW) {
+        BeJsDocument doc;
+        doc.Parse(stmt.GetValueText(0));
+        ASSERT_TRUE(doc.hasMember("ECInstanceId")) << "Must have ECInstanceId Property";
+        ASSERT_TRUE(doc.hasMember("ECClassId")) << "Must have ECClassId Property";
+    }
+    stmt.Finalize();
+
+    auto expectedJson = R"json(
+        [
+            {
+                "ECInstanceId":"0x38",
+                "ECClassId":"0xe7",
+                "Model":{
+                    "Id":"0x1f",
+                    "RelECClassId":"0x40"
+                },
+                "LastMod":"2017-07-25T20:44:59.926Z",
+                "CodeSpec":{
+                    "Id":"0x1",
+                    "RelECClassId":"0x47"
+                },
+                "CodeScope":{
+                    "Id":"0x1",
+                    "RelECClassId":"0x49"
+                },
+                "Category":{
+                    "Id":"0x17",
+                    "RelECClassId":"0x8c"
+                },
+                "InSpatialIndex":true,
+                "Origin":{
+                    "X":6.494445575423782,
+                    "Y":19.89784647571006,
+                    "Z":8.020100502512559
+                },
+                "Yaw":25.949359512071446,
+                "Pitch":4.770832022195274e-15,
+                "Roll":114.7782627769506,
+                "BBoxLow":{
+                    "X":-9.735928156263862,
+                    "Y":-9.735928156263864,
+                    "Z":-9.735928156263858
+                },
+                "BBoxHigh":{
+                    "X":9.735928156263858,
+                    "Y":9.73592815626386,
+                    "Z":9.735928156263855
+                },
+                "GeometryStream":"{\"bytes\":203}"
+            },
+            {
+                "ECInstanceId":"0x39",
+                "ECClassId":"0xe7",
+                "Model":{
+                    "Id":"0x24",
+                    "RelECClassId":"0x40"
+                },
+                "LastMod":"2017-07-25T20:44:59.926Z",
+                "CodeSpec":{
+                    "Id":"0x1",
+                    "RelECClassId":"0x47"
+                },
+                "CodeScope":{
+                    "Id":"0x1",
+                    "RelECClassId":"0x49"
+                },
+                "Category":{
+                    "Id":"0x17",
+                    "RelECClassId":"0x8c"
+                },
+                "InSpatialIndex":true,
+                "Origin":{
+                    "X":17.534003916481428,
+                    "Y":13.798192542788694,
+                    "Z":0.0
+                },
+                "Yaw":65.4666878656572,
+                "Pitch":-3.1805546814635176e-15,
+                "Roll":63.6877065778212,
+                "BBoxLow":{
+                    "X":-7.538875423282141,
+                    "Y":-7.538875423282143,
+                    "Z":-7.538875423282142
+                },
+                "BBoxHigh":{
+                    "X":7.538875423282141,
+                    "Y":7.538875423282143,
+                    "Z":7.538875423282142
+                },
+                "GeometryStream":"{\"bytes\":201}"
+            },
+            {
+                "ECInstanceId":"0x3a",
+                "ECClassId":"0xe7",
+                "Model":{
+                    "Id":"0x22",
+                    "RelECClassId":"0x40"
+                },
+                "LastMod":"2017-07-25T20:44:59.926Z",
+                "CodeSpec":{
+                    "Id":"0x1",
+                    "RelECClassId":"0x47"
+                },
+                "CodeScope":{
+                    "Id":"0x1",
+                    "RelECClassId":"0x49"
+                },
+                "Category":{
+                    "Id":"0x17",
+                    "RelECClassId":"0x8c"
+                },
+                "InSpatialIndex":true,
+                "Origin":{
+                    "X":3.5267011211011448,
+                    "Y":-0.14981669899059627,
+                    "Z":4.0100502512562795
+                },
+                "Yaw":25.94935951207144,
+                "Pitch":-3.1805546814635168e-15,
+                "Roll":114.7782627769506,
+                "BBoxLow":{
+                    "X":-9.735928156263856,
+                    "Y":-9.735928156263853,
+                    "Z":-9.735928156263855
+                },
+                "BBoxHigh":{
+                    "X":9.735928156263856,
+                    "Y":9.735928156263853,
+                    "Z":9.735928156263855
+                },
+                "GeometryStream":"{\"bytes\":204}"
+            },
+            {
+                "ECInstanceId":"0x3b",
+                "ECClassId":"0xe7",
+                "Model":{
+                    "Id":"0x23",
+                    "RelECClassId":"0x40"
+                },
+                "LastMod":"2017-07-25T20:44:59.942Z",
+                "CodeSpec":{
+                    "Id":"0x1",
+                    "RelECClassId":"0x47"
+                },
+                "CodeScope":{
+                    "Id":"0x1",
+                    "RelECClassId":"0x49"
+                },
+                "Category":{
+                    "Id":"0x17",
+                    "RelECClassId":"0x8c"
+                },
+                "InSpatialIndex":true,
+                "Origin":{
+                    "X":2.080496897152193,
+                    "Y":-4.824215490117017,
+                    "Z":0.0
+                },
+                "Yaw":65.4666878656572,
+                "Pitch":-3.1805546814635176e-15,
+                "Roll":63.6877065778212,
+                "BBoxLow":{
+                    "X":-7.538875423282141,
+                    "Y":-7.538875423282143,
+                    "Z":-7.538875423282142
+                },
+                "BBoxHigh":{
+                    "X":7.538875423282141,
+                    "Y":7.538875423282143,
+                    "Z":7.538875423282142
+                },
+                "GeometryStream":"{\"bytes\":201}"
+            }
+        ]
+
+    )json";
+
+    BeJsDocument expectedDoc;
+    expectedDoc.Parse(expectedJson);
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select JSON_GROUP_ARRAY(JSON($)) from bis.GeometricElement3d"));
+    while(stmt.Step() == BE_SQLITE_ROW) {
+        BeJsDocument actualDoc;
+        actualDoc.Parse(stmt.GetValueText(0));
+        ASSERT_STRCASEEQ(expectedDoc.Stringify(StringifyFormat::Indented).c_str(), actualDoc.Stringify(StringifyFormat::Indented).c_str());
+    }
+}
+>>>>>>> 963a6e22 (Update ECDbMap, bump ECDb profile version to 4.0.0.4)
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -23,8 +1083,14 @@ TEST_F(InstanceReaderFixture, ecsql_read_instance) {
     )sql"));
 
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+<<<<<<< HEAD
     ASSERT_STREQ(stmt.GetNativeSql(), "SELECT extract_inst([ECClassDef].[ECClassId],[ECClassDef].[ECInstanceId]) FROM (SELECT [Id] ECInstanceId,32 ECClassId,[Description] FROM [main].[ec_Class]) [ECClassDef] WHERE [ECClassDef].[Description]='Relates the property to its PropertyCategory.'");
     ASSERT_STREQ(stmt.GetValueText(0), R"json({"ECInstanceId":"0x2e","ECClassId":"ECDbMeta.ECClassDef","Schema":{"Id":"0x4","RelECClassId":"ECDbMeta.SchemaOwnsClasses"},"Name":"PropertyHasCategory","Description":"Relates the property to its PropertyCategory.","Type":1,"Modifier":2,"RelationshipStrength":0,"RelationshipStrengthDirection":1})json");
+=======
+
+    ASSERT_STREQ(stmt.GetNativeSql(), "SELECT json(extract_inst([ECClassDef].[ECClassId],[ECClassDef].[ECInstanceId], 0x0)) FROM (SELECT [Id] ECInstanceId,34 ECClassId,[Description] FROM [main].[ec_Class]) [ECClassDef] WHERE [ECClassDef].[Description]='Relates the property to its PropertyCategory.'");
+    ASSERT_STREQ(stmt.GetValueText(0), R"json({"ECInstanceId":"0x30","ECClassId":"0x22","Schema":{"Id":"0x4","RelECClassId":"0x23"},"Name":"PropertyHasCategory","Description":"Relates the property to its PropertyCategory.","Type":1,"Modifier":2,"RelationshipStrength":0,"RelationshipStrengthDirection":1})json");
+>>>>>>> 963a6e22 (Update ECDbMap, bump ECDb profile version to 4.0.0.4)
 }
 
 //---------------------------------------------------------------------------------------
@@ -39,7 +1105,11 @@ TEST_F(InstanceReaderFixture, ecsql_read_property) {
     )sql"));
 
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+<<<<<<< HEAD
     ASSERT_STREQ(stmt.GetNativeSql(), "SELECT extract_prop([ECClassDef].[ECClassId],[ECClassDef].[ECInstanceId],'name') FROM (SELECT [Id] ECInstanceId,32 ECClassId,[Description] FROM [main].[ec_Class]) [ECClassDef] WHERE [ECClassDef].[Description]='Relates the property to its PropertyCategory.'");
+=======
+    ASSERT_STREQ(stmt.GetNativeSql(), "SELECT extract_prop([ECClassDef].[ECClassId],[ECClassDef].[ECInstanceId],'name',0x0,:ecdb_this_ptr,0) FROM (SELECT [Id] ECInstanceId,34 ECClassId,[Description] FROM [main].[ec_Class]) [ECClassDef] WHERE [ECClassDef].[Description]='Relates the property to its PropertyCategory.'");
+>>>>>>> 963a6e22 (Update ECDbMap, bump ECDb profile version to 4.0.0.4)
     ASSERT_STREQ(stmt.GetValueText(0), "PropertyHasCategory");
 }
 
@@ -56,11 +1126,19 @@ TEST_F(InstanceReaderFixture, instance_reader) {
 
     BeJsDocument doc;
     doc.Parse(R"json({
+<<<<<<< HEAD
         "ECInstanceId": "0x2e",
         "ECClassId": "ECDbMeta.ECClassDef",
         "Schema": {
             "Id": "0x4",
             "RelECClassId": "ECDbMeta.SchemaOwnsClasses"
+=======
+        "ECInstanceId": "0x30",
+        "ECClassId": "0x22",
+        "Schema": {
+            "Id": "0x4",
+            "RelECClassId": "0x23"
+>>>>>>> 963a6e22 (Update ECDbMap, bump ECDb profile version to 4.0.0.4)
         },
         "Name": "PropertyHasCategory",
         "Description": "Relates the property to its PropertyCategory.",
@@ -80,7 +1158,11 @@ TEST_F(InstanceReaderFixture, instance_reader) {
     if ("use syntax to get full instance") {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECClassId, ECInstanceId, $ FROM meta.ECClassDef WHERE Description='Relates the property to its PropertyCategory.'"));
+<<<<<<< HEAD
         const auto expectedSQL = "SELECT [ECClassDef].[ECClassId],[ECClassDef].[ECInstanceId],extract_inst([ECClassDef].[ECClassId],[ECClassDef].[ECInstanceId]) FROM (SELECT [Id] ECInstanceId,32 ECClassId,[Description] FROM [main].[ec_Class]) [ECClassDef] WHERE [ECClassDef].[Description]='Relates the property to its PropertyCategory.'";
+=======
+        const auto expectedSQL = "SELECT [ECClassDef].[ECClassId],[ECClassDef].[ECInstanceId],json(extract_inst([ECClassDef].[ECClassId],[ECClassDef].[ECInstanceId], 0x0)) FROM (SELECT [Id] ECInstanceId,34 ECClassId,[Description] FROM [main].[ec_Class]) [ECClassDef] WHERE [ECClassDef].[Description]='Relates the property to its PropertyCategory.'";
+>>>>>>> 963a6e22 (Update ECDbMap, bump ECDb profile version to 4.0.0.4)
         EXPECT_STRCASEEQ(expectedSQL, stmt.GetNativeSql());
         if(stmt.Step() == BE_SQLITE_ROW) {
             BeJsDocument inst;
@@ -92,7 +1174,11 @@ TEST_F(InstanceReaderFixture, instance_reader) {
     if ("use syntax to get full instance using alias") {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT m.ECClassId, m.ECInstanceId, m.$ FROM meta.ECClassDef m WHERE m.Description='Relates the property to its PropertyCategory.'"));
+<<<<<<< HEAD
         const auto expectedSQL = "SELECT [m].[ECClassId],[m].[ECInstanceId],extract_inst([m].[ECClassId],[m].[ECInstanceId]) FROM (SELECT [Id] ECInstanceId,32 ECClassId,[Description] FROM [main].[ec_Class]) [m] WHERE [m].[Description]='Relates the property to its PropertyCategory.'";
+=======
+        const auto expectedSQL = "SELECT [m].[ECClassId],[m].[ECInstanceId],json(extract_inst([m].[ECClassId],[m].[ECInstanceId], 0x0)) FROM (SELECT [Id] ECInstanceId,34 ECClassId,[Description] FROM [main].[ec_Class]) [m] WHERE [m].[Description]='Relates the property to its PropertyCategory.'";
+>>>>>>> 963a6e22 (Update ECDbMap, bump ECDb profile version to 4.0.0.4)
         EXPECT_STRCASEEQ(expectedSQL, stmt.GetNativeSql());
         if(stmt.Step() == BE_SQLITE_ROW) {
             BeJsDocument inst;
@@ -193,7 +1279,11 @@ TEST_F(InstanceReaderFixture, extract_prop) {
     if ("use syntax to extract property") {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT $->s, $->i, $->d, $->p2d, $->p3d, $->bi, $->l, $->dt, $->b FROM ts.P"));
+<<<<<<< HEAD
         const auto expectedSQL = "SELECT extract_prop([P].[ECClassId],[P].[ECInstanceId],'s'),extract_prop([P].[ECClassId],[P].[ECInstanceId],'i'),extract_prop([P].[ECClassId],[P].[ECInstanceId],'d'),extract_prop([P].[ECClassId],[P].[ECInstanceId],'p2d'),extract_prop([P].[ECClassId],[P].[ECInstanceId],'p3d'),extract_prop([P].[ECClassId],[P].[ECInstanceId],'bi'),extract_prop([P].[ECClassId],[P].[ECInstanceId],'l'),extract_prop([P].[ECClassId],[P].[ECInstanceId],'dt'),extract_prop([P].[ECClassId],[P].[ECInstanceId],'b') FROM (SELECT [Id] ECInstanceId,73 ECClassId FROM [main].[ts_P]) [P]";
+=======
+        const auto expectedSQL = "SELECT extract_prop([P].[ECClassId],[P].[ECInstanceId],'s',0x0,:ecdb_this_ptr,0),extract_prop([P].[ECClassId],[P].[ECInstanceId],'i',0x0,:ecdb_this_ptr,1),extract_prop([P].[ECClassId],[P].[ECInstanceId],'d',0x0,:ecdb_this_ptr,2),extract_prop([P].[ECClassId],[P].[ECInstanceId],'p2d',0x0,:ecdb_this_ptr,3),extract_prop([P].[ECClassId],[P].[ECInstanceId],'p3d',0x0,:ecdb_this_ptr,4),extract_prop([P].[ECClassId],[P].[ECInstanceId],'bi',0x0,:ecdb_this_ptr,5),extract_prop([P].[ECClassId],[P].[ECInstanceId],'l',0x0,:ecdb_this_ptr,6),extract_prop([P].[ECClassId],[P].[ECInstanceId],'dt',0x0,:ecdb_this_ptr,7),extract_prop([P].[ECClassId],[P].[ECInstanceId],'b',0x0,:ecdb_this_ptr,8) FROM (SELECT [Id] ECInstanceId,75 ECClassId FROM [main].[ts_P]) [P]";
+>>>>>>> 963a6e22 (Update ECDbMap, bump ECDb profile version to 4.0.0.4)
         EXPECT_STRCASEEQ(expectedSQL, stmt.GetNativeSql());
         if(stmt.Step() == BE_SQLITE_ROW) {
             int i = 0;
@@ -627,7 +1717,11 @@ TEST_F(InstanceReaderFixture, nested_struct) {
     BeJsDocument expected;
     expected.Parse(R"json({
         "ECInstanceId": "0x1",
+<<<<<<< HEAD
         "ECClassId": "TestSchema.e_mix",
+=======
+        "ECClassId": "0x4b",
+>>>>>>> 963a6e22 (Update ECDbMap, bump ECDb profile version to 4.0.0.4)
         "b": true,
         "bi": "encoding=base64;SA==",
         "d": 3.141592653589793,

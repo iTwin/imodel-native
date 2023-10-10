@@ -43,7 +43,7 @@ TEST_F(JsonTests, json_tree) {
         ECSqlStatement stmt; 
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select s.* from ts.json_docs, json1.json_tree(doc) s where s.key='gravity'"));
         auto nativeSQL = stmt.GetNativeSql();
-        ASSERT_STREQ(nativeSQL,  "SELECT s.key,s.value,s.type,s.atom,s.parent,s.fullkey,s.path FROM (SELECT [Id] ECInstanceId,73 ECClassId,[doc] FROM [main].[ts_json_docs]) [json_docs],json_tree([json_docs].[doc]) s WHERE s.key='gravity'");
+        ASSERT_STREQ(nativeSQL,  "SELECT s.key,s.value,s.type,s.atom,s.parent,s.fullkey,s.path FROM (SELECT [Id] ECInstanceId,75 ECClassId,[doc] FROM [main].[ts_json_docs]) [json_docs],json_tree([json_docs].[doc]) s WHERE s.key='gravity'");
         stmt.BindText(1, test_data, IECSqlBinder::MakeCopy::No);
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
@@ -441,7 +441,7 @@ TEST_F(JsonTests, json_each) {
         ECSqlStatement stmt; 
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select s.* from ts.json_docs, json1.json_each(doc) s where s.key='gravity'"));
         auto nativeSQL = stmt.GetNativeSql();
-        ASSERT_STREQ(nativeSQL,  "SELECT s.key,s.value,s.type,s.atom,s.parent,s.fullkey,s.path FROM (SELECT [Id] ECInstanceId,73 ECClassId,[doc] FROM [main].[ts_json_docs]) [json_docs],json_each([json_docs].[doc]) s WHERE s.key='gravity'");
+        ASSERT_STREQ(nativeSQL,  "SELECT s.key,s.value,s.type,s.atom,s.parent,s.fullkey,s.path FROM (SELECT [Id] ECInstanceId,75 ECClassId,[doc] FROM [main].[ts_json_docs]) [json_docs],json_each([json_docs].[doc]) s WHERE s.key='gravity'");
         stmt.BindText(1, test_data, IECSqlBinder::MakeCopy::No);
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
