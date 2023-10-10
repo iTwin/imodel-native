@@ -50,6 +50,7 @@ stages:
         - template: /build/templates/prebuild.yml@imodel-native-internal
           parameters:
             otherRepo: imodel-native-internal
+            nativePR: main
 
         - script: $(PY_EXE) $(BB_SRC_ROOT)/BentleyBuild/BentleyBuild.py $(BB_ARGS) pull
           displayName: Pull
