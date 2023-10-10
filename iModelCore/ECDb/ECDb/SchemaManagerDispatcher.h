@@ -308,6 +308,8 @@ struct SchemaManager::Dispatcher final
         mutable std::map<Utf8String, std::unique_ptr<TableSpaceSchemaManager>, CompareIUtf8Ascii> m_managers;
         mutable std::vector<TableSpaceSchemaManager const*> m_orderedManagers;
         MainSchemaManager const* m_main = nullptr;
+        mutable BeIdSet m_unsupportedClassIdCache;
+        mutable bool m_unsupportedClassesLoaded;
 
         //not copyable
         Dispatcher(Dispatcher const&) = delete;
@@ -350,6 +352,9 @@ struct SchemaManager::Dispatcher final
         ECN::UnitSystemCP GetUnitSystem(Utf8StringCR schemaNameOrAlias, Utf8StringCR systemName, SchemaLookupMode, Utf8CP tableSpace) const;
         ECN::PhenomenonCP GetPhenomenon(Utf8StringCR schemaNameOrAlias, Utf8StringCR phenName, SchemaLookupMode, Utf8CP tableSpace) const;
         ECN::PropertyCategoryCP GetPropertyCategory(Utf8StringCR schemaNameOrAlias, Utf8StringCR propertyCategoryName, SchemaLookupMode, Utf8CP tableSpace) const;
+
+        //! Check if a class is unsupported by current ECDb runtime
+        bool IsClassUnsupported(ECN::ECClassId classId) const;
 
         void ClearCache() const;
 
