@@ -118,8 +118,6 @@ $(o)curl_get_line$(oext) : $(BeCurlLibDir)curl_get_line.c ${MultiCompileDepends}
 
 $(o)curl_gssapi$(oext) : $(BeCurlLibDir)curl_gssapi.c ${MultiCompileDepends}
 
-$(o)curl_log$(oext) : $(BeCurlLibDir)curl_log.c ${MultiCompileDepends}
-
 $(o)curl_memrchr$(oext) : $(BeCurlLibDir)curl_memrchr.c ${MultiCompileDepends}
 
 $(o)curl_multibyte$(oext) : $(BeCurlLibDir)curl_multibyte.c ${MultiCompileDepends}
@@ -135,6 +133,8 @@ $(o)curl_sasl$(oext) : $(BeCurlLibDir)curl_sasl.c ${MultiCompileDepends}
 $(o)curl_sspi$(oext) : $(BeCurlLibDir)curl_sspi.c ${MultiCompileDepends}
 
 $(o)curl_threads$(oext) : $(BeCurlLibDir)curl_threads.c ${MultiCompileDepends}
+
+$(o)curl_trc$(oext) : $(BeCurlLibDir)curl_trc.c ${MultiCompileDepends}
 
 $(o)dict$(oext) : $(BeCurlLibDir)dict.c ${MultiCompileDepends}
 
@@ -324,15 +324,11 @@ $(o)spnego_sspi$(oext) : $(BeCurlLibDir)vauth/spnego_sspi.c ${MultiCompileDepend
 
 $(o)vauth$(oext) : $(BeCurlLibDir)vauth/vauth.c ${MultiCompileDepends}
 
-$(o)gskit$(oext) : $(BeCurlLibDir)vtls/gskit.c ${MultiCompileDepends}
-
 $(o)gtls$(oext) : $(BeCurlLibDir)vtls/gtls.c ${MultiCompileDepends}
 
 $(o)hostcheck$(oext) : $(BeCurlLibDir)vtls/hostcheck.c ${MultiCompileDepends}
 
 $(o)mbedtls$(oext) : $(BeCurlLibDir)vtls/mbedtls.c ${MultiCompileDepends}
-
-$(o)nss$(oext) : $(BeCurlLibDir)vtls/nss.c ${MultiCompileDepends}
 
 $(o)openssl$(oext) : $(BeCurlLibDir)vtls/openssl.c ${MultiCompileDepends}
 
@@ -458,7 +454,11 @@ $(o)vquic$(oext) : $(BeCurlLibDir)vquic/vquic.c ${MultiCompileDepends}
 
 %endif
 
+%if $(TARGET_PLATFORM)=="MacOS"
 
+$(o)macos$(oext) : $(BeCurlLibDir)macos.c ${MultiCompileDepends}
+
+%endif
 
 %include MultiCppCompileGo.mki
 objs =% $(MultiCompileObjectList)
