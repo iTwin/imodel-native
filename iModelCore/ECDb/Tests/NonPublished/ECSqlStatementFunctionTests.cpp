@@ -461,6 +461,10 @@ TEST_F(ECSqlStatementFunctionTestFixture, BuiltinFunctions)
     for (std::pair<Utf8CP, ExpectedResult> const& kvPair : testDataset)
         {
         Utf8CP ecsql = kvPair.first;
+        if (!strcmp(ecsql, "SELECT RTRIM(S) FROM ecsql.P LIMIT 1") || !strcmp(ecsql, "SELECT GROUP_CONCAT(S) FROM ecsql.P"))
+            {
+            ASSERT_EQ(true, true);
+            }
         ExpectedResult const& expectedResult = kvPair.second;
         const ECSqlStatus expectedPrepareStat = expectedResult.m_isPrepareSupported ? ECSqlStatus::Success : ECSqlStatus::InvalidECSql;
 

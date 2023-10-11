@@ -107,7 +107,7 @@ using namespace connectivity;
 %token <pParseNode> SQL_TOKEN_GROUP SQL_TOKEN_HAVING SQL_TOKEN_IN SQL_TOKEN_INNER SQL_TOKEN_INSERT SQL_TOKEN_INTO SQL_TOKEN_IS SQL_TOKEN_INTERSECT
 
 %token <pParseNode> SQL_TOKEN_JOIN SQL_TOKEN_LIKE SQL_TOKEN_LEFT SQL_TOKEN_RIGHT
-%token <pParseNode> SQL_TOKEN_MAX SQL_TOKEN_MIN SQL_TOKEN_NATURAL SQL_TOKEN_NULL SQL_TOKEN_TOTAL SQL_TOKEN_GROUP_CONCAT
+%token <pParseNode> SQL_TOKEN_MAX SQL_TOKEN_MIN SQL_TOKEN_NATURAL SQL_TOKEN_NULL SQL_TOKEN_TOTAL
 
 %token <pParseNode> SQL_TOKEN_ON SQL_TOKEN_ORDER SQL_TOKEN_OUTER
 
@@ -176,6 +176,7 @@ using namespace connectivity;
 %right ':'
 %right '('
 
+%right <pParseNode> SQL_TOKEN_GROUP_CONCAT
 
 %token <pParseNode> SQL_TOKEN_INVALIDSYMBOL
 
@@ -1462,7 +1463,7 @@ general_set_fct:
             $$->append($4);
             $$->append($5 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
-    |    SQL_TOKEN_COUNT '(' '*' ')'
+    |   SQL_TOKEN_COUNT '(' '*' ')'
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
@@ -1470,16 +1471,7 @@ general_set_fct:
             $$->append($3 = CREATE_NODE("*", SQL_NODE_PUNCTUATION));
             $$->append($4 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
-    |    SQL_TOKEN_COUNT '(' opt_all_distinct function_arg ')'
-        {
-            $$ = SQL_NEW_RULE;
-            $$->append($1);
-            $$->append($2 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
-            $$->append($3);
-            $$->append($4);
-            $$->append($5 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
-        }
-    |   SQL_TOKEN_TOTAL '(' opt_all_distinct function_arg ')'
+    |   SQL_TOKEN_COUNT '(' opt_all_distinct function_arg ')'
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
@@ -1497,7 +1489,26 @@ general_set_fct:
             $$->append($4);
             $$->append($5 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
-    |   SQL_TOKEN_GROUP_CONCAT '(' opt_all_distinct function_arg ',' function_arg ')'
+    |   SQL_TOKEN_GROUP_CONCAT '(' function_arg ',' function_arg ')'
+        {
+            $$ = SQL_NEW_RULE;
+            $$->append($1);
+            $$->append($2 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
+            $$->append($3);
+            $$->append($4 = CREATE_NODE(",", SQL_NODE_PUNCTUATION));
+            $$->append($5);
+            $$->append($6 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
+        }
+    |   SQL_TOKEN_RTRIM '(' opt_all_distinct function_arg ')'
+        {
+            $$ = SQL_NEW_RULE;
+            $$->append($1);
+            $$->append($2 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
+            $$->append($3);
+            $$->append($4);
+            $$->append($5 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
+        }
+    |   SQL_TOKEN_RTRIM '(' opt_all_distinct function_arg ',' function_arg ')'
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
@@ -1516,6 +1527,7 @@ set_fct_type:
     |   SQL_TOKEN_EVERY
     |   SQL_TOKEN_ANY
     |   SQL_TOKEN_SOME
+    |   SQL_TOKEN_TOTAL
     ;
 
 outer_join_type:

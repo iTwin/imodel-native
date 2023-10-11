@@ -223,7 +223,6 @@ struct Exp
             ExtractInstance,
             WindowFunction,
             WindowSpecification,
-            WindowFunctionType,
             WindowFunctionClauseExp,
             WindowDefinitionListExpExp,
             WindowDefinitionExp,

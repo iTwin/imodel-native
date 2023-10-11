@@ -1165,7 +1165,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareOrderByExp(NativeSqlBuilder& nativeSqlBuild
             isFirstSpec = false; //needs to be inside the inner loop so that empty sqlSnippets are handled correctly
             }
         }
-    
+
     if (!orderBySqlBuilder.IsEmpty())
         nativeSqlBuilder.Append("ORDER BY ").Append(orderBySqlBuilder);
 
@@ -1957,6 +1957,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareTypeListExp(NativeSqlBuilder::List& nativeS
 ECSqlStatus ECSqlExpPreparer::PrepareWindowFunctionClauseExp(ECSqlPrepareContext& ctx, WindowFunctionClauseExp const& exp)
     {
     NativeSqlBuilder::List nativeSqlBuilderSnippets;
+    ctx.GetSqlBuilder().Append("WINDOW ");
     ECSqlStatus status = PrepareWindowDefinitionListExp(nativeSqlBuilderSnippets, ctx, *exp.GetWindowDefinitionListExp());
     if (!status.IsSuccess())
         return status;
@@ -2003,7 +2004,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareWindowDefinitionListExp(NativeSqlBuilder::L
 //static`
 ECSqlStatus ECSqlExpPreparer::PrepareWindowDefinitionExp(NativeSqlBuilder& nativeSqlBuilder, ECSqlPrepareContext& ctx, WindowDefinitionExp const& exp)
     {
-    nativeSqlBuilder.Append("WINDOW ").Append(exp.GetWindowName()).Append(" AS ");
+    nativeSqlBuilder.Append(exp.GetWindowName()).Append(" AS ");
     ECSqlStatus status = PrepareWindowSpecification(nativeSqlBuilder, ctx, *exp.GetWindowSpecification());
     if (!status.IsSuccess())
         return status;
@@ -2020,7 +2021,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareWindowFunctionExp(NativeSqlBuilder::List& n
     ECSqlStatus status;
     NativeSqlBuilder nativeSqlBuilder;
     NativeSqlBuilder::List nativeSqlFunctionSnippets;
-    status = PrepareFunctionCallExp(nativeSqlFunctionSnippets, ctx, exp.GetWindowFunctionType()->GetAs<FunctionCallExp>());
+    status = PrepareFunctionCallExp(nativeSqlFunctionSnippets, ctx, exp.GetWindowFunctionCallExp()->GetAs<FunctionCallExp>());
     if (!status.IsSuccess())
         return status;
     

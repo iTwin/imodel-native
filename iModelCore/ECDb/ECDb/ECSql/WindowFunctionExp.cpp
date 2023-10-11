@@ -8,7 +8,7 @@
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-
+//*************************** WindowFunctionExp ******************************************
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -17,7 +17,7 @@ Exp::FinalizeParseStatus WindowFunctionExp::_FinalizeParsing(ECSqlParseContext &
     if (mode == FinalizeParseMode::BeforeFinalizingChildren)
         return FinalizeParseStatus::NotCompleted;
 
-    SetTypeInfo(GetWindowFunctionType()->GetAsCP<FunctionCallExp>()->GetTypeInfo());
+    SetTypeInfo(GetWindowFunctionCallExp()->GetAsCP<FunctionCallExp>()->GetTypeInfo());
     return FinalizeParseStatus::Completed;
     }
 
@@ -26,7 +26,7 @@ Exp::FinalizeParseStatus WindowFunctionExp::_FinalizeParsing(ECSqlParseContext &
 //+---------------+---------------+---------------+---------------+---------------+------
 void WindowFunctionExp::_ToECSql(ECSqlRenderContext& ctx) const
     {
-    ctx.AppendToECSql(*GetWindowFunctionType());
+    ctx.AppendToECSql(*GetWindowFunctionCallExp());
     if (FilterClauseExp const * e = GetFilterClauseExp())
         ctx.AppendToECSql(*e);
 
@@ -43,40 +43,20 @@ void WindowFunctionExp::_ToECSql(ECSqlRenderContext& ctx) const
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void WindowFunctionExp::_ToJson(BeJsValue, JsonFormat const &) const
+void WindowFunctionExp::_ToJson(BeJsValue val, JsonFormat const & fmt) const
     {
+    val.SetEmptyObject();
+    val["id"] = "WindowFunctionExp";
+    GetWindowFunctionCallExp()->ToJson(val["WindowFunctionCallExp"], fmt);
+    if (GetFilterClauseExp() != nullptr)
+        GetFilterClauseExp()->ToJson(val["FilterExp"], fmt);
+    if (GetWindowSpecification() != nullptr)
+        GetWindowSpecification()->ToJson(val["WindowSpecificationExp"], fmt);
+    if (GetWindowName().size() != 0)
+        val["WindowName"] = GetWindowName();
     }
 
-//-----------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-Utf8String WindowFunctionExp::_ToString() const
-    {
-    return Utf8String();
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-void WindowFunctionType::_ToECSql(ECSqlRenderContext &) const
-    {
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-void WindowFunctionType::_ToJson(BeJsValue, JsonFormat const &) const
-    {
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-Utf8String WindowFunctionType::_ToString() const
-    {
-    return "?";
-    }
-
+//*************************** WindowSpecification ******************************************
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -118,18 +98,21 @@ void WindowSpecification::_ToECSql(ECSqlRenderContext& ctx) const
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void WindowSpecification::_ToJson(BeJsValue, JsonFormat const &) const
+void WindowSpecification::_ToJson(BeJsValue val, JsonFormat const & fmt) const
     {
+    val.SetEmptyObject();
+    val["id"] = "WindowSpecificationExp";
+    if (GetPartitionBy() != nullptr)
+        GetPartitionBy()->ToJson(val["PartitionByExp"], fmt);
+    if (GetOrderBy() != nullptr)
+        GetOrderBy()->ToJson(val["OrderBy"], fmt);
+    if (GetWindowFrameClause() != nullptr)
+        GetWindowFrameClause()->ToJson(val["WindowFrameClauseExp"], fmt);
+    if (GetWindowName().size() != 0)
+        val["WindowName"] = GetWindowName();
     }
 
-//-----------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-Utf8String WindowSpecification::_ToString() const
-    {
-    return "?";
-    }
-
+//*************************** WindowPartitionColumnReferenceListExp *****************************************
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -152,10 +135,14 @@ void WindowPartitionColumnReferenceListExp::_ToECSql(ECSqlRenderContext & ctx) c
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void WindowPartitionColumnReferenceListExp::_ToJson(BeJsValue, JsonFormat const &) const
+void WindowPartitionColumnReferenceListExp::_ToJson(BeJsValue val, JsonFormat const & fmt) const
     {
+    val.SetEmptyArray();
+    for (Exp const* childExp : GetChildren())
+        childExp->ToJson(val.appendValue(), fmt);
     }
 
+//*************************** WindowPartitionColumnReferenceExp *****************************************
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -163,30 +150,22 @@ void WindowPartitionColumnReferenceExp::_ToECSql(ECSqlRenderContext &ctx) const
     {
     ctx.AppendToECSql(*GetColumnRef());
     if (GetCollateClauseFunction() != WindowPartitionColumnReferenceExp::CollateClauseFunction::NotSpecified)
-        {
-        ctx.AppendToECSql(" COLLATE ");
-        switch(GetCollateClauseFunction())
-            {
-            case WindowPartitionColumnReferenceExp::CollateClauseFunction::Binary:
-                ctx.AppendToECSql("BINARY");
-                break;
-            case WindowPartitionColumnReferenceExp::CollateClauseFunction::NoCase:
-                ctx.AppendToECSql("NOCASE");
-                break;
-            case WindowPartitionColumnReferenceExp::CollateClauseFunction::Rtrim:
-                ctx.AppendToECSql("RTRIM");
-                break;
-            }
-        }
+        ctx.AppendToECSql(" COLLATE ").AppendToECSql(ExpHelper::ToSql(GetCollateClauseFunction()));
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void WindowPartitionColumnReferenceExp::_ToJson(BeJsValue, JsonFormat const &) const
+void WindowPartitionColumnReferenceExp::_ToJson(BeJsValue val, JsonFormat const & fmt) const
     {
+    val.SetEmptyObject();
+    val["id"] = "WindowPartitionColumnReferenceExp";
+    GetColumnRef()->ToJson(val["ColumnRef"], fmt);
+    if (GetCollateClauseFunction() != CollateClauseFunction::NotSpecified)
+        val["CollateClauseFunction"] = ExpHelper::ToSql(GetCollateClauseFunction());
     }
 
+//*************************** FilterClauseExp *****************************************
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -198,65 +177,48 @@ void FilterClauseExp::_ToECSql(ECSqlRenderContext &ctx) const
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void FilterClauseExp::_ToJson(BeJsValue, JsonFormat const &) const
+void FilterClauseExp::_ToJson(BeJsValue val, JsonFormat const & fmt) const
     {
+    val.SetEmptyObject();
+    val["id"] = "FilterExp";
+    GetWhereExp()->ToJson(val["WhereExp"], fmt);
     }
 
+//*************************** WindowFrameClauseExp *****************************************
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 void WindowFrameClauseExp::_ToECSql(ECSqlRenderContext &ctx) const
     {
-    switch (GetWindowFrameUnit())
-        {
-        case WindowFrameClauseExp::WindowFrameUnit::Groups:
-            ctx.AppendToECSql("GROUPS ");
-            break;
-        case WindowFrameClauseExp::WindowFrameUnit::Range:
-            ctx.AppendToECSql("RANGE ");
-            break;
-        case WindowFrameClauseExp::WindowFrameUnit::Rows:
-            ctx.AppendToECSql("ROWS ");
-            break;
-        }
-    
+    ctx.AppendToECSql(ExpHelper::ToSql(GetWindowFrameUnit())).AppendToECSql(" ");
+
     if (WindowFrameBetweenExp const * e = GetWindowFrameBetweenExp())
         ctx.AppendToECSql(*e);
     else if (WindowFrameStartExp const * e = GetWindowFrameStartExp())
         ctx.AppendToECSql(*e);
     
-    switch (GetWindowFrameExclusionType())
-        {
-        case WindowFrameClauseExp::WindowFrameExclusionType::ExcludeCurrentRow:
-            ctx.AppendToECSql(" EXCLUDE CURRENT ROW");
-            break;
-        case WindowFrameClauseExp::WindowFrameExclusionType::ExcludeGroup:
-            ctx.AppendToECSql(" EXCLUDE GROUP");
-            break;
-        case WindowFrameClauseExp::WindowFrameExclusionType::ExcludeNoOthers:
-            ctx.AppendToECSql(" EXCLUDE NO OTHERS");
-            break;
-        case WindowFrameClauseExp::WindowFrameExclusionType::ExcludeTies:
-            ctx.AppendToECSql(" EXCLUDE TIES");
-            break;
-        }
+    if (GetWindowFrameExclusionType() != WindowFrameClauseExp::WindowFrameExclusionType::NotSpecified)
+        ctx.AppendToECSql(" ").AppendToECSql(ExpHelper::ToSql(GetWindowFrameExclusionType()));
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void WindowFrameClauseExp::_ToJson(BeJsValue, JsonFormat const &) const
+void WindowFrameClauseExp::_ToJson(BeJsValue val, JsonFormat const & fmt) const
     {
+    val.SetEmptyObject();
+    val["id"] = "WindowFrameClauseExp";
+    val["WindowFrameUnit"] = ExpHelper::ToSql(GetWindowFrameUnit());
+    if (GetWindowFrameBetweenExp() != nullptr)
+        GetWindowFrameBetweenExp()->ToJson(val["WindowFrameBetweenExp"], fmt);
+    else
+        GetWindowFrameStartExp()->ToJson(val["WindowFrameStartExp"], fmt);
+    
+    if (GetWindowFrameExclusionType() != WindowFrameClauseExp::WindowFrameExclusionType::NotSpecified)
+        GetWindowFrameStartExp()->ToJson(val["WindowFrameExclusion"], fmt);
     }
 
-//-----------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-Utf8String WindowFrameClauseExp::_ToString() const
-    {
-    return "";
-    }
-
+//*************************** WindowFrameStartExp *****************************************
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -280,18 +242,26 @@ void WindowFrameStartExp::_ToECSql(ECSqlRenderContext &ctx) const
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void WindowFrameStartExp::_ToJson(BeJsValue, JsonFormat const &) const
+void WindowFrameStartExp::_ToJson(BeJsValue val, JsonFormat const &fmt) const
     {
+    val.SetEmptyObject();
+    val["id"] = "WindowFrameStartExp";
+    switch (GetWindowFrameStartType())
+        {
+        case WindowFrameStartExp::WindowFrameStartType::CurrentRow:
+            val["WindowFrameStartType"] = "CURRENT ROW";
+            break;
+        case WindowFrameStartExp::WindowFrameStartType::UnboundedPreceding:
+            val["WindowFrameStartType"] = "UNBOUNDED PRECEDING";
+            break;
+        case WindowFrameStartExp::WindowFrameStartType::ValuePreceding:
+            val["WindowFrameStartType"] = "VALUE PRECEDING";
+            GetValueExp()->ToJson(val["WindowFrameStartValue"], fmt);
+            break;
+        }
     }
 
-//-----------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-Utf8String WindowFrameStartExp::_ToString() const
-    {
-    return "";
-    }
-
+//*************************** WindowFrameBetweenExp *****************************************
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -306,18 +276,14 @@ void WindowFrameBetweenExp::_ToECSql(ECSqlRenderContext &ctx) const
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void WindowFrameBetweenExp::_ToJson(BeJsValue, JsonFormat const &) const
+void WindowFrameBetweenExp::_ToJson(BeJsValue val, JsonFormat const & fmt) const
     {
+    val.SetEmptyObject();
+    GetFirstWindowFrameBoundExp()->ToJson(val["FirstWindowFrameBoundExp"], fmt);
+    GetSecondWindowFrameBoundExp()->ToJson(val["SecondWindowFrameBoundExp"], fmt);
     }
 
-//-----------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-Utf8String WindowFrameBetweenExp::_ToString() const
-    {
-    return "";
-    }
-
+//*************************** FirstWindowFrameBoundExp *****************************************
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -345,18 +311,29 @@ void FirstWindowFrameBoundExp::_ToECSql(ECSqlRenderContext &ctx) const
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void FirstWindowFrameBoundExp::_ToJson(BeJsValue, JsonFormat const &) const
+void FirstWindowFrameBoundExp::_ToJson(BeJsValue val, JsonFormat const & fmt) const
     {
+    val.SetEmptyObject();
+    switch (GetWindowFrameBoundType())
+        {
+        case FirstWindowFrameBoundExp::WindowFrameBoundType::CurrentRow:
+            val["FirstWindowFrameBoundType"] = "CURRENT ROW";
+            break;
+        case FirstWindowFrameBoundExp::WindowFrameBoundType::UnboundedPreceding:
+            val["FirstWindowFrameBoundType"] = "UNBOUNDED PRECEDING";
+            break;
+        case FirstWindowFrameBoundExp::WindowFrameBoundType::ValueFollowing:
+            val["FirstWindowFrameBoundType"] = "VALUE FOLLOWING";
+            GetValueExp()->ToJson(val["FirstWindowFrameBoundValueExp"], fmt);
+            break;
+        case FirstWindowFrameBoundExp::WindowFrameBoundType::ValuePreceding:
+            val["FirstWindowFrameBoundType"] = "VALUE PRECEDING";
+            GetValueExp()->ToJson(val["FirstWindowFrameBoundValueExp"], fmt);
+            break;
+        }
     }
 
-//-----------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-Utf8String FirstWindowFrameBoundExp::_ToString() const
-    {
-    return "";
-    }
-
+//*************************** SecondWindowFrameBoundExp *****************************************
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -384,82 +361,90 @@ void SecondWindowFrameBoundExp::_ToECSql(ECSqlRenderContext &ctx) const
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void SecondWindowFrameBoundExp::_ToJson(BeJsValue, JsonFormat const &) const
+void SecondWindowFrameBoundExp::_ToJson(BeJsValue val, JsonFormat const & fmt) const
     {
+    val.SetEmptyObject();
+    val["id"] = "SecondWindowFrameBoundExp";
+    switch (GetWindowFrameBoundType())
+        {
+        case SecondWindowFrameBoundExp::WindowFrameBoundType::CurrentRow:
+            val["SecondWindowFrameBoundType"] = "CURRENT ROW";
+            break;
+        case SecondWindowFrameBoundExp::WindowFrameBoundType::UnboundedFollowing:
+            val["SecondWindowFrameBoundType"] = "UNBOUNDED FOLLOWING";
+            break;
+        case SecondWindowFrameBoundExp::WindowFrameBoundType::ValueFollowing:
+            val["SecondWindowFrameBoundType"] = "VALUE FOLLOWING";
+            GetValueExp()->ToJson(val["SecondWindowFrameBoundValueExp"], fmt);
+            break;
+        case SecondWindowFrameBoundExp::WindowFrameBoundType::ValuePreceding:
+            val["SecondWindowFrameBoundType"] = "VALUE PRECEDING";
+            GetValueExp()->ToJson(val["SecondWindowFrameBoundValueExp"], fmt);
+            break;
+        }
+    }
+
+//*************************** WindowFunctionClauseExp *****************************************
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void WindowFunctionClauseExp::_ToECSql(ECSqlRenderContext & ctx) const
+    {
+    ctx.AppendToECSql("WINDOW ").AppendToECSql(*GetWindowDefinitionListExp());
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8String SecondWindowFrameBoundExp::_ToString() const
+void WindowFunctionClauseExp::_ToJson(BeJsValue val, JsonFormat const & fmt) const
     {
-    return "";
+    val["id"] = "WindowFunctionClauseExp";
+    GetWindowDefinitionListExp()->ToJson(val["WindowDefinitionListExp"], fmt);
+    }
+
+//*************************** WindowDefinitionExp *****************************************
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void WindowDefinitionExp::_ToECSql(ECSqlRenderContext & ctx) const
+    {
+    ctx.AppendToECSql(GetWindowName()).AppendToECSql(" AS ").AppendToECSql(*GetWindowSpecification());
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void WindowFunctionClauseExp::_ToECSql(ECSqlRenderContext &) const
+void WindowDefinitionExp::_ToJson(BeJsValue val, JsonFormat const & fmt) const
     {
+    val.SetEmptyObject();
+    val["id"] = "WindowDefinitionExp";
+    GetWindowSpecification()->ToJson(val["WindowSpecificationExp"], fmt);
+    }
+
+//*************************** WindowDefinitionListExp *****************************************
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void WindowDefinitionListExp::_ToECSql(ECSqlRenderContext & ctx) const
+    {
+    bool isFirstWindowDefinition = false;
+    for (Exp const* childExp : GetChildren())
+        {
+        if (!isFirstWindowDefinition)
+            ctx.AppendToECSql(", ");
+        ctx.AppendToECSql(*childExp);
+        isFirstWindowDefinition = true;
+        }
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void WindowFunctionClauseExp::_ToJson(BeJsValue, JsonFormat const &) const
+void WindowDefinitionListExp::_ToJson(BeJsValue val, JsonFormat const & fmt) const
     {
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-Utf8String WindowFunctionClauseExp::_ToString() const
-    {
-    return "";
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-void WindowDefinitionExp::_ToECSql(ECSqlRenderContext &) const
-    {
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-void WindowDefinitionExp::_ToJson(BeJsValue, JsonFormat const &) const
-    {
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-Utf8String WindowDefinitionExp::_ToString() const
-    {
-    return "";
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-void WindowDefinitionListExp::_ToECSql(ECSqlRenderContext &) const
-    {
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-void WindowDefinitionListExp::_ToJson(BeJsValue, JsonFormat const &) const
-    {
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-Utf8String WindowDefinitionListExp::_ToString() const
-    {
-    return "";
+    val.SetEmptyArray();
+    for (Exp const* childExp : GetChildren())
+        childExp->ToJson(val.appendValue(), fmt);
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

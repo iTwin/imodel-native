@@ -1036,7 +1036,15 @@ BentleyStatus ECSqlParser::ParseSetFct(std::unique_ptr<ValueExp>& exp, OSQLParse
 
         functionCallExp->AddArgument(std::move(argExp));
         }
-    else if (functionName.EqualsIAscii("group_concat") && parseNode.count() == 7)
+    else if (functionName.EqualsIAscii("group_concat") && parseNode.count() == 6)
+        {
+        if (SUCCESS != ParseAndAddFunctionArg(*functionCallExp, parseNode.getChild(2/*function_arg*/)))
+            return ERROR;
+        
+        if (SUCCESS != ParseAndAddFunctionArg(*functionCallExp, parseNode.getChild(4/*function_arg*/)))
+            return ERROR;
+        }
+    else if (functionName.EqualsIAscii("rtrim") && parseNode.count() == 7)
         {
         if (SUCCESS != ParseAndAddFunctionArg(*functionCallExp, parseNode.getChild(3/*function_arg*/)))
             return ERROR;
@@ -1120,7 +1128,9 @@ BentleyStatus ECSqlParser::ParseGeneralSetFct(std::unique_ptr<ValueExp>& exp, OS
             case SQL_TOKEN_TOTAL:
                 functionName = "TOTAL";
                 break;
-
+            case SQL_TOKEN_RTRIM:
+                functionName = "RTRIM";
+                break;
             default:
             {
             Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Unsupported standard set function with token ID %" PRIu32, functionNameNode->getTokenID());
@@ -3330,9 +3340,9 @@ BentleyStatus ECSqlParser::ParseWindowFunction(std::unique_ptr<ValueExp>& valueE
         return ERROR;
         }
 
-    std::unique_ptr<ValueExp> windowFunctionTypeExp = nullptr;
+    std::unique_ptr<ValueExp> functionCallExp = nullptr;
 
-    if (SUCCESS != ParseWindowFunctionType(windowFunctionTypeExp, parseNode->getChild(0)))
+    if (SUCCESS != ParseWindowFunctionType(functionCallExp, parseNode->getChild(0)))
         return ERROR;
 
     std::unique_ptr<FilterClauseExp> filterClauseExp = nullptr;
@@ -3345,13 +3355,13 @@ BentleyStatus ECSqlParser::ParseWindowFunction(std::unique_ptr<ValueExp>& valueE
         if (SUCCESS != ParseWindowSpecification(windowSpecificationExp, parseNode->getChild(3)))
             return ERROR;
 
-        valueExp = std::make_unique<WindowFunctionExp>(std::move(windowFunctionTypeExp), std::move(filterClauseExp), std::move(windowSpecificationExp));
+        valueExp = std::make_unique<WindowFunctionExp>(std::move(functionCallExp), std::move(filterClauseExp), std::move(windowSpecificationExp));
         return SUCCESS;
         }
     else if (parseNode->getChild(3)->getNodeType() == SQLNodeType::SQL_NODE_NAME)
         {
         Utf8CP windowName = parseNode->getChild(3)->getTokenValue().c_str();
-        valueExp = std::make_unique<WindowFunctionExp>(std::move(windowFunctionTypeExp), std::move(filterClauseExp), std::move(windowName));
+        valueExp = std::make_unique<WindowFunctionExp>(std::move(functionCallExp), std::move(filterClauseExp), std::move(windowName));
         return SUCCESS;
         }
 

@@ -11954,6 +11954,20 @@ TEST_F(ECSqlStatementTestFixture, WindowName)
             ])json");
         ASSERT_EQ(expected, GetHelper().ExecuteSelectECSql(ecsql));
         }
+    if ("multiple window definitions")
+        {
+        Utf8CP ecsql = "SELECT Primary, Secondary, SomeValue, MIN(SomeValue) over win1, MIN(SomeValue) over win2 from ts.SomeEntity WINDOW win1 AS (PARTITION BY Secondary), win2 AS(PARTITION BY Primary)";
+        auto expected = JsonValue(R"json([
+                {"MIN([SomeValue]) OVER win1":1,"MIN([SomeValue]) OVER win2":1,"Primary":"A","Secondary":"one","SomeValue":1},
+                {"MIN([SomeValue]) OVER win1":1,"MIN([SomeValue]) OVER win2":4,"Primary":"D","Secondary":"one","SomeValue":4},
+                {"MIN([SomeValue]) OVER win1":1,"MIN([SomeValue]) OVER win2":7,"Primary":"G","Secondary":"one","SomeValue":7},
+                {"MIN([SomeValue]) OVER win1":3,"MIN([SomeValue]) OVER win2":3,"Primary":"C","Secondary":"three","SomeValue":3},
+                {"MIN([SomeValue]) OVER win1":3,"MIN([SomeValue]) OVER win2":6,"Primary":"F","Secondary":"three","SomeValue":6},
+                {"MIN([SomeValue]) OVER win1":2,"MIN([SomeValue]) OVER win2":2,"Primary":"B","Secondary":"two","SomeValue":2},
+                {"MIN([SomeValue]) OVER win1":2,"MIN([SomeValue]) OVER win2":5,"Primary":"E","Secondary":"two","SomeValue":5}
+            ])json");
+        ASSERT_EQ(expected, GetHelper().ExecuteSelectECSql(ecsql));
+        }
     }
 
 END_ECDBUNITTESTS_NAMESPACE
