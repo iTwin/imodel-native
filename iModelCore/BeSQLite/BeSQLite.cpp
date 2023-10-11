@@ -189,6 +189,41 @@ struct RegExpExtractFunc final : ScalarFunction {
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
+struct Base36Func final : ScalarFunction
+{
+private:
+    static Utf8String ToBase36String(uint64_t i)
+        {
+        static Utf8CP chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        Utf8String encoded;
+        while (i != 0)
+            {
+            encoded.push_back(chars[i % 36]);
+            i /= 36;
+            }
+        std::reverse(encoded.begin(), encoded.end());
+        return !encoded.empty() ? encoded : "0";
+        }
+    void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
+        {
+        DbValue const& v = args[0];
+        if (v.IsNull() || v.GetValueType() != DbValueType::IntegerVal)
+            {
+            ctx.SetResultNull();
+            return;
+            }
+        Utf8String base36 = ToBase36String(v.GetValueUInt64());
+        ctx.SetResultText(base36.c_str(), static_cast<int>(base36.size()), DbFunction::Context::CopyData::Yes);
+        }
+public:
+    Base36Func() : ScalarFunction("base36", 1, DbValueType::TextVal) {}
+    ~Base36Func() {}
+    static std::unique_ptr<Base36Func> Create() {return std::make_unique<Base36Func>();}
+};
+
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
 struct CachedPropertyKey
     {
     Utf8String  m_namespace;
@@ -910,7 +945,8 @@ static int besqliteBusyHandler(void* retry, int count) {return ((BusyRetry const
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbFile::DbFile(SqlDbP sqlDb, BusyRetry* retry, BeSQLiteTxnMode defaultTxnMode) : m_sqlDb(sqlDb), m_cachedProps(nullptr), m_blvCache(*this),
-            m_defaultTxn(*this, "default", defaultTxnMode), m_statements(10), m_regexFunc(RegExpFunc::Create()),m_regexExtractFunc(RegExpExtractFunc::Create())
+            m_defaultTxn(*this, "default", defaultTxnMode), m_statements(10),
+            m_regexFunc(RegExpFunc::Create()), m_regexExtractFunc(RegExpExtractFunc::Create()), m_base36Func(Base36Func::Create())
     {
     m_inCommit = false;
     m_allowImplicitTxns = false;
@@ -920,6 +956,7 @@ DbFile::DbFile(SqlDbP sqlDb, BusyRetry* retry, BeSQLiteTxnMode defaultTxnMode) :
     sqlite3_busy_handler(sqlDb, besqliteBusyHandler, m_retry.get());
     AddFunction(*m_regexFunc);
     AddFunction(*m_regexExtractFunc);
+    AddFunction(*m_base36Func);
     }
 
 BriefcaseLocalValueCache& DbFile::GetBLVCache() {return m_blvCache;}
@@ -2610,6 +2647,7 @@ DbFile::~DbFile() {
     BeAssert(nullptr == m_cachedProps);
     RemoveFunction(*m_regexFunc);
     RemoveFunction(*m_regexExtractFunc);
+    RemoveFunction(*m_base36Func);
     DbResult rc = (DbResult) sqlite3_close(m_sqlDb);
 
     if (BE_SQLITE_OK != rc) {
@@ -3033,6 +3071,18 @@ ProfileState Db::_CheckProfileVersion() const { return BeSQLiteProfileManager::C
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult Db::_UpgradeProfile(OpenParams const& params) { return BeSQLiteProfileManager::UpgradeProfile(*this); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ProfileVersion Db::GetBeSQLiteProfileVersion() const
+    {
+    ProfileVersion result(0, 0, 0, 0);
+    if(BeSQLiteProfileManager::ReadProfileVersion(result, *this) == DbResult::BE_SQLITE_OK)
+        return result;
+
+    return ProfileVersion(0, 0, 0, 0);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
