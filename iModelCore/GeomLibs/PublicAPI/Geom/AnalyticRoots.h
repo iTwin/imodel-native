@@ -52,7 +52,7 @@ static int SolveBezierCubic
         double y2,
         double y3,
         double e,
-        double uvals[2],
+        double uvals[3],
         bool bRestrictSolutionsTo01
         );
 
@@ -95,20 +95,18 @@ double reltol
 //! @param [out] amplitiude (positive) amplitude.
 static bool NormalizeCosine (double beta, double gamma, double &thetaMin, double &thetaMax, double &amplitude);
 
-
 //! Return 0 or 2 angle roots of  trig form {alpha + beta * cos + gamma * sin} for a bounded interval.
 //! There is no test for tangency --- a (numerically) exact tangency goes in twice (unnoticed).
 //! @param [in] alpha constant coff
 //! @param [in] beta  cosine coff
 //! @param [in] gamma sine coff
-//! @param [in] theta0 start angle of interval
-//! @param [in] sweep interval sweep
-//! @param [out] angles 
+//! @param [out] angles array of up to 2 radian roots
 //! @param [out] count angle count.  0 if no amplitude.
 //! @param [out] thetaMax angle where maximum value alpha + amplitude occurs.
-//! @param [out] thetaMin angle where minimum value alpha - almplitude occurs.
+//! @param [out] thetaMin angle where minimum value alpha - amplitude occurs.
 //! @param [out] amplitude (absolute) amplitude of wave.
-static bool LinearTrigFormRoots (double alpha, double beta, double gamma, double *angle, size_t &count, double &thetaMax, double &thetaMin, double &amplitude);
+//! @param [in] tol optional tolerance to catch near-tangents that don't intersect (non-positive to ignore)
+static bool LinearTrigFormRoots (double alpha, double beta, double gamma, double *angle, size_t &count, double &thetaMax, double &thetaMin, double &amplitude, double tol = 0.0);
 };
 #endif
 END_BENTLEY_GEOMETRY_NAMESPACE

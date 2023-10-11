@@ -103,7 +103,7 @@ TEST(IModelJson,ReadFiles)
             for (auto const& g : geometry)
                 {
                 if (Check::True(g.IsValid(), "Imported geometry is valid"))
-                    Check::NearRoundtrip(*g, 0.0, name);
+                    Check::NearRoundTrip(*g, 0.0, name);
                 }
             }
         }

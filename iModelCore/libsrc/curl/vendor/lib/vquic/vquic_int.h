@@ -41,17 +41,14 @@ struct cf_quic_ctx {
   size_t gsolen; /* length of individual packets in send buf */
   size_t split_len; /* if != 0, buffer length after which GSO differs */
   size_t split_gsolen; /* length of individual packets after split_len */
+#ifdef DEBUGBUILD
+  int wblock_percent; /* percent of writes doing EAGAIN */
+#endif
   bool no_gso; /* do not use gso on sending */
 };
 
 CURLcode vquic_ctx_init(struct cf_quic_ctx *qctx);
 void vquic_ctx_free(struct cf_quic_ctx *qctx);
-
-CURLcode vquic_send_packets(struct Curl_cfilter *cf,
-                            struct Curl_easy *data,
-                            struct cf_quic_ctx *qctx,
-                            const uint8_t *pkt, size_t pktlen, size_t gsolen,
-                            size_t *psent);
 
 void vquic_push_blocked_pkt(struct Curl_cfilter *cf,
                             struct cf_quic_ctx *qctx,

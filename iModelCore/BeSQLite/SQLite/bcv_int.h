@@ -397,7 +397,7 @@ ManifestDb *bcvManifestDbidToDb(Manifest *p, i64 iDbId);
 void bcvfsLruAdd(BcvCommon *p, CacheEntry *pEntry);
 u8 *bcvDatabaseVtabData(
     int*, BcvCommon*, const char*, const char*, const char*, 
-    void(*xClientCount)(BcvCommon*,Container*,int,int*,int*),
+    void(*xClientCount)(BcvCommon*,Container*,int,int*,int*,int*),
     u32, int*, int*
 );
 int bcvManifestUpdate(BcvCommon*, Container*, Manifest*, char**);

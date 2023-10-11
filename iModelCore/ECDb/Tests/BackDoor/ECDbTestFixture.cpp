@@ -139,6 +139,7 @@ BentleyStatus ECDbTestFixture::SetupECDb(Utf8CP ecdbFileName, SchemaItem const& 
     //reopen the file after creating and importing the schema
     return BE_SQLITE_OK == m_ecdb.OpenBeSQLiteDb(ecdbPath, ecdbParam) ? SUCCESS : ERROR;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
@@ -162,6 +163,7 @@ BentleyStatus ECDbTestFixture::SetupECDb(Utf8CP ecdbFileName, void* fileData, ui
     //reopen the file after creating and importing the schema
     return BE_SQLITE_OK == m_ecdb.OpenBeSQLiteDb(ecdbPath, openParams) ? SUCCESS : ERROR;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -273,15 +275,25 @@ DbResult ECDbTestFixture::CloneECDb(ECDbR clone, Utf8CP cloneFileName, BeFileNam
     BeFileName clonePath;
     BeTest::GetHost().GetOutputRoot(clonePath);
     clonePath.AppendToPath(BeFileName(cloneFileName));
-    BeFileName::CreateNewDirectory(BeFileName::GetDirectoryName(clonePath).c_str());
-    BeFileName::BeCopyFile(seedFilePath, clonePath);
+
+    return CloneECDb(clone, clonePath, seedFilePath, openParams);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+DbResult ECDbTestFixture::CloneECDb(ECDbR clone, BeFileNameCR cloneFilePath, BeFileNameCR seedFilePath, ECDb::OpenParams const& openParams)
+    {
+    BeFileName::CreateNewDirectory(BeFileName::GetDirectoryName(cloneFilePath).c_str());
+    BeFileName::BeCopyFile(seedFilePath, cloneFilePath);
 
     //clone Change cache file
     BeFileName seedChangeCachePath = ECDb::GetDefaultChangeCachePath(seedFilePath.GetNameUtf8().c_str());
     if (seedChangeCachePath.DoesPathExist())
-        BeFileName::BeCopyFile(seedChangeCachePath, ECDb::GetDefaultChangeCachePath(clonePath.GetNameUtf8().c_str()));
+        BeFileName::BeCopyFile(seedChangeCachePath, ECDb::GetDefaultChangeCachePath(cloneFilePath.GetNameUtf8().c_str()));
 
-    return clone.OpenBeSQLiteDb(clonePath, openParams);
+    return clone.OpenBeSQLiteDb(cloneFilePath, openParams);
     }
 
 //---------------------------------------------------------------------------------------
@@ -626,4 +638,22 @@ void DeleteInstance(ECDbCR ecdb, ECInstanceKey ik) {
     EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, sql.c_str())) << "ECSQL:" << sql.c_str();
     EXPECT_EQ(stmt.Step(), BE_SQLITE_DONE) << "ECSQL:" << sql.c_str();
 };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult ECDbTestFixture::OpenECDbTestDataFile(Utf8CP name) {
+    auto getDataPath = []() {
+        BeFileName docRoot;
+        BeTest::GetHost().GetDocumentsRoot(docRoot);
+        docRoot.AppendToPath(L"ECDb");
+        return docRoot;
+    };
+
+    const auto bimPath = getDataPath().AppendToPath(WString(name, true).c_str());
+    if (m_ecdb.IsDbOpen()) {
+        m_ecdb.CloseDb();
+    }
+    return m_ecdb.OpenBeSQLiteDb(bimPath, Db::OpenParams(Db::OpenMode::Readonly));
+}
 END_ECDBUNITTESTS_NAMESPACE

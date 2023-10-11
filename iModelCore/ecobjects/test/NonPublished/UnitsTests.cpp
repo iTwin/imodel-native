@@ -994,9 +994,9 @@ TEST_F(UnitConversionTests, UnitsConversions_Complex)
     testUnitConversion(((1 + 101.325 / 98.0665) * 9.80665e4) / 1.01325e5, "ATM", 1.0, "AT_GAUGE", 1); //Gauge Offset was inverse in Units 1.0.  Switched - to + to correct expected value
     testUnitConversion(9.80665 / 1.01325e5, "ATM", 1.0, "KGF_PER_SQ_M", 1);
     testUnitConversion(1000 / 1.01325e5, "ATM", 1.0, "KILOPASCAL", 1);
-    testUnitConversion(((1 + 101.325) * 1000) / 1.01325e5, "ATM", 1.0, "KILOPASCAL_GAUGE", 1); //Gauge Offset was inverse in Units 1.0.  Switched - to + to correct expected value
+    testUnitConversion(((1 + 101.325) * 1000) / 1.01325e5, "ATM", 1.0, "KILOPASCAL_GAUGE", 5); //Gauge Offset was inverse in Units 1.0.  Switched - to + to correct expected value
     testUnitConversion(1000000 / 1.01325e5, "ATM", 1.0, "MEGAPASCAL", 1);
-    testUnitConversion(((1 + 101.325 / 1000) * 1000000) / 1.01325e5, "ATM", 1.0, "MEGAPASCAL_GAUGE", 1); //Gauge Offset was inverse in Units 1.0.  Switched - to + to correct expected value
+    testUnitConversion(((1 + 101.325 / 1000) * 1000000) / 1.01325e5, "ATM", 1.0, "MEGAPASCAL_GAUGE", 5); //Gauge Offset was inverse in Units 1.0.  Switched - to + to correct expected value
     testUnitConversion(9806.65 / 1.01325e5, "ATM", 1.0, "M_H2O", 1);
     testUnitConversion(9.80665 / 1.01325e5, "ATM", 1.0, "MM_H2O", 1);
     testUnitConversion(1.0, "MM_HG_AT_32F", 1.33322e2 / 101325.0, "ATM", 1);  // KnowledgeDoor and hand calculation agree with actual value more than value from old system

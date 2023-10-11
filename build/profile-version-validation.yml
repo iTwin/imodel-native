@@ -1,0 +1,48 @@
+name: profile-version-tests-$(Date:yyyy.MM.dd)$(Rev:.r)
+
+trigger:
+  branches:
+    include:
+      - main
+
+pr:
+  autoCancel: true
+  branches:
+    include:
+      - main
+
+parameters:
+- name: defaultNativeBranch
+  displayName: Default Native Branch Used for PR Validation
+  type: string
+  default: 'main'
+- name: defaultCoreBranch
+  displayName: Default itwinjs-core Branch Used for PR Validation
+  type: string
+  default: 'master'
+
+resources:
+  repositories:
+    - repository: profileversion-tests
+      type: github
+      endpoint: imodel-native
+      name: iTwin/profileversion-tests
+
+    - repository: imodel-native-internal
+      type: github
+      ref: ${{ parameters.defaultNativeBranch }}
+      endpoint: imodel-native
+      name: iTwin/imodel-native-internal
+
+    - repository: itwinjs-core
+      type: github
+      ref: ${{ parameters.defaultCoreBranch }}
+      endpoint: imodel-native
+      name: iTwin/itwinjs-core
+
+extends:
+  template: /common/azure-pipelines/templates/pipeline.yml@profileversion-tests
+  parameters:
+    otherRepo: imodel-native
+    defaultNativeBranch: ${{ parameters.defaultNativeBranch }}
+    defaultCoreBranch: ${{ parameters.defaultCoreBranch }}

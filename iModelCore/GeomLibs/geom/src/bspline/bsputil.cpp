@@ -436,8 +436,6 @@ bool MSBsplineCurve::AlmostEqual (MSBsplineCurveCR other) const
 +----------------------------------------------------------------------*/
 bool MSBsplineCurve::AlmostEqual (MSBsplineCurveCR other, double tolerance) const
     {
-    int         i;
-
     if (   this->GetNumPoles () == other.GetNumPoles ()
         && this->GetNumKnots () == other.GetNumKnots ()
         && this->GetOrder ()    == other.GetOrder ()
@@ -445,34 +443,24 @@ bool MSBsplineCurve::AlmostEqual (MSBsplineCurveCR other, double tolerance) cons
         && this->HasWeights ()  == other.HasWeights ()
         )
         {
+        if (tolerance <= 0.0)
+            tolerance = 0.5 * (Resolution() + other.Resolution());
+            
         if (this->HasWeights())
             {
-            for (i=0; i<this->GetNumPoles(); i++)
+            for (int i=0; i<this->GetNumPoles(); i++)
                 if (! bsputil_isSameRationalPointTolerance (&this->poles[i], this->weights[i],
                                                    &other.poles[i], other.weights[i], tolerance))
                     return false;
             }
         else
             {
-            for (i=0; i<this->GetNumPoles(); i++)
+            for (int i=0; i<this->GetNumPoles(); i++)
                 if (! bsputil_isSamePointTolerance (&this->poles[i], &other.poles[i], tolerance))
                     return false;
             }
 
-        // compare normalized knots
-        double thisLeftKnot, thisRightKnot, otherLeftKnot, otherRightKnot;
-        this->GetKnotRange(thisLeftKnot, thisRightKnot);
-        other.GetKnotRange(otherLeftKnot, otherRightKnot);
-        double thisFactor = thisRightKnot - thisLeftKnot;
-        double otherFactor = otherRightKnot - otherLeftKnot;
-        if (thisFactor >= KNOT_TOLERANCE_BASIS && otherFactor >= KNOT_TOLERANCE_BASIS)
-            {
-            thisFactor = 1.0 / thisFactor;
-            otherFactor = 1.0 / otherFactor;                
-            for (i = 0; i < this->GetNumKnots(); ++i)
-                this->AreSameKnots((this->knots[i] - thisLeftKnot) * thisFactor, (other.knots[i] - otherLeftKnot) * otherFactor);
-            }
-        return true;
+        return AreSameKnotVectorsNormalized(knots, GetKnotRange(), other.knots, other.GetKnotRange(), GetNumKnots());
         }
     else
         {

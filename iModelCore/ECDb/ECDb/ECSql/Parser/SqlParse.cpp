@@ -195,6 +195,7 @@ namespace connectivity
                             {OSQLParseNode::predicate_check, "predicate_check"},
                             {OSQLParseNode::property_path_entry, "property_path_entry"},
                             {OSQLParseNode::property_path, "property_path"},
+                            {OSQLParseNode::opt_optional_prop, "opt_optional_prop"},
                             {OSQLParseNode::qualified_class_name, "qualified_class_name"},
                             {OSQLParseNode::qualified_join, "qualified_join"},
                             {OSQLParseNode::query_term, "query_term"},
@@ -237,6 +238,7 @@ namespace connectivity
                             {OSQLParseNode::value_exp, "value_exp"},
                             {OSQLParseNode::values_or_query_spec, "values_or_query_spec"},
                             {OSQLParseNode::where_clause, "where_clause"},
+                            {OSQLParseNode::opt_null_order, "opt_null_order"},
                     };
                 size_t nRuleMapCount = sizeof(aRuleDescriptions) / sizeof(aRuleDescriptions[0]);
                 OSL_ENSURE(nRuleMapCount == size_t(OSQLParseNode::rule_count), "OSQLParser::OSQLParser: added a new rule? Adjust this map!");

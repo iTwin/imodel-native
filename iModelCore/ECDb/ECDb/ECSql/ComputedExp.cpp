@@ -51,7 +51,7 @@ Exp::FinalizeParseStatus BinaryBooleanExp::_FinalizeParsing(ECSqlParseContext& c
             //only one side can be of Kind::Varies. If lhs is Varies, expWithVaryingTypeInfo was already set and no longer is null
             if (expWithVaryingTypeInfo != nullptr)
                 {
-                ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Only one operand of the expression '%s' can be an expression list.", ToECSql().c_str());
+                ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0456, "Only one operand of the expression '%s' can be an expression list.", ToECSql().c_str());
                 return FinalizeParseStatus::Error;
                 }
 
@@ -141,9 +141,9 @@ Exp::FinalizeParseStatus BinaryBooleanExp::CanCompareTypes(ECSqlParseContext& ct
     if (!lhs.Contains(Exp::Type::Parameter) && !rhs.Contains(Exp::Type::Parameter) && !lhsTypeInfo.CanCompare(rhsTypeInfo, &canCompareErrorMessage))
         {
         if (canCompareErrorMessage.empty())
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Type mismatch in expression '%s'.", ToECSql().c_str());
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0457, "Type mismatch in expression '%s'.", ToECSql().c_str());
         else
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Type mismatch in expression '%s': %s", ToECSql().c_str(), canCompareErrorMessage.c_str());
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0458, "Type mismatch in expression '%s': %s", ToECSql().c_str(), canCompareErrorMessage.c_str());
 
         return FinalizeParseStatus::Error;
         }
@@ -173,7 +173,8 @@ Exp::FinalizeParseStatus BinaryBooleanExp::CanCompareTypes(ECSqlParseContext& ct
                     return FinalizeParseStatus::Completed;
 
                 default:
-                    ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Type mismatch in expression '%s'. Operator not supported with point, geometry, navigation properties, struct or primitive array operands.", ToECSql().c_str());
+                    ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0459,
+                        "Type mismatch in expression '%s'. Operator not supported with point, geometry, navigation properties, struct or primitive array operands.", ToECSql().c_str());
                     return FinalizeParseStatus::Error;
             }
         }
@@ -184,7 +185,8 @@ Exp::FinalizeParseStatus BinaryBooleanExp::CanCompareTypes(ECSqlParseContext& ct
         rhsTypeKind == ECSqlTypeInfo::Kind::StructArray || rhsIsStructWithStructArray)
         {
         //structs and arrays not supported in where expressions for now
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Type mismatch in expression '%s'. Operator not supported with struct arrays or structs that contain struct arrays.", ToECSql().c_str());
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0460,
+            "Type mismatch in expression '%s'. Operator not supported with struct arrays or structs that contain struct arrays.", ToECSql().c_str());
         return FinalizeParseStatus::Error;
         }
 
@@ -212,6 +214,17 @@ bool BinaryBooleanExp::ContainsStructArrayProperty(ECClassCR ecclass)
 
     return false;
     }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void BinaryBooleanExp::_ToJson(BeJsValue val, JsonFormat const& fmt ) const {
+    //! ITWINJS_PARSE_TREE: BinaryBooleanExp
+    val["id"] = "BinaryBooleanExp";
+    val["op"] = ExpHelper::ToSql(m_op);
+    GetLeftOperand()->ToJson(val["lhs"], fmt);
+    GetRightOperand()->ToJson(val["rhs"], fmt);
+}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
@@ -246,6 +259,22 @@ BooleanFactorExp::BooleanFactorExp(std::unique_ptr<BooleanExp> operand, bool not
     {
     m_operandExpIndex = AddChild(std::move(operand));
     }
+
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void BooleanFactorExp::_ToJson(BeJsValue val, JsonFormat const& fmt ) const {
+    //! ITWINJS_PARSE_TREE: BooleanFactorExp
+    if (m_notOperator) {
+        val.SetEmptyObject();
+        val["id"] = "BooleanFactorExp",
+        val["op"] = "NOT";
+         GetOperand()->ToJson(val["exp"], fmt);
+    } else {
+        GetOperand()->ToJson(val, fmt);
+    }
+}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
@@ -299,7 +328,7 @@ Exp::FinalizeParseStatus UnaryPredicateExp::_FinalizeParsing(ECSqlParseContext& 
     ValueExp const* valueExp = GetValueExp();
     if (valueExp->IsParameterExp())
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Type mismatch in expression '%s'. Unary predicates cannot be parametrized.", ToECSql().c_str());
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0461, "Type mismatch in expression '%s'. Unary predicates cannot be parametrized.", ToECSql().c_str());
         return FinalizeParseStatus::Error;
         }
 
@@ -307,6 +336,13 @@ Exp::FinalizeParseStatus UnaryPredicateExp::_FinalizeParsing(ECSqlParseContext& 
     return FinalizeParseStatus::Completed;
     }
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void UnaryPredicateExp::_ToJson(BeJsValue val, JsonFormat const& fmt ) const {
+    //! ITWINJS_PARSE_TREE: UnaryPredicateExp
+    GetValueExp()->ToJson(val, fmt);
+}
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------

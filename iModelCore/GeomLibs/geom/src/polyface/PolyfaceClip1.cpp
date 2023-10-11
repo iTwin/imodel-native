@@ -1036,21 +1036,21 @@ GEOMDLLIMPEXP void PolyfaceCoordinateMap::AddClippedPolyface (PolyfaceQueryR sou
                 clipPlanes, formNewFacesOnClipPlanes, cutLoops, cutChains);
     }
 
-double PolyfaceQuery::BuildConvexClipPlaneSet (ConvexClipPlaneSetR planes)
+double PolyfaceQuery::BuildConvexClipPlaneSet (ConvexClipPlaneSetR planes) const
     {
     auto volume = ValidatedVolume ();
     planes.clear ();
     auto visitor = PolyfaceVisitor::Attach (*this, false);
     double s = 1.0;
-    if (volume.IsValid () && volume.Value () < 0.0)
-        s = -1.0;
+    if (volume.IsValid () && volume.Value () > 0.0)
+        s = -1.0;   // point clipper normals inward if mesh normals point outward
     bvector<DPoint3d> & points = visitor->Point ();
     for (visitor->Reset (); visitor->AdvanceToNextFace ();)
         {
         auto normal = PolygonOps::AreaNormal (points).ValidatedNormalize ();
         if (normal.IsValid ())
             {
-            DVec3d signedNormal = -s * normal.Value ();
+            DVec3d signedNormal = s * normal.Value ();
             ClipPlane plane (signedNormal, points[0]);
             planes.push_back (plane);
             }

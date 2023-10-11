@@ -461,6 +461,8 @@ GEOMDLLIMPEXP MTGNodeId FPred (MTGNodeId nodeId) const;
 /// Navigate to the edge mate of nodeId (at opposite end and opposite side of same edge.)
 GEOMDLLIMPEXP MTGNodeId EdgeMate (MTGNodeId nodeId) const;
 
+// Count the number of face loops whose nodes lack the given face mask
+GEOMDLLIMPEXP size_t CountFaceLoops(MTGMask ignoreMask);
 // Count the number of face loops
 GEOMDLLIMPEXP size_t CountFaceLoops ();
 // Count the number of vertex loops.
@@ -473,7 +475,7 @@ GEOMDLLIMPEXP void CollectVertexLoops (bvector <MTGNodeId> &vertexNodes);
 // Collect array of all nodes
 GEOMDLLIMPEXP void CollectAllNodes(bvector <MTGNodeId> &allNodes);
 
-// Collect nodeId's by component.
+// Collect nodeIds by component using depth-first flood.
 // @param components array with one vector of nodes per component.
 // @param scope one of:
 //<pre>
@@ -482,14 +484,19 @@ GEOMDLLIMPEXP void CollectAllNodes(bvector <MTGNodeId> &allNodes);
 //<li>MTG_ScopeEdge collect one node per edge
 //<li>MTG_ScopeVertex collect one node per vertex
 //<li>MTG_ScopeFace collect one node per face
-//<li>MTG_ScopeComponetn collect one node per component
+//<li>MTG_ScopeComponent collect one node per component
 //</pre>
 GEOMDLLIMPEXP void CollectConnectedComponents (bvector <bvector <MTGNodeId> > &components, MTGMarkScope scope);
 
-// Collect nodeId's by component.
+// Collect nodeIds by component using depth-first flood.
+// @param [out] components vector of node vectors, each of which is populated with all of the nodes in a component.  
 GEOMDLLIMPEXP void CollectConnectedComponents (bvector <bvector <MTGNodeId> > &components);
 
-
+// Collect nodeIds by component using breadth-first flood.
+// @param [out] components vector of node vectors, each of which is populated with one node per face of the component.  
+// @param [in] ignoreMask optional mask on faces to ignore, e.g., MTG_EXTERIOR_MASK.
+// @param [in] maxFaceCount if positive, limit size of each component to this number of faces
+GEOMDLLIMPEXP void CollectConnectedComponents (bvector<bvector<MTGNodeId>>& components, MTGMask ignoreMask, size_t maxFaceCount);
 
 // Pack the bvector to remove nodes that have the mask.
 GEOMDLLIMPEXP void DropMasked (bvector <MTGNodeId> &nodes, MTGMask mask) const;

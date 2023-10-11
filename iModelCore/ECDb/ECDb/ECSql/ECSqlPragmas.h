@@ -17,9 +17,9 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct PragmaExplainQuery : PragmaManager::GlobalHandler {
     PragmaExplainQuery():GlobalHandler("explain_query","explain query plan"){}
     ~PragmaExplainQuery(){}
-    DbResult ToResultSet(Statement& from, StaticPragmaResult& to);
-    virtual DbResult Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const& val) override;
-    virtual DbResult Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&) override;
+    DbResult ToResultSet(Statement&, StaticPragmaResult&);
+    virtual DbResult Read(PragmaManager::RowSet&, ECDbCR, PragmaVal const&,  PragmaManager::OptionsMap const&) override;
+    virtual DbResult Write(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
     static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<PragmaExplainQuery>(); }
 };
 
@@ -30,8 +30,8 @@ struct DisqualifyTypeIndex : PragmaManager::ClassHandler {
     std::set<ECClassId> m_disqualifiedClassSet;
     DisqualifyTypeIndex():ClassHandler("disqualify_type_index","set/get disqualify_type_index flag for a given ECClass"){}
     ~DisqualifyTypeIndex(){}
-    virtual DbResult Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&, ECClassCR cls) override;
-    virtual DbResult Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const& val, ECClassCR cls) override;
+    virtual DbResult Read(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, ECClassCR, PragmaManager::OptionsMap const&) override;
+    virtual DbResult Write(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, ECClassCR, PragmaManager::OptionsMap const&) override;
     static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<DisqualifyTypeIndex>(); }
 };
 
@@ -41,8 +41,8 @@ struct DisqualifyTypeIndex : PragmaManager::ClassHandler {
 struct PragmaECDbVersion : PragmaManager::GlobalHandler {
     PragmaECDbVersion():GlobalHandler("ecdb_ver","return current and file profile versions"){}
     ~PragmaECDbVersion(){}
-    virtual DbResult Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&) override;
-    virtual DbResult Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&) override;
+    virtual DbResult Read(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
+    virtual DbResult Write(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
     static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<PragmaECDbVersion>(); }
 };
 
@@ -52,8 +52,8 @@ struct PragmaECDbVersion : PragmaManager::GlobalHandler {
 struct PragmaChecksum : PragmaManager::GlobalHandler {
     PragmaChecksum():GlobalHandler("checksum", "checksum([ec_schema|ec_map|db_schema]) return sha1 checksum for data."){}
     ~PragmaChecksum(){}
-    virtual DbResult Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&) override;
-    virtual DbResult Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&) override;
+    virtual DbResult Read(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
+    virtual DbResult Write(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
     static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<PragmaChecksum>(); }
 };
 
@@ -63,9 +63,20 @@ struct PragmaChecksum : PragmaManager::GlobalHandler {
 struct PragmaExperimentalFeatures : PragmaManager::GlobalHandler {
     PragmaExperimentalFeatures():GlobalHandler("experimental_features_enabled","enable/disable experimental features"){}
     ~PragmaExperimentalFeatures(){}
-    virtual DbResult Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&) override;
-    virtual DbResult Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const& val) override;
+    virtual DbResult Read(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
+    virtual DbResult Write(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
     static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<PragmaExperimentalFeatures>(); }
+};
+
+//=======================================================================================
+// @bsiclass PragmaParseTree
+//+===============+===============+===============+===============+===============+======
+struct PragmaParseTree : PragmaManager::GlobalHandler {
+    PragmaParseTree():GlobalHandler("parse_tree", "parse_tree(ecsql) return parse tree of ecsql."){}
+    ~PragmaParseTree(){}
+    virtual DbResult Read(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
+    virtual DbResult Write(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
+    static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<PragmaParseTree>(); }
 };
 
 //=======================================================================================
@@ -73,18 +84,18 @@ struct PragmaExperimentalFeatures : PragmaManager::GlobalHandler {
 //+===============+===============+===============+===============+===============+======
 struct PragmaIntegrityCheck : PragmaManager::GlobalHandler {
     PragmaIntegrityCheck():GlobalHandler("integrity_check","performs integrity checks on ECDb"){}
-    virtual DbResult Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const& v) override;
-    DbResult CheckAll(IntegrityChecker& checker, StaticPragmaResult& result, ECDbCR ecdb);
-    DbResult CheckSchemaLoad(IntegrityChecker& checker, StaticPragmaResult& result, ECDbCR ecdb);
-    DbResult CheckEcProfile(IntegrityChecker& checker, StaticPragmaResult& result, ECDbCR ecdb);
-    DbResult CheckDataSchema(IntegrityChecker& checker, StaticPragmaResult& result, ECDbCR ecdb);
-    DbResult CheckDataColumns(IntegrityChecker& checker, StaticPragmaResult& result, ECDbCR ecdb);
-    DbResult CheckNavClassIds(IntegrityChecker& checker, StaticPragmaResult& result, ECDbCR ecdb);
-    DbResult CheckNavIds(IntegrityChecker& checker, StaticPragmaResult& result, ECDbCR ecdb);
-    DbResult CheckLinkTableFkClassIds(IntegrityChecker& checker, StaticPragmaResult& result, ECDbCR ecdb);
-    DbResult CheckLinkTableFkIds(IntegrityChecker& checker, StaticPragmaResult& result, ECDbCR ecdb);
-    DbResult CheckClassIds(IntegrityChecker& checker, StaticPragmaResult& result, ECDbCR ecdb);
-    virtual DbResult Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&) override;
+    virtual DbResult Read(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
+    DbResult CheckAll(IntegrityChecker&, StaticPragmaResult&, ECDbCR);
+    DbResult CheckSchemaLoad(IntegrityChecker&, StaticPragmaResult&, ECDbCR);
+    DbResult CheckEcProfile(IntegrityChecker&, StaticPragmaResult&, ECDbCR);
+    DbResult CheckDataSchema(IntegrityChecker&, StaticPragmaResult&, ECDbCR);
+    DbResult CheckDataColumns(IntegrityChecker&, StaticPragmaResult&, ECDbCR);
+    DbResult CheckNavClassIds(IntegrityChecker&, StaticPragmaResult&, ECDbCR);
+    DbResult CheckNavIds(IntegrityChecker&, StaticPragmaResult&, ECDbCR);
+    DbResult CheckLinkTableFkClassIds(IntegrityChecker&, StaticPragmaResult&, ECDbCR);
+    DbResult CheckLinkTableFkIds(IntegrityChecker&, StaticPragmaResult&, ECDbCR);
+    DbResult CheckClassIds(IntegrityChecker&, StaticPragmaResult&, ECDbCR);
+    virtual DbResult Write(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
     static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<PragmaIntegrityCheck>(); }
 
 };
@@ -106,11 +117,11 @@ struct SHA3Helper final {
 
 
 private:
-    static bool TableExists(DbCR db, Utf8CP tableName, Utf8CP dbAlias);
-    static DbResult ComputeHash(Utf8String& hash, DbCR db, std::vector<std::string> const & tables, Utf8CP dbAlias, HashSize hashSize, bool skipTableThatDoesNotExists);
-    static DbResult ComputeSQLiteSchemaHash(Utf8String& hash, DbCR db, Utf8CP dbAlias, HashSize hashSize);
+    static bool TableExists(DbCR, Utf8CP, Utf8CP);
+    static DbResult ComputeHash(Utf8String&, DbCR, std::vector<std::string> const &, Utf8CP, HashSize, bool);
+    static DbResult ComputeSQLiteSchemaHash(Utf8String&, DbCR, Utf8CP, HashSize);
 public:
-    static DbResult ComputeHash(Utf8StringR hash, DbCR db, SourceType type, Utf8CP dbAlias = "main", HashSize hashSize = HashSize::SHA3_256);
+    static DbResult ComputeHash(Utf8StringR, DbCR, SourceType, Utf8CP dbAlias = "main", HashSize hashSize = HashSize::SHA3_256);
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

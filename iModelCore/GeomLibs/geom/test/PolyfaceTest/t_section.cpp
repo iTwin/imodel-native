@@ -1624,7 +1624,6 @@ void RunSelectiveVisibility (double dX, bvector<PolyfaceHeaderPtr> &allMesh, bve
     SaveTransformed (visibleParts, 0.0, true);
     }
 
-bool DGNJSFileToGeometry (BeFileName &filename, bvector<IGeometryPtr> &geometry);
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1658,7 +1657,7 @@ TEST(Polyface,MultiMeshVisibilityB)
         bvector<IGeometryPtr> geometry;
         auto fullPath = dataPath;
         fullPath.AppendToPath (filename);
-        if (DGNJSFileToGeometry (fullPath, geometry))
+        if (GTestFileOps::JsonFileToGeometry (fullPath, geometry))
             {
             for (auto g : geometry)
                 {
@@ -1711,7 +1710,7 @@ TEST(Polyface, ValidateMeshConstruction)
         bvector<IGeometryPtr> geometry;
         auto fullPath = dataPath;
         fullPath.AppendToPath(filename);
-        if (DGNJSFileToGeometry(fullPath, geometry))
+        if (GTestFileOps::JsonFileToGeometry(fullPath, geometry))
             {
             for (auto g : geometry)
                 {
@@ -1759,7 +1758,7 @@ TEST(Polyface,MultiMeshVisibilityC)
         filename.Sprintf (L"RunOnSelection_BeforeMultiMeshVisiblePartsXYByPlaneSets_%d.dgnjs", fileNumber);
         fullPath.AppendToPath (filename.c_str ());
 
-        if (!DGNJSFileToGeometry (fullPath, geometry))
+        if (!GTestFileOps::JsonFileToGeometry (fullPath, geometry))
             break;
         static int s_fixAreas = 1;
         for (auto g : geometry)
@@ -1806,7 +1805,7 @@ bool ReadDgnjsGeometry (bvector<IGeometryPtr> &geometry, size_t minGeometry, WCh
     if (nameC)
         dataPath.AppendToPath (nameC);
 
-    bool stat = DGNJSFileToGeometry (dataPath, geometry);
+    bool stat = GTestFileOps::JsonFileToGeometry (dataPath, geometry);
     if (!Check::True (stat, "Read geometry from DGNJS file\n"))
         {
         printf ("   File %ls\n", dataPath.c_str ());
@@ -2126,7 +2125,7 @@ TEST(Polyface, BigSynchroMesh)
         bvector<IGeometryPtr> geometry;
         auto fullPath = dataPath;
         fullPath.AppendToPath(filename);
-        if (DGNJSFileToGeometry(fullPath, geometry))
+        if (GTestFileOps::JsonFileToGeometry(fullPath, geometry))
             {
             for (auto g0 : geometry)
                 {

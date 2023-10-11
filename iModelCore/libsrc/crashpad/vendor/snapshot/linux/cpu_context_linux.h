@@ -1,4 +1,4 @@
-// Copyright 2017 The Crashpad Authors. All rights reserved.
+// Copyright 2017 The Crashpad Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -170,7 +170,7 @@ void InitializeCPUContextMIPS(
   memcpy(&context->fpregs, &float_context.fpregs, sizeof(context->fpregs));
   context->fpcsr = float_context.fpcsr;
   context->fir = float_context.fpu_id;
-};
+}
 
 #endif  // ARCH_CPU_MIPS_FAMILY || DOXYGEN
 
