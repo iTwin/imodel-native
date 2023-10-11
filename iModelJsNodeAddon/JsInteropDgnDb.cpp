@@ -53,6 +53,7 @@ BE_JSON_NAME(geographicCoordinateSystem)
         case DgnDbStatus::BadSchema:      msg = "bad schema"; break;
         case DgnDbStatus::DuplicateCode:  msg = "duplicate code"; break;
         case DgnDbStatus::DuplicateName:  msg = "duplicate name"; break;
+        case DgnDbStatus::InvalidCategory: msg = "invalid category"; break;
         case DgnDbStatus::InvalidId:      msg = "Invalid id"; break;
         case DgnDbStatus::InvalidParent:  msg = "invalid parent"; break;
         case DgnDbStatus::MissingId:      msg = "missing id"; break;
