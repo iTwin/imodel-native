@@ -547,7 +547,7 @@ TEST_F(ECDbTestFixture, CurrentECSqlVersion)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbTestFixture, CurrentECDbProfileVersion)
     {
-    ProfileVersion expectedVersion (4, 0, 0, 3);
+    ProfileVersion expectedVersion (4, 0, 0, 4);
     ASSERT_EQ(ECDb::CurrentECDbProfileVersion(), expectedVersion);
     }
 
@@ -557,14 +557,14 @@ TEST_F(ECDbTestFixture, CurrentECDbProfileVersion)
 TEST_F(ECDbTestFixture, NewFileECDbProfileVersion)
     {
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("newFile.ecdb"));
-    ProfileVersion expectedVersion (4, 0, 0, 3);
+    ProfileVersion expectedVersion (4, 0, 0, 4);
     ASSERT_EQ(m_ecdb.GetECDbProfileVersion(), expectedVersion);
     }
 
 class IssueListener : public ECN::IIssueListener
     {
     mutable bvector<Utf8String> m_issues;
-    void _OnIssueReported(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, Utf8CP message) const override
+    void _OnIssueReported(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, ECN::IssueId id, Utf8CP message) const override
         {
         m_issues.push_back(message);
         }

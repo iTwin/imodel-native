@@ -2845,7 +2845,7 @@ struct  InstanceXmlReader
             auto oldUnitName = m_context.GetOldUnitName(ecClass, *primitiveProperty);
             if (Utf8String::IsNullOrEmpty(oldUnitName.c_str()))
                 {
-                m_context.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECInstance, 
+                m_context.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECInstance, ECIssueId::EC_0002,
                     "No old unit name resolved for property '%s.%s'.  Cannot ensure old unit is the same or convertible to new unit.  Skipping value.", ecClass.GetFullName(), primitiveProperty->GetName().c_str());
                 return nullptr;
                 }
@@ -2853,7 +2853,7 @@ struct  InstanceXmlReader
             auto ecUnitName = Units::UnitNameMappings::TryGetECNameFromOldName(oldUnitName.c_str());
             if (Utf8String::IsNullOrEmpty(ecUnitName))
                 {
-                m_context.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECInstance,
+                m_context.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECInstance, ECIssueId::EC_0003,
                     "An ECUnit name could not be found for the old unit '%s' for property '%s.%s'.  Cannot convert value. Skipping value.", ecUnitName, ecClass.GetFullName(), primitiveProperty->GetName().c_str());
                 return nullptr;
                 }
@@ -2861,7 +2861,8 @@ struct  InstanceXmlReader
             auto oldUnit = primitiveProperty->GetKindOfQuantity()->GetSchema().LookupUnit(ecUnitName, true);
             if (!oldUnit)
                 {
-                m_context.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECInstance, "Failed to lookup unit '%s' for property '%s.%s'. Cannot convert value. Skipping value.", ecUnitName, ecClass.GetFullName(), primitiveProperty->GetName().c_str());
+                m_context.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECInstance, ECIssueId::EC_0004,
+                    "Failed to lookup unit '%s' for property '%s.%s'. Cannot convert value. Skipping value.", ecUnitName, ecClass.GetFullName(), primitiveProperty->GetName().c_str());
                 return nullptr;
                 }
 
@@ -2879,7 +2880,7 @@ struct  InstanceXmlReader
                 auto pCode = oldUnit->Convert(convertedValue, ecValue.GetDouble(), kindOfQuantity->GetPersistenceUnit());
                 if (Units::UnitsProblemCode::NoProblem != pCode)
                     {
-                    m_context.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECInstance,
+                    m_context.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECInstance, ECIssueId::EC_0005,
                         "Failed to convert value for property '%s.%s' from '%s' to '%s'. Skipping value.", ecClass.GetFullName(), primitiveProperty->GetName().c_str(), oldUnit->GetFullName().c_str(), kindOfQuantity->GetPersistenceUnit()->GetFullName().c_str());
                     return false;
                     }
@@ -2896,7 +2897,7 @@ struct  InstanceXmlReader
                         auto pCode = oldUnit->Convert(convertedValue, d, kindOfQuantity->GetPersistenceUnit());
                         if (Units::UnitsProblemCode::NoProblem != pCode)
                             {
-                            m_context.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECInstance,
+                            m_context.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECInstance, ECIssueId::EC_0005,
                                 "Failed to convert value for property '%s.%s' from '%s' to '%s'. Skipping value.", ecClass.GetFullName(), primitiveProperty->GetName().c_str(), oldUnit->GetName().c_str(), kindOfQuantity->GetPersistenceUnit()->GetName().c_str());
                             return false;
                             }
@@ -2906,7 +2907,7 @@ struct  InstanceXmlReader
                         }
                     if (conversionRequired)
                         {
-                        m_context.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECInstance,
+                        m_context.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECInstance, ECIssueId::EC_0006,
                             "Could not convert value for property '%s.%s' from string to double for unit conversion from '%s' to '%s'.  Skipping value.", ecClass.GetFullName(), primitiveProperty->GetName().c_str(), oldUnit->GetFullName().c_str(), kindOfQuantity->GetPersistenceUnit()->GetFullName().c_str());
                         return false;
                         }
@@ -2914,7 +2915,7 @@ struct  InstanceXmlReader
                 }
             else if (conversionRequired)
                 {
-                m_context.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECInstance,
+                m_context.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECInstance, ECIssueId::EC_0007,
                     "Unit conversion required for property '%s.%s' of type '%s' but conversion is only supported for doubles and strings that can be converted to double. Skipping value.", ecClass.GetFullName(), primitiveProperty->GetName().c_str(), primitiveProperty->GetTypeName().c_str());
                 return false;
                 }

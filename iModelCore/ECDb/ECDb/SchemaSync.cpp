@@ -194,20 +194,20 @@ DbResult SchemaSyncHelper::VerifyAlias(ECDbR conn) {
 	auto rc = TryGetAttachDbs(aliasMap, conn);
 	if (rc != BE_SQLITE_OK) {
 		conn.GetImpl().Issues().Report(
-			IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue,
+			IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0613,
 			"Unable to query attach db from primary connection");
 		return rc;
 	}
 	if (aliasMap.find(ALIAS_MAIN_DB) == aliasMap.end()) {
 		conn.GetImpl().Issues().ReportV(
-			IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue,
+			IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0614,
 			"Expecting '%s' attach db on primary connection", ALIAS_MAIN_DB);
 		return rc;
 	}
 
 	if (aliasMap.find(ALIAS_SYNC_DB) != aliasMap.end()) {
 		conn.GetImpl().Issues().ReportV(
-			IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue,
+			IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0615,
 			"Db alias '%s' use by schema sync db is already in use", ALIAS_SYNC_DB);
 		return rc;
 	}
@@ -423,7 +423,7 @@ SchemaSync::Status SchemaSync::Init(SyncDbUri const& syncDbUri, TableList additi
         BeJsDocument doc;
         info.To(BeJsValue(doc));
         m_conn.GetImpl().Issues().ReportV(
-			IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue,
+			IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0616,
 			"Sync db (%a) already initalized. %s", doc.Stringify().c_str());
         return Status::ERROR_SCHEMA_SYNC_DB_ALREADY_INITIALIZED;
     }
@@ -434,7 +434,7 @@ SchemaSync::Status SchemaSync::Init(SyncDbUri const& syncDbUri, TableList additi
     auto rc = sharedDb.OpenBeSQLiteDb(syncDbUri.GetUri().c_str(), openParams);
 	if (rc != BE_SQLITE_OK) {
         m_conn.GetImpl().Issues().ReportV(
-			IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue,
+			IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0617,
 			"Fail to open schema sync db %s. %s", syncDbUri.GetUri().c_str(), BeSQLiteLib::GetErrorString(rc));
         return Status::ERROR_SCHEMA_SYNC_DB_ALREADY_INITIALIZED;
 	}
@@ -444,7 +444,7 @@ SchemaSync::Status SchemaSync::Init(SyncDbUri const& syncDbUri, TableList additi
     rc = SchemaSyncHelper::DropDataTables(sharedDb);
 	if (rc != BE_SQLITE_OK) {
         m_conn.GetImpl().Issues().ReportV(
-			IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue,
+			IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0618,
 			"Fail to drop data table(s) from schema sync db (%s). %s", syncDbUri.GetUri().c_str(), BeSQLiteLib::GetErrorString(rc));
         return Status::ERROR_FAIL_TO_INIT_SCHEMA_SYNC_DB;
 	}
@@ -452,7 +452,7 @@ SchemaSync::Status SchemaSync::Init(SyncDbUri const& syncDbUri, TableList additi
     rc = SchemaSyncHelper::DropMetaTables(sharedDb);
 	if (rc != BE_SQLITE_OK) {
         m_conn.GetImpl().Issues().ReportV(
-			IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue,
+			IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0619,
 			"Fail to drop meta table(s) from schema sync db (%s). %s", syncDbUri.GetUri().c_str(), BeSQLiteLib::GetErrorString(rc));
         return Status::ERROR_FAIL_TO_INIT_SCHEMA_SYNC_DB;
 	}
@@ -460,21 +460,21 @@ SchemaSync::Status SchemaSync::Init(SyncDbUri const& syncDbUri, TableList additi
     rc = SchemaSyncHelper::CreateMetaTablesFrom(m_conn, sharedDb);
 	if (rc != BE_SQLITE_OK) {
         m_conn.GetImpl().Issues().ReportV(
-			IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue,
+			IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0620,
 			"Fail to re-create meta table(s) in schema sync db (%s). %s", syncDbUri.GetUri().c_str(), BeSQLiteLib::GetErrorString(rc));
         return Status::ERROR_FAIL_TO_INIT_SCHEMA_SYNC_DB;
 	}
     rc = sharedDb.TryExecuteSql("create table if not exists " TABLE_SQLSCHEMA "(id integer primary key, Type text, Name text, TableName text, Sql text)");
 	if (rc != BE_SQLITE_OK) {
         m_conn.GetImpl().Issues().ReportV(
-			IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue,
+			IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0621,
 			"Fail to create sync table (" TABLE_SQLSCHEMA ") in schema sync db (%s). %s", syncDbUri.GetUri().c_str(), BeSQLiteLib::GetErrorString(rc));
         return Status::ERROR_FAIL_TO_INIT_SCHEMA_SYNC_DB;
 	}
     rc = UpdateOrCreateSyncDbInfo(sharedDb);
     if (rc != BE_SQLITE_OK) {
         m_conn.GetImpl().Issues().ReportV(
-			IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue,
+			IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0622,
 			"Fail to save sync db info in (%s). %s", syncDbUri.GetUri().c_str(), BeSQLiteLib::GetErrorString(rc));
         return Status::ERROR_FAIL_TO_INIT_SCHEMA_SYNC_DB;
 	}
@@ -483,7 +483,7 @@ SchemaSync::Status SchemaSync::Init(SyncDbUri const& syncDbUri, TableList additi
     rc = sharedDb.SaveChanges();
 	if (rc != BE_SQLITE_OK || sharedInfo.IsEmpty()) {
         m_conn.GetImpl().Issues().ReportV(
-			IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue,
+			IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0623,
 			"Fail to save changes to schema sync db (%s). %s", syncDbUri.GetUri().c_str(), BeSQLiteLib::GetErrorString(rc));
         return Status::ERROR_FAIL_TO_INIT_SCHEMA_SYNC_DB;
 	}
@@ -491,7 +491,7 @@ SchemaSync::Status SchemaSync::Init(SyncDbUri const& syncDbUri, TableList additi
     rc = UpdateOrCreateLocalDbInfo(sharedInfo);
     if (rc != BE_SQLITE_OK) {
         m_conn.GetImpl().Issues().ReportV(
-			IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue,
+			IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0624,
 			"Fail to save sync db info to local db. %s", BeSQLiteLib::GetErrorString(rc));
         return Status::ERROR;
 	}
@@ -524,7 +524,7 @@ void SchemaSync::ParseQueryParams(Db::OpenParams& params, SyncDbUri const& uri){
 SchemaSync::Status SchemaSync::VerifySyncDb(SyncDbUri const& syncDbUri, bool isPull) const{
 	if (m_conn.IsReadonly()) {
 		m_conn.GetImpl().Issues().Report(
-			IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue,
+			IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0625,
 			"Primary connection is readonly. It must be in read/write mode.");
 		return Status::ERROR_READONLY;
 	}
@@ -537,7 +537,7 @@ SchemaSync::Status SchemaSync::VerifySyncDb(SyncDbUri const& syncDbUri, bool isP
         rc = sharedDb.OpenBeSQLiteDb(syncDbUri.GetUri().c_str(), openParams);
         if (rc != BE_SQLITE_OK) {
 				m_conn.GetImpl().Issues().ReportV(
-					IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue,
+					IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0626,
 					"Fail to to open schema sync db db in readonly mode: (%s)", syncDbUri.GetUri().c_str());
 			return Status::ERROR_OPENING_SCHEMA_SYNC_DB;
 		}
@@ -547,7 +547,7 @@ SchemaSync::Status SchemaSync::VerifySyncDb(SyncDbUri const& syncDbUri, bool isP
 		rc = sharedDb.OpenBeSQLiteDb(syncDbUri.GetUri().c_str(), openParams);
 		if (rc != BE_SQLITE_OK) {
 				m_conn.GetImpl().Issues().ReportV(
-					IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue,
+					IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0626,
 					"Fail to to open schema sync db db in readonly mode: (%s)", syncDbUri.GetUri().c_str());
 			return Status::ERROR_OPENING_SCHEMA_SYNC_DB;
 		}
@@ -556,7 +556,7 @@ SchemaSync::Status SchemaSync::VerifySyncDb(SyncDbUri const& syncDbUri, bool isP
     const auto syncDbInfo = SyncDbInfo::From(sharedDb);
 	if (syncDbInfo.IsEmpty()) {
 		m_conn.GetImpl().Issues().ReportV(
-			IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue,
+			IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0627,
 			"Invalid schema sync db (%s). Schema sync info not found.", syncDbUri.GetUri().c_str());
 		return Status::ERROR_INVALID_SCHEMA_SYNC_DB;
 	}
@@ -564,14 +564,14 @@ SchemaSync::Status SchemaSync::VerifySyncDb(SyncDbUri const& syncDbUri, bool isP
     const auto localDbInfo = LocalDbInfo::From(m_conn);
 	if (localDbInfo.IsEmpty()) {
 		m_conn.GetImpl().Issues().ReportV(
-			IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue,
+			IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0628,
 			"Local db is not set to use schema sync db (%s).", syncDbUri.GetUri().c_str());
 		return Status::ERROR_INVALID_LOCAL_SYNC_DB;
 	}
 
     if (syncDbInfo.GetSyncId() != localDbInfo.GetSyncId()) {
 		m_conn.GetImpl().Issues().ReportV(
-			IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue,
+			IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0629,
 			"Sync id does not match (local) %s <> (SyncDb) %s.",
 				localDbInfo.GetSyncId().ToString().c_str(),
 				syncDbInfo.GetSyncId().ToString().c_str());
@@ -608,7 +608,7 @@ SchemaSync::Status SchemaSync::PullInternal(SyncDbUri const& syncDbUri, TableLis
     auto rc = m_conn.AttachDb(syncDbUri.GetDbAttachUri().c_str(), SchemaSyncHelper::ALIAS_SYNC_DB);
 	if (rc != BE_SQLITE_OK) {
 		m_conn.GetImpl().Issues().ReportV(
-			IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue,
+			IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0630,
 			"Unable to attach sync db '%s' as '%s' to primary connection: %s",
 			syncDbUri.GetUri().c_str(),
 			SchemaSyncHelper::ALIAS_SYNC_DB,
@@ -733,7 +733,7 @@ SchemaSync::Status SchemaSync::PushInternal(SyncDbUri const& syncDbUri, TableLis
     auto rc = m_conn.AttachDb(syncDbUri.GetDbAttachUri().c_str(), SchemaSyncHelper::ALIAS_SYNC_DB);
 	if (rc != BE_SQLITE_OK) {
 		m_conn.GetImpl().Issues().ReportV(
-			IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue,
+			IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0630,
 			"Unable to attach sync db '%s' as '%s' to primary connection: %s",
 			syncDbUri.GetUri().c_str(),
 			SchemaSyncHelper::ALIAS_SYNC_DB,

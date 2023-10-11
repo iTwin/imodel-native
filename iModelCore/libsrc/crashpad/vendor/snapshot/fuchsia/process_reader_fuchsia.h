@@ -1,4 +1,4 @@
-// Copyright 2018 The Crashpad Authors. All rights reserved.
+// Copyright 2018 The Crashpad Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@
 #include <memory>
 #include <vector>
 
-#include "base/macros.h"
 #include "build/build_config.h"
 #include "snapshot/elf/elf_image_reader.h"
 #include "snapshot/fuchsia/memory_map_fuchsia.h"
@@ -88,6 +87,10 @@ class ProcessReaderFuchsia {
   };
 
   ProcessReaderFuchsia();
+
+  ProcessReaderFuchsia(const ProcessReaderFuchsia&) = delete;
+  ProcessReaderFuchsia& operator=(const ProcessReaderFuchsia&) = delete;
+
   ~ProcessReaderFuchsia();
 
   //! \brief Initializes this object. This method must be called before any
@@ -112,7 +115,7 @@ class ProcessReaderFuchsia {
   const ProcessMemory* Memory() const { return process_memory_.get(); }
 
   //! \brief Return a memory map for the target process.
-  const MemoryMapFuchsia* MemoryMap() const { return &memory_map_; }
+  const MemoryMapFuchsia* MemoryMap();
 
  private:
   //! Performs lazy initialization of the \a modules_ vector on behalf of
@@ -123,18 +126,21 @@ class ProcessReaderFuchsia {
   //! Threads().
   void InitializeThreads();
 
+  //! Performs lazy initialization of the \a memory_map_ on behalf of
+  //! MemoryMap().
+  void InitializeMemoryMap();
+
   std::vector<Module> modules_;
   std::vector<Thread> threads_;
   std::vector<std::unique_ptr<ElfImageReader>> module_readers_;
   std::vector<std::unique_ptr<ProcessMemoryRange>> process_memory_ranges_;
   std::unique_ptr<ProcessMemoryFuchsia> process_memory_;
-  MemoryMapFuchsia memory_map_;
+  std::unique_ptr<MemoryMapFuchsia> memory_map_;
   zx::unowned_process process_;
   bool initialized_modules_ = false;
   bool initialized_threads_ = false;
+  bool initialized_memory_map_ = false;
   InitializationStateDcheck initialized_;
-
-  DISALLOW_COPY_AND_ASSIGN(ProcessReaderFuchsia);
 };
 
 }  // namespace crashpad

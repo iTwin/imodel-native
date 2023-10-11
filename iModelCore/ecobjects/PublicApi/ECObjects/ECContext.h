@@ -265,6 +265,9 @@ public:
 
     //! - For use when the caller does not know the schema of the instance he is deserializing.
     ECOBJECTS_EXPORT static ECInstanceReadContextPtr CreateContext(ECSchemaReadContextR, ECSchemaCR fallBackSchema, ECSchemaPtr* foundSchema);
+
+    //! - For use when the caller is deserializing custom attributes and has the container schema for the current instance
+    ECOBJECTS_EXPORT static ECInstanceReadContextPtr CreateContextForCA(ECSchemaCR containerSchema, ECSchemaReadContextR schemaContext);
 };
 /** @endGroup */
 END_BENTLEY_ECOBJECT_NAMESPACE

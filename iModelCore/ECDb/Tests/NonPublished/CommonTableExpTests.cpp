@@ -31,7 +31,7 @@ TEST_F(CommonTableExpTestFixture, PureRowConstructorQuery) {
         VALUES (22, 33)
         UNION
         SELECT  45, 55
-        UNION 
+        UNION
         SELECT  66, 77
     )";
 
@@ -109,7 +109,7 @@ TEST_F(CommonTableExpTestFixture, MetaQuery) {
             WITH RECURSIVE
                 base_classes (aId, aParentId, aPath, aDepth) AS (
                     SELECT c.ECInstanceId, null, c.Name, 0  FROM meta.ECClassDef c WHERE c.Name='A'
-                    UNION ALL 
+                    UNION ALL
                     SELECT c.ECInstanceId, cbc.TargetECInstanceId, aPath || '/' || c.Name, aDepth + 1
                         FROM meta.ECClassDef c
                             JOIN meta.ClassHasBaseClasses cbc ON cbc.SourceECInstanceId = c.ECInstanceId
@@ -118,7 +118,7 @@ TEST_F(CommonTableExpTestFixture, MetaQuery) {
                 )
             SELECT aId, aParentId, aDepth, aPath  from base_classes
         )";
-    
+
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query));
         ASSERT_STREQ("aId", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
@@ -126,56 +126,56 @@ TEST_F(CommonTableExpTestFixture, MetaQuery) {
         ASSERT_STREQ("aDepth", stmt.GetColumnInfo(2).GetProperty()->GetName().c_str());
         ASSERT_STREQ("aPath", stmt.GetColumnInfo(3).GetProperty()->GetName().c_str());
         /*
-        aId aParentId aDepth aPath    
-        --- --------- ------ -------- 
-        73    (null) 0      A        
-        74        73 1      A/AA     
-        75        74 2      A/AA/AAA 
-        76        74 2      A/AA/AAB 
-        77        73 1      A/AB     
-        78        77 2      A/AB/ABA 
-        79        77 2      A/AB/ABB 
+        aId aParentId aDepth aPath
+        --- --------- ------ --------
+        73    (null) 0      A
+        74        73 1      A/AA
+        75        74 2      A/AA/AAA
+        76        74 2      A/AA/AAB
+        77        73 1      A/AB
+        78        77 2      A/AB/ABA
+        79        77 2      A/AB/ABB
         */
 
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        ASSERT_EQ(73, stmt.GetValueInt(0)) << "aId";
+        ASSERT_EQ(m_ecdb.Schemas().GetClassId("TestSchema", "A").GetValue(), stmt.GetValueInt(0)) << "aId";
         ASSERT_EQ(true, stmt.IsValueNull(1)) << "aParentId"; 
         ASSERT_EQ(0, stmt.GetValueInt(2)) << "aDepth";
         ASSERT_STREQ("A", stmt.GetValueText(3)) << "aPath";
 
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        ASSERT_EQ(74, stmt.GetValueInt(0)) << "aId";
-        ASSERT_EQ(73, stmt.GetValueInt(1)) << "aParentId";
+        ASSERT_EQ(m_ecdb.Schemas().GetClassId("TestSchema", "AA").GetValue(), stmt.GetValueInt(0)) << "aId";
+        ASSERT_EQ(m_ecdb.Schemas().GetClassId("TestSchema", "A").GetValue(), stmt.GetValueInt(1)) << "aParentId";
         ASSERT_EQ(1, stmt.GetValueInt(2)) << "aDepth";
         ASSERT_STREQ("A/AA", stmt.GetValueText(3)) << "aPath";
 
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        ASSERT_EQ(75, stmt.GetValueInt(0)) << "aId";
-        ASSERT_EQ(74, stmt.GetValueInt(1)) << "aParentId";
+        ASSERT_EQ(m_ecdb.Schemas().GetClassId("TestSchema", "AAA").GetValue(), stmt.GetValueInt(0)) << "aId";
+        ASSERT_EQ(m_ecdb.Schemas().GetClassId("TestSchema", "AA").GetValue(), stmt.GetValueInt(1)) << "aParentId";
         ASSERT_EQ(2, stmt.GetValueInt(2)) << "aDepth";
         ASSERT_STREQ("A/AA/AAA", stmt.GetValueText(3)) << "aPath";
 
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        ASSERT_EQ(76, stmt.GetValueInt(0)) << "aId";
-        ASSERT_EQ(74, stmt.GetValueInt(1)) << "aParentId";
+        ASSERT_EQ(m_ecdb.Schemas().GetClassId("TestSchema", "AAB").GetValue(), stmt.GetValueInt(0)) << "aId";
+        ASSERT_EQ(m_ecdb.Schemas().GetClassId("TestSchema", "AA").GetValue(), stmt.GetValueInt(1)) << "aParentId";
         ASSERT_EQ(2, stmt.GetValueInt(2)) << "aDepth";
         ASSERT_STREQ("A/AA/AAB", stmt.GetValueText(3)) << "aPath";
 
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        ASSERT_EQ(77, stmt.GetValueInt(0)) << "aId";
-        ASSERT_EQ(73, stmt.GetValueInt(1)) << "aParentId";
+        ASSERT_EQ(m_ecdb.Schemas().GetClassId("TestSchema", "AB").GetValue(), stmt.GetValueInt(0)) << "aId";
+        ASSERT_EQ(m_ecdb.Schemas().GetClassId("TestSchema", "A").GetValue(), stmt.GetValueInt(1)) << "aParentId";
         ASSERT_EQ(1, stmt.GetValueInt(2)) << "aDepth";
         ASSERT_STREQ("A/AB", stmt.GetValueText(3)) << "aPath";
 
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        ASSERT_EQ(78, stmt.GetValueInt(0)) << "aId";
-        ASSERT_EQ(77, stmt.GetValueInt(1)) << "aParentId";
+        ASSERT_EQ(m_ecdb.Schemas().GetClassId("TestSchema", "ABA").GetValue(), stmt.GetValueInt(0)) << "aId";
+        ASSERT_EQ(m_ecdb.Schemas().GetClassId("TestSchema", "AB").GetValue(), stmt.GetValueInt(1)) << "aParentId";
         ASSERT_EQ(2, stmt.GetValueInt(2)) << "aDepth";
         ASSERT_STREQ("A/AB/ABA", stmt.GetValueText(3)) << "aPath";
 
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        ASSERT_EQ(79, stmt.GetValueInt(0)) << "aId";
-        ASSERT_EQ(77, stmt.GetValueInt(1)) << "aParentId";
+        ASSERT_EQ(m_ecdb.Schemas().GetClassId("TestSchema", "ABB").GetValue(), stmt.GetValueInt(0)) << "aId";
+        ASSERT_EQ(m_ecdb.Schemas().GetClassId("TestSchema", "AB").GetValue(), stmt.GetValueInt(1)) << "aParentId";
         ASSERT_EQ(2, stmt.GetValueInt(2)) << "aDepth";
         ASSERT_STREQ("A/AB/ABB", stmt.GetValueText(3)) << "aPath";
 
@@ -187,7 +187,7 @@ TEST_F(CommonTableExpTestFixture, MetaQuery) {
             WITH RECURSIVE
                 base_classes (aId, aParentId, aPath, aDepth) AS (
                     SELECT c.ECInstanceId, null, c.Name, 0  FROM meta.ECClassDef c WHERE c.Name=?
-                    UNION ALL 
+                    UNION ALL
                     SELECT c.ECInstanceId, cbc.TargetECInstanceId, aPath || '/' || c.Name, aDepth + 1
                         FROM meta.ECClassDef c
                             JOIN meta.ClassHasBaseClasses cbc ON cbc.SourceECInstanceId = c.ECInstanceId
@@ -196,7 +196,7 @@ TEST_F(CommonTableExpTestFixture, MetaQuery) {
                 )
             SELECT group_concat( DISTINCT p.Name)  from base_classes join meta.ECPropertyDef p on p.Class.id = aId
         )";
-    
+
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query));
         stmt.BindText(1, "A", IECSqlBinder::MakeCopy::No);
@@ -259,13 +259,13 @@ TEST_F(CommonTableExpTestFixture, RecursiveQuery) {
         if (parentId.IsValid()) {
             stmt->BindNavigationValue(1, parentId, relClassId);
         }
-        
+
         stmt->BindText(2, subject, IECSqlBinder::MakeCopy::No);
         ECInstanceKey key;
         if (stmt->Step(key) != BE_SQLITE_DONE) {
             return BeInt64Id(0);
         }
-        
+
         return (BeInt64Id)key.GetInstanceId();
     };
 
@@ -287,32 +287,32 @@ TEST_F(CommonTableExpTestFixture, RecursiveQuery) {
     addElementPath("Book/SciFi/Book1");
 
 /*
-    Id Subject  ParentId 
-    -- -------- -------- 
-     1 Drive      (null) 
-     2 Document        1 
-     3 Doc1            2 
-     4 Doc2            2 
-     5 Doc3            2 
-     6 Pictures        1 
-     7 Pic1            6 
-     8 Pic2            6 
-     9 Book       (null) 
-    10 SciFi           9 
-    11 Book1          10 
+    Id Subject  ParentId
+    -- -------- --------
+     1 Drive      (null)
+     2 Document        1
+     3 Doc1            2
+     4 Doc2            2
+     5 Doc3            2
+     6 Pictures        1
+     7 Pic1            6
+     8 Pic2            6
+     9 Book       (null)
+    10 SciFi           9
+    11 Book1          10
 */
     if (true) {
         auto query = R"(
             WITH RECURSIVE
                 cnt (aId, aParentId, aPath, aDepth) AS (
                     SELECT ECInstanceId, Parent.Id, Subject, 0 FROM ts.Element WHERE ECInstanceId = 1
-                    UNION ALL 
+                    UNION ALL
                     SELECT ECInstanceId, Parent.Id, aPath || '/' || Subject, aDepth + 1 FROM ts.Element, cnt WHERE Parent.Id = cnt.aId
                     ORDER BY 1
                 )
             SELECT aId, aParentId, aDepth, aPath  from cnt
         )";
-    
+
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query));
         ASSERT_STREQ("aId", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
@@ -322,7 +322,7 @@ TEST_F(CommonTableExpTestFixture, RecursiveQuery) {
 
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
         ASSERT_EQ(1, stmt.GetValueInt(0)) << "aId";
-        ASSERT_EQ(true, stmt.IsValueNull(1)) << "aParentId"; 
+        ASSERT_EQ(true, stmt.IsValueNull(1)) << "aParentId";
         ASSERT_EQ(0, stmt.GetValueInt(2)) << "aDepth";
         ASSERT_STREQ("Drive", stmt.GetValueText(3)) << "aPath";
 
@@ -331,19 +331,19 @@ TEST_F(CommonTableExpTestFixture, RecursiveQuery) {
         ASSERT_EQ(1, stmt.GetValueInt(1)) << "aParentId";
         ASSERT_EQ(1, stmt.GetValueInt(2)) << "aDepth";
         ASSERT_STREQ("Drive/Document", stmt.GetValueText(3)) << "aPath";
- 
+
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
         ASSERT_EQ(3, stmt.GetValueInt(0)) << "aId";
         ASSERT_EQ(2, stmt.GetValueInt(1)) << "aParentId";
         ASSERT_EQ(2, stmt.GetValueInt(2)) << "aDepth";
         ASSERT_STREQ("Drive/Document/Doc1", stmt.GetValueText(3)) << "aPath";
- 
+
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
         ASSERT_EQ(4, stmt.GetValueInt(0)) << "aId";
         ASSERT_EQ(2, stmt.GetValueInt(1)) << "aParentId";
         ASSERT_EQ(2, stmt.GetValueInt(2)) << "aDepth";
         ASSERT_STREQ("Drive/Document/Doc2", stmt.GetValueText(3)) << "aPath";
-  
+
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
         ASSERT_EQ(5, stmt.GetValueInt(0)) << "aId";
         ASSERT_EQ(2, stmt.GetValueInt(1)) << "aParentId";
@@ -355,7 +355,7 @@ TEST_F(CommonTableExpTestFixture, RecursiveQuery) {
         ASSERT_EQ(1, stmt.GetValueInt(1)) << "aParentId";
         ASSERT_EQ(1, stmt.GetValueInt(2)) << "aDepth";
         ASSERT_STREQ("Drive/Pictures", stmt.GetValueText(3)) << "aPath";
- 
+
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
         ASSERT_EQ(7, stmt.GetValueInt(0)) << "aId";
         ASSERT_EQ(6, stmt.GetValueInt(1)) << "aParentId";
@@ -373,13 +373,13 @@ TEST_F(CommonTableExpTestFixture, RecursiveQuery) {
             WITH RECURSIVE
                 cnt (aId, aParentId, aPath, aDepth) AS (
                     SELECT ECInstanceId, Parent.Id, Subject, 0 FROM ts.Element WHERE ECInstanceId = 9
-                    UNION ALL 
+                    UNION ALL
                     SELECT ECInstanceId, Parent.Id, aPath || '/' || Subject, aDepth + 1 FROM ts.Element, cnt WHERE Parent.Id = cnt.aId
                     ORDER BY 1
                 )
             SELECT aId, aParentId, aDepth, aPath  from cnt
         )";
-    
+
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query));
         ASSERT_STREQ("aId", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
@@ -390,7 +390,7 @@ TEST_F(CommonTableExpTestFixture, RecursiveQuery) {
 
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
         ASSERT_EQ(9, stmt.GetValueInt(0)) << "aId";
-        ASSERT_EQ(true, stmt.IsValueNull(1)) << "aParentId"; 
+        ASSERT_EQ(true, stmt.IsValueNull(1)) << "aParentId";
         ASSERT_EQ(0, stmt.GetValueInt(2)) << "aDepth";
         ASSERT_STREQ("Book", stmt.GetValueText(3)) << "aPath";
 
@@ -399,7 +399,7 @@ TEST_F(CommonTableExpTestFixture, RecursiveQuery) {
         ASSERT_EQ(9, stmt.GetValueInt(1)) << "aParentId";
         ASSERT_EQ(1, stmt.GetValueInt(2)) << "aDepth";
         ASSERT_STREQ("Book/SciFi", stmt.GetValueText(3)) << "aPath";
- 
+
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
         ASSERT_EQ(11, stmt.GetValueInt(0)) << "aId";
         ASSERT_EQ(10, stmt.GetValueInt(1)) << "aParentId";
@@ -412,19 +412,19 @@ TEST_F(CommonTableExpTestFixture, RecursiveQuery) {
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(CommonTableExpTestFixture, SqliteExample) {
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("cte_syntax.ecdb"));
-    // FROM ONLY cnt should fail. 
+    // FROM ONLY cnt should fail.
     // x in following has to be primitive value
     if (true) {
         auto query = R"(
             WITH RECURSIVE
                 cnt (x,y) AS (
                     SELECT 100, 200
-                    UNION ALL 
+                    UNION ALL
                     SELECT x+1, 200 FROM cnt WHERE x<210
                 )
             SELECT * from cnt
         )";
-    
+
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query));
         ASSERT_STREQ("x", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
@@ -435,57 +435,57 @@ TEST_F(CommonTableExpTestFixture, SqliteExample) {
             ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
             ASSERT_EQ(i, stmt.GetValueInt(0));
             ASSERT_EQ(200, stmt.GetValueInt(1));
-        }   
+        }
     }
     if (true) {
         auto query = R"(
             WITH RECURSIVE
                 cnt (x,y) AS (
                     SELECT 100, 200
-                    UNION ALL 
+                    UNION ALL
                     SELECT x+1, 200 FROM cnt WHERE x<210
                 )
             SELECT x,y from cnt
         )";
-    
-    
+
+
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query));
         for (int i = 100; i < 210; ++i)  {
             ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
             ASSERT_EQ(i, stmt.GetValueInt(0));
             ASSERT_EQ(200, stmt.GetValueInt(1));
-        }   
+        }
     }
     if (true) {
         auto query = R"(
             WITH RECURSIVE
                 cnt (x) AS (
-                    VALUES(100) 
-                    UNION ALL 
+                    VALUES(100)
+                    UNION ALL
                     SELECT x+1 FROM cnt WHERE x<210
                 )
             SELECT x from cnt
         )";
-    
-    
+
+
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query));
         for (int i = 100; i < 210; ++i)  {
             ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
             ASSERT_EQ(i, stmt.GetValueInt(0));
-        }   
+        }
     }
     if (true) {
         auto query = R"(
-            WITH 
+            WITH
                 cnt (x,y) AS (
                     SELECT 100, 200
                 )
             SELECT * from cnt
         )";
-    
-    
+
+
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query));
         ASSERT_STREQ("x", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
@@ -497,7 +497,7 @@ TEST_F(CommonTableExpTestFixture, SqliteExample) {
     }
     if (true) {
         auto query = R"(
-            WITH 
+            WITH
                 cte_1 (x,y) AS (
                     SELECT 100, 200
                 ),
@@ -522,7 +522,7 @@ TEST_F(CommonTableExpTestFixture, SqliteExample) {
     }
     if (true) {
         auto query = R"(
-            WITH 
+            WITH
                 cte_1 (x,y) AS (
                     SELECT 100, 200
                 ),
@@ -548,7 +548,7 @@ TEST_F(CommonTableExpTestFixture, SqliteExample) {
 
    if (true) {
         auto query = R"(
-            WITH 
+            WITH
                cte_1 (a,b,c) AS (
                     SELECT 100, 400
                 )
@@ -557,10 +557,10 @@ TEST_F(CommonTableExpTestFixture, SqliteExample) {
 
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, query));
-   }  
+   }
    if (true) {
         auto query = R"(
-            WITH 
+            WITH
                cte_1 (a,a) AS (
                     SELECT 100, 400
                 )
@@ -569,10 +569,10 @@ TEST_F(CommonTableExpTestFixture, SqliteExample) {
 
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, query));
-   }  
+   }
    if (true) {
         auto query = R"(
-            WITH 
+            WITH
                cte_1 (a,b) AS (
                     SELECT 100, 400, 300
                 )
@@ -581,10 +581,10 @@ TEST_F(CommonTableExpTestFixture, SqliteExample) {
 
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, query));
-   }  
+   }
    if (true) {
         auto query = R"(
-            WITH 
+            WITH
                cte_1 (a,b,c) AS (
                     SELECT 100, 400, 300
                 ),
@@ -604,7 +604,7 @@ TEST_F(CommonTableExpTestFixture, SqliteExample) {
         WITH RECURSIVE
             cte (x) AS (
                 VALUES(:test1)
-                UNION ALL 
+                UNION ALL
                 SELECT x + 1 FROM cte WHERE x < 3)
         SELECT x from cte)"));
 
@@ -627,13 +627,13 @@ TEST_F(CommonTableExpTestFixture, SqliteExample) {
         WITH RECURSIVE
             cte (x, y) AS (
                 VALUES(:test1, :test2)
-                UNION ALL 
+                UNION ALL
                 SELECT x + 1, y + 2 FROM cte WHERE x < 4 and y < 6)
         SELECT * from cte)"));
 
     EXPECT_STREQ("x", statement.GetColumnInfo(0).GetProperty()->GetName().c_str());
     EXPECT_STREQ("y", statement.GetColumnInfo(1).GetProperty()->GetName().c_str());
-    
+
     EXPECT_TRUE(statement.GetColumnInfo(0).GetDataType().IsPrimitive());
     EXPECT_EQ(statement.GetColumnInfo(0).GetDataType().GetPrimitiveType(), PrimitiveType::PRIMITIVETYPE_Double);
     EXPECT_TRUE(statement.GetColumnInfo(1).GetDataType().IsPrimitive());
@@ -656,7 +656,7 @@ TEST_F(CommonTableExpTestFixture, SqliteExample) {
         WITH RECURSIVE
             cte (x, y) AS (
                 VALUES(:test1, 200)
-                UNION ALL 
+                UNION ALL
                 SELECT x + 1, y FROM cte WHERE x < 3)
         SELECT * from cte)"));
 
@@ -684,7 +684,7 @@ TEST_F(CommonTableExpTestFixture, SqliteExample) {
         WITH RECURSIVE
             cte (x) AS (
                 SELECT ECInstanceId FROM meta.ECSchemaDef WHERE ECInstanceId = :test1
-                UNION ALL 
+                UNION ALL
                 SELECT x + 1 FROM cte WHERE x < 3)
         SELECT x from cte)"));
 
@@ -715,8 +715,8 @@ TEST_F(CommonTableExpTestFixture, alias_to_cte) {
         )";
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query));
-        ASSERT_STREQ(stmt.GetNativeSql(), "WITH cte0(a,b) AS (SELECT 100,200)\nSELECT [K2],[K3] FROM (SELECT cte0.a [K2],cte0.b [K3] FROM cte0 WHERE cte0.a=100 AND cte0.b=200)");
-    }     
+        ASSERT_STREQ(stmt.GetNativeSql(), "WITH RECURSIVE cte0(a,b) AS (SELECT 100,200)\nSELECT [K2],[K3] FROM (SELECT cte0.a [K2],cte0.b [K3] FROM cte0 WHERE cte0.a=100 AND cte0.b=200)");
+    }
     if ("simple_nested") {
         auto query = R"(
             with recursive
@@ -725,8 +725,8 @@ TEST_F(CommonTableExpTestFixture, alias_to_cte) {
         )";
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query));
-        ASSERT_STREQ(stmt.GetNativeSql(), "WITH cte0(a,b) AS (SELECT 100,200)\nSELECT [K2],[K3] FROM (SELECT c0.a [K2],c0.b [K3] FROM cte0 c0 WHERE c0.a=100 AND c0.b=200)");
-    } 
+        ASSERT_STREQ(stmt.GetNativeSql(), "WITH RECURSIVE cte0(a,b) AS (SELECT 100,200)\nSELECT [K2],[K3] FROM (SELECT c0.a [K2],c0.b [K3] FROM cte0 c0 WHERE c0.a=100 AND c0.b=200)");
+    }
     if ("simple_wild_nested") {
         auto query = R"(
             with recursive
@@ -735,9 +735,9 @@ TEST_F(CommonTableExpTestFixture, alias_to_cte) {
         )";
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query));
-        ASSERT_STREQ(stmt.GetNativeSql(), "WITH cte0(a,b) AS (SELECT 100,200)\nSELECT [K2],[K3] FROM (SELECT c0.a K2,c0.b K3 FROM cte0 c0 WHERE c0.a=100 AND c0.b=200)");
+        ASSERT_STREQ(stmt.GetNativeSql(), "WITH RECURSIVE cte0(a,b) AS (SELECT 100,200)\nSELECT [K2],[K3] FROM (SELECT c0.a K2,c0.b K3 FROM cte0 c0 WHERE c0.a=100 AND c0.b=200)");
     }
-  
+
     if ("simple_wild") {
         auto query = R"(
             with recursive
@@ -746,7 +746,7 @@ TEST_F(CommonTableExpTestFixture, alias_to_cte) {
         )";
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query));
-        ASSERT_STREQ(stmt.GetNativeSql(), "WITH cte0(a,b) AS (SELECT 100,200)\nSELECT c0.a,c0.b FROM cte0 c0 WHERE c0.a=100 AND c0.b=200");
+        ASSERT_STREQ(stmt.GetNativeSql(), "WITH RECURSIVE cte0(a,b) AS (SELECT 100,200)\nSELECT c0.a,c0.b FROM cte0 c0 WHERE c0.a=100 AND c0.b=200");
     }
     if ("simple_wild_no_alias") {
         auto query = R"(
@@ -756,7 +756,7 @@ TEST_F(CommonTableExpTestFixture, alias_to_cte) {
         )";
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query));
-        ASSERT_STREQ(stmt.GetNativeSql(), "WITH cte0(a,b) AS (SELECT 100,200)\nSELECT cte0.a,cte0.b FROM cte0 WHERE cte0.a=100 AND cte0.b=200");
+        ASSERT_STREQ(stmt.GetNativeSql(), "WITH RECURSIVE cte0(a,b) AS (SELECT 100,200)\nSELECT cte0.a,cte0.b FROM cte0 WHERE cte0.a=100 AND cte0.b=200");
     }
     if ("simple_alias") {
         auto query = R"(
@@ -766,29 +766,29 @@ TEST_F(CommonTableExpTestFixture, alias_to_cte) {
         )";
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query));
-        ASSERT_STREQ(stmt.GetNativeSql(), "WITH cte0(a,b) AS (SELECT 100,200)\nSELECT c0.a,c0.b FROM cte0 c0 WHERE c0.a=100 AND c0.b=200");
+        ASSERT_STREQ(stmt.GetNativeSql(), "WITH RECURSIVE cte0(a,b) AS (SELECT 100,200)\nSELECT c0.a,c0.b FROM cte0 c0 WHERE c0.a=100 AND c0.b=200");
     }
     if ("ambiguous_col") {
         auto query = R"(
             with recursive
                 cte0 (a,b) as ( select 100,200),
                 cte1 (c,d) as ( select 100,200)
-            select * from cte0 c0, cte1 c1 where c0.a=100 and c0.b=200 and c1.c=100 and c1.d=200 
+            select * from cte0 c0, cte1 c1 where c0.a=100 and c0.b=200 and c1.c=100 and c1.d=200
         )";
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query));
-        ASSERT_STREQ(stmt.GetNativeSql(), "WITH cte0(a,b) AS (SELECT 100,200),cte1(c,d) AS (SELECT 100,200)\nSELECT c0.a,c0.b,c1.c,c1.d FROM cte0 c0,cte1 c1 WHERE c0.a=100 AND c0.b=200 AND c1.c=100 AND c1.d=200");
+        ASSERT_STREQ(stmt.GetNativeSql(), "WITH RECURSIVE cte0(a,b) AS (SELECT 100,200),cte1(c,d) AS (SELECT 100,200)\nSELECT c0.a,c0.b,c1.c,c1.d FROM cte0 c0,cte1 c1 WHERE c0.a=100 AND c0.b=200 AND c1.c=100 AND c1.d=200");
     }
     if ("ambiguous_col_2") {
         auto query = R"(
             with recursive
                 cte0 (a,b) as ( select 100,200),
                 cte1 (a,b) as ( select 100,200)
-            select * from cte0 c0, cte1 c1 where c0.a=100 and c0.b=200 and c1.a=100 and c1.b=200 
+            select * from cte0 c0, cte1 c1 where c0.a=100 and c0.b=200 and c1.a=100 and c1.b=200
         )";
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query));
-        ASSERT_STREQ(stmt.GetNativeSql(), "WITH cte0(a,b) AS (SELECT 100,200),cte1(a,b) AS (SELECT 100,200)\nSELECT c0.a,c0.b,c1.a,c1.b FROM cte0 c0,cte1 c1 WHERE c0.a=100 AND c0.b=200 AND c1.a=100 AND c1.b=200");
+        ASSERT_STREQ(stmt.GetNativeSql(), "WITH RECURSIVE cte0(a,b) AS (SELECT 100,200),cte1(a,b) AS (SELECT 100,200)\nSELECT c0.a,c0.b,c1.a,c1.b FROM cte0 c0,cte1 c1 WHERE c0.a=100 AND c0.b=200 AND c1.a=100 AND c1.b=200");
     }
 }
 

@@ -1,4 +1,4 @@
-// Copyright 2017 The Crashpad Authors. All rights reserved.
+// Copyright 2017 The Crashpad Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@
 #include "util/file/string_file.h"
 #include "util/linux/proc_stat_reader.h"
 #include "util/misc/lexing.h"
+#include "util/misc/time.h"
 
 namespace crashpad {
 
@@ -238,7 +239,13 @@ bool ProcessInfo::StartTime(timeval* start_time) const {
     if (!reader.Initialize(connection_, pid_)) {
       return false;
     }
-    if (!reader.StartTime(&start_time_)) {
+    timespec boot_time_ts;
+    if (!GetBootTime(&boot_time_ts)) {
+      return false;
+    }
+    timeval boot_time;
+    TimespecToTimeval(boot_time_ts, &boot_time);
+    if (!reader.StartTime(boot_time, &start_time_)) {
       return false;
     }
     start_time_initialized_.set_valid();

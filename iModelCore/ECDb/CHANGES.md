@@ -4,7 +4,7 @@ This document including important changes to syntax or file format.
 
 | Module  | Version   |
 | ------- | --------- |
-| Profile | `4.0.0.3` |
+| Profile | `4.0.0.4` |
 | ECSQL   | `1.2.8.1` |
 
 ## `9/13/2023`: Prgma disqualify_type_filter only take effect if there was more then one class name in query
@@ -24,6 +24,11 @@ SELECT * FROM BisCore.ExternalSourceAspect
 ```
 
 But if we join the `ExternalSourceAspect` with something else then the `disqualify_type_filter` will take effect and ECClassId expression will be disqualified.
+
+## `9/26/2023`: Add support for ImportRequiresVersion and UseRequiresVersion custom attributes
+* Two custom attributes were added to the ECDbMap schema, the schema version is incremented to `02.00.02`
+    * They indicate whether the import process of a schema with the CA or anything using a CA requires a minimum ECDb version
+* ECDb profile version updated to `4.0.0.3` -> `4.0.0.4`.
 
 ## `9/13/2023`: Runtime instance and property accessor no longer experimental
 
@@ -101,6 +106,11 @@ On the other hand, the following query makes `Foo` optional by adding `?` at the
 
 > Note: Optional property may slow down performance while non-optional properties will improve the performance of instance query.
 
+## `8/28/2023`: Add support for ImportRequiresVersion and UseRequiresVersion custom attributes
+* Two custom attributes were added to the ECDbMap schema, the schema version is incremented to `02.00.02`
+    * They indicate whether the import process of a schema with the CA or anything using a CA requires a minimum ECDb version
+* ECDb profile version updated to `4.0.0.3` -> `4.0.0.4`.
+
 ## `8/18/2023`: Add support for CROSS Join
 
 * Add support for CROSS Join.
@@ -134,16 +144,32 @@ On the other hand, the following query makes `Foo` optional by adding `?` at the
   * Allow to run commands like `PRAGMA parse_tree("SELECT 1") ECSQLOPTIONS enable_experimental_features`
 
 ## `6/14/2023`: Add support for Schema sync
+
+* Schema sync allows two or more briefcases to sync there schema without requiring schema lock.
+* Schema lock might still be required in cases where data transformation require due to schema change.
+* Schema sync is handled in import schema call.
+
+## `5/22/2023`: Add `PRAGMA checksum(ecdb_schema|ecdb_map|sqlite_schema)`
+
+* ECSql version change to `1.0.4.1` as new syntax and runtime changes that does not break any existing syntax or runtime.
+* PRAGMA checksum(ecdb_schema|ecdb_map|sqlite_schema)
+  * `PRAGMA checksum(ecdb_schema)`: Compute SHA1 checksum for not null data in ec_* table that hold schemas.
+  * `PRAGMA checksum(ecdb_map)`: Compute SHA1 checksum for not null data in ec_* table that hold mapping.
+  * `PRAGMA checksum(sqlite_schema)`: Compute SHA1 checksum over ddl store in sqlite_master for all facets.
+
+## `6/14/2023`: Add support for Schema sync
+
 * Schema sync allows two or more briefcases to sync there schema without requiring schema lock.
 * Schema lock might still be required in cases where data transformation require due to schema change.
 * Schema sync is handled in import schema call.
 
 ## `5/22/2023`: Add PRAGMA checksum(ecdb_schema|ecdb_map|sqlite_schema)
+
 * ECSql version change to `1.0.4.1` as new syntax and runtime changes that does not break any existing syntax or runtime.
 * PRAGMA checksum(ecdb_schema|ecdb_map|sqlite_schema)
-    * `PRAGMA checksum(ecdb_schema)`: Compute SHA1 checksum for not null data in ec_* table that hold schemas.
-    * `PRAGMA checksum(ecdb_map)`: Compute SHA1 checksum for not null data in ec_* table that hold mapping.
-    * `PRAGMA checksum(sqlite_schema)`: Compute SHA1 checksum over ddl store in sqlite_master for all facets.
+  * `PRAGMA checksum(ecdb_schema)`: Compute SHA1 checksum for not null data in ec_* table that hold schemas.
+  * `PRAGMA checksum(ecdb_map)`: Compute SHA1 checksum for not null data in ec_* table that hold mapping.
+  * `PRAGMA checksum(sqlite_schema)`: Compute SHA1 checksum over ddl store in sqlite_master for all facets.
 
 ## `5/3/2023`: Enhanced Instance properties
 
@@ -159,7 +185,7 @@ On the other hand, the following query makes `Foo` optional by adding `?` at the
 * Instance prop continues to be an experimental feature.
 * Add instance properties docs on wiki.
 
-## `4/10/2023`: Add comprehensive ECDb integrity checks and support for enable/disabling experimental features.
+## `4/10/2023`: Add comprehensive ECDb integrity checks and support for enable/disabling experimental features
 
 * In future all experimental syntax will be only available when `PRAGMA experimental_features_enabled` is set to true.
 * ECSQL version changed from `1.0.2.1` -> `1.1.0.0`.
@@ -183,9 +209,9 @@ On the other hand, the following query makes `Foo` optional by adding `?` at the
 
 * ECSql version change to `1.0.3.1` as new syntax and runtime changes that does not break any existing syntax or runtime.
 * New PRAGMA commands added:
-    * `PRAGMA class_id_check`: Checks if there are no classId references to non existing class definitions.
-    * `PRAGMA nav_prop_id_check`: Checks if all navigation properties have valid classIds.
-    * `PRAGMA validate`: Runs all checks.
+  * `PRAGMA class_id_check`: Checks if there are no classId references to non existing class definitions.
+  * `PRAGMA nav_prop_id_check`: Checks if all navigation properties have valid classIds.
+  * `PRAGMA validate`: Runs all checks.
 
 ## `2/6/2023`: Add support for GREATEST/LEAST Sql functions
 
@@ -232,10 +258,10 @@ For primitive types that has single value, following will return typed value whi
     SELECT $->PropertyThatMayOrMayNotExists FROM bis.Element
 ```
 
-
-
 ## `12/06/2022`: Add `PRAGMA` support in `ECSQL`
+
 + Added support for `PRAGMA` in ECSQL. Syntax is as following
+
     ```sql
     -- Syntax
     PRAGMA <pragma-name> [ = <val>]
@@ -249,6 +275,7 @@ For primitive types that has single value, following will return typed value whi
     ```
 
 * `PRAGMA disqualify_type_filter`: Allow to hint ECSQL to disqualify expression generated to apply polymorphic filter expression.
+
     ```sql
     -- Following is set by default in iModelPlatform when iModel is opened.
     PRAGMA disqualify_type_filter=TRUE
@@ -265,9 +292,9 @@ For primitive types that has single value, following will return typed value whi
       2. **Runtime change** A change to runtime behavior, that normally passes `Prepare()` e.g. argument or result of a `Sql function`.
    2. `ECSql Version` description for left to right digit in version string i.e. `Major.Minor.Sub1.Sub2`
        1. **Major**: Any breaking change to `Syntax`. This will cause a `Prepare()` to fail with InvalidECSql which in previous version prepared successfully.  e.g. Changing or removing support for existing supported ECSql syntax.
-      1. **Minor**: Any breaking change to `Runtime` e.g. Removing support for a previously accessible sql function or change it in a way where it will not work as before. In this case `Prepare()` phase may or may not detect a failure but result are not as expected as it use to in previous version. e.g. Remove a sql function or change required argument or format of its return value.
-      2. **Sub1**:  Backward compatible change to `Syntax`. For example adding new syntax but not breaking any existing.
-      3. **Sub2**:  Backward compatible change to `Runtime`. For example adding a new sql function.
+       1. **Minor**: Any breaking change to `Runtime` e.g. Removing support for a previously accessible sql function or change it in a way where it will not work as before. In this case `Prepare()` phase may or may not detect a failure but result are not as expected as it use to in previous version. e.g. Remove a sql function or change required argument or format of its return value.
+       2. **Sub1**:  Backward compatible change to `Syntax`. For example adding new syntax but not breaking any existing.
+       3. **Sub2**:  Backward compatible change to `Runtime`. For example adding a new sql function.
 
 ## `5/16/2023`: Enable property and class deletion, property type change for dynamic schemas with a major schema update
 

@@ -807,8 +807,8 @@ BentleyStatus DbSchema::PersistIndexDef(DbIndex const& index) const
 
     if (BE_SQLITE_DONE != stmt->Step())
         {
-        m_schemaManager.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to persist definition for index %s on table %s: %s",
-                                         index.GetName().c_str(), index.GetTable().GetName().c_str(), m_schemaManager.GetECDb().GetLastError().c_str());
+        m_schemaManager.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0221,
+            "Failed to persist definition for index %s on table %s: %s", index.GetName().c_str(), index.GetTable().GetName().c_str(), m_schemaManager.GetECDb().GetLastError().c_str());
         return ERROR;
         }
 
@@ -831,8 +831,9 @@ BentleyStatus DbSchema::PersistIndexDef(DbIndex const& index) const
 
         if (BE_SQLITE_DONE != indexColStmt->Step())
             {
-            m_schemaManager.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to persist definition for index %s on table %s. Could not persist index column information for column %s: %s.",
-                       index.GetName().c_str(), index.GetTable().GetName().c_str(), col->GetName().c_str(), m_schemaManager.GetECDb().GetLastError().c_str());
+            m_schemaManager.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0222,
+                "Failed to persist definition for index %s on table %s. Could not persist index column information for column %s: %s.",
+                index.GetName().c_str(), index.GetTable().GetName().c_str(), col->GetName().c_str(), m_schemaManager.GetECDb().GetLastError().c_str());
             return ERROR;
             }
 

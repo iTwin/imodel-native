@@ -320,7 +320,8 @@ TEST_F(SchemaSyncTestFixture, PushSchemaWithoutInitializingSchemaChannel)
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*b1, SchemaItem(schemaXMLBuilder()), SchemaManager::SchemaImportOptions::None, schemaSyncDb.GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, b1->AbandonChanges());
             CheckHashes(*b1);
-            schemaSyncDb.WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb); });
+            //use specific hash below, because schema sync db is not using a seed but creating the db with the latest profile.
+            schemaSyncDb.WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, "f02cac7910b0a1dd833d9501db2f46fab8cc253dfb874495d98da9e77982915a", "17adf1cdba0c3c9970ec26d61bf5d8fa91808c3a98ce02f78ba0359e4eda11ee", "c4ca1cdd07de041e71f3e8d4b1942d29da89653c85276025d786688b6f576443"); });
             }
     );
     }

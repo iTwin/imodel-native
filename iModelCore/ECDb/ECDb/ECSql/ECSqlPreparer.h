@@ -37,6 +37,9 @@ struct ECSqlExpPreparer final
         static BentleyStatus PrepareCastExpForPrimitive(Utf8StringR, ECN::PrimitiveType, Utf8StringCR castOperandSnippet);
         static ECSqlStatus PrepareSearchConditionExp(NativeSqlBuilder&, ECSqlPrepareContext&, BooleanExp const& searchConditionExp);
         static void RemovePropertyRefs(ECSqlPrepareContext&, ClassRefExp const&, ClassMap const&);
+        // query options
+        static bool QueryOptionExperimentalFeaturesEnabled(ECDbCR db, ExpCR exp);
+        static unsigned int QueryOptionsInstanceFlags(ExpCR exp);
 
     public:
         static ECSqlStatus PrepareAllOrAnyExp(ECSqlPrepareContext&, AllOrAnyExp const&);
@@ -66,7 +69,7 @@ struct ECSqlExpPreparer final
         static ECSqlStatus PrepareParameterExp(NativeSqlBuilder::List&, ECSqlPrepareContext&, ParameterExp const&);
         static ECSqlStatus PrepareQualifiedJoinExp(ECSqlPrepareContext&, QualifiedJoinExp const&);
         static ECSqlStatus PrepareQueryExp(NativeSqlBuilder::List&, ECSqlPrepareContext&, QueryExp const&);
-        static ECSqlStatus PrepareRelationshipJoinExp(ECSqlPrepareContext&, ECRelationshipJoinExp const&);
+        static ECSqlStatus PrepareRelationshipJoinExp(ECSqlPrepareContext&, UsingRelationshipJoinExp const&);
         static ECSqlStatus PrepareSubqueryExp(ECSqlPrepareContext&, SubqueryExp const&);
         static ECSqlStatus PrepareSubqueryRefExp(ECSqlPrepareContext&, SubqueryRefExp const&);
         static ECSqlStatus PrepareSubqueryTestExp(NativeSqlBuilder::List&, ECSqlPrepareContext&, SubqueryTestExp const&);
