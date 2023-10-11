@@ -1,10 +1,6 @@
 name: open-source-$(Date:yyyy.MM.dd)$(Rev:.r)
 
-trigger:
-  branches:
-    include:
-      - main
-      - release/*
+trigger: none
 pr:
   autoCancel: true
   drafts: false
