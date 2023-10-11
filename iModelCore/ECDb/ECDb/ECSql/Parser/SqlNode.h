@@ -212,7 +212,6 @@ namespace connectivity
                 ordering_spec,
                 other_like_predicate_part_2,
                 outer_join_type,
-                parameter_ref,
                 parameter,
                 pragma_path,
                 pragma_value,

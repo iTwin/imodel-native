@@ -146,7 +146,7 @@ using namespace connectivity;
 
 // window functions
 %token <pParseNode> SQL_TOKEN_OVER SQL_TOKEN_ROW_NUMBER SQL_TOKEN_NTILE SQL_TOKEN_LEAD SQL_TOKEN_LAG
-%token <pParseNode> SQL_TOKEN_FIRST_VALUE SQL_TOKEN_LAST_VALUE SQL_TOKEN_NTH_VALUE 
+%token <pParseNode> SQL_TOKEN_FIRST_VALUE SQL_TOKEN_LAST_VALUE SQL_TOKEN_NTH_VALUE
 %token <pParseNode> SQL_TOKEN_EXCLUDE SQL_TOKEN_OTHERS SQL_TOKEN_TIES SQL_TOKEN_FOLLOWING SQL_TOKEN_UNBOUNDED SQL_TOKEN_PRECEDING SQL_TOKEN_RANGE SQL_TOKEN_ROWS
 %token <pParseNode> SQL_TOKEN_PARTITION SQL_TOKEN_WINDOW SQL_TOKEN_NO SQL_TOKEN_CURRENT SQL_TOKEN_ROW SQL_TOKEN_RANK SQL_TOKEN_DENSE_RANK SQL_TOKEN_PERCENT_RANK SQL_TOKEN_CUME_DIST
 %token <pParseNode> SQL_TOKEN_COLLATE SQL_TOKEN_NOCASE SQL_TOKEN_RTRIM SQL_TOKEN_FILTER SQL_TOKEN_GROUPS SQL_TOKEN_GROUP_CONCAT
@@ -182,19 +182,19 @@ using namespace connectivity;
 %type <pParseNode> column_commalist opt_column_array_idx property_path_entry property_path
 %type <pParseNode> opt_column_commalist column_ref_commalist opt_column_ref_commalist
 %type <pParseNode> opt_order_by_clause ordering_spec_commalist
-%type <pParseNode> ordering_spec opt_asc_desc manipulative_statement commit_statement opt_null_order first_last_desc
+%type <pParseNode> ordering_spec opt_asc_desc manipulative_statement opt_null_order first_last_desc
 %type <pParseNode> delete_statement_searched
 %type <pParseNode> type_predicate type_list type_list_item
 %type <pParseNode> insert_statement values_or_query_spec
-%type <pParseNode> rollback_statement select_statement_into opt_all_distinct
+%type <pParseNode>  opt_all_distinct
 %type <pParseNode> assignment_commalist assignment
-%type <pParseNode> update_statement_searched target_commalist target opt_where_clause
+%type <pParseNode> update_statement_searched opt_where_clause
 %type <pParseNode> single_select_statement selection table_exp from_clause table_ref_commalist table_ref
 %type <pParseNode> where_clause opt_group_by_clause opt_having_clause
 %type <pParseNode> search_condition predicate comparison_predicate comparison_predicate_part_2 between_predicate between_predicate_part_2
 %type <pParseNode> like_predicate opt_escape test_for_null null_predicate_part_2 in_predicate in_predicate_part_2 character_like_predicate_part_2 other_like_predicate_part_2
 %type <pParseNode> all_or_any_predicate any_all_some existence_test subquery quantified_comparison_predicate_part_2
-%type <pParseNode> scalar_exp_commalist parameter_ref literal
+%type <pParseNode> scalar_exp_commalist literal
 %type <pParseNode> column_ref column parameter range_variable
 /* neue Regeln bei OJ */
 %type <pParseNode> derived_column as_clause num_primary term num_value_exp term_add_sub
@@ -511,11 +511,8 @@ sql_not:
 /* manipulative statements */
 
 manipulative_statement:
-            commit_statement
-    |       delete_statement_searched
+            delete_statement_searched
     |       insert_statement
-    |       rollback_statement
-    |       select_statement_into
     |       update_statement_searched
     |       select_statement
     |       cte
@@ -542,12 +539,7 @@ union_op:
     | SQL_TOKEN_UNION
     | SQL_TOKEN_EXCEPT
     ;
-commit_statement:
-        SQL_TOKEN_COMMIT
-            {$$ = SQL_NEW_RULE;
-            $$->append($1);
-            }
-    ;
+
 
 delete_statement_searched:
         SQL_TOKEN_DELETE SQL_TOKEN_FROM table_ref opt_where_clause opt_ecsqloptions_clause
@@ -600,27 +592,6 @@ row_value_constructor_elem:
         value_exp
     ;
 
-
-rollback_statement:
-        SQL_TOKEN_ROLLBACK
-        {
-        $$ = SQL_NEW_RULE;
-            $$->append($1);
-        }
-    ;
-
-
-select_statement_into:
-        SQL_TOKEN_SELECT opt_all_distinct selection SQL_TOKEN_INTO target_commalist table_exp
-            {$$ = SQL_NEW_RULE;
-            $$->append($1);
-            $$->append($2);
-            $$->append($3);
-            $$->append($4);
-            $$->append($5);
-            $$->append($6); }
-    ;
-
 opt_all_distinct:
             {$$ = SQL_NEW_RULE;}
         |    SQL_TOKEN_ALL
@@ -656,19 +627,6 @@ update_statement_searched:
             $$->append($5);
             $$->append($6);
             }
-    ;
-
-target_commalist:
-        target
-            {$$ = SQL_NEW_COMMALISTRULE;
-            $$->append($1);}
-    |       target_commalist ',' target
-            {$1->append($3);
-            $$ = $1;}
-    ;
-
-target:
-        parameter_ref
     ;
 
 opt_where_clause:
@@ -1287,10 +1245,6 @@ select_sublist:
     derived_column
     ;
 
-parameter_ref:
-        parameter
-    ;
-
 literal:
         SQL_TOKEN_INT
     |   SQL_TOKEN_REAL_NUM
@@ -1680,7 +1634,7 @@ lead_or_lag_function:
 			$$->append($5 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
 	}
 	;
-    
+
 lead_or_lag:
 		SQL_TOKEN_LEAD
 	|	SQL_TOKEN_LAG
