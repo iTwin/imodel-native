@@ -50,6 +50,7 @@ my @ignore_line;
 my %warnings_extended = (
     'COPYRIGHTYEAR'    => 'copyright year incorrect',
     'STRERROR',        => 'strerror() detected',
+    'STDERR',          => 'stderr detected',
     );
 
 my %warnings = (
@@ -75,6 +76,7 @@ my %warnings = (
     'INCLUDEDUP',      => 'same file is included again',
     'INDENTATION'      => 'wrong start column for code',
     'LONGLINE'         => "Line longer than $max_column",
+    'SPACEBEFORELABEL' => 'labels not at the start of the line',
     'MULTISPACE'       => 'multiple spaces used when not suitable',
     'NOSPACEEQUALS'    => 'equals sign without preceding space',
     'NOTEQUALSZERO',   => 'if/while comparison with != 0',
@@ -98,13 +100,13 @@ my %warnings = (
     );
 
 sub readskiplist {
-    open(W, "<$dir/checksrc.skip") or return;
-    my @all=<W>;
+    open(my $W, '<', "$dir/checksrc.skip") or return;
+    my @all=<$W>;
     for(@all) {
         $windows_os ? $_ =~ s/\r?\n$// : chomp;
         $skiplist{$_}=1;
     }
-    close(W);
+    close($W);
 }
 
 # Reads the .checksrc in $dir for any extended warnings to enable locally.
@@ -380,7 +382,7 @@ sub scanfile {
     my $l = "";
     my $prep = 0;
     my $prevp = 0;
-    open(R, "<$file") || die "failed to open $file";
+    open(my $R, '<', $file) || die "failed to open $file";
 
     my $incomment=0;
     my @copyright=();
@@ -388,7 +390,7 @@ sub scanfile {
     checksrc_clear(); # for file based ignores
     accept_violations();
 
-    while(<R>) {
+    while(<$R>) {
         $windows_os ? $_ =~ s/\r?\n$// : chomp;
         my $l = $_;
         my $ol = $l; # keep the unmodified line for error reporting
@@ -531,7 +533,7 @@ sub scanfile {
             }
             elsif(($first eq "*") && ($word !~ /(for|if|while|switch)/)) {
                 # A "(*" beginning makes the space OK because it wants to
-                # allow funcion pointer declared
+                # allow function pointer declared
             }
             elsif($1 =~ / *typedef/) {
                 # typedefs can use space-paren
@@ -697,6 +699,11 @@ sub scanfile {
                       $line, length($1), $file, $ol, "no space before colon of switch label");
         }
 
+        if($prevl !~ /\?\z/ && $l =~ /^ +([A-Za-z_][A-Za-z0-9_]*):$/ && $1 ne 'default') {
+            checkwarn("SPACEBEFORELABEL",
+                      $line, length($1), $file, $ol, "no space before label");
+        }
+
         # scan for use of banned functions
         if($l =~ /^(.*\W)
                    (gmtime|localtime|
@@ -720,6 +727,18 @@ sub scanfile {
                     checkwarn("STRERROR",
                               $line, length($1), $file, $ol,
                               "use of $2 is banned");
+                }
+            }
+        }
+        if($warnings{"STDERR"}) {
+            # scan for use of banned stderr. This is not a BANNEDFUNC to
+            # allow for individual enable/disable of this warning.
+            if($l =~ /^([^\"-]*\W)(stderr)[^\"_]/x) {
+                if($1 !~ /^ *\#/) {
+                    # skip preprocessor lines
+                    checkwarn("STDERR",
+                              $line, length($1), $file, $ol,
+                              "use of $2 is banned (use tool_stderr instead)");
                 }
             }
         }
@@ -906,12 +925,12 @@ sub scanfile {
         @copyright = sort {$$b{year} cmp $$a{year}} @copyright;
 
         # if the file is modified, assume commit year this year
-        if(`git status -s -- $file` =~ /^ [MARCU]/) {
+        if(`git status -s -- "$file"` =~ /^ [MARCU]/) {
             $commityear = (localtime(time))[5] + 1900;
         }
         else {
             # min-parents=1 to ignore wrong initial commit in truncated repos
-            my $grl = `git rev-list --max-count=1 --min-parents=1 --timestamp HEAD -- $file`;
+            my $grl = `git rev-list --max-count=1 --min-parents=1 --timestamp HEAD -- "$file"`;
             if($grl) {
                 chomp $grl;
                 $commityear = (localtime((split(/ /, $grl))[0]))[5] + 1900;
@@ -933,7 +952,7 @@ sub scanfile {
 
     checksrc_endoffile($file);
 
-    close(R);
+    close($R);
 
 }
 
