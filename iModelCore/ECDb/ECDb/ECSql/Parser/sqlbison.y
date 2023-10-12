@@ -211,7 +211,7 @@ using namespace connectivity;
 %type <pParseNode> table_node tablespace_qualified_class_name qualified_class_name class_name table_primary_as_range_column opt_as
 %type <pParseNode> table_node_ref table_node_with_opt_member_func_call table_node_path table_node_path_entry opt_member_function_args
 %type <pParseNode> case_expression else_clause result_expression result case_specification searched_when_clause simple_when_clause searched_case simple_case
-%type <pParseNode> when_operand_list when_operand case_operand opt_extract_value
+%type <pParseNode> when_operand_list when_operand case_operand opt_extract_value opt_optional_prop
 %type <pParseNode> searched_when_clause_list simple_when_clause_list opt_disqualify_primary_join opt_disqualify_polymorphic_constraint
 /* window function rules */
 %type <pParseNode> window_function window_function_type ntile_function lead_or_lag_function lead_or_lag lead_or_lag_extent rank_function_type
@@ -2029,16 +2029,23 @@ cast_spec:
             $$->append($6 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
     ;
+opt_optional_prop:
+    /* empty*/ {$$ = SQL_NEW_RULE;}
+    |    '?' {
+        $$ = SQL_NEW_RULE;
+        $$->append($1 = CREATE_NODE("?", SQL_NODE_PUNCTUATION));
+    }
 
+    ;
 opt_extract_value:
       { $$ = SQL_NEW_RULE; }
-    | SQL_ARROW  property_path
+    | SQL_ARROW  property_path opt_optional_prop
         {
            $$ = SQL_NEW_RULE;
            $$->append($2);
-
+           $$->append($3);
         }
-    ;
+        ;
 value_exp_primary:
         unsigned_value_spec
       | fct_spec

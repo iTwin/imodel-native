@@ -19,7 +19,11 @@ Exp::FinalizeParseStatus TableValuedFunctionExp::_FinalizeParsing(ECSqlParseCont
                 IssueSeverity::Error,
                 IssueCategory::BusinessProperties,
                 IssueType::ECDbIssue,
-                "TableValuedFunction %s.%s() has no ECClass describing its output.", m_schemaName.c_str(), classValuedFunc.c_str());
+                ECDbIssueId::ECDb_0451,
+                "TableValuedFunction %s.%s() has no ECClass describing its output.",
+                m_schemaName.c_str(),
+                classValuedFunc.c_str()
+            );
             return Exp::FinalizeParseStatus::Error;
         }
         m_virtualEntityClass = tableViewClassP->GetEntityClassCP();
@@ -314,6 +318,9 @@ std::set<Utf8String, CompareIUtf8Ascii> ClassNameExp::GetInstancePropNames() con
         auto props = selectExp->Find(Exp::Type::ExtractProperty, true);
         for(auto& prop: props) {
             auto& extractProp = prop->GetAs<ExtractPropertyValueExp>();
+            if (extractProp.IsOptional())
+                continue;
+
             auto classIdClassRef = extractProp.GetClassIdPropExp().GetClassRefExp();
             if (classIdClassRef == this) {
                 dynamicProps.insert(extractProp.GetTargetPath().ToString().c_str());

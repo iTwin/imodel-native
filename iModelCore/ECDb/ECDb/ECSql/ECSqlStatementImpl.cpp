@@ -23,39 +23,48 @@ ECSqlStatus ECSqlStatement::Impl::Prepare(ECDbCR ecdb, Db const* dataSourceECDb,
     {
     m_hash64 = nullptr;
     auto filterAction = logErrors ?  IssueDataSource::FilterAction::Forward : IssueDataSource::FilterAction::Ignore;
-    IssueDataSource::FilterScope filteredScope(ecdb.GetImpl().Issues(), [=](ECN::IssueSeverity, ECN::IssueCategory, ECN::IssueType, Utf8CP) { return filterAction; });
+    IssueDataSource::FilterScope filteredScope(ecdb.GetImpl().Issues(), [=](ECN::IssueSeverity, ECN::IssueCategory, ECN::IssueType, ECN::IssueId, Utf8CP) { return filterAction; });
 
     //Verify that dataSourceECDb meets all necessary conditions
     if (dataSourceECDb != nullptr && dataSourceECDb != &ecdb)
         {
         if (!dataSourceECDb->IsDbOpen())
             {
-            filteredScope.Source().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Failed to prepare '%s'. The data source ECDb (parameter 'dataSourceECDb') is not open.", ecsql);
+            filteredScope.Source().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0530,
+                "Failed to prepare '%s'. The data source ECDb (parameter 'dataSourceECDb') is not open.", ecsql);
             return ECSqlStatus::Error;
             }
 
         if (!dataSourceECDb->IsReadonly())
             {
-            filteredScope.Source().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Failed to prepare '%s'. The data source ECDb (parameter 'dataSourceECDb') is not a read-only connection.", ecsql);
+            filteredScope.Source().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0531,
+                "Failed to prepare '%s'. The data source ECDb (parameter 'dataSourceECDb') is not a read-only connection.", ecsql);
             return ECSqlStatus::Error;
             }
 
         if (dataSourceECDb->GetDbGuid() != ecdb.GetDbGuid() || BeStringUtilities::Stricmp(dataSourceECDb->GetDbFileName(), ecdb.GetDbFileName()) != 0)
             {
-            filteredScope.Source().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Failed to prepare '%s'. The data source ECDb (parameter 'dataSourceECDb') must be a connection to the same ECDb file as the ECSQL parsing ECDb connection (parameter 'ecdb').", ecsql);
+            filteredScope.Source().ReportV(
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
+                IssueType::ECSQL,
+                ECDbIssueId::ECDb_0532,
+                "Failed to prepare '%s'. The data source ECDb (parameter 'dataSourceECDb') must be a connection to the same ECDb file as the ECSQL parsing ECDb connection (parameter 'ecdb').",
+                ecsql
+            );
             return ECSqlStatus::Error;
             }
         }
 
     if (IsPrepared())
         {
-        filteredScope.Source().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "ECSQL statement has already been prepared.");
+        filteredScope.Source().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0533, "ECSQL statement has already been prepared.");
         return ECSqlStatus::Error;
         }
 
     if (Utf8String::IsNullOrEmpty(ecsql))
         {
-        filteredScope.Source().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "ECSQL string is empty.");
+        filteredScope.Source().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0534, "ECSQL string is empty.");
         return ECSqlStatus::InvalidECSql;
         }
 
@@ -77,7 +86,7 @@ ECSqlStatus ECSqlStatement::Impl::Prepare(ECDbCR ecdb, Db const* dataSourceECDb,
     Policy policy = PolicyManager::GetPolicy(ECCrudPermissionPolicyAssertion(ecdb, preparedStatement.GetType() != ECSqlType::Select  && preparedStatement.GetType() != ECSqlType::Pragma , writeToken));
     if (!policy.IsSupported())
         {
-        filteredScope.Source().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, policy.GetNotSupportedMessage().c_str());
+        filteredScope.Source().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0535, policy.GetNotSupportedMessage().c_str());
         Finalize();
         return ECSqlStatus::Error;
         }
@@ -88,6 +97,7 @@ ECSqlStatus ECSqlStatement::Impl::Prepare(ECDbCR ecdb, Db const* dataSourceECDb,
     if (!stat.IsSuccess())
         Finalize();
 
+    preparedStatement.SetIsInstanceQuery(ctx.IsInstanceQuery());
     return stat;
     }
 
@@ -334,7 +344,7 @@ ECSqlStatus ECSqlStatement::Impl::FailIfWrongType(ECSqlType expectedType, Utf8CP
 
     if (GetPreparedStatementP()->GetType() != expectedType)
         {
-        GetECDb()->GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, errorMessage);
+        GetECDb()->GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0536, errorMessage);
         return ECSqlStatus::Error;
         }
 

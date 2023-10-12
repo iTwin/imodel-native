@@ -1,4 +1,4 @@
-// Copyright 2017 The Crashpad Authors. All rights reserved.
+// Copyright 2017 The Crashpad Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@ std::map<std::string, std::string> BreakpadHTTPFormParametersFromMinidump(
       }
     }
 
-    for (std::string annotation : module->AnnotationsVector()) {
+    for (const std::string& annotation : module->AnnotationsVector()) {
       list_annotations.append(annotation);
       list_annotations.append("\n");
     }

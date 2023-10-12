@@ -728,6 +728,7 @@ void PolyfaceVisitor::TrimFaceData (size_t index0, size_t count)
 
 
 bvector<BoolTypeForVector> &PolyfaceVisitor::Visible ()             { return m_visible;}
+BoolTypeForVector const* PolyfaceVisitor::GetVisibleCP() const      { return m_visible.data(); }
 bvector<size_t> &PolyfaceVisitor::IndexPosition()      { return m_indexPosition;}
 
 // Hidden virtual dispatch for polyface services ...

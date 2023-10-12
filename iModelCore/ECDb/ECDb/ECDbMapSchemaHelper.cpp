@@ -21,7 +21,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 bool ECDbMapCustomAttributeHelper::TryGetSchemaMap(SchemaMapCustomAttribute& schemaMap, ECSchemaCR schema)
     {
     IECInstancePtr ca = CustomAttributeReader::Read(schema, ECDBMAP_SCHEMANAME, "SchemaMap");
-    if (ca == nullptr || !ca.IsValid())
+    if (!ca.IsValid())
         return false;
 
     schemaMap = SchemaMapCustomAttribute(schema, ca);
@@ -35,7 +35,7 @@ bool ECDbMapCustomAttributeHelper::TryGetSchemaMap(SchemaMapCustomAttribute& sch
 bool ECDbMapCustomAttributeHelper::TryGetClassMap(ClassMapCustomAttribute& classMap, ECClassCR ecClass)
     {
     IECInstancePtr ca = CustomAttributeReader::Read(ecClass, ECDBMAP_SCHEMANAME, "ClassMap");
-    if (ca == nullptr || !ca.IsValid())
+    if (!ca.IsValid())
         return false;
 
     classMap = ClassMapCustomAttribute(ecClass, ca);
@@ -49,7 +49,7 @@ bool ECDbMapCustomAttributeHelper::TryGetClassMap(ClassMapCustomAttribute& class
 bool ECDbMapCustomAttributeHelper::TryGetShareColumns(ShareColumnsCustomAttribute& shareColumns, ECClassCR ecClass)
     {
     IECInstancePtr ca = CustomAttributeReader::Read(ecClass, ECDBMAP_SCHEMANAME, "ShareColumns");
-    if (ca == nullptr || !ca.IsValid())
+    if (!ca.IsValid())
         return false;
 
     shareColumns = ShareColumnsCustomAttribute(ecClass, ca);
@@ -72,7 +72,7 @@ bool ECDbMapCustomAttributeHelper::HasJoinedTablePerDirectSubclass(ECEntityClass
 bool ECDbMapCustomAttributeHelper::TryGetDbIndexList(DbIndexListCustomAttribute& dbIndexList, ECClassCR ecClass)
     {
     IECInstancePtr ca = CustomAttributeReader::Read(ecClass, ECDBMAP_SCHEMANAME, "DbIndexList");
-    if (ca == nullptr || !ca.IsValid())
+    if (!ca.IsValid())
         return false;
 
     dbIndexList = DbIndexListCustomAttribute(ecClass, ca);
@@ -86,7 +86,7 @@ bool ECDbMapCustomAttributeHelper::TryGetDbIndexList(DbIndexListCustomAttribute&
 bool ECDbMapCustomAttributeHelper::TryGetPropertyMap(PropertyMapCustomAttribute& propertyMap, PrimitiveECPropertyCR ecProperty)
     {
     IECInstancePtr ca = CustomAttributeReader::Read(ecProperty, ECDBMAP_SCHEMANAME, "PropertyMap");
-    if (ca == nullptr || !ca.IsValid())
+    if (!ca.IsValid())
         return false;
 
     propertyMap = PropertyMapCustomAttribute(ecProperty, ca);
@@ -100,7 +100,7 @@ bool ECDbMapCustomAttributeHelper::TryGetPropertyMap(PropertyMapCustomAttribute&
 bool ECDbMapCustomAttributeHelper::TryGetLinkTableRelationshipMap(LinkTableRelationshipMapCustomAttribute& linkTableRelationshipMap, ECRelationshipClassCR ecRelationship)
     {
     IECInstancePtr ca = CustomAttributeReader::Read(ecRelationship, ECDBMAP_SCHEMANAME, "LinkTableRelationshipMap");
-    if (ca == nullptr || !ca.IsValid())
+    if (!ca.IsValid())
         return false;
 
     linkTableRelationshipMap = LinkTableRelationshipMapCustomAttribute(ecRelationship, ca);
@@ -114,13 +114,40 @@ bool ECDbMapCustomAttributeHelper::TryGetLinkTableRelationshipMap(LinkTableRelat
 bool ECDbMapCustomAttributeHelper::TryGetForeignKeyConstraint(ForeignKeyConstraintCustomAttribute& foreignKeyTableRelationshipMap, NavigationECPropertyCR navProp)
     {
     IECInstancePtr ca = CustomAttributeReader::Read(navProp, ECDBMAP_SCHEMANAME, "ForeignKeyConstraint");
-    if (ca == nullptr || !ca.IsValid())
+    if (!ca.IsValid())
         return false;
 
     foreignKeyTableRelationshipMap = ForeignKeyConstraintCustomAttribute(navProp, ca);
     return true;
     }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+bool ECDbMapCustomAttributeHelper::TryGetImportRequiresVersion(ImportRequiresVersionCustomAttribute& ca, ECN::ECSchemaCR schema)
+    {
+    IECInstancePtr inst = CustomAttributeReader::Read(schema, ECDBMAP_SCHEMANAME, "ImportRequiresVersion");
+    if (!inst.IsValid())
+        return false;
+
+    ca = ImportRequiresVersionCustomAttribute(schema, inst);
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+bool ECDbMapCustomAttributeHelper::TryGetUseRequiresVersion(UseRequiresVersionCustomAttribute& ca, ECN::ECClassCR ecClass)
+    {
+    IECInstancePtr inst = CustomAttributeReader::Read(ecClass, ECDBMAP_SCHEMANAME, "UseRequiresVersion");
+    if (!inst.IsValid())
+        return false;
+
+    ca = UseRequiresVersionCustomAttribute(ecClass, inst);
+    return true;
+    }
 
 //*****************************************************************
 //SchemaMapCustomAttribute
@@ -478,6 +505,118 @@ BentleyStatus LinkTableRelationshipMapCustomAttribute::TryGetAllowDuplicateRelat
     return CustomAttributeReader::TryGetBooleanValue(allowDuplicateRelationshipsFlag, *m_ca, "AllowDuplicateRelationships");
     }
 
+
+//*****************************************************************
+//ImportRequiresVersionCustomAttribute
+//*****************************************************************
+//---------------------------------------------------------------------------------------
+//@bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ImportRequiresVersionCustomAttribute::TryGetECDbRuntimeVersion(Nullable<Utf8String>& version) const
+    {
+    if (m_ca == nullptr)
+        return ERROR;
+
+    return CustomAttributeReader::TryGetTrimmedValue(version, *m_ca, "ECDbRuntimeVersion");
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ImportRequiresVersionCustomAttribute::Verify(IssueDataSource const& issues, Utf8CP fullSchemaName) const
+    {
+    Nullable<Utf8String> version;
+    if (TryGetECDbRuntimeVersion(version) != BentleyStatus::SUCCESS)
+        {
+        issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0654, "ECSchema %s has an invalid ImportRequiresVersion custom attribute.", fullSchemaName);
+        return ERROR;
+        }
+
+    auto profileVersion = ECDb::CurrentECDbProfileVersion();
+    ProfileVersion requiredProfileVersion(0, 0, 0, 0);
+    if (version.IsNull() || requiredProfileVersion.FromString(version.ValueR().c_str()) != BentleyStatus::SUCCESS)
+        {
+        issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0655, "ECSchema %s has a ImportRequiresVersion custom attribute with a missing or invalid ECDbRuntimeVersion property.", fullSchemaName);
+        return ERROR;
+        }
+
+    if(requiredProfileVersion > profileVersion)
+        {
+        issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0656, "ECSchema %s requires ECDb version %s, but the current runtime version is only %s.", fullSchemaName, requiredProfileVersion.ToString().c_str(), profileVersion.ToString().c_str());
+        return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+//*****************************************************************
+//UseRequiresVersionCustomAttribute
+//*****************************************************************
+//---------------------------------------------------------------------------------------
+//@bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus UseRequiresVersionCustomAttribute::TryGetECDbRuntimeVersion(Nullable<Utf8String>& version) const
+    {
+    if (m_ca == nullptr)
+        return ERROR;
+
+    return CustomAttributeReader::TryGetTrimmedValue(version, *m_ca, "ECDbRuntimeVersion");
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus UseRequiresVersionCustomAttribute::TryGetECSqlVersion(Nullable<Utf8String>& version) const
+    {
+    if (m_ca == nullptr)
+        return ERROR;
+
+    return CustomAttributeReader::TryGetTrimmedValue(version, *m_ca, "ECSqlVersion");
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus UseRequiresVersionCustomAttribute::Verify(IssueDataSource const& issues, Utf8CP context) const
+    {
+    Nullable<Utf8String> version;
+    if (TryGetECDbRuntimeVersion(version) == BentleyStatus::SUCCESS && !version.IsNull())
+        {
+        auto profileVersion = ECDb::CurrentECDbProfileVersion();
+        ProfileVersion requiredProfileVersion(0, 0, 0, 0);
+        if (requiredProfileVersion.FromString(version.ValueR().c_str()) != BentleyStatus::SUCCESS)
+            {
+            issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue,ECDbIssueId::ECDb_0657,  "%s has a UseRequiresVersion custom attribute with an invalid ECDbRuntimeVersion property.", context);
+            return ERROR;
+            }
+
+        if(requiredProfileVersion > profileVersion)
+            {
+            issues.ReportV(IssueSeverity::Warning, IssueCategory::BusinessProperties, IssueType::ECDbIssue,ECDbIssueId::ECDb_0658,  "%s requires ECDb version %s, but the current runtime version is only %s.", context, requiredProfileVersion.ToString().c_str(), profileVersion.ToString().c_str());
+            return ERROR;
+            }
+        }
+
+    Nullable<Utf8String> sqlVersion;
+    if (TryGetECSqlVersion(sqlVersion) == BentleyStatus::SUCCESS && !sqlVersion.IsNull())
+        {
+        auto ecSqlVersion = ECDb::GetECSqlVersion();
+        BeVersion requiredECSqlVersion(0, 0, 0, 0);
+        if (requiredECSqlVersion.FromString(sqlVersion.ValueR().c_str()) != BentleyStatus::SUCCESS)
+            {
+            issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue,ECDbIssueId::ECDb_0659,  "%s has a UseRequiresVersion custom attribute with an invalid ECSqlVersion property.", context);
+            return ERROR;
+            }
+
+        if(requiredECSqlVersion > ecSqlVersion)
+            {
+            issues.ReportV(IssueSeverity::Warning, IssueCategory::BusinessProperties, IssueType::ECDbIssue,ECDbIssueId::ECDb_0660,  "%s requires ECSql version %s, but the current version is only %s.", context, requiredECSqlVersion.ToString().c_str(), ecSqlVersion.ToString().c_str());
+            return ERROR;
+            }
+        }
+
+    return SUCCESS;
+    }
 
 //*****************************************************************
 //CustomAttributeReader

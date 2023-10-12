@@ -226,6 +226,7 @@ namespace connectivity
                             {OSQLParseNode::predicate_check, "predicate_check"},
                             {OSQLParseNode::property_path, "property_path"},
                             {OSQLParseNode::property_path_entry, "property_path_entry"},
+                            {OSQLParseNode::opt_optional_prop, "opt_optional_prop"},
                             {OSQLParseNode::qualified_class_name, "qualified_class_name"},
                             {OSQLParseNode::qualified_join, "qualified_join"},
                             {OSQLParseNode::query_term, "query_term"},

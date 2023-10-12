@@ -391,6 +391,7 @@ struct JsInterop {
         };
 
     BE_JSON_NAME(accessToken)
+    BE_JSON_NAME(addClientInformation)
     BE_JSON_NAME(alias)
     BE_JSON_NAME(baseUri)
     BE_JSON_NAME(blob)

@@ -241,6 +241,7 @@ namespace connectivity
                 opt_window_frame_exclusion,
                 opt_window_partition_clause,
                 ordering_spec,
+                opt_optional_prop,
                 ordering_spec_commalist,
                 other_like_predicate_part_2,
                 outer_join_type,

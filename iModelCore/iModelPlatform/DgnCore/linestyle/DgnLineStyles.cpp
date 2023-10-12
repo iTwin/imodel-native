@@ -35,9 +35,7 @@ BentleyStatus DgnLineStyles::Insert(DgnStyleId& newStyleId, DgnModelId modelId, 
     
     newStyleId = DgnStyleId(constLs->GetElementId().GetValue());
 
-    LsDefinition* lsDef = new LsDefinition(name, m_dgndb, jsonObj, newStyleId);
-    GetCache().AddIdEntry(lsDef);
-
+    // NOTE: New cache entry added in LineStyleElement::_OnInsert...
     return SUCCESS;
     }
 

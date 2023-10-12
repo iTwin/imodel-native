@@ -1,4 +1,4 @@
-// Copyright 2019 The Crashpad Authors. All rights reserved.
+// Copyright 2019 The Crashpad Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,11 +16,14 @@
 
 #include <unistd.h>
 
+#include "base/check_op.h"
 #include "base/logging.h"
 #include "base/posix/eintr_wrapper.h"
 #include "third_party/lss/lss.h"
 
 namespace crashpad {
+
+constexpr size_t UnixCredentialSocket::kMaxSendRecvMsgFDs;
 
 // static
 bool UnixCredentialSocket::CreateCredentialSocketpair(ScopedFileHandle* sock1,
@@ -47,8 +50,6 @@ bool UnixCredentialSocket::CreateCredentialSocketpair(ScopedFileHandle* sock1,
   sock2->swap(local_sock2);
   return true;
 }
-
-constexpr size_t UnixCredentialSocket::kMaxSendRecvMsgFDs = 4;
 
 // static
 int UnixCredentialSocket::SendMsg(int fd,
@@ -168,17 +169,17 @@ bool UnixCredentialSocket::RecvMsg(int fd,
     return false;
   }
 
+  // Credentials are missing from the message either when the recv socket wasn't
+  // configured with SO_PASSCRED or when all sending sockets have been closed.
+  // In the latter case, res == 0. This case is also indistinguishable from an
+  // empty message sent to a recv socket which hasn't set SO_PASSCRED.
   if (!local_creds) {
-    LOG(ERROR) << "missing credentials";
+    LOG_IF(ERROR, res != 0) << "missing credentials";
     return false;
   }
 
-  // res == 0 may also indicate that the sending socket disconnected, but in
-  // that case, the message will also have missing or invalid credentials.
   if (static_cast<size_t>(res) != buf_size) {
-    if (res != 0 || (local_creds && local_creds->pid != 0)) {
-      LOG(ERROR) << "incorrect payload size " << res;
-    }
+    LOG(ERROR) << "incorrect payload size " << res;
     return false;
   }
 

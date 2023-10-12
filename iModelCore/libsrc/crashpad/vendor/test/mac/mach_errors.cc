@@ -1,4 +1,4 @@
-// Copyright 2014 The Crashpad Authors. All rights reserved.
+// Copyright 2014 The Crashpad Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,8 +13,6 @@
 // limitations under the License.
 
 #include "test/mac/mach_errors.h"
-
-#include <servers/bootstrap.h>
 
 #include "base/strings/stringprintf.h"
 
@@ -48,29 +46,6 @@ std::string MachErrorMessage(mach_error_t mach_err, const std::string& base) {
                             FormatBase(base).c_str(),
                             mach_error_string(mach_err),
                             FormatMachErrorNumber(mach_err).c_str());
-}
-
-std::string BootstrapErrorMessage(kern_return_t bootstrap_err,
-                                  const std::string& base) {
-  switch (bootstrap_err) {
-    case BOOTSTRAP_SUCCESS:
-    case BOOTSTRAP_NOT_PRIVILEGED:
-    case BOOTSTRAP_NAME_IN_USE:
-    case BOOTSTRAP_UNKNOWN_SERVICE:
-    case BOOTSTRAP_SERVICE_ACTIVE:
-    case BOOTSTRAP_BAD_COUNT:
-    case BOOTSTRAP_NO_MEMORY:
-    case BOOTSTRAP_NO_CHILDREN:
-      // Show known bootstrap errors in decimal because that's how they're
-      // defined in <servers/bootstrap.h>.
-      return base::StringPrintf("%s%s (%d)",
-                                FormatBase(base).c_str(),
-                                bootstrap_strerror(bootstrap_err),
-                                bootstrap_err);
-
-    default:
-      return MachErrorMessage(bootstrap_err, base);
-  }
 }
 
 }  // namespace test

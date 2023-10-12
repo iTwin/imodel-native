@@ -131,6 +131,7 @@ struct ECSqlPrepareContext final
         SelectClauseInfo m_selectionOptions;
         int m_nextSystemSqlParameterNameSuffix = 0;
         SqlAnchors m_anchors;
+        bool m_isInstanceQuery = false;
         //not copyable
         ECSqlPrepareContext(ECSqlPrepareContext const&) = delete;
         ECSqlPrepareContext& operator=(ECSqlPrepareContext const&) = delete;
@@ -166,6 +167,8 @@ struct ECSqlPrepareContext final
         Utf8CP GetThisStmtPtrParamName() const { return "ecdb_this_ptr"; }
         Utf8CP GetThisStmtPtrParamDecl() const { return ":ecdb_this_ptr"; }
         SqlAnchors& GetAnchors() { return m_anchors; }
+        void SetIsInstanceQuery(const bool isInstanceQuery) { m_isInstanceQuery = isInstanceQuery; }
+        bool IsInstanceQuery() const { return m_isInstanceQuery; }
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

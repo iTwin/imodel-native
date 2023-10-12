@@ -42,6 +42,7 @@ struct RangeClassInfo final
 
     public:
         RangeClassInfo() {}
+        RangeClassInfo(RangeClassInfo const& info, Scope scope) :m_exp(info.m_exp), m_scope(scope) {}
         RangeClassInfo(RangeClassRefExp const& exp, Scope scope) :m_exp(&exp), m_scope(scope) {}
 
         bool IsValid() const { return m_exp != nullptr; }

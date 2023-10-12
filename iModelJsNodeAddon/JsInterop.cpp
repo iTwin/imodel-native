@@ -350,11 +350,6 @@ JsTexturePtr ResourceCache::CreateTexture(ImageCR img, Texture::CreateParams con
 //=======================================================================================
 struct JsRenderSystem : Render::System
 {
-    int _Initialize(void*, bool) override NO_IMPL(0)
-    Render::GraphicBuilderPtr _CreateGraphic(Render::GraphicBuilder::CreateParams const&) const override NULL_IMPL
-    Render::TexturePtr _CreateGeometryTexture(Render::GraphicCR, DRange2dCR, bool, bool) const override NULL_IMPL
-    Render::LightPtr _CreateLight(Dgn::Lighting::Parameters const&, DVec3dCP, DPoint3dCP) const override NULL_IMPL
-
     Render::MaterialPtr _FindMaterial(Render::MaterialKeyCR key, Dgn::DgnDbR db) const override { return ResourceCache::Get(db).FindMaterial(key); }
     Render::MaterialPtr _CreateMaterial(Render::Material::CreateParams const& params, Dgn::DgnDbR db) const override { return ResourceCache::Get(db).GetMaterial(params); }
 
@@ -371,12 +366,6 @@ struct JsRenderSystem : Render::System
         {
         return ResourceCache::Get(db).GetGradient(grad);
         }
-
-    Render::GraphicPtr _CreateTriMesh(Render::TriMeshArgsCR args, Dgn::DgnDbR db) const override RETURN_GRAPHIC
-    Render::GraphicPtr _CreateIndexedPolylines(Render::IndexedPolylineArgsCR args, Dgn::DgnDbR db) const override RETURN_GRAPHIC
-    Render::GraphicPtr _CreateGraphicList(bvector<Render::GraphicPtr>&& graphics, Dgn::DgnDbR db) const override RETURN_GRAPHIC
-    Render::GraphicPtr _CreateBranch(Render::GraphicBranch&& branch, Dgn::DgnDbR db, TransformCR, ClipVectorCP) const override RETURN_GRAPHIC
-    Render::GraphicPtr _CreateBatch(Render::GraphicR graphic, Render::FeatureTable&& features, DRange3dCR range) const override { return new Render::Graphic(graphic.GetDgnDb()); }
 };
 
 //=======================================================================================
@@ -964,6 +953,7 @@ BentleyStatus JsInterop::ConvertSchemas(bvector<Utf8String> const& inputStrings,
 
     if (0 == schemaKeyPairs.size())
         return BentleyStatus::ERROR;
+    BeAssert(inputStrings.size() == schemaKeyPairs.size());
 
     for (int i = 0; i < schemaKeyPairs.size(); i++)
         {
@@ -975,6 +965,7 @@ BentleyStatus JsInterop::ConvertSchemas(bvector<Utf8String> const& inputStrings,
         schemaKeyPair.second = schema;
         }
 
+    outputStrings.resize(schemaKeyPairs.size());
     if (convertCA)
         {
         // Make a copy of the schemaKeyPairs bvector
@@ -990,14 +981,19 @@ BentleyStatus JsInterop::ConvertSchemas(bvector<Utf8String> const& inputStrings,
             bool conversionStatus = ECSchemaConverter::Convert(*const_cast<ECSchemaP> (schema), *schemaContext);
             if (!conversionStatus)
                 return BentleyStatus::ERROR;
-            Utf8String schemaXml;
-            SchemaWriteStatus writeStatus = schema->WriteToXmlString(schemaXml);
-            if (SchemaWriteStatus::Success != writeStatus)
+            for (int i = 0; i < schemaKeyPairs.size(); i++)
                 {
-                outputStrings.clear();
-                return BentleyStatus::ERROR;
+                if (schemaKeyPairs[i].first.Matches(schema->GetSchemaKey(), SchemaMatchType::Exact))
+                    {
+                    SchemaWriteStatus writeStatus = schema->WriteToXmlString(outputStrings[i]);
+                    if (SchemaWriteStatus::Success != writeStatus)
+                        {
+                        outputStrings.clear();
+                        return BentleyStatus::ERROR;
+                        }
+                    break;
+                    }
                 }
-            outputStrings.push_back(schemaXml);
             }
         }
     else

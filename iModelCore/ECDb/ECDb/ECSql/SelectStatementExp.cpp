@@ -210,7 +210,8 @@ Exp::FinalizeParseStatus FromExp::_FinalizeParsing(ECSqlParseContext& ctx, Final
 
         if (classExp.GetExp().GetId().EqualsI(classExpComparand->GetId()))
             {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Multiple occurrences of ECClass expression '%s' in the ECSQL statement. Use different aliases to distinguish them.", classExp.GetExp().ToECSql().c_str());
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0567,
+                "Multiple occurrences of ECClass expression '%s' in the ECSQL statement. Use different aliases to distinguish them.", classExp.GetExp().ToECSql().c_str());
             return FinalizeParseStatus::Error;
             }
         }
@@ -286,7 +287,8 @@ BentleyStatus FromExp::TryAddClassRef(ECSqlParseContext& ctx, std::unique_ptr<Cl
             if (existingRangeCRef.GetExp().GetId().Equals(newRangeCRef.GetExp().GetId()))
                 {
                 //e.g. SELECT * FROM FOO a, GOO a
-                ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Duplicate class name / alias '%s' in FROM or JOIN clause", newRangeCRef.GetExp().GetId().c_str());
+                ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0568,
+                    "Duplicate class name / alias '%s' in FROM or JOIN clause", newRangeCRef.GetExp().GetId().c_str());
                 return ERROR;
                 }
             }
@@ -391,7 +393,8 @@ Exp::FinalizeParseStatus GroupByExp::_FinalizeParsing(ECSqlParseContext& ctx, Fi
         ECSqlTypeInfo const& typeInfo = groupingValueExp->GetTypeInfo();
         if (expType == Exp::Type::Parameter || groupingValueExp->IsConstant() || typeInfo.IsNavigation())
             {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Invalid expression '%s' in GROUP BY: Parameters, constants, and navigation properties are not supported.", ToECSql().c_str());
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0569,
+                "Invalid expression '%s' in GROUP BY: Parameters, constants, and navigation properties are not supported.", ToECSql().c_str());
             return FinalizeParseStatus::Error;
             }
         }
@@ -452,13 +455,15 @@ LimitOffsetExp::FinalizeParseStatus LimitOffsetExp::_FinalizeParsing(ECSqlParseC
             {
             if (!IsValidChildExp(*GetLimitExp()))
                 {
-                ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Invalid expression '%s'. LIMIT expression must be constant numeric expression which may have parameters.", ToECSql().c_str());
+                ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0570,
+                    "Invalid expression '%s'. LIMIT expression must be constant numeric expression which may have parameters.", ToECSql().c_str());
                 return FinalizeParseStatus::Error;
                 }
 
             if (HasOffset() && !IsValidChildExp(*GetOffsetExp()))
                 {
-                ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Invalid expression '%s'. OFFSET expression must be constant numeric expression which may have parameters.", ToECSql().c_str());
+                ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0571,
+                    "Invalid expression '%s'. OFFSET expression must be constant numeric expression which may have parameters.", ToECSql().c_str());
                 return FinalizeParseStatus::Error;
                 }
 
@@ -576,7 +581,8 @@ Exp::FinalizeParseStatus OrderByExp::_FinalizeParsing(ECSqlParseContext& parseCo
             {
             if (ComputedExp const* incompatibleExp = FindIncompatibleOrderBySpecExpForUnion())
                 {
-                parseContext.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "'%s' ORDER BY term does not match any column in the result set.", incompatibleExp->ToECSql().c_str());
+                parseContext.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0572,
+                    "'%s' ORDER BY term does not match any column in the result set.", incompatibleExp->ToECSql().c_str());
                 return FinalizeParseStatus::Error;
                 }
 
@@ -608,7 +614,8 @@ OrderBySpecExp::FinalizeParseStatus OrderBySpecExp::_FinalizeParsing(ECSqlParseC
     ECSqlTypeInfo const& typeInfo = GetSortExpression()->GetTypeInfo();
     if (!typeInfo.IsPrimitive() || typeInfo.IsPoint() || typeInfo.IsGeometry())
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Invalid expression '%s' in ORDER BY: Points, Geometries, navigation properties, structs and arrays are not supported.", ToECSql().c_str());
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0573,
+            "Invalid expression '%s' in ORDER BY: Points, Geometries, navigation properties, structs and arrays are not supported.", ToECSql().c_str());
         return FinalizeParseStatus::Error;
         }
 
@@ -776,7 +783,7 @@ Exp::FinalizeParseStatus SelectClauseExp::_FinalizeParsing(ECSqlParseContext& ct
             BeAssert(ctx.CurrentArg()->GetType() == ECSqlParseContext::ParseArg::Type::RangeClass && "Expecting range class");
             if (SUCCESS != ReplaceAsteriskExpressions(ctx, sel.GetFrom()->FindRangeClassRefExpressions()))
                 {
-                ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Asterisk replacement in select clause failed unexpectedly.");
+                ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0574, "Asterisk replacement in select clause failed unexpectedly.");
                 return FinalizeParseStatus::Error;
                 }
             }
@@ -888,7 +895,7 @@ PropertyMatchResult SingleSelectStatementExp::_FindProperty(ECSqlParseContext& c
                     }
                     return PropertyMatchResult(options, propertyPath, effectivePath, derivedPropertyExp, isMatchIndirect ? -1 : 0);
                 } else if (propertyNameExp != nullptr && propertyNameExp->GetClassRefExp() != nullptr) {
-                    if (CompoundDataPropertyMap const *compoundProp = dynamic_cast<CompoundDataPropertyMap const*>(&propertyNameExp->GetPropertyMap())) {
+                    if (CompoundDataPropertyMap const *compoundProp = dynamic_cast<CompoundDataPropertyMap const*>(propertyNameExp->GetPropertyMap())) {
                         PropertyPath restOfAccessString = effectivePath.Skip(1);
                         auto endMap = compoundProp->Find(restOfAccessString.ToString().c_str());
                         if (endMap != nullptr) {
@@ -901,11 +908,13 @@ PropertyMatchResult SingleSelectStatementExp::_FindProperty(ECSqlParseContext& c
                 if (propertyNameExp->GetPropertyPath().First().GetName().EqualsIAscii(effectivePath.First().GetName())) {
                     if (effectivePath.Size() == 1) {
                         return PropertyMatchResult(options, propertyPath, effectivePath, derivedPropertyExp, 0);
-                    } else if (CompoundDataPropertyMap const *compoundProp = dynamic_cast<CompoundDataPropertyMap const*>(&propertyNameExp->GetPropertyMap())) {
-                        PropertyPath restOfAccessString = effectivePath.Skip(1);
-                        auto endMap = compoundProp->Find(restOfAccessString.ToString().c_str());
-                        if (endMap != nullptr) {
-                            return PropertyMatchResult(options, propertyPath, effectivePath, derivedPropertyExp, 0);
+                    } else if (!propertyNameExp->IsPropertyFromCommonTableBlock() && propertyNameExp->GetPropertyMap() != nullptr) {
+                        if (CompoundDataPropertyMap const *compoundProp = dynamic_cast<CompoundDataPropertyMap const*>(propertyNameExp->GetPropertyMap())) {
+                            PropertyPath restOfAccessString = effectivePath.Skip(1);
+                            auto endMap = compoundProp->Find(restOfAccessString.ToString().c_str());
+                            if (endMap != nullptr) {
+                                return PropertyMatchResult(options, propertyPath, effectivePath, derivedPropertyExp, 0);
+                            }
                         }
                     }
                     if (propertyNameExp->GetPropertyPath().ToString().EqualsIAscii(effectivePath.ToString().c_str())) {
@@ -1250,7 +1259,7 @@ Exp::FinalizeParseStatus SubqueryValueExp::_FinalizeParsing(ECSqlParseContext& c
 
     if (selectClauseExp->GetChildren().size() != 1)
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Subquery must return exactly one column %s.", ToECSql().c_str());
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0575, "Subquery must return exactly one column %s.", ToECSql().c_str());
         return FinalizeParseStatus::Error;
         }
 
@@ -1376,7 +1385,7 @@ Exp::FinalizeParseStatus SelectStatementExp::_FinalizeParsing(ECSqlParseContext&
     {
     if (GetRhsStatement() != nullptr && GetFirstStatement().GetOrderBy() != nullptr)
         {
-        parseContext.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "ORDER BY clause must not be followed by UNION clause.");
+        parseContext.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0576, "ORDER BY clause must not be followed by UNION clause.");
         return FinalizeParseStatus::Error;
         }
 

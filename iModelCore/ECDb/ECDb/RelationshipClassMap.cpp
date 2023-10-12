@@ -901,8 +901,14 @@ ClassMappingStatus RelationshipClassLinkTableMap::_Map(ClassMappingContext& ctx)
 
     if (sourceTables.empty() || targetTables.empty())
         {
-        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to map ECRelationshipClass '%s'. Source or target constraint classes are abstract without subclasses. Consider applying the MapStrategy 'TablePerHierarchy' to the abstract constraint class.",
-                        GetClass().GetFullName());
+        Issues().ReportV(
+            IssueSeverity::Error,
+            IssueCategory::BusinessProperties,
+            IssueType::ECDbIssue,
+            ECDbIssueId::ECDb_0242,
+            "Failed to map ECRelationshipClass '%s'. Source or target constraint classes are abstract without subclasses. Consider applying the MapStrategy 'TablePerHierarchy' to the abstract constraint class.",
+            GetClass().GetFullName()
+        );
         return ClassMappingStatus::Error;
         }
 
@@ -918,8 +924,8 @@ ClassMappingStatus RelationshipClassLinkTableMap::_Map(ClassMappingContext& ctx)
         else
             constraintStr = "target constraint is";
 
-        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to map ECRelationshipClass '%s'. It is mapped to a link table, but the %s mapped to more than one table, which is not supported for link tables.",
-                        GetClass().GetFullName(), constraintStr);
+        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0243,
+            "Failed to map ECRelationshipClass '%s'. It is mapped to a link table, but the %s mapped to more than one table, which is not supported for link tables.", GetClass().GetFullName(), constraintStr);
 
         return ClassMappingStatus::Error;
         }
@@ -975,8 +981,14 @@ ClassMappingStatus RelationshipClassLinkTableMap::_Map(ClassMappingContext& ctx)
        
         if (!allowDuplicateRelationships.IsNull())
             {
-            GetECDb().GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Warning: ECRelationshipClass '%s': has set deprecated property 'AllowDuplicateRelationships' of mapping customattribute LinkTableRelationshipMap. The value of 'AllowDuplicateRelationships' will be ignored.",
-                                 GetClass().GetFullName());
+            GetECDb().GetImpl().Issues().ReportV(
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
+                IssueType::ECDbIssue,
+                ECDbIssueId::ECDb_0244,
+                "Warning: ECRelationshipClass '%s': has set deprecated property 'AllowDuplicateRelationships' of mapping customattribute LinkTableRelationshipMap. The value of 'AllowDuplicateRelationships' will be ignored.",
+                GetClass().GetFullName()
+            );
             }
         }
 
@@ -1100,8 +1112,8 @@ ClassMappingStatus RelationshipClassLinkTableMap::CreateConstraintPropMaps(Schem
     Utf8String columnName = DetermineConstraintECInstanceIdColumnName(ca, ECRelationshipEnd_Source);
     if (columnName.empty() || GetPrimaryTable().FindColumn(columnName.c_str()) != nullptr && !GetMapStrategy().IsTablePerHierarchy() && GetMapStrategy().GetStrategy() != MapStrategy::ExistingTable)
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to map ECRelationshipClass '%s': Table '%s' already contains " ECDBSYS_PROP_SourceECInstanceId " column named '%s'.",
-                   GetClass().GetFullName(), GetPrimaryTable().GetName().c_str(), columnName.c_str());
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0245,
+            "Failed to map ECRelationshipClass '%s': Table '%s' already contains " ECDBSYS_PROP_SourceECInstanceId " column named '%s'.", GetClass().GetFullName(), GetPrimaryTable().GetName().c_str(), columnName.c_str());
         return ClassMappingStatus::Error;
         }
 

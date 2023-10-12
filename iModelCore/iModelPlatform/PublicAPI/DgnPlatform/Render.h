@@ -621,8 +621,8 @@ struct TextureMapping
     struct Trans2x3
     {
         double m_val[2][3];
-        Trans2x3() {}
-        Trans2x3(double t00, double t01, double t02, double t10, double t11, double t12)
+        DGNPLATFORM_EXPORT Trans2x3() {}
+        DGNPLATFORM_EXPORT Trans2x3(double t00, double t01, double t02, double t10, double t11, double t12)
             {
             m_val[0][0] = t00;
             m_val[0][1] = t01;
@@ -644,8 +644,8 @@ struct TextureMapping
 
         Transform GetTransform() const;
 
-        void ToJson(BeJsValue) const;
-        static Trans2x3 FromJson(BeJsConst);
+        DGNPLATFORM_EXPORT void ToJson(BeJsValue) const;
+        DGNPLATFORM_EXPORT static Trans2x3 FromJson(BeJsConst);
         static Trans2x3 FromTransform(TransformCR);
     };
 
@@ -3325,7 +3325,7 @@ struct System
     virtual ~System() { }
 
     //! Initialize the rendering system. Return a non-zero value in case of error. The client thread waits for the result.
-    virtual int _Initialize(void* systemWindow, bool swRendering) = 0;
+    virtual int _Initialize(void* systemWindow, bool swRendering) { return 0; }
 
     //! Find a previously-created Material by key. Returns null if no such material exists.
     virtual MaterialPtr _FindMaterial(MaterialKeyCR key, DgnDbR db) const = 0;
@@ -3337,25 +3337,25 @@ struct System
     //! Create a Material from parameters
     virtual MaterialPtr _CreateMaterial(Material::CreateParams const&, DgnDbR) const = 0;
 
-    virtual GraphicBuilderPtr _CreateGraphic(GraphicBuilder::CreateParams const& params) const = 0;
+    virtual GraphicBuilderPtr _CreateGraphic(GraphicBuilder::CreateParams const& params) const { return nullptr; }
 
     //! Create a triangle mesh primitive
-    virtual GraphicPtr _CreateTriMesh(TriMeshArgsCR args, DgnDbR dgndb) const = 0;
+    virtual GraphicPtr _CreateTriMesh(TriMeshArgsCR args, DgnDbR dgndb) const { return new Graphic(dgndb); }
 
     //! Create an indexed polyline primitive
-    virtual GraphicPtr _CreateIndexedPolylines(IndexedPolylineArgsCR args, DgnDbR dgndb) const = 0;
+    virtual GraphicPtr _CreateIndexedPolylines(IndexedPolylineArgsCR args, DgnDbR dgndb) const { return new Graphic(dgndb); }
 
     //! Create a Graphic consisting of a list of Graphics
-    virtual GraphicPtr _CreateGraphicList(bvector<GraphicPtr>&& primitives, DgnDbR dgndb) const = 0;
+    virtual GraphicPtr _CreateGraphicList(bvector<GraphicPtr>&& primitives, DgnDbR dgndb) const { return new Graphic(dgndb); }
 
     //! Create a Graphic consisting of a list of Graphics, with optional transform, clip, and view flag overrides applied to the list
-    virtual GraphicPtr _CreateBranch(GraphicBranch&& branch, DgnDbR dgndb, TransformCR transform, ClipVectorCP clips) const = 0;
+    virtual GraphicPtr _CreateBranch(GraphicBranch&& branch, DgnDbR dgndb, TransformCR transform, ClipVectorCP clips) const { return new Graphic(dgndb); }
 
     //! Return the maximum number of Features allowed within a Batch.
     virtual uint32_t _GetMaxFeaturesPerBatch() const { return 0xffffff; }
 
     //! Create a Graphic consisting of batched Features.
-    virtual GraphicPtr _CreateBatch(GraphicR graphic, FeatureTable&& features, DRange3dCR range) const = 0;
+    virtual GraphicPtr _CreateBatch(GraphicR graphic, FeatureTable&& features, DRange3dCR range) const { return new Graphic(graphic.GetDgnDb()); }
 
     //! Find a previously-created Texture by key. Returns null if no such texture exists.
     virtual TexturePtr _FindTexture(TextureKeyCR key, DgnDbR db) const = 0;
@@ -3376,10 +3376,10 @@ struct System
     virtual TexturePtr _CreateTexture(ImageSourceCR source, Image::BottomUp bottomUp, DgnDbR db, Texture::CreateParams const& params=Texture::CreateParams()) const = 0;
 
     //! Create a Texture from a graphic.
-    virtual TexturePtr _CreateGeometryTexture(GraphicCR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const = 0;
+    virtual TexturePtr _CreateGeometryTexture(GraphicCR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const { return nullptr; }
 
     //! Create a Light from Light::Parameters
-    virtual LightPtr _CreateLight(Lighting::Parameters const&, DVec3dCP direction, DPoint3dCP location) const = 0;
+    virtual LightPtr _CreateLight(Lighting::Parameters const&, DVec3dCP direction, DPoint3dCP location) const { return nullptr; }
 
     //! Perform some small unit of work (or do nothing) during an idle frame.
     //! An idle frame is classified one tick of the render loop during which no viewports are open and the render queue is empty.

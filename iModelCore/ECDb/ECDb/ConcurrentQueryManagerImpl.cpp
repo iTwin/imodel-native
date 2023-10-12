@@ -323,7 +323,7 @@ void ConnectionCache::Interrupt(bool reset_conn, bool detach_dbs) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void ErrorListenerScope::_OnIssueReported(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, Utf8CP message) const{
+void ErrorListenerScope::_OnIssueReported(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, ECN::IssueId id, Utf8CP message) const{
     if (severity == ECN::IssueSeverity::Error)
         m_lastError = message;
 }

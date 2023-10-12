@@ -7,20 +7,7 @@
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //****************************** OptionsExp *****************************************
-//-----------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-Utf8CP const OptionsExp::NOECCLASSIDFILTER_OPTION = "NoECClassIdFilter";
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-Utf8CP const OptionsExp::READONLYPROPERTIESAREUPDATABLE_OPTION = "ReadonlyPropertiesAreUpdatable";
-Utf8CP const OptionsExp::ENABLE_EXPERIMENTAL_FEATURES = "ENABLE_EXPERIMENTAL_FEATURES";
-
-//-----------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus OptionsExp::AddOptionExp(std::unique_ptr<OptionExp> optionExp, IssueDataSource const& issues)
@@ -28,7 +15,7 @@ BentleyStatus OptionsExp::AddOptionExp(std::unique_ptr<OptionExp> optionExp, Iss
     Utf8CP name = optionExp->GetName();
     if (m_optionsByName.find(name) != m_optionsByName.end())
         {
-        issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Multiple options with same name ('%s') are not supported.", name);
+        issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0548, "Multiple options with same name ('%s') are not supported.", name);
         return ERROR;
         }
 
@@ -37,7 +24,7 @@ BentleyStatus OptionsExp::AddOptionExp(std::unique_ptr<OptionExp> optionExp, Iss
     return SUCCESS;
     }
 
-//-----------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 bool OptionsExp::HasOption(Utf8CP optionName) const
@@ -49,11 +36,10 @@ bool OptionsExp::HasOption(Utf8CP optionName) const
     if (!option->IsNameValuePair())
         return true;
 
-    Utf8CP val = option->GetValue();
-    return BeStringUtilities::StricmpAscii(val, "true") == 0 || BeStringUtilities::StricmpAscii(val, "1") == 0;
+    return option->asBool();
     }
 
-//-----------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 bool OptionsExp::TryGetOption(OptionExp const*& exp, Utf8CP optionName) const
@@ -74,7 +60,7 @@ bool OptionsExp::TryGetOption(OptionExp const*& exp, Utf8CP optionName) const
     return true;
     }
 
-//-----------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 void OptionsExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
@@ -87,7 +73,7 @@ void OptionsExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
         child->ToJson(options.appendArray(), fmt);
 }
 
-//-----------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 void OptionsExp::_ToECSql(ECSqlRenderContext& ctx) const
@@ -103,7 +89,7 @@ void OptionsExp::_ToECSql(ECSqlRenderContext& ctx) const
 
 
 //****************************** OptionExp *****************************************
-//-----------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 void OptionExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
@@ -114,7 +100,23 @@ void OptionExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
         val["value"] = m_val;
 }
 
-//-----------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+bool OptionExp::asBool() const {
+    if (GetValType().IsBoolean()) {
+        return m_val.EqualsIAscii("TRUE");
+    }
+    if (GetValType().IsExactNumeric()) {
+        return std::atoi(m_val.c_str()) != 0;
+    }
+    if (GetValType().IsApproximateNumeric()) {
+        return std::atof(m_val.c_str()) != 0.0f;
+    }
+    return true;
+}
+
+//---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 void OptionExp::_ToECSql(ECSqlRenderContext& ctx) const
@@ -127,5 +129,22 @@ void OptionExp::_ToECSql(ECSqlRenderContext& ctx) const
     ctx.AppendToECSql("=").AppendToECSql(m_val);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+OptionExp const* OptionsExp::FindLocalOrInheritedOption(Utf8CP optionName, ExpCR exp) {
+    OptionExp const* opt;
+    auto cur = exp.FindParent(Exp::Type::SingleSelect);
+    while(cur != nullptr) {
+        auto options = cur->GetAsCP<SingleSelectStatementExp>()->GetOptions();
+        if (options) {
+            if (options->TryGetOption(opt, optionName)) {
+                return opt;
+            }
+        }
+        cur = cur->FindParent(Exp::Type::SingleSelect);
+    }
+    return nullptr;
+}
 END_BENTLEY_SQLITE_EC_NAMESPACE
 

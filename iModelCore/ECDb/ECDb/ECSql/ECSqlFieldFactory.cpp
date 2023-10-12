@@ -156,7 +156,7 @@ ECSqlColumnInfo ECSqlFieldFactory::CreateColumnInfoForProperty(ECSqlPrepareConte
     BeAssert((internalPropPath.GetClassMap() != nullptr) && "Error in program logic. PropertyPath must have been resolved.");
     ECClassCR ecClass = internalPropPath.GetClassMap()->GetClass();
     isSystem = leafProp != nullptr && ctx.GetECDb().Schemas().Main().GetSystemSchemaHelper().GetSystemPropertyInfo(*leafProp).IsSystemProperty();
-    Utf8CP tableSpace = resolvedPropertyName->GetPropertyMap().GetClassMap().GetSchemaManager().GetTableSpace().GetName().c_str();
+    Utf8CP tableSpace = resolvedPropertyName->GetPropertyMap()->GetClassMap().GetSchemaManager().GetTableSpace().GetName().c_str();
     return CreateTopLevelColumnInfo(ctx.Issues(), isSystem, false, std::move(ecsqlPropPath), ECSqlColumnInfo::RootClass(ecClass, tableSpace, resolvedPropertyName->GetClassName()), leafProp, isDynamic);
     }
 
@@ -385,8 +385,15 @@ ECTypeDescriptor ECSqlFieldFactory::DetermineDataType(DateTime::Info& dateTimeIn
             {
             if (ECObjectsStatus::Success != CoreCustomAttributeHelper::GetDateTimeInfo(dateTimeInfo, ecProperty))
                 {
-                issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Could not read DateTimeInfo custom attribute from the primitive ECProperty %s:%s.",
-                           ecProperty.GetClass().GetFullName(), ecProperty.GetName().c_str());
+                issues.ReportV(
+                    IssueSeverity::Error,
+                    IssueCategory::BusinessProperties,
+                    IssueType::ECSQL,
+                    ECDbIssueId::ECDb_0469,
+                    "Could not read DateTimeInfo custom attribute from the primitive ECProperty %s:%s.",
+                    ecProperty.GetClass().GetFullName(),
+                    ecProperty.GetName().c_str()
+                );
                 }
             }
 
@@ -406,8 +413,15 @@ ECTypeDescriptor ECSqlFieldFactory::DetermineDataType(DateTime::Info& dateTimeIn
             {
             if (ECObjectsStatus::Success != CoreCustomAttributeHelper::GetDateTimeInfo(dateTimeInfo, ecProperty))
                 {
-                issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Could not read DateTimeInfo custom attribute from the primitive array ECProperty %s:%s.",
-                           ecProperty.GetClass().GetFullName(), ecProperty.GetName().c_str());
+                issues.ReportV(
+                    IssueSeverity::Error,
+                    IssueCategory::BusinessProperties,
+                    IssueType::ECSQL,
+                    ECDbIssueId::ECDb_0470,
+                    "Could not read DateTimeInfo custom attribute from the primitive array ECProperty %s:%s.",
+                    ecProperty.GetClass().GetFullName(),
+                    ecProperty.GetName().c_str()
+                );
                 }
             }
 

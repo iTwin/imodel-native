@@ -5,6 +5,7 @@
 
 # Ignore warnings in third-party code.
 IS_THIRD_PARTY_LIBRARY = 1
+BUILD_WITH_C17 = 1
 
 %include mdl.mki
 

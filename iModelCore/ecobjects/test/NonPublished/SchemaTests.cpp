@@ -109,6 +109,64 @@ TEST_F(SchemaTest, CreateDynamicSchema)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaTest, AddCycleReference)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 2, 0, 1);
+    ASSERT_EQ(ECObjectsStatus::SchemaHasReferenceCycle, schema->AddReferencedSchema(*schema));
+
+    ECSchemaPtr schema2;
+    ECSchema::CreateSchema(schema2, "TestSchema", "ts", 2, 0, 4); //different version
+    ASSERT_EQ(ECObjectsStatus::SchemaHasReferenceCycle, schema->AddReferencedSchema(*schema2));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaTest, AddIndirectCycleReference)
+    {
+    //Create reference cycle Foo -> Middle -> Bar -> Foo
+    ECSchemaPtr foo;
+    ECSchema::CreateSchema(foo, "Foo", "foo", 2, 0, 1);
+
+    ECSchemaPtr middle;
+    ECSchema::CreateSchema(middle, "Middle", "middle", 2, 0, 1);
+    ASSERT_EQ(ECObjectsStatus::Success, foo->AddReferencedSchema(*middle));
+
+    ECSchemaPtr bar;
+    ECSchema::CreateSchema(bar, "Bar", "bar", 2, 0, 1);
+    ASSERT_EQ(ECObjectsStatus::Success, bar->AddReferencedSchema(*foo));
+
+    ASSERT_EQ(ECObjectsStatus::SchemaHasReferenceCycle, middle->AddReferencedSchema(*bar));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaTest, AddIndirectCycleReferenceToDifferentVersion)
+    {
+    //Create reference cycle Foo -> Middle -> Bar -> FooAlt (Same name different version as Foo)
+    ECSchemaPtr foo;
+    ECSchema::CreateSchema(foo, "Foo", "foo", 2, 0, 1);
+
+    ECSchemaPtr fooAlt;
+    ECSchema::CreateSchema(fooAlt, "Foo", "foo", 2, 0, 5);
+
+    ECSchemaPtr middle;
+    ECSchema::CreateSchema(middle, "Middle", "middle", 2, 0, 1);
+    ASSERT_EQ(ECObjectsStatus::Success, foo->AddReferencedSchema(*middle));
+    ASSERT_EQ(ECObjectsStatus::Success, fooAlt->AddReferencedSchema(*middle));
+
+    ECSchemaPtr bar;
+    ECSchema::CreateSchema(bar, "Bar", "bar", 2, 0, 1);
+    ASSERT_EQ(ECObjectsStatus::Success, bar->AddReferencedSchema(*fooAlt));
+
+    ASSERT_EQ(ECObjectsStatus::SchemaHasReferenceCycle, middle->AddReferencedSchema(*bar));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaTest, TryRenameECClass)
     {
     ECSchemaPtr schema;

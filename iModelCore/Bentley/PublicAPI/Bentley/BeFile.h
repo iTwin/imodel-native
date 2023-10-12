@@ -131,7 +131,7 @@ public:
     //! @param[in] position The new read/write position.
     //! @param[in] origin   The origin mode for the move.
     //! @return BeFileStatus::Success if the operation was successful or non-zero if it failed.
-    BENTLEYDLL_EXPORT BeFileStatus SetPointer(uint64_t position, BeFileSeekOrigin origin);
+    BENTLEYDLL_EXPORT BeFileStatus SetPointer(int64_t position, BeFileSeekOrigin origin);
 
     //! Gets the file read/write position
     //! @param[out] position      the current read/write position

@@ -17,7 +17,8 @@ ECSqlStatus ECSqlPreparer::Prepare(Utf8StringR nativeSql, ECSqlPrepareContext& c
     {
     if (&context.GetDataSourceConnection() != &context.GetECDb() && (Exp::Type::Select != exp.GetType() && Exp::Type::CommonTable != exp.GetType()))
         {
-        context.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Only SELECT queries can be executed against a separate data source connection.");
+        context.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0507,
+            "Only SELECT queries can be executed against a separate data source connection.");
         return ECSqlStatus::Error;
         }
 
@@ -214,7 +215,8 @@ ECSqlStatus ECSqlExpPreparer::PrepareBetweenRangeValueExp(NativeSqlBuilder::List
     const size_t tokenCount = lowerBoundSqlTokens.size();
     if (tokenCount != upperBoundSqlTokens.size())
         {
-        ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Type mismatch between lower bound operand and upper bound operand in BETWEEN expression.");
+        ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0509,
+            "Type mismatch between lower bound operand and upper bound operand in BETWEEN expression.");
         return ECSqlStatus::InvalidECSql;
         }
 
@@ -466,8 +468,14 @@ ECSqlStatus ECSqlExpPreparer::PrepareCastExp(NativeSqlBuilder::List& nativeSqlSn
 
     if (!exp.GetTypeInfo().IsPrimitive())
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Invalid ECSQL expression '%s': Only primitive types are supported as CAST target type",
-                                                               exp.ToECSql().c_str());
+        ctx.Issues().ReportV(
+            IssueSeverity::Error,
+            IssueCategory::BusinessProperties,
+            IssueType::ECSQL,
+            ECDbIssueId::ECDb_0510,
+            "Invalid ECSQL expression '%s': Only primitive types are supported as CAST target type",
+            exp.ToECSql().c_str()
+        );
         return ECSqlStatus::InvalidECSql;
         }
 
@@ -628,7 +636,7 @@ void ECSqlExpPreparer::RemovePropertyRefs(ECSqlPrepareContext& ctx, ClassRefExp 
 
         const RangeClassRefExp* classRefExp = propertyNameExp->GetClassRefExp();
         if (&exp == classRefExp)
-            ctx.GetSelectionOptionsR().AddProperty(propertyNameExp->GetPropertyMap());
+            ctx.GetSelectionOptionsR().AddProperty(*propertyNameExp->GetPropertyMap());
         }
     }
 
@@ -644,7 +652,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
     Policy policy = PolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(classMap, currentScopeECSqlType, exp.GetPolymorphicInfo().IsPolymorphic()));
     if (!policy.IsSupported())
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Invalid ECClass in ECSQL: %s", policy.GetNotSupportedMessage().c_str());
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0511, "Invalid ECClass in ECSQL: %s", policy.GetNotSupportedMessage().c_str());
         return ECSqlStatus::InvalidECSql;
         }
 
@@ -658,7 +666,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
 
             NativeSqlBuilder classViewSql;
             auto instanceProps = exp.GetInstancePropNames();
-            if (SUCCESS != ViewGenerator::GenerateSelectFromViewSql(classViewSql, ctx, classMap, exp.GetPolymorphicInfo(), exp.DisqualifyPrimaryJoin(), exp.GetMemberFunctionCallExp(), &instanceProps))
+            if (SUCCESS != ViewGenerator::GenerateSelectFromViewSql(classViewSql, ctx, classMap, exp.GetPolymorphicInfo(), exp.DisqualifyPrimaryJoin(), exp.GetMemberFunctionCallExp(), &instanceProps, &exp))
                 return ECSqlStatus::InvalidECSql;
 
             classViewSql.AppendSpace().AppendEscaped(exp.GetId());
@@ -781,9 +789,12 @@ ECSqlStatus ECSqlExpPreparer::PrepareTableValuedFunctionExp(NativeSqlBuilder::Li
                 IssueSeverity::Error,
                 IssueCategory::BusinessProperties,
                 IssueType::ECDbIssue,
+                ECDbIssueId::ECDb_0512,
                 "Invalid arg to %s.%s(): TableValuedFunction only accept primitive value expression.",
-                    exp.GetSchemaName().c_str(), exp.GetFunctionExp()->GetFunctionName().c_str());
-                return ECSqlStatus::InvalidECSql;
+                exp.GetSchemaName().c_str(),
+                exp.GetFunctionExp()->GetFunctionName().c_str()
+            );
+            return ECSqlStatus::InvalidECSql;
         }
         if (i > 0) {
             builder.AppendComma();
@@ -838,7 +849,8 @@ ECSqlStatus ECSqlExpPreparer::PrepareEnumValueExp(NativeSqlBuilder::List& native
         nativeSqlBuilder.AppendQuoted(enumerator.GetString().c_str());
     else
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Unsupported ECEnumeration %s. Only integer and string enumerations are supported.", enumerator.GetEnumeration().GetFullName().c_str());
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0513,
+            "Unsupported ECEnumeration %s. Only integer and string enumerations are supported.", enumerator.GetEnumeration().GetFullName().c_str());
         return ECSqlStatus::InvalidECSql;
         }
 
@@ -877,7 +889,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareLiteralValueExp(NativeSqlBuilder::List& nat
                 ECValue val;
                 if (SUCCESS != exp.TryParse(val))
                     {
-                    ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Invalid boolean literal in expression '%s'", exp.ToECSql().c_str());
+                    ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0514, "Invalid boolean literal in expression '%s'", exp.ToECSql().c_str());
                     return ECSqlStatus::InvalidECSql;
                     }
 
@@ -946,11 +958,11 @@ ECSqlStatus ECSqlExpPreparer::PrepareCrossJoinExp(ECSqlPrepareContext& ctx, Cros
         return r;
 
     sqlBuilder.Append(" CROSS JOIN ");
- 
+
     r = PrepareClassRefExp(sqlBuilder, ctx, exp.GetToClassRef());
     if (!r.IsSuccess())
         return r;
-    
+
     return ECSqlStatus::Success;
     }
 
@@ -1035,7 +1047,8 @@ ECSqlStatus ECSqlExpPreparer::PrepareLikeRhsValueExp(NativeSqlBuilder::List& nat
 
         if (escapeExpSqlSnippets.size() != 1)
             {
-            ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Invalid type in LIKE ESCAPE expression. ESCAPE only works with a string value.");
+            ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0516,
+                "Invalid type in LIKE ESCAPE expression. ESCAPE only works with a string value.");
             return ECSqlStatus::InvalidECSql;
             }
 
@@ -1081,7 +1094,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareLimitOffsetExp(ECSqlPrepareContext& ctx, Li
 //static
 ECSqlStatus ECSqlExpPreparer::PrepareNaturalJoinExp(ECSqlPrepareContext& ctx, NaturalJoinExp const& exp)
     {
-    ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Natural join expression not yet supported.");
+    ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0517, "Natural join expression not yet supported.");
     return ECSqlStatus::InvalidECSql;
     }
 
@@ -1272,7 +1285,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareQualifiedJoinExp(ECSqlPrepareContext& ctx, 
         }
     else if (exp.GetJoinSpec()->GetType() == Exp::Type::NamedPropertiesJoin)
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "JOIN <class/subquery> USING (property,...) is not supported yet.");
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0520, "JOIN <class/subquery> USING (property,...) is not supported yet.");
         return ECSqlStatus::InvalidECSql;
         }
 
@@ -1287,7 +1300,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareQualifiedJoinExp(ECSqlPrepareContext& ctx, 
 //static
 ECSqlStatus ECSqlExpPreparer::PrepareQueryExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, QueryExp const& exp)
     {
-    ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Query expression not yet supported.");
+    ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0521, "Query expression not yet supported.");
     return ECSqlStatus::InvalidECSql;
     }
 
@@ -1342,7 +1355,14 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
                 {
                 if (direction != JoinDirection::Forward)
                     {
-                    ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Invalid join direction BACKWARD in %s. Either specify FORWARD or omit the direction as the direction can be unambiguously implied in this ECSQL.", exp.ToString().c_str());
+                    ctx.Issues().ReportV(
+                        IssueSeverity::Error,
+                        IssueCategory::BusinessProperties,
+                        IssueType::ECSQL,
+                        ECDbIssueId::ECDb_0522,
+                        "Invalid join direction BACKWARD in %s. Either specify FORWARD or omit the direction as the direction can be unambiguously implied in this ECSQL.",
+                        exp.ToString().c_str()
+                    );
                     return ECSqlStatus::InvalidECSql;
                     }
                 }
@@ -1356,7 +1376,14 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
                 {
                 if (direction != JoinDirection::Backward)
                     {
-                    ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Invalid join direction FORWARD in %s. Either specify BACKWARD or omit the direction as the direction can be unambiguously implied in this ECSQL.", exp.ToString().c_str());
+                    ctx.Issues().ReportV(
+                        IssueSeverity::Error,
+                        IssueCategory::BusinessProperties,
+                        IssueType::ECSQL,
+                        ECDbIssueId::ECDb_0523,
+                        "Invalid join direction FORWARD in %s. Either specify BACKWARD or omit the direction as the direction can be unambiguously implied in this ECSQL.",
+                        exp.ToString().c_str()
+                    );
                     return ECSqlStatus::InvalidECSql;
                     }
                 }
@@ -1405,7 +1432,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
 
     //Generate view for relationship
     NativeSqlBuilder relationshipView;
-    if (SUCCESS != ViewGenerator::GenerateSelectFromViewSql(relationshipView, ctx, relationshipClassNameExp.GetInfo().GetMap(), relationshipClassNameExp.GetPolymorphicInfo(), relationshipClassNameExp.DisqualifyPrimaryJoin()))
+    if (SUCCESS != ViewGenerator::GenerateSelectFromViewSql(relationshipView, ctx, relationshipClassNameExp.GetInfo().GetMap(), relationshipClassNameExp.GetPolymorphicInfo(), relationshipClassNameExp.DisqualifyPrimaryJoin(), nullptr, nullptr, &relationshipClassNameExp))
         {
         BeAssert(false && "Generating class view during preparation of relationship class name expression failed.");
         return ECSqlStatus::Error;
@@ -1515,7 +1542,8 @@ ECSqlStatus ECSqlExpPreparer::PrepareFunctionCallExp(NativeSqlBuilder::List& nat
     {
     Utf8StringCR functionName = exp.GetSqliteFunctionName();
     if (ctx.GetECDb().GetECSqlConfig().GetDisableFunctions().Exists(functionName)) {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Failed to prepare function with name '%s': Function is disabled by application.", functionName.c_str());
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0524,
+            "Failed to prepare function with name '%s': Function is disabled by application.", functionName.c_str());
         return ECSqlStatus::InvalidECSql;
     }
     NativeSqlBuilder nativeSql;
@@ -1607,7 +1635,14 @@ ECSqlStatus ECSqlExpPreparer::PrepareFunctionArgList(NativeSqlBuilder::List& arg
 
         if (nativeSqlArgumentList.size() != 1)
             {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Failed to prepare function expression '%s': Functions in ECSQL can only accept primitive scalar arguments (i.e. excluding Point2d/Point3d).", functionCallExp.ToECSql().c_str());
+            ctx.Issues().ReportV(
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
+                IssueType::ECSQL,
+                ECDbIssueId::ECDb_0525,
+                "Failed to prepare function expression '%s': Functions in ECSQL can only accept primitive scalar arguments (i.e. excluding Point2d/Point3d).",
+                functionCallExp.ToECSql().c_str()
+            );
             return ECSqlStatus::InvalidECSql;
             }
 
@@ -1684,7 +1719,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareSubqueryTestExp(NativeSqlBuilder::List& nat
     {
     if (exp.GetOperator() == SubqueryTestOperator::Unique)
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "UNIQUE (subquery) expression not supported.");
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0526, "UNIQUE (subquery) expression not supported.");
         return ECSqlStatus::InvalidECSql;
         }
     NativeSqlBuilder nativeSqlBuilder;
@@ -2449,18 +2484,30 @@ ECSqlStatus ECSqlExpPreparer::PrepareWindowFrameExclusion(NativeSqlBuilder& nati
         }
     }
 
-namespace
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+bool ECSqlExpPreparer::QueryOptionExperimentalFeaturesEnabled(ECDbCR db, ExpCR exp)
     {
-    bool AreExperimentalFeaturesEnabled(const ECSqlPrepareContext& ctx)
-        {
-        // Check if ECSQLOption ENABLE_EXPERIMENTAL_FEATURES has been added
-        auto experimentalFeaturesECSqlOption = false;
-        if (const auto options = ctx.GetCurrentScope().GetOptions(); options != nullptr)
-            experimentalFeaturesECSqlOption = options->HasOption(OptionsExp::ENABLE_EXPERIMENTAL_FEATURES);
-
-        return (ctx.GetECDb().GetECSqlConfig().GetExperimentalFeaturesEnabled() || experimentalFeaturesECSqlOption);
-        }
+    return OptionsExp::FindLocalOrInheritedOption<bool>(
+        exp,
+        OptionsExp::ENABLE_EXPERIMENTAL_FEATURES,
+        [](OptionExp const& opt) { return opt.asBool(); },
+        [&db]() { return db.GetECSqlConfig().GetExperimentalFeaturesEnabled(); });
     }
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+unsigned int ECSqlExpPreparer::QueryOptionsInstanceFlags(ExpCR exp)
+    {
+    const auto useJsPropName = OptionsExp::FindLocalOrInheritedOption<bool>(exp, OptionsExp::USE_JS_PROP_NAMES, [](OptionExp const& opt) { return opt.asBool(); }, []() { return false; });
+    const auto doNotTruncateBlob = OptionsExp::FindLocalOrInheritedOption<bool>(exp, OptionsExp::DO_NOT_TRUNCATE_BLOB, [](OptionExp const& opt) { return opt.asBool(); }, []() { return false; });
+    unsigned int flags = 0;
+    if (useJsPropName) flags |= InstanceReader::FLAGS_UseJsPropertyNames;
+    if (doNotTruncateBlob) flags |= InstanceReader::FLAGS_DoNotTruncateBlobs;
+    return flags;
+    }
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -2469,11 +2516,6 @@ ECSqlStatus ECSqlExpPreparer::PrepareExtractPropertyExp(NativeSqlBuilder::List& 
     NativeSqlBuilder builder;
     NativeSqlBuilder::List classIdSql;
     NativeSqlBuilder::List instanceIdSql;
-
-    if (!AreExperimentalFeaturesEnabled(ctx)) {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Instance property access '%s' is experimental feature and disabled by default.", exp.ToECSql().c_str());
-        return ECSqlStatus::InvalidECSql;
-    }
 
     auto rc = PrepareValueExp(classIdSql, ctx, exp.GetClassIdPropExp());
     if (rc != ECSqlStatus::Success) {
@@ -2485,10 +2527,12 @@ ECSqlStatus ECSqlExpPreparer::PrepareExtractPropertyExp(NativeSqlBuilder::List& 
         return rc;
     }
 
-    builder.AppendFormatted("extract_prop(%s,%s,'%s'%s)",
+    const auto flags = QueryOptionsInstanceFlags(exp);
+    builder.AppendFormatted("extract_prop(%s,%s,'%s',0x%x%s)",
         classIdSql.front().GetSql().c_str(),
         instanceIdSql.front().GetSql().c_str(),
         exp.GetTargetPath().ToString().c_str(),
+        flags,
         exp.GetSqlAnchor([&](Utf8CP name) {
             return ctx.GetAnchors().CreateAnchor(name);
         }).c_str());
@@ -2505,11 +2549,6 @@ ECSqlStatus ECSqlExpPreparer::PrepareExtractInstanceExp(NativeSqlBuilder::List& 
     NativeSqlBuilder builder;
     NativeSqlBuilder::List classIdSql;
     NativeSqlBuilder::List instanceIdSql;
-
-    if (!AreExperimentalFeaturesEnabled(ctx)) {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Instance access '%s' is experimental feature and disabled by default.", exp.ToECSql().c_str());
-        return ECSqlStatus::InvalidECSql;
-    }
     auto rc = PrepareValueExp(classIdSql, ctx, exp.GetClassIdPropExp());
     if (rc != ECSqlStatus::Success) {
         return rc;
@@ -2520,8 +2559,10 @@ ECSqlStatus ECSqlExpPreparer::PrepareExtractInstanceExp(NativeSqlBuilder::List& 
         return rc;
     }
 
-    builder.AppendFormatted("extract_inst(%s,%s)", classIdSql.front().GetSql().c_str(),instanceIdSql.front().GetSql().c_str());
+    const auto flags = QueryOptionsInstanceFlags(exp);
+    builder.AppendFormatted("json(extract_inst(%s,%s, 0x%x))", classIdSql.front().GetSql().c_str(),instanceIdSql.front().GetSql().c_str(), flags);
     nativeSqlSnippets.push_back(std::move(builder));
+    ctx.SetIsInstanceQuery(true);
     return ECSqlStatus::Success;
 }
 //-----------------------------------------------------------------------------------------
