@@ -515,7 +515,7 @@ TEST_F(ECDbTestFixture, GetAndAssignBriefcaseIdForDb)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbTestFixture, GetAndChangeGUIDForDb)
     {
-    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecdbbriefcaseIdtest.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("getAndChangeGUIDForDb.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
 
     BeGuid guid = m_ecdb.GetDbGuid();
     ASSERT_TRUE(guid.IsValid());
