@@ -981,7 +981,16 @@ BentleyStatus ECSqlParser::ParseFctSpec(std::unique_ptr<ValueExp>& exp, OSQLPars
         }
 
     OSQLParseNode const* functionNameNode = parseNode->getChild(0);
-    Utf8StringCR functionName = functionNameNode->getTokenValue();
+    auto getFunctionNameFromTokenID = [&](uint32_t tokenID){
+        switch (tokenID)
+            {
+            case SQL_TOKEN_RTRIM:
+                return "RTRIM";
+            default:
+                return "";
+            }
+    };
+    Utf8StringCR functionName = functionNameNode->getTokenValue().empty() ? getFunctionNameFromTokenID(functionNameNode->getTokenID()) : functionNameNode->getTokenValue();
     if (functionName.empty())
         {
         const uint32_t tokenId = functionNameNode->getTokenID();
@@ -1036,26 +1045,19 @@ BentleyStatus ECSqlParser::ParseSetFct(std::unique_ptr<ValueExp>& exp, OSQLParse
 
         functionCallExp->AddArgument(std::move(argExp));
         }
-    else if (functionName.EqualsIAscii("group_concat") && parseNode.count() == 6)
-        {
-        if (SUCCESS != ParseAndAddFunctionArg(*functionCallExp, parseNode.getChild(2/*function_arg*/)))
-            return ERROR;
-        
-        if (SUCCESS != ParseAndAddFunctionArg(*functionCallExp, parseNode.getChild(4/*function_arg*/)))
-            return ERROR;
-        }
-    else if (functionName.EqualsIAscii("rtrim") && parseNode.count() == 7)
-        {
-        if (SUCCESS != ParseAndAddFunctionArg(*functionCallExp, parseNode.getChild(3/*function_arg*/)))
-            return ERROR;
-        
-        if (SUCCESS != ParseAndAddFunctionArg(*functionCallExp, parseNode.getChild(5/*function_arg*/)))
-            return ERROR;
-        }
     else
         {
         if (SUCCESS != ParseAndAddFunctionArg(*functionCallExp, parseNode.getChild(3/*function_arg*/)))
             return ERROR;
+        }
+
+    if (functionName.EqualsIAscii("group_concat"))
+        {
+        if (parseNode.getChild(4/*opt_function_arg*/)->count() != 0)
+            {
+            if (SUCCESS != ParseAndAddFunctionArg(*functionCallExp, parseNode.getChild(4/*opt_function_arg*/)->getChild(1/*function_arg*/)))
+                return ERROR;
+            }
         }
 
     exp = std::move(functionCallExp);
@@ -1079,9 +1081,9 @@ BentleyStatus ECSqlParser::ParseAndAddFunctionArg(FunctionCallExp& functionCallE
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-BentleyStatus ECSqlParser::ParseGeneralSetFct(std::unique_ptr<ValueExp>& exp, OSQLParseNode const* parseNode) const
+BentleyStatus ECSqlParser::ParseAggregateFct(std::unique_ptr<ValueExp>& exp, OSQLParseNode const* parseNode) const
     {
-    if (!SQL_ISRULE(parseNode, general_set_fct) &&
+    if (!SQL_ISRULE(parseNode, aggregate_fct) &&
         (parseNode->count() == 4 || parseNode->count() == 5))
         {
         BeAssert(false && "Wrong grammar");
@@ -1091,7 +1093,7 @@ BentleyStatus ECSqlParser::ParseGeneralSetFct(std::unique_ptr<ValueExp>& exp, OS
     OSQLParseNode const* functionNameNode = parseNode->getChild(0);
     if (!functionNameNode->getTokenValue().empty())
         {
-        BeAssert(false && "general_set_fct expects no function name to be set");
+        BeAssert(false && "aggregate_fct expects no function name to be set");
         return ERROR;
         }
 
@@ -1127,9 +1129,6 @@ BentleyStatus ECSqlParser::ParseGeneralSetFct(std::unique_ptr<ValueExp>& exp, OS
                 break;
             case SQL_TOKEN_TOTAL:
                 functionName = "TOTAL";
-                break;
-            case SQL_TOKEN_RTRIM:
-                functionName = "RTRIM";
                 break;
             default:
             {
@@ -3164,8 +3163,8 @@ BentleyStatus ECSqlParser::ParseValueExp(std::unique_ptr<ValueExp>& valueExp, OS
                     return ParseDatetimeValueExp(valueExp, parseNode);
                 case OSQLParseNode::factor:
                     return ParseFactor(valueExp, parseNode);
-                case OSQLParseNode::general_set_fct:
-                    return ParseGeneralSetFct(valueExp, parseNode);
+                case OSQLParseNode::aggregate_fct:
+                    return ParseAggregateFct(valueExp, parseNode);
                 case OSQLParseNode::fct_spec:
                     return ParseFctSpec(valueExp, parseNode);
                 case OSQLParseNode::property_path:
@@ -3378,8 +3377,8 @@ BentleyStatus ECSqlParser::ParseWindowFunctionType(std::unique_ptr<ValueExp>& ex
         {
         case OSQLParseNode::window_function_type:
             return ParseArgumentlessWindowFunction(exp, parseNode);
-        case OSQLParseNode::general_set_fct:
-            return ParseGeneralSetFct(exp, parseNode);
+        case OSQLParseNode::aggregate_fct:
+            return ParseAggregateFct(exp, parseNode);
         case OSQLParseNode::ntile_function:
             return ParseNtileFunction(exp, parseNode);
         case OSQLParseNode::lead_or_lag_function:

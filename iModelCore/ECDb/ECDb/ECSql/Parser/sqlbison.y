@@ -95,7 +95,7 @@ using namespace connectivity;
 
 %token <pParseNode> SQL_TOKEN_NULLS SQL_TOKEN_FIRST SQL_TOKEN_LAST
 
-%token <pParseNode> SQL_TOKEN_CAST SQL_TOKEN_COMMIT SQL_TOKEN_COUNT SQL_TOKEN_CROSS
+%token <pParseNode> SQL_TOKEN_CAST SQL_TOKEN_COUNT SQL_TOKEN_CROSS
 
 %token <pParseNode> SQL_TOKEN_DELETE SQL_TOKEN_DESC
 %token <pParseNode> SQL_TOKEN_DISTINCT SQL_TOKEN_FORWARD SQL_TOKEN_BACKWARD
@@ -108,8 +108,6 @@ using namespace connectivity;
 %token <pParseNode> SQL_TOKEN_MAX SQL_TOKEN_MIN SQL_TOKEN_NATURAL SQL_TOKEN_NULL SQL_TOKEN_TOTAL
 
 %token <pParseNode> SQL_TOKEN_ON SQL_TOKEN_ORDER SQL_TOKEN_OUTER
-
-%token <pParseNode> SQL_TOKEN_ROLLBACK
 
 %token <pParseNode> SQL_TOKEN_IIF
 
@@ -198,7 +196,7 @@ using namespace connectivity;
 %type <pParseNode> derived_column as_clause num_primary term num_value_exp term_add_sub
 %type <pParseNode> value_exp_primary unsigned_value_spec cast_spec fct_spec scalar_subquery
 %type <pParseNode> general_value_spec iif_spec
-%type <pParseNode> general_set_fct set_fct_type joined_table ecrelationship_join op_relationship_direction
+%type <pParseNode> aggregate_fct set_fct_type joined_table ecrelationship_join op_relationship_direction
 %type <pParseNode> row_value_constructor_commalist row_value_constructor row_value_constructor_elem
 %type <pParseNode> qualified_join value_exp join_type outer_join_type join_condition boolean_term
 %type <pParseNode> boolean_factor truth_value boolean_test boolean_primary named_columns_join join_spec
@@ -1335,16 +1333,16 @@ iif_spec:
         }
 
 fct_spec:
-        general_set_fct
+        aggregate_fct
     |   iif_spec
-    |    function_name '(' ')'
+    |   function_name '(' ')'
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
             $$->append($2 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             $$->append($3 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
-       |    function_name '(' function_args_commalist ')'
+    |   function_name '(' function_args_commalist ')'
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
@@ -1352,26 +1350,15 @@ fct_spec:
             $$->append($3);
             $$->append($4 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
-    |
-        function_name '(' opt_all_distinct function_arg ')'
-        {
-            $$ = SQL_NEW_RULE;
-            $$->append($1);
-            $$->append($2 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
-            $$->append($3);
-            $$->append($4);
-            $$->append($5 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
-        };
-
-
     ;
 
 function_name:
-    SQL_TOKEN_NAME
+        SQL_TOKEN_NAME
+    |   SQL_TOKEN_RTRIM
     ;
 
 
-general_set_fct:
+aggregate_fct:
         SQL_TOKEN_MAX '(' opt_all_distinct  function_args_commalist ')'
         {
             if($4->count() != 1)
@@ -1430,29 +1417,9 @@ general_set_fct:
             $$->append($4);
             $$->append($5 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
-    |   SQL_TOKEN_RTRIM '(' opt_all_distinct function_arg ')'
-        {
-            $$ = SQL_NEW_RULE;
-            $$->append($1);
-            $$->append($2 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
-            $$->append($3);
-            $$->append($4);
-            $$->append($5 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
-        }
-    |   SQL_TOKEN_RTRIM '(' opt_all_distinct function_arg ',' function_arg ')'
-        {
-            $$ = SQL_NEW_RULE;
-            $$->append($1);
-            $$->append($2 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
-            $$->append($3);
-            $$->append($4);
-            $$->append($5 = CREATE_NODE(",", SQL_NODE_PUNCTUATION));
-            $$->append($6);
-            $$->append($7 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
-        }
     |   SQL_TOKEN_GROUP_CONCAT '(' opt_all_distinct function_arg opt_function_arg ')'
         {
-            if ($3->isToken()!=0 && $5->count()!=0)
+            if ($3->isToken() && $5->count()!=0)
                 {
                 SQLyyerror(context, "Aggregate function can use DISTINCT or ALL keywords only with one argument.");
                 YYERROR;
@@ -1591,7 +1558,7 @@ window_function_type:
 			$$->append($2 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
 			$$->append($3 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
 		}
-	| general_set_fct
+	| aggregate_fct
 	| ntile_function
 	| lead_or_lag_function
 	| first_or_last_value_function

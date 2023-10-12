@@ -173,7 +173,7 @@ private:
     BentleyStatus ParseFunctionArg(std::unique_ptr<ValueExp>& exp, connectivity::OSQLParseNode const& argNode) const { return ParseResult(exp, &argNode); }
     BentleyStatus ParseAndAddFunctionArg(FunctionCallExp&, connectivity::OSQLParseNode const*) const;
 
-    BentleyStatus ParseGeneralSetFct(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseAggregateFct(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseGroupByClause(std::unique_ptr<GroupByExp>&, connectivity::OSQLParseNode const*) const;
 
     BentleyStatus ParseCTEBlock(std::unique_ptr<CommonTableBlockExp>&, connectivity::OSQLParseNode const*) const;

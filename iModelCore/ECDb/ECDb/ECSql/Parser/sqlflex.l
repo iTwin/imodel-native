@@ -134,7 +134,6 @@ BY                  {SQL_NEW_KEYWORD(SQL_TOKEN_BY);  }
 CASE                {SQL_NEW_KEYWORD(SQL_TOKEN_CASE);  }
 CAST                {SQL_NEW_KEYWORD(SQL_TOKEN_CAST);  }
 COLLATE             {SQL_NEW_KEYWORD(SQL_TOKEN_COLLATE);  }
-COMMIT              {SQL_NEW_KEYWORD(SQL_TOKEN_COMMIT);  }
 COUNT               {SQL_NEW_KEYWORD(SQL_TOKEN_COUNT);  }
 CROSS               {SQL_NEW_KEYWORD(SQL_TOKEN_CROSS);  }
 CUME_DIST           {SQL_NEW_KEYWORD(SQL_TOKEN_CUME_DIST);  }
@@ -230,7 +229,6 @@ RANK                {SQL_NEW_KEYWORD(SQL_TOKEN_RANK);  }
 REAL                {SQL_NEW_KEYWORD(SQL_TOKEN_REAL);  }
 RECURSIVE           {SQL_NEW_KEYWORD(SQL_TOKEN_RECURSIVE);  }
 RIGHT               {SQL_NEW_KEYWORD(SQL_TOKEN_RIGHT);  }
-ROLLBACK            {SQL_NEW_KEYWORD(SQL_TOKEN_ROLLBACK);  }
 ROW                 {SQL_NEW_KEYWORD(SQL_TOKEN_ROW);  }
 ROWS                {SQL_NEW_KEYWORD(SQL_TOKEN_ROWS);  }
 ROW_NUMBER          {SQL_NEW_KEYWORD(SQL_TOKEN_ROW_NUMBER);  }
@@ -531,12 +529,12 @@ sal_Int32 gatherName(yyscan_t yyscanner, const sal_Char* text)
         case IParseContext::KEY_MAX:
         case IParseContext::KEY_MIN:
         case IParseContext::KEY_SUM:
-    case IParseContext::KEY_EVERY:
-    case IParseContext::KEY_ANY:
-    case IParseContext::KEY_SOME:
-    case IParseContext::KEY_COLLECT:
-    case IParseContext::KEY_FUSION:
-    case IParseContext::KEY_INTERSECTION:
+        case IParseContext::KEY_EVERY:
+        case IParseContext::KEY_ANY:
+        case IParseContext::KEY_SOME:
+        case IParseContext::KEY_COLLECT:
+        case IParseContext::KEY_FUSION:
+        case IParseContext::KEY_INTERSECTION:
             nToken = mapEnumToToken(eKeyCode);
             SQL_NEW_KEYWORD(nToken);
             break;
@@ -574,12 +572,12 @@ sal_Int32 gatherNamePre(yyscan_t yyscanner, const sal_Char* text)
         case IParseContext::KEY_MAX:
         case IParseContext::KEY_MIN:
         case IParseContext::KEY_SUM:
-    case IParseContext::KEY_EVERY:
-    case IParseContext::KEY_ANY:
-    case IParseContext::KEY_SOME:
-    case IParseContext::KEY_COLLECT:
-    case IParseContext::KEY_FUSION:
-    case IParseContext::KEY_INTERSECTION:
+        case IParseContext::KEY_EVERY:
+        case IParseContext::KEY_ANY:
+        case IParseContext::KEY_SOME:
+        case IParseContext::KEY_COLLECT:
+        case IParseContext::KEY_FUSION:
+        case IParseContext::KEY_INTERSECTION:
             nToken = mapEnumToToken(eKeyCode);
             SQL_NEW_KEYWORD(nToken);
             break;
