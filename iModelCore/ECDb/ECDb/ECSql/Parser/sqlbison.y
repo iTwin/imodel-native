@@ -86,8 +86,6 @@ using namespace connectivity;
 
 %nonassoc <pParseNode> SQL_TOKEN_UMINUS
 
-
-
     /* literal keyword tokens */
 %token <pParseNode> SQL_TOKEN_WITH SQL_TOKEN_RECURSIVE
 
@@ -224,7 +222,7 @@ using namespace connectivity;
 %type <pParseNode> new_window_name  window_partition_column_reference_list window_partition_column_reference
 %type <pParseNode> window_frame_units window_frame_extent window_frame_start window_frame_preceding window_frame_between window_frame_bound_1 window_frame_bound_2 window_frame_following
 %type <pParseNode> opt_window_frame_clause opt_window_partition_clause window_specification opt_window_frame_exclusion opt_window_clause collating_function
-%type <pParseNode> opt_collate_clause opt_filter_clause opt_existing_window_name existing_window_name window_frame_bound
+%type <pParseNode> opt_collate_clause opt_filter_clause opt_existing_window_name existing_window_name window_frame_bound opt_function_arg
 /* LIMIT and OFFSET */
 %type <pParseNode> opt_limit_offset_clause limit_offset_clause opt_offset opt_only union_op
 /* non-standard */
@@ -1452,25 +1450,31 @@ general_set_fct:
             $$->append($6);
             $$->append($7 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
-    |   SQL_TOKEN_GROUP_CONCAT '(' opt_all_distinct function_arg ')'
+    |   SQL_TOKEN_GROUP_CONCAT '(' opt_all_distinct function_arg opt_function_arg ')'
         {
+            if ($3->isToken()!=0 && $5->count()!=0)
+                {
+                SQLyyerror(context, "Aggregate function can use DISTINCT or ALL keywords only with one argument.");
+                YYERROR;
+                }
             $$ = SQL_NEW_RULE;
             $$->append($1);
             $$->append($2 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             $$->append($3);
             $$->append($4);
-            $$->append($5 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
-        }
-    |   SQL_TOKEN_GROUP_CONCAT '(' function_arg ',' function_arg ')'
-        {
-            $$ = SQL_NEW_RULE;
-            $$->append($1);
-            $$->append($2 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
-            $$->append($3);
-            $$->append($4 = CREATE_NODE(",", SQL_NODE_PUNCTUATION));
             $$->append($5);
             $$->append($6 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
+    ;
+
+opt_function_arg:
+        {$$ = SQL_NEW_RULE;}
+    |   ',' function_arg
+    {
+        $$ = SQL_NEW_RULE;
+        $$->append($1 = CREATE_NODE(",", SQL_NODE_PUNCTUATION));
+        $$->append($2);
+    }
     ;
 
 set_fct_type:

@@ -316,6 +316,7 @@ namespace connectivity
                 collate_clause,
                 collating_function,
                 opt_filter_clause,
+                opt_function_arg,
                 window_frame_bound,
                 rule_count,
                 UNKNOWN_RULE            // ID indicating that a node is no rule with a matching Rule-enum value (see getKnownRuleID)

@@ -292,6 +292,7 @@ namespace connectivity
                             {OSQLParseNode::collating_function, "collating_function"},
                             {OSQLParseNode::opt_filter_clause, "opt_filter_clause"},
                             {OSQLParseNode::window_frame_bound, "window_frame_bound"},
+                            {OSQLParseNode::opt_function_arg, "opt_function_arg"},
                     };
                 size_t nRuleMapCount = sizeof(aRuleDescriptions) / sizeof(aRuleDescriptions[0]);
                 OSL_ENSURE(nRuleMapCount == size_t(OSQLParseNode::rule_count), "OSQLParser::OSQLParser: added a new rule? Adjust this map!");
