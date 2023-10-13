@@ -2089,7 +2089,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareWindowFunctionExp(NativeSqlBuilder::List& n
         }
     else
         {
-        ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Unsupported window function expression.");
+        ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0661, "Unsupported window function expression.");
         return ECSqlStatus::InvalidECSql;    
         }
     }
@@ -2158,7 +2158,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareWindowPartitionColumnCollateFunction(Native
             nativeSqlBuilder.Append(" RTRIM");
             break;
         default:
-            ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Unsupported COLLATE function.");
+            ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0662, "Unsupported COLLATE function.");
             return ECSqlStatus::InvalidECSql;
         }
 
@@ -2280,7 +2280,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareWindowFrameClauseExp(NativeSqlBuilder& nati
         }
     else
         {
-        ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Unsupported window frame clause expression.");
+        ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0661, "Unsupported window frame clause expression.");
         return ECSqlStatus::InvalidECSql;
         }
 
@@ -2312,7 +2312,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareWindowFrameUnits(NativeSqlBuilder& nativeSq
             nativeSqlBuilder.Append("GROUPS ");
             return ECSqlStatus::Success;
         default:
-            ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Unsupported window frame unit.");
+            ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0663, "Unsupported window frame unit.");
             return ECSqlStatus::InvalidECSql;
         }
     }
@@ -2350,7 +2350,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareWindowFrameStartExp(NativeSqlBuilder& nativ
             }
         default:
             {
-            ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Unsupported window frame start expression.");
+            ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0664, "Unsupported window frame start expression.");
             return ECSqlStatus::InvalidECSql;
             }
         }
@@ -2411,7 +2411,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareFirstWindowFrameBound(NativeSqlBuilder& nat
             }
         default:
             {
-            ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Unsupported first window frame bound expression.");
+            ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0665, "Unsupported first window frame bound expression.");
             return ECSqlStatus::InvalidECSql;
             }
         }
@@ -2452,7 +2452,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareSecondWindowFrameBound(NativeSqlBuilder& na
             }
         default:
             {
-            ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Unsupported first window frame bound expression.");
+            ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0666, "Unsupported first window frame bound expression.");
             return ECSqlStatus::InvalidECSql;
             }
         }
@@ -2479,7 +2479,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareWindowFrameExclusion(NativeSqlBuilder& nati
             nativeSqlBuilder.Append(" EXCLUDE CURRENT ROW");
             return ECSqlStatus::Success;
         default:
-            ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Unsupported first window frame exclusion expression.");
+            ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0667, "Unsupported first window frame exclusion expression.");
             return ECSqlStatus::InvalidECSql;
         }
     }

@@ -305,7 +305,6 @@ Utf8CP ExpHelper::ToSql(WindowFrameClauseExp::WindowFrameExclusionType exclusion
         {
         case WindowFrameClauseExp::WindowFrameExclusionType::ExcludeCurrentRow:
             return "EXCLUDE CURRENT ROW";
-            break;
         case WindowFrameClauseExp::WindowFrameExclusionType::ExcludeGroup:
             return "EXCLUDE GROUP";
         case WindowFrameClauseExp::WindowFrameExclusionType::ExcludeNoOthers:

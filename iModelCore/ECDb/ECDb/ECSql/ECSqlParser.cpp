@@ -3419,7 +3419,7 @@ BentleyStatus ECSqlParser::ParseWindowFunctionType(std::unique_ptr<ValueExp>& ex
             return ParseNthValueFunction(exp, parseNode);
         default:
             BeAssert(false && "Unsupported window function type");
-            Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Unsupported window function type");
+            Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0668, "Unsupported window function type");
             return ERROR;
         }
 
@@ -3466,7 +3466,7 @@ BentleyStatus ECSqlParser::ParseArgumentlessWindowFunction(std::unique_ptr<Value
         default:
             {
             BeAssert(false && "Unsupported window function");
-            Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Unsupported window function type");
+            Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0669, "Unsupported window function type");
             return ERROR;
             }
         }
@@ -3513,7 +3513,7 @@ BentleyStatus ECSqlParser::ParseLeadOrLagFunction(std::unique_ptr<ValueExp>& exp
     else
         {
         BeAssert(false && "Unsupported lead_or_lag_function type");
-        Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Unsupported lead_or_lag_function type");
+        Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0670, "Unsupported lead_or_lag_function type");
         return ERROR;
         }
     
@@ -3581,7 +3581,7 @@ BentleyStatus ECSqlParser::ParseFirstOrLastValueFunction(std::unique_ptr<ValueEx
     else
         {
         BeAssert(false && "Unsupported first_or_last_value_function");
-        Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Unsupported first_or_last_value_function");
+        Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0671, "Unsupported first_or_last_value_function");
         return ERROR;
         }
     
@@ -3726,7 +3726,7 @@ BentleyStatus ECSqlParser::ParseCollateClause(WindowPartitionColumnReferenceExp:
             return SUCCESS;
         default:
             BeAssert(false && "Unsupported collate function");
-            Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Unsupported collate function");
+            Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0672, "Unsupported collate function");
             return ERROR;
         }
     }
@@ -3797,7 +3797,7 @@ BentleyStatus ECSqlParser::ParseWindowFrameClause(std::unique_ptr<WindowFrameCla
     else
         {
         BeAssert(false && "Unsupported collate window frame clause rule");
-        Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Unsupported collate window frame clause rule");
+        Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0673, "Unsupported collate window frame clause rule");
         return ERROR;
         }
     }
@@ -3820,7 +3820,7 @@ BentleyStatus ECSqlParser::ParseWindowFrameUnit(WindowFrameClauseExp::WindowFram
             return SUCCESS;
         default:
             BeAssert(false && "Unsupported window frame unit");
-            Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Unsupported window frame unit");
+            Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0674, "Unsupported window frame unit");
             return ERROR;
         }
     }
@@ -3861,7 +3861,7 @@ BentleyStatus ECSqlParser::ParseWindowFrameStart(std::unique_ptr<WindowFrameStar
     else
         {
         BeAssert(false && "Unsupported window frame start rule");
-        Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Unsupported window frame start rule");
+        Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0675, "Unsupported window frame start rule");
         return ERROR;
         }
     }
@@ -4023,7 +4023,7 @@ BentleyStatus ECSqlParser::ParseWindowFrameExclusion(WindowFrameClauseExp::Windo
     if (firstTokenId != SQL_TOKEN_EXCLUDE)
         {
         BeAssert(false && "Expecting window frame exclusion to start with EXCLUDE");
-        Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Expecting window frame exclusion to start with EXCLUDE");
+        Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0676, "Expecting window frame exclusion to start with EXCLUDE");
         return ERROR;  
         }
 
