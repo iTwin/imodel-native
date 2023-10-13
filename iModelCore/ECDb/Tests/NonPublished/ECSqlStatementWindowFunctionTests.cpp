@@ -7,9 +7,15 @@
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
 struct ECSqlStatementWindowFunctionTestFixture : ECDbTestFixture
     {
     protected:
+        //---------------------------------------------------------------------------------------
+        // @bsimethod
+        //+---------------+---------------+---------------+---------------+---------------+------
         void SetupECDbAndInsertData(Utf8CP ECDbFileName)
             {
             ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb(ECDbFileName, SchemaItem(
@@ -34,6 +40,9 @@ struct ECSqlStatementWindowFunctionTestFixture : ECDbTestFixture
                 }
             }
 
+        //---------------------------------------------------------------------------------------
+        // @bsimethod
+        //+---------------+---------------+---------------+---------------+---------------+------
         void SetupECDbAndInsertDataForPartitionClause(Utf8CP ECDbFileName)
             {
             ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("WindowPartitionClause.ecdb", SchemaItem(
