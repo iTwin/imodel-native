@@ -695,7 +695,7 @@ ChangesetPropsPtr TxnManager::StartCreateChangeset(Utf8CP extension) {
     int64_t lastRebaseId = QueryLastRebaseId();
 
     DdlChanges ddlChanges;
-    ChangeGroup dataChangeGroup;
+    ChangeGroup dataChangeGroup(m_dgndb);
     for (TxnId currTxnId = startTxnId; currTxnId < endTxnId; currTxnId = QueryNextTxnId(currTxnId)) {
         auto txnType = GetTxnType(currTxnId);
         if (txnType == TxnType::EcSchema) // if we have EcSchema changes, set the flag on the change group

@@ -612,7 +612,24 @@ void Changes::Change::DumpCurrentValuesOfChangedColumns(Db const& db) const
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ChangeGroup::ChangeGroup() { sqlite3changegroup_new((sqlite3_changegroup**)&m_changegroup); }
-ChangeGroup::~ChangeGroup() { sqlite3changegroup_delete((sqlite3_changegroup*)m_changegroup); }
+
+/*---------------------------------------------------------------------------------**/ /**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void ChangeGroup::Finalize() {
+    if (m_changegroup == nullptr)
+        return;
+
+    sqlite3changegroup_delete((sqlite3_changegroup*)m_changegroup);
+    m_changegroup = nullptr;
+    }
+/*---------------------------------------------------------------------------------**/ /**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ChangeGroup::ChangeGroup(DbCR db, Utf8CP zDb) {
+    sqlite3changegroup_new((sqlite3_changegroup**)&m_changegroup);
+    sqlite3changegroup_schema((sqlite3_changegroup*)m_changegroup, (sqlite3*)db.GetSqlDb(), zDb);
+}
 
 /*---------------------------------------------------------------------------------**/ /**
 * @bsimethod
@@ -642,15 +659,23 @@ DbResult ChangeStream::FromChangeTrack(ChangeTracker& session, ChangeSet::SetTyp
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult ChangeStream::FromChangeGroup(ChangeGroupCR changeGroup) {
-    return (DbResult)sqlite3changegroup_output_strm((sqlite3_changegroup*)changeGroup.m_changegroup, AppendCallback, this);
+    auto changeGroupP = (sqlite3_changegroup*)changeGroup.m_changegroup;
+    if (changeGroupP == nullptr)
+        return BE_SQLITE_ERROR;
+
+    return (DbResult)sqlite3changegroup_output_strm(changeGroupP, AppendCallback, this);
 }
 
 /*---------------------------------------------------------------------------------**/ /**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult ChangeStream::AddToChangeGroup(ChangeGroup& changeGroup) {
+    auto changeGroupP = (sqlite3_changegroup*)changeGroup.m_changegroup;
+    if (changeGroupP == nullptr)
+        return BE_SQLITE_ERROR;
+
     auto reader = _GetReader();
-    return (DbResult)sqlite3changegroup_add_strm((sqlite3_changegroup*)changeGroup.m_changegroup, Changes::Reader::ReadCallback, (void*)reader.get());
+    return (DbResult)sqlite3changegroup_add_strm(changeGroupP, Changes::Reader::ReadCallback, (void*)reader.get());
 }
 
 /*---------------------------------------------------------------------------------**/ /**
