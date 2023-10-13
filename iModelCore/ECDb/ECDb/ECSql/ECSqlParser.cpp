@@ -5,7 +5,6 @@
 #include "ECDbPch.h"
 #include "Parser/SqlNode.h"
 #include "Parser/SqlParse.h"
-#include "ECSqlParser.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -3390,7 +3389,7 @@ BentleyStatus ECSqlParser::ParseWindowFunction(std::unique_ptr<ValueExp>& valueE
     else if (parseNode->getChild(3)->getNodeType() == SQLNodeType::SQL_NODE_NAME)
         {
         Utf8CP windowName = parseNode->getChild(3)->getTokenValue().c_str();
-        valueExp = std::make_unique<WindowFunctionExp>(std::move(functionCallExp), std::move(filterClauseExp), std::move(windowName));
+        valueExp = std::make_unique<WindowFunctionExp>(std::move(functionCallExp), std::move(filterClauseExp), windowName);
         return SUCCESS;
         }
 

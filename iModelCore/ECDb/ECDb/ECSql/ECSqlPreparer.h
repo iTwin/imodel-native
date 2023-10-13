@@ -6,7 +6,6 @@
 
 #include "ECSqlParser.h"
 #include "ECSqlPrepareContext.h"
-#include "WindowFunctionExp.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================

@@ -1342,13 +1342,15 @@ fct_spec:
             $$->append($2 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             $$->append($3 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
-    |   function_name '(' function_args_commalist ')'
+    |   function_name '(' opt_all_distinct ',' function_args_commalist ')'
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
             $$->append($2 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             $$->append($3);
-            $$->append($4 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
+            $$->append($4 = CREATE_NODE(",", SQL_NODE_PUNCTUATION));
+            $$->append($5);
+            $$->append($6 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
     ;
 

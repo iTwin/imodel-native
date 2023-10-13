@@ -368,7 +368,7 @@ struct WindowFunctionExp final : ValueExp
             WindowFunctionExp(std::move(windowFunctionCallExp), std::move(filterClauseExp))
             { m_WindowSpecificationIndex = AddChild(std::move(WindowSpecification)); }
 
-        WindowFunctionExp(std::unique_ptr<ValueExp> windowFunctionCallExp, std::unique_ptr<FilterClauseExp> filterClauseExp, Utf8String windowName) :
+        WindowFunctionExp(std::unique_ptr<ValueExp> windowFunctionCallExp, std::unique_ptr<FilterClauseExp> filterClauseExp, Utf8CP windowName) :
             WindowFunctionExp(std::move(windowFunctionCallExp), std::move(filterClauseExp))
             { m_windowName = windowName; }
         
