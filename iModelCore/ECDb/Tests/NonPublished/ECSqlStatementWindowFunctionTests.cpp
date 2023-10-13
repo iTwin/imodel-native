@@ -16,9 +16,9 @@ struct ECSqlStatementWindowFunctionTestFixture : ECDbTestFixture
         //---------------------------------------------------------------------------------------
         // @bsimethod
         //+---------------+---------------+---------------+---------------+---------------+------
-        void SetupECDbAndInsertData(Utf8CP ecdbbFileName)
+        void SetupECDbAndInsertData(Utf8CP ecdbFileName)
             {
-            ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb(ecdbbFileName, SchemaItem(
+            ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb(ecdbFileName, SchemaItem(
                 R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                     <ECEntityClass typeName="SomeEntity" >
                         <ECProperty propertyName="Primary" typeName="string" />
@@ -43,9 +43,9 @@ struct ECSqlStatementWindowFunctionTestFixture : ECDbTestFixture
         //---------------------------------------------------------------------------------------
         // @bsimethod
         //+---------------+---------------+---------------+---------------+---------------+------
-        void SetupECDbAndInsertDataForPartitionClause(Utf8CP ecdbbFileName)
+        void SetupECDbAndInsertDataForPartitionClause(Utf8CP ecdbFileName)
             {
-            ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb(ecdbbFileName, SchemaItem(
+            ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb(ecdbFileName, SchemaItem(
                 R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                     <ECEntityClass typeName="SomeEntity" >
                         <ECProperty propertyName="Primary" typeName="string" />
