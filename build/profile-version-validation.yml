@@ -25,6 +25,7 @@ resources:
   repositories:
     - repository: profileversion-tests
       type: github
+      ref: 'io-fix-script'
       endpoint: imodel-native
       name: iTwin/profileversion-tests
 
