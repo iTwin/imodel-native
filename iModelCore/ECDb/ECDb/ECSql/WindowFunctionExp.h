@@ -133,7 +133,7 @@ struct SecondWindowFrameBoundExp final : Exp
     private:
         void _ToECSql(ECSqlRenderContext&) const override;
         void _ToJson(BeJsValue, JsonFormat const&) const override;
-        Utf8String _ToString() const { return "SecondWindowFrameBoundExp"; }
+        Utf8String _ToString() const override { return "SecondWindowFrameBoundExp"; }
 
         WindowFrameBoundType m_windowFrameBoundType;
         size_t m_valueExpIndex = UNSET_CHILDINDEX;
@@ -289,7 +289,7 @@ struct WindowSpecification final : Exp
     private:
         void _ToECSql(ECSqlRenderContext& ctx) const override;
         void _ToJson(BeJsValue, JsonFormat const&) const override;
-        Utf8String _ToString() const { return "WindowSpecification"; }
+        Utf8String _ToString() const override { return "WindowSpecification"; }
 
         size_t m_partitionByClauseIndex = UNSET_CHILDINDEX;
         size_t m_orderByClauseIndex = UNSET_CHILDINDEX;
