@@ -6,7 +6,7 @@
 #include "BeSQLite/ChangeSet.h"
 #include <map>
 #include <vector>
-
+#include <functional>
 //---------------------------------------------------------------------------------------
 // Creating a new Db for the test
 // @bsimethod
@@ -1241,9 +1241,130 @@ struct MyChangeTracker : ChangeTracker
 
 struct MyChangeSet : ChangeSet
     {
-    virtual ConflictResolution _OnConflict(ConflictCause clause, Changes::Change iter) { BeAssert(false); return ConflictResolution::Abort; }
+    virtual ConflictResolution _OnConflict(ConflictCause cause, Changes::Change iter) {
+        Utf8CP tableName = nullptr;
+        int nCols, indirect;
+        DbOpcode opcode;
+        DbResult result = iter.GetOperation(&tableName, &nCols, &opcode, &indirect);
+        BeAssert(result == BE_SQLITE_OK);
+        UNUSED_VARIABLE(result);
+        if (cause == ChangeSet::ConflictCause::NotFound) {
+            /*
+            * Note: If ConflictCause = NotFound, the primary key was not found, and returning ConflictResolution::Replace is
+            * not an option at all - this will cause a BE_SQLITE_MISUSE error.
+            */
+            if (opcode == DbOpcode::Delete) {
+                // Caused by CASCADE DELETE on a foreign key, and is usually not a problem.
+                return ChangeSet::ConflictResolution::Skip;
+            }
+        }
+        BeAssert(false); return ConflictResolution::Abort;
+        }
+    };
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(BeSQLiteDbTests, CapturePropagatedChanges)
+    {
+    SetupDb(L"_blank.db");
+    Db b1, b2;
+    ASSERT_EQ(BE_SQLITE_OK, b1.CreateNewDb(BEDB_MemoryDb));
+    ASSERT_EQ(BE_SQLITE_OK, b2.CreateNewDb(BEDB_MemoryDb));
+
+    auto executeSql = [](Utf8CP sql, bvector<Db*> dbs) {
+        std::for_each(dbs.begin(), dbs.end(), [&](Db* db) {
+            EXPECT_EQ(BE_SQLITE_OK, db->ExecuteSql(sql));
+        });
     };
 
+    executeSql("CREATE TABLE Parent (ID INTEGER PRIMARY KEY, T INTEGER)", {&b1, &b2});
+    executeSql("CREATE TABLE Child  (ID INTEGER PRIMARY KEY, ParentId REFERENCES Parent(Id) ON DELETE CASCADE, P REAL)", {&b1, &b2});
+
+    auto captureChangeset = [](Db& db, std::function<void()> work) -> std::unique_ptr<MyChangeSet> {
+        MyChangeTracker changeTracker(db);
+        changeTracker.EnableTracking(true);
+        work();
+        auto changeset = std::make_unique<MyChangeSet>();
+        if(!changeTracker.HasDataChanges())
+            return nullptr;
+
+        EXPECT_EQ(BE_SQLITE_OK, changeset->FromChangeTrack(changeTracker));
+        changeTracker.EndTracking();
+        return changeset;
+    };
+    auto applyChangeset = [&](MyChangeSet& changeset, Db& db) -> std::unique_ptr<MyChangeSet> {
+        auto cs = captureChangeset(db, [&](){
+            EXPECT_EQ(BE_SQLITE_OK, changeset.ApplyChanges(db));
+        });
+        if (cs == nullptr) {
+            return cs;
+        }
+
+        //
+        EXPECT_EQ(BE_SQLITE_OK, cs->Invert());
+        EXPECT_EQ(BE_SQLITE_OK, cs->ConcatenateWith(changeset));
+        if (cs->IsValid()){
+            // if its not empty
+            EXPECT_EQ(BE_SQLITE_OK, cs->Invert());
+            return cs;
+        }
+        return nullptr;
+    };
+    ConsoleLogger::GetLogger().SetSeverity("Changeset", NativeLogging::LOG_TRACE);
+    auto cs1 = captureChangeset(b1, [&]() {
+        executeSql("INSERT INTO Parent VALUES(100, 1)", {&b1});
+        executeSql("INSERT INTO Child VALUES(200, 100, 1)", {&b1});
+        executeSql("INSERT INTO Child VALUES(201, 100, 2)", {&b1});
+    });
+
+    cs1->Dump("cs1", b1);
+    /*
+    INFO     Changeset            Table: Parent
+    INFO     Changeset            key=100,INSERT(direct),T=1
+    INFO     Changeset            Table: Child
+    INFO     Changeset            key=201,INSERT(direct),ParentId=100,P=2.00000000000000000
+    INFO     Changeset            key=200,INSERT(direct),ParentId=100,P=1.00000000000000000
+    */
+    auto cs2 = applyChangeset(*cs1, b2);
+    ASSERT_EQ(cs2, nullptr) << "no changes were propagated";
+
+    auto cs3 = captureChangeset(b2, [&]() {
+        executeSql("INSERT INTO Child VALUES(202, 100, 3)", {&b2});
+        executeSql("INSERT INTO Child VALUES(203, 100, 4)", {&b2});
+    });
+
+    cs3->Dump("cs3", b2);
+    /*
+    INFO     Changeset            Table: Child
+    INFO     Changeset            key=203,INSERT(direct),ParentId=100,P=4.00000000000000000
+    INFO     Changeset            key=202,INSERT(direct),ParentId=100,P=3.0000000000000000
+    */
+    auto cs4 = captureChangeset(b1, [&]() {
+        executeSql("DELETE FROM Parent WHERE ID = 100", {&b1});
+    });
+
+    cs4->Dump("cs4", b1);
+    /*
+    INFO     Changeset            Table: Parent
+    INFO     Changeset            key=100,DELETE(direct),T=1
+    INFO     Changeset            Table: Child
+    INFO     Changeset            key=201,DELETE(indirect),ParentId=100,P=2.00000000000000000
+    INFO     Changeset            key=200,DELETE(indirect),ParentId=100,P=1.00000000000000000
+    */
+    auto cs5 = applyChangeset(*cs4, b2);
+
+    cs5->Dump("cs5", b2);
+    /*
+    INFO     Changeset            Table: Child
+    INFO     Changeset            key=203,DELETE(indirect),ParentId=100,P=4.00000000000000000
+    INFO     Changeset            key=202,DELETE(indirect),ParentId=100,P=3.00000000000000000
+    */
+   
+    b1.SaveChanges();
+    b2.SaveChanges();
+    b1.CloseDb();
+    b2.CloseDb();
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
