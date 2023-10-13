@@ -154,7 +154,9 @@ public:
     bool ContainsEcSchemaChanges() const { return m_containsEcSchemaChanges; }
     void SetContainsEcSchemaChanges() { m_containsEcSchemaChanges = true; }
     BE_SQLITE_EXPORT ChangeGroup();
-    BE_SQLITE_EXPORT ~ChangeGroup();
+    BE_SQLITE_EXPORT ChangeGroup(DbCR, Utf8CP zDb = "main");
+    BE_SQLITE_EXPORT void Finalize();
+    ~ChangeGroup() { Finalize(); }
 };
 
 //=======================================================================================
