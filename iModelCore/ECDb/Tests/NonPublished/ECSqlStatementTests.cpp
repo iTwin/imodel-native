@@ -11466,5 +11466,4 @@ TEST_F(ECSqlStatementTestFixture, SelectAnySomeAll)
         ASSERT_EQ(expected, GetHelper().ExecuteSelectECSql(ecsql));
         }
     }
-
 END_ECDBUNITTESTS_NAMESPACE
