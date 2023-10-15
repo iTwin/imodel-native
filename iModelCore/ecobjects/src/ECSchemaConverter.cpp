@@ -860,9 +860,15 @@ ECObjectsStatus StandardValuesConverter::ConvertToEnum(ECClassP rootClass, ECCla
         PrimitiveArrayECPropertyP primitiveArray = prop->GetAsPrimitiveArrayPropertyP();
 
         ECEnumerationCP primitiveEnumeration = (nullptr != primitive) ? primitive->GetEnumeration() : primitiveArray->GetEnumeration();
-
         if (nullptr == primitiveEnumeration)
+            {
+            if (!ECSchema::IsSchemaReferenced(currentClass->GetSchema(), rootClass->GetSchema()) && ECObjectsStatus::Success != currentClass->GetSchemaR().AddReferencedSchema(rootClass->GetSchemaR()))
+                {
+                LOG.errorv("Unable to add the %s schema as a reference to %s.", rootClass->GetSchema().GetFullSchemaName().c_str(), currentClass->GetSchema().GetName().c_str());
+                return ECObjectsStatus::SchemaNotFound;
+                }
             status = (nullptr != primitive) ? primitive->SetType(*enumeration) : primitiveArray->SetType(*enumeration);
+            }
         else if (primitiveEnumeration != enumeration)
             {
             LOG.errorv("Failed to convert to enumeration because the derived property %s.%s already has an ECEnumeration '%s' as its type but it is not the same as the type '%s' from the base property in class %s.%s",

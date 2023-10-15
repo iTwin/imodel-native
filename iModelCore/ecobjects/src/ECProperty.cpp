@@ -1397,15 +1397,10 @@ ECObjectsStatus PrimitiveECProperty::SetType (PrimitiveType primitiveType)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus PrimitiveECProperty::SetType (ECEnumerationCR enumerationType)
     {
-    ECSchemaCR enumSchema = enumerationType.GetSchema();
-    ECSchemaCR currentSchema = this->GetClass().GetSchema();
-    if (&enumSchema != &currentSchema)
+    if (&(enumerationType.GetSchema()) != &(this->GetClass().GetSchema()))
         {
-        if (!ECSchema::IsSchemaReferenced(currentSchema, enumSchema) && ECObjectsStatus::Success != const_cast<ECSchemaR>(currentSchema).AddReferencedSchema(const_cast<ECSchemaR>(enumSchema)))
-            {
-            LOG.errorv("Unable to add the %s schema as a reference to %s.", enumSchema.GetFullSchemaName().c_str(), currentSchema.GetName().c_str());
+        if (!ECSchema::IsSchemaReferenced(this->GetClass().GetSchema(), enumerationType.GetSchema()))
             return ECObjectsStatus::SchemaNotFound;
-            }
         }
 
     auto primitiveType = enumerationType.GetType();
