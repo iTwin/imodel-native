@@ -862,7 +862,9 @@ ECObjectsStatus StandardValuesConverter::ConvertToEnum(ECClassP rootClass, ECCla
         ECEnumerationCP primitiveEnumeration = (nullptr != primitive) ? primitive->GetEnumeration() : primitiveArray->GetEnumeration();
         if (nullptr == primitiveEnumeration)
             {
-            if (!ECSchema::IsSchemaReferenced(currentClass->GetSchema(), rootClass->GetSchema()) && ECObjectsStatus::Success != currentClass->GetSchemaR().AddReferencedSchema(rootClass->GetSchemaR()))
+            if (&(rootClass->GetSchema()) != &(currentClass->GetSchema()) &&
+                !ECSchema::IsSchemaReferenced(currentClass->GetSchema(), rootClass->GetSchema()) &&
+                ECObjectsStatus::Success != currentClass->GetSchemaR().AddReferencedSchema(rootClass->GetSchemaR()))
                 {
                 LOG.errorv("Unable to add the %s schema as a reference to %s.", rootClass->GetSchema().GetFullSchemaName().c_str(), currentClass->GetSchema().GetName().c_str());
                 return ECObjectsStatus::SchemaNotFound;

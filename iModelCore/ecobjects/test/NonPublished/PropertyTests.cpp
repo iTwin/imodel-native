@@ -373,8 +373,8 @@ TEST_F(PropertyTest, SetEnumerationFromNonReferencedSchema)
 
     entityClass->CreatePrimitiveProperty(prop, "TestProp", PRIMITIVETYPE_String);
     entityClass->CreatePrimitiveArrayProperty(arrProp, "TestArrProp");
-    EXPECT_EQ(ECObjectsStatus::Success, prop->SetType(*enumeration));
-    EXPECT_EQ(ECObjectsStatus::Success, arrProp->SetType(*enumeration));
+    EXPECT_EQ(ECObjectsStatus::SchemaNotFound, prop->SetType(*enumeration));
+    EXPECT_EQ(ECObjectsStatus::SchemaNotFound, arrProp->SetType(*enumeration));
     }
 
 //---------------------------------------------------------------------------------------
