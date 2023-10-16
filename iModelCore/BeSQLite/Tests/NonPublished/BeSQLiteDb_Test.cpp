@@ -1247,6 +1247,46 @@ struct MyChangeSet : ChangeSet
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+TEST_F(BeSQLiteDbTests, SchemaChangeBetweenDataChangesets)
+    {
+    SetupDb(L"changeset.db");
+    ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("CREATE TABLE TestTable (ID INTEGER PRIMARY KEY, T REAL)"));
+
+    MyChangeTracker changeTracker(m_db);
+
+    changeTracker.EnableTracking(true);
+    ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("INSERT INTO TestTable (T) values (1)"));
+
+    MyChangeSet cs1;
+    ASSERT_EQ(BE_SQLITE_OK, cs1.FromChangeTrack(changeTracker));
+    changeTracker.EndTracking();
+
+    ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("ALTER TABLE TestTable ADD COLUMN P REAL"));
+
+    changeTracker.EnableTracking(true);
+    ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("INSERT INTO TestTable (T, P) values (1, 1)"));
+
+    MyChangeSet cs2;
+    ASSERT_EQ(BE_SQLITE_OK, cs2.FromChangeTrack(changeTracker));
+    changeTracker.EndTracking();
+
+    ChangeGroup group;
+    ASSERT_EQ(BE_SQLITE_OK, cs1.AddToChangeGroup(group));
+    ASSERT_EQ(BE_SQLITE_SCHEMA, cs2.AddToChangeGroup(group));
+
+
+    ChangeGroup groupS(m_db);
+    ASSERT_EQ(BE_SQLITE_OK, cs1.AddToChangeGroup(groupS));
+    ASSERT_EQ(BE_SQLITE_OK, cs2.AddToChangeGroup(groupS));
+    groupS.Finalize();
+
+    m_db.SaveChanges();
+    m_db.CloseDb();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 TEST_F(BeSQLiteDbTests, RealUpdateTest)
     {
     SetupDb(L"RealTest.db");
@@ -1510,7 +1550,7 @@ TEST_F(BeSQLiteDbTests, CreateChangeSetWithSchemaAndDataChanges)
     // Create change set - fails!
     changeSet.Clear();
     result = changeSet.FromChangeTrack(changeTracker);
-    ASSERT_TRUE(result == BE_SQLITE_SCHEMA); // Failure!
+    ASSERT_TRUE(result == BE_SQLITE_OK); // This does not fail any more
 
     // Add row to TestTable 1
     result = m_db.ExecuteSql("INSERT INTO TestTable1 (Column1,Column2) values (3.3,4.4)");
@@ -1519,7 +1559,7 @@ TEST_F(BeSQLiteDbTests, CreateChangeSetWithSchemaAndDataChanges)
     // Create change set - fails!
     changeSet.Clear();
     result = changeSet.FromChangeTrack(changeTracker);
-    ASSERT_TRUE(result == BE_SQLITE_SCHEMA); // Failure!
+    ASSERT_TRUE(result == BE_SQLITE_OK); // This does not fail any more
 
     changeTracker.EndTracking();
     changeSet.Clear();

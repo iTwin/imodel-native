@@ -505,15 +505,15 @@ void ContentDescriptor::UpdateSelectClasses()
             if (field->IsPropertiesField())
                 {
                 fieldMatchesClass = ContainerHelpers::Contains(field->AsPropertiesField()->GetProperties(),
-                    [&selectClass](auto const& prop){return prop.GetPropertyClass().Is(&selectClass.GetSelectClass().GetClass());});
+                    [&selectClass](auto const& prop){return selectClass.GetSelectClass().GetClass().Is(&prop.GetPropertyClass());});
                 }
             else if (field->IsNestedContentField() && field->AsNestedContentField()->AsCompositeContentField())
                 {
-                fieldMatchesClass = field->AsNestedContentField()->AsCompositeContentField()->GetContentClass().Is(&selectClass.GetSelectClass().GetClass());
+                fieldMatchesClass = selectClass.GetSelectClass().GetClass().Is(&field->AsNestedContentField()->AsCompositeContentField()->GetContentClass());
                 }
             else if (field->IsNestedContentField() && field->AsNestedContentField()->AsRelatedContentField())
                 {
-                fieldMatchesClass = field->AsNestedContentField()->AsRelatedContentField()->GetPathFromSelectToContentClass().front().GetSourceClass()->Is(&selectClass.GetSelectClass().GetClass());
+                fieldMatchesClass = selectClass.GetSelectClass().GetClass().Is(field->AsNestedContentField()->AsRelatedContentField()->GetPathFromSelectToContentClass().front().GetSourceClass());
                 }
             if (fieldMatchesClass)
                 {
