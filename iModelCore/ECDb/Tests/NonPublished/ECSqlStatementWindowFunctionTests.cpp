@@ -13,70 +13,42 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 struct ECSqlStatementWindowFunctionTestFixture : ECDbTestFixture
     {
     protected:
-        //---------------------------------------------------------------------------------------
-        // @bsimethod
-        //+---------------+---------------+---------------+---------------+---------------+------
-        void SetupECDbAndInsertData(Utf8CP ecdbFileName)
-            {
-            ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb(ecdbFileName, SchemaItem(
-                R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-                    <ECEntityClass typeName="SomeEntity" >
-                        <ECProperty propertyName="Primary" typeName="string" />
-                        <ECProperty propertyName="Secondary" typeName="string" />
-                        <ECProperty propertyName="SomeValue" typeName="int" />
-                    </ECEntityClass>
-                </ECSchema>)xml"
-            )));
-
-            if ("Insert data")
-                {
-                ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.SomeEntity(Primary,Secondary,SomeValue) VALUES ('A', 'one', 1)"));
-                ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.SomeEntity(Primary,Secondary,SomeValue) VALUES ('B', 'two', 2)"));
-                ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.SomeEntity(Primary,Secondary,SomeValue) VALUES ('C', 'three', 3)"));
-                ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.SomeEntity(Primary,Secondary,SomeValue) VALUES ('D', 'one', 4)"));
-                ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.SomeEntity(Primary,Secondary,SomeValue) VALUES ('E', 'two', 5)"));
-                ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.SomeEntity(Primary,Secondary,SomeValue) VALUES ('F', 'three', 6)"));
-                ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.SomeEntity(Primary,Secondary,SomeValue) VALUES ('G', 'one', 7)"));
-                }
-            }
-
-        //---------------------------------------------------------------------------------------
-        // @bsimethod
-        //+---------------+---------------+---------------+---------------+---------------+------
-        void SetupECDbAndInsertDataForPartitionClause(Utf8CP ecdbFileName)
-            {
-            ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb(ecdbFileName, SchemaItem(
-                R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-                    <ECEntityClass typeName="SomeEntity" >
-                        <ECProperty propertyName="Primary" typeName="string" />
-                        <ECProperty propertyName="Secondary" typeName="string" />
-                        <ECProperty propertyName="SomeValue" typeName="int" />
-                    </ECEntityClass>
-                </ECSchema>)xml"
-            )));
-
-            if ("Insert data")
-                {
-                ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.SomeEntity(Primary,Secondary,SomeValue) VALUES ('A', 'one', 1)"));
-                ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.SomeEntity(Primary,Secondary,SomeValue) VALUES ('B', 'two', 2)"));
-                ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.SomeEntity(Primary,Secondary,SomeValue) VALUES ('C', 'three', 3)"));
-                ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.SomeEntity(Primary,Secondary,SomeValue) VALUES ('D', 'one ', 4)"));
-                ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.SomeEntity(Primary,Secondary,SomeValue) VALUES ('E', 'two', 5)"));
-                ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.SomeEntity(Primary,Secondary,SomeValue) VALUES ('F', 'three', 6)"));
-                ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.SomeEntity(Primary,Secondary,SomeValue) VALUES ('G', 'ONE', 1)"));
-                ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.SomeEntity(Primary,Secondary,SomeValue) VALUES ('H', 'two', 2)"));
-                ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.SomeEntity(Primary,Secondary,SomeValue) VALUES ('I', 'three', 3)"));
-                }
-            }
+        void SetUp() override;
     };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECSqlStatementWindowFunctionTestFixture::SetUp()
+    {
+    ECDbTestFixture::SetUp();
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("WindowFunctionTests.ecdb", SchemaItem(
+        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECEntityClass typeName="SomeEntity" >
+                <ECProperty propertyName="Primary" typeName="string" />
+                <ECProperty propertyName="Secondary" typeName="string" />
+                <ECProperty propertyName="SomeValue" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml"
+    )));
+
+    if ("Insert data")
+        {
+        ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.SomeEntity(Primary,Secondary,SomeValue) VALUES ('A', 'one', 1)"));
+        ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.SomeEntity(Primary,Secondary,SomeValue) VALUES ('B', 'two', 2)"));
+        ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.SomeEntity(Primary,Secondary,SomeValue) VALUES ('C', 'three', 3)"));
+        ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.SomeEntity(Primary,Secondary,SomeValue) VALUES ('D', 'one', 4)"));
+        ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.SomeEntity(Primary,Secondary,SomeValue) VALUES ('E', 'two', 5)"));
+        ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.SomeEntity(Primary,Secondary,SomeValue) VALUES ('F', 'three', 6)"));
+        ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.SomeEntity(Primary,Secondary,SomeValue) VALUES ('G', 'one', 7)"));
+        }
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementWindowFunctionTestFixture, RowNumber)
     {
-    SetupECDbAndInsertData("RowNumber.ecdb");
-
     Utf8CP ecsql = "SELECT Primary, Secondary, row_number() over(PARTITION BY Secondary ORDER BY Primary) from ts.SomeEntity";
     auto expected = JsonValue(R"json([
             {"Primary":"A","ROW_NUMBER() OVER(PARTITION BY [Secondary] ORDER BY [Primary])":1,"Secondary":"one"},
@@ -95,8 +67,6 @@ TEST_F(ECSqlStatementWindowFunctionTestFixture, RowNumber)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementWindowFunctionTestFixture, Rank)
     {
-    SetupECDbAndInsertData("Rank.ecdb");
-
     Utf8CP ecsql = "SELECT Secondary, rank() over(ORDER BY Secondary) from ts.SomeEntity";
     auto expected = JsonValue(R"json([
             {"RANK() OVER(ORDER BY [Secondary])":1,"Secondary":"one"},
@@ -115,8 +85,6 @@ TEST_F(ECSqlStatementWindowFunctionTestFixture, Rank)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementWindowFunctionTestFixture, DenseRank)
     {
-    SetupECDbAndInsertData("DenseRank.ecdb");
-
     Utf8CP ecsql = "SELECT Secondary, dense_rank() over(ORDER BY Secondary) from ts.SomeEntity";
     auto expected = JsonValue(R"json([
             {"DENSE_RANK() OVER(ORDER BY [Secondary])":1,"Secondary":"one"},
@@ -135,8 +103,6 @@ TEST_F(ECSqlStatementWindowFunctionTestFixture, DenseRank)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementWindowFunctionTestFixture, PercentRank)
     {
-    SetupECDbAndInsertData("PercentRank.ecdb");
-
     Utf8CP ecsql = "SELECT Secondary, percent_rank() over(ORDER BY Secondary) from ts.SomeEntity";
     auto expected = JsonValue(R"json([
             {"PERCENT_RANK() OVER(ORDER BY [Secondary])":0.0,"Secondary":"one"},
@@ -155,8 +121,6 @@ TEST_F(ECSqlStatementWindowFunctionTestFixture, PercentRank)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementWindowFunctionTestFixture, CumeDist)
     {
-    SetupECDbAndInsertData("CumeDist.ecdb");
-
     Utf8CP ecsql = "SELECT Secondary, cume_dist() over(ORDER BY Secondary) from ts.SomeEntity";
     auto expected = JsonValue(R"json([
             {"CUME_DIST() OVER(ORDER BY [Secondary])":0.42857142857142855,"Secondary":"one"},
@@ -175,8 +139,6 @@ TEST_F(ECSqlStatementWindowFunctionTestFixture, CumeDist)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementWindowFunctionTestFixture, Ntile)
     {
-    SetupECDbAndInsertData("Ntile.ecdb");
-
     Utf8CP ecsql = "SELECT Primary, Secondary, ntile(3) over(ORDER BY Primary) from ts.SomeEntity";
     auto expected = JsonValue(R"json([
             {"Primary":"A","Secondary":"one","ntile(3) OVER(ORDER BY [Primary])":1},
@@ -195,8 +157,6 @@ TEST_F(ECSqlStatementWindowFunctionTestFixture, Ntile)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementWindowFunctionTestFixture, Lag)
     {
-    SetupECDbAndInsertData("Lag.ecdb");
-
     Utf8CP ecsql = "SELECT Primary, Secondary, lag(Primary, 1, 321) over(PARTITION BY Secondary ORDER BY Primary) from ts.SomeEntity";
     auto expected = JsonValue(R"json([
             {"LAG([Primary],1,321) OVER(PARTITION BY [Secondary] ORDER BY [Primary])":"321","Primary":"A","Secondary":"one"},
@@ -215,8 +175,6 @@ TEST_F(ECSqlStatementWindowFunctionTestFixture, Lag)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementWindowFunctionTestFixture, Lead)
     {
-    SetupECDbAndInsertData("Lead.ecdb");
-
     Utf8CP ecsql = "SELECT Primary, Secondary, lead(123, 1, 321) over(PARTITION BY Secondary ORDER BY Primary) from ts.SomeEntity";
     auto expected = JsonValue(R"json([
             {"LEAD(123,1,321) OVER(PARTITION BY [Secondary] ORDER BY [Primary])":123,"Primary":"A","Secondary":"one"},
@@ -235,8 +193,6 @@ TEST_F(ECSqlStatementWindowFunctionTestFixture, Lead)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementWindowFunctionTestFixture, FirstValue)
     {
-    SetupECDbAndInsertData("FirstValue.ecdb");
-
     Utf8CP ecsql = "SELECT Primary, Secondary, first_value(Primary) over(PARTITION BY Secondary ORDER BY Primary) from ts.SomeEntity";
     auto expected = JsonValue(R"json([
             {"FIRST_VALUE([Primary]) OVER(PARTITION BY [Secondary] ORDER BY [Primary])":"A","Primary":"A","Secondary":"one"},
@@ -255,8 +211,6 @@ TEST_F(ECSqlStatementWindowFunctionTestFixture, FirstValue)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementWindowFunctionTestFixture, LastValue)
     {
-    SetupECDbAndInsertData("LastValue.ecdb");
-
     Utf8CP ecsql = "SELECT Primary, Secondary, last_value(Primary) over(PARTITION BY Secondary ORDER BY Primary) from ts.SomeEntity";
     auto expected = JsonValue(R"json([
             {"LAST_VALUE([Primary]) OVER(PARTITION BY [Secondary] ORDER BY [Primary])":"A","Primary":"A","Secondary":"one"},
@@ -275,8 +229,6 @@ TEST_F(ECSqlStatementWindowFunctionTestFixture, LastValue)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementWindowFunctionTestFixture, NthValue)
     {
-    SetupECDbAndInsertData("NthValue.ecdb");
-
     Utf8CP ecsql = "SELECT Primary, Secondary, nth_Value(Primary, 1+1) over(PARTITION BY Secondary ORDER BY Primary) from ts.SomeEntity";
     auto expected = JsonValue(R"json([
             {"Primary":"A","Secondary":"one"},
@@ -295,8 +247,6 @@ TEST_F(ECSqlStatementWindowFunctionTestFixture, NthValue)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementWindowFunctionTestFixture, AggregateFunction)
     {
-    SetupECDbAndInsertData("AggregateFunction.ecdb");
-
     Utf8CP ecsql = "SELECT Primary, Secondary, SomeValue, MAX(SomeValue) over(PARTITION BY Secondary) from ts.SomeEntity";
     auto expected = JsonValue(R"json([
             {"MAX([SomeValue]) OVER(PARTITION BY [Secondary])":7,"Primary":"A","Secondary":"one","SomeValue":1},
@@ -315,8 +265,6 @@ TEST_F(ECSqlStatementWindowFunctionTestFixture, AggregateFunction)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementWindowFunctionTestFixture, AggregateFunctionWithFilter)
     {
-    SetupECDbAndInsertData("AggregateFunctionWithFilter.ecdb");
-
     Utf8CP ecsql = "SELECT Primary, Secondary, SomeValue, MAX(SomeValue) FILTER (WHERE Primary <> 'G' AND Primary <> 'F') over(PARTITION BY Secondary) from ts.SomeEntity";
     auto expected = JsonValue(R"json([
             {"MAX([SomeValue]) FILTER(WHERE [Primary] <> 'G' AND [Primary] <> 'F') OVER(PARTITION BY [Secondary])":4,"Primary":"A","Secondary":"one","SomeValue":1},
@@ -335,8 +283,6 @@ TEST_F(ECSqlStatementWindowFunctionTestFixture, AggregateFunctionWithFilter)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementWindowFunctionTestFixture, RowsWithFrameStart)
     {
-    SetupECDbAndInsertData("RowsWithFrameStart.ecdb");
-
     Utf8CP ecsql = "SELECT Primary, first_value(Primary) over(ORDER BY Primary ROWS CURRENT ROW) from ts.SomeEntity";
     auto expected = JsonValue(R"json([
             {"FIRST_VALUE([Primary]) OVER(ORDER BY [Primary] ROWS CURRENT ROW)":"A","Primary":"A"},
@@ -355,8 +301,6 @@ TEST_F(ECSqlStatementWindowFunctionTestFixture, RowsWithFrameStart)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementWindowFunctionTestFixture, RowsWithFrameBetween)
     {
-    SetupECDbAndInsertData("RowsWithFrameBetween.ecdb");
-
     Utf8CP ecsql = "SELECT Primary, last_value(Primary) over(ORDER BY Primary ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) from ts.SomeEntity";
     auto expected = JsonValue(R"json([
             {"LAST_VALUE([Primary]) OVER(ORDER BY [Primary] ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)":"A","Primary":"A"},
@@ -375,8 +319,6 @@ TEST_F(ECSqlStatementWindowFunctionTestFixture, RowsWithFrameBetween)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementWindowFunctionTestFixture, GroupsWithFrameStart)
     {
-    SetupECDbAndInsertData("GroupsWithFrameStart.ecdb");
-
     Utf8CP ecsql = "SELECT Secondary, last_value(Secondary) over(ORDER BY Secondary GROUPS UNBOUNDED PRECEDING) from ts.SomeEntity";
     auto expected = JsonValue(R"json([
             {"LAST_VALUE([Secondary]) OVER(ORDER BY [Secondary] GROUPS UNBOUNDED PRECEDING)":"one","Secondary":"one"},
@@ -395,8 +337,6 @@ TEST_F(ECSqlStatementWindowFunctionTestFixture, GroupsWithFrameStart)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementWindowFunctionTestFixture, GroupsWithFrameBetween)
     {
-    SetupECDbAndInsertData("GroupsWithFrameBetween.ecdb");
-
     Utf8CP ecsql = "SELECT Secondary, last_value(Secondary) over(ORDER BY Secondary GROUPS BETWEEN 2 + 2 PRECEDING AND 2 + 3 FOLLOWING) from ts.SomeEntity";
     auto expected = JsonValue(R"json([
             {"LAST_VALUE([Secondary]) OVER(ORDER BY [Secondary] GROUPS BETWEEN 2 + 2 PRECEDING AND 2 + 3 FOLLOWING)":"two","Secondary":"one"},
@@ -415,8 +355,6 @@ TEST_F(ECSqlStatementWindowFunctionTestFixture, GroupsWithFrameBetween)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementWindowFunctionTestFixture, RangeWithFrameStart)
     {
-    SetupECDbAndInsertData("RangeWithFrameStart.ecdb");
-
     Utf8CP ecsql = "SELECT Secondary, first_value(Secondary) over(ORDER BY Secondary RANGE 0 + 1 PRECEDING) from ts.SomeEntity";
     auto expected = JsonValue(R"json([
             {"FIRST_VALUE([Secondary]) OVER(ORDER BY [Secondary] RANGE 0 + 1 PRECEDING)":"one","Secondary":"one"},
@@ -435,8 +373,6 @@ TEST_F(ECSqlStatementWindowFunctionTestFixture, RangeWithFrameStart)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementWindowFunctionTestFixture, RangeWithFrameBetween)
     {
-    SetupECDbAndInsertData("RangeWithFrameBetween.ecdb");
-
     Utf8CP ecsql = "SELECT Secondary, first_value(Secondary) over(ORDER BY Secondary RANGE BETWEEN 0 + 1 PRECEDING AND CURRENT ROW) from ts.SomeEntity";
     auto expected = JsonValue(R"json([
             {"FIRST_VALUE([Secondary]) OVER(ORDER BY [Secondary] RANGE BETWEEN 0 + 1 PRECEDING AND CURRENT ROW)":"one","Secondary":"one"},
@@ -455,8 +391,6 @@ TEST_F(ECSqlStatementWindowFunctionTestFixture, RangeWithFrameBetween)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementWindowFunctionTestFixture, ExcludeNoOthers)
     {
-    SetupECDbAndInsertData("ExcludeNoOthers.ecdb");
-
     Utf8CP ecsql = "SELECT Primary, first_value(Primary) over(ORDER BY Primary ROWS BETWEEN 2 PRECEDING AND UNBOUNDED FOLLOWING EXCLUDE NO OTHERS) from ts.SomeEntity";
     auto expected = JsonValue(R"json([
             {"FIRST_VALUE([Primary]) OVER(ORDER BY [Primary] ROWS BETWEEN 2 PRECEDING AND UNBOUNDED FOLLOWING EXCLUDE NO OTHERS)":"A","Primary":"A"},
@@ -475,8 +409,6 @@ TEST_F(ECSqlStatementWindowFunctionTestFixture, ExcludeNoOthers)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementWindowFunctionTestFixture, ExcludeCurrentRow)
     {
-    SetupECDbAndInsertData("ExcludeCurrentRow.ecdb");
-
     Utf8CP ecsql = "SELECT Primary, first_value(Primary) over(ORDER BY Primary ROWS BETWEEN 2 PRECEDING AND UNBOUNDED FOLLOWING EXCLUDE CURRENT ROW) from ts.SomeEntity";
     auto expected = JsonValue(R"json([
             {"FIRST_VALUE([Primary]) OVER(ORDER BY [Primary] ROWS BETWEEN 2 PRECEDING AND UNBOUNDED FOLLOWING EXCLUDE CURRENT ROW)":"B","Primary":"A"},
@@ -495,8 +427,6 @@ TEST_F(ECSqlStatementWindowFunctionTestFixture, ExcludeCurrentRow)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementWindowFunctionTestFixture, ExcludeGroup)
     {
-    SetupECDbAndInsertData("ExcludeGroup.ecdb");
-
     Utf8CP ecsql = "SELECT Primary, first_value(Primary) over(ORDER BY Primary ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING EXCLUDE GROUP) from ts.SomeEntity";
     auto expected = JsonValue(R"json([
             {"FIRST_VALUE([Primary]) OVER(ORDER BY [Primary] ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING EXCLUDE GROUP)":"B","Primary":"A"},
@@ -515,8 +445,6 @@ TEST_F(ECSqlStatementWindowFunctionTestFixture, ExcludeGroup)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementWindowFunctionTestFixture, ExcludeTies)
     {
-    SetupECDbAndInsertData("ExcludeTies.ecdb");
-
     Utf8CP ecsql = "SELECT Primary, Secondary, last_value(Primary) over(PARTITION BY Secondary ROWS UNBOUNDED PRECEDING EXCLUDE TIES) from ts.SomeEntity";
     auto expected = JsonValue(R"json([
             {"Primary":"A","Secondary":"one"},
@@ -535,8 +463,6 @@ TEST_F(ECSqlStatementWindowFunctionTestFixture, ExcludeTies)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementWindowFunctionTestFixture, WithWindowName)
     {
-    SetupECDbAndInsertData("WithWindowName.ecdb");
-
     Utf8CP ecsql = "SELECT Primary, Secondary, SomeValue, MAX(SomeValue) over win, MIN(SomeValue) over win from ts.SomeEntity WINDOW win AS (PARTITION BY Secondary)";
     auto expected = JsonValue(R"json([
             {"MAX([SomeValue]) OVER win":7,"MIN([SomeValue]) OVER win":1,"Primary":"A","Secondary":"one","SomeValue":1},
@@ -555,8 +481,6 @@ TEST_F(ECSqlStatementWindowFunctionTestFixture, WithWindowName)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementWindowFunctionTestFixture, WithWindowChaining)
     {
-    SetupECDbAndInsertData("WithWindowChaining.ecdb");
-
     Utf8CP ecsql = "SELECT Primary, Secondary, SomeValue, group_concat(Primary) over (win ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) from ts.SomeEntity WINDOW win AS (PARTITION BY Secondary ORDER BY SomeValue)";
     auto expected = JsonValue(R"json([
             {"GROUP_CONCAT([Primary]) OVER(win ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)":"A","Primary":"A","Secondary":"one","SomeValue":1},
@@ -575,8 +499,6 @@ TEST_F(ECSqlStatementWindowFunctionTestFixture, WithWindowChaining)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementWindowFunctionTestFixture, WithMultipleWindowNames)
     {
-    SetupECDbAndInsertData("WithMultipleWindowNames.ecdb");
-
     Utf8CP ecsql = "SELECT Primary, Secondary, SomeValue, MIN(SomeValue) over win1, MIN(SomeValue) over win2 from ts.SomeEntity WINDOW win1 AS (PARTITION BY Secondary), win2 AS(PARTITION BY Primary)";
     auto expected = JsonValue(R"json([
             {"MIN([SomeValue]) OVER win1":1,"MIN([SomeValue]) OVER win2":1,"Primary":"A","Secondary":"one","SomeValue":1},
@@ -590,13 +512,46 @@ TEST_F(ECSqlStatementWindowFunctionTestFixture, WithMultipleWindowNames)
     ASSERT_EQ(expected, GetHelper().ExecuteSelectECSql(ecsql));
     }
 
+struct ECSqlStatementWindowPartitionTestFixture : ECDbTestFixture
+    {
+    protected:
+        void SetUp();
+    };
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlStatementWindowFunctionTestFixture, WindowPartitionClause)
+void ECSqlStatementWindowPartitionTestFixture::SetUp()
     {
-    SetupECDbAndInsertDataForPartitionClause("WindowPartitionClause.ecdb");
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("WindowPartitionClause.ecdb", SchemaItem(
+        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECEntityClass typeName="SomeEntity" >
+                <ECProperty propertyName="Primary" typeName="string" />
+                <ECProperty propertyName="Secondary" typeName="string" />
+                <ECProperty propertyName="SomeValue" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml"
+    )));
 
+    if ("Insert data")
+        {
+        ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.SomeEntity(Primary,Secondary,SomeValue) VALUES ('A', 'one', 1)"));
+        ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.SomeEntity(Primary,Secondary,SomeValue) VALUES ('B', 'two', 2)"));
+        ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.SomeEntity(Primary,Secondary,SomeValue) VALUES ('C', 'three', 3)"));
+        ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.SomeEntity(Primary,Secondary,SomeValue) VALUES ('D', 'one ', 4)"));
+        ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.SomeEntity(Primary,Secondary,SomeValue) VALUES ('E', 'two', 5)"));
+        ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.SomeEntity(Primary,Secondary,SomeValue) VALUES ('F', 'three', 6)"));
+        ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.SomeEntity(Primary,Secondary,SomeValue) VALUES ('G', 'ONE', 1)"));
+        ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.SomeEntity(Primary,Secondary,SomeValue) VALUES ('H', 'two', 2)"));
+        ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.SomeEntity(Primary,Secondary,SomeValue) VALUES ('I', 'three', 3)"));
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementWindowPartitionTestFixture, WindowPartitionClause)
+    {
     Utf8CP ecsql = "SELECT Primary, Secondary, SomeValue, row_number() over(PARTITION BY Secondary) from ts.SomeEntity";
     auto expected = JsonValue(R"json([
             {"Primary":"G","ROW_NUMBER() OVER(PARTITION BY [Secondary])":1,"Secondary":"ONE","SomeValue":1},
@@ -615,9 +570,8 @@ TEST_F(ECSqlStatementWindowFunctionTestFixture, WindowPartitionClause)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlStatementWindowFunctionTestFixture, WindowPartitionClauseWithRtrim)
+TEST_F(ECSqlStatementWindowPartitionTestFixture, WindowPartitionClauseWithRtrim)
     {
-    SetupECDbAndInsertDataForPartitionClause("WindowPartitionClauseWithRtrim.ecdb");
     Utf8CP ecsql = "SELECT Primary, Secondary, SomeValue, row_number() over(PARTITION BY Secondary collate rtrim) from ts.SomeEntity";
     auto expected = JsonValue(R"json([
             {"Primary":"G","ROW_NUMBER() OVER(PARTITION BY [Secondary] COLLATE RTRIM)":1,"Secondary":"ONE","SomeValue":1},
@@ -636,10 +590,8 @@ TEST_F(ECSqlStatementWindowFunctionTestFixture, WindowPartitionClauseWithRtrim)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlStatementWindowFunctionTestFixture, WindowPartitionClauseWithNoCase)
+TEST_F(ECSqlStatementWindowPartitionTestFixture, WindowPartitionClauseWithNoCase)
     {
-    SetupECDbAndInsertDataForPartitionClause("WindowPartitionClauseWithNoCase.ecdb");
-
     Utf8CP ecsql = "SELECT Primary, Secondary, SomeValue, row_number() over(PARTITION BY Secondary collate nocase) from ts.SomeEntity";
     auto expected = JsonValue(R"json([
             {"Primary":"A","ROW_NUMBER() OVER(PARTITION BY [Secondary] COLLATE NOCASE)":1,"Secondary":"one","SomeValue":1},
@@ -658,10 +610,8 @@ TEST_F(ECSqlStatementWindowFunctionTestFixture, WindowPartitionClauseWithNoCase)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlStatementWindowFunctionTestFixture, WindowPartitionClauseWithBinary)
+TEST_F(ECSqlStatementWindowPartitionTestFixture, WindowPartitionClauseWithBinary)
     {
-    SetupECDbAndInsertDataForPartitionClause("WindowPartitionClauseWithBinary.ecdb");
-
     Utf8CP ecsql = "SELECT Primary, Secondary, SomeValue, row_number() over(PARTITION BY Secondary collate binary) from ts.SomeEntity";
     auto expected = JsonValue(R"json([
             {"Primary":"G","ROW_NUMBER() OVER(PARTITION BY [Secondary] COLLATE BINARY)":1,"Secondary":"ONE","SomeValue":1},
@@ -680,10 +630,8 @@ TEST_F(ECSqlStatementWindowFunctionTestFixture, WindowPartitionClauseWithBinary)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlStatementWindowFunctionTestFixture, MultipleWindowPartitionClauses)
+TEST_F(ECSqlStatementWindowPartitionTestFixture, MultipleWindowPartitionClauses)
     {
-    SetupECDbAndInsertDataForPartitionClause("MultipleWindowPartitionClauses.ecdb");
-
     Utf8CP ecsql = "SELECT Primary, Secondary, SomeValue, row_number() over(PARTITION BY Secondary collate nocase, SomeValue) from ts.SomeEntity";
     auto expected = JsonValue(R"json([
             {"Primary":"A","ROW_NUMBER() OVER(PARTITION BY [Secondary] COLLATE NOCASE, [SomeValue])":1,"Secondary":"one","SomeValue":1},
