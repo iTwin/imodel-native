@@ -523,6 +523,7 @@ struct ECSqlStatementWindowPartitionTestFixture : ECDbTestFixture
 //+---------------+---------------+---------------+---------------+---------------+------
 void ECSqlStatementWindowPartitionTestFixture::SetUp()
     {
+    ECDbTestFixture::SetUp();
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("WindowPartitionClause.ecdb", SchemaItem(
         R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECEntityClass typeName="SomeEntity" >
