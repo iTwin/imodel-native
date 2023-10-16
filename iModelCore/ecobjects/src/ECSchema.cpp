@@ -3463,27 +3463,12 @@ bool ECSchema::IsSchemaReferenced(ECSchemaCR thisSchema, ECSchemaCR potentiallyR
     return referencedSchemas.end() != referencedSchemas.Find(potentiallyReferencedSchema.GetSchemaKey(), matchType);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* Returns true if thisSchema directly references possiblyReferencedSchema
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool DirectlyReferences(ECSchemaCP thisSchema, ECSchemaCP possiblyReferencedSchema)
-    {
-    ECSchemaReferenceListCR referencedSchemas = thisSchema->GetReferencedSchemas();
-    for (ECSchemaReferenceList::const_iterator it = referencedSchemas.begin(); it != referencedSchemas.end(); ++it)
-        {
-        if (it->second.get() == possiblyReferencedSchema)
-            return true;
-        }
-    return false;
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
 static bool DependsOn(ECSchemaCP thisSchema, ECSchemaCP possibleDependency)
     {
-    if (DirectlyReferences(thisSchema, possibleDependency))
+    if (ECSchema::IsSchemaReferenced(*thisSchema, *possibleDependency))
         return true;
 
     SupplementalSchemaMetaDataPtr metaData;
