@@ -515,7 +515,7 @@ TEST_F(ECDbTestFixture, GetAndAssignBriefcaseIdForDb)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbTestFixture, GetAndChangeGUIDForDb)
     {
-    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecdbbriefcaseIdtest.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("getAndChangeGUIDForDb.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
 
     BeGuid guid = m_ecdb.GetDbGuid();
     ASSERT_TRUE(guid.IsValid());
@@ -547,7 +547,7 @@ TEST_F(ECDbTestFixture, CurrentECSqlVersion)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbTestFixture, CurrentECDbProfileVersion)
     {
-    ProfileVersion expectedVersion (4, 0, 0, 3);
+    ProfileVersion expectedVersion (4, 0, 0, 4);
     ASSERT_EQ(ECDb::CurrentECDbProfileVersion(), expectedVersion);
     }
 
@@ -557,7 +557,7 @@ TEST_F(ECDbTestFixture, CurrentECDbProfileVersion)
 TEST_F(ECDbTestFixture, NewFileECDbProfileVersion)
     {
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("newFile.ecdb"));
-    ProfileVersion expectedVersion (4, 0, 0, 3);
+    ProfileVersion expectedVersion (4, 0, 0, 4);
     ASSERT_EQ(m_ecdb.GetECDbProfileVersion(), expectedVersion);
     }
 

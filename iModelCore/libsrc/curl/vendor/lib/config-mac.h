@@ -52,17 +52,10 @@
 #define HAVE_GETTIMEOFDAY       1
 #define HAVE_FCNTL_H            1
 #define HAVE_SYS_STAT_H         1
-#define HAVE_STDLIB_H           1
-#define HAVE_TIME_H             1
 #define HAVE_UTIME_H            1
 #define HAVE_SYS_TIME_H         1
 #define HAVE_SYS_UTIME_H        1
 #define HAVE_SYS_IOCTL_H        1
-#define HAVE_ERRNO_H            1
-#define HAVE_RECVFROM           1
-
-#define TIME_WITH_SYS_TIME      1
-
 #define HAVE_ALARM              1
 #define HAVE_FTRUNCATE          1
 #define HAVE_UTIME              1
@@ -71,15 +64,12 @@
 #define HAVE_STRUCT_TIMEVAL     1
 
 #define HAVE_SIGACTION          1
-#define HAVE_SIGNAL_H           1
 
 #ifdef MACOS_SSL_SUPPORT
 #  define USE_OPENSSL           1
 #endif
 
 #define CURL_DISABLE_LDAP       1
-
-//#define HAVE_RAND_EGD           1
 
 #define HAVE_IOCTL_FIONBIO      1
 
@@ -134,6 +124,10 @@
 /* Define if you have strncasecmp. CARES */
 #define HAVE_STRNCASECMP 1
 
+/* Define if you have errno.h. CARES */
+#define HAVE_ERRNO_H 1
 
+/* Define if you have recvfrom. CARES */
+#define HAVE_RECVFROM 1
 
 #endif /* HEADER_CURL_CONFIG_MAC_H */
