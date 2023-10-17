@@ -469,14 +469,8 @@ static ExpressionStatus GetInstanceValue (EvaluationResultR evalResult, uint32_t
 
         accessString.append (memberName);
 
-        currentProperty = ecClass->GetPropertyP (memberName);
-        if (NULL == currentProperty)
-            {
-            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "GetInstanceValue: UnknownMember. Property is Null");
-            evalResult.Clear();
-            return ExpressionStatus::UnknownMember;
-            }
-        else if (!currentProperty->GetIsStruct())
+        currentProperty = ecClass->GetPropertyP(memberName);
+        if (!currentProperty || !currentProperty->GetIsStruct())
             break;
 
         if (TOKEN_None == nextOperation)
@@ -509,6 +503,17 @@ static ExpressionStatus GetInstanceValue (EvaluationResultR evalResult, uint32_t
         evalResult.Clear();
         if (NULL == currentProperty)
             {
+            if (accessString.Equals("ECInstanceId"))
+                {
+                evalResult = ECValue(BeInt64Id::FromString(instance.GetInstanceId().c_str()).ToHexStr().c_str());
+                return ExpressionStatus::Success;
+                }
+            else if (accessString.Equals("ECClassId"))
+                {
+                evalResult = ECValue(instance.GetClass().HasId() ? instance.GetClass().GetId().ToHexStr().c_str() : BeInt64Id().ToHexStr().c_str());
+                return ExpressionStatus::Success;
+                }
+
             ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "GetInstanceValue: UnknownSymbol. Property is NULL");
             return ExpressionStatus::UnknownSymbol;
             }
