@@ -1846,6 +1846,10 @@ Utf8String    ECValue::ToString() const
         {
         return "IECInstance containing struct value";
         }
+    else if (IsNavigation())
+        {
+        str.Sprintf("Id: %" PRIu64, m_navigationInfo.GetId<BeInt64Id>().GetValue());
+        }
     else if (PRIMITIVETYPE_DateTime == m_primitiveType)
         str = GetDateTime().ToString(); // want something more readable than the ticks
     else if (!ConvertPrimitiveToString(str))
