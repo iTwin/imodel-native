@@ -671,178 +671,58 @@ int             nPoint
     return iMin;
     }
 
-/*----------------------------------------------------------------------------+
-| BARYCENTRIC COORDINATE FUNCTIONS:
-|
-| For a given triangle T with vertices v0, v1, v2, every point q in the plane
-| of T is uniquely represented by its barycentric coordinates (b0, b1, b2)
-| relative to T:
-|
-| q = b0 * v0 + b1 * v1 + b2 * v2,
-| 1 = b0 + b1 + b2.
-|
-+----------------------------------------------------------------------------*/
-
-
-Public bool    bsiDPoint3d_barycentricFromDPoint2dTriangleVectors
-
-(
-DPoint3dP pInstance,
-double    *pArea,
-DPoint2dCP pPoint,
-DPoint2dCP pOrigin,
-DPoint2dCP pVector1,
-DPoint2dCP pVector2
-)
-    {
-    bool        status = true;
-    double      denom, numer1, numer2;
-
-    /*
-    Let vectors v1 and v2 emanating from the plane's origin define triangle T,
-    and let q be a point in the plane.  Then the system for finding the
-    barycentric coordinates of q relative to T reduces from 3x3 to 2x2:
-      -             - -    -   -     -      -            - -    -   -     -
-      | 0 v1.x v2.x | | b0 |   | q.x |      | v1.x  v2.x | | b1 |   | q.x |
-      | 0 v1.y v2.y | | b1 | = | q.y |  =>  | v1.y  v2.y | | b2 | = | q.y |
-      | 1    1    1 | | b2 |   | 1   |      -            - -    -   -     -
-      -             - -    -   -     -
-    We use Cramer's Rule to solve this system for b1 and b2; b0 can be found
-    by subtracting the sum of the other two coords from 1.0.
-    */
-
-    /* Calculate numerators of Cramer's Rule formulae */
-    if (pOrigin)
-        {
-        /*
-        Since barycoords are invariant under affine transformation, we can
-        translate the triangle and point so that pOrigin is the origin.  This
-        gives us the dimension reduction detailed above.
-        */
-        numer1 = (pPoint->x - pOrigin->x) * pVector2->y -
-                 (pPoint->y - pOrigin->y) * pVector2->x;
-        numer2 = (pPoint->y - pOrigin->y) * pVector1->x -
-                 (pPoint->x - pOrigin->x) * pVector1->y;
-        }
-    else
-        {
-        numer1 = pPoint->x * pVector2->y - pPoint->y * pVector2->x;
-        numer2 = pPoint->y * pVector1->x - pPoint->x * pVector1->y;
-        }
-
-    /*
-    Calculate denominator of Cramer's Rule formulae.  On a good day, denom is
-    twice the signed area of T.  On a bad day (i.e. when T is long and skinny)
-    we get subtractive cancellation, but there's no way around it!
-    */
-    denom  = pVector1->x * pVector2->y - pVector2->x * pVector1->y;
-
-    /* Return false and barycoords (1,0,0) if denom relatively close to zero */
-    if (! DoubleOps::SafeDivide (pInstance->y, numer1, denom, 0.0))
-        status = false;
-
-    if (! DoubleOps::SafeDivide (pInstance->z, numer2, denom, 0.0))
-        status = false;
-
-    pInstance->x = 1.0 - pInstance->y - pInstance->z;
-
-    if (pArea)
-        *pArea = 2.0 * denom;
-    return status;
-    }
-
 /*-----------------------------------------------------------------*//**
-* @description Sets this instance to the barycentric coordinates of pPoint
-* relative to the triangle (pVertex0, pVertex1, pVertex2) in the xy-plane.
+* Given an array of three points that are origin, s=1, and t=1 points
+* on a skewed plane, evaluate the 3d point at s,t, and the derivatives
+* with respect to s and t.  The point is defined as
+* pPoint = pPlanePoint[0] + s *(pPlanePoint[1] - pPlanePoint[0])
+* + t*(pPlanePoint[2] - pPlanePoint[0]).
 *
-* @instance pInstance   <= barycentric coordinates of pPoint relative to T
-* @param pPoint         => point in plane
-* @param pVertex0       => vertex 0 of triangle T
-* @param pVertex1       => vertex 1 of triangle T
-* @param pVertex2       => vertex 2 of triangle T
-* @see bsiDPoint3d_barycentricFromDPoint2dTriangleVectors
-* @see bsiDPoint2d_fromBarycentricAndDPoint2dTriangle
-* @group "DPoint3d Barycentric"
-* @return true if and only if the area of T is sufficiently large.
+* @param pPoint <= space point
+* @param deriv1P <= derivative vectors wrt u, v
+* @param deriv2P <= 2nd derivative vectors wrt uu, vv, uv
+* @param pPlanePoint => origin, s=1, and t=1 points
+* @param s => s coordinate of point
+* @param t => t coordinate of point
 * @bsimethod
 +---------------+---------------+---------------+---------------+------*/
-Public   bool    bsiDPoint3d_barycentricFromDPoint2dTriangle
-
+Public void     bsiGeom_evaluateSkewedPlane
 (
-DPoint3dP pInstance,
-DPoint2dCP pPoint,
-DPoint2dCP pVertex0,
-DPoint2dCP pVertex1,
-DPoint2dCP pVertex2
+DPoint3dP pPoint,
+DPoint3dP deriv1P,
+DPoint3dP deriv2P,
+DPoint3dCP pPlanePoint,
+double           s,
+double           t
 )
     {
-    DPoint2d        q, v1, v2;
+    DPoint3d    vectorU, vectorV;
 
-    q.x  = pPoint->x   - pVertex0->x;
-    q.y  = pPoint->y   - pVertex0->y;
-    v1.x = pVertex1->x - pVertex0->x;
-    v1.y = pVertex1->y - pVertex0->y;
-    v2.x = pVertex2->x - pVertex0->x;
-    v2.y = pVertex2->y - pVertex0->y;
+    vectorU.x = pPlanePoint[1].x - pPlanePoint[0].x;
+    vectorU.y = pPlanePoint[1].y - pPlanePoint[0].y;
+    vectorU.z = pPlanePoint[1].z - pPlanePoint[0].z;
 
-    return bsiDPoint3d_barycentricFromDPoint2dTriangleVectors
-            (pInstance, NULL, &q, NULL, &v1, &v2);
-    }
+    vectorV.x = pPlanePoint[2].x - pPlanePoint[0].x;
+    vectorV.y = pPlanePoint[2].y - pPlanePoint[0].y;
+    vectorV.z = pPlanePoint[2].z - pPlanePoint[0].z;
 
-/*-----------------------------------------------------------------*//**
-* @description Sets this instance to the barycentric coordinates of pPoint
-* relative to the triangle (pVertex0, pVertex1, pVertex2) in the xy-plane.
-*
-* @instance pInstance   <= barycentric coordinates of pPoint relative to T
-* @param pPoint         => point in plane
-* @param pVertex0       => vertex 0 of triangle T
-* @param pVertex1       => vertex 1 of triangle T
-* @param pVertex2       => vertex 2 of triangle T
-* @see bsiDPoint3d_barycentricFromDPoint2dTriangleVectors
-* @see bsiDPoint2d_fromBarycentricAndDPoint2dTriangle
-* @group "DPoint3d Barycentric"
-* @return true if and only if the area of T is sufficiently large.
-* @bsimethod
-+---------------+---------------+---------------+---------------+------*/
-Public  GEOMDLLIMPEXP bool    bsiDPoint3d_barycentricFromDPoint2dTriangle
-(
-DPoint3dR uvw,
-DPoint3dR dUVWdX,
-DPoint3dR dUVWdY,
-double   &area,
-DPoint2dCR point,
-DPoint2dCR vertex0,
-DPoint2dCR vertex1,
-DPoint2dCR vertex2
-)
-    {
-    DPoint2d        q, v1, v2;
-
-    q.x  = point.x   - vertex0.x;
-    q.y  = point.y   - vertex0.y;
-    v1.x = vertex1.x - vertex0.x;
-    v1.y = vertex1.y - vertex0.y;
-    v2.x = vertex2.x - vertex0.x;
-    v2.y = vertex2.y - vertex0.y;
-    double divArea;
-    if (bsiDPoint3d_barycentricFromDPoint2dTriangleVectors
-            (&uvw, &area, &q, NULL, &v1, &v2)
-        && DoubleOps::SafeDivide (divArea, 2.0, area, 0.0))
+    if (pPoint)
         {
-
-        DVec2d edgeVector[3];
-        edgeVector[0].DifferenceOf (vertex2, vertex1);  // vector opposite point0
-        edgeVector[1].DifferenceOf (vertex0, vertex2);  // vector opposite point1
-        edgeVector[2].DifferenceOf (vertex1, vertex0);  // vector opposite point2
-        dUVWdX.Init (-edgeVector[0].y * divArea, -edgeVector[1].y * divArea, -edgeVector[2].y * divArea);
-        dUVWdY.Init ( edgeVector[0].x * divArea,  edgeVector[1].x * divArea, edgeVector[2].x * divArea);
-        return true;
+        pPoint->x = pPlanePoint[0].x + s * vectorU.x + t * vectorV.x;
+        pPoint->y = pPlanePoint[0].y + s * vectorU.y + t * vectorV.y;
+        pPoint->z = pPlanePoint[0].z + s * vectorU.z + t * vectorV.z;
         }
-    uvw.Zero ();
-    dUVWdX.Zero ();
-    dUVWdY.Zero ();
-    area = 0.0;
-    return false;
+
+    if (deriv1P)
+        {
+        deriv1P[0] = vectorU;
+        deriv1P[1] = vectorV;
+        }
+
+    if (deriv2P)
+        {
+        memset (deriv2P, 0, 3 * sizeof( DPoint3d ));
+        }
     }
 
 /*-----------------------------------------------------------------*//**
@@ -859,8 +739,7 @@ DPoint2dCR vertex2
 * @return true unless the plane points are collinear
 * @bsimethod
 +---------------+---------------+---------------+---------------+------*/
-Public  bool     bsiGeom_closestPointOnSkewedPlane
-
+Public bool     bsiGeom_closestPointOnSkewedPlane
 (
 DPoint3dP pClosePoint,
 double          *sP,
@@ -905,271 +784,63 @@ DPoint3dCP pSpacePoint
     }
 
 /*-----------------------------------------------------------------*//**
-* @description Compute the minimum distance from a point to a triangle.
-* @instance pSpacePoint   <= point in space
-* @param pVertex0       => vertex of T
-* @param pVertex1       => vertex of T
-* @param pVertex2       => vertex of T
-* @param pClosePoint    <= projection of space point onto plane of triangle
-* @param pBCoords       <= barycentric coordinates of closest point
-* @return minimum distance
-* @group "DPoint3d Barycentric"
+* Given a space point spacePontP, finds the closest point on the plane
+* with given origin and 2 vectors.    Stores the closest point
+* coordinates in pClosePoint, and the s and t coordinates (as defined
+* in bsiGeom_evaluateSkewedPlane) in sP and tP.
+*
+* @param pClosePoint <= point on plane.  May be null pointer
+* @param sP <= parametric coordinate on s axis
+* @param tP <= parametric coordinate on t axis
+* @param pPlanePoint => origin, s=1, and t=1 points
+* @param pSpacePoint => point to be projected
+* @return true unless vectors are parallel
 * @bsimethod
 +---------------+---------------+---------------+---------------+------*/
-Public  double bsiDPoint3d_minDistToTriangle
+Public bool     bsiGeom_closestPointOnSkewedVectors
 
 (
-DPoint3dCP pSpacePoint,
-DPoint3dCP pVertex0,
-DPoint3dCP pVertex1,
-DPoint3dCP pVertex2,
 DPoint3dP pClosePoint,
-DPoint3dP pBoundedUVW,
-DPoint3dP pUnboundedUVW
+double          *sP,
+double          *tP,
+DPoint3dCP pOrigin,
+DPoint3dCP pVectorU,
+DPoint3dCP pVectorV,
+DPoint3dCP pSpacePoint
 )
     {
-    DPoint3d planePoint;
-    double s, t;
-    DPoint3d xyz[3];
-    static DPoint3d uvwCorner[3] =
+    double          s,t;
+    double          dotUU, dotUV, dotVV, dotUQ, dotVQ;
+    bool            result = true;
+    DVec3d          vectorQ;
+
+    vectorQ.DifferenceOf(*pSpacePoint, *pOrigin);
+
+    dotUU = pVectorU->DotProduct(*pVectorU);
+    dotVV = pVectorV->DotProduct(*pVectorV);
+    dotUV = pVectorU->DotProduct(*pVectorV);
+
+    dotUQ = pVectorU->DotProduct(vectorQ);
+    dotVQ = pVectorV->DotProduct(vectorQ);
+
+    if (!bsiSVD_solve2x2 (&s, &t,
+                            dotUU, dotUV, dotUV, dotVV,
+                            dotUQ, dotVQ))
         {
-            {1,0,0},
-            {0,1,0},
-            {0,0,1}
-        };
-
-    /* Ugh.  Compute for each edge independently.  */
-    DSegment3d testSeg[3];
-    DPoint3d   testPoint[3];
-    double     testParam[3];
-    double     testDistanceSquared[3];
-
-    int i, iMin, jMin;
-    xyz[0] = *pVertex0;
-    xyz[1] = *pVertex1;
-    xyz[2] = *pVertex2;
-    if (pUnboundedUVW)
-        pUnboundedUVW->Zero ();
-
-    if (    bsiGeom_closestPointOnSkewedPlane (&planePoint, &s, &t, xyz, pSpacePoint))
+        result = false;
+        }
+    else
         {
-        if (pUnboundedUVW)
-            pUnboundedUVW->Init ( 1.0 - s - t, s, t);
-        if (s >= 0.0
-        &&  t >= 0.0
-        &&  s + t <= 1.0)
-            {
-            if (pBoundedUVW)
-                pBoundedUVW->Init ( 1.0 - s - t, s, t);
-            if (pClosePoint)
-                *pClosePoint = planePoint;
-            return planePoint.Distance (*pSpacePoint);
-            }
+        if (sP)
+            *sP = s;
+        if (tP)
+            *tP = t;
+
+        if (pClosePoint)
+            pClosePoint->SumOf(*pOrigin, *pVectorU, s, *pVectorV, t);
         }
 
-    testSeg[0].Init (*pVertex0, *pVertex1);
-    testSeg[1].Init (*pVertex1, *pVertex2);
-    testSeg[2].Init (*pVertex2, *pVertex0);
-
-    for (i = 0; i < 3; i++)
-        {
-        testSeg[i].ProjectPointBounded (testPoint[i], testParam[i], *pSpacePoint);
-        testDistanceSquared[i] = testPoint[i].DistanceSquared (*pSpacePoint);
-        }
-    iMin = 0;
-    if (testDistanceSquared[1] < testDistanceSquared[0])
-        iMin = 1;
-    if (testDistanceSquared[2] < testDistanceSquared[iMin])
-        iMin = 2;
-
-    jMin = iMin + 1;
-    if (jMin == 3)
-        jMin = 0;
-
-    if (pClosePoint)
-        *pClosePoint = testPoint[iMin];
-    if (pBoundedUVW)
-        pBoundedUVW->Interpolate (uvwCorner[iMin], testParam[iMin], uvwCorner[jMin]);
-    return sqrt (testDistanceSquared[iMin]);
-    }
-
-/*-----------------------------------------------------------------*//**
-* @description Applies transformation to simplify the problem of finding the barycentric
-* coordinates of a 3d point relative to a triangle.  Returned are the
-* components of the new 2d problem.
-*
-* @instance pInstance   => point to find barycentric coords of
-* @param pNewPoint      <= point in plane of new triangle with same barycoords
-* @param pNewVector1    <= side of new triangle
-* @param pNewVector2    <= side of new triangle
-* @param pVector1       => side of old triangle
-* @param pVector2       => side of old triangle
-* @group "DPoint3d Barycentric"
-* @bsimethod
-+---------------+---------------+---------------+---------------+------*/
-Public void transformBarycentric3dSystemTo2d
-
-(
-DPoint3dCP pInstance,
-DPoint2dP pNewPoint,
-DPoint2dP pNewVector1,
-DPoint2dP pNewVector2,
-DPoint3dCP pVector1,
-DPoint3dCP pVector2
-)
-    {
-    /*
-    Projecting the 3D point q onto the plane spanned by 3D vectors v1, v2
-    (which form triangle T) is a least squares problem:
-
-      [v1 v2] [b1 b2]^ = q
-
-    The resulting normal equations (below) determine the barycoords b1, b2
-    (corresponding to v1, v2) of the projection relative to T:
-      -              - -    -   -      -
-      | v1.v1  v1.v2 | | b1 | = | q.v1 |
-      | v1.v2  v2.v2 | | b2 |   | q.v2 |
-      -              - -    -   -      -
-
-    or equivalently, [newVector1 newVector2] [b1 b2]^ = newPoint.
-
-    This latter form shows that the 3D problem reduces to a 2D problem:
-    finding the barycentric coordinates of newPoint relative to the
-    triangle in the xy-plane spanned by vectors newVector1, newVector2.
-    */
-    pNewVector1->x =    pVector1->x * pVector1->x +
-                        pVector1->y * pVector1->y +
-                        pVector1->z * pVector1->z;
-    pNewVector1->y =
-    pNewVector2->x =    pVector1->x * pVector2->x +
-                        pVector1->y * pVector2->y +
-                        pVector1->z * pVector2->z;
-
-    pNewVector2->y =    pVector2->x * pVector2->x +
-                        pVector2->y * pVector2->y +
-                        pVector2->z * pVector2->z;
-
-    pNewPoint->x =     pInstance->x * pVector1->x +
-                       pInstance->y * pVector1->y +
-                       pInstance->z * pVector1->z;
-
-    pNewPoint->y =     pInstance->x * pVector2->x +
-                       pInstance->y * pVector2->y +
-                       pInstance->z * pVector2->z;
-    }
-
-
-
-/*-----------------------------------------------------------------*//**
-* @description Sets this instance to the barycentric coordinates of pPoint
-* relative to the triangle (pVertex0, pVertex1, pVertex2) in space.
-* Points p and r in space have the same barycentric coordinates relative to
-* T if and only if they project to the same point q in the plane of T;
-* then their barycentric coordinates relative to T are those of q.
-*
-* @instance pInstance   <= barycentric coordinates of pPoint relative to T
-* @param pPoint         => point in space
-* @param pVertex0       => vertex of triangle T
-* @param pVertex1       => vertex of triangle T
-* @param pVertex2       => vertex of triangle T
-* @see bsiDPoint3d_barycentricFromDPoint2dTriangle
-* @see bsiDPoint3d_fromBarycentricAndDPoint3dTriangle
-* @return true if and only if the area of T is sufficiently large.
-* @group "DPoint3d Barycentric"
-* @bsimethod
-+---------------+---------------+---------------+---------------+------*/
-Public  bool    bsiDPoint3d_barycentricFromDPoint3dTriangle
-
-(
-DPoint3dP pInstance,
-DPoint3dCP pPoint,
-DPoint3dCP pVertex0,
-DPoint3dCP pVertex1,
-DPoint3dCP pVertex2
-)
-    {
-    DPoint3d        q, v1, v2;
-    DPoint2d        newPoint, newV1, newV2;
-
-    /*
-    Translating by pVertex0 compresses the triangle definition from 3 points
-    to 2 vectors while preserving barycentric coords.
-    */
-    q.x  = pPoint->x   - pVertex0->x;
-    q.y  = pPoint->y   - pVertex0->y;
-    q.z  = pPoint->z   - pVertex0->z;
-    v1.x = pVertex1->x - pVertex0->x;
-    v1.y = pVertex1->y - pVertex0->y;
-    v1.z = pVertex1->z - pVertex0->z;
-    v2.x = pVertex2->x - pVertex0->x;
-    v2.y = pVertex2->y - pVertex0->y;
-    v2.z = pVertex2->z - pVertex0->z;
-
-    /* decrement dimension of problem */
-    transformBarycentric3dSystemTo2d (&q, &newPoint, &newV1, &newV2, &v1, &v2);
-
-    return bsiDPoint3d_barycentricFromDPoint2dTriangleVectors
-            (pInstance, &newPoint, NULL, &newV1, &newV2);
-    }
-/*-----------------------------------------------------------------*//**
-* @description Sets this instance to the barycentric coordinates of pPoint
-* relative to the triangle (pOrigin, pVector1-pOrigin, pVector2-pOrigin)
-* in the xy-plane.
-*
-* @instance pInstance   <= barycentric coordinates of pPoint relative to T
-* @param pArea          <= area of triangle.
-* @param pPoint         => point in plane
-* @param pOrigin        => vertex of triangle T (may be null for origin)
-* @param pVector1       => side vector of T (emanating from pOrigin)
-* @param pVector2       => side vector of T (emanating from pOrigin)
-* @see bsiDPoint3d_barycentricFromDPoint2dTriangle
-* @see bsiDPoint2d_fromBarycentricAndDPoint2dTriangleVectors
-* @group "DPoint3d Barycentric"
-* @return true if and only if the area of T is sufficiently large.
-* @bsimethod
-+---------------+---------------+---------------+---------------+------*/
-Public  bool    bsiDPoint3d_barycentricFromDPoint2dTriangleVectors
-
-(
-DPoint3dP pInstance,
-DPoint2dCP pPoint,
-DPoint2dCP pOrigin,
-DPoint2dCP pVector1,
-DPoint2dCP pVector2
-)
-    {
-    return bsiDPoint3d_barycentricFromDPoint2dTriangleVectors (pInstance, NULL, pPoint, pOrigin,
-                    pVector1, pVector2);
-    }
-/*-----------------------------------------------------------------*//**
-* @description Sets this instance to the point in the plane with the given barycentric
-* coordinates relative to triangle T (pVertex0, pVertex1, pVertex2).
-*
-* @instance pInstance   <= point with given barycoords relative to T
-* @param pBaryCoords    => barycentric coordinates relative to T
-* @param pVertex0       => vertex 0 of triangle T
-* @param pVertex1       => vertex 1 of triangle T
-* @param pVertex2       => vertex 2 of triangle T
-* @see bsiDPoint3d_barycentricFromDPoint2dTriangle
-* @group "DPoint2d Barycentric"
-* @bsimethod
-+---------------+---------------+---------------+---------------+------*/
-Public  void bsiDPoint2d_fromBarycentricAndDPoint2dTriangle
-
-(
-DPoint2dP pInstance,
-DPoint3dCP pBaryCoords,
-DPoint2dCP pVertex0,
-DPoint2dCP pVertex1,
-DPoint2dCP pVertex2
-)
-    {
-    pInstance->x =  pBaryCoords->x * pVertex0->x +
-                    pBaryCoords->y * pVertex1->x +
-                    pBaryCoords->z * pVertex2->x;
-    pInstance->y =  pBaryCoords->x * pVertex0->y +
-                    pBaryCoords->y * pVertex1->y +
-                    pBaryCoords->z * pVertex2->y;
+    return result;
     }
 
 /*-----------------------------------------------------------------*//**

@@ -222,6 +222,27 @@
             ]
         },
         {
+            "name": "LNX TilesetPublisher",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}LinuxX64/Product/TilesetPublisher/TilesetPublisher",
+            "cwd": "${workspaceFolder}",
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "args": [
+                "-i /media/paul/External 2TB SDD1/bim/NormalMaps/Cubes32PBR_A.bim",
+                "-o /home/paul/imdl"
+            ]
+        },
+
+        {
           "name": "MacOS Native Single iModelPlatformTest",
           "type": "cppdbg",
           "request": "launch",

@@ -2357,8 +2357,14 @@ DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
 DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
 DLM_CREATE_LIB_CONTEXT_LINK = 1
 
-$(DLM_OBJECT_DEST)$(DLM_NAME).def : $(_MakeFilePath)BeOpenSSL.def
-    $(LinkFirstDepToFirstTarget)
+%if defined(iTwinNativeThirdParty)
+  $(DLM_OBJECT_DEST)BeOpenSSL.def : $(_MakeFilePath)BeOpenSSL.def 
+      $(copyCmd) $< $@
+      $(BBPYTHONCMD) $(bsiScripts)RegexReplaceInFile.py iTwinOpenSSL BeOpenSSLB02 $@
+%else
+  $(DLM_OBJECT_DEST)$(DLM_NAME).def : $(_MakeFilePath)BeOpenSSL.def
+      $(LinkFirstDepToFirstTarget)
+%endif
 
 DLM_MODULE_DEF              = $(DLM_OBJECT_DEST)$(DLM_NAME).def
 

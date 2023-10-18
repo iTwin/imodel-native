@@ -14,6 +14,13 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
 struct ECSqlStatementTestFixture : ECDbTestFixture {};
+//including macro
+#define ASSERT_ECSQL(ECDB_OBJ, PREPARESTATUS, STEPSTATUS, ECSQL)   {\
+                                                                    ECSqlStatement stmt;\
+                                                                    ASSERT_EQ(PREPARESTATUS, stmt.Prepare(ECDB_OBJ, ECSQL));\
+                                                                    if (PREPARESTATUS == ECSqlStatus::Success)\
+                                                                        ASSERT_EQ(STEPSTATUS, stmt.Step());\
+                                                                   }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
@@ -102,7 +109,7 @@ TEST_F(ECSqlStatementTestFixture, CTECrash) {
     for (int i = 0; i < 1; ++i) {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
-        ASSERT_STREQ( stmt.GetNativeSql(), "WITH F(A) AS (SELECT 1),S(A) AS (SELECT F.A FROM F UNION SELECT 1 FROM S WHERE S.A=1)\nSELECT S.A FROM S");
+        ASSERT_STREQ( stmt.GetNativeSql(), "WITH RECURSIVE F(A) AS (SELECT 1),S(A) AS (SELECT F.A FROM F UNION SELECT 1 FROM S WHERE S.A=1)\nSELECT S.A FROM S");
     }
 }
 /*---------------------------------------------------------------------------------**//**
@@ -112,7 +119,7 @@ TEST_F(ECSqlStatementTestFixture, DisableFunction) {
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("disabledFunc.ecdb"));
     struct IssueListener: ECN::IIssueListener {
         mutable bvector<Utf8String> m_issues;
-        void _OnIssueReported(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, Utf8CP message) const override {
+        void _OnIssueReported(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, ECN::IssueId id, Utf8CP message) const override {
             m_issues.push_back(message);
         }
         Utf8String const& GetLastError() const { return m_issues.back();}
@@ -167,6 +174,78 @@ TEST_F(ECSqlStatementTestFixture, PopulateECSql_TestDbWithTestData)
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ECSqlStatementTests.ecdb", SchemaItem::CreateForFile("ECSqlStatementTests.01.00.00.ecschema.xml")));
     NestedStructArrayTestSchemaHelper::PopulateECSqlStatementTestsDb(m_ecdb);
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, MultilineStringLiteralOrName) {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("MultilineStringLiteralOrName.ecdb"));
+    if ("multi line quoted string") {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT 1 [\nHello\nWorld\n]"));
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STRCASEEQ(stmt.GetColumnInfo(0).GetProperty()->GetDisplayLabel().c_str(), "\nHello\nWorld\n");
+    }
+    if ("multi line string literal") {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT '\nHello\nWorld\n'"));
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STRCASEEQ(stmt.GetValueText(0), "\nHello\nWorld\n");
+    }
+    if ("multi line name") {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT 1 \"\nHello\nWorld\n\""));
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STRCASEEQ(stmt.GetColumnInfo(0).GetProperty()->GetDisplayLabel().c_str(), "\nHello\nWorld\n");
+    }
+    if ("multi line name with backtick") {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT 1 `\nHello\nWorld\n`"));
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STRCASEEQ(stmt.GetColumnInfo(0).GetProperty()->GetDisplayLabel().c_str(), "\nHello\nWorld\n");
+    }
+    if ("pragma parse_tree with double quote") {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"*(
+            PRAGMA parse_tree("
+                SELECT
+                    1,
+                    2,
+                    3,
+                    4
+            ") ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES
+        )*"));
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STRCASEEQ(stmt.GetValueText(0), "{\"id\":\"SelectStatementExp\",\"select\":{\"id\":\"RowConstructor\",\"values\":[{\"id\":\"DerivedPropertyExp\",\"exp\":{\"id\":\"LiteralValueExp\",\"kind\":\"RAW\",\"value\":\"1\"}},{\"id\":\"DerivedPropertyExp\",\"exp\":{\"id\":\"LiteralValueExp\",\"kind\":\"RAW\",\"value\":\"2\"}},{\"id\":\"DerivedPropertyExp\",\"exp\":{\"id\":\"LiteralValueExp\",\"kind\":\"RAW\",\"value\":\"3\"}},{\"id\":\"DerivedPropertyExp\",\"exp\":{\"id\":\"LiteralValueExp\",\"kind\":\"RAW\",\"value\":\"4\"}}]}}");
+    }
+    if ("pragma parse_tree with square quote") {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"*(
+            PRAGMA parse_tree([
+                SELECT
+                    1,
+                    2,
+                    3,
+                    4
+            ]) ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES
+        )*"));
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STRCASEEQ(stmt.GetValueText(0), "{\"id\":\"SelectStatementExp\",\"select\":{\"id\":\"RowConstructor\",\"values\":[{\"id\":\"DerivedPropertyExp\",\"exp\":{\"id\":\"LiteralValueExp\",\"kind\":\"RAW\",\"value\":\"1\"}},{\"id\":\"DerivedPropertyExp\",\"exp\":{\"id\":\"LiteralValueExp\",\"kind\":\"RAW\",\"value\":\"2\"}},{\"id\":\"DerivedPropertyExp\",\"exp\":{\"id\":\"LiteralValueExp\",\"kind\":\"RAW\",\"value\":\"3\"}},{\"id\":\"DerivedPropertyExp\",\"exp\":{\"id\":\"LiteralValueExp\",\"kind\":\"RAW\",\"value\":\"4\"}}]}}");
+    }
+    if ("pragma parse_tree with backtick quote") {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"*(
+            PRAGMA parse_tree(`
+                SELECT
+                    1,
+                    2,
+                    3,
+                    4
+            `) ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES
+        )*"));
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STRCASEEQ(stmt.GetValueText(0), "{\"id\":\"SelectStatementExp\",\"select\":{\"id\":\"RowConstructor\",\"values\":[{\"id\":\"DerivedPropertyExp\",\"exp\":{\"id\":\"LiteralValueExp\",\"kind\":\"RAW\",\"value\":\"1\"}},{\"id\":\"DerivedPropertyExp\",\"exp\":{\"id\":\"LiteralValueExp\",\"kind\":\"RAW\",\"value\":\"2\"}},{\"id\":\"DerivedPropertyExp\",\"exp\":{\"id\":\"LiteralValueExp\",\"kind\":\"RAW\",\"value\":\"3\"}},{\"id\":\"DerivedPropertyExp\",\"exp\":{\"id\":\"LiteralValueExp\",\"kind\":\"RAW\",\"value\":\"4\"}}]}}");
+    }
+}
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -644,71 +723,105 @@ TEST_F(ECSqlStatementTestFixture, SelectAsteriskAndViewGenerator)
                     </ECRelationshipClass>
                 </ECSchema>)xml")));
 
+    {
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ts.AOwnsB"));
-    EXPECT_STRCASEEQ("SELECT [AOwnsB].[ECInstanceId],[AOwnsB].[ECClassId],[AOwnsB].[SourceECInstanceId],[AOwnsB].[SourceECClassId],[AOwnsB].[TargetECInstanceId],[AOwnsB].[TargetECClassId] FROM "
-        "(SELECT [ts_B].[Id] ECInstanceId,76 ECClassId,[ts_B].[AId] SourceECInstanceId,[ts_A].[ECClassId] SourceECClassId,[ts_B].[Id] TargetECInstanceId,[ts_B].[ECClassId] TargetECClassId FROM [main].[ts_B] "
-        "INNER JOIN [main].[ts_A] ON [ts_A].[Id]=[ts_B].[AId] WHERE [ts_B].[AId] IS NOT NULL) [AOwnsB]", stmt.GetNativeSql()) << stmt.GetECSql();
-    stmt.Finalize();
+    auto classId = m_ecdb.Schemas().GetClassId("TestSchema", "AOwnsB").GetValue();
+    Utf8PrintfString stmtStr("SELECT [AOwnsB].[ECInstanceId],[AOwnsB].[ECClassId],[AOwnsB].[SourceECInstanceId],[AOwnsB].[SourceECClassId],[AOwnsB].[TargetECInstanceId],[AOwnsB].[TargetECClassId] FROM "
+        "(SELECT [ts_B].[Id] ECInstanceId,%" PRIu64 " ECClassId,[ts_B].[AId] SourceECInstanceId,[ts_A].[ECClassId] SourceECClassId,[ts_B].[Id] TargetECInstanceId,[ts_B].[ECClassId] TargetECClassId FROM [main].[ts_B] "
+        "INNER JOIN [main].[ts_A] ON [ts_A].[Id]=[ts_B].[AId] WHERE [ts_B].[AId] IS NOT NULL) [AOwnsB]", classId);
+    EXPECT_STRCASEEQ(stmtStr.c_str(), stmt.GetNativeSql()) << stmt.GetECSql();
+    }
 
+    {
+    ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ts.AOwnsB WHERE SourceECClassId=?"));
-    EXPECT_STRCASEEQ("SELECT [AOwnsB].[ECInstanceId],[AOwnsB].[ECClassId],[AOwnsB].[SourceECInstanceId],[AOwnsB].[SourceECClassId],[AOwnsB].[TargetECInstanceId],[AOwnsB].[TargetECClassId] FROM "
-        "(SELECT [ts_B].[Id] ECInstanceId,76 ECClassId,[ts_B].[AId] SourceECInstanceId,[ts_A].[ECClassId] SourceECClassId,[ts_B].[Id] TargetECInstanceId,[ts_B].[ECClassId] TargetECClassId FROM [main].[ts_B] "
+    auto classId = m_ecdb.Schemas().GetClassId("TestSchema", "AOwnsB").GetValue();
+    Utf8PrintfString stmtStr("SELECT [AOwnsB].[ECInstanceId],[AOwnsB].[ECClassId],[AOwnsB].[SourceECInstanceId],[AOwnsB].[SourceECClassId],[AOwnsB].[TargetECInstanceId],[AOwnsB].[TargetECClassId] FROM "
+        "(SELECT [ts_B].[Id] ECInstanceId,%" PRIu64 " ECClassId,[ts_B].[AId] SourceECInstanceId,[ts_A].[ECClassId] SourceECClassId,[ts_B].[Id] TargetECInstanceId,[ts_B].[ECClassId] TargetECClassId FROM [main].[ts_B] "
         "INNER JOIN [main].[ts_A] ON [ts_A].[Id]=[ts_B].[AId] WHERE [ts_B].[AId] IS NOT NULL) [AOwnsB] "
-        "WHERE [AOwnsB].[SourceECClassId]=:_ecdb_sqlparam_ix1_col1", stmt.GetNativeSql()) << stmt.GetECSql();
-    stmt.Finalize();
+        "WHERE [AOwnsB].[SourceECClassId]=:_ecdb_sqlparam_ix1_col1", classId);
+    EXPECT_STRCASEEQ(stmtStr.c_str(), stmt.GetNativeSql()) << stmt.GetECSql();
+    }
 
+    {
+    ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT SourceECInstanceId,SourceECClassId FROM ts.AOwnsB"));
-    EXPECT_STRCASEEQ("SELECT [AOwnsB].[SourceECInstanceId],[AOwnsB].[SourceECClassId] FROM "
-                     "(SELECT [ts_B].[Id] ECInstanceId,76 ECClassId,[ts_B].[AId] SourceECInstanceId,[ts_A].[ECClassId] SourceECClassId,[ts_B].[Id] TargetECInstanceId,[ts_B].[ECClassId] TargetECClassId FROM [main].[ts_B] "
-                     "INNER JOIN [main].[ts_A] ON [ts_A].[Id]=[ts_B].[AId] WHERE [ts_B].[AId] IS NOT NULL) [AOwnsB]", stmt.GetNativeSql()) << stmt.GetECSql();
-    stmt.Finalize();
+    auto classId = m_ecdb.Schemas().GetClassId("TestSchema", "AOwnsB").GetValue();
+    Utf8PrintfString stmtStr("SELECT [AOwnsB].[SourceECInstanceId],[AOwnsB].[SourceECClassId] FROM "
+                     "(SELECT [ts_B].[Id] ECInstanceId,%" PRIu64 " ECClassId,[ts_B].[AId] SourceECInstanceId,[ts_A].[ECClassId] SourceECClassId,[ts_B].[Id] TargetECInstanceId,[ts_B].[ECClassId] TargetECClassId FROM [main].[ts_B] "
+                     "INNER JOIN [main].[ts_A] ON [ts_A].[Id]=[ts_B].[AId] WHERE [ts_B].[AId] IS NOT NULL) [AOwnsB]", classId);
+    EXPECT_STRCASEEQ(stmtStr.c_str(), stmt.GetNativeSql()) << stmt.GetECSql();
+    }
 
+    {
+    ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT TargetECInstanceId,TargetECClassId FROM ts.AOwnsB"));
-    EXPECT_STRCASEEQ("SELECT [AOwnsB].[TargetECInstanceId],[AOwnsB].[TargetECClassId] FROM "
-                     "(SELECT [ts_B].[Id] ECInstanceId,76 ECClassId,[ts_B].[AId] SourceECInstanceId,[ts_A].[ECClassId] SourceECClassId,[ts_B].[Id] TargetECInstanceId,[ts_B].[ECClassId] TargetECClassId FROM [main].[ts_B] "
-                     "INNER JOIN [main].[ts_A] ON [ts_A].[Id]=[ts_B].[AId] WHERE [ts_B].[AId] IS NOT NULL) [AOwnsB]", stmt.GetNativeSql()) << stmt.GetECSql();
-    stmt.Finalize();
+    auto classId = m_ecdb.Schemas().GetClassId("TestSchema", "AOwnsB").GetValue();
+    Utf8PrintfString stmtStr("SELECT [AOwnsB].[TargetECInstanceId],[AOwnsB].[TargetECClassId] FROM "
+                     "(SELECT [ts_B].[Id] ECInstanceId,%" PRIu64 " ECClassId,[ts_B].[AId] SourceECInstanceId,[ts_A].[ECClassId] SourceECClassId,[ts_B].[Id] TargetECInstanceId,[ts_B].[ECClassId] TargetECClassId FROM [main].[ts_B] "
+                     "INNER JOIN [main].[ts_A] ON [ts_A].[Id]=[ts_B].[AId] WHERE [ts_B].[AId] IS NOT NULL) [AOwnsB]", classId);
+    EXPECT_STRCASEEQ(stmtStr.c_str(), stmt.GetNativeSql()) << stmt.GetECSql();
+    }
 
-
+    {
+    ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ts.ALinksB"));
-    EXPECT_STRCASEEQ("SELECT [ALinksB].[ECInstanceId],[ALinksB].[ECClassId],[ALinksB].[SourceECInstanceId],[ALinksB].[SourceECClassId],[ALinksB].[TargetECInstanceId],[ALinksB].[TargetECClassId] FROM "
-        "(SELECT [ts_ALinksB].[Id] [ECInstanceId],74 [ECClassId],[ts_ALinksB].[SourceId] [SourceECInstanceId],[SourceECClassPrimaryTable].[ECClassId] SourceECClassId,[ts_ALinksB].[TargetId] [TargetECInstanceId],[TargetECClassPrimaryTable].[ECClassId] TargetECClassId FROM [main].[ts_ALinksB] "
+    auto classId = m_ecdb.Schemas().GetClassId("TestSchema", "ALinksB").GetValue();
+    Utf8PrintfString stmtStr("SELECT [ALinksB].[ECInstanceId],[ALinksB].[ECClassId],[ALinksB].[SourceECInstanceId],[ALinksB].[SourceECClassId],[ALinksB].[TargetECInstanceId],[ALinksB].[TargetECClassId] FROM "
+        "(SELECT [ts_ALinksB].[Id] [ECInstanceId],%" PRIu64 " [ECClassId],[ts_ALinksB].[SourceId] [SourceECInstanceId],[SourceECClassPrimaryTable].[ECClassId] SourceECClassId,[ts_ALinksB].[TargetId] [TargetECInstanceId],[TargetECClassPrimaryTable].[ECClassId] TargetECClassId FROM [main].[ts_ALinksB] "
         "INNER JOIN [main].[ts_A] [SourceECClassPrimaryTable] ON [SourceECClassPrimaryTable].[Id]=[ts_ALinksB].[SourceId] "
-        "INNER JOIN [main].[ts_B] [TargetECClassPrimaryTable] ON [TargetECClassPrimaryTable].[Id]=[ts_ALinksB].[TargetId]) [ALinksB]", stmt.GetNativeSql()) << stmt.GetECSql();
-    stmt.Finalize();
+        "INNER JOIN [main].[ts_B] [TargetECClassPrimaryTable] ON [TargetECClassPrimaryTable].[Id]=[ts_ALinksB].[TargetId]) [ALinksB]", classId);
+    EXPECT_STRCASEEQ(stmtStr.c_str(), stmt.GetNativeSql()) << stmt.GetECSql();
+    }
 
+    {
+    ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ts.ALinksB WHERE SourceECInstanceId=? AND SourceECClassId=?"));
-    EXPECT_STRCASEEQ("SELECT [ALinksB].[ECInstanceId],[ALinksB].[ECClassId],[ALinksB].[SourceECInstanceId],[ALinksB].[SourceECClassId],[ALinksB].[TargetECInstanceId],[ALinksB].[TargetECClassId] FROM "
-        "(SELECT [ts_ALinksB].[Id] [ECInstanceId],74 [ECClassId],[ts_ALinksB].[SourceId] [SourceECInstanceId],[SourceECClassPrimaryTable].[ECClassId] SourceECClassId,[ts_ALinksB].[TargetId] [TargetECInstanceId],[TargetECClassPrimaryTable].[ECClassId] TargetECClassId FROM [main].[ts_ALinksB] "
+    auto classId = m_ecdb.Schemas().GetClassId("TestSchema", "ALinksB").GetValue();
+    Utf8PrintfString stmtStr("SELECT [ALinksB].[ECInstanceId],[ALinksB].[ECClassId],[ALinksB].[SourceECInstanceId],[ALinksB].[SourceECClassId],[ALinksB].[TargetECInstanceId],[ALinksB].[TargetECClassId] FROM "
+        "(SELECT [ts_ALinksB].[Id] [ECInstanceId],%" PRIu64 " [ECClassId],[ts_ALinksB].[SourceId] [SourceECInstanceId],[SourceECClassPrimaryTable].[ECClassId] SourceECClassId,[ts_ALinksB].[TargetId] [TargetECInstanceId],[TargetECClassPrimaryTable].[ECClassId] TargetECClassId FROM [main].[ts_ALinksB] "
         "INNER JOIN [main].[ts_A] [SourceECClassPrimaryTable] ON [SourceECClassPrimaryTable].[Id]=[ts_ALinksB].[SourceId] "
         "INNER JOIN [main].[ts_B] [TargetECClassPrimaryTable] ON [TargetECClassPrimaryTable].[Id]=[ts_ALinksB].[TargetId]) [ALinksB] "
-        "WHERE [ALinksB].[SourceECInstanceId]=:_ecdb_sqlparam_ix1_col1 AND [ALinksB].[SourceECClassId]=:_ecdb_sqlparam_ix2_col1", stmt.GetNativeSql()) << stmt.GetECSql();
-    stmt.Finalize();
+        "WHERE [ALinksB].[SourceECInstanceId]=:_ecdb_sqlparam_ix1_col1 AND [ALinksB].[SourceECClassId]=:_ecdb_sqlparam_ix2_col1", classId);
+    EXPECT_STRCASEEQ(stmtStr.c_str(), stmt.GetNativeSql()) << stmt.GetECSql();
+    }
 
+    {
+    ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ts.ALinksB WHERE SourceECClassId=?"));
-    EXPECT_STRCASEEQ("SELECT [ALinksB].[ECInstanceId],[ALinksB].[ECClassId],[ALinksB].[SourceECInstanceId],[ALinksB].[SourceECClassId],[ALinksB].[TargetECInstanceId],[ALinksB].[TargetECClassId] FROM "
-                     "(SELECT [ts_ALinksB].[Id] [ECInstanceId],74 [ECClassId],[ts_ALinksB].[SourceId] [SourceECInstanceId],[SourceECClassPrimaryTable].[ECClassId] SourceECClassId,[ts_ALinksB].[TargetId] [TargetECInstanceId],[TargetECClassPrimaryTable].[ECClassId] TargetECClassId FROM [main].[ts_ALinksB] "
+    auto classId = m_ecdb.Schemas().GetClassId("TestSchema", "ALinksB").GetValue();
+    Utf8PrintfString stmtStr("SELECT [ALinksB].[ECInstanceId],[ALinksB].[ECClassId],[ALinksB].[SourceECInstanceId],[ALinksB].[SourceECClassId],[ALinksB].[TargetECInstanceId],[ALinksB].[TargetECClassId] FROM "
+                     "(SELECT [ts_ALinksB].[Id] [ECInstanceId],%" PRIu64 " [ECClassId],[ts_ALinksB].[SourceId] [SourceECInstanceId],[SourceECClassPrimaryTable].[ECClassId] SourceECClassId,[ts_ALinksB].[TargetId] [TargetECInstanceId],[TargetECClassPrimaryTable].[ECClassId] TargetECClassId FROM [main].[ts_ALinksB] "
                      "INNER JOIN [main].[ts_A] [SourceECClassPrimaryTable] ON [SourceECClassPrimaryTable].[Id]=[ts_ALinksB].[SourceId] "
                      "INNER JOIN [main].[ts_B] [TargetECClassPrimaryTable] ON [TargetECClassPrimaryTable].[Id]=[ts_ALinksB].[TargetId]) [ALinksB] "
-                     "WHERE [ALinksB].[SourceECClassId]=:_ecdb_sqlparam_ix1_col1", stmt.GetNativeSql()) << stmt.GetECSql();
-    stmt.Finalize();
+                     "WHERE [ALinksB].[SourceECClassId]=:_ecdb_sqlparam_ix1_col1", classId);
+    EXPECT_STRCASEEQ(stmtStr.c_str(), stmt.GetNativeSql()) << stmt.GetECSql();
+    }
 
+    {
+    ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ts.ALinksB WHERE TargetECInstanceId=? AND TargetECClassId=?"));
-    EXPECT_STRCASEEQ("SELECT [ALinksB].[ECInstanceId],[ALinksB].[ECClassId],[ALinksB].[SourceECInstanceId],[ALinksB].[SourceECClassId],[ALinksB].[TargetECInstanceId],[ALinksB].[TargetECClassId] FROM "
-                     "(SELECT [ts_ALinksB].[Id] [ECInstanceId],74 [ECClassId],[ts_ALinksB].[SourceId] [SourceECInstanceId],[SourceECClassPrimaryTable].[ECClassId] SourceECClassId,[ts_ALinksB].[TargetId] [TargetECInstanceId],[TargetECClassPrimaryTable].[ECClassId] TargetECClassId FROM [main].[ts_ALinksB] "
+    auto classId = m_ecdb.Schemas().GetClassId("TestSchema", "ALinksB").GetValue();
+    Utf8PrintfString stmtStr("SELECT [ALinksB].[ECInstanceId],[ALinksB].[ECClassId],[ALinksB].[SourceECInstanceId],[ALinksB].[SourceECClassId],[ALinksB].[TargetECInstanceId],[ALinksB].[TargetECClassId] FROM "
+                     "(SELECT [ts_ALinksB].[Id] [ECInstanceId],%" PRIu64 " [ECClassId],[ts_ALinksB].[SourceId] [SourceECInstanceId],[SourceECClassPrimaryTable].[ECClassId] SourceECClassId,[ts_ALinksB].[TargetId] [TargetECInstanceId],[TargetECClassPrimaryTable].[ECClassId] TargetECClassId FROM [main].[ts_ALinksB] "
                      "INNER JOIN [main].[ts_A] [SourceECClassPrimaryTable] ON [SourceECClassPrimaryTable].[Id]=[ts_ALinksB].[SourceId] "
                      "INNER JOIN [main].[ts_B] [TargetECClassPrimaryTable] ON [TargetECClassPrimaryTable].[Id]=[ts_ALinksB].[TargetId]) [ALinksB] "
-                     "WHERE [ALinksB].[TargetECInstanceId]=:_ecdb_sqlparam_ix1_col1 AND [ALinksB].[TargetECClassId]=:_ecdb_sqlparam_ix2_col1", stmt.GetNativeSql()) << stmt.GetECSql();
-    stmt.Finalize();
+                     "WHERE [ALinksB].[TargetECInstanceId]=:_ecdb_sqlparam_ix1_col1 AND [ALinksB].[TargetECClassId]=:_ecdb_sqlparam_ix2_col1", classId);
+    EXPECT_STRCASEEQ(stmtStr.c_str(), stmt.GetNativeSql()) << stmt.GetECSql();
+    }
 
+    {
+    ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ts.ALinksB WHERE TargetECClassId=?"));
-    EXPECT_STRCASEEQ("SELECT [ALinksB].[ECInstanceId],[ALinksB].[ECClassId],[ALinksB].[SourceECInstanceId],[ALinksB].[SourceECClassId],[ALinksB].[TargetECInstanceId],[ALinksB].[TargetECClassId] FROM "
-                     "(SELECT [ts_ALinksB].[Id] [ECInstanceId],74 [ECClassId],[ts_ALinksB].[SourceId] [SourceECInstanceId],[SourceECClassPrimaryTable].[ECClassId] SourceECClassId,[ts_ALinksB].[TargetId] [TargetECInstanceId],[TargetECClassPrimaryTable].[ECClassId] TargetECClassId FROM [main].[ts_ALinksB] "
+    auto classId = m_ecdb.Schemas().GetClassId("TestSchema", "ALinksB").GetValue();
+    Utf8PrintfString stmtStr("SELECT [ALinksB].[ECInstanceId],[ALinksB].[ECClassId],[ALinksB].[SourceECInstanceId],[ALinksB].[SourceECClassId],[ALinksB].[TargetECInstanceId],[ALinksB].[TargetECClassId] FROM "
+                     "(SELECT [ts_ALinksB].[Id] [ECInstanceId],%" PRIu64 " [ECClassId],[ts_ALinksB].[SourceId] [SourceECInstanceId],[SourceECClassPrimaryTable].[ECClassId] SourceECClassId,[ts_ALinksB].[TargetId] [TargetECInstanceId],[TargetECClassPrimaryTable].[ECClassId] TargetECClassId FROM [main].[ts_ALinksB] "
                      "INNER JOIN [main].[ts_A] [SourceECClassPrimaryTable] ON [SourceECClassPrimaryTable].[Id]=[ts_ALinksB].[SourceId] "
                      "INNER JOIN [main].[ts_B] [TargetECClassPrimaryTable] ON [TargetECClassPrimaryTable].[Id]=[ts_ALinksB].[TargetId]) [ALinksB] "
-                     "WHERE [ALinksB].[TargetECClassId]=:_ecdb_sqlparam_ix1_col1", stmt.GetNativeSql()) << stmt.GetECSql();
-    stmt.Finalize();
+                     "WHERE [ALinksB].[TargetECClassId]=:_ecdb_sqlparam_ix1_col1", classId);
+    EXPECT_STRCASEEQ(stmtStr.c_str(), stmt.GetNativeSql()) << stmt.GetECSql();
+    }
     }
 
 //---------------------------------------------------------------------------------------
@@ -935,8 +1048,10 @@ TEST_F(ECSqlStatementTestFixture, ClassAliases)
 
     {
     ECSqlStatement stmt;
+    auto classId = m_ecdb.Schemas().GetClassId("TestSchema", "A").GetValue();
+    Utf8PrintfString stmtStr("SELECT (SELECT [b].[ECInstanceId] FROM (SELECT [Id] ECInstanceId,%" PRIu64 " ECClassId FROM [main].[ts_A]) [b])", classId);
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT (SELECT b.ECInstanceId FROM ts.A b)"));
-    EXPECT_STRCASEEQ("SELECT (SELECT [b].[ECInstanceId] FROM (SELECT [Id] ECInstanceId,73 ECClassId FROM [main].[ts_A]) [b])", stmt.GetNativeSql()) << stmt.GetECSql();
+    EXPECT_STRCASEEQ(stmtStr.c_str(), stmt.GetNativeSql()) << stmt.GetECSql();
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     EXPECT_EQ(1, stmt.GetColumnCount()) << stmt.GetECSql();
     ASSERT_EQ(1, stmt.GetValueId<ECInstanceId>(0).GetValue()) << stmt.GetECSql();
@@ -2007,7 +2122,10 @@ TEST_F(ECSqlStatementTestFixture, TopLevelAliasCheck)
             EXPECT_EQ(info.GetDataType().IsStruct(), true);
         });
         ASSERT_EQ(i, stmt.GetColumnCount() - 1);
-        EXPECT_STRCASEEQ(stmt.GetNativeSql(), "SELECT [K0],[K1],[K2],[K3],[K4],[K5],[K6],[K7_0],[K7_1],[K8_0],[K8_1],[K8_2],[K9],[K10],[K11],[K12],[K13],[K14],[K15],[K16],[K17_0],[K17_1],[K18_0],[K18_1],[K18_2],[K19],[K20_0],[K20_1],[K20_2],[K20_3],[K20_4],[K20_5],[K20_6],[K20_7],[K20_8],[K20_9],[K20_10],[K20_11],[K20_12] FROM (SELECT [foo].[Bl] [K0],[foo].[Bo] [K1],[foo].[D] [K2],[foo].[Dt] [K3],[foo].[G] [K4],[foo].[I] [K5],[foo].[L] [K6],[foo].[P2d_X] [K7_0],[foo].[P2d_Y] [K7_1],[foo].[P3d_X] [K8_0],[foo].[P3d_Y] [K8_1],[foo].[P3d_Z] [K8_2],[foo].[S] [K9],[foo].[Struct_Bl] [K10],[foo].[Struct_Bo] [K11],[foo].[Struct_D] [K12],[foo].[Struct_Dt] [K13],[foo].[Struct_G] [K14],[foo].[Struct_I] [K15],[foo].[Struct_L] [K16],[foo].[Struct_P2d_X] [K17_0],[foo].[Struct_P2d_Y] [K17_1],[foo].[Struct_P3d_X] [K18_0],[foo].[Struct_P3d_Y] [K18_1],[foo].[Struct_P3d_Z] [K18_2],[foo].[Struct_S] [K19],[foo].[Struct_Bl] [K20_0],[foo].[Struct_Bo] [K20_1],[foo].[Struct_D] [K20_2],[foo].[Struct_Dt] [K20_3],[foo].[Struct_G] [K20_4],[foo].[Struct_I] [K20_5],[foo].[Struct_L] [K20_6],[foo].[Struct_P2d_X] [K20_7],[foo].[Struct_P2d_Y] [K20_8],[foo].[Struct_P3d_X] [K20_9],[foo].[Struct_P3d_Y] [K20_10],[foo].[Struct_P3d_Z] [K20_11],[foo].[Struct_S] [K20_12] FROM (SELECT [Id] ECInstanceId,73 ECClassId,[Bl],[Bo],[D],[Dt],[G],[I],[L],[P2d_X],[P2d_Y],[P3d_X],[P3d_Y],[P3d_Z],[S],[Struct_Bl],[Struct_Bo],[Struct_D],[Struct_Dt],[Struct_G],[Struct_I],[Struct_L],[Struct_P2d_X],[Struct_P2d_Y],[Struct_P3d_X],[Struct_P3d_Y],[Struct_P3d_Z],[Struct_S] FROM [main].[test_Foo]) [foo]) 'e'");
+        
+        auto classId = m_ecdb.Schemas().GetClassId("Test", "Foo").GetValue();
+        Utf8PrintfString expectedSql("SELECT [K0],[K1],[K2],[K3],[K4],[K5],[K6],[K7_0],[K7_1],[K8_0],[K8_1],[K8_2],[K9],[K10],[K11],[K12],[K13],[K14],[K15],[K16],[K17_0],[K17_1],[K18_0],[K18_1],[K18_2],[K19],[K20_0],[K20_1],[K20_2],[K20_3],[K20_4],[K20_5],[K20_6],[K20_7],[K20_8],[K20_9],[K20_10],[K20_11],[K20_12] FROM (SELECT [foo].[Bl] [K0],[foo].[Bo] [K1],[foo].[D] [K2],[foo].[Dt] [K3],[foo].[G] [K4],[foo].[I] [K5],[foo].[L] [K6],[foo].[P2d_X] [K7_0],[foo].[P2d_Y] [K7_1],[foo].[P3d_X] [K8_0],[foo].[P3d_Y] [K8_1],[foo].[P3d_Z] [K8_2],[foo].[S] [K9],[foo].[Struct_Bl] [K10],[foo].[Struct_Bo] [K11],[foo].[Struct_D] [K12],[foo].[Struct_Dt] [K13],[foo].[Struct_G] [K14],[foo].[Struct_I] [K15],[foo].[Struct_L] [K16],[foo].[Struct_P2d_X] [K17_0],[foo].[Struct_P2d_Y] [K17_1],[foo].[Struct_P3d_X] [K18_0],[foo].[Struct_P3d_Y] [K18_1],[foo].[Struct_P3d_Z] [K18_2],[foo].[Struct_S] [K19],[foo].[Struct_Bl] [K20_0],[foo].[Struct_Bo] [K20_1],[foo].[Struct_D] [K20_2],[foo].[Struct_Dt] [K20_3],[foo].[Struct_G] [K20_4],[foo].[Struct_I] [K20_5],[foo].[Struct_L] [K20_6],[foo].[Struct_P2d_X] [K20_7],[foo].[Struct_P2d_Y] [K20_8],[foo].[Struct_P3d_X] [K20_9],[foo].[Struct_P3d_Y] [K20_10],[foo].[Struct_P3d_Z] [K20_11],[foo].[Struct_S] [K20_12] FROM (SELECT [Id] ECInstanceId,%" PRIu64 " ECClassId,[Bl],[Bo],[D],[Dt],[G],[I],[L],[P2d_X],[P2d_Y],[P3d_X],[P3d_Y],[P3d_Z],[S],[Struct_Bl],[Struct_Bo],[Struct_D],[Struct_Dt],[Struct_G],[Struct_I],[Struct_L],[Struct_P2d_X],[Struct_P2d_Y],[Struct_P3d_X],[Struct_P3d_Y],[Struct_P3d_Z],[Struct_S] FROM [main].[test_Foo]) [foo]) 'e'", classId);
+        EXPECT_STRCASEEQ(stmt.GetNativeSql(), expectedSql.c_str());
         });
 
     prepare("select bl t_bl, bo t_bo, d t_d, dt t_dt, g t_g, i t_i, l t_l, p2d t_p2d, p3d t_p3d, s t_s, struct.bl s_bl, struct.bo s_bo, struct.d s_d, struct.dt s_dt, struct.g s_g, struct.i s_i, struct.l s_l, struct.p2d s_p2d, struct.p3d s_p3d, struct.s s_s, struct s_st from test.foo" ,
@@ -2220,7 +2338,9 @@ TEST_F(ECSqlStatementTestFixture, TopLevelAliasCheck)
             EXPECT_EQ(info.GetDataType().IsStruct(), true);
         });
         ASSERT_EQ(i, stmt.GetColumnCount() - 1);
-        EXPECT_STRCASEEQ(stmt.GetNativeSql(), "SELECT [foo].[Bl] [t_bl],[foo].[Bo] [t_bo],[foo].[D] [t_d],[foo].[Dt] [t_dt],[foo].[G] [t_g],[foo].[I] [t_i],[foo].[L] [t_l],[foo].[P2d_X] [t_p2d_0],[foo].[P2d_Y] [t_p2d_1],[foo].[P3d_X] [t_p3d_0],[foo].[P3d_Y] [t_p3d_1],[foo].[P3d_Z] [t_p3d_2],[foo].[S] [t_s],[foo].[Struct_Bl] [s_bl],[foo].[Struct_Bo] [s_bo],[foo].[Struct_D] [s_d],[foo].[Struct_Dt] [s_dt],[foo].[Struct_G] [s_g],[foo].[Struct_I] [s_i],[foo].[Struct_L] [s_l],[foo].[Struct_P2d_X] [s_p2d_0],[foo].[Struct_P2d_Y] [s_p2d_1],[foo].[Struct_P3d_X] [s_p3d_0],[foo].[Struct_P3d_Y] [s_p3d_1],[foo].[Struct_P3d_Z] [s_p3d_2],[foo].[Struct_S] [s_s],[foo].[Struct_Bl] [s_st_0],[foo].[Struct_Bo] [s_st_1],[foo].[Struct_D] [s_st_2],[foo].[Struct_Dt] [s_st_3],[foo].[Struct_G] [s_st_4],[foo].[Struct_I] [s_st_5],[foo].[Struct_L] [s_st_6],[foo].[Struct_P2d_X] [s_st_7],[foo].[Struct_P2d_Y] [s_st_8],[foo].[Struct_P3d_X] [s_st_9],[foo].[Struct_P3d_Y] [s_st_10],[foo].[Struct_P3d_Z] [s_st_11],[foo].[Struct_S] [s_st_12] FROM (SELECT [Id] ECInstanceId,73 ECClassId,[Bl],[Bo],[D],[Dt],[G],[I],[L],[P2d_X],[P2d_Y],[P3d_X],[P3d_Y],[P3d_Z],[S],[Struct_Bl],[Struct_Bo],[Struct_D],[Struct_Dt],[Struct_G],[Struct_I],[Struct_L],[Struct_P2d_X],[Struct_P2d_Y],[Struct_P3d_X],[Struct_P3d_Y],[Struct_P3d_Z],[Struct_S] FROM [main].[test_Foo]) [foo]");
+        auto classId = m_ecdb.Schemas().GetClassId("Test", "Foo").GetValue();
+        Utf8PrintfString expectedSql("SELECT [foo].[Bl] [t_bl],[foo].[Bo] [t_bo],[foo].[D] [t_d],[foo].[Dt] [t_dt],[foo].[G] [t_g],[foo].[I] [t_i],[foo].[L] [t_l],[foo].[P2d_X] [t_p2d_0],[foo].[P2d_Y] [t_p2d_1],[foo].[P3d_X] [t_p3d_0],[foo].[P3d_Y] [t_p3d_1],[foo].[P3d_Z] [t_p3d_2],[foo].[S] [t_s],[foo].[Struct_Bl] [s_bl],[foo].[Struct_Bo] [s_bo],[foo].[Struct_D] [s_d],[foo].[Struct_Dt] [s_dt],[foo].[Struct_G] [s_g],[foo].[Struct_I] [s_i],[foo].[Struct_L] [s_l],[foo].[Struct_P2d_X] [s_p2d_0],[foo].[Struct_P2d_Y] [s_p2d_1],[foo].[Struct_P3d_X] [s_p3d_0],[foo].[Struct_P3d_Y] [s_p3d_1],[foo].[Struct_P3d_Z] [s_p3d_2],[foo].[Struct_S] [s_s],[foo].[Struct_Bl] [s_st_0],[foo].[Struct_Bo] [s_st_1],[foo].[Struct_D] [s_st_2],[foo].[Struct_Dt] [s_st_3],[foo].[Struct_G] [s_st_4],[foo].[Struct_I] [s_st_5],[foo].[Struct_L] [s_st_6],[foo].[Struct_P2d_X] [s_st_7],[foo].[Struct_P2d_Y] [s_st_8],[foo].[Struct_P3d_X] [s_st_9],[foo].[Struct_P3d_Y] [s_st_10],[foo].[Struct_P3d_Z] [s_st_11],[foo].[Struct_S] [s_st_12] FROM (SELECT [Id] ECInstanceId,%" PRIu64 " ECClassId,[Bl],[Bo],[D],[Dt],[G],[I],[L],[P2d_X],[P2d_Y],[P3d_X],[P3d_Y],[P3d_Z],[S],[Struct_Bl],[Struct_Bo],[Struct_D],[Struct_Dt],[Struct_G],[Struct_I],[Struct_L],[Struct_P2d_X],[Struct_P2d_Y],[Struct_P3d_X],[Struct_P3d_Y],[Struct_P3d_Z],[Struct_S] FROM [main].[test_Foo]) [foo]", classId);
+        EXPECT_STRCASEEQ(stmt.GetNativeSql(), expectedSql.c_str());
         });
 
     prepare("select bl, bo, d, dt, g, i, l, p2d, p3d, s, struct.bl, struct.bo, struct.d, struct.dt, struct.g, struct.i, struct.l, struct.p2d, struct.p3d, struct.s, struct from test.foo", [&](ECSqlStatus rc, ECSqlStatement &stmt) {
@@ -2431,7 +2551,9 @@ TEST_F(ECSqlStatementTestFixture, TopLevelAliasCheck)
             EXPECT_EQ(info.GetDataType().IsStruct(), true);
         });
         ASSERT_EQ(i, stmt.GetColumnCount() - 1);
-        EXPECT_STRCASEEQ(stmt.GetNativeSql(), "SELECT [foo].[Bl],[foo].[Bo],[foo].[D],[foo].[Dt],[foo].[G],[foo].[I],[foo].[L],[foo].[P2d_X],[foo].[P2d_Y],[foo].[P3d_X],[foo].[P3d_Y],[foo].[P3d_Z],[foo].[S],[foo].[Struct_Bl],[foo].[Struct_Bo],[foo].[Struct_D],[foo].[Struct_Dt],[foo].[Struct_G],[foo].[Struct_I],[foo].[Struct_L],[foo].[Struct_P2d_X],[foo].[Struct_P2d_Y],[foo].[Struct_P3d_X],[foo].[Struct_P3d_Y],[foo].[Struct_P3d_Z],[foo].[Struct_S],[foo].[Struct_Bl],[foo].[Struct_Bo],[foo].[Struct_D],[foo].[Struct_Dt],[foo].[Struct_G],[foo].[Struct_I],[foo].[Struct_L],[foo].[Struct_P2d_X],[foo].[Struct_P2d_Y],[foo].[Struct_P3d_X],[foo].[Struct_P3d_Y],[foo].[Struct_P3d_Z],[foo].[Struct_S] FROM (SELECT [Id] ECInstanceId,73 ECClassId,[Bl],[Bo],[D],[Dt],[G],[I],[L],[P2d_X],[P2d_Y],[P3d_X],[P3d_Y],[P3d_Z],[S],[Struct_Bl],[Struct_Bo],[Struct_D],[Struct_Dt],[Struct_G],[Struct_I],[Struct_L],[Struct_P2d_X],[Struct_P2d_Y],[Struct_P3d_X],[Struct_P3d_Y],[Struct_P3d_Z],[Struct_S] FROM [main].[test_Foo]) [foo]");
+        auto classId = m_ecdb.Schemas().GetClassId("Test", "Foo").GetValue();
+        Utf8PrintfString expectedSql("SELECT [foo].[Bl],[foo].[Bo],[foo].[D],[foo].[Dt],[foo].[G],[foo].[I],[foo].[L],[foo].[P2d_X],[foo].[P2d_Y],[foo].[P3d_X],[foo].[P3d_Y],[foo].[P3d_Z],[foo].[S],[foo].[Struct_Bl],[foo].[Struct_Bo],[foo].[Struct_D],[foo].[Struct_Dt],[foo].[Struct_G],[foo].[Struct_I],[foo].[Struct_L],[foo].[Struct_P2d_X],[foo].[Struct_P2d_Y],[foo].[Struct_P3d_X],[foo].[Struct_P3d_Y],[foo].[Struct_P3d_Z],[foo].[Struct_S],[foo].[Struct_Bl],[foo].[Struct_Bo],[foo].[Struct_D],[foo].[Struct_Dt],[foo].[Struct_G],[foo].[Struct_I],[foo].[Struct_L],[foo].[Struct_P2d_X],[foo].[Struct_P2d_Y],[foo].[Struct_P3d_X],[foo].[Struct_P3d_Y],[foo].[Struct_P3d_Z],[foo].[Struct_S] FROM (SELECT [Id] ECInstanceId,%" PRIu64 " ECClassId,[Bl],[Bo],[D],[Dt],[G],[I],[L],[P2d_X],[P2d_Y],[P3d_X],[P3d_Y],[P3d_Z],[S],[Struct_Bl],[Struct_Bo],[Struct_D],[Struct_Dt],[Struct_G],[Struct_I],[Struct_L],[Struct_P2d_X],[Struct_P2d_Y],[Struct_P3d_X],[Struct_P3d_Y],[Struct_P3d_Z],[Struct_S] FROM [main].[test_Foo]) [foo]", classId);
+        EXPECT_STRCASEEQ(stmt.GetNativeSql(), expectedSql.c_str());
     });
     }
 //-----------------------------------------------------------------------------------
@@ -3131,18 +3253,7 @@ TEST_F(ECSqlStatementTestFixture, NullLiteralForPrimArrays)
             }
         };
 
-    {
-    ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT CAST(NULL AS TIMESTAMP[]) FROM ecsql.PSA LIMIT 1"));
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
-    assertColumn(PRIMITIVETYPE_DateTime, stmt.GetValue(0), true);
-    }
-
     bmap<Utf8CP, bool> ecsqls;
-    ecsqls["SELECT CAST(NULL AS TIMESTAMP[]) FROM ecsql.P "
-        "UNION ALL "
-        "SELECT Dt_Array FROM ecsql.PSA"] = true;
-
     ecsqls["SELECT CAST(NULL AS Double) FROM ecsql.P "
         "UNION ALL "
         "SELECT Dt_Array FROM ecsql.PSA"] = false;
@@ -3208,22 +3319,7 @@ TEST_F(ECSqlStatementTestFixture, NullLiteralForStructArrays)
             }
         };
 
-    {
-    ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT CAST(NULL AS ecsql.PStruct[]) FROM ecsql.PSA LIMIT 1"));
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
-    assertColumn(*structType, stmt.GetValue(0), true);
-    }
-
     bmap<Utf8CP, bool> ecsqls;
-    ecsqls["SELECT CAST(NULL AS ecsql.PStruct[]) FROM ecsql.P "
-        "UNION ALL "
-        "SELECT PStruct_Array FROM ecsql.PSA"] = true;
-
-    ecsqls["SELECT CAST(NULL AS [ecsql].[PStruct][]) FROM ecsql.P "
-        "UNION ALL "
-        "SELECT PStruct_Array FROM ecsql.PSA"] = true;
-
     ecsqls["SELECT CAST(NULL AS ecsql.PStruct) FROM ecsql.P "
         "UNION ALL "
         "SELECT PStruct_Array FROM ecsql.PSA"] = false;
@@ -9085,6 +9181,64 @@ TEST_F(ECSqlStatementTestFixture, OrderBy)
     ASSERT_EQ(0, strcmp(lastName, "Da Vinci"));
     }
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+
+TEST_F(ECSqlStatementTestFixture, NullsOrdering) {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("StartupCompany.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO StartupCompany.Employee (FirstName, LastName) VALUES ('Leonardo', 'Da Vinci')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO StartupCompany.Employee (FirstName, LastName) VALUES (NULL, NULL)");
+    m_ecdb.SaveChanges();
+    //// Test ORDER BY NULLS FIRST
+    if ("ORDER BY FirstName NULLS FIRST") {
+        ECSqlStatement statement;
+        ECSqlStatus stat = statement.Prepare(m_ecdb, "SELECT FirstName, LastName FROM StartupCompany.Employee ORDER BY FirstName NULLS FIRST");
+        ASSERT_EQ(ECSqlStatus::Success, stat);
+
+        int count = 0;
+        while (statement.Step() == BE_SQLITE_ROW && count < 2) {
+            auto firstName = statement.GetValueText(0);
+            auto lastName = statement.GetValueText(1);
+            // Validate the first few entries
+            if (count == 0) {
+                ASSERT_STREQ(firstName, nullptr);
+                ASSERT_STREQ(lastName, nullptr);
+            }
+            else if (count == 1) {
+                ASSERT_STREQ(firstName, "Leonardo");
+                ASSERT_STREQ(lastName, "Da Vinci");
+            }
+            count++;
+        }
+            statement.Finalize();
+    }
+    // Test ORDER BY NULLS LAST
+    if ("ORDER BY LastName NULLS LAST") {
+        ECSqlStatement statement;
+        ECSqlStatus stat = statement.Prepare(m_ecdb, "SELECT FirstName, LastName FROM StartupCompany.Employee ORDER BY LastName NULLS LAST");
+        ASSERT_EQ(ECSqlStatus::Success, stat);
+        int counter = 0;
+        while (statement.Step() == BE_SQLITE_ROW && counter < 2) {
+            auto firstName = statement.GetValueText(0);
+            auto lastName = statement.GetValueText(1);
+
+            // Validate the first few entries
+            if (counter == 0) {
+                ASSERT_STREQ(firstName, "Leonardo");
+                ASSERT_STREQ(lastName, "Da Vinci");
+            }
+            else if (counter == 1) {
+                ASSERT_STREQ(firstName, nullptr);
+                ASSERT_STREQ(lastName, nullptr);
+            }
+            counter++;
+        }
+        statement.Finalize();
+    }
+}
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -10756,8 +10910,8 @@ TEST_F(ECSqlStatementTestFixture, RightLeftFullJoinTest)
         R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECEntityClass typeName="Person" >
                 <ECProperty propertyName="PersonalID" typeName="string" />
-                <ECProperty propertyName="First" typeName="string" />
-                <ECProperty propertyName="Last" typeName="string" />
+                <ECProperty propertyName="FirstName" typeName="string" />
+                <ECProperty propertyName="LastName" typeName="string" />
             </ECEntityClass>
             <ECEntityClass typeName="Identifier" >
                 <ECProperty propertyName="PersonId" typeName="string" />
@@ -10770,10 +10924,10 @@ TEST_F(ECSqlStatementTestFixture, RightLeftFullJoinTest)
 
     if ("Insert data")
         {
-        ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Person(PersonalID,First,Last) VALUES ('A1', 'AAAAAA', 'BBBBBB')"));
-        ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Person(PersonalID,First,Last) VALUES ('A2', 'Foo', 'Bar')"));
-        ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Person(PersonalID,First,Last) VALUES ('A3', 'Second', 'Person')"));
-        ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Person(PersonalID,First,Last) VALUES ('B1', 'XXXXXXX', 'ZZZZZZ')"));
+        ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Person(PersonalID,FirstName,LastName) VALUES ('A1', 'AAAAAA', 'BBBBBB')"));
+        ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Person(PersonalID,FirstName,LastName) VALUES ('A2', 'Foo', 'Bar')"));
+        ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Person(PersonalID,FirstName,LastName) VALUES ('A3', 'Second', 'Person')"));
+        ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Person(PersonalID,FirstName,LastName) VALUES ('B1', 'XXXXXXX', 'ZZZZZZ')"));
         ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Identifier(PersonId,Primary,Secondary,Random) VALUES ('A1', 'PR', 'SR', 123)"));
         ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Identifier(PersonId,Primary,Secondary,Random) VALUES ('B1', 'BBAA', 'CCDD', 255)"));
         ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Identifier(PersonId,Primary,Secondary,Random) VALUES ('C1', 'New', 'New', 999)"));
@@ -10785,11 +10939,11 @@ TEST_F(ECSqlStatementTestFixture, RightLeftFullJoinTest)
     if ("RIGHT JOIN")
         {
         auto expected = JsonValue(R"json([
-                {"First":"AAAAAA","Last":"BBBBBB","PersonId":"A1","PersonalID":"A1","Primary":"PR","Random":123,"Secondary":"SR","className":"TestSchema.Person","className_1":"TestSchema.Identifier","id":"0x1","id_1":"0x5"},
-                {"First":"AAAAAA","Last":"BBBBBB","PersonId":"A1","PersonalID":"A1","Primary":"PR","Random":165,"Secondary":"br","className":"TestSchema.Person","className_1":"TestSchema.Identifier","id":"0x1","id_1":"0x8"},
-                {"First":"AAAAAA","Last":"BBBBBB","PersonId":"A1","PersonalID":"A1","Primary":"...","Random":5,"Secondary":"---","className":"TestSchema.Person","className_1":"TestSchema.Identifier","id":"0x1","id_1":"0xa"},
-                {"First":"Foo","Last":"Bar","PersonId":"A2","PersonalID":"A2","Primary":"Second","Random":789,"Secondary":"Person","className":"TestSchema.Person","className_1":"TestSchema.Identifier","id":"0x2","id_1":"0x9"},
-                {"First":"XXXXXXX","Last":"ZZZZZZ","PersonId":"B1","PersonalID":"B1","Primary":"BBAA","Random":255,"Secondary":"CCDD","className":"TestSchema.Person","className_1":"TestSchema.Identifier","id":"0x4","id_1":"0x6"},
+                {"FirstName":"AAAAAA","LastName":"BBBBBB","PersonId":"A1","PersonalID":"A1","Primary":"PR","Random":123,"Secondary":"SR","className":"TestSchema.Person","className_1":"TestSchema.Identifier","id":"0x1","id_1":"0x5"},
+                {"FirstName":"AAAAAA","LastName":"BBBBBB","PersonId":"A1","PersonalID":"A1","Primary":"PR","Random":165,"Secondary":"br","className":"TestSchema.Person","className_1":"TestSchema.Identifier","id":"0x1","id_1":"0x8"},
+                {"FirstName":"AAAAAA","LastName":"BBBBBB","PersonId":"A1","PersonalID":"A1","Primary":"...","Random":5,"Secondary":"---","className":"TestSchema.Person","className_1":"TestSchema.Identifier","id":"0x1","id_1":"0xa"},
+                {"FirstName":"Foo","LastName":"Bar","PersonId":"A2","PersonalID":"A2","Primary":"Second","Random":789,"Secondary":"Person","className":"TestSchema.Person","className_1":"TestSchema.Identifier","id":"0x2","id_1":"0x9"},
+                {"FirstName":"XXXXXXX","LastName":"ZZZZZZ","PersonId":"B1","PersonalID":"B1","Primary":"BBAA","Random":255,"Secondary":"CCDD","className":"TestSchema.Person","className_1":"TestSchema.Identifier","id":"0x4","id_1":"0x6"},
                 {"PersonId":"C1","Primary":"New","Random":999,"Secondary":"New","className_1":"TestSchema.Identifier","id_1":"0x7"}
             ])json");
         ASSERT_EQ(expected, GetHelper().ExecuteSelectECSql("SELECT * FROM ts.Person RIGHT JOIN ts.Identifier ON Identifier.PersonId = Person.PersonalID"));
@@ -10799,12 +10953,12 @@ TEST_F(ECSqlStatementTestFixture, RightLeftFullJoinTest)
     if ("LEFT JOIN")
         {
         auto expected = JsonValue(R"json([
-                {"First":"AAAAAA","Last":"BBBBBB","PersonId":"A1","PersonalID":"A1","Primary":"...","Random":5,"Secondary":"---","className":"TestSchema.Person","className_1":"TestSchema.Identifier","id":"0x1","id_1":"0xa"},
-                {"First":"AAAAAA","Last":"BBBBBB","PersonId":"A1","PersonalID":"A1","Primary":"PR","Random":123,"Secondary":"SR","className":"TestSchema.Person","className_1":"TestSchema.Identifier","id":"0x1","id_1":"0x5"},
-                {"First":"AAAAAA","Last":"BBBBBB","PersonId":"A1","PersonalID":"A1","Primary":"PR","Random":165,"Secondary":"br","className":"TestSchema.Person","className_1":"TestSchema.Identifier","id":"0x1","id_1":"0x8"},
-                {"First":"Foo","Last":"Bar","PersonId":"A2","PersonalID":"A2","Primary":"Second","Random":789,"Secondary":"Person","className":"TestSchema.Person","className_1":"TestSchema.Identifier","id":"0x2","id_1":"0x9"},
-                {"First":"Second","Last":"Person","PersonalID":"A3","className":"TestSchema.Person","id":"0x3"},
-                {"First":"XXXXXXX","Last":"ZZZZZZ","PersonId":"B1","PersonalID":"B1","Primary":"BBAA","Random":255,"Secondary":"CCDD","className":"TestSchema.Person","className_1":"TestSchema.Identifier","id":"0x4","id_1":"0x6"}
+                {"FirstName":"AAAAAA","LastName":"BBBBBB","PersonId":"A1","PersonalID":"A1","Primary":"...","Random":5,"Secondary":"---","className":"TestSchema.Person","className_1":"TestSchema.Identifier","id":"0x1","id_1":"0xa"},
+                {"FirstName":"AAAAAA","LastName":"BBBBBB","PersonId":"A1","PersonalID":"A1","Primary":"PR","Random":123,"Secondary":"SR","className":"TestSchema.Person","className_1":"TestSchema.Identifier","id":"0x1","id_1":"0x5"},
+                {"FirstName":"AAAAAA","LastName":"BBBBBB","PersonId":"A1","PersonalID":"A1","Primary":"PR","Random":165,"Secondary":"br","className":"TestSchema.Person","className_1":"TestSchema.Identifier","id":"0x1","id_1":"0x8"},
+                {"FirstName":"Foo","LastName":"Bar","PersonId":"A2","PersonalID":"A2","Primary":"Second","Random":789,"Secondary":"Person","className":"TestSchema.Person","className_1":"TestSchema.Identifier","id":"0x2","id_1":"0x9"},
+                {"FirstName":"Second","LastName":"Person","PersonalID":"A3","className":"TestSchema.Person","id":"0x3"},
+                {"FirstName":"XXXXXXX","LastName":"ZZZZZZ","PersonId":"B1","PersonalID":"B1","Primary":"BBAA","Random":255,"Secondary":"CCDD","className":"TestSchema.Person","className_1":"TestSchema.Identifier","id":"0x4","id_1":"0x6"}
             ])json");
         ASSERT_EQ(expected, GetHelper().ExecuteSelectECSql("SELECT * FROM ts.Person LEFT JOIN ts.Identifier ON Identifier.PersonId = Person.PersonalID"));
         ASSERT_EQ(expected, GetHelper().ExecuteSelectECSql("SELECT * FROM ts.Person LEFT OUTER JOIN ts.Identifier ON Identifier.PersonId = Person.PersonalID"));
@@ -10813,16 +10967,63 @@ TEST_F(ECSqlStatementTestFixture, RightLeftFullJoinTest)
     if ("FULL JOIN")
         {
         auto expected = JsonValue(R"json([
-                {"First":"AAAAAA","Last":"BBBBBB","PersonId":"A1","PersonalID":"A1","Primary":"PR","Random":123,"Secondary":"SR","className":"TestSchema.Person","className_1":"TestSchema.Identifier","id":"0x1","id_1":"0x5"},
-                {"First":"AAAAAA","Last":"BBBBBB","PersonId":"A1","PersonalID":"A1","Primary":"PR","Random":165,"Secondary":"br","className":"TestSchema.Person","className_1":"TestSchema.Identifier","id":"0x1","id_1":"0x8"},
-                {"First":"AAAAAA","Last":"BBBBBB","PersonId":"A1","PersonalID":"A1","Primary":"...","Random":5,"Secondary":"---","className":"TestSchema.Person","className_1":"TestSchema.Identifier","id":"0x1","id_1":"0xa"},
-                {"First":"Foo","Last":"Bar","PersonId":"A2","PersonalID":"A2","Primary":"Second","Random":789,"Secondary":"Person","className":"TestSchema.Person","className_1":"TestSchema.Identifier","id":"0x2","id_1":"0x9"},
-                {"First":"Second","Last":"Person","PersonalID":"A3","className":"TestSchema.Person","id":"0x3"},
-                {"First":"XXXXXXX","Last":"ZZZZZZ","PersonId":"B1","PersonalID":"B1","Primary":"BBAA","Random":255,"Secondary":"CCDD","className":"TestSchema.Person","className_1":"TestSchema.Identifier","id":"0x4","id_1":"0x6"},
+                {"FirstName":"AAAAAA","LastName":"BBBBBB","PersonId":"A1","PersonalID":"A1","Primary":"PR","Random":123,"Secondary":"SR","className":"TestSchema.Person","className_1":"TestSchema.Identifier","id":"0x1","id_1":"0x5"},
+                {"FirstName":"AAAAAA","LastName":"BBBBBB","PersonId":"A1","PersonalID":"A1","Primary":"PR","Random":165,"Secondary":"br","className":"TestSchema.Person","className_1":"TestSchema.Identifier","id":"0x1","id_1":"0x8"},
+                {"FirstName":"AAAAAA","LastName":"BBBBBB","PersonId":"A1","PersonalID":"A1","Primary":"...","Random":5,"Secondary":"---","className":"TestSchema.Person","className_1":"TestSchema.Identifier","id":"0x1","id_1":"0xa"},
+                {"FirstName":"Foo","LastName":"Bar","PersonId":"A2","PersonalID":"A2","Primary":"Second","Random":789,"Secondary":"Person","className":"TestSchema.Person","className_1":"TestSchema.Identifier","id":"0x2","id_1":"0x9"},
+                {"FirstName":"Second","LastName":"Person","PersonalID":"A3","className":"TestSchema.Person","id":"0x3"},
+                {"FirstName":"XXXXXXX","LastName":"ZZZZZZ","PersonId":"B1","PersonalID":"B1","Primary":"BBAA","Random":255,"Secondary":"CCDD","className":"TestSchema.Person","className_1":"TestSchema.Identifier","id":"0x4","id_1":"0x6"},
                 {"PersonId":"C1","Primary":"New","Random":999,"Secondary":"New","className_1":"TestSchema.Identifier","id_1":"0x7"}
             ])json");
         ASSERT_EQ(expected, GetHelper().ExecuteSelectECSql("SELECT * FROM ts.Person FULL JOIN ts.Identifier ON Identifier.PersonId = Person.PersonalID"));
         ASSERT_EQ(expected, GetHelper().ExecuteSelectECSql("SELECT * FROM ts.Person FULL OUTER JOIN ts.Identifier ON Identifier.PersonId = Person.PersonalID"));
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, CrossJoinTest)
+    {
+        ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("CrossJoinTest.ecdb", SchemaItem(
+            R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                <ECEntityClass typeName="Person" >
+                    <ECProperty propertyName="PersonalID" typeName="string" />
+                    <ECProperty propertyName="FirstName" typeName="string" />
+                    <ECProperty propertyName="LastName" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="Identifier" >
+                    <ECProperty propertyName="PersonId" typeName="string" />
+                    <ECProperty propertyName="Primary" typeName="string" />
+                    <ECProperty propertyName="Secondary" typeName="string" />
+                    <ECProperty propertyName="Random" typeName="int" />
+                </ECEntityClass>
+            </ECSchema>)xml"
+        )));
+
+    if ("Insert data")
+        {
+        ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Person(PersonalID,FirstName,LastName) VALUES ('A1', 'A1FirstName', 'A1LastName')"));
+        ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Person(PersonalID,FirstName,LastName) VALUES ('A2', 'A2FirstName', 'A2LastName')"));
+        ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Person(PersonalID,FirstName,LastName) VALUES ('A3', 'A3FirstName', 'A3LastName')"));
+        ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Identifier(PersonId,Primary,Secondary,Random) VALUES ('A1', 'A1Primary', 'A1Secondary', 789)"));
+        ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Identifier(PersonId,Primary,Secondary,Random) VALUES ('A2', 'A2Primary', 'A2Secondary', 741)"));
+        ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Identifier(PersonId,Primary,Secondary,Random) VALUES ('A3', 'A3Primary', 'A3Secondary', 123)"));
+        }
+    if ("CROSS JOIN")
+        {
+        auto expected = JsonValue(R"json([
+                {"FirstName":"A1FirstName","LastName":"A1LastName","PersonId":"A1","PersonalID":"A1","Primary":"A1Primary","Random":789,"Secondary":"A1Secondary","className":"TestSchema.Person","className_1":"TestSchema.Identifier","id":"0x1","id_1":"0x4"},
+                {"FirstName":"A1FirstName","LastName":"A1LastName","PersonId":"A2","PersonalID":"A1","Primary":"A2Primary","Random":741,"Secondary":"A2Secondary","className":"TestSchema.Person","className_1":"TestSchema.Identifier","id":"0x1","id_1":"0x5"},
+                {"FirstName":"A1FirstName","LastName":"A1LastName","PersonId":"A3","PersonalID":"A1","Primary":"A3Primary","Random":123,"Secondary":"A3Secondary","className":"TestSchema.Person","className_1":"TestSchema.Identifier","id":"0x1","id_1":"0x6"},
+                {"FirstName":"A2FirstName","LastName":"A2LastName","PersonId":"A1","PersonalID":"A2","Primary":"A1Primary","Random":789,"Secondary":"A1Secondary","className":"TestSchema.Person","className_1":"TestSchema.Identifier","id":"0x2","id_1":"0x4"},
+                {"FirstName":"A2FirstName","LastName":"A2LastName","PersonId":"A2","PersonalID":"A2","Primary":"A2Primary","Random":741,"Secondary":"A2Secondary","className":"TestSchema.Person","className_1":"TestSchema.Identifier","id":"0x2","id_1":"0x5"},
+                {"FirstName":"A2FirstName","LastName":"A2LastName","PersonId":"A3","PersonalID":"A2","Primary":"A3Primary","Random":123,"Secondary":"A3Secondary","className":"TestSchema.Person","className_1":"TestSchema.Identifier","id":"0x2","id_1":"0x6"},
+                {"FirstName":"A3FirstName","LastName":"A3LastName","PersonId":"A1","PersonalID":"A3","Primary":"A1Primary","Random":789,"Secondary":"A1Secondary","className":"TestSchema.Person","className_1":"TestSchema.Identifier","id":"0x3","id_1":"0x4"},
+                {"FirstName":"A3FirstName","LastName":"A3LastName","PersonId":"A2","PersonalID":"A3","Primary":"A2Primary","Random":741,"Secondary":"A2Secondary","className":"TestSchema.Person","className_1":"TestSchema.Identifier","id":"0x3","id_1":"0x5"},
+                {"FirstName":"A3FirstName","LastName":"A3LastName","PersonId":"A3","PersonalID":"A3","Primary":"A3Primary","Random":123,"Secondary":"A3Secondary","className":"TestSchema.Person","className_1":"TestSchema.Identifier","id":"0x3","id_1":"0x6"}
+            ])json");
+        ASSERT_EQ(expected, GetHelper().ExecuteSelectECSql("SELECT * FROM ts.Person CROSS JOIN ts.Identifier"));
         }
     }
 
@@ -11049,6 +11250,220 @@ TEST_F(ECSqlStatementTestFixture, JoinUsingRelationshipSelect)
         auto actual = GetHelper().ExecuteSelectECSql(statementString);
 
         ASSERT_EQ(expected, actual);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, SelectAnySomeAll)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("SelectAnySomeAll.ecdb", SchemaItem(
+        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECEntityClass typeName="SomeEntity" >
+                <ECProperty propertyName="Name" typeName="string" />
+                <ECProperty propertyName="Primary" typeName="double" />
+                <ECProperty propertyName="Secondary" typeName="double" />
+                <ECProperty propertyName="Random" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml"
+    )));
+
+    if ("Insert data")
+        {
+        ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.SomeEntity(Name,Primary,Secondary,Random) VALUES ('One', -10.0, 10.1, 0)"));
+        ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.SomeEntity(Name,Primary,Secondary,Random) VALUES ('Two', 10.0, -10.1, 10)"));
+        ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.SomeEntity(Name,Primary,Secondary,Random) VALUES ('...', 1230.0, 10.0, 1)"));
+        ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.SomeEntity(Name,Primary,Secondary,Random) VALUES ('fas', -150.1, -150.1, -1)"));
+        ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.SomeEntity(Name,Primary,Secondary,Random) VALUES ('fas956', -20000.5, -150.1, -10)"));
+        }
+
+    if ("Select 1")
+        {
+        Utf8CP ecsql = "SELECT 1 FROM ts.SomeEntity WHERE 10 = ANY (SELECT 10)";
+        Utf8CP expectedSql =  "SELECT 1 FROM (SELECT [Id] ECInstanceId,75 ECClassId FROM [main].[ts_SomeEntity]) [SomeEntity] WHERE EXISTS(SELECT 10 WHERE 10 = 10)";
+
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_STREQ(expectedSql, stmt.GetNativeSql());
+
+        auto expected = JsonValue(R"json([{"1":1},{"1":1},{"1":1},{"1":1},{"1":1}])json");
+        ASSERT_EQ(expected, GetHelper().ExecuteSelectECSql(ecsql));
+        }
+
+    if ("Select single column")
+        {
+        Utf8CP ecsql = "SELECT * FROM ts.SomeEntity WHERE Primary = ANY (SELECT Secondary FROM ts.SomeEntity)";
+        Utf8CP expectedSql =  "SELECT [SomeEntity].[ECInstanceId],[SomeEntity].[ECClassId],[SomeEntity].[Name],[SomeEntity].[Primary],[SomeEntity].[Secondary],[SomeEntity].[Random] "
+            "FROM (SELECT [Id] ECInstanceId,75 ECClassId,[Name],[Primary],[Secondary],[Random] FROM [main].[ts_SomeEntity]) [SomeEntity] "
+            "WHERE EXISTS(SELECT [SomeEntity].[Secondary] FROM (SELECT [Id] ECInstanceId,75 ECClassId,[Secondary] FROM [main].[ts_SomeEntity]) [SomeEntity] WHERE [SomeEntity].[Primary] = [Secondary])";
+
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_STREQ(expectedSql, stmt.GetNativeSql());
+
+        auto expected = JsonValue(R"json([
+                {"Name":"Two","Primary":10.0,"Random":10,"Secondary":-10.10,"className":"TestSchema.SomeEntity","id":"0x2"},
+                {"Name":"fas","Primary":-150.09999999999999,"Random":-1,"Secondary":-150.09999999999999,"className":"TestSchema.SomeEntity","id":"0x4"}
+            ])json");
+        ASSERT_EQ(expected, GetHelper().ExecuteSelectECSql(ecsql));
+        }
+
+    if ("Select multiple columns")
+        {
+        Utf8CP ecsql = "SELECT * FROM ts.SomeEntity WHERE Primary = ANY (SELECT Random, Secondary FROM ts.SomeEntity)";
+        Utf8CP expectedSql =  "SELECT [SomeEntity].[ECInstanceId],[SomeEntity].[ECClassId],[SomeEntity].[Name],[SomeEntity].[Primary],[SomeEntity].[Secondary],[SomeEntity].[Random] "
+            "FROM (SELECT [Id] ECInstanceId,75 ECClassId,[Name],[Primary],[Secondary],[Random] FROM [main].[ts_SomeEntity]) [SomeEntity] "
+            "WHERE EXISTS(SELECT [SomeEntity].[Random],[SomeEntity].[Secondary] FROM (SELECT [Id] ECInstanceId,75 ECClassId,[Secondary],[Random] FROM [main].[ts_SomeEntity]) [SomeEntity] "
+            "WHERE [SomeEntity].[Primary] = [Random] OR [SomeEntity].[Primary] = [Secondary])";
+
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_STREQ(expectedSql, stmt.GetNativeSql());
+
+        auto expected = JsonValue(R"json([
+                {"Name":"One","Primary":-10.0,"Random":0,"Secondary":10.10,"className":"TestSchema.SomeEntity","id":"0x1"},
+                {"Name":"Two","Primary":10.0,"Random":10,"Secondary":-10.10,"className":"TestSchema.SomeEntity","id":"0x2"},
+                {"Name":"fas","Primary":-150.09999999999999,"Random":-1,"Secondary":-150.09999999999999,"className":"TestSchema.SomeEntity","id":"0x4"}
+            ])json");
+        ASSERT_EQ(expected, GetHelper().ExecuteSelectECSql(ecsql));
+        }
+
+    if ("Select less than ANY")
+        {
+        Utf8CP ecsql = "SELECT * FROM ts.SomeEntity WHERE Primary < ANY (SELECT Secondary FROM ts.SomeEntity WHERE Random <= 0)";
+        Utf8CP expectedSql =  "SELECT [SomeEntity].[ECInstanceId],[SomeEntity].[ECClassId],[SomeEntity].[Name],[SomeEntity].[Primary],[SomeEntity].[Secondary],[SomeEntity].[Random] "
+            "FROM (SELECT [Id] ECInstanceId,75 ECClassId,[Name],[Primary],[Secondary],[Random] FROM [main].[ts_SomeEntity]) [SomeEntity] "
+            "WHERE EXISTS(SELECT [SomeEntity].[Secondary] FROM (SELECT [Id] ECInstanceId,75 ECClassId,[Secondary],[Random] FROM [main].[ts_SomeEntity]) [SomeEntity] "
+            "WHERE ([SomeEntity].[Random]<=0) AND ([SomeEntity].[Primary] < [Secondary]))";
+
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_STREQ(expectedSql, stmt.GetNativeSql());
+
+        auto expected = JsonValue(R"json([
+                {"Name":"One","Primary":-10.0,"Random":0,"Secondary":10.10,"className":"TestSchema.SomeEntity","id":"0x1"},
+                {"Name":"Two","Primary":10.0,"Random":10,"Secondary":-10.10,"className":"TestSchema.SomeEntity","id":"0x2"},
+                {"Name":"fas","Primary":-150.09999999999999,"Random":-1,"Secondary":-150.09999999999999,"className":"TestSchema.SomeEntity","id":"0x4"},
+                {"Name":"fas956","Primary":-20000.50,"Random":-10,"Secondary":-150.09999999999999,"className":"TestSchema.SomeEntity","id":"0x5"}
+            ])json");
+        ASSERT_EQ(expected, GetHelper().ExecuteSelectECSql(ecsql));
+        }
+
+    if ("Select with GROUP BY")
+        {
+        Utf8CP ecsql = "SELECT * FROM ts.SomeEntity WHERE Primary < ANY (SELECT Secondary FROM ts.SomeEntity GROUP BY Random)";
+        Utf8CP expectedSql =  "SELECT [SomeEntity].[ECInstanceId],[SomeEntity].[ECClassId],[SomeEntity].[Name],[SomeEntity].[Primary],[SomeEntity].[Secondary],[SomeEntity].[Random] "
+            "FROM (SELECT [Id] ECInstanceId,75 ECClassId,[Name],[Primary],[Secondary],[Random] FROM [main].[ts_SomeEntity]) [SomeEntity] "
+            "WHERE EXISTS(SELECT [SomeEntity].[Secondary] FROM (SELECT [Id] ECInstanceId,75 ECClassId,[Secondary],[Random] FROM [main].[ts_SomeEntity]) "
+            "[SomeEntity] WHERE [SomeEntity].[Primary] < [Secondary]  GROUP BY [SomeEntity].[Random])";
+
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_STREQ(expectedSql, stmt.GetNativeSql());
+
+        auto expected = JsonValue(R"json([
+                {"Name":"One","Primary":-10.0,"Random":0,"Secondary":10.10,"className":"TestSchema.SomeEntity","id":"0x1"},
+                {"Name":"Two","Primary":10.0,"Random":10,"Secondary":-10.10,"className":"TestSchema.SomeEntity","id":"0x2"},
+                {"Name":"fas","Primary":-150.09999999999999,"Random":-1,"Secondary":-150.09999999999999,"className":"TestSchema.SomeEntity","id":"0x4"},
+                {"Name":"fas956","Primary":-20000.50,"Random":-10,"Secondary":-150.09999999999999,"className":"TestSchema.SomeEntity","id":"0x5"}
+            ])json");
+        ASSERT_EQ(expected, GetHelper().ExecuteSelectECSql(ecsql));
+        }
+
+    if ("Select with WHERE")
+        {
+        Utf8CP ecsql = "SELECT * FROM ts.SomeEntity WHERE Primary >= SOME (SELECT Secondary FROM ts.SomeEntity WHERE Secondary > 0)";
+        Utf8CP expectedSql =  "SELECT [SomeEntity].[ECInstanceId],[SomeEntity].[ECClassId],[SomeEntity].[Name],[SomeEntity].[Primary],[SomeEntity].[Secondary],[SomeEntity].[Random] "
+            "FROM (SELECT [Id] ECInstanceId,75 ECClassId,[Name],[Primary],[Secondary],[Random] FROM [main].[ts_SomeEntity]) [SomeEntity] "
+            "WHERE EXISTS(SELECT [SomeEntity].[Secondary] FROM (SELECT [Id] ECInstanceId,75 ECClassId,[Secondary] FROM [main].[ts_SomeEntity]) "
+            "[SomeEntity] WHERE ([SomeEntity].[Secondary]>0) AND ([SomeEntity].[Primary] >= [Secondary]))";
+
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_STREQ(expectedSql, stmt.GetNativeSql());
+
+        auto expected = JsonValue(R"json([
+                {"Name":"Two","Primary":10.0,"Random":10,"Secondary":-10.10,"className":"TestSchema.SomeEntity","id":"0x2"},
+                {"Name":"...","Primary":1230.0,"Random":1,"Secondary":10.0,"className":"TestSchema.SomeEntity","id":"0x3"}
+            ])json");
+        ASSERT_EQ(expected, GetHelper().ExecuteSelectECSql(ecsql));
+        }
+
+    if ("Select with Limit")
+        {
+        Utf8CP ecsql = "SELECT * FROM ts.SomeEntity WHERE Primary <= SOME (SELECT Secondary FROM ts.SomeEntity WHERE Secondary > 0 Limit 1)";
+        Utf8CP expectedSql =  "SELECT [SomeEntity].[ECInstanceId],[SomeEntity].[ECClassId],[SomeEntity].[Name],[SomeEntity].[Primary],[SomeEntity].[Secondary],[SomeEntity].[Random] "
+            "FROM (SELECT [Id] ECInstanceId,75 ECClassId,[Name],[Primary],[Secondary],[Random] FROM [main].[ts_SomeEntity]) [SomeEntity] "
+            "WHERE EXISTS(SELECT [SomeEntity].[Secondary] FROM (SELECT [Id] ECInstanceId,75 ECClassId,[Secondary] FROM [main].[ts_SomeEntity]) "
+            "[SomeEntity] WHERE ([SomeEntity].[Secondary]>0) AND ([SomeEntity].[Primary] <= [Secondary])  LIMIT 1)";
+
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_STREQ(expectedSql, stmt.GetNativeSql());
+
+        auto expected = JsonValue(R"json([
+                {"Name":"One","Primary":-10.0,"Random":0,"Secondary":10.10,"className":"TestSchema.SomeEntity","id":"0x1"},
+                {"Name":"Two","Primary":10.0,"Random":10,"Secondary":-10.10,"className":"TestSchema.SomeEntity","id":"0x2"},
+                {"Name":"fas","Primary":-150.09999999999999,"Random":-1,"Secondary":-150.09999999999999,"className":"TestSchema.SomeEntity","id":"0x4"},
+                {"Name":"fas956","Primary":-20000.50,"Random":-10,"Secondary":-150.09999999999999,"className":"TestSchema.SomeEntity","id":"0x5"}
+            ])json");
+        ASSERT_EQ(expected, GetHelper().ExecuteSelectECSql(ecsql));
+        }
+
+    if ("Select more than ALL")
+        {
+        Utf8CP ecsql = "SELECT * FROM ts.SomeEntity WHERE Primary > ALL (SELECT Secondary FROM ts.SomeEntity WHERE Random = 0)";
+        Utf8CP expectedSql =  "SELECT [SomeEntity].[ECInstanceId],[SomeEntity].[ECClassId],[SomeEntity].[Name],[SomeEntity].[Primary],[SomeEntity].[Secondary],[SomeEntity].[Random] "
+            "FROM (SELECT [Id] ECInstanceId,75 ECClassId,[Name],[Primary],[Secondary],[Random] FROM [main].[ts_SomeEntity]) [SomeEntity] "
+            "WHERE NOT EXISTS(SELECT [SomeEntity].[Secondary] FROM (SELECT [Id] ECInstanceId,75 ECClassId,[Secondary],[Random] "
+            "FROM [main].[ts_SomeEntity]) [SomeEntity] WHERE ([SomeEntity].[Random]=0) AND ([Secondary] > [SomeEntity].[Primary]))";
+
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_STREQ(expectedSql, stmt.GetNativeSql());
+
+        auto expected = JsonValue(R"json([{"Name":"...","Primary":1230.0,"Random":1,"Secondary":10.0,"className":"TestSchema.SomeEntity","id":"0x3"}])json");
+        ASSERT_EQ(expected, GetHelper().ExecuteSelectECSql(ecsql));
+        }
+
+    if ("Select Not Equals ALL")
+        {
+        Utf8CP ecsql = "SELECT * FROM ts.SomeEntity WHERE Primary <> ALL (SELECT Secondary FROM ts.SomeEntity WHERE Random > 0)";
+        Utf8CP expectedSql =  "SELECT [SomeEntity].[ECInstanceId],[SomeEntity].[ECClassId],[SomeEntity].[Name],[SomeEntity].[Primary],[SomeEntity].[Secondary],[SomeEntity].[Random] "
+            "FROM (SELECT [Id] ECInstanceId,75 ECClassId,[Name],[Primary],[Secondary],[Random] FROM [main].[ts_SomeEntity]) [SomeEntity] "
+            "WHERE NOT EXISTS(SELECT [SomeEntity].[Secondary] FROM (SELECT [Id] ECInstanceId,75 ECClassId,[Secondary],[Random] "
+            "FROM [main].[ts_SomeEntity]) [SomeEntity] WHERE ([SomeEntity].[Random]>0) AND ([Secondary] = [SomeEntity].[Primary]))";
+
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_STREQ(expectedSql, stmt.GetNativeSql());
+
+        auto expected = JsonValue(R"json([
+                {"Name":"One","Primary":-10.0,"Random":0,"Secondary":10.10,"className":"TestSchema.SomeEntity","id":"0x1"},
+                {"Name":"...","Primary":1230.0,"Random":1,"Secondary":10.0,"className":"TestSchema.SomeEntity","id":"0x3"},
+                {"Name":"fas","Primary":-150.09999999999999,"Random":-1,"Secondary":-150.09999999999999,"className":"TestSchema.SomeEntity","id":"0x4"},
+                {"Name":"fas956","Primary":-20000.50,"Random":-10,"Secondary":-150.09999999999999,"className":"TestSchema.SomeEntity","id":"0x5"}
+            ])json");
+        ASSERT_EQ(expected, GetHelper().ExecuteSelectECSql(ecsql));
+        }
+
+    if ("Select less than ALL")
+        {
+        Utf8CP ecsql = "SELECT * FROM ts.SomeEntity WHERE Primary < ALL (SELECT Secondary FROM ts.SomeEntity)";
+        Utf8CP expectedSql =  "SELECT [SomeEntity].[ECInstanceId],[SomeEntity].[ECClassId],[SomeEntity].[Name],[SomeEntity].[Primary],[SomeEntity].[Secondary],[SomeEntity].[Random] "
+            "FROM (SELECT [Id] ECInstanceId,75 ECClassId,[Name],[Primary],[Secondary],[Random] FROM [main].[ts_SomeEntity]) [SomeEntity] "
+            "WHERE NOT EXISTS(SELECT [SomeEntity].[Secondary] FROM (SELECT [Id] ECInstanceId,75 ECClassId,[Secondary] FROM [main].[ts_SomeEntity]) [SomeEntity] WHERE [Secondary] < [SomeEntity].[Primary])";
+
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_STREQ(expectedSql, stmt.GetNativeSql());
+
+        auto expected = JsonValue(R"json([
+                {"Name":"fas","Primary":-150.09999999999999,"Random":-1,"Secondary":-150.09999999999999,"className":"TestSchema.SomeEntity","id":"0x4"},
+                {"Name":"fas956","Primary":-20000.50,"Random":-10,"Secondary":-150.09999999999999,"className":"TestSchema.SomeEntity","id":"0x5"}
+            ])json");
+        ASSERT_EQ(expected, GetHelper().ExecuteSelectECSql(ecsql));
         }
     }
 END_ECDBUNITTESTS_NAMESPACE

@@ -26,17 +26,16 @@ LsSymbolReference::RotationMode LsSymbolReference::GetRotationMode () const
 //---------------------------------------------------------------------------------------
 static double getGeometryPartMaxOffset (LsSymbolComponentCR symbol, double angle)
     {
-    //  NEEDSWORK_LINESTYLES  It would be better to draw this with the transform instead of transforming the range
+    DRange3d range;
+    symbol.GetRange(range);
+
     Transform transform;
     transform.InitFromPrincipleAxisRotations(Transform::FromIdentity(), 0.0, 0.0, angle);
-    DRange3d        range;
-
-    symbol.GetRange(range);
     transform.Multiply(range.low);
     transform.Multiply(range.high);
 
-    double      maxWidth = fabs (range.low.y);
-    double      test;
+    double maxWidth = fabs (range.low.y);
+    double test;
 
     if ((test = fabs (range.high.y)) > maxWidth)
         maxWidth = test;
@@ -50,7 +49,6 @@ static double getGeometryPartMaxOffset (LsSymbolComponentCR symbol, double angle
     return maxWidth;
     }
 
-
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -60,7 +58,7 @@ double LsSymbolReference::_GetMaxWidth () const
         return 0.0;
 
     double offset   = m_offset.Magnitude ();
-    double maxWidth = getGeometryPartMaxOffset(*m_symbol, m_angle)/m_symbol->GetMuDef();
+    double maxWidth = getGeometryPartMaxOffset(*m_symbol, m_angle) / (m_symbol->IsNotScaled() ? 1.0 : m_symbol->GetMuDef());
 
     return  (offset + maxWidth) * 2.0;
     }

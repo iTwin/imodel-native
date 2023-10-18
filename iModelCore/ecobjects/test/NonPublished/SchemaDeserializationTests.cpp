@@ -2465,4 +2465,138 @@ TEST_F(SchemaDeserializationTest, RoundtripSchemaWithEmptyElements)
     ASSERT_FALSE(diff.Changes().IsChanged());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaDeserializationTest, MultipleVersionsOfSchemaInSameContext)
+    {
+    //There was a bug in CA deserialization so the CA would use a wrong version
+    //of the schema if multiple versions were in a context.
+    //Since SchemaMatchType::LatestReadCompatible and ECSchemaCache behave unpredictable (the cache uses a bmap and returns the first valid item),
+    //we are adding more than two versions of the schema to increase the likelyhood of the cache hitting the wrong instance
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+
+    Utf8CP schemaXml = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="01.00.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECCustomAttributeClass typeName="MyCustomAttribute" appliesTo="AnyClass" modifier="Sealed">
+            <ECProperty propertyName="Foo" typeName="string" />
+          </ECCustomAttributeClass>
+          <ECEntityClass typeName="MyClass">
+            <ECCustomAttributes>
+              <MyCustomAttribute xmlns="TestSchema.01.00.01">
+                <Foo>Something</Foo>
+              </MyCustomAttribute>
+            </ECCustomAttributes>
+          </ECEntityClass>
+        </ECSchema>)xml";
+
+    Utf8CP schemaXmlAlt = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="01.00.03" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECCustomAttributeClass typeName="MyCustomAttribute" appliesTo="AnyClass" modifier="Sealed">
+            <ECProperty propertyName="Foo" typeName="string" />
+          </ECCustomAttributeClass>
+          <ECEntityClass typeName="MyClass">
+            <ECCustomAttributes>
+              <MyCustomAttribute xmlns="TestSchema.01.00.03">
+                <Foo>Something</Foo>
+              </MyCustomAttribute>
+            </ECCustomAttributes>
+          </ECEntityClass>
+        </ECSchema>)xml";
+
+    Utf8CP schemaXmlAlt2 = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECCustomAttributeClass typeName="MyCustomAttribute" appliesTo="AnyClass" modifier="Sealed">
+            <ECProperty propertyName="Foo" typeName="string" />
+          </ECCustomAttributeClass>
+          <ECEntityClass typeName="MyClass">
+            <ECCustomAttributes>
+              <MyCustomAttribute xmlns="TestSchema.01.00.01">
+                <Foo>Something</Foo>
+              </MyCustomAttribute>
+            </ECCustomAttributes>
+          </ECEntityClass>
+        </ECSchema>)xml";
+
+    StringSchemaLocater locater;
+    SchemaKey key ("TestSchema", 1, 0, 2);
+    SchemaKey keyAlt ("TestSchema", 1, 0, 3);
+    SchemaKey keyAlt2 ("TestSchema", 1, 0, 1);
+    locater.AddSchemaString(keyAlt, schemaXmlAlt);
+    locater.AddSchemaString(keyAlt2, schemaXmlAlt2);
+    locater.AddSchemaString(key, schemaXml);
+    context->AddSchemaLocater(locater);
+
+    {
+    ECSchemaPtr schema = context->LocateSchema(keyAlt, SchemaMatchType::Exact);
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_EQ(3, schema->GetVersionMinor());
+    ASSERT_EQ(0, schema->GetReferencedSchemas().size());
+    auto c = schema->GetClassCP("MyClass");
+    ASSERT_TRUE(c != nullptr);
+    auto ca = c->GetCustomAttribute("MyCustomAttribute");
+    ASSERT_TRUE(ca.IsValid());
+    ASSERT_EQ(3, ca->GetClass().GetSchema().GetVersionMinor());
+    }
+
+    {
+    ECSchemaPtr schema = context->LocateSchema(keyAlt2, SchemaMatchType::Exact);
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_EQ(1, schema->GetVersionMinor());
+    ASSERT_EQ(0, schema->GetReferencedSchemas().size());
+    auto c = schema->GetClassCP("MyClass");
+    ASSERT_TRUE(c != nullptr);
+    auto ca = c->GetCustomAttribute("MyCustomAttribute");
+    ASSERT_TRUE(ca.IsValid());
+    ASSERT_EQ(1, ca->GetClass().GetSchema().GetVersionMinor());
+    }
+
+    {
+    ECSchemaPtr schema = context->LocateSchema(key, SchemaMatchType::Exact);
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_EQ(2, schema->GetVersionMinor());
+    ASSERT_EQ(0, schema->GetReferencedSchemas().size());
+    auto c = schema->GetClassCP("MyClass");
+    ASSERT_TRUE(c != nullptr);
+    auto ca = c->GetCustomAttribute("MyCustomAttribute");
+    ASSERT_TRUE(ca.IsValid());
+    ASSERT_EQ(2, ca->GetClass().GetSchema().GetVersionMinor());
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaDeserializationTest, MissingBSCAReference)
+    {
+    // For standard schemas, our custom attribute deserializer automatically adds missing references. It writes a warning to the logs but schema is expected
+    // to load successfully
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+
+    Utf8CP const schemaXml =
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECStructClass typeName = 'AdHocHolder'>"
+        "       <ECCustomAttributes>"
+        "           <AdhocPropertyContainerDefinition xmlns='Bentley_Standard_CustomAttributes.01.10'>"
+        "               <NameProperty>Name</NameProperty>"
+        "               <DisplayLabelProperty>Label</DisplayLabelProperty>"
+        "               <ValueProperty>Value</ValueProperty>"
+        "               <TypeProperty>Type</TypeProperty>"
+        "               <UnitProperty>Unit</UnitProperty>"
+        "               <ExtendTypeProperty>ExtendType</ExtendTypeProperty>"
+        "               <IsReadOnlyProperty>IsReadOnly</IsReadOnlyProperty>"
+        "           </AdhocPropertyContainerDefinition>"
+        "       </ECCustomAttributes>"
+        "       <ECProperty propertyName='Name' typeName='string' />"
+        "       <ECProperty propertyName='Label' typeName='string' />"
+        "       <ECProperty propertyName='Value' typeName='string' />"
+        "       <ECProperty propertyName='Type' typeName='int' />"
+        "       <ECProperty propertyName='Unit' typeName='string' />"
+        "       <ECProperty propertyName='ExtendType' typeName='string' />"
+        "       <ECProperty propertyName='IsReadOnly' typeName='boolean' />"
+        "   </ECStructClass>"
+        "</ECSchema>";
+            
+    EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    }
+
 END_BENTLEY_ECN_TEST_NAMESPACE

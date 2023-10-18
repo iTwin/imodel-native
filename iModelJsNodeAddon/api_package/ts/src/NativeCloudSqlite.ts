@@ -86,6 +86,29 @@ export namespace NativeCloudSqlite {
     readonly httpcode: number;
   }
 
+  /** Returned from 'CloudContainer.queryBcvStats' describing the rows in the bcv_stat table.
+   *  Also gathers additional statistics using the other virtual tables bcv_container, bcv_database
+   *  such as totalClients, ongoingPrefetches, activeClients and attachedContainers.
+   */
+  export interface BcvStats {
+    /** The total number of cache slots that are currently in use or 'locked' by ongoing client read transactions. In daemonless mode, this value is always 0.
+     *  A locked cache slot implies that it is not eligible for eviction in the event of a full cachefile.
+    */
+    readonly lockedCacheslots: number;
+    /** The current number of slots with data in them in the cache. */
+    readonly populatedCacheslots: number;
+    /** The configured size of the cache, in number of slots. */
+    readonly totalCacheslots: number;
+    /** The total number of clients opened on this cache */
+    readonly totalClients?: number;
+    /** The total number of ongoing prefetches on this cache */
+    readonly ongoingPrefetches?: number;
+    /** The total number of active clients on this cache. An active client is one which has an open read txn. */
+    readonly activeClients?: number;
+    /** The total number of attached containers on this cache. */
+    readonly attachedContainers?: number;
+  }
+
   /** Properties for accessing a CloudContainer */
   export type ContainerAccessProps = ContainerProps & {
     /** Duration for holding write lock, in seconds. After this time the write lock expires if not refreshed. Default is one hour. */

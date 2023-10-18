@@ -715,21 +715,30 @@ double &amplitude
 //! @param [in] alpha constant coff
 //! @param [in] beta  cosine coff
 //! @param [in] gamma sine coff
-//! @param [in] theta0 start angle of interval
-//! @param [in] sweep interval sweep
-//! @param [out] angles
+//! @param [out] angles array of up to 2 radian roots
 //! @param [out] count angle count.  0 if no amplitude.
 //! @param [out] thetaMax angle where maximum value alpha + amplitude occurs.
-//! @param [out] thetaMin angle where minimum value alpha - almplitude occurs.
+//! @param [out] thetaMin angle where minimum value alpha - amplitude occurs.
 //! @param [out] amplitude (absolute) amplitude of wave.
-bool AnalyticRoots::LinearTrigFormRoots (double alpha, double beta, double gamma, double *angles, size_t &count, double &thetaMax, double &thetaMin, double &amplitude)
+//! @param [in] tol optional tolerance to catch near-tangents that don't intersect (non-positive to ignore)
+bool AnalyticRoots::LinearTrigFormRoots (double alpha, double beta, double gamma, double *angles, size_t &count, double &thetaMax, double &thetaMin, double &amplitude, double tol)
     {
+    if (tol < 0.0)
+        tol = 0.0;
     count = 0;
     if (!NormalizeCosine (beta, gamma, thetaMin, thetaMax, amplitude))
         return false;
-    if (fabs (alpha) <= amplitude)
+    if (fabs(alpha) <= amplitude + tol)
         {
-        double delta = acos (-alpha / amplitude);
+        double ratio;
+        if (!SafeDivide(ratio, -alpha, amplitude, 0.0))
+            return false;
+        // clamp to acos domain, snap to prefer "on" classification (observed downstream altitudes greater than tol in SimpleCrossingCounter::CheckPoint_leftRight)
+        if (ratio < mgds_fc_nearZero - 1.0)
+            ratio = -1.0;
+        else if (ratio > 1.0 - mgds_fc_nearZero)
+            ratio = 1.0;
+        double delta = acos(ratio);
         angles[count++] = thetaMax - delta;
         angles[count++] = thetaMax + delta;
         }

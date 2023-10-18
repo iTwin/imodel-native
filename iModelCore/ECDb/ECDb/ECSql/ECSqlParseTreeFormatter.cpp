@@ -11,6 +11,48 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+BentleyStatus ECSqlParseTreeFormatter::ECSqlToJson(BeJsValue out, ECDbCR ecdb, Utf8CP ecsql) {
+    if (Utf8String::IsNullOrEmpty(ecsql))
+        return ERROR;
+
+    ECSqlStatement stmt;
+    if (ECSqlStatus::Success != stmt.Prepare(ecdb, ecsql))
+        return ERROR;
+
+    ECSqlParser parser;
+    std::unique_ptr<Exp> exp = parser.Parse(ecdb, ecsql, ecdb.GetImpl().Issues());
+    if (exp == nullptr)
+        return ERROR;
+
+    out.SetEmptyObject();
+    Exp::JsonFormat fmt;
+    exp->ToJson(out, fmt);
+    return SUCCESS;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+BentleyStatus ECSqlParseTreeFormatter::NormalizeECSql(Utf8StringR out, ECDbCR ecdb, Utf8CP ecsql) {
+    if (Utf8String::IsNullOrEmpty(ecsql))
+        return ERROR;
+
+    ECSqlStatement stmt;
+    if (ECSqlStatus::Success != stmt.Prepare(ecdb, ecsql))
+        return ERROR;
+
+    ECSqlParser parser;
+    std::unique_ptr<Exp> exp = parser.Parse(ecdb, ecsql, ecdb.GetImpl().Issues());
+    if (exp == nullptr)
+        return ERROR;
+
+    out = exp->ToECSql();
+    return SUCCESS;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 BentleyStatus ECSqlParseTreeFormatter::ParseAndFormatECSqlParseNodeTree(Utf8StringR parseNodeTreeString, ECDbCR ecdb, Utf8CP ecsql)
     {
     if (Utf8String::IsNullOrEmpty(ecsql))
@@ -22,7 +64,7 @@ BentleyStatus ECSqlParseTreeFormatter::ParseAndFormatECSqlParseNodeTree(Utf8Stri
     if (parseNode == nullptr)
         {
         if (!error.empty())
-            ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, error.c_str());
+            ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0497, error.c_str());
 
         return ERROR;
         }

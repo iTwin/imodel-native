@@ -324,21 +324,6 @@ Render::AmbientOcclusionParams Render::AmbientOcclusionParams::FromJson(BeJsCons
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Feature::operator<(FeatureCR rhs) const
-    {
-    if (GetElementId() != rhs.GetElementId())
-        return GetElementId() < rhs.GetElementId();
-    else if (GetSubCategoryId() != rhs.GetSubCategoryId())
-        return GetSubCategoryId() < rhs.GetSubCategoryId();
-    else if (GetClass() != rhs.GetClass())
-        return static_cast<uint8_t>(GetClass()) < static_cast<uint8_t>(rhs.GetClass());
-    else
-        return false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 bool MeshEdge::operator<(MeshEdge const& rhs) const
     {
     return m_indices[0] == rhs.m_indices[0] ? (m_indices[1] < rhs.m_indices[1]) :  (m_indices[0] < rhs.m_indices[0]);
@@ -537,53 +522,106 @@ MaterialPtr System::_GetMaterial(RenderMaterialId id, DgnDbR db) const
     return mat;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-PackedFeatureTable FeatureTable::Pack() const
-    {
-    ByteStream bytes(static_cast<uint32_t>(PackedFeature::PackedSize() * m_map.size()));
-    bmap<DgnSubCategoryId, uint32_t> subCategories;
-    auto getSubCategoryIndex = [&](DgnSubCategoryId id)
-        {
-        auto nextIndex = static_cast<uint32_t>(subCategories.size());
-        auto iter = subCategories.Insert(id, nextIndex);
-        return iter.first->second;
-        };
 
-    for (auto const& kvp : m_map)
-        {
-        FeatureCR feature = kvp.first;
-        uint32_t featureIndex = kvp.second;
-        PackedFeature packedFeature(feature.GetElementId(), getSubCategoryIndex(feature.GetSubCategoryId()), feature.GetClass());
-        size_t byteOffset = featureIndex * PackedFeature::PackedSize();
-        memcpy(bytes.data() + byteOffset, &packedFeature, PackedFeature::PackedSize());
-        }
+PackedFeatureTable FeatureTable::Pack() const {
+  ByteStream bytes(static_cast<uint32_t>(PackedFeature::PackedSize() * m_map.size()));
+  bmap<DgnSubCategoryId, uint32_t> subCategories;
+  auto getSubCategoryIndex = [&](DgnSubCategoryId id) {
+    auto nextIndex = static_cast<uint32_t>(subCategories.size());
+    auto iter = subCategories.Insert(id, nextIndex);
+    return iter.first->second;
+  };
 
-    size_t subCategoriesOffset = bytes.size();
-    size_t nSubCategoryBytes = subCategories.size() * sizeof(uint64_t);
-    bytes.resize(bytes.size() + nSubCategoryBytes);
-    for (auto const& kvp : subCategories)
-        {
-        uint64_t id = kvp.first.GetValueUnchecked();
-        size_t byteIndex = kvp.second * sizeof(id);
-        memcpy(bytes.data() + subCategoriesOffset + byteIndex, &id, sizeof(id));
-        }
+  for (auto const& kvp : m_map) {
+    FeatureCR feature = kvp.first;
+    uint32_t featureIndex = kvp.second;
+    PackedFeature packedFeature(feature.GetElementId(), getSubCategoryIndex(feature.GetSubCategoryId()), feature.GetClass());
+    size_t byteOffset = featureIndex * PackedFeature::PackedSize();
+    memcpy(bytes.data() + byteOffset, &packedFeature, PackedFeature::PackedSize());
+  }
 
-    return PackedFeatureTable(std::move(bytes), GetNumIndices(), GetModelId(), GetMaxFeatures());
+  size_t nBytesForModels = Type::SingleModel == m_type ? 0 : m_lastFeatureIndexPerModel.size() * 4 * 3;
+  size_t subCategoriesOffset = bytes.size();
+  size_t nSubCategoryBytes = subCategories.size() * sizeof(uint64_t);
+  bytes.resize(bytes.size() + nSubCategoryBytes + nBytesForModels);
+  for (auto const& kvp : subCategories) {
+    uint64_t id = kvp.first.GetValueUnchecked();
+    size_t byteIndex = kvp.second * sizeof(id);
+    memcpy(bytes.data() + subCategoriesOffset + byteIndex, &id, sizeof(id));
+  }
+
+  if (Type::MultiModel == m_type) {
+    size_t modelsOffset = subCategoriesOffset + nSubCategoryBytes;
+    auto p = bytes.data() + modelsOffset;
+    for (uint32_t const& lastFeatureIndex : m_lastFeatureIndexPerModel) {
+      auto feature = GetFeature(lastFeatureIndex);
+      memcpy(p, &lastFeatureIndex, sizeof(lastFeatureIndex));
+      p += sizeof(uint32_t);
+
+      uint64_t modelId = feature.GetModelId().GetValueUnchecked();
+      memcpy(p, &modelId, sizeof(modelId));
+      p += sizeof(uint64_t);
+    }
+  }
+
+  return PackedFeatureTable(std::move(bytes), GetNumIndices(), GetMaxFeatures(), static_cast<uint32_t>(subCategories.size()));
+}
+
+
+uint32_t FeatureTable::GetIndex(FeatureCR feature) {
+  uint32_t index = 0;
+  if (!FindIndex(index, feature) && !IsFull()) {
+    auto curModelId = m_map.empty() ? DgnModelId() : m_map.rbegin()->first.GetModelId();
+    if (!m_map.empty() && curModelId != feature.GetModelId() && Type::SingleModel == m_type)
+      throw std::runtime_error("Attempting to insert a second model into a single-model feature table");
+
+    if (feature.GetModelId() < curModelId)
+      throw std::runtime_error("Features must be inserted in ascending order by model Id");
+
+    if (m_map.empty() || feature.GetModelId() > curModelId)
+      m_lastFeatureIndexPerModel.push_back(0);
+
+    index = GetNumIndices();
+    m_map[feature] = index;
+    m_lastFeatureIndexPerModel.back() = std::max(m_lastFeatureIndexPerModel.back(), index);
+  }
+
+  return index;
+}
+
+FeatureTable PackedFeatureTable::Unpack(DgnModelId singleModelId) const {
+  size_t baseSize = PackedFeature::PackedSize() * m_numFeatures + sizeof(uint64_t) * m_numSubCategories;
+  BeAssert(baseSize <= m_bytes.size());
+  bool isMultiModel = baseSize < m_bytes.size();
+  uint32_t const* modelEntry = isMultiModel ? reinterpret_cast<uint32_t const*>(m_bytes.data() + baseSize) : nullptr;
+
+  auto modelIdFromEntry = [](uint32_t const* entry) {
+    uint64_t lo = entry[1];
+    uint64_t hi = entry[2];
+    return DgnModelId(lo | (hi << 32));
+  };
+
+  DgnModelId modelId = isMultiModel ? modelIdFromEntry(modelEntry) : singleModelId;
+  FeatureTable table(isMultiModel ? FeatureTable::Type::MultiModel : FeatureTable::Type::SingleModel, m_maxFeatures);
+
+  if (nullptr != modelEntry) {
+    size_t nModelEntries = (m_bytes.size() - baseSize) / (3 * sizeof(uint32_t));
+    table.m_lastFeatureIndexPerModel.reserve(nModelEntries);
+    for (size_t i = 0; i < nModelEntries; i++)
+      table.m_lastFeatureIndexPerModel.push_back(modelEntry[i * 3]);
+  }
+
+  for (uint32_t i = 0; i < GetNumFeatures(); i++) {
+    if (nullptr != modelEntry && i > modelEntry[0]) {
+      modelEntry += 3;
+      modelId = modelIdFromEntry(modelEntry);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-FeatureTable PackedFeatureTable::Unpack() const
-    {
-    FeatureTable table(GetModelId(), GetMaxFeatures());
-    for (uint32_t i = 0; i < GetNumFeatures(); i++)
-        table.Insert(GetFeature(i), i);
+    table.Insert(GetFeature(i, modelId), i);
+  }
 
-    return table;
-    }
+  return table;
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod

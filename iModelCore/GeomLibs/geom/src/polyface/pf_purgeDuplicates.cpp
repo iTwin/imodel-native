@@ -3,12 +3,9 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
-#include <Bentley/bset.h>
-
-#include <Geom/XYZRangeTree.h>
-#include <Geom/cluster.h>
-#include <Vu/VuApi.h>
-
+#include <algorithm>
+#include <numeric>
+#include <random>
 
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
@@ -109,6 +106,99 @@ void PolyfaceHeader::IdentifyDuplicates
                 }
             }
         }
+    }
+
+// clear all index arrays in the polyface
+static void clearIndexArrays(PolyfaceHeaderR mesh)
+    {
+    mesh.PointIndex().clear();
+    mesh.ParamIndex().clear();
+    mesh.NormalIndex().clear();
+    mesh.ColorIndex().clear();
+    mesh.FaceIndex().clear();
+    if (mesh.AuxData().IsValid())
+        mesh.AuxData()->GetIndices().clear();
+    }
+
+// copy indices for all active data for the current face
+static void appendVisitorIndices(PolyfaceHeaderR dest, PolyfaceHeaderCR source, PolyfaceVisitorCR visitor)
+    {
+    size_t readIndex = visitor.GetReadIndex();
+    size_t numIndices = visitor.NumEdgesThisFace();
+    dest.PointIndex().AddAndTerminate(source.GetPointIndexCP() + readIndex, numIndices);
+    if (dest.ParamIndex().Active())
+        dest.ParamIndex().AddAndTerminate(source.GetParamIndexCP() + readIndex, numIndices);
+    if (dest.NormalIndex().Active())
+        dest.NormalIndex().AddAndTerminate(source.GetNormalIndexCP() + readIndex, numIndices);
+    if (dest.ColorIndex().Active())
+        dest.ColorIndex().AddAndTerminate(source.GetColorIndexCP() + readIndex, numIndices);
+    if (dest.FaceIndex().Active())
+        dest.FaceIndex().AddAndTerminate(source.GetFaceIndexCP() + readIndex, numIndices);
+    if (dest.AuxData().IsValid())
+        {
+        auto destAuxIndices = dest.AuxData()->GetIndices();
+        auto srcAuxIndices = visitor.GetClientAuxIndexCP();
+        destAuxIndices.insert(destAuxIndices.end(), srcAuxIndices, srcAuxIndices + numIndices);
+        dest.AuxData()->AddIndexTerminator();
+        }
+    }
+
+PolyfaceHeaderPtr PolyfaceHeader::CloneWithDegenerateFacetsRemoved() const
+    {
+    auto cloneFiltered = Clone();
+    clearIndexArrays(*cloneFiltered);
+
+    for (auto visitor = PolyfaceVisitor::Attach(*this, true); visitor->AdvanceToNextFace(); )
+        {
+        if (visitor->NumEdgesThisFace() < 3)
+            continue;
+        auto pFaceIndices = visitor->GetClientPointIndexCP();   // zero based
+        auto i0 = pFaceIndices[0];
+        auto i1 = pFaceIndices[1];
+        auto i2 = pFaceIndices[2];
+        if (visitor->NumEdgesThisFace() == 3)
+            {
+            if (i0 == i1 || i0 == i2 || i1 == i2)
+                continue;
+            }
+        else if (visitor->NumEdgesThisFace() == 4)
+            {
+            auto i3 = pFaceIndices[3];
+            if ((i0 == i3 && i1 == i2) || (i0 == i1 && i2 == i3))
+                continue;
+            }
+        else
+            {
+            ; // TODO: faces with > 4 edges
+            }
+        appendVisitorIndices(*cloneFiltered, *this, *visitor);
+        }
+    return cloneFiltered;
+    }
+
+PolyfaceHeaderPtr PolyfaceHeader::CloneWithFacetsInRandomOrder() const
+    {
+    size_t numFacets = GetNumFacet();
+    std::vector<size_t> facetIndices(numFacets);
+    std::iota(facetIndices.begin(), facetIndices.end(), 0);
+    std::random_device rd;
+    std::mt19937 generator(rd());
+    std::shuffle(facetIndices.begin(), facetIndices.end(), generator);
+
+    auto shuffledMesh = Clone();
+    clearIndexArrays(*shuffledMesh);
+
+    auto leanVisitor = PolyfaceVisitor::Attach(*this, false);
+    for (auto const& iFacet : facetIndices)
+        {
+        leanVisitor->Reset();
+        for (size_t i = 0; leanVisitor->AdvanceToNextFace() && i < iFacet; ++i)
+            ; // yuck, linear search
+        auto fullVisitor = PolyfaceVisitor::Attach(*this, true);
+        if (fullVisitor->MoveToFacetByReadIndex(leanVisitor->GetReadIndex()))
+            appendVisitorIndices(*shuffledMesh, *this, *fullVisitor);
+        }
+    return shuffledMesh;
     }
 
 END_BENTLEY_GEOMETRY_NAMESPACE

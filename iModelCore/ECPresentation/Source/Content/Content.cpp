@@ -117,7 +117,7 @@ ContentDescriptor::ContentDescriptor(ContentDescriptorCR other)
     m_fieldsFilterExpression(other.m_fieldsFilterExpression), m_instanceFilter(other.m_instanceFilter), m_contentFlags(other.m_contentFlags),
     m_sortingFieldIndex(other.m_sortingFieldIndex), m_sortDirection(other.m_sortDirection), m_connectionId(other.m_connectionId), m_inputKeys(other.m_inputKeys),
     m_selectionInfo(other.m_selectionInfo), m_categories(other.m_categories), m_totalFieldsCount(other.m_totalFieldsCount), m_unitSystem(other.m_unitSystem),
-    m_ruleset(other.m_ruleset), m_rulesetVariables(other.m_rulesetVariables), m_usesModifiedRuleset(other.m_usesModifiedRuleset)
+    m_ruleset(other.m_ruleset), m_rulesetVariables(other.m_rulesetVariables), m_usesModifiedRuleset(other.m_usesModifiedRuleset), m_exclusiveIncludePaths(other.m_exclusiveIncludePaths)
     {
     for (Field const* field : other.m_fields)
         AddRootField(*field->Clone());
@@ -505,15 +505,15 @@ void ContentDescriptor::UpdateSelectClasses()
             if (field->IsPropertiesField())
                 {
                 fieldMatchesClass = ContainerHelpers::Contains(field->AsPropertiesField()->GetProperties(),
-                    [&selectClass](auto const& prop){return prop.GetPropertyClass().Is(&selectClass.GetSelectClass().GetClass());});
+                    [&selectClass](auto const& prop){return selectClass.GetSelectClass().GetClass().Is(&prop.GetPropertyClass());});
                 }
             else if (field->IsNestedContentField() && field->AsNestedContentField()->AsCompositeContentField())
                 {
-                fieldMatchesClass = field->AsNestedContentField()->AsCompositeContentField()->GetContentClass().Is(&selectClass.GetSelectClass().GetClass());
+                fieldMatchesClass = selectClass.GetSelectClass().GetClass().Is(&field->AsNestedContentField()->AsCompositeContentField()->GetContentClass());
                 }
             else if (field->IsNestedContentField() && field->AsNestedContentField()->AsRelatedContentField())
                 {
-                fieldMatchesClass = field->AsNestedContentField()->AsRelatedContentField()->GetPathFromSelectToContentClass().front().GetSourceClass()->Is(&selectClass.GetSelectClass().GetClass());
+                fieldMatchesClass = selectClass.GetSelectClass().GetClass().Is(field->AsNestedContentField()->AsRelatedContentField()->GetPathFromSelectToContentClass().front().GetSourceClass());
                 }
             if (fieldMatchesClass)
                 {

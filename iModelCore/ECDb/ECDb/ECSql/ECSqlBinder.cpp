@@ -79,7 +79,7 @@ std::unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateBinder(ECSqlPrepareContex
                 return CreateIdBinderForQuery(ctx, typeInfo, paramNameGen);
                 }
             else
-                return CreateIdBinder(ctx, propNameExp.GetPropertyMap(), sysPropInfo, paramNameGen);
+                return CreateIdBinder(ctx, *propNameExp.GetPropertyMap(), sysPropInfo, paramNameGen);
         }
 
     if (const Exp* exp = parameterExp.FindParent(Exp::Type::FunctionCall))
@@ -307,7 +307,7 @@ ECSqlBinder* ECSqlParameterMap::AddBinder(ECSqlPrepareContext& ctx, ParameterExp
     if (binderP->HasToCallOnClearBindings())
         m_bindersToCallOnClearBindings.push_back(binderP);
 
-    //insert name to index mapping. 
+    //insert name to index mapping.
     if (parameterExp.IsNamedParameter())
         m_nameToIndexMapping[parameterExp.GetParameterName()] = parameterExp.GetParameterIndex();
 

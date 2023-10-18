@@ -1,5 +1,3 @@
-# WIP Notes
-
 At this time:
 - Linux builds always compile and include crashpad
 - You must define LINUX_MINIDUMP_ENABLED=1 in the environment to enable crashpad handling
@@ -15,7 +13,44 @@ At this time:
     - You can call `sentry-cli difutil check BINARY_PATH` to verify symbols
 - Strip symbols before packaging / publishing: `objcopy --strip-debug --strip-unneeded BINARY_PATH`
 
-# Updating source from Google
+---
+# WIP Notes on pulling it now (2023)
+
+Latest attempt (2023)
+
+They changed the code a bit so it more heavily relies on Ninja and the Google build system.
+
+I make this build on Windows for imodel02 to copy and because it was convenient to edit on Windows; however this is only built with Linux in imodel-native. You can modify imodeljsnodeaddon to add CrashpadShim as a subpart of iModelJsNative-Dynamic and then remove the Linux-only restriction on the CrashpadShim part and it should build on Windows.
+
+I don't think this attempt was particularly efficient so it's not so much a procedure as a starting point to develop one.
+Probably starting on Linux will be a better workflow.
+
+1. Pull crashpad with vcpkg and get it to build on Windows. Using vcpkg rather than loading depot tools and trying to build myself.
+    `vcpkg install crashpad`
+
+2. In a separate directory, pull crashpad source to same GUID from https://chromium.googlesource.com/crashpad/crashpad
+    - You can get the GUID by going into the soure directory vcpkg\buildtrees\crashpad\src\[Id1-Id2].clean directory and doing a "git log -1"
+    - This will get a clean set of source since the one in vcpkg will have all the tools and other stuff pulled into it. At this point I'm trying to avoid committing Ninja et al. to the source tree.
+    - `Robocopy /mir checked out source to clean out deleted files in iModelCore\libsrc\crashpad\vendor`
+
+3. I needed to copy in several files from vcpkg that aren't in the source tree but are generated at build time
+    - `copy vcpkg\buildtrees\crashpad\src\[GUID].clean\third_party\mini_chromium\mini_chromium\base imodel-native\iModelCore\libsrc\crashpad\vendor\third_party\mini_chromium\mini_chromium\base`
+    - `copy vcpkg\buildtrees\crashpad\src\[GUID].clean\third_party\mini_chromium\mini_chromium\build imodel-native\iModelCore\libsrc\crashpad\vendor\third_party\mini_chromium\mini_chromium\build`
+
+4. I also needed to pull the vcpkg on Linux and copy in lss for tools
+    - `scp -r chuck@chuckdeb11.bentley.com:/home/chuck/vcpkg/vcpkg/buildtrees/crashpad/src/4c3e2d1c10-27b97453fa.clean/third_party/lss vendor\third_party\lss`
+
+
+- Make sure mini-chromium and lss are commented out in vendor/.gitignore so they will commit
+
+- Build, adjusting to add/remove files as necessary
+
+- Do the usual merging between libsrc-Vendor and libsrc-Main as described on the wiki.
+
+---
+# The previous technique (2019)
+
+## Updating source from Google
 
 https://chromium.googlesource.com/crashpad/crashpad/+/master/doc/developing.md
 

@@ -57,7 +57,7 @@ ECSqlStatus DynamicSelectClauseECClass::GeneratePropertyIfRequired(ECN::ECProper
         DerivedPropertyExp const* otherSelectClauseItem = it->second;
         if (!columnAlias.empty() || !otherSelectClauseItem->GetColumnAlias().empty())
             {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Alias '%s' used in the select clause is ambiguous.", propName.c_str());
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0463, "Alias '%s' used in the select clause is ambiguous.", propName.c_str());
             return ECSqlStatus::InvalidECSql;
             }
 
@@ -80,8 +80,14 @@ ECSqlStatus DynamicSelectClauseECClass::GeneratePropertyIfRequired(ECN::ECProper
 
                 if (suffixNr > 1000) //arbitrary threshold to avoid end-less loop
                     {
-                    ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Could not generate a unique select clause item name for the item '%s'. Try to avoid duplicate select clause items.",
-                                                                           selectClauseItemExp.ToECSql().c_str());
+                    ctx.Issues().ReportV(
+                        IssueSeverity::Error,
+                        IssueCategory::BusinessProperties,
+                        IssueType::ECSQL,
+                        ECDbIssueId::ECDb_0464,
+                        "Could not generate a unique select clause item name for the item '%s'. Try to avoid duplicate select clause items.",
+                        selectClauseItemExp.ToECSql().c_str()
+                    );
                     return ECSqlStatus::InvalidECSql;
                     }
 
@@ -321,7 +327,7 @@ BentleyStatus DynamicSelectClauseECClass::AssignCustomAttributes(ECSqlPrepareCon
     ECClassCP dtInfoCl = ctx.GetECDb().Schemas().GetClass("CoreCustomAttributes", "DateTimeInfo");
     if (dtInfoCl == nullptr)
         {
-        ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Could not locate DateTimeInfo ECClass from CoreCustomAttributes ECSchema.");
+        ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0465, "Could not locate DateTimeInfo ECClass from CoreCustomAttributes ECSchema.");
         return ERROR;
         }
 
@@ -347,7 +353,8 @@ BentleyStatus DynamicSelectClauseECClass::AssignCustomAttributes(ECSqlPrepareCon
 
     if (ECObjectsStatus::Success != dtInfoCA->SetValue("DateTimeComponent", compV))
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Could not create DateTimeInfo custom attribute for ECSQL select clause item '%s'.", dtProp.GetInvariantDisplayLabel().c_str());
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0466,
+            "Could not create DateTimeInfo custom attribute for ECSQL select clause item '%s'.", dtProp.GetInvariantDisplayLabel().c_str());
         return ERROR;
         }
 
@@ -372,7 +379,8 @@ BentleyStatus DynamicSelectClauseECClass::AssignCustomAttributes(ECSqlPrepareCon
 
         if (ECObjectsStatus::Success != dtInfoCA->SetValue("DateTimeKind", kindV))
             {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Could not create DateTimeInfo custom attribute for ECSQL select clause item '%s'.", dtProp.GetInvariantDisplayLabel().c_str());
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0467,
+                "Could not create DateTimeInfo custom attribute for ECSQL select clause item '%s'.", dtProp.GetInvariantDisplayLabel().c_str());
             return ERROR;
             }
         }
@@ -382,7 +390,8 @@ BentleyStatus DynamicSelectClauseECClass::AssignCustomAttributes(ECSqlPrepareCon
 
     if (ECObjectsStatus::Success != dtProp.SetCustomAttribute(*dtInfoCA))
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Could not assign DateTimeInfo custom attribute to generated property of ECSQL select clause item '%s'.", dtProp.GetInvariantDisplayLabel().c_str());
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0468,
+            "Could not assign DateTimeInfo custom attribute to generated property of ECSQL select clause item '%s'.", dtProp.GetInvariantDisplayLabel().c_str());
         return ERROR;
         }
 

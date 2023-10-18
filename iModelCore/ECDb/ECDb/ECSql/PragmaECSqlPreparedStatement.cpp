@@ -5,8 +5,6 @@
 #include "ECDbPch.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-
-
 //================================================================================
 // @bsiclass PragmaHelp
 //================================================================================
@@ -15,7 +13,7 @@ struct PragmaHelp : PragmaManager::GlobalHandler {
     PragmaHelp(PragmaManager& mgr):GlobalHandler("help","return list of pragma supported"),m_mgr(mgr){}
     ~PragmaHelp(){}
 
-    virtual DbResult Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&)  override {
+    virtual DbResult Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&, PragmaManager::OptionsMap const&)  override {
             auto result = std::make_unique<StaticPragmaResult>(ecdb);
             result->AppendProperty("pragma", PRIMITIVETYPE_String);
             result->AppendProperty("type", PRIMITIVETYPE_String);
@@ -33,8 +31,8 @@ struct PragmaHelp : PragmaManager::GlobalHandler {
             return BE_SQLITE_OK;
     }
 
-    virtual DbResult Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&) override {
-        ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "PRAGMA %s is readonly.", GetName().c_str());
+    virtual DbResult Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&, PragmaManager::OptionsMap const&) override {
+        ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0552, "PRAGMA %s is readonly.", GetName().c_str());
         rowSet = std::make_unique<StaticPragmaResult>(ecdb);
         rowSet->FreezeSchemaChanges();
         return BE_SQLITE_READONLY;
@@ -47,6 +45,13 @@ struct PragmaHelp : PragmaManager::GlobalHandler {
 //---------------------------------------------------------------------------------------
 void PragmaManager::InitSystemPragmas() {
     Register(PragmaHelp::Create(*this));
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+bool PragmaManager::Handler::isExperimentalFeatureAllowed(ECDbCR conn, PragmaManager::OptionsMap const& map) const {
+    return conn.GetECSqlConfig().GetExperimentalFeaturesEnabled() || map.find(OptionsExp::ENABLE_EXPERIMENTAL_FEATURES) != map.end();
 }
 
 //---------------------------------------------------------------------------------------
@@ -125,7 +130,10 @@ DbResult PragmaManager::DefaultGlobal(RowSet&, Utf8StringCR name, PragmaVal cons
         IssueSeverity::Error,
         IssueCategory::BusinessProperties,
         IssueType::ECSQL,
-        "Unrecognized pragma %s.", name.c_str());
+        ECDbIssueId::ECDb_0559,
+        "Unrecognized pragma %s.",
+        name.c_str()
+    );
     return BE_SQLITE_ERROR;
 }
 
@@ -137,7 +145,10 @@ DbResult PragmaManager::DefaultSchema(RowSet&, Utf8StringCR name, PragmaVal cons
         IssueSeverity::Error,
         IssueCategory::BusinessProperties,
         IssueType::ECSQL,
-        "Unrecognized pragma '%s' for schema object.", name.c_str());
+        ECDbIssueId::ECDb_0560,
+        "Unrecognized pragma '%s' for schema object.",
+        name.c_str()
+    );
 
     return BE_SQLITE_ERROR;
 }
@@ -150,7 +161,10 @@ DbResult PragmaManager::DefaultClass(RowSet&, Utf8StringCR name, PragmaVal const
         IssueSeverity::Error,
         IssueCategory::BusinessProperties,
         IssueType::ECSQL,
-        "Unrecognized pragma '%s' for class object.", name.c_str());
+        ECDbIssueId::ECDb_0561,
+        "Unrecognized pragma '%s' for class object.",
+        name.c_str()
+    );
     return BE_SQLITE_ERROR;
 
 }
@@ -163,7 +177,10 @@ DbResult PragmaManager::DefaultProperty(RowSet&, Utf8StringCR name, PragmaVal co
         IssueSeverity::Error,
         IssueCategory::BusinessProperties,
         IssueType::ECSQL,
-        "Unrecognized pragma '%s' for property object.", name.c_str());
+        ECDbIssueId::ECDb_0562,
+        "Unrecognized pragma '%s' for property object.",
+        name.c_str()
+    );
     return BE_SQLITE_ERROR;
 }
 
@@ -189,7 +206,11 @@ DbResult PragmaManager::DefaultAny(RowSet&, Utf8StringCR name, PragmaVal const&,
         IssueSeverity::Error,
         IssueCategory::BusinessProperties,
         IssueType::ECSQL,
-        "Unrecognized object path '%s' specified for pragma '%s'", BeStringUtilities::Join(path,".").c_str(), name.c_str());
+        ECDbIssueId::ECDb_0563,
+        "Unrecognized object path '%s' specified for pragma '%s'",
+        BeStringUtilities::Join(path,".").c_str(),
+        name.c_str()
+    );
     return BE_SQLITE_ERROR;
 }
 
@@ -209,7 +230,11 @@ BentleyStatus PragmaManager::Register(std::unique_ptr<Handler> handler) {
             IssueSeverity::Error,
             IssueCategory::BusinessProperties,
             IssueType::ECSQL,
-            "ECDb pragma handler with same type (%s) and name (%s) already exists.", handler->GetTypeString(), name.c_str());
+            ECDbIssueId::ECDb_0564,
+            "ECDb pragma handler with same type (%s) and name (%s) already exists.",
+            handler->GetTypeString(),
+            name.c_str()
+        );
         return ERROR;
     }
     m_handlers[type][name.c_str()] = std::move(handler);
@@ -219,13 +244,13 @@ BentleyStatus PragmaManager::Register(std::unique_ptr<Handler> handler) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DbResult PragmaManager::PrepareGlobal(RowSet& rowSet, Utf8StringCR name, PragmaVal const& val, Operation op ) const {
+DbResult PragmaManager::PrepareGlobal(RowSet& rowSet, Utf8StringCR name, PragmaVal const& val, Operation op, PragmaManager::OptionsMap const& options) const {
     auto handler = GetHandlerAs<GlobalHandler>(Handler::Type::Global, name);
     if (handler != nullptr) {
         if (op == Operation::Read) {
-            return handler->Read(rowSet, GetECDb(), val);
+            return handler->Read(rowSet, GetECDb(), val, options);
         }
-        return handler->Write(rowSet, GetECDb(), val);
+        return handler->Write(rowSet, GetECDb(), val, options);
     }
     return DefaultGlobal(rowSet, name, val, op);
 }
@@ -233,13 +258,13 @@ DbResult PragmaManager::PrepareGlobal(RowSet& rowSet, Utf8StringCR name, PragmaV
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DbResult PragmaManager::PrepareSchema(RowSet& rowSet, Utf8StringCR name, PragmaVal const& val, Operation op, ECN::ECSchemaCR schema) const{
+DbResult PragmaManager::PrepareSchema(RowSet& rowSet, Utf8StringCR name, PragmaVal const& val, Operation op, ECN::ECSchemaCR schema, PragmaManager::OptionsMap const& options) const{
     auto handler = GetHandlerAs<SchemaHandler>(Handler::Type::Schema, name);
     if (handler != nullptr) {
         if (op == Operation::Read) {
-            return handler->Read(rowSet, GetECDb(), val, schema);
+            return handler->Read(rowSet, GetECDb(), val, schema, options);
         }
-        return handler->Write(rowSet, GetECDb(), val, schema);
+        return handler->Write(rowSet, GetECDb(), val, schema, options);
     }
     return DefaultSchema(rowSet, name, val, op, schema);
 }
@@ -247,13 +272,13 @@ DbResult PragmaManager::PrepareSchema(RowSet& rowSet, Utf8StringCR name, PragmaV
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DbResult PragmaManager::PrepareClass(RowSet& rowSet, Utf8StringCR name, PragmaVal const& val, Operation op, ECN::ECClassCR cls) const {
+DbResult PragmaManager::PrepareClass(RowSet& rowSet, Utf8StringCR name, PragmaVal const& val, Operation op, ECN::ECClassCR cls, PragmaManager::OptionsMap const& options) const {
     auto handler = GetHandlerAs<ClassHandler>(Handler::Type::Class, name);
     if (handler != nullptr) {
         if (op == Operation::Read) {
-            return handler->Read(rowSet, GetECDb(), val, cls);
+            return handler->Read(rowSet, GetECDb(), val, cls, options);
         }
-        return handler->Write(rowSet, GetECDb(), val, cls);
+        return handler->Write(rowSet, GetECDb(), val, cls, options);
     }
 
     return DefaultClass(rowSet, name, val, op, cls);
@@ -262,18 +287,22 @@ DbResult PragmaManager::PrepareClass(RowSet& rowSet, Utf8StringCR name, PragmaVa
 // @bsimethod
 //---------------------------------------------------------------------------------------
 DbResult PragmaManager::Prepare(RowSet& rowset,PragmaStatementExp const& exp) const {
-    return Prepare(rowset, exp.GetName(), exp.GetValue(), exp.IsReadValue() ? Operation::Read : Operation::Write, exp.GetPathTokens());
+    OptionsMap optionsMap;
+    if (auto opts = exp.GetOptions()) {
+        optionsMap = exp.GetOptions()->GetOptionMap();
+    }
+    return Prepare(rowset, exp.GetName(), exp.GetValue(), exp.IsReadValue() ? Operation::Read : Operation::Write, exp.GetPathTokens(), optionsMap);
 }
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DbResult PragmaManager::PrepareProperty(RowSet& rowSet, Utf8StringCR name, PragmaVal const& val, Operation op, ECN::ECPropertyCR prop) const {
+DbResult PragmaManager::PrepareProperty(RowSet& rowSet, Utf8StringCR name, PragmaVal const& val, Operation op, ECN::ECPropertyCR prop, PragmaManager::OptionsMap const& options) const {
     auto handler = GetHandlerAs<PropertyHandler>(Handler::Type::Property, name);
     if (handler != nullptr) {
         if (op == Operation::Read) {
-            return handler->Read(rowSet, GetECDb(), val, prop);
+            return handler->Read(rowSet, GetECDb(), val, prop, options);
         }
-        return handler->Write(rowSet, GetECDb(), val, prop);
+        return handler->Write(rowSet, GetECDb(), val, prop, options);
     }
     return DefaultProperty(rowSet, name, val, op, prop);
 }
@@ -281,13 +310,13 @@ DbResult PragmaManager::PrepareProperty(RowSet& rowSet, Utf8StringCR name, Pragm
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DbResult PragmaManager::PrepareAny(RowSet& rowSet, Utf8StringCR name, PragmaVal const& val, Operation op, std::vector<Utf8String> const& path) const {
+DbResult PragmaManager::PrepareAny(RowSet& rowSet, Utf8StringCR name, PragmaVal const& val, Operation op, std::vector<Utf8String> const& path, PragmaManager::OptionsMap const& options) const {
     auto handler = GetHandlerAs<AnyHandler>(Handler::Type::Any, name);
     if (handler != nullptr) {
         if (op == Operation::Read) {
-            return handler->Read(rowSet, GetECDb(), val, path);
+            return handler->Read(rowSet, GetECDb(), val, path, options);
         }
-        return handler->Write(rowSet, GetECDb(), val, path);
+        return handler->Write(rowSet, GetECDb(), val, path, options);
     }
     return DefaultAny(rowSet, name, val, op, path);
 }
@@ -295,43 +324,43 @@ DbResult PragmaManager::PrepareAny(RowSet& rowSet, Utf8StringCR name, PragmaVal 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DbResult  PragmaManager::Prepare(RowSet& rowset, Utf8StringCR name, PragmaVal const& val, Operation op, std::vector<Utf8String> const& path) const {
+DbResult  PragmaManager::Prepare(RowSet& rowset, Utf8StringCR name, PragmaVal const& val, Operation op, std::vector<Utf8String> const& path, PragmaManager::OptionsMap const& options) const {
     ECN::ECSchemaCP schemaP = nullptr;
     ECN::ECClassCP classP = nullptr;
     ECN::ECPropertyCP propertyP = nullptr;
 
     if (path.empty()) {
-        return PrepareGlobal(rowset, name, val, op);
+        return PrepareGlobal(rowset, name, val, op, options);
     }
     if (path.size() >= 4) {
-        return PrepareAny(rowset,name, val, op, path);
+        return PrepareAny(rowset,name, val, op, path, options);
     }
     if (path.size() >= 1) {
         schemaP = m_ecdb.Schemas().GetSchema(path[0], false, SchemaLookupMode::AutoDetect);
         if (schemaP == nullptr) {
-            return PrepareAny(rowset,name, val, op, path);
+            return PrepareAny(rowset,name, val, op, path, options);
         }
     }
     if (path.size() >= 2) {
         classP = m_ecdb.Schemas().GetClass(path[0], path[1], SchemaLookupMode::AutoDetect);
         if (classP == nullptr) {
-            return PrepareAny(rowset,name, val, op, path);
+            return PrepareAny(rowset,name, val, op, path, options);
         }
     }
     if (path.size() >= 3) {
         propertyP = classP->GetPropertyP(path[2]);
         if (propertyP == nullptr) {
-            return PrepareAny(rowset,name, val, op, path);
+            return PrepareAny(rowset,name, val, op, path, options);
         }
     }
     if (propertyP && classP && schemaP) {
-        return PrepareProperty(rowset,name, val, op, *propertyP);
+        return PrepareProperty(rowset,name, val, op, *propertyP, options);
     } else if (!propertyP && classP && schemaP) {
-        return PrepareClass(rowset,name, val, op, *classP);
+        return PrepareClass(rowset,name, val, op, *classP, options);
     } else if (!propertyP && !classP && schemaP) {
-        return PrepareSchema(rowset,name, val, op, *schemaP);
+        return PrepareSchema(rowset,name, val, op, *schemaP, options);
     }
-    return PrepareAny(rowset,name, val, op, path);
+    return PrepareAny(rowset,name, val, op, path, options);
 }
 
 //=======================================================================================
@@ -572,7 +601,11 @@ ECSqlStatus PragmaECSqlPreparedStatement::_Reset() {
     if (m_resultSet == nullptr) {
         return ECSqlStatus(BE_SQLITE_MISMATCH);
     }
-    return ECSqlStatus(m_resultSet->Reset());
+    const auto rc = m_resultSet->Reset();
+    if (rc != BE_SQLITE_OK)
+        return ECSqlStatus(rc);
+
+    return ECSqlStatus::Success;
 }
 //---------------------------------------------------------------------------------------
 // @bsimethod

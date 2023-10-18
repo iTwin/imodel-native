@@ -10,7 +10,7 @@ import * as fs from "fs-extra";
 import * as os from "os";
 import * as path from "path";
 import { openDgnDb } from ".";
-import { IModelJsNative } from "../NativeLibrary";
+import { IModelJsNative, SchemaWriteStatus } from "../NativeLibrary";
 import { copyFile, dbFileName, getAssetsDir, getOutputDir, iModelJsNative } from "./utils";
 
 // Crash reporting on linux is gated by the presence of this env variable.
@@ -884,6 +884,10 @@ describe("basic tests", () => {
 
       const ec3Schemas: string[] = iModelJsNative.SchemaUtility.convertEC2XmlSchemas([schemaXML, schemaXMLRef]);
       const schemasWithUpdatedCA: string[] = iModelJsNative.SchemaUtility.convertCustomAttributes(ec3Schemas);
+      assert.equal(schemasWithUpdatedCA.length, 2);
+      // converted EC3 schemas are in the same order as of input schemas
+      const ec3SchemaXml = schemasWithUpdatedCA[0];
+      const ec3RefSchema = schemasWithUpdatedCA[1];
 
       const writeDbFileName = copyFile("SchemaConvertEnum.bim", dbFileName);
       // Without ProfileOptions.Upgrade, we get: Error | ECDb | Failed to import schema 'RefSchema.01.00.00'. Current ECDb profile version (4.0.0.1) only support schemas with EC version < 3.2. ECDb profile version upgrade is required to import schemas with EC Version >= 3.2.
@@ -891,7 +895,7 @@ describe("basic tests", () => {
       assert.isTrue(db !== undefined);
       assert.isTrue(db.isOpen());
 
-      const rc = db.importXmlSchemas(schemasWithUpdatedCA, { schemaLockHeld: true });
+      const rc = db.importXmlSchemas([ec3RefSchema, ec3SchemaXml], { schemaLockHeld: true });
       assert.equal(rc, DbResult.BE_SQLITE_OK);
       db.saveChanges();
 
@@ -972,5 +976,86 @@ describe("basic tests", () => {
 
       assert.isTrue(ec3SchemaXml.includes("http://www.bentley.com/schemas/Bentley.ECXML.3.2"));
     });
+  });
+
+  it("export ECXml 3.1 schema which is using ECXml 3.2 unit as persistence unit", async () => {
+    // This test covers the scenario where we have a schema with ECXml version 3.1 which is using a KoQ with a unit that's defined in ECXml 3.2.
+    // Since the 3.1 version only checks the legacy unit mappings, the export as a ECXml 3.1 schema fails.
+    // In this scenario, when the export fails, we will try to export the schema as an ECXml 3.2 schema instead.
+
+    if (fs.existsSync("testSchemaExport.bim"))
+      fs.unlinkSync("testSchemaExport.bim");
+
+    const testDb = openDgnDb(copyFile("testSchemaExport.bim", dbFileName), { profile: ProfileOptions.Upgrade, schemaLockHeld: true });
+    assert.isTrue(testDb !== undefined);
+
+    // Import the schema as ECXML 3.2 which has ECXml 3.2 unit LUMEN_PER_W
+    assert.equal(DbResult.BE_SQLITE_OK, testDb.importXmlSchemas([`<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" displayLabel="TestSchema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+        <ECSchemaReference name="Formats" version="01.00.00" alias="f"/>
+        <ECSchemaReference name="Units" version="01.00.07" alias="u"/>
+        <ECEnumeration typeName="TestEnum" backingTypeName="int" isStrict="true">
+            <ECEnumerator name="Test_ENUM0" value="0" displayLabel="Test_ENUM0"/>
+            <ECEnumerator name="Test_ENUM1" value="1" displayLabel="Test_ENUM1"/>
+        </ECEnumeration>
+        <ECEntityClass typeName="TestClass" displayLabel="TestClass">
+            <BaseClass>bis:PhysicalElement</BaseClass>
+            <ECProperty propertyName="TestProp" typeName="double" displayLabel="TestProp" readOnly="true" category="TestCategory" kindOfQuantity="TestKoq"/>
+        </ECEntityClass>
+        <KindOfQuantity typeName="TestKoq" displayLabel="TestKoq" persistenceUnit="u:LUMEN_PER_W" relativeError="10.763910416709722" presentationUnits="f:DefaultRealU[u:LUMEN_PER_W]"/>
+        <PropertyCategory typeName="TestCategory" displayLabel="TestCategory" priority="200000"/>
+    </ECSchema>`]));
+
+    testDb.saveChanges();
+
+    // Modify the ECXml version of the schema to 3.1 directly in the db
+    const statement = new iModelJsNative.SqliteStatement();
+    statement.prepare(testDb, `update ec_Schema set OriginalECXmlVersionMajor=3, OriginalECXmlVersionMinor=1 where Name='TestSchema'`);
+    expect(statement.step()).to.be.eql(DbResult.BE_SQLITE_DONE);
+    statement.dispose();
+
+    // Export ECXml 3.1 schema to xml file
+    const status = testDb.exportSchema(`TestSchema`, getOutputDir(), `ExportedTestSchema.ecschema.xml`);
+    assert.equal(status, SchemaWriteStatus.Success, `Exporting the ECXml 3.1 schema is expected to fail due to incorrect KoQ. Schema should retry serialization as an ECXml 3.2 schema and succeed`);
+    assert.isTrue(fs.existsSync(path.join(getOutputDir(), `ExportedTestSchema.ecschema.xml`)));
+
+    const xmlVersionStr = `xmlns="http://www.bentley.com/schemas/Bentley.`;
+    const koqStr = `<KindOfQuantity typeName="TestKoq" displayLabel="TestKoq" persistenceUnit="u:LUMEN_PER_W" relativeError="10.763910416709722" presentationUnits="f:DefaultRealU[u:LUMEN_PER_W]"/>`;
+    const propStr = `<ECProperty propertyName="TestProp" typeName="double" displayLabel="TestProp" readOnly="true" category="TestCategory" kindOfQuantity="TestKoq"/>`;
+    const propCatStr = `<PropertyCategory typeName="TestCategory" displayLabel="TestCategory" priority="200000"/>`;
+
+    // Read the exported file to check if schema was serialized as ECXml 3.2
+    const exportedFileStr = fs.readFileSync(path.join(getOutputDir(), `ExportedTestSchema.ecschema.xml`), { encoding: "utf8"});
+    assert.notEqual(exportedFileStr, undefined);
+    expect(exportedFileStr.includes(`${xmlVersionStr}ECXML.3.2"`)).to.be.true;
+    expect(exportedFileStr.includes(`${xmlVersionStr}ECXML.3.1"`)).to.be.false;
+    expect(exportedFileStr.includes(koqStr)).to.be.true;
+    expect(exportedFileStr.includes(propStr)).to.be.true;
+    expect(exportedFileStr.includes(propCatStr)).to.be.true;
+
+    // Export ECXml 3.1 schema to a xml string as ECXml 3.1
+    let schemaXmlStr = testDb.schemaToXmlString("TestSchema", IModelJsNative.ECVersion.V3_1);
+    assert.notEqual(schemaXmlStr, undefined);
+
+    // Check if schema was serialized as ECXml 3.2
+    expect(schemaXmlStr!.includes(`${xmlVersionStr}ECXML.3.2"`)).to.be.true;
+    expect(schemaXmlStr!.includes(`${xmlVersionStr}ECXML.3.1"`)).to.be.false;
+    expect(schemaXmlStr!.includes(koqStr)).to.be.true;
+    expect(schemaXmlStr!.includes(propStr)).to.be.true;
+    expect(schemaXmlStr!.includes(propCatStr)).to.be.true;
+
+    // Export ECXml 3.1 schema to a xml string as latest ECXml
+    schemaXmlStr = testDb.schemaToXmlString("TestSchema");
+    assert.notEqual(schemaXmlStr, undefined);
+
+    // Check if schema was serialized as ECXml 3.2
+    expect(schemaXmlStr!.includes(`${xmlVersionStr}ECXML.3.2"`)).to.be.true;
+    expect(schemaXmlStr!.includes(`${xmlVersionStr}ECXML.3.1"`)).to.be.false;
+    expect(schemaXmlStr!.includes(koqStr)).to.be.true;
+    expect(schemaXmlStr!.includes(propStr)).to.be.true;
+    expect(schemaXmlStr!.includes(propCatStr)).to.be.true;
+
+    testDb.closeIModel();
   });
 });

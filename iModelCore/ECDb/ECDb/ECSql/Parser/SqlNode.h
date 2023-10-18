@@ -208,6 +208,7 @@ namespace connectivity
                 opt_pragma_set_val,
                 opt_pragma_set,
                 opt_where_clause,
+                opt_optional_prop,
                 ordering_spec_commalist,
                 ordering_spec,
                 other_like_predicate_part_2,
@@ -262,6 +263,7 @@ namespace connectivity
                 values_or_query_spec,
                 where_clause,
                 opt_extract_value,
+                opt_null_order,
                 rule_count,
                 UNKNOWN_RULE            // ID indicating that a node is no rule with a matching Rule-enum value (see getKnownRuleID)
                 };

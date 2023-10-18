@@ -707,23 +707,25 @@ bool    MSBsplineSurface::IsPlane () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool    MSBsplineSurface::IsSameStructure (MSBsplineSurfaceCR other) const
     {
-    size_t numPoles = GetNumPoles ();
-    if (numPoles != other.GetNumPoles ())
-        return false;
+    // These fields are not compared:
+    //  * type - no longer relevant
+    //  * display, numRules - transient visualization settings
+
     if (GetNumUPoles () != other.GetNumUPoles ())
         return false;
     if (GetNumVPoles () != other.GetNumVPoles ())
         return false;
 
-    if (GetNumVKnots () != other.GetNumVKnots ())
+    if (GetNumUKnots () != other.GetNumUKnots ())
         return false;
     if (GetNumVKnots () != other.GetNumVKnots ())
         return false;
 
-    if (GetVOrder () != other.GetVOrder ())
+    if (GetUOrder () != other.GetUOrder ())
         return false;
     if (GetVOrder () != other.GetVOrder ())
         return false;
+
     if (GetIsUClosed () != other.GetIsUClosed ())
         return false;
     if (GetIsVClosed () != other.GetIsVClosed ())
@@ -734,9 +736,10 @@ bool    MSBsplineSurface::IsSameStructure (MSBsplineSurfaceCR other) const
 
     if (GetNumBounds () != other.GetNumBounds ())
         return false;
-    if (GetNumBounds () != 0)
+    if (GetNumBounds () > 0)
         {
-
+        if (IsOuterBoundaryActive() != other.IsOuterBoundaryActive())
+            return false;
         }
     return true;
     }
@@ -746,9 +749,13 @@ bool    MSBsplineSurface::IsSameStructure (MSBsplineSurfaceCR other) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool    MSBsplineSurface::IsSameStructureAndGeometry (MSBsplineSurfaceCR other, double tolerance) const
     {
-    size_t numPoles = GetNumPoles ();
     if (!IsSameStructure (other))
         return false;
+
+    if (tolerance <= 0.0)
+        tolerance = 0.5 * (Resolution() + other.Resolution());
+
+    size_t numPoles = GetNumPoles();
     if (HasWeights ())
         {
         for (size_t i = 0; i < numPoles; i++)
@@ -762,20 +769,20 @@ bool    MSBsplineSurface::IsSameStructureAndGeometry (MSBsplineSurfaceCR other, 
             if (! bsputil_isSamePointTolerance (&this->poles[i], &other.poles[i], tolerance))
                 return false;
         }
-    size_t numUKnots = GetNumUKnots ();
-    size_t numVKnots = GetNumVKnots ();
-    for (size_t i = 0; i < numUKnots; i++)
-        if (!MSBsplineCurve::AreSameKnots (uKnots[i], other.uKnots[i]))
-            return false;
-    for (size_t i = 0; i < numVKnots; i++)
-        if (!MSBsplineCurve::AreSameKnots (vKnots[i], other.vKnots[i]))
-            return false;
+
+    double u0a, u1a, v0a, v1a, u0b, u1b, v0b, v1b;
+    GetParameterRegion(u0a, u1a, v0a, v1a);
+    other.GetParameterRegion(u0b, u1b, v0b, v1b);
+    if (!MSBsplineCurve::AreSameKnotVectorsNormalized(uKnots, DSegment1d(u0a, u1a), other.uKnots, DSegment1d(u0b, u1b), GetNumUKnots()))
+        return false;
+    if (!MSBsplineCurve::AreSameKnotVectorsNormalized(vKnots, DSegment1d(v0a, v1a), other.vKnots, DSegment1d(v0b, v1b), GetNumVKnots()))
+        return false;
 
     if (GetNumBounds () > 0)
         {
         CurveVectorPtr boundaryA = GetUVBoundaryCurves (false, true);
-        CurveVectorPtr boundaryB = GetUVBoundaryCurves (false, true);
-        if (!boundaryA->IsSameStructureAndGeometry (*boundaryB))
+        CurveVectorPtr boundaryB = other.GetUVBoundaryCurves (false, true);
+        if (!boundaryA->IsSameStructureAndGeometry (*boundaryB))    // use default tol to compare uv-coords
             return false;
         }
     return true;
@@ -2338,7 +2345,7 @@ double MSBsplineSurface::Resolution (double abstol, double reltol) const
                 abstol,
                 reltol);
     }
-Public GEOMDLLIMPEXP double  MSBsplineCurve::Resolution (double abstol, double reltol) const
+double  MSBsplineCurve::Resolution (double abstol, double reltol) const
     {
     return bsputil_sizeToTol (
                 expandMaxAbsDoubleArray

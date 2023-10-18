@@ -28,6 +28,7 @@ struct IECSqlPreparedStatement
     private:
         Utf8String m_ecsql;
         ECDb::Impl::ClearCacheCounter m_preparationClearCacheCounter;
+        bool m_isInstanceQuery = false;
 
         //not copyable
         IECSqlPreparedStatement(IECSqlPreparedStatement const&) = delete;
@@ -43,7 +44,7 @@ struct IECSqlPreparedStatement
     protected:
         virtual ECSqlStatus _ClearBindings() = 0;
 
-        IECSqlPreparedStatement(ECDb const& ecdb, ECSqlType type, bool isCompoundStmt) : m_ecdb(ecdb), m_type(type), m_isCompoundStatement(isCompoundStmt), m_dataSourceDb(nullptr) {}
+        IECSqlPreparedStatement(ECDb const& ecdb, ECSqlType type, bool isCompoundStmt) : m_ecdb(ecdb), m_type(type), m_isCompoundStatement(isCompoundStmt), m_dataSourceDb(nullptr), m_isInstanceQuery(false) {}
         void SetDataSourceDb(Db const& db) { m_dataSourceDb = &db; }
         BentleyStatus AssertIsValid() const;
 
@@ -65,6 +66,8 @@ struct IECSqlPreparedStatement
         ECDb const& GetECDb() const { return m_ecdb; }
         bool IsCompoundStatement() const { return m_isCompoundStatement; }
         ECSqlType GetType() const { return m_type; }
+        bool IsInstanceQuery() const { return m_isInstanceQuery; }
+        void SetIsInstanceQuery(const bool isInstanceQuery) { m_isInstanceQuery = isInstanceQuery; }
     };
 
 //=======================================================================================

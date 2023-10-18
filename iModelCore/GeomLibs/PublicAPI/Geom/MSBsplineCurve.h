@@ -1278,6 +1278,13 @@ public:
     //! Compare knots.   Absolute tolerance 1e-8 for knots in -1..1.
     //! Relative tolerance 1e-8 outside.
     GEOMDLLIMPEXP static bool AreSameKnots (double knot0, double knot1);
+    //! Compare knot vectors, normalizing them first.
+    //! @param [in] knotsA full knot vector of size >= numKnots
+    //! @param [in] knotRangeA left and right knots of knotsA, cf. GetKnotRange()
+    //! @param [in] knotsB full knot vector of size >= numKnots
+    //! @param [in] knotRangeB left and right knots of knotsB, cf. GetKnotRange()
+    //! @param [in] numKnots number of knots to compare
+    GEOMDLLIMPEXP static bool AreSameKnotVectorsNormalized(double const* knotsA, DSegment1dCR knotRangeA, double const* knotsB, DSegment1dCR knotRangeB, size_t numKnots);
 
     //! Compare curves.
     GEOMDLLIMPEXP bool AlmostEqual (MSBsplineCurveCR other) const;
