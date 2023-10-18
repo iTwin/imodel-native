@@ -103,8 +103,8 @@ bool SchemaValidator::ValidBaseClassesRule::Validate(SchemaImportContext const& 
             if (Enum::Contains(ctx.GetOptions(), SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues))
                 {
                 //in legacy mode entity class multi-inheritance must be supported, but  not for other class types
-                LOG.warningv("ECClass '%s' has invalid base classes which can lead to data corruption. Error: Multi-inheritance is not supported. Use mixins instead.",
-                             ecClass.GetFullName());
+                issueReporter.ReportV(IssueSeverity::Info, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0631, 
+                    "Ignoring validation error: ECClass '%s' has multiple base classes but only one is allowed, use mixins instead.  Error suppressed, multiple base classes will be allowed now but this may cause unexpected errors.", ecClass.GetFullName());
                 continue;
                 }
 
