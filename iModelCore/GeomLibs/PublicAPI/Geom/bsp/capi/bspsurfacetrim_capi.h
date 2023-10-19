@@ -100,7 +100,7 @@ as it is using for faceting the body of the face.
 @param pTempSurface OUT surface to use for temporary operation.
 @param pSourceSurface IN original surface.
 @param curveTol IN tolerance for parameter space evaluation of curves.
-@param surfaceTol IN tolernace for surface error.
+@param surfaceTol IN tolerance for surface error.
 +----------------------------------------------------------------------*/
 Public GEOMDLLIMPEXP StatusInt bspsurf_openTempTrimmedSurface
 (

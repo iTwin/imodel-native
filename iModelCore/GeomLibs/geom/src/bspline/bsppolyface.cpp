@@ -76,7 +76,7 @@ struct MeshRegion
             }
         }
 
-    void push_back (BsurfBoundary &source)
+    void push_back (BsurfBoundaryCR source)
         {
         int numPoints = source.numPoints;
         if (numPoints <= 0)
@@ -1439,16 +1439,18 @@ BuilderParams          *mpP                /* => mesh parameters */
     enforceLimits (vHiSteps, 1, s_maxStepsInPatchSubdivision);
     }
 
-
-void SetupPatchesAndGridCountsInSurface
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static void SetupPatchesAndGridCountsInSurface
 (
 BuilderParams *mpP,
-MSBsplineSurfaceP surface,
+MSBsplineSurfaceCR surface,
 int &uCount,
 int &vCount
 )
     {
-    mpP->LoadBeziers (*surface, uCount, vCount);
+    mpP->LoadBeziers (surface, uCount, vCount);
     mpP->bezierGridCounts.clear ();
     for (int j=0; j < vCount; j++)
         {
@@ -1467,13 +1469,11 @@ int &vCount
         }
 
     bool uClosed, vClosed;
-    surface->IsPhysicallyClosed (uClosed, vClosed);
-    uClosed |= surface->uParams.closed != 0;
-    vClosed |= surface->vParams.closed != 0;
+    bspsurf_isPhysicallyClosed(surface, uClosed, vClosed);
+    uClosed |= surface.uParams.closed != 0;
+    vClosed |= surface.vParams.closed != 0;
     mpP->CorrectGridCounts (uClosed, vClosed);
     }
-
-
 
 /*---------------------------------------------------------------------------------**//**
 // 2 callers -- simple triangulator will be gridded, vu extractor not.
@@ -2901,7 +2901,7 @@ static int meshSurfaceRegion
 (
 BuilderParams          *mpP,                       /* => mesh parameters */
 bvector<DPoint2d>    &boundary,                 /* = region boundary */
-MSBsplineSurface    *surfaceP
+MSBsplineSurfaceCR      surface
 )
     {
     int                 minIndex, maxIndex, nPnts, status, j, next,
@@ -2935,7 +2935,7 @@ MSBsplineSurface    *surfaceP
     minLeftIndex = minRightIndex = minIndex;
     minLeftPoint = minRightPoint = pnts[minIndex];
     int uNumSegs, vNumSegs;
-    SetupPatchesAndGridCountsInSurface (mpP, surfaceP, uNumSegs, vNumSegs);
+    SetupPatchesAndGridCountsInSurface (mpP, surface, uNumSegs, vNumSegs);
 
     for (j=0, status=SUCCESS; j < vNumSegs && status==SUCCESS; j++)
         {
@@ -3005,18 +3005,18 @@ MSBsplineSurface    *surfaceP
 static int bspmesh_tileAndCoveSurface
 (
 BuilderParams          *mpP,                       /* => mesh parameters */
-MSBsplineSurface    *surfaceP                   /* => surface */
+MSBsplineSurfaceCR     surface                     /* => surface */
 )
     {
     int                 status = SUCCESS;
     bvector<MeshRegion> sourceRegions, monotoneRegions;
 
 
-    if (surfaceP->numBounds == 0 || ! surfaceP->holeOrigin)
+    if (surface.numBounds == 0 || ! surface.holeOrigin)
         {
         sourceRegions.push_back (MeshRegion ());
         double uMin, uMax, vMin, vMax;
-        surfaceP->GetParameterRegion (uMin, uMax, vMin, vMax);
+        surface.GetParameterRegion (uMin, uMax, vMin, vMax);
         MeshRegion &outerRegion = sourceRegions.back ();
         outerRegion.boundary.   reserve (5);
         outerRegion.push_back (uMin,vMin);
@@ -3026,17 +3026,17 @@ MSBsplineSurface    *surfaceP                   /* => surface */
         outerRegion.push_back (uMin,vMin);
         }
 
-    if (surfaceP->numBounds)
+    if (surface.numBounds)
         {
-        for (int i=0; i<surfaceP->numBounds; i++)
+        for (int i=0; i<surface.numBounds; i++)
             {
             // July 2019 -- caller code formerly killed boundaries if any were minimal points.
             // now ignore them here.
-            if (surfaceP->boundaries[i].numPoints > 3)
+            if (surface.boundaries[i].numPoints > 3)
                 {
                 sourceRegions.push_back (MeshRegion ());
                 MeshRegion &newRegion = sourceRegions.back ();
-                newRegion.push_back (surfaceP->boundaries[i]);
+                newRegion.push_back (surface.boundaries[i]);
                 }
             }
         }
@@ -3050,12 +3050,15 @@ MSBsplineSurface    *surfaceP                   /* => surface */
     for (size_t i = 0; i < monotoneRegions.size (); i++)
         {
         if (SUCCESS == status && 3 <= monotoneRegions[i].boundary.size ())
-            status = meshSurfaceRegion (mpP, monotoneRegions[i].boundary, surfaceP);
+            status = meshSurfaceRegion (mpP, monotoneRegions[i].boundary, surface);
         }
     return status;
     }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 static void updateMax
 (
 int i,
@@ -3123,22 +3126,26 @@ int &maxIndexY  // index where length.y occurred.
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 static void bsppolyface_calculateParameterLengths
 (
-DPoint2d            *lengthP,
-MSBsplineSurface    *surfaceP
+MSBsplineSurfaceCR  surface,
+DPoint2d&           length
 )
     {
     int maxIndexI, maxIndexJ;
-    bsppolyface_calculateParameterLengths (*surfaceP, *lengthP, maxIndexI, maxIndexJ);
+    bsppolyface_calculateParameterLengths (surface, length, maxIndexI, maxIndexJ);
     }
+    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 static int bspmesh_tileUnboundedSurface
 (
 BuilderParams          *mpP,
-MSBsplineSurface    *surfaceP
+MSBsplineSurfaceCR      surface
 )
     {
     int                 i, j, uSteps, vSteps, uNumSegs, vNumSegs;
@@ -3146,24 +3153,26 @@ MSBsplineSurface    *surfaceP
     DPoint2d            delta;
     static int s_parameterSelect = 0;
 
-    if (!surfaceP->uParams.closed && !surfaceP->vParams.closed &&
-         surfaceP->uParams.order == surfaceP->uParams.numPoles &&
-         surfaceP->vParams.order == surfaceP->vParams.numPoles)
+    if (!surface.uParams.closed && !surface.vParams.closed &&
+         surface.uParams.order == surface.uParams.numPoles &&
+         surface.vParams.order == surface.vParams.numPoles)
 
         {
+        MSBsplineSurfacePtr bezierPatch = surface.Clone();
+
         bspmesh_getSurfaceSteps (uSteps, vSteps, uLoSteps, uHiSteps, vLoSteps, vHiSteps,
-                                 surfaceP, mpP);
+                                 bezierPatch.get(), mpP);
 
         delta.x = 1.0 / (double) uSteps;
         delta.y = 1.0 / (double) vSteps;
 
-        return tilePatchOfBezier (mpP, surfaceP, 0, uSteps, 0, vSteps, false,
+        return tilePatchOfBezier (mpP, bezierPatch.get(), 0, uSteps, 0, vSteps, false,
                              &delta, 0.0, 1.0, 0.0, 1.0, &mpP->paramScale, 0 != mpP->reverse);
         }
     else
         {
         int status = SUCCESS;
-        SetupPatchesAndGridCountsInSurface (mpP, surfaceP, uNumSegs, vNumSegs);
+        SetupPatchesAndGridCountsInSurface (mpP, surface, uNumSegs, vNumSegs);
 
         for (j=0; j < vNumSegs; j++)
             for (i=0; i < uNumSegs; i++)
@@ -3209,10 +3218,14 @@ MSBsplineSurface    *surfaceP
         }
 
     }
-// Return true if all boundary coordinates are between -1 and 2.
-// This allows "some" straying outside 0,1 but flags really strange things.
-// (Is a fringe of 1 enough?)
-bool validateBoundary (BsurfBoundary &boundary)
+
+/*---------------------------------------------------------------------------------**//**
+* Return true if all boundary coordinates are between -1 and 2.
+* This allows "some" straying outside 0,1 but flags really strange things.
+* (Is a fringe of 1 enough?)
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool validateBoundary (BsurfBoundaryCR boundary)
     {
     DRange1d range (-1.0, 2.0);
     static bool s_rejectSmallVertexCount = false;
@@ -3224,7 +3237,11 @@ bool validateBoundary (BsurfBoundary &boundary)
             return false;
     return true;
     }
-bool validateBoundaries (BsurfBoundary   *boundsP, int numBounds)
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool validateBoundaries (BsurfBoundaryCP boundsP, int numBounds)
     {
     for (int i = 0; i < numBounds; i++)
         {
@@ -3245,7 +3262,7 @@ TransformP                                  toleranceTransformP,        /* => to
 DPoint3dP                                   toleranceCameraP,           /* => tolerance camera position */
 double                                      toleranceFocalLength,       /* => tolerance focal length */
 DPoint2dP                                   parameterScale,             /* => parameter scale */
-MSBsplineSurface                            *surfaceP,                  /* => surface to mesh */
+MSBsplineSurfaceCR                          surface,                    /* => surface to mesh */
 bool                                        reverse,                    /* => true to reverse order */
 bool                                        covePatchBoundaries        /* => true to cove patch bounds */
 )
@@ -3259,11 +3276,8 @@ bool                                        covePatchBoundaries        /* => tru
     if (parameterScale)
         {
         DPoint2d    length;
-    #if defined (BSPMESH_Use_Exact_for_length)
-        bsppolyface_calculateParameterLengthsExact (&length, surfaceP);
-#else
-        bsppolyface_calculateParameterLengths (&length, surfaceP);
-#endif
+        bsppolyface_calculateParameterLengths(surface, length);
+
         resolvedParamScale.x = (parameterScale->x < 1.0E-8)  ?
                                    1.0 : length.x / parameterScale->x;
         resolvedParamScale.y = (parameterScale->y < 1.0E-8)  ?
@@ -3289,32 +3303,34 @@ bool                                        covePatchBoundaries        /* => tru
     if ( alwaysCove )
         covePatchBoundaries = true;
 
-    int numBoundsInUse = surfaceP->numBounds;
+    int numBoundsInUse = surface.numBounds;
     if (covePatchBoundaries
-        && !validateBoundaries (surfaceP->boundaries, surfaceP->numBounds)
+        && !validateBoundaries (surface.boundaries, surface.numBounds)
         )
         {
         numBoundsInUse = 0;
         covePatchBoundaries = false;
         }
 
+    MSBsplineSurfaceCP surfaceP = &surface;
+    MSBsplineSurfacePtr fixedSurface;
     if (fixBoundaries)
-        bspmesh_fixBoundaries (&surfaceP->boundaries, &surfaceP->numBounds, true);
-
+        {
+        fixedSurface = surface.Clone();
+        bspmesh_fixBoundaries (&fixedSurface->boundaries, &fixedSurface->numBounds, true);
+        surfaceP = fixedSurface.get();
+        }
 
     if (numBoundsInUse == 0 &&
        (! covePatchBoundaries || (surfaceP->uParams.order == surfaceP->uParams.numPoles &&
                                   surfaceP->vParams.order == surfaceP->vParams.numPoles)))
-        status = bspmesh_tileUnboundedSurface (&meshParams, surfaceP);
+        status = bspmesh_tileUnboundedSurface (&meshParams, *surfaceP);
     else
-        status = bspmesh_tileAndCoveSurface (&meshParams, surfaceP);
+        status = bspmesh_tileAndCoveSurface (&meshParams, *surfaceP);
 
     options.SetMaxPerFace (maxPerFace);
     return status;
     }
-
-
-
 
 static bool s_firstTriangle012 = false;
 
@@ -3346,19 +3362,6 @@ StatusInt OutputTriStrip (DPoint3dP points, DVec3dP normals, DPoint2dP params, i
     }
 };
 
-
-
-bool TryTransformFromPseudoDistanceRectangle
-(
-FacetParamMode mode,
-DRange2dCR baseRange,
-double xDistanceFactor,
-double yDistanceFactor,
-DRange2dR distanceRange,
-DRange2dR targetRange,
-TransformR transform
-);
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -3370,13 +3373,13 @@ TransformP                                  toleranceTransformP,        /* => to
 DPoint3dP                                   toleranceCameraP,           /* => tolerance camera position */
 double                                      toleranceFocalLength,       /* => tolerance focal length */
 DPoint2dP                                   parameterScale,             /* => parameter scale */
-MSBsplineSurface*                           surfaceP,                   /* => surface to mesh */
+MSBsplineSurfaceCR                          surface,                    /* => surface to mesh */
 bool                                        reverse,                    /* => true to reverse order */
 bool                                        covePatchBoundaries        /* => true to cove patch bounds */
 )
     {
     int numBoundary, numPCurveLoop;
-    bspsurf_countLoops (surfaceP, &numBoundary, &numPCurveLoop);
+    bspsurf_countLoops (&surface, &numBoundary, &numPCurveLoop);
     // If there are exact trim curves, temporarily stroke them at our tolerance.
     if (numBoundary > 0 && numPCurveLoop == numBoundary)
         {
@@ -3385,14 +3388,14 @@ bool                                        covePatchBoundaries        /* => tru
         MSBsplineSurface tempSurface;
         static double sLocalRelTol = 1.0e-5;
         static double sGlobalRelTol = 1.0e-8;
-        double aSurfaceTol = mdlBspline_resolveSurfaceTolerance (surfaceP, options.GetChordTolerance (), sLocalRelTol, sGlobalRelTol);
+        double aSurfaceTol = mdlBspline_resolveSurfaceTolerance (&surface, options.GetChordTolerance (), sLocalRelTol, sGlobalRelTol);
         double aCurveTol = 0.01;
-        bspsurf_openTempTrimmedSurface (&tempSurface, surfaceP, aCurveTol, aSurfaceTol);
+        bspsurf_openTempTrimmedSurface (tempSurface, surface, aCurveTol, aSurfaceTol);
         status = meshSurfaceToPolyface (handler, options,
                         toleranceTransformP,
                         toleranceCameraP, toleranceFocalLength,
                         parameterScale,
-                        &tempSurface,
+                        tempSurface,
                         reverse, covePatchBoundaries);
         bspsurf_closeTempTrimmedSurface (&tempSurface);
         return status;
@@ -3402,12 +3405,9 @@ bool                                        covePatchBoundaries        /* => tru
                         toleranceTransformP,
                         toleranceCameraP, toleranceFocalLength,
                         parameterScale,
-                        surfaceP,
+                        surface,
                         reverse, covePatchBoundaries);
     }
-
-
-
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -3419,7 +3419,7 @@ void IPolyfaceConstruction::Add (MSBsplineSurfaceCR surface)
     static double s_defaultVisibleEdgeAngle = 0.80;
     SynchOptions ();
     DPoint2d sectionLength;
-    bspmesh_calculateParameterLengths (&sectionLength, const_cast <MSBsplineSurface*> (&surface));
+    bsppolyface_calculateParameterLengths(surface, sectionLength);
     Transform surfaceUVToMeshUV;
     DRange2d surfaceUVRange = DRange2d::From (0,0,1,1);
     DRange2d distanceUVRange, targetUVRange;
@@ -3434,12 +3434,7 @@ void IPolyfaceConstruction::Add (MSBsplineSurfaceCR surface)
     else
         {
         BSurfMeshContext context (*this, surfaceUVToMeshUV);
-        meshSurface (context, GetFacetOptionsR (), NULL, NULL, 0.0,
-                                NULL,
-                                const_cast <MSBsplineSurface*> (&surface),
-                                false,
-                                true);
-
+        meshSurface (context, GetFacetOptionsR(), NULL, NULL, 0.0, NULL, surface, false, true);
         }
 #ifdef CollectCounts
     size_t count0[7], count1[7], count2[7];
@@ -3480,27 +3475,6 @@ void IPolyfaceConstruction::Add (MSBsplineSurfaceCR surface)
 
     SetCurrentFaceParamDistanceRange (distanceUVRange);
     EndFace_internal ();
-    }
-
-
-Public bool bspsurf_closestPoint (MSBsplineSurfaceCR surface, DPoint3dCR spacePoint, SolidLocationDetailR detail)
-    {
-    BSurfPatch patch;
-    size_t numU, numV;
-    surface.GetIntervalCounts (numU, numV);
-    SolidLocationDetail detail1;
-    detail.Init ();
-    detail.SetA (DBL_MAX);
-    for (size_t i = 0; i < numU; i++)
-        {
-        for (size_t j = 0; j < numV; j++)
-            {
-            if (surface.GetPatch (patch, i, j))
-                {
-                }
-            }
-        }
-    return false;          
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3558,7 +3532,7 @@ static void    bspmesh_fixSingleBoundaryLoop
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP int      bspmesh_fixBoundaries
+Public int      bspmesh_fixBoundaries
 (
     BsurfBoundary   **boundsPP,
     int             *numBoundsP,
@@ -3737,7 +3711,7 @@ Public GEOMDLLIMPEXP int      bspmesh_fixBoundaries
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP int      bspmesh_fixBoundaries
+Public int      bspmesh_fixBoundaries
 (
     BsurfBoundary   **boundsPP,
     int             *numBoundsP,
@@ -3746,111 +3720,18 @@ Public GEOMDLLIMPEXP int      bspmesh_fixBoundaries
     {
     return bspmesh_fixBoundaries(boundsPP, numBoundsP, conserveParity, false);
     }
-void unweight(DPoint3dCR xyzw, double w, DPoint3dR xyz)
-    {
-    xyz = xyzw;
-    if (w <= 0.0 || w == 1.0)
-        {
-        // leave it alone.
-        }
-    else
-        {
-        double a = 1.0 / w;
-        xyz.x = xyzw.x * a;
-        xyz.y = xyzw.y * a;
-        xyz.z = xyzw.z * a;
-        }
-    }
-
-double SumWeightedLengths(DPoint3d const *xyz, double const *weight, int i0, int step, int n, bool wrap)
-    {
-    double d0 = PolylineOps::Length(xyz + i0, weight + i0, step, n, wrap);
-    DPoint3d xyz0, xyz1;
-    unweight(xyz[i0], weight[i0], xyz0);
-    DPoint3d xyzWrap = xyz0;
-    double d = 0.0;
-    i0 += step;
-    for (int i = 1; i < n; i++, i0 += step, xyz0 = xyz1)
-        {
-        unweight(xyz[i0], weight[i0], xyz1);
-        d += xyz0.Distance(xyz1);
-        }
-    if (wrap)
-        d += xyz0.Distance(xyzWrap);
-    return d > 0.0 ? d : d0;
-    }
-
-double SumLengths(DPoint3d const *xyz, int i0, int step, int n, bool wrap)
-    {
-    double d0 = PolylineOps::Length(xyz + i0, NULL, step, n, wrap);
-    DPoint3d xyz0 = xyz[i0], xyz1;
-    DPoint3d xyzWrap = xyz0;
-    i0 += step;
-    double d = 0.0;
-    for (int i = 1; i < n; i++, i0 += step, xyz0 = xyz1)
-        {
-        xyz1 = xyz[i0];
-        d += xyz0.Distance(xyz1);
-        }
-    if (wrap)
-        d += xyz0.Distance(xyzWrap);
-    return d > 0.0 ? d : d0;
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void bspmesh_calculateParameterLengths
-(
-    MSBsplineSurfaceCR surface,
-    DPoint2dR          length,
-    int &maxIndexX, // index where length.x occurred.
-    int &maxIndexY  // index where length.y occurred.
-)
-    {
-    length.Zero();
-    int numU = surface.uParams.numPoles;
-    int numV = surface.vParams.numPoles;
-
-    bool closedU = surface.uParams.closed != 0;
-    bool closedV = surface.vParams.closed != 0;
-    maxIndexX = -1;
-    maxIndexY = -1;
-    if (surface.rational)
-        {
-        for (int j = 0; j < numV; j++)
-            {
-            updateMax(j, SumWeightedLengths(surface.poles, surface.weights,
-                j * numU, 1, numU, closedU), length.x, maxIndexX);
-            }
-        for (int i = 0; i < numU; i++)
-            {
-            updateMax(i, SumWeightedLengths(surface.poles, surface.weights,
-                i, numU, numV, closedV), length.y, maxIndexY);
-            }
-        }
-    else
-        {
-        for (int j = 0; j < numV; j++)
-            {
-            updateMax(j, SumLengths(surface.poles, j * numU, 1, numU, closedU),
-                length.x, maxIndexX);
-            }
-        for (int i = 0; i < numU; i++)
-            {
-            updateMax(i, SumLengths(surface.poles, i, numU, numV, closedV), length.y, maxIndexY);
-            }
-        }
-    }
-
-GEOMDLLIMPEXP void bspmesh_calculateParameterLengths
+void bspmesh_calculateParameterLengths
 (
     DPoint2d            *lengthP,
     MSBsplineSurface    *surfaceP
 )
     {
     int maxIndexI, maxIndexJ;
-    bspmesh_calculateParameterLengths(*surfaceP, *lengthP, maxIndexI, maxIndexJ);
+    bsppolyface_calculateParameterLengths(*surfaceP, *lengthP, maxIndexI, maxIndexJ);
     }
 
 static double s_minEdgeFraction = 1.0e-5;
@@ -4149,7 +4030,7 @@ bool MSBsplineSurface::ComputeSecondMomentAreaProducts(DMatrix4dR products, doub
         NULL,
         0.0,
         NULL,
-        const_cast<MSBsplineSurface *> (this),
+        *this,
         false,
         cove
         ))
