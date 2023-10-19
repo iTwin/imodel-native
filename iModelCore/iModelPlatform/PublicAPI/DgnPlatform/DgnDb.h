@@ -63,7 +63,7 @@ enum DgnDbProfileValues : int32_t
     DGNDB_CURRENT_VERSION_Major = 2,
     DGNDB_CURRENT_VERSION_Minor = 0,
     DGNDB_CURRENT_VERSION_Sub1  = 0,
-    DGNDB_CURRENT_VERSION_Sub2  = 5,
+    DGNDB_CURRENT_VERSION_Sub2  = 6,
 
     DGNDB_SUPPORTED_VERSION_Major = 2,  // oldest version of the profile supported by the current api
     DGNDB_SUPPORTED_VERSION_Minor = 0,
@@ -230,7 +230,7 @@ protected:
     DgnModels m_models;
     mutable DgnDbProfileVersion m_profileVersion;
     DgnDomains m_domains;
-    DgnDbFonts m_fonts;
+    std::unique_ptr<DgnDbFonts> m_fonts;
     DgnLineStylesPtr m_lineStyles;
     DgnGeoLocation m_geoLocation;
     DgnCodeSpecs m_codeSpecs;
@@ -360,7 +360,7 @@ public:
     DgnElements& Elements() const{return const_cast<DgnElements&>(m_elements);}          //!< The DgnElements of this DgnDb
     DgnGeoLocation& GeoLocation() const {return const_cast<DgnGeoLocation&>(m_geoLocation);}  //!< The geolocation information for this DgnDb
     DgnLineStyles& LineStyles() const {return const_cast<DgnLineStyles&>(*m_lineStyles);}//!< The line styles for this DgnDb
-    DgnDbFonts& Fonts() const {return const_cast<DgnDbFonts&>(m_fonts);}                    //!< The fonts for this DgnDb
+    DgnDbFonts& Fonts() const {return const_cast<DgnDbFonts&>(*m_fonts);}                    //!< The fonts for this DgnDb
     DgnDomains& Domains() const {return const_cast<DgnDomains&>(m_domains);}             //!< The DgnDomains associated with this DgnDb.
     DgnCodeSpecs& CodeSpecs() const {return const_cast<DgnCodeSpecs&>(m_codeSpecs);} //!< The codeSpecs associated with this DgnDb
     DgnSearchableText& SearchableText() const {return const_cast<DgnSearchableText&>(m_searchableText);} //!< The searchable text table for this DgnDb

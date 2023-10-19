@@ -716,6 +716,56 @@ TEST_F(InstanceReaderFixture, check_link_table_serialization) {
     stmt.Finalize();
 }
 
+TEST_F(InstanceReaderFixture, InstanceQueriesAfterUpdate) 
+    {
+    // Setup test db
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("Test9876.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+
+            <ECStructClass typeName="StructProp" modifier="Sealed">
+                <ECProperty propertyName="DoubleProp" typeName="double" />
+                <ECProperty propertyName="StringProp" typeName="string" />
+            </ECStructClass>
+
+            <ECEntityClass typeName="TestClass" modifier="Sealed">
+                <ECStructProperty propertyName="StructProp" typeName="StructProp" />
+                <ECProperty propertyName="PrimitiveProp" typeName="double" />
+            </ECEntityClass>
+        </ECSchema>)xml")));
+
+    // Insert initial values in test db
+    ECSqlStatement insertStatement;
+    insertStatement.Prepare(m_ecdb, "insert into ts.TestClass (StructProp, PrimitiveProp) values (?, 15.65)");
+    auto& structProp = insertStatement.GetBinder(1);
+    structProp["DoubleProp"].BindDouble(15.25);
+    structProp["StringProp"].BindText("InitialValue", IECSqlBinder::MakeCopy::No);
+
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, insertStatement.Step(key));
+
+    m_ecdb.SaveChanges();
+
+    // Instance queries should return initial values
+    ECSqlStatement instanceQueryStatement;
+    ASSERT_EQ(ECSqlStatus::Success, instanceQueryStatement.Prepare(m_ecdb, "select $ from ts.TestClass"));
+    ASSERT_EQ(BE_SQLITE_ROW, instanceQueryStatement.Step());
+    EXPECT_STREQ(instanceQueryStatement.GetValueText(0), "{\"ECInstanceId\":\"0x1\",\"ECClassId\":\"0x4c\",\"StructProp\":{\"DoubleProp\":15.25,\"StringProp\":\"InitialValue\"},\"PrimitiveProp\":15.65}");
+    instanceQueryStatement.Finalize();
+
+    // Update data in TestClass
+    ECSqlStatement updateStatement;
+    ASSERT_EQ(ECSqlStatus::Success, updateStatement.Prepare(m_ecdb, "update ts.TestClass set StructProp.DoubleProp=25.15, StructProp.StringProp='UpdatedValue', PrimitiveProp=65.15"));
+    ASSERT_EQ(BE_SQLITE_DONE, updateStatement.Step());
+    updateStatement.Finalize();
+    m_ecdb.SaveChanges();
+    
+    // Instance queries should return updated values
+    ASSERT_EQ(ECSqlStatus::Success, instanceQueryStatement.Prepare(m_ecdb, "select $ from ts.TestClass"));
+    ASSERT_EQ(BE_SQLITE_ROW, instanceQueryStatement.Step());
+    EXPECT_STREQ(instanceQueryStatement.GetValueText(0), "{\"ECInstanceId\":\"0x1\",\"ECClassId\":\"0x4c\",\"StructProp\":{\"DoubleProp\":25.15,\"StringProp\":\"UpdatedValue\"},\"PrimitiveProp\":65.15}");
+    instanceQueryStatement.Finalize();
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1143,11 +1193,11 @@ TEST_F(InstanceReaderFixture, instance_reader) {
     BeJsDocument doc;
     //! HARD_CODED_IDS
     doc.Parse(R"json({
-        "ECInstanceId": "0x2f",
-        "ECClassId": "0x21",
+        "ECInstanceId": "0x30",
+        "ECClassId": "0x22",
         "Schema": {
-            "Id": "0x5",
-            "RelECClassId": "0x22"
+            "Id": "0x4",
+            "RelECClassId": "0x23"
         },
         "Name": "PropertyHasCategory",
         "Description": "Relates the property to its PropertyCategory.",
@@ -1629,7 +1679,7 @@ TEST_F(InstanceReaderFixture, extract_prop) {
     if ("use syntax to extract property") {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT $->s, $->i, $->d, $->p2d, $->p3d, $->bi, $->l, $->dt, $->b FROM ts.P"));
-        const auto expectedSQL = "SELECT extract_prop([P].[ECClassId],[P].[ECInstanceId],'s',0x0,:ecdb_this_ptr,0),extract_prop([P].[ECClassId],[P].[ECInstanceId],'i',0x0,:ecdb_this_ptr,1),extract_prop([P].[ECClassId],[P].[ECInstanceId],'d',0x0,:ecdb_this_ptr,2),extract_prop([P].[ECClassId],[P].[ECInstanceId],'p2d',0x0,:ecdb_this_ptr,3),extract_prop([P].[ECClassId],[P].[ECInstanceId],'p3d',0x0,:ecdb_this_ptr,4),extract_prop([P].[ECClassId],[P].[ECInstanceId],'bi',0x0,:ecdb_this_ptr,5),extract_prop([P].[ECClassId],[P].[ECInstanceId],'l',0x0,:ecdb_this_ptr,6),extract_prop([P].[ECClassId],[P].[ECInstanceId],'dt',0x0,:ecdb_this_ptr,7),extract_prop([P].[ECClassId],[P].[ECInstanceId],'b',0x0,:ecdb_this_ptr,8) FROM (SELECT [Id] ECInstanceId,73 ECClassId FROM [main].[ts_P]) [P]";
+        const auto expectedSQL = "SELECT extract_prop([P].[ECClassId],[P].[ECInstanceId],'s',0x0,:ecdb_this_ptr,0),extract_prop([P].[ECClassId],[P].[ECInstanceId],'i',0x0,:ecdb_this_ptr,1),extract_prop([P].[ECClassId],[P].[ECInstanceId],'d',0x0,:ecdb_this_ptr,2),extract_prop([P].[ECClassId],[P].[ECInstanceId],'p2d',0x0,:ecdb_this_ptr,3),extract_prop([P].[ECClassId],[P].[ECInstanceId],'p3d',0x0,:ecdb_this_ptr,4),extract_prop([P].[ECClassId],[P].[ECInstanceId],'bi',0x0,:ecdb_this_ptr,5),extract_prop([P].[ECClassId],[P].[ECInstanceId],'l',0x0,:ecdb_this_ptr,6),extract_prop([P].[ECClassId],[P].[ECInstanceId],'dt',0x0,:ecdb_this_ptr,7),extract_prop([P].[ECClassId],[P].[ECInstanceId],'b',0x0,:ecdb_this_ptr,8) FROM (SELECT [Id] ECInstanceId,75 ECClassId FROM [main].[ts_P]) [P]";
         EXPECT_STRCASEEQ(expectedSQL, stmt.GetNativeSql());
         if(stmt.Step() == BE_SQLITE_ROW) {
             int i = 0;
@@ -1966,7 +2016,7 @@ TEST_F(InstanceReaderFixture, nested_struct) {
     BeJsDocument expected;
     expected.Parse(R"json({
         "ECInstanceId": "0x1",
-        "ECClassId": "0x4a",
+        "ECClassId": "0x4b",
         "b": true,
         "bi": "{\"bytes\":13}",
         "d": 3.141592653589793,

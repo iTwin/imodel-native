@@ -96,7 +96,7 @@ protected:
     //! Does not check if the container's ECSchema references the requisite ECSchema(s). @see SupplementedSchemaBuilder::SetMergedCustomAttribute
     ECObjectsStatus SetSupplementedCustomAttribute(IECInstanceR customAttributeInstance);
 
-    CustomAttributeReadStatus ReadCustomAttributes(pugi::xml_node containerNode, ECSchemaReadContextR context, ECSchemaCR fallBackSchema);
+    CustomAttributeReadStatus ReadCustomAttributes(pugi::xml_node containerNode, ECSchemaReadContextR context);
     SchemaWriteStatus WriteCustomAttributes(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion = ECVersion::Latest) const;
     void WriteFilteredCustomAttributes(BeJsValue& parentNode, bool(*skipClassPredicate)(Utf8CP)) const;
     void WriteCustomAttributes(BeJsValue& parentNode) const;

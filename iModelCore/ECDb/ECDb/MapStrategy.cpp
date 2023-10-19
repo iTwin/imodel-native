@@ -47,8 +47,8 @@ BentleyStatus TablePerHierarchyInfo::Initialize(ShareColumnsCustomAttribute cons
 
     if (m_joinedTableInfo == JoinedTableInfo::ParentOfJoinedTable && m_shareColumnsMode == ShareColumnsMode::Yes)
         {
-        issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to map ECClass %s. It defines the JoinedTablePerDirectSubclass custom attribute, although it or its base class already enabled column sharing.",
-                      ecClass.GetFullName());
+        issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0238,
+            "Failed to map ECClass %s. It defines the JoinedTablePerDirectSubclass custom attribute, although it or its base class already enabled column sharing.", ecClass.GetFullName());
         return ERROR;
         }
 
@@ -67,8 +67,8 @@ BentleyStatus TablePerHierarchyInfo::DetermineSharedColumnsInfo(ShareColumnsCust
         {
         if (shareColumnsCA.IsValid())
             {
-            issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to map ECClass %s. It defines the ShareColumns custom attribute, although one of its base classes has defined it already.",
-                          ecClass.GetFullName());
+            issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0239,
+                "Failed to map ECClass %s. It defines the ShareColumns custom attribute, although one of its base classes has defined it already.", ecClass.GetFullName());
 
             return ERROR;
             }
@@ -94,8 +94,8 @@ BentleyStatus TablePerHierarchyInfo::DetermineSharedColumnsInfo(ShareColumnsCust
 
         if (SUCCESS != shareColumnsCA.TryGetMaxSharedColumnsBeforeOverflow(m_maxSharedColumnsBeforeOverflow))
             {
-            issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to map ECClass %s. It has the ShareColumns custom attribute with an invalid value for 'MaxSharedColumnsBeforeOverflow'. Either provide a non-negative value or omit the property.",
-                                  ecClass.GetFullName());
+            issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0240,
+                "Failed to map ECClass %s. It has the ShareColumns custom attribute with an invalid value for 'MaxSharedColumnsBeforeOverflow'. Either provide a non-negative value or omit the property.", ecClass.GetFullName());
             return ERROR;
             }
         }
@@ -112,8 +112,8 @@ BentleyStatus TablePerHierarchyInfo::DetermineJoinedTableInfo(bool hasJoinedTabl
         {
         if (hasJoinedTablePerDirectSubclassOption)
             {
-            issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to map ECClass %s. It defines the JoinedTablePerDirectSubclass custom attribute, although one of its base classes has defined it already.",
-                          ecClass.GetFullName());
+            issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0241,
+                "Failed to map ECClass %s. It defines the JoinedTablePerDirectSubclass custom attribute, although one of its base classes has defined it already.", ecClass.GetFullName());
 
             return ERROR;
             }

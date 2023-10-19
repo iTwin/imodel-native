@@ -19,7 +19,7 @@ struct MergerTestIssueListener : ECN::IIssueListener
     {
     mutable bvector<Utf8String> m_issues;
 
-    void _OnIssueReported(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, Utf8CP message) const override
+    void _OnIssueReported(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, ECN::IssueId id, Utf8CP message) const override
         {
         m_issues.push_back(message);
         }
@@ -4672,7 +4672,365 @@ TEST_F(SchemaMergerTests, ChangeAbstractConstraint_InvalidCase)
     // Compare issues
     bvector<Utf8String> expectedIssues { "Setting AbstractConstraint on MySchema:MyRelationshipClass failed. Was trying to set to MySchema:ABase2." };
     CompareIssues(expectedIssues, issues.m_issues);
+    }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaMergerTests, ChangeStrength)
+    {
+    // Initialize two sets of schemas
+    bvector<Utf8CP> leftSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="MySchema" alias="mys" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="A1">
+          </ECEntityClass>
+          <ECEntityClass typeName="A2">
+          </ECEntityClass>
+          <ECRelationshipClass typeName="MyRelationshipClass" modifier="None" strength="referencing">
+              <Source multiplicity="(0..*)" roleLabel="uses section" polymorphic="true">
+                  <Class class="A1"/>
+              </Source>
+              <Target multiplicity="(0..1)" roleLabel="is part of built up section" polymorphic="true">
+                  <Class class="A2"/>
+              </Target>
+          </ECRelationshipClass>
+        </ECSchema>
+        )schema"
+    };
+    ECSchemaReadContextPtr leftContext = InitializeReadContextWithAllSchemas(leftSchemasXml);
+    bvector<ECN::ECSchemaCP> leftSchemas = leftContext->GetCache().GetSchemas();
+
+    bvector<Utf8CP> rightSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="MySchema" alias="mys" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="A1">
+          </ECEntityClass>
+          <ECEntityClass typeName="A2">
+          </ECEntityClass>
+          <ECRelationshipClass typeName="MyRelationshipClass" modifier="None" strength="holding" >
+              <Source multiplicity="(0..*)" roleLabel="uses section" polymorphic="true">
+                  <Class class="A1"/>
+              </Source>
+              <Target multiplicity="(0..1)" roleLabel="is part of built up section" polymorphic="true">
+                  <Class class="A2"/>
+              </Target>
+          </ECRelationshipClass>
+        </ECSchema>
+        )schema"
+    };
+    ECSchemaReadContextPtr rightContext = InitializeReadContextWithAllSchemas(rightSchemasXml);
+    bvector<ECN::ECSchemaCP> rightSchemas = rightContext->GetCache().GetSchemas();
+    
+    SchemaMergeResult result;
+    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+
+    // Compare result
+    bvector<Utf8CP> expectedSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="MySchema" alias="mys" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="A1">
+          </ECEntityClass>
+          <ECEntityClass typeName="A2">
+          </ECEntityClass>
+          <ECRelationshipClass typeName="MyRelationshipClass" modifier="None" strength="holding" >
+              <Source multiplicity="(0..*)" roleLabel="uses section" polymorphic="true">
+                  <Class class="A1"/>
+              </Source>
+              <Target multiplicity="(0..1)" roleLabel="is part of built up section" polymorphic="true">
+                  <Class class="A2"/>
+              </Target>
+          </ECRelationshipClass>
+        </ECSchema>
+        )schema"
+    };
+
+    CompareResults(expectedSchemasXml, result);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaMergerTests, AddBaseRelationship)
+    {
+    // Initialize two sets of schemas
+    bvector<Utf8CP> leftSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="MySchema" alias="mys" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="Element" />
+
+          <ECRelationshipClass typeName="ElementGroupsMembers" strength="referencing" modifier="None">
+              <Source multiplicity="(0..*)" roleLabel="groups" polymorphic="true">
+                  <Class class="Element"/>
+              </Source>
+              <Target multiplicity="(0..*)" roleLabel="is grouped by" polymorphic="true">
+                  <Class class="Element"/>
+              </Target>
+              <ECProperty propertyName="MemberPriority" typeName="int" displayLabel="Member Priority" />
+          </ECRelationshipClass>
+        </ECSchema>
+        )schema"
+    };
+    ECSchemaReadContextPtr leftContext = InitializeReadContextWithAllSchemas(leftSchemasXml);
+    bvector<ECN::ECSchemaCP> leftSchemas = leftContext->GetCache().GetSchemas();
+
+    bvector<Utf8CP> rightSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="MySchema" alias="mys" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="Element" />
+          <ECRelationshipClass typeName="ElementRefersToElements" strength="referencing" modifier="Abstract">
+              <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="true">
+                  <Class class="Element"/>
+              </Source>
+              <Target multiplicity="(0..*)" roleLabel="is referenced by" polymorphic="true">
+                  <Class class="Element"/>
+              </Target>
+          </ECRelationshipClass>
+
+          <ECRelationshipClass typeName="ElementGroupsMembers" strength="referencing" modifier="None">
+              <BaseClass>ElementRefersToElements</BaseClass>
+              <Source multiplicity="(0..*)" roleLabel="groups" polymorphic="true">
+                  <Class class="Element"/>
+              </Source>
+              <Target multiplicity="(0..*)" roleLabel="is grouped by" polymorphic="true">
+                  <Class class="Element"/>
+              </Target>
+              <ECProperty propertyName="MemberPriority" typeName="int" displayLabel="Member Priority" />
+          </ECRelationshipClass>
+        </ECSchema>
+        )schema"
+    };
+    ECSchemaReadContextPtr rightContext = InitializeReadContextWithAllSchemas(rightSchemasXml);
+    bvector<ECN::ECSchemaCP> rightSchemas = rightContext->GetCache().GetSchemas();
+    
+    SchemaMergeResult result;
+    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+
+    // Compare result
+    bvector<Utf8CP> expectedSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="MySchema" alias="mys" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="Element" />
+          <ECRelationshipClass typeName="ElementRefersToElements" strength="referencing" modifier="Abstract">
+              <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="true">
+                  <Class class="Element"/>
+              </Source>
+              <Target multiplicity="(0..*)" roleLabel="is referenced by" polymorphic="true">
+                  <Class class="Element"/>
+              </Target>
+          </ECRelationshipClass>
+
+          <ECRelationshipClass typeName="ElementGroupsMembers" strength="referencing" modifier="None">
+              <BaseClass>ElementRefersToElements</BaseClass>
+              <Source multiplicity="(0..*)" roleLabel="groups" polymorphic="true">
+                  <Class class="Element"/>
+              </Source>
+              <Target multiplicity="(0..*)" roleLabel="is grouped by" polymorphic="true">
+                  <Class class="Element"/>
+              </Target>
+              <ECProperty propertyName="MemberPriority" typeName="int" displayLabel="Member Priority" />
+          </ECRelationshipClass>
+        </ECSchema>
+        )schema"
+    };
+
+    CompareResults(expectedSchemasXml, result);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaMergerTests, AddBaseRelationshipAndChangeStrength)
+    {
+    // Initialize two sets of schemas
+    bvector<Utf8CP> leftSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="MySchema" alias="mys" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="Element" />
+
+          <ECRelationshipClass typeName="ElementGroupsMembers" strength="holding" modifier="None">
+              <Source multiplicity="(0..*)" roleLabel="groups" polymorphic="true">
+                  <Class class="Element"/>
+              </Source>
+              <Target multiplicity="(0..*)" roleLabel="is grouped by" polymorphic="true">
+                  <Class class="Element"/>
+              </Target>
+              <ECProperty propertyName="MemberPriority" typeName="int" displayLabel="Member Priority" />
+          </ECRelationshipClass>
+        </ECSchema>
+        )schema"
+    };
+    ECSchemaReadContextPtr leftContext = InitializeReadContextWithAllSchemas(leftSchemasXml);
+    bvector<ECN::ECSchemaCP> leftSchemas = leftContext->GetCache().GetSchemas();
+
+    bvector<Utf8CP> rightSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="MySchema" alias="mys" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="Element" />
+          <ECRelationshipClass typeName="ElementRefersToElements" strength="referencing" modifier="Abstract">
+              <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="true">
+                  <Class class="Element"/>
+              </Source>
+              <Target multiplicity="(0..*)" roleLabel="is referenced by" polymorphic="true">
+                  <Class class="Element"/>
+              </Target>
+          </ECRelationshipClass>
+
+          <ECRelationshipClass typeName="ElementGroupsMembers" strength="referencing" modifier="None">
+              <BaseClass>ElementRefersToElements</BaseClass>
+              <Source multiplicity="(0..*)" roleLabel="groups" polymorphic="true">
+                  <Class class="Element"/>
+              </Source>
+              <Target multiplicity="(0..*)" roleLabel="is grouped by" polymorphic="true">
+                  <Class class="Element"/>
+              </Target>
+              <ECProperty propertyName="MemberPriority" typeName="int" displayLabel="Member Priority" />
+          </ECRelationshipClass>
+        </ECSchema>
+        )schema"
+    };
+    ECSchemaReadContextPtr rightContext = InitializeReadContextWithAllSchemas(rightSchemasXml);
+    bvector<ECN::ECSchemaCP> rightSchemas = rightContext->GetCache().GetSchemas();
+    
+    SchemaMergeResult result;
+    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+
+    // Compare result
+    bvector<Utf8CP> expectedSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="MySchema" alias="mys" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="Element" />
+          <ECRelationshipClass typeName="ElementRefersToElements" strength="referencing" modifier="Abstract">
+              <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="true">
+                  <Class class="Element"/>
+              </Source>
+              <Target multiplicity="(0..*)" roleLabel="is referenced by" polymorphic="true">
+                  <Class class="Element"/>
+              </Target>
+          </ECRelationshipClass>
+
+          <ECRelationshipClass typeName="ElementGroupsMembers" strength="referencing" modifier="None">
+              <BaseClass>ElementRefersToElements</BaseClass>
+              <Source multiplicity="(0..*)" roleLabel="groups" polymorphic="true">
+                  <Class class="Element"/>
+              </Source>
+              <Target multiplicity="(0..*)" roleLabel="is grouped by" polymorphic="true">
+                  <Class class="Element"/>
+              </Target>
+              <ECProperty propertyName="MemberPriority" typeName="int" displayLabel="Member Priority" />
+          </ECRelationshipClass>
+        </ECSchema>
+        )schema"
+    };
+
+    CompareResults(expectedSchemasXml, result);
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaMergerTests, ChangeStrengthIllegal)
+    {
+    // Setting the strength of a derived relationship to something other than its base class is illegal. This test attempts to do just that.
+    // Initialize two sets of schemas
+    bvector<Utf8CP> leftSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="MySchema" alias="mys" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="Element" />
+
+          <ECRelationshipClass typeName="ElementRefersToElements" strength="referencing" modifier="Abstract">
+              <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="true">
+                  <Class class="Element"/>
+              </Source>
+              <Target multiplicity="(0..*)" roleLabel="is referenced by" polymorphic="true">
+                  <Class class="Element"/>
+              </Target>
+          </ECRelationshipClass>
+
+          <ECRelationshipClass typeName="ElementGroupsMembers" strength="referencing" modifier="None">
+              <BaseClass>ElementRefersToElements</BaseClass>
+              <Source multiplicity="(0..*)" roleLabel="groups" polymorphic="true">
+                  <Class class="Element"/>
+              </Source>
+              <Target multiplicity="(0..*)" roleLabel="is grouped by" polymorphic="true">
+                  <Class class="Element"/>
+              </Target>
+              <ECProperty propertyName="MemberPriority" typeName="int" displayLabel="Member Priority" />
+          </ECRelationshipClass>
+        </ECSchema>
+        )schema"
+    };
+    ECSchemaReadContextPtr leftContext = InitializeReadContextWithAllSchemas(leftSchemasXml);
+    bvector<ECN::ECSchemaCP> leftSchemas = leftContext->GetCache().GetSchemas();
+
+    bvector<Utf8CP> rightSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="MySchema" alias="mys" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="Element" />
+
+          <ECRelationshipClass typeName="ElementGroupsMembers" strength="holding" modifier="None">
+              <Source multiplicity="(0..*)" roleLabel="groups" polymorphic="true">
+                  <Class class="Element"/>
+              </Source>
+              <Target multiplicity="(0..*)" roleLabel="is grouped by" polymorphic="true">
+                  <Class class="Element"/>
+              </Target>
+              <ECProperty propertyName="MemberPriority" typeName="int" displayLabel="Member Priority" />
+          </ECRelationshipClass>
+        </ECSchema>
+        )schema"
+    };
+    ECSchemaReadContextPtr rightContext = InitializeReadContextWithAllSchemas(rightSchemasXml);
+    bvector<ECN::ECSchemaCP> rightSchemas = rightContext->GetCache().GetSchemas();
+
+    {
+    SchemaMergeResult result;
+    MergerTestIssueListener issues;
+    result.AddIssueListener(issues);
+    EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+
+    // Compare issues
+    bvector<Utf8String> expectedIssues { "The setter for StrengthType on item MySchema:ElementGroupsMembers returned an error." };
+    CompareIssues(expectedIssues, issues.m_issues);
+    }
+    
+    {
+    SchemaMergeResult result;
+    SchemaMergeOptions options;
+    options.SetIgnoreStrengthChangeProblems(true);
+    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas, options));
+
+    // Compare result
+    bvector<Utf8CP> expectedSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="MySchema" alias="mys" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="Element" />
+          <ECRelationshipClass typeName="ElementRefersToElements" strength="referencing" modifier="Abstract">
+              <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="true">
+                  <Class class="Element"/>
+              </Source>
+              <Target multiplicity="(0..*)" roleLabel="is referenced by" polymorphic="true">
+                  <Class class="Element"/>
+              </Target>
+          </ECRelationshipClass>
+
+          <ECRelationshipClass typeName="ElementGroupsMembers" strength="referencing" modifier="None">
+              <BaseClass>ElementRefersToElements</BaseClass>
+              <Source multiplicity="(0..*)" roleLabel="groups" polymorphic="true">
+                  <Class class="Element"/>
+              </Source>
+              <Target multiplicity="(0..*)" roleLabel="is grouped by" polymorphic="true">
+                  <Class class="Element"/>
+              </Target>
+              <ECProperty propertyName="MemberPriority" typeName="int" displayLabel="Member Priority" />
+          </ECRelationshipClass>
+        </ECSchema>
+        )schema"
+    };
+
+    CompareResults(expectedSchemasXml, result);
+    }
     }
 
 /*---------------------------------------------------------------------------------**//**

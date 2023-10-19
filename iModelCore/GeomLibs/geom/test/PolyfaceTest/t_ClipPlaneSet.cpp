@@ -2666,3 +2666,53 @@ TEST(ClipPlaneSet,CloneBetweenDirectedFractions)
 
     Check::ClearGeometry("ClipPlaneSet.CloneBetweenDirectedFractions");
     }
+
+TEST(ClipPlaneSet, ClipParityRegionSweep)
+    {
+    bvector<ClipPlane> planes;
+    planes.push_back(ClipPlane(DVec3d::From(0, 0, -1), DPoint3d::From(0, 0, 8)));
+    planes.push_back(ClipPlane(DVec3d::From(0, 0, 1), DPoint3d::From(0, 0, 0.4)));
+    auto clipper = ClipPlaneSet(planes.data(), planes.size());
+
+    bvector<ISolidPrimitivePtr> solids;
+    bvector<BeFileName> filenames{ BeFileName(L"parityRegionSweep.imjs"), BeFileName(L"unionRegionSweep.imjs") };
+    for (auto const& filename : filenames)
+        {
+        BeFileName fullPathName;
+        BeTest::GetHost().GetDocumentsRoot(fullPathName);
+        fullPathName.AppendToPath(L"GeomLibsTestData").AppendToPath(L"Polyface").AppendToPath(L"validation").AppendToPath(filename);
+        bvector<IGeometryPtr> geometry;
+        if (Check::True(GTestFileOps::JsonFileToGeometry(fullPathName, geometry), "json file successfully imported"))
+            {
+            auto solid = geometry.front()->GetAsISolidPrimitive();
+            if (Check::True(solid.IsValid(), "solid successfully converted from json"))
+                solids.push_back(solid);
+            }
+        }
+
+    double x = 0;
+    for (auto const& solid : solids)
+        {
+        Check::SaveTransformed(*solid);
+        DgnExtrusionDetail detail;
+        if (Check::True(solid->TryGetDgnExtrusionDetail(detail), "DgnExtrusion successfully extracted from solid"))
+            {
+            auto builder = CreateBuilder(false, false);
+            if (Check::True(builder->Add(detail), "Builder successfully added DgnExtrusion"))
+                {
+                auto mesh = builder->GetClientMeshPtr();
+                Check::SaveTransformed(*mesh);
+                PolyfaceHeaderPtr sectionMesh;
+                bvector<bvector<DPoint3d>> sectionLines;
+                ValidatedDouble tol;
+                ClipPlaneSet::ClipPlaneSetSectionPolyface(*mesh, clipper, &sectionMesh, &sectionLines, tol);
+                Check::SaveTransformed(*sectionMesh);
+                Check::SaveTransformed(sectionLines);
+                Check::True(sectionMesh->GetNumFacet() > 0, "Section mesh has facets");
+                }
+            }
+        Check::SetTransform(Transform::From(DPoint3d::From(x += 10, 0)));
+        }
+
+    Check::ClearGeometry("ClipPlaneSet.ClipParityRegionSweep");
+    }

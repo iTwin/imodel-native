@@ -141,7 +141,7 @@ SchemaWriteStatus KindOfQuantity::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecX
 
     if (nullptr == GetPersistenceUnit())
         {
-        LOG.errorv("Failed to write schema because KindOfQuantity '%s' does not have a persistence unit", GetName().c_str());
+        LOG.errorv("Failed to write schema with ECXml version %s because KindOfQuantity '%s' does not have a persistence unit", ECSchema::GetECVersionString(ecXmlVersion), GetName().c_str());
         return SchemaWriteStatus::FailedToSaveXml;
         }
 
@@ -184,7 +184,7 @@ SchemaWriteStatus KindOfQuantity::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecX
             {
             if (format.IsProblem())
                 {
-                LOG.errorv("Failed to write schema because presentation Format for KindOfQuantity '%s' has problem: '%s'.", GetFullName().c_str(), format.GetProblemDescription().c_str());
+                LOG.errorv("Failed to write schema with ECXml version %s because presentation Format for KindOfQuantity '%s' has problem: '%s'.", ECSchema::GetECVersionString(ecXmlVersion), GetFullName().c_str(), format.GetProblemDescription().c_str());
                 return SchemaWriteStatus::FailedToSaveXml;
                 }
 

@@ -121,7 +121,7 @@ TEST_F(ECSqlStatementTestFixture, DisableFunction) {
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("disabledFunc.ecdb"));
     struct IssueListener: ECN::IIssueListener {
         mutable bvector<Utf8String> m_issues;
-        void _OnIssueReported(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, Utf8CP message) const override {
+        void _OnIssueReported(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, ECN::IssueId id, Utf8CP message) const override {
             m_issues.push_back(message);
         }
         Utf8String const& GetLastError() const { return m_issues.back();}
@@ -1016,8 +1016,10 @@ TEST_F(ECSqlStatementTestFixture, ClassAliases)
 
     {
     ECSqlStatement stmt;
+    auto classId = m_ecdb.Schemas().GetClassId("TestSchema", "A").GetValue();
+    Utf8PrintfString stmtStr("SELECT (SELECT [b].[ECInstanceId] FROM (SELECT [Id] ECInstanceId,%" PRIu64 " ECClassId FROM [main].[ts_A]) [b])", classId);
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT (SELECT b.ECInstanceId FROM ts.A b)"));
-    EXPECT_STRCASEEQ("SELECT (SELECT [b].[ECInstanceId] FROM (SELECT [Id] ECInstanceId,73 ECClassId FROM [main].[ts_A]) [b])", stmt.GetNativeSql()) << stmt.GetECSql();
+    EXPECT_STRCASEEQ(stmtStr.c_str(), stmt.GetNativeSql()) << stmt.GetECSql();
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     EXPECT_EQ(1, stmt.GetColumnCount()) << stmt.GetECSql();
     ASSERT_EQ(1, stmt.GetValueId<ECInstanceId>(0).GetValue()) << stmt.GetECSql();

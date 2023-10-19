@@ -32,7 +32,7 @@ struct PragmaHelp : PragmaManager::GlobalHandler {
     }
 
     virtual DbResult Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&, PragmaManager::OptionsMap const&) override {
-        ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "PRAGMA %s is readonly.", GetName().c_str());
+        ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0552, "PRAGMA %s is readonly.", GetName().c_str());
         rowSet = std::make_unique<StaticPragmaResult>(ecdb);
         rowSet->FreezeSchemaChanges();
         return BE_SQLITE_READONLY;
@@ -130,7 +130,10 @@ DbResult PragmaManager::DefaultGlobal(RowSet&, Utf8StringCR name, PragmaVal cons
         IssueSeverity::Error,
         IssueCategory::BusinessProperties,
         IssueType::ECSQL,
-        "Unrecognized pragma %s.", name.c_str());
+        ECDbIssueId::ECDb_0559,
+        "Unrecognized pragma %s.",
+        name.c_str()
+    );
     return BE_SQLITE_ERROR;
 }
 
@@ -142,7 +145,10 @@ DbResult PragmaManager::DefaultSchema(RowSet&, Utf8StringCR name, PragmaVal cons
         IssueSeverity::Error,
         IssueCategory::BusinessProperties,
         IssueType::ECSQL,
-        "Unrecognized pragma '%s' for schema object.", name.c_str());
+        ECDbIssueId::ECDb_0560,
+        "Unrecognized pragma '%s' for schema object.",
+        name.c_str()
+    );
 
     return BE_SQLITE_ERROR;
 }
@@ -155,7 +161,10 @@ DbResult PragmaManager::DefaultClass(RowSet&, Utf8StringCR name, PragmaVal const
         IssueSeverity::Error,
         IssueCategory::BusinessProperties,
         IssueType::ECSQL,
-        "Unrecognized pragma '%s' for class object.", name.c_str());
+        ECDbIssueId::ECDb_0561,
+        "Unrecognized pragma '%s' for class object.",
+        name.c_str()
+    );
     return BE_SQLITE_ERROR;
 
 }
@@ -168,7 +177,10 @@ DbResult PragmaManager::DefaultProperty(RowSet&, Utf8StringCR name, PragmaVal co
         IssueSeverity::Error,
         IssueCategory::BusinessProperties,
         IssueType::ECSQL,
-        "Unrecognized pragma '%s' for property object.", name.c_str());
+        ECDbIssueId::ECDb_0562,
+        "Unrecognized pragma '%s' for property object.",
+        name.c_str()
+    );
     return BE_SQLITE_ERROR;
 }
 
@@ -194,7 +206,11 @@ DbResult PragmaManager::DefaultAny(RowSet&, Utf8StringCR name, PragmaVal const&,
         IssueSeverity::Error,
         IssueCategory::BusinessProperties,
         IssueType::ECSQL,
-        "Unrecognized object path '%s' specified for pragma '%s'", BeStringUtilities::Join(path,".").c_str(), name.c_str());
+        ECDbIssueId::ECDb_0563,
+        "Unrecognized object path '%s' specified for pragma '%s'",
+        BeStringUtilities::Join(path,".").c_str(),
+        name.c_str()
+    );
     return BE_SQLITE_ERROR;
 }
 
@@ -214,7 +230,11 @@ BentleyStatus PragmaManager::Register(std::unique_ptr<Handler> handler) {
             IssueSeverity::Error,
             IssueCategory::BusinessProperties,
             IssueType::ECSQL,
-            "ECDb pragma handler with same type (%s) and name (%s) already exists.", handler->GetTypeString(), name.c_str());
+            ECDbIssueId::ECDb_0564,
+            "ECDb pragma handler with same type (%s) and name (%s) already exists.",
+            handler->GetTypeString(),
+            name.c_str()
+        );
         return ERROR;
     }
     m_handlers[type][name.c_str()] = std::move(handler);
