@@ -380,7 +380,7 @@ void MSBsplineSurface::GetPoleRange (DRange3dR range, TransformCR transform) con
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MSBsplineSurface::IsPhysicallyClosed (bool& uClosed, bool& vClosed)
     {
-    bspsurf_isPhysicallyClosed(*this, &uClosed, &vClosed);
+    bspsurf_isPhysicallyClosed(*this, uClosed, vClosed);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -388,7 +388,7 @@ void MSBsplineSurface::IsPhysicallyClosed (bool& uClosed, bool& vClosed)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MSBsplineSurface::IsPhysicallyClosed(bool& uClosed, bool& vClosed) const
     {
-    bspsurf_isPhysicallyClosed(*this, &uClosed, &vClosed);
+    bspsurf_isPhysicallyClosed(*this, uClosed, vClosed);
     }
 
 /*---------------------------------------------------------------------------------**//**
