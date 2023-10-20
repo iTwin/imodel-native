@@ -124,6 +124,10 @@
 /* Define if you have strncasecmp. CARES */
 #define HAVE_STRNCASECMP 1
 
+/* Define if you have errno.h. CARES */
+#define HAVE_ERRNO_H 1
 
+/* Define if you have recvfrom. CARES */
+#define HAVE_RECVFROM 1
 
 #endif /* HEADER_CURL_CONFIG_MAC_H */
