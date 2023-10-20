@@ -28,9 +28,9 @@ resources:
   repositories:
   - repository: imodel-native-internal
     type: github
+    endpoint: github.com_imodel-native
     name: iTwin/imodel-native-internal
     ref: ${{ parameters.defaultNativeBranch }}
-    endpoint: github.com_imodel-native
   - repository: itwinjs-core
     type: github
     name: iTwin/itwinjs-core
