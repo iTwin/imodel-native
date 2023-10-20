@@ -1469,7 +1469,7 @@ int &vCount
         }
 
     bool uClosed, vClosed;
-    bspsurf_isPhysicallyClosed(surface, uClosed, vClosed);
+    surface.IsPhysicallyClosed (uClosed, vClosed);
     uClosed |= surface.uParams.closed != 0;
     vClosed |= surface.vParams.closed != 0;
     mpP->CorrectGridCounts (uClosed, vClosed);
@@ -3361,6 +3361,17 @@ StatusInt OutputTriStrip (DPoint3dP points, DVec3dP normals, DPoint2dP params, i
     return SUCCESS;
     }
 };
+
+bool TryTransformFromPseudoDistanceRectangle
+(
+FacetParamMode mode,
+DRange2dCR baseRange,
+double xDistanceFactor,
+double yDistanceFactor,
+DRange2dR distanceRange,
+DRange2dR targetRange,
+TransformR transform
+);
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod

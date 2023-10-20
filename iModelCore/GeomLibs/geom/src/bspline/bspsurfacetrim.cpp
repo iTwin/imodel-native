@@ -727,7 +727,14 @@ double     surfaceTol
     }
 
 /*----------------------------------------------------------------------+
-Unpublished overload with const input surface.
+Copy non-boundary data bitwise from source header to dest header.
+Build reevaluated boundaries (lines) with no trim curves in the dest.
+This is used by bspmesh, which needs trim boundaries at the same tolerance
+as it is using for faceting the body of the face.
+@param pTempSurface OUT surface to use for temporary operation.
+@param pSourceSurface IN original surface.
+@param curveTol IN tolerance for parameter space evaluation of curves.
+@param surfaceTol IN tolerance for surface error.
 +----------------------------------------------------------------------*/
 Public StatusInt bspsurf_openTempTrimmedSurface
 (
@@ -766,14 +773,7 @@ double              surfaceTol
     }
 
 /*----------------------------------------------------------------------+
-Copy non-boundary data bitwise from source header to dest header.
-Build reevaluated boundaries (lines) with no trim curves in the dest.
-This is used by bspmesh, which needs trim boundaries at the same tolerance
-as it is using for faceting the body of the face.
-@param pTempSurface OUT surface to use for temporary operation.
-@param pSourceSurface IN original surface.
-@param curveTol IN tolerance for parameter space evaluation of curves.
-@param surfaceTol IN tolerance for surface error.
+@deprecated Use the overload with const input surface.
 +----------------------------------------------------------------------*/
 Public GEOMDLLIMPEXP StatusInt bspsurf_openTempTrimmedSurface
 (

@@ -266,8 +266,7 @@ struct GEOMDLLIMPEXP MSBsplineSurface
     //! Create B-spline surface by reversing the given direction of surface.
     MSBsplineStatus CopyReversed (MSBsplineSurfaceCR source, int edge);
     
-    //! Check whether the B-spline surface is physically closed in either parameter direction. A B-spline surface may be 
-    //! non-periodic, but still be closed in the v/u direction if its first and last rows/ columns of poles coincide. 
+    //! @deprecated Use the const overload. 
     void IsPhysicallyClosed (bool& uClosed, bool& vClosed);
     //! Check whether the B-spline surface encloses a valid space.
     bool    IsSolid (double tolerance);
@@ -900,6 +899,10 @@ bvector<CurveAndSolidLocationDetail> &curvePoints     //!< [out] hit points on c
     //! <li> Future validators might do fixup, hence method is non-const.
     //! </ul>
     bool IsValidGeometry(GeometryValidatorPtr &validator) const;
+
+    //! Check whether the B-spline surface is physically closed in either parameter direction. A B-spline surface may be 
+    //! non-periodic, but still be closed in the v/u direction if its first and last rows/ columns of poles coincide. 
+    void IsPhysicallyClosed(bool& uClosed, bool& vClosed) const;
 
     }; //MSBsplineSurface
 

@@ -1133,7 +1133,7 @@ public:
     //! Return the centroid of the (uniformly distributed) wire mass.
     GEOMDLLIMPEXP void WireCentroid (double &length, DPoint3dR centroid, double fraction0, double fraction1) const;
 
-    //! Create the B-spline curve from the parameters of an elliptic arc.
+    //! @deprecated Use the overload with const inputs.
     GEOMDLLIMPEXP MSBsplineStatus InitEllipticArc (DPoint3d &center, double rX, double rY,
             double startRadians = 0.0,
             double sweepRadians = msGeomConst_2pi,
@@ -1322,6 +1322,13 @@ public:
     GEOMDLLIMPEXP bool HasValidOrder () const;
     GEOMDLLIMPEXP bool HasValidPoleCounts () const;
     GEOMDLLIMPEXP bool HasValidCountsAndAllocations () const;
+
+    //! Create the B-spline curve from the parameters of an elliptic arc.
+    GEOMDLLIMPEXP MSBsplineStatus InitEllipticArc(DPoint3dCR center, double rX, double rY,
+            double startRadians = 0.0,
+            double sweepRadians = msGeomConst_2pi,
+            RotMatrixCP axes = NULL
+            );
 }; // MSBsplineCurve
 
 //! MSBsplineCurve with IRefCounted support for smart pointers.

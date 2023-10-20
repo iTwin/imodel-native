@@ -147,42 +147,6 @@ double              &pMax,
 MSBsplineSurfaceCP  pSurf
 );
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool TryTransformFromPseudoDistanceRectangle
-(
-FacetParamMode mode,
-DRange2dCR baseRange,
-double xDistanceFactor,
-double yDistanceFactor,
-DRange2dR distanceRange,
-DRange2dR targetRange,
-TransformR transform
-);
-
-/*---------------------------------------------------------------------------------**//**
-* Overload with const input.
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt bspsurf_openTempTrimmedSurface
-(
-MSBsplineSurfaceR   tempSurface,
-MSBsplineSurfaceCR  sourceSurface,
-double              curveTol,
-double              surfaceTol
-);
-
-/*---------------------------------------------------------------------------------**//**
-* Overload with const input.
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void bspsurf_isPhysicallyClosed
-(
-MSBsplineSurfaceCR  surf,
-bool&               uClosed,
-bool&               vClosed
-);
 
 END_BENTLEY_GEOMETRY_NAMESPACE
 

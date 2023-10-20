@@ -376,11 +376,19 @@ void MSBsplineSurface::GetPoleRange (DRange3dR range, TransformCR transform) con
 
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod
+* @deprecated Use the const overload.
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MSBsplineSurface::IsPhysicallyClosed (bool& uClosed, bool& vClosed)
     {
-    bspsurf_isPhysicallyClosed (&uClosed, &vClosed, this);
+    bspsurf_isPhysicallyClosed(*this, &uClosed, &vClosed);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void MSBsplineSurface::IsPhysicallyClosed(bool& uClosed, bool& vClosed) const
+    {
+    bspsurf_isPhysicallyClosed(*this, &uClosed, &vClosed);
     }
 
 /*---------------------------------------------------------------------------------**//**
