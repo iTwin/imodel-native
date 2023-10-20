@@ -146,8 +146,6 @@ double              &wMin,
 double              &pMax,
 MSBsplineSurfaceCP  pSurf
 );
-
-
 END_BENTLEY_GEOMETRY_NAMESPACE
 
 #include "sortutil.h"
