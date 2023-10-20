@@ -1139,6 +1139,12 @@ public:
             double sweepRadians = msGeomConst_2pi,
             RotMatrixP axes = NULL
             );
+    //! Create the B-spline curve from the parameters of an elliptic arc.
+    GEOMDLLIMPEXP MSBsplineStatus InitEllipticArc(DPoint3dCR center, double rX, double rY,
+            double startRadians = 0.0,
+            double sweepRadians = msGeomConst_2pi,
+            RotMatrixCP axes = NULL
+            );
 
     //! Initialize the B-spline curve for an ellipse.
     GEOMDLLIMPEXP MSBsplineStatus InitFromDEllipse3d (DEllipse3dCR ellipse);
@@ -1322,13 +1328,6 @@ public:
     GEOMDLLIMPEXP bool HasValidOrder () const;
     GEOMDLLIMPEXP bool HasValidPoleCounts () const;
     GEOMDLLIMPEXP bool HasValidCountsAndAllocations () const;
-
-    //! Create the B-spline curve from the parameters of an elliptic arc.
-    GEOMDLLIMPEXP MSBsplineStatus InitEllipticArc(DPoint3dCR center, double rX, double rY,
-            double startRadians = 0.0,
-            double sweepRadians = msGeomConst_2pi,
-            RotMatrixCP axes = NULL
-            );
 }; // MSBsplineCurve
 
 //! MSBsplineCurve with IRefCounted support for smart pointers.
