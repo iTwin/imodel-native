@@ -361,7 +361,7 @@ static bool    sbIsPreciseTrimEnabled = true;
 @description Inquire the static enabling flag for precise trim.
 @returns static flag value.
 +----------------------------------------------------------------------*/
-Public bool    bspsurf_isPreciseTrimEnabled
+Public GEOMDLLIMPEXP bool    bspsurf_isPreciseTrimEnabled
 (
 )
     {
@@ -371,7 +371,7 @@ Public bool    bspsurf_isPreciseTrimEnabled
 @description Set the static enabling flag for precise trim.
 @param bEnabled IN flag to save.
 +----------------------------------------------------------------------*/
-Public void bspsurf_setIsPreciseTrimEnabled
+Public GEOMDLLIMPEXP void bspsurf_setIsPreciseTrimEnabled
 (
 bool    bEnabled
 )
@@ -531,7 +531,7 @@ SurfaceBreakContext &breakContext
         }
     }
 
-Public StatusInt bspsurf_appendPCurveStrokes
+Public GEOMDLLIMPEXP StatusInt bspsurf_appendPCurveStrokes
 (
 EmbeddedDPoint3dArray *pCurvePoints,    // <= evaluated points. MAY NOT BE NULL
 EmbeddedDPoint3dArray *pSurfacePoints,  // <= evaluated points. MAY NOT BE NULL
@@ -664,7 +664,7 @@ cleanup:
 @returns SUCCESS if all trims evaluated.  If any evaluation fails,
         evaluation halts without changing the pDestBoundary.
 +----------------------------------------------------------------------*/
-Public StatusInt bspsurf_strokeSingleTrimLoop
+Public GEOMDLLIMPEXP StatusInt bspsurf_strokeSingleTrimLoop
 (
 BsurfBoundary   *pDestBoundary,
 BsurfBoundary   *pSourceBoundary,
@@ -692,7 +692,7 @@ const MSBsplineSurface *pSurface
 @returns SUCCESS if all trims evaluated.  If any evaluation fails, the surface
         will have a mixture of old and new polyline loops.
 +----------------------------------------------------------------------*/
-Public StatusInt bspsurf_restrokeTrimLoops
+Public GEOMDLLIMPEXP StatusInt bspsurf_restrokeTrimLoops
 (
 MSBsplineSurface    *pSurface,
 double     curveTol,
@@ -775,7 +775,7 @@ as it is using for faceting the body of the face.
 @param curveTol IN tolerance for parameter space evaluation of curves.
 @param surfaceTol IN tolerance for surface error.
 +----------------------------------------------------------------------*/
-Public StatusInt bspsurf_openTempTrimmedSurface
+Public GEOMDLLIMPEXP StatusInt bspsurf_openTempTrimmedSurface
 (
 MSBsplineSurface    *pTempSurface,
 MSBsplineSurface    *pSourceSurface,
@@ -793,7 +793,7 @@ Free boundary data in surface.  NULL out remaining parts (i.e. pole pointers
     that were copied by bspsurf_openTempTrimmedSurface)
 @param pTempSurface IN OUT surface to close.
 +----------------------------------------------------------------------*/
-Public StatusInt bspsurf_closeTempTrimmedSurface
+Public GEOMDLLIMPEXP StatusInt bspsurf_closeTempTrimmedSurface
 (
 MSBsplineSurface    *pTempSurface
 )
@@ -810,7 +810,7 @@ MSBsplineSurface    *pTempSurface
 /*----------------------------------------------------------------------+
 Stroke a parameter space curve and map to surface.
 +----------------------------------------------------------------------*/
-Public StatusInt bspsurf_strokePCurve
+Public GEOMDLLIMPEXP StatusInt bspsurf_strokePCurve
 (
 DPoint3d **ppCurveBuffer,    // <= evaluated points. MAY NOT BE NULL
 DPoint3d **ppSurfaceBuffer,    // <= evaluated points. MAY NOT BE NULL
@@ -857,7 +857,7 @@ double param1                           // => end parameter
 @param pNumLinearBoundaries OUT number of polyline loops.
 @param pNumPCurveLoops OUT number of precise curves.
 +----------------------------------------------------------------------*/
-Public void bspsurf_countLoops
+Public GEOMDLLIMPEXP void bspsurf_countLoops
 (
 const MSBsplineSurface *pSurface,
 int *pNumLinearBoundaries,
@@ -881,7 +881,7 @@ Insert as the tail of CYLCIC linked list.
 @param ppHead IN OUT head link
 @param pCurve IN curve pointer to place in new link.
 +----------------------------------------------------------------------*/
-Public void bspTrimCurve_allocateAndInsertCyclic
+Public GEOMDLLIMPEXP void bspTrimCurve_allocateAndInsertCyclic
 (
 TrimCurve **ppHead,
 MSBsplineCurve *pCurve
@@ -924,7 +924,7 @@ always responsible for freeing the original curve.
 @param bPreserveLinear IN true to copy linear curves directly.  (Linear curve segments
     are handled efficiently by strokers.)
 +----------------------------------------------------------------------*/
-Public void bspTrimCurve_allocateAndInsertCyclicC1Segments
+Public GEOMDLLIMPEXP void bspTrimCurve_allocateAndInsertCyclicC1Segments
 (
 TrimCurve **ppHead,
 MSBsplineCurve *pCurve,
@@ -956,7 +956,7 @@ bool    bPreserveLinear
 Reduce a cyclic trim curve list to linear list.
 @param ppHEAD IN OUT handle for head-of-chain.
 +----------------------------------------------------------------------*/
-Public void bspTrimCurve_breakCyclicList
+Public GEOMDLLIMPEXP void bspTrimCurve_breakCyclicList
 (
 TrimCurve **ppHead
 )
@@ -976,7 +976,7 @@ Free the links and curves in a TrimCurve chain.
 Both cyclic and linear chains are allowed.
 @param ppHEAD IN OUT handle for head-of-chain.
 +----------------------------------------------------------------------*/
-Public void bspTrimCurve_freeList
+Public GEOMDLLIMPEXP void bspTrimCurve_freeList
 (
 TrimCurve **ppHead
 )
@@ -999,7 +999,7 @@ TrimCurve **ppHead
 @description remove PCurve trim but leave polylines unchanged.
 @param pSurf IN OUT subject surface.
 +----------------------------------------------------------------------*/
-Public void bspsurf_removePCurveTrim
+Public GEOMDLLIMPEXP void bspsurf_removePCurveTrim
 (
 MSBsplineSurface *pSurf
 )
@@ -1017,7 +1017,7 @@ MSBsplineSurface *pSurf
 /*----------------------------------------------------------------------+
 @param pSurf IN OUT subject surface.
 +----------------------------------------------------------------------*/
-Public void bspsurf_freeBoundaries
+Public GEOMDLLIMPEXP void bspsurf_freeBoundaries
 (
 MSBsplineSurface *pSurf
 )
@@ -1046,7 +1046,7 @@ Append all transformed copy of boundaries from the source surface to the destina
 @param in  IN source surface
 @param pTransform IN transform (parameter space to parameter space) to apply to trim as copied.
 +----------------------------------------------------------------------*/
-Public int      bspsurf_appendCopyBoundaries
+Public GEOMDLLIMPEXP int      bspsurf_appendCopyBoundaries
 (
 MSBsplineSurface    *out,
 MSBsplineSurfaceCP   in,
@@ -1132,7 +1132,7 @@ Transform const *pTransform
 @param pSurface IN surface whose trim is to be transformed (in place)
 @param pTransform IN parameter space transformation
 +----------------------------------------------------------------------*/
-Public void bspsurf_transformBoundary
+Public GEOMDLLIMPEXP void bspsurf_transformBoundary
 (
 BsurfBoundary *pBoundary,
 Transform const *pTransform
@@ -1160,7 +1160,7 @@ Transform const *pTransform
 @param pSurface IN surface whose trim is to be transformed (in place)
 @param pTransform IN parameter space transformation
 +----------------------------------------------------------------------*/
-Public void bspsurf_transformAllBoundaries
+Public GEOMDLLIMPEXP void bspsurf_transformAllBoundaries
 (
 MSBsplineSurface *pSurface,
 Transform const  *pTransform
@@ -1177,7 +1177,7 @@ Transform const  *pTransform
 @param index0 IN first index to be transformed
 @param num    IN number to transform
 +----------------------------------------------------------------------*/
-Public void bspsurf_transformBoundaries
+Public GEOMDLLIMPEXP void bspsurf_transformBoundaries
 (
 MSBsplineSurface *pSurface,
 Transform const  *pTransform,
@@ -1359,7 +1359,7 @@ int &parity
 @param numBounds IN number of boundaries
 @param holeOrigin IN false inverts sense of parity logic.
 +----------------------------------------------------------------------*/
-Public bool    bsputil_pointInBounds
+Public GEOMDLLIMPEXP bool    bsputil_pointInBounds
 (
 DPoint2d        *uvP,
 BsurfBoundary   *boundaryArrayP,
@@ -1419,7 +1419,7 @@ cleanup:
 /*---------------------------------------------------------------------------------**//**
 
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public StatusInt bspUtil_initializeBsurfBoundary
+Public GEOMDLLIMPEXP StatusInt bspUtil_initializeBsurfBoundary
 (
 BsurfBoundary* pBBoundary
 )
@@ -1437,7 +1437,7 @@ BsurfBoundary* pBBoundary
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public void bspsurf_intersectBoundariesWithUVLine
+Public GEOMDLLIMPEXP void bspsurf_intersectBoundariesWithUVLine
 (
 bvector<double>             *pFractionArray,
 double                      value,

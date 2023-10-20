@@ -3532,7 +3532,7 @@ static void    bspmesh_fixSingleBoundaryLoop
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public int      bspmesh_fixBoundaries
+Public GEOMDLLIMPEXP int      bspmesh_fixBoundaries
 (
     BsurfBoundary   **boundsPP,
     int             *numBoundsP,
@@ -3711,7 +3711,7 @@ Public int      bspmesh_fixBoundaries
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public int      bspmesh_fixBoundaries
+Public GEOMDLLIMPEXP int      bspmesh_fixBoundaries
 (
     BsurfBoundary   **boundsPP,
     int             *numBoundsP,
@@ -3724,7 +3724,7 @@ Public int      bspmesh_fixBoundaries
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void bspmesh_calculateParameterLengths
+Public GEOMDLLIMPEXP void bspmesh_calculateParameterLengths
 (
     DPoint2d            *lengthP,
     MSBsplineSurface    *surfaceP
@@ -3738,7 +3738,7 @@ static double s_minEdgeFraction = 1.0e-5;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void bspmesh_calculateControlPolygonLengthsAndTurn
+Public void bspmesh_calculateControlPolygonLengthsAndTurn
 (
     MSBsplineSurfaceCR surface,
     bvector <double> &uLength,  //!< u direction length of control polygon [i] edges

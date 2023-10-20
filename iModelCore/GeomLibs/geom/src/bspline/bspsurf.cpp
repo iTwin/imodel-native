@@ -13,7 +13,7 @@ BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-Public void     bspsurf_freeSurface
+Public GEOMDLLIMPEXP void     bspsurf_freeSurface
 (
 MSBsplineSurface *surface
 )
@@ -48,7 +48,7 @@ MSBsplineSurface *surface
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-Public int      bspsurf_allocateSurface
+Public GEOMDLLIMPEXP int      bspsurf_allocateSurface
 (
 MSBsplineSurface    *surface
 )
@@ -114,7 +114,7 @@ MSBsplineSurface    *surface
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-Public int      bspsurf_copyBoundaries
+Public GEOMDLLIMPEXP int      bspsurf_copyBoundaries
 (
 MSBsplineSurface    *out,
 MSBsplineSurfaceCP   in
@@ -129,7 +129,7 @@ MSBsplineSurfaceCP   in
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-Public int      bspsurf_copySurface
+Public GEOMDLLIMPEXP int      bspsurf_copySurface
 (
 MSBsplineSurface    *output,
 MSBsplineSurfaceCP   input
@@ -180,7 +180,7 @@ MSBsplineSurfaceCP   input
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-Public int      bspsurf_computeBoundarySpans
+Public GEOMDLLIMPEXP int      bspsurf_computeBoundarySpans
 (
 double                     **spans,
 double                     value,
@@ -206,7 +206,7 @@ int                        horizontal
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-Public int      bspsurf_matchCurveParams
+Public GEOMDLLIMPEXP int      bspsurf_matchCurveParams
 (
 MSBsplineSurface    *surface,
 MSBsplineCurveCP    curve,
@@ -245,7 +245,7 @@ int                 direction
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-Public int      bspsurf_make2SurfacesCompatible
+Public GEOMDLLIMPEXP int      bspsurf_make2SurfacesCompatible
 (
 MSBsplineSurface    *surface0,
 MSBsplineSurface    *surface1,
@@ -297,7 +297,7 @@ wrapup:
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-Public bool     bspsurf_isDegenerateEdge
+Public GEOMDLLIMPEXP bool     bspsurf_isDegenerateEdge
 (
 int                 edgeCode,
 MSBsplineSurfaceCP   surf,
@@ -327,7 +327,7 @@ double              tolerance
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-Public bool      bspsurf_isSolid
+Public GEOMDLLIMPEXP bool      bspsurf_isSolid
 (
 MSBsplineSurface    *surf,
 double              tolerance
@@ -361,7 +361,7 @@ double              tolerance
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-Public void     bspsurf_isPhysicallyClosed
+Public GEOMDLLIMPEXP void     bspsurf_isPhysicallyClosed
 (
 bool                *uClosed,
 bool                *vClosed,
@@ -512,7 +512,7 @@ int                 direction
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-Public void     bspsurf_computePartials
+Public GEOMDLLIMPEXP void     bspsurf_computePartials
 (
 DPoint3d            *pointP,
 double              *weightP,
@@ -776,7 +776,7 @@ MSBsplineSurfaceCP  surfP
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-Public void     bspsurf_evaluateSurfacePoint
+Public GEOMDLLIMPEXP void     bspsurf_evaluateSurfacePoint
 (
 DPoint3d                    *pointP,
 double                      *weightP,
@@ -932,7 +932,7 @@ const MSBsplineSurface      *surfP
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-Public int      bspsurf_makeRationalSurface
+Public GEOMDLLIMPEXP int      bspsurf_makeRationalSurface
 (
 MSBsplineSurface    *out,
 MSBsplineSurfaceCP   in
@@ -975,7 +975,7 @@ wrapup:
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-Public int      bspsurf_swapUV
+Public GEOMDLLIMPEXP int      bspsurf_swapUV
 (
 MSBsplineSurface    *out,
 MSBsplineSurfaceCP   in
@@ -1092,7 +1092,7 @@ int                 colInc
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-Public int      bspsurf_reverseSurface
+Public GEOMDLLIMPEXP int      bspsurf_reverseSurface
 (
 MSBsplineSurface    *out,
 MSBsplineSurfaceCP  in,
@@ -1168,7 +1168,7 @@ int                 direction
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-Public int      bspsurf_evaluateSurface
+Public GEOMDLLIMPEXP int      bspsurf_evaluateSurface
 (
 DPoint3d                    **pts,
 DPoint2d                    *data,
@@ -1244,7 +1244,7 @@ const MSBsplineSurface      *surface
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-Public int      bspsurf_segmentSurface
+Public GEOMDLLIMPEXP int      bspsurf_segmentSurface
 (
 MSBsplineSurface    *segment,
 MSBsplineSurfaceCP  surface,
@@ -1701,7 +1701,7 @@ double              tolerance
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-Public void     bspsurf_longPath
+Public GEOMDLLIMPEXP void     bspsurf_longPath
 (
 DPoint2d        *path,
 int             *length,
@@ -1903,7 +1903,7 @@ DPoint2d        *lastParam
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-Public void     bspsurf_shortPath
+Public GEOMDLLIMPEXP void     bspsurf_shortPath
 (
 DPoint2d        *path,
 int             *length,
@@ -2075,7 +2075,7 @@ int                 shortPath          /* => true means get shortest path */
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-Public int      bspsurf_imposeBoundaryBySweptCurve
+Public GEOMDLLIMPEXP int      bspsurf_imposeBoundaryBySweptCurve
 (
 MSBsplineSurface    *surface,
 MSBsplineCurveCP    curve,
@@ -2362,7 +2362,7 @@ wrapup:
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-Public int     bspline_spansReqd
+Public GEOMDLLIMPEXP int     bspline_spansReqd
 (
 DPoint3d        *tangent,
 DPoint3d        *p1,
@@ -2403,7 +2403,7 @@ double          tolerance
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-Public int bspsurf_segmentDisjointSurface
+Public GEOMDLLIMPEXP int bspsurf_segmentDisjointSurface
 (
 MSBsplineSurface    **segSurfs,     /* <= continuous surfaces */
 int                 *nSegSurfs,     /* <= number of continuous surfaces */
@@ -2451,7 +2451,7 @@ static int sNumSampleCurve = 200;
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-Public int bspsurf_trimmedPlaneFromCurves
+Public GEOMDLLIMPEXP int bspsurf_trimmedPlaneFromCurves
 (
 MSBsplineSurface    *surfP,             /* <= trimmed plane */
 MSBsplineCurve      *curves,            /* => input curves */
@@ -2801,7 +2801,7 @@ double              tolerance           /* => stroke tolerance for bounds */
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-Public int bspsurf_transformSurface
+Public GEOMDLLIMPEXP int bspsurf_transformSurface
 (
 MSBsplineSurface        *outSurfP,          /* <= transformed surface */
 MSBsplineSurfaceCP      inSurfP,           /* => input surface */
@@ -2832,7 +2832,7 @@ Transform const         *transformP         /* => transform */
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-Public int      bspsurf_c1Discontinuities
+Public GEOMDLLIMPEXP int      bspsurf_c1Discontinuities
 (
 double              **paramPP,
 int                 *nParamsP,
@@ -2888,7 +2888,7 @@ double              tolerance
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-Public void bspsurf_freeArray
+Public GEOMDLLIMPEXP void bspsurf_freeArray
 (
 void **arrayPP          /* <=> array to be freed */
 )
@@ -2900,7 +2900,7 @@ void **arrayPP          /* <=> array to be freed */
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-Public double bspsurf_minAveRowLength
+Public GEOMDLLIMPEXP double bspsurf_minAveRowLength
 (
 MSBsplineSurface    *surfaceP
 )
@@ -2952,7 +2952,7 @@ MSBsplineSurface    *surfaceP
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-Public bool   bspsurf_isPlane
+Public GEOMDLLIMPEXP bool   bspsurf_isPlane
 (
 MSBsplineSurface    *surfaceP
 )
@@ -2989,7 +2989,7 @@ MSBsplineSurface    *surfaceP
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-Public int      bspsurf_swapSurfaceUV
+Public GEOMDLLIMPEXP int      bspsurf_swapSurfaceUV
 (
 MSBsplineSurface    *outP,
 MSBsplineSurface    *inP
@@ -3004,7 +3004,7 @@ MSBsplineSurface    *inP
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-Public void     bspsurf_surfacePhysicallyClosed
+Public GEOMDLLIMPEXP void     bspsurf_surfacePhysicallyClosed
 (
 bool                *uClosed,
 bool                *vClosed,
@@ -3050,7 +3050,7 @@ double              tolerance
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-Public void     bspsurf_normalizeSurface
+Public GEOMDLLIMPEXP void     bspsurf_normalizeSurface
 (
 MSBsplineSurface    *surfaceP
 )
@@ -3152,7 +3152,7 @@ int i
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-Public int      bspknot_addKnotSurface
+Public GEOMDLLIMPEXP int      bspknot_addKnotSurface
 (
 MSBsplineSurface    *surface,
 double              uv,
@@ -3191,7 +3191,7 @@ wrapup:
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-Public bool     bsputil_pointOnSurface
+Public GEOMDLLIMPEXP bool     bsputil_pointOnSurface
 (
 DPoint2d            *uv,
 MSBsplineSurfaceCP surf
@@ -3207,7 +3207,7 @@ MSBsplineSurfaceCP surf
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-Public int      bsputil_addBoundaries
+Public GEOMDLLIMPEXP int      bsputil_addBoundaries
 (
 MSBsplineSurface    *surface,
 BsurfBoundary       **bounds,
@@ -3239,7 +3239,7 @@ int                 numBounds
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-Public StatusInt     bsputil_addSingleBoundary
+Public GEOMDLLIMPEXP StatusInt     bsputil_addSingleBoundary
 (
 MSBsplineSurface    *pSurface,
 int                 numPoints,
@@ -3287,7 +3287,7 @@ DPoint3d        *normal2P
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-Public int     bsputil_nIsoParamsFromAngle
+Public GEOMDLLIMPEXP int     bsputil_nIsoParamsFromAngle
 (
 double          angle,
 int             nIsoParams
@@ -3301,7 +3301,7 @@ int             nIsoParams
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-Public void bsputil_calculateNumRules
+Public GEOMDLLIMPEXP void bsputil_calculateNumRules
 (
 MSBsplineSurface        *surfaceP,
 int                     uFullCircleIsoparametrics,
@@ -3365,7 +3365,7 @@ double                  closureTolerance
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-Public int      bsputil_ruledSurfaceFromCompatibleCurves
+Public GEOMDLLIMPEXP int      bsputil_ruledSurfaceFromCompatibleCurves
 (
 MSBsplineSurface    *surface,
 MSBsplineCurve      *curve1,
@@ -3416,7 +3416,7 @@ MSBsplineCurve      *curve2
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-Public  int      bspsurf_ruledSurface
+Public  GEOMDLLIMPEXP int      bspsurf_ruledSurface
 (
 MSBsplineSurface    *surface,
 MSBsplineCurve      *curve1,
@@ -3430,7 +3430,7 @@ MSBsplineCurve      *curve2
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public int      bspsurf_ruledSurfaceFromCompatibleCopiesOfCurves
+Public GEOMDLLIMPEXP int      bspsurf_ruledSurfaceFromCompatibleCopiesOfCurves
 (
 MSBsplineSurface    *surface,
 MSBsplineCurve      *inCurve1,
@@ -3461,7 +3461,7 @@ wrapup:
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-Public int      bsputil_extractIsoIntersects
+Public GEOMDLLIMPEXP int      bsputil_extractIsoIntersects
 (
 bvector <double> &params,
 double              value,
@@ -3576,7 +3576,7 @@ bool                horizontal
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-Public int      bsputil_extractIsoIntersects
+Public GEOMDLLIMPEXP int      bsputil_extractIsoIntersects
 (
 double              **paramPP,
 double              value,
@@ -3592,7 +3592,7 @@ bool                horizontal
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-Public int      bsputil_segmentC1DiscontinuousCurve
+Public GEOMDLLIMPEXP int      bsputil_segmentC1DiscontinuousCurve
 (
 MSBsplineCurve  **segCurves,    /* <= continuous curves */
 int             *nSegCurves,    /* <= number of continuous curves */
@@ -3634,7 +3634,7 @@ MSBsplineCurveCP curveP         /* => possibly disjoint curve */
 * @see mdlBspline_surfaceShouldBeOpenedInV, mdlBspline_curveShouldBeOpened
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public bool     mdlBspline_surfaceShouldBeOpenedInU
+Public GEOMDLLIMPEXP bool     mdlBspline_surfaceShouldBeOpenedInU
 (
 const MSBsplineSurface  *pSurface
 )
@@ -3671,7 +3671,7 @@ const MSBsplineSurface  *pSurface
 * @see mdlBspline_knotsShouldBeOpenedInU, mdlBspline_knotsShouldBeOpened
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public bool     mdlBspline_knotsShouldBeOpenedInV
+Public GEOMDLLIMPEXP bool     mdlBspline_knotsShouldBeOpenedInV
 (
 const double*   pKnots,
 int             numKnots,
@@ -3762,7 +3762,7 @@ int             closed
 * @see mdlBspline_knotsShouldBeOpenedInV, mdlBspline_knotsShouldBeOpened
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public bool     mdlBspline_knotsShouldBeOpenedInU
+Public GEOMDLLIMPEXP bool     mdlBspline_knotsShouldBeOpenedInU
 (
 const double*   pKnots,
 int             numKnots,
@@ -3843,7 +3843,7 @@ int             closed
 * @see mdlBspline_surfaceShouldBeOpenedInU, mdlBspline_curveShouldBeOpened
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public bool     mdlBspline_surfaceShouldBeOpenedInV
+Public GEOMDLLIMPEXP bool     mdlBspline_surfaceShouldBeOpenedInV
 (
 const MSBsplineSurface  *pSurface
 )
@@ -3906,7 +3906,7 @@ void            *argsP                 /* => passed through to flushFunc */
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public int      bspstrok_displayBoundaries
+Public GEOMDLLIMPEXP int      bspstrok_displayBoundaries
 (
 MSBsplineSurface    *surf,             /* => surface with boundaries to stroke */
 int                 (*stopFunc)(),     /* => function to abort stroking */

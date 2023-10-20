@@ -18,7 +18,7 @@ BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public int      sortUtil_returnMinimum
+Public GEOMDLLIMPEXP int      sortUtil_returnMinimum
 (
 double          *minimum,
 double          *list,
@@ -95,7 +95,7 @@ int direction
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public void     bsputil_knotToBlendingFuncs
+Public GEOMDLLIMPEXP void     bsputil_knotToBlendingFuncs
 (
 double          *coefs,
 double          *dCoefs,
@@ -160,7 +160,7 @@ int             closed
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public void     bsputil_computeBlendingFunctions
+Public GEOMDLLIMPEXP void     bsputil_computeBlendingFunctions
 (
 double          *coefs,
 double          *dCoefs,
@@ -183,7 +183,7 @@ int             closed
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public void     bsputil_computeBlendingFuncs
+Public GEOMDLLIMPEXP void     bsputil_computeBlendingFuncs
 (
 double          *coefs,
 double          *dCoefs,
@@ -204,7 +204,7 @@ int             closed
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public void     bsputil_blendingsForSecondPars
+Public GEOMDLLIMPEXP void     bsputil_blendingsForSecondPars
 (
 double          *coefs,
 double          *dCoefs,
@@ -288,7 +288,7 @@ Return a tolerance appropriate to an array of points.
     and compute the tolerance using the raw xyz.
 @return computed tolerance based on largest coordinate in poles.
 +----------------------------------------------------------------------*/
-Public double bsputil_pointTolerance
+Public GEOMDLLIMPEXP double bsputil_pointTolerance
 (
 DPoint3dCP  pXYZ,
 double const *pWeights,
@@ -307,7 +307,7 @@ int         numXYZ
 @param curveP IN subject curve
 @return computed tolerance based on largest coordinate in poles.
 +----------------------------------------------------------------------*/
-Public double bsputil_curveTolerance
+Public GEOMDLLIMPEXP double bsputil_curveTolerance
 (
 MSBsplineCurveCP curve
 )
@@ -319,7 +319,7 @@ MSBsplineCurveCP curve
 @param surface IN subject surface
 @return computed tolerance based on largest coordinate in poles.
 +----------------------------------------------------------------------*/
-Public double bsputil_surfaceTolerance
+Public GEOMDLLIMPEXP double bsputil_surfaceTolerance
 (
 MSBsplineSurfaceCP surface
 )
@@ -335,7 +335,7 @@ Test if two weights are equal within system tolerance.
 @param wB IN second weight
 @return true if same within tolerance.
 +----------------------------------------------------------------------*/
-Public bool    bsputil_isSameWeight
+Public GEOMDLLIMPEXP bool    bsputil_isSameWeight
 (
 double  wA,
 double  wB
@@ -351,7 +351,7 @@ Test if two points are equal, using caller's tolerance.
 @param pPointB IN second point
 @return true if max absolute coordinate difference is within computed tolerance.
 +----------------------------------------------------------------------*/
-Public bool    bsputil_isSamePointTolerance
+Public GEOMDLLIMPEXP bool    bsputil_isSamePointTolerance
 (
 DPoint3dCP pPointA,
 DPoint3dCP pPointB,
@@ -370,7 +370,7 @@ Test if two points are equal, using global absolute and relative tolerances.
 @param pPointB IN second point
 @return true if max absolute coordinate difference is within computed tolerance.
 +----------------------------------------------------------------------*/
-Public bool    bsputil_isSamePoint
+Public GEOMDLLIMPEXP bool    bsputil_isSamePoint
 (
 DPoint3dCP pPointA,
 DPoint3dCP pPointB
@@ -392,7 +392,7 @@ Weights must match to absolute tolerance.
 @param w1 IN second weight.
 @return true if weights and xyz parts both match.
 +----------------------------------------------------------------------*/
-Public bool     bsputil_isSameRationalPoint
+Public GEOMDLLIMPEXP bool     bsputil_isSameRationalPoint
 (
 DPoint3dCP p0,
 double     w0,
@@ -412,7 +412,7 @@ Weights must match to absolute tolerance.
 @param w1 IN second weight.
 @return true if weights and xyz parts both match.
 +----------------------------------------------------------------------*/
-Public bool     bsputil_isSameRationalPointTolerance
+Public GEOMDLLIMPEXP bool     bsputil_isSameRationalPointTolerance
 (
 DPoint3dCP p0,
 double     w0,
@@ -504,7 +504,7 @@ bool MSBsplineCurve::IsValidGeometry (GeometryValidatorPtr &validator) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public int      bsputil_edgeCode
+Public GEOMDLLIMPEXP int      bsputil_edgeCode
 (
 DPoint2dCP      uv,
 double          tolerance
@@ -532,7 +532,7 @@ double          tolerance
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public int      bsputil_edgeCode
+Public GEOMDLLIMPEXP int      bsputil_edgeCode
 (
 DPoint2dCR uv0,
 DPoint2dCR uv1,
@@ -555,7 +555,7 @@ double          tolerance
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public bool     bsputil_onEdge
+Public GEOMDLLIMPEXP bool     bsputil_onEdge
 (
 DPoint2dCP      uv,
 double          tolerance
@@ -570,7 +570,7 @@ double          tolerance
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public bool     bsputil_countPointsToEdgeBreak
+Public GEOMDLLIMPEXP bool     bsputil_countPointsToEdgeBreak
 (
 DPoint2dCP   uv,
 int i0,
@@ -675,7 +675,7 @@ int    &numOnEdge
 * Go to closest edge in UV space
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public void     bsputil_closestEdge
+Public GEOMDLLIMPEXP void     bsputil_closestEdge
 (
 DPoint2d        *edgePt,
 DPoint2d        *testPt
@@ -701,7 +701,7 @@ DPoint2d        *testPt
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public void     bsputil_extractScaledValues
+Public GEOMDLLIMPEXP void     bsputil_extractScaledValues
 (
 double          *weights,
 double          *igdsWeights,
@@ -719,7 +719,7 @@ int             numPoles
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public void     bsputil_loadPoles
+Public GEOMDLLIMPEXP void     bsputil_loadPoles
 (
 DPoint3d        *poles,                /* <= poles that define curve at u */
 double          *weights,              /* <= weights (if rational) */
@@ -805,7 +805,7 @@ bool            bCorrect               /* => to compensate for fake periodic kno
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public void     bsputil_swap
+Public GEOMDLLIMPEXP void     bsputil_swap
 (
 MSBsplineCurve  *curve1,
 MSBsplineCurve  *curve2
@@ -821,7 +821,7 @@ MSBsplineCurve  *curve2
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public int      bsputil_flushStrokes
+Public GEOMDLLIMPEXP int      bsputil_flushStrokes
 (
 DPoint3d        *out,
 int             strokes,
@@ -863,7 +863,7 @@ int             *bufSize
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public int      bsputil_returnStrokes
+Public GEOMDLLIMPEXP int      bsputil_returnStrokes
 (
 DSegment3d*      rvec,
 DPoint3d        out[],
@@ -904,7 +904,7 @@ int             *destSize
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public void     bsputil_weightPoles
+Public GEOMDLLIMPEXP void     bsputil_weightPoles
 (
 DPoint3d        *weightedPoles,
 DPoint3d        *poles,
@@ -930,7 +930,7 @@ int             numPoles
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public void     bsputil_unWeightPoles
+Public GEOMDLLIMPEXP void     bsputil_unWeightPoles
 (
 DPoint3d        *poles,
 DPoint3d        *weightedPoles,
@@ -959,7 +959,7 @@ int             numPoles
 * sets end weights both to the value 1.0 WARNING: interior weights may exceed the value 1.0 See Farin, 3rd edition, page 236.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public void     bsputil_regularizeWeights
+Public GEOMDLLIMPEXP void     bsputil_regularizeWeights
 (
 MSBsplineCurve  *curve
 )
@@ -989,7 +989,7 @@ MSBsplineCurve  *curve
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public double   bsputil_cumulativeDistance
+Public GEOMDLLIMPEXP double   bsputil_cumulativeDistance
 (
 DPoint3d        *points,
 double          *weights,
@@ -1111,7 +1111,7 @@ int             numPoints
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public bool     bsputil_isLinearArray
+Public GEOMDLLIMPEXP bool     bsputil_isLinearArray
 (
 DPoint3d        *poles,
 double          *weights,
@@ -1146,7 +1146,7 @@ double          cosineTol
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public bool     bsputil_containsInflection
+Public GEOMDLLIMPEXP bool     bsputil_containsInflection
 (
 DPoint3d        *poles,
 double          *weights,
@@ -1180,7 +1180,7 @@ int             numPoles
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public void     bsputil_polygonTangent
+Public GEOMDLLIMPEXP void     bsputil_polygonTangent
 (
 DPoint3d        *tangent,
 MSBsplineCurve  *bezier,
@@ -1210,7 +1210,7 @@ int             endFlag
 * of the control polygon.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public void     bsputil_polygonBiNormal
+Public GEOMDLLIMPEXP void     bsputil_polygonBiNormal
 (
 DPoint3d        *normal,
 MSBsplineCurve  *curve,
@@ -1279,7 +1279,7 @@ int             endFlag
 * from extract_elemDescrNormal
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public void     bsputil_extractNormal
+Public GEOMDLLIMPEXP void     bsputil_extractNormal
 (
 DPoint3d        *normalP,               /* <= curve normal */
 DPoint3d        *positionP,             /* <= point on plane (taken directly from points) */
@@ -1489,7 +1489,7 @@ double          relativeTolerance
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public double   *bspknot_bezierKnotVector
+Public GEOMDLLIMPEXP double   *bspknot_bezierKnotVector
 (
 int             order
 )
@@ -1508,7 +1508,7 @@ int             order
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public int      bspknot_numberKnots
+Public GEOMDLLIMPEXP int      bspknot_numberKnots
 (
 int             numPoles,
 int             order,
@@ -1521,7 +1521,7 @@ int             closed
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public bool    bspknot_sameKnot
+Public GEOMDLLIMPEXP bool    bspknot_sameKnot
 (
 double knotA,
 double knotB
@@ -1539,7 +1539,7 @@ double knotB
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public double   bspknot_knotTolerance
+Public GEOMDLLIMPEXP double   bspknot_knotTolerance
 (
 MSBsplineCurveCP curve
 )
@@ -1652,7 +1652,7 @@ bool MSBsplineSurface::SetVParamsWithUniformKnots (size_t numPoles, size_t order
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public int      bspknot_computeKnotVector
+Public GEOMDLLIMPEXP int      bspknot_computeKnotVector
 (
 double          *knotVector,        /* <= Full knot vector */
 BsplineParam    *params,            /* => B-Spline parameters */
@@ -1714,7 +1714,7 @@ double          *interiorKnots      /* => interior knots (if nonuniform) */
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public int      bspknot_computeKnotVectorNotNormalized
+Public GEOMDLLIMPEXP int      bspknot_computeKnotVectorNotNormalized
 (
 double          *knotVector,        /* <= Full knot vector */
 BsplineParam    *params,            /* => B-Spline parameters */
@@ -1732,7 +1732,7 @@ static void mapDoubles(double *data, int n, double origin, double factor)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public int      bspknot_normalizeKnotVector
+Public GEOMDLLIMPEXP int      bspknot_normalizeKnotVector
 (
 double          *knotVector,
 int             numPoles,
@@ -1792,7 +1792,7 @@ int             closed
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public int      bspknot_findSpan
+Public GEOMDLLIMPEXP int      bspknot_findSpan
 (
 int             *spanIndex,
 double          *knotVector,
@@ -1917,7 +1917,7 @@ void MSBsplineCurve::ComputeUniformKnotGrevilleAbscissa (bvector<double> &averag
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public int      bspknot_computeGrevilleAbscissa
+Public GEOMDLLIMPEXP int      bspknot_computeGrevilleAbscissa
 (
 double          *nodeValues,
 double          *knotVector,
@@ -2257,7 +2257,7 @@ size_t KnotData::GetNumActiveKnots() const
 * Note: bsputil_getKnotMultiplicityExt does not decrement count for a closed curve.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public int      bspknot_getKnotMultiplicity
+Public GEOMDLLIMPEXP int      bspknot_getKnotMultiplicity
 (
 double          *distinctKnots,
 int             *knotMultiplicity,
@@ -2316,7 +2316,7 @@ double          knotTolerance
 * Note: bsputil_getKnotMultiplicityExt does not decrement count for a closed curve.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public int      bspknot_getKnotMultiplicity
+Public GEOMDLLIMPEXP int      bspknot_getKnotMultiplicity
 (
 bvector<double> &distinctKnots,
 bvector<size_t> &multiplicities,
@@ -2379,7 +2379,7 @@ double          knotTolerance
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public int      bspknot_increaseKnotDegree
+Public GEOMDLLIMPEXP int      bspknot_increaseKnotDegree
 (
 double          **newKnots,
 int             *newNumPolesM1,
@@ -2431,7 +2431,7 @@ wrapup:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public int      bspknot_insertKnot
+Public GEOMDLLIMPEXP int      bspknot_insertKnot
 (
 double          u,
 int             addMult,
@@ -2554,7 +2554,7 @@ int             rational
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public int      bspknot_addKnot
+Public GEOMDLLIMPEXP int      bspknot_addKnot
 (
 MSBsplineCurve  *curve,
 double          u,
@@ -2676,7 +2676,7 @@ wrapup:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public void bspknot_correctEndKnots
+Public GEOMDLLIMPEXP void bspknot_correctEndKnots
 (
 MSBsplineCurve  *curve
 )
@@ -2732,7 +2732,7 @@ MSBsplineCurve  *curve
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public void bspknot_scaleCurveKnots
+Public GEOMDLLIMPEXP void bspknot_scaleCurveKnots
 (
 MSBsplineCurve  *curveP,
 double          scale
@@ -2751,7 +2751,7 @@ double          scale
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public void bspknot_scaleKnotVector
+Public GEOMDLLIMPEXP void bspknot_scaleKnotVector
 (
 double          *knots,
 BsplineParam    *params,
@@ -2770,7 +2770,7 @@ double          scale
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public bool     bsputil_validParameter
+Public GEOMDLLIMPEXP bool     bsputil_validParameter
 (
 double          u,
 double const    *knots,
@@ -2790,7 +2790,7 @@ BsplineParam const   *params
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public bool     bsputil_validParameterSurface
+Public GEOMDLLIMPEXP bool     bsputil_validParameterSurface
 (
 DPoint2d        *uv,
 double const    *uKnots,
@@ -2831,7 +2831,7 @@ double          tolerance
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public void     bsputil_xySegmentIntersection
+Public GEOMDLLIMPEXP void     bsputil_xySegmentIntersection
 (
 int             *intersect0,            /* <= intersection code for segment 0 */
 int             *intersect1,            /* <= intersection code for segment 1 */
@@ -2891,7 +2891,7 @@ double          tolerance               /* => tolerance for endpoint checks */
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public StatusInt    bsputil_segmentIntersection
+Public GEOMDLLIMPEXP StatusInt    bsputil_segmentIntersection
 (
 int         *code0P,
 int         *code1P,
@@ -2938,7 +2938,7 @@ double      endTol
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public int bsputil_lineStringIntersect
+Public GEOMDLLIMPEXP int bsputil_lineStringIntersect
 (
 DPoint3d    *pointP,
 double      *u0P,
@@ -2997,7 +2997,7 @@ double      tolerance
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public void     bsputil_freeBoundary
+Public GEOMDLLIMPEXP void     bsputil_freeBoundary
 (
 BsurfBoundary   **bounds,
 int             numBounds
@@ -3015,7 +3015,7 @@ int             numBounds
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public void     bsputil_free
+Public GEOMDLLIMPEXP void     bsputil_free
 (
 void            *pMem
 )
@@ -3026,7 +3026,7 @@ void            *pMem
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public void     bsputil_freePointList
+Public GEOMDLLIMPEXP void     bsputil_freePointList
 (
 PointList       **list,
 int             numLists
@@ -3044,7 +3044,7 @@ int             numLists
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public int      bsputil_getKnotMultiplicityExt
+Public GEOMDLLIMPEXP int      bsputil_getKnotMultiplicityExt
 (
 double          *distinctKnots,
 int             *knotMultiplicity,
@@ -3093,7 +3093,7 @@ double          knotTolerance
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public void     bsputil_extractParameterRange
+Public GEOMDLLIMPEXP void     bsputil_extractParameterRange
 (
 double          *minP,
 double          *maxP,
@@ -3124,7 +3124,7 @@ BsplineParam    *paramP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public int bsputil_calculateNumRulesFromCurve
+Public GEOMDLLIMPEXP int bsputil_calculateNumRulesFromCurve
 (
 MSBsplineCurve          *curveP,
 int                     nFullCircleIsoparametrics
@@ -3161,7 +3161,7 @@ int                     nFullCircleIsoparametrics
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public void     mdlBspline_getNaturalParameterRange
+Public GEOMDLLIMPEXP void     mdlBspline_getNaturalParameterRange
 (
 double          *pStart,
 double          *pEnd,
@@ -3184,7 +3184,7 @@ MSBsplineCurveCP curveP
 * Return true if normalization is performed
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public bool     mdlBspline_normalizeCurveKnots
+Public GEOMDLLIMPEXP bool     mdlBspline_normalizeCurveKnots
 (
 double          *pStartNaturalParam,
 double          *pEndNaturalParam,
@@ -3214,7 +3214,7 @@ MSBsplineCurve  *curveP
 * Return true if non-normalization is preformed
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public bool     mdlBspline_unNormalizeCurveKnots
+Public GEOMDLLIMPEXP bool     mdlBspline_unNormalizeCurveKnots
 (
 MSBsplineCurve  *curveP,        /* <=> curve with normalized knots */
 double          startNaturalParam,
@@ -3237,7 +3237,7 @@ double          endNaturalParam
 * DEPRECATED -- Use getNaturalParameterRange
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public void     mdlBspline_getParameterRange
+Public GEOMDLLIMPEXP void     mdlBspline_getParameterRange
 (
 double          *pStart,
 double          *pEnd,
@@ -3251,7 +3251,7 @@ MSBsplineCurveCP curveP
 * This function tells if a curve has parameter range between [0.0, 1.0]
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public bool     mdlBspline_curveHasNormalizedKnots
+Public GEOMDLLIMPEXP bool     mdlBspline_curveHasNormalizedKnots
 (
 MSBsplineCurveCP curveP
 )
@@ -3271,7 +3271,7 @@ MSBsplineCurveCP curveP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public void     mdlBspline_toFractionParams
+Public GEOMDLLIMPEXP void     mdlBspline_toFractionParams
 (
 double          *pOutParams,    /* <= fraction params between 0.0 and 1.0 */
 double          *pInParams,     /* => natural params */
@@ -3303,7 +3303,7 @@ double          end             /* => end of natural range */
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public void     mdlBspline_toNaturalParams
+Public GEOMDLLIMPEXP void     mdlBspline_toNaturalParams
 (
 double          *pOutParams,    /* <= natural params between start and end */
 double          *pInParams,     /* => fraction params between 0.0 and 1.0 */
@@ -3324,7 +3324,7 @@ double          end             /* => end of natural range */
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public double mdlBspline_naturalParameterToFractionParameter
+Public GEOMDLLIMPEXP double mdlBspline_naturalParameterToFractionParameter
 (
 MSBsplineCurveCP pCurve,
 double          naturalParam
@@ -3342,7 +3342,7 @@ double          naturalParam
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public double mdlBspline_fractionParameterToNaturalParameter
+Public GEOMDLLIMPEXP double mdlBspline_fractionParameterToNaturalParameter
 (
 MSBsplineCurveCP pCurve,
 double          fractionalParam
@@ -3415,7 +3415,7 @@ double      *Pw
 * This function will clamp periodic V7 or V8 knots
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public int      mdlBspline_clampCurveKnots
+Public GEOMDLLIMPEXP int      mdlBspline_clampCurveKnots
 (
 MSBsplineCurve  *curOutP,
 MSBsplineCurve  *curInP
@@ -3564,7 +3564,7 @@ MSBsplineCurve  *curInP
 * This function converts V7.0 periodic knots to V8.0 format
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public int      mdlBspline_convertPeriodicKnots
+Public GEOMDLLIMPEXP int      mdlBspline_convertPeriodicKnots
 (
 MSBsplineCurve  *curveOut,              /* <= expanded periodci knots, but curve.params.closed == false */
 MSBsplineCurve  *curveIn                /* => curve.params.closed == true */
@@ -3609,7 +3609,7 @@ MSBsplineCurve  *curveIn                /* => curve.params.closed == true */
 * This function tells if a curve has the clamped knots in V8.0 or V7.0
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public bool     mdlBspline_curveHasClampedKnots
+Public GEOMDLLIMPEXP bool     mdlBspline_curveHasClampedKnots
 (
 MSBsplineCurveCP curveP
 )
@@ -3643,7 +3643,7 @@ MSBsplineCurveCP curveP
 * This function tells if a curve has the periodic knots in V8.0 or V7.0
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public bool     mdlBspline_curveHasPeriodicKnots
+Public GEOMDLLIMPEXP bool     mdlBspline_curveHasPeriodicKnots
 (
 MSBsplineCurveCP curveP
 )
@@ -3706,7 +3706,7 @@ MSBsplineCurveCP curveP
 * This function tells if a curve has the new knot format in V8.0
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public bool     mdlBspline_curveStoreFullKnots
+Public GEOMDLLIMPEXP bool     mdlBspline_curveStoreFullKnots
 (
 MSBsplineCurveCP curveP
 )
@@ -3740,7 +3740,7 @@ MSBsplineCurveCP curveP
 * @see mdlBspline_knotsShouldBeOpenedInU, mdlBspline_knotsShouldBeOpenedInV
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public bool     mdlBspline_knotsShouldBeOpened
+Public GEOMDLLIMPEXP bool     mdlBspline_knotsShouldBeOpened
 (
 const double*   pKnots,
 int             numKnots,
@@ -3813,7 +3813,7 @@ int             closed
 * @see mdlBspline_surfaceShouldBeOpenedInU, mdlBspline_surfaceShouldBeOpenedInV
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public bool     mdlBspline_curveShouldBeOpened
+Public GEOMDLLIMPEXP bool     mdlBspline_curveShouldBeOpened
 (
 const MSBsplineCurve    *pCurve
 )
@@ -3848,7 +3848,7 @@ bool MSBsplineSurface::AreVKnotsValid (bool clampingRequired) const
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-Public bool     mdlBspline_areKnotsValid
+Public GEOMDLLIMPEXP bool     mdlBspline_areKnotsValid
 (
 const   double*         pKnots,             // full knot vector
 const   BsplineParam*   pParams,
