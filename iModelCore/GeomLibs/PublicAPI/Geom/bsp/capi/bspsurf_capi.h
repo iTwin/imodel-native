@@ -92,7 +92,7 @@ double              tolerance
 );
 
 //--------------------------------------------------------------------------------------
-// @deprecated Use the overload with const input surface.
+// @deprecated in 4.x. Use the overload with const input surface.
 //--------------------------------------------------------------------------------------
 Public GEOMDLLIMPEXP void     bspsurf_isPhysicallyClosed
 (

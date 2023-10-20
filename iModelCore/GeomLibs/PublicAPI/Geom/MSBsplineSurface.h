@@ -266,7 +266,7 @@ struct GEOMDLLIMPEXP MSBsplineSurface
     //! Create B-spline surface by reversing the given direction of surface.
     MSBsplineStatus CopyReversed (MSBsplineSurfaceCR source, int edge);
     
-    //! @deprecated Use the const overload. 
+    //! @deprecated in 4.x. Use the const overload. 
     void IsPhysicallyClosed (bool& uClosed, bool& vClosed);
     //! Check whether the B-spline surface is physically closed in either parameter direction. A B-spline surface may be 
     //! non-periodic, but still be closed in the v/u direction if its first and last rows/ columns of poles coincide. 

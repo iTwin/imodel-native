@@ -1133,7 +1133,7 @@ public:
     //! Return the centroid of the (uniformly distributed) wire mass.
     GEOMDLLIMPEXP void WireCentroid (double &length, DPoint3dR centroid, double fraction0, double fraction1) const;
 
-    //! @deprecated Use the overload with const inputs.
+    //! @deprecated in 4.x. Use the overload with const inputs.
     GEOMDLLIMPEXP MSBsplineStatus InitEllipticArc (DPoint3d &center, double rX, double rY,
             double startRadians = 0.0,
             double sweepRadians = msGeomConst_2pi,
