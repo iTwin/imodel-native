@@ -26,19 +26,19 @@ parameters:
 
 resources:
   repositories:
-    - repository: imodel-native-internal
-      type: github
-      name: iTwin/imodel-native-internal
-      ref: ${{ parameters.defaultNativeBranch }}
-      endpoint: github.com_imodel-native
-    - repository: itwinjs-core
-      type: github
-      name: iTwin/itwinjs-core
-      ref: ${{ parameters.defaultCoreBranch }}
-      endpoint: iTwin
-    - repository: imodeljs-build-pipeline-scripts
-      type: git
-      name: iModelTechnologies/imodeljs-build-pipeline-scripts
+  - repository: imodel-native-internal
+    type: github
+    name: iTwin/imodel-native-internal
+    ref: ${{ parameters.defaultNativeBranch }}
+    endpoint: github.com_imodel-native
+  - repository: itwinjs-core
+    type: github
+    name: iTwin/itwinjs-core
+    ref: ${{ parameters.defaultCoreBranch }}
+    endpoint: iTwin
+  - repository: imodeljs-build-pipeline-scripts
+    type: git
+    name: iModelTechnologies/imodeljs-build-pipeline-scripts
 
 extends:
   template: /build/templates/pipeline.yml@imodel-native-internal
