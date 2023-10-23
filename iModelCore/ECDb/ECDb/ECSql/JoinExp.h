@@ -158,10 +158,9 @@ struct UsingRelationshipJoinExp final : JoinExp
             friend UsingRelationshipJoinExp;
             private:
                 ClassNameExp const*    m_classRef;
-                SubqueryRefExp const*    m_viewRef;
                 ClassLocation           m_location;
             protected:
-                ResolvedEndPoint() :m_classRef(nullptr), m_viewRef(nullptr), m_location(ClassLocation::NotResolved){}
+                ResolvedEndPoint() :m_classRef(nullptr), m_location(ClassLocation::NotResolved){}
                 void SetClassRef(ClassNameExp const* classRef)
                     {
                     m_classRef = classRef;
@@ -181,9 +180,7 @@ struct UsingRelationshipJoinExp final : JoinExp
                     }
             public:
                 ClassNameExp const* GetClassNameRef() const { return m_classRef; }
-                SubqueryRefExp const* GetViewRef() const { return m_viewRef; }
                 ClassLocation       GetLocation() const { return m_location; }
-                bool                IsView() const { return m_viewRef != nullptr; }
             };
     private:
         JoinDirection           m_direction;
