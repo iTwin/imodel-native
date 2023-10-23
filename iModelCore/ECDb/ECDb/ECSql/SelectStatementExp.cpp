@@ -22,6 +22,17 @@ AllOrAnyExp::AllOrAnyExp(std::unique_ptr<ValueExp> operand, BooleanSqlOperator o
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+void AllOrAnyExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: AllOrAnyExp
+    val["id"] = "AllOrAnyExp";
+    val["op"] = Utf8String(ExpHelper::ToSql(m_type));
+    GetOperand()->ToJson(val["exp"], fmt);
+    GetSubquery()->ToJson(val["query"], fmt);
+}
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 void AllOrAnyExp::_ToECSql(ECSqlRenderContext& ctx) const
     {
     if (HasParentheses())
@@ -124,6 +135,18 @@ Utf8StringCR DerivedPropertyExp::GetColumnAlias() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+void DerivedPropertyExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: DerivedPropertyExp
+    val.SetEmptyObject();
+    val["id"] = "DerivedPropertyExp";
+    GetExpression()->ToJson(val["exp"], fmt);
+    if (!m_columnAlias.empty())
+        val["alias"] = m_columnAlias;
+}
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 void DerivedPropertyExp::_ToECSql(ECSqlRenderContext& ctx) const
     {
     if (m_columnAlias.empty())
@@ -187,7 +210,8 @@ Exp::FinalizeParseStatus FromExp::_FinalizeParsing(ECSqlParseContext& ctx, Final
 
         if (classExp.GetExp().GetId().EqualsI(classExpComparand->GetId()))
             {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Multiple occurrences of ECClass expression '%s' in the ECSQL statement. Use different aliases to distinguish them.", classExp.GetExp().ToECSql().c_str());
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0567,
+                "Multiple occurrences of ECClass expression '%s' in the ECSQL statement. Use different aliases to distinguish them.", classExp.GetExp().ToECSql().c_str());
             return FinalizeParseStatus::Error;
             }
         }
@@ -226,7 +250,7 @@ void FromExp::FindRangeClassRefs(std::vector<RangeClassInfo>& classRefs, ClassRe
                 FindRangeClassRefs(classRefs, join.GetFromClassRef(), scope);
                 FindRangeClassRefs(classRefs, join.GetToClassRef(), scope);
                 if (classRef.GetType() == Type::ECRelationshipJoin)
-                    FindRangeClassRefs(classRefs, join.GetAs<ECRelationshipJoinExp>().GetRelationshipClassNameExp(), scope);
+                    FindRangeClassRefs(classRefs, join.GetAs<UsingRelationshipJoinExp>().GetRelationshipClassNameExp(), scope);
 
                 break;
                 }
@@ -263,13 +287,14 @@ BentleyStatus FromExp::TryAddClassRef(ECSqlParseContext& ctx, std::unique_ptr<Cl
             if (existingRangeCRef.GetExp().GetId().Equals(newRangeCRef.GetExp().GetId()))
                 {
                 //e.g. SELECT * FROM FOO a, GOO a
-                ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Duplicate class name / alias '%s' in FROM or JOIN clause", newRangeCRef.GetExp().GetId().c_str());
+                ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0568,
+                    "Duplicate class name / alias '%s' in FROM or JOIN clause", newRangeCRef.GetExp().GetId().c_str());
                 return ERROR;
                 }
             }
         }
 
-    AddChild(move(classRefExp));
+    AddChild(std::move(classRefExp));
     return SUCCESS;
     }
 
@@ -311,13 +336,24 @@ std::vector<RangeClassInfo> FromExp::FindRangeClassRefExpressions() const
         isTableSubQuery = isSubQuery(*old, cur);
         if (cur != nullptr && !isTableSubQuery)
             {
-            if (cur->GetFrom() != this)
-                cur->GetFrom()->FindRangeClassRefs(rangeClassRefs, RangeClassInfo::Scope::Inherited);
+            FromExp const* fromExp = cur->GetFrom();
+            if (fromExp != nullptr && fromExp != this)
+                fromExp->FindRangeClassRefs(rangeClassRefs, RangeClassInfo::Scope::Inherited);
             }
         }
 
     return rangeClassRefs;
     }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void FromExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: FromExp
+    val.SetEmptyArray();
+    for (Exp const* classRefExp : GetChildren())
+        classRefExp->ToJson(val.appendValue(), fmt);
+}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
@@ -357,7 +393,8 @@ Exp::FinalizeParseStatus GroupByExp::_FinalizeParsing(ECSqlParseContext& ctx, Fi
         ECSqlTypeInfo const& typeInfo = groupingValueExp->GetTypeInfo();
         if (expType == Exp::Type::Parameter || groupingValueExp->IsConstant() || typeInfo.IsNavigation())
             {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Invalid expression '%s' in GROUP BY: Parameters, constants, and navigation properties are not supported.", ToECSql().c_str());
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0569,
+                "Invalid expression '%s' in GROUP BY: Parameters, constants, and navigation properties are not supported.", ToECSql().c_str());
             return FinalizeParseStatus::Error;
             }
         }
@@ -378,6 +415,19 @@ LimitOffsetExp::LimitOffsetExp(std::unique_ptr<ValueExp> limitExp, std::unique_p
     if (offsetExp != nullptr)
         m_offsetExpIndex =(int) AddChild(std::move(offsetExp));
     }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void LimitOffsetExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: LimitOffsetExp
+    val.SetEmptyObject();
+    val["id"] = "LimitOffsetExp";
+    GetLimitExp()->ToJson(val["exp"], fmt);
+    if (HasOffset())
+        GetOffsetExp()->ToJson(val["offset"], fmt);
+}
+
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
@@ -405,13 +455,15 @@ LimitOffsetExp::FinalizeParseStatus LimitOffsetExp::_FinalizeParsing(ECSqlParseC
             {
             if (!IsValidChildExp(*GetLimitExp()))
                 {
-                ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Invalid expression '%s'. LIMIT expression must be constant numeric expression which may have parameters.", ToECSql().c_str());
+                ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0570,
+                    "Invalid expression '%s'. LIMIT expression must be constant numeric expression which may have parameters.", ToECSql().c_str());
                 return FinalizeParseStatus::Error;
                 }
 
             if (HasOffset() && !IsValidChildExp(*GetOffsetExp()))
                 {
-                ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Invalid expression '%s'. OFFSET expression must be constant numeric expression which may have parameters.", ToECSql().c_str());
+                ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0571,
+                    "Invalid expression '%s'. OFFSET expression must be constant numeric expression which may have parameters.", ToECSql().c_str());
                 return FinalizeParseStatus::Error;
                 }
 
@@ -460,6 +512,15 @@ ValueExp const* LimitOffsetExp::GetOffsetExp() const
     }
 
 //************************* OrderByExp *******************************************
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void OrderByExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: OrderByExp
+    val.SetEmptyArray();
+    for (Exp const* childExp : GetChildren())
+        childExp->ToJson(val.appendValue(), fmt);
+}
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -520,7 +581,8 @@ Exp::FinalizeParseStatus OrderByExp::_FinalizeParsing(ECSqlParseContext& parseCo
             {
             if (ComputedExp const* incompatibleExp = FindIncompatibleOrderBySpecExpForUnion())
                 {
-                parseContext.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "'%s' ORDER BY term does not match any column in the result set.", incompatibleExp->ToECSql().c_str());
+                parseContext.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0572,
+                    "'%s' ORDER BY term does not match any column in the result set.", incompatibleExp->ToECSql().c_str());
                 return FinalizeParseStatus::Error;
                 }
 
@@ -552,12 +614,29 @@ OrderBySpecExp::FinalizeParseStatus OrderBySpecExp::_FinalizeParsing(ECSqlParseC
     ECSqlTypeInfo const& typeInfo = GetSortExpression()->GetTypeInfo();
     if (!typeInfo.IsPrimitive() || typeInfo.IsPoint() || typeInfo.IsGeometry())
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Invalid expression '%s' in ORDER BY: Points, Geometries, navigation properties, structs and arrays are not supported.", ToECSql().c_str());
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0573,
+            "Invalid expression '%s' in ORDER BY: Points, Geometries, navigation properties, structs and arrays are not supported.", ToECSql().c_str());
         return FinalizeParseStatus::Error;
         }
 
     return FinalizeParseStatus::Completed;
     }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void OrderBySpecExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: OrderBySpecExp
+    val.SetEmptyObject();
+    GetSortExpression()->ToJson(val["exp"], fmt);
+    if (m_direction != SortDirection::NotSpecified) {
+        if (m_direction == SortDirection::Ascending) {
+            val["direction"] = "ASC";
+        } else {
+           val["direction"] = "DESC";
+        }
+    }
+}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
@@ -579,6 +658,20 @@ void OrderBySpecExp::_ToECSql(ECSqlRenderContext& ctx) const
             default:
                 break;
         }
+        switch (m_nullsOrder)
+        {
+            case NullsOrder::First:
+                ctx.AppendToECSql(" NULLS FIRST");
+                break;
+
+            case NullsOrder::Last:
+                ctx.AppendToECSql(" NULLS LAST");
+                break;
+
+            default:
+                break;
+        }
+
     }
 
 //-----------------------------------------------------------------------------------------
@@ -690,13 +783,23 @@ Exp::FinalizeParseStatus SelectClauseExp::_FinalizeParsing(ECSqlParseContext& ct
             BeAssert(ctx.CurrentArg()->GetType() == ECSqlParseContext::ParseArg::Type::RangeClass && "Expecting range class");
             if (SUCCESS != ReplaceAsteriskExpressions(ctx, sel.GetFrom()->FindRangeClassRefExpressions()))
                 {
-                ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Asterisk replacement in select clause failed unexpectedly.");
+                ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0574, "Asterisk replacement in select clause failed unexpectedly.");
                 return FinalizeParseStatus::Error;
                 }
             }
         }
     return FinalizeParseStatus::Completed;
     }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void SelectClauseExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: SelectClauseExp
+    val.SetEmptyArray();
+    for (Exp const* childExp : GetChildren())
+        childExp->ToJson(val.appendValue(), fmt);
+}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
@@ -789,7 +892,7 @@ PropertyMatchResult SingleSelectStatementExp::_FindProperty(ECSqlParseContext& c
                     }
                     return PropertyMatchResult(options, propertyPath, effectivePath, derivedPropertyExp, isMatchIndirect ? -1 : 0);
                 } else if (propertyNameExp != nullptr && propertyNameExp->GetClassRefExp() != nullptr) {
-                    if (CompoundDataPropertyMap const *compoundProp = dynamic_cast<CompoundDataPropertyMap const*>(&propertyNameExp->GetPropertyMap())) {
+                    if (CompoundDataPropertyMap const *compoundProp = dynamic_cast<CompoundDataPropertyMap const*>(propertyNameExp->GetPropertyMap())) {
                         PropertyPath restOfAccessString = effectivePath.Skip(1);
                         auto endMap = compoundProp->Find(restOfAccessString.ToString().c_str());
                         if (endMap != nullptr) {
@@ -802,11 +905,13 @@ PropertyMatchResult SingleSelectStatementExp::_FindProperty(ECSqlParseContext& c
                 if (propertyNameExp->GetPropertyPath().First().GetName().EqualsIAscii(effectivePath.First().GetName())) {
                     if (effectivePath.Size() == 1) {
                         return PropertyMatchResult(options, propertyPath, effectivePath, derivedPropertyExp, 0);
-                    } else if (CompoundDataPropertyMap const *compoundProp = dynamic_cast<CompoundDataPropertyMap const*>(&propertyNameExp->GetPropertyMap())) {
-                        PropertyPath restOfAccessString = effectivePath.Skip(1);
-                        auto endMap = compoundProp->Find(restOfAccessString.ToString().c_str());
-                        if (endMap != nullptr) {
-                            return PropertyMatchResult(options, propertyPath, effectivePath, derivedPropertyExp, 0);
+                    } else if (!propertyNameExp->IsPropertyFromCommonTableBlock() && propertyNameExp->GetPropertyMap() != nullptr) {
+                        if (CompoundDataPropertyMap const *compoundProp = dynamic_cast<CompoundDataPropertyMap const*>(propertyNameExp->GetPropertyMap())) {
+                            PropertyPath restOfAccessString = effectivePath.Skip(1);
+                            auto endMap = compoundProp->Find(restOfAccessString.ToString().c_str());
+                            if (endMap != nullptr) {
+                                return PropertyMatchResult(options, propertyPath, effectivePath, derivedPropertyExp, 0);
+                            }
                         }
                     }
                     if (propertyNameExp->GetPropertyPath().ToString().EqualsIAscii(effectivePath.ToString().c_str())) {
@@ -889,6 +994,45 @@ Utf8String SingleSelectStatementExp::_ToString() const
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void SingleSelectStatementExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: SingleSelectStatementExp
+    val.SetEmptyObject();
+    if (IsRowConstructor()) {
+        val["id"] = "RowConstructor";
+        GetSelection()->ToJson(val["values"], fmt);
+    } else {
+        val["id"] = "SingleSelectStatementExp";
+        Utf8String selectionType = ExpHelper::ToSql(GetSelectionType());
+        if (!selectionType.empty())
+            val["selectionType"] = selectionType;
+
+        GetSelection()->ToJson(val["selection"], fmt);
+        if (GetFrom() != nullptr)
+            GetFrom()->ToJson(val["from"], fmt);
+
+        if (GetWhere() != nullptr)
+            GetWhere()->ToJson(val["where"], fmt);
+
+        if (GetGroupBy() != nullptr)
+            GetGroupBy()->ToJson(val["groupBy"], fmt);
+
+        if (GetOrderBy() != nullptr)
+            GetOrderBy()->ToJson(val["orderBy"], fmt);
+
+        if (GetHaving() != nullptr)
+            GetHaving()->ToJson(val["having"], fmt);
+
+        if (GetLimitOffset() != nullptr)
+            GetLimitOffset()->ToJson(val["limit"], fmt);
+
+        if (GetOptions() != nullptr)
+            GetOptions()->ToJson(val["options"], fmt);
+    }
+}
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
 void SingleSelectStatementExp::_ToECSql(ECSqlRenderContext& ctx) const
     {
@@ -957,6 +1101,16 @@ SelectStatementExp const* SubqueryExp::GetQuery() const { return GetChild<Select
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+void SubqueryExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: SubqueryExp
+    val.SetEmptyObject();
+    val["id"] = "SubqueryExp";
+    GetQuery()->ToJson(val["query"], fmt);
+}
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 void SubqueryExp::_ToECSql(ECSqlRenderContext& ctx) const { ctx.AppendToECSql(*GetQuery()); }
 
 //****************************** SubqueryRefExp *****************************************
@@ -986,6 +1140,22 @@ void SubqueryRefExp::_ExpandSelectAsterisk(std::vector<std::unique_ptr<DerivedPr
         }
     }
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void SubqueryRefExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: SubqueryRefExp
+    val.SetEmptyObject();
+    val["id"] = "SubqueryRefExp";
+    auto polymorphicInfo = GetPolymorphicInfo().ToECSql();
+    if (!polymorphicInfo.empty())
+        GetPolymorphicInfo().ToJson(val["polymorphicInfo"]);
+
+    if (!GetAlias().empty())
+        val["alias"] = GetAlias();
+
+    GetSubquery()->ToJson(val["query"], fmt);
+}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
@@ -1020,8 +1190,19 @@ Utf8String SubqueryRefExp::_ToString() const
 SubqueryTestExp::SubqueryTestExp(SubqueryTestOperator op, std::unique_ptr<SubqueryExp> subquery)
     : BooleanExp(Type::SubqueryTest), m_op(op)
     {
-    AddChild(move(subquery));
+    AddChild(std::move(subquery));
     }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void SubqueryTestExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: SubqueryTestExp
+    val.SetEmptyObject();
+    val["id"] = "SubqueryTestExp";
+    val["op"] = ExpHelper::ToSql(m_op);
+    GetSubquery()->ToJson(val["query"], fmt);
+}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
@@ -1057,7 +1238,7 @@ SubqueryValueExp::SubqueryValueExp(std::unique_ptr<SubqueryExp> subquery)
     : ValueExp(Type::SubqueryValue)
     {
     SetHasParentheses(); //subquery value exp always wrapped in parentheses
-    AddChild(move(subquery));
+    AddChild(std::move(subquery));
     }
 
 //-----------------------------------------------------------------------------------------
@@ -1072,13 +1253,21 @@ Exp::FinalizeParseStatus SubqueryValueExp::_FinalizeParsing(ECSqlParseContext& c
 
     if (selectClauseExp->GetChildren().size() != 1)
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Subquery must return exactly one column %s.", ToECSql().c_str());
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0575, "Subquery must return exactly one column %s.", ToECSql().c_str());
         return FinalizeParseStatus::Error;
         }
 
     SetTypeInfo(selectClauseExp->GetChildren().Get<DerivedPropertyExp>(0)->GetExpression()->GetTypeInfo());
     return FinalizeParseStatus::Completed;
     }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void SubqueryValueExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: SubqueryValueExp
+    GetQuery()->ToJson(val, fmt);
+}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
@@ -1095,6 +1284,23 @@ void SubqueryValueExp::_ToECSql(ECSqlRenderContext& ctx) const
     }
 
 //****************************** SelectStatementExp *****************************************
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void SelectStatementExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: SelectStatementExp
+    val.SetEmptyObject();
+    val["id"] = "SelectStatementExp";
+    GetFirstStatement().ToJson(val["select"], fmt);
+    if (!IsCompound())
+        return;
+
+    auto nextBlock = val["nextBlock"];
+    nextBlock.SetEmptyObject();
+    nextBlock["combineOp"] = Utf8String(OperatorToString(m_operator)) + (m_isAll ? " ALL" : "");
+    GetRhsStatement()->ToJson(nextBlock["select"], fmt);
+}
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1173,11 +1379,42 @@ Exp::FinalizeParseStatus SelectStatementExp::_FinalizeParsing(ECSqlParseContext&
     {
     if (GetRhsStatement() != nullptr && GetFirstStatement().GetOrderBy() != nullptr)
         {
-        parseContext.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "ORDER BY clause must not be followed by UNION clause.");
+        parseContext.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0576, "ORDER BY clause must not be followed by UNION clause.");
         return FinalizeParseStatus::Error;
         }
 
     return FinalizeParseStatus::Completed;
     }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void GroupByExp::_ToECSql(ECSqlRenderContext& ctx) const {
+    ctx.AppendToECSql("GROUP BY ").AppendToECSql(*GetGroupingValueListExp());
+}
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void GroupByExp::_ToJson(BeJsValue val, JsonFormat const& fmt ) const {
+    //! ITWINJS_PARSE_TREE: GroupByExp
+    GetGroupingValueListExp()->ToJson(val, fmt);
+}
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void HavingExp::_ToECSql(ECSqlRenderContext& ctx) const {
+    ctx.AppendToECSql("HAVING ").AppendToECSql(*GetSearchConditionExp());
+}
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void HavingExp::_ToJson(BeJsValue val, JsonFormat const& fmt) const {
+    //! ITWINJS_PARSE_TREE: HavingExp
+    GetSearchConditionExp()->ToJson(val, fmt);
+}
+
 END_BENTLEY_SQLITE_EC_NAMESPACE
 

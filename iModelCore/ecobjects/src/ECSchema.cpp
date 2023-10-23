@@ -2422,8 +2422,11 @@ ECObjectsStatus ECSchema::AddReferencedSchema(ECSchemaR refSchema, Utf8StringCR 
 
     SchemaKeyCR refSchemaKey = refSchema.GetSchemaKey();
 
-    if (GetSchemaKey() == refSchemaKey)
+    if (GetSchemaKey().GetName().EqualsI(refSchemaKey.GetName())) //Make sure we are not referencing ourselves, in any version
+        {
+        LOG.warningv("%s is trying to add itself (%s) as a referenced schema.", this->GetFullSchemaName().c_str(), refSchema.GetFullSchemaName().c_str());
         return ECObjectsStatus::SchemaHasReferenceCycle;
+        }
 
     if (m_refSchemaList.end () != m_refSchemaList.find (refSchemaKey))
         return ECObjectsStatus::NamedItemAlreadyExists;
@@ -3211,6 +3214,27 @@ ECSchemaPtr SearchPathSchemaFileLocater::_LocateSchema(SchemaKeyR key, SchemaMat
     return schemaOut;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaPtr StringSchemaLocater::_LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext)
+    {
+    // Check if locator has a schema key that matches the key and match type
+    auto matches = [&key, &matchType](const std::pair<SchemaKey, Utf8String>& pair) { return pair.first.Matches(key, matchType); };
+    bmap<SchemaKey, Utf8String>::const_iterator iter = std::find_if(m_schemaStrings.begin(), m_schemaStrings.end(), matches);
+    if (iter == m_schemaStrings.end())
+        return nullptr;
+
+    // Read the schema from Xml string
+    ECSchemaPtr schemaOut;
+    if (SchemaReadStatus::Success != ECSchema::ReadFromXmlString(schemaOut, iter->second.c_str(), schemaContext))
+        {
+        return nullptr;
+        }
+
+    return schemaOut;
+    }
+
 struct ChecksumHelper
 {
     static Utf8String ComputeCheckSumForString(Utf8CP string, size_t len)
@@ -3345,9 +3369,11 @@ SchemaReadStatus ECSchema::ReadFromXmlString(ECSchemaPtr& schemaOut, Utf8CP ecSc
         BeStringUtilities::Strncpy(first200Bytes, ecSchemaXml, 200);
         first200Bytes[200] = '\0';
         if (SchemaReadStatus::DuplicateSchema == status)
-            schemaContext.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::InvalidInputData, "Failed to read XML from string(1st 200 characters approx.): %s.  \nSchema already loaded.  Use ECSchemaReadContext::LocateSchema to load schema", first200Bytes);
+            schemaContext.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::InvalidInputData, ECIssueId::EC_0008,
+                "Failed to read XML from string(1st 200 characters approx.): %s.  \nSchema already loaded.  Use ECSchemaReadContext::LocateSchema to load schema", first200Bytes);
         else
-            schemaContext.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::InvalidInputData, "Failed to read XML from string (1st 200 characters approx.): %s", first200Bytes);
+            schemaContext.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::InvalidInputData, ECIssueId::EC_0009,
+                "Failed to read XML from string (1st 200 characters approx.): %s", first200Bytes);
 
         schemaContext.RemoveSchema(*schemaOut);
         schemaOut = nullptr;
@@ -3437,27 +3463,12 @@ bool ECSchema::IsSchemaReferenced(ECSchemaCR thisSchema, ECSchemaCR potentiallyR
     return referencedSchemas.end() != referencedSchemas.Find(potentiallyReferencedSchema.GetSchemaKey(), matchType);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* Returns true if thisSchema directly references possiblyReferencedSchema
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool DirectlyReferences(ECSchemaCP thisSchema, ECSchemaCP possiblyReferencedSchema)
-    {
-    ECSchemaReferenceListCR referencedSchemas = thisSchema->GetReferencedSchemas();
-    for (ECSchemaReferenceList::const_iterator it = referencedSchemas.begin(); it != referencedSchemas.end(); ++it)
-        {
-        if (it->second.get() == possiblyReferencedSchema)
-            return true;
-        }
-    return false;
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
 static bool DependsOn(ECSchemaCP thisSchema, ECSchemaCP possibleDependency)
     {
-    if (DirectlyReferences(thisSchema, possibleDependency))
+    if (ECSchema::IsSchemaReferenced(*thisSchema, *possibleDependency))
         return true;
 
     SupplementalSchemaMetaDataPtr metaData;
@@ -3531,9 +3542,16 @@ SchemaWriteStatus ECSchema::WriteToXmlString(WStringR ecSchemaXml, ECVersion ecX
 
     BeXmlWriterPtr xmlWriter = BeXmlWriter::Create();
 
-    SchemaWriteStatus status;
     SchemaXmlWriter schemaWriter(*xmlWriter.get(), *this, ecXmlVersion);
-    if (SchemaWriteStatus::Success != (status = schemaWriter.Serialize()))
+
+    const auto status = schemaWriter.Serialize();
+    if (status == SchemaWriteStatus::FailedToSaveXml && ecXmlVersion == ECVersion::V3_1)
+        {
+        LOG.errorv("The ECXml 3.1 schema failed to serialize. The schema will be serialized as ECXml 3.2 instead.");
+        return WriteToXmlString(ecSchemaXml, ECVersion::V3_2);
+        }
+
+    if (SchemaWriteStatus::Success != status)
         return status;
 
     xmlWriter->ToString (ecSchemaXml);
@@ -3551,9 +3569,16 @@ SchemaWriteStatus ECSchema::WriteToXmlString(Utf8StringR ecSchemaXml, ECVersion 
     BeXmlWriterPtr xmlWriter = BeXmlWriter::Create();
     xmlWriter->SetIndentation(4);
 
-    SchemaWriteStatus status;
     SchemaXmlWriter schemaWriter(*xmlWriter.get(), *this, ecXmlVersion);
-    if (SchemaWriteStatus::Success != (status = schemaWriter.Serialize()))
+    
+    const auto status = schemaWriter.Serialize();
+    if (status == SchemaWriteStatus::FailedToSaveXml && ecXmlVersion == ECVersion::V3_1)
+        {
+        LOG.errorv("The ECXml 3.1 schema failed to serialize. The schema will be serialized as ECXml 3.2 instead.");
+        return WriteToXmlString(ecSchemaXml, ECVersion::V3_2);
+        }
+
+    if (SchemaWriteStatus::Success != status)
         return status;
 
     xmlWriter->ToString (ecSchemaXml);
@@ -3581,19 +3606,25 @@ SchemaWriteStatus ECSchema::WriteToEC2XmlString(Utf8StringR ec2SchemaXml, ECSche
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaWriteStatus ECSchema::WriteToXmlFile(WCharCP ecSchemaXmlFile, ECVersion ecXmlVersion, bool utf16) const
     {
-    BeXmlWriterPtr xmlWriter = BeXmlWriter::CreateFileWriter(ecSchemaXmlFile);
+    auto serializeToFile = [&ecSchemaXmlFile, &utf16] (ECSchemaCR schema, ECVersion ecXmlVersion) {
+        BeXmlWriterPtr xmlWriter = BeXmlWriter::CreateFileWriter(ecSchemaXmlFile);
 
-    if (xmlWriter.IsNull())
-        return SchemaWriteStatus::FailedToCreateXml;
+        if (xmlWriter.IsNull())
+            return SchemaWriteStatus::FailedToCreateXml;
 
-    xmlWriter->SetIndentation(4);
+        xmlWriter->SetIndentation(4);
 
-    SchemaWriteStatus status;
-    SchemaXmlWriter schemaWriter(*xmlWriter.get(), *this, ecXmlVersion);
-    if (SchemaWriteStatus::Success != (status = schemaWriter.Serialize(utf16)))
-        return status;
+        SchemaXmlWriter schemaWriter(*xmlWriter.get(), schema, ecXmlVersion);
+        return schemaWriter.Serialize(utf16);
+    };
 
-    return SchemaWriteStatus::Success;
+    const auto status = serializeToFile(*this, ecXmlVersion);
+    if (status == SchemaWriteStatus::FailedToSaveXml && ecXmlVersion == ECVersion::V3_1)
+        {
+        LOG.errorv("The ECXml 3.1 schema failed to serialize. The schema will be serialized as ECXml 3.2 instead.");
+        return serializeToFile(*this, ECVersion::V3_2);
+        }
+    return status;
     }
 
 //---------------------------------------------------------------------------------------
@@ -3788,6 +3819,24 @@ void ECSchema::RemoveInvalidDisplayCharacters(ECSchemaR schema)
                 }
             }
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaReadStatus ECSchema::ReadSchemaKey(Utf8StringR schemaXml, SchemaKey& schemaKey)
+    {
+    pugi::xml_document xmlDoc;
+    pugi::xml_parse_result parseResult = xmlDoc.load_string(schemaXml.c_str());
+    if(!parseResult)
+        {
+        LOG.errorv("Error loading XML string: %s (error at char %d)", parseResult.description(), parseResult.offset);
+        return SchemaReadStatus::FailedToParseXml;
+        }
+
+    uint32_t ecXmlMajorVersion, ecXmlMinorVersion;
+    pugi::xml_node schemaNode;
+    return SchemaXmlReader::ReadSchemaStub(schemaKey, ecXmlMajorVersion, ecXmlMinorVersion, schemaNode, xmlDoc);
     }
 
 /////////////////////////////////////////////////////////////////////////////////////////

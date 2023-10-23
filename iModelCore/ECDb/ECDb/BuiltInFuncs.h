@@ -189,7 +189,7 @@ struct ExtractInstFunc final : ScalarFunction {
         void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override;
 
     public:
-        explicit ExtractInstFunc(ECDbCR ecdb) : ScalarFunction(SQLFUNC_ExtractInst, 2, DbValueType::TextVal), m_ecdb(ecdb) {}
+        explicit ExtractInstFunc(ECDbCR ecdb) : ScalarFunction(SQLFUNC_ExtractInst, 3, DbValueType::TextVal), m_ecdb(ecdb) {}
         ~ExtractInstFunc() {}
         static std::unique_ptr<ExtractInstFunc> Create(ECDbCR);
 };

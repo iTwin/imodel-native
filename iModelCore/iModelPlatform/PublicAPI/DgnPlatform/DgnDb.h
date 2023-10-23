@@ -63,7 +63,7 @@ enum DgnDbProfileValues : int32_t
     DGNDB_CURRENT_VERSION_Major = 2,
     DGNDB_CURRENT_VERSION_Minor = 0,
     DGNDB_CURRENT_VERSION_Sub1  = 0,
-    DGNDB_CURRENT_VERSION_Sub2  = 5,
+    DGNDB_CURRENT_VERSION_Sub2  = 6,
 
     DGNDB_SUPPORTED_VERSION_Major = 2,  // oldest version of the profile supported by the current api
     DGNDB_SUPPORTED_VERSION_Minor = 0,
@@ -179,6 +179,8 @@ public:
 //=======================================================================================
 struct DgnDb : RefCounted<BeSQLite::EC::ECDb>, BeSQLite::EC::ECDb::IECDbCacheClearListener
 {
+    using SyncDbUri = BeSQLite::EC::SchemaSync::SyncDbUri;
+    using PullResult = BeSQLite::EC::SchemaSync::Status;
     friend struct BisCoreDomain;
     DEFINE_T_SUPER(BeSQLite::EC::ECDb)
 
@@ -228,7 +230,7 @@ protected:
     DgnModels m_models;
     mutable DgnDbProfileVersion m_profileVersion;
     DgnDomains m_domains;
-    DgnDbFonts m_fonts;
+    std::unique_ptr<DgnDbFonts> m_fonts;
     DgnLineStylesPtr m_lineStyles;
     DgnGeoLocation m_geoLocation;
     DgnCodeSpecs m_codeSpecs;
@@ -269,6 +271,10 @@ protected:
 
 public:
     Napi::ObjectReference m_private_iModelDbJs; // only public so it can be set from IModelJsNative::NativeDgnDb::SetIModelDb
+
+    // Can be changed to put this DgnDb in compatability mode for iModels that contain
+    // codes created with the older behavior, that would now be altered during CRUD operations
+    DgnCodeValue::Behavior m_codeValueBehavior = DgnCodeValue::Behavior::TrimUnicodeWhitespace;
 
     Napi::ObjectReference* GetJsIModelDb() { return (IsMainThread() && !m_private_iModelDbJs.IsEmpty()) ? &m_private_iModelDbJs : nullptr; }
     DGNPLATFORM_EXPORT Napi::Object GetJsTxns(); // get the "IModelDb.txns" JavaScript object of this DgnDb (or nullptr)
@@ -354,7 +360,7 @@ public:
     DgnElements& Elements() const{return const_cast<DgnElements&>(m_elements);}          //!< The DgnElements of this DgnDb
     DgnGeoLocation& GeoLocation() const {return const_cast<DgnGeoLocation&>(m_geoLocation);}  //!< The geolocation information for this DgnDb
     DgnLineStyles& LineStyles() const {return const_cast<DgnLineStyles&>(*m_lineStyles);}//!< The line styles for this DgnDb
-    DgnDbFonts& Fonts() const {return const_cast<DgnDbFonts&>(m_fonts);}                    //!< The fonts for this DgnDb
+    DgnDbFonts& Fonts() const {return const_cast<DgnDbFonts&>(*m_fonts);}                    //!< The fonts for this DgnDb
     DgnDomains& Domains() const {return const_cast<DgnDomains&>(m_domains);}             //!< The DgnDomains associated with this DgnDb.
     DgnCodeSpecs& CodeSpecs() const {return const_cast<DgnCodeSpecs&>(m_codeSpecs);} //!< The codeSpecs associated with this DgnDb
     DgnSearchableText& SearchableText() const {return const_cast<DgnSearchableText&>(m_searchableText);} //!< The searchable text table for this DgnDb
@@ -373,7 +379,8 @@ public:
     //! <li> If the schemas already exist in the Database, they are upgraded if the schemas passed in have a newer, but
     //! compatible version number.
     //! </ul>
-    DGNPLATFORM_EXPORT SchemaStatus ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, bool schemaLockHeld = false);
+    DGNPLATFORM_EXPORT SchemaStatus ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, bool schemaLockHeld = false, SyncDbUri uri = SyncDbUri());
+    DGNPLATFORM_EXPORT PullResult PullSchemaChanges(SyncDbUri uri);
 
     //! Drop a unreferenced schema with no instances
     //! @param[in] name schema that need to be dropped.

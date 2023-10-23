@@ -38,10 +38,11 @@ struct ECDbIssue
     ECN::IssueSeverity severity;
     ECN::IssueCategory category;
     ECN::IssueType type;
+    ECN::IssueId id;
     Utf8String message;
 
-    ECDbIssue(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, Utf8String message): severity(severity), category(category), type(type), message(message) {}
-    ECDbIssue(): severity(ECN::IssueSeverity::Info), category(ECN::IssueCategory::BusinessProperties), type("ECDbIssue"), message() {}
+    ECDbIssue(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, ECN::IssueId id, Utf8String message): severity(severity), category(category), type(type), id(id), message(message) {}
+    ECDbIssue(): severity(ECN::IssueSeverity::Info), category(ECN::IssueCategory::BusinessProperties), type("ECDbIssue"), id("No_ID"), message() {}
 
     bool has_value() const { return !message.empty(); }
     void reset() { message.clear(); }
@@ -65,7 +66,7 @@ struct ECIssueListener : ECN::IIssueListener
     private:
         ECDbR m_ecdb;
         mutable ECDbIssue m_issue;
-        void _OnIssueReported(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, Utf8CP message) const override {m_issue = ECDbIssue(severity, category, type, message);}
+        void _OnIssueReported(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, ECN::IssueId id, Utf8CP message) const override {m_issue = ECDbIssue(severity, category, type, id, message);}
 
     public:
         explicit ECIssueListener(ECDbR ecdb) : ECN::IIssueListener(), m_ecdb(ecdb) { m_ecdb.AddIssueListener(*this); }

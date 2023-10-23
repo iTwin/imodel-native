@@ -1,4 +1,4 @@
-// Copyright 2014 The Crashpad Authors. All rights reserved.
+// Copyright 2014 The Crashpad Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@
 #include "base/logging.h"
 #include "base/mac/mach_logging.h"
 #include "tools/tool_support.h"
+#include "util/mach/bootstrap.h"
 #include "util/mach/exc_server_variants.h"
 #include "util/mach/exception_behaviors.h"
 #include "util/mach/exception_types.h"
@@ -50,7 +51,7 @@ struct Options {
   MachMessageServer::Persistent persistent;
 };
 
-class ExceptionServer : public UniversalMachExcServer::Interface {
+class ExceptionServer final : public UniversalMachExcServer::Interface {
  public:
   ExceptionServer(const Options& options,
                   const std::string& me,
@@ -180,6 +181,7 @@ class ExceptionServer : public UniversalMachExcServer::Interface {
 };
 
 void Usage(const std::string& me) {
+  // clang-format off
   fprintf(stderr,
 "Usage: %s -m SERVICE [OPTION]...\n"
 "Catch Mach exceptions and display information about them.\n"
@@ -191,6 +193,7 @@ void Usage(const std::string& me) {
 "      --help                  display this help and exit\n"
 "      --version               output version information and exit\n",
           me.c_str());
+  // clang-format on
   ToolSupport::UsageTail(me);
 }
 

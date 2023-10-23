@@ -539,6 +539,83 @@ DbTable* DbSchema::LoadTable(DbTableId tableId) const
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+BentleyStatus DbSchema::LoadTableForeignKeyListFromSqliteSchema(DbTable& table) const {
+    /*
+        CREATE TABLE [foo]( [id], [c1], [c2], [c3], [c4]);
+        CREATE TABLE [goo]( [id], [d1], [d2], [d3], [d4],
+        FOREIGN KEY([d1], [d2]) REFERENCES [foo]([c1], [c2]) ON DELETE NO ACTION,
+        FOREIGN KEY([d3], [d4]) REFERENCES [foo]([c3], [c4]) ON DELETE CASCADE);
+
+        id seq table from to on_update on_delete match
+        -- --- ----- ---- -- --------- --------- -----
+        0  0   foo   d3   c3 NO ACTION CASCADE   NONE
+        0  1   foo   d4   c4 NO ACTION CASCADE   NONE
+        1  0   foo   d1   c1 NO ACTION NO ACTION NONE
+        1  1   foo   d2   c2 NO ACTION NO ACTION NONE
+    */
+    Statement stmt;
+    auto tableSpace = m_schemaManager.GetTableSpace().IsMain() ? "main" : m_schemaManager.GetTableSpace().GetName().c_str();
+    auto rc = stmt.Prepare(m_schemaManager.GetECDb(), SqlPrintfString("%s.foreign_key_list ('%s')", tableSpace, table.GetName().c_str()));
+    if (rc != BE_SQLITE_OK)
+        return ERROR;
+
+    int cursorFkId = 0;
+    DbTable const* referencedTableP;
+    std::vector<DbColumn const*> fromColumns;
+    std::vector<DbColumn const*> toColumns;
+    auto onUpdateAction = ForeignKeyDbConstraint::ActionType::NoAction;
+    auto onDeleteAction = ForeignKeyDbConstraint::ActionType::NoAction;
+    std::string match;
+
+    while((rc=stmt.Step()) == BE_SQLITE_ROW) {
+        const auto id = stmt.GetValueInt(0);
+        const auto seq = stmt.GetValueInt(1);
+        if (seq == 0) {
+            referencedTableP = FindTable(stmt.GetValueText(2));
+            if (referencedTableP == nullptr ) {
+                return ERROR;
+            }
+            if (SUCCESS != ForeignKeyDbConstraint::TryParseActionType(onUpdateAction, Utf8String{stmt.GetValueText(5)})){
+                LOG.errorv("LoadTableForeignKeyListFromSqliteSchema(%s): Unable to parse foreign key constraint action for ON UPDATE.", table.GetName().c_str());
+                return ERROR;
+            }
+            if (SUCCESS != ForeignKeyDbConstraint::TryParseActionType(onDeleteAction, Utf8String{stmt.GetValueText(6)})) {
+                LOG.errorv("LoadTableForeignKeyListFromSqliteSchema(%s): Unable to parse foreign key constraint action for ON DELETE.", table.GetName().c_str());
+                return ERROR;
+            }
+
+            match = stmt.GetValueText(7);
+            if (!match.empty()){
+                LOG.errorv("LoadTableForeignKeyListFromSqliteSchema(%s): ECDb does not expect MATCH constraint in foreign key constraint.", table.GetName().c_str());
+                return ERROR;
+            }
+        }
+        auto fromColumnP = table.FindColumn(stmt.GetValueText(3));
+        if (fromColumnP == nullptr) {
+            LOG.errorv("LoadTableForeignKeyListFromSqliteSchema(%s): Unable to find foreign key soure column %s in table %s", table.GetName().c_str(), stmt.GetValueText(3), table.GetName().c_str());
+            return ERROR;
+        }
+        fromColumns.push_back(fromColumnP);
+
+        auto toColumnP = table.FindColumn(stmt.GetValueText(4));
+        if (toColumnP == nullptr) {
+            LOG.errorv("LoadTableForeignKeyListFromSqliteSchema(%s): Unable to find foreign key target column %s in table %s", table.GetName().c_str(), stmt.GetValueText(3), table.GetName().c_str());
+            return ERROR;
+        }
+        toColumns.push_back(toColumnP);
+
+        if (cursorFkId != id) {
+            if (nullptr == table.AddForeignKeyConstraint(*fromColumns.front(), *toColumns.front(), onDeleteAction, onUpdateAction)) {
+                LOG.warningv("LoadTableForeignKeyListFromSqliteSchema(%s): Unable to add foreign key constraint to in memory dbtable. It may exist already.", table.GetName().c_str());
+            }
+            cursorFkId = id;
+        }
+    }
+    return rc == BE_SQLITE_DONE ? SUCCESS : ERROR;
+}
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 DbTable* DbSchema::LoadTable(Utf8StringCR name) const
     {
     CachedStatementPtr stmt = nullptr;
@@ -616,6 +693,33 @@ BentleyStatus DbSchema::LoadIndexDefs() const
 
     m_indexDefsAreLoaded = true;
     return SUCCESS;
+    }
+
+//-------------------------------------------------------------------------------------- -
+// @bsimethod
+//--------------------------------------------------------------------------------------
+BentleyStatus DbSchema::ForceReloadTableAndIndexesFromDisk() const
+    {
+    ClearCache();
+    bvector<Utf8String> tables;
+    CachedStatementPtr stmt = GetCachedStatement("SELECT Name FROM main." TABLE_Table);
+    if (stmt == nullptr)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    while (stmt->Step() == BE_SQLITE_ROW)
+        {
+        tables.push_back(stmt->GetValueText(0));
+        }
+
+    for (auto& table : tables)
+        {
+        if (FindTable(table) == nullptr)
+            return ERROR;
+        }
+    return LoadIndexDefs();
     }
 
 //-------------------------------------------------------------------------------------- -
@@ -703,8 +807,8 @@ BentleyStatus DbSchema::PersistIndexDef(DbIndex const& index) const
 
     if (BE_SQLITE_DONE != stmt->Step())
         {
-        m_schemaManager.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to persist definition for index %s on table %s: %s",
-                                         index.GetName().c_str(), index.GetTable().GetName().c_str(), m_schemaManager.GetECDb().GetLastError().c_str());
+        m_schemaManager.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0221,
+            "Failed to persist definition for index %s on table %s: %s", index.GetName().c_str(), index.GetTable().GetName().c_str(), m_schemaManager.GetECDb().GetLastError().c_str());
         return ERROR;
         }
 
@@ -727,8 +831,9 @@ BentleyStatus DbSchema::PersistIndexDef(DbIndex const& index) const
 
         if (BE_SQLITE_DONE != indexColStmt->Step())
             {
-            m_schemaManager.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to persist definition for index %s on table %s. Could not persist index column information for column %s: %s.",
-                       index.GetName().c_str(), index.GetTable().GetName().c_str(), col->GetName().c_str(), m_schemaManager.GetECDb().GetLastError().c_str());
+            m_schemaManager.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0222,
+                "Failed to persist definition for index %s on table %s. Could not persist index column information for column %s: %s.",
+                index.GetName().c_str(), index.GetTable().GetName().c_str(), col->GetName().c_str(), m_schemaManager.GetECDb().GetLastError().c_str());
             return ERROR;
             }
 

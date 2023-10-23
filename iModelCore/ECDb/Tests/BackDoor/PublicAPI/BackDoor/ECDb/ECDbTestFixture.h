@@ -116,6 +116,8 @@ private:
 protected:
     //! The test's ECDb file. Any non-static methods of the ECDbTestFixture operate on it.
     FixtureECDb m_ecdb;
+    DbResult SetupECDbForCurrentTest();
+    BentleyStatus SetupECDbForCurrentTest(SchemaItem const&, ECDb::OpenParams const& openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
     DbResult SetupECDb(Utf8CP ecdbFileName);
     BentleyStatus SetupECDb(Utf8CP ecdbFileName, SchemaItem const&, ECDb::OpenParams const& openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
     BentleyStatus SetupECDb(Utf8CP ecdbFileName, void *fileData, uint32_t fileSize, ECDb::OpenParams const& openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
@@ -124,7 +126,7 @@ protected:
     DbResult ReopenECDb();
     DbResult ReopenECDb(ECDb::OpenParams const&);
     DbResult CloneECDb(Utf8CP cloneFileName, BeFileNameCR seedFilePath, ECDb::OpenParams const& openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite)) { return CloneECDb(m_ecdb, cloneFileName, seedFilePath, openParams); }
-    static DbResult CloneECDb(ECDbR clone, Utf8CP cloneFileName, BeFileNameCR seedFilePath, ECDb::OpenParams const& openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
+
     BentleyStatus PopulateECDb(ECN::ECSchemaCR, int instanceCountPerClass);
     BentleyStatus PopulateECDb(int instanceCountPerClass);
 
@@ -135,6 +137,7 @@ protected:
     BentleyStatus GetInstances(bvector<ECN::IECInstancePtr>& instances, Utf8CP schemaName, Utf8CP className);
     ECSqlStatus PrepareECSql(Utf8CP ecsql) { ECSqlStatement stmt; return stmt.Prepare(m_ecdb, ecsql); }
     TestHelper const& GetHelper() const { return m_ecdb.GetTestHelper(); }
+    DbResult OpenECDbTestDataFile(Utf8CP name);
 
 private:
     static ECN::ECSchemaPtr s_unitsSchema;
@@ -158,6 +161,8 @@ public:
     static ECN::ECSchemaPtr GetFormatsSchema(bool recreate = false);
     static bool EnableECSqlExperimentalFeatures(ECDbCR, bool);
     static bool IsECSqlExperimentalFeaturesEnabled(ECDbCR);
+    static DbResult CloneECDb(ECDbR clone, Utf8CP cloneFileName, BeFileNameCR seedFilePath, ECDb::OpenParams const& openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
+    static DbResult CloneECDb(ECDbR clone, BeFileNameCR cloneFilePath, BeFileNameCR seedFilePath, ECDb::OpenParams const& openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
     };
 
 SchemaItem operator"" _schema(const char* s, size_t n);

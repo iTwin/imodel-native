@@ -309,9 +309,15 @@ DbColumn* ClassMapColumnFactory::AllocateColumn(SchemaImportContext& ctx, ECN::E
             return existingColumn;
             }
 
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Column %s in table %s is used by multiple property maps where property name and data type matches,"
-                                                           " but where one of the constraints NOT NULL, UNIQUE, or COLLATE differs.",
-                                                           existingColumn->GetName().c_str(), effectiveTable.GetName().c_str());
+        ctx.Issues().ReportV(
+            IssueSeverity::Error,
+            IssueCategory::BusinessProperties,
+            IssueType::ECDbIssue,
+            ECDbIssueId::ECDb_0040,
+            "Column %s in table %s is used by multiple property maps where property name and data type matches, but where one of the constraints NOT NULL, UNIQUE, or COLLATE differs.",
+            existingColumn->GetName().c_str(),
+            effectiveTable.GetName().c_str()
+        );
         return nullptr;
         }
 
@@ -368,18 +374,30 @@ DbColumn* ClassMapColumnFactory::AllocateSharedColumn(SchemaImportContext& ctx, 
     //Defining a col name for a shared column is a DB thing and DB CAs are taken strictly.
     if (params.IsColumnNameFromPropertyMapCA())
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to map ECProperty '%s:%s'. It has a 'PropertyMap' custom attribute which specifies a value for 'ColumnName'. "
-                                                           "'ColumnName' must not be specified for this ECProperty because it is mapped to a column shared with other ECProperties.",
-                                                           prop.GetClass().GetFullName(), prop.GetName().c_str());
+        ctx.Issues().ReportV(
+            IssueSeverity::Error,
+            IssueCategory::BusinessProperties,
+            IssueType::ECDbIssue,
+            ECDbIssueId::ECDb_0041,
+            "Failed to map ECProperty '%s:%s'. It has a 'PropertyMap' custom attribute which specifies a value for 'ColumnName'. 'ColumnName' must not be specified for this ECProperty because it is mapped to a column shared with other ECProperties.",
+            prop.GetClass().GetFullName(),
+            prop.GetName().c_str()
+        );
         return nullptr;
         }
 
     //Defining a collation which is not doable is an error because this is a DB thing and DB CAs are taken strictly.
     if (params.GetCollation() != DbColumn::Constraints::Collation::Unset)
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to map ECProperty '%s:%s'. It has a 'PropertyMap' custom attribute which specifies a Collation constraint "
-                                                           "which cannot be created because the ECProperty is mapped to a column shared with other ECProperties.",
-                                                           prop.GetClass().GetFullName(), prop.GetName().c_str());
+        ctx.Issues().ReportV(
+            IssueSeverity::Error,
+            IssueCategory::BusinessProperties,
+            IssueType::ECDbIssue,
+            ECDbIssueId::ECDb_0042,
+            "Failed to map ECProperty '%s:%s'. It has a 'PropertyMap' custom attribute which specifies a Collation constraint which cannot be created because the ECProperty is mapped to a column shared with other ECProperties.",
+            prop.GetClass().GetFullName(),
+            prop.GetName().c_str()
+        );
         return nullptr;
         }
 

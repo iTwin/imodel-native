@@ -25,6 +25,7 @@ struct AdHocPropertyTest : ECTestFixture
         Utf8CP const s_schemaXml =
             "<?xml version='1.0' encoding='utf-8'?>"
             "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+            "   <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.10' prefix='bsca' />"
             "   <ECStructClass typeName = 'AdHocHolder'>"
             "       <ECCustomAttributes>"
             "           <AdhocPropertyContainerDefinition xmlns='Bentley_Standard_CustomAttributes.01.10'>"

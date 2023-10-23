@@ -14,24 +14,26 @@
         }                                                                                \
         return 0;                                                                        \
     }()
+USING_NAMESPACE_BENTLEY_EC
+USING_NAMESPACE_BENTLEY_SQLITE_EC
 
-    USING_NAMESPACE_BENTLEY_EC
-    USING_NAMESPACE_BENTLEY_SQLITE_EC
-
-    BEGIN_ECDBUNITTESTS_NAMESPACE
-    //---------------------------------------------------------------------------------------
-    // @bsiclass
-    //+---------------+---------------+---------------+---------------+---------------+------
-    struct SchemaUpgradeTestFixture : public ECDbTestFixture {
-        std::vector<Utf8String> m_updatedDbs;
-        class IssueListener : public ECN::IIssueListener {
-        public:
-            mutable bvector<Utf8String> m_issues;
-            void _OnIssueReported(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, Utf8CP message) const override {
-                m_issues.push_back(message);
-            }
-            void clear() { m_issues.clear(); }
-        };
+BEGIN_ECDBUNITTESTS_NAMESPACE
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+struct SchemaUpgradeTestFixture : public ECDbTestFixture
+    {
+    std::vector<Utf8String> m_updatedDbs;
+    class IssueListener: public ECN::IIssueListener
+    {
+    public:
+    mutable bvector<Utf8String> m_issues;
+    void _OnIssueReported(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, ECN::IssueId id, Utf8CP message) const override
+        {
+        m_issues.push_back(message);
+        }
+    void clear() { m_issues.clear(); }
+    };
     protected:
 
         //---------------------------------------------------------------------------------------
@@ -184,9 +186,6 @@ void AssertECProperties(ECDbCR ecdb, Utf8CP assertExpression, bool strict = true
             }
         }
     }
-
-void ExecuteECSQL(ECDbCR ecdb, Utf8CP ecsql, DbResult stepStatus, ECSqlStatus prepareStatus)
-    {}
 
 #define ASSERT_PROPERTIES_STRICT(ECDB_OBJ, EXPRESSION)              AssertECProperties(ECDB_OBJ, EXPRESSION, true);
 #define ASSERT_PROPERTIES(ECDB_OBJ, EXPRESSION)                     AssertECProperties(ECDB_OBJ, EXPRESSION, false)
@@ -17855,6 +17854,100 @@ TEST_F(SchemaUpgradeTestFixture, MajorSchemaUpgradeVerifyDataAfterTypeChange)
         GetHelper().ExecuteSelectECSql("SELECT intToLong, intToDouble, intToString, intToBinary, intToBoolean, intToDatetime, stringToLong, stringToDouble, stringToInt, stringToBinary, stringToBoolean, stringToDatetime FROM ts.TestClass"));
 
         ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    }
+
+TEST_F(SchemaUpgradeTestFixture, MovePropertyToBaseClass)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("MovePropertyToBaseClass.ecdb", SchemaItem(
+        R"xml(<?xml version='1.0' encoding='utf-8'?>
+        <ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+            <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />
+            <ECEntityClass typeName='Base' modifier='Abstract' >
+                <ECCustomAttributes>
+                    <ClassMap xmlns='ECDbMap.02.00'>
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <ShareColumns xmlns='ECDbMap.02.00' />
+                </ECCustomAttributes>
+            </ECEntityClass>
+            <ECEntityClass typeName='Sub' modifier='None' >
+                <BaseClass>Base</BaseClass>
+                <ECProperty propertyName='Prop1' typeName='string' />
+                <ECProperty propertyName='Prop2' typeName='string' />
+            </ECEntityClass>
+        </ECSchema>)xml")));
+
+    SchemaItem modifiedSchema(
+        R"xml(<?xml version='1.0' encoding='utf-8'?>
+        <ECSchema schemaName='TestSchema' alias='ts' version='1.0.1' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+            <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />
+            <ECEntityClass typeName='Base' modifier='Abstract' >
+                <ECCustomAttributes>
+                    <ClassMap xmlns='ECDbMap.02.00'>
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <ShareColumns xmlns='ECDbMap.02.00' />
+                </ECCustomAttributes>
+                <ECProperty propertyName='Prop2' typeName='string' />
+            </ECEntityClass>
+            <ECEntityClass typeName='Sub' modifier='None' >
+                <BaseClass>Base</BaseClass>
+                <ECProperty propertyName='Prop1' typeName='string' />
+            </ECEntityClass>
+        </ECSchema>)xml");
+
+    ASSERT_EQ(SUCCESS, ImportSchema(modifiedSchema, SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    }
+
+TEST_F(SchemaUpgradeTestFixture, MovePropertyToBaseClassDynamicSchema)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("MovePropertyToBaseClassDynamicSchema.ecdb", SchemaItem(
+        R"xml(<?xml version='1.0' encoding='utf-8'?>
+        <ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+            <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />
+            <ECSchemaReference name = 'CoreCustomAttributes' version = '01.00.00' alias = 'CoreCA' />
+            <ECCustomAttributes>
+                <DynamicSchema xmlns = 'CoreCustomAttributes.01.00.00' />
+            </ECCustomAttributes>
+            <ECEntityClass typeName='Base' modifier='Abstract' >
+                <ECCustomAttributes>
+                    <ClassMap xmlns='ECDbMap.02.00'>
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <ShareColumns xmlns='ECDbMap.02.00' />
+                </ECCustomAttributes>
+            </ECEntityClass>
+            <ECEntityClass typeName='Sub' modifier='None' >
+                <BaseClass>Base</BaseClass>
+                <ECProperty propertyName='Prop1' typeName='string' />
+                <ECProperty propertyName='Prop2' typeName='string' />
+            </ECEntityClass>
+        </ECSchema>)xml")));
+
+    SchemaItem modifiedSchema(
+        R"xml(<?xml version='1.0' encoding='utf-8'?>
+        <ECSchema schemaName='TestSchema' alias='ts' version='1.0.1' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+            <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />
+            <ECSchemaReference name = 'CoreCustomAttributes' version = '01.00.00' alias = 'CoreCA' />
+            <ECCustomAttributes>
+                <DynamicSchema xmlns = 'CoreCustomAttributes.01.00.00' />
+            </ECCustomAttributes>
+            <ECEntityClass typeName='Base' modifier='Abstract' >
+                <ECCustomAttributes>
+                    <ClassMap xmlns='ECDbMap.02.00'>
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <ShareColumns xmlns='ECDbMap.02.00' />
+                </ECCustomAttributes>
+                <ECProperty propertyName='Prop2' typeName='string' />
+            </ECEntityClass>
+            <ECEntityClass typeName='Sub' modifier='None' >
+                <BaseClass>Base</BaseClass>
+                <ECProperty propertyName='Prop1' typeName='string' />
+            </ECEntityClass>
+        </ECSchema>)xml");
+
+    ASSERT_EQ(SUCCESS, ImportSchema(modifiedSchema, SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
     }
 
 END_ECDBUNITTESTS_NAMESPACE

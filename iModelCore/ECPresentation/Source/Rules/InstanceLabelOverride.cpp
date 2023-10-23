@@ -159,21 +159,6 @@ MD5 InstanceLabelOverride::_ComputeHash() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool InstanceLabelOverride::_ShallowEqual(PresentationKeyCR other) const
-    {
-    if (!CustomizationRule::_ShallowEqual(other))
-        return false;
-
-    InstanceLabelOverride const* otherRule = dynamic_cast<InstanceLabelOverride const*>(&other);
-    if (nullptr == otherRule)
-        return false;
-
-    return m_className == otherRule->m_className;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 void InstanceLabelOverride::_Accept(CustomizationRuleVisitor& visitor) const {visitor._Visit(*this);}
 
 /*---------------------------------------------------------------------------------**//**
@@ -262,20 +247,6 @@ MD5 InstanceLabelOverrideCompositeValueSpecification::_ComputeHash() const
     ADD_RULES_TO_HASH(md5, INSTANCE_LABEL_OVERRIDE_COMPOSITE_VALUE_SPECIFICATION_JSON_ATTRIBUTE_PARTS, m_parts);
     return md5;
     }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool InstanceLabelOverrideCompositeValueSpecification::_ShallowEqual(PresentationKeyCR other) const
-    {
-    if (!InstanceLabelOverrideValueSpecification::_ShallowEqual(other))
-        return false;
-
-    InstanceLabelOverrideCompositeValueSpecification const* otherRule = dynamic_cast<InstanceLabelOverrideCompositeValueSpecification const*>(&other);
-    if (nullptr == otherRule)
-        return false;
-
-    return m_separator == otherRule->m_separator;
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -332,17 +303,6 @@ MD5 InstanceLabelOverrideCompositeValueSpecification::Part::_ComputeHash() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool InstanceLabelOverrideCompositeValueSpecification::Part::_ShallowEqual(PresentationKeyCR other) const
-    {
-    InstanceLabelOverrideCompositeValueSpecification::Part const* otherRule = dynamic_cast<InstanceLabelOverrideCompositeValueSpecification::Part const*>(&other);
-    if (nullptr == otherRule)
-        return false;
-
-    return m_isRequired == otherRule->m_isRequired;
-    }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 bool InstanceLabelOverrideCompositeValueSpecification::Part::_ReadJson(BeJsConst json)
     {
     if (!PresentationKey::_ReadJson(json))
@@ -395,21 +355,6 @@ MD5 InstanceLabelOverridePropertyValueSpecification::_ComputeHash() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool InstanceLabelOverridePropertyValueSpecification::_ShallowEqual(PresentationKeyCR other) const
-    {
-    if (!InstanceLabelOverrideValueSpecification::_ShallowEqual(other))
-        return false;
-
-    InstanceLabelOverridePropertyValueSpecification const* otherRule = dynamic_cast<InstanceLabelOverridePropertyValueSpecification const*>(&other);
-    if (nullptr == otherRule)
-        return false;
-
-    return m_propertyName == otherRule->m_propertyName
-        && m_pathToRelatedInstanceSpec == otherRule->m_pathToRelatedInstanceSpec;
-    }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 bool InstanceLabelOverridePropertyValueSpecification::_ReadJson(BeJsConst json)
     {
     if (!InstanceLabelOverrideValueSpecification::_ReadJson(json))
@@ -450,20 +395,6 @@ MD5 InstanceLabelOverrideClassNameValueSpecification::_ComputeHash() const
     if (m_full)
         ADD_PRIMITIVE_VALUE_TO_HASH(md5, INSTANCE_LABEL_OVERRIDE_CLASSNAME_VALUE_SPECIFICATION_JSON_ATTRIBUTE_FULL, m_full);
     return md5;
-    }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool InstanceLabelOverrideClassNameValueSpecification::_ShallowEqual(PresentationKeyCR other) const
-    {
-    if (!InstanceLabelOverrideValueSpecification::_ShallowEqual(other))
-        return false;
-
-    InstanceLabelOverrideClassNameValueSpecification const* otherRule = dynamic_cast<InstanceLabelOverrideClassNameValueSpecification const*>(&other);
-    if (nullptr == otherRule)
-        return false;
-
-    return m_full == otherRule->m_full;
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -520,20 +451,6 @@ MD5 InstanceLabelOverrideStringValueSpecification::_ComputeHash() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool InstanceLabelOverrideStringValueSpecification::_ShallowEqual(PresentationKeyCR other) const
-    {
-    if (!InstanceLabelOverrideValueSpecification::_ShallowEqual(other))
-        return false;
-
-    InstanceLabelOverrideStringValueSpecification const* otherRule = dynamic_cast<InstanceLabelOverrideStringValueSpecification const*>(&other);
-    if (nullptr == otherRule)
-        return false;
-
-    return m_value == otherRule->m_value;
-    }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 bool InstanceLabelOverrideStringValueSpecification::_ReadJson(BeJsConst json)
     {
     if (!InstanceLabelOverrideValueSpecification::_ReadJson(json))
@@ -568,20 +485,6 @@ MD5 InstanceLabelOverrideRelatedInstanceLabelSpecification::_ComputeHash() const
     if (!m_pathToRelatedInstanceSpec.GetSteps().empty())
         ADD_STR_VALUE_TO_HASH(md5, INSTANCE_LABEL_OVERRIDE_RELATED_INSTANCE_LABEL_SPECIFICATION_JSON_ATTRIBUTE_PATHTORELATEDINSTANCE, m_pathToRelatedInstanceSpec.GetHash());
     return md5;
-    }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool InstanceLabelOverrideRelatedInstanceLabelSpecification::_ShallowEqual(PresentationKeyCR other) const
-    {
-    if (!InstanceLabelOverrideValueSpecification::_ShallowEqual(other))
-        return false;
-
-    InstanceLabelOverrideRelatedInstanceLabelSpecification const* otherRule = dynamic_cast<InstanceLabelOverrideRelatedInstanceLabelSpecification const*>(&other);
-    if (nullptr == otherRule)
-        return false;
-
-    return m_pathToRelatedInstanceSpec == otherRule->m_pathToRelatedInstanceSpec;
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod

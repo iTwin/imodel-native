@@ -587,3 +587,65 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Limiting_ThrowsWhenThere
     params.SetLimit(3);
     ExpectHierarchyLevelTooLargeException(*m_manager, params);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(Limiting_ThrowsWhenThereAreTooManyInstancesInSameLabelMergedHierarchyLevel, R"*(
+    <ECEntityClass typeName="B">
+        <ECProperty propertyName="Prop" typeName="string" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, Limiting_ThrowsWhenThereAreTooManyInstancesInSameLabelMergedHierarchyLevel)
+    {
+    // dataset
+    ECClassCP classB = GetClass("B");
+
+    auto b1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance){instance.SetValue("Prop", ECValue("x"));});
+    auto b2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance){instance.SetValue("Prop", ECValue("2"));});
+    auto b3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance){instance.SetValue("Prop", ECValue("x"));});
+    auto b4 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance){instance.SetValue("Prop", ECValue("4"));});
+    
+    // ruleset
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    rules->AddPresentationRule(*new InstanceLabelOverride(1, false, classB->GetFullName(),
+        {
+        new InstanceLabelOverridePropertyValueSpecification("Prop"),
+        }));
+
+    auto rootRule = new RootNodeRule();
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "",
+        {
+        new MultiSchemaClass(classB->GetSchema().GetName(), true, bvector<Utf8String>{ classB->GetName() })
+        }, {}));
+    rules->AddPresentationRule(*rootRule);
+
+    auto groupingRule = new GroupingRule("", 1, false, classB->GetSchema().GetName(), classB->GetName(), "", "", "");
+    groupingRule->AddGroup(*new SameLabelInstanceGroup(SameLabelInstanceGroupApplicationStage::PostProcess));
+    rules->AddPresentationRule(*groupingRule);
+
+    // set up full hierarchy validator
+    auto validate = [&](AsyncHierarchyRequestParams const& p)
+        {
+        ValidateHierarchy(p,
+            {
+            CreateInstanceNodeValidator({ b2 }),
+            CreateInstanceNodeValidator({ b4 }),
+            CreateInstanceNodeValidator({ b1, b3 }),
+            });
+        };
+
+    // validate the hierarchy with no limit
+    auto params = AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables());
+    validate(params);
+
+    // validate the hierarchy with large limit (note: we count instances, not nodes)
+    params.SetLimit(4);
+    validate(params);
+
+    // verify request throws when limit is too small
+    params.SetLimit(2);
+    ExpectHierarchyLevelTooLargeException(*m_manager, params);
+    }

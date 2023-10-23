@@ -151,7 +151,7 @@ BeFileStatus BeFile::SetLastError() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileStatus BeFile::SetPointer(uint64_t pos, BeFileSeekOrigin origin)
+BeFileStatus BeFile::SetPointer(int64_t pos, BeFileSeekOrigin origin)
     {
 #if defined (BENTLEYCONFIG_OS_WINDOWS)
 
@@ -162,10 +162,10 @@ BeFileStatus BeFile::SetPointer(uint64_t pos, BeFileSeekOrigin origin)
 
 #elif defined (BENTLEYCONFIG_OS_UNIX)
 
-    if (pos != (uint32_t)pos)
+    if (pos != (off_t)pos)
         return m_lastError = BeFileStatus::UnknownError;
 
-    if (lseek(AS_FDES(m_handle), (uint32_t)pos, (int)origin) != -1)
+    if (lseek(AS_FDES(m_handle), (off_t)pos, (int)origin) != -1)
         return BeFileStatus::Success;
 
     lseek(AS_FDES(m_handle), 0, SEEK_END); // make sure the next read fails

@@ -9,6 +9,12 @@ USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_DGN
 
+
+void Session::ECIssueListener::_OnIssueReported(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, ECN::IssueId id, Utf8CP message) const
+    {
+    IModelConsole::WriteErrorLine("ISSUE: %s", message);
+    m_issue = message;
+    }
 //******************** Session ***********************
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -201,6 +207,7 @@ void IModelConsole::Setup()
     AddCommand(std::make_shared<SchemaStatsCommand>());
     AddCommand(std::make_shared<DebugCommand>());
     AddCommand(std::make_shared<ExplainCommand>());
+    AddCommand(std::make_shared<SyncCommand>());
     auto exitCommand = std::make_shared<ExitCommand>();
     AddCommand(exitCommand);
     AddCommand(".quit", exitCommand); //add same command with alternative command name

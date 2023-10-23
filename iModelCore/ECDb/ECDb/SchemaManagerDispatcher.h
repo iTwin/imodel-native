@@ -185,7 +185,8 @@ private:
     ECDbSystemSchemaHelper m_systemSchemaHelper;
     mutable SchemaChangeEvent m_onBeforeSchemaChanged;
     mutable SchemaChangeEvent m_onAfterSchemaCHanged;
-    SchemaImportResult ImportSchemas(SchemaImportContext&, bvector<ECN::ECSchemaCP> const& schemas, SchemaImportToken const*) const;
+    mutable SchemaSync m_schemaSync;
+    SchemaImportResult ImportSchemas(SchemaImportContext&, bvector<ECN::ECSchemaCP> const& schemas, SchemaImportToken const*, SchemaSync::SyncDbUri) const;
 
     SchemaImportResult MapSchemas(SchemaImportContext&, bvector<ECN::ECSchemaCP> const&) const;
     BentleyStatus DoMapSchemas(SchemaImportContext&, bvector<ECN::ECSchemaCP> const&) const;
@@ -193,9 +194,6 @@ private:
     ClassMappingStatus MapDerivedClasses(SchemaImportContext&, ECN::ECClassCR baseClass) const;
     BentleyStatus SaveDbSchema(SchemaImportContext&) const;
     BentleyStatus CanCreateOrUpdateRequiredTables() const;
-    BentleyStatus CreateOrUpdateRequiredTables() const;
-    BentleyStatus CreateOrUpdateIndexesInDb(SchemaImportContext&) const;
-    BentleyStatus PurgeOrphanTables(SchemaImportContext&) const;
     BentleyStatus FindIndexes(std::vector<DbIndex const*>& indexes) const;
     BentleyStatus LoadIndexesSQL(std::map<Utf8String, Utf8String, CompareIUtf8Ascii>& sqliteIndexes) const;
 
@@ -207,10 +205,17 @@ private:
     static DbResult UpgradeExistingECInstancesWithNewPropertiesMapToOverflowTable(ECDbCR ecdb, SchemaImportContext* ctx = nullptr);
     void ResetIds(bvector<ECN::ECSchemaCP> const& schemas) const;
 public:
-    explicit MainSchemaManager(ECDbCR ecdb, BeMutex& mutex) : TableSpaceSchemaManager(ecdb, DbTableSpace::Main()), m_mutex(mutex), m_systemSchemaHelper(ecdb), m_vsm(ecdb) {}
+    explicit MainSchemaManager(ECDbCR ecdb, BeMutex& mutex) : TableSpaceSchemaManager(ecdb, DbTableSpace::Main()), m_mutex(mutex), m_systemSchemaHelper(ecdb), m_vsm(ecdb), m_schemaSync(const_cast<ECDbR>(ecdb)) {}
     ~MainSchemaManager() {}
+    /* ====================== */
+    BentleyStatus CreateOrUpdateRequiredTables() const;
+    BentleyStatus CreateOrUpdateIndexesInDb(SchemaImportContext&) const;
+    BentleyStatus PurgeOrphanTables(SchemaImportContext&) const;
+    /* ====================== */
+
+    SchemaSync& GetSchemaSync() const { return m_schemaSync;  }
     VirtualSchemaManager const& GetVirtualSchemaManager() const;
-    SchemaImportResult ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, SchemaManager::SchemaImportOptions, SchemaImportToken const*) const;
+    SchemaImportResult ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, SchemaManager::SchemaImportOptions, SchemaImportToken const*, SchemaSync::SyncDbUri) const;
     ClassMappingStatus MapClass(SchemaImportContext&, ECN::ECClassCR) const;
     std::set<DbTable const*> GetRelationshipConstraintPrimaryTables(SchemaImportContext&, ECN::ECRelationshipConstraintCR) const;
     size_t GetRelationshipConstraintTableCount(SchemaImportContext&, ECN::ECRelationshipConstraintCR) const;
@@ -303,6 +308,8 @@ struct SchemaManager::Dispatcher final
         mutable std::map<Utf8String, std::unique_ptr<TableSpaceSchemaManager>, CompareIUtf8Ascii> m_managers;
         mutable std::vector<TableSpaceSchemaManager const*> m_orderedManagers;
         MainSchemaManager const* m_main = nullptr;
+        mutable BeIdSet m_unsupportedClassIdCache;
+        mutable bool m_unsupportedClassesLoaded;
 
         //not copyable
         Dispatcher(Dispatcher const&) = delete;
@@ -345,6 +352,9 @@ struct SchemaManager::Dispatcher final
         ECN::UnitSystemCP GetUnitSystem(Utf8StringCR schemaNameOrAlias, Utf8StringCR systemName, SchemaLookupMode, Utf8CP tableSpace) const;
         ECN::PhenomenonCP GetPhenomenon(Utf8StringCR schemaNameOrAlias, Utf8StringCR phenName, SchemaLookupMode, Utf8CP tableSpace) const;
         ECN::PropertyCategoryCP GetPropertyCategory(Utf8StringCR schemaNameOrAlias, Utf8StringCR propertyCategoryName, SchemaLookupMode, Utf8CP tableSpace) const;
+
+        //! Check if a class is unsupported by current ECDb runtime
+        bool IsClassUnsupported(ECN::ECClassId classId) const;
 
         void ClearCache() const;
 

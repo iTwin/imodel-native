@@ -62,13 +62,13 @@ std::unique_ptr<Exp> ECSqlParser::Parse(ECDbCR ecdb, Utf8CP ecsql, IssueDataSour
     auto parseTree = parser.parseTree(error, ecsql);
 
     if (parseTree == nullptr || !error.empty()) {
-        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Failed to parse ECSQL '%s': %s", ecsql, error.c_str());
+        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0471, "Failed to parse ECSQL '%s': %s", ecsql, error.c_str());
         return nullptr;
     }
 
     if (!parseTree->isRule()) {
         BeAssert(false && "ECSQL grammar has changed, but parser wasn't adopted.");
-        Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "ECSQL grammar has changed, but parser wasn't adopted.");
+        Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0472, "ECSQL grammar has changed, but parser wasn't adopted.");
         return nullptr;
     }
 
@@ -123,12 +123,12 @@ std::unique_ptr<Exp> ECSqlParser::Parse(ECDbCR ecdb, Utf8CP ecsql, IssueDataSour
             break;
         }
         case OSQLParseNode::manipulative_statement:
-            Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Manipulative statements are not supported.");
+            Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0473, "Manipulative statements are not supported.");
             return nullptr;
 
         default:
             BeAssert(false && "Not a valid statement");
-            Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Not a valid statement");
+            Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0474, "Not a valid statement");
             return nullptr;
         };
 
@@ -184,7 +184,7 @@ BentleyStatus ECSqlParser::ParseCTE(std::unique_ptr<CommonTableExp>& exp, OSQLPa
     if (!SQL_ISRULE(parseNode, cte))
         return ERROR;
 
-    auto recursive = parseNode->getChild(1)->count() > 0;
+    auto recursive = parseNode->getChild(1)->getTokenID() == SQL_TOKEN_RECURSIVE;
     auto pCteBlockList = parseNode->getChild(2);
     auto pSelectStmt = parseNode->getChild(3);
 
@@ -279,7 +279,7 @@ BentleyStatus ECSqlParser::ParseSingleSelectStatement(std::unique_ptr<SingleSele
 
     if (selectClauseExp == nullptr || fromExp == nullptr)
         {
-        Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "ECSQL without select clause or from clause is invalid.");
+        Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0475, "ECSQL without select clause or from clause is invalid.");
         return ERROR;
         }
 
@@ -313,7 +313,7 @@ BentleyStatus ECSqlParser::ParseSelection(std::unique_ptr<SelectClauseExp>& exp,
     if (!SQL_ISRULE(parseNode, scalar_exp_commalist))
         {
         BeAssert(false && "Wrong grammar");
-        Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Wrong grammar");
+        Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0476, "Wrong grammar");
         return ERROR;
         }
 
@@ -330,7 +330,7 @@ BentleyStatus ECSqlParser::ParseSelection(std::unique_ptr<SelectClauseExp>& exp,
             selectClauseExp->AddProperty(std::move(derivedPropExp));
         }
 
-    exp = move(selectClauseExp);
+    exp = std::move(selectClauseExp);
     return SUCCESS;
     }
 
@@ -344,7 +344,7 @@ BentleyStatus ECSqlParser::ParseDerivedColumn(std::unique_ptr<DerivedPropertyExp
     if (!SQL_ISRULE(parseNode, derived_column))
         {
         BeAssert(false && "Wrong grammar");
-        Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Wrong grammar");
+        Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0476, "Wrong grammar");
         return ERROR;
         }
 
@@ -414,7 +414,11 @@ BentleyStatus ECSqlParser::ParsePragmaStatement(std::unique_ptr<PragmaStatementE
             Issues().ReportV(
                 IssueSeverity::Error,
                 IssueCategory::BusinessProperties,
-                IssueType::ECSQL, "Unsupported PRAGMA value Token Id %" PRIu32 ".", parseNode->getTokenID());
+                IssueType::ECSQL, 
+                ECDbIssueId::ECDb_0478,
+                "Unsupported PRAGMA value Token Id %" PRIu32 ".",
+                parseNode->getTokenID()
+            );
             return ERROR;
         }
         return SUCCESS;
@@ -467,7 +471,12 @@ BentleyStatus ECSqlParser::ParsePragmaStatement(std::unique_ptr<PragmaStatementE
     if (SUCCESS != parse_pragma(&parseNode)) {
         return ERROR;
     }
-    pragmaExp = std::make_unique<PragmaStatementExp>(outPragmaName, outPragmaVal, outReadValue, outPathTokens);
+
+    std::unique_ptr<OptionsExp> options;
+    if (SUCCESS != ParseOptECSqlOptionsClause(options, parseNode.getChild(4 /* opt_ecsql_options */))) {
+        return ERROR;
+    }
+    pragmaExp = std::make_unique<PragmaStatementExp>(outPragmaName, outPragmaVal, outReadValue, outPathTokens, std::move(options));
     return SUCCESS;
     }
 
@@ -520,7 +529,8 @@ BentleyStatus ECSqlParser::ParseUpdateStatementSearched(std::unique_ptr<UpdateSt
 
     if (classRefExp->GetType() != Exp::Type::ClassName)
         {
-        Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "ECSQL UPDATE statements only support ECClass references as target. Subqueries or join clauses are not supported.");
+        Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0479,
+            "ECSQL UPDATE statements only support ECClass references as target. Subqueries or join clauses are not supported.");
         return ERROR;
         }
 
@@ -586,7 +596,8 @@ BentleyStatus ECSqlParser::ParseDeleteStatementSearched(std::unique_ptr<DeleteSt
 
     if (classRefExp->GetType() != Exp::Type::ClassName)
         {
-        Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "ECSQL DELETE statements only support ECClass references as target. Subqueries or join clauses are not supported.");
+        Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0480,
+            "ECSQL DELETE statements only support ECClass references as target. Subqueries or join clauses are not supported.");
         return ERROR;
         }
 
@@ -810,12 +821,14 @@ BentleyStatus ECSqlParser::ParseColumnRef(std::unique_ptr<ValueExp>& exp, OSQLPa
     }
 
     const auto isExtractProp  = (opt_extract_value->count() != 0);
+    const auto isOptionalProp = (opt_extract_value->count() == 2 && opt_extract_value->getLast()->count() == 1);
     if (isExtractProp) {
         if (lhsExp->GetType() != Exp::Type::PropertyName) {
             Issues().Report(
                 IssueSeverity::Error,
                 IssueCategory::BusinessProperties,
                 IssueType::ECSQL,
+                ECDbIssueId::ECDb_0609,
                 "Invalid grammar. instance property exp must be follow syntax '[<alias>.]$ -> <access-string>'");
             return ERROR;
         }
@@ -829,6 +842,7 @@ BentleyStatus ECSqlParser::ParseColumnRef(std::unique_ptr<ValueExp>& exp, OSQLPa
                     IssueSeverity::Error,
                     IssueCategory::BusinessProperties,
                     IssueType::ECSQL,
+                    ECDbIssueId::ECDb_0610,
                     "Invalid grammar. Instance exp must be follow syntax '[<alias>.]$'");
                 return ERROR;
             }
@@ -846,12 +860,24 @@ BentleyStatus ECSqlParser::ParseColumnRef(std::unique_ptr<ValueExp>& exp, OSQLPa
                         IssueSeverity::Error,
                         IssueCategory::BusinessProperties,
                         IssueType::ECSQL,
+                        ECDbIssueId::ECDb_0611,
                         "Invalid grammar. instance property exp must be follow syntax '[<alias>.]$ -> <access-string>'");
                     return ERROR;
                 }
+
                 auto rhsPropExp = rhsExp->GetAsCP<PropertyNameExp>();
-                exp = std::make_unique<ExtractPropertyValueExp>(lhsPropExp->GetPropertyPath(), rhsPropExp->GetPropertyPath());
+                exp = std::make_unique<ExtractPropertyValueExp>(lhsPropExp->GetPropertyPath(), rhsPropExp->GetPropertyPath(), isOptionalProp);
                 return SUCCESS;
+            }
+        } else {
+            if (lhsPropExp->GetPropertyPath().Last().GetName().EndsWith("?")) {
+                Issues().Report(
+                    IssueSeverity::Error,
+                    IssueCategory::BusinessProperties,
+                    IssueType::ECSQL,
+                    ECDbIssueId::ECDb_0612,
+                    "Invalid grammar. Property access string cannot end with '?'.");
+                return ERROR;
             }
         }
     }
@@ -883,7 +909,7 @@ BentleyStatus ECSqlParser::ParseParameter(std::unique_ptr<ValueExp>& exp, OSQLPa
         if (!paramTokenValue.Equals("?"))
             {
             BeAssert(paramTokenValue.Equals("?") && "Invalid grammar. Only : or ? allowed as parameter tokens");
-            Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Invalid grammar. Only : or ? allowed as parameter tokens");
+            Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0481, "Invalid grammar. Only : or ? allowed as parameter tokens");
             return ERROR;
             }
         }
@@ -960,7 +986,8 @@ BentleyStatus ECSqlParser::ParseCastSpec(std::unique_ptr<ValueExp>& exp, OSQLPar
         BeAssert(castTargetNode->getChild(1)->getNodeType() == SQL_NODE_ARRAY_INDEX);
         if (!castTargetNode->getChild(1)->getTokenValue().empty())
             {
-            Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Invalid syntax for CAST target array type. Array type must be specified with empty square brackets.");
+            Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0482,
+                "Invalid syntax for CAST target array type. Array type must be specified with empty square brackets.");
             return ERROR;
             }
         }
@@ -1016,7 +1043,7 @@ BentleyStatus ECSqlParser::ParseFctSpec(std::unique_ptr<ValueExp>& exp, OSQLPars
     if (functionName.empty())
         {
         const uint32_t tokenId = functionNameNode->getTokenID();
-        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Function with token ID %" PRIu32 " not yet supported.", tokenId);
+        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0483, "Function with token ID %" PRIu32 " not yet supported.", tokenId);
         return ERROR;
         }
 
@@ -1140,7 +1167,7 @@ BentleyStatus ECSqlParser::ParseGeneralSetFct(std::unique_ptr<ValueExp>& exp, OS
 
             default:
             {
-            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Unsupported standard set function with token ID %" PRIu32, functionNameNode->getTokenID());
+            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0484, "Unsupported standard set function with token ID %" PRIu32, functionNameNode->getTokenID());
             return ERROR;
             }
         }
@@ -1151,25 +1178,28 @@ BentleyStatus ECSqlParser::ParseGeneralSetFct(std::unique_ptr<ValueExp>& exp, OS
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-BentleyStatus ECSqlParser::ParseECSqlOption(std::unique_ptr<OptionExp>& exp, OSQLParseNode const* parseNode) const
-    {
+BentleyStatus ECSqlParser::ParseECSqlOption(std::unique_ptr<OptionExp>& exp, OSQLParseNode const* parseNode) const {
     const size_t childNodeCount = parseNode->count();
     BeAssert(childNodeCount == 1 || childNodeCount == 3);
 
     Utf8CP optionName = parseNode->getChild(0)->getTokenValue().c_str();
     Utf8String optionValue;
-    if (childNodeCount == 3)
-        {
+    ECSqlTypeInfo dataType;
+    if (childNodeCount == 3) {
         OSQLParseNode const* valNode = parseNode->getChild(2);
         BeAssert(valNode != nullptr);
-        ECSqlTypeInfo dataType;
-        if (SUCCESS != ParseLiteral(optionValue, dataType, *valNode))
-            return ERROR;
+        if (valNode->getNodeType() == SQL_NODE_NAME) {
+            optionValue = valNode->getTokenValue();
+            dataType = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_String);
+        } else {
+            if (SUCCESS != ParseLiteral(optionValue, dataType, *valNode)) {
+                return ERROR;
+            }
         }
-
-    exp = std::unique_ptr<OptionExp>(new OptionExp(optionName, optionValue.c_str()));
-    return SUCCESS;
     }
+    exp = std::make_unique<OptionExp>(optionName, optionValue.c_str(), dataType);
+    return SUCCESS;
+}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
@@ -1389,7 +1419,7 @@ BentleyStatus ECSqlParser::ParseDatetimeValueFct(std::unique_ptr<ValueExp>& exp,
             fctName = FunctionCallExp::CURRENT_TIME();
         else
             {
-            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Unrecognized keyword '%s'.", parseNode.getTokenValue().c_str());
+            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0485, "Unrecognized keyword '%s'.", parseNode.getTokenValue().c_str());
             return ERROR;
             }
 
@@ -1421,7 +1451,7 @@ BentleyStatus ECSqlParser::ParseFromClause(std::unique_ptr<FromExp>& exp, OSQLPa
         if (stat != SUCCESS)
             return stat;
 
-        stat = from_clause->TryAddClassRef(*m_context, move(classRefExp));
+        stat = from_clause->TryAddClassRef(*m_context, std::move(classRefExp));
         if (stat != SUCCESS)
             return stat;
         }
@@ -1440,7 +1470,7 @@ BentleyStatus ECSqlParser::ParsePolymorphicConstraint(PolymorphicInfo& constrain
 
     if (parseNode->count() == 0)
         {
-        constraint = PolymorphicInfo::All();
+        constraint = PolymorphicInfo::NotSpecified();
         return SUCCESS;
         }
 
@@ -1453,8 +1483,8 @@ BentleyStatus ECSqlParser::ParsePolymorphicConstraint(PolymorphicInfo& constrain
     if (disqualifyNode->count() == 1)
         disqualify = true;
 
-    auto type = PolymorphicInfo::Type::Default;
-    if (!PolymorphicInfo::TryParseToken(type, constraintNode->getTokenValue()))
+    auto type = PolymorphicInfo::Type::All;
+    if (!PolymorphicInfo::TryParseToken(type , constraintNode->getTokenValue()))
         return ERROR;
 
     constraint = PolymorphicInfo(type, disqualify);
@@ -1466,7 +1496,7 @@ BentleyStatus ECSqlParser::ParsePolymorphicConstraint(PolymorphicInfo& constrain
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECSqlParser::ParseTableRef(std::unique_ptr<ClassRefExp>& exp, OSQLParseNode const* parseNode, ECSqlType ecsqlType) const
     {
-    if (SQL_ISRULE(parseNode, OSQLParseNode::Rule::qualified_join) || SQL_ISRULE(parseNode, OSQLParseNode::Rule::ecrelationship_join))
+    if (SQL_ISRULE(parseNode, OSQLParseNode::Rule::qualified_join) || SQL_ISRULE(parseNode, OSQLParseNode::Rule::cross_union) || SQL_ISRULE(parseNode, OSQLParseNode::Rule::ecrelationship_join))
         {
         std::unique_ptr<JoinExp> joinExp = nullptr;
         if (SUCCESS != ParseJoinedTable(joinExp, parseNode))
@@ -1531,7 +1561,7 @@ BentleyStatus ECSqlParser::ParseTableRef(std::unique_ptr<ClassRefExp>& exp, OSQL
                         m_context->Issues().ReportV(
                             IssueSeverity::Error,
                             IssueCategory::BusinessProperties,
-                            IssueType::ECSQL, "Invalid View Class '%s'. There is not query supplied for view.", classCP->GetFullName());
+                            IssueType::ECSQL, ECDbIssueId::ECDb_0710, "Invalid View Class '%s'. There is not query supplied for view.", classCP->GetFullName());
                         return ERROR;
                     }
 
@@ -1539,7 +1569,7 @@ BentleyStatus ECSqlParser::ParseTableRef(std::unique_ptr<ClassRefExp>& exp, OSQL
                         m_context->Issues().ReportV(
                             IssueSeverity::Error,
                             IssueCategory::BusinessProperties,
-                            IssueType::ECSQL, "ONLY keyword is not supported for view classes (ViewClass: %s).", classCP->GetFullName());
+                            IssueType::ECSQL, ECDbIssueId::ECDb_0711, "ONLY keyword is not supported for view classes (ViewClass: %s).", classCP->GetFullName());
                         return ERROR;
                     }
 
@@ -1549,7 +1579,7 @@ BentleyStatus ECSqlParser::ParseTableRef(std::unique_ptr<ClassRefExp>& exp, OSQL
                         m_context->Issues().ReportV(
                             IssueSeverity::Error,
                             IssueCategory::BusinessProperties,
-                            IssueType::ECSQL, "Invalid View Class '%s'. View query references itself recusively (%s).", classCP->GetFullName(), viewStack.GetStackAsString().c_str());
+                            IssueType::ECSQL, ECDbIssueId::ECDb_0712, "Invalid View Class '%s'. View query references itself recusively (%s).", classCP->GetFullName(), viewStack.GetStackAsString().c_str());
                         return ERROR;
                     }
 
@@ -1558,7 +1588,7 @@ BentleyStatus ECSqlParser::ParseTableRef(std::unique_ptr<ClassRefExp>& exp, OSQL
                         m_context->Issues().ReportV(
                             IssueSeverity::Error,
                             IssueCategory::BusinessProperties,
-                            IssueType::ECSQL, "Invalid View Class '%s'. View ECSQL failed to parse.", classCP->GetFullName());
+                            IssueType::ECSQL, ECDbIssueId::ECDb_0713, "Invalid View Class '%s'. View ECSQL failed to parse.", classCP->GetFullName());
                         return ERROR;
                     }
 
@@ -1566,7 +1596,7 @@ BentleyStatus ECSqlParser::ParseTableRef(std::unique_ptr<ClassRefExp>& exp, OSQL
                         m_context->Issues().ReportV(
                             IssueSeverity::Error,
                             IssueCategory::BusinessProperties,
-                            IssueType::ECSQL, "Invalid View Class '%s'. View ECSQL is not a SELECT statement.", classCP->GetFullName());
+                            IssueType::ECSQL, ECDbIssueId::ECDb_0714, "Invalid View Class '%s'. View ECSQL is not a SELECT statement.", classCP->GetFullName());
                         return ERROR;
                     }
 
@@ -1622,7 +1652,7 @@ BentleyStatus ECSqlParser::ParseJoinedTable(std::unique_ptr<JoinExp>& exp, OSQLP
             }
             case OSQLParseNode::ecrelationship_join:
             {
-            std::unique_ptr<ECRelationshipJoinExp> joinExp = nullptr;
+            std::unique_ptr<UsingRelationshipJoinExp> joinExp = nullptr;
             if (SUCCESS != ParseECRelationshipJoin(joinExp, parseNode))
                 return ERROR;
 
@@ -1639,7 +1669,7 @@ BentleyStatus ECSqlParser::ParseJoinedTable(std::unique_ptr<JoinExp>& exp, OSQLP
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSqlParser::ParseECRelationshipJoin(std::unique_ptr<ECRelationshipJoinExp>& exp, OSQLParseNode const* parseNode) const
+BentleyStatus ECSqlParser::ParseECRelationshipJoin(std::unique_ptr<UsingRelationshipJoinExp>& exp, OSQLParseNode const* parseNode) const
     {
     if (!SQL_ISRULE(parseNode, ecrelationship_join))
         {
@@ -1661,9 +1691,9 @@ BentleyStatus ECSqlParser::ParseECRelationshipJoin(std::unique_ptr<ECRelationshi
         return ERROR;
 
     //TODO: need to decide whether we support ONLY in USING clause.
-    std::unique_ptr<ClassNameExp> table_node = nullptr;
-    if (SUCCESS != ParseTableNodeWithOptMemberCall(table_node, *parseNode->getChild(5/*table_node_with_opt_member_call*/), ECSqlType::Select, PolymorphicInfo::All(), false))
-     return ERROR;
+    std::unique_ptr<ClassRefExp> table_node_ref = nullptr;
+    if (SUCCESS != ParseTableNodeRef(table_node_ref, *parseNode->getChild(5/*table_node_ref*/), ECSqlType::Select))
+        return ERROR;
 
     OSQLParseNode const* op_relationship_direction = parseNode->getChild(6/*op_relationship_direction*/);
 
@@ -1679,7 +1709,7 @@ BentleyStatus ECSqlParser::ParseECRelationshipJoin(std::unique_ptr<ECRelationshi
     else if (op_relationship_direction->getTokenID() == SQL_TOKEN_BACKWARD)
         direction = JoinDirection::Backward;
 
-    exp = std::make_unique<ECRelationshipJoinExp>(std::move(from_table_ref), std::move(to_table_ref), std::move(table_node), direction);
+    exp = std::make_unique<UsingRelationshipJoinExp>(std::move(from_table_ref), std::move(to_table_ref), std::move(table_node_ref), direction);
     return SUCCESS;
     }
 
@@ -1772,11 +1802,19 @@ BentleyStatus ECSqlParser::ParseJoinType(ECSqlJoinType& joinType, OSQLParseNode 
             joinType = ECSqlJoinType::InnerJoin;
             return SUCCESS;
             }
+
+        if (SQL_ISRULE(first, outer_join_type))
+            return ParseOuterJoinType(joinType, first);
         }
 
     if (SQL_ISRULE(parseNode, outer_join_type))
         return ParseOuterJoinType(joinType, parseNode);
 
+    // outer_join_type SQL_TOKEN_OUTER
+    if (parseNode->count() == 2) {
+        if (SQL_ISRULE(parseNode->getChild(0), outer_join_type))
+            return ParseOuterJoinType(joinType, parseNode->getChild(0));
+    }
     BeAssert(false && "Invalid grammar. Expected JoinType");
     return ERROR;
     }
@@ -1990,9 +2028,51 @@ BentleyStatus ECSqlParser::ParseTableValuedFunction(std::unique_ptr<TableValuedF
             return ERROR;
         }
 
-    exp = std::make_unique<TableValuedFunctionExp>(schemaName.c_str(), std::move(memberFuncCall), PolymorphicInfo::All());
+    exp = std::make_unique<TableValuedFunctionExp>(schemaName.c_str(), std::move(memberFuncCall), PolymorphicInfo::NotSpecified());
     return SUCCESS;
 }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECSqlParser::ParseTableNodeRef(std::unique_ptr<ClassRefExp>& exp, OSQLParseNode const& tableNode, ECSqlType ecsqlType) const
+    {
+    if (!SQL_ISRULE(&tableNode, OSQLParseNode::Rule::table_node_ref))
+        {
+        BeAssert(false && "Wrong grammar. Expecting table_node_ref");
+        return ERROR;
+        }
+
+    std::unique_ptr<ClassNameExp> table_node = nullptr;
+    if (SUCCESS != ParseTableNodeWithOptMemberCall(table_node, *tableNode.getChild(0/*table_node_with_opt_member_call*/), ecsqlType, PolymorphicInfo::NotSpecified(), false))
+        return ERROR;
+
+    if (tableNode.count() == 1)
+        {
+        exp = std::move(table_node);
+        return SUCCESS;
+        }
+
+    std::unique_ptr<RangeClassRefExp> rangeClassRef = std::move(table_node);
+    OSQLParseNode const* table_primary_as_range_column = tableNode.getChild(1/*table_primary_as_range_column*/);
+    if (table_primary_as_range_column->count() > 0)
+        {
+        OSQLParseNode* table_alias = table_primary_as_range_column->getChild(1);
+        OSQLParseNode* opt_column_commalist = table_primary_as_range_column->getChild(2);
+        if (opt_column_commalist->count() > 0)
+            {
+            BeAssert(false && "Range column not supported");
+            return ERROR;
+            }
+
+        if (!table_alias->getTokenValue().empty())
+            rangeClassRef->SetAlias(table_alias->getTokenValue());
+        }
+
+    exp = std::move(rangeClassRef);
+    return SUCCESS;
+    }
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -2016,7 +2096,8 @@ BentleyStatus ECSqlParser::ParseTableNodeWithOptMemberCall(std::unique_ptr<Class
     const size_t pathLength = pathNode->count();
     if (pathLength < 2 || pathLength > 4)
         {
-        Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Invalid ECSQL class expression: Valid syntax: [<table space>.]<schema name or alias>.<class name>[.function call]");
+        Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0486,
+            "Invalid ECSQL class expression: Valid syntax: [<table space>.]<schema name or alias>.<class name>[.function call]");
         return ERROR;
         }
 
@@ -2042,7 +2123,8 @@ BentleyStatus ECSqlParser::ParseTableNodeWithOptMemberCall(std::unique_ptr<Class
                 }
             else
                 {
-                Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Invalid ECSQL class expression. Class member function calls must appear after the class. Valid syntax: [<table space>.]<schema name or alias>.<class name>[.function call]");
+                Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0487,
+                    "Invalid ECSQL class expression. Class member function calls must appear after the class. Valid syntax: [<table space>.]<schema name or alias>.<class name>[.function call]");
                 return ERROR;
                 }
             }
@@ -2057,7 +2139,8 @@ BentleyStatus ECSqlParser::ParseTableNodeWithOptMemberCall(std::unique_ptr<Class
     const int tableSpaceNodeIx = schemaNameNodeIx - 1;
     if (schemaNameNodeIx < 0)
         {
-        Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Invalid ECSQL class expression. Cannot specify a class name without schema name or alias. Valid syntax: [<table space>.]<schema name or alias>.<class name>[.function call]");
+        Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0488,
+            "Invalid ECSQL class expression. Cannot specify a class name without schema name or alias. Valid syntax: [<table space>.]<schema name or alias>.<class name>[.function call]");
         return ERROR;
         }
     BeAssert(tableSpaceNodeIx <= 0);
@@ -2116,7 +2199,7 @@ BentleyStatus ECSqlParser::ParseMemberFunctionCall(std::unique_ptr<MemberFunctio
         Utf8String err;
         if (memberFunCallExp->AddArgument(std::move(argument_expr), err) != SUCCESS)
             {
-            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, err.c_str());
+            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0489, err.c_str());
             return ERROR;
             }
         }
@@ -2274,16 +2357,16 @@ BentleyStatus ECSqlParser::ParseSearchCondition(std::unique_ptr<BooleanExp>& exp
 
             OSQLParseNode const* quantified_comparison_predicate_part_2 = parseNode->getChild(1/*quantified_comparison_predicate_part_2*/);
 
-            BooleanSqlOperator comparison = BooleanSqlOperator::EqualTo;
-            if (SUCCESS != ParseComparison(comparison, quantified_comparison_predicate_part_2->getChild(0/*sql_not*/)))
+            BooleanSqlOperator comparison;
+            if (SUCCESS != ParseComparison(comparison, quantified_comparison_predicate_part_2->getChild(0/*comparison*/)))
                 return ERROR;
 
-            SqlCompareListType any_all_some = SqlCompareListType::All;
+            SqlCompareListType any_all_some;
             if (SUCCESS != ParseAnyOrAllOrSomeToken(any_all_some, quantified_comparison_predicate_part_2->getChild(1/*any_all_some*/)))
                 return ERROR;
 
             std::unique_ptr<SubqueryExp> subquery = nullptr;
-            if (SUCCESS != ParseSubquery(subquery, quantified_comparison_predicate_part_2->getChild(4/*row_value_constructor*/)))
+            if (SUCCESS != ParseSubquery(subquery, quantified_comparison_predicate_part_2->getChild(2/*subquery*/)))
                 return ERROR;
 
             exp = std::make_unique<AllOrAnyExp>(std::move(op1), comparison, any_all_some, std::move(subquery));
@@ -2388,7 +2471,7 @@ BentleyStatus ECSqlParser::ParseInPredicate(std::unique_ptr<BooleanExp>& exp, OS
     if (SQL_ISRULE(firstChildNode, in_predicate_part_2))
         {
         BeAssert(false);
-        Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "IN predicate without left-hand side property not supported.");
+        Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0490, "IN predicate without left-hand side property not supported.");
         return ERROR;
         }
 
@@ -2622,7 +2705,7 @@ BentleyStatus ECSqlParser::ParseComparison(BooleanSqlOperator& op, OSQLParseNode
         {
         if (parseNode->count() == 4 /*SQL_TOKEN_IS sql_not SQL_TOKEN_DISTINCT SQL_TOKEN_FROM*/)
             {
-            Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "'IS [NOT] DISTINCT FROM' operator not supported in ECSQL.");
+            Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0491, "'IS [NOT] DISTINCT FROM' operator not supported in ECSQL.");
             return ERROR;
             }
         if (parseNode->count() == 2 /*SQL_TOKEN_IS sql_not*/)
@@ -2832,7 +2915,17 @@ BentleyStatus ECSqlParser::ParseOrderByClause(std::unique_ptr<OrderByExp>& exp, 
         if (SUCCESS != ParseAscOrDescToken(sortDirection, ordering_spec->getChild(1/*opt_asc_desc*/)))
             return ERROR;
 
-        orderBySpecs.push_back(std::make_unique<OrderBySpecExp>(sortValue, sortDirection));
+        auto nulls_order = ordering_spec->getChild(2 /*null order*/);
+        auto nullsOrder = OrderBySpecExp::NullsOrder::NotSpecified;
+        if ( nulls_order->count() == 2) {
+            auto firstOrLast = nulls_order->getChild(1 /*FIRST OR LAST*/)->getTokenID();
+            if (firstOrLast == SQL_TOKEN_FIRST) {
+                nullsOrder = OrderBySpecExp::NullsOrder::First;
+            } else {
+                nullsOrder = OrderBySpecExp::NullsOrder::Last;
+            }
+        }
+        orderBySpecs.push_back(std::make_unique<OrderBySpecExp>(sortValue, sortDirection, nullsOrder));
         }
 
     exp = std::make_unique<OrderByExp>(orderBySpecs);
@@ -3011,7 +3104,8 @@ BentleyStatus ECSqlParser::ParseSelectStatement(std::unique_ptr<SelectStatementE
 
         if (!single_select->IsCoreSelect())
             {
-            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "SELECT statement in UNION must not contain ORDER BY or LIMIT clause: %s", single_select->ToECSql().c_str());
+            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0492,
+                "SELECT statement in UNION must not contain ORDER BY or LIMIT clause: %s", single_select->ToECSql().c_str());
             return ERROR;
             }
 
@@ -3196,7 +3290,8 @@ BentleyStatus ECSqlParser::ParseValueExp(std::unique_ptr<ValueExp>& valueExp, OS
                     return ParseValueExpPrimary(valueExp, parseNode);
 
                 default:
-                    Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "ECSQL Parse error: Unsupported value_exp type: %d", (int) parseNode->getKnownRuleID());
+                    Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0493,
+                        "ECSQL Parse error: Unsupported value_exp type: %d", (int) parseNode->getKnownRuleID());
                     return ERROR;
 
             };
@@ -3365,9 +3460,11 @@ BentleyStatus ECSqlParseContext::TryResolveClass(std::shared_ptr<ClassNameExp::I
     if (classMap == nullptr)
         {
         if (Utf8String::IsNullOrEmpty(tableSpaceName))
-            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "ECClass '%s.%s' does not exist or could not be loaded.", schemaNameOrAlias.c_str(), className.c_str());
+            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0494,
+                "ECClass '%s.%s' does not exist or could not be loaded.", schemaNameOrAlias.c_str(), className.c_str());
         else
-            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "ECClass '%s.%s.%s' does not exist or could not be loaded.", tableSpaceName, schemaNameOrAlias.c_str(), className.c_str());
+            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0495,
+                "ECClass '%s.%s.%s' does not exist or could not be loaded.", tableSpaceName, schemaNameOrAlias.c_str(), className.c_str());
 
         return ERROR;
         }
@@ -3386,7 +3483,7 @@ BentleyStatus ECSqlParseContext::TryResolveClass(std::shared_ptr<ClassNameExp::I
     Policy policy = PolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(*classMap, ecsqlType, isPolymorphicExp));
     if (!policy.IsSupported())
         {
-        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Invalid ECClass in ECSQL: %s", policy.GetNotSupportedMessage().c_str());
+        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0496, "Invalid ECClass in ECSQL: %s", policy.GetNotSupportedMessage().c_str());
         return ERROR;
         }
 

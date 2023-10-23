@@ -462,8 +462,8 @@ TEST_F(MultiNavNodesProviderTests, RelatedRulesetVariables_CollectsRulesetVariab
     }
 
 #define EXPECT_OPTIMIZATION_FLAGS_ENABLED() \
-    EXPECT_TRUE(GetContext().GetOptimizationFlags().IsFullNodesLoadDisabled()); \
-    EXPECT_TRUE(GetContext().GetOptimizationFlags().IsPostProcessingDisabled());
+    EXPECT_TRUE(GetContext().GetMergedOptimizationFlags().IsFullNodesLoadDisabled()); \
+    EXPECT_TRUE(GetContext().GetMergedOptimizationFlags().IsPostProcessingDisabled());
 
 /*=================================================================================**//**
 * @bsiclass
@@ -506,7 +506,7 @@ public:
     static RefCountedPtr<OptimizationFlagsTestingProvider> Create(NavNodesProviderContextR context, NavNodeP node)
         {
         auto myContext = NavNodesProviderContext::Create(context);
-        myContext->GetOptimizationFlags().SetParentContainer(&context.GetOptimizationFlags());
+        myContext->SetAncestorContext(&context);
         return new OptimizationFlagsTestingProvider(*myContext, node);
         }
 };

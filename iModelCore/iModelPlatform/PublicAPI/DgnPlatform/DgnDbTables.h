@@ -199,6 +199,16 @@ struct ModelIterator;
 struct DgnCodeValue
 {
     enum class CompareResult { Less, Equal, Greater };
+    enum class Behavior {
+        // This is the default, always use it unless you have a specific reason, such as compatibility with iModels
+        // created by older connectors
+        TrimUnicodeWhitespace = 0,
+        // Use when you are copying data between iModels in a way that code values should preserved
+        // This is mostly for compatibility with older iModels where the previous behavior was
+        // trimming ascii whitespace.
+        Exact = 1,
+    };
+
 private:
     Utf8String  m_value; //!< Note: can be "empty" (persisted as null)
 
@@ -209,10 +219,18 @@ private:
 public:
     //! Create an empty code value
     DgnCodeValue() { }
+
     //! Create a code value from a Utf8String
-    DgnCodeValue(Utf8StringCR str) : m_value(str) { m_value.TrimUtf8(); }
+    DgnCodeValue(Utf8StringCR str, Behavior behavior)
+        : m_value(str)
+        { if (behavior != Behavior::Exact) m_value.TrimUtf8(); }
+
     //! Create a code value from a pointer to a UTF-8 string
-    DgnCodeValue(Utf8CP str) : m_value(str) { m_value.TrimUtf8(); }
+    //! @param[in] behavior - How to trim the code. Should default to Behavior::TrimUnicodeWhitespace, should come from the db using this code.
+    //! @see DgnCode::CreateWithDbContext
+    DgnCodeValue(Utf8CP str, Behavior behavior)
+        : m_value(str)
+        { if (behavior != Behavior::Exact) m_value.TrimUtf8(); }
 
     //! Get the value as a Utf8String
     Utf8StringCR GetUtf8() const { return m_value; }
@@ -269,7 +287,13 @@ public:
     DgnCode() {}
 
     //! Construct a DgnCode scoped to an existing element.
-    DgnCode(CodeSpecId specId, DgnElementId scopeElementId, Utf8StringCR value) : m_specId(specId), m_scope(scopeElementId.ToHexStr()), m_value(value) {}
+    //! @param[in] behavior - How to trim the code. Should default to Behavior::TrimUnicodeWhitespace, should come from the element/db using this code.
+    //! @see DgnCode::CreateWithDbContext
+    DgnCode(CodeSpecId specId, DgnElementId scopeElementId, Utf8StringCR value, DgnCodeValue::Behavior behavior)
+        : m_specId(specId), m_scope(scopeElementId.ToHexStr()), m_value(value, behavior) {}
+
+    //! use a dgndb's m_codeValueBehavior as the behavior for creating this code's value
+    DGNPLATFORM_EXPORT static DgnCode CreateWithDbContext(DgnDbCR db, CodeSpecId specId, DgnElementId scopeElementId, Utf8StringCR value);
 
     //! Invalidate this DgnCode
     void Invalidate() {

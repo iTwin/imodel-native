@@ -87,26 +87,6 @@ InstanceNodesOfSpecificClassesSpecification::~InstanceNodesOfSpecificClassesSpec
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool InstanceNodesOfSpecificClassesSpecification::_ShallowEqual(PresentationKeyCR other) const
-    {
-    if (!ChildNodeSpecification::_ShallowEqual(other))
-        return false;
-
-    InstanceNodesOfSpecificClassesSpecificationCP otherRule = dynamic_cast<InstanceNodesOfSpecificClassesSpecificationCP>(&other);
-    if (nullptr == otherRule)
-        return false;
-
-    return m_groupByClass == otherRule->m_groupByClass
-        && m_groupByLabel == otherRule->m_groupByLabel
-        && m_showEmptyGroups == otherRule->m_showEmptyGroups
-        && m_classes == otherRule->m_classes
-        && m_excludedClasses == otherRule->m_excludedClasses
-        && m_instanceFilter == otherRule->m_instanceFilter;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 void InstanceNodesOfSpecificClassesSpecification::_Accept(PresentationRuleSpecificationVisitor& visitor) const { visitor._Visit(*this); }
 
 /*---------------------------------------------------------------------------------**//**

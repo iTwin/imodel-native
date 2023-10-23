@@ -1,4 +1,4 @@
-// Copyright 2019 The Crashpad Authors. All rights reserved.
+// Copyright 2019 The Crashpad Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@
 
 #include <vector>
 
-#include "base/macros.h"
 #include "util/file/file_io.h"
 
 namespace crashpad {
@@ -29,6 +28,10 @@ namespace crashpad {
 //!     sockets.
 class UnixCredentialSocket {
  public:
+  UnixCredentialSocket() = delete;
+  UnixCredentialSocket(const UnixCredentialSocket&) = delete;
+  UnixCredentialSocket& operator=(const UnixCredentialSocket&) = delete;
+
   //! \brief Creates an `AF_UNIX` family socket pair with `SO_PASSCRED` set on
   //!     each socket.
   //!
@@ -40,7 +43,7 @@ class UnixCredentialSocket {
 
   //! \brief The maximum number of file descriptors that may be sent/received
   //!     with `SendMsg()` or `RecvMsg()`.
-  static const size_t kMaxSendRecvMsgFDs;
+  static constexpr size_t kMaxSendRecvMsgFDs = 4;
 
   //! \brief Wraps `sendmsg()` to send a message with file descriptors.
   //!
@@ -76,15 +79,16 @@ class UnixCredentialSocket {
   //! \param[out] creds The credentials of the sender.
   //! \param[out] fds The recieved file descriptors. Optional. If `nullptr`, all
   //!     received file descriptors will be closed.
-  //! \return `true` on success. Otherwise, `false`, with a message logged.
+  //! \return `true` on success. Otherwise, `false`, with a message logged. No
+  //!     message will be logged if the message was detected to be an EOF
+  //!     condition triggered by all clients disconnecting. This case is
+  //!     indistinguishable from misuses of this interface that haven't set
+  //!     `SO_PASSCRED` on \a fd.
   static bool RecvMsg(int fd,
                       void* buf,
                       size_t buf_size,
                       ucred* creds,
                       std::vector<ScopedFileHandle>* fds = nullptr);
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(UnixCredentialSocket);
 };
 
 }  // namespace crashpad

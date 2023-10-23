@@ -70,7 +70,16 @@ std::unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateBinder(ECSqlPrepareContex
         PropertyNameExp const& propNameExp = targetExp->GetAs<PropertyNameExp>();
         ECSqlSystemPropertyInfo const& sysPropInfo = propNameExp.GetSystemPropertyInfo();
         if (sysPropInfo.IsId() || propNameExp.GetTypeInfo().IsId())
-            return CreateIdBinder(ctx, propNameExp.GetPropertyMap(), sysPropInfo, paramNameGen);
+            if (propNameExp.GetClassRefExp()->GetType() == Exp::Type::CommonTableBlockName)
+                {
+                CommonTableBlockNameExp const& commonTableBlockNameExp = propNameExp.GetClassRefExp()->GetAs<CommonTableBlockNameExp>();
+                CommonTableBlockExp const* blockExp = commonTableBlockNameExp.GetBlock();
+                BeAssert(blockExp != nullptr);
+                ECSqlTypeInfo typeInfo = blockExp->FindType(propNameExp.GetPropertyName());
+                return CreateIdBinderForQuery(ctx, typeInfo, paramNameGen);
+                }
+            else
+                return CreateIdBinder(ctx, *propNameExp.GetPropertyMap(), sysPropInfo, paramNameGen);
         }
 
     if (const Exp* exp = parameterExp.FindParent(Exp::Type::FunctionCall))
@@ -147,6 +156,19 @@ std::unique_ptr<IdECSqlBinder> ECSqlBinderFactory::CreateIdBinder(ECSqlPrepareCo
     BeAssert(sysPropertyInfo.IsId() || ECSqlTypeInfo(propMap).IsId());
     const bool isNoopBinder = RequiresNoopBinder(ctx, propMap, sysPropertyInfo);
     return std::unique_ptr<IdECSqlBinder>(new IdECSqlBinder(ctx, ECSqlTypeInfo(propMap), isNoopBinder, paramNameGen));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+std::unique_ptr<IdECSqlBinder> ECSqlBinderFactory::CreateIdBinderForQuery(ECSqlPrepareContext& ctx, ECSqlTypeInfo const& typeInfo, ECSqlBinder::SqlParamNameGenerator& paramNameGen)
+    {
+    // Query expressions like SELECT/DELETE or UPDATE for AssignmentList expressions should call this function
+    BeAssert(ctx.GetCurrentScope().GetECSqlType() == ECSqlType::Select || ctx.GetCurrentScope().GetECSqlType() == ECSqlType::Delete
+        || (ctx.GetCurrentScope().GetECSqlType() == ECSqlType::Update && ctx.GetCurrentScope().GetExp().GetType() != Exp::Type::AssignmentList) && "ECSqlType is not supported and should have been caught before");
+    // SELECT/DELETE or UPDATE for AssignmentList expressions can use constant values for virtual columns and therefore don't need no-op binders
+    const bool isNoopBinder = false;
+    return std::unique_ptr<IdECSqlBinder>(new IdECSqlBinder(ctx, typeInfo, isNoopBinder, paramNameGen));
     }
 
 //---------------------------------------------------------------------------------------
@@ -285,7 +307,7 @@ ECSqlBinder* ECSqlParameterMap::AddBinder(ECSqlPrepareContext& ctx, ParameterExp
     if (binderP->HasToCallOnClearBindings())
         m_bindersToCallOnClearBindings.push_back(binderP);
 
-    //insert name to index mapping. 
+    //insert name to index mapping.
     if (parameterExp.IsNamedParameter())
         m_nameToIndexMapping[parameterExp.GetParameterName()] = parameterExp.GetParameterIndex();
 

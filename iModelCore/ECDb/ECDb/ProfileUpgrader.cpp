@@ -13,6 +13,14 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
+DbResult ProfileUpgrader_4004::_Upgrade(ECDbCR ecdb) const
+    {
+    return BE_SQLITE_OK;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
 DbResult ProfileUpgrader_4003::_Upgrade(ECDbCR ecdb) const
     {
     return BE_SQLITE_OK;
@@ -522,6 +530,10 @@ DbResult ProfileSchemaUpgrader::ImportProfileSchemas(ECDbCR ecdb, SchemaManager:
         return BE_SQLITE_ERROR;
 
     SchemaKey schemaKey("ECDbFileInfo", 2, 0, 1);
+    if (SUCCESS != ReadSchemaFromDisk(*context, schemaKey, ecdb.GetDbFileName()))
+        return BE_SQLITE_ERROR;
+
+    schemaKey = SchemaKey("ECDbMap", 2, 0, 2);
     if (SUCCESS != ReadSchemaFromDisk(*context, schemaKey, ecdb.GetDbFileName()))
         return BE_SQLITE_ERROR;
 

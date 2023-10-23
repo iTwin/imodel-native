@@ -549,7 +549,7 @@ ECObjectsStatus ECDbClassMapConverter::Convert(ECSchemaR schema, IECCustomAttrib
     if (ECObjectsStatus::Success != instance.GetValue(strategy, STRATEGY) || !convertStrategyName(strategy, instance, convertedStrategyName))
         {
         context->Issues().ReportV(
-            IssueSeverity::Warning, IssueCategory::BusinessProperties, IssueType::ECClass,
+            IssueSeverity::Warning, IssueCategory::BusinessProperties, IssueType::ECClass, ECIssueId::EC_0010,
             "Failed to convert ECDbMap:ClassMap on %s because the MapStrategy is not 'SharedTable with AppliesToSubclasses == true' or 'NotMapped'.  Removing and skipping.", container.GetContainerName().c_str()
         );
         return ECObjectsStatus::Success;
@@ -558,7 +558,8 @@ ECObjectsStatus ECDbClassMapConverter::Convert(ECSchemaR schema, IECCustomAttrib
     if (nullptr == context)
         {
         BeAssert(true);
-        context->Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, "Missing ECSchemaReadContext, it is necessary to perform conversion on a ECDbMap:ClassMap custom attribute.");
+        context->Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0011,
+            "Missing ECSchemaReadContext, it is necessary to perform conversion on a ECDbMap:ClassMap custom attribute.");
         return ECObjectsStatus::Error;
         }
 
@@ -859,9 +860,17 @@ ECObjectsStatus StandardValuesConverter::ConvertToEnum(ECClassP rootClass, ECCla
         PrimitiveArrayECPropertyP primitiveArray = prop->GetAsPrimitiveArrayPropertyP();
 
         ECEnumerationCP primitiveEnumeration = (nullptr != primitive) ? primitive->GetEnumeration() : primitiveArray->GetEnumeration();
-
         if (nullptr == primitiveEnumeration)
+            {
+            if (&(rootClass->GetSchema()) != &(currentClass->GetSchema()) &&
+                !ECSchema::IsSchemaReferenced(currentClass->GetSchema(), rootClass->GetSchema()) &&
+                ECObjectsStatus::Success != currentClass->GetSchemaR().AddReferencedSchema(rootClass->GetSchemaR()))
+                {
+                LOG.errorv("Unable to add the %s schema as a reference to %s.", rootClass->GetSchema().GetFullSchemaName().c_str(), currentClass->GetSchema().GetName().c_str());
+                return ECObjectsStatus::SchemaNotFound;
+                }
             status = (nullptr != primitive) ? primitive->SetType(*enumeration) : primitiveArray->SetType(*enumeration);
+            }
         else if (primitiveEnumeration != enumeration)
             {
             LOG.errorv("Failed to convert to enumeration because the derived property %s.%s already has an ECEnumeration '%s' as its type but it is not the same as the type '%s' from the base property in class %s.%s",

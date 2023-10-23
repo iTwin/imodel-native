@@ -10,7 +10,7 @@ import * as fs from "fs-extra";
 import * as os from "os";
 import * as path from "path";
 import { openDgnDb } from ".";
-import { IModelJsNative } from "../NativeLibrary";
+import { IModelJsNative, SchemaWriteStatus } from "../NativeLibrary";
 import { copyFile, dbFileName, getAssetsDir, getOutputDir, iModelJsNative } from "./utils";
 
 // Crash reporting on linux is gated by the presence of this env variable.
@@ -29,6 +29,149 @@ describe("basic tests", () => {
   after((done) => {
     dgndb.closeIModel();
     done();
+  });
+
+  it("schema synchronization", () => {
+
+    const copyAndOverrideFile = (from: string, to: string) => {
+      if (fs.existsSync(to)) {
+        fs.unlinkSync(to);
+      }
+      fs.copyFileSync(from, to);
+    };
+    const getCheckSum = (db: IModelJsNative.ECDb | IModelJsNative.DgnDb, type: "ecdb_schema" | "ecdb_map"| "sqlite_schema") => {
+      const stmt = new iModelJsNative.ECSqlStatement();
+      assert.equal(DbResult.BE_SQLITE_OK, stmt.prepare(db, `PRAGMA checksum(${type})`).status);
+      assert.equal(DbResult.BE_SQLITE_ROW,stmt.step());
+      const val = stmt.getValue(0).getString();
+      assert.isNotEmpty(val);
+      stmt.dispose();
+      return val;
+    };
+
+    const getSchemaHashes = (db: IModelJsNative.ECDb | IModelJsNative.DgnDb) => {
+      return {
+        eCDbSchema: getCheckSum(db, "ecdb_schema"),
+        eCDbMap: getCheckSum(db, "ecdb_map"),
+        sQLiteSchema: getCheckSum(db, "sqlite_schema"),
+      };
+    };
+
+    const baseDir = path.join(getOutputDir(), "shared-schema-channel");
+    if (fs.existsSync(baseDir)) {
+      fs.emptyDirSync(baseDir);
+      for (const file of fs.readdirSync(baseDir)) {
+        fs.unlinkSync(path.join(baseDir, file));
+      }
+    } else {
+      fs.mkdirSync(baseDir, { recursive: true });
+    }
+
+    // create empty sync db.
+    const syncDbUri = path.join(baseDir, "syncdb.ecdb");
+    const syncDb = new iModelJsNative.ECDb();
+    let rc: DbResult = syncDb.createDb(syncDbUri);
+    assert.equal(DbResult.BE_SQLITE_OK, rc);
+    syncDb.saveChanges();
+    syncDb.closeDb();
+
+    // create seed file.
+    const seedUri= path.join(baseDir, "seed.bim");
+    const iModelDb = new iModelJsNative.DgnDb();
+    iModelDb.createIModel(seedUri, { rootSubject: { name: "test file" } });
+
+    // initialize sync db.
+    iModelDb.schemaSyncInit(syncDbUri);
+    iModelDb.saveChanges();
+    iModelDb.performCheckpoint();
+
+    const localInfo = iModelDb.schemaSyncGetLocalDbInfo();
+    const sharedInfo = iModelDb.schemaSyncGetSyncDbInfo(syncDbUri);
+    assert.equal(localInfo?.id, sharedInfo?.id);
+    assert.equal(localInfo?.dataVer, sharedInfo?.dataVer);
+    assert.equal(localInfo?.dataVer, "0x2");
+    iModelDb.closeIModel();
+
+    // create first briefcase
+    const b0Uri = path.join(baseDir, "b0.bim");
+    copyAndOverrideFile(seedUri, b0Uri);
+    const b0 = new iModelJsNative.DgnDb();
+    b0.openIModel(b0Uri, OpenMode.ReadWrite);
+
+    // create second briefcase
+    const b1Uri = path.join(baseDir, "b1.bim");
+    copyAndOverrideFile(seedUri, b1Uri);
+    const b1 = new iModelJsNative.DgnDb();
+    b1.openIModel(b1Uri, OpenMode.ReadWrite);
+
+    // create second briefcase
+    const b2Uri = path.join(baseDir, "b2.bim");
+    copyAndOverrideFile(seedUri, b2Uri);
+    const b2 = new iModelJsNative.DgnDb();
+    b2.openIModel(b2Uri, OpenMode.ReadWrite);
+    // import schema in briefcase 1
+    const schema1 = `<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchema1" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+        <ECEntityClass typeName="Pipe1">
+            <BaseClass>bis:GeometricElement2d</BaseClass>
+            <ECProperty propertyName="p1" typeName="int" />
+            <ECProperty propertyName="p2" typeName="int" />
+        </ECEntityClass>
+    </ECSchema>`;
+    rc = b0.importXmlSchemas([schema1], { schemaSyncDbUri: syncDbUri });
+    assert.equal(DbResult.BE_SQLITE_OK, rc);
+
+    const schema2 = `<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchema1" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+        <ECEntityClass typeName="Pipe1">
+          <BaseClass>bis:GeometricElement2d</BaseClass>
+          <ECProperty propertyName="p1" typeName="int" />
+          <ECProperty propertyName="p2" typeName="int" />
+          <ECProperty propertyName="p3" typeName="int" />
+          <ECProperty propertyName="p4" typeName="int" />
+        </ECEntityClass>
+    </ECSchema>`;
+    rc = b1.importXmlSchemas([schema2], { schemaSyncDbUri: syncDbUri });
+    assert.equal(DbResult.BE_SQLITE_OK, rc);
+
+    b0.schemaSyncPull(syncDbUri);
+
+    // test default URI
+    b2.schemaSyncSetDefaultUri(syncDbUri);
+    assert.equal(b2.schemaSyncGetDefaultUri(), syncDbUri);
+    b2.schemaSyncPull();
+
+    // b1 = b2 == b0
+    const b0Hashes = getSchemaHashes(b0);
+    const b1Hashes = getSchemaHashes(b1);
+    const b2Hashes = getSchemaHashes(b2);
+    assert.deepEqual(b0Hashes, b1Hashes);
+    assert.deepEqual(b0Hashes, b2Hashes);
+
+    const schema3 = `<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchema1" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+        <ECEntityClass typeName="Pipe1">
+          <BaseClass>bis:GeometricElement2d</BaseClass>
+          <ECProperty propertyName="p1" typeName="int" />
+          <ECProperty propertyName="p2" typeName="int" />
+          <ECProperty propertyName="p3" typeName="int" />
+          <ECProperty propertyName="p4" typeName="int" />
+          <ECProperty propertyName="p5" typeName="int" />
+          <ECProperty propertyName="p6" typeName="int" />
+        </ECEntityClass>
+    </ECSchema>`;
+    rc = b2.importXmlSchemas([schema3]);
+    assert.equal(DbResult.BE_SQLITE_OK, rc);
+
+    b0.saveChanges();
+    b1.saveChanges();
+    b2.saveChanges();
+    b0.closeIModel();
+    b1.closeIModel();
+    b2.closeIModel();
   });
 
   // verify that throwing javascript exceptions from C++ works
@@ -509,5 +652,410 @@ describe("basic tests", () => {
         },
       }],
     });
+  });
+
+  describe("testConvertEC2XmlSchemas", () => {
+    const query = async (db: IModelJsNative.DgnDb, ecsql: string) => {
+      const request: DbQueryRequest = {
+        kind: DbRequestKind.ECSql,
+        query: ecsql,
+      };
+      return new Promise<DbQueryResponse>((resolve) => {
+        db.concurrentQueryExecute(request, (response) => {
+          resolve(response as DbQueryResponse);
+        });
+      });
+    };
+
+    it("verify namespace", () => {
+      const ec2SchemaXml = `<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+          <ECSchemaReference name="RefSchema" version="01.00" prefix="rs" />
+          <ECClass typeName="TestEntityClass" isDomainClass="true" />
+        </ECSchema>`;
+
+      const ec2RefSchema = `<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="RefSchema" nameSpacePrefix="rs" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+          <ECClass typeName="TestStructClass" isStruct="true" />
+        </ECSchema>`;
+
+      const ec3Schemas: string[] = iModelJsNative.SchemaUtility.convertEC2XmlSchemas([ec2SchemaXml, ec2RefSchema]);
+      assert.equal(ec3Schemas.length, 2);
+      // converted EC3 schemas are in the same order as of input schemas
+      const ec3SchemaXml = ec3Schemas[0];
+      const ec3RefSchema = ec3Schemas[1];
+
+      assert.isTrue(ec3SchemaXml.includes("http://www.bentley.com/schemas/Bentley.ECXML.3.2"));
+      assert.isTrue(ec3RefSchema.includes("http://www.bentley.com/schemas/Bentley.ECXML.3.2"));
+    });
+
+    it("schema import after deserialization", async () => {
+      const schemaXML = `<?xml version='1.0' encoding='UTF-8'?>
+        <ECSchema schemaName='Trap' version='78.00' nameSpacePrefix='tr' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>
+          <ECSchemaReference name='EditorCustomAttributes' version='01.00' prefix='beca' />
+          <ECSchemaReference name='TrapRef' version='78.00' prefix='trRef' />
+          <ECClass typeName='A' isStruct='false' isCustomAttributeClass='false' isDomainClass='true'>
+            <BaseClass>trRef:D</BaseClass>
+            <ECProperty propertyName='TitleA' typeName='int' displayLabel='Title'>
+              <ECCustomAttributes>
+                <StandardValues xmlns='EditorCustomAttributes.01.00'>
+                  <ValueMap>
+                    <ValueMap>
+                      <DisplayString>Sensei</DisplayString>
+                      <Value>0</Value>
+                    </ValueMap>
+                  </ValueMap>
+                </StandardValues>
+              </ECCustomAttributes>
+            </ECProperty>
+          </ECClass>
+        </ECSchema>`;
+
+      const schemaXMLRef = `<?xml version='1.0' encoding='UTF-8'?>
+        <ECSchema schemaName='TrapRef' version='78.00' nameSpacePrefix='trRef' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>
+          <ECSchemaReference name='BisCore' version='01.00' prefix='bis' />
+          <ECSchemaReference name='EditorCustomAttributes' version='01.00' prefix='beca' />
+          <ECClass typeName='D' isStruct='false' isCustomAttributeClass='false' isDomainClass='true'>
+            <BaseClass>bis:GraphicalElement3d</BaseClass>
+            <ECProperty propertyName='TitleA' typeName='int' displayLabel='Title'>
+              <ECCustomAttributes>
+                <StandardValues xmlns='EditorCustomAttributes.01.00'>
+                  <ValueMap>
+                    <ValueMap>
+                      <DisplayString>Sensei</DisplayString>
+                      <Value>0</Value>
+                    </ValueMap>
+                  </ValueMap>
+                </StandardValues>
+              </ECCustomAttributes>
+            </ECProperty>
+         </ECClass>
+        </ECSchema>`;
+
+      const ec3Schemas: string[] = iModelJsNative.SchemaUtility.convertEC2XmlSchemas([schemaXML, schemaXMLRef]);
+      assert.equal(ec3Schemas.length, 2);
+      // converted EC3 schemas are in the same order as of input schemas
+      const ec3SchemaXml = ec3Schemas[0];
+      const ec3RefSchema = ec3Schemas[1];
+
+      assert.isTrue(ec3SchemaXml.includes("http://www.bentley.com/schemas/Bentley.ECXML.3.2"));
+      assert.isTrue(ec3RefSchema.includes("http://www.bentley.com/schemas/Bentley.ECXML.3.2"));
+
+      const writeDbFileName = copyFile("SchemaImport.bim", dbFileName);
+      // Without ProfileOptions.Upgrade, we get: Error | ECDb | Failed to import schema 'RefSchema.01.00.00'. Current ECDb profile version (4.0.0.1) only support schemas with EC version < 3.2. ECDb profile version upgrade is required to import schemas with EC Version >= 3.2.
+      const db: IModelJsNative.DgnDb = openDgnDb(writeDbFileName, { profile: ProfileOptions.Upgrade, schemaLockHeld: true });
+      assert.isTrue(db !== undefined);
+      assert.isTrue(db.isOpen());
+
+      // importXmlSchemas expects schemas to be in dependency order
+      const rc = db.importXmlSchemas([ec3RefSchema, ec3SchemaXml], { schemaLockHeld: true });
+      assert.equal(rc, DbResult.BE_SQLITE_OK);
+      db.saveChanges();
+
+      const refSchema: IModelJsNative.SchemaProps = db.getSchemaProps("TrapRef");
+      expect(refSchema.name).equal("TrapRef");
+      assert.isTrue(refSchema.version === "78.00.00");
+
+      const schema: IModelJsNative.SchemaProps = db.getSchemaProps("Trap");
+      expect(schema.name).equal("Trap");
+      assert.isTrue(schema.version === "78.00.00");
+    });
+
+    it("rename reserved words", async () => {
+      const ec2SchemaXml = `<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+          <ECSchemaReference name='BisCore' version='01.00' prefix='bis' />
+          <ECClass typeName="TestEntityClass" isDomainClass="true">
+            <BaseClass>bis:GraphicalElement3d</BaseClass>
+            <ECProperty propertyName="Id" typeName="string" />
+            <ECProperty propertyName="ECInstanceId" typeName="string" />
+            <ECProperty propertyName="ECClassId" typeName="string" />
+            <ECProperty propertyName="SourceECInstanceId" typeName="string" />
+            <ECProperty propertyName="SourceId" typeName="string" />
+            <ECProperty propertyName="SourceECClassId" typeName="string" />
+            <ECProperty propertyName="TargetECInstanceId" typeName="string" />
+            <ECProperty propertyName="TargetId" typeName="string" />
+            <ECProperty propertyName="TargetECClassId" typeName="string" />
+          </ECClass>
+          <ECClass typeName="TestStructClass" isStruct="true">
+            <BaseClass>bis:GraphicalElement3d</BaseClass>
+            <ECProperty propertyName="Id" typeName="string" />
+            <ECProperty propertyName="ECInstanceId" typeName="string" />
+            <ECProperty propertyName="ECClassId" typeName="string" />
+          </ECClass>
+        </ECSchema>`;
+
+      const ec3Schemas: string[] = iModelJsNative.SchemaUtility.convertEC2XmlSchemas([ec2SchemaXml]);
+      const schemasWithUpdatedCA: string[] = iModelJsNative.SchemaUtility.convertCustomAttributes(ec3Schemas);
+
+      const writeDbFileName = copyFile("RenameReservedWords.bim", dbFileName);
+      // Without ProfileOptions.Upgrade, we get: Error | ECDb | Failed to import schema 'RefSchema.01.00.00'. Current ECDb profile version (4.0.0.1) only support schemas with EC version < 3.2. ECDb profile version upgrade is required to import schemas with EC Version >= 3.2.
+      const db: IModelJsNative.DgnDb = openDgnDb(writeDbFileName, { profile: ProfileOptions.Upgrade, schemaLockHeld: true });
+      assert.isTrue(db !== undefined);
+      assert.isTrue(db.isOpen());
+
+      const rc = db.importXmlSchemas(schemasWithUpdatedCA, { schemaLockHeld: true });
+      assert.equal(rc, DbResult.BE_SQLITE_OK);
+      db.saveChanges();
+
+      const schema: IModelJsNative.SchemaProps = db.getSchemaProps("TestSchema");
+      expect(schema.name).equal("TestSchema");
+      assert.isTrue(schema.version === "01.00.00");
+
+      let resp = await query(db, `SELECT p.Name FROM meta.ECPropertyDef p JOIN meta.ECClassDef c USING meta.ClassOwnsLocalProperties JOIN meta.ECSchemaDef s USING meta.SchemaOwnsClasses WHERE s.Name='TestSchema' AND c.Name='TestEntityClass' ORDER BY p.Ordinal`);
+      assert(resp.status === DbResponseStatus.Done);
+      assert(resp.error === "");
+      assert(resp.rowCount === 9);
+
+      // Function to check if a property exists in the given class/struct metadata
+      const doesPropertyExist = (properties: any, propertyName: string) => {
+        return Object.values(properties).some((property: any) => property[0] === propertyName);
+      };
+
+      assert.isFalse(doesPropertyExist(resp.data, "Id")); // The Id property is a reserved keyword and should have been renamed
+      assert.isFalse(doesPropertyExist(resp.data, "ECClassId"));  // The ECClassId property is a reserved keyword and should have been renamed
+      assert.isFalse(doesPropertyExist(resp.data, "ECInstanceId")); // The ECInstanceId property is a reserved keyword and should have been renamed
+      assert.isTrue(doesPropertyExist(resp.data, "TestSchema_Id_"));  // The Id property is a reserved keyword and should have been renamed
+      assert.isTrue(doesPropertyExist(resp.data, "TestSchema_ECClassId_")); // The ECClassId property is a reserved keyword and should have been renamed
+      assert.isTrue(doesPropertyExist(resp.data, "TestSchema_ECInstanceId_"));  // The ECInstanceId property is a reserved keyword and should have been renamed
+
+      assert.isTrue(doesPropertyExist(resp.data, "SourceECInstanceId"));  // The SourceECInstanceId property is allowed on Entity classes and should not be renamed
+      assert.isTrue(doesPropertyExist(resp.data, "SourceId"));  // The SourceId property is allowed on Entity classes and should not be renamed
+      assert.isTrue(doesPropertyExist(resp.data, "SourceECClassId")); // The SourceECClassId property is allowed on Entity classes and should not be renamed
+      assert.isTrue(doesPropertyExist(resp.data, "TargetECInstanceId"));  // The TargetECInstanceId property is allowed on Entity classes and should not be renamed
+      assert.isTrue(doesPropertyExist(resp.data, "TargetId"));  // The TargetId property is allowed on Entity classes and should not be renamed
+      assert.isTrue(doesPropertyExist(resp.data, "TargetECClassId")); // The TargetECClassId property is allowed on Entity classes and should not be renamed
+
+      resp = await query(db, `SELECT p.Name FROM meta.ECPropertyDef p JOIN meta.ECClassDef c USING meta.ClassOwnsLocalProperties JOIN meta.ECSchemaDef s USING meta.SchemaOwnsClasses WHERE s.Name='TestSchema' AND c.Name='TestStructClass' ORDER BY p.Ordinal`);
+      assert(resp.status === DbResponseStatus.Done);
+      assert(resp.error === "");
+      assert(resp.rowCount === 3);
+
+      assert.isTrue(doesPropertyExist(resp.data, "Id"));  // The Id property is not a reserved keyword for Struct classes and should not be renamed
+      assert.isTrue(doesPropertyExist(resp.data, "ECClassId")); // The ECClassId property is not a reserved keyword for Struct classes and should not be renamed
+      assert.isTrue(doesPropertyExist(resp.data, "ECInstanceId"));  // The ECInstanceId property is not a reserved keyword for Struct classes and should not be renamed
+      assert.isFalse(doesPropertyExist(resp.data, "TestSchema_Id_")); // The Id property is not a reserved keyword for Struct classes and should not be renamed
+      assert.isFalse(doesPropertyExist(resp.data, "TestSchema_ECClassId_"));  // The ECClassId property is not a reserved keyword for Struct classes and should not be renamed
+      assert.isFalse(doesPropertyExist(resp.data, "TestSchema_ECInstanceId_")); // The ECInstanceId property is not a reserved keyword for Struct classes and should not be renamed
+    });
+
+    it("enumeration in ref schema", async () => {
+      const schemaXML = `<?xml version='1.0' encoding='UTF-8'?>
+        <ECSchema schemaName='Trap' version='78.00' nameSpacePrefix='tr' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>
+          <ECSchemaReference name='EditorCustomAttributes' version='01.00' prefix='beca' />
+          <ECSchemaReference name='TrapRef' version='78.00' prefix='trRef' />
+          <ECClass typeName='A' isStruct='false' isCustomAttributeClass='false' isDomainClass='true'>
+            <BaseClass>trRef:D</BaseClass>
+            <ECProperty propertyName='TitleA' typeName='int' displayLabel='Title'>
+              <ECCustomAttributes>
+                <StandardValues xmlns='EditorCustomAttributes.01.00'>
+                  <ValueMap>
+                    <ValueMap>
+                      <DisplayString>Sensei</DisplayString>
+                      <Value>0</Value>
+                    </ValueMap>
+                  </ValueMap>
+                </StandardValues>
+              </ECCustomAttributes>
+            </ECProperty>
+          </ECClass>
+        </ECSchema>`;
+
+      const schemaXMLRef = `<?xml version='1.0' encoding='UTF-8'?>
+        <ECSchema schemaName='TrapRef' version='78.00' nameSpacePrefix='trRef' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>
+          <ECSchemaReference name='BisCore' version='01.00' prefix='bis' />
+          <ECSchemaReference name='EditorCustomAttributes' version='01.00' prefix='beca' />
+          <ECClass typeName='D' isStruct='false' isCustomAttributeClass='false' isDomainClass='true'>
+            <BaseClass>bis:GraphicalElement3d</BaseClass>
+            <ECProperty propertyName='TitleA' typeName='int' displayLabel='Title'>
+              <ECCustomAttributes>
+                <StandardValues xmlns='EditorCustomAttributes.01.00'>
+                  <ValueMap>
+                    <ValueMap>
+                      <DisplayString>Sensei</DisplayString>
+                      <Value>0</Value>
+                    </ValueMap>
+                  </ValueMap>
+                </StandardValues>
+              </ECCustomAttributes>
+            </ECProperty>
+         </ECClass>
+        </ECSchema>`;
+
+      const ec3Schemas: string[] = iModelJsNative.SchemaUtility.convertEC2XmlSchemas([schemaXML, schemaXMLRef]);
+      const schemasWithUpdatedCA: string[] = iModelJsNative.SchemaUtility.convertCustomAttributes(ec3Schemas);
+      assert.equal(schemasWithUpdatedCA.length, 2);
+      // converted EC3 schemas are in the same order as of input schemas
+      const ec3SchemaXml = schemasWithUpdatedCA[0];
+      const ec3RefSchema = schemasWithUpdatedCA[1];
+
+      const writeDbFileName = copyFile("SchemaConvertEnum.bim", dbFileName);
+      // Without ProfileOptions.Upgrade, we get: Error | ECDb | Failed to import schema 'RefSchema.01.00.00'. Current ECDb profile version (4.0.0.1) only support schemas with EC version < 3.2. ECDb profile version upgrade is required to import schemas with EC Version >= 3.2.
+      const db: IModelJsNative.DgnDb = openDgnDb(writeDbFileName, { profile: ProfileOptions.Upgrade, schemaLockHeld: true });
+      assert.isTrue(db !== undefined);
+      assert.isTrue(db.isOpen());
+
+      const rc = db.importXmlSchemas([ec3RefSchema, ec3SchemaXml], { schemaLockHeld: true });
+      assert.equal(rc, DbResult.BE_SQLITE_OK);
+      db.saveChanges();
+
+      const refSchema: IModelJsNative.SchemaProps = db.getSchemaProps("TrapRef");
+      expect(refSchema.name).equal("TrapRef");
+      assert.isTrue(refSchema.version === "78.00.00");
+      const schema: IModelJsNative.SchemaProps = db.getSchemaProps("Trap");
+      expect(schema.name).equal("Trap");
+      assert.isTrue(schema.version === "78.00.00");
+
+      // Enumeration should have been created in refschema
+      let resp = await query(db, `SELECT e.Name FROM meta.ECSchemaDef s JOIN meta.ECEnumerationDef e USING meta.SchemaOwnsEnumerations WHERE s.Name='${refSchema.name}'`);
+      assert(resp.status === DbResponseStatus.Done);
+      assert(resp.error === "");
+      assert(resp.rowCount === 1);
+      assert(resp.data[0], "D_TitleA");
+
+      // Enumeration should not have been created in schema
+      resp = await query(db, `SELECT e.Name, e.* FROM meta.ECSchemaDef s JOIN meta.ECEnumerationDef e USING meta.SchemaOwnsEnumerations WHERE s.Name='${schema.name}'`);
+      assert(resp.status === DbResponseStatus.Done);
+      assert(resp.error === "");
+      assert(resp.rowCount === 0);
+    });
+
+    it("reference schema is in schemaContext", async () => {
+      const schemaXMLRef = `<?xml version='1.0' encoding='UTF-8'?>
+        <ECSchema schemaName='TrapRef' version='78.00' nameSpacePrefix='trRef' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>
+          <ECSchemaReference name='BisCore' version='01.00' prefix='bis' />
+          <ECSchemaReference name='EditorCustomAttributes' version='01.00' prefix='beca' />
+          <ECClass typeName='D' isStruct='false' isCustomAttributeClass='false' isDomainClass='true'>
+            <BaseClass>bis:GraphicalElement3d</BaseClass>
+            <ECProperty propertyName='TitleA' typeName='int' displayLabel='Title'>
+              <ECCustomAttributes>
+                <StandardValues xmlns='EditorCustomAttributes.01.00'>
+                  <ValueMap>
+                    <ValueMap>
+                      <DisplayString>Sensei</DisplayString>
+                      <Value>0</Value>
+                    </ValueMap>
+                  </ValueMap>
+                </StandardValues>
+              </ECCustomAttributes>
+            </ECProperty>
+         </ECClass>
+        </ECSchema>`;
+
+      const refSchemaPath = path.join(getOutputDir(), "TrapRef.78.00.00.ecschema.xml");
+      fs.writeFileSync(refSchemaPath, schemaXMLRef);
+
+      const schemaContext = new iModelJsNative.ECSchemaXmlContext();
+      schemaContext.addSchemaPath(getOutputDir());
+
+      const schemaXML = `<?xml version='1.0' encoding='UTF-8'?>
+        <ECSchema schemaName='Trap' version='78.00' nameSpacePrefix='tr' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>
+          <ECSchemaReference name='EditorCustomAttributes' version='01.00' prefix='beca' />
+          <ECSchemaReference name='TrapRef' version='78.00' prefix='trRef' />
+          <ECClass typeName='A' isStruct='false' isCustomAttributeClass='false' isDomainClass='true'>
+            <BaseClass>trRef:D</BaseClass>
+            <ECProperty propertyName='TitleA' typeName='int' displayLabel='Title'>
+              <ECCustomAttributes>
+                <StandardValues xmlns='EditorCustomAttributes.01.00'>
+                  <ValueMap>
+                    <ValueMap>
+                      <DisplayString>Sensei</DisplayString>
+                      <Value>0</Value>
+                    </ValueMap>
+                  </ValueMap>
+                </StandardValues>
+              </ECCustomAttributes>
+            </ECProperty>
+          </ECClass>
+        </ECSchema>`;
+
+      const ec3Schemas: string[] = iModelJsNative.SchemaUtility.convertEC2XmlSchemas([schemaXML], schemaContext);
+      assert.equal(ec3Schemas.length, 1);
+      // converted EC3 schemas are in the same order as of input schemas
+      const ec3SchemaXml = ec3Schemas[0];
+
+      assert.isTrue(ec3SchemaXml.includes("http://www.bentley.com/schemas/Bentley.ECXML.3.2"));
+    });
+  });
+
+  it("export ECXml 3.1 schema which is using ECXml 3.2 unit as persistence unit", async () => {
+    // This test covers the scenario where we have a schema with ECXml version 3.1 which is using a KoQ with a unit that's defined in ECXml 3.2.
+    // Since the 3.1 version only checks the legacy unit mappings, the export as a ECXml 3.1 schema fails.
+    // In this scenario, when the export fails, we will try to export the schema as an ECXml 3.2 schema instead.
+
+    if (fs.existsSync("testSchemaExport.bim"))
+      fs.unlinkSync("testSchemaExport.bim");
+
+    const testDb = openDgnDb(copyFile("testSchemaExport.bim", dbFileName), { profile: ProfileOptions.Upgrade, schemaLockHeld: true });
+    assert.isTrue(testDb !== undefined);
+
+    // Import the schema as ECXML 3.2 which has ECXml 3.2 unit LUMEN_PER_W
+    assert.equal(DbResult.BE_SQLITE_OK, testDb.importXmlSchemas([`<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" displayLabel="TestSchema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+        <ECSchemaReference name="Formats" version="01.00.00" alias="f"/>
+        <ECSchemaReference name="Units" version="01.00.07" alias="u"/>
+        <ECEnumeration typeName="TestEnum" backingTypeName="int" isStrict="true">
+            <ECEnumerator name="Test_ENUM0" value="0" displayLabel="Test_ENUM0"/>
+            <ECEnumerator name="Test_ENUM1" value="1" displayLabel="Test_ENUM1"/>
+        </ECEnumeration>
+        <ECEntityClass typeName="TestClass" displayLabel="TestClass">
+            <BaseClass>bis:PhysicalElement</BaseClass>
+            <ECProperty propertyName="TestProp" typeName="double" displayLabel="TestProp" readOnly="true" category="TestCategory" kindOfQuantity="TestKoq"/>
+        </ECEntityClass>
+        <KindOfQuantity typeName="TestKoq" displayLabel="TestKoq" persistenceUnit="u:LUMEN_PER_W" relativeError="10.763910416709722" presentationUnits="f:DefaultRealU[u:LUMEN_PER_W]"/>
+        <PropertyCategory typeName="TestCategory" displayLabel="TestCategory" priority="200000"/>
+    </ECSchema>`]));
+
+    testDb.saveChanges();
+
+    // Modify the ECXml version of the schema to 3.1 directly in the db
+    const statement = new iModelJsNative.SqliteStatement();
+    statement.prepare(testDb, `update ec_Schema set OriginalECXmlVersionMajor=3, OriginalECXmlVersionMinor=1 where Name='TestSchema'`);
+    expect(statement.step()).to.be.eql(DbResult.BE_SQLITE_DONE);
+    statement.dispose();
+
+    // Export ECXml 3.1 schema to xml file
+    const status = testDb.exportSchema(`TestSchema`, getOutputDir(), `ExportedTestSchema.ecschema.xml`);
+    assert.equal(status, SchemaWriteStatus.Success, `Exporting the ECXml 3.1 schema is expected to fail due to incorrect KoQ. Schema should retry serialization as an ECXml 3.2 schema and succeed`);
+    assert.isTrue(fs.existsSync(path.join(getOutputDir(), `ExportedTestSchema.ecschema.xml`)));
+
+    const xmlVersionStr = `xmlns="http://www.bentley.com/schemas/Bentley.`;
+    const koqStr = `<KindOfQuantity typeName="TestKoq" displayLabel="TestKoq" persistenceUnit="u:LUMEN_PER_W" relativeError="10.763910416709722" presentationUnits="f:DefaultRealU[u:LUMEN_PER_W]"/>`;
+    const propStr = `<ECProperty propertyName="TestProp" typeName="double" displayLabel="TestProp" readOnly="true" category="TestCategory" kindOfQuantity="TestKoq"/>`;
+    const propCatStr = `<PropertyCategory typeName="TestCategory" displayLabel="TestCategory" priority="200000"/>`;
+
+    // Read the exported file to check if schema was serialized as ECXml 3.2
+    const exportedFileStr = fs.readFileSync(path.join(getOutputDir(), `ExportedTestSchema.ecschema.xml`), { encoding: "utf8"});
+    assert.notEqual(exportedFileStr, undefined);
+    expect(exportedFileStr.includes(`${xmlVersionStr}ECXML.3.2"`)).to.be.true;
+    expect(exportedFileStr.includes(`${xmlVersionStr}ECXML.3.1"`)).to.be.false;
+    expect(exportedFileStr.includes(koqStr)).to.be.true;
+    expect(exportedFileStr.includes(propStr)).to.be.true;
+    expect(exportedFileStr.includes(propCatStr)).to.be.true;
+
+    // Export ECXml 3.1 schema to a xml string as ECXml 3.1
+    let schemaXmlStr = testDb.schemaToXmlString("TestSchema", IModelJsNative.ECVersion.V3_1);
+    assert.notEqual(schemaXmlStr, undefined);
+
+    // Check if schema was serialized as ECXml 3.2
+    expect(schemaXmlStr!.includes(`${xmlVersionStr}ECXML.3.2"`)).to.be.true;
+    expect(schemaXmlStr!.includes(`${xmlVersionStr}ECXML.3.1"`)).to.be.false;
+    expect(schemaXmlStr!.includes(koqStr)).to.be.true;
+    expect(schemaXmlStr!.includes(propStr)).to.be.true;
+    expect(schemaXmlStr!.includes(propCatStr)).to.be.true;
+
+    // Export ECXml 3.1 schema to a xml string as latest ECXml
+    schemaXmlStr = testDb.schemaToXmlString("TestSchema");
+    assert.notEqual(schemaXmlStr, undefined);
+
+    // Check if schema was serialized as ECXml 3.2
+    expect(schemaXmlStr!.includes(`${xmlVersionStr}ECXML.3.2"`)).to.be.true;
+    expect(schemaXmlStr!.includes(`${xmlVersionStr}ECXML.3.1"`)).to.be.false;
+    expect(schemaXmlStr!.includes(koqStr)).to.be.true;
+    expect(schemaXmlStr!.includes(propStr)).to.be.true;
+    expect(schemaXmlStr!.includes(propCatStr)).to.be.true;
+
+    testDb.closeIModel();
   });
 });

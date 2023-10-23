@@ -28,7 +28,7 @@ DgnDbFonts::DgnDbFonts(DgnDbR db) : m_fontDb(db, false) {
 /*---------------------------------------------------------------------------------**/ /**
  * @bsimethod
  +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDb::DgnDb() : m_profileVersion(0, 0, 0, 0), m_fonts(*this), m_domains(*this), m_lineStyles(new DgnLineStyles(*this)),
+DgnDb::DgnDb() : m_profileVersion(0, 0, 0, 0), m_fonts(std::make_unique<DgnDbFonts>(*this)), m_domains(*this), m_lineStyles(new DgnLineStyles(*this)),
                  m_geoLocation(*this), m_models(*this), m_elements(*this),
                  m_codeSpecs(*this), m_ecsqlCache(50, "DgnDb"), m_searchableText(*this), m_elementIdSequence(*this, "bis_elementidsequence") {
     ApplyECDbSettings(true /* requireECCrudWriteToken */, true /* requireECSchemaImportToken */);
@@ -144,6 +144,7 @@ void DgnDb::Destroy() {
     m_models.Empty();
     m_txnManager = nullptr;
     m_lineStyles = nullptr;
+    m_fonts = nullptr;
     m_cacheECInstanceInserter.clear();
     ClearECSqlCache();
 }
@@ -265,6 +266,13 @@ DbResult DgnDb::InitializeSchemas(Db::OpenParams const& params)
         status = Domains().UpgradeSchemas(schemasToImport, domainsToImport, schemaImportOptions);
         return SchemaStatusToDbResult(status, true /*=isUpgrade*/);
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//--------------------------------------------------------------------------------------
+DgnDb::PullResult DgnDb::PullSchemaChanges(SyncDbUri uri) {
+    return Schemas().GetSchemaSync().Pull(uri, GetSchemaImportToken());
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod

@@ -283,20 +283,22 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Clas
 /*---------------------------------------------------------------------------------**//**
 // @betest
 +---------------+---------------+---------------+---------------+---------------+------*/
-DEFINE_SCHEMA(SelectedNodeInstances_SchemasAcceptablePolymorphically_BaseSchema, R"*(
+DEFINE_MULTIPLE_SCHEMAS(SelectedNodeInstances_SchemasAcceptablePolymorphically, bvector<Utf8String>({
+    R"*(
     <ECEntityClass typeName="A" />
-)*");
-DEFINE_SCHEMA(SelectedNodeInstances_SchemasAcceptablePolymorphically, R"*(
-    <ECSchemaReference name="SelectedNodeInstances_SchemasAcceptablePolymorphically_BaseSchema" version="01.00" alias="base" />
+    )*",
+    R"*(
+    <ECSchemaReference name="SelectedNodeInstances_SchemasAcceptablePolymorphically_1" version="01.00" alias="base" />
     <ECEntityClass typeName="B">
         <BaseClass>base:A</BaseClass>
     </ECEntityClass>
-)*");
+    )*"
+}));
 TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_SchemasAcceptablePolymorphically)
     {
     // set up the dataset
-    ECClassCP classA = GetClass(Utf8PrintfString("%s_BaseSchema", BeTest::GetNameOfCurrentTest()).c_str(), "A");
-    ECClassCP classB = GetClass("B");
+    ECClassCP classA = GetClass(Utf8PrintfString("%s_1", BeTest::GetNameOfCurrentTest()).c_str(), "A");
+    ECClassCP classB = GetClass(Utf8PrintfString("%s_2", BeTest::GetNameOfCurrentTest()).c_str(), "B");
 
     IECInstancePtr b = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
 
@@ -326,20 +328,22 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Schem
 /*---------------------------------------------------------------------------------**//**
 // @betest
 +---------------+---------------+---------------+---------------+---------------+------*/
-DEFINE_SCHEMA(SelectedNodeInstances_SchemasAndClassesAcceptablePolymorphically_BaseSchema, R"*(
+DEFINE_MULTIPLE_SCHEMAS(SelectedNodeInstances_SchemasAndClassesAcceptablePolymorphically, bvector<Utf8String>({
+    R"*(
     <ECEntityClass typeName="A" />
-)*");
-DEFINE_SCHEMA(SelectedNodeInstances_SchemasAndClassesAcceptablePolymorphically, R"*(
-    <ECSchemaReference name="SelectedNodeInstances_SchemasAndClassesAcceptablePolymorphically_BaseSchema" version="01.00" alias="base" />
+    )*",
+    R"*(
+    <ECSchemaReference name="SelectedNodeInstances_SchemasAndClassesAcceptablePolymorphically_1" version="01.00" alias="base" />
     <ECEntityClass typeName="B">
         <BaseClass>base:A</BaseClass>
     </ECEntityClass>
-)*");
+    )*"
+}));
 TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_SchemasAndClassesAcceptablePolymorphically)
     {
     // set up the dataset
-    ECClassCP classA = GetClass(Utf8PrintfString("%s_BaseSchema", BeTest::GetNameOfCurrentTest()).c_str(), "A");
-    ECClassCP classB = GetClass("B");
+    ECClassCP classA = GetClass(Utf8PrintfString("%s_1", BeTest::GetNameOfCurrentTest()).c_str(), "A");
+    ECClassCP classB = GetClass(Utf8PrintfString("%s_2", BeTest::GetNameOfCurrentTest()).c_str(), "B");
 
     IECInstancePtr b = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
 
@@ -965,7 +969,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DescriptorOverride_FiltersB
     {
     ECClassCP classA = GetClass("A");
     BeGuid instanceGuid1 = BeGuid(true);
-    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [instanceGuid1](IECInstanceR instance) 
+    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [instanceGuid1](IECInstanceR instance)
         {
         instance.SetValue("GuidProp", ECValue((Byte const*)&instanceGuid1, sizeof(BeGuid)));
         });
@@ -3133,6 +3137,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
 
     ContentRuleP rule = new ContentRule("", 1, false);
     ContentSpecificationP specification = new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false);
+    specification->AddCalculatedProperty(*new CalculatedPropertiesSpecification("instance id", 1000, "this.ECInstanceId"));
+    specification->AddCalculatedProperty(*new CalculatedPropertiesSpecification("class id", 1000, "this.ECClassId"));
     specification->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label1", 1000, "\"Value\""));
     specification->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label2", 1100, "1+2"));
     specification->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label3", 1200, "this.Property"));
@@ -3142,23 +3148,31 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     // validate descriptor
     ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
-    ASSERT_EQ(4, descriptor->GetVisibleFields().size());
+    ASSERT_EQ(6, descriptor->GetVisibleFields().size());
 
     ASSERT_TRUE(descriptor->GetVisibleFields()[1]->IsCalculatedPropertyField());
     ASSERT_TRUE(descriptor->GetVisibleFields()[2]->IsCalculatedPropertyField());
     ASSERT_TRUE(descriptor->GetVisibleFields()[3]->IsCalculatedPropertyField());
+    ASSERT_TRUE(descriptor->GetVisibleFields()[4]->IsCalculatedPropertyField());
+    ASSERT_TRUE(descriptor->GetVisibleFields()[5]->IsCalculatedPropertyField());
 
-    EXPECT_STREQ("label1", descriptor->GetVisibleFields()[1]->AsCalculatedPropertyField()->GetLabel().c_str());
-    EXPECT_STREQ("label2", descriptor->GetVisibleFields()[2]->AsCalculatedPropertyField()->GetLabel().c_str());
-    EXPECT_STREQ("label3", descriptor->GetVisibleFields()[3]->AsCalculatedPropertyField()->GetLabel().c_str());
+    EXPECT_STREQ("instance id", descriptor->GetVisibleFields()[1]->AsCalculatedPropertyField()->GetLabel().c_str());
+    EXPECT_STREQ("class id", descriptor->GetVisibleFields()[2]->AsCalculatedPropertyField()->GetLabel().c_str());
+    EXPECT_STREQ("label1", descriptor->GetVisibleFields()[3]->AsCalculatedPropertyField()->GetLabel().c_str());
+    EXPECT_STREQ("label2", descriptor->GetVisibleFields()[4]->AsCalculatedPropertyField()->GetLabel().c_str());
+    EXPECT_STREQ("label3", descriptor->GetVisibleFields()[5]->AsCalculatedPropertyField()->GetLabel().c_str());
 
     EXPECT_EQ(1000, descriptor->GetVisibleFields()[1]->GetPriority());
-    EXPECT_EQ(1100, descriptor->GetVisibleFields()[2]->GetPriority());
-    EXPECT_EQ(1200, descriptor->GetVisibleFields()[3]->GetPriority());
+    EXPECT_EQ(1000, descriptor->GetVisibleFields()[2]->GetPriority());
+    EXPECT_EQ(1000, descriptor->GetVisibleFields()[3]->GetPriority());
+    EXPECT_EQ(1100, descriptor->GetVisibleFields()[4]->GetPriority());
+    EXPECT_EQ(1200, descriptor->GetVisibleFields()[5]->GetPriority());
 
-    EXPECT_STREQ("\"Value\"", descriptor->GetVisibleFields()[1]->AsCalculatedPropertyField()->GetValueExpression().c_str());
-    EXPECT_STREQ("1+2", descriptor->GetVisibleFields()[2]->AsCalculatedPropertyField()->GetValueExpression().c_str());
-    EXPECT_STREQ("this.Property", descriptor->GetVisibleFields()[3]->AsCalculatedPropertyField()->GetValueExpression().c_str());
+    EXPECT_STREQ("this.ECInstanceId", descriptor->GetVisibleFields()[1]->AsCalculatedPropertyField()->GetValueExpression().c_str());
+    EXPECT_STREQ("this.ECClassId", descriptor->GetVisibleFields()[2]->AsCalculatedPropertyField()->GetValueExpression().c_str());
+    EXPECT_STREQ("\"Value\"", descriptor->GetVisibleFields()[3]->AsCalculatedPropertyField()->GetValueExpression().c_str());
+    EXPECT_STREQ("1+2", descriptor->GetVisibleFields()[4]->AsCalculatedPropertyField()->GetValueExpression().c_str());
+    EXPECT_STREQ("this.Property", descriptor->GetVisibleFields()[5]->AsCalculatedPropertyField()->GetValueExpression().c_str());
 
     // request for content
     ContentCPtr content = GetVerifiedContent(*descriptor);
@@ -3170,9 +3184,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     rapidjson::Document jsonDoc = contentSet.Get(0)->AsJson();
     RapidJsonValueCR jsonValues = jsonDoc["Values"];
 
-    EXPECT_STREQ("Value", jsonValues["CalculatedProperty_0"].GetString());
-    EXPECT_STREQ("3", jsonValues["CalculatedProperty_1"].GetString());
-    EXPECT_STREQ("Test", jsonValues["CalculatedProperty_2"].GetString());
+    EXPECT_STREQ(BeInt64Id::FromString(instance->GetInstanceId().c_str()).ToHexStr().c_str(), jsonValues["CalculatedProperty_0"].GetString());
+    EXPECT_STREQ(BeInt64Id(classA->GetId()).ToHexStr().c_str(), jsonValues["CalculatedProperty_1"].GetString());
+    EXPECT_STREQ("Value", jsonValues["CalculatedProperty_2"].GetString());
+    EXPECT_STREQ("3", jsonValues["CalculatedProperty_3"].GetString());
+    EXPECT_STREQ("Test", jsonValues["CalculatedProperty_4"].GetString());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5579,9 +5595,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, FindsCachedDescriptorWhenAl
     spec->AddPropertyOverride(*new PropertySpecification("Property", 1000, "", nullptr, "GetVariableBoolValue(\"related\")"));
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor1 = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), 
+    ContentDescriptorCPtr descriptor1 = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(),
         RulesetVariables({ RulesetVariableEntry("related", true), RulesetVariableEntry("not_related", false) }), nullptr, 0, *input)));
-    ContentDescriptorCPtr descriptor2 = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), 
+    ContentDescriptorCPtr descriptor2 = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(),
         RulesetVariables({ RulesetVariableEntry("related", true), RulesetVariableEntry("not_related", true) }), nullptr, 0, *input)));
 
     EXPECT_EQ(descriptor1, descriptor2);
@@ -6083,6 +6099,140 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     EXPECT_EQ(1, fieldsC.size()); // PropertyC
     EXPECT_STREQ("PropertyC", fieldsC[0]->GetLabel().c_str());
     EXPECT_STREQ("InstanceC", jsonValues[NESTED_CONTENT_FIELD_NAME(classA, classB)][0]["Values"][NESTED_CONTENT_FIELD_NAME(classB, classC)][0]["Values"][FIELD_NAME(classC, "PropertyC")].GetString());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(ContentInstancesOfSpecificClassesSpecification_ContentModifierAppliesSpecificRelatedPropertiesOnNestedContentProperties, R"*(
+    <ECEntityClass typeName="A">
+    </ECEntityClass>
+    <ECEntityClass typeName="B">
+    </ECEntityClass>
+    <ECEntityClass typeName="C">
+        <ECProperty propertyName="PropertyC1" typeName="string" />
+        <ECProperty propertyName="PropertyC2" typeName="string" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="A_Has_B" strength="referencing" strengthDirection="forward" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="references" polymorphic="True">
+            <Class class="A" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="is referenced by" polymorphic="True">
+            <Class class="B" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="B_Has_C" strength="referencing" strengthDirection="forward" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="references" polymorphic="True">
+            <Class class="B" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="is referenced by" polymorphic="True">
+            <Class class="C" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificClassesSpecification_ContentModifierAppliesSpecificRelatedPropertiesOnNestedContentProperties)
+    {
+    // set up data set
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECClassCP classC = GetClass("C");
+    ECRelationshipClassCP relationshipAHasB = GetClass("A_Has_B")->GetRelationshipClassCP();
+    ECRelationshipClassCP relationshipBHasC = GetClass("B_Has_C")->GetRelationshipClassCP();
+
+    IECInstancePtr instanceA = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance) {});
+    IECInstancePtr instanceB = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance) {});
+    IECInstancePtr instanceC = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC, [](IECInstanceR instance)
+        {
+        instance.SetValue("PropertyC1", ECValue("C1"));
+        instance.SetValue("PropertyC2", ECValue("C2"));
+        });
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipAHasB, *instanceA, *instanceB);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipBHasC, *instanceB, *instanceC);
+
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false);
+    contentRule->AddSpecification(*spec);
+
+    ContentModifierP relatedPropertiesModifierAtoB = new ContentModifier(GetSchema()->GetName(), classA->GetName());
+    relatedPropertiesModifierAtoB->AddRelatedProperty(*new RelatedPropertiesSpecification(*new RelationshipPathSpecification(
+        {
+        new RelationshipStepSpecification(relationshipAHasB->GetFullName(), RequiredRelationDirection_Forward, classB->GetFullName())
+        }), { new PropertySpecification("*") }, RelationshipMeaning::RelatedInstance));
+
+    ContentModifierP relatedPropertiesModifierBtoC = new ContentModifier(GetSchema()->GetName(), classB->GetName());
+    relatedPropertiesModifierBtoC->AddRelatedProperty(*new RelatedPropertiesSpecification(*new RelationshipPathSpecification(
+        {
+        new RelationshipStepSpecification(relationshipBHasC->GetFullName(), RequiredRelationDirection_Forward, classC->GetFullName())
+        }), { new PropertySpecification("*") }, RelationshipMeaning::RelatedInstance));
+    relatedPropertiesModifierBtoC->SetApplyOnNestedContent(true);
+
+    rules->AddPresentationRule(*contentRule);
+    rules->AddPresentationRule(*relatedPropertiesModifierAtoB);
+    rules->AddPresentationRule(*relatedPropertiesModifierBtoC);
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+
+    // only select PropertyC2
+    ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
+    auto classBField = modifiedDescriptor->GetVisibleFields()[0]->AsNestedContentField();
+    auto classCField = classBField->GetFields()[0]->AsNestedContentField();
+    auto propertyC2Field = classCField->GetFields()[1];
+    EXPECT_STREQ("PropertyC2", propertyC2Field->GetLabel().c_str());
+    modifiedDescriptor->ExclusivelyIncludeFields({ propertyC2Field });
+    modifiedDescriptor->SetExclusiveIncludePaths(std::make_shared<RelatedClassPathsList>(RelatedClassPathsList{
+        RelatedClassPath{
+            RelatedClass(*classA, SelectClass<ECRelationshipClass>(*relationshipAHasB, ""), true, SelectClassWithExcludes<ECClass>(*classB, "")),
+            RelatedClass(*classB, SelectClass<ECRelationshipClass>(*relationshipBHasC, ""), true, SelectClassWithExcludes<ECClass>(*classC, "")),
+            },
+        }));
+
+    // request for content
+    ContentCPtr content = GetVerifiedContent(*modifiedDescriptor);
+    ASSERT_TRUE(content.IsValid());
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+
+    rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
+    rapidjson::Document expectedValues;
+    expectedValues.Parse(Utf8PrintfString(R"({
+        "%s": [{
+            "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
+            "Values": {
+                "%s": [{
+                    "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
+                    "Values": {
+                        "%s": "C2"
+                        },
+                    "DisplayValues": {
+                        "%s": "C2"
+                        },
+                    "MergedFieldNames": []
+                    }]
+                },
+            "DisplayValues": {
+                "%s": [{
+                    "DisplayValues": {
+                        "%s": "C2"
+                        }
+                    }]
+                },
+            "MergedFieldNames": []
+            }]
+    })",
+        NESTED_CONTENT_FIELD_NAME(classA, classB),
+        instanceB->GetClass().GetId().ToString().c_str(), instanceB->GetInstanceId().c_str(),
+        NESTED_CONTENT_FIELD_NAME(classB, classC),
+        instanceC->GetClass().GetId().ToString().c_str(), instanceC->GetInstanceId().c_str(),
+        FIELD_NAME(classC, "PropertyC2"), FIELD_NAME(classC, "PropertyC2"),
+        NESTED_CONTENT_FIELD_NAME(classB, classC),
+        FIELD_NAME(classC, "PropertyC2")
+    ).c_str());
+    EXPECT_EQ(expectedValues, recordJson["Values"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -17165,7 +17315,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetContentForDisplayLabelGr
 
     // validate content descriptor
     NavNodeKeyCPtr selectedNode = rootNodes[0]->GetKey();
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), 
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(),
         rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create(*selectedNode))));
     ASSERT_TRUE(descriptor.IsValid());
 
@@ -17234,4 +17384,197 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetContentForDisplayLabelGr
 
     // validate content
     RulesEngineTestHelpers::ValidateContentSet({ instanceB.get() }, *content);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(CreatesDescriptorWithAllFieldsIncludedWhenExclusiveIncludePathsAreNotProvided, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="PropA" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="B">
+        <ECProperty propertyName="PropB" typeName="string" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="A_B" strength="embedding" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="ab" polymorphic="True">
+            <Class class="A" />
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="ba" polymorphic="True">
+            <Class class="B" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, CreatesDescriptorWithAllFieldsIncludedWhenExclusiveIncludePathsAreNotProvided)
+    {
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECRelationshipClassCP relationshipAHasB = GetClass("A_B")->GetRelationshipClassCP();
+
+    IECInstancePtr instanceA = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance) {});
+    IECInstancePtr instanceB = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance) {});
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipAHasB, *instanceA, *instanceB);
+
+    PresentationRuleSetPtr ruleset = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    ContentRuleP rule = new ContentRule();
+    ContentInstancesOfSpecificClassesSpecificationP contentSpec = new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false);
+    contentSpec->AddRelatedProperty(*new RelatedPropertiesSpecification(*new RelationshipPathSpecification(
+        {
+        new RelationshipStepSpecification(relationshipAHasB->GetFullName(), RequiredRelationDirection_Forward),
+        }), { new PropertySpecification("*") }, RelationshipMeaning::SameInstance));
+    rule->AddSpecification(*contentSpec);
+    ruleset->AddPresentationRule(*rule);
+    m_locater->AddRuleSet(*ruleset);
+
+    // no paths means all fields should be included
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(),
+        ruleset->GetRuleSetId(), RulesetVariables(), "", 0, *KeySet::Create(), nullptr, nullptr)));
+    ASSERT_TRUE(descriptor.IsValid());
+
+    auto fields = descriptor->GetVisibleFields();
+    ASSERT_EQ(fields.size(), 2);
+    EXPECT_STREQ(fields[0]->GetLabel().c_str(), "PropA");
+    auto nestedFields = fields[1]->AsNestedContentField()->GetFields();
+    ASSERT_EQ(nestedFields.size(), 1);
+    EXPECT_STREQ(nestedFields[0]->GetLabel().c_str(), "PropB");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(CreatesDescriptorWithOnlySelectClassFieldsIncludedWhenExclusiveIncludePathsAreProvidedButEmpty, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="PropA" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="B">
+        <ECProperty propertyName="PropB" typeName="string" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="A_B" strength="embedding" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="ab" polymorphic="True">
+            <Class class="A" />
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="ba" polymorphic="True">
+            <Class class="B" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, CreatesDescriptorWithOnlySelectClassFieldsIncludedWhenExclusiveIncludePathsAreProvidedButEmpty)
+    {
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECRelationshipClassCP relationshipAHasB = GetClass("A_B")->GetRelationshipClassCP();
+
+    IECInstancePtr instanceA = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance) {});
+    IECInstancePtr instanceB = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance) {});
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipAHasB, *instanceA, *instanceB);
+
+    PresentationRuleSetPtr ruleset = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    ContentRuleP rule = new ContentRule();
+    ContentInstancesOfSpecificClassesSpecificationP contentSpec = new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false);
+    contentSpec->AddRelatedProperty(*new RelatedPropertiesSpecification(*new RelationshipPathSpecification(
+        {
+        new RelationshipStepSpecification(relationshipAHasB->GetFullName(), RequiredRelationDirection_Forward),
+        }), { new PropertySpecification("*") }, RelationshipMeaning::SameInstance));
+    rule->AddSpecification(*contentSpec);
+    ruleset->AddPresentationRule(*rule);
+    m_locater->AddRuleSet(*ruleset);
+
+    // empty path means only select class fields should be included
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(),
+        ruleset->GetRuleSetId(), RulesetVariables(), "", 0, *KeySet::Create(), nullptr, std::make_shared<RelatedClassPathsList>(RelatedClassPathsList()))));
+    ASSERT_TRUE(descriptor.IsValid());
+
+    auto fields = descriptor->GetVisibleFields();
+    ASSERT_EQ(fields.size(), 1);
+    ASSERT_STREQ(fields[0]->GetLabel().c_str(), "PropA");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(CreatesDescriptorWithCorrectNestedClassFieldsWhenExclusiveIncludePathsAreProvided, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="PropA" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="B">
+        <ECProperty propertyName="PropB" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="C">
+        <ECProperty propertyName="PropC" typeName="string" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="A_B" strength="embedding" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="ab" polymorphic="True">
+            <Class class="A" />
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="ba" polymorphic="True">
+            <Class class="B" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="B_C" strength="embedding" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="bc" polymorphic="True">
+            <Class class="B" />
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="cb" polymorphic="True">
+            <Class class="C" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, CreatesDescriptorWithCorrectNestedClassFieldsWhenExclusiveIncludePathsAreProvided)
+    {
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECClassCP classC = GetClass("C");
+    ECRelationshipClassCP relationshipAHasB = GetClass("A_B")->GetRelationshipClassCP();
+    ECRelationshipClassCP relationshipBHasC = GetClass("B_C")->GetRelationshipClassCP();
+
+    IECInstancePtr instanceA = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance) {});
+    IECInstancePtr instanceB = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance) {});
+    IECInstancePtr instanceC = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC, [](IECInstanceR instance) {});
+
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipAHasB, *instanceA, *instanceB);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipBHasC, *instanceB, *instanceC);
+
+    PresentationRuleSetPtr ruleset = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    ContentRuleP rule = new ContentRule();
+    ContentInstancesOfSpecificClassesSpecificationP contentSpec = new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false);
+    RelatedPropertiesSpecificationP relatedSpec = new RelatedPropertiesSpecification(*new RelationshipPathSpecification(
+        {
+        new RelationshipStepSpecification(relationshipAHasB->GetFullName(), RequiredRelationDirection_Forward),
+        }), { new PropertySpecification("*") }, RelationshipMeaning::SameInstance);
+
+    // add 2 nested related properties
+    // A -> B -> C
+    relatedSpec->AddNestedRelatedProperty(*new RelatedPropertiesSpecification(*new RelationshipPathSpecification(
+        {
+        new RelationshipStepSpecification(relationshipBHasC->GetFullName(), RequiredRelationDirection_Forward),
+        }), { new PropertySpecification("*") }, RelationshipMeaning::SameInstance));
+    // A -> B -> A
+    relatedSpec->AddNestedRelatedProperty(*new RelatedPropertiesSpecification(*new RelationshipPathSpecification(
+        {
+        new RelationshipStepSpecification(relationshipAHasB->GetFullName(), RequiredRelationDirection_Backward),
+        }), { new PropertySpecification("*") }, RelationshipMeaning::SameInstance));
+    contentSpec->AddRelatedProperty(*relatedSpec);
+    rule->AddSpecification(*contentSpec);
+    ruleset->AddPresentationRule(*rule);
+    m_locater->AddRuleSet(*ruleset);
+
+    // include only A -> B -> C path
+    std::shared_ptr<RelatedClassPathsList> exclusiveIncludePaths = std::make_shared<RelatedClassPathsList>(RelatedClassPathsList(
+        {
+        RelatedClassPath(
+            {
+            RelatedClass(*classA, SelectClass<ECRelationshipClass>(*relationshipAHasB, "A_B"), true, SelectClassWithExcludes<ECClass>(*classB, "B")),
+            RelatedClass(*classB, SelectClass<ECRelationshipClass>(*relationshipBHasC, "B_C"), true, SelectClassWithExcludes<ECClass>(*classC, "C"))
+            }),
+        }));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(),
+        ruleset->GetRuleSetId(), RulesetVariables(), "", 0, *KeySet::Create(), nullptr, exclusiveIncludePaths)));
+    ASSERT_TRUE(descriptor.IsValid());
+
+    auto fields = descriptor->GetVisibleFields();
+    ASSERT_EQ(fields.size(), 2);
+    ASSERT_STREQ(fields[0]->GetLabel().c_str(), "PropA");
+    auto nestedFields = fields[1]->AsNestedContentField()->GetFields();
+    ASSERT_EQ(nestedFields.size(), 1);
+    EXPECT_STREQ(nestedFields[0]->GetLabel().c_str(), "PropC");
     }

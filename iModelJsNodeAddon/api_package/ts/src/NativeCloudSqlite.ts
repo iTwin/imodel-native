@@ -60,6 +60,10 @@ export namespace NativeCloudSqlite {
     readonly transactions: boolean;
     /** the state of this database. Indicates whether the database is new or deleted since last upload */
     readonly state: "" | "copied" | "deleted";
+    /** current number of clients that have this database open. */
+    readonly nClient: number;
+    /** current number of ongoing prefetches on this database. */
+    readonly nPrefetch: number;
   }
 
   /** Returned from 'CloudContainer.queryHttpLog' describing a row in the bcv_http_log table. */
@@ -80,6 +84,29 @@ export namespace NativeCloudSqlite {
     readonly uri: string;
     /** HTTP response code (e.g. 200) */
     readonly httpcode: number;
+  }
+
+  /** Returned from 'CloudContainer.queryBcvStats' describing the rows in the bcv_stat table.
+   *  Also gathers additional statistics using the other virtual tables bcv_container, bcv_database
+   *  such as totalClients, ongoingPrefetches, activeClients and attachedContainers.
+   */
+  export interface BcvStats {
+    /** The total number of cache slots that are currently in use or 'locked' by ongoing client read transactions. In daemonless mode, this value is always 0.
+     *  A locked cache slot implies that it is not eligible for eviction in the event of a full cachefile.
+    */
+    readonly lockedCacheslots: number;
+    /** The current number of slots with data in them in the cache. */
+    readonly populatedCacheslots: number;
+    /** The configured size of the cache, in number of slots. */
+    readonly totalCacheslots: number;
+    /** The total number of clients opened on this cache */
+    readonly totalClients?: number;
+    /** The total number of ongoing prefetches on this cache */
+    readonly ongoingPrefetches?: number;
+    /** The total number of active clients on this cache. An active client is one which has an open read txn. */
+    readonly activeClients?: number;
+    /** The total number of attached containers on this cache. */
+    readonly attachedContainers?: number;
   }
 
   /** Properties for accessing a CloudContainer */

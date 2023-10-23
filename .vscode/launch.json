@@ -14,7 +14,7 @@
             "program": "${env:OutRoot}Winx64/Product/iModelPlatform-Gtest/iModelPlatformTest.exe",
             "args": [
                 "--gtest_break_on_failure",
-                "--gtest_filter=VersionCompareTestFixture.*"
+                "--gtest_filter=DgnDbTest.ImportSchemaWithLocalChanges"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
@@ -53,7 +53,7 @@
             "program": "${env:OutRoot}Winx64/Product/ECDb-Gtest/ECDbTest.exe",
             "args": [
                 "--gtest_break_on_failure",
-                "--gtest_filter=InstanceReaderFixture.nested_struct"
+                "--gtest_filter=SchemaSyncTestFixture.Test"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
@@ -221,6 +221,27 @@
                 "--gtest_break_on_failure"
             ]
         },
+        {
+            "name": "LNX TilesetPublisher",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}LinuxX64/Product/TilesetPublisher/TilesetPublisher",
+            "cwd": "${workspaceFolder}",
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "args": [
+                "-i /media/paul/External 2TB SDD1/bim/NormalMaps/Cubes32PBR_A.bim",
+                "-o /home/paul/imdl"
+            ]
+        },
+
         {
           "name": "MacOS Native Single iModelPlatformTest",
           "type": "cppdbg",

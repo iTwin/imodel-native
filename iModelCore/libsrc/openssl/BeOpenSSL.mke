@@ -52,9 +52,6 @@ dirToSearch = $(vendorSrc)
 dirToSearch = $(vendorSrc)include/
 %include cincapnd.mki
 
-dirToSearch = $(vendorSrc)include/crypto/
-%include cincapnd.mki
-
 dirToSearch = $(vendorSrc)crypto/modes/
 %include cincapnd.mki
 
@@ -98,9 +95,27 @@ nameToDefine = ENGINESDIR=\"\"
     nameToDefine = OPENSSL_CPUID_OBJ
     %include cdefapnd.mki
 
+    nameToDefine = AES_ASM
+    %include cdefapnd.mki
+
+    nameToDefine = VPAES_ASM
+    %include cdefapnd.mki
+
+    nameToDefine = BSAES_ASM
+    %include cdefapnd.mki
+
 %elif $(TARGET_PLATFORM) == "Linux"
 
     nameToDefine = OPENSSL_CPUID_OBJ
+    %include cdefapnd.mki
+
+    nameToDefine = AES_ASM
+    %include cdefapnd.mki
+
+    nameToDefine = VPAES_ASM
+    %include cdefapnd.mki
+
+    nameToDefine = BSAES_ASM
     %include cdefapnd.mki
 
 %elif $(TARGET_PLATFORM) == "WinRT"
@@ -129,6 +144,15 @@ nameToDefine = ENGINESDIR=\"\"
 
     %if $(TARGET_PROCESSOR_ARCHITECTURE) != "AndroidARM64"
         nameToDefine = OPENSSL_CPUID_OBJ
+        %include cdefapnd.mki
+
+        nameToDefine = AES_ASM
+        %include cdefapnd.mki
+
+        nameToDefine = VPAES_ASM
+        %include cdefapnd.mki
+
+        nameToDefine = BSAES_ASM
         %include cdefapnd.mki
     %endif
 
@@ -238,11 +262,11 @@ $(o)threads_win$(oext) : $(vendorSrc)crypto/threads_win.c ${MultiCompileDepends}
 
 $(o)trace$(oext) : $(vendorSrc)crypto/trace.c ${MultiCompileDepends}
 
-$(o)aes_cbc$(oext) : $(vendorSrc)crypto/aes/aes_cbc.c ${MultiCompileDepends}
+#$(o)aes_cbc$(oext) : $(vendorSrc)crypto/aes/aes_cbc.c ${MultiCompileDepends}
 
 $(o)aes_cfb$(oext) : $(vendorSrc)crypto/aes/aes_cfb.c ${MultiCompileDepends}
 
-$(o)aes_core$(oext) : $(vendorSrc)crypto/aes/aes_core.c ${MultiCompileDepends}
+#$(o)aes_core$(oext) : $(vendorSrc)crypto/aes/aes_core.c ${MultiCompileDepends}
 
 $(o)aes_ecb$(oext) : $(vendorSrc)crypto/aes/aes_ecb.c ${MultiCompileDepends}
 
@@ -528,9 +552,6 @@ $(o)buf_err$(oext) : $(vendorSrc)crypto/buffer/buf_err.c ${MultiCompileDepends}
 
 $(o)buffer$(oext) : $(vendorSrc)crypto/buffer/buffer.c ${MultiCompileDepends}
 
-$(o)camellia$(oext) : $(vendorSrc)crypto/camellia/camellia.c ${MultiCompileDepends}
-
-$(o)cmll_cbc$(oext) : $(vendorSrc)crypto/camellia/cmll_cbc.c ${MultiCompileDepends}
 
 $(o)cmll_cfb$(oext) : $(vendorSrc)crypto/camellia/cmll_cfb.c ${MultiCompileDepends}
 
@@ -552,7 +573,6 @@ $(o)c_ofb64$(oext) : $(vendorSrc)crypto/cast/c_ofb64.c ${MultiCompileDepends}
 
 $(o)c_skey$(oext) : $(vendorSrc)crypto/cast/c_skey.c ${MultiCompileDepends}
 
-$(o)chacha_enc$(oext) : $(vendorSrc)crypto/chacha/chacha_enc.c ${MultiCompileDepends}
 
 $(o)cmac$(oext) : $(vendorSrc)crypto/cmac/cmac.c ${MultiCompileDepends}
 
@@ -1296,10 +1316,6 @@ $(o)rc2cfb64$(oext) : $(vendorSrc)crypto/rc2/rc2cfb64.c ${MultiCompileDepends}
 
 $(o)rc2ofb64$(oext) : $(vendorSrc)crypto/rc2/rc2ofb64.c ${MultiCompileDepends}
 
-$(o)rc4_enc$(oext) : $(vendorSrc)crypto/rc4/rc4_enc.c ${MultiCompileDepends}
-
-$(o)rc4_skey$(oext) : $(vendorSrc)crypto/rc4/rc4_skey.c ${MultiCompileDepends}
-
 $(o)rmd_dgst$(oext) : $(vendorSrc)crypto/ripemd/rmd_dgst.c ${MultiCompileDepends}
 
 $(o)rmd_one$(oext) : $(vendorSrc)crypto/ripemd/rmd_one.c ${MultiCompileDepends}
@@ -1366,7 +1382,6 @@ $(o)seed_ecb$(oext) : $(vendorSrc)crypto/seed/seed_ecb.c ${MultiCompileDepends}
 
 $(o)seed_ofb$(oext) : $(vendorSrc)crypto/seed/seed_ofb.c ${MultiCompileDepends}
 
-$(o)keccak1600$(oext) : $(vendorSrc)crypto/sha/keccak1600.c ${MultiCompileDepends}
 
 $(o)sha1_one$(oext) : $(vendorSrc)crypto/sha/sha1_one.c ${MultiCompileDepends}
 
@@ -1450,7 +1465,6 @@ $(o)ui_util$(oext) : $(vendorSrc)crypto/ui/ui_util.c ${MultiCompileDepends}
 
 $(o)uid$(oext) : $(vendorSrc)crypto/uid.c ${MultiCompileDepends}
 
-$(o)wp_block$(oext) : $(vendorSrc)crypto/whrlpool/wp_block.c ${MultiCompileDepends}
 
 $(o)wp_dgst$(oext) : $(vendorSrc)crypto/whrlpool/wp_dgst.c ${MultiCompileDepends}
 
@@ -1606,6 +1620,27 @@ $(o)v3_utl$(oext) : $(vendorSrc)crypto/x509/v3_utl.c ${MultiCompileDepends}
 
 $(o)v3err$(oext) : $(vendorSrc)crypto/x509/v3err.c ${MultiCompileDepends}
 
+# Can't compile these files on these platforms, because they have symbols already defined in assembly files.
+%if ($(TARGET_PLATFORM) != "Linux" && $(TARGET_PLATFORM) != "Android" && $(TARGET_PLATFORM) != "Windows") || $(TARGET_PROCESSOR_ARCHITECTURE) == "AndroidARM64"
+    $(o)wp_block$(oext) : $(vendorSrc)crypto/whrlpool/wp_block.c ${MultiCompileDepends}
+
+    $(o)keccak1600$(oext) : $(vendorSrc)crypto/sha/keccak1600.c ${MultiCompileDepends}
+
+    $(o)rc4_enc$(oext) : $(vendorSrc)crypto/rc4/rc4_enc.c ${MultiCompileDepends}
+
+    $(o)rc4_skey$(oext) : $(vendorSrc)crypto/rc4/rc4_skey.c ${MultiCompileDepends}
+
+    $(o)chacha_enc$(oext) : $(vendorSrc)crypto/chacha/chacha_enc.c ${MultiCompileDepends}
+
+    $(o)camellia$(oext) : $(vendorSrc)crypto/camellia/camellia.c ${MultiCompileDepends}
+
+    $(o)cmll_cbc$(oext) : $(vendorSrc)crypto/camellia/cmll_cbc.c ${MultiCompileDepends}
+
+    $(o)aes_cbc$(oext) : $(vendorSrc)crypto/aes/aes_cbc.c ${MultiCompileDepends}
+
+    $(o)aes_core$(oext) : $(vendorSrc)crypto/aes/aes_core.c ${MultiCompileDepends}
+
+%endif
 #----------------------------------------------------------------------------------------
 # SSL
 
@@ -2060,33 +2095,85 @@ $(o)file_store$(oext) : $(vendorSrc)providers/implementations/storemgmt/file_sto
 objs =% $(MultiCompileObjectList)
 
 #LINUX/ANDROID ASSEMBLY GENERATION
-#D:\bim0200\src\libsrc\openssl\vendor>perl ./crypto/x86_64cpuid.pl ./crypto/x86_64cpuid.s
-#perl ./crypto/aes/asm/aesni-x86_64.pl ./crypto/aes/asm/aesni-x86_64.s
-#perl ./crypto/modes/asm/aesni-gcm-x86_64.pl ./crypto/modes/asm/aesni-gcm-x86_64.s
-#perl ./crypto/modes/asm/ghash-x86_64.pl ./crypto/modes/asm/ghash-x86_64.s
-#perl ./crypto/ec/asm/x25519-x86_64.pl ./crypto/ec/asm/x25519-x86_64.s
+#Run ./Configure and make in WSL/Linux machine. 
 #WINDOWS ASSEMBLY GENERATION
-#perl ./crypto/x86_64cpuid.pl masm ./crypto/x86_64cpuid.asm
-#perl ./crypto/aes/asm/aesni-x86_64.pl masm ./crypto/aes/asm/aesni-x86_64.asm
-#perl ./crypto/modes/asm/aesni-gcm-x86_64.pl masm ./crypto/modes/asm/aesni-gcm-x86_64.asm
-#perl ./crypto/modes/asm/ghash-x86_64.pl masm ./crypto/modes/asm/ghash-x86_64.asm
-#perl ./crypto/ec/asm/x25519-x86_64.pl masm ./crypto/ec/asm/x25519-x86_64.asm
+#perl generateAssemblyForWindows.pl   
 # -- ASM ------------------------------------------------------------------------------------------
 %if $(TARGET_PLATFORM) == "Linux"
     .s.o:
         |[== Building $@, ($=) ==]
         $(BENTLEY_LINUX_TOOLCHAIN_compile) -I$(vendorSrc) -c $< -o $@
+ 
+    $(o)aes-x86_64$(oext) : $(vendorSrc)/crypto/aes/aes-x86_64.s ${MultiCompileDepends}
 
-    $(o)x86_64cpuid$(oext) : $(vendorSrc)crypto/x86_64cpuid.s ${MultiCompileDepends}
+    $(o)aesni-mb-x86_64$(oext) : $(vendorSrc)/crypto/aes/aesni-mb-x86_64.s ${MultiCompileDepends}
 
-    $(o)aesni-x86_64$(oext) : $(vendorSrc)crypto/aes/asm/aesni-x86_64.s ${MultiCompileDepends}
+    $(o)aesni-sha1-x86_64$(oext) : $(vendorSrc)/crypto/aes/aesni-sha1-x86_64.s ${MultiCompileDepends}
 
-    $(o)aesni-gcm-x86_64$(oext) : $(vendorSrc)crypto/modes/asm/aesni-gcm-x86_64.s ${MultiCompileDepends}
+    $(o)aesni-sha256-x86_64$(oext) : $(vendorSrc)/crypto/aes/aesni-sha256-x86_64.s ${MultiCompileDepends}
 
-    $(o)ghash-x86_64$(oext) : $(vendorSrc)crypto/modes/asm/ghash-x86_64.s ${MultiCompileDepends}
+    $(o)aesni-x86_64$(oext) : $(vendorSrc)/crypto/aes/aesni-x86_64.s ${MultiCompileDepends}
+
+    $(o)bsaes-x86_64$(oext) : $(vendorSrc)/crypto/aes/bsaes-x86_64.s ${MultiCompileDepends}
+
+    $(o)vpaes-x86_64$(oext) : $(vendorSrc)/crypto/aes/vpaes-x86_64.s ${MultiCompileDepends}
+
+    $(o)rsaz-2k-avx512$(oext) : $(vendorSrc)/crypto/bn/rsaz-2k-avx512.s ${MultiCompileDepends}
+
+    $(o)rsaz-3k-avx512$(oext) : $(vendorSrc)/crypto/bn/rsaz-3k-avx512.s ${MultiCompileDepends}
+
+    $(o)rsaz-4k-avx512$(oext) : $(vendorSrc)/crypto/bn/rsaz-4k-avx512.s ${MultiCompileDepends}
+
+    $(o)rsaz-avx2$(oext) : $(vendorSrc)/crypto/bn/rsaz-avx2.s ${MultiCompileDepends}
+
+    $(o)rsaz-x86_64$(oext) : $(vendorSrc)/crypto/bn/rsaz-x86_64.s ${MultiCompileDepends}
+
+    $(o)x86_64-gf2m$(oext) : $(vendorSrc)/crypto/bn/x86_64-gf2m.s ${MultiCompileDepends}
+
+    $(o)x86_64-mont$(oext) : $(vendorSrc)/crypto/bn/x86_64-mont.s ${MultiCompileDepends}
+
+    $(o)x86_64-mont5$(oext) : $(vendorSrc)/crypto/bn/x86_64-mont5.s ${MultiCompileDepends}
+
+    $(o)cmll-x86_64$(oext) : $(vendorSrc)/crypto/camellia/cmll-x86_64.s ${MultiCompileDepends}
+
+    $(o)chacha-x86_64$(oext) : $(vendorSrc)/crypto/chacha/chacha-x86_64.s ${MultiCompileDepends}
+
+    $(o)ecp_nistz256-x86_64$(oext) : $(vendorSrc)/crypto/ec/ecp_nistz256-x86_64.s ${MultiCompileDepends}
+
+    $(o)x25519-x86_64$(oext) : $(vendorSrc)/crypto/ec/x25519-x86_64.s ${MultiCompileDepends}
+
+    $(o)md5-x86_64$(oext) : $(vendorSrc)/crypto/md5/md5-x86_64.s ${MultiCompileDepends}
+
+    $(o)aes-gcm-avx512$(oext) : $(vendorSrc)/crypto/modes/aes-gcm-avx512.s ${MultiCompileDepends}
+
+    $(o)aesni-gcm-x86_64$(oext) : $(vendorSrc)/crypto/modes/aesni-gcm-x86_64.s ${MultiCompileDepends}
+
+    $(o)ghash-x86_64$(oext) : $(vendorSrc)/crypto/modes/ghash-x86_64.s ${MultiCompileDepends}
+
+    $(o)poly1305-x86_64$(oext) : $(vendorSrc)/crypto/poly1305/poly1305-x86_64.s ${MultiCompileDepends}
+
+    $(o)rc4-md5-x86_64$(oext) : $(vendorSrc)/crypto/rc4/rc4-md5-x86_64.s ${MultiCompileDepends}
+
+    $(o)rc4-x86_64$(oext) : $(vendorSrc)/crypto/rc4/rc4-x86_64.s ${MultiCompileDepends}
+
+    $(o)keccak1600-x86_64$(oext) : $(vendorSrc)/crypto/sha/keccak1600-x86_64.s ${MultiCompileDepends}
+
+    $(o)sha1-mb-x86_64$(oext) : $(vendorSrc)/crypto/sha/sha1-mb-x86_64.s ${MultiCompileDepends}
+
+    $(o)sha1-x86_64$(oext) : $(vendorSrc)/crypto/sha/sha1-x86_64.s ${MultiCompileDepends}
+
+    $(o)sha256-mb-x86_64$(oext) : $(vendorSrc)/crypto/sha/sha256-mb-x86_64.s ${MultiCompileDepends}
+
+    $(o)sha512-x86_64$(oext) : $(vendorSrc)/crypto/sha/sha512-x86_64.s ${MultiCompileDepends}
+
+    $(o)sha256-x86_64$(oext) : $(vendorSrc)/crypto/sha/sha256-x86_64.s ${MultiCompileDepends}
+
+    $(o)wp-x86_64$(oext) : $(vendorSrc)/crypto/whrlpool/wp-x86_64.s ${MultiCompileDepends}
+
+    $(o)x86_64cpuid$(oext) : $(vendorSrc)/crypto/x86_64cpuid.s ${MultiCompileDepends}
 
     always:
-      ~set objs $(objs) $(o)x86_64cpuid$(oext) $(o)aesni-x86_64$(oext) $(o)aesni-gcm-x86_64$(oext) $(o)ghash-x86_64$(oext)
+        ~set objs $(objs) $(o)aes-x86_64$(oext) $(o)aesni-mb-x86_64$(oext) $(o)aesni-sha1-x86_64$(oext) $(o)aesni-sha256-x86_64$(oext) $(o)aesni-x86_64$(oext) $(o)bsaes-x86_64$(oext) $(o)vpaes-x86_64$(oext) $(o)rsaz-2k-avx512$(oext) $(o)rsaz-3k-avx512$(oext) $(o)rsaz-4k-avx512$(oext) $(o)rsaz-avx2$(oext) $(o)rsaz-x86_64$(oext) $(o)x86_64-gf2m$(oext) $(o)x86_64-mont$(oext) $(o)x86_64-mont5$(oext) $(o)cmll-x86_64$(oext) $(o)chacha-x86_64$(oext) $(o)ecp_nistz256-x86_64$(oext) $(o)x25519-x86_64$(oext) $(o)md5-x86_64$(oext) $(o)aes-gcm-avx512$(oext) $(o)aesni-gcm-x86_64$(oext) $(o)ghash-x86_64$(oext) $(o)poly1305-x86_64$(oext) $(o)rc4-md5-x86_64$(oext) $(o)rc4-x86_64$(oext) $(o)keccak1600-x86_64$(oext) $(o)sha1-mb-x86_64$(oext) $(o)sha1-x86_64$(oext) $(o)sha256-mb-x86_64$(oext) $(o)sha512-x86_64$(oext) $(o)sha256-x86_64$(oext) $(o)wp-x86_64$(oext) $(o)x86_64cpuid$(oext)
 
 #TODO: AndroidARM requires different files than Android,
 #if we wish to support hw acceleration (or if there is a use case for it) on androidarm, work
@@ -2103,32 +2190,152 @@ objs =% $(MultiCompileObjectList)
         |[== Building $@, ($=) ==]
         $(BENTLEY_ANDROID_TOOLCHAIN_compile) --target=x86_64-linux-android30 -I$(vendorSrc) -c $< -o $@
 
-    $(o)x86_64cpuid$(oext) : $(vendorSrc)crypto/x86_64cpuid.s ${MultiCompileDepends}
+    $(o)aes-x86_64$(oext) : $(vendorSrc)/crypto/aes/aes-x86_64.s ${MultiCompileDepends}
 
-    $(o)aesni-x86_64$(oext) : $(vendorSrc)crypto/aes/asm/aesni-x86_64.s ${MultiCompileDepends}
+    $(o)aesni-mb-x86_64$(oext) : $(vendorSrc)/crypto/aes/aesni-mb-x86_64.s ${MultiCompileDepends}
 
-    $(o)aesni-gcm-x86_64$(oext) : $(vendorSrc)crypto/modes/asm/aesni-gcm-x86_64.s ${MultiCompileDepends}
+    $(o)aesni-sha1-x86_64$(oext) : $(vendorSrc)/crypto/aes/aesni-sha1-x86_64.s ${MultiCompileDepends}
 
-    $(o)ghash-x86_64$(oext) : $(vendorSrc)crypto/modes/asm/ghash-x86_64.s ${MultiCompileDepends}
+    $(o)aesni-sha256-x86_64$(oext) : $(vendorSrc)/crypto/aes/aesni-sha256-x86_64.s ${MultiCompileDepends}
+
+    $(o)aesni-x86_64$(oext) : $(vendorSrc)/crypto/aes/aesni-x86_64.s ${MultiCompileDepends}
+
+    $(o)bsaes-x86_64$(oext) : $(vendorSrc)/crypto/aes/bsaes-x86_64.s ${MultiCompileDepends}
+
+    $(o)vpaes-x86_64$(oext) : $(vendorSrc)/crypto/aes/vpaes-x86_64.s ${MultiCompileDepends}
+
+    $(o)rsaz-2k-avx512$(oext) : $(vendorSrc)/crypto/bn/rsaz-2k-avx512.s ${MultiCompileDepends}
+
+    $(o)rsaz-3k-avx512$(oext) : $(vendorSrc)/crypto/bn/rsaz-3k-avx512.s ${MultiCompileDepends}
+
+    $(o)rsaz-4k-avx512$(oext) : $(vendorSrc)/crypto/bn/rsaz-4k-avx512.s ${MultiCompileDepends}
+
+    $(o)rsaz-avx2$(oext) : $(vendorSrc)/crypto/bn/rsaz-avx2.s ${MultiCompileDepends}
+
+    $(o)rsaz-x86_64$(oext) : $(vendorSrc)/crypto/bn/rsaz-x86_64.s ${MultiCompileDepends}
+
+    $(o)x86_64-gf2m$(oext) : $(vendorSrc)/crypto/bn/x86_64-gf2m.s ${MultiCompileDepends}
+
+    $(o)x86_64-mont$(oext) : $(vendorSrc)/crypto/bn/x86_64-mont.s ${MultiCompileDepends}
+
+    $(o)x86_64-mont5$(oext) : $(vendorSrc)/crypto/bn/x86_64-mont5.s ${MultiCompileDepends}
+
+    $(o)cmll-x86_64$(oext) : $(vendorSrc)/crypto/camellia/cmll-x86_64.s ${MultiCompileDepends}
+
+    $(o)chacha-x86_64$(oext) : $(vendorSrc)/crypto/chacha/chacha-x86_64.s ${MultiCompileDepends}
+
+    $(o)ecp_nistz256-x86_64$(oext) : $(vendorSrc)/crypto/ec/ecp_nistz256-x86_64.s ${MultiCompileDepends}
+
+    $(o)x25519-x86_64$(oext) : $(vendorSrc)/crypto/ec/x25519-x86_64.s ${MultiCompileDepends}
+
+    $(o)md5-x86_64$(oext) : $(vendorSrc)/crypto/md5/md5-x86_64.s ${MultiCompileDepends}
+
+    $(o)aes-gcm-avx512$(oext) : $(vendorSrc)/crypto/modes/aes-gcm-avx512.s ${MultiCompileDepends}
+
+    $(o)aesni-gcm-x86_64$(oext) : $(vendorSrc)/crypto/modes/aesni-gcm-x86_64.s ${MultiCompileDepends}
+
+    $(o)ghash-x86_64$(oext) : $(vendorSrc)/crypto/modes/ghash-x86_64.s ${MultiCompileDepends}
+
+    $(o)poly1305-x86_64$(oext) : $(vendorSrc)/crypto/poly1305/poly1305-x86_64.s ${MultiCompileDepends}
+
+    $(o)rc4-md5-x86_64$(oext) : $(vendorSrc)/crypto/rc4/rc4-md5-x86_64.s ${MultiCompileDepends}
+
+    $(o)rc4-x86_64$(oext) : $(vendorSrc)/crypto/rc4/rc4-x86_64.s ${MultiCompileDepends}
+
+    $(o)keccak1600-x86_64$(oext) : $(vendorSrc)/crypto/sha/keccak1600-x86_64.s ${MultiCompileDepends}
+
+    $(o)sha1-mb-x86_64$(oext) : $(vendorSrc)/crypto/sha/sha1-mb-x86_64.s ${MultiCompileDepends}
+
+    $(o)sha1-x86_64$(oext) : $(vendorSrc)/crypto/sha/sha1-x86_64.s ${MultiCompileDepends}
+
+    $(o)sha256-mb-x86_64$(oext) : $(vendorSrc)/crypto/sha/sha256-mb-x86_64.s ${MultiCompileDepends}
+
+    $(o)sha512-x86_64$(oext) : $(vendorSrc)/crypto/sha/sha512-x86_64.s ${MultiCompileDepends}
+
+    $(o)sha256-x86_64$(oext) : $(vendorSrc)/crypto/sha/sha256-x86_64.s ${MultiCompileDepends}
+
+    $(o)wp-x86_64$(oext) : $(vendorSrc)/crypto/whrlpool/wp-x86_64.s ${MultiCompileDepends}
+
+    $(o)x86_64cpuid$(oext) : $(vendorSrc)/crypto/x86_64cpuid.s ${MultiCompileDepends}
 
     always:
-      ~set objs $(objs) $(o)x86_64cpuid$(oext) $(o)aesni-x86_64$(oext) $(o)aesni-gcm-x86_64$(oext) $(o)ghash-x86_64$(oext)
+        ~set objs $(objs) $(o)aes-x86_64$(oext) $(o)aesni-mb-x86_64$(oext) $(o)aesni-sha1-x86_64$(oext) $(o)aesni-sha256-x86_64$(oext) $(o)aesni-x86_64$(oext) $(o)bsaes-x86_64$(oext) $(o)vpaes-x86_64$(oext) $(o)rsaz-2k-avx512$(oext) $(o)rsaz-3k-avx512$(oext) $(o)rsaz-4k-avx512$(oext) $(o)rsaz-avx2$(oext) $(o)rsaz-x86_64$(oext) $(o)x86_64-gf2m$(oext) $(o)x86_64-mont$(oext) $(o)x86_64-mont5$(oext) $(o)cmll-x86_64$(oext) $(o)chacha-x86_64$(oext) $(o)ecp_nistz256-x86_64$(oext) $(o)x25519-x86_64$(oext) $(o)md5-x86_64$(oext) $(o)aes-gcm-avx512$(oext) $(o)aesni-gcm-x86_64$(oext) $(o)ghash-x86_64$(oext) $(o)poly1305-x86_64$(oext) $(o)rc4-md5-x86_64$(oext) $(o)rc4-x86_64$(oext) $(o)keccak1600-x86_64$(oext) $(o)sha1-mb-x86_64$(oext) $(o)sha1-x86_64$(oext) $(o)sha256-mb-x86_64$(oext) $(o)sha512-x86_64$(oext) $(o)sha256-x86_64$(oext) $(o)wp-x86_64$(oext) $(o)x86_64cpuid$(oext)
 
 %elif $(TARGET_PLATFORM) == "Windows"
     .asm.obj:
         |[== Building $@, ($=) ==]
         $(BENTLEY_WIN32_TOOLCHAIN_MLCmd) -c -Fo$@ $<
 
-    $(o)x86_64cpuid$(oext) : $(vendorSrc)crypto/x86_64cpuid.asm ${MultiCompileDepends}
+    $(o)aes-x86_64$(oext) : $(vendorSrc)/crypto/aes/aes-x86_64.asm ${MultiCompileDepends}
 
-    $(o)aesni-x86_64$(oext) : $(vendorSrc)crypto/aes/asm/aesni-x86_64.asm ${MultiCompileDepends}
+    $(o)aesni-mb-x86_64$(oext) : $(vendorSrc)/crypto/aes/aesni-mb-x86_64.asm ${MultiCompileDepends}
 
-    $(o)aesni-gcm-x86_64$(oext) : $(vendorSrc)crypto/modes/asm/aesni-gcm-x86_64.asm ${MultiCompileDepends}
+    $(o)aesni-sha1-x86_64$(oext) : $(vendorSrc)/crypto/aes/aesni-sha1-x86_64.asm ${MultiCompileDepends}
 
-    $(o)ghash-x86_64$(oext) : $(vendorSrc)crypto/modes/asm/ghash-x86_64.asm ${MultiCompileDepends}
+    $(o)aesni-sha256-x86_64$(oext) : $(vendorSrc)/crypto/aes/aesni-sha256-x86_64.asm ${MultiCompileDepends}
+
+    $(o)aesni-x86_64$(oext) : $(vendorSrc)/crypto/aes/aesni-x86_64.asm ${MultiCompileDepends}
+
+    $(o)bsaes-x86_64$(oext) : $(vendorSrc)/crypto/aes/bsaes-x86_64.asm ${MultiCompileDepends}
+
+    $(o)vpaes-x86_64$(oext) : $(vendorSrc)/crypto/aes/vpaes-x86_64.asm ${MultiCompileDepends}
+
+    $(o)rsaz-2k-avx512$(oext) : $(vendorSrc)/crypto/bn/rsaz-2k-avx512.asm ${MultiCompileDepends}
+
+    $(o)rsaz-3k-avx512$(oext) : $(vendorSrc)/crypto/bn/rsaz-3k-avx512.asm ${MultiCompileDepends}
+
+    $(o)rsaz-4k-avx512$(oext) : $(vendorSrc)/crypto/bn/rsaz-4k-avx512.asm ${MultiCompileDepends}
+
+    $(o)rsaz-avx2$(oext) : $(vendorSrc)/crypto/bn/rsaz-avx2.asm ${MultiCompileDepends}
+
+    $(o)rsaz-x86_64$(oext) : $(vendorSrc)/crypto/bn/rsaz-x86_64.asm ${MultiCompileDepends}
+
+    $(o)x86_64-gf2m$(oext) : $(vendorSrc)/crypto/bn/x86_64-gf2m.asm ${MultiCompileDepends}
+
+    $(o)x86_64-mont$(oext) : $(vendorSrc)/crypto/bn/x86_64-mont.asm ${MultiCompileDepends}
+
+    $(o)x86_64-mont5$(oext) : $(vendorSrc)/crypto/bn/x86_64-mont5.asm ${MultiCompileDepends}
+
+    $(o)cmll-x86_64$(oext) : $(vendorSrc)/crypto/camellia/cmll-x86_64.asm ${MultiCompileDepends}
+
+    $(o)chacha-x86_64$(oext) : $(vendorSrc)/crypto/chacha/chacha-x86_64.asm ${MultiCompileDepends}
+
+    $(o)ecp_nistz256-x86_64$(oext) : $(vendorSrc)/crypto/ec/ecp_nistz256-x86_64.asm ${MultiCompileDepends}
+
+    $(o)x25519-x86_64$(oext) : $(vendorSrc)/crypto/ec/x25519-x86_64.asm ${MultiCompileDepends}
+
+    $(o)md5-x86_64$(oext) : $(vendorSrc)/crypto/md5/md5-x86_64.asm ${MultiCompileDepends}
+
+    $(o)aes-gcm-avx512$(oext) : $(vendorSrc)/crypto/modes/aes-gcm-avx512.asm ${MultiCompileDepends}
+
+    $(o)aesni-gcm-x86_64$(oext) : $(vendorSrc)/crypto/modes/aesni-gcm-x86_64.asm ${MultiCompileDepends}
+
+    $(o)ghash-x86_64$(oext) : $(vendorSrc)/crypto/modes/ghash-x86_64.asm ${MultiCompileDepends}
+
+    $(o)poly1305-x86_64$(oext) : $(vendorSrc)/crypto/poly1305/poly1305-x86_64.asm ${MultiCompileDepends}
+
+    $(o)rc4-md5-x86_64$(oext) : $(vendorSrc)/crypto/rc4/rc4-md5-x86_64.asm ${MultiCompileDepends}
+
+    $(o)rc4-x86_64$(oext) : $(vendorSrc)/crypto/rc4/rc4-x86_64.asm ${MultiCompileDepends}
+
+    $(o)keccak1600-x86_64$(oext) : $(vendorSrc)/crypto/sha/keccak1600-x86_64.asm ${MultiCompileDepends}
+
+    $(o)sha1-mb-x86_64$(oext) : $(vendorSrc)/crypto/sha/sha1-mb-x86_64.asm ${MultiCompileDepends}
+
+    $(o)sha1-x86_64$(oext) : $(vendorSrc)/crypto/sha/sha1-x86_64.asm ${MultiCompileDepends}
+
+    $(o)sha256-mb-x86_64$(oext) : $(vendorSrc)/crypto/sha/sha256-mb-x86_64.asm ${MultiCompileDepends}
+
+    $(o)sha512-x86_64$(oext) : $(vendorSrc)/crypto/sha/sha512-x86_64.asm ${MultiCompileDepends}
+
+    $(o)sha256-x86_64$(oext) : $(vendorSrc)/crypto/sha/sha256-x86_64.asm ${MultiCompileDepends}
+
+    $(o)wp-x86_64$(oext) : $(vendorSrc)/crypto/whrlpool/wp-x86_64.asm ${MultiCompileDepends}
+
+    $(o)x86_64cpuid$(oext) : $(vendorSrc)/crypto/x86_64cpuid.asm ${MultiCompileDepends}
 
     always:
-      ~set objs $(objs) $(o)x86_64cpuid$(oext) $(o)aesni-x86_64$(oext) $(o)aesni-gcm-x86_64$(oext) $(o)ghash-x86_64$(oext)
+        ~set objs $(objs) $(o)aes-x86_64$(oext) $(o)aesni-mb-x86_64$(oext) $(o)aesni-sha1-x86_64$(oext) $(o)aesni-sha256-x86_64$(oext) $(o)aesni-x86_64$(oext) $(o)bsaes-x86_64$(oext) $(o)vpaes-x86_64$(oext) $(o)rsaz-2k-avx512$(oext) $(o)rsaz-3k-avx512$(oext) $(o)rsaz-4k-avx512$(oext) $(o)rsaz-avx2$(oext) $(o)rsaz-x86_64$(oext) $(o)x86_64-gf2m$(oext) $(o)x86_64-mont$(oext) $(o)x86_64-mont5$(oext) $(o)cmll-x86_64$(oext) $(o)chacha-x86_64$(oext) $(o)ecp_nistz256-x86_64$(oext) $(o)x25519-x86_64$(oext) $(o)md5-x86_64$(oext) $(o)aes-gcm-avx512$(oext) $(o)aesni-gcm-x86_64$(oext) $(o)ghash-x86_64$(oext) $(o)poly1305-x86_64$(oext) $(o)rc4-md5-x86_64$(oext) $(o)rc4-x86_64$(oext) $(o)keccak1600-x86_64$(oext) $(o)sha1-mb-x86_64$(oext) $(o)sha1-x86_64$(oext) $(o)sha256-mb-x86_64$(oext) $(o)sha512-x86_64$(oext) $(o)sha256-x86_64$(oext) $(o)wp-x86_64$(oext) $(o)x86_64cpuid$(oext)
 
 %endif
 
@@ -2150,8 +2357,14 @@ DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
 DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
 DLM_CREATE_LIB_CONTEXT_LINK = 1
 
-$(DLM_OBJECT_DEST)$(DLM_NAME).def : $(_MakeFilePath)BeOpenSSL.def
-    $(LinkFirstDepToFirstTarget)
+%if defined(iTwinNativeThirdParty)
+  $(DLM_OBJECT_DEST)BeOpenSSL.def : $(_MakeFilePath)BeOpenSSL.def 
+      $(copyCmd) $< $@
+      $(BBPYTHONCMD) $(bsiScripts)RegexReplaceInFile.py iTwinOpenSSL BeOpenSSLB02 $@
+%else
+  $(DLM_OBJECT_DEST)$(DLM_NAME).def : $(_MakeFilePath)BeOpenSSL.def
+      $(LinkFirstDepToFirstTarget)
+%endif
 
 DLM_MODULE_DEF              = $(DLM_OBJECT_DEST)$(DLM_NAME).def
 

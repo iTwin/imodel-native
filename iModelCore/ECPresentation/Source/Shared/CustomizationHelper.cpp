@@ -29,6 +29,7 @@ ExpressionContext& NavNodeCustomizer::GetNodeExpressionContext()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool NavNodeCustomizer::ApplyLabelAndDescriptionOverride()
     {
+    auto scope = Diagnostics::Scope::Create("Apply label and description overrides");
     bool didOverride = false;
     IRulesPreprocessor::CustomizationRuleByNodeParameters params(m_node, m_parentNode);
     LabelOverrideCP labelOverride = m_context.GetRulesPreprocessor().GetLabelOverride(params);
@@ -45,6 +46,7 @@ bool NavNodeCustomizer::ApplyLabelAndDescriptionOverride()
             LabelDefinitionPtr labelDefinition = value.IsString() ? LabelDefinition::FromString(valueStr.c_str()) : LabelDefinition::Create(value, valueStr.c_str());
             m_setter._SetLabelDefinition(*labelDefinition);
             didOverride = true;
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_TRACE, Utf8PrintfString("Set label to `%s`", valueStr.c_str()));
             }
         if (!labelOverride->GetDescription().empty()
             && ECExpressionsHelper(m_context.GetECExpressionsCache()).EvaluateECExpression(value, labelOverride->GetDescription(), GetNodeExpressionContext())
@@ -52,6 +54,7 @@ bool NavNodeCustomizer::ApplyLabelAndDescriptionOverride()
             {
             m_setter._SetDescription(valueStr);
             didOverride = true;
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_TRACE, Utf8PrintfString("Set description to `%s`", valueStr.c_str()));
             }
         }
     return didOverride;
@@ -62,6 +65,7 @@ bool NavNodeCustomizer::ApplyLabelAndDescriptionOverride()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool NavNodeCustomizer::ApplyStyleOverride()
     {
+    auto scope = Diagnostics::Scope::Create("Apply style override");
     bool didOverride = false;
     IRulesPreprocessor::CustomizationRuleByNodeParameters params(m_node, m_parentNode);
     StyleOverrideCP styleOverride = m_context.GetRulesPreprocessor().GetStyleOverride(params);
@@ -76,6 +80,7 @@ bool NavNodeCustomizer::ApplyStyleOverride()
             {
             m_setter._SetForeColor(valueStr);
             didOverride = true;
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_TRACE, Utf8PrintfString("Set foreground color to `%s`", valueStr.c_str()));
             }
         if (!styleOverride->GetBackColor().empty()
             && ECExpressionsHelper(m_context.GetECExpressionsCache()).EvaluateECExpression(value, styleOverride->GetBackColor(), GetNodeExpressionContext())
@@ -83,6 +88,7 @@ bool NavNodeCustomizer::ApplyStyleOverride()
             {
             m_setter._SetBackColor(valueStr);
             didOverride = true;
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_TRACE, Utf8PrintfString("Set background color to `%s`", valueStr.c_str()));
             }
         if (!styleOverride->GetFontStyle().empty()
             && ECExpressionsHelper(m_context.GetECExpressionsCache()).EvaluateECExpression(value, styleOverride->GetFontStyle(), GetNodeExpressionContext())
@@ -90,6 +96,7 @@ bool NavNodeCustomizer::ApplyStyleOverride()
             {
             m_setter._SetFontStyle(valueStr);
             didOverride = true;
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_TRACE, Utf8PrintfString("Set font style to `%s`", valueStr.c_str()));
             }
         }
     return didOverride;
@@ -100,6 +107,7 @@ bool NavNodeCustomizer::ApplyStyleOverride()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool NavNodeCustomizer::ApplyImageIdOverride()
     {
+    auto scope = Diagnostics::Scope::Create("Apply image id override");
     bool didOverride = false;
     IRulesPreprocessor::CustomizationRuleByNodeParameters params(m_node, m_parentNode);
     ImageIdOverrideCP imageIdOverride = m_context.GetRulesPreprocessor().GetImageIdOverride(params);
@@ -113,6 +121,7 @@ bool NavNodeCustomizer::ApplyImageIdOverride()
             {
             m_setter._SetImageId(valueStr);
             didOverride = true;
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_TRACE, Utf8PrintfString("Set image id to `%s`", valueStr.c_str()));
             }
         }
     return didOverride;
@@ -123,6 +132,8 @@ bool NavNodeCustomizer::ApplyImageIdOverride()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool NavNodeCustomizer::ApplyCheckboxRules()
     {
+    auto scope = Diagnostics::Scope::Create("Apply checkbox rules");
+
     IRulesPreprocessor::CustomizationRuleByNodeParameters params(m_node, m_parentNode);
     CheckBoxRuleCP rule = m_context.GetRulesPreprocessor().GetCheckboxRule(params);
     if (nullptr == rule)
@@ -181,6 +192,7 @@ bool NavNodeCustomizer::ApplyCheckboxRules()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool NavNodeCustomizer::ApplyExtendedDataRules()
     {
+    auto scope = Diagnostics::Scope::Create("Apply extended data rules");
     IRulesPreprocessor::CustomizationRuleByNodeParameters params(m_node, m_parentNode);
     bvector<ExtendedDataRuleCP> rules = m_context.GetRulesPreprocessor().GetExtendedDataRules(params);
     bool didAddExtendedData = false;
@@ -188,7 +200,7 @@ bool NavNodeCustomizer::ApplyExtendedDataRules()
     for (ExtendedDataRuleCP rule : rules)
         {
         DiagnosticsHelpers::ReportRule(*rule);
-        for (auto entry : rule->GetItemsMap())
+        for (auto const& entry : rule->GetItemsMap())
             {
             Utf8StringCR key = entry.first;
             Utf8StringCR valueExpr = entry.second;
@@ -197,6 +209,7 @@ bool NavNodeCustomizer::ApplyExtendedDataRules()
                 {
                 m_setter._AddExtendedData(key, value);
                 didAddExtendedData = true;
+                DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_TRACE, Utf8PrintfString("Add extended data `%s: %s`", key.c_str(), value.ToString().c_str()));
                 }
             usedKeys.insert(key);
             }

@@ -2486,6 +2486,26 @@ bvector<CurveVectorPtr> &children
     return true;
     }
 
+/*--------------------------------------------------------------------------------**//**
+* Set all disconnects to a non-disconnect point.
+* * Assume disconnects are not indexed, so they can be freely reassigned.
+* * This allows xyz range to be computed on the modified vector.
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+static void NeutralizeDisconnects(bvector<DPoint3d>& xyz)
+    {
+    size_t iReplace = 0;
+    for ( ; iReplace < xyz.size() && xyz[iReplace].IsDisconnect(); ++iReplace) {}
+    if (iReplace < xyz.size())
+        {
+        DPoint3d xyzReplace = xyz[iReplace];
+        for (auto& point : xyz)
+            {
+            if (point.IsDisconnect())
+                point = xyzReplace;
+            }
+        }
+    }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -2553,16 +2573,19 @@ bool IPolyfaceConstruction::AddRuledBetweenCorrespondingCurves
                 }
             if (capped)
                 context.EmitCaps (reversedPrimary);
+
+            // disconnects that are used to separate loops get copied into mesh xyz and prevent future clipping
+            NeutralizeDisconnects(context.m_builder.GetClientMeshPtr()->Point());
             }
         }
     else if (boundaryType == CurveVector::BOUNDARY_TYPE_UnionRegion)
         {
         bvector<CurveVectorPtr> oneContourSet;
-        // Process children at each index ...
+        stat = true;
         for (size_t ich = 0; ich < numChildren; ich++)
             {
             GatherChildrenAtIndex (contours, ich, oneContourSet);
-            AddRuledBetweenCorrespondingCurves (oneContourSet, capped);
+            stat &= AddRuledBetweenCorrespondingCurves (oneContourSet, capped);
             }
         }
     return stat;

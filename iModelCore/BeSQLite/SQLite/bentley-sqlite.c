@@ -65,6 +65,7 @@
 
 #include "sqlite3.c"
 #include "blockcachevfs.c"
+#include "shathree.c"
 
 #if defined (SQLITE_ENABLE_SQLLOG)
 #include "test_sqllog.c"

@@ -165,29 +165,6 @@ public:
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-struct NodeParentRequestParams : RequestWithRulesetParams
-{
-private:
-    NavNodeCPtr m_node;
-    std::shared_ptr<InstanceFilterDefinition const> m_instanceFilter;
-public:
-    NodeParentRequestParams(RequestWithRulesetParams const& rulesetParams, NavNodeCR node)
-        : RequestWithRulesetParams(rulesetParams), m_node(&node)
-        {}
-    NodeParentRequestParams(RequestWithRulesetParams&& rulesetParams, NavNodeCR node)
-        : RequestWithRulesetParams(std::move(rulesetParams)), m_node(&node)
-        {}
-    NodeParentRequestParams(Utf8String rulesetId, RulesetVariables rulesetVariables, NavNodeCR node)
-        : RequestWithRulesetParams(rulesetId, rulesetVariables), m_node(&node)
-        {}
-    NavNodeCR GetNode() const {return *m_node;}
-    std::shared_ptr<InstanceFilterDefinition const> GetInstanceFilter() const {return m_instanceFilter;}
-    void SetInstanceFilter(std::shared_ptr<InstanceFilterDefinition const> value) {m_instanceFilter = value;}
-};
-
-//=======================================================================================
-// @bsiclass
-//=======================================================================================
 struct NodePathFromInstanceKeyPathRequestParams : HierarchyRequestParams
 {
 private:
@@ -350,17 +327,20 @@ struct ContentDescriptorRequestParams : ContentMetadataRequestParams
 {
 private:
     KeySetCPtr m_inputKeys;
+    std::shared_ptr<RelatedClassPathsList> m_exclusiveIncludePaths;
 public:
-    ContentDescriptorRequestParams(ContentMetadataRequestParams const& metadataParams, KeySetCR inputKeys)
-        : ContentMetadataRequestParams(metadataParams), m_inputKeys(&inputKeys)
+    ContentDescriptorRequestParams(ContentMetadataRequestParams const& metadataParams, KeySetCR inputKeys, std::shared_ptr<RelatedClassPathsList> exclusiveIncludePaths = nullptr)
+        : ContentMetadataRequestParams(metadataParams), m_inputKeys(&inputKeys), m_exclusiveIncludePaths(exclusiveIncludePaths)
         {}
-    ContentDescriptorRequestParams(ContentMetadataRequestParams&& metadataParams, KeySetCR inputKeys)
-        : ContentMetadataRequestParams(std::move(metadataParams)), m_inputKeys(&inputKeys)
+    ContentDescriptorRequestParams(ContentMetadataRequestParams&& metadataParams, KeySetCR inputKeys, std::shared_ptr<RelatedClassPathsList> exclusiveIncludePaths = nullptr)
+        : ContentMetadataRequestParams(std::move(metadataParams)), m_inputKeys(&inputKeys), m_exclusiveIncludePaths(exclusiveIncludePaths)
         {}
-    ContentDescriptorRequestParams(Utf8String rulesetId, RulesetVariables rulesetVariables, Utf8String preferredDisplayType, int contentFlags, KeySetCR inputKeys, SelectionInfo const* selectionInfo = nullptr)
-        : ContentMetadataRequestParams(rulesetId, rulesetVariables, preferredDisplayType, contentFlags, selectionInfo), m_inputKeys(&inputKeys)
+    ContentDescriptorRequestParams(Utf8String rulesetId, RulesetVariables rulesetVariables, Utf8String preferredDisplayType, int contentFlags, KeySetCR inputKeys, SelectionInfo const* selectionInfo = nullptr,
+        std::shared_ptr<RelatedClassPathsList> exclusiveIncludePaths = nullptr)
+        : ContentMetadataRequestParams(rulesetId, rulesetVariables, preferredDisplayType, contentFlags, selectionInfo), m_inputKeys(&inputKeys), m_exclusiveIncludePaths(exclusiveIncludePaths)
         {}
     KeySetCR GetInputKeys() const {return *m_inputKeys;}
+    std::shared_ptr<RelatedClassPathsList> GetExclusiveIncludePaths() const {return m_exclusiveIncludePaths;}
 };
 
 //=======================================================================================

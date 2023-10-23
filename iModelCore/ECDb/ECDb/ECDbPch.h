@@ -33,6 +33,8 @@
 #include "ECDbMapSchemaHelper.h"
 #include "PolicyManager.h"
 
+#include "SchemaSync.h"
+
 #include "BuiltInFuncs.h"
 
 #include "DbMappingManager.h"
@@ -125,3 +127,5 @@
 #include "ECSql/ECSqlStatementNoopImpls.h"
 
 #include "ECSql/ECInstanceAdapterHelper.h"
+
+#include "ECSql/ECSqlPragmas.h"

@@ -96,7 +96,7 @@ protected:
     //! Does not check if the container's ECSchema references the requisite ECSchema(s). @see SupplementedSchemaBuilder::SetMergedCustomAttribute
     ECObjectsStatus SetSupplementedCustomAttribute(IECInstanceR customAttributeInstance);
 
-    CustomAttributeReadStatus ReadCustomAttributes(pugi::xml_node containerNode, ECSchemaReadContextR context, ECSchemaCR fallBackSchema);
+    CustomAttributeReadStatus ReadCustomAttributes(pugi::xml_node containerNode, ECSchemaReadContextR context);
     SchemaWriteStatus WriteCustomAttributes(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion = ECVersion::Latest) const;
     void WriteFilteredCustomAttributes(BeJsValue& parentNode, bool(*skipClassPredicate)(Utf8CP)) const;
     void WriteCustomAttributes(BeJsValue& parentNode) const;
@@ -2929,6 +2929,19 @@ public:
     ECOBJECTS_EXPORT static SearchPathSchemaFileLocaterPtr CreateSearchPathSchemaFileLocater(bvector<WString> const& searchPaths, bool includeFilesWithNoVerExt=false);
 };
 
+//=======================================================================================
+//! Reads schemas from a given set of Xml strings
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE StringSchemaLocater : IECSchemaLocater, NonCopyableClass
+{
+private:
+    bmap<SchemaKey, Utf8String> m_schemaStrings;
+protected:
+    ECOBJECTS_EXPORT ECSchemaPtr _LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext) override;
+public:
+    ECOBJECTS_EXPORT void AddSchemaString(SchemaKeyCR schemaKey, Utf8StringCR schemaXml) {m_schemaStrings[schemaKey] = schemaXml;}
+};
+
 struct SupplementalSchemaInfo;
 typedef RefCountedPtr<SupplementalSchemaInfo> SupplementalSchemaInfoPtr;
 
@@ -4136,6 +4149,9 @@ public:
     //!Loops through a schema's classes and properties and removes control characters from their descriptions, display labels, and role labels.
     //! @param[in]  schema  pointer to the schema which will be looped through
     ECOBJECTS_EXPORT static void RemoveInvalidDisplayCharacters(ECSchemaR schema);
+
+    //! The schemaXml will be read to obtain the SchemaKey
+    ECOBJECTS_EXPORT static SchemaReadStatus ReadSchemaKey(Utf8StringR schemaXml, SchemaKey& schemaKey);
 };
 
 //*=================================================================================**//**

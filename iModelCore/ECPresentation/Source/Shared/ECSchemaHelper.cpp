@@ -2244,12 +2244,10 @@ static void AssignClassAliases(RelatedClassPath::iterator begin, RelatedClassPat
 * An optimal solution would use a tree structure to store relationship paths.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void AssignClassAliases(bvector<RelatedClassPath*> const& paths)
+static void AssignClassAliases(bvector<RelatedClassPath*> const& paths, ECClassUseCounter& counter)
     {
     if (paths.empty())
         return;
-
-    ECClassUseCounter counter;
 
     // assign aliases for the first path
     AssignClassAliases(paths.front()->begin(), paths.front()->end(), counter, false);
@@ -2416,7 +2414,7 @@ ECSchemaHelper::RelationshipPathsResponse ECSchemaHelper::GetRelationshipPaths(R
         for (auto& pathResult : paths.GetPaths(i))
             allPaths.push_back(&pathResult.m_path);
         }
-    AssignClassAliases(allPaths);
+    AssignClassAliases(allPaths, params.m_relationshipsUseCounter);
 
     if (params.m_countTargets)
         {
@@ -2515,12 +2513,14 @@ void SupportedClassesParser::Parse(ECSchemaHelper const& helper, Utf8StringCR st
         }
     }
 
-static BeMutex s_getIntanceMutex;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult ECInstancesHelper::LoadInstance(IECInstancePtr& instance, IConnectionCR connection, ECInstanceKeyCR key)
     {
+    auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Load ECInstance `{ ECClassId: %s, ECInstanceId: %s }`",
+        key.GetClassId().ToString(BeInt64Id::UseHex::Yes).c_str(), key.GetInstanceId().ToString(BeInt64Id::UseHex::Yes).c_str()));
+
     ECClassCP selectClass = connection.GetECDb().Schemas().GetClass(key.GetClassId());
     if (nullptr == selectClass || !selectClass->IsEntityClass())
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("ECClass not found: %" PRIu64, key.GetClassId().GetValue()));
@@ -2537,12 +2537,13 @@ DbResult ECInstancesHelper::LoadInstance(IECInstancePtr& instance, IConnectionCR
     if (ECSqlStatus::Success != stmt->BindId(1, key.GetInstanceId()))
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Failed to bind ECInstance ID: %" PRIu64, key.GetInstanceId().GetValue()));
 
-    ECInstanceECSqlSelectAdapter adapter(*stmt);
     DbResult result = QueryExecutorHelper::Step(*stmt);
     if (BE_SQLITE_ROW == result)
         {
-        BeMutexHolder lock(s_getIntanceMutex);
-        instance = adapter.GetInstance();
+        auto parseECInstanceScope = Diagnostics::Scope::Create("Parse ECInstance from ECSql row");
+        static BeMutex s_getInstanceMutex;
+        BeMutexHolder lock(s_getInstanceMutex);
+        instance = ECInstanceECSqlSelectAdapter(*stmt).GetInstance();
         }
     return result;
     }

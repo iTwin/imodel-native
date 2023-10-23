@@ -138,6 +138,7 @@ private:
     static bool s_isInitialized;
     mutable BeMutex m_mutex;
     ECDbR m_ecdb;
+
     mutable BeGuid m_id;
     ProfileManager m_profileManager;
     std::unique_ptr<SchemaManager> m_schemaManager;
@@ -193,6 +194,9 @@ private:
     void ClearECDbCache() const;
     DbResult OnDbOpening() const;
     DbResult OnDbCreated() const;
+    DbResult OnDbOpened(OpenParams const& params) const;
+    void RegisterECSqlPragmas() const;
+    void OnInit() const;
     DbResult OnDbAttached(Utf8CP dbFileName, Utf8CP tableSpaceName) const;
     DbResult OnDbDetached(Utf8CP tableSpaceName) const;
 

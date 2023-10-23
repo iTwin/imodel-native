@@ -13,6 +13,7 @@
 #endif
 
 #include "sqlite3.h"
+#include "bcvencrypt.h"
 
 typedef sqlite3_int64 i64;
 typedef sqlite3_uint64 u64;
@@ -114,6 +115,7 @@ typedef struct BcvContainer BcvContainer;
 typedef struct BcvWrapper BcvWrapper;
 typedef struct BcvBuffer BcvBuffer;
 typedef struct BcvEncryptionKey BcvEncryptionKey;
+typedef struct BcvIntKey BcvIntKey;
 typedef struct BcvLog BcvLog;
 
 
@@ -239,7 +241,7 @@ struct Container {
   const char *zLocalDir;          /* Local directory used by container */
 
   Manifest *pMan;                 /* Current container manifest */
-  int nClient;                    /* Current number of clients */
+  int nClient;                    /* Number of clients (incl. prefetch) */
   Container *pNext;               /* Next container on same VFS */
 
   int nBcv;
@@ -247,7 +249,7 @@ struct Container {
   int eState;                     /* CONTAINER_STATE_* constant */
 
   u8 aKey[BCV_LOCAL_KEYSIZE];     /* Encryption key to use */
-  BcvEncryptionKey *pKey;         /* Compiled encryption key to use */
+  BcvIntKey *pKey;                /* Compiled encryption key to use */
   int iEnc;                       /* Encryption id (or 0 for no encryption) */
 };
 
@@ -394,7 +396,9 @@ void bcvfsBlockidToText(const u8 *pBlk, int nBlk, char *aBuf);
 ManifestDb *bcvManifestDbidToDb(Manifest *p, i64 iDbId);
 void bcvfsLruAdd(BcvCommon *p, CacheEntry *pEntry);
 u8 *bcvDatabaseVtabData(
-    int*, BcvCommon*, const char*, const char*, const char*, u32, int*
+    int*, BcvCommon*, const char*, const char*, const char*, 
+    void(*xClientCount)(BcvCommon*,Container*,int,int*,int*,int*),
+    u32, int*, int*
 );
 int bcvManifestUpdate(BcvCommon*, Container*, Manifest*, char**);
 void bcvExecPrintf(int *pRc, sqlite3 *db, const char *zFmt, ...);
@@ -530,6 +534,7 @@ typedef struct BcvPrefetchReply BcvPrefetchReply;
 struct BcvHelloMsg {
   const char *zContainer;
   const char *zDatabase;
+  int bPrefetch;
 };
 
 struct BcvHelloReply {
@@ -574,11 +579,13 @@ struct BcvVtabMsg {
   const char *zContainer;
   const char *zDatabase;
   u32 colUsed;
+  int iVersion;                   /* Vtab schema version requested */
 };
 
 struct BcvVtabReply {
   int nData;
   const u8 *aData;
+  int iVersion;                   /* Vtab schema version supplied */
 };
 
 struct BcvDetachMsg {
@@ -660,7 +667,7 @@ int bcvSendMsg(BCV_SOCKET_TYPE fd, BcvMessage *pMsg);
 #define BCV_MESSAGE_REPLY          0x03      /* d->c   BcvReply */
 #define BCV_MESSAGE_ATTACH         0x04      /* d->c   BcvAttachMsg */
 #define BCV_MESSAGE_VTAB           0x05      /* c->d   BcvVtabMsg */
-#define BCV_MESSAGE_VTAB_REPLY     0x06      /* d->c   BcvVtabMsg */
+#define BCV_MESSAGE_VTAB_REPLY     0x06      /* d->c   BcvVtabReply */
 #define BCV_MESSAGE_DETACH         0x07      /* c->d   BcvDetachMsg */
 #define BCV_MESSAGE_READ           0x08      /* c->d   BcvReadMsg */
 #define BCV_MESSAGE_READ_REPLY     0x09      /* d->c   BcvReadReply */
@@ -671,12 +678,12 @@ int bcvSendMsg(BCV_SOCKET_TYPE fd, BcvMessage *pMsg);
 #define BCV_MESSAGE_PREFETCH       0x0E      /* c->d   BcvPrefetchMsg */
 #define BCV_MESSAGE_PREFETCH_REPLY 0x0F      /* d->c   BcvPrefetchReply */
 
-BcvEncryptionKey *bcvEncryptionKeyNew(const u8 *aKey);
-void bcvEncryptionKeyFree(BcvEncryptionKey*);
-BcvEncryptionKey *bcvEncryptionKeyRef(BcvEncryptionKey*);
+BcvIntKey *bcvIntEncryptionKeyRef(BcvIntKey*);
+BcvIntKey *bcvIntEncryptionKeyNew(const u8 *aKey);
+void bcvIntEncryptionKeyFree(BcvIntKey*);
+int bcvIntDecrypt(BcvIntKey*, sqlite3_int64, u8*, u8*, int);
+int bcvIntEncrypt(BcvIntKey*, sqlite3_int64, u8*, u8*, int);
 
-int bcvDecrypt(BcvEncryptionKey*, sqlite3_int64, u8*, u8*, int);
-int bcvEncrypt(BcvEncryptionKey*, sqlite3_int64, u8*, u8*, int);
 
 const char *bcvRequestHeader(const u8 *aHdrs, int nHdrs, const char *zHdr);
 
