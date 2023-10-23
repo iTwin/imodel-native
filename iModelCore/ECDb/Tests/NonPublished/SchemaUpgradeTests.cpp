@@ -14,6 +14,8 @@
         }                                                                                \
         return 0;                                                                        \
     }()
+USING_NAMESPACE_BENTLEY_EC
+USING_NAMESPACE_BENTLEY_SQLITE_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 //---------------------------------------------------------------------------------------

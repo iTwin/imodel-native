@@ -670,6 +670,23 @@ IssueId ECDbIssueId::ECDb_0658 = IssueId("ECDb_0658");
 IssueId ECDbIssueId::ECDb_0659 = IssueId("ECDb_0659");
 IssueId ECDbIssueId::ECDb_0660 = IssueId("ECDb_0660");
 
+IssueId ECDbIssueId::ECDb_0700 = IssueId("ECDb_0700");
+IssueId ECDbIssueId::ECDb_0701 = IssueId("ECDb_0701");
+IssueId ECDbIssueId::ECDb_0702 = IssueId("ECDb_0702");
+IssueId ECDbIssueId::ECDb_0703 = IssueId("ECDb_0703");
+IssueId ECDbIssueId::ECDb_0704 = IssueId("ECDb_0704");
+IssueId ECDbIssueId::ECDb_0705 = IssueId("ECDb_0705");
+IssueId ECDbIssueId::ECDb_0706 = IssueId("ECDb_0706");
+IssueId ECDbIssueId::ECDb_0707 = IssueId("ECDb_0707");
+IssueId ECDbIssueId::ECDb_0708 = IssueId("ECDb_0708");
+IssueId ECDbIssueId::ECDb_0709 = IssueId("ECDb_0709");
+IssueId ECDbIssueId::ECDb_0710 = IssueId("ECDb_0710");
+IssueId ECDbIssueId::ECDb_0711 = IssueId("ECDb_0711");
+IssueId ECDbIssueId::ECDb_0712 = IssueId("ECDb_0712");
+IssueId ECDbIssueId::ECDb_0713 = IssueId("ECDb_0713");
+IssueId ECDbIssueId::ECDb_0714 = IssueId("ECDb_0714");
+IssueId ECDbIssueId::ECDb_0715 = IssueId("ECDb_0715");
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------

@@ -1561,7 +1561,7 @@ BentleyStatus ECSqlParser::ParseTableRef(std::unique_ptr<ClassRefExp>& exp, OSQL
                         m_context->Issues().ReportV(
                             IssueSeverity::Error,
                             IssueCategory::BusinessProperties,
-                            IssueType::ECSQL, "Invalid View Class '%s'. There is not query supplied for view.", classCP->GetFullName());
+                            IssueType::ECSQL, ECDbIssueId::ECDb_0710, "Invalid View Class '%s'. There is not query supplied for view.", classCP->GetFullName());
                         return ERROR;
                     }
 
@@ -1569,7 +1569,7 @@ BentleyStatus ECSqlParser::ParseTableRef(std::unique_ptr<ClassRefExp>& exp, OSQL
                         m_context->Issues().ReportV(
                             IssueSeverity::Error,
                             IssueCategory::BusinessProperties,
-                            IssueType::ECSQL, "ONLY keyword is not supported for view classes (ViewClass: %s).", classCP->GetFullName());
+                            IssueType::ECSQL, ECDbIssueId::ECDb_0711, "ONLY keyword is not supported for view classes (ViewClass: %s).", classCP->GetFullName());
                         return ERROR;
                     }
 
@@ -1579,7 +1579,7 @@ BentleyStatus ECSqlParser::ParseTableRef(std::unique_ptr<ClassRefExp>& exp, OSQL
                         m_context->Issues().ReportV(
                             IssueSeverity::Error,
                             IssueCategory::BusinessProperties,
-                            IssueType::ECSQL, "Invalid View Class '%s'. View query references itself recusively (%s).", classCP->GetFullName(), viewStack.GetStackAsString().c_str());
+                            IssueType::ECSQL, ECDbIssueId::ECDb_0712, "Invalid View Class '%s'. View query references itself recusively (%s).", classCP->GetFullName(), viewStack.GetStackAsString().c_str());
                         return ERROR;
                     }
 
@@ -1588,7 +1588,7 @@ BentleyStatus ECSqlParser::ParseTableRef(std::unique_ptr<ClassRefExp>& exp, OSQL
                         m_context->Issues().ReportV(
                             IssueSeverity::Error,
                             IssueCategory::BusinessProperties,
-                            IssueType::ECSQL, "Invalid View Class '%s'. View ECSQL failed to parse.", classCP->GetFullName());
+                            IssueType::ECSQL, ECDbIssueId::ECDb_0713, "Invalid View Class '%s'. View ECSQL failed to parse.", classCP->GetFullName());
                         return ERROR;
                     }
 
@@ -1596,7 +1596,7 @@ BentleyStatus ECSqlParser::ParseTableRef(std::unique_ptr<ClassRefExp>& exp, OSQL
                         m_context->Issues().ReportV(
                             IssueSeverity::Error,
                             IssueCategory::BusinessProperties,
-                            IssueType::ECSQL, "Invalid View Class '%s'. View ECSQL is not a SELECT statement.", classCP->GetFullName());
+                            IssueType::ECSQL, ECDbIssueId::ECDb_0714, "Invalid View Class '%s'. View ECSQL is not a SELECT statement.", classCP->GetFullName());
                         return ERROR;
                     }
 
