@@ -1430,10 +1430,25 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
     sql.AppendEscaped(relationshipClassNameExp.GetId().c_str());
 
     sql.Append(" ON ");
+    {
+    ECInstanceIdPropertyMap const* fromECInstanceIdPropMap = fromEP.GetClassNameRef()->GetInfo().GetMap().GetECInstanceIdPropertyMap();
+    if (fromECInstanceIdPropMap == nullptr)
+        {
+        BeAssert(false);
+        return ECSqlStatus::Error;
+        }
 
-    AppendRelationshipEPId(sql, fromEP);
+    ToSqlPropertyMapVisitor fromECInstanceIdSqlVisitor(*fromECInstanceIdPropMap->GetTables().front(), ToSqlPropertyMapVisitor::ECSqlScope::Select, fromEP.GetClassNameRef()->GetId());
+    fromECInstanceIdPropMap->AcceptVisitor(fromECInstanceIdSqlVisitor);
+    if (fromECInstanceIdSqlVisitor.GetResultSet().size() != 1)
+        {
+        BeAssert(false);
+        return ECSqlStatus::Error;
+        }
 
+    sql.Append(fromECInstanceIdSqlVisitor.GetResultSet().front().GetSqlBuilder().GetSql());
     sql.Append(ExpHelper::ToSql(BooleanSqlOperator::EqualTo));
+    }
 
     {
     PropertyMap const* fromRelatedIdPropMap = relationshipClassNameExp.GetInfo().GetMap().GetPropertyMaps().Find(fromRelatedKey);
@@ -1463,9 +1478,25 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
     sql.Append(" ON ");
     }
 
-    AppendRelationshipEPId(sql, toEP);
+    {
+    ECInstanceIdPropertyMap const*  toECInstanceIdPropMap = toEP.GetClassNameRef()->GetInfo().GetMap().GetECInstanceIdPropertyMap();
+    if (toECInstanceIdPropMap == nullptr)
+        {
+        BeAssert(false);
+        return ECSqlStatus::Error;
+        }
 
+    ToSqlPropertyMapVisitor toECInstanceIdSqlVisitor(*toECInstanceIdPropMap->GetTables().front(), ToSqlPropertyMapVisitor::ECSqlScope::Select, toEP.GetClassNameRef()->GetId());
+    toECInstanceIdPropMap->AcceptVisitor(toECInstanceIdSqlVisitor);
+    if (toECInstanceIdSqlVisitor.GetResultSet().size() != 1)
+        {
+        BeAssert(false);
+        return ECSqlStatus::Error;
+        }
+
+    sql.Append(toECInstanceIdSqlVisitor.GetResultSet().front().GetSqlBuilder().GetSql());
     sql.Append(ExpHelper::ToSql(BooleanSqlOperator::EqualTo));
+    }
 
     {
     PropertyMap const* toRelatedIdPropMap = relationshipClassNameExp.GetInfo().GetMap().GetPropertyMaps().Find(toRelatedKey);

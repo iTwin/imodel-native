@@ -164,12 +164,6 @@ struct UsingRelationshipJoinExp final : JoinExp
                 void SetClassRef(ClassNameExp const* classRef)
                     {
                     m_classRef = classRef;
-                    m_viewRef = nullptr;
-                    }
-                void SetViewRef(SubqueryRefExp const* viewRef)
-                    {
-                    m_viewRef = viewRef;
-                    m_classRef = nullptr;
                     }
                 void SetLocation(ClassLocation location, bool append)
                     {

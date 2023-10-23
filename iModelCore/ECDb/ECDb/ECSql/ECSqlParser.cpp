@@ -1603,7 +1603,7 @@ BentleyStatus ECSqlParser::ParseTableRef(std::unique_ptr<ClassRefExp>& exp, OSQL
                     std::unique_ptr<SelectStatementExp> selectExp;
                     selectExp.reset(static_cast<SelectStatementExp*>(parseTree.get()));
                     parseTree.release();
-                    rangeClassRef = std::make_unique<SubqueryRefExp>(std::make_unique<SubqueryExp>(std::move(selectExp)), classNameExp->GetAlias().c_str(), polymorphicConst, classCP);
+                    rangeClassRef = std::make_unique<SubqueryRefExp>(std::make_unique<SubqueryExp>(std::move(selectExp)), classNameExp->GetAlias().c_str(), polymorphicConst);
                 } else {
                     rangeClassRef = std::move(classNameExp);
                 }
