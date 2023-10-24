@@ -5,9 +5,13 @@ This document including important changes to syntax or file format.
 | Module  | Version   |
 | ------- | --------- |
 | Profile | `4.0.0.4` |
-| ECSQL   | `1.2.8.1` |
+| ECSQL   | `1.2.8.2` |
 
-## `9/13/2023`: Prgma disqualify_type_filter only take effect if there was more then one class name in query
+## `10/24/2023`: Pragma integrity_check now checks if navigation property represents a valid ClassId for the relationship
+
+ECsql version updated `1.2.8.1` -> `1.2.8.2`
+
+## `9/13/2023`: Pragma disqualify_type_filter only take effect if there was more then one class name in query
 
 ECSql version updated `1.2.8.0` -> `1.2.8.1`
 
