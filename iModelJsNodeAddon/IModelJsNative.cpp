@@ -4151,25 +4151,30 @@ public:
           InstanceMethod("getColumnCount", &NativeChangesetReader::GetColumnCount),
           InstanceMethod("getColumnValue", &NativeChangesetReader::GetColumnValue),
           InstanceMethod("getColumnValueType", &NativeChangesetReader::GetColumnValueType),
-          InstanceMethod("getFileName", &NativeChangesetReader::GetFileName),
           InstanceMethod("getOpCode", &NativeChangesetReader::GetOpCode),
           InstanceMethod("getRow", &NativeChangesetReader::GetRow),
           InstanceMethod("getDdlChanges", &NativeChangesetReader::GetDdlChanges),
           InstanceMethod("getTableName", &NativeChangesetReader::GetTableName),
+          InstanceMethod("getPrimaryKeys", &NativeChangesetReader::GetPrimaryKeys),
           InstanceMethod("isIndirectChange", &NativeChangesetReader::IsIndirectChange),
           InstanceMethod("isPrimaryKeyColumn", &NativeChangesetReader::IsPrimaryKeyColumn),
           InstanceMethod("open", &NativeChangesetReader::Open),
           InstanceMethod("reset", &NativeChangesetReader::Reset),
           InstanceMethod("step", &NativeChangesetReader::Step),
+          InstanceMethod("hasRow", &NativeChangesetReader::HasRow),
         });
 
         exports.Set("ChangesetReader", t);
         SET_CONSTRUCTOR(t);
         }
-
+    Napi::Value GetPrimaryKeys(NapiInfoCR info)
+        {
+        return m_changeset.GetPrimaryKeys(Env());
+        }
     Napi::Value GetRow(NapiInfoCR info)
         {
-        return m_changeset.GetRow(Env());
+        REQUIRE_ARGUMENT_INTEGER(0, valueKind);
+        return m_changeset.GetRow(Env(), valueKind);
         }
     Napi::Value GetColumnValue(NapiInfoCR info)
         {
@@ -4204,31 +4209,31 @@ public:
         {
         return m_changeset.GetDdlChanges(Env());;
         }
-    Napi::Value Open(NapiInfoCR info)
+    void Open(NapiInfoCR info)
         {
         REQUIRE_ARGUMENT_STRING(0, fileName);
         REQUIRE_ARGUMENT_BOOL(1, invert);
-        return m_changeset.Open(Env(), fileName.c_str(), invert);
+        m_changeset.Open(Env(), fileName.c_str(), invert);
         }
     Napi::Value Step(NapiInfoCR info)
         {
         return m_changeset.Step(Env());
         }
-    Napi::Value Close(NapiInfoCR info)
+    void Close(NapiInfoCR info)
         {
-        return m_changeset.Close(Env());
+        m_changeset.Close(Env());
         }
-    Napi::Value Reset(NapiInfoCR info)
+    void Reset(NapiInfoCR info)
         {
-        return m_changeset.Reset(Env());
-        }
-    Napi::Value GetFileName(NapiInfoCR info)
-        {
-        return m_changeset.GetFileName(Env());
+        m_changeset.Reset(Env());
         }
     Napi::Value GetTableName(NapiInfoCR info)
         {
         return m_changeset.GetTableName(Env());
+        }
+    Napi::Value HasRow(NapiInfoCR info)
+        {
+        return m_changeset.GetHasRow(Env());
         }
 };
 

@@ -613,41 +613,44 @@ struct GeoServicesInterop
 //=======================================================================================
 struct NativeChangeset {
     private:
-        std::unique_ptr<ChangesetFileReaderBase> m_reader;
-        Db m_unusedDb;
         BeFileName m_fileName;
-        std::unique_ptr<Changes> m_changes;
+        bool m_invert;
+        Byte* m_primaryKeyColumns;
         Changes::Change m_currentChange;
-        Utf8CP m_tableName;
+        Db m_unusedDb;
+        DbOpcode m_opcode;
         int m_columnCount;
         int m_indirect;
         int m_primaryKeyColumnCount;
-        DbOpcode m_opcode;
-        Byte* m_primaryKeyColumns;
-        bool m_invert;
+        int m_primaryKeyCount;
+        std::unique_ptr<Changes> m_changes;
+        std::unique_ptr<ChangesetFileReaderBase> m_changesetFileReader;
+        Utf8CP m_tableName;
     private:
         Napi::Value SerializeValue(Napi::Env, DbValue&val);
         bool HasRow() { return IsOpen() && m_currentChange.IsValid(); }
-        bool IsOpen() { return m_reader != nullptr; }
+        bool IsOpen() { return m_changesetFileReader != nullptr; }
         bool IsValidColumnIndex(int col) { return HasRow() && (col>=0 && col< m_columnCount); }
         bool IsValidPrimaryKeyColumnIndex(int col) { return HasRow() && (col>=0 && col< m_primaryKeyColumnCount); }
 
     public:
         NativeChangeset():m_primaryKeyColumns(nullptr), m_tableName(nullptr), m_currentChange(nullptr, false), m_invert(false){}
-        Napi::Value Open(Napi::Env env, Utf8CP changesetFile, bool invert);
-        Napi::Value Close(Napi::Env env);
-        Napi::Value Reset(Napi::Env env);
-        Napi::Value Step(Napi::Env env);
-        Napi::Value GetFileName(Napi::Env env);
-        Napi::Value GetTableName(Napi::Env env);
+        void Open(Napi::Env env, Utf8StringCR changesetFile, bool invert);
+        void Close(Napi::Env env);
+        void Reset(Napi::Env env);
+        Napi::Value GetHasRow(Napi::Env env);
+        Napi::Value GetColumnCount(Napi::Env env);
+        Napi::Value GetColumnValue(Napi::Env env, int col, int target);
+        Napi::Value GetColumnValueType(Napi::Env env, int col, int target);
+        Napi::Value GetDdlChanges(Napi::Env);
         Napi::Value GetOpCode(Napi::Env env);
+        Napi::Value GetPrimaryKeyColumnIndexes(Napi::Env env);
+        Napi::Value GetPrimaryKeys(Napi::Env env);
+        Napi::Value GetRow(Napi::Env env, int target);
+        Napi::Value GetTableName(Napi::Env env);
         Napi::Value IsIndirectChange(Napi::Env env);
         Napi::Value IsPrimaryKeyColumn(Napi::Env env, int col);
-        Napi::Value GetColumnCount(Napi::Env env);
-        Napi::Value GetColumnValueType(Napi::Env env, int col, int target);
-        Napi::Value GetColumnValue(Napi::Env env, int col, int target);
-        Napi::Value GetRow(Napi::Env env);
-        Napi::Value GetDdlChanges(Napi::Env);
+        Napi::Value Step(Napi::Env env);
 };
 
 //=======================================================================================

@@ -1135,6 +1135,7 @@ Napi::Value NativeChangeset::SerializeValue(Napi::Env env, DbValue&value) {
 
     switch(value.GetValueType()) {
         case DbValueType::IntegerVal:
+            return Napi::String::New(env, BeInt64Id(value.GetValueUInt64()).ToHexStr());
         case DbValueType::FloatVal:
             return Napi::Number::New(env, value.GetValueDouble());
         case DbValueType::TextVal:
@@ -1152,40 +1153,38 @@ Napi::Value NativeChangeset::SerializeValue(Napi::Env env, DbValue&value) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-Napi::Value NativeChangeset::Open(Napi::Env env, Utf8CP changesetFile, bool invert) {
-    if (m_reader != nullptr) {
-        return Napi::Number::New(env, (int) BE_SQLITE_ERROR);
+void NativeChangeset::Open(Napi::Env env, Utf8StringCR changesetFile, bool invert) {
+    if (m_changesetFileReader != nullptr) {
+        BeNapi::ThrowJsException(env, "open(): reader is already have open changeset file.", (int)BE_SQLITE_ERROR);
     }
 
     BeFileName input;
-    input.AppendUtf8(changesetFile);
-    // changesetId = Utf8String(input.GetFileNameWithoutExtension());
+    input.AppendUtf8(changesetFile.c_str());
+
     if (!input.DoesPathExist()) {
-        return Napi::Number::New(env, (int) BE_SQLITE_CANTOPEN);
+        BeNapi::ThrowJsException(env, "open(): changeset file specified does not exists", (int)BE_SQLITE_CANTOPEN);
     }
+
     m_fileName = input;
     m_invert = invert;
-    m_reader = std::unique_ptr<ChangesetFileReaderBase>( new ChangesetFileReaderBase({input}, m_unusedDb));
-    return Napi::Number::New(env, (int) BE_SQLITE_OK);
+    m_changesetFileReader = std::make_unique<ChangesetFileReaderBase>(bvector<BeFileName>{m_fileName}, m_unusedDb);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-Napi::Value NativeChangeset::Close(Napi::Env env) {
+void NativeChangeset::Close(Napi::Env env) {
     m_currentChange = Changes::Change(nullptr, false);
     m_changes = nullptr;
-    m_reader = nullptr;
-    return Napi::Number::New(env, (int) BE_SQLITE_OK);
+    m_changesetFileReader = nullptr;
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-Napi::Value NativeChangeset::Reset(Napi::Env env) {
+void NativeChangeset::Reset(Napi::Env env) {
     m_currentChange = Changes::Change(nullptr, false);
     m_changes = nullptr;
-    return Napi::Number::New(env, (int) BE_SQLITE_OK);
 }
 
 //---------------------------------------------------------------------------------------
@@ -1193,82 +1192,82 @@ Napi::Value NativeChangeset::Reset(Napi::Env env) {
 //+---------------+---------------+---------------+---------------+---------------+------
 Napi::Value NativeChangeset::Step(Napi::Env env) {
     if (!IsOpen()) {
-        return Napi::Number::New(env, (int) BE_SQLITE_ERROR);
+        BeNapi::ThrowJsException(env, "step(): no changeset opened.", (int)BE_SQLITE_ERROR);
     }
 
     if (m_changes == nullptr) {
-        m_changes = std::make_unique<Changes>(*m_reader, m_invert);
+        m_changes = std::make_unique<Changes>(*m_changesetFileReader, m_invert);
         m_currentChange = m_changes->begin();
     } else {
         ++m_currentChange;
     }
 
     if (!m_currentChange.IsValid()) {
-        return Napi::Number::New(env, (int) BE_SQLITE_DONE);
+        return Napi::Boolean::New(env, false);
     }
 
     auto rc = m_currentChange.GetOperation(&m_tableName, &m_columnCount, &m_opcode, &m_indirect);
     if (rc != BE_SQLITE_OK) {
-        return Napi::Number::New(env, (int) rc);
+        BeNapi::ThrowJsException(env, "step(): unable to read changeset", (int)rc);
     }
 
     rc = m_currentChange.GetPrimaryKeyColumns(&m_primaryKeyColumns, &m_primaryKeyColumnCount);
     if (rc != BE_SQLITE_OK) {
-        return Napi::Number::New(env, (int) rc);
+        BeNapi::ThrowJsException(env, "step(): unable to read changeset", (int)rc);
     }
 
-    return Napi::Number::New(env, (int) BE_SQLITE_ROW);
-}
+    m_primaryKeyCount = 0;
+    for (int i = 0; i < m_primaryKeyColumnCount; ++i) {
+        if (m_primaryKeyColumns[i])
+            ++m_primaryKeyCount;
+    }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-Napi::Value NativeChangeset::GetFileName(Napi::Env env) {
-    if (IsOpen())
-        return Napi::String::New(env, m_fileName.GetNameUtf8());
-
-    return env.Undefined();
+    return Napi::Boolean::New(env, true);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 Napi::Value NativeChangeset::GetTableName(Napi::Env env) {
-    if (HasRow()) {
-        return Napi::String::New(env, m_tableName);
+    if (!HasRow()) {
+        BeNapi::ThrowJsException(env, "getTableName(): there is no current row.", (int) BE_SQLITE_ERROR);
     }
 
-    return env.Undefined();
+    return Napi::String::New(env, m_tableName);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 Napi::Value NativeChangeset::GetOpCode(Napi::Env env) {
-    if (HasRow()) {
-        return Napi::Number::New(env, (int)m_opcode);
+    if (!HasRow()) {
+        BeNapi::ThrowJsException(env, "getOpCode(): there is no current row.", (int) BE_SQLITE_ERROR);
     }
 
-    return env.Undefined();
+    return Napi::Number::New(env, (int)m_opcode);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 Napi::Value NativeChangeset::IsIndirectChange(Napi::Env env) {
-    if (HasRow()) {
-        return Napi::Boolean::New(env, (int)m_indirect);
+    if (!HasRow()) {
+        BeNapi::ThrowJsException(env, "isIndirectChange(): there is no current row.", (int) BE_SQLITE_ERROR);
     }
 
-    return env.Undefined();
+    return Napi::Boolean::New(env, (int)m_indirect);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 Napi::Value NativeChangeset::IsPrimaryKeyColumn(Napi::Env env, int col) {
+    if (!HasRow()) {
+        BeNapi::ThrowJsException(env, "isPrimaryKeyColumn(): there is no current row.", (int) BE_SQLITE_ERROR);
+    }
+
     if (IsValidPrimaryKeyColumnIndex(col)) {
-        return env.Undefined();
+        BeNapi::ThrowJsException(env, "isPrimaryKeyColumn(): invalid column index for primary key", (int) BE_SQLITE_ERROR);
     }
 
     return Napi::Boolean::New(env, m_primaryKeyColumns[col] == 1);
@@ -1278,11 +1277,18 @@ Napi::Value NativeChangeset::IsPrimaryKeyColumn(Napi::Env env, int col) {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 Napi::Value NativeChangeset::GetColumnCount(Napi::Env env) {
-    if (HasRow()) {
-        return Napi::Number::New(env, m_columnCount);
+    if (!HasRow()) {
+        BeNapi::ThrowJsException(env, "getColumnCount(): there is no current row.", (int) BE_SQLITE_ERROR);
     }
 
-    return env.Undefined();
+    return Napi::Number::New(env, m_columnCount);
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+Napi::Value NativeChangeset::GetHasRow(Napi::Env env) {
+    return Napi::Boolean::New(env, HasRow());
 }
 
 //---------------------------------------------------------------------------------------
@@ -1290,6 +1296,14 @@ Napi::Value NativeChangeset::GetColumnCount(Napi::Env env) {
 //+---------------+---------------+---------------+---------------+---------------+------
 Napi::Value NativeChangeset::GetColumnValueType(Napi::Env env, int col, int target) {
     if (HasRow()) {
+        // old value can be called by updated and deleted row.
+        if (target == 0 && m_opcode == DbOpcode::Insert)
+            return env.Undefined();
+
+        // new value can be called by updated and inserted row.
+        if (target != 0 && m_opcode == DbOpcode::Delete)
+            return env.Undefined();
+
         auto val = target == 0 ? m_currentChange.GetOldValue(col) : m_currentChange.GetNewValue(col);
         if (!val.IsValid()) {
             return env.Undefined();
@@ -1303,15 +1317,17 @@ Napi::Value NativeChangeset::GetColumnValueType(Napi::Env env, int col, int targ
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 Napi::Value NativeChangeset::GetDdlChanges(Napi::Env env) {
-    if (IsOpen()) {
-        DdlChanges ddlChanges;
-        bool hasSchemaChanges;
-        m_reader->MakeReader()->GetSchemaChanges(hasSchemaChanges, ddlChanges);
-        if (!ddlChanges._IsEmpty()) {
-            auto ddl = ddlChanges.ToString();
-            return Napi::String::New(env, ddl.c_str());
-        };
+    if (!IsOpen()) {
+        BeNapi::ThrowJsException(env, "getDdlChanges(): no changeset opened.", (int)BE_SQLITE_ERROR);
     }
+
+    DdlChanges ddlChanges;
+    bool hasSchemaChanges;
+    m_changesetFileReader->MakeReader()->GetSchemaChanges(hasSchemaChanges, ddlChanges);
+    if (!ddlChanges._IsEmpty()) {
+        auto ddl = ddlChanges.ToString();
+        return Napi::String::New(env, ddl.c_str());
+    };
     return env.Undefined();
 }
 
@@ -1320,6 +1336,14 @@ Napi::Value NativeChangeset::GetDdlChanges(Napi::Env env) {
 //+---------------+---------------+---------------+---------------+---------------+------
 Napi::Value NativeChangeset::GetColumnValue(Napi::Env env, int col, int target) {
     if (HasRow()) {
+        // old value can be called by updated and deleted row.
+        if (target == 0 && m_opcode == DbOpcode::Insert)
+            return env.Undefined();
+
+        // new value can be called by updated and inserted row.
+        if (target != 0 && m_opcode == DbOpcode::Delete)
+            return env.Undefined();
+
         auto val = target == 0 ? m_currentChange.GetOldValue(col) : m_currentChange.GetNewValue(col);
         if (!val.IsValid()) {
             return env.Undefined();
@@ -1332,35 +1356,57 @@ Napi::Value NativeChangeset::GetColumnValue(Napi::Env env, int col, int target) 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-Napi::Value NativeChangeset::GetRow(Napi::Env env) {
+Napi::Value NativeChangeset::GetPrimaryKeyColumnIndexes(Napi::Env env) {
     if (!HasRow()) {
-        return env.Undefined();
+        BeNapi::ThrowJsException(env, "getPrimaryKeyColumnIndexes(): there is no current row.", (int) BE_SQLITE_ERROR);
     }
 
-    auto row = Napi::Array::New(env, m_columnCount);
-    for (int i =0; i< m_columnCount; ++i)  {
-        auto colVal = Napi::Object::New(env);
-        if (m_opcode == DbOpcode::Insert) {
-            auto newVal = m_currentChange.GetNewValue(i);
-            if (newVal.IsValid()) {
-                colVal.Set("new", SerializeValue(env, newVal));
-            }
-        } else if (m_opcode == DbOpcode::Delete) {
-            auto oldVal = m_currentChange.GetOldValue(i);
-            if (oldVal.IsValid()) {
-                colVal.Set("old", SerializeValue(env, oldVal));
-            }
-        } else {
-            auto newVal = m_currentChange.GetNewValue(i);
-            if (newVal.IsValid()) {
-                colVal.Set("new", SerializeValue(env, newVal));
-            }
-            auto oldVal = m_currentChange.GetOldValue(i);
-            if (oldVal.IsValid()) {
-                colVal.Set("old", SerializeValue(env, oldVal));
-            }
+    auto row = Napi::Array::New(env, m_primaryKeyCount);
+    uint32_t k = 0;
+    for (int i = 0; i < m_columnCount; ++i) {
+        if (m_primaryKeyColumns[i]) {
+            row[k++] = Napi::Number::New(env, i);
         }
-        row[i] = colVal;
+    }
+    return row;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+Napi::Value NativeChangeset::GetRow(Napi::Env env, int target) {
+    if (!HasRow()) {
+        BeNapi::ThrowJsException(env, "getRow(): there is no current row.", (int) BE_SQLITE_ERROR);
+    }
+    // old value can be called by updated and deleted row.
+    if (target == 0 && m_opcode == DbOpcode::Insert)
+        return env.Undefined();
+
+    // new value can be called by updated and inserted row.
+    if (target != 0 && m_opcode == DbOpcode::Delete)
+        return env.Undefined();
+
+    auto row = Napi::Array::New(env, m_columnCount);
+    for (int i = 0; i< m_columnCount; ++i)  {
+        row[i] = GetColumnValue(env, i, target);
+    }
+    return row;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+Napi::Value NativeChangeset::GetPrimaryKeys(Napi::Env env) {
+    if (!HasRow()) {
+        BeNapi::ThrowJsException(env, "getPrimaryKeys(): there is no current row.", (int) BE_SQLITE_ERROR);
+    }
+
+    auto row = Napi::Array::New(env, m_primaryKeyCount);
+    auto k = 0;
+    for (int i = 0; i< m_columnCount; ++i)  {
+        if (m_primaryKeyColumns[i]) {
+            row[k++] = GetColumnValue(env, i, m_opcode == DbOpcode::Insert ? 1 : 0 );
+        }
     }
     return row;
 }
