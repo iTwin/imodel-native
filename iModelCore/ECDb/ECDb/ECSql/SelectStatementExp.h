@@ -456,14 +456,23 @@ struct SubqueryRefExp final : RangeClassRefExp
             overrideOptions.SetAlias(GetAlias().c_str());
             return GetSubquery()->GetQuery()->FindProperty(ctx, propertyPath, overrideOptions);
             }
+        void _OnAliasChanged() override {
+            if( auto view = GetViewClassP()) {
+                view->SetAlias(GetAlias());
+            }
+        }
         void _ExpandSelectAsterisk(std::vector<std::unique_ptr<DerivedPropertyExp>>& expandedSelectClauseItemList, ECSqlParseContext const&) const override;
         void _ToECSql(ECSqlRenderContext&) const override;
         void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override;
+        ECN::ECClassCP m_viewClass;
+        Utf8String m_viewTableSpace;
 
     public:
-        SubqueryRefExp(std::unique_ptr<SubqueryExp>, Utf8CP alias, PolymorphicInfo polymorphic);
+        SubqueryRefExp(std::unique_ptr<SubqueryExp>, Utf8CP alias, PolymorphicInfo polymorphic, std::unique_ptr<ClassNameExp> viewClass = nullptr);
         SubqueryExp const* GetSubquery() const { return GetChild<SubqueryExp>(0); }
+        ClassNameExp const* GetViewClass() const;
+        ClassNameExp* GetViewClassP();
     };
 
 //******************* Select related boolean exp *******************************

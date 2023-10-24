@@ -104,6 +104,22 @@ bool ClassViews::IsValid(ECN::ECClassCR viewClass, ECDbCR conn){
                 IssueType::ECDbIssue, "Invalid view class '%s'. View definition can only be applied to EntityClass or RelationshipClass.", viewClassName);
         return false;
     }
+
+    auto classMap = conn.Schemas().Main().GetClassMap(viewClass);
+    if (classMap == nullptr) {
+        conn.GetImpl().Issues().ReportV(
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
+                IssueType::ECDbIssue, "Invalid view class '%s'. View class does not have a classmap", viewClassName);
+        return false;
+    }
+    if (classMap->GetPrimaryTable().GetType() != DbTable::Type::Virtual) {
+        conn.GetImpl().Issues().ReportV(
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
+                IssueType::ECDbIssue, "Invalid view class '%s'. View class must be mapped to virtual table and not physical table.", viewClassName);
+        return false;
+    }
     if (viewClass.GetClassModifier() != ECClassModifier::Abstract) {
         conn.GetImpl().Issues().ReportV(
                 IssueSeverity::Error,
