@@ -285,18 +285,6 @@ void            *pUserData0,
 void            *pUserData1
 );
 
-/*----------------------------------------------------------------------+
-@param pSurface IN subject surface
-@param pNumLinearBoundaries OUT number of polyline loops.
-@param pNumPCurveLoops OUT number of precise curves.
-+----------------------------------------------------------------------*/
-Public GEOMDLLIMPEXP  void      bspsurf_countLoops
-(
-const MSBsplineSurface *pSurface,
-int *pNumLinearBoundaries,
-int *pNumPCurveLoops
-);
-
 Public GEOMDLLIMPEXP  int       bspsurf_computeBoundarySpansWithHeapDescr
 (
 double                       **spans,
