@@ -5,7 +5,13 @@ This document including important changes to syntax or file format.
 | Module  | Version   |
 | ------- | --------- |
 | Profile | `4.0.0.4` |
-| ECSQL   | `1.2.8.1` |
+| ECSQL   | `1.2.9.0` |
+
+## `10/12/2023`: Add support for window functions
+
+* Add support for window functions
+  * Example: `SELECT rank() OVER(PARTITION BY ECClassId ORDER BY ECInstanceId) from bis.Model`
+* ECSql version updated `1.2.8.1` -> `1.2.9.0`
 
 ## `9/13/2023`: Prgma disqualify_type_filter only take effect if there was more then one class name in query
 
