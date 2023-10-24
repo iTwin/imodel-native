@@ -865,14 +865,15 @@ protected:
     void _Visit(InstanceLabelOverrideBriefcaseIdValueSpecification const& spec) override
         {
         auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Handle %s", DiagnosticsHelpers::CreateRuleIdentifier(spec).c_str()));
-        // WIP: the clause can be replaced with the following when ECSQL start supporting bitwise operators
-        // FUNCTION_NAME_ToBase36 "(ECInstanceId >> 40)"
-        m_fields.push_back(PresentationQueryContractFunctionField::Create("/Base36BriefcaseId/", FUNCTION_NAME_ToBase36,
+        // base36(ECInstanceId >> 40)
+        m_fields.push_back(PresentationQueryContractFunctionField::Create("/Base36BriefcaseId/", "base36",
             {
-            PresentationQueryContractFunctionField::Create("/BriefcaseId/", FUNCTION_NAME_ParseBriefcaseId,
-                {
+            PresentationQueryContractBinaryOpField::Create(
+                "/BriefcaseId/",
+                ">>",
                 m_ecInstanceIdField,
-                })
+                PresentationQueryContractSimpleField::Create("", "40", false)
+                )
             }));
         m_definitelyHasValue = true;
         }
@@ -880,14 +881,15 @@ protected:
     void _Visit(InstanceLabelOverrideLocalIdValueSpecification const& spec) override
         {
         auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Handle %s", DiagnosticsHelpers::CreateRuleIdentifier(spec).c_str()));
-        // WIP: the clause can be replaced with the following when ECSQL start supporting bitwise operators
-        // FUNCTION_NAME_ToBase36 "(ECInstanceId & ((1 << 40) - 1))"
-        m_fields.push_back(PresentationQueryContractFunctionField::Create("/Base36LocalId/", FUNCTION_NAME_ToBase36,
+        // base36(ECInstanceId & ((1 << 40) - 1))
+        m_fields.push_back(PresentationQueryContractFunctionField::Create("/Base36LocalId/", "base36",
             {
-            PresentationQueryContractFunctionField::Create("/LocalId/", FUNCTION_NAME_ParseLocalId,
-                {
+            PresentationQueryContractBinaryOpField::Create(
+                "/LocalId/",
+                "&",
                 m_ecInstanceIdField,
-                })
+                PresentationQueryContractSimpleField::Create("", "((1 << 40) - 1)", false)
+                )
             }));
         m_definitelyHasValue = true;
         }

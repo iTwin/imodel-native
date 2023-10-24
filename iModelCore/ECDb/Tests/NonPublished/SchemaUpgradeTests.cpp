@@ -14,24 +14,26 @@
         }                                                                                \
         return 0;                                                                        \
     }()
+USING_NAMESPACE_BENTLEY_EC
+USING_NAMESPACE_BENTLEY_SQLITE_EC
 
-    USING_NAMESPACE_BENTLEY_EC
-    USING_NAMESPACE_BENTLEY_SQLITE_EC
-
-    BEGIN_ECDBUNITTESTS_NAMESPACE
-    //---------------------------------------------------------------------------------------
-    // @bsiclass
-    //+---------------+---------------+---------------+---------------+---------------+------
-    struct SchemaUpgradeTestFixture : public ECDbTestFixture {
-        std::vector<Utf8String> m_updatedDbs;
-        class IssueListener : public ECN::IIssueListener {
-        public:
-            mutable bvector<Utf8String> m_issues;
-            void _OnIssueReported(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, Utf8CP message) const override {
-                m_issues.push_back(message);
-            }
-            void clear() { m_issues.clear(); }
-        };
+BEGIN_ECDBUNITTESTS_NAMESPACE
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+struct SchemaUpgradeTestFixture : public ECDbTestFixture
+    {
+    std::vector<Utf8String> m_updatedDbs;
+    class IssueListener: public ECN::IIssueListener
+    {
+    public:
+    mutable bvector<Utf8String> m_issues;
+    void _OnIssueReported(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, ECN::IssueId id, Utf8CP message) const override
+        {
+        m_issues.push_back(message);
+        }
+    void clear() { m_issues.clear(); }
+    };
     protected:
 
         //---------------------------------------------------------------------------------------

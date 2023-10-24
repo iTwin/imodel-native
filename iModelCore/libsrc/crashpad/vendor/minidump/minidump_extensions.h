@@ -1,4 +1,4 @@
-// Copyright 2014 The Crashpad Authors. All rights reserved.
+// Copyright 2014 The Crashpad Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,14 +25,15 @@
 #include "util/misc/pdb_structures.h"
 #include "util/misc/uuid.h"
 
+#if defined(COMPILER_MSVC)
 // C4200 is "nonstandard extension used : zero-sized array in struct/union".
 // We would like to globally disable this warning, but unfortunately, the
 // compiler is buggy and only supports disabling it with a pragma, so we can't
-// disable it with other silly warnings in build/common.gypi. See:
+// disable it with other silly warnings in the build files. See:
 //   https://connect.microsoft.com/VisualStudio/feedback/details/1114440
-MSVC_PUSH_DISABLE_WARNING(4200)
+#pragma warning(push)
+#pragma warning(disable: 4200)
 
-#if defined(COMPILER_MSVC)
 #define PACKED
 #pragma pack(push, 1)
 #else
@@ -91,6 +92,11 @@ enum MinidumpStreamType : uint32_t {
   //!
   //! \sa MemoryInfoListStream
   kMinidumpStreamTypeMemoryInfoList = MemoryInfoListStream,
+
+  //! \brief The stream type for MINIDUMP_THREAD_NAME_LIST.
+  //!
+  //! \sa ThreadNamesStream
+  kMinidumpStreamTypeThreadNameList = ThreadNamesStream,
 
   //! \brief The last reserved minidump stream.
   //!
@@ -241,7 +247,7 @@ enum MinidumpOS : uint32_t {
   kMinidumpOSMacOSX = 0x8101,
 
   //! \brief iOS, Darwin for mobile devices.
-  kMinidumpOSiOS = 0x8102,
+  kMinidumpOSIOS = 0x8102,
 
   //! \brief Linux, not including Android.
   kMinidumpOSLinux = 0x8201,
@@ -262,7 +268,6 @@ enum MinidumpOS : uint32_t {
   //! \brief Unknown operating system.
   kMinidumpOSUnknown = 0xffffffff,
 };
-
 
 //! \brief A list of ::RVA pointers.
 struct ALIGNAS(4) PACKED MinidumpRVAList {
@@ -439,8 +444,9 @@ struct ALIGNAS(4) PACKED MinidumpCrashpadInfo {
         report_id(),
         client_id(),
         simple_annotations(),
-        module_list() {
-  }
+        module_list(),
+        reserved(),
+        address_mask() {}
 
   //! \brief The structure’s currently-defined version number.
   //!
@@ -494,14 +500,35 @@ struct ALIGNAS(4) PACKED MinidumpCrashpadInfo {
   //!
   //! This field is present when #version is at least `1`.
   MINIDUMP_LOCATION_DESCRIPTOR module_list;
+
+  //! \brief This field is always `0`.
+  uint32_t reserved;
+
+  //! \brief A mask indicating the range of valid addresses for a pointer.
+  //!
+  //! ARM64 supports MTE, TBI and PAC masking, generally in the upper bits of
+  //! a pointer. This mask can be used by LLDB to mimic ptrauth_strip and strip
+  //! the pointer authentication codes. To recover `pointer` in userland on
+  //! Darwin, `pointer & (~mask)`. In the case of code running in high memory,
+  //! where bit 55 is set (indicating that all of the high bits should be set
+  //! to 1), `pointer | mask`. See ABIMacOSX_arm64::FixAddress for more details
+  //! here:
+  //! https://github.com/llvm/llvm-project/blob/001d18664f8bcf63af64f10688809f7681dfbf0b/lldb/source/Plugins/ABI/AArch64/ABIMacOSX_arm64.cpp#L817-L830
+  //!
+  //! If the platform does not support pointer authentication, or the range of
+  //! valid addressees for a pointer was inaccessible, this field will be 0 and
+  //! should be ignored.
+  //!
+  //! This field is present when #version is at least `1`, if the size of the
+  //! structure is large enough to accommodate it.
+  uint64_t address_mask;
 };
 
 #if defined(COMPILER_MSVC)
 #pragma pack(pop)
+#pragma warning(pop)  // C4200
 #endif  // COMPILER_MSVC
 #undef PACKED
-
-MSVC_POP_WARNING()  // C4200
 
 }  // namespace crashpad
 

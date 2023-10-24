@@ -11,7 +11,7 @@ struct ClassViewsFixture : public ECDbTestFixture {};
 
 struct TestIssueListener: ECN::IIssueListener {
     mutable std::vector<Utf8String> m_issues;
-    void _OnIssueReported(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, Utf8CP message) const override {
+    void _OnIssueReported(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, ECN::IssueId issueId, Utf8CP message) const override {
         m_issues.push_back(message);
     }
     Utf8String const& GetLastError() const { return m_issues.back();}

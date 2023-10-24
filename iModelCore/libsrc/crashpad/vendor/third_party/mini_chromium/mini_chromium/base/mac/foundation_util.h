@@ -5,9 +5,14 @@
 #ifndef MINI_CHROMIUM_BASE_MAC_FOUNDATION_UTIL_H_
 #define MINI_CHROMIUM_BASE_MAC_FOUNDATION_UTIL_H_
 
-#include <ApplicationServices/ApplicationServices.h>
-
 #include "base/logging.h"
+#include "build/build_config.h"
+
+#if BUILDFLAG(IS_IOS)
+#include <CoreText/CoreText.h>
+#else
+#include <ApplicationServices/ApplicationServices.h>
+#endif
 
 #if defined(__OBJC__)
 #import <Foundation/Foundation.h>
@@ -57,23 +62,23 @@ CFMutable##name##Ref NSToCFCast(NSMutable##name* ns_val); \
 // List of toll-free bridged types taken from:
 // http://www.cocoadev.com/index.pl?TollFreeBridged
 
-CF_TO_NS_MUTABLE_CAST_DECL(Array);
-CF_TO_NS_MUTABLE_CAST_DECL(AttributedString);
-CF_TO_NS_CAST_DECL(CFCalendar, NSCalendar);
-CF_TO_NS_MUTABLE_CAST_DECL(CharacterSet);
-CF_TO_NS_MUTABLE_CAST_DECL(Data);
-CF_TO_NS_CAST_DECL(CFDate, NSDate);
-CF_TO_NS_MUTABLE_CAST_DECL(Dictionary);
-CF_TO_NS_CAST_DECL(CFError, NSError);
-CF_TO_NS_CAST_DECL(CFLocale, NSLocale);
-CF_TO_NS_CAST_DECL(CFNumber, NSNumber);
-CF_TO_NS_CAST_DECL(CFRunLoopTimer, NSTimer);
-CF_TO_NS_CAST_DECL(CFTimeZone, NSTimeZone);
-CF_TO_NS_MUTABLE_CAST_DECL(Set);
-CF_TO_NS_CAST_DECL(CFReadStream, NSInputStream);
-CF_TO_NS_CAST_DECL(CFWriteStream, NSOutputStream);
-CF_TO_NS_MUTABLE_CAST_DECL(String);
-CF_TO_NS_CAST_DECL(CFURL, NSURL);
+CF_TO_NS_MUTABLE_CAST_DECL(Array)
+CF_TO_NS_MUTABLE_CAST_DECL(AttributedString)
+CF_TO_NS_CAST_DECL(CFCalendar, NSCalendar)
+CF_TO_NS_MUTABLE_CAST_DECL(CharacterSet)
+CF_TO_NS_MUTABLE_CAST_DECL(Data)
+CF_TO_NS_CAST_DECL(CFDate, NSDate)
+CF_TO_NS_MUTABLE_CAST_DECL(Dictionary)
+CF_TO_NS_CAST_DECL(CFError, NSError)
+CF_TO_NS_CAST_DECL(CFLocale, NSLocale)
+CF_TO_NS_CAST_DECL(CFNumber, NSNumber)
+CF_TO_NS_CAST_DECL(CFRunLoopTimer, NSTimer)
+CF_TO_NS_CAST_DECL(CFTimeZone, NSTimeZone)
+CF_TO_NS_MUTABLE_CAST_DECL(Set)
+CF_TO_NS_CAST_DECL(CFReadStream, NSInputStream)
+CF_TO_NS_CAST_DECL(CFWriteStream, NSOutputStream)
+CF_TO_NS_MUTABLE_CAST_DECL(String)
+CF_TO_NS_CAST_DECL(CFURL, NSURL)
 
 #undef CF_TO_NS_CAST_DECL
 #undef CF_TO_NS_MUTABLE_CAST_DECL
@@ -104,12 +109,12 @@ T CFCast(const CFTypeRef& cf_val);
 template<typename T>
 T CFCastStrict(const CFTypeRef& cf_val);
 
-#define CF_CAST_DECL(TypeCF) \
-template<> TypeCF##Ref \
-CFCast<TypeCF##Ref>(const CFTypeRef& cf_val);\
-\
-template<> TypeCF##Ref \
-CFCastStrict<TypeCF##Ref>(const CFTypeRef& cf_val);
+#define CF_CAST_DECL(TypeCF)                  \
+template<> TypeCF##Ref                        \
+CFCast<TypeCF##Ref>(const CFTypeRef& cf_val); \
+                                              \
+template<> TypeCF##Ref                        \
+CFCastStrict<TypeCF##Ref>(const CFTypeRef& cf_val)
 
 CF_CAST_DECL(CFArray);
 CF_CAST_DECL(CFBag);
@@ -129,8 +134,10 @@ CF_CAST_DECL(CGColor);
 CF_CAST_DECL(CTFont);
 CF_CAST_DECL(CTRun);
 
+#if !BUILDFLAG(IS_IOS)
 CF_CAST_DECL(SecACL);
 CF_CAST_DECL(SecTrustedApplication);
+#endif
 
 #undef CF_CAST_DECL
 
