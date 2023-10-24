@@ -1198,3 +1198,58 @@ TEST(BsplineKnots, ValidateOverClamped)
             }
         }
     }
+
+TEST(BsplineSurface, IsPhysicallyClosed)
+    {
+    bool uClosed, vClosed;
+
+    bvector<WString> fileNames;
+    fileNames.push_back(L"nonrational_toroid_legacy_closed.imjs");
+    fileNames.push_back(L"nonrational_toroid_open.imjs");
+    fileNames.push_back(L"torus3_open_closed.imjs");
+    fileNames.push_back(L"torus6_open_closed.imjs");
+    for (auto const& fileName : fileNames)
+        {
+        BeFileName dataPath;
+        BeTest::GetHost().GetDocumentsRoot(dataPath);
+        dataPath.AppendToPath(L"GeomLibsTestData");
+        dataPath.AppendToPath(L"BSpline");
+        dataPath.AppendToPath(fileName.GetWCharCP());
+        bvector<IGeometryPtr> geometry;
+        if (Check::True(GTestFileOps::JsonFileToGeometry(dataPath, geometry), "Import geometry from JSON"))
+            {
+            for (auto const& g : geometry)
+                {
+                auto surface = g->GetAsMSBsplineSurface();
+                if (Check::True(surface.IsValid(), "Geometry is a B-spline surface"))
+                    {
+                    surface->IsPhysicallyClosed(uClosed, vClosed);
+                    Check::True(uClosed, "Toroid is physically closed in u-direction");
+                    Check::True(vClosed, "Toroid is physically closed in v-direction");
+                    }
+                }
+            }
+        }
+    if (true)
+        {
+        auto openSurface = SimpleBilinearPatch(1, 1, 2);
+        openSurface->IsPhysicallyClosed(uClosed, vClosed);
+        Check::False(uClosed, "Bilinear patch is not physically closed in u-direction");
+        Check::False(vClosed, "Bilinear patch is not physically closed in v-direction");
+        }
+    if (true)
+        {
+        auto circle = MSBsplineCurve::CreatePtr();
+        circle->InitEllipticArc(DPoint3d::FromZero(), 3, 6);
+        auto halfOpenSurface = MSBsplineSurface::CreateLinearSweep(*circle, DVec3d::From(0,0,2));
+
+        halfOpenSurface->IsPhysicallyClosed(uClosed, vClosed);
+        Check::True(uClosed, "Cylinder is physically closed in u-direction");
+        Check::False(vClosed, "Cylinder is not physically closed in v-direction");
+
+        halfOpenSurface->SwapUV();
+        halfOpenSurface->IsPhysicallyClosed(uClosed, vClosed);
+        Check::False(uClosed, "Swapped cylinder is not physically closed in u-direction");
+        Check::True(vClosed, "Swapped cylinder is physically closed in v-direction");
+        }
+    }

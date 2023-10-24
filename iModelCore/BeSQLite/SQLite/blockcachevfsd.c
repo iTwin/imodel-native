@@ -1500,6 +1500,7 @@ static void bdDisconnectClient(
 
   /* Close the socket connection */
   bcv_close_socket(pClient->fd);
+  pClient->fd = INVALID_SOCKET;
 
   if( pClient->apRef ){
     bdReleaseEntryRefs(pClient);
@@ -2443,8 +2444,6 @@ static void bdPrefetchCb(
   CacheEntry *pEntry = pDLCtx->pEntry;
   int rc = errCode;
 
-  pClient->prefetch.nOutstanding--;
-
   if( rc==SQLITE_OK ){
     i64 iOff = (pEntry->iPos * p->c.szBlk);
     rc = bdWriteFile(p->pCacheFile, pDLCtx->pKey, aData, nData, iOff);
@@ -2459,17 +2458,21 @@ static void bdPrefetchCb(
     bcvfsUnusedAdd(&p->c, pEntry);
   }
 
+  if( pClient ){
+    pClient->prefetch.nOutstanding--;
+
+    if( rc!=SQLITE_OK && pClient->prefetch.errCode==SQLITE_OK ){
+      pClient->prefetch.errCode = rc;
+      pClient->prefetch.zErrMsg = sqlite3_mprintf("%s", zETag);
+    }
+
+    if( pClient->prefetch.bReply ){
+      bdSendPrefetchReply(pClient);
+      pClient->prefetch.bReply = 0;
+    }
+  }
+
   bdBlockDownloadFree(pDLCtx);
-
-  if( rc!=SQLITE_OK && pClient->prefetch.errCode==SQLITE_OK ){
-    pClient->prefetch.errCode = rc;
-    pClient->prefetch.zErrMsg = sqlite3_mprintf("%s", zETag);
-  }
-
-  if( pClient && pClient->prefetch.bReply ){
-    bdSendPrefetchReply(pClient);
-    pClient->prefetch.bReply = 0;
-  }
 }
 
 
