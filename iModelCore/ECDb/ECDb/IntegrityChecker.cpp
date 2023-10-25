@@ -731,12 +731,18 @@ DbResult IntegrityChecker::CheckNavClassIds(std::function<bool(ECInstanceId, Utf
                 continue;
             }
 			LOG.infov("integrity_check(check_nav_class_ids) analyzing [class: %s] [nav_prop: %s]", classCP->GetFullName(), prop.c_str());
-            std::string query = SqlPrintfString("SELECT s.ECInstanceId, s.%s.Id, s.%s.RelECClassId FROM %s s LEFT JOIN meta.ECClassDef t ON s.%s.RelECClassId=t.ECInstanceId WHERE t.ECInstanceId IS NULL AND s.%s.RelECClassId IS NOT NULL",
-												navPropCP->GetName().c_str(),
-												navPropCP->GetName().c_str(),
-												classCP->GetECSqlName().c_str(),
-												navPropCP->GetName().c_str(),
-												navPropCP->GetName().c_str()).GetUtf8CP();
+            std::string query = SqlPrintfString(
+				"SELECT s.ECInstanceId, s.%s.Id, s.%s.RelECClassId FROM %s s LEFT JOIN meta.ECClassDef t ON s.%s.RelECClassId=t.ECInstanceId "
+				"WHERE (t.ECInstanceId IS NULL AND s.%s.RelECClassId IS NOT NULL) OR (s.%s.RelECClassId IS NOT NULL AND ec_instanceof(s.%s.RelECClassId, %s) = 0)",
+				navPropCP->GetName().c_str(),
+				navPropCP->GetName().c_str(),
+				classCP->GetECSqlName().c_str(),
+				navPropCP->GetName().c_str(),
+				navPropCP->GetName().c_str(),
+				navPropCP->GetName().c_str(),
+				navPropCP->GetName().c_str(),
+				std::to_string(propMap->GetAs<NavigationPropertyMap>().GetRelECClassIdPropertyMap().GetDefaultClassId().GetValue()).c_str()
+			).GetUtf8CP();
 			ECSqlStatement navStmt;
 			if (navStmt.Prepare(m_conn, query.c_str()) != ECSqlStatus::Success) {
 				m_lastError = "failed to prepared ecsql for nav prop integrity check";
