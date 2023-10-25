@@ -138,11 +138,7 @@ TEST_F(CommonTableExpTestFixture, MetaQuery) {
         */
 
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-<<<<<<< HEAD
-        ASSERT_EQ(73, stmt.GetValueInt(0)) << "aId";
-=======
         ASSERT_EQ(m_ecdb.Schemas().GetClassId("TestSchema", "A").GetValue(), stmt.GetValueInt(0)) << "aId";
->>>>>>> 963a6e22 (Update ECDbMap, bump ECDb profile version to 4.0.0.4)
         ASSERT_EQ(true, stmt.IsValueNull(1)) << "aParentId"; 
         ASSERT_EQ(0, stmt.GetValueInt(2)) << "aDepth";
         ASSERT_STREQ("A", stmt.GetValueText(3)) << "aPath";

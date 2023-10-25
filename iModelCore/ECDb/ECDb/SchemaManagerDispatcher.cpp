@@ -2186,20 +2186,4 @@ void MainSchemaManager::GatherRootClasses(
         }
     }
 
-
-<<<<<<< HEAD
-
 END_BENTLEY_SQLITE_EC_NAMESPACE
-=======
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-DbResult ECDbModule::_OnRegister() {
-    auto& vm = GetECDb().Schemas().Main().GetVirtualSchemaManager();
-    if (SUCCESS != vm.Add(m_ecSchema)) {
-        return BE_SQLITE_ERROR;
-    }
-    return BE_SQLITE_OK;
-}
-END_BENTLEY_SQLITE_EC_NAMESPACE
->>>>>>> 963a6e22 (Update ECDbMap, bump ECDb profile version to 4.0.0.4)

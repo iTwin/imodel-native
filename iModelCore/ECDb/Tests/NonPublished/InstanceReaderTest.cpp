@@ -10,8 +10,6 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
 struct InstanceReaderFixture : ECDbTestFixture {};
-<<<<<<< HEAD
-=======
 #if 0
 // Instance perf test
 struct InstancePropPerfTest {
@@ -1069,7 +1067,6 @@ TEST_F(InstanceReaderFixture, check_instance_serialization) {
         ASSERT_STRCASEEQ(expectedDoc.Stringify(StringifyFormat::Indented).c_str(), actualDoc.Stringify(StringifyFormat::Indented).c_str());
     }
 }
->>>>>>> 963a6e22 (Update ECDbMap, bump ECDb profile version to 4.0.0.4)
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -1083,14 +1080,9 @@ TEST_F(InstanceReaderFixture, ecsql_read_instance) {
     )sql"));
 
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-<<<<<<< HEAD
-    ASSERT_STREQ(stmt.GetNativeSql(), "SELECT extract_inst([ECClassDef].[ECClassId],[ECClassDef].[ECInstanceId]) FROM (SELECT [Id] ECInstanceId,32 ECClassId,[Description] FROM [main].[ec_Class]) [ECClassDef] WHERE [ECClassDef].[Description]='Relates the property to its PropertyCategory.'");
-    ASSERT_STREQ(stmt.GetValueText(0), R"json({"ECInstanceId":"0x2e","ECClassId":"ECDbMeta.ECClassDef","Schema":{"Id":"0x4","RelECClassId":"ECDbMeta.SchemaOwnsClasses"},"Name":"PropertyHasCategory","Description":"Relates the property to its PropertyCategory.","Type":1,"Modifier":2,"RelationshipStrength":0,"RelationshipStrengthDirection":1})json");
-=======
 
     ASSERT_STREQ(stmt.GetNativeSql(), "SELECT json(extract_inst([ECClassDef].[ECClassId],[ECClassDef].[ECInstanceId], 0x0)) FROM (SELECT [Id] ECInstanceId,34 ECClassId,[Description] FROM [main].[ec_Class]) [ECClassDef] WHERE [ECClassDef].[Description]='Relates the property to its PropertyCategory.'");
     ASSERT_STREQ(stmt.GetValueText(0), R"json({"ECInstanceId":"0x30","ECClassId":"0x22","Schema":{"Id":"0x4","RelECClassId":"0x23"},"Name":"PropertyHasCategory","Description":"Relates the property to its PropertyCategory.","Type":1,"Modifier":2,"RelationshipStrength":0,"RelationshipStrengthDirection":1})json");
->>>>>>> 963a6e22 (Update ECDbMap, bump ECDb profile version to 4.0.0.4)
 }
 
 //---------------------------------------------------------------------------------------
@@ -1105,11 +1097,7 @@ TEST_F(InstanceReaderFixture, ecsql_read_property) {
     )sql"));
 
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-<<<<<<< HEAD
-    ASSERT_STREQ(stmt.GetNativeSql(), "SELECT extract_prop([ECClassDef].[ECClassId],[ECClassDef].[ECInstanceId],'name') FROM (SELECT [Id] ECInstanceId,32 ECClassId,[Description] FROM [main].[ec_Class]) [ECClassDef] WHERE [ECClassDef].[Description]='Relates the property to its PropertyCategory.'");
-=======
     ASSERT_STREQ(stmt.GetNativeSql(), "SELECT extract_prop([ECClassDef].[ECClassId],[ECClassDef].[ECInstanceId],'name',0x0,:ecdb_this_ptr,0) FROM (SELECT [Id] ECInstanceId,34 ECClassId,[Description] FROM [main].[ec_Class]) [ECClassDef] WHERE [ECClassDef].[Description]='Relates the property to its PropertyCategory.'");
->>>>>>> 963a6e22 (Update ECDbMap, bump ECDb profile version to 4.0.0.4)
     ASSERT_STREQ(stmt.GetValueText(0), "PropertyHasCategory");
 }
 
@@ -1126,19 +1114,11 @@ TEST_F(InstanceReaderFixture, instance_reader) {
 
     BeJsDocument doc;
     doc.Parse(R"json({
-<<<<<<< HEAD
-        "ECInstanceId": "0x2e",
-        "ECClassId": "ECDbMeta.ECClassDef",
-        "Schema": {
-            "Id": "0x4",
-            "RelECClassId": "ECDbMeta.SchemaOwnsClasses"
-=======
         "ECInstanceId": "0x30",
         "ECClassId": "0x22",
         "Schema": {
             "Id": "0x4",
             "RelECClassId": "0x23"
->>>>>>> 963a6e22 (Update ECDbMap, bump ECDb profile version to 4.0.0.4)
         },
         "Name": "PropertyHasCategory",
         "Description": "Relates the property to its PropertyCategory.",
@@ -1158,11 +1138,7 @@ TEST_F(InstanceReaderFixture, instance_reader) {
     if ("use syntax to get full instance") {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECClassId, ECInstanceId, $ FROM meta.ECClassDef WHERE Description='Relates the property to its PropertyCategory.'"));
-<<<<<<< HEAD
-        const auto expectedSQL = "SELECT [ECClassDef].[ECClassId],[ECClassDef].[ECInstanceId],extract_inst([ECClassDef].[ECClassId],[ECClassDef].[ECInstanceId]) FROM (SELECT [Id] ECInstanceId,32 ECClassId,[Description] FROM [main].[ec_Class]) [ECClassDef] WHERE [ECClassDef].[Description]='Relates the property to its PropertyCategory.'";
-=======
         const auto expectedSQL = "SELECT [ECClassDef].[ECClassId],[ECClassDef].[ECInstanceId],json(extract_inst([ECClassDef].[ECClassId],[ECClassDef].[ECInstanceId], 0x0)) FROM (SELECT [Id] ECInstanceId,34 ECClassId,[Description] FROM [main].[ec_Class]) [ECClassDef] WHERE [ECClassDef].[Description]='Relates the property to its PropertyCategory.'";
->>>>>>> 963a6e22 (Update ECDbMap, bump ECDb profile version to 4.0.0.4)
         EXPECT_STRCASEEQ(expectedSQL, stmt.GetNativeSql());
         if(stmt.Step() == BE_SQLITE_ROW) {
             BeJsDocument inst;
@@ -1174,11 +1150,7 @@ TEST_F(InstanceReaderFixture, instance_reader) {
     if ("use syntax to get full instance using alias") {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT m.ECClassId, m.ECInstanceId, m.$ FROM meta.ECClassDef m WHERE m.Description='Relates the property to its PropertyCategory.'"));
-<<<<<<< HEAD
-        const auto expectedSQL = "SELECT [m].[ECClassId],[m].[ECInstanceId],extract_inst([m].[ECClassId],[m].[ECInstanceId]) FROM (SELECT [Id] ECInstanceId,32 ECClassId,[Description] FROM [main].[ec_Class]) [m] WHERE [m].[Description]='Relates the property to its PropertyCategory.'";
-=======
         const auto expectedSQL = "SELECT [m].[ECClassId],[m].[ECInstanceId],json(extract_inst([m].[ECClassId],[m].[ECInstanceId], 0x0)) FROM (SELECT [Id] ECInstanceId,34 ECClassId,[Description] FROM [main].[ec_Class]) [m] WHERE [m].[Description]='Relates the property to its PropertyCategory.'";
->>>>>>> 963a6e22 (Update ECDbMap, bump ECDb profile version to 4.0.0.4)
         EXPECT_STRCASEEQ(expectedSQL, stmt.GetNativeSql());
         if(stmt.Step() == BE_SQLITE_ROW) {
             BeJsDocument inst;
@@ -1279,11 +1251,7 @@ TEST_F(InstanceReaderFixture, extract_prop) {
     if ("use syntax to extract property") {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT $->s, $->i, $->d, $->p2d, $->p3d, $->bi, $->l, $->dt, $->b FROM ts.P"));
-<<<<<<< HEAD
-        const auto expectedSQL = "SELECT extract_prop([P].[ECClassId],[P].[ECInstanceId],'s'),extract_prop([P].[ECClassId],[P].[ECInstanceId],'i'),extract_prop([P].[ECClassId],[P].[ECInstanceId],'d'),extract_prop([P].[ECClassId],[P].[ECInstanceId],'p2d'),extract_prop([P].[ECClassId],[P].[ECInstanceId],'p3d'),extract_prop([P].[ECClassId],[P].[ECInstanceId],'bi'),extract_prop([P].[ECClassId],[P].[ECInstanceId],'l'),extract_prop([P].[ECClassId],[P].[ECInstanceId],'dt'),extract_prop([P].[ECClassId],[P].[ECInstanceId],'b') FROM (SELECT [Id] ECInstanceId,73 ECClassId FROM [main].[ts_P]) [P]";
-=======
         const auto expectedSQL = "SELECT extract_prop([P].[ECClassId],[P].[ECInstanceId],'s',0x0,:ecdb_this_ptr,0),extract_prop([P].[ECClassId],[P].[ECInstanceId],'i',0x0,:ecdb_this_ptr,1),extract_prop([P].[ECClassId],[P].[ECInstanceId],'d',0x0,:ecdb_this_ptr,2),extract_prop([P].[ECClassId],[P].[ECInstanceId],'p2d',0x0,:ecdb_this_ptr,3),extract_prop([P].[ECClassId],[P].[ECInstanceId],'p3d',0x0,:ecdb_this_ptr,4),extract_prop([P].[ECClassId],[P].[ECInstanceId],'bi',0x0,:ecdb_this_ptr,5),extract_prop([P].[ECClassId],[P].[ECInstanceId],'l',0x0,:ecdb_this_ptr,6),extract_prop([P].[ECClassId],[P].[ECInstanceId],'dt',0x0,:ecdb_this_ptr,7),extract_prop([P].[ECClassId],[P].[ECInstanceId],'b',0x0,:ecdb_this_ptr,8) FROM (SELECT [Id] ECInstanceId,75 ECClassId FROM [main].[ts_P]) [P]";
->>>>>>> 963a6e22 (Update ECDbMap, bump ECDb profile version to 4.0.0.4)
         EXPECT_STRCASEEQ(expectedSQL, stmt.GetNativeSql());
         if(stmt.Step() == BE_SQLITE_ROW) {
             int i = 0;
@@ -1717,11 +1685,7 @@ TEST_F(InstanceReaderFixture, nested_struct) {
     BeJsDocument expected;
     expected.Parse(R"json({
         "ECInstanceId": "0x1",
-<<<<<<< HEAD
-        "ECClassId": "TestSchema.e_mix",
-=======
         "ECClassId": "0x4b",
->>>>>>> 963a6e22 (Update ECDbMap, bump ECDb profile version to 4.0.0.4)
         "b": true,
         "bi": "encoding=base64;SA==",
         "d": 3.141592653589793,
