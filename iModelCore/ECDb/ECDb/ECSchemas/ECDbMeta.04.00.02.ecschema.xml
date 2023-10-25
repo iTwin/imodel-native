@@ -535,6 +535,7 @@
         <ECEnumerator name="String" value="2305" displayLabel="String" />
         <ECEnumerator name="IGeometry" value="2561" displayLabel="IGeometry" />
     </ECEnumeration>
+
     <ECEntityClass typeName="CustomAttribute" description="" displayLabel="" modifier="Sealed">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00.00">
@@ -548,6 +549,7 @@
         <ECProperty propertyName="Instance"  typeName="string"/>
         <ECNavigationProperty propertyName="Class" relationshipName="CustomAttributeClassHasInstance" direction="backward"/>
     </ECEntityClass>
+
     <ECRelationshipClass typeName="CustomAttributeClassHasInstance" modifier="Sealed" strength="referencing">
         <Source multiplicity="(1..1)" roleLabel="has instance" polymorphic="false">
             <Class class="ECClassDef"/>
@@ -556,6 +558,7 @@
             <Class class="CustomAttribute"/>
         </Target>
     </ECRelationshipClass>
+
 
     <ECEntityClass typeName="PropertyCustomAttribute" description="" displayLabel="" modifier="Abstract">
         <ECCustomAttributes>
@@ -576,7 +579,21 @@
         <ECProperty propertyName="Instance"  typeName="string"/>
     </ECEntityClass>
 
-    <ECRelationshipClass typeName="PropertyHasCustomAttribute" modifier="Sealed" strength="referencing">
+    <ECRelationshipClass typeName="PropertyHasCustomAttribute" modifier="Abstract" strength="referencing">
+        <ECCustomAttributes>
+            <View xmlns="ClassViews.01.00.00">
+                <Query>
+                    SELECT
+                        [ca].[ECinstanceId],
+                        [ca].[ContainerId] as [SourceECInstanceId],
+                        ec_classid('ECDbMeta:ECPropertyDef') as [SourceECClassId],
+                        [ca].[ECInstanceId] as [TargetECInstanceId],
+                        ec_classid('ECDbMeta:PropertyCustomAttribute') as [TargetECClassId]
+                    FROM meta.CustomAttribute [ca]
+                    WHERE [ca].[ContainerType] = 992 ORDER BY [ca].[Ordinal]
+                </Query>
+            </View>
+        </ECCustomAttributes>
         <Source multiplicity="(1..1)" roleLabel="has custom attribute" polymorphic="false">
             <Class class="ECPropertyDef"/>
         </Source>
@@ -584,7 +601,14 @@
             <Class class="PropertyCustomAttribute"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="CustomAttributeClassHasInstanceOnProperty" modifier="Sealed" strength="referencing">
+    <ECRelationshipClass typeName="CustomAttributeClassHasInstanceOnProperty" modifier="Abstract" strength="referencing">
+        <ECCustomAttributes>
+            <View xmlns="ClassViews.01.00.00">
+                <Query>
+                    SELECT * FROM meta.CustomAttributeClassHasInstance
+                </Query>
+            </View>
+        </ECCustomAttributes>
         <Source multiplicity="(1..1)" roleLabel="has instance" polymorphic="false">
             <Class class="ECClassDef"/>
         </Source>
