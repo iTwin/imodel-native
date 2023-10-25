@@ -534,12 +534,12 @@ BentleyStatus ImportRequiresVersionCustomAttribute::Verify(IssueDataSource const
 
     auto profileVersion = ECDb::CurrentECDbProfileVersion();
     ProfileVersion requiredProfileVersion(0, 0, 0, 0);
-    if (version.IsNull() || requiredProfileVersion.FromString(version.ValueR().c_str()) != BentleyStatus::SUCCESS)
+    if (version.IsNull())
         {
         issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "ECSchema %s has a ImportRequiresVersion custom attribute with a missing or invalid ECDbRuntimeVersion property.", fullSchemaName);
         return ERROR;
         }
-
+    requiredProfileVersion.FromString(version.ValueR().c_str());
     if(requiredProfileVersion > profileVersion)
         {
         issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "ECSchema %s requires ECDb version %s, but the current runtime version is only %s.", fullSchemaName, requiredProfileVersion.ToString().c_str(), profileVersion.ToString().c_str());
@@ -584,11 +584,7 @@ BentleyStatus UseRequiresVersionCustomAttribute::Verify(IssueDataSource const& i
         {
         auto profileVersion = ECDb::CurrentECDbProfileVersion();
         ProfileVersion requiredProfileVersion(0, 0, 0, 0);
-        if (requiredProfileVersion.FromString(version.ValueR().c_str()) != BentleyStatus::SUCCESS)
-            {
-            issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "%s has a UseRequiresVersion custom attribute with an invalid ECDbRuntimeVersion property.", context);
-            return ERROR;
-            }
+        requiredProfileVersion.FromString(version.ValueR().c_str());
 
         if(requiredProfileVersion > profileVersion)
             {
@@ -602,11 +598,7 @@ BentleyStatus UseRequiresVersionCustomAttribute::Verify(IssueDataSource const& i
         {
         auto ecSqlVersion = ECDb::GetECSqlVersion();
         BeVersion requiredECSqlVersion(0, 0, 0, 0);
-        if (requiredECSqlVersion.FromString(sqlVersion.ValueR().c_str()) != BentleyStatus::SUCCESS)
-            {
-            issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "%s has a UseRequiresVersion custom attribute with an invalid ECSqlVersion property.", context);
-            return ERROR;
-            }
+        requiredECSqlVersion.FromString(sqlVersion.ValueR().c_str());
 
         if(requiredECSqlVersion > ecSqlVersion)
             {
