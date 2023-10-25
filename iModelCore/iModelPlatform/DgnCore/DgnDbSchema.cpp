@@ -663,7 +663,7 @@ SchemaStatus DgnDb::ImportV8LegacySchemas(bvector<ECSchemaCP> const& schemas, si
     if (schemasToImport.empty())
         return SchemaStatus::Success;
 
-    SchemaManager::SchemaImportOptions options = SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues | SchemaManager::SchemaImportOptions::DoNotFailForDeletionsOrModifications;
+    SchemaManager::SchemaImportOptions options = IsAlwaysAllowDeletionsEnabled() ? SchemaManager::SchemaImportOptions::AlwaysAllowDeletions : SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues | SchemaManager::SchemaImportOptions::DoNotFailForDeletionsOrModifications;
     return Domains().DoImportSchemas(schemasToImport, options);
     }
 

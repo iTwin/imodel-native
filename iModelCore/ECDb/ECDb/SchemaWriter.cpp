@@ -3416,20 +3416,25 @@ BentleyStatus SchemaWriter::DeleteClass(Context& ctx, ClassChange& classChange, 
     // Allow Major schema upgrade for dynamic schemas if AllowMajorSchemaUpgradeForDynamicSchemas import option is set irrespective of the DisallowMajorSchemaUpgrade import option
     // For more information about major schema upgrade rules and examples, see https://dev.azure.com/bentleycs/iModelTechnologies/_wiki/wikis/iModelTechnologies.wiki/36117/Major-Schema-Upgrades
     Utf8String errorMessage = "";
-    if (!ctx.IsMajorSchemaVersionChange(deletedClass.GetSchema().GetId())) // Check if the schema "Read" version has been updated to allow the major change
-        errorMessage = "the 'Read' version number of the ECSchema was not incremented.";
 
-    else if (!ctx.AreMajorSchemaVersionChangesAllowed()) // Check if the major version changes are disabled for all schemas with SchemaImportOptions::DisallowMajorSchemaUpgrade (default behavior)
+    // Check if the schema import option AlwaysAllowDeletions has been set to allow class deletion without major schema version increment required.
+    if (!ctx.IsAlwaysAllowDeletionsEnabled())
         {
-        // Major version changes are disabled. Check if schema is dynamic to decide if major version changes can still be done.
-        if (isDynamicSchema)
+        if (!ctx.IsMajorSchemaVersionChange(deletedClass.GetSchema().GetId())) // Check if the schema "Read" version has been updated to allow the major change
+            errorMessage = "the 'Read' version number of the ECSchema was not incremented.";
+
+        else if (!ctx.AreMajorSchemaVersionChangesAllowed()) // Check if the major version changes are disabled for all schemas with SchemaImportOptions::DisallowMajorSchemaUpgrade (default behavior)
             {
-            if (!ctx.IsMajorSchemaVersionChangeAllowedForDynamicSchemas()) // Schema is dynamic, check if major schema changed enabled for dynamic schemas with SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas
-                errorMessage = "major schema version changes have not been enabled for dynamic schemas.";
-            }
-        else
-            {
-            errorMessage = "major schema version changes are disabled for all schemas.";
+            // Major version changes are disabled. Check if schema is dynamic to decide if major version changes can still be done.
+            if (isDynamicSchema)
+                {
+                if (!ctx.IsMajorSchemaVersionChangeAllowedForDynamicSchemas()) // Schema is dynamic, check if major schema changed enabled for dynamic schemas with SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas
+                    errorMessage = "major schema version changes have not been enabled for dynamic schemas.";
+                }
+            else
+                {
+                errorMessage = "major schema version changes are disabled for all schemas.";
+                }
             }
         }
 
@@ -3608,20 +3613,26 @@ BentleyStatus SchemaWriter::DeleteProperty(Context& ctx, PropertyChange& propert
         {
         // Property is not overriden, hence major schema change rules will be applied
         Utf8String errorMessage = "";
-        if (!ctx.IsMajorSchemaVersionChange(deletedProperty.GetClass().GetSchema().GetId())) // Check if the schema "Read" version has been updated to allow the major change
-            errorMessage = "the 'Read' version number of the ECSchema was not incremented.";
 
-        else if (!ctx.AreMajorSchemaVersionChangesAllowed()) // Check if the major version changes are disabled for all schemas with SchemaImportOptions::DisallowMajorSchemaUpgrade (default behavior)
+        // Check if the schema import option AlwaysAllowDeletions has been set to allow property deletion without major schema version increment required.
+        if (!ctx.IsAlwaysAllowDeletionsEnabled())
             {
-            // Major version changes are disabled. Check if schema is dynamic to decide if major version changes can still be done.
-            if (isDynamicSchema)
+            // Check if the schema "Read" version has been updated to allow the major change
+            if (!ctx.IsMajorSchemaVersionChange(deletedProperty.GetClass().GetSchema().GetId()))
+                errorMessage = "the 'Read' version number of the ECSchema was not incremented.";
+
+            else if (!ctx.AreMajorSchemaVersionChangesAllowed()) // Check if the major version changes are disabled for all schemas with SchemaImportOptions::DisallowMajorSchemaUpgrade (default behavior)
                 {
-                if (!ctx.IsMajorSchemaVersionChangeAllowedForDynamicSchemas()) // Schema is dynamic, check if major schema changed enabled for dynamic schemas with SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas
-                    errorMessage = "major schema version changes have not been enabled for dynamic schemas.";
-                }
-            else
-                {
-                errorMessage = "major schema version changes are disabled for all schemas.";
+                // Major version changes are disabled. Check if schema is dynamic to decide if major version changes can still be done.
+                if (isDynamicSchema)
+                    {
+                    if (!ctx.IsMajorSchemaVersionChangeAllowedForDynamicSchemas()) // Schema is dynamic, check if major schema changed enabled for dynamic schemas with SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas
+                        errorMessage = "major schema version changes have not been enabled for dynamic schemas.";
+                    }
+                else
+                    {
+                    errorMessage = "major schema version changes are disabled for all schemas.";
+                    }
                 }
             }
 
@@ -5236,7 +5247,7 @@ BentleyStatus SchemaWriter::UpdateSchema(Context& ctx, SchemaChange& schemaChang
             return ERROR;
             }
 
-        if (!ctx.AreMajorSchemaVersionChangesAllowed() && !(newSchema.IsDynamicSchema() && ctx.IsMajorSchemaVersionChangeAllowedForDynamicSchemas()))
+        if (!ctx.IsAlwaysAllowDeletionsEnabled() && !ctx.AreMajorSchemaVersionChangesAllowed() && !(newSchema.IsDynamicSchema() && ctx.IsMajorSchemaVersionChangeAllowedForDynamicSchemas()))
             {
             ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0427,
                 "ECSchema Upgrade failed. ECSchema %s: Major schema version changes are disabled.  New Schema %s",

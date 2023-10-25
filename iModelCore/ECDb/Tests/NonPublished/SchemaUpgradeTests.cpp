@@ -14039,11 +14039,15 @@ TEST_F(SchemaUpgradeTestFixture, DisallowMajorSchemaUpgrade)
     EXPECT_EQ(ERROR, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << "Deleting a property on a shared column (must fail because it requires the major schema version to be incremented)";
     EXPECT_EQ(ERROR, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas)) << "Deleting a property on a shared column (must fail because it requires the major schema version to be incremented)";
     EXPECT_EQ(ERROR, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas)) << "Deleting a property on a shared column (must fail because it requires the major schema version to be incremented)";
+    EXPECT_EQ(SUCCESS, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::AlwaysAllowDeletions)) << "Deleting a property on a shared column should succeed without major schema version increment if the Schema Import Option AlwaysAllowDeletions is given";
+    EXPECT_EQ(SUCCESS, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas | SchemaManager::SchemaImportOptions::AlwaysAllowDeletions)) << "Deleting a property on a shared column should succeed without major schema version increment if the Schema Import Option AlwaysAllowDeletions is given";
 
     EXPECT_EQ(SUCCESS, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::None)) << "Deleting a property on a shared column";
     EXPECT_EQ(ERROR, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << "Deleting a property on a shared column";
     EXPECT_EQ(SUCCESS, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas)) << "Deleting a property on a shared column";
     EXPECT_EQ(ERROR, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas)) << "Deleting a property on a shared column";
+    EXPECT_EQ(SUCCESS, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::AlwaysAllowDeletions)) << "Deleting a property on a shared column";
+    EXPECT_EQ(SUCCESS, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas | SchemaManager::SchemaImportOptions::AlwaysAllowDeletions)) << "Deleting a property on a shared column should succeed without major schema version increment if the Schema Import Option AlwaysAllowDeletions is given";
 
     //Deleting a class
     newSchema = R"xml(<?xml version="1.0" encoding="utf-8" ?>
@@ -14066,11 +14070,15 @@ TEST_F(SchemaUpgradeTestFixture, DisallowMajorSchemaUpgrade)
     EXPECT_EQ(ERROR, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << "Deleting a class (must fail because it requires the major schema version to be incremented)";
     EXPECT_EQ(ERROR, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas)) << "Deleting a class (must fail because it requires the major schema version to be incremented)";
     EXPECT_EQ(ERROR, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas)) << "Deleting a class (must fail because it requires the major schema version to be incremented)";
+    EXPECT_EQ(SUCCESS, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::AlwaysAllowDeletions)) << "Deleting a class should succeed without major schema version increment if the Schema Import Option AlwaysAllowDeletions is given";
+    EXPECT_EQ(SUCCESS, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas | SchemaManager::SchemaImportOptions::AlwaysAllowDeletions)) << "Deleting a class should succeed without major schema version increment if the Schema Import Option AlwaysAllowDeletions is given";
 
     EXPECT_EQ(SUCCESS, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::None)) << "Deleting a class";
     EXPECT_EQ(ERROR, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << "Deleting a class";
     EXPECT_EQ(SUCCESS, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas)) << "Deleting a class";
     EXPECT_EQ(ERROR, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas)) << "Deleting a class";
+    EXPECT_EQ(SUCCESS, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::AlwaysAllowDeletions)) << "Deleting a class";
+    EXPECT_EQ(SUCCESS, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas | SchemaManager::SchemaImportOptions::AlwaysAllowDeletions)) << "Deleting a class";
 
     //adding IsNullable constraint
     newSchema = R"xml(<?xml version="1.0" encoding="utf-8" ?>
@@ -17215,23 +17223,29 @@ TEST_F(SchemaUpgradeTestFixture, MajorSchemaUpgradeDeletePropertyAndClass)
             { __LINE__, "1.1.0", SchemaManager::SchemaImportOptions::None, ERROR },
             { __LINE__, "1.1.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, ERROR },
             { __LINE__, "1.1.0", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, ERROR },
+            { __LINE__, "1.1.0", SchemaManager::SchemaImportOptions::AlwaysAllowDeletions, SUCCESS },
             { __LINE__, "1.1.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, ERROR },
+            { __LINE__, "1.1.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AlwaysAllowDeletions, SUCCESS },
+            { __LINE__, "1.1.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AlwaysAllowDeletions | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS },
 
             { __LINE__, "2.0.0", SchemaManager::SchemaImportOptions::None, SUCCESS },
             { __LINE__, "2.0.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, ERROR },
             { __LINE__, "2.0.0", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS },
+            { __LINE__, "2.0.0", SchemaManager::SchemaImportOptions::AlwaysAllowDeletions, SUCCESS },
             { __LINE__, "2.0.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS },
+            { __LINE__, "2.0.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AlwaysAllowDeletions, SUCCESS },
+            { __LINE__, "2.0.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AlwaysAllowDeletions | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, SUCCESS },
         })
         {
         Utf8PrintfString errorMsg("Test case at line %d has failed.\n", lineNumber);
 
         EXPECT_EQ(expectedResult, GetHelper().ImportSchema(SchemaItem(Utf8PrintfString(majorSchemaChange, newSchemaVersion)), importOptions)) << errorMsg;
+        auto testClass = m_ecdb.Schemas().GetClass("TestSchema", "TestClass");
+        ASSERT_NE(testClass, nullptr) << errorMsg;
+
         if (expectedResult == SUCCESS)
             {
             // Check if property "Code" was deleted
-            auto testClass = m_ecdb.Schemas().GetClass("TestSchema", "TestClass");
-            ASSERT_NE(testClass, nullptr) << errorMsg;
-
             EXPECT_NE(testClass->GetPropertyP("Name"), nullptr) << errorMsg;
             EXPECT_EQ(testClass->GetPropertyP("Code"), nullptr) << errorMsg;
 
@@ -17239,7 +17253,16 @@ TEST_F(SchemaUpgradeTestFixture, MajorSchemaUpgradeDeletePropertyAndClass)
             EXPECT_EQ(m_ecdb.Schemas().GetClass("TestSchema", "TestClassToDelete"), nullptr) << errorMsg;
             EXPECT_EQ(m_ecdb.Schemas().GetClass("TestSchema", "SubClassToDelete"), nullptr) << errorMsg;
             }
+        else
+            {
+            EXPECT_NE(testClass->GetPropertyP("Name"), nullptr);
+            EXPECT_NE(testClass->GetPropertyP("Code"), nullptr);
+
+            EXPECT_NE(m_ecdb.Schemas().GetClass("TestSchema", "TestClassToDelete"), nullptr);
+            EXPECT_NE(m_ecdb.Schemas().GetClass("TestSchema", "SubClassToDelete"), nullptr);
+            }
         ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AbandonChanges()) << errorMsg;
+        m_ecdb.ClearECDbCache();
         ASSERT_EQ(BE_SQLITE_OK, ReopenECDb()) << errorMsg;
         }
     }

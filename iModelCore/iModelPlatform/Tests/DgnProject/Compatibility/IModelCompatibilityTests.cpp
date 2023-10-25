@@ -2319,3 +2319,92 @@ TEST_F(IModelCompatibilityTestFixture, MajorSchemaUpgradePropertyTypeChange)
             }
         }
     }
+
+TEST_F(IModelCompatibilityTestFixture, DeletePropertyAndClassWithoutMajorChangeLegacyImport)
+    {
+    for (const auto& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EMPTY))
+        {
+        for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
+            {
+            TestIModel& testDb = *testDbPtr;
+            const auto openStat = testDb.Open();
+            const auto& params = static_cast<DgnDb::OpenParams const&> (testDb.GetOpenParams());
+
+            if (params.IsReadonly())
+                continue;
+
+            ASSERT_EQ(BE_SQLITE_OK, openStat) << testDb.GetDescription();
+
+            // Setup test schema
+            auto deserializationCtx = TestFileCreator::DeserializeSchema(testDbPtr->GetDb(), SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+                                <ECSchemaReference name="BisCore" version="01.00" alias="bis"/>
+
+                                <ECEntityClass typeName="TestClass" >
+                                    <BaseClass>bis:PhysicalElement</BaseClass>
+                                    <ECProperty propertyName="Prop1" typeName="string" />
+                                    <ECProperty propertyName="Prop2" typeName="int" />
+                                </ECEntityClass>
+                                <ECEntityClass typeName="SubClassToDelete" >
+                                    <BaseClass>TestClass</BaseClass>
+                                    <ECProperty propertyName="SubProp" typeName="int" />
+                                </ECEntityClass>
+
+                                <ECEntityClass typeName="TestClassToDelete" >
+                                    <BaseClass>bis:PhysicalElement</BaseClass>
+                                    <ECProperty propertyName="NameProp" typeName="string" />
+                                </ECEntityClass>
+                            </ECSchema>)xml"));
+            ASSERT_NE(deserializationCtx, nullptr) << testDbPtr->GetDescription();
+
+            DgnDbR dgnDb = testDb.GetDgnDb();
+            ASSERT_EQ(SchemaStatus::Success, dgnDb.ImportV8LegacySchemas(deserializationCtx->GetCache().GetSchemas())) << testDbPtr->GetDescription();
+            ASSERT_EQ(BE_SQLITE_OK, dgnDb.SaveChanges());
+
+            auto deserializationCtxUpdate = TestFileCreator::DeserializeSchema(testDbPtr->GetDb(), SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                            <ECSchema schemaName="TestSchema" alias="ts" version="1.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+                                <ECSchemaReference name="BisCore" version="01.00" alias="bis"/>
+
+                                <ECEntityClass typeName="TestClass" >
+                                    <BaseClass>bis:PhysicalElement</BaseClass>
+                                    <ECProperty propertyName="Prop1" typeName="string" />
+                                </ECEntityClass>
+                            </ECSchema>)xml"));
+            ASSERT_NE(deserializationCtxUpdate, nullptr) << testDbPtr->GetDescription();
+
+            // AlwaysAllowDeletions flag gets defaulted to false, import should SUCCEED but selected classes and properties should not be deleted.
+            ASSERT_EQ(SchemaStatus::Success, dgnDb.ImportV8LegacySchemas(deserializationCtxUpdate->GetCache().GetSchemas())) << testDbPtr->GetDescription();
+
+            auto testClass = dgnDb.Schemas().GetClass("TestSchema", "TestClass");
+            ASSERT_NE(testClass, nullptr);
+
+            EXPECT_NE(testClass->GetPropertyP("Prop1"), nullptr) << testDbPtr->GetDescription();
+            EXPECT_NE(testClass->GetPropertyP("Prop2"), nullptr) << testDbPtr->GetDescription();
+
+            EXPECT_NE(dgnDb.Schemas().GetClass("TestSchema", "TestClassToDelete"), nullptr) << testDbPtr->GetDescription();
+            EXPECT_NE(dgnDb.Schemas().GetClass("TestSchema", "SubClassToDelete"), nullptr) << testDbPtr->GetDescription();
+
+            ASSERT_EQ(BE_SQLITE_OK, dgnDb.AbandonChanges());
+
+            // Retry import with AlwaysAllowDeletions flag set to true, import should succeed and selected classes and properties should be deleted.
+            dgnDb.SetAlwaysAllowDeletions(true);
+            dgnDb.ClearECDbCache();
+            ASSERT_EQ(SchemaStatus::Success, dgnDb.ImportV8LegacySchemas(deserializationCtxUpdate->GetCache().GetSchemas())) << testDbPtr->GetDescription();
+
+            testClass = dgnDb.Schemas().GetClass("TestSchema", "TestClass");
+            ASSERT_NE(testClass, nullptr);
+
+            // Check if property "Code" was deleted
+            EXPECT_NE(testClass->GetPropertyP("Prop1"), nullptr) << testDbPtr->GetDescription();
+            EXPECT_EQ(testClass->GetPropertyP("Prop2"), nullptr) << testDbPtr->GetDescription();
+
+            // Check if classes "TestClassToDelete" and "SubClassToDelete" were deleted
+            EXPECT_EQ(dgnDb.Schemas().GetClass("TestSchema", "TestClassToDelete"), nullptr) << testDbPtr->GetDescription();
+            EXPECT_EQ(dgnDb.Schemas().GetClass("TestSchema", "SubClassToDelete"), nullptr) << testDbPtr->GetDescription();
+
+            ASSERT_EQ(BE_SQLITE_OK, dgnDb.AbandonChanges());
+            }
+        }
+    }

@@ -159,6 +159,7 @@ struct SchemaWriter final
 
             bool AreMajorSchemaVersionChangesAllowed() const { return !Enum::Contains(m_importCtx.GetOptions(), SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade); }
             bool IsMajorSchemaVersionChangeAllowedForDynamicSchemas() const { return Enum::Contains(m_importCtx.GetOptions(), SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas); }
+            bool IsAlwaysAllowDeletionsEnabled() const { return Enum::Contains(m_importCtx.GetOptions(), SchemaManager::SchemaImportOptions::AlwaysAllowDeletions); }
             bool IgnoreIllegalDeletionsAndModifications() const { return Enum::Contains(m_importCtx.GetOptions(), SchemaManager::SchemaImportOptions::DoNotFailForDeletionsOrModifications); }
             bool IsMajorSchemaVersionChange(ECN::ECSchemaId schemaId) const { return m_schemasWithMajorVersionChange.find(schemaId) != m_schemasWithMajorVersionChange.end(); }
             bool IsEC32AvailableInFile() const { return m_ec32AvailableInFile; }

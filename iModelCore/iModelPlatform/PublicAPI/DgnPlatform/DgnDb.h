@@ -210,6 +210,7 @@ struct DgnDb : RefCounted<BeSQLite::EC::ECDb>, BeSQLite::EC::ECDb::IECDbCacheCle
 private:
     BeSQLite::BeBriefcaseBasedIdSequence m_elementIdSequence;
     int m_purgeOperation = 0;
+    bool m_alwaysAllowDeletions = false;
 
     void Destroy();
     SchemaStatus PickSchemasToImport(bvector<ECN::ECSchemaCP>& importSchemas, bvector<ECN::ECSchemaCP> const& schemas, bool isImportingFromV8) const;
@@ -520,6 +521,9 @@ public:
     //! the changes if necessary, and then creating a revision.
     //! </ul>
     DGNPLATFORM_EXPORT SchemaStatus ImportV8LegacySchemas(bvector<ECN::ECSchemaCP> const& schemas, size_t* numImported = nullptr);
+
+    DGNPLATFORM_EXPORT void SetAlwaysAllowDeletions(const bool flagStatus) { m_alwaysAllowDeletions = flagStatus; }
+    bool IsAlwaysAllowDeletionsEnabled() const { return m_alwaysAllowDeletions; }
 
     //! Utility method to get the next id in a sequence
     //! @private internal use only

@@ -2001,7 +2001,7 @@ BentleyStatus MainSchemaManager::PurgeOrphanTables(SchemaImportContext& ctx) con
     if (tablesToDrop.empty())
         return SUCCESS;
 
-    if (Enum::Contains(ctx.GetOptions(), SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade))
+    if (Enum::Contains(ctx.GetOptions(), SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade) && !Enum::Contains(ctx.GetOptions(), SchemaManager::SchemaImportOptions::AlwaysAllowDeletions))
         {
         Utf8String tableNames;
         bool isFirstTable = true;
