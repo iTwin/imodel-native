@@ -42,7 +42,7 @@ def makeRange(lst):
 	pos = e + 1			# ready to check for next range
     return ret
 
-sources = "chvalid.def"			# input filename
+sources = "chvalid.def"                 # input filename
 
 # minTableSize gives the minimum number of ranges which must be present
 # before a 256-byte lookup table is produced.  If there are less than this
@@ -392,7 +392,7 @@ for f in fkeys:
 	ntab = 0
     just = ""
     for i in range(ntab):
-	just += "\t"
+        just += "\t"
     header.write(pline + just + "(((c) < 0x100) ? \\\n\t\t\t\t ")
     if max(Functs[f][0]) > 0:
 	header.write("%s_ch((c)) :" % f)
