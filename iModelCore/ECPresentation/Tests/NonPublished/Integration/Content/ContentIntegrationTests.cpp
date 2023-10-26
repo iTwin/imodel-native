@@ -10195,7 +10195,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPointsArrayPropertyVal
     rapidjson::Document expectedDisplayValues1;
     expectedDisplayValues1.Parse(Utf8PrintfString(R"(
         {
-        "%s": ["X: 0.00 Y: 0.00 Z: 0.00", "X: 1.00 Y: 1.00 Z: 1.00"]
+        "%s": ["X: 0.00; Y: 0.00; Z: 0.00", "X: 1.00; Y: 1.00; Z: 1.00"]
         })", FIELD_NAME(ecClass, "PointsArrayProperty")).c_str());
     EXPECT_EQ(expectedDisplayValues1, recordJson1["DisplayValues"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedDisplayValues1) << "\r\n"
@@ -10216,7 +10216,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPointsArrayPropertyVal
     rapidjson::Document expectedDisplayValues2;
     expectedDisplayValues2.Parse(Utf8PrintfString(R"(
         {
-        "%s": ["X: 3.00 Y: 3.00 Z: 3.00", "X: 4.00 Y: 4.00 Z: 4.00", "X: 5.00 Y: 5.00 Z: 5.00"]
+        "%s": ["X: 3.00; Y: 3.00; Z: 3.00", "X: 4.00; Y: 4.00; Z: 4.00", "X: 5.00; Y: 5.00; Z: 5.00"]
         })", FIELD_NAME(ecClass, "PointsArrayProperty")).c_str());
     EXPECT_EQ(expectedDisplayValues2, recordJson2["DisplayValues"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedDisplayValues2) << "\r\n"
@@ -14015,7 +14015,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsPointValueLabelWhenUsin
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
 
-    EXPECT_STREQ("X: 1.00 Y: 2.00 Z: 3.00", contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("X: 1.00; Y: 2.00; Z: 3.00", contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -14061,7 +14061,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsPointValueLabelWhenUsin
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
 
-    EXPECT_STREQ("X: 1.00 Y: 2.00 Z: 3.00", contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("X: 1.00; Y: 2.00; Z: 3.00", contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -14107,7 +14107,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsPointValueLabelWhenUsin
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
 
-    EXPECT_STREQ("X: 1.00 Y: 2.00", contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("X: 1.00; Y: 2.00", contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
