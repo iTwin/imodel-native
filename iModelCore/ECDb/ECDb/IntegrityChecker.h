@@ -45,7 +45,7 @@ private:
 
     DbResult GetTablePerHierarchyClasses(std::vector<ECClassId>&);
     DbResult GetRootLinkTableRelationships(std::vector<ECClassId>&);
-		DbResult GetDerivedNavigationIds(Utf8CP, std::vector<ECClassId>&);
+	DbResult GetDerivedNavigationIds(Utf8CP, std::vector<ECClassId>&);
     DbResult GetNavigationProperties(std::map<ECN::ECClassId, std::vector<std::string>>&);
     DbResult GetMappedClasses(std::set<ECN::ECClassId>&);
 
