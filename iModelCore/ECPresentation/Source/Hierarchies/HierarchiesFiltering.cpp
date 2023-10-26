@@ -650,6 +650,8 @@ public:
         GetInProgressContentRule(); // just to make sure we have the ruleset
         PresentationRuleSetPtr ruleset = m_ruleset;
         m_ruleset->SetRuleSetId(Utf8String("NodesDescriptor:").append(m_contentRule->GetHash()));
+        for (auto modifier : m_props.GetRulesPreprocessor().GetContentModifiers())
+            m_ruleset->AddPresentationRule(*new ContentModifier(*modifier));
         m_ruleset = nullptr;
         m_contentRule = nullptr;
         return ruleset;
