@@ -5024,7 +5024,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ReturnsPointPropertyContent
     rapidjson::Document expectedDisplayValues;
     expectedDisplayValues.Parse(Utf8PrintfString(R"(
         {
-        "%s": "X: 1.00 Y: 2.00 Z: 3.00"
+        "%s": "X: 1.00; Y: 2.00; Z: 3.00"
         })", FIELD_NAME(classA, "Property")).c_str());
     EXPECT_EQ(expectedDisplayValues, recordJson["DisplayValues"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedDisplayValues) << "\r\n"
