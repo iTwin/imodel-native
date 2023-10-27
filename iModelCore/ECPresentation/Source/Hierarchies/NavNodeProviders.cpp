@@ -841,7 +841,7 @@ void NodesFinalizer::DetermineFilteringSupport(NavNodeR node) const
 
     node.SetSupportsFiltering(HierarchiesFilteringHelper::SupportsFiltering(
         &node,
-        TraverseHierarchyRulesProps(childrenContext->GetNodesFactory(), childrenContext->GetRulesPreprocessor(), childrenContext->GetSchemaHelper()),
+        TraverseHierarchyRulesProps(childrenContext->GetNodesFactory(), childrenContext->GetRulesPreprocessor(), childrenContext->GetRuleset(), childrenContext->GetSchemaHelper()),
         nullptr
         ));
     }
