@@ -18,8 +18,10 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
             <ECProperty propertyName="Prop3" typeName="TestStringEnum" />
             <ECProperty propertyName="Prop4" typeName="double" kindOfQuantity="Length" />
             <ECProperty propertyName="Prop5" typeName="double" />
-            <ECProperty propertyName="Prop6" typeName="point2d" />
-            <ECProperty propertyName="Prop7" typeName="point3d" />
+            <ECProperty propertyName="Point2dProp" typeName="point2d" />
+            <ECProperty propertyName="Point2dPropWithKoq" typeName="point2d" kindOfQuantity="Length" />
+            <ECProperty propertyName="Point3dProp" typeName="point3d" />
+            <ECProperty propertyName="Point3dPropWithKoq" typeName="point3d" kindOfQuantity="Length" />
             <ECProperty propertyName="Prop7" typeName="DateTime" />
             <ECProperty propertyName="SmallLengthProp" typeName="double" kindOfQuantity="SmallLength" />
         </ECClass>
@@ -157,11 +159,25 @@ TEST_F(DefaultPropertyFormatterTests, GetFormattedPropertyValueHandlesDoubleValu
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DefaultPropertyFormatterTests, GetFormattedPropertyValueHandlesPoint2dValues)
     {
-    ECPropertyCP prop = m_class->GetPropertyP("Prop6");
+    ECPropertyCP prop = m_class->GetPropertyP("Point2dProp");
     ECValue value(DPoint2d::From(1, 2));
     Utf8String formattedValue;
     EXPECT_EQ(SUCCESS, m_formatter.GetFormattedPropertyValue(formattedValue, *prop, value, ECPresentation::UnitSystem::Undefined));
-    EXPECT_STREQ("X: 1.00 Y: 2.00", formattedValue.c_str());
+    EXPECT_STREQ("X: 1.00; Y: 2.00", formattedValue.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DefaultPropertyFormatterTests, GetFormattedPropertyValueHandlesPoint2dValuesWithKoq)
+    {
+    ECPropertyCP prop = m_class->GetPropertyP("Point2dPropWithKoq");
+    NamedFormat namedFormat = prop->GetKindOfQuantity()->GetPresentationFormats()[1];
+    Utf8Char decimalSeparator = namedFormat.GetNumericSpec()->GetDecimalSeparator();
+    ECValue value(DPoint2d::From(1, 2));
+    Utf8String formattedValue;
+    EXPECT_EQ(SUCCESS, m_formatter.GetFormattedPropertyValue(formattedValue, *prop, value, ECPresentation::UnitSystem::Metric));
+    EXPECT_STREQ(Utf8PrintfString("X: 1%c0 m; Y: 2%c0 m", decimalSeparator, decimalSeparator).c_str(), formattedValue.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -169,11 +185,25 @@ TEST_F(DefaultPropertyFormatterTests, GetFormattedPropertyValueHandlesPoint2dVal
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DefaultPropertyFormatterTests, GetFormattedPropertyValueHandlesPoint3dValues)
     {
-    ECPropertyCP prop = m_class->GetPropertyP("Prop7");
+    ECPropertyCP prop = m_class->GetPropertyP("Point3dProp");
     ECValue value(DPoint3d::From(1, 2, 3));
     Utf8String formattedValue;
     EXPECT_EQ(SUCCESS, m_formatter.GetFormattedPropertyValue(formattedValue, *prop, value, ECPresentation::UnitSystem::Undefined));
-    EXPECT_STREQ("X: 1.00 Y: 2.00 Z: 3.00", formattedValue.c_str());
+    EXPECT_STREQ("X: 1.00; Y: 2.00; Z: 3.00", formattedValue.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DefaultPropertyFormatterTests, GetFormattedPropertyValueHandlesPoint3dValuesWithKoq)
+    {
+    ECPropertyCP prop = m_class->GetPropertyP("Point3dPropWithKoq");
+    NamedFormat namedFormat = prop->GetKindOfQuantity()->GetPresentationFormats()[1];
+    Utf8Char decimalSeparator = namedFormat.GetNumericSpec()->GetDecimalSeparator();
+    ECValue value(DPoint3d::From(1, 2, 3));
+    Utf8String formattedValue;
+    EXPECT_EQ(SUCCESS, m_formatter.GetFormattedPropertyValue(formattedValue, *prop, value, ECPresentation::UnitSystem::Metric));
+    EXPECT_STREQ(Utf8PrintfString("X: 1%c0 m; Y: 2%c0 m; Z: 3%c0 m", decimalSeparator, decimalSeparator, decimalSeparator).c_str(), formattedValue.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
