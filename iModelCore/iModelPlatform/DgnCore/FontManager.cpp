@@ -393,8 +393,24 @@ bool FontManager::AddWorkspaceDb(Utf8CP inName, CloudContainerP container) {
 
 /** Get the Mutex for all font related activities */
 BeMutex& FontManager::GetMutex() {
+#if defined (__APPLE__)
+    // This mutex is used in an atexit handler, and static initialization and cleanup order
+    // brokenness means that this code may execute after s_fontsMutex has been destroyed. That
+    // leads to a runtime exception. Doing it this way means that the mutex is "leaked", but since
+    // it is a singleton object, that really doesn't hurt anything.
+    // Note: under normal circumstances, mobile apps never cleanly exit, so this problem is masked.
+    // It's only when something else causes the mobile app to exit (including some other
+    // uncaught exception) that the atexit handler triggers an exception from this mutex.
+    static BeMutex* s_fontsMutex = NULL;
+    if (s_fontsMutex == NULL)
+    {
+        s_fontsMutex = new BeMutex();
+    }
+    return *s_fontsMutex;
+#else
     static BeMutex s_fontsMutex;
     return s_fontsMutex;
+#endif
 }
 
 /** Initialize font manager. Adds the default "FallbackFonts" WorkspaceDb. */
