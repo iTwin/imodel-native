@@ -16844,21 +16844,22 @@ TEST_F(SchemaSyncTestFixture, KoQDeleteWithDoNotFailFlag)
             }
     );
 
+    const auto SCHEMA2_HASH_ECDB_SCHEMA = "de1626bb34cb2ea15d8efffdd556ea327674faefcd5ca2d70b084b3748d53f77";
     Test(
-        "Illegal KoQ modification should not fail when DoNotFail flag is on",
+        "KoQ modification should not fail when DoNotFail flag is on",
         [&]()
             {
             auto schema = SchemaItem(
                 R"xml(<?xml version="1.0" encoding="utf-8"?>
-                <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                <ECSchema schemaName="TestSchema" alias="ts" version="2.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                     <ECSchemaReference name="Units" version="01.00.00" alias="u" />
                     <ECSchemaReference name="Formats" version="01.00.00" alias="f" />
                 </ECSchema>)xml"
             );
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema, SchemaManager::SchemaImportOptions::DoNotFailForDeletionsOrModifications));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
-            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
+            CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -16868,7 +16869,7 @@ TEST_F(SchemaSyncTestFixture, KoQDeleteWithDoNotFailFlag)
             {
             auto schema = m_briefcase->Schemas().GetSchema("TestSchema");
             auto koq = schema->GetKindOfQuantityCP("KoQ1");
-            ASSERT_NE(koq, nullptr) << "KindOfQuantity 'KoQ1' should still exist";
+            ASSERT_EQ(koq, nullptr) << "KindOfQuantity 'KoQ1' should not exist";
             }
     );
     }

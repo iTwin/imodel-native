@@ -3857,6 +3857,47 @@ BentleyStatus SchemaWriter::UpdateClasses(Context& ctx, ClassChanges& classChang
     return SUCCESS;
     }
 
+BentleyStatus SchemaWriter::DeleteKindOfQuantity(Context& ctx, const ECN::KindOfQuantityCR deletedKoQ, const bool isDynamicSchema)
+    {
+    // Check if major version change is allowed for given schema
+    if (const auto errorMessage = IsMajorVersionChangeAllowed(ctx, deletedKoQ.GetSchema().GetId(), isDynamicSchema); !Utf8String::IsNullOrEmpty(errorMessage.c_str()))
+        {
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0677,
+            "ECSchema Upgrade failed. ECSchema %s: Cannot delete KindOfQuantity '%s'. This is a major ECSchema change. %s", deletedKoQ.GetSchema().GetFullSchemaName().c_str(), deletedKoQ.GetName().c_str(), errorMessage.c_str());
+        return ERROR;
+        }
+
+    const auto koQId = deletedKoQ.GetId();
+
+    // The properties that are using the KoQ must be updated before we delete the actual KoQ, otherwise they will be dropped.
+    if (auto updatePropertyStmt = ctx.GetCachedStatement("UPDATE main." TABLE_Property " SET KindOfQuantityId=NULL WHERE KindOfQuantityId=?");
+        updatePropertyStmt == nullptr || updatePropertyStmt->BindId(1, koQId) != BE_SQLITE_OK || updatePropertyStmt->Step() != BE_SQLITE_DONE)
+        {
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0677,
+            "ECSchema Upgrade failed. ECSchema %s: Failed to drop references to deleted KindOfQuantity '%s'", deletedKoQ.GetSchema().GetFullSchemaName().c_str(), deletedKoQ.GetName().c_str());
+        return ERROR;
+        }
+
+    // Delete the KoQ
+    Statement deleteStatement;
+    if (deleteStatement.Prepare(ctx.GetECDb(), "DELETE FROM main." TABLE_KindOfQuantity " WHERE Id=?") != BE_SQLITE_OK)
+        {
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0677,
+            "ECSchema Upgrade failed. ECSchema %s: Failed to delete KindOfQuantity '%s'", deletedKoQ.GetSchema().GetFullSchemaName().c_str(), deletedKoQ.GetName().c_str());
+        return ERROR;
+        }
+
+    deleteStatement.BindId(1, koQId);
+    if (deleteStatement.Step() != BE_SQLITE_DONE)
+        {
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0677,
+            "ECSchema Upgrade failed. ECSchema %s: Failed to delete KindOfQuantity '%s'", deletedKoQ.GetSchema().GetFullSchemaName().c_str(), deletedKoQ.GetName().c_str());
+        return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -3873,17 +3914,9 @@ BentleyStatus SchemaWriter::UpdateKindOfQuantities(Context& ctx, KindOfQuantityC
 
         if (change.GetOpCode() == ECChange::OpCode::Deleted)
             {
-            if (ctx.IgnoreIllegalDeletionsAndModifications())
-                {
-                ctx.Issues().ReportV(IssueSeverity::Info, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0642, 
-                    "Ignoring update error: ECSchema Upgrade failed. ECSchema %s: KindOfQuantity %s: Deleting KindOfQuantity from an ECSchema is not supported. Error suppressed, KindOfQuantity will not be deleted.",
-                    oldSchema.GetFullSchemaName().c_str(), oldKoq->GetFullName().c_str());
-                continue;
-                }
-
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0388,
-                "ECSchema Upgrade failed. ECSchema %s: KindOfQuantity %s: Deleting KindOfQuantity from an ECSchema is not supported.", oldSchema.GetFullSchemaName().c_str(), oldKoq->GetFullName().c_str());
-            return ERROR;
+            if (SUCCESS != DeleteKindOfQuantity(ctx, *oldKoq, newSchema.IsDynamicSchema()))
+                return ERROR;
+            continue;
             }
 
         if (change.GetOpCode() == ECChange::OpCode::New)

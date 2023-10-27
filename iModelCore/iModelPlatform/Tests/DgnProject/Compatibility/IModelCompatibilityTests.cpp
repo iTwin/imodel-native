@@ -2123,7 +2123,7 @@ TEST_F(IModelCompatibilityTestFixture, UpgradeDomainIModelToEC32)
     IModelEvolutionTestsDomain::GetDomain().SetRequired(DgnDomain::Required::No);
     }
 
-TEST_F(IModelCompatibilityTestFixture, MajorSchemaUpgradeDeletePropertyAndClass)
+TEST_F(IModelCompatibilityTestFixture, MajorSchemaUpgradeDeleteSchemaItems)
     {
     for (const auto& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EMPTY))
         {
@@ -2147,19 +2147,23 @@ TEST_F(IModelCompatibilityTestFixture, MajorSchemaUpgradeDeletePropertyAndClass)
                                 <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
                                 <ECSchemaReference name="BisCore" version="01.00" alias="bis"/>
 
+                                <KindOfQuantity typeName='TestKoQ' description='TestKoQ' displayLabel='TestKoQ' persistenceUnit='CM' relativeError='.5' presentationUnits='FT;CM' />
+                                <KindOfQuantity typeName='AnotherTestKoQ' description='AnotherTestKoQ' displayLabel='AnotherTestKoQ' persistenceUnit='M' relativeError='.5' presentationUnits='FT;M' />
+
                                 <ECEntityClass typeName="TestClass" >
                                     <BaseClass>bis:PhysicalElement</BaseClass>
-                                    <ECProperty propertyName="Prop1" typeName="string" />
-                                    <ECProperty propertyName="Prop2" typeName="int" />
+                                    <ECProperty propertyName="FirstProp" typeName="int" kindOfQuantity='TestKoQ' />
+                                    <ECProperty propertyName="SecondProp" typeName="int" kindOfQuantity='AnotherTestKoQ' />
+                                    <ECProperty propertyName="ThirdProp" typeName="int" />
                                 </ECEntityClass>
                                 <ECEntityClass typeName="SubClassToDelete" >
                                     <BaseClass>TestClass</BaseClass>
-                                    <ECProperty propertyName="SubProp" typeName="int" />
+                                    <ECProperty propertyName="SubProp" typeName="int" kindOfQuantity='TestKoQ' />
                                 </ECEntityClass>
 
                                 <ECEntityClass typeName="TestClassToDelete" >
                                     <BaseClass>bis:PhysicalElement</BaseClass>
-                                    <ECProperty propertyName="NameProp" typeName="string" />
+                                    <ECProperty propertyName="NameProp" typeName="int" kindOfQuantity='TestKoQ' />
                                 </ECEntityClass>
                             </ECSchema>)xml"));
             ASSERT_NE(deserializationCtx, nullptr) << testDbPtr->GetDescription();
@@ -2171,6 +2175,9 @@ TEST_F(IModelCompatibilityTestFixture, MajorSchemaUpgradeDeletePropertyAndClass)
                                 <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
                                 <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA" />
                                 <ECSchemaReference name="BisCore" version="01.00" alias="bis"/>
+                                <ECSchemaReference name="SchemaUpgradeCustomAttributes" version="01.00.00" alias="SchemaUpgradeCA" />
+
+                                <KindOfQuantity typeName='AnotherTestKoQ' description='AnotherTestKoQ' displayLabel='AnotherTestKoQ' persistenceUnit='M' relativeError='.5' presentationUnits='FT;M' />
                                 
                                 <ECCustomAttributes>
                                     <DynamicSchema xmlns = 'CoreCustomAttributes.01.00' />
@@ -2178,7 +2185,15 @@ TEST_F(IModelCompatibilityTestFixture, MajorSchemaUpgradeDeletePropertyAndClass)
 
                                 <ECEntityClass typeName="TestClass" >
                                     <BaseClass>bis:PhysicalElement</BaseClass>
-                                    <ECProperty propertyName="Prop1" typeName="string" />
+                                    <ECProperty propertyName="FirstProp" typeName="int">
+                                        <ECCustomAttributes>
+                                            <AllowUnitChange xmlns="SchemaUpgradeCustomAttributes.01.00.00">
+                                                <From>u:CM</From>
+                                                <To></To>
+                                            </AllowUnitChange>
+                                        </ECCustomAttributes>
+                                    </ECProperty>
+                                    <ECProperty propertyName="SecondProp" typeName="string" kindOfQuantity='AnotherTestKoQ' />
                                 </ECEntityClass>
                             </ECSchema>)xml"));
             ASSERT_NE(deserializationCtxUpdate, nullptr) << testDbPtr->GetDescription();
@@ -2187,11 +2202,26 @@ TEST_F(IModelCompatibilityTestFixture, MajorSchemaUpgradeDeletePropertyAndClass)
             auto testClass = dgnDb.Schemas().GetClass("TestSchema", "TestClass");
             ASSERT_NE(testClass, nullptr);
 
-            // Check if property "Code" was deleted
-            EXPECT_NE(testClass->GetPropertyP("Prop1"), nullptr);
-            EXPECT_EQ(testClass->GetPropertyP("Prop2"), nullptr);
+            // "TestKoq" should be deleted and "AnotherTestKoQ" should still exist
+            ASSERT_EQ(testClass->GetSchema().GetKindOfQuantityCP("TestKoQ"), nullptr);
+            ASSERT_NE(testClass->GetSchema().GetKindOfQuantityCP("AnotherTestKoQ"), nullptr);
 
-            // Check if classes "TestClassToDelete" and "SubClassToDelete" were deleted
+            // Property "FirstProp" should exist and no longer have KoQ "TestKoQ"
+            const auto firstProp = testClass->GetPropertyP("FirstProp");
+            ASSERT_NE(firstProp, nullptr);
+            EXPECT_EQ(firstProp->GetKindOfQuantity(), nullptr);
+
+            // Property "SecondProp" should exist and still have the KoQ "AnotherTestKoQ"
+            const auto secondProp = testClass->GetPropertyP("SecondProp");
+            ASSERT_NE(secondProp, nullptr);
+            const auto anotherKoq = secondProp->GetKindOfQuantity();
+            ASSERT_NE(anotherKoq, nullptr);
+            EXPECT_EQ(anotherKoq->GetFullName(), "TestSchema:AnotherTestKoQ");
+
+            // Property "ThirdProp" should be deleted
+            EXPECT_EQ(testClass->GetPropertyP("ThirdProp"), nullptr);
+
+            // Classes "TestClassToDelete" and "SubClassToDelete" were deleted
             EXPECT_EQ(dgnDb.Schemas().GetClass("TestSchema", "TestClassToDelete"), nullptr);
             EXPECT_EQ(dgnDb.Schemas().GetClass("TestSchema", "SubClassToDelete"), nullptr);
 

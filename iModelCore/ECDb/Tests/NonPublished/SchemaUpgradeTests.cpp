@@ -10590,7 +10590,7 @@ TEST_F(SchemaUpgradeTestFixture, ReplaceKindOfQuantityWithDifferentPersistenceUn
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpgradeTestFixture, DeleteKindOfQuantityFromECSchema)
+TEST_F(SchemaUpgradeTestFixture, DeleteKoQFromECSchemaShouldFail)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -10620,6 +10620,76 @@ TEST_F(SchemaUpgradeTestFixture, DeleteKindOfQuantityFromECSchema)
 
     m_updatedDbs.clear();
     AssertSchemaUpdate(editedSchemaXml, filePath, {false, false}, "Deleting KindOfQuantity from an ECSchema");
+    }
+
+TEST_F(SchemaUpgradeTestFixture, DeleteKoQWithMajorSchemaChangeShouldPass)
+    {
+    SchemaItem schemaItem(R"xml(
+        <?xml version='1.0' encoding='utf-8'?>
+        <ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+            <ECSchemaReference name = 'CoreCustomAttributes' version = '01.00.00' alias = 'CoreCA' />                    
+            <ECCustomAttributes>
+                <DynamicSchema xmlns = 'CoreCustomAttributes.01.00.00' />
+            </ECCustomAttributes>
+
+            <KindOfQuantity typeName='TestKoQ' description='TestKoQ' displayLabel='TestKoQ' persistenceUnit='CM' relativeError='.5' presentationUnits='FT;CM' />
+
+            <ECEntityClass typeName='TestClass' >
+                <ECProperty propertyName='SimpleProperty' typeName='double' kindOfQuantity='TestKoQ' />
+                <ECArrayProperty propertyName='ArrayProperty' typeName='double' minOccurs='0' maxOccurs='unbounded' kindOfQuantity = 'TestKoQ'/>
+                <ECProperty propertyName='StringProperty' typeName='string' />
+            </ECEntityClass>
+        </ECSchema>)xml");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("deletekoqs.ecdb", schemaItem));
+
+    ASSERT_NE(m_ecdb.Schemas().GetKindOfQuantity("TestSchema", "TestKoQ"), nullptr);
+
+    // Perform a major version change and delete the KoQ "TestKoQ"
+    SchemaItem updatedSchemaXml(R"xml(
+        <?xml version='1.0' encoding='utf-8'?>
+        <ECSchema schemaName='TestSchema' alias='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+            <ECSchemaReference name = 'CoreCustomAttributes' version = '01.00.00' alias = 'CoreCA' />
+            <ECSchemaReference name = "SchemaUpgradeCustomAttributes" version = "01.00.00" alias = "SchemaUpgradeCA" />
+
+            <ECCustomAttributes>
+                <DynamicSchema xmlns = 'CoreCustomAttributes.01.00.00' />
+            </ECCustomAttributes>
+
+            <ECEntityClass typeName='TestClass'>
+                <ECProperty propertyName='SimpleProperty' typeName='double'>
+                    <ECCustomAttributes>
+                        <AllowUnitChange xmlns='SchemaUpgradeCustomAttributes.01.00.00'>
+                            <From>u:CM</From>
+                            <To></To>
+                        </AllowUnitChange>
+                    </ECCustomAttributes>
+                </ECProperty>
+                <ECArrayProperty propertyName='ArrayProperty' typeName='double' minOccurs='0' maxOccurs='unbounded'>
+                    <ECCustomAttributes>
+                        <AllowUnitChange xmlns='SchemaUpgradeCustomAttributes.01.00.00'>
+                            <From>u:CM</From>
+                            <To></To>
+                        </AllowUnitChange>
+                    </ECCustomAttributes>
+                </ECArrayProperty>
+                <ECProperty propertyName='StringProperty' typeName='string' />
+            </ECEntityClass>
+        </ECSchema>)xml");
+
+    ASSERT_EQ(SUCCESS, ImportSchema(updatedSchemaXml, SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas
+         | SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+
+    // "TestKoQ" should be deleted from schema
+    EXPECT_EQ(m_ecdb.Schemas().GetKindOfQuantity("TestSchema", "TestKoQ"), nullptr);
+
+    const auto testClass = m_ecdb.Schemas().GetClass("TestSchema", "TestClass");
+    ASSERT_NE(testClass, nullptr);
+    const auto property = testClass->GetPropertyP("SimpleProperty");
+    ASSERT_NE(property, nullptr);
+
+    // "TestKoQ" should not be referenced by property
+    EXPECT_EQ(property->GetKindOfQuantity(), nullptr);
     }
 
 //---------------------------------------------------------------------------------------
@@ -10945,20 +11015,21 @@ TEST_F(SchemaUpgradeTestFixture, KoQDeleteWithDoNotFailFlag)
             <KindOfQuantity typeName="KoQ1" displayLabel="KoQ1" relativeError=".5" persistenceUnit="u:CM" />
         </ECSchema>)schema")));
 
+    auto schema = m_ecdb.Schemas().GetSchema("TestSchema");
+    ASSERT_NE(schema->GetKindOfQuantityCP("KoQ1"), nullptr);
+
     auto modifiedSchemaItem = SchemaItem(R"schema(<?xml version="1.0" encoding="utf-8"?>
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchema schemaName="TestSchema" alias="ts" version="2.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="Units" version="01.00.00" alias="u" />
             <ECSchemaReference name="Formats" version="01.00.00" alias="f" />
         </ECSchema>)schema");
 
-    auto options = SchemaManager::SchemaImportOptions::DoNotFailForDeletionsOrModifications;
+    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(modifiedSchemaItem, SchemaManager::SchemaImportOptions::DoNotFailForDeletionsOrModifications));
 
-    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(modifiedSchemaItem, options))
-        << "Illegal KoQ modification should not fail when DoNotFail flag is on";
-
-    ECSchemaCP schema = m_ecdb.Schemas().GetSchema("TestSchema");
-    KindOfQuantityCP koq = (*schema).GetKindOfQuantityCP("KoQ1");
-    ASSERT_TRUE(koq != nullptr) << "KindOfQuantity 'KoQ1' should still exist";
+    schema = m_ecdb.Schemas().GetSchema("TestSchema");
+    ASSERT_NE(schema, nullptr);
+    const auto koq = schema->GetKindOfQuantityCP("KoQ1");
+    ASSERT_EQ(koq, nullptr) << "KindOfQuantity 'KoQ1' should be deleted";
     }
 
 //---------------------------------------------------------------------------------------
