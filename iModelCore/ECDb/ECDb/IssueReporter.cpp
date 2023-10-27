@@ -686,6 +686,7 @@ IssueId ECDbIssueId::ECDb_0674 = IssueId("ECDb_0674");
 IssueId ECDbIssueId::ECDb_0675 = IssueId("ECDb_0675");
 IssueId ECDbIssueId::ECDb_0676 = IssueId("ECDb_0676");
 IssueId ECDbIssueId::ECDb_0677 = IssueId("ECDb_0677");
+IssueId ECDbIssueId::ECDb_0678 = IssueId("ECDb_0678");
 
 //---------------------------------------------------------------------------------------
 // @bsimethod

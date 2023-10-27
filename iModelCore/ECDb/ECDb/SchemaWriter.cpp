@@ -3914,9 +3914,9 @@ BentleyStatus SchemaWriter::UpdateKindOfQuantities(Context& ctx, KindOfQuantityC
 
         if (change.GetOpCode() == ECChange::OpCode::Deleted)
             {
-            if (SUCCESS != DeleteKindOfQuantity(ctx, *oldKoq, newSchema.IsDynamicSchema()))
-                return ERROR;
-            continue;
+            if (DeleteKindOfQuantity(ctx, *oldKoq, newSchema.IsDynamicSchema()) == SUCCESS)
+                continue;
+            return ERROR;
             }
 
         if (change.GetOpCode() == ECChange::OpCode::New)
@@ -4493,6 +4493,50 @@ BentleyStatus SchemaWriter::VerifyEnumeratorChanges(Context& ctx, ECSchemaCR old
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaWriter::DeleteEnumeration(Context& ctx, ECN::ECEnumerationCR deletedEnum, bool isDynamicSchema)
+    {
+    // Check if major version change is allowed for given schema
+    if (const auto errorMessage = IsMajorVersionChangeAllowed(ctx, deletedEnum.GetSchema().GetId(), isDynamicSchema); !Utf8String::IsNullOrEmpty(errorMessage.c_str()))
+        {
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0678,
+            "ECSchema Upgrade failed. ECSchema %s: Cannot delete ECEnumeration '%s'. This is a major ECSchema change. %s", deletedEnum.GetSchema().GetFullSchemaName().c_str(), deletedEnum.GetName().c_str(), errorMessage.c_str());
+        return ERROR;
+        }
+
+    const auto enumId = deletedEnum.GetId();
+
+    // The properties that are using the ECEnumeration must be updated before we delete the actual ECEnumeration, otherwise they will be dropped.
+    if (auto updatePropertyStmt = ctx.GetCachedStatement("UPDATE main." TABLE_Property " SET EnumerationId=NULL WHERE EnumerationId=?");
+        updatePropertyStmt == nullptr || updatePropertyStmt->BindId(1, enumId) != BE_SQLITE_OK || updatePropertyStmt->Step() != BE_SQLITE_DONE)
+        {
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0678,
+            "ECSchema Upgrade failed. ECSchema %s: Failed to drop references to deleted ECEnumeration '%s'", deletedEnum.GetSchema().GetFullSchemaName().c_str(), deletedEnum.GetName().c_str());
+        return ERROR;
+        }
+
+    // Delete the ECEnumeration
+    Statement deleteStatement;
+    if (deleteStatement.Prepare(ctx.GetECDb(), "DELETE FROM main." TABLE_Enumeration " WHERE Id=?") != BE_SQLITE_OK)
+        {
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0678,
+            "ECSchema Upgrade failed. ECSchema %s: Failed to delete ECEnumeration '%s'", deletedEnum.GetSchema().GetFullSchemaName().c_str(), deletedEnum.GetName().c_str());
+        return ERROR;
+        }
+
+    deleteStatement.BindId(1, enumId);
+    if (deleteStatement.Step() != BE_SQLITE_DONE)
+        {
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0678,
+            "ECSchema Upgrade failed. ECSchema %s: Failed to delete ECEnumeration '%s'", deletedEnum.GetSchema().GetFullSchemaName().c_str(), deletedEnum.GetName().c_str());
+        return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaWriter::UpdateEnumerations(Context& ctx, EnumerationChanges& enumChanges, ECSchemaCR oldSchema, ECSchemaCR newSchema)
     {
     for (size_t i = 0; i < enumChanges.Count(); i++)
@@ -4503,17 +4547,8 @@ BentleyStatus SchemaWriter::UpdateEnumerations(Context& ctx, EnumerationChanges&
 
         if (change.GetOpCode() == ECChange::OpCode::Deleted)
             {
-            ECEnumerationCP ecEnum = oldSchema.GetEnumerationCP(change.GetChangeName());
-            if (ctx.IgnoreIllegalDeletionsAndModifications())
-                {
-                ctx.Issues().ReportV(IssueSeverity::Info, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0652,
-                    "Ignoring upgrade error: ECSchema Upgrade failed. ECSchema %s: ECEnumeration %s: Deleting ECEnumerations from an ECSchema is not supported. Error suppressed, Enumeration not deleted.",
-                    oldSchema.GetFullSchemaName().c_str(), ecEnum->GetFullName().c_str());
+            if (const auto ecEnum = oldSchema.GetEnumerationCP(change.GetChangeName()); ecEnum != nullptr && DeleteEnumeration(ctx, *ecEnum, newSchema.IsDynamicSchema()) == SUCCESS)
                 continue;
-                }
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0404,
-                "ECSchema Upgrade failed. ECSchema %s: ECEnumeration %s: Deleting ECEnumerations from an ECSchema is not supported.",
-                oldSchema.GetFullSchemaName().c_str(), ecEnum->GetFullName().c_str());
             return ERROR;
             }
 

@@ -10643,7 +10643,10 @@ TEST_F(SchemaUpgradeTestFixture, DeleteKoQWithMajorSchemaChangeShouldPass)
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("deletekoqs.ecdb", schemaItem));
 
-    ASSERT_NE(m_ecdb.Schemas().GetKindOfQuantity("TestSchema", "TestKoQ"), nullptr);
+    auto testSchema = m_ecdb.Schemas().GetSchema("TestSchema");
+    ASSERT_NE(testSchema, nullptr);
+
+    ASSERT_NE(testSchema->GetKindOfQuantityCP("TestKoQ"), nullptr);
 
     // Perform a major version change and delete the KoQ "TestKoQ"
     SchemaItem updatedSchemaXml(R"xml(
@@ -10680,10 +10683,13 @@ TEST_F(SchemaUpgradeTestFixture, DeleteKoQWithMajorSchemaChangeShouldPass)
     ASSERT_EQ(SUCCESS, ImportSchema(updatedSchemaXml, SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas
          | SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
 
-    // "TestKoQ" should be deleted from schema
-    EXPECT_EQ(m_ecdb.Schemas().GetKindOfQuantity("TestSchema", "TestKoQ"), nullptr);
+    testSchema = m_ecdb.Schemas().GetSchema("TestSchema");
+    ASSERT_NE(testSchema, nullptr);
 
-    const auto testClass = m_ecdb.Schemas().GetClass("TestSchema", "TestClass");
+    // "TestKoQ" should be deleted from schema
+    EXPECT_EQ(testSchema->GetKindOfQuantityCP("TestKoQ"), nullptr);
+
+    const auto testClass = testSchema->GetClassCP("TestClass");
     ASSERT_NE(testClass, nullptr);
     const auto property = testClass->GetPropertyP("SimpleProperty");
     ASSERT_NE(property, nullptr);
@@ -18009,6 +18015,98 @@ TEST_F(SchemaUpgradeTestFixture, MovePropertyToBaseClassDynamicSchema)
         </ECSchema>)xml");
 
     ASSERT_EQ(SUCCESS, ImportSchema(modifiedSchema, SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    }
+
+TEST_F(SchemaUpgradeTestFixture, DeleteEnumsWithMajorSchemaChangeShouldPass)
+    {
+    SchemaItem schemaItem(R"xml(
+        <?xml version='1.0' encoding='utf-8'?>
+        <ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+            <ECSchemaReference name = 'CoreCustomAttributes' version = '01.00.00' alias = 'CoreCA' />                    
+            <ECCustomAttributes>
+                <DynamicSchema xmlns = 'CoreCustomAttributes.01.00.00' />
+            </ECCustomAttributes>
+
+            <ECEnumeration typeName='UnstrictEnumInt' backingTypeName='int' isStrict='False'>
+                <ECEnumerator value = '0' displayLabel = 'txt' />
+                <ECEnumerator value = '1' displayLabel = 'bat' />
+            </ECEnumeration>
+            <ECEnumeration typeName='UnstrictEnumString' backingTypeName='string' isStrict='False'>
+                <ECEnumerator value = 'val0' displayLabel = 'txt' />
+                <ECEnumerator value = 'val1' displayLabel = 'bat' />
+            </ECEnumeration>
+
+            <ECEnumeration typeName='StrictEnumInt' backingTypeName='int' isStrict='True'>
+                <ECEnumerator value = '10' displayLabel = 'txt' />
+                <ECEnumerator value = '11' displayLabel = 'bat' />
+            </ECEnumeration>
+            <ECEnumeration typeName='StrictEnumString' backingTypeName='string' isStrict='True'>
+                <ECEnumerator value = 'val10' displayLabel = 'txt' />
+                <ECEnumerator value = 'val11' displayLabel = 'bat' />
+            </ECEnumeration>
+
+            <ECEntityClass typeName="TestClass" >
+                <ECProperty propertyName="Property1" typeName="UnstrictEnumInt" />
+                <ECProperty propertyName="Property2" typeName="UnstrictEnumString" />
+                <ECProperty propertyName="Property3" typeName="StrictEnumInt" />
+                <ECProperty propertyName="Property4" typeName="StrictEnumString" />
+            </ECEntityClass>
+        </ECSchema>)xml");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("deleteEnums.ecdb", schemaItem));
+    auto testSchema = m_ecdb.Schemas().GetSchema("TestSchema");
+    ASSERT_NE(testSchema, nullptr);
+
+    // ECEnumerations should exist
+    ASSERT_NE(testSchema->GetEnumerationCP("UnstrictEnumInt"), nullptr);
+    ASSERT_NE(testSchema->GetEnumerationCP("UnstrictEnumString"), nullptr);
+    ASSERT_NE(testSchema->GetEnumerationCP("StrictEnumInt"), nullptr);
+    ASSERT_NE(testSchema->GetEnumerationCP("StrictEnumString"), nullptr);
+
+    auto testClass = testSchema->GetClassCP("TestClass");
+    ASSERT_NE(testClass, nullptr);
+
+    // Properties should have correct enumeration typenames
+    EXPECT_STREQ(testClass->GetPropertyP("Property1")->GetTypeFullName().c_str(), "TestSchema.UnstrictEnumInt");
+    EXPECT_STREQ(testClass->GetPropertyP("Property2")->GetTypeFullName().c_str(), "TestSchema.UnstrictEnumString");
+    EXPECT_STREQ(testClass->GetPropertyP("Property3")->GetTypeFullName().c_str(), "TestSchema.StrictEnumInt");
+    EXPECT_STREQ(testClass->GetPropertyP("Property4")->GetTypeFullName().c_str(), "TestSchema.StrictEnumString");
+
+    SchemaItem updatedSchemaXml(R"xml(
+        <?xml version='1.0' encoding='utf-8'?>
+        <ECSchema schemaName='TestSchema' alias='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+            <ECSchemaReference name = 'CoreCustomAttributes' version = '01.00.00' alias = 'CoreCA' />                    
+            <ECCustomAttributes>
+                <DynamicSchema xmlns = 'CoreCustomAttributes.01.00.00' />
+            </ECCustomAttributes>
+
+            <ECEntityClass typeName="TestClass" >
+                <ECProperty propertyName="Property1" typeName="int" />
+                <ECProperty propertyName="Property2" typeName="string" />
+                <ECProperty propertyName="Property3" typeName="int" />
+                <ECProperty propertyName="Property4" typeName="string" />
+            </ECEntityClass>
+        </ECSchema>)xml");
+
+    EXPECT_EQ(SUCCESS, ImportSchema(updatedSchemaXml, SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas | SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+
+    testSchema = m_ecdb.Schemas().GetSchema("TestSchema");
+    ASSERT_NE(testSchema, nullptr);
+
+    // ECEnumerations should be deleted after upgrade
+    ASSERT_EQ(testSchema->GetEnumerationCP("UnstrictEnumInt"), nullptr);
+    ASSERT_EQ(testSchema->GetEnumerationCP("UnstrictEnumString"), nullptr);
+    ASSERT_EQ(testSchema->GetEnumerationCP("StrictEnumInt"), nullptr);
+    ASSERT_EQ(testSchema->GetEnumerationCP("StrictEnumString"), nullptr);
+
+    testClass = testSchema->GetClassCP("TestClass");
+    ASSERT_NE(testClass, nullptr);
+
+    // Properties should have new primitive typenames
+    EXPECT_STREQ(testClass->GetPropertyP("Property1")->GetTypeFullName().c_str(), "int");
+    EXPECT_STREQ(testClass->GetPropertyP("Property2")->GetTypeFullName().c_str(), "string");
+    EXPECT_STREQ(testClass->GetPropertyP("Property3")->GetTypeFullName().c_str(), "int");
+    EXPECT_STREQ(testClass->GetPropertyP("Property4")->GetTypeFullName().c_str(), "string");
     }
 
 END_ECDBUNITTESTS_NAMESPACE
