@@ -803,6 +803,40 @@ MSBsplineStatus MSBsplineCurve::CopyTransformed (MSBsplineCurveCR input, Transfo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+static MSBsplineStatus initEllipticArc
+(
+MSBsplineCurveR curve,
+DPoint3dCR center,
+double rX,
+double rY,
+double startRadians,
+double sweepRadians,
+RotMatrixCP axes
+)
+    {
+    DPoint3d tmpPoles[20];
+    double   tmpKnots[20];
+    double tmpWeights[20];
+    Transform transform;
+    curveFromArc (tmpPoles, tmpKnots, tmpWeights, &curve.params, startRadians, sweepRadians, rX, rY);
+    curve.rational = true;
+    int numPoles = curve.params.numPoles;
+    transform.InitFrom (axes != nullptr ? *axes : RotMatrix::FromIdentity (), center);
+
+    curve.Allocate();
+
+    curve.display.curveDisplay = true;
+    curve.display.polygonDisplay = false;
+    transform.Multiply (curve.poles, tmpPoles, numPoles);
+    memcpy (curve.weights, tmpWeights, numPoles * sizeof (double));
+    bspknot_computeKnotVector (curve.knots, &curve.params, tmpKnots);
+    DPoint3d::MultiplyArrayByScales (curve.poles, curve.poles, curve.weights, curve.params.numPoles);
+    return MSB_SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @deprecated Use the overload with const inputs.
++---------------+---------------+---------------+---------------+---------------+------*/
 MSBsplineStatus MSBsplineCurve::InitEllipticArc
 (
 DPoint3d &center,
@@ -813,32 +847,23 @@ double sweepRadians,
 RotMatrixP axes
 )
     {
-    int curveType = BSCURVE_CIRCULAR_ARC, numPoles;
-    DPoint3d tmpPoles[20];
-    double   tmpKnots[20];
-    double tmpWeights[20];
-    Transform transform;
-    curveFromArc (tmpPoles, tmpKnots, tmpWeights, &params, startRadians, sweepRadians, rX, rY);
-    rational = true;
-    numPoles = params.numPoles;
-    transform.InitFrom (axes != nullptr ? *axes : RotMatrix::FromIdentity (), center);
+    return initEllipticArc(*this, center, rX, rY, startRadians, sweepRadians, axes);
+    }
 
-    Allocate ();
-
-    // Full ellipse?
-    if (Angle::IsFullCircle (sweepRadians))
-        curveType++;
-    // Circular?
-    if (0 == DoubleOps::TolerancedComparison (rX, rY))
-        curveType += 2;
-
-    display.curveDisplay = true;
-    display.polygonDisplay = false;
-    transform.Multiply (poles, tmpPoles, numPoles);
-    memcpy (weights, tmpWeights, numPoles * sizeof (double));
-    bspknot_computeKnotVector (knots, &params, tmpKnots);
-    DPoint3d::MultiplyArrayByScales (poles, poles, weights, params.numPoles);
-    return MSB_SUCCESS;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+MSBsplineStatus MSBsplineCurve::InitEllipticArc
+(
+DPoint3dCR  center,
+double      rX,
+double      rY,
+double      startRadians,
+double      sweepRadians,
+RotMatrixCP axes
+)
+    {
+    return initEllipticArc(*this, center, rX, rY, startRadians, sweepRadians, axes);
     }
 
 /*---------------------------------------------------------------------------------**//**

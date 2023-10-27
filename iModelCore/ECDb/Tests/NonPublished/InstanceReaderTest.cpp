@@ -716,7 +716,7 @@ TEST_F(InstanceReaderFixture, check_link_table_serialization) {
     stmt.Finalize();
 }
 
-TEST_F(InstanceReaderFixture, InstanceQueriesAfterUpdate) 
+TEST_F(InstanceReaderFixture, InstanceQueriesAfterUpdate)
     {
     // Setup test db
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("Test9876.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
@@ -758,7 +758,7 @@ TEST_F(InstanceReaderFixture, InstanceQueriesAfterUpdate)
     ASSERT_EQ(BE_SQLITE_DONE, updateStatement.Step());
     updateStatement.Finalize();
     m_ecdb.SaveChanges();
-    
+
     // Instance queries should return updated values
     ASSERT_EQ(ECSqlStatus::Success, instanceQueryStatement.Prepare(m_ecdb, "select $ from ts.TestClass"));
     ASSERT_EQ(BE_SQLITE_ROW, instanceQueryStatement.Step());

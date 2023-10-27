@@ -53,7 +53,7 @@
             "program": "${env:OutRoot}Winx64/Product/ECDb-Gtest/ECDbTest.exe",
             "args": [
                 "--gtest_break_on_failure",
-                "--gtest_filter=SchemaSyncTestFixture.Test"
+                "--gtest_filter=ClassViewsFixture.prepare_view_and_check_validate_sql_and_data"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

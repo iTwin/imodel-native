@@ -468,6 +468,9 @@ void PropertyNameExp::SetPropertyRef(DerivedPropertyExp const& derivedPropertyEx
 //+---------------+---------------+---------------+---------------+---------------+---------
 PropertyMap const* PropertyNameExp::GetPropertyMap() const
     {
+    if (GetClassRefExp() == nullptr) {
+        printf("");
+    }
     BeAssert(GetClassRefExp() != nullptr);
     PropertyMap const* propertyMap = nullptr;
     switch (GetClassRefExp()->GetType())

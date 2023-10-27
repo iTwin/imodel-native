@@ -30,6 +30,120 @@ struct TestIssueListener: ECN::IIssueListener {
     void Reset() { m_issues.clear(); }
 };
 
+struct GetDbValueFunc final : ScalarFunction {
+  private:
+      Db const* m_db;
+      void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override {
+        if (nArgs != 3 || args[0].GetValueType() != DbValueType::TextVal || args[1].GetValueType() != DbValueType::TextVal || args[2].GetValueType() != DbValueType::IntegerVal) {
+            return;
+        }
+        const auto tableName = args[0].GetValueText();
+        const auto columnName= args[1].GetValueText();
+        const auto rowId = args[2].GetValueId<ECInstanceId>();
+        Utf8String sql = SqlPrintfString("SELECT [%s] FROM [%s] WHERE [ROWID]=%s", columnName, tableName, rowId.ToHexStr().c_str()).GetUtf8CP();
+        auto stmt = m_db->GetCachedStatement(sql.c_str());
+        if (stmt.IsValid() && stmt->Step() == BE_SQLITE_ROW) {
+          ctx.SetResultValue(stmt->GetDbValue(0));
+        }
+      }
+
+  public:
+      GetDbValueFunc(DbCR db):ScalarFunction("get_val", 3), m_db(&db) {}
+      ~GetDbValueFunc() {}
+};
+//======
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ClassViewsFixture, join_using) {
+    auto testSchema = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+    <ECSchema
+            schemaName="test_schema"
+            alias="ts"
+            version="1.0.0"
+            xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name='ClassViews' version='01.00.00' alias='classView' />
+        <ECSchemaReference name='ECDbMeta' version='04.00.00' alias='meta' />
+        <ECEntityClass typeName="CustomAttribute" description="" displayLabel="" modifier="Sealed">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00.00">
+                    <MapStrategy>ExistingTable</MapStrategy>
+                    <TableName>ec_CustomAttribute</TableName>
+                </ClassMap>
+            </ECCustomAttributes>
+            <ECProperty propertyName="ContainerId"  typeName="int"/>
+            <ECProperty propertyName="ContainerType"  typeName="int"/>
+            <ECProperty propertyName="Ordinal"  typeName="int"/>
+            <ECProperty propertyName="Instance"  typeName="string"/>
+            <ECNavigationProperty propertyName="Class" relationshipName="CustomAttributeClassHasInstance" direction="backward"/>
+        </ECEntityClass>
+        <ECRelationshipClass typeName="CustomAttributeClassHasInstance" modifier="Sealed" strength="referencing">
+            <Source multiplicity="(1..1)" roleLabel="has instance" polymorphic="false">
+                <Class class="meta:ECClassDef"/>
+            </Source>
+            <Target multiplicity="(0..*)" roleLabel="is instance of" polymorphic="false">
+                <Class class="CustomAttribute"/>
+            </Target>
+        </ECRelationshipClass>
+        <ECEntityClass typeName="PropertyCustomAttribute" description="" displayLabel="" modifier="Abstract">
+            <ECCustomAttributes>
+                <View xmlns="ClassViews.01.00.00">
+                    <Query>
+                      SELECT
+                          [ca].[ECInstanceId],
+                          [ca].[Class] [Class],
+                          CAST([ca].[ContainerId] as LONG) [Property],
+                          '' [Instance]
+                      FROM [ts].[CustomAttribute] [ca]
+                      WHERE [ca].[ContainerType] = 992 ORDER BY [ca].[Ordinal]
+                    </Query>
+                </View>
+            </ECCustomAttributes>
+            <ECNavigationProperty propertyName="Property" relationshipName="PropertyHasCustomAttribute" direction="backward"/>
+            <ECNavigationProperty propertyName="Class" relationshipName="CustomAttributeClassHasInstanceOnProperty" direction="backward"/>
+            <ECProperty propertyName="Instance"  typeName="string"/>
+        </ECEntityClass>
+        <ECRelationshipClass typeName="PropertyHasCustomAttribute" modifier="Sealed" strength="referencing">
+            <Source multiplicity="(1..1)" roleLabel="has custom attribute" polymorphic="false">
+                <Class class="meta:ECPropertyDef"/>
+            </Source>
+            <Target multiplicity="(0..*)" roleLabel="is defined on" polymorphic="false">
+                <Class class="PropertyCustomAttribute"/>
+            </Target>
+        </ECRelationshipClass>
+        <ECRelationshipClass typeName="CustomAttributeClassHasInstanceOnProperty" modifier="Sealed" strength="referencing">
+            <Source multiplicity="(1..1)" roleLabel="has instance" polymorphic="false">
+                <Class class="meta:ECClassDef"/>
+            </Source>
+            <Target multiplicity="(0..*)" roleLabel="is instance of" polymorphic="false">
+                <Class class="PropertyCustomAttribute"/>
+            </Target>
+        </ECRelationshipClass>
+    </ECSchema>)xml");
+
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("test.ecdb"));
+    GetDbValueFunc func(m_ecdb);
+    m_ecdb.AddFunction(func);
+
+    ASSERT_EQ(SUCCESS, ImportSchema(testSchema));
+    m_ecdb.SaveChanges();
+    printf("%s\n", m_ecdb.GetDbFileName());
+    if (true){
+        ECSqlStatement stmt;
+        auto ecsql = R"x(
+          SELECT pca.ECInstanceId, pDef.Name
+            FROM ts.PropertyCustomAttribute pca
+              JOIN meta.ECPropertyDef pDef USING ts.PropertyHasCustomAttribute
+          --  JOIN meta.ECClassDef    cDef USING ts.CustomAttributeClassHasInstanceOnProperty
+        )x";
+
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        auto nativeSql = "";
+        ASSERT_STREQ(nativeSql, stmt.GetNativeSql());
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+    }
+}
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -138,6 +252,7 @@ TEST_F(ClassViewsFixture, linktable_relationship_view) {
         ASSERT_EQ(stmt.GetValueId<ECInstanceId>(4), ECInstanceId(1ull));
         ASSERT_EQ(stmt.GetValueId<ECClassId>(5), ECClassId(33ull));
     }
+    ASSERT_FALSE(m_ecdb.TableExists("ts_SchemaClassesView")) << "A abstract linktable is still mapped to a table.";
 }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
