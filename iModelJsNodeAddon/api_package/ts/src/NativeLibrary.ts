@@ -701,6 +701,7 @@ export declare namespace IModelJsNative {
     public schemaSyncGetLocalDbInfo(): SchemaLocalDbInfo | undefined;
     public schemaSyncGetSyncDbInfo(): SchemaSyncDbInfo | undefined;
     public getFilePath(): string;
+    public getSchemaProps(name: string): SchemaProps;
     public importSchema(schemaPathName: string): DbResult;
     public isOpen(): boolean;
     public openDb(dbName: string, mode: OpenMode, upgradeProfiles?: boolean): DbResult;
@@ -1277,6 +1278,7 @@ export declare namespace IModelJsNative {
     public setRulesetVariableValue(rulesetId: string, variableId: string, type: string, value: any): ECPresentationManagerResponse<void>;
     public unsetRulesetVariableValue(rulesetId: string, variableId: string): ECPresentationManagerResponse<void>;
     public getRulesetVariableValue(rulesetId: string, variableId: string, type: string): ECPresentationManagerResponse<any>;
+    public registerSupplementalRuleset(serializedRuleset: string): ECPresentationManagerResponse<string>;
     public getRulesets(rulesetId: string): ECPresentationManagerResponse<string>;
     public addRuleset(serializedRuleset: string): ECPresentationManagerResponse<string>;
     public removeRuleset(rulesetId: string, hash: string): ECPresentationManagerResponse<boolean>;

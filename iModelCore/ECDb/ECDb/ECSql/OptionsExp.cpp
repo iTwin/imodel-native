@@ -15,7 +15,7 @@ BentleyStatus OptionsExp::AddOptionExp(std::unique_ptr<OptionExp> optionExp, Iss
     Utf8CP name = optionExp->GetName();
     if (m_optionsByName.find(name) != m_optionsByName.end())
         {
-        issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Multiple options with same name ('%s') are not supported.", name);
+        issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0548, "Multiple options with same name ('%s') are not supported.", name);
         return ERROR;
         }
 

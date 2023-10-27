@@ -4,8 +4,41 @@ This document including important changes to syntax or file format.
 
 | Module  | Version   |
 | ------- | --------- |
-| Profile | `4.0.0.3` |
-| ECSQL   | `1.2.8.0` |
+| Profile | `4.0.0.4` |
+| ECSQL   | `1.2.9.1` |
+
+## `10/24/2023`: Pragma integrity_check(check_nav_class_ids) now checks if the navigation property represents a valid ClassId for the relationship
+
+ECsql version updated `1.2.9.0` -> `1.2.9.1`
+
+## `10/12/2023`: Add support for window functions
+
+* Add support for window functions
+  * Example: `SELECT rank() OVER(PARTITION BY ECClassId ORDER BY ECInstanceId) from bis.Model`
+* ECSql version updated `1.2.8.1` -> `1.2.9.0`
+
+## `9/13/2023`: Pragma disqualify_type_filter only take effect if there was more then one class name in query
+
+ECSql version updated `1.2.8.0` -> `1.2.8.1`
+
+If following is set
+```sql
+    PRAGMA disqualify_type_filter=TRUE
+        FOR BisCore.ExternalSourceAspect;
+```
+
+Then if we only select the `BisCore.ExternalSourceAspect` then the `disqualify_type_filter` will not take effect.
+
+```sql
+SELECT * FROM BisCore.ExternalSourceAspect
+```
+
+But if we join the `ExternalSourceAspect` with something else then the `disqualify_type_filter` will take effect and ECClassId expression will be disqualified.
+
+## `9/26/2023`: Add support for ImportRequiresVersion and UseRequiresVersion custom attributes
+* Two custom attributes were added to the ECDbMap schema, the schema version is incremented to `02.00.02`
+    * They indicate whether the import process of a schema with the CA or anything using a CA requires a minimum ECDb version
+* ECDb profile version updated to `4.0.0.3` -> `4.0.0.4`.
 
 ## `9/13/2023`: Runtime instance and property accessor no longer experimental
 
@@ -82,6 +115,11 @@ On the other hand, the following query makes `Foo` optional by adding `?` at the
 ```
 
 > Note: Optional property may slow down performance while non-optional properties will improve the performance of instance query.
+
+## `8/28/2023`: Add support for ImportRequiresVersion and UseRequiresVersion custom attributes
+* Two custom attributes were added to the ECDbMap schema, the schema version is incremented to `02.00.02`
+    * They indicate whether the import process of a schema with the CA or anything using a CA requires a minimum ECDb version
+* ECDb profile version updated to `4.0.0.3` -> `4.0.0.4`.
 
 ## `8/18/2023`: Add support for CROSS Join
 

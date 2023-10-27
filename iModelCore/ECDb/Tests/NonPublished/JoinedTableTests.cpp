@@ -1027,39 +1027,39 @@ TEST_F(JoinedTableTestFixture,  Disqualifying_PolymorphicFilter)
         }
     };
     prepareAndMatchSql("SELECT * FROM +ALL ts.Goo", {
-        "[CHC_ts_Foo].[ClassId]=[ts_Foo].ECClassId AND [CHC_ts_Foo].[BaseClassId]=75"
+        "[CHC_ts_Foo].[ClassId]=[ts_Foo].ECClassId AND [CHC_ts_Foo].[BaseClassId]=77"
         }, ECSqlStatus::Success);
 
     prepareAndMatchSql("SELECT * FROM ALL ts.Goo", {
-        "[CHC_ts_Foo].[ClassId]=[ts_Foo].ECClassId AND [CHC_ts_Foo].[BaseClassId]=75"
+        "[CHC_ts_Foo].[ClassId]=[ts_Foo].ECClassId AND [CHC_ts_Foo].[BaseClassId]=77"
         }, ECSqlStatus::Success);
 
     prepareAndMatchSql("SELECT * FROM ts.Goo", {
-        "[CHC_ts_Foo].[ClassId]=[ts_Foo].ECClassId AND [CHC_ts_Foo].[BaseClassId]=75"
+        "[CHC_ts_Foo].[ClassId]=[ts_Foo].ECClassId AND [CHC_ts_Foo].[BaseClassId]=77"
         }, ECSqlStatus::Success);
 
     prepareAndMatchSql("SELECT * FROM ONLY ts.Goo", {
-        "[ts_Foo].ECClassId=75"
+        "[ts_Foo].ECClassId=77"
         }, ECSqlStatus::Success);
 
     prepareAndMatchSql("SELECT * FROM +ONLY ts.Goo", {
-        "+[ts_Foo].ECClassId=75"
+        "+[ts_Foo].ECClassId=77"
         }, ECSqlStatus::Success);
 
     prepareAndMatchSql("SELECT * FROM ONLY ts.Doo", {
-        "[ts_Foo].ECClassId=73"
+        "[ts_Foo].ECClassId=75"
         }, ECSqlStatus::Success);
 
     prepareAndMatchSql("SELECT * FROM +ONLY ts.Doo", {
-        "+[ts_Foo].ECClassId=73"
+        "+[ts_Foo].ECClassId=75"
         }, ECSqlStatus::Success);
 
     prepareAndMatchSql("SELECT * FROM ALL ts.Doo", {
-        "[ts_Foo].ECClassId=73"
+        "[ts_Foo].ECClassId=75"
         }, ECSqlStatus::Success);
 
     prepareAndMatchSql("SELECT * FROM +ALL ts.Doo", {
-        "+[ts_Foo].ECClassId=73"
+        "+[ts_Foo].ECClassId=75"
         }, ECSqlStatus::Success);
     }
 //---------------------------------------------------------------------------------------

@@ -523,6 +523,26 @@ DgnDbStatus LineStyleElement::_OnDelete() const
     return GetDgnDb().IsPurgeOperationActive() ? T_Super::_OnDelete() : DgnDbStatus::DeletionProhibited;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DgnDbStatus LineStyleElement::_OnInsert()
+    {
+    auto status = T_Super::_OnInsert();
+    if (DgnDbStatus::Success != status)
+        return status;
+
+    Json::Value dataObj(Json::objectValue);
+    if (!Json::Reader::Parse(GetData(), dataObj))
+        return DgnDbStatus::Success;
+
+    DgnDbR db = GetDgnDb();
+    LsDefinition* lsDef = new LsDefinition(GetName().c_str(), db, dataObj, DgnStyleId(GetElementId().GetValue()));
+    db.LineStyles().GetCache().AddIdEntry(lsDef);
+
+    return DgnDbStatus::Success;
+    }
+
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 namespace dgn_ElementHandler
 {

@@ -243,6 +243,14 @@ ECSqlStatus ECSqlSelectPreparer::Prepare(ECSqlPrepareContext& ctx, NativeSqlBuil
                 return status;
             }
 
+        if (WindowFunctionClauseExp const* e = exp.GetWindowFunctionClause())
+            {
+            sqlGenerator.AppendSpace();
+            status = ECSqlExpPreparer::PrepareWindowFunctionClauseExp(ctx, *e);
+            if (!status.IsSuccess())
+                return status;
+            }
+
         // Append ORDER BY
         if (OrderByExp const* e = exp.GetOrderBy())
             {
@@ -378,7 +386,8 @@ BentleyStatus ECSqlSelectPreparer::ValidateSelectClauseItems(ECSqlPrepareContext
     const size_t count = lhs.GetChildrenCount();
     if (count != rhs.GetChildrenCount())
         {
-        ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Number of properties in all the select clauses of UNION/EXCEPT/INTERSECT must be same in number and type.");
+        ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0527,
+            "Number of properties in all the select clauses of UNION/EXCEPT/INTERSECT must be same in number and type.");
         return ERROR;
         }
 
@@ -390,13 +399,22 @@ BentleyStatus ECSqlSelectPreparer::ValidateSelectClauseItems(ECSqlPrepareContext
         ECSqlTypeInfo const& rhsTypeInfo = rhsDerivedPropExp->GetExpression()->GetTypeInfo();
         if (!lhsTypeInfo.CanCompare(rhsTypeInfo))
             {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Type of expression %s in LHS of UNION/EXCEPT/INTERSECT is not same as respective expression %s in RHS.", lhsDerivedPropExp->ToECSql().c_str(), rhsDerivedPropExp->ToECSql().c_str());
+            ctx.Issues().ReportV(
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
+                IssueType::ECSQL,
+                ECDbIssueId::ECDb_0528,
+                "Type of expression %s in LHS of UNION/EXCEPT/INTERSECT is not same as respective expression %s in RHS.",
+                lhsDerivedPropExp->ToECSql().c_str(),
+                rhsDerivedPropExp->ToECSql().c_str()
+            );
             return ERROR;
             }
 
         if (lhsTypeInfo.IsNull() && (rhsTypeInfo.IsPoint() || !rhsTypeInfo.IsPrimitive()))
             {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "NULL in LHS of UNION/EXCEPT/INTERSECT is ambiguous if its RHS counterpart is not of a primitive type (excluding Point2d and Point3d).");
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0529,
+                "NULL in LHS of UNION/EXCEPT/INTERSECT is ambiguous if its RHS counterpart is not of a primitive type (excluding Point2d and Point3d).");
             return ERROR;
             }
         }

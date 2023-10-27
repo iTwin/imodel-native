@@ -601,7 +601,7 @@ NonSupplementalRuleSetLocater::~NonSupplementalRuleSetLocater()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<PresentationRuleSetPtr> NonSupplementalRuleSetLocater::_LocateRuleSets(Utf8CP rulesetId) const
     {
-    bvector<PresentationRuleSetPtr> rulesets = m_locater->LocateRuleSets(nullptr);
+    bvector<PresentationRuleSetPtr> rulesets = m_locater->LocateRuleSets(rulesetId);
     auto iter = std::remove_if(rulesets.begin(), rulesets.end(), [](PresentationRuleSetPtr r){return r->GetIsSupplemental();});
     if (rulesets.end() != iter)
         rulesets.erase(iter, rulesets.end());
@@ -617,21 +617,13 @@ bvector<PresentationRuleSetPtr> SimpleRuleSetLocater::_LocateRuleSets(Utf8CP rul
     if (ruleSetId == nullptr)
         {
         for (auto entry : m_cached)
-            {
-            DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Default, entry.second->GetRuleSetId().Equals(entry.first), Utf8PrintfString("Expected cached ruleset id '%s' to equal cache key '%s'",
-                entry.second->GetRuleSetId().c_str(), entry.first.c_str()));
             ruleSets.push_back(entry.second);
-            }
         return ruleSets;
         }
 
     auto iter = m_cached.find(ruleSetId);
     if (iter != m_cached.end())
-        {
-        DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Default, iter->second->GetRuleSetId().Equals(iter->first), Utf8PrintfString("Expected cached ruleset id '%s' to equal cache key '%s'",
-            iter->second->GetRuleSetId().c_str(), iter->first.c_str()));
         ruleSets.push_back(iter->second);
-        }
 
     return ruleSets;
     }
@@ -643,11 +635,7 @@ bvector<Utf8String> SimpleRuleSetLocater::_GetRuleSetIds() const
     {
     bvector<Utf8String> ruleSetIds;
     for (auto entry : m_cached)
-        {
-        DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Default, entry.second->GetRuleSetId().Equals(entry.first), Utf8PrintfString("Expected cached ruleset id '%s' to equal cache key '%s'",
-            entry.second->GetRuleSetId().c_str(), entry.first.c_str()));
         ruleSetIds.push_back(entry.first);
-        }
     return ruleSetIds;
     }
 
@@ -661,9 +649,6 @@ void SimpleRuleSetLocater::AddRuleSet(PresentationRuleSetR ruleSet)
     auto iter = m_cached.find(ruleSet.GetRuleSetId());
     if (iter != m_cached.end())
         {
-        DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Default, iter->second->GetRuleSetId().Equals(iter->first), Utf8PrintfString("Expected cached ruleset id '%s' to equal cache key '%s'",
-            iter->second->GetRuleSetId().c_str(), iter->first.c_str()));
-
         if (iter->second->GetHash().Equals(ruleSet.GetHash()))
             return;
 
@@ -688,8 +673,6 @@ void SimpleRuleSetLocater::RemoveRuleSet(Utf8StringCR ruleSetId)
     auto iter = m_cached.find(ruleSetId);
     if (iter != m_cached.end())
         {
-        DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Default, iter->second->GetRuleSetId().Equals(iter->first), Utf8PrintfString("Expected cached ruleset id '%s' to equal cache key '%s'",
-            iter->second->GetRuleSetId().c_str(), iter->first.c_str()));
         PresentationRuleSetPtr ruleset = iter->second;
         m_cached.erase(iter);
         lock.unlock();

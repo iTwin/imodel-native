@@ -717,11 +717,13 @@ static void detect_foreign_key(EVP_PKEY *pkey)
 {
     switch (pkey->type) {
     case EVP_PKEY_RSA:
+    case EVP_PKEY_RSA_PSS:
         pkey->foreign = pkey->pkey.rsa != NULL
                         && ossl_rsa_is_foreign(pkey->pkey.rsa);
         break;
 #  ifndef OPENSSL_NO_EC
     case EVP_PKEY_SM2:
+        break;
     case EVP_PKEY_EC:
         pkey->foreign = pkey->pkey.ec != NULL
                         && ossl_ec_key_is_foreign(pkey->pkey.ec);
@@ -1074,6 +1076,7 @@ int EVP_PKEY_can_sign(const EVP_PKEY *pkey)
     if (pkey->keymgmt == NULL) {
         switch (EVP_PKEY_get_base_id(pkey)) {
         case EVP_PKEY_RSA:
+        case EVP_PKEY_RSA_PSS:
             return 1;
 # ifndef OPENSSL_NO_DSA
         case EVP_PKEY_DSA:

@@ -940,6 +940,52 @@ TEST(SupplementalRuleSetLocater, ForwardsRulesetCreatedAndDisposedCallbacks)
     EXPECT_EQ(1, disposedRulesetCount);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @betest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(NonSupplementalRuleSetLocater, FindsNonSupplementalRuleSets)
+    {
+    auto baseLocater = SimpleRuleSetLocater::Create();
+
+    auto ruleset1 = PresentationRuleSet::CreateInstance("Ruleset1");
+    baseLocater->AddRuleSet(*ruleset1);
+
+    auto ruleset2 = PresentationRuleSet::CreateInstance("Ruleset2");
+    ruleset2->SetIsSupplemental(true);
+    baseLocater->AddRuleSet(*ruleset2);
+
+    auto ruleset3 = PresentationRuleSet::CreateInstance("Ruleset3");
+    baseLocater->AddRuleSet(*ruleset3);
+
+    auto locater = NonSupplementalRuleSetLocater::Create(*baseLocater);
+    EXPECT_EQ(1, locater->LocateRuleSets("Ruleset1").size());
+    EXPECT_EQ(0, locater->LocateRuleSets("Ruleset2").size());
+    EXPECT_EQ(1, locater->LocateRuleSets("Ruleset3").size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(NonSupplementalRuleSetLocater, ForwardsRulesetCreatedAndDisposedCallbacks)
+    {
+    auto baseLocater = SimpleRuleSetLocater::Create();
+    auto locater = NonSupplementalRuleSetLocater::Create(*baseLocater);
+
+    TestRulesetCallbacksHandler handler;
+    int createdRulesetCount = 0;
+    int disposedRulesetCount = 0;
+    handler.SetCreatedHandler([&](PresentationRuleSetCR) { createdRulesetCount++; });
+    handler.SetDisposedHandler([&](PresentationRuleSetCR) { disposedRulesetCount++; });
+    locater->AddRulesetCallbacksHandler(handler);
+
+    auto ruleset = PresentationRuleSet::CreateInstance("ruleset");
+    baseLocater->AddRuleSet(*ruleset);
+    EXPECT_EQ(1, createdRulesetCount);
+
+    baseLocater->RemoveRuleSet(ruleset->GetRuleSetId());
+    EXPECT_EQ(1, disposedRulesetCount);
+    }
+
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/

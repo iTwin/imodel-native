@@ -20,7 +20,7 @@ struct SchemaUpgradeTestFixture : public ECDbTestFixture
     {
     public:
     mutable bvector<Utf8String> m_issues;
-    void _OnIssueReported(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, Utf8CP message) const override
+    void _OnIssueReported(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, ECN::IssueId id, Utf8CP message) const override
         {
         m_issues.push_back(message);
         }
@@ -233,8 +233,8 @@ TEST_F(SchemaUpgradeTestFixture, ValidateMapCheck_CheckForOrphanCustomAttributeI
 
     // this should fail and generate issue messages
     ASSERT_EQ(ERROR, ImportSchema(SchemaItem(testSchemaXml1)));
-    auto expected_msg1 = "Detected orphan custom attribute rows. CustomAttribute with id=39 applied to container of type 'ECClass' with container id=76.";
-    auto expected_msg2 = "Detected orphan custom attribute rows. CustomAttribute with id=38 applied to container of type 'ECProperty' with container id=171.";
+    auto expected_msg1 = "Detected orphan custom attribute rows. CustomAttribute with id=40 applied to container of type 'ECClass' with container id=78.";
+    auto expected_msg2 = "Detected orphan custom attribute rows. CustomAttribute with id=39 applied to container of type 'ECProperty' with container id=174.";
     auto expected_msg3 = "Detected 2 orphan rows in ec_CustomAttributes.";
 
     ASSERT_STREQ(expected_msg1,listener.m_issues[0].c_str());

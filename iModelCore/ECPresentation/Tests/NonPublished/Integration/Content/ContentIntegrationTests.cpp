@@ -969,7 +969,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DescriptorOverride_FiltersB
     {
     ECClassCP classA = GetClass("A");
     BeGuid instanceGuid1 = BeGuid(true);
-    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [instanceGuid1](IECInstanceR instance) 
+    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [instanceGuid1](IECInstanceR instance)
         {
         instance.SetValue("GuidProp", ECValue((Byte const*)&instanceGuid1, sizeof(BeGuid)));
         });
@@ -3137,6 +3137,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
 
     ContentRuleP rule = new ContentRule("", 1, false);
     ContentSpecificationP specification = new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false);
+    specification->AddCalculatedProperty(*new CalculatedPropertiesSpecification("instance id", 1000, "this.ECInstanceId"));
+    specification->AddCalculatedProperty(*new CalculatedPropertiesSpecification("class id", 1000, "this.ECClassId"));
     specification->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label1", 1000, "\"Value\""));
     specification->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label2", 1100, "1+2"));
     specification->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label3", 1200, "this.Property"));
@@ -3146,23 +3148,31 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     // validate descriptor
     ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
-    ASSERT_EQ(4, descriptor->GetVisibleFields().size());
+    ASSERT_EQ(6, descriptor->GetVisibleFields().size());
 
     ASSERT_TRUE(descriptor->GetVisibleFields()[1]->IsCalculatedPropertyField());
     ASSERT_TRUE(descriptor->GetVisibleFields()[2]->IsCalculatedPropertyField());
     ASSERT_TRUE(descriptor->GetVisibleFields()[3]->IsCalculatedPropertyField());
+    ASSERT_TRUE(descriptor->GetVisibleFields()[4]->IsCalculatedPropertyField());
+    ASSERT_TRUE(descriptor->GetVisibleFields()[5]->IsCalculatedPropertyField());
 
-    EXPECT_STREQ("label1", descriptor->GetVisibleFields()[1]->AsCalculatedPropertyField()->GetLabel().c_str());
-    EXPECT_STREQ("label2", descriptor->GetVisibleFields()[2]->AsCalculatedPropertyField()->GetLabel().c_str());
-    EXPECT_STREQ("label3", descriptor->GetVisibleFields()[3]->AsCalculatedPropertyField()->GetLabel().c_str());
+    EXPECT_STREQ("instance id", descriptor->GetVisibleFields()[1]->AsCalculatedPropertyField()->GetLabel().c_str());
+    EXPECT_STREQ("class id", descriptor->GetVisibleFields()[2]->AsCalculatedPropertyField()->GetLabel().c_str());
+    EXPECT_STREQ("label1", descriptor->GetVisibleFields()[3]->AsCalculatedPropertyField()->GetLabel().c_str());
+    EXPECT_STREQ("label2", descriptor->GetVisibleFields()[4]->AsCalculatedPropertyField()->GetLabel().c_str());
+    EXPECT_STREQ("label3", descriptor->GetVisibleFields()[5]->AsCalculatedPropertyField()->GetLabel().c_str());
 
     EXPECT_EQ(1000, descriptor->GetVisibleFields()[1]->GetPriority());
-    EXPECT_EQ(1100, descriptor->GetVisibleFields()[2]->GetPriority());
-    EXPECT_EQ(1200, descriptor->GetVisibleFields()[3]->GetPriority());
+    EXPECT_EQ(1000, descriptor->GetVisibleFields()[2]->GetPriority());
+    EXPECT_EQ(1000, descriptor->GetVisibleFields()[3]->GetPriority());
+    EXPECT_EQ(1100, descriptor->GetVisibleFields()[4]->GetPriority());
+    EXPECT_EQ(1200, descriptor->GetVisibleFields()[5]->GetPriority());
 
-    EXPECT_STREQ("\"Value\"", descriptor->GetVisibleFields()[1]->AsCalculatedPropertyField()->GetValueExpression().c_str());
-    EXPECT_STREQ("1+2", descriptor->GetVisibleFields()[2]->AsCalculatedPropertyField()->GetValueExpression().c_str());
-    EXPECT_STREQ("this.Property", descriptor->GetVisibleFields()[3]->AsCalculatedPropertyField()->GetValueExpression().c_str());
+    EXPECT_STREQ("this.ECInstanceId", descriptor->GetVisibleFields()[1]->AsCalculatedPropertyField()->GetValueExpression().c_str());
+    EXPECT_STREQ("this.ECClassId", descriptor->GetVisibleFields()[2]->AsCalculatedPropertyField()->GetValueExpression().c_str());
+    EXPECT_STREQ("\"Value\"", descriptor->GetVisibleFields()[3]->AsCalculatedPropertyField()->GetValueExpression().c_str());
+    EXPECT_STREQ("1+2", descriptor->GetVisibleFields()[4]->AsCalculatedPropertyField()->GetValueExpression().c_str());
+    EXPECT_STREQ("this.Property", descriptor->GetVisibleFields()[5]->AsCalculatedPropertyField()->GetValueExpression().c_str());
 
     // request for content
     ContentCPtr content = GetVerifiedContent(*descriptor);
@@ -3174,9 +3184,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     rapidjson::Document jsonDoc = contentSet.Get(0)->AsJson();
     RapidJsonValueCR jsonValues = jsonDoc["Values"];
 
-    EXPECT_STREQ("Value", jsonValues["CalculatedProperty_0"].GetString());
-    EXPECT_STREQ("3", jsonValues["CalculatedProperty_1"].GetString());
-    EXPECT_STREQ("Test", jsonValues["CalculatedProperty_2"].GetString());
+    EXPECT_STREQ(BeInt64Id::FromString(instance->GetInstanceId().c_str()).ToHexStr().c_str(), jsonValues["CalculatedProperty_0"].GetString());
+    EXPECT_STREQ(BeInt64Id(classA->GetId()).ToHexStr().c_str(), jsonValues["CalculatedProperty_1"].GetString());
+    EXPECT_STREQ("Value", jsonValues["CalculatedProperty_2"].GetString());
+    EXPECT_STREQ("3", jsonValues["CalculatedProperty_3"].GetString());
+    EXPECT_STREQ("Test", jsonValues["CalculatedProperty_4"].GetString());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5012,7 +5024,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ReturnsPointPropertyContent
     rapidjson::Document expectedDisplayValues;
     expectedDisplayValues.Parse(Utf8PrintfString(R"(
         {
-        "%s": "X: 1.00 Y: 2.00 Z: 3.00"
+        "%s": "X: 1.00; Y: 2.00; Z: 3.00"
         })", FIELD_NAME(classA, "Property")).c_str());
     EXPECT_EQ(expectedDisplayValues, recordJson["DisplayValues"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedDisplayValues) << "\r\n"
@@ -5583,9 +5595,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, FindsCachedDescriptorWhenAl
     spec->AddPropertyOverride(*new PropertySpecification("Property", 1000, "", nullptr, "GetVariableBoolValue(\"related\")"));
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor1 = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), 
+    ContentDescriptorCPtr descriptor1 = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(),
         RulesetVariables({ RulesetVariableEntry("related", true), RulesetVariableEntry("not_related", false) }), nullptr, 0, *input)));
-    ContentDescriptorCPtr descriptor2 = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), 
+    ContentDescriptorCPtr descriptor2 = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(),
         RulesetVariables({ RulesetVariableEntry("related", true), RulesetVariableEntry("not_related", true) }), nullptr, 0, *input)));
 
     EXPECT_EQ(descriptor1, descriptor2);
@@ -6087,6 +6099,140 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     EXPECT_EQ(1, fieldsC.size()); // PropertyC
     EXPECT_STREQ("PropertyC", fieldsC[0]->GetLabel().c_str());
     EXPECT_STREQ("InstanceC", jsonValues[NESTED_CONTENT_FIELD_NAME(classA, classB)][0]["Values"][NESTED_CONTENT_FIELD_NAME(classB, classC)][0]["Values"][FIELD_NAME(classC, "PropertyC")].GetString());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(ContentInstancesOfSpecificClassesSpecification_ContentModifierAppliesSpecificRelatedPropertiesOnNestedContentProperties, R"*(
+    <ECEntityClass typeName="A">
+    </ECEntityClass>
+    <ECEntityClass typeName="B">
+    </ECEntityClass>
+    <ECEntityClass typeName="C">
+        <ECProperty propertyName="PropertyC1" typeName="string" />
+        <ECProperty propertyName="PropertyC2" typeName="string" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="A_Has_B" strength="referencing" strengthDirection="forward" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="references" polymorphic="True">
+            <Class class="A" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="is referenced by" polymorphic="True">
+            <Class class="B" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="B_Has_C" strength="referencing" strengthDirection="forward" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="references" polymorphic="True">
+            <Class class="B" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="is referenced by" polymorphic="True">
+            <Class class="C" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificClassesSpecification_ContentModifierAppliesSpecificRelatedPropertiesOnNestedContentProperties)
+    {
+    // set up data set
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECClassCP classC = GetClass("C");
+    ECRelationshipClassCP relationshipAHasB = GetClass("A_Has_B")->GetRelationshipClassCP();
+    ECRelationshipClassCP relationshipBHasC = GetClass("B_Has_C")->GetRelationshipClassCP();
+
+    IECInstancePtr instanceA = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance) {});
+    IECInstancePtr instanceB = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance) {});
+    IECInstancePtr instanceC = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC, [](IECInstanceR instance)
+        {
+        instance.SetValue("PropertyC1", ECValue("C1"));
+        instance.SetValue("PropertyC2", ECValue("C2"));
+        });
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipAHasB, *instanceA, *instanceB);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipBHasC, *instanceB, *instanceC);
+
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false);
+    contentRule->AddSpecification(*spec);
+
+    ContentModifierP relatedPropertiesModifierAtoB = new ContentModifier(GetSchema()->GetName(), classA->GetName());
+    relatedPropertiesModifierAtoB->AddRelatedProperty(*new RelatedPropertiesSpecification(*new RelationshipPathSpecification(
+        {
+        new RelationshipStepSpecification(relationshipAHasB->GetFullName(), RequiredRelationDirection_Forward, classB->GetFullName())
+        }), { new PropertySpecification("*") }, RelationshipMeaning::RelatedInstance));
+
+    ContentModifierP relatedPropertiesModifierBtoC = new ContentModifier(GetSchema()->GetName(), classB->GetName());
+    relatedPropertiesModifierBtoC->AddRelatedProperty(*new RelatedPropertiesSpecification(*new RelationshipPathSpecification(
+        {
+        new RelationshipStepSpecification(relationshipBHasC->GetFullName(), RequiredRelationDirection_Forward, classC->GetFullName())
+        }), { new PropertySpecification("*") }, RelationshipMeaning::RelatedInstance));
+    relatedPropertiesModifierBtoC->SetApplyOnNestedContent(true);
+
+    rules->AddPresentationRule(*contentRule);
+    rules->AddPresentationRule(*relatedPropertiesModifierAtoB);
+    rules->AddPresentationRule(*relatedPropertiesModifierBtoC);
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+
+    // only select PropertyC2
+    ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
+    auto classBField = modifiedDescriptor->GetVisibleFields()[0]->AsNestedContentField();
+    auto classCField = classBField->GetFields()[0]->AsNestedContentField();
+    auto propertyC2Field = classCField->GetFields()[1];
+    EXPECT_STREQ("PropertyC2", propertyC2Field->GetLabel().c_str());
+    modifiedDescriptor->ExclusivelyIncludeFields({ propertyC2Field });
+    modifiedDescriptor->SetExclusiveIncludePaths(std::make_shared<RelatedClassPathsList>(RelatedClassPathsList{
+        RelatedClassPath{
+            RelatedClass(*classA, SelectClass<ECRelationshipClass>(*relationshipAHasB, ""), true, SelectClassWithExcludes<ECClass>(*classB, "")),
+            RelatedClass(*classB, SelectClass<ECRelationshipClass>(*relationshipBHasC, ""), true, SelectClassWithExcludes<ECClass>(*classC, "")),
+            },
+        }));
+
+    // request for content
+    ContentCPtr content = GetVerifiedContent(*modifiedDescriptor);
+    ASSERT_TRUE(content.IsValid());
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+
+    rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
+    rapidjson::Document expectedValues;
+    expectedValues.Parse(Utf8PrintfString(R"({
+        "%s": [{
+            "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
+            "Values": {
+                "%s": [{
+                    "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
+                    "Values": {
+                        "%s": "C2"
+                        },
+                    "DisplayValues": {
+                        "%s": "C2"
+                        },
+                    "MergedFieldNames": []
+                    }]
+                },
+            "DisplayValues": {
+                "%s": [{
+                    "DisplayValues": {
+                        "%s": "C2"
+                        }
+                    }]
+                },
+            "MergedFieldNames": []
+            }]
+    })",
+        NESTED_CONTENT_FIELD_NAME(classA, classB),
+        instanceB->GetClass().GetId().ToString().c_str(), instanceB->GetInstanceId().c_str(),
+        NESTED_CONTENT_FIELD_NAME(classB, classC),
+        instanceC->GetClass().GetId().ToString().c_str(), instanceC->GetInstanceId().c_str(),
+        FIELD_NAME(classC, "PropertyC2"), FIELD_NAME(classC, "PropertyC2"),
+        NESTED_CONTENT_FIELD_NAME(classB, classC),
+        FIELD_NAME(classC, "PropertyC2")
+    ).c_str());
+    EXPECT_EQ(expectedValues, recordJson["Values"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -10049,7 +10195,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPointsArrayPropertyVal
     rapidjson::Document expectedDisplayValues1;
     expectedDisplayValues1.Parse(Utf8PrintfString(R"(
         {
-        "%s": ["X: 0.00 Y: 0.00 Z: 0.00", "X: 1.00 Y: 1.00 Z: 1.00"]
+        "%s": ["X: 0.00; Y: 0.00; Z: 0.00", "X: 1.00; Y: 1.00; Z: 1.00"]
         })", FIELD_NAME(ecClass, "PointsArrayProperty")).c_str());
     EXPECT_EQ(expectedDisplayValues1, recordJson1["DisplayValues"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedDisplayValues1) << "\r\n"
@@ -10070,7 +10216,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPointsArrayPropertyVal
     rapidjson::Document expectedDisplayValues2;
     expectedDisplayValues2.Parse(Utf8PrintfString(R"(
         {
-        "%s": ["X: 3.00 Y: 3.00 Z: 3.00", "X: 4.00 Y: 4.00 Z: 4.00", "X: 5.00 Y: 5.00 Z: 5.00"]
+        "%s": ["X: 3.00; Y: 3.00; Z: 3.00", "X: 4.00; Y: 4.00; Z: 4.00", "X: 5.00; Y: 5.00; Z: 5.00"]
         })", FIELD_NAME(ecClass, "PointsArrayProperty")).c_str());
     EXPECT_EQ(expectedDisplayValues2, recordJson2["DisplayValues"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedDisplayValues2) << "\r\n"
@@ -13869,7 +14015,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsPointValueLabelWhenUsin
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
 
-    EXPECT_STREQ("X: 1.00 Y: 2.00 Z: 3.00", contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("X: 1.00; Y: 2.00; Z: 3.00", contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -13915,7 +14061,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsPointValueLabelWhenUsin
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
 
-    EXPECT_STREQ("X: 1.00 Y: 2.00 Z: 3.00", contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("X: 1.00; Y: 2.00; Z: 3.00", contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -13961,7 +14107,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsPointValueLabelWhenUsin
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
 
-    EXPECT_STREQ("X: 1.00 Y: 2.00", contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("X: 1.00; Y: 2.00", contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -17169,7 +17315,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetContentForDisplayLabelGr
 
     // validate content descriptor
     NavNodeKeyCPtr selectedNode = rootNodes[0]->GetKey();
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), 
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(),
         rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create(*selectedNode))));
     ASSERT_TRUE(descriptor.IsValid());
 
