@@ -191,19 +191,19 @@ TEST_F(IntegrityCheckerFixture, check_nav_class_ids) {
                 },
                 {
                     "sno": 2,
-                    "id": "0x3b",
-                    "class": "BisCore:GeometricElement3d",
-                    "property": "TypeDefinition",
-                    "nav_id": "0x17",
-                    "nav_classId": "0x43"
-                },
-                {
-                    "sno": 3,
                     "id": "0x3a",
                     "class": "BisCore:GeometricElement3d",
                     "property": "TypeDefinition",
                     "nav_id": "0x17",
                     "nav_classId": "0xffff"
+                },
+                {
+                    "sno": 3,
+                    "id": "0x3b",
+                    "class": "BisCore:GeometricElement3d",
+                    "property": "TypeDefinition",
+                    "nav_id": "0x17",
+                    "nav_classId": "0x43"
                 }
             ]
         )json";

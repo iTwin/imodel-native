@@ -753,7 +753,10 @@ DbResult IntegrityChecker::CheckNavClassIds(std::function<bool(ECInstanceId, Utf
             }
 			LOG.infov("integrity_check(check_nav_class_ids) analyzing [class: %s] [nav_prop: %s]", classCP->GetFullName(), prop.c_str());
 			std::vector<ECClassId> derivedNavClassIds;
-			GetDerivedNavigationIds(std::to_string(propMap->GetAs<NavigationPropertyMap>().GetRelECClassIdPropertyMap().GetDefaultClassId().GetValue()).c_str(), derivedNavClassIds);
+			rc = GetDerivedNavigationIds(std::to_string(propMap->GetAs<NavigationPropertyMap>().GetRelECClassIdPropertyMap().GetDefaultClassId().GetValue()).c_str(), derivedNavClassIds);
+			if (BE_SQLITE_OK != rc) {
+				return rc;
+			}
 			std::string derivedIds = "";
 			bool isFirst = true;
 			for (auto & derivedNavClassId : derivedNavClassIds) {
