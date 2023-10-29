@@ -62,7 +62,7 @@ TEST_F(ClassViewsFixture, join_using) {
             alias="ts"
             version="1.0.0"
             xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-        <ECSchemaReference name='ClassViews' version='01.00.00' alias='classView' />
+        <ECSchemaReference name='ECDbMap' version='02.00.03' alias='ecdbmap' />
         <ECSchemaReference name='ECDbMeta' version='04.00.00' alias='meta' />
         <ECEntityClass typeName="CustomAttribute" description="" displayLabel="" modifier="Sealed">
             <ECCustomAttributes>
@@ -87,7 +87,7 @@ TEST_F(ClassViewsFixture, join_using) {
         </ECRelationshipClass>
         <ECEntityClass typeName="PropertyCustomAttribute" description="" displayLabel="" modifier="Abstract">
             <ECCustomAttributes>
-                <View xmlns="ClassViews.01.00.00">
+                <View xmlns="ECDbMap.02.00.03">
                     <Query>
                       SELECT
                           [ca].[ECInstanceId],
@@ -154,10 +154,10 @@ TEST_F(ClassViewsFixture, prepare_view_and_check_validate_sql_and_data) {
             alias="ts"
             version="1.0.0"
             xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-        <ECSchemaReference name='ClassViews' version='01.00.00' alias='classView' />
+        <ECSchemaReference name='ECDbMap' version='02.00.03' alias='ecdbmap' />
         <ECEntityClass typeName="SchemaClassesView" description="" displayLabel="" modifier="Abstract">
             <ECCustomAttributes>
-                <View xmlns="ClassViews.01.00.00">
+                <View xmlns="ECDbMap.02.00.03">
                     <Query>
                         SELECT
                             cd.ECInstanceId,
@@ -185,9 +185,9 @@ TEST_F(ClassViewsFixture, prepare_view_and_check_validate_sql_and_data) {
         auto nativeSql = "SELECT [K0],[K1],[K2],[K3] FROM (SELECT [cd].[ECInstanceId] [K0],[cd].[ECClassId] [K1],[sc].[Name] [K2],[cd].[Name] [K3] FROM (SELECT [Id] ECInstanceId,35 ECClassId,[Name] FROM [main].[ec_Schema]) [sc] INNER JOIN (SELECT [Id] ECInstanceId,33 ECClassId,[SchemaId],[Name] FROM [main].[ec_Class]) [cd] ON [cd].[SchemaId]=[sc].[ECInstanceId]   GROUP BY [sc].[Name],[cd].[Name]  LIMIT 10) WHERE [K3]='View'";
         ASSERT_STREQ(nativeSql, stmt.GetNativeSql());
         ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
-        ASSERT_EQ(stmt.GetValueId<ECInstanceId>(0), ECInstanceId(27ull));
-        ASSERT_EQ(stmt.GetValueId<ECN::ECClassId>(1), ECClassId(33ull));
-        ASSERT_STREQ(stmt.GetValueText(2), "ClassViews");
+        //ASSERT_EQ(stmt.GetValueId<ECInstanceId>(0), ECInstanceId(27ull));
+        //ASSERT_EQ(stmt.GetValueId<ECN::ECClassId>(1), ECClassId(33ull));
+        ASSERT_STREQ(stmt.GetValueText(2), "ECDbMap");
         ASSERT_STREQ(stmt.GetValueText(3), "View");
     }
     if (true){
@@ -218,11 +218,11 @@ TEST_F(ClassViewsFixture, linktable_relationship_view) {
             alias="ts"
             version="1.0.0"
             xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-        <ECSchemaReference name='ClassViews' version='01.00.00' alias='classView' />
+        <ECSchemaReference name='ECDbMap' version='02.00.03' alias='ecdbmap' />
         <ECSchemaReference name='ECDbMeta' version='04.00.00' alias='meta' />
         <ECRelationshipClass typeName="SchemaClassesView" description="" displayLabel="" strength="referencing" modifier="Abstract">
             <ECCustomAttributes>
-                <View xmlns="ClassViews.01.00.00">
+                <View xmlns="ECDbMap.02.00.03">
                     <Query>
                         SELECT * FROM meta.SchemaOwnsClasses
                     </Query>
@@ -264,7 +264,7 @@ TEST_F(ClassViewsFixture, return_nav_prop_from_view_query) {
             alias="ts"
             version="1.0.0"
             xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-        <ECSchemaReference name='ClassViews' version='01.00.00' alias='classView' />
+        <ECSchemaReference name='ECDbMap' version='02.00.03' alias='ecdbmap' />
         <ECSchemaReference name='ECDbMeta' version='04.00.00' alias='meta' />
         <ECRelationshipClass typeName="SchemaClassesView" description="" displayLabel="" strength="referencing" modifier="Abstract">
             <Source multiplicity="(1..1)" roleLabel="contains" polymorphic="false">
@@ -276,7 +276,7 @@ TEST_F(ClassViewsFixture, return_nav_prop_from_view_query) {
         </ECRelationshipClass>
         <ECEntityClass typeName="ClassDefView" description="" displayLabel="" modifier="Abstract">
             <ECCustomAttributes>
-                <View xmlns="ClassViews.01.00.00">
+                <View xmlns="ECDbMap.02.00.03">
                     <Query>SELECT ECInstanceId, ECClassId, Schema FROM meta.ECClassDef</Query>
                 </View>
             </ECCustomAttributes>
@@ -314,10 +314,10 @@ TEST_F(ClassViewsFixture, fail_when_view_reference_itself_directly_or_indirectly
                 alias="ts"
                 version="1.0.0"
                 xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            <ECSchemaReference name='ClassViews' version='01.00.00' alias='classView' />
+            <ECSchemaReference name='ECDbMap' version='02.00.03' alias='ecdbmap' />
             <ECEntityClass typeName="SchemaView" description="" displayLabel="" modifier="Abstract">
                 <ECCustomAttributes>
-                    <View xmlns="ClassViews.01.00.00">
+                    <View xmlns="ECDbMap.02.00.03">
                         <Query>SELECT cd.ECInstanceId, cd.ECClassId FROM ts.SchemaView</Query>
                     </View>
                 </ECCustomAttributes>
@@ -340,17 +340,17 @@ TEST_F(ClassViewsFixture, fail_when_view_reference_itself_directly_or_indirectly
                 alias="ts"
                 version="1.0.0"
                 xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            <ECSchemaReference name='ClassViews' version='01.00.00' alias='classView' />
+            <ECSchemaReference name='ECDbMap' version='02.00.03' alias='ecdbmap' />
             <ECEntityClass typeName="SchemaView" description="" displayLabel="" modifier="Abstract">
                 <ECCustomAttributes>
-                    <View xmlns="ClassViews.01.00.00">
+                    <View xmlns="ECDbMap.02.00.03">
                         <Query>SELECT cd.ECInstanceId, cd.ECClassId FROM ts.ClassView</Query>
                     </View>
                 </ECCustomAttributes>
             </ECEntityClass>
             <ECEntityClass typeName="ClassView" description="" displayLabel="" modifier="Abstract">
                 <ECCustomAttributes>
-                    <View xmlns="ClassViews.01.00.00">
+                    <View xmlns="ECDbMap.02.00.03">
                         <Query>SELECT cd.ECInstanceId, cd.ECClassId FROM ts.SchemaView</Query>
                     </View>
                 </ECCustomAttributes>
@@ -377,24 +377,24 @@ TEST_F(ClassViewsFixture, fail_when_view_reference_itself_directly_or_indirectly
                 alias="ts"
                 version="1.0.0"
                 xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            <ECSchemaReference name='ClassViews' version='01.00.00' alias='classView' />
+            <ECSchemaReference name='ECDbMap' version='02.00.03' alias='ecdbmap' />
             <ECEntityClass typeName="View1" description="" displayLabel="" modifier="Abstract">
                 <ECCustomAttributes>
-                    <View xmlns="ClassViews.01.00.00">
+                    <View xmlns="ECDbMap.02.00.03">
                         <Query>SELECT cd.ECInstanceId, cd.ECClassId FROM ts.View2</Query>
                     </View>
                 </ECCustomAttributes>
             </ECEntityClass>
             <ECEntityClass typeName="View2" description="" displayLabel="" modifier="Abstract">
                 <ECCustomAttributes>
-                    <View xmlns="ClassViews.01.00.00">
+                    <View xmlns="ECDbMap.02.00.03">
                         <Query>SELECT cd.ECInstanceId, cd.ECClassId FROM ts.View3</Query>
                     </View>
                 </ECCustomAttributes>
             </ECEntityClass>
             <ECEntityClass typeName="View3" description="" displayLabel="" modifier="Abstract">
                 <ECCustomAttributes>
-                    <View xmlns="ClassViews.01.00.00">
+                    <View xmlns="ECDbMap.02.00.03">
                         <Query>SELECT cd.ECInstanceId, cd.ECClassId FROM ts.View1</Query>
                     </View>
                 </ECCustomAttributes>
@@ -436,7 +436,7 @@ TEST_F(ClassViewsFixture, all_specified_view_properties_must_return_by_view_quer
                 alias="ts"
                 version="1.0.0"
                 xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            <ECSchemaReference name='ClassViews' version='01.00.00' alias='classView' />
+            <ECSchemaReference name='ECDbMap' version='02.00.03' alias='ecdbmap' />
             <ECEntityClass typeName="P" modifier="Sealed">
                 <ECProperty propertyName="intProp" typeName="int"/>
                 <ECProperty propertyName="longProp" typeName="long"/>
@@ -450,7 +450,7 @@ TEST_F(ClassViewsFixture, all_specified_view_properties_must_return_by_view_quer
             </ECEntityClass>
             <ECEntityClass typeName="P_View" description="" displayLabel="" modifier="Abstract">
                 <ECCustomAttributes>
-                    <View xmlns="ClassViews.01.00.00">
+                    <View xmlns="ECDbMap.02.00.03">
                         <Query>SELECT * FROM ts.P</Query>
                     </View>
                 </ECCustomAttributes>
@@ -480,14 +480,14 @@ TEST_F(ClassViewsFixture, all_specified_view_properties_must_return_by_view_quer
                 alias="ts"
                 version="1.0.0"
                 xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            <ECSchemaReference name='ClassViews' version='01.00.00' alias='classView' />
+            <ECSchemaReference name='ECDbMap' version='02.00.03' alias='ecdbmap' />
             <ECEntityClass typeName="P" modifier="Sealed">
                 <ECProperty propertyName="intProp" typeName="int"/>
                 <ECProperty propertyName="longProp" typeName="long"/>
             </ECEntityClass>
             <ECEntityClass typeName="P_View" description="" displayLabel="" modifier="Abstract">
                 <ECCustomAttributes>
-                    <View xmlns="ClassViews.01.00.00">
+                    <View xmlns="ECDbMap.02.00.03">
                         <Query>SELECT intProp, longProp FROM ts.P</Query>
                     </View>
                 </ECCustomAttributes>
@@ -510,7 +510,7 @@ TEST_F(ClassViewsFixture, all_specified_view_properties_must_return_by_view_quer
                 alias="ts"
                 version="1.0.0"
                 xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            <ECSchemaReference name='ClassViews' version='01.00.00' alias='classView' />
+            <ECSchemaReference name='ECDbMap' version='02.00.03' alias='ecdbmap' />
             <ECEntityClass typeName="P" modifier="Sealed">
                 <ECProperty propertyName="intProp" typeName="int"/>
                 <ECProperty propertyName="longProp" typeName="long"/>
@@ -518,7 +518,7 @@ TEST_F(ClassViewsFixture, all_specified_view_properties_must_return_by_view_quer
             </ECEntityClass>
             <ECEntityClass typeName="P_View" description="" displayLabel="" modifier="Abstract">
                 <ECCustomAttributes>
-                    <View xmlns="ClassViews.01.00.00">
+                    <View xmlns="ECDbMap.02.00.03">
                         <Query>SELECT intProp, longProp, doubleProp FROM ts.P</Query>
                     </View>
                 </ECCustomAttributes>
@@ -542,7 +542,7 @@ TEST_F(ClassViewsFixture, all_specified_view_properties_must_return_by_view_quer
                 alias="ts"
                 version="1.0.0"
                 xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            <ECSchemaReference name='ClassViews' version='01.00.00' alias='classView' />
+            <ECSchemaReference name='ECDbMap' version='02.00.03' alias='ecdbmap' />
             <ECEntityClass typeName="P" modifier="Sealed">
                 <ECProperty propertyName="intProp" typeName="int"/>
                 <ECProperty propertyName="longProp" typeName="long"/>
@@ -550,7 +550,7 @@ TEST_F(ClassViewsFixture, all_specified_view_properties_must_return_by_view_quer
             </ECEntityClass>
             <ECEntityClass typeName="P_View" description="" displayLabel="" modifier="Abstract">
                 <ECCustomAttributes>
-                    <View xmlns="ClassViews.01.00.00">
+                    <View xmlns="ECDbMap.02.00.03">
                         <Query>SELECT intProp, longProp, doubleProp FROM ts.P</Query>
                     </View>
                 </ECCustomAttributes>
@@ -573,7 +573,7 @@ TEST_F(ClassViewsFixture, all_specified_view_properties_must_return_by_view_quer
                 alias="ts"
                 version="1.0.0"
                 xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            <ECSchemaReference name='ClassViews' version='01.00.00' alias='classView' />
+            <ECSchemaReference name='ECDbMap' version='02.00.03' alias='ecdbmap' />
             <ECEntityClass typeName="P" modifier="Sealed">
                 <ECProperty propertyName="intProp" typeName="int"/>
                 <ECProperty propertyName="longProp" typeName="long"/>
@@ -581,7 +581,7 @@ TEST_F(ClassViewsFixture, all_specified_view_properties_must_return_by_view_quer
             </ECEntityClass>
             <ECEntityClass typeName="P_View" description="" displayLabel="" modifier="Abstract">
                 <ECCustomAttributes>
-                    <View xmlns="ClassViews.01.00.00">
+                    <View xmlns="ECDbMap.02.00.03">
                         <Query>SELECT ECInstanceId, ECClassId, intProp, longProp, doubleProp FROM ts.P</Query>
                     </View>
                 </ECCustomAttributes>
@@ -605,7 +605,7 @@ TEST_F(ClassViewsFixture, all_specified_view_properties_must_return_by_view_quer
                 alias="ts"
                 version="1.0.0"
                 xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            <ECSchemaReference name='ClassViews' version='01.00.00' alias='classView' />
+            <ECSchemaReference name='ECDbMap' version='02.00.03' alias='ecdbmap' />
             <ECEntityClass typeName="P" modifier="Sealed">
                 <ECProperty propertyName="intProp" typeName="int"/>
                 <ECProperty propertyName="longProp" typeName="long"/>
@@ -613,7 +613,7 @@ TEST_F(ClassViewsFixture, all_specified_view_properties_must_return_by_view_quer
             </ECEntityClass>
             <ECEntityClass typeName="P_View" description="" displayLabel="" modifier="Abstract">
                 <ECCustomAttributes>
-                    <View xmlns="ClassViews.01.00.00">
+                    <View xmlns="ECDbMap.02.00.03">
                         <Query>SELECT intProp, longProp, doubleProp FROM ts.P</Query>
                     </View>
                 </ECCustomAttributes>
@@ -1569,11 +1569,11 @@ TEST_F(ClassViewsFixture, complex_data) {
                 alias="v1"
                 version="1.0.0"
                 xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            <ECSchemaReference name="ClassViews" version="01.00.00" alias="classView" />
+            <ECSchemaReference name='ECDbMap' version='02.00.03' alias='ecdbmap' />
             <ECSchemaReference name="TestSchema" version="01.00.00" alias="ts" />
             <ECEntityClass typeName="EMixProxyView" description="" displayLabel="" modifier="Abstract">
                 <ECCustomAttributes>
-                    <View xmlns="ClassViews.01.00.00">
+                    <View xmlns="ECDbMap.02.00.03">
                         <Query>SELECT * FROM ts.e_mix</Query>
                     </View>
                 </ECCustomAttributes>

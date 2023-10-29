@@ -4,8 +4,7 @@
 * See LICENSE.md in the repository root for full copyright notice.
 ========================================================================================== -->
 <ECSchema schemaName="ECDbMeta" alias="meta" version="04.00.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-    <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
-    <ECSchemaReference name='ClassViews' version='01.00.00' alias='classView' />
+    <ECSchemaReference name="ECDbMap" version="02.00.03" alias="ecdbmap"/>
 
     <ECEntityClass typeName="ECSchemaDef" description="ECSchema" displayLabel="ECSchema" modifier="Sealed">
         <ECCustomAttributes>
@@ -562,7 +561,7 @@
 
     <ECEntityClass typeName="PropertyCustomAttribute" description="" displayLabel="" modifier="Abstract">
         <ECCustomAttributes>
-            <View xmlns="ClassViews.01.00.00">
+            <View xmlns="ECDbMap.02.00.03">
                 <Query>
                 SELECT
                     [ca].[ECInstanceId],
@@ -581,7 +580,7 @@
 
     <ECRelationshipClass typeName="PropertyHasCustomAttribute" modifier="Abstract" strength="referencing">
         <ECCustomAttributes>
-            <View xmlns="ClassViews.01.00.00">
+            <View xmlns="ECDbMap.02.00.03">
                 <Query>
                     SELECT
                         [ca].[ECinstanceId],
@@ -603,7 +602,7 @@
     </ECRelationshipClass>
     <ECRelationshipClass typeName="CustomAttributeClassHasInstanceOnProperty" modifier="Abstract" strength="referencing">
         <ECCustomAttributes>
-            <View xmlns="ClassViews.01.00.00">
+            <View xmlns="ECDbMap.02.00.03">
                 <Query>
                     SELECT * FROM meta.CustomAttributeClassHasInstance
                 </Query>
