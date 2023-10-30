@@ -3857,7 +3857,7 @@ BentleyStatus SchemaWriter::UpdateClasses(Context& ctx, ClassChanges& classChang
     return SUCCESS;
     }
 
-BentleyStatus SchemaWriter::DeleteKindOfQuantity(Context& ctx, const ECN::KindOfQuantityCR deletedKoQ, const bool isDynamicSchema)
+BentleyStatus SchemaWriter::DeleteKindOfQuantity(Context& ctx, ECN::KindOfQuantityCR deletedKoQ, const bool isDynamicSchema)
     {
     // Check if major version change is allowed for given schema
     if (const auto errorMessage = IsMajorVersionChangeAllowed(ctx, deletedKoQ.GetSchema().GetId(), isDynamicSchema); !Utf8String::IsNullOrEmpty(errorMessage.c_str()))
