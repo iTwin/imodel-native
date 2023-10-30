@@ -10,27 +10,6 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult IntegrityChecker::GetDerivedNavigationIds(Utf8CP id, std::vector<ECClassId>& derivedECClassIds) {
-	auto sql = SqlPrintfString("SELECT [ClassId] FROM [main].[ec_cache_ClassHierarchy] WHERE [BaseClassId] = %s", id);
-	Statement stmt;
-	auto rc = stmt.Prepare(m_conn, sql);
-	if (rc != BE_SQLITE_OK) {
-		m_lastError = m_conn.GetLastError();
-		return rc;
-	}
-	while((rc = stmt.Step()) == BE_SQLITE_ROW) {
-		derivedECClassIds.push_back(stmt.GetValueId<ECClassId>(0));
-	}
-	if (rc != BE_SQLITE_DONE) {
-		m_lastError = m_conn.GetLastError();
-		return rc;
-	}
-	return BE_SQLITE_OK;
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
 DbResult IntegrityChecker::GetNavigationProperties (std::map<ECClassId, std::vector<std::string>>& navProps) {
 	auto sql = R"sql(
 		SELECT
@@ -752,26 +731,12 @@ DbResult IntegrityChecker::CheckNavClassIds(std::function<bool(ECInstanceId, Utf
                 continue;
             }
 			LOG.infov("integrity_check(check_nav_class_ids) analyzing [class: %s] [nav_prop: %s]", classCP->GetFullName(), prop.c_str());
-			std::vector<ECClassId> derivedNavClassIds;
-			rc = GetDerivedNavigationIds(std::to_string(propMap->GetAs<NavigationPropertyMap>().GetRelECClassIdPropertyMap().GetDefaultClassId().GetValue()).c_str(), derivedNavClassIds);
-			if (BE_SQLITE_OK != rc) {
-				return rc;
-			}
-			std::string derivedIds = "";
-			bool isFirst = true;
-			for (auto & derivedNavClassId : derivedNavClassIds) {
-				if (!isFirst) {
-					derivedIds += ", ";
-				}
-				isFirst = false;
-				derivedIds += std::to_string(derivedNavClassId.GetValue());
-			}
-			std::string incorrectClassIdsForTableQuery = SqlPrintfString("SELECT DISTINCT %s.RelECClassId FROM %s WHERE %s.RelECClassId IS NOT NULL AND %s.RelECClassId NOT IN (%s)",
+			std::string incorrectClassIdsForTableQuery = SqlPrintfString("SELECT DISTINCT %s.RelECClassId FROM %s WHERE %s.RelECClassId IS NOT NULL AND %s.RelECClassId NOT IN (SELECT SourceECInstanceId FROM ECDbMeta.ClassHasAllBaseClasses WHERE TargetECInstanceId = %s)",
 												navPropCP->GetName().c_str(),
 												classCP->GetECSqlName().c_str(),
 												navPropCP->GetName().c_str(),
 												navPropCP->GetName().c_str(),
-												derivedIds.c_str()).GetUtf8CP();
+												std::to_string(propMap->GetAs<NavigationPropertyMap>().GetRelECClassIdPropertyMap().GetDefaultClassId().GetValue()).c_str()).GetUtf8CP();
 
 			ECSqlStatement incorrectClassIdsForTableStmt;
 			if (incorrectClassIdsForTableStmt.Prepare(m_conn, incorrectClassIdsForTableQuery.c_str()) != ECSqlStatus::Success) {
@@ -779,7 +744,7 @@ DbResult IntegrityChecker::CheckNavClassIds(std::function<bool(ECInstanceId, Utf
 				return BE_SQLITE_ERROR;
 			}
 			std::string incorrectClassIds = "";
-			isFirst = true;
+			bool isFirst = true;
 			while (incorrectClassIdsForTableStmt.Step() == BE_SQLITE_ROW) {
 				if (!isFirst) {
 					incorrectClassIds += ", ";
