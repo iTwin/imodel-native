@@ -26,5 +26,5 @@ COPYDIR_OUTPUT = $(CacheDir)
 
 always:
     ~mkdir $(ContextDir)
-    python $(SrcRoot)bsicommon/build/CopyWithSymlinks.py $(CacheDir) $(ContextDir)
+    $(BBPYTHONCMD) $(SrcRoot)bsicommon/build/CopyWithSymlinks.py $(CacheDir) $(ContextDir)
     
