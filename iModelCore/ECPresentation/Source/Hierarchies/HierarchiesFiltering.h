@@ -17,13 +17,15 @@ struct TraverseHierarchyRulesProps
 private:
     NavNodesFactoryCR m_nodesFactory;
     IRulesPreprocessorR m_rulesPreprocessor;
+    PresentationRuleSetCR m_ruleset;
     ECSchemaHelper const& m_schemaHelper;
 public:
-    TraverseHierarchyRulesProps(NavNodesFactoryCR nodesFactory, IRulesPreprocessorR rulesPreprocessor, ECSchemaHelper const& schemaHelper)
-        : m_nodesFactory(nodesFactory), m_rulesPreprocessor(rulesPreprocessor), m_schemaHelper(schemaHelper)
+    TraverseHierarchyRulesProps(NavNodesFactoryCR nodesFactory, IRulesPreprocessorR rulesPreprocessor, PresentationRuleSetCR ruleset, ECSchemaHelper const& schemaHelper)
+        : m_nodesFactory(nodesFactory), m_rulesPreprocessor(rulesPreprocessor), m_ruleset(ruleset), m_schemaHelper(schemaHelper)
         {}
     NavNodesFactoryCR GetNodesFactory() const {return m_nodesFactory;}
     IRulesPreprocessorR GetRulesPreprocessor() const {return m_rulesPreprocessor;}
+    PresentationRuleSetCR GetRuleset() const {return m_ruleset;}
     ECSchemaHelper const& GetSchemaHelper() const {return m_schemaHelper;}
 };
 
