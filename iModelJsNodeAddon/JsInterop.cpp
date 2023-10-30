@@ -1266,7 +1266,7 @@ Napi::Value NativeChangeset::IsPrimaryKeyColumn(Napi::Env env, int col) {
         BeNapi::ThrowJsException(env, "isPrimaryKeyColumn(): there is no current row.", (int) BE_SQLITE_ERROR);
     }
 
-    if (IsValidPrimaryKeyColumnIndex(col)) {
+    if (!IsValidPrimaryKeyColumnIndex(col)) {
         BeNapi::ThrowJsException(env, "isPrimaryKeyColumn(): invalid column index for primary key", (int) BE_SQLITE_ERROR);
     }
 
