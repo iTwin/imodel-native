@@ -106,12 +106,6 @@ MSBsplineSurface    *surfaceP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP void bspmesh_calculateParameterLengthsExact
-(
-DPoint2d            *lengthP,
-MSBsplineSurface    *surfaceP
-);
-
 void bspmesh_calculateControlPolygonLengthsAndTurn
 (
 MSBsplineSurfaceCR surface,
