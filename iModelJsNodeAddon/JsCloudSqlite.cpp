@@ -440,12 +440,25 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
 
         auto rows = Napi::Array::New(Env());
         uint32_t index = 0;
+        auto containerIndex = 1;
+        // map of containerName to index 
+        // imodelblocks-129301-2019-10202- => 1
+        // imodelblocks-123 => 2
+        // If containerName exists in map, use that value otherwise increment the containerIndex that we have and add to a new map 
+        auto databaseIndex = 1;
+        // This has to be per container somehow..
+        // 
         while (BE_SQLITE_ROW == stmt.Step()) {
             BeJsNapiObject value(Env());
             value["nclient"] = stmt.GetValueInt(0);
             value["ntrans"] = stmt.GetValueInt(1);
-            value["database"] = stmt.GetValueText(2); // anonymize database and container? 
+            value["database"] = stmt.GetValueText(2); // anonymize database and container? I could decide to anonymize only container? or something?
             value["container"] = stmt.GetValueText(3);
+            // could do something like replace container name with ascending integer. container1 container2 
+            // same for database, database1 database2. container1/database1, container1/database2 etc. 
+            // Only issue with this I think is that grafana trends wouldn't work, depending on when you queried. it would only really work for 
+            // snapshots in time. Because container1/database1 would probably change. 
+            // changing every 30 seconds.. is that alright? 
             value["nblock"] = stmt.GetValueInt(4);
             value["ncache"] = stmt.GetValueInt(5);
             rows.Set(index++, value);
