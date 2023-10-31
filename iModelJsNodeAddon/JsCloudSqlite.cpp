@@ -430,6 +430,30 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
         return value;
     }
 
+    Napi::Value QueryClientCacheInformationByDatabase(NapiInfoCR info) {
+        RequireConnected();
+        Statement stmt;
+        auto rc = stmt.Prepare(m_containerDb, "SELECT nclient, ntrans, database, container, nblock, ncache FROM bcv_database");
+        BeAssert (rc == BE_SQLITE_OK);
+        UNUSED_VARIABLE(rc);
+        BeJsNapiObject value(Env());
+
+        auto rows = Napi::Array::New(Env());
+        uint32_t index = 0;
+        while (BE_SQLITE_ROW == stmt.Step()) {
+            BeJsNapiObject value(Env());
+            value["nclient"] = stmt.GetValueInt(0);
+            value["ntrans"] = stmt.GetValueInt(1);
+            value["database"] = stmt.GetValueText(2); // anonymize database and container? 
+            value["container"] = stmt.GetValueText(3);
+            value["nblock"] = stmt.GetValueInt(4);
+            value["ncache"] = stmt.GetValueInt(5);
+            rows.Set(index++, value);
+        }
+        return rows;
+
+    }
+
     bool HasLocalChanges() {
         RequireConnected();
         Statement stmt;
