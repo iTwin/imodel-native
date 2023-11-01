@@ -10590,7 +10590,7 @@ TEST_F(SchemaUpgradeTestFixture, ReplaceKindOfQuantityWithDifferentPersistenceUn
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpgradeTestFixture, DeleteKoQFromECSchemaShouldFail)
+TEST_F(SchemaUpgradeTestFixture, DeleteKindOfQuantityFromECSchema)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -10626,13 +10626,16 @@ TEST_F(SchemaUpgradeTestFixture, DeleteKoQWithMajorSchemaChangeShouldPass)
     {
     SchemaItem schemaItem(R"xml(
         <?xml version='1.0' encoding='utf-8'?>
-        <ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
-            <ECSchemaReference name = 'CoreCustomAttributes' version = '01.00.00' alias = 'CoreCA' />                    
+        <ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>
+            <ECSchemaReference name = 'CoreCustomAttributes' version = '01.00.00' alias = 'CoreCA' />
+            <ECSchemaReference name="Units" version="01.00.00" alias="u" />
+            <ECSchemaReference name="Formats" version="01.00.00" alias="f" />
+
             <ECCustomAttributes>
                 <DynamicSchema xmlns = 'CoreCustomAttributes.01.00.00' />
             </ECCustomAttributes>
 
-            <KindOfQuantity typeName='TestKoQ' description='TestKoQ' displayLabel='TestKoQ' persistenceUnit='CM' relativeError='.5' presentationUnits='FT;CM' />
+            <KindOfQuantity typeName='TestKoQ' description='TestKoQ' displayLabel='TestKoQ' persistenceUnit='u:CM' relativeError='.5' presentationUnits='f:DefaultRealU(4)[u:CM]' />
 
             <ECEntityClass typeName='TestClass' >
                 <ECProperty propertyName='SimpleProperty' typeName='double' kindOfQuantity='TestKoQ' />
@@ -10651,7 +10654,7 @@ TEST_F(SchemaUpgradeTestFixture, DeleteKoQWithMajorSchemaChangeShouldPass)
     // Perform a major version change and delete the KoQ "TestKoQ"
     SchemaItem updatedSchemaXml(R"xml(
         <?xml version='1.0' encoding='utf-8'?>
-        <ECSchema schemaName='TestSchema' alias='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+        <ECSchema schemaName='TestSchema' alias='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>
             <ECSchemaReference name = 'CoreCustomAttributes' version = '01.00.00' alias = 'CoreCA' />
             <ECSchemaReference name = "SchemaUpgradeCustomAttributes" version = "01.00.00" alias = "SchemaUpgradeCA" />
 
@@ -11021,21 +11024,20 @@ TEST_F(SchemaUpgradeTestFixture, KoQDeleteWithDoNotFailFlag)
             <KindOfQuantity typeName="KoQ1" displayLabel="KoQ1" relativeError=".5" persistenceUnit="u:CM" />
         </ECSchema>)schema")));
 
-    auto schema = m_ecdb.Schemas().GetSchema("TestSchema");
-    ASSERT_NE(schema->GetKindOfQuantityCP("KoQ1"), nullptr);
-
     auto modifiedSchemaItem = SchemaItem(R"schema(<?xml version="1.0" encoding="utf-8"?>
-        <ECSchema schemaName="TestSchema" alias="ts" version="2.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="Units" version="01.00.00" alias="u" />
             <ECSchemaReference name="Formats" version="01.00.00" alias="f" />
         </ECSchema>)schema");
 
-    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(modifiedSchemaItem, SchemaManager::SchemaImportOptions::DoNotFailForDeletionsOrModifications));
+    auto options = SchemaManager::SchemaImportOptions::DoNotFailForDeletionsOrModifications;
 
-    schema = m_ecdb.Schemas().GetSchema("TestSchema");
-    ASSERT_NE(schema, nullptr);
-    const auto koq = schema->GetKindOfQuantityCP("KoQ1");
-    ASSERT_EQ(koq, nullptr) << "KindOfQuantity 'KoQ1' should be deleted";
+    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(modifiedSchemaItem, options))
+        << "Illegal KoQ modification should not fail when DoNotFail flag is on";
+
+    ECSchemaCP schema = m_ecdb.Schemas().GetSchema("TestSchema");
+    KindOfQuantityCP koq = (*schema).GetKindOfQuantityCP("KoQ1");
+    ASSERT_TRUE(koq != nullptr) << "KindOfQuantity 'KoQ1' should still exist";
     }
 
 //---------------------------------------------------------------------------------------
@@ -18017,32 +18019,32 @@ TEST_F(SchemaUpgradeTestFixture, MovePropertyToBaseClassDynamicSchema)
     ASSERT_EQ(SUCCESS, ImportSchema(modifiedSchema, SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
     }
 
-TEST_F(SchemaUpgradeTestFixture, DeleteEnumsWithMajorSchemaChangeShouldPass)
+TEST_F(SchemaUpgradeTestFixture, DeleteEnumsWithMajorSchemaChange)
     {
     SchemaItem schemaItem(R"xml(
         <?xml version='1.0' encoding='utf-8'?>
-        <ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+        <ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>
             <ECSchemaReference name = 'CoreCustomAttributes' version = '01.00.00' alias = 'CoreCA' />                    
             <ECCustomAttributes>
                 <DynamicSchema xmlns = 'CoreCustomAttributes.01.00.00' />
             </ECCustomAttributes>
 
             <ECEnumeration typeName='UnstrictEnumInt' backingTypeName='int' isStrict='False'>
-                <ECEnumerator value = '0' displayLabel = 'txt' />
-                <ECEnumerator value = '1' displayLabel = 'bat' />
+                <ECEnumerator name='txt' value = '0' />
+                <ECEnumerator name='bat' value = '1' />
             </ECEnumeration>
             <ECEnumeration typeName='UnstrictEnumString' backingTypeName='string' isStrict='False'>
-                <ECEnumerator value = 'val0' displayLabel = 'txt' />
-                <ECEnumerator value = 'val1' displayLabel = 'bat' />
+                <ECEnumerator name='txt' value = 'val0' />
+                <ECEnumerator name='bat' value = 'val1' />
             </ECEnumeration>
 
             <ECEnumeration typeName='StrictEnumInt' backingTypeName='int' isStrict='True'>
-                <ECEnumerator value = '10' displayLabel = 'txt' />
-                <ECEnumerator value = '11' displayLabel = 'bat' />
+                <ECEnumerator name='txt' value = '10' />
+                <ECEnumerator name='bat' value = '11' />
             </ECEnumeration>
             <ECEnumeration typeName='StrictEnumString' backingTypeName='string' isStrict='True'>
-                <ECEnumerator value = 'val10' displayLabel = 'txt' />
-                <ECEnumerator value = 'val11' displayLabel = 'bat' />
+                <ECEnumerator name='txt' value = 'val10' />
+                <ECEnumerator name='bat' value = 'val11' />
             </ECEnumeration>
 
             <ECEntityClass typeName="TestClass" >
@@ -18074,7 +18076,7 @@ TEST_F(SchemaUpgradeTestFixture, DeleteEnumsWithMajorSchemaChangeShouldPass)
 
     SchemaItem updatedSchemaXml(R"xml(
         <?xml version='1.0' encoding='utf-8'?>
-        <ECSchema schemaName='TestSchema' alias='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+        <ECSchema schemaName='TestSchema' alias='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>
             <ECSchemaReference name = 'CoreCustomAttributes' version = '01.00.00' alias = 'CoreCA' />                    
             <ECCustomAttributes>
                 <DynamicSchema xmlns = 'CoreCustomAttributes.01.00.00' />

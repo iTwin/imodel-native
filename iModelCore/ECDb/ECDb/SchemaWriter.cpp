@@ -3862,6 +3862,14 @@ BentleyStatus SchemaWriter::DeleteKindOfQuantity(Context& ctx, ECN::KindOfQuanti
     // Check if major version change is allowed for given schema
     if (const auto errorMessage = IsMajorVersionChangeAllowed(ctx, deletedKoQ.GetSchema().GetId(), isDynamicSchema); !Utf8String::IsNullOrEmpty(errorMessage.c_str()))
         {
+        if (ctx.IgnoreIllegalDeletionsAndModifications())
+            {
+            ctx.Issues().ReportV(IssueSeverity::Info, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0642, 
+                "Ignoring update error: ECSchema Upgrade failed. ECSchema %s: KindOfQuantity %s: Deleting KindOfQuantity from an ECSchema is not supported. Error suppressed, KindOfQuantity will not be deleted.",
+                deletedKoQ.GetSchema().GetFullSchemaName().c_str(), deletedKoQ.GetName().c_str());
+            return SUCCESS;
+            }
+
         ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0677,
             "ECSchema Upgrade failed. ECSchema %s: Cannot delete KindOfQuantity '%s'. This is a major ECSchema change. %s", deletedKoQ.GetSchema().GetFullSchemaName().c_str(), deletedKoQ.GetName().c_str(), errorMessage.c_str());
         return ERROR;
@@ -4498,6 +4506,14 @@ BentleyStatus SchemaWriter::DeleteEnumeration(Context& ctx, ECN::ECEnumerationCR
     // Check if major version change is allowed for given schema
     if (const auto errorMessage = IsMajorVersionChangeAllowed(ctx, deletedEnum.GetSchema().GetId(), isDynamicSchema); !Utf8String::IsNullOrEmpty(errorMessage.c_str()))
         {
+        if (ctx.IgnoreIllegalDeletionsAndModifications())
+            {
+            ctx.Issues().ReportV(IssueSeverity::Info, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0652,
+                "Ignoring upgrade error: ECSchema Upgrade failed. ECSchema %s: ECEnumeration %s: Deleting ECEnumerations from an ECSchema is not supported. Error suppressed, Enumeration not deleted.",
+                deletedEnum.GetSchema().GetFullSchemaName().c_str(), deletedEnum.GetName().c_str());
+            return SUCCESS;
+            }
+
         ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0678,
             "ECSchema Upgrade failed. ECSchema %s: Cannot delete ECEnumeration '%s'. This is a major ECSchema change. %s", deletedEnum.GetSchema().GetFullSchemaName().c_str(), deletedEnum.GetName().c_str(), errorMessage.c_str());
         return ERROR;

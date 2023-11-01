@@ -414,7 +414,7 @@ struct ECDB_EXPORT ECDbIssueId
     static ECN::IssueId ECDb_0385;
     static ECN::IssueId ECDb_0386;
     static ECN::IssueId ECDb_0387;
-    static ECN::IssueId ECDb_0388;
+    static ECN::IssueId ECDb_0388;  // This issue id was being used to report unsupported deletion of KoQs. KoQ deletion support is now added and issue id is now unused.
     static ECN::IssueId ECDb_0389;
     static ECN::IssueId ECDb_0390;
     static ECN::IssueId ECDb_0391;
@@ -431,7 +431,7 @@ struct ECDB_EXPORT ECDbIssueId
     static ECN::IssueId ECDb_0401;
     static ECN::IssueId ECDb_0402;
     static ECN::IssueId ECDb_0403;
-    static ECN::IssueId ECDb_0404;
+    static ECN::IssueId ECDb_0404;  // This issue id was being used to report unsupported deletion of ECEnumerations. ECEnumerations deletion support is now added and issue id is now unused.
     static ECN::IssueId ECDb_0405;
     static ECN::IssueId ECDb_0406;
     static ECN::IssueId ECDb_0407;
