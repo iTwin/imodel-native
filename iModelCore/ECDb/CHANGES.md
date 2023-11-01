@@ -5,11 +5,15 @@ This document including important changes to syntax or file format.
 | Module  | Version   |
 | ------- | --------- |
 | Profile | `4.0.0.4` |
-| ECSQL   | `1.2.9.1` |
+| ECSQL   | `1.2.9.2` |
+
+## `10/27/2023`: Pragma integrity_check(check_nav_class_ids) performance improved
+
+ECSql version updated `1.2.9.1` -> `1.2.9.2`
 
 ## `10/24/2023`: Pragma integrity_check(check_nav_class_ids) now checks if the navigation property represents a valid ClassId for the relationship
 
-ECsql version updated `1.2.9.0` -> `1.2.9.1`
+ECSql version updated `1.2.9.0` -> `1.2.9.1`
 
 ## `10/12/2023`: Add support for window functions
 
