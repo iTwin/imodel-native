@@ -16825,7 +16825,7 @@ TEST_F(SchemaSyncTestFixture, RemoveKindOfQuantityFromECPropertyUsingCA)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaSyncTestFixture, KoQDeleteWithDoNotFailFlag)
     {
-    const auto SCHEMA1_HASH_ECDB_SCHEMA = "0fa7141150b99931f7e415f83e503a421a7671a6d0afa4785e917e07fae76724";
+    const auto SCHEMA1_HASH_ECDB_SCHEMA = "b90e3f651fbb42ceef37954cd94a44c106f3f12790cdf4ad86517405c73d3eb1";
     Test(
         "import initial schema",
         [&]()
@@ -16835,6 +16835,12 @@ TEST_F(SchemaSyncTestFixture, KoQDeleteWithDoNotFailFlag)
                 <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                     <ECSchemaReference name="Units" version="01.00.00" alias="u" />
                     <ECSchemaReference name="Formats" version="01.00.00" alias="f" />
+                    <ECSchemaReference name = 'CoreCustomAttributes' version = '01.00.00' alias = 'CoreCA' />
+
+                    <ECCustomAttributes>
+                        <DynamicSchema xmlns = 'CoreCustomAttributes.01.00.00' />
+                    </ECCustomAttributes>
+
                     <KindOfQuantity typeName="KoQ1" displayLabel="KoQ1" relativeError=".5" persistenceUnit="u:CM" />
                 </ECSchema>)xml"
             );
@@ -16844,22 +16850,26 @@ TEST_F(SchemaSyncTestFixture, KoQDeleteWithDoNotFailFlag)
             }
     );
 
-    const auto SCHEMA2_HASH_ECDB_SCHEMA = "de1626bb34cb2ea15d8efffdd556ea327674faefcd5ca2d70b084b3748d53f77";
     Test(
-        "KoQ modification should not fail when DoNotFail flag is on",
+        "Illegal KoQ modification should not fail when DoNotFail flag is on",
         [&]()
             {
             auto schema = SchemaItem(
                 R"xml(<?xml version="1.0" encoding="utf-8"?>
-                <ECSchema schemaName="TestSchema" alias="ts" version="2.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                     <ECSchemaReference name="Units" version="01.00.00" alias="u" />
                     <ECSchemaReference name="Formats" version="01.00.00" alias="f" />
+                    <ECSchemaReference name = 'CoreCustomAttributes' version = '01.00.00' alias = 'CoreCA' />
+
+                    <ECCustomAttributes>
+                        <DynamicSchema xmlns = 'CoreCustomAttributes.01.00.00' />
+                    </ECCustomAttributes>
                 </ECSchema>)xml"
             );
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema, SchemaManager::SchemaImportOptions::DoNotFailForDeletionsOrModifications));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->SaveChanges());
-            CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA); });
+            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA); });
             }
     );
 
@@ -16869,7 +16879,7 @@ TEST_F(SchemaSyncTestFixture, KoQDeleteWithDoNotFailFlag)
             {
             auto schema = m_briefcase->Schemas().GetSchema("TestSchema");
             auto koq = schema->GetKindOfQuantityCP("KoQ1");
-            ASSERT_EQ(koq, nullptr) << "KindOfQuantity 'KoQ1' should not exist";
+            ASSERT_NE(koq, nullptr) << "KindOfQuantity 'KoQ1' should still exist";
             }
     );
     }
