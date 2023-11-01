@@ -16825,7 +16825,7 @@ TEST_F(SchemaSyncTestFixture, RemoveKindOfQuantityFromECPropertyUsingCA)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaSyncTestFixture, KoQDeleteWithDoNotFailFlag)
     {
-    const auto SCHEMA1_HASH_ECDB_SCHEMA = "b90e3f651fbb42ceef37954cd94a44c106f3f12790cdf4ad86517405c73d3eb1";
+    const auto SCHEMA1_HASH_ECDB_SCHEMA = "0fa7141150b99931f7e415f83e503a421a7671a6d0afa4785e917e07fae76724";
     Test(
         "import initial schema",
         [&]()
@@ -16835,12 +16835,6 @@ TEST_F(SchemaSyncTestFixture, KoQDeleteWithDoNotFailFlag)
                 <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                     <ECSchemaReference name="Units" version="01.00.00" alias="u" />
                     <ECSchemaReference name="Formats" version="01.00.00" alias="f" />
-                    <ECSchemaReference name = 'CoreCustomAttributes' version = '01.00.00' alias = 'CoreCA' />
-
-                    <ECCustomAttributes>
-                        <DynamicSchema xmlns = 'CoreCustomAttributes.01.00.00' />
-                    </ECCustomAttributes>
-
                     <KindOfQuantity typeName="KoQ1" displayLabel="KoQ1" relativeError=".5" persistenceUnit="u:CM" />
                 </ECSchema>)xml"
             );
@@ -16859,11 +16853,6 @@ TEST_F(SchemaSyncTestFixture, KoQDeleteWithDoNotFailFlag)
                 <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                     <ECSchemaReference name="Units" version="01.00.00" alias="u" />
                     <ECSchemaReference name="Formats" version="01.00.00" alias="f" />
-                    <ECSchemaReference name = 'CoreCustomAttributes' version = '01.00.00' alias = 'CoreCA' />
-
-                    <ECCustomAttributes>
-                        <DynamicSchema xmlns = 'CoreCustomAttributes.01.00.00' />
-                    </ECCustomAttributes>
                 </ECSchema>)xml"
             );
             ASSERT_EQ(SchemaImportResult::OK, ImportSchema(schema, SchemaManager::SchemaImportOptions::DoNotFailForDeletionsOrModifications));
