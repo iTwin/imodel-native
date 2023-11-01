@@ -1153,11 +1153,7 @@ Napi::Value NativeChangeset::SerializeValue(Napi::Env env, DbValue&value) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void NativeChangeset::Open(Napi::Env env, Utf8StringCR changesetFile, bool invert) {
-    if (m_changesetFileReader != nullptr) {
-        BeNapi::ThrowJsException(env, "open(): reader is already have open changeset file.", (int)BE_SQLITE_ERROR);
-    }
-
+void NativeChangeset::OpenFile(Napi::Env env, Utf8StringCR changesetFile, bool invert) {
     BeFileName input;
     input.AppendUtf8(changesetFile.c_str());
 
@@ -1165,18 +1161,38 @@ void NativeChangeset::Open(Napi::Env env, Utf8StringCR changesetFile, bool inver
         BeNapi::ThrowJsException(env, "open(): changeset file specified does not exists", (int)BE_SQLITE_CANTOPEN);
     }
 
-    m_fileName = input;
-    m_invert = invert;
-    m_changesetFileReader = std::make_unique<ChangesetFileReaderBase>(bvector<BeFileName>{m_fileName}, m_unusedDb);
-}
+    auto reader = std::make_unique<ChangesetFileReaderBase>(bvector<BeFileName>{input}, m_unusedDb);
+    DdlChanges ddlChanges;
+    bool hasSchemaChanges;
+    reader->MakeReader()->GetSchemaChanges(hasSchemaChanges, ddlChanges);
+    if (!ddlChanges._IsEmpty())
+        m_ddl = ddlChanges.ToString();
 
+    OpenChangeStream(env, std::move(reader), invert);
+}
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void NativeChangeset::OpenChangeStream(Napi::Env env, std::unique_ptr<ChangeStream> changeStream, bool invert) {
+    if (m_changeStream != nullptr) {
+        BeNapi::ThrowJsException(env, "openChangeStream(): reader is already in open state.", (int)BE_SQLITE_ERROR);
+    }
+
+    if (changeStream == nullptr) {
+        BeNapi::ThrowJsException(env, "openChangeStream(): could not open a empty changeStream", (int)BE_SQLITE_ERROR);
+    }
+
+    m_invert = invert;
+    m_changeStream = std::move(changeStream);
+}
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 void NativeChangeset::Close(Napi::Env env) {
     m_currentChange = Changes::Change(nullptr, false);
     m_changes = nullptr;
-    m_changesetFileReader = nullptr;
+    m_changeStream = nullptr;
+    m_ddl.clear();
 }
 
 //---------------------------------------------------------------------------------------
@@ -1196,7 +1212,7 @@ Napi::Value NativeChangeset::Step(Napi::Env env) {
     }
 
     if (m_changes == nullptr) {
-        m_changes = std::make_unique<Changes>(*m_changesetFileReader, m_invert);
+        m_changes = std::make_unique<Changes>(*m_changeStream, m_invert);
         m_currentChange = m_changes->begin();
     } else {
         ++m_currentChange;
@@ -1321,13 +1337,9 @@ Napi::Value NativeChangeset::GetDdlChanges(Napi::Env env) {
         BeNapi::ThrowJsException(env, "getDdlChanges(): no changeset opened.", (int)BE_SQLITE_ERROR);
     }
 
-    DdlChanges ddlChanges;
-    bool hasSchemaChanges;
-    m_changesetFileReader->MakeReader()->GetSchemaChanges(hasSchemaChanges, ddlChanges);
-    if (!ddlChanges._IsEmpty()) {
-        auto ddl = ddlChanges.ToString();
-        return Napi::String::New(env, ddl.c_str());
-    };
+    if (!m_ddl.empty())
+        return Napi::String::New(env, m_ddl.c_str());
+
     return env.Undefined();
 }
 

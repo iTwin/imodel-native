@@ -21,7 +21,7 @@ describe("Native changeset reader", () => {
   it("changeset reader", () => {
     const reader = new iModelJsNative.ChangesetReader();
     const testCsFile = path.join(getAssetsDir(), "test.cs");
-    reader.open(testCsFile, false);
+    reader.openFile(testCsFile, false);
 
     const changes: IChange[] = [];
     while (reader.step()) {

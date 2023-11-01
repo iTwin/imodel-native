@@ -1362,7 +1362,8 @@ export declare namespace IModelJsNative {
     public getTableName(): string;
     public isIndirectChange(): boolean;
     public isPrimaryKeyColumn(col: number): boolean;
-    public open(fileName: string, invert: boolean): void;
+    public openFile(fileName: string, invert: boolean): void;
+    public openLocalChanges(db: DgnDb, includeInMemoryChanges: boolean, invert: boolean): void;
     public reset(): void;
     public step(): boolean;
     public hasRow(): boolean;

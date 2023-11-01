@@ -613,7 +613,7 @@ struct GeoServicesInterop
 //=======================================================================================
 struct NativeChangeset {
     private:
-        BeFileName m_fileName;
+
         bool m_invert;
         Byte* m_primaryKeyColumns;
         Changes::Change m_currentChange;
@@ -624,18 +624,21 @@ struct NativeChangeset {
         int m_primaryKeyColumnCount;
         int m_primaryKeyCount;
         std::unique_ptr<Changes> m_changes;
-        std::unique_ptr<ChangesetFileReaderBase> m_changesetFileReader;
+        std::unique_ptr<ChangeStream> m_changeStream;
         Utf8CP m_tableName;
+        Utf8String m_ddl;
+
     private:
         Napi::Value SerializeValue(Napi::Env, DbValue&val);
         bool HasRow() { return IsOpen() && m_currentChange.IsValid(); }
-        bool IsOpen() { return m_changesetFileReader != nullptr; }
+        bool IsOpen() { return m_changeStream != nullptr; }
         bool IsValidColumnIndex(int col) { return HasRow() && (col>=0 && col< m_columnCount); }
         bool IsValidPrimaryKeyColumnIndex(int col) { return HasRow() && (col>=0 && col< m_primaryKeyColumnCount); }
 
     public:
         NativeChangeset():m_primaryKeyColumns(nullptr), m_tableName(nullptr), m_currentChange(nullptr, false), m_invert(false){}
-        void Open(Napi::Env env, Utf8StringCR changesetFile, bool invert);
+        void OpenFile(Napi::Env env, Utf8StringCR changesetFile, bool invert);
+        void OpenChangeStream(Napi::Env env, std::unique_ptr<ChangeStream>, bool invert);
         void Close(Napi::Env env);
         void Reset(Napi::Env env);
         Napi::Value GetHasRow(Napi::Env env);

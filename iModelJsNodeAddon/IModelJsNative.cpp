@@ -4158,7 +4158,8 @@ public:
           InstanceMethod("getPrimaryKeys", &NativeChangesetReader::GetPrimaryKeys),
           InstanceMethod("isIndirectChange", &NativeChangesetReader::IsIndirectChange),
           InstanceMethod("isPrimaryKeyColumn", &NativeChangesetReader::IsPrimaryKeyColumn),
-          InstanceMethod("open", &NativeChangesetReader::Open),
+          InstanceMethod("openFile", &NativeChangesetReader::OpenFile),
+          InstanceMethod("openLocalChanges", &NativeChangesetReader::OpenLocalChanges),
           InstanceMethod("reset", &NativeChangesetReader::Reset),
           InstanceMethod("step", &NativeChangesetReader::Step),
           InstanceMethod("hasRow", &NativeChangesetReader::HasRow),
@@ -4209,11 +4210,26 @@ public:
         {
         return m_changeset.GetDdlChanges(Env());;
         }
-    void Open(NapiInfoCR info)
+    void OpenFile(NapiInfoCR info)
         {
         REQUIRE_ARGUMENT_STRING(0, fileName);
         REQUIRE_ARGUMENT_BOOL(1, invert);
-        m_changeset.Open(Env(), fileName.c_str(), invert);
+        m_changeset.OpenFile(Env(), fileName.c_str(), invert);
+        }
+    void OpenLocalChanges(NapiInfoCR info)
+        {
+        REQUIRE_ARGUMENT_ANY_OBJ(0, dbObj);
+        REQUIRE_ARGUMENT_BOOL(1, includeInMemoryChanges);
+        REQUIRE_ARGUMENT_BOOL(2, invert);
+        NativeDgnDb* nativeDgnDb = NativeDgnDb::Unwrap(dbObj);
+        if (!nativeDgnDb->IsOpen())
+            BeNapi::ThrowJsException(Env(), "provided db is not open");
+
+        auto changeset = nativeDgnDb->GetDgnDb().Txns().CreateChangesetFromLocalChanges(includeInMemoryChanges);
+        if (changeset == nullptr)
+            BeNapi::ThrowJsException(Env(), "no local changes");
+
+        m_changeset.OpenChangeStream(Env(), std::move(changeset), invert);
         }
     Napi::Value Step(NapiInfoCR info)
         {
