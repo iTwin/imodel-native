@@ -3099,26 +3099,28 @@ namespace SqlFuncs {
             };
 
             auto source = GeometryStream();
-            // NOTE: says not be used during loading of geometry... I assume that means concurrently?
-            auto& snappy = m_dgnDb.Elements().GetSnappyFrom();
+            // NOTE: see SnappyToBlob::GetForThread
+            // NB: This requires that no other code uses DgnElements::SnappyToBlob(), but I don't think that's possible
+            // inside a sqlite db function
+            auto& snappyFrom = m_dgnDb.Elements().GetSnappyFrom();
 
-            const auto readGeomStreamStat = source.ReadGeometryStream(snappy, *Dgn::GeomRemapDb, args[0].GetValueBlob(), args[0].GetValueBytes());
+            const auto readGeomStreamStat = source.ReadGeometryStream(snappyFrom, *Dgn::GeomRemapDb, args[0].GetValueBlob(), args[0].GetValueBytes());
             if (readGeomStreamStat != DgnDbStatus::Success) {
                 ctx.SetResultError("Failed to read geom stream");
                 return;
             }
-            auto target = GeometryStream();
+            auto target = std::unique_ptr<GeometryStream>();
             
             DgnDbStatus status;
             try {
                 status = RemapGeometryIds(
                     // can I get a font out of an attached db?
                     m_dgnDb,
-                    m_dgnDb,
+                    m_dgnDb, // FIXME: this targetDb usage is a timebomb, fonts or geometry stream needs to be refactored
                     source,
-                    target,
+                    *target,
                     SqlTableRemapper(getStatements),
-                    // can add this to the context eventually
+                    // FIXME: can add this to the context eventually
                     { .filteredSubCategories = {} }
                 );
             } catch (const SqlTableRemapperException& err) {
@@ -3132,8 +3134,43 @@ namespace SqlFuncs {
                 return;
             }
 
-            // really copying huge things like 10 times here
-            ctx.SetResultBlob(source.GetData(), target.GetSize());
+            // NB: This requires that no other code uses DgnElements::SnappyToBlob(), but I don't think that's possible
+            // inside a sqlite db function
+            auto& snappyTo = m_dgnDb.Elements().GetSnappyTo();
+            snappyTo.Init();
+
+            if (0 < target->GetSize()) {
+                GeomBlobHeader header(*target);
+                snappyTo.Write((Byte const*)&header, sizeof(header));
+                snappyTo.Write(target->GetData(), target->GetSize());
+            }
+
+            uint32_t zipSize = snappyTo.GetCompressedSize();
+
+            // no geometry
+            if (zipSize <= 0) {
+                ctx.SetResultZeroblob(0);
+                return;
+            }
+
+            // Common case - only one chunk in geom stream. Bind it directly.
+            if (snappyTo.GetCurrChunk() == 1) {
+                // FIXME: this is a bad warning?
+                ctx.SetResultBlob(snappyTo.GetChunkData(0), zipSize, Context::CopyData::No);
+                return;
+            }
+
+            // to not eat memory, don't return large geometry streams, instead return a pointer which
+            // valid code can check for by type, and read it out more efficiently
+            // FIXME: is it that much more memory if the uncompressed geometry stream is already in memory and
+            // can be dropped?
+            // would be nice if we could read the compressed data in chunks and still remap the Ids
+            else {
+                // NOTE: this holds a reference to the m_dgndb, which could be deleted before this is read again, technically
+                auto* targetPtr = target.release();
+                ctx.SetResultPointer(targetPtr, "geometry-stream", [](void* p){ delete static_cast<GeometryStream*>(targetPtr); });
+                ctx.SetResultError_toobig();
+            }
         }
     };
 }
