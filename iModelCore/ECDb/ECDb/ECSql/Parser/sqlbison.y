@@ -658,17 +658,6 @@ single_select_statement:
             $$->append($4);
         }
         | values_or_query_spec
-        | SQL_TOKEN_SELECT opt_all_distinct selection SQL_TOKEN_FROM '(' values_commalist ')'
-        {
-            $$ = SQL_NEW_RULE;
-            $$->append($1);
-            $$->append($2);
-            $$->append($3);
-            $$->append($4);
-            $$->append($5 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
-            $$->append($6);
-            $$->append($7 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
-        }
     ;
 
 selection:
@@ -1240,7 +1229,14 @@ unique_test:
             $$->append($2);}
     ;
 subquery:
-        '(' select_statement ')'
+        '(' values_commalist ')'
+        {
+            $$ = SQL_NEW_RULE;
+            $$->append($1 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
+            $$->append($2);
+            $$->append($3 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
+        }
+    |   '(' select_statement ')'
         {
             $$ = SQL_NEW_RULE;
             $$->append($1 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
