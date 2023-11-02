@@ -3336,6 +3336,8 @@ void DbFunction::Context::SetResultNull(){sqlite3_result_null((sqlite3_context*)
 void DbFunction::Context::SetResultText(Utf8CP val, int length, CopyData doCopy){sqlite3_result_text((sqlite3_context*) this, val, length,(sqlite3_destructor_type) doCopy);}
 void DbFunction::Context::SetResultZeroblob(int length){sqlite3_result_zeroblob((sqlite3_context*)this, length);}
 void DbFunction::Context::SetResultValue(DbValue val){sqlite3_result_value((sqlite3_context*)this, val.GetSqlValueP());}
+void DbFunction::Context::SetResultPointer(void* ptr, Utf8CP typeTag, void(*destructor)(void*))
+    { sqlite3_result_pointer((sqlite3_context*) this, ptr, typeTag, destructor); }
 void* DbFunction::Context::GetAggregateContext(int nBytes) {return sqlite3_aggregate_context((sqlite3_context*)this, nBytes);}
 
 /*---------------------------------------------------------------------------------**//**

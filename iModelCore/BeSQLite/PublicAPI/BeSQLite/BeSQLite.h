@@ -1227,6 +1227,7 @@ public:
         BE_SQLITE_EXPORT void SetResultText(Utf8CP value, int length, CopyData);      //!< see sqlite3_result_text
         BE_SQLITE_EXPORT void SetResultZeroblob(int length);                          //!< see sqlite3_result_zeroblob
         BE_SQLITE_EXPORT void SetResultValue(DbValue);                                //!< see sqlite3_result_value
+        BE_SQLITE_EXPORT void SetResultPointer(void* ptr, Utf8CP typeTag, void(*destructor)(void*)); //!< see sqlite3_result_pointer
         BE_SQLITE_EXPORT void* GetAggregateContext(int nbytes);
         };
 

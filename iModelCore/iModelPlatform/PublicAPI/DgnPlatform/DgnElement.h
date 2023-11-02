@@ -3868,7 +3868,6 @@ private:
     BeSQLite::EC::CachedECSqlStatementPtr GetPreparedInsertStatement(DgnElementR el) const;
     BeSQLite::EC::CachedECSqlStatementPtr GetPreparedUpdateStatement(DgnElementR el) const;
 
-    BeSQLite::SnappyToBlob& GetSnappyTo() {return m_snappyTo;} // NB: Not to be used during insert or update of a GeometricElement or GeometryPart!
 
     ECSqlClassParams const& GetECSqlClassParams(DgnClassId) const;
 
@@ -3876,6 +3875,7 @@ private:
     void ClearECCaches();
 public:
     DGNPLATFORM_EXPORT BeSQLite::SnappyFromMemory& GetSnappyFrom() {return m_snappyFrom;} // NB: Not to be used during loading of a GeometricElement or GeometryPart!
+    DGNPLATFORM_EXPORT BeSQLite::SnappyToBlob& GetSnappyTo() {return m_snappyTo;} // NB: Not to be used during insert or update of a GeometricElement or GeometryPart!
 
     BeMutex& GetMutex() {return m_mutex;}
 
@@ -4072,6 +4072,19 @@ struct DgnElementTransformer
            }
         return DgnDbStatus::Success;
        }
+};
+
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+struct GeomBlobHeader
+{
+    enum {Signature = 0x0600,}; // DgnDb06
+
+    uint32_t m_signature;    // write this so we can detect errors on read
+    uint32_t m_size;
+    GeomBlobHeader(GeometryStream const& geom) {m_signature = Signature; m_size=geom.GetSize();}
+    GeomBlobHeader(BeSQLite::SnappyReader& in) {uint32_t actuallyRead; in._Read((Byte*) this, sizeof(*this), actuallyRead);}
 };
 
 // FIXME: this is obviously horrible
