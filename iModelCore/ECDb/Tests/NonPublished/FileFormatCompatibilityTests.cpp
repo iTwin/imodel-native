@@ -1343,7 +1343,7 @@ TEST_F(FileFormatCompatibilityTests, ProfileUpgrade)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Only two entries expected in " << BEDB_TABLE_Local;
     stmt.Finalize();
     
-    //verify 4.0.0.3 upgrade
+    //verify 4.0.0.4 upgrade
     Db benchmarkFile;
     ASSERT_EQ(BE_SQLITE_OK, benchmarkFile.OpenBeSQLiteDb(benchmarkFilePath, Db::OpenParams(Db::OpenMode::Readonly)));
 
@@ -1356,7 +1356,7 @@ TEST_F(FileFormatCompatibilityTests, ProfileUpgrade)
     EXPECT_STREQ("CoreCustomAttributes", ecsqlStmt.GetValueText(0));
     EXPECT_EQ(1, ecsqlStmt.GetValueInt(1));
     EXPECT_EQ(0, ecsqlStmt.GetValueInt(2));
-    EXPECT_EQ(3, ecsqlStmt.GetValueInt(3));
+    EXPECT_EQ(4, ecsqlStmt.GetValueInt(3));
     ASSERT_EQ(BE_SQLITE_ROW, ecsqlStmt.Step());
     EXPECT_STREQ("ECDbFileInfo", ecsqlStmt.GetValueText(0));
     EXPECT_EQ(2, ecsqlStmt.GetValueInt(1));
@@ -1367,7 +1367,7 @@ TEST_F(FileFormatCompatibilityTests, ProfileUpgrade)
     EXPECT_STREQ("ECDbMap", ecsqlStmt.GetValueText(0));
     EXPECT_EQ(2, ecsqlStmt.GetValueInt(1));
     EXPECT_EQ(0, ecsqlStmt.GetValueInt(2));
-    EXPECT_EQ(1, ecsqlStmt.GetValueInt(3));
+    EXPECT_EQ(2, ecsqlStmt.GetValueInt(3));
     ASSERT_EQ(BE_SQLITE_ROW, ecsqlStmt.Step());
 
     EXPECT_STREQ("ECDbMeta", ecsqlStmt.GetValueText(0));

@@ -44,40 +44,18 @@
 #define ARRAYSIZE(A) (sizeof(A)/sizeof((A)[0]))
 #endif
 
-
-void Curl_cf_def_destroy_this(struct Curl_cfilter *cf, struct Curl_easy *data)
-{
-  (void)cf;
-  (void)data;
-}
-
+#ifdef DEBUGBUILD
+/* used by unit2600.c */
 void Curl_cf_def_close(struct Curl_cfilter *cf, struct Curl_easy *data)
 {
   cf->connected = FALSE;
   if(cf->next)
-    cf->next->cft->close(cf->next, data);
+    cf->next->cft->do_close(cf->next, data);
 }
+#endif
 
-CURLcode Curl_cf_def_connect(struct Curl_cfilter *cf,
-                             struct Curl_easy *data,
-                             bool blocking, bool *done)
-{
-  CURLcode result;
-
-  if(cf->connected) {
-    *done = TRUE;
-    return CURLE_OK;
-  }
-  if(cf->next) {
-    result = cf->next->cft->connect(cf->next, data, blocking, done);
-    if(!result && *done) {
-      cf->connected = TRUE;
-    }
-    return result;
-  }
-  *done = FALSE;
-  return CURLE_FAILED_INIT;
-}
+static void conn_report_connect_stats(struct Curl_easy *data,
+                                      struct connectdata *conn);
 
 void Curl_cf_def_get_host(struct Curl_cfilter *cf, struct Curl_easy *data,
                           const char **phost, const char **pdisplay_host,
@@ -183,7 +161,7 @@ void Curl_conn_close(struct Curl_easy *data, int index)
   /* it is valid to call that without filters being present */
   cf = data->conn->cfilter[index];
   if(cf) {
-    cf->cft->close(cf, data);
+    cf->cft->do_close(cf, data);
   }
 }
 
@@ -201,7 +179,7 @@ ssize_t Curl_conn_recv(struct Curl_easy *data, int num, char *buf,
   if(cf) {
     return cf->cft->do_recv(cf, data, buf, len, code);
   }
-  failf(data, CMSGI(data->conn, num, "recv: no filter connected"));
+  failf(data, "recv: no filter connected");
   *code = CURLE_FAILED_INIT;
   return -1;
 }
@@ -220,7 +198,7 @@ ssize_t Curl_conn_send(struct Curl_easy *data, int num,
   if(cf) {
     return cf->cft->do_send(cf, data, mem, len, code);
   }
-  failf(data, CMSGI(data->conn, num, "send: no filter connected"));
+  failf(data, "send: no filter connected");
   DEBUGASSERT(0);
   *code = CURLE_FAILED_INIT;
   return -1;
@@ -260,7 +238,7 @@ void Curl_conn_cf_add(struct Curl_easy *data,
   cf->conn = conn;
   cf->sockindex = index;
   conn->cfilter[index] = cf;
-  DEBUGF(LOG_CF(data, cf, "added"));
+  CURL_TRC_CF(data, cf, "added");
 }
 
 void Curl_conn_cf_insert_after(struct Curl_cfilter *cf_at,
@@ -315,14 +293,14 @@ CURLcode Curl_conn_cf_connect(struct Curl_cfilter *cf,
                               bool blocking, bool *done)
 {
   if(cf)
-    return cf->cft->connect(cf, data, blocking, done);
+    return cf->cft->do_connect(cf, data, blocking, done);
   return CURLE_FAILED_INIT;
 }
 
 void Curl_conn_cf_close(struct Curl_cfilter *cf, struct Curl_easy *data)
 {
   if(cf)
-    cf->cft->close(cf, data);
+    cf->cft->do_close(cf, data);
 }
 
 int Curl_conn_cf_get_select_socks(struct Curl_cfilter *cf,
@@ -332,14 +310,6 @@ int Curl_conn_cf_get_select_socks(struct Curl_cfilter *cf,
   if(cf)
     return cf->cft->get_select_socks(cf, data, socks);
   return 0;
-}
-
-bool Curl_conn_cf_data_pending(struct Curl_cfilter *cf,
-                               const struct Curl_easy *data)
-{
-  if(cf)
-    return cf->cft->has_data_pending(cf, data);
-  return FALSE;
 }
 
 ssize_t Curl_conn_cf_send(struct Curl_cfilter *cf, struct Curl_easy *data,
@@ -378,14 +348,14 @@ CURLcode Curl_conn_connect(struct Curl_easy *data,
 
   *done = cf->connected;
   if(!*done) {
-    result = cf->cft->connect(cf, data, blocking, done);
+    result = cf->cft->do_connect(cf, data, blocking, done);
     if(!result && *done) {
       Curl_conn_ev_update_info(data, data->conn);
-      Curl_conn_report_connect_stats(data, data->conn);
+      conn_report_connect_stats(data, data->conn);
       data->conn->keepalive = Curl_now();
     }
     else if(result) {
-      Curl_conn_report_connect_stats(data, data->conn);
+      conn_report_connect_stats(data, data->conn);
     }
   }
 
@@ -625,8 +595,11 @@ void Curl_conn_ev_update_info(struct Curl_easy *data,
   cf_cntrl_all(conn, data, TRUE, CF_CTRL_CONN_INFO_UPDATE, 0, NULL);
 }
 
-void Curl_conn_report_connect_stats(struct Curl_easy *data,
-                                    struct connectdata *conn)
+/**
+ * Update connection statistics
+ */
+static void conn_report_connect_stats(struct Curl_easy *data,
+                                      struct connectdata *conn)
 {
   struct Curl_cfilter *cf = conn->cfilter[FIRSTSOCKET];
   if(cf) {
@@ -673,4 +646,3 @@ size_t Curl_conn_get_max_concurrent(struct Curl_easy *data,
                               &n, NULL) : CURLE_UNKNOWN_OPTION;
   return (result || n <= 0)? 1 : (size_t)n;
 }
-

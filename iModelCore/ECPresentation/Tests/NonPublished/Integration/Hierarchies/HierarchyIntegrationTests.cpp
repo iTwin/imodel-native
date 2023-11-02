@@ -10232,7 +10232,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByPointProper
         );
     ASSERT_EQ(1, rootNodes.GetSize());
     VerifyPropertyGroupingNode(rules->GetRuleSetId(), *rootNodes[0], nullptr, { instance1, instance2 }, { ECValue(DPoint3d::From(1.12, 1.12, 1.12)) });
-    EXPECT_STREQ("X: 1.12 Y: 1.12 Z: 1.12", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("X: 1.12; Y: 1.12; Z: 1.12", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure it has 2 children nodes
     DataContainer<NavNodeCPtr> childrenNodes = RulesEngineTestHelpers::GetValidatedNodes(
@@ -10279,7 +10279,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByPointProper
         );
     ASSERT_EQ(1, rootNodes.GetSize());
     VerifyPropertyGroupingNode(rules->GetRuleSetId(), *rootNodes[0], nullptr, { instance1, instance2 }, { ECValue(DPoint3d::From(1.121, 1.121, 1.121)), ECValue(DPoint3d::From(1.122, 1.122, 1.122)) });
-    EXPECT_STREQ("X: 1.12 Y: 1.12 Z: 1.12", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("X: 1.12; Y: 1.12; Z: 1.12", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure it has 2 children nodes
     DataContainer<NavNodeCPtr> childrenNodes = RulesEngineTestHelpers::GetValidatedNodes(
@@ -10327,10 +10327,10 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByPointProper
     ASSERT_EQ(2, rootNodes.GetSize());
 
     VerifyPropertyGroupingNode(rules->GetRuleSetId(), *rootNodes[0], nullptr, { instance1 }, { ECValue(DPoint3d::From(1.11, 1.11, 1.11)) });
-    EXPECT_STREQ("X: 1.11 Y: 1.11 Z: 1.11", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("X: 1.11; Y: 1.11; Z: 1.11", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     VerifyPropertyGroupingNode(rules->GetRuleSetId(), *rootNodes[1], nullptr, { instance2 }, { ECValue(DPoint3d::From(1.12, 1.12, 1.12)) });
-    EXPECT_STREQ("X: 1.12 Y: 1.12 Z: 1.12", rootNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("X: 1.12; Y: 1.12; Z: 1.12", rootNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure first grouping node has 1 child node
     DataContainer<NavNodeCPtr> firstNodeChildrenNodes = RulesEngineTestHelpers::GetValidatedNodes(
@@ -10385,10 +10385,10 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByPointProper
     ASSERT_EQ(2, rootNodes.GetSize());
 
     VerifyPropertyGroupingNode(rules->GetRuleSetId(), *rootNodes[0], nullptr, { instance1 }, { ECValue(DPoint3d::From(1.11, 1.12, 1.12)) });
-    EXPECT_STREQ("X: 1.11 Y: 1.12 Z: 1.12", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("X: 1.11; Y: 1.12; Z: 1.12", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     VerifyPropertyGroupingNode(rules->GetRuleSetId(), *rootNodes[1], nullptr, { instance2 }, { ECValue(DPoint3d::From(1.12, 1.12, 1.12)) });
-    EXPECT_STREQ("X: 1.12 Y: 1.12 Z: 1.12", rootNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("X: 1.12; Y: 1.12; Z: 1.12", rootNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure first grouping node has 1 child node
     DataContainer<NavNodeCPtr> firstNodeChildrenNodes = RulesEngineTestHelpers::GetValidatedNodes(
@@ -10443,10 +10443,10 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByPointProper
     ASSERT_EQ(2, rootNodes.GetSize());
 
     VerifyPropertyGroupingNode(rules->GetRuleSetId(), *rootNodes[0], nullptr, { instance1 }, { ECValue(DPoint3d::From(1.12, 1.11, 1.12)) });
-    EXPECT_STREQ("X: 1.12 Y: 1.11 Z: 1.12", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("X: 1.12; Y: 1.11; Z: 1.12", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     VerifyPropertyGroupingNode(rules->GetRuleSetId(), *rootNodes[1], nullptr, { instance2 }, { ECValue(DPoint3d::From(1.12, 1.12, 1.12)) });
-    EXPECT_STREQ("X: 1.12 Y: 1.12 Z: 1.12", rootNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("X: 1.12; Y: 1.12; Z: 1.12", rootNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure first grouping node has 1 child node
     DataContainer<NavNodeCPtr> firstNodeChildrenNodes = RulesEngineTestHelpers::GetValidatedNodes(
@@ -10501,10 +10501,10 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByPointProper
     ASSERT_EQ(2, rootNodes.GetSize());
 
     VerifyPropertyGroupingNode(rules->GetRuleSetId(), *rootNodes[0], nullptr, { instance1 }, { ECValue(DPoint3d::From(1.12, 1.12, 1.11)) });
-    EXPECT_STREQ("X: 1.12 Y: 1.12 Z: 1.11", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("X: 1.12; Y: 1.12; Z: 1.11", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     VerifyPropertyGroupingNode(rules->GetRuleSetId(), *rootNodes[1], nullptr, { instance2 }, { ECValue(DPoint3d::From(1.12, 1.12, 1.12)) });
-    EXPECT_STREQ("X: 1.12 Y: 1.12 Z: 1.12", rootNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("X: 1.12; Y: 1.12; Z: 1.12", rootNodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure first grouping node has 1 child node
     DataContainer<NavNodeCPtr> firstNodeChildrenNodes = RulesEngineTestHelpers::GetValidatedNodes(
@@ -10558,7 +10558,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByPointProper
         );
     ASSERT_EQ(1, rootNodes.GetSize());
     VerifyPropertyGroupingNode(rules->GetRuleSetId(), *rootNodes[0], nullptr, { instance1, instance2 }, { ECValue(DPoint3d::From(1.119, 1.12, 1.12)), ECValue(DPoint3d::From(1.124, 1.12, 1.12)) });
-    EXPECT_STREQ("X: 1.12 Y: 1.12 Z: 1.12", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("X: 1.12; Y: 1.12; Z: 1.12", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure it has 2 children nodes
     DataContainer<NavNodeCPtr> childrenNodes = RulesEngineTestHelpers::GetValidatedNodes(
@@ -10605,7 +10605,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByPointProper
         );
     ASSERT_EQ(1, rootNodes.GetSize());
     VerifyPropertyGroupingNode(rules->GetRuleSetId(), *rootNodes[0], nullptr, { instance1, instance2 }, { ECValue(DPoint3d::From(1.12, 1.119, 1.12)), ECValue(DPoint3d::From(1.12, 1.124, 1.12)) });
-    EXPECT_STREQ("X: 1.12 Y: 1.12 Z: 1.12", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("X: 1.12; Y: 1.12; Z: 1.12", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure it has 2 children nodes
     DataContainer<NavNodeCPtr> childrenNodes = RulesEngineTestHelpers::GetValidatedNodes(
@@ -10652,7 +10652,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByPointProper
         );
     ASSERT_EQ(1, rootNodes.GetSize());
     VerifyPropertyGroupingNode(rules->GetRuleSetId(), *rootNodes[0], nullptr, { instance1, instance2 }, { ECValue(DPoint3d::From(1.12, 1.12, 1.119)), ECValue(DPoint3d::From(1.12, 1.12, 1.124)) });
-    EXPECT_STREQ("X: 1.12 Y: 1.12 Z: 1.12", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("X: 1.12; Y: 1.12; Z: 1.12", rootNodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
 
     //make sure it has 2 children nodes
     DataContainer<NavNodeCPtr> childrenNodes = RulesEngineTestHelpers::GetValidatedNodes(

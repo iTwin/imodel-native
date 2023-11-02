@@ -91,6 +91,7 @@ ECDbAllHeaders = \
                 $(baseDir)ECSql/ListExp.h \
                 $(baseDir)ECSql/PropertyNameExp.h \
                 $(baseDir)ECSql/ValueExp.h \
+                $(baseDir)ECSql/WindowFunctionExp.h \
                 $(baseDir)ECSql/WhereExp.h \
                 $(baseDir)ECSql/SelectStatementExp.h \
                 $(baseDir)ECSql/InsertStatementExp.h \
@@ -259,6 +260,8 @@ $(o)Exp$(oext):                                               $(baseDir)ECSql/Ex
 $(o)ComputedExp$(oext):                                       $(baseDir)ECSql/ComputedExp.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ValueExp$(oext):                                          $(baseDir)ECSql/ValueExp.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)WindowFunctionExp$(oext):                                 $(baseDir)ECSql/WindowFunctionExp.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ListExp$(oext):                                           $(baseDir)ECSql/ListExp.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
@@ -527,4 +530,4 @@ $(BuildContext)Delivery/openoffice-license.txt : $(baseDir)ECSql/Parser/LICENSE
 #----------------------------------------------------------------------------------------
 
 always:
-    ~linkfile "$(BuildContext)Dox/Files/ECDb/ECDbMap.ecschema.xml=$(BuildContext)SubParts/ECSchemas/ECDb/ECDbMap.02.00.01.ecschema.xml"
+    ~linkfile "$(BuildContext)Dox/Files/ECDb/ECDbMap.ecschema.xml=$(BuildContext)SubParts/ECSchemas/ECDb/ECDbMap.02.00.02.ecschema.xml"

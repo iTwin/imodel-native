@@ -755,6 +755,16 @@ void PresentationRuleSet::AssignRuleIndexes()
     SET_RULES_INDEX(m_childNodesRules, index)
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+SupplementedPresentationRuleSet::SupplementedPresentationRuleSet(PresentationRuleSetCR primary, bvector<PresentationRuleSetPtr> supplementals)
+    : PresentationRuleSet(primary), m_primary(&primary), m_supplementals(supplementals)
+    {
+    for (PresentationRuleSetPtr const& supplemental : supplementals)
+        MergeWith(*supplemental);
+    }
+
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 template<> RootNodeRuleList* PresentationRuleSet::GetRules<RootNodeRule>() {return &m_rootNodesRules;}
 template<> ChildNodeRuleList* PresentationRuleSet::GetRules<ChildNodeRule>() {return &m_childNodesRules;}

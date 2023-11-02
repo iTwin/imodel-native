@@ -87,6 +87,7 @@
 #include "ECSql/UpdateStatementExp.h"
 #include "ECSql/DeleteStatementExp.h"
 #include "ECSql/PragmaStatementExp.h"
+#include "ECSql/WindowFunctionExp.h"
 #include "ECSql/OptionsExp.h"
 #include "ECSql/ExpHelper.h"
 #include "ECSql/ECSqlTypeInfo.h"

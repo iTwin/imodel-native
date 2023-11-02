@@ -275,7 +275,7 @@ namespace connectivity
                     bHandled = true;
                     break;
 
-                case general_set_fct:
+                case aggregate_fct:
                 case fct_spec:
                 {
                 // Funktionsname nicht quoten

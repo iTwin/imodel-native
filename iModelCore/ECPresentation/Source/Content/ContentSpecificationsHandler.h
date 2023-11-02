@@ -80,7 +80,8 @@ public:
     RelatedPropertiesSpecificationScopeInfo const& GetScope() const {return m_scope;}
     static bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> Create(RelatedPropertiesSpecificationCR, RelatedPropertiesSpecificationScopeInfo const&);
     static bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> Create(bvector<RelatedPropertiesSpecificationP> const&, RelatedPropertiesSpecificationScopeInfo const&);
-    static void MoveNestedSpecification(bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>>&, bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>>&&, RelatedPropertiesSpecificationCR);
+    static void MoveNestedSpecification(bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>>&, bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>>&&, 
+        RelatedPropertiesSpecificationCR, bvector<RelatedPropertiesSpecificationCP> const& specificationsStack);
     static bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> CreateForSelectClassFromModifiers(SelectClass<ECClass> const& selectClass, bvector<ContentModifierCP> const& modifiers, ECSchemaHelper const& helper);
     static bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> CreateForNestedPropertiesFromModifiers(bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> const& flatSpecs, 
         bvector<ContentModifierCP> const& modifiers, ECSchemaHelper const& helper);
