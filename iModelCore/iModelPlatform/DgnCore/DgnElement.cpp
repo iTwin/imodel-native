@@ -1421,19 +1421,6 @@ DgnElementIdSet DgnElement::QueryChildren() const
     return elementIdSet;
     }
 
-//=======================================================================================
-// @bsiclass
-//=======================================================================================
-struct GeomBlobHeader
-{
-    enum {Signature = 0x0600,}; // DgnDb06
-
-    uint32_t m_signature;    // write this so we can detect errors on read
-    uint32_t m_size;
-    GeomBlobHeader(GeometryStream const& geom) {m_signature = Signature; m_size=geom.GetSize();}
-    GeomBlobHeader(SnappyReader& in) {uint32_t actuallyRead; in._Read((Byte*) this, sizeof(*this), actuallyRead);}
-};
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
