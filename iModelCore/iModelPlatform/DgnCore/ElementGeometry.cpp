@@ -3168,7 +3168,7 @@ namespace SqlFuncs {
             else {
                 // NOTE: this holds a reference to the m_dgndb, which could be deleted before this is read again, technically
                 auto* targetPtr = target.release();
-                ctx.SetResultPointer(targetPtr, "geometry-stream", [](void* p){ delete static_cast<GeometryStream*>(targetPtr); });
+                ctx.SetResultPointer(targetPtr, "geometry-stream", [](void* p){ delete static_cast<GeometryStream*>(p); });
                 ctx.SetResultError_toobig();
             }
         }
