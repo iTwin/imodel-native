@@ -359,7 +359,7 @@ double              tolerance
     }
 
 //--------------------------------------------------------------------------------------
-// @bsimethod
+// @deprecated Use the overload with const input surface.
 //--------------------------------------------------------------------------------------
 Public GEOMDLLIMPEXP void     bspsurf_isPhysicallyClosed
 (
@@ -368,44 +368,71 @@ bool                *vClosed,
 MSBsplineSurface    *surf
 )
     {
-    int         totalPoles, uPoles;
-    DPoint3d    *pt0, *pt1, *endP;
-
-    uPoles = surf->uParams.numPoles;
-    totalPoles = surf->uParams.numPoles * surf->vParams.numPoles;
-    double tolerance = bsputil_surfaceTolerance (surf);
-    if (surf->rational)
-        bsputil_unWeightPoles (surf->poles, surf->poles, surf->weights, totalPoles);
-
-    if (surf->vParams.closed)
-        *vClosed = true;
-    else
-        {
-        for (*vClosed = true,
-             pt0 = endP = surf->poles,
-             pt1 = surf->poles + uPoles * (surf->vParams.numPoles - 1),
-             endP += uPoles;
-             *vClosed && (pt0 < endP);
-             pt0++, pt1++)
-            *vClosed = bsputil_isSamePointTolerance (pt0, pt1, tolerance);
-        }
-
-    if (surf->uParams.closed)
-        *uClosed = true;
-    else
-        {
-        for (*uClosed = true,
-             pt0 = endP = surf->poles,
-             pt1 = surf->poles + uPoles - 1,
-             endP += totalPoles;
-             *uClosed && (pt0 < endP);
-             pt0 += uPoles, pt1 += uPoles)
-            *uClosed = bsputil_isSamePointTolerance (pt0, pt1, tolerance);
-        }
-
-    if (surf->rational)
-        bsputil_weightPoles (surf->poles, surf->poles, surf->weights, totalPoles);
+    if (surf && uClosed && vClosed)
+        bspsurf_isPhysicallyClosed(*surf, *uClosed, *vClosed);
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//--------------------------------------------------------------------------------------
+Public void     bspsurf_isPhysicallyClosed
+(
+MSBsplineSurfaceCR  surf,
+bool&               uClosed,
+bool&               vClosed
+)
+    {
+    DPoint3dCP    pt0, pt1, endP;
+    double const* wt0 = nullptr;
+    double const* wt1 = nullptr;
+
+    int uPoles = surf.uParams.numPoles;
+    int totalPoles = surf.uParams.numPoles * surf.vParams.numPoles;
+    double tolerance = bsputil_surfaceTolerance (&surf);
+
+    if (surf.vParams.closed)
+        vClosed = true;
+    else
+        {
+        int iLastRow = uPoles * (surf.vParams.numPoles - 1);
+        for (vClosed = true,
+             pt0 = endP = surf.poles,
+             wt0 = surf.rational ? surf.weights : nullptr,
+             pt1 = surf.poles + iLastRow,
+             wt1 = surf.rational ? surf.weights + iLastRow : nullptr,
+             endP += uPoles;
+             vClosed && (pt0 < endP);
+             pt0++,
+             pt1++,
+             wt0 ? wt0++ : nullptr,
+             wt1 ? wt1++ : nullptr)
+            {
+            vClosed = bsputil_isSameRationalPointTolerance(pt0, wt0 ? *wt0 : 1.0, pt1, wt1 ? *wt1 : 1.0, tolerance);
+            }
+        }
+
+    if (surf.uParams.closed)
+        uClosed = true;
+    else
+        {
+        int iLastCol = uPoles - 1;
+        for (uClosed = true,
+             pt0 = endP = surf.poles,
+             wt0 = surf.rational ? surf.weights : nullptr,
+             pt1 = surf.poles + iLastCol,
+             wt1 = surf.rational ? surf.weights + iLastCol : nullptr,
+             endP += totalPoles;
+             uClosed && (pt0 < endP);
+             pt0 += uPoles,
+             pt1 += uPoles,
+             wt0 ? wt0 += uPoles : nullptr,
+             wt1 ? wt1 += uPoles : nullptr)
+            {
+            uClosed = bsputil_isSameRationalPointTolerance(pt0, wt0 ? *wt0 : 1.0, pt1, wt1 ? *wt1 : 1.0, tolerance);
+            }
+        }
+    }
+
 // What is this used for.
 // What it does  ..
 // along one edge (u=0, u=1, v=0, or v=1) compute each quad.  Compute vectors "along the edge itself" and "along the first inboard polygon line.
