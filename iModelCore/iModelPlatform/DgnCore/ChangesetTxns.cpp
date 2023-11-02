@@ -507,7 +507,7 @@ std::unique_ptr<ChangeSet> TxnManager::CreateChangesetFromLocalChanges(bool incl
     if (BE_SQLITE_OK != rc)
         m_dgndb.ThrowException("fail to create changeset form change group", (int) rc);
 
-    return std::move(cs);
+    return cs;
 }
 
 /**
