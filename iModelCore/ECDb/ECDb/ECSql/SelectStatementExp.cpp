@@ -1088,6 +1088,20 @@ SubqueryExp::SubqueryExp(std::unique_ptr<SelectStatementExp> selectExp) : QueryE
     AddChild(std::move(selectExp));
     }
 
+SubqueryExp::SubqueryExp(std::vector<std::unique_ptr<ValueExp>>& valueExpList) : QueryExp(Type::Subquery)
+    {
+    std::unique_ptr<SelectClauseExp> selectClauseExp = std::make_unique<SelectClauseExp>();
+    int expIx = 0;
+    for (std::unique_ptr<ValueExp>& valueExp : valueExpList)
+        {
+        expIx++;
+        std::unique_ptr<DerivedPropertyExp> derivedPropertyExp = std::make_unique<DerivedPropertyExp>(std::move(valueExp), nullptr);
+        selectClauseExp->AddProperty(std::move(derivedPropertyExp));
+        }
+
+    AddChild(std::move(selectClauseExp));
+    }
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------

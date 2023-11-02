@@ -2588,11 +2588,54 @@ BentleyStatus ECSqlParser::ParseSubquery(std::unique_ptr<SubqueryExp>& exp, OSQL
         return ERROR;
         }
 
-    std::unique_ptr<SelectStatementExp> compound_select = nullptr;
-    if (SUCCESS != ParseSelectStatement(compound_select, *parseNode->getChild(1/*query_exp*/)))
-        return ERROR;
+    OSQLParseNode const* childNode = parseNode->getChild(1/*query_exp*/);
+    if (SQL_ISRULE(childNode, select_statement))
+        {
+        //select_statement
+        std::unique_ptr<SelectStatementExp> compound_select = nullptr;
+        if (SUCCESS != ParseSelectStatement(compound_select, *childNode))
+            return ERROR;
 
-    exp = std::make_unique<SubqueryExp>(std::move(compound_select));
+        exp = std::make_unique<SubqueryExp>(std::move(compound_select));
+        }
+
+    if (SQL_ISRULE(childNode, values_commalist))
+        {
+        //values_commalist
+        std::vector<std::unique_ptr<ValueExp>> valueExpList;
+        if (SUCCESS != ParseValuesCommalist(valueExpList, *childNode))
+            return ERROR;
+
+        exp = std::make_unique<SubqueryExp>(valueExpList);
+        }
+    return SUCCESS;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+BentleyStatus ECSqlParser::ParseValuesCommalist(std::vector<std::unique_ptr<ValueExp>>& valueExpList, OSQLParseNode const& parseNode) const
+    {
+    if (!SQL_ISRULE(&parseNode, values_commalist))
+        {
+        BeAssert(false && "Invalid grammar. Expecting values_commalist");
+        return ERROR;
+        }
+
+    const size_t childCount = parseNode.count();
+    for (size_t i = 0; i < childCount; i++)
+        {
+        OSQLParseNode const* childNode = parseNode.getChild(i);
+        if (childNode == nullptr)
+            {
+            BeAssert(false);
+            return ERROR;
+            }
+
+        if (SUCCESS != ParseValuesOrQuerySpec(valueExpList, *childNode))
+            return ERROR;
+        }
+
     return SUCCESS;
     }
 
