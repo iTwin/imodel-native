@@ -237,6 +237,8 @@ struct SchemaWriter final
         static BentleyStatus DeleteInstances(Context&, ECN::ECClassCR);
         static BentleyStatus DeleteCustomAttributeClass(Context&, ECN::ECCustomAttributeClassCR);
         static BentleyStatus DeletePropertyCategory(Context&, ECN::PropertyCategoryCR);
+        static BentleyStatus DeleteKindOfQuantity(Context&, ECN::KindOfQuantityCR, bool);
+        static BentleyStatus DeleteEnumeration(Context&, ECN::ECEnumerationCR, bool);
 
         static bool IsSpecifiedInRelationshipConstraint(Context&, ECN::ECClassCR);
 
