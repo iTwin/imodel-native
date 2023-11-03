@@ -2123,7 +2123,7 @@ TEST_F(IModelCompatibilityTestFixture, UpgradeDomainIModelToEC32)
     IModelEvolutionTestsDomain::GetDomain().SetRequired(DgnDomain::Required::No);
     }
 
-TEST_F(IModelCompatibilityTestFixture, MajorSchemaUpgradeDeletePropertyAndClass)
+TEST_F(IModelCompatibilityTestFixture, MajorSchemaUpgradeDeleteSchemaItems)
     {
     for (const auto& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EMPTY))
         {
@@ -2147,23 +2147,96 @@ TEST_F(IModelCompatibilityTestFixture, MajorSchemaUpgradeDeletePropertyAndClass)
                                 <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
                                 <ECSchemaReference name="BisCore" version="01.00" alias="bis"/>
 
+                                <KindOfQuantity typeName='TestKoQ' description='TestKoQ' displayLabel='TestKoQ' persistenceUnit='CM' relativeError='.5' presentationUnits='FT;CM' />
+                                <KindOfQuantity typeName='AnotherTestKoQ' description='AnotherTestKoQ' displayLabel='AnotherTestKoQ' persistenceUnit='M' relativeError='.5' presentationUnits='FT;M' />
+
+                                <ECEnumeration typeName='UnstrictEnumInt' backingTypeName='int' isStrict='False'>
+                                    <ECEnumerator value = '0' displayLabel = 'txt' />
+                                    <ECEnumerator value = '1' displayLabel = 'bat' />
+                                </ECEnumeration>
+                                <ECEnumeration typeName='UnstrictEnumString' backingTypeName='string' isStrict='False'>
+                                    <ECEnumerator value = 'val0' displayLabel = 'txt' />
+                                    <ECEnumerator value = 'val1' displayLabel = 'bat' />
+                                </ECEnumeration>
+
+                                <ECEnumeration typeName='StrictEnumInt' backingTypeName='int' isStrict='True'>
+                                    <ECEnumerator value = '10' displayLabel = 'txt' />
+                                    <ECEnumerator value = '11' displayLabel = 'bat' />
+                                </ECEnumeration>
+                                <ECEnumeration typeName='StrictEnumString' backingTypeName='string' isStrict='True'>
+                                    <ECEnumerator value = 'val10' displayLabel = 'txt' />
+                                    <ECEnumerator value = 'val11' displayLabel = 'bat' />
+                                </ECEnumeration>
+
                                 <ECEntityClass typeName="TestClass" >
                                     <BaseClass>bis:PhysicalElement</BaseClass>
-                                    <ECProperty propertyName="Prop1" typeName="string" />
-                                    <ECProperty propertyName="Prop2" typeName="int" />
+                                    <ECProperty propertyName="FirstProp" typeName="int" kindOfQuantity='TestKoQ' />
+                                    <ECProperty propertyName="SecondProp" typeName="int" kindOfQuantity='AnotherTestKoQ' />
+                                    <ECProperty propertyName="ThirdProp" typeName="int" />
+
+                                    <ECProperty propertyName="Property1" typeName="UnstrictEnumInt" />
+                                    <ECProperty propertyName="Property2" typeName="UnstrictEnumString" />
+                                    <ECProperty propertyName="Property3" typeName="StrictEnumInt" />
+                                    <ECProperty propertyName="Property4" typeName="StrictEnumString" />
                                 </ECEntityClass>
                                 <ECEntityClass typeName="SubClassToDelete" >
                                     <BaseClass>TestClass</BaseClass>
-                                    <ECProperty propertyName="SubProp" typeName="int" />
+                                    <ECProperty propertyName="SubProp" typeName="int" kindOfQuantity='TestKoQ' />
                                 </ECEntityClass>
 
                                 <ECEntityClass typeName="TestClassToDelete" >
                                     <BaseClass>bis:PhysicalElement</BaseClass>
-                                    <ECProperty propertyName="NameProp" typeName="string" />
+                                    <ECProperty propertyName="NameProp" typeName="int" kindOfQuantity='TestKoQ' />
                                 </ECEntityClass>
                             </ECSchema>)xml"));
             ASSERT_NE(deserializationCtx, nullptr) << testDbPtr->GetDescription();
             ASSERT_EQ(SchemaStatus::Success, dgnDb.ImportSchemas(deserializationCtx->GetCache().GetSchemas())) << testDbPtr->GetDescription();
+
+            // Check that the data has been setup correctly
+            auto schema = dgnDb.Schemas().GetSchema("TestSchema");
+            ASSERT_NE(schema, nullptr);
+
+            auto testClass = schema->GetClassCP("TestClass");
+            ASSERT_NE(testClass, nullptr);
+
+            EXPECT_NE(testClass->GetSchema().GetKindOfQuantityCP("TestKoQ"), nullptr);
+            EXPECT_NE(testClass->GetSchema().GetKindOfQuantityCP("AnotherTestKoQ"), nullptr);
+            
+            EXPECT_NE(schema->GetEnumerationCP("UnstrictEnumInt"), nullptr);
+            EXPECT_NE(schema->GetEnumerationCP("UnstrictEnumString"), nullptr);
+            EXPECT_NE(schema->GetEnumerationCP("StrictEnumInt"), nullptr);
+            EXPECT_NE(schema->GetEnumerationCP("StrictEnumString"), nullptr);
+
+            auto firstProp = testClass->GetPropertyP("FirstProp");
+            ASSERT_NE(firstProp, nullptr);
+            EXPECT_NE(firstProp->GetKindOfQuantity(), nullptr);
+
+            auto secondProp = testClass->GetPropertyP("SecondProp");
+            ASSERT_NE(secondProp, nullptr);
+            auto anotherKoq = secondProp->GetKindOfQuantity();
+            ASSERT_NE(anotherKoq, nullptr);
+            EXPECT_STREQ(anotherKoq->GetFullName().c_str(), "TestSchema:AnotherTestKoQ");
+
+            EXPECT_NE(testClass->GetPropertyP("ThirdProp"), nullptr);
+
+            auto enumProp1 = testClass->GetPropertyP("Property1");
+            ASSERT_NE(enumProp1, nullptr);
+            EXPECT_NE(enumProp1->GetTypeFullName(), "int");
+
+            auto enumProp2 = testClass->GetPropertyP("Property2");
+            ASSERT_NE(enumProp2, nullptr);
+            EXPECT_NE(enumProp2->GetTypeFullName(), "string");
+
+            auto enumProp3 = testClass->GetPropertyP("Property3");
+            ASSERT_NE(enumProp3, nullptr);
+            EXPECT_NE(enumProp3->GetTypeFullName(), "int");
+
+            auto enumProp4 = testClass->GetPropertyP("Property4");
+            ASSERT_NE(enumProp4, nullptr);
+            EXPECT_NE(enumProp4->GetTypeFullName(), "string");
+
+            EXPECT_NE(schema->GetClassCP("TestClassToDelete"), nullptr);
+            EXPECT_NE(schema->GetClassCP("SubClassToDelete"), nullptr);
 
             // Perform major schema change by deleting property and class
             auto deserializationCtxUpdate = TestFileCreator::DeserializeSchema(testDbPtr->GetDb(), SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
@@ -2171,6 +2244,9 @@ TEST_F(IModelCompatibilityTestFixture, MajorSchemaUpgradeDeletePropertyAndClass)
                                 <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
                                 <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA" />
                                 <ECSchemaReference name="BisCore" version="01.00" alias="bis"/>
+                                <ECSchemaReference name="SchemaUpgradeCustomAttributes" version="01.00.00" alias="SchemaUpgradeCA" />
+
+                                <KindOfQuantity typeName='AnotherTestKoQ' description='AnotherTestKoQ' displayLabel='AnotherTestKoQ' persistenceUnit='M' relativeError='.5' presentationUnits='FT;M' />
                                 
                                 <ECCustomAttributes>
                                     <DynamicSchema xmlns = 'CoreCustomAttributes.01.00' />
@@ -2178,22 +2254,76 @@ TEST_F(IModelCompatibilityTestFixture, MajorSchemaUpgradeDeletePropertyAndClass)
 
                                 <ECEntityClass typeName="TestClass" >
                                     <BaseClass>bis:PhysicalElement</BaseClass>
-                                    <ECProperty propertyName="Prop1" typeName="string" />
+                                    <ECProperty propertyName="FirstProp" typeName="int">
+                                        <ECCustomAttributes>
+                                            <AllowUnitChange xmlns="SchemaUpgradeCustomAttributes.01.00.00">
+                                                <From>u:CM</From>
+                                                <To></To>
+                                            </AllowUnitChange>
+                                        </ECCustomAttributes>
+                                    </ECProperty>
+                                    <ECProperty propertyName="SecondProp" typeName="string" kindOfQuantity='AnotherTestKoQ' />
+
+                                    <ECProperty propertyName="Property1" typeName="int" />
+                                    <ECProperty propertyName="Property2" typeName="string" />
+                                    <ECProperty propertyName="Property3" typeName="int" />
+                                    <ECProperty propertyName="Property4" typeName="string" />
                                 </ECEntityClass>
                             </ECSchema>)xml"));
             ASSERT_NE(deserializationCtxUpdate, nullptr) << testDbPtr->GetDescription();
             ASSERT_EQ(SchemaStatus::Success, dgnDb.ImportSchemas(deserializationCtxUpdate->GetCache().GetSchemas())) << testDbPtr->GetDescription();
 
-            auto testClass = dgnDb.Schemas().GetClass("TestSchema", "TestClass");
+            schema = dgnDb.Schemas().GetSchema("TestSchema");
+            ASSERT_NE(schema, nullptr);
+
+            testClass = schema->GetClassCP("TestClass");
             ASSERT_NE(testClass, nullptr);
 
-            // Check if property "Code" was deleted
-            EXPECT_NE(testClass->GetPropertyP("Prop1"), nullptr);
-            EXPECT_EQ(testClass->GetPropertyP("Prop2"), nullptr);
+            // "TestKoq" should be deleted and "AnotherTestKoQ" should still exist
+            EXPECT_EQ(testClass->GetSchema().GetKindOfQuantityCP("TestKoQ"), nullptr);
+            EXPECT_NE(testClass->GetSchema().GetKindOfQuantityCP("AnotherTestKoQ"), nullptr);
 
-            // Check if classes "TestClassToDelete" and "SubClassToDelete" were deleted
-            EXPECT_EQ(dgnDb.Schemas().GetClass("TestSchema", "TestClassToDelete"), nullptr);
-            EXPECT_EQ(dgnDb.Schemas().GetClass("TestSchema", "SubClassToDelete"), nullptr);
+            // All enums should be deleted
+            EXPECT_EQ(schema->GetEnumerationCP("UnstrictEnumInt"), nullptr);
+            EXPECT_EQ(schema->GetEnumerationCP("UnstrictEnumString"), nullptr);
+            EXPECT_EQ(schema->GetEnumerationCP("StrictEnumInt"), nullptr);
+            EXPECT_EQ(schema->GetEnumerationCP("StrictEnumString"), nullptr);
+
+            // Property "FirstProp" should exist and no longer have KoQ "TestKoQ"
+            firstProp = testClass->GetPropertyP("FirstProp");
+            ASSERT_NE(firstProp, nullptr);
+            EXPECT_EQ(firstProp->GetKindOfQuantity(), nullptr);
+
+            // Property "SecondProp" should exist and still have the KoQ "AnotherTestKoQ"
+            secondProp = testClass->GetPropertyP("SecondProp");
+            ASSERT_NE(secondProp, nullptr);
+            anotherKoq = secondProp->GetKindOfQuantity();
+            ASSERT_NE(anotherKoq, nullptr);
+            EXPECT_STREQ(anotherKoq->GetFullName().c_str(), "TestSchema:AnotherTestKoQ");
+
+            // Property "ThirdProp" should be deleted
+            EXPECT_EQ(testClass->GetPropertyP("ThirdProp"), nullptr);
+
+            // Properties should not have enum type names
+            enumProp1 = testClass->GetPropertyP("Property1");
+            ASSERT_NE(enumProp1, nullptr);
+            EXPECT_EQ(enumProp1->GetTypeFullName(), "int");
+
+            enumProp2 = testClass->GetPropertyP("Property2");
+            ASSERT_NE(enumProp2, nullptr);
+            EXPECT_EQ(enumProp2->GetTypeFullName(), "string");
+
+            enumProp3 = testClass->GetPropertyP("Property3");
+            ASSERT_NE(enumProp3, nullptr);
+            EXPECT_EQ(enumProp3->GetTypeFullName(), "int");
+
+            enumProp4 = testClass->GetPropertyP("Property4");
+            ASSERT_NE(enumProp4, nullptr);
+            EXPECT_EQ(enumProp4->GetTypeFullName(), "string");
+
+            // Classes "TestClassToDelete" and "SubClassToDelete" were deleted
+            EXPECT_EQ(schema->GetClassCP("TestClassToDelete"), nullptr);
+            EXPECT_EQ(schema->GetClassCP("SubClassToDelete"), nullptr);
 
             ASSERT_EQ(BE_SQLITE_OK, dgnDb.AbandonChanges());
             }
