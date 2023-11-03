@@ -3070,6 +3070,11 @@ namespace SqlFuncs {
                 return;
             }
 
+            if (args[0].GetValueType() == DbValueType::NullVal) {
+                ctx.SetResultNull();
+                return;
+            }
+
             if (args[0].GetValueType() != DbValueType::BlobVal) {
                 ctx.SetResultError("First argument to RemapGeom was not a blob");
                 return;
