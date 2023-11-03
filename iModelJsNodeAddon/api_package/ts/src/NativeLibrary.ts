@@ -1350,26 +1350,23 @@ export declare namespace IModelJsNative {
 
   type ChangeValueType = Uint8Array | number | string | null | undefined;
 
-  interface ChangedValue {
-    new?: ChangeValueType;
-    old?: ChangeValueType;
-  }
-
   class ChangesetReader {
-    public close(): DbResult;
-    public getColumnCount(): number | undefined;
+    public close(): void;
+    public getColumnCount(): number;
     public getColumnValue(col: number, stage: DbChangeStage): ChangeValueType;
     public getColumnValueType(col: number, stage: DbChangeStage): DbValueType | undefined;
-    public getFileName(): string | undefined;
-    public getOpCode(): DbOpcode | undefined;
-    public getRow(): ChangedValue[] | undefined;
     public getDdlChanges(): string | undefined;
-    public getTableName(): string | undefined;
-    public isIndirectChange(): boolean | undefined;
-    public isPrimaryKeyColumn(col: number): boolean | undefined;
-    public open(fileName: string, invert: boolean): DbResult;
-    public reset(): DbResult;
-    public step(): DbResult;
+    public getOpCode(): DbOpcode;
+    public getPrimaryKeys(): ChangeValueType[];
+    public getRow(stage: DbChangeStage): ChangeValueType[];
+    public getTableName(): string;
+    public isIndirectChange(): boolean;
+    public isPrimaryKeyColumn(col: number): boolean;
+    public openFile(fileName: string, invert: boolean): void;
+    public openLocalChanges(db: DgnDb, includeInMemoryChanges: boolean, invert: boolean): void;
+    public reset(): void;
+    public step(): boolean;
+    public hasRow(): boolean;
   }
 
   class DisableNativeAssertions implements IDisposable {
