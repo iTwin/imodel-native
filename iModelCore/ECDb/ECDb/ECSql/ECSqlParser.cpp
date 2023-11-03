@@ -2602,11 +2602,11 @@ BentleyStatus ECSqlParser::ParseSubquery(std::unique_ptr<SubqueryExp>& exp, OSQL
     if (SQL_ISRULE(childNode, values_commalist))
         {
         //values_commalist
-        std::vector<std::unique_ptr<ValueExp>> valueExpList;
-        if (SUCCESS != ParseValuesCommalist(valueExpList, *childNode))
+        std::vector<std::unique_ptr<SelectStatementExp>> valuesList;
+        if (SUCCESS != ParseValuesCommalist(valuesList, *childNode))
             return ERROR;
 
-        exp = std::make_unique<SubqueryExp>(valueExpList);
+        exp = std::make_unique<SubqueryExp>(valuesList);
         }
     return SUCCESS;
     }
@@ -2614,7 +2614,7 @@ BentleyStatus ECSqlParser::ParseSubquery(std::unique_ptr<SubqueryExp>& exp, OSQL
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-BentleyStatus ECSqlParser::ParseValuesCommalist(std::vector<std::unique_ptr<ValueExp>>& valueExpList, OSQLParseNode const& parseNode) const
+BentleyStatus ECSqlParser::ParseValuesCommalist(std::vector<std::unique_ptr<SelectStatementExp>>& valuesList, OSQLParseNode const& parseNode) const
     {
     if (!SQL_ISRULE(&parseNode, values_commalist))
         {
@@ -2631,9 +2631,19 @@ BentleyStatus ECSqlParser::ParseValuesCommalist(std::vector<std::unique_ptr<Valu
             BeAssert(false);
             return ERROR;
             }
-
-        if (SUCCESS != ParseValuesOrQuerySpec(valueExpList, *childNode))
+        if (!SQL_ISRULE(childNode, values_or_query_spec))
+            {
+            BeAssert(false && "Invalid grammar. Expecting values_or_query_spec");
             return ERROR;
+            }
+
+        std::unique_ptr<SingleSelectStatementExp> singleSelect = nullptr;
+        if (SUCCESS != ParseSingleSelectStatement(singleSelect, childNode))
+            return ERROR;
+
+        std::unique_ptr<SelectStatementExp> selectExp = nullptr;
+        selectExp = std::make_unique<SelectStatementExp>(std::move(singleSelect));
+        valuesList.push_back(std::move(selectExp));
         }
 
     return SUCCESS;
