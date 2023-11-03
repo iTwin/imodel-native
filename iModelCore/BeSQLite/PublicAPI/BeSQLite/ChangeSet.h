@@ -234,7 +234,7 @@ protected:
 
 public:
     virtual bool _IsEmpty() const = 0;
-
+    virtual ~ChangeStream(){}
     Changes GetChanges(bool invert = false) { return Changes(*this, invert); }
     BE_SQLITE_EXPORT DbResult FromChangeTrack(ChangeTracker& tracker, SetType setType = SetType::Full);
     BE_SQLITE_EXPORT DbResult FromChangeGroup(ChangeGroupCR changeGroup);
