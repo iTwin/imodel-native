@@ -3080,8 +3080,27 @@ namespace SqlFuncs {
                 return;
             }
 
+            const auto isValidTableName = [](const char* name) {
+                if (name == nullptr)
+                    return false;
+                const auto isEmptyString = *name == '\0';
+                if (isEmptyString)
+                    return false;
+                for (auto* c = name; *c != '\0'; ++c)
+                    if (!(isalpha(*c) || *c == '.' || *c == '_'))
+                        return false;
+                return true;
+            };
+
             if (args[1].GetValueType() != DbValueType::TextVal) {
                 ctx.SetResultError("Second argument to RemapGeom was not a string");
+                return;
+            }
+
+            const auto& fontRemapTableName = args[1].GetValueText();
+
+            if (!isValidTableName(fontRemapTableName)) {
+                ctx.SetResultError("Second argument to RemapGeom was not a valid tablename /[a-zA-Z_.]+/");
                 return;
             }
 
@@ -3090,13 +3109,21 @@ namespace SqlFuncs {
                 return;
             }
 
+            const auto& elementRemapTableName = args[2].GetValueText();
+
+            if (!isValidTableName(elementRemapTableName)) {
+                ctx.SetResultError("Third argument to RemapGeom was not a valid tablename /[a-zA-Z_.]+/");
+                return;
+            }
+
+            // table name escaped in checks above
             auto fontSql = std::make_shared<SqlPrintfString>(R"sql(
-                SELECT TargetId FROM [%s] WHERE SourceId=?
-            )sql", args[1].GetValueText());
+                SELECT TargetId FROM %s WHERE SourceId=?
+            )sql", fontRemapTableName);
 
             auto elemSql = std::make_shared<SqlPrintfString>(R"sql(
-                SELECT TargetId FROM [%s] WHERE SourceId=?
-            )sql", args[2].GetValueText());
+                SELECT TargetId FROM %s WHERE SourceId=?
+            )sql", elementRemapTableName);
 
             const auto getStatements = [this, fontSql = std::move(fontSql), elemSql = std::move(elemSql)]()
             {
@@ -3114,7 +3141,7 @@ namespace SqlFuncs {
                 ctx.SetResultError("Failed to read geom stream");
                 return;
             }
-            auto target = std::unique_ptr<GeometryStream>();
+            auto target = std::make_unique<GeometryStream>();
             
             DgnDbStatus status;
             try {
