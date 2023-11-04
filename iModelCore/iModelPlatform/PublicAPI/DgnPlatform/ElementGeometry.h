@@ -255,10 +255,9 @@ struct GeometryStreamIO
     //=======================================================================================
     struct Writer
     {
-        DgnDbR m_db;
         bvector<uint8_t> m_buffer;
 
-        Writer(DgnDbR db) : m_db(db) {AppendHeader();}
+        Writer() {AppendHeader();}
 
         void AppendHeader(Header::Flags flags = Header::Flags::None) {Header hdr(1, flags); Append(Operation(OpCode::Header, (uint32_t) sizeof (hdr), (const uint8_t *) &hdr));}
         void Reset(Header::Flags flags = Header::Flags::None) {m_buffer.clear(); AppendHeader(flags);};
@@ -295,9 +294,7 @@ struct GeometryStreamIO
     //=======================================================================================
     struct Reader
     {
-        DgnDbR m_db;
-
-        Reader(DgnDbR db) : m_db(db) {}
+        Reader() {}
 
         static Header const* GetHeader(Operation const& egOp) {return (OpCode::Header == egOp.m_opCode ? (Header const*)egOp.m_data : nullptr);}
 
