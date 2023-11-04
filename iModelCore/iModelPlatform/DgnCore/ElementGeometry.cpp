@@ -1411,7 +1411,7 @@ void GeometryStreamIO::Writer::AppendNonBRepRepresentation(IBRepEntityCR entity,
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool GeometryStreamIO::Writer::AppendNonBRepRepresentation(Operation const& egOp, IFacetOptionsCP facetOptIn)
     {
-    GeometryStreamIO::Reader reader();
+    GeometryStreamIO::Reader reader(m_db);
     IBRepEntityPtr entityPtr;
 
     if (!reader.Get(egOp, entityPtr))
@@ -1768,10 +1768,10 @@ void GeometryStreamIO::Writer::Append(GeometricPrimitiveCR elemGeom)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometryStreamIO::Writer::Append(TextStringCR text, DgnDbCR db)
+void GeometryStreamIO::Writer::Append(TextStringCR text)
     {
     bvector<Byte> data;
-    if (SUCCESS != TextStringPersistence::EncodeAsFlatBuf(data, text, db, TextStringPersistence::FlatBufEncodeOptions::IncludeGlyphLayoutData))
+    if (SUCCESS != TextStringPersistence::EncodeAsFlatBuf(data, text, m_db, TextStringPersistence::FlatBufEncodeOptions::IncludeGlyphLayoutData))
         return;
 
     Append(Operation(OpCode::TextString, (uint32_t)data.size(), &data[0]));
@@ -2103,7 +2103,7 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, DgnGeometryPartId& geo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryStreamIO::Reader::Get(Operation const& egOp, DgnDbR db, GeometryParamsR elParams) const
+bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometryParamsR elParams) const
     {
     bool changed = false;
 
@@ -2123,7 +2123,7 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, DgnDbR db, GeometryPar
                 DgnCategoryId categoryId = elParams.GetCategoryId(); // Preserve current category and reset to sub-category appearance...
 
                 if (!categoryId.IsValid())
-                    categoryId = DgnSubCategory::QueryCategoryId(db, subCategoryId);
+                    categoryId = DgnSubCategory::QueryCategoryId(m_db, subCategoryId);
 
                 elParams = GeometryParams();
                 elParams.SetCategoryId(categoryId);
@@ -2456,7 +2456,7 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, ImageGraphicPtr& img) 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryStreamIO::Reader::Get(Operation const& egOp, DgnDbR db, GeometricPrimitivePtr& elemGeom, bool applyValidation) const
+bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometricPrimitivePtr& elemGeom, bool applyValidation) const
     {
     switch (egOp.m_opCode)
         {
@@ -2610,7 +2610,7 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, DgnDbR db, GeometricPr
 
         case GeometryStreamIO::OpCode::TextString:
             {
-            TextStringPtr text = TextString::Create(db);
+            TextStringPtr text = TextString::Create(m_db);
             if (SUCCESS != TextStringPersistence::DecodeFromFlatBuf(*text, egOp.m_data, egOp.m_dataSize))
                 break;
 
@@ -2811,7 +2811,10 @@ static DgnDbStatus RemapGeometryIds(
         return DgnDbStatus::Success; // otherwise we end up writing a header for an otherwise empty stream...
 
     GeometryStreamIO::Collection collection(source.GetData(), source.GetSize());
-    GeometryStreamIO::Writer writer();
+    // HACK: we know this won't be used by this writer, so before we refactor everything, just prove
+    // this function works
+    DgnDbP fakeDbP = nullptr;
+    GeometryStreamIO::Writer writer(*reinterpret_cast<DgnDbR>(fakeDbP));
     writer.Reset(collection.GetHeader().m_flags);
 
     bool isFilteringBySubCategory = false;
@@ -3035,12 +3038,14 @@ BeSQLite::Db* Dgn::RemapDb = nullptr;
 
 namespace SqlFuncs {
     struct RemapGeom final : public ScalarFunction {
-        DgnDbR m_dgnDb;
+        DbR m_db;
+        SnappyToBlob m_snappy;
         // FIXME: should be thread local
         Statement m_fontStmt, m_elemStmt;
-        RemapGeom(DgnDbR dgnDb)
+
+        RemapGeom(DbR db)
             : ScalarFunction("RemapGeom", 3, DbValueType::BlobVal)
-            , m_dgnDb(dgnDb) {}
+            , m_db(db) {}
 
         // lazy so the remap tables don't have to exist at DgnDb init/open time
         RemapGeomStatements LazyGetStatements(Utf8CP fontSql, Utf8CP elemSql)
@@ -3054,11 +3059,11 @@ namespace SqlFuncs {
 
             DbResult status;
 
-            // FIXME: make thread local
+            // FIXME: make thread local?
             // do not use the normal statement cache, its mutex can deadlock
             (void)(
-               BE_SQLITE_OK == (status = m_fontStmt.Prepare(static_cast<Db&>(m_dgnDb), fontSql))
-            && BE_SQLITE_OK == (status = m_elemStmt.Prepare(static_cast<Db&>(m_dgnDb), elemSql))
+               BE_SQLITE_OK == (status = m_fontStmt.Prepare(m_db, fontSql))
+            && BE_SQLITE_OK == (status = m_elemStmt.Prepare(m_db, elemSql))
             );
 
             return { m_fontStmt, m_elemStmt, status };
@@ -3132,12 +3137,8 @@ namespace SqlFuncs {
             };
 
             auto source = GeometryStream();
-            // NOTE: see SnappyToBlob::GetForThread
-            // NB: This requires that no other code uses DgnElements::SnappyToBlob(), but I don't think that's possible
-            // inside a sqlite db function
-            auto& snappyFrom = m_dgnDb.Elements().GetSnappyFrom();
 
-            const auto readGeomStreamStat = source.ReadGeometryStream(snappyFrom, *Dgn::GeomRemapDb, args[0].GetValueBlob(), args[0].GetValueBytes());
+            const auto readGeomStreamStat = source.ReadGeometryStream(m_snappy, *Dgn::GeomRemapDb, args[0].GetValueBlob(), args[0].GetValueBytes());
             if (readGeomStreamStat != DgnDbStatus::Success) {
                 ctx.SetResultError("Failed to read geom stream");
                 return;
@@ -3147,6 +3148,7 @@ namespace SqlFuncs {
             DgnDbStatus status;
             try {
                 status = RemapGeometryIds(
+                    // can I get a font out of an attached db?
                     source,
                     *target,
                     SqlTableRemapper(getStatements),
@@ -3164,18 +3166,15 @@ namespace SqlFuncs {
                 return;
             }
 
-            // NB: This requires that no other code uses DgnElements::SnappyToBlob(), but I don't think that's possible
-            // inside a sqlite db function
-            auto& snappyTo = m_dgnDb.Elements().GetSnappyTo();
-            snappyTo.Init();
+            m_snappy.Init(); // reset
 
             if (0 < target->GetSize()) {
                 GeomBlobHeader header(*target);
-                snappyTo.Write((Byte const*)&header, sizeof(header));
-                snappyTo.Write(target->GetData(), target->GetSize());
+                m_snappy.Write((Byte const*)&header, sizeof(header));
+                m_snappy.Write(target->GetData(), target->GetSize());
             }
 
-            uint32_t zipSize = snappyTo.GetCompressedSize();
+            uint32_t zipSize = m_snappy.GetCompressedSize();
 
             // no geometry
             if (zipSize <= 0) {
@@ -3184,9 +3183,9 @@ namespace SqlFuncs {
             }
 
             // Common case - only one chunk in geom stream. Bind it directly.
-            if (snappyTo.GetCurrChunk() == 1) {
+            if (m_snappy.GetCurrChunk() == 1) {
                 // FIXME: this is a bad warning?
-                ctx.SetResultBlob(snappyTo.GetChunkData(0), zipSize, Context::CopyData::No);
+                ctx.SetResultBlob(m_snappy.GetChunkData(0), zipSize, Context::CopyData::No);
                 return;
             }
 
@@ -3208,8 +3207,8 @@ namespace SqlFuncs {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::vector<DbFunction*> GeometryStreamIO::ExposeSqlFunctions(DgnDbR dgnDb) {
-    return std::vector<DbFunction*>{new SqlFuncs::RemapGeom(dgnDb)};
+std::vector<DbFunction*> GeometryStreamIO::ExposeSqlFunctions(DbR db) {
+    return std::vector<DbFunction*>{new SqlFuncs::RemapGeom(db)};
 }
 
 /*---------------------------------------------------------------------------------**//**
