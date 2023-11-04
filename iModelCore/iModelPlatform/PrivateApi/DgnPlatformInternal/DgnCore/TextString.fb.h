@@ -90,6 +90,8 @@ struct TextStringStyle : private flatbuffers::Table {
   uint8_t majorVersion() const { return GetField<uint8_t>(4, 0); }
   uint8_t minorVersion() const { return GetField<uint8_t>(6, 0); }
   uint32_t fontId() const { return GetField<uint32_t>(8, 0); }
+  // added to prevent needing to deserialize specific data that needs only a scalar mutation
+  const uint32_t* HACK_fontIdMutablePtr() const { return GetPointer<const uint32_t*>(8); }
   uint8_t isBold() const { return GetField<uint8_t>(10, 0); }
   uint8_t isItalic() const { return GetField<uint8_t>(12, 0); }
   uint8_t isUnderlined() const { return GetField<uint8_t>(14, 0); }

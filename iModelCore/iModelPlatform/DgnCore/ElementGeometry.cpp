@@ -2955,17 +2955,28 @@ static DgnDbStatus RemapGeometryIds(
 
             case GeometryStreamIO::OpCode::TextString:
                 {
-                // FIXME: does it really _need_ to be the sourceDb? why?
-                TextStringPtr text = TextString::Create(sourceDb);
-                if (SUCCESS != TextStringPersistence::DecodeFromFlatBuf(*text, egOp.m_data, egOp.m_dataSize))
-                    break;
+                const FB::TextString* fbText = GetRoot<FB::TextString>(egOp.m_data);
+                if (!fbText->has_style()) { writer.Append(egOp); break; }
 
-                FontId srcFontId = text->GetStyle().GetFont();
-                FontId dstFontId = remapper.RemapFontId(srcFontId);
-                text->ChangeDgnDb(&targetDb);
-                text->GetStyleR().SetFont(dstFontId);
+                auto* style = fbText->style();
+                if (!style->has_fontId()) { writer.Append(egOp); break; }
 
-                writer.Append(*text);
+                auto srcFontId = FontId((uint64_t).fontId());
+                auto targetFontId = remapper.RemapFontId(srcFontId);
+                auto* fontIdPtr = const_cast<uint32_t*>(style->HACK_fontIdMutablePtr());
+                *fontIdPtr = static_cast<uint32_t>(targetFontId);
+
+                writer.Append(
+                    Operation(
+                        OpCode::TextString,
+                        egOp.m_dataSize,
+                        egOp.m_data,
+                    )
+                );
+
+                // just in case, let's undo our change after using it
+                *fontIdPtr = static_cast<uint32_t>(srcFontId);
+
                 break;
                 }
 
