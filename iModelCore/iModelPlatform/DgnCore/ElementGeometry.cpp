@@ -1411,7 +1411,7 @@ void GeometryStreamIO::Writer::AppendNonBRepRepresentation(IBRepEntityCR entity,
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool GeometryStreamIO::Writer::AppendNonBRepRepresentation(Operation const& egOp, IFacetOptionsCP facetOptIn)
     {
-    GeometryStreamIO::Reader reader(m_db);
+    GeometryStreamIO::Reader reader();
     IBRepEntityPtr entityPtr;
 
     if (!reader.Get(egOp, entityPtr))
@@ -1768,10 +1768,10 @@ void GeometryStreamIO::Writer::Append(GeometricPrimitiveCR elemGeom)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometryStreamIO::Writer::Append(TextStringCR text)
+void GeometryStreamIO::Writer::Append(TextStringCR text, DgnDbCR db)
     {
     bvector<Byte> data;
-    if (SUCCESS != TextStringPersistence::EncodeAsFlatBuf(data, text, m_db, TextStringPersistence::FlatBufEncodeOptions::IncludeGlyphLayoutData))
+    if (SUCCESS != TextStringPersistence::EncodeAsFlatBuf(data, text, db, TextStringPersistence::FlatBufEncodeOptions::IncludeGlyphLayoutData))
         return;
 
     Append(Operation(OpCode::TextString, (uint32_t)data.size(), &data[0]));
@@ -2103,7 +2103,7 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, DgnGeometryPartId& geo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometryParamsR elParams) const
+bool GeometryStreamIO::Reader::Get(Operation const& egOp, DgnDbR db, GeometryParamsR elParams) const
     {
     bool changed = false;
 
@@ -2123,7 +2123,7 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometryParamsR elPara
                 DgnCategoryId categoryId = elParams.GetCategoryId(); // Preserve current category and reset to sub-category appearance...
 
                 if (!categoryId.IsValid())
-                    categoryId = DgnSubCategory::QueryCategoryId(m_db, subCategoryId);
+                    categoryId = DgnSubCategory::QueryCategoryId(db, subCategoryId);
 
                 elParams = GeometryParams();
                 elParams.SetCategoryId(categoryId);
@@ -2456,7 +2456,7 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, ImageGraphicPtr& img) 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometricPrimitivePtr& elemGeom, bool applyValidation) const
+bool GeometryStreamIO::Reader::Get(Operation const& egOp, DgnDbR db, GeometricPrimitivePtr& elemGeom, bool applyValidation) const
     {
     switch (egOp.m_opCode)
         {
@@ -2610,7 +2610,7 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometricPrimitivePtr&
 
         case GeometryStreamIO::OpCode::TextString:
             {
-            TextStringPtr text = TextString::Create(m_db);
+            TextStringPtr text = TextString::Create(db);
             if (SUCCESS != TextStringPersistence::DecodeFromFlatBuf(*text, egOp.m_data, egOp.m_dataSize))
                 break;
 
@@ -2799,8 +2799,6 @@ concept GeometryRemapper = requires(T a)
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<GeometryRemapper Remapper>
 static DgnDbStatus RemapGeometryIds(
-    DgnDbR sourceDb,
-    DgnDbR targetDb,
     GeometryStreamCR source,
     GeometryStreamR target,
     Remapper remapper,
@@ -2813,7 +2811,7 @@ static DgnDbStatus RemapGeometryIds(
         return DgnDbStatus::Success; // otherwise we end up writing a header for an otherwise empty stream...
 
     GeometryStreamIO::Collection collection(source.GetData(), source.GetSize());
-    GeometryStreamIO::Writer writer(targetDb);
+    GeometryStreamIO::Writer writer();
     writer.Reset(collection.GetHeader().m_flags);
 
     bool isFilteringBySubCategory = false;
@@ -3021,8 +3019,6 @@ static DgnDbStatus RemapGeometryIds(
 DgnDbStatus GeometryStreamIO::Import(GeometryStreamR dest, GeometryStreamCR source, DgnImportContext& importer)
     {
     return RemapGeometryIds(
-        importer.GetSourceDb(),
-        importer.GetDestinationDb(),
         source,
         dest,
         ImportContextRemapper(importer),
@@ -3151,9 +3147,6 @@ namespace SqlFuncs {
             DgnDbStatus status;
             try {
                 status = RemapGeometryIds(
-                    // can I get a font out of an attached db?
-                    m_dgnDb,
-                    m_dgnDb, // FIXME: this targetDb usage is a timebomb, fonts or geometry stream needs to be refactored
                     source,
                     *target,
                     SqlTableRemapper(getStatements),
