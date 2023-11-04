@@ -397,30 +397,25 @@ public:
     }
 
     void ClearGeomFuncs() {
-        bool hadError = false;
-
+        DbResult removeStatus;
         for (auto& dbFunc : m_dbFuncs) {
-            auto removeStatus = (DbResult) RemoveFunction(*dbFunc);
+            removeStatus = (DbResult) m_ecdb.RemoveFunction(*dbFunc);
             if (removeStatus != BE_SQLITE_OK)
-                hadError = true;
+                fprintf(stderr, "Error removing func; stat=%d, error=%s", (int)removeStatus, m_ecdb.GetLastError().c_str());
             // regardless of error, delete the function... some functions hold e.g. prepared statements
             // that can lock the database if not deleted
             dbFunc = nullptr;
         }
 
         m_dbFuncs.clear();
-
-        // FIXME: for debugging, should never happen, as this will prevent closing a database
-        if (hadError)
-            BeNapi::ThrowJsException(info.Env(), m_ecdb.GetLastError().c_str(), (int)result);
     }
 
-    void AddGeomFuncs() {
+    void AddGeomFuncs(NapiInfoCR info) {
         auto geomDbFuncs = GeometryStreamIO::ExposeSqlFunctions(m_ecdb);
         m_dbFuncs.reserve(geomDbFuncs.size());
 
         for (auto& geomDbFunc : geomDbFuncs) {
-            result = (DbResult) m_ecdb->AddFunction(*geomDbFunc);
+            auto result = (DbResult) m_ecdb.AddFunction(*geomDbFunc);
             if (result != BE_SQLITE_OK) {
                 BeNapi::ThrowJsException(info.Env(), m_ecdb.GetLastError().c_str(), (int)result);
             }
@@ -434,7 +429,7 @@ public:
         if (BE_SQLITE_OK == status) {
             m_ecdb.AddFunction(HexStrSqlFunction::GetSingleton());
             m_ecdb.AddFunction(StrSqlFunction::GetSingleton());
-            this->AddGeomFuncs();
+            this->AddGeomFuncs(info);
         }
 
         return Napi::Number::New(Env(), (int)status);
@@ -453,7 +448,7 @@ public:
         if (BE_SQLITE_OK == status) {
             m_ecdb.AddFunction(HexStrSqlFunction::GetSingleton());
             m_ecdb.AddFunction(StrSqlFunction::GetSingleton());
-            this->AddGeomFuncs();
+            this->AddGeomFuncs(info);
         }
 
         return Napi::Number::New(Env(), (int)status);
