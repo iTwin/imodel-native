@@ -3618,7 +3618,7 @@ DgnDbStatus GeometricElement::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClass
 
     int blobSize;
     void const* blob = stmt.GetValueBlob(geomIndex, &blobSize);
-    return m_geom.ReadGeometryStream(GetDgnDb().Elements().GetSnappyFrom(), GetDgnDb(), blob, blobSize);
+    return m_geom.ReadGeometryStream(GetDgnDb().Elements().GetSnappyFrom(), blob, blobSize);
     }
 
 /*---------------------------------------------------------------------------------**//**
