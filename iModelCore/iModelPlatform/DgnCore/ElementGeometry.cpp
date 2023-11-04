@@ -2814,7 +2814,7 @@ static DgnDbStatus RemapGeometryIds(
     // HACK: we know this won't be used by this writer, so before we refactor everything, just prove
     // this function works
     DgnDbP fakeDbP = nullptr;
-    GeometryStreamIO::Writer writer(*reinterpret_cast<DgnDbR>(fakeDbP));
+    GeometryStreamIO::Writer writer(*fakeDbP);
     writer.Reset(collection.GetHeader().m_flags);
 
     bool isFilteringBySubCategory = false;
@@ -3032,13 +3032,17 @@ DgnDbStatus GeometryStreamIO::Import(GeometryStreamR dest, GeometryStreamCR sour
 namespace SqlFuncs {
     struct RemapGeom final : public ScalarFunction {
         DbR m_db;
-        SnappyToBlob m_snappy;
+        Byte m_snappyFromBuffer[BeSQLite::SnappyReader::SNAPPY_UNCOMPRESSED_BUFFER_SIZE];
+        SnappyFromMemory m_snappyFrom;
+        SnappyToBlob m_snappyTo;
         // FIXME: should be thread local
         Statement m_fontStmt, m_elemStmt;
 
         RemapGeom(DbR db)
             : ScalarFunction("RemapGeom", 3, DbValueType::BlobVal)
-            , m_db(db) {}
+            , m_db(db)
+            , m_snappyFrom(m_snappyFromBuffer, _countof(m_snappyFromBuffer))
+        {}
 
         // lazy so the remap tables don't have to exist at DgnDb init/open time
         RemapGeomStatements LazyGetStatements(Utf8CP fontSql, Utf8CP elemSql)
@@ -3131,7 +3135,7 @@ namespace SqlFuncs {
 
             auto source = GeometryStream();
 
-            const auto readGeomStreamStat = source.ReadGeometryStream(m_snappy, args[0].GetValueBlob(), args[0].GetValueBytes());
+            const auto readGeomStreamStat = source.ReadGeometryStream(m_snappyFrom, args[0].GetValueBlob(), args[0].GetValueBytes());
             if (readGeomStreamStat != DgnDbStatus::Success) {
                 ctx.SetResultError("Failed to read geom stream");
                 return;
@@ -3159,15 +3163,15 @@ namespace SqlFuncs {
                 return;
             }
 
-            m_snappy.Init(); // reset
+            m_snappyTo.Init(); // reset
 
             if (0 < target->GetSize()) {
                 GeomBlobHeader header(*target);
-                m_snappy.Write((Byte const*)&header, sizeof(header));
-                m_snappy.Write(target->GetData(), target->GetSize());
+                m_snappyTo.Write((Byte const*)&header, sizeof(header));
+                m_snappyTo.Write(target->GetData(), target->GetSize());
             }
 
-            uint32_t zipSize = m_snappy.GetCompressedSize();
+            uint32_t zipSize = m_snappyTo.GetCompressedSize();
 
             // no geometry
             if (zipSize <= 0) {
@@ -3176,9 +3180,9 @@ namespace SqlFuncs {
             }
 
             // Common case - only one chunk in geom stream. Bind it directly.
-            if (m_snappy.GetCurrChunk() == 1) {
+            if (m_snappyTo.GetCurrChunk() == 1) {
                 // FIXME: this is a bad warning?
-                ctx.SetResultBlob(m_snappy.GetChunkData(0), zipSize, Context::CopyData::No);
+                ctx.SetResultBlob(m_snappyTo.GetChunkData(0), zipSize, Context::CopyData::No);
                 return;
             }
 

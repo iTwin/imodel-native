@@ -334,7 +334,7 @@ DgnElementCPtr DgnElements::LoadElement(DgnElementId elementId,  bool makePersis
 DgnDbStatus DgnElements::LoadGeometryStream(GeometryStreamR geom, void const* blob, int blobSize)
     {
     BeMutexHolder _v(m_mutex);
-    return geom.ReadGeometryStream(GetSnappyFrom(), GetDgnDb(), blob, blobSize);
+    return geom.ReadGeometryStream(GetSnappyFrom(), blob, blobSize);
     }
 
 /*---------------------------------------------------------------------------------**//**
