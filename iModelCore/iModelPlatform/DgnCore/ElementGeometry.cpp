@@ -2961,21 +2961,15 @@ static DgnDbStatus RemapGeometryIds(
                 auto* style = fbText->style();
                 if (!style->has_fontId()) { writer.Append(egOp); break; }
 
-                auto srcFontId = FontId((uint64_t).fontId());
+                auto srcFontId = FontId((uint64_t)style->fontId());
                 auto targetFontId = remapper.RemapFontId(srcFontId);
                 auto* fontIdPtr = const_cast<uint32_t*>(style->HACK_fontIdMutablePtr());
-                *fontIdPtr = static_cast<uint32_t>(targetFontId);
+                *fontIdPtr = (uint32_t) targetFontId.GetValueUnchecked();
 
-                writer.Append(
-                    Operation(
-                        OpCode::TextString,
-                        egOp.m_dataSize,
-                        egOp.m_data,
-                    )
-                );
+                writer.Append(egOp); // append/read mutated operation
 
                 // just in case, let's undo our change after using it
-                *fontIdPtr = static_cast<uint32_t>(srcFontId);
+                *fontIdPtr = (uint32_t) srcFontId.GetValueUnchecked();
 
                 break;
                 }
