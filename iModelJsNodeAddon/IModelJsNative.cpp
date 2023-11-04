@@ -638,8 +638,6 @@ public:
             InstanceMethod("schemaSyncGetSyncDbInfo", &NativeECDb::SchemaSyncGetSyncDbInfo),
             InstanceMethod("openDb", &NativeECDb::OpenDb),
             InstanceMethod("saveChanges", &NativeECDb::SaveChanges),
-            InstanceMethod("openRemapGeom", &NativeECDb::OpenRemapGeom),
-            InstanceMethod("closeRemapGeom", &NativeECDb::CloseRemapGeom),
             StaticMethod("enableSharedCache", &NativeECDb::EnableSharedCache),
         });
 
@@ -1239,31 +1237,6 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
             }
 
         return CreateBentleyReturnSuccessObject(Napi::Boolean::New(Env(), modelChanges.IsTrackingGeometry()));
-        }
-
-    Napi::Value SetGeomRemapContextDb(NapiInfoCR info)
-        {
-        RequireDbIsOpen(info);
-        REQUIRE_ARGUMENT_STRING(0, dbPath);
-        REQUIRE_ARGUMENT_STRING(1, in_fontTableName);
-        REQUIRE_ARGUMENT_STRING(2, in_elemTableName);
-
-        fontTableName = in_fontTableName;
-        elemTableName = in_elemTableName;
-
-        GeomRemapDb = &*m_dgndb;
-
-        auto jsRemapDbVal = NativeECDb::Constructor().New({});
-        auto jsRemapDb = NativeECDb::Unwrap(jsRemapDbVal);
-        RemapDb = &jsRemapDb->m_ecdb;
-        auto createParams = Db::CreateParams();
-        createParams.m_skipFileCheck = true;
-        createParams.m_rawSQLite = true; // FIXME: should return a non-ecsql db
-        RemapDb->OpenBeSQLiteDb(dbPath.c_str(), createParams);
-        // FIXME: workaround required delete data, also check if this leaks the db
-        auto* finalizeData = new int;
-        jsRemapDbVal.AddFinalizer([](Napi::Env env, int*) -> void { Dgn::RemapDb = nullptr; }, finalizeData);
-        return jsRemapDbVal;
         }
 
 
@@ -2706,7 +2679,6 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
             InstanceMethod("schemaToXmlString", &NativeDgnDb::SchemaToXmlString),
             InstanceMethod("setCodeValueBehavior", &NativeDgnDb::SetCodeValueBehavior),
             InstanceMethod("setGeometricModelTrackingEnabled", &NativeDgnDb::SetGeometricModelTrackingEnabled),
-            InstanceMethod("setGeomRemapContextDb", &NativeDgnDb::SetGeomRemapContextDb),
             InstanceMethod("setIModelDb", &NativeDgnDb::SetIModelDb),
             InstanceMethod("setIModelId", &NativeDgnDb::SetIModelId),
             InstanceMethod("setITwinId", &NativeDgnDb::SetITwinId),

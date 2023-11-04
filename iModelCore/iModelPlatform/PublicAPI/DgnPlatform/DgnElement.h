@@ -2073,7 +2073,7 @@ public:
 struct GeometryStream : ByteStream {
 public:
     bool HasGeometry() const {return HasData();}  //!< return false if this GeometryStream is empty.
-    DGNPLATFORM_EXPORT DgnDbStatus ReadGeometryStream(BeSQLite::SnappyFromMemory& snappy, DgnDbR dgnDb, void const* blob, int blobSize); //!< @private
+    DGNPLATFORM_EXPORT DgnDbStatus ReadGeometryStream(BeSQLite::SnappyFromMemory& snappy, void const* blob, int blobSize); //!< @private
     static DgnDbStatus WriteGeometryStream(BeSQLite::SnappyToBlob&, DgnDbR, DgnElementId, Utf8CP className, Utf8CP propertyName); //!< @private
     DgnDbStatus BindGeometryStream(bool& multiChunkGeometryStream, BeSQLite::SnappyToBlob&, BeSQLite::EC::ECSqlStatement&, Utf8CP parameterName) const; //!< @private
     DGNPLATFORM_EXPORT bool IsViewIndependent() const;
@@ -4086,12 +4086,5 @@ struct GeomBlobHeader
     GeomBlobHeader(GeometryStream const& geom) {m_signature = Signature; m_size=geom.GetSize();}
     GeomBlobHeader(BeSQLite::SnappyReader& in) {uint32_t actuallyRead; in._Read((Byte*) this, sizeof(*this), actuallyRead);}
 };
-
-// FIXME: this is obviously horrible
-extern DgnDb* GeomRemapDb;
-// TODO: try to prevent having to copy to a separate db... not sure it's possible atm due to the stmt cache
-extern BeSQLite::Db* RemapDb;
-extern Utf8String fontTableName;
-extern Utf8String elemTableName;
 
 END_BENTLEY_DGN_NAMESPACE

@@ -1442,7 +1442,7 @@ GeometrySource3dCP DgnElement::ToGeometrySource3d() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeometryStream::ReadGeometryStream(SnappyFromMemory& snappy, DgnDbR dgnDb, void const* blob, int blobSize)
+DgnDbStatus GeometryStream::ReadGeometryStream(SnappyFromMemory& snappy, void const* blob, int blobSize)
     {
     if (0 == blobSize && nullptr == blob)
         return DgnDbStatus::Success;

@@ -3029,13 +3029,6 @@ DgnDbStatus GeometryStreamIO::Import(GeometryStreamR dest, GeometryStreamCR sour
     );
     }
 
-// FIXME: this is obviously all horrible
-Utf8String Dgn::fontTableName = "";
-Utf8String Dgn::elemTableName = "";
-DgnDb* Dgn::GeomRemapDb = nullptr;
-// TODO: make in memory
-BeSQLite::Db* Dgn::RemapDb = nullptr;
-
 namespace SqlFuncs {
     struct RemapGeom final : public ScalarFunction {
         DbR m_db;
@@ -3138,7 +3131,7 @@ namespace SqlFuncs {
 
             auto source = GeometryStream();
 
-            const auto readGeomStreamStat = source.ReadGeometryStream(m_snappy, *Dgn::GeomRemapDb, args[0].GetValueBlob(), args[0].GetValueBytes());
+            const auto readGeomStreamStat = source.ReadGeometryStream(m_snappy, args[0].GetValueBlob(), args[0].GetValueBytes());
             if (readGeomStreamStat != DgnDbStatus::Success) {
                 ctx.SetResultError("Failed to read geom stream");
                 return;
