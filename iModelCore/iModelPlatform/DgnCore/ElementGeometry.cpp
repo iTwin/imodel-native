@@ -3035,7 +3035,6 @@ namespace SqlFuncs {
         Byte m_snappyFromBuffer[BeSQLite::SnappyReader::SNAPPY_UNCOMPRESSED_BUFFER_SIZE];
         SnappyFromMemory m_snappyFrom;
         SnappyToBlob m_snappyTo;
-        // FIXME: should be thread local
         Statement m_fontStmt, m_elemStmt;
 
         RemapGeom(DbR db)
@@ -3179,23 +3178,33 @@ namespace SqlFuncs {
                 return;
             }
 
+            const auto chunkCount = m_snappyTo.GetCurrChunk();
+
             // Common case - only one chunk in geom stream. Bind it directly.
-            if (m_snappyTo.GetCurrChunk() == 1) {
+            if (chunkCount == 1) {
                 // FIXME: this is a bad warning?
                 ctx.SetResultBlob(m_snappyTo.GetChunkData(0), zipSize, Context::CopyData::No);
                 return;
             }
 
-            // to not eat memory, don't return large geometry streams, instead return a pointer which
-            // valid code can check for by type, and read it out more efficiently
-            // FIXME: is it that much more memory if the uncompressed geometry stream is already in memory and
+            // FIXME: is this that much more memory if the uncompressed geometry stream is already in memory and
             // can be dropped?
             // would be nice if we could read the compressed data in chunks and still remap the Ids
             else {
-                // NOTE: this holds a reference to the m_dgndb, which could be deleted before this is read again, technically
-                auto* targetPtr = target.release();
-                ctx.SetResultPointer(targetPtr, "geometry-stream", [](void* p){ delete static_cast<GeometryStream*>(p); });
-                ctx.SetResultError_toobig();
+                // FIXME: it is not possible atm to write a non-full blob
+                // it _could_ maybe be possibly by returning a temporary value and then going back
+                // somehow, opening the blob with blob io and writing then
+
+                auto fullBlob = new Byte[zipSize];
+                auto blobPtr = &fullBlob[0];
+
+                for (auto* chunkPtr : m_snappyTo.m_chunks) {
+                    memcpy(blobPtr, chunkPtr->m_data, chunkPtr->GetChunkSize());
+                    blobPtr += chunkPtr->GetChunkSize();
+                }
+
+                // can we rid this copy and just do a move?
+                ctx.SetResultBlob(m_snappyTo.GetChunkData(0), zipSize, Context::CopyData::Yes);
             }
         }
     };

@@ -3364,6 +3364,7 @@ enum ZipErrors
 struct SnappyToBlob
 {
 private:
+public: // FIXME: temp
     struct SnappyChunk
     {
         uint16_t*  m_data;
