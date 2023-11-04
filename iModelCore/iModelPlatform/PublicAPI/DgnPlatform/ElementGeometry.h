@@ -255,9 +255,10 @@ struct GeometryStreamIO
     //=======================================================================================
     struct Writer
     {
+        DgnDbR m_db;
         bvector<uint8_t> m_buffer;
 
-        Writer() {AppendHeader();}
+        Writer(DgnDbR db) : m_db(db) {AppendHeader();}
 
         void AppendHeader(Header::Flags flags = Header::Flags::None) {Header hdr(1, flags); Append(Operation(OpCode::Header, (uint32_t) sizeof (hdr), (const uint8_t *) &hdr));}
         void Reset(Header::Flags flags = Header::Flags::None) {m_buffer.clear(); AppendHeader(flags);};
@@ -294,7 +295,9 @@ struct GeometryStreamIO
     //=======================================================================================
     struct Reader
     {
-        Reader() {}
+        DgnDbR m_db;
+
+        Reader(DgnDbR db) : m_db(db) {}
 
         static Header const* GetHeader(Operation const& egOp) {return (OpCode::Header == egOp.m_opCode ? (Header const*)egOp.m_data : nullptr);}
 
@@ -394,7 +397,7 @@ struct GeometryStreamIO
     //! @param remapper  The ID remapper
     DGNPLATFORM_EXPORT static DgnDbStatus Import(GeometryStreamR dest, GeometryStreamCR source, DgnImportContext& remapper);
 
-    DGNPLATFORM_EXPORT static std::vector<BeSQLite::DbFunction*> ExposeSqlFunctions(DgnDbR);
+    DGNPLATFORM_EXPORT static std::vector<BeSQLite::DbFunction*> ExposeSqlFunctions(BeSQLite::DbR);
 
     //! @private
     DGNPLATFORM_EXPORT static DgnDbStatus ConvertBRepsToPolyfacesOrCurves(DgnDbR db, GeometryStreamR output, GeometryStreamCR input, bool& changed);

@@ -380,6 +380,7 @@ struct NativeECDb : BeObjectWrap<NativeECDb>, SQLiteOps {
 public:
     DEFINE_CONSTRUCTOR
     ECDb m_ecdb;
+    std::vector<std::unique_ptr<BeSQLite::DbFunction>> m_dbFuncs;
 
     NativeECDb(NapiInfoCR info) : BeObjectWrap<NativeECDb>(info) {}
     ~NativeECDb() { SetInDestructor(); CloseDbIfOpen(); }
@@ -395,12 +396,45 @@ public:
         return val.As<Napi::Object>().InstanceOf(Constructor().Value());
     }
 
+    void ClearGeomFuncs() {
+        bool hadError = false;
+
+        for (auto& dbFunc : m_dbFuncs) {
+            auto removeStatus = (DbResult) RemoveFunction(*dbFunc);
+            if (removeStatus != BE_SQLITE_OK)
+                hadError = true;
+            // regardless of error, delete the function... some functions hold e.g. prepared statements
+            // that can lock the database if not deleted
+            dbFunc = nullptr;
+        }
+
+        m_dbFuncs.clear();
+
+        // FIXME: for debugging, should never happen, as this will prevent closing a database
+        if (hadError)
+            BeNapi::ThrowJsException(info.Env(), m_ecdb.GetLastError().c_str(), (int)result);
+    }
+
+    void AddGeomFuncs() {
+        auto geomDbFuncs = GeometryStreamIO::ExposeSqlFunctions(m_ecdb);
+        m_dbFuncs.reserve(geomDbFuncs.size());
+
+        for (auto& geomDbFunc : geomDbFuncs) {
+            result = (DbResult) m_ecdb->AddFunction(*geomDbFunc);
+            if (result != BE_SQLITE_OK) {
+                BeNapi::ThrowJsException(info.Env(), m_ecdb.GetLastError().c_str(), (int)result);
+            }
+            m_dbFuncs.push_back(std::unique_ptr<DbFunction>(geomDbFunc));
+        }
+    }
+
     Napi::Value CreateDb(NapiInfoCR info) {
         REQUIRE_ARGUMENT_STRING(0, dbName);
         DbResult status = JsInterop::CreateECDb(m_ecdb, BeFileName(dbName.c_str(), true));
         if (BE_SQLITE_OK == status) {
             m_ecdb.AddFunction(HexStrSqlFunction::GetSingleton());
             m_ecdb.AddFunction(StrSqlFunction::GetSingleton());
+            this->AddGeomFuncs();
         }
 
         return Napi::Number::New(Env(), (int)status);
@@ -419,6 +453,7 @@ public:
         if (BE_SQLITE_OK == status) {
             m_ecdb.AddFunction(HexStrSqlFunction::GetSingleton());
             m_ecdb.AddFunction(StrSqlFunction::GetSingleton());
+            this->AddGeomFuncs();
         }
 
         return Napi::Number::New(Env(), (int)status);
@@ -437,14 +472,17 @@ public:
         }
         return JsInterop::ConcurrentQueryResetConfig(Env(), m_ecdb);
     }
+
     void ConcurrentQueryShutdown(NapiInfoCR info) {
         ConcurrentQueryMgr::Shutdown(m_ecdb);
     }
+
     void CloseDbIfOpen() {
         if (m_ecdb.IsDbOpen()) {
             m_ecdb.AbandonChanges();
             m_ecdb.RemoveFunction(HexStrSqlFunction::GetSingleton());
             m_ecdb.RemoveFunction(StrSqlFunction::GetSingleton());
+            this->ClearGeomFuncs();
             m_ecdb.CloseDb();
         }
     }
@@ -600,6 +638,8 @@ public:
             InstanceMethod("schemaSyncGetSyncDbInfo", &NativeECDb::SchemaSyncGetSyncDbInfo),
             InstanceMethod("openDb", &NativeECDb::OpenDb),
             InstanceMethod("saveChanges", &NativeECDb::SaveChanges),
+            InstanceMethod("openRemapGeom", &NativeECDb::OpenRemapGeom),
+            InstanceMethod("closeRemapGeom", &NativeECDb::CloseRemapGeom),
             StaticMethod("enableSharedCache", &NativeECDb::EnableSharedCache),
         });
 
