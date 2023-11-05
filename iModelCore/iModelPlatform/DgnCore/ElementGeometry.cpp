@@ -3196,15 +3196,18 @@ namespace SqlFuncs {
                 // somehow, opening the blob with blob io and writing then
 
                 auto fullBlob = new Byte[zipSize];
-                auto blobPtr = &fullBlob[0];
+                auto blobPtr = fullBlob;
 
-                for (auto* chunkPtr : m_snappyTo.m_chunks) {
+                for (auto i = 0; i < m_snappyTo.m_currChunk; ++i) {
+                    const auto& chunkPtr = m_snappyTo.m_chunks[i];
+                    BeAssert(blobPtr + chunkPtr->GetChunkSize() <= fullBlob + zipSize);
                     memcpy(blobPtr, chunkPtr->m_data, chunkPtr->GetChunkSize());
                     blobPtr += chunkPtr->GetChunkSize();
                 }
 
-                // can we rid this copy and just do a move?
-                ctx.SetResultBlob(m_snappyTo.GetChunkData(0), zipSize, Context::CopyData::Yes);
+                ctx.SetResultBlob(m_snappyTo.GetChunkData(0), zipSize, Context::CopyData::No, [](void*p) {
+                    delete[] static_cast<decltype(fullBlob)>(p);
+                });
             }
         }
     };
