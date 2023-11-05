@@ -1215,7 +1215,10 @@ public:
     struct Context
         {
         enum class CopyData : int {No = 0, Yes = -1};                                     //!< see sqlite3_destructor_type
-        BE_SQLITE_EXPORT void SetResultBlob(void const* value, int length, CopyData copy=CopyData::Yes, void(*)(void* p) = nullptr); //!< see sqlite3_result_blob
+        //! NOTE: if the destructor pointer is not null, the value of copy will be ignored,
+        //! the copy and destructor arguments are mututally exclusive.
+        //! see sqlite3_result_blob
+        BE_SQLITE_EXPORT void SetResultBlob(void const* value, int length, CopyData copy=CopyData::Yes, void(*)(void* p) = nullptr);
         BE_SQLITE_EXPORT void SetResultDouble(double);                                //!< see sqlite3_result_double
         BE_SQLITE_EXPORT void SetResultError(Utf8CP, int len=-1);                     //!< see sqlite3_result_error
         BE_SQLITE_EXPORT void SetResultError_toobig();                                //!< see sqlite3_result_error_toobig

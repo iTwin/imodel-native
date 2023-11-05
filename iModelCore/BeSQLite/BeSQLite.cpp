@@ -3325,7 +3325,7 @@ DbResult Db::QueryDbIds()
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DbFunction::Context::SetResultBlob(void const* value, int length, CopyData doCopy, void(*destructor)(void* p)) {
-    BeAssert(doCopy == CopyData::Yes && destructor != nullptr);
+    if (destructor != nullptr) BeAssert(doCopy == CopyData::No);
     sqlite3_result_blob(
         (sqlite3_context*) this,
         value,
