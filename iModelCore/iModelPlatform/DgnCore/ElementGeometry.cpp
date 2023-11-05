@@ -3205,7 +3205,7 @@ namespace SqlFuncs {
                     blobPtr += chunkPtr->GetChunkSize();
                 }
 
-                ctx.SetResultBlob(m_snappyTo.GetChunkData(0), zipSize, Context::CopyData::No, [](void*p) {
+                ctx.SetResultBlob(fullBlob, zipSize, Context::CopyData::No, [](void*p) {
                     delete[] static_cast<decltype(fullBlob)>(p);
                 });
             }
