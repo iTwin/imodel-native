@@ -3324,7 +3324,15 @@ DbResult Db::QueryDbIds()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DbFunction::Context::SetResultBlob(void const* value, int length, CopyData doCopy) {sqlite3_result_blob((sqlite3_context*) this, value, length, (sqlite3_destructor_type) doCopy);}
+void DbFunction::Context::SetResultBlob(void const* value, int length, CopyData doCopy, void(*destructor)(void* p)) {
+    BeAssert(doCopy == CopyData::Yes && destructor != nullptr);
+    sqlite3_result_blob(
+        (sqlite3_context*) this,
+        value,
+        length,
+        destructor != nullptr ? destructor : (sqlite3_destructor_type) doCopy
+    );
+}
 void DbFunction::Context::SetResultDouble(double val){sqlite3_result_double((sqlite3_context*) this, val);}
 void DbFunction::Context::SetResultError(Utf8CP val, int len){sqlite3_result_error((sqlite3_context*) this, val, len);}
 void DbFunction::Context::SetResultError_toobig(){sqlite3_result_error_toobig((sqlite3_context*) this);}
