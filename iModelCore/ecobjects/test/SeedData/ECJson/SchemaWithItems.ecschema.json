@@ -8,7 +8,7 @@
   "references": [
     {
       "name" : "CoreCustomAttributes",
-      "version" : "01.00.03"
+      "version" : "01.00.04"
     },
     {
       "name" : "Formats",

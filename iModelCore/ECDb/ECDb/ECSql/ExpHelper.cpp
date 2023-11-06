@@ -256,4 +256,67 @@ Utf8CP ExpHelper::ToSql(ECSqlType type)
         }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+Utf8CP ExpHelper::ToSql(WindowPartitionColumnReferenceExp::CollateClauseFunction collateFunction)
+    {
+    switch (collateFunction)
+            {
+            case WindowPartitionColumnReferenceExp::CollateClauseFunction::Binary:
+                return "BINARY";
+            case WindowPartitionColumnReferenceExp::CollateClauseFunction::NoCase:
+                return "NOCASE";
+            case WindowPartitionColumnReferenceExp::CollateClauseFunction::Rtrim:
+                return "RTRIM";
+            case WindowPartitionColumnReferenceExp::CollateClauseFunction::NotSpecified:
+                return "";
+            default:
+                BeAssert(false && "ExpHelper::ToSql(WindowPartitionColumnReferenceExp::CollateClauseFunction) needs to be updated to a new value of the ECSqlType enum.");
+                return "";
+            }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+Utf8CP ExpHelper::ToSql(WindowFrameClauseExp::WindowFrameUnit frameUnit)
+    {
+    switch (frameUnit)
+        {
+        case WindowFrameClauseExp::WindowFrameUnit::Groups:
+            return "GROUPS";
+        case WindowFrameClauseExp::WindowFrameUnit::Range:
+            return "RANGE";
+        case WindowFrameClauseExp::WindowFrameUnit::Rows:
+            return "ROWS";
+        default:
+            BeAssert(false && "ExpHelper::ToSql(WindowFrameClauseExp::WindowFrameUnit) needs to be updated to a new value of the ECSqlType enum.");
+            return "";
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+Utf8CP ExpHelper::ToSql(WindowFrameClauseExp::WindowFrameExclusionType exclusionType)
+    {
+    switch (exclusionType)
+        {
+        case WindowFrameClauseExp::WindowFrameExclusionType::ExcludeCurrentRow:
+            return "EXCLUDE CURRENT ROW";
+        case WindowFrameClauseExp::WindowFrameExclusionType::ExcludeGroup:
+            return "EXCLUDE GROUP";
+        case WindowFrameClauseExp::WindowFrameExclusionType::ExcludeNoOthers:
+            return "EXCLUDE NO OTHERS";
+        case WindowFrameClauseExp::WindowFrameExclusionType::ExcludeTies:
+            return "EXCLUDE TIES";
+        case WindowFrameClauseExp::WindowFrameExclusionType::NotSpecified:
+            return "";
+        default:
+            BeAssert(false && "ExpHelper::ToSql(WindowFrameClauseExp::WindowFrameExclusionType) needs to be updated to a new value of the ECSqlType enum.");
+            return "";
+        }
+    }
+
 END_BENTLEY_SQLITE_EC_NAMESPACE

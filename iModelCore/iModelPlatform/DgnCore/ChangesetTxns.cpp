@@ -465,6 +465,51 @@ void TxnManager::WriteChangesToFile(BeFileNameCR pathname, DdlChangesCR ddlChang
     if (!pathname.DoesPathExist())
         m_dgndb.ThrowException("changeset file not created", (int) ChangesetStatus::FileWriteError);
 }
+/**
+ * Create changeset from local changes
+*/
+std::unique_ptr<ChangeSet> TxnManager::CreateChangesetFromLocalChanges(bool includeInMemoryChanges){
+    DbResult rc;
+    includeInMemoryChanges = includeInMemoryChanges && HasDataChanges();
+    if (!HasPendingTxns() && !includeInMemoryChanges) {
+        return nullptr;
+    }
+ // Group all local txn
+    auto endTxnId = GetCurrentTxnId();
+    auto startTxnId = QueryNextTxnId(TxnId(0));
+    DdlChanges ddlChanges;
+    ChangeGroup dataChangeGroup;
+    for (auto currTxnId = startTxnId; currTxnId < endTxnId; currTxnId = QueryNextTxnId(currTxnId)) {
+        ChangeSet sqlChangeSet;
+        if (BE_SQLITE_OK != ReadDataChanges(sqlChangeSet, currTxnId, TxnAction::None))
+            m_dgndb.ThrowException("unable to read data changes", (int) ChangesetStatus::CorruptedTxn);
+
+        rc = sqlChangeSet.AddToChangeGroup(dataChangeGroup);
+        if (BE_SQLITE_OK != rc)
+            m_dgndb.ThrowException("add to changes failed", (int) rc);
+    }
+
+    // Include change that has not been persisted using Db::SaveChanges()
+    if (includeInMemoryChanges && HasDataChanges()) {
+        ChangeSet inMemChangeSet;
+        rc = inMemChangeSet.FromChangeTrack(*this);
+        if (BE_SQLITE_OK != rc)
+            m_dgndb.ThrowException("fail to add in memory changes", (int) rc);
+
+        inMemChangeSet.AddToChangeGroup(dataChangeGroup);
+        if (BE_SQLITE_OK != rc)
+            m_dgndb.ThrowException("add to changes failed", (int) rc);
+    }
+
+    // Create changeset from change group
+    auto cs = std::make_unique<ChangeSet>();
+    rc = cs->FromChangeGroup(dataChangeGroup);
+    if (BE_SQLITE_OK != rc)
+        m_dgndb.ThrowException("failed to create changeset from change group", (int) rc);
+
+
+    return cs;
+}
 
 /**
  * Iterate over local txn and notify changed instance keys and change type.
@@ -512,38 +557,8 @@ void TxnManager::ForEachLocalChange(std::function<void(ECInstanceKey const&, DbO
     while(tblStmt->Step() == BE_SQLITE_ROW) {
         dataTables[tblStmt->GetValueText(0)] = tblStmt->GetValueId<ECClassId>(1);
     }
-    // Group all local txn
-    auto endTxnId = GetCurrentTxnId();
-    auto startTxnId = QueryNextTxnId(TxnId(0));
-    DdlChanges ddlChanges;
-    ChangeGroup dataChangeGroup;
-    for (auto currTxnId = startTxnId; currTxnId < endTxnId; currTxnId = QueryNextTxnId(currTxnId)) {
-        ChangeSet sqlChangeSet;
-        if (BE_SQLITE_OK != ReadDataChanges(sqlChangeSet, currTxnId, TxnAction::None))
-            m_dgndb.ThrowException("unable to read data changes", (int) ChangesetStatus::CorruptedTxn);
 
-        rc = sqlChangeSet.AddToChangeGroup(dataChangeGroup);
-        if (BE_SQLITE_OK != rc)
-            m_dgndb.ThrowException("add to changes failed", (int) rc);
-    }
-
-    // Include change that has not been persisted using Db::SaveChanges()
-    if (includeInMemoryChanges && HasDataChanges()) {
-        ChangeSet inMemChangeSet;
-        rc = inMemChangeSet.FromChangeTrack(*this);
-        if (BE_SQLITE_OK != rc)
-            m_dgndb.ThrowException("fail to add in memory changes", (int) rc);
-
-        inMemChangeSet.AddToChangeGroup(dataChangeGroup);
-        if (BE_SQLITE_OK != rc)
-            m_dgndb.ThrowException("add to changes failed", (int) rc);
-    }
-
-    // Create changeset from change group
-    ChangeSet cs;
-    rc = cs.FromChangeGroup(dataChangeGroup);
-    if (BE_SQLITE_OK != rc)
-        m_dgndb.ThrowException("fail to create changeset form change group", (int) rc);
+    auto cs = CreateChangesetFromLocalChanges(includeInMemoryChanges);
 
     // Optimization based on fact that in changeset change to same table is contigious
     struct {
@@ -559,7 +574,7 @@ void TxnManager::ForEachLocalChange(std::function<void(ECInstanceKey const&, DbO
     bset<ECInstanceKey> instanceKeysAlreadyNotified;
 
     // Iterate over changeset and notify each change if it meet filter criteria
-    for(auto& change : cs.GetChanges()) {
+    for(auto& change : cs->GetChanges()) {
         Utf8CP zTab;
         int nCol;
         DbOpcode op;

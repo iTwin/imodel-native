@@ -6214,7 +6214,7 @@ TEST_F(DbMappingTestFixture, AbstractClass)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, PropertyWithSameNameAsStructMemberColumn)
     {
-    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("propertywithsamenameasstructmembercol.ecdb", SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("propertywithsamenameasstructmembercol1.ecdb", SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
                                                                                           "  <ECStructClass typeName='ElementCode' modifier='None'>"
                                                                                           "    <ECProperty propertyName='Name' typeName='string' />"
                                                                                           "  </ECStructClass>"
@@ -6234,7 +6234,7 @@ TEST_F(DbMappingTestFixture, PropertyWithSameNameAsStructMemberColumn)
     ASSERT_TRUE(m_ecdb.ColumnExists("ts_Foo", expectedColumnName.c_str()));
 
     //now flip order of struct prop and prim prop
-    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("propertywithsamenameasstructmembercol.ecdb", SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("propertywithsamenameasstructmembercol2.ecdb", SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
                                                                                           "  <ECStructClass typeName='ElementCode' modifier='None'>"
                                                                                           "    <ECProperty propertyName='Name' typeName='string' />"
                                                                                           "  </ECStructClass>"
