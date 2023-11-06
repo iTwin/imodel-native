@@ -831,7 +831,10 @@ ChangesetStatus TxnManager::MergeDataChanges(ChangesetPropsCR revision, Changese
     Rebase rebase;
 
     auto const ignoreNoop = containsSchemaChanges;
-    DbResult result = ApplyChanges(changeStream, TxnAction::Merge, containsSchemaChanges, mergeNeeded ? &rebase : nullptr, false, ignoreNoop);
+    /** This will disable cascade action and so no new changes are created when applying changeset */
+    auto const fkNoAction = true;
+
+    DbResult result = ApplyChanges(changeStream, TxnAction::Merge, containsSchemaChanges, mergeNeeded ? &rebase : nullptr, false, ignoreNoop, fkNoAction);
     if (result != BE_SQLITE_OK)
         m_dgndb.ThrowException("failed to apply changes", result);
 
@@ -1230,7 +1233,7 @@ struct DisableTracking {
 * Apply a changeset to the database. Notify all TxnTables about what was in the Changeset afterwards.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bool containsSchemaChanges, Rebase* rebase, bool invert, bool ignoreNoop) {
+DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bool containsSchemaChanges, Rebase* rebase, bool invert, bool ignoreNoop, bool fkNoAction) {
     BeAssert(action != TxnAction::None);
     AutoRestore<TxnAction> saveAction(&m_action, action);
 
@@ -1252,7 +1255,7 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
 
     if (!m_dgndb.IsReadonly()) {
         DisableTracking _v(*this);
-        auto result = changeset.ApplyChanges(m_dgndb, rebase, invert, ignoreNoop); // this actually updates the database with the changes
+        auto result = changeset.ApplyChanges(m_dgndb, rebase, invert, ignoreNoop, fkNoAction); // this actually updates the database with the changes
         if (result != BE_SQLITE_OK) {
             LOG.errorv("failed to apply changeset: %s", BeSQLiteLib::GetErrorName(result));
             BeAssert(false);
