@@ -69,38 +69,74 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(8) TextStringTransform FLATBUFFERS_FINAL_CLA
   double form3d00() const {
     return flatbuffers::EndianScalar(form3d00_);
   }
+  void mutate_form3d00(double _form3d00) {
+    flatbuffers::WriteScalar(&form3d00_, _form3d00);
+  }
   double form3d01() const {
     return flatbuffers::EndianScalar(form3d01_);
+  }
+  void mutate_form3d01(double _form3d01) {
+    flatbuffers::WriteScalar(&form3d01_, _form3d01);
   }
   double form3d02() const {
     return flatbuffers::EndianScalar(form3d02_);
   }
+  void mutate_form3d02(double _form3d02) {
+    flatbuffers::WriteScalar(&form3d02_, _form3d02);
+  }
   double form3d03() const {
     return flatbuffers::EndianScalar(form3d03_);
+  }
+  void mutate_form3d03(double _form3d03) {
+    flatbuffers::WriteScalar(&form3d03_, _form3d03);
   }
   double form3d10() const {
     return flatbuffers::EndianScalar(form3d10_);
   }
+  void mutate_form3d10(double _form3d10) {
+    flatbuffers::WriteScalar(&form3d10_, _form3d10);
+  }
   double form3d11() const {
     return flatbuffers::EndianScalar(form3d11_);
+  }
+  void mutate_form3d11(double _form3d11) {
+    flatbuffers::WriteScalar(&form3d11_, _form3d11);
   }
   double form3d12() const {
     return flatbuffers::EndianScalar(form3d12_);
   }
+  void mutate_form3d12(double _form3d12) {
+    flatbuffers::WriteScalar(&form3d12_, _form3d12);
+  }
   double form3d13() const {
     return flatbuffers::EndianScalar(form3d13_);
+  }
+  void mutate_form3d13(double _form3d13) {
+    flatbuffers::WriteScalar(&form3d13_, _form3d13);
   }
   double form3d20() const {
     return flatbuffers::EndianScalar(form3d20_);
   }
+  void mutate_form3d20(double _form3d20) {
+    flatbuffers::WriteScalar(&form3d20_, _form3d20);
+  }
   double form3d21() const {
     return flatbuffers::EndianScalar(form3d21_);
+  }
+  void mutate_form3d21(double _form3d21) {
+    flatbuffers::WriteScalar(&form3d21_, _form3d21);
   }
   double form3d22() const {
     return flatbuffers::EndianScalar(form3d22_);
   }
+  void mutate_form3d22(double _form3d22) {
+    flatbuffers::WriteScalar(&form3d22_, _form3d22);
+  }
   double form3d23() const {
     return flatbuffers::EndianScalar(form3d23_);
+  }
+  void mutate_form3d23(double _form3d23) {
+    flatbuffers::WriteScalar(&form3d23_, _form3d23);
   }
 };
 FLATBUFFERS_STRUCT_END(TextStringTransform, 96);
@@ -128,14 +164,26 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(8) TextStringRange FLATBUFFERS_FINAL_CLASS {
   double lowx() const {
     return flatbuffers::EndianScalar(lowx_);
   }
+  void mutate_lowx(double _lowx) {
+    flatbuffers::WriteScalar(&lowx_, _lowx);
+  }
   double lowy() const {
     return flatbuffers::EndianScalar(lowy_);
+  }
+  void mutate_lowy(double _lowy) {
+    flatbuffers::WriteScalar(&lowy_, _lowy);
   }
   double highx() const {
     return flatbuffers::EndianScalar(highx_);
   }
+  void mutate_highx(double _highx) {
+    flatbuffers::WriteScalar(&highx_, _highx);
+  }
   double highy() const {
     return flatbuffers::EndianScalar(highy_);
+  }
+  void mutate_highy(double _highy) {
+    flatbuffers::WriteScalar(&highy_, _highy);
   }
 };
 FLATBUFFERS_STRUCT_END(TextStringRange, 32);
@@ -157,8 +205,14 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(8) TextStringGlyphOrigin FLATBUFFERS_FINAL_C
   double x() const {
     return flatbuffers::EndianScalar(x_);
   }
+  void mutate_x(double _x) {
+    flatbuffers::WriteScalar(&x_, _x);
+  }
   double y() const {
     return flatbuffers::EndianScalar(y_);
+  }
+  void mutate_y(double _y) {
+    flatbuffers::WriteScalar(&y_, _y);
   }
 };
 FLATBUFFERS_STRUCT_END(TextStringGlyphOrigin, 16);
@@ -178,26 +232,50 @@ struct TextStringStyle FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   uint8_t majorVersion() const {
     return GetField<uint8_t>(VT_MAJORVERSION, 0);
   }
+  bool mutate_majorVersion(uint8_t _majorVersion) {
+    return SetField<uint8_t>(VT_MAJORVERSION, _majorVersion, 0);
+  }
   uint8_t minorVersion() const {
     return GetField<uint8_t>(VT_MINORVERSION, 0);
+  }
+  bool mutate_minorVersion(uint8_t _minorVersion) {
+    return SetField<uint8_t>(VT_MINORVERSION, _minorVersion, 0);
   }
   uint32_t fontId() const {
     return GetField<uint32_t>(VT_FONTID, 0);
   }
+  bool mutate_fontId(uint32_t _fontId) {
+    return SetField<uint32_t>(VT_FONTID, _fontId, 0);
+  }
   bool isBold() const {
     return GetField<uint8_t>(VT_ISBOLD, 0) != 0;
+  }
+  bool mutate_isBold(bool _isBold) {
+    return SetField<uint8_t>(VT_ISBOLD, static_cast<uint8_t>(_isBold), 0);
   }
   bool isItalic() const {
     return GetField<uint8_t>(VT_ISITALIC, 0) != 0;
   }
+  bool mutate_isItalic(bool _isItalic) {
+    return SetField<uint8_t>(VT_ISITALIC, static_cast<uint8_t>(_isItalic), 0);
+  }
   bool isUnderlined() const {
     return GetField<uint8_t>(VT_ISUNDERLINED, 0) != 0;
+  }
+  bool mutate_isUnderlined(bool _isUnderlined) {
+    return SetField<uint8_t>(VT_ISUNDERLINED, static_cast<uint8_t>(_isUnderlined), 0);
   }
   double height() const {
     return GetField<double>(VT_HEIGHT, 0.0);
   }
+  bool mutate_height(double _height) {
+    return SetField<double>(VT_HEIGHT, _height, 0.0);
+  }
   double widthFactor() const {
     return GetField<double>(VT_WIDTHFACTOR, 0.0);
+  }
+  bool mutate_widthFactor(double _widthFactor) {
+    return SetField<double>(VT_WIDTHFACTOR, _widthFactor, 0.0);
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
@@ -289,26 +367,50 @@ struct TextString FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   uint8_t majorVersion() const {
     return GetField<uint8_t>(VT_MAJORVERSION, 0);
   }
+  bool mutate_majorVersion(uint8_t _majorVersion) {
+    return SetField<uint8_t>(VT_MAJORVERSION, _majorVersion, 0);
+  }
   uint8_t minorVersion() const {
     return GetField<uint8_t>(VT_MINORVERSION, 0);
+  }
+  bool mutate_minorVersion(uint8_t _minorVersion) {
+    return SetField<uint8_t>(VT_MINORVERSION, _minorVersion, 0);
   }
   const flatbuffers::String *text() const {
     return GetPointer<const flatbuffers::String *>(VT_TEXT);
   }
+  flatbuffers::String *mutable_text() {
+    return GetPointer<flatbuffers::String *>(VT_TEXT);
+  }
   const BentleyM0200::Dgn::FB::TextStringStyle *style() const {
     return GetPointer<const BentleyM0200::Dgn::FB::TextStringStyle *>(VT_STYLE);
+  }
+  BentleyM0200::Dgn::FB::TextStringStyle *mutable_style() {
+    return GetPointer<BentleyM0200::Dgn::FB::TextStringStyle *>(VT_STYLE);
   }
   const BentleyM0200::Dgn::FB::TextStringTransform *transform() const {
     return GetStruct<const BentleyM0200::Dgn::FB::TextStringTransform *>(VT_TRANSFORM);
   }
+  BentleyM0200::Dgn::FB::TextStringTransform *mutable_transform() {
+    return GetStruct<BentleyM0200::Dgn::FB::TextStringTransform *>(VT_TRANSFORM);
+  }
   const BentleyM0200::Dgn::FB::TextStringRange *range() const {
     return GetStruct<const BentleyM0200::Dgn::FB::TextStringRange *>(VT_RANGE);
+  }
+  BentleyM0200::Dgn::FB::TextStringRange *mutable_range() {
+    return GetStruct<BentleyM0200::Dgn::FB::TextStringRange *>(VT_RANGE);
   }
   const flatbuffers::Vector<uint32_t> *glyphIds() const {
     return GetPointer<const flatbuffers::Vector<uint32_t> *>(VT_GLYPHIDS);
   }
+  flatbuffers::Vector<uint32_t> *mutable_glyphIds() {
+    return GetPointer<flatbuffers::Vector<uint32_t> *>(VT_GLYPHIDS);
+  }
   const flatbuffers::Vector<const BentleyM0200::Dgn::FB::TextStringGlyphOrigin *> *glyphOrigins() const {
     return GetPointer<const flatbuffers::Vector<const BentleyM0200::Dgn::FB::TextStringGlyphOrigin *> *>(VT_GLYPHORIGINS);
+  }
+  flatbuffers::Vector<const BentleyM0200::Dgn::FB::TextStringGlyphOrigin *> *mutable_glyphOrigins() {
+    return GetPointer<flatbuffers::Vector<const BentleyM0200::Dgn::FB::TextStringGlyphOrigin *> *>(VT_GLYPHORIGINS);
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
