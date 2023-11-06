@@ -2956,10 +2956,11 @@ static DgnDbStatus RemapGeometryIds(
 
             case GeometryStreamIO::OpCode::TextString:
                 {
-                const FB::TextString* fbText = GetRoot<FB::TextString>(egOp.m_data);
+                // FIXME: hack, real flatc with --gen-mutable avoids const_cast
+                FB::TextString* fbText = const_cast<FB::TextString*>(GetRoot<FB::TextString>(egOp.m_data));
                 if (!fbText->has_style()) { writer.Append(egOp); break; }
 
-                auto* style = fbText->style();
+                auto* style = const_cast<FB::TextStringStyle*>(fbText->style());
                 if (!style->has_fontId()) { writer.Append(egOp); break; }
 
                 auto srcFontId = FontId((uint64_t)style->fontId());
