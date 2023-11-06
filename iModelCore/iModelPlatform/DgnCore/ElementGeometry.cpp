@@ -2964,13 +2964,9 @@ static DgnDbStatus RemapGeometryIds(
 
                 auto srcFontId = FontId((uint64_t)style->fontId());
                 auto targetFontId = remapper.RemapFontId(srcFontId);
-                auto* fontIdPtr = const_cast<uint32_t*>(style->HACK_fontIdMutablePtr());
-                *fontIdPtr = (uint32_t) targetFontId.GetValueUnchecked();
 
+                style->mutate_fontId((uint32_t) targetFontId.GetValueUnchecked());
                 writer.Append(egOp); // append/read mutated operation
-
-                // just in case, let's undo our change after using it
-                *fontIdPtr = (uint32_t) srcFontId.GetValueUnchecked();
 
                 break;
                 }
