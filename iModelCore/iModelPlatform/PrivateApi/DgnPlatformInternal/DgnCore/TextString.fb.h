@@ -4,7 +4,7 @@
 #ifndef FLATBUFFERS_GENERATED_TEXTSTRING_BENTLEYM0200_DGN_FB_H_
 #define FLATBUFFERS_GENERATED_TEXTSTRING_BENTLEYM0200_DGN_FB_H_
 
-#include "flatbuffers/flatbuffers.h"
+#include "flatbuffers2/flatbuffers.h"
 
 namespace BentleyM0200 {
 namespace Dgn {
