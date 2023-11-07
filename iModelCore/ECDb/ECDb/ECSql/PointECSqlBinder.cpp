@@ -42,12 +42,10 @@ ECSqlStatus PointECSqlBinder::_BindPoint2d(DPoint2dCR value)
         }
 
     Statement& sqliteStmt = GetSqliteStatement();
-    DbResult sqliteStat = sqliteStmt.BindDouble(GetCoordSqlParamIndex(Coordinate::X), value.x);
-    if (sqliteStat != BE_SQLITE_OK)
+    if (const auto sqliteStat = (std::isinf(value.x) || std::isnan(value.x)) ? sqliteStmt.BindNull(GetCoordSqlParamIndex(Coordinate::X)) : sqliteStmt.BindDouble(GetCoordSqlParamIndex(Coordinate::X), value.x); sqliteStat != BE_SQLITE_OK)
         return LogSqliteError(sqliteStat, "ECSqlStatement::BindPoint2d.");
 
-    sqliteStat = sqliteStmt.BindDouble(GetCoordSqlParamIndex(Coordinate::Y), value.y);
-    if (sqliteStat != BE_SQLITE_OK)
+    if (const auto sqliteStat = (std::isinf(value.y) || std::isnan(value.y)) ? sqliteStmt.BindNull(GetCoordSqlParamIndex(Coordinate::Y)) : sqliteStmt.BindDouble(GetCoordSqlParamIndex(Coordinate::Y), value.y); sqliteStat != BE_SQLITE_OK)
         return LogSqliteError(sqliteStat, "ECSqlStatement::BindPoint2d.");
 
     return ECSqlStatus::Success;
@@ -65,16 +63,13 @@ ECSqlStatus PointECSqlBinder::_BindPoint3d(DPoint3dCR value)
         }
 
     Statement& sqliteStmt = GetSqliteStatement();
-    DbResult sqliteStat = sqliteStmt.BindDouble(GetCoordSqlParamIndex(Coordinate::X), value.x);
-    if (sqliteStat != BE_SQLITE_OK)
+    if (const auto sqliteStat = (std::isinf(value.x) || std::isnan(value.x)) ? sqliteStmt.BindNull(GetCoordSqlParamIndex(Coordinate::X)) : sqliteStmt.BindDouble(GetCoordSqlParamIndex(Coordinate::X), value.x); sqliteStat != BE_SQLITE_OK)
         return LogSqliteError(sqliteStat, "ECSqlStatement::BindPoint3d.");
 
-    sqliteStat = sqliteStmt.BindDouble(GetCoordSqlParamIndex(Coordinate::Y), value.y);
-    if (sqliteStat != BE_SQLITE_OK)
+    if (const auto sqliteStat = (std::isinf(value.y) || std::isnan(value.y)) ? sqliteStmt.BindNull(GetCoordSqlParamIndex(Coordinate::Y)) : sqliteStmt.BindDouble(GetCoordSqlParamIndex(Coordinate::Y), value.y); sqliteStat != BE_SQLITE_OK)
         return LogSqliteError(sqliteStat, "ECSqlStatement::BindPoint3d.");
 
-    sqliteStat = sqliteStmt.BindDouble(GetCoordSqlParamIndex(Coordinate::Z), value.z);
-    if (sqliteStat != BE_SQLITE_OK)
+    if (const auto sqliteStat = (std::isinf(value.z) || std::isnan(value.z)) ? sqliteStmt.BindNull(GetCoordSqlParamIndex(Coordinate::Z)) : sqliteStmt.BindDouble(GetCoordSqlParamIndex(Coordinate::Z), value.z); sqliteStat != BE_SQLITE_OK)
         return LogSqliteError(sqliteStat, "ECSqlStatement::BindPoint3d.");
 
     return ECSqlStatus::Success;

@@ -11036,42 +11036,97 @@ TEST_F(ECSqlStatementTestFixture, verify_inf_and_nan_handling) {
                         <ECProperty propertyName="inf_pos" typeName="double" />
                         <ECProperty propertyName="inf_neg" typeName="double" />
                         <ECProperty propertyName="nan_val" typeName="double" />
+
+                        <ECProperty propertyName="inf_pos_point2d" typeName="Point2d" />
+                        <ECProperty propertyName="inf_neg_point2d" typeName="Point2d" />
+                        <ECProperty propertyName="nan_val_point2d" typeName="Point2d" />
+
+                        <ECProperty propertyName="inf_pos_point3d" typeName="Point3d" />
+                        <ECProperty propertyName="inf_neg_point3d" typeName="Point3d" />
+                        <ECProperty propertyName="nan_val_point3d" typeName="Point3d" />
                     </ECEntityClass>
                 </ECSchema>)"_schema;
 
     ASSERT_EQ(SUCCESS, SetupECDb("test.ecdb", v1));
 
+    const auto pos_inf = std::numeric_limits<double>::infinity();
+    const auto neg_inf = -std::numeric_limits<double>::infinity();
+    const auto nan_val = std::numeric_limits<double>::quiet_NaN();
+    constexpr auto selectStmt = "select inf_pos, inf_neg, nan_val, inf_pos_point2d, inf_neg_point2d, nan_val_point2d, inf_pos_point3d, inf_neg_point3d, nan_val_point3d from ts.Element";
+
     if("insert row") {
         ECSqlStatement stmt;
-        ASSERT_EQ(stmt.Prepare(m_ecdb, "insert into ts.Element(inf_pos,inf_neg,nan_val) values(?,?,?)"), ECSqlStatus::Success);
-        stmt.BindDouble(1,  std::numeric_limits<double>::infinity()); // ECSQL treat inf as null
-        stmt.BindDouble(2, -std::numeric_limits<double>::infinity()); // ECSQL treat inf as null
-        stmt.BindDouble(3,  std::numeric_limits<double>::quiet_NaN());// ECSQL treat nan as null
+        ASSERT_EQ(stmt.Prepare(m_ecdb, "insert into ts.Element(inf_pos,inf_neg,nan_val,inf_pos_point2d,inf_neg_point2d,nan_val_point2d,inf_pos_point3d,inf_neg_point3d,nan_val_point3d) values(?,?,?,?,?,?,?,?,?)"), ECSqlStatus::Success);
+        stmt.BindDouble(1,  pos_inf); // ECSQL treat inf as null
+        stmt.BindDouble(2, neg_inf); // ECSQL treat inf as null
+        stmt.BindDouble(3,  nan_val); // ECSQL treat nan as null
+        stmt.BindPoint2d(4, DPoint2d::From(pos_inf, pos_inf)); // ECSQL treat positive inf as null
+        stmt.BindPoint2d(5,  DPoint2d::From(neg_inf, neg_inf)); // ECSQL treat negative inf as null
+        stmt.BindPoint2d(6,  DPoint2d::From(nan_val, nan_val)); // ECSQL treat nan as null
+        stmt.BindPoint3d(7, DPoint3d::From(pos_inf, pos_inf, pos_inf)); // ECSQL treat positive inf as null
+        stmt.BindPoint3d(8,  DPoint3d::From(neg_inf, neg_inf, neg_inf)); // ECSQL treat negative inf as null
+        stmt.BindPoint3d(9,  DPoint3d::From(nan_val, nan_val, nan_val)); // ECSQL treat nan as null
         ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
     }
     if("read row") {
         ECSqlStatement stmt;
-        ASSERT_EQ(stmt.Prepare(m_ecdb, "select inf_pos, inf_neg, nan_val from ts.Element"), ECSqlStatus::Success);
+        ASSERT_EQ(stmt.Prepare(m_ecdb, selectStmt), ECSqlStatus::Success);
         ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
-        auto inf_pos = stmt.GetValueDouble(0);
-        auto inf_neg = stmt.GetValueDouble(1);
-        auto nan_val = stmt.GetValueDouble(2);
 
-        ASSERT_EQ(std::isinf(inf_pos), false);
-        ASSERT_EQ(std::isinf(inf_neg), false);
-        ASSERT_EQ(std::isnan(nan_val), false);
+        for (auto columnIndex = 0; columnIndex < stmt.GetColumnCount(); ++columnIndex)
+            {
+            switch (columnIndex / 3)
+                {
+                case 1:
+                    {
+                    // Test Point2D properties
+                    double coordX, coordY;
+                    stmt.GetValuePoint2d(columnIndex).GetComponents(coordX, coordY);
 
-        auto inf_pos_isnull = stmt.IsValueNull(0);
-        auto inf_neg_isnull = stmt.IsValueNull(1);
-        auto nan_val_isnull = stmt.IsValueNull(2);
+                    // Check the +inf and -inf column values
+                    EXPECT_EQ(std::isinf(coordX), false) << "Value of co-ordinate X column " << columnIndex + 1 << " should not be infinity";
+                    EXPECT_EQ(std::isinf(coordY), false) << "Value of co-ordinate Y column " << columnIndex + 1 << " should not be infinity";
 
-        ASSERT_EQ(inf_pos_isnull, true);
-        ASSERT_EQ(inf_neg_isnull, true);
-        ASSERT_EQ(nan_val_isnull, true);
+                    // Check the nan column values
+                    EXPECT_EQ(std::isnan(coordX), false) << "Value of co-ordinate X column " << columnIndex + 1 << " should not be NaN";
+                    EXPECT_EQ(std::isnan(coordY), false) << "Value of co-ordinate Y column " << columnIndex + 1 << " should not be NaN";
+
+                    EXPECT_EQ(stmt.IsValueNull(columnIndex), true) << "Point2D at column " << columnIndex + 1 << " should be NULL";
+                    break;
+                    }
+                case 2:
+                    {
+                    // Test Point3D properties
+                    double coordX, coordY, coordZ;
+                    stmt.GetValuePoint3d(columnIndex).GetComponents(coordX, coordY, coordZ);
+                    // Check the +inf and -inf column values
+                    EXPECT_EQ(std::isinf(coordX), false) << "Value of co-ordinate X column " << columnIndex + 1 << " should not be infinity";
+                    EXPECT_EQ(std::isinf(coordY), false) << "Value of co-ordinate Y column " << columnIndex + 1 << " should not be infinity";
+                    EXPECT_EQ(std::isinf(coordZ), false) << "Value of co-ordinate Z column " << columnIndex + 1 << " should not be infinity";
+
+                    // Check the nan column values
+                    EXPECT_EQ(std::isnan(coordX), false) << "Value of co-ordinate X column " << columnIndex + 1 << " should not be NaN";
+                    EXPECT_EQ(std::isnan(coordY), false) << "Value of co-ordinate Y column " << columnIndex + 1 << " should not be NaN";
+                    EXPECT_EQ(std::isnan(coordZ), false) << "Value of co-ordinate Z column " << columnIndex + 1 << " should not be NaN";
+
+                    EXPECT_EQ(stmt.IsValueNull(columnIndex), true) << "Point3D at column " << columnIndex + 1 << " should be NULL";
+                    break;
+                    }
+                default:
+                    {
+                    // Test Double properties
+                    const auto columnValue = stmt.GetValueDouble(columnIndex);
+                    EXPECT_EQ(std::isinf(columnValue), false) << "Value of column " << columnIndex + 1 << " should not be infinity"; // Check the +inf and -inf column values
+                    EXPECT_EQ(std::isnan(columnValue), false) << "Value of column " << columnIndex + 1 << " should not be NaN";  // Check the nan column values
+                    EXPECT_EQ(stmt.IsValueNull(columnIndex), true) << "Value of column " << columnIndex + 1 << " should be NULL";
+                    break;
+                    }
+                }
+            }
     }
     if ("jsoncpp must return null for inf") {
         ECSqlStatement stmt;
-        ASSERT_EQ(stmt.Prepare(m_ecdb, "select inf_pos, inf_neg, nan_val from ts.Element"), ECSqlStatus::Success);
+        ASSERT_EQ(stmt.Prepare(m_ecdb, selectStmt), ECSqlStatus::Success);
         ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
         JsonECSqlSelectAdapter adaptor(stmt);
         Json::Value jsonCpp;
@@ -11080,7 +11135,7 @@ TEST_F(ECSqlStatementTestFixture, verify_inf_and_nan_handling) {
     }
     if ("rapidjson must return null for inf") {
         ECSqlStatement stmt;
-        ASSERT_EQ(stmt.Prepare(m_ecdb, "select inf_pos, inf_neg, nan_val from ts.Element"), ECSqlStatus::Success);
+        ASSERT_EQ(stmt.Prepare(m_ecdb, selectStmt), ECSqlStatus::Success);
         ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
         JsonECSqlSelectAdapter adaptor(stmt);
         BeJsDocument rapidJson;
@@ -11091,51 +11146,103 @@ TEST_F(ECSqlStatementTestFixture, verify_inf_and_nan_handling) {
 
     // Simulate existing data with INF and NAN
     Statement stmt1;
-    ASSERT_EQ(BE_SQLITE_OK, stmt1.Prepare(m_ecdb, "UPDATE ts_Element SET inf_pos=?, inf_neg=?, nan_val=?"));
-    stmt1.BindDouble(1,  std::numeric_limits<double>::infinity());
-    stmt1.BindDouble(2, -std::numeric_limits<double>::infinity());
-    stmt1.BindDouble(3,  std::numeric_limits<double>::quiet_NaN());
+    ASSERT_EQ(BE_SQLITE_OK, stmt1.Prepare(m_ecdb, R"sqlstr(UPDATE ts_Element SET inf_pos=?, inf_neg=?, nan_val=?, inf_pos_point2d_X=?, inf_pos_point2d_Y=?, inf_neg_point2d_X=?, inf_neg_point2d_Y=?, nan_val_point2d_X=?, nan_val_point2d_Y=?, 
+        inf_pos_point3d_X=?, inf_pos_point3d_Y=?, inf_pos_point3d_Z=?, inf_neg_point3d_X=?, inf_neg_point3d_Y=?, inf_neg_point3d_Z=?, nan_val_point3d_X=?, nan_val_point3d_Y=?, nan_val_point3d_Z=?)sqlstr"));
+    stmt1.BindDouble(1, pos_inf);
+    stmt1.BindDouble(2, neg_inf);
+    stmt1.BindDouble(3, nan_val);
+    stmt1.BindDouble(4, pos_inf);
+    stmt1.BindDouble(5, pos_inf);
+    stmt1.BindDouble(6, neg_inf);
+    stmt1.BindDouble(7, neg_inf);
+    stmt1.BindDouble(8, nan_val);
+    stmt1.BindDouble(9, nan_val);
+    stmt1.BindDouble(10, pos_inf);
+    stmt1.BindDouble(11, pos_inf);
+    stmt1.BindDouble(12, pos_inf);
+    stmt1.BindDouble(13, neg_inf);
+    stmt1.BindDouble(14, neg_inf);
+    stmt1.BindDouble(15, neg_inf);
+    stmt1.BindDouble(16, nan_val);
+    stmt1.BindDouble(17, nan_val);
+    stmt1.BindDouble(18, nan_val);
     ASSERT_EQ(BE_SQLITE_DONE, stmt1.Step());
 
 
     if("read row") {
         ECSqlStatement stmt;
-        ASSERT_EQ(stmt.Prepare(m_ecdb, "select inf_pos, inf_neg, nan_val from ts.Element"), ECSqlStatus::Success);
+        ASSERT_EQ(stmt.Prepare(m_ecdb, selectStmt), ECSqlStatus::Success);
         ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
-        auto inf_pos = stmt.GetValueDouble(0);
-        auto inf_neg = stmt.GetValueDouble(1);
-        auto nan_val = stmt.GetValueDouble(2);
 
-        ASSERT_EQ(std::isinf(inf_pos), true);
-        ASSERT_EQ(std::isinf(inf_neg), true);
-        ASSERT_EQ(std::isnan(nan_val), false);
+        for (auto columnIndex = 0; columnIndex < stmt.GetColumnCount(); ++columnIndex) {
+            const auto wasCurrentColumnSetToInf = (columnIndex % 3 < 2);
+            switch (columnIndex / 3) {
+                case 1: {
+                    // Test Point2D properties
+                    double coordX, coordY;
+                    stmt.GetValuePoint2d(columnIndex).GetComponents(coordX, coordY);
 
-        auto inf_pos_isnull = stmt.IsValueNull(0);
-        auto inf_neg_isnull = stmt.IsValueNull(1);
-        auto nan_val_isnull = stmt.IsValueNull(2);
+                    // Check the +inf and -inf column values
+                    EXPECT_EQ(std::isinf(coordX), wasCurrentColumnSetToInf);
+                    EXPECT_EQ(std::isinf(coordY), wasCurrentColumnSetToInf);
 
-        ASSERT_EQ(inf_pos_isnull, false);
-        ASSERT_EQ(inf_neg_isnull, false);
-        ASSERT_EQ(nan_val_isnull, true);
+
+                    // Check the nan column values
+                    EXPECT_EQ(std::isnan(coordX), false);
+                    EXPECT_EQ(std::isnan(coordY), false);
+
+                    EXPECT_NE(stmt.IsValueNull(columnIndex), wasCurrentColumnSetToInf);
+                    break;
+                }
+                case 2: {
+                    // Test Point3D properties
+                    double coordX, coordY, coordZ;
+                    stmt.GetValuePoint3d(columnIndex).GetComponents(coordX, coordY, coordZ);
+
+                    // Check the +inf and -inf column values
+                    EXPECT_EQ(std::isinf(coordX), wasCurrentColumnSetToInf);
+                    EXPECT_EQ(std::isinf(coordY), wasCurrentColumnSetToInf);
+                    EXPECT_EQ(std::isinf(coordZ), wasCurrentColumnSetToInf);
+
+                    // Check the nan column values
+                    EXPECT_EQ(std::isnan(coordX), false);
+                    EXPECT_EQ(std::isnan(coordY), false);
+                    EXPECT_EQ(std::isnan(coordZ), false);
+
+                    EXPECT_NE(stmt.IsValueNull(columnIndex), wasCurrentColumnSetToInf);
+                    break;
+                }
+                default: {
+                    // Test Double properties
+                    const auto columnValue = stmt.GetValueDouble(columnIndex);
+
+                    EXPECT_EQ(std::isinf(columnValue), wasCurrentColumnSetToInf);   // Check the +inf and -inf column values
+                    EXPECT_EQ(std::isnan(columnValue), false);  // Check the nan column values
+
+                    EXPECT_NE(stmt.IsValueNull(columnIndex), wasCurrentColumnSetToInf);
+                    break;
+                }
+            }
+        }
     }
     if ("jsoncpp must return null for inf") {
         ECSqlStatement stmt;
-        ASSERT_EQ(stmt.Prepare(m_ecdb, "select inf_pos, inf_neg, nan_val from ts.Element"), ECSqlStatus::Success);
+        ASSERT_EQ(stmt.Prepare(m_ecdb, selectStmt), ECSqlStatus::Success);
         ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
         JsonECSqlSelectAdapter adaptor(stmt);
         Json::Value jsonCpp;
         EXPECT_EQ(SUCCESS, adaptor.GetRow(jsonCpp));
-        EXPECT_STREQ("{\"inf_neg\":null,\"inf_pos\":null}", jsonCpp.ToString().c_str());
+        EXPECT_STREQ("{\"inf_neg\":null,\"inf_neg_point2d\":{\"x\":null,\"y\":null},\"inf_neg_point3d\":{\"x\":null,\"y\":null,\"z\":null},\"inf_pos\":null,\"inf_pos_point2d\":{\"x\":null,\"y\":null},\"inf_pos_point3d\":{\"x\":null,\"y\":null,\"z\":null}}", jsonCpp.ToString().c_str());
     }
     if ("rapidjson must return null for inf") {
         ECSqlStatement stmt;
-        ASSERT_EQ(stmt.Prepare(m_ecdb, "select inf_pos, inf_neg, nan_val from ts.Element"), ECSqlStatus::Success);
+        ASSERT_EQ(stmt.Prepare(m_ecdb, selectStmt), ECSqlStatus::Success);
         ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
         JsonECSqlSelectAdapter adaptor(stmt);
         BeJsDocument rapidJson;
         EXPECT_EQ(SUCCESS, adaptor.GetRow(rapidJson));
         Utf8String json = rapidJson.Stringify();
-        EXPECT_STREQ("{\"inf_pos\":null,\"inf_neg\":null}", json.c_str());
+        EXPECT_STREQ("{\"inf_pos\":null,\"inf_neg\":null,\"inf_pos_point2d\":{\"x\":null,\"y\":null},\"inf_neg_point2d\":{\"x\":null,\"y\":null},\"inf_pos_point3d\":{\"x\":null,\"y\":null,\"z\":null},\"inf_neg_point3d\":{\"x\":null,\"y\":null,\"z\":null}}", json.c_str());
     }
 }
 
