@@ -532,12 +532,13 @@ void TestClipper (bvector<DPoint3d> const &points, AlternatingConvexClipTreeNode
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(RecursiveClipSets, Test1)
     {
-    for (size_t numPoints : bvector<size_t>{5, 8, 12, 15, 23, 37, 67})
+    for (size_t numPoints : {5, 8, 12, 15, 23, 37, 67})
         {
         SaveAndRestoreCheckTransform shifter(10,0,0);
         bvector<DPoint3d> points;
         SampleGeometryCreator::StrokeUnitCircle (points, numPoints);
         points.pop_back ();
+        --numPoints;
         double f0 = 0.4;
         double f = 0.3;
         double af = 1.4;
