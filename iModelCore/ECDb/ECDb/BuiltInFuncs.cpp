@@ -3,6 +3,7 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
+#include <Bentley/Base64Utilities.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -535,8 +536,41 @@ HexToId& HexToId::GetSingleton()
     }
 
 //---------------------------------------------------------------------------------------
+// Base64ToBlob
+//+---------------+---------------+---------------+---------------+---------------+------
+void Base64ToBlob::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
+    {
+    DbValue const& v = args[0];
+    if (v.IsNull() || v.GetValueType() != DbValueType::TextVal)
+        {
+        ctx.SetResultNull();
+        return;
+        }
+
+    auto* result = new Utf8String;
+    Base64Utilities::Encode(*result, (const Byte*) v.GetValueText(), v.GetValueBytes());
+
+    ctx.SetResultBlob(result->data(), result->size(), DbFunction::Context::CopyData::No,
+                      [](void* p){ delete static_cast<Utf8String*>(p); });
+    }
+
+//************************************************************************************
+// Base64ToBlob
+//************************************************************************************
+//---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+
+Base64ToBlob& Base64ToBlob::GetSingleton()
+    {
+    static Base64ToBlob s_singleton;
+    return s_singleton;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+
 void HexToId::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
     {
     DbValue const& v = args[0];

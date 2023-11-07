@@ -14,6 +14,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 #define SQLFUNC_GuidToStr "GuidToStr"
 #define SQLFUNC_IdToHex "IdToHex"
 #define SQLFUNC_HexToId "HexToId"
+#define SQLFUNC_Base64ToBlob "Base64ToBlob"
 #define SQLFUNC_ClassName "ec_classname"
 #define SQLFUNC_ClassId "ec_classid"
 #define SQLFUNC_InstanceOf "ec_instanceof"
@@ -139,6 +140,22 @@ struct HexToId final : ScalarFunction
         ~HexToId() {}
 
         static HexToId& GetSingleton();
+    };
+//
+//=======================================================================================
+//! I Base64ToBlob(S)
+// @bsiclass
+//=======================================================================================
+struct Base64ToBlob final : ScalarFunction
+    {
+    private:
+        Base64ToBlob() : ScalarFunction(SQLFUNC_Base64ToBlob, 1, DbValueType::BlobVal) {}
+        void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override;
+
+    public:
+        ~Base64ToBlob() {}
+
+        static Base64ToBlob& GetSingleton();
     };
 
 //=======================================================================================
