@@ -234,11 +234,11 @@ protected:
 
 public:
     virtual bool _IsEmpty() const = 0;
-
+    virtual ~ChangeStream(){}
     Changes GetChanges(bool invert = false) { return Changes(*this, invert); }
     BE_SQLITE_EXPORT DbResult FromChangeTrack(ChangeTracker& tracker, SetType setType = SetType::Full);
     BE_SQLITE_EXPORT DbResult FromChangeGroup(ChangeGroupCR changeGroup);
-    BE_SQLITE_EXPORT DbResult ApplyChanges(DbR db, Rebase* rebase = nullptr, bool invert = false, bool ignoreNoop = false) const;
+    BE_SQLITE_EXPORT DbResult ApplyChanges(DbR db, Rebase* rebase = nullptr, bool invert = false, bool ignoreNoop = false, bool fkNoAction = false) const;
     BE_SQLITE_EXPORT DbResult ReadFrom(Changes::Reader& reader);
     BE_SQLITE_EXPORT DbResult InvertFrom(Changes::Reader& reader);
 
