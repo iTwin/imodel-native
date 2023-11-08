@@ -109,6 +109,27 @@ export namespace NativeCloudSqlite {
     readonly attachedContainers?: number;
   }
 
+  /** Returned from 'CloudContainer.queryContainerStats'
+   * A per container breakdown of some useful
+   */
+  export interface ContainerStats {
+    /** The total number of clients for the container opened on this cache */
+    readonly totalClients: number;
+    /** The total number of active clients for the container on this cache. An active client is one which has an open read txn. */
+    readonly activeClients: number;
+    /** The name of the container. */
+    readonly container: string;
+    /** the total number of blocks of all databases that are open in this container. If we were to fully download each open database in this container,
+     *  we would download AT MOST 'totalBlocks' blocks to do so. The real number may be less since blocks can be shared between databases in the same container.
+     */
+    readonly totalBlocks: number;
+    readonly dbToCachedBlocks: [key: string]: number;
+    /** the number of blocks for this container that are in the cloud cache. */
+    readonly cachedBlocks: number;
+    /** the total number of databases within this container that are opened on the cloud cache. */
+    readonly openDatabases: number;
+  }
+
   /** Properties for accessing a CloudContainer */
   export type ContainerAccessProps = ContainerProps & {
     /** Duration for holding write lock, in seconds. After this time the write lock expires if not refreshed. Default is one hour. */

@@ -430,32 +430,124 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
         return value;
     }
 
+    Napi::Value QueryContainerStats(NapiInfoCR info) {
+        RequireConnected();
+        
+        Statement stmt;
+        auto rc = stmt.Prepare(m_containerDb, "SELECT sum(nclient), sum(ntrans), container, sum(nblock), sum(ncache), group_concat(database, ','), group_concat(ncache, ','), COUNT(*) FROM bcv_database WHERE nclient >= 1 GROUP BY container");
+        BeAssert(rc == BE_SQLITE_OK);                                                                                 json_group_object(database, ncache)
+
+        {
+            container1: 100
+            container2: 200, 
+            container3: 300, 
+        }
+        UNUSED_VARIABLE(rc);
+        // I'm tempted to allow for grouping by container or not. So that we can also get per database information if we need. That would change the return type though, database would be an extra prop when not
+        // grouped by container I think. 
+
+        auto rows = Napi::Array::New(Env());
+        uint32_t index = 0;
+        while (BE_SQLITE_ROW == stmt.Step()) {
+            BeJsNapiObject value(Env());
+            value["totalClients"] = stmt.GetValueInt(0);
+            value["activeClients"] = stmt.GetValueInt(1);
+            value["container"] = stmt.GetValueText(2);
+            value["totalBlocks"] = stmt.GetValueInt(3);
+            value["cachedBlocks"] = stmt.GetValueInt(4);
+            value["databaseNames"] = stmt.GetValueText(5);
+            value["openDatabases"] = stmt.GetValueInt(6);
+            rows.Set(index++, value);
+        }
+        // I had the idea to show something.. relevant to block sharing. 
+        // Pretty much just bar charts of each database I think. You'd maybe get some idea of how many blocks are shared if db1 has 1000 cachedblocks, db2 has 1000 cachedblocks. And they only add 1000 to the total
+        // That would imply all 1000 of those blocks are shared.. but do we know the total in the cachefile for a given container? Right now it only seems like we could know the total in the cachefile for a given
+        // container by adding up all the locked blocks and if that number is less than the sum of all cached blocks across all containers which are locked. 
+        // cachedblocks === lockedblocks for a database if ntrans >=1. But the problem is that two dbs can have ntrans >=1 and would double count a shared block. BUT its okay because we can compare this number 
+        // to nlock from bcv_stat. realLockedBlocks, estimatedLockedBlocks. 
+
+                // WIth the above in mind, I might need to change my query. At first I thought that we would need per database stats, because we'd need some way to match the ntrans >=1 with the amount of cachedblocks for the
+        // specific database. But maybe theres some sqlite magic I could do? What was the magic I was thinking of.. right a summation of ncache when ntrans >=1, would give us estimatedLockedBlocks per container to compare with realLockedBlocks.
+        // At the very least we could do a separate query like, 'SELECT sum(ncache) FROM bcv_database WHERE ntrans >= 1 GROUP BY container', (would need to figure out how to augment the data with it)
+
+        // Extra wrinkle to all of this is that I think for us to recognize block sharing with the above approach, the two databases need to be active at the same time. Its possible that database 2 becomes only active after 
+        // database 1 becomes inactive, database 2 may get a nice jump start to however many blocks they share, but we probably wouldn't be able to detect this with the current idea. 
+        // Maybe we could look for these jump starts, when a database becomes locked / active for the first time did it have an amount of cachedblocks already present? This might have to be logic in the prometheus client.
+        // Prometheus client would need to maintain a list of active databases, first time it sees a database that is not active. See how many cachedblocks it has. (at most this would also include 30s of data that downloaded during that connection)
+        // I was thinking to continue grouping by container, we could concatenate a list of db names csv(is this possible?)... But we also need access to the cachedblocks for the db. We could also track prevCachedBlocks and currentCachedBlocks to approximate the increase (which would show up as soon as db becomes active)
+        // string_agg(database, ',') does a concatenated list of dbs. so prometheus client woudl split on "," to get an array of database names. 
+        
+        // *****************
+        // Last open question is cachedblocks per db I guess. Do we need it? Or do we just remember what the last query showed for that container. if our container has cachedblocks of 100, and we have one new 
+        // active db and it jumps up to 200 we can guess ~100 blocks were in that active db. Some maybe downloaded in last 30 seconds, some maybe shared from other dbs that lived before this new db.
+        // It would further be an overestimate if other dbs in that container were actively dl'ing blocks that weren't part of the new db. We oculd string_agg(ncache) in addition to the other string_agg
+        // I'm not exactly sure how to make sure they're in the same order, we should write a test to ensure they're in the correct order as well. This is such a pain, for same order would have to do an inner select / order by which just seems wasteful.
+        // The specific number probably won't be THAT much different... right? 
+        // We could also just hope for the best that they'll be in the same order. I think currently they are, but its probably not a guaranteed behavior in the future.
+        // *****************
+
+        // Another componento f block sharing would be a new agent spins up ( so we get a new activeClient ) would eb hard to differentiate btwn that activeClient and one from teh same process I think. probably don't worry aobut this.
+
+        // I just really don't want to give a row for each database if I can help it for some reason. I guess in my ehad its easier for the prometheus client this way.
+        // Don't really want to worry about something like this for now.
+
+
+
+
+
+
+        // could also add ncleanup to the containerstats.. seems like a scary number to see to be honest. That number lives on bcv_container which we aren't querying at the moment, would we have to do a join to get that?
+
+        return rows;
+    }
+
     Napi::Value QueryClientCacheInformationByDatabase(NapiInfoCR info) {
         RequireConnected();
+
         Statement stmt;
-        auto rc = stmt.Prepare(m_containerDb, "SELECT nclient, ntrans, database, container, nblock, ncache FROM bcv_database");
+        auto rc = stmt.Prepare(m_containerDb, "SELECT nclient, ntrans, database, container, nblock, ncache FROM bcv_database WHERE nclient >=1 ORDER BY container");
         BeAssert (rc == BE_SQLITE_OK);
         UNUSED_VARIABLE(rc);
-        BeJsNapiObject value(Env());
 
         auto rows = Napi::Array::New(Env());
         uint32_t index = 0;
         auto containerIndex = 1;
-        // map of containerName to index 
-        // imodelblocks-129301-2019-10202- => 1
-        // imodelblocks-123 => 2
-        // If containerName exists in map, use that value otherwise increment the containerIndex that we have and add to a new map 
         auto databaseIndex = 1;
-        // This has to be per container somehow..
-        // 
+        // By database function should maybe instead return a json object where key is containerName and the value is an array of databases. 
+        // As opposed to an array of databases? 
+        // What does that type look like ? 
+        // {key: string} : databaseInfo[] pretty much this.. I think. Building it in napi would be annoying, i'd need to figure that out.
+
+        // Since query is ordered by container, I could also increment index whenever the containerName changes.
+        bmap<Utf8String, int> containerNameMap; // map of containerName to index for anonymizing container names.
         while (BE_SQLITE_ROW == stmt.Step()) {
             BeJsNapiObject value(Env());
             value["nclient"] = stmt.GetValueInt(0);
             value["ntrans"] = stmt.GetValueInt(1);
-            value["database"] = stmt.GetValueText(2); // anonymize database and container? I could decide to anonymize only container? or something?
-            value["container"] = stmt.GetValueText(3);
-            // could do something like replace container name with ascending integer. container1 container2 
-            // same for database, database1 database2. container1/database1, container1/database2 etc. 
+            auto database = stmt.GetValueText(2);
+            auto container = stmt.GetValueText(3);
+            if (containerNameMap.find(container) == containerNameMap.end()) {
+                databaseIndex = 1;
+                containerNameMap.insert(bpair<Utf8String, int>(container, containerIndex++));
+            }
+            value["container"] = Utf8PrintfString("container%d", containerNameMap.at(container));
+            value["database"] = Utf8PrintfString("database%d", databaseIndex++);
+            // ultimately I want some gauges in grafana 
+            // active clients per container 
+            // total clients per container 
+            // active clients per container/database? 
+            // total clients per container/database? the sum of clients 
+            // total size of databases on the node? I could see SOME value in knowing the size per database on a node as well.
+            // We could also get the average size of a database on the node pretty easily with the per container view. even per container.
+            // It'd PROBABLY equal out to be about the same unless you went from 100% fragmented to 0 with a vacuum.
+            // There would also probably not ever be THAT many databases per container on a node I would think. 
+            // blocks in cachefile per database probably would vary and be lost if we did by container. 
+            // num blocks in the cachefile broken down by database. (We already have num blocks in cachefile.. not sure how necessary tihs is)
+            // Also need to think about how this information looks in the grafana dashboard.. 
+            //    Probably has to be part of the drill-down pod view.
+            //    I could also potentially represent a per node view somehow.. like a weird percentage or something 'utilization' 
+            //    100% if its all one container?, 93% if its two containers.. idk Something like expect x pods on node.
+            // KEEP IN MIND: My main goal out of all of this was to get an idea of utilization / sharing. we pretty much get that with a breakdown by container. 
             // Only issue with this I think is that grafana trends wouldn't work, depending on when you queried. it would only really work for 
             // snapshots in time. Because container1/database1 would probably change. 
             // changing every 30 seconds.. is that alright? 
@@ -761,6 +853,7 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
             InstanceMethod<&JsCloudContainer::QueryDatabases>("queryDatabases"),
             InstanceMethod<&JsCloudContainer::QueryHttpLog>("queryHttpLog"),
             InstanceMethod<&JsCloudContainer::QueryBcvStats>("queryBcvStats"),
+            QueryContainerStats
             InstanceMethod<&JsCloudContainer::ReleaseWriteLock>("releaseWriteLock"),
             InstanceMethod<&JsCloudContainer::UploadChanges>("uploadChanges"),
         });

@@ -1167,6 +1167,11 @@ export declare namespace IModelJsNative {
     public queryBcvStats(filterOptions?: BcvStatsFilterOptions): NativeCloudSqlite.BcvStats;
 
     /**
+     * @internal
+     */
+    public queryClientCacheInformationByContainer(): NativeCloudSqlite.BcvvStats;
+
+    /**
      * Get the SHA1 hash of the content of a database.
      * @param dbName the name of the database of interest
      * @note the hash will be empty if the database does not exist
