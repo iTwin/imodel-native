@@ -180,7 +180,7 @@ void AddTestGraph00 (MTGFacets & facets, MTGNodeId &node0)
     MakeEdge(facets, node4, indexB, node5, indexC, 30);
     MakeEdge(facets, node6, indexE, node7, indexF, 40);
     MakeEdge(facets, node8, indexC, node9, indexD, 50);
-    MakeEdge(facets, node10, indexD, node11, indexF, 50);
+    MakeEdge(facets, node10, indexD, node11, indexF, 60);
     MakeEdge(facets, node12, indexX, node13, indexY, 200);
 
     graph->VertexTwist (node1, node2);
