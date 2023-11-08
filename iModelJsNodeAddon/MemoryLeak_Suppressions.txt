@@ -1,4 +1,4 @@
 leak:/usr/bin/bash
-leak:*/python3.5*
+leak:*/bin/python*
 leak:*/bsitools/*
 leak:*/thirdparty/*
