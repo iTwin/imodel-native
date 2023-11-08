@@ -5,5 +5,6 @@ leak:*/thirdparty/*
 leak:*/BentleyBuild/*
 leak:*/toolcache/*
 leak:*/upack/*
-leak:*/node16/*
+leak:*/node*/*
 leak:*/bsicommon/*
+leak: */tmp/pip-req-build*/*
