@@ -5,3 +5,5 @@ leak:*/thirdparty/*
 leak:*/BentleyBuild/*
 leak:*/toolcache/*
 leak:*/upack/*
+leak:*/node16/*
+leak:*/bsicommon/*
