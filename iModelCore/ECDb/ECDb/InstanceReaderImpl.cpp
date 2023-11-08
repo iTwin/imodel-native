@@ -163,8 +163,11 @@ InstanceReader::Impl::~Impl() {}
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 RowRender::Document& RowRender::ClearAndGetCachedJsonDocument() const {
-    m_cachedJsonDoc.RemoveAllMembers();
     m_allocator.Clear();
+    m_cachedJsonDoc.RemoveAllMembers();
+    m_cachedJsonDoc.SetObject();
+
+
     return m_cachedJsonDoc;
 }
 
