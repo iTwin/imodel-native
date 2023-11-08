@@ -547,11 +547,18 @@ void Base64ToBlob::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
         return;
         }
 
-    auto* result = new Utf8String;
-    Base64Utilities::Encode(*result, (const Byte*) v.GetValueText(), v.GetValueBytes());
+    ByteStream result;
+    Base64Utilities::Decode(result, v.GetValueText(), v.GetValueBytes());
+    auto resultSize = result.GetSize();
+    // ByteStream uses malloc so we destroy with free
+    auto resultData = result.ExtractData();
 
-    ctx.SetResultBlob(result->data(), result->size(), DbFunction::Context::CopyData::No,
-                      [](void* p){ delete static_cast<Utf8String*>(p); });
+    if (resultData == nullptr) {
+        ctx.SetResultNull();
+        return;
+    }
+
+    ctx.SetResultBlob(resultData, resultSize, DbFunction::Context::CopyData::No, free);
     }
 
 //************************************************************************************
