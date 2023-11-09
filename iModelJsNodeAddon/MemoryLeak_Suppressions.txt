@@ -3,7 +3,5 @@ leak:*/bin/python*
 leak:*/bsitools/*
 leak:*/BentleyBuild/*
 leak:*/toolcache/*
-leak:*/upack/*
 leak:*/node*/*
-leak:*/bsicommon/*
 leak:*interceptor_malloc
