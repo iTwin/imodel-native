@@ -1,7 +1,6 @@
 leak:/usr/bin/bash
 leak:*/bin/python*
 leak:*/bsitools/*
-leak:*/thirdparty/*
 leak:*/BentleyBuild/*
 leak:*/toolcache/*
 leak:*/upack/*
