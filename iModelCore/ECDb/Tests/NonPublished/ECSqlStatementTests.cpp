@@ -1545,7 +1545,7 @@ TEST_F(ECSqlStatementTestFixture, IsNull)
         ecsql.Sprintf("SELECT P2D, P2D.X, P2D.Y, P3D.X, P3D.Y, P3D.Z, Struct.pstruct.p2d.X, Struct.pstruct.p2d.Y, Struct.pstruct.p3d.X, Struct.pstruct.p3d.Y, Struct.pstruct.p3d.Z FROM ts.%s WHERE ECInstanceId=%s",
                       testClassName, key.GetInstanceId().ToString().c_str());
 
-        std::set<Utf8String> notNullItems {"P2D", "P2D.X", "P3D.Y", "Struct.pstruct.p2d.X", "Struct.pstruct.p3d.Y"};
+        std::set<Utf8String> notNullItems {"P2D.X", "P3D.Y", "Struct.pstruct.p2d.X", "Struct.pstruct.p3d.Y"};
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql.c_str())) << ecsql.c_str();
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
         for (int i = 0; i < stmt.GetColumnCount(); i++)
@@ -1654,8 +1654,8 @@ TEST_F(ECSqlStatementTestFixture, IsNullForIncompletePoints)
     IECSqlValue const& point2D = stmt.GetValue(0);
     IECSqlValue const& point3D = stmt.GetValue(1);
 
-    //IsNull only returns true if all coordinates cols are NULL.
-    ASSERT_FALSE(point2D.IsNull());
+    //IsNull should return true if one or more co-ordinates are INF/NaN/Null
+    ASSERT_TRUE(point2D.IsNull());
     ASSERT_TRUE(point3D.IsNull());
     }
 //-----------------------------------------------------------------------------------
@@ -11240,22 +11240,22 @@ TEST_F(ECSqlStatementTestFixture, verify_inf_and_nan_handling_Point2D) {
         ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
 
         // Test columns inf_pos, inf_neg, nan_val where both coordinates are INF/NaN
-        for (const auto& [columnIndex, columnName, isCoordXInf, isCoordYInf, isColumnValueNull] : std::vector<std::tuple<int, Utf8CP, bool, bool, bool>>
+        for (const auto& [columnIndex, columnName, isCoordXInf, isCoordYInf] : std::vector<std::tuple<int, Utf8CP, bool, bool>>
             {
                 // Test Case Set 1: Columns where both co-ordiantes X and Y are INF/NaN
-                { 0, "inf_pos", true, true, false },
-                { 1, "inf_neg", true, true, false },
-                { 2, "nan_val", false, false, true },
+                { 0, "inf_pos", true, true },
+                { 1, "inf_neg", true, true },
+                { 2, "nan_val", false, false },
 
                 // Test Case Set 2: Columns where coordinate X is a double and coordinate Y is INF/NaN
-                { 3, "inf_pos_combo_1", false, true, false },
-                { 4, "inf_neg_combo_1", false, true, false },
-                { 5, "nan_val_combo_1", false, false, false },
+                { 3, "inf_pos_combo_1", false, true },
+                { 4, "inf_neg_combo_1", false, true },
+                { 5, "nan_val_combo_1", false, false },
 
                 // Test Case Set 3: Columns where coordinate Y is a double and coordinate X is INF/NaN
-                { 6, "inf_pos_combo_2", true, false, false },
-                { 7, "inf_neg_combo_2", true, false, false },
-                { 8, "nan_val_combo_2", false, false, false },
+                { 6, "inf_pos_combo_2", true, false },
+                { 7, "inf_neg_combo_2", true, false },
+                { 8, "nan_val_combo_2", false, false },
             })
             {
             double coordX, coordY;
@@ -11267,11 +11267,7 @@ TEST_F(ECSqlStatementTestFixture, verify_inf_and_nan_handling_Point2D) {
             EXPECT_FALSE(std::isnan(coordX)) << "Test failed for column " << columnName;
             EXPECT_FALSE(std::isnan(coordY)) << "Test failed for column " << columnName;
 
-            // TO-DO:
-            // Current Behavior: The function IsValueNull(columnIndex) returns false when one co-ordinate is INF/NaN and the other isn't.
-            // Expected Behavior: The function IsValueNull(columnIndex) should return true if either of the co-ordinates is INF/NaN.
-            // After fix, test case sets 2 and 3 should be modified to expect all values of "isColumnValueNull" as true.
-            EXPECT_EQ(stmt.IsValueNull(columnIndex), isColumnValueNull) << "Test failed for column " << columnName;
+            EXPECT_TRUE(stmt.IsValueNull(columnIndex)) << "Test failed for column " << columnName;
             }
     }
     if ("jsoncpp must return null for inf") {
@@ -11281,8 +11277,7 @@ TEST_F(ECSqlStatementTestFixture, verify_inf_and_nan_handling_Point2D) {
         JsonECSqlSelectAdapter adaptor(stmt);
         Json::Value jsonCpp;
         EXPECT_EQ(SUCCESS, adaptor.GetRow(jsonCpp));
-        EXPECT_STREQ("{\"inf_neg\":{\"x\":null,\"y\":null},\"inf_neg_combo_1\":{\"x\":1.0,\"y\":null},\"inf_neg_combo_2\":{\"x\":null,\"y\":1.0},\"inf_pos\":{\"x\":null,\"y\":null},\"inf_pos_combo_1\":{\"x\":1.0,\"y\":null},"
-            "\"inf_pos_combo_2\":{\"x\":null,\"y\":1.0},\"nan_val_combo_1\":{\"x\":1.0,\"y\":0.0},\"nan_val_combo_2\":{\"x\":0.0,\"y\":1.0}}", jsonCpp.ToString().c_str());
+        EXPECT_STREQ("{}", jsonCpp.ToString().c_str());
     }
     if ("rapidjson must return null for inf") {
         ECSqlStatement stmt;
@@ -11292,8 +11287,7 @@ TEST_F(ECSqlStatementTestFixture, verify_inf_and_nan_handling_Point2D) {
         BeJsDocument rapidJson;
         EXPECT_EQ(SUCCESS, adaptor.GetRow(rapidJson));
         Utf8String json = rapidJson.Stringify();
-        EXPECT_STREQ("{\"inf_pos\":{\"x\":null,\"y\":null},\"inf_neg\":{\"x\":null,\"y\":null},\"inf_pos_combo_1\":{\"x\":1.0,\"y\":null},\"inf_pos_combo_2\":{\"x\":null,\"y\":1.0},\"inf_neg_combo_1\":{\"x\":1.0,\"y\":null},"
-            "\"inf_neg_combo_2\":{\"x\":null,\"y\":1.0},\"nan_val_combo_1\":{\"x\":1.0,\"y\":0.0},\"nan_val_combo_2\":{\"x\":0.0,\"y\":1.0}}", json.c_str());
+        EXPECT_STREQ("{}", json.c_str());
     }
 }
 
@@ -11444,35 +11438,35 @@ TEST_F(ECSqlStatementTestFixture, verify_inf_and_nan_handling_Point3D) {
         ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
 
         // Test columns inf_pos, inf_neg, nan_val where both coordinates are INF/NaN
-        for (const auto& [columnIndex, columnName, isCoordXInf, isCoordYInf, isCoordZInf, isColumnValueNull] : std::vector<std::tuple<int, Utf8CP, bool, bool, bool, bool>> {
+        for (const auto& [columnIndex, columnName, isCoordXInf, isCoordYInf, isCoordZInf] : std::vector<std::tuple<int, Utf8CP, bool, bool, bool>> {
             // Test Case Set 1: Columns where all 3 co-ordiantes are +-INF/NaN
-                { 0, "inf_pos", true, true, true, false },
-                { 1, "inf_neg", true, true, true, false },
-                { 2, "nan_val", false, false, false, true },
+                { 0, "inf_pos", true, true, true },
+                { 1, "inf_neg", true, true, true },
+                { 2, "nan_val", false, false, false },
 
                 // Test Case Set 2: Columns where co-ordinates are a combination of +INF/double
-                { 3, "inf_pos_combo_1", false, false, true, false },
-                { 4, "inf_pos_combo_2", false, true, false, false },
-                { 5, "inf_pos_combo_3", true, false, false, false },
-                { 6, "inf_pos_combo_4", true, true, false, false },
-                { 7, "inf_pos_combo_5", false, true, true, false },
-                { 8, "inf_pos_combo_6", true, false, true, false },
+                { 3, "inf_pos_combo_1", false, false, true },
+                { 4, "inf_pos_combo_2", false, true, false },
+                { 5, "inf_pos_combo_3", true, false, false },
+                { 6, "inf_pos_combo_4", true, true, false },
+                { 7, "inf_pos_combo_5", false, true, true },
+                { 8, "inf_pos_combo_6", true, false, true },
 
                 // Test Case Set 3: Columns where co-ordinates are a combination of -INF/double
-                { 9, "inf_neg_combo_1", false, false, true, false },
-                { 10, "inf_neg_combo_2", false, true, false, false },
-                { 11, "inf_neg_combo_3", true, false, false, false },
-                { 12, "inf_neg_combo_4", true, true, false, false },
-                { 13, "inf_neg_combo_5", false, true, true, false },
-                { 14, "inf_neg_combo_6", true, false, true, false },
+                { 9, "inf_neg_combo_1", false, false, true },
+                { 10, "inf_neg_combo_2", false, true, false },
+                { 11, "inf_neg_combo_3", true, false, false },
+                { 12, "inf_neg_combo_4", true, true, false },
+                { 13, "inf_neg_combo_5", false, true, true },
+                { 14, "inf_neg_combo_6", true, false, true },
 
                 // Test Case Set 4: Columns where co-ordinates are a combination of NaN/double
-                { 15, "nan_val_combo_1", false, false, false, false },
-                { 16, "nan_val_combo_2", false, false, false, false },
-                { 17, "nan_val_combo_3", false, false, false, false },
-                { 18, "nan_val_combo_4", false, false, false, false },
-                { 19, "nan_val_combo_5", false, false, false, false },
-                { 20, "nan_val_combo_6", false, false, false, false },
+                { 15, "nan_val_combo_1", false, false, false },
+                { 16, "nan_val_combo_2", false, false, false },
+                { 17, "nan_val_combo_3", false, false, false },
+                { 18, "nan_val_combo_4", false, false, false },
+                { 19, "nan_val_combo_5", false, false, false },
+                { 20, "nan_val_combo_6", false, false, false },
             })
         {
             double coordX, coordY, coordZ;
@@ -11486,11 +11480,7 @@ TEST_F(ECSqlStatementTestFixture, verify_inf_and_nan_handling_Point3D) {
             EXPECT_FALSE(std::isnan(coordY)) << "Test failed for column " << columnName;
             EXPECT_FALSE(std::isnan(coordZ)) << "Test failed for column " << columnName;
 
-            // TO-DO:
-            // Current Behavior: The function IsValueNull(columnIndex) returns false when one or more co-ordinates are INF/NaN and the rest aren't.
-            // Expected Behavior: The function IsValueNull(columnIndex) should return true if one or more of the co-ordinates are INF/NaN.
-            // After fix, test case sets 2, 3 and 4 should be modified to expect all values of "isColumnValueNull" as true.
-            EXPECT_EQ(stmt.IsValueNull(columnIndex), isColumnValueNull) << "Test failed for column " << columnName;
+            EXPECT_TRUE(stmt.IsValueNull(columnIndex)) << "Test failed for column " << columnName;
         }
     }
     if ("jsoncpp must return null for inf") {
@@ -11500,12 +11490,7 @@ TEST_F(ECSqlStatementTestFixture, verify_inf_and_nan_handling_Point3D) {
         JsonECSqlSelectAdapter adaptor(stmt);
         Json::Value jsonCpp;
         EXPECT_EQ(SUCCESS, adaptor.GetRow(jsonCpp));
-        EXPECT_STREQ("{\"inf_neg\":{\"x\":null,\"y\":null,\"z\":null},\"inf_neg_combo_1\":{\"x\":1.0,\"y\":1.0,\"z\":null},\"inf_neg_combo_2\":{\"x\":1.0,\"y\":null,\"z\":1.0},\"inf_neg_combo_3\":{\"x\":null,\"y\":1.0,\"z\":1.0},"
-            "\"inf_neg_combo_4\":{\"x\":null,\"y\":null,\"z\":1.0},\"inf_neg_combo_5\":{\"x\":1.0,\"y\":null,\"z\":null},\"inf_neg_combo_6\":{\"x\":null,\"y\":1.0,\"z\":null},"
-            "\"inf_pos\":{\"x\":null,\"y\":null,\"z\":null},\"inf_pos_combo_1\":{\"x\":1.0,\"y\":1.0,\"z\":null},\"inf_pos_combo_2\":{\"x\":1.0,\"y\":null,\"z\":1.0},\"inf_pos_combo_3\":{\"x\":null,\"y\":1.0,\"z\":1.0},"
-            "\"inf_pos_combo_4\":{\"x\":null,\"y\":null,\"z\":1.0},\"inf_pos_combo_5\":{\"x\":1.0,\"y\":null,\"z\":null},\"inf_pos_combo_6\":{\"x\":null,\"y\":1.0,\"z\":null},"
-            "\"nan_val_combo_1\":{\"x\":1.0,\"y\":1.0,\"z\":0.0},\"nan_val_combo_2\":{\"x\":1.0,\"y\":0.0,\"z\":1.0},\"nan_val_combo_3\":{\"x\":0.0,\"y\":1.0,\"z\":1.0},\"nan_val_combo_4\":{\"x\":0.0,\"y\":0.0,\"z\":1.0},"
-            "\"nan_val_combo_5\":{\"x\":1.0,\"y\":0.0,\"z\":0.0},\"nan_val_combo_6\":{\"x\":0.0,\"y\":1.0,\"z\":0.0}}", jsonCpp.ToString().c_str());
+        EXPECT_STREQ("{}", jsonCpp.ToString().c_str());
     }
     if ("rapidjson must return null for inf") {
         ECSqlStatement stmt;
@@ -11515,12 +11500,7 @@ TEST_F(ECSqlStatementTestFixture, verify_inf_and_nan_handling_Point3D) {
         BeJsDocument rapidJson;
         EXPECT_EQ(SUCCESS, adaptor.GetRow(rapidJson));
         Utf8String json = rapidJson.Stringify();
-        EXPECT_STREQ("{\"inf_pos\":{\"x\":null,\"y\":null,\"z\":null},\"inf_pos_combo_1\":{\"x\":1.0,\"y\":1.0,\"z\":null},\"inf_pos_combo_2\":{\"x\":1.0,\"y\":null,\"z\":1.0},\"inf_pos_combo_3\":{\"x\":null,\"y\":1.0,\"z\":1.0},"
-            "\"inf_pos_combo_4\":{\"x\":null,\"y\":null,\"z\":1.0},\"inf_pos_combo_5\":{\"x\":1.0,\"y\":null,\"z\":null},\"inf_pos_combo_6\":{\"x\":null,\"y\":1.0,\"z\":null},"
-            "\"inf_neg\":{\"x\":null,\"y\":null,\"z\":null},\"inf_neg_combo_1\":{\"x\":1.0,\"y\":1.0,\"z\":null},\"inf_neg_combo_2\":{\"x\":1.0,\"y\":null,\"z\":1.0},\"inf_neg_combo_3\":{\"x\":null,\"y\":1.0,\"z\":1.0},"
-            "\"inf_neg_combo_4\":{\"x\":null,\"y\":null,\"z\":1.0},\"inf_neg_combo_5\":{\"x\":1.0,\"y\":null,\"z\":null},\"inf_neg_combo_6\":{\"x\":null,\"y\":1.0,\"z\":null},"
-            "\"nan_val_combo_1\":{\"x\":1.0,\"y\":1.0,\"z\":0.0},\"nan_val_combo_2\":{\"x\":1.0,\"y\":0.0,\"z\":1.0},\"nan_val_combo_3\":{\"x\":0.0,\"y\":1.0,\"z\":1.0},\"nan_val_combo_4\":{\"x\":0.0,\"y\":0.0,\"z\":1.0},"
-            "\"nan_val_combo_5\":{\"x\":1.0,\"y\":0.0,\"z\":0.0},\"nan_val_combo_6\":{\"x\":0.0,\"y\":1.0,\"z\":0.0}}", json.c_str());
+        EXPECT_STREQ("{}", json.c_str());
     }
 }
 
