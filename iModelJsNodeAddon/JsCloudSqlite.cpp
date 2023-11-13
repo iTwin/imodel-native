@@ -434,14 +434,8 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
         RequireConnected();
         
         Statement stmt;
-        auto rc = stmt.Prepare(m_containerDb, "SELECT sum(nclient), sum(ntrans), container, sum(nblock), sum(ncache), group_concat(database, ','), group_concat(ncache, ','), COUNT(*) FROM bcv_database WHERE nclient >= 1 GROUP BY container");
-        BeAssert(rc == BE_SQLITE_OK);                                                                                 json_group_object(database, ncache)
-
-        {
-            container1: 100
-            container2: 200, 
-            container3: 300, 
-        }
+        auto rc = stmt.Prepare(m_containerDb, "SELECT sum(nclient), sum(ntrans), container, sum(nblock), json_group_object(database, ncache), CASE WHEN ntrans > 0 THEN sum(ncache) ELSE 0 END AS locked_blocks, COUNT(*) FROM bcv_database WHERE nclient >= 1 GROUP BY container");
+        BeAssert(rc == BE_SQLITE_OK);
         UNUSED_VARIABLE(rc);
         // I'm tempted to allow for grouping by container or not. So that we can also get per database information if we need. That would change the return type though, database would be an extra prop when not
         // grouped by container I think. 
@@ -454,9 +448,9 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
             value["activeClients"] = stmt.GetValueInt(1);
             value["container"] = stmt.GetValueText(2);
             value["totalBlocks"] = stmt.GetValueInt(3);
-            value["cachedBlocks"] = stmt.GetValueInt(4);
-            value["databaseNames"] = stmt.GetValueText(5);
-            value["openDatabases"] = stmt.GetValueInt(6);
+            value["dbToCachedBlocks"] = stmt.GetValueInt(4);
+            value["cachedBlocks"] = stmt.GetValueText(5);
+            value["openDatabases"] = stmt.GetValueText(6);
             rows.Set(index++, value);
         }
         // I had the idea to show something.. relevant to block sharing. 
@@ -466,7 +460,7 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
         // cachedblocks === lockedblocks for a database if ntrans >=1. But the problem is that two dbs can have ntrans >=1 and would double count a shared block. BUT its okay because we can compare this number 
         // to nlock from bcv_stat. realLockedBlocks, estimatedLockedBlocks. 
 
-                // WIth the above in mind, I might need to change my query. At first I thought that we would need per database stats, because we'd need some way to match the ntrans >=1 with the amount of cachedblocks for the
+        // WIth the above in mind, I might need to change my query. At first I thought that we would need per database stats, because we'd need some way to match the ntrans >=1 with the amount of cachedblocks for the
         // specific database. But maybe theres some sqlite magic I could do? What was the magic I was thinking of.. right a summation of ncache when ntrans >=1, would give us estimatedLockedBlocks per container to compare with realLockedBlocks.
         // At the very least we could do a separate query like, 'SELECT sum(ncache) FROM bcv_database WHERE ntrans >= 1 GROUP BY container', (would need to figure out how to augment the data with it)
 
@@ -853,7 +847,7 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
             InstanceMethod<&JsCloudContainer::QueryDatabases>("queryDatabases"),
             InstanceMethod<&JsCloudContainer::QueryHttpLog>("queryHttpLog"),
             InstanceMethod<&JsCloudContainer::QueryBcvStats>("queryBcvStats"),
-            QueryContainerStats
+            InstanceMethod<&JsCloudContainer::QueryContainerStats>("queryContainerStats"),
             InstanceMethod<&JsCloudContainer::ReleaseWriteLock>("releaseWriteLock"),
             InstanceMethod<&JsCloudContainer::UploadChanges>("uploadChanges"),
         });

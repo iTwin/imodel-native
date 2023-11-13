@@ -123,7 +123,8 @@ export namespace NativeCloudSqlite {
      *  we would download AT MOST 'totalBlocks' blocks to do so. The real number may be less since blocks can be shared between databases in the same container.
      */
     readonly totalBlocks: number;
-    readonly dbToCachedBlocks: [key: string]: number;
+    /** Key value pair of Data base names and the total number of databases within this container that are opened on the cloud cache. */
+    readonly dbToCachedBlocks: [key: string, number];
     /** the number of blocks for this container that are in the cloud cache. */
     readonly cachedBlocks: number;
     /** the total number of databases within this container that are opened on the cloud cache. */

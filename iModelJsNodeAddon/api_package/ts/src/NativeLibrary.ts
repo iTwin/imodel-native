@@ -1169,7 +1169,7 @@ export declare namespace IModelJsNative {
     /**
      * @internal
      */
-    public queryClientCacheInformationByContainer(): NativeCloudSqlite.BcvvStats;
+    public queryContainerStats(): NativeCloudSqlite.BcvStats;
 
     /**
      * Get the SHA1 hash of the content of a database.
