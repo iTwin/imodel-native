@@ -60,8 +60,8 @@ struct JoinExp : ClassRefExp
         JoinExp(Type type, ECSqlJoinType joinType, std::unique_ptr<ClassRefExp> from, std::unique_ptr<ClassRefExp> to)
             : ClassRefExp(type), m_joinType(joinType)
             {
-            m_nFromClassRefIndex = AddChild(move(from));
-            m_nToClassRefIndex = AddChild(move(to));
+            m_nFromClassRefIndex = AddChild(std::move(from));
+            m_nToClassRefIndex = AddChild(std::move(to));
             }
 
     public:
@@ -188,7 +188,7 @@ struct ECRelationshipJoinExp final : JoinExp
         ECRelationshipJoinExp(std::unique_ptr<ClassRefExp> from, std::unique_ptr<ClassRefExp> to, std::unique_ptr<ClassRefExp> relationship, JoinDirection direction)
             : JoinExp(Type::ECRelationshipJoin, ECSqlJoinType::JoinUsingRelationship, std::move(from), std::move(to)), m_direction(direction)
             {
-            m_relationshipClassNameExpIndex = AddChild(move(relationship));
+            m_relationshipClassNameExpIndex = AddChild(std::move(relationship));
             }
 
         ClassNameExp const& GetRelationshipClassNameExp() const { return *GetChild<ClassNameExp>(m_relationshipClassNameExpIndex); }
