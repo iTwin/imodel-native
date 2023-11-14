@@ -3117,11 +3117,15 @@ namespace SqlFuncs {
 
             // table name escaped in checks above
             auto fontSql = std::make_shared<SqlPrintfString>(R"sql(
-                SELECT TargetId FROM %s WHERE SourceId=?
+                SELECT TargetId + (?1 - SourceId)
+                FROM %s
+                WHERE ?1 BETWEEN SourceId AND SourceId + Length - 1
             )sql", fontRemapTableName);
 
             auto elemSql = std::make_shared<SqlPrintfString>(R"sql(
-                SELECT TargetId FROM %s WHERE SourceId=?
+                SELECT TargetId + (?1 - SourceId)
+                FROM %s
+                WHERE ?1 BETWEEN SourceId AND SourceId + Length - 1
             )sql", elementRemapTableName);
 
             const auto getStatements = [this, fontSql = std::move(fontSql), elemSql = std::move(elemSql)]()
