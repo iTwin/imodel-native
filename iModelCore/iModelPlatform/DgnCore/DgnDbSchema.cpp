@@ -194,9 +194,10 @@ static DbResult insertIntoDgnModel(DgnDbR db, DgnClassId classId, DgnElementId m
 DbResult DgnDb::CreatePartitionElement(Utf8CP className, DgnElementId partitionId, Utf8CP partitionName)
     {
     DgnCode partitionCode(CodeSpecs().QueryCodeSpecId(BIS_CODESPEC_InformationPartitionElement), Elements().GetRootSubjectId(), partitionName, m_codeValueBehavior);
+    BeGuid federationGuid(true);
 
     // element handlers are not initialized yet, so insert DefinitionPartition directly
-    Utf8PrintfString sql("INSERT INTO %s (ECInstanceId,Model.Id,Parent.Id,Parent.RelECClassId,CodeSpec.Id,CodeScope.Id,CodeValue) VALUES(?,?,?,?,?,?,?)", className);
+    Utf8PrintfString sql("INSERT INTO %s (ECInstanceId,Model.Id,Parent.Id,Parent.RelECClassId,CodeSpec.Id,CodeScope.Id,CodeValue,FederationGuid) VALUES(?,?,?,?,?,?,?,?)", className);
     ECSqlStatement statement;
     if (ECSqlStatus::Success != statement.Prepare(*this, sql.c_str(), GetECCrudWriteToken()))
         {
@@ -211,6 +212,7 @@ DbResult DgnDb::CreatePartitionElement(Utf8CP className, DgnElementId partitionI
     statement.BindId(5, partitionCode.GetCodeSpecId());
     statement.BindId(6, partitionCode.GetScopeElementId(*this));
     statement.BindText(7, partitionCode.GetValue().GetUtf8CP(), IECSqlBinder::MakeCopy::No);
+    statement.BindGuid(8, federationGuid, IECSqlBinder::MakeCopy::No);
 
     DbResult result = statement.Step();
     BeAssert(BE_SQLITE_DONE == result);
@@ -268,10 +270,11 @@ DbResult DgnDb::CreateRootSubject(CreateDgnDbParams const& params)
     DgnModelId modelId = DgnModel::RepositoryModelId();
     CodeSpecId codeSpecId = CodeSpecs().QueryCodeSpecId(BIS_CODESPEC_Subject);
     DgnCode elementCode = DgnCode(codeSpecId, elementId, params.m_rootSubjectName, m_codeValueBehavior);
+    BeGuid federationGuid(true);
 
     // element handlers are not initialized yet, so insert root Subject directly
     ECSqlStatement statement;
-    if (ECSqlStatus::Success != statement.Prepare(*this, "INSERT INTO " BIS_SCHEMA(BIS_CLASS_Subject) " (ECInstanceId,Model.Id,CodeSpec.Id,CodeScope.Id,CodeValue,Description) VALUES(?,?,?,?,?,?)", GetECCrudWriteToken()))
+    if (ECSqlStatus::Success != statement.Prepare(*this, "INSERT INTO " BIS_SCHEMA(BIS_CLASS_Subject) " (ECInstanceId,Model.Id,CodeSpec.Id,CodeScope.Id,CodeValue,Description,FederationGuid) VALUES(?,?,?,?,?,?,?)", GetECCrudWriteToken()))
         {
         BeAssert(false);
         return BE_SQLITE_ERROR;
@@ -283,6 +286,7 @@ DbResult DgnDb::CreateRootSubject(CreateDgnDbParams const& params)
     statement.BindId(4, elementCode.GetScopeElementId(*this));
     statement.BindText(5, elementCode.GetValueUtf8CP(), IECSqlBinder::MakeCopy::No);
     statement.BindText(6, params.m_rootSubjectDescription.c_str(), IECSqlBinder::MakeCopy::No);
+    statement.BindGuid(7, federationGuid, IECSqlBinder::MakeCopy::No);
 
     DbResult result = statement.Step();
     BeAssert(BE_SQLITE_DONE == result);
@@ -368,7 +372,7 @@ void DgnDb::OnBisCoreSchemaImported(CreateDgnDbParams const& params)
     // Every DgnDb has a few built-in CodeSpec for element codes
     CreateCodeSpecs();
 
-    // Every DgnDb has a RepositoryModel and a DictionaryModel
+    // Every DgnDb has a RepositoryModel, a DictionaryModel and a RealityDataSourcesModel
     ExecuteSql("PRAGMA defer_foreign_keys = true;"); // the RepositoryModel and root Subject have foreign keys to each other
     CreateRepositoryModel();
     CreateRootSubject(params);
