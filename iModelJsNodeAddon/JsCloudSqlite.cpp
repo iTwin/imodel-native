@@ -449,7 +449,7 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
             value["container"] = stmt.GetValueText(2);
             value["totalBlocks"] = stmt.GetValueInt(3);
             value["dbToCachedBlocks"] = stmt.GetValueInt(4);
-            value["cachedBlocks"] = stmt.GetValueText(5);
+            value["estimatedLockedBlocks"] = stmt.GetValueText(5);
             value["openDatabases"] = stmt.GetValueText(6);
             rows.Set(index++, value);
         }
@@ -495,63 +495,63 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
         return rows;
     }
 
-    Napi::Value QueryClientCacheInformationByDatabase(NapiInfoCR info) {
-        RequireConnected();
+    // Napi::Value QueryClientCacheInformationByDatabase(NapiInfoCR info) {
+    //     RequireConnected();
 
-        Statement stmt;
-        auto rc = stmt.Prepare(m_containerDb, "SELECT nclient, ntrans, database, container, nblock, ncache FROM bcv_database WHERE nclient >=1 ORDER BY container");
-        BeAssert (rc == BE_SQLITE_OK);
-        UNUSED_VARIABLE(rc);
+    //     Statement stmt;
+    //     auto rc = stmt.Prepare(m_containerDb, "SELECT nclient, ntrans, database, container, nblock, ncache FROM bcv_database WHERE nclient >=1 ORDER BY container");
+    //     BeAssert (rc == BE_SQLITE_OK);
+    //     UNUSED_VARIABLE(rc);
 
-        auto rows = Napi::Array::New(Env());
-        uint32_t index = 0;
-        auto containerIndex = 1;
-        auto databaseIndex = 1;
-        // By database function should maybe instead return a json object where key is containerName and the value is an array of databases. 
-        // As opposed to an array of databases? 
-        // What does that type look like ? 
-        // {key: string} : databaseInfo[] pretty much this.. I think. Building it in napi would be annoying, i'd need to figure that out.
+    //     auto rows = Napi::Array::New(Env());
+    //     uint32_t index = 0;
+    //     auto containerIndex = 1;
+    //     auto databaseIndex = 1;
+    //     // By database function should maybe instead return a json object where key is containerName and the value is an array of databases. 
+    //     // As opposed to an array of databases? 
+    //     // What does that type look like ? 
+    //     // {key: string} : databaseInfo[] pretty much this.. I think. Building it in napi would be annoying, i'd need to figure that out.
 
-        // Since query is ordered by container, I could also increment index whenever the containerName changes.
-        bmap<Utf8String, int> containerNameMap; // map of containerName to index for anonymizing container names.
-        while (BE_SQLITE_ROW == stmt.Step()) {
-            BeJsNapiObject value(Env());
-            value["nclient"] = stmt.GetValueInt(0);
-            value["ntrans"] = stmt.GetValueInt(1);
-            auto database = stmt.GetValueText(2);
-            auto container = stmt.GetValueText(3);
-            if (containerNameMap.find(container) == containerNameMap.end()) {
-                databaseIndex = 1;
-                containerNameMap.insert(bpair<Utf8String, int>(container, containerIndex++));
-            }
-            value["container"] = Utf8PrintfString("container%d", containerNameMap.at(container));
-            value["database"] = Utf8PrintfString("database%d", databaseIndex++);
-            // ultimately I want some gauges in grafana 
-            // active clients per container 
-            // total clients per container 
-            // active clients per container/database? 
-            // total clients per container/database? the sum of clients 
-            // total size of databases on the node? I could see SOME value in knowing the size per database on a node as well.
-            // We could also get the average size of a database on the node pretty easily with the per container view. even per container.
-            // It'd PROBABLY equal out to be about the same unless you went from 100% fragmented to 0 with a vacuum.
-            // There would also probably not ever be THAT many databases per container on a node I would think. 
-            // blocks in cachefile per database probably would vary and be lost if we did by container. 
-            // num blocks in the cachefile broken down by database. (We already have num blocks in cachefile.. not sure how necessary tihs is)
-            // Also need to think about how this information looks in the grafana dashboard.. 
-            //    Probably has to be part of the drill-down pod view.
-            //    I could also potentially represent a per node view somehow.. like a weird percentage or something 'utilization' 
-            //    100% if its all one container?, 93% if its two containers.. idk Something like expect x pods on node.
-            // KEEP IN MIND: My main goal out of all of this was to get an idea of utilization / sharing. we pretty much get that with a breakdown by container. 
-            // Only issue with this I think is that grafana trends wouldn't work, depending on when you queried. it would only really work for 
-            // snapshots in time. Because container1/database1 would probably change. 
-            // changing every 30 seconds.. is that alright? 
-            value["nblock"] = stmt.GetValueInt(4);
-            value["ncache"] = stmt.GetValueInt(5);
-            rows.Set(index++, value);
-        }
-        return rows;
+    //     // Since query is ordered by container, I could also increment index whenever the containerName changes.
+    //     bmap<Utf8String, int> containerNameMap; // map of containerName to index for anonymizing container names.
+    //     while (BE_SQLITE_ROW == stmt.Step()) {
+    //         BeJsNapiObject value(Env());
+    //         value["nclient"] = stmt.GetValueInt(0);
+    //         value["ntrans"] = stmt.GetValueInt(1);
+    //         auto database = stmt.GetValueText(2);
+    //         auto container = stmt.GetValueText(3);
+    //         if (containerNameMap.find(container) == containerNameMap.end()) {
+    //             databaseIndex = 1;
+    //             containerNameMap.insert(bpair<Utf8String, int>(container, containerIndex++));
+    //         }
+    //         value["container"] = Utf8PrintfString("container%d", containerNameMap.at(container));
+    //         value["database"] = Utf8PrintfString("database%d", databaseIndex++);
+    //         // ultimately I want some gauges in grafana 
+    //         // active clients per container 
+    //         // total clients per container 
+    //         // active clients per container/database? 
+    //         // total clients per container/database? the sum of clients 
+    //         // total size of databases on the node? I could see SOME value in knowing the size per database on a node as well.
+    //         // We could also get the average size of a database on the node pretty easily with the per container view. even per container.
+    //         // It'd PROBABLY equal out to be about the same unless you went from 100% fragmented to 0 with a vacuum.
+    //         // There would also probably not ever be THAT many databases per container on a node I would think. 
+    //         // blocks in cachefile per database probably would vary and be lost if we did by container. 
+    //         // num blocks in the cachefile broken down by database. (We already have num blocks in cachefile.. not sure how necessary tihs is)
+    //         // Also need to think about how this information looks in the grafana dashboard.. 
+    //         //    Probably has to be part of the drill-down pod view.
+    //         //    I could also potentially represent a per node view somehow.. like a weird percentage or something 'utilization' 
+    //         //    100% if its all one container?, 93% if its two containers.. idk Something like expect x pods on node.
+    //         // KEEP IN MIND: My main goal out of all of this was to get an idea of utilization / sharing. we pretty much get that with a breakdown by container. 
+    //         // Only issue with this I think is that grafana trends wouldn't work, depending on when you queried. it would only really work for 
+    //         // snapshots in time. Because container1/database1 would probably change. 
+    //         // changing every 30 seconds.. is that alright? 
+    //         value["nblock"] = stmt.GetValueInt(4);
+    //         value["ncache"] = stmt.GetValueInt(5);
+    //         rows.Set(index++, value);
+    //     }
+    //     return rows;
 
-    }
+    // }
 
     bool HasLocalChanges() {
         RequireConnected();

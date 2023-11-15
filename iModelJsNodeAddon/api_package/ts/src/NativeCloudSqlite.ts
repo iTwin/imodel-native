@@ -110,7 +110,7 @@ export namespace NativeCloudSqlite {
   }
 
   /** Returned from 'CloudContainer.queryContainerStats'
-   * A per container breakdown of some useful
+   * A per container breakdown of some useful stats
    */
   export interface ContainerStats {
     /** The total number of clients for the container opened on this cache */
@@ -123,10 +123,10 @@ export namespace NativeCloudSqlite {
      *  we would download AT MOST 'totalBlocks' blocks to do so. The real number may be less since blocks can be shared between databases in the same container.
      */
     readonly totalBlocks: number;
-    /** Key value pair of Data base names and the total number of databases within this container that are opened on the cloud cache. */
-    readonly dbToCachedBlocks: [key: string, number];
+    /** Key value pair of Data base names and the total number of cached blocks within this container. */
+    readonly dbToCachedBlocks: {db: number};
     /** the number of blocks for this container that are in the cloud cache. */
-    readonly cachedBlocks: number;
+    readonly estimatedLockedBlocks: number;
     /** the total number of databases within this container that are opened on the cloud cache. */
     readonly openDatabases: number;
   }
