@@ -48,6 +48,7 @@ public:
     // General
     Utf8StringCR GetPreferredDisplayType() const {return m_preferredDisplayType;}
     int GetContentFlags() const {return m_contentFlags;}
+    void SetContentFlags(int flags) {m_contentFlags = flags;}
     INavNodeLocaterCR GetNodesLocater() const {return *m_nodesLocater;}
     IPropertyCategorySupplierCR GetCategorySupplier() const {return m_categorySupplier;}
     INavNodeKeysContainerCR GetInputKeys() const {return *m_inputNodeKeys;}

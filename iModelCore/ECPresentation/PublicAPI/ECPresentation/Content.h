@@ -1132,6 +1132,7 @@ private:
     mutable Nullable<size_t> m_totalFieldsCount;
     int m_sortingFieldIndex;
     SortDirection m_sortDirection;
+    int m_requestedContentFlags;
     int m_contentFlags;
     Utf8String m_fieldsFilterExpression;
     std::shared_ptr<InstanceFilterDefinition> m_instanceFilter;
@@ -1142,11 +1143,10 @@ private:
     std::shared_ptr<RelatedClassPathsList> m_exclusiveIncludePaths;
 
 private:
-    ECPRESENTATION_EXPORT ContentDescriptor(IConnectionCR, PresentationRuleSetCR, RulesetVariables, INavNodeKeysContainerCR);
+    ECPRESENTATION_EXPORT ContentDescriptor(IConnectionCR, PresentationRuleSetCR, RulesetVariables, INavNodeKeysContainerCR, Utf8CP, int, int);
     ECPRESENTATION_EXPORT ContentDescriptor(ContentDescriptorCR other);
     ECPRESENTATION_EXPORT int GetFieldIndex(Utf8CP name) const;
-    void OnFlagAdded(ContentFlags flag);
-    void OnFlagRemoved(ContentFlags flag);
+    void AddContentFlags(int flags) {m_contentFlags |= flags;}
     void OnECPropertiesFieldRemoved(ECPropertiesField const& field);
     void OnECPropertiesFieldAdded(ECPropertiesField& field);
     void UpdateSelectClasses();
@@ -1166,14 +1166,19 @@ protected:
 
 public:
     //! Creates a content descriptor.
-    static ContentDescriptorPtr Create(IConnectionCR connection, PresentationRuleSetCR ruleset, RulesetVariables rulesetVariables, INavNodeKeysContainerCR inputKeys)
+    static ContentDescriptorPtr Create(IConnectionCR connection, PresentationRuleSetCR ruleset, RulesetVariables rulesetVariables, INavNodeKeysContainerCR inputKeys, 
+        Utf8CP preferredDisplayType = ContentDisplayType::Undefined, int requestedContentFlags = 0, int usedContentFlags = 0)
         {
-        return new ContentDescriptor(connection, ruleset, rulesetVariables, inputKeys);
+        return new ContentDescriptor(connection, ruleset, rulesetVariables, inputKeys, preferredDisplayType, requestedContentFlags, usedContentFlags);
         }
 
     //! Copies the supplied content descriptor.
     //! @param[in] other The descriptor to copy.
     static ContentDescriptorPtr Create(ContentDescriptorCR other) {return new ContentDescriptor(other);}
+
+    //! Copies the supplied content descriptor and adds additional content flags.
+    //! @param[in] other The descriptor to copy.
+    ECPRESENTATION_EXPORT static ContentDescriptorPtr Create(ContentDescriptorCR other, int additionalContentFlags);
 
     //! Serializes this descriptor to JSON.
     ECPRESENTATION_EXPORT rapidjson::Document AsJson(ECPresentationSerializerContextR ctx, rapidjson::Document::AllocatorType* allocator = nullptr) const;
@@ -1187,7 +1192,6 @@ public:
 
     //! Get the preferred display type which this descriptor is created for.
     Utf8StringCR GetPreferredDisplayType() const {return m_preferredDisplayType;}
-    void SetPreferredDisplayType(Utf8String value) {m_preferredDisplayType = value;}
 
     //! Get node keys which this descriptor is created for.
     INavNodeKeysContainerCR GetInputNodeKeys() const {return *m_inputKeys;}
@@ -1279,16 +1283,10 @@ public:
     //! Get instance filter definition.
     std::shared_ptr<InstanceFilterDefinition> GetInstanceFilter() const {return m_instanceFilter;}
 
+    int GetRequestedContentFlags() const {return m_requestedContentFlags;}
     //! Get the content flags.
     //! @see ContentFlags
     int GetContentFlags() const {return m_contentFlags;}
-    //! Set the content flags.
-    //! @see ContentFlags
-    ECPRESENTATION_EXPORT void SetContentFlags(int flags);
-    //! Add a content flag.
-    ECPRESENTATION_EXPORT void AddContentFlag(ContentFlags flag);
-    //! Remove a content flag.
-    ECPRESENTATION_EXPORT void RemoveContentFlag(ContentFlags flag);
     //! Does this descriptor have the supplied content flag.
     ECPRESENTATION_EXPORT bool HasContentFlag(ContentFlags flag) const;
     //! Should content include images.

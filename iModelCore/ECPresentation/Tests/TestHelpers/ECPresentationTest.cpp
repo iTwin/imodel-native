@@ -261,17 +261,10 @@ bvector<ECClassInstanceKey> PresentationManagerTestsHelper::GetGeometricElementK
 static folly::Future<ContentDescriptorCPtr> GetDescriptor(ECPresentationManager& manager, ECDbCR project, Utf8CP rulesetId, SelectionInfo const* selection,
     KeySetCR inputKeys, Utf8CP type, int flags)
     {
-    return manager.GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(project, rulesetId, RulesetVariables(), type, 0, inputKeys, selection))
+    return manager.GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(project, rulesetId, RulesetVariables(), type, flags, inputKeys, selection))
         .then([flags](ContentDescriptorResponse descriptorResponse)
         {
-        ContentDescriptorCPtr descriptor = *descriptorResponse;
-        if (descriptor.IsValid() && descriptor->GetContentFlags() != (flags | descriptor->GetContentFlags()))
-            {
-            ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
-            modifiedDescriptor->SetContentFlags(flags | descriptor->GetContentFlags());
-            descriptor = modifiedDescriptor;
-            }
-        return descriptor;
+        return *descriptorResponse;
         });
     }
 

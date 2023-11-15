@@ -1372,11 +1372,11 @@ public:
         m_propertyInfos = std::make_unique<PropertyInfoStore>(GetContext().GetSchemaHelper(), GetContext().GetRulesPreprocessor().GetContentModifiers(), specification, &GetContext().GetCategorySupplier());
         m_categoriesSupplierContext = std::make_unique<CategoriesSupplierContext>(context, *m_propertyInfos);
 
-        m_descriptor = ContentDescriptor::Create(GetContext().GetConnection(), context.GetRuleset(), context.GetRulesetVariables(), GetContext().GetInputKeys());
+        int requestedContentFlags = GetContext().GetContentFlagsCalculator() ? context.GetContentFlagsCalculator()(0) : 0;
+        int usedContentFlags = specification ? _GetContentFlags(*specification) : GetContext().GetContentFlagsCalculator() ? context.GetContentFlagsCalculator()(0) : 0;
+        m_descriptor = ContentDescriptor::Create(GetContext().GetConnection(), context.GetRuleset(), context.GetRulesetVariables(), GetContext().GetInputKeys(), GetContext().GetPreferredDisplayType(), requestedContentFlags, usedContentFlags);
         m_descriptor->SetExclusiveIncludePaths(context.GetExclusiveIncludePaths());
         m_descriptor->SetUnitSystem(context.GetUnitSystem());
-        m_descriptor->SetPreferredDisplayType(GetContext().GetPreferredDisplayType());
-        m_descriptor->SetContentFlags(specification ? _GetContentFlags(*specification) : GetContext().GetContentFlagsCalculator() ? context.GetContentFlagsCalculator()(0) : 0);
         if (nullptr != GetContext().GetSelectionInfo())
             m_descriptor->SetSelectionInfo(*GetContext().GetSelectionInfo());
 
