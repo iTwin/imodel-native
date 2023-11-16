@@ -404,6 +404,7 @@ public:
                 fprintf(stderr, "Error removing func; stat=%d, error=%s", (int)removeStatus, m_ecdb.GetLastError().c_str());
             // regardless of error, delete the function... some functions hold e.g. prepared statements
             // that can lock the database if not deleted
+            // FIXME: let sqlite's destructor logic handle destroying this...
             dbFunc = nullptr;
         }
 
@@ -4488,6 +4489,7 @@ public:
         Napi::Function t = DefineClass(env, "BlobIO", {
             InstanceMethod("close", &NativeBlobIo::Close),
             InstanceMethod("open", &NativeBlobIo::Open),
+            InstanceMethod("openEc", &NativeBlobIo::OpenEC),
             InstanceMethod("changeRow", &NativeBlobIo::ChangeRow),
             InstanceMethod("read", &NativeBlobIo::Read),
             InstanceMethod("write", &NativeBlobIo::Write),
@@ -4531,6 +4533,61 @@ public:
         if (BE_SQLITE_OK != stat)
             JsInterop::throwSqlResult("cannot open blob", db->GetDbFileName(), stat);
     }
+
+    void OpenEC(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_ANY_OBJ(0, dbObj);
+        ECDb* db = nullptr;
+
+        if (NativeDgnDb::InstanceOf(dbObj)) {
+            db = &NativeDgnDb::Unwrap(dbObj)->GetDgnDb();
+        } else if (NativeECDb::InstanceOf(dbObj)) {
+            db = &NativeECDb::Unwrap(dbObj)->GetECDb();
+        } else if (SQLiteDb::InstanceOf(dbObj)) {
+            THROW_JS_EXCEPTION("first argument must be an ECDb, but received a plain SQL Db");
+        } else {
+            THROW_JS_EXCEPTION("first argument must be an open ECDb");
+        }
+
+        REQUIRE_ARGUMENT_ANY_OBJ(1, args);
+        const auto classFullName = stringMember(args, JsInterop::json_classFullName());
+        if (classFullName == "")
+            BeNapi::ThrowJsException(info.Env(), "classFullName missing");
+
+        const auto propertyAccessString = stringMember(args, JsInterop::json_propertyAccessString());
+        if (propertyAccessString == "")
+            BeNapi::ThrowJsException(info.Env(), "propertyAccessString missing");
+
+        const auto idStr = stringMember(args, JsInterop::json_id());
+        if (idStr == "")
+            BeNapi::ThrowJsException(info.Env(), "invalid id");
+
+        BeInt64Id id;
+        if (SUCCESS != BeStringUtilities::ParseUInt64(id, idStr, 0))
+            BeNapi::ThrowJsException(info.Env(), "invalid id");
+
+        const auto writeable = boolMember(args, JsInterop::json_writeable(), false);
+
+        //const auto classTokens = BeStringUtilities::Split(classFullName.c_str(), ".:");
+        //if (classNameTokens.size() != 2)
+            //BeNapi::ThrowJsException(info.Env(), "not a valid qualified class name");
+        //const auto& schemaName = classTokens[0];
+        //const auto& className = classTokens[1];
+
+        auto ecClass = db->Schemas().GetClass(classFullName);
+
+        auto stat = db->OpenBlobIO(
+            m_blobIO,
+            ecClass,
+            propertyAccessString.c_str(),
+            id,
+            writeable,
+            db->GetECCrudWriteToken()
+        );
+
+        if (BE_SQLITE_OK != stat)
+            JsInterop::throwSqlResult("cannot open blob", db->GetDbFileName(), stat);
+    }
+
     void ChangeRow(NapiInfoCR info) {
         REQUIRE_ARGUMENT_INTEGER(0, row);
         auto stat = m_blobIO.ReOpen(row);

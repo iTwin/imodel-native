@@ -466,6 +466,8 @@ struct JsInterop {
     BE_JSON_NAME(subId)
     BE_JSON_NAME(systemFont)
     BE_JSON_NAME(tableName)
+    BE_JSON_NAME(classFullName)
+    BE_JSON_NAME(propertyAccessString)
     BE_JSON_NAME(tempFileBase)
     BE_JSON_NAME(timeout)
     BE_JSON_NAME(type)
