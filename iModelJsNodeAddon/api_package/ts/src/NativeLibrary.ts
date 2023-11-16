@@ -923,6 +923,20 @@ export declare namespace IModelJsNative {
     public getNumBytes(): number;
     /** @return true if this BlobIO was successfully opened and may be use to read or write the blob */
     public isValid(): boolean;
+    /** Open this BlobIO against an EC property in a Db */
+    public openEc(
+      /** The ECDb for the blob */
+      db: AnyECDb,
+      args: {
+        /** the class full name of the class */
+        classFullName: string;
+        /** the name of the property or struct access string for the blob */
+        propertyAccessString: string;
+        /** The ec instance id of the instance */
+        id: number;
+        /** If true, open this BlobIO for write access */
+        writeable?: boolean;
+      }): void;
     /** Open this BlobIO against a table/row/column in a Db */
     public open(
       /** The database for the blob */

@@ -4537,11 +4537,16 @@ public:
     void OpenEC(NapiInfoCR info) {
         REQUIRE_ARGUMENT_ANY_OBJ(0, dbObj);
         ECDb* db = nullptr;
+        // FIXME: to prevent needing this, add a DgnDb specific OpenBlobIO
+        const ECCrudWriteToken* writeToken = nullptr;
 
         if (NativeDgnDb::InstanceOf(dbObj)) {
-            db = &NativeDgnDb::Unwrap(dbObj)->GetDgnDb();
+            auto* dgnDb = &NativeDgnDb::Unwrap(dbObj)->GetDgnDb();
+            db = dgnDb;
+            writeToken = dgnDb->GetECCrudWriteToken();
         } else if (NativeECDb::InstanceOf(dbObj)) {
             db = &NativeECDb::Unwrap(dbObj)->GetECDb();
+            writeToken = db->GetECDbSettingsManager().GetCrudWriteToken();
         } else if (SQLiteDb::InstanceOf(dbObj)) {
             THROW_JS_EXCEPTION("first argument must be an ECDb, but received a plain SQL Db");
         } else {
@@ -4561,31 +4566,33 @@ public:
         if (idStr == "")
             BeNapi::ThrowJsException(info.Env(), "invalid id");
 
-        BeInt64Id id;
-        if (SUCCESS != BeStringUtilities::ParseUInt64(id, idStr, 0))
+        uint64_t id;
+        if (SUCCESS != BeStringUtilities::ParseUInt64(id, idStr.c_str()))
             BeNapi::ThrowJsException(info.Env(), "invalid id");
 
         const auto writeable = boolMember(args, JsInterop::json_writeable(), false);
 
-        //const auto classTokens = BeStringUtilities::Split(classFullName.c_str(), ".:");
-        //if (classNameTokens.size() != 2)
-            //BeNapi::ThrowJsException(info.Env(), "not a valid qualified class name");
-        //const auto& schemaName = classTokens[0];
-        //const auto& className = classTokens[1];
 
-        auto ecClass = db->Schemas().GetClass(classFullName);
+        bvector<Utf8String> classTokens;
+        BeStringUtilities::Split(classFullName.c_str(), ".:", classTokens);
+        if (classTokens.size() != 2)
+            BeNapi::ThrowJsException(info.Env(), "not a valid qualified class name");
+        const auto& schemaName = classTokens[0];
+        const auto& className = classTokens[1];
+
+        auto ecClass = db->Schemas().GetClass(schemaName, className);
 
         auto stat = db->OpenBlobIO(
             m_blobIO,
-            ecClass,
+            *ecClass,
             propertyAccessString.c_str(),
-            id,
+            BeInt64Id(id),
             writeable,
-            db->GetECCrudWriteToken()
+            writeToken
         );
 
-        if (BE_SQLITE_OK != stat)
-            JsInterop::throwSqlResult("cannot open blob", db->GetDbFileName(), stat);
+        if (SUCCESS != stat)
+            BeNapi::ThrowJsException(info.Env(), "Cannot open blob");
     }
 
     void ChangeRow(NapiInfoCR info) {

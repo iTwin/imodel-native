@@ -258,14 +258,15 @@ protected:
     //! SUCCESS or ERROR
     ECDB_EXPORT BentleyStatus ResetInstanceIdSequence(BeBriefcaseId briefcaseId, IdSet<ECN::ECClassId> const* ecClassIgnoreList = nullptr);
 
-    //! Returns the settings manager to subclasses which gives access to the various access tokens
-    ECDB_EXPORT SettingsManager const& GetECDbSettingsManager() const;
-
     //! @return return true if schema EC version requires does not support current profile version and need profile version to be upgraded.
     ECDB_EXPORT bool SchemaRequiresProfileUpgrade(ECN::ECSchemaCR ecSchema) const;
 #endif
 
 public:
+    // MIKE MADE THIS PUBLIC
+    //! Returns the settings manager to subclasses which gives access to the various access tokens
+    ECDB_EXPORT SettingsManager const& GetECDbSettingsManager() const;
+
     //! This method @b must be called once per process before any other ECDb method is called.
     //! @remarks This method is a convenience wrapper around the individual initialization routines
     //!          needed for ECDb. This includes calls to BeSQLiteLib::Initialize and to
