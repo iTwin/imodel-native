@@ -933,7 +933,7 @@ export declare namespace IModelJsNative {
         /** the name of the property or struct access string for the blob */
         propertyAccessString: string;
         /** The ec instance id of the instance */
-        id: number;
+        id: Id64String;
         /** If true, open this BlobIO for write access */
         writeable?: boolean;
       }): void;
