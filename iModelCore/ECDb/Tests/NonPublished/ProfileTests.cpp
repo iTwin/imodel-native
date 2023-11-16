@@ -14,10 +14,14 @@ static const PropertySpec PROFILEVERSION_PROPSPEC ("SchemaVersion", "ec_Db");
 static Utf8CP const PROFILE_TABLE = "ec_Schema";
 static Utf8CP const ECINSTANCEIDSEQUENCE_KEY = "ec_instanceidsequence";
 
+struct ProfileTestFixture : public ECDbTestFixture
+    {
+    };
+
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbTestFixture, Profile)
+TEST_F(ProfileTestFixture, Profile)
     {
     BeFileName dbPath = BuildECDbPath("ecdbprofiletest.db");
     if (dbPath.DoesPathExist())
@@ -66,7 +70,7 @@ TEST_F(ECDbTestFixture, Profile)
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbTestFixture, ProfileSchemas)
+TEST_F(ProfileTestFixture, ProfileSchemas)
     {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("empty.ecdb"));
 
@@ -85,7 +89,7 @@ TEST_F(ECDbTestFixture, ProfileSchemas)
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbTestFixture, GetECDbProfileVersion)
+TEST_F(ProfileTestFixture, GetECDbProfileVersion)
     {
     //Test GetECDbProfileVersion on freshly created file
     BeFileName ecdbPath = BuildECDbPath("empty.ecdb");
@@ -106,7 +110,7 @@ TEST_F(ECDbTestFixture, GetECDbProfileVersion)
 // Test to verify TFS 107173: ECDb profile creation should fail if it exists
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbTestFixture, CreateProfileFailsIfAlreadyCreated)
+TEST_F(ProfileTestFixture, CreateProfileFailsIfAlreadyCreated)
     {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("ecdbprofiletest2.ecdb"));
 
@@ -139,7 +143,7 @@ TEST_F(ECDbTestFixture, CreateProfileFailsIfAlreadyCreated)
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbTestFixture, ProfileCreation)
+TEST_F(ProfileTestFixture, ProfileCreation)
     {
     auto defaultTxnModeToString = [] (DefaultTxn txnMode)
         {
@@ -181,7 +185,7 @@ TEST_F(ECDbTestFixture, ProfileCreation)
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbTestFixture, CheckECDbProfileVersion)
+TEST_F(ProfileTestFixture, CheckECDbProfileVersion)
     {
     std::vector<std::pair<ProfileVersion, ProfileState>> expectedProfileStates {
             {ProfileVersion(3,6,99,0), ProfileState::Older(ProfileState::CanOpen::No, false)},
@@ -197,7 +201,8 @@ TEST_F(ECDbTestFixture, CheckECDbProfileVersion)
             {ProfileVersion(4,0,0,0), ProfileState::Older(ProfileState::CanOpen::Readwrite, true)},
             {ProfileVersion(4,0,0,1), ProfileState::Older(ProfileState::CanOpen::Readwrite, true)},
             {ProfileVersion(4,0,0,2), ProfileState::Older(ProfileState::CanOpen::Readwrite, true)},
-            {ProfileVersion(4,0,0,3), ProfileState::UpToDate()},
+            {ProfileVersion(4,0,0,3), ProfileState::Older(ProfileState::CanOpen::Readwrite, true)},
+            {ProfileVersion(4,0,0,4), ProfileState::UpToDate()},
             {ProfileVersion(4,0,1,0), ProfileState::Newer(ProfileState::CanOpen::Readwrite)},
             {ProfileVersion(4,0,1,1), ProfileState::Newer(ProfileState::CanOpen::Readwrite)},
             {ProfileVersion(4,0,1,99), ProfileState::Newer(ProfileState::CanOpen::Readwrite)},
@@ -215,9 +220,9 @@ TEST_F(ECDbTestFixture, CheckECDbProfileVersion)
         }
 
     std::vector<ProfileVersion> expectedTooOld = {ProfileVersion(3,6,99,0), ProfileVersion(3,7,0,0),ProfileVersion(3,7,0,1),ProfileVersion(3,7,3,1),ProfileVersion(3,7,3,2),ProfileVersion(3,7,4,3),ProfileVersion(3,100,0,0), ProfileVersion(3,100,0,1), ProfileVersion(3,100,1,1)};
-    std::vector<ProfileVersion> expectedOlderReadWriteAndUpgradable = {ProfileVersion(4,0,0,0), ProfileVersion(4,0,0,1), ProfileVersion(4,0,0,2)};
-    ProfileVersion expectedUpToDate = ProfileVersion(4,0,0,3);
-    std::vector<ProfileVersion> expectedNewerReadWrite = {ProfileVersion(4,0,0,4), ProfileVersion(4,0,1,0), ProfileVersion(4,0,1,3), ProfileVersion(4,0,2,0), ProfileVersion(4,0,10,99)};
+    std::vector<ProfileVersion> expectedOlderReadWriteAndUpgradable = {ProfileVersion(4,0,0,0), ProfileVersion(4,0,0,1), ProfileVersion(4,0,0,2), ProfileVersion(4,0,0,3)};
+    ProfileVersion expectedUpToDate = ProfileVersion(4,0,0,4);
+    std::vector<ProfileVersion> expectedNewerReadWrite = {ProfileVersion(4,0,0,5), ProfileVersion(4,0,1,0), ProfileVersion(4,0,1,3), ProfileVersion(4,0,2,0), ProfileVersion(4,0,10,99)};
     std::vector<ProfileVersion> expectedNewerReadonly = {ProfileVersion(4,1,1,0), ProfileVersion(4,1,0,0)};
     std::vector<ProfileVersion> expectedTooNew = {ProfileVersion(5,1,0,0), ProfileVersion(99,0,0,0)};
 
@@ -310,7 +315,7 @@ TEST_F(ECDbTestFixture, CheckECDbProfileVersion)
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbTestFixture, ImportSchemaByProfileVersion)
+TEST_F(ProfileTestFixture, ImportSchemaByProfileVersion)
     {
     auto fakeModifyProfileVersion = [] (BeFileNameCR filePath, ProfileVersion const& version)
         {
@@ -357,6 +362,619 @@ TEST_F(ECDbTestFixture, ImportSchemaByProfileVersion)
     fakeModifyProfileVersion(filePath, ProfileVersion(4,0,1,0));
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.OpenBeSQLiteDb(filePath, Db::OpenParams(Db::OpenMode::ReadWrite)));
     ASSERT_EQ(ERROR, import(schema, SchemaManager::SchemaImportOptions::None)) << "Import schema to newer sub2 profile should fail";
+    CloseECDb();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ProfileTestFixture, ImportRequiresVersionCustomAttribute)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDbForCurrentTest());
+
+    {
+    SchemaItem schema(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="Schema1" alias="s1" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="ECDbMap" version="02.00.02" alias="ecdbmap"/>
+        <ECCustomAttributes>
+            <ImportRequiresVersion xmlns="ECDbMap.02.00.02">
+                <ECDbRuntimeVersion>999.9.9.9</ECDbRuntimeVersion>
+            </ImportRequiresVersion>
+        </ECCustomAttributes>
+        <ECEntityClass typeName="Foo" >
+            <ECProperty propertyName="Length" typeName="double" />
+        </ECEntityClass>
+        </ECSchema>)xml");
+
+    ECIssueListener issueListener(m_ecdb);
+    ASSERT_EQ(BentleyStatus::ERROR, ImportSchema(schema));
+    auto lastIssue = issueListener.GetIssue();
+    ASSERT_TRUE(lastIssue.has_value()) << "Should raise an issue.";
+    ASSERT_STREQ("ECSchema Schema1.01.00.01 requires ECDb version 999.9.9.9, but the current runtime version is only 4.0.0.4.", lastIssue.message.c_str());
+    }
+
+    CloseECDb();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ProfileTestFixture, ApplyImportRequiresVersionToExistingSchema)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDbForCurrentTest());
+
+    {
+    SchemaItem schema(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="Schema1" alias="s1" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECEntityClass typeName="Foo" >
+            <ECProperty propertyName="Length" typeName="double" />
+        </ECEntityClass>
+        </ECSchema>)xml");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema));
+    }
+
+    { //apply valid ImportRequiresVersion ca to existing schema
+    SchemaItem schema(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="Schema1" alias="s1" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="ECDbMap" version="02.00.02" alias="ecdbmap"/>
+        <ECCustomAttributes>
+            <ImportRequiresVersion xmlns="ECDbMap.02.00.02">
+                <ECDbRuntimeVersion>4.0.0.1</ECDbRuntimeVersion>
+            </ImportRequiresVersion>
+        </ECCustomAttributes>
+        <ECEntityClass typeName="Foo" >
+            <ECProperty propertyName="Length" typeName="double" />
+        </ECEntityClass>
+        </ECSchema>)xml");
+
+    ECIssueListener issueListener(m_ecdb);
+    ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema));
+    auto lastIssue = issueListener.GetIssue();
+    ASSERT_FALSE(lastIssue.has_value());
+    }
+
+    {  //apply valid ImportRequiresVersion ca to existing schema which evaluates to false
+    SchemaItem schema(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="Schema1" alias="s1" version="1.0.3" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="ECDbMap" version="02.00.02" alias="ecdbmap"/>
+        <ECCustomAttributes>
+            <ImportRequiresVersion xmlns="ECDbMap.02.00.02">
+                <ECDbRuntimeVersion>999.9.9.9</ECDbRuntimeVersion>
+            </ImportRequiresVersion>
+        </ECCustomAttributes>
+        <ECEntityClass typeName="Foo" >
+            <ECProperty propertyName="Length" typeName="double" />
+        </ECEntityClass>
+        </ECSchema>)xml");
+
+    ECIssueListener issueListener(m_ecdb);
+    ASSERT_EQ(BentleyStatus::ERROR, ImportSchema(schema));
+    auto lastIssue = issueListener.GetIssue();
+    ASSERT_TRUE(lastIssue.has_value()) << "Should raise an issue.";
+    ASSERT_STREQ("ECSchema Schema1.01.00.03 requires ECDb version 999.9.9.9, but the current runtime version is only 4.0.0.4.", lastIssue.message.c_str());
+    }
+
+    CloseECDb();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ProfileTestFixture, UseRequiresVersionOnEntity)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDbForCurrentTest());
+
+    {
+    SchemaItem schema(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="Schema1" alias="s1" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="ECDbMap" version="02.00.02" alias="ecdbmap"/>
+        <ECEntityClass typeName="Foo" >
+            <ECCustomAttributes>
+                <UseRequiresVersion xmlns="ECDbMap.02.00.02">
+                    <ECDbRuntimeVersion>999.9.9.9</ECDbRuntimeVersion>
+                </UseRequiresVersion>
+            </ECCustomAttributes>
+            <ECProperty propertyName="Length" typeName="double" />
+        </ECEntityClass>
+        </ECSchema>)xml");
+
+    
+    ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema));
+
+    ECIssueListener issueListener(m_ecdb);
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT * from s1.Foo"));
+
+    auto lastIssue = issueListener.GetIssue();
+    ASSERT_TRUE(lastIssue.has_value()) << "Should raise an issue.";
+    ASSERT_STREQ("Invalid ECClass in ECSQL: Cannot use ECClass 'Schema1:Foo' because it requires a newer version of ECDb.", lastIssue.message.c_str());
+    }
+
+    CloseECDb();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ProfileTestFixture, TestUseRequiresVersionOnEntityPasses)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDbForCurrentTest());
+
+    { //same as before but validation should pass
+    SchemaItem schema(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="Schema1" alias="s1" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="ECDbMap" version="02.00.02" alias="ecdbmap"/>
+        <ECEntityClass typeName="Foo" >
+            <ECCustomAttributes>
+                <UseRequiresVersion xmlns="ECDbMap.02.00.02">
+                    <ECDbRuntimeVersion>2.0.0.0</ECDbRuntimeVersion>
+                    <ECSqlVersion>1.0.0.0</ECSqlVersion>
+                </UseRequiresVersion>
+            </ECCustomAttributes>
+            <ECProperty propertyName="Length" typeName="double" />
+        </ECEntityClass>
+        </ECSchema>)xml");
+
+    
+    ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema));
+
+    ECIssueListener issueListener(m_ecdb);
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * from s1.Foo"));
+
+    auto lastIssue = issueListener.GetIssue();
+    ASSERT_FALSE(lastIssue.has_value()) << "Should not raise an issue.";
+    }
+
+    CloseECDb();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ProfileTestFixture, UseRequiresVersionOnEntityInherited)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDbForCurrentTest());
+
+    {
+    SchemaItem schema(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="Schema1" alias="s1" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="ECDbMap" version="02.00.02" alias="ecdbmap"/>
+        <ECEntityClass typeName="Foo">
+            <ECCustomAttributes>
+                <UseRequiresVersion xmlns="ECDbMap.02.00.02">
+                    <ECSqlVersion>999.9.9.9</ECSqlVersion>
+                </UseRequiresVersion>
+            </ECCustomAttributes>
+            <ECProperty propertyName="Length" typeName="double" />
+        </ECEntityClass>
+        <ECEntityClass typeName="Bar">
+            <BaseClass>Foo</BaseClass>
+        </ECEntityClass>
+        </ECSchema>)xml");
+
+    
+    ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema));
+
+    ECIssueListener issueListener(m_ecdb);
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT * from s1.Bar"));
+
+    auto lastIssue = issueListener.GetIssue();
+    ASSERT_TRUE(lastIssue.has_value()) << "Should raise an issue.";
+    ASSERT_STREQ("Invalid ECClass in ECSQL: Cannot use ECClass 'Schema1:Bar' because it requires a newer version of ECDb.", lastIssue.message.c_str());
+    }
+
+    CloseECDb();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ProfileTestFixture, UseRequiresVersionOnCA)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDbForCurrentTest());
+    {
+    SchemaItem schema(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="Schema1" alias="s1" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="ECDbMap" version="02.00.02" alias="ecdbmap"/>
+        <ECCustomAttributeClass typeName="Bar" modifier="Sealed" appliesTo="EntityClass">
+            <ECCustomAttributes>
+                <UseRequiresVersion xmlns="ECDbMap.02.00.02">
+                    <ECDbRuntimeVersion>999.9.9.9</ECDbRuntimeVersion>
+                </UseRequiresVersion>
+            </ECCustomAttributes>
+        </ECCustomAttributeClass>
+        <ECEntityClass typeName="Foo" >
+            <ECCustomAttributes>
+                <Bar></Bar>
+            </ECCustomAttributes>
+            <ECProperty propertyName="Length" typeName="double" />
+        </ECEntityClass>
+        </ECSchema>)xml");
+
+    
+    ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema));
+
+    ECIssueListener issueListener(m_ecdb);
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT * from s1.Foo"));
+
+    auto lastIssue = issueListener.GetIssue();
+    ASSERT_TRUE(lastIssue.has_value()) << "Should raise an issue.";
+    ASSERT_STREQ("Invalid ECClass in ECSQL: Cannot use ECClass 'Schema1:Foo' because it requires a newer version of ECDb.", lastIssue.message.c_str());
+    }
+
+    CloseECDb();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ProfileTestFixture, UseRequiresVersionOnCAIndirect)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDbForCurrentTest());
+
+    { //use a custom attribute that uses a custom attribute on an entity
+    SchemaItem schema(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="Schema1" alias="s1" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="ECDbMap" version="02.00.02" alias="ecdbmap"/>
+        <ECCustomAttributeClass typeName="Foo" modifier="Sealed" appliesTo="CustomAttributeClass">
+            <ECCustomAttributes>
+                <UseRequiresVersion xmlns="ECDbMap.02.00.02">
+                    <ECDbRuntimeVersion>999.9.9.9</ECDbRuntimeVersion>
+                </UseRequiresVersion>
+            </ECCustomAttributes>
+        </ECCustomAttributeClass>
+
+        <ECCustomAttributeClass typeName="Bar" modifier="Sealed" appliesTo="EntityClass">
+            <ECCustomAttributes>
+                <Foo></Foo>
+            </ECCustomAttributes>
+        </ECCustomAttributeClass>
+        <ECEntityClass typeName="MyEntity" >
+            <ECCustomAttributes>
+                <Bar></Bar>
+            </ECCustomAttributes>
+            <ECProperty propertyName="Length" typeName="double" />
+        </ECEntityClass>
+        </ECSchema>)xml");
+
+    
+    ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema));
+
+    ECIssueListener issueListener(m_ecdb);
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT * from s1.MyEntity"));
+
+    auto lastIssue = issueListener.GetIssue();
+    ASSERT_TRUE(lastIssue.has_value()) << "Should raise an issue.";
+    ASSERT_STREQ("Invalid ECClass in ECSQL: Cannot use ECClass 'Schema1:MyEntity' because it requires a newer version of ECDb.", lastIssue.message.c_str());
+    }
+
+    CloseECDb();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ProfileTestFixture, UseRequiresVersionOnCAIndirectInherited)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDbForCurrentTest());
+
+    { //use a entity which uses a struct class that has been flagged as 
+    SchemaItem schema(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="Schema1" alias="s1" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="ECDbMap" version="02.00.02" alias="ecdbmap"/>
+        <ECCustomAttributeClass typeName="Foo" modifier="Sealed" appliesTo="CustomAttributeClass">
+            <ECCustomAttributes>
+                <UseRequiresVersion xmlns="ECDbMap.02.00.02">
+                    <ECDbRuntimeVersion>999.9.9.9</ECDbRuntimeVersion>
+                </UseRequiresVersion>
+            </ECCustomAttributes>
+        </ECCustomAttributeClass>
+
+        <ECCustomAttributeClass typeName="Bar" modifier="Sealed" appliesTo="EntityClass">
+            <ECCustomAttributes>
+                <Foo></Foo>
+            </ECCustomAttributes>
+        </ECCustomAttributeClass>
+        <ECEntityClass typeName="MyEntity" >
+            <ECCustomAttributes>
+                <Bar></Bar>
+            </ECCustomAttributes>
+            <ECProperty propertyName="Length" typeName="double" />
+        </ECEntityClass>
+
+        <ECEntityClass typeName="MySubclass" >
+            <BaseClass>MyEntity</BaseClass>
+        </ECEntityClass>
+        </ECSchema>)xml");
+
+    
+    ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema));
+
+    ECIssueListener issueListener(m_ecdb);
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT * from s1.MySubclass"));
+
+    auto lastIssue = issueListener.GetIssue();
+    ASSERT_TRUE(lastIssue.has_value()) << "Should raise an issue.";
+    ASSERT_STREQ("Invalid ECClass in ECSQL: Cannot use ECClass 'Schema1:MySubclass' because it requires a newer version of ECDb.", lastIssue.message.c_str());
+    }
+
+    CloseECDb();
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ProfileTestFixture, ApplyUseRequiresVersionOnExistingCA)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDbForCurrentTest());
+
+
+    SchemaItem schema(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="Schema1" alias="s1" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="ECDbMap" version="02.00.02" alias="ecdbmap"/>
+        <ECCustomAttributeClass typeName="Foo" modifier="Sealed" appliesTo="CustomAttributeClass">
+        </ECCustomAttributeClass>
+
+        <ECCustomAttributeClass typeName="Bar" modifier="Sealed" appliesTo="EntityClass">
+            <ECCustomAttributes>
+                <Foo></Foo>
+            </ECCustomAttributes>
+        </ECCustomAttributeClass>
+        <ECEntityClass typeName="MyEntity" >
+            <ECCustomAttributes>
+                <Bar></Bar>
+            </ECCustomAttributes>
+            <ECProperty propertyName="Length" typeName="double" />
+        </ECEntityClass>
+
+        <ECEntityClass typeName="MySubclass" >
+            <BaseClass>MyEntity</BaseClass>
+        </ECEntityClass>
+        </ECSchema>)xml");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema));
+    {
+    ECIssueListener issueListener(m_ecdb);
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * from s1.MySubclass"));
+
+    auto lastIssue = issueListener.GetIssue();
+    ASSERT_FALSE(lastIssue.has_value()) << "Should not raise an issue.";
+    }
+    
+    SchemaItem schema2(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="Schema1" alias="s1" version="1.0.2" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="ECDbMap" version="02.00.02" alias="ecdbmap"/>
+        <ECCustomAttributeClass typeName="Foo" modifier="Sealed" appliesTo="CustomAttributeClass">
+            <ECCustomAttributes>
+                <UseRequiresVersion xmlns="ECDbMap.02.00.02">
+                    <ECDbRuntimeVersion>999.9.9.9</ECDbRuntimeVersion>
+                </UseRequiresVersion>
+            </ECCustomAttributes>
+        </ECCustomAttributeClass>
+
+        <ECCustomAttributeClass typeName="Bar" modifier="Sealed" appliesTo="EntityClass">
+            <ECCustomAttributes>
+                <Foo></Foo>
+            </ECCustomAttributes>
+        </ECCustomAttributeClass>
+        <ECEntityClass typeName="MyEntity" >
+            <ECCustomAttributes>
+                <Bar></Bar>
+            </ECCustomAttributes>
+            <ECProperty propertyName="Length" typeName="double" />
+        </ECEntityClass>
+
+        <ECEntityClass typeName="MySubclass" >
+            <BaseClass>MyEntity</BaseClass>
+        </ECEntityClass>
+        </ECSchema>)xml");
+    
+    ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema2));
+
+    {
+    ECIssueListener issueListener(m_ecdb);
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT * from s1.MySubclass"));
+
+    auto lastIssue = issueListener.GetIssue();
+    ASSERT_TRUE(lastIssue.has_value()) << "Should raise an issue.";
+    ASSERT_STREQ("Invalid ECClass in ECSQL: Cannot use ECClass 'Schema1:MySubclass' because it requires a newer version of ECDb.", lastIssue.message.c_str());
+    }
+
+    CloseECDb();
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ProfileTestFixture, TestUseRequiresVersionOnStruct)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDbForCurrentTest());
+
+    { //Apply an unsupported CA to a struct and struct property and then try to select (currently the CA on structs has no effect)
+    SchemaItem schema(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="Schema1" alias="s1" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="ECDbMap" version="02.00.02" alias="ecdbmap"/>
+        <ECCustomAttributeClass typeName="Foo" modifier="Sealed" appliesTo="Any">
+            <ECCustomAttributes>
+                <UseRequiresVersion xmlns="ECDbMap.02.00.02">
+                    <ECDbRuntimeVersion>999.9.9.9</ECDbRuntimeVersion>
+                </UseRequiresVersion>
+            </ECCustomAttributes>
+        </ECCustomAttributeClass>
+        <ECStructClass typeName="MyStruct">
+            <ECCustomAttributes>
+                <Foo xmlns="Schema1.01.00.01" />
+            </ECCustomAttributes>
+            <ECProperty propertyName='Prop1' typeName='string' />
+        </ECStructClass>
+        <ECEntityClass typeName="MyEntity" >
+            <ECStructProperty propertyName="StructProp" typeName="MyStruct">
+            <ECCustomAttributes>
+                <Foo xmlns="Schema1.01.00.01" />
+            </ECCustomAttributes>
+            </ECStructProperty>
+        </ECEntityClass>
+        </ECSchema>)xml");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema));
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * from s1.MyEntity"));
+    }
+
+    CloseECDb();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ProfileTestFixture, TestUseRequiresVersionOnRelationship)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDbForCurrentTest());
+
+    { //Apply an unsupported CA to a struct and struct property and then try to select
+    SchemaItem schema(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="Schema1" alias="s1" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="ECDbMap" version="02.00.02" alias="ecdbmap"/>
+        <ECEntityClass typeName="MyEntity" >
+        </ECEntityClass>
+
+        <ECRelationshipClass typeName="MyEntityRefersToMyEntity" strength="referencing" modifier="None">
+            <ECCustomAttributes>
+                <UseRequiresVersion xmlns="ECDbMap.02.00.02">
+                    <ECDbRuntimeVersion>999.9.9.9</ECDbRuntimeVersion>
+                </UseRequiresVersion>
+            </ECCustomAttributes>
+            <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="true">
+                <Class class="MyEntity"/>
+            </Source>
+            <Target multiplicity="(0..*)" roleLabel="is referenced by" polymorphic="true">
+                <Class class="MyEntity"/>
+            </Target>
+        </ECRelationshipClass>
+        </ECSchema>)xml");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema));
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT * from s1.MyEntityRefersToMyEntity"));
+    }
+    }
+
+    CloseECDb();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ProfileTestFixture, TestUseRequiresVersionOnRelationshipIndirect)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDbForCurrentTest());
+
+    { //Apply an unsupported CA to a struct and struct property and then try to select
+    SchemaItem schema(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="Schema1" alias="s1" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="ECDbMap" version="02.00.02" alias="ecdbmap"/>
+        <ECCustomAttributeClass typeName="Foo" modifier="Sealed" appliesTo="Any">
+            <ECCustomAttributes>
+                <UseRequiresVersion xmlns="ECDbMap.02.00.02">
+                    <ECDbRuntimeVersion>999.9.9.9</ECDbRuntimeVersion>
+                </UseRequiresVersion>
+            </ECCustomAttributes>
+        </ECCustomAttributeClass>
+        <ECEntityClass typeName="MyEntity" >
+        </ECEntityClass>
+
+        <ECRelationshipClass typeName="MyEntityRefersToMyEntity" strength="referencing" modifier="None">
+            <ECCustomAttributes>
+                <Foo xmlns="Schema1.01.00.01" />
+            </ECCustomAttributes>
+            <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="true">
+                <Class class="MyEntity"/>
+            </Source>
+            <Target multiplicity="(0..*)" roleLabel="is referenced by" polymorphic="true">
+                <Class class="MyEntity"/>
+            </Target>
+        </ECRelationshipClass>
+        </ECSchema>)xml");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema));
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT * from s1.MyEntityRefersToMyEntity"));
+    }
+    }
+
+    CloseECDb();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ProfileTestFixture, TestUseRequiresVersionOnRelationshipConstraint)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDbForCurrentTest());
+
+    { //Apply an unsupported CA to a struct and struct property and then try to select (currently the CA on structs has no effect)
+    SchemaItem schema(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="Schema1" alias="s1" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="ECDbMap" version="02.00.02" alias="ecdbmap"/>
+        <ECCustomAttributeClass typeName="Foo" modifier="Sealed" appliesTo="Any">
+            <ECCustomAttributes>
+                <UseRequiresVersion xmlns="ECDbMap.02.00.02">
+                    <ECDbRuntimeVersion>999.9.9.9</ECDbRuntimeVersion>
+                </UseRequiresVersion>
+            </ECCustomAttributes>
+        </ECCustomAttributeClass>
+        <ECEntityClass typeName="MyEntity" >
+            <ECCustomAttributes>
+                <Foo xmlns="Schema1.01.00.01" />
+            </ECCustomAttributes>
+        </ECEntityClass>
+
+        <ECRelationshipClass typeName="MyEntityRefersToMyEntity" strength="referencing" modifier="None">
+            <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="true">
+                <Class class="MyEntity"/>
+            </Source>
+            <Target multiplicity="(0..*)" roleLabel="is referenced by" polymorphic="true">
+                <Class class="MyEntity"/>
+            </Target>
+        </ECRelationshipClass>
+        </ECSchema>)xml");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema));
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * from s1.MyEntityRefersToMyEntity"));
+    }
+
+    
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT * from s1.MyEntity"));
+    }
+    }
     CloseECDb();
     }
 

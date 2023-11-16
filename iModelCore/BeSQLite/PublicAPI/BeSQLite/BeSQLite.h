@@ -2712,6 +2712,12 @@ protected:
     virtual void _OnAfterSetBriefcaseId() {}
     virtual void _OnDbGuidChange(BeGuid guid) {}
 
+    //! Gets the current version of the BeSQLite profile
+    static ProfileVersion CurrentBeSQLiteProfileVersion() { return ProfileVersion(BEDB_CURRENT_VERSION_Major, BEDB_CURRENT_VERSION_Minor, BEDB_CURRENT_VERSION_Sub1, BEDB_CURRENT_VERSION_Sub2); }
+
+    //! Gets the version of the BeSQLite profile of this file.
+    BE_SQLITE_EXPORT ProfileVersion GetBeSQLiteProfileVersion() const;
+
     //! Gets called when a Db is opened and checks whether the file can be opened, i.e
     //! whether the file version matches what the opening API expects.
     //!

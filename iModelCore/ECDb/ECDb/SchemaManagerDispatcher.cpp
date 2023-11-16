@@ -698,6 +698,91 @@ void SchemaManager::Dispatcher::ClearCache() const
         {
         manager->ClearCache();
         }
+
+        {
+        BeMutexHolder lock(m_mutex);
+        m_unsupportedClassIdCache.clear();
+        m_unsupportedClassesLoaded = false;
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+bool SchemaManager::Dispatcher::IsClassUnsupported(ECClassId classId) const
+    {
+    if(!m_unsupportedClassesLoaded)
+        {
+        BeMutexHolder lock(m_mutex);
+        m_unsupportedClassesLoaded = true;
+
+        ECClassId useRequiresVersionClassId = GetClassId("ECDbMap", "UseRequiresVersion", SchemaLookupMode::ByName, nullptr);
+        if(!useRequiresVersionClassId.IsValid())
+            return false; //can drop out here, the CA class wasn't found so the set will be empty
+
+        IdSet<ECClassId> baseUnsupportedClasses;
+        //ClassId refers to the ca class to collect entities for
+        //boolean parameter specifies whether we are using the UseRequiresVersion CA indirectly (class which has a ca which has the ca), if this is set true, we can assume
+        //everything we find is unsupported
+        std::function<void(ECClassId,bool)> collectEntitiesThatHaveCA;
+        collectEntitiesThatHaveCA = [&baseUnsupportedClasses, &collectEntitiesThatHaveCA, this](ECClassId caClassId,bool indirect) -> void {
+            Statement stmt;
+            if (stmt.Prepare(m_ecdb, SqlPrintfString("SELECT ContainerId FROM main." TABLE_CustomAttribute " WHERE ContainerType = %d AND ClassId = ?", (int)SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Class)) != DbResult::BE_SQLITE_OK)
+                return;
+
+            if (stmt.BindId(1, caClassId) != DbResult::BE_SQLITE_OK)
+                return;
+            
+            while (stmt.Step() == BE_SQLITE_ROW)
+                {
+                auto classId = stmt.GetValueId<ECClassId>(0);
+                ECClassCP classWithCA = GetClass(classId, nullptr);
+                if (classWithCA == nullptr)
+                    continue;
+
+                if(!indirect)
+                    {
+                    UseRequiresVersionCustomAttribute ca;
+                    if (!ECDbMapCustomAttributeHelper::TryGetUseRequiresVersion(ca, *classWithCA) || !ca.IsValid())
+                        continue;
+
+                    Utf8PrintfString classCaption("ECClass %s", classWithCA->GetFullName());
+                    if (ca.Verify(m_ecdb.GetImpl().Issues(), classCaption.c_str()) == BentleyStatus::SUCCESS)
+                        continue; //step out, our current code passes the CA requirements
+                    }
+                
+                if (classWithCA->IsEntityClass() || classWithCA->IsRelationshipClass()) //ignoring structs here for now, the CA has no effect on those
+                    {
+                    baseUnsupportedClasses.insert(classId);
+                    continue;
+                    }
+                else if (classWithCA->IsCustomAttributeClass())
+                    { //recurse into this function with the new custom attribute as classId
+                    collectEntitiesThatHaveCA(classId, true);
+                    }
+                }
+            };
+
+        collectEntitiesThatHaveCA(useRequiresVersionClassId, false);
+        //we first filled a list with all unsupported entities. Now we need to fill them, and their derived classes into m_unsupportedClassIdCache.
+        if(!baseUnsupportedClasses.empty())
+            {
+            Statement expandClassIdsStmt;
+            if (expandClassIdsStmt.Prepare(m_ecdb, "SELECT DISTINCT ClassId FROM main." TABLE_ClassHierarchyCache " WHERE InVirtualSet(?, BaseClassId)") != DbResult::BE_SQLITE_OK)
+                return false;
+
+            if (expandClassIdsStmt.BindVirtualSet(1, baseUnsupportedClasses) != DbResult::BE_SQLITE_OK)
+                return false;
+
+            while (expandClassIdsStmt.Step() == BE_SQLITE_ROW)
+                {
+                auto classId = expandClassIdsStmt.GetValueId<ECClassId>(0);
+                m_unsupportedClassIdCache.insert(classId);
+                }
+            }
+        }
+
+    return m_unsupportedClassIdCache.find(classId) != m_unsupportedClassIdCache.end();
     }
 
 //*****************************************************************
@@ -2100,7 +2185,5 @@ void MainSchemaManager::GatherRootClasses(
         GatherRootClasses(*baseClass, doneList, rootClassSet, rootClassList, rootRelationshipList, rootMixins);
         }
     }
-
-
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

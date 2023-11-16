@@ -70,7 +70,7 @@ ECSqlStatus ECSqlFieldFactory::CreateField(ECSqlPrepareContext& ctx, DerivedProp
         }
 
     if (stat.IsSuccess())
-        selectPreparedStatement.AddField(move(field));
+        selectPreparedStatement.AddField(std::move(field));
 
     return stat;
     }

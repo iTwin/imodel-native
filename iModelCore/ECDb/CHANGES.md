@@ -4,8 +4,13 @@ This document including important changes to syntax or file format.
 
 | Module  | Version   |
 | ------- | --------- |
-| Profile | `4.0.0.2` |
+| Profile | `4.0.0.4` |
 | ECSQL   | `1.0.1.1` |
+
+## `9/26/2023`: Add support for ImportRequiresVersion and UseRequiresVersion custom attributes
+* Two custom attributes were added to the ECDbMap schema, the schema version is incremented to `02.00.02`
+    * They indicate whether the import process of a schema with the CA or anything using a CA requires a minimum ECDb version
+* ECDb profile version updated to `4.0.0.3` -> `4.0.0.4`.
 
 ## `2/1/2023`: Add support for runtime instance and property accessor in ECSQL (beta)
 

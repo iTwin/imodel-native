@@ -55,6 +55,24 @@ ECDbTestFixture::SeedECDbManager& ECDbTestFixture::SeedECDbs()
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+DbResult ECDbTestFixture::SetupECDbForCurrentTest()
+    {
+    Utf8PrintfString ecdbFileName("%s_%s.ecdb", BeTest::GetNameOfCurrentTestCase(), BeTest::GetNameOfCurrentTest());
+    return SetupECDb(ecdbFileName.c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECDbTestFixture::SetupECDbForCurrentTest(SchemaItem const& schemaItem, ECDb::OpenParams const& openParams)
+    {
+    Utf8PrintfString ecdbFileName("%s_%s.ecdb", BeTest::GetNameOfCurrentTestCase(), BeTest::GetNameOfCurrentTest());
+    return SetupECDb(ecdbFileName.c_str(), schemaItem, openParams);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 DbResult ECDbTestFixture::SetupECDb(Utf8CP ecdbFileName)
     {
     CloseECDb();

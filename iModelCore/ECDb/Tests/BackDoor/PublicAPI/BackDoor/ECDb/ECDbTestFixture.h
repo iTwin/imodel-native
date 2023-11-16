@@ -116,6 +116,8 @@ private:
 protected:
     //! The test's ECDb file. Any non-static methods of the ECDbTestFixture operate on it.
     FixtureECDb m_ecdb;
+    DbResult SetupECDbForCurrentTest();
+    BentleyStatus SetupECDbForCurrentTest(SchemaItem const&, ECDb::OpenParams const& openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
     DbResult SetupECDb(Utf8CP ecdbFileName);
     BentleyStatus SetupECDb(Utf8CP ecdbFileName, SchemaItem const&, ECDb::OpenParams const& openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
     BentleyStatus SetupECDb(Utf8CP ecdbFileName, void *fileData, uint32_t fileSize, ECDb::OpenParams const& openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
