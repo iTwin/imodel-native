@@ -262,7 +262,7 @@ static folly::Future<ContentDescriptorCPtr> GetDescriptor(ECPresentationManager&
     KeySetCR inputKeys, Utf8CP type, int flags)
     {
     return manager.GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(project, rulesetId, RulesetVariables(), type, flags, inputKeys, selection))
-        .then([flags](ContentDescriptorResponse descriptorResponse)
+        .then([](ContentDescriptorResponse descriptorResponse)
         {
         return *descriptorResponse;
         });
