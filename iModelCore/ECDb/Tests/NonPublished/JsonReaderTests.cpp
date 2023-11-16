@@ -1642,55 +1642,25 @@ TEST_F(JsonReaderTests, PartialPoints)
     ASSERT_TRUE_NULLABLE(defaultJson.IsObject()) << defaultJson.ToString();
     ASSERT_TRUE_NULLABLE(javaScriptJson.IsObject()) << javaScriptJson.ToString();
 
-    //ECSqlStatement fills the NULL coordinates with the SQLite defaults for NULL which is 0
+    // Point2/3D will be considered NULL if one or more co-ordinates are INF/Nan/Null
     {
-    ASSERT_TRUE_NULLABLE(defaultJson.HasMember("P2D"));
-    ASSERT_TRUE_NULLABLE(defaultJson["P2D"].IsObject());
-    EXPECT_DOUBLE_EQ_NULLABLE(1.0, defaultJson["P2D"][ECJsonSystemNames::Point::X()].GetDouble());
-    EXPECT_DOUBLE_EQ_NULLABLE(0.0, defaultJson["P2D"][ECJsonSystemNames::Point::Y()].GetDouble());
-
-    ASSERT_TRUE_NULLABLE(javaScriptJson.HasMember("p2D"));
-    ASSERT_TRUE_NULLABLE(javaScriptJson["p2D"].IsObject());
-    EXPECT_DOUBLE_EQ_NULLABLE(1.0, javaScriptJson["p2D"][ECJsonSystemNames::Point::X()].GetDouble());
-    EXPECT_DOUBLE_EQ_NULLABLE(0.0, javaScriptJson["p2D"][ECJsonSystemNames::Point::Y()].GetDouble());
+    EXPECT_FALSE_NULLABLE(defaultJson.HasMember("P2D"));
+    EXPECT_FALSE_NULLABLE(javaScriptJson.HasMember("p2D"));
     }
 
     {
-    ASSERT_TRUE_NULLABLE(defaultJson.HasMember("P3D"));
-    ASSERT_TRUE_NULLABLE(defaultJson["P3D"].IsObject());
-    EXPECT_DOUBLE_EQ_NULLABLE(0, defaultJson["P3D"][ECJsonSystemNames::Point::X()].GetDouble());
-    EXPECT_DOUBLE_EQ_NULLABLE(2, defaultJson["P3D"][ECJsonSystemNames::Point::Y()].GetDouble());
-    EXPECT_DOUBLE_EQ_NULLABLE(0, defaultJson["P3D"][ECJsonSystemNames::Point::Z()].GetDouble());
-
-    ASSERT_TRUE_NULLABLE(javaScriptJson.HasMember("p3D"));
-    ASSERT_TRUE_NULLABLE(javaScriptJson["p3D"].IsObject());
-    EXPECT_DOUBLE_EQ_NULLABLE(0, javaScriptJson["p3D"][ECJsonSystemNames::Point::X()].GetDouble());
-    EXPECT_DOUBLE_EQ_NULLABLE(2, javaScriptJson["p3D"][ECJsonSystemNames::Point::Y()].GetDouble());
-    EXPECT_DOUBLE_EQ_NULLABLE(0, javaScriptJson["p3D"][ECJsonSystemNames::Point::Z()].GetDouble());
+    EXPECT_FALSE_NULLABLE(defaultJson.HasMember("P3D"));
+    EXPECT_FALSE_NULLABLE(javaScriptJson.HasMember("p3D"));
     }
 
     {
-    ASSERT_TRUE_NULLABLE(defaultJson.HasMember("PStructProp.p2d"));
-    ASSERT_TRUE_NULLABLE(defaultJson["PStructProp.p2d"].IsObject());
-    EXPECT_DOUBLE_EQ_NULLABLE(0.0, defaultJson["PStructProp.p2d"][ECJsonSystemNames::Point::X()].GetDouble());
-    EXPECT_DOUBLE_EQ_NULLABLE(3.0, defaultJson["PStructProp.p2d"][ECJsonSystemNames::Point::Y()].GetDouble());
-
-    ASSERT_TRUE_NULLABLE(javaScriptJson.HasMember("pStructProp.p2d"));
-    ASSERT_TRUE_NULLABLE(javaScriptJson["pStructProp.p2d"].IsObject());
-    EXPECT_DOUBLE_EQ_NULLABLE(0.0, javaScriptJson["pStructProp.p2d"][ECJsonSystemNames::Point::X()].GetDouble());
-    EXPECT_DOUBLE_EQ_NULLABLE(3.0, javaScriptJson["pStructProp.p2d"][ECJsonSystemNames::Point::Y()].GetDouble());
+    EXPECT_FALSE_NULLABLE(defaultJson.HasMember("PStructProp.p2d"));
+    EXPECT_FALSE_NULLABLE(javaScriptJson.HasMember("pStructProp.p2d"));
     }
 
     {
-    ASSERT_TRUE_NULLABLE(defaultJson["PStructProp.p3d"].IsObject());
-    EXPECT_DOUBLE_EQ_NULLABLE(0.0, defaultJson["PStructProp.p3d"][ECJsonSystemNames::Point::X()].GetDouble());
-    EXPECT_DOUBLE_EQ_NULLABLE(0.0, defaultJson["PStructProp.p3d"][ECJsonSystemNames::Point::Y()].GetDouble());
-    EXPECT_DOUBLE_EQ_NULLABLE(4.0, defaultJson["PStructProp.p3d"][ECJsonSystemNames::Point::Z()].GetDouble());
-
-    ASSERT_TRUE_NULLABLE(javaScriptJson["pStructProp.p3d"].IsObject());
-    EXPECT_DOUBLE_EQ_NULLABLE(0.0, javaScriptJson["pStructProp.p3d"][ECJsonSystemNames::Point::X()].GetDouble());
-    EXPECT_DOUBLE_EQ_NULLABLE(0.0, javaScriptJson["pStructProp.p3d"][ECJsonSystemNames::Point::Y()].GetDouble());
-    EXPECT_DOUBLE_EQ_NULLABLE(4.0, javaScriptJson["pStructProp.p3d"][ECJsonSystemNames::Point::Z()].GetDouble());
+    EXPECT_FALSE_NULLABLE(defaultJson.HasMember("PStructProp.p3d"));
+    EXPECT_FALSE_NULLABLE(javaScriptJson.HasMember("pStructProp.p3d"));
     }
 
     ECClassCP testClass = m_ecdb.Schemas().GetClass("ECSqlTest", "PSA");
@@ -1708,48 +1678,25 @@ TEST_F(JsonReaderTests, PartialPoints)
     ASSERT_TRUE_NULLABLE(defaultJson.IsObject()) << defaultJson.ToString();
     ASSERT_TRUE_NULLABLE(javaScriptJson.IsObject()) << javaScriptJson.ToString();
 
+    // Point2/3D will be considered NULL if one or more co-ordinates are INF/Nan/Null
     {
-    ASSERT_TRUE_NULLABLE(defaultJson.HasMember("P2D"));
-    ASSERT_TRUE_NULLABLE(defaultJson["P2D"].IsObject());
-    EXPECT_DOUBLE_EQ_NULLABLE(1.0, defaultJson["P2D"][ECJsonSystemNames::Point::X()].GetDouble());
-    EXPECT_DOUBLE_EQ_NULLABLE(0.0, defaultJson["P2D"][ECJsonSystemNames::Point::Y()].GetDouble());
-
-    ASSERT_TRUE_NULLABLE(javaScriptJson.HasMember("p2D"));
-    ASSERT_TRUE_NULLABLE(javaScriptJson["p2D"].IsObject());
-    EXPECT_DOUBLE_EQ_NULLABLE(1.0, javaScriptJson["p2D"][ECJsonSystemNames::Point::X()].GetDouble());
-    EXPECT_DOUBLE_EQ_NULLABLE(0.0, javaScriptJson["p2D"][ECJsonSystemNames::Point::Y()].GetDouble());
+    EXPECT_FALSE_NULLABLE(defaultJson.HasMember("P2D"));
+    EXPECT_FALSE_NULLABLE(javaScriptJson.HasMember("p2D"));
     }
 
     {
-    ASSERT_TRUE_NULLABLE(defaultJson.HasMember("P3D"));
-    ASSERT_TRUE_NULLABLE(defaultJson["P3D"].IsObject());
-    EXPECT_DOUBLE_EQ_NULLABLE(0.0, defaultJson["P3D"][ECJsonSystemNames::Point::X()].GetDouble());
-    EXPECT_DOUBLE_EQ_NULLABLE(2.0, defaultJson["P3D"][ECJsonSystemNames::Point::Y()].GetDouble());
-    EXPECT_DOUBLE_EQ_NULLABLE(0.0, defaultJson["P3D"][ECJsonSystemNames::Point::Z()].GetDouble());
-
-    ASSERT_TRUE_NULLABLE(javaScriptJson.HasMember("p3D"));
-    ASSERT_TRUE_NULLABLE(javaScriptJson["p3D"].IsObject());
-    EXPECT_DOUBLE_EQ_NULLABLE(0.0, javaScriptJson["p3D"][ECJsonSystemNames::Point::X()].GetDouble());
-    EXPECT_DOUBLE_EQ_NULLABLE(2.0, javaScriptJson["p3D"][ECJsonSystemNames::Point::Y()].GetDouble());
-    EXPECT_DOUBLE_EQ_NULLABLE(0.0, javaScriptJson["p3D"][ECJsonSystemNames::Point::Z()].GetDouble());
+    EXPECT_FALSE_NULLABLE(defaultJson.HasMember("P3D"));
+    EXPECT_FALSE_NULLABLE(javaScriptJson.HasMember("p3D"));
     }
 
     {
-    EXPECT_DOUBLE_EQ_NULLABLE(0.0, defaultJson["PStructProp"]["p2d"][ECJsonSystemNames::Point::X()].GetDouble());
-    EXPECT_DOUBLE_EQ_NULLABLE(3.0, defaultJson["PStructProp"]["p2d"][ECJsonSystemNames::Point::Y()].GetDouble());
-
-    EXPECT_DOUBLE_EQ_NULLABLE(0.0, javaScriptJson["pStructProp"]["p2d"][ECJsonSystemNames::Point::X()].GetDouble());
-    EXPECT_DOUBLE_EQ_NULLABLE(3.0, javaScriptJson["pStructProp"]["p2d"][ECJsonSystemNames::Point::Y()].GetDouble());
+    EXPECT_FALSE_NULLABLE(defaultJson.HasMember("PStructProp.p2d"));
+    EXPECT_FALSE_NULLABLE(defaultJson.HasMember("pStructProp.p2d"));
     }
 
     {
-    EXPECT_DOUBLE_EQ_NULLABLE(0.0, defaultJson["PStructProp"]["p3d"][ECJsonSystemNames::Point::X()].GetDouble());
-    EXPECT_DOUBLE_EQ_NULLABLE(0.0, defaultJson["PStructProp"]["p3d"][ECJsonSystemNames::Point::Y()].GetDouble());
-    EXPECT_DOUBLE_EQ_NULLABLE(4.0, defaultJson["PStructProp"]["p3d"][ECJsonSystemNames::Point::Z()].GetDouble());
-
-    EXPECT_DOUBLE_EQ_NULLABLE(0.0, javaScriptJson["pStructProp"]["p3d"][ECJsonSystemNames::Point::X()].GetDouble());
-    EXPECT_DOUBLE_EQ_NULLABLE(0.0, javaScriptJson["pStructProp"]["p3d"][ECJsonSystemNames::Point::Y()].GetDouble());
-    EXPECT_DOUBLE_EQ_NULLABLE(4.0, javaScriptJson["pStructProp"]["p3d"][ECJsonSystemNames::Point::Z()].GetDouble());
+    EXPECT_FALSE_NULLABLE(defaultJson.HasMember("PStructProp.p3d"));
+    EXPECT_FALSE_NULLABLE(defaultJson.HasMember("pStructProp.p3d"));
     }
     }
 
