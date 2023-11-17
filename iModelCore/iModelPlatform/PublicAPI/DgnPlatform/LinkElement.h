@@ -90,6 +90,14 @@ public:
 
 protected:
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element) override;
+    DgnDbStatus _OnDelete() override {
+        if (GetModelId().GetValue() == GetDgnDb().Elements().GetRealityDataSourcesPartitionId().GetValue()) { 
+            BeAssert(false && "The RealityDataSourcesModel cannot be deleted"); 
+            return DgnDbStatus::WrongModel; 
+        } 
+
+        return T_Super::_OnDelete();
+    }
 public:
     explicit LinkModel(CreateParams const& params) : T_Super(params) {}
 
