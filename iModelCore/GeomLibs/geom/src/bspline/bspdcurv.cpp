@@ -2101,8 +2101,8 @@ size_t          numSeg      //!< [in] segment count
 )
     {
     points.clear ();
-    points.resize (numSeg);
-    outParams.resize (numSeg);
+    points.resize (numSeg + 1);
+    outParams.resize (numSeg + 1);
     double minDist, maxDist;
     auto status = mdlBspline_computeEqualDeviationChordByNumber (&points[0], &outParams[0], &minDist, &maxDist, this, (int)numSeg);
     return status == SUCCESS;

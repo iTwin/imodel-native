@@ -731,24 +731,49 @@ DbResult IntegrityChecker::CheckNavClassIds(std::function<bool(ECInstanceId, Utf
                 continue;
             }
 			LOG.infov("integrity_check(check_nav_class_ids) analyzing [class: %s] [nav_prop: %s]", classCP->GetFullName(), prop.c_str());
-            std::string query = SqlPrintfString("SELECT s.ECInstanceId, s.%s.Id, s.%s.RelECClassId FROM %s s LEFT JOIN meta.ECClassDef t ON s.%s.RelECClassId=t.ECInstanceId WHERE t.ECInstanceId IS NULL AND s.%s.RelECClassId IS NOT NULL",
+			std::string incorrectClassIdsForTableQuery = SqlPrintfString("SELECT DISTINCT %s.RelECClassId FROM %s WHERE %s.RelECClassId IS NOT NULL AND %s.RelECClassId NOT IN (SELECT SourceECInstanceId FROM ECDbMeta.ClassHasAllBaseClasses WHERE TargetECInstanceId = %s)",
+												navPropCP->GetName().c_str(),
+												classCP->GetECSqlName().c_str(),
+												navPropCP->GetName().c_str(),
+												navPropCP->GetName().c_str(),
+												std::to_string(propMap->GetAs<NavigationPropertyMap>().GetRelECClassIdPropertyMap().GetDefaultClassId().GetValue()).c_str()).GetUtf8CP();
+
+			ECSqlStatement incorrectClassIdsForTableStmt;
+			if (incorrectClassIdsForTableStmt.Prepare(m_conn, incorrectClassIdsForTableQuery.c_str()) != ECSqlStatus::Success) {
+				m_lastError = "failed to prepare ecsql for nav prop integrity check";
+				return BE_SQLITE_ERROR;
+			}
+			std::string incorrectClassIds = "";
+			bool isFirst = true;
+			while (incorrectClassIdsForTableStmt.Step() == BE_SQLITE_ROW) {
+				if (!isFirst) {
+					incorrectClassIds += ", ";
+				}
+				isFirst = false;
+				incorrectClassIds += std::to_string(incorrectClassIdsForTableStmt.GetValueId<ECClassId>(0).GetValue());
+			}
+			if (incorrectClassIds.empty()) {
+				continue;
+			}
+			std::string rowsWithIncorrectClassIdQuery = SqlPrintfString("SELECT ECInstanceId, %s.Id, %s.RelECClassId FROM %s WHERE %s.RelECClassId IN (%s)",
 												navPropCP->GetName().c_str(),
 												navPropCP->GetName().c_str(),
 												classCP->GetECSqlName().c_str(),
 												navPropCP->GetName().c_str(),
-												navPropCP->GetName().c_str()).GetUtf8CP();
-			ECSqlStatement navStmt;
-			if (navStmt.Prepare(m_conn, query.c_str()) != ECSqlStatus::Success) {
-				m_lastError = "failed to prepared ecsql for nav prop integrity check";
+												incorrectClassIds.c_str()).GetUtf8CP();
+
+			ECSqlStatement rowsWithIncorrectClassIdStmt;
+			if (rowsWithIncorrectClassIdStmt.Prepare(m_conn, rowsWithIncorrectClassIdQuery.c_str()) != ECSqlStatus::Success) {
+				m_lastError = "failed to prepare ecsql for nav prop integrity check";
 				return BE_SQLITE_ERROR;
 			}
-			while((rc = navStmt.Step()) == BE_SQLITE_ROW) {
+			while (rowsWithIncorrectClassIdStmt.Step() == BE_SQLITE_ROW) {
 				if (!callback(
-					navStmt.GetValueId<ECInstanceId>(0),
+					rowsWithIncorrectClassIdStmt.GetValueId<ECInstanceId>(0),
 					classCP->GetFullName(),
 					prop.c_str(),
-					navStmt.GetValueId<ECInstanceId>(1),
-					navStmt.GetValueId<ECClassId>(2))) {
+					rowsWithIncorrectClassIdStmt.GetValueId<ECInstanceId>(1),
+					rowsWithIncorrectClassIdStmt.GetValueId<ECClassId>(2))) {
 					return BE_SQLITE_OK;
 				}
 			}

@@ -51,17 +51,6 @@ template<typename T> static void PrioritySortedAdd(bvector<T>& list, T const& el
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static PresentationRuleSetPtr CreateSupplementedRuleSet(PresentationRuleSetCR primary, bvector<PresentationRuleSetPtr> const& supplemental)
-    {
-    PresentationRuleSetPtr ruleset = primary.Clone();
-    for (PresentationRuleSetPtr const& supplementalSet : supplemental)
-        ruleset->MergeWith(*supplementalSet);
-    return ruleset;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 static bool MeetsSchemaRequirements(ECDbCR ecdb, RequiredSchemaSpecificationsList const& requirements, Utf8StringCR containerIdentifier)
     {
     bool meetsRequirements = true;
@@ -201,7 +190,7 @@ PresentationRuleSetPtr RulesPreprocessor::GetPresentationRuleSet(IRulesetLocater
     auto supplementalRuleSetsList = ContainerHelpers::TransformContainer<bvector<PresentationRuleSetPtr>>(supplementalRuleSets, [](auto const& entry){return entry.second;});
     DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_INFO, Utf8PrintfString("Identified %" PRIu64 " supplemental rulesets.", (uint64_t)supplementalRuleSetsList.size()));
 
-    PresentationRuleSetPtr supplementedRuleSet = supplementalRuleSets.empty() ? primary : CreateSupplementedRuleSet(*primary, supplementalRuleSetsList);
+    PresentationRuleSetPtr supplementedRuleSet = supplementalRuleSets.empty() ? primary : SupplementedPresentationRuleSet::Create(*primary, supplementalRuleSetsList).get();
     supplementedRuleSet->AssignRuleIndexes();
     return supplementedRuleSet;
     }
@@ -936,7 +925,7 @@ ContentRuleInputKeysContainer RulesPreprocessor::_GetContentSpecifications(Conte
     ContentRuleInputKeysContainer specs;
     bset<NavNodeKeyCP> handledNodes;
     bvector<NavNodeKeyCPtr> contentNodeKeys = ProcessNodeKeysForContent(params.GetInputNodeKeys(), m_connection, params.GetInstanceKeyProvider());
-   
+
     for (NavNodeKeyCPtr const& inputNodeKey : contentNodeKeys)
         {
         std::function<ExpressionContextPtr()> contextPreparer = [&]()

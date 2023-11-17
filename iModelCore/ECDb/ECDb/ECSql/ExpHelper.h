@@ -31,6 +31,9 @@ public:
     static Utf8CP ToSql(BooleanSqlOperator);
     static Utf8CP ToSql(UnaryValueExp::Operator);
     static Utf8CP ToSql(ECSqlType);
+    static Utf8CP ToSql(WindowPartitionColumnReferenceExp::CollateClauseFunction);
+    static Utf8CP ToSql(WindowFrameClauseExp::WindowFrameUnit);
+    static Utf8CP ToSql(WindowFrameClauseExp::WindowFrameExclusionType);
     };
 
 

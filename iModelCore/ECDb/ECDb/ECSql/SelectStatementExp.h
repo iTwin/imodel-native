@@ -278,6 +278,7 @@ struct QueryExp : Exp
 //=======================================================================================
 //! @bsiclass
 //+===============+===============+===============+===============+===============+======
+struct WindowFunctionClauseExp;
 struct SingleSelectStatementExp final : QueryExp
     {
     private:
@@ -288,6 +289,7 @@ struct SingleSelectStatementExp final : QueryExp
         int m_orderByClauseIndex = UNSET_CHILDINDEX;
         int m_groupByClauseIndex = UNSET_CHILDINDEX;
         int m_havingClauseIndex = UNSET_CHILDINDEX;
+        int m_WindowFunctionClauseExpExpIndex = UNSET_CHILDINDEX;
         int m_limitOffsetClauseIndex = UNSET_CHILDINDEX;
         int m_optionsClauseIndex = UNSET_CHILDINDEX;
         std::vector<RangeClassInfo> m_rangeClassRefExpCache;
@@ -304,7 +306,7 @@ struct SingleSelectStatementExp final : QueryExp
 
     public:
         SingleSelectStatementExp(SqlSetQuantifier selectionType, std::unique_ptr<SelectClauseExp>, std::unique_ptr<FromExp>, std::unique_ptr<WhereExp>,
-                                 std::unique_ptr<OrderByExp>, std::unique_ptr<GroupByExp>, std::unique_ptr<HavingExp>, std::unique_ptr<LimitOffsetExp> limitOffsetExp, std::unique_ptr<OptionsExp>);
+                                 std::unique_ptr<OrderByExp>, std::unique_ptr<WindowFunctionClauseExp>, std::unique_ptr<GroupByExp>, std::unique_ptr<HavingExp>, std::unique_ptr<LimitOffsetExp> limitOffsetExp, std::unique_ptr<OptionsExp>);
 
         explicit SingleSelectStatementExp(std::vector<std::unique_ptr<ValueExp>>&);
         bool IsRowConstructor() const { return m_fromClauseIndex == UNSET_CHILDINDEX;}
@@ -324,6 +326,14 @@ struct SingleSelectStatementExp final : QueryExp
                 return nullptr;
 
             return GetChild<WhereExp>((size_t) m_whereClauseIndex);
+            }
+        
+        WindowFunctionClauseExp const* GetWindowFunctionClause() const
+            {
+            if (m_WindowFunctionClauseExpExpIndex < 0)
+                return nullptr;
+
+            return GetChild<WindowFunctionClauseExp>((size_t) m_WindowFunctionClauseExpExpIndex);
             }
 
         OrderByExp const* GetOrderBy() const

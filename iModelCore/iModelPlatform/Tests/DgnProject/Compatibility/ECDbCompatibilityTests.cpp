@@ -1203,14 +1203,14 @@ TEST_F(ECDbCompatibilityTestFixture, EC31SchemaImportWithReadContextVariations)
         ECSchemaPtr schema = nullptr;
         return SchemaReadStatus::Success == ECSchema::ReadFromXmlString(schema, R"xml(<?xml version="1.0" encoding="utf-8" ?>
                     <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-                        <ECSchemaReference name="CoreCustomAttributes" version="01.00.02" alias="cca" />
+                        <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="cca" />
                         <ECEntityClass typeName="Foo">
-                                <ECCustomAttributes>
-                                    <HiddenClass xmlns="CoreCustomAttributes.01.00.02" />
-                                </ECCustomAttributes>
-                                <ECProperty propertyName="Code" typeName="int" />
-                                <ECProperty propertyName="Size" typeName="double" kindOfQuantity="AREA" />
-                                <ECProperty propertyName="Status" typeName="StatusEnum" />
+                            <ECCustomAttributes>
+                                <HiddenClass xmlns="CoreCustomAttributes.01.00.00" />
+                            </ECCustomAttributes>
+                            <ECProperty propertyName="Code" typeName="int" />
+                            <ECProperty propertyName="Size" typeName="double" kindOfQuantity="AREA" />
+                            <ECProperty propertyName="Status" typeName="StatusEnum" />
                         </ECEntityClass>
                         <KindOfQuantity typeName="ANGLE" displayLabel="Angle" persistenceUnit="RAD(DefaultReal)" presentationUnits="ARC_DEG(real2u);ARC_DEG(dms)" relativeError="0.0001"/>
                         <KindOfQuantity typeName="AREA" displayLabel="Area" persistenceUnit="SQ.M(DefaultReal)" presentationUnits="SQ.M(real4u);SQ.FT(real4u)" relativeError="0.0001"/>
@@ -1229,14 +1229,14 @@ TEST_F(ECDbCompatibilityTestFixture, EC31SchemaImportWithReadContextVariations)
         ECSchemaPtr schema = nullptr;
         ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, R"xml(<?xml version="1.0" encoding="utf-8" ?>
                     <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-                        <ECSchemaReference name="CoreCustomAttributes" version="01.00.02" alias="cca" />
+                        <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="cca" />
                         <ECEntityClass typeName="Foo">
-                                <ECCustomAttributes>
-                                    <HiddenClass xmlns="CoreCustomAttributes.01.00.02" />
-                                </ECCustomAttributes>
-                                <ECProperty propertyName="Code" typeName="int" />
-                                <ECProperty propertyName="Size" typeName="double" kindOfQuantity="AREA" />
-                                <ECProperty propertyName="Status" typeName="StatusEnum" />
+                            <ECCustomAttributes>
+                                <HiddenClass xmlns="CoreCustomAttributes.01.00.00" />
+                            </ECCustomAttributes>
+                            <ECProperty propertyName="Code" typeName="int" />
+                            <ECProperty propertyName="Size" typeName="double" kindOfQuantity="AREA" />
+                            <ECProperty propertyName="Status" typeName="StatusEnum" />
                         </ECEntityClass>
                         <KindOfQuantity typeName="ANGLE" displayLabel="Angle" persistenceUnit="RAD(DefaultReal)" presentationUnits="ARC_DEG(real2u);ARC_DEG(dms)" relativeError="0.0001"/>
                         <KindOfQuantity typeName="AREA" displayLabel="Area" persistenceUnit="SQ.M(DefaultReal)" presentationUnits="SQ.M(real4u);SQ.FT(real4u)" relativeError="0.0001"/>
@@ -1336,6 +1336,12 @@ TEST_F(ECDbCompatibilityTestFixture, EC31SchemaImportWithReadContextVariations)
             ctx->AddSchemaPath(ecdbSchemaAssetsDir);
 
             assertSchemaImport(testDb, *ctx, scenario);
+
+            // For Open mode: read-write w/o profile upgrade, Age: older, Version: ecdb 4.0.0.1, bedb 3.1.0.2, we get:
+            // ERROR | ECDb | Failed to import schema 'CoreCustomAttributes.01.00.04'. Current ECDb profile version (4.0.0.1) only support schemas with EC version < 3.2. ECDb profile version upgrade is required to import schemas with EC Version >= 3.2.
+            if (testDb.GetAge() == ProfileState::Age::Older && testDb.GetECDbProfileVersion() == ProfileVersion(4, 0, 0, 1) &&
+                testDb.GetOpenParams().GetProfileUpgradeOptions() == Db::ProfileUpgradeOptions::None)
+                continue;
 
             scenario = "Read context with ECDb schema assets folder and ECDb as final schema locater";
             ctx = ECN::ECSchemaReadContext::CreateContext();
