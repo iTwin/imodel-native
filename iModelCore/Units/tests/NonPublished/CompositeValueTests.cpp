@@ -445,5 +445,32 @@ TEST_F(CompositeValueSpecJsonTest, JsonVerboseTest)
     validateSpecJson(&spec, expectedJson, s_unitsContext, true);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(CompositeValueSpecJsonTest, CorrectlyReadsUnitLabels)
+    {
+    Json::Value json;
+    Json::Reader::Parse(R"json({
+        "units": [{
+            "name": "MILE",
+            "label": "x"
+        }]
+    })json", json);
+    CompositeValueSpec specWithUnitLabel;
+    ASSERT_TRUE(CompositeValueSpec::FromJson(specWithUnitLabel, json, s_unitsContext));
+    EXPECT_TRUE(specWithUnitLabel.HasMajorLabel());
+    EXPECT_STREQ("x", specWithUnitLabel.GetMajorLabel().c_str());
+
+    Json::Reader::Parse(R"json({
+        "units": [{
+            "name": "MILE"
+        }]
+    })json", json);
+    CompositeValueSpec specWithoutUnitLabel;
+    ASSERT_TRUE(CompositeValueSpec::FromJson(specWithoutUnitLabel, json, s_unitsContext));
+    EXPECT_FALSE(specWithoutUnitLabel.HasMajorLabel());
+    EXPECT_STREQ("", specWithoutUnitLabel.GetMajorLabel().c_str());
+    }
 
 END_BENTLEY_FORMATTEST_NAMESPACE
