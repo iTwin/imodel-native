@@ -235,9 +235,9 @@ static std::map<std::pair<Utf8String, ECPresentation::UnitSystem>, std::shared_p
                 return false;
 
             auto format = std::make_shared<Formatting::Format>();
-            auto serializedFormatJson = value["serializedFormat"].asCString();
-            if (!Formatting::Format::FromJson(*format, serializedFormatJson, &unitsSchema->GetUnitsContext()))
-                DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Failed to read Format from JSON: '%s'", serializedFormatJson));
+            Utf8String serializedFormatJson = value["serializedFormat"].asString();
+            if (!Formatting::Format::FromJson(*format, serializedFormatJson.c_str(), &unitsSchema->GetUnitsContext()))
+                DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Failed to read Format from JSON: '%s'", serializedFormatJson.c_str()));
 
             BeJsConst unitSystems = value["unitSystems"];
             unitSystems.ForEachArrayMember([&](BeJsConst::ArrayIndex, BeJsConst unitSystem)
