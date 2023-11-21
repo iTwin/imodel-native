@@ -342,7 +342,7 @@ protected:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
-    ContentDescriptor::CalculatedPropertyField* CreateCalculatedPropertyField(ECClassCP ecClass, Utf8StringCR name, CalculatedPropertiesSpecificationCR spec, 
+    ContentDescriptor::CalculatedPropertyField* CreateCalculatedPropertyField(ECClassCP ecClass, Utf8StringCR name, CalculatedPropertiesSpecificationCR spec,
         RelatedClassPathCR pathFromSelectToPropertyClass, RelationshipMeaning relationshipMeaning)
         {
         ContentDescriptor::CalculatedPropertyField* field = new ContentDescriptor::CalculatedPropertyField(m_categoriesSupplier.GetCalculatedFieldCategory(ecClass, spec, pathFromSelectToPropertyClass, relationshipMeaning),
@@ -370,7 +370,30 @@ protected:
     +---------------+---------------+---------------+---------------+---------------+------*/
     std::shared_ptr<ContentFieldRenderer const> CreateFieldRenderer(ECPropertyCR ecProperty, ECClassCR propertyClass, PropertySpecificationCP overrides) const
         {
-        return m_propertyInfos.GetPropertyRenderer(ecProperty, propertyClass, overrides);
+        auto renderer = m_propertyInfos.GetPropertyRenderer(ecProperty, propertyClass, overrides);
+        if (renderer)
+            return renderer;
+
+        if (ecProperty.GetIsPrimitive() || ecProperty.GetIsPrimitiveArray())
+            {
+            Nullable<PrimitiveType> primitiveType;
+            Utf8String extendedTypeName;
+            if (auto primitiveProperty = ecProperty.GetAsPrimitiveProperty())
+                {
+                primitiveType = primitiveProperty->GetType();
+                extendedTypeName = primitiveProperty->GetExtendedTypeName();
+                }
+            else if (auto primitiveArrayProperty = ecProperty.GetAsPrimitiveArrayProperty())
+                {
+                primitiveType = primitiveArrayProperty->GetType();
+                extendedTypeName = primitiveArrayProperty->GetExtendedTypeName();
+                }
+
+            if (primitiveType.IsValid() && primitiveType.Value() == PRIMITIVETYPE_String && extendedTypeName.EqualsI("MultilinePlainText"))
+                return std::make_shared<ContentFieldRenderer>("multiline");
+            }
+
+        return nullptr;
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -992,8 +1015,8 @@ public:
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
     RelatedContentPropertiesAppender(ContentDescriptorBuilder::Context& context, PropertyInfoStore const& propertyInfos, ContentDescriptorR descriptor,
-        CategoriesSupplier categoriesSupplier, ContentDescriptor::RelatedContentField& relatedContentField, PropertyCategorySpecificationsList const* scopePropertyCategories, 
-        std::unique_ptr<ContentSpecificationsHandler::PropertyAppendResult::ReplacedRelationshipPath> pathReplaceInfo, std::function<void(ContentDescriptor::RelatedContentField&)> onPropertiesAppended, 
+        CategoriesSupplier categoriesSupplier, ContentDescriptor::RelatedContentField& relatedContentField, PropertyCategorySpecificationsList const* scopePropertyCategories,
+        std::unique_ptr<ContentSpecificationsHandler::PropertyAppendResult::ReplacedRelationshipPath> pathReplaceInfo, std::function<void(ContentDescriptor::RelatedContentField&)> onPropertiesAppended,
         RelatedPropertiesSpecificationCR relatedSpec)
         : ContentPropertiesAppender(context, propertyInfos, descriptor, categoriesSupplier, scopePropertyCategories),
         m_relatedContentField(relatedContentField), m_pathReplaceInfo(std::move(pathReplaceInfo)), m_onPropertiesAppended(onPropertiesAppended), m_relatedSpec(relatedSpec)
