@@ -1258,10 +1258,10 @@ export declare namespace IModelJsNative {
     id: string;
     taskAllocationsMap: { [priority: number]: number };
     defaultFormats: {
-      [phenomenon: string]: {
+      [phenomenon: string]: Array<{
         unitSystems: string[];
         serializedFormat: string;
-      };
+      }>;
     };
     isChangeTrackingEnabled: boolean;
     cacheConfig: ECPresentationHierarchyCacheConfig;

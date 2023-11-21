@@ -227,27 +227,30 @@ static std::map<std::pair<Utf8String, ECPresentation::UnitSystem>, std::shared_p
     if (unitsSchema == nullptr)
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, "Failed to find Units schema");
 
-    jsMap.ForEachProperty([&](Utf8CP name, BeJsConst value)
+    jsMap.ForEachProperty([&](Utf8CP phenomenon, BeJsConst formatsArray)
         {
-        if (!value.hasMember("serializedFormat") || !value.hasMember("unitSystems"))
-            return false;
-
-        Utf8String phenomenon = name;
-        auto format = std::make_shared<Formatting::Format>();
-        Utf8String serializedFormatJson = value["serializedFormat"].asString();
-        if (!Formatting::Format::FromJson(*format, serializedFormatJson.c_str(), &unitsSchema->GetUnitsContext()))
-            DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Failed to read Format from JSON: '%s'", serializedFormatJson.c_str()));
-
-        BeJsConst unitSystems = value["unitSystems"];
-        unitSystems.ForEachArrayMember([&](BeJsConst::ArrayIndex _, BeJsConst unitSystem)
+        formatsArray.ForEachArrayMember([&](BeJsConst::ArrayIndex, BeJsConst value)
             {
-            if (!unitSystem.isString())
+            if (!value.hasMember("serializedFormat") || !value.hasMember("unitSystems"))
                 return false;
 
-            auto parsedUnitSystem = ParseUnitSystemFromString(unitSystem.asCString());
-            if (parsedUnitSystem.IsSuccess())
-                defaultFormats.insert(std::make_pair(std::make_pair(phenomenon.ToUpper(), parsedUnitSystem.GetValue()), format));
+            auto format = std::make_shared<Formatting::Format>();
+            auto serializedFormatJson = value["serializedFormat"].asCString();
+            if (!Formatting::Format::FromJson(*format, serializedFormatJson, &unitsSchema->GetUnitsContext()))
+                DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Failed to read Format from JSON: '%s'", serializedFormatJson));
 
+            BeJsConst unitSystems = value["unitSystems"];
+            unitSystems.ForEachArrayMember([&](BeJsConst::ArrayIndex, BeJsConst unitSystem)
+                {
+                if (!unitSystem.isString())
+                    return false;
+
+                auto parsedUnitSystem = ParseUnitSystemFromString(unitSystem.asCString());
+                if (parsedUnitSystem.IsSuccess())
+                    defaultFormats.insert(std::make_pair(std::make_pair(Utf8String(phenomenon).ToUpper(), parsedUnitSystem.GetValue()), format));
+
+                return false;
+                });
             return false;
             });
         return false;
