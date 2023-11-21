@@ -7756,6 +7756,98 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyDisplayOverride_Use
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(PropertyRenderer_AppliesMultilineRendererForPrimitiveStringPropertiesWithMultilinePlainTextExtendedType, R"*(
+    <ECEntityClass typeName="ClassX">
+        <ECProperty propertyName="Primitive" typeName="string" extendedTypeName="MultilinePlainText" />
+        <ECArrayProperty propertyName="PrimitivesArray" typeName="string" extendedTypeName="MultilinePlainText" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyRenderer_AppliesMultilineRendererForPrimitiveStringPropertiesWithMultilinePlainTextExtendedType)
+    {
+    // set up the dataset
+    ECClassCP classX = GetClass("ClassX");
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    contentRule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", classX->GetFullName(), false, false));
+    rules->AddPresentationRule(*contentRule);
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ASSERT_TRUE(descriptor.IsValid());
+    ASSERT_EQ(2, descriptor->GetVisibleFields().size());
+    EXPECT_STREQ("multiline", descriptor->GetVisibleFields()[0]->GetRenderer()->GetName().c_str());
+    EXPECT_STREQ("multiline", descriptor->GetVisibleFields()[1]->GetRenderer()->GetName().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(PropertyRenderer_Priorities_SpecificationOverrideOverridesDefaultRenderer, R"*(
+    <ECEntityClass typeName="ClassX">
+        <ECProperty propertyName="Prop" typeName="string" extendedTypeName="MultilinePlainText" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyRenderer_Priorities_SpecificationOverrideOverridesDefaultRenderer)
+    {
+    // set up the dataset
+    ECClassCP classX = GetClass("ClassX");
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", classX->GetFullName(), false, false);
+    spec->AddPropertyOverride(*new PropertySpecification("Prop", 1, "", nullptr, nullptr, new CustomRendererSpecification("Specification Renderer")));
+    contentRule->AddSpecification(*spec);
+    rules->AddPresentationRule(*contentRule);
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ASSERT_TRUE(descriptor.IsValid());
+    ASSERT_EQ(1, descriptor->GetVisibleFields().size());
+    EXPECT_STREQ("Specification Renderer", descriptor->GetVisibleFields()[0]->GetRenderer()->GetName().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(PropertyRendererOverride_Priorities_ModifierOverrideOverridesDefaultRenderer, R"*(
+    <ECEntityClass typeName="ClassX">
+        <ECProperty propertyName="Prop" typeName="string" extendedTypeName="MultilinePlainText" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyRendererOverride_Priorities_ModifierOverrideOverridesDefaultRenderer)
+    {
+    // set up the dataset
+    ECClassCP classX = GetClass("ClassX");
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    contentRule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", classX->GetFullName(), false, false));
+    rules->AddPresentationRule(*contentRule);
+
+    ContentModifierP modifier = new ContentModifier(classX->GetSchema().GetName(), classX->GetName());
+    modifier->AddPropertyOverride(*new PropertySpecification("Prop", 1, "", nullptr, nullptr, new CustomRendererSpecification("Modifier Renderer")));
+    rules->AddPresentationRule(*modifier);
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ASSERT_TRUE(descriptor.IsValid());
+    ASSERT_EQ(1, descriptor->GetVisibleFields().size());
+    EXPECT_STREQ("Modifier Renderer", descriptor->GetVisibleFields()[0]->GetRenderer()->GetName().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
 DEFINE_SCHEMA(PropertyRendererOverride_Priorities_AppliesSpecificationOverrideWhenPrioritiesEqual, R"*(
     <ECEntityClass typeName="ClassA">
         <ECProperty propertyName="PropertyOnA" typeName="string" />
