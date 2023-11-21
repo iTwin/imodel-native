@@ -401,11 +401,7 @@ BeMutex& FontManager::GetMutex() {
     // Note: under normal circumstances, mobile apps never cleanly exit, so this problem is masked.
     // It's only when something else causes the mobile app to exit (including some other
     // uncaught exception) that the atexit handler triggers an exception from this mutex.
-    static BeMutex* s_fontsMutex = NULL;
-    if (s_fontsMutex == NULL)
-    {
-        s_fontsMutex = new BeMutex();
-    }
+    static BeMutex* s_fontsMutex = new BeMutex();
     return *s_fontsMutex;
 #else
     static BeMutex s_fontsMutex;
