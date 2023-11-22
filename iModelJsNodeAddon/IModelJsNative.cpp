@@ -302,7 +302,7 @@ struct SQLiteOps {
 
     void RequireDbIsOpen(NapiInfoCR info) {
         const auto* db = _GetMyDb();
-        if (db == nullptr || _GetMyDb()->IsDbOpen())
+        if (db == nullptr || !_GetMyDb()->IsDbOpen())
             BeNapi::ThrowJsException(info.Env(), "db is not open");
     }
     void RequireDbIsWritable(NapiInfoCR info) {
