@@ -1594,7 +1594,7 @@ ContentDescriptorCPtr RulesDrivenECPresentationManagerImpl::_GetContentDescripto
 SpecificationContentProviderPtr RulesDrivenECPresentationManagerImpl::GetContentProvider(ContentRequestImplParams const& params) const
     {
     ContentDescriptorCR descriptor = params.GetContentDescriptor();
-    ContentProviderKey key(params.GetConnection().GetId(), descriptor.GetRuleset().GetRuleSetId(), descriptor.GetPreferredDisplayType(), descriptor.GetContentFlags(),
+    ContentProviderKey key(params.GetConnection().GetId(), descriptor.GetRuleset().GetRuleSetId(), descriptor.GetPreferredDisplayType(), descriptor.GetRequestedContentFlags(),
         descriptor.GetUnitSystem(), descriptor.GetInputNodeKeys(), descriptor.GetSelectionInfo(), descriptor.GetExclusiveIncludePaths());
     return GetContentProvider(params.GetConnection(), params.GetCancellationToken(), key, descriptor.GetRulesetVariables());
     }
