@@ -21,9 +21,9 @@ static void VerifyItemInstance(ContentSetItemCR item, IECInstanceCR instance)
 +===============+===============+===============+===============+===============+======*/
 struct ContentQueryResultsReaderTests : QueryExecutorTests
     {
-    ContentDescriptorPtr CreateContentDescriptor() const
+    ContentDescriptorPtr CreateContentDescriptor(int contentFlags = 0) const
         {
-        return ContentDescriptor::Create(*m_connection, *m_ruleset, RulesetVariables(), *NavNodeKeyListContainer::Create());
+        return ContentDescriptor::Create(*m_connection, *m_ruleset, RulesetVariables(), *NavNodeKeyListContainer::Create(), ContentDisplayType::Undefined, contentFlags, contentFlags);
         }
     };
 
@@ -89,10 +89,9 @@ TEST_F(ContentQueryResultsReaderTests, HandlesResultsMergingFromOneClass)
 
     Utf8PrintfString formattedVariesStr(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::LABEL_VARIES);
 
-    ContentDescriptorPtr descriptor = CreateContentDescriptor();
+    ContentDescriptorPtr descriptor = CreateContentDescriptor((int)ContentFlags::MergeResults);
     AddField(*descriptor, *m_gadgetClass, ContentDescriptor::Property("gadget", *m_gadgetClass, *m_gadgetClass->GetPropertyP("MyID")->GetAsPrimitiveProperty()));
     AddField(*descriptor, *m_gadgetClass, ContentDescriptor::Property("gadget", *m_gadgetClass, *m_gadgetClass->GetPropertyP("Description")->GetAsPrimitiveProperty()));
-    descriptor->AddContentFlag(ContentFlags::MergeResults);
 
     ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->SelectContract(*ContentQueryContract::Create(1, *descriptor, m_gadgetClass, *query, nullptr, {}, false, false), "gadget");
@@ -170,13 +169,12 @@ TEST_F(ContentQueryResultsReaderTests, HandlesResultsMergingFromMultipleClasses)
     q2->SelectContract(*ContentQueryContract::Create(2, *innerDescriptor, m_widgetClass, *q2, nullptr, {}, false, false), "widget");
     q2->From(*m_widgetClass, false, "widget");
 
-    ContentDescriptorPtr outerDescriptor = ContentDescriptor::Create(*innerDescriptor);
+    ContentDescriptorPtr outerDescriptor = ContentDescriptor::Create(*innerDescriptor, (int)ContentFlags::MergeResults);
     for (ContentDescriptor::Field* field : outerDescriptor->GetAllFields())
         {
         for (ContentDescriptor::Property const& fieldProperty : field->AsPropertiesField()->GetProperties())
             const_cast<ContentDescriptor::Property&>(fieldProperty).SetPrefix("");
         }
-    outerDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
     query->SelectContract(*ContentQueryContract::Create(0, *outerDescriptor, nullptr, *query, nullptr, {}, false, false));
@@ -416,8 +414,7 @@ TEST_F(ContentQueryResultsReaderTests, HandlesResultsMergingOfRelatedProperties)
 
     RelatedClass relatedPropertyPath(*m_gadgetClass, SelectClass<ECRelationshipClass>(*widgetHasGadgetsRelationship, "r"), false, SelectClass<ECClass>(*m_widgetClass, "w"));
 
-    ContentDescriptorPtr descriptor = CreateContentDescriptor();
-    descriptor->AddContentFlag(ContentFlags::MergeResults);
+    ContentDescriptorPtr descriptor = CreateContentDescriptor((int)ContentFlags::MergeResults);
     descriptor->AddRootField(*new ContentDescriptor::ECPropertiesField(m_categorySupplier.CreatePropertyCategory(*m_gadgetClass->GetPropertyP("MyID")), "gadget_MyID_unique_property_name",
         ContentDescriptor::Property("this", *m_gadgetClass, *m_gadgetClass->GetPropertyP("MyID")->GetAsPrimitiveProperty())));
     descriptor->AddRootField(*new ContentDescriptor::RelatedContentField(m_categorySupplier.CreateDefaultCategory(), "widget_related_content_unique_field_name", "related content", {relatedPropertyPath},
@@ -484,8 +481,7 @@ TEST_F(ContentQueryResultsReaderTests, HandlesResultsMergingOfRelatedPropertiesO
 
     RelatedClass relatedPropertyPath(*m_gadgetClass, SelectClass<ECRelationshipClass>(*widgetHasGadgetsRelationship, "r"), false, SelectClass<ECClass>(*m_widgetClass, "w"));
 
-    ContentDescriptorPtr descriptor = CreateContentDescriptor();
-    descriptor->AddContentFlag(ContentFlags::MergeResults);
+    ContentDescriptorPtr descriptor = CreateContentDescriptor((int)ContentFlags::MergeResults);
     descriptor->AddRootField(*new ContentDescriptor::ECPropertiesField(m_categorySupplier.CreatePropertyCategory(*m_gadgetClass->GetPropertyP("MyID")), "gadget_MyID_unique_property_name",
         ContentDescriptor::Property("this", *m_gadgetClass, *m_gadgetClass->GetPropertyP("MyID")->GetAsPrimitiveProperty())));
     descriptor->AddRootField(*new ContentDescriptor::RelatedContentField(m_categorySupplier.CreateDefaultCategory(), "widget_related_content_unique_field_name", "related content", {relatedPropertyPath},
@@ -622,8 +618,7 @@ TEST_F(ContentQueryResultsReaderTests, HandlesResultsMergingOfOneToManyRelatedPr
 
     RelatedClass relatedPropertyPath(*m_widgetClass, SelectClass<ECRelationshipClass>(*widgetHasGadgetsRelationship, "r"), true, SelectClass<ECClass>(*m_gadgetClass, "g"));
 
-    ContentDescriptorPtr descriptor = CreateContentDescriptor();
-    descriptor->AddContentFlag(ContentFlags::MergeResults);
+    ContentDescriptorPtr descriptor = CreateContentDescriptor((int)ContentFlags::MergeResults);
     descriptor->AddRootField(*new ContentDescriptor::ECPropertiesField(m_categorySupplier.CreatePropertyCategory(*m_widgetClass->GetPropertyP("MyID")), "widget_MyID_unique_property_name",
         ContentDescriptor::Property("this", *m_widgetClass, *m_widgetClass->GetPropertyP("MyID")->GetAsPrimitiveProperty())));
     descriptor->AddRootField(*new ContentDescriptor::RelatedContentField(m_categorySupplier.CreateDefaultCategory(), "gadget_related_content_unique_field_name", "related content", {relatedPropertyPath},
@@ -690,8 +685,7 @@ TEST_F(ContentQueryResultsReaderTests, HandlesResultsMergingOfOneToManyRelatedPr
 
     RelatedClass relatedPropertyPath(*m_widgetClass, SelectClass<ECRelationshipClass>(*widgetHasGadgetsRelationship, "r"), true, SelectClass<ECClass>(*m_gadgetClass, "g"));
 
-    ContentDescriptorPtr descriptor = CreateContentDescriptor();
-    descriptor->AddContentFlag(ContentFlags::MergeResults);
+    ContentDescriptorPtr descriptor = CreateContentDescriptor((int)ContentFlags::MergeResults);
     descriptor->AddRootField(*new ContentDescriptor::ECPropertiesField(m_categorySupplier.CreatePropertyCategory(*m_widgetClass->GetPropertyP("MyID")), "widget_MyID_unique_property_name",
         ContentDescriptor::Property("this", *m_widgetClass, *m_widgetClass->GetPropertyP("MyID")->GetAsPrimitiveProperty())));
     descriptor->AddRootField(*new ContentDescriptor::RelatedContentField(m_categorySupplier.CreateDefaultCategory(), "gadget_related_content_unique_field_name", "related content", {relatedPropertyPath},
@@ -763,8 +757,7 @@ TEST_F(ContentQueryResultsReaderTests, HandlesResultsMergingOfOneToManyRelatedPr
 
     RelatedClass relatedPropertyPath(*m_widgetClass, SelectClass<ECRelationshipClass>(*widgetHasGadgetsRelationship, "r"), true, SelectClass<ECClass>(*m_gadgetClass, "g"));
 
-    ContentDescriptorPtr descriptor = CreateContentDescriptor();
-    descriptor->AddContentFlag(ContentFlags::MergeResults);
+    ContentDescriptorPtr descriptor = CreateContentDescriptor((int)ContentFlags::MergeResults);
     descriptor->AddRootField(*new ContentDescriptor::ECPropertiesField(m_categorySupplier.CreatePropertyCategory(*m_widgetClass->GetPropertyP("MyID")), "widget_MyID_unique_property_name",
         ContentDescriptor::Property("this", *m_widgetClass, *m_widgetClass->GetPropertyP("MyID")->GetAsPrimitiveProperty())));
     descriptor->AddRootField(*new ContentDescriptor::RelatedContentField(m_categorySupplier.CreateDefaultCategory(), "gadget_related_content_unique_field_name", "related content", {relatedPropertyPath},
@@ -833,8 +826,7 @@ TEST_F(ContentQueryResultsReaderTests, HandlesResultsMergingOfOneToManyRelatedPr
 
     RelatedClass relatedPropertyPath(*m_widgetClass, SelectClass<ECRelationshipClass>(*widgetHasGadgetsRelationship, "r"), true, SelectClass<ECClass>(*m_gadgetClass, "g"));
 
-    ContentDescriptorPtr descriptor = CreateContentDescriptor();
-    descriptor->AddContentFlag(ContentFlags::MergeResults);
+    ContentDescriptorPtr descriptor = CreateContentDescriptor((int)ContentFlags::MergeResults);
     descriptor->AddRootField(*new ContentDescriptor::ECPropertiesField(m_categorySupplier.CreatePropertyCategory(*m_widgetClass->GetPropertyP("MyID")), "widget_MyID_unique_property_name",
         ContentDescriptor::Property("this", *m_widgetClass, *m_widgetClass->GetPropertyP("MyID")->GetAsPrimitiveProperty())));
     descriptor->AddRootField(*new ContentDescriptor::RelatedContentField(m_categorySupplier.CreateDefaultCategory(), "gadget_related_content_unique_field_name", "related content", {relatedPropertyPath},
@@ -903,8 +895,7 @@ TEST_F(ContentQueryResultsReaderTests, HandlesResultsMergingOfOneToManyRelatedPr
 
     RelatedClass relatedPropertyPath(*m_widgetClass, SelectClass<ECRelationshipClass>(*widgetHasGadgetsRelationship, "r"), true, SelectClass<ECClass>(*m_gadgetClass, "g"));
 
-    ContentDescriptorPtr descriptor = CreateContentDescriptor();
-    descriptor->AddContentFlag(ContentFlags::MergeResults);
+    ContentDescriptorPtr descriptor = CreateContentDescriptor((int)ContentFlags::MergeResults);
     descriptor->AddRootField(*new ContentDescriptor::ECPropertiesField(m_categorySupplier.CreatePropertyCategory(*m_widgetClass->GetPropertyP("MyID")), "widget_MyID_unique_property_name",
         ContentDescriptor::Property("this", *m_widgetClass, *m_widgetClass->GetPropertyP("MyID")->GetAsPrimitiveProperty())));
     descriptor->AddRootField(*new ContentDescriptor::RelatedContentField(m_categorySupplier.CreateDefaultCategory(), "gadget_related_content_unique_field_name", "related content", {relatedPropertyPath},
@@ -1127,8 +1118,7 @@ TEST_F(ContentQueryResultsReaderTests, HandlesResultsMergingOfOneToManyRelatedPr
     RelatedClass relWG(*m_widgetClass, SelectClass<ECRelationshipClass>(*widgetHasGadgetsRelationship, "r1"), true, SelectClass<ECClass>(*m_gadgetClass, "g"));
     RelatedClass relGS(*m_gadgetClass, SelectClass<ECRelationshipClass>(*gadgetHasSprocketsRelationship, "r2"), true, SelectClass<ECClass>(*m_sprocketClass, "s"));
 
-    ContentDescriptorPtr descriptor = CreateContentDescriptor();
-    descriptor->AddContentFlag(ContentFlags::MergeResults);
+    ContentDescriptorPtr descriptor = CreateContentDescriptor((int)ContentFlags::MergeResults);
     descriptor->AddRootField(*new ContentDescriptor::ECPropertiesField(m_categorySupplier.CreatePropertyCategory(*m_widgetClass->GetPropertyP("MyID")), "widget_MyID_unique_property_name",
         ContentDescriptor::Property("this", *m_widgetClass, *m_widgetClass->GetPropertyP("MyID")->GetAsPrimitiveProperty())));
     descriptor->AddRootField(*new ContentDescriptor::RelatedContentField(m_categorySupplier.CreateDefaultCategory(), "gadget_related_content_unique_field_name", "related content 1", {relWG},
@@ -1341,8 +1331,7 @@ TEST_F(ContentQueryResultsReaderTests, HandlesResultsMergingOfOneToManyRelatedPr
     RelatedClass relWG(*m_widgetClass, SelectClass<ECRelationshipClass>(*widgetHasGadgetsRelationship, "r1"), true, SelectClass<ECClass>(*m_gadgetClass, "g"));
     RelatedClass relGW(*m_gadgetClass, SelectClass<ECRelationshipClass>(*widgetsHaveGadgetsRelationship, "r2"), false, SelectClass<ECClass>(*m_widgetClass, "w"));
 
-    ContentDescriptorPtr descriptor = CreateContentDescriptor();
-    descriptor->AddContentFlag(ContentFlags::MergeResults);
+    ContentDescriptorPtr descriptor = CreateContentDescriptor((int)ContentFlags::MergeResults);
     descriptor->AddRootField(*new ContentDescriptor::ECPropertiesField(m_categorySupplier.CreatePropertyCategory(*m_widgetClass->GetPropertyP("MyID")), "widget_MyID_unique_property_name_1",
         ContentDescriptor::Property("this", *m_widgetClass, *m_widgetClass->GetPropertyP("MyID")->GetAsPrimitiveProperty())));
     descriptor->AddRootField(*new ContentDescriptor::RelatedContentField(m_categorySupplier.CreateDefaultCategory(), "gadget_related_content_unique_field_name", "related content 1", {relWG},
@@ -1586,8 +1575,7 @@ TEST_F(ContentQueryResultsReaderTests, DoesntIncludeFieldPropertyValueInstanceKe
     {
     IECInstancePtr instance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
 
-    ContentDescriptorPtr descriptor = CreateContentDescriptor();
-    descriptor->SetContentFlags(descriptor->GetContentFlags() | (int)ContentFlags::ExcludeEditingData);
+    ContentDescriptorPtr descriptor = CreateContentDescriptor((int)ContentFlags::ExcludeEditingData);
     AddField(*descriptor, *m_widgetClass, ContentDescriptor::Property("widget", *m_widgetClass, *m_widgetClass->GetPropertyP("MyID")->GetAsPrimitiveProperty()));
 
     ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
