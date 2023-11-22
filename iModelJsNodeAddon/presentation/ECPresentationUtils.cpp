@@ -1467,16 +1467,6 @@ public:
         {
         bool didModifyDescriptor = false;
         ContentDescriptorPtr descriptorCopy = ContentDescriptor::Create(*descriptor);
-        if (!m_contentFlags.IsNull())
-            {
-            descriptorCopy->SetContentFlags(m_contentFlags.Value());
-            didModifyDescriptor = true;
-            }
-        if (!m_displayType.IsNull())
-            {
-            descriptorCopy->SetPreferredDisplayType(m_displayType.Value());
-            didModifyDescriptor = true;
-            }
         if (!m_fieldsFilterExpression.IsNull())
             {
             descriptorCopy->SetFieldsFilterExpression(m_fieldsFilterExpression.Value());
