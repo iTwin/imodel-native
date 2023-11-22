@@ -871,6 +871,43 @@ BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder
             sqlBuilder.Append(" AS INTEGER)");
         };
 
+    if (ctx.GetViewType() == ViewType::SelectFromView)
+        {
+        ECRelationshipClassCR relationshipClass = relationMap.GetRelationshipClass();
+        ECClassCP targetClassConstraint = relationshipClass.GetTarget().GetAbstractConstraint();
+        ECClassCP sourceClassConstraint = relationshipClass.GetSource().GetAbstractConstraint();
+        NavigationECPropertyCP sourceNavProp = nullptr;
+        for (const ECPropertyP& prop : targetClassConstraint->GetProperties())
+            {
+            if (prop->GetIsNavigation() && prop->GetAsNavigationProperty()->GetRelationshipClass()->GetId() == relationshipClass.GetId())
+                {
+                sourceNavProp = prop->GetAsNavigationPropertyP();
+                }
+            }
+
+        if (sourceNavProp == nullptr)
+            {
+            BeAssert(false && "Could not find navigation property");
+            return ERROR;
+            }
+
+        std::string query = SqlPrintfString("SELECT [ECInstanceId] [ECInstanceId], %s [ECClassId], %s.Id [SourceECInstanceId], %s [SourceECClassId], [ECInstanceId] [TargetECInstanceId], %s [TargetECClassId] FROM %s",
+            std::to_string(relationshipClass.GetId().GetValue()).c_str(), //ECClassId of the ECRelationshipClass
+            sourceNavProp->GetName().c_str(),
+            std::to_string(sourceClassConstraint->GetId().GetValue()).c_str(), //ECClassId of the Source ECClass
+            std::to_string(targetClassConstraint->GetId().GetValue()).c_str(), //ECClassId of the Target ECClass
+            targetClassConstraint->GetECSqlName().c_str()
+        ).GetUtf8CP();
+
+        ECSqlStatement stmt;
+        if (ECSqlStatus::Success != stmt.Prepare(ctx.GetECDb(), query.c_str())){
+            BeAssert(false && "Failed to prepare ECRelationShipClass view");
+            return ERROR;
+        }
+        viewSql.AppendParenLeft().Append(stmt.GetNativeSql()).AppendParenRight();
+        return SUCCESS;
+        }
+
     const ECClassId classId = relationMap.GetClass().GetId();
     std::unique_ptr<ForeignKeyPartitionView> view = ForeignKeyPartitionView::CreateReadonly(ctx.GetSchemaManager(), relationMap.GetRelationshipClass());
     for (ForeignKeyPartitionView::Partition const* partition : view->GetPartitions(true, true))

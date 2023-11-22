@@ -110,14 +110,14 @@ bool ClassViews::IsValid(ECN::ECClassCR viewClass, ECDbCR conn){
         conn.GetImpl().Issues().ReportV(
                 IssueSeverity::Error,
                 IssueCategory::BusinessProperties,
-                IssueType::ECDbIssue, "Invalid view class '%s'. View class does not have a classmap", viewClassName);
+                IssueType::ECDbIssue, ECDbIssueId::ECDb_0718, "Invalid view class '%s'. View class does not have a classmap", viewClassName);
         return false;
     }
     if (classMap->GetPrimaryTable().GetType() != DbTable::Type::Virtual) {
         conn.GetImpl().Issues().ReportV(
                 IssueSeverity::Error,
                 IssueCategory::BusinessProperties,
-                IssueType::ECDbIssue, "Invalid view class '%s'. View class must be mapped to virtual table and not physical table.", viewClassName);
+                IssueType::ECDbIssue, ECDbIssueId::ECDb_0719, "Invalid view class '%s'. View class must be mapped to virtual table and not physical table.", viewClassName);
         return false;
     }
     if (viewClass.GetClassModifier() != ECClassModifier::Abstract) {

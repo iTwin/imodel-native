@@ -175,6 +175,8 @@ struct ForeignKeyPartitionView final
         MapStrategy m_mapStrategy;
         DbColumn const* m_fromClassIdColumn = nullptr;
         ECN::ECRelationshipClassCR m_relationshipClass;
+        // When the class which is holding the navigation property is abstract and derived classes are mapped into multiple tables
+        // then the view will have multiple partitions. It will never happen in BisCore.
         std::vector<std::unique_ptr<Partition>> m_partitions;
         bool m_readonly = false;
         bool m_updateFromECClassIdColumnOnInsert = true;

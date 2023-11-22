@@ -203,6 +203,7 @@ BentleyStatus UsingRelationshipJoinExp::ResolveRelationshipEnds(ECSqlParseContex
                             IssueSeverity::Error,
                             IssueCategory::BusinessProperties,
                             IssueType::ECSQL,
+                            ECDbIssueId::ECDb_0716,
                             "Invalid join direction BACKWARD in %s. Either specify FORWARD or omit the direction as the direction can be unambiguously implied in this ECSQL.",
                             ToString().c_str()
                         );
@@ -216,6 +217,7 @@ BentleyStatus UsingRelationshipJoinExp::ResolveRelationshipEnds(ECSqlParseContex
                             IssueSeverity::Error,
                             IssueCategory::BusinessProperties,
                             IssueType::ECSQL,
+                            ECDbIssueId::ECDb_0717,
                             "Invalid join direction FORWARD in %s. Either specify BACKWARD or omit the direction as the direction can be unambiguously implied in this ECSQL.",
                             ToString().c_str()
                         );
