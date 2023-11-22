@@ -94,10 +94,11 @@ ECSqlStatus ECSqlStatement::Impl::Prepare(ECDbCR ecdb, Db const* dataSourceECDb,
     //if dataSourceECDb is nullptr, the primary ECDb is used
     ECSqlPrepareContext ctx(preparedStatement, dataSourceECDb != nullptr ? *dataSourceECDb : ecdb, filteredScope.Source());
     ECSqlStatus stat = preparedStatement.Prepare(ctx, *exp, ecsql);
-    if (!stat.IsSuccess())
+    if (stat.IsSuccess())
+        preparedStatement.SetIsInstanceQuery(ctx.IsInstanceQuery());
+    else
         Finalize();
 
-    preparedStatement.SetIsInstanceQuery(ctx.IsInstanceQuery());
     return stat;
     }
 
