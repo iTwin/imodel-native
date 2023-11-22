@@ -1023,7 +1023,7 @@ BentleyStatus SchemaWriter::ImportFormatComposite(Context& ctx, ECFormatCR forma
         if (SUCCESS != ImportUnit(ctx, *unit))
             return ERROR;
 
-        Nullable<Utf8String> label = spec.HasMajorLabel() ? spec.GetMajorLabel() : nullptr;
+        auto label = spec.HasMajorLabel() ? Nullable<Utf8String>(spec.GetMajorLabel()) : nullptr;
         if (SUCCESS != insertUnit(*stmt, formatId, label, *unit, ordinal))
             return ERROR;
         }
@@ -1034,7 +1034,7 @@ BentleyStatus SchemaWriter::ImportFormatComposite(Context& ctx, ECFormatCR forma
         if (SUCCESS != ImportUnit(ctx, *unit))
             return ERROR;
 
-        Nullable<Utf8String> label = spec.HasMiddleLabel() ? spec.GetMiddleLabel() : nullptr;
+        auto label = spec.HasMiddleLabel() ? Nullable<Utf8String>(spec.GetMiddleLabel()) : nullptr;
         if (SUCCESS != insertUnit(*stmt, formatId, label, *unit, ordinal))
             return ERROR;
         }
@@ -1046,7 +1046,7 @@ BentleyStatus SchemaWriter::ImportFormatComposite(Context& ctx, ECFormatCR forma
         if (SUCCESS != ImportUnit(ctx, *unit))
             return ERROR;
 
-        Nullable<Utf8String> label = spec.HasMinorLabel() ? spec.GetMinorLabel() : nullptr;
+        auto label = spec.HasMinorLabel() ? Nullable<Utf8String>(spec.GetMinorLabel()) : nullptr;
         if (SUCCESS != insertUnit(*stmt, formatId, label, *unit, ordinal))
             return ERROR;
         }
@@ -1058,7 +1058,7 @@ BentleyStatus SchemaWriter::ImportFormatComposite(Context& ctx, ECFormatCR forma
         if (SUCCESS != ImportUnit(ctx, *unit))
             return ERROR;
 
-        Nullable<Utf8String> label = spec.HasSubLabel() ? spec.GetSubLabel() : nullptr;
+        auto label = spec.HasSubLabel() ? Nullable<Utf8String>(spec.GetSubLabel()) : nullptr;
         if (SUCCESS != insertUnit(*stmt, formatId, label, *unit, ordinal))
             return ERROR;
         }

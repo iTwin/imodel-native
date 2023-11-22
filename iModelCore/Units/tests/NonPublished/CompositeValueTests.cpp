@@ -445,5 +445,38 @@ TEST_F(CompositeValueSpecJsonTest, JsonVerboseTest)
     validateSpecJson(&spec, expectedJson, s_unitsContext, true);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(CompositeValueSpecJsonTest, NullOrEmptyStringUnitLabels)
+    {
+    Json::Value json;
+    Json::Reader::Parse(R"json({
+        "units": [{
+            "name": "MILE",
+            "label": "alpha"
+        },{
+            "name": "YRD"
+        },{
+            "name": "FT",
+            "label": "\""
+        },{
+            "name": "IN",
+            "label": ""
+        }]
+    })json", json);
+    CompositeValueSpec spec;
+    ASSERT_TRUE(CompositeValueSpec::FromJson(spec, json, s_unitsContext));
+
+    EXPECT_TRUE(spec.HasMajorLabel());
+    EXPECT_FALSE(spec.HasMiddleLabel());
+    EXPECT_TRUE(spec.HasMinorLabel());
+    EXPECT_TRUE(spec.HasSubLabel());
+
+    EXPECT_STREQ("alpha", spec.GetMajorLabel().c_str());
+    EXPECT_STREQ("YRD", spec.GetMiddleLabel().c_str());    // When no explicit display label is specified, label defaults to unit name
+    EXPECT_STREQ("\"", spec.GetMinorLabel().c_str());
+    EXPECT_STREQ("", spec.GetSubLabel().c_str());    // Setting the label to an empty string should result in no label i.e. an empty string
+    }
 
 END_BENTLEY_FORMATTEST_NAMESPACE

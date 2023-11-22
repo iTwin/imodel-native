@@ -822,4 +822,65 @@ TEST_F(ECDbTestFixture, TestGreatestAndLeastFunctionsDQLAndDML)
         }
     }
 
+TEST_F(ECDbTestFixture, NullOrEmptyStringUnitLabelsInCompositeFormats)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("UnitLabelsCompositeFormat.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+
+    ASSERT_EQ(SUCCESS, GetHelper().ImportSchemas({SchemaItem(R"xml(
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="Units" version="01.00.00" alias="u" />
+
+            <Unit typeName="TestUnitMajor" displayLabel="TestUnitMajor" definition="u:KM" numerator="1.0" phenomenon="u:LENGTH" unitSystem="u:METRIC" />
+            <Unit typeName="TestUnitMiddle" displayLabel="TestUnitMiddle" definition="u:M" numerator="1.0" phenomenon="u:LENGTH" unitSystem="u:METRIC" />
+            <Unit typeName="TestUnitMinor" displayLabel="TestUnitMinor" definition="u:CM" numerator="1.0" phenomenon="u:LENGTH" unitSystem="u:METRIC" />
+            <Unit typeName="TestUnitSub" displayLabel="TestUnitSub" definition="u:MM" numerator="1.0" phenomenon="u:LENGTH" unitSystem="u:METRIC" />
+
+            <Format typeName="TestFormat" displayLabel="TestFormat" roundFactor="0.3" type="Fractional" showSignOption="OnlyNegative" formatTraits="TrailZeroes|KeepSingleZero" precision="4" decimalSeparator="." thousandSeparator="," uomSeparator=" " >
+                <Composite spacer="=" includeZero="False">
+                    <Unit label="romeo">TestUnitMajor</Unit>
+                    <Unit label="oscar">TestUnitMiddle</Unit>
+                    <Unit label="hotel">TestUnitMinor</Unit>
+                    <Unit label="tango">TestUnitSub</Unit>
+                </Composite>
+            </Format>
+
+            <Format typeName="TestFormatWithSpecialLabels" displayLabel="TestFormatWithSpecialLabels" roundFactor="0.3" type="Fractional" showSignOption="OnlyNegative" formatTraits="TrailZeroes|KeepSingleZero" precision="4" decimalSeparator="." thousandSeparator="," uomSeparator=" " >
+                <Composite spacer="=" includeZero="False">
+                    <Unit>TestUnitMajor</Unit>
+                    <Unit label="">TestUnitMiddle</Unit>
+                    <Unit label="&quot;">TestUnitMinor</Unit>
+                    <Unit label="tango">TestUnitSub</Unit>
+                </Composite>
+            </Format>
+        </ECSchema>)xml")}));
+
+    // All labels are valid strings in TestFormat
+    auto format = m_ecdb.Schemas().GetFormat("TestSchema", "TestFormat");
+    auto spec = format->GetCompositeSpec();
+
+    EXPECT_TRUE(spec->HasMajorLabel());
+    EXPECT_TRUE(spec->HasMiddleLabel());
+    EXPECT_TRUE(spec->HasMinorLabel());
+    EXPECT_TRUE(spec->HasSubLabel());
+
+    EXPECT_STREQ("romeo", spec->GetMajorLabel().c_str());
+    EXPECT_STREQ("oscar", spec->GetMiddleLabel().c_str());
+    EXPECT_STREQ("hotel", spec->GetMinorLabel().c_str());
+    EXPECT_STREQ("tango", spec->GetSubLabel().c_str());
+
+    // TestFormatWithSpecialLabels contains labels that are Null/Empty strings
+    format = m_ecdb.Schemas().GetFormat("TestSchema", "TestFormatWithSpecialLabels");
+    spec = format->GetCompositeSpec();
+
+    EXPECT_FALSE(spec->HasMajorLabel());    // No explicit major label was specified
+    EXPECT_TRUE(spec->HasMiddleLabel());
+    EXPECT_TRUE(spec->HasMinorLabel());
+    EXPECT_TRUE(spec->HasSubLabel());
+
+    EXPECT_STREQ("TestUnitMajor", spec->GetMajorLabel().c_str());   // When no explicit display label is specified, label defaults to unit name
+    EXPECT_STREQ("", spec->GetMiddleLabel().c_str());    // Setting the label to an empty string should result in no label i.e. an empty string
+    EXPECT_STREQ("\"", spec->GetMinorLabel().c_str());
+    EXPECT_STREQ("tango", spec->GetSubLabel().c_str());
+    }
+
 END_ECDBUNITTESTS_NAMESPACE
