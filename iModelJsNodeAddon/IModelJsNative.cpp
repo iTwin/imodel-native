@@ -440,10 +440,14 @@ public:
         REQUIRE_ARGUMENT_STRING(0, dbName);
         REQUIRE_ARGUMENT_INTEGER(1, mode);
         OPTIONAL_ARGUMENT_BOOL(2, upgrade, false);
+        OPTIONAL_ARGUMENT_ANY_OBJ(2, moreOpts, Napi::Object::New(Env()));
 
         Db::OpenParams params((Db::OpenMode)mode);
         if (upgrade)
             params.SetProfileUpgradeOptions(Db::ProfileUpgradeOptions::Upgrade);
+
+        if (moreOpts["defaultTxn"])
+            params.SetStartDefaultTxn((DefaultTxn)moreOpts["defaultTxn"].As<Napi::Number>())
 
         DbResult status = JsInterop::OpenECDb(m_ecdb, BeFileName(dbName.c_str(), true), params);
         if (BE_SQLITE_OK == status) {

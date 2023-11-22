@@ -705,7 +705,12 @@ export declare namespace IModelJsNative {
     public getSchemaProps(name: string): SchemaProps;
     public importSchema(schemaPathName: string): DbResult;
     public isOpen(): boolean;
-    public openDb(dbName: string, mode: OpenMode, upgradeProfiles?: boolean): DbResult;
+    public openDb(
+      dbName: string,
+      mode: OpenMode,
+      upgradeProfiles?: boolean,
+      options?: { defaultTxn?: DefaultTxnMode }
+    ): DbResult;
     public saveChanges(changesetName?: string): DbResult;
     public getLastError(): string;
     public getLastInsertRowId(): number;
