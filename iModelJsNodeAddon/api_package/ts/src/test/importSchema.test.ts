@@ -139,5 +139,7 @@ describe("ImportSchema", () => {
     expect("BisCore:InformationRecordElement").eq(fooInfoClassV98.baseClasses[0]);
     expect(fooInfoClassV98.properties).hasOwnProperty("propertyFoo");
     expect(fooInfoClassV98.properties).hasOwnProperty("propertyBar");
+
+    db.saveChanges();
   });
 });

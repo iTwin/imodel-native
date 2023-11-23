@@ -1056,9 +1056,6 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         if (!m_dgndb.IsValid())
             return;
 
-        if (m_dgndb->Txns().HasChanges())
-            m_dgndb->SaveChanges();
-
         DgnDbPtr dgndb = m_dgndb;
         ClearDgnDb();
         dgndb->CloseDb();
