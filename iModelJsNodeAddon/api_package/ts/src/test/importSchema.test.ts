@@ -82,7 +82,7 @@ describe("ImportSchema", () => {
     db.setITwinId(Guid.empty);
     db.resetBriefcaseId(0);
     db.saveChanges();
-    db.closeIModel();
+    db.closeFile();
 
     db.openIModel(dbpath, OpenMode.ReadWrite);
 
