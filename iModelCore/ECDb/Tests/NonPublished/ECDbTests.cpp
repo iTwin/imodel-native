@@ -826,7 +826,7 @@ TEST_F(ECDbTestFixture, NullOrEmptyStringUnitLabelsInCompositeFormats)
     {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("UnitLabelsCompositeFormat.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
-    ASSERT_EQ(SUCCESS, GetHelper().ImportSchemas({SchemaItem(R"xml(
+    Utf8CP schemaXml = R"xml(
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="Units" version="01.00.00" alias="u" />
 
@@ -852,35 +852,62 @@ TEST_F(ECDbTestFixture, NullOrEmptyStringUnitLabelsInCompositeFormats)
                     <Unit label="tango">TestUnitSub</Unit>
                 </Composite>
             </Format>
-        </ECSchema>)xml")}));
+        </ECSchema>)xml";
 
-    // All labels are valid strings in TestFormat
-    auto format = m_ecdb.Schemas().GetFormat("TestSchema", "TestFormat");
-    auto spec = format->GetCompositeSpec();
+        static auto const verifyBothCompositeFormats = [](ECFormatCP testFormat, ECFormatCP testFormatWithSpecialLabels, unsigned int testNumber) -> void
+            {
+            const auto errMsg = Utf8PrintfString("Test Case from line %d failed.\n", testNumber).c_str();
+            // All labels are valid strings in TestFormat
+            auto spec = testFormat->GetCompositeSpec();
 
-    EXPECT_TRUE(spec->HasMajorLabel());
-    EXPECT_TRUE(spec->HasMiddleLabel());
-    EXPECT_TRUE(spec->HasMinorLabel());
-    EXPECT_TRUE(spec->HasSubLabel());
+            EXPECT_TRUE(spec->HasMajorLabel()) << errMsg;
+            EXPECT_TRUE(spec->HasMiddleLabel()) << errMsg;
+            EXPECT_TRUE(spec->HasMinorLabel()) << errMsg;
+            EXPECT_TRUE(spec->HasSubLabel()) << errMsg;
 
-    EXPECT_STREQ("romeo", spec->GetMajorLabel().c_str());
-    EXPECT_STREQ("oscar", spec->GetMiddleLabel().c_str());
-    EXPECT_STREQ("hotel", spec->GetMinorLabel().c_str());
-    EXPECT_STREQ("tango", spec->GetSubLabel().c_str());
+            EXPECT_STREQ("romeo", spec->GetMajorLabel().c_str()) << errMsg;
+            EXPECT_STREQ("oscar", spec->GetMiddleLabel().c_str()) << errMsg;
+            EXPECT_STREQ("hotel", spec->GetMinorLabel().c_str()) << errMsg;
+            EXPECT_STREQ("tango", spec->GetSubLabel().c_str()) << errMsg;
 
-    // TestFormatWithSpecialLabels contains labels that are Null/Empty strings
-    format = m_ecdb.Schemas().GetFormat("TestSchema", "TestFormatWithSpecialLabels");
-    spec = format->GetCompositeSpec();
+            // TestFormatWithSpecialLabels contains labels that are Null/Empty strings
+            spec = testFormatWithSpecialLabels->GetCompositeSpec();
 
-    EXPECT_FALSE(spec->HasMajorLabel());    // No explicit major label was specified
-    EXPECT_TRUE(spec->HasMiddleLabel());
-    EXPECT_TRUE(spec->HasMinorLabel());
-    EXPECT_TRUE(spec->HasSubLabel());
+            EXPECT_FALSE(spec->HasMajorLabel()) << errMsg;    // No explicit major label was specified
+            EXPECT_FALSE(spec->HasMiddleLabel()) << errMsg;
+            EXPECT_TRUE(spec->HasMinorLabel()) << errMsg;
+            EXPECT_TRUE(spec->HasSubLabel()) << errMsg;
 
-    EXPECT_STREQ("TestUnitMajor", spec->GetMajorLabel().c_str());   // When no explicit display label is specified, label defaults to unit name
-    EXPECT_STREQ("", spec->GetMiddleLabel().c_str());    // Setting the label to an empty string should result in no label i.e. an empty string
-    EXPECT_STREQ("\"", spec->GetMinorLabel().c_str());
-    EXPECT_STREQ("tango", spec->GetSubLabel().c_str());
+            EXPECT_STREQ("TestUnitMajor", spec->GetMajorLabel().c_str()) << errMsg;   // When no explicit display label is specified, label defaults to unit name
+            EXPECT_STREQ("TestUnitMiddle", spec->GetMiddleLabel().c_str()) << errMsg;   // When display label is set to an empty string, label defaults to unit name
+            EXPECT_STREQ("\"", spec->GetMinorLabel().c_str()) << errMsg;
+            EXPECT_STREQ("tango", spec->GetSubLabel().c_str()) << errMsg;
+            };
+
+        {
+        // Test 1: Import schema and check if composite formats are correct
+        ASSERT_EQ(SUCCESS, GetHelper().ImportSchemas({SchemaItem(schemaXml)}));
+        verifyBothCompositeFormats(m_ecdb.Schemas().GetFormat("TestSchema", "TestFormat"), m_ecdb.Schemas().GetFormat("TestSchema", "TestFormatWithSpecialLabels"), __LINE__);
+        }
+
+        // Test 2: RoundTrip Test
+        {
+        Utf8String serializedSchemaXml;
+        // Deserialize original XML
+        ECSchemaPtr schema;
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+        verifyBothCompositeFormats(schema->GetFormatCP("TestFormat"), schema->GetFormatCP("TestFormatWithSpecialLabels"), __LINE__);
+
+        //  Serialize it to Xml
+        ASSERT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(serializedSchemaXml, ECVersion::Latest));
+        
+        // Deserialize it back and verify the formats in the schema
+        ECSchemaPtr roundtrippedSchema;
+        ECSchemaReadContextPtr newContext = ECSchemaReadContext::CreateContext();
+        ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, serializedSchemaXml.c_str(), *newContext));
+        verifyBothCompositeFormats(schema->GetFormatCP("TestFormat"), schema->GetFormatCP("TestFormatWithSpecialLabels"), __LINE__);
+        }
     }
 
 END_ECDBUNITTESTS_NAMESPACE

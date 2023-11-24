@@ -510,16 +510,16 @@ bool CompositeValueSpec::FromJson(CompositeValueSpecR out, JsonValueCR jval, bve
     switch (unitLabels.size())
         {
         case 4:
-            if (unitLabels[3].IsValid())
+            if (unitLabels[3].IsValid() && !Utf8String::IsNullOrEmpty(unitLabels[3].Value().c_str()))
                 out.SetSubLabel(unitLabels[3].Value());
         case 3:
-            if (unitLabels[2].IsValid())
+            if (unitLabels[2].IsValid() && !Utf8String::IsNullOrEmpty(unitLabels[2].Value().c_str()))
                 out.SetMinorLabel(unitLabels[2].Value());
         case 2:
-            if (unitLabels[1].IsValid())
+            if (unitLabels[1].IsValid() && !Utf8String::IsNullOrEmpty(unitLabels[1].Value().c_str()))
                 out.SetMiddleLabel(unitLabels[1].Value());
         case 1:
-            if (unitLabels[0].IsValid())
+            if (unitLabels[0].IsValid() && !Utf8String::IsNullOrEmpty(unitLabels[0].Value().c_str()))
                 out.SetMajorLabel(unitLabels[0].Value());
         }
 
@@ -572,7 +572,7 @@ bool CompositeValueSpec::UnitProxy::FromJson(Json::Value const& jval, BEU::IUnit
             if (nullptr == m_unit)
                 return false;
             }
-        else if (BeStringUtilities::StricmpAscii(paramName, json_label()) == 0)
+        else if (BeStringUtilities::StricmpAscii(paramName, json_label()) == 0 && !Utf8String::IsNullOrEmpty(val.asString().c_str()))
             SetLabel(val.asString().c_str());
         }
     return true;

@@ -415,12 +415,8 @@ SchemaReadStatus ECFormat::ReadCompositeUnitXml(pugi::xml_node unitNode, ECSchem
         }
     units.push_back(unit);
 
-    auto labelAttr = unitNode.attribute(COMPOSITE_UNIT_LABEL_ATTRIBUTE);
-    if (labelAttr)
-        {
-        Utf8String label(labelAttr.as_string());
-        labels.push_back(label);
-        }
+    if (auto labelAttr = unitNode.attribute(COMPOSITE_UNIT_LABEL_ATTRIBUTE); labelAttr && !Utf8String::IsNullOrEmpty(labelAttr.as_string()))
+        labels.push_back(Utf8String(labelAttr.as_string()));
     else
         labels.push_back(nullptr);
 

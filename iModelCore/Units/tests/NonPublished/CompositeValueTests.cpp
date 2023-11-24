@@ -469,14 +469,14 @@ TEST_F(CompositeValueSpecJsonTest, NullOrEmptyStringUnitLabels)
     ASSERT_TRUE(CompositeValueSpec::FromJson(spec, json, s_unitsContext));
 
     EXPECT_TRUE(spec.HasMajorLabel());
-    EXPECT_FALSE(spec.HasMiddleLabel());
+    EXPECT_FALSE(spec.HasMiddleLabel());    // Label not specified
     EXPECT_TRUE(spec.HasMinorLabel());
-    EXPECT_TRUE(spec.HasSubLabel());
+    EXPECT_FALSE(spec.HasSubLabel());   // Label set to empty string ""
 
     EXPECT_STREQ("alpha", spec.GetMajorLabel().c_str());
     EXPECT_STREQ("YRD", spec.GetMiddleLabel().c_str());    // When no explicit display label is specified, label defaults to unit name
     EXPECT_STREQ("\"", spec.GetMinorLabel().c_str());
-    EXPECT_STREQ("", spec.GetSubLabel().c_str());    // Setting the label to an empty string should result in no label i.e. an empty string
+    EXPECT_STREQ("IN", spec.GetSubLabel().c_str());    // When display label is set to an empty string, label defaults to unit name
     }
 
 END_BENTLEY_FORMATTEST_NAMESPACE

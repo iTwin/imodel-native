@@ -626,6 +626,155 @@ TEST_F(SchemaCompareTest, CompareFormatsModifiedCompositeSpecs)
 //----------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+--------
+TEST_F(SchemaCompareTest, NullOrEmptyStringsInCompositeFormat)
+    {
+    Utf8CP firstSchemaXml = R"xml(
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="Units" version="01.00.00" alias="u" />
+
+            <Unit typeName="TestUnitMajor" displayLabel="TestUnitMajor" definition="u:KM" numerator="1.0" phenomenon="u:LENGTH" unitSystem="u:METRIC" />
+            <Unit typeName="TestUnitMiddle" displayLabel="TestUnitMiddle" definition="u:M" numerator="1.0" phenomenon="u:LENGTH" unitSystem="u:METRIC" />
+            <Unit typeName="TestUnitMinor" displayLabel="TestUnitMinor" definition="u:CM" numerator="1.0" phenomenon="u:LENGTH" unitSystem="u:METRIC" />
+            <Unit typeName="TestUnitSub" displayLabel="TestUnitSub" definition="u:MM" numerator="1.0" phenomenon="u:LENGTH" unitSystem="u:METRIC" />
+
+            <Format typeName="TestFormatNoLabel" displayLabel="TestFormatNoLabel" roundFactor="0.3" type="Fractional" showSignOption="OnlyNegative" formatTraits="TrailZeroes|KeepSingleZero" precision="4" decimalSeparator="." thousandSeparator="," uomSeparator=" " >
+                <Composite spacer="=" includeZero="False">
+                    <Unit>TestUnitMajor</Unit>
+                    <Unit label="">TestUnitMiddle</Unit>
+                    <Unit>TestUnitMinor</Unit>
+                    <Unit label="bravo">TestUnitSub</Unit>
+                </Composite>
+            </Format>
+
+            <Format typeName="TestFormatEmptyLabel" displayLabel="TestFormatEmptyLabel" roundFactor="0.3" type="Fractional" showSignOption="OnlyNegative" formatTraits="TrailZeroes|KeepSingleZero" precision="4" decimalSeparator="." thousandSeparator="," uomSeparator=" " >
+                <Composite spacer="=" includeZero="False">
+                    <Unit>TestUnitMajor</Unit>
+                    <Unit label="alpha">TestUnitMiddle</Unit>
+                    <Unit label="">TestUnitMinor</Unit>
+                    <Unit label="">TestUnitSub</Unit>
+                </Composite>
+            </Format>
+        </ECSchema>)xml";
+
+    Utf8CP secondSchemaXml = R"xml(
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="Units" version="01.00.00" alias="u" />
+
+            <Unit typeName="TestUnitMajorNew" displayLabel="TestUnitMajorNew" definition="u:MILE" numerator="1.0" phenomenon="u:LENGTH" unitSystem="u:METRIC" />
+            <Unit typeName="TestUnitMiddleNew" displayLabel="TestUnitMiddleNew" definition="u:YRD" numerator="1.0" phenomenon="u:LENGTH" unitSystem="u:METRIC" />
+            <Unit typeName="TestUnitMinorNew" displayLabel="TestUnitMinorNew" definition="u:FT" numerator="1.0" phenomenon="u:LENGTH" unitSystem="u:METRIC" />
+            <Unit typeName="TestUnitSubNew" displayLabel="TestUnitSubNew" definition="u:IN" numerator="1.0" phenomenon="u:LENGTH" unitSystem="u:METRIC" />
+
+            <Format typeName="TestFormatNoLabel" displayLabel="TestFormatNoLabel" roundFactor="0.3" type="Fractional" showSignOption="OnlyNegative" formatTraits="TrailZeroes|KeepSingleZero" precision="4" decimalSeparator="." thousandSeparator="," uomSeparator=" " >
+                <Composite spacer="=" includeZero="False">
+                    <Unit>TestUnitMajorNew</Unit>
+                    <Unit>TestUnitMiddleNew</Unit>
+                    <Unit label="">TestUnitMinorNew</Unit>
+                    <Unit label="">TestUnitSubNew</Unit>
+                </Composite>
+            </Format>
+
+            <Format typeName="TestFormatEmptyLabel" displayLabel="TestFormatEmptyLabel" roundFactor="0.3" type="Fractional" showSignOption="OnlyNegative" formatTraits="TrailZeroes|KeepSingleZero" precision="4" decimalSeparator="." thousandSeparator="," uomSeparator=" " >
+                <Composite spacer="=" includeZero="False">
+                    <Unit label="charlie">TestUnitMajorNew</Unit>
+                    <Unit>TestUnitMiddleNew</Unit>
+                    <Unit label="tango">TestUnitMinorNew</Unit>
+                    <Unit label="">TestUnitSubNew</Unit>
+                </Composite>
+            </Format>
+        </ECSchema>)xml";
+
+    ECSchemaPtr firstSchema;
+    auto context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(firstSchema, firstSchemaXml, *context));
+
+    ECSchemaPtr secondSchema;
+    auto secondContext = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(secondSchema, secondSchemaXml, *secondContext));
+
+    SchemaComparer comparer;
+    SchemaDiff changes;
+    bvector<ECSchemaCP> first;
+    bvector<ECSchemaCP> second;
+    first.push_back(firstSchema.get());
+    second.push_back(secondSchema.get());
+    comparer.Compare(changes, first, second);
+
+    EXPECT_EQ(1, changes.Changes().Count());
+    auto& formatChanges = changes.Changes()[0].Formats();
+
+    EXPECT_EQ(2, formatChanges.Count());
+
+    auto testFormatNoLabel = formatChanges[1];
+    EXPECT_EQ(1, testFormatNoLabel.MemberChangesCount());
+
+    auto spec = testFormatNoLabel.CompositeSpec();
+
+    // No label specified in Old, No label specified in New
+    EXPECT_FALSE(spec.MajorLabel().GetOld().IsValid());
+    EXPECT_STREQ("TestSchema:TestUnitMajor", spec.MajorUnit().GetOld().Value().c_str());
+
+    EXPECT_FALSE(spec.MajorLabel().GetNew().IsValid());
+    EXPECT_STREQ("TestSchema:TestUnitMajorNew", spec.MajorUnit().GetNew().Value().c_str());
+
+    // Label set to empty string "" in Old, No label specified in New
+    EXPECT_FALSE(spec.MiddleLabel().GetOld().IsValid());
+    EXPECT_STREQ("TestSchema:TestUnitMiddle", spec.MiddleUnit().GetOld().Value().c_str());
+
+    EXPECT_FALSE(spec.MiddleLabel().GetNew().IsValid());
+    EXPECT_STREQ("TestSchema:TestUnitMiddleNew", spec.MiddleUnit().GetNew().Value().c_str());
+
+    // No label specified in Old, Label set to empty string "" in New
+    EXPECT_FALSE(spec.MinorLabel().GetOld().IsValid());
+    EXPECT_STREQ("TestSchema:TestUnitMinor", spec.MinorUnit().GetOld().Value().c_str());
+    
+    EXPECT_FALSE(spec.MinorLabel().GetNew().IsValid());
+    EXPECT_STREQ("TestSchema:TestUnitMinorNew", spec.MinorUnit().GetNew().Value().c_str());
+      
+    // Label set to string "bravo" in Old, Label set to empty string "" in New
+    EXPECT_STREQ("bravo", spec.SubLabel().GetOld().Value().c_str());
+    EXPECT_STREQ("TestSchema:TestUnitSub", spec.SubUnit().GetOld().Value().c_str());
+    
+    EXPECT_FALSE(spec.SubLabel().GetNew().IsValid());
+    EXPECT_STREQ("TestSchema:TestUnitSubNew", spec.SubUnit().GetNew().Value().c_str());
+
+    auto testFormatEmptyLabel = formatChanges[0];
+    EXPECT_EQ(1, testFormatEmptyLabel.MemberChangesCount());
+
+    spec = testFormatEmptyLabel.CompositeSpec();
+
+    // No label specified in Old, label set to "charlie" in New
+    EXPECT_FALSE(spec.MajorLabel().GetOld().IsValid());
+    EXPECT_STREQ("TestSchema:TestUnitMajor", spec.MajorUnit().GetOld().Value().c_str());
+
+    EXPECT_STREQ("charlie", spec.MajorLabel().GetNew().Value().c_str());
+    EXPECT_STREQ("TestSchema:TestUnitMajorNew", spec.MajorUnit().GetNew().Value().c_str());
+
+    // Label set to "alpha" in Old, No label specified in New
+    EXPECT_STREQ("alpha", spec.MiddleLabel().GetOld().Value().c_str());
+    EXPECT_STREQ("TestSchema:TestUnitMiddle", spec.MiddleUnit().GetOld().Value().c_str());
+
+    EXPECT_FALSE(spec.MiddleLabel().GetNew().IsValid());
+    EXPECT_STREQ("TestSchema:TestUnitMiddleNew", spec.MiddleUnit().GetNew().Value().c_str());
+
+    // Label set to empty string "" in Old, Label set to "tango" in New
+    EXPECT_FALSE(spec.MinorLabel().GetOld().IsValid());
+    EXPECT_STREQ("TestSchema:TestUnitMinor", spec.MinorUnit().GetOld().Value().c_str());
+
+    EXPECT_STREQ("tango", spec.MinorLabel().GetNew().Value().c_str());
+    EXPECT_STREQ("TestSchema:TestUnitMinorNew", spec.MinorUnit().GetNew().Value().c_str());
+      
+    // Label set to empty string "" in Old, Label set to empty string "" in New
+    EXPECT_FALSE(spec.SubLabel().GetOld().IsValid());
+    EXPECT_STREQ("TestSchema:TestUnitSub", spec.SubUnit().GetOld().Value().c_str());
+    
+    EXPECT_FALSE(spec.SubLabel().GetNew().IsValid());
+    EXPECT_STREQ("TestSchema:TestUnitSubNew", spec.SubUnit().GetNew().Value().c_str());
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+--------
 TEST_F(SchemaCompareTest, CompareFormatsDeletedNumericSpec)
     {
     CreateFirstSchema();
