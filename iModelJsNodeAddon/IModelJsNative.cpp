@@ -17,6 +17,7 @@
 #include "presentation/ECPresentationUtils.h"
 #include "presentation/UpdateRecordsHandler.h"
 #include <BeSQLite/Profiler.h>
+#include <sqlite3.h>
 #include <folly/BeFolly.h>
 #include "SchemaUtil.h"
 #include "JsLogger.h"
@@ -446,7 +447,7 @@ public:
             }
 
             void operator()(sqlite3_context* ctx, int argCount, sqlite3_value** args) {
-                std::vector<Napi::Value> jsArgs;
+                std::vector<napi_value> jsArgs;
 
                 for (auto i = 0; i < argCount; ++i) {
                     auto* arg = args[i];
@@ -460,7 +461,7 @@ public:
                             jsArgs[i] = Napi::Number::New(m_env, sqlite3_value_double(arg));
                             break;
                         case (int) DbValueType::TextVal: // SQLITE_TEXT:
-                            jsArgs[i] = Napi::String::New(m_env, sqlite3_value_text(arg), sqlite3_value_bytes(arg));
+                            jsArgs[i] = Napi::String::New(m_env, (const char*) sqlite3_value_text(arg), sqlite3_value_bytes(arg));
                             break;
                         case (int) DbValueType::BlobVal: { // SQLITE_BLOB:
                             auto uint8array = Napi::TypedArrayOf<uint8_t>::New(m_env, sqlite3_value_bytes(arg));
@@ -471,30 +472,30 @@ public:
                         default: {
                             Utf8PrintfString err("argument index '%d' of unhandled type, '%d'", i, argType);
                             sqlite3_result_error(ctx, err.c_str(), err.size());
-                            return 
+                            return;
                         }
                     }
                 }
 
                 m_jsImplRef.Call(m_env.Undefined(), jsArgs);
             }
-        }
+        };
 
-        auto* stepFunc = new StepFunc(info.Env(), std::move(jsImpl));
+        auto* stepFunc = new StepFunc(info.Env(), std::move(jsImplRef));
 
         sqlite3_create_function_v2(
-            m_ecdb.GetDb(),
+            m_ecdb.GetSqlDb(),
             name.c_str(),
             -1,
             SQLITE_UTF8 | (deterministic ? SQLITE_DETERMINISTIC : 0),
             stepFunc,
             [](sqlite3_context* ctx, int argCount, sqlite3_value** args){
-                auto* inStepFunc = static_cast<StepFunc*>(sqlite3_user_data(ctx));
+                auto& inStepFunc = *static_cast<StepFunc*>(sqlite3_user_data(ctx));
                 inStepFunc(ctx, argCount, args);
             },
             nullptr,
             nullptr,
-            [](void* data){ delete static_cast<StepFunc*>(data); },
+            [](void* data){ delete static_cast<StepFunc*>(data); }
         );
     }
 
