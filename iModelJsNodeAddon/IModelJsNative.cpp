@@ -21,6 +21,7 @@
 #include <folly/BeFolly.h>
 #include "SchemaUtil.h"
 #include "JsLogger.h"
+#include <optional>
 
 // cspell:ignore napi strbuf propsize
 
@@ -446,38 +447,58 @@ public:
                 m_jsImplRef.Unref();
             }
 
+
+            std::optional<Napi::Value> DbToNapi(sqlite3_value* dbval) {
+                auto type = sqlite3_value_type(dbval);
+                switch (type) {
+                    case (int) DbValueType::IntegerVal: // SQLITE_INTEGER:
+                        // FIXME: handle ids separately?
+                        return Napi::Number::New(m_env, sqlite3_value_int64(dbval));
+                    case (int) DbValueType::FloatVal: // SQLITE_DOUBLE:
+                        return Napi::Number::New(m_env, sqlite3_value_double(dbval));
+                    case (int) DbValueType::TextVal: // SQLITE_TEXT:
+                        return Napi::String::New(m_env, (const char*) sqlite3_value_text(dbval), sqlite3_value_bytes(dbval));
+                    case (int) DbValueType::BlobVal: { // SQLITE_BLOB:
+                        auto uint8array = Napi::TypedArrayOf<uint8_t>::New(m_env, sqlite3_value_bytes(dbval));
+                        memcpy(uint8array.Data(), sqlite3_value_blob(dbval), sqlite3_value_bytes(dbval));
+                        return uint8array;
+                    }
+                    default:
+                        return std::optional<Napi::Value>();
+                }
+            }
+
             void operator()(sqlite3_context* ctx, int argCount, sqlite3_value** args) {
                 std::vector<napi_value> jsArgs;
+                jsArgs.reserve(argCount);
 
                 for (auto i = 0; i < argCount; ++i) {
                     auto* arg = args[i];
-                    auto argType = sqlite3_value_type(arg);
-                    switch (argType) {
-                        case (int) DbValueType::IntegerVal: // SQLITE_INTEGER:
-                            // FIXME: handle ids separately?
-                            jsArgs[i] = Napi::Number::New(m_env, sqlite3_value_int64(arg));
-                            break;
-                        case (int) DbValueType::FloatVal: // SQLITE_DOUBLE:
-                            jsArgs[i] = Napi::Number::New(m_env, sqlite3_value_double(arg));
-                            break;
-                        case (int) DbValueType::TextVal: // SQLITE_TEXT:
-                            jsArgs[i] = Napi::String::New(m_env, (const char*) sqlite3_value_text(arg), sqlite3_value_bytes(arg));
-                            break;
-                        case (int) DbValueType::BlobVal: { // SQLITE_BLOB:
-                            auto uint8array = Napi::TypedArrayOf<uint8_t>::New(m_env, sqlite3_value_bytes(arg));
-                            memcpy(uint8array.Data(), sqlite3_value_blob(arg), sqlite3_value_bytes(arg));
-                            jsArgs[i] = uint8array;
-                            break;
-                        }
-                        default: {
-                            Utf8PrintfString err("argument index '%d' of unhandled type, '%d'", i, argType);
-                            sqlite3_result_error(ctx, err.c_str(), err.size());
-                            return;
-                        }
+                    auto jsArg = this->DbToNapi(arg);
+                    if (!jsArg.has_value()) {
+                        auto argType = sqlite3_value_type(arg);
+                        Utf8PrintfString err("argument index '%d' of unhandled type, '%d'", i, argType);
+                        sqlite3_result_error(ctx, err.c_str(), err.size());
+                        return;
                     }
+                    jsArgs.emplace_back(jsArg.value());
                 }
 
-                m_jsImplRef.Call(m_env.Undefined(), jsArgs);
+                auto result = m_jsImplRef.Call(m_env.Undefined(), jsArgs);
+
+                if (result.IsNumber())
+                    sqlite3_result_double(ctx, result.As<Napi::Number>().DoubleValue());
+                else if (result.IsString()) {
+                    const auto& string = result.As<Napi::String>().Utf8Value();
+                    sqlite3_result_text(ctx, string.c_str(), string.size(), nullptr);
+                } else if (result.IsTypedArray()) {
+                    // FIXME: can we move this memory into sqlite?
+                    const auto& array = result.As<Napi::TypedArrayOf<uint8_t>>();
+                    sqlite3_result_blob(ctx, array.Data(), array.ByteLength(), nullptr);
+                } else {
+                    Utf8PrintfString err("javascript returned unsupported type (not number, Uint8Array or string)");
+                    sqlite3_result_error(ctx, err.c_str(), err.size());
+                }
             }
         };
 
