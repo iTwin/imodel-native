@@ -520,8 +520,8 @@ public:
         if (upgrade)
             params.SetProfileUpgradeOptions(Db::ProfileUpgradeOptions::Upgrade);
 
-        if (moreOpts["defaultTxn"])
-            params.SetStartDefaultTxn((DefaultTxn)moreOpts["defaultTxn"].As<Napi::Number>())
+        if (moreOpts.Get("defaultTxn"))
+            params.SetStartDefaultTxn((DefaultTxn)moreOpts.Get("defaultTxn").As<Napi::Number>().Uint32Value());
 
         DbResult status = JsInterop::OpenECDb(m_ecdb, BeFileName(dbName.c_str(), true), params);
         if (BE_SQLITE_OK == status) {
