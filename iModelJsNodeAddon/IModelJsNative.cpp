@@ -483,7 +483,7 @@ public:
 
         auto* stepFunc = new StepFunc(info.Env(), std::move(jsImplRef));
 
-        sqlite3_create_function_v2(
+        auto funcStatus = sqlite3_create_function_v2(
             m_ecdb.GetSqlDb(),
             name.c_str(),
             -1,
@@ -497,6 +497,11 @@ public:
             nullptr,
             [](void* data){ delete static_cast<StepFunc*>(data); }
         );
+
+        if (funcStatus != SQLITE_OK)
+            BeNapi::ThrowJsException(Env(), "error registering function", funcStatus);
+
+        return info.Env().Undefined();
     }
 
     Napi::Value CreateDb(NapiInfoCR info) {
