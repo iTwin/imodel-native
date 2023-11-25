@@ -424,6 +424,80 @@ public:
         }
     }
 
+    Napi::Value AddJsDbFunc(NapiInfoCR info) {
+        RequireDbIsOpen(info);
+        REQUIRE_ARGUMENT_ANY_OBJ(0, desc);
+        const auto name = desc.Get("name").As<Napi::String>().Utf8Value();
+        const auto deterministic = desc.Get("deterministic").ToBoolean();
+        auto jsImplRef = Napi::Weak(desc.Get("impl").As<Napi::Function>());
+
+        struct StepFunc {
+            Napi::Env m_env;
+            Napi::FunctionReference m_jsImplRef;
+
+            StepFunc(Napi::Env env, Napi::FunctionReference&& jsImplRef)
+                : m_env(env), m_jsImplRef(std::move(jsImplRef))
+            {
+                m_jsImplRef.Ref();
+            }
+
+            ~StepFunc() {
+                m_jsImplRef.Unref();
+            }
+
+            void operator()(sqlite3_context* ctx, int argCount, sqlite3_value** args) {
+                std::vector<Napi::Value> jsArgs;
+
+                for (auto i = 0; i < argCount; ++i) {
+                    auto* arg = args[i];
+                    auto argType = sqlite3_value_type(arg);
+                    switch (argType) {
+                        case (int) DbValueType::IntegerVal: // SQLITE_INTEGER:
+                            // FIXME: handle ids separately?
+                            jsArgs[i] = Napi::Number::New(m_env, sqlite3_value_int64(arg));
+                            break;
+                        case (int) DbValueType::FloatVal: // SQLITE_DOUBLE:
+                            jsArgs[i] = Napi::Number::New(m_env, sqlite3_value_double(arg));
+                            break;
+                        case (int) DbValueType::TextVal: // SQLITE_TEXT:
+                            jsArgs[i] = Napi::String::New(m_env, sqlite3_value_text(arg), sqlite3_value_bytes(arg));
+                            break;
+                        case (int) DbValueType::BlobVal: { // SQLITE_BLOB:
+                            auto uint8array = Napi::TypedArrayOf<uint8_t>::New(m_env, sqlite3_value_bytes(arg));
+                            memcpy(uint8array.Data(), sqlite3_value_blob(arg), sqlite3_value_bytes(arg));
+                            jsArgs[i] = uint8array;
+                            break;
+                        }
+                        default: {
+                            Utf8PrintfString err("argument index '%d' of unhandled type, '%d'", i, argType);
+                            sqlite3_result_error(ctx, err.c_str(), err.size());
+                            return 
+                        }
+                    }
+                }
+
+                m_jsImplRef.Call(m_env.Undefined(), jsArgs);
+            }
+        }
+
+        auto* stepFunc = new StepFunc(info.Env(), std::move(jsImpl));
+
+        sqlite3_create_function_v2(
+            m_ecdb.GetDb(),
+            name.c_str(),
+            -1,
+            SQLITE_UTF8 | (deterministic ? SQLITE_DETERMINISTIC : 0),
+            stepFunc,
+            [](sqlite3_context* ctx, int argCount, sqlite3_value** args){
+                auto* inStepFunc = static_cast<StepFunc*>(sqlite3_user_data(ctx));
+                inStepFunc(ctx, argCount, args);
+            },
+            nullptr,
+            nullptr,
+            [](void* data){ delete static_cast<StepFunc*>(data); },
+        );
+    }
+
     Napi::Value CreateDb(NapiInfoCR info) {
         REQUIRE_ARGUMENT_STRING(0, dbName);
         DbResult status = JsInterop::CreateECDb(m_ecdb, BeFileName(dbName.c_str(), true));
@@ -620,6 +694,7 @@ public:
             InstanceMethod("concurrentQueryExecute", &NativeECDb::ConcurrentQueryExecute),
             InstanceMethod("concurrentQueryResetConfig", &NativeECDb::ConcurrentQueryResetConfig),
             InstanceMethod("concurrentQueryShutdown", &NativeECDb::ConcurrentQueryShutdown),
+            InstanceMethod("addJsDbFunc", &NativeECDb::AddJsDbFunc),
             InstanceMethod("createDb", &NativeECDb::CreateDb),
             InstanceMethod("dispose", &NativeECDb::Dispose),
             InstanceMethod("dropSchema", &NativeECDb::DropSchema),
