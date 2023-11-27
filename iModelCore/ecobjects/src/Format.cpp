@@ -489,10 +489,11 @@ SchemaWriteStatus ECFormat::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVers
             xmlWriter.WriteElementStart(FORMAT_COMPOSITE_UNIT_ELEMENT);
             if(label.IsValid())
                 {
-                if (const auto labelValue = label.Value().c_str(); !Utf8String::IsNullOrEmpty(labelValue))
-                    xmlWriter.WriteAttribute(COMPOSITE_UNIT_LABEL_ATTRIBUTE, labelValue);
-                else
+                const auto labelValue = label.Value().c_str();
+                if (Utf8String::IsNullOrEmpty(labelValue))
                     xmlWriter.WriteEmptyAttribute(COMPOSITE_UNIT_LABEL_ATTRIBUTE);
+                else
+                    xmlWriter.WriteAttribute(COMPOSITE_UNIT_LABEL_ATTRIBUTE, labelValue);
                 }
             xmlWriter.WriteText(((ECUnitCP)unit)->GetQualifiedName(GetSchema()).c_str());
             xmlWriter.WriteElementEnd();
