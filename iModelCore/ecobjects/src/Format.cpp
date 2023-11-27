@@ -415,7 +415,7 @@ SchemaReadStatus ECFormat::ReadCompositeUnitXml(pugi::xml_node unitNode, ECSchem
         }
     units.push_back(unit);
 
-    if (auto labelAttr = unitNode.attribute(COMPOSITE_UNIT_LABEL_ATTRIBUTE); labelAttr && !Utf8String::IsNullOrEmpty(labelAttr.as_string()))
+    if (auto labelAttr = unitNode.attribute(COMPOSITE_UNIT_LABEL_ATTRIBUTE); labelAttr)
         labels.push_back(Utf8String(labelAttr.as_string()));
     else
         labels.push_back(nullptr);
@@ -488,18 +488,35 @@ SchemaWriteStatus ECFormat::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVers
             {
             xmlWriter.WriteElementStart(FORMAT_COMPOSITE_UNIT_ELEMENT);
             if(label.IsValid())
-                xmlWriter.WriteAttribute(COMPOSITE_UNIT_LABEL_ATTRIBUTE, label.Value().c_str());
+                {
+                if (const auto labelValue = label.Value().c_str(); !Utf8String::IsNullOrEmpty(labelValue))
+                    xmlWriter.WriteAttribute(COMPOSITE_UNIT_LABEL_ATTRIBUTE, labelValue);
+                else
+                    xmlWriter.WriteEmptyAttribute(COMPOSITE_UNIT_LABEL_ATTRIBUTE);
+                }
             xmlWriter.WriteText(((ECUnitCP)unit)->GetQualifiedName(GetSchema()).c_str());
             xmlWriter.WriteElementEnd();
             };
         if (HasCompositeMajorUnit())
-            writeUnit(comp->HasMajorLabel() ? comp->GetMajorLabel() : nullptr, comp->GetMajorUnit());
+            {
+            const auto label = comp->HasMajorLabel() ? Nullable<Utf8String>(comp->GetMajorLabel()) : nullptr;
+            writeUnit(label, comp->GetMajorUnit());
+            }
         if (HasCompositeMiddleUnit())
-            writeUnit(comp->HasMiddleLabel() ? comp->GetMiddleLabel() : nullptr, comp->GetMiddleUnit());
+            {
+            const auto label = comp->HasMiddleLabel() ? Nullable<Utf8String>(comp->GetMiddleLabel()) : nullptr;
+            writeUnit(label, comp->GetMiddleUnit());
+            }
         if (HasCompositeMinorUnit())
-            writeUnit(comp->HasMinorLabel() ? comp->GetMinorLabel() : nullptr, comp->GetMinorUnit());
+            {
+            const auto label = comp->HasMinorLabel() ? Nullable<Utf8String>(comp->GetMinorLabel()) : nullptr;
+            writeUnit(label, comp->GetMinorUnit());
+            }
         if (HasCompositeSubUnit())
-            writeUnit(comp->HasSubLabel() ? comp->GetSubLabel() : nullptr, comp->GetSubUnit());
+            {
+            const auto label = comp->HasSubLabel() ? Nullable<Utf8String>(comp->GetSubLabel()) : nullptr;
+            writeUnit(label, comp->GetSubUnit());
+            }
         xmlWriter.WriteElementEnd();
         }
     xmlWriter.WriteElementEnd();

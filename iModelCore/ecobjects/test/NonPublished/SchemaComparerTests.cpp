@@ -632,10 +632,10 @@ TEST_F(SchemaCompareTest, NullOrEmptyStringsInCompositeFormat)
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="Units" version="01.00.00" alias="u" />
 
-            <Unit typeName="TestUnitMajor" displayLabel="TestUnitMajor" definition="u:KM" numerator="1.0" phenomenon="u:LENGTH" unitSystem="u:METRIC" />
-            <Unit typeName="TestUnitMiddle" displayLabel="TestUnitMiddle" definition="u:M" numerator="1.0" phenomenon="u:LENGTH" unitSystem="u:METRIC" />
-            <Unit typeName="TestUnitMinor" displayLabel="TestUnitMinor" definition="u:CM" numerator="1.0" phenomenon="u:LENGTH" unitSystem="u:METRIC" />
-            <Unit typeName="TestUnitSub" displayLabel="TestUnitSub" definition="u:MM" numerator="1.0" phenomenon="u:LENGTH" unitSystem="u:METRIC" />
+            <Unit typeName="TestUnitMajor" displayLabel="TestUnitMajorLabel" definition="u:KM" numerator="1.0" phenomenon="u:LENGTH" unitSystem="u:METRIC" />
+            <Unit typeName="TestUnitMiddle" displayLabel="TestUnitMiddleLabel" definition="u:M" numerator="1.0" phenomenon="u:LENGTH" unitSystem="u:METRIC" />
+            <Unit typeName="TestUnitMinor" displayLabel="TestUnitMinorLabel" definition="u:CM" numerator="1.0" phenomenon="u:LENGTH" unitSystem="u:METRIC" />
+            <Unit typeName="TestUnitSub" displayLabel="TestUnitSubLabel" definition="u:MM" numerator="1.0" phenomenon="u:LENGTH" unitSystem="u:METRIC" />
 
             <Format typeName="TestFormatNoLabel" displayLabel="TestFormatNoLabel" roundFactor="0.3" type="Fractional" showSignOption="OnlyNegative" formatTraits="TrailZeroes|KeepSingleZero" precision="4" decimalSeparator="." thousandSeparator="," uomSeparator=" " >
                 <Composite spacer="=" includeZero="False">
@@ -660,10 +660,10 @@ TEST_F(SchemaCompareTest, NullOrEmptyStringsInCompositeFormat)
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="Units" version="01.00.00" alias="u" />
 
-            <Unit typeName="TestUnitMajorNew" displayLabel="TestUnitMajorNew" definition="u:MILE" numerator="1.0" phenomenon="u:LENGTH" unitSystem="u:METRIC" />
-            <Unit typeName="TestUnitMiddleNew" displayLabel="TestUnitMiddleNew" definition="u:YRD" numerator="1.0" phenomenon="u:LENGTH" unitSystem="u:METRIC" />
-            <Unit typeName="TestUnitMinorNew" displayLabel="TestUnitMinorNew" definition="u:FT" numerator="1.0" phenomenon="u:LENGTH" unitSystem="u:METRIC" />
-            <Unit typeName="TestUnitSubNew" displayLabel="TestUnitSubNew" definition="u:IN" numerator="1.0" phenomenon="u:LENGTH" unitSystem="u:METRIC" />
+            <Unit typeName="TestUnitMajorNew" displayLabel="TestUnitMajorNewLabel" definition="u:MILE" numerator="1.0" phenomenon="u:LENGTH" unitSystem="u:METRIC" />
+            <Unit typeName="TestUnitMiddleNew" displayLabel="TestUnitMiddleNewLabel" definition="u:YRD" numerator="1.0" phenomenon="u:LENGTH" unitSystem="u:METRIC" />
+            <Unit typeName="TestUnitMinorNew" displayLabel="TestUnitMinorNewLabel" definition="u:FT" numerator="1.0" phenomenon="u:LENGTH" unitSystem="u:METRIC" />
+            <Unit typeName="TestUnitSubNew" displayLabel="TestUnitSubNewLabel" definition="u:IN" numerator="1.0" phenomenon="u:LENGTH" unitSystem="u:METRIC" />
 
             <Format typeName="TestFormatNoLabel" displayLabel="TestFormatNoLabel" roundFactor="0.3" type="Fractional" showSignOption="OnlyNegative" formatTraits="TrailZeroes|KeepSingleZero" precision="4" decimalSeparator="." thousandSeparator="," uomSeparator=" " >
                 <Composite spacer="=" includeZero="False">
@@ -718,7 +718,7 @@ TEST_F(SchemaCompareTest, NullOrEmptyStringsInCompositeFormat)
     EXPECT_STREQ("TestSchema:TestUnitMajorNew", spec.MajorUnit().GetNew().Value().c_str());
 
     // Label set to empty string "" in Old, No label specified in New
-    EXPECT_FALSE(spec.MiddleLabel().GetOld().IsValid());
+    EXPECT_STREQ("", spec.MiddleLabel().GetOld().Value().c_str());
     EXPECT_STREQ("TestSchema:TestUnitMiddle", spec.MiddleUnit().GetOld().Value().c_str());
 
     EXPECT_FALSE(spec.MiddleLabel().GetNew().IsValid());
@@ -728,14 +728,14 @@ TEST_F(SchemaCompareTest, NullOrEmptyStringsInCompositeFormat)
     EXPECT_FALSE(spec.MinorLabel().GetOld().IsValid());
     EXPECT_STREQ("TestSchema:TestUnitMinor", spec.MinorUnit().GetOld().Value().c_str());
     
-    EXPECT_FALSE(spec.MinorLabel().GetNew().IsValid());
+    EXPECT_STREQ("", spec.MinorLabel().GetNew().Value().c_str());
     EXPECT_STREQ("TestSchema:TestUnitMinorNew", spec.MinorUnit().GetNew().Value().c_str());
       
     // Label set to string "bravo" in Old, Label set to empty string "" in New
     EXPECT_STREQ("bravo", spec.SubLabel().GetOld().Value().c_str());
     EXPECT_STREQ("TestSchema:TestUnitSub", spec.SubUnit().GetOld().Value().c_str());
     
-    EXPECT_FALSE(spec.SubLabel().GetNew().IsValid());
+    EXPECT_STREQ("", spec.SubLabel().GetNew().Value().c_str());
     EXPECT_STREQ("TestSchema:TestUnitSubNew", spec.SubUnit().GetNew().Value().c_str());
 
     auto testFormatEmptyLabel = formatChanges[0];
@@ -758,13 +758,14 @@ TEST_F(SchemaCompareTest, NullOrEmptyStringsInCompositeFormat)
     EXPECT_STREQ("TestSchema:TestUnitMiddleNew", spec.MiddleUnit().GetNew().Value().c_str());
 
     // Label set to empty string "" in Old, Label set to "tango" in New
-    EXPECT_FALSE(spec.MinorLabel().GetOld().IsValid());
+    EXPECT_STREQ("", spec.MinorLabel().GetOld().Value().c_str());
     EXPECT_STREQ("TestSchema:TestUnitMinor", spec.MinorUnit().GetOld().Value().c_str());
 
     EXPECT_STREQ("tango", spec.MinorLabel().GetNew().Value().c_str());
     EXPECT_STREQ("TestSchema:TestUnitMinorNew", spec.MinorUnit().GetNew().Value().c_str());
       
     // Label set to empty string "" in Old, Label set to empty string "" in New
+    // Since there is no change between the sublabels in the two formats being comapred, the will both be set to null by the comparer
     EXPECT_FALSE(spec.SubLabel().GetOld().IsValid());
     EXPECT_STREQ("TestSchema:TestUnitSub", spec.SubUnit().GetOld().Value().c_str());
     

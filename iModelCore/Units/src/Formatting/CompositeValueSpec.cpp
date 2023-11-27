@@ -510,16 +510,16 @@ bool CompositeValueSpec::FromJson(CompositeValueSpecR out, JsonValueCR jval, bve
     switch (unitLabels.size())
         {
         case 4:
-            if (unitLabels[3].IsValid() && !Utf8String::IsNullOrEmpty(unitLabels[3].Value().c_str()))
+            if (unitLabels[3].IsValid())
                 out.SetSubLabel(unitLabels[3].Value());
         case 3:
-            if (unitLabels[2].IsValid() && !Utf8String::IsNullOrEmpty(unitLabels[2].Value().c_str()))
+            if (unitLabels[2].IsValid())
                 out.SetMinorLabel(unitLabels[2].Value());
         case 2:
-            if (unitLabels[1].IsValid() && !Utf8String::IsNullOrEmpty(unitLabels[1].Value().c_str()))
+            if (unitLabels[1].IsValid())
                 out.SetMiddleLabel(unitLabels[1].Value());
         case 1:
-            if (unitLabels[0].IsValid() && !Utf8String::IsNullOrEmpty(unitLabels[0].Value().c_str()))
+            if (unitLabels[0].IsValid())
                 out.SetMajorLabel(unitLabels[0].Value());
         }
 
@@ -539,7 +539,7 @@ bool CompositeValueSpec::UnitProxy::ToJson(BeJsValue jUP, bool verbose) const
         return false;
     auto val = jUP.appendValue();
     val[json_name()] = m_unit->GetName().c_str();
-    if (!m_unitLabel.empty())
+    if (HasLabel())
         val[json_label()] = m_unitLabel.c_str();
     else if (verbose)
         val[json_label()] = m_unit->GetDisplayLabel().c_str();
@@ -572,7 +572,7 @@ bool CompositeValueSpec::UnitProxy::FromJson(Json::Value const& jval, BEU::IUnit
             if (nullptr == m_unit)
                 return false;
             }
-        else if (BeStringUtilities::StricmpAscii(paramName, json_label()) == 0 && !Utf8String::IsNullOrEmpty(val.asString().c_str()))
+        else if (BeStringUtilities::StricmpAscii(paramName, json_label()) == 0)
             SetLabel(val.asString().c_str());
         }
     return true;
