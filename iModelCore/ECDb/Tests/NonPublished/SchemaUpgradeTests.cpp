@@ -13561,9 +13561,9 @@ TEST_F(SchemaUpgradeTestFixture, Formats)
                                     <Format typeName="MyFormat" displayLabel="My Format" roundFactor="0.3" type="Fractional" showSignOption="OnlyNegative" formatTraits="TrailZeroes|KeepSingleZero"
                                             precision="4" decimalSeparator="." thousandSeparator="," uomSeparator=" ">
                                         <Composite spacer="=" includeZero="False">
-                                            <Unit>u:KM</Unit>
+                                            <Unit label="">u:KM</Unit>
                                             <Unit label="meterle">MyMeter</Unit>
-                                            <Unit label="">u:CM</Unit>
+                                            <Unit>u:CM</Unit>
                                             <Unit label="millimeterle">u:MM</Unit>
                                         </Composite>
                                     </Format>
@@ -13571,7 +13571,7 @@ TEST_F(SchemaUpgradeTestFixture, Formats)
 
     assertFormat(m_ecdb, "MyFormat", "My Format", "",
                  JsonValue(R"json({"roundFactor":0.3, "type": "Fractional", "showSignOption": "OnlyNegative", "formatTraits": ["trailZeroes", "keepSingleZero"], "precision": 4, "decimalSeparator": ".", "thousandSeparator": ",", "uomSeparator": " "})json"),
-                 JsonValue(R"json({"spacer":"=", "includeZero":false, "units": [{"name":"KM"},{"name":"MyMeter", "label":"meterle"},{"name":"CM", "label":""},{"name":"MM", "label":"millimeterle"}]})json"));
+                 JsonValue(R"json({"spacer":"=", "includeZero":false, "units": [{"name":"KM", "label":""},{"name":"MyMeter", "label":"meterle"},{"name":"CM"},{"name":"MM", "label":"millimeterle"}]})json"));
 
     ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
                                 <ECSchema schemaName="Schema" alias="ts" version="2.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
