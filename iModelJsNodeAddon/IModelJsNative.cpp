@@ -311,7 +311,8 @@ struct SQLiteOps {
     }
 
     Napi::Value IsOpen(NapiInfoCR info) {
-        return Napi::Boolean::New(info.Env(), _GetMyDb()->IsDbOpen());
+        auto db = _GetMyDb();
+        return Napi::Boolean::New(info.Env(), nullptr != db && db->IsDbOpen());
     }
 
     Napi::Value IsReadonly(NapiInfoCR info) {
