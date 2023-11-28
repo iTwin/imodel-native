@@ -2011,7 +2011,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareValueExpListExp(NativeSqlBuilder::ListOfLis
         if (!stat.IsSuccess())
             return stat;
 
-        nativeSqlSnippetLists.push_back(move(nativeSqlSnippets));
+        nativeSqlSnippetLists.push_back(std::move(nativeSqlSnippets));
         index++;
         }
 

@@ -3019,6 +3019,18 @@ DbResult Db::_UpgradeProfile(OpenParams const& params) { return BeSQLiteProfileM
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+ProfileVersion Db::GetBeSQLiteProfileVersion() const
+    {
+    ProfileVersion result(0, 0, 0, 0);
+    if(BeSQLiteProfileManager::ReadProfileVersion(result, *this) == DbResult::BE_SQLITE_OK)
+        return result;
+
+    return ProfileVersion(0, 0, 0, 0);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 DbResult Db::QueryExpirationDate(DateTime& expirationDate) const
     {
     Utf8String dateStr;
